@@ -5,15 +5,12 @@
 "use strict";
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { assert, fetch } = DevToolsUtils;
+const { assert } = DevToolsUtils;
 const EventEmitter = require("devtools/shared/event-emitter");
 const { OriginalLocation, GeneratedLocation } = require("devtools/server/actors/common");
-const { joinURI } = require("devtools/shared/path");
 
 loader.lazyRequireGetter(this, "SourceActor", "devtools/server/actors/source", true);
 loader.lazyRequireGetter(this, "isEvalSource", "devtools/server/actors/source", true);
-loader.lazyRequireGetter(this, "SourceMapConsumer", "source-map", true);
-loader.lazyRequireGetter(this, "WasmRemap", "devtools/shared/wasm-source-map", true);
 
 
 
@@ -23,7 +20,6 @@ function TabSources(threadActor, allowSourceFn = () => true) {
   EventEmitter.decorate(this);
 
   this._thread = threadActor;
-  this._useSourceMaps = true;
   this._autoBlackBox = true;
   this.allowSource = source => {
     return !isHiddenSource(source) && allowSourceFn(source);
@@ -33,13 +29,9 @@ function TabSources(threadActor, allowSourceFn = () => true) {
   this.neverAutoBlackBoxSources = new Set();
 
   
-  this._sourceMaps = new Map();
-  
-  this._sourceMapCache = Object.create(null);
-  
   this._sourceActors = new Map();
   
-  this._sourceMappedSourceActors = Object.create(null);
+  this._htmlDocumentSourceActors = Object.create(null);
 }
 
 
@@ -56,11 +48,6 @@ TabSources.prototype = {
   setOptions: function(options) {
     let shouldReset = false;
 
-    if ("useSourceMaps" in options) {
-      shouldReset = true;
-      this._useSourceMaps = options.useSourceMaps;
-    }
-
     if ("autoBlackBox" in options) {
       shouldReset = true;
       this._autoBlackBox = options.autoBlackBox;
@@ -74,18 +61,9 @@ TabSources.prototype = {
   
 
 
-
-
-
-
-  reset: function(opts = {}) {
+  reset: function() {
     this._sourceActors = new Map();
-    this._sourceMaps = new Map();
-    this._sourceMappedSourceActors = Object.create(null);
-
-    if (opts.sourceMaps) {
-      this._sourceMapCache = Object.create(null);
-    }
+    this._htmlDocumentSourceActors = Object.create(null);
   },
 
   
@@ -102,61 +80,39 @@ TabSources.prototype = {
 
 
 
+  source: function({ source, isInlineSource, contentType }) {
+    assert(source,
+           "TabSources.prototype.source needs a source");
 
+    if (!this.allowSource(source)) {
+      return null;
+    }
 
-  source: function({ source, originalUrl, generatedSource,
-                       isInlineSource, contentType }) {
-    assert(source || (originalUrl && generatedSource),
-           "TabSources.prototype.source needs an originalUrl or a source");
+    
+    
+    
+    
+    
+    if (source.url in this._htmlDocumentSourceActors) {
+      return this._htmlDocumentSourceActors[source.url];
+    }
 
-    if (source) {
-      
-      
-
-      if (!this.allowSource(source)) {
-        return null;
-      }
-
+    let originalUrl = null;
+    if (isInlineSource) {
       
       
       
       
-      
-      if (source.url in this._sourceMappedSourceActors) {
-        return this._sourceMappedSourceActors[source.url];
-      }
-
-      if (isInlineSource) {
-        
-        
-        
-        
-        originalUrl = source.url;
-        source = null;
-      } else if (this._sourceActors.has(source)) {
-        return this._sourceActors.get(source);
-      }
-    } else if (originalUrl) {
-      
-      
-      
-      
-      for (const [sourceData, actor] of this._sourceActors) {
-        if (sourceData.url === originalUrl) {
-          return actor;
-        }
-      }
-
-      if (originalUrl in this._sourceMappedSourceActors) {
-        return this._sourceMappedSourceActors[originalUrl];
-      }
+      originalUrl = source.url;
+      source = null;
+    } else if (this._sourceActors.has(source)) {
+      return this._sourceActors.get(source);
     }
 
     const actor = new SourceActor({
       thread: this._thread,
       source: source,
       originalUrl: originalUrl,
-      generatedSource: generatedSource,
       isInlineSource: isInlineSource,
       contentType: contentType,
     });
@@ -180,39 +136,16 @@ TabSources.prototype = {
     if (source) {
       this._sourceActors.set(source, actor);
     } else {
-      this._sourceMappedSourceActors[originalUrl] = actor;
+      this._htmlDocumentSourceActors[originalUrl] = actor;
     }
 
-    this._emitNewSource(actor);
+    this.emit("newSource", actor);
     return actor;
   },
 
-  _emitNewSource: function(actor) {
-    if (!actor.source) {
-      
-      
-      
-      this.emit("newSource", actor);
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      this.fetchSourceMap(actor.source).then(map => {
-        if (!map) {
-          this.emit("newSource", actor);
-        }
-      });
-    }
-  },
-
   _getSourceActor: function(source) {
-    if (source.url in this._sourceMappedSourceActors) {
-      return this._sourceMappedSourceActors[source.url];
+    if (source.url in this._htmlDocumentSourceActors) {
+      return this._htmlDocumentSourceActors[source.url];
     }
 
     if (this._sourceActors.has(source)) {
@@ -245,8 +178,8 @@ TabSources.prototype = {
         }
       }
 
-      if (url in this._sourceMappedSourceActors) {
-        return this._sourceMappedSourceActors[url];
+      if (url in this._htmlDocumentSourceActors) {
+        return this._htmlDocumentSourceActors[url];
       }
     }
 
@@ -365,172 +298,9 @@ TabSources.prototype = {
 
 
 
-
-  _createSourceMappedActors: function(source) {
-    if (!this._useSourceMaps || !source.sourceMapURL) {
-      return Promise.resolve(null);
-    }
-
-    return this.fetchSourceMap(source)
-      .then(map => {
-        if (map) {
-          return map.sources.map(s => {
-            return this.source({ originalUrl: s, generatedSource: source });
-          }).filter(isNotNull);
-        }
-        return null;
-      });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  createSourceActors: function(source) {
-    return this._createSourceMappedActors(source).then(actors => {
-      const actor = this.createNonSourceMappedActor(source);
-      return (actors || [actor]).filter(isNotNull);
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  fetchSourceMap: function(source) {
-    if (!this._useSourceMaps) {
-      return Promise.resolve(null);
-    } else if (this._sourceMaps.has(source)) {
-      return this._sourceMaps.get(source);
-    } else if (!source || !source.sourceMapURL) {
-      return Promise.resolve(null);
-    }
-
-    let sourceMapURL = source.sourceMapURL;
-    if (source.url) {
-      sourceMapURL = joinURI(source.url, sourceMapURL);
-    }
-    let result = this._fetchSourceMap(sourceMapURL, source.url);
-
-    const isWasm = source.introductionType == "wasm";
-    if (isWasm) {
-      result = result.then((map) => new WasmRemap(map));
-    }
-
-    
-    
-    
-    this._sourceMaps.set(source, result);
-    return result;
-  },
-
-  
-
-
-
-
-  getSourceMap: function(source) {
-    return Promise.resolve(this._sourceMaps.get(source));
-  },
-
-  
-
-
-  setSourceMap: function(source, map) {
-    this._sourceMaps.set(source, Promise.resolve(map));
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _fetchSourceMap: function(absSourceMapURL, sourceURL) {
-    assert(this._useSourceMaps,
-           "Cannot fetch sourcemaps if they are disabled");
-
-    if (this._sourceMapCache[absSourceMapURL]) {
-      return this._sourceMapCache[absSourceMapURL];
-    }
-
-    const fetching = fetch(absSourceMapURL, { loadFromCache: false })
-      .then(({ content }) => {
-        return new SourceMapConsumer(content,
-                                     this._getSourceMapRoot(absSourceMapURL, sourceURL));
-      })
-      .catch(error => {
-        if (!DevToolsUtils.reportingDisabled) {
-          DevToolsUtils.reportException("TabSources.prototype._fetchSourceMap", error);
-        }
-        return null;
-      });
-    this._sourceMapCache[absSourceMapURL] = fetching;
-    return fetching;
-  },
-
-  
-
-
-
-  _getSourceMapRoot: function(absSourceMapURL, scriptURL) {
-    
-    
-    if (scriptURL && absSourceMapURL.startsWith("data:")) {
-      return scriptURL;
-    }
-    return absSourceMapURL;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  clearSourceMapCache: function(sourceMapURL, opts = { hard: false }) {
-    const oldSm = this._sourceMapCache[sourceMapURL];
-
-    if (opts.hard) {
-      delete this._sourceMapCache[sourceMapURL];
-    }
-
-    if (oldSm) {
-      
-      for (const [source, sm] of this._sourceMaps.entries()) {
-        if (sm === oldSm) {
-          this._sourceMaps.delete(source);
-        }
-      }
-    }
+  createSourceActors: async function(source) {
+    const actor = this.createNonSourceMappedActor(source);
+    return actor ? [actor] : [];
   },
 
   
@@ -575,84 +345,12 @@ TabSources.prototype = {
 
 
 
-  getOriginalLocation: function(generatedLocation) {
-    const {
-      generatedSourceActor,
-      generatedLine,
-      generatedColumn,
-    } = generatedLocation;
-    const source = generatedSourceActor.source;
-
-    
-    
-    
-    
-    
-    return this.fetchSourceMap(source).then(map => {
-      if (map) {
-        const {
-          source: originalUrl,
-          line: originalLine,
-          column: originalColumn,
-          name: originalName,
-        } = map.originalPositionFor({
-          line: generatedLine,
-          column: generatedColumn == null ? Infinity : generatedColumn,
-        });
-
-        
-        
-        
-        
-        
-        
-        
-        return new OriginalLocation(
-          originalUrl ? this.source({
-            originalUrl: originalUrl,
-            generatedSource: source,
-          }) : null,
-          originalLine,
-          originalColumn,
-          originalName
-        );
-      }
-
-      
-      return OriginalLocation.fromGeneratedLocation(generatedLocation);
-    });
+  getOriginalLocation: async function(generatedLocation) {
+    return OriginalLocation.fromGeneratedLocation(generatedLocation);
   },
 
-  getAllGeneratedLocations: function(originalLocation) {
-    const {
-      originalSourceActor,
-      originalLine,
-      originalColumn,
-    } = originalLocation;
-
-    const source = (originalSourceActor.source ||
-                  originalSourceActor.generatedSource);
-
-    return this.fetchSourceMap(source).then((map) => {
-      if (map) {
-        map.computeColumnSpans();
-
-        return map.allGeneratedPositionsFor({
-          source: originalSourceActor.url,
-          line: originalLine,
-          column: originalColumn,
-        }).map(({ line, column, lastColumn }) => {
-          return new GeneratedLocation(
-            this.createNonSourceMappedActor(source),
-            line,
-            column,
-            lastColumn
-          );
-        });
-      }
-
-      return [GeneratedLocation.fromOriginalLocation(originalLocation)];
-    });
+  getAllGeneratedLocations: async function(originalLocation) {
+    return [GeneratedLocation.fromOriginalLocation(originalLocation)];
   },
 
   
@@ -687,13 +385,11 @@ TabSources.prototype = {
   },
 
   iter: function() {
-    const actors = Object.keys(this._sourceMappedSourceActors).map(k => {
-      return this._sourceMappedSourceActors[k];
+    const actors = Object.keys(this._htmlDocumentSourceActors).map(k => {
+      return this._htmlDocumentSourceActors[k];
     });
     for (const actor of this._sourceActors.values()) {
-      if (!this._sourceMaps.has(actor.source)) {
-        actors.push(actor);
-      }
+      actors.push(actor);
     }
     return actors;
   },
@@ -705,13 +401,6 @@ TabSources.prototype = {
 
 function isHiddenSource(source) {
   return source.introductionType === "Function.prototype";
-}
-
-
-
-
-function isNotNull(thing) {
-  return thing !== null;
 }
 
 exports.TabSources = TabSources;
