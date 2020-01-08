@@ -152,7 +152,7 @@ struct FunctorTraits<R (*)(Args...)> {
   }
 };
 
-#if defined(OS_WIN) && !defined(ARCH_CPU_X86_64)
+#if defined(OS_WIN) && !defined(ARCH_CPU_64_BITS)
 
 
 template <typename R, typename... Args>

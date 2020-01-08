@@ -648,6 +648,12 @@ void ThreadTicks::WaitUntilInitializedWin() {
     ::Sleep(10);
 }
 
+#if defined(_M_ARM64)
+#define ReadCycleCounter() _ReadStatusReg(ARM64_PMCCNTR_EL0)
+#else
+#define ReadCycleCounter() __rdtsc()
+#endif
+
 double ThreadTicks::TSCTicksPerSecond() {
   DCHECK(IsSupported());
 
@@ -668,12 +674,12 @@ double ThreadTicks::TSCTicksPerSecond() {
 
   
   
-  static const uint64_t tsc_initial = __rdtsc();
+  static const uint64_t tsc_initial = ReadCycleCounter();
   static const uint64_t perf_counter_initial = QPCNowRaw();
 
   
   
-  uint64_t tsc_now = __rdtsc();
+  uint64_t tsc_now = ReadCycleCounter();
   uint64_t perf_counter_now = QPCNowRaw();
 
   
@@ -706,6 +712,8 @@ double ThreadTicks::TSCTicksPerSecond() {
 
   return tsc_ticks_per_second;
 }
+
+#undef ReadCycleCounter
 
 
 TimeTicks TimeTicks::FromQPCValue(LONGLONG qpc_value) {

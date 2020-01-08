@@ -144,7 +144,7 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
 }  
 }  
 
-#if defined(OS_WIN)
+#if defined(OS_WIN) && defined(ARCH_CPU_X86_FAMILY)
 
 
 #  include "base/atomicops_internals_x86_msvc.h"
