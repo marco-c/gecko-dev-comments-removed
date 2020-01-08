@@ -4,42 +4,11 @@
 
 
 
-import Services from "devtools-services";
 import { addThreadEventListeners } from "./events";
+import type { TabTarget } from "./types";
 
-
-
-
-
-
-
-
-
-export async function checkServerSupportsListWorkers({
-  tabTarget,
-  debuggerClient
-}: Object) {
-  const root = await tabTarget.root;
-  
-  if (!root) {
-    return false;
-  }
-
-  const deviceFront = await debuggerClient.mainRoot.getFront("device");
-  const description = await deviceFront.getDescription();
-
-  const isFennec = description.apptype === "mobile/android";
-  if (!isFennec) {
-    
-    
-    
-    return true;
-  }
-
-  
-  
-  const version = description.platformversion;
-  return Services.vc.compare(version, "61.0") >= 0;
+export function supportsWorkers(tabTarget: TabTarget) {
+  return tabTarget.isBrowsingContext || tabTarget.isContentProcess;
 }
 
 export async function updateWorkerClients({
@@ -48,28 +17,13 @@ export async function updateWorkerClients({
   threadClient,
   workerClients
 }: Object) {
-  const newWorkerClients = {};
-
-  
-  
-  const supportsListWorkers = await checkServerSupportsListWorkers({
-    tabTarget,
-    debuggerClient
-  });
-
-  
-  
-  
-  
-  if (
-    !threadClient._parent ||
-    typeof threadClient._parent.listWorkers != "function" ||
-    !supportsListWorkers
-  ) {
-    return newWorkerClients;
+  if (!supportsWorkers(tabTarget)) {
+    return {};
   }
 
-  const { workers } = await threadClient._parent.listWorkers();
+  const newWorkerClients = {};
+
+  const { workers } = await tabTarget.activeTab.listWorkers();
   for (const workerTargetFront of workers) {
     await workerTargetFront.attach();
     const [, workerThread] = await workerTargetFront.attachThread();
@@ -81,7 +35,6 @@ export async function updateWorkerClients({
       newWorkerClients[workerThread.actor] = workerClients[workerThread.actor];
     } else {
       addThreadEventListeners(workerThread);
-      workerThread.url = workerTargetFront.url;
       workerThread.resume();
 
       const [, consoleClient] = await debuggerClient.attachConsole(
