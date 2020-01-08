@@ -232,7 +232,8 @@ class TraceLoggerGraph
                    mozilla::Maybe<uint32_t>& column);
 
     
-    void log(ContinuousSpace<EventEntry>& events);
+    void log(ContinuousSpace<EventEntry>& events,
+             mozilla::TimeStamp startTime);
 
     static size_t treeSizeFlushLimit() {
         

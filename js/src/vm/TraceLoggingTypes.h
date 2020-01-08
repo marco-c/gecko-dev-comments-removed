@@ -314,11 +314,11 @@ class ContinuousSpace {
 
 
 struct EventEntry {
-    uint64_t time;
+    mozilla::TimeStamp time;
     uint32_t textId;
-    EventEntry(uint64_t time, uint32_t textId)
-      : time(time), textId(textId)
-    { }
+    EventEntry()
+      : textId(0)
+    {}
 };
 
 #endif 

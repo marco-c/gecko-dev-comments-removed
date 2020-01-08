@@ -418,7 +418,12 @@ class TraceLoggerThreadState
     uint32_t nextDictionaryId;
 
   public:
-    uint64_t startupTime;
+    mozilla::TimeStamp startTime;
+
+    double getTimeStampOffset(mozilla::TimeStamp time) {
+        mozilla::TimeDuration delta = time - startTime;
+        return delta.ToMicroseconds();
+    }
 
     
     
@@ -436,7 +441,6 @@ class TraceLoggerThreadState
         spewErrors(false),
         nextTextId(TraceLogger_Last),
         nextDictionaryId(0),
-        startupTime(0),
         lock(js::mutexid::TraceLoggerThreadState)
     { }
 
