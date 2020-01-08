@@ -42,9 +42,15 @@ class MozXULElement extends XULElement {
 
 
 
-  static parseXULToFragment(str, preamble = "") {
+  static parseXULToFragment(str, entities = []) {
     let doc = gXULDOMParser.parseFromString(`
-      ${preamble}
+      ${entities.length ? `<!DOCTYPE bindings [
+        ${entities.reduce((preamble, url, index) => {
+          return preamble + `<!ENTITY % _dtd-${index} SYSTEM "${url}">
+            %_dtd-${index};
+            `;
+        }, "")}
+      ]>` : ""}
       <box xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
         ${str}
       </box>
