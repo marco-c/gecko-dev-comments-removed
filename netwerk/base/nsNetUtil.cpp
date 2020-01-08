@@ -2930,7 +2930,8 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
                               EmptyString(), 
                               0, 
                               0, 
-                              nsIScriptError::warningFlag, "CSP",
+                              nsIScriptError::warningFlag,
+                              NS_LITERAL_CSTRING("upgradeInsecureRequest"),
                               innerWindowId,
                               !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);
           Telemetry::AccumulateCategorical(Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::CSP);
