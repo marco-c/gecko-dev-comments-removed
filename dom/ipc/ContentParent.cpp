@@ -2354,13 +2354,6 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   SetReplyTimeoutMs(Preferences::GetInt("dom.ipc.cpow.timeout", 0));
 
-  
-  
-  
-  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_TIME_MS,
-                        static_cast<uint32_t>((TimeStamp::Now() - mLaunchTS)
-                                              .ToMilliseconds()));
-
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
     nsAutoString cpId;
@@ -2369,6 +2362,8 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   }
 
   Init();
+
+  
 
   return true;
 }
@@ -2469,10 +2464,6 @@ ContentParent::~ContentParent()
 void
 ContentParent::InitInternal(ProcessPriority aInitialPriority)
 {
-  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_TIME_MS,
-                        static_cast<uint32_t>((TimeStamp::Now() - mLaunchTS)
-                                              .ToMilliseconds()));
-
   XPCOMInitData xpcomInit;
 
   nsCOMPtr<nsIIOService> io(do_GetIOService());
