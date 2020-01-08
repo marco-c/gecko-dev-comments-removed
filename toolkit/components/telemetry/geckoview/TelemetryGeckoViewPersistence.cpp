@@ -382,7 +382,7 @@ PersistenceThreadPersist()
   }
 
   
-  mozilla::JSONWriter<> w(std::move(jsonWriter));
+  mozilla::JSONWriter w(std::move(jsonWriter));
   w.Start();
 
   w.StartObjectProperty("scalars");

@@ -134,8 +134,4 @@ class TempAllocPolicy : public AllocPolicyBase
 
 } 
 
-namespace JS {
-using SystemAllocPolicy = js::SystemAllocPolicy;
-} 
-
 #endif 
