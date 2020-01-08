@@ -3,12 +3,16 @@
 
 "use strict";
 
-const { Localization } = ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
+const {Localization} = ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 const POPUP_NOTIFICATION_ID = "contextual-feature-recommendation";
+const SUMO_BASE_URL = Services.urlFormatter.formatURLPref("app.support.baseURL");
 
 const DELAY_BEFORE_EXPAND_MS = 1000;
-const DURATION_OF_EXPAND_MS = 5000;
 
 
 
@@ -18,12 +22,12 @@ const DURATION_OF_EXPAND_MS = 5000;
 
 
 
-const RecommendationMap = new WeakMap();
+let RecommendationMap = new WeakMap();
 
 
 
 
-const PageActionMap = new WeakMap();
+let PageActionMap = new WeakMap();
 
 
 
@@ -55,10 +59,25 @@ class PageAction {
     this.container.onclick = this._handleClick;
   }
 
-  async show(notification_text, shouldExpand = false) {
+  _dispatchImpression(message) {
+    this._dispatchToASRouter({type: "IMPRESSION", data: message});
+  }
+
+  _sendTelemetry(ping) {
+    
+    
+    
+    
+    this._dispatchToASRouter({
+      type: "DOORHANGER_TELEMETRY",
+      data: {useClientID: true, action: "cfr_user_event", source: "CFR", ...ping}
+    });
+  }
+
+  async show(recommendation, shouldExpand = false) {
     this.container.hidden = false;
 
-    this.label.value = await this.getStrings({string: notification_text});
+    this.label.value = await this.getStrings(recommendation.content.notification_text);
 
     
     
@@ -73,8 +92,14 @@ class PageAction {
       
       this._expand(DELAY_BEFORE_EXPAND_MS);
 
+      this._dispatchImpression(recommendation);
       
-      this._collapse(DELAY_BEFORE_EXPAND_MS + DURATION_OF_EXPAND_MS);
+      
+      
+      
+      if (!!recommendation.id && !!recommendation.content.bucket_id) {
+        this._sendTelemetry({message_id: recommendation.id, bucket_id: recommendation.content.bucket_id, event: "IMPRESSION"});
+      }
     }
   }
 
@@ -82,6 +107,8 @@ class PageAction {
     this.container.hidden = true;
     this._clearScheduledStateChanges();
     this.urlbar.removeAttribute("cfr-recommendation-state");
+    
+    this.window.PopupNotifications.remove(this.currentNotification);
   }
 
   dispatchUserAction(action) {
@@ -131,7 +158,15 @@ class PageAction {
   _popupStateChange(state) {
     if (["dismissed", "removed"].includes(state)) {
       this._collapse();
+      
+      this.window.PopupNotifications.remove(this.currentNotification);
     }
+  }
+
+  _blockMessage(messageID) {
+    this._dispatchToASRouter(
+      {type: "BLOCK_MESSAGE_BY_ID", data: {id: messageID}}
+    );
   }
 
   
@@ -141,32 +176,34 @@ class PageAction {
 
 
 
-  async getStrings({string, hasAttributes}) {
+
+  async getStrings(string, subAttribute = "") {
     if (!string.string_id) {
       return string;
     }
 
-    const [localeStrings] = await this._l10n.formatMessages([{id: string.string_id}]);
+    const [localeStrings] = await this._l10n.formatMessages([{
+      id: string.string_id,
+      args: string.args
+    }]);
 
-    if (hasAttributes && localeStrings.attributes) {
+    const mainString = new String(localeStrings.value); 
+    if (localeStrings.attributes) {
       const attributes = localeStrings.attributes.reduce((acc, attribute) => {
         acc[attribute.name] = attribute.value;
         return acc;
       }, {});
-      return {
-        value: localeStrings.value,
-        attributes
-      };
-    } else {
-      return localeStrings.value;
+      mainString.attributes = attributes;
     }
+
+    return subAttribute ? mainString.attributes[subAttribute] : mainString;
   }
 
   
 
 
 
-  async _handleClick(event) {
+  async _handleClick(event) { 
     const browser = this.window.gBrowser.selectedBrowser;
     if (!RecommendationMap.has(browser)) {
       
@@ -174,7 +211,7 @@ class PageAction {
       this.hide();
       return;
     }
-    const {content} = RecommendationMap.get(browser);
+    const {id, content} = RecommendationMap.get(browser);
 
     
     
@@ -184,20 +221,102 @@ class PageAction {
     
     browser.cfrpopupnotificationanchor = this.container;
 
+    const notification = this.window.document.getElementById("contextual-feature-recommendation-notification");
+    const headerLabel = this.window.document.getElementById("cfr-notification-header-label");
+    const headerLink = this.window.document.getElementById("cfr-notification-header-link");
+    const headerImage = this.window.document.getElementById("cfr-notification-header-image");
+    const author = this.window.document.getElementById("cfr-notification-author");
+    const footerText = this.window.document.getElementById("cfr-notification-footer-text");
+    const footerFilledStars = this.window.document.getElementById("cfr-notification-footer-filled-stars");
+    const footerEmptyStars = this.window.document.getElementById("cfr-notification-footer-empty-stars");
+    const footerUsers = this.window.document.getElementById("cfr-notification-footer-users");
+    const footerSpacer = this.window.document.getElementById("cfr-notification-footer-spacer");
+    const footerLink = this.window.document.getElementById("cfr-notification-footer-learn-more-link");
+
+    headerLabel.value = await this.getStrings(content.heading_text);
+    headerLink.setAttribute("href", SUMO_BASE_URL + content.info_icon.sumo_path);
+    const isRTL = this.window.getComputedStyle(notification).direction === "rtl";
+    const attribute = isRTL ? "left" : "right";
+    headerLink.setAttribute(attribute, 0);
+    headerImage.setAttribute("tooltiptext", await this.getStrings(content.info_icon.label, "tooltiptext"));
+    headerLink.onclick = () => this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "RATIONALE"});
+
+    author.textContent = await this.getStrings({
+      string_id: "cfr-doorhanger-extension-author",
+      args: {name: content.addon.author}
+    });
+
+    footerText.textContent = await this.getStrings(content.text);
+
+    const {rating} = content.addon;
+    if (rating) {
+      const MAX_RATING = 5;
+      const STARS_WIDTH = 17 * MAX_RATING;
+      const calcWidth = stars => `${stars / MAX_RATING * STARS_WIDTH}px`;
+      footerFilledStars.style.width = calcWidth(rating);
+      footerEmptyStars.style.width = calcWidth(MAX_RATING - rating);
+
+      const ratingString = await this.getStrings({
+        string_id: "cfr-doorhanger-extension-rating",
+        args: {total: rating}
+      }, "tooltiptext");
+      footerFilledStars.setAttribute("tooltiptext", ratingString);
+      footerEmptyStars.setAttribute("tooltiptext", ratingString);
+    } else {
+      footerFilledStars.style.width = "";
+      footerEmptyStars.style.width = "";
+      footerFilledStars.removeAttribute("tooltiptext");
+      footerEmptyStars.removeAttribute("tooltiptext");
+    }
+
+    const {users} = content.addon;
+    if (users) {
+      footerUsers.setAttribute("value", await this.getStrings({
+        string_id: "cfr-doorhanger-extension-total-users",
+        args: {total: users}
+      }));
+      footerUsers.removeAttribute("hidden");
+    } else {
+      
+      footerUsers.setAttribute("hidden", true);
+      footerUsers.removeAttribute("value");
+    }
+
+    
+    if (rating || users) {
+      footerSpacer.removeAttribute("hidden");
+    } else {
+      footerSpacer.setAttribute("hidden", true);
+    }
+
+    footerLink.value = await this.getStrings({string_id: "cfr-doorhanger-extension-learn-more-link"});
+    footerLink.setAttribute("href", content.addon.amo_url);
+    footerLink.onclick = () => this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "LEARN_MORE"});
+
     const {primary, secondary} = content.buttons;
-    const primaryBtnStrings = await this.getStrings({string: primary.label, hasAttributes: true});
-    const secondaryBtnStrings = await this.getStrings({string: secondary.label, hasAttributes: true});
+    const primaryBtnStrings = await this.getStrings(primary.label);
+    const secondaryBtnStrings = await this.getStrings(secondary.label);
 
     const mainAction = {
-      label: primaryBtnStrings.value,
+      label: primaryBtnStrings,
       accessKey: primaryBtnStrings.attributes.accesskey,
-      callback: () => this.dispatchUserAction(primary.action)
+      callback: () => {
+        this._blockMessage(id);
+        this.dispatchUserAction(primary.action);
+        this.hide();
+        this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "INSTALL"});
+        RecommendationMap.delete(browser);
+      }
     };
 
     const secondaryActions = [{
-      label: secondaryBtnStrings.value,
+      label: secondaryBtnStrings,
       accessKey: secondaryBtnStrings.attributes.accesskey,
-      callback: this._collapse
+      callback: () => {
+        this.hide();
+        this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "DISMISS"});
+        RecommendationMap.delete(browser);
+      }
     }];
 
     const options = {
@@ -206,10 +325,11 @@ class PageAction {
       eventCallback: this._popupStateChange
     };
 
-    this.window.PopupNotifications.show(
+    this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "CLICK_DOORHANGER"});
+    this.currentNotification = this.window.PopupNotifications.show(
       browser,
       POPUP_NOTIFICATION_ID,
-      await this.getStrings({string: content.text}),
+      await this.getStrings(content.addon.title),
       "cfr",
       mainAction,
       secondaryActions,
@@ -239,11 +359,11 @@ const CFRPageActions = {
       return;
     }
     if (RecommendationMap.has(browser)) {
-      const {host, content} = RecommendationMap.get(browser);
-      if (isHostMatch(browser, host)) {
+      const recommendation = RecommendationMap.get(browser);
+      if (isHostMatch(browser, recommendation.host)) {
         
         
-        pageAction.show(this.getStrings({string: content.notification_text}));
+        pageAction.show(recommendation);
       } else {
         
         
@@ -271,7 +391,7 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).show(this.getStrings({string: recommendation.content.notification_text}), true);
+    await PageActionMap.get(win).show(recommendation, true);
     return true;
   },
 
@@ -285,6 +405,9 @@ const CFRPageActions = {
 
   async addRecommendation(browser, host, recommendation, dispatchToASRouter) {
     const win = browser.ownerGlobal;
+    if (PrivateBrowsingUtils.isWindowPrivate(win)) {
+      return false;
+    }
     if (browser !== win.gBrowser.selectedBrowser || !isHostMatch(browser, host)) {
       return false;
     }
@@ -293,7 +416,7 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).show(recommendation.content.notification_text, true);
+    await PageActionMap.get(win).show(recommendation, true);
     return true;
   },
 
@@ -301,11 +424,16 @@ const CFRPageActions = {
 
 
   clearRecommendations() {
-    for (const [win, pageAction] of PageActionMap) {
-      pageAction.hide();
-      PageActionMap.delete(win);
+    
+    for (const win of Services.wm.getEnumerator("navigator:browser")) {
+      if (win.closed || !PageActionMap.has(win)) {
+        continue;
+      }
+      PageActionMap.get(win).hide();
     }
-    RecommendationMap.clear();
+    
+    PageActionMap = new WeakMap();
+    RecommendationMap = new WeakMap();
   }
 };
 this.CFRPageActions = CFRPageActions;
