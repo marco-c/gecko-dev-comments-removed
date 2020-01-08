@@ -38,6 +38,7 @@
 #include "js/Realm.h"
 #include "js/RefCounted.h"
 #include "js/RootingAPI.h"
+#include "js/SourceBufferHolder.h"
 #include "js/Stream.h"
 #include "js/TracingAPI.h"
 #include "js/UniquePtr.h"
@@ -300,114 +301,6 @@ JS_PUBLIC_API(bool)
 JS_StringHasBeenPinned(JSContext* cx, JSString* str);
 
 namespace JS {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SourceBufferHolder final
-{
-  public:
-    enum Ownership {
-      NoOwnership,
-      GiveOwnership
-    };
-
-    SourceBufferHolder(const char16_t* data, size_t dataLength, Ownership ownership)
-      : data_(data),
-        length_(dataLength),
-        ownsChars_(ownership == GiveOwnership)
-    {
-        fixEmptyBuffer();
-    }
-
-    SourceBufferHolder(UniqueTwoByteChars&& data, size_t dataLength)
-      : data_(data.release()),
-        length_(dataLength),
-        ownsChars_(true)
-    {
-        fixEmptyBuffer();
-    }
-
-    SourceBufferHolder(SourceBufferHolder&& other)
-      : data_(other.data_),
-        length_(other.length_),
-        ownsChars_(other.ownsChars_)
-    {
-        other.data_ = nullptr;
-        other.length_ = 0;
-        other.ownsChars_ = false;
-    }
-
-    ~SourceBufferHolder() {
-        if (ownsChars_)
-            js_free(const_cast<char16_t*>(data_));
-    }
-
-    
-    const char16_t* get() const { return data_; }
-
-    
-    size_t length() const { return length_; }
-
-    
-    
-    bool ownsChars() const { return ownsChars_; }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    char16_t* take() {
-        MOZ_ASSERT(ownsChars_);
-        ownsChars_ = false;
-        return const_cast<char16_t*>(data_);
-    }
-
-  private:
-    SourceBufferHolder(SourceBufferHolder&) = delete;
-    SourceBufferHolder& operator=(SourceBufferHolder&) = delete;
-
-    void fixEmptyBuffer() {
-        
-        
-        static const char16_t NullChar_ = 0;
-        if (!get()) {
-            data_ = &NullChar_;
-            length_ = 0;
-            ownsChars_ = false;
-        }
-    }
-
-    const char16_t* data_;
-    size_t length_;
-    bool ownsChars_;
-};
 
 struct TranscodeSource;
 
