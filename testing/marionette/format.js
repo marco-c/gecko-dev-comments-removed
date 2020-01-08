@@ -7,6 +7,7 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const {Log} = ChromeUtils.import("chrome://marionette/content/log.js", {});
+const {MarionettePrefs} = ChromeUtils.import("chrome://marionette/content/prefs.js", {});
 
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
@@ -135,10 +136,12 @@ function truncate(strings, ...values) {
         return obj;
 
       case "[object String]":
-        if (obj.length > MAX_STRING_LENGTH) {
-          let s1 = obj.substring(0, (MAX_STRING_LENGTH / 2));
-          let s2 = obj.substring(obj.length - (MAX_STRING_LENGTH / 2));
-          return `${s1} ... ${s2}`;
+        if (MarionettePrefs.truncateLog) {
+          if (obj.length > MAX_STRING_LENGTH) {
+            let s1 = obj.substring(0, (MAX_STRING_LENGTH / 2));
+            let s2 = obj.substring(obj.length - (MAX_STRING_LENGTH / 2));
+            return `${s1} ... ${s2}`;
+          }
         }
         return obj;
 

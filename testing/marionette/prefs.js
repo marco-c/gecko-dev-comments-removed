@@ -218,6 +218,17 @@ class MarionetteBranch extends Branch {
 
 
 
+  get truncateLog() {
+    return this.get("log.truncate");
+  }
+
+  
+
+
+
+
+
+
   get recommendedPrefs() {
     return this.get("prefs.recommended", true);
   }

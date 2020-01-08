@@ -22,6 +22,11 @@ pref("marionette.debugging.clicktostart", false);
 pref("marionette.log.level", "info");
 
 
+
+
+pref("marionette.log.truncate", true);
+
+
 pref("marionette.port", 2828);
 
 
