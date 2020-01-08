@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef __ENCRYPT_H__
 #define __ENCRYPT_H__
 
@@ -38,37 +37,32 @@
 
 
 
-SECStatus PublicKey_encryptSize (unsigned int inputLen, unsigned int *outputLen);
+SECStatus PublicKey_encryptSize(unsigned int inputLen, unsigned int* outputLen);
 
 
 
 
-SECStatus Keypair_new (PrivateKey *pvtkey, PublicKey *pubkey);
-
-
-
-
-
-
-
-
-
-SECStatus PublicKey_encrypt (PublicKey pubkey, 
-    unsigned char *output, 
-    unsigned int *outputLen, 
-    unsigned int maxOutputLen, 
-    const unsigned char *input, unsigned int inputLen);
+SECStatus Keypair_new(PrivateKey* pvtkey, PublicKey* pubkey);
 
 
 
 
 
 
-SECStatus PrivateKey_decrypt (PrivateKey privkey, 
-    unsigned char *output, 
-    unsigned int *outputLen, 
-    unsigned int maxOutputLen, 
-    const unsigned char *input, unsigned int inputLen);
+
+
+
+SECStatus PublicKey_encrypt(PublicKey pubkey, unsigned char* output,
+                            unsigned int* outputLen, unsigned int maxOutputLen,
+                            const unsigned char* input, unsigned int inputLen);
+
+
+
+
+
+
+SECStatus PrivateKey_decrypt(PrivateKey privkey, unsigned char* output,
+                             unsigned int* outputLen, unsigned int maxOutputLen,
+                             const unsigned char* input, unsigned int inputLen);
 
 #endif 
-

@@ -13,12 +13,14 @@
 #include "prg.h"
 #include "share.h"
 
-struct prio_total_share {
+struct prio_total_share
+{
   PrioServerId idx;
   MPArray data_shares;
 };
 
-struct prio_server {
+struct prio_server
+{
   const_PrioConfig cfg;
   PrioServerId idx;
 
@@ -34,7 +36,8 @@ struct prio_server {
   PRG prg;
 };
 
-struct prio_verifier {
+struct prio_verifier
+{
   PrioServer s;
 
   PrioPacketClient clientp;
@@ -47,14 +50,15 @@ struct prio_verifier {
   mp_int share_out;
 };
 
-struct prio_packet_verify1 {
+struct prio_packet_verify1
+{
   mp_int share_d;
   mp_int share_e;
 };
 
-struct prio_packet_verify2 {
+struct prio_packet_verify2
+{
   mp_int share_out;
 };
 
 #endif 
-

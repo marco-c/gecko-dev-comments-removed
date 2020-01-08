@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef __SHARE_H__
 #define __SHARE_H__
 
@@ -14,23 +13,22 @@
 
 #include "config.h"
 
-struct beaver_triple {
+struct beaver_triple
+{
   mp_int a;
   mp_int b;
   mp_int c;
 };
 
-typedef struct beaver_triple *BeaverTriple;
-typedef const struct beaver_triple *const_BeaverTriple;
+typedef struct beaver_triple* BeaverTriple;
+typedef const struct beaver_triple* const_BeaverTriple;
 
 
 
 
 
-
-SECStatus share_int (const_PrioConfig cfg, const mp_int *src, 
-    mp_int *shareA, mp_int *shareB);
-
+SECStatus share_int(const_PrioConfig cfg, const mp_int* src, mp_int* shareA,
+                    mp_int* shareB);
 
 
 
@@ -38,14 +36,12 @@ SECStatus share_int (const_PrioConfig cfg, const mp_int *src,
 
 
 
-BeaverTriple BeaverTriple_new (void);
-void BeaverTriple_clear (BeaverTriple t);
+BeaverTriple BeaverTriple_new(void);
+void BeaverTriple_clear(BeaverTriple t);
 
-SECStatus BeaverTriple_set_rand (const_PrioConfig cfg, 
-    BeaverTriple triple_a, 
-    BeaverTriple triple_b);
+SECStatus BeaverTriple_set_rand(const_PrioConfig cfg, BeaverTriple triple_a,
+                                BeaverTriple triple_b);
 
-bool BeaverTriple_areEqual (const_BeaverTriple t1, const_BeaverTriple t2);
+bool BeaverTriple_areEqual(const_BeaverTriple t1, const_BeaverTriple t2);
 
 #endif 
-

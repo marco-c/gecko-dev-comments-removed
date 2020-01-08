@@ -13,11 +13,11 @@
 
 #include "mparray.h"
 
-struct prio_config {
+struct prio_config
+{
   int num_data_fields;
-  unsigned char *batch_id;
+  unsigned char* batch_id;
   unsigned int batch_id_len;
-
 
   PublicKey server_a_pub;
   PublicKey server_b_pub;
@@ -30,7 +30,6 @@ struct prio_config {
   MPArray rootsInv;
 };
 
-int PrioConfig_hPoints (const_PrioConfig cfg);
+int PrioConfig_hPoints(const_PrioConfig cfg);
 
 #endif 
-

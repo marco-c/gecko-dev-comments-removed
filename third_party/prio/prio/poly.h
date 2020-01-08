@@ -21,8 +21,8 @@
 
 
 
-SECStatus poly_fft(MPArray points_out, const_MPArray points_in, 
-    const_PrioConfig cfg, bool invert);
+SECStatus poly_fft(MPArray points_out, const_MPArray points_in,
+                   const_PrioConfig cfg, bool invert);
 
 
 
@@ -33,17 +33,15 @@ SECStatus poly_fft(MPArray points_out, const_MPArray points_in,
 
 
 
-SECStatus poly_fft_get_roots (mp_int *roots_out, int n_points,
-    const_PrioConfig cfg, bool invert);
+SECStatus poly_fft_get_roots(mp_int* roots_out, int n_points,
+                             const_PrioConfig cfg, bool invert);
 
 
 
 
 
-
-
-SECStatus poly_eval (mp_int *value, const_MPArray coeffs, 
-    const mp_int *eval_at, const_PrioConfig cfg);
+SECStatus poly_eval(mp_int* value, const_MPArray coeffs, const mp_int* eval_at,
+                    const_PrioConfig cfg);
 
 
 
@@ -52,8 +50,7 @@ SECStatus poly_eval (mp_int *value, const_MPArray coeffs,
 
 
 
-
-SECStatus poly_interp_evaluate (mp_int *value, const_MPArray poly_points, 
-    const mp_int *eval_at, const_PrioConfig cfg);
+SECStatus poly_interp_evaluate(mp_int* value, const_MPArray poly_points,
+                               const mp_int* eval_at, const_PrioConfig cfg);
 
 #endif

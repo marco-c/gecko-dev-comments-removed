@@ -10,45 +10,45 @@
 #define __RAND_H__
 
 #include <mpi.h>
-#include <nss/seccomon.h>
+#include <seccomon.h>
 #include <stdlib.h>
 
 
 
 
 
-typedef SECStatus (*RandBytesFunc) (void *user_data, unsigned char *out, size_t len);
+typedef SECStatus (*RandBytesFunc)(void* user_data, unsigned char* out,
+                                   size_t len);
 
 
 
 
 
-SECStatus rand_init (void);
-void rand_clear (void);
-
-
-
-
- 
-SECStatus rand_bytes (unsigned char *out, size_t n_bytes);
+SECStatus rand_init(void);
+void rand_clear(void);
 
 
 
 
 
-
-SECStatus rand_int (mp_int *out, const mp_int *max);
+SECStatus rand_bytes(unsigned char* out, size_t n_bytes);
 
 
 
 
 
 
+SECStatus rand_int(mp_int* out, const mp_int* max);
 
 
 
-SECStatus rand_int_rng (mp_int *out, const mp_int *max, 
-    RandBytesFunc rng, void *user_data);
+
+
+
+
+
+
+SECStatus rand_int_rng(mp_int* out, const mp_int* max, RandBytesFunc rng,
+                       void* user_data);
 
 #endif 
-

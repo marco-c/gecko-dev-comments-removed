@@ -12,10 +12,12 @@
 #include <stdio.h>
 
 #ifdef DEBUG
-#define PRIO_DEBUG(msg) do { fprintf(stderr, "Error: %s\n", msg); } while(false);
+#define PRIO_DEBUG(msg)                                                        \
+  do {                                                                         \
+    fprintf(stderr, "Error: %s\n", msg);                                       \
+  } while (false);
 #else
 #define PRIO_DEBUG(msg) ;
 #endif
 
 #endif 
-

@@ -12,60 +12,59 @@
 #include <mpi.h>
 #include <mprio.h>
 
-struct mparray {
+struct mparray
+{
   int len;
-  mp_int *data;
+  mp_int* data;
 };
 
-typedef struct mparray *MPArray;
-typedef const struct mparray *const_MPArray;
+typedef struct mparray* MPArray;
+typedef const struct mparray* const_MPArray;
 
 
 
 
-MPArray MPArray_new (int len);
-void MPArray_clear (MPArray arr);
-
-
-
-
-
-
-SECStatus MPArray_set_share (MPArray arrA, MPArray arrB, 
-    const_MPArray src, const_PrioConfig cfg);
-
-
-
-
-MPArray MPArray_new_bool (int len, const bool *data_in);
+MPArray MPArray_new(int len);
+void MPArray_clear(MPArray arr);
 
 
 
 
 
-SECStatus MPArray_resize (MPArray arr, int newlen);
+
+SECStatus MPArray_set_share(MPArray arrA, MPArray arrB, const_MPArray src,
+                            const_PrioConfig cfg);
 
 
 
 
-MPArray MPArray_dup (const_MPArray src);
-
-
-
-
-SECStatus MPArray_copy (MPArray dst, const_MPArray src);
-
-
-
-
-SECStatus MPArray_addmod (MPArray dst, const_MPArray to_add, 
-    const mp_int *mod);
+MPArray MPArray_new_bool(int len, const bool* data_in);
 
 
 
 
 
-bool MPArray_areEqual (const_MPArray arr1, const_MPArray arr2);
+SECStatus MPArray_resize(MPArray arr, int newlen);
+
+
+
+
+MPArray MPArray_dup(const_MPArray src);
+
+
+
+
+SECStatus MPArray_copy(MPArray dst, const_MPArray src);
+
+
+
+
+SECStatus MPArray_addmod(MPArray dst, const_MPArray to_add, const mp_int* mod);
+
+
+
+
+
+bool MPArray_areEqual(const_MPArray arr1, const_MPArray arr2);
 
 #endif 
-
