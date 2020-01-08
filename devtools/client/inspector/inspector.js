@@ -292,10 +292,6 @@ Inspector.prototype = {
     
     this.setupSidebar();
 
-    if (flags.testing) {
-      await this.once("markuploaded");
-    }
-
     this.isReady = true;
 
     
@@ -1488,6 +1484,7 @@ Inspector.prototype = {
 
     this._is3PaneModeChromeEnabled = null;
     this._is3PaneModeEnabled = null;
+    this._isMarkupLoaded = null;
     this._markupBox = null;
     this._markupFrame = null;
     this._notificationBox = null;
@@ -1958,6 +1955,9 @@ Inspector.prototype = {
   },
 
   _initMarkup: function() {
+    
+    this._isMarkupLoaded = this.once("markuploaded");
+
     if (!this._markupFrame) {
       this._markupFrame = this.panelDoc.createElement("iframe");
       this._markupFrame.setAttribute("aria-label",
