@@ -458,6 +458,11 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
 
   
   RefPtr<nsIURI> scriptURI = mWorkerPrivate->GetResolvedScriptURI();
+  if (NS_WARN_IF(!scriptURI)) {
+    
+    return PerformanceInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                   __func__);
+  }
   nsCString url = scriptURI->GetSpecOrDefault();
 
   
