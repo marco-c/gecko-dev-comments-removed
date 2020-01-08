@@ -46,7 +46,7 @@ AnimationSurfaceProvider::AnimationSurfaceProvider(NotNull<RasterImage*> aImage,
     (pixelSize * frameSize.width * frameSize.height);
   size_t batch = gfxPrefs::ImageAnimatedDecodeOnDemandBatchSize();
 
-  mFrames.Initialize(threshold, batch, aCurrentFrame);
+  mFrames.reset(new AnimationFrameRetainedBuffer(threshold, batch, aCurrentFrame));
 }
 
 AnimationSurfaceProvider::~AnimationSurfaceProvider()
@@ -82,9 +82,9 @@ AnimationSurfaceProvider::Reset()
     
     
     
-    mayDiscard = mFrames.MayDiscard();
+    mayDiscard = mFrames->MayDiscard();
     if (!mayDiscard) {
-      restartDecoder = mFrames.Reset();
+      restartDecoder = mFrames->Reset();
     }
   }
 
@@ -100,7 +100,7 @@ AnimationSurfaceProvider::Reset()
     MOZ_ASSERT(mDecoder);
 
     MutexAutoLock lock2(mFramesMutex);
-    restartDecoder = mFrames.Reset();
+    restartDecoder = mFrames->Reset();
   }
 
   if (restartDecoder) {
@@ -116,7 +116,7 @@ AnimationSurfaceProvider::Advance(size_t aFrame)
   {
     
     MutexAutoLock lock(mFramesMutex);
-    restartDecoder = mFrames.AdvanceTo(aFrame);
+    restartDecoder = mFrames->AdvanceTo(aFrame);
   }
 
   if (restartDecoder) {
@@ -134,7 +134,7 @@ AnimationSurfaceProvider::DrawableRef(size_t aFrame)
     return DrawableFrameRef();
   }
 
-  imgFrame* frame = mFrames.Get(aFrame);
+  imgFrame* frame = mFrames->Get(aFrame,  true);
   if (!frame) {
     return DrawableFrameRef();
   }
@@ -149,10 +149,10 @@ AnimationSurfaceProvider::GetFrame(size_t aFrame)
 
   if (Availability().IsPlaceholder()) {
     MOZ_ASSERT_UNREACHABLE("Calling GetFrame() on a placeholder");
-    return RawAccessFrameRef();
+    return nullptr;
   }
 
-  RefPtr<imgFrame> frame = mFrames.Get(aFrame);
+  RefPtr<imgFrame> frame = mFrames->Get(aFrame,  false);
   MOZ_ASSERT_IF(frame, frame->IsFinished());
   return frame.forget();
 }
@@ -167,20 +167,14 @@ AnimationSurfaceProvider::IsFinished() const
     return false;
   }
 
-  if (mFrames.Frames().IsEmpty()) {
-    MOZ_ASSERT_UNREACHABLE("Calling IsFinished() when we have no frames");
-    return false;
-  }
-
-  
-  return mFrames.Frames()[0]->IsFinished();
+  return mFrames->IsFirstFrameFinished();
 }
 
 bool
 AnimationSurfaceProvider::IsFullyDecoded() const
 {
   MutexAutoLock lock(mFramesMutex);
-  return mFrames.SizeKnown() && !mFrames.MayDiscard();
+  return mFrames->SizeKnown() && !mFrames->MayDiscard();
 }
 
 size_t
@@ -209,19 +203,7 @@ AnimationSurfaceProvider::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
   
   
   MutexAutoLock lock(mFramesMutex);
-
-  size_t i = 0;
-  for (const RawAccessFrameRef& frame : mFrames.Frames()) {
-    ++i;
-    if (frame) {
-      frame->AddSizeOfExcludingThis(aMallocSizeOf,
-        [&](AddSizeOfCbData& aMetadata) {
-          aMetadata.index = i;
-          aCallback(aMetadata);
-        }
-      );
-    }
-  }
+  mFrames->AddSizeOfExcludingThis(aMallocSizeOf, aCallback);
 }
 
 void
@@ -292,13 +274,13 @@ AnimationSurfaceProvider::CheckForNewFrameAtYield()
   MOZ_ASSERT(mDecoder);
 
   bool justGotFirstFrame = false;
-  bool continueDecoding;
+  bool continueDecoding = false;
 
   {
     MutexAutoLock lock(mFramesMutex);
 
     
-    RawAccessFrameRef frame = mDecoder->GetCurrentFrameRef();
+    RefPtr<imgFrame> frame = mDecoder->GetCurrentFrame();
     MOZ_ASSERT(mDecoder->HasFrameToTake());
     mDecoder->ClearHasFrameToTake();
 
@@ -308,15 +290,31 @@ AnimationSurfaceProvider::CheckForNewFrameAtYield()
     }
 
     
-    MOZ_ASSERT_IF(!mFrames.Frames().IsEmpty(),
-                  mFrames.Frames().LastElement().get() != frame.get());
+    MOZ_ASSERT(!mFrames->IsLastInsertedFrame(frame));
 
     
-    continueDecoding = mFrames.Insert(std::move(frame));
+    AnimationFrameBuffer::InsertStatus status =
+      mFrames->Insert(std::move(frame));
+    switch (status) {
+      case AnimationFrameBuffer::InsertStatus::DISCARD_CONTINUE:
+        continueDecoding = true;
+        MOZ_FALLTHROUGH;
+      case AnimationFrameBuffer::InsertStatus::DISCARD_YIELD:
+        RequestFrameDiscarding();
+        break;
+      case AnimationFrameBuffer::InsertStatus::CONTINUE:
+        continueDecoding = true;
+        break;
+      case AnimationFrameBuffer::InsertStatus::YIELD:
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unhandled insert status!");
+        break;
+    }
 
     
     
-    size_t frameCount = mFrames.Frames().Length();
+    size_t frameCount = mFrames->Size();
     if (frameCount == 1 && mImage) {
       justGotFirstFrame = true;
     }
@@ -343,31 +341,44 @@ AnimationSurfaceProvider::CheckForNewFrameAtTerminalState()
 
     
     
-    RawAccessFrameRef frame = mDecoder->GetCurrentFrameRef();
+    RefPtr<imgFrame> frame = mDecoder->GetCurrentFrame();
 
     
     
     
     
     if (!mDecoder->HasFrameToTake()) {
-      frame = RawAccessFrameRef();
+      frame = nullptr;
     } else {
       MOZ_ASSERT(frame);
       mDecoder->ClearHasFrameToTake();
     }
 
-    if (!frame || (!mFrames.Frames().IsEmpty() &&
-                   mFrames.Frames().LastElement().get() == frame.get())) {
-      return mFrames.MarkComplete();
+    if (!frame || mFrames->IsLastInsertedFrame(frame)) {
+      return mFrames->MarkComplete(mDecoder->GetFirstFrameRefreshArea());
     }
 
     
-    mFrames.Insert(std::move(frame));
-    continueDecoding = mFrames.MarkComplete();
+    AnimationFrameBuffer::InsertStatus status = mFrames->Insert(std::move(frame));
+    switch (status) {
+      case AnimationFrameBuffer::InsertStatus::DISCARD_CONTINUE:
+      case AnimationFrameBuffer::InsertStatus::DISCARD_YIELD:
+        RequestFrameDiscarding();
+        break;
+      case AnimationFrameBuffer::InsertStatus::CONTINUE:
+      case AnimationFrameBuffer::InsertStatus::YIELD:
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unhandled insert status!");
+        break;
+    }
+
+    continueDecoding =
+      mFrames->MarkComplete(mDecoder->GetFirstFrameRefreshArea());
 
     
     
-    if (mFrames.Frames().Length() == 1 && mImage) {
+    if (mFrames->Size() == 1 && mImage) {
       justGotFirstFrame = true;
     }
   }
@@ -377,6 +388,12 @@ AnimationSurfaceProvider::CheckForNewFrameAtTerminalState()
   }
 
   return continueDecoding;
+}
+
+void
+AnimationSurfaceProvider::RequestFrameDiscarding()
+{
+  MOZ_ASSERT_UNREACHABLE("Missing implementation");
 }
 
 void
@@ -409,7 +426,7 @@ AnimationSurfaceProvider::FinishDecoding()
   bool recreateDecoder;
   {
     MutexAutoLock lock(mFramesMutex);
-    recreateDecoder = !mFrames.HasRedecodeError() && mFrames.MayDiscard();
+    recreateDecoder = !mFrames->HasRedecodeError() && mFrames->MayDiscard();
   }
 
   if (recreateDecoder) {
