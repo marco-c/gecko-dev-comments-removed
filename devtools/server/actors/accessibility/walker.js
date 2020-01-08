@@ -500,12 +500,14 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     
     
     
-    loadSheet(this.rootWin, HIGHLIGHTER_STYLES_SHEET);
+    const { DOMNode: rawNode } = accessible.rawAccessible;
+    const win = rawNode.ownerGlobal;
+    loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
     const { audit, name, role } = accessible;
-    const shown = this.highlighter.show({ rawNode: accessible.rawAccessible.DOMNode },
-                                      { ...options, ...bounds, name, role, audit });
+    const shown = this.highlighter.show({ rawNode },
+                                        { ...options, ...bounds, name, role, audit });
     
-    removeSheet(this.rootWin, HIGHLIGHTER_STYLES_SHEET);
+    removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
     return shown;
   },
 

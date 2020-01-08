@@ -169,9 +169,6 @@ function getBgRGBA(dataText, dataBackground) {
 
 
 
-
-
-
 function getContrastRatioFor(node, options = {}) {
   const props = getTextProperties(node);
   if (!props) {
