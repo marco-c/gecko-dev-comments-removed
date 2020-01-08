@@ -31,10 +31,6 @@ class PerformanceFront extends FrontClassWithSpec(performanceSpec) {
     await this.connect();
   }
 
-  destroy() {
-    super.destroy();
-  }
-
   
 
 
