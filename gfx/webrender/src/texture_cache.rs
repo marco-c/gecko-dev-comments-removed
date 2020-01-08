@@ -12,15 +12,20 @@ use gpu_types::{ImageSource, UvRectKind};
 use internal_types::{CacheTextureId, LayerIndex, TextureUpdateList, TextureUpdateSource};
 use internal_types::{TextureSource, TextureCacheAllocInfo, TextureCacheUpdate};
 use profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
-use render_backend::FrameId;
+use render_backend::{FrameId, FrameStamp};
 use resource_cache::CacheItem;
 use std::cell::Cell;
 use std::cmp;
 use std::mem;
+use std::time::{Duration, SystemTime};
 use std::rc::Rc;
 
 
 const TEXTURE_REGION_DIMENSIONS: i32 = 512;
+
+
+const TEXTURE_REGION_PIXELS: usize =
+    (TEXTURE_REGION_DIMENSIONS as usize) * (TEXTURE_REGION_DIMENSIONS as usize);
 
 
 
@@ -71,7 +76,7 @@ struct CacheEntry {
     
     user_data: [f32; 3],
     
-    last_access: FrameId,
+    last_access: FrameStamp,
     
     uv_rect_handle: GpuCacheHandle,
     
@@ -91,7 +96,7 @@ impl CacheEntry {
     
     fn new_standalone(
         texture_id: CacheTextureId,
-        last_access: FrameId,
+        last_access: FrameStamp,
         params: &CacheAllocParams,
     ) -> Self {
         CacheEntry {
@@ -239,6 +244,22 @@ impl SharedTextures {
     }
 
     
+    fn size_in_bytes(&self) -> usize {
+        self.array_a8_linear.size_in_bytes() +
+        self.array_a16_linear.size_in_bytes() +
+        self.array_rgba8_linear.size_in_bytes() +
+        self.array_rgba8_nearest.size_in_bytes()
+    }
+
+    
+    fn empty_region_bytes(&self) -> usize {
+        self.array_a8_linear.empty_region_bytes() +
+        self.array_a16_linear.empty_region_bytes() +
+        self.array_rgba8_linear.empty_region_bytes() +
+        self.array_rgba8_nearest.empty_region_bytes()
+    }
+
+    
     fn clear(&mut self, updates: &mut TextureUpdateList) {
         self.array_a8_linear.clear(updates);
         self.array_a16_linear.clear(updates);
@@ -303,6 +324,105 @@ struct CacheAllocParams {
 
 
 
+struct EvictionThreshold {
+    id: FrameId,
+    time: SystemTime,
+}
+
+impl EvictionThreshold {
+    
+    
+    fn should_evict(&self, last_access: FrameStamp) -> bool {
+        last_access.frame_id() < self.id &&
+        last_access.time() < self.time
+    }
+}
+
+
+
+
+
+
+
+struct EvictionThresholdBuilder {
+    now: FrameStamp,
+    max_frames: Option<usize>,
+    max_time_ms: Option<usize>,
+    scale_by_pressure: bool,
+}
+
+impl EvictionThresholdBuilder {
+    fn new(now: FrameStamp) -> Self {
+        Self {
+            now,
+            max_frames: None,
+            max_time_ms: None,
+            scale_by_pressure: false,
+        }
+    }
+
+    fn max_frames(mut self, frames: usize) -> Self {
+        self.max_frames = Some(frames);
+        self
+    }
+
+    fn max_time_s(mut self, seconds: usize) -> Self {
+        self.max_time_ms = Some(seconds * 1000);
+        self
+    }
+
+    fn scale_by_pressure(mut self) -> Self {
+        self.scale_by_pressure = true;
+        self
+    }
+
+    fn build(self) -> EvictionThreshold {
+        const MAX_MEMORY_PRESSURE_BYTES: f64 = (500 * 1024 * 1024) as f64;
+        
+        let pressure_factor = if self.scale_by_pressure {
+            let bytes_allocated = total_gpu_bytes_allocated() as f64;
+            1.0 - (bytes_allocated / MAX_MEMORY_PRESSURE_BYTES).min(1.0)
+        } else {
+            1.0
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let max_frames = self.max_frames
+            .map(|f| (f as f64 * pressure_factor) as usize)
+            .unwrap_or(0)
+            .min(self.now.frame_id().as_usize() - 1);
+        let max_time_ms = self.max_time_ms
+            .map(|f| (f as f64 * pressure_factor) as usize)
+            .unwrap_or(0) as u64;
+
+        EvictionThreshold {
+            id: self.now.frame_id() - max_frames,
+            time: self.now.time() - Duration::from_millis(max_time_ms),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -331,10 +451,14 @@ pub struct TextureCache {
     pending_updates: TextureUpdateList,
 
     
-    frame_id: FrameId,
+    now: FrameStamp,
 
     
-    last_shared_cache_expiration: FrameId,
+    last_shared_cache_expiration: FrameStamp,
+
+    
+    
+    reached_reclaim_threshold: Option<SystemTime>,
 
     
     entries: FreeList<CacheEntry, CacheEntryMarker>,
@@ -378,11 +502,24 @@ impl TextureCache {
             debug_flags: DebugFlags::empty(),
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
-            frame_id: FrameId::INVALID,
-            last_shared_cache_expiration: FrameId::INVALID,
+            now: FrameStamp::INVALID,
+            last_shared_cache_expiration: FrameStamp::INVALID,
+            reached_reclaim_threshold: None,
             entries: FreeList::new(),
             handles: EntryHandles::default(),
         }
+    }
+
+    
+    
+    
+    #[allow(dead_code)]
+    pub fn new_for_testing(max_texture_size: i32, max_texture_layers: usize) -> Self {
+        let mut cache = Self::new(max_texture_size, max_texture_layers);
+        let mut now = FrameStamp::first();
+        now.advance();
+        cache.begin_frame(now);
+        cache
     }
 
     pub fn set_debug_flags(&mut self, flags: DebugFlags) {
@@ -417,12 +554,67 @@ impl TextureCache {
         self.shared_textures.clear(&mut self.pending_updates);
     }
 
-    pub fn begin_frame(&mut self, frame_id: FrameId) {
-        self.frame_id = frame_id;
+    
+    pub fn begin_frame(&mut self, stamp: FrameStamp) {
+        self.now = stamp;
+        self.maybe_reclaim_shared_cache_memory();
+    }
+
+    
+    
+    fn maybe_reclaim_shared_cache_memory(&mut self) {
+        
+        
+        const RECLAIM_THRESHOLD_BYTES: usize = 5 * 1024 * 1024;
+
+        
+        
+        
+        
+        let time_since_last_gc = self.now.time()
+            .duration_since(self.last_shared_cache_expiration.time())
+            .unwrap_or(Duration::default());
+        let do_periodic_gc = time_since_last_gc >= Duration::from_secs(5) &&
+            self.shared_textures.size_in_bytes() >= RECLAIM_THRESHOLD_BYTES * 2;
+        if do_periodic_gc {
+            let threshold = EvictionThresholdBuilder::new(self.now)
+                .max_frames(1)
+                .max_time_s(10)
+                .build();
+            self.maybe_expire_old_shared_entries(threshold);
+        }
+
+        
+        
+        
+        
+        
+        if self.shared_textures.empty_region_bytes() >= RECLAIM_THRESHOLD_BYTES {
+            self.reached_reclaim_threshold.get_or_insert(self.now.time());
+        } else {
+            self.reached_reclaim_threshold = None;
+        }
+        if let Some(t) = self.reached_reclaim_threshold {
+            let dur = self.now.time().duration_since(t).unwrap_or(Duration::default());
+            if dur >= Duration::from_secs(5) {
+                self.clear();
+                self.reached_reclaim_threshold = None;
+            }
+        }
+
     }
 
     pub fn end_frame(&mut self, texture_cache_profile: &mut TextureCacheProfileCounters) {
-        self.expire_old_standalone_entries();
+        
+        
+        
+        
+        
+        
+        
+        
+        let threshold = self.default_eviction();
+        self.expire_old_entries(EntryKind::Standalone, threshold);
 
         self.shared_textures.array_a8_linear
             .update_profile(&mut texture_cache_profile.pages_a8_linear);
@@ -447,7 +639,7 @@ impl TextureCache {
             
             
             Some(entry) => {
-                entry.last_access = self.frame_id;
+                entry.last_access = self.now;
                 entry.update_gpu_cache(gpu_cache);
                 false
             }
@@ -570,7 +762,7 @@ impl TextureCache {
         let entry = self.entries
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
-        debug_assert_eq!(entry.last_access, self.frame_id);
+        debug_assert_eq!(entry.last_access, self.now);
         let (layer_index, origin) = match entry.details {
             EntryDetails::Standalone { .. } => {
                 (0, DeviceIntPoint::zero())
@@ -600,7 +792,7 @@ impl TextureCache {
         let entry = self.entries
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
-        debug_assert_eq!(entry.last_access, self.frame_id);
+        debug_assert_eq!(entry.last_access, self.now);
         let (layer_index, origin) = match entry.details {
             EntryDetails::Standalone { .. } => {
                 (0, DeviceIntPoint::zero())
@@ -620,54 +812,37 @@ impl TextureCache {
         if let Some(entry) = self.entries.get_opt_mut(handle) {
             
             
-            entry.last_access = FrameId::INVALID;
+            entry.last_access = FrameStamp::INVALID;
             entry.eviction = Eviction::Auto;
         }
     }
 
     
-    fn expire_old_standalone_entries(&mut self) {
-        self.expire_old_entries(EntryKind::Standalone);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn default_eviction(&self) -> EvictionThreshold {
+        EvictionThresholdBuilder::new(self.now)
+            .max_frames(30)
+            .max_time_s(3)
+            .scale_by_pressure()
+            .build()
     }
 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn expire_old_entries(&mut self, kind: EntryKind) {
-        
-        
-        
-        
-        const MAX_FRAME_AGE_WITHOUT_PRESSURE: f64 = 75.0;
-        const MAX_MEMORY_PRESSURE_BYTES: f64 = (500 * 1024 * 1024) as f64;
-
-        
-        let pressure_factor =
-            (total_gpu_bytes_allocated() as f64 / MAX_MEMORY_PRESSURE_BYTES as f64).min(1.0);
-
-        
-        
-        let max_frame_age_raw =
-            ((1.0 - pressure_factor) * MAX_FRAME_AGE_WITHOUT_PRESSURE) as usize;
-
-        
-        
-        let max_frame_age = max_frame_age_raw.min(self.frame_id.as_usize() - 1);
-
-        
-        let frame_id_threshold = self.frame_id - max_frame_age;
-
+    fn expire_old_entries(&mut self, kind: EntryKind, threshold: EvictionThreshold) {
         
         
         
@@ -676,8 +851,8 @@ impl TextureCache {
                 let entry = self.entries.get(&self.handles.select(kind)[i]);
                 match entry.eviction {
                     Eviction::Manual => false,
-                    Eviction::Auto => entry.last_access < frame_id_threshold,
-                    Eviction::Eager => entry.last_access < self.frame_id,
+                    Eviction::Auto => threshold.should_evict(entry.last_access),
+                    Eviction::Eager => entry.last_access < self.now,
                 }
             };
             if evict {
@@ -692,11 +867,11 @@ impl TextureCache {
     
     
     
-    fn maybe_expire_old_shared_entries(&mut self) -> bool {
+    fn maybe_expire_old_shared_entries(&mut self, threshold: EvictionThreshold) -> bool {
         let old_len = self.handles.shared.len();
-        if self.last_shared_cache_expiration + 25 < self.frame_id {
-            self.expire_old_entries(EntryKind::Shared);
-            self.last_shared_cache_expiration = self.frame_id;
+        if self.last_shared_cache_expiration.frame_id() < self.now.frame_id() {
+            self.expire_old_entries(EntryKind::Shared, threshold);
+            self.last_shared_cache_expiration = self.now;
         }
         self.handles.shared.len() != old_len
     }
@@ -727,7 +902,7 @@ impl TextureCache {
                         layer_index
                     );
                 }
-                region.free(origin);
+                region.free(origin, &mut texture_array.empty_regions);
             }
         }
     }
@@ -760,12 +935,12 @@ impl TextureCache {
             self.pending_updates.push_alloc(texture_id, info);
 
             texture_array.texture_id = Some(texture_id);
-            texture_array.regions.push(TextureRegion::new(0));
+            texture_array.push_region();
         }
 
         
         
-        texture_array.alloc(params, self.frame_id)
+        texture_array.alloc(params, self.now)
     }
 
     
@@ -818,7 +993,7 @@ impl TextureCache {
 
         return CacheEntry::new_standalone(
             texture_id,
-            self.frame_id,
+            self.now,
             params,
         );
     }
@@ -848,7 +1023,21 @@ impl TextureCache {
 
         
         
-        if self.maybe_expire_old_shared_entries() {
+        
+        
+        
+        
+        
+        
+        let num_regions = self.shared_textures
+            .select(params.descriptor.format, params.filter).regions.len();
+        let threshold = if num_regions == self.max_texture_layers {
+            EvictionThresholdBuilder::new(self.now).max_frames(1).build()
+        } else {
+            self.default_eviction()
+        };
+
+        if self.maybe_expire_old_shared_entries(threshold) {
             if let Some(entry) = self.allocate_from_shared_cache(params) {
                 return entry;
             }
@@ -858,7 +1047,6 @@ impl TextureCache {
             
             let texture_array =
                 self.shared_textures.select(params.descriptor.format, params.filter);
-            let num_regions = texture_array.regions.len();
             
             if num_regions < self.max_texture_layers as usize {
                 let info = TextureCacheAllocInfo {
@@ -870,7 +1058,7 @@ impl TextureCache {
                     is_shared_cache: true,
                 };
                 self.pending_updates.push_realloc(texture_array.texture_id.unwrap(), info);
-                texture_array.regions.push(TextureRegion::new(num_regions));
+                texture_array.push_region();
                 true
             } else {
                 false
@@ -1005,7 +1193,7 @@ impl TextureRegion {
     }
 
     
-    fn init(&mut self, slab_size: SlabSize) {
+    fn init(&mut self, slab_size: SlabSize, empty_regions: &mut usize) {
         debug_assert!(self.slab_size == SlabSize::invalid());
         debug_assert!(self.free_slots.is_empty());
 
@@ -1021,14 +1209,16 @@ impl TextureRegion {
         }
 
         self.total_slot_count = self.free_slots.len();
+        *empty_regions -= 1;
     }
 
     
     
-    fn deinit(&mut self) {
+    fn deinit(&mut self, empty_regions: &mut usize) {
         self.slab_size = SlabSize::invalid();
         self.free_slots.clear();
         self.total_slot_count = 0;
+        *empty_regions += 1;
     }
 
     fn is_empty(&self) -> bool {
@@ -1048,7 +1238,7 @@ impl TextureRegion {
     }
 
     
-    fn free(&mut self, point: DeviceIntPoint) {
+    fn free(&mut self, point: DeviceIntPoint, empty_regions: &mut usize) {
         let x = point.x / self.slab_size.width;
         let y = point.y / self.slab_size.height;
         self.free_slots.push(TextureLocation::new(x, y));
@@ -1057,7 +1247,7 @@ impl TextureRegion {
         
         
         if self.free_slots.len() == self.total_slot_count {
-            self.deinit();
+            self.deinit(empty_regions);
         }
     }
 }
@@ -1070,6 +1260,7 @@ struct TextureArray {
     filter: TextureFilter,
     format: ImageFormat,
     regions: Vec<TextureRegion>,
+    empty_regions: usize,
     texture_id: Option<CacheTextureId>,
 }
 
@@ -1082,33 +1273,48 @@ impl TextureArray {
             format,
             filter,
             regions: Vec::new(),
+            empty_regions: 0,
             texture_id: None,
         }
     }
 
+    
+    fn size_in_bytes(&self) -> usize {
+        let bpp = self.format.bytes_per_pixel() as usize;
+        self.regions.len() * TEXTURE_REGION_PIXELS * bpp
+    }
+
+    
+    fn empty_region_bytes(&self) -> usize {
+        let bpp = self.format.bytes_per_pixel() as usize;
+        self.empty_regions * TEXTURE_REGION_PIXELS * bpp
+    }
+
     fn clear(&mut self, updates: &mut TextureUpdateList) {
         self.regions.clear();
+        self.empty_regions = 0;
         if let Some(id) = self.texture_id.take() {
             updates.push_free(id);
         }
     }
 
     fn update_profile(&self, counter: &mut ResourceProfileCounter) {
-        let layer_count = self.regions.len();
-        if layer_count != 0 {
-            let size = layer_count as i32 * TEXTURE_REGION_DIMENSIONS *
-                TEXTURE_REGION_DIMENSIONS * self.format.bytes_per_pixel();
-            counter.set(layer_count as usize, size as usize);
-        } else {
-            counter.set(0, 0);
-        }
+        counter.set(self.regions.len(), self.size_in_bytes());
+    }
+
+    
+    fn push_region(&mut self) {
+        let index = self.regions.len();
+        self.regions.push(TextureRegion::new(index));
+        self.empty_regions += 1;
+        assert!(self.empty_regions <= self.regions.len());
     }
 
     
     fn alloc(
         &mut self,
         params: &CacheAllocParams,
-        frame_id: FrameId,
+        now: FrameStamp,
     ) -> Option<CacheEntry> {
         
         
@@ -1145,7 +1351,7 @@ impl TextureArray {
         if entry_details.is_none() {
             if let Some(empty_region_index) = empty_region_index {
                 let region = &mut self.regions[empty_region_index];
-                region.init(slab_size);
+                region.init(slab_size, &mut self.empty_regions);
                 entry_details = region.alloc().map(|location| {
                     EntryDetails::Cache {
                         layer_index: region.layer_index,
@@ -1159,7 +1365,7 @@ impl TextureArray {
             CacheEntry {
                 size: params.descriptor.size,
                 user_data: params.user_data,
-                last_access: frame_id,
+                last_access: now,
                 details,
                 uv_rect_handle: GpuCacheHandle::new(),
                 format: self.format,
