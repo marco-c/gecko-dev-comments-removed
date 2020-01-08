@@ -141,7 +141,11 @@ function addScript(script) {
 const gScriptSources = new IdMap();
 
 function addScriptSource(source) {
-  gScriptSources.add(source);
+  
+  
+  if (!gScriptSources.getId(source)) {
+    gScriptSources.add(source);
+  }
 }
 
 function considerScript(script) {
