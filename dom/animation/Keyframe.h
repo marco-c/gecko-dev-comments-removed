@@ -10,15 +10,13 @@
 #include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
 #include "nsTArray.h"
+#include "mozilla/dom/BaseKeyframeTypesBinding.h" 
 #include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 
 struct RawServoDeclarationBlock;
 namespace mozilla {
-namespace dom {
-enum class CompositeOperation : uint8_t;
-}
 
 
 
@@ -89,7 +87,8 @@ struct Keyframe
   double                        mComputedOffset = kComputedOffsetNotSet;
   Maybe<ComputedTimingFunction> mTimingFunction; 
                                                  
-  Maybe<dom::CompositeOperation> mComposite;
+  dom::CompositeOperationOrAuto mComposite =
+                                  dom::CompositeOperationOrAuto::Auto;
   nsTArray<PropertyValuePair>   mPropertyValues;
 };
 
