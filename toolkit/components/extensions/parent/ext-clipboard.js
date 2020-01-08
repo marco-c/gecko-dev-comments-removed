@@ -16,10 +16,9 @@ this.clipboard = class extends ExtensionAPI {
           if (AppConstants.platform == "android") {
             return Promise.reject({message: "Writing images to the clipboard is not supported on Android"});
           }
-          let mimeType = `image/${imageType}`;
           let img;
           try {
-            img = imgTools.decodeImageFromArrayBuffer(imageData, mimeType);
+            img = imgTools.decodeImageFromArrayBuffer(imageData, `image/${imageType}`);
           } catch (e) {
             return Promise.reject({message: `Data is not a valid ${imageType} image`});
           }
@@ -38,7 +37,8 @@ this.clipboard = class extends ExtensionAPI {
           
           let transferable = new Transferable();
           transferable.init(null);
-          transferable.addDataFlavor(mimeType);
+          const kNativeImageMime = "application/x-moz-nativeimage";
+          transferable.addDataFlavor(kNativeImageMime);
 
           
           
@@ -55,15 +55,9 @@ this.clipboard = class extends ExtensionAPI {
           
           
           
+
           
-          
-          
-          
-          
-          
-          
-          
-          transferable.setTransferData(mimeType, img, 0);
+          transferable.setTransferData(kNativeImageMime, img, 1);
 
           Services.clipboard.setData(
             transferable, null, Services.clipboard.kGlobalClipboard);
