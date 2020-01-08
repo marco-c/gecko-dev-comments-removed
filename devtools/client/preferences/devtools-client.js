@@ -278,11 +278,7 @@ pref("devtools.webconsole.sidebarToggle", false);
 pref("devtools.webconsole.jsterm.codeMirror", true);
 
 
-#if defined(NIGHTLY_BUILD)
 pref("devtools.webconsole.jsterm.reverse-search", true);
-#else
-pref("devtools.webconsole.jsterm.reverse-search", false);
-#endif
 
 
 pref("devtools.performance.new-panel-enabled", false);
