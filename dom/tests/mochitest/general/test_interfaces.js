@@ -125,11 +125,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "Animation", insecureContext: true},
 
-    {name: "AnimationEffect", insecureContext: true, release: false},
+    {name: "AnimationEffect", insecureContext: true},
 
     {name: "AnimationEvent", insecureContext: true},
 
-    {name: "AnimationPlaybackEvent", insecureContext: true, release: false},
+    {name: "AnimationPlaybackEvent", insecureContext: true},
 
     {name: "AnimationTimeline", insecureContext: true, release: false},
 
@@ -609,7 +609,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "KeyboardEvent", insecureContext: true},
 
-    {name: "KeyframeEffect", insecureContext: true, release: false},
+    {name: "KeyframeEffect", insecureContext: true},
 
     {name: "LocalMediaStream", insecureContext: true},
 
