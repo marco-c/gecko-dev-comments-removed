@@ -231,6 +231,11 @@ Consider installing certutil via your OS package manager or directly.""")
             logger.info("Running in headless mode, pass --no-headless to disable")
 
         
+        os.unsetenv('R_LOG_LEVEL')
+        os.unsetenv('R_LOG_DESTINATION')
+        os.unsetenv('R_LOG_VERBOSE')
+
+        
         kwargs["extra_prefs"].append("media.navigator.streams.fake=true")
 
 
