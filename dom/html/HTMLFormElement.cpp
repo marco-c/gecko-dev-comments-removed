@@ -14,6 +14,7 @@
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
+#include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/HTMLFormControlsCollection.h"
 #include "mozilla/dom/HTMLFormElementBinding.h"
 #include "mozilla/Move.h"
@@ -1891,83 +1892,105 @@ HTMLFormElement::CheckValidFormSubmission()
     return true;
   }
 
+  AutoTArray<RefPtr<Element>, 32> invalidElements;
+  if (CheckFormValidity(&invalidElements)) {
+    return true;
+  }
+
+  
+  
+  
+  if (!mEverTriedInvalidSubmit) {
+    mEverTriedInvalidSubmit = true;
+
+    
+
+
+
+
+
+    nsAutoScriptBlocker scriptBlocker;
+
+    for (uint32_t i = 0, length = mControls->mElements.Length();
+         i < length; ++i) {
+      
+      
+      if (mControls->mElements[i]->IsHTMLElement(nsGkAtoms::input) &&
+          
+          
+          
+          
+          
+          mControls->mElements[i]->State().HasState(NS_EVENT_STATE_FOCUS)) {
+        static_cast<HTMLInputElement*>(mControls->mElements[i])
+          ->UpdateValidityUIBits(true);
+      }
+
+      mControls->mElements[i]->UpdateState(true);
+    }
+
+    
+    
+    
+    for (uint32_t i = 0, length = mControls->mNotInElements.Length();
+         i < length; ++i) {
+      mControls->mNotInElements[i]->UpdateState(true);
+    }
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetOwnerGlobal())) {
+    return false;
+  }
+  JS::Rooted<JS::Value> detail(jsapi.cx());
+  if (!ToJSValue(jsapi.cx(), invalidElements, &detail)) {
+    return false;
+  }
+
+  RefPtr<CustomEvent> event = NS_NewDOMCustomEvent(OwnerDoc(),
+                                                   nullptr, nullptr);
+  event->InitCustomEvent(jsapi.cx(),
+                         NS_LITERAL_STRING("MozInvalidForm"),
+                          true,
+                          true,
+                         detail);
+  event->SetTrusted(true);
+  event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+
+  DispatchEvent(*event);
+
+  bool result = !event->DefaultPrevented();
+
   nsCOMPtr<nsISimpleEnumerator> theEnum;
   nsresult rv = service->EnumerateObservers(NS_INVALIDFORMSUBMIT_SUBJECT,
                                             getter_AddRefs(theEnum));
-  
-  NS_ENSURE_SUCCESS(rv, true);
+  NS_ENSURE_SUCCESS(rv, result);
 
   bool hasObserver = false;
   rv = theEnum->HasMoreElements(&hasObserver);
 
-  
-  
   if (NS_SUCCEEDED(rv) && hasObserver) {
-    AutoTArray<RefPtr<Element>, 32> invalidElements;
+    result = false;
 
-    if (!CheckFormValidity(&invalidElements)) {
-      
-      
-      
-      if (!mEverTriedInvalidSubmit) {
-        mEverTriedInvalidSubmit = true;
+    nsCOMPtr<nsISupports> inst;
+    nsCOMPtr<nsIFormSubmitObserver> observer;
+    bool more = true;
+    while (NS_SUCCEEDED(theEnum->HasMoreElements(&more)) && more) {
+      theEnum->GetNext(getter_AddRefs(inst));
+      observer = do_QueryInterface(inst);
 
-        
-
-
-
-
-
-        nsAutoScriptBlocker scriptBlocker;
-
-        for (uint32_t i = 0, length = mControls->mElements.Length();
-             i < length; ++i) {
-          
-          
-          if (mControls->mElements[i]->IsHTMLElement(nsGkAtoms::input) &&
-              
-              
-              
-              
-              
-              mControls->mElements[i]->State().HasState(NS_EVENT_STATE_FOCUS)) {
-            static_cast<HTMLInputElement*>(mControls->mElements[i])
-              ->UpdateValidityUIBits(true);
-          }
-
-          mControls->mElements[i]->UpdateState(true);
-        }
-
-        
-        
-        
-        for (uint32_t i = 0, length = mControls->mNotInElements.Length();
-             i < length; ++i) {
-          mControls->mNotInElements[i]->UpdateState(true);
-        }
+      if (observer) {
+        observer->NotifyInvalidSubmit(this, invalidElements);
       }
-
-      nsCOMPtr<nsISupports> inst;
-      nsCOMPtr<nsIFormSubmitObserver> observer;
-      bool more = true;
-      while (NS_SUCCEEDED(theEnum->HasMoreElements(&more)) && more) {
-        theEnum->GetNext(getter_AddRefs(inst));
-        observer = do_QueryInterface(inst);
-
-        if (observer) {
-          observer->NotifyInvalidSubmit(this, invalidElements);
-        }
-      }
-
-      
-      return false;
     }
-  } else {
+  }
+
+  if (result) {
     NS_WARNING("There is no observer for \"invalidformsubmit\". \
 One should be implemented!");
   }
 
-  return true;
+  return result;
 }
 
 bool
