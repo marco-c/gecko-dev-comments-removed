@@ -470,33 +470,25 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  setBreakpoint: function(line, column, condition, noSliding, inNestedLoop) {
-    if (!inNestedLoop && this.threadActor.state !== "paused") {
-      const errorObject = {
-        error: "wrongState",
-        message: "Cannot set breakpoint while debuggee is running.",
-      };
-      throw errorObject;
-    }
-
+  setBreakpoint: function(line, column, condition, noSliding) {
     const location = new OriginalLocation(this, line, column);
-    return this._getOrCreateBreakpointActor(
+    const actor = this._getOrCreateBreakpointActor(
       location,
       condition,
       noSliding
-    ).then((actor) => {
-      const response = {
-        actor: actor.actorID,
-        isPending: actor.isPending,
-      };
+    );
 
-      const actualLocation = actor.originalLocation;
-      if (!actualLocation.equals(location)) {
-        response.actualLocation = actualLocation.toJSON();
-      }
+    const response = {
+      actor: actor.actorID,
+      isPending: actor.isPending,
+    };
 
-      return response;
-    });
+    const actualLocation = actor.originalLocation;
+    if (!actualLocation.equals(location)) {
+      response.actualLocation = actualLocation.toJSON();
+    }
+
+    return response;
   },
 
   
@@ -591,7 +583,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       
       
       if (originalLocation.originalColumn || scripts.length === 0) {
-        return Promise.resolve(actor);
+        return actor;
       }
 
       
@@ -617,13 +609,14 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       
       
       if (actualLine > maxLine) {
-        return Promise.reject({
+        
+        throw {
           error: "noCodeAtLineColumn",
           message:
             "Could not find any entry points to set a breakpoint on, " +
             "even though I was told a script existed on the line I started " +
             "the search with.",
-        });
+        };
       }
 
       
@@ -640,7 +633,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       }
     }
 
-    return Promise.resolve(actor);
+    return actor;
   },
 
   _setBreakpointAtAllGeneratedLocations: function(actor, generatedLocations) {
