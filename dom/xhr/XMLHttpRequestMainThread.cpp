@@ -2088,6 +2088,8 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   
   if (mDecoder && !mFlagParseBody) {
     AppendToResponseText(nullptr, 0, true);
+    
+    mDecoder = nullptr;
   }
 
   mWaitingForOnStopRequest = false;
