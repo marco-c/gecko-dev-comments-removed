@@ -66,7 +66,12 @@ pref("devtools.flexboxinspector.enabled", false);
 
 pref("devtools.new-animationinspector.enabled", true);
 
+
+#if defined(NIGHTLY_BUILD)
+pref("devtools.inspector.fonteditor.enabled", true);
+#else
 pref("devtools.inspector.fonteditor.enabled", false);
+#endif
 
 pref("devtools.inspector.fonthighlighter.enabled", false);
 
