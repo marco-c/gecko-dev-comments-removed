@@ -10,12 +10,14 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h" 
 #include "mozilla/fallible.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 #include "mozilla/Types.h"
 #include "nscore.h"
 
-typedef uint32_t PLDHashNumber;
+using PLDHashNumber = mozilla::HashNumber;
+static const uint32_t kPLDHashNumberBits = mozilla::kHashNumberBits;
 
 class PLDHashTable;
 struct PLDHashTableOps;
@@ -503,7 +505,6 @@ public:
 private:
   
   
-  static const uint32_t kHashBits = 32;
   static const uint32_t kGoldenRatio = 0x9E3779B9U;
 
   static uint32_t HashShift(uint32_t aEntrySize, uint32_t aLength);
@@ -544,7 +545,7 @@ private:
   
   uint32_t CapacityFromHashShift() const
   {
-    return ((uint32_t)1 << (kHashBits - mHashShift));
+    return ((uint32_t)1 << (kPLDHashNumberBits - mHashShift));
   }
 
   PLDHashNumber ComputeKeyHash(const void* aKey) const;

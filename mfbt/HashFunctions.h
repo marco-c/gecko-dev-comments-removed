@@ -58,22 +58,25 @@
 
 namespace mozilla {
 
+using HashNumber = uint32_t;
+static const uint32_t kHashNumberBits = 32;
 
 
 
-static const uint32_t kGoldenRatioU32 = 0x9E3779B9U;
+
+static const HashNumber kGoldenRatioU32 = 0x9E3779B9U;
 
 namespace detail {
 
 MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-constexpr uint32_t
-RotateLeft5(uint32_t aValue)
+constexpr HashNumber
+RotateLeft5(HashNumber aValue)
 {
   return (aValue << 5) | (aValue >> 27);
 }
 
-constexpr uint32_t
-AddU32ToHash(uint32_t aHash, uint32_t aValue)
+constexpr HashNumber
+AddU32ToHash(HashNumber aHash, uint32_t aValue)
 {
   
 
@@ -124,15 +127,15 @@ AddU32ToHash(uint32_t aHash, uint32_t aValue)
 
 
 template<size_t PtrSize>
-constexpr uint32_t
-AddUintptrToHash(uint32_t aHash, uintptr_t aValue)
+constexpr HashNumber
+AddUintptrToHash(HashNumber aHash, uintptr_t aValue)
 {
   return AddU32ToHash(aHash, static_cast<uint32_t>(aValue));
 }
 
 template<>
-inline uint32_t
-AddUintptrToHash<8>(uint32_t aHash, uintptr_t aValue)
+inline HashNumber
+AddUintptrToHash<8>(HashNumber aHash, uintptr_t aValue)
 {
   uint32_t v1 = static_cast<uint32_t>(aValue);
   uint32_t v2 = static_cast<uint32_t>(static_cast<uint64_t>(aValue) >> 32);
@@ -151,8 +154,8 @@ AddUintptrToHash<8>(uint32_t aHash, uintptr_t aValue)
 template<typename T,
          bool TypeIsNotIntegral = !mozilla::IsIntegral<T>::value,
          typename U = typename mozilla::EnableIf<TypeIsNotIntegral>::Type>
-MOZ_MUST_USE inline uint32_t
-AddToHash(uint32_t aHash, T aA)
+MOZ_MUST_USE inline HashNumber
+AddToHash(HashNumber aHash, T aA)
 {
   
 
@@ -162,8 +165,8 @@ AddToHash(uint32_t aHash, T aA)
 }
 
 template<typename A>
-MOZ_MUST_USE inline uint32_t
-AddToHash(uint32_t aHash, A* aA)
+MOZ_MUST_USE inline HashNumber
+AddToHash(HashNumber aHash, A* aA)
 {
   
 
@@ -180,15 +183,15 @@ AddToHash(uint32_t aHash, A* aA)
 
 template<typename T,
          typename U = typename mozilla::EnableIf<mozilla::IsIntegral<T>::value>::Type>
-MOZ_MUST_USE constexpr uint32_t
-AddToHash(uint32_t aHash, T aA)
+MOZ_MUST_USE constexpr HashNumber
+AddToHash(HashNumber aHash, T aA)
 {
   return detail::AddUintptrToHash<sizeof(T)>(aHash, aA);
 }
 
 template<typename A, typename... Args>
-MOZ_MUST_USE uint32_t
-AddToHash(uint32_t aHash, A aArg, Args... aArgs)
+MOZ_MUST_USE HashNumber
+AddToHash(HashNumber aHash, A aArg, Args... aArgs)
 {
   return AddToHash(AddToHash(aHash, aArg), aArgs...);
 }
@@ -201,7 +204,7 @@ AddToHash(uint32_t aHash, A aArg, Args... aArgs)
 
 
 template<typename... Args>
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashGeneric(Args... aArgs)
 {
   return AddToHash(0, aArgs...);
@@ -210,10 +213,10 @@ HashGeneric(Args... aArgs)
 namespace detail {
 
 template<typename T>
-uint32_t
+HashNumber
 HashUntilZero(const T* aStr)
 {
-  uint32_t hash = 0;
+  HashNumber hash = 0;
   for (T c; (c = *aStr); aStr++) {
     hash = AddToHash(hash, c);
   }
@@ -225,8 +228,8 @@ HashUntilZero(const T* aStr)
 
 
 template<typename T>
-constexpr uint32_t
-ConstExprHashUntilZero(const T* aStr, uint32_t aHash)
+constexpr HashNumber
+ConstExprHashUntilZero(const T* aStr, HashNumber aHash)
 {
   return !*aStr
        ? aHash
@@ -234,10 +237,10 @@ ConstExprHashUntilZero(const T* aStr, uint32_t aHash)
 }
 
 template<typename T>
-uint32_t
+HashNumber
 HashKnownLength(const T* aStr, size_t aLength)
 {
-  uint32_t hash = 0;
+  HashNumber hash = 0;
   for (size_t i = 0; i < aLength; i++) {
     hash = AddToHash(hash, aStr[i]);
   }
@@ -252,26 +255,26 @@ HashKnownLength(const T* aStr, size_t aLength)
 
 
 
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashString(const char* aStr)
 {
   return detail::HashUntilZero(reinterpret_cast<const unsigned char*>(aStr));
 }
 
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashString(const char* aStr, size_t aLength)
 {
   return detail::HashKnownLength(reinterpret_cast<const unsigned char*>(aStr), aLength);
 }
 
 MOZ_MUST_USE
-inline uint32_t
+inline HashNumber
 HashString(const unsigned char* aStr, size_t aLength)
 {
   return detail::HashKnownLength(aStr, aLength);
 }
 
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashString(const char16_t* aStr)
 {
   return detail::HashUntilZero(aStr);
@@ -286,13 +289,13 @@ HashString(const char16_t* aStr)
 
 
 
-MOZ_MUST_USE constexpr uint32_t
+MOZ_MUST_USE constexpr HashNumber
 ConstExprHashString(const char16_t* aStr)
 {
   return detail::ConstExprHashUntilZero(aStr, 0);
 }
 
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashString(const char16_t* aStr, size_t aLength)
 {
   return detail::HashKnownLength(aStr, aLength);
@@ -303,13 +306,13 @@ HashString(const char16_t* aStr, size_t aLength)
 
 
 #ifdef WIN32
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashString(const wchar_t* aStr)
 {
   return detail::HashUntilZero(aStr);
 }
 
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE inline HashNumber
 HashString(const wchar_t* aStr, size_t aLength)
 {
   return detail::HashKnownLength(aStr, aLength);
@@ -322,7 +325,7 @@ HashString(const wchar_t* aStr, size_t aLength)
 
 
 
-MOZ_MUST_USE extern MFBT_API uint32_t
+MOZ_MUST_USE extern MFBT_API HashNumber
 HashBytes(const void* bytes, size_t aLength);
 
 
@@ -355,10 +358,10 @@ public:
 
 
 
-  uint32_t scramble(uint32_t aHashCode) const
+  HashNumber scramble(HashNumber aHashCode) const
   {
     SipHasher hasher(mK0, mK1);
-    return uint32_t(hasher.sipHash(aHashCode));
+    return HashNumber(hasher.sipHash(aHashCode));
   }
 
 private:

@@ -666,10 +666,6 @@ typedef mozilla::UniquePtr<char16_t[], JS::FreePolicy> UniqueTwoByteChars;
 
 namespace js {
 
-
-typedef uint32_t HashNumber;
-const unsigned HashNumberSizeBits = 32;
-
 namespace detail {
 
 
@@ -687,8 +683,8 @@ namespace detail {
 
 
 
-inline HashNumber
-ScrambleHashCode(HashNumber h)
+inline uint32_t
+ScrambleHashCode(uint32_t h)
 {
     
 
@@ -705,7 +701,7 @@ ScrambleHashCode(HashNumber h)
 
 
 
-    static const HashNumber goldenRatio = 0x9E3779B9U;
+    static const uint32_t goldenRatio = 0x9E3779B9U;
     return mozilla::WrappingMultiply(h, goldenRatio);
 }
 
