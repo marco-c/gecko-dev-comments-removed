@@ -753,6 +753,16 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       result,
       "With these static arguments AddRule should never fail, what happened?");
 
+  
+  
+  
+  result =
+      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
+                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section");
+  SANDBOX_ENSURE_SUCCESS(
+      result,
+      "With these static arguments AddRule should never fail, what happened?");
+
   return true;
 }
 
