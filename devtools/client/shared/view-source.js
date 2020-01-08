@@ -48,7 +48,9 @@ exports.viewSourceInStyleEditor = async function(toolbox, sourceURL,
 
 
 
-exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine) {
+
+exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine,
+                                              reason = "unknown") {
   
   
   
@@ -59,7 +61,7 @@ exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine) {
   if (Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend")) {
     const source = dbg.getSource(sourceURL);
     if (source) {
-      await toolbox.selectTool("jsdebugger");
+      await toolbox.selectTool("jsdebugger", reason);
       dbg.selectSource(sourceURL, sourceLine);
       return true;
     }
@@ -80,7 +82,7 @@ exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine) {
 
   const item = Sources.getItemForAttachment(a => a.source.url === sourceURL);
   if (item) {
-    await toolbox.selectTool("jsdebugger");
+    await toolbox.selectTool("jsdebugger", reason);
 
     
     
