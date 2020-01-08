@@ -5,6 +5,7 @@
 
 
 #include "BlobURLChannel.h"
+#include "mozilla/dom/BlobImpl.h"
 
 using namespace mozilla::dom;
 

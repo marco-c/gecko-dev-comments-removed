@@ -53,6 +53,9 @@ public:
                                nsIPrincipal* aPrincipal,
                                mozilla::dom::BlobImpl* aBlobImpl);
 
+  
+  
+  
   static void RemoveDataEntry(const nsACString& aUri,
                               bool aBroadcastToOTherProcesses = true);
 
@@ -66,6 +69,22 @@ public:
   static bool
   GetAllBlobURLEntries(nsTArray<mozilla::dom::BlobURLRegistrationData>& aRegistrations,
                        mozilla::dom::ContentParent* aCP);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool
+  GetBlobURLPrincipal(nsIURI* aURI,
+                      nsIPrincipal** aPrincipal);
 
 private:
   ~BlobURLProtocolHandler();
