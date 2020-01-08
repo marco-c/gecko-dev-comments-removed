@@ -3855,19 +3855,19 @@ JS_PUBLIC_API void JS_ResetInterruptCallback(JSContext* cx, bool enable) {
 
 
 JS_PUBLIC_API void JS::SetGetIncumbentGlobalCallback(
-    JSContext* cx, JSGetIncumbentGlobalCallback callback) {
+    JSContext* cx, GetIncumbentGlobalCallback callback) {
   cx->getIncumbentGlobalCallback = callback;
 }
 
 JS_PUBLIC_API void JS::SetEnqueuePromiseJobCallback(
-    JSContext* cx, JSEnqueuePromiseJobCallback callback,
+    JSContext* cx, EnqueuePromiseJobCallback callback,
     void* data ) {
   cx->enqueuePromiseJobCallback = callback;
   cx->enqueuePromiseJobCallbackData = data;
 }
 
 extern JS_PUBLIC_API void JS::SetPromiseRejectionTrackerCallback(
-    JSContext* cx, JSPromiseRejectionTrackerCallback callback,
+    JSContext* cx, PromiseRejectionTrackerCallback callback,
     void* data ) {
   cx->promiseRejectionTrackerCallback = callback;
   cx->promiseRejectionTrackerCallbackData = data;
