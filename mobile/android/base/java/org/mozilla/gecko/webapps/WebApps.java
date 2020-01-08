@@ -73,6 +73,9 @@ public final class WebApps {
             return null;
         }
         final String scheme = uri.getScheme();
+        if (scheme == null) {
+            return null;
+        }
         
         if (scheme.equals("http") || scheme.equals("https")) {
             return uri;
