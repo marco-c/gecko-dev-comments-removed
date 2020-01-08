@@ -130,7 +130,7 @@ CreateQuotaDBKey(nsIPrincipal* aPrincipal,
 } 
 
 
-nsCString
+nsAutoCString
 LocalStorageManager::CreateOrigin(const nsACString& aOriginSuffix,
                                   const nsACString& aOriginNoSuffix)
 {
