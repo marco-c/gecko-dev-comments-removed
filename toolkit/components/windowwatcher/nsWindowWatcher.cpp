@@ -60,6 +60,7 @@
 #include "nsSandboxFlags.h"
 #include "nsSimpleEnumerator.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
@@ -1033,9 +1034,10 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   
   
   
+  
   nsCOMPtr<nsIPrincipal> subjectPrincipal =
     nsContentUtils::GetCurrentJSContext() ? nsContentUtils::SubjectPrincipal() :
-                                            nullptr;
+                                            nsContentUtils::GetSystemPrincipal();
 
   bool isPrivateBrowsingWindow = false;
 
