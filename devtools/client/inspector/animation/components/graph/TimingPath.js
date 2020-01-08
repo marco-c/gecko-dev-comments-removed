@@ -53,9 +53,9 @@ class TimingPath extends PureComponent {
     
     
     
-    const firstSectionCount = iterationStart % 1 === 0
-                            ? 0
-                            : Math.min(iterationCount, 1) - iterationStart % 1;
+    const firstSectionCount =
+      iterationStart % 1 === 0 ? 0 : Math.min(1 - iterationStart % 1, iterationCount);
+
     if (firstSectionCount) {
       this.renderFirstIteration(pathList, state,
                                 mainIterationStartTime, firstSectionCount, helper);
