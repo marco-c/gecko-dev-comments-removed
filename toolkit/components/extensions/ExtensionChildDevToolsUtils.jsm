@@ -15,7 +15,6 @@ var EXPORTED_SYMBOLS = ["ExtensionChildDevToolsUtils"];
 
 ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 

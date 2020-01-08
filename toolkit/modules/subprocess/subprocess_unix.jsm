@@ -7,8 +7,6 @@
 
 
 
-
-
 Cu.importGlobalProperties(["TextDecoder"]);
 
 var EXPORTED_SYMBOLS = ["SubprocessImpl"];
