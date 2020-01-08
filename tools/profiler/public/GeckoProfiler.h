@@ -932,19 +932,10 @@ protected:
 
 
 
-class MOZ_RAII AutoSetProfilerEnvVarsForChildProcess
-{
-public:
-  explicit AutoSetProfilerEnvVarsForChildProcess(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
-  ~AutoSetProfilerEnvVarsForChildProcess();
 
-private:
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  char mSetCapacity[64];
-  char mSetInterval[64];
-  char mSetFeaturesBitfield[64];
-  char mSetFilters[1024];
-};
+
+void GetProfilerEnvVarsForChildProcess(
+  std::function<void(const char* key, const char* value)>&& aSetEnv);
 
 } 
 

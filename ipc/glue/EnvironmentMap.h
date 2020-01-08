@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef SANDBOXING_COMMON_ENVIRONMENTMAP_H_
 #define SANDBOXING_COMMON_ENVIRONMENTMAP_H_
 
@@ -18,7 +20,7 @@ typedef std::map<NativeEnvironmentString, NativeEnvironmentString>
     EnvironmentMap;
 
 #define ENVIRONMENT_LITERAL(x) L##x
-#define ENVIRONMENT_STRING(x) (std::wstring)(NS_ConvertUTF8toUTF16((x)).get())
+#define ENVIRONMENT_STRING(x) ((std::wstring)(NS_ConvertUTF8toUTF16((x)).get()))
 
 
 
@@ -40,7 +42,7 @@ typedef std::map<NativeEnvironmentString, NativeEnvironmentString>
     EnvironmentMap;
 
 #define ENVIRONMENT_LITERAL(x) x
-#define ENVIRONMENT_STRING(x) ((x)).get()
+#define ENVIRONMENT_STRING(x) x
 
 
 

@@ -568,7 +568,10 @@ bool
 GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 {
 #ifdef MOZ_GECKO_PROFILER
-  AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
+  GetProfilerEnvVarsForChildProcess([this](const char* key, const char* value) {
+    mLaunchOptions->env_map[ENVIRONMENT_STRING(key)] =
+      ENVIRONMENT_STRING(value);
+  });
 #endif
 
   const auto startTS = TimeStamp::Now();
@@ -584,20 +587,20 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
     nsAutoCString nsprLogName;
     GetChildLogName(origNSPRLogName, nsprLogName);
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("NSPR_LOG_FILE")]
-        = ENVIRONMENT_STRING(nsprLogName);
+      = ENVIRONMENT_STRING(nsprLogName.get());
   }
   if (origMozLogName) {
     nsAutoCString mozLogName;
     GetChildLogName(origMozLogName, mozLogName);
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MOZ_LOG_FILE")]
-        = ENVIRONMENT_STRING(mozLogName);
+      = ENVIRONMENT_STRING(mozLogName.get());
   }
 
   
   nsAutoCString childRustLog(PR_GetEnv("RUST_LOG_CHILD"));
   if (!childRustLog.IsEmpty()) {
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("RUST_LOG")]
-        = ENVIRONMENT_STRING(childRustLog);
+      = ENVIRONMENT_STRING(childRustLog.get());
   }
 
 #if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
@@ -605,10 +608,10 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
     
     
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("TMPDIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
+      ENVIRONMENT_STRING(mTmpDirName.get());
     
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MESA_GLSL_CACHE_DIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
+      ENVIRONMENT_STRING(mTmpDirName.get());
   }
 #endif
 
