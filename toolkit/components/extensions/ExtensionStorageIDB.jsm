@@ -372,35 +372,37 @@ this.ExtensionStorageIDB = {
       let promise;
 
       if (context.childManager) {
-        
-        
-        
-        
-        promise = (async () => {
-          
-          
-          let result = await context.childManager.callParentAsyncFunction(
-            "storage.local.IDBBackend.selectBackend", []
-          );
+        return context.childManager.callParentAsyncFunction(
+          "storage.local.IDBBackend.selectBackend", []
+        ).then(parentResult => {
+          let result;
 
-          if (!result.backendEnabled) {
-            return {backendEnabled: false};
+          if (!parentResult.backendEnabled) {
+            result = {backendEnabled: false};
+          } else {
+            result = {
+              ...parentResult,
+              
+              
+              storagePrincipal: parentResult.storagePrincipal.deserialize(this),
+            };
           }
 
-          return {
-            ...result,
-            
-            
-            storagePrincipal: result.storagePrincipal.deserialize(this),
-          };
-        })();
-      } else {
-        
-        
-        if (!this.isBackendEnabled) {
-          return Promise.resolve({backendEnabled: false});
-        }
+          
+          
+          
+          
+          this.selectedBackendPromises.set(extension, Promise.resolve(result));
 
+          return result;
+        });
+      }
+
+      
+      
+      if (!this.isBackendEnabled) {
+        promise = Promise.resolve({backendEnabled: false});
+      } else {
         
         
         

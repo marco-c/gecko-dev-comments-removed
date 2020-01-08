@@ -172,7 +172,11 @@ this.storage = class extends ExtensionAPI {
         if (!promiseStorageLocalBackend) {
           promiseStorageLocalBackend = getStorageLocalBackend();
         }
-        const backend = await promiseStorageLocalBackend;
+        const backend = await promiseStorageLocalBackend.catch(err => {
+          
+          promiseStorageLocalBackend = null;
+          throw err;
+        });
         return backend[method](...args);
       };
     }
