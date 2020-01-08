@@ -62,7 +62,16 @@ this.AntiTracking = {
         this._createTask(name, BEHAVIOR_ACCEPT, true, false, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
+        this._createTask(name, BEHAVIOR_REJECT_FOREIGN, false, false, callbackNonTracking);
+        this._createCleanupTask(cleanupFunction);
+
         this._createTask(name, BEHAVIOR_REJECT_TRACKER, false, false, callbackNonTracking);
+        this._createCleanupTask(cleanupFunction);
+
+        this._createTask(name, BEHAVIOR_REJECT_FOREIGN, false, true, callbackNonTracking);
+        this._createCleanupTask(cleanupFunction);
+
+        this._createTask(name, BEHAVIOR_REJECT_TRACKER, false, true, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
         this._createTask(name, BEHAVIOR_ACCEPT, false, false, callbackNonTracking);
