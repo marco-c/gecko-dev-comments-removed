@@ -11764,8 +11764,6 @@ nsIDocument::MaybeActiveMediaComponents()
  void
 nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
 {
-  nsINode::AddSizeOfExcludingThis(aSizes, &aSizes.mDOMOtherSize);
-
   if (mPresShell) {
     mPresShell->AddSizeOfIncludingThis(aSizes);
   }
@@ -11801,21 +11799,6 @@ nsIDocument::DocAddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const
   DocAddSizeOfExcludingThis(aWindowSizes);
 }
 
-static size_t
-SizeOfOwnedSheetArrayExcludingThis(const nsTArray<RefPtr<StyleSheet>>& aSheets,
-                                   MallocSizeOf aMallocSizeOf)
-{
-  size_t n = 0;
-  n += aSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (StyleSheet* sheet : aSheets) {
-    if (!sheet->GetAssociatedDocumentOrShadowRoot()) {
-      
-      continue;
-    }
-    n += sheet->SizeOfIncludingThis(aMallocSizeOf);
-  }
-  return n;
-}
 
 void
 nsDocument::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
@@ -11828,15 +11811,15 @@ nsDocument::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   MOZ_CRASH();
 }
 
-static void
-AddSizeOfNodeTree(nsIContent* aNode, nsWindowSizes& aWindowSizes)
+ void
+nsIDocument::AddSizeOfNodeTree(nsINode& aNode, nsWindowSizes& aWindowSizes)
 {
   size_t nodeSize = 0;
-  aNode->AddSizeOfIncludingThis(aWindowSizes, &nodeSize);
+  aNode.AddSizeOfIncludingThis(aWindowSizes, &nodeSize);
 
   
   
-  switch (aNode->NodeType()) {
+  switch (aNode.NodeType()) {
   case nsINode::ELEMENT_NODE:
     aWindowSizes.mDOMElementNodesSize += nodeSize;
     break;
@@ -11854,30 +11837,50 @@ AddSizeOfNodeTree(nsIContent* aNode, nsWindowSizes& aWindowSizes)
     break;
   }
 
-  if (EventListenerManager* elm = aNode->GetExistingListenerManager()) {
+  if (EventListenerManager* elm = aNode.GetExistingListenerManager()) {
     aWindowSizes.mDOMEventListenersCount += elm->ListenerCount();
   }
 
-  AllChildrenIterator iter(aNode, nsIContent::eAllChildren);
-  for (nsIContent* n = iter.GetNextChild(); n; n = iter.GetNextChild()) {
-    AddSizeOfNodeTree(n, aWindowSizes);
+  if (aNode.IsContent()) {
+    nsTArray<nsIContent*> anonKids;
+    nsContentUtils::AppendNativeAnonymousChildren(aNode.AsContent(),
+                                                  anonKids,
+                                                  nsIContent::eAllChildren);
+    for (nsIContent* anonKid : anonKids) {
+      AddSizeOfNodeTree(*anonKid, aWindowSizes);
+    }
+
+    if (auto* element = Element::FromNode(aNode)) {
+      if (ShadowRoot* shadow = element->GetShadowRoot()) {
+        AddSizeOfNodeTree(*shadow, aWindowSizes);
+      }
+
+      for (nsXBLBinding* binding = element->GetXBLBinding();
+           binding;
+           binding = binding->GetBaseBinding()) {
+        if (nsIContent* anonContent = binding->GetAnonymousContent()) {
+          AddSizeOfNodeTree(*anonContent, aWindowSizes);
+        }
+      }
+    }
+  }
+
+  
+  
+  
+  
+  for (nsIContent* kid = aNode.GetFirstChild(); kid; kid = kid->GetNextSibling()) {
+    AddSizeOfNodeTree(*kid, aWindowSizes);
   }
 }
 
 void
 nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
 {
-  
-  
-  
-  
-  
-  
-  
-  for (nsIContent* node = nsINode::GetFirstChild();
-       node;
-       node = node->GetNextSibling()) {
-    AddSizeOfNodeTree(node, aWindowSizes);
+  nsINode::AddSizeOfExcludingThis(aWindowSizes, &aWindowSizes.mDOMOtherSize);
+
+  for (nsIContent* kid = GetFirstChild(); kid; kid = kid->GetNextSibling()) {
+    AddSizeOfNodeTree(*kid, aWindowSizes);
   }
 
   
@@ -11889,13 +11892,9 @@ nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
   
   nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
 
-  aWindowSizes.mLayoutStyleSheetsSize +=
-    SizeOfOwnedSheetArrayExcludingThis(mStyleSheets,
-                                       aWindowSizes.mState.mMallocSizeOf);
+  DocumentOrShadowRoot::AddSizeOfExcludingThis(aWindowSizes);
   for (auto& sheetArray : mAdditionalSheets) {
-    aWindowSizes.mLayoutStyleSheetsSize +=
-      SizeOfOwnedSheetArrayExcludingThis(sheetArray,
-                                         aWindowSizes.mState.mMallocSizeOf);
+    AddSizeOfOwnedSheetArrayExcludingThis(aWindowSizes, sheetArray);
   }
   
   

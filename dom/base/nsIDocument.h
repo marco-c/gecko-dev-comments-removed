@@ -3019,6 +3019,10 @@ public:
 
   
   
+  static void AddSizeOfNodeTree(nsINode&, nsWindowSizes&);
+
+  
+  
   
   
   virtual void DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const;

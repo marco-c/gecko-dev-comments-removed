@@ -25,6 +25,7 @@
 #include "nsIObserverService.h"
 #include "nsIDebug2.h"
 #include "nsIDocShell.h"
+#include "nsIDocument.h"
 #include "nsIRunnable.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
@@ -2141,39 +2142,33 @@ class OrphanReporter : public JS::ObjectPrivateVisitor
 
     virtual size_t sizeOfIncludingThis(nsISupports* aSupports) override
     {
-        size_t n = 0;
         nsCOMPtr<nsINode> node = do_QueryInterface(aSupports);
         
         
-        
-        if (node && !node->IsInComposedDoc() &&
-            !(node->IsElement() && node->AsElement()->IsInNamespace(kNameSpaceID_XBL)))
-        {
-            
-            
-            
-            nsCOMPtr<nsINode> orphanTree = node->SubtreeRoot();
-            if (orphanTree && !mState.HaveSeenPtr(orphanTree.get())) {
-                n += SizeOfTreeIncludingThis(orphanTree);
-            }
+        if (!node || node->IsInComposedDoc() ||
+            (node->IsElement() && node->AsElement()->IsInNamespace(kNameSpaceID_XBL))) {
+            return 0;
         }
-        return n;
-    }
 
-    size_t SizeOfTreeIncludingThis(nsINode* tree)
-    {
-        size_t nodeSize = 0;
+        
+        
+        
+        nsCOMPtr<nsINode> orphanTree = node->SubtreeRoot();
+        if (!orphanTree || mState.HaveSeenPtr(orphanTree.get())) {
+            return 0;
+        }
+
         nsWindowSizes sizes(mState);
-        tree->AddSizeOfIncludingThis(sizes, &nodeSize);
-        for (nsIContent* child = tree->GetFirstChild(); child; child = child->GetNextNode(tree))
-            child->AddSizeOfIncludingThis(sizes, &nodeSize);
+        nsIDocument::AddSizeOfNodeTree(*orphanTree, sizes);
 
         
         
         
         
         
-        return nodeSize + sizes.getTotalSize();
+        
+        
+        return sizes.getTotalSize();
     }
 
   private:

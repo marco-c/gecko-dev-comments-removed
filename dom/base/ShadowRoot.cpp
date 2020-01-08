@@ -103,6 +103,14 @@ ShadowRoot::~ShadowRoot()
   SetSubtreeRootPointer(this);
 }
 
+void
+ShadowRoot::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
+{
+  DocumentFragment::AddSizeOfExcludingThis(aSizes, aNodeSize);
+  DocumentOrShadowRoot::AddSizeOfExcludingThis(aSizes);
+  
+}
+
 JSObject*
 ShadowRoot::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
