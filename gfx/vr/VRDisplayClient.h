@@ -51,7 +51,6 @@ protected:
   virtual ~VRDisplayClient();
 
   void FireEvents();
-  void FireGamepadEvents();
 
   VRDisplayInfo mDisplayInfo;
 
@@ -61,10 +60,6 @@ protected:
   int mPresentationCount;
   uint64_t mLastEventFrameId;
   uint32_t mLastPresentingGeneration;
-
-  
-  
-  VRControllerState mLastEventControllerState[kVRControllerMaxCount];
 private:
   VRSubmitFrameResultInfo mSubmitFrameResult;
 };
