@@ -99,6 +99,9 @@ class VideoReceiveStream {
     RtcpPacketTypeCounter rtcp_packet_type_counts;
     RtcpStatistics rtcp_stats;
 
+    uint32_t rtcp_sender_packets_sent;
+    uint32_t rtcp_sender_octets_sent;
+
     
     
     rtc::Optional<webrtc::TimingFrameInfo> timing_frame_info;
