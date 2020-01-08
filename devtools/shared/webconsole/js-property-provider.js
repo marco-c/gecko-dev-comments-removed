@@ -289,7 +289,8 @@ function JSPropertyProvider(
   if (!isWorker && lastCompletionCharIndex > 0) {
     const parser = new Parser();
     parser.logExceptions = false;
-    const syntaxTree = parser.get(completionPart.slice(0, lastCompletionCharIndex));
+    const parsedExpression = completionPart.slice(0, lastCompletionCharIndex);
+    const syntaxTree = parser.get(parsedExpression);
     const lastTree = syntaxTree.getLastSyntaxTree();
     const lastBody = lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
 
@@ -297,38 +298,45 @@ function JSPropertyProvider(
     
     if (lastBody) {
       const expression = lastBody.expression;
-      const matchProp = completionPart.slice(lastCompletionCharIndex + 1).trimLeft();
-      let search = matchProp;
-
-      let elementAccessQuote;
-      if (isElementAccess && startQuoteRegex.test(matchProp)) {
-        elementAccessQuote = matchProp[0];
-        search = matchProp.replace(startQuoteRegex, "");
-      }
+      let matchingObject;
 
       if (expression.type === "ArrayExpression") {
-        let arrayProtoProps = getMatchedProps(Array.prototype, search);
-        if (isElementAccess) {
-          arrayProtoProps = wrapMatchesInQuotes(arrayProtoProps, elementAccessQuote);
+        matchingObject = Array.prototype;
+      } else if (expression.type === "Literal" && typeof expression.value === "string") {
+        matchingObject = String.prototype;
+      } else if (expression.type === "Literal" && Number.isFinite(expression.value)) {
+        
+        
+        
+        
+        
+        if (
+          !Number.isInteger(expression.value) ||
+          /\d[^\.]{0}\.$/.test(completionPart) === false
+        ) {
+          matchingObject = Number.prototype;
         }
-
-        return {
-          isElementAccess,
-          matchProp,
-          matches: arrayProtoProps,
-        };
       }
 
-      if (expression.type === "Literal" && typeof expression.value === "string") {
-        let stringProtoProps = getMatchedProps(String.prototype, search);
+      if (matchingObject) {
+        const matchProp = completionPart.slice(lastCompletionCharIndex + 1).trimLeft();
+        let search = matchProp;
+
+        let elementAccessQuote;
+        if (isElementAccess && startQuoteRegex.test(matchProp)) {
+          elementAccessQuote = matchProp[0];
+          search = matchProp.replace(startQuoteRegex, "");
+        }
+
+        let props = getMatchedProps(matchingObject, search);
         if (isElementAccess) {
-          stringProtoProps = wrapMatchesInQuotes(stringProtoProps, elementAccessQuote);
+          props = wrapMatchesInQuotes(props, elementAccessQuote);
         }
 
         return {
           isElementAccess,
           matchProp,
-          matches: stringProtoProps,
+          matches: props,
         };
       }
     }
