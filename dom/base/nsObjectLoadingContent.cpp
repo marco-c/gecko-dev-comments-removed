@@ -1810,10 +1810,7 @@ nsObjectLoadingContent::UpdateObjectParameters()
              IsPluginType(newMime_Type)) {
     newType = newMime_Type;
     LOG(("OBJLC [%p]: Plugin type with no URI, skipping channel load", this));
-  } else if (newURI && (mOriginalContentType.IsEmpty() || newMime_Type != eType_Null)) {
-    
-    
-    
+  } else if (newURI) {
     
     
     newType = eType_Loading;
