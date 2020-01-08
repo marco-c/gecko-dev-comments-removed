@@ -26,13 +26,14 @@ class VRProcessChild final : public mozilla::ipc::ProcessChild {
   ~VRProcessChild();
 
   
+  static VRParent* GetVRParent();
+
+  
   virtual bool Init(int aArgc, char* aArgv[]) override;
   virtual void CleanUp() override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(VRProcessChild);
-
-  VRParent mVR;
 };
 
 }  
