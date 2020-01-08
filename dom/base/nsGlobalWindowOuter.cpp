@@ -2248,10 +2248,6 @@ void
 nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
                                      bool aOriginalOpener)
 {
-  MOZ_DIAGNOSTIC_ASSERT(!aOpener || aOpener->GetBrowsingContext());
-  MOZ_DIAGNOSTIC_ASSERT(!mOpener || GetBrowsingContext() && GetBrowsingContext()->GetOpener());
-  MOZ_DIAGNOSTIC_ASSERT(mDocShell);
-
   nsWeakPtr opener = do_GetWeakReference(aOpener);
   if (opener == mOpener) {
     MOZ_DIAGNOSTIC_ASSERT(
@@ -2270,11 +2266,11 @@ nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   mOpener = opener.forget();
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
 
-  if (mDocShell) {
+  if (mDocShell && aOpener) {
     
     
     
-    GetBrowsingContext()->SetOpener(aOpener ? aOpener->GetBrowsingContext() : nullptr);
+    GetBrowsingContext()->SetOpener(aOpener->GetBrowsingContext());
   }
 
   
