@@ -1348,7 +1348,6 @@ var LoginManagerContent = {
     
     if (ChromeUtils.getClassName(aField) !== "HTMLInputElement" ||
         (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
-        aField.nodePrincipal.isNullPrincipal ||
         !aField.ownerDocument) {
       return null;
     }
