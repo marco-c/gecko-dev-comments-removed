@@ -331,7 +331,7 @@
     </hbox>
     <vbox id="contentBlockingCategories">
       <label id="content-blocking-categories-label" data-l10n-id="content-blocking-category-label"/>
-      <hbox class="content-blocking-category fast-block-ui">
+      <hbox class="content-blocking-category">
         <vbox class="content-blocking-category-checkbox">
           <checkbox id="contentBlockingFastBlockCheckbox"
                     class="content-blocking-checkbox"
@@ -341,7 +341,7 @@
           <image class="fastblock-icon content-blocking-icon"/>
         </vbox>
         <vbox class="content-blocking-category-labels" flex="1">
-          <label data-l10n-id="content-blocking-fastblock-slow-loading-label"
+          <label data-l10n-id="content-blocking-fastblock-label"
                  class="content-blocking-category-name"
                  control="contentBlockingFastBlockCheckbox"/>
           <description data-l10n-id="content-blocking-fastblock-description" class="content-blocking-category-description"/>
@@ -356,7 +356,7 @@
                   class="extension-controlled-button accessory-button"
                   data-l10n-id="disable-extension"/>
         </hbox>
-        <hbox class="content-blocking-category tracking-protection-ui">
+        <hbox class="content-blocking-category">
           <vbox class="content-blocking-category-checkbox">
             <checkbox id="contentBlockingTrackingProtectionCheckbox" class="content-blocking-checkbox" />
           </vbox>
@@ -364,7 +364,7 @@
             <image class="tracking-protection-icon content-blocking-icon" />
           </vbox>
           <vbox class="content-blocking-category-labels" flex="1">
-            <label data-l10n-id="content-blocking-tracking-protection-all-label"
+            <label data-l10n-id="content-blocking-tracking-protection-label"
                    class="content-blocking-category-name"
                    control="contentBlockingTrackingProtectionCheckbox"/>
             <description data-l10n-id="content-blocking-tracking-protection-description"

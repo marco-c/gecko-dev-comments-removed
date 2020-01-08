@@ -29,12 +29,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRe
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersEnabled",
                                       "browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled");
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingFastBlockUiEnabled",
-                                      "browser.contentblocking.fastblock.ui.enabled");
-
-XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingTrackingProtectionUiEnabled",
-                                      "browser.contentblocking.trackingprotection.ui.enabled");
-
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingRejectTrackersUiEnabled",
                                       "browser.contentblocking.rejecttrackers.ui.enabled");
 
@@ -500,20 +494,10 @@ var gPrivacyPane = {
     link.setAttribute("href", url);
 
     
-    
-    let selectorPrefMap = {
-      ".fast-block-ui": contentBlockingFastBlockUiEnabled,
-      ".tracking-protection-ui": contentBlockingTrackingProtectionUiEnabled,
-      ".reject-trackers-ui": contentBlockingRejectTrackersUiEnabled,
-    };
-
-    for (let selector in selectorPrefMap) {
-      let pref = selectorPrefMap[selector];
-      if (!pref) {
-        let elements = document.querySelectorAll(selector);
-        for (let element of elements) {
-          element.hidden = true;
-        }
+    if (!contentBlockingRejectTrackersUiEnabled) {
+      let elements = document.querySelectorAll(".reject-trackers-ui");
+      for (let element of elements) {
+        element.hidden = true;
       }
     }
 
@@ -576,14 +560,6 @@ var gPrivacyPane = {
     };
     for (let id in visibleState) {
       document.getElementById(id).hidden = contentBlockingUiEnabled != visibleState[id];
-    }
-
-    
-    if (contentBlockingUiEnabled) {
-      let dntDefaultRadioItem =
-        document.querySelector("#doNotTrackRadioGroup > radio[value=false]");
-      document.l10n.setAttributes(
-        dntDefaultRadioItem, "do-not-track-option-default-content-blocking");
     }
 
     
