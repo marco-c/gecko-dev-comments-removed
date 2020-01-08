@@ -115,12 +115,72 @@ exports.startRecording = () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createDebugPathMapForLibsInProfile(profile) {
+  const map = new Map();
+  function fillMapForProcessRecursive(processProfile) {
+    for (const lib of processProfile.libs) {
+      const { debugName, debugPath, breakpadId } = lib;
+      const key = [debugName, breakpadId].join(":");
+      map.set(key, debugPath);
+    }
+    for (const subprocess of processProfile.processes) {
+      fillMapForProcessRecursive(subprocess);
+    }
+  }
+
+  fillMapForProcessRecursive(profile);
+  return function getDebugPathFor(debugName, breakpadId) {
+    const key = [debugName, breakpadId].join(":");
+    return map.get(key);
+  };
+}
+
+
+
+
 exports.getProfileAndStopProfiler = () => {
   return async (dispatch, getState) => {
     const perfFront = selectors.getPerfFront(getState());
     dispatch(changeRecordingState(REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER));
     const profile = await perfFront.getProfileAndStopProfiler();
-    selectors.getReceiveProfileFn(getState())(profile);
+
+    const debugPathGetter = createDebugPathMapForLibsInProfile(profile);
+    async function getSymbolTable(debugName, breakpadId) {
+      const debugPath = debugPathGetter(debugName, breakpadId);
+      const [addresses, index, buffer] =
+        await perfFront.getSymbolTable(debugPath, breakpadId);
+      
+      
+      return [
+        new Uint32Array(addresses),
+        new Uint32Array(index),
+        new Uint8Array(buffer)
+      ];
+    }
+
+    selectors.getReceiveProfileFn(getState())(profile, getSymbolTable);
     dispatch(changeRecordingState(AVAILABLE_TO_RECORD));
   };
 };
