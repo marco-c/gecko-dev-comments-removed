@@ -4,7 +4,9 @@
 
 
 
-#include "mozilla/dom/PServiceWorkerContainerParent.h"
+#include "ServiceWorkerContainerParent.h"
+
+#include "ServiceWorkerContainerProxy.h"
 
 namespace mozilla {
 namespace dom {
@@ -14,20 +16,32 @@ using mozilla::ipc::IPCResult;
 void
 ServiceWorkerContainerParent::ActorDestroy(ActorDestroyReason aReason)
 {
-  
+  if (mProxy) {
+    mProxy->RevokeActor(this);
+    mProxy = nullptr;
+  }
 }
 
 IPCResult
 ServiceWorkerContainerParent::RecvTeardown()
 {
-  
+  Unused << Send__delete__(this);
   return IPC_OK();
+}
+
+ServiceWorkerContainerParent::ServiceWorkerContainerParent()
+{
+}
+
+ServiceWorkerContainerParent::~ServiceWorkerContainerParent()
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mProxy);
 }
 
 void
 ServiceWorkerContainerParent::Init()
 {
-  
+  mProxy = new ServiceWorkerContainerProxy(this);
 }
 
 } 
