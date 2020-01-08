@@ -516,12 +516,30 @@ public:
   
   
   
+  
+  
+  
+  
   template<int N>
   void AssignLiteral(const char_type (&aStr)[N])
   {
     AssignLiteral(aStr, N - 1);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   template<int N, typename Q = T, typename EnableIfChar16 = typename mozilla::Char16OnlyT<Q>>
   void AssignLiteral(const incompatible_char_type (&aStr)[N])
   {
@@ -738,12 +756,20 @@ public:
   
   
   
+  
+  
+  
   template<int N>
   void AppendLiteral(const char_type (&aStr)[N])
   {
     ReplaceLiteral(base_string_type::mLength, 0, aStr, N - 1);
   }
 
+  
+  
+  
+  
+  
   
   template <int N, typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
   void AppendLiteral(const incompatible_char_type (&aStr)[N])
