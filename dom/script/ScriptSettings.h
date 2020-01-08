@@ -229,6 +229,7 @@ public:
 
   
   
+  
   MOZ_MUST_USE bool Init(JSObject* aObject);
 
   
