@@ -3586,22 +3586,9 @@ nsIDocument::GetActiveElement()
 
   
   if (IsHTMLOrXHTML()) {
-    Element* bodyElement = AsHTMLDocument()->GetBody();
-    if (bodyElement) {
-      return bodyElement;
-    }
     
     
-    
-    if (nsContentUtils::IsChromeDoc(this)) {
-      Element* docElement = GetDocumentElement();
-      if (docElement && docElement->IsXULElement()) {
-        return docElement;
-      }
-    }
-    
-    
-    return nullptr;
+    return AsHTMLDocument()->GetBody();
   }
 
   
@@ -11788,6 +11775,8 @@ nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
     aSizes.mDOMMediaQueryLists +=
       mql->SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
   }
+
+  mContentBlockingLog.AddSizeOfExcludingThis(aSizes);
 
   
   
