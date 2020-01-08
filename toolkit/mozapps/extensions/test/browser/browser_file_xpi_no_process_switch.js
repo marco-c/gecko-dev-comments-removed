@@ -92,10 +92,6 @@ async function testOpenedAndDraggedXPI(aBrowser) {
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["xpinstall.customConfirmationUI", true]],
-  });
-
   await BrowserTestUtils.withNewTab("http://example.com", testOpenedAndDraggedXPI);
   await BrowserTestUtils.withNewTab("about:robots", testOpenedAndDraggedXPI);
 });

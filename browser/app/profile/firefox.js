@@ -33,7 +33,6 @@ pref("extensions.strictCompatibility", false);
 
 pref("extensions.checkCompatibility.temporaryThemeOverride_minAppVersion", "29.0a1");
 
-pref("xpinstall.customConfirmationUI", true);
 pref("extensions.webextPermissionPrompts", true);
 pref("extensions.webextOptionalPermissionPrompts", true);
 
@@ -1498,11 +1497,6 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 
 
 pref("media.gmp-provider.enabled", true);
-
-
-#ifdef NIGHTLY_BUILD
-pref("network.cookie.cookieBehavior", 4 );
-#endif
 
 pref("browser.contentblocking.allowlist.storage.enabled", true);
 
