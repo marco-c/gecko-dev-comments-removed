@@ -84,6 +84,16 @@ js::ErrorObject::init(JSContext* cx, Handle<ErrorObject*> obj, JSExnType type,
     if (message)
         obj->setSlotWithType(cx, messageShape, StringValue(message));
 
+    
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying() && !cx->runtime()->parentRuntime) {
+        uint64_t timeWarpTarget = mozilla::recordreplay::NewTimeWarpTarget();
+
+        
+        MOZ_RELEASE_ASSERT(timeWarpTarget < uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT));
+        obj->initReservedSlot(TIME_WARP_SLOT, DoubleValue(timeWarpTarget));
+    }
+
     return true;
 }
 
