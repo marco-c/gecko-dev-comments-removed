@@ -221,15 +221,16 @@ nsAppShellService::CreateTopLevelWindow(nsIXULWindow *aParent,
 
 
 
-class WebBrowserChrome2Stub : public nsIWebBrowserChrome2,
-                              public nsIEmbeddingSiteWindow,
-                              public nsIInterfaceRequestor,
-                              public nsSupportsWeakReference {
+class WebBrowserChrome2Stub final : public nsIWebBrowserChrome2,
+                                    public nsIEmbeddingSiteWindow,
+                                    public nsIInterfaceRequestor,
+                                    public nsSupportsWeakReference {
 protected:
     nsCOMPtr<nsIWebBrowser> mBrowser;
     virtual ~WebBrowserChrome2Stub() {}
 public:
-    explicit WebBrowserChrome2Stub(nsIWebBrowser *aBrowser) : mBrowser(aBrowser) {}
+    void SetBrowser(nsIWebBrowser* aBrowser) { mBrowser = aBrowser; }
+
     NS_DECL_ISUPPORTS
     NS_DECL_NSIWEBBROWSERCHROME
     NS_DECL_NSIWEBBROWSERCHROME2
@@ -481,24 +482,9 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, nsIWindowlessBrowser 
   
 
 
-  nsCOMPtr<nsIWebBrowser> browser =
-    new nsWebBrowser(aIsChrome ? nsIDocShellTreeItem::typeChromeWrapper
-                               : nsIDocShellTreeItem::typeContentWrapper);
-
-  if (!browser) {
-    NS_ERROR("Couldn't create instance of nsWebBrowser!");
-    return NS_ERROR_FAILURE;
-  }
-
-  
 
 
-
-
-  RefPtr<WebBrowserChrome2Stub> stub = new WebBrowserChrome2Stub(browser);
-  browser->SetContainerWindow(stub);
-
-  nsCOMPtr<nsIWebNavigation> navigation = do_QueryInterface(browser);
+  RefPtr<WebBrowserChrome2Stub> stub = new WebBrowserChrome2Stub();
 
   
 
@@ -515,12 +501,29 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, nsIWindowlessBrowser 
     NS_ERROR("Couldn't create instance of stub widget");
     return NS_ERROR_FAILURE;
   }
+
   nsresult rv =
     widget->Create(nullptr, 0, LayoutDeviceIntRect(0, 0, 0, 0), nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIBaseWindow> window = do_QueryInterface(navigation);
-  window->InitWindow(0, widget, 0, 0, 0, 0);
-  window->Create();
+
+  
+
+
+  nsCOMPtr<nsIWebBrowser> browser =
+    nsWebBrowser::Create(stub,
+                         widget,
+                         OriginAttributes(),
+                         nullptr,
+                         aIsChrome ? nsIDocShellTreeItem::typeChromeWrapper
+                         : nsIDocShellTreeItem::typeContentWrapper);
+
+  if (NS_WARN_IF(!browser)) {
+    NS_ERROR("Couldn't create instance of nsWebBrowser!");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  stub->SetBrowser(browser);
 
   nsISupports *isstub = NS_ISUPPORTS_CAST(nsIWebBrowserChrome2*, stub);
   RefPtr<nsIWindowlessBrowser> result = new WindowlessBrowser(browser, isstub);
