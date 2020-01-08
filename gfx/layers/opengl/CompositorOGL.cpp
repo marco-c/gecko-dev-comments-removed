@@ -986,15 +986,11 @@ CompositorOGL::GetShaderConfigFor(Effect *aEffect,
   case EffectTypes::YCBCR:
   {
     config.SetYCbCr(true);
-    EffectYCbCr* effectYCbCr =
-      static_cast<EffectYCbCr*>(aEffect);
-    uint32_t pixelBits = (8 * BytesPerPixel(SurfaceFormatForAlphaBitDepth(effectYCbCr->mBitDepth)));
-    uint32_t paddingBits = pixelBits - effectYCbCr->mBitDepth;
-    
-    
-    
-    config.SetColorMultiplier(pow(2, paddingBits));
-    config.SetTextureTarget(effectYCbCr->mTexture->AsSourceOGL()->GetTextureTarget());
+    EffectYCbCr* effectYCbCr = static_cast<EffectYCbCr*>(aEffect);
+    config.SetColorMultiplier(
+      RescalingFactorForAlphaBitDepth(effectYCbCr->mBitDepth));
+    config.SetTextureTarget(
+      effectYCbCr->mTexture->AsSourceOGL()->GetTextureTarget());
     break;
   }
   case EffectTypes::NV12:

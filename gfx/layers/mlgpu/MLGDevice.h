@@ -360,6 +360,9 @@ public:
   
   
   RefPtr<MLGBuffer> GetBufferForColorSpace(YUVColorSpace aColorSpace);
+  
+  
+  RefPtr<MLGBuffer> GetBufferForBitDepthCoefficient(uint8_t aBitDepth);
 
   
   SharedVertexBuffer* GetSharedVertexBuffer() {
@@ -466,7 +469,7 @@ protected:
   template <typename... T>
   bool Fail(const char* aFailureId,
             const char* aMessage,
-            const T&... args) 
+            const T&... args)
   {
     nsCString failureId(aFailureId);
     nsPrintfCString message(aMessage, args...);
@@ -491,6 +494,8 @@ private:
 
   typedef EnumeratedArray<YUVColorSpace, YUVColorSpace::UNKNOWN, RefPtr<MLGBuffer>> ColorSpaceArray;
   ColorSpaceArray mColorSpaceBuffers;
+  typedef EnumeratedArray<gfx::ColorDepth, gfx::ColorDepth::MAX, RefPtr<MLGBuffer>> ColorDepthArray;
+  ColorDepthArray mColorDepthBuffers;
 
 protected:
   bool mIsValid;
