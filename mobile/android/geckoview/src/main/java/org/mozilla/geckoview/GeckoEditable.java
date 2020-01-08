@@ -105,6 +105,9 @@ import android.view.inputmethod.EditorInfo;
     private int mIMEFlags; 
 
     private boolean mIgnoreSelectionChange; 
+    private int mLastTextChangeStart = -1; 
+    private int mLastTextChangeEnd = -1; 
+    private boolean mLastTextChangeReplacedSelection; 
 
     
     
@@ -1126,6 +1129,45 @@ import android.view.inputmethod.EditorInfo;
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
         switch (action.mType) {
+        case Action.TYPE_REPLACE_TEXT: {
+            final Spanned currentText = mText.getCurrentText();
+            final int actionNewEnd = action.mStart + action.mSequence.length();
+            if (mLastTextChangeStart < 0 || mLastTextChangeEnd > currentText.length() ||
+                action.mStart < mLastTextChangeStart || actionNewEnd > mLastTextChangeEnd) {
+                
+                break;
+            }
+
+            int indexInText = TextUtils.indexOf(currentText, action.mSequence,
+                                                action.mStart, mLastTextChangeEnd);
+            if (indexInText < 0 && action.mStart != mLastTextChangeStart) {
+                final String changedText = TextUtils.substring(
+                        currentText, mLastTextChangeStart, actionNewEnd);
+                indexInText = changedText.lastIndexOf(action.mSequence.toString());
+                if (indexInText >= 0) {
+                    indexInText += mLastTextChangeStart;
+                }
+            }
+            if (indexInText < 0) {
+                
+                break;
+            }
+
+            
+            
+            mText.currentReplace(indexInText,
+                                 indexInText + action.mSequence.length(),
+                                 action.mSequence);
+
+            
+            
+            
+            
+            
+            mIgnoreSelectionChange = !mLastTextChangeReplacedSelection;
+            break;
+        }
+
         case Action.TYPE_SET_SPAN:
             final int len = mText.getCurrentText().length();
             if (action.mStart > len || action.mEnd > len ||
@@ -1579,6 +1621,12 @@ import android.view.inputmethod.EditorInfo;
             mText.currentSetSelection(start, end);
         }
 
+        
+        
+        mLastTextChangeStart = -1;
+        mLastTextChangeEnd = -1;
+        mLastTextChangeReplacedSelection = false;
+
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -1610,7 +1658,6 @@ import android.view.inputmethod.EditorInfo;
         final int currentLength = mText.getCurrentText().length();
         final int oldEnd = unboundedOldEnd > currentLength ? currentLength : unboundedOldEnd;
         final int newEnd = start + text.length();
-        final Action action = mActions.peek();
 
         if (start == 0 && unboundedOldEnd > currentLength) {
             
@@ -1622,96 +1669,42 @@ import android.view.inputmethod.EditorInfo;
             
             mIgnoreSelectionChange = false;
 
-        } else if (action != null &&
-                action.mType == Action.TYPE_REPLACE_TEXT &&
-                start <= action.mStart &&
-                oldEnd >= action.mEnd &&
-                newEnd >= action.mStart + action.mSequence.length()) {
+            mLastTextChangeStart = -1;
+            mLastTextChangeEnd = -1;
+            mLastTextChangeReplacedSelection = false;
+
+        } else if (!geckoIsSameText(start, oldEnd, text)) {
+            final Spanned currentText = mText.getCurrentText();
+            final int selStart = Selection.getSelectionStart(currentText);
+            final int selEnd = Selection.getSelectionEnd(currentText);
 
             
             
-            final int startWithinText = action.mStart - start;
-            int indexInText = TextUtils.indexOf(text, action.mSequence, startWithinText);
-            if (indexInText < 0 && startWithinText >= action.mSequence.length()) {
-                indexInText = text.toString().lastIndexOf(action.mSequence.toString(),
-                                                          startWithinText);
-            }
-
-            if (indexInText < 0) {
-                
-                mText.currentReplace(start, oldEnd, text);
-
-                
-                
-                mIgnoreSelectionChange = false;
-
-            } else if (indexInText == 0 && text.length() == action.mSequence.length() &&
-                    oldEnd - start == action.mEnd - action.mStart) {
-                
-                mText.currentReplace(start, oldEnd, action.mSequence);
-
-                
-                
-                mIgnoreSelectionChange = true;
-
-            } else {
-                
-                
-                mText.currentReplace(start, action.mStart, text.subSequence(0, indexInText));
-
-                
-                final int actionStart = indexInText + start;
-                final int delta = actionStart - action.mStart;
-                final int actionEnd = delta + action.mEnd;
-
-                final Spanned currentText = mText.getCurrentText();
-                final boolean resetSelStart = Selection.getSelectionStart(currentText) == actionEnd;
-                final boolean resetSelEnd = Selection.getSelectionEnd(currentText) == actionEnd;
-
-                mText.currentReplace(actionEnd, delta + oldEnd, text.subSequence(
-                        indexInText + action.mSequence.length(), text.length()));
-
-                
-                
-                
-                if (resetSelStart || resetSelEnd) {
-                    mText.currentSetSelection(
-                            resetSelStart ? actionEnd : Selection.getSelectionStart(currentText),
-                            resetSelEnd ? actionEnd : Selection.getSelectionEnd(currentText));
-                }
-
-                
-                mText.currentReplace(actionStart, actionEnd, action.mSequence);
-
-                
-                
-                
-                
-                
-                
-                
-                mIgnoreSelectionChange = !resetSelStart || !resetSelEnd;
-            }
-
-        } else if (geckoIsSameText(start, oldEnd, text)) {
             
-            
-            
-            mIgnoreSelectionChange = mIgnoreSelectionChange || (action != null &&
-                    (action.mType == Action.TYPE_REPLACE_TEXT ||
-                     action.mType == Action.TYPE_SET_SPAN ||
-                     action.mType == Action.TYPE_REMOVE_SPAN));
-            return;
+            mLastTextChangeReplacedSelection |=
+                (selStart >= start && selStart <= oldEnd) ||
+                (selEnd >= start && selEnd <= oldEnd);
 
-        } else {
             
             
             mText.currentReplace(start, oldEnd, "");
             mText.currentReplace(start, start, text);
 
+            mLastTextChangeStart = start;
+            mLastTextChangeEnd = newEnd;
+
+        } else {
             
             
-            mIgnoreSelectionChange = false;
+            
+            final Action action = mActions.peek();
+            mIgnoreSelectionChange = mIgnoreSelectionChange || (action != null &&
+                    (action.mType == Action.TYPE_REPLACE_TEXT ||
+                     action.mType == Action.TYPE_SET_SPAN ||
+                     action.mType == Action.TYPE_REMOVE_SPAN));
+
+            mLastTextChangeStart = start;
+            mLastTextChangeEnd = newEnd;
         }
 
         
@@ -1790,7 +1783,7 @@ import android.view.inputmethod.EditorInfo;
         } else if (chr == '\n') {
             return "\u21b2";
         }
-        return String.format("%04x", (int) chr);
+        return String.format("\\u%04x", (int) chr);
     }
 
     static StringBuilder debugAppend(StringBuilder sb, Object obj) {
