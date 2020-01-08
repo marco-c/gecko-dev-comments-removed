@@ -162,7 +162,8 @@ MaybeWaitForRecordReplayCheckpointSave(AutoLockHelperThreadState& locked)
 
         
         
-        mozilla::recordreplay::NotifyUnrecordedWait(HelperThread::WakeupAll);
+        mozilla::recordreplay::NotifyUnrecordedWait(HelperThread::WakeupAll,
+                                                     false);
     }
 }
 

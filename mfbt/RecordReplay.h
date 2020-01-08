@@ -263,7 +263,11 @@ static inline bool HasDivergedFromRecording();
 
 
 
-MFBT_API void NotifyUnrecordedWait(const std::function<void()>& aCallback);
+
+
+
+MFBT_API void NotifyUnrecordedWait(const std::function<void()>& aCallback,
+                                   bool aOnlyWhenDiverged);
 MFBT_API void MaybeWaitForCheckpointSave();
 
 

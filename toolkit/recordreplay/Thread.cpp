@@ -389,7 +389,15 @@ Thread::WaitForIdleThreads()
       Thread* thread = GetById(i);
       if (!thread->mIdle) {
         done = false;
-        if (thread->mUnrecordedWaitCallback && !thread->mUnrecordedWaitNotified) {
+
+        
+        
+        
+        
+        
+        if (thread->mUnrecordedWaitCallback && !thread->mUnrecordedWaitNotified &&
+            (!thread->mUnrecordedWaitOnlyWhenDiverged ||
+             thread->WillDivergeFromRecordingSoon())) {
           
           
           
@@ -397,10 +405,11 @@ Thread::WaitForIdleThreads()
           thread->mUnrecordedWaitNotified = true;
 
           
+          std::function<void()> callback = thread->mUnrecordedWaitCallback;
           {
             MonitorAutoUnlock unlock(*gMonitor);
             AutoPassThroughThreadEvents pt;
-            thread->mUnrecordedWaitCallback();
+            callback();
           }
 
           
@@ -438,7 +447,7 @@ Thread::ResumeIdleThreads()
 }
 
 void
-Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback)
+Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback, bool aOnlyWhenDiverged)
 {
   MonitorAutoLock lock(*gMonitor);
   if (mUnrecordedWaitCallback) {
@@ -451,6 +460,7 @@ Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback)
   }
 
   mUnrecordedWaitCallback = aCallback;
+  mUnrecordedWaitOnlyWhenDiverged = aOnlyWhenDiverged;
 
   
   
@@ -472,9 +482,10 @@ Thread::MaybeWaitForCheckpointSave()
 extern "C" {
 
 MOZ_EXPORT void
-RecordReplayInterface_NotifyUnrecordedWait(const std::function<void()>& aCallback)
+RecordReplayInterface_NotifyUnrecordedWait(const std::function<void()>& aCallback,
+                                           bool aOnlyWhenDiverged)
 {
-  Thread::Current()->NotifyUnrecordedWait(aCallback);
+  Thread::Current()->NotifyUnrecordedWait(aCallback, aOnlyWhenDiverged);
 }
 
 MOZ_EXPORT void

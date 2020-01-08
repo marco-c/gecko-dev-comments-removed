@@ -134,6 +134,7 @@ private:
   
   
   std::function<void()> mUnrecordedWaitCallback;
+  bool mUnrecordedWaitOnlyWhenDiverged;
   bool mUnrecordedWaitNotified;
 
 public:
@@ -277,7 +278,8 @@ public:
   static void WaitForeverNoIdle();
 
   
-  void NotifyUnrecordedWait(const std::function<void()>& aCallback);
+  void NotifyUnrecordedWait(const std::function<void()>& aCallback,
+                            bool aOnlyWhenDiverged);
   static void MaybeWaitForCheckpointSave();
 
   
