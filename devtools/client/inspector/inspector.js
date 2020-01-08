@@ -10,7 +10,6 @@
 
 const Services = require("Services");
 const promise = require("promise");
-const flags = require("devtools/shared/flags");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {executeSoon} = require("devtools/shared/DevToolsUtils");
 const {Toolbox} = require("devtools/client/framework/toolbox");
@@ -299,10 +298,7 @@ Inspector.prototype = {
     
     this.setupSidebar();
 
-    if (flags.testing) {
-      await this.once("markuploaded");
-    }
-
+    await this.once("markuploaded");
     this.isReady = true;
 
     
