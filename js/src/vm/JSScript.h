@@ -98,14 +98,33 @@ bool CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum JSTryNoteKind {
   JSTRY_CATCH,
   JSTRY_FINALLY,
   JSTRY_FOR_IN,
+  JSTRY_DESTRUCTURING,
   JSTRY_FOR_OF,
-  JSTRY_LOOP,
   JSTRY_FOR_OF_ITERCLOSE,
-  JSTRY_DESTRUCTURING
+  JSTRY_LOOP
 };
 
 
