@@ -115,8 +115,8 @@ public:
   wr::ExternalImageId GetNextExternalImageId();
 
 private:
-  void ProcessPipelineRendered(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch, const uint64_t aUpdatesCount);
-  void ProcessPipelineRemoved(const wr::PipelineId& aPipelineId, const uint64_t aUpdatesCount);
+  void ProcessPipelineRendered(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch);
+  void ProcessPipelineRemoved(const wr::PipelineId& aPipelineId);
 
   wr::Epoch GetNextImageEpoch();
   uint32_t GetNextResourceId() { return ++mResourceId; }
@@ -216,13 +216,8 @@ private:
                              TextureHost::ResourceUpdateOp,
                              wr::TransactionBuilder& aTxn);
 
-  
-  void HoldUntilNotUsedByGPU(const CompositableTextureHostRef& aTextureHost, uint64_t aUpdatesCount);
-  void CheckForTextureHostsNotUsedByGPU();
-
   RefPtr<wr::WebRenderAPI> mApi;
-  const wr::IdNamespace mIdNamespace;
-  const bool mUseTripleBuffering;
+  wr::IdNamespace mIdNamespace;
   uint32_t mResourceId;
 
   nsClassHashtable<nsUint64HashKey, PipelineTexturesHolder> mPipelineTexturesHolders;
@@ -252,6 +247,8 @@ private:
     {}
     bool NeedsToWait(const uint64_t aUpdatesCount) {
       MOZ_ASSERT(mUpdatesCount <= aUpdatesCount);
+      
+      
       if (mUpdatesCount == aUpdatesCount && !mRendered) {
         
         return true;
@@ -268,9 +265,6 @@ private:
     std::queue<std::pair<wr::PipelineId, Maybe<wr::Epoch>>> mQueue;
   };
   std::queue<UniquePtr<PipelineUpdates>> mUpdatesQueues;
-
-  
-  std::queue<std::pair<uint64_t, CompositableTextureHostRef>> mTexturesInUseByGPU;
 };
 
 } 
