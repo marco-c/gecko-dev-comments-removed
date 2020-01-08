@@ -79,7 +79,9 @@ add_task(async function test_getTopWindow() {
 
 add_task(async function test_orderedWindows() {
   await withOpenWindows(10, async function(windows) {
-    let ordered = [...BrowserWindowTracker.orderedWindows].filter(w => w != TEST_WINDOW);
+    Assert.equal(BrowserWindowTracker.windowCount, 11,
+      "Number of tracked windows, including the test window");
+    let ordered = BrowserWindowTracker.orderedWindows.filter(w => w != TEST_WINDOW);
     Assert.deepEqual([9, 8, 7, 6, 5, 4, 3, 2, 1, 0], ordered.map(w => windows.indexOf(w)),
       "Order of opened windows should be as opened.");
 
@@ -90,7 +92,7 @@ add_task(async function test_orderedWindows() {
       await promise;
     }
 
-    let ordered2 = [...BrowserWindowTracker.orderedWindows].filter(w => w != TEST_WINDOW);
+    let ordered2 = BrowserWindowTracker.orderedWindows.filter(w => w != TEST_WINDOW);
     
     
     
@@ -104,7 +106,7 @@ add_task(async function test_orderedWindows() {
     windows[9].minimize();
     await promise;
 
-    let ordered3 = [...BrowserWindowTracker.orderedWindows].filter(w => w != TEST_WINDOW);
+    let ordered3 = BrowserWindowTracker.orderedWindows.filter(w => w != TEST_WINDOW);
     
     
     Assert.deepEqual([8, 7, 5, 3, 2, 0, 9], ordered3.map(w => windows.indexOf(w)).slice(3),

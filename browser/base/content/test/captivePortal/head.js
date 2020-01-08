@@ -60,7 +60,9 @@ async function focusWindowAndWaitForPortalUI(aLongRecheck, win) {
   if (!win) {
     win = await BrowserTestUtils.openNewBrowserWindow();
   }
-  await SimpleTest.promiseFocus(win);
+  let windowActivePromise = waitForBrowserWindowActive(win);
+  win.focus();
+  await windowActivePromise;
 
   
   
@@ -135,19 +137,28 @@ function ensureNoPortalNotification(win) {
 
 
 
-function waitForXulWindowVisible() {
+function waitForBrowserWindowActive(win) {
   return new Promise(resolve => {
-    Services.obs.addObserver(function observe() {
-      Services.obs.removeObserver(observe, "xul-window-visible");
+    if (Services.focus.activeWindow == win) {
       resolve();
-    }, "xul-window-visible");
+    } else {
+      win.addEventListener("activate", () => {
+        resolve();
+      }, { once: true });
+    }
   });
 }
 
-async function closeWindowAndWaitForXulWindowVisible(win) {
-  let p = waitForXulWindowVisible();
+async function closeWindowAndWaitForWindowActivate(win) {
+  let activationPromises = [];
+  for (let w of BrowserWindowTracker.orderedWindows) {
+    if (w != win &&
+        !win.document.documentElement.getAttribute("ignorecaptiveportal")) {
+      activationPromises.push(waitForBrowserWindowActive(win));
+    }
+  }
   await BrowserTestUtils.closeWindow(win);
-  await p;
+  await Promise.race(activationPromises);
 }
 
 
@@ -157,6 +168,6 @@ async function closeWindowAndWaitForXulWindowVisible(win) {
 
 async function openWindowAndWaitForFocus() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  await SimpleTest.promiseFocus(win);
+  await waitForBrowserWindowActive(win);
   return win;
 }

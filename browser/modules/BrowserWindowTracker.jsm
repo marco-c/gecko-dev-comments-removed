@@ -14,7 +14,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
 
@@ -145,44 +144,6 @@ var WindowHelper = {
       _trackedWindows.push(window);
     }
   },
-
-  getTopWindow(options) {
-    let checkPrivacy = typeof options == "object" &&
-                       "private" in options;
-
-    let allowPopups = typeof options == "object" && !!options.allowPopups;
-
-    function isSuitableBrowserWindow(win) {
-      return (!win.closed &&
-              (allowPopups || win.toolbar.visible) &&
-              (!checkPrivacy ||
-               PrivateBrowsingUtils.permanentPrivateBrowsing ||
-               PrivateBrowsingUtils.isWindowPrivate(win) == options.private));
-    }
-
-    let broken_wm_z_order =
-      AppConstants.platform != "macosx" && AppConstants.platform != "win";
-
-    if (broken_wm_z_order) {
-      let win = Services.wm.getMostRecentWindow("navigator:browser");
-
-      
-      if (win && !isSuitableBrowserWindow(win)) {
-        win = null;
-        
-        for (let nextWin of Services.wm.getEnumerator("navigator:browser")) {
-          if (isSuitableBrowserWindow(nextWin))
-            win = nextWin;
-        }
-      }
-      return win;
-    }
-    for (let win of Services.wm.getZOrderDOMWindowEnumerator("navigator:browser", true)) {
-      if (isSuitableBrowserWindow(win))
-        return win;
-    }
-    return null;
-  },
 };
 
 this.BrowserWindowTracker = {
@@ -195,23 +156,34 @@ this.BrowserWindowTracker = {
 
 
 
-  getTopWindow(options) {
-    return WindowHelper.getTopWindow(options);
+  getTopWindow(options = {}) {
+    for (let win of _trackedWindows) {
+      if (!win.closed &&
+          (options.allowPopups || win.toolbar.visible) &&
+          (!("private" in options) ||
+           PrivateBrowsingUtils.permanentPrivateBrowsing ||
+           PrivateBrowsingUtils.isWindowPrivate(win) == options.private)) {
+        return win;
+      }
+    }
+    return null;
+  },
+
+  
+
+
+  get windowCount() {
+    return _trackedWindows.length;
   },
 
   
 
 
 
-
-
-  orderedWindows: {
-    * [Symbol.iterator]() {
-      
-      
-      for (let window of [..._trackedWindows])
-        yield window;
-    },
+  get orderedWindows() {
+    
+    
+    return [..._trackedWindows];
   },
 
   track(window) {
