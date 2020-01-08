@@ -1475,8 +1475,7 @@ class JSTerm extends Component {
     
     
     
-    if (this.props.hud.isBrowserConsole &&
-        Services.prefs.getBoolPref("devtools.browserconsole.html")) {
+    if (this.props.hud.isBrowserConsole) {
       this.props.serviceContainer.openEditContextMenu(e);
     }
   }

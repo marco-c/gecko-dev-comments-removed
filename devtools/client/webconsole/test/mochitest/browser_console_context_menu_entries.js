@@ -12,7 +12,6 @@ add_task(async function() {
   
   await pushPref("devtools.browserconsole.filter.net", true);
   
-  await pushPref("devtools.browserconsole.html", true);
   await pushPref("devtools.chrome.enabled", true);
 
   await addTab(TEST_URI);
