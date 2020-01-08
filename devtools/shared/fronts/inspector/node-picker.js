@@ -100,8 +100,8 @@ class NodePicker extends EventEmitter {
 
 
   async cancel() {
-    this.emit("picker-node-canceled");
     await this.stop();
+    this.emit("picker-node-canceled");
   }
 
   
