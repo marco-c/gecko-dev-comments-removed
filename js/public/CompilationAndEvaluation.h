@@ -8,6 +8,8 @@
 #ifndef js_CompilationAndEvaluation_h
 #define js_CompilationAndEvaluation_h
 
+#include "mozilla/Utf8.h" 
+
 #include <stddef.h> 
 #include <stdio.h> 
 
@@ -155,6 +157,22 @@ EvaluateUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
 extern JS_PUBLIC_API bool
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
         SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool
+CompileDontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
+                   SourceText<mozilla::Utf8Unit>& srcBuf,
+                   MutableHandle<JSScript*> script);
 
 
 
