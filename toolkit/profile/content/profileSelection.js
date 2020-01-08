@@ -98,6 +98,8 @@ function acceptDialog() {
   updateStartupPrefs();
 
   gDialogParams.SetInt(0, 1);
+  
+  gDialogParams.SetInt(1, document.getElementById("offlineState").checked ? 1 : 0);
 
   gDialogParams.SetString(0, selectedProfile.profile.name);
 
@@ -113,9 +115,6 @@ function exitDialog() {
 function updateStartupPrefs() {
   var autoSelectLastProfile = document.getElementById("autoSelectLastProfile");
   gProfileService.startWithLastProfile = autoSelectLastProfile.checked;
-
-  
-  gProfileService.startOffline = document.getElementById("offlineState").checked;
 }
 
 
