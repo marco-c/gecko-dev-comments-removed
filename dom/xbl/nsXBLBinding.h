@@ -25,7 +25,6 @@ struct RawServoAuthorStyles;
 namespace mozilla {
 namespace dom {
 
-class ShadowRoot;
 class XBLChildrenElement;
 
 } 
@@ -40,7 +39,6 @@ class nsXBLBinding final
 {
 public:
   explicit nsXBLBinding(nsXBLPrototypeBinding* aProtoBinding);
-  nsXBLBinding(mozilla::dom::ShadowRoot* aShadowRoot, nsXBLPrototypeBinding* aProtoBinding);
 
   
 
@@ -165,7 +163,6 @@ protected:
 
   bool mMarkedForDeath;
   bool mUsingContentXBLScope;
-  bool mIsShadowRootBinding;
 
   nsXBLPrototypeBinding* mPrototypeBinding; 
   nsCOMPtr<nsIContent> mContent; 

@@ -52,7 +52,6 @@
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/ShadowRoot.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -104,7 +103,6 @@ static const JSClass gPrototypeJSClass = {
 nsXBLBinding::nsXBLBinding(nsXBLPrototypeBinding* aBinding)
   : mMarkedForDeath(false)
   , mUsingContentXBLScope(false)
-  , mIsShadowRootBinding(false)
   , mPrototypeBinding(aBinding)
   , mBoundElement(nullptr)
 {
@@ -113,26 +111,9 @@ nsXBLBinding::nsXBLBinding(nsXBLPrototypeBinding* aBinding)
   NS_ADDREF(mPrototypeBinding->XBLDocumentInfo());
 }
 
-
-nsXBLBinding::nsXBLBinding(ShadowRoot* aShadowRoot, nsXBLPrototypeBinding* aBinding)
-  : mMarkedForDeath(false),
-    mUsingContentXBLScope(false),
-    mIsShadowRootBinding(true),
-    mPrototypeBinding(aBinding),
-    mContent(aShadowRoot),
-    mBoundElement(nullptr)
+nsXBLBinding::~nsXBLBinding()
 {
-  NS_ASSERTION(mPrototypeBinding, "Must have a prototype binding!");
-  
-  NS_ADDREF(mPrototypeBinding->XBLDocumentInfo());
-}
-
-nsXBLBinding::~nsXBLBinding(void)
-{
-  if (mContent && !mIsShadowRootBinding) {
-    
-    
-    
+  if (mContent) {
     nsXBLBinding::UnbindAnonymousContent(mContent->OwnerDoc(), mContent);
   }
   nsXBLDocumentInfo* info = mPrototypeBinding->XBLDocumentInfo();
@@ -144,7 +125,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(nsXBLBinding)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsXBLBinding)
   
   
-  if (tmp->mContent && !tmp->mIsShadowRootBinding) {
+  if (tmp->mContent) {
     nsXBLBinding::UnbindAnonymousContent(tmp->mContent->OwnerDoc(),
                                          tmp->mContent);
   }
@@ -417,8 +398,6 @@ nsXBLBinding::GenerateAnonymousContent()
       }
     }
 
-    
-    
     
     
     
@@ -802,7 +781,7 @@ nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocumen
 
     
     
-    if (mContent && !mIsShadowRootBinding) {
+    if (mContent) {
       nsXBLBinding::UnbindAnonymousContent(aOldDocument, mContent);
     }
 
