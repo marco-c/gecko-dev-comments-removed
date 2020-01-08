@@ -447,7 +447,6 @@ nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue,
     return nullptr;
   }
 
-  
   RefPtr<nsThread> thread = new nsThread(WrapNotNull(aQueue), aMainThread, 0);
   if (!thread || NS_FAILED(thread->InitCurrentThread())) {
     return nullptr;
@@ -470,9 +469,11 @@ nsThreadManager::GetCurrentThread()
   }
 
   
-  RefPtr<ThreadEventQueue<EventQueue>> queue =
-    new ThreadEventQueue<EventQueue>(MakeUnique<EventQueue>());
-  RefPtr<nsThread> thread = new nsThread(WrapNotNull(queue), nsThread::NOT_MAIN_THREAD, 0);
+  
+  
+  
+  
+  RefPtr<nsThread> thread = new nsThread();
   if (!thread || NS_FAILED(thread->InitCurrentThread())) {
     return nullptr;
   }
@@ -487,7 +488,7 @@ nsThreadManager::IsNSThread() const
     return false;
   }
   if (auto* thread = (nsThread*)PR_GetThreadPrivate(mCurThreadIndex)) {
-    return thread->mShutdownRequired;
+    return thread->EventQueue();
   }
   return false;
 }

@@ -25,10 +25,6 @@ typedef struct tagTHREADNAME_INFO {
 } THREADNAME_INFO;
 
 DWORD __stdcall ThreadFunc(void* closure) {
-  
-  
-  (void) NS_GetCurrentThread();
-
   PlatformThread::Delegate* delegate =
       static_cast<PlatformThread::Delegate*>(closure);
   delegate->ThreadMain();
