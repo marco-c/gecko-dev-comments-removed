@@ -60,40 +60,21 @@ function startupAddonsManager() {
   internalManager.observe(null, "addons-startup", null);
 }
 
-
-
-
-
-
-
-async function createTabMemoryFront() {
-  const client = await startTestDebuggerServer("test_MemoryActor");
-
-  
-  
-  
-  DebuggerServer.registerActors({ browser: true });
+async function createTargetForFakeTab(title) {
+  const client = await startTestDebuggerServer(title);
 
   const { tabs } = await listTabs(client);
-  const tab = findTab(tabs, "test_MemoryActor");
+  const tab = findTab(tabs, title);
   const options = {
     form: tab,
     client,
     chrome: false,
   };
   const target = await TargetFactory.forRemoteTab(options);
-
-  const memoryFront = await target.getFront("memory");
-  await memoryFront.attach();
-
-  return { client, memoryFront };
+  return target;
 }
 
-
-
-
-
-async function createFullRuntimeMemoryFront() {
+async function createTargetForMainProcess() {
   DebuggerServer.init();
   DebuggerServer.registerAllActors();
   DebuggerServer.allowChromeProcess = true;
@@ -108,11 +89,94 @@ async function createFullRuntimeMemoryFront() {
     chrome: true,
   };
   const target = await TargetFactory.forRemoteTab(options);
+  return target;
+}
+
+
+
+
+async function createTabMemoryFront() {
+  const target = await createTargetForFakeTab("test_memory");
+
+  
+  
+  
+  DebuggerServer.registerActors({ browser: true });
 
   const memoryFront = await target.getFront("memory");
   await memoryFront.attach();
 
-  return { client, memoryFront };
+  registerCleanupFunction(async () => {
+    await memoryFront.detach();
+
+    
+    
+    await target.client.close();
+  });
+
+  return { target, memoryFront };
+}
+
+
+
+
+async function createTabPromisesFront() {
+  const title = "test_promises";
+  const target = await createTargetForFakeTab(title);
+
+  
+  const debuggee = DebuggerServer.getTestGlobal(title);
+
+  const promisesFront = await target.getFront("promises");
+
+  registerCleanupFunction(async () => {
+    
+    
+    await target.client.close();
+  });
+
+  return { debuggee, client: target.client, promisesFront };
+}
+
+
+
+
+async function createMainProcessPromisesFront() {
+  const target = await createTargetForMainProcess();
+
+  const promisesFront = await target.getFront("promises");
+
+  registerCleanupFunction(async () => {
+    
+    
+    
+    
+    await target.client.close();
+  });
+
+  return { client: target.client, promisesFront };
+}
+
+
+
+
+
+async function createMainProcessMemoryFront() {
+  const target = await createTargetForMainProcess();
+
+  const memoryFront = await target.getFront("memory");
+  await memoryFront.attach();
+
+  registerCleanupFunction(async () => {
+    await memoryFront.detach();
+    
+    
+    
+    
+    await target.client.close();
+  });
+
+  return { client: target.client, memoryFront };
 }
 
 function createTestGlobal(name) {
@@ -401,11 +465,6 @@ async function finishClient(client) {
   await client.close();
   DebuggerServer.destroy();
   do_test_finished();
-}
-
-function getParentProcessActors(client, server = DebuggerServer) {
-  server.allowChromeProcess = true;
-  return client.mainRoot.getMainProcess().then(response => response.targetForm);
 }
 
 
