@@ -1260,6 +1260,14 @@ TabChild::RecvShow(const ScreenIntSize& aSize,
   if (!res) {
     return IPC_FAIL_NO_REASON(this);
   }
+
+  
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::child::MaybeCreateInitialCheckpoint();
+  }
+
   return IPC_OK();
 }
 

@@ -20,6 +20,9 @@ namespace recordreplay {
 
 
 
+
+
+
 namespace navigation {
 
 
@@ -69,13 +72,11 @@ void AfterCheckpoint(const CheckpointId& aCheckpoint);
 
 } 
 
-
 namespace child {
 
+
 void RespondToRequest(const js::CharBuffer& aBuffer);
-
 void HitCheckpoint(size_t aId, bool aRecordingEndpoint);
-
 void HitBreakpoint(bool aRecordingEndpoint, const uint32_t* aBreakpoints, size_t aNumBreakpoints);
 
 
@@ -98,6 +99,19 @@ void ReportFatalError(const Maybe<MinidumpInfo>& aMinidumpInfo,
 
 
 extern Monitor* gMonitor;
+
+
+void NotifyFlushedRecording();
+
+
+void NotifyAlwaysMarkMajorCheckpoints();
+
+
+void ReportFatalError(const char* aFormat, ...);
+
+
+void BeginIdleTime();
+void EndIdleTime();
 
 } 
 

@@ -309,6 +309,12 @@ ParentProcessId()
 }
 
 void
+MaybeCreateInitialCheckpoint()
+{
+  NewCheckpoint( false);
+}
+
+void
 ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat, ...)
 {
   

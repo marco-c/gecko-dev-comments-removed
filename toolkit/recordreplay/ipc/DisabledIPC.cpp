@@ -18,6 +18,8 @@ namespace child {
 void
 InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
 {
+  
+  
 }
 
 char*
@@ -38,6 +40,11 @@ ParentProcessId()
   MOZ_CRASH();
 }
 
+void MaybeCreateInitialCheckpoint()
+{
+  MOZ_CRASH();
+}
+
 void
 SetVsyncObserver(VsyncObserver* aObserver)
 {
@@ -46,12 +53,6 @@ SetVsyncObserver(VsyncObserver* aObserver)
 
 void
 NotifyVsyncObserver()
-{
-  MOZ_CRASH();
-}
-
-void
-NotifyPaint()
 {
   MOZ_CRASH();
 }
@@ -80,30 +81,6 @@ DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize)
   MOZ_CRASH();
 }
 
-void
-NotifyFlushedRecording()
-{
-  MOZ_CRASH();
-}
-
-void
-NotifyAlwaysMarkMajorCheckpoints()
-{
-  MOZ_CRASH();
-}
-
-void
-BeginIdleTime()
-{
-  MOZ_CRASH();
-}
-
-void
-EndIdleTime()
-{
-  MOZ_CRASH();
-}
-
 } 
 
 namespace parent {
@@ -111,11 +88,15 @@ namespace parent {
 void
 InitializeUIProcess(int aArgc, char** aArgv)
 {
+  
+  
 }
 
 const char*
 SaveAllRecordingsDirectory()
 {
+  
+  
   return nullptr;
 }
 

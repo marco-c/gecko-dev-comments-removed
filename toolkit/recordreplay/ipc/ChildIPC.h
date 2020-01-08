@@ -23,46 +23,47 @@ namespace child {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv);
+
 
 base::ProcessId MiddlemanProcessId();
 base::ProcessId ParentProcessId();
 
+
+void MaybeCreateInitialCheckpoint();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void SetVsyncObserver(VsyncObserver* aObserver);
 void NotifyVsyncObserver();
 
-void NotifyPaint();
+
+
+
+
+
+
+
 void NotifyPaintStart();
-void NotifyPaintComplete();
 void WaitForPaintToComplete();
+void NotifyPaintComplete();
+
 
 already_AddRefed<gfx::DrawTarget> DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize);
-
-
-void NotifyFlushedRecording();
-
-
-void NotifyAlwaysMarkMajorCheckpoints();
-
-
-void BeginIdleTime();
-void EndIdleTime();
 
 } 
 } 
