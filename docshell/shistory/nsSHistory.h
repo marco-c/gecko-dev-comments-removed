@@ -134,7 +134,6 @@ private:
   virtual ~nsSHistory();
   friend class nsSHistoryObserver;
 
-  nsresult GetTransactionAtIndex(int32_t aIndex, nsISHTransaction** aResult);
   nsresult LoadDifferingEntries(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
                                 nsIDocShell* aRootDocShell, long aLoadType,
                                 bool& aDifferenceFound);
@@ -175,10 +174,12 @@ private:
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  nsCOMPtr<nsISHTransaction> mListRoot;
-  int32_t mIndex;
-  int32_t mLength;
-  int32_t mRequestedIndex;
+  nsTArray<nsCOMPtr<nsISHTransaction>> mTransactions;
+  int32_t mIndex;           
+  int32_t mRequestedIndex;  
+
+  
+  int32_t Length() { return int32_t(mTransactions.Length()); }
 
   
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;

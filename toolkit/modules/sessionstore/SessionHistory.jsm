@@ -83,8 +83,11 @@ var SessionHistoryInternal = {
     if (history && history.count > 0) {
       
       
-      for (let txn = history.legacySHistory.QueryInterface(Ci.nsISHistoryInternal).rootTransaction;
-           txn; entryCount++, txn = txn.next) {
+      let shistory = history.legacySHistory.QueryInterface(Ci.nsISHistory);
+      let shistoryInternal = history.legacySHistory.QueryInterface(Ci.nsISHistoryInternal);
+      let count = shistory.count;
+      for ( ; entryCount < count; entryCount++) {
+        let txn = shistoryInternal.GetTransactionAtIndex(entryCount);
         if (entryCount <= aFromIdx) {
           skippedCount++;
           continue;
