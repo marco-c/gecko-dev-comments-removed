@@ -7,6 +7,7 @@
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 
 const AUTOINCREMENT_DELAY = 300;
@@ -40,10 +41,14 @@ class FontPropertyValue extends PureComponent {
     };
 
     this.autoIncrement = this.autoIncrement.bind(this);
+    this.onBlur = this.onBlur.bind(this);
     this.onChange = this.onChange.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onUnitChange = this.onUnitChange.bind(this);
+    this.stopAutoIncrement = this.stopAutoIncrement.bind(this);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -79,6 +84,10 @@ class FontPropertyValue extends PureComponent {
     return value >= Math.floor(this.props.max);
   }
 
+  onBlur() {
+    this.toggleInteractiveState(false);
+  }
+
   
 
 
@@ -102,6 +111,49 @@ class FontPropertyValue extends PureComponent {
     }
   }
 
+  
+
+
+
+
+
+
+
+  onKeyDown(e) {
+    const inputType = e.target.type;
+
+    if ([
+      KeyCodes.DOM_VK_UP,
+      KeyCodes.DOM_VK_DOWN,
+      KeyCodes.DOM_VK_RIGHT,
+      KeyCodes.DOM_VK_LEFT
+    ].includes(e.keyCode)) {
+      this.toggleInteractiveState(true);
+    }
+
+    
+    
+    if (this.isAtUpperBound(this.props.value)) {
+      if ((inputType === "range" &&
+            e.keyCode === KeyCodes.DOM_VK_UP || e.keyCode === KeyCodes.DOM_VK_RIGHT) ||
+          (inputType === "number" &&
+            e.keyCode === KeyCodes.DOM_VK_UP)) {
+        this.startAutoIncrement();
+      }
+    }
+  }
+
+  onKeyUp(e) {
+    if ([
+      KeyCodes.DOM_VK_UP,
+      KeyCodes.DOM_VK_DOWN,
+      KeyCodes.DOM_VK_RIGHT,
+      KeyCodes.DOM_VK_LEFT
+    ].includes(e.keyCode)) {
+      this.toggleInteractiveState(false);
+    }
+  }
+
   onUnitChange(e) {
     this.props.onChange(this.props.name, this.props.value, this.props.unit,
        e.target.value);
@@ -114,16 +166,24 @@ class FontPropertyValue extends PureComponent {
     });
   }
 
+  
+
+
+
+
+
+
+
   onMouseDown(e) {
-    this.setState((prevState, props) => {
-      return { ...prevState, interactive: true, value: props.value };
-    });
+    
+    if (this.isAtUpperBound(this.props.value) && e.target.type === "range") {
+      this.startAutoIncrement();
+    }
+    this.toggleInteractiveState(true);
   }
 
   onMouseUp(e) {
-    this.setState((prevState, props) => {
-      return { ...prevState, interactive: false, value: props.value };
-    });
+    this.toggleInteractiveState(false);
   }
 
   startAutoIncrement() {
@@ -184,9 +244,10 @@ class FontPropertyValue extends PureComponent {
     const defaults = {
       min: this.props.min,
       max: this.props.max,
+      onBlur: this.onBlur,
       onChange: this.onChange,
-      onMouseDown: this.onMouseDown,
-      onMouseUp: this.onMouseUp,
+      onKeyUp: this.onKeyUp,
+      onKeyDown: this.onKeyDown,
       step: this.props.step || 1,
       
       
@@ -198,6 +259,8 @@ class FontPropertyValue extends PureComponent {
     const range = dom.input(
       {
         ...defaults,
+        onMouseDown: this.onMouseDown,
+        onMouseUp: this.onMouseUp,
         className: "font-value-slider",
         name: this.props.name,
         title: this.props.label,
