@@ -3182,6 +3182,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->Check();
     BuildDisplayList(aBuilder, set);
     aBuilder->Check();
+    aBuilder->DisplayCaret(this, set.Content());
 
     
     
@@ -3856,7 +3857,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
     child->BuildDisplayListForStackingContext(aBuilder, &list, &canSkipWrapList);
     wrapListASR = contASRTracker.GetContainerASR();
-    if (aBuilder->DisplayCaret(child, &list)) {
+    if (aBuilder->GetCaretFrame() == child) {
       canSkipWrapList = false;
     }
   } else {
