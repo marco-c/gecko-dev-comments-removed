@@ -1275,7 +1275,7 @@ protected:
    
 
     
-    void AddPlatformFont(const nsAString& aName,
+    void AddPlatformFont(const nsACString& aName,
                          nsTArray<FamilyAndGeneric>& aFamilyList);
 
     

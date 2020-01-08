@@ -17,7 +17,7 @@ typedef mozilla::gfx::FontVariation gfxFontVariation;
 
 struct gfxFontVariationAxis {
     uint32_t mTag;
-    nsString mName; 
+    nsCString mName; 
     float    mMinValue;
     float    mMaxValue;
     float    mDefaultValue;
@@ -34,7 +34,7 @@ struct gfxFontVariationValue {
 
 
 struct gfxFontVariationInstance {
-    nsString mName;
+    nsCString mName;
     nsTArray<gfxFontVariationValue> mValues;
 };
 

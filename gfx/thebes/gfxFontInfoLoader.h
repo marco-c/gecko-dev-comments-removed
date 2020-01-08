@@ -30,8 +30,8 @@ struct FontFaceData {
         mUVSOffset = aFontFaceData.mUVSOffset;
     }
 
-    nsString mFullName;
-    nsString mPostscriptName;
+    nsCString mFullName;
+    nsCString mPostscriptName;
     RefPtr<gfxCharacterMap> mCharacterMap;
     uint32_t mUVSOffset;
 };
@@ -51,7 +51,6 @@ public:
                  bool aLoadFaceNames,
                  bool aLoadCmaps) :
         mCanceled(false),
-        mLoadStats(),
         mLoadOtherNames(aLoadOtherNames),
         mLoadFaceNames(aLoadFaceNames),
         mLoadCmaps(aLoadCmaps)
@@ -70,13 +69,13 @@ public:
 
     
     
-    virtual void LoadFontFamilyData(const nsAString& aFamilyName) = 0;
+    virtual void LoadFontFamilyData(const nsACString& aFamilyName) = 0;
 
     
 
     
     virtual already_AddRefed<gfxCharacterMap>
-    GetCMAP(const nsAString& aFontName,
+    GetCMAP(const nsACString& aFontName,
             uint32_t& aUVSOffset)
     {
         FontFaceData faceData;
@@ -91,9 +90,9 @@ public:
     }
 
     
-    virtual void GetFaceNames(const nsAString& aFontName,
-                              nsAString& aFullName,
-                              nsAString& aPostscriptName)
+    virtual void GetFaceNames(const nsACString& aFontName,
+                              nsACString& aFullName,
+                              nsACString& aPostscriptName)
     {
         FontFaceData faceData;
         if (!mFontFaceData.Get(aFontName, &faceData)) {
@@ -105,13 +104,13 @@ public:
     }
 
     
-    virtual bool GetOtherFamilyNames(const nsAString& aFamilyName,
-                                     nsTArray<nsString>& aOtherFamilyNames)
+    virtual bool GetOtherFamilyNames(const nsACString& aFamilyName,
+                                     nsTArray<nsCString>& aOtherFamilyNames)
     {
         return mOtherFamilyNames.Get(aFamilyName, &aOtherFamilyNames); 
     }
 
-    nsTArray<nsString> mFontFamiliesToLoad;
+    nsTArray<nsCString> mFontFamiliesToLoad;
 
     
     
@@ -135,10 +134,10 @@ public:
     bool mLoadCmaps;
 
     
-    nsDataHashtable<nsStringHashKey, FontFaceData> mFontFaceData;
+    nsDataHashtable<nsCStringHashKey, FontFaceData> mFontFaceData;
 
     
-    nsDataHashtable<nsStringHashKey, nsTArray<nsString> > mOtherFamilyNames;
+    nsDataHashtable<nsCStringHashKey, nsTArray<nsCString> > mOtherFamilyNames;
 };
 
 

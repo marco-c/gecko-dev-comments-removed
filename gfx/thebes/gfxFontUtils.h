@@ -829,18 +829,18 @@ public:
     
     static nsresult
     GetFullNameFromSFNT(const uint8_t* aFontData, uint32_t aLength,
-                        nsAString& aFullName);
+                        nsACString& aFullName);
 
     
     
     static nsresult
     GetFullNameFromTable(hb_blob_t *aNameTable,
-                         nsAString& aFullName);
+                         nsACString& aFullName);
 
     
     static nsresult
     GetFamilyNameFromTable(hb_blob_t *aNameTable,
-                           nsAString& aFamilyName);
+                           nsACString& aFamilyName);
 
     
     
@@ -865,17 +865,17 @@ public:
     
     static nsresult
     ReadNames(const char *aNameData, uint32_t aDataLen, uint32_t aNameID,
-              int32_t aPlatformID, nsTArray<nsString>& aNames);
+              int32_t aPlatformID, nsTArray<nsCString>& aNames);
 
     
     
     static nsresult
     ReadCanonicalName(hb_blob_t *aNameTable, uint32_t aNameID,
-                      nsString& aName);
+                      nsCString& aName);
 
     static nsresult
     ReadCanonicalName(const char *aNameData, uint32_t aDataLen,
-                      uint32_t aNameID, nsString& aName);
+                      uint32_t aNameID, nsCString& aName);
 
     
     
@@ -883,7 +883,7 @@ public:
     static bool
     DecodeFontName(const char *aBuf, int32_t aLength, 
                    uint32_t aPlatformCode, uint32_t aScriptCode,
-                   uint32_t aLangCode, nsAString& dest);
+                   uint32_t aLangCode, nsACString& dest);
 
     static inline bool IsJoinCauser(uint32_t ch) {
         return (ch == 0x200D);
@@ -999,7 +999,7 @@ protected:
 
     static nsresult
     ReadNames(const char *aNameData, uint32_t aDataLen, uint32_t aNameID,
-              int32_t aLangID, int32_t aPlatformID, nsTArray<nsString>& aNames);
+              int32_t aLangID, int32_t aPlatformID, nsTArray<nsCString>& aNames);
 
     
     

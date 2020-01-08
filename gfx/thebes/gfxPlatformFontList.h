@@ -165,22 +165,22 @@ public:
     
     
     virtual bool
-    FindAndAddFamilies(const nsAString& aFamily,
+    FindAndAddFamilies(const nsACString& aFamily,
                        nsTArray<FamilyAndGeneric>* aOutput,
                        FindFamiliesFlags aFlags,
                        gfxFontStyle* aStyle = nullptr,
                        gfxFloat aDevToCssSize = 1.0);
 
-    gfxFontEntry* FindFontForFamily(const nsAString& aFamily,
+    gfxFontEntry* FindFontForFamily(const nsACString& aFamily,
                                     const gfxFontStyle* aStyle);
 
     
 
-    void AddOtherFamilyName(gfxFontFamily *aFamilyEntry, nsAString& aOtherFamilyName);
+    void AddOtherFamilyName(gfxFontFamily *aFamilyEntry, nsCString& aOtherFamilyName);
 
-    void AddFullname(gfxFontEntry *aFontEntry, nsAString& aFullname);
+    void AddFullname(gfxFontEntry *aFontEntry, const nsCString& aFullname);
 
-    void AddPostscriptName(gfxFontEntry *aFontEntry, nsAString& aPostscriptName);
+    void AddPostscriptName(gfxFontEntry *aFontEntry, const nsCString& aPostscriptName);
 
     bool NeedFullnamePostscriptNames() { return mExtraNames != nullptr; }
 
@@ -196,7 +196,7 @@ public:
 
 
 
-    virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
+    virtual gfxFontEntry* LookupLocalFont(const nsACString& aFontName,
                                           WeightRange aWeightForEntry,
                                           StretchRange aStretchForEntry,
                                           SlantStyleRange aStyleForEntry) = 0;
@@ -212,7 +212,7 @@ public:
 
 
 
-    virtual gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
+    virtual gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
                                            WeightRange aWeightForEntry,
                                            StretchRange aStretchForEntry,
                                            SlantStyleRange aStyleForEntry,
@@ -221,7 +221,7 @@ public:
 
     
     
-    virtual bool GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName);
+    virtual bool GetStandardFamilyName(const nsCString& aFontName, nsACString& aFamilyName);
 
     
     
@@ -302,7 +302,7 @@ public:
 
     static void FontWhitelistPrefChanged(const char *aPref, void *aClosure);
 
-    bool AddWithLegacyFamilyName(const nsAString& aLegacyName,
+    bool AddWithLegacyFamilyName(const nsACString& aLegacyName,
                                  gfxFontEntry* aFontEntry);
 
     static const char* GetGenericName(mozilla::FontFamilyType aGenericType);
@@ -403,7 +403,7 @@ protected:
     
     
     gfxFontFamily*
-    FindFamily(const nsAString& aFamily,
+    FindFamily(const nsACString& aFamily,
                FindFamiliesFlags aFlags = FindFamiliesFlags(0),
                gfxFontStyle* aStyle = nullptr,
                gfxFloat aDevToCssSize = 1.0)
@@ -419,8 +419,8 @@ protected:
 
     
     
-    gfxFontFamily* FindFamilyByCanonicalName(const nsAString& aFamily) {
-        nsAutoString key;
+    gfxFontFamily* FindFamilyByCanonicalName(const nsACString& aFamily) {
+        nsAutoCString key;
         gfxFontFamily *familyEntry;
         GenerateFontListKey(aFamily, key);
         if ((familyEntry = mFontFamilies.GetWeak(key))) {
@@ -472,14 +472,14 @@ protected:
     
     
     
-    gfxFontEntry* SearchFamiliesForFaceName(const nsAString& aFaceName);
+    gfxFontEntry* SearchFamiliesForFaceName(const nsACString& aFaceName);
 
     
-    gfxFontEntry* FindFaceName(const nsAString& aFaceName);
+    gfxFontEntry* FindFaceName(const nsACString& aFaceName);
 
     
     
-    virtual gfxFontEntry* LookupInFaceNameLists(const nsAString& aFontName);
+    virtual gfxFontEntry* LookupInFaceNameLists(const nsACString& aFontName);
 
     
     virtual void PreloadNamesList();
@@ -488,8 +488,9 @@ protected:
     void LoadBadUnderlineList();
 
     void GenerateFontListKey(const nsAString& aKeyName, nsAString& aResult);
+    void GenerateFontListKey(const nsACString& aKeyName, nsACString& aResult);
 
-    virtual void GetFontFamilyNames(nsTArray<nsString>& aFontFamilyNames);
+    virtual void GetFontFamilyNames(nsTArray<nsCString>& aFontFamilyNames);
 
     
     nsAtom* GetLangGroup(nsAtom* aLanguage);
@@ -529,10 +530,10 @@ protected:
 
     
     
-    virtual gfxFontFamily* CreateFontFamily(const nsAString& aName) const = 0;
+    virtual gfxFontFamily* CreateFontFamily(const nsACString& aName) const = 0;
 
-    typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontFamilyTable;
-    typedef nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> FontEntryTable;
+    typedef nsRefPtrHashtable<nsCStringHashKey, gfxFontFamily> FontFamilyTable;
+    typedef nsRefPtrHashtable<nsCStringHashKey, gfxFontEntry> FontEntryTable;
 
     
     static size_t
@@ -576,10 +577,10 @@ protected:
     mozilla::UniquePtr<ExtraNames> mExtraNames;
 
     
-    mozilla::UniquePtr<nsTHashtable<nsStringHashKey> > mFaceNamesMissed;
+    mozilla::UniquePtr<nsTHashtable<nsCStringHashKey> > mFaceNamesMissed;
 
     
-    mozilla::UniquePtr<nsTHashtable<nsStringHashKey> > mOtherNamesMissed;
+    mozilla::UniquePtr<nsTHashtable<nsCStringHashKey> > mOtherNamesMissed;
 
     typedef nsTArray<RefPtr<gfxFontFamily>> PrefFontList;
     typedef mozilla::RangedArray<mozilla::UniquePtr<PrefFontList>,
@@ -597,7 +598,7 @@ protected:
     
     RefPtr<gfxFontFamily> mReplacementCharFallbackFamily;
 
-    nsTHashtable<nsStringHashKey> mBadUnderlineFamilyNames;
+    nsTHashtable<nsCStringHashKey> mBadUnderlineFamilyNames;
 
     
     

@@ -108,7 +108,7 @@ public:
 
 
 
-  bool GetFamilyName(nsString& aResult);
+  bool GetFamilyName(nsCString& aResult);
 
   
 

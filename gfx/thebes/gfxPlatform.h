@@ -368,7 +368,7 @@ public:
 
 
 
-    virtual nsresult GetStandardFamilyName(const nsAString& aFontName, nsAString& aFamilyName);
+    void GetStandardFamilyName(const nsCString& aFontName, nsACString& aFamilyName);
 
     
 
@@ -377,8 +377,8 @@ public:
 
 
 
-    nsAutoString GetDefaultFontName(const nsACString& aLangGroup,
-                                    const nsACString& aGenericFamily);
+    nsAutoCString GetDefaultFontName(const nsACString& aLangGroup,
+                                     const nsACString& aGenericFamily);
 
     
 
@@ -396,7 +396,7 @@ public:
 
 
 
-    gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
+    gfxFontEntry* LookupLocalFont(const nsACString& aFontName,
                                   WeightRange aWeightForEntry,
                                   StretchRange aStretchForEntry,
                                   SlantStyleRange aStyleForEntry);
@@ -409,7 +409,7 @@ public:
 
 
 
-    gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
+    gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
                                    WeightRange aWeightForEntry,
                                    StretchRange aStretchForEntry,
                                    SlantStyleRange aStyleForEntry,

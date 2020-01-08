@@ -126,7 +126,7 @@ public:
     
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
 
-    explicit gfxFontEntry(const nsAString& aName, bool aIsStandardFace = false);
+    explicit gfxFontEntry(const nsACString& aName, bool aIsStandardFace = false);
 
     
     
@@ -136,19 +136,19 @@ public:
 
     
     
-    const nsString& Name() const { return mName; }
+    const nsCString& Name() const { return mName; }
 
     
-    const nsString& FamilyName() const { return mFamilyName; }
-
-    
-    
-    
-    
+    const nsCString& FamilyName() const { return mFamilyName; }
 
     
     
-    virtual nsString RealFaceName();
+    
+    
+
+    
+    
+    virtual nsCString RealFaceName();
 
     WeightRange Weight() const { return mWeightRange; }
     StretchRange Stretch() const { return mStretchRange; }
@@ -401,8 +401,8 @@ public:
     
     virtual FT_MM_Var* GetMMVar() { return nullptr; }
 
-    nsString         mName;
-    nsString         mFamilyName;
+    nsCString         mName;
+    nsCString         mFamilyName;
 
     RefPtr<gfxCharacterMap> mCharacterMap;
 
@@ -716,7 +716,7 @@ public:
     
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFamily)
 
-    explicit gfxFontFamily(const nsAString& aName) :
+    explicit gfxFontFamily(const nsACString& aName) :
         mName(aName),
         mOtherFamilyNamesInitialized(false),
         mHasOtherFamilyNames(false),
@@ -730,9 +730,9 @@ public:
         mCheckedForLegacyFamilyNames(false)
         { }
 
-    const nsString& Name() { return mName; }
+    const nsCString& Name() { return mName; }
 
-    virtual void LocalizedName(nsAString& aLocalizedName);
+    virtual void LocalizedName(nsACString& aLocalizedName);
     virtual bool HasOtherFamilyNames();
 
     
@@ -801,10 +801,10 @@ public:
 
     
     
-    static void ReadOtherFamilyNamesForFace(const nsAString& aFamilyName,
+    static void ReadOtherFamilyNamesForFace(const nsACString& aFamilyName,
                                             const char *aNameData,
                                             uint32_t aDataLength,
-                                            nsTArray<nsString>& aOtherFamilyNames,
+                                            nsTArray<nsCString>& aOtherFamilyNames,
                                             bool useFullName);
 
     
@@ -823,7 +823,7 @@ public:
     virtual void FindStyleVariations(FontInfoData *aFontInfoData = nullptr) { }
 
     
-    gfxFontEntry* FindFont(const nsAString& aPostscriptName);
+    gfxFontEntry* FindFont(const nsACString& aPostscriptName);
 
     
     void ReadAllCMAPs(FontInfoData *aFontInfoData = nullptr);
@@ -903,7 +903,7 @@ protected:
         }
     }
 
-    nsString mName;
+    nsCString mName;
     nsTArray<RefPtr<gfxFontEntry> >  mAvailableFonts;
     gfxSparseBitSet mFamilyCharacterMap;
     bool mOtherFamilyNamesInitialized : 1;

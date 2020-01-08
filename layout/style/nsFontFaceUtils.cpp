@@ -31,7 +31,7 @@ ComputedStyleContainsFont(ComputedStyle* aComputedStyle,
   }
 
   
-  const nsString& familyName = aFont->FamilyName();
+  NS_ConvertUTF8toUTF16 familyName(aFont->FamilyName());
   if (!aComputedStyle->StyleFont()->mFont.fontlist.Contains(familyName)) {
     return false;
   }

@@ -57,7 +57,7 @@ struct gfxFontFaceSrc {
     
     uint32_t               mFormatFlags;
 
-    nsString               mLocalName;     
+    nsCString              mLocalName;     
     RefPtr<gfxFontSrcURI>  mURI;           
     nsCOMPtr<nsIURI>       mReferrer;      
     mozilla::net::ReferrerPolicy mReferrerPolicy;
@@ -119,8 +119,8 @@ public:
     nsTArray<uint8_t> mMetadata;  
     RefPtr<gfxFontSrcURI>  mURI;       
     RefPtr<gfxFontSrcPrincipal> mPrincipal; 
-    nsString          mLocalName; 
-    nsString          mRealName;  
+    nsCString         mLocalName; 
+    nsCString         mRealName;  
     uint32_t          mSrcIndex;  
     uint32_t          mFormat;    
     uint32_t          mMetaOrigLen; 
@@ -142,7 +142,7 @@ class gfxUserFontFamily : public gfxFontFamily {
 public:
     friend class gfxUserFontSet;
 
-    explicit gfxUserFontFamily(const nsAString& aName)
+    explicit gfxUserFontFamily(const nsACString& aName)
         : gfxFontFamily(aName) { }
 
     virtual ~gfxUserFontFamily();
@@ -161,8 +161,8 @@ public:
             aFontEntry->mFamilyName = Name();
         } else {
 #ifdef DEBUG
-            nsString thisName = Name();
-            nsString entryName = aFontEntry->mFamilyName;
+            nsCString thisName = Name();
+            nsCString entryName = aFontEntry->mFamilyName;
             ToLowerCase(thisName);
             ToLowerCase(entryName);
             MOZ_ASSERT(thisName.Equals(entryName));
@@ -250,7 +250,7 @@ public:
     
     
     already_AddRefed<gfxUserFontEntry> FindOrCreateUserFontEntry(
-                               const nsAString& aFamilyName,
+                               const nsACString& aFamilyName,
                                const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList,
                                WeightRange aWeight,
                                StretchRange aStretch,
@@ -263,18 +263,18 @@ public:
                                RangeFlags aRangeFlags);
 
     
-    void AddUserFontEntry(const nsAString& aFamilyName,
+    void AddUserFontEntry(const nsCString& aFamilyName,
                           gfxUserFontEntry* aUserFontEntry);
 
     
-    bool HasFamily(const nsAString& aFamilyName) const
+    bool HasFamily(const nsACString& aFamilyName) const
     {
         return LookupFamily(aFamilyName) != nullptr;
     }
 
     
     
-    gfxUserFontFamily* LookupFamily(const nsAString& aName) const;
+    gfxUserFontFamily* LookupFamily(const nsACString& aName) const;
 
     
     bool ContainsUserFontSetFonts(const mozilla::FontFamilyList& aFontList) const;
@@ -519,10 +519,10 @@ protected:
 
     
     
-    gfxUserFontFamily* GetFamily(const nsAString& aFamilyName);
+    gfxUserFontFamily* GetFamily(const nsACString& aFamilyName);
 
     
-    nsRefPtrHashtable<nsStringHashKey, gfxUserFontFamily> mFontFamilies;
+    nsRefPtrHashtable<nsCStringHashKey, gfxUserFontFamily> mFontFamilies;
 
     uint64_t        mGeneration;        
     uint64_t        mRebuildGeneration; 
@@ -689,7 +689,7 @@ protected:
     
     void StoreUserFontData(gfxFontEntry*      aFontEntry,
                            bool               aPrivate,
-                           const nsAString&   aOriginalName,
+                           const nsACString&  aOriginalName,
                            FallibleTArray<uint8_t>* aMetadata,
                            uint32_t           aMetaOrigLen,
                            uint8_t            aCompression);
