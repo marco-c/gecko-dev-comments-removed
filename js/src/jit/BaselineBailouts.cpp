@@ -450,13 +450,16 @@ GetStubReturnAddress(JSContext* cx, jsbytecode* pc)
 }
 
 static inline jsbytecode*
-GetNextNonLoopEntryPc(jsbytecode* pc)
+GetNextNonLoopEntryPc(jsbytecode* pc, jsbytecode** skippedLoopEntry)
 {
     JSOp op = JSOp(*pc);
     if (op == JSOP_GOTO)
         return pc + GET_JUMP_OFFSET(pc);
-    if (op == JSOP_LOOPENTRY || op == JSOP_NOP || op == JSOP_LOOPHEAD)
+    if (op == JSOP_LOOPENTRY || op == JSOP_NOP || op == JSOP_LOOPHEAD) {
+        if (op == JSOP_LOOPENTRY)
+            *skippedLoopEntry = pc;
         return GetNextPc(pc);
+    }
     return pc;
 }
 
@@ -982,15 +985,18 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     
     
+    jsbytecode* skippedLoopEntry = nullptr;
     if (!resumeAfter) {
         jsbytecode* fasterPc = pc;
         while (true) {
-            pc = GetNextNonLoopEntryPc(pc);
-            fasterPc = GetNextNonLoopEntryPc(GetNextNonLoopEntryPc(fasterPc));
+            pc = GetNextNonLoopEntryPc(pc, &skippedLoopEntry);
+            fasterPc = GetNextNonLoopEntryPc(GetNextNonLoopEntryPc(fasterPc, &skippedLoopEntry), &skippedLoopEntry);
             if (fasterPc == pc)
                 break;
         }
         op = JSOp(*pc);
+        if (skippedLoopEntry && ReplayDebugger::trackProgress(script))
+            ReplayDebugger::gProgressCounter++;
     }
 
     const uint32_t pcOff = script->pcToOffset(pc);
@@ -1189,6 +1195,10 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 opReturnAddr = baselineScript->prologueEntryAddr();
                 JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
 
+                
+                
+                if (skippedLoopEntry && ReplayDebugger::trackProgress(script))
+                    ReplayDebugger::gProgressCounter--;
             } else {
                 opReturnAddr = nativeCodeForPC;
             }

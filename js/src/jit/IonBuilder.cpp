@@ -1018,6 +1018,14 @@ IonBuilder::buildInline(IonBuilder* callerBuilder, MResumePoint* callerResumePoi
 
     
     
+    if (ReplayDebugger::trackProgress(script())) {
+        MInterruptCheck* check = MInterruptCheck::New(alloc());
+        check->setTrackRecordReplayProgress();
+        current->add(check);
+    }
+
+    
+    
     MOZ_TRY(initEnvironmentChain(callInfo.fun()));
 
     auto clearLastPriorResumePoint = mozilla::MakeScopeExit([&] {
@@ -1749,8 +1757,17 @@ IonBuilder::jsop_loopentry()
 {
     MOZ_ASSERT(*pc == JSOP_LOOPENTRY);
 
-    current->add(MInterruptCheck::New(alloc()));
+    MInterruptCheck* check = MInterruptCheck::New(alloc());
+    current->add(check);
     insertRecompileCheck();
+
+    if (ReplayDebugger::trackProgress(script())) {
+        check->setTrackRecordReplayProgress();
+
+        
+        
+        MOZ_TRY(resumeAfter(check));
+    }
 
     return Ok();
 }
@@ -5753,9 +5770,12 @@ IonBuilder::jsop_eval(uint32_t argc)
         
         
         
+        
+        
         if (string->isConcat() &&
             string->getOperand(1)->type() == MIRType::String &&
-            string->getOperand(1)->maybeConstantValue())
+            string->getOperand(1)->maybeConstantValue() &&
+            !ReplayDebugger::trackProgress(script()))
         {
             JSAtom* atom = &string->getOperand(1)->maybeConstantValue()->toString()->asAtom();
 

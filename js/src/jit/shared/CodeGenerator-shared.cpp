@@ -19,6 +19,7 @@
 #include "jit/MIRGenerator.h"
 #include "jit/OptimizationTracking.h"
 #include "js/Conversions.h"
+#include "vm/ReplayDebugger.h"
 #include "vm/TraceLogging.h"
 
 #include "jit/JitFrames-inl.h"
@@ -127,6 +128,9 @@ CodeGeneratorShared::generatePrologue()
     
     if (isProfilerInstrumentationEnabled())
         masm.profilerEnterFrame(masm.getStackPointer(), CallTempReg0);
+
+    if (ReplayDebugger::trackProgress(gen->info().script()))
+        masm.inc64(AbsoluteAddress(&ReplayDebugger::gProgressCounter));
 
     
     masm.assertStackAlignment(JitStackAlignment, 0);
