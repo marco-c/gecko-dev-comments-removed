@@ -1220,7 +1220,7 @@ public:
 
 
 
-  bool ArePointerEventsConsumable(TouchBlockState* aBlock, const MultiTouchInput& aInput);
+  bool ArePointerEventsConsumable(TouchBlockState* aBlock, uint32_t aTouchPoints);
 
   
 

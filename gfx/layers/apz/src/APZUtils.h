@@ -131,16 +131,6 @@ void InitializeGlobalState();
 const ScreenMargin CalculatePendingDisplayPort(const FrameMetrics& aFrameMetrics,
                                                const ParentLayerPoint& aVelocity);
 
-
-
-
-
-
-bool IsCloseToHorizontal(float aAngle, float aThreshold);
-
-
-bool IsCloseToVertical(float aAngle, float aThreshold);
-
 } 
 
 } 
