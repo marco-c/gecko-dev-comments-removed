@@ -22,12 +22,12 @@ this.EXPORTED_SYMBOLS = [
   "executeSoon",
   "DebounceCallback",
   "IdlePromise",
-  "MessageManagerDestroyedPromise",
   "PollPromise",
   "Sleep",
   "TimedPromise",
   "waitForEvent",
   "waitForMessage",
+  "waitForObserverTopic",
 ];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
@@ -264,46 +264,6 @@ function Sleep(timeout) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function MessageManagerDestroyedPromise(messageManager) {
-  return new Promise(resolve => {
-    function observe(subject, topic) {
-      log.trace(`Received observer notification ${topic}`);
-
-      if (subject == messageManager) {
-        Services.obs.removeObserver(this, "message-manager-disconnect");
-        resolve();
-      }
-    }
-
-    Services.obs.addObserver(observe, "message-manager-disconnect");
-  });
-}
-
-
-
-
-
-
-
-
-
-
 function IdlePromise(win) {
   return new Promise(resolve => {
     Services.tm.idleDispatchToMainThread(() => {
@@ -509,5 +469,53 @@ function waitForMessage(messageManager, messageName,
       messageManager.removeMessageListener(messageName, onMessage);
       resolve(msg.data);
     });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForObserverTopic(topic, {checkFn = null} = {}) {
+  if (typeof topic != "string") {
+    throw new TypeError();
+  }
+  if (checkFn != null && typeof checkFn != "function") {
+    throw new TypeError();
+  }
+
+  return new Promise((resolve, reject) => {
+    Services.obs.addObserver(function observer(subject, topic, data) {
+      log.trace(`Received observer notification ${topic}`);
+      try {
+        if (checkFn && !checkFn(subject, data)) {
+          return;
+        }
+        Services.obs.removeObserver(observer, topic);
+        resolve({subject, data});
+      } catch (ex) {
+        Services.obs.removeObserver(observer, topic);
+        reject(ex);
+      }
+    }, topic);
   });
 }
