@@ -495,8 +495,8 @@ const browsingContextTargetPrototype = {
 
 
   destroy() {
-    Actor.prototype.destroy.call(this);
     this.exit();
+    Actor.prototype.destroy.call(this);
   },
 
   
