@@ -7,7 +7,7 @@ const fetch = require("node-fetch");
 
 require("shelljs/global");
 
-const DEFAULT_LOCALE = "en-US";
+const {CENTRAL_LOCALES, DEFAULT_LOCALE} = require("./locales");
 const L10N_CENTRAL = "https://hg.mozilla.org/l10n-central";
 const PROPERTIES_PATH = "raw-file/default/browser/chrome/browser/activity-stream/newtab.properties";
 const STRINGS_FILE = "strings.properties";
@@ -18,14 +18,19 @@ async function getLocales() {
 
   
   const locales = [];
+  const unbuilt = [];
   const subrepos = await (await fetch(`${L10N_CENTRAL}?style=json`)).json();
   subrepos.entries.forEach(({name}) => {
-    if (name !== "x-testing") {
+    if (CENTRAL_LOCALES.includes(name)) {
       locales.push(name);
+    } else {
+      unbuilt.push(name);
     }
   });
 
-  console.log(`Got ${locales.length} locales: ${locales}`);
+  console.log(`Got ${locales.length} mozilla-central locales: ${locales}`);
+  console.log(`Skipped ${unbuilt.length} unbuilt locales: ${unbuilt}`);
+
   return locales;
 }
 
@@ -63,8 +68,16 @@ async function updateLocales() {
   });
 
   
-  const locales = await getLocales();
-  const missing = (await Promise.all(locales.map(saveProperties))).filter(v => v);
+  
+  const missing = [];
+  for (const locale of await getLocales()) {
+    process.stdout.write(`${locale} `);
+    if (await saveProperties(locale)) {
+      missing.push(locale);
+    }
+  }
+
+  console.log("");
   console.log(`Skipped ${missing.length} locales without strings: ${missing.sort()}`);
 
   console.log(`

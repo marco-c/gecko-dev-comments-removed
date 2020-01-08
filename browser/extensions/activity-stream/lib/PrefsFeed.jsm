@@ -102,6 +102,10 @@ this.PrefsFeed = class PrefsFeed {
     values.platform = AppConstants.platform;
 
     
+    values.fxa_endpoint = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.fxaccounts.endpoint", "https://accounts.firefox.com");
+
+    
     this.store.dispatch(ac.BroadcastToContent({type: at.PREFS_INITIAL_VALUES, data: values}));
 
     this._migratePrefs();

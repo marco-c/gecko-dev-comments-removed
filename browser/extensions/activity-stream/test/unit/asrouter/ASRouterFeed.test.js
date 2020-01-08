@@ -73,7 +73,7 @@ describe("ASRouterFeed", () => {
       prefs[EXPERIMENT_PREF] = true;
 
       
-      feed.onAction({type: at.INIT});
+      feed.onAction({type: at.INIT, data: {name: EXPERIMENT_PREF}});
 
       assert.notCalled(Router.init);
     });
