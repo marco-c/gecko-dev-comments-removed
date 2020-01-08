@@ -374,13 +374,6 @@ nsChannelClassifier::ShouldEnableTrackingProtectionInternal(
       return NS_OK;
     }
 
-    
-    
-    if (aAnnotationsOnly) {
-      *result = true;
-      return NS_OK;
-    }
-
     if (AddonMayLoad(aChannel, chanURI)) {
         return NS_OK;
     }
