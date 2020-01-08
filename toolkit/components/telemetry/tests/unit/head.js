@@ -294,13 +294,6 @@ function fakePrioEncode() {
   m.Policy.prioEncode = (batchID, prioParams) => prioParams;
 }
 
-function fakeIntlReady() {
-  const m = ChromeUtils.import("resource://gre/modules/TelemetryEnvironment.jsm", {});
-  m.Policy._intlLoaded = true;
-  
-  Services.obs.notifyObservers(null, "browser-delayed-startup-finished");
-}
-
 
 function futureDate(date, offset) {
   return new Date(date.getTime() + offset);
