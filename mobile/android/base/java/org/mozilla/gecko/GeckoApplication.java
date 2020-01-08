@@ -674,15 +674,27 @@ public class GeckoApplication extends Application
     }
 
     public static void createBrowserShortcut(final String title, final String url) {
-      Icons.with(GeckoAppShell.getApplicationContext())
+        createBrowserShortcut(title, url, true);
+    }
+
+    private static void createBrowserShortcut(final String title, final String url, final boolean skipMemoryCache) {
+        
+        
+        Icons.with(GeckoAppShell.getApplicationContext())
               .pageUrl(url)
               .skipNetwork()
-              .skipMemory()
+              .skipMemoryIf(skipMemoryCache)
               .forLauncherIcon()
               .build()
               .execute(new IconCallback() {
                   @Override
                   public void onIconResponse(final IconResponse response) {
+                      if (response.isGenerated() && skipMemoryCache) {
+                          
+                          
+                          createBrowserShortcut(title, url, false);
+                          return;
+                      }
                       createShortcutWithIcon(title, url, response.getBitmap());
                   }
               });

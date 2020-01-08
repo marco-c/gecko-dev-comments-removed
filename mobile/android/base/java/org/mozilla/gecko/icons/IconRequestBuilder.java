@@ -110,6 +110,16 @@ public class IconRequestBuilder {
 
 
 
+    @CheckResult
+    public IconRequestBuilder skipMemoryIf(boolean shouldSkipMemory) {
+        internal.skipMemory = shouldSkipMemory;
+        return this;
+    }
+
+    
+
+
+
     public IconRequestBuilder forLauncherIcon() {
         internal.targetSize = GeckoAppShell.getPreferredIconSize();
         return this;
