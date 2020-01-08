@@ -3394,6 +3394,51 @@ AddPromiseReactions(JSContext* cx, JS::HandleObject promise,
 
 
 
+
+enum class PromiseUserInputEventHandlingState {
+  
+  DontCare,
+  
+  
+  HadUserInteractionAtCreation,
+  
+  
+  DidntHaveUserInteractionAtCreation
+};
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(PromiseUserInputEventHandlingState)
+GetPromiseUserInputEventHandlingState(JS::HandleObject promise);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+SetPromiseUserInputEventHandlingState(JS::HandleObject promise,
+                                      JS::PromiseUserInputEventHandlingState state);
+
+
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 

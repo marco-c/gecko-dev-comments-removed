@@ -64,6 +64,24 @@ enum PromiseSlots {
 
 #define PROMISE_FLAG_ASYNC    0x10
 
+
+
+
+
+
+
+
+#define PROMISE_FLAG_REQUIRES_USER_INTERACTION_HANDLING 0x20
+
+
+
+
+
+
+
+
+#define PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION 0x40
+
 class AutoSetNewObjectMetadata;
 
 class PromiseObject : public NativeObject
@@ -136,6 +154,20 @@ class PromiseObject : public NativeObject
         MOZ_ASSERT(state() == JS::PromiseState::Rejected);
         return !(flags() & PROMISE_FLAG_HANDLED);
     }
+
+    bool requiresUserInteractionHandling() {
+        return (flags() & PROMISE_FLAG_REQUIRES_USER_INTERACTION_HANDLING);
+    }
+
+    void setRequiresUserInteractionHandling(bool state);
+
+    bool hadUserInteractionUponCreation() {
+        return (flags() & PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION);
+    }
+
+    void setHadUserInteractionUponCreation(bool state);
+
+    void copyUserInteractionFlagsFrom(PromiseObject& rhs);
 };
 
 
