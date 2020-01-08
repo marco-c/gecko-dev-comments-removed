@@ -78,36 +78,41 @@ DocGroup::ReportPerformanceInfo()
 #else
   uint32_t pid = getpid();
 #endif
-  uint64_t wid = 0;
   uint64_t pwid = 0;
   uint16_t count = 0;
   uint64_t duration = 0;
-  nsCString host = NS_LITERAL_CSTRING("None");
+  bool isTopLevel = false;
+  nsCString host;
 
+  
   for (const auto& document : *this) {
-    
     nsCOMPtr<nsIDocument> doc = do_QueryInterface(document);
     MOZ_ASSERT(doc);
+    
+    nsPIDOMWindowInner* win = doc->GetInnerWindow();
+    if (!win) {
+      continue;
+    }
+    nsPIDOMWindowOuter* outer = win->GetOuterWindow();
+    if (!outer) {
+      continue;
+    }
+    nsCOMPtr<nsPIDOMWindowOuter> top = outer->GetTop();
+    if (!top) {
+      continue;
+    }
     nsCOMPtr<nsIURI> docURI = doc->GetDocumentURI();
     if (!docURI) {
       continue;
     }
+    pwid = top->WindowID();
+    isTopLevel = top->IsTopLevelWindow();;
     docURI->GetHost(host);
-    wid = doc->OuterWindowID();
-
     
-    
-    pwid = wid;
-    nsPIDOMWindowInner* win = doc->GetInnerWindow();
-    if (win) {
-      nsPIDOMWindowOuter* outer = win->GetOuterWindow();
-      if (outer) {
-        nsCOMPtr<nsPIDOMWindowOuter> top = outer->GetTop();
-        if (top) {
-          pwid = top->WindowID();
-        }
-      }
+    if (host.IsEmpty()) {
+      docURI->GetSpec(host);
     }
+    break;
   }
 
   duration = mPerformanceCounter->GetExecutionDuration();
@@ -120,13 +125,13 @@ DocGroup::ReportPerformanceInfo()
     CategoryDispatch item = CategoryDispatch(index, count);
     if (!items.AppendElement(item, fallible)) {
       NS_ERROR("Could not complete the operation");
-      return PerformanceInfo(host, pid, wid, pwid, duration, false, items);
+      return PerformanceInfo(host, pid, pwid, duration, false, isTopLevel, items);
     }
   }
 
   
   mPerformanceCounter->ResetPerformanceCounters();
-  return PerformanceInfo(host, pid, wid, pwid, duration, false, items);
+  return PerformanceInfo(host, pid, pwid, duration, false, isTopLevel, items);
 }
 
 nsresult
