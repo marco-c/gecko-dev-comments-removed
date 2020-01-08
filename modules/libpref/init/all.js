@@ -568,9 +568,6 @@ pref("media.recorder.video.frame_drops", true);
 pref("media.autoplay.default", 0);
 
 
-pref("media.autoplay.block-webaudio", false);
-
-
 
 
 
@@ -604,10 +601,6 @@ pref("media.cubeb.sandbox", false);
 #endif
 
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
-
-
-
-pref("media.setsinkid.enabled", false);
 
 
 pref("layers.amd-switchable-gfx.enabled", true);
@@ -896,8 +889,6 @@ pref("gfx.webrender.debug.compact-profiler", false);
 pref("gfx.webrender.debug.echo-driver-messages", false);
 pref("gfx.webrender.debug.new-frame-indicator", false);
 pref("gfx.webrender.debug.new-scene-indicator", false);
-pref("gfx.webrender.dl.dump-parent", false);
-pref("gfx.webrender.dl.dump-content", false);
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
@@ -2527,19 +2518,9 @@ pref("security.directory",              "");
 pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
-pref("security.csp.enable", true);
-pref("security.csp.experimentalEnabled", false);
-pref("security.csp.enableStrictDynamic", true);
-
 #if defined(DEBUG) && !defined(ANDROID)
 
 pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,welcome");
-#endif
-
-#ifdef NIGHTLY_BUILD
-pref("security.csp.enable_violation_events", true);
-#else
-pref("security.csp.enable_violation_events", false);
 #endif
 
 

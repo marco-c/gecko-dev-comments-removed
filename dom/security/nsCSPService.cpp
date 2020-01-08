@@ -5,6 +5,8 @@
 
 
 #include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
@@ -16,21 +18,16 @@
 #include "nsError.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsAsyncRedirectVerifyHelper.h"
-#include "mozilla/Preferences.h"
 #include "nsIScriptError.h"
 #include "nsContentUtils.h"
 #include "nsContentPolicyUtils.h"
 
 using namespace mozilla;
 
-
-bool CSPService::sCSPEnabled = true;
-
 static LazyLogModule gCspPRLog("CSP");
 
 CSPService::CSPService()
 {
-  Preferences::AddBoolVarCache(&sCSPEnabled, "security.csp.enable");
 }
 
 CSPService::~CSPService()
@@ -152,7 +149,8 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   
   
   
-  if (!sCSPEnabled || !subjectToCSP(aContentLocation, contentType)) {
+  if (!StaticPrefs::security_csp_enable() ||
+      !subjectToCSP(aContentLocation, contentType)) {
     return NS_OK;
   }
 
@@ -282,7 +280,8 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   
   
   nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
-  if (!sCSPEnabled || !subjectToCSP(newUri, policyType)) {
+  if (!StaticPrefs::security_csp_enable() ||
+      !subjectToCSP(newUri, policyType)) {
     return NS_OK;
   }
 

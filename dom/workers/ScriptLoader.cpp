@@ -1259,7 +1259,7 @@ private:
       nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerPrivate->GetCSP();
       
       
-      if (CSPService::sCSPEnabled) {
+      if (StaticPrefs::security_csp_enable()) {
         if (!csp) {
           rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
                                                       tCspROHeaderValue);

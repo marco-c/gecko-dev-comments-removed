@@ -1168,6 +1168,46 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "security.csp.enable",
+   security_csp_enable,
+  bool, true
+)
+
+VARCACHE_PREF(
+  "security.csp.experimentalEnabled",
+   security_csp_experimentalEnabled,
+  bool, false
+)
+
+VARCACHE_PREF(
+  "security.csp.enableStrictDynamic",
+   security_csp_enableStrictDynamic,
+  bool, true
+)
+
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "security.csp.enable_violation_events",
+   security_csp_enable_violation_events,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+VARCACHE_PREF(
+  "security.csp.reporting.script-sample.max-length",
+   security_csp_reporting_script_sample_max_length,
+  int32_t, 40
+)
+
+
+
+
+
+VARCACHE_PREF(
   "view_source.editor.external",
    view_source_editor_external,
   bool, false
