@@ -357,6 +357,53 @@ function* iterDirectory(aDir) {
 
 
 
+
+
+
+
+function migrateAddonLoader(addon) {
+  if (addon.hasOwnProperty("loader")) {
+    return false;
+  }
+
+  switch (addon.type) {
+    case "extension":
+    case "dictionary":
+    case "locale":
+    case "theme":
+      addon.loader = "bootstrap";
+      break;
+
+    case "webextension":
+      addon.type = "extension";
+      addon.loader = null;
+      break;
+
+    case "webextension-dictionary":
+      addon.type = "dictionary";
+      addon.loader = null;
+      break;
+
+    case "webextension-langpack":
+      addon.type = "locale";
+      addon.loader = null;
+      break;
+
+    case "webextension-theme":
+      addon.type = "theme";
+      addon.loader = null;
+      break;
+
+    default:
+      logger.warn(`Not converting unknown addon type ${addon.type}`);
+  }
+  return true;
+}
+
+
+
+
+
 const JSON_FIELDS = Object.freeze([
   "changed",
   "dependencies",
@@ -1200,6 +1247,21 @@ var XPIStates = {
     } catch (e) {
       logger.warn("Error parsing extensions state: ${error}",
                   {error: e});
+    }
+
+    
+    
+    let done = false;
+    for (let location of Object.values(state)) {
+      for (let data of Object.values(location.addons)) {
+        if (!migrateAddonLoader(data)) {
+          done = true;
+          break;
+        }
+      }
+      if (done) {
+        break;
+      }
     }
 
     logger.debug("Loaded add-on state: ${}", state);
@@ -2729,6 +2791,7 @@ var XPIInternal = {
   getURIForResourceInFile,
   isXPI,
   iterDirectory,
+  migrateAddonLoader,
 };
 
 var addonTypes = [
