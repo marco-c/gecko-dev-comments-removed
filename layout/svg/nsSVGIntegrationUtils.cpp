@@ -310,7 +310,6 @@ nsIntRegion nsSVGIntegrationUtils::AdjustInvalidAreaForSVGEffects(
     return nsIntRect();
   }
 
-  int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
   nsIFrame* firstFrame =
       nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
 
@@ -321,17 +320,10 @@ nsIntRegion nsSVGIntegrationUtils::AdjustInvalidAreaForSVGEffects(
   if (!aFrame->StyleEffects()->HasFilters() ||
       SVGObserverUtils::GetFiltersIfObserving(firstFrame, nullptr) ==
           SVGObserverUtils::eHasRefsSomeInvalid) {
-    
-    
-    
-    
-    
-    
-    
-    
-    nsRect overflow = aFrame->GetVisualOverflowRect() + aToReferenceFrame;
-    return overflow.ToOutsidePixels(appUnitsPerDevPixel);
+    return aInvalidRegion;
   }
+
+  int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   
   nsPoint toBoundingBox =
