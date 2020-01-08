@@ -405,8 +405,6 @@ private:
     
     
     
-    
-    
     eSameProcessSyncInputTransaction
   };
 

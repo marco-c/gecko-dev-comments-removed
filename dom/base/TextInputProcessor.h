@@ -16,6 +16,8 @@
 #include "nsITextInputProcessorCallback.h"
 #include "nsTArray.h"
 
+class nsPIDOMWindowInner;
+
 namespace mozilla {
 
 namespace dom {
@@ -49,6 +51,41 @@ public:
                       WidgetKeyboardEvent& aKeyboardEvent,
                       uint32_t aIndexOfKeypress,
                       void* aData) override;
+
+  
+
+
+
+
+
+  Modifiers GetActiveModifiers() const
+  {
+    return mModifierKeyDataArray ?
+      mModifierKeyDataArray->GetActiveModifiers() : MODIFIER_NONE;
+  }
+
+  
+
+
+
+
+
+  nsresult
+  BeginInputTransactionForFuzzing(nsPIDOMWindowInner* aWindow,
+                                  nsITextInputProcessorCallback* aCallback,
+                                  bool* aSucceeded);
+
+  
+
+
+
+
+  nsresult Keydown(const WidgetKeyboardEvent& aKeyboardEvent,
+                   uint32_t aKeyFlags,
+                   uint32_t* aConsumedFlags = nullptr);
+  nsresult Keyup(const WidgetKeyboardEvent& aKeyboardEvent,
+                 uint32_t aKeyFlags,
+                 bool* aDoDefault = nullptr);
 
   
 
@@ -197,11 +234,6 @@ private:
     virtual ~ModifierKeyDataArray() { }
   };
 
-  Modifiers GetActiveModifiers() const
-  {
-    return mModifierKeyDataArray ?
-      mModifierKeyDataArray->GetActiveModifiers() : 0;
-  }
   void EnsureModifierKeyDataArray()
   {
     if (mModifierKeyDataArray) {

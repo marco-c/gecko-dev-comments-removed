@@ -7,13 +7,19 @@
 #ifndef mozilla_dom_FuzzingFunctions
 #define mozilla_dom_FuzzingFunctions
 
+#include "mozilla/EventForwards.h"
+
+class nsIWidget;
+
 namespace mozilla {
 
 class ErrorResult;
+class TextInputProcessor;
 
 namespace dom {
 
 class GlobalObject;
+struct KeyboardEventInit;
 
 class FuzzingFunctions final
 {
@@ -26,6 +32,44 @@ public:
 
   static void
   EnableAccessibility(const GlobalObject&, ErrorResult& aRv);
+
+  static void
+  SynthesizeKeyboardEvents(const GlobalObject& aGlobalObject,
+                           const nsAString& aKeyValue,
+                           const KeyboardEventInit& aKeyboardEvent,
+                           ErrorResult& aRv);
+
+private:
+  
+
+
+
+
+
+
+
+
+
+
+  static Modifiers
+  ActivateModifiers(TextInputProcessor* aTextInputProcessor,
+                    Modifiers aModifiers, nsIWidget* aWidget, ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Modifiers
+  InactivateModifiers(TextInputProcessor* aTextInputProcessor,
+                      Modifiers aModifiers, nsIWidget* aWidget,
+                      ErrorResult& aRv);
 };
 
 } 

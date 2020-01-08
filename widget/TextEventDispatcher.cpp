@@ -600,6 +600,13 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
   WidgetKeyboardEvent keyEvent(true, aMessage, mWidget);
   InitEvent(keyEvent);
   keyEvent.AssignKeyEventData(aKeyboardEvent, false);
+  
+  
+  
+  
+  if (keyEvent.mIsSynthesizedByTIP) {
+    keyEvent.AssignCommands(aKeyboardEvent);
+  }
 
   if (aStatus == nsEventStatus_eConsumeNoDefault) {
     
