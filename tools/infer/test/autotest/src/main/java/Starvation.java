@@ -1,0 +1,25 @@
+
+
+
+
+
+public class Starvation {
+
+    String lockA, lockB;
+
+    public void lockAThenB() {
+        synchronized(lockA) {
+            synchronized(lockB) {
+                
+            }
+        }
+    }
+
+    public void lockBThenA() {
+        synchronized(lockB) {
+            synchronized(lockA) {
+                
+            }
+        }
+    }
+}
