@@ -96,7 +96,7 @@ class Raptor(object):
                           % self.post_startup_delay)
 
         
-        if self.config['app'] == 'geckoview':
+        if self.config['app'] in ["geckoview", "fennec"]:
             self.profile = create_profile('firefox')
         else:
             self.profile = create_profile(self.config['app'])
@@ -119,7 +119,7 @@ class Raptor(object):
         
         
 
-        if self.config['app'] == "geckoview":
+        if self.config['app'] in ["geckoview", "fennec"]:
             
             self.log.info("creating android device handler using mozdevice")
             self.device = ADBDevice(verbose=True)
@@ -153,7 +153,8 @@ class Raptor(object):
         self.control_server.start()
 
         
-        if self.config['app'] == "geckoview" and self.config['host'] in ('localhost', '127.0.0.1'):
+        if self.config['app'] in ['geckoview', 'fennec'] and \
+                self.config['host'] in ('localhost', '127.0.0.1'):
             self.log.info("making the raptor control server port available to device")
             _tcp_port = "tcp:%s" % self.control_server.port
             self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
@@ -179,13 +180,6 @@ class Raptor(object):
         if test.get('type') == "benchmark":
             self.benchmark = Benchmark(self.config, test)
             benchmark_port = int(self.benchmark.port)
-
-            
-            if self.config['app'] == "geckoview" and self.config['host'] \
-                    in ('localhost', '127.0.0.1'):
-                self.log.info("making the raptor benchmarks server port available to device")
-                _tcp_port = "tcp:%s" % benchmark_port
-                self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
         else:
             benchmark_port = 0
 
@@ -196,6 +190,13 @@ class Raptor(object):
                         host=self.config['host'],
                         b_port=benchmark_port,
                         debug_mode=1 if self.debug_mode else 0)
+
+        
+        if self.config['app'] in ['geckoview', 'fennec'] and \
+                self.config['host'] in ('localhost', '127.0.0.1'):
+            self.log.info("making the raptor benchmarks server port available to device")
+            _tcp_port = "tcp:%s" % benchmark_port
+            self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
         
         
@@ -213,12 +214,12 @@ class Raptor(object):
                               but we do not install them on non Firefox browsers.")
 
         
-        if self.config['app'] in ["firefox", "geckoview"]:
+        if self.config['app'] in ['firefox', 'geckoview', 'fennec']:
             webext_id = self.profile.addons.addon_details(raptor_webext)['id']
 
         
         
-        if self.config['app'] == "geckoview":
+        if self.config['app'] in ["geckoview", "fennec"]:
             self.device_raptor_dir = "/sdcard/raptor"
             self.config['device_raptor_dir'] = self.device_raptor_dir
             if self.device.is_dir(self.device_raptor_dir):
@@ -241,7 +242,7 @@ class Raptor(object):
                 _tcp_port = "tcp:8080"
                 self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
-        if self.config['app'] in ("geckoview", "firefox") and \
+        if self.config['app'] in ('geckoview', 'firefox', 'fennec') and \
            self.config['host'] not in ('localhost', '127.0.0.1'):
             
             
@@ -268,16 +269,18 @@ class Raptor(object):
             self.profile.set_preferences(proxy_prefs)
 
         
-        if self.config['app'] == "geckoview":
+        if self.config['app'] in ["geckoview", "fennec"]:
             
             if not self.device.is_app_installed(self.config['binary']):
                 raise Exception('%s is not installed' % self.config['binary'])
             self.device_profile = os.path.join(self.device_raptor_dir, "profile")
+
             if self.device.is_dir(self.device_profile):
                 self.log.info("deleting existing device profile folder: %s" % self.device_profile)
                 self.device.rm(self.device_profile, recursive=True)
             self.log.info("creating profile folder on device: %s" % self.device_profile)
             self.device.mkdir(self.device_profile)
+
             self.log.info("copying firefox profile onto the device")
             self.log.info("note: the profile folder being copied is: %s" % self.profile.profile)
             self.log.info('the adb push cmd copies that profile dir to a new temp dir before copy')
@@ -291,21 +294,38 @@ class Raptor(object):
                           "--es", "env0", "LOG_VERBOSE=1",
                           "--es", "env1", "R_LOG_LEVEL=6"]
 
-            try:
+            if self.config['app'] == 'geckoview':
                 
+                try:
+                    
+                    
+                    self.device.stop_application(self.config['binary'])
+                    self.device.launch_activity(self.config['binary'],
+                                                "GeckoViewActivity",
+                                                extra_args=extra_args,
+                                                url='about:blank',
+                                                e10s=True,
+                                                fail_if_running=False)
+                except Exception:
+                    self.log.error("Exception launching %s" % self.config['binary'])
+                    if self.config['power_test']:
+                        finish_geckoview_power_test(self)
+                    raise
+            else:
                 
-                self.device.stop_application(self.config['binary'])
-                self.device.launch_activity(self.config['binary'],
-                                            "GeckoViewActivity",
-                                            extra_args=extra_args,
-                                            url='about:blank',
-                                            e10s=True,
-                                            fail_if_running=False)
-            except Exception:
-                self.log.error("Exception launching %s" % self.config['binary'])
-                if self.config['power_test']:
-                    finish_geckoview_power_test(self)
-                raise
+                try:
+                    
+                    self.device.stop_application(self.config['binary'])
+                    self.device.launch_fennec(self.config['binary'],
+                                              extra_args=extra_args,
+                                              url='about:blank',
+                                              fail_if_running=False)
+                except Exception:
+                    self.log.error("Exception launching %s" % self.config['binary'])
+                    if self.config['power_test']:
+                        finish_geckoview_power_test(self)
+                    raise
+
             self.control_server.device = self.device
             self.control_server.app_name = self.config['binary']
 
@@ -400,7 +420,7 @@ class Raptor(object):
 
         
         self.log.info("removing webext %s" % raptor_webext)
-        if self.config['app'] in ["firefox", "geckoview"]:
+        if self.config['app'] in ['firefox', 'geckoview', 'fennec']:
             self.profile.addons.remove_addon(webext_id)
 
         
@@ -416,7 +436,7 @@ class Raptor(object):
 
         
         if not self.debug_mode:
-            if self.config['app'] != "geckoview":
+            if self.config['app'] not in ['geckoview', 'fennec']:
                 if self.runner.is_running():
                     self.runner.stop()
             
@@ -456,7 +476,7 @@ class Raptor(object):
         return self.results_handler.page_timeout_list
 
     def check_for_crashes(self):
-        if self.config['app'] == "geckoview":
+        if self.config['app'] in ["geckoview", "fennec"]:
             logcat = self.device.get_logcat()
             if logcat:
                 if mozcrash.check_for_java_exception(logcat, "raptor"):
@@ -482,9 +502,9 @@ class Raptor(object):
 
     def clean_up(self):
         self.control_server.stop()
-        if self.config['app'] != "geckoview":
+        if self.config['app'] not in ['geckoview', 'fennec']:
             self.runner.stop()
-        elif self.config['app'] == 'geckoview':
+        elif self.config['app'] in ['geckoview', 'fennec']:
             self.log.info('removing reverse socket connections')
             self.device.remove_socket_connections('reverse')
         else:
