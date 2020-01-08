@@ -101,7 +101,6 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
 
   async _buildEventTooltipContent(target) {
     const tooltip = this.markup.eventDetailsTooltip;
-
     await tooltip.hide();
 
     const listenerInfo = await this.node.getEventListenerInfo();
@@ -114,7 +113,20 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     tooltip.once("hidden", () => {
       
       this.markup._enableImagePreviewTooltip();
+
+      
+      
+      this.markup.win.setTimeout(() => {
+        if (this.editor._eventBadge) {
+          this.editor._eventBadge.style.pointerEvents = "auto";
+        }
+      }, 0);
     });
+
+    
+    if (this.editor._eventBadge) {
+      this.editor._eventBadge.style.pointerEvents = "none";
+    }
     tooltip.show(target);
   },
 
