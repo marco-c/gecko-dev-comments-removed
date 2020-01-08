@@ -1,85 +1,85 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This file defines static prefs, i.e. those that are defined at startup and
-// used entirely or mostly from C++ code.
-//
-// If a pref is listed here and also in a prefs data file such as all.js, the
-// value from the latter will override the value given here. For vanilla
-// browser builds such overrides are discouraged, but they are necessary for
-// some configurations (e.g. Thunderbird).
-//
-// The file is separated into sections, where the sections are determined by
-// the first segment of the prefnames within (e.g. "network.predictor.enabled"
-// is within the "Network" section). Sections should be kept in alphabetical
-// order, but prefs within sections need not be.
-//
-// Normal prefs
-// ------------
-// Definitions of normal prefs in this file have the following form.
-//
-//   PREF(<pref-name-string>, <cpp-type>, <default-value>)
-//
-// - <pref-name-string> is the name of the pref, as it appears in about:config.
-//   It is used in most libpref API functions (from both C++ and JS code).
-//
-// - <cpp-type> is one of bool, int32_t, float, or String (which is just a
-//   typedef for `const char*` in StaticPrefs.h). Note that float prefs are
-//   stored internally as strings.
-//
-// - <default-value> is the default value. Its type should match <cpp-type>.
-//
-// VarCache prefs
-// --------------
-// A VarCache pref is a special type of pref. It can be accessed via the normal
-// pref hash table lookup functions, but it also has an associated global
-// variable (the VarCache) that mirrors the pref value in the prefs hash table,
-// and a getter function that reads that global variable. Using the getter to
-// read the pref's value has the two following advantages over the normal API
-// functions.
-//
-// - A direct global variable access is faster than a hash table lookup.
-//
-// - A global variable can be accessed off the main thread. If a pref *is*
-//   accessed off the main thread, it should use an atomic type. (But note that
-//   many VarCaches that should be atomic are not, in particular because
-//   Atomic<float> is not available, alas.)
-//
-// Definitions of VarCache prefs in this file has the following form.
-//
-//   VARCACHE_PREF(
-//     <pref-name-string>,
-//     <pref-name-id>,
-//     <cpp-type>, <default-value>
-//   )
-//
-// - <pref-name-string> is the same as for normal prefs.
-//
-// - <pref-name-id> is the name of the static getter function generated within
-//   the StaticPrefs class. For consistency, the identifier for every pref
-//   should be created by starting with <pref-name-string> and converting any
-//   '.' or '-' chars to '_'. For example, "foo.bar_baz" becomes
-//   |foo_bar_baz|. This is arguably ugly, but clear, and you can search for
-//   both using the regexp /foo.bar.baz/.
-//
-// - <cpp-type> is one of bool, int32_t, uint32_t, float, or an Atomic version
-//   of one of those. The C++ preprocessor doesn't like template syntax in a
-//   macro argument, so use the typedefs defines in StaticPrefs.h; for example,
-//   use `ReleaseAcquireAtomicBool` instead of `Atomic<bool, ReleaseAcquire>`.
-//
-// - <default-value> is the same as for normal prefs.
-//
-// Note that Rust code must access the global variable directly, rather than via
-// the getter.
 
-// clang-format off
 
-//---------------------------------------------------------------------------
-// Accessibility prefs
-//---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 VARCACHE_PREF(
   "accessibility.monoaudio.enable",
@@ -87,9 +87,9 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-//---------------------------------------------------------------------------
-// Clipboard prefs
-//---------------------------------------------------------------------------
+
+
+
 
 #if !defined(ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
 # define PREF_VALUE true
@@ -103,11 +103,11 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-//---------------------------------------------------------------------------
-// DOM prefs
-//---------------------------------------------------------------------------
 
-// Is support for composite operations from the Web Animations API enabled?
+
+
+
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else
@@ -120,12 +120,12 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Is support for Document.getAnimations() and Element.getAnimations()
-// supported?
-//
-// Before enabling this by default, make sure also CSSPseudoElement interface
-// has been spec'ed properly, or we should add a separate pref for
-// CSSPseudoElement interface. See Bug 1174575 for further details.
+
+
+
+
+
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else
@@ -138,8 +138,8 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Is support for animations from the Web Animations API without 0%/100%
-// keyframes enabled?
+
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else
@@ -152,7 +152,7 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Is support for timelines from the Web Animations API enabled?
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else
@@ -165,18 +165,18 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// NOTE: This preference is used in unit tests. If it is removed or its default
-// value changes, please update test_sharedMap_var_caches.js accordingly.
+
+
 VARCACHE_PREF(
   "dom.webcomponents.shadowdom.report_usage",
    dom_webcomponents_shadowdom_report_usage,
   bool, false
 )
 
-// Whether we disable triggering mutation events for changes to style
-// attribute via CSSOM.
-// NOTE: This preference is used in unit tests. If it is removed or its default
-// value changes, please update test_sharedMap_var_caches.js accordingly.
+
+
+
+
 VARCACHE_PREF(
   "dom.mutation-events.cssom.disabled",
    dom_mutation_events_cssom_disabled,
@@ -189,34 +189,34 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-// If true. then the service worker interception and the ServiceWorkerManager
-// will live in the parent process.  This only takes effect on browser start.
-// Note, this is not currently safe to use for normal browsing yet.
+
+
+
 PREF("dom.serviceWorkers.parent_intercept", bool, false)
 
-// Whether a user gesture is required to call PaymentRequest.prototype.show().
+
 VARCACHE_PREF(
   "dom.payments.request.user_interaction_required",
   dom_payments_request_user_interaction_required,
   bool, true
 )
 
-// Time in milliseconds for PaymentResponse to wait for
-// the Web page to call complete().
+
+
 VARCACHE_PREF(
   "dom.payments.response.timeout",
    dom_payments_response_timeout,
   uint32_t, 5000
 )
 
-// Disable the ImageBitmap-extensions for now.
+
 VARCACHE_PREF(
   "canvas.imagebitmap_extensions.enabled",
    canvas_imagebitmap_extensions_enabled,
   RelaxedAtomicBool, false
 )
 
-// SW Cache API
+
 VARCACHE_PREF(
   "dom.caches.enabled",
    dom_caches_enabled,
@@ -229,7 +229,7 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-// Enable printing performance marks/measures to log
+
 VARCACHE_PREF(
   "dom.performance.enable_user_timing_logging",
    dom_performance_enable_user_timing_logging,
@@ -272,7 +272,7 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-// Enable Storage API for all platforms except Android.
+
 #if !defined(MOZ_WIDGET_ANDROID)
 # define PREF_VALUE true
 #else
@@ -285,23 +285,23 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// WHATWG promise rejection events. See
-// https://html.spec.whatwg.org/multipage/webappapis.html#promiserejectionevent
-// TODO: Enable the event interface once actually firing it (bug 1362272).
+
+
+
 VARCACHE_PREF(
   "dom.promise_rejection_events.enabled",
    dom_promise_rejection_events_enabled,
   RelaxedAtomicBool, false
 )
 
-// Push
+
 VARCACHE_PREF(
   "dom.push.enabled",
    dom_push_enabled,
   RelaxedAtomicBool, false
 )
 
-// Streams API
+
 VARCACHE_PREF(
   "dom.streams.enabled",
    dom_streams_enabled,
@@ -320,7 +320,7 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Network Information API
+
 #if defined(MOZ_WIDGET_ANDROID)
 # define PREF_VALUE true
 #else
@@ -339,14 +339,14 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-// Enable Performance Observer API
+
 VARCACHE_PREF(
   "dom.enable_performance_observer",
    dom_enable_performance_observer,
   RelaxedAtomicBool, true
 )
 
-// Enable passing the "storage" option to indexedDB.open.
+
 VARCACHE_PREF(
   "dom.indexedDB.storageOption.enabled",
    dom_indexedDB_storageOption_enabled,
@@ -361,9 +361,9 @@ VARCACHE_PREF(
 )
 #endif
 
-// IMPORTANT: Keep this in condition in sync with all.js. The value
-// of MOZILLA_OFFICIAL is different between full and artifact builds, so without
-// it being specified there, dump is disabled in artifact builds (see Bug 1490412).
+
+
+
 #ifdef MOZILLA_OFFICIAL
 # define PREF_VALUE false
 #else
@@ -379,19 +379,19 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   "dom.worker.canceling.timeoutMilliseconds",
    dom_worker_canceling_timeoutMilliseconds,
-  RelaxedAtomicUint32, 30000 /* 30 seconds */
+  RelaxedAtomicUint32, 30000 
 )
 
-// Enable content type normalization of XHR uploads via MIME Sniffing standard
+
 VARCACHE_PREF(
   "dom.xhr.standard_content_type_normalization",
    dom_xhr_standard_content_type_normalization,
   RelaxedAtomicBool, true
 )
 
-//---------------------------------------------------------------------------
-// Clear-Site-Data prefs
-//---------------------------------------------------------------------------
+
+
+
 
 VARCACHE_PREF(
   "dom.clearSiteData.enabled",
@@ -399,9 +399,9 @@ VARCACHE_PREF(
   bool, true
 )
 
-//---------------------------------------------------------------------------
-// Full-screen prefs
-//---------------------------------------------------------------------------
+
+
+
 
 VARCACHE_PREF(
   "full-screen-api.unprefix.enabled",
@@ -409,9 +409,9 @@ VARCACHE_PREF(
   bool, true
 )
 
-//---------------------------------------------------------------------------
-// Graphics prefs
-//---------------------------------------------------------------------------
+
+
+
 
 VARCACHE_PREF(
   "gfx.font_rendering.opentype_svg.enabled",
@@ -425,46 +425,66 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-//---------------------------------------------------------------------------
-// HTML5 parser prefs
-//---------------------------------------------------------------------------
 
-// Toggle which thread the HTML5 parser uses for stream parsing.
+
+
+
+
 VARCACHE_PREF(
   "html5.offmainthread",
    html5_offmainthread,
   bool, true
 )
 
-// Time in milliseconds between the time a network buffer is seen and the timer
-// firing when the timer hasn't fired previously in this parse in the
-// off-the-main-thread HTML5 parser.
+
+
+
 VARCACHE_PREF(
   "html5.flushtimer.initialdelay",
    html5_flushtimer_initialdelay,
   RelaxedAtomicInt32, 120
 )
 
-// Time in milliseconds between the time a network buffer is seen and the timer
-// firing when the timer has already fired previously in this parse.
+
+
 VARCACHE_PREF(
   "html5.flushtimer.subsequentdelay",
    html5_flushtimer_subsequentdelay,
   RelaxedAtomicInt32, 120
 )
 
-//---------------------------------------------------------------------------
-// Layout prefs
-//---------------------------------------------------------------------------
 
-// Is parallel CSS parsing enabled?
+
+
+
+
+
+VARCACHE_PREF(
+  "layout.accessiblecaret.width",
+   layout_accessiblecaret_width,
+  float, 34.0f
+)
+
+VARCACHE_PREF(
+  "layout.accessiblecaret.height",
+   layout_accessiblecaret_height,
+  float, 36.0f
+)
+
+VARCACHE_PREF(
+  "layout.accessiblecaret.margin-left",
+   layout_accessiblecaret_margin_left,
+  float, -18.5f
+)
+
+
 VARCACHE_PREF(
   "layout.css.parsing.parallel",
    layout_css_parsing_parallel,
   bool, true
 )
 
-// Are style system use counters enabled?
+
 #ifdef RELEASE_OR_BETA
 #define PREF_VALUE false
 #else
@@ -477,51 +497,51 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Is CSS error reporting enabled?
+
 VARCACHE_PREF(
   "layout.css.report_errors",
   layout_css_report_errors,
   bool, true
 )
 
-// Is support for the font-display @font-face descriptor enabled?
+
 VARCACHE_PREF(
   "layout.css.font-display.enabled",
    layout_css_font_display_enabled,
   bool, true
 )
 
-// Are webkit-prefixed properties & property-values supported?
+
 VARCACHE_PREF(
   "layout.css.prefixes.webkit",
    layout_css_prefixes_webkit,
   bool, true
 )
 
-// Are "-webkit-{min|max}-device-pixel-ratio" media queries supported? (Note:
-// this pref has no effect if the master 'layout.css.prefixes.webkit' pref is
-// set to false.)
+
+
+
 VARCACHE_PREF(
   "layout.css.prefixes.device-pixel-ratio-webkit",
    layout_css_prefixes_device_pixel_ratio_webkit,
   bool, true
 )
 
-// Is -moz-prefixed gradient functions enabled?
+
 VARCACHE_PREF(
   "layout.css.prefixes.gradients",
    layout_css_prefixes_gradients,
   bool, true
 )
 
-// Whether the offset-* logical property aliases are enabled.
+
 VARCACHE_PREF(
   "layout.css.offset-logical-properties.enabled",
    layout_css_offset_logical_properties_enabled,
   bool, false
 )
 
-// Should stray control characters be rendered visibly?
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else
@@ -534,7 +554,7 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Is support for the frames() timing function enabled?
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else
@@ -547,14 +567,14 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Should the :visited selector ever match (otherwise :link matches instead)?
+
 VARCACHE_PREF(
   "layout.css.visited_links_enabled",
    layout_css_visited_links_enabled,
   bool, true
 )
 
-// Is the '-webkit-appearance' alias for '-moz-appearance' enabled?
+
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE true
 #else
@@ -567,15 +587,15 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Pref to control whether @-moz-document rules are enabled in content pages.
+
 VARCACHE_PREF(
   "layout.css.moz-document.content.enabled",
    layout_css_moz_document_content_enabled,
   bool, false
 )
 
-// Pref to control whether @-moz-document url-prefix() is parsed in content
-// pages. Only effective when layout.css.moz-document.content.enabled is false.
+
+
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE false
 #else
@@ -594,8 +614,8 @@ VARCACHE_PREF(
   bool, false
 )
 
-// Pref to control whether display: -moz-box and display: -moz-inline-box are
-// parsed in content pages.
+
+
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE false
 #else
@@ -608,8 +628,8 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Pref to control whether ::xul-tree-* pseudo-elements are parsed in content
-// pages.
+
+
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE false
 #else
@@ -622,74 +642,74 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Is support for CSS "grid-template-{columns,rows}: subgrid X" enabled?
+
 VARCACHE_PREF(
   "layout.css.grid-template-subgrid-value.enabled",
    layout_css_grid_template_subgrid_value_enabled,
   bool, false
 )
 
-// Is support for variation fonts enabled?
+
 VARCACHE_PREF(
   "layout.css.font-variations.enabled",
    layout_css_font_variations_enabled,
   RelaxedAtomicBool, true
 )
 
-// Are we emulating -moz-{inline}-box layout using CSS flexbox?
+
 VARCACHE_PREF(
   "layout.css.emulate-moz-box-with-flex",
    layout_css_emulate_moz_box_with_flex,
   bool, false
 )
 
-// Is overflow: -moz-scrollbars-* value enabled?
+
 VARCACHE_PREF(
   "layout.css.overflow.moz-scrollbars.enabled",
    layout_css_overflow_moz_scrollbars_enabled,
   bool, false
 )
 
-// Does overflow-break: break-word affect intrinsic size?
+
 VARCACHE_PREF(
   "layout.css.overflow-break.intrinsic-size",
    layout_css_overflow_break_intrinsic_size,
   bool, false
 )
 
-// Does arbitrary ::-webkit-* pseudo-element parsed?
+
 VARCACHE_PREF(
   "layout.css.unknown-webkit-pseudo-element",
    layout_css_unknown_webkit_pseudo_element,
   bool, true
 )
 
-// Is path() supported in clip-path?
+
 VARCACHE_PREF(
   "layout.css.clip-path-path.enabled",
    layout_css_clip_path_path_enabled,
   bool, false
 )
 
-// Is support for CSS column-span enabled?
+
 VARCACHE_PREF(
   "layout.css.column-span.enabled",
    layout_css_column_span_enabled,
   bool, false
 )
 
-//---------------------------------------------------------------------------
-// JavaScript prefs
-//---------------------------------------------------------------------------
 
-// nsJSEnvironmentObserver observes the memory-pressure notifications and
-// forces a garbage collection and cycle collection when it happens, if the
-// appropriate pref is set.
+
+
+
+
+
+
 #ifdef ANDROID
-  // Disable the JS engine's GC on memory pressure, since we do one in the
-  // mobile browser (bug 669346).
-  // XXX: this value possibly should be changed, or the pref removed entirely.
-  //      See bug 1450787.
+  
+  
+  
+  
 # define PREF_VALUE false
 #else
 # define PREF_VALUE true
@@ -707,8 +727,8 @@ VARCACHE_PREF(
   bool, true
 )
 
-// The default amount of time to wait from the user being idle to starting a
-// shrinking GC.
+
+
 #ifdef NIGHTLY_BUILD
 # define PREF_VALUE  15000  // ms
 #else
@@ -733,14 +753,14 @@ VARCACHE_PREF(
   bool, false
 )
 
-//---------------------------------------------------------------------------
-// Media prefs
-//---------------------------------------------------------------------------
 
-// These prefs use camel case instead of snake case for the getter because one
-// reviewer had an unshakeable preference for that.
 
-// File-backed MediaCache size.
+
+
+
+
+
+
 #ifdef ANDROID
 # define PREF_VALUE  32768  // Measured in KiB
 #else
@@ -753,33 +773,33 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// If a resource is known to be smaller than this size (in kilobytes), a
-// memory-backed MediaCache may be used; otherwise the (single shared global)
-// file-backed MediaCache is used.
+
+
+
 VARCACHE_PREF(
   "media.memory_cache_max_size",
    MediaMemoryCacheMaxSize,
-  uint32_t, 8192      // Measured in KiB
+  uint32_t, 8192      
 )
 
-// Don't create more memory-backed MediaCaches if their combined size would go
-// above this absolute size limit.
+
+
 VARCACHE_PREF(
   "media.memory_caches_combined_limit_kb",
    MediaMemoryCachesCombinedLimitKb,
   uint32_t, 524288
 )
 
-// Don't create more memory-backed MediaCaches if their combined size would go
-// above this relative size limit (a percentage of physical memory).
+
+
 VARCACHE_PREF(
   "media.memory_caches_combined_limit_pc_sysmem",
    MediaMemoryCachesCombinedLimitPcSysmem,
-  uint32_t, 5         // A percentage
+  uint32_t, 5         
 )
 
-// When a network connection is suspended, don't resume it until the amount of
-// buffered data falls below this threshold (in seconds).
+
+
 #ifdef ANDROID
 # define PREF_VALUE 10  // Use a smaller limit to save battery.
 #else
@@ -792,9 +812,9 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Stop reading ahead when our buffered data is this many seconds ahead of the
-// current playback position. This limit can stop us from using arbitrary
-// amounts of network bandwidth prefetching huge videos.
+
+
+
 #ifdef ANDROID
 # define PREF_VALUE 30  // Use a smaller limit to save battery.
 #else
@@ -807,7 +827,7 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// AudioSink
+
 VARCACHE_PREF(
   "media.resampling.enabled",
    MediaResamplingEnabled,
@@ -815,7 +835,7 @@ VARCACHE_PREF(
 )
 
 #if defined(XP_WIN) || defined(XP_DARWIN) || defined(MOZ_PULSEAUDIO)
-// libcubeb backend implement .get_preferred_channel_layout
+
 # define PREF_VALUE false
 #else
 # define PREF_VALUE true
@@ -827,14 +847,14 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// VideoSink
+
 VARCACHE_PREF(
   "media.ruin-av-sync.enabled",
    MediaRuinAvSyncEnabled,
   RelaxedAtomicBool, false
 )
 
-// Encrypted Media Extensions
+
 #if defined(ANDROID)
 # if defined(NIGHTLY_BUILD)
 #  define PREF_VALUE true
@@ -842,13 +862,13 @@ VARCACHE_PREF(
 #  define PREF_VALUE false
 # endif
 #elif defined(XP_LINUX)
-  // On Linux EME is visible but disabled by default. This is so that the "Play
-  // DRM content" checkbox in the Firefox UI is unchecked by default. DRM
-  // requires downloading and installing proprietary binaries, which users on
-  // an open source operating systems didn't opt into. The first time a site
-  // using EME is encountered, the user will be prompted to enable DRM,
-  // whereupon the EME plugin binaries will be downloaded if permission is
-  // granted.
+  
+  
+  
+  
+  
+  
+  
 # define PREF_VALUE false
 #else
 # define PREF_VALUE true
@@ -867,9 +887,9 @@ VARCACHE_PREF(
 )
 
 #if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
-// Whether to allow, on a Linux system that doesn't support the necessary
-// sandboxing features, loading Gecko Media Plugins unsandboxed.  However, EME
-// CDMs will not be loaded without sandboxing even if this pref is changed.
+
+
+
 VARCACHE_PREF(
   "media.gmp.insecure.allow",
    MediaGmpInsecureAllow,
@@ -877,9 +897,9 @@ VARCACHE_PREF(
 )
 #endif
 
-// Specifies whether the PDMFactory can create a test decoder that just outputs
-// blank frames/audio instead of actually decoding. The blank decoder works on
-// all platforms.
+
+
+
 VARCACHE_PREF(
   "media.use-blank-decoder",
    MediaUseBlankDecoder,
@@ -900,7 +920,7 @@ VARCACHE_PREF(
 
 #ifdef ANDROID
 
-// Enable the MediaCodec PlatformDecoderModule by default.
+
 VARCACHE_PREF(
   "media.android-media-codec.enabled",
    MediaAndroidMediaCodecEnabled,
@@ -913,9 +933,9 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
-#endif // ANDROID
+#endif 
 
-// WebRTC
+
 #ifdef MOZ_WEBRTC
 #ifdef ANDROID
 
@@ -929,16 +949,16 @@ PREF("media.navigator.hardware.vp8_encode.acceleration_enabled", bool, true)
 
 PREF("media.navigator.hardware.vp8_decode.acceleration_enabled", bool, false)
 
-#endif // ANDROID
+#endif 
 
-// Use MediaDataDecoder API for WebRTC. This includes hardware acceleration for
-// decoding.
+
+
 VARCACHE_PREF(
   "media.navigator.mediadatadecoder_enabled",
    MediaNavigatorMediadatadecoderEnabled,
   bool, false
 )
-#endif // MOZ_WEBRTC
+#endif 
 
 #ifdef MOZ_OMX
 VARCACHE_PREF(
@@ -968,7 +988,7 @@ VARCACHE_PREF(
   bool, false
 )
 
-#endif // MOZ_FFMPEG
+#endif 
 
 #ifdef MOZ_FFVPX
 VARCACHE_PREF(
@@ -994,7 +1014,7 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
-// Whether DD should consider WMF-disabled a WMF failure, useful for testing.
+
 VARCACHE_PREF(
   "media.decoder-doctor.wmf-disabled-is-failure",
    MediaDecoderDoctorWmfDisabledIsFailure,
@@ -1007,9 +1027,9 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
-#endif // MOZ_WMF
+#endif 
 
-// Whether to check the decoder supports recycling.
+
 #ifdef ANDROID
 # define PREF_VALUE true
 #else
@@ -1022,7 +1042,7 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Should MFR try to skip to the next key frame?
+
 VARCACHE_PREF(
   "media.decoder.skip-to-next-key-frame.enabled",
    MediaDecoderSkipToNextKeyFrameEnabled,
@@ -1052,15 +1072,15 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, 6
 )
 
-// Whether to suspend decoding of videos in background tabs.
+
 VARCACHE_PREF(
   "media.suspend-bkgnd-video.enabled",
    MediaSuspendBkgndVideoEnabled,
   RelaxedAtomicBool, true
 )
 
-// Delay, in ms, from time window goes to background to suspending
-// video decoders. Defaults to 10 seconds.
+
+
 VARCACHE_PREF(
   "media.suspend-bkgnd-video.delay-ms",
    MediaSuspendBkgndVideoDelayMs,
@@ -1126,7 +1146,7 @@ VARCACHE_PREF(
 #if defined(RELEASE_OR_BETA)
 # define PREF_VALUE 3
 #else
-  // Zero tolerance in pre-release builds to detect any decoder regression.
+  
 # define PREF_VALUE 0
 #endif
 VARCACHE_PREF(
@@ -1139,7 +1159,7 @@ VARCACHE_PREF(
 #if defined(RELEASE_OR_BETA)
 # define PREF_VALUE 2
 #else
-  // Zero tolerance in pre-release builds to detect any decoder regression.
+  
 # define PREF_VALUE 0
 #endif
 VARCACHE_PREF(
@@ -1149,35 +1169,35 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Opus
+
 VARCACHE_PREF(
   "media.opus.enabled",
    MediaOpusEnabled,
   RelaxedAtomicBool, true
 )
 
-// Wave
+
 VARCACHE_PREF(
   "media.wave.enabled",
    MediaWaveEnabled,
   RelaxedAtomicBool, true
 )
 
-// Ogg
+
 VARCACHE_PREF(
   "media.ogg.enabled",
    MediaOggEnabled,
   RelaxedAtomicBool, true
 )
 
-// WebM
+
 VARCACHE_PREF(
   "media.webm.enabled",
    MediaWebMEnabled,
   RelaxedAtomicBool, true
 )
 
-// AV1
+
 VARCACHE_PREF(
   "media.av1.enabled",
    MediaAv1Enabled,
@@ -1190,7 +1210,7 @@ VARCACHE_PREF(
   bool, true
 )
 
-// Hls
+
 #ifdef ANDROID
 # define PREF_VALUE true
 #else
@@ -1215,17 +1235,17 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Error/warning handling, Decoder Doctor.
-//
-// Set to true to force demux/decode warnings to be treated as errors.
+
+
+
 VARCACHE_PREF(
   "media.playback.warnings-as-errors",
    MediaPlaybackWarningsAsErrors,
   RelaxedAtomicBool, false
 )
 
-// Resume video decoding when the cursor is hovering on a background tab to
-// reduce the resume latency and improve the user experience.
+
+
 VARCACHE_PREF(
   "media.resume-bkgnd-video-on-tabhover",
    MediaResumeBkgndVideoOnTabhover,
@@ -1244,7 +1264,7 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
-// Media Seamless Looping
+
 VARCACHE_PREF(
   "media.seamless-looping",
    MediaSeamlessLooping,
@@ -1299,52 +1319,52 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, 1000
 )
 
-//---------------------------------------------------------------------------
-// Network prefs
-//---------------------------------------------------------------------------
 
-// Sub-resources HTTP-authentication:
-//   0 - don't allow sub-resources to open HTTP authentication credentials
-//       dialogs
-//   1 - allow sub-resources to open HTTP authentication credentials dialogs,
-//       but don't allow it for cross-origin sub-resources
-//   2 - allow the cross-origin authentication as well.
+
+
+
+
+
+
+
+
+
 VARCACHE_PREF(
   "network.auth.subresource-http-auth-allow",
    network_auth_subresource_http_auth_allow,
   uint32_t, 2
 )
 
-// Sub-resources HTTP-authentication for cross-origin images:
-// - true: It is allowed to present http auth. dialog for cross-origin images.
-// - false: It is not allowed.
-// If network.auth.subresource-http-auth-allow has values 0 or 1 this pref does
-// not have any effect.
+
+
+
+
+
 VARCACHE_PREF(
   "network.auth.subresource-img-cross-origin-http-auth-allow",
    network_auth_subresource_img_cross_origin_http_auth_allow,
   bool, false
 )
 
-// Resources that are triggered by some non-web-content:
-// - true: They are allow to present http auth. dialog
-// - false: They are not allow to present http auth. dialog.
+
+
+
 VARCACHE_PREF(
   "network.auth.non-web-content-triggered-resources-http-auth-allow",
    network_auth_non_web_content_triggered_resources_http_auth_allow,
   bool, false
 )
 
-// 0-Accept, 1-dontAcceptForeign, 2-dontAcceptAny, 3-limitForeign,
-// 4-rejectTracker
-// Keep the old default of accepting all cookies
+
+
+
 VARCACHE_PREF(
   "network.cookie.cookieBehavior",
   network_cookie_cookieBehavior,
   RelaxedAtomicInt32, 0
 )
 
-// Enables the predictive service.
+
 VARCACHE_PREF(
   "network.predictor.enabled",
    network_predictor_enabled,
@@ -1449,8 +1469,8 @@ VARCACHE_PREF(
   int32_t, 100
 )
 
-// This is selected in concert with max-resources-per-entry to keep memory
-// usage low-ish. The default of the combo of the two is ~50k.
+
+
 VARCACHE_PREF(
   "network.predictor.max-uri-length",
    network_predictor_max_uri_length,
@@ -1459,40 +1479,40 @@ VARCACHE_PREF(
 
 PREF("network.predictor.cleaned-up", bool, false)
 
-// A testing flag.
+
 VARCACHE_PREF(
   "network.predictor.doing-tests",
    network_predictor_doing_tests,
   bool, false
 )
 
-//---------------------------------------------------------------------------
-// Preferences prefs
-//---------------------------------------------------------------------------
+
+
+
 
 PREF("preferences.allow.omt-write", bool, true)
 
-//---------------------------------------------------------------------------
-// Privacy prefs
-//---------------------------------------------------------------------------
+
+
+
 
 #include "ContentBlockingDefaultPrefValues.h"
 
-// Whether Content Blocking has been enabled.
+
 VARCACHE_PREF(
   "browser.contentblocking.enabled",
    browser_contentblocking_enabled,
   bool, CONTENTBLOCKING_ENABLED
 )
 
-// Whether Content Blocking UI has been enabled.
+
 VARCACHE_PREF(
   "browser.contentblocking.ui.enabled",
    browser_contentblocking_ui_enabled,
   bool, CONTENTBLOCKING_UI_ENABLED
 )
 
-// Whether Content Blocking Third-Party Cookies UI has been enabled.
+
 VARCACHE_PREF(
   "browser.contentblocking.rejecttrackers.ui.enabled",
    browser_contentblocking_rejecttrackers_ui_enabled,
@@ -1503,21 +1523,21 @@ VARCACHE_PREF(
 #undef CONTENTBLOCKING_UI_ENABLED
 #undef CONTENTBLOCKING_REJECTTRACKERS_UI_ENABLED
 
-// Whether FastBlock has been enabled.
+
 VARCACHE_PREF(
   "browser.fastblock.enabled",
   browser_fastblock_enabled,
   bool, false
 )
 
-// Anti-tracking permission expiration
+
 VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.expiration",
    privacy_restrict3rdpartystorage_expiration,
-  uint32_t, 2592000 // 30 days (in seconds)
+  uint32_t, 2592000 
 )
 
-// Anti-fingerprinting, disabled by default
+
 VARCACHE_PREF(
   "privacy.resistFingerprinting",
    privacy_resistFingerprinting,
@@ -1530,9 +1550,9 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-//---------------------------------------------------------------------------
-// Security prefs
-//---------------------------------------------------------------------------
+
+
+
 
 VARCACHE_PREF(
   "security.csp.enable",
@@ -1558,9 +1578,9 @@ VARCACHE_PREF(
   int32_t, 40
 )
 
-//---------------------------------------------------------------------------
-// View source prefs
-//---------------------------------------------------------------------------
+
+
+
 
 VARCACHE_PREF(
   "view_source.editor.external",
@@ -1568,9 +1588,9 @@ VARCACHE_PREF(
   bool, false
 )
 
-//---------------------------------------------------------------------------
-// DevTools prefs
-//---------------------------------------------------------------------------
+
+
+
 
 VARCACHE_PREF(
   "devtools.enabled",
@@ -1578,8 +1598,8 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
-//---------------------------------------------------------------------------
-// End of prefs
-//---------------------------------------------------------------------------
 
-// clang-format on
+
+
+
+
