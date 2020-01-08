@@ -241,6 +241,13 @@ impl KeyframesName {
 
 impl Eq for KeyframesName {}
 
+
+
+pub trait IsAuto {
+    
+    fn is_auto(&self) -> bool;
+}
+
 impl PartialEq for KeyframesName {
     fn eq(&self, other: &Self) -> bool {
         self.as_atom() == other.as_atom()

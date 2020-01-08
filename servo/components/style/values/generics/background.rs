@@ -4,6 +4,10 @@
 
 
 
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ToCss};
+use values::IsAuto;
+
 
 #[derive(
     Animate,
@@ -17,7 +21,6 @@
     ToAnimatedValue,
     ToAnimatedZero,
     ToComputedValue,
-    ToCss,
 )]
 pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     
@@ -33,4 +36,30 @@ pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     
     #[animation(error)]
     Contain,
+}
+
+impl<LengthOrPercentageOrAuto> ToCss for BackgroundSize<LengthOrPercentageOrAuto>
+where
+    LengthOrPercentageOrAuto: ToCss + IsAuto,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match self {
+            BackgroundSize::Explicit { width, height } => {
+                width.to_css(dest)?;
+                
+                
+                
+                if !width.is_auto() || !height.is_auto() {
+                    dest.write_str(" ")?;
+                    height.to_css(dest)?;
+                }
+                Ok(())
+            }
+            BackgroundSize::Cover => dest.write_str("cover"),
+            BackgroundSize::Contain => dest.write_str("contain"),
+        }
+    }
 }
