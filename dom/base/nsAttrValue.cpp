@@ -1169,16 +1169,13 @@ nsAttrValue::Contains(nsAtom* aValue, nsCaseTreatment aCaseSensitive) const
     case eAtomBase:
     {
       nsAtom* atom = GetAtomValue();
-
       if (aCaseSensitive == eCaseMatters) {
         return aValue == atom;
       }
 
       
       
-      return
-        nsContentUtils::EqualsIgnoreASCIICase(nsDependentAtomString(aValue),
-                                              nsDependentAtomString(atom));
+      return nsContentUtils::EqualsIgnoreASCIICase(aValue, atom);
     }
     default:
     {
@@ -1188,16 +1185,11 @@ nsAttrValue::Contains(nsAtom* aValue, nsCaseTreatment aCaseSensitive) const
           return array->Contains(aValue);
         }
 
-        nsDependentAtomString val1(aValue);
-
-        for (RefPtr<nsAtom> *cur = array->Elements(),
-                               *end = cur + array->Length();
-             cur != end; ++cur) {
+        for (RefPtr<nsAtom>& cur : *array) {
           
           
           
-          if (nsContentUtils::EqualsIgnoreASCIICase(val1,
-                nsDependentAtomString(*cur))) {
+          if (nsContentUtils::EqualsIgnoreASCIICase(aValue, cur)) {
             return true;
           }
         }

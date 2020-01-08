@@ -30,8 +30,6 @@ class nsDynamicAtom;
 
 
 
-
-
 class nsAtom
 {
 public:
@@ -77,6 +75,13 @@ public:
 
   
   
+  bool IsAsciiLowercase() const
+  {
+    return mIsAsciiLowercase;
+  }
+
+  
+  
   MozExternalRefCountType AddRef();
   MozExternalRefCountType Release();
 
@@ -84,16 +89,20 @@ public:
 
 protected:
   
-  constexpr nsAtom(uint32_t aLength, uint32_t aHash)
+  constexpr nsAtom(uint32_t aLength, uint32_t aHash, bool aIsAsciiLowercase)
     : mLength(aLength)
     , mIsStatic(true)
+    , mIsAsciiLowercase(aIsAsciiLowercase)
     , mHash(aHash)
   {}
 
   
-  nsAtom(const nsAString& aString, uint32_t aHash)
+  nsAtom(const nsAString& aString,
+         uint32_t aHash,
+         bool aIsAsciiLowercase)
     : mLength(aString.Length())
     , mIsStatic(false)
+    , mIsAsciiLowercase(aIsAsciiLowercase)
     , mHash(aHash)
   {
   }
@@ -101,8 +110,8 @@ protected:
   ~nsAtom() = default;
 
   const uint32_t mLength:30;
-  
   const uint32_t mIsStatic:1;
+  const uint32_t mIsAsciiLowercase:1;
   const uint32_t mHash;
 };
 
@@ -123,8 +132,8 @@ public:
   
   
   constexpr nsStaticAtom(uint32_t aLength, uint32_t aHash,
-                         uint32_t aStringOffset)
-    : nsAtom(aLength, aHash)
+                         uint32_t aStringOffset, bool aIsAsciiLowercase)
+    : nsAtom(aLength, aHash, aIsAsciiLowercase)
     , mStringOffset(aStringOffset)
   {}
 
@@ -167,14 +176,10 @@ private:
 
   
   
-  static nsDynamicAtom* CreateInner(const nsAString& aString, uint32_t aHash);
-  nsDynamicAtom(const nsAString& aString, uint32_t aHash);
+  nsDynamicAtom(const nsAString& aString, uint32_t aHash, bool aIsAsciiLowercase);
   ~nsDynamicAtom() {}
 
-  
-  
   static nsDynamicAtom* Create(const nsAString& aString, uint32_t aHash);
-  static nsDynamicAtom* Create(const nsAString& aString);
   static void Destroy(nsDynamicAtom* aAtom);
 
   mozilla::ThreadSafeAutoRefCnt mRefCnt;

@@ -17,7 +17,7 @@ import build
 
 
 
-PATTERN = re.compile('^GK_ATOM\(([^,]*),[^"]*"([^"]*)",\s*(0x[0-9a-f]+),\s*([^,]*),\s*([^)]*)\)',
+PATTERN = re.compile('^GK_ATOM\(([^,]*),[^"]*"([^"]*)",\s*(0x[0-9a-f]+),\s*[^,]*,\s*([^,]*),\s*([^)]*)\)',
                      re.MULTILINE)
 FILE = "include/nsGkAtomList.h"
 
