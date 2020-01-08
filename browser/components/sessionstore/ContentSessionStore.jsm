@@ -524,7 +524,15 @@ class SessionStorageListener extends Handler {
     if (!this._changes[domain]) {
       this._changes[domain] = {};
     }
-    this._changes[domain][key] = newValue;
+
+    
+    
+    
+    if (!key) {
+      this._changes[domain] = null;
+    } else {
+      this._changes[domain][key] = newValue;
+    }
 
     this.messageQueue.push("storagechange", () => {
       let tmp = this._changes;
