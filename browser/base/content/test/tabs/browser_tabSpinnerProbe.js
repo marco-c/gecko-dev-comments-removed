@@ -50,10 +50,7 @@ function hangContentProcess(browser, aMs) {
 async function testProbe(aProbe) {
   info(`Testing probe: ${aProbe}`);
   let histogram = Services.telemetry.getHistogramById(aProbe);
-  let buckets = histogram.snapshot().ranges.filter(function(value) {
-    return (value > MIN_HANG_TIME && value < MAX_HANG_TIME);
-  });
-  let delayTime = buckets[0]; 
+  let delayTime = MIN_HANG_TIME + 1; 
 
   
   
@@ -78,7 +75,7 @@ async function testProbe(aProbe) {
   
   let snapshot = histogram.snapshot();
   BrowserTestUtils.removeTab(hangTab);
-  ok(sum(snapshot.counts) > 0,
+  ok(sum(Object.values(snapshot.values)) > 0,
    `Spinner probe should now have a value in some bucket`);
 }
 
