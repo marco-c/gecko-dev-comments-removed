@@ -418,7 +418,7 @@ ParseCacheIRStub(ICStub* stub)
       case CacheOp::Int32URightShiftResult:
         reader.skip(); 
         reader.skip(); 
-        return reader.readByte() == 0  ?  MIRType::Int32 : MIRType::Double;
+        return reader.readByte() == 0 ? MIRType::Int32 : MIRType::Double;
       case CacheOp::LoadValueResult:
         return MIRType::Value;
       default:
