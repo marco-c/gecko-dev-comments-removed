@@ -791,16 +791,47 @@ var gMainPane = {
   
   async showConfirmLanguageChangeMessageBar(locales) {
     let messageBar = document.getElementById("confirmBrowserLanguage");
+
     
     let newBundle = getBundleForLocales(locales);
-    let description = messageBar.querySelector(".message-bar-description");
-    description.textContent = await newBundle.formatValue(
-      "confirm-browser-language-change-description");
-    let button = messageBar.querySelector(".message-bar-button");
-    button.setAttribute(
-      "label", await newBundle.formatValue(
-        "confirm-browser-language-change-button"));
-    button.setAttribute("locales", locales.join(","));
+
+    
+    let messages = await Promise.all([newBundle, document.l10n].map(
+      async (bundle) => bundle.formatValue("confirm-browser-language-change-description")));
+    let buttonLabels = await Promise.all([newBundle, document.l10n].map(
+      async (bundle) => bundle.formatValue("confirm-browser-language-change-button")));
+
+    
+    if (messages[0] == messages[1] && buttonLabels[0] == buttonLabels[1]) {
+      messages.pop();
+      buttonLabels.pop();
+    }
+
+    let contentContainer = messageBar.querySelector(".message-bar-content-container");
+    contentContainer.textContent = "";
+
+    for (let i = 0; i < messages.length; i++) {
+      let messageContainer = document.createXULElement("hbox");
+      messageContainer.classList.add("message-bar-content");
+      messageContainer.setAttribute("flex", "1");
+      messageContainer.setAttribute("align", "center");
+
+      let description = document.createXULElement("description");
+      description.classList.add("message-bar-description");
+      description.setAttribute("flex", "1");
+      description.textContent = messages[i];
+      messageContainer.appendChild(description);
+
+      let button = document.createXULElement("button");
+      button.addEventListener("command", gMainPane.confirmBrowserLanguageChange);
+      button.classList.add("message-bar-button");
+      button.setAttribute("locales", locales.join(","));
+      button.setAttribute("label", buttonLabels[i]);
+      messageContainer.appendChild(button);
+
+      contentContainer.appendChild(messageContainer);
+    }
+
     messageBar.hidden = false;
     gMainPane.requestingLocales = locales;
   },
