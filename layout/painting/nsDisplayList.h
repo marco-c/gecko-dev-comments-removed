@@ -797,6 +797,15 @@ class nsDisplayListBuilder {
 
 
   nsCaret* GetCaret();
+
+  
+
+
+
+  nsIFrame* GetPresShellIgnoreScrollFrame() {
+    return CurrentPresShellState()->mPresShellIgnoreScrollFrame;
+  }
+
   
 
 
@@ -1833,6 +1842,7 @@ class nsDisplayListBuilder {
     
     
     bool mInsidePointerEventsNoneDoc;
+    nsIFrame* mPresShellIgnoreScrollFrame;
   };
 
   PresShellState* CurrentPresShellState() {
