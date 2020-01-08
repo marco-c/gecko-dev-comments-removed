@@ -9,6 +9,7 @@
 #define nsTSubstring_h
 
 #include "mozilla/Casting.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/MemoryReporting.h"
@@ -909,20 +910,59 @@ public:
 
 
 
+
+
+
+
+
+
+
   void NS_FASTCALL SetCapacity(size_type aNewCapacity);
   MOZ_MUST_USE bool NS_FASTCALL SetCapacity(size_type aNewCapacity,
                                             const fallible_t&);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   void NS_FASTCALL SetLength(size_type aNewLength);
   MOZ_MUST_USE bool NS_FASTCALL SetLength(size_type aNewLength,
                                           const fallible_t&);
 
-  void Truncate(size_type aNewLength = 0)
+  
+
+
+
+
+
+
+
+  void Truncate(size_type aNewLength)
   {
-    NS_ASSERTION(aNewLength <= base_string_type::mLength, "Truncate cannot make string longer");
-    SetLength(aNewLength);
+    MOZ_RELEASE_ASSERT(aNewLength <= base_string_type::mLength,
+                       "Truncate cannot make string longer");
+    mozilla::DebugOnly<bool> success = SetLength(aNewLength, mozilla::fallible);
+    MOZ_ASSERT(success);
   }
 
+  
+
+
+
+  void Truncate();
 
   
 
@@ -1333,6 +1373,29 @@ public:
                                  size_type aSuffixLength = 0,
                                  size_type aOldSuffixStart = 0,
                                  size_type aNewSuffixStart = 0);
+
+private:
+  
+
+
+
+  MOZ_ALWAYS_INLINE void NS_FASTCALL FinishBulkWriteImplImpl(size_type aLength)
+  {
+    base_string_type::mData[aLength] = char_type(0);
+    base_string_type::mLength = aLength;
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    char_traits::uninitialize(base_string_type::mData + aLength + 1, Capacity() - aLength);
+#endif
+  }
 
 protected:
   

@@ -289,11 +289,9 @@ struct InputContext final
   
   void ShutDown()
   {
-    
-    
-    mHTMLInputType.SetCapacity(0);
-    mHTMLInputInputmode.SetCapacity(0);
-    mActionHint.SetCapacity(0);
+    mHTMLInputType.Truncate();
+    mHTMLInputInputmode.Truncate();
+    mActionHint.Truncate();
   }
 
   bool IsPasswordEditor() const
