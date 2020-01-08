@@ -103,26 +103,6 @@ def prepare(srcdir, objdir, args):
             data = pickle.load(f)
             previous_args = data['args']
 
-    
-    
-    
-    input = sys.stdin.read()
-    if input:
-        data = {a: b for [a, b] in eval(input)}
-        environ = {a: b for a, b in data['env']}
-        
-        
-        
-        
-        
-        for var in ('HOME', 'TERM', 'PATH', 'TMPDIR', 'TMP',
-                    'TEMP', 'INCLUDE'):
-            if var in environ and var in os.environ:
-                environ[var] = os.environ[var]
-        args = data['args']
-    else:
-        environ = os.environ
-
     args, others = parser.parse_known_args(args)
 
     data = {
@@ -132,7 +112,7 @@ def prepare(srcdir, objdir, args):
         'args': others,
         'srcdir': srcdir,
         'objdir': objdir,
-        'env': environ,
+        'env': os.environ,
     }
 
     if args.cache_file:
