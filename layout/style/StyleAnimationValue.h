@@ -79,10 +79,6 @@ struct AnimationValue
   float GetOpacity() const;
 
   
-  
-  nscolor GetColor(nscolor aForegroundColor) const;
-
-  
   already_AddRefed<const nsCSSValueSharedList> GetTransformList() const;
 
   
