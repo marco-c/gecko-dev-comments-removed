@@ -1,0 +1,12 @@
+
+
+
+
+import { createSelector as reselectCreateSelector } from "reselect";
+
+function createSelector(...args) {
+  
+  return reselectCreateSelector(...args);
+}
+
+export { createSelector };

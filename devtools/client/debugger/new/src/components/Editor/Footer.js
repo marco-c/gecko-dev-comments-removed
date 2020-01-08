@@ -4,7 +4,7 @@
 
 
 import React, { PureComponent } from "react";
-import { connect } from "react-redux";
+import { connect } from "../../utils/connect";
 import classnames from "classnames";
 import Svg from "../shared/Svg";
 import actions from "../../actions";

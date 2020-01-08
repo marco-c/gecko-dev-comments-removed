@@ -3,13 +3,13 @@
 
 
 
-import { connect } from "react-redux";
 import React, { Component } from "react";
 import Breakpoint from "./Breakpoint";
 
 import { getSelectedSource, getFirstVisibleBreakpoints } from "../../selectors";
 import { makeLocationId } from "../../utils/breakpoint";
 import { isLoaded } from "../../utils/source";
+import { connect } from "../../utils/connect";
 
 import type { Breakpoint as BreakpointType, Source } from "../../types";
 

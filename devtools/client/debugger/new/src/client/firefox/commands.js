@@ -401,12 +401,12 @@ async function createSources(client: ThreadClient) {
   );
 }
 
-async function fetchSources() {
+async function fetchSources(): Promise<any[]> {
   let sources = await createSources(threadClient);
 
   
   if (!sources) {
-    return;
+    return [];
   }
 
   if (features.windowlessWorkers) {

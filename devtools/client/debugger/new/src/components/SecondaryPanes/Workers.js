@@ -3,7 +3,7 @@
 
 
 import React, { Component } from "react";
-import { connect } from "react-redux";
+import { connect } from "../../utils/connect";
 import type { List } from "immutable";
 
 import "./Workers.css";

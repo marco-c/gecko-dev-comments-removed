@@ -5,7 +5,7 @@
 
 
 import React, { PureComponent } from "react";
-import { connect } from "react-redux";
+import { connect } from "../../utils/connect";
 
 import { getSelectedSource, getSourcesForTabs } from "../../selectors";
 import { isVisible } from "../../utils/ui";

@@ -3,12 +3,12 @@
 
 
 import React, { Component } from "react";
-import { connect } from "react-redux";
 
 import ColumnBreakpoint from "./ColumnBreakpoint";
 import "./ColumnBreakpoints.css";
 
 import { getSelectedSource, visibleColumnBreakpoints } from "../../selectors";
+import { connect } from "../../utils/connect";
 import { makeLocationId } from "../../utils/breakpoint";
 import actions from "../../actions";
 

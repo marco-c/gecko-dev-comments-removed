@@ -2,7 +2,7 @@
 
 
 
-import { connect } from "react-redux";
+import { connect } from "../../utils/connect";
 import { Component } from "react";
 import { getSelectedSource, getEmptyLines } from "../../selectors";
 import type { Source } from "../../types";
