@@ -402,13 +402,16 @@ struct BuiltDisplayListDescriptor {
   
   uint64_t send_start_time;
   
-  uintptr_t total_clip_ids;
+  uintptr_t total_clip_nodes;
+  
+  uintptr_t total_spatial_nodes;
 
   bool operator==(const BuiltDisplayListDescriptor& aOther) const {
     return builder_start_time == aOther.builder_start_time &&
            builder_finish_time == aOther.builder_finish_time &&
            send_start_time == aOther.send_start_time &&
-           total_clip_ids == aOther.total_clip_ids;
+           total_clip_nodes == aOther.total_clip_nodes &&
+           total_spatial_nodes == aOther.total_spatial_nodes;
   }
 };
 
@@ -915,10 +918,12 @@ struct FontInstanceOptions {
 
 #if defined(XP_WIN)
 struct FontInstancePlatformOptions {
-  uint32_t unused;
+  uint16_t gamma;
+  uint16_t contrast;
 
   bool operator==(const FontInstancePlatformOptions& aOther) const {
-    return unused == aOther.unused;
+    return gamma == aOther.gamma &&
+           contrast == aOther.contrast;
   }
 };
 #endif
