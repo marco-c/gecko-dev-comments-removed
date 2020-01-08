@@ -19,7 +19,8 @@ add_task(async function() {
   await selectNode(".container .item", inspector);
   let [flexOutline] = await onFlexItemOutlineRendered;
 
-  ok(flexOutline.classList.contains("row"), "The flex outline has the row class");
+  ok(flexOutline.classList.contains("horizontal-lr"),
+    "The flex outline has the horizontal-lr class");
 
   
   let bounds = flexOutline.getBoxQuads()[0].getBounds();
@@ -30,10 +31,10 @@ add_task(async function() {
     ".flex-outline-container .flex-outline");
   await selectNode(".container.column .item", inspector);
   await waitUntil(() => {
-    flexOutline = doc.querySelector(".flex-outline-container .flex-outline.column");
+    flexOutline = doc.querySelector(".flex-outline-container .flex-outline.vertical-tb");
     return flexOutline;
   });
-  ok(true, "The flex outline has the column class");
+  ok(true, "The flex outline has the vertical-tb class");
 
   
   bounds = flexOutline.getBoxQuads()[0].getBounds();
