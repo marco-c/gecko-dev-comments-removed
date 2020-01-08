@@ -53,6 +53,11 @@ add_task(async function overrideContext_permissions() {
     
     
     let testGenerator = (async function* () {
+      browser.test.assertEq(undefined, browser.menus.overrideContext,
+                            "menus.overrideContext requires the 'menus.overrideContext' permission");
+      await requestPermissions({permissions: ["menus.overrideContext"]});
+      yield;
+
       
       browser.test.assertThrows(
         () => { browser.menus.overrideContext({context: "tab"}); },
@@ -114,6 +119,10 @@ add_task(async function overrideContext_permissions() {
 
       
       assertNotAllowed(CONTEXT_OPTIONS_TAB, E_PERM_TAB);
+
+      await browser.permissions.remove({permissions: ["menus.overrideContext"]});
+      browser.test.assertEq(undefined, browser.menus.overrideContext,
+                            "menus.overrideContext is unavailable after revoking the permission");
     })();
 
     
@@ -133,7 +142,7 @@ add_task(async function overrideContext_permissions() {
     useAddonManager: "temporary", 
     manifest: {
       permissions: ["menus"],
-      optional_permissions: ["tabs", "bookmarks", "<all_urls>"],
+      optional_permissions: ["menus.overrideContext", "tabs", "bookmarks", "<all_urls>"],
       sidebar_action: {
         default_panel: "sidebar.html",
       },
