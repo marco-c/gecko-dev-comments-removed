@@ -2,18 +2,20 @@
 
 
 
-
 extern crate cssparser;
-#[macro_use] extern crate cstr;
+#[macro_use]
+extern crate cstr;
 extern crate libc;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate malloc_size_of;
 extern crate nsstring;
 extern crate num_traits;
 extern crate selectors;
 extern crate servo_arc;
 extern crate smallvec;
-#[macro_use] extern crate style;
+#[macro_use]
+extern crate style;
 extern crate style_traits;
 
 mod error_reporter;
@@ -23,4 +25,6 @@ mod stylesheet_loader;
 
 
 #[no_mangle]
-pub extern "C" fn je_malloc_usable_size(_: *const ::libc::c_void) -> ::libc::size_t { 0 }
+pub extern "C" fn je_malloc_usable_size(_: *const ::libc::c_void) -> ::libc::size_t {
+    0
+}
