@@ -92,8 +92,8 @@ void KungFuDeathGripChecker::check(const MatchFinder::MatchResult &Result) {
   }
 
   
-  diag(D->getLocStart(), Error, DiagnosticIDs::Error)
+  diag(D->getBeginLoc(), Error, DiagnosticIDs::Error)
       << D->getType() << ErrThing;
-  diag(E->getLocStart(), Note, DiagnosticIDs::Note)
+  diag(E->getBeginLoc(), Note, DiagnosticIDs::Note)
       << NoteThing << getNameChecked(D);
 }

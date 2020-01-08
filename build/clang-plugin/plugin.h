@@ -33,6 +33,12 @@ typedef std::unique_ptr<ASTConsumer> ASTConsumerPtr;
 typedef ASTConsumer *ASTConsumerPtr;
 #endif
 
+#if CLANG_VERSION_FULL < 800
+
+#define getBeginLoc getLocStart
+#define getEndLoc getLocEnd
+#endif
+
 #ifndef HAVE_NEW_ASTMATCHER_NAMES
 
 

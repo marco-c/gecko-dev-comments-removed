@@ -34,6 +34,12 @@
 #include "JSONFormatter.h"
 #include "StringOperations.h"
 
+#if CLANG_VERSION_FULL < 800
+
+#define getBeginLoc getLocStart
+#define getEndLoc getLocEnd
+#endif
+
 using namespace clang;
 
 const std::string GENERATED("__GENERATED__" PATHSEP_STRING);
@@ -1021,7 +1027,7 @@ public:
       
       if (ParamLoc.first == FuncLoc.first) {
         
-        End = Param->getLocEnd();
+        End = Param->getEndLoc();
       }
     }
 
@@ -1039,13 +1045,13 @@ public:
     if (CXXRecordDecl* D2 = dyn_cast<CXXRecordDecl>(D)) {
       
       for (CXXBaseSpecifier& Base : D2->bases()) {
-        std::pair<FileID, unsigned> Loc = SM.getDecomposedLoc(Base.getLocEnd());
+        std::pair<FileID, unsigned> Loc = SM.getDecomposedLoc(Base.getEndLoc());
 
         
         
         if (Loc.first == FuncLoc.first) {
           
-          End = Base.getLocEnd();
+          End = Base.getEndLoc();
         }
       }
     }
@@ -1128,7 +1134,7 @@ public:
     int Flags = 0;
     const char *Kind = "def";
     const char *PrettyKind = "?";
-    SourceRange PeekRange(D->getLocStart(), D->getLocEnd());
+    SourceRange PeekRange(D->getBeginLoc(), D->getEndLoc());
     if (FunctionDecl *D2 = dyn_cast<FunctionDecl>(D)) {
       if (D2->isTemplateInstantiation()) {
         D = D2->getTemplateInstantiationPattern();

@@ -220,7 +220,7 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
         << MemberCall->getSourceRange();
 
     
-    diag(EscapeStmt->getLocStart(), EscapeStmtNote, DiagnosticIDs::Note)
+    diag(EscapeStmt->getBeginLoc(), EscapeStmtNote, DiagnosticIDs::Note)
         << EscapeStmt->getSourceRange();
 
     
