@@ -65,7 +65,7 @@ test_newtab({
   
   test: async function topsites_add() {
     let nativeInputValueSetter = Object.getOwnPropertyDescriptor(content.window.HTMLInputElement.prototype, "value").set;
-    let event = new content.Event("input", {bubbles: true});
+    let event = new Event("input", {bubbles: true});
 
     
     content.document.querySelector(".top-sites .section-top-bar .context-menu-button").click();

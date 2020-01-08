@@ -105,7 +105,7 @@ if (params.runUntilFailure) {
 
 
 if (params.closeWhenDone) {
-  TestRunner.onComplete = SpecialPowers.quit.bind(SpecialPowers);
+  TestRunner.onComplete = SpecialPowers.quit;
 }
 
 if (params.failureFile) {

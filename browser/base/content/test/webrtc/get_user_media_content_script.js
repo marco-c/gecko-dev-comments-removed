@@ -3,7 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "MediaManagerService",
                                    "@mozilla.org/mediaManagerService;1",
