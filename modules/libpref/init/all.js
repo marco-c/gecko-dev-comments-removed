@@ -2955,7 +2955,7 @@ pref("layout.css.mix-blend-mode.enabled", true);
 pref("layout.css.isolation.enabled", true);
 
 
-pref("layout.css.scrollbar-colors.enabled", true);
+pref("layout.css.scrollbar-color.enabled", true);
 
 
 pref("layout.css.scrollbar-width.enabled", true);
