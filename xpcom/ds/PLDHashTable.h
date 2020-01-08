@@ -247,7 +247,8 @@ private:
 
     bool IsFree() const { return KeyHash() == 0; }
     bool IsRemoved() const { return KeyHash() == 1; }
-    bool IsLive() const { return KeyHash() >= 2; }
+    bool IsLive() const { return IsLiveHash(KeyHash()); }
+    static bool IsLiveHash(uint32_t aHash) { return aHash >= 2; }
 
     void MarkFree() { *HashPtr() = 0; }
     void MarkRemoved() { *HashPtr() = 1; }
@@ -259,9 +260,9 @@ private:
       mEntry = reinterpret_cast<PLDHashEntryHdr*>(p);
       mKeyHash++;
     }
-  private:
     PLDHashNumber* HashPtr() const { return mKeyHash; }
 
+  private:
     PLDHashEntryHdr* mEntry;
     PLDHashNumber* mKeyHash;
   };
@@ -613,7 +614,6 @@ public:
     PLDHashTable* mTable;             
 
   private:
-    Slot mLimit;                      
     Slot mCurrent;                    
     uint32_t mNexts;                  
     uint32_t mNextsLimit;             
@@ -622,7 +622,8 @@ public:
     uint8_t mEntrySize;               
 
     bool IsOnNonLiveEntry() const;
-    void MoveToNextEntry();
+
+    void MoveToNextLiveEntry();
 
     Iterator() = delete;
     Iterator(const Iterator&) = delete;

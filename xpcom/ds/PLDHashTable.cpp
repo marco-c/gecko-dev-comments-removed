@@ -746,7 +746,6 @@ PLDHashTable::ShallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 
 PLDHashTable::Iterator::Iterator(Iterator&& aOther)
   : mTable(aOther.mTable)
-  , mLimit(aOther.mLimit)
   , mCurrent(aOther.mCurrent)
   , mNexts(aOther.mNexts)
   , mNextsLimit(aOther.mNextsLimit)
@@ -764,8 +763,6 @@ PLDHashTable::Iterator::Iterator(Iterator&& aOther)
 
 PLDHashTable::Iterator::Iterator(PLDHashTable* aTable)
   : mTable(aTable)
-  , mLimit(mTable->mEntryStore.SlotForIndex(mTable->Capacity(), mTable->mEntrySize,
-                                            mTable->Capacity()))
   , mCurrent(mTable->mEntryStore.SlotForIndex(0, mTable->mEntrySize,
                                               mTable->Capacity()))
   , mNexts(0)
@@ -787,10 +784,8 @@ PLDHashTable::Iterator::Iterator(PLDHashTable* aTable)
   }
 
   
-  if (!Done()) {
-    while (IsOnNonLiveEntry()) {
-      MoveToNextEntry();
-    }
+  if (!Done() && IsOnNonLiveEntry()) {
+    MoveToNextLiveEntry();
   }
 }
 
@@ -813,17 +808,6 @@ PLDHashTable::Iterator::IsOnNonLiveEntry() const
   return !mCurrent.IsLive();
 }
 
-MOZ_ALWAYS_INLINE void
-PLDHashTable::Iterator::MoveToNextEntry()
-{
-  mCurrent.Next(mEntrySize);
-  if (mCurrent == mLimit) {
-    
-    mCurrent = mTable->mEntryStore.SlotForIndex(0, mEntrySize,
-                                                mTable->CapacityFromHashShift());
-  }
-}
-
 void
 PLDHashTable::Iterator::Next()
 {
@@ -833,10 +817,44 @@ PLDHashTable::Iterator::Next()
 
   
   if (!Done()) {
-    do {
-      MoveToNextEntry();
-    } while (IsOnNonLiveEntry());
+    MoveToNextLiveEntry();
   }
+}
+
+MOZ_ALWAYS_INLINE void
+PLDHashTable::Iterator::MoveToNextLiveEntry()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  Slot slot = mCurrent;
+  PLDHashNumber* p = slot.HashPtr();
+  const uint32_t capacity = mTable->CapacityFromHashShift();
+  const uint32_t mask = capacity - 1;
+  auto hashes = reinterpret_cast<PLDHashNumber*>(mTable->mEntryStore.Get());
+  uint32_t slotIndex = p - hashes;
+
+  do {
+    slotIndex = (slotIndex + 1) & mask;
+  } while (!Slot::IsLiveHash(hashes[slotIndex]));
+
+  
+  
+  auto entries = reinterpret_cast<char*>(&hashes[capacity]);
+  char* entryPtr = entries + slotIndex * mEntrySize;
+  auto entry = reinterpret_cast<PLDHashEntryHdr*>(entryPtr);
+
+  mCurrent = Slot(entry, &hashes[slotIndex]);
 }
 
 void
