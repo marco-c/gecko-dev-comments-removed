@@ -6,3 +6,6 @@ user_pref("dom.performance.time_to_first_interactive.enabled", true);
 
 
 user_pref("geckoview.console.enabled", true);
+
+
+user_pref("dom.push.connection.enabled", false);
