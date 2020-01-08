@@ -265,7 +265,7 @@ StaticPresData::GetFontPrefsForLangHelper(nsAtom* aLanguage,
       *aNeedsToCache = true;
       return nullptr;
     }
-    AssertIsMainThreadOrServoLangFontPrefsCacheLocked();
+    AssertIsMainThreadOrServoFontMetricsLocked();
     
     prefs = prefs->mNext = new LangGroupFontPrefs;
   }
@@ -275,7 +275,7 @@ StaticPresData::GetFontPrefsForLangHelper(nsAtom* aLanguage,
     return nullptr;
   }
 
-  AssertIsMainThreadOrServoLangFontPrefsCacheLocked();
+  AssertIsMainThreadOrServoFontMetricsLocked();
   prefs->Initialize(langGroupAtom);
 
   return prefs;
