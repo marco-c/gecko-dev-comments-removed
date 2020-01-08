@@ -273,6 +273,27 @@ var AUSTLMY = {
 
 
 
+  pingBinaryTransparencyResult: function UT_pingBinaryTransparencyResult(aSuffix, aCode) {
+    try {
+      let id = "update.binarytransparencyresult";
+      let key = aSuffix.toLowerCase().replace("_", "-");
+      Services.telemetry.keyedScalarSet(id, key, aCode);
+    } catch (e) {
+      Cu.reportError(e);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
   pingLastUpdateTime: function UT_pingLastUpdateTime(aSuffix) {
     const PREF_APP_UPDATE_LASTUPDATETIME = "app.update.lastUpdateTime.background-update-timer";
     if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_LASTUPDATETIME)) {

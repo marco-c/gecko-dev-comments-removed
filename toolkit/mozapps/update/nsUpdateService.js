@@ -75,6 +75,7 @@ const DIR_UPDATES         = "updates";
 
 const FILE_ACTIVE_UPDATE_XML = "active-update.xml";
 const FILE_BACKUP_UPDATE_LOG = "backup-update.log";
+const FILE_BT_RESULT         = "bt.result";
 const FILE_LAST_UPDATE_LOG   = "last-update.log";
 const FILE_UPDATES_XML       = "updates.xml";
 const FILE_UPDATE_CONFIG_JSON = "update-config.json";
@@ -677,6 +678,29 @@ function readStatusFile(dir) {
 
 
 
+function readBinaryTransparencyResult(dir) {
+  let binaryTransparencyResultFile = dir.clone();
+  binaryTransparencyResultFile.append(FILE_BT_RESULT);
+  let result = readStringFromFile(binaryTransparencyResultFile);
+  LOG("readBinaryTransparencyResult - result: " + result + ", path: "
+      + binaryTransparencyResultFile.path);
+  
+  
+  if (result) {
+    binaryTransparencyResultFile.remove(false);
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
 
 function writeStatusFile(dir, state) {
   let statusFile = dir.clone();
@@ -1074,6 +1098,10 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
       }
       AUSTLMY.pingStatusErrorCode(suffix, statusErrorCode);
     }
+  }
+  let binaryTransparencyResult = readBinaryTransparencyResult(getUpdatesDir());
+  if (binaryTransparencyResult) {
+    AUSTLMY.pingBinaryTransparencyResult(suffix, parseInt(binaryTransparencyResult));
   }
   AUSTLMY.pingStateCode(suffix, stateCode);
 }

@@ -52,6 +52,7 @@ const DIR_UPDATED      = IS_MACOSX ? "Updated.app" : "updated";
 const FILE_ACTIVE_UPDATE_XML         = "active-update.xml";
 const FILE_APPLICATION_INI           = "application.ini";
 const FILE_BACKUP_UPDATE_LOG         = "backup-update.log";
+const FILE_BT_RESULT                 = "update.bt";
 const FILE_LAST_UPDATE_LOG           = "last-update.log";
 const FILE_UPDATE_SETTINGS_INI       = "update-settings.ini";
 const FILE_UPDATE_SETTINGS_INI_BAK   = "update-settings.ini.bak";
@@ -319,6 +320,19 @@ function readStatusState() {
 
 function readStatusFailedCode() {
   return readStatusFile().split(": ")[1];
+}
+
+
+
+
+
+
+
+function updateHasBinaryTransparencyErrorResult() {
+  let file = getUpdatesPatchDir();
+  file.append(FILE_BT_RESULT);
+
+  return file.exists();
 }
 
 
