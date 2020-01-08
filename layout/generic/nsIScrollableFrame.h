@@ -241,7 +241,8 @@ public:
 
   virtual void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
                                  nsIScrollableFrame::ScrollMode aMode
-                                   = nsIScrollableFrame::INSTANT) = 0;
+                                   = nsIScrollableFrame::INSTANT,
+                                 nsAtom* aOrigin = nullptr) = 0;
   
 
 
@@ -278,6 +279,11 @@ public:
                         ScrollMomentum aMomentum = NOT_MOMENTUM,
                         nsIScrollbarMediator::ScrollSnapMode aSnap
                           = nsIScrollbarMediator::DISABLE_SNAP) = 0;
+
+  virtual void ScrollByCSSPixels(const CSSIntPoint& aDelta,
+                                 nsIScrollableFrame::ScrollMode aMode
+                                   = nsIScrollableFrame::INSTANT,
+                                 nsAtom* aOrigin = nullptr) = 0;
 
   
 
