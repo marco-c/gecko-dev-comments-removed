@@ -90,9 +90,12 @@ impl StateMachine {
             
             
             let excluded = key_handles.iter().any(|key_handle| {
-                is_valid_transport(key_handle.transports)
-                    && u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
-                        .unwrap_or(false) 
+                is_valid_transport(key_handle.transports) && u2f_is_keyhandle_valid(
+                    dev,
+                    &challenge,
+                    &application,
+                    &key_handle.credential,
+                ).unwrap_or(false) 
             });
 
             while alive() {

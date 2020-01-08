@@ -57,8 +57,7 @@ impl Transaction {
 
                 
                 callback.call(Err(::Error::NotAllowed));
-            })
-            .map_err(|_| ::Error::Unknown)?;
+            }).map_err(|_| ::Error::Unknown)?;
 
         
         let runloop = rx.recv().map_err(|_| ::Error::Unknown)?;
