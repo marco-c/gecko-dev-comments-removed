@@ -290,8 +290,6 @@ Target.prototype = {
 
 
 
-
-
   getActorDescription: async function(actorName) {
     if (this._protocolDescription &&
         this._protocolDescription.types[actorName]) {
