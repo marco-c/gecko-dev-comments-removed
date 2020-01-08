@@ -9,7 +9,11 @@ class ChromeXRTest {
   }
 
   simulateDeviceConnection(init_params) {
-    return Promise.resolve(this.mockVRService_.addDevice(init_params));
+    return Promise.resolve(this.mockVRService_.addRuntime(init_params));
+  }
+
+  simulateDeviceDisconnection(device) {
+    this.mockVRService_.removeRuntime(device);
   }
 
   simulateUserActivation(callback) {
@@ -30,10 +34,12 @@ class ChromeXRTest {
 }
 
 
+
+
 class MockVRService {
   constructor() {
     this.bindingSet_ = new mojo.BindingSet(device.mojom.VRService);
-    this.devices_ = [];
+    this.runtimes_ = [];
 
     this.interceptor_ =
         new MojoInterfaceInterceptor(device.mojom.VRService.name);
@@ -43,31 +49,87 @@ class MockVRService {
   }
 
   
-  addDevice(fakeDeviceInit) {
-    let device = new MockDevice(fakeDeviceInit, this);
-    this.devices_.push(device);
+  addRuntime(fakeDeviceInit) {
+    let runtime = new MockRuntime(fakeDeviceInit, this);
+    this.runtimes_.push(runtime);
 
     if (this.client_) {
       this.client_.onDeviceChanged();
     }
 
-    return device;
+    return runtime;
+  }
+
+  removeRuntime(runtime) {
+    
+    
+    
+    
+    this.runtimes_ = [];
   }
 
   
   requestDevice() {
-    return Promise.resolve(
-        {device: this.devices_[0] ? this.devices_[0].getDevicePtr() : null});
+    if (this.runtimes_.length > 0) {
+      let devicePtr = new device.mojom.XRDevicePtr();
+      new mojo.Binding(
+          device.mojom.XRDevice, this, mojo.makeRequest(devicePtr));
+
+      return Promise.resolve({device: devicePtr});
+    } else {
+      return Promise.resolve({device: null});
+    }
   }
 
   setClient(client) {
     this.client_ = client;
   }
+
+  
+  requestSession(sessionOptions, was_activation) {
+    let requests = [];
+    
+    for (let i = 0; i < this.runtimes_.length; i++) {
+      requests[i] = this.runtimes_[i].requestRuntimeSession(sessionOptions);
+    }
+
+    return Promise.all(requests).then((results) => {
+      
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].session) {
+          return results[i];
+        }
+      }
+
+      
+      return {session: null};
+    });
+  }
+
+  supportsSession(sessionOptions) {
+    let requests = [];
+    
+    for (let i = 0; i < this.runtimes_.length; i++) {
+      requests[i] = this.runtimes_[i].runtimeSupportsSession(sessionOptions);
+    }
+
+    return Promise.all(requests).then((results) => {
+      
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].supportsSession) {
+          return results[i];
+        }
+      }
+
+      
+      return {supportsSession: false};
+    });
+  };
 }
 
 
 
-class MockDevice {
+class MockRuntime {
   constructor(fakeDeviceInit, service) {
     this.sessionClient_ = new device.mojom.XRSessionClientPtr();
     this.presentation_provider_ = new MockXRPresentationProvider();
@@ -84,13 +146,6 @@ class MockDevice {
     } else {
       this.displayInfo_ = this.getNonImmersiveDisplayInfo();
     }
-  }
-
-  
-  getDevicePtr() {
-    let devicePtr = new device.mojom.XRDevicePtr();
-    new mojo.Binding(device.mojom.XRDevice, this, mojo.makeRequest(devicePtr));
-    return devicePtr;
   }
 
   
@@ -273,9 +328,10 @@ class MockDevice {
     
   }
 
+
   
-  requestSession(sessionOptions, was_activation) {
-    return this.supportsSession(sessionOptions).then((result) => {
+  requestRuntimeSession(sessionOptions) {
+    return this.runtimeSupportsSession(sessionOptions).then((result) => {
       
       let options = new device.mojom.XRPresentationTransportOptions();
       options.transportMethod =
@@ -320,7 +376,7 @@ class MockDevice {
     });
   }
 
-  supportsSession(options) {
+  runtimeSupportsSession(options) {
     return Promise.resolve({
       supportsSession:
           !options.immersive || this.displayInfo_.capabilities.canPresent
