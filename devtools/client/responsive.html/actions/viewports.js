@@ -6,6 +6,8 @@
 
 "use strict";
 
+const asyncStorage = require("devtools/shared/async-storage");
+
 const {
   ADD_VIEWPORT,
   CHANGE_DEVICE,
@@ -33,11 +35,20 @@ module.exports = {
 
 
   changeDevice(id, device, deviceType) {
-    return {
-      type: CHANGE_DEVICE,
-      id,
-      device,
-      deviceType,
+    return async function(dispatch) {
+      try {
+        await asyncStorage.setItem("devtools.responsive.deviceState",
+          { id, device, deviceType });
+      } catch (e) {
+        console.error(e);
+      }
+
+      dispatch({
+        type: CHANGE_DEVICE,
+        id,
+        device,
+        deviceType,
+      });
     };
   },
 
@@ -56,10 +67,15 @@ module.exports = {
 
 
   removeDeviceAssociation(id) {
-    post(window, "remove-device-association");
-    return {
-      type: REMOVE_DEVICE_ASSOCIATION,
-      id,
+    return async function(dispatch) {
+      post(window, "remove-device-association");
+
+      dispatch({
+        type: REMOVE_DEVICE_ASSOCIATION,
+        id,
+      });
+
+      await asyncStorage.removeItem("devtools.responsive.deviceState");
     };
   },
 
