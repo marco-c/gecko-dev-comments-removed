@@ -47,7 +47,7 @@ nsSVGForeignObjectFrame::nsSVGForeignObjectFrame(ComputedStyle* aStyle)
 
 
 NS_QUERYFRAME_HEAD(nsSVGForeignObjectFrame)
-NS_QUERYFRAME_ENTRY(nsSVGDisplayableFrame)
+  NS_QUERYFRAME_ENTRY(nsSVGDisplayableFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 void nsSVGForeignObjectFrame::Init(nsIContent* aContent,

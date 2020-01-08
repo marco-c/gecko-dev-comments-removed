@@ -114,7 +114,7 @@ void nsTableRowFrame::SetPctBSize(float aPctValue, bool aForce) {
 
 
 NS_QUERYFRAME_HEAD(nsTableRowFrame)
-NS_QUERYFRAME_ENTRY(nsTableRowFrame)
+  NS_QUERYFRAME_ENTRY(nsTableRowFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 nsTableRowFrame::nsTableRowFrame(ComputedStyle* aStyle, ClassID aID)
