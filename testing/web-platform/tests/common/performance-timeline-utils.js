@@ -42,3 +42,10 @@ function test_entries(actualEntries, expectedEntries) {
     }
   })
 }
+
+function delayedLoadListener(callback) {
+  window.addEventListener('load', function() {
+    
+    step_timeout(callback, 0)
+  })
+}
