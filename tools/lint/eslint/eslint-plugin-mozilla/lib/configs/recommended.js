@@ -371,6 +371,6 @@ module.exports = {
     }],
 
     
-    "spaced-comment": "error",
+    "spaced-comment": ["error", "always", { "markers": ["#"] }],
   },
 };
