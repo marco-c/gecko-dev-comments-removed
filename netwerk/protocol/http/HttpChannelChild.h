@@ -387,7 +387,12 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   Atomic<bool, ReleaseAcquire> mFlushedForDiversion;
 
-  uint8_t mIsFromCache : 1;
+  Atomic<bool, SequentiallyConsistent> mIsFromCache;
+  
+  Atomic<bool, SequentiallyConsistent> mCacheNeedToReportBytesReadInitialized;
+  
+  Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead;
+
   uint8_t mCacheEntryAvailable : 1;
   uint8_t mAltDataCacheEntryAvailable : 1;
 
@@ -427,12 +432,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   
   uint8_t mSuspendParentAfterSynthesizeResponse : 1;
-
-  
-  uint8_t mCacheNeedToReportBytesReadInitialized : 1;
-
-  
-  uint8_t mNeedToReportBytesRead : 1;
 
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
