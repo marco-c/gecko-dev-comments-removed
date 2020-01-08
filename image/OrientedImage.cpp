@@ -182,11 +182,12 @@ OrientedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
   return false;
 }
 
-NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
-OrientedImage::GetImageContainerAtSize(LayerManager* aManager,
-                                       const IntSize& aSize,
+NS_IMETHODIMP_(ImgDrawResult)
+OrientedImage::GetImageContainerAtSize(layers::LayerManager* aManager,
+                                       const gfx::IntSize& aSize,
                                        const Maybe<SVGImageContext>& aSVGContext,
-                                       uint32_t aFlags)
+                                       uint32_t aFlags,
+                                       layers::ImageContainer** aOutContainer)
 {
   
   
@@ -195,11 +196,11 @@ OrientedImage::GetImageContainerAtSize(LayerManager* aManager,
   
 
   if (mOrientation.IsIdentity()) {
-    return InnerImage()->GetImageContainerAtSize(aManager, aSize,
-                                                 aSVGContext, aFlags);
+    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aSVGContext,
+                                                 aFlags, aOutContainer);
   }
 
-  return nullptr;
+  return ImgDrawResult::NOT_SUPPORTED;
 }
 
 struct MatrixBuilder

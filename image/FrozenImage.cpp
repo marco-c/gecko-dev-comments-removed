@@ -77,18 +77,19 @@ FrozenImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
   return false;
 }
 
-NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
+NS_IMETHODIMP_(ImgDrawResult)
 FrozenImage::GetImageContainerAtSize(layers::LayerManager* aManager,
-                                     const IntSize& aSize,
+                                     const gfx::IntSize& aSize,
                                      const Maybe<SVGImageContext>& aSVGContext,
-                                     uint32_t aFlags)
+                                     uint32_t aFlags,
+                                     layers::ImageContainer** aOutContainer)
 {
   
   
   
   
   
-  return nullptr;
+  return ImgDrawResult::NOT_SUPPORTED;
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
