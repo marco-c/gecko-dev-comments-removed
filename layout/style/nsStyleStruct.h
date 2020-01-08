@@ -1973,13 +1973,11 @@ private:
 
 struct StyleShapeSource final
 {
-  StyleShapeSource() = default;
+  StyleShapeSource();
 
   StyleShapeSource(const StyleShapeSource& aSource);
 
-  ~StyleShapeSource()
-  {
-  }
+  ~StyleShapeSource();
 
   StyleShapeSource& operator=(const StyleShapeSource& aOther);
 
@@ -2041,9 +2039,14 @@ private:
   void* operator new(size_t) = delete;
 
   void DoCopy(const StyleShapeSource& aOther);
+  void DoDestroy();
 
-  mozilla::UniquePtr<StyleBasicShape> mBasicShape;
-  mozilla::UniquePtr<nsStyleImage> mShapeImage;
+  union {
+    mozilla::UniquePtr<StyleBasicShape> mBasicShape;
+    mozilla::UniquePtr<nsStyleImage> mShapeImage;
+    
+    
+  };
   StyleShapeSourceType mType = StyleShapeSourceType::None;
   StyleGeometryBox mReferenceBox = StyleGeometryBox::NoBox;
 };
