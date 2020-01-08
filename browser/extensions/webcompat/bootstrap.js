@@ -2,7 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const PREF_BRANCH = "extensions.webcompat.";

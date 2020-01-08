@@ -2,11 +2,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "UserAgentOverrides", "resource://gre/modules/UserAgentOverrides.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "eTLDService", "@mozilla.org/network/effective-tld-service;1", "nsIEffectiveTLDService");
 
 class UAOverrider {
   constructor(overrides) {
@@ -23,7 +20,9 @@ class UAOverrider {
     let currentApplication = "firefox";
     try {
       currentApplication = Services.appinfo.name.toLowerCase();
-    } catch (_) {}
+    } catch (ex) {
+      console.warn("Getting appinfo.name failed, assuming we run on Desktop.", ex);
+    }
 
     for (let override of overrides) {
       
@@ -88,8 +87,9 @@ class UAOverrider {
 
   getBaseDomainFromURI(uri) {
     try {
-      return eTLDService.getBaseDomain(uri);
-    } catch (_) {
+      return Services.eTLD.getBaseDomain(uri);
+    } catch (ex) {
+      console.error(`Could not getBaseDomain() for "${uri}"`, ex);
       return false;
     }
   }
