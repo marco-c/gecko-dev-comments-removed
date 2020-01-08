@@ -46,5 +46,11 @@ module.exports = {
     "rules": {
       "mozilla/reject-importGlobalProperties": "off",
     }
+  }, {
+    
+    "files": "gfx/layers/apz/test/mochitest/**",
+    "rules": {
+      "no-undef": "off",
+    }
   }]
 };
