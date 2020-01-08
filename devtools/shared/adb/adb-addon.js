@@ -12,7 +12,9 @@ const PREF_ADB_EXTENSION_URL = "devtools.remote.adb.extensionURL";
 const PREF_ADB_EXTENSION_ID = "devtools.remote.adb.extensionID";
 
 
-const OLD_ADB_ADDON_ID = "adbhelper@mozilla.org";
+const ADB_HELPER_ADDON_ID = "adbhelper@mozilla.org";
+
+const VALENCE_ADDON_ID = "fxdevtools-adapters@mozilla.org";
 
 
 
@@ -42,7 +44,8 @@ class ADBAddon extends EventEmitter {
     this._status = ADB_ADDON_STATES.UNKNOWN;
 
     
-    this.uninstallOldExtension();
+    
+    this.uninstallUnsupportedExtensions();
 
     const addonsListener = {};
     addonsListener.onEnabled =
@@ -138,10 +141,18 @@ class ADBAddon extends EventEmitter {
     addon.uninstall();
   }
 
-  async uninstallOldExtension() {
-    const oldAddon = await AddonManager.getAddonByID(OLD_ADB_ADDON_ID);
-    if (oldAddon) {
-      oldAddon.uninstall();
+  async uninstallUnsupportedExtensions() {
+    const [adbHelperAddon, valenceAddon] = await Promise.all([
+      AddonManager.getAddonByID(ADB_HELPER_ADDON_ID),
+      AddonManager.getAddonByID(VALENCE_ADDON_ID),
+    ]);
+
+    if (adbHelperAddon) {
+      adbHelperAddon.uninstall();
+    }
+
+    if (valenceAddon) {
+      valenceAddon.uninstall();
     }
   }
 
