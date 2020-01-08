@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_CHAR_PTR_HPP
+#define MSGPACK_TYPE_CHAR_PTR_HPP
+
+#include "msgpack/v1/adaptor/char_ptr.hpp"
+
+#endif 

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef MSGPACK_PREDEF_LIBRARY_STD__PREFIX_H
+#define MSGPACK_PREDEF_LIBRARY_STD__PREFIX_H
+
+
+
+
+
+
+
+
+
+
+
+
+#include <msgpack/predef/detail/_exception.h>
+
+#endif

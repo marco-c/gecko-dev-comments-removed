@@ -1,0 +1,17 @@
+# 
+
+
+
+
+
+
+
+#
+# 
+#
+# ifndef MSGPACK_PREPROCESSOR_ENUM_PARAMS_HPP
+# define MSGPACK_PREPROCESSOR_ENUM_PARAMS_HPP
+#
+# include <msgpack/preprocessor/repetition/enum_params.hpp>
+#
+# endif
