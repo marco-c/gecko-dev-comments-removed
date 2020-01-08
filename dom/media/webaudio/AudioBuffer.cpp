@@ -382,6 +382,13 @@ void AudioBuffer::GetChannelData(JSContext* aJSContext, uint32_t aChannel,
 
 already_AddRefed<ThreadSharedFloatArrayBufferList>
 AudioBuffer::StealJSArrayDataIntoSharedChannels(JSContext* aJSContext) {
+  nsPIDOMWindowInner* global = GetParentObject();
+  if (!global || !global->AsGlobal()->GetGlobalJSObject()) {
+    return nullptr;
+  }
+
+  JSAutoRealm ar(aJSContext, global->AsGlobal()->GetGlobalJSObject());
+
   
   
   
