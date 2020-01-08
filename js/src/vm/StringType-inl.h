@@ -88,6 +88,26 @@ NewInlineString(JSContext* cx, HandleLinearString base, size_t start, size_t len
     return s;
 }
 
+template <typename CharT>
+static MOZ_ALWAYS_INLINE JSFlatString*
+TryEmptyOrStaticString(JSContext* cx, const CharT* chars, size_t n)
+{
+    
+    
+    
+    if (n <= 2) {
+        if (n == 0) {
+            return cx->emptyString();
+        }
+
+        if (JSFlatString* str = cx->staticStrings().lookup(chars, n)) {
+            return str;
+        }
+    }
+
+    return nullptr;
+}
+
 } 
 
 MOZ_ALWAYS_INLINE bool

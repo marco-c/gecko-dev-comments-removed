@@ -1585,26 +1585,6 @@ NewInlineStringDeflated(JSContext* cx, mozilla::Range<const char16_t> chars)
     return str;
 }
 
-template <typename CharT>
-static MOZ_ALWAYS_INLINE JSFlatString*
-TryEmptyOrStaticString(JSContext* cx, const CharT* chars, size_t n)
-{
-    
-    
-    
-    if (n <= 2) {
-        if (n == 0) {
-            return cx->emptyString();
-        }
-
-        if (JSFlatString* str = cx->staticStrings().lookup(chars, n)) {
-            return str;
-        }
-    }
-
-    return nullptr;
-}
-
 template <AllowGC allowGC>
 static JSFlatString*
 NewStringDeflated(JSContext* cx, const char16_t* s, size_t n)
