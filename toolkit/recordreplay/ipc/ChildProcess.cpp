@@ -32,9 +32,10 @@ ChildProcessInfo::SetIntroductionMessage(IntroductionMessage* aMessage)
   gIntroductionMessage = aMessage;
 }
 
-ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole, bool aRecording)
+ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole,
+                                   const Maybe<RecordingProcessData>& aRecordingProcessData)
   : mChannel(nullptr)
-  , mRecording(aRecording)
+  , mRecording(aRecordingProcessData.isSome())
   , mRecoveryStage(RecoveryStage::None)
   , mPaused(false)
   , mPausedMessage(nullptr)
@@ -55,13 +56,13 @@ ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole, bool aRecording)
 
   mRole->SetProcess(this);
 
-  LaunchSubprocess();
+  LaunchSubprocess(aRecordingProcessData);
 
   
   
   
   
-  if (!aRecording && CanRewind()) {
+  if (!IsRecording() && CanRewind()) {
     SendMessage(SetSaveCheckpointMessage(CheckpointId::First, true));
   }
 
@@ -445,7 +446,7 @@ GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
 }
 
 void
-ChildProcessInfo::LaunchSubprocess()
+ChildProcessInfo::LaunchSubprocess(const Maybe<RecordingProcessData>& aRecordingProcessData)
 {
   size_t channelId = gNumChannels++;
 
@@ -457,6 +458,7 @@ ChildProcessInfo::LaunchSubprocess()
       ReceiveChildMessageOnMainThread(channelId, aMsg);
     });
 
+  MOZ_RELEASE_ASSERT(IsRecording() == aRecordingProcessData.isSome());
   if (IsRecording()) {
     std::vector<std::string> extraArgs;
     GetArgumentsForChildProcess(base::GetCurrentProcId(), channelId,
@@ -465,8 +467,13 @@ ChildProcessInfo::LaunchSubprocess()
     MOZ_RELEASE_ASSERT(!gRecordingProcess);
     gRecordingProcess = new ipc::GeckoChildProcessHost(GeckoProcessType_Content);
 
-    gRecordingProcess->AddFdToRemap(kPrefsFileDescriptor, kPrefsFileDescriptor);
-    gRecordingProcess->AddFdToRemap(kPrefMapFileDescriptor, kPrefMapFileDescriptor);
+    
+    
+    gRecordingProcess->AddFdToRemap(aRecordingProcessData.ref().mPrefsHandle.fd,
+                                    kPrefsFileDescriptor);
+    ipc::FileDescriptor::UniquePlatformHandle prefMapHandle =
+      aRecordingProcessData.ref().mPrefMapHandle.ClonePlatformHandle();
+    gRecordingProcess->AddFdToRemap(prefMapHandle.get(), kPrefMapFileDescriptor);
 
     if (!gRecordingProcess->LaunchAndWaitForProcessHandle(extraArgs)) {
       MOZ_CRASH("ChildProcessInfo::LaunchSubprocess");
@@ -537,7 +544,7 @@ ChildProcessInfo::AttemptRestart(const char* aWhy)
   newShouldSaveCheckpoints.append(mShouldSaveCheckpoints.begin(), mShouldSaveCheckpoints.length());
   mShouldSaveCheckpoints.clear();
 
-  LaunchSubprocess();
+  LaunchSubprocess(Nothing());
 
   
   SendMessage(SetAllowIntentionalCrashesMessage(false));

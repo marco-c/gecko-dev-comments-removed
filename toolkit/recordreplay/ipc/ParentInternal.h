@@ -155,6 +155,21 @@ public:
 extern ipc::GeckoChildProcessHost* gRecordingProcess;
 
 
+
+struct RecordingProcessData
+{
+  
+  const base::SharedMemoryHandle& mPrefsHandle;
+  const ipc::FileDescriptor& mPrefMapHandle;
+
+  RecordingProcessData(const base::SharedMemoryHandle& aPrefsHandle,
+                       const ipc::FileDescriptor& aPrefMapHandle)
+    : mPrefsHandle(aPrefsHandle)
+    , mPrefMapHandle(aPrefMapHandle)
+  {}
+};
+
+
 class ChildProcessInfo
 {
   
@@ -251,10 +266,11 @@ class ChildProcessInfo
 
   bool CanRestart();
   void AttemptRestart(const char* aWhy);
-  void LaunchSubprocess();
+  void LaunchSubprocess(const Maybe<RecordingProcessData>& aRecordingProcessData);
 
 public:
-  ChildProcessInfo(UniquePtr<ChildRole> aRole, bool aRecording);
+  ChildProcessInfo(UniquePtr<ChildRole> aRole,
+                   const Maybe<RecordingProcessData>& aRecordingProcessData);
   ~ChildProcessInfo();
 
   ChildRole* Role() { return mRole.get(); }
