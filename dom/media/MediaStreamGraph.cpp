@@ -1354,8 +1354,10 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
   
   
   
+  
   if (ensureNextIteration ||
-      aEndBlockingDecisions == mStateComputedTime) {
+      (aEndBlockingDecisions == mStateComputedTime &&
+       mStateComputedTime < mEndTime)) {
     EnsureNextIteration();
   }
 }
