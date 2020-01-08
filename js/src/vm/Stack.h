@@ -23,6 +23,7 @@
 #include "jit/JSJitFrameIter.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
+#include "js/UniquePtr.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
@@ -1634,7 +1635,7 @@ class JitActivation : public Activation
     
     typedef GCVector<RematerializedFrame*> RematerializedFrameVector;
     typedef HashMap<uint8_t*, RematerializedFrameVector> RematerializedFrameTable;
-    RematerializedFrameTable* rematerializedFrames_;
+    js::UniquePtr<RematerializedFrameTable> rematerializedFrames_;
 
     
     
