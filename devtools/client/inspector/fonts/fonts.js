@@ -770,9 +770,11 @@ class FontInspector {
         unit = toUnit;
       }
 
-      this.onFontPropertyUpdate(property, value, unit);
+      
+      this.onFontPropertyUpdate(property, value + "", unit);
     } else {
-      this.onAxisUpdate(property, value);
+      
+      this.onAxisUpdate(property, value + "");
     }
   }
 
