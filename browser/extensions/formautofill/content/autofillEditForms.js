@@ -124,6 +124,7 @@ class EditAddress extends EditAutofillForm {
 
 
 
+
   constructor(elements, record, config) {
     super(elements);
 
@@ -143,9 +144,7 @@ class EditAddress extends EditAutofillForm {
     this.loadRecord(record);
     this.attachEventListeners();
 
-    if (config.novalidate) {
-      this.form.setAttribute("novalidate", "true");
-    }
+    form.noValidate = !!config.noValidate;
   }
 
   loadRecord(record) {

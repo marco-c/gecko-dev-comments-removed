@@ -294,7 +294,12 @@ class ManageAddresses extends ManageRecords {
 
 
   openEditDialog(address) {
-    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, null, address, "novalidate");
+    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, null, {
+      record: address,
+      
+      
+      noValidate: true,
+    });
   }
 
   getLabel(address) {
@@ -329,7 +334,9 @@ class ManageCreditCards extends ManageRecords {
         decryptedCCNumObj["cc-number"] = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
       }
       let decryptedCreditCard = Object.assign({}, creditCard, decryptedCCNumObj);
-      this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, "resizable=no", decryptedCreditCard);
+      this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, "resizable=no", {
+        record: decryptedCreditCard,
+      });
     }
   }
 
