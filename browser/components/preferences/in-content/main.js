@@ -802,7 +802,7 @@ var gMainPane = {
   },
 
   
-  confirmBrowserLanguageChange() {
+  confirmBrowserLanguageChange(event) {
     let localesString = (event.target.getAttribute("locales") || "").trim();
     if (!localesString || localesString.length == 0) {
       return;
