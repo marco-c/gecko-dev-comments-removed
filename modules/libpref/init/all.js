@@ -1377,6 +1377,10 @@ pref("privacy.restrict3rdpartystorage.partitionedHosts", "accounts.google.com/o/
 
 
 
+pref("privacy.restrict3rdpartystorage.userInteractionRequiredForHosts", "");
+
+
+
 
 
 
