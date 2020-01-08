@@ -44,8 +44,6 @@ public:
                                  uint32_t* aLineno = nullptr,
                                  uint32_t* aColumn = nullptr);
 
-  static nsIScriptGlobalObject *GetStaticScriptGlobal(JSObject* aObj);
-
   
 
 
