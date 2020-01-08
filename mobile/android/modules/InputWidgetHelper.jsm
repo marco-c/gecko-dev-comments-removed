@@ -51,6 +51,7 @@ var InputWidgetHelper = {
     }).addDatePicker({
       value: aElement.value,
       type: type,
+      step: this._getInputTimeStep(aElement),
       min: aElement.min,
       max: aElement.max,
     }).show(data => {
@@ -110,5 +111,20 @@ var InputWidgetHelper = {
       currentElement = currentElement.parentElement;
     }
     return false;
+  },
+
+  
+  _getInputTimeStep: function(aElement) {
+    try {
+      
+      let tmpInput = aElement.ownerDocument.createElement("input");
+      tmpInput.type = aElement.type;
+      tmpInput.step = aElement.step;
+      
+      tmpInput.stepUp();
+      return tmpInput.valueAsNumber || 0; 
+    } catch (e) {
+      return 0;
+    }
   }
 };
