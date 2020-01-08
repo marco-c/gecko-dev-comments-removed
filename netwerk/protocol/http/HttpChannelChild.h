@@ -91,6 +91,7 @@ public:
   NS_IMETHOD GetSecurityInfo(nsISupports **aSecurityInfo) override;
   NS_IMETHOD AsyncOpen(nsIStreamListener *listener, nsISupports *aContext) override;
   NS_IMETHOD AsyncOpen2(nsIStreamListener *aListener) override;
+  NS_IMETHOD SetLoadInfo(nsILoadInfo* aLoadInfo) override;
 
   
   NS_IMETHOD SetReferrerWithPolicy(nsIURI *referrer, uint32_t referrerPolicy) override;
@@ -206,6 +207,7 @@ protected:
   virtual mozilla::ipc::IPCResult RecvLogBlockedCORSRequest(const nsString& aMessage, const nsCString& aCategory) override;
   NS_IMETHOD LogBlockedCORSRequest(const nsAString & aMessage, const nsACString& aCategory) override;
 
+  nsresult InitIPCChannel();
 private:
   nsresult
   AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
@@ -432,11 +434,22 @@ private:
   
   uint8_t mNeedToReportBytesRead : 1;
 
+  
+  uint8_t mSentAsyncOpen : 1;
+
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
 
   
-  bool RemoteChannelExists() { return mIPCOpen && !mKeptAlive; }
+  
+  
+  
+  
+  
+  bool RemoteChannelExists()
+  {
+    return mIPCOpen && !mKeptAlive && mSentAsyncOpen;
+  }
 
   void AssociateApplicationCache(const nsCString &groupID,
                                  const nsCString &clientID);

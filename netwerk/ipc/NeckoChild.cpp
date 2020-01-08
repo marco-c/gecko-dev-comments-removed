@@ -74,9 +74,7 @@ void NeckoChild::InitNeckoChild()
 }
 
 PHttpChannelChild*
-NeckoChild::AllocPHttpChannelChild(const PBrowserOrId& browser,
-                                   const SerializedLoadContext& loadContext,
-                                   const HttpChannelCreationArgs& aOpenArgs)
+NeckoChild::AllocPHttpChannelChild()
 {
   
   
