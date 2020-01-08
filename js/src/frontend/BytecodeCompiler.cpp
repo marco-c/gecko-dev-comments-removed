@@ -13,7 +13,7 @@
 
 #include "builtin/ModuleObject.h"
 #if defined(JS_BUILD_BINAST)
-# include "frontend/BinASTParserPerTokenizer.h"
+# include "frontend/BinASTParser.h"
 #endif 
 #include "frontend/BytecodeCompilation.h"
 #include "frontend/BytecodeEmitter.h"

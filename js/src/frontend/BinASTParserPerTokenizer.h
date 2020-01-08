@@ -35,6 +35,9 @@
 namespace js {
 namespace frontend {
 
+template<typename Tok>
+class BinASTParser;
+
 
 
 
@@ -42,7 +45,7 @@ namespace frontend {
 
 
 template<typename Tok>
-class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEParserHandle
+class BinASTParserPerTokenizer : public BinASTParserBase, public ErrorReporter, public BCEParserHandle
 {
   public:
     using Tokenizer = Tok;
@@ -56,25 +59,24 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
   public:
     
     using AssertedDeclaredKind = binast::AssertedDeclaredKind;
-    using BinaryOperator = binast::BinaryOperator;
-    using CompoundAssignmentOperator = binast::CompoundAssignmentOperator;
-    using UnaryOperator = binast::UnaryOperator;
-    using UpdateOperator = binast::UpdateOperator;
     using VariableDeclarationKind = binast::VariableDeclarationKind;
 
   public:
-    BinASTParser(JSContext* cx, LifoAlloc& alloc, UsedNameTracker& usedNames, const JS::ReadOnlyCompileOptions& options,
-                 HandleScriptSourceObject sourceObject, Handle<LazyScript*> lazyScript = nullptr)
+    BinASTParserPerTokenizer(JSContext* cx, LifoAlloc& alloc, UsedNameTracker& usedNames,
+                             const JS::ReadOnlyCompileOptions& options,
+                             HandleScriptSourceObject sourceObject,
+                             Handle<LazyScript*> lazyScript = nullptr)
         : BinASTParserBase(cx, alloc, usedNames, sourceObject, lazyScript)
         , options_(options)
         , variableDeclarationKind_(VariableDeclarationKind::Var)
     {
     }
-    ~BinASTParser()
+    ~BinASTParserPerTokenizer()
     {
     }
 
     
+
 
 
 
@@ -91,7 +93,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 
     JS::Result<ParseNode*> parseLazyFunction(ScriptSource* src, const size_t firstOffset);
 
-  private:
+  protected:
     MOZ_MUST_USE JS::Result<ParseNode*> parseAux(GlobalSharedContext* globalsc,
                                                  const uint8_t* start, const size_t length,
                                                  BinASTSourceMetadata** metadataPtr = nullptr);
@@ -127,9 +129,6 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
         Parameter,
         Var,
     };
-
-    
-#include "frontend/BinASTParser.h"
 
     
 
@@ -187,7 +186,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     
     void forceStrictIfNecessary(SharedContext* sc, ListNode* directives);
 
-  private: 
+  protected: 
     const JS::ReadOnlyCompileOptions& options_;
 
     const JS::ReadOnlyCompileOptions& options() const override {
@@ -271,7 +270,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
         return this->options_.filename();
     }
 
-  private: 
+  protected: 
     mozilla::Maybe<Tokenizer> tokenizer_;
     VariableDeclarationKind variableDeclarationKind_;
 
@@ -281,7 +280,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     
     class MOZ_RAII AutoVariableDeclarationKind {
       public:
-        explicit AutoVariableDeclarationKind(BinASTParser<Tok>* parser
+        explicit AutoVariableDeclarationKind(BinASTParserPerTokenizer<Tok>* parser
                                              MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
             : parser_(parser)
             , kind(parser->variableDeclarationKind_)
@@ -292,17 +291,27 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
             parser_->variableDeclarationKind_ = kind;
         }
         private:
-        BinASTParser<Tok>* parser_;
-        BinASTParser<Tok>::VariableDeclarationKind kind;
+        BinASTParserPerTokenizer<Tok>* parser_;
+        BinASTParserPerTokenizer<Tok>::VariableDeclarationKind kind;
         MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
     };
+
+  private:
+    
+    
+    
+    
+    using FinalParser = BinASTParser<Tok>;
+
+    inline FinalParser* asFinalParser();
+    inline const FinalParser* asFinalParser() const;
 };
 
 class BinParseContext : public ParseContext
 {
   public:
     template<typename Tok>
-    BinParseContext(JSContext* cx, BinASTParser<Tok>* parser, SharedContext* sc,
+    BinParseContext(JSContext* cx, BinASTParserPerTokenizer<Tok>* parser, SharedContext* sc,
         Directives* newDirectives)
         : ParseContext(cx, parser->parseContext_, sc, *parser,
                        parser->usedNames_, newDirectives,  true)
@@ -310,8 +319,8 @@ class BinParseContext : public ParseContext
 };
 
 
-extern template class BinASTParser<BinTokenReaderMultipart>;
-extern template class BinASTParser<BinTokenReaderTester>;
+extern template class BinASTParserPerTokenizer<BinTokenReaderMultipart>;
+extern template class BinASTParserPerTokenizer<BinTokenReaderTester>;
 
 } 
 } 
