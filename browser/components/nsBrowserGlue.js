@@ -1671,8 +1671,10 @@ BrowserGlue.prototype = {
       }
       windowcount++;
       let tabbrowser = win.gBrowser;
-      if (tabbrowser)
-        pagecount += tabbrowser.browsers.length - tabbrowser._numPinnedTabs;
+      if (tabbrowser) {
+        pagecount += tabbrowser.browsers.length - tabbrowser._numPinnedTabs -
+                     tabbrowser._removingTabs.length;
+      }
     }
 
     if (pagecount < 2)
@@ -1695,10 +1697,9 @@ BrowserGlue.prototype = {
 
     
     
-    let closingTabs = win.gBrowser.tabs.length - win.gBrowser._removingTabs.length;
     if (windowcount == 1) {
       aCancelQuit.data =
-        !win.gBrowser.warnAboutClosingTabs(closingTabs, win.gBrowser.closingTabsEnum.ALL);
+        !win.gBrowser.warnAboutClosingTabs(pagecount, win.gBrowser.closingTabsEnum.ALL);
     } else {
       
       let tabSubstring = gTabbrowserBundle.GetStringFromName("tabs.closeWarningMultipleWindowsTabSnippet");
@@ -1707,7 +1708,7 @@ BrowserGlue.prototype = {
       windowString = PluralForm.get(windowcount, windowString).replace(/#1/, windowcount);
       windowString = windowString.replace(/%(?:1$)?S/i, tabSubstring);
       aCancelQuit.data =
-        !win.gBrowser.warnAboutClosingTabs(closingTabs, win.gBrowser.closingTabsEnum.ALL, null, windowString);
+        !win.gBrowser.warnAboutClosingTabs(pagecount, win.gBrowser.closingTabsEnum.ALL, windowString);
     }
   },
 
