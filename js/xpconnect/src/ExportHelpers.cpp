@@ -119,7 +119,7 @@ public:
                 return nullptr;
             }
 
-            nsIGlobalObject* global = xpc::NativeGlobal(JS::CurrentGlobalOrNull(aCx));
+            nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
             MOZ_ASSERT(global);
 
             

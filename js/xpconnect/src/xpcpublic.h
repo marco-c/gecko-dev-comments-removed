@@ -508,6 +508,13 @@ NativeGlobal(JSObject* aObj);
 
 
 
+nsIGlobalObject*
+CurrentNativeGlobal(JSContext* cx);
+
+
+
+
+
 nsGlobalWindowInner*
 WindowOrNull(JSObject* aObj);
 
