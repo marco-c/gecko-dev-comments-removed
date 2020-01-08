@@ -389,6 +389,13 @@ XPCConvert::NativeData2JS(MutableHandleValue d, const void* s,
         return NativeArray2JS(d, *static_cast<const void* const*>(s),
                               type.ArrayElementType(), iid, arrlen, pErr);
 
+    case nsXPTType::T_SEQUENCE:
+    {
+        auto* sequence = static_cast<const xpt::detail::UntypedSequence*>(s);
+        return NativeArray2JS(d, sequence->Elements(), type.ArrayElementType(),
+                              iid, sequence->Length(), pErr);
+    }
+
     default:
         NS_ERROR("bad type");
         return false;
@@ -874,6 +881,27 @@ XPCConvert::JSData2Native(void* d, HandleValue s,
             
             free(*dest);
             *dest = nullptr;
+        }
+        return ok;
+    }
+
+    case nsXPTType::T_SEQUENCE:
+    {
+        auto* dest = (xpt::detail::UntypedSequence*)d;
+        const nsXPTType& elty = type.ArrayElementType();
+
+        bool ok = JSArray2Native(s, elty, iid, pErr, [&] (uint32_t* aLength) -> void* {
+            if (!dest->SetLength(elty, *aLength)) {
+                if (pErr)
+                    *pErr = NS_ERROR_OUT_OF_MEMORY;
+                return nullptr;
+            }
+            return dest->Elements();
+        });
+
+        if (!ok) {
+            
+            dest->Clear();
         }
         return ok;
     }
@@ -1586,6 +1614,19 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
         }
 
         
+        case nsXPTType::T_SEQUENCE:
+        {
+            const nsXPTType& elty = aType.ArrayElementType();
+            auto* sequence = (xpt::detail::UntypedSequence*)aValue;
+
+            for (uint32_t i = 0; i < sequence->Length(); ++i) {
+                CleanupValue(elty, elty.ElementPtr(sequence->Elements(), i));
+            }
+            sequence->Clear();
+            break;
+        }
+
+        
         case nsXPTType::T_JSVAL:
             ((JS::Value*)aValue)->setUndefined();
             break;
@@ -1618,6 +1659,10 @@ xpc::InitializeValue(const nsXPTType& aType, void* aValue)
         case nsXPTType::T_CSTRING:
         case nsXPTType::T_UTF8STRING:
             new (aValue) nsCString();
+            break;
+
+        case nsXPTType::T_SEQUENCE:
+            new (aValue) xpt::detail::UntypedSequence();
             break;
 
         
