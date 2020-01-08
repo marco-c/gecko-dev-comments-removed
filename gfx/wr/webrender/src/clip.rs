@@ -500,19 +500,18 @@ impl ClipStore {
     
     
     
-    pub fn push_surface(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-    ) {
+    
+    
+    
+    
+    pub fn push_raster_root(&mut self, spatial_node_index: SpatialNodeIndex) {
         self.clip_node_collectors.push(
             ClipNodeCollector::new(spatial_node_index),
         );
     }
 
     
-    pub fn pop_surface(
-        &mut self,
-    ) -> ClipNodeCollector {
+    pub fn pop_raster_root(&mut self) -> ClipNodeCollector {
         self.clip_node_collectors.pop().unwrap()
     }
 
