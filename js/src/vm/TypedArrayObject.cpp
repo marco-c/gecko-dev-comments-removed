@@ -837,15 +837,14 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   }
 
   static bool maybeCreateArrayBuffer(JSContext* cx, uint32_t count,
-                                     uint32_t unit,
                                      HandleObject nonDefaultProto,
                                      MutableHandle<ArrayBufferObject*> buffer) {
-    if (count >= INT32_MAX / unit) {
+    if (count >= INT32_MAX / BYTES_PER_ELEMENT) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_BAD_ARRAY_LENGTH);
       return false;
     }
-    uint32_t byteLength = count * unit;
+    uint32_t byteLength = count * BYTES_PER_ELEMENT;
 
     MOZ_ASSERT(byteLength < INT32_MAX);
     static_assert(INLINE_BUFFER_LIMIT % BYTES_PER_ELEMENT == 0,
@@ -881,8 +880,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     }
 
     Rooted<ArrayBufferObject*> buffer(cx);
-    if (!maybeCreateArrayBuffer(cx, uint32_t(nelements), BYTES_PER_ELEMENT,
-                                nullptr, &buffer)) {
+    if (!maybeCreateArrayBuffer(cx, uint32_t(nelements), nullptr, &buffer)) {
       return nullptr;
     }
 
@@ -891,7 +889,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   }
 
   static bool AllocateArrayBuffer(JSContext* cx, HandleObject ctor,
-                                  uint32_t count, uint32_t unit,
+                                  uint32_t count,
                                   MutableHandle<ArrayBufferObject*> buffer);
 
   static JSObject* fromArray(JSContext* cx, HandleObject other,
@@ -949,7 +947,7 @@ TypedArrayObject* js::TypedArrayCreateWithTemplate(JSContext* cx,
 
 template <typename T>
  bool TypedArrayObjectTemplate<T>::AllocateArrayBuffer(
-    JSContext* cx, HandleObject ctor, uint32_t count, uint32_t unit,
+    JSContext* cx, HandleObject ctor, uint32_t count,
     MutableHandle<ArrayBufferObject*> buffer) {
   
   RootedObject proto(cx);
@@ -980,7 +978,7 @@ template <typename T>
   }
 
   
-  if (!maybeCreateArrayBuffer(cx, count, unit, proto, buffer)) {
+  if (!maybeCreateArrayBuffer(cx, count, proto, buffer)) {
     return false;
   }
 
@@ -1111,10 +1109,9 @@ template <typename T>
   }
 
   
-  uint32_t elementLength = srcArray->length();
 
   
-  Scalar::Type srcType = srcArray->type();
+  uint32_t elementLength = srcArray->length();
 
   
 
@@ -1132,21 +1129,10 @@ template <typename T>
 
   
   Rooted<ArrayBufferObject*> buffer(cx);
-  if (ArrayTypeID() == srcType) {
-    
-    uint32_t byteLength = srcArray->byteLength();
 
-    
-    
-    if (!AllocateArrayBuffer(cx, bufferCtor, byteLength, 1, &buffer)) {
-      return nullptr;
-    }
-  } else {
-    
-    if (!AllocateArrayBuffer(cx, bufferCtor, elementLength, BYTES_PER_ELEMENT,
-                             &buffer)) {
-      return nullptr;
-    }
+  
+  if (!AllocateArrayBuffer(cx, bufferCtor, elementLength, &buffer)) {
+    return nullptr;
   }
 
   
@@ -1221,7 +1207,7 @@ template <typename T>
 
     
     Rooted<ArrayBufferObject*> buffer(cx);
-    if (!maybeCreateArrayBuffer(cx, len, BYTES_PER_ELEMENT, nullptr, &buffer)) {
+    if (!maybeCreateArrayBuffer(cx, len, nullptr, &buffer)) {
       return nullptr;
     }
 
@@ -1296,7 +1282,7 @@ template <typename T>
 
   
   Rooted<ArrayBufferObject*> buffer(cx);
-  if (!maybeCreateArrayBuffer(cx, len, BYTES_PER_ELEMENT, nullptr, &buffer)) {
+  if (!maybeCreateArrayBuffer(cx, len, nullptr, &buffer)) {
     return nullptr;
   }
 
