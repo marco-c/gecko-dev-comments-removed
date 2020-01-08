@@ -397,10 +397,6 @@ void MobileViewportManager::RefreshVisualViewportSize() {
   
   
 
-  if (!gfxPrefs::APZAllowZooming()) {
-    return;
-  }
-
   ScreenIntSize displaySize = ViewAs<ScreenPixel>(
       mDisplaySize, PixelCastJustification::LayoutDeviceIsScreenForBounds);
 
@@ -476,6 +472,10 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   if (gfxPrefs::APZAllowZooming()) {
     UpdateResolution(viewportInfo, displaySize, viewport,
                      displayWidthChangeRatio, UpdateType::ViewportSize);
+  } else {
+    
+    
+    RefreshVisualViewportSize();
   }
   if (gfxPlatform::AsyncPanZoomEnabled()) {
     UpdateDisplayPortMargins();
