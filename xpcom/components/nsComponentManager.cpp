@@ -338,9 +338,27 @@ nsresult nsComponentManagerImpl::Init() {
   
   nsLayoutModuleInitialize();
 
-  bool loadChromeManifests = (XRE_GetProcessType() != GeckoProcessType_GPU &&
-                              XRE_GetProcessType() != GeckoProcessType_VR &&
-                              XRE_GetProcessType() != GeckoProcessType_RDD);
+  bool loadChromeManifests;
+  switch (XRE_GetProcessType()) {
+    
+    
+    
+    default:
+      loadChromeManifests = false;
+      break;
+
+    
+    
+    
+    case GeckoProcessType_Default:
+    case GeckoProcessType_Plugin:
+    case GeckoProcessType_Content:
+    case GeckoProcessType_IPDLUnitTest:
+    case GeckoProcessType_GMPlugin:
+      loadChromeManifests = true;
+      break;
+  }
+
   if (loadChromeManifests) {
     
     
