@@ -11,10 +11,6 @@
 
 #include "nsCSSPropertyID.h"
 #include <limits.h> 
-#include <initializer_list>
-
-
-#include "mozilla/CompositorAnimatableProperties.h"
 
 
 
@@ -25,17 +21,6 @@ class nsCSSPropertyIDSet {
 public:
     nsCSSPropertyIDSet() { Empty(); }
     
-
-    explicit constexpr nsCSSPropertyIDSet(
-        std::initializer_list<nsCSSPropertyID> aProperties)
-      : mProperties{0}
-    {
-      for (auto property : aProperties) {
-        size_t p = property;
-        mProperties[p / kBitsInChunk] |=
-          property_set_type(1) << (p % kBitsInChunk);
-      }
-    }
 
     void AssertInSetRange(nsCSSPropertyID aProperty) const {
         NS_ASSERTION(0 <= aProperty &&
@@ -65,29 +50,6 @@ public:
         size_t p = aProperty;
         return (mProperties[p / kBitsInChunk] &
                 (property_set_type(1) << (p % kBitsInChunk))) != 0;
-    }
-
-    
-    
-    static constexpr nsCSSPropertyIDSet CompositorAnimatables()
-    {
-      return nsCSSPropertyIDSet(COMPOSITOR_ANIMATABLE_PROPERTY_LIST);
-    }
-
-    static constexpr size_t CompositorAnimatableCount()
-    {
-      auto list = COMPOSITOR_ANIMATABLE_PROPERTY_LIST;
-      return list.size();
-    }
-
-    bool Intersects(const nsCSSPropertyIDSet& aOther) const
-    {
-      for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
-        if (mProperties[i] & aOther.mProperties[i]) {
-          return true;
-        }
-      }
-      return false;
     }
 
     void Empty() {
