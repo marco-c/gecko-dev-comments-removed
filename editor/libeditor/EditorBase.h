@@ -2342,13 +2342,20 @@ protected:
   RefPtr<IMEContentObserver> mIMEContentObserver;
 
   
-  typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 5>
+  
+  
+  typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 2>
             AutoActionListenerArray;
   AutoActionListenerArray mActionListeners;
   
-  typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 3>
+  
+  
+  typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 0>
             AutoEditorObserverArray;
   AutoEditorObserverArray mEditorObservers;
+  
+  
+  
   
   typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
             AutoDocumentStateListenerArray;
