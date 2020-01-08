@@ -122,8 +122,12 @@ GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key)
 }
 
  bool
-GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JSProtoKey key)
+GlobalObject::resolveConstructor(JSContext* cx,
+                                 Handle<GlobalObject*> global,
+                                 JSProtoKey key,
+                                 IfClassIsDisabled mode)
 {
+    MOZ_ASSERT(key != JSProto_Null);
     MOZ_ASSERT(!global->isStandardClassResolved(key));
 
     if (global->zone()->createdForHelperThread()) {
@@ -152,12 +156,15 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
         init = nullptr;
     }
 
+    
+    
     const Class* clasp = ProtoKeyToClass(key);
-    if (!init && !clasp) {
-        return true;  
-    }
-
-    if (skipDeselectedConstructor(cx, key)) {
+    if ((!init && !clasp) || skipDeselectedConstructor(cx, key)) {
+        if (mode == IfClassIsDisabled::Throw) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CONSTRUCTOR_DISABLED,
+                                      clasp ? clasp->name : "constructor");
+            return false;
+        }
         return true;
     }
 
@@ -197,7 +204,7 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
     if (key == JSProto_Function && global->getPrototype(JSProto_Object).isUndefined()) {
-        return resolveConstructor(cx, global, JSProto_Object);
+        return resolveConstructor(cx, global, JSProto_Object, IfClassIsDisabled::DoNothing);
     }
 
     
@@ -604,8 +611,13 @@ GlobalObject::initStandardClasses(JSContext* cx, Handle<GlobalObject*> global)
     }
 
     for (size_t k = 0; k < JSProto_LIMIT; ++k) {
-        if (!ensureConstructor(cx, global, static_cast<JSProtoKey>(k))) {
-            return false;
+        JSProtoKey key = static_cast<JSProtoKey>(k);
+        if (key != JSProto_Null && !global->isStandardClassResolved(key)) {
+            if (!resolveConstructor(cx, global, static_cast<JSProtoKey>(k),
+                                    IfClassIsDisabled::DoNothing))
+            {
+                return false;
+            }
         }
     }
     return true;
