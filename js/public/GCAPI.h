@@ -758,14 +758,6 @@ IsGenerationalGCEnabled(JSRuntime* rt);
 
 
 
-extern JS_PUBLIC_API(size_t)
-GetGCNumber();
-
-
-
-
-
-
 class JS_PUBLIC_API(AutoRequireNoGC)
 {
   protected:
