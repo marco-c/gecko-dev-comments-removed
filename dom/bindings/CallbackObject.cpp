@@ -204,8 +204,6 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   }
 
   
-  
-  
   if (!globalObject->GetGlobalJSObject()) {
     aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
       NS_LITERAL_CSTRING("Refusing to execute function from global which is "
