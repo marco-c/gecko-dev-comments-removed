@@ -41,7 +41,6 @@ import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
-import android.support.annotation.UiThread;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -94,7 +93,7 @@ import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.distribution.DistributionStoreCallback;
 import org.mozilla.gecko.dlc.DownloadContentService;
 import org.mozilla.gecko.extensions.ExtensionPermissionsHelper;
-import org.mozilla.gecko.firstrun.FirstrunAnimationContainer;
+import org.mozilla.gecko.firstrun.OnboardingHelper;
 import org.mozilla.gecko.gfx.DynamicToolbarAnimator;
 import org.mozilla.gecko.gfx.DynamicToolbarAnimator.PinReason;
 import org.mozilla.gecko.home.BrowserSearch;
@@ -162,6 +161,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.MenuUtils;
+import org.mozilla.gecko.util.NetworkUtils;
 import org.mozilla.gecko.util.PrefUtils;
 import org.mozilla.gecko.util.ShortcutUtils;
 import org.mozilla.gecko.util.StringUtils;
@@ -186,7 +186,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static org.mozilla.gecko.mma.MmaDelegate.NEW_TAB;
@@ -204,7 +203,8 @@ public class BrowserApp extends GeckoApp
                                    OnUrlOpenInBackgroundListener,
                                    PropertyAnimator.PropertyAnimationListener,
                                    TabsPanel.TabsLayoutChangeListener,
-                                   View.OnKeyListener {
+                                   View.OnKeyListener,
+                                   OnboardingHelper.OnboardingListener {
     private static final String LOGTAG = "GeckoBrowserApp";
 
     private static final int TABS_ANIMATION_DURATION = 450;
@@ -233,14 +233,7 @@ public class BrowserApp extends GeckoApp
 
     public static final String ACTION_VIEW_MULTIPLE = AppConstants.ANDROID_PACKAGE_NAME + ".action.VIEW_MULTIPLE";
 
-    @RobocopTarget
-    public static final String EXTRA_SKIP_STARTPANE = "skipstartpane";
     private static final String EOL_NOTIFIED = "eol_notified";
-
-    
-
-
-    private static final String FIRSTRUN_UUID = "firstrun_uuid";
 
     private BrowserSearch mBrowserSearch;
     private View mBrowserSearchContainer;
@@ -254,7 +247,6 @@ public class BrowserApp extends GeckoApp
     
     private TabStripInterface mTabStrip;
     private AnimatedProgressBar mProgressView;
-    private FirstrunAnimationContainer mFirstrunAnimationContainer;
     private HomeScreen mHomeScreen;
     private TabsPanel mTabsPanel;
 
@@ -433,6 +425,7 @@ public class BrowserApp extends GeckoApp
 
     @NonNull
     private SearchEngineManager mSearchEngineManager; 
+    private OnboardingHelper mOnboardingHelper;       
 
     private boolean mHasResumed;
 
@@ -749,6 +742,7 @@ public class BrowserApp extends GeckoApp
           return;
         }
 
+        mOnboardingHelper = new OnboardingHelper(this, safeStartingIntent);
         initSwitchboardAndMma(this, safeStartingIntent, isInAutomation);
         initTelemetryUploader(isInAutomation);
 
@@ -1014,14 +1008,16 @@ public class BrowserApp extends GeckoApp
 
         final String serverExtra = intent.getStringExtra(INTENT_KEY_SWITCHBOARD_SERVER);
         final String serverUrl = TextUtils.isEmpty(serverExtra) ? SWITCHBOARD_SERVER : serverExtra;
-        new AsyncConfigLoader(context, serverUrl) {
+        final SwitchBoard.ConfigStatusListener configStatuslistener = mOnboardingHelper;
+        final MmaDelegate.MmaVariablesChangedListener variablesChangedListener = mOnboardingHelper;
+        new AsyncConfigLoader(context, serverUrl, configStatuslistener) {
             @Override
             protected Void doInBackground(Void... params) {
                 super.doInBackground(params);
-                SwitchBoard.loadConfig(context, serverUrl);
+                SwitchBoard.loadConfig(context, serverUrl, configStatuslistener);
                 if (GeckoPreferences.isMmaAvailableAndEnabled(context)) {
                     
-                    MmaDelegate.init(BrowserApp.this);
+                    MmaDelegate.init(BrowserApp.this, variablesChangedListener);
                 }
                 return null;
             }
@@ -1089,106 +1085,6 @@ public class BrowserApp extends GeckoApp
         }
     }
 
-    
-
-
-
-    @UiThread
-    private void checkFirstrunInternal() {
-        showFirstrunPager();
-
-        if (HardwareUtils.isTablet()) {
-            mTabStrip.setOnTabChangedListener(new TabStripInterface.OnTabAddedOrRemovedListener() {
-                @Override
-                public void onTabChanged() {
-                    hideFirstrunPager(TelemetryContract.Method.BUTTON);
-                    mTabStrip.setOnTabChangedListener(null);
-                }
-            });
-        }
-    }
-
-    
-
-
-
-
-
-
-    private void checkFirstrun(Context context, SafeIntent intent) {
-        if (getProfile().inGuestMode()) {
-            
-            return;
-        }
-
-        if (intent.getBooleanExtra(EXTRA_SKIP_STARTPANE, false)) {
-            
-            
-            return;
-        }
-        final StrictMode.ThreadPolicy savedPolicy = StrictMode.allowThreadDiskReads();
-
-        try {
-            final SharedPreferences prefs = GeckoSharedPrefs.forProfile(this);
-
-            if (prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED_OLD, true) &&
-                prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true)) {
-                showSplashScreen = false;
-                if (!Intent.ACTION_VIEW.equals(intent.getAction())) {
-                    
-                    final Distribution distribution = Distribution.getInstance(BrowserApp.this);
-                    if (!distribution.shouldWaitForSystemDistribution()) {
-                        checkFirstrunInternal();
-                    } else {
-                        distribution.addOnDistributionReadyCallback(new Distribution.ReadyCallback() {
-                            @Override
-                            public void distributionNotFound() {
-                                ThreadUtils.postToUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        checkFirstrunInternal();
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void distributionFound(final Distribution distribution) {
-                                
-                                if (prefs.getBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true)) {
-                                    ThreadUtils.postToUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            checkFirstrunInternal();
-                                        }
-                                    });
-                                }
-                            }
-
-                            @Override
-                            public void distributionArrivedLate(final Distribution distribution) {
-                            }
-                        });
-                    }
-                }
-
-                prefs.edit()
-                        
-                        .putBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, false)
-                        
-                        
-                        .putString(FIRSTRUN_UUID, UUID.randomUUID().toString())
-                        .apply();
-
-                
-                
-                
-                Telemetry.startUISession(TelemetryContract.Session.FIRSTRUN);
-            }
-        } finally {
-            StrictMode.setThreadPolicy(savedPolicy);
-        }
-    }
-
     private Class<?> getMediaPlayerManager() {
         if (AppConstants.MOZ_MEDIA_PLAYER) {
             try {
@@ -1246,7 +1142,7 @@ public class BrowserApp extends GeckoApp
 
         if (!IntentUtils.getIsInAutomationFromEnvironment(intent)) {
             
-            checkFirstrun(this, intent);
+            mOnboardingHelper.checkFirstRun();
         }
     }
 
@@ -2660,9 +2556,10 @@ public class BrowserApp extends GeckoApp
                 && mHomeScreenContainer != null && mHomeScreenContainer.getVisibility() == View.VISIBLE);
     }
 
-    private boolean isFirstrunVisible() {
-        return (mFirstrunAnimationContainer != null && mFirstrunAnimationContainer.isVisible()
-                && mHomeScreenContainer != null && mHomeScreenContainer.getVisibility() == View.VISIBLE);
+    private SplashScreen getSplashScreen() {
+        final ViewGroup main = (ViewGroup) findViewById(R.id.gecko_layout);
+        final View splashLayout = LayoutInflater.from(this).inflate(R.layout.splash_screen, main);
+        return (SplashScreen) splashLayout.findViewById(R.id.splash_root);
     }
 
     
@@ -2916,7 +2813,10 @@ public class BrowserApp extends GeckoApp
         
         if (isAboutHome(tab)) {
             
-            if (splashScreen != null && splashScreen.getVisibility() == View.VISIBLE) {
+            
+            if (!mOnboardingHelper.isPreparing() &&
+                    splashScreen != null &&
+                    splashScreen.getVisibility() == View.VISIBLE) {
                 
                 splashScreen.hide();
             }
@@ -2955,10 +2855,9 @@ public class BrowserApp extends GeckoApp
             
             
             if (showSplashScreen && !GeckoThread.isRunning()) {
-
-                final ViewGroup main = (ViewGroup) findViewById(R.id.gecko_layout);
-                final View splashLayout = LayoutInflater.from(this).inflate(R.layout.splash_screen, main);
-                splashScreen = (SplashScreen) splashLayout.findViewById(R.id.splash_root);
+                if (splashScreen == null) {
+                    splashScreen = getSplashScreen();
+                }
 
                 showSplashScreen = false;
             } else if (splashScreen != null) {
@@ -3021,26 +2920,6 @@ public class BrowserApp extends GeckoApp
 
                 super.onActivityResult(requestCode, resultCode, data);
         }
-    }
-
-    private void showFirstrunPager() {
-
-        if (mFirstrunAnimationContainer == null) {
-            final ViewStub firstrunPagerStub = (ViewStub) findViewById(R.id.firstrun_pager_stub);
-            mFirstrunAnimationContainer = (FirstrunAnimationContainer) firstrunPagerStub.inflate();
-            mFirstrunAnimationContainer.load(getApplicationContext(), getSupportFragmentManager());
-            mFirstrunAnimationContainer.registerOnFinishListener(new FirstrunAnimationContainer.OnFinishListener() {
-                @Override
-                public void onFinish() {
-                    if (mFirstrunAnimationContainer.showBrowserHint() &&
-                        !Tabs.hasHomepage(BrowserApp.this)) {
-                        enterEditingMode();
-                    }
-                }
-            });
-        }
-
-        mHomeScreenContainer.setVisibility(View.VISIBLE);
     }
 
     private void showHomePager(String panelId, Bundle panelRestoreData) {
@@ -3174,15 +3053,12 @@ public class BrowserApp extends GeckoApp
 
 
     private boolean hideFirstrunPager(TelemetryContract.Method method) {
-        if (!isFirstrunVisible()) {
+        if (!mOnboardingHelper.hideOnboarding()) {
             return false;
         }
 
         Telemetry.sendUIEvent(TelemetryContract.Event.CANCEL, method, "firstrun-pane");
 
-        
-        mFirstrunAnimationContainer.registerOnFinishListener(null);
-        mFirstrunAnimationContainer.hide();
         return true;
     }
 
@@ -4633,5 +4509,36 @@ public class BrowserApp extends GeckoApp
     private void refreshStatusBarColor() {
         final boolean isPrivate = mBrowserToolbar.isPrivateMode();
         WindowUtil.setStatusBarColor(BrowserApp.this, isPrivate);
+    }
+
+    @Override
+    public void onOnboardingProcessStarted() {
+        if (splashScreen == null) {
+            splashScreen = getSplashScreen();
+        }
+
+        splashScreen.show(OnboardingHelper.DELAY_SHOW_DEFAULT_ONBOARDING);
+    }
+
+    @Override
+    public void onOnboardingScreensVisible() {
+        mHomeScreenContainer.setVisibility(View.VISIBLE);
+
+        if (HardwareUtils.isTablet()) {
+            mTabStrip.setOnTabChangedListener(new BrowserApp.TabStripInterface.OnTabAddedOrRemovedListener() {
+                @Override
+                public void onTabChanged() {
+                    hideFirstrunPager(TelemetryContract.Method.BUTTON);
+                    mTabStrip.setOnTabChangedListener(null);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onFinishedOnboarding(final boolean showBrowserHint) {
+        if (showBrowserHint && !Tabs.hasHomepage(this)) {
+            enterEditingMode();
+        }
     }
 }

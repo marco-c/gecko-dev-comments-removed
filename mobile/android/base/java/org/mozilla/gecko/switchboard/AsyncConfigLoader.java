@@ -33,6 +33,7 @@ public class AsyncConfigLoader extends AsyncTask<Void, Void, Void> {
 
     private Context context;
     private String defaultServerUrl;
+    private SwitchBoard.ConfigStatusListener listener;
 
     
 
@@ -41,14 +42,16 @@ public class AsyncConfigLoader extends AsyncTask<Void, Void, Void> {
 
 
 
-    public AsyncConfigLoader(Context c, String defaultServerUrl) {
+    public AsyncConfigLoader(Context c, String defaultServerUrl,
+                             SwitchBoard.ConfigStatusListener listener) {
         this.context = c;
         this.defaultServerUrl = defaultServerUrl;
+        this.listener = listener;
     }
 
     @Override
     protected Void doInBackground(Void... params) {
-        SwitchBoard.loadConfig(context, defaultServerUrl);
+        SwitchBoard.loadConfig(context, defaultServerUrl, listener);
         return null;
     }
 }
