@@ -236,6 +236,31 @@ var getNodeFrontInFrame = async function(selector, frameSelector,
   return inspector.walker.querySelector(nodes[0], selector);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+var getNodeFrontInShadowDom = async function(selector, hostSelector, inspector) {
+  const hostFront = await getNodeFront(hostSelector, inspector);
+  const {nodes} = await inspector.walker.children(hostFront);
+
+  
+  const shadowRoot = nodes.filter(node => node.isShadowRoot)[0];
+  if (!shadowRoot) {
+    throw new Error("Could not find a shadow root under selector: " + hostSelector);
+  }
+
+  return inspector.walker.querySelector(shadowRoot, selector);
+};
+
 var focusSearchBoxUsingShortcut = async function(panelWin, callback) {
   info("Focusing search box");
   const searchBox = panelWin.document.getElementById("inspector-searchbox");
