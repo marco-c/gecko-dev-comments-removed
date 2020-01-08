@@ -1,0 +1,8 @@
+
+
+
+
+
+var g = newGlobal();
+assertEq(objectGlobal(g), null); 
+assertEq(isProxy(g), true);
