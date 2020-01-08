@@ -329,7 +329,7 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
 #ifdef DEBUG
 static void DEBUG_CheckUnwrapSafety(HandleObject obj,
                                     const js::Wrapper* handler,
-                                    JS::Realm* origin,
+                                    JS::Compartment* origin,
                                     JS::Compartment* target) {
   if (!js::AllowNewWrapper(target, obj)) {
     
@@ -340,20 +340,18 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
     
     
     MOZ_ASSERT(!handler->hasSecurityPolicy());
-  } else if (RealmPrivate::Get(origin)->forcePermissiveCOWs) {
+  } else if (CompartmentPrivate::Get(origin)->forcePermissiveCOWs) {
     
     
     
     MOZ_ASSERT(!handler->hasSecurityPolicy());
   } else {
     
-    JS::Compartment* originComp = JS::GetCompartmentForRealm(origin);
-    bool subsumes =
-        (OriginAttributes::IsRestrictOpenerAccessForFPI()
-             ? AccessCheck::subsumesConsideringDomain(target, originComp)
-             : AccessCheck::subsumesConsideringDomainIgnoringFPD(target,
-                                                                 originComp));
-    MOZ_ASSERT(handler->hasSecurityPolicy() == !subsumes);
+    MOZ_ASSERT(handler->hasSecurityPolicy() ==
+               !(OriginAttributes::IsRestrictOpenerAccessForFPI()
+                     ? AccessCheck::subsumesConsideringDomain(target, origin)
+                     : AccessCheck::subsumesConsideringDomainIgnoringFPD(
+                           target, origin)));
   }
 }
 #else
@@ -444,9 +442,6 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   CompartmentPrivate* targetCompartmentPrivate =
       CompartmentPrivate::Get(target);
 
-  JS::Realm* originRealm = js::GetNonCCWObjectRealm(obj);
-  RealmPrivate* originRealmPrivate = RealmPrivate::Get(originRealm);
-
   
   
   
@@ -459,7 +454,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   }
 
   
-  else if (originRealmPrivate->forcePermissiveCOWs) {
+  else if (originCompartmentPrivate->forcePermissiveCOWs) {
     CrashIfNotInAutomation();
     wrapper = &CrossCompartmentWrapper::singleton;
   }
@@ -522,7 +517,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
     wrapper = SelectWrapper(securityWrapper, xrayType, waiveXrays, obj);
   }
 
-  if (!targetSubsumesOrigin && !originRealmPrivate->forcePermissiveCOWs) {
+  if (!targetSubsumesOrigin && !originCompartmentPrivate->forcePermissiveCOWs) {
     
     
     
@@ -537,7 +532,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
     }
   }
 
-  DEBUG_CheckUnwrapSafety(obj, wrapper, originRealm, target);
+  DEBUG_CheckUnwrapSafety(obj, wrapper, origin, target);
 
   if (existing) {
     return Wrapper::Renew(existing, obj, wrapper);
