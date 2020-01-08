@@ -1343,6 +1343,33 @@ var LoginManagerContent = {
 
 
 
+  getUserNameAndPasswordFields(aField) {
+    
+    if (ChromeUtils.getClassName(aField) !== "HTMLInputElement" ||
+        (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
+        aField.nodePrincipal.isNullPrincipal ||
+        !aField.ownerDocument) {
+      return [null, null, null];
+    }
+    let form = LoginFormFactory.createFromField(aField);
+
+    let doc = aField.ownerDocument;
+    let formOrigin = LoginUtils._getPasswordOrigin(doc.documentURI);
+    let recipes = LoginRecipesContent.getRecipes(formOrigin, doc.defaultView);
+
+    return this._getFormFields(form, false, recipes);
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
   getFieldContext(aField) {
     
@@ -1352,14 +1379,9 @@ var LoginManagerContent = {
         !aField.ownerDocument) {
       return null;
     }
-    let form = LoginFormFactory.createFromField(aField);
-
-    let doc = aField.ownerDocument;
-    let formOrigin = LoginUtils._getPasswordOrigin(doc.documentURI);
-    let recipes = LoginRecipesContent.getRecipes(formOrigin, doc.defaultView);
 
     let [usernameField, newPasswordField] =
-          this._getFormFields(form, false, recipes);
+          this.getUserNameAndPasswordFields(aField);
 
     
     
