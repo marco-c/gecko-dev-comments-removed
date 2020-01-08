@@ -7,6 +7,7 @@
 #ifndef mozilla_EffectCompositor_h
 #define mozilla_EffectCompositor_h
 
+#include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
@@ -31,7 +32,6 @@ class ComputedStyle;
 class EffectSet;
 class RestyleTracker;
 class StyleAnimationValue;
-struct AnimationPerformanceWarning;
 struct AnimationProperty;
 struct NonOwningAnimationTarget;
 
@@ -206,7 +206,7 @@ public:
 
   
   
-  bool PreTraverseInSubtree(ServoTraversalFlags aFlags, dom::Element* aElement);
+  bool PreTraverseInSubtree(ServoTraversalFlags aFlags, dom::Element* aRoot);
 
   
   
@@ -216,6 +216,14 @@ public:
   
   static dom::Element* GetElementToRestyle(dom::Element* aElement,
                                            CSSPseudoElementType aPseudoType);
+
+  
+  
+  
+  static bool AllowCompositorAnimationsOnFrame(
+    const nsIFrame* aFrame,
+    const EffectSet& aEffects,
+    AnimationPerformanceWarning::Type& aWarning );
 
 private:
   ~EffectCompositor() = default;

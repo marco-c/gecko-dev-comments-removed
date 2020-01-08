@@ -120,6 +120,41 @@ IsMatchForCompositor(const KeyframeEffect& aEffect,
          : MatchForCompositor::IfNeeded;
 }
 
+ bool
+EffectCompositor::AllowCompositorAnimationsOnFrame(
+  const nsIFrame* aFrame,
+  const EffectSet& aEffects,
+  AnimationPerformanceWarning::Type& aWarning )
+{
+  if (aFrame->RefusedAsyncAnimation()) {
+    return false;
+  }
+
+  if (!nsLayoutUtils::AreAsyncAnimationsEnabled()) {
+    if (nsLayoutUtils::IsAnimationLoggingEnabled()) {
+      nsCString message;
+      message.AppendLiteral("Performance warning: Async animations are "
+                            "disabled");
+      AnimationUtils::LogAsyncAnimationFailure(message);
+    }
+    return false;
+  }
+
+  
+  
+  
+  nsIContent* content = aFrame->GetContent();
+  while (content) {
+    if (content->HasRenderingObservers()) {
+      aWarning = AnimationPerformanceWarning::Type::HasRenderingObserver;
+      return false;
+    }
+    content = content->GetParent();
+  }
+
+  return true;
+}
+
 
 
 
@@ -159,7 +194,16 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
     return false;
   }
 
-  if (aFrame->RefusedAsyncAnimation()) {
+  AnimationPerformanceWarning::Type warning =
+    AnimationPerformanceWarning::Type::None;
+  if (!EffectCompositor::AllowCompositorAnimationsOnFrame(aFrame,
+                                                          *effects,
+                                                          warning)) {
+    if (warning != AnimationPerformanceWarning::Type::None) {
+      EffectCompositor::SetPerformanceWarning(
+        aFrame, aProperty,
+        AnimationPerformanceWarning(warning));
+    }
     return false;
   }
 
@@ -177,31 +221,6 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
              "have bailed out at above the call to EffectSet::GetEffectSet");
   EffectCompositor::MaybeUpdateCascadeResults(pseudoElement->mElement,
                                               pseudoElement->mPseudoType);
-
-  if (!nsLayoutUtils::AreAsyncAnimationsEnabled()) {
-    if (nsLayoutUtils::IsAnimationLoggingEnabled()) {
-      nsCString message;
-      message.AppendLiteral("Performance warning: Async animations are "
-                            "disabled");
-      AnimationUtils::LogAsyncAnimationFailure(message);
-    }
-    return false;
-  }
-
-  
-  
-  
-  nsIContent* content = aFrame->GetContent();
-  while (content) {
-    if (content->HasRenderingObservers()) {
-      EffectCompositor::SetPerformanceWarning(
-        aFrame, aProperty,
-        AnimationPerformanceWarning(
-          AnimationPerformanceWarning::Type::HasRenderingObserver));
-      return false;
-    }
-    content = content->GetParent();
-  }
 
   bool foundRunningAnimations = false;
   for (KeyframeEffect* effect : *effects) {
