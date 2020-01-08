@@ -1170,21 +1170,9 @@ public:
 
 
 
-
-
   void GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements);
 
 private:
-  
-
-
-
-
-  typedef bool (*nsElementMatchFunc)(Element* aElement);
-
-  void GetElementsByMatching(nsElementMatchFunc aFunc,
-                             nsTArray<RefPtr<Element>>& aElements);
-
   
 
 
