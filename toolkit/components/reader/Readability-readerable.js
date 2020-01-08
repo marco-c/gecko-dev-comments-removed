@@ -21,6 +21,13 @@
 
 
 
+
+
+
+
+
+
+
 var REGEXPS = {
   
   
@@ -29,7 +36,8 @@ var REGEXPS = {
 };
 
 function isNodeVisible(node) {
-  return node.style.display != "none" && !node.hasAttribute("hidden");
+  
+  return (!node.style || node.style.display != "none") && !node.hasAttribute("hidden");
 }
 
 

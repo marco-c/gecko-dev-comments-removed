@@ -25,6 +25,13 @@
 
 
 
+
+
+
+
+
+
+
 function Readability(doc, options) {
   
   if (options && options.documentElement) {
@@ -39,6 +46,7 @@ function Readability(doc, options) {
   this._articleTitle = null;
   this._articleByline = null;
   this._articleDir = null;
+  this._articleSiteName = null;
   this._attempts = [];
 
   
@@ -323,7 +331,7 @@ Readability.prototype = {
       return uri;
     }
 
-    var links = articleContent.getElementsByTagName("a");
+    var links = this._getAllNodesWithTag(articleContent, ["a"]);
     this._forEachNode(links, function(link) {
       var href = link.getAttribute("href");
       if (href) {
@@ -338,7 +346,7 @@ Readability.prototype = {
       }
     });
 
-    var imgs = articleContent.getElementsByTagName("img");
+    var imgs = this._getAllNodesWithTag(articleContent, ["img"]);
     this._forEachNode(imgs, function(img) {
       var src = img.getAttribute("src");
       if (src) {
@@ -411,7 +419,7 @@ Readability.prototype = {
         curTitle = this._getInnerText(hOnes[0]);
     }
 
-    curTitle = curTitle.trim();
+    curTitle = curTitle.trim().replace(this.REGEXPS.normalize, " ");
     
     
     
@@ -1144,7 +1152,7 @@ Readability.prototype = {
           this._attempts.push({articleContent: articleContent, textLength: textLength});
           
           this._attempts.sort(function (a, b) {
-            return a.textLength < b.textLength;
+            return b.textLength - a.textLength;
           });
 
           
@@ -1202,10 +1210,10 @@ Readability.prototype = {
     var metaElements = this._doc.getElementsByTagName("meta");
 
     
-    var propertyPattern = /\s*(dc|dcterm|og|twitter)\s*:\s*(author|creator|description|title)\s*/gi;
+    var propertyPattern = /\s*(dc|dcterm|og|twitter)\s*:\s*(author|creator|description|title|site_name)\s*/gi;
 
     
-    var namePattern = /^\s*(?:(dc|dcterm|og|twitter|weibo:(article|webpage))\s*[\.:]\s*)?(author|creator|description|title)\s*$/i;
+    var namePattern = /^\s*(?:(dc|dcterm|og|twitter|weibo:(article|webpage))\s*[\.:]\s*)?(author|creator|description|title|site_name)\s*$/i;
 
     
     this._forEachNode(metaElements, function(element) {
@@ -1264,6 +1272,9 @@ Readability.prototype = {
                        values["weibo:webpage:description"] ||
                        values["description"] ||
                        values["twitter:description"];
+
+    
+    metadata.siteName = values["og:site_name"];
 
     return metadata;
   },
@@ -1704,7 +1715,7 @@ Readability.prototype = {
   },
 
   _isProbablyVisible: function(node) {
-    return node.style.display != "none" && !node.hasAttribute("hidden");
+    return (!node.style || node.style.display != "none") && !node.hasAttribute("hidden");
   },
 
   
@@ -1763,6 +1774,7 @@ Readability.prototype = {
       textContent: textContent,
       length: textContent.length,
       excerpt: metadata.excerpt,
+      siteName: metadata.siteName || this._articleSiteName
     };
   }
 };
