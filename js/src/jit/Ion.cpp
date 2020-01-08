@@ -301,7 +301,7 @@ JitRuntime::initialize(JSContext* cx)
             
             continue;
         }
-        JitSpew(JitSpew_Codegen, "# VM function wrapper");
+        JitSpew(JitSpew_Codegen, "# VM function wrapper (%s)", fun->name());
         if (!generateVMWrapper(cx, masm, *fun))
             return false;
     }
