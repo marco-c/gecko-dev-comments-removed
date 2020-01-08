@@ -1040,12 +1040,6 @@ Realm::getOrCreateIterResultTemplateObject(JSContext* cx)
 
 
 
-bool
-js::IsPropertyIterator(HandleValue v)
-{
-    return v.isObject() && v.toObject().is<PropertyIteratorObject>();
-}
-
 size_t
 PropertyIteratorObject::sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const
 {
