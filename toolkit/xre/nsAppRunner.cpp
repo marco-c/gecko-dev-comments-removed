@@ -2657,7 +2657,8 @@ static bool RemoveComponentRegistries(nsIFile* aProfileDir,
 
   file->SetNativeLeafName(NS_LITERAL_CSTRING("startupCache"));
   nsresult rv = file->Remove(true);
-  return NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
+  return NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+         rv == NS_ERROR_FILE_NOT_FOUND;
 }
 
 
@@ -4927,16 +4928,31 @@ GeckoProcessType XRE_GetProcessType() {
   return mozilla::startup::sChildProcessType;
 }
 
+bool XRE_IsGPUProcess() { return XRE_GetProcessType() == GeckoProcessType_GPU; }
+
+bool XRE_IsRDDProcess() { return XRE_GetProcessType() == GeckoProcessType_RDD; }
+
+bool XRE_IsVRProcess() { return XRE_GetProcessType() == GeckoProcessType_VR; }
+
+
+
+
+
+bool XRE_IsParentProcess() {
+  return XRE_GetProcessType() == GeckoProcessType_Default;
+}
+
 bool XRE_IsE10sParentProcess() {
   return XRE_IsParentProcess() && BrowserTabsRemoteAutostart();
 }
 
-#define GECKO_PROCESS_TYPE(enum_name, string_name, xre_name)     \
-  bool XRE_Is##xre_name##Process() {                             \
-    return XRE_GetProcessType() == GeckoProcessType_##enum_name; \
-  }
-#include "mozilla/GeckoProcessTypes.h"
-#undef GECKO_PROCESS_TYPE
+bool XRE_IsContentProcess() {
+  return XRE_GetProcessType() == GeckoProcessType_Content;
+}
+
+bool XRE_IsPluginProcess() {
+  return XRE_GetProcessType() == GeckoProcessType_Plugin;
+}
 
 bool XRE_UseNativeEventProcessing() {
 #ifdef XP_MACOSX
