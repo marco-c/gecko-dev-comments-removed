@@ -40,6 +40,7 @@
 #include "mozilla/dom/quota/PQuotaUsageRequestParent.h"
 #include "mozilla/dom/simpledb/ActorsParent.h"
 #include "mozilla/dom/StorageActivityService.h"
+#include "mozilla/dom/StorageDBUpdater.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/IntegerRange.h"
@@ -211,6 +212,7 @@ enum AppId {
 #define METADATA_V2_FILE_NAME ".metadata-v2"
 #define METADATA_V2_TMP_FILE_NAME ".metadata-v2-tmp"
 
+#define WEB_APPS_STORE_FILE_NAME "webappsstore.sqlite"
 #define LS_ARCHIVE_FILE_NAME "ls-archive.sqlite"
 #define LS_ARCHIVE_TMP_FILE_NAME "ls-archive-tmp.sqlite"
 
@@ -261,6 +263,65 @@ CreateTables(mozIStorageConnection* aConnection)
     return rv;
   }
 
+  return NS_OK;
+}
+
+nsresult
+CreateWebAppsStoreConnection(nsIFile* aWebAppsStoreFile,
+                             mozIStorageService* aStorageService,
+                             mozIStorageConnection** aConnection)
+{
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aWebAppsStoreFile);
+  MOZ_ASSERT(aStorageService);
+  MOZ_ASSERT(aConnection);
+
+  
+  bool exists;
+  nsresult rv = aWebAppsStoreFile->Exists(&exists);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (!exists) {
+    
+    *aConnection = nullptr;
+    return NS_OK;
+  }
+
+  bool isDirectory;
+  rv = aWebAppsStoreFile->IsDirectory(&isDirectory);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (isDirectory) {
+    QM_WARNING("webappsstore.sqlite is not a file!");
+    *aConnection = nullptr;
+    return NS_OK;
+  }
+
+  nsCOMPtr<mozIStorageConnection> connection;
+  rv = aStorageService->OpenUnsharedDatabase(aWebAppsStoreFile,
+                                             getter_AddRefs(connection));
+  if (rv == NS_ERROR_FILE_CORRUPTED) {
+    
+    *aConnection = nullptr;
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = StorageDBUpdater::Update(connection);
+  if (NS_FAILED(rv)) {
+    
+    
+    *aConnection = nullptr;
+    return NS_OK;
+  }
+
+  connection.forget(aConnection);
   return NS_OK;
 }
 
@@ -4837,10 +4898,7 @@ nsresult
 QuotaManager::MaybeRemoveLocalStorageData()
 {
   AssertIsOnIOThread();
-
-  if (CachedNextGenLocalStorageEnabled()) {
-    return NS_OK;
-  }
+  MOZ_ASSERT(!CachedNextGenLocalStorageEnabled());
 
   
   nsCOMPtr<nsIFile> lsArchiveTmpFile;
@@ -5037,6 +5095,202 @@ QuotaManager::MaybeRemoveLocalStorageDirectories()
   return NS_OK;
 }
 
+nsresult
+QuotaManager::MaybeCreateLocalStorageArchive()
+{
+  AssertIsOnIOThread();
+  MOZ_ASSERT(CachedNextGenLocalStorageEnabled());
+
+  
+  nsCOMPtr<nsIFile> lsArchiveFile;
+  nsresult rv = NS_NewLocalFile(mStoragePath,
+                                false,
+                                getter_AddRefs(lsArchiveFile));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = lsArchiveFile->Append(NS_LITERAL_STRING(LS_ARCHIVE_FILE_NAME));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  bool exists;
+  rv = lsArchiveFile->Exists(&exists);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (exists) {
+    
+    return NS_OK;
+  }
+
+  
+  nsCOMPtr<mozIStorageService> ss =
+    do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIFile> webAppsStoreFile;
+  rv = NS_NewLocalFile(mBasePath, false, getter_AddRefs(webAppsStoreFile));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = webAppsStoreFile->Append(NS_LITERAL_STRING(WEB_APPS_STORE_FILE_NAME));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<mozIStorageConnection> connection;
+  rv = CreateWebAppsStoreConnection(webAppsStoreFile,
+                                    ss,
+                                    getter_AddRefs(connection));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (connection) {
+    
+    nsCOMPtr<mozIStorageStatement> stmt;
+    rv = connection->CreateStatement(NS_LITERAL_CSTRING(
+      "PRAGMA journal_mode;"
+    ), getter_AddRefs(stmt));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    bool hasResult;
+    rv = stmt->ExecuteStep(&hasResult);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    MOZ_ASSERT(hasResult);
+
+    nsCString journalMode;
+    rv = stmt->GetUTF8String(0, journalMode);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = stmt->Finalize();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (journalMode.EqualsLiteral("wal")) {
+      
+      
+      rv = connection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        "PRAGMA wal_checkpoint(TRUNCATE);"
+      ));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+
+    
+    rv = connection->Close();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    
+    
+    
+    nsCOMPtr<nsIFile> storageDir;
+    rv = NS_NewLocalFile(mStoragePath, false, getter_AddRefs(storageDir));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = webAppsStoreFile->CopyTo(storageDir,
+                                  NS_LITERAL_STRING(LS_ARCHIVE_TMP_FILE_NAME));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    nsCOMPtr<nsIFile> lsArchiveTmpFile;
+    rv = NS_NewLocalFile(mStoragePath, false, getter_AddRefs(lsArchiveTmpFile));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = lsArchiveTmpFile->Append(NS_LITERAL_STRING(LS_ARCHIVE_TMP_FILE_NAME));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (journalMode.EqualsLiteral("wal")) {
+      nsCOMPtr<mozIStorageConnection> lsArchiveTmpConnection;
+      rv = ss->OpenUnsharedDatabase(lsArchiveTmpFile,
+                                    getter_AddRefs(lsArchiveTmpConnection));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      
+      
+      
+      
+      
+      rv = lsArchiveTmpConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        "PRAGMA journal_mode = DELETE;"
+      ));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      
+      
+    }
+
+    
+    rv = lsArchiveTmpFile->MoveTo(nullptr,
+                                  NS_LITERAL_STRING(LS_ARCHIVE_FILE_NAME));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else {
+    
+
+    
+    nsCOMPtr<nsIFile> storageDirectory;
+    rv = NS_NewLocalFile(GetStoragePath(),
+                         false,
+                         getter_AddRefs(storageDirectory));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    bool dummy;
+    rv = EnsureDirectory(storageDirectory, &dummy);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    nsCOMPtr<mozIStorageConnection> lsArchiveConnection;
+    rv = ss->OpenUnsharedDatabase(lsArchiveFile,
+                                  getter_AddRefs(lsArchiveConnection));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = StorageDBUpdater::Update(lsArchiveConnection);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  return NS_OK;
+}
+
 #ifdef DEBUG
 
 void
@@ -5216,7 +5470,11 @@ QuotaManager::EnsureStorageIsInitialized()
     }
   }
 
-  rv = MaybeRemoveLocalStorageData();
+  if (CachedNextGenLocalStorageEnabled()) {
+    rv = MaybeCreateLocalStorageArchive();
+  } else {
+    rv = MaybeRemoveLocalStorageData();
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
