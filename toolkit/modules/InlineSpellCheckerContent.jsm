@@ -21,9 +21,7 @@ var InlineSpellCheckerContent = {
     if (!(editFlags & (SpellCheckHelper.TEXTAREA | SpellCheckHelper.INPUT))) {
       
       let win = event.target.ownerGlobal;
-      let editingSession = win.docShell
-                              .QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIEditingSession);
+      let editingSession = win.docShell.editingSession;
       spellChecker = this._spellChecker =
         new InlineSpellChecker(editingSession.getEditorForWindow(win));
     } else {
