@@ -6830,6 +6830,7 @@ nsDisplayOpacity::CreateWebRenderCommands(
                            GetActiveScrolledRoot(),
                            aBuilder,
                            filters,
+                           LayoutDeviceRect(),
                            nullptr,
                            animationsId ? &prop : nullptr,
                            opacityForSC);
@@ -6883,10 +6884,10 @@ nsDisplayBlendMode::CreateWebRenderCommands(
                            GetActiveScrolledRoot(),
                            aBuilder,
                            filters,
+                           LayoutDeviceRect(),
                            nullptr,
                            nullptr,
                            nullptr,
-                           LayoutDevicePoint(),
                            nullptr,
                            nullptr,
                            nsCSSRendering::GetGFXBlendMode(mBlendMode));
@@ -7175,6 +7176,7 @@ nsDisplayOwnLayer::CreateWebRenderCommands(
                            GetActiveScrolledRoot(),
                            aBuilder,
                            nsTArray<wr::WrFilterOp>(),
+                           LayoutDeviceRect(),
                            nullptr,
                            &prop);
 
@@ -7833,14 +7835,6 @@ nsDisplayStickyPosition::CreateWebRenderCommands(
     nsRect scrollPort =
       stickyScrollContainer->ScrollFrame()->GetScrollPortRect();
     scrollPort += offset;
-    
-    
-    
-    
-    
-    auto& scrollOrigin =
-      nsLayoutUtils::GetReferenceFrame(scrollFrame) == ReferenceFrame() ?
-      LayoutDevicePoint() : aSc.GetInheritedStickyOrigin();
 
     
     
@@ -7864,8 +7858,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(
       
       nscoord distance = DistanceToRange(inner.YMost(), outer.YMost());
       topMargin = Some(NSAppUnitsToFloatPixels(
-        itemBounds.y - scrollPort.y - distance, auPerDevPixel
-        ) - scrollOrigin.y);
+        itemBounds.y - scrollPort.y - distance, auPerDevPixel));
       
       
       
@@ -7891,8 +7884,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(
       
       nscoord distance = DistanceToRange(outer.Y(), inner.Y());
       bottomMargin = Some(NSAppUnitsToFloatPixels(
-        scrollPort.YMost() - itemBounds.YMost() + distance, auPerDevPixel
-        ) - scrollOrigin.y);
+        scrollPort.YMost() - itemBounds.YMost() + distance, auPerDevPixel));
       
       
       vBounds.min =
@@ -7909,8 +7901,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(
     if (outer.XMost() != inner.XMost()) {
       nscoord distance = DistanceToRange(inner.XMost(), outer.XMost());
       leftMargin = Some(NSAppUnitsToFloatPixels(
-        itemBounds.x - scrollPort.x - distance, auPerDevPixel
-        ) - scrollOrigin.x);
+        itemBounds.x - scrollPort.x - distance, auPerDevPixel));
       hBounds.max =
         NSAppUnitsToFloatPixels(outer.XMost() - inner.XMost(), auPerDevPixel);
       if (inner.XMost() < 0) {
@@ -7921,8 +7912,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(
     if (outer.X() != inner.X()) {
       nscoord distance = DistanceToRange(outer.X(), inner.X());
       rightMargin = Some(NSAppUnitsToFloatPixels(
-        scrollPort.XMost() - itemBounds.XMost() + distance, auPerDevPixel
-        ) - scrollOrigin.x);
+        scrollPort.XMost() - itemBounds.XMost() + distance, auPerDevPixel));
       hBounds.min =
         NSAppUnitsToFloatPixels(outer.X() - inner.X(), auPerDevPixel);
       if (appliedOffset.x == 0 && inner.X() > 0) {
@@ -8926,10 +8916,10 @@ nsDisplayTransform::CreateWebRenderCommands(
                            GetActiveScrolledRoot(),
                            aBuilder,
                            filters,
+                           LayoutDeviceRect(position, LayoutDeviceSize()),
                            &newTransformMatrix,
                            animationsId ? &prop : nullptr,
                            nullptr,
-                           position,
                            transformForSC,
                            nullptr,
                            gfx::CompositionOp::OP_OVER,
@@ -9576,10 +9566,10 @@ nsDisplayPerspective::CreateWebRenderCommands(
                            GetActiveScrolledRoot(),
                            aBuilder,
                            filters,
+                           LayoutDeviceRect(),
                            nullptr,
                            nullptr,
                            nullptr,
-                           LayoutDevicePoint(),
                            &transformForSC,
                            &perspectiveMatrix,
                            gfx::CompositionOp::OP_OVER,
@@ -10279,10 +10269,10 @@ nsDisplayMasksAndClipPaths::CreateWebRenderCommands(
                   GetActiveScrolledRoot(),
                   aBuilder,
                    nsTArray<wr::WrFilterOp>(),
+                   bounds,
                    nullptr,
                    nullptr,
                    opacity.ptrOr(nullptr),
-                   LayoutDevicePoint(),
                    nullptr,
                    nullptr,
                    gfx::CompositionOp::OP_OVER,
@@ -10602,11 +10592,11 @@ nsDisplayFilters::CreateWebRenderCommands(
                            GetActiveScrolledRoot(),
                            aBuilder,
                            wrFilters,
+                           LayoutDeviceRect(),
                            nullptr,
                            nullptr,
                            opacity != 1.0f && mHandleOpacity ? &opacity
                                                              : nullptr,
-                           LayoutDevicePoint(),
                            nullptr,
                            nullptr,
                            gfx::CompositionOp::OP_OVER,
