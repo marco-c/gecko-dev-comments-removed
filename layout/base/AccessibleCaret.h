@@ -229,6 +229,9 @@ protected:
   RefPtr<DummyTouchListener> mDummyTouchListener{new DummyTouchListener()};
 
   
+  static float sWidth;
+  static float sHeight;
+  static float sMarginLeft;
   static const nsLiteralString sTextOverlayElementId;
   static const nsLiteralString sCaretImageElementId;
 
