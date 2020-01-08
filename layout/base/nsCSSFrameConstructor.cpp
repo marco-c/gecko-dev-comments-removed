@@ -52,7 +52,7 @@
 #include "nsNameSpaceManager.h"
 #include "nsIComboboxControlFrame.h"
 #include "nsComboboxControlFrame.h"
-#include "nsIListControlFrame.h"
+#include "nsListControlFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsTableRowGroupFrame.h"
 #include "nsIFormControl.h"
@@ -3053,7 +3053,7 @@ nsCSSFrameConstructor::ConstructSelectFrame(nsFrameConstructorState& aState,
     nsContainerFrame* listFrame = NS_NewListControlFrame(mPresShell, listStyle);
 
     
-    nsIListControlFrame * listControlFrame = do_QueryFrame(listFrame);
+    nsListControlFrame * listControlFrame = do_QueryFrame(listFrame);
     if (listControlFrame) {
       listControlFrame->SetComboboxFrame(comboboxFrame);
     }

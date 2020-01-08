@@ -20,7 +20,6 @@
 #include "mozilla/Attributes.h"
 #include "nsGfxScrollFrame.h"
 #include "nsIFormControlFrame.h"
-#include "nsIListControlFrame.h"
 #include "nsISelectControlFrame.h"
 #include "nsSelectsAreaFrame.h"
 
@@ -47,7 +46,6 @@ class HTMLOptionsCollection;
 
 class nsListControlFrame final : public nsHTMLScrollFrame,
                                  public nsIFormControlFrame,
-                                 public nsIListControlFrame,
                                  public nsISelectControlFrame
 {
 public:
@@ -110,40 +108,39 @@ public:
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
 
-    
-  virtual void SetComboboxFrame(nsIFrame* aComboboxFrame) override;
-  virtual int32_t GetSelectedIndex() override;
-  virtual HTMLOptionElement* GetCurrentOption() override;
+  void SetComboboxFrame(nsIFrame* aComboboxFrame);
+  int32_t GetSelectedIndex();
+  HTMLOptionElement* GetCurrentOption();
 
   
 
 
 
 
-  virtual void GetOptionText(uint32_t aIndex, nsAString& aStr) override;
+  void GetOptionText(uint32_t aIndex, nsAString& aStr);
 
-  virtual void CaptureMouseEvents(bool aGrabMouseEvents) override;
-  virtual nscoord GetBSizeOfARow() override;
-  virtual uint32_t GetNumberOfOptions() override;
-  virtual void AboutToDropDown() override;
-
-  
-
-
-  virtual void AboutToRollup() override;
+  void CaptureMouseEvents(bool aGrabMouseEvents);
+  nscoord GetBSizeOfARow();
+  uint32_t GetNumberOfOptions();
+  void AboutToDropDown();
 
   
 
 
-
-  virtual void FireOnInputAndOnChange() override;
+  void AboutToRollup();
 
   
 
 
 
-  virtual void ComboboxFinish(int32_t aIndex) override;
-  virtual void OnContentReset() override;
+  void FireOnInputAndOnChange();
+
+  
+
+
+
+  void ComboboxFinish(int32_t aIndex);
+  void OnContentReset();
 
   
   NS_IMETHOD AddOption(int32_t index) override;

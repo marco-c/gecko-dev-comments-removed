@@ -32,7 +32,7 @@
 #include "nsIStatefulFrame.h"
 #include "nsThreadUtils.h"
 
-class nsIListControlFrame;
+class nsListControlFrame;
 class nsComboboxDisplayFrame;
 class nsIDOMEventListener;
 class nsIScrollableFrame;
@@ -291,7 +291,7 @@ protected:
   nsContainerFrame*        mDisplayFrame;            
   nsIFrame*                mButtonFrame;             
   nsIFrame*                mDropdownFrame;           
-  nsIListControlFrame *    mListControlFrame;        
+  nsListControlFrame*      mListControlFrame;        
 
   
   
