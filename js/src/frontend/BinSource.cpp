@@ -17,6 +17,7 @@
 #include "frontend/BinSource-macros.h"
 #include "frontend/BinTokenReaderTester.h"
 #include "frontend/FullParseHandler.h"
+#include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
 #include "frontend/SharedContext.h"
 
@@ -24,7 +25,6 @@
 #include "vm/RegExpObject.h"
 
 #include "frontend/ParseContext-inl.h"
-#include "frontend/ParseNode-inl.h"
 #include "vm/JSContext-inl.h"
 
 
@@ -558,7 +558,7 @@ BinASTParser<Tok>::checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> pos
             }
 
             
-            if (param->name() != name) {
+            if (param->as<NameNode>().name() != name) {
                 
                 return raiseError("Name mismatch between AssertedPositionalParameterName in AssertedParameterScope.paramNames and actual parameter");
             }

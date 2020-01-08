@@ -641,6 +641,7 @@ class ParseNode
         ParseNodeKind kind = getKind();
         return ParseNodeKind::BinOpFirst <= kind && kind <= ParseNodeKind::BinOpLast;
     }
+    inline bool isName(PropertyName* name) const;
 
     
     bool isInParens() const                { return pn_parens; }
@@ -741,9 +742,6 @@ class ParseNode
                        FullParseHandler* handler, ParseContext* pc);
 
     
-    inline PropertyName* name() const;
-
-    
     bool isLiteral() const {
         return isKind(ParseNodeKind::Number) ||
                isKind(ParseNodeKind::String) ||
@@ -841,6 +839,11 @@ class NameNode : public ParseNode
         return pn_u.name.atom;
     }
 
+    PropertyName* name() const {
+        MOZ_ASSERT(isKind(ParseNodeKind::Name));
+        return atom()->asPropertyName();
+    }
+
     ParseNode* initializer() const {
         return pn_u.name.initOrStmt;
     }
@@ -858,6 +861,12 @@ class NameNode : public ParseNode
         return &pn_u.name.initOrStmt;
     }
 };
+
+inline bool
+ParseNode::isName(PropertyName* name) const
+{
+    return getKind() == ParseNodeKind::Name && as<NameNode>().name() == name;
+}
 
 class UnaryNode : public ParseNode
 {

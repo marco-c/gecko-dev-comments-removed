@@ -4,7 +4,7 @@
 
 
 
-#include "frontend/ParseNode-inl.h"
+#include "frontend/ParseNode.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/FloatingPoint.h"
