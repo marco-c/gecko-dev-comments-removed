@@ -2032,7 +2032,6 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
     
     
     
-    
     promise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
   } else {
     
@@ -2046,6 +2045,13 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
       return false;
     }
     promise = PromiseObject::unforgeableReject(cx, storedError);
+    if (!promise) {
+      return false;
+    }
+
+    
+    promise->as<PromiseObject>().setHandled();
+    cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
   }
 
   if (!promise) {
