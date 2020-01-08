@@ -976,7 +976,7 @@ void CodeGenerator::visitRound(LRound* lir) {
     masm.branch32(Assembler::NotEqual, output, Imm32(0), &done);
     {
       
-      masm.Fcmp(ARMFPRegister(input), 0.0);
+      masm.Fcmp(input64, 0.0);
       bailoutIf(Assembler::Overflow, lir->snapshot());
 
       
@@ -1021,7 +1021,82 @@ void CodeGenerator::visitRound(LRound* lir) {
   masm.bind(&done);
 }
 
-void CodeGenerator::visitRoundF(LRoundF* lir) { MOZ_CRASH("visitRoundF"); }
+void CodeGenerator::visitRoundF(LRoundF* lir) {
+  const FloatRegister input = ToFloatRegister(lir->input());
+  const ARMFPRegister input32(input, 32);
+  const FloatRegister temp = ToFloatRegister(lir->temp());
+  const FloatRegister scratch = ScratchFloat32Reg;
+  const Register output = ToRegister(lir->output());
+
+  Label negative, done;
+
+  
+  
+  masm.Fcmp(input32, 0.0);
+  masm.B(&negative, Assembler::Condition::lo);
+
+  
+  
+  
+  
+  
+  {
+    
+    
+    
+    masm.Fcvtas(ARMRegister(output, 32), input32);
+    
+    bailoutCmp32(Assembler::Equal, output, Imm32(INT_MAX), lir->snapshot());
+
+    
+    
+    masm.branch32(Assembler::NotEqual, output, Imm32(0), &done);
+    {
+      
+      masm.Fcmp(input32, 0.0f);
+      bailoutIf(Assembler::Overflow, lir->snapshot());
+
+      
+      vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+      const ARMRegister scratchGPR32 = temps.AcquireW();
+      masm.Fmov(scratchGPR32, input32);
+      masm.Cmp(scratchGPR32, vixl::Operand(uint32_t(0x80000000)));
+      bailoutIf(Assembler::Equal, lir->snapshot());
+    }
+
+    masm.jump(&done);
+  }
+
+  
+  
+  
+  
+  
+  masm.bind(&negative);
+  {
+    
+    
+    Label join;
+    masm.loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
+    masm.loadConstantFloat32(-0.5f, scratch);
+    masm.branchFloat(Assembler::DoubleLessThan, input, scratch, &join);
+    masm.loadConstantFloat32(0.5f, temp);
+    masm.bind(&join);
+
+    masm.addFloat32(input, temp);
+    
+    
+    
+    masm.Fcvtms(ARMRegister(output, 32), temp);
+    
+    bailoutCmp32(Assembler::Equal, output, Imm32(INT_MIN), lir->snapshot());
+
+    
+    bailoutTest32(Assembler::Zero, output, output, lir->snapshot());
+  }
+
+  masm.bind(&done);
+}
 
 void CodeGenerator::visitTrunc(LTrunc* lir) { MOZ_CRASH("visitTrunc"); }
 
