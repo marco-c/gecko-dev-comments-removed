@@ -85,7 +85,7 @@ class FontInspector {
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewTextChange = debounce(this.onPreviewTextChange, 100, this);
     this.onPropertyChange = this.onPropertyChange.bind(this);
-    this.onRulePropertyUpdated = debounce(this.onRulePropertyUpdated, 100, this);
+    this.onRulePropertyUpdated = debounce(this.onRulePropertyUpdated, 300, this);
     this.onToggleFontHighlight = this.onToggleFontHighlight.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
     this.update = this.update.bind(this);
@@ -598,22 +598,23 @@ class FontInspector {
 
 
 
-  syncChanges(name, value) {
+  async syncChanges(name, value) {
     const textProperty = this.getTextProperty(name, value);
     if (textProperty) {
-      
-      
-      
-      textProperty.setValue(value).catch(error => {
+      try {
+        await textProperty.setValue(value, "", true);
+        this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
+      } catch (error) {
+        
+        
+        
         if (!this.document) {
           return;
         }
 
         throw error;
-      });
+      }
     }
-
-    this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
   }
 
   
