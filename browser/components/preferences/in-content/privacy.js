@@ -613,12 +613,16 @@ var gPrivacyPane = {
       document.getElementById(id).hidden = contentBlockingUiEnabled != visibleState[id];
     }
 
-    
     if (contentBlockingUiEnabled) {
+      
       let dntDefaultRadioItem =
         document.querySelector("#doNotTrackRadioGroup > radio[value=false]");
       document.l10n.setAttributes(
         dntDefaultRadioItem, "do-not-track-option-default-content-blocking");
+
+      
+      document.getElementById("contentBlockingCheckboxContainer").hidden =
+        !Services.prefs.getBoolPref("browser.contentblocking.global-toggle.enabled", true);
     }
 
     
