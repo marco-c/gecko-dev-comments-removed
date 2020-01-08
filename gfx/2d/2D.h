@@ -31,7 +31,6 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
-#include "mozilla/Atomics.h"
 
 #include "mozilla/DebugOnly.h"
 
@@ -446,14 +445,14 @@ class DataSourceSurface : public SourceSurface
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DataSourceSurface, override)
   DataSourceSurface()
-    : mMapCount(0)
+    : mIsMapped(false)
   {
   }
 
 #ifdef DEBUG
   virtual ~DataSourceSurface()
   {
-    MOZ_ASSERT(mMapCount == 0);
+    MOZ_ASSERT(!mIsMapped, "Someone forgot to call Unmap()");
   }
 #endif
 
@@ -559,30 +558,18 @@ public:
   
 
 
-
-
-
-
-
-
-
-
-
   virtual bool Map(MapType, MappedSurface *aMappedSurface)
   {
     aMappedSurface->mData = GetData();
     aMappedSurface->mStride = Stride();
-    bool success = !!aMappedSurface->mData;
-    if (success) {
-      mMapCount++;
-    }
-    return success;
+    mIsMapped = !!aMappedSurface->mData;
+    return mIsMapped;
   }
 
   virtual void Unmap()
   {
-    mMapCount--;
-    MOZ_ASSERT(mMapCount >= 0);
+    MOZ_ASSERT(mIsMapped);
+    mIsMapped = false;
   }
 
   
@@ -627,7 +614,7 @@ public:
   virtual void Invalidate(const IntRect& aDirtyRect) { }
 
 protected:
-  Atomic<int32_t> mMapCount;
+  bool mIsMapped;
 };
 
 
