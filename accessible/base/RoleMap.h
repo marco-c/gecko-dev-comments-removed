@@ -491,7 +491,7 @@ ROLE(SPINBUTTON,
      NSAccessibilityIncrementorRole,  
      ROLE_SYSTEM_SPINBUTTON,
      ROLE_SYSTEM_SPINBUTTON,
-     "android.widget.EditText",
+     "android.view.View", 
      eNameFromValueRule)
 
 ROLE(DIAGRAM,
