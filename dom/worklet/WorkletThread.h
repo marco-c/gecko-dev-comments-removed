@@ -25,12 +25,6 @@ class WorkletThread final : public nsThread, public nsIObserver {
 
   static already_AddRefed<WorkletThread> Create();
 
-  
-  
-  
-  static void EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime);
-  static void DeleteCycleCollectedJSContext();
-
   static bool IsOnWorkletThread();
 
   static void AssertIsOnWorkletThread();
@@ -43,7 +37,7 @@ class WorkletThread final : public nsThread, public nsIObserver {
   WorkletThread();
   ~WorkletThread();
 
-  void RunEventLoop();
+  void RunEventLoop(JSRuntime* aParentRuntime);
   class PrimaryRunnable;
 
   void TerminateInternal();
