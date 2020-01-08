@@ -378,13 +378,43 @@ class Output(object):
         """
         correctionFactor = 3
         results = [i for i, j in val_list]
-        
-        
-        
-        if len(results) != 52:
-            raise Exception("StyleBench has 52 subtests, found: %s instead" % len(results))
 
-        results = results[12::13]
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if len(results) != 380:
+            raise Exception("StyleBench has 380 entries, found: %s instead" % len(results))
+
+        results = results[75::76]
         score = 60 * 1000 / filter.geometric_mean(results) / correctionFactor
         return score
 
