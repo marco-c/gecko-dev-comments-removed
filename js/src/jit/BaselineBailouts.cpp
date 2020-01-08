@@ -423,41 +423,6 @@ struct BaselineStackBuilder
     }
 };
 
-
-
-
-class SnapshotIteratorForBailout : public SnapshotIterator
-{
-    JitActivation* activation_;
-    const JSJitFrameIter& iter_;
-
-  public:
-    SnapshotIteratorForBailout(JitActivation* activation, const JSJitFrameIter& iter)
-      : SnapshotIterator(iter, activation->bailoutData()->machineState()),
-        activation_(activation),
-        iter_(iter)
-    {
-        MOZ_ASSERT(iter.isBailoutJS());
-    }
-
-    ~SnapshotIteratorForBailout() {
-        
-        
-        activation_->removeIonFrameRecovery(fp_);
-    }
-
-    
-    
-    MOZ_MUST_USE bool init(JSContext* cx) {
-
-        
-        
-        
-        MaybeReadFallback recoverBailout(cx, activation_, &iter_, MaybeReadFallback::Fallback_DoNothing);
-        return initInstructionResults(recoverBailout);
-    }
-};
-
 #ifdef DEBUG
 static inline bool
 IsInlinableFallback(ICFallbackStub* icEntry)
@@ -1515,6 +1480,7 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 {
     MOZ_ASSERT(bailoutInfo != nullptr);
     MOZ_ASSERT(*bailoutInfo == nullptr);
+    MOZ_ASSERT(iter.isBailoutJS());
 
     TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
     TraceLogStopEvent(logger, TraceLogger_IonMonkey);
@@ -1525,6 +1491,12 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     
     auto guardRemoveRematerializedFramesFromDebugger = mozilla::MakeScopeExit([&] {
         activation->removeRematerializedFramesFromDebugger(cx, iter.fp());
+    });
+
+    
+    
+    auto removeIonFrameRecovery = mozilla::MakeScopeExit([&] {
+        activation->removeIonFrameRecovery(iter.jsFrame());
     });
 
     
@@ -1600,8 +1572,16 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     }
     JitSpew(JitSpew_BaselineBailouts, "  Incoming frame ptr = %p", builder.startFrame());
 
-    SnapshotIteratorForBailout snapIter(activation, iter);
-    if (!snapIter.init(cx)) {
+    
+    
+    
+    MaybeReadFallback recoverBailout(cx, activation, &iter, MaybeReadFallback::Fallback_DoNothing);
+
+    
+    
+    
+    SnapshotIterator snapIter(iter, activation->bailoutData()->machineState());
+    if (!snapIter.initInstructionResults(recoverBailout)) {
         ReportOutOfMemory(cx);
         return BAILOUT_RETURN_FATAL_ERROR;
     }

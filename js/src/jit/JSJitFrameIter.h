@@ -533,13 +533,13 @@ class SnapshotIterator
         return recover_.moreInstructions();
     }
 
-  protected:
     
     
     
     
     MOZ_MUST_USE bool initInstructionResults(MaybeReadFallback& fallback);
 
+  protected:
     
     
     MOZ_MUST_USE bool computeInstructionResults(JSContext* cx, RInstructionResults* results) const;
