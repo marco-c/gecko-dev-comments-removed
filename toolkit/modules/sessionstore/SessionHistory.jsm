@@ -84,10 +84,9 @@ var SessionHistoryInternal = {
       
       
       let shistory = history.legacySHistory.QueryInterface(Ci.nsISHistory);
-      let shistoryInternal = history.legacySHistory.QueryInterface(Ci.nsISHistoryInternal);
       let count = shistory.count;
       for ( ; entryCount < count; entryCount++) {
-        let txn = shistoryInternal.GetTransactionAtIndex(entryCount);
+        let txn = shistory.GetTransactionAtIndex(entryCount);
         if (entryCount <= aFromIdx) {
           skippedCount++;
           continue;
@@ -301,7 +300,6 @@ var SessionHistoryInternal = {
     if (history.count > 0) {
       history.PurgeHistory(history.count);
     }
-    history.QueryInterface(Ci.nsISHistoryInternal);
 
     let idMap = { used: {} };
     let docIdentMap = {};

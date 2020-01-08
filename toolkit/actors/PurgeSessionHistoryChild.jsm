@@ -21,7 +21,6 @@ class PurgeSessionHistoryChild extends ActorChild {
     
     if (sessionHistory.index < sessionHistory.count - 1) {
       let legacy = sessionHistory.legacySHistory;
-      legacy.QueryInterface(Ci.nsISHistoryInternal);
       let indexEntry = legacy.getEntryAtIndex(sessionHistory.index, false);
       indexEntry.QueryInterface(Ci.nsISHEntry);
       legacy.addEntry(indexEntry, true);
