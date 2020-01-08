@@ -149,6 +149,16 @@ public:
     return mUnit;
   }
 
+  
+  
+  bool IsAutoOrEnum() const {
+    
+    
+    return mUnit == eStyleUnit_Auto ||
+           mUnit == eStyleUnit_None ||
+           mUnit == eStyleUnit_Enumerated;
+  }
+
   bool IsAngleValue() const {
     return eStyleUnit_Degree == mUnit;
   }

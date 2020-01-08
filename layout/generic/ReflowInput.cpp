@@ -442,8 +442,7 @@ ReflowInput::Init(nsPresContext*     aPresContext,
   } else {
     const nsStyleCoord& bSizeCoord = mStylePosition->BSize(mWritingMode);
     const nsStyleCoord& maxBSizeCoord = mStylePosition->MaxBSize(mWritingMode);
-    if ((bSizeCoord.GetUnit() != eStyleUnit_Auto ||
-         maxBSizeCoord.GetUnit() != eStyleUnit_None) &&
+    if ((!bSizeCoord.IsAutoOrEnum() || !maxBSizeCoord.IsAutoOrEnum()) &&
          
          (mFrame->GetContent() &&
         !(mFrame->GetContent()->IsAnyOfHTMLElements(nsGkAtoms::body,
@@ -1568,8 +1567,7 @@ ReflowInput::CalculateHypotheticalPosition(
 
     nscoord boxBSize;
     nsStyleCoord styleBSize = mStylePosition->BSize(wm);
-    bool isAutoBSize = styleBSize.GetUnit() == eStyleUnit_Auto;
-    if (isAutoBSize) {
+    if (styleBSize.IsAutoOrEnum()) {
       if (NS_FRAME_IS_REPLACED(mFrameType) && knowIntrinsicSize) {
         
         
@@ -1889,7 +1887,7 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     }
   }
 
-  bool bSizeIsAuto = eStyleUnit_Auto == mStylePosition->BSize(cbwm).GetUnit();
+  bool bSizeIsAuto = mStylePosition->BSize(cbwm).IsAutoOrEnum();
   if (bStartIsAuto) {
     
     if (bSizeIsAuto) {
@@ -2283,7 +2281,9 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
 
     
     const nsStyleCoord &blockSize = mStylePosition->BSize(wm);
-    nsStyleUnit blockSizeUnit = blockSize.GetUnit();
+    nsStyleUnit blockSizeUnit = blockSize.IsAutoOrEnum()
+                                ? eStyleUnit_Auto
+                                : blockSize.GetUnit();
 
     
     
@@ -3021,7 +3021,7 @@ SizeComputationInput::ComputePadding(WritingMode aWM,
 }
 
 void
-ReflowInput::ComputeMinMaxValues(const LogicalSize&aCBSize)
+ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize)
 {
   WritingMode wm = GetWritingMode();
 
@@ -3062,44 +3062,32 @@ ReflowInput::ComputeMinMaxValues(const LogicalSize&aCBSize)
   
   
   
+  const nscoord& bPercentageBasis = aCBSize.BSize(wm);
+  auto BSizeBehavesAsInitialValue = [&](const nsStyleCoord& aBSize) {
+    return nsLayoutUtils::IsAutoBSize(aBSize, bPercentageBasis) ||
+             (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE &&
+              aBSize.IsCalcUnit() && aBSize.CalcHasPercent()) ||
+             mFlags.mIsFlexContainerMeasuringBSize;
+  };
 
   
   
   
-  if (eStyleUnit_Auto == minBSize.GetUnit() ||
-      (NS_AUTOHEIGHT == aCBSize.BSize(wm) &&
-       minBSize.HasPercent()) ||
-      (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE &&
-       minBSize.IsCalcUnit() && minBSize.CalcHasPercent()) ||
-      mFlags.mIsFlexContainerMeasuringBSize) {
+  if (BSizeBehavesAsInitialValue(minBSize)) {
     ComputedMinBSize() = 0;
   } else {
-    ComputedMinBSize() = ComputeBSizeValue(aCBSize.BSize(wm),
+    ComputedMinBSize() = ComputeBSizeValue(bPercentageBasis,
                                            mStylePosition->mBoxSizing,
                                            minBSize);
   }
-  nsStyleUnit maxBSizeUnit = maxBSize.GetUnit();
-  if (eStyleUnit_None == maxBSizeUnit) {
+
+  if (BSizeBehavesAsInitialValue(maxBSize)) {
     
     ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;  
   } else {
-    
-    
-    
-    
-    
-    
-    if ((NS_AUTOHEIGHT == aCBSize.BSize(wm) &&
-         maxBSize.HasPercent()) ||
-        (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE &&
-         maxBSize.IsCalcUnit() && maxBSize.CalcHasPercent()) ||
-        mFlags.mIsFlexContainerMeasuringBSize) {
-      ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
-    } else {
-      ComputedMaxBSize() = ComputeBSizeValue(aCBSize.BSize(wm),
-                                             mStylePosition->mBoxSizing,
-                                             maxBSize);
-    }
+    ComputedMaxBSize() = ComputeBSizeValue(bPercentageBasis,
+                                           mStylePosition->mBoxSizing,
+                                           maxBSize);
   }
 
   

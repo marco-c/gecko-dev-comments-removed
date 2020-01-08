@@ -3731,14 +3731,11 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     
-    initial_values: [ " auto",
-      
-      
-      "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
-    ],
+    initial_values: [ " auto" ],
     
     prerequisites: { "display": "block" },
     other_values: [ "15px", "3em", "15%",
+      "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
       "calc(2px)",
       "calc(50%)",
       "calc(3*25px)",
@@ -3989,12 +3986,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     prerequisites: { "display": "block" },
-    initial_values: [ "none",
-      
-      
-      "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
-    ],
+    initial_values: [ "none" ],
     other_values: [ "30px", "50%", "0",
+      "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
       "calc(2px)",
       "calc(-2px)",
       "calc(0px)",
@@ -4033,12 +4027,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     prerequisites: { "display": "block" },
-    initial_values: [ "auto", "0", "calc(0em)", "calc(-2px)",
-      
-      
-      "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
-    ],
+    initial_values: [ "auto", "0", "calc(0em)", "calc(-2px)" ],
     other_values: [ "30px", "50%",
+      "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
