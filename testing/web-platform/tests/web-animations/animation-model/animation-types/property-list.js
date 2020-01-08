@@ -413,12 +413,6 @@ const gCSSProperties = {
       { type: 'discrete', options: [ [ 'auto', '1px' ] ] }
     ]
   },
-  'contain': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'strict', 'none' ] ] }
-    ]
-  },
   'content': {
     
     types: [
@@ -1334,12 +1328,6 @@ const gCSSProperties = {
     types: [
     ]
   },
-  'text-orientation': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'upright', 'sideways' ] ] }
-    ]
-  },
   'text-overflow': {
     
     types: [
@@ -1418,12 +1406,6 @@ const gCSSProperties = {
     
     types: [ 'scaleList' ]
   },
-  'unicode-bidi': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'embed', 'bidi-override' ] ] },
-    ]
-  },
   'vector-effect': {
     
     types: [
@@ -1459,12 +1441,6 @@ const gCSSProperties = {
   'word-spacing': {
     
     types: [ 'lengthPercentageOrCalc' ]
-  },
-  'will-change': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'scroll-position', 'contents' ] ] }
-    ]
   },
   'z-index': {
     
