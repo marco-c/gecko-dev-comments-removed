@@ -26,6 +26,7 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 
 #include <vector>
+#include <set>
 
 namespace webrtc {
 class VideoFrame;
@@ -39,64 +40,6 @@ enum class MediaSessionConduitLocalDirection : int {
 };
 
 using RtpExtList = std::vector<webrtc::RtpExtension>;
-
-
-class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper>
-{
-public:
-  typedef webrtc::Call::Config Config;
-
-  static RefPtr<WebRtcCallWrapper> Create()
-  {
-    return new WebRtcCallWrapper();
-  }
-
-  static RefPtr<WebRtcCallWrapper> Create(UniquePtr<webrtc::Call>&& aCall)
-  {
-    return new WebRtcCallWrapper(std::move(aCall));
-  }
-
-  webrtc::Call* Call() const
-  {
-    return mCall.get();
-  }
-
-  virtual ~WebRtcCallWrapper()
-  {
-    if (mCall->voice_engine()) {
-      webrtc::VoiceEngine* voice_engine = mCall->voice_engine();
-      mCall.reset(nullptr); 
-      
-      webrtc::VoiceEngine::Delete(voice_engine);
-    } else {
-      
-      mCall.reset(nullptr);
-    }
-  }
-
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(WebRtcCallWrapper)
-
-private:
-  WebRtcCallWrapper()
-  {
-    webrtc::Call::Config config(&mEventLog);
-    mCall.reset(webrtc::Call::Create(config));
-  }
-
-  explicit WebRtcCallWrapper(UniquePtr<webrtc::Call>&& aCall)
-  {
-    MOZ_ASSERT(aCall);
-    mCall = std::move(aCall);
-  }
-
-  
-  WebRtcCallWrapper(const WebRtcCallWrapper&) = delete;
-  void operator=(const WebRtcCallWrapper&) = delete;
-
-  UniquePtr<webrtc::Call> mCall;
-  webrtc::RtcEventLogNullImpl mEventLog;
-};
-
 
 
 
@@ -268,6 +211,7 @@ public:
 
   virtual bool GetRemoteSSRC(unsigned int* ssrc) = 0;
   virtual bool SetRemoteSSRC(unsigned int ssrc) = 0;
+  virtual bool UnsetRemoteSSRC(uint32_t ssrc) = 0;
   virtual bool SetLocalCNAME(const char* cname) = 0;
 
   virtual bool SetLocalMID(const std::string& mid) = 0;
@@ -317,6 +261,87 @@ public:
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaSessionConduit)
 
+};
+
+
+class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper>
+{
+public:
+  typedef webrtc::Call::Config Config;
+
+  static RefPtr<WebRtcCallWrapper> Create()
+  {
+    return new WebRtcCallWrapper();
+  }
+
+  static RefPtr<WebRtcCallWrapper> Create(UniquePtr<webrtc::Call>&& aCall)
+  {
+    return new WebRtcCallWrapper(std::move(aCall));
+  }
+
+  
+  WebRtcCallWrapper(const WebRtcCallWrapper&) = delete;
+  void operator=(const WebRtcCallWrapper&) = delete;
+
+  webrtc::Call* Call() const
+  {
+    return mCall.get();
+  }
+
+  virtual ~WebRtcCallWrapper()
+  {
+    if (mCall->voice_engine()) {
+      webrtc::VoiceEngine* voice_engine = mCall->voice_engine();
+      mCall.reset(nullptr); 
+      
+      webrtc::VoiceEngine::Delete(voice_engine);
+    } else {
+      
+      mCall.reset(nullptr);
+    }
+  }
+
+  bool UnsetRemoteSSRC(uint32_t ssrc)
+  {
+    for (auto conduit : mConduits) {
+      if (!conduit->UnsetRemoteSSRC(ssrc)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  void RegisterConduit(MediaSessionConduit* conduit)
+  {
+    mConduits.insert(conduit);
+  }
+
+  void UnregisterConduit(MediaSessionConduit* conduit)
+  {
+    mConduits.erase(conduit);
+  }
+
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(WebRtcCallWrapper)
+
+private:
+  WebRtcCallWrapper()
+  {
+    webrtc::Call::Config config(&mEventLog);
+    mCall.reset(webrtc::Call::Create(config));
+  }
+
+  explicit WebRtcCallWrapper(UniquePtr<webrtc::Call>&& aCall)
+  {
+    MOZ_ASSERT(aCall);
+    mCall = std::move(aCall);
+  }
+
+  UniquePtr<webrtc::Call> mCall;
+  webrtc::RtcEventLogNullImpl mEventLog;
+  
+  
+  std::set<MediaSessionConduit*> mConduits;
 };
 
 
@@ -389,6 +414,7 @@ public:
   virtual void DisableSsrcChanges() = 0;
 
   bool SetRemoteSSRC(unsigned int ssrc) override = 0;
+  bool UnsetRemoteSSRC(uint32_t ssrc) override = 0;
 
   
 
