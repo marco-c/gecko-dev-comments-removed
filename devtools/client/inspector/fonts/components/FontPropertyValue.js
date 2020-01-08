@@ -13,6 +13,8 @@ const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 
+const { toFixed } = require("../utils/font-utils");
+
 
 const AUTOINCREMENT_DELAY = 1000;
 
@@ -24,9 +26,14 @@ class FontPropertyValue extends PureComponent {
       defaultValue: PropTypes.number,
       label: PropTypes.string.isRequired,
       min: PropTypes.number.isRequired,
+      
+      minLabel: PropTypes.bool,
       max: PropTypes.number.isRequired,
+      
+      maxLabel: PropTypes.bool,
       name: PropTypes.string.isRequired,
-      nameLabel: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
+      
+      nameLabel: PropTypes.bool,
       onChange: PropTypes.func.isRequired,
       step: PropTypes.number,
       unit: PropTypes.string,
@@ -39,6 +46,8 @@ class FontPropertyValue extends PureComponent {
     return {
       autoIncrement: false,
       className: "",
+      minLabel: false,
+      maxLabel: false,
       nameLabel: false,
       step: 1,
       unit: null,
@@ -91,6 +100,22 @@ class FontPropertyValue extends PureComponent {
   autoIncrement() {
     const value = this.props.value + this.props.step * 10;
     this.updateValue(value);
+  }
+
+  
+
+
+
+
+
+
+
+  getPropLabel(prop) {
+    const label = this.props[`${prop}Label`];
+    
+    const decimals = Math.abs(Math.log10(this.props.step));
+
+    return label ? toFixed(this.props[prop], decimals) : null;
   }
 
   
@@ -380,14 +405,13 @@ class FontPropertyValue extends PureComponent {
     );
 
     
-    
     const detailEl = nameLabel ?
       dom.span(
         {
           className: "font-control-label-detail",
           id: `detail-${name}`
         },
-        typeof nameLabel === "boolean" ? name : nameLabel
+        this.getPropLabel("name")
       )
       :
       null;
@@ -458,7 +482,14 @@ class FontPropertyValue extends PureComponent {
         {
           className: "font-control-input"
         },
-        range,
+        dom.div(
+          {
+            className: "font-value-slider-container",
+            "data-min": this.getPropLabel("min"),
+            "data-max": this.getPropLabel("max"),
+          },
+          range
+        ),
         input,
         this.renderUnitSelect()
       )
