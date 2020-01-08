@@ -983,8 +983,9 @@ js::intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
     mozilla::Range<const char16_t> input = inputChars.twoByteRange();
 
     
-    static_assert(JSString::MAX_LENGTH < INT32_MAX / 3,
-                  "Case conversion doesn't overflow int32_t indices");
+    
+    static_assert(JSString::MAX_LENGTH <= INT32_MAX,
+                  "String length must fit in int32_t for ICU");
 
     static const size_t INLINE_CAPACITY = js::intl::INITIAL_CHAR_BUFFER_SIZE;
 
@@ -1406,8 +1407,9 @@ js::intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
     mozilla::Range<const char16_t> input = inputChars.twoByteRange();
 
     
-    static_assert(JSString::MAX_LENGTH < INT32_MAX / 3,
-                  "Case conversion doesn't overflow int32_t indices");
+    
+    static_assert(JSString::MAX_LENGTH <= INT32_MAX,
+                  "String length must fit in int32_t for ICU");
 
     static const size_t INLINE_CAPACITY = js::intl::INITIAL_CHAR_BUFFER_SIZE;
 
