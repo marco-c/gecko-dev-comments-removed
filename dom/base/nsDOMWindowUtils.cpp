@@ -9,6 +9,7 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "nsPresContext.h"
+#include "nsContentList.h"
 #include "nsError.h"
 #include "nsQueryContentEventResult.h"
 #include "nsGlobalWindow.h"
@@ -548,8 +549,7 @@ nsDOMWindowUtils::SetResolutionAndScaleTo(float aResolution) {
     return NS_ERROR_FAILURE;
   }
 
-  presShell->SetResolutionAndScaleTo(aResolution,
-                                     nsIPresShell::ChangeOrigin::eMainThread);
+  presShell->SetResolutionAndScaleTo(aResolution, nsGkAtoms::other);
 
   return NS_OK;
 }
@@ -577,6 +577,18 @@ nsDOMWindowUtils::GetResolution(float* aResolution) {
   }
 
   *aResolution = presShell->GetResolution();
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::GetIsResolutionSet(bool* aIsResolutionSet) {
+  nsIPresShell* presShell = GetPresShell();
+  if (!presShell) {
+    return NS_ERROR_FAILURE;
+  }
+
+  *aIsResolutionSet = presShell->IsResolutionSet();
 
   return NS_OK;
 }
