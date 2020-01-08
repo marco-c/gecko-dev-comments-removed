@@ -26,10 +26,16 @@ button {
 }
 
 .category {
-  border: 0 solid transparent;
+  align-items: center;
+  
+  background-color: transparent;
   display: flex;
   flex-direction: row;
-  align-items: center;
+}
+
+.category.selected {
+  
+  color: var(--in-content-category-text-selected) !important;
 }
 
 .category-name {
