@@ -4,10 +4,10 @@
 
 
 
+#[cfg(feature = "gecko")]
+use gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
 use properties::{NonCustomPropertyId, NON_CUSTOM_PROPERTY_ID_COUNT};
-
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
+use std::cell::Cell;
 
 #[cfg(target_pointer_width = "64")]
 const BITS_PER_ENTRY: usize = 64;
@@ -18,7 +18,7 @@ const BITS_PER_ENTRY: usize = 32;
 
 #[derive(Default)]
 pub struct NonCustomPropertyUseCounters {
-    storage: [AtomicUsize; (NON_CUSTOM_PROPERTY_ID_COUNT - 1 + BITS_PER_ENTRY) / BITS_PER_ENTRY],
+    storage: [Cell<usize>; (NON_CUSTOM_PROPERTY_ID_COUNT - 1 + BITS_PER_ENTRY) / BITS_PER_ENTRY],
 }
 
 impl NonCustomPropertyUseCounters {
@@ -36,7 +36,8 @@ impl NonCustomPropertyUseCounters {
     #[inline]
     pub fn record(&self, id: NonCustomPropertyId) {
         let (bucket, pattern) = Self::bucket_and_pattern(id);
-        self.storage[bucket].fetch_or(pattern, Ordering::Relaxed);
+        let bucket = &self.storage[bucket];
+        bucket.set(bucket.get() | pattern)
     }
 
     
@@ -44,7 +45,15 @@ impl NonCustomPropertyUseCounters {
     #[inline]
     pub fn recorded(&self, id: NonCustomPropertyId) -> bool {
         let (bucket, pattern) = Self::bucket_and_pattern(id);
-        self.storage[bucket].load(Ordering::Relaxed) & pattern != 0
+        self.storage[bucket].get() & pattern != 0
+    }
+
+    
+    #[inline]
+    fn merge(&self, other: &Self) {
+        for (bucket, other_bucket) in self.storage.iter().zip(other.storage.iter()) {
+            bucket.set(bucket.get() | other_bucket.get())
+        }
     }
 }
 
@@ -55,3 +64,24 @@ pub struct UseCounters {
     
     pub non_custom_properties: NonCustomPropertyUseCounters,
 }
+
+impl UseCounters {
+    
+    
+    
+    #[inline]
+    pub fn merge(&self, other: &Self) {
+        self.non_custom_properties.merge(&other.non_custom_properties)
+    }
+}
+
+#[cfg(feature = "gecko")]
+unsafe impl HasFFI for UseCounters {
+    type FFIType = ::gecko_bindings::structs::StyleUseCounters;
+}
+
+#[cfg(feature = "gecko")]
+unsafe impl HasSimpleFFI for UseCounters {}
+
+#[cfg(feature = "gecko")]
+unsafe impl HasBoxFFI for UseCounters {}

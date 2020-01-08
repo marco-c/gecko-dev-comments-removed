@@ -1042,7 +1042,7 @@ StyleSheet::ParseSheet(css::Loader* aLoader,
                                         mParsingMode,
                                         aLoadData->mLineNumber,
                                         aLoader->GetCompatibilityMode(),
-                                        useCounters);
+                                         !!useCounters);
   }
 
   return p;

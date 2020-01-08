@@ -307,6 +307,15 @@ pub struct OwnedOrNull<GeckoType> {
 impl<GeckoType> OwnedOrNull<GeckoType> {
     
     #[inline]
+    pub fn null() -> Self {
+        Self {
+            ptr: ptr::null_mut(),
+            _marker: PhantomData,
+        }
+    }
+
+    
+    #[inline]
     pub fn is_null(&self) -> bool {
         self.ptr.is_null()
     }
