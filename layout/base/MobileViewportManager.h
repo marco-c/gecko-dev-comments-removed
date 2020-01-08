@@ -71,10 +71,6 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   void SetInitialViewport();
 
-  const mozilla::LayoutDeviceIntSize& DisplaySize() const {
-    return mDisplaySize;
-  };
-
  private:
   ~MobileViewportManager();
 
