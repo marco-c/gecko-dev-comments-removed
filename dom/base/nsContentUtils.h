@@ -2953,6 +2953,22 @@ public:
   
 
 
+  static bool StorageDisabledByAntiTracking(nsIDocument* aDocument,
+                                            nsIURI* aURI)
+  {
+    
+    
+    
+    return StorageDisabledByAntiTracking(aDocument->GetInnerWindow(),
+                                         aDocument->GetChannel(),
+                                         aDocument->NodePrincipal(),
+                                         aURI);
+  }
+
+private:
+  
+
+
 
 
 
@@ -2962,6 +2978,7 @@ public:
                                             nsIPrincipal* aPrincipal,
                                             nsIURI* aURI);
 
+public:
   
 
 
