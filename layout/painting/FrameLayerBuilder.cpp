@@ -2868,12 +2868,11 @@ SetOuterVisibleRegion(Layer* aLayer, nsIntRegion* aOuterVisibleRegion,
     nsIntRect outerRect = aOuterVisibleRegion->GetBounds();
     
     
-    Rect outerVisible(outerRect.x, outerRect.y,
-                      outerRect.width, outerRect.height);
+    Rect outerVisible(outerRect.x, outerRect.y, outerRect.width, outerRect.height);
     transform.Invert();
 
-    Rect layerContentsVisible = Rect::MaxIntRect();
-
+    Rect layerContentsVisible(-float(INT32_MAX) / 2, -float(INT32_MAX) / 2,
+                              float(INT32_MAX), float(INT32_MAX));
     if (aLayerContentsVisibleRect) {
       NS_ASSERTION(aLayerContentsVisibleRect->width >= 0 &&
                    aLayerContentsVisibleRect->height >= 0,
@@ -2885,18 +2884,14 @@ SetOuterVisibleRegion(Layer* aLayer, nsIntRegion* aOuterVisibleRegion,
           aLayerContentsVisibleRect->x, aLayerContentsVisibleRect->y,
           aLayerContentsVisibleRect->width, aLayerContentsVisibleRect->height);
     }
-
-    Rect layerVisible =
-      transform.ProjectRectBounds(outerVisible, layerContentsVisible);
-
+    gfxRect layerVisible = ThebesRect(transform.ProjectRectBounds(outerVisible, layerContentsVisible));
     layerVisible.RoundOut();
-
-    IntRect intRect;
-    if (!layerVisible.ToIntRect(&intRect)) {
-      intRect = IntRect::MaxIntRect();
+    nsIntRect visRect;
+    if (gfxUtils::GfxRectToIntRect(layerVisible, &visRect)) {
+      *aOuterVisibleRegion = visRect;
+    } else  {
+      aOuterVisibleRegion->SetEmpty();
     }
-
-    *aOuterVisibleRegion = intRect;
   }
 
   aLayer->SetVisibleRegion(LayerIntRegion::FromUnknownRegion(*aOuterVisibleRegion));
@@ -4067,16 +4062,16 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
     mHitRegion.OrWith(area);
   }
 
-  if (aItem->HitTestInfo() & CompositorHitTestInfo::eDispatchToContent) {
+  if (aItem->HitTestInfo().contains(CompositorHitTestFlags::eDispatchToContent)) {
     mDispatchToContentHitRegion.OrWith(area);
 
-    if (aItem->HitTestInfo() & CompositorHitTestInfo::eRequiresTargetConfirmation) {
+    if (aItem->HitTestInfo().contains(CompositorHitTestFlags::eRequiresTargetConfirmation)) {
       mDTCRequiresTargetConfirmation = true;
     }
   }
 
-  auto touchFlags = hitTestInfo & CompositorHitTestInfo::eTouchActionMask;
-  if (touchFlags) {
+  const auto touchFlags = hitTestInfo & CompositorHitTestTouchActionMask;
+  if (!touchFlags.isEmpty()) {
     
     
     
@@ -4085,7 +4080,7 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
     
     if (mCollapsedTouchActions) {
       mDispatchToContentHitRegion.OrWith(area);
-    } else if (touchFlags == CompositorHitTestInfo::eTouchActionMask) {
+    } else if (touchFlags == CompositorHitTestTouchActionMask) {
       
       mNoActionRegion.OrWith(area);
     } else {
@@ -4104,12 +4099,12 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
       
       
       
-      if (touchFlags != CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled) {
-        if (!(hitTestInfo & CompositorHitTestInfo::eTouchActionPanXDisabled)) {
+      if (touchFlags != CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled) {
+        if (!hitTestInfo.contains(CompositorHitTestFlags::eTouchActionPanXDisabled)) {
           
           mHorizontalPanRegion.OrWith(area);
         }
-        if (!(hitTestInfo & CompositorHitTestInfo::eTouchActionPanYDisabled)) {
+        if (!hitTestInfo.contains(CompositorHitTestFlags::eTouchActionPanYDisabled)) {
           
           mVerticalPanRegion.OrWith(area);
         }

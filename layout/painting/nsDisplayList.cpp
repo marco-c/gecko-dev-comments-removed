@@ -2268,7 +2268,7 @@ nsDisplayListBuilder::ShouldBuildCompositorHitTestInfo(const nsIFrame* aFrame,
 {
   MOZ_ASSERT(mBuildCompositorHitTestInfo);
 
-  if (aInfo == CompositorHitTestInfo::eInvisibleToHitTest) {
+  if (aInfo == CompositorHitTestInvisibleToHit) {
     return false;
   }
 
@@ -2775,18 +2775,18 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
   }
 
   nsIntRegion invalid;
+  bool areaOverflowed = false;
   if (props) {
     if (!props->ComputeDifferences(layerManager->GetRoot(), invalid, computeInvalidFunc)) {
-      invalid = nsIntRect::MaxIntRect();
+      areaOverflowed = true;
     }
   } else if (widgetTransaction) {
     LayerProperties::ClearInvalidations(layerManager->GetRoot());
   }
 
   bool shouldInvalidate = layerManager->NeedsWidgetInvalidation();
-
   if (view) {
-    if (props) {
+    if (props && !areaOverflowed) {
       if (!invalid.IsEmpty()) {
         nsIntRect bounds = invalid.GetBounds();
         nsRect rect(presContext->DevPixelsToAppUnits(bounds.x),
@@ -5069,12 +5069,12 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
   
   
   MOZ_ASSERT(aBuilder->BuildCompositorHitTestInfo());
-  MOZ_ASSERT(mHitTestInfo != mozilla::gfx::CompositorHitTestInfo::eInvisibleToHitTest);
+  MOZ_ASSERT(mHitTestInfo != CompositorHitTestInvisibleToHit);
 
   if (aBuilder->GetCurrentScrollbarDirection().isSome()) {
     
     
-    MOZ_ASSERT(mHitTestInfo & CompositorHitTestInfo::eScrollbar);
+    MOZ_ASSERT(mHitTestInfo.contains(CompositorHitTestFlags::eScrollbar));
     mScrollTarget = Some(aBuilder->GetCurrentScrollbarTarget());
   }
 
@@ -5132,7 +5132,7 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
 void
 nsDisplayCompositorHitTestInfo::WriteDebugInfo(std::stringstream& aStream)
 {
-  aStream << nsPrintfCString(" (hitTestInfo 0x%x)", (int)mHitTestInfo).get();
+  aStream << nsPrintfCString(" (hitTestInfo 0x%x)", mHitTestInfo.serialize()).get();
   AppendToString(aStream, mArea, " hitTestArea");
 }
 

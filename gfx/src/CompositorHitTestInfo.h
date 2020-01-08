@@ -7,7 +7,8 @@
 #ifndef MOZILLA_GFX_COMPOSITORHITTESTINFO_H_
 #define MOZILLA_GFX_COMPOSITORHITTESTINFO_H_
 
-#include "mozilla/TypedEnumBits.h"
+#include "mozilla/EnumSet.h"
+#include "mozilla/EnumTypeTraits.h"
 
 namespace mozilla {
 namespace gfx {
@@ -17,49 +18,74 @@ namespace gfx {
 
 
 
-enum class CompositorHitTestInfo : uint16_t {
+enum class CompositorHitTestFlags : uint8_t {
   
-  eInvisibleToHitTest = 0,
-
+  eVisibleToHitTest = 0,
   
-  eVisibleToHitTest = 1 << 0,
-  
-  eDispatchToContent = 1 << 1,
+  eDispatchToContent,
 
   
   
-  eTouchActionPanXDisabled = 1 << 2,
-  eTouchActionPanYDisabled = 1 << 3,
-  eTouchActionPinchZoomDisabled = 1 << 4,
-  eTouchActionDoubleTapZoomDisabled = 1 << 5,
-  
-  eTouchActionMask = (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5),
+  eTouchActionPanXDisabled,
+  eTouchActionPanYDisabled,
+  eTouchActionPinchZoomDisabled,
+  eTouchActionDoubleTapZoomDisabled,
 
   
   
-  eScrollbar = 1 << 6,
+  eScrollbar,
   
   
   
-  eScrollbarThumb = 1 << 7,
+  eScrollbarThumb,
   
   
-  eScrollbarVertical = 1 << 8,
+  eScrollbarVertical,
 
   
   
   
   
-  eRequiresTargetConfirmation = 1 << 9,
-
-  
-  
-  ALL_BITS = (1 << 10) - 1,
+  eRequiresTargetConfirmation,
 };
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CompositorHitTestInfo)
+using CompositorHitTestInfo = EnumSet<CompositorHitTestFlags>;
+
+
+const CompositorHitTestInfo CompositorHitTestInvisibleToHit;
+
+
+const CompositorHitTestInfo CompositorHitTestTouchActionMask =
+  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionPanXDisabled) +
+  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionPanYDisabled) +
+  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionPinchZoomDisabled) +
+  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
 
 } 
+
+
+
+template <>
+struct MaxEnumValue<::mozilla::gfx::CompositorHitTestFlags>
+{
+  static constexpr unsigned int value = static_cast<unsigned int>(gfx::CompositorHitTestFlags::eRequiresTargetConfirmation);
+};
+
+namespace gfx {
+
+
+template <int N>
+static constexpr bool DoesCompositorHitTestInfoFitIntoBits()
+{
+    if (MaxEnumValue<CompositorHitTestInfo::valueType>::value < N)
+    {
+        return true;
+    }
+
+    return false;
+}
+} 
+
 } 
 
 #endif 

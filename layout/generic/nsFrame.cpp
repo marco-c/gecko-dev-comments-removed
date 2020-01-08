@@ -11241,7 +11241,7 @@ nsIFrame::AddSizeOfExcludingThisForTree(nsWindowSizes& aSizes) const
 CompositorHitTestInfo
 nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
 {
-  CompositorHitTestInfo result = CompositorHitTestInfo::eInvisibleToHitTest;
+  CompositorHitTestInfo result = CompositorHitTestInvisibleToHit;
 
   if (aBuilder->IsInsidePointerEventsNoneDoc()) {
     
@@ -11263,7 +11263,7 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
   }
 
   
-  result |= CompositorHitTestInfo::eVisibleToHitTest;
+  result = CompositorHitTestFlags::eVisibleToHitTest;
 
   if (aBuilder->IsBuildingNonLayerizedScrollbar() ||
       aBuilder->GetAncestorHasApzAwareEventHandler()) {
@@ -11272,13 +11272,13 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
     
     
     
-    result |= CompositorHitTestInfo::eDispatchToContent;
+    result += CompositorHitTestFlags::eDispatchToContent;
   } else if (IsObjectFrame()) {
     
     
     nsPluginFrame* pluginFrame = do_QueryFrame(this);
     if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
-      result |= CompositorHitTestInfo::eDispatchToContent;
+      result += CompositorHitTestFlags::eDispatchToContent;
     }
   }
 
@@ -11292,9 +11292,9 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
     
     
     
-    CompositorHitTestInfo inheritedTouchAction = CompositorHitTestInfo::eInvisibleToHitTest;
+    CompositorHitTestInfo inheritedTouchAction = CompositorHitTestInvisibleToHit;
     if (nsDisplayCompositorHitTestInfo* parentInfo = aBuilder->GetCompositorHitTestInfo()) {
-      inheritedTouchAction = (parentInfo->HitTestInfo() & CompositorHitTestInfo::eTouchActionMask);
+      inheritedTouchAction = parentInfo->HitTestInfo() & CompositorHitTestTouchActionMask;
     }
 
     nsIFrame* touchActionFrame = this;
@@ -11305,12 +11305,12 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
       
       
       
-      CompositorHitTestInfo panMask = CompositorHitTestInfo::eTouchActionPanXDisabled
-                                    | CompositorHitTestInfo::eTouchActionPanYDisabled;
-      inheritedTouchAction &= ~panMask;
+      CompositorHitTestInfo panMask(CompositorHitTestFlags::eTouchActionPanXDisabled,
+                                    CompositorHitTestFlags::eTouchActionPanYDisabled);
+      inheritedTouchAction -= panMask;
     }
 
-    result |= inheritedTouchAction;
+    result += inheritedTouchAction;
 
     const uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
     
@@ -11318,23 +11318,22 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
     if (touchAction == NS_STYLE_TOUCH_ACTION_AUTO) {
       
     } else if (touchAction & NS_STYLE_TOUCH_ACTION_MANIPULATION) {
-      result |= CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+      result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
     } else {
       
       
-      result |= CompositorHitTestInfo::eTouchActionPinchZoomDisabled
-              | CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+      result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
+      result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
 
       if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_X)) {
-        result |= CompositorHitTestInfo::eTouchActionPanXDisabled;
+        result += CompositorHitTestFlags::eTouchActionPanXDisabled;
       }
       if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_Y)) {
-        result |= CompositorHitTestInfo::eTouchActionPanYDisabled;
+        result += CompositorHitTestFlags::eTouchActionPanYDisabled;
       }
       if (touchAction & NS_STYLE_TOUCH_ACTION_NONE) {
         
-        MOZ_ASSERT((result & CompositorHitTestInfo::eTouchActionMask)
-                 == CompositorHitTestInfo::eTouchActionMask);
+        MOZ_ASSERT(result.contains(CompositorHitTestTouchActionMask));
       }
     }
   }
@@ -11345,19 +11344,19 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
       const bool thumbGetsLayer = aBuilder->GetCurrentScrollbarTarget() !=
           layers::FrameMetrics::NULL_SCROLL_ID;
       if (thumbGetsLayer) {
-        result |= CompositorHitTestInfo::eScrollbarThumb;
+        result += CompositorHitTestFlags::eScrollbarThumb;
       } else {
-        result |= CompositorHitTestInfo::eDispatchToContent;
+        result += CompositorHitTestFlags::eDispatchToContent;
       }
     }
 
     if (*scrollDirection == ScrollDirection::eVertical) {
-      result |= CompositorHitTestInfo::eScrollbarVertical;
+      result += CompositorHitTestFlags::eScrollbarVertical;
     }
 
     
     
-    result |= CompositorHitTestInfo::eScrollbar;
+    result += CompositorHitTestFlags::eScrollbar;
   }
 
   return result;

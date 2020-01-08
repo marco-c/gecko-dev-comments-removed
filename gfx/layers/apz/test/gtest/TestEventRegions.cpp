@@ -243,7 +243,7 @@ TEST_F(APZEventRegionsTester, Obscuration) {
   gfx::CompositorHitTestInfo result;
   RefPtr<AsyncPanZoomController> hit = manager->GetTargetAPZC(ScreenPoint(50, 75), &result);
   EXPECT_EQ(child, hit.get());
-  EXPECT_EQ(CompositorHitTestInfo::eVisibleToHitTest, result);
+  EXPECT_EQ(result, CompositorHitTestFlags::eVisibleToHitTest);
 }
 
 TEST_F(APZEventRegionsTester, Bug1119497) {
@@ -254,7 +254,7 @@ TEST_F(APZEventRegionsTester, Bug1119497) {
   
   
   EXPECT_EQ(ApzcOf(layers[0]), hit.get());
-  EXPECT_EQ(CompositorHitTestInfo::eVisibleToHitTest, result);
+  EXPECT_EQ(result, CompositorHitTestFlags::eVisibleToHitTest);
 }
 
 TEST_F(APZEventRegionsTester, Bug1117712) {
