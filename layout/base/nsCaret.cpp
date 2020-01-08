@@ -99,14 +99,12 @@ AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset)
   for (nsIFrame* f = line->mFirstChild; count > 0; --count, f = f->GetNextSibling())
   {
     nsIFrame* r = CheckForTrailingTextFrameRecursive(f, *aFrame);
-    if (r == *aFrame) {
+    if (r == *aFrame)
       return;
-    }
-    if (r) {
-      
-      
-      MOZ_ASSERT(r->IsTextFrame(), "Expected text frame");
+    if (r)
+    {
       *aFrame = r;
+      NS_ASSERTION(r->IsTextFrame(), "Expected text frame");
       *aOffset = (static_cast<nsTextFrame*>(r))->GetContentEnd();
       return;
     }
@@ -382,13 +380,8 @@ nsCaret::GetGeometryForFrame(nsIFrame* aFrame,
 nsIFrame*
 nsCaret::GetFrameAndOffset(Selection* aSelection,
                            nsINode* aOverrideNode, int32_t aOverrideOffset,
-                           int32_t* aFrameOffset,
-                           nsIFrame** aUnadjustedFrame)
+                           int32_t* aFrameOffset)
 {
-  if (aUnadjustedFrame) {
-    *aUnadjustedFrame = nullptr;
-  }
-
   nsINode* focusNode;
   int32_t focusOffset;
 
@@ -412,11 +405,11 @@ nsCaret::GetFrameAndOffset(Selection* aSelection,
   nsIFrame* frame;
   nsresult rv = nsCaret::GetCaretFrameForNodeOffset(
       frameSelection, contentNode, focusOffset,
-      frameSelection->GetHint(), bidiLevel, &frame, aUnadjustedFrame,
-      aFrameOffset);
+      frameSelection->GetHint(), bidiLevel, &frame, aFrameOffset);
   if (NS_FAILED(rv) || !frame) {
     return nullptr;
   }
+
   return frame;
 }
 
@@ -500,26 +493,16 @@ nsCaret::GetPaintGeometry(nsRect* aRect)
   CheckSelectionLanguageChange();
 
   int32_t frameOffset;
-  nsIFrame* unadjustedFrame = nullptr;
   nsIFrame* frame = GetFrameAndOffset(GetSelection(),
-      mOverrideContent, mOverrideOffset, &frameOffset, &unadjustedFrame);
-  MOZ_ASSERT(!!frame == !!unadjustedFrame);
+      mOverrideContent, mOverrideOffset, &frameOffset);
   if (!frame) {
     return nullptr;
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  const nsStyleUI* ui = unadjustedFrame->StyleUI();
+  const nsStyleUI* ui = frame->StyleUI();
   if ((!mIgnoreUserModify && ui->mUserModify == StyleUserModify::ReadOnly) ||
-      unadjustedFrame->IsContentDisabled()) {
+      frame->IsContentDisabled()) {
     return nullptr;
   }
 
@@ -662,7 +645,6 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
                                     CaretAssociationHint aFrameHint,
                                     nsBidiLevel          aBidiLevel,
                                     nsIFrame**           aReturnFrame,
-                                    nsIFrame**           aReturnUnadjustedFrame,
                                     int32_t*             aReturnOffset)
 {
   if (!aFrameSelection)
@@ -683,10 +665,6 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
   if (!theFrame)
     return NS_ERROR_FAILURE;
 
-  if (aReturnUnadjustedFrame) {
-    *aReturnUnadjustedFrame = theFrame;
-  }
-
   
   
   
@@ -699,7 +677,8 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
   
   
   
-  if (theFrame->PresContext()->BidiEnabled()) {
+  if (theFrame->PresContext()->BidiEnabled())
+  {
     
     if (aBidiLevel & BIDI_LEVEL_UNDEFINED) {
       aBidiLevel = theFrame->GetEmbeddingLevel();

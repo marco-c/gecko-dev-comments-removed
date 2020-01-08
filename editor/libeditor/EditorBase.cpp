@@ -4681,16 +4681,10 @@ EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
   if (NS_WARN_IF(!caret)) {
     return NS_ERROR_FAILURE;
   }
+  caret->SetIgnoreUserModify(false);
   caret->SetSelection(SelectionRefPtr());
   selectionController->SetCaretReadOnly(IsReadonly());
   selectionController->SetCaretEnabled(true);
-  
-  
-  
-  
-  
-  
-  caret->SetIgnoreUserModify(targetNode->OwnerDoc()->HasFlag(NODE_IS_EDITABLE));
 
   
   selectionController->SetDisplaySelection(
@@ -4778,10 +4772,6 @@ EditorBase::FinalizeSelection()
 
   nsCOMPtr<nsIPresShell> presShell = GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_NOT_INITIALIZED);
-
-  if (RefPtr<nsCaret> caret = presShell->GetCaret()) {
-    caret->SetIgnoreUserModify(true);
-  }
 
   selectionController->SetCaretEnabled(false);
 

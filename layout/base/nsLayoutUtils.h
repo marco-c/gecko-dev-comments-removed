@@ -1389,7 +1389,7 @@ public:
 
 
 
-  static nsIFrame* GetParentOrPlaceholderFor(const nsIFrame* aFrame);
+  static nsIFrame* GetParentOrPlaceholderFor(nsIFrame* aFrame);
 
   
 

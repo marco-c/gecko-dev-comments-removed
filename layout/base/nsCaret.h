@@ -182,7 +182,6 @@ class nsCaret final : public nsISelectionListener
                                                CaretAssociationHint aFrameHint,
                                                uint8_t aBidiLevel,
                                                nsIFrame** aReturnFrame,
-                                               nsIFrame** aReturnUnadjustedFrame,
                                                int32_t* aReturnOffset);
     static nsRect GetGeometryForFrame(nsIFrame* aFrame,
                                       int32_t   aFrameOffset,
@@ -193,13 +192,10 @@ class nsCaret final : public nsISelectionListener
     
     
     
-    
-    
     static nsIFrame* GetFrameAndOffset(mozilla::dom::Selection* aSelection,
                                        nsINode* aOverrideNode,
                                        int32_t aOverrideOffset,
-                                       int32_t* aFrameOffset,
-                                       nsIFrame** aUnadjustedFrame = nullptr);
+                                       int32_t* aFrameOffset);
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

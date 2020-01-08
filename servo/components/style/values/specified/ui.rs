@@ -141,6 +141,11 @@ impl Parse for ScrollbarColor {
     }
 }
 
+fn in_ua_sheet(context: &ParserContext) -> bool {
+    use crate::stylesheets::Origin;
+    context.stylesheet_origin == Origin::UserAgent
+}
+
 
 
 
@@ -165,4 +170,13 @@ pub enum UserSelect {
     None,
     
     All,
+    
+    
+    
+    
+    
+    
+    
+    #[parse(condition = "in_ua_sheet")]
+    MozText,
 }
