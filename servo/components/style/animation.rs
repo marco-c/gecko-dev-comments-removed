@@ -369,22 +369,6 @@ impl PropertyAnimation {
             GenericTimingFunction::Steps(steps, StepPosition::End) => {
                 (time * (steps as f64)).floor() / (steps as f64)
             },
-            GenericTimingFunction::Frames(frames) => {
-                
-                let mut out = (time * (frames as f64)).floor() / ((frames - 1) as f64);
-                if out > 1.0 {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    out = 1.0;
-                }
-                out
-            },
             GenericTimingFunction::Keyword(keyword) => {
                 let (x1, x2, y1, y2) = keyword.to_bezier();
                 Bezier::new(x1, x2, y1, y2).solve(time, epsilon)

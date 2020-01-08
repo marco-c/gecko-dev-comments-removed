@@ -111,9 +111,6 @@ pub enum TimingFunction<Integer, Number> {
     #[css(comma, function)]
     #[value_info(other_values = "step-start,step-end")]
     Steps(Integer, #[css(skip_if = "is_end")] StepPosition),
-    
-    #[css(comma, function)]
-    Frames(Integer),
 }
 
 #[allow(missing_docs)]

@@ -51,8 +51,6 @@ const closeAnimationInspector = async function() {
 
 
 
-
-
 const enableAnimationFeatures = function() {
   return new Promise(resolve => {
     SpecialPowers.pushPrefEnv({"set": [
@@ -60,7 +58,6 @@ const enableAnimationFeatures = function() {
       ["dom.animations-api.getAnimations.enabled", true],
       ["dom.animations-api.implicit-keyframes.enabled", true],
       ["dom.animations-api.timelines.enabled", true],
-      ["layout.css.frames-timing.enabled", true],
     ]}, resolve);
   });
 };
