@@ -28,7 +28,7 @@ add_task(async function() {
   ok(Promise.toString().includes("native code"), "Expect native DOM Promise.");
 
   
-  await attachTarget(client, parentProcessActors);
+  await attachTab(client, parentProcessActors);
   await testPromiseCreationTimestamp(client, parentProcessActors, v => {
     return new Promise(resolve => resolve(v));
   });

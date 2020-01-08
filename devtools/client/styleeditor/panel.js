@@ -42,7 +42,7 @@ StyleEditorPanel.prototype = {
   async open() {
     
     if (!this.target.isRemote) {
-      await this.target.attach();
+      await this.target.makeRemote();
     }
 
     this.target.on("close", this.destroy);

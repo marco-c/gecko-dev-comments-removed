@@ -23,8 +23,8 @@ var openToolboxForTab = async function(tab, toolId, hostType) {
   info("Opening the toolbox");
 
   let toolbox;
-  let target = await TargetFactory.forTab(tab);
-  await target.attach();
+  let target = TargetFactory.forTab(tab);
+  await target.makeRemote();
 
   
   toolbox = gDevTools.getToolbox(target);
