@@ -592,7 +592,6 @@ nsHttpChannel::OnBeforeConnect()
     mConnectionInfo->SetBeConservative((mCaps & NS_HTTP_BE_CONSERVATIVE) || mBeConservative);
     mConnectionInfo->SetTlsFlags(mTlsFlags);
     mConnectionInfo->SetTrrUsed(mTRR);
-    mConnectionInfo->SetTrrDisabled(mCaps & NS_HTTP_DISABLE_TRR);
 
     
     gHttpHandler->OnBeforeConnect(this);
@@ -694,7 +693,6 @@ bool
 nsHttpChannel::CheckFastBlocked()
 {
     LOG(("nsHttpChannel::CheckFastBlocked [this=%p]\n", this));
-    MOZ_ASSERT(mIsThirdPartyTrackingResource);
 
     static bool sFastBlockInited = false;
     static bool sIsFastBlockEnabled = false;
@@ -707,26 +705,25 @@ nsHttpChannel::CheckFastBlocked()
     }
 
     TimeStamp timestamp;
-    if (NS_FAILED(GetNavigationStartTimeStamp(&timestamp)) || !timestamp) {
-        LOG(("FastBlock passed (no timestamp) [this=%p]\n", this));
-
+    if (NS_FAILED(GetNavigationStartTimeStamp(&timestamp))) {
         return false;
     }
 
     if (!StaticPrefs::browser_contentblocking_enabled() ||
         !sIsFastBlockEnabled ||
-        IsContentPolicyTypeWhitelistedForFastBlock(mLoadInfo)) {
-
-        LOG(("FastBlock passed (invalid) [this=%p]\n", this));
-
+        IsContentPolicyTypeWhitelistedForFastBlock(mLoadInfo) ||
+        !timestamp ||
+        
+        (mLoadInfo && mLoadInfo->GetDocumentHasUserInteracted())) {
         return false;
     }
 
     TimeDuration duration = TimeStamp::NowLoRes() - timestamp;
     bool isFastBlocking = duration.ToMilliseconds() >= sFastBlockTimeout;
 
-    if (isFastBlocking && mLoadInfo) {
-        MOZ_ALWAYS_SUCCEEDS(mLoadInfo->SetIsTrackerBlocked(true));
+    if (mLoadInfo) {
+        MOZ_ALWAYS_SUCCEEDS(mLoadInfo->SetIsTracker(true));
+        MOZ_ALWAYS_SUCCEEDS(mLoadInfo->SetIsTrackerBlocked(isFastBlocking));
     }
 
     LOG(("FastBlock %s (%lf) [this=%p]\n",
@@ -6111,10 +6108,6 @@ nsHttpChannel::CancelInternal(nsresult status)
       !!mTrackingProtectionCancellationPending;
     if (status == NS_ERROR_TRACKING_URI) {
       mTrackingProtectionCancellationPending = 0;
-      if (mLoadInfo) {
-        MOZ_ALWAYS_SUCCEEDS(mLoadInfo->SetIsTracker(true));
-        MOZ_ALWAYS_SUCCEEDS(mLoadInfo->SetIsTrackerBlocked(true));
-      }
     }
 
     mCanceled = true;
