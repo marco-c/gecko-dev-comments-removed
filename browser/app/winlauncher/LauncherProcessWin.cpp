@@ -166,35 +166,52 @@ MaybeBreakForBrowserDebugging()
 
 #if defined(MOZ_LAUNCHER_PROCESS)
 
-static mozilla::Maybe<bool>
+static bool
 IsSameBinaryAsParentProcess()
 {
   mozilla::Maybe<DWORD> parentPid = mozilla::nt::GetParentProcessId();
   if (!parentPid) {
-    return mozilla::Nothing();
+    
+    
+    
+    MOZ_CRASH("NtQueryInformationProcess failed");
   }
 
   nsAutoHandle parentProcess(::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
                                            FALSE, parentPid.value()));
   if (!parentProcess.get()) {
-    return mozilla::Nothing();
+    
+    
+    
+    return false;
   }
 
   WCHAR parentExe[MAX_PATH + 1] = {};
   DWORD parentExeLen = mozilla::ArrayLength(parentExe);
   if (!::QueryFullProcessImageNameW(parentProcess.get(), 0, parentExe,
                                     &parentExeLen)) {
-    return mozilla::Nothing();
+    
+    
+    MOZ_CRASH("QueryFullProcessImageNameW failed");
   }
 
   WCHAR ourExe[MAX_PATH + 1] = {};
   DWORD ourExeOk = ::GetModuleFileNameW(nullptr, ourExe,
                                         mozilla::ArrayLength(ourExe));
   if (!ourExeOk || ourExeOk == mozilla::ArrayLength(ourExe)) {
-    return mozilla::Nothing();
+    
+    
+    MOZ_CRASH("GetModuleFileNameW failed");
   }
 
-  return mozilla::DoPathsPointToIdenticalFile(parentExe, ourExe);
+  mozilla::Maybe<bool> isSame =
+    mozilla::DoPathsPointToIdenticalFile(parentExe, ourExe);
+  if (!isSame) {
+    
+    
+    MOZ_CRASH("DoPathsPointToIdenticalFile failed");
+  }
+  return isSame.value();
 }
 
 #endif 
@@ -210,12 +227,7 @@ RunAsLauncherProcess(int& argc, wchar_t** argv)
   bool result = false;
 
 #if defined(MOZ_LAUNCHER_PROCESS)
-  Maybe<bool> isChildOfFirefox = IsSameBinaryAsParentProcess();
-  if (isChildOfFirefox) {
-    result |= !isChildOfFirefox.value();
-  } else {
-    result = true;
-  }
+  result = !IsSameBinaryAsParentProcess();
 #endif 
 
   if (mozilla::EnvHasValue("MOZ_LAUNCHER_PROCESS")) {
