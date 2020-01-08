@@ -59,13 +59,27 @@ VRService::VRService()
  , mBrowserState{}
  , mServiceThread(nullptr)
  , mShutdownRequested(false)
+ , mAPIShmem(nullptr)
+ , mTargetShmemFile(0)
 {
-  memset(&mAPIShmem, 0, sizeof(mAPIShmem));
+  
+  
+  
+  
+  if (!gfxPrefs::VRProcessEnabled()) {
+    mAPIShmem = new VRExternalShmem();
+    memset(mAPIShmem, 0, sizeof(VRExternalShmem));
+  }
 }
 
 VRService::~VRService()
 {
   Stop();
+
+  if (!gfxPrefs::VRProcessEnabled() && mAPIShmem) {
+    delete mAPIShmem;
+    mAPIShmem = nullptr;
+  }
 }
 
 void
@@ -110,13 +124,63 @@ void
 VRService::Stop()
 {
   if (mServiceThread) {
-    mServiceThread->message_loop()->PostTask(NewRunnableMethod(
-      "gfx::VRService::RequestShutdown",
-      this, &VRService::RequestShutdown
-    ));
+    mShutdownRequested = true;
     delete mServiceThread;
     mServiceThread = nullptr;
   }
+  if (mTargetShmemFile) {
+#if defined(XP_WIN)
+    CloseHandle(mTargetShmemFile);
+#endif
+    mTargetShmemFile = 0;
+  }
+  if (gfxPrefs::VRProcessEnabled() && mAPIShmem) {
+#if defined(XP_WIN)
+    UnmapViewOfFile((void *)mAPIShmem);
+#endif
+    mAPIShmem = nullptr;
+  }
+  mSession = nullptr;
+}
+
+bool
+VRService::InitShmem()
+{
+  if (!gfxPrefs::VRProcessEnabled()) {
+    return true;
+  }
+
+#if defined(XP_WIN)
+  const char* kShmemName = "moz.gecko.vr_ext.0.0.1";
+  base::ProcessHandle targetHandle = 0;
+
+  
+  targetHandle = OpenFileMappingA(
+                  FILE_MAP_ALL_ACCESS,   
+                  FALSE,                 
+                  kShmemName);           
+
+  MOZ_ASSERT(GetLastError() == 0);
+
+  LARGE_INTEGER length;
+  length.QuadPart = sizeof(VRExternalShmem);
+  mAPIShmem = (VRExternalShmem *)MapViewOfFile(reinterpret_cast<base::ProcessHandle>(targetHandle), 
+                                               FILE_MAP_ALL_ACCESS,  
+                                               0,
+                                               0,
+                                               length.QuadPart);
+  MOZ_ASSERT(GetLastError() == 0);
+  
+  mTargetShmemFile = targetHandle;
+  if (!mAPIShmem) {
+    MOZ_ASSERT(mAPIShmem);
+    return false;
+  }
+#else
+  
+#endif
+
+ return true;
 }
 
 bool
@@ -126,25 +190,22 @@ VRService::IsInServiceThread()
 }
 
 void
-VRService::RequestShutdown()
-{
-  MOZ_ASSERT(IsInServiceThread());
-  mShutdownRequested = true;
-}
-
-void
 VRService::ServiceInitialize()
 {
   MOZ_ASSERT(IsInServiceThread());
+
+  if (!InitShmem()) {
+    return;
+  }
 
   mShutdownRequested = false;
   memset(&mBrowserState, 0, sizeof(mBrowserState));
 
   
-  unique_ptr<VRSession> session;
+  UniquePtr<VRSession> session;
 
   
-  session = make_unique<OpenVRSession>();
+  session = MakeUnique<OpenVRSession>();
   if (!session->Initialize(mSystemState)) {
     session = nullptr;
   }
@@ -282,6 +343,9 @@ VRService::ServiceImmersiveMode()
 void
 VRService::PushState(const mozilla::gfx::VRSystemState& aState)
 {
+  if (!mAPIShmem) {
+    return;
+  }
   
   
   
@@ -289,19 +353,22 @@ VRService::PushState(const mozilla::gfx::VRSystemState& aState)
 
 #if defined(MOZ_WIDGET_ANDROID)
     if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) == 0) {
-      memcpy((void *)&mAPIShmem.state, &aState, sizeof(VRSystemState));
+      memcpy((void *)&mAPIShmem->state, &aState, sizeof(VRSystemState));
       pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
     }
 #else
-  mAPIShmem.generationA++;
-  memcpy((void *)&mAPIShmem.state, &aState, sizeof(VRSystemState));
-  mAPIShmem.generationB++;
+  mAPIShmem->generationA++;
+  memcpy((void *)&mAPIShmem->state, &aState, sizeof(VRSystemState));
+  mAPIShmem->generationB++;
 #endif
 }
 
 void
 VRService::PullState(mozilla::gfx::VRBrowserState& aState)
 {
+  if (!mAPIShmem) {
+    return;
+  }
   
   
   
@@ -318,7 +385,7 @@ VRService::PullState(mozilla::gfx::VRBrowserState& aState)
     }
 #else
   VRExternalShmem tmp;
-  memcpy(&tmp, &mAPIShmem, sizeof(VRExternalShmem));
+  memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
   if (tmp.browserGenerationA == tmp.browserGenerationB && tmp.browserGenerationA != 0 && tmp.browserGenerationA != -1) {
     memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
   }
@@ -328,5 +395,5 @@ VRService::PullState(mozilla::gfx::VRBrowserState& aState)
 VRExternalShmem*
 VRService::GetAPIShmem()
 {
-  return &mAPIShmem;
+  return mAPIShmem;
 }
