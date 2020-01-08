@@ -186,7 +186,7 @@ CheckPatternSyntax(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
     
     
 
-    if (RegExpShared* shared = cx->zone()->regExps.maybeGet(pattern, flags)) {
+    if (RegExpShared* shared = cx->zone()->regExps().maybeGet(pattern, flags)) {
 #ifdef DEBUG
         
         if (!CheckPatternSyntaxSlow(cx, pattern, flags)) {
@@ -202,7 +202,7 @@ CheckPatternSyntax(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
 
     
     
-    return cx->zone()->regExps.get(cx, pattern, flags);
+    return cx->zone()->regExps().get(cx, pattern, flags);
 }
 
 
