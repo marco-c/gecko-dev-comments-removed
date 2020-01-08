@@ -224,29 +224,37 @@ class AndroidPresentor {
 
 
 
+  viewportScrolled(aWindow) {
+    const { windowUtils, devicePixelRatio } = aWindow;
+    const resolution = { value: 1 };
+    windowUtils.getResolution(resolution);
+    const scale = devicePixelRatio * resolution.value;
+    return [{
+      eventType: AndroidEvents.VIEW_SCROLLED,
+      scrollX: aWindow.scrollX * scale,
+      scrollY: aWindow.scrollY * scale,
+      maxScrollX: aWindow.scrollMaxX * scale,
+      maxScrollY: aWindow.scrollMaxY * scale,
+    }];
+  }
+
+  
+
+
 
   viewportChanged(aWindow) {
-    let currentContext = this.displayedAccessibles.get(aWindow);
-
-    let events = [{
-      eventType: AndroidEvents.VIEW_SCROLLED,
-      scrollX: aWindow.scrollX,
-      scrollY: aWindow.scrollY,
-      maxScrollX: aWindow.scrollMaxX,
-      maxScrollY: aWindow.scrollMaxY,
-    }];
-
-    if (currentContext) {
-      let currentAcc = currentContext.accessibleForBounds;
-      if (Utils.isAliveAndVisible(currentAcc)) {
-        events.push({
-          eventType: AndroidEvents.WINDOW_CONTENT_CHANGED,
-          bounds: Utils.getBounds(currentAcc)
-        });
-      }
+    const currentContext = this.displayedAccessibles.get(aWindow);
+    if (!currentContext) {
+      return;
     }
 
-    return events;
+    const currentAcc = currentContext.accessibleForBounds;
+    if (Utils.isAliveAndVisible(currentAcc)) {
+      return [{
+        eventType: AndroidEvents.WINDOW_STATE_CHANGED,
+        bounds: Utils.getBounds(currentAcc)
+      }];
+    }
   }
 
   
