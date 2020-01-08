@@ -33,6 +33,8 @@ const {
 
 const POPUP_LOAD_TIMEOUT_MS = 200;
 
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
 function promisePopupShown(popup) {
   return new Promise(resolve => {
     if (popup.state == "open") {
@@ -237,10 +239,10 @@ class BasePopup {
   createBrowser(viewNode, popupURL = null) {
     let document = viewNode.ownerDocument;
 
-    let stack = document.createXULElement("stack");
+    let stack = document.createElementNS(XUL_NS, "stack");
     stack.setAttribute("class", "webextension-popup-stack");
 
-    let browser = document.createXULElement("browser");
+    let browser = document.createElementNS(XUL_NS, "browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("disableglobalhistory", "true");
     browser.setAttribute("transparent", "true");
@@ -309,10 +311,10 @@ class BasePopup {
       let mm = browser.messageManager;
 
       
-      mm.loadFrameScript("chrome://browser/content/content.js", true);
+      mm.loadFrameScript("chrome://browser/content/content.js", true, true);
 
       mm.loadFrameScript(
-        "chrome://extensions/content/ext-browser-content.js", false);
+        "chrome://extensions/content/ext-browser-content.js", false, true);
 
       mm.sendAsyncMessage("Extension:InitBrowser", {
         allowScriptsToClose: true,

@@ -1101,7 +1101,7 @@ var SessionStoreInternal = {
     });
 
     
-    mm.loadFrameScript("chrome://browser/content/content-sessionStore.js", true);
+    mm.loadFrameScript("chrome://browser/content/content-sessionStore.js", true, true);
 
     
     this._windows[aWindow.__SSi] = { tabs: [], selected: 0, _closedTabs: [], busy: false };
