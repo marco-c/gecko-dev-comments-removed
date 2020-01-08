@@ -6,6 +6,12 @@
 
 
 
+#if(__GNUC__ && __linux__ && __PPC64__ && _LITTLE_ENDIAN)
+
+
+#pragma GCC optimize("no-stack-protector")
+#endif
+
 #include "xpcprivate.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "nsWrapperCacheInlines.h"
