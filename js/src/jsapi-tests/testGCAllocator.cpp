@@ -27,16 +27,12 @@
 BEGIN_TEST(testGCAllocator) {
 #ifdef JS_64BIT
   
-  return true;
-#else
-  size_t PageSize = 0;
-#if defined(XP_WIN)
-  SYSTEM_INFO sysinfo;
-  GetSystemInfo(&sysinfo);
-  PageSize = sysinfo.dwPageSize;
-#else
-  PageSize = size_t(sysconf(_SC_PAGESIZE));
+  if (js::gc::UsingScattershotAllocator()) {
+    return true;
+  }
 #endif
+
+  size_t PageSize = js::gc::SystemPageSize();
 
   
   js::gc::FinishGC(cx);
@@ -46,9 +42,9 @@ BEGIN_TEST(testGCAllocator) {
 
   if (growUp) {
     return testGCAllocatorUp(PageSize);
+  } else {
+    return testGCAllocatorDown(PageSize);
   }
-  return testGCAllocatorDown(PageSize);
-#endif
 }
 
 static const size_t Chunk = 512 * 1024;

@@ -14,7 +14,7 @@
 #include "js/HeapAPI.h"
 #include "vm/Runtime.h"
 
-#if defined(XP_WIN)
+#ifdef XP_WIN
 
 #include "util/Windows.h"
 #include <psapi.h>
@@ -43,10 +43,8 @@ static size_t pageSize = 0;
 
 static size_t allocGranularity = 0;
 
-#if defined(JS_64BIT)
-static size_t minValidAddress = 0;
-static size_t maxValidAddress = 0;
-#endif
+
+static size_t numAddressBits = 0;
 
 
 
@@ -69,12 +67,69 @@ static mozilla::Atomic<int, mozilla::Relaxed,
     growthDirection(0);
 #endif
 
+
+
+
+
+
+
+static const int MaxLastDitchAttempts = 32;
+
+#ifdef JS_64BIT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const size_t MinAddressBitsForRandomAlloc = 43;
+
+
+static const size_t HugeAllocationSize = 1024 * 1024 * 1024;
+
+
+static size_t minValidAddress = 0;
+static size_t maxValidAddress = 0;
+
+
+static size_t hugeSplit = 0;
+#endif
+
+size_t SystemPageSize() { return pageSize; }
+
+size_t SystemAddressBits() { return numAddressBits; }
+
+bool UsingScattershotAllocator() {
+#ifdef JS_64BIT
+  return numAddressBits >= MinAddressBitsForRandomAlloc;
+#else
+  return false;
+#endif
+}
+
 enum class Commit : bool {
   No = false,
   Yes = true,
 };
 
-#if defined(XP_WIN)
+#ifdef XP_WIN
 enum class PageAccess : DWORD {
   None = PAGE_NOACCESS,
   Read = PAGE_READONLY,
@@ -94,32 +149,21 @@ enum class PageAccess : int {
 };
 #endif
 
-#if !defined(JS_64BIT)
-
-
-
-
-
-
-static const int MaxLastDitchAttempts = 32;
-#endif
-
 template <bool AlwaysGetNew = true>
 static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
                             size_t length, size_t alignment);
 
-#if defined(JS_64BIT)
+static void* MapAlignedPagesSlow(size_t length, size_t alignment);
+static void* MapAlignedPagesLastDitch(size_t length, size_t alignment);
+
+#ifdef JS_64BIT
 static void* MapAlignedPagesRandom(size_t length, size_t alignment);
 void* TestMapAlignedPagesLastDitch(size_t, size_t) { return nullptr; }
 #else
-static void* MapAlignedPagesSlow(size_t length, size_t alignment);
-static void* MapAlignedPagesLastDitch(size_t length, size_t alignment);
 void* TestMapAlignedPagesLastDitch(size_t length, size_t alignment) {
   return MapAlignedPagesLastDitch(length, alignment);
 }
 #endif
-
-size_t SystemPageSize() { return pageSize; }
 
 
 
@@ -135,7 +179,7 @@ static inline size_t OffsetFromAligned(void* region, size_t alignment) {
 template <Commit commit, PageAccess prot>
 static inline void* MapInternal(void* desired, size_t length) {
   void* region = nullptr;
-#if defined(XP_WIN)
+#ifdef XP_WIN
   DWORD flags =
       (commit == Commit::Yes ? MEM_RESERVE | MEM_COMMIT : MEM_RESERVE);
   region = VirtualAlloc(desired, length, flags, DWORD(prot));
@@ -154,7 +198,7 @@ static inline void UnmapInternal(void* region, size_t length) {
   MOZ_ASSERT(region && OffsetFromAligned(region, allocGranularity) == 0);
   MOZ_ASSERT(length > 0 && length % pageSize == 0);
 
-#if defined(XP_WIN)
+#ifdef XP_WIN
   MOZ_RELEASE_ASSERT(VirtualFree(region, 0, MEM_RELEASE) != 0);
 #else
   if (munmap(region, length)) {
@@ -170,6 +214,10 @@ static inline void* MapMemory(size_t length) {
   return MapInternal<commit, prot>(nullptr, length);
 }
 
+
+
+
+
 template <Commit commit = Commit::Yes, PageAccess prot = PageAccess::ReadWrite>
 static inline void* MapMemoryAtFuzzy(void* desired, size_t length) {
   MOZ_ASSERT(desired && OffsetFromAligned(desired, allocGranularity) == 0);
@@ -179,6 +227,10 @@ static inline void* MapMemoryAtFuzzy(void* desired, size_t length) {
   
   return MapInternal<commit, prot>(desired, length);
 }
+
+
+
+
 
 template <Commit commit = Commit::Yes, PageAccess prot = PageAccess::ReadWrite>
 static inline void* MapMemoryAt(void* desired, size_t length) {
@@ -199,7 +251,7 @@ static inline void* MapMemoryAt(void* desired, size_t length) {
   return region;
 }
 
-#if defined(JS_64BIT)
+#ifdef JS_64BIT
 
 
 static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
@@ -219,7 +271,7 @@ static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
   return minNum + rndNum;
 }
 
-#if !defined(XP_WIN)
+#ifndef XP_WIN
 
 
 
@@ -233,7 +285,8 @@ static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
 
 
 
-static uint64_t FindAddressLimit() {
+
+static size_t FindAddressLimit() {
   const size_t length = allocGranularity;  
 
   void* address;
@@ -244,7 +297,7 @@ static uint64_t FindAddressLimit() {
   uint64_t highestSeen = (UINT64_C(1) << 32) - length - 1;
 
   
-  size_t high = 46;
+  size_t high = 47;
   startRaw = UINT64_C(1) << high;
   endRaw = 2 * startRaw - length - 1;
   start = (startRaw + length - 1) / length;
@@ -258,7 +311,7 @@ static uint64_t FindAddressLimit() {
       UnmapInternal(address, length);
     }
     if (actual >= startRaw) {
-      return endRaw;  
+      return high + 1;  
     }
     if (actual > highestSeen) {
       highestSeen = actual;
@@ -297,9 +350,7 @@ static uint64_t FindAddressLimit() {
   }
 
   
-  startRaw = UINT64_C(1) << std::min(low, size_t(46));
-  endRaw = 2 * startRaw - length - 1;
-  return endRaw;
+  return std::min(low + 1, size_t(47));
 }
 #endif  
 
@@ -307,7 +358,7 @@ static uint64_t FindAddressLimit() {
 
 void InitMemorySubsystem() {
   if (pageSize == 0) {
-#if defined(XP_WIN)
+#ifdef XP_WIN
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     pageSize = sysinfo.dwPageSize;
@@ -316,26 +367,33 @@ void InitMemorySubsystem() {
     pageSize = size_t(sysconf(_SC_PAGESIZE));
     allocGranularity = pageSize;
 #endif
-#if defined(JS_64BIT)
-#if defined(XP_WIN)
+#ifdef JS_64BIT
+#ifdef XP_WIN
     minValidAddress = size_t(sysinfo.lpMinimumApplicationAddress);
     maxValidAddress = size_t(sysinfo.lpMaximumApplicationAddress);
+    numAddressBits = mozilla::FloorLog2(maxValidAddress) + 1;
 #else
     
+    numAddressBits = FindAddressLimit();
     minValidAddress = allocGranularity;
-    maxValidAddress = FindAddressLimit() - allocGranularity;
+    maxValidAddress = (UINT64_C(1) << numAddressBits) - 1 - allocGranularity;
 #endif
     
     uint64_t maxJSAddress = UINT64_C(0x00007fffffffffff) - allocGranularity;
     if (maxValidAddress > maxJSAddress) {
       maxValidAddress = maxJSAddress;
+      hugeSplit = UINT64_C(0x00003fffffffffff) - allocGranularity;
+    } else {
+      hugeSplit = (UINT64_C(1) << (numAddressBits - 1)) - 1 - allocGranularity;
     }
+#else  
+    numAddressBits = 32;
 #endif
   }
 }
 
+#ifdef JS_64BIT
 
-#if defined(JS_64BIT)
 static inline bool IsInvalidRegion(void* region, size_t length) {
   const uint64_t invalidPointerMask = UINT64_C(0xffff800000000000);
   return (uintptr_t(region) + length - 1) & invalidPointerMask;
@@ -354,11 +412,18 @@ void* MapAlignedPages(size_t length, size_t alignment) {
     alignment = allocGranularity;
   }
 
-#if defined(JS_64BIT)
-  void* region = MapAlignedPagesRandom(length, alignment);
+#ifdef JS_64BIT
+  
+  if (UsingScattershotAllocator()) {
+    void* region = MapAlignedPagesRandom(length, alignment);
 
-  MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
-#else
+    MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
+    MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
+
+    return region;
+  }
+#endif
+
   void* region = MapMemory(length);
   if (OffsetFromAligned(region, alignment) == 0) {
     return region;
@@ -380,17 +445,44 @@ void* MapAlignedPages(size_t length, size_t alignment) {
   if (!region) {
     region = MapAlignedPagesLastDitch(length, alignment);
   }
-#endif
 
   MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
   return region;
 }
 
-#if defined(JS_64BIT)
+#ifdef JS_64BIT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
-  uint64_t minNum = (minValidAddress + alignment - 1) / alignment;
-  uint64_t maxNum = (maxValidAddress - (length - 1)) / alignment;
+  uint64_t minNum, maxNum;
+  if (length < HugeAllocationSize) {
+    
+    minNum = (minValidAddress + alignment - 1) / alignment;
+    maxNum = (hugeSplit - (length - 1)) / alignment;
+  } else {
+    
+    minNum = (hugeSplit + 1 + alignment - 1) / alignment;
+    maxNum = (maxValidAddress - (length - 1)) / alignment;
+  }
 
   
   void* region = nullptr;
@@ -424,17 +516,28 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
     UnmapInternal(region, length);
   }
 
-  MOZ_CRASH("Couldn't allocate even after 1000 tries!");
+  if (numAddressBits < 48) {
+    
+    
+    region = MapAlignedPagesSlow(length, alignment);
+    if (region) {
+      return region;
+    }
+  }
+  if (length < HugeAllocationSize) {
+    MOZ_CRASH("Couldn't allocate even after 1000 tries!");
+  }
+
   return nullptr;
 }
 
-#else  
+#endif  
 
 static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
   void* alignedRegion = nullptr;
   do {
     size_t reserveLength = length + alignment - pageSize;
-#if defined(XP_WIN)
+#ifdef XP_WIN
     
     void* region = MapMemory<Commit::No>(reserveLength);
 #else
@@ -445,7 +548,7 @@ static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
     }
     alignedRegion =
         reinterpret_cast<void*>(AlignBytes(uintptr_t(region), alignment));
-#if defined(XP_WIN)
+#ifdef XP_WIN
     
     
     UnmapInternal(region, reserveLength);
@@ -503,9 +606,7 @@ static void* MapAlignedPagesLastDitch(size_t length, size_t alignment) {
   return region;
 }
 
-#endif  
-
-#if defined(XP_WIN)
+#ifdef XP_WIN
 
 
 
@@ -654,7 +755,7 @@ size_t GetPageFaultCount() {
   if (mozilla::recordreplay::IsRecordingOrReplaying()) {
     return 0;
   }
-#if defined(XP_WIN)
+#ifdef XP_WIN
   PROCESS_MEMORY_COUNTERS pmc;
   if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)) == 0) {
     return 0;
@@ -689,7 +790,7 @@ void* AllocateMappedContent(int fd, size_t offset, size_t length,
     mappedLength += pageSize - alignedLength % pageSize;
   }
 
-#if defined(XP_WIN)
+#ifdef XP_WIN
   HANDLE hFile = reinterpret_cast<HANDLE>(intptr_t(fd));
 
   
@@ -728,7 +829,7 @@ void* AllocateMappedContent(int fd, size_t offset, size_t length,
   if (!map) {
     return nullptr;
   }
-#else
+#else  
   
   struct stat st;
   if (fstat(fd, &st) || offset >= uint64_t(st.st_size) ||
@@ -749,7 +850,7 @@ void* AllocateMappedContent(int fd, size_t offset, size_t length,
   MOZ_RELEASE_ASSERT(map != MAP_FAILED);
 #endif
 
-#if defined(DEBUG)
+#ifdef DEBUG
   
   if (offset != alignedOffset) {
     memset(map, 0, offset - alignedOffset);
@@ -775,7 +876,7 @@ void DeallocateMappedContent(void* region, size_t length) {
   
   
   uintptr_t map = uintptr_t(region) - (uintptr_t(region) % allocGranularity);
-#if defined(XP_WIN)
+#ifdef XP_WIN
   MOZ_RELEASE_ASSERT(UnmapViewOfFile(reinterpret_cast<void*>(map)) != 0);
 #else
   size_t alignedLength = length + (uintptr_t(region) % allocGranularity);
@@ -788,7 +889,7 @@ void DeallocateMappedContent(void* region, size_t length) {
 static inline void ProtectMemory(void* region, size_t length, PageAccess prot) {
   MOZ_RELEASE_ASSERT(region && OffsetFromAligned(region, pageSize) == 0);
   MOZ_RELEASE_ASSERT(length > 0 && length % pageSize == 0);
-#if defined(XP_WIN)
+#ifdef XP_WIN
   DWORD oldProtect;
   MOZ_RELEASE_ASSERT(VirtualProtect(region, length, DWORD(prot), &oldProtect) !=
                      0);

@@ -16,7 +16,16 @@ namespace gc {
 
 void InitMemorySubsystem();
 
+
 size_t SystemPageSize();
+
+
+
+size_t SystemAddressBits();
+
+
+
+bool UsingScattershotAllocator();
 
 
 void* MapAlignedPages(size_t size, size_t alignment);
