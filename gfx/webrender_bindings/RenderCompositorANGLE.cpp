@@ -111,10 +111,7 @@ RenderCompositorANGLE::Initialize()
   if (!SutdownEGLLibraryIfNecessary()) {
     return false;
   }
-  if (!RenderThread::Get()->SharedGL()) {
-    gfxCriticalNote << "[WR] failed to get shared GL context.";
-    return false;
-  }
+  RenderThread::Get()->SharedGL();
 
   mDevice = GetDeviceOfEGLDisplay();
 
@@ -314,7 +311,7 @@ RenderCompositorANGLE::BeginFrame()
   }
 
   if (mSyncObject) {
-    if (!mSyncObject->Synchronize()) {
+    if (!mSyncObject->Synchronize( true)) {
       
       RenderThread::Get()->HandleDeviceReset("SyncObject",  true);
       return false;
