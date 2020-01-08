@@ -503,9 +503,7 @@ class DesktopInstance(GeckoInstance):
         
         
         
-        
-        
-        
+        "app.update.disabledForTesting": True,
         
         
         "app.update.auto": False,
