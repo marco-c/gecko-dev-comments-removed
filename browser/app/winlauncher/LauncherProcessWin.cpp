@@ -146,25 +146,30 @@ namespace mozilla {
 bool
 RunAsLauncherProcess(int& argc, wchar_t** argv)
 {
+  
+  
+  
+  bool result = false;
+
 #if defined(MOZ_LAUNCHER_PROCESS)
   Maybe<bool> isChildOfFirefox = IsSameBinaryAsParentProcess();
-  if (!isChildOfFirefox) {
-    return true;
-  }
-
-  if (!isChildOfFirefox.value()) {
-    return true;
+  if (isChildOfFirefox) {
+    result |= !isChildOfFirefox.value();
+  } else {
+    result = true;
   }
 #endif 
 
   if (mozilla::EnvHasValue("MOZ_LAUNCHER_PROCESS")) {
     mozilla::SaveToEnv("MOZ_LAUNCHER_PROCESS=");
-    return true;
+    result = true;
   }
 
-  return CheckArg(argc, argv, L"launcher",
-                  static_cast<const wchar_t**>(nullptr),
-                  CheckArgFlag::RemoveArg) == ARG_FOUND;
+  result |= CheckArg(argc, argv, L"launcher",
+                     static_cast<const wchar_t**>(nullptr),
+                     CheckArgFlag::RemoveArg) == ARG_FOUND;
+
+  return result;
 }
 
 int
