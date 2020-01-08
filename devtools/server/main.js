@@ -85,6 +85,7 @@ var DebuggerServer = {
     this._nextConnID = 0;
 
     this._initialized = true;
+    this._onSocketListenerAccepted = this._onSocketListenerAccepted.bind(this);
   },
 
   get protocol() {
@@ -225,6 +226,7 @@ var DebuggerServer = {
 
 
   _addListener(listener) {
+    listener.on("accepted", this._onSocketListenerAccepted);
     this._listeners.push(listener);
   },
 
@@ -233,7 +235,16 @@ var DebuggerServer = {
 
 
   _removeListener(listener) {
+    
+    for (const connID of Object.getOwnPropertyNames(this._connections)) {
+      const connection = this._connections[connID];
+      if (connection.isAcceptedBy(listener)) {
+        connection.close();
+      }
+    }
+
     this._listeners = this._listeners.filter(l => l !== listener);
+    listener.off("accepted", this._onSocketListenerAccepted);
   },
 
   
@@ -252,6 +263,10 @@ var DebuggerServer = {
     }
 
     return true;
+  },
+
+  _onSocketListenerAccepted(transport, listener) {
+    this._onConnection(transport, null, false, listener);
   },
 
   
@@ -863,7 +878,7 @@ var DebuggerServer = {
 
 
 
-  _onConnection(transport, forwardingPrefix, noRootActor = false) {
+  _onConnection(transport, forwardingPrefix, noRootActor = false, socketListener = null) {
     let connID;
     if (forwardingPrefix) {
       connID = forwardingPrefix + "/";
@@ -875,7 +890,7 @@ var DebuggerServer = {
       connID = "server" + loader.id + ".conn" + this._nextConnID++ + ".";
     }
 
-    const conn = new DebuggerServerConnection(connID, transport);
+    const conn = new DebuggerServerConnection(connID, transport, socketListener);
     this._connections[connID] = conn;
 
     
@@ -975,11 +990,15 @@ exports.DebuggerServer = DebuggerServer;
 
 
 
-function DebuggerServerConnection(prefix, transport) {
+
+
+
+function DebuggerServerConnection(prefix, transport, socketListener) {
   this._prefix = prefix;
   this._transport = transport;
   this._transport.hooks = this;
   this._nextID = 1;
+  this._socketListener = socketListener;
 
   this._actorPool = new Pool(this);
   this._extraPools = [this._actorPool];
@@ -1223,6 +1242,17 @@ DebuggerServerConnection.prototype = {
         return;
       }
     });
+  },
+
+  
+
+
+
+
+
+
+  isAcceptedBy(socketListener) {
+    return this._socketListener === socketListener;
   },
 
   
