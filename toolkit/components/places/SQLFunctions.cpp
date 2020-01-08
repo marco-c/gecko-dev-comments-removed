@@ -554,6 +554,8 @@ namespace places {
     }
 
     int32_t visitCount = aArguments->AsInt32(kArgIndexVisitCount);
+    
+    
     bool typed = aArguments->AsInt32(kArgIndexTyped) ? true : false;
     bool bookmark = aArguments->AsInt32(kArgIndexBookmark) ? true : false;
     nsDependentCString tags = getSharedUTF8String(aArguments, kArgIndexTags);

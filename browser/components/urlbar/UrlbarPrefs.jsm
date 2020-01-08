@@ -98,11 +98,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.history", true],
 
   
-  
-  
-  ["suggest.history.onlyTyped", false],
-
-  
   ["suggest.openpage", true],
 
   
@@ -213,8 +208,6 @@ class Preferences {
     
     if (pref == "matchBuckets") {
       this._map.delete("matchBucketsSearch");
-    } else if (pref == "suggest.history") {
-      this._map.delete("suggest.history.onlyTyped");
     }
     if (pref == "autocomplete.enabled" || pref.startsWith("suggest.")) {
       this._map.delete("defaultBehavior");
@@ -295,17 +288,11 @@ class Preferences {
         }
         return this.get("matchBuckets");
       }
-      case "suggest.history.onlyTyped": {
-        
-        return this.get("suggest.history") && this._readPref(pref);
-      }
       case "defaultBehavior": {
         let val = 0;
-        for (let type of [...Object.keys(SUGGEST_PREF_TO_BEHAVIOR), "history.onlyTyped"]) {
-          let behavior = type == "history.onlyTyped" ?
-            "TYPED" : SUGGEST_PREF_TO_BEHAVIOR[type].toUpperCase();
-          val |= this.get("suggest." + type) &&
-                 Ci.mozIPlacesAutoComplete["BEHAVIOR_" + behavior];
+        for (let type of Object.keys(SUGGEST_PREF_TO_BEHAVIOR)) {
+          let behavior = `BEHAVIOR_${SUGGEST_PREF_TO_BEHAVIOR[type].toUpperCase()}`;
+          val |= this.get("suggest." + type) && Ci.mozIPlacesAutoComplete[behavior];
         }
         return val;
       }
@@ -316,8 +303,7 @@ class Preferences {
         
         let val = Ci.mozIPlacesAutoComplete.BEHAVIOR_RESTRICT;
         if (this.get("suggest.history")) {
-          val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_HISTORY |
-                Ci.mozIPlacesAutoComplete.BEHAVIOR_TYPED;
+          val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_HISTORY;
         } else if (this.get("suggest.bookmark")) {
           val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_BOOKMARK;
         } else {
