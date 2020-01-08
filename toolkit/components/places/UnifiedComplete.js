@@ -1202,6 +1202,7 @@ Search.prototype = {
           
           let aliasPreservingUserCase = token + alias.substr(token.length);
           let value = aliasPreservingUserCase + " ";
+          this._result.setDefaultIndex(0);
           this._addMatch({
             value,
             finalCompleteValue: PlacesUtils.mozActionURI("searchengine", {
@@ -1215,7 +1216,6 @@ Search.prototype = {
             style: "autofill action searchengine",
             icon: engine.iconURI ? engine.iconURI.spec : null,
           });
-          this._result.setDefaultIndex(0);
 
           
           
