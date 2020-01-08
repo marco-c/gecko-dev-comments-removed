@@ -163,6 +163,9 @@ function submitToServer(data) {
       
       if (auth_token) {
         xhr.setRequestHeader("Authorization", "Token " + auth_token);
+      } else {
+        
+        xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
       }
 
       xhr.onreadystatechange = function() {
