@@ -230,15 +230,15 @@
 .subviewbutton.download:hover:-moz-any(:not([openLabel]),:not([exists])):not([retryLabel]) > .toolbarbutton-text > .status-full,
 
 
-.subviewbutton.download:hover[retryLabel]:not([buttonover]) > .toolbarbutton-text > .status-full,
+.subviewbutton.download:hover[retryLabel]:not(.downloadHoveringButton) > .toolbarbutton-text > .status-full,
 
 
-.subviewbutton.download:hover[openLabel][exists]:not([buttonover]) > .toolbarbutton-text > .status-open,
+.subviewbutton.download:hover[openLabel][exists]:not(.downloadHoveringButton) > .toolbarbutton-text > .status-open,
 
 
-.subviewbutton.download:hover[retryLabel][buttonover] > .toolbarbutton-text > .status-retry,
+.subviewbutton.download:hover[retryLabel].downloadHoveringButton > .toolbarbutton-text > .status-retry,
 
 
-.subviewbutton.download:hover[openLabel][exists][buttonover] > .toolbarbutton-text > .status-show {
+.subviewbutton.download:hover[openLabel][exists].downloadHoveringButton > .toolbarbutton-text > .status-show {
   display: inline;
 }
