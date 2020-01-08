@@ -152,6 +152,9 @@ RecordReplayInterface_Initialize(int aArgc, char* aArgv[])
   InitializeCountdownThread();
   SetupDirtyMemoryHandler();
 
+  
+  putenv((char*) "STYLO_THREADS=1");
+
   thread->SetPassThrough(false);
 
   Lock::InitializeLocks();
