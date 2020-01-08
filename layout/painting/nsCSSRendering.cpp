@@ -670,28 +670,12 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorder(
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::WebRenderLayerManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  const nsStyleBorder* styleBorder = aForFrame->Style()->StyleBorder();
-  return nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
-      aItem, aForFrame, aBorderArea, aBuilder, aResources, aSc, aManager,
-      aDisplayListBuilder, *styleBorder);
-}
-
-ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
-    nsDisplayItem* aItem, nsIFrame* aForFrame, const nsRect& aBorderArea,
-    mozilla::wr::DisplayListBuilder& aBuilder,
-    mozilla::wr::IpcResourceUpdateQueue& aResources,
-    const mozilla::layers::StackingContextHelper& aSc,
-    mozilla::layers::WebRenderLayerManager* aManager,
-    nsDisplayListBuilder* aDisplayListBuilder,
-    const nsStyleBorder& aStyleBorder) {
   
   {
     bool borderIsEmpty = false;
-    Maybe<nsCSSBorderRenderer> br =
-        nsCSSRendering::CreateBorderRendererWithStyleBorder(
-            aForFrame->PresContext(), nullptr, aForFrame, nsRect(), aBorderArea,
-            aStyleBorder, aForFrame->Style(), &borderIsEmpty,
-            aForFrame->GetSkipSides());
+    Maybe<nsCSSBorderRenderer> br = nsCSSRendering::CreateBorderRenderer(
+        aForFrame->PresContext(), nullptr, aForFrame, nsRect(), aBorderArea,
+        aForFrame->Style(), &borderIsEmpty, aForFrame->GetSkipSides());
     if (borderIsEmpty) {
       return ImgDrawResult::SUCCESS;
     }
@@ -703,7 +687,8 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
   }
 
   
-  const nsStyleImage* image = &aStyleBorder.mBorderImageSource;
+  const nsStyleBorder* styleBorder = aForFrame->Style()->StyleBorder();
+  const nsStyleImage* image = &styleBorder->mBorderImageSource;
 
   
   if (!image) {
@@ -719,10 +704,10 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
     return ImgDrawResult::NOT_SUPPORTED;
   }
 
-  if (aStyleBorder.mBorderImageRepeatH == StyleBorderImageRepeat::Round ||
-      aStyleBorder.mBorderImageRepeatH == StyleBorderImageRepeat::Space ||
-      aStyleBorder.mBorderImageRepeatV == StyleBorderImageRepeat::Round ||
-      aStyleBorder.mBorderImageRepeatV == StyleBorderImageRepeat::Space) {
+  if (styleBorder->mBorderImageRepeatH == StyleBorderImageRepeat::Round ||
+      styleBorder->mBorderImageRepeatH == StyleBorderImageRepeat::Space ||
+      styleBorder->mBorderImageRepeatV == StyleBorderImageRepeat::Round ||
+      styleBorder->mBorderImageRepeatV == StyleBorderImageRepeat::Space) {
     return ImgDrawResult::NOT_SUPPORTED;
   }
 
@@ -734,7 +719,7 @@ ImgDrawResult nsCSSRendering::CreateWebRenderCommandsForBorderWithStyleBorder(
   image::ImgDrawResult result;
   Maybe<nsCSSBorderImageRenderer> bir =
       nsCSSBorderImageRenderer::CreateBorderImageRenderer(
-          aForFrame->PresContext(), aForFrame, aBorderArea, aStyleBorder,
+          aForFrame->PresContext(), aForFrame, aBorderArea, *styleBorder,
           aItem->GetPaintRect(), aForFrame->GetSkipSides(), flags, &result);
 
   if (!bir) {
@@ -942,7 +927,9 @@ Maybe<nsCSSBorderRenderer> nsCSSRendering::CreateBorderRendererWithStyleBorder(
 static nsRect GetOutlineInnerRect(nsIFrame* aFrame) {
   nsRect* savedOutlineInnerRect =
       aFrame->GetProperty(nsIFrame::OutlineInnerRectProperty());
-  if (savedOutlineInnerRect) return *savedOutlineInnerRect;
+  if (savedOutlineInnerRect) {
+    return *savedOutlineInnerRect;
+  }
 
   
   NS_ERROR("we should have saved a frame property");
