@@ -11,9 +11,6 @@ loader.lazyRequireGetter(this, "NetworkObserver", "devtools/server/actors/networ
 loader.lazyRequireGetter(this, "NetworkEventActor", "devtools/server/actors/network-event", true);
 
 const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
-  _netEvents: new Map(),
-  _networkEventActorsByURL: new Map(),
-
   
 
 
@@ -35,6 +32,12 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
   initialize(conn, filters, parentID, messageManager) {
     Actor.prototype.initialize.call(this, conn);
+
+    
+    this._netEvents = new Map();
+
+    
+    this._networkEventActorsByURL = new Map();
 
     this.parentID = parentID;
     this.messageManager = messageManager;
