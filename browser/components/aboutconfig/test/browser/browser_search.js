@@ -25,7 +25,7 @@ add_task(async function test_search() {
     
     
     
-    this.search("wser.down   ");
+    this.search("Wser.down   ");
 
     let filteredPrefArray =
         prefArray.filter(pref => pref.includes("wser.down"));
@@ -52,5 +52,10 @@ add_task(async function test_search() {
     
     this.search("test.aboutconfig.a");
     Assert.equal(this.rows.length, 2);
+
+    
+    
+    this.search("TEST.aboutconfig.a");
+    Assert.equal(this.rows.length, 3);
   });
 });
