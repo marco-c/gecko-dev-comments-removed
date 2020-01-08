@@ -16,7 +16,6 @@
 
 class nsIURI;
 class nsDOMCSSRect;
-class nsDOMCSSRGBColor;
 
 
 
@@ -72,7 +71,6 @@ public:
                       mozilla::ErrorResult& aRv);
   void GetCounterValue(mozilla::ErrorResult& aRv);
   nsDOMCSSRect* GetRectValue(mozilla::ErrorResult& aRv);
-  nsDOMCSSRGBColor *GetRGBColorValue(mozilla::ErrorResult& aRv);
 
   
   nsROCSSPrimitiveValue();
@@ -94,7 +92,6 @@ public:
   
   void SetString(const nsAString& aString, uint16_t aType = CSS_STRING);
   void SetURI(nsIURI *aURI);
-  void SetColor(nsDOMCSSRGBColor* aColor);
   void SetRect(nsDOMCSSRect* aRect);
   void SetTime(float aValue);
   void Reset();
@@ -110,7 +107,6 @@ protected:
     int32_t         mInt32;
     uint32_t        mUint32;
     
-    nsDOMCSSRGBColor* MOZ_OWNING_REF mColor;
     nsDOMCSSRect* MOZ_OWNING_REF mRect;
     char16_t*      mString;
     nsIURI* MOZ_OWNING_REF mURI;
