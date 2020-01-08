@@ -10,8 +10,10 @@
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include "mozilla/Attributes.h"         
+#include "mozilla/Maybe.h"              
 #include "mozilla/RefPtr.h"             
 #include "mozilla/StaticPtr.h"          
+#include "mozilla/gfx/UserData.h"       
 #include "mozilla/webrender/WebRenderTypes.h" 
 
 namespace mozilla {
@@ -71,6 +73,13 @@ public:
                         wr::IpcResourceUpdateQueue& aResources,
                         wr::ImageKey& aKey);
 
+  
+
+
+
+  static Maybe<wr::ExternalImageId>
+  GetExternalId(const gfx::SourceSurfaceSharedData* aSurface);
+
 private:
   SharedSurfacesChild() = delete;
   ~SharedSurfacesChild() = delete;
@@ -83,6 +92,8 @@ private:
 
   static void Unshare(const wr::ExternalImageId& aId, nsTArray<ImageKeyData>& aKeys);
   static void DestroySharedUserData(void* aClosure);
+
+  static gfx::UserDataKey sSharedKey;
 };
 
 } 
