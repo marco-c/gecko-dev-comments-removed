@@ -285,6 +285,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "DelayNode", insecureContext: true},
 
+    {name: "DeprecationReportBody", insecureContext: true, nightly: true},
+
     {name: "DeviceLightEvent", insecureContext: true, disabled: true},
 
     {name: "DeviceMotionEvent", insecureContext: true},
@@ -348,6 +350,8 @@ var interfaceNamesInGlobalScope =
     {name: "EventSource", insecureContext: true},
 
     {name: "EventTarget", insecureContext: true},
+
+    {name: "FeaturePolicyViolationReportBody", insecureContext: true, nightly: true},
 
     {name: "File", insecureContext: true},
 
@@ -822,6 +826,12 @@ var interfaceNamesInGlobalScope =
     {name: "RadioNodeList", insecureContext: true},
 
     {name: "Range", insecureContext: true},
+
+    {name: "Report", insecureContext: true, nightly: true},
+
+    {name: "ReportBody", insecureContext: true, nightly: true},
+
+    {name: "ReportingObserver", insecureContext: true, nightly: true},
 
     {name: "Request", insecureContext: true},
 
