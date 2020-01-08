@@ -192,7 +192,7 @@ public:
 
 
   virtual bool SetLocalSSRCs(const std::vector<unsigned int>& aSSRCs) = 0;
-  virtual std::vector<unsigned int> GetLocalSSRCs() const = 0;
+  virtual std::vector<unsigned int> GetLocalSSRCs() = 0;
 
   
 
@@ -378,7 +378,8 @@ public:
 
 
 
-  static RefPtr<VideoSessionConduit> Create(RefPtr<WebRtcCallWrapper> aCall);
+  static RefPtr<VideoSessionConduit> Create(
+    RefPtr<WebRtcCallWrapper> aCall, nsCOMPtr<nsIEventTarget> aStsThread);
 
   enum FrameRequestType
   {

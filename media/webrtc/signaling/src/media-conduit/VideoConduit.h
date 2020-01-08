@@ -114,6 +114,11 @@ public:
   MediaConduitErrorCode StopReceiving() override;
   MediaConduitErrorCode StartReceiving() override;
 
+  MediaConduitErrorCode StopTransmittingLocked();
+  MediaConduitErrorCode StartTransmittingLocked();
+  MediaConduitErrorCode StopReceivingLocked();
+  MediaConduitErrorCode StartReceivingLocked();
+
   
 
 
@@ -175,17 +180,6 @@ public:
 
 
 
-  unsigned int SelectSendFrameRate(const VideoCodecConfig* codecConfig,
-                                   unsigned int old_framerate,
-                                   unsigned short sending_width,
-                                   unsigned short sending_height) const;
-
-  
-
-
-
-
-
 
 
   MediaConduitErrorCode SendVideoFrame(
@@ -229,6 +223,7 @@ public:
 
   void SetPCHandle(const std::string& aPCHandle) override
   {
+    MOZ_ASSERT(NS_IsMainThread());
     mPCHandle = aPCHandle;
   }
 
@@ -251,13 +246,14 @@ public:
   }
 
   WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall,
-                     UniquePtr<cricket::VideoAdapter>&& aVideoAdapter);
+                     UniquePtr<cricket::VideoAdapter>&& aVideoAdapter,
+                     nsCOMPtr<nsIEventTarget> aStsThread);
   virtual ~WebrtcVideoConduit();
 
   MediaConduitErrorCode InitMain();
   virtual MediaConduitErrorCode Init();
 
-  std::vector<unsigned int> GetLocalSSRCs() const override;
+  std::vector<unsigned int> GetLocalSSRCs() override;
   bool SetLocalSSRCs(const std::vector<unsigned int>& ssrcs) override;
   bool GetRemoteSSRC(unsigned int* ssrc) override;
   bool SetRemoteSSRC(unsigned int ssrc) override;
@@ -265,12 +261,17 @@ public:
   bool SetLocalCNAME(const char* cname) override;
   bool SetLocalMID(const std::string& mid) override;
 
+  bool GetRemoteSSRCLocked(unsigned int* ssrc);
+  bool SetRemoteSSRCLocked(unsigned int ssrc);
+
   bool GetSendPacketTypeStats(
       webrtc::RtcpPacketTypeCounter* aPacketCounts) override;
 
   bool GetRecvPacketTypeStats(
       webrtc::RtcpPacketTypeCounter* aPacketCounts) override;
 
+  void PollStats();
+  void UpdateVideoStatsTimer();
   bool GetVideoEncoderStats(double* framerateMean,
                             double* framerateStdDev,
                             double* bitrateMean,
@@ -299,6 +300,7 @@ public:
   uint64_t MozVideoLatencyAvg();
 
   void DisableSsrcChanges() override {
+    ASSERT_ON_THREAD(mStsThread);
     mAllowSsrcChange = false;
   }
 
@@ -309,9 +311,32 @@ private:
 
   
 
+
+
+  class CallStatistics {
+  public:
+    explicit CallStatistics(nsCOMPtr<nsIEventTarget> aStatsThread)
+      : mStatsThread(aStatsThread)
+    {}
+    void Update(const webrtc::Call::Stats& aStats);
+    int32_t RttMs() const;
+  protected:
+    const nsCOMPtr<nsIEventTarget> mStatsThread;
+  private:
+    int32_t mRttMs = 0;
+  };
+
+  
+
+
+
   class StreamStatistics {
   public:
-    void Update(const double aFrameRate, const double aBitrate);
+    explicit StreamStatistics(nsCOMPtr<nsIEventTarget> aStatsThread)
+      : mStatsThread(aStatsThread)
+    {}
+    void Update(const double aFrameRate, const double aBitrate,
+                const webrtc::RtcpPacketTypeCounter& aPacketCounts);
     
 
 
@@ -323,9 +348,16 @@ private:
         double& aOutFrStdDev,
         double& aOutBrMean,
         double& aOutBrStdDev) const;
+    const webrtc::RtcpPacketTypeCounter& PacketCounts() const;
+    bool Active() const;
+    void SetActive(bool aActive);
+  protected:
+    const nsCOMPtr<nsIEventTarget> mStatsThread;
   private:
+    bool mActive = false;
     RunningStat mFrameRate;
     RunningStat mBitrate;
+    webrtc::RtcpPacketTypeCounter mPacketCounts;
   };
 
   
@@ -333,47 +365,69 @@ private:
 
   class SendStreamStatistics : public StreamStatistics {
   public:
+    explicit SendStreamStatistics(nsCOMPtr<nsIEventTarget> aStatsThread)
+      : StreamStatistics(std::forward<nsCOMPtr<nsIEventTarget>>(aStatsThread))
+    {}
     
 
 
-
-    void DroppedFrames(uint32_t& aOutDroppedFrames) const;
+    uint32_t DroppedFrames() const;
     
 
 
-    uint32_t FramesEncoded() const {
-      return mFramesEncoded;
-    }
-    void Update(const webrtc::VideoSendStream::Stats& aStats);
+    uint32_t FramesEncoded() const;
+    void Update(const webrtc::VideoSendStream::Stats& aStats,
+                uint32_t aConfiguredSsrc);
     
 
 
-    void FrameDeliveredToEncoder() { ++mFramesDeliveredToEncoder; }
+    void FrameDeliveredToEncoder();
+
+    bool SsrcFound() const;
+    uint32_t JitterMs() const;
+    uint32_t CumulativeLost() const;
+    uint64_t BytesReceived() const;
+    uint32_t PacketsReceived() const;
   private:
     uint32_t mDroppedFrames = 0;
     uint32_t mFramesEncoded = 0;
-    mozilla::Atomic<int32_t> mFramesDeliveredToEncoder;
+    int32_t mFramesDeliveredToEncoder;
+
+    bool mSsrcFound = false;
+    uint32_t mJitterMs = 0;
+    uint32_t mCumulativeLost = 0;
+    uint64_t mBytesReceived = 0;
+    uint32_t mPacketsReceived = 0;
   };
 
   
 
+
   class ReceiveStreamStatistics : public StreamStatistics {
   public:
+    explicit ReceiveStreamStatistics(nsCOMPtr<nsIEventTarget> aStatsThread)
+      : StreamStatistics(std::forward<nsCOMPtr<nsIEventTarget>>(aStatsThread))
+    {}
     
 
 
-
-    void DiscardedPackets(uint32_t& aOutDiscPackets) const;
-   
-
+    uint32_t DiscardedPackets() const;
+    
 
 
-    void FramesDecoded(uint32_t& aFramesDecoded) const;
+    uint32_t FramesDecoded() const;
+    uint32_t JitterMs() const;
+    uint32_t CumulativeLost() const;
+    uint32_t Ssrc() const;
     void Update(const webrtc::VideoReceiveStream::Stats& aStats);
   private:
     uint32_t mDiscardedPackets = 0;
     uint32_t mFramesDecoded = 0;
+    uint32_t mJitterMs = 0;
+    uint32_t mCumulativeLost = 0;
+    uint32_t mSsrc = 0;
   };
+
   
 
 
@@ -411,17 +465,7 @@ private:
   };
 
   
-  void CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
-                                webrtc::VideoCodec& cinst);
-
-  
-  MediaConduitErrorCode ValidateCodecConfig(const VideoCodecConfig* codecInfo);
-
-  
   void DumpCodecDB() const;
-
-  bool CodecsDifferent(const nsTArray<UniquePtr<VideoCodecConfig>>& a,
-                       const nsTArray<UniquePtr<VideoCodecConfig>>& b);
 
   
   
@@ -459,13 +503,38 @@ private:
   bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
 
   mozilla::ReentrantMonitor mTransportMonitor;
+
+  
   RefPtr<TransportInterface> mTransmitterTransport;
+
+  
   RefPtr<TransportInterface> mReceiverTransport;
+
+  
   RefPtr<mozilla::VideoRenderer> mRenderer;
+
+  
+  unsigned short mReceivingWidth = 0;
+
+  
+  unsigned short mReceivingHeight = 0;
+
+  
+  const nsCOMPtr<nsIEventTarget> mStsThread;
+
+  Mutex mMutex;
 
   
   
   UniquePtr<cricket::VideoAdapter> mVideoAdapter;
+
+  
+  
+  AutoTArray<rtc::VideoSinkInterface<webrtc::VideoFrame>*, 1> mRegisteredSinks;
+
+  
+  
+  
   rtc::VideoBroadcaster mVideoBroadcaster;
 
   
@@ -476,71 +545,113 @@ private:
   mozilla::Atomic<bool> mEngineTransmitting; 
   mozilla::Atomic<bool> mEngineReceiving;    
 
-  int mCapId = -1; 
   
   nsTArray<UniquePtr<VideoCodecConfig>> mRecvCodecList;
 
   
-  Mutex mCodecMutex;
   nsAutoPtr<VideoCodecConfig> mCurSendCodecConfig;
-  SendStreamStatistics mSendStreamStats;
-  ReceiveStreamStatistics mRecvStreamStats;
-  webrtc::RtcpPacketTypeCounter mSendPacketCounts;
-  webrtc::RtcpPacketTypeCounter mRecvPacketCounts;
 
   
+  SendStreamStatistics mSendStreamStats;
+
+  
+  ReceiveStreamStatistics mRecvStreamStats;
+
+  
+  CallStatistics mCallStats;
+
+  
+  
   webrtc::VideoReceiveStream* mRecvStream = nullptr;
+
+  
+  
   webrtc::VideoSendStream* mSendStream = nullptr;
 
+  
+  
   unsigned short mLastWidth = 0;
+
+  
+  
   unsigned short mLastHeight = 0;
-  unsigned short mReceivingWidth = 0;
-  unsigned short mReceivingHeight = 0;
-  unsigned int   mSendingFramerate;
+
+  
+  unsigned int mSendingFramerate;
+
+  
+  
   bool mVideoLatencyTestEnable = false;
+
+  
   uint64_t mVideoLatencyAvg = 0;
+
+  
   
   int mMinBitrate = 0;
   int mStartBitrate = 0;
   int mPrefMaxBitrate = 0;
   int mNegotiatedMaxBitrate = 0;
   int mMinBitrateEstimate = 0;
-  bool mDenoising = false;
-  bool mLockScaling = false; 
-  uint8_t mSpatialLayers = 1;
-  uint8_t mTemporalLayers = 1;
 
-  rtc::VideoSinkWants mLastSinkWanted;
+  
+  
+  bool mDenoising = false;
+
+  
+  
+  bool mLockScaling = false;
+
+  
+  uint8_t mSpatialLayers = 1;
+
+  
+  uint8_t mTemporalLayers = 1;
 
   static const unsigned int sAlphaNum = 7;
   static const unsigned int sAlphaDen = 8;
   static const unsigned int sRoundingPadding = 1024;
 
+  
   RefPtr<WebrtcAudioConduit> mSyncedTo;
 
-  webrtc::VideoCodecMode mCodecMode;
+  
+  Atomic<webrtc::VideoCodecMode> mCodecMode;
 
   
-  RefPtr<WebRtcCallWrapper> mCall;
+  
+  
+  const RefPtr<WebRtcCallWrapper> mCall;
 
+  
   webrtc::VideoSendStream::Config mSendStreamConfig;
+
+  
   VideoEncoderConfigBuilder mEncoderConfig;
 
+  
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;
 
   
+  
   bool mAllowSsrcChange = true;
+
+  
   bool mWaitingForInitialSsrc = true;
 
   
-  uint32_t mRecvSSRC = 0; 
+  
+  bool mRecvSsrcSetInProgress = false;
 
   
-  bool mRecvSSRCSetInProgress = false;
+  
+  Atomic<uint32_t> mRecvSSRC; 
+
   struct QueuedPacket {
     int mLen;
     uint8_t mData[1];
   };
+  
   nsTArray<UniquePtr<QueuedPacket>> mQueuedPackets;
 
   
@@ -548,11 +659,17 @@ private:
   
   nsAutoPtr<webrtc::VideoEncoder> mEncoder; 
   std::vector<std::unique_ptr<webrtc::VideoDecoder>> mDecoders;
+  
   WebrtcVideoEncoder* mSendCodecPlugin = nullptr;
+  
   WebrtcVideoDecoder* mRecvCodecPlugin = nullptr;
 
+  
   nsCOMPtr<nsITimer> mVideoStatsTimer;
+  
+  bool mVideoStatsTimerActive = false;
 
+  
   std::string mPCHandle;
 };
 } 
