@@ -88,7 +88,7 @@ const TargetFactory = exports.TargetFactory = {
     
     const response = await client.getTab({ tab });
 
-    return new TabTarget({
+    return new Target({
       client,
       form: response.tab,
       
@@ -113,7 +113,7 @@ const TargetFactory = exports.TargetFactory = {
   forRemoteTab: function(options) {
     let targetPromise = promiseTargets.get(options);
     if (targetPromise == null) {
-      const target = new TabTarget(options);
+      const target = new Target(options);
       targetPromise = target.attach().then(() => target);
       targetPromise.catch(e => {
         console.error("Exception while attaching target", e);
@@ -126,7 +126,7 @@ const TargetFactory = exports.TargetFactory = {
   forWorker: function(workerTargetFront) {
     let target = targets.get(workerTargetFront);
     if (target == null) {
-      target = new TabTarget({
+      target = new Target({
         client: workerTargetFront.client,
         
         
@@ -212,7 +212,7 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-function TabTarget({ form, client, chrome, activeTab = null, tab = null }) {
+function Target({ form, client, chrome, activeTab = null, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
   this._onTabNavigated = this._onTabNavigated.bind(this);
@@ -262,9 +262,9 @@ function TabTarget({ form, client, chrome, activeTab = null, tab = null }) {
   this._inspector = null;
 }
 
-exports.TabTarget = TabTarget;
+exports.Target = Target;
 
-TabTarget.prototype = {
+Target.prototype = {
   
 
 
@@ -817,7 +817,7 @@ TabTarget.prototype = {
 
   toString: function() {
     const id = this._tab ? this._tab : (this._form && this._form.actor);
-    return `TabTarget:${id}`;
+    return `Target:${id}`;
   },
 
   
