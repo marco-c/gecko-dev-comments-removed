@@ -25,7 +25,7 @@ protected:
   }
 
   ReadOnlyTargetFunction<MMPolicyT>
-  ResolveRedirectedAddress(const void* aOriginalFunction)
+  ResolveRedirectedAddress(FARPROC aOriginalFunction)
   {
     ReadOnlyTargetFunction<MMPolicyT> origFn(mVMPolicy, aOriginalFunction);
     
