@@ -17,6 +17,7 @@
   
   <script src="/resources/testharness.js"></script>
   <script src="/resources/testharnessreport.js"></script>
+  <script src="/webrtc/RTCPeerConnection-helper.js"></script>
   <script type="text/javascript">
   var test = async_test('Can set up a basic WebRTC call with no data.');
 
@@ -125,7 +126,7 @@
 
     // The offerToReceiveVideo is necessary and sufficient to make
     // an actual connection.
-    gFirstConnection.createOffer({offerToReceiveVideo: true})
+    generateVideoReceiveOnlyOffer(gFirstConnection)
       .then(onOfferCreated, failed('createOffer'));
   });
 </script>

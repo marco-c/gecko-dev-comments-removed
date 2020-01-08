@@ -160,6 +160,16 @@ function generateOffer(options={}) {
   });
 }
 
+async function generateVideoReceiveOnlyOffer(pc)
+{
+    try {
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        return pc.createOffer();
+    } catch(e) {
+        return pc.createOffer({ offerToReceiveVideo: true });
+    }
+}
+
 
 
 function generateAnswer(offer) {
