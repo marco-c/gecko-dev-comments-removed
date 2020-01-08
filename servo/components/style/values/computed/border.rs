@@ -4,8 +4,7 @@
 
 
 
-use crate::values::generics::NonNegative;
-use crate::values::computed::length::{NonNegativeLengthOrPercentage, NonNegativeLength};
+use crate::values::computed::length::{NonNegativeLength, NonNegativeLengthOrPercentage};
 use crate::values::computed::{NonNegativeNumber, NonNegativeNumberOrPercentage};
 use crate::values::generics::border::BorderCornerRadius as GenericBorderCornerRadius;
 use crate::values::generics::border::BorderImageSideWidth as GenericBorderImageSideWidth;
@@ -14,6 +13,7 @@ use crate::values::generics::border::BorderRadius as GenericBorderRadius;
 use crate::values::generics::border::BorderSpacing as GenericBorderSpacing;
 use crate::values::generics::rect::Rect;
 use crate::values::generics::size::Size;
+use crate::values::generics::NonNegative;
 use app_units::Au;
 
 pub use crate::values::specified::border::BorderImageRepeat;
@@ -22,7 +22,8 @@ pub use crate::values::specified::border::BorderImageRepeat;
 pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
 
-pub type BorderImageSideWidth = GenericBorderImageSideWidth<NonNegativeLengthOrPercentage, NonNegativeNumber>;
+pub type BorderImageSideWidth =
+    GenericBorderImageSideWidth<NonNegativeLengthOrPercentage, NonNegativeNumber>;
 
 
 pub type BorderImageSlice = GenericBorderImageSlice<NonNegativeNumberOrPercentage>;
