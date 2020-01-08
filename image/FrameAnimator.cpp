@@ -498,8 +498,13 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   
   
   
+  
+  
+  
+  
+  
   if (currentFrameEndTime > aTime && aState.mCompositedFrameInvalid &&
-      mLastCompositedFrameIndex >= 0) {
+      (mLastCompositedFrameIndex >= 0 || currentFrame->IsFullFrame())) {
     aState.mCompositedFrameInvalid = false;
     ret.mDirtyRect = IntRect(IntPoint(0,0), mSize);
   }

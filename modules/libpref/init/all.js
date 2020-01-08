@@ -228,7 +228,8 @@ pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_i
 
 
 
-pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "");
+pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys",
+     "medium.com/p/");
 #else
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
 #endif
@@ -4685,7 +4686,7 @@ pref("image.animated.decode-on-demand.recycle", true);
 
 
 
-pref("image.animated.generate-full-frames", false);
+pref("image.animated.generate-full-frames", true);
 
 
 
