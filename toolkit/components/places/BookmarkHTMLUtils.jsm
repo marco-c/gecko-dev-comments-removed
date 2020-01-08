@@ -55,6 +55,7 @@
 
 
 
+
 var EXPORTED_SYMBOLS = [ "BookmarkHTMLUtils" ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -283,12 +284,6 @@ function Frame(aFolder) {
   
 
 
-
-  this.previousFeed = null;
-
-  
-
-
   this.previousItem = null;
 
   
@@ -488,13 +483,11 @@ BookmarkImporter.prototype = {
   _handleLinkBegin: function handleLinkBegin(aElt) {
     let frame = this._curFrame;
 
-    frame.previousFeed = null;
     frame.previousItem = null;
     frame.previousText = ""; 
 
     
     let href = this._safeTrim(aElt.getAttribute("href"));
-    let feedUrl = this._safeTrim(aElt.getAttribute("feedurl"));
     let icon = this._safeTrim(aElt.getAttribute("icon"));
     let iconUri = this._safeTrim(aElt.getAttribute("icon_uri"));
     let lastCharset = this._safeTrim(aElt.getAttribute("last_charset"));
@@ -505,36 +498,17 @@ BookmarkImporter.prototype = {
     let tags = this._safeTrim(aElt.getAttribute("tags"));
 
     
-    
-    if (feedUrl) {
-      frame.previousFeed = feedUrl;
-    }
-
-    
-    if (href) {
-      
-      
-      try {
-        frame.previousLink = Services.io.newURI(href).spec;
-      } catch (e) {
-        if (!frame.previousFeed) {
-          frame.previousLink = null;
-          return;
-        }
-      }
-    } else {
+    try {
+      frame.previousLink = Services.io.newURI(href).spec;
+    } catch (e) {
       frame.previousLink = null;
-      
-      
-      if (!frame.previousFeed) {
-        return;
-      }
+      return;
     }
 
     let bookmark = {};
 
     
-    if (frame.previousLink && !frame.previousFeed) {
+    if (frame.previousLink) {
       bookmark.url = frame.previousLink;
     }
 
@@ -548,13 +522,6 @@ BookmarkImporter.prototype = {
 
     if (!dateAdded && lastModified) {
       bookmark.dateAdded = bookmark.lastModified;
-    }
-
-    if (frame.previousFeed) {
-      
-      frame.folder.children.push(bookmark);
-      frame.previousItem = bookmark;
-      return;
     }
 
     if (tags) {
@@ -627,26 +594,6 @@ BookmarkImporter.prototype = {
     frame.previousText = frame.previousText.trim();
 
     if (frame.previousItem != null) {
-      if (frame.previousFeed) {
-        if (!frame.previousItem.hasOwnProperty("annos")) {
-          frame.previousItem.annos = [];
-        }
-        frame.previousItem.type = PlacesUtils.bookmarks.TYPE_FOLDER;
-        frame.previousItem.annos.push({
-          "name": PlacesUtils.LMANNO_FEEDURI,
-          "flags": 0,
-          "expires": 4,
-          "value": frame.previousFeed,
-        });
-        if (frame.previousLink) {
-          frame.previousItem.annos.push({
-            "name": PlacesUtils.LMANNO_SITEURI,
-            "flags": 0,
-            "expires": 4,
-            "value": frame.previousLink,
-          });
-        }
-      }
       frame.previousItem.title = frame.previousText;
     }
 
@@ -956,9 +903,7 @@ BookmarkExporter.prototype = {
     let localIndent = aIndent + EXPORT_INDENT;
 
     for (let child of aItem.children) {
-      if (child.annos && child.annos.some(anno => anno.name == PlacesUtils.LMANNO_FEEDURI)) {
-        this._writeLivemark(child, localIndent);
-      } else if (child.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER) {
+      if (child.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER) {
         await this._writeContainer(child, localIndent);
       } else if (child.type == PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR) {
         this._writeSeparator(child, localIndent);
@@ -974,17 +919,6 @@ BookmarkExporter.prototype = {
     if (aItem.title)
       this._writeAttribute("NAME", escapeHtmlEntities(aItem.title));
     this._write(">");
-  },
-
-  _writeLivemark(aItem, aIndent) {
-    this._write(aIndent + "<DT><A");
-    let feedSpec = aItem.annos.find(anno => anno.name == PlacesUtils.LMANNO_FEEDURI).value;
-    this._writeAttribute("FEEDURL", escapeUrl(feedSpec));
-    let siteSpecAnno = aItem.annos.find(anno => anno.name == PlacesUtils.LMANNO_SITEURI);
-    if (siteSpecAnno)
-      this._writeAttribute("HREF", escapeUrl(siteSpecAnno.value));
-    this._writeLine(">" + escapeHtmlEntities(aItem.title) + "</A>");
-    this._writeDescription(aItem, aIndent);
   },
 
   async _writeItem(aItem, aIndent) {

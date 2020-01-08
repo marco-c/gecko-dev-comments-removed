@@ -945,23 +945,6 @@ DefineTransaction.defineArrayInputProp("excludingAnnotations",
 
 function createItemsFromBookmarksTree(tree, restoring = false,
                                       excludingAnnotations = []) {
-  function extractLivemarkDetails(annos) {
-    let feedURI = null, siteURI = null;
-    annos = annos.filter(anno => {
-      switch (anno.name) {
-        case PlacesUtils.LMANNO_FEEDURI:
-          feedURI = Services.io.newURI(anno.value);
-          return false;
-        case PlacesUtils.LMANNO_SITEURI:
-          siteURI = Services.io.newURI(anno.value);
-          return false;
-        default:
-          return true;
-      }
-    });
-    return [feedURI, siteURI, annos];
-  }
-
   async function createItem(item,
                             parentGuid,
                             index = PlacesUtils.bookmarks.DEFAULT_INDEX) {
@@ -993,33 +976,17 @@ function createItemsFromBookmarksTree(tree, restoring = false,
         break;
       }
       case PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER: {
-        
-        let feedURI, siteURI;
-        [feedURI, siteURI, annos] = extractLivemarkDetails(annos);
-        if (!feedURI) {
-          info.type = PlacesUtils.bookmarks.TYPE_FOLDER;
-          if (typeof(item.title) == "string")
-            info.title = item.title;
-          guid = (await PlacesUtils.bookmarks.insert(info)).guid;
-          if ("children" in item) {
-            for (let child of item.children) {
-              await createItem(child, guid);
-            }
+        info.type = PlacesUtils.bookmarks.TYPE_FOLDER;
+        if (typeof(item.title) == "string")
+          info.title = item.title;
+        guid = (await PlacesUtils.bookmarks.insert(info)).guid;
+        if ("children" in item) {
+          for (let child of item.children) {
+            await createItem(child, guid);
           }
-          if (restoring)
-            shouldResetLastModified = true;
-        } else {
-          info.parentId = await PlacesUtils.promiseItemId(parentGuid);
-          info.feedURI = feedURI;
-          info.siteURI = siteURI;
-          if (info.dateAdded)
-            info.dateAdded = PlacesUtils.toPRTime(info.dateAdded);
-          if (info.lastModified)
-            info.lastModified = PlacesUtils.toPRTime(info.lastModified);
-          if (typeof(item.title) == "string")
-            info.title = item.title;
-          guid = (await PlacesUtils.livemarks.addLivemark(info)).guid;
         }
+        if (restoring)
+          shouldResetLastModified = true;
         break;
       }
       case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR: {
@@ -1194,49 +1161,6 @@ PT.NewSeparator.prototype = Object.seal({
     this.undo = PlacesUtils.bookmarks.remove.bind(PlacesUtils.bookmarks, info);
     this.redo = PlacesUtils.bookmarks.insert.bind(PlacesUtils.bookmarks, info);
     return info.guid;
-  },
-});
-
-
-
-
-
-
-
-
-
-
-
-PT.NewLivemark = DefineTransaction(["feedUrl", "title", "parentGuid"],
-                                   ["siteUrl", "index", "annotations"]);
-PT.NewLivemark.prototype = Object.seal({
-  async execute({ feedUrl, title, parentGuid, siteUrl, index, annotations }) {
-    let livemarkInfo = { title,
-                         feedURI: Services.io.newURI(feedUrl.href),
-                         siteURI: siteUrl ? Services.io.newURI(siteUrl.href) : null,
-                         index,
-                         parentGuid};
-    let createItem = async function() {
-      let livemark = await PlacesUtils.livemarks.addLivemark(livemarkInfo);
-      if (annotations.length > 0) {
-        PlacesUtils.setAnnotationsForItem(livemark.id, annotations,
-          Ci.nsINavBookmarksService.SOURCE_DEFAULT, true);
-      }
-      return livemark;
-    };
-
-    let livemark = await createItem();
-    livemarkInfo.guid = livemark.guid;
-    livemarkInfo.dateAdded = livemark.dateAdded;
-    livemarkInfo.lastModified = livemark.lastModified;
-
-    this.undo = async function() {
-      await PlacesUtils.livemarks.removeLivemark(livemark);
-    };
-    this.redo = async function() {
-      livemark = await createItem();
-    };
-    return livemark.guid;
   },
 });
 

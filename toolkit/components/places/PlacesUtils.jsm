@@ -127,9 +127,7 @@ function getAnnotationsForItem(aItemId) {
 
 
 
-
-
-function serializeNode(aNode, aIsLivemark) {
+function serializeNode(aNode) {
   let data = {};
 
   data.title = aNode.title;
@@ -138,7 +136,6 @@ function serializeNode(aNode, aIsLivemark) {
   
   data.id = aNode.itemId;
   data.itemGuid = aNode.bookmarkGuid;
-  data.livemark = aIsLivemark;
   
   
   data.instanceId = PlacesUtils.instanceId;
@@ -925,11 +922,7 @@ var PlacesUtils = {
 
 
 
-
-
-
-
-  wrapNode(aNode, aType, aFeedURI) {
+  wrapNode(aNode, aType) {
     
     
     
@@ -960,10 +953,6 @@ var PlacesUtils = {
       
       let escapedTitle = node.title ? htmlEscape(node.title) : "";
 
-      if (aFeedURI) {
-        return `<A HREF="${aFeedURI}">${escapedTitle}</A>${NEWLINE}`;
-      }
-
       if (PlacesUtils.nodeIsContainer(node)) {
         asContainer(node);
         let wasOpen = node.containerOpen;
@@ -990,10 +979,6 @@ var PlacesUtils = {
     }
 
     function gatherDataText(node) {
-      if (aFeedURI) {
-        return aFeedURI;
-      }
-
       if (PlacesUtils.nodeIsContainer(node)) {
         asContainer(node);
         let wasOpen = node.containerOpen;
@@ -1022,11 +1007,12 @@ var PlacesUtils = {
       case this.TYPE_X_MOZ_PLACE_SEPARATOR:
       case this.TYPE_X_MOZ_PLACE_CONTAINER: {
         
-        return serializeNode(aNode, aFeedURI);
+        return serializeNode(aNode);
       }
       case this.TYPE_X_MOZ_URL: {
-        if (aFeedURI || PlacesUtils.nodeIsURI(aNode))
-          return (aFeedURI || aNode.uri) + NEWLINE + aNode.title;
+        if (PlacesUtils.nodeIsURI(aNode)) {
+          return aNode.uri + NEWLINE + aNode.title;
+        }
         if (PlacesUtils.nodeIsContainer(aNode)) {
           return PlacesUtils.getURLsForContainerNode(aNode)
             .map(item => item.uri + "\n" + item.title)

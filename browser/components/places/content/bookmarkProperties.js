@@ -54,7 +54,6 @@
 
 
 
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -72,7 +71,6 @@ XPCOMUtils.defineLazyScriptGetter(this, ["PlacesInsertionPoint", "PlacesControll
 
 const BOOKMARK_ITEM = 0;
 const BOOKMARK_FOLDER = 1;
-const LIVEMARK_CONTAINER = 2;
 
 const ACTION_EDIT = 0;
 const ACTION_ADD = 1;
@@ -113,9 +111,6 @@ var BookmarkPropertiesPanel = {
       if (this._URIs.length)
         return this._strings.getString("dialogAcceptLabelAddMulti");
 
-      if (this._itemType == LIVEMARK_CONTAINER)
-        return this._strings.getString("dialogAcceptLabelAddLivemark");
-
       if (this._dummyItem)
         return this._strings.getString("dialogAcceptLabelAddItem");
 
@@ -132,8 +127,6 @@ var BookmarkPropertiesPanel = {
     if (this._action == ACTION_ADD) {
       if (this._itemType == BOOKMARK_ITEM)
         return this._strings.getString("dialogTitleAddBookmark");
-      if (this._itemType == LIVEMARK_CONTAINER)
-        return this._strings.getString("dialogTitleAddLivemark");
 
       
       if (this._itemType != BOOKMARK_FOLDER)
@@ -211,21 +204,6 @@ var BookmarkPropertiesPanel = {
               this._dummyItem = true;
           }
           break;
-
-        case "livemark":
-          this._itemType = LIVEMARK_CONTAINER;
-          if ("feedURI" in dialogInfo)
-            this._feedURI = dialogInfo.feedURI;
-          if ("siteURI" in dialogInfo)
-            this._siteURI = dialogInfo.siteURI;
-
-          if (!this._title) {
-            if (this._feedURI) {
-              this._title = await PlacesUtils.history.fetch(this._feedURI) ||
-                            this._feedURI.spec;
-            } else
-              this._title = this._strings.getString("newLivemarkDefault");
-          }
       }
     } else { 
       this._node = dialogInfo.node;
@@ -473,12 +451,6 @@ var BookmarkPropertiesPanel = {
       }
 
       itemGuid = await PlacesTransactions.NewBookmark(info).transact();
-    } else if (this._itemType == LIVEMARK_CONTAINER) {
-      info.feedUrl = this._feedURI;
-      if (this._siteURI)
-        info.siteUrl = this._siteURI;
-
-      itemGuid = await PlacesTransactions.NewLivemark(info).transact();
     } else if (this._itemType == BOOKMARK_FOLDER) {
       
       info.children = this._URIs.map(item => {

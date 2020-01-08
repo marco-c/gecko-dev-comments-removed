@@ -105,10 +105,6 @@
 #define PLACES_BUNDLE "chrome://places/locale/places.properties"
 
 
-#define LMANNO_FEEDURI "livemark/feedURI"
-#define LMANNO_SITEURI "livemark/siteURI"
-
-
 
 #define MOBILE_ROOT_ANNO "mobile/bookmarksRoot"
 

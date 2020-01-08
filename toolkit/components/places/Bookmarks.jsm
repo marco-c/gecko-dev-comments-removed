@@ -388,7 +388,6 @@ var Bookmarks = Object.freeze({
 
     
     let insertInfos = [];
-    let insertLivemarkInfos = [];
     let urlsThatMightNeedPlaces = [];
 
     
@@ -477,20 +476,6 @@ var Bookmarks = Object.freeze({
           urlsThatMightNeedPlaces.push(insertInfo.url);
         }
 
-        
-        
-        
-        if (isLivemark(insertInfo)) {
-          
-          let livemarkInfo = Object.assign({}, insertInfo);
-
-          
-          delete insertInfo.annos;
-
-          
-          insertLivemarkInfos.push(livemarkInfo);
-        }
-
         insertInfos.push(insertInfo);
         
         
@@ -532,25 +517,6 @@ var Bookmarks = Object.freeze({
 
       await insertBookmarkTree(insertInfos, source, treeParent,
                                urlsThatMightNeedPlaces, lastAddedForParent);
-
-      for (let info of insertLivemarkInfos) {
-        try {
-          await insertLivemarkData(info);
-        } catch (ex) {
-          
-          if (fixupOrSkipInvalidEntries) {
-            
-            
-            let placeholderIndex = insertInfos.findIndex(item => item.guid == info.guid);
-            if (placeholderIndex != -1) {
-              insertInfos.splice(placeholderIndex, 1);
-            }
-          } else {
-            
-            throw ex;
-          }
-        }
-      }
 
       
       
@@ -1826,17 +1792,6 @@ function insertBookmark(item, parent) {
   });
 }
 
-
-
-
-
-
-
-function isLivemark(node) {
-  return node.type == Bookmarks.TYPE_FOLDER && node.annos &&
-         node.annos.some(anno => anno.name == PlacesUtils.LMANNO_FEEDURI);
-}
-
 function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: insertBookmarkTree", async function(db) {
     await db.executeTransaction(async function transaction() {
@@ -1884,56 +1839,6 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
 
     return items;
   });
-}
-
-
-
-
-
-
-async function insertLivemarkData(item) {
-  
-  
-  let placeholder = await Bookmarks.fetch(item.guid);
-  let index = placeholder.index;
-  await removeBookmarks([item], {source: item.source});
-
-  let feedURI = null;
-  let siteURI = null;
-  item.annos = item.annos.filter(function(aAnno) {
-    switch (aAnno.name) {
-      case PlacesUtils.LMANNO_FEEDURI:
-        feedURI = NetUtil.newURI(aAnno.value);
-        return false;
-      case PlacesUtils.LMANNO_SITEURI:
-        siteURI = NetUtil.newURI(aAnno.value);
-        return false;
-      default:
-        return true;
-    }
-  });
-
-  if (feedURI) {
-    item.feedURI = feedURI;
-    item.siteURI = siteURI;
-    item.index = index;
-
-    if (item.dateAdded) {
-      item.dateAdded = PlacesUtils.toPRTime(item.dateAdded);
-    }
-    if (item.lastModified) {
-      item.lastModified = PlacesUtils.toPRTime(item.lastModified);
-    }
-
-    let livemark = await PlacesUtils.livemarks.addLivemark(item);
-
-    let id = livemark.id;
-    if (item.annos && item.annos.length) {
-      
-      
-      PlacesUtils.setAnnotationsForItem(id, item.annos, item.source, true);
-    }
-  }
 }
 
 

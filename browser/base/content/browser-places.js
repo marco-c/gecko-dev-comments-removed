@@ -514,33 +514,6 @@ var PlacesCommandHook = {
 
 
 
-  async addLiveBookmark(url, feedTitle) {
-    let toolbarIP = new PlacesInsertionPoint({
-      parentId: PlacesUtils.toolbarFolderId,
-      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    });
-
-    let feedURI = makeURI(url);
-    let title = feedTitle || gBrowser.contentTitle;
-
-    PlacesUIUtils.showBookmarkDialog({ action: "add",
-                                       type: "livemark",
-                                       feedURI,
-                                       siteURI: gBrowser.currentURI,
-                                       title,
-                                       defaultInsertionPoint: toolbarIP,
-                                       hiddenRows: [ "feedLocation",
-                                                     "siteLocation" ],
-                                     }, window);
-  },
-
-  
-
-
-
-
-
-
   showPlacesOrganizer(item) {
     var organizer = Services.wm.getMostRecentWindow("Places:Organizer");
     
