@@ -33,7 +33,7 @@
     var transferable = Cc['@mozilla.org/widget/transferable;1']
                          .createInstance(Ci.nsITransferable);
     transferable.init(getLoadContext());
-    transferable.setTransferData("application/x-moz-file", file, 0);
+    transferable.setTransferData("application/x-moz-file", file);
     return transferable;
   }
 
