@@ -384,8 +384,6 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-
-
   createASRouterEvent(action) {
     const ping = {
       client_id: "n/a",
@@ -393,15 +391,13 @@ this.TelemetryFeed = class TelemetryFeed {
       locale: Services.locale.appLocaleAsLangTag,
       impression_id: this._impressionId,
     };
-    if (action.data.includeClientID) {
-      
-      delete ping.client_id;
-      delete action.data.includeClientID;
-      ping.impression_id = "n/a";
-    }
     const event = Object.assign(ping, action.data);
     if (event.action === "cfr_user_event") {
       return this.applyCFRPolicy(event);
+    } else if (event.action === "snippets_user_event") {
+      return this.applySnippetsPolicy(event);
+    } else if (event.action === "onboarding_user_event") {
+      return this.applyOnboardingPolicy(event);
     }
     return event;
   }
@@ -424,6 +420,28 @@ this.TelemetryFeed = class TelemetryFeed {
     }
     
     delete ping.bucket_id;
+    return ping;
+  }
+
+  
+
+
+
+  applySnippetsPolicy(ping) {
+    
+    delete ping.client_id;
+    ping.impression_id = "n/a";
+    return ping;
+  }
+
+  
+
+
+
+  applyOnboardingPolicy(ping) {
+    
+    delete ping.client_id;
+    ping.impression_id = "n/a";
     return ping;
   }
 
