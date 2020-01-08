@@ -493,12 +493,26 @@ BinASTParser<Tok>::checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> pos
     
     
     uint32_t i = 0;
+    const bool hasRest = parseContext_->functionBox()->hasRest();
     for (ParseNode* param : params->contents()) {
         if (param->isKind(ParseNodeKind::Assign)) {
             param = param->as<AssignmentNode>().left();
         }
 
-        if (param->isKind(ParseNodeKind::Name)) {
+        
+        const bool isRest = hasRest && !param->pn_next;
+        if (isRest) {
+            
+
+            
+            if (i >= positionalParams.get().length()) {
+                continue;
+            }
+
+            if (positionalParams.get()[i]) {
+                return raiseError("Expected positional parameter per AssertedParameterScope.paramNames, got rest parameter");
+            }
+        } else if (param->isKind(ParseNodeKind::Name)) {
             
 
             
@@ -509,13 +523,13 @@ BinASTParser<Tok>::checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> pos
             JSAtom* name = positionalParams.get()[i];
             if (!name) {
                 
-                return raiseError("AssertedParameterScope.paramNames asserted destructuring/rest parameter, got positional parameter");
+                return raiseError("Expected destructuring/rest parameter per AssertedParameterScope.paramNames, got positional parameter");
             }
 
             
             if (param->name() != name) {
                 
-                return raiseError("AssertedPositionalParameterName: name mismatch");
+                return raiseError("Name mismatch between AssertedPositionalParameterName in AssertedParameterScope.paramNames and actual parameter");
             }
 
             
@@ -524,8 +538,7 @@ BinASTParser<Tok>::checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> pos
             
 
             MOZ_ASSERT(param->isKind(ParseNodeKind::Object) ||
-                       param->isKind(ParseNodeKind::Array) ||
-                       param->isKind(ParseNodeKind::Spread));
+                       param->isKind(ParseNodeKind::Array));
 
             
             if (i >= positionalParams.get().length()) {
@@ -533,11 +546,7 @@ BinASTParser<Tok>::checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> pos
             }
 
             if (positionalParams.get()[i]) {
-                if (param->isKind(ParseNodeKind::Spread)) {
-                    return raiseError("AssertedParameterScope.paramNames asserted positional parameter, got rest parameter");
-                } else {
-                    return raiseError("AssertedParameterScope.paramNames asserted positional parameter, got destructuring parameter");
-                }
+                return raiseError("Expected positional parameter per AssertedParameterScope.paramNames, got destructuring parameter");
             }
         }
 
