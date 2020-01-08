@@ -92,6 +92,7 @@ pub enum DepthFunction {
     LessEqual = gl::LEQUAL,
 }
 
+#[repr(u32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -464,6 +465,14 @@ impl ExternalTexture {
     }
 }
 
+bitflags! {
+    #[derive(Default)]
+    pub struct TextureFlags: u32 {
+        /// This texture corresponds to one of the shared texture caches.
+        const IS_SHARED_TEXTURE_CACHE = 1 << 0;
+    }
+}
+
 
 
 
@@ -477,6 +486,7 @@ pub struct Texture {
     width: u32,
     height: u32,
     filter: TextureFilter,
+    flags: TextureFlags,
     
     
     
@@ -535,14 +545,29 @@ impl Texture {
     }
 
     
+    pub fn flags(&self) -> &TextureFlags {
+        &self.flags
+    }
+
     
-    pub fn size_in_bytes(&self) -> usize {
+    pub fn flags_mut(&mut self) -> &mut TextureFlags {
+        &mut self.flags
+    }
+
+    
+    
+    pub fn layer_size_in_bytes(&self) -> usize {
         assert!(self.layer_count > 0 || self.width + self.height == 0);
         let bpp = self.format.bytes_per_pixel() as usize;
         let w = self.width as usize;
         let h = self.height as usize;
-        let count = self.layer_count as usize;
-        bpp * w * h * count
+        bpp * w * h
+    }
+
+    
+    
+    pub fn size_in_bytes(&self) -> usize {
+        self.layer_size_in_bytes() * (self.layer_count as usize)
     }
 
     #[cfg(feature = "replay")]
@@ -1454,6 +1479,7 @@ impl Device {
             fbos: vec![],
             fbos_with_depth: vec![],
             last_frame_used: self.frame_id,
+            flags: TextureFlags::default(),
         };
         self.bind_texture(DEFAULT_TEXTURE, &texture);
         self.set_texture_parameters(texture.target, filter);
@@ -1738,6 +1764,29 @@ impl Device {
             dest_rect.origin.y,
             dest_rect.origin.x + dest_rect.size.width,
             dest_rect.origin.y + dest_rect.size.height,
+            gl::COLOR_BUFFER_BIT,
+            gl::LINEAR,
+        );
+    }
+
+    
+    
+    
+    pub fn blit_render_target_invert_y(
+        &mut self,
+        src_rect: DeviceIntRect,
+        dest_rect: DeviceIntRect,
+    ) {
+        debug_assert!(self.inside_frame);
+        self.gl.blit_framebuffer(
+            src_rect.origin.x,
+            src_rect.origin.y,
+            src_rect.origin.x + src_rect.size.width,
+            src_rect.origin.y + src_rect.size.height,
+            dest_rect.origin.x,
+            dest_rect.origin.y + dest_rect.size.height,
+            dest_rect.origin.x + dest_rect.size.width,
+            dest_rect.origin.y,
             gl::COLOR_BUFFER_BIT,
             gl::LINEAR,
         );

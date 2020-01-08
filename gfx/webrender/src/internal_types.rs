@@ -127,6 +127,8 @@ pub struct TextureCacheAllocInfo {
     pub layer_count: i32,
     pub format: ImageFormat,
     pub filter: TextureFilter,
+    
+    pub is_shared_cache: bool,
 }
 
 
