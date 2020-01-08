@@ -180,8 +180,12 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
 
   if (mPendingSheets == 0) {
     
-    mResources->ComputeServoStyles(
-      *mBoundDocument->GetShell()->StyleSet());
+
+    
+    
+    if (nsIPresShell* shell = mBoundDocument->GetShell()) {
+      mResources->ComputeServoStyles(*shell->StyleSet());
+    }
 
     
     if (!mInLoadResourcesFunc)
