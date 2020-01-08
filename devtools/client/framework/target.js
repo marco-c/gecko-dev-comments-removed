@@ -777,7 +777,8 @@ Target.prototype = {
       
       this.emit("close");
 
-      for (const [, front] of this.fronts) {
+      for (let [, front] of this.fronts) {
+        front = await front;
         await front.destroy();
       }
 
