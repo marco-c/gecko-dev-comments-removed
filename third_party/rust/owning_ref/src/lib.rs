@@ -466,14 +466,12 @@ impl<O, T: ?Sized> OwningRef<O, T> {
     
 
     
-    
-    pub fn owner(&self) -> &O {
+    pub fn as_owner(&self) -> &O {
         &self.owner
     }
 
     
-    
-    pub fn into_inner(self) -> O {
+    pub fn into_owner(self) -> O {
         self.owner
     }
 }
@@ -712,14 +710,17 @@ impl<O, T: ?Sized> OwningRefMut<O, T> {
     
 
     
-    
-    pub fn owner(&self) -> &O {
+    pub fn as_owner(&self) -> &O {
         &self.owner
     }
 
     
+    pub fn as_owner_mut(&mut self) -> &mut O {
+        &mut self.owner
+    }
+
     
-    pub fn into_inner(self) -> O {
+    pub fn into_owner(self) -> O {
         self.owner
     }
 }
@@ -855,6 +856,16 @@ impl<O, H> OwningHandle<O, H>
           _owner: o,
         })
     }
+
+    
+    pub fn as_owner(&self) -> &O {
+        &self._owner
+    }
+
+    
+    pub fn into_owner(self) -> O {
+        self._owner
+    }
 }
 
 
@@ -897,6 +908,8 @@ impl<O, T: ?Sized> DerefMut for OwningRefMut<O, T> {
 }
 
 unsafe impl<O, T: ?Sized> StableAddress for OwningRef<O, T> {}
+
+unsafe impl<O, T: ?Sized> StableAddress for OwningRefMut<O, T> {}
 
 impl<O, T: ?Sized> AsRef<T> for OwningRef<O, T> {
     fn as_ref(&self) -> &T {
@@ -961,7 +974,7 @@ impl<O, T: ?Sized> Debug for OwningRef<O, T>
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f,
                "OwningRef {{ owner: {:?}, reference: {:?} }}",
-               self.owner(),
+               self.as_owner(),
                &**self)
     }
 }
@@ -973,7 +986,7 @@ impl<O, T: ?Sized> Debug for OwningRefMut<O, T>
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f,
                "OwningRefMut {{ owner: {:?}, reference: {:?} }}",
-               self.owner(),
+               self.as_owner(),
                &**self)
     }
 }
@@ -1119,7 +1132,7 @@ pub type RefMutRefMut<'a, T, U = T> = OwningRefMut<RefMut<'a, T>, U>;
 
 pub type MutexGuardRefMut<'a, T, U = T> = OwningRefMut<MutexGuard<'a, T>, U>;
 
-pub type RwLockWriteGuardRefMut<'a, T, U = T> = OwningRef<RwLockWriteGuard<'a, T>, U>;
+pub type RwLockWriteGuardRefMut<'a, T, U = T> = OwningRefMut<RwLockWriteGuard<'a, T>, U>;
 
 unsafe impl<'a, T: 'a> IntoErased<'a> for Box<T> {
     type Erased = Box<Erased + 'a>;
@@ -1221,19 +1234,19 @@ mod tests {
         }
 
         #[test]
-        fn owner() {
+        fn as_owner() {
             let or: BoxRef<String> = Box::new(example().1).into();
             let or = or.map(|x| &x[..5]);
             assert_eq!(&*or, "hello");
-            assert_eq!(&**or.owner(), "hello world");
+            assert_eq!(&**or.as_owner(), "hello world");
         }
 
         #[test]
-        fn into_inner() {
+        fn into_owner() {
             let or: BoxRef<String> = Box::new(example().1).into();
             let or = or.map(|x| &x[..5]);
             assert_eq!(&*or, "hello");
-            let s = *or.into_inner();
+            let s = *or.into_owner();
             assert_eq!(&s, "hello world");
         }
 
@@ -1262,8 +1275,15 @@ mod tests {
             let foo = [413, 612];
             let bar = &foo;
 
+            
+            
+            
+            fn borrow<'a>(a: &'a &[i32; 2]) -> &'a i32 {
+                &a[0]
+            }
+
             let o: BoxRef<&[i32; 2]> = Box::new(bar).into();
-            let o: BoxRef<&[i32; 2], i32> = o.map(|a: &&[i32; 2]| &a[0]);
+            let o: BoxRef<&[i32; 2], i32> = o.map(borrow);
             let o: BoxRef<Erased, i32> = o.erase_owner();
 
             assert_eq!(*o, 413);
@@ -1651,19 +1671,19 @@ mod tests {
         }
 
         #[test]
-        fn owner() {
+        fn as_owner() {
             let or: BoxRefMut<String> = Box::new(example().1).into();
             let or = or.map_mut(|x| &mut x[..5]);
             assert_eq!(&*or, "hello");
-            assert_eq!(&**or.owner(), "hello world");
+            assert_eq!(&**or.as_owner(), "hello world");
         }
 
         #[test]
-        fn into_inner() {
+        fn into_owner() {
             let or: BoxRefMut<String> = Box::new(example().1).into();
             let or = or.map_mut(|x| &mut x[..5]);
             assert_eq!(&*or, "hello");
-            let s = *or.into_inner();
+            let s = *or.into_owner();
             assert_eq!(&s, "hello world");
         }
 
@@ -1693,8 +1713,15 @@ mod tests {
             let mut foo = [413, 612];
             let bar = &mut foo;
 
+            
+            
+            
+            fn borrow<'a>(a: &'a mut &mut [i32; 2]) -> &'a mut i32 {
+                &mut a[0]
+            }
+
             let o: BoxRefMut<&mut [i32; 2]> = Box::new(bar).into();
-            let o: BoxRefMut<&mut [i32; 2], i32> = o.map_mut(|a: &mut &mut [i32; 2]| &mut a[0]);
+            let o: BoxRefMut<&mut [i32; 2], i32> = o.map_mut(borrow);
             let o: BoxRefMut<Erased, i32> = o.erase_owner();
 
             assert_eq!(*o, 413);

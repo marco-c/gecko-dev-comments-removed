@@ -389,6 +389,33 @@ impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a> ReentrantMutexGu
     
     
     
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<U: ?Sized, F>(s: Self, f: F) -> Result<MappedReentrantMutexGuard<'a, R, G, U>, Self>
+    where
+        F: FnOnce(&mut T) -> Option<&mut U>,
+    {
+        let raw = &s.remutex.raw;
+        let data = match f(unsafe { &mut *s.remutex.data.get() }) {
+            Some(data) => data,
+            None => return Err(s),
+        };
+        mem::forget(s);
+        Ok(MappedReentrantMutexGuard {
+            raw,
+            data,
+            marker: PhantomData,
+        })
+    }
+
+    
+    
+    
+    
     #[inline]
     pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
     where
@@ -514,6 +541,33 @@ impl<'a, R: RawMutex + 'a, G: GetThreadId + 'a, T: ?Sized + 'a>
             data,
             marker: PhantomData,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<U: ?Sized, F>(s: Self, f: F) -> Result<MappedReentrantMutexGuard<'a, R, G, U>, Self>
+    where
+        F: FnOnce(&T) -> Option<&U>,
+    {
+        let raw = s.raw;
+        let data = match f(unsafe { &*s.data }) {
+            Some(data) => data,
+            None => return Err(s),
+        };
+        mem::forget(s);
+        Ok(MappedReentrantMutexGuard {
+            raw,
+            data,
+            marker: PhantomData,
+        })
     }
 }
 

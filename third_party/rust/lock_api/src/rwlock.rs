@@ -720,6 +720,33 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> RwLockReadGuard<'a, R, T> {
     
     
     
+    
+    
+    
+    #[inline]
+    pub fn try_map<U: ?Sized, F>(s: Self, f: F) -> Result<MappedRwLockReadGuard<'a, R, U>, Self>
+    where
+        F: FnOnce(&T) -> Option<&U>,
+    {
+        let raw = &s.rwlock.raw;
+        let data = match f(unsafe { &*s.rwlock.data.get() }) {
+            Some(data) => data,
+            None => return Err(s),
+        };
+        mem::forget(s);
+        Ok(MappedRwLockReadGuard {
+            raw,
+            data,
+            marker: PhantomData,
+        })
+    }
+
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn unlocked<F, U>(s: &mut Self, f: F) -> U
     where
@@ -820,18 +847,45 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> RwLockWriteGuard<'a, R, T> {
     
     
     #[inline]
-    pub fn map<U: ?Sized, F>(orig: Self, f: F) -> MappedRwLockWriteGuard<'a, R, U>
+    pub fn map<U: ?Sized, F>(s: Self, f: F) -> MappedRwLockWriteGuard<'a, R, U>
     where
         F: FnOnce(&mut T) -> &mut U,
     {
-        let raw = &orig.rwlock.raw;
-        let data = f(unsafe { &mut *orig.rwlock.data.get() });
-        mem::forget(orig);
+        let raw = &s.rwlock.raw;
+        let data = f(unsafe { &mut *s.rwlock.data.get() });
+        mem::forget(s);
         MappedRwLockWriteGuard {
             raw,
             data,
             marker: PhantomData,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<U: ?Sized, F>(s: Self, f: F) -> Result<MappedRwLockWriteGuard<'a, R, U>, Self>
+    where
+        F: FnOnce(&mut T) -> Option<&mut U>,
+    {
+        let raw = &s.rwlock.raw;
+        let data = match f(unsafe { &mut *s.rwlock.data.get() }) {
+            Some(data) => data,
+            None => return Err(s),
+        };
+        mem::forget(s);
+        Ok(MappedRwLockWriteGuard {
+            raw,
+            data,
+            marker: PhantomData,
+        })
     }
 
     
@@ -1189,6 +1243,33 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> MappedRwLockReadGuard<'a, R, T> {
             marker: PhantomData,
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<U: ?Sized, F>(s: Self, f: F) -> Result<MappedRwLockReadGuard<'a, R, U>, Self>
+    where
+        F: FnOnce(&T) -> Option<&U>,
+    {
+        let raw = s.raw;
+        let data = match f(unsafe { &*s.data }) {
+            Some(data) => data,
+            None => return Err(s),
+        };
+        mem::forget(s);
+        Ok(MappedRwLockReadGuard {
+            raw,
+            data,
+            marker: PhantomData,
+        })
+    }
 }
 
 impl<'a, R: RawRwLockFair + 'a, T: ?Sized + 'a> MappedRwLockReadGuard<'a, R, T> {
@@ -1262,18 +1343,45 @@ impl<'a, R: RawRwLock + 'a, T: ?Sized + 'a> MappedRwLockWriteGuard<'a, R, T> {
     
     
     #[inline]
-    pub fn map<U: ?Sized, F>(orig: Self, f: F) -> MappedRwLockWriteGuard<'a, R, U>
+    pub fn map<U: ?Sized, F>(s: Self, f: F) -> MappedRwLockWriteGuard<'a, R, U>
     where
         F: FnOnce(&mut T) -> &mut U,
     {
-        let raw = orig.raw;
-        let data = f(unsafe { &mut *orig.data });
-        mem::forget(orig);
+        let raw = s.raw;
+        let data = f(unsafe { &mut *s.data });
+        mem::forget(s);
         MappedRwLockWriteGuard {
             raw,
             data,
             marker: PhantomData,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_map<U: ?Sized, F>(s: Self, f: F) -> Result<MappedRwLockWriteGuard<'a, R, U>, Self>
+    where
+        F: FnOnce(&mut T) -> Option<&mut U>,
+    {
+        let raw = s.raw;
+        let data = match f(unsafe { &mut *s.data }) {
+            Some(data) => data,
+            None => return Err(s),
+        };
+        mem::forget(s);
+        Ok(MappedRwLockWriteGuard {
+            raw,
+            data,
+            marker: PhantomData,
+        })
     }
 }
 
