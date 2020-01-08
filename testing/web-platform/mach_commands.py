@@ -35,13 +35,13 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
 
         if kwargs["product"] == "fennec":
             
-            from mozrunner.devices.android_device import verify_android_device, grant_runtime_permissions
-            verify_android_device(self, install=True, verbose=False, xre=True)
-
-            
             package_name = kwargs["package_name"]
             if not package_name:
                 package_name = self.substs["ANDROID_PACKAGE_NAME"]
+
+            
+            from mozrunner.devices.android_device import verify_android_device, grant_runtime_permissions
+            verify_android_device(self, install=True, verbose=False, xre=True, app=package_name)
 
             grant_runtime_permissions(self, package_name, kwargs["device_serial"])
             if kwargs["certutil_binary"] is None:
