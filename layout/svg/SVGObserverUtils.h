@@ -125,7 +125,7 @@ public:
   
   
   
-  void NotifyEvictedFromRenderingObserverList();
+  void NotifyEvictedFromRenderingObserverSet();
 
   nsIFrame* GetAndObserveReferencedFrame();
   

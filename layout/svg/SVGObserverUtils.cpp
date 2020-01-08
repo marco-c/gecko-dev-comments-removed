@@ -166,7 +166,7 @@ SVGRenderingObserver::OnNonDOMMutationRenderingChange()
 }
 
 void
-SVGRenderingObserver::NotifyEvictedFromRenderingObserverList()
+SVGRenderingObserver::NotifyEvictedFromRenderingObserverSet()
 {
   mInObserverList = false; 
   StopObserving();            
@@ -913,18 +913,23 @@ SVGTemplateElementObserver::OnRenderingChange()
 
 
 
-class SVGRenderingObserverList
+
+
+
+
+
+class SVGRenderingObserverSet
 {
 public:
-  SVGRenderingObserverList()
+  SVGRenderingObserverSet()
     : mObservers(4)
   {
-    MOZ_COUNT_CTOR(SVGRenderingObserverList);
+    MOZ_COUNT_CTOR(SVGRenderingObserverSet);
   }
 
-  ~SVGRenderingObserverList() {
+  ~SVGRenderingObserverSet() {
     InvalidateAll();
-    MOZ_COUNT_DTOR(SVGRenderingObserverList);
+    MOZ_COUNT_DTOR(SVGRenderingObserverSet);
   }
 
   void Add(SVGRenderingObserver* aObserver) {
@@ -965,7 +970,7 @@ private:
 };
 
 void
-SVGRenderingObserverList::InvalidateAll()
+SVGRenderingObserverSet::InvalidateAll()
 {
   if (mObservers.IsEmpty()) {
     return;
@@ -984,7 +989,7 @@ SVGRenderingObserverList::InvalidateAll()
 }
 
 void
-SVGRenderingObserverList::InvalidateAllForReflow()
+SVGRenderingObserverSet::InvalidateAllForReflow()
 {
   if (mObservers.IsEmpty()) {
     return;
@@ -1006,7 +1011,7 @@ SVGRenderingObserverList::InvalidateAllForReflow()
 }
 
 void
-SVGRenderingObserverList::RemoveAll()
+SVGRenderingObserverSet::RemoveAll()
 {
   AutoTArray<SVGRenderingObserver*,10> observers;
 
@@ -1018,16 +1023,16 @@ SVGRenderingObserverList::RemoveAll()
   
   
   for (uint32_t i = 0; i < observers.Length(); ++i) {
-    observers[i]->NotifyEvictedFromRenderingObserverList();
+    observers[i]->NotifyEvictedFromRenderingObserverSet();
   }
 }
 
 
-static SVGRenderingObserverList*
-GetObserverList(Element* aElement)
+static SVGRenderingObserverSet*
+GetObserverSet(Element* aElement)
 {
-  return static_cast<SVGRenderingObserverList*>
-    (aElement->GetProperty(nsGkAtoms::renderingobserverlist));
+  return static_cast<SVGRenderingObserverSet*>
+    (aElement->GetProperty(nsGkAtoms::renderingobserverset));
 }
 
 #ifdef DEBUG
@@ -1037,12 +1042,12 @@ SVGRenderingObserver::DebugObserverSet()
 {
   Element* referencedElement = GetReferencedElementWithoutObserving();
   if (referencedElement) {
-    SVGRenderingObserverList* observerList = GetObserverList(referencedElement);
-    bool inObserverList = observerList && observerList->Contains(this);
-    MOZ_ASSERT(inObserverList == mInObserverList,
-      "failed to track whether we're in our referenced element's observer list!");
+    SVGRenderingObserverSet* observers = GetObserverSet(referencedElement);
+    bool inObserverSet = observers && observers->Contains(this);
+    MOZ_ASSERT(inObserverSet == mInObserverList,
+      "failed to track whether we're in our referenced element's observer set!");
   } else {
-    MOZ_ASSERT(!mInObserverList, "In whose observer list are we, then?");
+    MOZ_ASSERT(!mInObserverList, "In whose observer set are we, then?");
   }
 }
 #endif
@@ -1552,28 +1557,29 @@ void
 SVGObserverUtils::AddRenderingObserver(Element* aElement,
                                        SVGRenderingObserver* aObserver)
 {
-  SVGRenderingObserverList* observerList = GetObserverList(aElement);
-  if (!observerList) {
-    observerList = new SVGRenderingObserverList();
-    if (!observerList)
+  SVGRenderingObserverSet* observers = GetObserverSet(aElement);
+  if (!observers) {
+    observers = new SVGRenderingObserverSet();
+    if (!observers) {
       return;
-    aElement->SetProperty(nsGkAtoms::renderingobserverlist, observerList,
-                          nsINode::DeleteProperty<SVGRenderingObserverList>);
+    }
+    aElement->SetProperty(nsGkAtoms::renderingobserverset, observers,
+                          nsINode::DeleteProperty<SVGRenderingObserverSet>);
   }
   aElement->SetHasRenderingObservers(true);
-  observerList->Add(aObserver);
+  observers->Add(aObserver);
 }
 
 void
 SVGObserverUtils::RemoveRenderingObserver(Element* aElement,
                                           SVGRenderingObserver* aObserver)
 {
-  SVGRenderingObserverList* observerList = GetObserverList(aElement);
-  if (observerList) {
-    NS_ASSERTION(observerList->Contains(aObserver),
+  SVGRenderingObserverSet* observers = GetObserverSet(aElement);
+  if (observers) {
+    NS_ASSERTION(observers->Contains(aObserver),
                  "removing observer from an element we're not observing?");
-    observerList->Remove(aObserver);
-    if (observerList->IsEmpty()) {
+    observers->Remove(aObserver);
+    if (observers->IsEmpty()) {
       aElement->SetHasRenderingObservers(false);
     }
   }
@@ -1582,9 +1588,9 @@ SVGObserverUtils::RemoveRenderingObserver(Element* aElement,
 void
 SVGObserverUtils::RemoveAllRenderingObservers(Element* aElement)
 {
-  SVGRenderingObserverList* observerList = GetObserverList(aElement);
-  if (observerList) {
-    observerList->RemoveAll();
+  SVGRenderingObserverSet* observers = GetObserverSet(aElement);
+  if (observers) {
+    observers->RemoveAll();
     aElement->SetHasRenderingObservers(false);
   }
 }
@@ -1601,10 +1607,9 @@ SVGObserverUtils::InvalidateRenderingObservers(nsIFrame* aFrame)
   
   aFrame->DeleteProperty(nsSVGUtils::ObjectBoundingBoxProperty());
 
-  SVGRenderingObserverList* observerList =
-    GetObserverList(content->AsElement());
-  if (observerList) {
-    observerList->InvalidateAll();
+  SVGRenderingObserverSet* observers = GetObserverSet(content->AsElement());
+  if (observers) {
+    observers->InvalidateAll();
     return;
   }
 
@@ -1613,9 +1618,9 @@ SVGObserverUtils::InvalidateRenderingObservers(nsIFrame* aFrame)
   for (nsIFrame *f = aFrame->GetParent();
        f->IsFrameOfType(nsIFrame::eSVGContainer); f = f->GetParent()) {
     if (f->GetContent()->IsElement()) {
-      observerList = GetObserverList(f->GetContent()->AsElement());
-      if (observerList) {
-        observerList->InvalidateAll();
+      observers = GetObserverSet(f->GetContent()->AsElement());
+      if (observers) {
+        observers->InvalidateAll();
         return;
       }
     }
@@ -1633,12 +1638,12 @@ SVGObserverUtils::InvalidateDirectRenderingObservers(Element* aElement,
   }
 
   if (aElement->HasRenderingObservers()) {
-    SVGRenderingObserverList* observerList = GetObserverList(aElement);
-    if (observerList) {
+    SVGRenderingObserverSet* observers = GetObserverSet(aElement);
+    if (observers) {
       if (aFlags & INVALIDATE_REFLOW) {
-        observerList->InvalidateAllForReflow();
+        observers->InvalidateAllForReflow();
       } else {
-        observerList->InvalidateAll();
+        observers->InvalidateAll();
       }
     }
   }
