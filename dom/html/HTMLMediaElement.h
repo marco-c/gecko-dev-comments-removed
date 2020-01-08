@@ -1781,6 +1781,8 @@ private:
 
   already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
 
+  void ReportAutoplayTelemetry() const;
+
   
 
 

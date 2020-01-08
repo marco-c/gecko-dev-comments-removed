@@ -3575,6 +3575,10 @@ public:
 
   void ReportShadowDOMUsage();
 
+  
+  void SetDocTreeHadAudibleMedia();
+  void SetDocTreeHadPlayRevoked();
+
 protected:
   void DoUpdateSVGUseElementShadowTrees();
 
@@ -4095,6 +4099,16 @@ protected:
   bool mReportedUseCounters: 1;
 
   bool mHasReportedShadowDOMUsage: 1;
+
+  
+  
+  
+  bool mDocTreeHadAudibleMedia: 1;
+  
+  
+  
+  
+  bool mDocTreeHadPlayRevoked: 1;
 
 #ifdef DEBUG
 public:

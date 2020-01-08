@@ -100,6 +100,20 @@ DefaultAutoplayBehaviour()
   return prefValue;
 }
 
+static bool
+IsMediaElementAllowedToPlay(const HTMLMediaElement& aElement)
+{
+  return ((aElement.Volume() == 0.0 || aElement.Muted()) &&
+          Preferences::GetBool("media.autoplay.allow-muted", true)) ||
+         IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow());
+}
+
+ bool
+AutoplayPolicy::WouldBeAllowedToPlayIfAutoplayDisabled(const HTMLMediaElement& aElement)
+{
+  return IsMediaElementAllowedToPlay(aElement);
+}
+
  uint32_t
 AutoplayPolicy::IsAllowedToPlay(const HTMLMediaElement& aElement)
 {
@@ -114,13 +128,7 @@ AutoplayPolicy::IsAllowedToPlay(const HTMLMediaElement& aElement)
               ? nsIAutoplay::ALLOWED : nsIAutoplay::BLOCKED;
   }
 
-  
-  if ((aElement.Volume() == 0.0 || aElement.Muted()) &&
-      Preferences::GetBool("media.autoplay.allow-muted", true)) {
-    return nsIAutoplay::ALLOWED;
-  }
-
-  if (IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow())) {
+  if (IsMediaElementAllowedToPlay(aElement)) {
     return nsIAutoplay::ALLOWED;
   }
 

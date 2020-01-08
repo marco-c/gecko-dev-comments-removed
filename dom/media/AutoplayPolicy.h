@@ -39,6 +39,13 @@ public:
   static uint32_t IsAllowedToPlay(const HTMLMediaElement& aElement);
 
   
+  
+  
+  
+  
+  static bool WouldBeAllowedToPlayIfAutoplayDisabled(const HTMLMediaElement& aElement);
+
+  
   static bool IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext);
 
   
