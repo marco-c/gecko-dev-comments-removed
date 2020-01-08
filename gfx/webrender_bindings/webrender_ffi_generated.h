@@ -50,6 +50,7 @@ enum class BoxShadowClipMode : uint32_t {
 enum class Checkpoint : uint32_t {
   SceneBuilt,
   FrameBuilt,
+  FrameTexturesUpdated,
   FrameRendered,
   
   
