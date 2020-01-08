@@ -10038,7 +10038,6 @@ public:
       parser->BlockParser();
       mParser = do_GetWeakReference(parser);
       mDocument = aDocument;
-      mDocument->BlockOnload();
     }
   }
 
@@ -10077,7 +10076,6 @@ private:
       if (parser == docParser) {
         parser->UnblockParser();
         parser->ContinueInterruptedParsingAsync();
-        mDocument->UnblockOnload(false);
       }
     }
     mParser = nullptr;
@@ -12655,7 +12653,8 @@ void
 nsIDocument::MaybeAllowStorageForOpener()
 {
   if (StaticPrefs::network_cookie_cookieBehavior() !=
-        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+        nsICookieService::BEHAVIOR_REJECT_TRACKER ||
+      !StaticPrefs::browser_contentblocking_enabled()) {
     return;
   }
 
