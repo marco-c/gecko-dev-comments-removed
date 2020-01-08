@@ -631,7 +631,7 @@ MarkupView.prototype = {
 
 
 
-  _onNewSelection: function() {
+  _onNewSelection: function(nodeFront, reason) {
     const selection = this.inspector.selection;
 
     if (this.htmlEditor) {
@@ -656,20 +656,22 @@ MarkupView.prototype = {
     }
 
     const slotted = selection.isSlotted();
-    const onShow = this.showNode(selection.nodeFront, { slotted }).then(() => {
-      
-      if (this._destroyer) {
-        return promise.reject("markupview destroyed");
-      }
+    const smoothScroll = reason === "reveal-from-slot";
+    const onShow = this.showNode(selection.nodeFront, { slotted, smoothScroll })
+      .then(() => {
+        
+        if (this._destroyer) {
+          return promise.reject("markupview destroyed");
+        }
 
-      
-      const container = this.getContainer(selection.nodeFront, slotted);
-      this._markContainerAsSelected(container);
+        
+        const container = this.getContainer(selection.nodeFront, slotted);
+        this._markContainerAsSelected(container);
 
-      
-      this.maybeNavigateToNewSelection();
-      return undefined;
-    }).catch(this._handleRejectionIfNotDestroyed);
+        
+        this.maybeNavigateToNewSelection();
+        return undefined;
+      }).catch(this._handleRejectionIfNotDestroyed);
 
     promise.all([onShowBoxModel, onShow]).then(done);
   },
@@ -1203,7 +1205,7 @@ MarkupView.prototype = {
 
 
 
-  showNode: function(node, {centered = true, slotted} = {}) {
+  showNode: function(node, {centered = true, slotted, smoothScroll = false} = {}) {
     if (slotted && !this.hasContainer(node, slotted)) {
       throw new Error("Tried to show a slotted node not previously imported");
     } else {
@@ -1217,7 +1219,7 @@ MarkupView.prototype = {
       return this._ensureVisible(node);
     }).then(() => {
       const container = this.getContainer(node, slotted);
-      scrollIntoViewIfNeeded(container.editor.elt, centered);
+      scrollIntoViewIfNeeded(container.editor.elt, centered, smoothScroll);
     }, this._handleRejectionIfNotDestroyed);
   },
 

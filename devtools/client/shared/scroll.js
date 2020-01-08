@@ -16,7 +16,10 @@ define(function(require, exports, module) {
 
 
 
-  function scrollIntoViewIfNeeded(elem, centered = true) {
+
+
+
+  function scrollIntoViewIfNeeded(elem, centered = true, smooth = false) {
     const win = elem.ownerDocument.defaultView;
     const clientRect = elem.getBoundingClientRect();
 
@@ -31,13 +34,22 @@ define(function(require, exports, module) {
     let yAllowed = true;
 
     
+    const reducedMotion = win.matchMedia("(prefers-reduced-motion)").matches;
+    smooth = smooth && !reducedMotion;
+
+    const options = { behavior: smooth ? "smooth" : "auto" };
+
+    
     
     if ((topToBottom > 0 || !centered) && topToBottom <= elem.offsetHeight) {
-      win.scrollBy(0, topToBottom - elem.offsetHeight);
+      win.scrollBy(Object.assign(
+        {left: 0, top: topToBottom - elem.offsetHeight}, options));
       yAllowed = false;
     } else if ((bottomToTop < 0 || !centered) &&
               bottomToTop >= -elem.offsetHeight) {
-      win.scrollBy(0, bottomToTop + elem.offsetHeight);
+      win.scrollBy(Object.assign(
+        {left: 0, top: bottomToTop + elem.offsetHeight}, options));
+
       yAllowed = false;
     }
 
@@ -45,9 +57,10 @@ define(function(require, exports, module) {
     
     if (centered) {
       if (yAllowed && (topToBottom <= 0 || bottomToTop >= 0)) {
-        win.scroll(win.scrollX,
-                  win.scrollY + clientRect.top
-                  - (win.innerHeight - elem.offsetHeight) / 2);
+        const x = win.scrollX;
+        const y = win.scrollY + clientRect.top -
+          (win.innerHeight - elem.offsetHeight) / 2;
+        win.scroll(Object.assign({left: x, top: y}, options));
       }
     }
   }
