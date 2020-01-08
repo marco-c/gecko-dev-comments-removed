@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ModuleLoadRequest.h"
 
@@ -16,9 +16,9 @@
 namespace mozilla {
 namespace dom {
 
-
-
-
+//////////////////////////////////////////////////////////////
+// ScriptLoadRequest
+//////////////////////////////////////////////////////////////
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ScriptLoadRequest)
 NS_INTERFACE_MAP_END
@@ -79,11 +79,11 @@ ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
 
 ScriptLoadRequest::~ScriptLoadRequest()
 {
-  
+  // We should always clean up any off-thread script parsing resources.
   MOZ_ASSERT(!mOffThreadToken);
 
-  
-  
+  // But play it safe in release builds and try to clean them up here
+  // as a fail safe.
   MaybeCancelOffThreadScript();
 
   if (mScript) {
@@ -115,7 +115,7 @@ ScriptLoadRequest::MaybeCancelOffThreadScript()
   }
 
   JSContext* cx = danger::GetJSContext();
-  
+  // Follow the same conditions as ScriptLoader::AttemptAsyncScriptCompile
   if (IsModuleRequest()) {
     JS::CancelOffThreadModule(cx, mOffThreadToken);
   } else if (IsSource()) {
@@ -166,7 +166,7 @@ ScriptLoadRequest::SetTextSource()
 {
   MOZ_ASSERT(IsUnknownDataType());
   mDataType = DataType::eTextSource;
-  mScriptData.emplace(VariantType<Vector<char16_t>>());
+  mScriptData.emplace(VariantType<ScriptTextBuffer>());
 }
 
 void
@@ -175,7 +175,7 @@ ScriptLoadRequest::SetBinASTSource()
 #ifdef JS_BUILD_BINAST
   MOZ_ASSERT(IsUnknownDataType());
   mDataType = DataType::eBinASTSource;
-  mScriptData.emplace(VariantType<Vector<uint8_t>>());
+  mScriptData.emplace(VariantType<BinASTSourceBuffer>());
 #else
   MOZ_CRASH("BinAST not supported");
 #endif
@@ -192,7 +192,7 @@ bool
 ScriptLoadRequest::ShouldAcceptBinASTEncoding() const
 {
 #ifdef JS_BUILD_BINAST
-  
+  // We accept the BinAST encoding if we're using a secure connection.
 
   bool isHTTPS = false;
   nsresult rv = mURI->SchemeIs("https", &isHTTPS);
@@ -215,9 +215,9 @@ ScriptLoadRequest::ClearScriptSource()
   }
 }
 
-
-
-
+//////////////////////////////////////////////////////////////
+// ScriptLoadRequestList
+//////////////////////////////////////////////////////////////
 
 ScriptLoadRequestList::~ScriptLoadRequestList()
 {
@@ -230,7 +230,7 @@ ScriptLoadRequestList::Clear()
   while (!isEmpty()) {
     RefPtr<ScriptLoadRequest> first = StealFirst();
     first->Cancel();
-    
+    // And just let it go out of scope and die.
   }
 }
 
@@ -247,7 +247,7 @@ ScriptLoadRequestList::Contains(ScriptLoadRequest* aElem) const
 
   return false;
 }
-#endif 
+#endif // DEBUG
 
 inline void
 ImplCycleCollectionUnlink(ScriptLoadRequestList& aField)
@@ -270,5 +270,5 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
   }
 }
 
-} 
-} 
+} // dom namespace
+} // mozilla namespace
