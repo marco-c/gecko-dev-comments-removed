@@ -278,9 +278,6 @@ struct DocumentHandle;
 struct LayoutPixel;
 
 
-struct NormalizedCoordinates;
-
-
 
 struct Renderer;
 
@@ -1052,8 +1049,6 @@ struct WrImageDescriptor {
   }
 };
 
-using NormalizedRect = TypedRect<float, NormalizedCoordinates>;
-
 struct WrTransformProperty {
   uint64_t id;
   LayoutTransform transform;
@@ -1715,7 +1710,7 @@ WR_FUNC;
 WR_INLINE
 void wr_resource_updates_set_image_visible_area(Transaction *aTxn,
                                                 WrImageKey aKey,
-                                                const NormalizedRect *aArea)
+                                                const DeviceUintRect *aArea)
 WR_FUNC;
 
 WR_INLINE
