@@ -716,16 +716,29 @@ GeneratePrototypeGuardsForReceiver(CacheIRWriter& writer, JSObject* obj, ObjOper
 #endif 
 }
 
-static void
-GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, ObjOperandId objId)
+static bool
+ProtoChainSupportsTeleporting(JSObject* obj, JSObject* holder)
 {
     
     
+    MOZ_ASSERT(obj->isDelegate());
+
     
     
+    for (JSObject* tmp = obj; tmp != holder; tmp = tmp->staticPrototype()) {
+        if (tmp->hasUncacheableProto()) {
+            return false;
+        }
+    }
+
     
     
-    
+    return !holder->hasUncacheableProto();
+}
+
+static void
+GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, ObjOperandId objId)
+{
     
     
     
@@ -789,8 +802,7 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
     MOZ_ASSERT(pobj->isDelegate());
 
     
-    
-    if (!holder->hasUncacheableProto()) {
+    if (ProtoChainSupportsTeleporting(pobj, holder)) {
         return;
     }
 
