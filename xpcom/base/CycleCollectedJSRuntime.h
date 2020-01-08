@@ -383,7 +383,7 @@ private:
   
 
   struct ErrorInterceptor final : public JSErrorInterceptor {
-    virtual void interceptError(JSContext* cx, const JS::Value& val) override;
+    virtual void interceptError(JSContext* cx, JS::HandleValue exn) override;
     void Shutdown(JSRuntime* rt);
 
     

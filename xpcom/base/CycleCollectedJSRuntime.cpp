@@ -1599,7 +1599,7 @@ CycleCollectedJSRuntime::ErrorInterceptor::Shutdown(JSRuntime* rt)
 }
 
  void
-CycleCollectedJSRuntime::ErrorInterceptor::interceptError(JSContext* cx, const JS::Value& exn)
+CycleCollectedJSRuntime::ErrorInterceptor::interceptError(JSContext* cx, JS::HandleValue exn)
 {
   if (mThrownError) {
     
@@ -1631,7 +1631,6 @@ CycleCollectedJSRuntime::ErrorInterceptor::interceptError(JSContext* cx, const J
   
   
   
-  JS::RootedValue value(cx, exn);
 
   ErrorDetails details;
   details.mType = *type;
@@ -1640,7 +1639,7 @@ CycleCollectedJSRuntime::ErrorInterceptor::interceptError(JSContext* cx, const J
   
   
   
-  nsContentUtils::ExtractErrorValues(cx, value, details.mFilename, &details.mLine, &details.mColumn, details.mMessage);
+  nsContentUtils::ExtractErrorValues(cx, exn, details.mFilename, &details.mLine, &details.mColumn, details.mMessage);
 
   JS::UniqueChars buf = JS::FormatStackDump(cx,  false,  false,  false);
   CopyUTF8toUTF16(mozilla::MakeStringSpan(buf.get()), details.mStack);
