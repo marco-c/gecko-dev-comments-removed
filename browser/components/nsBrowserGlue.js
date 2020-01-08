@@ -429,7 +429,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteSettings: "resource://services-settings/remote-settings.js",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
-  SavantShieldStudy: "resource:///modules/SavantShieldStudy.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
   ShellService: "resource:///modules/ShellService.jsm",
@@ -525,9 +524,6 @@ const listeners = {
     "RemoteLogins:autoCompleteLogins": ["LoginManagerParent"],
     "RemoteLogins:removeLogin": ["LoginManagerParent"],
     "RemoteLogins:insecureLoginFormPresent": ["LoginManagerParent"],
-    
-    "LoginStats:LoginFillSuccessful": ["LoginManagerParent"],
-    "LoginStats:LoginEncountered": ["LoginManagerParent"],
     
     "WCCR:registerProtocolHandler": ["Feeds"],
     "rtcpeer:CancelRequest": ["webrtcUI"],
@@ -1400,8 +1396,6 @@ BrowserGlue.prototype = {
     }
 
     Normandy.uninit();
-
-    SavantShieldStudy.uninit();
   },
 
   
@@ -1557,10 +1551,6 @@ BrowserGlue.prototype = {
 
     Services.tm.idleDispatchToMainThread(() => {
       Blocklist.loadBlocklistAsync();
-    });
-
-    Services.tm.idleDispatchToMainThread(() => {
-      SavantShieldStudy.init();
     });
   },
 

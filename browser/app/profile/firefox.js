@@ -1739,10 +1739,6 @@ pref("app.shield.optoutstudies.enabled", false);
 #endif
 
 
-pref("shield.savant.enabled", false);
-pref("shield.savant.loglevel", "warn");
-
-
 pref("intl.multilingual.enabled", false);
 
 
