@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const promise = require("devtools/shared/deprecated-sync-thenables");
@@ -80,9 +81,14 @@ ThreadClient.prototype = {
 
 
 
+
+
+
+
   _doResume: DebuggerClient.requester({
     type: "resume",
-    resumeLimit: arg(0)
+    resumeLimit: arg(0),
+    rewind: arg(1)
   }, {
     before: function(packet) {
       this._assertPaused("resume");
@@ -136,7 +142,7 @@ ThreadClient.prototype = {
 
 
   resume: function(onResponse) {
-    return this._doResume(null, onResponse);
+    return this._doResume(null, false, onResponse);
   },
 
   
@@ -146,7 +152,17 @@ ThreadClient.prototype = {
 
 
   resumeThenPause: function(onResponse) {
-    return this._doResume({ type: "break" }, onResponse);
+    return this._doResume({ type: "break" }, false, onResponse);
+  },
+
+  
+
+
+
+
+
+  rewind: function(onResponse) {
+    this._doResume(null, true, onResponse);
   },
 
   
@@ -156,7 +172,7 @@ ThreadClient.prototype = {
 
 
   stepOver: function(onResponse) {
-    return this._doResume({ type: "next" }, onResponse);
+    return this._doResume({ type: "next" }, false, onResponse);
   },
 
   
@@ -166,7 +182,7 @@ ThreadClient.prototype = {
 
 
   stepIn: function(onResponse) {
-    return this._doResume({ type: "step" }, onResponse);
+    return this._doResume({ type: "step" }, false, onResponse);
   },
 
   
@@ -176,7 +192,37 @@ ThreadClient.prototype = {
 
 
   stepOut: function(onResponse) {
-    return this._doResume({ type: "finish" }, onResponse);
+    return this._doResume({ type: "finish" }, false, onResponse);
+  },
+
+  
+
+
+
+
+
+  reverseStepOver: function(onResponse) {
+    return this._doResume({ type: "next" }, true, onResponse);
+  },
+
+  
+
+
+
+
+
+  reverseStepIn: function(onResponse) {
+    return this._doResume({ type: "step" }, true, onResponse);
+  },
+
+  
+
+
+
+
+
+  reverseStepOut: function(onResponse) {
+    return this._doResume({ type: "finish" }, true, onResponse);
   },
 
   
