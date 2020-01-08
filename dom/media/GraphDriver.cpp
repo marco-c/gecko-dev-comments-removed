@@ -293,7 +293,6 @@ SystemClockDriver::SystemClockDriver(MediaStreamGraphImpl* aGraphImpl)
   : ThreadedDriver(aGraphImpl),
     mInitialTimeStamp(TimeStamp::Now()),
     mLastTimeStamp(TimeStamp::Now()),
-    mWaitState(WAITSTATE_RUNNING),
     mIsFallback(false)
 {}
 
@@ -412,7 +411,6 @@ SystemClockDriver::WaitForNextIteration()
   bool another = GraphImpl()->mNeedAnotherIteration; 
   if (!another) {
     GraphImpl()->mGraphDriverAsleep = true; 
-    mWaitState = WAITSTATE_WAITING_INDEFINITELY;
   }
   
   
@@ -430,10 +428,10 @@ SystemClockDriver::WaitForNextIteration()
          GraphImpl(),
          (now - mInitialTimeStamp).ToSeconds(),
          timeoutMS / 1000.0));
-    if (mWaitState == WAITSTATE_WAITING_INDEFINITELY) {
+    if (!another) {
       GraphImpl()->mGraphDriverAsleep = false; 
+      another = true;
     }
-    mWaitState = WAITSTATE_WAITING_FOR_NEXT_ITERATION;
   }
   if (!timeout.IsZero()) {
     GraphImpl()->GetMonitor().Wait(timeout);
@@ -444,23 +442,15 @@ SystemClockDriver::WaitForNextIteration()
          (TimeStamp::Now() - now).ToSeconds()));
   }
 
-  if (mWaitState == WAITSTATE_WAITING_INDEFINITELY) {
+  if (!another) {
     GraphImpl()->mGraphDriverAsleep = false; 
   }
-  
-  
-  
-  mWaitState = WAITSTATE_RUNNING;
   GraphImpl()->mNeedAnotherIteration = false; 
 }
 
 void SystemClockDriver::WakeUp()
 {
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-  
-  
-  
-  mWaitState = WAITSTATE_WAKING_UP;
   GraphImpl()->mGraphDriverAsleep = false; 
   GraphImpl()->GetMonitor().Notify();
 }
