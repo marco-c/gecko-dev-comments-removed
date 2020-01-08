@@ -799,8 +799,7 @@ public:
   }
 
   bool shouldVisitImplicitCode() const {
-    AutoSetContext *Ctxt = CurDeclContext;
-    return Ctxt ? Ctxt->VisitImplicit : false;
+    return CurDeclContext && CurDeclContext->VisitImplicit;
   }
 
   bool TraverseClassTemplateDecl(ClassTemplateDecl *D) {
