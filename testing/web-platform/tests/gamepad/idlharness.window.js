@@ -1,0 +1,18 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['gamepad'],
+  ['dom', 'html'],
+  idl_array => {
+    idl_array.add_objects({
+      GamepadEvent: ['new GamepadEvent("gamepad")'],
+      Navigator: ['navigator']
+    });
+  },
+  'Test IDL implementation of Gamepad API'
+);
