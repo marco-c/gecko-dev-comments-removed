@@ -58,6 +58,7 @@ struct nsXPTCVariant
         nsCString  nscstr;
         nsString   nsstr;
         JS::Value  jsval;
+        xpt::detail::UntypedSequence sequence;
 
         
         
