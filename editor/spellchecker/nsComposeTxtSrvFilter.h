@@ -6,8 +6,7 @@
 #ifndef nsComposeTxtSrvFilter_h__
 #define nsComposeTxtSrvFilter_h__
 
-#include "nsISupportsImpl.h"            
-#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/UniquePtr.h"
 
 
 
@@ -16,17 +15,14 @@
 
 
 
-class nsComposeTxtSrvFilter final : public nsISupports
+class nsComposeTxtSrvFilter final
 {
 public:
-  
-  NS_DECL_ISUPPORTS
-
-  static already_AddRefed<nsComposeTxtSrvFilter> CreateNormalFilter()
+  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateNormalFilter()
   {
     return CreateHelper(false);
   }
-  static already_AddRefed<nsComposeTxtSrvFilter> CreateMailFilter()
+  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateMailFilter()
   {
     return CreateHelper(true);
   }
@@ -38,15 +34,12 @@ public:
   bool Skip(nsINode* aNode) const;
 
 private:
-  nsComposeTxtSrvFilter();
-  ~nsComposeTxtSrvFilter() {}
-
   
   void Init(bool aIsForMail) { mIsForMail = aIsForMail; }
 
-  static already_AddRefed<nsComposeTxtSrvFilter> CreateHelper(bool aIsForMail);
+  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateHelper(bool aIsForMail);
 
-  bool              mIsForMail;
+  bool              mIsForMail = false;
 };
 
 #endif

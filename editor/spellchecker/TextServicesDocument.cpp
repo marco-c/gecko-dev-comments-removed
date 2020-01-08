@@ -31,6 +31,7 @@
 #include "nsRange.h"                    
 #include "nsString.h"                   
 #include "nscore.h"                     
+#include "mozilla/UniquePtr.h"          
 
 namespace mozilla {
 
@@ -70,7 +71,8 @@ public:
 };
 
 TextServicesDocument::TextServicesDocument()
-  : mSelStartIndex(-1)
+  : mTxtSvcFilterType(0)
+  , mSelStartIndex(-1)
   , mSelStartOffset(-1)
   , mSelEndIndex(-1)
   , mSelEndOffset(-1)
@@ -99,8 +101,7 @@ NS_IMPL_CYCLE_COLLECTION(TextServicesDocument,
                          mIterator,
                          mPrevTextBlock,
                          mNextTextBlock,
-                         mExtent,
-                         mTxtSvcFilter)
+                         mExtent)
 
 nsresult
 TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
@@ -344,19 +345,7 @@ TextServicesDocument::ExpandRangeToWordBoundaries(nsRange* aRange)
 nsresult
 TextServicesDocument::SetFilterType(uint32_t aFilterType)
 {
-  
-  switch (aFilterType) {
-  case nsIEditorSpellCheck::FILTERTYPE_NORMAL:
-    mTxtSvcFilter = nsComposeTxtSrvFilter::CreateNormalFilter();
-    break;
-  case nsIEditorSpellCheck::FILTERTYPE_MAIL:
-    mTxtSvcFilter = nsComposeTxtSrvFilter::CreateMailFilter();
-    break;
-  default:
-    
-    mTxtSvcFilter = nullptr;
-    break;
-  }
+  mTxtSvcFilterType = aFilterType;
 
   return NS_OK;
 }
@@ -1450,10 +1439,21 @@ TextServicesDocument::CreateContentIterator(nsRange* aRange,
 
   *aIterator = nullptr;
 
+  UniquePtr<nsComposeTxtSrvFilter> composeFilter;
+  switch (mTxtSvcFilterType) {
+  case nsIEditorSpellCheck::FILTERTYPE_NORMAL:
+    composeFilter = nsComposeTxtSrvFilter::CreateNormalFilter();
+    break;
+  case nsIEditorSpellCheck::FILTERTYPE_MAIL:
+    composeFilter = nsComposeTxtSrvFilter::CreateMailFilter();
+    break;
+  }
+
   
   
   
-  RefPtr<nsFilteredContentIterator> filter = new nsFilteredContentIterator(mTxtSvcFilter);
+  RefPtr<nsFilteredContentIterator> filter =
+    new nsFilteredContentIterator(std::move(composeFilter));
 
   nsresult rv = filter->Init(aRange);
   if (NS_FAILED(rv)) {

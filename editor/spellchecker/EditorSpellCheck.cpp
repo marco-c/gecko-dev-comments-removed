@@ -18,7 +18,6 @@
 #include "mozilla/TextServicesDocument.h" 
 #include "nsAString.h"                  
 #include "nsComponentManagerUtils.h"    
-#include "nsComposeTxtSrvFilter.h"
 #include "nsDebug.h"                    
 #include "nsDependentSubstring.h"       
 #include "nsError.h"                    
