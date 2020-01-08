@@ -7,11 +7,32 @@
 #ifndef mozilla_WinDllServices_h
 #define mozilla_WinDllServices_h
 
+#include "mozilla/CombinedStacks.h"
 #include "mozilla/glue/WindowsDllServices.h"
+#include "mozilla/ModuleEvaluator_windows.h"
 #include "mozilla/mozalloc.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 
 namespace mozilla {
+
+
+
+class UntrustedModuleLoadTelemetryData
+{
+public:
+  UntrustedModuleLoadTelemetryData() = default;
+  
+  UntrustedModuleLoadTelemetryData(UntrustedModuleLoadTelemetryData&&) = default;
+  UntrustedModuleLoadTelemetryData(
+      const UntrustedModuleLoadTelemetryData& aOther) = delete;
+
+  Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy> mEvents;
+  Telemetry::CombinedStacks mStacks;
+  int mErrorModules = 0;
+};
+
+class UntrustedModulesManager;
 
 class DllServices : public mozilla::glue::DllServices
 {
@@ -21,6 +42,19 @@ public:
   static const char* kTopicDllLoadedMainThread;
   static const char* kTopicDllLoadedNonMainThread;
 
+  
+
+
+
+
+
+
+
+
+
+
+  bool GetUntrustedModuleTelemetryData(UntrustedModuleLoadTelemetryData& aOut);
+
 private:
   DllServices();
   ~DllServices() = default;
@@ -29,6 +63,8 @@ private:
 
   void NotifyUntrustedModuleLoads(
     const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents) override;
+
+  UniquePtr<UntrustedModulesManager> mUntrustedModulesManager;
 };
 
 } 
