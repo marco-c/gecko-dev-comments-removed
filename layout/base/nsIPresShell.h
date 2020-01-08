@@ -1375,6 +1375,13 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
+  virtual bool IsResolutionUpdated() const = 0;
+  virtual void SetResolutionUpdated(bool aUpdated) = 0;
+
+  
+
+
+
   virtual float GetCumulativeNonRootScaleResolution() = 0;
 
   
@@ -1386,7 +1393,12 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsresult SetResolutionAndScaleTo(float aResolution) = 0;
+
+
+
+
+  virtual nsresult SetResolutionAndScaleTo(float aResolution,
+                                           nsAtom* aOrigin) = 0;
 
   
 

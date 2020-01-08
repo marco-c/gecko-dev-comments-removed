@@ -317,7 +317,7 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     
     presShellResolution =
         aRequest.GetPresShellResolution() * aRequest.GetAsyncZoom().scale;
-    shell->SetResolutionAndScaleTo(presShellResolution);
+    shell->SetResolutionAndScaleTo(presShellResolution, nsGkAtoms::apz);
   }
 
   

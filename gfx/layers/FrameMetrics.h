@@ -812,6 +812,7 @@ struct ScrollMetadata {
         mIsAutoDirRootContentRTL(false),
         mUsesContainerScrolling(false),
         mForceDisableApz(false),
+        mResolutionUpdated(false),
         mOverscrollBehavior() {}
 
   bool operator==(const ScrollMetadata& aOther) const {
@@ -827,6 +828,7 @@ struct ScrollMetadata {
            mIsAutoDirRootContentRTL == aOther.mIsAutoDirRootContentRTL &&
            mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
            mForceDisableApz == aOther.mForceDisableApz &&
+           mResolutionUpdated == aOther.mResolutionUpdated &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior;
   }
@@ -907,6 +909,8 @@ struct ScrollMetadata {
     mForceDisableApz = aForceDisable;
   }
   bool IsApzForceDisabled() const { return mForceDisableApz; }
+  void SetResolutionUpdated(bool aUpdated) { mResolutionUpdated = aUpdated; }
+  bool IsResolutionUpdated() const { return mResolutionUpdated; }
 
   
   
@@ -982,6 +986,11 @@ struct ScrollMetadata {
   
   
   bool mForceDisableApz : 1;
+
+  
+  
+  
+  bool mResolutionUpdated : 1;
 
   
   

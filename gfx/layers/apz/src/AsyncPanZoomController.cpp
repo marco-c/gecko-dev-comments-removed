@@ -4418,11 +4418,13 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
 
+    
+    
     if (FuzzyEqualsAdditive(Metrics().GetCompositionBounds().Width(),
                             aLayerMetrics.GetCompositionBounds().Width()) &&
         Metrics().GetDevPixelsPerCSSPixel() ==
             aLayerMetrics.GetDevPixelsPerCSSPixel() &&
-        !viewportUpdated) {
+        !viewportUpdated && !aScrollMetadata.IsResolutionUpdated()) {
       
       
       

@@ -271,8 +271,6 @@
 
 #include "mozilla/DocLoadingTimelineMarker.h"
 
-#include "mozilla/dom/WindowGlobalChild.h"
-
 #include "nsISpeculativeConnect.h"
 
 #include "mozilla/MediaManager.h"
@@ -2898,13 +2896,6 @@ void nsIDocument::SetDocumentURI(nsIURI* aURI) {
   
   if (!equalBases) {
     RefreshLinkHrefs();
-  }
-
-  
-  nsPIDOMWindowInner* inner = GetInnerWindow();
-  WindowGlobalChild* wgc = inner ? inner->GetWindowGlobalChild() : nullptr;
-  if (wgc) {
-    Unused << wgc->SendUpdateDocumentURI(mDocumentURI);
   }
 }
 
@@ -10188,7 +10179,7 @@ void nsIDocument::CleanupFullscreenState() {
   
   if (nsIPresShell* shell = GetShell()) {
     if (shell->GetMobileViewportManager()) {
-      shell->SetResolutionAndScaleTo(mSavedResolution);
+      shell->SetResolutionAndScaleTo(mSavedResolution, nsGkAtoms::restore);
     }
   }
 
@@ -10585,7 +10576,8 @@ bool nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
               shell->GetMobileViewportManager()) {
         
         child->mSavedResolution = shell->GetResolution();
-        shell->SetResolutionAndScaleTo(manager->ComputeIntrinsicResolution());
+        shell->SetResolutionAndScaleTo(manager->ComputeIntrinsicResolution(),
+                                       nsGkAtoms::other);
       }
     }
 

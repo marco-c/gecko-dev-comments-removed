@@ -8820,6 +8820,13 @@ static void MaybeReflowForInflationScreenSizeChange(
   } else {
     metrics.SetPresShellResolution(1.0f);
   }
+
+  if (presShell->IsResolutionUpdated()) {
+    metadata.SetResolutionUpdated(true);
+    
+    presShell->SetResolutionUpdated(false);
+  }
+
   
   
   
