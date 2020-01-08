@@ -8,8 +8,7 @@
 
 var srv;
 
-function run_test()
-{
+function run_test() {
   srv;
 
   srv = createServer();
@@ -24,8 +23,7 @@ function run_test()
 
 
 
-function pathHandler(request, response)
-{
+function pathHandler(request, response) {
   response.setHeader("Cache-Control", "no-cache", false);
 
   response.setHeader("Proxy-Authenticate", "First line 1", true);
@@ -50,12 +48,11 @@ function pathHandler(request, response)
 XPCOMUtils.defineLazyGetter(this, "tests", function() {
   return [
     new Test("http://localhost:" + srv.identity.primaryPort + "/path-handler",
-             null, check)
+             null, check),
   ];
 });
 
-function check(ch, cx)
-{
+function check(ch, cx) {
   var headerValue;
 
   headerValue = ch.getResponseHeader("Proxy-Authenticate");

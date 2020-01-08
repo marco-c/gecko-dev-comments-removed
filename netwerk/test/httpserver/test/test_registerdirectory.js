@@ -11,33 +11,28 @@ XPCOMUtils.defineLazyGetter(this, "BASE", function() {
 });
 
 
-function nocache(ch)
-{
+function nocache(ch) {
   ch.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE; 
 }
 
-function notFound(ch)
-{
+function notFound(ch) {
   Assert.equal(ch.responseStatus, 404);
   Assert.ok(!ch.requestSucceeded);
 }
 
-function checkOverride(ch)
-{
+function checkOverride(ch) {
   Assert.equal(ch.responseStatus, 200);
   Assert.equal(ch.responseStatusText, "OK");
   Assert.ok(ch.requestSucceeded);
   Assert.equal(ch.getResponseHeader("Override-Succeeded"), "yes");
 }
 
-function check200(ch)
-{
+function check200(ch) {
   Assert.equal(ch.responseStatus, 200);
   Assert.equal(ch.responseStatusText, "OK");
 }
 
-function checkFile(ch, cx, status, data)
-{
+function checkFile(ch, cx, status, data) {
   Assert.equal(ch.responseStatus, 200);
   Assert.ok(ch.requestSucceeded);
 
@@ -62,8 +57,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-           function(ch)
-           {
+           function(ch) {
              nocache(ch);
              serverBasePath = testsDirectory.clone();
              srv.registerDirectory("/", serverBasePath);
@@ -75,8 +69,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               serverBasePath = null;
               srv.registerDirectory("/", serverBasePath);
@@ -88,8 +81,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               srv.registerPathHandler("/test_registerdirectory.js",
                                       override_test_registerdirectory);
@@ -101,8 +93,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function init_registerDirectory6(ch)
-            {
+            function init_registerDirectory6(ch) {
               nocache(ch);
               srv.registerPathHandler("/test_registerdirectory.js", null);
             },
@@ -113,8 +104,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
 
               
@@ -128,8 +118,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               srv.registerPathHandler("/test_registerdirectory.js",
                                       override_test_registerdirectory);
@@ -141,8 +130,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               serverBasePath = null;
               srv.registerDirectory("/", serverBasePath);
@@ -154,8 +142,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               srv.registerPathHandler("/test_registerdirectory.js", null);
             },
@@ -166,8 +153,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/foo/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               serverBasePath = testsDirectory.clone();
               srv.registerDirectory("/foo/", serverBasePath);
@@ -187,8 +173,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/foo/test_registerdirectory.js/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               srv.registerDirectory("/foo/test_registerdirectory.js/",
                                     serverBasePath);
@@ -206,8 +191,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/foo/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               srv.registerDirectory("/foo/", null);
             },
@@ -224,13 +208,12 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
     new Test(BASE + "/foo/test_registerdirectory.js/test_registerdirectory.js",
-            function(ch)
-            {
+            function(ch) {
               nocache(ch);
               srv.registerDirectory("/foo/test_registerdirectory.js/", null);
             },
             notFound,
-            null)
+            null),
   ];
 });
 
@@ -239,8 +222,7 @@ var srv;
 var serverBasePath;
 var testsDirectory;
 
-function run_test()
-{
+function run_test() {
   testsDirectory = do_get_cwd();
 
   srv = createServer();
@@ -253,8 +235,7 @@ function run_test()
 
 
 
-function override_test_registerdirectory(metadata, response)
-{
+function override_test_registerdirectory(metadata, response) {
   response.setStatusLine("1.1", 200, "OK");
   response.setHeader("Override-Succeeded", "yes", false);
 

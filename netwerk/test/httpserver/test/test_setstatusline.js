@@ -13,8 +13,7 @@ XPCOMUtils.defineLazyGetter(this, "URL", function() {
 
 var srv;
 
-function run_test()
-{
+function run_test() {
   srv = createServer();
 
   srv.registerPathHandler("/no/setstatusline", noSetstatusline);
@@ -36,8 +35,7 @@ function run_test()
 
 
 
-function checkStatusLine(channel, httpMaxVer, httpMinVer, httpCode, statusText)
-{
+function checkStatusLine(channel, httpMaxVer, httpMinVer, httpCode, statusText) {
   Assert.equal(channel.responseStatus, httpCode);
   Assert.equal(channel.responseStatusText, statusText);
 
@@ -61,112 +59,88 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
     new Test(URL + "/invalidStatus", null, startPassedTrue, stop),
     new Test(URL + "/invalidDescription", null, startPassedTrue, stop),
     new Test(URL + "/crazyCode", null, startCrazy, stop),
-    new Test(URL + "/nullVersion", null, startNullVersion, stop)
+    new Test(URL + "/nullVersion", null, startNullVersion, stop),
   ];
 });
 
 
 
-function noSetstatusline(metadata, response)
-{
+function noSetstatusline(metadata, response) {
 }
-function startNoSetStatusLine(ch, cx)
-{
+function startNoSetStatusLine(ch, cx) {
   checkStatusLine(ch, 1, 1, 200, "OK");
 }
-function stop(ch, cx, status, data)
-{
+function stop(ch, cx, status, data) {
   Assert.ok(Components.isSuccessCode(status));
 }
 
 
 
-function http1_0(metadata, response)
-{
+function http1_0(metadata, response) {
   response.setStatusLine("1.0", 200, "OK");
 }
-function startHttp1_0(ch, cx)
-{
+function startHttp1_0(ch, cx) {
   checkStatusLine(ch, 1, 0, 200, "OK");
 }
 
 
 
-function http1_1(metadata, response)
-{
+function http1_1(metadata, response) {
   response.setStatusLine("1.1", 200, "OK");
 }
-function startHttp1_1(ch, cx)
-{
+function startHttp1_1(ch, cx) {
   checkStatusLine(ch, 1, 1, 200, "OK");
 }
 
 
 
-function invalidVersion(metadata, response)
-{
-  try
-  {
+function invalidVersion(metadata, response) {
+  try {
     response.setStatusLine(" 1.0", 200, "FAILED");
-  }
-  catch (e)
-  {
+  } catch (e) {
     response.setHeader("Passed", "true", false);
   }
 }
-function startPassedTrue(ch, cx)
-{
+function startPassedTrue(ch, cx) {
   checkStatusLine(ch, 1, 1, 200, "OK");
   Assert.equal(ch.getResponseHeader("Passed"), "true");
 }
 
 
 
-function invalidStatus(metadata, response)
-{
-  try
-  {
+function invalidStatus(metadata, response) {
+  try {
     response.setStatusLine("1.0", 1000, "FAILED");
-  }
-  catch (e)
-  {
+  } catch (e) {
     response.setHeader("Passed", "true", false);
   }
 }
 
 
 
-function invalidDescription(metadata, response)
-{
-  try
-  {
+function invalidDescription(metadata, response) {
+  try {
     response.setStatusLine("1.0", 200, "FAILED\x01");
-  }
-  catch (e)
-  {
+  } catch (e) {
     response.setHeader("Passed", "true", false);
   }
 }
 
 
 
-function crazyCode(metadata, response)
-{
+function crazyCode(metadata, response) {
   response.setStatusLine("1.1", 617, "Crazy");
 }
-function startCrazy(ch, cx)
-{
+function startCrazy(ch, cx) {
   checkStatusLine(ch, 1, 1, 617, "Crazy");
 }
 
 
 
-function nullVersion(metadata, response)
-{
+function nullVersion(metadata, response) {
   response.setStatusLine(null, 255, "NULL");
 }
-function startNullVersion(ch, cx)
-{
+function startNullVersion(ch, cx) {
   
   checkStatusLine(ch, 1, 1, 255, "NULL");
 }

@@ -10,14 +10,13 @@
 
 var srv, dir, dirEntries;
 
-XPCOMUtils.defineLazyGetter(this, 'BASE_URL', function() {
+XPCOMUtils.defineLazyGetter(this, "BASE_URL", function() {
   return "http://localhost:" + srv.identity.primaryPort + "/";
 });
 
 Cu.importGlobalProperties(["DOMParser"]);
 
-function run_test()
-{
+function run_test() {
   createTestDirectory();
 
   srv = createServer();
@@ -28,8 +27,7 @@ function run_test()
 
   srv.start(-1);
 
-  function done()
-  {
+  function done() {
     do_test_pending();
     destroyTestDirectory();
     srv.stop(function() { do_test_finished(); });
@@ -38,8 +36,7 @@ function run_test()
   runHttpTests(tests, done);
 }
 
-function createTestDirectory()
-{
+function createTestDirectory() {
   dir = Cc["@mozilla.org/file/directory_service;1"]
           .getService(Ci.nsIProperties)
           .get("TmpD", Ci.nsIFile);
@@ -80,8 +77,7 @@ function createTestDirectory()
   dirEntries.push(files);
 }
 
-function destroyTestDirectory()
-{
+function destroyTestDirectory() {
   dir.remove(true);
 }
 
@@ -91,8 +87,7 @@ function destroyTestDirectory()
 
 
 
-function hiddenDataCheck(bytes, uri, path)
-{
+function hiddenDataCheck(bytes, uri, path) {
   var data = String.fromCharCode.apply(null, bytes);
 
   var parser = new DOMParser();
@@ -100,12 +95,9 @@ function hiddenDataCheck(bytes, uri, path)
   
   
   
-  try
-  {
+  try {
     var doc = parser.parseFromString(data, "application/xml");
-  }
-  catch (e)
-  {
+  } catch (e) {
     do_throw("document failed to parse as XML");
   }
 
@@ -133,8 +125,7 @@ function hiddenDataCheck(bytes, uri, path)
   var dirEntries = [{name: "file.txt", isDirectory: false},
                     {name: "SHOULD_SEE_THIS.txt^", isDirectory: false}];
 
-  for (var i = 0; i < items.length; i++)
-  {
+  for (var i = 0; i < items.length; i++) {
     var link = items[i].childNodes[0];
     var f = dirEntries[i];
 
@@ -164,8 +155,7 @@ function hiddenDataCheck(bytes, uri, path)
 
 
 
-function dataCheck(bytes, uri, path, dirEntries)
-{
+function dataCheck(bytes, uri, path, dirEntries) {
   var data = String.fromCharCode.apply(null, bytes);
 
   var parser = new DOMParser();
@@ -173,12 +163,9 @@ function dataCheck(bytes, uri, path, dirEntries)
   
   
   
-  try
-  {
+  try {
     var doc = parser.parseFromString(data, "application/xml");
-  }
-  catch (e)
-  {
+  } catch (e) {
     do_throw("document failed to parse as XML");
   }
 
@@ -202,8 +189,7 @@ function dataCheck(bytes, uri, path, dirEntries)
 
   var dirURI = ios.newURI(uri);
 
-  for (var i = 0; i < items.length; i++)
-  {
+  for (var i = 0; i < items.length; i++) {
     var link = items[i].childNodes[0];
     var f = dirEntries[i];
 
@@ -221,18 +207,15 @@ function dataCheck(bytes, uri, path, dirEntries)
 
 
 
-function makeFile(name, isDirectory, parentDir, lst)
-{
+function makeFile(name, isDirectory, parentDir, lst) {
   var type = Ci.nsIFile[isDirectory ? "DIRECTORY_TYPE" : "NORMAL_FILE_TYPE"];
   var file = parentDir.clone();
 
-  try
-  {
+  try {
     file.append(name);
     file.create(type, 0o755);
-    lst.push({name: name, isDirectory: isDirectory});
-  }
-  catch (e) {  }
+    lst.push({name, isDirectory});
+  } catch (e) {  }
 }
 
 
@@ -248,23 +231,19 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 });
 
 
-function start(ch)
-{
+function start(ch) {
   Assert.equal(ch.getResponseHeader("Content-Type"), "text/html;charset=utf-8");
 }
-function stopRootDirectory(ch, cx, status, data)
-{
+function stopRootDirectory(ch, cx, status, data) {
   dataCheck(data, BASE_URL, "/", dirEntries[0]);
 }
 
 
-function stopFooDirectory(ch, cx, status, data)
-{
+function stopFooDirectory(ch, cx, status, data) {
   dataCheck(data, BASE_URL + "foo/", "/foo/", dirEntries[1]);
 }
 
 
-function stopTrailingCaretDirectory(ch, cx, status, data)
-{
+function stopTrailingCaretDirectory(ch, cx, status, data) {
   hiddenDataCheck(data, BASE_URL + "bar/folder^/", "/bar/folder^/");
 }

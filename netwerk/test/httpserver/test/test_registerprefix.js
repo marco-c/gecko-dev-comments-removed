@@ -10,21 +10,17 @@ XPCOMUtils.defineLazyGetter(this, "BASE", function() {
   return "http://localhost:" + srv.identity.primaryPort;
 });
 
-function nocache(ch)
-{
+function nocache(ch) {
   ch.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE; 
 }
 
-function notFound(ch)
-{
+function notFound(ch) {
   Assert.equal(ch.responseStatus, 404);
   Assert.ok(!ch.requestSucceeded);
 }
 
-function makeCheckOverride(magic)
-{
-  return (function checkOverride(ch)
-  {
+function makeCheckOverride(magic) {
+  return (function checkOverride(ch) {
     Assert.equal(ch.responseStatus, 200);
     Assert.equal(ch.responseStatusText, "OK");
     Assert.ok(ch.requestSucceeded);
@@ -42,7 +38,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
                 makeCheckOverride("subpath")),
     new Test(BASE + "/prefix/dummy", removeHandlers, null, notFound),
     new Test(BASE + "/prefix/subpath/dummy", newPrefixHandler, null,
-                makeCheckOverride("subpath"))
+                makeCheckOverride("subpath")),
   ];
 });
 
@@ -50,8 +46,7 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 
 
 
-function prefixHandler(channel)
-{
+function prefixHandler(channel) {
   nocache(channel);
   srv.registerPrefixHandler("/prefix/", makeOverride("prefix"));
 }
@@ -60,8 +55,7 @@ function prefixHandler(channel)
 
 
 
-function pathHandler(channel)
-{
+function pathHandler(channel) {
   nocache(channel);
   srv.registerPathHandler("/prefix/dummy", makeOverride("path"));
 }
@@ -70,8 +64,7 @@ function pathHandler(channel)
 
 
 
-function longerPrefixHandler(channel)
-{
+function longerPrefixHandler(channel) {
   nocache(channel);
   srv.registerPrefixHandler("/prefix/subpath/", makeOverride("subpath"));
 }
@@ -80,8 +73,7 @@ function longerPrefixHandler(channel)
 
 
 
-function removeHandlers(channel)
-{
+function removeHandlers(channel) {
   nocache(channel);
   srv.registerPrefixHandler("/prefix/", null);
   srv.registerPathHandler("/prefix/dummy", null);
@@ -91,8 +83,7 @@ function removeHandlers(channel)
 
 
 
-function newPrefixHandler(channel)
-{
+function newPrefixHandler(channel) {
   nocache(channel);
   srv.registerPrefixHandler("/prefix/", makeOverride("prefix"));
 }
@@ -101,8 +92,7 @@ var srv;
 var serverBasePath;
 var testsDirectory;
 
-function run_test()
-{
+function run_test() {
   testsDirectory = do_get_profile();
 
   srv = createServer();
@@ -114,10 +104,8 @@ function run_test()
 
 
 
-function makeOverride(magic)
-{
-  return (function override(metadata, response)
-  {
+function makeOverride(magic) {
+  return (function override(metadata, response) {
     response.setStatusLine("1.1", 200, "OK");
     response.setHeader("Override-Succeeded", magic, false);
 

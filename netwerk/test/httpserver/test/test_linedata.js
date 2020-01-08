@@ -6,8 +6,7 @@
 
 
 
-function run_test()
-{
+function run_test() {
   var data = new LineData();
   data.appendBytes(["a".charCodeAt(0), CR]);
 
