@@ -118,19 +118,7 @@ MemMapSnapshot::Freeze(AutoMemMap& aMem)
   MOZ_TRY(NS_NewNativeLocalFile(mPath,  false,
                                 getter_AddRefs(file)));
 
-  auto result = aMem.init(file);
-#ifdef XP_LINUX
-  
-  
-  
-  
-  
-  if (!result.isOk()) {
-    aMem.reset();
-    result = aMem.init(file);
-  }
-#endif
-  return result;
+  return aMem.init(file);
 }
 
 #else
