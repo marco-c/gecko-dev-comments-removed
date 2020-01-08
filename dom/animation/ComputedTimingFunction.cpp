@@ -56,33 +56,46 @@ StepTiming(const ComputedTimingFunction::StepFunc& aStepFunc,
            ComputedTimingFunction::BeforeFlag aBeforeFlag)
 {
   
-  int32_t step = floor(aPortion * aStepFunc.mSteps);
+  
 
   
-  if (aStepFunc.mPos == StyleStepPosition::Start) {
-    step++;
+  int32_t currentStep = floor(aPortion * aStepFunc.mSteps);
+
+  
+  if (aStepFunc.mPos == StyleStepPosition::Start ||
+      aStepFunc.mPos == StyleStepPosition::JumpStart ||
+      aStepFunc.mPos == StyleStepPosition::JumpBoth) {
+    ++currentStep;
   }
 
   
   
   if (aBeforeFlag == ComputedTimingFunction::BeforeFlag::Set &&
       fmod(aPortion * aStepFunc.mSteps, 1) == 0) {
-    step--;
+    --currentStep;
   }
 
   
-  double result = double(step) / double(aStepFunc.mSteps);
+  
+  
+  if (aPortion >= 0.0 && currentStep < 0) {
+    currentStep = 0;
+  }
+
+  int32_t jumps = aStepFunc.mSteps;
+  if (aStepFunc.mPos == StyleStepPosition::JumpBoth) {
+    ++jumps;
+  } else if (aStepFunc.mPos == StyleStepPosition::JumpNone) {
+    --jumps;
+  }
+
+  if (aPortion <= 1.0 && currentStep > jumps) {
+    currentStep = jumps;
+  }
 
   
-  
-  
-  if (result < 0.0 && aPortion >= 0.0) {
-    return 0.0;
-  }
-  if (result > 1.0 && aPortion <= 1.0) {
-    return 1.0;
-  }
-  return result;
+  MOZ_ASSERT(jumps > 0, "`jumps` should be a positive integer");
+  return double(currentStep) / double(jumps);
 }
 
 double
