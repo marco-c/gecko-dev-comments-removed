@@ -388,6 +388,85 @@ class nsDocShell final : public nsDocLoader,
 
   mozilla::dom::BrowsingContext* GetBrowsingContext() const;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult InternalLoad(
+      nsIURI* aURI, nsIURI* aOriginalURI,
+      mozilla::Maybe<nsCOMPtr<nsIURI>> const& aResultPrincipalURI,
+      bool aKeepResultPrincipalURIIfSet, bool aLoadReplace,
+      bool aIsFromProcessingFrameAttributes, nsIURI* aReferrer,
+      uint32_t aReferrerPolicy, nsIPrincipal* aTriggeringPrincipal,
+      nsIPrincipal* aPrincipalToInherit, uint32_t aFlags,
+      const nsAString& aWindowTarget, const nsACString& aTypeHint,
+      const nsAString& aFileName, nsIInputStream* aPostData,
+      nsIInputStream* aHeadersData, uint32_t aLoadType, nsISHEntry* aSHEntry,
+      bool aFirstParty, const nsAString& aSrcdoc, nsIDocShell* aSourceDocShell,
+      nsIURI* aBaseURI, nsIDocShell** aDocShell, nsIRequest** aRequest);
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;

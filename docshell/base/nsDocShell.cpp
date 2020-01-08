@@ -149,6 +149,7 @@
 
 #include "nsCommandManager.h"
 #include "nsPIDOMWindow.h"
+#include "nsPILoadGroupInternal.h"
 #include "nsPIWindowRoot.h"
 
 #include "IHistory.h"
@@ -6692,6 +6693,11 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
     if (NS_SUCCEEDED(rv) && !channelCreationTime.IsNull()) {
       Telemetry::AccumulateTimeDelta(Telemetry::TOTAL_CONTENT_PAGE_LOAD_TIME,
                                      channelCreationTime);
+      nsCOMPtr<nsPILoadGroupInternal> internalLoadGroup =
+          do_QueryInterface(mLoadGroup);
+      if (internalLoadGroup) {
+        internalLoadGroup->OnEndPageLoad(aChannel);
+      }
     }
   }
 
@@ -8698,8 +8704,7 @@ bool nsDocShell::JustStartedNetworkLoad() {
   return mDocumentRequest && mDocumentRequest != GetCurrentDocChannel();
 }
 
-NS_IMETHODIMP
-nsDocShell::InternalLoad(
+nsresult nsDocShell::InternalLoad(
     nsIURI* aURI, nsIURI* aOriginalURI,
     Maybe<nsCOMPtr<nsIURI>> const& aResultPrincipalURI,
     bool aKeepResultPrincipalURIIfSet, bool aLoadReplace,
@@ -9037,7 +9042,8 @@ nsDocShell::InternalLoad(
     
     
     if (NS_SUCCEEDED(rv) && targetDocShell) {
-      rv = targetDocShell->InternalLoad(
+      nsDocShell* docShell = nsDocShell::Cast(targetDocShell);
+      rv = docShell->InternalLoad(
           aURI, aOriginalURI, aResultPrincipalURI, aKeepResultPrincipalURIIfSet,
           aLoadReplace, aIsFromProcessingFrameAttributes, aReferrer,
           aReferrerPolicy, aTriggeringPrincipal, principalToInherit, aFlags,
@@ -10435,6 +10441,7 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
     case LOAD_RELOAD_CHARSET_CHANGE: {
       
       
+      
       nsCOMPtr<nsICacheInfoChannel> cachingChannel =
           do_QueryInterface(aChannel);
       if (cachingChannel) {
@@ -10859,6 +10866,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   }
 
 #ifdef MOZ_GECKO_PROFILER
+  
   
   
   
@@ -12502,6 +12510,7 @@ class OnLinkClickEvent : public Runnable {
     
     
     
+    
     AutoJSAPI jsapi;
     if (mIsTrusted || jsapi.Init(mContent->OwnerDoc()->GetScopeObject())) {
       mHandler->OnLinkClickSync(mContent, mURI, mTargetSpec, mFileName,
@@ -12651,6 +12660,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
       nsAutoCString scheme;
       aURI->GetScheme(scheme);
       if (!scheme.IsEmpty()) {
+        
         
         
         bool isExposed;
