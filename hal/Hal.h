@@ -11,10 +11,10 @@
 #include "base/platform_thread.h"
 #include "nsTArray.h"
 #include "mozilla/dom/battery/Types.h"
-#include "mozilla/dom/network/Types.h"
 #include "mozilla/dom/power/Types.h"
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/hal_sandbox/PHal.h"
+#include "mozilla/HalNetworkInformation.h"
 #include "mozilla/HalScreenConfiguration.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/Types.h"
@@ -147,13 +147,13 @@ void DisableSensorNotifications(hal::SensorType aSensor);
 
 
 
-void RegisterNetworkObserver(NetworkObserver* aNetworkObserver);
+void RegisterNetworkObserver(hal::NetworkObserver* aNetworkObserver);
 
 
 
 
 
-void UnregisterNetworkObserver(NetworkObserver* aNetworkObserver);
+void UnregisterNetworkObserver(hal::NetworkObserver* aNetworkObserver);
 
 
 

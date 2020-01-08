@@ -4,19 +4,16 @@
 
 
 
-#ifndef mozilla_dom_network_Types_h
-#define mozilla_dom_network_Types_h
+#ifndef mozilla_HalNetworkInformation_h
+#define mozilla_HalNetworkInformation_h
+
+#include "mozilla/Observer.h"
 
 namespace mozilla {
 namespace hal {
 class NetworkInformation;
-} 
-
-template <class T>
-class Observer;
-
 typedef Observer<hal::NetworkInformation> NetworkObserver;
-
+} 
 } 
 
 #endif 
