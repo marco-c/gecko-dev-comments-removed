@@ -1958,13 +1958,12 @@ pub extern "C" fn wr_dp_push_stacking_context(
     let mut wr_spatial_id = spatial_id.to_webrender(state.pipeline_id);
     let wr_clip_id = clip.to_webrender(state.pipeline_id);
 
-    let is_reference_frame = transform_binding.is_some();
     
     
     
     
     let mut result = WrSpatialId { id: 0 };
-    if is_reference_frame {
+    if let Some(transform_binding) = transform_binding {
         wr_spatial_id = state.frame_builder.dl_builder.push_reference_frame(
             &bounds,
             wr_spatial_id,

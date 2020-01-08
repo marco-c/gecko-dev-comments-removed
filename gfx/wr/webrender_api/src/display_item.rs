@@ -537,7 +537,7 @@ pub struct ReferenceFrame {
     pub transform_style: TransformStyle,
     
     
-    pub transform: Option<PropertyBinding<LayoutTransform>>,
+    pub transform: PropertyBinding<LayoutTransform>,
     pub id: SpatialId,
 }
 
