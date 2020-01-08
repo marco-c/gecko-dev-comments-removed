@@ -1233,13 +1233,21 @@ function UpdatePatch(patch) {
         this[attr.name] = attr.value;
         break;
       default:
-        
-        this.setProperty(attr.name, attr.value);
+        if (!this._attrNames.includes(attr.name)) {
+          
+          this.setProperty(attr.name, attr.value);
+        }
         break;
     }
   }
 }
 UpdatePatch.prototype = {
+  
+  
+  _attrNames: [
+    "errorCode", "finalURL", "selected", "size", "state", "type", "URL",
+  ],
+
   
 
 
@@ -1266,7 +1274,7 @@ UpdatePatch.prototype = {
     }
 
     for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
+      if (value.present && !this._attrNames.includes(name)) {
         patch.setAttribute(name, value.data);
       }
     }
@@ -1277,6 +1285,12 @@ UpdatePatch.prototype = {
 
 
   setProperty: function UpdatePatch_setProperty(name, value) {
+    if (this._attrNames.includes(name)) {
+      throw Components.Exception(
+        "Illegal value '" + name + "' (attribute exists on nsIUpdatePatch) " +
+        "when calling method: [nsIWritablePropertyBag::setProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
     this._properties[name] = { data: value, present: true };
   },
 
@@ -1284,6 +1298,12 @@ UpdatePatch.prototype = {
 
 
   deleteProperty: function UpdatePatch_deleteProperty(name) {
+    if (this._attrNames.includes(name)) {
+      throw Components.Exception(
+        "Illegal value '" + name + "' (attribute exists on nsIUpdatePatch) " +
+        "when calling method: [nsIWritablePropertyBag::deleteProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
     if (name in this._properties) {
       this._properties[name].present = false;
     } else {
@@ -1308,7 +1328,7 @@ UpdatePatch.prototype = {
              createInstance(Ci.nsISupportsInterfacePointer);
     let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
     for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
+      if (value.present && !this._attrNames.includes(name)) {
         
         
         
@@ -1327,6 +1347,12 @@ UpdatePatch.prototype = {
 
 
   getProperty: function UpdatePatch_getProperty(name) {
+    if (this._attrNames.includes(name)) {
+      throw Components.Exception(
+        "Illegal value '" + name + "' (attribute exists on nsIUpdatePatch) " +
+        "when calling method: [nsIWritablePropertyBag::getProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
     if (name in this._properties && this._properties[name].present) {
       return this._properties[name].data;
     }
@@ -1431,8 +1457,10 @@ function Update(update) {
           this[attr.name] = attr.value;
           break;
         default:
-          
-          this.setProperty(attr.name, attr.value);
+          if (!this._attrNames.includes(attr.name)) {
+            
+            this.setProperty(attr.name, attr.value);
+          }
           break;
       }
     }
@@ -1470,6 +1498,15 @@ function Update(update) {
   }
 }
 Update.prototype = {
+  
+  
+  _attrNames: [
+    "appVersion", "buildID", "channel", "detailsURL", "displayVersion",
+    "elevationFailure", "errorCode", "installDate", "isCompleteUpdate", "name",
+    "previousAppVersion", "promptWaitTime", "serviceURL", "state", "statusText",
+    "type", "unsupported",
+  ],
+
   
 
 
@@ -1563,7 +1600,7 @@ Update.prototype = {
     }
 
     for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
+      if (value.present && !this._attrNames.includes(name)) {
         update.setAttribute(name, value.data);
       }
     }
@@ -1580,6 +1617,12 @@ Update.prototype = {
 
 
   setProperty: function Update_setProperty(name, value) {
+    if (this._attrNames.includes(name)) {
+      throw Components.Exception(
+        "Illegal value '" + name + "' (attribute exists on nsIUpdate) " +
+        "when calling method: [nsIWritablePropertyBag::setProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
     this._properties[name] = { data: value, present: true };
   },
 
@@ -1587,6 +1630,12 @@ Update.prototype = {
 
 
   deleteProperty: function Update_deleteProperty(name) {
+    if (this._attrNames.includes(name)) {
+      throw Components.Exception(
+        "Illegal value '" + name + "' (attribute exists on nsIUpdate) " +
+        "when calling method: [nsIWritablePropertyBag::deleteProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
     if (name in this._properties) {
       this._properties[name].present = false;
     } else {
@@ -1611,7 +1660,7 @@ Update.prototype = {
              createInstance(Ci.nsISupportsInterfacePointer);
     let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
     for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
+      if (value.present && !this._attrNames.includes(name)) {
         
         
         
@@ -1629,6 +1678,12 @@ Update.prototype = {
 
 
   getProperty: function Update_getProperty(name) {
+    if (this._attrNames.includes(name)) {
+      throw Components.Exception(
+        "Illegal value '" + name + "' (attribute exists on nsIUpdate) " +
+        "when calling method: [nsIWritablePropertyBag::getProperty]",
+        Cr.NS_ERROR_ILLEGAL_VALUE);
+    }
     if (name in this._properties && this._properties[name].present) {
       return this._properties[name].data;
     }
