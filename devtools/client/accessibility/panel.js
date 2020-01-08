@@ -240,8 +240,11 @@ AccessibilityPanel.prototype = {
     this.panelWin.off(EVENTS.ACCESSIBILITY_INSPECTOR_UPDATED,
       this.onAccessibilityInspectorUpdated);
 
-    this.picker.release();
-    this.picker = null;
+    
+    if (this.picker) {
+      this.picker.release();
+      this.picker = null;
+    }
 
     if (this.front) {
       this.front.off("init", this.updateA11YServiceDurationTimer);
