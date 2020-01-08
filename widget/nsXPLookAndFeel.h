@@ -83,6 +83,10 @@ public:
 
   virtual nsTArray<LookAndFeelInt> GetIntCacheImpl();
   virtual void SetIntCacheImpl(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache) {}
+  void SetShouldRetainCacheImplForTest(bool aValue)
+  {
+    mShouldRetainCacheForTest = aValue;
+  }
 
   virtual void NativeInit() = 0;
 
@@ -117,6 +121,10 @@ protected:
 
   static nsXPLookAndFeel* sInstance;
   static bool sShutdown;
+
+  
+  
+  bool mShouldRetainCacheForTest;
 };
 
 #endif

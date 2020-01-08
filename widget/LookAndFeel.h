@@ -687,6 +687,11 @@ public:
 
   static nsTArray<LookAndFeelInt> GetIntCache();
   static void SetIntCache(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache);
+  
+
+
+
+  static void SetShouldRetainCacheForTest(bool aValue);
 };
 
 } 
