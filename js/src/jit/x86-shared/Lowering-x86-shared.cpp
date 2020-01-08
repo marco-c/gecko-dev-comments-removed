@@ -704,10 +704,11 @@ LIRGenerator::visitCopySign(MCopySign* ins)
 
     
     lir->setOperand(0, useRegisterAtStart(lhs));
-    lir->setOperand(1, lhs != rhs ? useRegister(rhs) : useRegisterAtStart(rhs));
     if (!Assembler::HasAVX()) {
+        lir->setOperand(1, lhs != rhs ? useRegister(rhs) : useRegisterAtStart(rhs));
         defineReuseInput(lir, ins, 0);
     } else {
+        lir->setOperand(1, useRegisterAtStart(rhs));
         define(lir, ins);
     }
 }
