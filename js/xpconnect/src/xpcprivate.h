@@ -108,6 +108,7 @@
 #include "nsIComponentManager.h"
 #include "nsIComponentRegistrar.h"
 #include "nsISupportsPrimitives.h"
+#include "nsISimpleEnumerator.h"
 #include "nsMemory.h"
 #include "nsIXPConnect.h"
 #include "nsIXPCScriptable.h"
@@ -1943,6 +1944,31 @@ private:
     nsString             mName;
     nsCOMPtr<nsIVariant> mValue;
 };
+
+namespace xpc {
+
+
+
+class XPCWrappedJSIterator final : public nsISimpleEnumerator
+{
+public:
+    NS_DECL_CYCLE_COLLECTION_CLASS(XPCWrappedJSIterator)
+    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+    NS_DECL_NSISIMPLEENUMERATOR
+    NS_DECL_NSISIMPLEENUMERATORBASE
+
+    explicit XPCWrappedJSIterator(nsIJSEnumerator* aEnum);
+
+private:
+    ~XPCWrappedJSIterator() = default;
+
+    nsCOMPtr<nsIJSEnumerator> mEnum;
+    nsCOMPtr<nsIGlobalObject> mGlobal;
+    nsCOMPtr<nsISupports> mNext;
+    mozilla::Maybe<bool> mHasNext;
+};
+
+} 
 
 
 
