@@ -48,10 +48,9 @@ function createClientMock() {
         eventEmitter.off(evt, listener);
       },
     },
+
     
     close: () => {},
-    
-    isClosed: () => false,
     
     connect: () => {},
     

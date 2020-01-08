@@ -26,7 +26,6 @@ const {
   DISCONNECT_RUNTIME_FAILURE,
   DISCONNECT_RUNTIME_START,
   DISCONNECT_RUNTIME_SUCCESS,
-  PAGE_TYPES,
   REMOTE_RUNTIMES_UPDATED,
   RUNTIME_PREFERENCE,
   RUNTIMES,
@@ -63,9 +62,11 @@ async function getRuntimeInfo(runtime, clientWrapper) {
   };
 }
 
-function onRemoteDebuggerClientClosed() {
-  window.AboutDebugging.onNetworkLocationsUpdated();
-  window.AboutDebugging.onUSBRuntimesUpdated();
+function onUSBDebuggerClientClosed() {
+  
+  
+  
+  window.AboutDebugging.store.dispatch(Actions.scanUSBRuntimes());
 }
 
 function onMultiE10sUpdated() {
@@ -98,10 +99,10 @@ function connectRuntime(id) {
         deviceFront.on("multi-e10s-updated", onMultiE10sUpdated);
       }
 
-      if (runtime.type !== RUNTIMES.THIS_FIREFOX) {
+      if (runtime.type === RUNTIMES.USB) {
         
         
-        clientWrapper.addOneTimeListener("closed", onRemoteDebuggerClientClosed);
+        clientWrapper.addOneTimeListener("closed", onUSBDebuggerClientClosed);
       }
 
       dispatch({
@@ -130,8 +131,8 @@ function disconnectRuntime(id) {
         deviceFront.off("multi-e10s-updated", onMultiE10sUpdated);
       }
 
-      if (runtime.type !== RUNTIMES.THIS_FIREFOX) {
-        clientWrapper.removeListener("closed", onRemoteDebuggerClientClosed);
+      if (runtime.type === RUNTIMES.USB) {
+        clientWrapper.removeListener("closed", onUSBDebuggerClientClosed);
       }
 
       await clientWrapper.close();
@@ -270,27 +271,13 @@ function updateUSBRuntimes(adbRuntimes) {
   return updateRemoteRuntimes(runtimes, RUNTIMES.USB);
 }
 
-
-
-
-
-
-
-function _isRuntimeValid(runtime, runtimes) {
-  const isRuntimeAvailable = runtimes.some(r => r.id === runtime.id);
-  const isConnectionValid = runtime.runtimeDetails &&
-    !runtime.runtimeDetails.clientWrapper.isClosed();
-  return isRuntimeAvailable && isConnectionValid;
-}
-
 function updateRemoteRuntimes(runtimes, type) {
   return async (dispatch, getState) => {
     const currentRuntime = getCurrentRuntime(getState().runtimes);
 
-    
-    
-    if (currentRuntime && currentRuntime.type === type &&
-      !_isRuntimeValid(currentRuntime, runtimes)) {
+    if (currentRuntime &&
+        currentRuntime.type === type &&
+        !runtimes.find(runtime => currentRuntime.id === runtime.id)) {
       
       
       
@@ -300,26 +287,27 @@ function updateRemoteRuntimes(runtimes, type) {
       
       
       
-      await dispatch(Actions.selectPage(PAGE_TYPES.RUNTIME, RUNTIMES.THIS_FIREFOX));
+
+      await dispatch(Actions.selectPage(RUNTIMES.THIS_FIREFOX, RUNTIMES.THIS_FIREFOX));
     }
 
     
     runtimes.forEach(runtime => {
       const existingRuntime = findRuntimeById(runtime.id, getState().runtimes);
-      const isConnectionValid = existingRuntime && existingRuntime.runtimeDetails &&
-        !existingRuntime.runtimeDetails.clientWrapper.isClosed();
-      runtime.runtimeDetails = isConnectionValid ? existingRuntime.runtimeDetails : null;
+      runtime.runtimeDetails = existingRuntime ? existingRuntime.runtimeDetails : null;
     });
 
+    
+    const validIds = runtimes.map(r => r.id);
     const existingRuntimes = getAllRuntimes(getState().runtimes);
-    for (const runtime of existingRuntimes) {
-      
-      const isConnected = runtime.runtimeDetails;
-      
-      const isSameType = runtime.type === type;
-      if (isConnected && isSameType && !_isRuntimeValid(runtime, runtimes)) {
-        
-        await dispatch(disconnectRuntime(runtime.id));
+    const invalidRuntimes = existingRuntimes.filter(r => {
+      return r.type === type && !validIds.includes(r.id);
+    });
+
+    for (const invalidRuntime of invalidRuntimes) {
+      const isConnected = !!invalidRuntime.runtimeDetails;
+      if (isConnected) {
+        await dispatch(disconnectRuntime(invalidRuntime.id));
       }
     }
 
@@ -330,7 +318,6 @@ function updateRemoteRuntimes(runtimes, type) {
         continue;
       }
 
-      
       const isConnected = !!runtime.runtimeDetails;
       const hasConnectedClient = remoteClientManager.hasClient(runtime.id, runtime.type);
       if (!isConnected && hasConnectedClient) {
@@ -347,12 +334,11 @@ function updateRemoteRuntimes(runtimes, type) {
 
 function removeRuntimeListeners() {
   return (dispatch, getState) => {
-    const allRuntimes = getAllRuntimes(getState().runtimes);
-    const remoteRuntimes = allRuntimes.filter(r => r.type !== RUNTIMES.THIS_FIREFOX);
-    for (const runtime of remoteRuntimes) {
+    const { usbRuntimes } = getState().runtimes;
+    for (const runtime of usbRuntimes) {
       if (runtime.runtimeDetails) {
         const { clientWrapper } = runtime.runtimeDetails;
-        clientWrapper.removeListener("closed", onRemoteDebuggerClientClosed);
+        clientWrapper.removeListener("closed", onUSBDebuggerClientClosed);
       }
     }
   };

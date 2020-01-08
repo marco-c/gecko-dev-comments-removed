@@ -14,10 +14,8 @@ const {
   ADB_ADDON_STATUS_UPDATED,
   DEBUG_TARGET_COLLAPSIBILITY_UPDATED,
   NETWORK_LOCATIONS_UPDATED,
+  PAGE_SELECTED,
   PAGE_TYPES,
-  SELECT_PAGE_FAILURE,
-  SELECT_PAGE_START,
-  SELECT_PAGE_SUCCESS,
   USB_RUNTIMES_SCAN_START,
   USB_RUNTIMES_SCAN_SUCCESS,
 } = require("../constants");
@@ -30,39 +28,33 @@ const Actions = require("./index");
 
 function selectPage(page, runtimeId) {
   return async (dispatch, getState) => {
-    dispatch({ type: SELECT_PAGE_START });
-
-    try {
-      const isSamePage = (oldPage, newPage) => {
-        if (newPage === PAGE_TYPES.RUNTIME && oldPage === PAGE_TYPES.RUNTIME) {
-          return runtimeId === getState().runtimes.selectedRuntimeId;
-        }
-        return newPage === oldPage;
-      };
-
-      const currentPage = getState().ui.selectedPage;
-      
-      
-      
-      if (!page || isSamePage(currentPage, page)) {
-        return;
+    const isSamePage = (oldPage, newPage) => {
+      if (newPage === PAGE_TYPES.RUNTIME && oldPage === PAGE_TYPES.RUNTIME) {
+        return runtimeId === getState().runtimes.selectedRuntimeId;
       }
+      return newPage === oldPage;
+    };
 
-      
-      if (currentPage === PAGE_TYPES.RUNTIME) {
-        const currentRuntimeId = getState().runtimes.selectedRuntimeId;
-        await dispatch(Actions.unwatchRuntime(currentRuntimeId));
-      }
-
-      
-      if (page === PAGE_TYPES.RUNTIME) {
-        await dispatch(Actions.watchRuntime(runtimeId));
-      }
-
-      dispatch({ type: SELECT_PAGE_SUCCESS, page, runtimeId });
-    } catch (e) {
-      dispatch({ type: SELECT_PAGE_FAILURE, error: e });
+    const currentPage = getState().ui.selectedPage;
+    
+    
+    
+    if (!page || isSamePage(currentPage, page)) {
+      return;
     }
+
+    
+    if (currentPage === PAGE_TYPES.RUNTIME) {
+      const currentRuntimeId = getState().runtimes.selectedRuntimeId;
+      await dispatch(Actions.unwatchRuntime(currentRuntimeId));
+    }
+
+    
+    if (page === PAGE_TYPES.RUNTIME) {
+      await dispatch(Actions.watchRuntime(runtimeId));
+    }
+
+    dispatch({ type: PAGE_SELECTED, page, runtimeId });
   };
 }
 
