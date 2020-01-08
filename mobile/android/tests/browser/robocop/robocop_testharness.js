@@ -45,7 +45,10 @@ function _evalURI(uri, sandbox) {
 
 
 function testOneFile(uri) {
-  let HEAD_JS = "robocop_head.js";
+  let HEAD_JS = [
+    "head.js",
+    "robocop_head.js",
+  ];
 
   
   
@@ -76,7 +79,13 @@ function testOneFile(uri) {
 
   
   
-  _evalURI(HEAD_JS, testScope);
+  for (script of HEAD_JS) {
+    _evalURI(script, testScope);
+  }
+
+  
+  
+  testScope.info = testScope.do_print;
 
   return _evalURI(uri, testScope);
 }
