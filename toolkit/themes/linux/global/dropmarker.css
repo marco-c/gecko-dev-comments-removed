@@ -4,4 +4,7 @@
 
 dropmarker {
   -moz-appearance: -moz-menulist-button;
+  
+
+  -moz-image-region: auto;
 }
