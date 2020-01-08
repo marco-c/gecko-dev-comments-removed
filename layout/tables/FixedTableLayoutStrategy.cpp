@@ -71,13 +71,13 @@ FixedTableLayoutStrategy::~FixedTableLayoutStrategy() {}
     if (styleISize->ConvertsToLength()) {
       result +=
           colFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, *styleISize);
-    } else if (styleISize->GetUnit() == eStyleUnit_Percent) {
+    } else if (styleISize->ConvertsToPercent()) {
       
     } else {
       NS_ASSERTION(
           styleISize->GetUnit() == eStyleUnit_Auto ||
               styleISize->GetUnit() == eStyleUnit_Enumerated ||
-              (styleISize->IsCalcUnit() && styleISize->CalcHasPercent()),
+              (styleISize->IsCalcUnit() && !styleISize->ConvertsToPercent()),
           "bad inline size");
 
       
@@ -102,7 +102,7 @@ FixedTableLayoutStrategy::~FixedTableLayoutStrategy() {}
             cellISize = ((cellISize + spacing) / colSpan) - spacing;
           }
           result += cellISize;
-        } else if (styleISize->GetUnit() == eStyleUnit_Percent) {
+        } else if (styleISize->ConvertsToPercent()) {
           if (colSpan > 1) {
             
             result -= spacing * (colSpan - 1);
@@ -209,8 +209,8 @@ static inline nscoord AllocateUnassigned(nscoord aUnassignedSpace,
       colISize = colFrame->ComputeISizeValue(aReflowInput.mRenderingContext, 0,
                                              0, 0, *styleISize);
       specTotal += colISize;
-    } else if (styleISize->GetUnit() == eStyleUnit_Percent) {
-      float pct = styleISize->GetPercentValue();
+    } else if (styleISize->ConvertsToPercent()) {
+      float pct = styleISize->ToPercent();
       colISize = NSToCoordFloor(pct * float(tableISize));
       colFrame->AddPrefPercent(pct);
       pctTotal += pct;
@@ -218,7 +218,7 @@ static inline nscoord AllocateUnassigned(nscoord aUnassignedSpace,
       NS_ASSERTION(
           styleISize->GetUnit() == eStyleUnit_Auto ||
               styleISize->GetUnit() == eStyleUnit_Enumerated ||
-              (styleISize->IsCalcUnit() && styleISize->CalcHasPercent()),
+              (styleISize->IsCalcUnit() && !styleISize->ConvertsToPercent()),
           "bad inline size");
 
       
@@ -242,9 +242,9 @@ static inline nscoord AllocateUnassigned(nscoord aUnassignedSpace,
           colISize = nsLayoutUtils::IntrinsicForContainer(
               aReflowInput.mRenderingContext, cellFrame,
               nsLayoutUtils::MIN_ISIZE);
-        } else if (styleISize->GetUnit() == eStyleUnit_Percent) {
+        } else if (styleISize->ConvertsToPercent()) {
           
-          float pct = styleISize->GetPercentValue();
+          float pct = styleISize->ToPercent();
           colISize = NSToCoordFloor(pct * float(tableISize));
 
           if (cellStylePos->mBoxSizing == StyleBoxSizing::Content) {
@@ -273,7 +273,7 @@ static inline nscoord AllocateUnassigned(nscoord aUnassignedSpace,
               colISize = 0;
             }
           }
-          if (styleISize->GetUnit() != eStyleUnit_Percent) {
+          if (!styleISize->ConvertsToPercent()) {
             specTotal += colISize;
           }
         }

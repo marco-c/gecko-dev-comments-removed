@@ -145,8 +145,8 @@ static CellISizeInfo GetISizeInfo(gfxContext *aRenderingContext,
       minCoord = c;
     }
     prefCoord = std::max(c, minCoord);
-  } else if (unit == eStyleUnit_Percent) {
-    prefPercent = iSize.GetPercentValue();
+  } else if (iSize.ConvertsToPercent()) {
+    prefPercent = iSize.ToPercent();
   } else if (unit == eStyleUnit_Enumerated && aIsCell) {
     switch (iSize.GetIntValue()) {
       case NS_STYLE_WIDTH_MAX_CONTENT:
@@ -181,13 +181,12 @@ static CellISizeInfo GetISizeInfo(gfxContext *aRenderingContext,
     nscoord c = aFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, maxISize);
     minCoord = std::min(c, minCoord);
     prefCoord = std::min(c, prefCoord);
-  } else if (unit == eStyleUnit_Percent) {
-    float p = stylePos->MaxISize(aWM).GetPercentValue();
+  } else if (maxISize.ConvertsToPercent()) {
+    float p = maxISize.ToPercent();
     if (p < prefPercent) {
       prefPercent = p;
     }
   }
-  
 
   nsStyleCoord minISize(stylePos->MinISize(aWM));
   if (minISize.GetUnit() == eStyleUnit_Enumerated) {
@@ -203,13 +202,12 @@ static CellISizeInfo GetISizeInfo(gfxContext *aRenderingContext,
     nscoord c = aFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, minISize);
     minCoord = std::max(c, minCoord);
     prefCoord = std::max(c, prefCoord);
-  } else if (unit == eStyleUnit_Percent) {
-    float p = stylePos->MinISize(aWM).GetPercentValue();
+  } else if (minISize.ConvertsToPercent()) {
+    float p = minISize.ToPercent();
     if (p > prefPercent) {
       prefPercent = p;
     }
   }
-  
 
   
   if (aIsCell) {

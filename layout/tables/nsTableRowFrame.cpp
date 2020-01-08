@@ -503,10 +503,9 @@ nscoord nsTableRowFrame::CalcBSize(const ReflowInput& aReflowInput) {
   const nsStyleCoord& bsizeStyleCoord = position->BSize(wm);
   if (bsizeStyleCoord.ConvertsToLength()) {
     SetFixedBSize(bsizeStyleCoord.ComputeCoordPercentCalc(0));
-  } else if (eStyleUnit_Percent == bsizeStyleCoord.GetUnit()) {
-    SetPctBSize(bsizeStyleCoord.GetPercentValue());
+  } else if (bsizeStyleCoord.ConvertsToPercent()) {
+    SetPctBSize(bsizeStyleCoord.ToPercent());
   }
-  
 
   for (nsIFrame* kidFrame : mFrames) {
     nsTableCellFrame* cellFrame = do_QueryFrame(kidFrame);
@@ -569,44 +568,26 @@ nsresult nsTableRowFrame::CalculateCellActualBSize(nsTableCellFrame* aCellFrame,
   int32_t rowSpan = GetTableFrame()->GetEffectiveRowSpan(*aCellFrame);
 
   const nsStyleCoord& bsizeStyleCoord = position->BSize(aWM);
-  switch (bsizeStyleCoord.GetUnit()) {
-    case eStyleUnit_Calc: {
-      if (bsizeStyleCoord.CalcHasPercent()) {
-        
-        break;
-      }
-      
-      MOZ_FALLTHROUGH;
+  if (bsizeStyleCoord.ConvertsToLength()) {
+    
+    
+    
+    
+    
+    specifiedBSize = bsizeStyleCoord.ToLength();
+    if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
+        position->mBoxSizing == StyleBoxSizing::Content) {
+      specifiedBSize +=
+          aCellFrame->GetLogicalUsedBorderAndPadding(aWM).BStartEnd(aWM);
     }
-    case eStyleUnit_Coord: {
-      
-      
-      
-      
-      
-      specifiedBSize = bsizeStyleCoord.ComputeCoordPercentCalc(0);
-      if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
-          position->mBoxSizing == StyleBoxSizing::Content) {
-        specifiedBSize +=
-            aCellFrame->GetLogicalUsedBorderAndPadding(aWM).BStartEnd(aWM);
-      }
 
-      if (1 == rowSpan) {
-        SetFixedBSize(specifiedBSize);
-      }
-      break;
+    if (1 == rowSpan) {
+      SetFixedBSize(specifiedBSize);
     }
-    case eStyleUnit_Percent: {
-      if (1 == rowSpan) {
-        SetPctBSize(bsizeStyleCoord.GetPercentValue());
-      }
-      
-      
-      break;
+  } else if (bsizeStyleCoord.ConvertsToPercent()) {
+    if (1 == rowSpan) {
+      SetPctBSize(bsizeStyleCoord.ToPercent());
     }
-    case eStyleUnit_Auto:
-    default:
-      break;
   }
 
   
@@ -1358,7 +1339,7 @@ void nsTableRowFrame::InitHasCellWithStyleBSize(nsTableFrame* aTableFrame) {
     if (aTableFrame->GetEffectiveRowSpan(*cellFrame) == 1 &&
         cellBSize.GetUnit() != eStyleUnit_Auto &&
         
-        (!cellBSize.IsCalcUnit() || !cellBSize.HasPercent())) {
+        (cellBSize.ConvertsToLength() || cellBSize.ConvertsToPercent())) {
       AddStateBits(NS_ROW_HAS_CELL_WITH_STYLE_BSIZE);
       return;
     }
