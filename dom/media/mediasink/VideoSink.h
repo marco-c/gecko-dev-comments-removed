@@ -132,7 +132,8 @@ private:
   
   TimeUnit mVideoFrameEndTime;
 
-  uint32_t mOldDroppedCount;
+  uint32_t mOldCompositorDroppedCount;
+  uint32_t mPendingDroppedCount;
 
   
   MediaEventListener mPushListener;
