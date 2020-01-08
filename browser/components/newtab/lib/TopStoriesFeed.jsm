@@ -40,8 +40,6 @@ this.TopStoriesFeed = class TopStoriesFeed {
     try {
       const {options} = SectionsManager.sections.get(SECTION_ID);
       const apiKey = this.getApiKeyFromPref(options.api_key_pref);
-      
-      let shouldBroadcast = false;
       this.stories_endpoint = this.produceFinalEndpointUrl(options.stories_endpoint, apiKey);
       this.topics_endpoint = this.produceFinalEndpointUrl(options.topics_endpoint, apiKey);
       this.read_more_endpoint = options.read_more_endpoint;
@@ -57,17 +55,14 @@ this.TopStoriesFeed = class TopStoriesFeed {
       
       
       
-      
       await this.loadCachedData();
       if (this.storiesLastUpdated === 0) {
-        shouldBroadcast = true;
         await this.fetchStories();
       }
       if (this.topicsLastUpdated === 0) {
-        shouldBroadcast = true;
         await this.fetchTopics();
       }
-      this.doContentUpdate(shouldBroadcast);
+      this.doContentUpdate(true);
       this.storiesLoaded = true;
 
       
