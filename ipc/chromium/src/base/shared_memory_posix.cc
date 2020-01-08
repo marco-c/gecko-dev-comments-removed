@@ -65,7 +65,15 @@ bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid)
   
   
   
-  static const char* const kSnap = PR_GetEnv("SNAP_NAME");
+  static const char* const kSnap = []{
+    auto instanceName = PR_GetEnv("SNAP_INSTANCE_NAME");
+    if (instanceName != nullptr) {
+      return instanceName;
+    }
+    
+    return PR_GetEnv("SNAP_NAME");
+  }();
+
   if (kSnap) {
     StringAppendF(str, "snap.%s.", kSnap);
   }
