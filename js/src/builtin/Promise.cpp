@@ -2566,6 +2566,7 @@ CommonPerformPromiseAllRace(JSContext *cx, PromiseForOfIterator& iterator, Handl
             
             
             
+            
             if (nextPromiseObj->is<PromiseObject>() && resultPromise->is<PromiseObject>()) {
                 Handle<PromiseObject*> promise = nextPromiseObj.as<PromiseObject>();
                 if (!AddDummyPromiseReactionForDebugger(cx, promise, blockedPromise))
@@ -2999,7 +3000,12 @@ Promise_static_species(JSContext* cx, unsigned argc, Value* vp)
 
 
 enum class IncumbentGlobalObject {
-    Yes, No
+    
+    
+    No,
+
+    
+    Yes
 };
 
 static PromiseReactionRecord*
@@ -3007,16 +3013,45 @@ NewReactionRecord(JSContext* cx, Handle<PromiseCapability> resultCapability,
                   HandleValue onFulfilled, HandleValue onRejected,
                   IncumbentGlobalObject incumbentGlobalObjectOption)
 {
-    
-    
-    
-    
 #ifdef DEBUG
-    if (resultCapability.promise() && !resultCapability.promise()->is<PromiseObject>()) {
-        MOZ_ASSERT(resultCapability.resolve());
-        MOZ_ASSERT(IsCallable(resultCapability.resolve()));
-        MOZ_ASSERT(resultCapability.reject());
-        MOZ_ASSERT(IsCallable(resultCapability.reject()));
+    if (resultCapability.promise()) {
+        if (incumbentGlobalObjectOption == IncumbentGlobalObject::Yes) {
+            if (resultCapability.promise()->is<PromiseObject>()) {
+                
+                
+                
+                MOZ_ASSERT_IF(resultCapability.resolve(),
+                              IsCallable(resultCapability.resolve()));
+                MOZ_ASSERT_IF(resultCapability.reject(),
+                              IsCallable(resultCapability.reject()));
+            } else {
+                
+                
+                
+                MOZ_ASSERT(resultCapability.resolve());
+                MOZ_ASSERT(IsCallable(resultCapability.resolve()));
+                MOZ_ASSERT(resultCapability.reject());
+                MOZ_ASSERT(IsCallable(resultCapability.reject()));
+            }
+        } else {
+            
+            
+            
+            
+            
+            JSObject* unwrappedPromise = UncheckedUnwrap(resultCapability.promise());
+            MOZ_ASSERT(unwrappedPromise->is<PromiseObject>());
+            MOZ_ASSERT(!resultCapability.resolve());
+            MOZ_ASSERT(!resultCapability.reject());
+        }
+    } else {
+        
+        
+        
+        
+        MOZ_ASSERT(!resultCapability.resolve());
+        MOZ_ASSERT(!resultCapability.reject());
+        MOZ_ASSERT(incumbentGlobalObjectOption == IncumbentGlobalObject::Yes);
     }
 #endif
 
@@ -4017,6 +4052,9 @@ AddDummyPromiseReactionForDebugger(JSContext* cx, Handle<PromiseObject*> promise
 {
     if (promise->state() != JS::PromiseState::Pending)
         return true;
+
+    
+    MOZ_ASSERT(UncheckedUnwrap(dependentPromise)->is<PromiseObject>());
 
     
     Rooted<PromiseCapability> capability(cx);
