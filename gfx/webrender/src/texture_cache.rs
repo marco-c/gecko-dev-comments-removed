@@ -710,6 +710,7 @@ impl TextureCache {
 
         
         entry.eviction_notice = eviction_notice.cloned();
+        entry.uv_rect_kind = uv_rect_kind;
 
         
         
