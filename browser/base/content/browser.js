@@ -1141,19 +1141,6 @@ function RedirectLoad({ target: browser, data }) {
   }
 }
 
-if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
-  window.addEventListener("MozBeforeInitialXULLayout", () => {
-    gBrowserInit.onBeforeInitialXULLayout();
-  }, { once: true });
-  
-  
-  
-  
-  window.addEventListener("DOMContentLoaded", () => {
-    gBrowserInit.onDOMContentLoaded();
-  }, { once: true });
-}
-
 let _resolveDelayedStartup;
 var delayedStartupPromise = new Promise(resolve => {
   _resolveDelayedStartup = resolve;
