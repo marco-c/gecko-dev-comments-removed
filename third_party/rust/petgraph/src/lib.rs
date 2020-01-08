@@ -13,8 +13,6 @@
 
 
 
-
-
 #![doc(html_root_url = "https://docs.rs/petgraph/0.4/")]
 
 extern crate fixedbitset;
