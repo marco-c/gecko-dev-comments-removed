@@ -883,7 +883,7 @@ PlacesTreeView.prototype = {
 
     
     
-    if (this._tree.getAttribute("editing")) {
+    if (this._tree.element.getAttribute("editing")) {
       if (!this._editingObservers) {
         this._editingObservers = new Map();
       }
@@ -896,7 +896,7 @@ PlacesTreeView.prototype = {
           this._editingObservers.delete(aContainer);
         });
 
-        mutationObserver.observe(this._tree, {
+        mutationObserver.observe(this._tree.element, {
           attributes: true,
           attributeFilter: ["editing"],
         });
@@ -1348,7 +1348,7 @@ PlacesTreeView.prototype = {
     
     let ip = this._getInsertionPoint(aRow, aOrientation);
     if (ip) {
-      PlacesControllerDragHelper.onDrop(ip, aDataTransfer, this._tree)
+      PlacesControllerDragHelper.onDrop(ip, aDataTransfer, this._tree.element)
                                 .catch(Cu.reportError)
                                 .then(() => {
                                   

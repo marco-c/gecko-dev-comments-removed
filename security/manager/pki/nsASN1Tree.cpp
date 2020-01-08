@@ -255,7 +255,7 @@ nsNSSASN1Tree::GetDisplayData(uint32_t index, nsAString& _retval) {
 }
 
 NS_IMETHODIMP
-nsNSSASN1Tree::SetTree(mozilla::dom::XULTreeElement* tree) {
+nsNSSASN1Tree::SetTree(nsITreeBoxObject* tree) {
   
   mTree = tree;
   return NS_OK;

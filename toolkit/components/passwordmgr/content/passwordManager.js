@@ -49,7 +49,7 @@ let signonReloadDisplay = {
           if (filterField && filterField.value != "") {
             FilterPasswords();
           }
-          signonsTree.ensureRowIsVisible(signonsTree.view.selection.currentIndex);
+          signonsTree.treeBoxObject.ensureRowIsVisible(signonsTree.view.selection.currentIndex);
           break;
       }
       Services.obs.notifyObservers(null, "passwordmgr-dialog-updated");
@@ -191,7 +191,7 @@ let signonsTreeView = {
       table[row][field] = value;
       table[row].timePasswordChanged = Date.now();
       Services.logins.modifyLogin(existingLogin, table[row]);
-      signonsTree.invalidateRow(row);
+      signonsTree.treeBoxObject.invalidateRow(row);
     }
 
     if (col.id == "userCol") {
@@ -264,9 +264,9 @@ function SortTree(column, ascending) {
   }
 
   
-  signonsTree.invalidate();
+  signonsTree.treeBoxObject.invalidate();
   if (selectedRow >= 0) {
-    signonsTree.ensureRowIsVisible(selectedRow);
+    signonsTree.treeBoxObject.ensureRowIsVisible(selectedRow);
   }
 }
 
@@ -358,7 +358,7 @@ function DeleteSignon() {
       }
       table.splice(j, k - j);
       view.rowCount -= k - j;
-      tree.rowCountChanged(j, j - k);
+      tree.treeBoxObject.rowCountChanged(j, j - k);
     }
   }
 
@@ -402,8 +402,9 @@ function DeleteAllSignons() {
   
   view.rowCount = 0;
 
-  signonsTree.rowCountChanged(0, -deletedSignons.length);
-  signonsTree.invalidate();
+  let box = signonsTree.treeBoxObject;
+  box.rowCountChanged(0, -deletedSignons.length);
+  box.invalidate();
 
   
   removeButton.setAttribute("disabled", "true");
@@ -515,7 +516,7 @@ function SignonClearFilter() {
 
   
   signonsTreeView.rowCount = 0;
-  signonsTree.rowCountChanged(0, -signonsTreeView._filterSet.length);
+  signonsTree.treeBoxObject.rowCountChanged(0, -signonsTreeView._filterSet.length);
   signonsTreeView._filterSet = [];
 
   
@@ -594,10 +595,10 @@ function FilterPasswords() {
   
   let oldRowCount = signonsTreeView.rowCount;
   signonsTreeView.rowCount = 0;
-  signonsTree.rowCountChanged(0, -oldRowCount);
+  signonsTree.treeBoxObject.rowCountChanged(0, -oldRowCount);
   
   signonsTreeView.rowCount = signonsTreeView._filterSet.length;
-  signonsTree.rowCountChanged(0, signonsTreeView.rowCount);
+  signonsTree.treeBoxObject.rowCountChanged(0, signonsTreeView.rowCount);
 
   
   if (signonsTreeView.rowCount > 0)

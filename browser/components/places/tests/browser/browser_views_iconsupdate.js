@@ -109,7 +109,8 @@ async function getRectForSidebarItem(guid) {
   let tree = sidebar.contentDocument.getElementById("bookmarks-view");
   tree.selectItems([guid]);
   let treerect = tree.getBoundingClientRect();
-  let cellrect = tree.getCoordsForCellItem(tree.currentIndex, tree.columns[0], "cell");
+  let cellrect = tree.treeBoxObject.
+                      getCoordsForCellItem(tree.currentIndex, tree.columns[0], "cell");
 
   
   return {

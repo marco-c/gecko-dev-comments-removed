@@ -8,11 +8,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "nsBoxFrame.h"
 
-namespace mozilla {
-namespace dom {
-class XULTreeElement;
-}
-}  
+class nsITreeBoxObject;
 
 nsIFrame* NS_NewTreeColFrame(nsIPresShell* aPresShell,
                              mozilla::ComputedStyle* aStyle);
@@ -49,7 +45,7 @@ class nsTreeColFrame final : public nsBoxFrame {
   
 
 
-  mozilla::dom::XULTreeElement* GetTree();
+  nsITreeBoxObject* GetTreeBoxObject();
 
   
 

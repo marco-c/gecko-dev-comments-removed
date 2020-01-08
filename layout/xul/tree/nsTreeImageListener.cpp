@@ -5,7 +5,7 @@
 
 
 #include "nsTreeImageListener.h"
-#include "XULTreeElement.h"
+#include "nsITreeBoxObject.h"
 #include "imgIRequest.h"
 #include "imgIContainer.h"
 #include "nsIContent.h"
@@ -80,8 +80,7 @@ void nsTreeImageListener::Invalidate() {
       
       for (int32_t i = currArea->GetMin(); i <= currArea->GetMax(); ++i) {
         if (mTreeFrame) {
-          RefPtr<XULTreeElement> tree =
-              XULTreeElement::FromNodeOrNull(mTreeFrame->GetBaseElement());
+          nsITreeBoxObject* tree = mTreeFrame->GetTreeBoxObject();
           if (tree) {
             tree->InvalidateCell(i, currArea->GetCol());
           }
