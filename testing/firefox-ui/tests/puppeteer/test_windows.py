@@ -25,7 +25,7 @@ class TestWindows(PuppeteerMixin, MarionetteTestCase):
 
         
         for index in range(0, 2):
-            self.marionette.execute_script(""" window.open(); """)
+            self.marionette.execute_script(""" OpenBrowserWindow(); """)
 
         windows = self.puppeteer.windows.all
         self.assertEquals(len(windows), 3)
@@ -130,7 +130,7 @@ class TestBaseWindow(PuppeteerMixin, MarionetteTestCase):
 
         
         def opener(window):
-            window.marionette.execute_script(""" window.open(); """)
+            window.marionette.execute_script(""" OpenBrowserWindow(); """)
 
         def closer(window):
             window.marionette.execute_script(""" window.close(); """)
