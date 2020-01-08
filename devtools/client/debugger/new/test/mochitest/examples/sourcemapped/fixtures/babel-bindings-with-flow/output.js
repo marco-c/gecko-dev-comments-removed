@@ -1,4 +1,4 @@
-var babelFlowtypeBindings =
+var babelBindingsWithFlow =
  (function(modules) { 
  	
  	var installedModules = {};
@@ -75,10 +75,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-var aConst = "a-const";
+
 
 function root() {
-  console.log("pause here", aConst, __WEBPACK_IMPORTED_MODULE_0__src_mod__["a" ], root);
+  var value = __WEBPACK_IMPORTED_MODULE_0__src_mod__["a" ];
+
+  console.log("pause here", root, value);
 }
 
  }),
@@ -86,9 +88,8 @@ function root() {
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
- __webpack_require__.d(__webpack_exports__, "a", function() { return Four; });
- var _unused_webpack_default_export = ("a-default");
-var Four = "one";
+ __webpack_require__.d(__webpack_exports__, "a", function() { return aNamed; });
+var aNamed = "a-named";
 
  })
  ])["default"];

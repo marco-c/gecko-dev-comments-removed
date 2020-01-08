@@ -1,0 +1,10 @@
+
+
+
+import { aNamed } from "./src/mod";
+
+export default function root() {
+  var value = (aNamed: Array<string>);
+
+  console.log("pause here", root, value);
+}
