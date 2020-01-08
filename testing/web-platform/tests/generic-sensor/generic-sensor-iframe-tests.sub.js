@@ -5,7 +5,6 @@ async function send_message_to_iframe(iframe, message, reply) {
 
   return new Promise((resolve, reject) => {
     let messageHandler = e => {
-
       if (e.data.command !== message.command) {
         return;
       }
@@ -131,4 +130,31 @@ function run_generic_sensor_iframe_tests(sensorName) {
     iframe.parentNode.removeChild(iframe);
   }, `${sensorName}: sensor is not suspended when focus traverses from\
  to same-origin frame`);
+
+  sensor_test(async t => {
+    assert_true(sensorName in self);
+    const iframe = document.createElement('iframe');
+    iframe.allow = featurePolicies.join(';') + ';';
+    iframe.src = 'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
+
+    
+    
+    const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
+    document.body.appendChild(iframe);
+    await iframeLoadWatcher.wait_for('load');
+    await send_message_to_iframe(iframe, {command: 'create_sensor',
+                                          type: sensorName});
+    iframe.contentWindow.focus();
+    await send_message_to_iframe(iframe, {command: 'start_sensor'});
+
+    
+    
+    
+    
+    
+    
+    
+    iframe.parentNode.removeChild(iframe);
+    window.focus();
+  }, `${sensorName}: losing a document's frame with an active sensor does not crash`);
 }
