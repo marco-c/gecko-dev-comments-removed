@@ -91,9 +91,6 @@ function openRuleView() {
     
     view.debounce = manualDebounce();
 
-    
-    view.addHighlightersToView();
-
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
@@ -113,8 +110,6 @@ function openRuleView() {
 function openComputedView() {
   return openInspectorSidebarTab("computedview").then(data => {
     const view = data.inspector.getPanel("computedview").computedView;
-    
-    view.addHighlightersToView();
 
     return {
       toolbox: data.toolbox,
@@ -165,9 +160,7 @@ function openLayoutView() {
 
 
 function selectRuleView(inspector) {
-  const view = inspector.getPanel("ruleview").view;
-  view.addHighlightersToView();
-  return view;
+  return inspector.getPanel("ruleview").view;
 }
 
 
@@ -179,9 +172,7 @@ function selectRuleView(inspector) {
 
 function selectComputedView(inspector) {
   inspector.sidebar.select("computedview");
-  const view = inspector.getPanel("computedview").computedView;
-  view.addHighlightersToView();
-  return view;
+  return inspector.getPanel("computedview").computedView;
 }
 
 
