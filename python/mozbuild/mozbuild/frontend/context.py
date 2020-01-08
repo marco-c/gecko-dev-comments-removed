@@ -489,13 +489,8 @@ class CompileFlags(BaseCompileFlags):
         if self._context.config.substs.get('MOZ_PGO'):
             
             
-            if self._context.config.substs['OS_ARCH'] == 'WINNT':
+            if self._context.config.substs.get('CC_TYPE') == 'msvc':
                 warnings_as_errors = None
-
-        if self._context.config.substs.get('CC_TYPE') == 'clang-cl':
-            
-            
-            warnings_as_errors = None
 
         if warnings_as_errors:
             return [warnings_as_errors]
