@@ -270,12 +270,37 @@ private:
   RefPtr<HttpBaseChannel>       mChannel;
   nsCOMPtr<nsICacheEntry>       mCacheEntry;
   nsCOMPtr<nsIAssociatedContentSecurity>  mAssociatedContentSecurity;
-  Atomic<bool> mIPCClosed; 
 
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
 
   nsAutoPtr<class nsHttpChannel::OfflineCacheEntryAsForeignMarker> mOfflineForeignMarker;
+  nsCOMPtr<nsILoadContext> mLoadContext;
+  RefPtr<nsHttpHandler>  mHttpHandler;
+
+  RefPtr<HttpChannelParentListener> mParentListener;
+  
+  
+  nsCOMPtr<nsIStreamListener> mDivertListener;
+
+  RefPtr<ChannelEventQueue> mEventQ;
+
+  RefPtr<HttpBackgroundChannelParent> mBgParent;
+
+  MozPromiseHolder<GenericPromise> mPromise;
+  MozPromiseRequestHolder<GenericPromise> mRequest;
+
+  dom::TabId mNestedFrameId;
+
+  Atomic<bool> mIPCClosed; 
+
+  
+  uint32_t mRedirectRegistrarId = 0;
+
+  PBOverrideStatus mPBOverride;
+
+  
+  nsresult mStatus;
 
   
   
@@ -285,17 +310,6 @@ private:
   bool mSentRedirect1BeginFailed    : 1;
   bool mReceivedRedirect2Verify     : 1;
 
-  PBOverrideStatus mPBOverride;
-
-  nsCOMPtr<nsILoadContext> mLoadContext;
-  RefPtr<nsHttpHandler>  mHttpHandler;
-
-  RefPtr<HttpChannelParentListener> mParentListener;
-  
-  
-  nsCOMPtr<nsIStreamListener> mDivertListener;
-  
-  nsresult mStatus;
   
   
   bool mPendingDiversion;
@@ -314,23 +328,11 @@ private:
   
   bool mWillSynthesizeResponse;
 
-  dom::TabId mNestedFrameId;
-
-  RefPtr<ChannelEventQueue> mEventQ;
-
-  RefPtr<HttpBackgroundChannelParent> mBgParent;
-
   
   
   
   
   uint8_t mAsyncOpenBarrier = 0;
-
-  
-  uint32_t mRedirectRegistrarId = 0;
-
-  MozPromiseHolder<GenericPromise> mPromise;
-  MozPromiseRequestHolder<GenericPromise> mRequest;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpChannelParent,
