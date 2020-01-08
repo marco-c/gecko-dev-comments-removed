@@ -84,6 +84,8 @@ private:
   nsCString mResolvedScriptURL;
   nsString mName;
   bool mIsSecureContext;
+  bool mSuspended;
+  bool mFrozen;
 
   
   nsTArray<SharedWorkerParent*> mActors;

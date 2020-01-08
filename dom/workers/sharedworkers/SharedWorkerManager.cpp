@@ -27,6 +27,8 @@ SharedWorkerManager::SharedWorkerManager(nsIEventTarget* aPBackgroundEventTarget
   , mResolvedScriptURL(aData.resolvedScriptURL())
   , mName(aData.name())
   , mIsSecureContext(aData.isSecureContext())
+  , mSuspended(false)
+  , mFrozen(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aLoadingPrincipal);
@@ -90,21 +92,12 @@ SharedWorkerManager::AddActor(SharedWorkerParent* aParent)
   MOZ_ASSERT(aParent);
   MOZ_ASSERT(!mActors.Contains(aParent));
 
-  uint32_t frozen = 0;
-
-  for (SharedWorkerParent* actor : mActors) {
-    if (actor->IsFrozen()) {
-      ++frozen;
-    }
-  }
-
-  bool hadActors = !mActors.IsEmpty();
-
   mActors.AppendElement(aParent);
 
-  if (hadActors && frozen == mActors.Length() - 1) {
-    mRemoteWorkerController->Thaw();
-  }
+  
+  
+  
+  
 }
 
 void
@@ -122,6 +115,9 @@ SharedWorkerManager::RemoveActor(SharedWorkerParent* aParent)
   mActors.RemoveElement(aParent);
 
   if (!mActors.IsEmpty()) {
+    
+    UpdateSuspend();
+    UpdateFrozen();
     return;
   }
 
@@ -148,13 +144,18 @@ SharedWorkerManager::UpdateSuspend()
     }
   }
 
-  if (suspended != 0 && suspended != mActors.Length()) {
+  
+  
+  if ((mSuspended && suspended == mActors.Length()) ||
+      (!mSuspended && suspended != mActors.Length())) {
     return;
   }
 
-  if (suspended) {
+  if (!mSuspended) {
+    mSuspended = true;
     mRemoteWorkerController->Suspend();
   } else {
+    mSuspended = false;
     mRemoteWorkerController->Resume();
   }
 }
@@ -173,13 +174,18 @@ SharedWorkerManager::UpdateFrozen()
     }
   }
 
-  if (frozen != 0 && frozen != mActors.Length()) {
+  
+  
+  if ((mFrozen && frozen == mActors.Length()) ||
+      (!mFrozen && frozen != mActors.Length())) {
     return;
   }
 
-  if (frozen) {
+  if (!mFrozen) {
+    mFrozen = true;
     mRemoteWorkerController->Freeze();
   } else {
+    mFrozen = false;
     mRemoteWorkerController->Thaw();
   }
 }
