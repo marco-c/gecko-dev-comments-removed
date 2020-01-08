@@ -164,12 +164,15 @@ function validateRtpParameters(param) {
 
 
 
+
 function validateEncodingParameters(encoding) {
   assert_optional_enum_field(encoding, 'dtx',
     ['disabled', 'enabled']);
 
   assert_optional_boolean_field(encoding, 'active');
   assert_optional_enum_field(encoding, 'priority',
+    ['very-low', 'low', 'medium', 'high']);
+  assert_optional_enum_field(encoding, 'networkPriority',
     ['very-low', 'low', 'medium', 'high']);
 
   assert_optional_unsigned_int_field(encoding, 'ptime');
