@@ -5,11 +5,11 @@
 
 
 #include "nsSMILTimeContainer.h"
-#include "nsSMILTimeValue.h"
-#include "nsSMILTimedElement.h"
-#include <algorithm>
 
 #include "mozilla/AutoRestore.h"
+#include "mozilla/SMILTimedElement.h"
+#include "nsSMILTimeValue.h"
+#include <algorithm>
 
 using namespace mozilla;
 

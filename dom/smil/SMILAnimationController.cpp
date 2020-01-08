@@ -10,6 +10,7 @@
 
 #include "mozilla/AutoRestore.h"
 #include "mozilla/RestyleManager.h"
+#include "mozilla/SMILTimedElement.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "nsContentUtils.h"
@@ -18,9 +19,8 @@
 #include "nsIPresShell.h"
 #include "nsIPresShellInlines.h"
 #include "nsITimer.h"
-#include "nsSMILCompositor.h"
+#include "SMILCompositor.h"
 #include "nsSMILCSSProperty.h"
-#include "nsSMILTimedElement.h"
 
 using namespace mozilla::dom;
 
@@ -199,7 +199,7 @@ void SMILAnimationController::Traverse(
   
   if (mLastCompositorTable) {
     for (auto iter = mLastCompositorTable->Iter(); !iter.Done(); iter.Next()) {
-      nsSMILCompositor* compositor = iter.Get();
+      SMILCompositor* compositor = iter.Get();
       compositor->Traverse(aCallback);
     }
   }
@@ -344,8 +344,8 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
 
   
-  nsAutoPtr<nsSMILCompositorTable> currentCompositorTable(
-      new nsSMILCompositorTable(0));
+  nsAutoPtr<SMILCompositorTable> currentCompositorTable(
+      new SMILCompositorTable(0));
   nsTArray<RefPtr<SVGAnimationElement>> animElems(
       mAnimationElementTable.Count());
 
@@ -365,8 +365,8 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
     
     for (auto iter = currentCompositorTable->Iter(); !iter.Done();
          iter.Next()) {
-      nsSMILCompositor* compositor = iter.Get();
-      nsSMILCompositor* lastCompositor =
+      SMILCompositor* compositor = iter.Get();
+      SMILCompositor* lastCompositor =
           mLastCompositorTable->GetEntry(compositor->GetKey());
 
       if (lastCompositor) {
@@ -562,7 +562,7 @@ void SMILAnimationController::DoMilestoneSamples() {
 }
 
  void SMILAnimationController::AddAnimationToCompositorTable(
-    SVGAnimationElement* aElement, nsSMILCompositorTable* aCompositorTable,
+    SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable,
     bool& aStyleFlushNeeded) {
   
   nsSMILTargetIdentifier key;
@@ -578,7 +578,7 @@ void SMILAnimationController::DoMilestoneSamples() {
   if (func.IsActiveOrFrozen()) {
     
     
-    nsSMILCompositor* result = aCompositorTable->PutEntry(key);
+    SMILCompositor* result = aCompositorTable->PutEntry(key);
     result->AddAnimationFunction(&func);
 
   } else if (func.HasChanged()) {
@@ -587,7 +587,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     
     
     
-    nsSMILCompositor* result = aCompositorTable->PutEntry(key);
+    SMILCompositor* result = aCompositorTable->PutEntry(key);
     result->ToggleForceCompositing();
 
     

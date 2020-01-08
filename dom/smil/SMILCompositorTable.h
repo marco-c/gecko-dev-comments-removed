@@ -17,7 +17,12 @@
 
 
 
-class nsSMILCompositor;
-typedef nsTHashtable<nsSMILCompositor> nsSMILCompositorTable;
+namespace mozilla {
+
+class SMILCompositor;
+
+typedef nsTHashtable<SMILCompositor> SMILCompositorTable;
+
+}  
 
 #endif  

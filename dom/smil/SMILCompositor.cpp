@@ -4,19 +4,21 @@
 
 
 
-#include "nsSMILCompositor.h"
+#include "SMILCompositor.h"
 
 #include "nsComputedDOMStyle.h"
 #include "nsCSSProps.h"
 #include "nsHashKeys.h"
 #include "nsSMILCSSProperty.h"
 
+namespace mozilla {
 
-bool nsSMILCompositor::KeyEquals(KeyTypePointer aKey) const {
+
+bool SMILCompositor::KeyEquals(KeyTypePointer aKey) const {
   return aKey && aKey->Equals(mKey);
 }
 
- PLDHashNumber nsSMILCompositor::HashKey(KeyTypePointer aKey) {
+ PLDHashNumber SMILCompositor::HashKey(KeyTypePointer aKey) {
   
   
   
@@ -26,7 +28,7 @@ bool nsSMILCompositor::KeyEquals(KeyTypePointer aKey) const {
 }
 
 
-void nsSMILCompositor::Traverse(nsCycleCollectionTraversalCallback* aCallback) {
+void SMILCompositor::Traverse(nsCycleCollectionTraversalCallback* aCallback) {
   if (!mKey.mElement) return;
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*aCallback, "Compositor mKey.mElement");
@@ -34,13 +36,13 @@ void nsSMILCompositor::Traverse(nsCycleCollectionTraversalCallback* aCallback) {
 }
 
 
-void nsSMILCompositor::AddAnimationFunction(SMILAnimationFunction* aFunc) {
+void SMILCompositor::AddAnimationFunction(SMILAnimationFunction* aFunc) {
   if (aFunc) {
     mAnimationFunctions.AppendElement(aFunc);
   }
 }
 
-void nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
+void SMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
   if (!mKey.mElement) return;
 
   
@@ -104,7 +106,7 @@ void nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
   }
 }
 
-void nsSMILCompositor::ClearAnimationEffects() {
+void SMILCompositor::ClearAnimationEffects() {
   if (!mKey.mElement || !mKey.mAttributeName) return;
 
   UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(nullptr);
@@ -117,7 +119,7 @@ void nsSMILCompositor::ClearAnimationEffects() {
 
 
 
-UniquePtr<nsISMILAttr> nsSMILCompositor::CreateSMILAttr(
+UniquePtr<nsISMILAttr> SMILCompositor::CreateSMILAttr(
     ComputedStyle* aBaseComputedStyle) {
   nsCSSPropertyID propID = GetCSSPropertyToAnimate();
 
@@ -130,7 +132,7 @@ UniquePtr<nsISMILAttr> nsSMILCompositor::CreateSMILAttr(
                                         mKey.mAttributeName);
 }
 
-nsCSSPropertyID nsSMILCompositor::GetCSSPropertyToAnimate() const {
+nsCSSPropertyID SMILCompositor::GetCSSPropertyToAnimate() const {
   if (mKey.mAttributeNamespaceID != kNameSpaceID_None) {
     return eCSSProperty_UNKNOWN;
   }
@@ -162,7 +164,7 @@ nsCSSPropertyID nsSMILCompositor::GetCSSPropertyToAnimate() const {
   return propID;
 }
 
-bool nsSMILCompositor::MightNeedBaseStyle() const {
+bool SMILCompositor::MightNeedBaseStyle() const {
   if (GetCSSPropertyToAnimate() == eCSSProperty_UNKNOWN) {
     return false;
   }
@@ -178,7 +180,7 @@ bool nsSMILCompositor::MightNeedBaseStyle() const {
   return false;
 }
 
-uint32_t nsSMILCompositor::GetFirstFuncToAffectSandwich() {
+uint32_t SMILCompositor::GetFirstFuncToAffectSandwich() {
   
   
   
@@ -222,10 +224,12 @@ uint32_t nsSMILCompositor::GetFirstFuncToAffectSandwich() {
   return i;
 }
 
-void nsSMILCompositor::UpdateCachedBaseValue(const nsSMILValue& aBaseValue) {
+void SMILCompositor::UpdateCachedBaseValue(const nsSMILValue& aBaseValue) {
   if (mCachedBaseValue != aBaseValue) {
     
     mCachedBaseValue = aBaseValue;
     mForceCompositing = true;
   }
 }
+
+}  

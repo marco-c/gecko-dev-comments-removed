@@ -9,13 +9,14 @@
 
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/SMILAnimationFunction.h"
+#include "mozilla/SMILCompositorTable.h"
 #include "nsTHashtable.h"
 #include "nsString.h"
-#include "SMILAnimationFunction.h"
 #include "nsSMILTargetIdentifier.h"
-#include "nsSMILCompositorTable.h"
 #include "PLDHashTable.h"
 
+namespace mozilla {
 
 
 
@@ -23,20 +24,21 @@
 
 
 
-class nsSMILCompositor : public PLDHashEntryHdr {
+
+class SMILCompositor : public PLDHashEntryHdr {
  public:
   typedef nsSMILTargetIdentifier KeyType;
   typedef const KeyType& KeyTypeRef;
   typedef const KeyType* KeyTypePointer;
 
-  explicit nsSMILCompositor(KeyTypePointer aKey)
+  explicit SMILCompositor(KeyTypePointer aKey)
       : mKey(*aKey), mForceCompositing(false) {}
-  nsSMILCompositor(nsSMILCompositor&& toMove)
+  SMILCompositor(SMILCompositor&& toMove)
       : PLDHashEntryHdr(std::move(toMove)),
         mKey(std::move(toMove.mKey)),
         mAnimationFunctions(std::move(toMove.mAnimationFunctions)),
         mForceCompositing(false) {}
-  ~nsSMILCompositor() {}
+  ~SMILCompositor() {}
 
   
   KeyTypeRef GetKey() const { return mKey; }
@@ -46,7 +48,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   enum { ALLOW_MEMMOVE = false };
 
   
-  void AddAnimationFunction(mozilla::SMILAnimationFunction* aFunc);
+  void AddAnimationFunction(SMILAnimationFunction* aFunc);
 
   
   
@@ -65,7 +67,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   void ToggleForceCompositing() { mForceCompositing = true; }
 
   
-  void StealCachedBaseValue(nsSMILCompositor* aOther) {
+  void StealCachedBaseValue(SMILCompositor* aOther) {
     mCachedBaseValue = std::move(aOther->mCachedBaseValue);
   }
 
@@ -74,8 +76,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   
   
   
-  mozilla::UniquePtr<nsISMILAttr> CreateSMILAttr(
-      mozilla::ComputedStyle* aBaseComputedStyle);
+  UniquePtr<nsISMILAttr> CreateSMILAttr(ComputedStyle* aBaseComputedStyle);
 
   
   
@@ -104,7 +105,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   KeyType mKey;
 
   
-  nsTArray<mozilla::SMILAnimationFunction*> mAnimationFunctions;
+  nsTArray<SMILAnimationFunction*> mAnimationFunctions;
 
   
   
@@ -118,5 +119,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   
   nsSMILValue mCachedBaseValue;
 };
+
+}  
 
 #endif  
