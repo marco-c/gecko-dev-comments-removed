@@ -9245,8 +9245,12 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
     aFrame->GetClipPropClipRect(disp, effects, bounds.Size());
 
   
+  
   const nsIFrame::ChildListIDs skip(nsIFrame::kPopupList |
-                                    nsIFrame::kSelectPopupList);
+                                    nsIFrame::kSelectPopupList |
+                                    nsIFrame::kAbsoluteList |
+                                    nsIFrame::kFixedList |
+                                    nsIFrame::kFloatList);
   for (nsIFrame::ChildListIterator childLists(aFrame);
        !childLists.IsDone(); childLists.Next()) {
     if (skip.Contains(childLists.CurrentID())) {
@@ -9256,6 +9260,10 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
     nsFrameList children = childLists.CurrentList();
     for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next()) {
       nsIFrame* child = e.get();
+      if (child->IsPlaceholderFrame()) {
+        continue;
+      }
+
       
       
       
