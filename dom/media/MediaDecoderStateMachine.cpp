@@ -870,11 +870,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
     }
   }
 
-  void HandleError(const MediaResult& aError) {
-    SLOG("audio looping failed, aError=%s", aError.ErrorName().get());
-    MOZ_ASSERT(aError != NS_ERROR_DOM_MEDIA_END_OF_STREAM);
-    mMaster->DecodeError(aError);
-  }
+  void HandleError(const MediaResult& aError);
 
   void EnsureAudioDecodeTaskQueued() override {
     if (mAudioSeekRequest.Exists() || mAudioDataRequest.Exists()) {
@@ -2441,6 +2437,18 @@ void MediaDecoderStateMachine::DecodingState::MaybeStartBuffering() {
       mMaster->HasLowBufferedData() && !mMaster->mCanPlayThrough) {
     SetState<BufferingState>();
   }
+}
+
+void MediaDecoderStateMachine::LoopingDecodingState::HandleError(
+    const MediaResult& aError) {
+  SLOG("audio looping failed, aError=%s", aError.ErrorName().get());
+  
+  
+  if (aError == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
+    SetState<CompletedState>();
+    return;
+  }
+  mMaster->DecodeError(aError);
 }
 
 void MediaDecoderStateMachine::SeekingState::SeekCompleted() {
