@@ -281,7 +281,10 @@ function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
 
 function ObjectDefineProperty(obj, propertyKey, attributes) {
     
-    ObjectOrReflectDefineProperty(obj, propertyKey, attributes, true);
+    if (!ObjectOrReflectDefineProperty(obj, propertyKey, attributes, true)) {
+        
+        return false;
+    }
 
     
     return obj;
