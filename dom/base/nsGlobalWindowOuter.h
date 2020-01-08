@@ -219,7 +219,7 @@ public:
     return (nsGlobalWindowOuter *)(mozilla::dom::EventTarget *)supports;
   }
 
-  static already_AddRefed<nsGlobalWindowOuter> Create(bool aIsChrome);
+  static already_AddRefed<nsGlobalWindowOuter> Create(nsIDocShell* aDocShell, bool aIsChrome);
 
   
   nsPIDOMWindowOuter* GetPrivateParent();
@@ -320,7 +320,6 @@ public:
   
   bool WouldReuseInnerWindow(nsIDocument* aNewDocument);
 
-  void SetDocShell(nsIDocShell* aDocShell);
   void DetachFromDocShell();
 
   virtual nsresult SetNewDocument(nsIDocument *aDocument,
@@ -581,7 +580,6 @@ public:
 
   nsresult GetPrompter(nsIPrompt** aPrompt) override;
 protected:
-  explicit nsGlobalWindowOuter();
   nsPIDOMWindowOuter* GetOpenerWindowOuter();
   
   void InitWasOffline();
@@ -831,6 +829,8 @@ protected:
                  nsPIDOMWindowOuter** _retval) override;
 
 private:
+  explicit nsGlobalWindowOuter(uint64_t aWindowID);
+
   
 
 
@@ -1047,6 +1047,8 @@ private:
                               SecureContextFlags aFlags =
                                 SecureContextFlags::eDefault);
 
+  void SetDocShell(nsIDocShell* aDocShell);
+
   
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
@@ -1256,13 +1258,6 @@ nsGlobalWindowOuter::MaybeClearInnerWindow(nsGlobalWindowInner* aExpectedInner)
   if(mInnerWindow == aExpectedInner->AsInner()) {
     mInnerWindow = nullptr;
   }
-}
-
-
-inline already_AddRefed<nsGlobalWindowOuter>
-NS_NewScriptGlobalObject(bool aIsChrome)
-{
-  return nsGlobalWindowOuter::Create(aIsChrome);
 }
 
 #endif 

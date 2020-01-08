@@ -313,6 +313,7 @@ DecreasePrivateDocShellCount()
 
 nsDocShell::nsDocShell()
   : nsDocLoader()
+  , mContentWindowID(NextWindowID())
   , mForcedCharset(nullptr)
   , mParentCharset(nullptr)
   , mTreeOwner(nullptr)
@@ -1283,6 +1284,13 @@ nsDocShell::GetContentViewer(nsIContentViewer** aContentViewer)
 
   *aContentViewer = mContentViewer;
   NS_IF_ADDREF(*aContentViewer);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::GetOuterWindowID(uint64_t *aWindowID)
+{
+  *aWindowID = mContentWindowID;
   return NS_OK;
 }
 
@@ -12726,10 +12734,8 @@ nsDocShell::EnsureScriptEnvironment()
 
   
   
-  mScriptGlobal = NS_NewScriptGlobalObject(mItemType == typeChrome);
+  mScriptGlobal = nsGlobalWindowOuter::Create(this, mItemType == typeChrome);
   MOZ_ASSERT(mScriptGlobal);
-
-  mScriptGlobal->SetDocShell(this);
 
   
   return mScriptGlobal->EnsureScriptEnvironment();

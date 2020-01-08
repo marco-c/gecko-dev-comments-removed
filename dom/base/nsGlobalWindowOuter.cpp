@@ -812,8 +812,8 @@ NewOuterWindowProxy(JSContext *cx, JS::Handle<JSObject*> global, bool isChrome)
 
 
 
-nsGlobalWindowOuter::nsGlobalWindowOuter()
-  : nsPIDOMWindowOuter(),
+nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
+  : nsPIDOMWindowOuter(aWindowID),
     mIdleFuzzFactor(0),
     mIdleCallbackIndex(-1),
     mCurrentlyIdle(false),
@@ -7661,12 +7661,14 @@ nsPIDOMWindowOuter::TabGroup()
 }
 
  already_AddRefed<nsGlobalWindowOuter>
-nsGlobalWindowOuter::Create(bool aIsChrome)
+nsGlobalWindowOuter::Create(nsIDocShell* aDocShell, bool aIsChrome)
 {
-  RefPtr<nsGlobalWindowOuter> window = new nsGlobalWindowOuter();
+  uint64_t outerWindowID = aDocShell->GetOuterWindowID();
+  RefPtr<nsGlobalWindowOuter> window = new nsGlobalWindowOuter(outerWindowID);
   if (aIsChrome) {
     window->mIsChrome = true;
   }
+  window->SetDocShell(aDocShell);
 
   window->InitWasOffline();
   return window.forget();
@@ -7715,15 +7717,7 @@ nsPIDOMWindowOuter::GetDocGroup() const
   return nullptr;
 }
 
-
-namespace mozilla {
-namespace dom {
-extern uint64_t
-NextWindowID();
-} 
-} 
-
-nsPIDOMWindowOuter::nsPIDOMWindowOuter()
+nsPIDOMWindowOuter::nsPIDOMWindowOuter(uint64_t aWindowID)
   : mFrameElement(nullptr)
   , mDocShell(nullptr)
   , mModalStateDepth(0)
@@ -7738,9 +7732,7 @@ nsPIDOMWindowOuter::nsPIDOMWindowOuter()
   , mDesktopModeViewport(false)
   , mIsRootOuterWindow(false)
   , mInnerWindow(nullptr)
-  ,
-  
-  mWindowID(NextWindowID())
+  , mWindowID(aWindowID)
   , mMarkedCCGeneration(0)
   , mServiceWorkersTestingEnabled(false)
   , mLargeAllocStatus(LargeAllocStatus::NONE)
