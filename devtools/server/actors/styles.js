@@ -1071,6 +1071,72 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     return ancestors;
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  get metadata() {
+    const data = {};
+    
+    
+    data.ancestors = this.ancestorRules.map(rule => {
+      return {
+        
+        
+        type: rule.rawRule.type,
+        
+        typeName: CSSRuleTypeName[rule.rawRule.type],
+        
+        conditionText: rule.rawRule.conditionText,
+        
+        name: rule.rawRule.name,
+        
+        keyText: rule.rawRule.keyText,
+        
+        ruleIndex: rule._ruleIndex,
+      };
+    });
+
+    
+    if (this.type === ELEMENT_STYLE) {
+      
+      try {
+        data.selector = findCssSelector(this.rawNode);
+      } catch (err) {}
+
+      data.source = {
+        type: "element",
+        
+        
+        href: this.rawNode.baseURI,
+        
+        index: data.selector,
+      };
+      data.ruleIndex = 0;
+    } else {
+      data.selector = (this.type === CSSRule.KEYFRAME_RULE)
+        ? this.rawRule.keyText
+        : this.rawRule.selectorText;
+      data.source = {
+        type: "stylesheet",
+        href: this.sheetActor.href,
+        index: this.sheetActor.styleSheetIndex,
+      };
+      
+      data.ruleIndex = this._ruleIndex;
+    }
+
+    return data;
+  },
+
   getDocument: function(sheet) {
     if (sheet.ownerNode) {
       return sheet.ownerNode.nodeType == sheet.ownerNode.DOCUMENT_NODE ?
@@ -1503,56 +1569,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     
     prevValue = (prevValue && prevPriority) ? `${prevValue} !important` : prevValue;
 
-    
-    const data = {};
-    
-    
-    data.ancestors = this.ancestorRules.map(rule => {
-      return {
-        
-        
-        type: rule.rawRule.type,
-        
-        typeName: CSSRuleTypeName[rule.rawRule.type],
-        
-        conditionText: rule.rawRule.conditionText,
-        
-        name: rule.rawRule.name,
-        
-        keyText: rule.rawRule.keyText,
-        
-        ruleIndex: rule._ruleIndex,
-      };
-    });
-
-    
-    if (this.type === ELEMENT_STYLE) {
-      
-      try {
-        data.selector = findCssSelector(this.rawNode);
-      } catch (err) {}
-
-      data.source = {
-        type: "element",
-        
-        
-        href: this.rawNode.baseURI,
-        
-        index: data.selector,
-      };
-      data.ruleIndex = 0;
-    } else {
-      data.selector = (this.type === CSSRule.KEYFRAME_RULE)
-        ? this.rawRule.keyText
-        : this.rawRule.selectorText;
-      data.source = {
-        type: "stylesheet",
-        href: this.sheetActor.href,
-        index: this.sheetActor.styleSheetIndex,
-      };
-      
-      data.ruleIndex = this._ruleIndex;
-    }
+    const data = this.metadata;
 
     switch (change.type) {
       case "set":
