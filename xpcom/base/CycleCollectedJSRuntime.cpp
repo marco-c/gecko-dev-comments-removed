@@ -1455,6 +1455,13 @@ CycleCollectedJSRuntime::FinalizeDeferredThings(CycleCollectedJSContext::Deferre
     }
   }
 
+  
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::ExecuteTriggers();
+  }
+
   if (mDeferredFinalizerTable.Count() == 0) {
     return;
   }
