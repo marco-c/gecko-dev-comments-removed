@@ -51,6 +51,23 @@ bool
 DoesTargetMatchDimensions(WebGLContext* webgl, TexImageTarget target, uint8_t dims,
                           const char* funcName);
 
+namespace webgl {
+
+struct SamplingState final
+{
+    
+    TexMinFilter minFilter = LOCAL_GL_NEAREST_MIPMAP_LINEAR;
+    TexMagFilter magFilter = LOCAL_GL_LINEAR;
+    TexWrap wrapS = LOCAL_GL_REPEAT;
+    TexWrap wrapT = LOCAL_GL_REPEAT;
+    
+    
+    
+    TexCompareMode compareMode = LOCAL_GL_NONE;
+    
+};
+
+} 
 
 
 
@@ -74,10 +91,6 @@ protected:
     static const uint8_t kMaxFaceCount = 6;
     uint8_t mFaceCount; 
 
-    TexMinFilter mMinFilter;
-    TexMagFilter mMagFilter;
-    TexWrap mWrapS, mWrapT;
-
     bool mImmutable; 
     uint8_t mImmutableLevelCount;
 
@@ -86,7 +99,7 @@ protected:
     
     
 
-    GLenum mTexCompareMode;
+    webgl::SamplingState mSamplingState;
 
     
     bool mIsResolved;
@@ -354,25 +367,7 @@ protected:
                                     uint32_t level);
     bool EnsureLevelInitialized(const char* funcName, uint32_t level);
 
-    bool CheckFloatTextureFilterParams() const {
-        
-        
-        return mMagFilter == LOCAL_GL_NEAREST &&
-               (mMinFilter == LOCAL_GL_NEAREST ||
-                mMinFilter == LOCAL_GL_NEAREST_MIPMAP_NEAREST);
-    }
-
-    bool AreBothWrapModesClampToEdge() const {
-        return mWrapS == LOCAL_GL_CLAMP_TO_EDGE &&
-               mWrapT == LOCAL_GL_CLAMP_TO_EDGE;
-    }
-
 public:
-    bool DoesMinFilterRequireMipmap() const {
-        return !(mMinFilter == LOCAL_GL_NEAREST ||
-                 mMinFilter == LOCAL_GL_LINEAR);
-    }
-
     void SetGeneratedMipmap();
 
     void SetCustomMipmap();
