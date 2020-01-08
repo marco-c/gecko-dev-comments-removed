@@ -19,6 +19,7 @@
 #include "gfxContext.h"
 #include "gfxUtils.h"
 #include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/gfx/2D.h"
@@ -1447,6 +1448,40 @@ DisplayListIsNonBlank(nsDisplayList* aList)
   return false;
 }
 
+
+
+
+
+
+
+
+static bool
+DisplayListIsContentful(nsDisplayList* aList)
+{
+  for (nsDisplayItem* i = aList->GetBottom(); i != nullptr; i = i->GetAbove()) {
+    DisplayItemType type = i->GetType();
+    nsDisplayList* children = i->GetChildren();
+
+    switch (type) {
+      case DisplayItemType::TYPE_SUBDOCUMENT: 
+        break;
+      
+      
+      default:
+        if (i->IsContentful()) {
+          return true;
+        }
+        if (children) {
+          if (DisplayListIsContentful(children)) {
+            return true;
+          }
+        }
+        break;
+    }
+  }
+  return false;
+}
+
 void
 nsDisplayListBuilder::LeavePresShell(nsIFrame* aReferenceFrame,
                                      nsDisplayList* aPaintedContents)
@@ -1455,12 +1490,18 @@ nsDisplayListBuilder::LeavePresShell(nsIFrame* aReferenceFrame,
                  aReferenceFrame->PresShell(),
                "Presshell mismatch");
 
-  if (mIsPaintingToWindow) {
+  if (mIsPaintingToWindow && aPaintedContents) {
     nsPresContext* pc = aReferenceFrame->PresContext();
     if (!pc->HadNonBlankPaint()) {
       if (!CurrentPresShellState()->mIsBackgroundOnly &&
           DisplayListIsNonBlank(aPaintedContents)) {
         pc->NotifyNonBlankPaint();
+      }
+    }
+    if (!pc->HadContentfulPaint()) {
+      if (!CurrentPresShellState()->mIsBackgroundOnly &&
+          DisplayListIsContentful(aPaintedContents)) {
+        pc->NotifyContentfulPaint();
       }
     }
   }

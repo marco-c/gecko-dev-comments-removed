@@ -349,6 +349,8 @@ public:
 
   already_AddRefed<layers::SharedSurfaceTextureClient> GetVRFrame();
 
+  bool MaybeModified() const { return mMaybeModified; };
+
 protected:
   virtual ~HTMLCanvasElement();
 
@@ -387,6 +389,7 @@ protected:
   AsyncCanvasRenderer* GetAsyncCanvasRenderer();
 
   bool mResetLayer;
+  bool mMaybeModified; 
   RefPtr<HTMLCanvasElement> mOriginalCanvas;
   RefPtr<PrintCallback> mPrintCallback;
   RefPtr<HTMLCanvasPrintState> mPrintState;
