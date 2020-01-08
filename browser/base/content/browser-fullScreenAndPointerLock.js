@@ -597,7 +597,13 @@ var FullScreen = {
         
         
         requestAnimationFrame(() => {
-          setTimeout(() => this.hideNavToolbox(aAnimate), 0);
+          setTimeout(() => {
+            
+            
+            if (window.fullScreen) {
+              this.hideNavToolbox(aAnimate);
+            }
+          }, 0);
         });
         window.removeEventListener("keypress", retryHideNavToolbox);
         window.removeEventListener("click", retryHideNavToolbox);
