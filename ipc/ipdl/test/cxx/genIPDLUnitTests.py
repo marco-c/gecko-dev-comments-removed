@@ -2,12 +2,14 @@
 
 
 
+from __future__ import print_function
+
 import string
 import sys
 
 
 def usage():
-    print >>sys.stderr, """
+    print("""
 %s template_file -t unit_tests... -e extra_protocols...
 
   TEMPLATE_FILE is used to generate to generate the unit-tester .cpp
@@ -15,7 +17,7 @@ def usage():
   EXTRA_PROTOCOLS are top-level protocols for subprocesses that can be
                   spawned in tests but are not unit tests in and of
                   themselves
-""" % (sys.argv[0])
+""" % (sys.argv[0]), file=sys.stderr)
     sys.exit(1)
 
 

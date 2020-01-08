@@ -3,6 +3,8 @@
 
 
 
+from __future__ import print_function
+
 import os
 import sys
 
@@ -113,9 +115,11 @@ class Type:
     def typename(self):
         return self.__class__.__name__
 
-    def name(self): raise Exception, 'NYI'
+    def name(self):
+        raise NotImplementedError
 
-    def fullname(self): raise Exception, 'NYI'
+    def fullname(self):
+        raise NotImplementedError
 
     def accept(self, visitor, *args):
         visit = getattr(visitor, 'visit' + self.__class__.__name__, None)
@@ -661,7 +665,7 @@ With this information, it type checks the AST.'''
 
     def reportErrors(self, errout):
         for error in self.errors:
-            print >>errout, error
+            print(error, file=errout)
 
 
 class TcheckVisitor(Visitor):
