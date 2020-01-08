@@ -213,10 +213,12 @@ class FlexItemSizingProperties extends PureComponent {
         reasons.push(getStr("flexbox.itemSizing.shrinkAttemptWhenClamped"));
       }
     } else if (lineGrowthState === "growing" && nonZeroFlexGrowDefined) {
-      
-      
       property = this.renderCssProperty("flex-grow", flexGrow);
-      reasons.push(getStr("flexbox.itemSizing.growthAttemptButSiblings"));
+      if (!wasClamped) {
+        
+        
+        reasons.push(getStr("flexbox.itemSizing.growthAttemptButSiblings"));
+      }
     } else if (lineGrowthState === "shrinking") {
       
       if (!flexShrink0) {
