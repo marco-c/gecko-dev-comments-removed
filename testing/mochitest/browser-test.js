@@ -383,7 +383,11 @@ function Tester(aTests, structuredLogger, aCallback) {
   
   
   
-  this.cpowSandbox = Cu.Sandbox(window, {sandboxPrototype: window});
+  
+  this.cpowSandbox = Cu.Sandbox(window, {
+    freshCompartment: true,
+    sandboxPrototype: window,
+  });
   Cu.permitCPOWsInScope(this.cpowSandbox);
 
   this.cpowEventUtils = new this.cpowSandbox.Object();
@@ -1454,7 +1458,13 @@ testScope.prototype = {
   Assert: null,
 
   _createSandbox() {
-    let sandbox = Cu.Sandbox(window, {sandboxPrototype: window});
+    
+    
+    
+    let sandbox = Cu.Sandbox(window, {
+      freshCompartment: true,
+      sandboxPrototype: window,
+    });
 
     for (let prop in this) {
       if (typeof this[prop] == "function") {
