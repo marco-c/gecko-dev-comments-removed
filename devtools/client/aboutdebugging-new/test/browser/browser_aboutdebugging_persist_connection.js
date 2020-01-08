@@ -8,28 +8,28 @@ const RUNTIME_DEVICE_NAME = "test device name";
 const RUNTIME_APP_NAME = "TestApp";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "mocks/head-usb-mocks.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-mocks.js", this);
 
 
 add_task(async function() {
-  const usbMocks = new UsbMocks();
-  usbMocks.enableMocks();
-  registerCleanupFunction(() => usbMocks.disableMocks());
+  const mocks = new Mocks();
+  mocks.enableMocks();
+  registerCleanupFunction(() => mocks.disableMocks());
 
   let { document, tab } = await openAboutDebugging();
 
-  const usbClient = usbMocks.createRuntime(RUNTIME_ID, {
+  const usbClient = mocks.createUSBRuntime(RUNTIME_ID, {
     name: RUNTIME_APP_NAME,
     deviceName: RUNTIME_DEVICE_NAME,
   });
-  usbMocks.emitUpdate();
+  mocks.emitUSBUpdate();
 
   await connectToRuntime(RUNTIME_DEVICE_NAME, document);
   await selectRuntime(RUNTIME_DEVICE_NAME, RUNTIME_APP_NAME, document);
 
   info("Reload about:debugging");
   document = await reloadAboutDebugging(tab);
-  usbMocks.emitUpdate();
+  mocks.emitUSBUpdate();
 
   info("Wait until the remote runtime appears as connected");
   await waitUntil(() => {
@@ -40,7 +40,7 @@ add_task(async function() {
   
   
   info("Remove the runtime from the list of USB runtimes");
-  usbMocks.removeRuntime(RUNTIME_ID);
+  mocks.removeUSBRuntime(RUNTIME_ID);
 
   info("Emit 'closed' on the client and wait for the sidebar item to disappear");
   usbClient._eventEmitter.emit("closed");

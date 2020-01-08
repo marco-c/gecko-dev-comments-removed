@@ -19,19 +19,20 @@ Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-usb-runtimes-mock.js", th
 
 
 
+
 class Mocks {
   constructor() {
     
     this.usbRuntimesMock = createUsbRuntimesMock();
-    this._runtimes = [];
+    this._usbRuntimes = [];
     this.usbRuntimesMock.getUSBRuntimes = () => {
-      return this._runtimes;
+      return this._usbRuntimes;
     };
 
     
     
     this.usbRuntimesMock.refreshUSBRuntimes = () => {
-      this.emitUpdate();
+      this.emitUSBUpdate();
     };
 
     
@@ -39,15 +40,19 @@ class Mocks {
 
     
     this.runtimeClientFactoryMock = createRuntimeClientFactoryMock();
-    this._clients = {};
+    this._clients = {
+      [RUNTIMES.NETWORK]: {},
+      [RUNTIMES.THIS_FIREFOX]: {},
+      [RUNTIMES.USB]: {},
+    };
     this.runtimeClientFactoryMock.createClientForRuntime = runtime => {
-      return this._clients[runtime.id];
+      return this._clients[runtime.type][runtime.id];
     };
 
     
     
     this._thisFirefoxClient = createThisFirefoxClientMock();
-    this._clients[RUNTIMES.THIS_FIREFOX] = this._thisFirefoxClient;
+    this._clients[RUNTIMES.THIS_FIREFOX][RUNTIMES.THIS_FIREFOX] = this._thisFirefoxClient;
   }
 
   get thisFirefoxClient() {
@@ -62,6 +67,37 @@ class Mocks {
   disableMocks() {
     disableUsbRuntimesMock();
     disableRuntimeClientFactoryMock();
+
+    for (const host of Object.keys(this._clients[RUNTIMES.NETWORK])) {
+      this.removeNetworkRuntime(host);
+    }
+  }
+
+  createNetworkRuntime(host, runtimeInfo) {
+    const { addNetworkLocation } =
+      require("devtools/client/aboutdebugging-new/src/modules/network-locations");
+    addNetworkLocation(host);
+
+    
+    const mockNetworkClient = createClientMock();
+    mockNetworkClient.getDeviceDescription = () => {
+      return {
+        name: runtimeInfo.name || "TestBrand",
+        channel: runtimeInfo.channel || "release",
+        version: runtimeInfo.version || "1.0",
+      };
+    };
+    this._clients[RUNTIMES.NETWORK][host] = mockNetworkClient;
+
+    return mockNetworkClient;
+  }
+
+  removeNetworkRuntime(host) {
+    const { removeNetworkLocation } =
+      require("devtools/client/aboutdebugging-new/src/modules/network-locations");
+    removeNetworkLocation(host);
+
+    delete this._clients[RUNTIMES.NETWORK][host];
   }
 
   emitUSBUpdate() {
@@ -84,7 +120,7 @@ class Mocks {
 
   createUSBRuntime(id, runtimeInfo = {}) {
     
-    this._runtimes.push({
+    this._usbRuntimes.push({
       id: id,
       _socketPath: runtimeInfo.socketPath || "test/path",
       deviceName: runtimeInfo.deviceName || "test device name",
@@ -100,13 +136,13 @@ class Mocks {
         version: runtimeInfo.version || "1.0",
       };
     };
-    this._clients[id] = mockUsbClient;
+    this._clients[RUNTIMES.USB][id] = mockUsbClient;
 
     return mockUsbClient;
   }
 
   removeUSBRuntime(id) {
-    this._runtimes = this._runtimes.filter(runtime => runtime.id !== id);
-    delete this._clients[id];
+    this._usbRuntimes = this._usbRuntimes.filter(runtime => runtime.id !== id);
+    delete this._clients[RUNTIMES.USB][id];
   }
 }
