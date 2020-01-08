@@ -65,7 +65,6 @@ const whitelist = {
 
     
     "resource://gre/modules/TelemetryController.jsm", 
-    "resource://gre/modules/MemoryTelemetry.jsm", 
     "resource://gre/modules/TelemetryUtils.jsm", 
 
     
