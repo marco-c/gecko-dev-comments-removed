@@ -118,7 +118,7 @@ MemoryProtectionExceptionHandler::isDisabled()
     
     
     return true;
-#elif defined(RELEASE_OR_BETA)
+#elif !defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
     
     return true;
 #else
