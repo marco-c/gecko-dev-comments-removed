@@ -577,6 +577,13 @@ InterruptCallback(JSContext* aCx)
   MOZ_ASSERT(worker);
 
   
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return true;
+  }
+
+  
   PROFILER_JS_INTERRUPT_CALLBACK();
 
   return worker->InterruptCallback(aCx);
@@ -965,6 +972,11 @@ public:
         NS_WARNING("failed to set workerCx's default locale");
       }
     }
+
+    
+    if (recordreplay::IsRecordingOrReplaying()) {
+      recordreplay::RegisterTrigger(this, [=]() { nsCycleCollector_collect(nullptr); });
+    }
   }
 
   void Shutdown(JSContext* cx) override
@@ -979,6 +991,10 @@ public:
   ~WorkerJSRuntime()
   {
     MOZ_COUNT_DTOR_INHERITED(WorkerJSRuntime, CycleCollectedJSRuntime);
+
+    if (recordreplay::IsRecordingOrReplaying()) {
+      recordreplay::UnregisterTrigger(this);
+    }
   }
 
   virtual void
@@ -1015,7 +1031,11 @@ public:
     mWorkerPrivate->AssertIsOnWorkerThread();
 
     if (aStatus == JSGC_END) {
-      nsCycleCollector_collect(nullptr);
+      if (recordreplay::IsRecordingOrReplaying()) {
+        recordreplay::ActivateTrigger(this);
+      } else {
+        nsCycleCollector_collect(nullptr);
+      }
     }
   }
 
