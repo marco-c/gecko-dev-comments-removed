@@ -143,6 +143,19 @@ NS_IdleDispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent);
 
 
 
+extern nsresult
+NS_IdleDispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
