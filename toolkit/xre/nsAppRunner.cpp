@@ -1399,11 +1399,11 @@ public:
   nsresult Initialize();
   nsresult SetWindowCreator(nsINativeAppSupport* native);
 
-  static nsresult CreateAppSupport(nsISupports* aOuter, REFNSIID aIID, void** aResult);
-
 private:
   nsIServiceManager* mServiceManager;
   static nsINativeAppSupport* gNativeAppSupport;
+
+  friend already_AddRefed<nsINativeAppSupport> NS_GetNativeAppSupport();
 };
 
 ScopedXPCOMStartup::~ScopedXPCOMStartup()
@@ -1436,10 +1436,6 @@ ScopedXPCOMStartup::~ScopedXPCOMStartup()
   { 0x95d89e3e, 0xa169, 0x41a3, { 0x8e, 0x56, 0x71, 0x99, 0x78, 0xe1, 0x5b, 0x12 } }
 
 
-static const nsCID kNativeAppSupportCID =
-  { 0xc4a446c, 0xee82, 0x41f2, { 0x8d, 0x4, 0xd3, 0x66, 0xd2, 0xc7, 0xa7, 0xd4 } };
-
-
 static const nsCID kProfileServiceCID =
   { 0x5f5e59ce, 0x27bc, 0x47eb, { 0x9d, 0x1f, 0xb0, 0x9c, 0xa9, 0x4, 0x98, 0x36 } };
 
@@ -1456,7 +1452,6 @@ NS_DEFINE_NAMED_CID(APPINFO_CID);
 static const mozilla::Module::CIDEntry kXRECIDs[] = {
   { &kAPPINFO_CID, false, nullptr, AppInfoConstructor },
   { &kProfileServiceCID, false, ProfileServiceFactoryConstructor, nullptr },
-  { &kNativeAppSupportCID, false, nullptr, ScopedXPCOMStartup::CreateAppSupport },
   { nullptr }
 };
 
@@ -1467,7 +1462,6 @@ static const mozilla::Module::ContractIDEntry kXREContracts[] = {
   { NS_CRASHREPORTER_CONTRACTID, &kAPPINFO_CID },
 #endif 
   { NS_PROFILESERVICE_CONTRACTID, &kProfileServiceCID },
-  { NS_NATIVEAPPSUPPORT_CONTRACTID, &kNativeAppSupportCID },
   { nullptr }
 };
 
@@ -1571,16 +1565,14 @@ ScopedXPCOMStartup::SetWindowCreator(nsINativeAppSupport* native)
   return wwatch->SetWindowCreator(creator);
 }
 
- nsresult
-ScopedXPCOMStartup::CreateAppSupport(nsISupports* aOuter, REFNSIID aIID, void** aResult)
+ already_AddRefed<nsINativeAppSupport>
+NS_GetNativeAppSupport()
 {
-  if (aOuter)
-    return NS_ERROR_NO_AGGREGATION;
+  if (!ScopedXPCOMStartup::gNativeAppSupport) {
+    return nullptr;
+  }
 
-  if (!gNativeAppSupport)
-    return NS_ERROR_NOT_INITIALIZED;
-
-  return gNativeAppSupport->QueryInterface(aIID, aResult);
+  return do_AddRef(ScopedXPCOMStartup::gNativeAppSupport);
 }
 
 nsINativeAppSupport* ScopedXPCOMStartup::gNativeAppSupport;
