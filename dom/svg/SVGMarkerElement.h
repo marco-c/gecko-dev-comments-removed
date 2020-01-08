@@ -8,7 +8,7 @@
 #define mozilla_dom_SVGMarkerElement_h
 
 #include "nsAutoPtr.h"
-#include "nsSVGAngle.h"
+#include "SVGAngle.h"
 #include "nsSVGEnum.h"
 #include "nsSVGLength2.h"
 #include "nsSVGViewBox.h"
@@ -153,7 +153,7 @@ class SVGMarkerElement : public SVGMarkerElementBase {
   static EnumInfo sEnumInfo[1];
 
   enum { ORIENT };
-  nsSVGAngle mAngleAttributes[1];
+  SVGAngle mAngleAttributes[1];
   static AngleInfo sAngleInfo[1];
 
   nsSVGViewBox mViewBox;

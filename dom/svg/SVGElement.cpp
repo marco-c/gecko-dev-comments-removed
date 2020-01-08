@@ -35,7 +35,7 @@
 #include "nsIPresShell.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
-#include "nsSVGAngle.h"
+#include "SVGAngle.h"
 #include "nsSVGBoolean.h"
 #include "nsSVGEnum.h"
 #include "nsSVGInteger.h"

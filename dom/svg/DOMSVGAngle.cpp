@@ -5,7 +5,7 @@
 
 
 #include "DOMSVGAngle.h"
-#include "nsSVGAngle.h"
+#include "SVGAngle.h"
 #include "mozilla/dom/SVGAngleBinding.h"
 
 using namespace mozilla;
@@ -18,7 +18,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(DOMSVGAngle, Release)
 
 DOMSVGAngle::DOMSVGAngle(SVGElement* aSVGElement)
     : mSVGElement(aSVGElement), mType(DOMSVGAngle::CreatedValue) {
-  mVal = new nsSVGAngle();
+  mVal = new SVGAngle();
   mVal->Init();
 }
 

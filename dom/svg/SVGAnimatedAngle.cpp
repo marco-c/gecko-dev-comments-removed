@@ -5,7 +5,7 @@
 
 
 #include "SVGAnimatedAngle.h"
-#include "nsSVGAngle.h"
+#include "SVGAngle.h"
 #include "mozilla/dom/SVGAnimatedAngleBinding.h"
 
 using namespace mozilla;

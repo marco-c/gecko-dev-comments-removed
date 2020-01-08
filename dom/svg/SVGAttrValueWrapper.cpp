@@ -5,7 +5,7 @@
 
 
 #include "SVGAttrValueWrapper.h"
-#include "nsSVGAngle.h"
+#include "SVGAngle.h"
 #include "nsSVGIntegerPair.h"
 #include "nsSVGLength2.h"
 #include "nsSVGNumberPair.h"
@@ -20,7 +20,7 @@
 
 using namespace mozilla;
 
- void SVGAttrValueWrapper::ToString(const nsSVGAngle* aAngle,
+ void SVGAttrValueWrapper::ToString(const SVGAngle* aAngle,
                                               nsAString& aResult) {
   aAngle->GetBaseValueString(aResult);
 }
