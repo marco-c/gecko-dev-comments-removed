@@ -856,13 +856,11 @@ nsSHistory::PurgeHistory(int32_t aNumEntries)
   
   mTransactions.RemoveElementsAt(0, aNumEntries);
 
+  
   mIndex -= aNumEntries;
-
-  
-  
-  if (mIndex < -1) {
-    mIndex = -1;
-  }
+  mIndex = std::max(mIndex, -1);
+  mRequestedIndex -= aNumEntries;
+  mRequestedIndex = std::max(mRequestedIndex, -1);
 
   NOTIFY_LISTENERS(OnLengthChanged, (Length()));
   NOTIFY_LISTENERS(OnIndexChanged, (mIndex))
