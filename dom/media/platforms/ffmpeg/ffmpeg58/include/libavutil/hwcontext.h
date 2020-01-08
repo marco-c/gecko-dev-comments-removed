@@ -25,17 +25,17 @@
 #include "pixfmt.h"
 
 enum AVHWDeviceType {
-  AV_HWDEVICE_TYPE_NONE,
-  AV_HWDEVICE_TYPE_VDPAU,
-  AV_HWDEVICE_TYPE_CUDA,
-  AV_HWDEVICE_TYPE_VAAPI,
-  AV_HWDEVICE_TYPE_DXVA2,
-  AV_HWDEVICE_TYPE_QSV,
-  AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
-  AV_HWDEVICE_TYPE_D3D11VA,
-  AV_HWDEVICE_TYPE_DRM,
-  AV_HWDEVICE_TYPE_OPENCL,
-  AV_HWDEVICE_TYPE_MEDIACODEC,
+    AV_HWDEVICE_TYPE_NONE,
+    AV_HWDEVICE_TYPE_VDPAU,
+    AV_HWDEVICE_TYPE_CUDA,
+    AV_HWDEVICE_TYPE_VAAPI,
+    AV_HWDEVICE_TYPE_DXVA2,
+    AV_HWDEVICE_TYPE_QSV,
+    AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
+    AV_HWDEVICE_TYPE_D3D11VA,
+    AV_HWDEVICE_TYPE_DRM,
+    AV_HWDEVICE_TYPE_OPENCL,
+    AV_HWDEVICE_TYPE_MEDIACODEC,
 };
 
 typedef struct AVHWDeviceInternal AVHWDeviceInternal;
@@ -58,39 +58,26 @@ typedef struct AVHWDeviceInternal AVHWDeviceInternal;
 
 
 typedef struct AVHWDeviceContext {
-  
+    
 
 
-  const AVClass *av_class;
+    const AVClass *av_class;
 
-  
-
-
-
-  AVHWDeviceInternal *internal;
-
-  
+    
 
 
 
+    AVHWDeviceInternal *internal;
 
-
-  enum AVHWDeviceType type;
-
-  
+    
 
 
 
 
 
+    enum AVHWDeviceType type;
 
-
-
-
-
-  void *hwctx;
-
-  
+    
 
 
 
@@ -100,12 +87,25 @@ typedef struct AVHWDeviceContext {
 
 
 
-  void (*free)(struct AVHWDeviceContext *ctx);
 
-  
+    void *hwctx;
+
+    
 
 
-  void *user_opaque;
+
+
+
+
+
+
+
+    void (*free)(struct AVHWDeviceContext *ctx);
+
+    
+
+
+    void *user_opaque;
 } AVHWDeviceContext;
 
 typedef struct AVHWFramesInternal AVHWFramesInternal;
@@ -121,33 +121,33 @@ typedef struct AVHWFramesInternal AVHWFramesInternal;
 
 
 typedef struct AVHWFramesContext {
-  
+    
 
 
-  const AVClass *av_class;
+    const AVClass *av_class;
 
-  
+    
 
 
 
-  AVHWFramesInternal *internal;
+    AVHWFramesInternal *internal;
 
-  
+    
 
 
 
 
-  AVBufferRef *device_ref;
+    AVBufferRef *device_ref;
 
-  
+    
 
 
 
 
 
-  AVHWDeviceContext *device_ctx;
+    AVHWDeviceContext *device_ctx;
 
-  
+    
 
 
 
@@ -158,22 +158,22 @@ typedef struct AVHWFramesContext {
 
 
 
-  void *hwctx;
+    void *hwctx;
 
-  
+    
 
 
 
 
 
-  void (*free)(struct AVHWFramesContext *ctx);
+    void (*free)(struct AVHWFramesContext *ctx);
 
-  
+    
 
 
-  void *user_opaque;
+    void *user_opaque;
 
-  
+    
 
 
 
@@ -186,18 +186,18 @@ typedef struct AVHWFramesContext {
 
 
 
-  AVBufferPool *pool;
+    AVBufferPool *pool;
 
-  
+    
 
 
 
 
 
 
-  int initial_pool_size;
+    int initial_pool_size;
 
-  
+    
 
 
 
@@ -205,9 +205,9 @@ typedef struct AVHWFramesContext {
 
 
 
-  enum AVPixelFormat format;
+    enum AVPixelFormat format;
 
-  
+    
 
 
 
@@ -218,14 +218,14 @@ typedef struct AVHWFramesContext {
 
 
 
-  enum AVPixelFormat sw_format;
+    enum AVPixelFormat sw_format;
 
-  
+    
 
 
 
 
-  int width, height;
+    int width, height;
 } AVHWFramesContext;
 
 
@@ -336,6 +336,7 @@ int av_hwdevice_ctx_create_derived(AVBufferRef **dst_ctx,
 
 
 
+
 AVBufferRef *av_hwframe_ctx_alloc(AVBufferRef *device_ctx);
 
 
@@ -391,15 +392,15 @@ int av_hwframe_get_buffer(AVBufferRef *hwframe_ctx, AVFrame *frame, int flags);
 int av_hwframe_transfer_data(AVFrame *dst, const AVFrame *src, int flags);
 
 enum AVHWFrameTransferDirection {
-  
+    
 
 
-  AV_HWFRAME_TRANSFER_DIRECTION_FROM,
+    AV_HWFRAME_TRANSFER_DIRECTION_FROM,
 
-  
+    
 
 
-  AV_HWFRAME_TRANSFER_DIRECTION_TO,
+    AV_HWFRAME_TRANSFER_DIRECTION_TO,
 };
 
 
@@ -427,33 +428,34 @@ int av_hwframe_transfer_get_formats(AVBufferRef *hwframe_ctx,
 
 
 
+
 typedef struct AVHWFramesConstraints {
-  
+    
 
 
 
-  enum AVPixelFormat *valid_hw_formats;
+    enum AVPixelFormat *valid_hw_formats;
 
-  
-
-
-
-
-  enum AVPixelFormat *valid_sw_formats;
-
-  
+    
 
 
 
-  int min_width;
-  int min_height;
 
-  
+    enum AVPixelFormat *valid_sw_formats;
+
+    
 
 
 
-  int max_width;
-  int max_height;
+    int min_width;
+    int min_height;
+
+    
+
+
+
+    int max_width;
+    int max_height;
 } AVHWFramesConstraints;
 
 
@@ -480,8 +482,8 @@ void *av_hwdevice_hwconfig_alloc(AVBufferRef *device_ctx);
 
 
 
-AVHWFramesConstraints *av_hwdevice_get_hwframe_constraints(
-    AVBufferRef *ref, const void *hwconfig);
+AVHWFramesConstraints *av_hwdevice_get_hwframe_constraints(AVBufferRef *ref,
+                                                           const void *hwconfig);
 
 
 
@@ -493,27 +495,28 @@ void av_hwframe_constraints_free(AVHWFramesConstraints **constraints);
 
 
 
+
 enum {
-  
+    
 
 
-  AV_HWFRAME_MAP_READ = 1 << 0,
-  
+    AV_HWFRAME_MAP_READ      = 1 << 0,
+    
 
 
-  AV_HWFRAME_MAP_WRITE = 1 << 1,
-  
-
-
-
-
-  AV_HWFRAME_MAP_OVERWRITE = 1 << 2,
-  
+    AV_HWFRAME_MAP_WRITE     = 1 << 1,
+    
 
 
 
 
-  AV_HWFRAME_MAP_DIRECT = 1 << 3,
+    AV_HWFRAME_MAP_OVERWRITE = 1 << 2,
+    
+
+
+
+
+    AV_HWFRAME_MAP_DIRECT    = 1 << 3,
 };
 
 
@@ -571,9 +574,11 @@ int av_hwframe_map(AVFrame *dst, const AVFrame *src, int flags);
 
 
 
+
 int av_hwframe_ctx_create_derived(AVBufferRef **derived_frame_ctx,
                                   enum AVPixelFormat format,
                                   AVBufferRef *derived_device_ctx,
-                                  AVBufferRef *source_frame_ctx, int flags);
+                                  AVBufferRef *source_frame_ctx,
+                                  int flags);
 
 #endif 

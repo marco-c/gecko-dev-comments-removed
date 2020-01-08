@@ -48,6 +48,7 @@
 
 
 
+
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include "libavutil/avconfig.h"
@@ -58,10 +59,10 @@
 
 #if FF_API_BUFS_VDPAU
 union AVVDPAUPictureInfo {
-  VdpPictureInfoH264 h264;
-  VdpPictureInfoMPEG1Or2 mpeg;
-  VdpPictureInfoVC1 vc1;
-  VdpPictureInfoMPEG4Part2 mpeg4;
+    VdpPictureInfoH264        h264;
+    VdpPictureInfoMPEG1Or2    mpeg;
+    VdpPictureInfoVC1          vc1;
+    VdpPictureInfoMPEG4Part2 mpeg4;
 };
 #endif
 
@@ -87,51 +88,55 @@ typedef int (*AVVDPAU_Render2)(struct AVCodecContext *, struct AVFrame *,
 
 
 typedef struct AVVDPAUContext {
-  
+    
 
 
 
 
-  VdpDecoder decoder;
+    VdpDecoder decoder;
 
-  
-
-
+    
 
 
-  VdpDecoderRender *render;
+
+
+    VdpDecoderRender *render;
 
 #if FF_API_BUFS_VDPAU
-  
+    
 
 
 
 
-  attribute_deprecated union AVVDPAUPictureInfo info;
+    attribute_deprecated
+    union AVVDPAUPictureInfo info;
 
-  
-
-
-
-
-  attribute_deprecated int bitstream_buffers_allocated;
-
-  
+    
 
 
 
 
-  attribute_deprecated int bitstream_buffers_used;
+    attribute_deprecated
+    int bitstream_buffers_allocated;
 
-  
-
-
-
+    
 
 
-  attribute_deprecated VdpBitstreamBuffer *bitstream_buffers;
+
+
+    attribute_deprecated
+    int bitstream_buffers_used;
+
+   
+
+
+
+
+
+    attribute_deprecated
+    VdpBitstreamBuffer *bitstream_buffers;
 #endif
-  AVVDPAU_Render2 render2;
+    AVVDPAU_Render2 render2;
 } AVVDPAUContext;
 
 
@@ -205,8 +210,8 @@ AVVDPAUContext *av_vdpau_alloc_context(void);
 
 
 
-attribute_deprecated int av_vdpau_get_profile(AVCodecContext *avctx,
-                                              VdpDecoderProfile *profile);
+attribute_deprecated
+int av_vdpau_get_profile(AVCodecContext *avctx, VdpDecoderProfile *profile);
 #endif
 
 #if FF_API_CAP_VDPAU
@@ -227,19 +232,19 @@ attribute_deprecated int av_vdpau_get_profile(AVCodecContext *avctx,
 
 
 struct vdpau_render_state {
-  VdpVideoSurface surface;  
+    VdpVideoSurface surface; 
 
-  int state;  
+    int state; 
 
-  
-  union AVVDPAUPictureInfo info;
+    
+    union AVVDPAUPictureInfo info;
 
-  
+    
 
-  int bitstream_buffers_allocated;
-  int bitstream_buffers_used;
-  
-  VdpBitstreamBuffer *bitstream_buffers;
+    int bitstream_buffers_allocated;
+    int bitstream_buffers_used;
+    
+    VdpBitstreamBuffer *bitstream_buffers;
 };
 #endif
 
