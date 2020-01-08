@@ -385,6 +385,18 @@ UnscaledFontDWrite::GetWRFontDescriptor(WRFontDescriptorOutput aCb, void* aBaton
     return false;
   }
 
+  RefPtr<IDWriteFontCollection> systemFonts = Factory::GetDWriteSystemFonts();
+  if (!systemFonts) {
+    return false;
+  }
+
+  UINT32 idx;
+  BOOL exists;
+  hr = systemFonts->FindFamilyName(familyName.data(), &idx, &exists);
+  if (FAILED(hr) || !exists) {
+    return false;
+  }
+
   
   
   

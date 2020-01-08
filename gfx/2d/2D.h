@@ -31,7 +31,6 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
-#include "mozilla/Atomics.h"
 
 #include "mozilla/DebugOnly.h"
 
@@ -63,6 +62,7 @@ struct ID2D1Device;
 struct IDWriteFactory;
 struct IDWriteRenderingParams;
 struct IDWriteFontFace;
+struct IDWriteFontCollection;
 
 class GrContext;
 class SkCanvas;
@@ -446,14 +446,14 @@ class DataSourceSurface : public SourceSurface
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DataSourceSurface, override)
   DataSourceSurface()
-    : mMapCount(0)
+    : mIsMapped(false)
   {
   }
 
 #ifdef DEBUG
   virtual ~DataSourceSurface()
   {
-    MOZ_ASSERT(mMapCount == 0);
+    MOZ_ASSERT(!mIsMapped, "Someone forgot to call Unmap()");
   }
 #endif
 
@@ -559,30 +559,18 @@ public:
   
 
 
-
-
-
-
-
-
-
-
-
   virtual bool Map(MapType, MappedSurface *aMappedSurface)
   {
     aMappedSurface->mData = GetData();
     aMappedSurface->mStride = Stride();
-    bool success = !!aMappedSurface->mData;
-    if (success) {
-      mMapCount++;
-    }
-    return success;
+    mIsMapped = !!aMappedSurface->mData;
+    return mIsMapped;
   }
 
   virtual void Unmap()
   {
-    mMapCount--;
-    MOZ_ASSERT(mMapCount >= 0);
+    MOZ_ASSERT(mIsMapped);
+    mIsMapped = false;
   }
 
   
@@ -627,7 +615,7 @@ public:
   virtual void Invalidate(const IntRect& aDirtyRect) { }
 
 protected:
-  Atomic<int32_t> mMapCount;
+  bool mIsMapped;
 };
 
 
@@ -1860,9 +1848,9 @@ public:
   static RefPtr<ID2D1Device> GetD2D1Device(uint32_t* aOutSeqNo = nullptr);
   static bool HasD2D1Device();
   static RefPtr<IDWriteFactory> GetDWriteFactory();
-  static bool SetDWriteFactory(IDWriteFactory *aFactory);
   static RefPtr<IDWriteFactory> EnsureDWriteFactory();
   static bool SupportsD2D1();
+  static RefPtr<IDWriteFontCollection> GetDWriteSystemFonts(bool aUpdate = false);
 
   static uint64_t GetD2DVRAMUsageDrawTarget();
   static uint64_t GetD2DVRAMUsageSourceSurface();
@@ -1886,6 +1874,7 @@ private:
   static StaticRefPtr<ID3D11Device> mD3D11Device;
   static StaticRefPtr<IDWriteFactory> mDWriteFactory;
   static bool mDWriteFactoryInitialized;
+  static StaticRefPtr<IDWriteFontCollection> mDWriteSystemFonts;
 
 protected:
   
