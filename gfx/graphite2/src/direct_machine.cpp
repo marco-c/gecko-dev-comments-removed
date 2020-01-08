@@ -56,6 +56,26 @@ using namespace vm;
 
 namespace {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+__attribute__((__noinline__))
 const void * direct_run(const bool          get_table_mode,
                         const instr       * program,
                         const byte        * data,
