@@ -100,18 +100,11 @@ class CustomRequestPanel extends Component {
 
     switch (evt.target.id) {
       case "custom-headers-value":
-        let customHeadersValue = val || "";
-        
-        const headersArray = this.parseRequestText(customHeadersValue, "\\S+?", ":");
-        
-        if (customHeadersValue === "" ||
-          headersArray.length === customHeadersValue.split("\n").length) {
-          customHeadersValue = null;
-        }
         data = {
           requestHeaders: {
-            customHeadersValue,
-            headers: headersArray,
+            customHeadersValue: val || "",
+            
+            headers: this.parseRequestText(val, "\\S+?", ":")
           },
         };
         break;
