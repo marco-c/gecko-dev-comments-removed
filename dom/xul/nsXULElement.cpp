@@ -453,7 +453,6 @@ nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
 
 
 
-
   
   bool shouldFocus = false;
 
@@ -483,36 +482,32 @@ nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
   }
 
   if (aTabIndex) {
-    if (xulControl) {
-      if (HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
-        
-        
-        int32_t tabIndex = 0;
-        xulControl->GetTabIndex(&tabIndex);
-        shouldFocus = *aTabIndex >= 0 || tabIndex >= 0;
-        *aTabIndex = tabIndex;
-      } else {
-        
-        
-        shouldFocus = *aTabIndex >= 0;
-        if (shouldFocus)
-          *aTabIndex = 0;
-      }
-
-      if (shouldFocus && sTabFocusModelAppliesToXUL &&
-          !(sTabFocusModel & eTabFocus_formElementsMask)) {
-        
-        
-        
-        
-        
-        
-        
-        if (IsNonList(mNodeInfo))
-          *aTabIndex = -1;
-      }
+    if (HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+      
+      
+      shouldFocus = true;
+      *aTabIndex = TabIndex();
     } else {
+      
+      
       shouldFocus = *aTabIndex >= 0;
+      if (shouldFocus) {
+        *aTabIndex = 0;
+      }
+    }
+
+    if (xulControl && shouldFocus && sTabFocusModelAppliesToXUL &&
+        !(sTabFocusModel & eTabFocus_formElementsMask)) {
+      
+      
+      
+      
+      
+      
+      
+      if (IsNonList(mNodeInfo)) {
+        *aTabIndex = -1;
+      }
     }
   }
 
@@ -1035,6 +1030,11 @@ nsXULElement::ParseAttribute(int32_t aNamespaceID,
                              nsIPrincipal* aMaybeScriptedPrincipal,
                              nsAttrValue& aResult)
 {
+    if (aNamespaceID == kNameSpaceID_None &&
+        aAttribute == nsGkAtoms::tabindex) {
+      return aResult.ParseIntValue(aValue);
+    }
+
     
     if (!nsStyledElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
                                          aMaybeScriptedPrincipal, aResult)) {
@@ -1960,6 +1960,10 @@ nsXULPrototypeElement::SetAttrAt(uint32_t aPos, const nsAString& aValue,
             return NS_OK;
         }
         
+    } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::tabindex)) {
+        mAttributes[aPos].mValue.ParseIntValue(aValue);
+
+        return NS_OK;
     }
 
     mAttributes[aPos].mValue.ParseStringOrAtom(aValue);
