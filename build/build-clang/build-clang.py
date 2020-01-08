@@ -616,7 +616,8 @@ if __name__ == "__main__":
         
         extra_cxxflags2 = ["-fPIC", '-Qunused-arguments']
         extra_asmflags = []
-        extra_ldflags = []
+        
+        extra_ldflags = ['-Wl,-Bsymbolic-functions']
 
         if 'LD_LIBRARY_PATH' in os.environ:
             os.environ['LD_LIBRARY_PATH'] = ('%s/lib64/:%s' %
