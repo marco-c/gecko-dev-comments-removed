@@ -19,6 +19,12 @@
 #include "mozilla/RelativeTimeline.h"
 #include "PrincipalChangeObserver.h"
 
+
+
+#ifdef CurrentTime
+#undef CurrentTime
+#endif
+
 namespace mozilla {
 
 class AbstractThread;
@@ -351,6 +357,8 @@ public:
               const dom::Sequence<OwningNonNull<MediaStreamTrack>>& aTracks,
               ErrorResult& aRv);
 
+  double CurrentTime();
+
   static already_AddRefed<dom::Promise>
   CountUnderlyingStreams(const dom::GlobalObject& aGlobal, ErrorResult& aRv);
 
@@ -514,6 +522,11 @@ public:
                                   nsIPrincipal* aPrincipal,
                                   MediaStreamGraph* aGraph);
 
+  void SetLogicalStreamStartTime(StreamTime aTime)
+  {
+    mLogicalStreamStartTime = aTime;
+  }
+
   
 
 
@@ -648,6 +661,9 @@ protected:
   
   
   void RecomputePrincipal();
+
+  
+  StreamTime mLogicalStreamStartTime;
 
   
   nsCOMPtr<nsPIDOMWindowInner> mWindow;

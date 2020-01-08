@@ -1314,6 +1314,10 @@ public:
 
       
       
+      aStream->SetLogicalStreamStartTime(aStream->GetPlaybackStream()->GetCurrentTime());
+
+      
+      
       LOG(("Returning success for getUserMedia()"));
       CallOnSuccess(mOnSuccess, *aStream);
     }
