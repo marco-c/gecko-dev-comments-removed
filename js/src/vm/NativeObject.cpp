@@ -2040,12 +2040,6 @@ DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 {
     
 
-#ifdef DEBUG
-    
-    uint64_t index;
-    MOZ_ASSERT_IF(obj->is<TypedArrayObject>(), !IsTypedArrayIndex(id, &index));
-#endif
-
     
     if (obj->is<ArrayObject>()) {
         
@@ -2059,7 +2053,35 @@ DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                 return result.fail(JSMSG_CANT_DEFINE_PAST_ARRAY_LENGTH);
             }
         }
-    }  else if (obj->is<ArgumentsObject>()) {
+    } else if (obj->is<TypedArrayObject>()) {
+        
+        uint64_t index;
+        if (IsTypedArrayIndex(id, &index)) {
+            
+            
+            MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
+
+            
+
+            
+            
+            
+            double d;
+            if (!ToNumber(cx, v, &d)) {
+                return false;
+            }
+
+            
+            
+            if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
+                return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+            }
+
+            
+            
+            return result.failSoft(JSMSG_BAD_INDEX);
+        }
+    } else if (obj->is<ArgumentsObject>()) {
         
         
         
@@ -2939,8 +2961,6 @@ SetExistingProperty(JSContext* cx, HandleId id, HandleValue v, HandleValue recei
 {
     
     if (prop.isDenseOrTypedArrayElement()) {
-        MOZ_ASSERT(!pobj->is<TypedArrayObject>());
-
         
         if (pobj->denseElementsAreFrozen()) {
             return result.fail(JSMSG_READ_ONLY);
@@ -2948,7 +2968,14 @@ SetExistingProperty(JSContext* cx, HandleId id, HandleValue v, HandleValue recei
 
         
         if (receiver.isObject() && pobj == &receiver.toObject()) {
-            return SetDenseElement(cx, pobj, JSID_TO_INT(id), v, result);
+            uint32_t index = JSID_TO_INT(id);
+
+            if (pobj->is<TypedArrayObject>()) {
+                Rooted<TypedArrayObject*> tobj(cx, &pobj->as<TypedArrayObject>());
+                return SetTypedArrayElement(cx, tobj, index, v, result);
+            }
+
+            return SetDenseElement(cx, pobj, index, v, result);
         }
 
         
@@ -3012,17 +3039,6 @@ js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handle
         bool done;
         if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
             return false;
-        }
-
-        if (pobj->is<TypedArrayObject>()) {
-            uint64_t index;
-            if (IsTypedArrayIndex(id, &index)) {
-                Rooted<TypedArrayObject*> tobj(cx, &pobj->as<TypedArrayObject>());
-                return SetTypedArrayElement(cx, tobj, index, v, result);
-            }
-
-            
-            MOZ_ASSERT(!prop.isDenseOrTypedArrayElement());
         }
 
         if (prop) {
