@@ -8385,7 +8385,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
   if ((aFlags & INCLUDE_PRESERVE3D_ANCESTORS) && frame &&
       frame->Combines3DTransformWithAncestors()) {
     
-    nsIFrame* parentFrame = frame->GetInFlowParent();
+    nsIFrame* parentFrame = frame->GetInFlowParentIgnoringAnonBoxes();
     NS_ASSERTION(parentFrame && parentFrame->IsTransformed() &&
                    parentFrame->Extend3DContext(),
                  "Preserve3D mismatch!");
@@ -8664,7 +8664,7 @@ nsDisplayTransform::GetAccumulatedPreserved3DTransform(
     const nsIFrame* establisher; 
     for (establisher = mFrame;
          establisher && establisher->Combines3DTransformWithAncestors();
-         establisher = establisher->GetInFlowParent()) {
+         establisher = establisher->GetInFlowParentIgnoringAnonBoxes()) {
     }
     const nsIFrame* establisherReference = aBuilder->FindReferenceFrameFor(
       nsLayoutUtils::GetCrossDocParentFrame(establisher));
