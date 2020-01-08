@@ -72,7 +72,8 @@ public:
   
 
 
-  nsresult GetInstallHash(nsAString & aPathHash);
+  nsresult GetInstallHash(nsAString & aPathHash,
+                          bool aUseCompatibilityMode = false);
 
   
 

@@ -1176,8 +1176,12 @@ GetCachedHash(HKEY rootKey, const nsAString &regPath, const nsAString &path,
 
 #endif
 
+
+
+
 nsresult
-nsXREDirProvider::GetInstallHash(nsAString & aPathHash)
+nsXREDirProvider::GetInstallHash(nsAString & aPathHash,
+                                 bool aUseCompatibilityMode )
 {
   nsCOMPtr<nsIFile> updRoot;
   nsCOMPtr<nsIFile> appFile;
@@ -1190,6 +1194,8 @@ nsXREDirProvider::GetInstallHash(nsAString & aPathHash)
   nsAutoString appDirPath;
   rv = updRoot->GetPath(appDirPath);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  aPathHash.Truncate();
 
 #ifdef XP_WIN
   
@@ -1216,13 +1222,17 @@ nsXREDirProvider::GetInstallHash(nsAString & aPathHash)
   void* buffer = appDirPath.BeginWriting();
   uint32_t length = appDirPath.Length() * sizeof(nsAutoString::char_type);
   uint64_t hash = CityHash64(static_cast<const char*>(buffer), length);
-  aPathHash.AppendInt((int)(hash >> 32), 16);
-  aPathHash.AppendInt((int)hash, 16);
-  
-  
-  
-  
-  ToUpperCase(aPathHash);
+  if (aUseCompatibilityMode) {
+    aPathHash.AppendInt((int)(hash >> 32), 16);
+    aPathHash.AppendInt((int)hash, 16);
+    
+    
+    
+    
+    ToUpperCase(aPathHash);
+  } else {
+    aPathHash.AppendPrintf("%" PRIX64, hash);
+  }
 
   return NS_OK;
 }
@@ -1275,7 +1285,7 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
 
 #elif XP_WIN
   nsAutoString pathHash;
-  rv = GetInstallHash(pathHash);
+  rv = GetInstallHash(pathHash, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
