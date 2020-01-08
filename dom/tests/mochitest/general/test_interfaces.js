@@ -1162,8 +1162,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "VideoStreamTrack", insecureContext: true},
 
-    {name: "VisualViewport", insecureContext: true},
-
     {name: "VRDisplay", insecureContext: true, releaseNonWindows: false},
 
     {name: "VRDisplayCapabilities", insecureContext: true, releaseNonWindows: false},
