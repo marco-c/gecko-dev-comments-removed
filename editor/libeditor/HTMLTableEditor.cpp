@@ -530,7 +530,7 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
         continue;
       }
 
-      if (cellData.mFirst.mColumn < cellData.mCurrent.mColumn) {
+      if (cellData.IsSpannedFromOtherColumn()) {
         
         
         
@@ -1407,7 +1407,7 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
 
     
     MOZ_ASSERT(colSpan >= 0);
-    if (cellData.mFirst.mColumn < cellData.mCurrent.mColumn || colSpan != 1) {
+    if (cellData.IsSpannedFromOtherColumn() || colSpan != 1) {
       
       
       
@@ -1415,7 +1415,7 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
         NS_WARNING_ASSERTION(colSpan > 1, "colspan should be 2 or larger");
         SetColSpan(cellData.mElement, colSpan - 1);
       }
-      if (cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
+      if (!cellData.IsSpannedFromOtherColumn()) {
         
         
         
@@ -1905,8 +1905,7 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
       
       
       if (!isSelected && cellData.mElement &&
-          !cellData.IsSpannedFromOtherRow() &&
-          cellData.mCurrent.mColumn == cellData.mFirst.mColumn) {
+          !cellData.IsSpannedFromOtherRowOrColumn()) {
         rv = AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
           break;
@@ -1978,8 +1977,7 @@ HTMLEditor::SelectAllTableCells()
       
       
       if (cellData.mElement &&
-          !cellData.IsSpannedFromOtherRow() &&
-          cellData.mCurrent.mColumn == cellData.mFirst.mColumn) {
+          !cellData.IsSpannedFromOtherRowOrColumn()) {
         rv =  AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
           break;
@@ -2070,8 +2068,7 @@ HTMLEditor::SelectTableRow()
     
     
     if (cellData.mElement &&
-        !cellData.IsSpannedFromOtherRow() &&
-        cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
+        !cellData.IsSpannedFromOtherRowOrColumn()) {
       rv = AppendNodeToSelectionAsRange(cellData.mElement);
       if (NS_FAILED(rv)) {
         break;
@@ -2157,8 +2154,7 @@ HTMLEditor::SelectTableColumn()
     
     
     if (cellData.mElement &&
-        !cellData.IsSpannedFromOtherRow() &&
-        cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
+        !cellData.IsSpannedFromOtherRowOrColumn()) {
       rv = AppendNodeToSelectionAsRange(cellData.mElement);
       if (NS_FAILED(rv)) {
         break;
@@ -3034,8 +3030,7 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
       
       
       if (cellData.mElement && rowSpan > 0 &&
-          !cellData.IsSpannedFromOtherRow() &&
-          cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
+          !cellData.IsSpannedFromOtherRowOrColumn()) {
         nsresult rv = SetRowSpan(cellData.mElement, rowSpan-rowsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -3094,7 +3089,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       break;
     }
     if (colSpan > 0 &&
-        cellData.mFirst.mColumn == cellData.mCurrent.mColumn &&
+        !cellData.IsSpannedFromOtherColumn() &&
         (colSpan < minColSpan || minColSpan == -1)) {
       minColSpan = colSpan;
     }
@@ -3122,8 +3117,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       
       
       if (cellData.mElement && colSpan > 0 &&
-          cellData.mFirst.mColumn == cellData.mCurrent.mColumn &&
-          !cellData.IsSpannedFromOtherRow()) {
+          !cellData.IsSpannedFromOtherRowOrColumn()) {
         nsresult rv = SetColSpan(cellData.mElement, colSpan-colsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
