@@ -155,7 +155,8 @@ EditorBase::MoveNodeWithTransaction(nsIContent& aContent,
                                     const EditorRawDOMPoint& aPointToInsert);
 
 EditorBase::EditorBase()
-  : mPlaceholderName(nullptr)
+  : mEditActionData(nullptr)
+  , mPlaceholderName(nullptr)
   , mModCount(0)
   , mFlags(0)
   , mUpdateCount(0)
@@ -5184,6 +5185,43 @@ EditorBase::AutoSelectionRestorer::Abort()
   if (mSelection) {
     mEditorBase->StopPreservingSelection();
   }
+}
+
+
+
+
+
+EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
+                                        const EditorBase& aEditorBase,
+                                        EditAction aEditAction)
+  : mEditorBase(const_cast<EditorBase&>(aEditorBase))
+  , mParentData(aEditorBase.mEditActionData)
+{
+  
+  if (mParentData) {
+    mSelection = mParentData->mSelection;
+    
+    
+    
+    if (aEditAction != EditAction::eNotEditing) {
+      mEditAction = aEditAction;
+    }
+  } else {
+    mSelection = mEditorBase.GetSelection();
+    if (NS_WARN_IF(!mSelection)) {
+      return;
+    }
+    mEditAction = aEditAction;
+  }
+  mEditorBase.mEditActionData = this;
+}
+
+EditorBase::AutoEditActionDataSetter::~AutoEditActionDataSetter()
+{
+  if (!mSelection || NS_WARN_IF(mEditorBase.mEditActionData != this)) {
+    return;
+  }
+  mEditorBase.mEditActionData = mParentData;
 }
 
 } 
