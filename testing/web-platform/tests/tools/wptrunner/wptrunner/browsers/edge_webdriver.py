@@ -1,0 +1,12 @@
+from .base import inherit
+from . import edge
+
+from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
+                                           WebDriverRefTestExecutor)  
+
+
+inherit(edge, globals(), "edge_webdriver")
+
+
+__wptrunner__["executor"]["testharness"] = "WebDriverTestharnessExecutor"  
+__wptrunner__["executor"]["reftest"] = "WebDriverRefTestExecutor"  
