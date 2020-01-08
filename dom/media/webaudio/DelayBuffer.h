@@ -19,9 +19,9 @@ class DelayBuffer final
   typedef dom::ChannelInterpretation ChannelInterpretation;
 
 public:
-  explicit DelayBuffer(double aMaxDelayTicks)
+  explicit DelayBuffer(float aMaxDelayTicks)
     
-    : mMaxDelayTicks(ceil(aMaxDelayTicks))
+    : mMaxDelayTicks(std::ceil(aMaxDelayTicks))
     , mCurrentChunk(0)
     
 #ifdef DEBUG
@@ -40,19 +40,19 @@ public:
 
   
   
-  void Read(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
+  void Read(const float aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
             AudioBlock* aOutputChunk,
             ChannelInterpretation aChannelInterpretation);
   
   
-  void Read(double aDelayTicks, AudioBlock* aOutputChunk,
+  void Read(float aDelayTicks, AudioBlock* aOutputChunk,
             ChannelInterpretation aChannelInterpretation);
 
   
   
   
   
-  void ReadChannel(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
+  void ReadChannel(const float aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
                    AudioBlock* aOutputChunk, uint32_t aChannel,
                    ChannelInterpretation aChannelInterpretation);
 
@@ -75,7 +75,7 @@ public:
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
 private:
-  void ReadChannels(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
+  void ReadChannels(const float aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
                     AudioBlock* aOutputChunk,
                     uint32_t aFirstChannel, uint32_t aNumChannelsToRead,
                     ChannelInterpretation aChannelInterpretation);
