@@ -1383,9 +1383,6 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
             _spec),
            aTopWinURI);
 
-  nsCOMPtr<nsIIOService> ios = services::GetIOService();
-  NS_ENSURE_TRUE(ios, NS_ERROR_FAILURE);
-
   
   
   
@@ -1395,16 +1392,11 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
     return rv;  
   }
 
-  nsCString escaped(NS_LITERAL_CSTRING("https://"));
+  nsAutoCString escaped(NS_LITERAL_CSTRING("https://"));
   nsAutoCString temp;
   rv = url->GetHostPort(temp);
   NS_ENSURE_SUCCESS(rv, rv);
   escaped.Append(temp);
-
-  
-  nsCOMPtr<nsIURI> topWinURI;
-  rv = ios->NewURI(escaped, nullptr, nullptr, getter_AddRefs(topWinURI));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIPermissionManager> permMgr =
       do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
@@ -1415,19 +1407,21 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
   Pair<const char*, bool> types[] = {{"trackingprotection", false},
                                      {"trackingprotection-pb", true}};
 
+  auto topWinURI = PromiseFlatCString(escaped);
   for (size_t i = 0; i < ArrayLength(types); ++i) {
     if (aIsPrivateBrowsing != types[i].second()) {
       continue;
     }
 
     uint32_t permissions = nsIPermissionManager::UNKNOWN_ACTION;
-    rv = permMgr->TestPermission(topWinURI, types[i].first(), &permissions);
+    rv = permMgr->TestPermissionOriginNoSuffix(topWinURI, types[i].first(),
+                                               &permissions);
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (permissions == nsIPermissionManager::ALLOW_ACTION) {
       aIsAllowListed = true;
-      LOG_SPEC(("Found user override type %s for %s", types[i].first(), _spec),
-               topWinURI);
+      LOG(("Found user override type %s for %s", types[i].first(),
+           topWinURI.get()));
       
       break;
     }
