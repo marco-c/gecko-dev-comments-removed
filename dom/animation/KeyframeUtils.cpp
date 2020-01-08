@@ -451,9 +451,9 @@ ConvertKeyframeSequence(JSContext* aCx,
       keyframe->mOffset.emplace(keyframeDict.mOffset.Value());
     }
 
-    if (StaticPrefs::dom_animations_api_compositing_enabled() &&
-        !keyframeDict.mComposite.IsNull()) {
-      keyframe->mComposite.emplace(keyframeDict.mComposite.Value());
+    if (StaticPrefs::dom_animations_api_compositing_enabled()) {
+      keyframe->mComposite =
+        KeyframeUtils::ToCompositeOperation(keyframeDict.mComposite);
     }
 
     
@@ -1188,27 +1188,25 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
   
   
   if (StaticPrefs::dom_animations_api_compositing_enabled()) {
-    const FallibleTArray<Nullable<dom::CompositeOperation>>* compositeOps =
-      nullptr;
-    AutoTArray<Nullable<dom::CompositeOperation>, 1> singleCompositeOp;
+    const FallibleTArray<dom::CompositeOperationOrAuto>* compositeOps = nullptr;
+    AutoTArray<dom::CompositeOperationOrAuto, 1> singleCompositeOp;
     auto& composite = keyframeDict.mComposite;
-    if (composite.IsCompositeOperation()) {
-      singleCompositeOp.AppendElement(composite.GetAsCompositeOperation());
-      const FallibleTArray<Nullable<dom::CompositeOperation>>& asFallibleArray =
+    if (composite.IsCompositeOperationOrAuto()) {
+      singleCompositeOp.AppendElement(
+        composite.GetAsCompositeOperationOrAuto());
+      const FallibleTArray<dom::CompositeOperationOrAuto>& asFallibleArray =
         singleCompositeOp;
       compositeOps = &asFallibleArray;
-    } else if (composite.IsCompositeOperationOrNullSequence()) {
-      compositeOps = &composite.GetAsCompositeOperationOrNullSequence();
+    } else if (composite.IsCompositeOperationOrAutoSequence()) {
+      compositeOps = &composite.GetAsCompositeOperationOrAutoSequence();
     }
 
     
     if (compositeOps && !compositeOps->IsEmpty()) {
       size_t length = compositeOps->Length();
       for (size_t i = 0; i < aResult.Length(); i++) {
-        if (!compositeOps->ElementAt(i % length).IsNull()) {
-          aResult[i].mComposite.emplace(
-            compositeOps->ElementAt(i % length).Value());
-        }
+        dom::CompositeOperationOrAuto op = compositeOps->ElementAt(i % length);
+        aResult[i].mComposite = KeyframeUtils::ToCompositeOperation(op);
       }
     }
   }

@@ -104,6 +104,35 @@ public:
 
 
   static bool IsAnimatableProperty(nsCSSPropertyID aProperty);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static dom::CompositeOperationOrAuto
+  ToCompositeOperationOrAuto(const Maybe<dom::CompositeOperation>& aComposite)
+  {
+    return aComposite
+           ? static_cast<dom::CompositeOperationOrAuto>(aComposite.value())
+           : dom::CompositeOperationOrAuto::Auto;
+  }
+
+  static Maybe<dom::CompositeOperation>
+  ToCompositeOperation(dom::CompositeOperationOrAuto aComposite)
+  {
+    return aComposite == dom::CompositeOperationOrAuto::Auto
+           ? Nothing()
+           : Some(static_cast<dom::CompositeOperation>(aComposite));
+  }
 };
 
 } 
