@@ -6023,11 +6023,6 @@ DoCompareFallback(JSContext* cx, BaselineFrame* frame, ICCompare_Fallback* stub_
     FallbackICSpew(cx, stub, "Compare(%s)", CodeName[op]);
 
     
-    if (op == JSOP_CASE) {
-        op = JSOP_STRICTEQ;
-    }
-
-    
     
     RootedValue lhsCopy(cx, lhs);
     RootedValue rhsCopy(cx, rhs);

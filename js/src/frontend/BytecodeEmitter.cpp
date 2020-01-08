@@ -2105,6 +2105,10 @@ BytecodeEmitter::emitSwitch(SwitchStatement* switchStmt)
                 continue;
             }
 
+            if (!se.prepareForCaseValue()) {
+                return false;
+            }
+
             ParseNode* caseValue = caseClause->caseExpression();
             
             

@@ -165,6 +165,11 @@ struct BytecodeEmitter;
 
 
 
+
+
+
+
+
 class MOZ_STACK_CLASS SwitchEmitter
 {
     
@@ -394,6 +399,12 @@ class MOZ_STACK_CLASS SwitchEmitter
     
     
     
+    
+    
+    
+    
+    
+    
     enum class State {
         
         Start,
@@ -412,6 +423,9 @@ class MOZ_STACK_CLASS SwitchEmitter
 
         
         Table,
+
+        
+        CaseValue,
 
         
         Case,
@@ -451,6 +465,7 @@ class MOZ_STACK_CLASS SwitchEmitter
     MOZ_MUST_USE bool emitCond();
     MOZ_MUST_USE bool emitTable(const TableGenerator& tableGen);
 
+    MOZ_MUST_USE bool prepareForCaseValue();
     MOZ_MUST_USE bool emitCaseJump();
 
     MOZ_MUST_USE bool emitCaseBody();

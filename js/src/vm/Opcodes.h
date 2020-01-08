@@ -1232,7 +1232,7 @@
 
 
  \
-    macro(JSOP_CASE,      121,"case",       NULL,         5,  2,  1,  JOF_JUMP|JOF_IC) \
+    macro(JSOP_CASE,      121,"case",       NULL,         5,  2,  1,  JOF_JUMP) \
     
 
 

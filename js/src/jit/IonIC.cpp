@@ -702,11 +702,6 @@ IonCompareIC::update(JSContext* cx,
     JSOp op = JSOp(*pc);
 
     
-    if (op == JSOP_CASE) {
-        op = JSOP_STRICTEQ;
-    }
-
-    
     
     RootedValue lhsCopy(cx, lhs);
     RootedValue rhsCopy(cx, rhs);
