@@ -670,6 +670,8 @@ class Selection final : public nsSupportsWeakReference,
 
   Element* GetCommonEditingHostForAllRanges();
 
+  void Disconnect();
+
   
   
   

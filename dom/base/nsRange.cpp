@@ -344,11 +344,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsRange)
 
   tmp->Reset();
 
-  
-  
   MOZ_DIAGNOSTIC_ASSERT(!tmp->isInList(),
                         "Shouldn't be registered now that we're unlinking");
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelection);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsRange)
@@ -356,7 +353,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStart)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEnd)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRoot)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelection)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsRange)
@@ -896,7 +892,7 @@ void nsRange::NotifySelectionListenersAfterRangeSet() {
     mCalledByJS = false;
     
     
-    RefPtr<Selection> selection = mSelection;
+    RefPtr<Selection> selection = mSelection.get();
     selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
   }
 }

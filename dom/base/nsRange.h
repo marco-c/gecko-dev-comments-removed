@@ -490,7 +490,7 @@ class nsRange final : public nsStubMutationObserver,
   
   
   nsINode* MOZ_NON_OWNING_REF mRegisteredCommonAncestor;
-  RefPtr<mozilla::dom::Selection> mSelection;
+  mozilla::WeakPtr<mozilla::dom::Selection> mSelection;
 
   
   
