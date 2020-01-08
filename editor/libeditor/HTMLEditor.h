@@ -1560,6 +1560,32 @@ protected:
   
 
 
+  enum class InsertPosition
+  {
+    
+    eBeforeSelectedCell,
+    
+    eAfterSelectedCell,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
+                                          InsertPosition aInsertPosition);
+
+  
+
+
 
 
 

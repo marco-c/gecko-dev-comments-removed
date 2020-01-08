@@ -1183,8 +1183,10 @@ HTMLEditor::TabInTable(bool inIsShift,
   if (!(*outHandled) && !inIsShift) {
     
     
-    rv = InsertTableRow(1, true);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = InsertTableRowsWithTransaction(1, InsertPosition::eAfterSelectedCell);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     *outHandled = true;
     
     

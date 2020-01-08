@@ -509,8 +509,22 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
 }
 
 NS_IMETHODIMP
-HTMLEditor::InsertTableRow(int32_t aNumber,
-                           bool aAfter)
+HTMLEditor::InsertTableRow(int32_t aNumberOfRowsToInsert,
+                           bool aInsertAfterSelectedCell)
+{
+  nsresult rv =
+    InsertTableRowsWithTransaction(aNumberOfRowsToInsert,
+      aInsertAfterSelectedCell ? InsertPosition::eAfterSelectedCell :
+                                 InsertPosition::eBeforeSelectedCell);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
+                                           InsertPosition aInsertPosition)
 {
   RefPtr<Element> table;
   RefPtr<Element> curCell;
@@ -521,26 +535,39 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
                                getter_AddRefs(curCell),
                                nullptr, nullptr,
                                &startRowIndex, &startColIndex);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  NS_ENSURE_TRUE(curCell, NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (NS_WARN_IF(!curCell)) {
+    
+    return NS_OK;
+  }
 
   
-  int32_t curStartRowIndex, curStartColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
+  
+  int32_t curStartRowIndex = 0, curStartColIndex = 0;
+  int32_t rowSpan = 0, colSpan = 0;
+  int32_t actualRowSpan = 0, actualColSpan = 0;
+  bool isSelected = false;
   rv = GetCellDataAt(table, startRowIndex, startColIndex,
                      getter_AddRefs(curCell),
                      &curStartRowIndex, &curStartColIndex,
                      &rowSpan, &colSpan,
                      &actualRowSpan, &actualColSpan, &isSelected);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(curCell, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (NS_WARN_IF(!curCell)) {
+    return NS_ERROR_FAILURE;
+  }
 
   ErrorResult error;
   TableSize tableSize(*this, *table, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
+  
+  MOZ_ASSERT(!tableSize.IsEmpty());
 
   AutoPlaceholderBatch beginBatching(this);
   
@@ -548,17 +575,22 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
                                       *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
-  if (aAfter) {
-    
-    startRowIndex += actualRowSpan;
+  switch (aInsertPosition) {
+    case InsertPosition::eBeforeSelectedCell:
+      break;
+    case InsertPosition::eAfterSelectedCell:
+      
+      startRowIndex += actualRowSpan;
 
-    
-    
-    
-    
-    if (!rowSpan) {
-      SetRowSpan(curCell, actualRowSpan);
-    }
+      
+      
+      
+      if (!rowSpan) {
+        SetRowSpan(curCell, actualRowSpan);
+      }
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Invalid InsertPosition");
   }
 
   
@@ -574,37 +606,40 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
     
     
     
-    int32_t colIndex = 0;
-    while (NS_SUCCEEDED(GetCellDataAt(table, startRowIndex, colIndex,
-                                      getter_AddRefs(curCell),
-                                      &curStartRowIndex, &curStartColIndex,
-                                      &rowSpan, &colSpan,
-                                      &actualRowSpan, &actualColSpan,
-                                      &isSelected))) {
-      if (curCell) {
-        if (curStartRowIndex < startRowIndex) {
-          
-          
-          
-          
-          if (rowSpan > 0) {
-            SetRowSpan(curCell, rowSpan+aNumber);
-          }
-        } else {
-          
+    for (int32_t colIndex = 0, actualColSpan = 0;; colIndex += actualColSpan) {
+      RefPtr<Element> cellElement;
+      int32_t curStartRowIndex = 0, curStartColIndex = 0;
+      int32_t rowSpan = 0, colSpan = 0;
+      int32_t actualRowSpan = 0;
+      nsresult rv = GetCellDataAt(table, startRowIndex, colIndex,
+                                  getter_AddRefs(cellElement),
+                                  &curStartRowIndex, &curStartColIndex,
+                                  &rowSpan, &colSpan,
+                                  &actualRowSpan, &actualColSpan,
+                                  &isSelected);
+      if (NS_FAILED(rv)) {
+        break; 
+      }
 
-          
-          cellsInRow += actualColSpan;
-
-          
-          if (!cellForRowParent) {
-            cellForRowParent = curCell;
-          }
-        }
+      if (NS_WARN_IF(!cellElement)) {
         
-        colIndex += actualColSpan;
-      } else {
-        colIndex++;
+        actualColSpan = 1;
+        continue;
+      }
+
+      if (curStartRowIndex < startRowIndex) {
+        
+        
+        
+        if (rowSpan > 0) {
+          SetRowSpan(cellElement, rowSpan + aNumberOfRowsToInsert);
+        }
+        continue;
+      }
+
+      cellsInRow += actualColSpan;
+      if (!cellForRowParent) {
+        cellForRowParent = std::move(cellElement);
       }
     }
   } else {
@@ -612,90 +647,95 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
     
     
     
+    
     cellsInRow = tableSize.mColumnCount;
 
     
-    int32_t lastRow = tableSize.mRowCount - 1;
-    int32_t tempColIndex = 0;
-    while (NS_SUCCEEDED(GetCellDataAt(table, lastRow, tempColIndex,
-                                      getter_AddRefs(curCell),
-                                      &curStartRowIndex, &curStartColIndex,
-                                      &rowSpan, &colSpan,
-                                      &actualRowSpan, &actualColSpan,
-                                      &isSelected))) {
+    const int32_t kLastRowIndex = tableSize.mRowCount - 1;
+    for (int32_t colIndex = 0, actualColSpan = 0;; colIndex += actualColSpan) {
+      RefPtr<Element> cellElement;
+      int32_t curStartRowIndex = 0, curStartColIndex = 0;
+      int32_t rowSpan = 0, colSpan = 0;
+      int32_t actualRowSpan = 0;
+      nsresult rv = GetCellDataAt(table, kLastRowIndex, colIndex,
+                                  getter_AddRefs(cellElement),
+                                  &curStartRowIndex, &curStartColIndex,
+                                  &rowSpan, &colSpan,
+                                  &actualRowSpan, &actualColSpan,
+                                  &isSelected);
+      if (NS_FAILED(rv)) {
+        break; 
+      }
+
       if (!rowSpan) {
+        MOZ_ASSERT(cellsInRow >= actualColSpan);
         cellsInRow -= actualColSpan;
       }
 
-      tempColIndex += actualColSpan;
-
       
-      if (!cellForRowParent && curStartRowIndex == lastRow) {
-        cellForRowParent = curCell;
+      if (!cellForRowParent && curStartRowIndex == kLastRowIndex) {
+        cellForRowParent = std::move(cellElement);
       }
     }
   }
 
-  if (cellsInRow > 0) {
-    if (NS_WARN_IF(!cellForRowParent)) {
-      return NS_ERROR_FAILURE;
-    }
-    Element* parentRow =
-      GetElementOrParentByTagNameInternal(*nsGkAtoms::tr, *cellForRowParent);
-    if (NS_WARN_IF(!parentRow)) {
-      return NS_ERROR_FAILURE;
-    }
-
+  if (NS_WARN_IF(!cellsInRow)) {
     
-    nsCOMPtr<nsINode> parentOfRow = parentRow->GetParentNode();
-    if (NS_WARN_IF(!parentOfRow)) {
+    return NS_OK;
+  }
+
+  if (NS_WARN_IF(!cellForRowParent)) {
+    return NS_ERROR_FAILURE;
+  }
+  Element* parentRow =
+    GetElementOrParentByTagNameInternal(*nsGkAtoms::tr, *cellForRowParent);
+  if (NS_WARN_IF(!parentRow)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  EditorDOMPoint pointToInsert(parentRow);
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  if (aInsertPosition == InsertPosition::eAfterSelectedCell &&
+      startRowIndex >= tableSize.mRowCount) {
+    DebugOnly<bool> advanced = pointToInsert.AdvanceOffset();
+    NS_WARNING_ASSERTION(advanced, "Failed to advance offset");
+  }
+
+  for (int32_t row = 0; row < aNumberOfRowsToInsert; row++) {
+    
+    RefPtr<Element> newRow = CreateElementWithDefaults(*nsGkAtoms::tr);
+    if (NS_WARN_IF(!newRow)) {
       return NS_ERROR_FAILURE;
     }
-    int32_t newRowOffset = parentOfRow->ComputeIndexOf(parentRow);
 
-    
-    if (aAfter && startRowIndex >= tableSize.mRowCount) {
-      newRowOffset++;
-    }
-
-    for (int32_t row = 0; row < aNumber; row++) {
-      
-      RefPtr<Element> newRow = CreateElementWithDefaults(*nsGkAtoms::tr);
-      if (NS_WARN_IF(!newRow)) {
+    for (int32_t i = 0; i < cellsInRow; i++) {
+      RefPtr<Element> newCell = CreateElementWithDefaults(*nsGkAtoms::td);
+      if (NS_WARN_IF(!newCell)) {
         return NS_ERROR_FAILURE;
       }
-
-      for (int32_t i = 0; i < cellsInRow; i++) {
-        RefPtr<Element> newCell = CreateElementWithDefaults(*nsGkAtoms::td);
-        if (NS_WARN_IF(!newCell)) {
-          return NS_ERROR_FAILURE;
-        }
-
-        
-        
-        newRow->AppendChild(*newCell, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
+      newRow->AppendChild(*newCell, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
       }
+    }
 
-      
-      
-      rv = InsertNodeWithTransaction(*newRow,
-                                     EditorRawDOMPoint(parentOfRow,
-                                                       newRowOffset));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+    AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
+    rv = InsertNodeWithTransaction(*newRow, pointToInsert);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
 
   
   
   
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  if (ps) {
-    ps->FlushPendingNotifications(FlushType::Frames);
+  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  if (presShell) {
+    presShell->FlushPendingNotifications(FlushType::Frames);
   }
 
   return NS_OK;
