@@ -4616,11 +4616,11 @@ ICCall_IsSuspendedGenerator::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     
-    masm.loadValue(Address(genObj, GeneratorObject::offsetOfYieldAndAwaitIndexSlot()), argVal);
+    masm.loadValue(Address(genObj, GeneratorObject::offsetOfResumeIndexSlot()), argVal);
     masm.branchTestInt32(Assembler::NotEqual, argVal, &returnFalse);
     masm.unboxInt32(argVal, scratch);
     masm.branch32(Assembler::AboveOrEqual, scratch,
-                  Imm32(GeneratorObject::YIELD_AND_AWAIT_INDEX_CLOSING),
+                  Imm32(GeneratorObject::RESUME_INDEX_CLOSING),
                   &returnFalse);
 
     masm.moveValue(BooleanValue(true), R0);

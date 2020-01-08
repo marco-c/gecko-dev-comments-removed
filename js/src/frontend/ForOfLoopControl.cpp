@@ -32,7 +32,7 @@ ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce)
     }
 
     MOZ_ASSERT(numYieldsAtBeginCodeNeedingIterClose_ == UINT32_MAX);
-    numYieldsAtBeginCodeNeedingIterClose_ = bce->yieldAndAwaitOffsetList.numYields;
+    numYieldsAtBeginCodeNeedingIterClose_ = bce->resumeOffsetList.numYields;
 
     return true;
 }
@@ -86,7 +86,7 @@ ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce)
     
     
     
-    uint32_t numYieldsEmitted = bce->yieldAndAwaitOffsetList.numYields;
+    uint32_t numYieldsEmitted = bce->resumeOffsetList.numYields;
     if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
         if (!tryCatch_->emitFinally()) {
             return false;

@@ -988,7 +988,7 @@ GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame, Handle<GeneratorObje
     
     
     JSScript* script = frame->script();
-    uint32_t offset = script->yieldAndAwaitOffsets()[genObj->yieldAndAwaitIndex()];
+    uint32_t offset = script->resumeOffsets()[genObj->resumeIndex()];
     jsbytecode* pc = script->offsetToPC(offset);
     frame->setOverridePc(pc);
 

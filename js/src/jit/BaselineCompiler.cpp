@@ -238,8 +238,8 @@ BaselineCompiler::compile()
     
     
     size_t bytecodeTypeMapEntries = script->nTypeSets() + 1;
-    size_t yieldAndAwaitEntries =
-        script->hasYieldAndAwaitOffsets() ? script->yieldAndAwaitOffsets().size() : 0;
+    size_t resumeEntries =
+        script->hasResumeOffsets() ? script->resumeOffsets().size() : 0;
     UniquePtr<BaselineScript> baselineScript(
         BaselineScript::New(script, bailoutPrologueOffset_.offset(),
                             debugOsrPrologueOffset_.offset(),
@@ -251,7 +251,7 @@ BaselineCompiler::compile()
                             pcMappingIndexEntries.length(),
                             pcEntries.length(),
                             bytecodeTypeMapEntries,
-                            yieldAndAwaitEntries,
+                            resumeEntries,
                             traceLoggerToggleOffsets_.length()),
         JS::DeletePolicy<BaselineScript>(cx->runtime()));
     if (!baselineScript) {
@@ -318,7 +318,7 @@ BaselineCompiler::compile()
     bytecodeMap[script->nTypeSets()] = 0;
 
     
-    baselineScript->computeYieldAndAwaitNativeOffsets(script);
+    baselineScript->computeResumeNativeOffsets(script);
 
     if (compileDebugInstrumentation_) {
         baselineScript->setHasDebugInstrumentation();
@@ -4827,7 +4827,7 @@ BaselineCompiler::emit_JSOP_INITIALYIELD()
 
     MOZ_ASSERT(GET_UINT24(pc) == 0);
     masm.storeValue(Int32Value(0),
-                    Address(genObj, GeneratorObject::offsetOfYieldAndAwaitIndexSlot()));
+                    Address(genObj, GeneratorObject::offsetOfResumeIndexSlot()));
 
     Register envObj = R0.scratchReg();
     Address envChainSlot(genObj, GeneratorObject::offsetOfEnvironmentChainSlot());
@@ -4868,7 +4868,7 @@ BaselineCompiler::emit_JSOP_YIELD()
         
 
         masm.storeValue(Int32Value(GET_UINT24(pc)),
-                        Address(genObj, GeneratorObject::offsetOfYieldAndAwaitIndexSlot()));
+                        Address(genObj, GeneratorObject::offsetOfResumeIndexSlot()));
 
         Register envObj = R0.scratchReg();
         Address envChainSlot(genObj, GeneratorObject::offsetOfEnvironmentChainSlot());
@@ -5129,15 +5129,15 @@ BaselineCompiler::emit_JSOP_RESUME()
     if (resumeKind == GeneratorObject::NEXT) {
         
         
-        masm.load32(Address(scratch1, BaselineScript::offsetOfYieldEntriesOffset()), scratch2);
+        masm.load32(Address(scratch1, BaselineScript::offsetOfResumeEntriesOffset()), scratch2);
         masm.addPtr(scratch2, scratch1);
-        masm.unboxInt32(Address(genObj, GeneratorObject::offsetOfYieldAndAwaitIndexSlot()),
+        masm.unboxInt32(Address(genObj, GeneratorObject::offsetOfResumeIndexSlot()),
                         scratch2);
         masm.loadPtr(BaseIndex(scratch1, scratch2, ScaleFromElemWidth(sizeof(uintptr_t))), scratch1);
 
         
-        masm.storeValue(Int32Value(GeneratorObject::YIELD_AND_AWAIT_INDEX_RUNNING),
-                        Address(genObj, GeneratorObject::offsetOfYieldAndAwaitIndexSlot()));
+        masm.storeValue(Int32Value(GeneratorObject::RESUME_INDEX_RUNNING),
+                        Address(genObj, GeneratorObject::offsetOfResumeIndexSlot()));
         masm.jump(scratch1);
     } else {
         MOZ_ASSERT(resumeKind == GeneratorObject::THROW || resumeKind == GeneratorObject::RETURN);

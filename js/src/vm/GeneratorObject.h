@@ -20,15 +20,15 @@ class GeneratorObject : public NativeObject
   public:
     
     
-    static const int32_t YIELD_AND_AWAIT_INDEX_RUNNING = INT32_MAX;
-    static const int32_t YIELD_AND_AWAIT_INDEX_CLOSING = INT32_MAX - 1;
+    static const int32_t RESUME_INDEX_RUNNING = INT32_MAX;
+    static const int32_t RESUME_INDEX_CLOSING = INT32_MAX - 1;
 
     enum {
         CALLEE_SLOT = 0,
         ENV_CHAIN_SLOT,
         ARGS_OBJ_SLOT,
         EXPRESSION_STACK_SLOT,
-        YIELD_AND_AWAIT_INDEX_SLOT,
+        RESUME_INDEX_SLOT,
         RESERVED_SLOTS
     };
 
@@ -127,46 +127,47 @@ class GeneratorObject : public NativeObject
     
 
     bool isBeforeInitialYield() const {
-        return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).isUndefined();
+        return getFixedSlot(RESUME_INDEX_SLOT).isUndefined();
     }
     bool isRunning() const {
         MOZ_ASSERT(!isClosed());
-        return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).toInt32() == YIELD_AND_AWAIT_INDEX_RUNNING;
+        return getFixedSlot(RESUME_INDEX_SLOT).toInt32() == RESUME_INDEX_RUNNING;
     }
     bool isClosing() const {
-        return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).toInt32() == YIELD_AND_AWAIT_INDEX_CLOSING;
+        return getFixedSlot(RESUME_INDEX_SLOT).toInt32() == RESUME_INDEX_CLOSING;
     }
     bool isSuspended() const {
         
         
         MOZ_ASSERT(!isClosed());
-        static_assert(YIELD_AND_AWAIT_INDEX_CLOSING < YIELD_AND_AWAIT_INDEX_RUNNING,
-                      "test below should return false for YIELD_AND_AWAIT_INDEX_RUNNING");
-        return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).toInt32() < YIELD_AND_AWAIT_INDEX_CLOSING;
+        static_assert(RESUME_INDEX_CLOSING < RESUME_INDEX_RUNNING,
+                      "test below should return false for RESUME_INDEX_RUNNING");
+        return getFixedSlot(RESUME_INDEX_SLOT).toInt32() < RESUME_INDEX_CLOSING;
     }
     void setRunning() {
         MOZ_ASSERT(isSuspended());
-        setFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT, Int32Value(YIELD_AND_AWAIT_INDEX_RUNNING));
+        setFixedSlot(RESUME_INDEX_SLOT, Int32Value(RESUME_INDEX_RUNNING));
     }
     void setClosing() {
         MOZ_ASSERT(isRunning());
-        setFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT, Int32Value(YIELD_AND_AWAIT_INDEX_CLOSING));
+        setFixedSlot(RESUME_INDEX_SLOT, Int32Value(RESUME_INDEX_CLOSING));
     }
-    void setYieldAndAwaitIndex(uint32_t yieldAndAwaitIndex) {
-        MOZ_ASSERT_IF(yieldAndAwaitIndex == 0,
-                      getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).isUndefined());
-        MOZ_ASSERT_IF(yieldAndAwaitIndex != 0, isRunning() || isClosing());
-        setYieldAndAwaitIndexNoAssert(yieldAndAwaitIndex);
-    }
-    
-    void setYieldAndAwaitIndexNoAssert(uint32_t yieldAndAwaitIndex) {
-        MOZ_ASSERT(yieldAndAwaitIndex < uint32_t(YIELD_AND_AWAIT_INDEX_CLOSING));
-        setFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT, Int32Value(yieldAndAwaitIndex));
+    void setResumeIndex(jsbytecode* pc) {
+        MOZ_ASSERT(*pc == JSOP_INITIALYIELD || *pc == JSOP_YIELD || *pc == JSOP_AWAIT);
+
+        MOZ_ASSERT_IF(JSOp(*pc) == JSOP_INITIALYIELD,
+                      getFixedSlot(RESUME_INDEX_SLOT).isUndefined());
+        MOZ_ASSERT_IF(JSOp(*pc) != JSOP_INITIALYIELD, isRunning() || isClosing());
+
+        uint32_t resumeIndex = GET_UINT24(pc);
+        MOZ_ASSERT(resumeIndex < uint32_t(RESUME_INDEX_CLOSING));
+
+        setFixedSlot(RESUME_INDEX_SLOT, Int32Value(resumeIndex));
         MOZ_ASSERT(isSuspended());
     }
-    uint32_t yieldAndAwaitIndex() const {
+    uint32_t resumeIndex() const {
         MOZ_ASSERT(isSuspended());
-        return getFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT).toInt32();
+        return getFixedSlot(RESUME_INDEX_SLOT).toInt32();
     }
     bool isClosed() const {
         return getFixedSlot(CALLEE_SLOT).isNull();
@@ -176,7 +177,7 @@ class GeneratorObject : public NativeObject
         setFixedSlot(ENV_CHAIN_SLOT, NullValue());
         setFixedSlot(ARGS_OBJ_SLOT, NullValue());
         setFixedSlot(EXPRESSION_STACK_SLOT, NullValue());
-        setFixedSlot(YIELD_AND_AWAIT_INDEX_SLOT, NullValue());
+        setFixedSlot(RESUME_INDEX_SLOT, NullValue());
     }
 
     bool isAfterYield();
@@ -195,8 +196,8 @@ class GeneratorObject : public NativeObject
     static size_t offsetOfArgsObjSlot() {
         return getFixedSlotOffset(ARGS_OBJ_SLOT);
     }
-    static size_t offsetOfYieldAndAwaitIndexSlot() {
-        return getFixedSlotOffset(YIELD_AND_AWAIT_INDEX_SLOT);
+    static size_t offsetOfResumeIndexSlot() {
+        return getFixedSlotOffset(RESUME_INDEX_SLOT);
     }
     static size_t offsetOfExpressionStackSlot() {
         return getFixedSlotOffset(EXPRESSION_STACK_SLOT);

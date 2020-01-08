@@ -98,11 +98,11 @@ struct CGScopeNoteList {
     void finish(mozilla::Span<ScopeNote> array, uint32_t prologueLength);
 };
 
-struct CGYieldAndAwaitOffsetList {
+struct CGResumeOffsetList {
     Vector<uint32_t> list;
     uint32_t numYields;
     uint32_t numAwaits;
-    explicit CGYieldAndAwaitOffsetList(JSContext* cx) : list(cx), numYields(0), numAwaits(0) {}
+    explicit CGResumeOffsetList(JSContext* cx) : list(cx), numYields(0), numAwaits(0) {}
 
     MOZ_MUST_USE bool append(uint32_t offset) { return list.append(offset); }
     size_t length() const { return list.length(); }
@@ -203,10 +203,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     CGScopeNoteList  scopeNoteList;  
 
     
-
-
-
-    CGYieldAndAwaitOffsetList yieldAndAwaitOffsetList;
+    
+    
+    
+    
+    CGResumeOffsetList resumeOffsetList;
 
     uint16_t        typesetCount;   
 
@@ -614,6 +615,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter
         return emitGetDotGeneratorInScope(*innermostEmitterScope());
     }
     MOZ_MUST_USE bool emitGetDotGeneratorInScope(EmitterScope& currentScope);
+
+    MOZ_MUST_USE bool allocateResumeIndexForCurrentOffset(uint32_t* resumeIndex);
 
     MOZ_MUST_USE bool emitInitialYield(UnaryNode* yieldNode);
     MOZ_MUST_USE bool emitYield(UnaryNode* yieldNode);
