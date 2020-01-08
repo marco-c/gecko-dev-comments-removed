@@ -114,7 +114,7 @@
   background-size: 16px, auto;
   -moz-context-properties: fill;
   fill: currentColor;
-  color: inherit;
+  color: inherit !important; 
 }
 
 .identity-popup-expander:-moz-locale-dir(ltr) {
