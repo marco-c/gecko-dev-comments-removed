@@ -162,6 +162,14 @@ IndexedDBHelper.prototype = {
 
       txn.oncomplete = function () {
         if (DEBUG) debug("Transaction complete. Returning to callback.");
+        
+
+
+
+
+
+
+
         if (successCb) {
           if ("result" in txn) {
             successCb(txn.result);
@@ -173,6 +181,12 @@ IndexedDBHelper.prototype = {
 
       txn.onabort = function () {
         if (DEBUG) debug("Caught error on transaction");
+        
+
+
+
+
+
         if (failureCb) {
           failureCb(getErrorName(txn.error));
         }
