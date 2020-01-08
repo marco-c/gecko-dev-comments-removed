@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html class=reftest-wait>
-<link rel="help" href="https://drafts.css-houdini.org/css-layout-api/#dom-layoutconstraintsoptions-availableinlinesize">
-<link rel="match" href="green-square-ref.html">
-<meta name="assert" content="This test checks that setting the available inline size of children works as expected." />
+<link rel="help" href="https://drafts.css-houdini.org/css-layout-api/#dom-layoutconstraintsoptions-availableblocksize">
+<link rel="match" href="../green-square-ref.html">
+<meta name="assert" content="This test checks that setting the available block-size of children works as expected." />
 
 <style>
 .test {
@@ -61,5 +61,5 @@
 </div>
 
 <script>
-importWorkletAndTerminateTestAfterAsyncPaint(CSS.layoutWorklet, {url: 'support/layout-child-sizes-worklet.js'});
+importWorkletAndTerminateTestAfterAsyncPaint(CSS.layoutWorklet, {url: '../support/layout-child-sizes-worklet.js'});
 </script>
