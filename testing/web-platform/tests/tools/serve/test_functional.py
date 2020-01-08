@@ -55,7 +55,7 @@ def test_subprocess_exit(server_subprocesses, tempfile_name):
         
         
         with open(tempfile_name, 'w') as handle:
-            json.dump({"check_subdomains": False}, handle)
+            json.dump({"check_subdomains": False, "bind_address": False}, handle)
 
         
         
