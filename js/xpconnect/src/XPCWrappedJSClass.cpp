@@ -955,9 +955,9 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
 
     
     
-    if (info->WantsOptArgc() || info->WantsContext()) {
-        const char* str = "IDL methods marked with [implicit_jscontext] "
-                          "or [optional_argc] may not be implemented in JS";
+    if (info->WantsOptArgc()) {
+        const char* str = "IDL methods marked with [optional_argc] may not "
+                          "be implemented in JS";
         
         JS_ReportErrorASCII(cx, "%s", str);
         NS_WARNING(str);

@@ -426,6 +426,22 @@ struct nsXPTMethodInfo
   
   
   
+  uint8_t IndexOfJSContext() const {
+    if (!WantsContext()) {
+      return UINT8_MAX;
+    }
+    if (IsGetter() || IsSetter()) {
+      
+      return 0;
+    }
+    
+    MOZ_ASSERT_IF(HasRetval(), ParamCount() > 0);
+    return ParamCount() - uint8_t(HasRetval());
+  }
+
+  
+  
+  
 
   const char* GetName() const { return Name(); }
   uint8_t GetParamCount() const { return ParamCount(); }

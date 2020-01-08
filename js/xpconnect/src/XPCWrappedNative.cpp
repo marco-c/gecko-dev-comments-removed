@@ -1442,17 +1442,16 @@ CallMethodHelper::InitializeDispatchParams()
     const uint8_t wantsJSContext = mMethodInfo->WantsContext() ? 1 : 0;
     const uint8_t paramCount = mMethodInfo->GetParamCount();
     uint8_t requiredArgs = paramCount;
-    uint8_t hasRetval = 0;
 
     
-    if (mMethodInfo->HasRetval()) {
-        hasRetval = 1;
+    if (mMethodInfo->HasRetval())
         requiredArgs--;
-    }
 
     if (mArgc < requiredArgs || wantsOptArgc) {
-        if (wantsOptArgc)
-            mOptArgcIndex = requiredArgs;
+        if (wantsOptArgc) {
+            
+            mOptArgcIndex = requiredArgs + wantsJSContext;
+        }
 
         
         while (requiredArgs && mMethodInfo->GetParam(requiredArgs-1).IsOptional())
@@ -1464,16 +1463,7 @@ CallMethodHelper::InitializeDispatchParams()
         }
     }
 
-    if (wantsJSContext) {
-        if (wantsOptArgc)
-            
-            mJSContextIndex = mOptArgcIndex++;
-        else if (mMethodInfo->IsSetter() || mMethodInfo->IsGetter())
-            
-            mJSContextIndex = 0;
-        else
-            mJSContextIndex = paramCount - hasRetval;
-    }
+    mJSContextIndex = mMethodInfo->IndexOfJSContext();
 
     
     for (uint8_t i = 0; i < paramCount + wantsJSContext + wantsOptArgc; i++) {
