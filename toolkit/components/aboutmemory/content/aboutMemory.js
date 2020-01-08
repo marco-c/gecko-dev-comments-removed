@@ -1488,7 +1488,7 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
     appendTextNode(pre, "\n"); 
   }
   for (let t of otherDegenerates) {
-    let padText = pad("", maxStringLength - t.toString().length, " ");
+    let padText = "".padStart(maxStringLength - t.toString().length, " ");
     appendTreeElements(pre, t, aProcess, padText);
   }
   appendTextNode(aP, "\n"); 
@@ -1592,26 +1592,6 @@ function formatTreeFrac(aNum, aDenom) {
   return (0.99995 <= num && num <= 1)
          ? formatNum(1, kFrac1Style)
          : formatNum(num, kFracStyle);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function pad(aS, aN, aC) {
-  let padding = "";
-  let n2 = aN - aS.length;
-  for (let i = 0; i < n2; i++) {
-    padding += aC;
-  }
-  return padding + aS;
 }
 
 const kNoKidsSep   = " ── ",
