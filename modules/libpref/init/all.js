@@ -211,20 +211,12 @@ pref("dom.gamepad.haptic_feedback.enabled", true);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("dom.keyboardevent.dispatch_during_composition", true);
-#else
-pref("dom.keyboardevent.dispatch_during_composition", false);
-#endif
 
 
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", true);
-#else
-pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
-#endif
 
 
 
@@ -272,11 +264,7 @@ pref("dom.script_loader.binast_encoding.enabled", false);
 #endif
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.window.event.enabled", true);
-#else
-pref("dom.window.event.enabled", false);
-#endif
 
 
 

@@ -205,17 +205,11 @@ VARCACHE_PREF(
 
 
 
-#ifdef NIGHTLY_BUILD
-# define PREF_VALUE  true
-#else
-# define PREF_VALUE  false
-#endif
 VARCACHE_PREF(
   "dom.keyboardevent.keypress.set_keycode_and_charcode_to_same_value",
    dom_keyboardevent_keypress_set_keycode_and_charcode_to_same_value,
-  bool, PREF_VALUE
+  bool, true
 )
-#undef PREF_VALUE
 
 
 
