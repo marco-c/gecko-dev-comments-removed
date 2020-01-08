@@ -418,17 +418,34 @@ class RobocopTestRunner(MochitestDesktop):
         self.setupRemoteProfile()
         self.options.app = "am"
         timeout = None
+
+        testName = test['name'].split('/')[-1].split('.java')[0]
+        if self.options.enable_coverage:
+            remoteCoverageFile = posixpath.join(self.options.remoteTestRoot,
+                                                'robocop-coverage-%s.ec' % testName)
+            coverageFile = os.path.join(self.options.coverage_output_dir,
+                                        'robocop-coverage-%s.ec' % testName)
         if self.options.autorun:
             
             
             
             browserArgs = [
                 "instrument",
+            ]
+
+            if self.options.enable_coverage:
+                browserArgs += [
+                    "-e", "coverage", "true",
+                    "-e", "coverageFile", remoteCoverageFile,
+                ]
+
+            browserArgs += [
                 "-e", "quit_and_finish", "1",
                 "-e", "deviceroot", self.device.test_root,
                 "-e", "class",
-                "org.mozilla.gecko.tests.%s" % test['name'].split('/')[-1].split('.java')[0],
-                "org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner"]
+                "org.mozilla.gecko.tests.%s" % testName,
+                "org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner",
+            ]
         else:
             
             
@@ -465,6 +482,14 @@ class RobocopTestRunner(MochitestDesktop):
                 
                 if self.options.log_mach is None:
                     self.printDeviceInfo(printLogcat=True)
+            if self.options.enable_coverage:
+                if self.device.is_file(remoteCoverageFile):
+                    self.device.pull(remoteCoverageFile, coverageFile)
+                    self.device.rm(remoteCoverageFile)
+                else:
+                    self.log.warning("Code coverage output not found on remote device: %s" %
+                                     remoteCoverageFile)
+
         except Exception:
             self.log.error(
                 "Automation Error: Exception caught while running tests")
