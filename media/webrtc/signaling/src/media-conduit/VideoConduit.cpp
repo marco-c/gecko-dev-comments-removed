@@ -2040,31 +2040,22 @@ WebrtcVideoConduit::ReceivedRTPPacket(const void* data, int len, uint32_t ssrc)
     
     
     
-    if (mRecvSsrcSetInProgress || mRecvSSRC != ssrc) {
+    if (mRtpPacketQueue.IsQueueActive()) {
+      mRtpPacketQueue.Enqueue(data, len);
+      return kMediaConduitNoError;
+    }
+
+    if (mRecvSSRC != ssrc) {
       
       
       
-      
-      UniquePtr<QueuedPacket> packet((QueuedPacket*) malloc(sizeof(QueuedPacket) + len-1));
-      packet->mLen = len;
-      memcpy(packet->mData, data, len);
-      CSFLogDebug(LOGTAG, "queuing packet: seq# %u, Len %d ",
-                  (uint16_t)ntohs(((uint16_t*) packet->mData)[1]), packet->mLen);
-      if (mRecvSsrcSetInProgress) {
-        mQueuedPackets.AppendElement(std::move(packet));
-        return kMediaConduitNoError;
-      }
-      
-      
-      
-      mQueuedPackets.Clear();
-      mQueuedPackets.AppendElement(std::move(packet));
+      mRtpPacketQueue.Clear();
+      mRtpPacketQueue.Enqueue(data, len);
 
       CSFLogDebug(LOGTAG, "%s: switching from SSRC %u to %u", __FUNCTION__,
                   static_cast<uint32_t>(mRecvSSRC), ssrc);
       
       mRecvSSRC = ssrc;
-      mRecvSsrcSetInProgress = true;
 
       
       NS_DispatchToMainThread(NS_NewRunnableFunction(
@@ -2087,19 +2078,7 @@ WebrtcVideoConduit::ReceivedRTPPacket(const void* data, int len, uint32_t ssrc)
                 
                 return;
               }
-              
-              for (auto& packet : mQueuedPackets) {
-                CSFLogDebug(LOGTAG, "Inserting queued packets: seq# %u, Len %d ",
-                            (uint16_t)ntohs(((uint16_t*) packet->mData)[1]), packet->mLen);
-
-                if (DeliverPacket(packet->mData, packet->mLen) != kMediaConduitNoError) {
-                  CSFLogError(LOGTAG, "%s RTP Processing Failed", __FUNCTION__);
-                  
-                }
-              }
-              mQueuedPackets.Clear();
-              
-              mRecvSsrcSetInProgress = false;
+              self->mRtpPacketQueue.DequeueAll(self);
             }));
         }));
       return kMediaConduitNoError;
