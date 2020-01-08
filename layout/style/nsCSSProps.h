@@ -307,8 +307,6 @@ public:
     if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState) es_))
 
   
-  static const KTableEntry kTransformStyleKTable[];
-  static const KTableEntry kImageLayerRepeatKTable[];
   
   
   static const KTableEntry kBorderImageRepeatKTable[];
@@ -345,7 +343,6 @@ public:
   static const KTableEntry kOverflowKTable[];
   static const KTableEntry kOverflowSubKTable[];
   static const KTableEntry kOverflowClipBoxKTable[];
-  static const KTableEntry kRadialGradientSizeKTable[];
   static const KTableEntry kOverscrollBehaviorKTable[];
   static const KTableEntry kScrollSnapTypeKTable[];
   

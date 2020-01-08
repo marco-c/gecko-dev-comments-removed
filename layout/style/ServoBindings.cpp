@@ -2061,6 +2061,13 @@ Gecko_GetComputedURLSpec(const URLValueData* aURL, nsCString* aOut)
     aOut->Assign(aURL->GetString());
     return;
   }
+  Gecko_GetComputedImageURLSpec(aURL, aOut);
+}
+
+void
+Gecko_GetComputedImageURLSpec(const URLValueData* aURL, nsCString* aOut)
+{
+  
   if (nsIURI* uri = aURL->GetURI()) {
     nsresult rv = uri->GetSpec(*aOut);
     if (NS_SUCCEEDED(rv)) {
