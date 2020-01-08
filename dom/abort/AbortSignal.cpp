@@ -35,8 +35,9 @@ AbortSignalImpl::Abort()
   mAborted = true;
 
   
-  for (AbortFollower* follower : mFollowers) {
-    follower->Abort();
+  nsTObserverArray<AbortFollower*>::ForwardIterator iter(mFollowers);
+  while (iter.HasMore()) {
+    iter.GetNext()->Abort();
   }
 }
 

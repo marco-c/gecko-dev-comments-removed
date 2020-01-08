@@ -8,6 +8,7 @@
 #define mozilla_dom_AbortSignal_h
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "nsTObserverArray.h"
 
 namespace mozilla {
 namespace dom {
@@ -62,7 +63,7 @@ protected:
 
 private:
   
-  nsTArray<AbortFollower*> mFollowers;
+  nsTObserverArray<AbortFollower*> mFollowers;
 
   bool mAborted;
 };
