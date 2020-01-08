@@ -235,7 +235,6 @@ void
 OldItemInfo::AddedMatchToMergedList(RetainedDisplayListBuilder* aBuilder,
                                     MergedListIndex aIndex)
 {
-  mItem->Destroy(aBuilder->Builder());
   AddedToMergedList(aIndex);
 }
 
@@ -290,29 +289,74 @@ public:
                             oldItem->Frame() == aNewItem->Frame());
       if (!mOldItems[oldIndex.val].IsChanged()) {
         MOZ_DIAGNOSTIC_ASSERT(!mOldItems[oldIndex.val].IsUsed());
+        nsDisplayItem* destItem = ShouldUseNewItem(aNewItem) ? aNewItem : oldItem;
         if (aNewItem->GetChildren()) {
           Maybe<const ActiveScrolledRoot*> containerASRForChildren;
           if (mBuilder->MergeDisplayLists(aNewItem->GetChildren(),
                                           oldItem->GetChildren(),
-                                          aNewItem->GetChildren(),
+                                          destItem->GetChildren(),
                                           containerASRForChildren,
                                           aNewItem->GetPerFrameKey())) {
-            aNewItem->InvalidateCachedChildInfo();
+            destItem->InvalidateCachedChildInfo();
             mResultIsModified = true;
 
           }
-          UpdateASR(aNewItem, containerASRForChildren);
-          aNewItem->UpdateBounds(mBuilder->Builder());
+          UpdateASR(destItem, containerASRForChildren);
+          destItem->UpdateBounds(mBuilder->Builder());
         }
 
         AutoTArray<MergedListIndex, 2> directPredecessors = ProcessPredecessorsOfOldNode(oldIndex);
-        MergedListIndex newIndex = AddNewNode(aNewItem, Some(oldIndex), directPredecessors, aPreviousItem);
+        MergedListIndex newIndex = AddNewNode(destItem, Some(oldIndex), directPredecessors, aPreviousItem);
         mOldItems[oldIndex.val].AddedMatchToMergedList(mBuilder, newIndex);
+        if (destItem == aNewItem) {
+          oldItem->Destroy(mBuilder->Builder());
+        } else {
+          aNewItem->Destroy(mBuilder->Builder());
+        }
         return newIndex;
       }
     }
     mResultIsModified = true;
     return AddNewNode(aNewItem, Nothing(), Span<MergedListIndex>(), aPreviousItem);
+  }
+
+  bool ShouldUseNewItem(nsDisplayItem* aNewItem)
+  {
+    
+    
+    
+    
+    
+    
+    
+    DisplayItemType type = aNewItem->GetType();
+    if (type == DisplayItemType::TYPE_CANVAS_BACKGROUND_COLOR ||
+        type == DisplayItemType::TYPE_SOLID_COLOR) {
+      
+      
+      
+      return true;
+    } else if (type == DisplayItemType::TYPE_TABLE_BORDER_COLLAPSE) {
+      
+      
+      
+      
+      return true;
+    } else if (type == DisplayItemType::TYPE_TEXT_OVERFLOW) {
+      
+      
+      
+      
+      
+      
+      return true;
+    } else if (type == DisplayItemType::TYPE_SUBDOCUMENT) {
+      
+      
+      
+      return true;
+    }
+    return false;
   }
 
   RetainedDisplayList Finalize() {
