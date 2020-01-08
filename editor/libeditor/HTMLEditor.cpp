@@ -2660,17 +2660,17 @@ HTMLEditor::GetSelectedNode(Selection& aSelection,
   bool isLinkTag = aTagName && IsLinkTag(*aTagName);
   bool isNamedAnchorTag = aTagName && IsNamedAnchorTag(*aTagName);
 
-  RefPtr<nsRange> range = aSelection.GetRangeAt(0);
-  if (NS_WARN_IF(!range)) {
+  RefPtr<nsRange> firstRange = aSelection.GetRangeAt(0);
+  if (NS_WARN_IF(!firstRange)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
 
-  nsCOMPtr<nsINode> startContainer = range->GetStartContainer();
-  nsIContent* startNode = range->GetChildAtStartOffset();
+  nsCOMPtr<nsINode> startContainer = firstRange->GetStartContainer();
+  nsIContent* startNode = firstRange->GetChildAtStartOffset();
 
-  nsCOMPtr<nsINode> endContainer = range->GetEndContainer();
-  nsIContent* endNode = range->GetChildAtEndOffset();
+  nsCOMPtr<nsINode> endContainer = firstRange->GetEndContainer();
+  nsIContent* endNode = firstRange->GetChildAtEndOffset();
 
   
   if (startContainer && startContainer == endContainer &&
@@ -2725,66 +2725,74 @@ HTMLEditor::GetSelectedNode(Selection& aSelection,
     }
   }
 
-  if (!aSelection.IsCollapsed()) {
-    RefPtr<nsRange> currange = aSelection.GetRangeAt(0);
-    if (currange) {
-      nsresult rv;
-      nsCOMPtr<nsIContentIterator> iter =
-        do_CreateInstance("@mozilla.org/content/post-content-iterator;1",
-                          &rv);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        aRv.Throw(rv);
-        return nullptr;
-      }
-
-      bool found = !!selectedElement;
-      const nsAtom* tagNameLookingFor = aTagName;
-      iter->Init(currange);
-      
-      while (!iter->IsDone()) {
-        
-        
-        
-        selectedElement = Element::FromNodeOrNull(iter->GetCurrentNode());
-        if (selectedElement) {
-          
-          
-          if (found) {
-            break;
-          }
-
-          if (!tagNameLookingFor) {
-            
-            tagNameLookingFor = selectedElement->NodeInfo()->NameAtom();
-          }
-
-          
-          
-          if ((isLinkTag &&
-               HTMLEditUtils::IsLink(selectedElement)) ||
-              (isNamedAnchorTag &&
-               HTMLEditUtils::IsNamedAnchor(selectedElement))) {
-            found = true;
-          }
-          
-          else if (tagNameLookingFor ==
-                     selectedElement->NodeInfo()->NameAtom()) {
-            found = true;
-          }
-
-          if (!found) {
-            
-            break;
-          }
-        }
-        iter->Next();
-      }
-    } else {
-      
-      NS_WARNING("isCollapsed was FALSE, but no elements found in selection\n");
-    }
+  if (aSelection.IsCollapsed()) {
+    return selectedElement.forget();
   }
 
+  nsresult rv;
+  nsCOMPtr<nsIContentIterator> iter =
+    do_CreateInstance("@mozilla.org/content/post-content-iterator;1",
+                      &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+
+  bool found = !!selectedElement;
+  const nsAtom* tagNameLookingFor = aTagName;
+  iter->Init(firstRange);
+  
+  while (!iter->IsDone()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    selectedElement = Element::FromNodeOrNull(iter->GetCurrentNode());
+    if (selectedElement) {
+      
+      
+      
+      
+      
+      if (found) {
+        break;
+      }
+
+      if (!tagNameLookingFor) {
+        
+        
+        
+        tagNameLookingFor = selectedElement->NodeInfo()->NameAtom();
+      }
+
+      
+      
+      if ((isLinkTag &&
+           HTMLEditUtils::IsLink(selectedElement)) ||
+          (isNamedAnchorTag &&
+           HTMLEditUtils::IsNamedAnchor(selectedElement))) {
+        found = true;
+      }
+      
+      else if (tagNameLookingFor ==
+                 selectedElement->NodeInfo()->NameAtom()) {
+        found = true;
+      }
+
+      if (!found) {
+        
+        
+        
+        
+        break;
+      }
+    }
+    iter->Next();
+  }
   return selectedElement.forget();
 }
 
