@@ -127,6 +127,17 @@ enum class InheritTarget {
 
 
 
+enum class PointerCapabilities : uint8_t {
+  None = 0,
+  Coarse = 1 << 0,
+  Fine = 1 << 1,
+  Hover = 1 << 2,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PointerCapabilities)
+
+
+
 class ServoStyleSetSizes
 {
 public:

@@ -447,7 +447,22 @@ public:
 
 
 
+
      eIntID_PrefersReducedMotion,
+     
+
+
+
+
+
+
+     eIntID_PrimaryPointerCapabilities,
+     
+
+
+
+
+     eIntID_AllPointerCapabilities,
   };
 
   
