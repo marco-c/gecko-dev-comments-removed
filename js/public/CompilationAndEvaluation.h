@@ -210,9 +210,18 @@ Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
            : CompileLatin1(cx, options, bytes, length, script);
 }
 
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        FILE* file, MutableHandle<JSScript*> script);
+CompileUtf8File(JSContext* cx, const ReadOnlyCompileOptions& options,
+                FILE* file, MutableHandle<JSScript*> script);
 
 extern JS_PUBLIC_API(bool)
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
