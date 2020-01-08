@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["FindBarChild"];
+var EXPORTED_SYMBOLS = ["FindBarContent"];
 
 ChromeUtils.defineModuleGetter(this, "RemoteFinder",
                                "resource://gre/modules/RemoteFinder.jsm");
@@ -16,7 +16,7 @@ const FIND_NORMAL = 0;
 const FIND_TYPEAHEAD = 1;
 const FIND_LINKS = 2;
 
-class FindBarChild {
+class FindBarContent {
   constructor(mm) {
     this.mm = mm;
 
