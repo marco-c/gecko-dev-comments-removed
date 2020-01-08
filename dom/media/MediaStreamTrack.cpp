@@ -45,12 +45,11 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(MediaStreamTrackSource)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 auto MediaStreamTrackSource::ApplyConstraints(
-    nsPIDOMWindowInner* aWindow, const dom::MediaTrackConstraints& aConstraints,
-    CallerType aCallerType) -> RefPtr<ApplyConstraintsPromise> {
+    const dom::MediaTrackConstraints& aConstraints, CallerType aCallerType)
+    -> RefPtr<ApplyConstraintsPromise> {
   return ApplyConstraintsPromise::CreateAndReject(
-      MakeRefPtr<MediaStreamError>(aWindow,
-                                   MediaStreamError::Name::OverconstrainedError,
-                                   NS_LITERAL_STRING("")),
+      MakeRefPtr<MediaMgrError>(MediaMgrError::Name::OverconstrainedError,
+                                NS_LITERAL_STRING("")),
       __func__);
 }
 
@@ -363,21 +362,24 @@ already_AddRefed<Promise> MediaStreamTrack::ApplyConstraints(
   
   RefPtr<MediaStreamTrack> self(this);
   GetSource()
-      .ApplyConstraints(window, aConstraints, aCallerType)
-      ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-             [this, self, promise, aConstraints](bool aDummy) {
-               if (NS_FAILED(CheckInnerWindowCorrectness())) {
-                 return;  
-               }
-               mConstraints = aConstraints;
-               promise->MaybeResolve(false);
-             },
-             [this, self, promise](const RefPtr<MediaStreamError>& reason) {
-               if (NS_FAILED(CheckInnerWindowCorrectness())) {
-                 return;  
-               }
-               promise->MaybeReject(reason);
-             });
+      .ApplyConstraints(aConstraints, aCallerType)
+      ->Then(
+          GetCurrentThreadSerialEventTarget(), __func__,
+          [this, self, promise, aConstraints](bool aDummy) {
+            nsPIDOMWindowInner* window = mOwningStream->GetParentObject();
+            if (!window || !window->IsCurrentInnerWindow()) {
+               return;  
+            }
+            mConstraints = aConstraints;
+            promise->MaybeResolve(false);
+          },
+          [this, self, promise](const RefPtr<MediaMgrError>& aError) {
+            nsPIDOMWindowInner* window = mOwningStream->GetParentObject();
+            if (!window || !window->IsCurrentInnerWindow()) {
+               return;  
+            }
+            promise->MaybeReject(MakeRefPtr<MediaStreamError>(window, *aError));
+          });
   return promise.forget();
 }
 
