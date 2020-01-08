@@ -153,6 +153,19 @@ static void InitVideoQueuePrefs()
   }
 }
 
+template <typename Type, typename Function>
+static void
+DiscardFramesFromTail(MediaQueue<Type>& aQueue, const Function&& aTest)
+{
+  while(aQueue.GetSize()) {
+    if (aTest(aQueue.PeekBack()->mTime.ToMicroseconds())) {
+      RefPtr<Type> releaseMe = aQueue.PopBack();
+      continue;
+    }
+    break;
+  }
+}
+
 
 
 static TimeDuration
@@ -845,6 +858,9 @@ public:
   {
     mAudioDataRequest.DisconnectIfExists();
     mAudioSeekRequest.DisconnectIfExists();
+    if (ShouldDiscardLoopedAudioData()) {
+      DiscardLoopedAudioData();
+    }
     DecodingState::Exit();
   }
 
@@ -935,6 +951,37 @@ private:
               MediaResult(NS_OK) :
               MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
                           "Audio sample overflow during looping time adjustment");
+  }
+
+  bool ShouldDiscardLoopedAudioData() const
+  {
+    
+
+
+
+
+
+
+
+
+
+
+
+    return (mAudioLoopingOffset != media::TimeUnit::Zero() &&
+            mMaster->mCurrentPosition.Ref() < mAudioLoopingOffset &&
+            mAudioLoopingOffset < mMaster->mDecodedAudioEndTime);
+  }
+
+  void DiscardLoopedAudioData()
+  {
+    if (mAudioLoopingOffset == media::TimeUnit::Zero()) {
+        return;
+    }
+
+    SLOG("Discard frames after the time=%" PRId64, mAudioLoopingOffset.ToMicroseconds());
+    DiscardFramesFromTail(AudioQueue(), [&] (int64_t aSampleTime) {
+        return aSampleTime > mAudioLoopingOffset.ToMicroseconds();
+    });
   }
 
   media::TimeUnit mAudioLoopingOffset = media::TimeUnit::Zero();
@@ -2506,25 +2553,6 @@ DecodingState::Step()
   if (before > mMaster->GetMediaTime()) {
     MOZ_ASSERT(mMaster->mLooping);
     mMaster->mOnPlaybackEvent.Notify(MediaPlaybackEvent::Loop);
-  
-  
-  
-  
-  
-  
-  
-  
-  } else if (mMaster->mMediaSink->IsStarted() && !mMaster->mLooping) {
-    TimeUnit adjusted = mMaster->GetClock();
-    Reader()->AdjustByLooping(adjusted);
-    if (adjusted < before) {
-      mMaster->StopPlayback();
-      mMaster->mAudioDataRequest.DisconnectIfExists();
-      AudioQueue().Finish();
-      mMaster->mAudioCompleted = true;
-      SetState<CompletedState>();
-      return;
-    }
   }
 
   MOZ_ASSERT(!mMaster->IsPlaying() || mMaster->IsStateMachineScheduled(),
