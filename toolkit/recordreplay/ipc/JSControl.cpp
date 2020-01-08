@@ -449,6 +449,9 @@ static PersistentRootedObject* gDevtoolsSandbox;
 
 #define ReplayScriptURL "resource://devtools/server/actors/replay/replay.js"
 
+
+static bool gIncludeSystemScripts;
+
 void
 SetupDevtoolsSandbox()
 {
@@ -479,14 +482,26 @@ SetupDevtoolsSandbox()
   dom::ChromeUtils::Import(global, NS_LITERAL_STRING(ReplayScriptURL),
                            dom::Optional<HandleObject>(), &obj, er);
   MOZ_RELEASE_ASSERT(!er.Failed());
+
+  gIncludeSystemScripts = Preferences::GetBool("devtools.recordreplay.includeSystemScripts");
 }
 
 extern "C" {
 
 MOZ_EXPORT bool
-RecordReplayInterface_IsInternalScript(const char* aURL)
+RecordReplayInterface_ShouldUpdateProgressCounter(const char* aURL)
 {
-  return !strcmp(aURL, ReplayScriptURL);
+  
+  
+  
+  if (gIncludeSystemScripts) {
+    
+    
+    
+    return aURL && strcmp(aURL, ReplayScriptURL);
+  } else {
+    return aURL && strncmp(aURL, "resource:", 9) && strncmp(aURL, "chrome:", 7);
+  }
 }
 
 } 
