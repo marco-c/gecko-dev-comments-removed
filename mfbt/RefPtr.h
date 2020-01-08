@@ -22,6 +22,11 @@ class nsISupports;
 namespace mozilla {
 template<class T> class OwningNonNull;
 template<class T> class StaticRefPtr;
+#if defined(XP_WIN)
+namespace mscom {
+class AgileReference;
+} 
+#endif 
 
 
 
@@ -152,6 +157,9 @@ public:
 
   MOZ_IMPLICIT RefPtr(const nsQueryReferent& aHelper);
   MOZ_IMPLICIT RefPtr(const nsCOMPtr_helper& aHelper);
+#if defined(XP_WIN)
+  MOZ_IMPLICIT RefPtr(const mozilla::mscom::AgileReference& aAgileRef);
+#endif 
 
   
   template<class U>
@@ -215,6 +223,9 @@ public:
 
   RefPtr<T>& operator=(const nsQueryReferent& aQueryReferent);
   RefPtr<T>& operator=(const nsCOMPtr_helper& aHelper);
+#if defined(XP_WIN)
+  RefPtr<T>& operator=(const mozilla::mscom::AgileReference& aAgileRef);
+#endif 
 
   RefPtr<T>&
   operator=(RefPtr<T> && aRefPtr)
