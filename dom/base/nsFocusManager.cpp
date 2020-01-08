@@ -3294,9 +3294,6 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
         break;
       }
 
-      
-      
-      
       int32_t tabIndex = 0;
       if (iterContent->IsInNativeAnonymousSubtree() &&
           iterContent->GetPrimaryFrame()) {
@@ -3304,7 +3301,11 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
       } else if (IsHostOrSlot(iterContent)) {
         tabIndex = HostOrSlotTabIndexValue(iterContent);
       } else {
-        iterContent->IsFocusable(&tabIndex);
+        nsIFrame* frame = iterContent->GetPrimaryFrame();
+        if (!frame) {
+          continue;
+        }
+        frame->IsFocusable(&tabIndex, 0);
       }
       if (tabIndex < 0 || !(aIgnoreTabIndex || tabIndex == aCurrentTabIndex)) {
         
