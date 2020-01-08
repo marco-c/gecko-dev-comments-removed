@@ -1703,8 +1703,7 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
         
         
         int32_t newRowSpanValue =
-          std::max(cellData.mCurrent.mRow - cellData.mFirst.mRow,
-                   actualRowSpan - 1);
+          std::max(cellData.NumberOfPrecedingRows(), actualRowSpan - 1);
         spanCellArray.AppendElement(
                         SpanCell(cellData.mElement, newRowSpanValue));
       }
@@ -1714,7 +1713,7 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
         
         
         int32_t aboveRowToInsertNewCellInto =
-          cellData.mCurrent.mRow - cellData.mFirst.mRow + 1;
+          cellData.NumberOfPrecedingRows() + 1;
         int32_t numOfRawSpanRemainingBelow = actualRowSpan - 1;
         nsresult rv =
           SplitCellIntoRows(&aTableElement, cellData.mFirst.mRow, startColIndex,
@@ -2858,15 +2857,13 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
 
     
     
-    int32_t spanAboveMergedCell =
-      rightCellData.mCurrent.mRow - rightCellData.mFirst.mRow;
+    int32_t spanAboveMergedCell = rightCellData.NumberOfPrecedingRows();
     int32_t effectiveRowSpan2 = actualRowSpan2 - spanAboveMergedCell;
-
     if (effectiveRowSpan2 > actualRowSpan) {
       
       
       rv = SplitCellIntoRows(table, rightCellData.mFirst.mRow, startColIndex2,
-                             spanAboveMergedCell+actualRowSpan,
+                             spanAboveMergedCell + actualRowSpan,
                              effectiveRowSpan2-actualRowSpan, nullptr);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
