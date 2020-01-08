@@ -11,8 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "webrtc/base/thread.h"
-#include "webrtc/p2p/base/pseudotcp.h"
+#include "p2p/base/pseudotcp.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 class FakeIPseudoTcpNotify : public cricket::IPseudoTcpNotify {
@@ -31,19 +31,18 @@ class FakeIPseudoTcpNotify : public cricket::IPseudoTcpNotify {
 
 struct Environment {
   explicit Environment(cricket::IPseudoTcpNotify* notifier):
-      ptcp(new cricket::PseudoTcp(notifier, 0)) {
+      ptcp(notifier, 0) {
   }
-
-  cricket::PseudoTcp* const ptcp;
 
   
   
   rtc::AutoThread thread;
+  cricket::PseudoTcp ptcp;
 };
 
 Environment* env = new Environment(new FakeIPseudoTcpNotify());
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  env->ptcp->NotifyPacket(reinterpret_cast<const char*>(data), size);
+  env->ptcp.NotifyPacket(reinterpret_cast<const char*>(data), size);
 }
 }  

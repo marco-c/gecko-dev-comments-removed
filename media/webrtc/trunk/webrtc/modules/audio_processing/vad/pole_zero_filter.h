@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VAD_POLE_ZERO_FILTER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_VAD_POLE_ZERO_FILTER_H_
+#ifndef MODULES_AUDIO_PROCESSING_VAD_POLE_ZERO_FILTER_H_
+#define MODULES_AUDIO_PROCESSING_VAD_POLE_ZERO_FILTER_H_
 
 #include <cstddef>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

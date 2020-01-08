@@ -8,38 +8,48 @@
 
 
 
-#ifndef WEBRTC_AUDIO_AUDIO_STATE_H_
-#define WEBRTC_AUDIO_AUDIO_STATE_H_
+#ifndef AUDIO_AUDIO_STATE_H_
+#define AUDIO_AUDIO_STATE_H_
 
-#include "webrtc/audio/audio_transport_proxy.h"
-#include "webrtc/audio/scoped_voe_interface.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/call/audio_state.h"
-#include "webrtc/voice_engine/include/voe_base.h"
+#include <memory>
+
+#include "audio/audio_transport_proxy.h"
+#include "audio/null_audio_poller.h"
+#include "audio/scoped_voe_interface.h"
+#include "call/audio_state.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/thread_checker.h"
+#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 namespace internal {
 
-class AudioState final : public webrtc::AudioState,
-                         public webrtc::VoiceEngineObserver {
+class AudioState final : public webrtc::AudioState {
  public:
   explicit AudioState(const AudioState::Config& config);
   ~AudioState() override;
 
-  VoiceEngine* voice_engine();
+  AudioProcessing* audio_processing() override {
+    RTC_DCHECK(config_.audio_processing);
+    return config_.audio_processing.get();
+  }
+  AudioTransport* audio_transport() override {
+    return &audio_transport_proxy_;
+  }
 
+  void SetPlayout(bool enabled) override;
+  void SetRecording(bool enabled) override;
+
+  VoiceEngine* voice_engine();
   rtc::scoped_refptr<AudioMixer> mixer();
   bool typing_noise_detected() const;
 
  private:
   
-  int AddRef() const override;
-  int Release() const override;
-
-  
-  void CallbackOnError(int channel_id, int err_code) override;
+  void AddRef() const override;
+  rtc::RefCountReleaseStatus Release() const override;
 
   rtc::ThreadChecker thread_checker_;
   rtc::ThreadChecker process_thread_checker_;
@@ -50,15 +60,16 @@ class AudioState final : public webrtc::AudioState,
 
   
   
-  rtc::CriticalSection crit_sect_;
-  bool typing_noise_detected_ GUARDED_BY(crit_sect_) = false;
-
-  
   mutable volatile int ref_count_ = 0;
 
   
   
   AudioTransportProxy audio_transport_proxy_;
+
+  
+  
+  
+  std::unique_ptr<NullAudioPoller> null_audio_poller_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioState);
 };

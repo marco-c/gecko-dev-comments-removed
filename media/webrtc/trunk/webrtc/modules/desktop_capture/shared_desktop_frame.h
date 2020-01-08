@@ -8,13 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
+#ifndef MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
+#define MODULES_DESKTOP_CAPTURE_SHARED_DESKTOP_FRAME_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_frame.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -32,7 +33,13 @@ class SharedDesktopFrame : public DesktopFrame {
   static SharedDesktopFrame* Wrap(DesktopFrame* desktop_frame);
 
   
+  
+  
+  
   DesktopFrame* GetUnderlyingFrame();
+
+  
+  bool ShareFrameWith(const SharedDesktopFrame& other) const;
 
   
   std::unique_ptr<SharedDesktopFrame> Share();
@@ -46,7 +53,7 @@ class SharedDesktopFrame : public DesktopFrame {
 
   SharedDesktopFrame(rtc::scoped_refptr<Core> core);
 
-  rtc::scoped_refptr<Core> core_;
+  const rtc::scoped_refptr<Core> core_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SharedDesktopFrame);
 };

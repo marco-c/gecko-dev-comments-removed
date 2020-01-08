@@ -13,14 +13,18 @@
 
 
 
-#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
-#define WEBRTC_SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
+#ifndef SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
+#define SDK_ANDROID_SRC_JNI_CLASSREFERENCEHOLDER_H_
+
+
+
 
 #include <jni.h>
 #include <map>
 #include <string>
 
-namespace webrtc_jni {
+namespace webrtc {
+namespace jni {
 
 
 void LoadGlobalClassReferenceHolder();
@@ -29,12 +33,19 @@ void FreeGlobalClassReferenceHolder();
 
 
 
+
+
+
 jclass FindClass(JNIEnv* jni, const char* name);
 
+}  
+}  
 
 
-#define JOW(rettype, name) \
-  extern "C" JNIEXPORT rettype JNICALL Java_org_webrtc_##name
+namespace webrtc_jni {
+
+using webrtc::jni::LoadGlobalClassReferenceHolder;
+using webrtc::jni::FreeGlobalClassReferenceHolder;
 
 }  
 

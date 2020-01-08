@@ -8,13 +8,13 @@
 
 
 
-#include "webrtc/modules/remote_bitrate_estimator/test/metric_recorder.h"
+#include "modules/remote_bitrate_estimator/test/metric_recorder.h"
 
 #include <math.h>
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace testing {

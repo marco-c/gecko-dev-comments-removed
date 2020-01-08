@@ -10,27 +10,30 @@
 
 #include <string>
 
-#include "webrtc/base/logging.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
 static const size_t kGenericHeaderLength = 1;
 
 RtpPacketizerGeneric::RtpPacketizerGeneric(FrameType frame_type,
-                                           size_t max_payload_len)
+                                           size_t max_payload_len,
+                                           size_t last_packet_reduction_len)
     : payload_data_(NULL),
       payload_size_(0),
       max_payload_len_(max_payload_len - kGenericHeaderLength),
-      frame_type_(frame_type) {
-}
+      last_packet_reduction_len_(last_packet_reduction_len),
+      frame_type_(frame_type),
+      num_packets_left_(0),
+      num_larger_packets_(0) {}
 
 RtpPacketizerGeneric::~RtpPacketizerGeneric() {
 }
 
-void RtpPacketizerGeneric::SetPayloadData(
+size_t RtpPacketizerGeneric::SetPayloadData(
     const uint8_t* payload_data,
     size_t payload_size,
     const RTPFragmentationHeader* fragmentation) {
@@ -38,51 +41,71 @@ void RtpPacketizerGeneric::SetPayloadData(
   payload_size_ = payload_size;
 
   
-  size_t num_packets =
-      (payload_size_ + max_payload_len_ - 1) / max_payload_len_;
-  payload_length_ = (payload_size_ + num_packets - 1) / num_packets;
-  assert(payload_length_ <= max_payload_len_);
+  
+  
+  
+  
+  
+  
+  size_t total_bytes = payload_size_ + last_packet_reduction_len_;
+
+  
+  
+  num_packets_left_ = (total_bytes + max_payload_len_ - 1) / max_payload_len_;
+  
+  payload_len_per_packet_ = total_bytes / num_packets_left_;
+  
+  
+  num_larger_packets_ = total_bytes % num_packets_left_;
+  RTC_DCHECK_LE(payload_len_per_packet_, max_payload_len_);
 
   generic_header_ = RtpFormatVideoGeneric::kFirstPacketBit;
-}
-
-bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet,
-                                      bool* last_packet) {
-  RTC_DCHECK(packet);
-  RTC_DCHECK(last_packet);
-  if (payload_size_ < payload_length_) {
-    payload_length_ = payload_size_;
-  }
-
-  payload_size_ -= payload_length_;
-  RTC_DCHECK_LE(payload_length_, max_payload_len_);
-
-  uint8_t* out_ptr =
-      packet->AllocatePayload(kGenericHeaderLength + payload_length_);
-  
   if (frame_type_ == kVideoFrameKey) {
     generic_header_ |= RtpFormatVideoGeneric::kKeyFrameBit;
   }
+  return num_packets_left_;
+}
+
+bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet) {
+  RTC_DCHECK(packet);
+  if (num_packets_left_ == 0)
+    return false;
+  
+  
+  if (num_packets_left_ == num_larger_packets_)
+    ++payload_len_per_packet_;
+  size_t next_packet_payload_len = payload_len_per_packet_;
+  if (payload_size_ <= next_packet_payload_len) {
+    
+    next_packet_payload_len = payload_size_;
+    if (num_packets_left_ == 2) {
+      
+      
+      --next_packet_payload_len;
+      RTC_DCHECK_GT(next_packet_payload_len, 0);
+    }
+  }
+  RTC_DCHECK_LE(next_packet_payload_len, max_payload_len_);
+
+  uint8_t* out_ptr =
+      packet->AllocatePayload(kGenericHeaderLength + next_packet_payload_len);
+  
   out_ptr[0] = generic_header_;
   
   generic_header_ &= ~RtpFormatVideoGeneric::kFirstPacketBit;
 
   
-  memcpy(out_ptr + kGenericHeaderLength, payload_data_, payload_length_);
-  payload_data_ += payload_length_;
+  memcpy(out_ptr + kGenericHeaderLength, payload_data_,
+         next_packet_payload_len);
+  payload_data_ += next_packet_payload_len;
+  payload_size_ -= next_packet_payload_len;
+  --num_packets_left_;
+  
+  RTC_DCHECK_EQ(num_packets_left_ == 0, payload_size_ == 0);
 
-  *last_packet = payload_size_ <= 0;
-  packet->SetMarker(*last_packet);
+  packet->SetMarker(payload_size_ == 0);
+
   return true;
-}
-
-ProtectionType RtpPacketizerGeneric::GetProtectionType() {
-  return kProtectedPacket;
-}
-
-StorageType RtpPacketizerGeneric::GetStorageType(
-    uint32_t retransmission_settings) {
-  return kAllowRetransmission;
 }
 
 std::string RtpPacketizerGeneric::ToString() {
@@ -94,7 +117,7 @@ bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
                                    size_t payload_data_length) {
   assert(parsed_payload != NULL);
   if (payload_data_length == 0) {
-    LOG(LS_ERROR) << "Empty payload.";
+    RTC_LOG(LS_ERROR) << "Empty payload.";
     return false;
   }
 

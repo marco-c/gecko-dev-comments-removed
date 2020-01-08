@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface VideoEncoderFactory {
+  
+  public VideoEncoder createEncoder(VideoCodecInfo info);
+
+  
+
+
+
+  public VideoCodecInfo[] getSupportedCodecs();
+}

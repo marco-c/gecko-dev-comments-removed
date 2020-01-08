@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#include "test/mock_audio_decoder.h"
+
+namespace webrtc {
+
+MockAudioDecoder::MockAudioDecoder() = default;
+MockAudioDecoder::~MockAudioDecoder() {
+  Die();
+}
+
+}  

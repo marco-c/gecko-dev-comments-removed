@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
-#define WEBRTC_MEDIA_BASE_VIDEOADAPTER_H_
+#ifndef MEDIA_BASE_VIDEOADAPTER_H_
+#define MEDIA_BASE_VIDEOADAPTER_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/optional.h"
-#include "webrtc/media/base/videocommon.h"
+#include "api/optional.h"
+#include "media/base/videocommon.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
 
 namespace cricket {
 
@@ -25,6 +25,8 @@ namespace cricket {
 class VideoAdapter {
  public:
   VideoAdapter();
+  
+  
   explicit VideoAdapter(int required_resolution_alignment);
   virtual ~VideoAdapter();
 
@@ -32,13 +34,13 @@ class VideoAdapter {
   
   
   
-  virtual bool AdaptFrameResolution(int in_width,
-                                    int in_height,
-                                    int64_t in_timestamp_ns,
-                                    int* cropped_width,
-                                    int* cropped_height,
-                                    int* out_width,
-                                    int* out_height);
+  bool AdaptFrameResolution(int in_width,
+                            int in_height,
+                            int64_t in_timestamp_ns,
+                            int* cropped_width,
+                            int* cropped_height,
+                            int* out_width,
+                            int* out_height);
 
   
   
@@ -51,12 +53,14 @@ class VideoAdapter {
   
   
   
-  virtual void OnResolutionRequest(rtc::Optional<int> max_pixel_count,
-                                   rtc::Optional<int> max_pixel_count_step_up);
-
   
   
-  virtual void OnScaleResolutionBy(rtc::Optional<float> scale_resolution_by);
+  
+  
+  void OnResolutionFramerateRequest(
+      const rtc::Optional<int>& target_pixel_count,
+      int max_pixel_count,
+      int max_framerate_fps);
 
  private:
   
@@ -71,16 +75,17 @@ class VideoAdapter {
   
   const int required_resolution_alignment_;
   
-  rtc::Optional<int64_t> next_frame_timestamp_ns_ GUARDED_BY(critical_section_);
+  rtc::Optional<int64_t> next_frame_timestamp_ns_
+      RTC_GUARDED_BY(critical_section_);
 
   
   
   
-  rtc::Optional<VideoFormat> requested_format_ GUARDED_BY(critical_section_);
-  int resolution_request_max_pixel_count_ GUARDED_BY(critical_section_);
-  bool step_up_ GUARDED_BY(critical_section_);
-  float scale_resolution_by_ GUARDED_BY(critical_section_);
-  bool scale_ GUARDED_BY(critical_section_);
+  rtc::Optional<VideoFormat> requested_format_
+      RTC_GUARDED_BY(critical_section_);
+  int resolution_request_target_pixel_count_ RTC_GUARDED_BY(critical_section_);
+  int resolution_request_max_pixel_count_ RTC_GUARDED_BY(critical_section_);
+  int max_framerate_request_ RTC_GUARDED_BY(critical_section_);
 
   
   rtc::CriticalSection critical_section_;

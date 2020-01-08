@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/base/random.h"
-#include "webrtc/modules/congestion_controller/median_slope_estimator.h"
+#include "modules/congestion_controller/median_slope_estimator.h"
+#include "rtc_base/random.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

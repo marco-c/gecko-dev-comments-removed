@@ -8,13 +8,11 @@
 
 
 
-#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
-#endif
+
+#include "modules/audio_processing/beamformer/covariance_matrix_generator.h"
 
 #include <cmath>
-
-#include "webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.h"
 
 namespace webrtc {
 namespace {

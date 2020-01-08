@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVCMFACTORY_H_
-#define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCVCMFACTORY_H_
+#ifndef MEDIA_ENGINE_FAKEWEBRTCVCMFACTORY_H_
+#define MEDIA_ENGINE_FAKEWEBRTCVCMFACTORY_H_
 
 #include <vector>
 
-#include "webrtc/media/engine/fakewebrtcdeviceinfo.h"
-#include "webrtc/media/engine/fakewebrtcvideocapturemodule.h"
-#include "webrtc/media/engine/webrtcvideocapturer.h"
+#include "media/engine/fakewebrtcdeviceinfo.h"
+#include "media/engine/fakewebrtcvideocapturemodule.h"
+#include "media/engine/webrtcvideocapturer.h"
 
 
 

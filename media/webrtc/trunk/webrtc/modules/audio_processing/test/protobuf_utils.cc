@@ -8,8 +8,8 @@
 
 
 
-#include "webrtc/modules/audio_processing/test/protobuf_utils.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_processing/test/protobuf_utils.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -30,7 +30,7 @@ size_t ReadMessageBytesFromFile(FILE* file, std::unique_ptr<uint8_t[]>* bytes) {
 }
 
 
-bool ReadMessageFromFile(FILE* file, ::google::protobuf::MessageLite* msg) {
+bool ReadMessageFromFile(FILE* file, MessageLite* msg) {
   std::unique_ptr<uint8_t[]> bytes;
   size_t size = ReadMessageBytesFromFile(file, &bytes);
   if (!size)

@@ -8,16 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
-#define WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
+#ifndef MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
+#define MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
 
 #include <jni.h>
 
 #include <memory>
 #include <string>
 
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/utility/include/helpers_android.h"
+#include "modules/utility/include/helpers_android.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 
@@ -142,9 +142,12 @@ class JNIEnvironment {
 
 
 
-
 class JVM {
  public:
+  
+  
+  static void Initialize(JavaVM* jvm);
+  
   
   
   static void Initialize(JavaVM* jvm, jobject context);
@@ -168,10 +171,9 @@ class JVM {
 
   
   JavaVM* jvm() const { return jvm_; }
-  jobject context() const { return context_; }
 
  protected:
-  JVM(JavaVM* jvm, jobject context);
+  JVM(JavaVM* jvm);
   ~JVM();
 
  private:
@@ -179,7 +181,6 @@ class JVM {
 
   rtc::ThreadChecker thread_checker_;
   JavaVM* const jvm_;
-  jobject context_;
 };
 
 }  

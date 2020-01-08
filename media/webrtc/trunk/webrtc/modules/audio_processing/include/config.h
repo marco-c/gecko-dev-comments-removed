@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
+#ifndef MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
+#define MODULES_AUDIO_PROCESSING_INCLUDE_CONFIG_H_
 
 #include <map>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/constructormagic.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -35,8 +35,7 @@ enum class ConfigOptionID {
   kIntelligibility,
   kEchoCanceller3,  
   kAecRefinedAdaptiveFilter,
-  kLevelControl,
-  kCaptureDeviceInfo
+  kLevelControl
 };
 
 

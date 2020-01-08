@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_AUDIO_ENCODER_ISAC_T_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_AUDIO_ENCODER_ISAC_T_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_AUDIO_ENCODER_ISAC_T_H_
+#define MODULES_AUDIO_CODING_CODECS_ISAC_AUDIO_ENCODER_ISAC_T_H_
 
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

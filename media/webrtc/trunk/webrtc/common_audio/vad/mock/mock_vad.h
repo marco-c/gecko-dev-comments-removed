@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_COMMON_AUDIO_VAD_MOCK_MOCK_VAD_H_
-#define WEBRTC_COMMON_AUDIO_VAD_MOCK_MOCK_VAD_H_
+#ifndef COMMON_AUDIO_VAD_MOCK_MOCK_VAD_H_
+#define COMMON_AUDIO_VAD_MOCK_MOCK_VAD_H_
 
-#include "webrtc/common_audio/vad/include/vad.h"
-#include "webrtc/test/gmock.h"
+#include "common_audio/vad/include/vad.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 

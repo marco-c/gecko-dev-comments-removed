@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_
+#define MODULES_AUDIO_CODING_NETEQ_RED_PAYLOAD_SPLITTER_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "modules/audio_coding/neteq/packet.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

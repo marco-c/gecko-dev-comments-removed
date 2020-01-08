@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/common_audio/vad/vad_filterbank.h"
+#include "common_audio/vad/vad_filterbank.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/checks.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "typedefs.h"  
 
 
 static const int16_t kLogConst = 24660;  
@@ -91,14 +91,14 @@ static void AllPassFilter(const int16_t* data_in, size_t data_length,
   size_t i;
   int16_t tmp16 = 0;
   int32_t tmp32 = 0;
-  int32_t state32 = ((int32_t) (*filter_state) << 16);  
+  int32_t state32 = ((int32_t) (*filter_state) * (1 << 16));  
 
   for (i = 0; i < data_length; i++) {
     tmp32 = state32 + filter_coefficient * *data_in;
     tmp16 = (int16_t) (tmp32 >> 16);  
     *data_out++ = tmp16;
-    state32 = (*data_in << 14) - filter_coefficient * tmp16;  
-    state32 <<= 1;  
+    state32 = (*data_in * (1 << 14)) - filter_coefficient * tmp16;  
+    state32 *= 2;  
     data_in += 2;
   }
 

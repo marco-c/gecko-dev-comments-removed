@@ -8,18 +8,18 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_VIDEO_CAPTURE_LINUX_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_VIDEO_CAPTURE_LINUX_H_
+#ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_VIDEO_CAPTURE_LINUX_H_
+#define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_VIDEO_CAPTURE_LINUX_H_
 
 #include <memory>
 
-#include "webrtc/base/platform_thread.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/video_capture/video_capture_impl.h"
+#include "common_types.h"  
+#include "modules/video_capture/video_capture_impl.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/platform_thread.h"
 
 namespace webrtc
 {
-class CriticalSectionWrapper;
 namespace videocapturemodule
 {
 class VideoCaptureModuleV4L2: public VideoCaptureImpl
@@ -43,7 +43,7 @@ private:
 
     
     std::unique_ptr<rtc::PlatformThread> _captureThread;
-    CriticalSectionWrapper* _captureCritSect;
+    rtc::CriticalSection _captureCritSect;
 
     int32_t _deviceId;
     int32_t _deviceFd;
@@ -53,7 +53,7 @@ private:
     int32_t _currentHeight;
     int32_t _currentFrameRate;
     bool _captureStarted;
-    RawVideoType _captureVideoType;
+    VideoType _captureVideoType;
     struct Buffer
     {
         void *start;

@@ -8,30 +8,26 @@
 
 
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_SEND_TIME_HISTORY_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_SEND_TIME_HISTORY_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_SEND_TIME_HISTORY_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_SEND_TIME_HISTORY_H_
 
 #include <map>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/include/module_common_types.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/basictypes.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 class Clock;
-struct PacketInfo;
+struct PacketFeedback;
 
 class SendTimeHistory {
  public:
-  SendTimeHistory(Clock* clock, int64_t packet_age_limit_ms);
+  SendTimeHistory(const Clock* clock, int64_t packet_age_limit_ms);
   ~SendTimeHistory();
 
-  void Clear();
-
   
-  void AddAndRemoveOld(uint16_t sequence_number,
-                       size_t payload_size,
-                       int probe_cluster_id);
+  void AddAndRemoveOld(const PacketFeedback& packet);
 
   
   
@@ -40,13 +36,17 @@ class SendTimeHistory {
   
   
   
-  bool GetInfo(PacketInfo* packet_info, bool remove);
+  bool GetFeedback(PacketFeedback* packet_feedback, bool remove);
+
+  size_t GetOutstandingBytes(uint16_t local_net_id,
+                             uint16_t remote_net_id) const;
 
  private:
-  Clock* const clock_;
+  const Clock* const clock_;
   const int64_t packet_age_limit_ms_;
   SequenceNumberUnwrapper seq_num_unwrapper_;
-  std::map<int64_t, PacketInfo> history_;
+  std::map<int64_t, PacketFeedback> history_;
+  rtc::Optional<int64_t> latest_acked_seq_num_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendTimeHistory);
 };

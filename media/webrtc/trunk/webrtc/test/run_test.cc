@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/test/run_test.h"
+#include "test/run_test.h"
 
 #include <stdio.h>
 

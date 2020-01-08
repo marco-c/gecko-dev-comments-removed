@@ -24,11 +24,18 @@ NS_ASSUME_NONNULL_BEGIN
 @class RTCVideoSource;
 @class RTCVideoTrack;
 @protocol RTCPeerConnectionDelegate;
+@protocol RTCVideoDecoderFactory;
+@protocol RTCVideoEncoderFactory;
 
 RTC_EXPORT
 @interface RTCPeerConnectionFactory : NSObject
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)init;
+
+
+- (instancetype)initWithEncoderFactory:(nullable id<RTCVideoEncoderFactory>)encoderFactory
+                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory;
 
 
 - (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints;
@@ -45,6 +52,11 @@ RTC_EXPORT
 
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints;
+
+
+
+
+- (RTCVideoSource *)videoSource;
 
 
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

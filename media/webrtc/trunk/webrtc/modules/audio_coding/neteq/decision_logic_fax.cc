@@ -8,14 +8,14 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/decision_logic_fax.h"
+#include "modules/audio_coding/neteq/decision_logic_fax.h"
 
 #include <assert.h>
 
 #include <algorithm>
 
-#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
+#include "modules/audio_coding/neteq/sync_buffer.h"
 
 namespace webrtc {
 

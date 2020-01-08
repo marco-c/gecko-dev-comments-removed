@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/common_audio/vad/vad_sp.h"
+#include "common_audio/vad/vad_sp.h"
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/common_audio/vad/vad_core.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/checks.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/vad/vad_core.h"
+#include "typedefs.h"  
 
 
 

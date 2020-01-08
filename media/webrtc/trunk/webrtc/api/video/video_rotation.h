@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_API_VIDEO_VIDEO_ROTATION_H_
-#define WEBRTC_API_VIDEO_VIDEO_ROTATION_H_
+#ifndef API_VIDEO_VIDEO_ROTATION_H_
+#define API_VIDEO_VIDEO_ROTATION_H_
 
 namespace webrtc {
 

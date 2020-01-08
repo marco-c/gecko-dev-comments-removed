@@ -10,10 +10,13 @@
 
 #include <stdio.h>
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
-#define WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
+#ifndef TEST_TESTSUPPORT_FILEUTILS_H_
+#define TEST_TESTSUPPORT_FILEUTILS_H_
 
 #include <string>
+#include <vector>
+
+#include "api/optional.h"
 
 namespace webrtc {
 namespace test {
@@ -58,7 +61,8 @@ std::string TempFilename(const std::string &dir, const std::string &prefix);
 
 
 
-std::string ResourcePath(std::string name, std::string extension);
+std::string ResourcePath(const std::string& name,
+                         const std::string& extension);
 
 
 
@@ -68,14 +72,29 @@ std::string WorkingDir();
 
 
 
-bool CreateDir(std::string directory_name);
+
+rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path);
 
 
-bool FileExists(std::string& file_name);
+
+
+bool CreateDir(const std::string& directory_name);
+
+
+bool RemoveDir(const std::string& directory_name);
+
+
+bool RemoveFile(const std::string& file_name);
+
+
+bool FileExists(const std::string& file_name);
+
+
+bool DirExists(const std::string& directory_name);
 
 
 
-size_t GetFileSize(std::string filename);
+size_t GetFileSize(const std::string& filename);
 
 
 

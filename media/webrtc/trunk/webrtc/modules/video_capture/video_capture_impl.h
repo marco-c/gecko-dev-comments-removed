@@ -8,23 +8,22 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
+#ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
+#define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
 
 
 
 
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_capture/video_capture.h"
-#include "webrtc/modules/video_capture/video_capture_config.h"
-#include <set>
+#include "api/video/video_frame.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_capture/video_capture.h"
+#include "modules/video_capture/video_capture_config.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc
 {
-class CriticalSectionWrapper;
 
 namespace videocapturemodule {
 
@@ -60,10 +59,8 @@ public:
     
     void RegisterCaptureDataCallback(
         rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
-    void DeRegisterCaptureDataCallback(
-        rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+    void DeRegisterCaptureDataCallback() override;
 
-    int32_t StopCaptureIfAllClientsClose() override;
     int32_t SetCaptureRotation(VideoRotation rotation) override;
     bool SetApplyRotation(bool enable) override;
     bool GetApplyRotation() override {
@@ -96,8 +93,7 @@ protected:
     int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
     char* _deviceUniqueId; 
-    CriticalSectionWrapper& _apiCs;
-    int32_t _captureDelay; 
+    rtc::CriticalSection _apiCs;
     VideoCaptureCapability _requestedCapability; 
 private:
     void UpdateFrameCount();
@@ -108,7 +104,7 @@ private:
     
     int64_t _lastFrameRateCallbackTimeNanos;
 
-    std::set<rtc::VideoSinkInterface<VideoFrame>*> _dataCallBacks;
+    rtc::VideoSinkInterface<VideoFrame>* _dataCallBack;
 
     int64_t _lastProcessFrameTimeNanos;
     

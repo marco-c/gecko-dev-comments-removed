@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+
+
+
+
+class WebRtcClassLoader {
+  @CalledByNative
+  static Object getClassLoader() {
+    return WebRtcClassLoader.class.getClassLoader();
+  }
+}

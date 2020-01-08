@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_COMMON_AUDIO_SPARSE_FIR_FILTER_H_
-#define WEBRTC_COMMON_AUDIO_SPARSE_FIR_FILTER_H_
+#ifndef COMMON_AUDIO_SPARSE_FIR_FILTER_H_
+#define COMMON_AUDIO_SPARSE_FIR_FILTER_H_
 
 #include <cstring>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

@@ -8,18 +8,18 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTP_FILE_SOURCE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTP_FILE_SOURCE_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_RTP_FILE_SOURCE_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_RTP_FILE_SOURCE_H_
 
 #include <stdio.h>
 
 #include <memory>
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "common_types.h"  
+#include "modules/audio_coding/neteq/tools/packet_source.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

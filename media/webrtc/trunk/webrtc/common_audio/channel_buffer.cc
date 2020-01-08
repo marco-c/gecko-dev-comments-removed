@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/common_audio/channel_buffer.h"
+#include "common_audio/channel_buffer.h"
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

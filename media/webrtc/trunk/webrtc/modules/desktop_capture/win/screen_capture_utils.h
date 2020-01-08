@@ -8,22 +8,33 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include <vector>
+#include <string>
+
+#include "modules/desktop_capture/desktop_capturer.h"
 
 namespace webrtc {
 
 
 
-bool GetScreenList(DesktopCapturer::SourceList* screens);
+
+
+
+bool GetScreenList(DesktopCapturer::SourceList* screens,
+                   std::vector<std::string>* device_names = nullptr);
 
 
 
 
 
 bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key);
+
+
+
+DesktopRect GetFullscreenRect();
 
 
 

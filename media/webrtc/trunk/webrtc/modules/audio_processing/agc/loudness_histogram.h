@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_
+#define MODULES_AUDIO_PROCESSING_AGC_LOUDNESS_HISTOGRAM_H_
 
 #include <string.h>
 
 #include <memory>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

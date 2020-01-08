@@ -8,14 +8,13 @@
 
 
 
-#include "webrtc/media/base/videocommon.h"
+#include "media/base/videocommon.h"
 
 #include <limits.h>  
 #include <math.h>
 #include <sstream>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/common.h"
+#include "rtc_base/arraysize.h"
 
 namespace cricket {
 

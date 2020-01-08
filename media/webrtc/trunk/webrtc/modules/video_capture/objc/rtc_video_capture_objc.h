@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
+#ifndef MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
+#define MODULES_VIDEO_CAPTURE_OBJC_RTC_VIDEO_CAPTURE_OBJC_H_
 
 #import <Foundation/Foundation.h>
 #ifdef WEBRTC_IOS
 #import <UIKit/UIKit.h>
 #endif
 
-#include "webrtc/modules/video_capture/objc/video_capture.h"
+#include "modules/video_capture/objc/video_capture.h"
 
 
 

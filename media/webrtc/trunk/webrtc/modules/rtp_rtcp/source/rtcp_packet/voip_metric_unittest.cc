@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/voip_metric.h"
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace rtcp {

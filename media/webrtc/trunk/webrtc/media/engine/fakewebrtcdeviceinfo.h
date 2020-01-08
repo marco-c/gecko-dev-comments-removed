@@ -8,13 +8,14 @@
 
 
 
-#ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCDEVICEINFO_H_
-#define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCDEVICEINFO_H_
+#ifndef MEDIA_ENGINE_FAKEWEBRTCDEVICEINFO_H_
+#define MEDIA_ENGINE_FAKEWEBRTCDEVICEINFO_H_
 
+#include <string>
 #include <vector>
 
-#include "webrtc/base/stringutils.h"
-#include "webrtc/media/engine/webrtcvideocapturer.h"
+#include "media/engine/webrtcvideocapturer.h"
+#include "rtc_base/stringutils.h"
 
 
 class FakeWebRtcDeviceInfo : public webrtc::VideoCaptureModule::DeviceInfo {

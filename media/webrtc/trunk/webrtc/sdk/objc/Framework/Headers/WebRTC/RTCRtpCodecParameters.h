@@ -14,22 +14,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-RTC_EXTERN const NSString * const kRTCRtxCodecMimeType;
-RTC_EXTERN const NSString * const kRTCRedCodecMimeType;
-RTC_EXTERN const NSString * const kRTCUlpfecCodecMimeType;
-RTC_EXTERN const NSString * const kRTCFlexfecCodecMimeType;
-RTC_EXTERN const NSString * const kRTCOpusCodecMimeType;
-RTC_EXTERN const NSString * const kRTCIsacCodecMimeType;
-RTC_EXTERN const NSString * const kRTCL16CodecMimeType;
-RTC_EXTERN const NSString * const kRTCG722CodecMimeType;
-RTC_EXTERN const NSString * const kRTCIlbcCodecMimeType;
-RTC_EXTERN const NSString * const kRTCPcmuCodecMimeType;
-RTC_EXTERN const NSString * const kRTCPcmaCodecMimeType;
-RTC_EXTERN const NSString * const kRTCDtmfCodecMimeType;
-RTC_EXTERN const NSString * const kRTCComfortNoiseCodecMimeType;
-RTC_EXTERN const NSString * const kRTCVp8CodecMimeType;
-RTC_EXTERN const NSString * const kRTCVp9CodecMimeType;
-RTC_EXTERN const NSString * const kRTCH264CodecMimeType;
+RTC_EXTERN const NSString * const kRTCRtxCodecName;
+RTC_EXTERN const NSString * const kRTCRedCodecName;
+RTC_EXTERN const NSString * const kRTCUlpfecCodecName;
+RTC_EXTERN const NSString * const kRTCFlexfecCodecName;
+RTC_EXTERN const NSString * const kRTCOpusCodecName;
+RTC_EXTERN const NSString * const kRTCIsacCodecName;
+RTC_EXTERN const NSString * const kRTCL16CodecName;
+RTC_EXTERN const NSString * const kRTCG722CodecName;
+RTC_EXTERN const NSString * const kRTCIlbcCodecName;
+RTC_EXTERN const NSString * const kRTCPcmuCodecName;
+RTC_EXTERN const NSString * const kRTCPcmaCodecName;
+RTC_EXTERN const NSString * const kRTCDtmfCodecName;
+RTC_EXTERN const NSString * const kRTCComfortNoiseCodecName;
+RTC_EXTERN const NSString * const kRTCVp8CodecName;
+RTC_EXTERN const NSString * const kRTCVp9CodecName;
+RTC_EXTERN const NSString * const kRTCH264CodecName;
 
 
 RTC_EXPORT
@@ -44,13 +44,24 @@ RTC_EXPORT
 
 
 
-@property(nonatomic, nonnull) NSString *mimeType;
+@property(nonatomic, readonly, nonnull) NSString *name;
 
 
-@property(nonatomic, assign) int clockRate;
 
 
-@property(nonatomic, assign) int channels;
+
+
+
+@property(nonatomic, readonly, nonnull) NSString *kind;
+
+
+@property(nonatomic, readonly, nullable) NSNumber *clockRate;
+
+
+
+
+
+@property(nonatomic, readonly, nullable) NSNumber *numChannels;
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 

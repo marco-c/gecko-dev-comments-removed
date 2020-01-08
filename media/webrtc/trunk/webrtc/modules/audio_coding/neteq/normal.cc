@@ -8,19 +8,19 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/normal.h"
+#include "modules/audio_coding/neteq/normal.h"
 
 #include <string.h>  
 
 #include <algorithm>  
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
-#include "webrtc/modules/audio_coding/neteq/background_noise.h"
-#include "webrtc/modules/audio_coding/neteq/decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/expand.h"
+#include "api/audio_codecs/audio_decoder.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "modules/audio_coding/neteq/background_noise.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
+#include "modules/audio_coding/neteq/expand.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -130,24 +130,23 @@ int Normal::Process(const int16_t* input,
 
       
       
-      RTC_DCHECK_LT(fs_shift, 3);  
-      increment = 4 >> fs_shift;
-      int fraction = increment;
-      
-      
-      
-      const size_t interp_len_samples =
-          std::min(static_cast<size_t>(8 * fs_mult), output->Size());
-      for (size_t i = 0; i < interp_len_samples; ++i) {
-        
-        
-        RTC_DCHECK_LT(channel_ix, output->Channels());
-        RTC_DCHECK_LT(i, output->Size());
-        (*output)[channel_ix][i] =
-            static_cast<int16_t>((fraction * (*output)[channel_ix][i] +
-                (32 - fraction) * expanded[channel_ix][i] + 8) >> 5);
-        fraction += increment;
+      size_t win_length = samples_per_ms_;
+      int16_t win_slope_Q14 = default_win_slope_Q14_;
+      RTC_DCHECK_LT(channel_ix, output->Channels());
+      if (win_length > output->Size()) {
+        win_length = output->Size();
+        win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
       }
+      int16_t win_up_Q14 = 0;
+      for (size_t i = 0; i < win_length; i++) {
+        win_up_Q14 += win_slope_Q14;
+        (*output)[channel_ix][i] =
+            (win_up_Q14 * (*output)[channel_ix][i] +
+             ((1 << 14) - win_up_Q14) * expanded[channel_ix][i] + (1 << 13)) >>
+            14;
+      }
+      RTC_DCHECK_GT(win_up_Q14,
+                    (1 << 14) - 32);  
     }
   } else if (last_mode == kModeRfc3389Cng) {
     RTC_DCHECK_EQ(output->Channels(), 1);  
@@ -171,16 +170,22 @@ int Normal::Process(const int16_t* input,
     }
     
     
-    RTC_DCHECK_LT(fs_shift, 3);  
-    int16_t increment = 4 >> fs_shift;
-    int16_t fraction = increment;
-    for (size_t i = 0; i < static_cast<size_t>(8 * fs_mult); i++) {
-      
-      
-      (*output)[0][i] = (fraction * (*output)[0][i] +
-          (32 - fraction) * cng_output[i] + 8) >> 5;
-      fraction += increment;
+    size_t win_length = samples_per_ms_;
+    int16_t win_slope_Q14 = default_win_slope_Q14_;
+    if (win_length > kCngLength) {
+      win_length = kCngLength;
+      win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
     }
+    int16_t win_up_Q14 = 0;
+    for (size_t i = 0; i < win_length; i++) {
+      win_up_Q14 += win_slope_Q14;
+      (*output)[0][i] =
+          (win_up_Q14 * (*output)[0][i] +
+           ((1 << 14) - win_up_Q14) * cng_output[i] + (1 << 13)) >>
+          14;
+    }
+    RTC_DCHECK_GT(win_up_Q14,
+                  (1 << 14) - 32);  
   } else if (external_mute_factor_array[0] < 16384) {
     
     

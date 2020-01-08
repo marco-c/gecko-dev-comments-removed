@@ -8,25 +8,25 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
+#ifndef MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
+#define MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 
-#include "webrtc/base/buffer.h"
-#include "webrtc/base/task_queue.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
+#include "system_wrappers/include/file_wrapper.h"
+#include "typedefs.h"  
 
 namespace webrtc {
+
 
 
 const size_t kMaxDeltaTimeInMs = 500;
 
 const size_t kMaxBufferSizeBytes = 3840;  
-
-class AudioDeviceObserver;
 
 class AudioDeviceBuffer {
  public:
@@ -36,10 +36,46 @@ class AudioDeviceBuffer {
     LOG_ACTIVE,
   };
 
+  struct Stats {
+    void ResetRecStats() {
+      rec_callbacks = 0;
+      rec_samples = 0;
+      max_rec_level = 0;
+    }
+
+    void ResetPlayStats() {
+      play_callbacks = 0;
+      play_samples = 0;
+      max_play_level = 0;
+    }
+
+    
+    
+    uint64_t rec_callbacks = 0;
+
+    
+    
+    uint64_t play_callbacks = 0;
+
+    
+    uint64_t rec_samples = 0;
+
+    
+    uint64_t play_samples = 0;
+
+    
+    
+    
+    int16_t max_rec_level = 0;
+
+    
+    
+    int16_t max_play_level = 0;
+  };
+
   AudioDeviceBuffer();
   virtual ~AudioDeviceBuffer();
 
-  void SetId(uint32_t id) {};
   int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
   void StartPlayout();
@@ -56,8 +92,6 @@ class AudioDeviceBuffer {
   int32_t SetPlayoutChannels(size_t channels);
   size_t RecordingChannels() const;
   size_t PlayoutChannels() const;
-  int32_t SetRecordingChannel(const AudioDeviceModule::ChannelType channel);
-  int32_t RecordingChannel(AudioDeviceModule::ChannelType& channel) const;
 
   virtual int32_t SetRecordedBuffer(const void* audio_buffer,
                                     size_t samples_per_channel);
@@ -69,15 +103,13 @@ class AudioDeviceBuffer {
   virtual int32_t RequestPlayoutData(size_t samples_per_channel);
   virtual int32_t GetPlayoutData(void* audio_buffer);
 
-  
-  
-  
-  int32_t StartInputFileRecording(const char fileName[kAdmMaxFileNameSize]);
-  int32_t StopInputFileRecording();
-  int32_t StartOutputFileRecording(const char fileName[kAdmMaxFileNameSize]);
-  int32_t StopOutputFileRecording();
-
   int32_t SetTypingStatus(bool typing_status);
+
+  
+  
+  
+  
+  void NativeAudioInterrupted();
 
  private:
   
@@ -92,7 +124,6 @@ class AudioDeviceBuffer {
   
   void LogStats(LogState state);
 
-  
   
   
   void UpdateRecStats(int16_t max_abs, size_t samples_per_channel);
@@ -119,6 +150,8 @@ class AudioDeviceBuffer {
 
   
   rtc::ThreadChecker recording_thread_checker_;
+
+  rtc::CriticalSection lock_;
 
   
   
@@ -150,86 +183,58 @@ class AudioDeviceBuffer {
   
   
   
-  bool playing_ ACCESS_ON(main_thread_checker_);
-  bool recording_ ACCESS_ON(main_thread_checker_);
+  bool playing_ RTC_ACCESS_ON(main_thread_checker_);
+  bool recording_ RTC_ACCESS_ON(main_thread_checker_);
 
   
   
   
-  rtc::BufferT<int16_t> play_buffer_ ACCESS_ON(playout_thread_checker_);
+  rtc::BufferT<int16_t> play_buffer_ RTC_ACCESS_ON(playout_thread_checker_);
 
   
   
-  rtc::BufferT<int16_t> rec_buffer_ ACCESS_ON(recording_thread_checker_);
+  rtc::BufferT<int16_t> rec_buffer_ RTC_ACCESS_ON(recording_thread_checker_);
 
-  
+
 #if !defined(WEBRTC_WIN)
-  uint32_t current_mic_level_ ACCESS_ON(recording_thread_checker_);
+  uint32_t current_mic_level_ RTC_ACCESS_ON(recording_thread_checker_);
 #else
   
   uint32_t current_mic_level_;
 #endif
-  uint32_t new_mic_level_ ACCESS_ON(recording_thread_checker_);
+  uint32_t new_mic_level_ RTC_ACCESS_ON(recording_thread_checker_);
 
   
-  bool typing_status_ ACCESS_ON(recording_thread_checker_);
+  bool typing_status_ RTC_ACCESS_ON(recording_thread_checker_);
 
   
-  int play_delay_ms_ ACCESS_ON(recording_thread_checker_);
-  int rec_delay_ms_ ACCESS_ON(recording_thread_checker_);
+  int play_delay_ms_ RTC_ACCESS_ON(recording_thread_checker_);
+  int rec_delay_ms_ RTC_ACCESS_ON(recording_thread_checker_);
 
   
-  int clock_drift_ ACCESS_ON(recording_thread_checker_);
+  int clock_drift_ RTC_ACCESS_ON(recording_thread_checker_);
 
   
-  size_t num_stat_reports_ ACCESS_ON(task_queue_);
+  size_t num_stat_reports_ RTC_ACCESS_ON(task_queue_);
 
   
-  
-  uint64_t rec_callbacks_ ACCESS_ON(task_queue_);
-
-  
-  uint64_t last_rec_callbacks_ ACCESS_ON(task_queue_);
+  int64_t last_timer_task_time_ RTC_ACCESS_ON(task_queue_);
 
   
   
-  uint64_t play_callbacks_ ACCESS_ON(task_queue_);
+  int16_t rec_stat_count_ RTC_ACCESS_ON(recording_thread_checker_);
+  int16_t play_stat_count_ RTC_ACCESS_ON(playout_thread_checker_);
 
   
-  uint64_t last_play_callbacks_ ACCESS_ON(task_queue_);
+  int64_t play_start_time_ RTC_ACCESS_ON(main_thread_checker_);
+  int64_t rec_start_time_ RTC_ACCESS_ON(main_thread_checker_);
 
   
-  uint64_t rec_samples_ ACCESS_ON(task_queue_);
-
-  
-  uint64_t last_rec_samples_ ACCESS_ON(task_queue_);
-
-  
-  uint64_t play_samples_ ACCESS_ON(task_queue_);
-
-  
-  uint64_t last_play_samples_ ACCESS_ON(task_queue_);
+  Stats stats_ RTC_GUARDED_BY(lock_);
 
   
   
-  
-  int16_t max_rec_level_ ACCESS_ON(task_queue_);
-
-  
-  
-  int16_t max_play_level_ ACCESS_ON(task_queue_);
-
-  
-  int64_t last_timer_task_time_ ACCESS_ON(task_queue_);
-
-  
-  
-  int16_t rec_stat_count_ ACCESS_ON(recording_thread_checker_);
-  int16_t play_stat_count_ ACCESS_ON(playout_thread_checker_);
-
-  
-  int64_t play_start_time_ ACCESS_ON(main_thread_checker_);
-  int64_t rec_start_time_ ACCESS_ON(main_thread_checker_);
+  Stats last_stats_ RTC_ACCESS_ON(task_queue_);
 
   
   
@@ -239,7 +244,13 @@ class AudioDeviceBuffer {
   
   
   
-  bool log_stats_ ACCESS_ON(task_queue_);
+  bool log_stats_ RTC_ACCESS_ON(task_queue_);
+
+
+
+#ifdef AUDIO_DEVICE_PLAYS_SINUS_TONE
+  double phase_ RTC_ACCESS_ON(playout_thread_checker_);
+#endif
 };
 
 }  

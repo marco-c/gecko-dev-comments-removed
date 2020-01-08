@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_DETECTOR_NORMALIZED_COVARIANCE_ESTIMATOR_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_DETECTOR_NORMALIZED_COVARIANCE_ESTIMATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_ECHO_DETECTOR_NORMALIZED_COVARIANCE_ESTIMATOR_H_
+#define MODULES_AUDIO_PROCESSING_ECHO_DETECTOR_NORMALIZED_COVARIANCE_ESTIMATOR_H_
 
 namespace webrtc {
 
@@ -28,6 +28,7 @@ class NormalizedCovarianceEstimator {
   float normalized_cross_correlation() const {
     return normalized_cross_correlation_;
   }
+  float covariance() const { return covariance_; }
   
   void Clear();
 

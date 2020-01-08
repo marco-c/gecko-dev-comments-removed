@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef API_STREAMCOLLECTION_H_
+#define API_STREAMCOLLECTION_H_
+
+
+
+#include "pc/streamcollection.h"
+
+#endif  

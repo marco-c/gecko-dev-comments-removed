@@ -8,15 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_CONVERSION_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_CONVERSION_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_CONVERSION_H_
+#define MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_CONVERSION_H_
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/audio_format.h"
+#include "api/audio_codecs/audio_format.h"
+#include "common_types.h"  
 
 namespace webrtc {
 
 SdpAudioFormat CodecInstToSdp(const CodecInst& codec_inst);
+CodecInst SdpToCodecInst(int payload_type, const SdpAudioFormat& audio_format);
 
 }  
 

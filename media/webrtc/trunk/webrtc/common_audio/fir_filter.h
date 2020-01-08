@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_COMMON_AUDIO_FIR_FILTER_H_
-#define WEBRTC_COMMON_AUDIO_FIR_FILTER_H_
+#ifndef COMMON_AUDIO_FIR_FILTER_H_
+#define COMMON_AUDIO_FIR_FILTER_H_
 
 #include <string.h>
 
@@ -18,16 +18,6 @@ namespace webrtc {
 
 class FIRFilter {
  public:
-  
-  
-  
-  
-  
-  
-  static FIRFilter* Create(const float* coefficients,
-                           size_t coefficients_length,
-                           size_t max_input_length);
-
   virtual ~FIRFilter() {}
 
   

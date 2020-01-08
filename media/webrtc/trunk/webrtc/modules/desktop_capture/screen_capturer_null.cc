@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_capturer.h"
 
 namespace webrtc {
 

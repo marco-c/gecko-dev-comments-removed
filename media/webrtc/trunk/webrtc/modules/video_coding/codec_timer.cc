@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/video_coding/codec_timer.h"
+#include "modules/video_coding/codec_timer.h"
 
 namespace webrtc {
 

@@ -7,7 +7,7 @@
 
 
 
-#include "webrtc/test/statistics.h"
+#include "test/statistics.h"
 
 #include <math.h>
 

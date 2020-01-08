@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
+#include "modules/audio_coding/codecs/isac/fix/source/codec.h"
 
 
 

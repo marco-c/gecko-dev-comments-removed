@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/video_coding/inter_frame_delay.h"
+#include "modules/video_coding/inter_frame_delay.h"
 
 namespace webrtc {
 

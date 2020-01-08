@@ -8,8 +8,8 @@
 
 
 
-#include "webrtc/modules/desktop_capture/differ_block.h"
-#include "webrtc/test/gmock.h"
+#include "modules/desktop_capture/differ_block.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 

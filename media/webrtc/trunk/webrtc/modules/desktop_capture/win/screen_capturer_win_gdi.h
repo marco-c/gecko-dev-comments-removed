@@ -8,18 +8,19 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_GDI_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_GDI_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_GDI_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_GDI_H_
 
 #include <memory>
 
 #include <windows.h>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/screen_capture_frame_queue.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
+#include "modules/desktop_capture/win/display_configuration_monitor.h"
+#include "modules/desktop_capture/win/scoped_thread_desktop.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -36,7 +37,6 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
 
   
   void Start(Callback* callback) override;
-  void Stop() override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
@@ -45,7 +45,6 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
 
  private:
   typedef HRESULT (WINAPI * DwmEnableCompositionFunc)(UINT);
-  typedef HRESULT (WINAPI * DwmIsCompositionEnabledFunc)(BOOL*);
 
   
   void PrepareCaptureResources();
@@ -71,15 +70,10 @@ class ScreenCapturerWinGdi : public DesktopCapturer {
   
   ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
 
-  
-  
-  DesktopRect desktop_dc_rect_;
+  DisplayConfigurationMonitor display_configuration_monitor_;
 
   HMODULE dwmapi_library_ = NULL;
   DwmEnableCompositionFunc composition_func_ = nullptr;
-  DwmIsCompositionEnabledFunc composition_enabled_func_;
-
-  bool disable_composition_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinGdi);
 };

@@ -8,15 +8,26 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WINDOW_LIST_UTILS_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_WINDOW_LIST_UTILS_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/mac/desktop_configuration.h"
+#include "rtc_base/function_view.h"
 
 namespace webrtc {
+
+
+
+
+
+
+bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
+                   bool ignore_minimized);
 
 
 bool GetWindowList(DesktopCapturer::SourceList* windows, bool ignore_minimized);
@@ -26,10 +37,53 @@ bool IsWindowFullScreen(const MacDesktopConfiguration& desktop_config,
                         CFDictionaryRef window);
 
 
-bool IsWindowMinimized(CGWindowID id);
 
+bool IsWindowOnScreen(CFDictionaryRef window);
+
+
+
+bool IsWindowOnScreen(CGWindowID id);
+
+
+
+std::string GetWindowTitle(CFDictionaryRef window);
+
+
+
+WindowId GetWindowId(CFDictionaryRef window);
+
+
+
+
+
+float GetScaleFactorAtPosition(const MacDesktopConfiguration& desktop_config,
+                               DesktopVector position);
+
+
+
+
+
+
+
+DesktopRect GetWindowBounds(CFDictionaryRef window);
+
+
+
+DesktopRect GetWindowBounds(const MacDesktopConfiguration& desktop_config,
+                            CFDictionaryRef window);
+
+
+
+
+
+
+DesktopRect GetWindowBounds(CGWindowID id);
+
+
+
+DesktopRect GetWindowBounds(const MacDesktopConfiguration& desktop_config,
+                            CGWindowID id);
 
 }  
 
 #endif  
-

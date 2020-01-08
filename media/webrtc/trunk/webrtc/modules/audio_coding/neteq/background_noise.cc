@@ -8,17 +8,17 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/background_noise.h"
+#include "modules/audio_coding/neteq/background_noise.h"
 
 #include <assert.h>
 #include <string.h>  
 
 #include <algorithm>  
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
-#include "webrtc/modules/audio_coding/neteq/cross_correlation.h"
-#include "webrtc/modules/audio_coding/neteq/post_decode_vad.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "modules/audio_coding/neteq/cross_correlation.h"
+#include "modules/audio_coding/neteq/post_decode_vad.h"
 
 namespace webrtc {
 
@@ -103,8 +103,8 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
       
       
       
-      if ((residual_energy * 20 >= (sample_energy << 6)) &&
-          (sample_energy > 0)) {
+      if ((sample_energy > 0) &&
+          (int64_t{5} * residual_energy >= int64_t{16} * sample_energy)) {
         
         
         

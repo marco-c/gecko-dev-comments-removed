@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
-#define WEBRTC_COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
+#ifndef COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
+#define COMMON_VIDEO_VIDEO_RENDER_FRAMES_H_
 
 #include <stdint.h>
 
 #include <list>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/optional.h"
+#include "api/optional.h"
+#include "api/video/video_frame.h"
 
 namespace webrtc {
 
@@ -27,7 +27,7 @@ class VideoRenderFrames {
   VideoRenderFrames(const VideoRenderFrames&) = delete;
 
   
-  int32_t AddFrame(const VideoFrame& new_frame);
+  int32_t AddFrame(VideoFrame&& new_frame);
 
   
   rtc::Optional<VideoFrame> FrameToRender();
@@ -35,19 +35,16 @@ class VideoRenderFrames {
   
   uint32_t TimeToNextFrameRelease();
 
- private:
-  
-  enum { KMaxNumberOfFrames = 300 };
-  
-  enum { KOldRenderTimestampMS = 500 };
-  
-  enum { KFutureRenderTimestampMS = 10000 };
+  bool HasPendingFrames() const;
 
+ private:
   
   std::list<VideoFrame> incoming_frames_;
 
   
   const uint32_t render_delay_ms_;
+
+  int64_t last_render_time_ms_ = 0;
 };
 
 }  

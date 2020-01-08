@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface VideoDecoderFactory {
+  
+
+
+
+  public VideoDecoder createDecoder(String codecType);
+}

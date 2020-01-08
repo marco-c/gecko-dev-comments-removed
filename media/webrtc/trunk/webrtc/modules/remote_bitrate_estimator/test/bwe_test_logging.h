@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_LOGGING_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_LOGGING_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_LOGGING_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_LOGGING_H_
 
 
 
@@ -128,8 +128,9 @@
 #include <stack>
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/common_types.h"
+#include "common_types.h"  
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
 
 #define BWE_TEST_LOGGING_GLOBAL_CONTEXT(name) \
     do { \
@@ -254,9 +255,6 @@
   } while (0)
 
 namespace webrtc {
-
-class CriticalSectionWrapper;
-
 namespace testing {
 namespace bwe {
 
@@ -340,7 +338,7 @@ class Logging {
   void PopState();
 
   static Logging g_Logging;
-  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::CriticalSection crit_sect_;
   ThreadMap thread_map_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Logging);

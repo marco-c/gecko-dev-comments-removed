@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/rtp_rtcp/source/dtmf_queue.h"
+#include "modules/rtp_rtcp/source/dtmf_queue.h"
 
 namespace {
 constexpr size_t kDtmfOutbandMax = 20;

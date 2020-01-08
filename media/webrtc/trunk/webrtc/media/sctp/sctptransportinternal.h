@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
-#define WEBRTC_MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
+#ifndef MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
+#define MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
 
 
 
@@ -18,13 +18,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/base/thread.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/thread.h"
 
 
 
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/p2p/base/transportchannel.h"
+#include "media/base/mediachannel.h"
+#include "p2p/base/packettransportinternal.h"
 
 namespace cricket {
 
@@ -58,7 +58,7 @@ class SctpTransportInternal {
   
   
   
-  virtual void SetTransportChannel(TransportChannel* channel) = 0;
+  virtual void SetTransportChannel(rtc::PacketTransportInternal* channel) = 0;
 
   
   
@@ -129,7 +129,7 @@ class SctpTransportInternalFactory {
 
   
   virtual std::unique_ptr<SctpTransportInternal> CreateSctpTransport(
-      TransportChannel* channel) = 0;
+      rtc::PacketTransportInternal* channel) = 0;
 };
 
 }  

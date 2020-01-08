@@ -7,9 +7,9 @@
 
 
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "modules/rtp_rtcp/source/rtcp_receiver.h"
+#include "rtc_base/checks.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace {

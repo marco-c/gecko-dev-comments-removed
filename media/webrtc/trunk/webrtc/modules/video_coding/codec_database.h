@@ -8,17 +8,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+#ifndef MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+#define MODULES_VIDEO_CODING_CODEC_DATABASE_H_
 
 #include <map>
 #include <memory>
 
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/include/video_coding.h"
-#include "webrtc/modules/video_coding/generic_decoder.h"
-#include "webrtc/modules/video_coding/generic_encoder.h"
-#include "webrtc/typedefs.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/generic_decoder.h"
+#include "modules/video_coding/generic_encoder.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -46,10 +46,6 @@ class VCMCodecDataBase {
  public:
   explicit VCMCodecDataBase(VCMEncodedFrameCallback* encoded_frame_callback);
   ~VCMCodecDataBase();
-
-  
-  
-  static void Codec(VideoCodecType codec_type, VideoCodec* settings);
 
   
   
@@ -99,12 +95,6 @@ class VCMCodecDataBase {
   bool DeregisterReceiveCodec(uint8_t payload_type);
 
   
-  bool ReceiveCodec(VideoCodec* current_receive_codec) const;
-
-  
-  VideoCodecType ReceiveCodec() const;
-
-  
   
   
   
@@ -115,7 +105,7 @@ class VCMCodecDataBase {
 
   
   
-  void ReleaseDecoder(VCMGenericDecoder* decoder) const;
+  VCMGenericDecoder* GetCurrentDecoder();
 
   
   
@@ -127,17 +117,15 @@ class VCMCodecDataBase {
   typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
   typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
 
-  VCMGenericDecoder* CreateAndInitDecoder(const VCMEncodedFrame& frame,
-                                          VideoCodec* new_codec) const;
+  std::unique_ptr<VCMGenericDecoder> CreateAndInitDecoder(
+      const VCMEncodedFrame& frame,
+      VideoCodec* new_codec) const;
 
   
   
   bool RequiresEncoderReset(const VideoCodec& send_codec);
 
   void DeleteEncoder();
-
-  
-  VCMGenericDecoder* CreateDecoder(VideoCodecType type) const;
 
   const VCMDecoderMapItem* FindDecoderItem(uint8_t payload_type) const;
 
@@ -155,7 +143,7 @@ class VCMCodecDataBase {
   bool internal_source_;
   VCMEncodedFrameCallback* const encoded_frame_callback_;
   std::unique_ptr<VCMGenericEncoder> ptr_encoder_;
-  VCMGenericDecoder* ptr_decoder_;
+  std::unique_ptr<VCMGenericDecoder> ptr_decoder_;
   DecoderMap dec_map_;
   ExternalDecoderMap dec_external_map_;
 };  

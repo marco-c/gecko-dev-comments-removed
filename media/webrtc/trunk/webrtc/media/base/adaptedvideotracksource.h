@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
-#define WEBRTC_MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
+#ifndef MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
+#define MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/notifier.h"
-#include "webrtc/media/base/videoadapter.h"
-#include "webrtc/media/base/videobroadcaster.h"
+#include "api/mediastreaminterface.h"
+#include "api/notifier.h"
+#include "media/base/videoadapter.h"
+#include "media/base/videobroadcaster.h"
 
 namespace rtc {
 
@@ -30,7 +30,7 @@ class AdaptedVideoTrackSource
  protected:
   
   
-  AdaptedVideoTrackSource(int required_alignment);
+  explicit AdaptedVideoTrackSource(int required_alignment);
   
   
   
@@ -74,7 +74,7 @@ class AdaptedVideoTrackSource
   cricket::VideoAdapter video_adapter_;
 
   rtc::CriticalSection stats_crit_;
-  rtc::Optional<Stats> stats_ GUARDED_BY(stats_crit_);
+  rtc::Optional<Stats> stats_ RTC_GUARDED_BY(stats_crit_);
 
   VideoBroadcaster broadcaster_;
 };

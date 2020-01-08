@@ -8,23 +8,24 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
+#ifndef MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
+#define MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/deprecation.h"
-#include "webrtc/base/function_view.h"
-#include "webrtc/base/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/modules/include/module.h"
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/typedefs.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/optional.h"
+#include "common_types.h"  
+#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
+#include "modules/audio_coding/neteq/include/neteq.h"
+#include "modules/include/module.h"
+#include "rtc_base/deprecation.h"
+#include "rtc_base/function_view.h"
+#include "system_wrappers/include/clock.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -69,7 +70,6 @@ class AudioCodingModule {
     Config(const Config&);
     ~Config();
 
-    int id;
     NetEq::Config neteq_config;
     Clock* clock;
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
@@ -82,8 +82,10 @@ class AudioCodingModule {
   
   
   
-  static AudioCodingModule* Create(int id);
-  static AudioCodingModule* Create(int id, Clock* clock);
+  
+  RTC_DEPRECATED static AudioCodingModule* Create(int id);
+  static AudioCodingModule* Create();
+  static AudioCodingModule* Create(Clock* clock);
   static AudioCodingModule* Create(const Config& config);
   virtual ~AudioCodingModule() = default;
 
@@ -485,6 +487,10 @@ class AudioCodingModule {
   virtual int32_t PlayoutFrequency() const = 0;
 
   
+  virtual void SetReceiveCodecs(
+      const std::map<int, SdpAudioFormat>& codecs) = 0;
+
+  
   
   virtual bool RegisterReceiveCodec(int rtp_payload_type,
                                     const SdpAudioFormat& audio_format) = 0;
@@ -572,17 +578,6 @@ class AudioCodingModule {
   
   
   
-  virtual int ReceiveSampleRate() const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -591,35 +586,6 @@ class AudioCodingModule {
   virtual int32_t IncomingPacket(const uint8_t* incoming_payload,
                                  const size_t payload_len_bytes,
                                  const WebRtcRTPHeader& rtp_info) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t IncomingPayload(const uint8_t* incoming_payload,
-                                  const size_t payload_len_byte,
-                                  const uint8_t payload_type,
-                                  const uint32_t timestamp = 0) = 0;
 
   
   
@@ -648,6 +614,7 @@ class AudioCodingModule {
   
   virtual int SetMaximumPlayoutDelay(int time_ms) = 0;
 
+  
   
   
   
@@ -687,6 +654,12 @@ class AudioCodingModule {
   
   
   virtual int FilteredCurrentDelayMs() const = 0;
+
+  
+  
+  
+  
+  virtual int TargetDelayMs() const = 0;
 
   
   
@@ -828,6 +801,8 @@ class AudioCodingModule {
 
   virtual void GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const = 0;
+
+  virtual ANAStats GetANAStats() const = 0;
 };
 
 }  

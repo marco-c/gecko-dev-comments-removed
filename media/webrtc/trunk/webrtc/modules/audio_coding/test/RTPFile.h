@@ -8,16 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_TEST_RTPFILE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_TEST_RTPFILE_H_
+#ifndef MODULES_AUDIO_CODING_TEST_RTPFILE_H_
+#define MODULES_AUDIO_CODING_TEST_RTPFILE_H_
 
 #include <stdio.h>
 #include <queue>
 
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
-#include "webrtc/typedefs.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/include/module_common_types.h"
+#include "system_wrappers/include/rw_lock_wrapper.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

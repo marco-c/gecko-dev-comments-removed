@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_LOOP_H_
 
 #include <memory>
 #include <string>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "api/array_view.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace test {

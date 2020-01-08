@@ -8,12 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MOUSE_CURSOR_MONITOR_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MOUSE_CURSOR_MONITOR_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MOUSE_CURSOR_MONITOR_H_
+#define MODULES_DESKTOP_CAPTURE_MOUSE_CURSOR_MONITOR_H_
 
-#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/typedefs.h"
+#include <memory>
+
+#include "modules/desktop_capture/desktop_capture_types.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -24,6 +26,7 @@ class MouseCursor;
 
 class MouseCursorMonitor {
  public:
+  
   enum CursorState {
     
     INSIDE,
@@ -49,8 +52,18 @@ class MouseCursorMonitor {
 
     
     
+    
     virtual void OnMouseCursorPosition(CursorState state,
                                        const DesktopVector& position) = 0;
+
+    
+    
+    
+    
+    
+    
+    
+    virtual void OnMouseCursorPosition(const DesktopVector& position) {}
 
    protected:
     virtual ~Callback() {}
@@ -58,6 +71,8 @@ class MouseCursorMonitor {
 
   virtual ~MouseCursorMonitor() {}
 
+  
+  
   
   
   static MouseCursorMonitor* CreateForWindow(
@@ -74,10 +89,13 @@ class MouseCursorMonitor {
 
   
   
-  virtual void Start(Callback* callback, Mode mode) = 0;
+  
+  static std::unique_ptr<MouseCursorMonitor> Create(
+      const DesktopCaptureOptions& options);
 
   
-  virtual void Stop() = 0;
+  
+  virtual void Init(Callback* callback, Mode mode) = 0;
 
   
   

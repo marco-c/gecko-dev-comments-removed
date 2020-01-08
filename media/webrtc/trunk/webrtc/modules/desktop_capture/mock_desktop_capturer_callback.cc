@@ -7,7 +7,7 @@
 
 
 
-#include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
+#include "modules/desktop_capture/mock_desktop_capturer_callback.h"
 
 namespace webrtc {
 

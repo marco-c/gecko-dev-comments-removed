@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_AUDIO_SCOPED_VOE_INTERFACE_H_
-#define WEBRTC_AUDIO_SCOPED_VOE_INTERFACE_H_
+#ifndef AUDIO_SCOPED_VOE_INTERFACE_H_
+#define AUDIO_SCOPED_VOE_INTERFACE_H_
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

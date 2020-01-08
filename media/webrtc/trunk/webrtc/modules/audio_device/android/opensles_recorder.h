@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_RECORDER_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_RECORDER_H_
+#ifndef MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_RECORDER_H_
+#define MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_RECORDER_H_
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -17,13 +17,13 @@
 
 #include <memory>
 
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_device/android/audio_common.h"
-#include "webrtc/modules/audio_device/android/audio_manager.h"
-#include "webrtc/modules/audio_device/android/opensles_common.h"
-#include "webrtc/modules/audio_device/include/audio_device_defines.h"
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/utility/include/helpers_android.h"
+#include "modules/audio_device/android/audio_common.h"
+#include "modules/audio_device/android/audio_manager.h"
+#include "modules/audio_device/android/opensles_common.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/include/audio_device_defines.h"
+#include "modules/utility/include/helpers_android.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 
@@ -186,19 +186,6 @@ class OpenSLESRecorder {
 
   
   uint32_t last_rec_time_;
-
-  void *opensles_lib_;
-  typedef SLresult (*slCreateEngine_t)(SLObjectItf *,
-                                       SLuint32,
-                                       const SLEngineOption *,
-                                       SLuint32,
-                                       const SLInterfaceID *,
-                                       const SLboolean *);
-  slCreateEngine_t slCreateEngine_;
-  SLInterfaceID SL_IID_ENGINE_;
-  SLInterfaceID SL_IID_ANDROIDCONFIGURATION_;
-  SLInterfaceID SL_IID_ANDROIDSIMPLEBUFFERQUEUE_;
-  SLInterfaceID SL_IID_RECORD_;
 };
 
 }  

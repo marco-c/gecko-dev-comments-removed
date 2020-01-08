@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INTER_ARRIVAL_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INTER_ARRIVAL_H_
+#ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INTER_ARRIVAL_H_
+#define MODULES_REMOTE_BITRATE_ESTIMATOR_INTER_ARRIVAL_H_
 
 #include <cstddef>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

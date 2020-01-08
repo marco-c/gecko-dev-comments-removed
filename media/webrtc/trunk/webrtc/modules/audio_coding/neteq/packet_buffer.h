@@ -8,18 +8,19 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
+#define MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/optional.h"
-#include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
+#include "api/optional.h"
+#include "modules/audio_coding/neteq/packet.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
 class DecoderDatabase;
+class StatisticsCalculator;
 class TickTimer;
 
 
@@ -51,7 +52,7 @@ class PacketBuffer {
   
   
   
-  virtual int InsertPacket(Packet&& packet);
+  virtual int InsertPacket(Packet&& packet, StatisticsCalculator* stats);
 
   
   
@@ -65,7 +66,8 @@ class PacketBuffer {
       PacketList* packet_list,
       const DecoderDatabase& decoder_database,
       rtc::Optional<uint8_t>* current_rtp_payload_type,
-      rtc::Optional<uint8_t>* current_cng_rtp_payload_type);
+      rtc::Optional<uint8_t>* current_cng_rtp_payload_type,
+      StatisticsCalculator* stats);
 
   
   
@@ -92,22 +94,24 @@ class PacketBuffer {
   
   
   
-  virtual int DiscardNextPacket();
+  virtual int DiscardNextPacket(StatisticsCalculator* stats);
 
   
   
   
   
   
-  
-  virtual int DiscardOldPackets(uint32_t timestamp_limit,
-                                uint32_t horizon_samples);
+  virtual void DiscardOldPackets(uint32_t timestamp_limit,
+                                 uint32_t horizon_samples,
+                                 StatisticsCalculator* stats);
 
   
-  virtual int DiscardAllOldPackets(uint32_t timestamp_limit);
+  virtual void DiscardAllOldPackets(uint32_t timestamp_limit,
+                                    StatisticsCalculator* stats);
 
   
-  virtual void DiscardPacketsWithPayloadType(uint8_t payload_type);
+  virtual void DiscardPacketsWithPayloadType(uint8_t payload_type,
+                                             StatisticsCalculator* stats);
 
   
   

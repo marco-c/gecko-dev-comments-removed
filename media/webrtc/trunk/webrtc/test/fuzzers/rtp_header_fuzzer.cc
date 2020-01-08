@@ -10,35 +10,36 @@
 
 #include <bitset>
 
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
 
 
 
-static_assert(kRtpExtensionNumberOfExtensions <= 8,
+static_assert(kRtpExtensionNumberOfExtensions <= 16,
               "Insufficient bits read to configure all header extensions. Add "
               "an extra byte and update the switches.");
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  if (size <= 1)
+  if (size <= 2)
     return;
 
   
-  std::bitset<8> extensionMask(data[0]);
-  data++;
-  size--;
+  std::bitset<16> extensionMask(*reinterpret_cast<const uint16_t*>(data));
+  data += 2;
+  size -= 2;
 
   RtpPacketReceived::ExtensionManager extensions;
+  
   for (int i = 0; i < kRtpExtensionNumberOfExtensions; i++) {
     RTPExtensionType extension_type = static_cast<RTPExtensionType>(i);
     if (extensionMask[i] && extension_type != kRtpExtensionNone) {
       
       
       
-      extensions.Register(extension_type, i);
+      extensions.RegisterByType(i, extension_type);
     }
   }
 

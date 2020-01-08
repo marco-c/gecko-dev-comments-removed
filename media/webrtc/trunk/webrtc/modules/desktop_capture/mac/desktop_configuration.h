@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
+#ifndef MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
+#define MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <vector>
 
-#include "webrtc/typedefs.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "typedefs.h"  
+#include "modules/desktop_capture/desktop_geometry.h"
 
 namespace webrtc {
 
@@ -57,6 +57,8 @@ struct MacDesktopConfiguration {
   MacDesktopConfiguration& operator=(const MacDesktopConfiguration& other);
   MacDesktopConfiguration& operator=(MacDesktopConfiguration&& other);
 
+  
+  
   
   
   

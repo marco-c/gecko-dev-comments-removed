@@ -8,24 +8,29 @@
 
 
 
-#ifndef WEBRTC_MEDIA_BASE_VIDEOENGINE_UNITTEST_H_  
-#define WEBRTC_MEDIA_BASE_VIDEOENGINE_UNITTEST_H_
+#ifndef MEDIA_BASE_VIDEOENGINE_UNITTEST_H_  
+#define MEDIA_BASE_VIDEOENGINE_UNITTEST_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/bytebuffer.h"
-#include "webrtc/base/gunit.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/call/call.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/media/base/fakenetworkinterface.h"
-#include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/streamparams.h"
-#include "webrtc/media/engine/fakewebrtccall.h"
+#include "call/call.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/fakenetworkinterface.h"
+#include "media/base/fakevideocapturer.h"
+#include "media/base/fakevideorenderer.h"
+#include "media/base/mediachannel.h"
+#include "media/base/streamparams.h"
+#include "media/engine/fakewebrtccall.h"
+#include "rtc_base/bytebuffer.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/timeutils.h"
+
+namespace cricket {
+class WebRtcVideoEncoderFactory;
+class WebRtcVideoDecoderFactory;
+}  
 
 #define EXPECT_FRAME_WAIT(c, w, h, t) \
   EXPECT_EQ_WAIT((c), renderer_.num_rendered_frames(), (t)); \
@@ -59,20 +64,14 @@ inline bool IsEqualCodec(const cricket::VideoCodec& a,
   return a.id == b.id && a.name == b.name;
 }
 
-namespace std {
-inline std::ostream& operator<<(std::ostream& s, const cricket::VideoCodec& c) {
-  s << "{" << c.name << "(" << c.id << ")"
-    << "}";
-  return s;
-}
-}  
-
 template<class E, class C>
 class VideoMediaChannelTest : public testing::Test,
                               public sigslot::has_slots<> {
  protected:
   VideoMediaChannelTest<E, C>()
-      : call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))) {}
+      : call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))),
+        engine_(std::unique_ptr<cricket::WebRtcVideoEncoderFactory>(),
+                std::unique_ptr<cricket::WebRtcVideoDecoderFactory>()) {}
 
   virtual cricket::VideoCodec DefaultCodec() = 0;
 
@@ -81,7 +80,6 @@ class VideoMediaChannelTest : public testing::Test,
   }
 
   virtual void SetUp() {
-    engine_.Init();
     cricket::MediaConfig media_config;
     
     
@@ -769,7 +767,7 @@ class VideoMediaChannelTest : public testing::Test,
     
     
     cricket::VideoOptions video_options;
-    video_options.is_screencast = rtc::Optional<bool>(true);
+    video_options.is_screencast = true;
     channel_->SetVideoSend(kSsrc, true, &video_options, nullptr);
 
     cricket::VideoFormat format(480, 360,

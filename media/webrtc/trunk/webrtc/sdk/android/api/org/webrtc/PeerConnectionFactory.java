@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import android.content.Context;
 import java.util.List;
 
 
@@ -17,24 +18,79 @@ import java.util.List;
 
 
 public class PeerConnectionFactory {
-  private static volatile boolean nativeLibLoaded;
-
-  static {
-    try {
-      System.loadLibrary("jingle_peerconnection_so");
-      nativeLibLoaded = true;
-    } catch (UnsatisfiedLinkError t) {
-      nativeLibLoaded = false;
-    }
-  }
+  public static final String TRIAL_ENABLED = "Enabled";
+  public static final String VIDEO_FRAME_EMIT_TRIAL = "VideoFrameEmit";
 
   private static final String TAG = "PeerConnectionFactory";
+  private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
+
   private final long nativeFactory;
+  private static volatile boolean internalTracerInitialized = false;
+  private static Context applicationContext;
   private static Thread networkThread;
   private static Thread workerThread;
   private static Thread signalingThread;
   private EglBase localEglbase;
   private EglBase remoteEglbase;
+
+  public static class InitializationOptions {
+    final Context applicationContext;
+    final String fieldTrials;
+    final boolean enableInternalTracer;
+    final boolean enableVideoHwAcceleration;
+    final NativeLibraryLoader nativeLibraryLoader;
+
+    private InitializationOptions(Context applicationContext, String fieldTrials,
+        boolean enableInternalTracer, boolean enableVideoHwAcceleration,
+        NativeLibraryLoader nativeLibraryLoader) {
+      this.applicationContext = applicationContext;
+      this.fieldTrials = fieldTrials;
+      this.enableInternalTracer = enableInternalTracer;
+      this.enableVideoHwAcceleration = enableVideoHwAcceleration;
+      this.nativeLibraryLoader = nativeLibraryLoader;
+    }
+
+    public static Builder builder(Context applicationContext) {
+      return new Builder(applicationContext);
+    }
+
+    public static class Builder {
+      private final Context applicationContext;
+      private String fieldTrials = "";
+      private boolean enableInternalTracer = false;
+      private boolean enableVideoHwAcceleration = true;
+      private NativeLibraryLoader nativeLibraryLoader = new NativeLibrary.DefaultLoader();
+
+      Builder(Context applicationContext) {
+        this.applicationContext = applicationContext;
+      }
+
+      public Builder setFieldTrials(String fieldTrials) {
+        this.fieldTrials = fieldTrials;
+        return this;
+      }
+
+      public Builder setEnableInternalTracer(boolean enableInternalTracer) {
+        this.enableInternalTracer = enableInternalTracer;
+        return this;
+      }
+
+      public Builder setEnableVideoHwAcceleration(boolean enableVideoHwAcceleration) {
+        this.enableVideoHwAcceleration = enableVideoHwAcceleration;
+        return this;
+      }
+
+      public Builder setNativeLibraryLoader(NativeLibraryLoader nativeLibraryLoader) {
+        this.nativeLibraryLoader = nativeLibraryLoader;
+        return this;
+      }
+
+      public PeerConnectionFactory.InitializationOptions createInitializationOptions() {
+        return new PeerConnectionFactory.InitializationOptions(applicationContext, fieldTrials,
+            enableInternalTracer, enableVideoHwAcceleration, nativeLibraryLoader);
+      }
+    }
+  }
 
   public static class Options {
     
@@ -51,19 +107,47 @@ public class PeerConnectionFactory {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  public static native boolean initializeAndroidGlobals(Object context, boolean initializeAudio,
-      boolean initializeVideo, boolean videoHwAcceleration);
+
+
+
+
+  public static void initialize(InitializationOptions options) {
+    ContextUtils.initialize(options.applicationContext);
+    NativeLibrary.initialize(options.nativeLibraryLoader);
+    nativeInitializeAndroidGlobals(options.applicationContext, options.enableVideoHwAcceleration);
+    initializeFieldTrials(options.fieldTrials);
+    if (options.enableInternalTracer && !internalTracerInitialized) {
+      initializeInternalTracer();
+    }
+  }
+
+  private void checkInitializeHasBeenCalled() {
+    if (!NativeLibrary.isLoaded() || ContextUtils.getApplicationContext() == null) {
+      throw new IllegalStateException(
+          "PeerConnectionFactory.initialize was not called before creating a "
+          + "PeerConnectionFactory.");
+    }
+  }
 
   
   
-  public static native void initializeFieldTrials(String fieldTrialsInitString);
+  private static native void nativeInitializeAndroidGlobals(
+      Context context, boolean videoHwAcceleration);
+
+  private static void initializeInternalTracer() {
+    internalTracerInitialized = true;
+    nativeInitializeInternalTracer();
+  }
+
+  public static void shutdownInternalTracer() {
+    internalTracerInitialized = false;
+    nativeShutdownInternalTracer();
+  }
+
+  
+  
+  
+  @Deprecated public static native void initializeFieldTrials(String fieldTrialsInitString);
   
   
   
@@ -72,15 +156,16 @@ public class PeerConnectionFactory {
   
   
   public static String fieldTrialsFindFullName(String name) {
-    return nativeLibLoaded ? nativeFieldTrialsFindFullName(name) : "";
+    return NativeLibrary.isLoaded() ? nativeFieldTrialsFindFullName(name) : "";
   }
   private static native String nativeFieldTrialsFindFullName(String name);
   
   
-  public static native void initializeInternalTracer();
+  
+  private static native void nativeInitializeInternalTracer();
   
   
-  public static native void shutdownInternalTracer();
+  private static native void nativeShutdownInternalTracer();
   
   public static native boolean startInternalTracingCapture(String tracing_filename);
   public static native void stopInternalTracingCapture();
@@ -90,8 +175,30 @@ public class PeerConnectionFactory {
     this(null);
   }
 
+  
+  
   public PeerConnectionFactory(Options options) {
-    nativeFactory = nativeCreatePeerConnectionFactory(options);
+    this(options, null , null );
+  }
+
+  public PeerConnectionFactory(
+      Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
+    checkInitializeHasBeenCalled();
+    nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory);
+    if (nativeFactory == 0) {
+      throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
+    }
+  }
+
+  public PeerConnectionFactory(Options options, VideoEncoderFactory encoderFactory,
+      VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory) {
+    checkInitializeHasBeenCalled();
+    if (audioProcessingFactory == null) {
+      throw new NullPointerException(
+          "PeerConnectionFactory constructor does not accept a null AudioProcessingFactory.");
+    }
+    nativeFactory = nativeCreatePeerConnectionFactoryWithAudioProcessing(
+        options, encoderFactory, decoderFactory, audioProcessingFactory.createNative());
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -124,12 +231,14 @@ public class PeerConnectionFactory {
   public VideoSource createVideoSource(VideoCapturer capturer) {
     final EglBase.Context eglContext =
         localEglbase == null ? null : localEglbase.getEglBaseContext();
+    final SurfaceTextureHelper surfaceTextureHelper =
+        SurfaceTextureHelper.create(VIDEO_CAPTURER_THREAD_NAME, eglContext);
     long nativeAndroidVideoTrackSource =
-        nativeCreateVideoSource(nativeFactory, eglContext, capturer.isScreencast());
+        nativeCreateVideoSource(nativeFactory, surfaceTextureHelper, capturer.isScreencast());
     VideoCapturer.CapturerObserver capturerObserver =
-        new VideoCapturer.AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
-    nativeInitializeVideoCapturer(
-        nativeFactory, capturer, nativeAndroidVideoTrackSource, capturerObserver);
+        new AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
+    capturer.initialize(
+        surfaceTextureHelper, ContextUtils.getApplicationContext(), capturerObserver);
     return new VideoSource(nativeAndroidVideoTrackSource);
   }
 
@@ -233,7 +342,12 @@ public class PeerConnectionFactory {
     Logging.d(TAG, "onSignalingThreadReady");
   }
 
-  private static native long nativeCreatePeerConnectionFactory(Options options);
+  private static native long nativeCreatePeerConnectionFactory(
+      Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory);
+
+  private static native long nativeCreatePeerConnectionFactoryWithAudioProcessing(Options options,
+      VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
+      long nativeAudioProcessor);
 
   private static native long nativeCreateObserver(PeerConnection.Observer observer);
 
@@ -243,11 +357,7 @@ public class PeerConnectionFactory {
   private static native long nativeCreateLocalMediaStream(long nativeFactory, String label);
 
   private static native long nativeCreateVideoSource(
-      long nativeFactory, EglBase.Context eglContext, boolean is_screencast);
-
-  private static native void nativeInitializeVideoCapturer(long native_factory,
-      VideoCapturer j_video_capturer, long native_source,
-      VideoCapturer.CapturerObserver j_frame_observer);
+      long nativeFactory, SurfaceTextureHelper surfaceTextureHelper, boolean is_screencast);
 
   private static native long nativeCreateVideoTrack(
       long nativeFactory, String id, long nativeVideoSource);

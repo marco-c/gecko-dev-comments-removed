@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/common_audio/include/audio_util.h"
+#include "common_audio/include/audio_util.h"
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

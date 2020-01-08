@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_
+#define MODULES_RTP_RTCP_INCLUDE_ULPFEC_RECEIVER_H_
 
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/typedefs.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -31,7 +31,8 @@ struct FecPacketCounter {
 
 class UlpfecReceiver {
  public:
-  static UlpfecReceiver* Create(RtpData* callback);
+  static UlpfecReceiver* Create(uint32_t ssrc,
+                                RecoveredPacketReceiver* callback);
 
   virtual ~UlpfecReceiver() {}
 

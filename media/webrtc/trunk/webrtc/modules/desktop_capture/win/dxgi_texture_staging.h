@@ -8,17 +8,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_STAGING_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_STAGING_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_STAGING_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_TEXTURE_STAGING_H_
 
 #include <wrl/client.h>
 #include <D3D11.h>
 #include <DXGI1_2.h>
 
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/win/d3d_device.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_texture.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/desktop_region.h"
+#include "modules/desktop_capture/win/d3d_device.h"
+#include "modules/desktop_capture/win/dxgi_texture.h"
 
 namespace webrtc {
 
@@ -33,14 +33,15 @@ class DxgiTextureStaging : public DxgiTexture {
  public:
   
   
-  DxgiTextureStaging(const DesktopSize& desktop_size, const D3dDevice& device);
+  explicit DxgiTextureStaging(const D3dDevice& device);
 
   ~DxgiTextureStaging() override;
 
+ protected:
   
   
-  bool CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                IDXGIResource* resource) override;
+  bool CopyFromTexture(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
+                       ID3D11Texture2D* texture) override;
 
   bool DoRelease() override;
 

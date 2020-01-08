@@ -8,17 +8,17 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
+#ifndef MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
+#define MODULES_DESKTOP_CAPTURE_X11_SHARED_X_DISPLAY_H_
 
 #include <map>
 #include <vector>
 
 #include <string>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/system_wrappers/include/atomic32.h"
+#include "api/refcountedbase.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 
 
@@ -28,7 +28,7 @@ typedef union _XEvent XEvent;
 namespace webrtc {
 
 
-class SharedXDisplay {
+class SharedXDisplay : public rtc::RefCountedBase {
  public:
   class XEventHandler {
    public:
@@ -51,12 +51,6 @@ class SharedXDisplay {
   
   static rtc::scoped_refptr<SharedXDisplay> CreateDefault();
 
-  void AddRef() { ++ref_count_; }
-  void Release() {
-    if (--ref_count_ == 0)
-      delete this;
-  }
-
   Display* display() { return display_; }
 
   
@@ -69,12 +63,12 @@ class SharedXDisplay {
   
   void ProcessPendingXEvents();
 
+ protected:
+  ~SharedXDisplay() override;
+
  private:
   typedef std::map<int, std::vector<XEventHandler*> > EventHandlersMap;
 
-  ~SharedXDisplay();
-
-  Atomic32 ref_count_;
   Display* display_;
 
   EventHandlersMap event_handlers_;

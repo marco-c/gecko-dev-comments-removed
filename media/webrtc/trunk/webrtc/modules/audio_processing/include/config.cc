@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_processing/include/config.h"
+#include "modules/audio_processing/include/config.h"
 
 namespace webrtc {
 

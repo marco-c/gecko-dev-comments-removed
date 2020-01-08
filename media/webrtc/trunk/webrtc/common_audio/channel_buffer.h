@@ -8,16 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_CHANNEL_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_CHANNEL_BUFFER_H_
+#ifndef COMMON_AUDIO_CHANNEL_BUFFER_H_
+#define COMMON_AUDIO_CHANNEL_BUFFER_H_
 
 #include <string.h>
 
 #include <memory>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/gtest_prod_util.h"
-#include "webrtc/common_audio/include/audio_util.h"
+#include "common_audio/include/audio_util.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/gtest_prod_util.h"
 
 namespace webrtc {
 

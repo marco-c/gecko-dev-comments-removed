@@ -8,15 +8,16 @@
 
 
 
-#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
-#define WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
+#ifndef COMMON_AUDIO_VAD_VAD_UNITTEST_H_
+#define COMMON_AUDIO_VAD_VAD_UNITTEST_H_
 
 #include <stddef.h>  
 
-#include "webrtc/test/gtest.h"
-#include "webrtc/typedefs.h"
+#include "test/gtest.h"
+#include "typedefs.h"  
 
-namespace {
+namespace webrtc {
+namespace test {
 
 
 const int kModes[] = { 0, 1, 2, 3 };
@@ -32,6 +33,7 @@ const size_t kFrameLengths[] = { 80, 120, 160, 240, 320, 480, 640, 960,
     kMaxFrameLength };
 const size_t kFrameLengthsSize = sizeof(kFrameLengths) / sizeof(*kFrameLengths);
 
+}  
 }  
 
 class VadTest : public ::testing::Test {

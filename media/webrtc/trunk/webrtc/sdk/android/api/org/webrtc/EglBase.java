@@ -21,7 +21,7 @@ import javax.microedition.khronos.egl.EGL10;
 
 public abstract class EglBase {
   
-  public static class Context {}
+  public interface Context { long getNativeEglContext(); }
 
   
   
@@ -33,9 +33,9 @@ public abstract class EglBase {
   
   
   
-  private static final int EGL_OPENGL_ES2_BIT = 4;
+  public static final int EGL_OPENGL_ES2_BIT = 4;
   
-  private static final int EGL_RECORDABLE_ANDROID = 0x3142;
+  public static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
   
   public static final int[] CONFIG_PLAIN = {
@@ -81,7 +81,10 @@ public abstract class EglBase {
   
 
   
-  
+
+
+
+
   public static EglBase create(Context sharedContext, int[] configAttributes) {
     return (EglBase14.isEGL14Supported()
                && (sharedContext == null || sharedContext instanceof EglBase14.Context))
@@ -89,12 +92,52 @@ public abstract class EglBase {
         : new EglBase10((EglBase10.Context) sharedContext, configAttributes);
   }
 
+  
+
+
+
   public static EglBase create() {
-    return create(null, CONFIG_PLAIN);
+    return create(null , CONFIG_PLAIN);
   }
+
+  
+
+
 
   public static EglBase create(Context sharedContext) {
     return create(sharedContext, CONFIG_PLAIN);
+  }
+
+  
+
+
+  public static EglBase createEgl10(int[] configAttributes) {
+    return new EglBase10(null , configAttributes);
+  }
+
+  
+
+
+
+  public static EglBase createEgl10(
+      javax.microedition.khronos.egl.EGLContext sharedContext, int[] configAttributes) {
+    return new EglBase10(new EglBase10.Context(sharedContext), configAttributes);
+  }
+
+  
+
+
+  public static EglBase createEgl14(int[] configAttributes) {
+    return new EglBase14(null , configAttributes);
+  }
+
+  
+
+
+
+  public static EglBase createEgl14(
+      android.opengl.EGLContext sharedContext, int[] configAttributes) {
+    return new EglBase14(new EglBase14.Context(sharedContext), configAttributes);
   }
 
   public abstract void createSurface(Surface surface);
@@ -125,4 +168,6 @@ public abstract class EglBase {
   public abstract void detachCurrent();
 
   public abstract void swapBuffers();
+
+  public abstract void swapBuffers(long presentationTimeStampNs);
 }

@@ -8,13 +8,13 @@
 
 
 
-#include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
+#include "modules/audio_processing/agc/loudness_histogram.h"
 
 #include <cmath>
 #include <cstring>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/modules/include/module_common_types.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

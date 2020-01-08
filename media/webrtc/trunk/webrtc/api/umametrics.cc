@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/umametrics.h"
+
+namespace webrtc {
+
+void MetricsObserverInterface::IncrementSparseEnumCounter(
+    PeerConnectionEnumCounterType type,
+    int counter) {
+  IncrementEnumCounter(type, counter, 0 );
+}
+
+}  

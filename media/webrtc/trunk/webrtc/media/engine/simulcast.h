@@ -8,13 +8,14 @@
 
 
 
-#ifndef WEBRTC_MEDIA_ENGINE_SIMULCAST_H_
-#define WEBRTC_MEDIA_ENGINE_SIMULCAST_H_
+#ifndef MEDIA_ENGINE_SIMULCAST_H_
+#define MEDIA_ENGINE_SIMULCAST_H_
 
+#include <string>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/config.h"
+#include "call/video_config.h"
+#include "rtc_base/basictypes.h"
 
 namespace cricket {
 struct StreamParams;

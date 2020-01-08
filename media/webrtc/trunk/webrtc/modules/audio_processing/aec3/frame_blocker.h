@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_FRAME_BLOCKER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_FRAME_BLOCKER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_FRAME_BLOCKER_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_FRAME_BLOCKER_H_
 
 #include <stddef.h>
 #include <vector>
 
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "api/array_view.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

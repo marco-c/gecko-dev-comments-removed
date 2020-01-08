@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
 
 #include <vector>
 
-#include "webrtc/base/arraysize.h"
-#include "webrtc/test/gtest.h"
+#include "rtc_base/arraysize.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace testing {

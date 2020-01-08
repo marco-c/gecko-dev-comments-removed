@@ -8,20 +8,18 @@
 
 
 
-#include "webrtc/modules/audio_device/android/opensles_player.h"
+#include "modules/audio_device/android/opensles_player.h"
 
 #include <android/log.h>
-#include <dlfcn.h>
 
-#include "OpenSLESProvider.h"
-
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/format_macros.h"
-#include "webrtc/base/timeutils.h"
-#include "webrtc/modules/audio_device/android/audio_common.h"
-#include "webrtc/modules/audio_device/android/audio_manager.h"
-#include "webrtc/modules/audio_device/fine_audio_buffer.h"
+#include "api/array_view.h"
+#include "modules/audio_device/android/audio_common.h"
+#include "modules/audio_device/android/audio_manager.h"
+#include "modules/audio_device/fine_audio_buffer.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/format_macros.h"
+#include "rtc_base/timeutils.h"
 
 #define TAG "OpenSLESPlayer"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -81,32 +79,11 @@ OpenSLESPlayer::~OpenSLESPlayer() {
 int OpenSLESPlayer::Init() {
   ALOGD("Init%s", GetThreadInfo().c_str());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
-  
-  opensles_lib_ = dlopen("libOpenSLES.so", RTLD_LAZY);
-  if (!opensles_lib_) {
-    ALOGE("failed to dlopen OpenSLES library");
+  if (audio_parameters_.channels() == 2) {
+    
+    ALOGE("OpenSLESPlayer does not support stereo");
     return -1;
   }
-
-  slCreateEngine_ = (slCreateEngine_t)dlsym(opensles_lib_, "slCreateEngine");
-  SL_IID_ENGINE_ = *(SLInterfaceID *)dlsym(opensles_lib_, "SL_IID_ENGINE");
-  SL_IID_ANDROIDCONFIGURATION_ =
-    *(SLInterfaceID *)dlsym(opensles_lib_, "SL_IID_ANDROIDCONFIGURATION");
-  SL_IID_BUFFERQUEUE_ = *(SLInterfaceID *)dlsym(opensles_lib_, "SL_IID_BUFFERQUEUE");
-  SL_IID_VOLUME_ = *(SLInterfaceID *)dlsym(opensles_lib_, "SL_IID_VOLUME");
-  SL_IID_PLAY_ = *(SLInterfaceID *)dlsym(opensles_lib_, "SL_IID_PLAY");
-
-  if (!slCreateEngine ||
-      !SL_IID_ENGINE_ ||
-      !SL_IID_ANDROIDCONFIGURATION_ ||
-      !SL_IID_BUFFERQUEUE_ ||
-      !SL_IID_VOLUME_ ||
-      !SL_IID_PLAY_) {
-    ALOGE("failed to links to SLES library");
-    return -1;
-  }
-
   return 0;
 }
 
@@ -234,19 +211,16 @@ void OpenSLESPlayer::AllocateDataBuffers() {
   
   
   
-  ALOGD("native buffer size: %" PRIuS, audio_parameters_.GetBytesPerBuffer());
+  const size_t buffer_size_in_bytes = audio_parameters_.GetBytesPerBuffer();
+  ALOGD("native buffer size: %" PRIuS, buffer_size_in_bytes);
   ALOGD("native buffer size in ms: %.2f",
         audio_parameters_.GetBufferSizeInMilliseconds());
-  fine_audio_buffer_.reset(new FineAudioBuffer(
-      audio_device_buffer_, audio_parameters_.GetBytesPerBuffer(),
-      audio_parameters_.sample_rate()));
+  fine_audio_buffer_.reset(new FineAudioBuffer(audio_device_buffer_,
+                                               audio_parameters_.sample_rate(),
+                                               2 * buffer_size_in_bytes));
   
-  
-  const size_t required_buffer_size =
-      fine_audio_buffer_->RequiredPlayoutBufferSizeBytes();
-  ALOGD("required buffer size: %" PRIuS, required_buffer_size);
   for (int i = 0; i < kNumOfOpenSLESBuffers; ++i) {
-    audio_buffers_[i].reset(new SLint8[required_buffer_size]);
+    audio_buffers_[i].reset(new SLint8[buffer_size_in_bytes]);
   }
 }
 
@@ -264,7 +238,7 @@ bool OpenSLESPlayer::ObtainEngineInterface() {
   }
   
   RETURN_ON_ERROR(
-      (*engine_object)->GetInterface(engine_object, SL_IID_ENGINE_, &engine_),
+      (*engine_object)->GetInterface(engine_object, SL_IID_ENGINE, &engine_),
       false);
   return true;
 }
@@ -315,10 +289,10 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
   SLDataSink audio_sink = {&locator_output_mix, nullptr};
 
   
-  const SLInterfaceID interface_ids[] = {
-      SL_IID_ANDROIDCONFIGURATION_, SL_IID_BUFFERQUEUE_, SL_IID_VOLUME_};
-  const SLboolean interface_required[] = {
-      SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+  const SLInterfaceID interface_ids[] = {SL_IID_ANDROIDCONFIGURATION,
+                                         SL_IID_BUFFERQUEUE, SL_IID_VOLUME};
+  const SLboolean interface_required[] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE,
+                                          SL_BOOLEAN_TRUE};
 
   
   RETURN_ON_ERROR(
@@ -332,7 +306,7 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
   SLAndroidConfigurationItf player_config;
   RETURN_ON_ERROR(
       player_object_->GetInterface(player_object_.Get(),
-                                   SL_IID_ANDROIDCONFIGURATION_, &player_config),
+                                   SL_IID_ANDROIDCONFIGURATION, &player_config),
       false);
   
   
@@ -349,12 +323,12 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
 
   
   RETURN_ON_ERROR(
-      player_object_->GetInterface(player_object_.Get(), SL_IID_PLAY_, &player_),
+      player_object_->GetInterface(player_object_.Get(), SL_IID_PLAY, &player_),
       false);
 
   
   RETURN_ON_ERROR(
-      player_object_->GetInterface(player_object_.Get(), SL_IID_BUFFERQUEUE_,
+      player_object_->GetInterface(player_object_.Get(), SL_IID_BUFFERQUEUE,
                                    &simple_buffer_queue_),
       false);
 
@@ -367,7 +341,7 @@ bool OpenSLESPlayer::CreateAudioPlayer() {
 
   
   RETURN_ON_ERROR(player_object_->GetInterface(player_object_.Get(),
-                                               SL_IID_VOLUME_, &volume_),
+                                               SL_IID_VOLUME, &volume_),
                   false);
 
   
@@ -430,7 +404,8 @@ void OpenSLESPlayer::EnqueuePlayoutData(bool silence) {
     
     
     
-    fine_audio_buffer_->GetPlayoutData(audio_ptr);
+    fine_audio_buffer_->GetPlayoutData(rtc::ArrayView<SLint8>(
+        audio_ptr, audio_parameters_.GetBytesPerBuffer()));
   }
   
   SLresult err = (*simple_buffer_queue_)

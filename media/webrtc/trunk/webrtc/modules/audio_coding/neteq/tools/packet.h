@@ -8,20 +8,19 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_PACKET_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_PACKET_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_PACKET_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_PACKET_H_
 
 #include <list>
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/common_types.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"  
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
 class RtpHeaderParser;
-struct WebRtcRTPHeader;
 
 namespace test {
 
@@ -89,10 +88,6 @@ class Packet {
   }
 
   const RTPHeader& header() const { return header_; }
-
-  
-  
-  void ConvertHeader(WebRtcRTPHeader* copy_to) const;
 
   void set_time_ms(double time) { time_ms_ = time; }
   double time_ms() const { return time_ms_; }

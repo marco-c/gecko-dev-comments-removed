@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/video_processing/util/noise_estimation.h"
+#include "modules/video_processing/util/noise_estimation.h"
 #if DISPLAYNEON
 #include <android/log.h>
 #endif

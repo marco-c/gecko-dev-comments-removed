@@ -7,15 +7,17 @@
 
 
 
-#ifndef WEBRTC_CALL_AUDIO_STATE_H_
-#define WEBRTC_CALL_AUDIO_STATE_H_
+#ifndef CALL_AUDIO_STATE_H_
+#define CALL_AUDIO_STATE_H_
 
-#include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "api/audio/audio_mixer.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
+class AudioProcessing;
+class AudioTransport;
 class VoiceEngine;
 
 
@@ -36,7 +38,24 @@ class AudioState : public rtc::RefCountInterface {
     
     
     rtc::scoped_refptr<AudioMixer> audio_mixer;
+
+    
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing;
   };
+
+  virtual AudioProcessing* audio_processing() = 0;
+  virtual AudioTransport* audio_transport() = 0;
+
+  
+  
+  
+  
+  virtual void SetPlayout(bool enabled) = 0;
+
+  
+  
+  
+  virtual void SetRecording(bool enabled) = 0;
 
   
   static rtc::scoped_refptr<AudioState> Create(

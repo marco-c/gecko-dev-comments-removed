@@ -8,17 +8,20 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
+#ifndef MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
+#define MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
 
 #include <memory>
 
-#include "WebRTC/RTCMacros.h"
-#include "webrtc/base/thread.h"
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_device/audio_device_generic.h"
-#include "webrtc/modules/audio_device/ios/audio_session_observer.h"
-#include "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
+#include "sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
+#include "modules/audio_device/audio_device_generic.h"
+#include "modules/audio_device/ios/audio_session_observer.h"
+#include "modules/audio_device/ios/voice_processing_audio_unit.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/gtest_prod_util.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCAudioSessionDelegateAdapter);
 
@@ -51,13 +54,13 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   InitStatus Init() override;
   int32_t Terminate() override;
-  bool Initialized() const override { return initialized_; }
+  bool Initialized() const override;
 
   int32_t InitPlayout() override;
-  bool PlayoutIsInitialized() const override { return audio_is_initialized_; }
+  bool PlayoutIsInitialized() const override;
 
   int32_t InitRecording() override;
-  bool RecordingIsInitialized() const override { return audio_is_initialized_; }
+  bool RecordingIsInitialized() const override;
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
@@ -66,9 +69,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int32_t StartRecording() override;
   int32_t StopRecording() override;
   bool Recording() const override { return recording_; }
-
-  int32_t SetLoudspeakerStatus(bool enable) override;
-  int32_t GetLoudspeakerStatus(bool& enabled) const override;
 
   
   
@@ -80,7 +80,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   
   
   int32_t PlayoutDelay(uint16_t& delayMS) const override;
-  int32_t RecordingDelay(uint16_t& delayMS) const override;
 
   
   
@@ -90,11 +89,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   
 
   
-  int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type,
-                        uint16_t& sizeMS) const override;
   int32_t ActiveAudioLayer(
       AudioDeviceModule::AudioLayer& audioLayer) const override;
-  int32_t ResetAudioDevice() override;
   int32_t PlayoutIsAvailable(bool& available) override;
   int32_t RecordingIsAvailable(bool& available) override;
   int32_t SetAGC(bool enable) override;
@@ -113,9 +109,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int32_t SetRecordingDevice(uint16_t index) override;
   int32_t SetRecordingDevice(
       AudioDeviceModule::WindowsDeviceType device) override;
-  int32_t SetWaveOutVolume(uint16_t volumeLeft, uint16_t volumeRight) override;
-  int32_t WaveOutVolume(uint16_t& volumeLeft,
-                        uint16_t& volumeRight) const override;
   int32_t InitSpeaker() override;
   bool SpeakerIsInitialized() const override;
   int32_t InitMicrophone() override;
@@ -125,45 +118,30 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   int32_t SpeakerVolume(uint32_t& volume) const override;
   int32_t MaxSpeakerVolume(uint32_t& maxVolume) const override;
   int32_t MinSpeakerVolume(uint32_t& minVolume) const override;
-  int32_t SpeakerVolumeStepSize(uint16_t& stepSize) const override;
   int32_t MicrophoneVolumeIsAvailable(bool& available) override;
   int32_t SetMicrophoneVolume(uint32_t volume) override;
   int32_t MicrophoneVolume(uint32_t& volume) const override;
   int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const override;
   int32_t MinMicrophoneVolume(uint32_t& minVolume) const override;
-  int32_t MicrophoneVolumeStepSize(uint16_t& stepSize) const override;
   int32_t MicrophoneMuteIsAvailable(bool& available) override;
   int32_t SetMicrophoneMute(bool enable) override;
   int32_t MicrophoneMute(bool& enabled) const override;
   int32_t SpeakerMuteIsAvailable(bool& available) override;
   int32_t SetSpeakerMute(bool enable) override;
   int32_t SpeakerMute(bool& enabled) const override;
-  int32_t MicrophoneBoostIsAvailable(bool& available) override;
-  int32_t SetMicrophoneBoost(bool enable) override;
-  int32_t MicrophoneBoost(bool& enabled) const override;
   int32_t StereoPlayoutIsAvailable(bool& available) override;
   int32_t SetStereoPlayout(bool enable) override;
   int32_t StereoPlayout(bool& enabled) const override;
   int32_t StereoRecordingIsAvailable(bool& available) override;
   int32_t SetStereoRecording(bool enable) override;
   int32_t StereoRecording(bool& enabled) const override;
-  int32_t SetPlayoutBuffer(const AudioDeviceModule::BufferType type,
-                           uint16_t sizeMS) override;
-  int32_t CPULoad(uint16_t& load) const override;
-  bool PlayoutWarning() const override;
-  bool PlayoutError() const override;
-  bool RecordingWarning() const override;
-  bool RecordingError() const override;
-  void ClearPlayoutWarning() override {}
-  void ClearPlayoutError() override {}
-  void ClearRecordingWarning() override {}
-  void ClearRecordingError() override {}
 
   
   void OnInterruptionBegin() override;
   void OnInterruptionEnd() override;
   void OnValidRouteChange() override;
   void OnCanPlayOrRecordChange(bool can_play_or_record) override;
+  void OnChangedOutputVolume() override;
 
   
   OSStatus OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
@@ -187,6 +165,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void HandleValidRouteChange();
   void HandleCanPlayOrRecordChange(bool can_play_or_record);
   void HandleSampleRateChange(float sample_rate);
+  void HandlePlayoutGlitchDetected();
+  void HandleOutputVolumeChange();
 
   
   
@@ -206,7 +186,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void UpdateAudioUnit(bool can_play_or_record);
 
   
-  void ConfigureAudioSession();
+  bool ConfigureAudioSession();
   
   void UnconfigureAudioSession();
 
@@ -220,6 +200,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   
   
   rtc::ThreadChecker thread_checker_;
+
+  
+  rtc::ThreadChecker io_thread_checker_;
+
   
   rtc::Thread* thread_;
 
@@ -261,15 +245,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   
   
-  std::unique_ptr<int8_t[]> playout_audio_buffer_;
-
   
   
-  AudioBufferList audio_record_buffer_list_;
-
   
-  
-  std::unique_ptr<int8_t[]> record_audio_buffer_;
+  rtc::BufferT<int8_t> record_audio_buffer_;
 
   
   volatile int recording_;
@@ -278,7 +257,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   volatile int playing_;
 
   
-  bool initialized_;
+  bool initialized_ RTC_ACCESS_ON(thread_checker_);
 
   
   
@@ -288,10 +267,27 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   bool is_interrupted_;
 
   
-  RTCAudioSessionDelegateAdapter* audio_session_observer_;
+  RTCAudioSessionDelegateAdapter* audio_session_observer_
+      RTC_ACCESS_ON(thread_checker_);
 
   
-  bool has_configured_session_;
+  bool has_configured_session_ RTC_ACCESS_ON(thread_checker_);
+
+  
+  int64_t num_detected_playout_glitches_ RTC_ACCESS_ON(thread_checker_);
+  int64_t last_playout_time_ RTC_ACCESS_ON(io_thread_checker_);
+
+  
+  
+  
+  
+  int64_t num_playout_callbacks_;
+
+  
+  int64_t last_output_volume_change_time_ RTC_ACCESS_ON(thread_checker_);
+
+  
+  FRIEND_TEST_ALL_PREFIXES(AudioDeviceTest, testInterruptedAudioSession);
 };
 
 }  

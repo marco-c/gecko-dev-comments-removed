@@ -7,16 +7,28 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURE_UTILS_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURE_UTILS_H_
 
 #include <windows.h>
-#include <dwmapi.h>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
+
+
+
+
+bool GetWindowRect(HWND window, DesktopRect* result);
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -26,8 +38,26 @@ bool GetCroppedWindowRect(HWND window,
                           DesktopRect* cropped_rect,
                           DesktopRect* original_rect);
 
-typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL*);
 
+
+
+
+
+bool GetWindowContentRect(HWND window, DesktopRect* result);
+
+
+
+int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result);
+
+
+
+bool GetDcSize(HDC hdc, DesktopSize* size);
+
+
+
+bool IsWindowMaximized(HWND window, bool* result);
+
+typedef HRESULT (WINAPI *DwmIsCompositionEnabledFunc)(BOOL* enabled);
 class AeroChecker {
  public:
   AeroChecker();
@@ -43,5 +73,3 @@ class AeroChecker {
 };
 
 }  
-
-#endif

@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
+#include "modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 
 #include <stddef.h>
 

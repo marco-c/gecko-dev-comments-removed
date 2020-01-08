@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_COMMON_H_
-#define WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_COMMON_H_
+#ifndef MODULES_VIDEO_CODING_JITTER_BUFFER_COMMON_H_
+#define MODULES_VIDEO_CODING_JITTER_BUFFER_COMMON_H_
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -32,8 +32,7 @@ enum VCMJitterBufferEnum {
   
   kMaxPacketsInSession = 1400,      
   kBufferIncStepSizeBytes = 30000,  
-  kMaxJBFrameSizeBytes            = 4000000, 
-  kBufferSafetyMargin             = 100      
+  kMaxJBFrameSizeBytes = 4000000    
 };
 
 enum VCMFrameBufferEnum {

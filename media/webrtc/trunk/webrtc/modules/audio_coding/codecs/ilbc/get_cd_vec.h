@@ -16,8 +16,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_GET_CD_VEC_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_GET_CD_VEC_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_GET_CD_VEC_H_
+#define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_GET_CD_VEC_H_
 
 #include <stdbool.h>
 
@@ -31,6 +31,6 @@ bool WebRtcIlbcfix_GetCbVec(
     size_t index,   
     size_t lMem,    
     size_t cbveclen 
-    ) WARN_UNUSED_RESULT;
+    ) RTC_WARN_UNUSED_RESULT;
 
 #endif

@@ -8,18 +8,18 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODEC_INTERFACE_H_
-#define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODEC_INTERFACE_H_
+#ifndef MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODEC_INTERFACE_H_
+#define MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODEC_INTERFACE_H_
 
 #include <vector>
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/include/video_error_codes.h"
-#include "webrtc/typedefs.h"
-#include "webrtc/video_decoder.h"
-#include "webrtc/video_encoder.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_encoder.h"
+#include "common_types.h"  
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -28,10 +28,6 @@ class RTPFragmentationHeader;
 
 
 struct CodecSpecificInfoVP8 {
-  bool hasReceivedSLI;
-  uint8_t pictureIdSLI;
-  bool hasReceivedRPSI;
-  uint64_t pictureIdRPSI;
   int16_t pictureId;  
   bool nonReference;
   uint8_t simulcastIdx;
@@ -42,10 +38,6 @@ struct CodecSpecificInfoVP8 {
 };
 
 struct CodecSpecificInfoVP9 {
-  bool has_received_sli;
-  uint8_t picture_id_sli;
-  bool has_received_rpsi;
-  uint64_t picture_id_rpsi;
   int16_t picture_id;  
 
   bool inter_pic_predicted;  

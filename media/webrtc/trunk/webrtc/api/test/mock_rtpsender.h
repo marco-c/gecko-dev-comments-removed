@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_API_TEST_MOCK_RTPSENDER_H_
-#define WEBRTC_API_TEST_MOCK_RTPSENDER_H_
+#ifndef API_TEST_MOCK_RTPSENDER_H_
+#define API_TEST_MOCK_RTPSENDER_H_
 
 #include <string>
 #include <vector>
 
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/test/gmock.h"
+#include "api/rtpsenderinterface.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 
@@ -29,6 +29,7 @@ class MockRtpSender : public rtc::RefCountedObject<RtpSenderInterface> {
   MOCK_CONST_METHOD0(stream_ids, std::vector<std::string>());
   MOCK_CONST_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, bool(const RtpParameters&));
+  MOCK_CONST_METHOD0(GetDtmfSender, rtc::scoped_refptr<DtmfSenderInterface>());
 };
 
 }  

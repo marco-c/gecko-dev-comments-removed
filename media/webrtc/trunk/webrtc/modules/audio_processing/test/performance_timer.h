@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_PERFORMANCE_TIMER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_PERFORMANCE_TIMER_H_
+#ifndef MODULES_AUDIO_PROCESSING_TEST_PERFORMANCE_TIMER_H_
+#define MODULES_AUDIO_PROCESSING_TEST_PERFORMANCE_TIMER_H_
 
 #include <vector>
 
-#include "webrtc/base/optional.h"
-#include "webrtc/system_wrappers/include/clock.h"
+#include "api/optional.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {
@@ -29,6 +29,11 @@ class PerformanceTimer {
 
   double GetDurationAverage() const;
   double GetDurationStandardDeviation() const;
+
+  
+  
+  double GetDurationAverage(size_t number_of_warmup_samples) const;
+  double GetDurationStandardDeviation(size_t number_of_warmup_samples) const;
 
  private:
   webrtc::Clock* clock_;

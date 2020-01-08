@@ -8,14 +8,14 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/rtcp.h"
+#include "modules/audio_coding/neteq/rtcp.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
 
-#include "webrtc/modules/include/module_common_types.h"
+#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 
@@ -56,24 +56,24 @@ void Rtcp::Update(const RTPHeader& rtp_header, uint32_t receive_timestamp) {
 
 void Rtcp::GetStatistics(bool no_reset, RtcpStatistics* stats) {
   
-  stats->extended_max_sequence_number =
+  stats->extended_highest_sequence_number =
       (static_cast<int>(cycles_) << 16) + max_seq_no_;
 
   
   
   
   uint32_t expected_packets =
-      stats->extended_max_sequence_number - base_seq_no_ + 1;
+      stats->extended_highest_sequence_number - base_seq_no_ + 1;
   if (received_packets_ == 0) {
     
-    stats->cumulative_lost = 0;
+    stats->packets_lost = 0;
   } else if (expected_packets > received_packets_) {
-    stats->cumulative_lost = expected_packets - received_packets_;
-    if (stats->cumulative_lost > 0xFFFFFF) {
-      stats->cumulative_lost = 0xFFFFFF;
+    stats->packets_lost = expected_packets - received_packets_;
+    if (stats->packets_lost > 0xFFFFFF) {
+      stats->packets_lost = 0xFFFFFF;
     }
   } else {
-    stats->cumulative_lost = 0;
+    stats->packets_lost = 0;
   }
 
   

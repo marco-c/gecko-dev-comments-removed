@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_processing/agc/utility.h"
+#include "modules/audio_processing/agc/utility.h"
 
 #include <math.h>
 

@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/modules/desktop_capture/rgba_color.h"
+#include "modules/desktop_capture/rgba_color.h"
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

@@ -8,14 +8,14 @@
 
 
 
-#include "webrtc/common_audio/lapped_transform.h"
+#include "common_audio/lapped_transform.h"
 
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/real_fourier.h"
+#include "common_audio/real_fourier.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

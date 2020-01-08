@@ -8,11 +8,11 @@
 
 
 
-#include "webrtc/system_wrappers/include/aligned_array.h"
+#include "system_wrappers/include/aligned_array.h"
 
 #include <stdint.h>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 namespace {
 

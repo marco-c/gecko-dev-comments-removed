@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ISAC_FLOAT_TYPE_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ISAC_FLOAT_TYPE_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ISAC_FLOAT_TYPE_H_
+#define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_ISAC_FLOAT_TYPE_H_
 
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/isac.h"
+#include "modules/audio_coding/codecs/isac/main/include/isac.h"
 
 namespace webrtc {
 

@@ -8,18 +8,18 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_ADAPTER_DUPLICATOR_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_ADAPTER_DUPLICATOR_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_DXGI_ADAPTER_DUPLICATOR_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_DXGI_ADAPTER_DUPLICATOR_H_
 
 #include <wrl/client.h>
 
 #include <vector>
 
-#include "webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/modules/desktop_capture/win/d3d_device.h"
-#include "webrtc/modules/desktop_capture/win/dxgi_output_duplicator.h"
+#include "modules/desktop_capture/desktop_geometry.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
+#include "modules/desktop_capture/win/d3d_device.h"
+#include "modules/desktop_capture/win/dxgi_context.h"
+#include "modules/desktop_capture/win/dxgi_output_duplicator.h"
 
 namespace webrtc {
 
@@ -27,15 +27,7 @@ namespace webrtc {
 
 class DxgiAdapterDuplicator {
  public:
-  struct Context {
-    Context();
-    Context(const Context& other);
-    ~Context();
-
-    
-    
-    std::vector<DxgiOutputDuplicator::Context> contexts;
-  };
+  using Context = DxgiAdapterContext;
 
   
   
@@ -69,17 +61,26 @@ class DxgiAdapterDuplicator {
 
   
   
+  const std::string& GetDeviceName(int id) const;
+
   
-  int screen_count() const { return static_cast<int>(duplicators_.size()); }
-
- private:
-  friend class DxgiDuplicatorController;
-
-  bool DoInitialize();
+  
+  
+  int screen_count() const;
 
   void Setup(Context* context);
 
   void Unregister(const Context* const context);
+
+  
+  int64_t GetNumFramesCaptured() const;
+
+  
+  
+  void TranslateRect(const DesktopVector& position);
+
+ private:
+  bool DoInitialize();
 
   const D3dDevice device_;
   std::vector<DxgiOutputDuplicator> duplicators_;

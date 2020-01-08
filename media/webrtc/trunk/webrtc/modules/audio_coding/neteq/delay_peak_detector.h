@@ -8,16 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_DELAY_PEAK_DETECTOR_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DELAY_PEAK_DETECTOR_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_DELAY_PEAK_DETECTOR_H_
+#define MODULES_AUDIO_CODING_NETEQ_DELAY_PEAK_DETECTOR_H_
 
 #include <string.h>  
 
 #include <list>
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
+#include "modules/audio_coding/neteq/tick_timer.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -66,6 +66,7 @@ class DelayPeakDetector {
   int peak_detection_threshold_;
   const TickTimer* tick_timer_;
   std::unique_ptr<TickTimer::Stopwatch> peak_period_stopwatch_;
+  const bool frame_length_change_experiment_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayPeakDetector);
 };

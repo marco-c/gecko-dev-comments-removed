@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/modules/audio_processing/vad/gmm.h"
+#include "modules/audio_processing/vad/gmm.h"
 
 #include <math.h>
 #include <stdlib.h>
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 

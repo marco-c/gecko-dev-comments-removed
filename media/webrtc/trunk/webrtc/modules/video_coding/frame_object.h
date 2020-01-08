@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
-#define WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
+#ifndef MODULES_VIDEO_CODING_FRAME_OBJECT_H_
+#define MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
-#include "webrtc/base/optional.h"
-#include "webrtc/common_types.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/encoded_frame.h"
+#include "api/optional.h"
+#include "common_types.h"  
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -37,17 +37,26 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   
   virtual int64_t RenderTime() const = 0;
 
-  size_t size() { return _length; }
+  
+  
+  
+  virtual bool delayed_by_retransmission() const { return 0; }
+
+  size_t size() const { return _length; }
+
+  bool is_keyframe() const { return num_references == 0; }
 
   
   
   
-  uint16_t picture_id;
+  int64_t picture_id;
   uint8_t spatial_layer;
   uint32_t timestamp;
 
+  
+  
   size_t num_references;
-  uint16_t references[kMaxFrameReferences];
+  int64_t references[kMaxFrameReferences];
   bool inter_layer_predicted;
 };
 
@@ -72,6 +81,7 @@ class RtpFrameObject : public FrameObject {
   uint32_t Timestamp() const override;
   int64_t ReceivedTime() const override;
   int64_t RenderTime() const override;
+  bool delayed_by_retransmission() const override;
   rtc::Optional<RTPVideoTypeHeader> GetCodecHeader() const;
 
  private:

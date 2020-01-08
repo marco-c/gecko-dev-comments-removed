@@ -8,13 +8,13 @@
 
 
 
-#include "webrtc/common_audio/real_fourier_ooura.h"
+#include "common_audio/real_fourier_ooura.h"
 
 #include <cmath>
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/common_audio/fft4g.h"
+#include "common_audio/fft4g.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

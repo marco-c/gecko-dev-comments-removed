@@ -8,13 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_PACKET_H_
-#define WEBRTC_MODULES_VIDEO_CODING_PACKET_H_
+#ifndef MODULES_VIDEO_CODING_PACKET_H_
+#define MODULES_VIDEO_CODING_PACKET_H_
 
-#include "webrtc/base/deprecation.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/jitter_buffer_common.h"
-#include "webrtc/typedefs.h"
+#include "modules/include/module_common_types.h"
+#include "modules/video_coding/jitter_buffer_common.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -40,16 +39,15 @@ class VCMPacket {
   FrameType frameType;
   VideoCodecType codec;
 
-  union {
-    RTC_DEPRECATED bool isFirstPacket;  
-    bool is_first_packet_in_frame;
-  };
+  bool is_first_packet_in_frame;
   VCMNaluCompleteness completeNALU;  
   bool insertStartCode;  
                          
   int width;
   int height;
   RTPVideoHeader video_header;
+
+  int64_t receive_time_ms;
 
  protected:
   void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);

@@ -11,7 +11,6 @@
 package org.webrtc;
 
 import android.content.Context;
-
 import java.util.List;
 
 
@@ -31,48 +30,9 @@ public interface VideoCapturer {
     
     void onTextureFrameCaptured(int width, int height, int oesTextureId, float[] transformMatrix,
         int rotation, long timestamp);
-  }
 
-  
-  
-  static class AndroidVideoTrackSourceObserver implements CapturerObserver {
     
-    private final long nativeSource;
-
-    public AndroidVideoTrackSourceObserver(long nativeSource) {
-      this.nativeSource = nativeSource;
-    }
-
-    @Override
-    public void onCapturerStarted(boolean success) {
-      nativeCapturerStarted(nativeSource, success);
-    }
-
-    @Override
-    public void onCapturerStopped() {
-      nativeCapturerStopped(nativeSource);
-    }
-
-    @Override
-    public void onByteBufferFrameCaptured(
-        byte[] data, int width, int height, int rotation, long timeStamp) {
-      nativeOnByteBufferFrameCaptured(
-          nativeSource, data, data.length, width, height, rotation, timeStamp);
-    }
-
-    @Override
-    public void onTextureFrameCaptured(int width, int height, int oesTextureId,
-        float[] transformMatrix, int rotation, long timestamp) {
-      nativeOnTextureFrameCaptured(
-          nativeSource, width, height, oesTextureId, transformMatrix, rotation, timestamp);
-    }
-
-    private native void nativeCapturerStarted(long nativeSource, boolean success);
-    private native void nativeCapturerStopped(long nativeSource);
-    private native void nativeOnByteBufferFrameCaptured(long nativeSource, byte[] data, int length,
-        int width, int height, int rotation, long timeStamp);
-    private native void nativeOnTextureFrameCaptured(long nativeSource, int width, int height,
-        int oesTextureId, float[] transformMatrix, int rotation, long timestamp);
+    void onFrameCaptured(VideoFrame frame);
   }
 
   

@@ -14,12 +14,14 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import org.webrtc.VideoFrame.I420Buffer;
+import org.webrtc.VideoFrame.TextureBuffer;
 
 
 
 
 
-class YuvConverter {
+public class YuvConverter {
   
   
   private static final FloatBuffer DEVICE_RECTANGLE = GlUtil.createFloatBuffer(new float[] {
@@ -50,12 +52,12 @@ class YuvConverter {
       + "    interp_tc = (texMatrix * in_tc).xy;\n"
       + "}\n";
 
-  private static final String FRAGMENT_SHADER =
+  private static final String OES_FRAGMENT_SHADER =
         "#extension GL_OES_EGL_image_external : require\n"
       + "precision mediump float;\n"
       + "varying vec2 interp_tc;\n"
       + "\n"
-      + "uniform samplerExternalOES oesTex;\n"
+      + "uniform samplerExternalOES tex;\n"
       
       
       + "uniform vec2 xUnit;\n"
@@ -70,25 +72,51 @@ class YuvConverter {
       
       
       + "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc - 1.5 * xUnit).rgb);\n"
+      + "      texture2D(tex, interp_tc - 1.5 * xUnit).rgb);\n"
       + "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc - 0.5 * xUnit).rgb);\n"
+      + "      texture2D(tex, interp_tc - 0.5 * xUnit).rgb);\n"
       + "  gl_FragColor.b = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc + 0.5 * xUnit).rgb);\n"
+      + "      texture2D(tex, interp_tc + 0.5 * xUnit).rgb);\n"
       + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
-      + "      texture2D(oesTex, interp_tc + 1.5 * xUnit).rgb);\n"
+      + "      texture2D(tex, interp_tc + 1.5 * xUnit).rgb);\n"
+      + "}\n";
+
+  private static final String RGB_FRAGMENT_SHADER =
+        "precision mediump float;\n"
+      + "varying vec2 interp_tc;\n"
+      + "\n"
+      + "uniform sampler2D tex;\n"
+      
+      
+      + "uniform vec2 xUnit;\n"
+      
+      + "uniform vec4 coeffs;\n"
+      + "\n"
+      + "void main() {\n"
+      
+      
+      
+      
+      
+      
+      + "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
+      + "      texture2D(tex, interp_tc - 1.5 * xUnit).rgb);\n"
+      + "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"
+      + "      texture2D(tex, interp_tc - 0.5 * xUnit).rgb);\n"
+      + "  gl_FragColor.b = coeffs.a + dot(coeffs.rgb,\n"
+      + "      texture2D(tex, interp_tc + 0.5 * xUnit).rgb);\n"
+      + "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
+      + "      texture2D(tex, interp_tc + 1.5 * xUnit).rgb);\n"
       + "}\n";
   
 
-  private final int frameBufferId;
-  private final int frameTextureId;
-  private final GlShader shader;
-  private final int texMatrixLoc;
-  private final int xUnitLoc;
-  private final int coeffsLoc;
   private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
-  private int frameBufferWidth;
-  private int frameBufferHeight;
+  private final GlTextureFrameBuffer textureFrameBuffer;
+  private TextureBuffer.Type shaderTextureType;
+  private GlShader shader;
+  private int texMatrixLoc;
+  private int xUnitLoc;
+  private int coeffsLoc;
   private boolean released = false;
 
   
@@ -96,31 +124,81 @@ class YuvConverter {
 
   public YuvConverter() {
     threadChecker.checkIsOnValidThread();
-    frameTextureId = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
-    this.frameBufferWidth = 0;
-    this.frameBufferHeight = 0;
+    textureFrameBuffer = new GlTextureFrameBuffer(GLES20.GL_RGBA);
+  }
+
+  
+  public I420Buffer convert(TextureBuffer textureBuffer) {
+    final int width = textureBuffer.getWidth();
+    final int height = textureBuffer.getHeight();
 
     
-    final int frameBuffers[] = new int[1];
-    GLES20.glGenFramebuffers(1, frameBuffers, 0);
-    frameBufferId = frameBuffers[0];
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
-    GlUtil.checkNoGLES2Error("Generate framebuffer");
+    
+    final int stride = ((width + 7) / 8) * 8;
+    final int uvHeight = (height + 1) / 2;
+    
+    
+    
+    
+    final int size = stride * (height + uvHeight + 1);
+    ByteBuffer buffer = JniCommon.allocateNativeByteBuffer(size);
+    convert(buffer, width, height, stride, textureBuffer.getTextureId(),
+        RendererCommon.convertMatrixFromAndroidGraphicsMatrix(textureBuffer.getTransformMatrix()),
+        textureBuffer.getType());
+
+    final int yPos = 0;
+    final int uPos = yPos + stride * height;
+    
+    final int vPos = uPos + stride / 2;
+
+    buffer.position(yPos);
+    buffer.limit(yPos + stride * height);
+    ByteBuffer dataY = buffer.slice();
+
+    buffer.position(uPos);
+    buffer.limit(uPos + stride * uvHeight);
+    ByteBuffer dataU = buffer.slice();
+
+    buffer.position(vPos);
+    buffer.limit(vPos + stride * uvHeight);
+    ByteBuffer dataV = buffer.slice();
 
     
-    GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-        GLES20.GL_TEXTURE_2D, frameTextureId, 0);
-    GlUtil.checkNoGLES2Error("Attach texture to framebuffer");
+    return JavaI420Buffer.wrap(width, height, dataY, stride, dataU, stride, dataV, stride,
+        () -> { JniCommon.freeNativeByteBuffer(buffer); });
+  }
 
-    
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+  
+  @Deprecated
+  void convert(ByteBuffer buf, int width, int height, int stride, int srcTextureId,
+      float[] transformMatrix) {
+    convert(buf, width, height, stride, srcTextureId, transformMatrix, TextureBuffer.Type.OES);
+  }
 
-    shader = new GlShader(VERTEX_SHADER, FRAGMENT_SHADER);
+  private void initShader(TextureBuffer.Type textureType) {
+    if (shader != null) {
+      shader.release();
+    }
+
+    final String fragmentShader;
+    switch (textureType) {
+      case OES:
+        fragmentShader = OES_FRAGMENT_SHADER;
+        break;
+      case RGB:
+        fragmentShader = RGB_FRAGMENT_SHADER;
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported texture type.");
+    }
+
+    shaderTextureType = textureType;
+    shader = new GlShader(VERTEX_SHADER, fragmentShader);
     shader.useProgram();
     texMatrixLoc = shader.getUniformLocation("texMatrix");
     xUnitLoc = shader.getUniformLocation("xUnit");
     coeffsLoc = shader.getUniformLocation("coeffs");
-    GLES20.glUniform1i(shader.getUniformLocation("oesTex"), 0);
+    GLES20.glUniform1i(shader.getUniformLocation("tex"), 0);
     GlUtil.checkNoGLES2Error("Initialize fragment shader uniform values.");
     
     shader.setVertexAttribArray("in_pos", 2, DEVICE_RECTANGLE);
@@ -129,12 +207,16 @@ class YuvConverter {
     shader.setVertexAttribArray("in_tc", 2, TEXTURE_RECTANGLE);
   }
 
-  public void convert(ByteBuffer buf, int width, int height, int stride, int srcTextureId,
-      float[] transformMatrix) {
+  private void convert(ByteBuffer buf, int width, int height, int stride, int srcTextureId,
+      float[] transformMatrix, TextureBuffer.Type textureType) {
     threadChecker.checkIsOnValidThread();
     if (released) {
       throw new IllegalStateException("YuvConverter.convert called on released object");
     }
+    if (textureType != shaderTextureType) {
+      initShader(textureType);
+    }
+    shader.useProgram();
 
     
     
@@ -186,28 +268,16 @@ class YuvConverter {
     transformMatrix =
         RendererCommon.multiplyMatrices(transformMatrix, RendererCommon.verticalFlipMatrix());
 
+    final int frameBufferWidth = stride / 4;
+    final int frameBufferHeight = total_height;
+    textureFrameBuffer.setSize(frameBufferWidth, frameBufferHeight);
+
     
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, textureFrameBuffer.getFrameBufferId());
     GlUtil.checkNoGLES2Error("glBindFramebuffer");
 
-    if (frameBufferWidth != stride / 4 || frameBufferHeight != total_height) {
-      frameBufferWidth = stride / 4;
-      frameBufferHeight = total_height;
-      
-      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameTextureId);
-      GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, frameBufferWidth,
-          frameBufferHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-
-      
-      final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-      if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-        throw new IllegalStateException("Framebuffer not complete, status: " + status);
-      }
-    }
-
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, srcTextureId);
+    GLES20.glBindTexture(textureType.getGlTarget(), srcTextureId);
     GLES20.glUniformMatrix4fv(texMatrixLoc, 1, false, transformMatrix, 0);
 
     
@@ -244,16 +314,15 @@ class YuvConverter {
 
     
     
-    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+    GLES20.glBindTexture(textureType.getGlTarget(), 0);
   }
 
   public void release() {
     threadChecker.checkIsOnValidThread();
     released = true;
-    shader.release();
-    GLES20.glDeleteTextures(1, new int[] {frameTextureId}, 0);
-    GLES20.glDeleteFramebuffers(1, new int[] {frameBufferId}, 0);
-    frameBufferWidth = 0;
-    frameBufferHeight = 0;
+    if (shader != null) {
+      shader.release();
+    }
+    textureFrameBuffer.release();
   }
 }

@@ -11,8 +11,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_GLOBALS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_GLOBALS_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_GLOBALS_H_
+#define MODULES_VIDEO_CODING_CODECS_H264_INCLUDE_H264_GLOBALS_H_
 
 namespace webrtc {
 
@@ -57,10 +57,6 @@ struct NaluInfo {
   uint8_t type;
   int sps_id;
   int pps_id;
-
-  
-  size_t offset;
-  size_t size;
 };
 
 const size_t kMaxNalusPerPacket = 10;

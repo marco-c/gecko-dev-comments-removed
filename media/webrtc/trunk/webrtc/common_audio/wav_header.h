@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBRTC_COMMON_AUDIO_WAV_HEADER_H_
-#define WEBRTC_COMMON_AUDIO_WAV_HEADER_H_
+#ifndef COMMON_AUDIO_WAV_HEADER_H_
+#define COMMON_AUDIO_WAV_HEADER_H_
 
 #include <stddef.h>
 #include <stdint.h>

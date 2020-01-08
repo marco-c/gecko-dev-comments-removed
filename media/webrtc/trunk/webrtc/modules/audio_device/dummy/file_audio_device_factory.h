@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_FACTORY_H
-#define WEBRTC_AUDIO_DEVICE_FILE_AUDIO_DEVICE_FACTORY_H
+#ifndef AUDIO_DEVICE_FILE_AUDIO_DEVICE_FACTORY_H_
+#define AUDIO_DEVICE_FILE_AUDIO_DEVICE_FACTORY_H_
 
-#include "webrtc/common_types.h"
+#include "common_types.h"  
 
 namespace webrtc {
 
@@ -23,7 +23,7 @@ class FileAudioDevice;
 
 class FileAudioDeviceFactory {
  public:
-  static FileAudioDevice* CreateFileAudioDevice(const int32_t id);
+  static FileAudioDevice* CreateFileAudioDevice();
 
   
   
@@ -31,7 +31,7 @@ class FileAudioDeviceFactory {
                                 const char* outputAudioFilename);
 
  private:
-  static const uint32_t MAX_FILENAME_LEN = 512;
+  enum : uint32_t { MAX_FILENAME_LEN = 512 };
   static bool _isConfigured;
   static char _inputAudioFilename[MAX_FILENAME_LEN];
   static char _outputAudioFilename[MAX_FILENAME_LEN];

@@ -7,7 +7,7 @@
 
 
 
-#include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
+#include "modules/rtp_rtcp/source/rtp_format_h264.h"
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {

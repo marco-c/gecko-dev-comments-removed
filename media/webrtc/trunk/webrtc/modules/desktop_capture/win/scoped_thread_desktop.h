@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCOPED_THREAD_DESKTOP_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCOPED_THREAD_DESKTOP_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_SCOPED_THREAD_DESKTOP_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_SCOPED_THREAD_DESKTOP_H_
 
 #include <memory>
 
 #include <windows.h>
 
-#include "webrtc/base/constructormagic.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

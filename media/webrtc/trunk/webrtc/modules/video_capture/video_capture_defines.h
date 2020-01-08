@@ -8,16 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+#ifndef MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+#define MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/typedefs.h"
-
-#ifdef XP_WIN
-typedef int pid_t;
-#endif
+#include "api/video/video_frame.h"
+#include "modules/include/module_common_types.h"
+#include "typedefs.h"  
 
 namespace webrtc
 {
@@ -35,9 +31,7 @@ struct VideoCaptureCapability
     int32_t width;
     int32_t height;
     int32_t maxFPS;
-    int32_t expectedCaptureDelay;
-    RawVideoType rawType;
-    VideoCodecType codecType;
+    VideoType videoType;
     bool interlaced;
 
     VideoCaptureCapability()
@@ -45,9 +39,7 @@ struct VideoCaptureCapability
         width = 0;
         height = 0;
         maxFPS = 0;
-        expectedCaptureDelay = 0;
-        rawType = kVideoUnknown;
-        codecType = kVideoCodecUnknown;
+        videoType = VideoType::kUnknown;
         interlaced = false;
     }
     ;
@@ -59,10 +51,8 @@ struct VideoCaptureCapability
             return true;
         if (maxFPS != other.maxFPS)
             return true;
-        if (rawType != other.rawType)
-            return true;
-        if (codecType != other.codecType)
-            return true;
+        if (videoType != other.videoType)
+          return true;
         if (interlaced != other.interlaced)
             return true;
         return false;
@@ -86,19 +76,6 @@ public:
                                   int64_t captureTime = 0) = 0;
 protected:
     ~VideoCaptureExternal() {}
-};
-
-
-
-class VideoCaptureDataCallback
-{
-public:
-    virtual void OnIncomingCapturedFrame(const int32_t id,
-                                         const VideoFrame& videoFrame) = 0;
-    virtual void OnCaptureDelayChanged(const int32_t id,
-                                       const int32_t delay) = 0;
-protected:
-    virtual ~VideoCaptureDataCallback(){}
 };
 
 }  

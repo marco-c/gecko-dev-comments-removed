@@ -8,20 +8,23 @@
 
 
 
-#ifndef WEBRTC_MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
-#define WEBRTC_MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
+#ifndef MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
+#define MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/call/call.h"
-#include "webrtc/config.h"
-#include "webrtc/media/base/mediaengine.h"
+#include "call/call.h"
+#include "media/base/mediaengine.h"
 
 namespace webrtc {
 class AudioDecoderFactory;
 class AudioDeviceModule;
 class AudioMixer;
+class AudioProcessing;
+class VideoDecoderFactory;
+class VideoEncoderFactory;
 }
 namespace cricket {
 class WebRtcVideoDecoderFactory;
@@ -35,25 +38,39 @@ class WebRtcMediaEngineFactory {
   
   
   
+  
+  
+  
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
-      WebRtcVideoEncoderFactory* video_encoder_factory,
-      WebRtcVideoDecoderFactory* video_decoder_factory);
-
-  static MediaEngineInterface* Create(
-      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+          audio_encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
           audio_decoder_factory,
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory);
-
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+          audio_encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
           audio_decoder_factory,
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      rtc::scoped_refptr<webrtc::AudioProcessing> apm);
+
+  
+  
+  
+  static std::unique_ptr<MediaEngineInterface> Create(
+      rtc::scoped_refptr<webrtc::AudioDeviceModule> adm,
+      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
+      std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
+      std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory,
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
+      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
 };
 
 

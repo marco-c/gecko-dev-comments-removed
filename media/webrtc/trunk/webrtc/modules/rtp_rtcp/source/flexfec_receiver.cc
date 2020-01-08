@@ -8,10 +8,11 @@
 
 
 
-#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
+#include "modules/rtp_rtcp/include/flexfec_receiver.h"
 
-#include "webrtc/base/logging.h"
-#include "webrtc/base/scoped_ref_ptr.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
@@ -34,7 +35,8 @@ FlexfecReceiver::FlexfecReceiver(
     RecoveredPacketReceiver* recovered_packet_receiver)
     : ssrc_(ssrc),
       protected_media_ssrc_(protected_media_ssrc),
-      erasure_code_(ForwardErrorCorrection::CreateFlexfec()),
+      erasure_code_(
+          ForwardErrorCorrection::CreateFlexfec(ssrc, protected_media_ssrc)),
       recovered_packet_receiver_(recovered_packet_receiver),
       clock_(Clock::GetRealTimeClock()),
       last_recovered_packet_ms_(-1) {
@@ -45,13 +47,13 @@ FlexfecReceiver::FlexfecReceiver(
 
 FlexfecReceiver::~FlexfecReceiver() = default;
 
-bool FlexfecReceiver::AddAndProcessReceivedPacket(
-    const RtpPacketReceived& packet) {
+void FlexfecReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  if (!AddReceivedPacket(std::move(packet))) {
-    return false;
-  }
-  return ProcessReceivedPackets();
+  std::unique_ptr<ReceivedPacket> received_packet = AddReceivedPacket(packet);
+  if (!received_packet)
+    return;
+
+  ProcessReceivedPacket(*received_packet);
 }
 
 FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
@@ -59,7 +61,10 @@ FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
   return packet_counter_;
 }
 
-bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
+
+
+std::unique_ptr<ReceivedPacket> FlexfecReceiver::AddReceivedPacket(
+    const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   
@@ -74,8 +79,8 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
   if (received_packet->ssrc == ssrc_) {
     
     if (packet.payload_size() < kMinFlexfecHeaderSize) {
-      LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
-      return false;
+      RTC_LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
+      return nullptr;
     }
     received_packet->is_fec = true;
     ++packet_counter_.num_fec_packets;
@@ -91,7 +96,7 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     
     
     if (received_packet->ssrc != protected_media_ssrc_) {
-      return false;
+      return nullptr;
     }
     received_packet->is_fec = false;
 
@@ -102,10 +107,9 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     received_packet->pkt->length = packet.size();
   }
 
-  received_packets_.push_back(std::move(received_packet));
   ++packet_counter_.num_packets;
 
-  return true;
+  return received_packet;
 }
 
 
@@ -117,38 +121,36 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
 
 
 
-bool FlexfecReceiver::ProcessReceivedPackets() {
+void FlexfecReceiver::ProcessReceivedPacket(
+    const ReceivedPacket& received_packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   
-  if (!received_packets_.empty()) {
-    if (erasure_code_->DecodeFec(&received_packets_, &recovered_packets_) !=
-        0) {
-      return false;
-    }
-  }
+  erasure_code_->DecodeFec(received_packet, &recovered_packets_);
+
   
   for (const auto& recovered_packet : recovered_packets_) {
+    RTC_CHECK(recovered_packet);
     if (recovered_packet->returned) {
       continue;
     }
     ++packet_counter_.num_recovered_packets;
-    if (!recovered_packet_receiver_->OnRecoveredPacket(
-            recovered_packet->pkt->data, recovered_packet->pkt->length)) {
-      return false;
-    }
+    
+    
     recovered_packet->returned = true;
+    RTC_CHECK(recovered_packet->pkt);
+    recovered_packet_receiver_->OnRecoveredPacket(
+        recovered_packet->pkt->data, recovered_packet->pkt->length);
     
     int64_t now_ms = clock_->TimeInMilliseconds();
     if (now_ms - last_recovered_packet_ms_ > kPacketLogIntervalMs) {
       uint32_t media_ssrc =
           ForwardErrorCorrection::ParseSsrc(recovered_packet->pkt->data);
-      LOG(LS_VERBOSE) << "Recovered media packet with SSRC: " << media_ssrc
-                      << " from FlexFEC stream with SSRC: " << ssrc_ << ".";
+      RTC_LOG(LS_VERBOSE) << "Recovered media packet with SSRC: " << media_ssrc
+                          << " from FlexFEC stream with SSRC: " << ssrc_ << ".";
       last_recovered_packet_ms_ = now_ms;
     }
   }
-  return true;
 }
 
 }  

@@ -8,7 +8,7 @@
 
 
 
-#include "webrtc/modules/audio_coding/neteq/dtmf_buffer.h"
+#include "modules/audio_coding/neteq/dtmf_buffer.h"
 
 #ifdef WIN32
 #include <winsock2.h>  
@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-#include "webrtc/test/gtest.h"
+#include "test/gtest.h"
 
 
 

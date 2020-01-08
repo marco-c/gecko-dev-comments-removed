@@ -8,11 +8,11 @@
 
 
 
-#ifndef WEBRTC_TEST_FAKE_VIDEORENDERER_H_
-#define WEBRTC_TEST_FAKE_VIDEORENDERER_H_
+#ifndef TEST_FAKE_VIDEORENDERER_H_
+#define TEST_FAKE_VIDEORENDERER_H_
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/media/base/videosinkinterface.h"
+#include "api/video/video_frame.h"
+#include "media/base/videosinkinterface.h"
 
 namespace webrtc {
 namespace test {

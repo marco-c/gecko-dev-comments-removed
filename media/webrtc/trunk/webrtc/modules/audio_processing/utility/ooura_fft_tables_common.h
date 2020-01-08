@@ -8,10 +8,10 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_TABLES_COMMON_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_TABLES_COMMON_H_
+#ifndef MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_TABLES_COMMON_H_
+#define MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_TABLES_COMMON_H_
 
-#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
+#include "modules/audio_processing/utility/ooura_fft.h"
 
 namespace webrtc {
 

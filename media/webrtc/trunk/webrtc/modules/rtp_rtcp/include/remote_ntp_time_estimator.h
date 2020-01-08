@@ -8,18 +8,18 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
+#define MODULES_RTP_RTCP_INCLUDE_REMOTE_NTP_TIME_ESTIMATOR_H_
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/numerics/moving_median_filter.h"
+#include "system_wrappers/include/rtp_to_ntp_estimator.h"
 
 namespace webrtc {
 
 class Clock;
-class TimestampExtrapolator;
 
 
 
@@ -42,7 +42,7 @@ class RemoteNtpTimeEstimator {
 
  private:
   Clock* clock_;
-  std::unique_ptr<TimestampExtrapolator> ts_extrapolator_;
+  MovingMedianFilter<int64_t> ntp_clocks_offset_estimator_;
   RtpToNtpEstimator rtp_to_ntp_;
   int64_t last_timing_log_ms_;
   RTC_DISALLOW_COPY_AND_ASSIGN(RemoteNtpTimeEstimator);

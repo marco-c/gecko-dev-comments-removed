@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
-#define WEBRTC_COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
+#ifndef COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
+#define COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
 
 #include <complex>
 
-#include "webrtc/common_audio/real_fourier.h"
+#include "common_audio/real_fourier.h"
 
 namespace webrtc {
 

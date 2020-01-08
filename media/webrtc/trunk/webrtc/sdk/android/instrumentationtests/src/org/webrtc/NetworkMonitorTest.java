@@ -42,6 +42,10 @@ import org.junit.runner.RunWith;
 
 
 
+
+
+
+
 @SuppressLint("NewApi")
 @RunWith(BaseJUnit4ClassRunner.class)
 public class NetworkMonitorTest {
@@ -161,8 +165,8 @@ public class NetworkMonitorTest {
 
   private void createTestMonitor() {
     Context context = InstrumentationRegistry.getTargetContext();
-    NetworkMonitor.resetInstanceForTests(context);
-    NetworkMonitor.setAutoDetectConnectivityState(true);
+    NetworkMonitor.resetInstanceForTests();
+    NetworkMonitor.createAutoDetectorForTest();
     receiver = NetworkMonitor.getAutoDetectorForTest();
     assertNotNull(receiver);
 
@@ -177,11 +181,12 @@ public class NetworkMonitorTest {
 
   private NetworkMonitorAutoDetect.ConnectionType getCurrentConnectionType() {
     final NetworkMonitorAutoDetect.NetworkState networkState = receiver.getCurrentNetworkState();
-    return receiver.getConnectionType(networkState);
+    return NetworkMonitorAutoDetect.getConnectionType(networkState);
   }
 
   @Before
   public void setUp() {
+    ContextUtils.initialize(InstrumentationRegistry.getTargetContext());
     createTestMonitor();
   }
 

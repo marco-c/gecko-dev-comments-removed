@@ -8,22 +8,23 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
+#define MODULES_RTP_RTCP_SOURCE_ULPFEC_RECEIVER_IMPL_H_
 
 #include <memory>
+#include <vector>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/typedefs.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/include/ulpfec_receiver.h"
+#include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "rtc_base/criticalsection.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
 class UlpfecReceiverImpl : public UlpfecReceiver {
  public:
-  explicit UlpfecReceiverImpl(RtpData* callback);
+  explicit UlpfecReceiverImpl(uint32_t ssrc, RecoveredPacketReceiver* callback);
   virtual ~UlpfecReceiverImpl();
 
   int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
@@ -36,13 +37,17 @@ class UlpfecReceiverImpl : public UlpfecReceiver {
   FecPacketCounter GetPacketCounter() const override;
 
  private:
+  const uint32_t ssrc_;
+
   rtc::CriticalSection crit_sect_;
-  RtpData* recovered_packet_callback_;
+  RecoveredPacketReceiver* recovered_packet_callback_;
   std::unique_ptr<ForwardErrorCorrection> fec_;
   
   
   
-  ForwardErrorCorrection::ReceivedPacketList received_packets_;
+  
+  std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>
+      received_packets_;
   ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
   FecPacketCounter packet_counter_;
 };

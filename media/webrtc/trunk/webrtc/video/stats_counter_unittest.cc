@@ -8,10 +8,10 @@
 
 
 
-#include "webrtc/video/stats_counter.h"
+#include "video/stats_counter.h"
 
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/gtest.h"
+#include "system_wrappers/include/clock.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {
@@ -213,6 +213,20 @@ TEST_F(StatsCounterTest, TestMetric_RateAccCounter) {
   EXPECT_EQ(94, stats.max);
 }
 
+TEST_F(StatsCounterTest, TestMetric_RateAccCounterWithSetLast) {
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  RateAccCounter counter(&clock_, observer, true);
+  counter.SetLast(98, kStreamId);
+  counter.Set(175, kStreamId);
+  counter.Set(188, kStreamId);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  
+  counter.Set(192, kStreamId);
+  
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(45, observer->last_sample_);
+}
+
 TEST_F(StatsCounterTest, TestMetric_RateAccCounterWithMultipleStreamIds) {
   StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
   RateAccCounter counter(&clock_, observer, true);
@@ -361,6 +375,123 @@ TEST_F(StatsCounterTest, TestAvgCounter_WithPause) {
   counter.ProcessAndGetStats();
   EXPECT_EQ(6, observer->num_calls_);
   EXPECT_EQ(22, observer->last_sample_);
+}
+
+TEST_F(StatsCounterTest, TestRateAccCounter_AddSampleStopsPause) {
+  
+  
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  RateAccCounter counter(&clock_, observer, true);
+  
+  counter.Set(12, kStreamId);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  
+  counter.ProcessAndPause();
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  counter.Set(24, kStreamId);  
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(2, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+}
+
+TEST_F(StatsCounterTest, TestRateAccCounter_AddSameSampleDoesNotStopPause) {
+  
+  
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  RateAccCounter counter(&clock_, observer, true);
+  
+  counter.Set(12, kStreamId);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  
+  counter.ProcessAndPause();
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  counter.Set(12, kStreamId);  
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  counter.Set(24, kStreamId);  
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(2, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+}
+
+TEST_F(StatsCounterTest, TestRateAccCounter_PauseAndStopPause) {
+  
+  
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  RateAccCounter counter(&clock_, observer, true);
+  
+  counter.Set(12, kStreamId);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  
+  counter.ProcessAndPause();
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  counter.Set(12, kStreamId);  
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(1, observer->num_calls_);
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  counter.ProcessAndStopPause();
+  counter.Set(12, kStreamId);
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs);
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(2, observer->num_calls_);
+  EXPECT_EQ(0, observer->last_sample_);
+}
+
+TEST_F(StatsCounterTest, TestAvgCounter_WithoutMinPauseTimePassed) {
+  
+  
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  AvgCounter counter(&clock_, observer, true);
+  
+  AddSampleAndAdvance(6, kDefaultProcessIntervalMs, &counter);
+  
+  const int64_t kMinMs = 500;
+  counter.ProcessAndPauseForDuration(kMinMs);
+  EXPECT_EQ(1, observer->num_calls_);  
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  clock_.AdvanceTimeMilliseconds(kMinMs - 1);
+  counter.Add(2);  
+  
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs * 2 - (kMinMs - 1));
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(2, observer->num_calls_);
+  EXPECT_EQ(2, observer->last_sample_);
+}
+
+TEST_F(StatsCounterTest, TestAvgCounter_WithMinPauseTimePassed) {
+  
+  
+  StatsCounterObserverImpl* observer = new StatsCounterObserverImpl();
+  AvgCounter counter(&clock_, observer, true);
+  
+  AddSampleAndAdvance(6, kDefaultProcessIntervalMs, &counter);
+  
+  const int64_t kMinMs = 500;
+  counter.ProcessAndPauseForDuration(kMinMs);
+  EXPECT_EQ(1, observer->num_calls_);  
+  EXPECT_EQ(6, observer->last_sample_);
+  
+  clock_.AdvanceTimeMilliseconds(kMinMs);
+  counter.Add(2);  
+  
+  clock_.AdvanceTimeMilliseconds(kDefaultProcessIntervalMs * 2 - kMinMs);
+  counter.ProcessAndGetStats();
+  EXPECT_EQ(3, observer->num_calls_);
+  EXPECT_EQ(2, observer->last_sample_);
 }
 
 TEST_F(StatsCounterTest, TestRateCounter_IntervalsWithoutSamplesIgnored) {

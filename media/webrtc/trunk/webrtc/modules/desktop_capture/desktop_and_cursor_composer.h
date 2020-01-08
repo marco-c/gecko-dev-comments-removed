@@ -8,16 +8,20 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_AND_CURSOR_COMPOSER_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_AND_CURSOR_COMPOSER_H_
+#ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_AND_CURSOR_COMPOSER_H_
+#define MODULES_DESKTOP_CAPTURE_DESKTOP_AND_CURSOR_COMPOSER_H_
 
 #include <memory>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/desktop_capture/desktop_capturer.h"
-#include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
+#include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/mouse_cursor_monitor.h"
+#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
+
+template <bool use_desktop_relative_cursor_position>
+class DesktopAndCursorComposerTest;
 
 
 
@@ -29,20 +33,36 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   
   
   
+  
   DesktopAndCursorComposer(DesktopCapturer* desktop_capturer,
-                      MouseCursorMonitor* mouse_monitor);
+                           MouseCursorMonitor* mouse_monitor);
+
+  
+  
+  
+  DesktopAndCursorComposer(std::unique_ptr<DesktopCapturer> desktop_capturer,
+                           const DesktopCaptureOptions& options);
+
   ~DesktopAndCursorComposer() override;
 
   
   void Start(DesktopCapturer::Callback* callback) override;
-  void Stop() override;
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
-  bool FocusOnSelectedSource() override;
 
  private:
+  
+  friend class DesktopAndCursorComposerTest<true>;
+  friend class DesktopAndCursorComposerTest<false>;
+
+  
+  
+  DesktopAndCursorComposer(DesktopCapturer* desktop_capturer,
+                           MouseCursorMonitor* mouse_monitor,
+                           bool use_desktop_relative_cursor_position);
+
   
   void OnCaptureResult(DesktopCapturer::Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
@@ -51,13 +71,23 @@ class DesktopAndCursorComposer : public DesktopCapturer,
   void OnMouseCursor(MouseCursor* cursor) override;
   void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
                              const DesktopVector& position) override;
+  void OnMouseCursorPosition(const DesktopVector& position) override;
 
-  std::unique_ptr<DesktopCapturer> desktop_capturer_;
-  std::unique_ptr<MouseCursorMonitor> mouse_monitor_;
+  const std::unique_ptr<DesktopCapturer> desktop_capturer_;
+  const std::unique_ptr<MouseCursorMonitor> mouse_monitor_;
+  
+  
+  
+  
+  
+  
+  const bool use_desktop_relative_cursor_position_;
 
   DesktopCapturer::Callback* callback_;
 
   std::unique_ptr<MouseCursor> cursor_;
+  
+  
   MouseCursorMonitor::CursorState cursor_state_;
   DesktopVector cursor_position_;
 

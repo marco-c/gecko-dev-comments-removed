@@ -8,14 +8,14 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_ENCODE_NETEQ_INPUT_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_ENCODE_NETEQ_INPUT_H_
+#ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_ENCODE_NETEQ_INPUT_H_
+#define MODULES_AUDIO_CODING_NETEQ_TOOLS_ENCODE_NETEQ_INPUT_H_
 
 #include <memory>
 
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
-#include "webrtc/modules/audio_coding/neteq/tools/neteq_input.h"
-#include "webrtc/modules/include/module_common_types.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "modules/audio_coding/neteq/tools/neteq_input.h"
+#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 namespace test {

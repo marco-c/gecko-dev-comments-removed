@@ -8,9 +8,9 @@
 
 
 
-#include "webrtc/modules/audio_processing/echo_detector/moving_max.h"
+#include "modules/audio_processing/echo_detector/moving_max.h"
 
-#include "webrtc/base/checks.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace {

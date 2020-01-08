@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 
 #include <algorithm>
 
-#include "webrtc/base/safe_conversions.h"
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 
@@ -218,13 +218,15 @@ ComfortNoiseEncoder::ComfortNoiseEncoder(int fs, int interval, int quality)
       enc_reflCoefs_{0},
       enc_corrVector_{0},
       enc_seed_(7777)   {
-  RTC_CHECK(quality <= WEBRTC_CNG_MAX_LPC_ORDER && quality > 0);
+  RTC_CHECK_GT(quality, 0);
+  RTC_CHECK_LE(quality, WEBRTC_CNG_MAX_LPC_ORDER);
   
   WebRtcSpl_Init();
 }
 
 void ComfortNoiseEncoder::Reset(int fs, int interval, int quality) {
-  RTC_CHECK(quality <= WEBRTC_CNG_MAX_LPC_ORDER && quality > 0);
+  RTC_CHECK_GT(quality, 0);
+  RTC_CHECK_LE(quality, WEBRTC_CNG_MAX_LPC_ORDER);
   enc_nrOfCoefs_ = quality;
   enc_sampfreq_ = fs;
   enc_interval_ = interval;

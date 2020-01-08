@@ -8,13 +8,13 @@
 
 
 
-#ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCOPED_GDI_HANDLE_H_
-#define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCOPED_GDI_HANDLE_H_
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_SCOPED_GDI_HANDLE_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_SCOPED_GDI_HANDLE_H_
 
 #include <windows.h>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/typedefs.h"
+#include "rtc_base/constructormagic.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace win {

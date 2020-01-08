@@ -8,15 +8,15 @@
 
 
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FILE_WRAPPER_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_FILE_WRAPPER_H_
+#ifndef SYSTEM_WRAPPERS_INCLUDE_FILE_WRAPPER_H_
+#define SYSTEM_WRAPPERS_INCLUDE_FILE_WRAPPER_H_
 
 #include <stddef.h>
 #include <stdio.h>
 
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/common_types.h"
-#include "webrtc/typedefs.h"
+#include "common_types.h"  
+#include "rtc_base/criticalsection.h"
+#include "typedefs.h"  
 
 
 

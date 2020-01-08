@@ -7,11 +7,11 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
-#define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
+#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
+#define MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
 
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/typedefs.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 
@@ -31,8 +31,7 @@ class RtpHeaderParser {
   
   virtual bool Parse(const uint8_t* packet,
                      size_t length,
-                     RTPHeader* header,
-                     bool secured = false) const = 0;
+                     RTPHeader* header) const = 0;
 
   
   virtual bool RegisterRtpHeaderExtension(RTPExtensionType type,

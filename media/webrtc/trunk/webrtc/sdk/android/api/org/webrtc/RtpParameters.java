@@ -10,7 +10,13 @@
 
 package org.webrtc;
 
-import java.util.LinkedList;
+import java.util.List;
+import java.util.ArrayList;
+
+
+
+
+
 
 
 
@@ -18,24 +24,34 @@ import java.util.LinkedList;
 
 public class RtpParameters {
   public static class Encoding {
+    
+    
     public boolean active = true;
     
+    
+    
     public Integer maxBitrateBps;
+    
+    
     public Long ssrc;
   }
 
   public static class Codec {
-    int payloadType;
-    String mimeType;
-    int clockRate;
-    int channels = 1;
+    
+    public int payloadType;
+    
+    public String name;
+    
+    MediaStreamTrack.MediaType kind;
+    
+    public Integer clockRate;
+    
+    public Integer numChannels;
   }
 
-  public final LinkedList<Encoding> encodings;
-  public final LinkedList<Codec> codecs;
-
-  public RtpParameters() {
-    encodings = new LinkedList<Encoding>();
-    codecs = new LinkedList<Codec>();
-  }
+  public final List<Encoding> encodings = new ArrayList<>();
+  
+  
+  
+  public final List<Codec> codecs = new ArrayList<>();
 }

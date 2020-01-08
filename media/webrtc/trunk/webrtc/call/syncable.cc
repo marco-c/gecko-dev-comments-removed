@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#include "call/syncable.h"
+
+namespace webrtc {
+
+Syncable::~Syncable() = default;
+
+}  

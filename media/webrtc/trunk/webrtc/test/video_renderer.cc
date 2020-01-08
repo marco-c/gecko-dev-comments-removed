@@ -7,11 +7,11 @@
 
 
 
-#include "webrtc/test/video_renderer.h"
+#include "test/video_renderer.h"
 
 
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"  
 
 namespace webrtc {
 namespace test {

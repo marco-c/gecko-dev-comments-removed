@@ -8,141 +8,84 @@
 
 
 
-#include "webrtc/modules/audio_device/fine_audio_buffer.h"
+#include "modules/audio_device/fine_audio_buffer.h"
 
 #include <memory.h>
 #include <stdio.h>
 #include <algorithm>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/modules/audio_device/audio_device_buffer.h"
+#include "modules/audio_device/audio_device_buffer.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
 FineAudioBuffer::FineAudioBuffer(AudioDeviceBuffer* device_buffer,
-                                 size_t desired_frame_size_bytes,
-                                 int sample_rate)
+                                 int sample_rate,
+                                 size_t capacity)
     : device_buffer_(device_buffer),
-      desired_frame_size_bytes_(desired_frame_size_bytes),
       sample_rate_(sample_rate),
       samples_per_10_ms_(static_cast<size_t>(sample_rate_ * 10 / 1000)),
       bytes_per_10_ms_(samples_per_10_ms_ * sizeof(int16_t)),
-      playout_cached_buffer_start_(0),
-      playout_cached_bytes_(0),
-      
-      
-      required_record_buffer_size_bytes_(
-          5 * (desired_frame_size_bytes + bytes_per_10_ms_)),
-      record_cached_bytes_(0),
-      record_read_pos_(0),
-      record_write_pos_(0) {
-  playout_cache_buffer_.reset(new int8_t[bytes_per_10_ms_]);
-  record_cache_buffer_.reset(new int8_t[required_record_buffer_size_bytes_]);
-  memset(record_cache_buffer_.get(), 0, required_record_buffer_size_bytes_);
+      playout_buffer_(0, capacity),
+      record_buffer_(0, capacity) {
+  RTC_LOG(INFO) << "samples_per_10_ms_:" << samples_per_10_ms_;
 }
 
 FineAudioBuffer::~FineAudioBuffer() {}
 
-size_t FineAudioBuffer::RequiredPlayoutBufferSizeBytes() {
-  
-  
-  
-  return desired_frame_size_bytes_ + bytes_per_10_ms_;
-}
-
 void FineAudioBuffer::ResetPlayout() {
-  playout_cached_buffer_start_ = 0;
-  playout_cached_bytes_ = 0;
-  memset(playout_cache_buffer_.get(), 0, bytes_per_10_ms_);
+  playout_buffer_.Clear();
 }
 
 void FineAudioBuffer::ResetRecord() {
-  record_cached_bytes_ = 0;
-  record_read_pos_ = 0;
-  record_write_pos_ = 0;
-  memset(record_cache_buffer_.get(), 0, required_record_buffer_size_bytes_);
+  record_buffer_.Clear();
 }
 
-void FineAudioBuffer::GetPlayoutData(int8_t* buffer) {
-  if (desired_frame_size_bytes_ <= playout_cached_bytes_) {
-    memcpy(buffer, &playout_cache_buffer_.get()[playout_cached_buffer_start_],
-           desired_frame_size_bytes_);
-    playout_cached_buffer_start_ += desired_frame_size_bytes_;
-    playout_cached_bytes_ -= desired_frame_size_bytes_;
-    RTC_CHECK_LT(playout_cached_buffer_start_ + playout_cached_bytes_,
-                 bytes_per_10_ms_);
-    return;
-  }
-  memcpy(buffer, &playout_cache_buffer_.get()[playout_cached_buffer_start_],
-         playout_cached_bytes_);
+void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer) {
   
   
   
-  int8_t* unwritten_buffer = &buffer[playout_cached_bytes_];
-  int bytes_left =
-      static_cast<int>(desired_frame_size_bytes_ - playout_cached_bytes_);
-  
-  size_t number_of_requests = 1 + (bytes_left - 1) / (bytes_per_10_ms_);
-  for (size_t i = 0; i < number_of_requests; ++i) {
+  const size_t num_bytes = audio_buffer.size();
+  while (playout_buffer_.size() < num_bytes) {
+    
     device_buffer_->RequestPlayoutData(samples_per_10_ms_);
-    int num_out = device_buffer_->GetPlayoutData(unwritten_buffer);
-    if (static_cast<size_t>(num_out) != samples_per_10_ms_) {
-      RTC_CHECK_EQ(num_out, 0);
-      playout_cached_bytes_ = 0;
-      return;
-    }
-    unwritten_buffer += bytes_per_10_ms_;
-    RTC_CHECK_GE(bytes_left, 0);
-    bytes_left -= static_cast<int>(bytes_per_10_ms_);
+    
+    const size_t bytes_written = playout_buffer_.AppendData(
+        bytes_per_10_ms_, [&](rtc::ArrayView<int8_t> buf) {
+          const size_t samples_per_channel =
+              device_buffer_->GetPlayoutData(buf.data());
+          
+          
+          return sizeof(int16_t) * samples_per_channel;
+        });
+    RTC_DCHECK_EQ(bytes_per_10_ms_, bytes_written);
   }
-  RTC_CHECK_LE(bytes_left, 0);
   
+  memcpy(audio_buffer.data(), playout_buffer_.data(), num_bytes);
   
-  size_t cache_location = desired_frame_size_bytes_;
-  int8_t* cache_ptr = &buffer[cache_location];
-  playout_cached_bytes_ = number_of_requests * bytes_per_10_ms_ -
-                          (desired_frame_size_bytes_ - playout_cached_bytes_);
-  
-  
-  RTC_CHECK_LE(playout_cached_bytes_, bytes_per_10_ms_);
-  RTC_CHECK_EQ(-bytes_left, playout_cached_bytes_);
-  playout_cached_buffer_start_ = 0;
-  memcpy(playout_cache_buffer_.get(), cache_ptr, playout_cached_bytes_);
+  memmove(playout_buffer_.data(), playout_buffer_.data() + num_bytes,
+          playout_buffer_.size() - num_bytes);
+  playout_buffer_.SetSize(playout_buffer_.size() - num_bytes);
 }
 
-void FineAudioBuffer::DeliverRecordedData(const int8_t* buffer,
-                                          size_t size_in_bytes,
-                                          int playout_delay_ms,
-                                          int record_delay_ms) {
+void FineAudioBuffer::DeliverRecordedData(
+    rtc::ArrayView<const int8_t> audio_buffer,
+    int playout_delay_ms,
+    int record_delay_ms) {
+  
+  record_buffer_.AppendData(audio_buffer.data(), audio_buffer.size());
   
   
   
-  if (record_write_pos_ + size_in_bytes > required_record_buffer_size_bytes_) {
-    if (record_cached_bytes_ > 0) {
-      memmove(record_cache_buffer_.get(),
-              record_cache_buffer_.get() + record_read_pos_,
-              record_cached_bytes_);
-    }
-    record_write_pos_ = record_cached_bytes_;
-    record_read_pos_ = 0;
-  }
-  
-  memcpy(record_cache_buffer_.get() + record_write_pos_, buffer, size_in_bytes);
-  record_write_pos_ += size_in_bytes;
-  record_cached_bytes_ += size_in_bytes;
-  
-  
-  
-  while (record_cached_bytes_ >= bytes_per_10_ms_) {
-    device_buffer_->SetRecordedBuffer(
-        record_cache_buffer_.get() + record_read_pos_, samples_per_10_ms_);
+  while (record_buffer_.size() >= bytes_per_10_ms_) {
+    device_buffer_->SetRecordedBuffer(record_buffer_.data(),
+                                      samples_per_10_ms_);
     device_buffer_->SetVQEData(playout_delay_ms, record_delay_ms, 0);
     device_buffer_->DeliverRecordedData();
-    
-    record_read_pos_ += bytes_per_10_ms_;
-    
-    record_cached_bytes_ -= bytes_per_10_ms_;
+    memmove(record_buffer_.data(), record_buffer_.data() + bytes_per_10_ms_,
+            record_buffer_.size() - bytes_per_10_ms_);
+    record_buffer_.SetSize(record_buffer_.size() - bytes_per_10_ms_);
   }
 }
 

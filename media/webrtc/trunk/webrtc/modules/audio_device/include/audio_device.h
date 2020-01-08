@@ -11,14 +11,16 @@
 #ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/audio_device/include/audio_device_defines.h"
-#include "webrtc/modules/include/module.h"
+#include "modules/audio_device/include/audio_device_defines.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/refcount.h"
 
 namespace webrtc {
 
-class AudioDeviceModule : public RefCountedModule {
+class AudioDeviceModule : public rtc::RefCountInterface {
  public:
+  
+  
   enum ErrorCode {
     kAdmErrNone = 0,
     kAdmErrArgument = 1
@@ -26,15 +28,13 @@ class AudioDeviceModule : public RefCountedModule {
 
   enum AudioLayer {
     kPlatformDefaultAudio = 0,
-    kWindowsWaveAudio = 1,
     kWindowsCoreAudio = 2,
     kLinuxAlsaAudio = 3,
     kLinuxPulseAudio = 4,
     kAndroidJavaAudio = 5,
     kAndroidOpenSLESAudio = 6,
     kAndroidJavaInputAndOpenSLESOutputAudio = 7,
-    kSndioAudio = 8,
-    kDummyAudio = 9
+    kDummyAudio = 8
   };
 
   enum WindowsDeviceType {
@@ -42,11 +42,7 @@ class AudioDeviceModule : public RefCountedModule {
     kDefaultDevice = -2
   };
 
-  enum BufferType {
-    kFixedBufferSize  = 0,
-    kAdaptiveBufferSize = 1
-  };
-
+  
   enum ChannelType {
     kChannelLeft = 0,
     kChannelRight = 1,
@@ -56,15 +52,14 @@ class AudioDeviceModule : public RefCountedModule {
  public:
   
   static rtc::scoped_refptr<AudioDeviceModule> Create(
+      const AudioLayer audio_layer);
+  
+  static rtc::scoped_refptr<AudioDeviceModule> Create(
       const int32_t id,
       const AudioLayer audio_layer);
 
   
   virtual int32_t ActiveAudioLayer(AudioLayer* audioLayer) const = 0;
-
-  
-  virtual ErrorCode LastError() const = 0;
-  virtual int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) = 0;
 
   
   virtual int32_t RegisterAudioCallback(AudioTransport* audioCallback) = 0;
@@ -111,12 +106,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual bool AGC() const = 0;
 
   
-  virtual int32_t SetWaveOutVolume(uint16_t volumeLeft,
-                                   uint16_t volumeRight) = 0;
-  virtual int32_t WaveOutVolume(uint16_t* volumeLeft,
-                                uint16_t* volumeRight) const = 0;
-
-  
   virtual int32_t InitSpeaker() = 0;
   virtual bool SpeakerIsInitialized() const = 0;
   virtual int32_t InitMicrophone() = 0;
@@ -128,7 +117,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SpeakerVolume(uint32_t* volume) const = 0;
   virtual int32_t MaxSpeakerVolume(uint32_t* maxVolume) const = 0;
   virtual int32_t MinSpeakerVolume(uint32_t* minVolume) const = 0;
-  virtual int32_t SpeakerVolumeStepSize(uint16_t* stepSize) const = 0;
 
   
   virtual int32_t MicrophoneVolumeIsAvailable(bool* available) = 0;
@@ -136,7 +124,6 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t MicrophoneVolume(uint32_t* volume) const = 0;
   virtual int32_t MaxMicrophoneVolume(uint32_t* maxVolume) const = 0;
   virtual int32_t MinMicrophoneVolume(uint32_t* minVolume) const = 0;
-  virtual int32_t MicrophoneVolumeStepSize(uint16_t* stepSize) const = 0;
 
   
   virtual int32_t SpeakerMuteIsAvailable(bool* available) = 0;
@@ -149,48 +136,36 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t MicrophoneMute(bool* enabled) const = 0;
 
   
-  virtual int32_t MicrophoneBoostIsAvailable(bool* available) = 0;
-  virtual int32_t SetMicrophoneBoost(bool enable) = 0;
-  virtual int32_t MicrophoneBoost(bool* enabled) const = 0;
-
-  
   virtual int32_t StereoPlayoutIsAvailable(bool* available) const = 0;
   virtual int32_t SetStereoPlayout(bool enable) = 0;
   virtual int32_t StereoPlayout(bool* enabled) const = 0;
   virtual int32_t StereoRecordingIsAvailable(bool* available) const = 0;
   virtual int32_t SetStereoRecording(bool enable) = 0;
   virtual int32_t StereoRecording(bool* enabled) const = 0;
-  virtual int32_t SetRecordingChannel(const ChannelType channel) = 0;
-  virtual int32_t RecordingChannel(ChannelType* channel) const = 0;
+  
+  virtual int32_t SetRecordingChannel(const ChannelType channel) { return -1; }
+  virtual int32_t RecordingChannel(ChannelType* channel) const { return -1; }
 
   
-  virtual int32_t SetPlayoutBuffer(const BufferType type,
-                                   uint16_t sizeMS = 0) = 0;
-  virtual int32_t PlayoutBuffer(BufferType* type, uint16_t* sizeMS) const = 0;
   virtual int32_t PlayoutDelay(uint16_t* delayMS) const = 0;
-  virtual int32_t RecordingDelay(uint16_t* delayMS) const = 0;
 
   
-  virtual int32_t CPULoad(uint16_t* load) const = 0;
+  virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) {
+    return -1;
+  }
+  virtual int32_t RecordingSampleRate(uint32_t* samplesPerSec) const {
+    return -1;
+  }
+  virtual int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) {
+    return -1;
+  }
+  virtual int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const {
+    return -1;
+  }
 
   
-  virtual int32_t StartRawOutputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) = 0;
-  virtual int32_t StopRawOutputFileRecording() = 0;
-  virtual int32_t StartRawInputFileRecording(
-      const char pcmFileNameUTF8[kAdmMaxFileNameSize]) = 0;
-  virtual int32_t StopRawInputFileRecording() = 0;
-
-  
-  virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) = 0;
-  virtual int32_t RecordingSampleRate(uint32_t* samplesPerSec) const = 0;
-  virtual int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) = 0;
-  virtual int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const = 0;
-
-  
-  virtual int32_t ResetAudioDevice() = 0;
-  virtual int32_t SetLoudspeakerStatus(bool enable) = 0;
-  virtual int32_t GetLoudspeakerStatus(bool* enabled) const = 0;
+  virtual int32_t SetLoudspeakerStatus(bool enable) { return -1; }
+  virtual int32_t GetLoudspeakerStatus(bool* enabled) const { return -1; }
 
   
   virtual bool BuiltInAECIsAvailable() const = 0;

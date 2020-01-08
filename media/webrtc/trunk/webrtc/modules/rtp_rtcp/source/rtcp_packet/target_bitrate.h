@@ -8,12 +8,12 @@
 
 
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TARGET_BITRATE_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TARGET_BITRATE_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TARGET_BITRATE_H_
+#define MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TARGET_BITRATE_H_
 
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
+#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 namespace rtcp {
@@ -37,6 +37,8 @@ class TargetBitrate {
   };
 
   TargetBitrate();
+  TargetBitrate(const TargetBitrate&);
+  TargetBitrate& operator=(const TargetBitrate&);
   ~TargetBitrate();
 
   void AddTargetBitrate(uint8_t spatial_layer,
@@ -45,11 +47,11 @@ class TargetBitrate {
 
   const std::vector<BitrateItem>& GetTargetBitrates() const;
 
-  bool Parse(const uint8_t* block, uint16_t block_length);
-
-  void Create(uint8_t* buffer) const;
+  void Parse(const uint8_t* block, uint16_t block_length);
 
   size_t BlockLength() const;
+
+  void Create(uint8_t* buffer) const;
 
  private:
   std::vector<BitrateItem> bitrates_;
