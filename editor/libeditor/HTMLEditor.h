@@ -298,7 +298,7 @@ public:
 
 
 
-  Element* GetActiveEditingHost();
+  Element* GetActiveEditingHost() const;
 
 protected: 
   
@@ -380,7 +380,7 @@ protected:
 
   nsresult RemoveBlockContainerWithTransaction(Element& aElement);
 
-  virtual Element* GetEditorRoot() override;
+  virtual Element* GetEditorRoot() const override;
   using EditorBase::IsEditable;
   virtual nsresult RemoveAttributeOrEquivalent(
                      Element* aElement,

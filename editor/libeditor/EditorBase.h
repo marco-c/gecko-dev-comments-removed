@@ -1421,14 +1421,14 @@ protected:
   
 
 
-  bool IsRoot(nsINode* inNode);
-  bool IsEditorRoot(nsINode* aNode);
+  bool IsRoot(nsINode* inNode) const;
+  bool IsEditorRoot(nsINode* aNode) const;
 
   
 
 
-  bool IsDescendantOfRoot(nsINode* inNode);
-  bool IsDescendantOfEditorRoot(nsINode* aNode);
+  bool IsDescendantOfRoot(nsINode* inNode) const;
+  bool IsDescendantOfEditorRoot(nsINode* aNode) const;
 
   
 
@@ -1560,13 +1560,13 @@ protected:
 
 
 
-  virtual Element* GetEditorRoot();
+  virtual Element* GetEditorRoot() const;
 
   
 
 
 
-  Element* GetExposedRoot();
+  Element* GetExposedRoot() const;
 
   
 
