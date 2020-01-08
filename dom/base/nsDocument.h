@@ -88,7 +88,7 @@ class Performance;
 
 struct FullscreenRequest : public LinkedListElement<FullscreenRequest>
 {
-  explicit FullscreenRequest(Element* aElement);
+  FullscreenRequest(Element* aElement, CallerType aCallerType);
   FullscreenRequest(const FullscreenRequest&) = delete;
   ~FullscreenRequest();
 
@@ -102,7 +102,7 @@ private:
 public:
   
   
-  bool mIsCallerChrome = false;
+  const CallerType mCallerType;
   
   
   

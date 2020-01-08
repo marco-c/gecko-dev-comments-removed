@@ -1756,7 +1756,8 @@ public:
 
   
   
-  bool FullscreenElementReadyCheck(Element* aElement, bool aWasCallerChrome);
+  bool FullscreenElementReadyCheck(Element* aElement,
+                                   mozilla::dom::CallerType aCallerType);
 
   
   
