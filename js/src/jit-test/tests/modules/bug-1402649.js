@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-   quit();
+
 
 loadFile(`
 function parseAndEvaluate(source) {

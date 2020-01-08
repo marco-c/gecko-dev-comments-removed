@@ -1,7 +1,6 @@
 
 
-if (helperThreadCount() == 0)
-    quit();
+
 
 load(libdir + "asserts.js");
 load(libdir + "dummyModuleResolveHook.js");

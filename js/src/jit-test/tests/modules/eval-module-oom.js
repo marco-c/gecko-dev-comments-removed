@@ -1,7 +1,6 @@
 
 
-if (!('oomTest' in this))
-    quit();
+
 
 load(libdir + "dummyModuleResolveHook.js");
 
