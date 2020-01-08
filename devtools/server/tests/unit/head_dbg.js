@@ -874,11 +874,11 @@ function threadClientTest(test, options = {}) {
 
     
     
-    const [, , threadClient] =
+    const [, targetFront, threadClient] =
       await attachTestTabAndResume(client, scriptName);
 
     
-    await test({ threadClient, debuggee, client });
+    await test({ threadClient, debuggee, client, targetFront });
 
     
     await client.close();
