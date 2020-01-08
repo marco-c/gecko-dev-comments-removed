@@ -304,7 +304,7 @@ public:
 
   
   
-  bool IsIdle() { return mIdle; }
+  bool ShouldIdle() { return mShouldIdle; }
 };
 
 
