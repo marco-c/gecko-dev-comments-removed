@@ -2,37 +2,36 @@
 
 
 
+"use strict";
 
-var EXPORTED_SYMBOLS = ["PrintingContent"];
+var EXPORTED_SYMBOLS = ["PrintingChild"];
 
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(this, "ReaderMode",
   "resource://gre/modules/ReaderMode.jsm");
 
-var PrintingContent = {
+class PrintingChild extends ActorChild {
   
   
   
   
   
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrintingPromptService]),
 
   get shouldSavePrintSettings() {
     return Services.prefs.getBoolPref("print.use_global_printsettings") &&
            Services.prefs.getBoolPref("print.save_print_settings");
-  },
+  }
 
-  printPreviewInitializingInfo: null,
-
-  handleEvent(global, event) {
+  handleEvent(event) {
     switch (event.type) {
       case "PrintingError": {
         let win = event.target.defaultView;
         let wbp = win.getInterface(Ci.nsIWebBrowserPrint);
         let nsresult = event.detail;
-        global.sendAsyncMessage("Printing:Error", {
+        this.mm.sendAsyncMessage("Printing:Error", {
           isPrinting: wbp.doingPrint,
           nsresult,
         });
@@ -51,7 +50,7 @@ var PrintingContent = {
         
         if (!info.entered) {
           info.entered = true;
-          global.sendAsyncMessage("Printing:Preview:Entered", {
+          this.mm.sendAsyncMessage("Printing:Preview:Entered", {
             failed: false,
             changingBrowsers: info.changingBrowsers
           });
@@ -63,18 +62,17 @@ var PrintingContent = {
         }
 
         
-        this.updatePageCount(global);
+        this.updatePageCount(this.mm);
         break;
       }
     }
-  },
+  }
 
-  receiveMessage(global, message) {
+  receiveMessage(message) {
     let data = message.data;
     switch (message.name) {
       case "Printing:Preview:Enter": {
-        this.enterPrintPreview(global,
-                               Services.wm.getOuterWindowWithId(data.windowID),
+        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID),
                                data.simplifiedMode,
                                data.changingBrowsers,
                                data.defaultPrinterName);
@@ -82,29 +80,28 @@ var PrintingContent = {
       }
 
       case "Printing:Preview:Exit": {
-        this.exitPrintPreview(global);
+        this.exitPrintPreview();
         break;
       }
 
       case "Printing:Preview:Navigate": {
-        this.navigate(global, data.navType, data.pageNum);
+        this.navigate(data.navType, data.pageNum);
         break;
       }
 
       case "Printing:Preview:ParseDocument": {
-        this.parseDocument(global, data.URL, Services.wm.getOuterWindowWithId(data.windowID));
+        this.parseDocument(data.URL, Services.wm.getOuterWindowWithId(data.windowID));
         break;
       }
 
       case "Printing:Print": {
-        this.print(global,
-                   Services.wm.getOuterWindowWithId(data.windowID),
+        this.print(Services.wm.getOuterWindowWithId(data.windowID),
                    data.simplifiedMode,
                    data.defaultPrinterName);
         break;
       }
     }
-  },
+  }
 
   getPrintSettings(defaultPrinterName) {
     try {
@@ -128,16 +125,17 @@ var PrintingContent = {
     }
 
     return null;
-  },
+  }
 
-  parseDocument(global, URL, contentWindow) {
+  parseDocument(URL, contentWindow) {
     
     
     let articlePromise = ReaderMode.parseDocument(contentWindow.document).catch(Cu.reportError);
-    articlePromise.then(function(article) {
+    articlePromise.then((article) => {
       
       
       
+      let {mm} = this;
       let webProgressListener = {
         onStateChange(webProgress, req, flags, status) {
           if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
@@ -147,17 +145,17 @@ var PrintingContent = {
             
             if (domUtils.isMozAfterPaintPending) {
               let onPaint = function() {
-                global.removeEventListener("MozAfterPaint", onPaint);
-                global.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+                mm.removeEventListener("MozAfterPaint", onPaint);
+                mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
               };
               contentWindow.addEventListener("MozAfterPaint", onPaint);
               
-              global.setTimeout(() => {
-                global.removeEventListener("MozAfterPaint", onPaint);
-                global.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+              mm.setTimeout(() => {
+                mm.removeEventListener("MozAfterPaint", onPaint);
+                mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
               }, 100);
             } else {
-              global.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+              mm.sendAsyncMessage("Printing:Preview:ReaderModeReady");
             }
           }
         },
@@ -169,7 +167,7 @@ var PrintingContent = {
         ]),
       };
 
-      const {content, docShell} = global;
+      const {content, docShell} = this.mm;
 
       
       let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -269,10 +267,10 @@ var PrintingContent = {
         readerMessageElement.style.display = "block";
       }
     });
-  },
+  }
 
-  enterPrintPreview(global, contentWindow, simplifiedMode, changingBrowsers, defaultPrinterName) {
-    const {docShell} = global;
+  enterPrintPreview(contentWindow, simplifiedMode, changingBrowsers, defaultPrinterName) {
+    const {docShell} = this;
     try {
       let printSettings = this.getPrintSettings(defaultPrinterName);
 
@@ -287,7 +285,7 @@ var PrintingContent = {
       
       let printPreviewInitialize = () => {
         try {
-          let listener = new PrintingListener(global);
+          let listener = new PrintingListener(this.mm);
 
           this.printPreviewInitializingInfo = { changingBrowsers };
           docShell.printPreview.printPreview(printSettings, contentWindow, listener);
@@ -296,7 +294,7 @@ var PrintingContent = {
           
           Cu.reportError(error);
           this.printPreviewInitializingInfo = null;
-          global.sendAsyncMessage("Printing:Preview:Entered", { failed: true });
+          this.mm.sendAsyncMessage("Printing:Preview:Entered", { failed: true });
         }
       };
 
@@ -314,16 +312,16 @@ var PrintingContent = {
       
       
       Cu.reportError(error);
-      global.sendAsyncMessage("Printing:Preview:Entered", { failed: true });
+      this.mm.sendAsyncMessage("Printing:Preview:Entered", { failed: true });
     }
-  },
+  }
 
-  exitPrintPreview(global) {
+  exitPrintPreview(glo) {
     this.printPreviewInitializingInfo = null;
-    global.docShell.printPreview.exitPrintPreview();
-  },
+    this.docShell.printPreview.exitPrintPreview();
+  }
 
-  print(global, contentWindow, simplifiedMode, defaultPrinterName) {
+  print(contentWindow, simplifiedMode, defaultPrinterName) {
     let printSettings = this.getPrintSettings(defaultPrinterName);
 
     
@@ -359,7 +357,7 @@ var PrintingContent = {
       if (e.result != Cr.NS_ERROR_ABORT) {
         Cu.reportError(`In Printing:Print:Done handler, got unexpected rv
                         ${e.result}.`);
-        global.sendAsyncMessage("Printing:Error", {
+        this.mm.sendAsyncMessage("Printing:Error", {
           isPrinting: true,
           nsresult: e.result,
         });
@@ -375,24 +373,27 @@ var PrintingContent = {
       PSSVC.savePrintSettingsToPrefs(printSettings, false,
                                      printSettings.kInitSavePrinterName);
     }
-  },
+  }
 
   logKeyedTelemetry(id, key) {
     let histogram = Services.telemetry.getKeyedHistogramById(id);
     histogram.add(key);
-  },
+  }
 
-  updatePageCount(global) {
-    let numPages = global.docShell.printPreview.printPreviewNumPages;
-    global.sendAsyncMessage("Printing:Preview:UpdatePageCount", {
+  updatePageCount() {
+    let numPages = this.docShell.printPreview.printPreviewNumPages;
+    this.mm.sendAsyncMessage("Printing:Preview:UpdatePageCount", {
       numPages,
     });
-  },
+  }
 
-  navigate(global, navType, pageNum) {
-    global.docShell.printPreview.printPreviewNavigate(navType, pageNum);
-  },
-};
+  navigate(navType, pageNum) {
+    this.docShell.printPreview.printPreviewNavigate(navType, pageNum);
+  }
+}
+
+PrintingChild.prototype.QueryInterface =
+  ChromeUtils.generateQI([Ci.nsIPrintingPromptService]);
 
 function PrintingListener(global) {
   this.global = global;
