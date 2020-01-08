@@ -794,7 +794,7 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
 
       
       
-      if (gHttpHandler->IsTelemetryEnabled()) {
+      if (Telemetry::CanRecordPrereleaseData()) {
         if (NS_LITERAL_CSTRING("basic").LowerCaseEqualsASCII(authType)) {
           Telemetry::Accumulate(
               Telemetry::HTTP_AUTH_TYPE_STATS,
@@ -943,7 +943,7 @@ bool nsHttpChannelAuthProvider::BlockPrompt(bool proxyAuth) {
     }
   }
 
-  if (gHttpHandler->IsTelemetryEnabled()) {
+  if (Telemetry::CanRecordPrereleaseData()) {
     if (topDoc) {
       Telemetry::Accumulate(Telemetry::HTTP_AUTH_DIALOG_STATS_3,
                             HTTP_AUTH_DIALOG_TOP_LEVEL_DOC);

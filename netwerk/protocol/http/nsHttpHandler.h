@@ -105,9 +105,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   bool IsPersistentHttpsCachingEnabled() {
     return mEnablePersistentHttpsCaching;
   }
-  bool IsTelemetryEnabled() { return mTelemetryEnabled; }
-  bool AllowExperiments() { return mTelemetryEnabled && mAllowExperiments; }
-
+  
   bool IsSpdyEnabled() { return mEnableSpdy; }
   bool IsHttp2Enabled() { return mHttp2Enabled; }
   bool EnforceHttp2TlsProfile() { return mEnforceHttp2TlsProfile; }
@@ -546,12 +544,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   Atomic<bool, Relaxed> mHandlerActive;
-
-  
-  uint32_t mTelemetryEnabled : 1;
-
-  
-  uint32_t mAllowExperiments : 1;
 
   
   uint32_t mDebugObservations : 1;

@@ -103,8 +103,6 @@
 #define BROWSER_PREF_PREFIX "browser.cache."
 #define DONOTTRACK_HEADER_ENABLED "privacy.donottrackheader.enabled"
 #define H2MANDATORY_SUITE "security.ssl3.ecdhe_rsa_aes_128_gcm_sha256"
-#define TELEMETRY_ENABLED "toolkit.telemetry.enabled"
-#define ALLOW_EXPERIMENTS "network.allow-experiments"
 #define SAFE_HINT_HEADER_VALUE "safeHint.enabled"
 #define SECURITY_PREFIX "security."
 
@@ -245,8 +243,6 @@ nsHttpHandler::nsHttpHandler()
       mSafeHintEnabled(false),
       mParentalControlEnabled(false),
       mHandlerActive(false),
-      mTelemetryEnabled(false),
-      mAllowExperiments(true),
       mDebugObservations(false),
       mEnableSpdy(false),
       mHttp2Enabled(true),
@@ -430,7 +426,6 @@ static const char *gCallbackPrefs[] = {
     INTL_ACCEPT_LANGUAGES,
     BROWSER_PREF("disk_cache_ssl"),
     DONOTTRACK_HEADER_ENABLED,
-    TELEMETRY_ENABLED,
     H2MANDATORY_SUITE,
     HTTP_PREF("tcp_keepalive.short_lived_connections"),
     HTTP_PREF("tcp_keepalive.long_lived_connections"),
@@ -1764,37 +1759,12 @@ void nsHttpHandler::PrefsChanged(const char *pref) {
 
   
   
-  
-
-  if (PREF_CHANGED(TELEMETRY_ENABLED)) {
-    cVar = false;
-    requestTokenBucketUpdated = true;
-    rv = Preferences::GetBool(TELEMETRY_ENABLED, &cVar);
-    if (NS_SUCCEEDED(rv)) {
-      mTelemetryEnabled = cVar;
-    }
-  }
-
-  
-  
 
   if (PREF_CHANGED(H2MANDATORY_SUITE)) {
     cVar = false;
     rv = Preferences::GetBool(H2MANDATORY_SUITE, &cVar);
     if (NS_SUCCEEDED(rv)) {
       mH2MandatorySuiteEnabled = cVar;
-    }
-  }
-
-  
-  
-  
-  if (PREF_CHANGED(ALLOW_EXPERIMENTS)) {
-    cVar = true;
-    requestTokenBucketUpdated = true;
-    rv = Preferences::GetBool(ALLOW_EXPERIMENTS, &cVar);
-    if (NS_SUCCEEDED(rv)) {
-      mAllowExperiments = cVar;
     }
   }
 

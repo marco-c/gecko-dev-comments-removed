@@ -1605,11 +1605,6 @@ pref("logging.config.clear_on_startup", true);
 
 
 
-
-pref("network.allow-experiments", true);
-
-
-
 pref("network.notify.changed", true);
 
 
