@@ -579,9 +579,15 @@ Target.prototype = {
       } else if (this.isLegacyAddon) {
         const [, addonTargetFront] = await this._client.attachAddon(this.form);
         this.activeTab = addonTargetFront;
-      } else if (this.isWorkerTarget || this.isContentProcess) {
+
+      
+      
+      
+      } else if (this.isWorkerTarget) {
         
         
+        await this.activeTab.attach();
+      } else if (this.isContentProcess) {
         
       } else {
         throw new Error(`Unsupported type of target. Expected target of one of the` +

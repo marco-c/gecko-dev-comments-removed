@@ -10,15 +10,11 @@ const {custom} = protocol;
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 
 const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
+  initialize: function(client) {
+    protocol.Front.prototype.initialize.call(this, client);
 
     this.thread = null;
     this.traits = {};
-
-    
-    
-    this.targetForm = form;
 
     
     this.client = client;
@@ -27,6 +23,18 @@ const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
 
     this.destroy = this.destroy.bind(this);
     this.on("close", this.destroy);
+  },
+
+  form(json) {
+    this.actorID = json.actor;
+
+    
+    
+    this.targetForm = json;
+    this.url = json.url;
+    this.type = json.type;
+    this.scope = json.scope;
+    this.fetch = json.fetch;
   },
 
   get isClosed() {

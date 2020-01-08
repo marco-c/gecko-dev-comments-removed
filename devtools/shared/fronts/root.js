@@ -95,30 +95,30 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
       });
     });
 
-    workers.forEach(form => {
+    workers.forEach(front => {
       const worker = {
-        name: form.url,
-        url: form.url,
-        workerTargetActor: form.actor,
+        name: front.url,
+        url: front.url,
+        workerTargetFront: front,
       };
-      switch (form.type) {
+      switch (front.type) {
         case Ci.nsIWorkerDebugger.TYPE_SERVICE:
-          const registration = result.service.find(r => r.scope === form.scope);
+          const registration = result.service.find(r => r.scope === front.scope);
           if (registration) {
             
             
             if (!registration.url) {
-              registration.name = registration.url = form.url;
+              registration.name = registration.url = front.url;
             }
-            registration.workerTargetActor = form.actor;
+            registration.workerTargetFront = front;
           } else {
-            worker.fetch = form.fetch;
+            worker.fetch = front.fetch;
 
             
             
             
             
-            worker.scope = form.scope;
+            worker.scope = front.scope;
             worker.active = false;
             result.service.push(worker);
           }

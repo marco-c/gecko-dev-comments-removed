@@ -33,7 +33,7 @@ class ServiceWorkerTarget extends Component {
         scope: PropTypes.string.isRequired,
         
         registrationActor: PropTypes.string,
-        workerTargetActor: PropTypes.string,
+        workerTargetFront: PropTypes.object,
       }).isRequired,
     };
   }
@@ -85,8 +85,8 @@ class ServiceWorkerTarget extends Component {
       return;
     }
 
-    const { client, target } = this.props;
-    gDevToolsBrowser.openWorkerToolbox(client, target.workerTargetActor);
+    const { workerTargetFront } = this.props.target;
+    gDevToolsBrowser.openWorkerToolbox(workerTargetFront);
   }
 
   push() {
@@ -97,11 +97,8 @@ class ServiceWorkerTarget extends Component {
       return;
     }
 
-    const { client, target } = this.props;
-    client.request({
-      to: target.workerTargetActor,
-      type: "push",
-    });
+    const { workerTargetFront } = this.props.target;
+    workerTargetFront.push();
   }
 
   start() {
@@ -149,7 +146,7 @@ class ServiceWorkerTarget extends Component {
 
   isRunning() {
     
-    return !!this.props.target.workerTargetActor;
+    return !!this.props.target.workerTargetFront;
   }
 
   isActive() {
