@@ -16,7 +16,10 @@
 #include "ipc/Channel.h"
 #include "mac/handler/exception_handler.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/VsyncDispatcher.h"
 
@@ -589,6 +592,29 @@ CompositorCanPerformMiddlemanCalls()
   
   MonitorAutoLock lock(*gMonitor);
   return gNumPendingPaints != 0;
+}
+
+bool
+SuppressMessageAfterDiverge(IPC::Message* aMsg)
+{
+  MOZ_RELEASE_ASSERT(HasDivergedFromRecording());
+
+  
+  
+  
+  
+
+  IPC::Message::msgid_t type = aMsg->type();
+  if (type >= layers::PLayerTransaction::PLayerTransactionStart &&
+      type <= layers::PLayerTransaction::PLayerTransactionEnd) {
+    return false;
+  }
+
+  if (type == layers::PCompositorBridge::Msg_PTextureConstructor__ID) {
+    return false;
+  }
+
+  return true;
 }
 
 
