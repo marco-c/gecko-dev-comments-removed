@@ -130,6 +130,13 @@ function reportUnexpectedReflows(reflows, expectedReflows = []) {
             actualStacks: new Map()};
   });
   let unexpectedReflows = new Map();
+
+  if (knownReflows.some(r => r.path.includes("*"))) {
+    Assert.ok(false,
+              "Do not include async frames in the stack, as " +
+              "that feature is not available on all trees.");
+  }
+
   for (let stack of reflows) {
     let path =
       stack.split("\n").slice(1) 
@@ -144,7 +151,8 @@ function reportUnexpectedReflows(reflows, expectedReflows = []) {
 
     
     
-    if (path.startsWith("synthesizeKey@chrome://mochikit/content/tests/SimpleTest/EventUtils.js")) {
+    
+    if (/^(synthesize|send|createDragEventObject).*?@chrome:\/\/mochikit.*?EventUtils\.js/.test(path)) {
       continue;
     }
 
