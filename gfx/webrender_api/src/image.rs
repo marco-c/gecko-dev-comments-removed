@@ -2,8 +2,6 @@
 
 
 
-#![deny(missing_docs)]
-
 extern crate serde_bytes;
 
 use font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
@@ -12,18 +10,13 @@ use {DevicePoint, DeviceUintPoint, DeviceUintRect, DeviceUintSize};
 use {IdNamespace, TileOffset, TileSize};
 use euclid::size2;
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct ImageKey(pub IdNamespace, pub u32);
 
 impl ImageKey {
-    
     pub const DUMMY: Self = ImageKey(IdNamespace(0), 0);
 
-    
     pub fn new(namespace: IdNamespace, key: u32) -> Self {
         ImageKey(namespace, key)
     }
@@ -36,73 +29,40 @@ impl ImageKey {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ExternalImageId(pub u64);
 
-
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum TextureTarget {
-    
     Default = 0,
-    
-    
-    
     Array = 1,
-    
-    
-    
-    
-    
-    
     Rect = 2,
-    
-    
-    
-    
     External = 3,
 }
-
 
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum ExternalImageType {
-    
     TextureHandle(TextureTarget),
-    
     Buffer,
 }
-
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ExternalImageData {
-    
     pub id: ExternalImageId,
-    
-    
     pub channel_index: u8,
-    
     pub image_type: ExternalImageType,
 }
-
 
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum ImageFormat {
-    
-    
-    
     R8 = 1,
-    
     BGRA8 = 3,
-    
     RGBAF32 = 4,
-    
-    
     RG8 = 5,
-    
     RGBAI32 = 6,
 }
 
 impl ImageFormat {
-    
     pub fn bytes_per_pixel(self) -> u32 {
         match self {
             ImageFormat::R8 => 1,
@@ -114,37 +74,17 @@ impl ImageFormat {
     }
 }
 
-
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ImageDescriptor {
-    
     pub format: ImageFormat,
-    
     pub size: DeviceUintSize,
-    
-    
-    
-    
     pub stride: Option<u32>,
-    
-    
-    
-    
-    
     pub offset: u32,
-    
-    
     pub is_opaque: bool,
-    
-    
-    
-    
-    
     pub allow_mipmaps: bool,
 }
 
 impl ImageDescriptor {
-    
     pub fn new(
         width: u32,
         height: u32,
@@ -162,18 +102,14 @@ impl ImageDescriptor {
         }
     }
 
-    
-    
     pub fn compute_stride(&self) -> u32 {
         self.stride.unwrap_or(self.size.width * self.format.bytes_per_pixel())
     }
 
-    
     pub fn compute_total_size(&self) -> u32 {
         self.compute_stride() * self.size.height
     }
 
-    
     pub fn full_rect(&self) -> DeviceUintRect {
         DeviceUintRect::new(
             DeviceUintPoint::zero(),
@@ -182,18 +118,10 @@ impl ImageDescriptor {
     }
 }
 
-
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ImageData {
-    
-    
     Raw(#[serde(with = "serde_image_data_raw")] Arc<Vec<u8>>),
-    
-    
     Blob(#[serde(with = "serde_image_data_raw")] Arc<BlobImageData>),
-    
-    
     External(ExternalImageData),
 }
 
@@ -213,22 +141,18 @@ mod serde_image_data_raw {
 }
 
 impl ImageData {
-    
     pub fn new(bytes: Vec<u8>) -> Self {
         ImageData::Raw(Arc::new(bytes))
     }
 
-    
     pub fn new_shared(bytes: Arc<Vec<u8>>) -> Self {
         ImageData::Raw(bytes)
     }
 
-    
     pub fn new_blob_image(commands: BlobImageData) -> Self {
         ImageData::Blob(Arc::new(commands))
     }
 
-    
     #[inline]
     pub fn is_blob(&self) -> bool {
         match *self {
@@ -237,8 +161,6 @@ impl ImageData {
         }
     }
 
-    
-    
     #[inline]
     pub fn uses_texture_cache(&self) -> bool {
         match *self {
@@ -254,11 +176,8 @@ impl ImageData {
 
 
 pub trait BlobImageResources {
-    
     fn get_font_data(&self, key: FontKey) -> &FontTemplate;
-    
     fn get_font_instance_data(&self, key: FontInstanceKey) -> Option<FontInstanceData>;
-    
     fn get_image(&self, key: ImageKey) -> Option<(&ImageData, &ImageDescriptor)>;
 }
 
@@ -303,72 +222,44 @@ pub trait BlobImageHandler: Send {
 
 
 pub trait AsyncBlobImageRasterizer : Send {
-    
     fn rasterize(&mut self, requests: &[BlobImageParams]) -> Vec<(BlobImageRequest, BlobImageResult)>;
 }
 
 
-
 #[derive(Copy, Clone, Debug)]
 pub struct BlobImageParams {
-    
     pub request: BlobImageRequest,
-    
     pub descriptor: BlobImageDescriptor,
-    
-    
-    
-    
     pub dirty_rect: Option<DeviceUintRect>,
 }
 
-
 pub type BlobImageData = Vec<u8>;
 
-
 pub type BlobImageResult = Result<RasterizedBlobImage, BlobImageError>;
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct BlobImageDescriptor {
-    
     pub size: DeviceUintSize,
-    
-    
     pub offset: DevicePoint,
-    
     pub format: ImageFormat,
 }
 
-
-
 pub struct RasterizedBlobImage {
-    
     pub rasterized_rect: DeviceUintRect,
-    
     pub data: Arc<Vec<u8>>,
 }
 
-
 #[derive(Clone, Debug)]
 pub enum BlobImageError {
-    
     Oom,
-    
+    InvalidKey,
+    InvalidData,
     Other(String),
 }
 
-
-
-
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct BlobImageRequest {
-    
     pub key: ImageKey,
-    
-    
-    
     pub tile: Option<TileOffset>,
 }

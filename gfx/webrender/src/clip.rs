@@ -106,7 +106,6 @@ enum ClipResult {
 
 
 
-#[derive(Debug)]
 pub struct ClipNode {
     pub item: ClipItem,
     pub gpu_cache_handle: GpuCacheHandle,
@@ -766,14 +765,11 @@ impl ClipItem {
 
     pub fn new_box_shadow(
         shadow_rect: LayoutRect,
-        mut shadow_radius: BorderRadius,
+        shadow_radius: BorderRadius,
         prim_shadow_rect: LayoutRect,
         blur_radius: f32,
         clip_mode: BoxShadowClipMode,
     ) -> Self {
-        
-        ensure_no_corner_overlap(&mut shadow_radius, &shadow_rect);
-
         
         
         let fract_offset = LayoutPoint::new(

@@ -740,7 +740,7 @@ impl RenderTask {
         
         if let RenderTaskLocation::Fixed(_) = self.location {
             target_rect.origin = DeviceIntPoint::origin();
-        }
+        };
 
         RenderTaskData {
             data: [
