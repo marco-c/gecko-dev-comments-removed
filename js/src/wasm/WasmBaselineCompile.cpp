@@ -1891,6 +1891,7 @@ class BaseCompiler final : public BaseCompilerInterface
     ValTypeVector               SigF_;
     MIRTypeVector               SigP_;
     MIRTypeVector               SigPI_;
+    MIRTypeVector               SigPL_;
     MIRTypeVector               SigPII_;
     MIRTypeVector               SigPIII_;
     MIRTypeVector               SigPIIL_;
@@ -5617,6 +5618,97 @@ class BaseCompiler final : public BaseCompilerInterface
     
     
     
+
+#ifdef ENABLE_WASM_GC
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    void emitPreBarrier(RegPtr valueAddr) {
+        Label skipBarrier;
+
+        MOZ_ASSERT(valueAddr == PreBarrierReg);
+
+        ScratchPtr scratch(*this);
+
+        
+        masm.loadWasmTlsRegFromFrame(scratch);
+        masm.loadPtr(Address(scratch, offsetof(TlsData, addressOfNeedsIncrementalBarrier)), scratch);
+        masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1), &skipBarrier);
+
+        
+        masm.loadPtr(Address(valueAddr, 0), scratch);
+        masm.branchTestPtr(Assembler::Zero, scratch, scratch, &skipBarrier);
+
+        
+        
+        
+        
+        masm.loadWasmTlsRegFromFrame(scratch);
+        masm.loadPtr(Address(scratch, offsetof(TlsData, instance)), scratch);
+        masm.loadPtr(Address(scratch, Instance::offsetOfPreBarrierCode()), scratch);
+        masm.call(scratch);
+
+        masm.bind(&skipBarrier);
+    }
+
+    
+    
+    
+    
+    
+    
+
+    void emitPostBarrier(const Maybe<RegPtr>& object, RegPtr otherScratch, RegPtr valueAddr, RegPtr setValue) {
+        Label skipBarrier;
+
+        
+        masm.branchTestPtr(Assembler::Zero, setValue, setValue, &skipBarrier);
+
+        
+        if (object)
+            masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch, &skipBarrier);
+
+        
+        masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, otherScratch, &skipBarrier);
+
+        
+        uint32_t bytecodeOffset = iter_.lastOpcodeOffset();
+
+        
+        
+        
+# ifdef JS_64BIT
+        pushI64(RegI64(Register64(valueAddr)));
+        emitInstanceCall(bytecodeOffset, SigPL_, ExprType::Void, SymbolicAddress::PostBarrier);
+# else
+        pushI32(RegI32(valueAddr));
+        emitInstanceCall(bytecodeOffset, SigPI_, ExprType::Void, SymbolicAddress::PostBarrier);
+# endif
+
+        masm.bind(&skipBarrier);
+    }
+#endif
+
+    void emitBarrieredStore(const Maybe<RegPtr>& object, RegPtr valueAddr, RegPtr value) {
+        emitPreBarrier(valueAddr); 
+        masm.storePtr(value, Address(valueAddr, 0));
+        RegPtr otherScratch = needRef();
+        emitPostBarrier(object, otherScratch, valueAddr, value); 
+        freeRef(otherScratch);
+    }
+
+    
+    
+    
     
     
     
@@ -5720,81 +5812,6 @@ class BaseCompiler final : public BaseCompilerInterface
     void branchTo(Assembler::Condition c, RegI64 lhs, Imm64 rhs, Label* l) {
         masm.branch64(c, lhs, rhs, l);
     }
-
-#ifdef ENABLE_WASM_GC
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    void testNeedPreBarrier(Label* skipBarrier) {
-        MOZ_ASSERT(!skipBarrier->used());
-        MOZ_ASSERT(!skipBarrier->bound());
-
-        
-        ScratchPtr scratch(*this);
-        masm.loadWasmTlsRegFromFrame(scratch);
-        masm.loadPtr(Address(scratch, offsetof(TlsData, addressOfNeedsIncrementalBarrier)), scratch);
-        masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1), skipBarrier);
-    }
-
-    void emitPreBarrier(RegPtr valueAddr, Label* skipBarrier) {
-        MOZ_ASSERT(valueAddr == PreBarrierReg);
-
-        
-        ScratchPtr scratch(*this);
-        masm.loadPtr(Address(valueAddr, 0), scratch);
-        masm.branchTestPtr(Assembler::Zero, scratch, scratch, skipBarrier);
-
-        
-        
-        masm.loadWasmTlsRegFromFrame(scratch);
-        masm.loadPtr(Address(scratch, offsetof(TlsData, instance)), scratch);
-        masm.loadPtr(Address(scratch, Instance::offsetOfPreBarrierCode()), scratch);
-        masm.call(scratch);
-
-        masm.bind(skipBarrier);
-    }
-
-    
-    
-    
-    
-
-    void emitPostBarrier(const Maybe<RegPtr>& object, RegPtr setValue, PostBarrierArg arg) {
-        Label skipBarrier;
-
-        
-        masm.branchTestPtr(Assembler::Zero, setValue, setValue, &skipBarrier);
-
-        RegPtr scratch = needRef();
-        if (object) {
-            
-            masm.branchPtrInNurseryChunk(Assembler::Equal, *object, scratch, &skipBarrier);
-        }
-
-        
-        masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, scratch, &skipBarrier);
-
-        freeRef(scratch);
-
-        
-        uint32_t bytecodeOffset = iter_.lastOpcodeOffset();
-        pushI32(arg.rawPayload());
-        emitInstanceCall(bytecodeOffset, SigPI_, ExprType::Void, SymbolicAddress::PostBarrier);
-
-        masm.bind(&skipBarrier);
-    }
-#endif
 
     
     
@@ -8438,27 +8455,14 @@ BaseCompiler::emitSetGlobal()
       }
 #ifdef ENABLE_WASM_GC
       case ValType::AnyRef: {
-        Label skipBarrier;
-        testNeedPreBarrier(&skipBarrier);
-
         RegPtr valueAddr(PreBarrierReg);
         needRef(valueAddr);
         {
             ScratchI32 tmp(*this);
             masm.computeEffectiveAddress(addressOfGlobalVar(global, tmp), valueAddr);
         }
-        emitPreBarrier(valueAddr, &skipBarrier);
-        freeRef(valueAddr);
-
         RegPtr rv = popRef();
-        {
-            
-            ScratchI32 tmp(*this);
-            masm.storePtr(rv, addressOfGlobalVar(global, tmp));
-        }
-
-        emitPostBarrier(Nothing(), rv, PostBarrierArg::Global(id));
-
+        emitBarrieredStore(Nothing(), valueAddr, rv); 
         freeRef(rv);
         break;
       }
@@ -10259,6 +10263,8 @@ BaseCompiler::init()
     if (!SigP_.append(MIRType::Pointer))
         return false;
     if (!SigPI_.append(MIRType::Pointer) || !SigPI_.append(MIRType::Int32))
+        return false;
+    if (!SigPL_.append(MIRType::Pointer) || !SigPL_.append(MIRType::Int64))
         return false;
     if (!SigPII_.append(MIRType::Pointer) || !SigPII_.append(MIRType::Int32) ||
         !SigPII_.append(MIRType::Int32))
