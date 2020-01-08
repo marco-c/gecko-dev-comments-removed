@@ -353,7 +353,7 @@ var PlacesOrganizer = {
         
         
         
-        PlacesUIUtils.openMultipleLinksInTabs(node, aEvent, this._places);
+        PlacesUIUtils.openContainerNodeInTabs(node, aEvent, this._places);
       }
     }
   },
@@ -1295,7 +1295,7 @@ var ContentTree = {
         
         
         
-        PlacesUIUtils.openMultipleLinksInTabs(node, aEvent, this.view);
+        PlacesUIUtils.openContainerNodeInTabs(node, aEvent, this.view);
       }
     }
   },
