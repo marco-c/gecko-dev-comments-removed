@@ -46,8 +46,9 @@ class BufferPointer
 
     T* get() const {
         BaselineBailoutInfo* header = *header_;
-        if (!heap_)
+        if (!heap_) {
             return (T*)(header->incomingStack + offset_);
+        }
 
         uint8_t* p = header->copyStackTop - offset_;
         MOZ_ASSERT(p >= header->copyStackBottom && p < header->copyStackTop);
@@ -120,8 +121,9 @@ struct BaselineStackBuilder
         MOZ_ASSERT(!buffer_);
         MOZ_ASSERT(bufferUsed_ == 0);
         buffer_ = js_pod_calloc<uint8_t>(bufferTotal_);
-        if (!buffer_)
+        if (!buffer_) {
             return false;
+        }
         bufferAvail_ = bufferTotal_ - HeaderSize();
         bufferUsed_ = 0;
 
@@ -146,12 +148,14 @@ struct BaselineStackBuilder
 
     MOZ_MUST_USE bool enlarge() {
         MOZ_ASSERT(buffer_ != nullptr);
-        if (bufferTotal_ & mozilla::tl::MulOverflowMask<2>::value)
+        if (bufferTotal_ & mozilla::tl::MulOverflowMask<2>::value) {
             return false;
+        }
         size_t newSize = bufferTotal_ * 2;
         uint8_t* newBuffer = js_pod_calloc<uint8_t>(newSize);
-        if (!newBuffer)
+        if (!newBuffer) {
             return false;
+        }
         memcpy((newBuffer + newSize) - bufferUsed_, header_->copyStackBottom, bufferUsed_);
         memcpy(newBuffer, header_, sizeof(BaselineBailoutInfo));
         js_free(buffer_);
@@ -187,8 +191,9 @@ struct BaselineStackBuilder
     MOZ_MUST_USE bool subtract(size_t size, const char* info = nullptr) {
         
         while (size > bufferAvail_) {
-            if (!enlarge())
+            if (!enlarge()) {
                 return false;
+            }
         }
 
         
@@ -209,26 +214,30 @@ struct BaselineStackBuilder
         MOZ_ASSERT(!(uintptr_t(&t) >= uintptr_t(header_->copyStackBottom) &&
                      uintptr_t(&t) < uintptr_t(header_->copyStackTop)),
                    "Should not reference memory that can be freed");
-        if (!subtract(sizeof(T)))
+        if (!subtract(sizeof(T))) {
             return false;
+        }
         memcpy(header_->copyStackBottom, &t, sizeof(T));
         return true;
     }
 
     template <typename T>
     MOZ_MUST_USE bool writePtr(T* t, const char* info) {
-        if (!write<T*>(t))
+        if (!write<T*>(t)) {
             return false;
-        if (info)
+        }
+        if (info) {
             JitSpew(JitSpew_BaselineBailouts,
                     "      WRITE_PTR %p/%p %-15s %p",
                     header_->copyStackBottom, virtualPointerAtStackOffset(0), info, t);
+        }
         return true;
     }
 
     MOZ_MUST_USE bool writeWord(size_t w, const char* info) {
-        if (!write<size_t>(w))
+        if (!write<size_t>(w)) {
             return false;
+        }
         if (info) {
             if (sizeof(size_t) == 4) {
                 JitSpew(JitSpew_BaselineBailouts,
@@ -244,8 +253,9 @@ struct BaselineStackBuilder
     }
 
     MOZ_MUST_USE bool writeValue(const Value& val, const char* info) {
-        if (!write<Value>(val))
+        if (!write<Value>(val)) {
             return false;
+        }
         if (info) {
             JitSpew(JitSpew_BaselineBailouts,
                     "      WRITE_VAL %p/%p %-15s %016" PRIx64,
@@ -260,8 +270,9 @@ struct BaselineStackBuilder
         MOZ_ASSERT(after % sizeof(Value) == 0);
         size_t offset = ComputeByteAlignment(after, alignment);
         while (framePushed_ % alignment != offset) {
-            if (!writeValue(MagicValue(JS_ARG_POISON), info))
+            if (!writeValue(MagicValue(JS_ARG_POISON), info)) {
                 return false;
+            }
         }
 
         return true;
@@ -328,8 +339,9 @@ struct BaselineStackBuilder
     }
 
     inline uint8_t* virtualPointerAtStackOffset(size_t offset) {
-        if (offset < bufferUsed_)
+        if (offset < bufferUsed_) {
             return reinterpret_cast<uint8_t*>(frame_) - (bufferUsed_ - offset);
+        }
         return reinterpret_cast<uint8_t*>(frame_) + (offset - bufferUsed_);
     }
 
@@ -361,8 +373,9 @@ struct BaselineStackBuilder
         
         
         
-        if (JSJitFrameIter::isEntry(type) || type == FrameType::IonJS || type == FrameType::IonICCall)
+        if (JSJitFrameIter::isEntry(type) || type == FrameType::IonJS || type == FrameType::IonICCall) {
             return nullptr;
+        }
 
         
         
@@ -399,8 +412,9 @@ struct BaselineStackBuilder
 
         
         
-        if (priorType == FrameType::IonJS || JSJitFrameIter::isEntry(priorType))
+        if (priorType == FrameType::IonJS || JSJitFrameIter::isEntry(priorType)) {
             return nullptr;
+        }
 
         
         
@@ -437,15 +451,18 @@ GetStubReturnAddress(JSContext* cx, jsbytecode* pc)
 {
     JitRealm* jitRealm = cx->realm()->jitRealm();
 
-    if (IsGetPropPC(pc))
+    if (IsGetPropPC(pc)) {
         return jitRealm->bailoutReturnAddr(BailoutReturnStub::GetProp);
-    if (IsSetPropPC(pc))
+    }
+    if (IsSetPropPC(pc)) {
         return jitRealm->bailoutReturnAddr(BailoutReturnStub::SetProp);
+    }
 
     
     MOZ_ASSERT(IsCallPC(pc) && !IsSpreadCallPC(pc));
-    if (IsConstructorCallPC(pc))
+    if (IsConstructorCallPC(pc)) {
         return jitRealm->bailoutReturnAddr(BailoutReturnStub::New);
+    }
     return jitRealm->bailoutReturnAddr(BailoutReturnStub::Call);
 }
 
@@ -453,11 +470,13 @@ static inline jsbytecode*
 GetNextNonLoopEntryPc(jsbytecode* pc, jsbytecode** skippedLoopEntry)
 {
     JSOp op = JSOp(*pc);
-    if (op == JSOP_GOTO)
+    if (op == JSOP_GOTO) {
         return pc + GET_JUMP_OFFSET(pc);
+    }
     if (op == JSOP_LOOPENTRY || op == JSOP_NOP || op == JSOP_LOOPHEAD) {
-        if (op == JSOP_LOOPENTRY)
+        if (op == JSOP_LOOPENTRY) {
             *skippedLoopEntry = pc;
+        }
         return GetNextPc(pc);
     }
     return pc;
@@ -466,23 +485,27 @@ GetNextNonLoopEntryPc(jsbytecode* pc, jsbytecode** skippedLoopEntry)
 static bool
 HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
 {
-    if (!script->hasTrynotes())
+    if (!script->hasTrynotes()) {
         return false;
+    }
 
     JSTryNote* tn = script->trynotes()->vector;
     JSTryNote* tnEnd = tn + script->trynotes()->length;
     uint32_t pcOffset = uint32_t(pc - script->main());
     for (; tn != tnEnd; ++tn) {
-        if (pcOffset < tn->start)
+        if (pcOffset < tn->start) {
             continue;
-        if (pcOffset >= tn->start + tn->length)
+        }
+        if (pcOffset >= tn->start + tn->length) {
             continue;
+        }
 
         switch (tn->kind) {
           case JSTRY_FOR_IN:
             
-            if (stackDepth == tn->stackDepth)
+            if (stackDepth == tn->stackDepth) {
                 return true;
+            }
             break;
 
           case JSTRY_FOR_OF:
@@ -490,15 +513,17 @@ HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
             
             
             
-            if (stackDepth == tn->stackDepth - 1 || stackDepth == tn->stackDepth - 2)
+            if (stackDepth == tn->stackDepth - 1 || stackDepth == tn->stackDepth - 2) {
                 return true;
+            }
             break;
 
           case JSTRY_DESTRUCTURING_ITERCLOSE:
             
             
-            if (stackDepth == tn->stackDepth || stackDepth == tn->stackDepth - 1)
+            if (stackDepth == tn->stackDepth || stackDepth == tn->stackDepth - 1) {
                 return true;
+            }
             break;
 
           default:
@@ -616,10 +641,11 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     
     uint32_t exprStackSlots;
-    if (catchingException)
+    if (catchingException) {
         exprStackSlots = excInfo->numExprSlots();
-    else
+    } else {
         exprStackSlots = iter.numAllocations() - (script->nfixed() + CountArgSlots(script, fun));
+    }
 
     builder.resetFramePushed();
 
@@ -657,13 +683,15 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     
     void* prevFramePtr = builder.calculatePrevFramePtr();
-    if (!builder.writePtr(prevFramePtr, "PrevFramePtr"))
+    if (!builder.writePtr(prevFramePtr, "PrevFramePtr")) {
         return false;
+    }
     prevFramePtr = builder.virtualPointerAtStackOffset(0);
 
     
-    if (!builder.subtract(BaselineFrame::Size(), "BaselineFrame"))
+    if (!builder.subtract(BaselineFrame::Size(), "BaselineFrame")) {
         return false;
+    }
     BufferPointer<BaselineFrame> blFrame = builder.pointerAtStackOffset<BaselineFrame>(0);
 
     uint32_t flags = 0;
@@ -671,8 +699,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     
     
-    if (script->isDebuggee())
+    if (script->isDebuggee()) {
         flags |= BaselineFrame::DEBUGGEE;
+    }
 
     
     JSObject* envChain = nullptr;
@@ -735,8 +764,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 
                 
                 
-                if (!IsPrologueBailout(iter, excInfo))
+                if (!IsPrologueBailout(iter, excInfo)) {
                     envChain = fun->environment();
+                }
             } else if (script->module()) {
                 envChain = script->module()->environment();
             } else {
@@ -754,8 +784,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 
                 
                 
-                if (IsPrologueBailout(iter, excInfo))
+                if (IsPrologueBailout(iter, excInfo)) {
                     builder.setCheckGlobalDeclarationConflicts();
+                }
             }
         }
 
@@ -768,8 +799,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
         if (script->argumentsHasVarBinding()) {
             v = iter.read();
             MOZ_ASSERT(v.isObject() || v.isUndefined() || v.isMagic(JS_OPTIMIZED_OUT));
-            if (v.isObject())
+            if (v.isObject()) {
                 argsObj = &v.toObject().as<ArgumentsObject>();
+            }
         }
     }
     JitSpew(JitSpew_BaselineBailouts, "      EnvChain=%p", envChain);
@@ -781,8 +813,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     blFrame->setFlags(flags);
 
     
-    if (argsObj)
+    if (argsObj) {
         blFrame->initArgsObjUnchecked(*argsObj);
+    }
 
     if (fun) {
         
@@ -807,8 +840,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             
             
             MOZ_ASSERT(startFrameFormals.empty());
-            if (!startFrameFormals.resize(fun->nargs()))
+            if (!startFrameFormals.resize(fun->nargs())) {
                 return false;
+            }
         }
 
         for (uint32_t i = 0; i < fun->nargs(); i++) {
@@ -832,8 +866,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
     for (uint32_t i = 0; i < script->nfixed(); i++) {
         Value slot = iter.read();
-        if (!builder.writeValue(slot, "FixedValue"))
+        if (!builder.writeValue(slot, "FixedValue")) {
             return false;
+        }
     }
 
     
@@ -848,8 +883,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     
     
-    if (!JitOptions.disablePgo && script->hasScriptCounts())
+    if (!JitOptions.disablePgo && script->hasScriptCounts()) {
         script->incHitCount(pc);
+    }
 
     JSOp op = JSOp(*pc);
 
@@ -861,8 +897,7 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     uint32_t pushedSlots = 0;
     AutoValueVector savedCallerArgs(cx);
     bool needToSaveArgs = op == JSOP_FUNAPPLY || IsGetPropPC(pc) || IsSetPropPC(pc);
-    if (iter.moreFrames() && (op == JSOP_FUNCALL || needToSaveArgs))
-    {
+    if (iter.moreFrames() && (op == JSOP_FUNCALL || needToSaveArgs)) {
         uint32_t inlined_args = 0;
         if (op == JSOP_FUNCALL) {
             inlined_args = 2 + GET_ARGC(pc) - 1;
@@ -881,8 +916,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 pushedSlots);
         for (uint32_t i = 0; i < pushedSlots; i++) {
             Value v = iter.read();
-            if (!builder.writeValue(v, "StackValue"))
+            if (!builder.writeValue(v, "StackValue")) {
                 return false;
+            }
         }
 
         if (op == JSOP_FUNCALL) {
@@ -892,8 +928,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             
             
             JitSpew(JitSpew_BaselineBailouts, "      pushing undefined to fixup funcall");
-            if (!builder.writeValue(UndefinedValue(), "StackValue"))
+            if (!builder.writeValue(UndefinedValue(), "StackValue")) {
                 return false;
+            }
         }
 
         if (needToSaveArgs) {
@@ -910,21 +947,27 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             
             if (op == JSOP_FUNAPPLY) {
                 JitSpew(JitSpew_BaselineBailouts, "      pushing 4x undefined to fixup funapply");
-                if (!builder.writeValue(UndefinedValue(), "StackValue"))
+                if (!builder.writeValue(UndefinedValue(), "StackValue")) {
                     return false;
-                if (!builder.writeValue(UndefinedValue(), "StackValue"))
+                }
+                if (!builder.writeValue(UndefinedValue(), "StackValue")) {
                     return false;
-                if (!builder.writeValue(UndefinedValue(), "StackValue"))
+                }
+                if (!builder.writeValue(UndefinedValue(), "StackValue")) {
                     return false;
-                if (!builder.writeValue(UndefinedValue(), "StackValue"))
+                }
+                if (!builder.writeValue(UndefinedValue(), "StackValue")) {
                     return false;
+                }
             }
             
             
-            if (!savedCallerArgs.resize(inlined_args))
+            if (!savedCallerArgs.resize(inlined_args)) {
                 return false;
-            for (uint32_t i = 0; i < inlined_args; i++)
+            }
+            for (uint32_t i = 0; i < inlined_args; i++) {
                 savedCallerArgs[i].set(iter.read());
+            }
 
             if (IsSetPropPC(pc)) {
                 
@@ -933,8 +976,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 
                 Value initialArg = savedCallerArgs[inlined_args - 1];
                 JitSpew(JitSpew_BaselineBailouts, "     pushing setter's initial argument");
-                if (!builder.writeValue(initialArg, "StackValue"))
+                if (!builder.writeValue(initialArg, "StackValue")) {
                     return false;
+                }
             }
             pushedSlots = exprStackSlots;
         }
@@ -975,8 +1019,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
         } else {
             v = iter.read();
         }
-        if (!builder.writeValue(v, "StackValue"))
+        if (!builder.writeValue(v, "StackValue")) {
             return false;
+        }
     }
 
     
@@ -1001,12 +1046,14 @@ InitFromBailout(JSContext* cx, size_t frameNo,
         while (true) {
             pc = GetNextNonLoopEntryPc(pc, &skippedLoopEntry);
             fasterPc = GetNextNonLoopEntryPc(GetNextNonLoopEntryPc(fasterPc, &skippedLoopEntry), &skippedLoopEntry);
-            if (fasterPc == pc)
+            if (fasterPc == pc) {
                 break;
+            }
         }
         op = JSOp(*pc);
-        if (skippedLoopEntry && script->trackRecordReplayProgress())
+        if (skippedLoopEntry && script->trackRecordReplayProgress()) {
             mozilla::recordreplay::AdvanceExecutionProgressCounter();
+        }
     }
 
     const uint32_t pcOff = script->pcToOffset(pc);
@@ -1015,8 +1062,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 #ifdef DEBUG
     uint32_t expectedDepth;
     bool reachablePC;
-    if (!ReconstructStackDepth(cx, script, resumeAfter ? GetNextPc(pc) : pc, &expectedDepth, &reachablePC))
+    if (!ReconstructStackDepth(cx, script, resumeAfter ? GetNextPc(pc) : pc, &expectedDepth, &reachablePC)) {
         return false;
+    }
 
     if (reachablePC) {
         if (op != JSOP_FUNAPPLY || !iter.moreFrames() || resumeAfter) {
@@ -1069,14 +1117,16 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             
             ICEntry& icEntry = baselineScript->icEntryFromPCOffset(pcOff);
             ICFallbackStub* fallbackStub = icEntry.firstStub()->getChainFallback();
-            if (fallbackStub->isMonitoredFallback())
+            if (fallbackStub->isMonitoredFallback()) {
                 enterMonitorChain = true;
+            }
         }
 
         uint32_t numUses = js::StackUses(pc);
 
-        if (resumeAfter && !enterMonitorChain)
+        if (resumeAfter && !enterMonitorChain) {
             pc = GetNextPc(pc);
+        }
 
         builder.setResumePC(pc);
         builder.setResumeFramePtr(prevFramePtr);
@@ -1089,8 +1139,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
             ICTypeMonitor_Fallback* typeMonitorFallback =
                 fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(cx, script);
-            if (!typeMonitorFallback)
+            if (!typeMonitorFallback) {
                 return false;
+            }
 
             ICStub* firstMonStub = typeMonitorFallback->firstMonitorStub();
 
@@ -1101,8 +1152,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
             if (JSOp(*pc) == JSOP_GETELEM_SUPER) {
                 
-                if (!builder.writeValue(UndefinedValue(), "GETELEM_SUPER stack balance"))
+                if (!builder.writeValue(UndefinedValue(), "GETELEM_SUPER stack balance")) {
                     return false;
+                }
                 frameSize += sizeof(Value);
             }
 
@@ -1116,17 +1168,21 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             
             if (IsCallPC(pc)) {
                 uint32_t numCallArgs = numUses - 2 - uint32_t(pushedNewTarget);
-                if (!builder.writeValue(UndefinedValue(), "CallOp FillerCallee"))
+                if (!builder.writeValue(UndefinedValue(), "CallOp FillerCallee")) {
                     return false;
-                if (!builder.writeValue(UndefinedValue(), "CallOp FillerThis"))
+                }
+                if (!builder.writeValue(UndefinedValue(), "CallOp FillerThis")) {
                     return false;
+                }
                 for (uint32_t i = 0; i < numCallArgs; i++) {
-                    if (!builder.writeValue(UndefinedValue(), "CallOp FillerArg"))
+                    if (!builder.writeValue(UndefinedValue(), "CallOp FillerArg")) {
                         return false;
+                    }
                 }
                 if (pushedNewTarget) {
-                    if (!builder.writeValue(UndefinedValue(), "CallOp FillerNewTarget"))
+                    if (!builder.writeValue(UndefinedValue(), "CallOp FillerNewTarget")) {
                         return false;
+                    }
                 }
 
                 frameSize += numUses * sizeof(Value);
@@ -1207,8 +1263,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
                 
                 
-                if (skippedLoopEntry && script->trackRecordReplayProgress())
+                if (skippedLoopEntry && script->trackRecordReplayProgress()) {
                     --*mozilla::recordreplay::ExecutionProgressCounter();
+                }
             } else {
                 opReturnAddr = nativeCodeForPC;
             }
@@ -1219,8 +1276,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
         if (cx->runtime()->geckoProfiler().enabled()) {
             
             const char* filename = script->filename();
-            if (filename == nullptr)
+            if (filename == nullptr) {
                 filename = "<unknown>";
+            }
             unsigned len = strlen(filename) + 200;
             UniqueChars buf(js_pod_malloc<char>(len));
             if (buf == nullptr) {
@@ -1244,15 +1302,17 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     size_t baselineFrameDescr = MakeFrameDescriptor((uint32_t) builder.framePushed(),
                                                     FrameType::BaselineJS,
                                                     BaselineStubFrameLayout::Size());
-    if (!builder.writeWord(baselineFrameDescr, "Descriptor"))
+    if (!builder.writeWord(baselineFrameDescr, "Descriptor")) {
         return false;
+    }
 
     
     
     ICEntry& icEntry = baselineScript->icEntryFromPCOffset(pcOff);
     MOZ_ASSERT(IsInlinableFallback(icEntry.firstStub()->getChainFallback()));
-    if (!builder.writePtr(baselineScript->returnAddressForIC(icEntry), "ReturnAddr"))
+    if (!builder.writePtr(baselineScript->returnAddressForIC(icEntry), "ReturnAddr")) {
         return false;
+    }
 
     
     
@@ -1285,12 +1345,14 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
     
     MOZ_ASSERT(IsInlinableFallback(icEntry.fallbackStub()));
-    if (!builder.writePtr(icEntry.fallbackStub(), "StubPtr"))
+    if (!builder.writePtr(icEntry.fallbackStub(), "StubPtr")) {
         return false;
+    }
 
     
-    if (!builder.writePtr(prevFramePtr, "PrevFramePtr"))
+    if (!builder.writePtr(prevFramePtr, "PrevFramePtr")) {
         return false;
+    }
     prevFramePtr = builder.virtualPointerAtStackOffset(0);
 
     
@@ -1301,24 +1363,27 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     if (needToSaveArgs) {
         
         
-        if (op == JSOP_FUNAPPLY)
+        if (op == JSOP_FUNAPPLY) {
             actualArgc = blFrame->numActualArgs();
-        else
+        } else {
             actualArgc = IsSetPropPC(pc);
+        }
         callee = savedCallerArgs[0];
 
         
         size_t afterFrameSize = (actualArgc + 1) * sizeof(Value) + JitFrameLayout::Size();
-        if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding"))
+        if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
             return false;
+        }
 
         
         MOZ_ASSERT(actualArgc + 2 <= exprStackSlots);
         MOZ_ASSERT(savedCallerArgs.length() == actualArgc + 2);
         for (unsigned i = 0; i < actualArgc + 1; i++) {
             size_t arg = savedCallerArgs.length() - (i + 1);
-            if (!builder.writeValue(savedCallerArgs[arg], "ArgVal"))
+            if (!builder.writeValue(savedCallerArgs[arg], "ArgVal")) {
                 return false;
+            }
         }
     } else {
         actualArgc = GET_ARGC(pc);
@@ -1330,8 +1395,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
         
         size_t afterFrameSize = (actualArgc + 1 + pushedNewTarget) * sizeof(Value) +
                                 JitFrameLayout::Size();
-        if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding"))
+        if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
             return false;
+        }
 
         
         size_t valueSlot = blFrame->numValueSlots() - 1;
@@ -1339,8 +1405,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
         for (size_t i = valueSlot; i > calleeSlot; i--) {
             Value v = *blFrame->valueSlot(i);
-            if (!builder.writeValue(v, "ArgVal"))
+            if (!builder.writeValue(v, "ArgVal")) {
                 return false;
+            }
         }
 
         callee = *blFrame->valueSlot(calleeSlot);
@@ -1357,40 +1424,46 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                                                         JitFrameLayout::Size());
 
     
-    if (!builder.writeWord(actualArgc, "ActualArgc"))
+    if (!builder.writeWord(actualArgc, "ActualArgc")) {
         return false;
+    }
 
     
     JitSpew(JitSpew_BaselineBailouts, "      Callee = %016" PRIx64, callee.asRawBits());
 
     JSFunction* calleeFun = &callee.toObject().as<JSFunction>();
-    if (!builder.writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken"))
+    if (!builder.writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken")) {
         return false;
+    }
     nextCallee.set(calleeFun);
 
     
-    if (!builder.writeWord(baselineStubFrameDescr, "Descriptor"))
+    if (!builder.writeWord(baselineStubFrameDescr, "Descriptor")) {
         return false;
+    }
 
     
     
     if (CodeSpec[*pc].format & JOF_TYPESET) {
         ICFallbackStub* fallbackStub = icEntry.firstStub()->getChainFallback();
-        if (!fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(cx, script))
+        if (!fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(cx, script)) {
             return false;
+        }
     }
 
     
     void* baselineCallReturnAddr = GetStubReturnAddress(cx, pc);
     MOZ_ASSERT(baselineCallReturnAddr);
-    if (!builder.writePtr(baselineCallReturnAddr, "ReturnAddr"))
+    if (!builder.writePtr(baselineCallReturnAddr, "ReturnAddr")) {
         return false;
+    }
     MOZ_ASSERT(builder.framePushed() % JitStackAlignment == 0);
 
     
     
-    if (actualArgc >= calleeFun->nargs())
+    if (actualArgc >= calleeFun->nargs()) {
         return true;
+    }
 
     
     
@@ -1425,38 +1498,44 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
     
 #if defined(JS_CODEGEN_X86)
-    if (!builder.writePtr(prevFramePtr, "PrevFramePtr-X86Only"))
+    if (!builder.writePtr(prevFramePtr, "PrevFramePtr-X86Only")) {
         return false;
+    }
     
     prevFramePtr = builder.virtualPointerAtStackOffset(0);
-    if (!builder.writePtr(prevFramePtr, "Padding-X86Only"))
+    if (!builder.writePtr(prevFramePtr, "Padding-X86Only")) {
         return false;
+    }
 #endif
 
     
     size_t afterFrameSize = (calleeFun->nargs() + 1 + pushedNewTarget) * sizeof(Value) +
                             RectifierFrameLayout::Size();
-    if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding"))
+    if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
         return false;
+    }
 
     
     if (pushedNewTarget) {
         size_t newTargetOffset = (builder.framePushed() - endOfBaselineStubArgs) +
                                  (actualArgc + 1) * sizeof(Value);
         Value newTargetValue = *builder.valuePointerAtStackOffset(newTargetOffset);
-        if (!builder.writeValue(newTargetValue, "CopiedNewTarget"))
+        if (!builder.writeValue(newTargetValue, "CopiedNewTarget")) {
             return false;
+        }
     }
 
     
     for (unsigned i = 0; i < (calleeFun->nargs() - actualArgc); i++) {
-        if (!builder.writeValue(UndefinedValue(), "FillerVal"))
+        if (!builder.writeValue(UndefinedValue(), "FillerVal")) {
             return false;
+        }
     }
 
     
-    if (!builder.subtract((actualArgc + 1) * sizeof(Value), "CopiedArgs"))
+    if (!builder.subtract((actualArgc + 1) * sizeof(Value), "CopiedArgs")) {
         return false;
+    }
     BufferPointer<uint8_t> stubArgsEnd =
         builder.pointerAtStackOffset<uint8_t>(builder.framePushed() - endOfBaselineStubArgs);
     JitSpew(JitSpew_BaselineBailouts, "      MemCpy from %p", stubArgsEnd.get());
@@ -1470,23 +1549,27 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                                                      JitFrameLayout::Size());
 
     
-    if (!builder.writeWord(actualArgc, "ActualArgc"))
+    if (!builder.writeWord(actualArgc, "ActualArgc")) {
         return false;
+    }
 
     
-    if (!builder.writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken"))
+    if (!builder.writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken")) {
         return false;
+    }
 
     
-    if (!builder.writeWord(rectifierFrameDescr, "Descriptor"))
+    if (!builder.writeWord(rectifierFrameDescr, "Descriptor")) {
         return false;
+    }
 
     
     
     void* rectReturnAddr = cx->runtime()->jitRuntime()->getArgumentsRectifierReturnAddr().value;
     MOZ_ASSERT(rectReturnAddr);
-    if (!builder.writePtr(rectReturnAddr, "ReturnAddr"))
+    if (!builder.writePtr(rectReturnAddr, "ReturnAddr")) {
         return false;
+    }
     MOZ_ASSERT(builder.framePushed() % JitStackAlignment == 0);
 
     return true;
@@ -1567,11 +1650,13 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
         catchingException = excInfo->catchingException();
         propagatingExceptionForDebugMode = excInfo->propagatingIonExceptionForDebugMode();
 
-        if (catchingException)
+        if (catchingException) {
             JitSpew(JitSpew_BaselineBailouts, "Resuming in catch or finally block");
+        }
 
-        if (propagatingExceptionForDebugMode)
+        if (propagatingExceptionForDebugMode) {
             JitSpew(JitSpew_BaselineBailouts, "Resuming in-place for debug mode");
+        }
     } else {
         catchingException = false;
         propagatingExceptionForDebugMode = false;
@@ -1580,8 +1665,9 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     JitSpew(JitSpew_BaselineBailouts, "  Reading from snapshot offset %u size %zu",
             iter.snapshotOffset(), iter.ionScript()->snapshotsListSize());
 
-    if (!excInfo)
+    if (!excInfo) {
         iter.ionScript()->incNumBailouts();
+    }
     iter.script()->updateJitCodeRaw(cx->runtime());
 
     
@@ -1619,10 +1705,11 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
         JitSpew(JitSpew_BaselineBailouts, "  No callee!");
     }
 
-    if (iter.isConstructing())
+    if (iter.isConstructing()) {
         JitSpew(JitSpew_BaselineBailouts, "  Constructing!");
-    else
+    } else {
         JitSpew(JitSpew_BaselineBailouts, "  Not constructing!");
+    }
 
     JitSpew(JitSpew_BaselineBailouts, "  Restoring frames:");
     size_t frameNo = 0;
@@ -1669,8 +1756,9 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
             break;
         }
 
-        if (handleException)
+        if (handleException) {
             break;
+        }
 
         MOZ_ASSERT(nextCallee);
         fun = nextCallee;
@@ -1695,11 +1783,13 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     BaselineBailoutInfo *info = builder.info();
     uint8_t* newsp = info->incomingStack - (info->copyStackTop - info->copyStackBottom);
 #ifdef JS_SIMULATOR
-    if (Simulator::Current()->overRecursed(uintptr_t(newsp)))
+    if (Simulator::Current()->overRecursed(uintptr_t(newsp))) {
         overRecursed = true;
+    }
 #else
-    if (!CheckRecursionLimitWithStackPointerDontReport(cx, newsp))
+    if (!CheckRecursionLimitWithStackPointerDontReport(cx, newsp)) {
         overRecursed = true;
+    }
 #endif
     if (overRecursed) {
         JitSpew(JitSpew_BaselineBailouts, "  Overrecursion check failed!");
@@ -1743,12 +1833,14 @@ HandleBoundsCheckFailure(JSContext* cx, HandleScript outerScript, HandleScript i
             innerScript->filename(), innerScript->lineno(), innerScript->column(),
             outerScript->filename(), outerScript->lineno(), outerScript->column());
 
-    if (!innerScript->failedBoundsCheck())
+    if (!innerScript->failedBoundsCheck()) {
         innerScript->setFailedBoundsCheck();
+    }
 
     InvalidateAfterBailout(cx, outerScript, "bounds check failure");
-    if (innerScript->hasIonScript())
+    if (innerScript->hasIonScript()) {
         Invalidate(cx, innerScript);
+    }
 }
 
 static void
@@ -1783,12 +1875,14 @@ HandleLexicalCheckFailure(JSContext* cx, HandleScript outerScript, HandleScript 
             innerScript->filename(), innerScript->lineno(), innerScript->column(),
             outerScript->filename(), outerScript->lineno(), outerScript->column());
 
-    if (!innerScript->failedLexicalCheck())
+    if (!innerScript->failedLexicalCheck()) {
         innerScript->setFailedLexicalCheck();
+    }
 
     InvalidateAfterBailout(cx, outerScript, "lexical check failure");
-    if (innerScript->hasIonScript())
+    if (innerScript->hasIonScript()) {
         Invalidate(cx, innerScript);
+    }
 }
 
 static bool
@@ -1799,22 +1893,26 @@ CopyFromRematerializedFrame(JSContext* cx, JitActivation* act, uint8_t* fp, size
 
     
     
-    if (!rematFrame)
+    if (!rematFrame) {
         return true;
+    }
 
     MOZ_ASSERT(rematFrame->script() == frame->script());
     MOZ_ASSERT(rematFrame->numActualArgs() == frame->numActualArgs());
 
     frame->setEnvironmentChain(rematFrame->environmentChain());
 
-    if (frame->isFunctionFrame())
+    if (frame->isFunctionFrame()) {
         frame->thisArgument() = rematFrame->thisArgument();
+    }
 
-    for (unsigned i = 0; i < frame->numActualArgs(); i++)
+    for (unsigned i = 0; i < frame->numActualArgs(); i++) {
         frame->argv()[i] = rematFrame->argv()[i];
+    }
 
-    for (size_t i = 0; i < frame->script()->nfixed(); i++)
+    for (size_t i = 0; i < frame->script()->nfixed(); i++) {
         *frame->valueSlot(i) = rematFrame->locals()[i];
+    }
 
     frame->setReturnValue(rematFrame->returnValue());
 
@@ -1878,8 +1976,9 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
         
         
         
-        if (!EnsureHasEnvironmentObjects(cx, topFrame))
+        if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
             return false;
+        }
 
         
         
@@ -1887,8 +1986,9 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
         if (checkGlobalDeclarationConflicts) {
             Rooted<LexicalEnvironmentObject*> lexicalEnv(cx, &cx->global()->lexicalEnvironment());
             RootedScript script(cx, topFrame->script());
-            if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv, cx->global()))
+            if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv, cx->global())) {
                 return false;
+            }
         }
     }
 
@@ -1904,8 +2004,9 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
     
     
     
-    if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime()))
+    if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime())) {
         cx->jitActivation->setLastProfilingFrame(iter.prevFp());
+    }
 
     uint32_t frameno = 0;
     while (frameno < numFrames) {
@@ -1924,8 +2025,9 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
                     argsObj = &frame->argsObj();
                 } else {
                     argsObj = ArgumentsObject::createExpected(cx, frame);
-                    if (!argsObj)
+                    if (!argsObj) {
                         return false;
+                    }
                 }
 
                 
@@ -1936,8 +2038,9 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
                 SetFrameArgumentsObject(cx, frame, script, argsObj);
             }
 
-            if (frameno == 0)
+            if (frameno == 0) {
                 innerScript = frame->script();
+            }
 
             if (frameno == numFrames - 1) {
                 outerScript = frame->script();
@@ -1978,8 +2081,9 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
             ++iter;
         }
 
-        if (!ok)
+        if (!ok) {
             return false;
+        }
 
         
         

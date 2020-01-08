@@ -24,8 +24,9 @@ FrameInfo::init(TempAllocator& alloc)
     
     size_t extra = script->isGlobalCode() ? 1 : 0;
     size_t nstack = Max(script->nslots() - script->nfixed(), size_t(MinJITStackSize)) + extra;
-    if (!stack.init(alloc, nstack))
+    if (!stack.init(alloc, nstack)) {
         return false;
+    }
 
     return true;
 }
@@ -81,8 +82,9 @@ FrameInfo::numUnsyncedSlots()
     
     uint32_t i = 0;
     for (; i < stackDepth(); i++) {
-        if (peek(-int32_t(i + 1))->kind() == StackValue::Stack)
+        if (peek(-int32_t(i + 1))->kind() == StackValue::Stack) {
             break;
+        }
     }
     return i;
 }
@@ -165,13 +167,15 @@ FrameInfo::assertValidState(const BytecodeInfo& info)
     
     uint32_t i = 0;
     for (; i < stackDepth(); i++) {
-        if (stack[i].kind() != StackValue::Stack)
+        if (stack[i].kind() != StackValue::Stack) {
             break;
+        }
     }
 
     
-    for (; i < stackDepth(); i++)
+    for (; i < stackDepth(); i++) {
         MOZ_ASSERT(stack[i].kind() != StackValue::Stack);
+    }
 
     
     
