@@ -159,6 +159,12 @@ row[unsupported="true"] {
   -moz-user-select: text;
 }
 
+#detail-name-container {
+  
+
+  max-width: 580px;
+}
+
 
 #view-port:not([selectedIndex="0"]) #discover-view .loading,
 #discover-view:not([selectedIndex="0"]) .loading {
