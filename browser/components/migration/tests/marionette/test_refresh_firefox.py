@@ -468,6 +468,7 @@ class TestFirefoxRefresh(MarionetteTestCase):
         self.setUpScriptData()
 
         self.reset_profile_path = None
+        self.reset_profile_local_path = None
         self.desktop_backup_path = None
 
         self.createProfileData()
@@ -508,6 +509,12 @@ class TestFirefoxRefresh(MarionetteTestCase):
               global.profSvc.flush();
             """, script_args=(self.profileNameToRemove,))
             
+            different_path = self.reset_profile_local_path != self.reset_profile_path
+            if self.reset_profile_local_path and different_path:
+                shutil.rmtree(self.reset_profile_local_path,
+                              ignore_errors=False, onerror=handleRemoveReadonly)
+
+            
             shutil.rmtree(self.reset_profile_path,
                           ignore_errors=False, onerror=handleRemoveReadonly)
 
@@ -543,9 +550,10 @@ class TestFirefoxRefresh(MarionetteTestCase):
         self.setUpScriptData()
 
         
-        self.reset_profile_path = self.runCode("""
+        [self.reset_profile_path, self.reset_profile_local_path] = self.runCode("""
           let profD = Services.dirsvc.get("ProfD", Ci.nsIFile);
-          return profD.path;
+          let localD = Services.dirsvc.get("ProfLD", Ci.nsIFile);
+          return [profD.path, localD.path];
         """)
 
         
