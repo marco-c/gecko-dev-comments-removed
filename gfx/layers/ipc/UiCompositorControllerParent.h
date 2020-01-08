@@ -51,6 +51,7 @@ public:
 
   
   void NotifyLayersUpdated();
+  void NotifyFirstPaint();
 
 private:
   explicit UiCompositorControllerParent(const LayersId& aRootLayerTreeId);
