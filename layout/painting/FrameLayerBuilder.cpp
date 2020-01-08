@@ -6818,6 +6818,10 @@ PushOpacity(gfxContext* aContext,
   }
 }
 
+
+
+
+
 static void
 PushTransform(gfxContext* aContext,
               AssignedDisplayItem& aItem,
@@ -6880,7 +6884,7 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
 {
   DrawTarget& aDrawTarget = *aContext->GetDrawTarget();
 
-  int32_t appUnitsPerDevPixel  = aPresContext->AppUnitsPerDevPixel();
+  int32_t appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
   nsRect boundRect = ToAppUnits(aRect, appUnitsPerDevPixel);
   boundRect.MoveBy(NSIntPixelsToAppUnits(aOffset.x, appUnitsPerDevPixel),
                    NSIntPixelsToAppUnits(aOffset.y, appUnitsPerDevPixel));
@@ -6903,8 +6907,10 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
   
   
   
+  
   ItemClipTracker itemClipTracker(aContext, appUnitsPerDevPixel);
 
+  
   
   
   
@@ -6979,6 +6985,8 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
 
     if (cdi.mType == DisplayItemEntryType::PUSH_OPACITY ||
         cdi.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
+      
+      
       DisplayItemClip effectClip;
       effectClip.SetTo(item->GetPaintRect());
       effectClip.IntersectWith(item->GetClip());
