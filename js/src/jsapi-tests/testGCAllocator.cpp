@@ -14,9 +14,7 @@
 #if defined(XP_WIN)
 #include "util/Windows.h"
 #include <psapi.h>
-#elif defined(SOLARIS)
-
-#elif defined(XP_UNIX)
+#else
 #include <algorithm>
 #include <errno.h>
 #include <sys/mman.h>
@@ -24,26 +22,20 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#else
-#error "Memory mapping functions are not defined for your OS."
 #endif
 
 BEGIN_TEST(testGCAllocator) {
+#ifdef JS_64BIT
+  
+  return true;
+#else
   size_t PageSize = 0;
 #if defined(XP_WIN)
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
   PageSize = sysinfo.dwPageSize;
-#else  
-  return true;
-#endif
-#elif defined(SOLARIS)
-  return true;
-#elif defined(XP_UNIX)
-  PageSize = size_t(sysconf(_SC_PAGESIZE));
 #else
-  return true;
+  PageSize = size_t(sysconf(_SC_PAGESIZE));
 #endif
 
   
@@ -56,6 +48,7 @@ BEGIN_TEST(testGCAllocator) {
     return testGCAllocatorUp(PageSize);
   }
   return testGCAllocatorDown(PageSize);
+#endif
 }
 
 static const size_t Chunk = 512 * 1024;
@@ -140,15 +133,9 @@ bool testGCAllocatorUp(const size_t PageSize) {
   
   CHECK(positionIsCorrect("x--xx--xoo--xxx-", stagingArea, chunkPool,
                           tempChunks));
-#ifndef __aarch64__
-  
-  
-  
-
   
   CHECK(positionIsCorrect("x--xx---x-oo--x-", stagingArea, chunkPool,
                           tempChunks));
-#endif
   
   CHECK(positionIsCorrect("x--xx--xx-oox---", stagingArea, chunkPool,
                           tempChunks, UseLastDitchAllocator));
@@ -293,7 +280,6 @@ bool positionIsCorrect(const char* str, void* base, void** chunkPool,
 }
 
 #if defined(XP_WIN)
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 
 void* mapMemoryAt(void* desired, size_t length) {
   return VirtualAlloc(desired, length, MEM_COMMIT | MEM_RESERVE,
@@ -309,29 +295,9 @@ void unmapPages(void* p, size_t size) {
   MOZ_ALWAYS_TRUE(VirtualFree(p, 0, MEM_RELEASE));
 }
 
-#else  
-
-void* mapMemoryAt(void* desired, size_t length) { return nullptr; }
-void* mapMemory(size_t length) { return nullptr; }
-void unmapPages(void* p, size_t size) {}
-
-#endif
-#elif defined(SOLARIS)  
-
-void* mapMemoryAt(void* desired, size_t length) { return nullptr; }
-void* mapMemory(size_t length) { return nullptr; }
-void unmapPages(void* p, size_t size) {}
-
-#elif defined(XP_UNIX)
+#else
 
 void* mapMemoryAt(void* desired, size_t length) {
-
-#if defined(__ia64__) || defined(__aarch64__) ||  \
-    (defined(__sparc__) && defined(__arch64__) && \
-     (defined(__NetBSD__) || defined(__linux__)))
-  MOZ_RELEASE_ASSERT(
-      (0xffff800000000000ULL & (uintptr_t(desired) + length - 1)) == 0);
-#endif
   void* region = mmap(desired, length, PROT_READ | PROT_WRITE,
                       MAP_PRIVATE | MAP_ANON, -1, 0);
   if (region == MAP_FAILED) {
@@ -351,48 +317,11 @@ void* mapMemory(size_t length) {
   int flags = MAP_PRIVATE | MAP_ANON;
   int fd = -1;
   off_t offset = 0;
-  
-#if defined(__ia64__) || \
-    (defined(__sparc__) && defined(__arch64__) && defined(__NetBSD__))
-  void* region =
-      mmap((void*)0x0000070000000000, length, prot, flags, fd, offset);
-  if (region == MAP_FAILED) {
-    return nullptr;
-  }
-  if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
-    if (munmap(region, length)) {
-      MOZ_RELEASE_ASSERT(errno == ENOMEM);
-    }
-    return nullptr;
-  }
-  return region;
-#elif defined(__aarch64__) || \
-    (defined(__sparc__) && defined(__arch64__) && defined(__linux__))
-  const uintptr_t start = UINT64_C(0x0000070000000000);
-  const uintptr_t end = UINT64_C(0x0000800000000000);
-  const uintptr_t step = js::gc::ChunkSize;
-  uintptr_t hint;
-  void* region = MAP_FAILED;
-  for (hint = start; region == MAP_FAILED && hint + length <= end;
-       hint += step) {
-    region = mmap((void*)hint, length, prot, flags, fd, offset);
-    if (region != MAP_FAILED) {
-      if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
-        if (munmap(region, length)) {
-          MOZ_RELEASE_ASSERT(errno == ENOMEM);
-        }
-        region = MAP_FAILED;
-      }
-    }
-  }
-  return region == MAP_FAILED ? nullptr : region;
-#else
   void* region = mmap(nullptr, length, prot, flags, fd, offset);
   if (region == MAP_FAILED) {
     return nullptr;
   }
   return region;
-#endif
 }
 
 void unmapPages(void* p, size_t size) {
@@ -401,7 +330,6 @@ void unmapPages(void* p, size_t size) {
   }
 }
 
-#else  
-#error "Memory mapping functions are not defined for your OS."
 #endif
+
 END_TEST(testGCAllocator)
