@@ -5784,6 +5784,22 @@ nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> a
     if (NS_WARN_IF(!providedPrincipal)) {
       return;
     }
+  } else {
+    
+    
+    auto principal = BasePrincipal::Cast(GetPrincipal());
+    NS_ENSURE_TRUE_VOID(principal);
+
+    OriginAttributes targetAttrs = principal->OriginAttributesRef();
+    OriginAttributes sourceAttrs = aSubjectPrincipal.OriginAttributesRef();
+    MOZ_DIAGNOSTIC_ASSERT(sourceAttrs.EqualsIgnoringFPD(targetAttrs));
+
+    
+    
+    if (OriginAttributes::IsBlockPostMessageForFPI() &&
+        sourceAttrs.mFirstPartyDomain != targetAttrs.mFirstPartyDomain) {
+      return;
+    }
   }
 
   
