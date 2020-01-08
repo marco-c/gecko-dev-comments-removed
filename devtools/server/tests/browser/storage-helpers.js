@@ -54,7 +54,7 @@ async function openTabAndSetupStorage(url) {
   });
   
   const target = await getTargetForTab(gBrowser.selectedTab);
-  const front = target.getFront("storage");
+  const front = await target.getFront("storage");
   return { target, front };
 }
 

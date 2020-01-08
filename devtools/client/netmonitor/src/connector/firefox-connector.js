@@ -75,7 +75,7 @@ class FirefoxConnector {
       this.tabTarget.on("navigate", this.navigate);
 
       
-      this.emulationFront = this.tabTarget.getFront("emulation");
+      this.emulationFront = await this.tabTarget.getFront("emulation");
     }
 
     

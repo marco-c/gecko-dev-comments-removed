@@ -272,7 +272,7 @@ Inspector.prototype = {
       
       
       
-      this.changesFront = this.toolbox.target.getFront("changes");
+      this.changesFront = await this.toolbox.target.getFront("changes");
       this.changesFront.start();
     }
 
@@ -2297,7 +2297,7 @@ Inspector.prototype = {
       nodeActorID: this.selection.nodeFront.actorID,
       clipboard: clipboardEnabled,
     };
-    const screenshotFront = this.target.getFront("screenshot");
+    const screenshotFront = await this.target.getFront("screenshot");
     const screenshot = await screenshotFront.capture(args);
     await saveScreenshot(this.panelWin, args, screenshot);
   },

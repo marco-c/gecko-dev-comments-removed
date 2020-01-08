@@ -33,7 +33,7 @@ ShaderEditorPanel.prototype = {
 
 
   async open() {
-    this.front = this.target.getFront("webgl");
+    this.front = await this.target.getFront("webgl");
     this.shadersListView = new ShadersListView();
     this.eventsHandler = new EventsHandler();
     this.shadersEditorsView = new ShadersEditorsView();

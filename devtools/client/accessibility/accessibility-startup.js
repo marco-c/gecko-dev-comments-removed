@@ -74,7 +74,7 @@ class AccessibilityStartup {
           this.toolbox.once("accessibility-init"),
         ]);
 
-        this._accessibility = this.target.getFront("accessibility");
+        this._accessibility = await this.target.getFront("accessibility");
         
         
         
