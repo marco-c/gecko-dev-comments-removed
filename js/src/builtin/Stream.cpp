@@ -9,7 +9,6 @@
 #include "js/Stream.h"
 
 #include "gc/Heap.h"
-#include "vm/Interpreter.h"
 #include "vm/JSContext.h"
 #include "vm/SelfHosting.h"
 
@@ -121,6 +120,10 @@ inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
                                              HandlePropertyName P,
                                              HandleValue arg,
                                              MutableHandleValue rval);
+
+static MOZ_MUST_USE JSObject* PromiseInvokeOrNoop(JSContext* cx, HandleValue O,
+                                                  HandlePropertyName P,
+                                                  HandleValue arg);
 
 static MOZ_MUST_USE JSObject* PromiseRejectedWithPendingError(JSContext* cx) {
   RootedValue exn(cx);
@@ -467,21 +470,9 @@ const Class TeeState::class_ = {"TeeState",
 
 
 
-
-
-
-
-
-
-enum class SourceAlgorithms {
-  Script,
-  Tee,
-};
-
 static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
-    JSContext* cx, Handle<ReadableStream*> stream, SourceAlgorithms algorithms,
-    HandleValue underlyingSource, HandleValue pullMethod,
-    HandleValue cancelMethod, double highWaterMark, HandleValue size);
+    JSContext* cx, Handle<ReadableStream*> stream, HandleValue underlyingSource,
+    double highWaterMarkVal, HandleValue size);
 
 static MOZ_MUST_USE ReadableByteStreamController*
 CreateExternalReadableByteStreamController(
@@ -511,11 +502,6 @@ static MOZ_MUST_USE bool MakeSizeAlgorithmFromSizeFunction(JSContext* cx,
 
 static MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
     JSContext* cx, HandleValue highWaterMarkVal, double* highWaterMark);
-
-static MOZ_MUST_USE bool
-SetUpReadableStreamDefaultControllerFromUnderlyingSource(
-    JSContext* cx, Handle<ReadableStream*> stream, HandleValue underlyingSource,
-    double highWaterMark, HandleValue sizeAlgorithm);
 
 
 
@@ -619,8 +605,8 @@ bool ReadableStream::constructor(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
-    if (!SetUpReadableStreamDefaultControllerFromUnderlyingSource(
-            cx, stream, underlyingSource, highWaterMark, size)) {
+    if (!SetUpReadableStreamDefaultController(cx, stream, underlyingSource,
+                                              highWaterMark, size)) {
       return false;
     }
 
@@ -828,11 +814,8 @@ CLASS_SPEC(ReadableStream, 0, SlotCount, 0, 0, JS_NULL_CLASS_OPS);
 
 
 
-
 MOZ_MUST_USE ReadableStream* CreateReadableStream(
-    JSContext* cx, SourceAlgorithms sourceAlgorithms,
-    HandleValue underlyingSource, HandleValue pullMethod = UndefinedHandleValue,
-    HandleValue cancelMethod = UndefinedHandleValue, double highWaterMark = 1,
+    JSContext* cx, HandleValue underlyingSource, double highWaterMark = 1,
     HandleValue sizeAlgorithm = UndefinedHandleValue,
     HandleObject proto = nullptr) {
   cx->check(underlyingSource, sizeAlgorithm, proto);
@@ -856,10 +839,8 @@ MOZ_MUST_USE ReadableStream* CreateReadableStream(
   
   
   
-
-  if (!SetUpReadableStreamDefaultController(
-          cx, stream, sourceAlgorithms, underlyingSource, pullMethod,
-          cancelMethod, highWaterMark, sizeAlgorithm)) {
+  if (!SetUpReadableStreamDefaultController(cx, stream, underlyingSource,
+                                            highWaterMark, sizeAlgorithm)) {
     return nullptr;
   }
 
@@ -1180,8 +1161,8 @@ static MOZ_MUST_USE JSObject* ReadableStreamTee_Cancel(
   return cancelPromise;
 }
 
-static MOZ_MUST_USE bool ReadableStreamControllerError(
-    JSContext* cx, Handle<ReadableStreamController*> unwrappedController,
+static MOZ_MUST_USE bool ReadableStreamDefaultControllerErrorIfNeeded(
+    JSContext* cx, Handle<ReadableStreamDefaultController*> unwrappedController,
     HandleValue e);
 
 
@@ -1202,17 +1183,15 @@ static bool TeeReaderClosedHandler(JSContext* cx, unsigned argc, Value* vp) {
 
     
     
-    
     Rooted<ReadableStreamDefaultController*> branch1(cx, teeState->branch1());
-    if (!ReadableStreamControllerError(cx, branch1, reason)) {
+    if (!ReadableStreamDefaultControllerErrorIfNeeded(cx, branch1, reason)) {
       return false;
     }
 
     
     
-    
     Rooted<ReadableStreamDefaultController*> branch2(cx, teeState->branch2());
-    if (!ReadableStreamControllerError(cx, branch2, reason)) {
+    if (!ReadableStreamDefaultControllerErrorIfNeeded(cx, branch2, reason)) {
       return false;
     }
   }
@@ -1271,8 +1250,7 @@ static MOZ_MUST_USE bool ReadableStreamTee(
   
   
   RootedValue underlyingSource(cx, ObjectValue(*teeState));
-  branch1Stream.set(
-      CreateReadableStream(cx, SourceAlgorithms::Tee, underlyingSource));
+  branch1Stream.set(CreateReadableStream(cx, underlyingSource));
   if (!branch1Stream) {
     return false;
   }
@@ -1285,8 +1263,7 @@ static MOZ_MUST_USE bool ReadableStreamTee(
   
   
   
-  branch2Stream.set(
-      CreateReadableStream(cx, SourceAlgorithms::Tee, underlyingSource));
+  branch2Stream.set(CreateReadableStream(cx, underlyingSource));
   if (!branch2Stream) {
     return false;
   }
@@ -2233,6 +2210,10 @@ static bool ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static MOZ_MUST_USE bool ReadableStreamControllerError(
+    JSContext* cx, Handle<ReadableStreamController*> unwrappedController,
+    HandleValue e);
+
 
 
 
@@ -2246,10 +2227,19 @@ static bool ControllerStartFailedHandler(JSContext* cx, unsigned argc,
 
   
   
+  if (controller->is<ReadableStreamDefaultController>()) {
+    Rooted<ReadableStreamDefaultController*> defaultController(
+        cx, &controller->as<ReadableStreamDefaultController>());
+    return ReadableStreamDefaultControllerErrorIfNeeded(cx, defaultController,
+                                                        args.get(0));
+  }
+
   
   
-  if (!ReadableStreamControllerError(cx, controller, args.get(0))) {
-    return false;
+  if (controller->stream()->readable()) {
+    if (!ReadableStreamControllerError(cx, controller, args.get(0))) {
+      return false;
+    }
   }
 
   args.rval().setUndefined();
@@ -2418,6 +2408,7 @@ static bool ReadableStreamDefaultController_error(JSContext* cx, unsigned argc,
                                                   Value* vp) {
   
   
+
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<ReadableStreamDefaultController*> unwrappedController(
       cx, UnwrapAndTypeCheckThis<ReadableStreamDefaultController>(cx, args,
@@ -2427,10 +2418,18 @@ static bool ReadableStreamDefaultController_error(JSContext* cx, unsigned argc,
   }
 
   
-  if (!ReadableStreamControllerError(cx, unwrappedController, args.get(0))) {
+  
+  if (!unwrappedController->stream()->readable()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAMCONTROLLER_NOT_READABLE,
+                              "error");
     return false;
   }
 
+  
+  if (!ReadableStreamControllerError(cx, unwrappedController, args.get(0))) {
+    return false;
+  }
   args.rval().setUndefined();
   return true;
 }
@@ -2446,12 +2445,6 @@ static const JSFunctionSpec ReadableStreamDefaultController_methods[] = {
 
 CLASS_SPEC(ReadableStreamDefaultController, 0, SlotCount,
            ClassSpec::DontDefineConstructor, 0, JS_NULL_CLASS_OPS);
-
-static MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx, HandleValue F,
-                                          HandleValue V, HandleValue arg);
-
-static void ReadableStreamControllerClearAlgorithms(
-    ReadableStreamController* controller);
 
 
 
@@ -2499,20 +2492,21 @@ static MOZ_MUST_USE JSObject* ReadableStreamControllerCancelSteps(
   
   
   
-  RootedObject result(cx);
+  
+  
+  
   if (IsMaybeWrapped<TeeState>(unwrappedUnderlyingSource)) {
-    
-    MOZ_ASSERT(unwrappedUnderlyingSource.toObject().is<TeeState>(),
-               "tee streams and controllers are always same-compartment with "
-               "the TeeState object");
-    Rooted<TeeState*> unwrappedTeeState(
-        cx, &unwrappedUnderlyingSource.toObject().as<TeeState>());
-    Rooted<ReadableStreamDefaultController*> unwrappedDefaultController(
-        cx, &unwrappedController->as<ReadableStreamDefaultController>());
-    result = ReadableStreamTee_Cancel(cx, unwrappedTeeState,
-                                      unwrappedDefaultController, reason);
-  } else if (unwrappedController->hasExternalSource()) {
-    
+    Rooted<TeeState*> unwrappedteeState(cx);
+    unwrappedteeState =
+        &unwrappedUnderlyingSource.toObject().unwrapAs<TeeState>();
+    Rooted<ReadableStreamDefaultController*> unwrappedDefaultController(cx);
+    unwrappedDefaultController =
+        &unwrappedController->as<ReadableStreamDefaultController>();
+    return ReadableStreamTee_Cancel(cx, unwrappedteeState,
+                                    unwrappedDefaultController, reason);
+  }
+
+  if (unwrappedController->hasExternalSource()) {
     RootedValue rval(cx);
     {
       AutoRealm ar(cx, unwrappedController);
@@ -2528,50 +2522,21 @@ static MOZ_MUST_USE JSObject* ReadableStreamControllerCancelSteps(
       rval = source->cancel(cx, stream, wrappedReason);
     }
 
-    
-    
     if (!cx->compartment()->wrap(cx, &rval)) {
-      result = nullptr;
-    } else {
-      result = PromiseObject::unforgeableResolve(cx, rval);
+      return nullptr;
     }
-  } else {
-    
-    
-    RootedValue unwrappedCancelMethod(cx, unwrappedController->cancelMethod());
-    if (unwrappedCancelMethod.isUndefined()) {
-      
-      result = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
-    } else {
-      
-      {
-        AutoRealm ar(cx, &unwrappedCancelMethod.toObject());
-        RootedValue underlyingSource(cx, unwrappedUnderlyingSource);
-        if (!cx->compartment()->wrap(cx, &underlyingSource)) {
-          return nullptr;
-        }
-        RootedValue wrappedReason(cx, reason);
-        if (!cx->compartment()->wrap(cx, &wrappedReason)) {
-          return nullptr;
-        }
-
-        
-        
-        result = PromiseCall(cx, unwrappedCancelMethod, underlyingSource,
-                             wrappedReason);
-      }
-      if (!cx->compartment()->wrap(cx, &result)) {
-        result = nullptr;
-      }
-    }
+    return PromiseObject::unforgeableResolve(cx, rval);
   }
 
   
   
-  ReadableStreamControllerClearAlgorithms(unwrappedController);
-
   
-  return result;
+  if (!cx->compartment()->wrap(cx, &unwrappedUnderlyingSource)) {
+    return nullptr;
+  }
+
+  return PromiseInvokeOrNoop(cx, unwrappedUnderlyingSource, cx->names().cancel,
+                             reason);
 }
 
 inline static MOZ_MUST_USE bool DequeueValue(
@@ -2709,8 +2674,10 @@ static bool ControllerPullFailedHandler(JSContext* cx, unsigned argc,
 
   
   
-  if (!ReadableStreamControllerError(cx, controller, e)) {
-    return false;
+  if (controller->stream()->readable()) {
+    if (!ReadableStreamControllerError(cx, controller, e)) {
+      return false;
+    }
   }
 
   args.rval().setUndefined();
@@ -2731,7 +2698,6 @@ static MOZ_MUST_USE double ReadableStreamControllerGetDesiredSizeUnchecked(
 
 inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController) {
-  
   
   
   bool shouldPull = ReadableStreamControllerShouldCallPull(unwrappedController);
@@ -2758,21 +2724,17 @@ inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
 
   
   
+  
   RootedObject wrappedController(cx, unwrappedController);
   if (!cx->compartment()->wrap(cx, &wrappedController)) {
     return false;
   }
-
-  
-  
-  
-  
-  RootedObject pullPromise(cx);
+  RootedValue controllerVal(cx, ObjectValue(*wrappedController));
   RootedValue unwrappedUnderlyingSource(
       cx, unwrappedController->underlyingSource());
+  RootedObject pullPromise(cx);
 
   if (IsMaybeWrapped<TeeState>(unwrappedUnderlyingSource)) {
-    
     MOZ_ASSERT(unwrappedUnderlyingSource.toObject().is<TeeState>(),
                "tee streams and controllers are always same-compartment with "
                "the TeeState object");
@@ -2780,7 +2742,6 @@ inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
         cx, &unwrappedUnderlyingSource.toObject().as<TeeState>());
     pullPromise = ReadableStreamTee_Pull(cx, unwrappedTeeState);
   } else if (unwrappedController->hasExternalSource()) {
-    
     {
       AutoRealm ar(cx, unwrappedController);
       JS::ReadableStreamUnderlyingSource* source =
@@ -2792,34 +2753,12 @@ inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
     }
     pullPromise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
   } else {
-    
-    
-    RootedValue unwrappedPullMethod(cx, unwrappedController->pullMethod());
-    if (unwrappedPullMethod.isUndefined()) {
-      
-      pullPromise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
-    } else {
-      
-      {
-        AutoRealm ar(cx, &unwrappedPullMethod.toObject());
-        RootedValue underlyingSource(cx, unwrappedUnderlyingSource);
-        if (!cx->compartment()->wrap(cx, &underlyingSource)) {
-          return false;
-        }
-        RootedValue controller(cx, ObjectValue(*unwrappedController));
-        if (!cx->compartment()->wrap(cx, &controller)) {
-          return false;
-        }
-        pullPromise =
-            PromiseCall(cx, unwrappedPullMethod, underlyingSource, controller);
-        if (!pullPromise) {
-          return false;
-        }
-      }
-      if (!cx->compartment()->wrap(cx, &pullPromise)) {
-        return false;
-      }
+    RootedValue underlyingSource(cx, unwrappedUnderlyingSource);
+    if (!cx->compartment()->wrap(cx, &underlyingSource)) {
+      return false;
     }
+    pullPromise = PromiseInvokeOrNoop(cx, underlyingSource, cx->names().pull,
+                                      controllerVal);
   }
   if (!pullPromise) {
     return false;
@@ -2894,28 +2833,6 @@ static bool ReadableStreamControllerShouldCallPull(
 
 
 
-
-
-
-static void ReadableStreamControllerClearAlgorithms(
-    ReadableStreamController* controller) {
-  
-  controller->setPullMethod(UndefinedHandleValue);
-
-  
-  controller->setCancelMethod(UndefinedHandleValue);
-
-  
-  
-  if (controller->is<ReadableStreamDefaultController>()) {
-    controller->as<ReadableStreamDefaultController>().setStrategySize(
-        UndefinedHandleValue);
-  }
-}
-
-
-
-
 static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
     JSContext* cx,
     Handle<ReadableStreamDefaultController*> unwrappedController) {
@@ -2961,6 +2878,9 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
   MOZ_ASSERT(!unwrappedController->closeRequested());
 
   
+  MOZ_ASSERT(unwrappedStream->readable());
+
+  
   
   
   if (unwrappedStream->locked() &&
@@ -2972,13 +2892,14 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
   } else {
     
     
-    
-    
-    
     RootedValue chunkSize(cx, NumberValue(1));
     bool success = true;
+
+    
     RootedValue strategySize(cx, unwrappedController->strategySize());
     if (!strategySize.isUndefined()) {
+      
+      
       if (!cx->compartment()->wrap(cx, &strategySize)) {
         return false;
       }
@@ -3005,13 +2926,11 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
       
       
       
-      
-      if (!ReadableStreamControllerError(cx, unwrappedController, exn)) {
+      if (!ReadableStreamDefaultControllerErrorIfNeeded(cx, unwrappedController,
+                                                        exn)) {
         return false;
       }
 
-      
-      
       
       cx->setPendingException(exn);
       return false;
@@ -3041,9 +2960,7 @@ static MOZ_MUST_USE bool ReadableStreamControllerError(
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
 
   
-  if (!unwrappedStream->readable()) {
-    return true;
-  }
+  MOZ_ASSERT(unwrappedStream->readable());
 
   
   
@@ -3063,6 +2980,23 @@ static MOZ_MUST_USE bool ReadableStreamControllerError(
 
   
   return ReadableStreamErrorInternal(cx, unwrappedStream, e);
+}
+
+
+
+
+
+static MOZ_MUST_USE bool ReadableStreamDefaultControllerErrorIfNeeded(
+    JSContext* cx, Handle<ReadableStreamDefaultController*> unwrappedController,
+    HandleValue e) {
+  MOZ_ASSERT(!cx->isExceptionPending());
+
+  
+  
+  if (unwrappedController->stream()->readable()) {
+    return ReadableStreamControllerError(cx, unwrappedController, e);
+  }
+  return true;
 }
 
 
@@ -3100,36 +3034,10 @@ static MOZ_MUST_USE double ReadableStreamControllerGetDesiredSizeUnchecked(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
-    JSContext* cx, Handle<ReadableStream*> stream,
-    SourceAlgorithms sourceAlgorithms, HandleValue underlyingSource,
-    HandleValue pullMethod, HandleValue cancelMethod, double highWaterMark,
-    HandleValue size) {
+    JSContext* cx, Handle<ReadableStream*> stream, HandleValue underlyingSource,
+    double highWaterMark, HandleValue size) {
   cx->check(stream, underlyingSource, size);
-  MOZ_ASSERT(pullMethod.isUndefined() || IsCallable(pullMethod));
-  MOZ_ASSERT(cancelMethod.isUndefined() || IsCallable(cancelMethod));
-  MOZ_ASSERT_IF(sourceAlgorithms != SourceAlgorithms::Script,
-                pullMethod.isUndefined());
-  MOZ_ASSERT_IF(sourceAlgorithms != SourceAlgorithms::Script,
-                cancelMethod.isUndefined());
   MOZ_ASSERT(highWaterMark >= 0);
   MOZ_ASSERT(size.isUndefined() || IsCallable(size));
 
@@ -3164,18 +3072,21 @@ static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
   
   
   
-  controller->setUnderlyingSource(underlyingSource);
-  controller->setPullMethod(pullMethod);
-
   
-  controller->setCancelMethod(cancelMethod);
+  
+  
+  
+  controller->setUnderlyingSource(underlyingSource);
 
   
   stream->setController(controller);
 
   
+  
+  
   RootedValue startResult(cx);
-  if (sourceAlgorithms == SourceAlgorithms::Script) {
+  if (!underlyingSource.isObject() ||
+      !underlyingSource.toObject().is<TeeState>()) {
     RootedValue controllerVal(cx, ObjectValue(*controller));
     if (!InvokeOrNoop(cx, underlyingSource, cx->names().start, controllerVal,
                       &startResult)) {
@@ -3210,61 +3121,6 @@ static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
   }
 
   return true;
-}
-
-static MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
-    JSContext* cx, HandleValue underlyingObject,
-    const char* methodNameForErrorMessage, HandlePropertyName methodName,
-    MutableHandleValue method);
-
-
-
-
-
-
-static MOZ_MUST_USE bool
-SetUpReadableStreamDefaultControllerFromUnderlyingSource(
-    JSContext* cx, Handle<ReadableStream*> stream, HandleValue underlyingSource,
-    double highWaterMark, HandleValue sizeAlgorithm) {
-  
-  MOZ_ASSERT(!underlyingSource.isUndefined());
-
-  
-  
-  
-
-  
-  
-  
-  SourceAlgorithms sourceAlgorithms = SourceAlgorithms::Script;
-
-  
-  
-  
-  RootedValue pullMethod(cx);
-  if (!CreateAlgorithmFromUnderlyingMethod(cx, underlyingSource,
-                                           "ReadableStream source.pull method",
-                                           cx->names().pull, &pullMethod)) {
-    return false;
-  }
-
-  
-  
-  
-  RootedValue cancelMethod(cx);
-  if (!CreateAlgorithmFromUnderlyingMethod(
-          cx, underlyingSource, "ReadableStream source.cancel method",
-          cx->names().cancel, &cancelMethod)) {
-    return false;
-  }
-
-  
-  
-  
-
-  return SetUpReadableStreamDefaultController(
-      cx, stream, sourceAlgorithms, underlyingSource, pullMethod, cancelMethod,
-      highWaterMark, sizeAlgorithm);
 }
 
 
@@ -4174,64 +4030,6 @@ inline static MOZ_MUST_USE bool AppendToListAtSlot(
 
 
 
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
-    JSContext* cx, HandleValue underlyingObject,
-    const char* methodNameForErrorMessage, HandlePropertyName methodName,
-    MutableHandleValue method) {
-  
-  MOZ_ASSERT(!underlyingObject.isUndefined());
-
-  
-  
-  
-
-  
-  if (!GetProperty(cx, underlyingObject, methodName, method)) {
-    return false;
-  }
-
-  
-  if (!method.isUndefined()) {
-    
-    
-    if (!IsCallable(method)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_NOT_FUNCTION, methodNameForErrorMessage);
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-
-  
-  
-  return true;
-}
-
-
-
-
 inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
                                              HandlePropertyName P,
                                              HandleValue arg,
@@ -4259,27 +4057,27 @@ inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
 
 
 
-static MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx, HandleValue F,
-                                          HandleValue V, HandleValue arg) {
-  cx->check(F, V, arg);
+static MOZ_MUST_USE JSObject* PromiseInvokeOrNoop(JSContext* cx, HandleValue O,
+                                                  HandlePropertyName P,
+                                                  HandleValue arg) {
+  cx->check(O, P, arg);
 
   
-  MOZ_ASSERT(IsCallable(F));
-
-  
-  MOZ_ASSERT(!V.isUndefined());
+  MOZ_ASSERT(!O.isUndefined());
 
   
   
-  RootedValue rval(cx);
-  if (!Call(cx, F, V, arg, &rval)) {
-    
-    
+
+  
+  
+  
+  RootedValue returnValue(cx);
+  if (!InvokeOrNoop(cx, O, P, arg, &returnValue)) {
     return PromiseRejectedWithPendingError(cx);
   }
 
   
-  return PromiseObject::unforgeableResolve(cx, rval);
+  return PromiseObject::unforgeableResolve(cx, returnValue);
 }
 
 
@@ -4355,30 +4153,16 @@ JS_PUBLIC_API JSObject* JS::NewReadableDefaultStreamObject(
   cx->check(underlyingSource, size, proto);
   MOZ_ASSERT(highWaterMark >= 0);
 
-  
-  
-  Rooted<ReadableStream*> stream(cx, ReadableStream::create(cx));
-  if (!stream) {
-    return nullptr;
-  }
-  RootedValue sourceVal(cx);
-  if (underlyingSource) {
-    sourceVal.setObject(*underlyingSource);
-  } else {
-    JSObject* source = NewBuiltinClassInstance<PlainObject>(cx);
+  RootedObject source(cx, underlyingSource);
+  if (!source) {
+    source = NewBuiltinClassInstance<PlainObject>(cx);
     if (!source) {
       return nullptr;
     }
-    sourceVal.setObject(*source);
   }
+  RootedValue sourceVal(cx, ObjectValue(*source));
   RootedValue sizeVal(cx, size ? ObjectValue(*size) : UndefinedValue());
-
-  if (!SetUpReadableStreamDefaultControllerFromUnderlyingSource(
-          cx, stream, sourceVal, highWaterMark, sizeVal)) {
-    return nullptr;
-  }
-
-  return stream;
+  return CreateReadableStream(cx, sourceVal, highWaterMark, sizeVal);
 }
 
 JS_PUBLIC_API JSObject* JS::NewReadableExternalSourceStreamObject(
@@ -4787,6 +4571,15 @@ JS_PUBLIC_API bool JS::ReadableStreamError(JSContext* cx,
     return false;
   }
 
+  
+  if (!unwrappedStream->readable()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAMCONTROLLER_NOT_READABLE,
+                              "error");
+    return false;
+  }
+
+  
   Rooted<ReadableStreamController*> unwrappedController(
       cx, unwrappedStream->controller());
   return ReadableStreamControllerError(cx, unwrappedController, error);

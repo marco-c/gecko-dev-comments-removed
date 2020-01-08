@@ -252,24 +252,9 @@ class ReadableStreamController : public StreamController {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
   enum Slots {
     Slot_Stream = StreamController::SlotCount,
     Slot_UnderlyingSource,
-    Slot_PullMethod,
-    Slot_CancelMethod,
     Slot_StrategyHWM,
     Slot_Flags,
     SlotCount
@@ -295,14 +280,6 @@ class ReadableStreamController : public StreamController {
   Value underlyingSource() const { return getFixedSlot(Slot_UnderlyingSource); }
   void setUnderlyingSource(const Value& underlyingSource) {
     setFixedSlot(Slot_UnderlyingSource, underlyingSource);
-  }
-  Value pullMethod() const { return getFixedSlot(Slot_PullMethod); }
-  void setPullMethod(const Value& pullMethod) {
-    setFixedSlot(Slot_PullMethod, pullMethod);
-  }
-  Value cancelMethod() const { return getFixedSlot(Slot_CancelMethod); }
-  void setCancelMethod(const Value& cancelMethod) {
-    setFixedSlot(Slot_CancelMethod, cancelMethod);
   }
   JS::ReadableStreamUnderlyingSource* externalSource() const {
     static_assert(alignof(JS::ReadableStreamUnderlyingSource) >= 2,
