@@ -1263,11 +1263,6 @@ auto RetainedDisplayListBuilder::AttemptPartialUpdate(
       modifiedDirty,
       mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
 
-  PartialUpdateResult result = PartialUpdateResult::NoChange;
-  if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
-    result = PartialUpdateResult::Updated;
-  }
-
   mBuilder.SetDirtyRect(modifiedDirty);
   mBuilder.SetPartialUpdate(true);
 
@@ -1309,6 +1304,7 @@ auto RetainedDisplayListBuilder::AttemptPartialUpdate(
   
   
   
+  PartialUpdateResult result = PartialUpdateResult::NoChange;
   Maybe<const ActiveScrolledRoot*> dummy;
   if (MergeDisplayLists(&modifiedDL, &mList, &mList, dummy)) {
     result = PartialUpdateResult::Updated;
