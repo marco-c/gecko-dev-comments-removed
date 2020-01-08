@@ -212,7 +212,7 @@ function saveDocument(aDocument, aSkipPrompt) {
 
     try {
       let shEntry =
-        win.getInterface(Ci.nsIWebNavigation)
+        win.docShell
            .QueryInterface(Ci.nsIWebPageDescriptor)
            .currentDescriptor
            .QueryInterface(Ci.nsISHEntry);
@@ -761,8 +761,7 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
   
   
   let isPrivate = aInitiatingDocument.defaultView
-                                     .QueryInterface(Ci.nsIInterfaceRequestor)
-                                     .getInterface(Ci.nsIWebNavigation)
+                                     .docShell
                                      .QueryInterface(Ci.nsILoadContext)
                                      .usePrivateBrowsing;
 
@@ -891,8 +890,7 @@ function getPostData(aDocument) {
     
     let sessionHistoryEntry =
         aDocument.defaultView
-                 .QueryInterface(Ci.nsIInterfaceRequestor)
-                 .getInterface(Ci.nsIWebNavigation)
+                 .docShell
                  .QueryInterface(Ci.nsIWebPageDescriptor)
                  .currentDescriptor
                  .QueryInterface(Ci.nsISHEntry);

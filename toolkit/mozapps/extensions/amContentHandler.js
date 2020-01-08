@@ -73,8 +73,7 @@ amContentHandler.prototype = {
     }
 
     
-    let messageManager = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIDocShell)
+    let messageManager = window.docShell
                                .QueryInterface(Ci.nsIInterfaceRequestor)
                                .getInterface(Ci.nsIContentFrameMessageManager);
 

@@ -54,9 +54,7 @@ var PageMetadata = {
     
     
     if (document.defaultView) {
-      let docshell = document.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
-                                         .getInterface(Ci.nsIWebNavigation)
-                                         .QueryInterface(Ci.nsIDocShell);
+      let docshell = document.defaultView.docShell;
       let shentry = {};
       if (docshell.getCurrentSHEntry(shentry) &&
           shentry.value && shentry.value.URIWasModified) {

@@ -1892,10 +1892,7 @@ var AddonManagerInternal = {
     
     
     let topBrowser = aBrowser;
-    let docShell = aBrowser.ownerGlobal
-                           .QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIDocShell)
-                           .QueryInterface(Ci.nsIDocShellTreeItem);
+    let docShell = aBrowser.ownerGlobal.docShell;
     if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent)
       topBrowser = docShell.chromeEventHandler;
 
@@ -2590,10 +2587,7 @@ var AddonManagerInternal = {
           let parentWindow = null;
           if (browser) {
             
-            let docShell = browser.ownerGlobal
-                                  .QueryInterface(Ci.nsIInterfaceRequestor)
-                                  .getInterface(Ci.nsIDocShell)
-                                  .QueryInterface(Ci.nsIDocShellTreeItem);
+            let docShell = browser.ownerGlobal.docShell;
             if (docShell.itemType == Ci.nsIDocShellTreeItem.typeContent)
               browser = docShell.chromeEventHandler;
 

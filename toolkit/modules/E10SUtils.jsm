@@ -258,7 +258,7 @@ var E10SUtils = {
 
   shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData) {
     
-    if (aDocShell.QueryInterface(Ci.nsIDocShellTreeItem).sameTypeParent)
+    if (aDocShell.sameTypeParent)
       return true;
 
     

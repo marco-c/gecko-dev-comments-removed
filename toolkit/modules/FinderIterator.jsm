@@ -606,9 +606,7 @@ var FinderIterator = {
     
     if (ChromeUtils.getClassName(windowOrRange) === "Range")
       window = windowOrRange.startContainer.ownerGlobal;
-    return window.QueryInterface(Ci.nsIInterfaceRequestor)
-                 .getInterface(Ci.nsIWebNavigation)
-                 .QueryInterface(Ci.nsIDocShell);
+    return window.docShell;
   },
 
   

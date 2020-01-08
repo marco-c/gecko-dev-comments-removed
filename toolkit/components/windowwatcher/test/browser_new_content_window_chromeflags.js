@@ -144,9 +144,7 @@ registerCleanupFunction(() => {
 
 
 function getParentChromeFlags(win) {
-  return win.QueryInterface(Ci.nsIInterfaceRequestor)
-            .getInterface(Ci.nsIWebNavigation)
-            .QueryInterface(Ci.nsIDocShellTreeItem)
+  return win.docShell
             .treeOwner
             .QueryInterface(Ci.nsIInterfaceRequestor)
             .getInterface(Ci.nsIXULWindow)
@@ -174,8 +172,7 @@ function getContentChromeFlags(win) {
                       .chromeFlags;
     } catch (e) {
       
-      return docShell.QueryInterface(Ci.nsIDocShellTreeItem)
-                      .treeOwner
+      return docShell.treeOwner
                       .QueryInterface(Ci.nsIWebBrowserChrome)
                       .chromeFlags;
     }
