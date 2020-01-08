@@ -16,7 +16,6 @@ var EXPORTED_SYMBOLS = [
 var module = this;
 
 
-ChromeUtils.import("resource://formautofill/FormAutofillSync.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -26,6 +25,7 @@ ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
 ChromeUtils.import("resource://services-common/async.js");
 ChromeUtils.import("resource://services-common/utils.js");
 ChromeUtils.import("resource://services-sync/constants.js");
@@ -95,7 +95,6 @@ const ACTIONS = [
 const OBSERVER_TOPICS = ["fxaccounts:onlogin",
                          "fxaccounts:onlogout",
                          "profile-before-change",
-                         "sessionstore-windows-restored",
                          "weave:service:tracking-started",
                          "weave:service:tracking-stopped",
                          "weave:service:login:error",
@@ -114,7 +113,6 @@ var TPS = {
   _enabledEngines: null,
   _errors: 0,
   _isTracking: false,
-  _operations_pending: 0,
   _phaseFinished: false,
   _phaselist: {},
   _setupComplete: false,
@@ -133,7 +131,6 @@ var TPS = {
   shouldValidateBookmarks: false,
   shouldValidatePasswords: false,
   shouldValidateForms: false,
-  _windowsUpDeferred: PromiseUtils.defer(),
   _placesInitDeferred: PromiseUtils.defer(),
 
   _init: function TPS__init() {
@@ -145,6 +142,16 @@ var TPS = {
 
     
     ChromeUtils.import("resource://tps/auth/fxaccounts.jsm", module);
+
+    
+    
+    
+    
+    Services.prefs.addObserver("services.sync.globalScore", () => {
+      if (Weave.Service.scheduler.globalScore != 0) {
+        Weave.Service.scheduler.globalScore = 0;
+      }
+    });
   },
 
   DumpError(msg, exc = null) {
@@ -175,10 +182,6 @@ var TPS = {
 
           Logger.close();
 
-          break;
-
-        case "sessionstore-windows-restored":
-          this._windowsUpDeferred.resolve();
           break;
 
         case "places-browser-init-complete":
@@ -223,13 +226,6 @@ var TPS = {
           this._triggeredSync = false;
 
           this.delayAutoSync();
-
-          
-          
-          CommonUtils.namedTimer(function() {
-            this.FinishAsyncOperation();
-          }, 1000, this, "postsync");
-
           break;
 
         case "weave:service:sync:start":
@@ -267,44 +263,18 @@ var TPS = {
     Weave.Svc.Prefs.set("syncThreshold", 10000000);
   },
 
-  StartAsyncOperation: function TPS__StartAsyncOperation() {
-    this._operations_pending++;
-  },
-
-  FinishAsyncOperation: function TPS__FinishAsyncOperation() {
-    
-    
-    
-    
-    
-    
-    if (this._operations_pending) {
-      this._operations_pending--;
-    }
-    if (!this.operations_pending) {
-      this._currentAction++;
-      CommonUtils.nextTick(function() {
-        this.RunNextTestAction().catch(err => {
-          this.DumpError("RunNextTestActionFailed", err);
-        });
-      }, this);
-    }
-  },
-
   quit: function TPS__quit() {
+    Logger.logInfo("quitting");
     this._requestedQuit = true;
     this.goQuitApplication();
   },
 
-  HandleWindows(aWindow, action) {
+  async HandleWindows(aWindow, action) {
     Logger.logInfo("executing action " + action.toUpperCase() +
                    " on window " + JSON.stringify(aWindow));
     switch (action) {
       case ACTION_ADD:
-        BrowserWindows.Add(aWindow.private, win => {
-          Logger.logInfo("window finished loading");
-          this.FinishAsyncOperation();
-        });
+        await BrowserWindows.Add(aWindow.private);
         break;
     }
     Logger.logPass("executing action " + action.toUpperCase() + " on windows");
@@ -784,9 +754,11 @@ var TPS = {
   },
 
   async RunNextTestAction() {
+    Logger.logInfo("Running next test action");
     try {
       if (this._currentAction >= this._phaselist[this._currentPhase].length) {
         
+        Logger.logInfo("No more actions - running validations...");
         if (this.shouldValidateBookmarks) {
           await this.ValidateBookmarks();
         }
@@ -825,11 +797,6 @@ var TPS = {
       let action = phase[this._currentAction];
       Logger.logInfo("starting action: " + action[0].name);
       await action[0].apply(this, action.slice(1));
-
-      
-      if (this._operations_pending) {
-        return;
-      }
 
       this._currentAction++;
     } catch (e) {
@@ -1017,7 +984,7 @@ var TPS = {
 
       
       this._currentAction = 0;
-      await this._windowsUpDeferred.promise;
+      await SessionStore.promiseAllWindowsRestored;
       await this.RunNextTestAction();
     } catch (e) {
       this.DumpError("_executeTestPhase failed", e);
@@ -1080,7 +1047,8 @@ var TPS = {
   Phase: function Test__Phase(phasename, fnlist) {
     if (Object.keys(this._phaselist).length === 0) {
       
-      fnlist.unshift([this.Login]);
+      
+      fnlist.unshift([this.WipeServer]);
     }
     this._phaselist[phasename] = fnlist;
   },
@@ -1167,7 +1135,7 @@ var TPS = {
 
 
   async waitForSyncFinished() {
-    if (this._syncActive) {
+    if (Weave.Service.locked) {
       await this.waitForEvent("weave:service:resyncs-finished");
     }
   },
@@ -1184,20 +1152,16 @@ var TPS = {
   
 
 
-  async Login(force) {
-    if ((await Authentication.isReady()) && !force) {
+  async Login() {
+    if ((await Authentication.isReady())) {
       return;
     }
 
-    
-    this._triggeredSync = true;
     Logger.logInfo("Setting client credentials and login.");
     await Authentication.signIn(this.config.fx_account);
     await this.waitForSetupComplete();
     Logger.AssertEqual(Weave.Status.service, Weave.STATUS_OK, "Weave status OK");
     await this.waitForTracking();
-    
-    await this.waitForSyncFinished();
   },
 
   
@@ -1209,8 +1173,8 @@ var TPS = {
 
   async Sync(wipeAction) {
     if (this._syncActive) {
-      Logger.logInfo("WARNING: Sync currently active! Waiting, before triggering another");
-      await this.waitForSyncFinished();
+      this.DumpError("Sync currently active which should be impossible");
+      return;
     }
     Logger.logInfo("Executing Sync" + (wipeAction ? ": " + wipeAction : ""));
 
@@ -1225,20 +1189,25 @@ var TPS = {
     }
     if (!await Weave.Service.login()) {
       
-      await this.Login(false);
+      Logger.logInfo("Logging in before performing sync");
+      await this.Login();
     }
     ++this._syncCount;
 
+    Logger.logInfo("Executing Sync" + (wipeAction ? ": " + wipeAction : ""));
     this._triggeredSync = true;
-    this.StartAsyncOperation();
     await Weave.Service.sync();
     Logger.logInfo("Sync is complete");
+    
+    await new Promise(resolve => {
+      CommonUtils.namedTimer(resolve, 1000, this, "postsync");
+    });
   },
 
   async WipeServer() {
     Logger.logInfo("Wiping data from server.");
 
-    await this.Login(false);
+    await this.Login();
     await Weave.Service.login();
     await Weave.Service.wipeServer();
   },
@@ -1247,7 +1216,7 @@ var TPS = {
 
 
   async EnsureTracking() {
-    await this.Login(false);
+    await this.Login();
     await this.waitForTracking();
   },
 };
@@ -1403,9 +1372,8 @@ var Tabs = {
 };
 
 var Windows = {
-  add: function Window__add(aWindow) {
-    TPS.StartAsyncOperation();
-    TPS.HandleWindows(aWindow, ACTION_ADD);
+  async add(aWindow) {
+    await TPS.HandleWindows(aWindow, ACTION_ADD);
   },
 };
 

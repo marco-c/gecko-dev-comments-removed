@@ -42,6 +42,7 @@ async function tpsStartup() {
       
       TPS.DumpError("Test initialization failed", e);
     }
+    dump(`TPS test initialization failed: ${e} - ${e.stack}\n`);
     
     
     Services.startup.quit(Ci.nsIAppStartup.eForceQuit);

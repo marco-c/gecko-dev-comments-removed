@@ -27,5 +27,15 @@ module.exports = {
     "Tabs": false,
     "Windows": false,
     "WipeServer": false,
-  }
+  },
+  
+  
+  "overrides": [{
+    "files": [
+      "test_*.js",
+    ],
+    "rules": {
+      "comma-dangle": "off",
+    }
+  }]
 };

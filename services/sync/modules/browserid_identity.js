@@ -256,7 +256,9 @@ this.BrowserIDManager.prototype = {
       }
       
       
-      Weave.Service.sync({why: "login"});
+      if (!Svc.Prefs.get("testing.tps", false)) {
+        Weave.Service.sync({why: "login"});
+      }
       break;
     }
 
