@@ -1131,6 +1131,7 @@ nsPresContext::CompatibilityModeChanged()
   }
 
   mQuirkSheetAdded = needsQuirkSheet;
+  mShell->ApplicableStylesChanged();
 }
 
 
