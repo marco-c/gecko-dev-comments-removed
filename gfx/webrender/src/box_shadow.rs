@@ -3,7 +3,7 @@
 
 
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, DeviceIntSize, LayoutPrimitiveInfo};
-use api::{LayoutRect, LayoutSize, LayoutToDeviceScale, LayoutVector2D, MAX_BLUR_RADIUS};
+use api::{LayoutRect, LayoutSize, LayoutVector2D, MAX_BLUR_RADIUS};
 use clip::ClipItemKey;
 use display_list_flattener::DisplayListFlattener;
 use gpu_cache::GpuCacheHandle;
@@ -12,12 +12,6 @@ use prim_store::{BrushKind, BrushPrimitive, PrimitiveContainer};
 use prim_store::ScrollNodeAndClipChain;
 use render_task::RenderTaskCacheEntryHandle;
 use util::RectHelpers;
-
-
-
-
-
-const MAX_BOX_SHADOW_RESOLUTION: u32 = 2048;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -41,6 +35,10 @@ pub struct BoxShadowClipSource {
 
     
     
+    pub original_alloc_size: LayoutSize,
+
+    
+    
     pub minimal_shadow_rect: LayoutRect,
 
     
@@ -60,7 +58,9 @@ pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
 pub struct BoxShadowCacheKey {
     pub blur_radius_dp: i32,
     pub clip_mode: BoxShadowClipMode,
-    pub rect_size: DeviceIntSize,
+    
+    
+    pub original_alloc_size: DeviceIntSize,
     pub br_top_left: DeviceIntSize,
     pub br_top_right: DeviceIntSize,
     pub br_bottom_right: DeviceIntSize,
@@ -249,9 +249,4 @@ fn adjust_radius_for_box_shadow(border_radius: f32, spread_amount: f32) -> f32 {
     } else {
         0.0
     }
-}
-
-pub fn get_max_scale_for_box_shadow(rect_size: &LayoutSize) -> LayoutToDeviceScale {
-    let r = rect_size.width.max(rect_size.height);
-    LayoutToDeviceScale::new(MAX_BOX_SHADOW_RESOLUTION as f32 / r)
 }
