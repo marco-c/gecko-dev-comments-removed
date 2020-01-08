@@ -230,61 +230,27 @@ private:
 
 
   
+  void SetPassThrough(bool aPassThrough);
+  
+  uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
+  
+  void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
+  
   
   
   bool PassThrough(MediaStreamGraphImpl* aGraphImpl) const;
 
   
-  void SetPassThrough(bool aPassThrough);
-  uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
-  void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
-
-  
-  
-  
-  RefPtr<WebRTCAudioDataListener> mListener;
-
-  
   const RefPtr<AudioDeviceInfo> mDeviceInfo;
-
-  const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
-
   
-  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
-  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
-
-  
-  Mutex mMutex;
-
-  
-  
-  UniquePtr<Allocation> mAllocation;
-
-  
-  
-  Atomic<MediaEngineSourceState> mState;
-
-  bool mDelayAgnostic;
-  bool mExtendedFilter;
-
+  const bool mDelayAgnostic;
+  const bool mExtendedFilter;
   const nsString mDeviceName;
   const nsCString mDeviceUUID;
-
+  
   
   
   const nsMainThreadPtrHandle<media::Refcountable<dom::MediaTrackSettings>> mSettings;
-
-  
-  
-  
-  uint32_t mRequestedInputChannelCount;
-
-  
-  
-  
-  
-  bool mSkipProcessing;
-
   
   
   
@@ -292,10 +258,44 @@ private:
   MediaEnginePrefs mNetPrefs;
 
   
+  
+  Atomic<MediaEngineSourceState> mState;
+  Mutex mMutex;
+  
+  
+  
+  UniquePtr<Allocation> mAllocation;
+  
+  
+  
+  RefPtr<WebRTCAudioDataListener> mListener;
+  
+  
+  
+  const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
+  
+  
+  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
+  nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
+  
+  
+  
+  
+  
+  uint32_t mRequestedInputChannelCount;
+  
+  
+  
+  
+  bool mSkipProcessing;
+  
+  
   AlignedFloatBuffer mOutputBuffer;
-
+  
   AlignedFloatBuffer mInputBuffer;
+  
   AlignedFloatBuffer mDeinterleavedBuffer;
+  
   AlignedFloatBuffer mInputDownmixBuffer;
 };
 
