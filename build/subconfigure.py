@@ -21,11 +21,6 @@ CONFIGURE_DATA = 'configure.pkl'
 def prepare(srcdir, objdir, args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--cache-file', type=str)
-    
-    
-    
-    
-    parser.add_argument('--srcdir', type=str)
 
     data_file = os.path.join(objdir, CONFIGURE_DATA)
     previous_args = None
