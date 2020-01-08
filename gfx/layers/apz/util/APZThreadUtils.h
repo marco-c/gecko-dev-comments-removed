@@ -45,7 +45,7 @@ public:
 
 
 
-  static void RunOnControllerThread(already_AddRefed<Runnable> aTask);
+  static void RunOnControllerThread(RefPtr<Runnable>&& aTask);
 
   
 
