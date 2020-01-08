@@ -51,6 +51,10 @@ class nsCSPContext : public nsIContentSecurityPolicy {
  public:
   nsCSPContext();
 
+  nsresult InitFromOther(nsCSPContext* otherContext,
+                         mozilla::dom::Document* aDoc,
+                         nsIPrincipal* aPrincipal);
+
   
 
 
