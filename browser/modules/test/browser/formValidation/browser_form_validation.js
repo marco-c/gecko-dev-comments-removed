@@ -360,27 +360,6 @@ add_task(async function() {
 
 add_task(async function() {
   incrementTest();
-  let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input x-moz-errormessage='foo' required id='i'><input id='s' type='submit'></form>" + getDocFooter();
-  let browser = await openNewTab(uri);
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(gInvalidFormPopup, "popupshown");
-  await clickChildElement(browser);
-  await popupShownPromise;
-
-  checkPopupShow();
-  await checkChildFocus(browser, gInvalidFormPopup.firstElementChild.textContent);
-
-  is(gInvalidFormPopup.firstElementChild.textContent, "foo",
-     "The panel should show the author defined error message");
-
-  gBrowser.removeCurrentTab();
-});
-
-
-
-
-add_task(async function() {
-  incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input type='email' required id='i'><input id='s' type='submit'></form>" + getDocFooter();
   let browser = await openNewTab(uri);
 
