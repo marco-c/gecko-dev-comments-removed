@@ -239,6 +239,8 @@ DeleteBlobFont(WrFontInstanceKey aKey)
   }
 }
 
+} 
+
 static RefPtr<UnscaledFont>
 GetUnscaledFont(Translator* aTranslator, WrFontKey aKey)
 {
@@ -455,6 +457,11 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
   return ret;
 }
 
+} 
+} 
+
+extern "C" {
+
 bool wr_moz2d_render_cb(const mozilla::wr::ByteSlice blob,
                         uint32_t width, uint32_t height,
                         mozilla::wr::ImageFormat aFormat,
@@ -472,8 +479,5 @@ bool wr_moz2d_render_cb(const mozilla::wr::ByteSlice blob,
                                           mozilla::wr::MutByteSliceToRange(output));
 }
 
-} 
-
-} 
 } 
 
