@@ -1109,7 +1109,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
       
       
       LOG(("ScriptLoadRequest (%p): Maybe request bytecode", aRequest));
-      cic->PreferAlternativeDataType(nsContentUtils::JSBytecodeMimeType(), EmptyCString());
+      cic->PreferAlternativeDataType(nsContentUtils::JSBytecodeMimeType());
     } else {
       
       
@@ -1118,7 +1118,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
       
       
       LOG(("ScriptLoadRequest (%p): Request saving bytecode later", aRequest));
-      cic->PreferAlternativeDataType(kNullMimeType, EmptyCString());
+      cic->PreferAlternativeDataType(kNullMimeType);
     }
   }
 

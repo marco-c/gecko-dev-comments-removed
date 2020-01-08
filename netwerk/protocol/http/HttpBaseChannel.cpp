@@ -3909,9 +3909,7 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   
   nsCOMPtr<nsICacheInfoChannel> cacheInfoChan(do_QueryInterface(newChannel));
   if (cacheInfoChan) {
-    for (auto& pair : mPreferredCachedAltDataTypes) {
-      cacheInfoChan->PreferAlternativeDataType(mozilla::Get<0>(pair), mozilla::Get<1>(pair));
-    }
+    cacheInfoChan->PreferAlternativeDataType(mPreferredCachedAltDataType);
   }
 
   if (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
