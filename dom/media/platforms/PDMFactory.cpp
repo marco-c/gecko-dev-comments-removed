@@ -5,6 +5,26 @@
 
 
 #include "PDMFactory.h"
+#include "AgnosticDecoderModule.h"
+#include "DecoderDoctorDiagnostics.h"
+#include "EMEDecoderModule.h"
+#include "GMPDecoderModule.h"
+#include "H264.h"
+#include "MP4Decoder.h"
+#include "MediaChangeMonitor.h"
+#include "MediaInfo.h"
+#include "VPXDecoder.h"
+#include "gfxPrefs.h"
+#include "mozilla/CDMProxy.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/GpuDecoderModule.h"
+#include "mozilla/RemoteDecoderModule.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/SyncRunnable.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/gfx/gfxVars.h"
 
 #ifdef XP_WIN
 #include "WMFDecoderModule.h"
@@ -25,30 +45,6 @@
 #ifdef MOZ_OMX
 #include "OmxDecoderModule.h"
 #endif
-#include "GMPDecoderModule.h"
-
-#include "mozilla/CDMProxy.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/StaticPrefs.h"
-#include "mozilla/SyncRunnable.h"
-#include "mozilla/TaskQueue.h"
-
-#include "MediaChangeMonitor.h"
-#include "MediaInfo.h"
-
-#include "AgnosticDecoderModule.h"
-#include "EMEDecoderModule.h"
-
-#include "DecoderDoctorDiagnostics.h"
-
-#include "MP4Decoder.h"
-#include "VPXDecoder.h"
-#include "mozilla/GpuDecoderModule.h"
-#include "mozilla/RemoteDecoderModule.h"
-
-#include "H264.h"
 
 #include <functional>
 
@@ -167,24 +163,29 @@ void PDMFactory::EnsureInit() const {
       
       return;
     }
-    if (NS_IsMainThread()) {
+  }
+
+  auto initalization = []() {
+    MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+    StaticMutexAutoLock mon(sMonitor);
+    if (!sInstance) {
+      
+      gfx::gfxVars::Initialize();
+      gfxPrefs::GetSingleton();
       
       sInstance = new PDMFactoryImpl();
       ClearOnShutdown(&sInstance);
-      return;
     }
+  };
+  if (NS_IsMainThread()) {
+    initalization();
+    return;
   }
 
   
   nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
-  nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableFunction("PDMFactory::EnsureInit", []() {
-        StaticMutexAutoLock mon(sMonitor);
-        if (!sInstance) {
-          sInstance = new PDMFactoryImpl();
-          ClearOnShutdown(&sInstance);
-        }
-      });
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "PDMFactory::EnsureInit", std::move(initalization));
   SyncRunnable::DispatchToThread(mainTarget, runnable);
 }
 
