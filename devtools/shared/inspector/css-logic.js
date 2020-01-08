@@ -231,6 +231,10 @@ function prettifyCSS(text, ruleCount) {
   
   
   let lastWasWS;
+  
+  let isInSelector = true;
+  
+  let isInAtRuleDefinition = false;
 
   
   
@@ -252,12 +256,22 @@ function prettifyCSS(text, ruleCount) {
         break;
       }
 
+      if (token.tokenType === "at") {
+        isInAtRuleDefinition = true;
+      }
+
       
       
       if (token.tokenType === "symbol" && token.text === "}") {
+        isInSelector = true;
         isCloseBrace = true;
         break;
       } else if (token.tokenType === "symbol" && token.text === "{") {
+        if (isInAtRuleDefinition) {
+          isInAtRuleDefinition = false;
+        } else {
+          isInSelector = false;
+        }
         break;
       }
 
@@ -271,6 +285,11 @@ function prettifyCSS(text, ruleCount) {
       endIndex = token.endOffset;
 
       if (token.tokenType === "symbol" && token.text === ";") {
+        break;
+      }
+
+      if (token.tokenType === "symbol" && token.text === "," &&
+          isInSelector && !isInAtRuleDefinition) {
         break;
       }
 
