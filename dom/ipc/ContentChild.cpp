@@ -1638,15 +1638,13 @@ StartMacOSContentSandbox()
     return false;
   }
 
-  
-  
-  
-  CGSShutdownServerConnections();
-  
-  
-  
   if (Preferences::GetBool(
         "security.sandbox.content.mac.disconnect-windowserver")) {
+    
+    
+    
+    
+    CGSShutdownServerConnections();
     CGError result = CGSSetDenyWindowServerConnections(true);
     MOZ_DIAGNOSTIC_ASSERT(result == kCGErrorSuccess);
   }
