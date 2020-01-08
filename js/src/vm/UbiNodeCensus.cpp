@@ -346,7 +346,8 @@ static int compareEntries(const void* lhsVoid, const void* rhsVoid) {
 }
 
 
-using CStringCountMap = HashMap<const char*, CountBasePtr, CStringHasher, SystemAllocPolicy>;
+using CStringCountMap =
+    HashMap<const char*, CountBasePtr, mozilla::CStringHasher, SystemAllocPolicy>;
 
 
 
@@ -897,7 +898,7 @@ ByAllocationStack::report(JSContext* cx, CountBase& countBase, MutableHandleValu
 
 #ifdef DEBUG
     
-    Generation generation = count.table.generation();
+    mozilla::Generation generation = count.table.generation();
 #endif
 
     
@@ -959,11 +960,11 @@ class ByFilename : public CountType {
         using Lookup = UniqueCString;
 
         static js::HashNumber hash(const Lookup& lookup) {
-            return CStringHasher::hash(lookup.get());
+            return mozilla::CStringHasher::hash(lookup.get());
         }
 
         static bool match(const UniqueCString& key, const Lookup& lookup) {
-            return CStringHasher::match(key.get(), lookup.get());
+            return mozilla::CStringHasher::match(key.get(), lookup.get());
         }
     };
 

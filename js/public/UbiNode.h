@@ -1185,7 +1185,7 @@ void SetConstructUbiNodeForDOMObjectCallback(JSContext* cx, void (*callback)(voi
 } 
 } 
 
-namespace js {
+namespace mozilla {
 
 
 template<> struct DefaultHasher<JS::ubi::Node> : JS::ubi::Node::HashPolicy { };

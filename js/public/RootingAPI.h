@@ -766,14 +766,18 @@ struct JS_PUBLIC_API(MovableCellHasher<JS::Heap<T>>)
     static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
 };
 
+} 
+
+namespace mozilla {
+
 template <typename T>
-struct FallibleHashMethods<MovableCellHasher<T>>
+struct FallibleHashMethods<js::MovableCellHasher<T>>
 {
     template <typename Lookup> static bool hasHash(Lookup&& l) {
-        return MovableCellHasher<T>::hasHash(std::forward<Lookup>(l));
+        return js::MovableCellHasher<T>::hasHash(std::forward<Lookup>(l));
     }
     template <typename Lookup> static bool ensureHash(Lookup&& l) {
-        return MovableCellHasher<T>::ensureHash(std::forward<Lookup>(l));
+        return js::MovableCellHasher<T>::ensureHash(std::forward<Lookup>(l));
     }
 };
 

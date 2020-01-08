@@ -172,16 +172,24 @@ struct SavedFrame::HashPolicy
     static void rekey(Key& key, const Key& newKey);
 };
 
+} 
+
+namespace mozilla {
+
 template <>
-struct FallibleHashMethods<SavedFrame::HashPolicy>
+struct FallibleHashMethods<js::SavedFrame::HashPolicy>
 {
     template <typename Lookup> static bool hasHash(Lookup&& l) {
-        return SavedFrame::HashPolicy::hasHash(std::forward<Lookup>(l));
+        return js::SavedFrame::HashPolicy::hasHash(std::forward<Lookup>(l));
     }
     template <typename Lookup> static bool ensureHash(Lookup&& l) {
-        return SavedFrame::HashPolicy::ensureHash(std::forward<Lookup>(l));
+        return js::SavedFrame::HashPolicy::ensureHash(std::forward<Lookup>(l));
     }
 };
+
+} 
+
+namespace js {
 
 
 

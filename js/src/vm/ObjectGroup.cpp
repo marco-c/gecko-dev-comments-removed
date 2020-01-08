@@ -431,7 +431,7 @@ struct ObjectGroupRealm::NewEntry
     }
 };
 
-namespace js {
+namespace mozilla {
 template <>
 struct FallibleHashMethods<ObjectGroupRealm::NewEntry>
 {

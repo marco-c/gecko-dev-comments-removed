@@ -871,10 +871,6 @@ struct GCPtrHasher
     static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
 };
 
-
-template <class T>
-struct DefaultHasher<GCPtr<T>> : GCPtrHasher<T> {};
-
 template <class T>
 struct PreBarrieredHasher
 {
@@ -885,9 +881,6 @@ struct PreBarrieredHasher
     static bool match(const Key& k, Lookup l) { return k.get() == l; }
     static void rekey(Key& k, const Key& newKey) { k.unsafeSet(newKey); }
 };
-
-template <class T>
-struct DefaultHasher<PreBarriered<T>> : PreBarrieredHasher<T> { };
 
 
 template <class T>
@@ -901,9 +894,24 @@ struct ReadBarrieredHasher
     static void rekey(Key& k, const Key& newKey) { k.set(newKey.unbarrieredGet()); }
 };
 
+} 
+
+namespace mozilla {
+
 
 template <class T>
-struct DefaultHasher<ReadBarriered<T>> : ReadBarrieredHasher<T> { };
+struct DefaultHasher<js::GCPtr<T>> : js::GCPtrHasher<T> {};
+
+template <class T>
+struct DefaultHasher<js::PreBarriered<T>> : js::PreBarrieredHasher<T> { };
+
+
+template <class T>
+struct DefaultHasher<js::ReadBarriered<T>> : js::ReadBarrieredHasher<T> { };
+
+} 
+
+namespace js {
 
 class ArrayObject;
 class ArrayBufferObject;
