@@ -119,10 +119,6 @@ let propNameWhitelist = [
    isFromDevTools: false},
   {propName: "--positionDurationBox-width-long",
    isFromDevTools: false},
-  
-  {propName: "--in-content-box-background-odd",
-   platforms: ["win", "macosx"],
-   isFromDevTools: false},
 
   
   
