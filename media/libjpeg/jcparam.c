@@ -25,9 +25,9 @@
 
 
 GLOBAL(void)
-jpeg_add_quant_table (j_compress_ptr cinfo, int which_tbl,
-                      const unsigned int *basic_table,
-                      int scale_factor, boolean force_baseline)
+jpeg_add_quant_table(j_compress_ptr cinfo, int which_tbl,
+                     const unsigned int *basic_table, int scale_factor,
+                     boolean force_baseline)
 
 
 
@@ -45,24 +45,25 @@ jpeg_add_quant_table (j_compress_ptr cinfo, int which_tbl,
   if (which_tbl < 0 || which_tbl >= NUM_QUANT_TBLS)
     ERREXIT1(cinfo, JERR_DQT_INDEX, which_tbl);
 
-  qtblptr = & cinfo->quant_tbl_ptrs[which_tbl];
+  qtblptr = &cinfo->quant_tbl_ptrs[which_tbl];
 
   if (*qtblptr == NULL)
-    *qtblptr = jpeg_alloc_quant_table((j_common_ptr) cinfo);
+    *qtblptr = jpeg_alloc_quant_table((j_common_ptr)cinfo);
 
   for (i = 0; i < DCTSIZE2; i++) {
-    temp = ((long) basic_table[i] * scale_factor + 50L) / 100L;
+    temp = ((long)basic_table[i] * scale_factor + 50L) / 100L;
     
     if (temp <= 0L) temp = 1L;
     if (temp > 32767L) temp = 32767L; 
     if (force_baseline && temp > 255L)
       temp = 255L;              
-    (*qtblptr)->quantval[i] = (UINT16) temp;
+    (*qtblptr)->quantval[i] = (UINT16)temp;
   }
 
   
   (*qtblptr)->sent_table = FALSE;
 }
+
 
 
 
@@ -93,7 +94,7 @@ static const unsigned int std_chrominance_quant_tbl[DCTSIZE2] = {
 
 #if JPEG_LIB_VERSION >= 70
 GLOBAL(void)
-jpeg_default_qtables (j_compress_ptr cinfo, boolean force_baseline)
+jpeg_default_qtables(j_compress_ptr cinfo, boolean force_baseline)
 
 
 
@@ -109,8 +110,8 @@ jpeg_default_qtables (j_compress_ptr cinfo, boolean force_baseline)
 
 
 GLOBAL(void)
-jpeg_set_linear_quality (j_compress_ptr cinfo, int scale_factor,
-                         boolean force_baseline)
+jpeg_set_linear_quality(j_compress_ptr cinfo, int scale_factor,
+                        boolean force_baseline)
 
 
 
@@ -126,7 +127,7 @@ jpeg_set_linear_quality (j_compress_ptr cinfo, int scale_factor,
 
 
 GLOBAL(int)
-jpeg_quality_scaling (int quality)
+jpeg_quality_scaling(int quality)
 
 
 
@@ -145,14 +146,14 @@ jpeg_quality_scaling (int quality)
   if (quality < 50)
     quality = 5000 / quality;
   else
-    quality = 200 - quality*2;
+    quality = 200 - quality * 2;
 
   return quality;
 }
 
 
 GLOBAL(void)
-jpeg_set_quality (j_compress_ptr cinfo, int quality, boolean force_baseline)
+jpeg_set_quality(j_compress_ptr cinfo, int quality, boolean force_baseline)
 
 
 
@@ -178,7 +179,7 @@ jpeg_set_quality (j_compress_ptr cinfo, int quality, boolean force_baseline)
 
 
 GLOBAL(void)
-jpeg_set_defaults (j_compress_ptr cinfo)
+jpeg_set_defaults(j_compress_ptr cinfo)
 {
   int i;
 
@@ -192,7 +193,7 @@ jpeg_set_defaults (j_compress_ptr cinfo)
 
   if (cinfo->comp_info == NULL)
     cinfo->comp_info = (jpeg_component_info *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,
                                   MAX_COMPONENTS * sizeof(jpeg_component_info));
 
   
@@ -205,7 +206,7 @@ jpeg_set_defaults (j_compress_ptr cinfo)
   
   jpeg_set_quality(cinfo, 75, TRUE);
   
-  std_huff_tables((j_common_ptr) cinfo);
+  std_huff_tables((j_common_ptr)cinfo);
 
   
   for (i = 0; i < NUM_ARITH_TBLS; i++) {
@@ -278,7 +279,7 @@ jpeg_set_defaults (j_compress_ptr cinfo)
 
 
 GLOBAL(void)
-jpeg_default_colorspace (j_compress_ptr cinfo)
+jpeg_default_colorspace(j_compress_ptr cinfo)
 {
   switch (cinfo->in_color_space) {
   case JCS_GRAYSCALE:
@@ -320,12 +321,12 @@ jpeg_default_colorspace (j_compress_ptr cinfo)
 
 
 GLOBAL(void)
-jpeg_set_colorspace (j_compress_ptr cinfo, J_COLOR_SPACE colorspace)
+jpeg_set_colorspace(j_compress_ptr cinfo, J_COLOR_SPACE colorspace)
 {
   jpeg_component_info *compptr;
   int ci;
 
-#define SET_COMP(index,id,hsamp,vsamp,quant,dctbl,actbl)  \
+#define SET_COMP(index, id, hsamp, vsamp, quant, dctbl, actbl) \
   (compptr = &cinfo->comp_info[index], \
    compptr->component_id = (id), \
    compptr->h_samp_factor = (hsamp), \
@@ -352,39 +353,39 @@ jpeg_set_colorspace (j_compress_ptr cinfo, J_COLOR_SPACE colorspace)
     cinfo->write_JFIF_header = TRUE; 
     cinfo->num_components = 1;
     
-    SET_COMP(0, 1, 1,1, 0, 0,0);
+    SET_COMP(0, 1, 1, 1, 0, 0, 0);
     break;
   case JCS_RGB:
     cinfo->write_Adobe_marker = TRUE; 
     cinfo->num_components = 3;
-    SET_COMP(0, 0x52 , 1,1, 0, 0,0);
-    SET_COMP(1, 0x47 , 1,1, 0, 0,0);
-    SET_COMP(2, 0x42 , 1,1, 0, 0,0);
+    SET_COMP(0, 0x52 , 1, 1, 0, 0, 0);
+    SET_COMP(1, 0x47 , 1, 1, 0, 0, 0);
+    SET_COMP(2, 0x42 , 1, 1, 0, 0, 0);
     break;
   case JCS_YCbCr:
     cinfo->write_JFIF_header = TRUE; 
     cinfo->num_components = 3;
     
     
-    SET_COMP(0, 1, 2,2, 0, 0,0);
-    SET_COMP(1, 2, 1,1, 1, 1,1);
-    SET_COMP(2, 3, 1,1, 1, 1,1);
+    SET_COMP(0, 1, 2, 2, 0, 0, 0);
+    SET_COMP(1, 2, 1, 1, 1, 1, 1);
+    SET_COMP(2, 3, 1, 1, 1, 1, 1);
     break;
   case JCS_CMYK:
     cinfo->write_Adobe_marker = TRUE; 
     cinfo->num_components = 4;
-    SET_COMP(0, 0x43 , 1,1, 0, 0,0);
-    SET_COMP(1, 0x4D , 1,1, 0, 0,0);
-    SET_COMP(2, 0x59 , 1,1, 0, 0,0);
-    SET_COMP(3, 0x4B , 1,1, 0, 0,0);
+    SET_COMP(0, 0x43 , 1, 1, 0, 0, 0);
+    SET_COMP(1, 0x4D , 1, 1, 0, 0, 0);
+    SET_COMP(2, 0x59 , 1, 1, 0, 0, 0);
+    SET_COMP(3, 0x4B , 1, 1, 0, 0, 0);
     break;
   case JCS_YCCK:
     cinfo->write_Adobe_marker = TRUE; 
     cinfo->num_components = 4;
-    SET_COMP(0, 1, 2,2, 0, 0,0);
-    SET_COMP(1, 2, 1,1, 1, 1,1);
-    SET_COMP(2, 3, 1,1, 1, 1,1);
-    SET_COMP(3, 4, 2,2, 0, 0,0);
+    SET_COMP(0, 1, 2, 2, 0, 0, 0);
+    SET_COMP(1, 2, 1, 1, 1, 1, 1);
+    SET_COMP(2, 3, 1, 1, 1, 1, 1);
+    SET_COMP(3, 4, 2, 2, 0, 0, 0);
     break;
   case JCS_UNKNOWN:
     cinfo->num_components = cinfo->input_components;
@@ -392,7 +393,7 @@ jpeg_set_colorspace (j_compress_ptr cinfo, J_COLOR_SPACE colorspace)
       ERREXIT2(cinfo, JERR_COMPONENT_COUNT, cinfo->num_components,
                MAX_COMPONENTS);
     for (ci = 0; ci < cinfo->num_components; ci++) {
-      SET_COMP(ci, ci, 1,1, 0, 0,0);
+      SET_COMP(ci, ci, 1, 1, 0, 0, 0);
     }
     break;
   default:
@@ -404,8 +405,7 @@ jpeg_set_colorspace (j_compress_ptr cinfo, J_COLOR_SPACE colorspace)
 #ifdef C_PROGRESSIVE_SUPPORTED
 
 LOCAL(jpeg_scan_info *)
-fill_a_scan (jpeg_scan_info *scanptr, int ci,
-             int Ss, int Se, int Ah, int Al)
+fill_a_scan(jpeg_scan_info *scanptr, int ci, int Ss, int Se, int Ah, int Al)
 
 {
   scanptr->comps_in_scan = 1;
@@ -419,8 +419,7 @@ fill_a_scan (jpeg_scan_info *scanptr, int ci,
 }
 
 LOCAL(jpeg_scan_info *)
-fill_scans (jpeg_scan_info *scanptr, int ncomps,
-            int Ss, int Se, int Ah, int Al)
+fill_scans(jpeg_scan_info *scanptr, int ncomps, int Ss, int Se, int Ah, int Al)
 
 {
   int ci;
@@ -438,7 +437,7 @@ fill_scans (jpeg_scan_info *scanptr, int ncomps,
 }
 
 LOCAL(jpeg_scan_info *)
-fill_dc_scans (jpeg_scan_info *scanptr, int ncomps, int Ah, int Al)
+fill_dc_scans(jpeg_scan_info *scanptr, int ncomps, int Ah, int Al)
 
 {
   int ci;
@@ -466,7 +465,7 @@ fill_dc_scans (jpeg_scan_info *scanptr, int ncomps, int Ah, int Al)
 
 
 GLOBAL(void)
-jpeg_simple_progression (j_compress_ptr cinfo)
+jpeg_simple_progression(j_compress_ptr cinfo)
 {
   int ncomps = cinfo->num_components;
   int nscans;
@@ -498,7 +497,7 @@ jpeg_simple_progression (j_compress_ptr cinfo)
   if (cinfo->script_space == NULL || cinfo->script_space_size < nscans) {
     cinfo->script_space_size = MAX(nscans, 10);
     cinfo->script_space = (jpeg_scan_info *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,
                         cinfo->script_space_size * sizeof(jpeg_scan_info));
   }
   scanptr = cinfo->script_space;

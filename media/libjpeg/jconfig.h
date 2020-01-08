@@ -5,13 +5,22 @@
 #define JPEG_LIB_VERSION 62
 
 
-#define LIBJPEG_TURBO_VERSION 1.5.2
+#define LIBJPEG_TURBO_VERSION 2.0.0
+
+
+#define LIBJPEG_TURBO_VERSION_NUMBER 2000000
 
 
 
 
 
 
+
+
+
+
+
+#define WITH_SIMD 1
 
 
 
@@ -33,6 +42,12 @@
 #define HAVE_STDLIB_H 1
 
 
+#define NEED_SYS_TYPES_H 1
+
+
+
+
+
 #define HAVE_UNSIGNED_CHAR 1
 
 
@@ -45,18 +60,6 @@
 
 
 
-
-
-
-#define NEED_SYS_TYPES_H 1
-
-
-
-
-
-#define WITH_SIMD 1
-
-
 #ifndef __CHAR_UNSIGNED__
 
 #endif
@@ -66,10 +69,3 @@
 
 
 
-
-
-#ifdef HAVE_64BIT_BUILD
-#define SIZEOF_SIZE_T 8
-#else
-#define SIZEOF_SIZE_T 4
-#endif

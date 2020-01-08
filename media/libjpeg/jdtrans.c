@@ -19,7 +19,7 @@
 
 
 
-LOCAL(void) transdecode_master_selection (j_decompress_ptr cinfo);
+LOCAL(void) transdecode_master_selection(j_decompress_ptr cinfo);
 
 
 
@@ -45,7 +45,7 @@ LOCAL(void) transdecode_master_selection (j_decompress_ptr cinfo);
 
 
 GLOBAL(jvirt_barray_ptr *)
-jpeg_read_coefficients (j_decompress_ptr cinfo)
+jpeg_read_coefficients(j_decompress_ptr cinfo)
 {
   if (cinfo->global_state == DSTATE_READY) {
     
@@ -58,7 +58,7 @@ jpeg_read_coefficients (j_decompress_ptr cinfo)
       int retcode;
       
       if (cinfo->progress != NULL)
-        (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+        (*cinfo->progress->progress_monitor) ((j_common_ptr)cinfo);
       
       retcode = (*cinfo->inputctl->consume_input) (cinfo);
       if (retcode == JPEG_SUSPENDED)
@@ -70,7 +70,7 @@ jpeg_read_coefficients (j_decompress_ptr cinfo)
           (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
         if (++cinfo->progress->pass_counter >= cinfo->progress->pass_limit) {
           
-          cinfo->progress->pass_limit += (long) cinfo->total_iMCU_rows;
+          cinfo->progress->pass_limit += (long)cinfo->total_iMCU_rows;
         }
       }
     }
@@ -97,7 +97,7 @@ jpeg_read_coefficients (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-transdecode_master_selection (j_decompress_ptr cinfo)
+transdecode_master_selection(j_decompress_ptr cinfo)
 {
   
   cinfo->buffered_image = TRUE;
@@ -129,7 +129,7 @@ transdecode_master_selection (j_decompress_ptr cinfo)
   jinit_d_coef_controller(cinfo, TRUE);
 
   
-  (*cinfo->mem->realize_virt_arrays) ((j_common_ptr) cinfo);
+  (*cinfo->mem->realize_virt_arrays) ((j_common_ptr)cinfo);
 
   
   (*cinfo->inputctl->start_input_pass) (cinfo);
@@ -148,7 +148,7 @@ transdecode_master_selection (j_decompress_ptr cinfo)
       nscans = 1;
     }
     cinfo->progress->pass_counter = 0L;
-    cinfo->progress->pass_limit = (long) cinfo->total_iMCU_rows * nscans;
+    cinfo->progress->pass_limit = (long)cinfo->total_iMCU_rows * nscans;
     cinfo->progress->completed_passes = 0;
     cinfo->progress->total_passes = 1;
   }

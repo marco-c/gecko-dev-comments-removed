@@ -112,26 +112,29 @@
 
 
 
-METHODDEF(void) process_data_simple_main
-        (j_decompress_ptr cinfo, JSAMPARRAY output_buf,
-         JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
-METHODDEF(void) process_data_context_main
-        (j_decompress_ptr cinfo, JSAMPARRAY output_buf,
-         JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
+METHODDEF(void) process_data_simple_main(j_decompress_ptr cinfo,
+                                         JSAMPARRAY output_buf,
+                                         JDIMENSION *out_row_ctr,
+                                         JDIMENSION out_rows_avail);
+METHODDEF(void) process_data_context_main(j_decompress_ptr cinfo,
+                                          JSAMPARRAY output_buf,
+                                          JDIMENSION *out_row_ctr,
+                                          JDIMENSION out_rows_avail);
 #ifdef QUANT_2PASS_SUPPORTED
-METHODDEF(void) process_data_crank_post
-        (j_decompress_ptr cinfo, JSAMPARRAY output_buf,
-         JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
+METHODDEF(void) process_data_crank_post(j_decompress_ptr cinfo,
+                                        JSAMPARRAY output_buf,
+                                        JDIMENSION *out_row_ctr,
+                                        JDIMENSION out_rows_avail);
 #endif
 
 
 LOCAL(void)
-alloc_funny_pointers (j_decompress_ptr cinfo)
+alloc_funny_pointers(j_decompress_ptr cinfo)
 
 
 
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
   int ci, rgroup;
   int M = cinfo->_min_DCT_scaled_size;
   jpeg_component_info *compptr;
@@ -141,7 +144,7 @@ alloc_funny_pointers (j_decompress_ptr cinfo)
 
 
   main_ptr->xbuffer[0] = (JSAMPIMAGE)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 cinfo->num_components * 2 * sizeof(JSAMPARRAY));
   main_ptr->xbuffer[1] = main_ptr->xbuffer[0] + cinfo->num_components;
 
@@ -153,7 +156,7 @@ alloc_funny_pointers (j_decompress_ptr cinfo)
 
 
     xbuf = (JSAMPARRAY)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   2 * (rgroup * (M + 4)) * sizeof(JSAMPROW));
     xbuf += rgroup;             
     main_ptr->xbuffer[0][ci] = xbuf;
@@ -164,7 +167,7 @@ alloc_funny_pointers (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-make_funny_pointers (j_decompress_ptr cinfo)
+make_funny_pointers(j_decompress_ptr cinfo)
 
 
 
@@ -172,7 +175,7 @@ make_funny_pointers (j_decompress_ptr cinfo)
 
 
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
   int ci, i, rgroup;
   int M = cinfo->_min_DCT_scaled_size;
   jpeg_component_info *compptr;
@@ -191,8 +194,8 @@ make_funny_pointers (j_decompress_ptr cinfo)
     }
     
     for (i = 0; i < rgroup * 2; i++) {
-      xbuf1[rgroup*(M-2) + i] = buf[rgroup*M + i];
-      xbuf1[rgroup*M + i] = buf[rgroup*(M-2) + i];
+      xbuf1[rgroup * (M - 2) + i] = buf[rgroup * M + i];
+      xbuf1[rgroup * M + i] = buf[rgroup * (M - 2) + i];
     }
     
 
@@ -207,13 +210,13 @@ make_funny_pointers (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-set_bottom_pointers (j_decompress_ptr cinfo)
+set_bottom_pointers(j_decompress_ptr cinfo)
 
 
 
 
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
   int ci, i, rgroup, iMCUheight, rows_left;
   jpeg_component_info *compptr;
   JSAMPARRAY xbuf;
@@ -224,20 +227,20 @@ set_bottom_pointers (j_decompress_ptr cinfo)
     iMCUheight = compptr->v_samp_factor * compptr->_DCT_scaled_size;
     rgroup = iMCUheight / cinfo->_min_DCT_scaled_size;
     
-    rows_left = (int) (compptr->downsampled_height % (JDIMENSION) iMCUheight);
+    rows_left = (int)(compptr->downsampled_height % (JDIMENSION)iMCUheight);
     if (rows_left == 0) rows_left = iMCUheight;
     
 
 
     if (ci == 0) {
-      main_ptr->rowgroups_avail = (JDIMENSION) ((rows_left-1) / rgroup + 1);
+      main_ptr->rowgroups_avail = (JDIMENSION)((rows_left - 1) / rgroup + 1);
     }
     
 
 
     xbuf = main_ptr->xbuffer[main_ptr->whichptr][ci];
     for (i = 0; i < rgroup * 2; i++) {
-      xbuf[rows_left + i] = xbuf[rows_left-1];
+      xbuf[rows_left + i] = xbuf[rows_left - 1];
     }
   }
 }
@@ -248,9 +251,9 @@ set_bottom_pointers (j_decompress_ptr cinfo)
 
 
 METHODDEF(void)
-start_pass_main (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
+start_pass_main(j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
 
   switch (pass_mode) {
   case JBUF_PASS_THRU:
@@ -286,22 +289,21 @@ start_pass_main (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
 
 
 METHODDEF(void)
-process_data_simple_main (j_decompress_ptr cinfo,
-                          JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
-                          JDIMENSION out_rows_avail)
+process_data_simple_main(j_decompress_ptr cinfo, JSAMPARRAY output_buf,
+                         JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
   JDIMENSION rowgroups_avail;
 
   
-  if (! main_ptr->buffer_full) {
-    if (! (*cinfo->coef->decompress_data) (cinfo, main_ptr->buffer))
+  if (!main_ptr->buffer_full) {
+    if (!(*cinfo->coef->decompress_data) (cinfo, main_ptr->buffer))
       return;                   
     main_ptr->buffer_full = TRUE;       
   }
 
   
-  rowgroups_avail = (JDIMENSION) cinfo->_min_DCT_scaled_size;
+  rowgroups_avail = (JDIMENSION)cinfo->_min_DCT_scaled_size;
   
 
 
@@ -326,16 +328,15 @@ process_data_simple_main (j_decompress_ptr cinfo,
 
 
 METHODDEF(void)
-process_data_context_main (j_decompress_ptr cinfo,
-                           JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
-                           JDIMENSION out_rows_avail)
+process_data_context_main(j_decompress_ptr cinfo, JSAMPARRAY output_buf,
+                          JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
 
   
-  if (! main_ptr->buffer_full) {
-    if (! (*cinfo->coef->decompress_data) (cinfo,
-                                           main_ptr->xbuffer[main_ptr->whichptr]))
+  if (!main_ptr->buffer_full) {
+    if (!(*cinfo->coef->decompress_data) (cinfo,
+                                          main_ptr->xbuffer[main_ptr->whichptr]))
       return;                   
     main_ptr->buffer_full = TRUE;       
     main_ptr->iMCU_row_ctr++;   
@@ -349,9 +350,11 @@ process_data_context_main (j_decompress_ptr cinfo,
   switch (main_ptr->context_state) {
   case CTX_POSTPONED_ROW:
     
-    (*cinfo->post->post_process_data) (cinfo, main_ptr->xbuffer[main_ptr->whichptr],
-                        &main_ptr->rowgroup_ctr, main_ptr->rowgroups_avail,
-                        output_buf, out_row_ctr, out_rows_avail);
+    (*cinfo->post->post_process_data) (cinfo,
+                                       main_ptr->xbuffer[main_ptr->whichptr],
+                                       &main_ptr->rowgroup_ctr,
+                                       main_ptr->rowgroups_avail, output_buf,
+                                       out_row_ctr, out_rows_avail);
     if (main_ptr->rowgroup_ctr < main_ptr->rowgroups_avail)
       return;                   
     main_ptr->context_state = CTX_PREPARE_FOR_IMCU;
@@ -361,7 +364,7 @@ process_data_context_main (j_decompress_ptr cinfo,
   case CTX_PREPARE_FOR_IMCU:
     
     main_ptr->rowgroup_ctr = 0;
-    main_ptr->rowgroups_avail = (JDIMENSION) (cinfo->_min_DCT_scaled_size - 1);
+    main_ptr->rowgroups_avail = (JDIMENSION)(cinfo->_min_DCT_scaled_size - 1);
     
 
 
@@ -371,9 +374,11 @@ process_data_context_main (j_decompress_ptr cinfo,
     
   case CTX_PROCESS_IMCU:
     
-    (*cinfo->post->post_process_data) (cinfo, main_ptr->xbuffer[main_ptr->whichptr],
-                        &main_ptr->rowgroup_ctr, main_ptr->rowgroups_avail,
-                        output_buf, out_row_ctr, out_rows_avail);
+    (*cinfo->post->post_process_data) (cinfo,
+                                       main_ptr->xbuffer[main_ptr->whichptr],
+                                       &main_ptr->rowgroup_ctr,
+                                       main_ptr->rowgroups_avail, output_buf,
+                                       out_row_ctr, out_rows_avail);
     if (main_ptr->rowgroup_ctr < main_ptr->rowgroups_avail)
       return;                   
     
@@ -384,8 +389,8 @@ process_data_context_main (j_decompress_ptr cinfo,
     main_ptr->buffer_full = FALSE;
     
     
-    main_ptr->rowgroup_ctr = (JDIMENSION) (cinfo->_min_DCT_scaled_size + 1);
-    main_ptr->rowgroups_avail = (JDIMENSION) (cinfo->_min_DCT_scaled_size + 2);
+    main_ptr->rowgroup_ctr = (JDIMENSION)(cinfo->_min_DCT_scaled_size + 1);
+    main_ptr->rowgroups_avail = (JDIMENSION)(cinfo->_min_DCT_scaled_size + 2);
     main_ptr->context_state = CTX_POSTPONED_ROW;
   }
 }
@@ -400,12 +405,11 @@ process_data_context_main (j_decompress_ptr cinfo,
 #ifdef QUANT_2PASS_SUPPORTED
 
 METHODDEF(void)
-process_data_crank_post (j_decompress_ptr cinfo,
-                         JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
-                         JDIMENSION out_rows_avail)
+process_data_crank_post(j_decompress_ptr cinfo, JSAMPARRAY output_buf,
+                        JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail)
 {
-  (*cinfo->post->post_process_data) (cinfo, (JSAMPIMAGE) NULL,
-                                     (JDIMENSION *) NULL, (JDIMENSION) 0,
+  (*cinfo->post->post_process_data) (cinfo, (JSAMPIMAGE)NULL,
+                                     (JDIMENSION *)NULL, (JDIMENSION)0,
                                      output_buf, out_row_ctr, out_rows_avail);
 }
 
@@ -417,16 +421,16 @@ process_data_crank_post (j_decompress_ptr cinfo,
 
 
 GLOBAL(void)
-jinit_d_main_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
+jinit_d_main_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
 {
   my_main_ptr main_ptr;
   int ci, rgroup, ngroups;
   jpeg_component_info *compptr;
 
   main_ptr = (my_main_ptr)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(my_main_controller));
-  cinfo->main = (struct jpeg_d_main_controller *) main_ptr;
+  cinfo->main = (struct jpeg_d_main_controller *)main_ptr;
   main_ptr->pub.start_pass = start_pass_main;
 
   if (need_full_buffer)         
@@ -449,8 +453,8 @@ jinit_d_main_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
     rgroup = (compptr->v_samp_factor * compptr->_DCT_scaled_size) /
       cinfo->_min_DCT_scaled_size; 
     main_ptr->buffer[ci] = (*cinfo->mem->alloc_sarray)
-                        ((j_common_ptr) cinfo, JPOOL_IMAGE,
+                        ((j_common_ptr)cinfo, JPOOL_IMAGE,
                          compptr->width_in_blocks * compptr->_DCT_scaled_size,
-                         (JDIMENSION) (rgroup * ngroups));
+                         (JDIMENSION)(rgroup * ngroups));
   }
 }

@@ -36,7 +36,7 @@
 
 
 GLOBAL(void)
-jpeg_start_compress (j_compress_ptr cinfo, boolean write_all_tables)
+jpeg_start_compress(j_compress_ptr cinfo, boolean write_all_tables)
 {
   if (cinfo->global_state != CSTATE_START)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
@@ -45,7 +45,7 @@ jpeg_start_compress (j_compress_ptr cinfo, boolean write_all_tables)
     jpeg_suppress_tables(cinfo, FALSE); 
 
   
-  (*cinfo->err->reset_error_mgr) ((j_common_ptr) cinfo);
+  (*cinfo->err->reset_error_mgr) ((j_common_ptr)cinfo);
   (*cinfo->dest->init_destination) (cinfo);
   
   jinit_compress_master(cinfo);
@@ -75,8 +75,8 @@ jpeg_start_compress (j_compress_ptr cinfo, boolean write_all_tables)
 
 
 GLOBAL(JDIMENSION)
-jpeg_write_scanlines (j_compress_ptr cinfo, JSAMPARRAY scanlines,
-                      JDIMENSION num_lines)
+jpeg_write_scanlines(j_compress_ptr cinfo, JSAMPARRAY scanlines,
+                     JDIMENSION num_lines)
 {
   JDIMENSION row_ctr, rows_left;
 
@@ -87,9 +87,9 @@ jpeg_write_scanlines (j_compress_ptr cinfo, JSAMPARRAY scanlines,
 
   
   if (cinfo->progress != NULL) {
-    cinfo->progress->pass_counter = (long) cinfo->next_scanline;
-    cinfo->progress->pass_limit = (long) cinfo->image_height;
-    (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+    cinfo->progress->pass_counter = (long)cinfo->next_scanline;
+    cinfo->progress->pass_limit = (long)cinfo->image_height;
+    (*cinfo->progress->progress_monitor) ((j_common_ptr)cinfo);
   }
 
   
@@ -118,8 +118,8 @@ jpeg_write_scanlines (j_compress_ptr cinfo, JSAMPARRAY scanlines,
 
 
 GLOBAL(JDIMENSION)
-jpeg_write_raw_data (j_compress_ptr cinfo, JSAMPIMAGE data,
-                     JDIMENSION num_lines)
+jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
+                    JDIMENSION num_lines)
 {
   JDIMENSION lines_per_iMCU_row;
 
@@ -132,9 +132,9 @@ jpeg_write_raw_data (j_compress_ptr cinfo, JSAMPIMAGE data,
 
   
   if (cinfo->progress != NULL) {
-    cinfo->progress->pass_counter = (long) cinfo->next_scanline;
-    cinfo->progress->pass_limit = (long) cinfo->image_height;
-    (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+    cinfo->progress->pass_counter = (long)cinfo->next_scanline;
+    cinfo->progress->pass_limit = (long)cinfo->image_height;
+    (*cinfo->progress->progress_monitor) ((j_common_ptr)cinfo);
   }
 
   
@@ -151,7 +151,7 @@ jpeg_write_raw_data (j_compress_ptr cinfo, JSAMPIMAGE data,
     ERREXIT(cinfo, JERR_BUFFER_SIZE);
 
   
-  if (! (*cinfo->coef->compress_data) (cinfo, data)) {
+  if (!(*cinfo->coef->compress_data) (cinfo, data)) {
     
     return 0;
   }

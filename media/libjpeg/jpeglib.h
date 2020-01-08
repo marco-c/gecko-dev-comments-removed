@@ -211,8 +211,8 @@ struct jpeg_marker_struct {
 
 
 
-#define JCS_EXTENSIONS 1
-#define JCS_ALPHA_EXTENSIONS 1
+#define JCS_EXTENSIONS  1
+#define JCS_ALPHA_EXTENSIONS  1
 
 typedef enum {
   JCS_UNKNOWN,            
@@ -268,11 +268,11 @@ typedef enum {
 
 
 #define jpeg_common_fields \
-  struct jpeg_error_mgr *err;   /* Error handler module */\
-  struct jpeg_memory_mgr *mem;  /* Memory manager module */\
-  struct jpeg_progress_mgr *progress; /* Progress monitor, or NULL if none */\
-  void *client_data;            /* Available for use by application */\
-  boolean is_decompressor;      /* So common code can tell which is which */\
+  struct jpeg_error_mgr *err;   /* Error handler module */ \
+  struct jpeg_memory_mgr *mem;  /* Memory manager module */ \
+  struct jpeg_progress_mgr *progress; /* Progress monitor, or NULL if none */ \
+  void *client_data;            /* Available for use by application */ \
+  boolean is_decompressor;      /* So common code can tell which is which */ \
   int global_state              /* For checking call sequence validity */
 
 
@@ -822,9 +822,9 @@ struct jpeg_source_mgr {
 
 
 
-#define JPOOL_PERMANENT 0       /* lasts until master record is destroyed */
-#define JPOOL_IMAGE     1       /* lasts until done with image/datastream */
-#define JPOOL_NUMPOOLS  2
+#define JPOOL_PERMANENT  0      /* lasts until master record is destroyed */
+#define JPOOL_IMAGE      1      /* lasts until done with image/datastream */
+#define JPOOL_NUMPOOLS   2
 
 typedef struct jvirt_sarray_control *jvirt_sarray_ptr;
 typedef struct jvirt_barray_control *jvirt_barray_ptr;
@@ -888,7 +888,7 @@ typedef boolean (*jpeg_marker_parser_method) (j_decompress_ptr cinfo);
 
 
 
-EXTERN(struct jpeg_error_mgr *) jpeg_std_error (struct jpeg_error_mgr *err);
+EXTERN(struct jpeg_error_mgr *) jpeg_std_error(struct jpeg_error_mgr *err);
 
 
 
@@ -898,118 +898,123 @@ EXTERN(struct jpeg_error_mgr *) jpeg_std_error (struct jpeg_error_mgr *err);
 
 
 #define jpeg_create_compress(cinfo) \
-    jpeg_CreateCompress((cinfo), JPEG_LIB_VERSION, \
-                        (size_t) sizeof(struct jpeg_compress_struct))
+  jpeg_CreateCompress((cinfo), JPEG_LIB_VERSION, \
+                      (size_t)sizeof(struct jpeg_compress_struct))
 #define jpeg_create_decompress(cinfo) \
-    jpeg_CreateDecompress((cinfo), JPEG_LIB_VERSION, \
-                          (size_t) sizeof(struct jpeg_decompress_struct))
-EXTERN(void) jpeg_CreateCompress (j_compress_ptr cinfo, int version,
-                                  size_t structsize);
-EXTERN(void) jpeg_CreateDecompress (j_decompress_ptr cinfo, int version,
-                                    size_t structsize);
+  jpeg_CreateDecompress((cinfo), JPEG_LIB_VERSION, \
+                        (size_t)sizeof(struct jpeg_decompress_struct))
+EXTERN(void) jpeg_CreateCompress(j_compress_ptr cinfo, int version,
+                                 size_t structsize);
+EXTERN(void) jpeg_CreateDecompress(j_decompress_ptr cinfo, int version,
+                                   size_t structsize);
 
-EXTERN(void) jpeg_destroy_compress (j_compress_ptr cinfo);
-EXTERN(void) jpeg_destroy_decompress (j_decompress_ptr cinfo);
+EXTERN(void) jpeg_destroy_compress(j_compress_ptr cinfo);
+EXTERN(void) jpeg_destroy_decompress(j_decompress_ptr cinfo);
 
 
 
-EXTERN(void) jpeg_stdio_dest (j_compress_ptr cinfo, FILE *outfile);
-EXTERN(void) jpeg_stdio_src (j_decompress_ptr cinfo, FILE *infile);
+EXTERN(void) jpeg_stdio_dest(j_compress_ptr cinfo, FILE *outfile);
+EXTERN(void) jpeg_stdio_src(j_decompress_ptr cinfo, FILE *infile);
 
 #if JPEG_LIB_VERSION >= 80 || defined(MEM_SRCDST_SUPPORTED)
 
-EXTERN(void) jpeg_mem_dest (j_compress_ptr cinfo, unsigned char **outbuffer,
-                            unsigned long *outsize);
-EXTERN(void) jpeg_mem_src (j_decompress_ptr cinfo,
-                           const unsigned char *inbuffer,
-                           unsigned long insize);
+EXTERN(void) jpeg_mem_dest(j_compress_ptr cinfo, unsigned char **outbuffer,
+                           unsigned long *outsize);
+EXTERN(void) jpeg_mem_src(j_decompress_ptr cinfo,
+                          const unsigned char *inbuffer, unsigned long insize);
 #endif
 
 
-EXTERN(void) jpeg_set_defaults (j_compress_ptr cinfo);
+EXTERN(void) jpeg_set_defaults(j_compress_ptr cinfo);
 
-EXTERN(void) jpeg_set_colorspace (j_compress_ptr cinfo,
-                                  J_COLOR_SPACE colorspace);
-EXTERN(void) jpeg_default_colorspace (j_compress_ptr cinfo);
-EXTERN(void) jpeg_set_quality (j_compress_ptr cinfo, int quality,
-                               boolean force_baseline);
-EXTERN(void) jpeg_set_linear_quality (j_compress_ptr cinfo, int scale_factor,
-                                      boolean force_baseline);
+EXTERN(void) jpeg_set_colorspace(j_compress_ptr cinfo,
+                                 J_COLOR_SPACE colorspace);
+EXTERN(void) jpeg_default_colorspace(j_compress_ptr cinfo);
+EXTERN(void) jpeg_set_quality(j_compress_ptr cinfo, int quality,
+                              boolean force_baseline);
+EXTERN(void) jpeg_set_linear_quality(j_compress_ptr cinfo, int scale_factor,
+                                     boolean force_baseline);
 #if JPEG_LIB_VERSION >= 70
-EXTERN(void) jpeg_default_qtables (j_compress_ptr cinfo,
-                                   boolean force_baseline);
+EXTERN(void) jpeg_default_qtables(j_compress_ptr cinfo,
+                                  boolean force_baseline);
 #endif
-EXTERN(void) jpeg_add_quant_table (j_compress_ptr cinfo, int which_tbl,
-                                   const unsigned int *basic_table,
-                                   int scale_factor, boolean force_baseline);
-EXTERN(int) jpeg_quality_scaling (int quality);
-EXTERN(void) jpeg_simple_progression (j_compress_ptr cinfo);
-EXTERN(void) jpeg_suppress_tables (j_compress_ptr cinfo, boolean suppress);
-EXTERN(JQUANT_TBL *) jpeg_alloc_quant_table (j_common_ptr cinfo);
-EXTERN(JHUFF_TBL *) jpeg_alloc_huff_table (j_common_ptr cinfo);
+EXTERN(void) jpeg_add_quant_table(j_compress_ptr cinfo, int which_tbl,
+                                  const unsigned int *basic_table,
+                                  int scale_factor, boolean force_baseline);
+EXTERN(int) jpeg_quality_scaling(int quality);
+EXTERN(void) jpeg_simple_progression(j_compress_ptr cinfo);
+EXTERN(void) jpeg_suppress_tables(j_compress_ptr cinfo, boolean suppress);
+EXTERN(JQUANT_TBL *) jpeg_alloc_quant_table(j_common_ptr cinfo);
+EXTERN(JHUFF_TBL *) jpeg_alloc_huff_table(j_common_ptr cinfo);
 
 
-EXTERN(void) jpeg_start_compress (j_compress_ptr cinfo,
-                                  boolean write_all_tables);
-EXTERN(JDIMENSION) jpeg_write_scanlines (j_compress_ptr cinfo,
-                                         JSAMPARRAY scanlines,
-                                         JDIMENSION num_lines);
-EXTERN(void) jpeg_finish_compress (j_compress_ptr cinfo);
-
-#if JPEG_LIB_VERSION >= 70
-
-EXTERN(void) jpeg_calc_jpeg_dimensions (j_compress_ptr cinfo);
-#endif
-
-
-EXTERN(JDIMENSION) jpeg_write_raw_data (j_compress_ptr cinfo, JSAMPIMAGE data,
-                                        JDIMENSION num_lines);
-
-
-EXTERN(void) jpeg_write_marker (j_compress_ptr cinfo, int marker,
-                                const JOCTET *dataptr, unsigned int datalen);
-
-EXTERN(void) jpeg_write_m_header (j_compress_ptr cinfo, int marker,
-                                  unsigned int datalen);
-EXTERN(void) jpeg_write_m_byte (j_compress_ptr cinfo, int val);
-
-
-EXTERN(void) jpeg_write_tables (j_compress_ptr cinfo);
-
-
-EXTERN(int) jpeg_read_header (j_decompress_ptr cinfo, boolean require_image);
-
-#define JPEG_SUSPENDED          0 /* Suspended due to lack of input data */
-#define JPEG_HEADER_OK          1 /* Found valid image datastream */
-#define JPEG_HEADER_TABLES_ONLY 2 /* Found valid table-specs-only datastream */
-
-
-
-
-
-
-
-EXTERN(boolean) jpeg_start_decompress (j_decompress_ptr cinfo);
-EXTERN(JDIMENSION) jpeg_read_scanlines (j_decompress_ptr cinfo,
+EXTERN(void) jpeg_start_compress(j_compress_ptr cinfo,
+                                 boolean write_all_tables);
+EXTERN(JDIMENSION) jpeg_write_scanlines(j_compress_ptr cinfo,
                                         JSAMPARRAY scanlines,
-                                        JDIMENSION max_lines);
-EXTERN(JDIMENSION) jpeg_skip_scanlines (j_decompress_ptr cinfo,
                                         JDIMENSION num_lines);
-EXTERN(void) jpeg_crop_scanline (j_decompress_ptr cinfo, JDIMENSION *xoffset,
-                                 JDIMENSION *width);
-EXTERN(boolean) jpeg_finish_decompress (j_decompress_ptr cinfo);
+EXTERN(void) jpeg_finish_compress(j_compress_ptr cinfo);
+
+#if JPEG_LIB_VERSION >= 70
+
+EXTERN(void) jpeg_calc_jpeg_dimensions(j_compress_ptr cinfo);
+#endif
 
 
-EXTERN(JDIMENSION) jpeg_read_raw_data (j_decompress_ptr cinfo, JSAMPIMAGE data,
+EXTERN(JDIMENSION) jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
+                                       JDIMENSION num_lines);
+
+
+EXTERN(void) jpeg_write_marker(j_compress_ptr cinfo, int marker,
+                               const JOCTET *dataptr, unsigned int datalen);
+
+EXTERN(void) jpeg_write_m_header(j_compress_ptr cinfo, int marker,
+                                 unsigned int datalen);
+EXTERN(void) jpeg_write_m_byte(j_compress_ptr cinfo, int val);
+
+
+EXTERN(void) jpeg_write_tables(j_compress_ptr cinfo);
+
+
+EXTERN(void) jpeg_write_icc_profile(j_compress_ptr cinfo,
+                                    const JOCTET *icc_data_ptr,
+                                    unsigned int icc_data_len);
+
+
+
+EXTERN(int) jpeg_read_header(j_decompress_ptr cinfo, boolean require_image);
+
+#define JPEG_SUSPENDED           0 /* Suspended due to lack of input data */
+#define JPEG_HEADER_OK           1 /* Found valid image datastream */
+#define JPEG_HEADER_TABLES_ONLY  2 /* Found valid table-specs-only datastream */
+
+
+
+
+
+
+
+EXTERN(boolean) jpeg_start_decompress(j_decompress_ptr cinfo);
+EXTERN(JDIMENSION) jpeg_read_scanlines(j_decompress_ptr cinfo,
+                                       JSAMPARRAY scanlines,
                                        JDIMENSION max_lines);
+EXTERN(JDIMENSION) jpeg_skip_scanlines(j_decompress_ptr cinfo,
+                                       JDIMENSION num_lines);
+EXTERN(void) jpeg_crop_scanline(j_decompress_ptr cinfo, JDIMENSION *xoffset,
+                                JDIMENSION *width);
+EXTERN(boolean) jpeg_finish_decompress(j_decompress_ptr cinfo);
 
 
-EXTERN(boolean) jpeg_has_multiple_scans (j_decompress_ptr cinfo);
-EXTERN(boolean) jpeg_start_output (j_decompress_ptr cinfo, int scan_number);
-EXTERN(boolean) jpeg_finish_output (j_decompress_ptr cinfo);
-EXTERN(boolean) jpeg_input_complete (j_decompress_ptr cinfo);
-EXTERN(void) jpeg_new_colormap (j_decompress_ptr cinfo);
-EXTERN(int) jpeg_consume_input (j_decompress_ptr cinfo);
+EXTERN(JDIMENSION) jpeg_read_raw_data(j_decompress_ptr cinfo, JSAMPIMAGE data,
+                                      JDIMENSION max_lines);
+
+
+EXTERN(boolean) jpeg_has_multiple_scans(j_decompress_ptr cinfo);
+EXTERN(boolean) jpeg_start_output(j_decompress_ptr cinfo, int scan_number);
+EXTERN(boolean) jpeg_finish_output(j_decompress_ptr cinfo);
+EXTERN(boolean) jpeg_input_complete(j_decompress_ptr cinfo);
+EXTERN(void) jpeg_new_colormap(j_decompress_ptr cinfo);
+EXTERN(int) jpeg_consume_input(j_decompress_ptr cinfo);
 
 
 #define JPEG_REACHED_SOS        1 /* Reached start of new scan */
@@ -1019,43 +1024,48 @@ EXTERN(int) jpeg_consume_input (j_decompress_ptr cinfo);
 
 
 #if JPEG_LIB_VERSION >= 80
-EXTERN(void) jpeg_core_output_dimensions (j_decompress_ptr cinfo);
+EXTERN(void) jpeg_core_output_dimensions(j_decompress_ptr cinfo);
 #endif
-EXTERN(void) jpeg_calc_output_dimensions (j_decompress_ptr cinfo);
+EXTERN(void) jpeg_calc_output_dimensions(j_decompress_ptr cinfo);
 
 
-EXTERN(void) jpeg_save_markers (j_decompress_ptr cinfo, int marker_code,
-                                unsigned int length_limit);
+EXTERN(void) jpeg_save_markers(j_decompress_ptr cinfo, int marker_code,
+                               unsigned int length_limit);
 
 
-EXTERN(void) jpeg_set_marker_processor (j_decompress_ptr cinfo,
-                                        int marker_code,
-                                        jpeg_marker_parser_method routine);
+EXTERN(void) jpeg_set_marker_processor(j_decompress_ptr cinfo,
+                                       int marker_code,
+                                       jpeg_marker_parser_method routine);
 
 
-EXTERN(jvirt_barray_ptr *) jpeg_read_coefficients (j_decompress_ptr cinfo);
-EXTERN(void) jpeg_write_coefficients (j_compress_ptr cinfo,
-                                      jvirt_barray_ptr *coef_arrays);
-EXTERN(void) jpeg_copy_critical_parameters (j_decompress_ptr srcinfo,
-                                            j_compress_ptr dstinfo);
-
-
-
+EXTERN(jvirt_barray_ptr *) jpeg_read_coefficients(j_decompress_ptr cinfo);
+EXTERN(void) jpeg_write_coefficients(j_compress_ptr cinfo,
+                                     jvirt_barray_ptr *coef_arrays);
+EXTERN(void) jpeg_copy_critical_parameters(j_decompress_ptr srcinfo,
+                                           j_compress_ptr dstinfo);
 
 
 
 
-EXTERN(void) jpeg_abort_compress (j_compress_ptr cinfo);
-EXTERN(void) jpeg_abort_decompress (j_decompress_ptr cinfo);
+
+
+
+EXTERN(void) jpeg_abort_compress(j_compress_ptr cinfo);
+EXTERN(void) jpeg_abort_decompress(j_decompress_ptr cinfo);
 
 
 
 
-EXTERN(void) jpeg_abort (j_common_ptr cinfo);
-EXTERN(void) jpeg_destroy (j_common_ptr cinfo);
+EXTERN(void) jpeg_abort(j_common_ptr cinfo);
+EXTERN(void) jpeg_destroy(j_common_ptr cinfo);
 
 
-EXTERN(boolean) jpeg_resync_to_restart (j_decompress_ptr cinfo, int desired);
+EXTERN(boolean) jpeg_resync_to_restart(j_decompress_ptr cinfo, int desired);
+
+
+EXTERN(boolean) jpeg_read_icc_profile(j_decompress_ptr cinfo,
+                                      JOCTET **icc_data_ptr,
+                                      unsigned int *icc_data_len);
 
 
 

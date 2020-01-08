@@ -39,9 +39,10 @@ typedef my_main_controller *my_main_ptr;
 
 
 
-METHODDEF(void) process_data_simple_main
-        (j_compress_ptr cinfo, JSAMPARRAY input_buf, JDIMENSION *in_row_ctr,
-         JDIMENSION in_rows_avail);
+METHODDEF(void) process_data_simple_main(j_compress_ptr cinfo,
+                                         JSAMPARRAY input_buf,
+                                         JDIMENSION *in_row_ctr,
+                                         JDIMENSION in_rows_avail);
 
 
 
@@ -49,9 +50,9 @@ METHODDEF(void) process_data_simple_main
 
 
 METHODDEF(void)
-start_pass_main (j_compress_ptr cinfo, J_BUF_MODE pass_mode)
+start_pass_main(j_compress_ptr cinfo, J_BUF_MODE pass_mode)
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
 
   
   if (cinfo->raw_data_in)
@@ -75,19 +76,18 @@ start_pass_main (j_compress_ptr cinfo, J_BUF_MODE pass_mode)
 
 
 METHODDEF(void)
-process_data_simple_main (j_compress_ptr cinfo,
-                          JSAMPARRAY input_buf, JDIMENSION *in_row_ctr,
-                          JDIMENSION in_rows_avail)
+process_data_simple_main(j_compress_ptr cinfo, JSAMPARRAY input_buf,
+                         JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail)
 {
-  my_main_ptr main_ptr = (my_main_ptr) cinfo->main;
+  my_main_ptr main_ptr = (my_main_ptr)cinfo->main;
 
   while (main_ptr->cur_iMCU_row < cinfo->total_iMCU_rows) {
     
     if (main_ptr->rowgroup_ctr < DCTSIZE)
-      (*cinfo->prep->pre_process_data) (cinfo,
-                                        input_buf, in_row_ctr, in_rows_avail,
-                                        main_ptr->buffer, &main_ptr->rowgroup_ctr,
-                                        (JDIMENSION) DCTSIZE);
+      (*cinfo->prep->pre_process_data) (cinfo, input_buf, in_row_ctr,
+                                        in_rows_avail, main_ptr->buffer,
+                                        &main_ptr->rowgroup_ctr,
+                                        (JDIMENSION)DCTSIZE);
 
     
 
@@ -97,14 +97,14 @@ process_data_simple_main (j_compress_ptr cinfo,
       return;
 
     
-    if (! (*cinfo->coef->compress_data) (cinfo, main_ptr->buffer)) {
+    if (!(*cinfo->coef->compress_data) (cinfo, main_ptr->buffer)) {
       
 
 
 
 
 
-      if (! main_ptr->suspended) {
+      if (!main_ptr->suspended) {
         (*in_row_ctr)--;
         main_ptr->suspended = TRUE;
       }
@@ -128,16 +128,16 @@ process_data_simple_main (j_compress_ptr cinfo,
 
 
 GLOBAL(void)
-jinit_c_main_controller (j_compress_ptr cinfo, boolean need_full_buffer)
+jinit_c_main_controller(j_compress_ptr cinfo, boolean need_full_buffer)
 {
   my_main_ptr main_ptr;
   int ci;
   jpeg_component_info *compptr;
 
   main_ptr = (my_main_ptr)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(my_main_controller));
-  cinfo->main = (struct jpeg_c_main_controller *) main_ptr;
+  cinfo->main = (struct jpeg_c_main_controller *)main_ptr;
   main_ptr->pub.start_pass = start_pass_main;
 
   
@@ -154,9 +154,9 @@ jinit_c_main_controller (j_compress_ptr cinfo, boolean need_full_buffer)
     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
          ci++, compptr++) {
       main_ptr->buffer[ci] = (*cinfo->mem->alloc_sarray)
-        ((j_common_ptr) cinfo, JPOOL_IMAGE,
+        ((j_common_ptr)cinfo, JPOOL_IMAGE,
          compptr->width_in_blocks * DCTSIZE,
-         (JDIMENSION) (compptr->v_samp_factor * DCTSIZE));
+         (JDIMENSION)(compptr->v_samp_factor * DCTSIZE));
     }
   }
 }

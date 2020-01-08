@@ -17,10 +17,14 @@
 
 
 
+
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jdhuff.h"             
+#include <limits.h>
 
 
 #ifdef D_PROGRESSIVE_SUPPORTED
@@ -43,15 +47,15 @@ typedef struct {
 
 
 #ifndef NO_STRUCT_ASSIGN
-#define ASSIGN_STATE(dest,src)  ((dest) = (src))
+#define ASSIGN_STATE(dest, src)  ((dest) = (src))
 #else
 #if MAX_COMPS_IN_SCAN == 4
-#define ASSIGN_STATE(dest,src)  \
-        ((dest).EOBRUN = (src).EOBRUN, \
-         (dest).last_dc_val[0] = (src).last_dc_val[0], \
-         (dest).last_dc_val[1] = (src).last_dc_val[1], \
-         (dest).last_dc_val[2] = (src).last_dc_val[2], \
-         (dest).last_dc_val[3] = (src).last_dc_val[3])
+#define ASSIGN_STATE(dest, src) \
+  ((dest).EOBRUN = (src).EOBRUN, \
+   (dest).last_dc_val[0] = (src).last_dc_val[0], \
+   (dest).last_dc_val[1] = (src).last_dc_val[1], \
+   (dest).last_dc_val[2] = (src).last_dc_val[2], \
+   (dest).last_dc_val[3] = (src).last_dc_val[3])
 #endif
 #endif
 
@@ -77,14 +81,14 @@ typedef struct {
 typedef phuff_entropy_decoder *phuff_entropy_ptr;
 
 
-METHODDEF(boolean) decode_mcu_DC_first (j_decompress_ptr cinfo,
+METHODDEF(boolean) decode_mcu_DC_first(j_decompress_ptr cinfo,
+                                       JBLOCKROW *MCU_data);
+METHODDEF(boolean) decode_mcu_AC_first(j_decompress_ptr cinfo,
+                                       JBLOCKROW *MCU_data);
+METHODDEF(boolean) decode_mcu_DC_refine(j_decompress_ptr cinfo,
                                         JBLOCKROW *MCU_data);
-METHODDEF(boolean) decode_mcu_AC_first (j_decompress_ptr cinfo,
+METHODDEF(boolean) decode_mcu_AC_refine(j_decompress_ptr cinfo,
                                         JBLOCKROW *MCU_data);
-METHODDEF(boolean) decode_mcu_DC_refine (j_decompress_ptr cinfo,
-                                         JBLOCKROW *MCU_data);
-METHODDEF(boolean) decode_mcu_AC_refine (j_decompress_ptr cinfo,
-                                         JBLOCKROW *MCU_data);
 
 
 
@@ -92,9 +96,9 @@ METHODDEF(boolean) decode_mcu_AC_refine (j_decompress_ptr cinfo,
 
 
 METHODDEF(void)
-start_pass_phuff_decoder (j_decompress_ptr cinfo)
+start_pass_phuff_decoder(j_decompress_ptr cinfo)
 {
-  phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
+  phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
   boolean is_DC_band, bad;
   int ci, coefi, tbl;
   d_derived_tbl **pdtbl;
@@ -118,7 +122,7 @@ start_pass_phuff_decoder (j_decompress_ptr cinfo)
   }
   if (cinfo->Ah != 0) {
     
-    if (cinfo->Al != cinfo->Ah-1)
+    if (cinfo->Al != cinfo->Ah - 1)
       bad = TRUE;
   }
   if (cinfo->Al > 13)           
@@ -138,7 +142,7 @@ start_pass_phuff_decoder (j_decompress_ptr cinfo)
 
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     int cindex = cinfo->cur_comp_info[ci]->component_index;
-    coef_bit_ptr = & cinfo->coef_bits[cindex][0];
+    coef_bit_ptr = &cinfo->coef_bits[cindex][0];
     if (!is_DC_band && coef_bit_ptr[0] < 0) 
       WARNMS2(cinfo, JWRN_BOGUS_PROGRESSION, cindex, 0);
     for (coefi = cinfo->Ss; coefi <= cinfo->Se; coefi++) {
@@ -205,22 +209,26 @@ start_pass_phuff_decoder (j_decompress_ptr cinfo)
 #define AVOID_TABLES
 #ifdef AVOID_TABLES
 
-#define NEG_1 ((unsigned)-1)
-#define HUFF_EXTEND(x,s)  ((x) < (1<<((s)-1)) ? (x) + (((NEG_1)<<(s)) + 1) : (x))
+#define NEG_1  ((unsigned)-1)
+#define HUFF_EXTEND(x, s) \
+  ((x) < (1 << ((s) - 1)) ? (x) + (((NEG_1) << (s)) + 1) : (x))
 
 #else
 
-#define HUFF_EXTEND(x,s)  ((x) < extend_test[s] ? (x) + extend_offset[s] : (x))
+#define HUFF_EXTEND(x, s) \
+  ((x) < extend_test[s] ? (x) + extend_offset[s] : (x))
 
-static const int extend_test[16] =   
-  { 0, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
-    0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000 };
+static const int extend_test[16] = {   
+  0, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+  0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000
+};
 
-static const int extend_offset[16] = 
-  { 0, ((-1)<<1) + 1, ((-1)<<2) + 1, ((-1)<<3) + 1, ((-1)<<4) + 1,
-    ((-1)<<5) + 1, ((-1)<<6) + 1, ((-1)<<7) + 1, ((-1)<<8) + 1,
-    ((-1)<<9) + 1, ((-1)<<10) + 1, ((-1)<<11) + 1, ((-1)<<12) + 1,
-    ((-1)<<13) + 1, ((-1)<<14) + 1, ((-1)<<15) + 1 };
+static const int extend_offset[16] = { 
+  0, ((-1) << 1) + 1, ((-1) << 2) + 1, ((-1) << 3) + 1, ((-1) << 4) + 1,
+  ((-1) << 5) + 1, ((-1) << 6) + 1, ((-1) << 7) + 1, ((-1) << 8) + 1,
+  ((-1) << 9) + 1, ((-1) << 10) + 1, ((-1) << 11) + 1, ((-1) << 12) + 1,
+  ((-1) << 13) + 1, ((-1) << 14) + 1, ((-1) << 15) + 1
+};
 
 #endif 
 
@@ -231,9 +239,9 @@ static const int extend_offset[16] =
 
 
 LOCAL(boolean)
-process_restart (j_decompress_ptr cinfo)
+process_restart(j_decompress_ptr cinfo)
 {
-  phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
+  phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
   int ci;
 
   
@@ -242,7 +250,7 @@ process_restart (j_decompress_ptr cinfo)
   entropy->bitstate.bits_left = 0;
 
   
-  if (! (*cinfo->marker->read_restart_marker) (cinfo))
+  if (!(*cinfo->marker->read_restart_marker) (cinfo))
     return FALSE;
 
   
@@ -289,9 +297,9 @@ process_restart (j_decompress_ptr cinfo)
 
 
 METHODDEF(boolean)
-decode_mcu_DC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+decode_mcu_DC_first(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
+  phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
   int Al = cinfo->Al;
   register int s, r;
   int blkn, ci;
@@ -304,17 +312,17 @@ decode_mcu_DC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   
   if (cinfo->restart_interval) {
     if (entropy->restarts_to_go == 0)
-      if (! process_restart(cinfo))
+      if (!process_restart(cinfo))
         return FALSE;
   }
 
   
 
 
-  if (! entropy->pub.insufficient_data) {
+  if (!entropy->pub.insufficient_data) {
 
     
-    BITREAD_LOAD_STATE(cinfo,entropy->bitstate);
+    BITREAD_LOAD_STATE(cinfo, entropy->bitstate);
     ASSIGN_STATE(state, entropy->saved);
 
     
@@ -336,14 +344,18 @@ decode_mcu_DC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       }
 
       
+      if ((state.last_dc_val[ci] >= 0 &&
+           s > INT_MAX - state.last_dc_val[ci]) ||
+          (state.last_dc_val[ci] < 0 && s < INT_MIN - state.last_dc_val[ci]))
+        ERREXIT(cinfo, JERR_BAD_DCT_COEF);
       s += state.last_dc_val[ci];
       state.last_dc_val[ci] = s;
       
-      (*block)[0] = (JCOEF) LEFT_SHIFT(s, Al);
+      (*block)[0] = (JCOEF)LEFT_SHIFT(s, Al);
     }
 
     
-    BITREAD_SAVE_STATE(cinfo,entropy->bitstate);
+    BITREAD_SAVE_STATE(cinfo, entropy->bitstate);
     ASSIGN_STATE(entropy->saved, state);
   }
 
@@ -360,9 +372,9 @@ decode_mcu_DC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+decode_mcu_AC_first(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
+  phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
   int Se = cinfo->Se;
   int Al = cinfo->Al;
   register int s, k, r;
@@ -374,14 +386,14 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   
   if (cinfo->restart_interval) {
     if (entropy->restarts_to_go == 0)
-      if (! process_restart(cinfo))
+      if (!process_restart(cinfo))
         return FALSE;
   }
 
   
 
 
-  if (! entropy->pub.insufficient_data) {
+  if (!entropy->pub.insufficient_data) {
 
     
 
@@ -393,7 +405,7 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     if (EOBRUN > 0)             
       EOBRUN--;                 
     else {
-      BITREAD_LOAD_STATE(cinfo,entropy->bitstate);
+      BITREAD_LOAD_STATE(cinfo, entropy->bitstate);
       block = MCU_data[0];
       tbl = entropy->ac_derived_tbl;
 
@@ -407,7 +419,7 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
           r = GET_BITS(s);
           s = HUFF_EXTEND(r, s);
           
-          (*block)[jpeg_natural_order[k]] = (JCOEF) LEFT_SHIFT(s, Al);
+          (*block)[jpeg_natural_order[k]] = (JCOEF)LEFT_SHIFT(s, Al);
         } else {
           if (r == 15) {        
             k += 15;            
@@ -424,7 +436,7 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
         }
       }
 
-      BITREAD_SAVE_STATE(cinfo,entropy->bitstate);
+      BITREAD_SAVE_STATE(cinfo, entropy->bitstate);
     }
 
     
@@ -445,9 +457,9 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+decode_mcu_DC_refine(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
+  phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
   int p1 = 1 << cinfo->Al;      
   int blkn;
   JBLOCKROW block;
@@ -456,7 +468,7 @@ decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   
   if (cinfo->restart_interval) {
     if (entropy->restarts_to_go == 0)
-      if (! process_restart(cinfo))
+      if (!process_restart(cinfo))
         return FALSE;
   }
 
@@ -465,7 +477,7 @@ decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
   
-  BITREAD_LOAD_STATE(cinfo,entropy->bitstate);
+  BITREAD_LOAD_STATE(cinfo, entropy->bitstate);
 
   
 
@@ -480,7 +492,7 @@ decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   }
 
   
-  BITREAD_SAVE_STATE(cinfo,entropy->bitstate);
+  BITREAD_SAVE_STATE(cinfo, entropy->bitstate);
 
   
   entropy->restarts_to_go--;
@@ -494,9 +506,9 @@ decode_mcu_DC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+decode_mcu_AC_refine(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
+  phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
   int Se = cinfo->Se;
   int p1 = 1 << cinfo->Al;        
   int m1 = (NEG_1) << cinfo->Al;  
@@ -512,16 +524,16 @@ decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   
   if (cinfo->restart_interval) {
     if (entropy->restarts_to_go == 0)
-      if (! process_restart(cinfo))
+      if (!process_restart(cinfo))
         return FALSE;
   }
 
   
 
-  if (! entropy->pub.insufficient_data) {
+  if (!entropy->pub.insufficient_data) {
 
     
-    BITREAD_LOAD_STATE(cinfo,entropy->bitstate);
+    BITREAD_LOAD_STATE(cinfo, entropy->bitstate);
     EOBRUN = entropy->saved.EOBRUN; 
 
     
@@ -589,7 +601,7 @@ decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
         if (s) {
           int pos = jpeg_natural_order[k];
           
-          (*block)[pos] = (JCOEF) s;
+          (*block)[pos] = (JCOEF)s;
           
           newnz_pos[num_newnz++] = pos;
         }
@@ -621,7 +633,7 @@ decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     }
 
     
-    BITREAD_SAVE_STATE(cinfo,entropy->bitstate);
+    BITREAD_SAVE_STATE(cinfo, entropy->bitstate);
     entropy->saved.EOBRUN = EOBRUN; 
   }
 
@@ -644,16 +656,16 @@ undoit:
 
 
 GLOBAL(void)
-jinit_phuff_decoder (j_decompress_ptr cinfo)
+jinit_phuff_decoder(j_decompress_ptr cinfo)
 {
   phuff_entropy_ptr entropy;
   int *coef_bit_ptr;
   int ci, i;
 
   entropy = (phuff_entropy_ptr)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(phuff_entropy_decoder));
-  cinfo->entropy = (struct jpeg_entropy_decoder *) entropy;
+  cinfo->entropy = (struct jpeg_entropy_decoder *)entropy;
   entropy->pub.start_pass = start_pass_phuff_decoder;
 
   
@@ -663,9 +675,10 @@ jinit_phuff_decoder (j_decompress_ptr cinfo)
 
   
   cinfo->coef_bits = (int (*)[DCTSIZE2])
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-                                cinfo->num_components*DCTSIZE2*sizeof(int));
-  coef_bit_ptr = & cinfo->coef_bits[0][0];
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                cinfo->num_components * DCTSIZE2 *
+                                sizeof(int));
+  coef_bit_ptr = &cinfo->coef_bits[0][0];
   for (ci = 0; ci < cinfo->num_components; ci++)
     for (i = 0; i < DCTSIZE2; i++)
       *coef_bit_ptr++ = -1;

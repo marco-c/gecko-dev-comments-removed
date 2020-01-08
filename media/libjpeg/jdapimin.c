@@ -31,7 +31,7 @@
 
 
 GLOBAL(void)
-jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
+jpeg_CreateDecompress(j_decompress_ptr cinfo, int version, size_t structsize)
 {
   int i;
 
@@ -41,7 +41,7 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
     ERREXIT2(cinfo, JERR_BAD_LIB_VERSION, JPEG_LIB_VERSION, version);
   if (structsize != sizeof(struct jpeg_decompress_struct))
     ERREXIT2(cinfo, JERR_BAD_STRUCT_SIZE,
-             (int) sizeof(struct jpeg_decompress_struct), (int) structsize);
+             (int)sizeof(struct jpeg_decompress_struct), (int)structsize);
 
   
 
@@ -50,8 +50,8 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
 
 
   {
-    struct jpeg_error_mgr * err = cinfo->err;
-    void * client_data = cinfo->client_data; 
+    struct jpeg_error_mgr *err = cinfo->err;
+    void *client_data = cinfo->client_data; 
     MEMZERO(cinfo, sizeof(struct jpeg_decompress_struct));
     cinfo->err = err;
     cinfo->client_data = client_data;
@@ -59,7 +59,7 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
   cinfo->is_decompressor = TRUE;
 
   
-  jinit_memory_mgr((j_common_ptr) cinfo);
+  jinit_memory_mgr((j_common_ptr)cinfo);
 
   
   cinfo->progress = NULL;
@@ -89,8 +89,8 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
 
 
   cinfo->master = (struct jpeg_decomp_master *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-                                  sizeof(my_decomp_master));
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,
+                                sizeof(my_decomp_master));
   MEMZERO(cinfo->master, sizeof(my_decomp_master));
 }
 
@@ -100,9 +100,9 @@ jpeg_CreateDecompress (j_decompress_ptr cinfo, int version, size_t structsize)
 
 
 GLOBAL(void)
-jpeg_destroy_decompress (j_decompress_ptr cinfo)
+jpeg_destroy_decompress(j_decompress_ptr cinfo)
 {
-  jpeg_destroy((j_common_ptr) cinfo); 
+  jpeg_destroy((j_common_ptr)cinfo); 
 }
 
 
@@ -112,9 +112,9 @@ jpeg_destroy_decompress (j_decompress_ptr cinfo)
 
 
 GLOBAL(void)
-jpeg_abort_decompress (j_decompress_ptr cinfo)
+jpeg_abort_decompress(j_decompress_ptr cinfo)
 {
-  jpeg_abort((j_common_ptr) cinfo); 
+  jpeg_abort((j_common_ptr)cinfo); 
 }
 
 
@@ -123,7 +123,7 @@ jpeg_abort_decompress (j_decompress_ptr cinfo)
 
 
 LOCAL(void)
-default_decompress_parms (j_decompress_ptr cinfo)
+default_decompress_parms(j_decompress_ptr cinfo)
 {
   
   
@@ -250,7 +250,7 @@ default_decompress_parms (j_decompress_ptr cinfo)
 
 
 GLOBAL(int)
-jpeg_read_header (j_decompress_ptr cinfo, boolean require_image)
+jpeg_read_header(j_decompress_ptr cinfo, boolean require_image)
 {
   int retcode;
 
@@ -271,7 +271,7 @@ jpeg_read_header (j_decompress_ptr cinfo, boolean require_image)
 
 
 
-    jpeg_abort((j_common_ptr) cinfo); 
+    jpeg_abort((j_common_ptr)cinfo); 
     retcode = JPEG_HEADER_TABLES_ONLY;
     break;
   case JPEG_SUSPENDED:
@@ -296,7 +296,7 @@ jpeg_read_header (j_decompress_ptr cinfo, boolean require_image)
 
 
 GLOBAL(int)
-jpeg_consume_input (j_decompress_ptr cinfo)
+jpeg_consume_input(j_decompress_ptr cinfo)
 {
   int retcode = JPEG_SUSPENDED;
 
@@ -343,7 +343,7 @@ jpeg_consume_input (j_decompress_ptr cinfo)
 
 
 GLOBAL(boolean)
-jpeg_input_complete (j_decompress_ptr cinfo)
+jpeg_input_complete(j_decompress_ptr cinfo)
 {
   
   if (cinfo->global_state < DSTATE_START ||
@@ -358,7 +358,7 @@ jpeg_input_complete (j_decompress_ptr cinfo)
 
 
 GLOBAL(boolean)
-jpeg_has_multiple_scans (j_decompress_ptr cinfo)
+jpeg_has_multiple_scans(j_decompress_ptr cinfo)
 {
   
   if (cinfo->global_state < DSTATE_READY ||
@@ -378,10 +378,10 @@ jpeg_has_multiple_scans (j_decompress_ptr cinfo)
 
 
 GLOBAL(boolean)
-jpeg_finish_decompress (j_decompress_ptr cinfo)
+jpeg_finish_decompress(j_decompress_ptr cinfo)
 {
   if ((cinfo->global_state == DSTATE_SCANNING ||
-       cinfo->global_state == DSTATE_RAW_OK) && ! cinfo->buffered_image) {
+       cinfo->global_state == DSTATE_RAW_OK) && !cinfo->buffered_image) {
     
     if (cinfo->output_scanline < cinfo->output_height)
       ERREXIT(cinfo, JERR_TOO_LITTLE_DATA);
@@ -395,13 +395,13 @@ jpeg_finish_decompress (j_decompress_ptr cinfo)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
   }
   
-  while (! cinfo->inputctl->eoi_reached) {
+  while (!cinfo->inputctl->eoi_reached) {
     if ((*cinfo->inputctl->consume_input) (cinfo) == JPEG_SUSPENDED)
       return FALSE;             
   }
   
   (*cinfo->src->term_source) (cinfo);
   
-  jpeg_abort((j_common_ptr) cinfo);
+  jpeg_abort((j_common_ptr)cinfo);
   return TRUE;
 }

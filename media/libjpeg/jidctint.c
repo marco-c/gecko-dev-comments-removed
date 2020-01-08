@@ -115,18 +115,18 @@
 
 
 #if CONST_BITS == 13
-#define FIX_0_298631336  ((JLONG)  2446)        /* FIX(0.298631336) */
-#define FIX_0_390180644  ((JLONG)  3196)        /* FIX(0.390180644) */
-#define FIX_0_541196100  ((JLONG)  4433)        /* FIX(0.541196100) */
-#define FIX_0_765366865  ((JLONG)  6270)        /* FIX(0.765366865) */
-#define FIX_0_899976223  ((JLONG)  7373)        /* FIX(0.899976223) */
-#define FIX_1_175875602  ((JLONG)  9633)        /* FIX(1.175875602) */
-#define FIX_1_501321110  ((JLONG)  12299)       /* FIX(1.501321110) */
-#define FIX_1_847759065  ((JLONG)  15137)       /* FIX(1.847759065) */
-#define FIX_1_961570560  ((JLONG)  16069)       /* FIX(1.961570560) */
-#define FIX_2_053119869  ((JLONG)  16819)       /* FIX(2.053119869) */
-#define FIX_2_562915447  ((JLONG)  20995)       /* FIX(2.562915447) */
-#define FIX_3_072711026  ((JLONG)  25172)       /* FIX(3.072711026) */
+#define FIX_0_298631336  ((JLONG)2446)          /* FIX(0.298631336) */
+#define FIX_0_390180644  ((JLONG)3196)          /* FIX(0.390180644) */
+#define FIX_0_541196100  ((JLONG)4433)          /* FIX(0.541196100) */
+#define FIX_0_765366865  ((JLONG)6270)          /* FIX(0.765366865) */
+#define FIX_0_899976223  ((JLONG)7373)          /* FIX(0.899976223) */
+#define FIX_1_175875602  ((JLONG)9633)          /* FIX(1.175875602) */
+#define FIX_1_501321110  ((JLONG)12299)         /* FIX(1.501321110) */
+#define FIX_1_847759065  ((JLONG)15137)         /* FIX(1.847759065) */
+#define FIX_1_961570560  ((JLONG)16069)         /* FIX(1.961570560) */
+#define FIX_2_053119869  ((JLONG)16819)         /* FIX(2.053119869) */
+#define FIX_2_562915447  ((JLONG)20995)         /* FIX(2.562915447) */
+#define FIX_3_072711026  ((JLONG)25172)         /* FIX(3.072711026) */
 #else
 #define FIX_0_298631336  FIX(0.298631336)
 #define FIX_0_390180644  FIX(0.390180644)
@@ -151,9 +151,9 @@
 
 
 #if BITS_IN_JSAMPLE == 8
-#define MULTIPLY(var,const)  MULTIPLY16C16(var,const)
+#define MULTIPLY(var, const)  MULTIPLY16C16(var, const)
 #else
-#define MULTIPLY(var,const)  ((var) * (const))
+#define MULTIPLY(var, const)  ((var) * (const))
 #endif
 
 
@@ -162,7 +162,7 @@
 
 
 
-#define DEQUANTIZE(coef,quantval)  (((ISLOW_MULT_TYPE) (coef)) * (quantval))
+#define DEQUANTIZE(coef, quantval)  (((ISLOW_MULT_TYPE)(coef)) * (quantval))
 
 
 
@@ -170,9 +170,9 @@
 
 
 GLOBAL(void)
-jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_islow(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp0, tmp1, tmp2, tmp3;
   JLONG tmp10, tmp11, tmp12, tmp13;
@@ -191,7 +191,7 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = DCTSIZE; ctr > 0; ctr--) {
     
@@ -203,22 +203,22 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 
-    if (inptr[DCTSIZE*1] == 0 && inptr[DCTSIZE*2] == 0 &&
-        inptr[DCTSIZE*3] == 0 && inptr[DCTSIZE*4] == 0 &&
-        inptr[DCTSIZE*5] == 0 && inptr[DCTSIZE*6] == 0 &&
-        inptr[DCTSIZE*7] == 0) {
+    if (inptr[DCTSIZE * 1] == 0 && inptr[DCTSIZE * 2] == 0 &&
+        inptr[DCTSIZE * 3] == 0 && inptr[DCTSIZE * 4] == 0 &&
+        inptr[DCTSIZE * 5] == 0 && inptr[DCTSIZE * 6] == 0 &&
+        inptr[DCTSIZE * 7] == 0) {
       
-      int dcval = LEFT_SHIFT(DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]),
-                             PASS1_BITS);
+      int dcval = LEFT_SHIFT(DEQUANTIZE(inptr[DCTSIZE * 0],
+                             quantptr[DCTSIZE * 0]), PASS1_BITS);
 
-      wsptr[DCTSIZE*0] = dcval;
-      wsptr[DCTSIZE*1] = dcval;
-      wsptr[DCTSIZE*2] = dcval;
-      wsptr[DCTSIZE*3] = dcval;
-      wsptr[DCTSIZE*4] = dcval;
-      wsptr[DCTSIZE*5] = dcval;
-      wsptr[DCTSIZE*6] = dcval;
-      wsptr[DCTSIZE*7] = dcval;
+      wsptr[DCTSIZE * 0] = dcval;
+      wsptr[DCTSIZE * 1] = dcval;
+      wsptr[DCTSIZE * 2] = dcval;
+      wsptr[DCTSIZE * 3] = dcval;
+      wsptr[DCTSIZE * 4] = dcval;
+      wsptr[DCTSIZE * 5] = dcval;
+      wsptr[DCTSIZE * 6] = dcval;
+      wsptr[DCTSIZE * 7] = dcval;
 
       inptr++;                  
       quantptr++;
@@ -229,15 +229,15 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
     
 
-    z2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     z1 = MULTIPLY(z2 + z3, FIX_0_541196100);
-    tmp2 = z1 + MULTIPLY(z3, - FIX_1_847759065);
+    tmp2 = z1 + MULTIPLY(z3, -FIX_1_847759065);
     tmp3 = z1 + MULTIPLY(z2, FIX_0_765366865);
 
-    z2 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
 
     tmp0 = LEFT_SHIFT(z2 + z3, CONST_BITS);
     tmp1 = LEFT_SHIFT(z2 - z3, CONST_BITS);
@@ -251,10 +251,10 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 
-    tmp0 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
-    tmp1 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    tmp2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    tmp3 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
+    tmp0 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
+    tmp1 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    tmp2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    tmp3 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
 
     z1 = tmp0 + tmp3;
     z2 = tmp1 + tmp2;
@@ -266,10 +266,10 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp1 = MULTIPLY(tmp1, FIX_2_053119869); 
     tmp2 = MULTIPLY(tmp2, FIX_3_072711026); 
     tmp3 = MULTIPLY(tmp3, FIX_1_501321110); 
-    z1 = MULTIPLY(z1, - FIX_0_899976223); 
-    z2 = MULTIPLY(z2, - FIX_2_562915447); 
-    z3 = MULTIPLY(z3, - FIX_1_961570560); 
-    z4 = MULTIPLY(z4, - FIX_0_390180644); 
+    z1 = MULTIPLY(z1, -FIX_0_899976223); 
+    z2 = MULTIPLY(z2, -FIX_2_562915447); 
+    z3 = MULTIPLY(z3, -FIX_1_961570560); 
+    z4 = MULTIPLY(z4, -FIX_0_390180644); 
 
     z3 += z5;
     z4 += z5;
@@ -281,14 +281,14 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[DCTSIZE*0] = (int) DESCALE(tmp10 + tmp3, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*7] = (int) DESCALE(tmp10 - tmp3, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*1] = (int) DESCALE(tmp11 + tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*6] = (int) DESCALE(tmp11 - tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*2] = (int) DESCALE(tmp12 + tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*5] = (int) DESCALE(tmp12 - tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*3] = (int) DESCALE(tmp13 + tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[DCTSIZE*4] = (int) DESCALE(tmp13 - tmp0, CONST_BITS-PASS1_BITS);
+    wsptr[DCTSIZE * 0] = (int)DESCALE(tmp10 + tmp3, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 7] = (int)DESCALE(tmp10 - tmp3, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 1] = (int)DESCALE(tmp11 + tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 6] = (int)DESCALE(tmp11 - tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 2] = (int)DESCALE(tmp12 + tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 5] = (int)DESCALE(tmp12 - tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 3] = (int)DESCALE(tmp13 + tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[DCTSIZE * 4] = (int)DESCALE(tmp13 - tmp0, CONST_BITS - PASS1_BITS);
 
     inptr++;                    
     quantptr++;
@@ -314,8 +314,8 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     if (wsptr[1] == 0 && wsptr[2] == 0 && wsptr[3] == 0 && wsptr[4] == 0 &&
         wsptr[5] == 0 && wsptr[6] == 0 && wsptr[7] == 0) {
       
-      JSAMPLE dcval = range_limit[(int) DESCALE((JLONG) wsptr[0], PASS1_BITS+3)
-                                  & RANGE_MASK];
+      JSAMPLE dcval = range_limit[(int)DESCALE((JLONG)wsptr[0],
+                                               PASS1_BITS + 3) & RANGE_MASK];
 
       outptr[0] = dcval;
       outptr[1] = dcval;
@@ -334,15 +334,15 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
     
 
-    z2 = (JLONG) wsptr[2];
-    z3 = (JLONG) wsptr[6];
+    z2 = (JLONG)wsptr[2];
+    z3 = (JLONG)wsptr[6];
 
     z1 = MULTIPLY(z2 + z3, FIX_0_541196100);
-    tmp2 = z1 + MULTIPLY(z3, - FIX_1_847759065);
+    tmp2 = z1 + MULTIPLY(z3, -FIX_1_847759065);
     tmp3 = z1 + MULTIPLY(z2, FIX_0_765366865);
 
-    tmp0 = LEFT_SHIFT((JLONG) wsptr[0] + (JLONG) wsptr[4], CONST_BITS);
-    tmp1 = LEFT_SHIFT((JLONG) wsptr[0] - (JLONG) wsptr[4], CONST_BITS);
+    tmp0 = LEFT_SHIFT((JLONG)wsptr[0] + (JLONG)wsptr[4], CONST_BITS);
+    tmp1 = LEFT_SHIFT((JLONG)wsptr[0] - (JLONG)wsptr[4], CONST_BITS);
 
     tmp10 = tmp0 + tmp3;
     tmp13 = tmp0 - tmp3;
@@ -353,10 +353,10 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 
-    tmp0 = (JLONG) wsptr[7];
-    tmp1 = (JLONG) wsptr[5];
-    tmp2 = (JLONG) wsptr[3];
-    tmp3 = (JLONG) wsptr[1];
+    tmp0 = (JLONG)wsptr[7];
+    tmp1 = (JLONG)wsptr[5];
+    tmp2 = (JLONG)wsptr[3];
+    tmp3 = (JLONG)wsptr[1];
 
     z1 = tmp0 + tmp3;
     z2 = tmp1 + tmp2;
@@ -368,10 +368,10 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp1 = MULTIPLY(tmp1, FIX_2_053119869); 
     tmp2 = MULTIPLY(tmp2, FIX_3_072711026); 
     tmp3 = MULTIPLY(tmp3, FIX_1_501321110); 
-    z1 = MULTIPLY(z1, - FIX_0_899976223); 
-    z2 = MULTIPLY(z2, - FIX_2_562915447); 
-    z3 = MULTIPLY(z3, - FIX_1_961570560); 
-    z4 = MULTIPLY(z4, - FIX_0_390180644); 
+    z1 = MULTIPLY(z1, -FIX_0_899976223); 
+    z2 = MULTIPLY(z2, -FIX_2_562915447); 
+    z3 = MULTIPLY(z3, -FIX_1_961570560); 
+    z4 = MULTIPLY(z4, -FIX_0_390180644); 
 
     z3 += z5;
     z4 += z5;
@@ -383,30 +383,30 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0] = range_limit[(int) DESCALE(tmp10 + tmp3,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[7] = range_limit[(int) DESCALE(tmp10 - tmp3,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) DESCALE(tmp11 + tmp2,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[6] = range_limit[(int) DESCALE(tmp11 - tmp2,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) DESCALE(tmp12 + tmp1,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[5] = range_limit[(int) DESCALE(tmp12 - tmp1,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[3] = range_limit[(int) DESCALE(tmp13 + tmp0,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[4] = range_limit[(int) DESCALE(tmp13 - tmp0,
-                                          CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)DESCALE(tmp10 + tmp3,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[7] = range_limit[(int)DESCALE(tmp10 - tmp3,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)DESCALE(tmp11 + tmp2,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[6] = range_limit[(int)DESCALE(tmp11 - tmp2,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)DESCALE(tmp12 + tmp1,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[5] = range_limit[(int)DESCALE(tmp12 - tmp1,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[3] = range_limit[(int)DESCALE(tmp13 + tmp0,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[4] = range_limit[(int)DESCALE(tmp13 - tmp0,
+                                         CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += DCTSIZE;           
   }
@@ -424,9 +424,9 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-               JCOEFPTR coef_block,
-               JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_7x7(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+              JCOEFPTR coef_block, JSAMPARRAY output_buf,
+              JDIMENSION output_col)
 {
   JLONG tmp0, tmp1, tmp2, tmp10, tmp11, tmp12, tmp13;
   JLONG z1, z2, z3;
@@ -436,25 +436,25 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[7*7];   
+  int workspace[7 * 7];         
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 7; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp13 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp13 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp13 = LEFT_SHIFT(tmp13, CONST_BITS);
     
-    tmp13 += ONE << (CONST_BITS-PASS1_BITS-1);
+    tmp13 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     tmp10 = MULTIPLY(z2 - z3, FIX(0.881747734));     
     tmp12 = MULTIPLY(z1 - z2, FIX(0.314692123));     
@@ -468,15 +468,15 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
 
     tmp1 = MULTIPLY(z1 + z2, FIX(0.935414347));      
     tmp2 = MULTIPLY(z1 - z2, FIX(0.170262339));      
     tmp0 = tmp1 - tmp2;
     tmp1 += tmp2;
-    tmp2 = MULTIPLY(z2 + z3, - FIX(1.378756276));    
+    tmp2 = MULTIPLY(z2 + z3, -FIX(1.378756276));     
     tmp1 += tmp2;
     z2 = MULTIPLY(z1 + z3, FIX(0.613604268));        
     tmp0 += z2;
@@ -484,13 +484,13 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[7*0] = (int) RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[7*6] = (int) RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[7*1] = (int) RIGHT_SHIFT(tmp11 + tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[7*5] = (int) RIGHT_SHIFT(tmp11 - tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[7*2] = (int) RIGHT_SHIFT(tmp12 + tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[7*4] = (int) RIGHT_SHIFT(tmp12 - tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[7*3] = (int) RIGHT_SHIFT(tmp13, CONST_BITS-PASS1_BITS);
+    wsptr[7 * 0] = (int)RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[7 * 6] = (int)RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[7 * 1] = (int)RIGHT_SHIFT(tmp11 + tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[7 * 5] = (int)RIGHT_SHIFT(tmp11 - tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[7 * 2] = (int)RIGHT_SHIFT(tmp12 + tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[7 * 4] = (int)RIGHT_SHIFT(tmp12 - tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[7 * 3] = (int)RIGHT_SHIFT(tmp13, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -502,12 +502,12 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp13 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp13 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp13 = LEFT_SHIFT(tmp13, CONST_BITS);
 
-    z1 = (JLONG) wsptr[2];
-    z2 = (JLONG) wsptr[4];
-    z3 = (JLONG) wsptr[6];
+    z1 = (JLONG)wsptr[2];
+    z2 = (JLONG)wsptr[4];
+    z3 = (JLONG)wsptr[6];
 
     tmp10 = MULTIPLY(z2 - z3, FIX(0.881747734));     
     tmp12 = MULTIPLY(z1 - z2, FIX(0.314692123));     
@@ -521,15 +521,15 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
 
     tmp1 = MULTIPLY(z1 + z2, FIX(0.935414347));      
     tmp2 = MULTIPLY(z1 - z2, FIX(0.170262339));      
     tmp0 = tmp1 - tmp2;
     tmp1 += tmp2;
-    tmp2 = MULTIPLY(z2 + z3, - FIX(1.378756276));    
+    tmp2 = MULTIPLY(z2 + z3, -FIX(1.378756276));     
     tmp1 += tmp2;
     z2 = MULTIPLY(z1 + z3, FIX(0.613604268));        
     tmp0 += z2;
@@ -537,27 +537,27 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp10 + tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[6] = range_limit[(int) RIGHT_SHIFT(tmp10 - tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp11 + tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[5] = range_limit[(int) RIGHT_SHIFT(tmp11 - tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) RIGHT_SHIFT(tmp12 + tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[4] = range_limit[(int) RIGHT_SHIFT(tmp12 - tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[3] = range_limit[(int) RIGHT_SHIFT(tmp13,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)RIGHT_SHIFT(tmp10 + tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[6] = range_limit[(int)RIGHT_SHIFT(tmp10 - tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)RIGHT_SHIFT(tmp11 + tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[5] = range_limit[(int)RIGHT_SHIFT(tmp11 - tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)RIGHT_SHIFT(tmp12 + tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[4] = range_limit[(int)RIGHT_SHIFT(tmp12 - tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[3] = range_limit[(int)RIGHT_SHIFT(tmp13,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += 7;         
   }
@@ -573,9 +573,9 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-               JCOEFPTR coef_block,
-               JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_6x6(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+              JCOEFPTR coef_block, JSAMPARRAY output_buf,
+              JDIMENSION output_col)
 {
   JLONG tmp0, tmp1, tmp2, tmp10, tmp11, tmp12;
   JLONG z1, z2, z3;
@@ -585,35 +585,35 @@ jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[6*6];   
+  int workspace[6 * 6];         
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 6; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
     
-    tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
-    tmp2 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    tmp0 += ONE << (CONST_BITS - PASS1_BITS - 1);
+    tmp2 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     tmp10 = MULTIPLY(tmp2, FIX(0.707106781));   
     tmp1 = tmp0 + tmp10;
-    tmp11 = RIGHT_SHIFT(tmp0 - tmp10 - tmp10, CONST_BITS-PASS1_BITS);
-    tmp10 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
+    tmp11 = RIGHT_SHIFT(tmp0 - tmp10 - tmp10, CONST_BITS - PASS1_BITS);
+    tmp10 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
     tmp0 = MULTIPLY(tmp10, FIX(1.224744871));   
     tmp10 = tmp1 + tmp0;
     tmp12 = tmp1 - tmp0;
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
     tmp1 = MULTIPLY(z1 + z3, FIX(0.366025404)); 
     tmp0 = tmp1 + LEFT_SHIFT(z1 + z2, CONST_BITS);
     tmp2 = tmp1 + LEFT_SHIFT(z3 - z2, CONST_BITS);
@@ -621,12 +621,12 @@ jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[6*0] = (int) RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[6*5] = (int) RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[6*1] = (int) (tmp11 + tmp1);
-    wsptr[6*4] = (int) (tmp11 - tmp1);
-    wsptr[6*2] = (int) RIGHT_SHIFT(tmp12 + tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[6*3] = (int) RIGHT_SHIFT(tmp12 - tmp2, CONST_BITS-PASS1_BITS);
+    wsptr[6 * 0] = (int)RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[6 * 5] = (int)RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[6 * 1] = (int)(tmp11 + tmp1);
+    wsptr[6 * 4] = (int)(tmp11 - tmp1);
+    wsptr[6 * 2] = (int)RIGHT_SHIFT(tmp12 + tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[6 * 3] = (int)RIGHT_SHIFT(tmp12 - tmp2, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -638,22 +638,22 @@ jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp0 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp0 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
-    tmp2 = (JLONG) wsptr[4];
+    tmp2 = (JLONG)wsptr[4];
     tmp10 = MULTIPLY(tmp2, FIX(0.707106781));   
     tmp1 = tmp0 + tmp10;
     tmp11 = tmp0 - tmp10 - tmp10;
-    tmp10 = (JLONG) wsptr[2];
+    tmp10 = (JLONG)wsptr[2];
     tmp0 = MULTIPLY(tmp10, FIX(1.224744871));   
     tmp10 = tmp1 + tmp0;
     tmp12 = tmp1 - tmp0;
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
     tmp1 = MULTIPLY(z1 + z3, FIX(0.366025404)); 
     tmp0 = tmp1 + LEFT_SHIFT(z1 + z2, CONST_BITS);
     tmp2 = tmp1 + LEFT_SHIFT(z3 - z2, CONST_BITS);
@@ -661,24 +661,24 @@ jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp10 + tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[5] = range_limit[(int) RIGHT_SHIFT(tmp10 - tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp11 + tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[4] = range_limit[(int) RIGHT_SHIFT(tmp11 - tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) RIGHT_SHIFT(tmp12 + tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[3] = range_limit[(int) RIGHT_SHIFT(tmp12 - tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)RIGHT_SHIFT(tmp10 + tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[5] = range_limit[(int)RIGHT_SHIFT(tmp10 - tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)RIGHT_SHIFT(tmp11 + tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[4] = range_limit[(int)RIGHT_SHIFT(tmp11 - tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)RIGHT_SHIFT(tmp12 + tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[3] = range_limit[(int)RIGHT_SHIFT(tmp12 - tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += 6;         
   }
@@ -694,9 +694,9 @@ jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-               JCOEFPTR coef_block,
-               JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_5x5(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+              JCOEFPTR coef_block, JSAMPARRAY output_buf,
+              JDIMENSION output_col)
 {
   JLONG tmp0, tmp1, tmp10, tmp11, tmp12;
   JLONG z1, z2, z3;
@@ -706,23 +706,23 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[5*5];   
+  int workspace[5 * 5];         
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 5; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp12 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp12 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp12 = LEFT_SHIFT(tmp12, CONST_BITS);
     
-    tmp12 += ONE << (CONST_BITS-PASS1_BITS-1);
-    tmp0 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    tmp1 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    tmp12 += ONE << (CONST_BITS - PASS1_BITS - 1);
+    tmp0 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    tmp1 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     z1 = MULTIPLY(tmp0 + tmp1, FIX(0.790569415)); 
     z2 = MULTIPLY(tmp0 - tmp1, FIX(0.353553391)); 
     z3 = tmp12 + z2;
@@ -732,8 +732,8 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z2 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
 
     z1 = MULTIPLY(z2 + z3, FIX(0.831253876));     
     tmp0 = z1 + MULTIPLY(z2, FIX(0.513743148));   
@@ -741,11 +741,11 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[5*0] = (int) RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[5*4] = (int) RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[5*1] = (int) RIGHT_SHIFT(tmp11 + tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[5*3] = (int) RIGHT_SHIFT(tmp11 - tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[5*2] = (int) RIGHT_SHIFT(tmp12, CONST_BITS-PASS1_BITS);
+    wsptr[5 * 0] = (int)RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[5 * 4] = (int)RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[5 * 1] = (int)RIGHT_SHIFT(tmp11 + tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[5 * 3] = (int)RIGHT_SHIFT(tmp11 - tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[5 * 2] = (int)RIGHT_SHIFT(tmp12, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -757,10 +757,10 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp12 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp12 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp12 = LEFT_SHIFT(tmp12, CONST_BITS);
-    tmp0 = (JLONG) wsptr[2];
-    tmp1 = (JLONG) wsptr[4];
+    tmp0 = (JLONG)wsptr[2];
+    tmp1 = (JLONG)wsptr[4];
     z1 = MULTIPLY(tmp0 + tmp1, FIX(0.790569415)); 
     z2 = MULTIPLY(tmp0 - tmp1, FIX(0.353553391)); 
     z3 = tmp12 + z2;
@@ -770,8 +770,8 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z2 = (JLONG) wsptr[1];
-    z3 = (JLONG) wsptr[3];
+    z2 = (JLONG)wsptr[1];
+    z3 = (JLONG)wsptr[3];
 
     z1 = MULTIPLY(z2 + z3, FIX(0.831253876));     
     tmp0 = z1 + MULTIPLY(z2, FIX(0.513743148));   
@@ -779,21 +779,21 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp10 + tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[4] = range_limit[(int) RIGHT_SHIFT(tmp10 - tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp11 + tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[3] = range_limit[(int) RIGHT_SHIFT(tmp11 - tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) RIGHT_SHIFT(tmp12,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)RIGHT_SHIFT(tmp10 + tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[4] = range_limit[(int)RIGHT_SHIFT(tmp10 - tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)RIGHT_SHIFT(tmp11 + tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[3] = range_limit[(int)RIGHT_SHIFT(tmp11 - tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)RIGHT_SHIFT(tmp12,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += 5;         
   }
@@ -809,9 +809,9 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_3x3 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-               JCOEFPTR coef_block,
-               JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_3x3(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+              JCOEFPTR coef_block, JSAMPARRAY output_buf,
+              JDIMENSION output_col)
 {
   JLONG tmp0, tmp2, tmp10, tmp12;
   JCOEFPTR inptr;
@@ -820,36 +820,36 @@ jpeg_idct_3x3 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[3*3];   
+  int workspace[3 * 3];         
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 3; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
     
-    tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
-    tmp2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
+    tmp0 += ONE << (CONST_BITS - PASS1_BITS - 1);
+    tmp2 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
     tmp12 = MULTIPLY(tmp2, FIX(0.707106781)); 
     tmp10 = tmp0 + tmp12;
     tmp2 = tmp0 - tmp12 - tmp12;
 
     
 
-    tmp12 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
+    tmp12 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
     tmp0 = MULTIPLY(tmp12, FIX(1.224744871)); 
 
     
 
-    wsptr[3*0] = (int) RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[3*2] = (int) RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[3*1] = (int) RIGHT_SHIFT(tmp2, CONST_BITS-PASS1_BITS);
+    wsptr[3 * 0] = (int)RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[3 * 2] = (int)RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[3 * 1] = (int)RIGHT_SHIFT(tmp2, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -861,29 +861,29 @@ jpeg_idct_3x3 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp0 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp0 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
-    tmp2 = (JLONG) wsptr[2];
+    tmp2 = (JLONG)wsptr[2];
     tmp12 = MULTIPLY(tmp2, FIX(0.707106781)); 
     tmp10 = tmp0 + tmp12;
     tmp2 = tmp0 - tmp12 - tmp12;
 
     
 
-    tmp12 = (JLONG) wsptr[1];
+    tmp12 = (JLONG)wsptr[1];
     tmp0 = MULTIPLY(tmp12, FIX(1.224744871)); 
 
     
 
-    outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp10 + tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) RIGHT_SHIFT(tmp10 - tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)RIGHT_SHIFT(tmp10 + tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)RIGHT_SHIFT(tmp10 - tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)RIGHT_SHIFT(tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += 3;         
   }
@@ -899,9 +899,9 @@ jpeg_idct_3x3 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-               JCOEFPTR coef_block,
-               JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_9x9(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+              JCOEFPTR coef_block, JSAMPARRAY output_buf,
+              JDIMENSION output_col)
 {
   JLONG tmp0, tmp1, tmp2, tmp3, tmp10, tmp11, tmp12, tmp13, tmp14;
   JLONG z1, z2, z3, z4;
@@ -911,25 +911,25 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*9];   
+  int workspace[8 * 9];         
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
     
-    tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
+    tmp0 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     tmp3 = MULTIPLY(z3, FIX(0.707106781));      
     tmp1 = tmp0 + tmp3;
@@ -949,12 +949,12 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
-    z2 = MULTIPLY(z2, - FIX(1.224744871));           
+    z2 = MULTIPLY(z2, -FIX(1.224744871));            
 
     tmp2 = MULTIPLY(z1 + z3, FIX(0.909038955));      
     tmp3 = MULTIPLY(z1 + z4, FIX(0.483689525));      
@@ -966,15 +966,15 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0] = (int) RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[8*8] = (int) RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS-PASS1_BITS);
-    wsptr[8*1] = (int) RIGHT_SHIFT(tmp11 + tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[8*7] = (int) RIGHT_SHIFT(tmp11 - tmp1, CONST_BITS-PASS1_BITS);
-    wsptr[8*2] = (int) RIGHT_SHIFT(tmp12 + tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[8*6] = (int) RIGHT_SHIFT(tmp12 - tmp2, CONST_BITS-PASS1_BITS);
-    wsptr[8*3] = (int) RIGHT_SHIFT(tmp13 + tmp3, CONST_BITS-PASS1_BITS);
-    wsptr[8*5] = (int) RIGHT_SHIFT(tmp13 - tmp3, CONST_BITS-PASS1_BITS);
-    wsptr[8*4] = (int) RIGHT_SHIFT(tmp14, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0] = (int)RIGHT_SHIFT(tmp10 + tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8] = (int)RIGHT_SHIFT(tmp10 - tmp0, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1] = (int)RIGHT_SHIFT(tmp11 + tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7] = (int)RIGHT_SHIFT(tmp11 - tmp1, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2] = (int)RIGHT_SHIFT(tmp12 + tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6] = (int)RIGHT_SHIFT(tmp12 - tmp2, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3] = (int)RIGHT_SHIFT(tmp13 + tmp3, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5] = (int)RIGHT_SHIFT(tmp13 - tmp3, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4] = (int)RIGHT_SHIFT(tmp14, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -986,12 +986,12 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp0 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp0 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
 
-    z1 = (JLONG) wsptr[2];
-    z2 = (JLONG) wsptr[4];
-    z3 = (JLONG) wsptr[6];
+    z1 = (JLONG)wsptr[2];
+    z2 = (JLONG)wsptr[4];
+    z3 = (JLONG)wsptr[6];
 
     tmp3 = MULTIPLY(z3, FIX(0.707106781));      
     tmp1 = tmp0 + tmp3;
@@ -1011,12 +1011,12 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
-    z4 = (JLONG) wsptr[7];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
+    z4 = (JLONG)wsptr[7];
 
-    z2 = MULTIPLY(z2, - FIX(1.224744871));           
+    z2 = MULTIPLY(z2, -FIX(1.224744871));            
 
     tmp2 = MULTIPLY(z1 + z3, FIX(0.909038955));      
     tmp3 = MULTIPLY(z1 + z4, FIX(0.483689525));      
@@ -1028,33 +1028,33 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp10 + tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[8] = range_limit[(int) RIGHT_SHIFT(tmp10 - tmp0,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp11 + tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[7] = range_limit[(int) RIGHT_SHIFT(tmp11 - tmp1,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) RIGHT_SHIFT(tmp12 + tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[6] = range_limit[(int) RIGHT_SHIFT(tmp12 - tmp2,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[3] = range_limit[(int) RIGHT_SHIFT(tmp13 + tmp3,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[5] = range_limit[(int) RIGHT_SHIFT(tmp13 - tmp3,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[4] = range_limit[(int) RIGHT_SHIFT(tmp14,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)RIGHT_SHIFT(tmp10 + tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[8] = range_limit[(int)RIGHT_SHIFT(tmp10 - tmp0,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)RIGHT_SHIFT(tmp11 + tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[7] = range_limit[(int)RIGHT_SHIFT(tmp11 - tmp1,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)RIGHT_SHIFT(tmp12 + tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[6] = range_limit[(int)RIGHT_SHIFT(tmp12 - tmp2,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[3] = range_limit[(int)RIGHT_SHIFT(tmp13 + tmp3,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[5] = range_limit[(int)RIGHT_SHIFT(tmp13 - tmp3,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[4] = range_limit[(int)RIGHT_SHIFT(tmp14,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -1070,9 +1070,9 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_10x10(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp10, tmp11, tmp12, tmp13, tmp14;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24;
@@ -1083,32 +1083,32 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*10];  
+  int workspace[8 * 10];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    z3 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     z3 = LEFT_SHIFT(z3, CONST_BITS);
     
-    z3 += ONE << (CONST_BITS-PASS1_BITS-1);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    z3 += ONE << (CONST_BITS - PASS1_BITS - 1);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     z1 = MULTIPLY(z4, FIX(1.144122806));         
     z2 = MULTIPLY(z4, FIX(0.437016024));         
     tmp10 = z3 + z1;
     tmp11 = z3 - z2;
 
     tmp22 = RIGHT_SHIFT(z3 - LEFT_SHIFT(z1 - z2, 1),
-                        CONST_BITS-PASS1_BITS);  
+                        CONST_BITS - PASS1_BITS); 
 
-    z2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     z1 = MULTIPLY(z2 + z3, FIX(0.831253876));    
     tmp12 = z1 + MULTIPLY(z2, FIX(0.513743148)); 
@@ -1121,10 +1121,10 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
     tmp11 = z2 + z4;
     tmp13 = z2 - z4;
@@ -1148,16 +1148,16 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0] = (int) RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*9] = (int) RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*1] = (int) RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*8] = (int) RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*2] = (int) (tmp22 + tmp12);
-    wsptr[8*7] = (int) (tmp22 - tmp12);
-    wsptr[8*3] = (int) RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*6] = (int) RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*4] = (int) RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*5] = (int) RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0] = (int)RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9] = (int)RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1] = (int)RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8] = (int)RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2] = (int)(tmp22 + tmp12);
+    wsptr[8 * 7] = (int)(tmp22 - tmp12);
+    wsptr[8 * 3] = (int)RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6] = (int)RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4] = (int)RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5] = (int)RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -1169,9 +1169,9 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    z3 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    z3 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     z3 = LEFT_SHIFT(z3, CONST_BITS);
-    z4 = (JLONG) wsptr[4];
+    z4 = (JLONG)wsptr[4];
     z1 = MULTIPLY(z4, FIX(1.144122806));         
     z2 = MULTIPLY(z4, FIX(0.437016024));         
     tmp10 = z3 + z1;
@@ -1179,8 +1179,8 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     tmp22 = z3 - LEFT_SHIFT(z1 - z2, 1);         
 
-    z2 = (JLONG) wsptr[2];
-    z3 = (JLONG) wsptr[6];
+    z2 = (JLONG)wsptr[2];
+    z3 = (JLONG)wsptr[6];
 
     z1 = MULTIPLY(z2 + z3, FIX(0.831253876));    
     tmp12 = z1 + MULTIPLY(z2, FIX(0.513743148)); 
@@ -1193,11 +1193,11 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
     z3 = LEFT_SHIFT(z3, CONST_BITS);
-    z4 = (JLONG) wsptr[7];
+    z4 = (JLONG)wsptr[7];
 
     tmp11 = z2 + z4;
     tmp13 = z2 - z4;
@@ -1220,36 +1220,36 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp10,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[9] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp10,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp11,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[8] = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp11,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[2] = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp12,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[7] = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp12,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[3] = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp13,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[6] = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp13,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[4] = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp14,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
-    outptr[5] = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp14,
-                                              CONST_BITS+PASS1_BITS+3)
-                            & RANGE_MASK];
+    outptr[0] = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp10,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[9] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp10,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[1] = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp11,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[8] = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp11,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[2] = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp12,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[7] = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp12,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[3] = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp13,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[6] = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp13,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[4] = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp14,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
+    outptr[5] = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp14,
+                                             CONST_BITS + PASS1_BITS + 3) &
+                            RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -1265,9 +1265,9 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_11x11(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp10, tmp11, tmp12, tmp13, tmp14;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24, tmp25;
@@ -1278,30 +1278,30 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*11];  
+  int workspace[8 * 11];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp10 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp10 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp10 = LEFT_SHIFT(tmp10, CONST_BITS);
     
-    tmp10 += ONE << (CONST_BITS-PASS1_BITS-1);
+    tmp10 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     tmp20 = MULTIPLY(z2 - z3, FIX(2.546640132));     
     tmp23 = MULTIPLY(z2 - z1, FIX(0.430815045));     
     z4 = z1 + z3;
-    tmp24 = MULTIPLY(z4, - FIX(1.155664402));        
+    tmp24 = MULTIPLY(z4, -FIX(1.155664402));         
     z4 -= z2;
     tmp25 = tmp10 + MULTIPLY(z4, FIX(1.356927976));  
     tmp21 = tmp20 + tmp23 + tmp25 -
@@ -1316,10 +1316,10 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
     tmp11 = z1 + z2;
     tmp14 = MULTIPLY(tmp11 + z3 + z4, FIX(0.398430003)); 
@@ -1331,26 +1331,26 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     z1    = tmp14 - MULTIPLY(z2 + z3, FIX(1.163011579)); 
     tmp11 += z1 + MULTIPLY(z2, FIX(2.073276588));        
     tmp12 += z1 - MULTIPLY(z3, FIX(1.192193623));        
-    z1    = MULTIPLY(z2 + z4, - FIX(1.798248910));       
+    z1    = MULTIPLY(z2 + z4, -FIX(1.798248910));        
     tmp11 += z1;
     tmp13 += z1 + MULTIPLY(z4, FIX(2.102458632));        
-    tmp14 += MULTIPLY(z2, - FIX(1.467221301)) +          
+    tmp14 += MULTIPLY(z2, -FIX(1.467221301)) +           
              MULTIPLY(z3, FIX(1.001388905)) -            
              MULTIPLY(z4, FIX(1.684843907));             
 
     
 
-    wsptr[8*0]  = (int) RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*10] = (int) RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*1]  = (int) RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*9]  = (int) RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*2]  = (int) RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*8]  = (int) RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*3]  = (int) RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*7]  = (int) RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*4]  = (int) RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*6]  = (int) RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*5]  = (int) RIGHT_SHIFT(tmp25, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0]  = (int)RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 10] = (int)RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1]  = (int)RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9]  = (int)RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2]  = (int)RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8]  = (int)RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3]  = (int)RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7]  = (int)RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4]  = (int)RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6]  = (int)RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5]  = (int)RIGHT_SHIFT(tmp25, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -1362,17 +1362,17 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp10 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp10 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp10 = LEFT_SHIFT(tmp10, CONST_BITS);
 
-    z1 = (JLONG) wsptr[2];
-    z2 = (JLONG) wsptr[4];
-    z3 = (JLONG) wsptr[6];
+    z1 = (JLONG)wsptr[2];
+    z2 = (JLONG)wsptr[4];
+    z3 = (JLONG)wsptr[6];
 
     tmp20 = MULTIPLY(z2 - z3, FIX(2.546640132));     
     tmp23 = MULTIPLY(z2 - z1, FIX(0.430815045));     
     z4 = z1 + z3;
-    tmp24 = MULTIPLY(z4, - FIX(1.155664402));        
+    tmp24 = MULTIPLY(z4, -FIX(1.155664402));         
     z4 -= z2;
     tmp25 = tmp10 + MULTIPLY(z4, FIX(1.356927976));  
     tmp21 = tmp20 + tmp23 + tmp25 -
@@ -1387,10 +1387,10 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
-    z4 = (JLONG) wsptr[7];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
+    z4 = (JLONG)wsptr[7];
 
     tmp11 = z1 + z2;
     tmp14 = MULTIPLY(tmp11 + z3 + z4, FIX(0.398430003)); 
@@ -1402,48 +1402,48 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     z1    = tmp14 - MULTIPLY(z2 + z3, FIX(1.163011579)); 
     tmp11 += z1 + MULTIPLY(z2, FIX(2.073276588));        
     tmp12 += z1 - MULTIPLY(z3, FIX(1.192193623));        
-    z1    = MULTIPLY(z2 + z4, - FIX(1.798248910));       
+    z1    = MULTIPLY(z2 + z4, -FIX(1.798248910));        
     tmp11 += z1;
     tmp13 += z1 + MULTIPLY(z4, FIX(2.102458632));        
-    tmp14 += MULTIPLY(z2, - FIX(1.467221301)) +          
+    tmp14 += MULTIPLY(z2, -FIX(1.467221301)) +           
              MULTIPLY(z3, FIX(1.001388905)) -            
              MULTIPLY(z4, FIX(1.684843907));             
 
     
 
-    outptr[0]  = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[10] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[1]  = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[9]  = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[2]  = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[8]  = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[3]  = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[7]  = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[4]  = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[6]  = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[5]  = range_limit[(int) RIGHT_SHIFT(tmp25,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
+    outptr[0]  = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[10] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[1]  = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[9]  = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[2]  = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[8]  = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[3]  = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[7]  = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[4]  = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[6]  = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[5]  = range_limit[(int)RIGHT_SHIFT(tmp25,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -1459,9 +1459,9 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_12x12(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp10, tmp11, tmp12, tmp13, tmp14, tmp15;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24, tmp25;
@@ -1472,32 +1472,32 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*12];  
+  int workspace[8 * 12];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    z3 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     z3 = LEFT_SHIFT(z3, CONST_BITS);
     
-    z3 += ONE << (CONST_BITS-PASS1_BITS-1);
+    z3 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
-    z4 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     z4 = MULTIPLY(z4, FIX(1.224744871)); 
 
     tmp10 = z3 + z4;
     tmp11 = z3 - z4;
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
     z4 = MULTIPLY(z1, FIX(1.366025404)); 
     z1 = LEFT_SHIFT(z1, CONST_BITS);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
     z2 = LEFT_SHIFT(z2, CONST_BITS);
 
     tmp12 = z1 - z2;
@@ -1517,19 +1517,19 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
     tmp11 = MULTIPLY(z2, FIX(1.306562965));                  
-    tmp14 = MULTIPLY(z2, - FIX_0_541196100);                 
+    tmp14 = MULTIPLY(z2, -FIX_0_541196100);                  
 
     tmp10 = z1 + z3;
     tmp15 = MULTIPLY(tmp10 + z4, FIX(0.860918669));          
     tmp12 = tmp15 + MULTIPLY(tmp10, FIX(0.261052384));       
     tmp10 = tmp12 + tmp11 + MULTIPLY(z1, FIX(0.280143716));  
-    tmp13 = MULTIPLY(z3 + z4, - FIX(1.045510580));           
+    tmp13 = MULTIPLY(z3 + z4, -FIX(1.045510580));            
     tmp12 += tmp13 + tmp14 - MULTIPLY(z3, FIX(1.478575242)); 
     tmp13 += tmp15 - tmp11 + MULTIPLY(z4, FIX(1.586706681)); 
     tmp15 += tmp14 - MULTIPLY(z1, FIX(0.676326758)) -        
@@ -1543,18 +1543,18 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0]  = (int) RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*11] = (int) RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*1]  = (int) RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*10] = (int) RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*2]  = (int) RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*9]  = (int) RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*3]  = (int) RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*8]  = (int) RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*4]  = (int) RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*7]  = (int) RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*5]  = (int) RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*6]  = (int) RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0]  = (int)RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 11] = (int)RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1]  = (int)RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 10] = (int)RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2]  = (int)RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9]  = (int)RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3]  = (int)RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8]  = (int)RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4]  = (int)RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7]  = (int)RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5]  = (int)RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6]  = (int)RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -1566,19 +1566,19 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    z3 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    z3 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     z3 = LEFT_SHIFT(z3, CONST_BITS);
 
-    z4 = (JLONG) wsptr[4];
+    z4 = (JLONG)wsptr[4];
     z4 = MULTIPLY(z4, FIX(1.224744871)); 
 
     tmp10 = z3 + z4;
     tmp11 = z3 - z4;
 
-    z1 = (JLONG) wsptr[2];
+    z1 = (JLONG)wsptr[2];
     z4 = MULTIPLY(z1, FIX(1.366025404)); 
     z1 = LEFT_SHIFT(z1, CONST_BITS);
-    z2 = (JLONG) wsptr[6];
+    z2 = (JLONG)wsptr[6];
     z2 = LEFT_SHIFT(z2, CONST_BITS);
 
     tmp12 = z1 - z2;
@@ -1598,19 +1598,19 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
-    z4 = (JLONG) wsptr[7];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
+    z4 = (JLONG)wsptr[7];
 
     tmp11 = MULTIPLY(z2, FIX(1.306562965));                  
-    tmp14 = MULTIPLY(z2, - FIX_0_541196100);                 
+    tmp14 = MULTIPLY(z2, -FIX_0_541196100);                  
 
     tmp10 = z1 + z3;
     tmp15 = MULTIPLY(tmp10 + z4, FIX(0.860918669));          
     tmp12 = tmp15 + MULTIPLY(tmp10, FIX(0.261052384));       
     tmp10 = tmp12 + tmp11 + MULTIPLY(z1, FIX(0.280143716));  
-    tmp13 = MULTIPLY(z3 + z4, - FIX(1.045510580));           
+    tmp13 = MULTIPLY(z3 + z4, -FIX(1.045510580));            
     tmp12 += tmp13 + tmp14 - MULTIPLY(z3, FIX(1.478575242)); 
     tmp13 += tmp15 - tmp11 + MULTIPLY(z4, FIX(1.586706681)); 
     tmp15 += tmp14 - MULTIPLY(z1, FIX(0.676326758)) -        
@@ -1624,42 +1624,42 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0]  = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[11] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[1]  = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[10] = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[2]  = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[9]  = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[3]  = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[8]  = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[4]  = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[7]  = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[5]  = range_limit[(int) RIGHT_SHIFT(tmp25 + tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[6]  = range_limit[(int) RIGHT_SHIFT(tmp25 - tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
+    outptr[0]  = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[11] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[1]  = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[10] = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[2]  = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[9]  = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[3]  = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[8]  = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[4]  = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[7]  = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[5]  = range_limit[(int)RIGHT_SHIFT(tmp25 + tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[6]  = range_limit[(int)RIGHT_SHIFT(tmp25 - tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -1675,9 +1675,9 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_13x13(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp10, tmp11, tmp12, tmp13, tmp14, tmp15;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24, tmp25, tmp26;
@@ -1688,25 +1688,25 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*13];  
+  int workspace[8 * 13];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     z1 = LEFT_SHIFT(z1, CONST_BITS);
     
-    z1 += ONE << (CONST_BITS-PASS1_BITS-1);
+    z1 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
-    z2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     tmp10 = z3 + z4;
     tmp11 = z3 - z4;
@@ -1721,22 +1721,22 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp13 = MULTIPLY(tmp11, FIX(0.486914739)) + z1;           
 
     tmp21 = MULTIPLY(z2, FIX(1.058554052)) - tmp12 + tmp13;   
-    tmp25 = MULTIPLY(z2, - FIX(1.252223920)) + tmp12 + tmp13; 
+    tmp25 = MULTIPLY(z2, -FIX(1.252223920)) + tmp12 + tmp13;  
 
     tmp12 = MULTIPLY(tmp10, FIX(0.435816023));                
     tmp13 = MULTIPLY(tmp11, FIX(0.937303064)) - z1;           
 
-    tmp23 = MULTIPLY(z2, - FIX(0.170464608)) - tmp12 - tmp13; 
-    tmp24 = MULTIPLY(z2, - FIX(0.803364869)) + tmp12 - tmp13; 
+    tmp23 = MULTIPLY(z2, -FIX(0.170464608)) - tmp12 - tmp13;  
+    tmp24 = MULTIPLY(z2, -FIX(0.803364869)) + tmp12 - tmp13;  
 
     tmp26 = MULTIPLY(tmp11 - z2, FIX(1.414213562)) + z1;      
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
     tmp11 = MULTIPLY(z1 + z2, FIX(1.322312651));     
     tmp12 = MULTIPLY(z1 + z3, FIX(1.163874945));     
@@ -1744,13 +1744,13 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp13 = MULTIPLY(tmp15, FIX(0.937797057));       
     tmp10 = tmp11 + tmp12 + tmp13 -
             MULTIPLY(z1, FIX(2.020082300));          
-    tmp14 = MULTIPLY(z2 + z3, - FIX(0.338443458));   
+    tmp14 = MULTIPLY(z2 + z3, -FIX(0.338443458));    
     tmp11 += tmp14 + MULTIPLY(z2, FIX(0.837223564)); 
     tmp12 += tmp14 - MULTIPLY(z3, FIX(1.572116027)); 
-    tmp14 = MULTIPLY(z2 + z4, - FIX(1.163874945));   
+    tmp14 = MULTIPLY(z2 + z4, -FIX(1.163874945));    
     tmp11 += tmp14;
     tmp13 += tmp14 + MULTIPLY(z4, FIX(2.205608352)); 
-    tmp14 = MULTIPLY(z3 + z4, - FIX(0.657217813));   
+    tmp14 = MULTIPLY(z3 + z4, -FIX(0.657217813));    
     tmp12 += tmp14;
     tmp13 += tmp14;
     tmp15 = MULTIPLY(tmp15, FIX(0.338443458));       
@@ -1763,19 +1763,19 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0]  = (int) RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*12] = (int) RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*1]  = (int) RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*11] = (int) RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*2]  = (int) RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*10] = (int) RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*3]  = (int) RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*9]  = (int) RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*4]  = (int) RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*8]  = (int) RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*5]  = (int) RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*7]  = (int) RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*6]  = (int) RIGHT_SHIFT(tmp26, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0]  = (int)RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 12] = (int)RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1]  = (int)RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 11] = (int)RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2]  = (int)RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 10] = (int)RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3]  = (int)RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9]  = (int)RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4]  = (int)RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8]  = (int)RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5]  = (int)RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7]  = (int)RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6]  = (int)RIGHT_SHIFT(tmp26, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -1787,12 +1787,12 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    z1 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    z1 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     z1 = LEFT_SHIFT(z1, CONST_BITS);
 
-    z2 = (JLONG) wsptr[2];
-    z3 = (JLONG) wsptr[4];
-    z4 = (JLONG) wsptr[6];
+    z2 = (JLONG)wsptr[2];
+    z3 = (JLONG)wsptr[4];
+    z4 = (JLONG)wsptr[6];
 
     tmp10 = z3 + z4;
     tmp11 = z3 - z4;
@@ -1807,22 +1807,22 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp13 = MULTIPLY(tmp11, FIX(0.486914739)) + z1;           
 
     tmp21 = MULTIPLY(z2, FIX(1.058554052)) - tmp12 + tmp13;   
-    tmp25 = MULTIPLY(z2, - FIX(1.252223920)) + tmp12 + tmp13; 
+    tmp25 = MULTIPLY(z2, -FIX(1.252223920)) + tmp12 + tmp13;  
 
     tmp12 = MULTIPLY(tmp10, FIX(0.435816023));                
     tmp13 = MULTIPLY(tmp11, FIX(0.937303064)) - z1;           
 
-    tmp23 = MULTIPLY(z2, - FIX(0.170464608)) - tmp12 - tmp13; 
-    tmp24 = MULTIPLY(z2, - FIX(0.803364869)) + tmp12 - tmp13; 
+    tmp23 = MULTIPLY(z2, -FIX(0.170464608)) - tmp12 - tmp13;  
+    tmp24 = MULTIPLY(z2, -FIX(0.803364869)) + tmp12 - tmp13;  
 
     tmp26 = MULTIPLY(tmp11 - z2, FIX(1.414213562)) + z1;      
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
-    z4 = (JLONG) wsptr[7];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
+    z4 = (JLONG)wsptr[7];
 
     tmp11 = MULTIPLY(z1 + z2, FIX(1.322312651));     
     tmp12 = MULTIPLY(z1 + z3, FIX(1.163874945));     
@@ -1830,13 +1830,13 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp13 = MULTIPLY(tmp15, FIX(0.937797057));       
     tmp10 = tmp11 + tmp12 + tmp13 -
             MULTIPLY(z1, FIX(2.020082300));          
-    tmp14 = MULTIPLY(z2 + z3, - FIX(0.338443458));   
+    tmp14 = MULTIPLY(z2 + z3, -FIX(0.338443458));    
     tmp11 += tmp14 + MULTIPLY(z2, FIX(0.837223564)); 
     tmp12 += tmp14 - MULTIPLY(z3, FIX(1.572116027)); 
-    tmp14 = MULTIPLY(z2 + z4, - FIX(1.163874945));   
+    tmp14 = MULTIPLY(z2 + z4, -FIX(1.163874945));    
     tmp11 += tmp14;
     tmp13 += tmp14 + MULTIPLY(z4, FIX(2.205608352)); 
-    tmp14 = MULTIPLY(z3 + z4, - FIX(0.657217813));   
+    tmp14 = MULTIPLY(z3 + z4, -FIX(0.657217813));    
     tmp12 += tmp14;
     tmp13 += tmp14;
     tmp15 = MULTIPLY(tmp15, FIX(0.338443458));       
@@ -1849,45 +1849,45 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0]  = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[12] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[1]  = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[11] = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[2]  = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[10] = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[3]  = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[9]  = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[4]  = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[8]  = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[5]  = range_limit[(int) RIGHT_SHIFT(tmp25 + tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[7]  = range_limit[(int) RIGHT_SHIFT(tmp25 - tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[6]  = range_limit[(int) RIGHT_SHIFT(tmp26,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
+    outptr[0]  = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[12] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[1]  = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[11] = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[2]  = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[10] = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[3]  = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[9]  = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[4]  = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[8]  = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[5]  = range_limit[(int)RIGHT_SHIFT(tmp25 + tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[7]  = range_limit[(int)RIGHT_SHIFT(tmp25 - tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[6]  = range_limit[(int)RIGHT_SHIFT(tmp26,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -1903,9 +1903,9 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_14x14(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp10, tmp11, tmp12, tmp13, tmp14, tmp15, tmp16;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24, tmp25, tmp26;
@@ -1916,22 +1916,22 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*14];  
+  int workspace[8 * 14];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     z1 = LEFT_SHIFT(z1, CONST_BITS);
     
-    z1 += ONE << (CONST_BITS-PASS1_BITS-1);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    z1 += ONE << (CONST_BITS - PASS1_BITS - 1);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     z2 = MULTIPLY(z4, FIX(1.274162392));         
     z3 = MULTIPLY(z4, FIX(0.314692123));         
     z4 = MULTIPLY(z4, FIX(0.881747734));         
@@ -1941,10 +1941,10 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp12 = z1 - z4;
 
     tmp23 = RIGHT_SHIFT(z1 - LEFT_SHIFT(z2 + z3 - z4, 1),
-                        CONST_BITS-PASS1_BITS);  
+                        CONST_BITS - PASS1_BITS); 
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     z3 = MULTIPLY(z1 + z2, FIX(1.105676686));    
 
@@ -1962,10 +1962,10 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
     tmp13 = LEFT_SHIFT(z4, CONST_BITS);
 
     tmp14 = z1 + z3;
@@ -1978,7 +1978,7 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp15 = MULTIPLY(z1, FIX(0.467085129)) - tmp13;        
     tmp16 += tmp15;
     z1    += z4;
-    z4    = MULTIPLY(z2 + z3, - FIX(0.158341681)) - tmp13; 
+    z4    = MULTIPLY(z2 + z3, -FIX(0.158341681)) - tmp13;  
     tmp11 += z4 - MULTIPLY(z2, FIX(0.424103948));          
     tmp12 += z4 - MULTIPLY(z3, FIX(2.373959773));          
     z4    = MULTIPLY(z3 - z2, FIX(1.405321284));           
@@ -1989,20 +1989,20 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0]  = (int) RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*13] = (int) RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*1]  = (int) RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*12] = (int) RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*2]  = (int) RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*11] = (int) RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*3]  = (int) (tmp23 + tmp13);
-    wsptr[8*10] = (int) (tmp23 - tmp13);
-    wsptr[8*4]  = (int) RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*9]  = (int) RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*5]  = (int) RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*8]  = (int) RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*6]  = (int) RIGHT_SHIFT(tmp26 + tmp16, CONST_BITS-PASS1_BITS);
-    wsptr[8*7]  = (int) RIGHT_SHIFT(tmp26 - tmp16, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0]  = (int)RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 13] = (int)RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1]  = (int)RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 12] = (int)RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2]  = (int)RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 11] = (int)RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3]  = (int)(tmp23 + tmp13);
+    wsptr[8 * 10] = (int)(tmp23 - tmp13);
+    wsptr[8 * 4]  = (int)RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9]  = (int)RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5]  = (int)RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8]  = (int)RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6]  = (int)RIGHT_SHIFT(tmp26 + tmp16, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7]  = (int)RIGHT_SHIFT(tmp26 - tmp16, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -2014,9 +2014,9 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    z1 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    z1 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     z1 = LEFT_SHIFT(z1, CONST_BITS);
-    z4 = (JLONG) wsptr[4];
+    z4 = (JLONG)wsptr[4];
     z2 = MULTIPLY(z4, FIX(1.274162392));         
     z3 = MULTIPLY(z4, FIX(0.314692123));         
     z4 = MULTIPLY(z4, FIX(0.881747734));         
@@ -2027,8 +2027,8 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     tmp23 = z1 - LEFT_SHIFT(z2 + z3 - z4, 1);    
 
-    z1 = (JLONG) wsptr[2];
-    z2 = (JLONG) wsptr[6];
+    z1 = (JLONG)wsptr[2];
+    z2 = (JLONG)wsptr[6];
 
     z3 = MULTIPLY(z1 + z2, FIX(1.105676686));    
 
@@ -2046,10 +2046,10 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
-    z4 = (JLONG) wsptr[7];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
+    z4 = (JLONG)wsptr[7];
     z4 = LEFT_SHIFT(z4, CONST_BITS);
 
     tmp14 = z1 + z3;
@@ -2061,7 +2061,7 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     z1    -= z2;
     tmp15 = MULTIPLY(z1, FIX(0.467085129)) - z4;           
     tmp16 += tmp15;
-    tmp13 = MULTIPLY(z2 + z3, - FIX(0.158341681)) - z4;    
+    tmp13 = MULTIPLY(z2 + z3, -FIX(0.158341681)) - z4;     
     tmp11 += tmp13 - MULTIPLY(z2, FIX(0.424103948));       
     tmp12 += tmp13 - MULTIPLY(z3, FIX(2.373959773));       
     tmp13 = MULTIPLY(z3 - z2, FIX(1.405321284));           
@@ -2072,48 +2072,48 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0]  = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[13] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[1]  = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[12] = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[2]  = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[11] = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[3]  = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[10] = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[4]  = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[9]  = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[5]  = range_limit[(int) RIGHT_SHIFT(tmp25 + tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[8]  = range_limit[(int) RIGHT_SHIFT(tmp25 - tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[6]  = range_limit[(int) RIGHT_SHIFT(tmp26 + tmp16,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[7]  = range_limit[(int) RIGHT_SHIFT(tmp26 - tmp16,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
+    outptr[0]  = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[13] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[1]  = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[12] = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[2]  = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[11] = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[3]  = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[10] = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[4]  = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[9]  = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[5]  = range_limit[(int)RIGHT_SHIFT(tmp25 + tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[8]  = range_limit[(int)RIGHT_SHIFT(tmp25 - tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[6]  = range_limit[(int)RIGHT_SHIFT(tmp26 + tmp16,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[7]  = range_limit[(int)RIGHT_SHIFT(tmp26 - tmp16,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -2129,9 +2129,9 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_15x15(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp10, tmp11, tmp12, tmp13, tmp14, tmp15, tmp16;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24, tmp25, tmp26, tmp27;
@@ -2142,25 +2142,25 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*15];  
+  int workspace[8 * 15];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     z1 = LEFT_SHIFT(z1, CONST_BITS);
     
-    z1 += ONE << (CONST_BITS-PASS1_BITS-1);
+    z1 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
-    z2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
 
     tmp10 = MULTIPLY(z4, FIX(0.437016024)); 
     tmp11 = MULTIPLY(z4, FIX(1.144122806)); 
@@ -2195,19 +2195,19 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
     z3 = MULTIPLY(z4, FIX(1.224744871));                    
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
     tmp13 = z2 - z4;
     tmp15 = MULTIPLY(z1 + tmp13, FIX(0.831253876));         
     tmp11 = tmp15 + MULTIPLY(z1, FIX(0.513743148));         
     tmp14 = tmp15 - MULTIPLY(tmp13, FIX(2.176250899));      
 
-    tmp13 = MULTIPLY(z2, - FIX(0.831253876));               
-    tmp15 = MULTIPLY(z2, - FIX(1.344997024));               
+    tmp13 = MULTIPLY(z2, -FIX(0.831253876));                
+    tmp15 = MULTIPLY(z2, -FIX(1.344997024));                
     z2 = z1 - z4;
     tmp12 = z3 + MULTIPLY(z2, FIX(1.406466353));            
 
@@ -2220,21 +2220,21 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0]  = (int) RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*14] = (int) RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*1]  = (int) RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*13] = (int) RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*2]  = (int) RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*12] = (int) RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*3]  = (int) RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*11] = (int) RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*4]  = (int) RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*10] = (int) RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS-PASS1_BITS);
-    wsptr[8*5]  = (int) RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*9]  = (int) RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS-PASS1_BITS);
-    wsptr[8*6]  = (int) RIGHT_SHIFT(tmp26 + tmp16, CONST_BITS-PASS1_BITS);
-    wsptr[8*8]  = (int) RIGHT_SHIFT(tmp26 - tmp16, CONST_BITS-PASS1_BITS);
-    wsptr[8*7]  = (int) RIGHT_SHIFT(tmp27, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0]  = (int)RIGHT_SHIFT(tmp20 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 14] = (int)RIGHT_SHIFT(tmp20 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1]  = (int)RIGHT_SHIFT(tmp21 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 13] = (int)RIGHT_SHIFT(tmp21 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2]  = (int)RIGHT_SHIFT(tmp22 + tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 12] = (int)RIGHT_SHIFT(tmp22 - tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3]  = (int)RIGHT_SHIFT(tmp23 + tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 11] = (int)RIGHT_SHIFT(tmp23 - tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4]  = (int)RIGHT_SHIFT(tmp24 + tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 10] = (int)RIGHT_SHIFT(tmp24 - tmp14, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5]  = (int)RIGHT_SHIFT(tmp25 + tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9]  = (int)RIGHT_SHIFT(tmp25 - tmp15, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6]  = (int)RIGHT_SHIFT(tmp26 + tmp16, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8]  = (int)RIGHT_SHIFT(tmp26 - tmp16, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7]  = (int)RIGHT_SHIFT(tmp27, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -2246,12 +2246,12 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    z1 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    z1 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     z1 = LEFT_SHIFT(z1, CONST_BITS);
 
-    z2 = (JLONG) wsptr[2];
-    z3 = (JLONG) wsptr[4];
-    z4 = (JLONG) wsptr[6];
+    z2 = (JLONG)wsptr[2];
+    z3 = (JLONG)wsptr[4];
+    z4 = (JLONG)wsptr[6];
 
     tmp10 = MULTIPLY(z4, FIX(0.437016024)); 
     tmp11 = MULTIPLY(z4, FIX(1.144122806)); 
@@ -2286,19 +2286,19 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z4 = (JLONG) wsptr[5];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z4 = (JLONG)wsptr[5];
     z3 = MULTIPLY(z4, FIX(1.224744871));                    
-    z4 = (JLONG) wsptr[7];
+    z4 = (JLONG)wsptr[7];
 
     tmp13 = z2 - z4;
     tmp15 = MULTIPLY(z1 + tmp13, FIX(0.831253876));         
     tmp11 = tmp15 + MULTIPLY(z1, FIX(0.513743148));         
     tmp14 = tmp15 - MULTIPLY(tmp13, FIX(2.176250899));      
 
-    tmp13 = MULTIPLY(z2, - FIX(0.831253876));               
-    tmp15 = MULTIPLY(z2, - FIX(1.344997024));               
+    tmp13 = MULTIPLY(z2, -FIX(0.831253876));                
+    tmp15 = MULTIPLY(z2, -FIX(1.344997024));                
     z2 = z1 - z4;
     tmp12 = z3 + MULTIPLY(z2, FIX(1.406466353));            
 
@@ -2311,51 +2311,51 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0]  = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[14] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[1]  = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[13] = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[2]  = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[12] = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[3]  = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[11] = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[4]  = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[10] = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp14,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[5]  = range_limit[(int) RIGHT_SHIFT(tmp25 + tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[9]  = range_limit[(int) RIGHT_SHIFT(tmp25 - tmp15,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[6]  = range_limit[(int) RIGHT_SHIFT(tmp26 + tmp16,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[8]  = range_limit[(int) RIGHT_SHIFT(tmp26 - tmp16,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[7]  = range_limit[(int) RIGHT_SHIFT(tmp27,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
+    outptr[0]  = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[14] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[1]  = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[13] = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[2]  = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[12] = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[3]  = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[11] = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[4]  = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[10] = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp14,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[5]  = range_limit[(int)RIGHT_SHIFT(tmp25 + tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[9]  = range_limit[(int)RIGHT_SHIFT(tmp25 - tmp15,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[6]  = range_limit[(int)RIGHT_SHIFT(tmp26 + tmp16,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[8]  = range_limit[(int)RIGHT_SHIFT(tmp26 - tmp16,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[7]  = range_limit[(int)RIGHT_SHIFT(tmp27,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
 
     wsptr += 8;         
   }
@@ -2371,9 +2371,9 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 GLOBAL(void)
-jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
-                 JCOEFPTR coef_block,
-                 JSAMPARRAY output_buf, JDIMENSION output_col)
+jpeg_idct_16x16(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JCOEFPTR coef_block, JSAMPARRAY output_buf,
+                JDIMENSION output_col)
 {
   JLONG tmp0, tmp1, tmp2, tmp3, tmp10, tmp11, tmp12, tmp13;
   JLONG tmp20, tmp21, tmp22, tmp23, tmp24, tmp25, tmp26, tmp27;
@@ -2384,23 +2384,23 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
   int ctr;
-  int workspace[8*16];  
+  int workspace[8 * 16];        
   SHIFT_TEMPS
 
   
 
   inptr = coef_block;
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+  quantptr = (ISLOW_MULT_TYPE *)compptr->dct_table;
   wsptr = workspace;
   for (ctr = 0; ctr < 8; ctr++, inptr++, quantptr++, wsptr++) {
     
 
-    tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
+    tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
     
-    tmp0 += 1 << (CONST_BITS-PASS1_BITS-1);
+    tmp0 += 1 << (CONST_BITS - PASS1_BITS - 1);
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     tmp1 = MULTIPLY(z1, FIX(1.306562965));      
     tmp2 = MULTIPLY(z1, FIX_0_541196100);       
 
@@ -2409,8 +2409,8 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp12 = tmp0 + tmp2;
     tmp13 = tmp0 - tmp2;
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 2], quantptr[DCTSIZE * 2]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 6], quantptr[DCTSIZE * 6]);
     z3 = z1 - z2;
     z4 = MULTIPLY(z3, FIX(0.275899379));        
     z3 = MULTIPLY(z3, FIX(1.387039845));        
@@ -2431,10 +2431,10 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = DEQUANTIZE(inptr[DCTSIZE*1], quantptr[DCTSIZE*1]);
-    z2 = DEQUANTIZE(inptr[DCTSIZE*3], quantptr[DCTSIZE*3]);
-    z3 = DEQUANTIZE(inptr[DCTSIZE*5], quantptr[DCTSIZE*5]);
-    z4 = DEQUANTIZE(inptr[DCTSIZE*7], quantptr[DCTSIZE*7]);
+    z1 = DEQUANTIZE(inptr[DCTSIZE * 1], quantptr[DCTSIZE * 1]);
+    z2 = DEQUANTIZE(inptr[DCTSIZE * 3], quantptr[DCTSIZE * 3]);
+    z3 = DEQUANTIZE(inptr[DCTSIZE * 5], quantptr[DCTSIZE * 5]);
+    z4 = DEQUANTIZE(inptr[DCTSIZE * 7], quantptr[DCTSIZE * 7]);
 
     tmp11 = z1 + z3;
 
@@ -2455,13 +2455,13 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp11 += z1 - MULTIPLY(z3, FIX(0.766367282));  
     tmp12 += z1 + MULTIPLY(z2, FIX(1.971951411));  
     z2    += z4;
-    z1    = MULTIPLY(z2, - FIX(0.666655658));      
+    z1    = MULTIPLY(z2, -FIX(0.666655658));       
     tmp1  += z1;
     tmp3  += z1 + MULTIPLY(z4, FIX(1.065388962));  
-    z2    = MULTIPLY(z2, - FIX(1.247225013));      
+    z2    = MULTIPLY(z2, -FIX(1.247225013));       
     tmp10 += z2 + MULTIPLY(z4, FIX(3.141271809));  
     tmp12 += z2;
-    z2    = MULTIPLY(z3 + z4, - FIX(1.353318001)); 
+    z2    = MULTIPLY(z3 + z4, -FIX(1.353318001));  
     tmp2  += z2;
     tmp3  += z2;
     z2    = MULTIPLY(z4 - z3, FIX(0.410524528));   
@@ -2470,22 +2470,22 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    wsptr[8*0]  = (int) RIGHT_SHIFT(tmp20 + tmp0,  CONST_BITS-PASS1_BITS);
-    wsptr[8*15] = (int) RIGHT_SHIFT(tmp20 - tmp0,  CONST_BITS-PASS1_BITS);
-    wsptr[8*1]  = (int) RIGHT_SHIFT(tmp21 + tmp1,  CONST_BITS-PASS1_BITS);
-    wsptr[8*14] = (int) RIGHT_SHIFT(tmp21 - tmp1,  CONST_BITS-PASS1_BITS);
-    wsptr[8*2]  = (int) RIGHT_SHIFT(tmp22 + tmp2,  CONST_BITS-PASS1_BITS);
-    wsptr[8*13] = (int) RIGHT_SHIFT(tmp22 - tmp2,  CONST_BITS-PASS1_BITS);
-    wsptr[8*3]  = (int) RIGHT_SHIFT(tmp23 + tmp3,  CONST_BITS-PASS1_BITS);
-    wsptr[8*12] = (int) RIGHT_SHIFT(tmp23 - tmp3,  CONST_BITS-PASS1_BITS);
-    wsptr[8*4]  = (int) RIGHT_SHIFT(tmp24 + tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*11] = (int) RIGHT_SHIFT(tmp24 - tmp10, CONST_BITS-PASS1_BITS);
-    wsptr[8*5]  = (int) RIGHT_SHIFT(tmp25 + tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*10] = (int) RIGHT_SHIFT(tmp25 - tmp11, CONST_BITS-PASS1_BITS);
-    wsptr[8*6]  = (int) RIGHT_SHIFT(tmp26 + tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*9]  = (int) RIGHT_SHIFT(tmp26 - tmp12, CONST_BITS-PASS1_BITS);
-    wsptr[8*7]  = (int) RIGHT_SHIFT(tmp27 + tmp13, CONST_BITS-PASS1_BITS);
-    wsptr[8*8]  = (int) RIGHT_SHIFT(tmp27 - tmp13, CONST_BITS-PASS1_BITS);
+    wsptr[8 * 0]  = (int)RIGHT_SHIFT(tmp20 + tmp0,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 15] = (int)RIGHT_SHIFT(tmp20 - tmp0,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 1]  = (int)RIGHT_SHIFT(tmp21 + tmp1,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 14] = (int)RIGHT_SHIFT(tmp21 - tmp1,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 2]  = (int)RIGHT_SHIFT(tmp22 + tmp2,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 13] = (int)RIGHT_SHIFT(tmp22 - tmp2,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 3]  = (int)RIGHT_SHIFT(tmp23 + tmp3,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 12] = (int)RIGHT_SHIFT(tmp23 - tmp3,  CONST_BITS - PASS1_BITS);
+    wsptr[8 * 4]  = (int)RIGHT_SHIFT(tmp24 + tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 11] = (int)RIGHT_SHIFT(tmp24 - tmp10, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 5]  = (int)RIGHT_SHIFT(tmp25 + tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 10] = (int)RIGHT_SHIFT(tmp25 - tmp11, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 6]  = (int)RIGHT_SHIFT(tmp26 + tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 9]  = (int)RIGHT_SHIFT(tmp26 - tmp12, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 7]  = (int)RIGHT_SHIFT(tmp27 + tmp13, CONST_BITS - PASS1_BITS);
+    wsptr[8 * 8]  = (int)RIGHT_SHIFT(tmp27 - tmp13, CONST_BITS - PASS1_BITS);
   }
 
   
@@ -2497,10 +2497,10 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     
 
     
-    tmp0 = (JLONG) wsptr[0] + (ONE << (PASS1_BITS+2));
+    tmp0 = (JLONG)wsptr[0] + (ONE << (PASS1_BITS + 2));
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
 
-    z1 = (JLONG) wsptr[4];
+    z1 = (JLONG)wsptr[4];
     tmp1 = MULTIPLY(z1, FIX(1.306562965));      
     tmp2 = MULTIPLY(z1, FIX_0_541196100);       
 
@@ -2509,8 +2509,8 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp12 = tmp0 + tmp2;
     tmp13 = tmp0 - tmp2;
 
-    z1 = (JLONG) wsptr[2];
-    z2 = (JLONG) wsptr[6];
+    z1 = (JLONG)wsptr[2];
+    z2 = (JLONG)wsptr[6];
     z3 = z1 - z2;
     z4 = MULTIPLY(z3, FIX(0.275899379));        
     z3 = MULTIPLY(z3, FIX(1.387039845));        
@@ -2531,10 +2531,10 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    z1 = (JLONG) wsptr[1];
-    z2 = (JLONG) wsptr[3];
-    z3 = (JLONG) wsptr[5];
-    z4 = (JLONG) wsptr[7];
+    z1 = (JLONG)wsptr[1];
+    z2 = (JLONG)wsptr[3];
+    z3 = (JLONG)wsptr[5];
+    z4 = (JLONG)wsptr[7];
 
     tmp11 = z1 + z3;
 
@@ -2555,13 +2555,13 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp11 += z1 - MULTIPLY(z3, FIX(0.766367282));  
     tmp12 += z1 + MULTIPLY(z2, FIX(1.971951411));  
     z2    += z4;
-    z1    = MULTIPLY(z2, - FIX(0.666655658));      
+    z1    = MULTIPLY(z2, -FIX(0.666655658));       
     tmp1  += z1;
     tmp3  += z1 + MULTIPLY(z4, FIX(1.065388962));  
-    z2    = MULTIPLY(z2, - FIX(1.247225013));      
+    z2    = MULTIPLY(z2, -FIX(1.247225013));       
     tmp10 += z2 + MULTIPLY(z4, FIX(3.141271809));  
     tmp12 += z2;
-    z2    = MULTIPLY(z3 + z4, - FIX(1.353318001)); 
+    z2    = MULTIPLY(z3 + z4, -FIX(1.353318001));  
     tmp2  += z2;
     tmp3  += z2;
     z2    = MULTIPLY(z4 - z3, FIX(0.410524528));   
@@ -2570,54 +2570,54 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
     
 
-    outptr[0]  = range_limit[(int) RIGHT_SHIFT(tmp20 + tmp0,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[15] = range_limit[(int) RIGHT_SHIFT(tmp20 - tmp0,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[1]  = range_limit[(int) RIGHT_SHIFT(tmp21 + tmp1,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[14] = range_limit[(int) RIGHT_SHIFT(tmp21 - tmp1,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[2]  = range_limit[(int) RIGHT_SHIFT(tmp22 + tmp2,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[13] = range_limit[(int) RIGHT_SHIFT(tmp22 - tmp2,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[3]  = range_limit[(int) RIGHT_SHIFT(tmp23 + tmp3,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[12] = range_limit[(int) RIGHT_SHIFT(tmp23 - tmp3,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[4]  = range_limit[(int) RIGHT_SHIFT(tmp24 + tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[11] = range_limit[(int) RIGHT_SHIFT(tmp24 - tmp10,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[5]  = range_limit[(int) RIGHT_SHIFT(tmp25 + tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[10] = range_limit[(int) RIGHT_SHIFT(tmp25 - tmp11,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[6]  = range_limit[(int) RIGHT_SHIFT(tmp26 + tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[9]  = range_limit[(int) RIGHT_SHIFT(tmp26 - tmp12,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[7]  = range_limit[(int) RIGHT_SHIFT(tmp27 + tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
-    outptr[8]  = range_limit[(int) RIGHT_SHIFT(tmp27 - tmp13,
-                                               CONST_BITS+PASS1_BITS+3)
-                             & RANGE_MASK];
+    outptr[0]  = range_limit[(int)RIGHT_SHIFT(tmp20 + tmp0,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[15] = range_limit[(int)RIGHT_SHIFT(tmp20 - tmp0,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[1]  = range_limit[(int)RIGHT_SHIFT(tmp21 + tmp1,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[14] = range_limit[(int)RIGHT_SHIFT(tmp21 - tmp1,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[2]  = range_limit[(int)RIGHT_SHIFT(tmp22 + tmp2,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[13] = range_limit[(int)RIGHT_SHIFT(tmp22 - tmp2,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[3]  = range_limit[(int)RIGHT_SHIFT(tmp23 + tmp3,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[12] = range_limit[(int)RIGHT_SHIFT(tmp23 - tmp3,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[4]  = range_limit[(int)RIGHT_SHIFT(tmp24 + tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[11] = range_limit[(int)RIGHT_SHIFT(tmp24 - tmp10,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[5]  = range_limit[(int)RIGHT_SHIFT(tmp25 + tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[10] = range_limit[(int)RIGHT_SHIFT(tmp25 - tmp11,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[6]  = range_limit[(int)RIGHT_SHIFT(tmp26 + tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[9]  = range_limit[(int)RIGHT_SHIFT(tmp26 - tmp12,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[7]  = range_limit[(int)RIGHT_SHIFT(tmp27 + tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
+    outptr[8]  = range_limit[(int)RIGHT_SHIFT(tmp27 - tmp13,
+                                              CONST_BITS + PASS1_BITS + 3) &
+                             RANGE_MASK];
 
     wsptr += 8;         
   }

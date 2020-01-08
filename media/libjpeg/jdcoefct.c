@@ -25,16 +25,15 @@
 
 
 
-METHODDEF(int) decompress_onepass
-        (j_decompress_ptr cinfo, JSAMPIMAGE output_buf);
+METHODDEF(int) decompress_onepass(j_decompress_ptr cinfo,
+                                  JSAMPIMAGE output_buf);
 #ifdef D_MULTISCAN_FILES_SUPPORTED
-METHODDEF(int) decompress_data
-        (j_decompress_ptr cinfo, JSAMPIMAGE output_buf);
+METHODDEF(int) decompress_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf);
 #endif
 #ifdef BLOCK_SMOOTHING_SUPPORTED
-LOCAL(boolean) smoothing_ok (j_decompress_ptr cinfo);
-METHODDEF(int) decompress_smooth_data
-        (j_decompress_ptr cinfo, JSAMPIMAGE output_buf);
+LOCAL(boolean) smoothing_ok(j_decompress_ptr cinfo);
+METHODDEF(int) decompress_smooth_data(j_decompress_ptr cinfo,
+                                      JSAMPIMAGE output_buf);
 #endif
 
 
@@ -43,7 +42,7 @@ METHODDEF(int) decompress_smooth_data
 
 
 METHODDEF(void)
-start_input_pass (j_decompress_ptr cinfo)
+start_input_pass(j_decompress_ptr cinfo)
 {
   cinfo->input_iMCU_row = 0;
   start_iMCU_row(cinfo);
@@ -55,10 +54,10 @@ start_input_pass (j_decompress_ptr cinfo)
 
 
 METHODDEF(void)
-start_output_pass (j_decompress_ptr cinfo)
+start_output_pass(j_decompress_ptr cinfo)
 {
 #ifdef BLOCK_SMOOTHING_SUPPORTED
-  my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
 
   
   if (coef->pub.coef_arrays != NULL) {
@@ -83,9 +82,9 @@ start_output_pass (j_decompress_ptr cinfo)
 
 
 METHODDEF(int)
-decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
+decompress_onepass(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 {
-  my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION MCU_col_num;       
   JDIMENSION last_MCU_col = cinfo->MCUs_per_row - 1;
   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
@@ -101,9 +100,9 @@ decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
     for (MCU_col_num = coef->MCU_ctr; MCU_col_num <= last_MCU_col;
          MCU_col_num++) {
       
-      jzero_far((void *) coef->MCU_buffer[0],
-                (size_t) (cinfo->blocks_in_MCU * sizeof(JBLOCK)));
-      if (! (*cinfo->entropy->decode_mcu) (cinfo, coef->MCU_buffer)) {
+      jzero_far((void *)coef->MCU_buffer[0],
+                (size_t)(cinfo->blocks_in_MCU * sizeof(JBLOCK)));
+      if (!(*cinfo->entropy->decode_mcu) (cinfo, coef->MCU_buffer)) {
         
         coef->MCU_vert_offset = yoffset;
         coef->MCU_ctr = MCU_col_num;
@@ -120,28 +119,28 @@ decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 
 
 
-        blkn = 0;                 
+        blkn = 0;               
         for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
           compptr = cinfo->cur_comp_info[ci];
           
-          if (! compptr->component_needed) {
+          if (!compptr->component_needed) {
             blkn += compptr->MCU_blocks;
             continue;
           }
           inverse_DCT = cinfo->idct->inverse_DCT[compptr->component_index];
-          useful_width = (MCU_col_num < last_MCU_col) ? compptr->MCU_width
-                                                      : compptr->last_col_width;
+          useful_width = (MCU_col_num < last_MCU_col) ?
+                         compptr->MCU_width : compptr->last_col_width;
           output_ptr = output_buf[compptr->component_index] +
-            yoffset * compptr->_DCT_scaled_size;
+                       yoffset * compptr->_DCT_scaled_size;
           start_col = (MCU_col_num - cinfo->master->first_iMCU_col) *
-              compptr->MCU_sample_width;
+                      compptr->MCU_sample_width;
           for (yindex = 0; yindex < compptr->MCU_height; yindex++) {
             if (cinfo->input_iMCU_row < last_iMCU_row ||
-                yoffset+yindex < compptr->last_row_height) {
+                yoffset + yindex < compptr->last_row_height) {
               output_col = start_col;
               for (xindex = 0; xindex < useful_width; xindex++) {
                 (*inverse_DCT) (cinfo, compptr,
-                                (JCOEFPTR) coef->MCU_buffer[blkn+xindex],
+                                (JCOEFPTR)coef->MCU_buffer[blkn + xindex],
                                 output_ptr, output_col);
                 output_col += compptr->_DCT_scaled_size;
               }
@@ -172,7 +171,7 @@ decompress_onepass (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 
 
 METHODDEF(int)
-dummy_consume_data (j_decompress_ptr cinfo)
+dummy_consume_data(j_decompress_ptr cinfo)
 {
   return JPEG_SUSPENDED;        
 }
@@ -188,9 +187,9 @@ dummy_consume_data (j_decompress_ptr cinfo)
 
 
 METHODDEF(int)
-consume_data (j_decompress_ptr cinfo)
+consume_data(j_decompress_ptr cinfo)
 {
-  my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION MCU_col_num;       
   int blkn, ci, xindex, yindex, yoffset;
   JDIMENSION start_col;
@@ -202,9 +201,9 @@ consume_data (j_decompress_ptr cinfo)
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];
     buffer[ci] = (*cinfo->mem->access_virt_barray)
-      ((j_common_ptr) cinfo, coef->whole_image[compptr->component_index],
+      ((j_common_ptr)cinfo, coef->whole_image[compptr->component_index],
        cinfo->input_iMCU_row * compptr->v_samp_factor,
-       (JDIMENSION) compptr->v_samp_factor, TRUE);
+       (JDIMENSION)compptr->v_samp_factor, TRUE);
     
 
 
@@ -222,14 +221,14 @@ consume_data (j_decompress_ptr cinfo)
         compptr = cinfo->cur_comp_info[ci];
         start_col = MCU_col_num * compptr->MCU_width;
         for (yindex = 0; yindex < compptr->MCU_height; yindex++) {
-          buffer_ptr = buffer[ci][yindex+yoffset] + start_col;
+          buffer_ptr = buffer[ci][yindex + yoffset] + start_col;
           for (xindex = 0; xindex < compptr->MCU_width; xindex++) {
             coef->MCU_buffer[blkn++] = buffer_ptr++;
           }
         }
       }
       
-      if (! (*cinfo->entropy->decode_mcu) (cinfo, coef->MCU_buffer)) {
+      if (!(*cinfo->entropy->decode_mcu) (cinfo, coef->MCU_buffer)) {
         
         coef->MCU_vert_offset = yoffset;
         coef->MCU_ctr = MCU_col_num;
@@ -259,9 +258,9 @@ consume_data (j_decompress_ptr cinfo)
 
 
 METHODDEF(int)
-decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
+decompress_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 {
-  my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
   JDIMENSION block_num;
   int ci, block_row, block_rows;
@@ -276,7 +275,7 @@ decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
   while (cinfo->input_scan_number < cinfo->output_scan_number ||
          (cinfo->input_scan_number == cinfo->output_scan_number &&
           cinfo->input_iMCU_row <= cinfo->output_iMCU_row)) {
-    if ((*cinfo->inputctl->consume_input)(cinfo) == JPEG_SUSPENDED)
+    if ((*cinfo->inputctl->consume_input) (cinfo) == JPEG_SUSPENDED)
       return JPEG_SUSPENDED;
   }
 
@@ -284,19 +283,19 @@ decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
     
-    if (! compptr->component_needed)
+    if (!compptr->component_needed)
       continue;
     
     buffer = (*cinfo->mem->access_virt_barray)
-      ((j_common_ptr) cinfo, coef->whole_image[ci],
+      ((j_common_ptr)cinfo, coef->whole_image[ci],
        cinfo->output_iMCU_row * compptr->v_samp_factor,
-       (JDIMENSION) compptr->v_samp_factor, FALSE);
+       (JDIMENSION)compptr->v_samp_factor, FALSE);
     
     if (cinfo->output_iMCU_row < last_iMCU_row)
       block_rows = compptr->v_samp_factor;
     else {
       
-      block_rows = (int) (compptr->height_in_blocks % compptr->v_samp_factor);
+      block_rows = (int)(compptr->height_in_blocks % compptr->v_samp_factor);
       if (block_rows == 0) block_rows = compptr->v_samp_factor;
     }
     inverse_DCT = cinfo->idct->inverse_DCT[ci];
@@ -307,8 +306,8 @@ decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
       output_col = 0;
       for (block_num = cinfo->master->first_MCU_col[ci];
            block_num <= cinfo->master->last_MCU_col[ci]; block_num++) {
-        (*inverse_DCT) (cinfo, compptr, (JCOEFPTR) buffer_ptr,
-                        output_ptr, output_col);
+        (*inverse_DCT) (cinfo, compptr, (JCOEFPTR)buffer_ptr, output_ptr,
+                        output_col);
         buffer_ptr++;
         output_col += compptr->_DCT_scaled_size;
       }
@@ -350,9 +349,9 @@ decompress_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 
 
 LOCAL(boolean)
-smoothing_ok (j_decompress_ptr cinfo)
+smoothing_ok(j_decompress_ptr cinfo)
 {
-  my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   boolean smoothing_useful = FALSE;
   int ci, coefi;
   jpeg_component_info *compptr;
@@ -360,13 +359,13 @@ smoothing_ok (j_decompress_ptr cinfo)
   int *coef_bits;
   int *coef_bits_latch;
 
-  if (! cinfo->progressive_mode || cinfo->coef_bits == NULL)
+  if (!cinfo->progressive_mode || cinfo->coef_bits == NULL)
     return FALSE;
 
   
   if (coef->coef_bits_latch == NULL)
     coef->coef_bits_latch = (int *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   cinfo->num_components *
                                   (SAVED_COEFS * sizeof(int)));
   coef_bits_latch = coef->coef_bits_latch;
@@ -406,9 +405,9 @@ smoothing_ok (j_decompress_ptr cinfo)
 
 
 METHODDEF(int)
-decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
+decompress_smooth_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 {
-  my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
   JDIMENSION block_num, last_block_column;
   int ci, block_row, block_rows, access_rows;
@@ -422,8 +421,8 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
   JCOEF *workspace;
   int *coef_bits;
   JQUANT_TBL *quanttbl;
-  JLONG Q00,Q01,Q02,Q10,Q11,Q20, num;
-  int DC1,DC2,DC3,DC4,DC5,DC6,DC7,DC8,DC9;
+  JLONG Q00, Q01, Q02, Q10, Q11, Q20, num;
+  int DC1, DC2, DC3, DC4, DC5, DC6, DC7, DC8, DC9;
   int Al, pred;
 
   
@@ -431,7 +430,7 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 
   
   while (cinfo->input_scan_number <= cinfo->output_scan_number &&
-         ! cinfo->inputctl->eoi_reached) {
+         !cinfo->inputctl->eoi_reached) {
     if (cinfo->input_scan_number == cinfo->output_scan_number) {
       
 
@@ -439,10 +438,10 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 
 
       JDIMENSION delta = (cinfo->Ss == 0) ? 1 : 0;
-      if (cinfo->input_iMCU_row > cinfo->output_iMCU_row+delta)
+      if (cinfo->input_iMCU_row > cinfo->output_iMCU_row + delta)
         break;
     }
-    if ((*cinfo->inputctl->consume_input)(cinfo) == JPEG_SUSPENDED)
+    if ((*cinfo->inputctl->consume_input) (cinfo) == JPEG_SUSPENDED)
       return JPEG_SUSPENDED;
   }
 
@@ -450,7 +449,7 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
     
-    if (! compptr->component_needed)
+    if (!compptr->component_needed)
       continue;
     
     if (cinfo->output_iMCU_row < last_iMCU_row) {
@@ -459,7 +458,7 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
       last_row = FALSE;
     } else {
       
-      block_rows = (int) (compptr->height_in_blocks % compptr->v_samp_factor);
+      block_rows = (int)(compptr->height_in_blocks % compptr->v_samp_factor);
       if (block_rows == 0) block_rows = compptr->v_samp_factor;
       access_rows = block_rows; 
       last_row = TRUE;
@@ -468,15 +467,15 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
     if (cinfo->output_iMCU_row > 0) {
       access_rows += compptr->v_samp_factor; 
       buffer = (*cinfo->mem->access_virt_barray)
-        ((j_common_ptr) cinfo, coef->whole_image[ci],
+        ((j_common_ptr)cinfo, coef->whole_image[ci],
          (cinfo->output_iMCU_row - 1) * compptr->v_samp_factor,
-         (JDIMENSION) access_rows, FALSE);
+         (JDIMENSION)access_rows, FALSE);
       buffer += compptr->v_samp_factor; 
       first_row = FALSE;
     } else {
       buffer = (*cinfo->mem->access_virt_barray)
-        ((j_common_ptr) cinfo, coef->whole_image[ci],
-         (JDIMENSION) 0, (JDIMENSION) access_rows, FALSE);
+        ((j_common_ptr)cinfo, coef->whole_image[ci],
+         (JDIMENSION)0, (JDIMENSION)access_rows, FALSE);
       first_row = TRUE;
     }
     
@@ -496,115 +495,115 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
       if (first_row && block_row == 0)
         prev_block_row = buffer_ptr;
       else
-        prev_block_row = buffer[block_row-1];
-      if (last_row && block_row == block_rows-1)
+        prev_block_row = buffer[block_row - 1];
+      if (last_row && block_row == block_rows - 1)
         next_block_row = buffer_ptr;
       else
-        next_block_row = buffer[block_row+1];
+        next_block_row = buffer[block_row + 1];
       
 
 
-      DC1 = DC2 = DC3 = (int) prev_block_row[0][0];
-      DC4 = DC5 = DC6 = (int) buffer_ptr[0][0];
-      DC7 = DC8 = DC9 = (int) next_block_row[0][0];
+      DC1 = DC2 = DC3 = (int)prev_block_row[0][0];
+      DC4 = DC5 = DC6 = (int)buffer_ptr[0][0];
+      DC7 = DC8 = DC9 = (int)next_block_row[0][0];
       output_col = 0;
       last_block_column = compptr->width_in_blocks - 1;
       for (block_num = cinfo->master->first_MCU_col[ci];
            block_num <= cinfo->master->last_MCU_col[ci]; block_num++) {
         
-        jcopy_block_row(buffer_ptr, (JBLOCKROW) workspace, (JDIMENSION) 1);
+        jcopy_block_row(buffer_ptr, (JBLOCKROW)workspace, (JDIMENSION)1);
         
         if (block_num < last_block_column) {
-          DC3 = (int) prev_block_row[1][0];
-          DC6 = (int) buffer_ptr[1][0];
-          DC9 = (int) next_block_row[1][0];
+          DC3 = (int)prev_block_row[1][0];
+          DC6 = (int)buffer_ptr[1][0];
+          DC9 = (int)next_block_row[1][0];
         }
         
 
 
 
         
-        if ((Al=coef_bits[1]) != 0 && workspace[1] == 0) {
+        if ((Al = coef_bits[1]) != 0 && workspace[1] == 0) {
           num = 36 * Q00 * (DC4 - DC6);
           if (num >= 0) {
-            pred = (int) (((Q01<<7) + num) / (Q01<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q01 << 7) + num) / (Q01 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
           } else {
-            pred = (int) (((Q01<<7) - num) / (Q01<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q01 << 7) - num) / (Q01 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
             pred = -pred;
           }
-          workspace[1] = (JCOEF) pred;
+          workspace[1] = (JCOEF)pred;
         }
         
-        if ((Al=coef_bits[2]) != 0 && workspace[8] == 0) {
+        if ((Al = coef_bits[2]) != 0 && workspace[8] == 0) {
           num = 36 * Q00 * (DC2 - DC8);
           if (num >= 0) {
-            pred = (int) (((Q10<<7) + num) / (Q10<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q10 << 7) + num) / (Q10 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
           } else {
-            pred = (int) (((Q10<<7) - num) / (Q10<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q10 << 7) - num) / (Q10 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
             pred = -pred;
           }
-          workspace[8] = (JCOEF) pred;
+          workspace[8] = (JCOEF)pred;
         }
         
-        if ((Al=coef_bits[3]) != 0 && workspace[16] == 0) {
-          num = 9 * Q00 * (DC2 + DC8 - 2*DC5);
+        if ((Al = coef_bits[3]) != 0 && workspace[16] == 0) {
+          num = 9 * Q00 * (DC2 + DC8 - 2 * DC5);
           if (num >= 0) {
-            pred = (int) (((Q20<<7) + num) / (Q20<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q20 << 7) + num) / (Q20 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
           } else {
-            pred = (int) (((Q20<<7) - num) / (Q20<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q20 << 7) - num) / (Q20 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
             pred = -pred;
           }
-          workspace[16] = (JCOEF) pred;
+          workspace[16] = (JCOEF)pred;
         }
         
-        if ((Al=coef_bits[4]) != 0 && workspace[9] == 0) {
+        if ((Al = coef_bits[4]) != 0 && workspace[9] == 0) {
           num = 5 * Q00 * (DC1 - DC3 - DC7 + DC9);
           if (num >= 0) {
-            pred = (int) (((Q11<<7) + num) / (Q11<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q11 << 7) + num) / (Q11 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
           } else {
-            pred = (int) (((Q11<<7) - num) / (Q11<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q11 << 7) - num) / (Q11 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
             pred = -pred;
           }
-          workspace[9] = (JCOEF) pred;
+          workspace[9] = (JCOEF)pred;
         }
         
-        if ((Al=coef_bits[5]) != 0 && workspace[2] == 0) {
-          num = 9 * Q00 * (DC4 + DC6 - 2*DC5);
+        if ((Al = coef_bits[5]) != 0 && workspace[2] == 0) {
+          num = 9 * Q00 * (DC4 + DC6 - 2 * DC5);
           if (num >= 0) {
-            pred = (int) (((Q02<<7) + num) / (Q02<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q02 << 7) + num) / (Q02 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
           } else {
-            pred = (int) (((Q02<<7) - num) / (Q02<<8));
-            if (Al > 0 && pred >= (1<<Al))
-              pred = (1<<Al)-1;
+            pred = (int)(((Q02 << 7) - num) / (Q02 << 8));
+            if (Al > 0 && pred >= (1 << Al))
+              pred = (1 << Al) - 1;
             pred = -pred;
           }
-          workspace[2] = (JCOEF) pred;
+          workspace[2] = (JCOEF)pred;
         }
         
-        (*inverse_DCT) (cinfo, compptr, (JCOEFPTR) workspace,
-                        output_ptr, output_col);
+        (*inverse_DCT) (cinfo, compptr, (JCOEFPTR)workspace, output_ptr,
+                        output_col);
         
-        DC1 = DC2; DC2 = DC3;
-        DC4 = DC5; DC5 = DC6;
-        DC7 = DC8; DC8 = DC9;
+        DC1 = DC2;  DC2 = DC3;
+        DC4 = DC5;  DC5 = DC6;
+        DC7 = DC8;  DC8 = DC9;
         buffer_ptr++, prev_block_row++, next_block_row++;
         output_col += compptr->_DCT_scaled_size;
       }
@@ -625,14 +624,14 @@ decompress_smooth_data (j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
 
 
 GLOBAL(void)
-jinit_d_coef_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
+jinit_d_coef_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
 {
   my_coef_ptr coef;
 
   coef = (my_coef_ptr)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(my_coef_controller));
-  cinfo->coef = (struct jpeg_d_coef_controller *) coef;
+  cinfo->coef = (struct jpeg_d_coef_controller *)coef;
   coef->pub.start_input_pass = start_input_pass;
   coef->pub.start_output_pass = start_output_pass;
 #ifdef BLOCK_SMOOTHING_SUPPORTED
@@ -657,12 +656,12 @@ jinit_d_coef_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
         access_rows *= 3;
 #endif
       coef->whole_image[ci] = (*cinfo->mem->request_virt_barray)
-        ((j_common_ptr) cinfo, JPOOL_IMAGE, TRUE,
-         (JDIMENSION) jround_up((long) compptr->width_in_blocks,
-                                (long) compptr->h_samp_factor),
-         (JDIMENSION) jround_up((long) compptr->height_in_blocks,
-                                (long) compptr->v_samp_factor),
-         (JDIMENSION) access_rows);
+        ((j_common_ptr)cinfo, JPOOL_IMAGE, TRUE,
+         (JDIMENSION)jround_up((long)compptr->width_in_blocks,
+                               (long)compptr->h_samp_factor),
+         (JDIMENSION)jround_up((long)compptr->height_in_blocks,
+                               (long)compptr->v_samp_factor),
+         (JDIMENSION)access_rows);
     }
     coef->pub.consume_data = consume_data;
     coef->pub.decompress_data = decompress_data;
@@ -676,7 +675,7 @@ jinit_d_coef_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
     int i;
 
     buffer = (JBLOCKROW)
-      (*cinfo->mem->alloc_large) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+      (*cinfo->mem->alloc_large) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   D_MAX_BLOCKS_IN_MCU * sizeof(JBLOCK));
     for (i = 0; i < D_MAX_BLOCKS_IN_MCU; i++) {
       coef->MCU_buffer[i] = buffer + i;
@@ -688,6 +687,6 @@ jinit_d_coef_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
 
   
   coef->workspace = (JCOEF *)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(JCOEF) * DCTSIZE2);
 }

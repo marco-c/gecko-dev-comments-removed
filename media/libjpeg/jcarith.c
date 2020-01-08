@@ -16,6 +16,9 @@
 
 
 
+
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -63,8 +66,8 @@ typedef arith_entropy_encoder *arith_entropy_ptr;
 
 
 
-#define DC_STAT_BINS 64
-#define AC_STAT_BINS 256
+#define DC_STAT_BINS  64
+#define AC_STAT_BINS  256
 
 
 
@@ -105,25 +108,25 @@ typedef arith_entropy_encoder *arith_entropy_ptr;
 
 #ifdef RIGHT_SHIFT_IS_UNSIGNED
 #define ISHIFT_TEMPS    int ishift_temp;
-#define IRIGHT_SHIFT(x,shft)  \
-        ((ishift_temp = (x)) < 0 ? \
-         (ishift_temp >> (shft)) | ((~0) << (16-(shft))) : \
-         (ishift_temp >> (shft)))
+#define IRIGHT_SHIFT(x, shft) \
+  ((ishift_temp = (x)) < 0 ? \
+   (ishift_temp >> (shft)) | ((~0) << (16 - (shft))) : \
+   (ishift_temp >> (shft)))
 #else
 #define ISHIFT_TEMPS
-#define IRIGHT_SHIFT(x,shft)    ((x) >> (shft))
+#define IRIGHT_SHIFT(x, shft)   ((x) >> (shft))
 #endif
 
 
 LOCAL(void)
-emit_byte (int val, j_compress_ptr cinfo)
+emit_byte(int val, j_compress_ptr cinfo)
 
 {
   struct jpeg_destination_mgr *dest = cinfo->dest;
 
-  *dest->next_output_byte++ = (JOCTET) val;
+  *dest->next_output_byte++ = (JOCTET)val;
   if (--dest->free_in_buffer == 0)
-    if (! (*dest->empty_output_buffer) (cinfo))
+    if (!(*dest->empty_output_buffer) (cinfo))
       ERREXIT(cinfo, JERR_CANT_SUSPEND);
 }
 
@@ -133,22 +136,22 @@ emit_byte (int val, j_compress_ptr cinfo)
 
 
 METHODDEF(void)
-finish_pass (j_compress_ptr cinfo)
+finish_pass(j_compress_ptr cinfo)
 {
-  arith_entropy_ptr e = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr e = (arith_entropy_ptr)cinfo->entropy;
   JLONG temp;
 
   
 
   
 
-  if ((temp = (e->a - 1 + e->c) & 0xFFFF0000L) < e->c)
+  if ((temp = (e->a - 1 + e->c) & 0xFFFF0000UL) < e->c)
     e->c = temp + 0x8000L;
   else
     e->c = temp;
   
   e->c <<= e->ct;
-  if (e->c & 0xF8000000L) {
+  if (e->c & 0xF8000000UL) {
     
     if (e->buffer >= 0) {
       if (e->zc)
@@ -219,9 +222,9 @@ finish_pass (j_compress_ptr cinfo)
 
 
 LOCAL(void)
-arith_encode (j_compress_ptr cinfo, unsigned char *st, int val)
+arith_encode(j_compress_ptr cinfo, unsigned char *st, int val)
 {
-  register arith_entropy_ptr e = (arith_entropy_ptr) cinfo->entropy;
+  register arith_entropy_ptr e = (arith_entropy_ptr)cinfo->entropy;
   register unsigned char nl, nm;
   register JLONG qe, temp;
   register int sv;
@@ -231,8 +234,8 @@ arith_encode (j_compress_ptr cinfo, unsigned char *st, int val)
 
   sv = *st;
   qe = jpeg_aritab[sv & 0x7F];  
-  nl = qe & 0xFF; qe >>= 8;     
-  nm = qe & 0xFF; qe >>= 8;     
+  nl = qe & 0xFF;  qe >>= 8;    
+  nm = qe & 0xFF;  qe >>= 8;    
 
   
   e->a -= qe;
@@ -319,9 +322,9 @@ arith_encode (j_compress_ptr cinfo, unsigned char *st, int val)
 
 
 LOCAL(void)
-emit_restart (j_compress_ptr cinfo, int restart_num)
+emit_restart(j_compress_ptr cinfo, int restart_num)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   int ci;
   jpeg_component_info *compptr;
 
@@ -362,9 +365,9 @@ emit_restart (j_compress_ptr cinfo, int restart_num)
 
 
 METHODDEF(boolean)
-encode_mcu_DC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
+encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   JBLOCKROW block;
   unsigned char *st;
   int blkn, ci, tbl;
@@ -391,7 +394,7 @@ encode_mcu_DC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
     
 
 
-    m = IRIGHT_SHIFT((int) ((*block)[0]), cinfo->Al);
+    m = IRIGHT_SHIFT((int)((*block)[0]), cinfo->Al);
 
     
 
@@ -432,9 +435,9 @@ encode_mcu_DC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       }
       arith_encode(cinfo, st, 0);
       
-      if (m < (int) ((1L << cinfo->arith_dc_L[tbl]) >> 1))
+      if (m < (int)((1L << cinfo->arith_dc_L[tbl]) >> 1))
         entropy->dc_context[ci] = 0;    
-      else if (m > (int) ((1L << cinfo->arith_dc_U[tbl]) >> 1))
+      else if (m > (int)((1L << cinfo->arith_dc_U[tbl]) >> 1))
         entropy->dc_context[ci] += 8;   
       
       st += 14;
@@ -453,9 +456,9 @@ encode_mcu_DC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-encode_mcu_AC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
+encode_mcu_AC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   JBLOCKROW block;
   unsigned char *st;
   int tbl, k, ke;
@@ -510,7 +513,7 @@ encode_mcu_AC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
           break;
         }
       }
-      arith_encode(cinfo, st + 1, 0); st += 3; k++;
+      arith_encode(cinfo, st + 1, 0);  st += 3;  k++;
     }
     st += 2;
     
@@ -552,9 +555,9 @@ encode_mcu_AC_first (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-encode_mcu_DC_refine (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
+encode_mcu_DC_refine(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   unsigned char *st;
   int Al, blkn;
 
@@ -587,9 +590,9 @@ encode_mcu_DC_refine (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-encode_mcu_AC_refine (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
+encode_mcu_AC_refine(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   JBLOCKROW block;
   unsigned char *st;
   int tbl, k, ke, kex;
@@ -662,7 +665,7 @@ encode_mcu_AC_refine (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
           break;
         }
       }
-      arith_encode(cinfo, st + 1, 0); st += 3; k++;
+      arith_encode(cinfo, st + 1, 0);  st += 3;  k++;
     }
   }
   
@@ -680,9 +683,9 @@ encode_mcu_AC_refine (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(boolean)
-encode_mcu (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
+encode_mcu(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   jpeg_component_info *compptr;
   JBLOCKROW block;
   unsigned char *st;
@@ -747,9 +750,9 @@ encode_mcu (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       }
       arith_encode(cinfo, st, 0);
       
-      if (m < (int) ((1L << cinfo->arith_dc_L[tbl]) >> 1))
+      if (m < (int)((1L << cinfo->arith_dc_L[tbl]) >> 1))
         entropy->dc_context[ci] = 0;    
-      else if (m > (int) ((1L << cinfo->arith_dc_U[tbl]) >> 1))
+      else if (m > (int)((1L << cinfo->arith_dc_U[tbl]) >> 1))
         entropy->dc_context[ci] += 8;   
       
       st += 14;
@@ -770,7 +773,7 @@ encode_mcu (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       st = entropy->ac_stats[tbl] + 3 * (k - 1);
       arith_encode(cinfo, st, 0);       
       while ((v = (*block)[jpeg_natural_order[k]]) == 0) {
-        arith_encode(cinfo, st + 1, 0); st += 3; k++;
+        arith_encode(cinfo, st + 1, 0);  st += 3;  k++;
       }
       arith_encode(cinfo, st + 1, 1);
       
@@ -822,9 +825,9 @@ encode_mcu (j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
 
 METHODDEF(void)
-start_pass (j_compress_ptr cinfo, boolean gather_statistics)
+start_pass(j_compress_ptr cinfo, boolean gather_statistics)
 {
-  arith_entropy_ptr entropy = (arith_entropy_ptr) cinfo->entropy;
+  arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
   int ci, tbl;
   jpeg_component_info *compptr;
 
@@ -862,8 +865,8 @@ start_pass (j_compress_ptr cinfo, boolean gather_statistics)
       if (tbl < 0 || tbl >= NUM_ARITH_TBLS)
         ERREXIT1(cinfo, JERR_NO_ARITH_TABLE, tbl);
       if (entropy->dc_stats[tbl] == NULL)
-        entropy->dc_stats[tbl] = (unsigned char *) (*cinfo->mem->alloc_small)
-          ((j_common_ptr) cinfo, JPOOL_IMAGE, DC_STAT_BINS);
+        entropy->dc_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
+          ((j_common_ptr)cinfo, JPOOL_IMAGE, DC_STAT_BINS);
       MEMZERO(entropy->dc_stats[tbl], DC_STAT_BINS);
       
       entropy->last_dc_val[ci] = 0;
@@ -875,13 +878,14 @@ start_pass (j_compress_ptr cinfo, boolean gather_statistics)
       if (tbl < 0 || tbl >= NUM_ARITH_TBLS)
         ERREXIT1(cinfo, JERR_NO_ARITH_TABLE, tbl);
       if (entropy->ac_stats[tbl] == NULL)
-        entropy->ac_stats[tbl] = (unsigned char *) (*cinfo->mem->alloc_small)
-          ((j_common_ptr) cinfo, JPOOL_IMAGE, AC_STAT_BINS);
+        entropy->ac_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
+          ((j_common_ptr)cinfo, JPOOL_IMAGE, AC_STAT_BINS);
       MEMZERO(entropy->ac_stats[tbl], AC_STAT_BINS);
 #ifdef CALCULATE_SPECTRAL_CONDITIONING
       if (cinfo->progressive_mode)
         
-        cinfo->arith_ac_K[tbl] = cinfo->Ss + ((8 + cinfo->Se - cinfo->Ss) >> 4);
+        cinfo->arith_ac_K[tbl] = cinfo->Ss +
+                                 ((8 + cinfo->Se - cinfo->Ss) >> 4);
 #endif
     }
   }
@@ -905,15 +909,15 @@ start_pass (j_compress_ptr cinfo, boolean gather_statistics)
 
 
 GLOBAL(void)
-jinit_arith_encoder (j_compress_ptr cinfo)
+jinit_arith_encoder(j_compress_ptr cinfo)
 {
   arith_entropy_ptr entropy;
   int i;
 
   entropy = (arith_entropy_ptr)
-    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+    (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(arith_entropy_encoder));
-  cinfo->entropy = (struct jpeg_entropy_encoder *) entropy;
+  cinfo->entropy = (struct jpeg_entropy_encoder *)entropy;
   entropy->pub.start_pass = start_pass;
   entropy->pub.finish_pass = finish_pass;
 
