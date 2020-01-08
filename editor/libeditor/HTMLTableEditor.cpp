@@ -860,10 +860,10 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
             nextRow = nextSelectedCellIndexes.mRow;
             startColIndex = nextSelectedCellIndexes.mColumn;
           }
-          
-          rv = DeleteRow(table, startRowIndex);
-          NS_ENSURE_SUCCESS(rv, rv);
-
+          rv = DeleteTableRowWithTransaction(*table, startRowIndex);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
           if (cell) {
             
             startRowIndex = nextRow - 1;
@@ -1266,8 +1266,11 @@ HTMLEditor::DeleteColumn(Element* aTable,
 
           
           
-          rv = DeleteRow(aTable, startRowIndex);
-          NS_ENSURE_SUCCESS(rv, rv);
+          
+          rv = DeleteTableRowWithTransaction(*aTable, startRowIndex);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
 
           
           
@@ -1377,7 +1380,7 @@ HTMLEditor::DeleteSelectedTableRowsWithTransaction(
     int32_t rowCountToRemove =
       std::min(aNumberOfRowsToDelete, tableSize.mRowCount - startRowIndex);
     for (int32_t i = 0; i < rowCountToRemove; i++) {
-      nsresult rv = DeleteRow(table, startRowIndex);
+      nsresult rv = DeleteTableRowWithTransaction(*table, startRowIndex);
       
       if (NS_WARN_IF(NS_FAILED(rv))) {
         startRowIndex++;
@@ -1421,7 +1424,7 @@ HTMLEditor::DeleteSelectedTableRowsWithTransaction(
       startColIndex = cellIndexes.mColumn;
     }
     
-    rv = DeleteRow(table, startRowIndex);
+    rv = DeleteTableRowWithTransaction(*table, startRowIndex);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1431,18 +1434,14 @@ HTMLEditor::DeleteSelectedTableRowsWithTransaction(
 
 
 nsresult
-HTMLEditor::DeleteRow(Element* aTable,
-                      int32_t aRowIndex)
+HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
+                                          int32_t aRowIndex)
 {
-  if (NS_WARN_IF(!aTable)) {
-    return NS_ERROR_INVALID_ARG;
+  ErrorResult error;
+  TableSize tableSize(*this, aTableElement, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
   }
-
-  RefPtr<Element> cell;
-  RefPtr<Element> cellInDeleteRow;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-  int32_t colIndex = 0;
 
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(*
@@ -1451,67 +1450,79 @@ HTMLEditor::DeleteRow(Element* aTable,
 
   
   
-  nsTArray<RefPtr<Element> > spanCellList;
-  nsTArray<int32_t> newSpanList;
-
-  ErrorResult error;
-  TableSize tableSize(*this, *aTable, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
+  
 
   
   
-  
-  do {
-    if (aRowIndex >= tableSize.mRowCount ||
-        colIndex >= tableSize.mColumnCount) {
-      break;
+  struct MOZ_STACK_CLASS SpanCell final
+  {
+    RefPtr<Element> mElement;
+    int32_t mNewRowSpanValue;
+
+    SpanCell(Element* aSpanCellElement,
+             int32_t aNewRowSpanValue)
+      : mElement(aSpanCellElement)
+      , mNewRowSpanValue(aNewRowSpanValue)
+    {
     }
-
+  };
+  AutoTArray<SpanCell, 10> spanCellArray;
+  RefPtr<Element> cellInDeleteRow;
+  int32_t columnIndex = 0;
+  while (aRowIndex < tableSize.mRowCount &&
+         columnIndex < tableSize.mColumnCount) {
+    RefPtr<Element> cell;
+    int32_t startRowIndex = 0, startColIndex = 0;
+    int32_t rowSpan = 0, colSpan = 0;
+    int32_t actualRowSpan = 0, actualColSpan = 0;
+    bool isSelected = false;
     nsresult rv =
-      GetCellDataAt(aTable, aRowIndex, colIndex, getter_AddRefs(cell),
+      GetCellDataAt(&aTableElement, aRowIndex, columnIndex,
+                    getter_AddRefs(cell),
                     &startRowIndex, &startColIndex, &rowSpan, &colSpan,
                     &actualRowSpan, &actualColSpan, &isSelected);
     
-    if (NS_FAILED(rv)) {
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
+    if (!cell) {
+      break;
+    }
     
-    if (cell) {
-      if (startRowIndex < aRowIndex) {
+    
+    if (startRowIndex < aRowIndex) {
+      
+      
+      
+      if (rowSpan > 0) {
+        
+        
+        int32_t newRowSpanValue =
+          std::max(aRowIndex - startRowIndex, actualRowSpan - 1);
+        spanCellArray.AppendElement(SpanCell(cell, newRowSpanValue));
+      }
+    } else {
+      if (rowSpan > 1) {
         
         
         
-        
-        if (rowSpan > 0) {
-          
-          
-          
-          spanCellList.AppendElement(cell);
-          newSpanList.AppendElement(std::max((aRowIndex - startRowIndex), actualRowSpan-1));
-        }
-      } else {
-        if (rowSpan > 1) {
-          
-          
-          
-          int32_t aboveRowToInsertNewCellInto = aRowIndex - startRowIndex + 1;
-          int32_t numOfRawSpanRemainingBelow = actualRowSpan - 1;
-          rv = SplitCellIntoRows(aTable, startRowIndex, startColIndex,
-                                 aboveRowToInsertNewCellInto,
-                                 numOfRawSpanRemainingBelow, nullptr);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-        if (!cellInDeleteRow) {
-          cellInDeleteRow = cell; 
+        int32_t aboveRowToInsertNewCellInto = aRowIndex - startRowIndex + 1;
+        int32_t numOfRawSpanRemainingBelow = actualRowSpan - 1;
+        rv = SplitCellIntoRows(&aTableElement, startRowIndex, startColIndex,
+                               aboveRowToInsertNewCellInto,
+                               numOfRawSpanRemainingBelow, nullptr);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
         }
       }
-      
-      colIndex += actualColSpan;
+      if (!cellInDeleteRow) {
+        cellInDeleteRow = cell; 
+      }
     }
-  } while (cell);
+    
+    columnIndex += actualColSpan;
+  }
 
   
   if (NS_WARN_IF(!cellInDeleteRow)) {
@@ -1529,13 +1540,13 @@ HTMLEditor::DeleteRow(Element* aTable,
   }
 
   
-  for (uint32_t i = 0, n = spanCellList.Length(); i < n; i++) {
-    Element* cellPtr = spanCellList[i];
-    if (cellPtr) {
-      nsresult rv = SetRowSpan(cellPtr, newSpanList[i]);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+  for (SpanCell& spanCell : spanCellArray) {
+    if (NS_WARN_IF(!spanCell.mElement)) {
+      continue;
+    }
+    nsresult rv = SetRowSpan(spanCell.mElement, spanCell.mNewRowSpanValue);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
   return NS_OK;

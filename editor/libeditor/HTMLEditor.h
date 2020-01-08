@@ -1572,7 +1572,20 @@ protected:
   
 
 
-  nsresult DeleteRow(Element* aTable, int32_t aRowIndex);
+
+
+
+
+
+
+
+
+  nsresult
+  DeleteTableRowWithTransaction(Element& aTableElement, int32_t aRowIndex);
+
+  
+
+
   nsresult DeleteColumn(Element* aTable, int32_t aColIndex);
   nsresult DeleteCellContents(Element* aCell);
 
