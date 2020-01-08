@@ -11,14 +11,14 @@
 #include "nsITimer.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/Attributes.h"
+#include "XULTreeElement.h"
 
-class nsITreeBoxObject;
 class nsTreeColumn;
 struct nsTreeRange;
 
 class nsTreeSelection final : public nsINativeTreeSelection {
  public:
-  explicit nsTreeSelection(nsITreeBoxObject* aTree);
+  explicit nsTreeSelection(mozilla::dom::XULTreeElement* aTree);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(nsTreeSelection)
@@ -37,11 +37,7 @@ class nsTreeSelection final : public nsINativeTreeSelection {
 
  protected:
   
-  already_AddRefed<nsIContent> GetContent();
-
-  
-  nsCOMPtr<nsITreeBoxObject> mTree;  
-                                     
+  RefPtr<mozilla::dom::XULTreeElement> mTree;
 
   bool mSuppressed;       
   int32_t mCurrentIndex;  
@@ -54,7 +50,7 @@ class nsTreeSelection final : public nsINativeTreeSelection {
   nsCOMPtr<nsITimer> mSelectTimer;
 };
 
-nsresult NS_NewTreeSelection(nsITreeBoxObject* aTree,
+nsresult NS_NewTreeSelection(mozilla::dom::XULTreeElement* aTree,
                              nsITreeSelection** aResult);
 
 #endif
