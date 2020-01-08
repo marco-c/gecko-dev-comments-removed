@@ -3104,7 +3104,6 @@ struct CreateGlobalOptions<nsGlobalWindowInner>
 {
   static constexpr ProtoAndIfaceCache::Kind ProtoAndIfaceCacheKind =
     ProtoAndIfaceCache::WindowLike;
-  static bool PostCreateGlobal(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
 };
 
 

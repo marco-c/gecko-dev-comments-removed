@@ -11,6 +11,8 @@ import math
 import textwrap
 import functools
 
+from perfecthash import PerfectHash
+
 from WebIDL import BuiltinTypes, IDLBuiltinType, IDLNullValue, IDLSequenceType, IDLType, IDLAttribute, IDLInterfaceMember, IDLUndefinedValue, IDLEmptySequenceValue, IDLDictionary
 from Configuration import NoSuchDescriptorError, getTypesFromDescriptor, getTypesFromDictionary, getTypesFromCallback, getAllTypes, Descriptor, MemberIsUnforgeable, iteratorNativeType
 
@@ -28,6 +30,11 @@ MAY_RESOLVE_HOOK_NAME = '_mayResolve'
 NEW_ENUMERATE_HOOK_NAME = '_newEnumerate'
 ENUM_ENTRY_VARIABLE_NAME = 'strings'
 INSTANCE_RESERVED_SLOTS = 1
+
+
+
+
+GLOBAL_NAMES_PHF_SIZE=256
 
 
 def memberReservedSlot(member, descriptor):
@@ -13691,6 +13698,75 @@ def getGlobalNames(config):
         names.extend((n.identifier.name, desc) for n in desc.interface.namedConstructors)
     return names
 
+class CGGlobalNames(CGGeneric):
+    def __init__(self, config):
+        currentOffset = 0
+        strings = []
+        entries = []
+        for name, desc in getGlobalNames(config):
+            
+            offset = currentOffset
+            strings.append('/* %i */ "%s\\0"' % (offset, name))
+            currentOffset += len(name) + 1  
+
+            
+            
+            
+            nativeEntry = fill("""
+                {
+                  /* mNameOffset */ ${nameOffset}, // "${name}"
+                  /* mNameLength */ ${nameLength},
+                  /* mConstructorId */ constructors::id::${realname},
+                  /* mCreate */ ${realname}_Binding::CreateInterfaceObjects,
+                  /* mEnabled */ ${enabled}
+                }
+                """,
+                nameOffset=offset,
+                nameLength=len(name),
+                name=name,
+                realname=desc.name,
+                enabled=("%s_Binding::ConstructorEnabled" % desc.name
+                         if desc.isExposedConditionally() else "nullptr"))
+
+            entries.append((name, nativeEntry))
+
+        
+        phf = PerfectHash(entries, GLOBAL_NAMES_PHF_SIZE)
+
+        
+        phfCodegen = phf.codegen('WebIDLGlobalNameHash::sEntries',
+                                 'WebIDLNameTableEntry')
+        entries = phfCodegen.gen_entries(lambda e: e[1])
+        getter = phfCodegen.gen_jsflatstr_getter(
+            name='WebIDLGlobalNameHash::GetEntry',
+            return_type='const WebIDLNameTableEntry*',
+            
+            
+            return_entry=dedent("""
+                if (JS_FlatStringEqualsAscii(aKey, sNames + entry.mNameOffset)) {
+                  return &entry;
+                }
+                return nullptr;
+                """))
+
+        define = fill("""
+            const uint32_t WebIDLGlobalNameHash::sCount = ${count};
+
+            const char WebIDLGlobalNameHash::sNames[] =
+              $*{strings}
+
+            $*{entries}
+
+            $*{getter}
+
+            """,
+            count=len(phf.entries),
+            strings="\n".join(strings) + ";\n",
+            entries=entries,
+            getter=getter)
+        CGGeneric.__init__(self, define=define)
+
+
 class CGGlobalNamesString(CGGeneric):
     def __init__(self, config):
         globalNames = getGlobalNames(config)
@@ -17119,11 +17195,7 @@ class GlobalGenRoots():
     @staticmethod
     def RegisterBindings(config):
 
-        curr = CGList([CGGlobalNamesString(config), CGRegisterGlobalNames(config)])
-
-        
-        curr = CGNamespace.build(['mozilla', 'dom'],
-                                 CGWrapper(curr, post='\n'))
+        curr = CGNamespace.build(['mozilla', 'dom'], CGGlobalNames(config))
         curr = CGWrapper(curr, post='\n')
 
         
@@ -17133,6 +17205,7 @@ class GlobalGenRoots():
                                                             register=True)]
         defineIncludes.append('mozilla/dom/WebIDLGlobalNameHash.h')
         defineIncludes.append('mozilla/dom/PrototypeList.h')
+        defineIncludes.append('mozilla/PerfectHash.h')
         defineIncludes.extend([CGHeaders.getDeclarationFilename(desc.interface)
                                for desc in config.getDescriptors(isNavigatorProperty=True,
                                                                  register=True)])

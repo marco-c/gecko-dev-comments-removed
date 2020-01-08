@@ -11,10 +11,10 @@
 #include "nsTArray.h"
 #include "mozilla/dom/BindingDeclarations.h"
 
+class JSFlatString;
+
 namespace mozilla {
 namespace dom {
-
-struct WebIDLNameTableEntry;
 
 namespace constructors {
 namespace id {
@@ -22,27 +22,25 @@ enum ID : uint16_t;
 } 
 } 
 
+struct WebIDLNameTableEntry
+{
+  
+  
+  
+  typedef bool (*ConstructorEnabled)(JSContext* cx, JS::Handle<JSObject*> obj);
+
+  uint16_t mNameOffset;
+  uint16_t mNameLength;
+  constructors::id::ID mConstructorId;
+  CreateInterfaceObjectsMethod mCreate;
+  
+  ConstructorEnabled mEnabled;
+};
+
 class WebIDLGlobalNameHash
 {
 public:
-  static void Init();
-  static void Shutdown();
-
-  
-  
-  
-  
-  
-  
-  typedef bool
-  (*ConstructorEnabled)(JSContext* cx, JS::Handle<JSObject*> obj);
-
-  static void Register(uint16_t aNameOffset, uint16_t aNameLength,
-                       CreateInterfaceObjectsMethod aCreate,
-                       ConstructorEnabled aEnabled,
-                       constructors::id::ID aConstructorId);
-
-  static void Remove(const char* aName, uint32_t aLength);
+  typedef WebIDLNameTableEntry::ConstructorEnabled ConstructorEnabled;
 
   
   
@@ -71,7 +69,15 @@ private:
 
   
   
+  static const WebIDLNameTableEntry* GetEntry(JSFlatString* aKey);
+
+  
+  
   static const uint32_t sCount;
+
+  
+  
+  static const WebIDLNameTableEntry sEntries[];
 
   
   
