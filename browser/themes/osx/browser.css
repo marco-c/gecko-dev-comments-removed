@@ -215,9 +215,10 @@
 
 
 .findbar-button {
-  background: none !important;
-  box-shadow: none !important;
+  background: none;
+  box-shadow: none;
   border: none;
+  color: inherit;
 }
 
 
