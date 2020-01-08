@@ -16,24 +16,24 @@ class nsSVGAngle;
 namespace mozilla {
 namespace dom {
 
-class SVGAngle final : public nsWrapperCache {
+class DOMSVGAngle final : public nsWrapperCache {
  public:
   typedef enum { BaseValue, AnimValue, CreatedValue } AngleType;
 
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SVGAngle)
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(SVGAngle)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGAngle)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGAngle)
 
   
 
 
-  SVGAngle(nsSVGAngle* aVal, SVGElement* aSVGElement, AngleType aType)
+  DOMSVGAngle(nsSVGAngle* aVal, SVGElement* aSVGElement, AngleType aType)
       : mVal(aVal), mSVGElement(aSVGElement), mType(aType) {}
 
   
 
 
 
-  explicit SVGAngle(SVGElement* aSVGElement);
+  explicit DOMSVGAngle(SVGElement* aSVGElement);
 
   
   SVGElement* GetParentObject() { return mSVGElement; }
@@ -50,7 +50,7 @@ class SVGAngle final : public nsWrapperCache {
   void ConvertToSpecifiedUnits(uint16_t unitType, ErrorResult& rv);
 
  protected:
-  ~SVGAngle();
+  ~DOMSVGAngle();
 
   nsSVGAngle* mVal;  
                      
