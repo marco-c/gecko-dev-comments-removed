@@ -21,13 +21,15 @@ namespace mozilla {
 
 
 
-enum class PixelCastJustification : uint8_t {
+enum class PixelCastJustification : uint8_t
+{
   
   ScreenIsParentLayerForRoot,
   
   LayoutDeviceIsScreenForBounds,
   
   RenderTargetIsParentLayerForRoot,
+  
   
   ParentLayerToLayerForRootComposition,
   
@@ -55,7 +57,9 @@ enum class PixelCastJustification : uint8_t {
   MultipleAsyncTransforms,
   
   
-  NoTransformOnLayer
+  NoTransformOnLayer,
+  
+  LayerIsImage,
 };
 
 template <class TargetUnits, class SourceUnits>
