@@ -425,7 +425,9 @@
   margin-inline-end: 8px;
   width: 16px;
   height: 16px;
-  vertical-align: top;
+  
+
+  vertical-align: -3px;
   -moz-context-properties: fill;
   fill: currentColor;
   background-image: var(--menuitem-icon-image);
