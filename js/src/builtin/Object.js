@@ -286,3 +286,23 @@ function ObjectDefineProperty(obj, propertyKey, attributes) {
     
     return obj;
 }
+
+
+
+function ObjectFromEntries(iter) {
+    
+    
+    
+    
+    
+    const obj = {};
+
+    for (const pair of allowContentIter(iter)) {
+        if (!IsObject(pair))
+            ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Object.fromEntries");
+        _DefineDataProperty(obj, pair[0], pair[1]);
+    }
+
+    return obj;
+}
+
