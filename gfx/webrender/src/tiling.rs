@@ -14,7 +14,7 @@ use euclid::{TypedPoint2D, TypedVector2D};
 use gpu_cache::{GpuCache};
 use gpu_types::{BorderInstance, BlurDirection, BlurInstance, PrimitiveHeaders, ScalingInstance};
 use gpu_types::{TransformData, TransformPalette};
-use internal_types::{FastHashMap, SavedTargetIndex, SourceTexture};
+use internal_types::{CacheTextureId, FastHashMap, SavedTargetIndex, TextureSource};
 #[cfg(feature = "pathfinder")]
 use pathfinder_partitioner::mesh::Mesh;
 use prim_store::{PrimitiveStore, DeferredResolve};
@@ -31,6 +31,7 @@ use webrender_api::{DevicePixel, FontRenderMode};
 const MIN_TARGET_SIZE: u32 = 2048;
 const STYLE_SOLID: i32 = ((BorderStyle::Solid as i32) << 8) | ((BorderStyle::Solid as i32) << 16);
 const STYLE_MASK: i32 = 0x00FF_FF00;
+
 
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -86,12 +87,35 @@ impl TextureAllocator {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait RenderTarget {
+    
     fn new(
         size: Option<DeviceUintSize>,
         screen_size: DeviceIntSize,
     ) -> Self;
+
+    
+    
+    
+    
+    
     fn allocate(&mut self, size: DeviceUintSize) -> Option<DeviceUintPoint>;
+
+    
+    
     fn build(
         &mut self,
         _ctx: &mut RenderTargetContext,
@@ -102,6 +126,9 @@ pub trait RenderTarget {
         _transforms: &mut TransformPalette,
     ) {
     }
+
+    
+    
     
     
     
@@ -123,6 +150,7 @@ pub trait RenderTarget {
     fn needs_depth(&self) -> bool;
 }
 
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -130,6 +158,31 @@ pub enum RenderTargetKind {
     Color, 
     Alpha, 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -139,7 +192,6 @@ pub struct RenderTargetList<T> {
     pub max_size: DeviceUintSize,
     pub targets: Vec<T>,
     pub saved_index: Option<SavedTargetIndex>,
-    pub is_shared: bool,
 }
 
 impl<T: RenderTarget> RenderTargetList<T> {
@@ -153,7 +205,6 @@ impl<T: RenderTarget> RenderTargetList<T> {
             max_size: DeviceUintSize::new(MIN_TARGET_SIZE, MIN_TARGET_SIZE),
             targets: Vec::new(),
             saved_index: None,
-            is_shared: false,
         }
     }
 
@@ -256,7 +307,7 @@ pub struct FrameOutput {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BlitJobSource {
-    Texture(SourceTexture, i32, DeviceIntRect),
+    Texture(TextureSource, i32, DeviceIntRect),
     RenderTask(RenderTaskId),
 }
 
@@ -284,6 +335,9 @@ pub struct GlyphJob {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GlyphJob;
+
+
+
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -499,6 +553,10 @@ impl RenderTarget for ColorRenderTarget {
         })
     }
 }
+
+
+
+
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -727,14 +785,18 @@ impl TextureCacheRenderTarget {
     fn add_glyph_task(&mut self, _: &mut GlyphTask, _: DeviceIntRect) {}
 }
 
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum RenderPassKind {
+    
+    
     MainFramebuffer(ColorRenderTarget),
+    
     OffScreen {
         alpha: RenderTargetList<AlphaRenderTarget>,
         color: RenderTargetList<ColorRenderTarget>,
-        texture_cache: FastHashMap<(SourceTexture, i32), TextureCacheRenderTarget>,
+        texture_cache: FastHashMap<(CacheTextureId, i32), TextureCacheRenderTarget>,
     },
 }
 
@@ -746,11 +808,17 @@ pub enum RenderPassKind {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderPass {
+    
+    
     pub kind: RenderPassKind,
+    
+    
     tasks: Vec<RenderTaskId>,
 }
 
 impl RenderPass {
+    
+    
     pub fn new_main_framebuffer(screen_size: DeviceIntSize) -> Self {
         let target = ColorRenderTarget::new(None, screen_size);
         RenderPass {
@@ -759,6 +827,7 @@ impl RenderPass {
         }
     }
 
+    
     pub fn new_off_screen(screen_size: DeviceIntSize) -> Self {
         RenderPass {
             kind: RenderPassKind::OffScreen {
@@ -770,6 +839,7 @@ impl RenderPass {
         }
     }
 
+    
     pub fn add_render_task(
         &mut self,
         task_id: RenderTaskId,
@@ -788,6 +858,11 @@ impl RenderPass {
         self.tasks.push(task_id);
     }
 
+    
+    
+    
+    
+    
     pub fn build(
         &mut self,
         ctx: &mut RenderTargetContext,
@@ -824,11 +899,6 @@ impl RenderPass {
                 );
             }
             RenderPassKind::OffScreen { ref mut color, ref mut alpha, ref mut texture_cache } => {
-                let is_shared_alpha = self.tasks.iter().any(|&task_id| {
-                    let task = &render_tasks[task_id];
-                    task.is_shared() &&
-                        task.target_kind() == RenderTargetKind::Alpha
-                });
                 let saved_color = if self.tasks.iter().any(|&task_id| {
                     let t = &render_tasks[task_id];
                     t.target_kind() == RenderTargetKind::Color && t.saved_index.is_some()
@@ -940,7 +1010,6 @@ impl RenderPass {
                     prim_headers,
                     transforms,
                 );
-                alpha.is_shared = is_shared_alpha;
             }
         }
     }

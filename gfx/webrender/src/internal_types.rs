@@ -31,13 +31,16 @@ pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
 
 
 
-
-
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CacheTextureId(pub usize);
+
+
+
+
+
+
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -49,20 +52,23 @@ impl SavedTargetIndex {
 }
 
 
-
-
-
-
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum SourceTexture {
+pub enum TextureSource {
+    
     Invalid,
+    
     TextureCache(CacheTextureId),
+    
     External(ExternalImageData),
-    CacheA8,
-    CacheRGBA8,
+    
+    PrevPassAlpha,
+    
+    PrevPassColor,
+    
+    
+    
     RenderTaskCache(SavedTargetIndex),
 }
 

@@ -16,7 +16,7 @@ use freelist::{FreeList, FreeListHandle, WeakFreeListHandle};
 use glyph_rasterizer::GpuGlyphCacheKey;
 use gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use gpu_types::{BorderInstance, ImageSource, RasterizationSpace, UvRectKind};
-use internal_types::{FastHashMap, SavedTargetIndex, SourceTexture};
+use internal_types::{CacheTextureId, FastHashMap, SavedTargetIndex};
 #[cfg(feature = "pathfinder")]
 use pathfinder_partitioner::mesh::Mesh;
 use picture::PictureCacheKey;
@@ -116,16 +116,6 @@ impl RenderTaskTree {
             }
         }
 
-        
-        
-        
-        let pass_index = if task.is_shared() {
-            debug_assert!(task.children.is_empty());
-            0
-        } else {
-            pass_index
-        };
-
         let pass = &mut passes[pass_index];
         pass.add_render_task(id, task.get_dynamic_size(), task.target_kind());
     }
@@ -174,13 +164,27 @@ impl ops::IndexMut<RenderTaskId> for RenderTaskTree {
     }
 }
 
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum RenderTaskLocation {
+    
+    
+    
     Fixed(DeviceIntRect),
+    
+    
+    
+    
+    
+    
+    
+    
     Dynamic(Option<(DeviceIntPoint, RenderTargetIndex)>, DeviceIntSize),
-    TextureCache(SourceTexture, i32, DeviceIntRect),
+    
+    
+    TextureCache(CacheTextureId, i32, DeviceIntRect),
 }
 
 #[derive(Debug)]
@@ -868,33 +872,6 @@ impl RenderTask {
             RenderTaskKind::Blit(..) => {
                 RenderTargetKind::Color
             }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn is_shared(&self) -> bool {
-        match self.kind {
-            RenderTaskKind::Picture(..) |
-            RenderTaskKind::VerticalBlur(..) |
-            RenderTaskKind::Readback(..) |
-            RenderTaskKind::HorizontalBlur(..) |
-            RenderTaskKind::Scaling(..) |
-            RenderTaskKind::ClipRegion(..) |
-            RenderTaskKind::Blit(..) |
-            RenderTaskKind::Border(..) |
-            RenderTaskKind::Glyph(..) => false,
-
-            
-            
-            
-            
-            
-            RenderTaskKind::CacheMask(..) => false,
         }
     }
 

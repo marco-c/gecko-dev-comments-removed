@@ -260,8 +260,16 @@ impl SpatialNode {
                 
                 
                 
+                
+                
+                
+                
+                
+                
+                
+                
                 let relative_transform = info.resolved_transform
-                    .post_translate(state.parent_accumulated_scroll_offset)
+                    .pre_translate(&state.parent_accumulated_scroll_offset)
                     .to_transform()
                     .with_destination::<LayoutPixel>();
                 self.world_viewport_transform =

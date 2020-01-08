@@ -279,10 +279,19 @@ impl PicturePrimitive {
         
         
         let raster_space = self.requested_raster_space;
-        let local_scale = raster_space.local_scale();
 
-        let wants_raster_root = xf.has_perspective_component() ||
-                                local_scale.is_some();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let wants_raster_root = xf.has_perspective_component();
 
         let establishes_raster_root = has_surface && wants_raster_root;
 
