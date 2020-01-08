@@ -833,6 +833,7 @@ impl TransitionProperty {
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq,
          SpecifiedValueInfo, ToCss)]
+
 pub enum Float {
     Left,
     Right,
@@ -846,6 +847,7 @@ pub enum Float {
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq,
          SpecifiedValueInfo, ToCss)]
+
 pub enum Clear {
     None,
     Left,
