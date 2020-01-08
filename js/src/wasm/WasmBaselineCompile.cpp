@@ -1164,7 +1164,6 @@ class BaseStackFrame
 
     static constexpr uint32_t ChunkSize = 8 * sizeof(void*);
     static constexpr uint32_t InitialChunk = ChunkSize;
-    static constexpr uint32_t ChunkCutoff = ChunkSize + InitialChunk;
 #endif
 
     MacroAssembler& masm;
@@ -1484,6 +1483,12 @@ class BaseStackFrame
     }
 
     
+    
+    uint32_t dynamicHeight() const {
+        return currentFramePushed() - localSize_;
+    }
+
+    
     void setStackHeight(StackHeight amount) {
 #ifdef RABALDR_CHUNKY_STACK
         currentFramePushed_ = amount.height;
@@ -1579,6 +1584,8 @@ class BaseStackFrame
     
     
     
+    
+    
 
     void popStackBeforeBranch(StackHeight destStackHeight) {
         uint32_t framePushedHere = masm.framePushed();
@@ -1597,22 +1604,26 @@ class BaseStackFrame
     
     
     
+    
+    
+    
+    
 
     void popStackOnBlockExit(StackHeight destStackHeight, bool deadCode) {
-        uint32_t framePushedHere = masm.framePushed();
-        uint32_t framePushedThere = framePushedForHeight(destStackHeight);
-        if (framePushedHere > framePushedThere) {
+        uint32_t stackHeightHere = currentFramePushed();
+        uint32_t stackHeightThere = destStackHeight.height;
+        if (stackHeightHere > stackHeightThere) {
 #ifdef RABALDR_CHUNKY_STACK
             if (deadCode) {
                 setStackHeight(destStackHeight);
             } else {
-                popChunkyBytes(framePushedHere - framePushedThere);
+                popChunkyBytes(stackHeightHere - stackHeightThere);
             }
 #else
             if (deadCode) {
-                masm.setFramePushed(framePushedThere);
+                masm.setFramePushed(stackHeightThere);
             } else {
-                masm.freeStack(framePushedHere - framePushedThere);
+                masm.freeStack(stackHeightHere - stackHeightThere);
             }
 #endif
         }
@@ -3410,6 +3421,22 @@ class BaseCompiler final : public BaseCompilerInterface
             }
         }
     }
+
+    void assertStackInvariants() const {
+        size_t size = 0;
+        for (const Stk& v : stk_) {
+            switch (v.kind()) {
+              case Stk::MemRef: size += BaseStackFrame::StackSizeOfPtr;    break;
+              case Stk::MemI32: size += BaseStackFrame::StackSizeOfPtr;    break;
+              case Stk::MemI64: size += BaseStackFrame::StackSizeOfInt64;  break;
+              case Stk::MemF64: size += BaseStackFrame::StackSizeOfDouble; break;
+              case Stk::MemF32: size += BaseStackFrame::StackSizeOfFloat;  break;
+              default:          MOZ_ASSERT(!v.isMem());                    break;
+            }
+        }
+        MOZ_ASSERT(size == fr.dynamicHeight());
+    }
+
 #endif
 
     
@@ -10257,6 +10284,7 @@ BaseCompiler::emitBody()
 
 #ifdef DEBUG
         performRegisterLeakCheck();
+        assertStackInvariants();
 #endif
 
 #define emitBinary(doEmit, type) \
