@@ -2481,7 +2481,7 @@ static MOZ_MUST_USE JSObject* PromiseCall(JSContext* cx, HandleValue F,
                                           HandleValue V, HandleValue arg);
 
 static void ReadableStreamControllerClearAlgorithms(
-    ReadableStreamController* controller);
+    Handle<ReadableStreamController*> controller);
 
 
 
@@ -2945,12 +2945,14 @@ static bool ReadableStreamControllerShouldCallPull(
 
 
 static void ReadableStreamControllerClearAlgorithms(
-    ReadableStreamController* controller) {
+    Handle<ReadableStreamController*> controller) {
+  
+  
+  
   
   controller->setPullMethod(UndefinedHandleValue);
-
-  
   controller->setCancelMethod(UndefinedHandleValue);
+  ReadableStreamController::clearUnderlyingSource(controller);
 
   
   
