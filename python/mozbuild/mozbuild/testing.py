@@ -203,17 +203,15 @@ def _resolve_installs(paths, topobjdir, manifest):
                 
                 pass
 
-def install_test_files(topsrcdir, topobjdir, tests_root, test_objs):
-    """Installs the requested test files to the objdir. This is invoked by
-    test runners to avoid installing tens of thousands of test files when
-    only a few tests need to be run.
-    """
+
+def _make_install_manifest(topsrcdir, topobjdir, test_objs):
+
     flavor_info = {flavor: (root, prefix, install)
                    for (flavor, root, prefix, install) in TEST_MANIFESTS.values()}
-    objdir_dest = mozpath.join(topobjdir, tests_root)
 
     converter = SupportFilesConverter()
     install_info = TestInstallInfo()
+
     for o in test_objs:
         flavor = o['flavor']
         if flavor not in flavor_info:
@@ -252,8 +250,26 @@ def install_test_files(topsrcdir, topobjdir, tests_root, test_objs):
 
     _resolve_installs(install_info.deferred_installs, topobjdir, manifest)
 
+    return manifest
+
+
+def install_test_files(topsrcdir, topobjdir, tests_root, test_objs):
+    """Installs the requested test files to the objdir. This is invoked by
+    test runners to avoid installing tens of thousands of test files when
+    only a few tests need to be run.
+    """
+
+    if test_objs:
+        manifest = _make_install_manifest(topsrcdir, topobjdir, test_objs)
+    else:
+        
+        
+        manifest = InstallManifest(mozpath.join(topobjdir, '_build_manifests',
+                                                'install', '_test_files'))
+
     harness_files_manifest = mozpath.join(topobjdir, '_build_manifests',
                                           'install', tests_root)
+
     if os.path.isfile(harness_files_manifest):
         
         
@@ -262,7 +278,7 @@ def install_test_files(topsrcdir, topobjdir, tests_root, test_objs):
 
     copier = FileCopier()
     manifest.populate_registry(copier)
-    copier.copy(objdir_dest,
+    copier.copy(mozpath.join(topobjdir, tests_root),
                 remove_unaccounted=False)
 
 
