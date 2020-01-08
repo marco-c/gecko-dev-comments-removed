@@ -162,7 +162,7 @@ private:
   nsCOMPtr<nsIStreamListener> mInner;
   AutoTArray<nsXBLBindingRequest*, 8> mBindingRequests;
 
-  nsCOMPtr<nsIWeakReference> mBoundDocument;
+  nsWeakPtr mBoundDocument;
   nsCOMPtr<nsIXMLContentSink> mSink; 
   nsCOMPtr<nsIDocument> mBindingDocument; 
 };

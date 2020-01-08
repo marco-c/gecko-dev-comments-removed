@@ -20,8 +20,8 @@
 #include "nsCOMPtr.h"                   
 #include "nsHashKeys.h"                 
 #include "nsISupportsImpl.h"            
+#include "nsIWeakReferenceUtils.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-#include "nsWeakReference.h"
 
 #include <unordered_map>
 

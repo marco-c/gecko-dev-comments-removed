@@ -32,7 +32,6 @@
 #include "nsFrameManager.h"
 #include "nsRect.h"
 #include "nsRegionFwd.h"
-#include "nsWeakReference.h"
 #include <stdio.h> 
 #include "nsChangeHint.h"
 #include "nsRefPtrHashtable.h"

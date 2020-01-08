@@ -14,7 +14,6 @@
 #include "nsISupportsImpl.h"            
 #include "nsITimer.h"                   
 #include "nsITransactionListener.h"     
-#include "nsIWeakReferenceUtils.h"      
 #include "nscore.h"                     
 
 class nsIDocShell;
