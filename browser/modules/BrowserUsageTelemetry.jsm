@@ -7,7 +7,6 @@
 
 var EXPORTED_SYMBOLS = [
   "BrowserUsageTelemetry",
-  "URICountListener",
   "URLBAR_SELECTED_RESULT_TYPES",
   "URLBAR_SELECTED_RESULT_METHODS",
   "MINIMUM_TAB_COUNT_INTERVAL_MS",
@@ -19,13 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
 });
-
-
-XPCOMUtils.defineLazyPreferenceGetter(this,
-  "gRecentVisitedOriginsExpiry",
-  "browser.engagement.recent_visited_origins.expiry");
 
 
 const MAX_UNIQUE_VISITED_DOMAINS = 100;
@@ -136,8 +129,6 @@ let URICountListener = {
   
   _domainSet: new Set(),
   
-  _origin24hrSet: new Set(),
-  
   _restoredURIsMap: new WeakMap(),
 
   isHttpURI(uri) {
@@ -239,26 +230,13 @@ let URICountListener = {
 
     
     
-    let baseDomain;
     try {
       
       
       
-      baseDomain = Services.eTLD.getBaseDomain(uri);
-      this._domainSet.add(baseDomain);
+      this._domainSet.add(Services.eTLD.getBaseDomain(uri));
     } catch (e) {
-      baseDomain = uri.host;
-    }
-
-    
-    let baseDomainURI = uri.mutate()
-                           .setHost(baseDomain)
-                           .finalize();
-    this._origin24hrSet.add(baseDomainURI.prePath);
-    if (gRecentVisitedOriginsExpiry) {
-      setTimeout(() => {
-        this._origin24hrSet.delete(baseDomainURI.prePath);
-      }, gRecentVisitedOriginsExpiry * 1000);
+      return;
     }
 
     Services.telemetry.scalarSet(UNIQUE_DOMAINS_COUNT_SCALAR_NAME, this._domainSet.size);
@@ -269,21 +247,6 @@ let URICountListener = {
 
   reset() {
     this._domainSet.clear();
-  },
-
-  
-
-
-
-  get uniqueOriginsVisitedInPast24Hours() {
-    return this._origin24hrSet.size;
-  },
-
-  
-
-
-  resetUniqueOriginsVisitedInPast24Hours() {
-    this._origin24hrSet.clear();
   },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,

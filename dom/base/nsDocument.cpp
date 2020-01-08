@@ -13988,11 +13988,9 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
           RefPtr<StorageAccessPermissionRequest> sapr =
             StorageAccessPermissionRequest::Create(inner,
               
-              [p] { p->Resolve(AntiTrackingCommon::eAllow, __func__); },
+              [p] { p->Resolve(false, __func__); },
               
-              [p] { p->Resolve(AntiTrackingCommon::eAllowAutoGrant, __func__); },
-              
-              [p] { p->Resolve(AntiTrackingCommon::eAllowOnAnySite, __func__); },
+              [p] { p->Resolve(true, __func__); },
               
               [p] { p->Reject(false, __func__); });
 
@@ -14013,8 +14011,7 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
                           pr == PromptResult::Denied);
             if (pr == PromptResult::Granted) {
               return AntiTrackingCommon::StorageAccessFinalCheckPromise::
-                CreateAndResolve(onAnySite ? AntiTrackingCommon::eAllowOnAnySite :
-                                             AntiTrackingCommon::eAllow, __func__);
+                CreateAndResolve(onAnySite, __func__);
             }
             return AntiTrackingCommon::StorageAccessFinalCheckPromise::
               CreateAndReject(false, __func__);

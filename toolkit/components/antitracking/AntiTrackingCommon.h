@@ -77,12 +77,6 @@ public:
     eOpenerAfterUserInteraction,
     eOpener
   };
-  enum StorageAccessPromptChoices
-  {
-    eAllow,
-    eAllowAutoGrant,
-    eAllowOnAnySite
-  };
 
   
   
@@ -99,9 +93,9 @@ public:
   
   
   
-  typedef MozPromise<int, bool, true> StorageAccessFinalCheckPromise;
+  typedef MozPromise<bool, bool, true> StorageAccessFinalCheckPromise;
   typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()> PerformFinalChecks;
-  typedef MozPromise<int, bool, true> StorageAccessGrantPromise;
+  typedef MozPromise<bool, bool, true> StorageAccessGrantPromise;
   static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise>
   AddFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal,
                                        nsPIDOMWindowInner* aParentWindow,
@@ -126,7 +120,7 @@ public:
                                                              nsIPrincipal* aTrackingPrinciapl,
                                                              const nsCString& aParentOrigin,
                                                              const nsCString& aGrantedOrigin,
-                                                             int aAllowMode);
+                                                             bool aAnySite);
 
   enum ContentBlockingAllowListPurpose {
     eStorageChecks,
