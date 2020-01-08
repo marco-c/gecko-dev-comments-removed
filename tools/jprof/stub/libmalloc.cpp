@@ -37,17 +37,6 @@
 #include <errno.h>
 #include <dlfcn.h>
 
-
-void *moz_xmalloc(size_t size)
-{
-    return malloc(size);
-}
-
-void moz_xfree(void *mem)
-{
-    free(mem);
-}
-
 #ifdef NTO
 #include <sys/link.h>
 extern r_debug _r_debug;
