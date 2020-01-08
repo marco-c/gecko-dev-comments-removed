@@ -72,7 +72,7 @@ from ..frontend.data import (
     StaticLibrary,
     TestManifest,
     VariablePassthru,
-    XPIDLFile,
+    XPIDLModule,
 )
 from ..util import (
     ensureParentDir,
@@ -439,8 +439,8 @@ class RecursiveMakeBackend(CommonBackend):
 
         
         
-        if isinstance(obj, XPIDLFile):
-            backend_file.xpt_name = '%s.xpt' % obj.module
+        if isinstance(obj, XPIDLModule):
+            backend_file.xpt_name = '%s.xpt' % obj.name
             self._idl_dirs.add(obj.relobjdir)
 
         
