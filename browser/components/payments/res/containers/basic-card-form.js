@@ -5,6 +5,7 @@
 
 import AcceptedCards from "../components/accepted-cards.js";
 import LabelledCheckbox from "../components/labelled-checkbox.js";
+import PaymentDialog from "./payment-dialog.js";
 import PaymentRequestPage from "../components/payment-request-page.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
@@ -96,6 +97,12 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
       form.addEventListener("change", this);
       form.addEventListener("input", this);
       form.addEventListener("invalid", this);
+
+      
+      
+      for (let field of this.form.elements) {
+        field.addEventListener("invalid", this);
+      }
 
       let fragment = document.createDocumentFragment();
       fragment.append(this.addressAddLink);
@@ -222,7 +229,12 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
         break;
       }
       case "invalid": {
-        this.onInvalid(event);
+        if (event.target instanceof HTMLFormElement) {
+          this.onInvalidForm(event);
+          break;
+        }
+
+        this.onInvalidField(event);
         break;
       }
     }
@@ -319,10 +331,22 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
   }
 
   onInput(event) {
+    event.target.setCustomValidity("");
     this.updateSaveButtonState();
   }
 
-  onInvalid(event) {
+  
+
+
+
+  onInvalidField(event) {
+    let field = event.target;
+    let container = field.closest(`#${field.id}-container`);
+    let errorTextSpan = PaymentDialog.maybeCreateFieldErrorElement(container);
+    errorTextSpan.textContent = field.validationMessage;
+  }
+
+  onInvalidForm() {
     this.saveButton.disabled = true;
   }
 
