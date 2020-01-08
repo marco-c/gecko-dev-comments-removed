@@ -14,7 +14,6 @@ add_task(async function setup() {
 add_task(async function test_search() {
   await AboutConfigTest.withNewTab(async function() {
     let prefArray = Services.prefs.getChildList("");
-    await this.document.querySelector("button").click();
 
     
     
