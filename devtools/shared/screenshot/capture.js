@@ -3,22 +3,17 @@
 
 
 "use strict";
-
 const { Cu } = require("chrome");
-const { getRect } = require("devtools/shared/layout/utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
+const Services = require("Services");
 
 const CONTAINER_FLASHING_DURATION = 500;
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
-exports.screenshot = function takeAsyncScreenshot(owner, args = {}) {
-  if (args.help) {
-    
-    return null;
-  }
-  return captureScreenshot(args, owner.window.document);
-};
+loader.lazyRequireGetter(this, "getRect", "devtools/shared/layout/utils", true);
+
+
 
 
 
@@ -33,22 +28,38 @@ function simulateCameraFlash(document) {
 
 
 
-function captureScreenshot(args, document) {
-  if (args.delay > 0) {
-    return new Promise((resolve, reject) => {
-      document.defaultView.setTimeout(() => {
-        createScreenshotData(document, args).then(resolve, reject);
-      }, args.delay * 1000);
-    });
+
+
+function simulateCameraShutter(document) {
+  const window = document.defaultView;
+  if (Services.prefs.getBoolPref("devtools.screenshot.audio.enabled")) {
+    const audioCamera = new window.Audio("resource://devtools/client/themes/audio/shutter.wav");
+    audioCamera.play();
   }
-  return createScreenshotData(document, args);
 }
 
 
 
 
 
-function createScreenshotData(document, args) {
+function captureScreenshot(args, document) {
+  if (args.delay > 0) {
+    return new Promise((resolve, reject) => {
+      document.defaultView.setTimeout(() => {
+        createScreenshotDataURL(document, args).then(resolve, reject);
+      }, args.delay * 1000);
+    });
+  }
+  return createScreenshotDataURL(document, args);
+}
+
+exports.captureScreenshot = captureScreenshot;
+
+
+
+
+
+function createScreenshotDataURL(document, args) {
   const window = document.defaultView;
   let left = 0;
   let top = 0;
@@ -101,6 +112,7 @@ function createScreenshotData(document, args) {
   }
 
   simulateCameraFlash(document);
+  simulateCameraShutter(document);
 
   return Promise.resolve({
     destinations: [],
@@ -110,6 +122,8 @@ function createScreenshotData(document, args) {
     filename: filename,
   });
 }
+
+exports.createScreenshotDataURL = createScreenshotDataURL;
 
 
 
@@ -138,3 +152,4 @@ function getFilename(defaultName) {
     timeString
   ) + ".png";
 }
+
