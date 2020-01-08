@@ -45,6 +45,10 @@ public:
 
   void SetResultPrincipalURIIsSome(bool aIsSome);
 
+  bool KeepResultPrincipalURIIfSet() const;
+
+  void SetKeepResultPrincipalURIIfSet(bool aKeep);
+
   bool LoadReplace() const;
 
   void SetLoadReplace(bool aLoadReplace);
@@ -139,6 +143,10 @@ protected:
   
   
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
+  
+  bool mKeepResultPrincipalURIIfSet;
 
   
   bool mLoadReplace;
