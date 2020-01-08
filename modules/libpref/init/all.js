@@ -5615,9 +5615,6 @@ pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 pref("beacon.enabled", true);
 
 
-pref("dom.caches.enabled", true);
-
-
 pref("dom.udpsocket.enabled", false);
 
 

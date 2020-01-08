@@ -210,6 +210,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.caches.enabled",
+   dom_caches_enabled,
+  RelaxedAtomicBool, true
+)
+
+
 
 
 
