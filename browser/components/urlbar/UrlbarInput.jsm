@@ -50,11 +50,12 @@ class UrlbarInput {
     this.userInitiatedFocus = false;
     this.isPrivate = PrivateBrowsingUtils.isWindowPrivate(this.window);
 
+    
     const METHODS = ["addEventListener", "removeEventListener",
       "setAttribute", "hasAttribute", "removeAttribute", "getAttribute",
       "focus", "blur", "select"];
-    const READ_ONLY_PROPERTIES = ["focused", "inputField", "editor"];
-    const READ_WRITE_PROPERTIES = ["value", "placeholder", "readOnly",
+    const READ_ONLY_PROPERTIES = ["inputField", "editor"];
+    const READ_WRITE_PROPERTIES = ["placeholder", "readOnly",
       "selectionStart", "selectionEnd"];
 
     for (let method of METHODS) {
@@ -67,10 +68,6 @@ class UrlbarInput {
       Object.defineProperty(this, property, {
         enumerable: true,
         get() {
-          let getter = "_get_" + property;
-          if (getter in this) {
-            return this[getter]();
-          }
           return this.textbox[property];
         },
       });
@@ -80,17 +77,9 @@ class UrlbarInput {
       Object.defineProperty(this, property, {
         enumerable: true,
         get() {
-          let getter = "_get_" + property;
-          if (getter in this) {
-            return this[getter]();
-          }
           return this.textbox[property];
         },
         set(val) {
-          let setter = "_set_" + property;
-          if (setter in this) {
-            return this[setter](val);
-          }
           return this.textbox[property] = val;
         },
       });
@@ -114,6 +103,9 @@ class UrlbarInput {
   }
 
   
+
+
+
 
 
 
@@ -179,11 +171,15 @@ class UrlbarInput {
 
   
 
-  _get_focused() {
-    return this.inputField.getAttribute("focused") == "true";
+  get focused() {
+    return this.textbox.getAttribute("focused") == "true";
   }
 
-  _set_value(val) {
+  get value() {
+    return this.inputField.value;
+  }
+
+  set value(val) {
     val = this.trimValue(val);
 
     this.valueIsTyped = false;
