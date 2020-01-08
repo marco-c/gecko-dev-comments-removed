@@ -86,17 +86,17 @@ public:
 
 
 
-class HTMLTableRowAccessible : public AccessibleWrap
+class HTMLTableRowAccessible : public HyperTextAccessibleWrap
 {
 public:
   HTMLTableRowAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    AccessibleWrap(aContent, aDoc)
+    HyperTextAccessibleWrap(aContent, aDoc)
   {
     mType = eHTMLTableRowType;
     mGenericTypes |= eTableRow;
   }
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableRowAccessible, AccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableRowAccessible, HyperTextAccessibleWrap)
 
   
   virtual a11y::role NativeRole() const override;
@@ -116,18 +116,18 @@ protected:
 
 
 
-class HTMLTableAccessible : public AccessibleWrap,
+class HTMLTableAccessible : public HyperTextAccessibleWrap,
                             public TableAccessible
 {
 public:
   HTMLTableAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    AccessibleWrap(aContent, aDoc)
+    HyperTextAccessibleWrap(aContent, aDoc)
   {
     mType = eHTMLTableType;
     mGenericTypes |= eTable;
   }
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableAccessible, AccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableAccessible, HyperTextAccessibleWrap)
 
   
   virtual Accessible* Caption() const override;
