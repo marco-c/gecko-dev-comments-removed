@@ -1046,11 +1046,18 @@ impl<'a> From<DrawTarget<'a>> for ReadTarget<'a> {
 
 impl Device {
     pub fn new(
-        gl: Rc<gl::Gl>,
+        mut gl: Rc<gl::Gl>,
         resource_override_path: Option<PathBuf>,
         upload_method: UploadMethod,
         cached_programs: Option<Rc<ProgramCache>>,
     ) -> Device {
+        
+        
+        
+        if cfg!(debug_assertions) {
+            gl = gl::ErrorCheckingGl::wrap(gl);
+        }
+
         let mut max_texture_size = [0];
         let mut max_texture_layers = [0];
         unsafe {
@@ -1150,11 +1157,6 @@ impl Device {
 
         let supports_copy_image_sub_data = supports_extension(&extensions, "GL_EXT_copy_image") ||
             supports_extension(&extensions, "GL_ARB_copy_image");
-
-        
-        gl.disable(gl::FRAMEBUFFER_SRGB);
-        gl.disable(gl::MULTISAMPLE);
-        gl.disable(gl::POLYGON_SMOOTH);
 
         Device {
             gl,
@@ -1289,19 +1291,9 @@ impl Device {
         }
     }
 
-    
-    
-    pub fn check_gl_state(&self) {
-        debug_assert!(self.gl.is_enabled(gl::FRAMEBUFFER_SRGB) == 0);
-        debug_assert!(self.gl.is_enabled(gl::MULTISAMPLE) == 0);
-        debug_assert!(self.gl.is_enabled(gl::POLYGON_SMOOTH) == 0);
-    }
-
     pub fn begin_frame(&mut self) -> GpuFrameId {
         debug_assert!(!self.inside_frame);
         self.inside_frame = true;
-
-        self.check_gl_state();
 
         
         let mut default_read_fbo = [0];
@@ -1435,8 +1427,15 @@ impl Device {
         );
     }
 
+    
+    
+    pub fn create_fbo(&mut self) -> FBOId {
+        FBOId(self.gl.gen_framebuffers(1)[0])
+    }
+
+    
     pub fn create_fbo_for_external_texture(&mut self, texture_id: u32) -> FBOId {
-        let fbo = FBOId(self.gl.gen_framebuffers(1)[0]);
+        let fbo = self.create_fbo();
         fbo.bind(self.gl(), FBOTarget::Draw);
         self.gl.framebuffer_texture_2d(
             gl::DRAW_FRAMEBUFFER,
@@ -1444,6 +1443,11 @@ impl Device {
             gl::TEXTURE_2D,
             texture_id,
             0,
+        );
+        debug_assert_eq!(
+            self.gl.check_frame_buffer_status(gl::DRAW_FRAMEBUFFER),
+            gl::FRAMEBUFFER_COMPLETE,
+            "Incomplete framebuffer",
         );
         self.bound_draw_fbo.bind(self.gl(), FBOTarget::Draw);
         fbo
@@ -1867,6 +1871,12 @@ impl Device {
                     depth_rb.0,
                 );
             }
+
+            debug_assert_eq!(
+                self.gl.check_frame_buffer_status(gl::DRAW_FRAMEBUFFER),
+                gl::FRAMEBUFFER_COMPLETE,
+                "Incomplete framebuffer",
+            );
         }
         self.bind_external_draw_target(original_bound_fbo);
     }
@@ -2886,11 +2896,24 @@ impl<'a, T> Drop for TextureUploader<'a, T> {
 impl<'a, T> TextureUploader<'a, T> {
     pub fn upload(
         &mut self,
-        rect: DeviceIntRect,
+        mut rect: DeviceIntRect,
         layer_index: i32,
         stride: Option<i32>,
         data: &[T],
     ) -> usize {
+        
+        
+        let cropped = rect.intersection(
+            &DeviceIntRect::new(DeviceIntPoint::zero(), self.target.texture.get_dimensions())
+        );
+        if cfg!(debug_assertions) && cropped.map_or(true, |r| r != rect) {
+            warn!("Cropping texture upload {:?} to {:?}", rect, cropped);
+        }
+        rect = match cropped {
+            None => return 0,
+            Some(r) => r,
+        };
+
         let bytes_pp = self.target.texture.format.bytes_per_pixel();
         let upload_size = match stride {
             Some(stride) => ((rect.size.height - 1) * stride + rect.size.width * bytes_pp) as usize,
