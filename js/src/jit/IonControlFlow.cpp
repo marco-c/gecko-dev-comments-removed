@@ -262,10 +262,20 @@ ControlFlowGenerator::ControlStatus
 ControlFlowGenerator::snoopControlFlow(JSOp op)
 {
     switch (op) {
-      case JSOP_POP:
       case JSOP_NOP: {
         jssrcnote* sn = GetSrcNote(gsn, script, pc);
-        return maybeLoop(op, sn);
+        if (sn) {
+            
+            if (SN_TYPE(sn) == SRC_WHILE)
+                return processDoWhileLoop(sn);
+            
+            
+
+            
+            if (SN_TYPE(sn) == SRC_FOR)
+                return processForLoop(op, sn);
+        }
+        break;
       }
 
       case JSOP_RETURN:
@@ -1392,44 +1402,6 @@ ControlFlowGenerator::processAndOrEnd(CFGState& state)
         return ControlStatus::Error;
 
     return ControlStatus::Joined;
-}
-
-ControlFlowGenerator::ControlStatus
-ControlFlowGenerator::maybeLoop(JSOp op, jssrcnote* sn)
-{
-    
-    
-    
-    
-    
-    switch (op) {
-      case JSOP_POP:
-        
-        if (sn && SN_TYPE(sn) == SRC_FOR) {
-            MOZ_CRASH("Not supported anymore?");
-            return processForLoop(op, sn);
-        }
-        break;
-
-      case JSOP_NOP:
-        if (sn) {
-            
-            if (SN_TYPE(sn) == SRC_WHILE)
-                return processDoWhileLoop(sn);
-            
-            
-
-            
-            if (SN_TYPE(sn) == SRC_FOR)
-                return processForLoop(op, sn);
-        }
-        break;
-
-      default:
-        MOZ_CRASH("unexpected opcode");
-    }
-
-    return ControlStatus::None;
 }
 
 ControlFlowGenerator::ControlStatus

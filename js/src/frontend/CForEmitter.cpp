@@ -69,7 +69,6 @@ CForEmitter::emitBody(Cond cond, const Maybe<uint32_t>& bodyPos)
         }
     }
 
-    
     if (!bce_->newSrcNote(SRC_FOR, &noteIndex_))
         return false;
     if (!bce_->emit1(JSOP_NOP))

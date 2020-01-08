@@ -4232,10 +4232,6 @@ BytecodeEmitter::emitCallSiteObject(ParseNode* pn)
     return emitObjectPairOp(objbox1, objbox2, JSOP_CALLSITEOBJ);
 }
 
-
-JS_STATIC_ASSERT(JSOP_NOP_LENGTH == 1);
-JS_STATIC_ASSERT(JSOP_POP_LENGTH == 1);
-
 namespace {
 
 class EmitLevelManager
@@ -8608,10 +8604,6 @@ CGYieldAndAwaitOffsetList::finish(YieldAndAwaitOffsetArray& array, uint32_t prol
     for (unsigned i = 0; i < length(); i++)
         array[i] = prologueLength + list[i];
 }
-
-
-
-
 
 const JSSrcNoteSpec js_SrcNoteSpec[] = {
 #define DEFINE_SRC_NOTE_SPEC(sym, name, arity) { name, arity },
