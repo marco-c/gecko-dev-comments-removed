@@ -3,11 +3,11 @@
 
 <head>
     
-    <meta http-equiv="Content-Security-Policy" content="connect-src 'self'; script-src 'self' 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' ws://{{domains[www1]}}:{{ports[http][0]}}/echo; script-src 'self' 'unsafe-inline';">
     <title>connect-src-websocket-blocked</title>
     <script src="/resources/testharness.js"></script>
     <script src="/resources/testharnessreport.js"></script>
-    <script src='../support/logTest.sub.js?logs=["blocked","violated-directive=connect-src"]'></script>
+    <script src='../support/logTest.sub.js?logs=["allowed"]'></script>
     <script src="../support/alertAssert.sub.js?alerts=[]"></script>
 </head>
 

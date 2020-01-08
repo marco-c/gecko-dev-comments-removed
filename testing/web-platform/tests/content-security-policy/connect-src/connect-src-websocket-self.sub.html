@@ -2,12 +2,11 @@
 <html>
 
 <head>
-    
     <meta http-equiv="Content-Security-Policy" content="connect-src 'self'; script-src 'self' 'unsafe-inline';">
-    <title>connect-src-eventsource-blocked</title>
+    <title>connect-src-websocket-blocked</title>
     <script src="/resources/testharness.js"></script>
     <script src="/resources/testharnessreport.js"></script>
-    <script src='../support/logTest.sub.js?logs=["blocked","violated-directive=connect-src"]'></script>
+    <script src='../support/logTest.sub.js?logs=["allowed", "allowed"]'></script>
     <script src="../support/alertAssert.sub.js?alerts=[]"></script>
 </head>
 
@@ -18,13 +17,9 @@
         });
 
         try {
-            var es = new EventSource("http://{{domains[www1]}}:{{ports[http][0]}}/content-security-policy/connect-src/resources/simple-event-stream");
-            // Firefox and Chrome don't throw an exception and takes some time to close async
-            if (es.readyState == EventSource.CONNECTING) {
-                setTimeout( function() {
-                    es.readyState != EventSource.CLOSED ? log("allowed") : log("blocked");
-                }, 1000);
-            } else if (es.readyState == EventSource.CLOSED) {
+            var ws = new WebSocket("ws://{{host}}:{{location[port]}}/echo");
+
+            if (ws.readyState == WebSocket.CLOSING || ws.readyState == WebSocket.CLOSED) {
                 log("blocked");
             } else {
                 log("allowed");
@@ -32,6 +27,19 @@
         } catch (e) {
             log("blocked");
         }
+
+        try {
+            var wss = new WebSocket("wss://{{host}}:{{location[port]}}/echo");
+
+            if (wss.readyState == WebSocket.CLOSING || wss.readyState == WebSocket.CLOSED) {
+                log("blocked");
+            } else {
+                log("allowed");
+            }
+        } catch (e) {
+            log("blocked");
+        }
+
     </script>
     <div id="log"></div>
 </body>
