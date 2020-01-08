@@ -32,7 +32,7 @@ class nsSVGPaintServerFrame;
 class nsSVGFilterFrame;
 class nsSVGMaskFrame;
 namespace mozilla {
-class nsSVGFilterChainObserver;
+class SVGFilterObserverList;
 }
 
 namespace mozilla {
@@ -243,15 +243,15 @@ class SVGFilterObserver final : public SVGIDRenderingObserver
 public:
   SVGFilterObserver(nsIURI* aURI,
                     nsIContent* aObservingContent,
-                    nsSVGFilterChainObserver* aFilterChainObserver)
+                    SVGFilterObserverList* aFilterChainObserver)
     : SVGIDRenderingObserver(aURI, aObservingContent, false)
-    , mFilterChainObserver(aFilterChainObserver)
+    , mFilterObserverList(aFilterChainObserver)
   {
   }
 
   bool ReferencesValidResource() { return GetFilterFrame(); }
 
-  void DetachFromChainObserver() { mFilterChainObserver = nullptr; }
+  void DetachFromChainObserver() { mFilterObserverList = nullptr; }
 
   
 
@@ -272,7 +272,7 @@ protected:
   virtual void OnRenderingChange() override;
 
 private:
-  nsSVGFilterChainObserver* mFilterChainObserver;
+  SVGFilterObserverList* mFilterObserverList;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(SVGFilterObserver, NS_SVGFILTEROBSERVER_IID)
@@ -288,12 +288,12 @@ NS_DEFINE_STATIC_IID_ACCESSOR(SVGFilterObserver, NS_SVGFILTEROBSERVER_IID)
 
 
 
-class nsSVGFilterChainObserver : public nsISupports
+class SVGFilterObserverList : public nsISupports
 {
 public:
-  nsSVGFilterChainObserver(const nsTArray<nsStyleFilter>& aFilters,
-                           nsIContent* aFilteredElement,
-                           nsIFrame* aFiltedFrame = nullptr);
+  SVGFilterObserverList(const nsTArray<nsStyleFilter>& aFilters,
+                        nsIContent* aFilteredElement,
+                        nsIFrame* aFiltedFrame = nullptr);
 
   bool ReferencesValidResources();
   bool IsInObserverLists() const;
@@ -301,10 +301,10 @@ public:
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(nsSVGFilterChainObserver)
+  NS_DECL_CYCLE_COLLECTION_CLASS(SVGFilterObserverList)
 
 protected:
-  virtual ~nsSVGFilterChainObserver();
+  virtual ~SVGFilterObserverList();
 
   virtual void OnRenderingChange() = 0;
 
@@ -320,13 +320,13 @@ private:
   nsTArray<RefPtr<SVGFilterObserver>> mObservers;
 };
 
-class nsSVGFilterProperty : public nsSVGFilterChainObserver
+class nsSVGFilterProperty : public SVGFilterObserverList
 {
 public:
   nsSVGFilterProperty(const nsTArray<nsStyleFilter>& aFilters,
                       nsIFrame* aFilteredFrame)
-    : nsSVGFilterChainObserver(aFilters, aFilteredFrame->GetContent(),
-                               aFilteredFrame)
+    : SVGFilterObserverList(aFilters, aFilteredFrame->GetContent(),
+                            aFilteredFrame)
     , mFrameReference(aFilteredFrame)
   {}
 
