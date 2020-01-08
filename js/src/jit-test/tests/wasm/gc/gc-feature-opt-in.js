@@ -2,6 +2,12 @@
 
 
 
+let CURRENT_VERSION = 2;
+let OLDER_INCOMPATIBLE_VERSION = 1; 
+let FUTURE_VERSION = 3;
+
+
+
 var bad_order =
     new Uint8Array([0x00, 0x61, 0x73, 0x6d,
                     0x01, 0x00, 0x00, 0x00,
@@ -12,33 +18,37 @@ var bad_order =
 
                     0x2a,                   
                     0x01,                   
-                    0x01]);                 
+                    CURRENT_VERSION]);      
 
 assertErrorMessage(() => new WebAssembly.Module(bad_order),
                    WebAssembly.CompileError,
                    /expected custom section/);
 
-
+new WebAssembly.Module(wasmTextToBinary(
+    `(module
+      (gc_feature_opt_in ${CURRENT_VERSION}))`));
 
 new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 1))`));
-
-new WebAssembly.Module(wasmTextToBinary(
-    `(module
-      (gc_feature_opt_in 1))`));
+      (gc_feature_opt_in ${CURRENT_VERSION}))`));
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 3))`)),
+      (gc_feature_opt_in ${OLDER_INCOMPATIBLE_VERSION}))`)),
                    WebAssembly.CompileError,
-                   /unsupported version of the gc feature/);
+                   /GC feature version \d+ is no longer supported by this engine/);
+
+assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+    `(module
+      (gc_feature_opt_in ${FUTURE_VERSION}))`)),
+                   WebAssembly.CompileError,
+                   /GC feature version is unknown/);
 
 
 
 new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 1)
+      (gc_feature_opt_in ${CURRENT_VERSION})
       (type (struct (field i32))))`));
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
@@ -51,7 +61,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 1)
+      (gc_feature_opt_in ${CURRENT_VERSION})
       (type (func (param anyref))))`));
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
@@ -64,7 +74,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 1)
+      (gc_feature_opt_in ${CURRENT_VERSION})
       (type (func (result anyref))))`));
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
@@ -77,7 +87,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 1)
+      (gc_feature_opt_in ${CURRENT_VERSION})
       (func (result i32)
        (local anyref)
        (i32.const 0)))`));
@@ -94,12 +104,12 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 1)
-      (global (mut anyref) (ref.null anyref)))`));
+      (gc_feature_opt_in ${CURRENT_VERSION})
+      (global (mut anyref) (ref.null)))`));
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (global (mut anyref) (ref.null anyref)))`)),
+      (global (mut anyref) (ref.null)))`)),
                    WebAssembly.CompileError,
                    /reference types not enabled/);
 
@@ -111,7 +121,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (func (ref.null anyref)))`)),
+      (func ref.null))`)),
                    WebAssembly.CompileError,
                    /unrecognized opcode/);
 
