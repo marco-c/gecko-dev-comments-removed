@@ -92,6 +92,11 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg);
 
 
 
+void MaybeUpdateGraphicsAtPaint(const PaintMessage& aMsg);
+void MaybeUpdateGraphicsAtCheckpoint(size_t aCheckpointId);
+
+
+
 static const int32_t GraphicsHandshakeMessageId = 42;
 
 

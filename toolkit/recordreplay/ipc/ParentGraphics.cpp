@@ -69,8 +69,6 @@ SendGraphicsMemoryToChild()
   MOZ_RELEASE_ASSERT(kr == KERN_SUCCESS);
 }
 
-static Maybe<PaintMessage> gLastPaint;
-
 
 static JS::PersistentRootedObject* gGraphicsSandbox;
 
@@ -109,18 +107,46 @@ InitGraphicsSandbox()
 
 static void* gBufferMemory;
 
+
+static size_t gLastPaintWidth, gLastPaintHeight;
+
+
+
+
+
+
+
+
+
+
+
+
+
+static UniquePtr<PaintMessage> gLastExplicitPaint;
+
+
+
+static size_t gLastCheckpoint;
+
 void
 UpdateGraphicsInUIProcess(const PaintMessage* aMsg)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (aMsg) {
-    gLastPaint = Some(*aMsg);
-  } else if (!gLastPaint.isSome()) {
+    gLastPaintWidth = aMsg->mWidth;
+    gLastPaintHeight = aMsg->mHeight;
+  }
+
+  if (!gLastPaintWidth || !gLastPaintHeight) {
     return;
   }
 
   bool hadFailure = !aMsg;
+
+  
+  gLastExplicitPaint = nullptr;
+  gLastCheckpoint = CheckpointId::Invalid;
 
   
   if (!gGraphicsSandbox) {
@@ -130,8 +156,8 @@ UpdateGraphicsInUIProcess(const PaintMessage* aMsg)
   AutoSafeJSContext cx;
   JSAutoRealm ar(cx, *gGraphicsSandbox);
 
-  size_t width = gLastPaint.ref().mWidth;
-  size_t height = gLastPaint.ref().mHeight;
+  size_t width = gLastPaintWidth;
+  size_t height = gLastPaintHeight;
   size_t stride = layers::ImageDataSerializer::ComputeRGBStride(gSurfaceFormat, width);
 
   
@@ -173,6 +199,28 @@ UpdateGraphicsInUIProcess(const PaintMessage* aMsg)
   if (!JS_CallFunctionName(cx, *gGraphicsSandbox, "Update", args, &rval)) {
     MOZ_CRASH("UpdateGraphicsInUIProcess");
   }
+}
+
+static void
+MaybeTriggerExplicitPaint()
+{
+  if (gLastExplicitPaint && gLastExplicitPaint->mCheckpointId == gLastCheckpoint) {
+    UpdateGraphicsInUIProcess(gLastExplicitPaint.get());
+  }
+}
+
+void
+MaybeUpdateGraphicsAtPaint(const PaintMessage& aMsg)
+{
+  gLastExplicitPaint.reset(new PaintMessage(aMsg));
+  MaybeTriggerExplicitPaint();
+}
+
+void
+MaybeUpdateGraphicsAtCheckpoint(size_t aCheckpointId)
+{
+  gLastCheckpoint = aCheckpointId;
+  MaybeTriggerExplicitPaint();
 }
 
 bool
