@@ -94,7 +94,7 @@ let AddressDataLoader = {
       return null;
     }
 
-    const properties = ["languages", "sub_keys", "sub_names", "sub_lnames"];
+    const properties = ["languages", "sub_keys", "sub_isoids", "sub_names", "sub_lnames"];
     for (let key of properties) {
       if (!data[key]) {
         continue;
@@ -545,6 +545,40 @@ this.FormAutofillUtils = {
 
 
 
+
+
+  buildRegionMapIfAvailable(subKeys, subIsoids, subNames, subLnames) {
+    
+    if (!subKeys || !subKeys.length ||
+        (!subNames && !subLnames) ||
+        (subNames && subKeys.length != subNames.length ||
+         subLnames && subKeys.length != subLnames.length)) {
+      return null;
+    }
+
+    
+    if (subIsoids && subIsoids.length && subIsoids.length == subKeys.length) {
+      for (let i = 0; i < subIsoids.length; i++) {
+        if (subIsoids[i]) {
+          subKeys[i] = subIsoids[i];
+        }
+      }
+    }
+
+    
+    let names = subNames || subLnames;
+    return new Map(subKeys.map((key, index) => [key, names[index]]));
+  },
+
+  
+
+
+
+
+
+
+
+
   parseRequireString(requireString) {
     if (!requireString) {
       throw new Error("requireString string is missing.");
@@ -866,10 +900,11 @@ this.FormAutofillUtils = {
       addressLevel3Label: dataset.sublocality_name_type || "suburb",
       addressLevel2Label: dataset.locality_name_type || "city",
       addressLevel1Label: dataset.state_name_type || "province",
-      postalCodeLabel: dataset.zip_name_type || "postalCode",
-      fieldsOrder: this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C"),
-      postalCodePattern: dataset.zip,
+      addressLevel1Options: this.buildRegionMapIfAvailable(dataset.sub_keys, dataset.sub_isoids, dataset.sub_names, dataset.sub_lnames),
       countryRequiredFields: this.parseRequireString(dataset.require || "AC"),
+      fieldsOrder: this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C"),
+      postalCodeLabel: dataset.zip_name_type || "postalCode",
+      postalCodePattern: dataset.zip,
     };
   },
 
