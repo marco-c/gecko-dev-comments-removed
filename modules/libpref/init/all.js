@@ -2144,7 +2144,13 @@ pref("network.http.throttle.enable", false);
 #else
 pref("network.http.throttle.enable", true);
 #endif
+
+
+#ifdef NIGHTLY_BUILD
 pref("network.http.throttle.version", 2);
+#else
+pref("network.http.throttle.version", 1);
+#endif
 
 
 pref("network.http.throttle.suspend-for", 900);
