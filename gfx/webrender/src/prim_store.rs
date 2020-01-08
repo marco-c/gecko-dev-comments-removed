@@ -212,11 +212,14 @@ impl<F, T> SpaceMapper<F, T> where F: fmt::Debug {
 
 
 
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeferredResolve {
     pub address: GpuCacheAddress,
     pub image_properties: ImageProperties,
+    pub rendering: ImageRendering,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
