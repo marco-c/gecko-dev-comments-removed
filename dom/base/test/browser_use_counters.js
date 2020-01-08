@@ -143,7 +143,7 @@ var check_use_counter_iframe = async function(file, use_counter_middlefix, check
        histogram_docs_before, histogram_toplevel_docs_before] =
       await grabHistogramsFromContent(use_counter_middlefix);
 
-  gBrowser.selectedBrowser.loadURI(gHttpTestRoot + "file_use_counter_outer.html");
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, gHttpTestRoot + "file_use_counter_outer.html");
   await waitForPageLoad(gBrowser.selectedBrowser);
 
   
@@ -207,7 +207,7 @@ var check_use_counter_img = async function(file, use_counter_middlefix) {
        histogram_docs_before, histogram_toplevel_docs_before] =
       await grabHistogramsFromContent(use_counter_middlefix);
 
-  gBrowser.selectedBrowser.loadURI(gHttpTestRoot + "file_use_counter_outer.html");
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, gHttpTestRoot + "file_use_counter_outer.html");
   await waitForPageLoad(gBrowser.selectedBrowser);
 
   
@@ -273,7 +273,7 @@ var check_use_counter_direct = async function(file, use_counter_middlefix, xfail
        histogram_docs_before, histogram_toplevel_docs_before] =
       await grabHistogramsFromContent(use_counter_middlefix);
 
-  gBrowser.selectedBrowser.loadURI(gHttpTestRoot + file);
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, gHttpTestRoot + file);
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
     await new Promise(resolve => {

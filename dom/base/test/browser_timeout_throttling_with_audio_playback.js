@@ -33,7 +33,7 @@ async function runTest(url) {
 
   
   let promise = BrowserTestUtils.waitForAttribute("soundplaying", newTab, "true");
-  newBrowser.loadURI(url);
+  BrowserTestUtils.loadURI(newBrowser, url);
   await promise;
 
   
