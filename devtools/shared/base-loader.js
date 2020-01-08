@@ -182,7 +182,7 @@ function load(loader, module) {
 
   const originalExports = module.exports;
   try {
-    Services.scriptloader.loadSubScript(module.uri, sandbox, "UTF-8");
+    Services.scriptloader.loadSubScript(module.uri, sandbox);
   } catch (error) {
     
     

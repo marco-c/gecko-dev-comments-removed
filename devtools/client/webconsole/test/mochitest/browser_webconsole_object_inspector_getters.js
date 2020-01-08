@@ -210,9 +210,7 @@ async function testMapGetter(oi) {
   const entriesNode = findObjectInspectorNode(oi, "<entries>");
   expandObjectInspectorNode(entriesNode);
   await waitFor(() => getObjectInspectorChildrenNodes(entriesNode).length > 0);
-  
-  const arrow = String.fromCodePoint(8594);
-  checkChildren(entriesNode, [`foo ${arrow} Object { ${ELLIPSIS} }`]);
+  checkChildren(entriesNode, [`foo → Object { ${ELLIPSIS} }`]);
 
   const entryNode = getObjectInspectorChildrenNodes(entriesNode)[0];
   expandObjectInspectorNode(entryNode);

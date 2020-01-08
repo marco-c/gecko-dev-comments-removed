@@ -1509,7 +1509,7 @@ class SchemaAPIManager extends EventEmitter {
 
     this.initGlobal();
 
-    Services.scriptloader.loadSubScript(module.url, this.global, "UTF-8");
+    Services.scriptloader.loadSubScript(module.url, this.global);
 
     module.loaded = true;
 
@@ -1661,7 +1661,7 @@ class SchemaAPIManager extends EventEmitter {
     
     let scope = Cu.createObjectIn(this.global);
 
-    Services.scriptloader.loadSubScript(scriptUrl, scope, "UTF-8");
+    Services.scriptloader.loadSubScript(scriptUrl, scope);
 
     
     this._scriptScopes.push(scope);

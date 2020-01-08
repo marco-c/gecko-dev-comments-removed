@@ -526,8 +526,7 @@ bool mozJSSubScriptLoader::ReadScript(nsIURI* uri, JSContext* cx,
 
 NS_IMETHODIMP
 mozJSSubScriptLoader::LoadSubScript(const nsAString& url, HandleValue target,
-                                    const nsAString& charset, JSContext* cx,
-                                    MutableHandleValue retval) {
+                                    JSContext* cx, MutableHandleValue retval) {
   
 
 
@@ -538,9 +537,8 @@ mozJSSubScriptLoader::LoadSubScript(const nsAString& url, HandleValue target,
 
 
 
-
   LoadSubScriptOptions options(cx);
-  options.charset = charset;
+  options.charset.AssignLiteral("UTF-8");
   options.target = target.isObject() ? &target.toObject() : nullptr;
   return DoLoadSubScriptWithOptions(url, options, cx, retval);
 }

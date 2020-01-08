@@ -163,7 +163,7 @@ AboutNewTabService.prototype = {
           }
 
           for (let script of scripts) {
-            Services.scriptloader.loadSubScript(script, win, "UTF-8"); 
+            Services.scriptloader.loadSubScript(script, win); 
           }
         };
         subject.addEventListener("DOMContentLoaded", onLoaded, {once: true});
