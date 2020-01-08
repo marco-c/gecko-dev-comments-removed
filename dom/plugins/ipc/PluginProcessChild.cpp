@@ -29,6 +29,8 @@ extern "C" CGError CGSSetDebugOptions(int options);
 #ifdef XP_WIN
 #if defined(MOZ_SANDBOX)
 #include "mozilla/sandboxTarget.h"
+#include "ProcessUtils.h"
+#include "nsDirectoryService.h"
 #endif
 #endif
 
@@ -40,6 +42,21 @@ using mozilla::ipc::IOThreadChild;
 
 namespace mozilla {
 namespace plugins {
+
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+static void
+SetSandboxTempPath(const std::wstring& aFullTmpPath)
+{
+  
+  
+  
+  Unused << NS_WARN_IF(!SetEnvironmentVariableW(L"TMP", aFullTmpPath.c_str()));
+
+  
+  
+  Unused << NS_WARN_IF(!SetEnvironmentVariableW(L"TEMP", aFullTmpPath.c_str()));
+}
+#endif
 
 bool
 PluginProcessChild::Init(int aArgc, char* aArgv[])
@@ -119,6 +136,9 @@ PluginProcessChild::Init(int aArgc, char* aArgv[])
         CommandLine::ForCurrentProcess()->GetLooseValues();
     MOZ_ASSERT(values.size() >= 1, "not enough loose args");
 
+    
+    
+    
     pluginFilename = WideToUTF8(values[0]);
 
     
@@ -130,6 +150,12 @@ PluginProcessChild::Init(int aArgc, char* aArgv[])
     nsThreadManager::get().Init();
 
 #if defined(MOZ_SANDBOX)
+    MOZ_ASSERT(values.size() >= 2, "not enough loose args for sandboxed plugin process");
+
+    
+    
+    SetSandboxTempPath(values[1]);
+
     
     
     
