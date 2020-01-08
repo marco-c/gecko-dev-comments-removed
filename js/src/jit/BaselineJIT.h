@@ -530,7 +530,9 @@ struct BaselineScript final
 
     void adoptFallbackStubs(FallbackICStubSpace* stubSpace);
 
-    void copyYieldAndAwaitEntries(JSScript* script, Vector<uint32_t>& yieldAndAwaitOffsets);
+    
+    
+    void computeYieldAndAwaitNativeOffsets(JSScript* script);
 
     PCMappingIndexEntry& pcMappingIndexEntry(size_t index);
     CompactBufferReader pcMappingReader(size_t indexEntry);

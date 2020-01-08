@@ -318,10 +318,6 @@ class BaselineCompiler final
     CodeOffset debugOsrEpilogueOffset_;
 
     
-    
-    Vector<uint32_t>            yieldAndAwaitOffsets_;
-
-    
     bool modifiesArguments_;
 
     Label* labelOf(jsbytecode* pc) {
@@ -482,8 +478,6 @@ class BaselineCompiler final
     MOZ_MUST_USE bool emitIsMagicValue();
 
     MOZ_MUST_USE bool addPCMappingEntry(bool addIndexEntry);
-
-    MOZ_MUST_USE bool addYieldAndAwaitOffset();
 
     void getEnvironmentCoordinateObject(Register reg);
     Address getEnvironmentCoordinateAddressFromObject(Register objReg, Register reg);
