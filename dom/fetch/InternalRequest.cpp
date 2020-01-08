@@ -31,7 +31,6 @@ InternalRequest::GetRequestConstructorCopy(nsIGlobalObject* aGlobal, ErrorResult
   copy->SetUnsafeRequest();
   copy->mBodyStream = mBodyStream;
   copy->mBodyLength = mBodyLength;
-  copy->mForceOriginHeader = true;
   
   
   
@@ -95,7 +94,6 @@ InternalRequest::InternalRequest(const nsACString& aURL,
   , mRedirectMode(RequestRedirect::Follow)
   , mMozErrors(false)
   , mAuthenticationFlag(false)
-  , mForceOriginHeader(false)
   , mPreserveContentCodings(false)
     
     
@@ -137,7 +135,6 @@ InternalRequest::InternalRequest(const nsACString& aURL,
   , mIntegrity(aIntegrity)
   , mMozErrors(false)
   , mAuthenticationFlag(false)
-  , mForceOriginHeader(false)
   , mPreserveContentCodings(false)
     
   , mSameOriginDataURL(true)
@@ -167,7 +164,6 @@ InternalRequest::InternalRequest(const InternalRequest& aOther)
   , mMozErrors(aOther.mMozErrors)
   , mFragment(aOther.mFragment)
   , mAuthenticationFlag(aOther.mAuthenticationFlag)
-  , mForceOriginHeader(aOther.mForceOriginHeader)
   , mPreserveContentCodings(aOther.mPreserveContentCodings)
   , mSameOriginDataURL(aOther.mSameOriginDataURL)
   , mSkipServiceWorker(aOther.mSkipServiceWorker)
