@@ -2865,6 +2865,11 @@ public:
     
     
     
+    eSupportsContainLayoutAndPaint =    1 << 17,
+
+    
+    
+    
     eDEBUGAllFrames =                   1 << 30,
     eDEBUGNoFrames =                    1 << 31
   };
@@ -2878,11 +2883,13 @@ public:
 
   virtual bool IsFrameOfType(uint32_t aFlags) const
   {
+    return !(aFlags & ~(
 #ifdef DEBUG
-    return !(aFlags & ~(nsIFrame::eDEBUGAllFrames | nsIFrame::eSupportsCSSTransforms));
-#else
-    return !(aFlags & ~nsIFrame::eSupportsCSSTransforms);
+                        nsIFrame::eDEBUGAllFrames |
 #endif
+                        nsIFrame::eSupportsCSSTransforms |
+                        nsIFrame::eSupportsContainLayoutAndPaint
+                        ));
   }
 
   
