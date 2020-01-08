@@ -213,11 +213,15 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   
   mAnimationReadyTime = TimeStamp::Now();
 
-  if (aFlags & EndTransactionFlags::END_NO_COMPOSITE && 
+  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId( true);
+
+  if (aFlags & EndTransactionFlags::END_NO_COMPOSITE &&
       !mWebRenderCommandBuilder.NeedsEmptyTransaction() &&
       mPendingScrollUpdates.empty()) {
     MOZ_ASSERT(!mTarget);
     WrBridge()->SendSetFocusTarget(mFocusTarget);
+    
+    mTransactionIdAllocator->RevokeTransactionId(mLatestTransactionId);
     return true;
   }
 
@@ -226,7 +230,6 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 
   mWebRenderCommandBuilder.EmptyTransaction();
 
-  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId( true);
   TimeStamp refreshStart = mTransactionIdAllocator->GetTransactionStart();
 
   
