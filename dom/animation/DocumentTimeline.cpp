@@ -91,17 +91,22 @@ DocumentTimeline::GetCurrentTimeStamp() const
                      ? refreshTime
                      : mLastRefreshDriverTime;
 
+  nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming();
   
   
-  if (result.IsNull()) {
-    nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming();
-    if (timing) {
-      result = timing->GetNavigationStartTimeStamp();
-      
-      
-      
-      refreshTime = result;
-    }
+  
+  
+  
+  
+  
+  if (timing &&
+      (result.IsNull() ||
+       result < timing->GetNavigationStartTimeStamp())) {
+    result = timing->GetNavigationStartTimeStamp();
+    
+    
+    
+    refreshTime = result;
   }
 
   if (!refreshTime.IsNull()) {
