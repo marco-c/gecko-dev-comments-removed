@@ -21,7 +21,7 @@ add_task(async function() {
         
         
         if (!spec.startsWith("https://tracking.example.com/")) {
-          return;
+          return undefined;
         }
         if (spec.endsWith("empty.js")) {
           browser.test.succeed("Correct resource observed");
