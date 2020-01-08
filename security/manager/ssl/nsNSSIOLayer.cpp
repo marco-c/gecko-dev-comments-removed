@@ -406,18 +406,16 @@ nsNSSSocketInfo::SetEarlyDataAccepted(bool aAccepted)
   mEarlyDataAccepted = aAccepted;
 }
 
-NS_IMETHODIMP
-nsNSSSocketInfo::GetDenyClientCert(bool* aDenyClientCert)
+bool
+nsNSSSocketInfo::GetDenyClientCert()
 {
-  *aDenyClientCert = mDenyClientCert;
-  return NS_OK;
+  return  mDenyClientCert;
 }
 
-NS_IMETHODIMP
+void
 nsNSSSocketInfo::SetDenyClientCert(bool aDenyClientCert)
 {
   mDenyClientCert = aDenyClientCert;
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -2443,8 +2441,7 @@ done:
 static PRFileDesc*
 nsSSLIOLayerImportFD(PRFileDesc* fd,
                      nsNSSSocketInfo* infoObject,
-                     const char* host,
-                     bool haveHTTPSProxy)
+                     const char* host)
 {
   PRFileDesc* sslSock = SSL_ImportFD(nullptr, fd);
   if (!sslSock) {
@@ -2458,8 +2455,7 @@ nsSSLIOLayerImportFD(PRFileDesc* fd,
   
   uint32_t flags = 0;
   infoObject->GetProviderFlags(&flags);
-  
-  if (flags & nsISocketProvider::ANONYMOUS_CONNECT && !haveHTTPSProxy) {
+  if (flags & nsISocketProvider::ANONYMOUS_CONNECT) {
       SSL_GetClientAuthDataHook(sslSock, nullptr, infoObject);
   } else {
       SSL_GetClientAuthDataHook(sslSock,
@@ -2705,15 +2701,10 @@ nsSSLIOLayerAddToSocket(int32_t family,
   }
 
   bool haveProxy = false;
-  bool haveHTTPSProxy = false;
   if (proxy) {
-    nsAutoCString proxyHost;
+    nsCString proxyHost;
     proxy->GetHost(proxyHost);
     haveProxy = !proxyHost.IsEmpty();
-    nsAutoCString type;
-    haveHTTPSProxy = haveProxy &&
-                     NS_SUCCEEDED(proxy->GetType(type)) &&
-                     type.EqualsLiteral("https");
   }
 
   
@@ -2729,7 +2720,7 @@ nsSSLIOLayerAddToSocket(int32_t family,
     }
   }
 
-  PRFileDesc* sslSock = nsSSLIOLayerImportFD(fd, infoObject, host, haveHTTPSProxy);
+  PRFileDesc* sslSock = nsSSLIOLayerImportFD(fd, infoObject, host);
   if (!sslSock) {
     MOZ_ASSERT_UNREACHABLE("NSS: Error importing socket");
     goto loser;

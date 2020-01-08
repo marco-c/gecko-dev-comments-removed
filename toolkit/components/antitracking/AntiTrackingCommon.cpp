@@ -881,7 +881,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   
   
   
-  nsIPrincipal* toplevelPrincipal = loadInfo->TopLevelPrincipal();
+  nsIPrincipal* toplevelPrincipal = loadInfo->GetTopLevelPrincipal();
 
   
   
@@ -1006,13 +1006,13 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
     return true;
   }
 
-  nsIPrincipal* parentPrincipal = loadInfo->TopLevelStorageAreaPrincipal();
+  nsIPrincipal* parentPrincipal = loadInfo->GetTopLevelStorageAreaPrincipal();
   if (!parentPrincipal) {
     LOG(("No top-level storage area principal at hand"));
 
     
     
-    if (loadInfo->TopLevelPrincipal()) {
+    if (loadInfo->GetTopLevelPrincipal()) {
       LOG(("Parent window is the top-level window, bail out early"));
       return false;
     }

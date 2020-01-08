@@ -1266,8 +1266,7 @@ Http2Session::CleanupStream(Http2Stream *aStream, nsresult aResult,
       MOZ_ASSERT(rv);
       nsIRequestContext *requestContext = aStream->RequestContext();
       if (requestContext) {
-        SpdyPushCache *cache = nullptr;
-        requestContext->GetSpdyPushCache(&cache);
+        SpdyPushCache *cache = requestContext->GetSpdyPushCache();
         if (cache) {
           
           
@@ -1881,13 +1880,10 @@ Http2Session::RecvPushPromise(Http2Session *self)
   } else {
     nsIRequestContext *requestContext = associatedStream->RequestContext();
     if (requestContext) {
-      requestContext->GetSpdyPushCache(&cache);
+      cache = requestContext->GetSpdyPushCache();
       if (!cache) {
         cache = new SpdyPushCache();
-        if (!cache || NS_FAILED(requestContext->SetSpdyPushCache(cache))) {
-          delete cache;
-          cache = nullptr;
-        }
+        requestContext->SetSpdyPushCache(cache);
       }
     }
     if (!cache) {
