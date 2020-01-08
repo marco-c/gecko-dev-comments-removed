@@ -22,7 +22,6 @@
 
 
 
-
 async function f() {
   return await import('./dynamic-import-module_FIXTURE.js');
 }

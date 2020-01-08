@@ -76,7 +76,6 @@
 
 
 
-
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(ns[Symbol('test262')], undefined, 'Symbol: test262');

@@ -18,7 +18,6 @@
 
 
 
-
 async function * agen() {
   for await (let imported of [
       import('./for-await-resolution-and-error-a_FIXTURE.js'),

@@ -18,7 +18,6 @@
 
 
 
-
 var global = fnGlobalObject();
 
 var isFirstScript = typeof global.evaluated === 'undefined';

@@ -70,7 +70,6 @@
 
 
 
-
 var sym = Symbol('test262');
 
 const exported = ['local1', 'renamed', 'indirect'];

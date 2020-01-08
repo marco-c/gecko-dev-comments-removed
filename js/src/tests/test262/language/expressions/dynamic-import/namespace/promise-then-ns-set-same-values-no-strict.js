@@ -74,7 +74,6 @@
 
 
 
-
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(Reflect.set(ns, 'local1', 'Test262'), false, 'Reflect.set: local1');

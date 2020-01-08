@@ -19,7 +19,6 @@
 
 
 
-
 function ctor() {
     return import(new.target); 
 }

@@ -76,7 +76,6 @@
 
 
 
-
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert.sameValue(ns.local1, 'Test262');

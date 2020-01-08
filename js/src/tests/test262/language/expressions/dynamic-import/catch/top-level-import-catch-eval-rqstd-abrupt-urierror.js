@@ -29,7 +29,6 @@
 
 
 
-
 import('./eval-rqstd-abrupt-err-uri_FIXTURE.js').catch(error => {
 
   assert.sameValue(error.name, 'URIError');
