@@ -3532,7 +3532,7 @@ HTMLEditor::GetFirstSelectedCellInTable(int32_t* aRowIndex,
   }
 
   
-  CellIndexes cellIndexes(*firstSelectedCellElement, error);
+  CellIndexes cellIndexes(**aCell, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
