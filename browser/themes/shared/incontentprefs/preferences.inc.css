@@ -49,6 +49,14 @@ html|option {
   -moz-user-select: none;
 }
 
+
+
+
+
+button[flex] {
+  min-width: auto;
+}
+
 description,
 label {
   line-height: 1.8em;
