@@ -4,9 +4,12 @@
 
 
 
-async function test() {
-  waitForExplicitFinish();
+"use strict";
 
+
+
+
+add_task(async function() {
   const dbg = await attachRecordingDebugger(
     "doc_rr_basic.html",
     { waitForRecording: true }
@@ -38,5 +41,4 @@ async function test() {
 
   await toolbox.closeToolbox();
   await gBrowser.removeTab(tab);
-  finish();
-}
+});

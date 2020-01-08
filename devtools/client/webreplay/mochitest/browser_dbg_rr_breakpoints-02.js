@@ -4,10 +4,14 @@
 
 
 
-async function test() {
-  waitForExplicitFinish();
+"use strict";
 
-  const dbg = await attachRecordingDebugger("doc_rr_basic.html", { waitForRecording: true });
+
+
+
+add_task(async function() {
+  const dbg = await attachRecordingDebugger("doc_rr_basic.html",
+                                            { waitForRecording: true });
   const {threadClient, tab, toolbox} = dbg;
 
   await setBreakpoint(threadClient, "doc_rr_basic.html", 21);
@@ -21,5 +25,4 @@ async function test() {
 
   await toolbox.destroy();
   await gBrowser.removeTab(tab);
-  finish();
-}
+});

@@ -4,10 +4,13 @@
 
 
 
-async function test() {
-  waitForExplicitFinish();
+"use strict";
 
-  var recordingTab = BrowserTestUtils.addTab(gBrowser, null, { recordExecution: "*" });
+
+
+
+add_task(async function() {
+  const recordingTab = BrowserTestUtils.addTab(gBrowser, null, { recordExecution: "*" });
   gBrowser.selectedTab = recordingTab;
   openTrustedLinkIn(EXAMPLE_URL + "doc_rr_basic.html", "current");
   await once(Services.ppmm, "RecordingFinished");
@@ -15,5 +18,4 @@ async function test() {
   await gBrowser.removeTab(recordingTab);
 
   ok(true, "Finished");
-  finish();
-}
+});

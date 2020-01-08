@@ -4,11 +4,16 @@
 
 
 
-async function test() {
+"use strict";
+
+
+
+
+add_task(async function() {
   waitForExplicitFinish();
 
-  let recordingFile = newRecordingFile();
-  let recordingTab = BrowserTestUtils.addTab(gBrowser, null, { recordExecution: "*" });
+  const recordingFile = newRecordingFile();
+  const recordingTab = BrowserTestUtils.addTab(gBrowser, null, { recordExecution: "*" });
   gBrowser.selectedTab = recordingTab;
   openTrustedLinkIn(EXAMPLE_URL + "doc_rr_continuous.html", "current");
 
@@ -18,9 +23,9 @@ async function test() {
   await resumeToLine(client, 14);
   await resumeToLine(client, 14);
   await reverseStepOverToLine(client, 13);
-  let lastNumberValue = await evaluateInTopFrame(client, "number");
+  const lastNumberValue = await evaluateInTopFrame(client, "number");
 
-  let tabParent = recordingTab.linkedBrowser.frameLoader.tabParent;
+  const tabParent = recordingTab.linkedBrowser.frameLoader.tabParent;
   ok(tabParent, "Found recording tab parent");
   ok(tabParent.saveRecording(recordingFile), "Saved recording");
   await once(Services.ppmm, "SaveRecordingFinished");
@@ -28,7 +33,8 @@ async function test() {
   await toolbox.destroy();
   await gBrowser.removeTab(recordingTab);
 
-  let replayingTab = BrowserTestUtils.addTab(gBrowser, null, { replayExecution: recordingFile });
+  const replayingTab = BrowserTestUtils.addTab(gBrowser, null,
+                                               { replayExecution: recordingFile });
   gBrowser.selectedTab = replayingTab;
   await once(Services.ppmm, "HitRecordingEndpoint");
 
@@ -45,5 +51,4 @@ async function test() {
 
   await toolbox.destroy();
   await gBrowser.removeTab(replayingTab);
-  finish();
-}
+});
