@@ -33,6 +33,12 @@ window.Audit = (function() {
 
   'use strict';
 
+  
+  
+  function _logError(message) {
+    console.error('[audit.js] ' + message);
+  }
+
   function _logPassed(message) {
     test(function(arg) {
       assert_true(true);
@@ -70,13 +76,9 @@ window.Audit = (function() {
               String(target.slice(0, options.numberOfArrayElements)) + '...';
           targetString = '[' + arrayElements + ']';
         } else if (target === null) {
-          
           targetString = String(target);
         } else {
-          
-          
-          
-          targetString = '' + String(targetString).split(/[\s\]]/)[1];
+          targetString = '' + String(target).split(/[\s\]]/)[1];
         }
         break;
       default:
@@ -1299,6 +1301,56 @@ window.Audit = (function() {
 
 
 
+
+  function loadFileFromUrl(fileUrl) {
+    return new Promise((resolve, reject) => {
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', fileUrl, true);
+      xhr.responseType = 'arraybuffer';
+
+      xhr.onload = () => {
+        
+        
+        
+        if (xhr.status === 200 || xhr.status === 0) {
+          resolve(xhr.response);
+        } else {
+          let errorMessage = 'loadFile: Request failed when loading ' +
+              fileUrl + '. ' + xhr.statusText + '. (status = ' + xhr.status +
+              ')';
+          if (reject) {
+            reject(errorMessage);
+          } else {
+            new Error(errorMessage);
+          }
+        }
+      };
+
+      xhr.onerror = (event) => {
+        let errorMessage =
+            'loadFile: Network failure when loading ' + fileUrl + '.';
+        if (reject) {
+          reject(errorMessage);
+        } else {
+          new Error(errorMessage);
+        }
+      };
+
+      xhr.send();
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
   return {
 
     
@@ -1313,11 +1365,17 @@ window.Audit = (function() {
       if (options && options.requireResultFile == true) {
         _logError(
             'this test requires the explicit comparison with the ' +
-            'expected result when it runs with run-webkit-tests.');
+            'expected result when it runs with run_web_tests.py.');
       }
 
       return new TaskRunner();
     },
+
+    
+
+
+
+    loadFileFromUrl: loadFileFromUrl
 
   };
 
