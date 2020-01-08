@@ -7926,8 +7926,13 @@ Realm* js::NewRealm(JSContext* cx, JSPrincipals* principals,
     zone = zoneHolder.get();
   }
 
-  if (!comp) {
-    compHolder = cx->make_unique<JS::Compartment>(zone);
+  bool invisibleToDebugger = options.creationOptions().invisibleToDebugger();
+  if (comp) {
+    
+    
+    MOZ_ASSERT(comp->invisibleToDebugger() == invisibleToDebugger);
+  } else {
+    compHolder = cx->make_unique<JS::Compartment>(zone, invisibleToDebugger);
     if (!compHolder) {
       return nullptr;
     }
