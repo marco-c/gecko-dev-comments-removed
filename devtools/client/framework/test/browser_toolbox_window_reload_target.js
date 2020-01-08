@@ -3,96 +3,99 @@
 
 
 
+
+
+
+
+
+
+
 requestLongerTimeout(10);
 
 const TEST_URL = "data:text/html;charset=utf-8," +
                  "<html><head><title>Test reload</title></head>" +
                  "<body><h1>Testing reload from devtools</h1></body></html>";
 
-var {Toolbox} = require("devtools/client/framework/toolbox");
-
-const {LocalizationHelper} = require("devtools/shared/l10n");
+const { Toolbox } = require("devtools/client/framework/toolbox");
+const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
 
-var target, toolbox, description, reloadsSent, toolIDs;
 
-function test() {
-  addTab(TEST_URL).then(async () => {
-    target = await TargetFactory.forTab(gBrowser.selectedTab);
+var reloadsSent = 0;
 
-    toolIDs = gDevTools.getToolDefinitionArray()
-                .filter(def => def.isTargetSupported(target))
-                .map(def => def.id);
-    gDevTools.showToolbox(target, toolIDs[0], Toolbox.HostType.BOTTOM)
-             .then(startReloadTest);
-  });
-}
+add_task(async function() {
+  await addTab(TEST_URL);
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  
+  loadFrameScriptUtils();
 
-function startReloadTest(aToolbox) {
-  loadFrameScriptUtils(); 
-  toolbox = aToolbox;
+  info("Getting the entire list of tools supported in this tab");
+  const toolIDs = gDevTools.getToolDefinitionArray()
+                           .filter(def => def.isTargetSupported(target))
+                           .map(def => def.id);
 
-  reloadsSent = 0;
-  let reloads = 0;
-  const reloadCounter = (msg) => {
-    reloads++;
-    info("Detected reload #" + reloads);
-    is(reloads, reloadsSent, "Reloaded from devtools window once and only for " + description + "");
+  info("Display the toolbox, docked at the bottom, with the first tool selected");
+  const toolbox = await gDevTools.showToolbox(target, toolIDs[0],
+    Toolbox.HostType.BOTTOM);
+
+  info("Listen to page reloads to check that they are indeed sent by the toolbox");
+  let reloadDetected = 0;
+  const reloadCounter = msg => {
+    reloadDetected++;
+    info("Detected reload #" + reloadDetected);
+    is(reloadDetected, reloadsSent, "Detected the right number of reloads in the page");
   };
   gBrowser.selectedBrowser.messageManager.addMessageListener("devtools:test:load", reloadCounter);
 
-  testAllTheTools("docked", () => {
-    const origHostType = toolbox.hostType;
-    toolbox.switchHost(Toolbox.HostType.WINDOW).then(() => {
-      toolbox.win.focus();
-      testAllTheTools("undocked", () => {
-        toolbox.switchHost(origHostType).then(() => {
-          gBrowser.selectedBrowser.messageManager.removeMessageListener("devtools:test:load", reloadCounter);
-          
-          toolbox.getPanel("inspector").once("new-root", finishUp);
-        });
-      });
-    });
-  }, toolIDs.length - 1 );
-}
+  info("Start testing with the toolbox docked");
+  
+  await testOneTool(toolbox, toolIDs[toolIDs.length - 1]);
 
-function testAllTheTools(docked, callback, toolNum = 0) {
-  if (toolNum >= toolIDs.length) {
-    return callback();
-  }
-  toolbox.selectTool(toolIDs[toolNum]).then(() => {
-    testReload("toolbox.reload.key", docked, toolIDs[toolNum], () => {
-      testReload("toolbox.reload2.key", docked, toolIDs[toolNum], () => {
-        testReload("toolbox.forceReload.key", docked, toolIDs[toolNum], () => {
-          testReload("toolbox.forceReload2.key", docked, toolIDs[toolNum], () => {
-            testAllTheTools(docked, callback, toolNum + 1);
-          });
-        });
-      });
-    });
-  });
-}
-
-function testReload(shortcut, docked, toolID, callback) {
-  const complete = () => {
-    gBrowser.selectedBrowser.messageManager.removeMessageListener("devtools:test:load", complete);
-    return callback();
-  };
-  gBrowser.selectedBrowser.messageManager.addMessageListener("devtools:test:load", complete);
-
-  description = docked + " devtools with tool " + toolID + ", shortcut #" + shortcut;
-  info("Testing reload in " + description);
+  info("Switch to undocked mode");
+  await toolbox.switchHost(Toolbox.HostType.WINDOW);
   toolbox.win.focus();
-  synthesizeKeyShortcut(L10N.getStr(shortcut), toolbox.win);
-  reloadsSent++;
+
+  info("Now test with the toolbox undocked");
+  for (const toolID of toolIDs) {
+    await testOneTool(toolbox, toolID);
+  }
+
+  info("Switch back to docked mode");
+  await toolbox.switchHost(Toolbox.HostType.BOTTOM);
+
+  gBrowser.selectedBrowser.messageManager.removeMessageListener("devtools:test:load", reloadCounter);
+
+  
+  await toolbox.getPanel("inspector").once("new-root");
+
+  await toolbox.destroy();
+  gBrowser.removeCurrentTab();
+});
+
+async function testOneTool(toolbox, toolID) {
+  info(`Select tool ${toolID}`);
+  await toolbox.selectTool(toolID);
+
+  await testReload("toolbox.reload.key", toolbox, toolID);
+  await testReload("toolbox.reload2.key", toolbox, toolID);
+  await testReload("toolbox.forceReload.key", toolbox, toolID);
+  await testReload("toolbox.forceReload2.key", toolbox, toolID);
 }
 
-function finishUp() {
-  toolbox.destroy().then(() => {
-    gBrowser.removeCurrentTab();
+function testReload(shortcut, toolbox, toolID) {
+  info(`Reload with ${shortcut}`);
 
-    target = toolbox = description = reloadsSent = toolIDs = null;
+  const mm = gBrowser.selectedBrowser.messageManager;
 
-    finish();
+  return new Promise(resolve => {
+    const complete = () => {
+      mm.removeMessageListener("devtools:test:load", complete);
+      resolve();
+    };
+    mm.addMessageListener("devtools:test:load", complete);
+
+    toolbox.win.focus();
+    synthesizeKeyShortcut(L10N.getStr(shortcut), toolbox.win);
+    reloadsSent++;
   });
 }
