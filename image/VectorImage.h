@@ -93,11 +93,7 @@ private:
                           uint32_t aFlags) override;
 
   
-
-
-
-
-  Tuple<RefPtr<SourceSurface>, IntSize>
+  already_AddRefed<SourceSurface>
     LookupCachedSurface(const IntSize& aSize,
                         const Maybe<SVGImageContext>& aSVGContext,
                         uint32_t aFlags);
@@ -109,9 +105,6 @@ private:
   
   already_AddRefed<gfxDrawable>
     CreateSVGDrawable(const SVGDrawingParameters& aParams);
-
-  
-  bool UseSurfaceCacheForSize(const IntSize& aSize) const;
 
   
   
