@@ -2960,13 +2960,6 @@ public:
   
 
 
-  static bool IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
-                                          nsIChannel* aChannel,
-                                          nsIURI* aURI);
-
-  
-
-
   static bool SerializeNodeToMarkup(nsINode* aRoot,
                                     bool aDescendentsOnly,
                                     nsAString& aOut);

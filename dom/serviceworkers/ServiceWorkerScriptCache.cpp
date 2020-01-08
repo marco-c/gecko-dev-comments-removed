@@ -77,6 +77,7 @@ CreateCacheStorage(JSContext* aCx, nsIPrincipal* aPrincipal, ErrorResult& aRv,
   
   return CacheStorage::CreateOnMainThread(cache::CHROME_ONLY_NAMESPACE,
                                           sandboxGlobalObject, aPrincipal,
+                                          false ,
                                           true ,
                                           aRv);
 }

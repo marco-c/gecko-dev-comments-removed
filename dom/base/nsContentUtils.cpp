@@ -515,6 +515,41 @@ EventListenerManagerHashClearEntry(PLDHashTable *table, PLDHashEntryHdr *entry)
   lm->~EventListenerManagerMapEntry();
 }
 
+static bool
+IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
+                            nsIChannel* aChannel,
+                            nsIURI* aURI)
+{
+  MOZ_ASSERT(!aWindow || !aChannel,
+             "A window and channel should not both be provided.");
+
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+  if (!thirdPartyUtil) {
+    return false;
+  }
+
+  
+  bool thirdParty = false;
+
+  if (aWindow) {
+    Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
+                                                 aURI,
+                                                 &thirdParty);
+  }
+
+  if (aChannel) {
+    
+    
+    
+    
+    Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
+                                                  nullptr,
+                                                  &thirdParty);
+  }
+
+  return thirdParty;
+}
+
 class SameOriginCheckerImpl final : public nsIChannelEventSink,
                                     public nsIInterfaceRequestor
 {
@@ -8804,42 +8839,6 @@ nsContentUtils::GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
 
 
 bool
-nsContentUtils::IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
-                                            nsIChannel* aChannel,
-                                            nsIURI* aURI)
-{
-  MOZ_ASSERT(!aWindow || !aChannel,
-             "A window and channel should not both be provided.");
-
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
-  if (!thirdPartyUtil) {
-    return false;
-  }
-
-  
-  bool thirdParty = false;
-
-  if (aWindow) {
-    Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
-                                                 aURI,
-                                                 &thirdParty);
-  }
-
-  if (aChannel) {
-    
-    
-    
-    
-    Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
-                                                  nullptr,
-                                                  &thirdParty);
-  }
-
-  return thirdParty;
-}
-
-
-bool
 nsContentUtils::StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
                                               nsIChannel* aChannel,
                                               nsIURI* aURI)
@@ -8853,54 +8852,19 @@ nsContentUtils::StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
     return false;
   }
 
+  nsCOMPtr<nsIChannel> channel;
+
+  
+  channel = aChannel;
   if (aWindow) {
-    nsCOMPtr<nsIHttpChannel> httpChannel;
     nsIDocument* document = aWindow->GetExtantDoc();
     if (document) {
-      httpChannel = do_QueryInterface(document->GetChannel());
+      channel = document->GetChannel();
     }
-
-    
-    if (!httpChannel || !httpChannel->GetIsTrackingResource()) {
-      return false;
-    }
-
-    
-    nsIURI* documentURI = aURI ? aURI : aWindow->GetDocumentURI();
-    if (documentURI &&
-        nsGlobalWindowInner::Cast(aWindow)->IsFirstPartyStorageAccessGrantedFor(documentURI)) {
-      return false;
-    }
-
-    return true;
   }
 
-  
-  MOZ_ASSERT(aChannel);
-
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-  if (!httpChannel) {
-    return false;
-  }
-
-  
-  if (!httpChannel->GetIsTrackingResource()) {
-    return false;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = httpChannel->GetURI(getter_AddRefs(uri));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  return !loadInfo->IsFirstPartyStorageAccessGrantedFor(uri);
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
+  return httpChannel && httpChannel->GetIsTrackingResource();
 }
 
 

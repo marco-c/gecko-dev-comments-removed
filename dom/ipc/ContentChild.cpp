@@ -2664,20 +2664,6 @@ ContentChild::RecvAddPermission(const IPC::Permission& permission)
 }
 
 mozilla::ipc::IPCResult
-ContentChild::RecvRemoveAllPermissions()
-{
-  nsCOMPtr<nsIPermissionManager> permissionManagerIface =
-    services::GetPermissionManager();
-  nsPermissionManager* permissionManager =
-    static_cast<nsPermissionManager*>(permissionManagerIface.get());
-  MOZ_ASSERT(permissionManager,
-         "We have no permissionManager in the Content process !");
-
-  permissionManager->RemoveAllFromIPC();
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 ContentChild::RecvFlushMemory(const nsString& reason)
 {
   nsCOMPtr<nsIObserverService> os =
@@ -3277,25 +3263,6 @@ NextWindowID()
   uint64_t windowBits = windowID & ((uint64_t(1) << kWindowIDWindowBits) - 1);
 
   return (processBits << kWindowIDWindowBits) | windowBits;
-}
-
-
-
-void
-SendFirstPartyStorageAccessGrantedForOriginToParentProcess(nsIPrincipal* aPrincipal,
-                                                           const nsACString& aParentOrigin,
-                                                           const nsACString& aGrantedOrigin)
-{
-  MOZ_ASSERT(!XRE_IsParentProcess());
-
-  ContentChild* cc = ContentChild::GetSingleton();
-  MOZ_ASSERT(cc);
-
-  
-  
-  Unused << cc->SendFirstPartyStorageAccessGrantedForOrigin(IPC::Principal(aPrincipal),
-                                                            aParentOrigin,
-                                                            aGrantedOrigin);
 }
 
 mozilla::ipc::IPCResult

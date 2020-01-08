@@ -53,9 +53,6 @@ SuspendWorkersForWindow(nsPIDOMWindowInner* aWindow);
 void
 ResumeWorkersForWindow(nsPIDOMWindowInner* aWindow);
 
-void
-PropagateFirstPartyStorageAccessGrantedToWorkers(nsPIDOMWindowInner* aWindow);
-
 
 
 bool
