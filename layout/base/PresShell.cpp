@@ -747,7 +747,8 @@ PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell)
 }
 
 nsIPresShell::nsIPresShell()
-    : mViewManager(nullptr)
+    : mFrameConstructor(nullptr)
+    , mViewManager(nullptr)
     , mFrameManager(nullptr)
 #ifdef ACCESSIBILITY
     , mDocAccessible(nullptr)
@@ -832,7 +833,7 @@ PresShell::PresShell()
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
 
 #ifdef MOZ_REFLOW_PERF
-  mReflowCountMgr = MakeUnique<ReflowCountMgr>();
+  mReflowCountMgr = new ReflowCountMgr();
   mReflowCountMgr->SetPresContext(mPresContext);
   mReflowCountMgr->SetPresShell(this);
 #endif
@@ -891,8 +892,7 @@ PresShell::~PresShell()
   MOZ_ASSERT(mAllocatedPointers.IsEmpty(), "Some pres arena objects were not freed");
 
   mStyleSet = nullptr;
-  mFrameManager = nullptr;
-  mFrameConstructor = nullptr;
+  delete mFrameConstructor;
 
   mCurrentEventContent = nullptr;
 }
@@ -929,9 +929,9 @@ PresShell::Init(nsIDocument* aDocument,
   SetNeedStyleFlush();
 
   
-  mFrameConstructor = MakeUnique<nsCSSFrameConstructor>(mDocument, this);
+  mFrameConstructor = new nsCSSFrameConstructor(mDocument, this);
 
-  mFrameManager = mFrameConstructor.get();
+  mFrameManager = mFrameConstructor;
 
   
   mViewManager->SetPresShell(this);
@@ -1182,7 +1182,10 @@ PresShell::Destroy()
 
 #ifdef MOZ_REFLOW_PERF
   DumpReflows();
-  mReflowCountMgr = nullptr;
+  if (mReflowCountMgr) {
+    delete mReflowCountMgr;
+    mReflowCountMgr = nullptr;
+  }
 #endif
 
   if (mZoomConstraintsClient) {
@@ -6400,6 +6403,14 @@ PresShell::Paint(nsView*         aViewToPaint,
     
     nsLayoutUtils::PaintFrame(nullptr, frame, aDirtyRegion, bgcolor,
                               nsDisplayListBuilderMode::PAINTING, flags);
+
+    
+    
+    if (recordreplay::IsRecordingOrReplaying()) {
+      nojs.reset();
+      recordreplay::child::CreateCheckpoint();
+    }
+
     return;
   }
 
@@ -6962,8 +6973,10 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     if (aEvent->mMessage == eKeyDown) {
       mNoDelayedKeyEvents = true;
     } else if (!mNoDelayedKeyEvents) {
-      auto event = MakeUnique<DelayedKeyEvent>(aEvent->AsKeyboardEvent());
-      mDelayedEvents.AppendElement(std::move(event));
+      DelayedEvent* event = new DelayedKeyEvent(aEvent->AsKeyboardEvent());
+      if (!mDelayedEvents.AppendElement(event)) {
+        delete event;
+      }
     }
     aEvent->mFlags.mIsSuppressedOrDelayed = true;
     return NS_OK;
@@ -7182,8 +7195,10 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         
         
         aEvent->mMessage == eContextMenu)) {
-        auto event = MakeUnique<DelayedMouseEvent>(aEvent->AsMouseEvent());
-        mDelayedEvents.AppendElement(std::move(event));
+        DelayedEvent* event = new DelayedMouseEvent(aEvent->AsMouseEvent());
+        if (!mDelayedEvents.AppendElement(event)) {
+          delete event;
+        }
       }
       return NS_OK;
     }
@@ -8720,7 +8735,7 @@ PresShell::FireOrClearDelayedEvents(bool aFireEvents)
     nsCOMPtr<nsIDocument> doc = mDocument;
     while (!mIsDestroying && mDelayedEvents.Length() &&
            !doc->EventHandlingSuppressed()) {
-      UniquePtr<DelayedEvent> ev = std::move(mDelayedEvents[0]);
+      nsAutoPtr<DelayedEvent> ev(mDelayedEvents[0].forget());
       mDelayedEvents.RemoveElementAt(0);
       if (ev->IsKeyPressEvent() && mIsLastKeyDownCanceled) {
         continue;
