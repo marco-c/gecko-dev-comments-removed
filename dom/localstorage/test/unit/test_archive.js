@@ -3,23 +3,21 @@
 
 
 
-async function testSteps()
-{
+async function testSteps() {
   const lsArchiveFile = "storage/ls-archive.sqlite";
 
   const principalInfo = {
     url: "http://example.com",
-    attrs: {}
+    attrs: {},
   };
 
-  function checkStorage()
-  {
+  function checkStorage() {
     let principal = getPrincipal(principalInfo.url, principalInfo.attrs);
     let storage = getLocalStorage(principal);
     try {
       storage.open();
       ok(true, "Did not throw");
-    } catch(ex) {
+    } catch (ex) {
       ok(false, "Should not have thrown");
     }
   }
