@@ -15,6 +15,7 @@
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ScrollStyles.h"
 
@@ -2064,10 +2065,9 @@ private:
 
 
 
-
   template<SiblingDirection>
   nsIFrame* FindSibling(const mozilla::dom::FlattenedChildIterator& aIter,
-                        mozilla::StyleDisplay& aTargetContentDisplay);
+                        mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
 
   
   
@@ -2076,14 +2076,14 @@ private:
   nsIFrame* FindSiblingInternal(
     mozilla::dom::FlattenedChildIterator&,
     nsIContent* aTargetContent,
-    mozilla::StyleDisplay& aTargetContentDisplay);
+    mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
 
   
   nsIFrame* FindNextSibling(const mozilla::dom::FlattenedChildIterator& aIter,
-                            mozilla::StyleDisplay& aTargetContentDisplay);
+                            mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
   
   nsIFrame* FindPreviousSibling(const mozilla::dom::FlattenedChildIterator& aIter,
-                                mozilla::StyleDisplay& aTargetContentDisplay);
+                                mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
 
   
   
@@ -2091,7 +2091,7 @@ private:
   
   nsIFrame* AdjustSiblingFrame(nsIFrame* aSibling,
                                nsIContent* aTargetContent,
-                               mozilla::StyleDisplay& aTargetContentDisplay,
+                               mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay,
                                SiblingDirection aDirection);
 
   
@@ -2120,7 +2120,7 @@ private:
   
   bool IsValidSibling(nsIFrame*              aSibling,
                       nsIContent*            aContent,
-                      mozilla::StyleDisplay& aDisplay);
+                      mozilla::Maybe<mozilla::StyleDisplay>& aDisplay);
 
   void QuotesDirty();
   void CountersDirty();
