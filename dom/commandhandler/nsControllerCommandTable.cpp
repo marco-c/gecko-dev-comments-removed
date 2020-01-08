@@ -215,6 +215,22 @@ nsControllerCommandTable::CreateEditorCommandTable()
 
 
 already_AddRefed<nsIControllerCommandTable>
+nsControllerCommandTable::CreateEditingCommandTable()
+{
+  nsCOMPtr<nsIControllerCommandTable> commandTable =
+      new nsControllerCommandTable();
+
+  nsresult rv = EditorController::RegisterEditingCommands(commandTable);
+  if (NS_FAILED(rv)) return nullptr;
+
+  
+  
+
+  return commandTable.forget();
+}
+
+
+already_AddRefed<nsIControllerCommandTable>
 nsControllerCommandTable::CreateHTMLEditorCommandTable()
 {
   nsCOMPtr<nsIControllerCommandTable> commandTable =
