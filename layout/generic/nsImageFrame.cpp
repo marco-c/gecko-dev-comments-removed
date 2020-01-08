@@ -151,6 +151,29 @@ NS_NewImageFrameForGeneratedContentIndex(nsIPresShell* aPresShell,
     aStyle, nsImageFrame::Kind::ContentPropertyAtIndex);
 }
 
+bool
+nsImageFrame::ShouldShowBrokenImageIcon() const
+{
+  
+  
+  
+  if (mKind != Kind::ImageElement) {
+    return false;
+  }
+
+  
+  
+  if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
+    uint32_t imageStatus;
+    return NS_SUCCEEDED(currentRequest->GetImageStatus(&imageStatus)) &&
+           (imageStatus & imgIRequest::STATUS_ERROR);
+  }
+
+  nsCOMPtr<nsIImageLoadingContent> loader = do_QueryInterface(mContent);
+  MOZ_ASSERT(loader);
+  return loader->GetImageBlockingStatus() != nsIContentPolicy::ACCEPT;
+}
+
 nsImageFrame*
 nsImageFrame::CreateContinuingFrame(nsIPresShell* aPresShell,
                                     ComputedStyle* aStyle) const
@@ -937,36 +960,7 @@ nsImageFrame::EnsureIntrinsicSizeAndRatio()
   }
 
   
-  
-  
-  const bool mayDisplayBrokenIcon = mKind == Kind::ImageElement;
-  if (!mayDisplayBrokenIcon) {
-    return;
-  }
-  
-  
-  bool imageInvalid = false;
-
-  
-  
-  if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
-    uint32_t imageStatus;
-    imageInvalid =
-      NS_SUCCEEDED(currentRequest->GetImageStatus(&imageStatus)) &&
-      (imageStatus & imgIRequest::STATUS_ERROR);
-  } else {
-    MOZ_ASSERT(mKind == Kind::ImageElement);
-
-    nsCOMPtr<nsIImageLoadingContent> loader = do_QueryInterface(mContent);
-    MOZ_ASSERT(loader);
-    
-    int16_t imageBlockingStatus;
-    loader->GetImageBlockingStatus(&imageBlockingStatus);
-    imageInvalid = imageBlockingStatus != nsIContentPolicy::ACCEPT;
-  }
-
-  
-  if (imageInvalid) {
+  if (ShouldShowBrokenImageIcon()) {
     nscoord edgeLengthToUse =
       nsPresContext::CSSPixelsToAppUnits(
         ICON_SIZE + (2 * (ICON_PADDING + ALT_BORDER_WIDTH)));
@@ -1494,7 +1488,8 @@ nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
   ImgDrawResult result = ImgDrawResult::NOT_READY;
 
   
-  if (!gIconLoad->mPrefShowPlaceholders ||
+  if (!ShouldShowBrokenImageIcon() ||
+      !gIconLoad->mPrefShowPlaceholders ||
       (isLoading && !gIconLoad->mPrefShowLoadingPlaceholder)) {
     result = ImgDrawResult::SUCCESS;
   } else {
