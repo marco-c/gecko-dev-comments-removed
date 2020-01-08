@@ -112,7 +112,18 @@ def delete(path):
 
 
 def install_libgcc(gcc_dir, clang_dir):
-    out = subprocess.check_output([os.path.join(gcc_dir, "bin", "gcc"),
+    gcc_bin_dir = os.path.join(gcc_dir, 'bin')
+
+    
+    
+    
+    
+    
+    x64_bin_dir = os.path.join(clang_dir, 'x86_64-unknown-linux-gnu', 'bin')
+    mkdir_p(x64_bin_dir)
+    shutil.copy2(os.path.join(gcc_bin_dir, 'ld'), x64_bin_dir)
+
+    out = subprocess.check_output([os.path.join(gcc_bin_dir, "gcc"),
                                    '-print-libgcc-file-name'])
 
     libgcc_dir = os.path.dirname(out.rstrip())
