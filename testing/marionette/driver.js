@@ -58,7 +58,6 @@ const {MarionettePrefs} = ChromeUtils.import("chrome://marionette/content/prefs.
 ChromeUtils.import("chrome://marionette/content/proxy.js");
 ChromeUtils.import("chrome://marionette/content/reftest.js");
 const {
-  IdlePromise,
   PollPromise,
   TimedPromise,
 } = ChromeUtils.import("chrome://marionette/content/sync.js", {});
@@ -1446,11 +1445,10 @@ GeckoDriver.prototype.setWindowRect = async function(cmd) {
 
   
   async function resizeWindow(width, height) {
-    await new Promise(resolve => {
-      win.addEventListener("resize", resolve, {once: true});
+    return new Promise(resolve => {
+      win.addEventListener("resize", whenIdle(win, resolve), {once: true});
       win.resizeTo(width, height);
     });
-    await new IdlePromise(win);
   }
 
   
@@ -3144,11 +3142,10 @@ GeckoDriver.prototype.dismissDialog = async function() {
   this._checkIfAlertIsPresent();
 
   await new Promise(resolve => {
-    win.addEventListener("DOMModalDialogClosed", async () => {
-      await new IdlePromise(win);
+    win.addEventListener("DOMModalDialogClosed", whenIdle(win, () => {
       this.dialog = null;
       resolve();
-    }, {once: true});
+    }), {once: true});
 
     let {button0, button1} = this.dialog.ui;
     (button1 ? button1 : button0).click();
@@ -3164,11 +3161,10 @@ GeckoDriver.prototype.acceptDialog = async function() {
   this._checkIfAlertIsPresent();
 
   await new Promise(resolve => {
-    win.addEventListener("DOMModalDialogClosed", async () => {
-      await new IdlePromise(win);
+    win.addEventListener("DOMModalDialogClosed", whenIdle(win, () => {
       this.dialog = null;
       resolve();
-    }, {once: true});
+    }), {once: true});
 
     let {button0} = this.dialog.ui;
     button0.click();
@@ -3658,11 +3654,10 @@ function getOuterWindowId(win) {
 
 
 async function exitFullscreen(window) {
-  await new Promise(resolve => {
-    window.addEventListener("sizemodechange", () => resolve(), {once: true});
+  return new Promise(resolve => {
+    window.addEventListener("sizemodechange", whenIdle(window, resolve), {once: true});
     window.fullScreen = false;
   });
-  await new IdlePromise(window);
 }
 
 
@@ -3677,5 +3672,25 @@ async function restoreWindow(chromeWindow, contentWindow) {
   return new Promise(resolve => {
     contentWindow.addEventListener("visibilitychange", resolve, {once: true});
     chromeWindow.restore();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function whenIdle(window, callback) {
+  return () => Services.tm.idleDispatchToMainThread(() => {
+    window.requestAnimationFrame(callback);
   });
 }

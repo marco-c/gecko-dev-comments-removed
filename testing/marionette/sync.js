@@ -16,7 +16,6 @@ const {Log} = ChromeUtils.import("chrome://marionette/content/log.js", {});
 XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 
 this.EXPORTED_SYMBOLS = [
-  "IdlePromise",
   "MessageManagerDestroyedPromise",
   "PollPromise",
   "Sleep",
@@ -264,22 +263,5 @@ function MessageManagerDestroyedPromise(messageManager) {
     }
 
     Services.obs.addObserver(observe, "message-manager-disconnect");
-  });
-}
-
-
-
-
-
-
-
-
-
-
-function IdlePromise(window) {
-  return new Promise(resolve => {
-    Services.tm.idleDispatchToMainThread(() => {
-      window.requestAnimationFrame(resolve);
-    });
   });
 }
