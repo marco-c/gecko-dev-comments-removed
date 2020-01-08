@@ -1,7 +1,7 @@
 
 
 
-'use strict';
+"use strict";
 
 const BIN_SUFFIX = mozinfo.bin_suffix;
 const tempDir = do_get_tempdir();
@@ -17,7 +17,7 @@ function compareBinaryData(arr1, arr2) {
   Assert.equal(arr1.length, arr2.length);
   for (let i = 0; i < arr1.length; i++) {
     if (arr1[i] != arr2[i]) {
-      throw "Data differs at index " + i + 
+      throw "Data differs at index " + i +
             ", arr1: " + arr1[i] + ", arr2: " + arr2[i];
     }
   }
@@ -113,7 +113,7 @@ function createMAR(outMAR, dataDir, files) {
               "-V", "13.0a1", "-c", outMAR.path];
   args = args.concat(files);
 
-  info('Running: ' + signmarBin.path + " " + args.join(" "));
+  info("Running: " + signmarBin.path + " " + args.join(" "));
   process.init(signmarBin);
   process.run(true, args, args.length);
 
@@ -143,10 +143,9 @@ function extractMAR(mar, dataDir) {
   
   let args = ["-C", dataDir.path, "-x", mar.path];
 
-  info('Running: ' + signmarBin.path + " " + args.join(" "));
+  info("Running: " + signmarBin.path + " " + args.join(" "));
   process.init(signmarBin);
   process.run(true, args, args.length);
 
-  
-  Assert.equal(process.exitValue, 0);
+  return process.exitValue;
 }

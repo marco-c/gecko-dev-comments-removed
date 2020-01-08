@@ -19,12 +19,20 @@
 
 #define MAXADDITIONALBLOCKSIZE 96
 
-static uint32_t mar_hash_name(const char *name) {
+static uint32_t
+mar_hash_name(const char* name)
+{
   return CityHash64(name, strlen(name)) % TABLESIZE;
 }
 
-static int mar_insert_item(MarFile *mar, const char *name, int namelen,
-                           uint32_t offset, uint32_t length, uint32_t flags) {
+static int
+mar_insert_item(MarFile* mar,
+                const char* name,
+                int namelen,
+                uint32_t offset,
+                uint32_t length,
+                uint32_t flags)
+{
   MarItem *item, *root;
   uint32_t hash;
 
@@ -51,7 +59,9 @@ static int mar_insert_item(MarFile *mar, const char *name, int namelen,
   return 0;
 }
 
-static int mar_consume_index(MarFile *mar, char **buf, const char *buf_end) {
+static int
+mar_consume_index(MarFile* mar, char** buf, const char* buf_end)
+{
   
 
 
@@ -103,7 +113,9 @@ static int mar_consume_index(MarFile *mar, char **buf, const char *buf_end) {
   return mar_insert_item(mar, name, namelen, offset, length, flags);
 }
 
-static int mar_read_index(MarFile *mar) {
+static int
+mar_read_index(MarFile* mar)
+{
   char id[MAR_ID_SIZE], *buf, *bufptr, *bufend;
   uint32_t offset_to_index, size_of_index;
 
@@ -144,11 +156,69 @@ static int mar_read_index(MarFile *mar) {
 
 
 
-static MarFile *mar_fpopen(FILE *fp)
-{
-  MarFile *mar;
 
-  mar = (MarFile *) malloc(sizeof(*mar));
+
+
+
+static int
+mar_insert_offset(MarFile* mar, uint32_t offset, uint32_t length)
+{
+  
+  if (length == 0) {
+    return 1;
+  }
+
+  SeenIndex* index = (SeenIndex*)malloc(sizeof(SeenIndex));
+  if (!index) {
+    return -1;
+  }
+  index->next = NULL;
+  index->offset = offset;
+  index->length = length;
+  uint32_t index_end = index->offset + index->length - 1;
+
+  
+  if (mar->index_list == NULL) {
+    mar->index_list = index;
+    return 1;
+  }
+
+  
+  SeenIndex* previous;
+  SeenIndex* current = mar->index_list;
+  while (current != NULL) {
+    uint32_t current_end = current->offset + current->length - 1;
+
+    
+
+    if ((index->offset >= current->offset && index->offset <= current_end) ||
+        (index_end >= current->offset && index_end <= current_end) ||
+        (current->offset >= index->offset && current->offset <= index_end) ||
+        (current_end >= index->offset && current_end <= index_end)) {
+      free(index);
+      return 0;
+    }
+
+    
+    previous = current;
+    current = current->next;
+  }
+
+  
+  previous->next = index;
+  return 1;
+}
+
+
+
+
+
+static MarFile*
+mar_fpopen(FILE* fp)
+{
+  MarFile* mar;
+
+  mar = (MarFile*)malloc(sizeof(*mar));
   if (!mar) {
     fclose(fp);
     return NULL;
@@ -157,11 +227,14 @@ static MarFile *mar_fpopen(FILE *fp)
   mar->fp = fp;
   mar->item_table_is_valid = 0;
   memset(mar->item_table, 0, sizeof(mar->item_table));
+  mar->index_list = NULL;
 
   return mar;
 }
 
-MarFile *mar_open(const char *path) {
+MarFile*
+mar_open(const char* path)
+{
   FILE *fp;
 
   fp = fopen(path, "rb");
@@ -175,7 +248,9 @@ MarFile *mar_open(const char *path) {
 }
 
 #ifdef XP_WIN
-MarFile *mar_wopen(const wchar_t *path) {
+MarFile*
+mar_wopen(const wchar_t* path)
+{
   FILE *fp;
 
   _wfopen_s(&fp, path, L"rb");
@@ -189,8 +264,11 @@ MarFile *mar_wopen(const wchar_t *path) {
 }
 #endif
 
-void mar_close(MarFile *mar) {
-  MarItem *item;
+void
+mar_close(MarFile* mar)
+{
+  MarItem* item;
+  SeenIndex* index;
   int i;
 
   fclose(mar->fp);
@@ -198,10 +276,16 @@ void mar_close(MarFile *mar) {
   for (i = 0; i < TABLESIZE; ++i) {
     item = mar->item_table[i];
     while (item) {
-      MarItem *temp = item;
+      MarItem* temp = item;
       item = item->next;
       free(temp);
     }
+  }
+
+  while (mar->index_list != NULL) {
+    index = mar->index_list;
+    mar->index_list = index->next;
+    free(index);
   }
 
   free(mar);
@@ -225,12 +309,13 @@ void mar_close(MarFile *mar) {
 
 
 
-int get_mar_file_info_fp(FILE *fp,
-                         int *hasSignatureBlock,
-                         uint32_t *numSignatures,
-                         int *hasAdditionalBlocks,
-                         uint32_t *offsetAdditionalBlocks,
-                         uint32_t *numAdditionalBlocks)
+int
+get_mar_file_info_fp(FILE* fp,
+                     int* hasSignatureBlock,
+                     uint32_t* numSignatures,
+                     int* hasAdditionalBlocks,
+                     uint32_t* offsetAdditionalBlocks,
+                     uint32_t* numAdditionalBlocks)
 {
   uint32_t offsetToIndex, offsetToContent, signatureCount, signatureLen, i;
 
@@ -363,8 +448,7 @@ int get_mar_file_info_fp(FILE *fp,
 
 
 int
-read_product_info_block(char *path,
-                        struct ProductInformationBlock *infoBlock)
+read_product_info_block(char* path, struct ProductInformationBlock* infoBlock)
 {
   int rv;
   MarFile mar;
@@ -388,8 +472,8 @@ read_product_info_block(char *path,
 
 
 int
-mar_read_product_info_block(MarFile *mar,
-                            struct ProductInformationBlock *infoBlock)
+mar_read_product_info_block(MarFile* mar,
+                            struct ProductInformationBlock* infoBlock)
 {
   uint32_t offsetAdditionalBlocks, numAdditionalBlocks,
     additionalBlockSize, additionalBlockID;
@@ -476,9 +560,11 @@ mar_read_product_info_block(MarFile *mar,
   return -1;
 }
 
-const MarItem *mar_find_item(MarFile *mar, const char *name) {
+const MarItem*
+mar_find_item(MarFile* mar, const char* name)
+{
   uint32_t hash;
-  const MarItem *item;
+  const MarItem* item;
 
   if (!mar->item_table_is_valid) {
     if (mar_read_index(mar)) {
@@ -491,15 +577,24 @@ const MarItem *mar_find_item(MarFile *mar, const char *name) {
   hash = mar_hash_name(name);
 
   item = mar->item_table[hash];
-  while (item && strcmp(item->name, name) != 0)
+  while (item && strcmp(item->name, name) != 0) {
     item = item->next;
+  }
 
-  return item;
+  
+  if (mar_insert_offset(mar, item->offset, item->length) == 1) {
+    return item;
+  } else {
+    fprintf(stderr, "ERROR: file content collision in mar_find_item()\n");
+    return NULL;
+  }
 }
 
-int mar_enum_items(MarFile *mar, MarItemCallback callback, void *closure) {
-  MarItem *item;
-  int i;
+int
+mar_enum_items(MarFile* mar, MarItemCallback callback, void* closure)
+{
+  MarItem* item;
+  int i, rv;
 
   if (!mar->item_table_is_valid) {
     if (mar_read_index(mar)) {
@@ -512,9 +607,16 @@ int mar_enum_items(MarFile *mar, MarItemCallback callback, void *closure) {
   for (i = 0; i < TABLESIZE; ++i) {
     item = mar->item_table[i];
     while (item) {
-      int rv = callback(mar, item, closure);
-      if (rv)
-        return rv;
+      
+      if (mar_insert_offset(mar, item->offset, item->length) == 1) {
+        rv = callback(mar, item, closure);
+        if (rv) {
+          return rv;
+        }
+      } else {
+        fprintf(stderr, "ERROR: file content collision in mar_enum_items()\n");
+        return 1;
+      }
       item = item->next;
     }
   }
@@ -522,8 +624,13 @@ int mar_enum_items(MarFile *mar, MarItemCallback callback, void *closure) {
   return 0;
 }
 
-int mar_read(MarFile *mar, const MarItem *item, int offset, uint8_t *buf,
-             int bufsize) {
+int
+mar_read(MarFile* mar,
+         const MarItem* item,
+         int offset,
+         uint8_t* buf,
+         int bufsize)
+{
   int nr;
 
   if (offset == (int) item->length)
@@ -559,12 +666,13 @@ int mar_read(MarFile *mar, const MarItem *item, int offset, uint8_t *buf,
 
 
 
-int get_mar_file_info(const char *path,
-                      int *hasSignatureBlock,
-                      uint32_t *numSignatures,
-                      int *hasAdditionalBlocks,
-                      uint32_t *offsetAdditionalBlocks,
-                      uint32_t *numAdditionalBlocks)
+int
+get_mar_file_info(const char* path,
+                  int* hasSignatureBlock,
+                  uint32_t* numSignatures,
+                  int* hasAdditionalBlocks,
+                  uint32_t* offsetAdditionalBlocks,
+                  uint32_t* numAdditionalBlocks)
 {
   int rv;
   FILE *fp = fopen(path, "rb");

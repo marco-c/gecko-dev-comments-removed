@@ -9,7 +9,7 @@ function run_test() {
 
 
 
-  function run_one_test(marFileName, files) {
+  function extract_and_compare(marFileName, files) {
     
     let mar = do_get_file("data/" + marFileName);
 
@@ -32,7 +32,7 @@ function run_test() {
     }
 
     
-    extractMAR(mar, outDir);
+    Assert.equal(extractMAR(mar, outDir), 0);
 
     
     for (let i = 0; i < files.length; i++) {
@@ -44,38 +44,90 @@ function run_test() {
   }
 
   
+
+
+
+
+  function extract_and_fail(marFileName) {
+    
+    let mar = do_get_file("data/" + marFileName);
+
+    
+    let outDir = tempDir.clone();
+    outDir.append("out");
+    Assert.ok(!outDir.exists());
+    outDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o777);
+
+    
+    
+    Assert.equal(extractMAR(mar, outDir), 1);
+  }
+
+  
   let tests = {
     
     test_zero_sized: function _test_zero_sized() {
-      return run_one_test("0_sized.mar", ["0_sized_file"]);
+      return extract_and_compare("0_sized.mar", ["0_sized_file"]);
     },
     
     test_one_byte: function _test_one_byte() {
-      return run_one_test("1_byte.mar", ["1_byte_file"]);
+      return extract_and_compare("1_byte.mar", ["1_byte_file"]);
     },
     
     test_binary_data: function _test_binary_data() {
-      return run_one_test("binary_data.mar", ["binary_data_file"]);
+      return extract_and_compare("binary_data.mar", ["binary_data_file"]);
     },
     
     
     test_no_pib: function _test_no_pib() {
-      return run_one_test("no_pib.mar", ["binary_data_file"]);
+      return extract_and_compare("no_pib.mar", ["binary_data_file"]);
     },
     
     
     test_no_pib_signed: function _test_no_pib_signed() {
-      return run_one_test("signed_no_pib.mar", ["binary_data_file"]);
+      return extract_and_compare("signed_no_pib.mar", ["binary_data_file"]);
     },
     
     
     test_pib_signed: function _test_pib_signed() {
-      return run_one_test("signed_pib.mar", ["binary_data_file"]);
+      return extract_and_compare("signed_pib.mar", ["binary_data_file"]);
     },
     
     test_multiple_file: function _test_multiple_file() {
-      return run_one_test("multiple_file.mar",
+      return extract_and_compare("multiple_file.mar",
                           ["0_sized_file", "1_byte_file", "binary_data_file"]);
+    },
+    
+    test_collision_same_offset: function test_collision_same_offset() {
+      return extract_and_fail("manipulated_same_offset.mar");
+    },
+    
+    test_collision_is_contained: function test_collision_is_contained() {
+      return extract_and_fail("manipulated_is_container.mar");
+    },
+    
+    test_collision_contained_by: function test_collision_contained_by() {
+      return extract_and_fail("manipulated_is_contained.mar");
+    },
+    
+    test_collision_a_onto_b: function test_collision_a_onto_b() {
+      return extract_and_fail("manipulated_frontend_collision.mar");
+    },
+    
+    test_collsion_b_onto_a: function test_collsion_b_onto_a()  {
+      return extract_and_fail("manipulated_backend_collision.mar");
+    },
+    
+    test_collision_multiple: function test_collision_multiple() {
+      return extract_and_fail("manipulated_multiple_collision.mar");
+    },
+    
+    test_collision_last: function test_collision_multiple_last() {
+      return extract_and_fail("manipulated_multiple_collision_last.mar");
+    },
+    
+    test_collision_first: function test_collision_multiple_first() {
+      return extract_and_fail("manipulated_multiple_collision_first.mar");
     },
     
     
