@@ -331,20 +331,6 @@ protected:
   
   static const int32_t kBoundaryAppUnits = 61;
 
-  
-  
-  static bool sExtendSelectionForPhoneNumber;
-
-  
-  
-  
-  
-  static bool sCaretShownWhenLongTappingOnEmptyContent;
-
-  
-  
-  static bool sCaretsAlwaysTilt;
-
   enum ScriptUpdateMode : int32_t {
     
     kScriptAlwaysHide,
@@ -354,22 +340,6 @@ protected:
     
     kScriptAlwaysShow
   };
-
-  
-  
-  static int32_t sCaretsScriptUpdates;
-
-  
-  
-  
-  static bool sCaretsAllowDraggingAcrossOtherCaret;
-
-  
-  static bool sHapticFeedback;
-
-  
-  
-  static bool sHideCaretsForMouseInput;
 };
 
 std::ostream& operator<<(std::ostream& aStream,
