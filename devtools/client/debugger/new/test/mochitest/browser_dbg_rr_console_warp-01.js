@@ -4,22 +4,35 @@
 
 
 
-"use strict";
+
+
+function waitForThreadEvents(threadClient, eventName) {
+  info(`Waiting for thread event '${eventName}' to fire.`);
+
+  return new Promise(function(resolve, reject) {
+    threadClient.addListener(eventName, function onEvent(eventName, ...args) {
+      info(`Thread event '${eventName}' fired.`);
+      threadClient.removeListener(eventName, onEvent);
+      resolve.apply(resolve, args);
+    });
+  });
+}
 
 
 
+async function test() {
+  waitForExplicitFinish();
 
-add_task(async function() {
   const dbg = await attachRecordingDebugger(
-    "doc_rr_error.html",
+    "doc_rr_error.html", 
     { waitForRecording: true }
   );
 
   const {tab, toolbox, threadClient} = dbg;
-  const console = await getDebuggerSplitConsole(dbg);
+  const console = await getSplitConsole(dbg);
   const hud = console.hud;
 
-  await warpToMessage(hud, dbg, "Number 5");
+  await warpToMessage(hud, threadClient, "Number 5");
   await threadClient.interrupt();
 
   await checkEvaluateInTopFrame(threadClient, "number", 5);
@@ -36,4 +49,5 @@ add_task(async function() {
 
   await toolbox.destroy();
   await gBrowser.removeTab(tab);
-});
+  finish();
+}

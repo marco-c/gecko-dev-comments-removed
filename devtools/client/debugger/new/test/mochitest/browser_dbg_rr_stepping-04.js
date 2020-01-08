@@ -4,18 +4,15 @@
 
 
 
-"use strict";
+async function test() {
+  waitForExplicitFinish();
 
-
-
-
-add_task(async function() {
-  const tab = BrowserTestUtils.addTab(gBrowser, null, { recordExecution: "*" });
+  let tab = BrowserTestUtils.addTab(gBrowser, null, { recordExecution: "*" });
   gBrowser.selectedTab = tab;
   openTrustedLinkIn(EXAMPLE_URL + "doc_rr_basic.html", "current");
   await once(Services.ppmm, "RecordingFinished");
 
-  const toolbox = await attachDebugger(tab), client = toolbox.threadClient;
+  let toolbox = await attachDebugger(tab), client = toolbox.threadClient;
   await client.interrupt();
   await setBreakpoint(client, "doc_rr_basic.html", 21);
   await rewindToLine(client, 21);
@@ -41,4 +38,5 @@ add_task(async function() {
 
   await toolbox.destroy();
   await gBrowser.removeTab(tab);
-});
+  finish();
+}
