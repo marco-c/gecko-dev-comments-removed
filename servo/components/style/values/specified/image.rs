@@ -33,6 +33,20 @@ use values::specified::url::SpecifiedImageUrl;
 
 pub type ImageLayer = Either<None_, Image>;
 
+impl ImageLayer {
+    
+    
+    pub fn parse_with_cors_anonymous<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(v) = input.try(|i| None_::parse(context, i)) {
+            return Ok(Either::First(v));
+        }
+        Image::parse_with_cors_anonymous(context, input).map(Either::Second)
+    }
+}
+
 
 
 pub type Image = generic::Image<Gradient, MozImageRect, SpecifiedImageUrl>;
