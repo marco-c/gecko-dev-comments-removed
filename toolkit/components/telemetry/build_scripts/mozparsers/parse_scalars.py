@@ -111,6 +111,7 @@ class ScalarType:
             'release_channel_collection': basestring,
             'keyed': bool,
             'products': list,
+            'record_into_store': list,
         }
 
         
@@ -119,6 +120,7 @@ class ScalarType:
             'notification_emails': basestring,
             'record_in_processes': basestring,
             'products': basestring,
+            'record_into_store': basestring,
         }
 
         
@@ -328,6 +330,11 @@ class ScalarType:
     def cpp_guard(self):
         """Get the cpp guard for this scalar"""
         return self._definition.get('cpp_guard')
+
+    @property
+    def record_into_store(self):
+        """Get the list of stores this probe should be recorded into"""
+        return self._definition.get('record_into_store', ['main'])
 
 
 def load_scalars(filename, strict_type_checks=True):
