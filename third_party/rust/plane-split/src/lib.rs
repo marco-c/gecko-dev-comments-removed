@@ -17,14 +17,17 @@ extern crate log;
 extern crate num_traits;
 
 mod bsp;
+mod clip;
 mod polygon;
 
-use std::{fmt, mem, ops};
-use euclid::{TypedPoint3D, TypedVector3D};
+use euclid::{TypedPoint3D, TypedScale, TypedVector3D};
 use euclid::approxeq::ApproxEq;
 use num_traits::{Float, One, Zero};
 
+use std::ops;
+
 pub use self::bsp::BspSplitter;
+pub use self::clip::Clipper;
 pub use self::polygon::{Intersection, LineProjection, Polygon};
 
 
@@ -96,6 +99,20 @@ impl<
     U,
 > Plane<T, U> {
     
+    pub fn from_unnormalized(normal: TypedVector3D<T, U>, offset: T) -> Option<Self> {
+        let square_len = normal.square_length();
+        if square_len < T::approx_epsilon() {
+            None
+        } else {
+            let kf = T::one() / square_len.sqrt();
+            Some(Plane {
+                normal: normal * TypedScale::new(kf),
+                offset: offset * kf,
+            })
+        }
+    }
+
+    
     pub fn contains(&self, other: &Self) -> bool {
         
         self.normal == other.normal && self.offset == other.offset
@@ -147,7 +164,11 @@ impl<
         
         
         let w = self.normal.dot(other.normal);
-        let factor = T::one() / (T::one() - w * w);
+        let divisor = T::one() - w * w;
+        if divisor < T::approx_epsilon() {
+            return None
+        }
+        let factor = T::one() / divisor;
         let origin = TypedPoint3D::origin() +
             self.normal * ((other.offset * w - self.offset) * factor) -
             other.normal* ((other.offset - self.offset * w) * factor);
@@ -189,67 +210,6 @@ pub trait Splitter<T, U> {
             self.add(p.clone());
         }
         self.sort(view)
-    }
-}
-
-
-
-#[derive(Debug)]
-pub struct Clipper<T, U> {
-    clips: Vec<Plane<T, U>>,
-    results: Vec<Polygon<T, U>>,
-    temp: Vec<Polygon<T, U>>,
-}
-
-impl<
-    T: Copy + fmt::Debug + ApproxEq<T> +
-        ops::Sub<T, Output=T> + ops::Add<T, Output=T> +
-        ops::Mul<T, Output=T> + ops::Div<T, Output=T> +
-        Zero + One + Float,
-    U: fmt::Debug,
-> Clipper<T, U> {
-    
-    pub fn new() -> Self {
-        Clipper {
-            clips: Vec::new(),
-            results: Vec::new(),
-            temp: Vec::new(),
-        }
-    }
-
-    
-    
-    pub fn add(&mut self, plane: Plane<T, U>) {
-        self.clips.push(plane);
-    }
-
-    
-    pub fn clip(&mut self, polygon: Polygon<T, U>) -> &[Polygon<T, U>] {
-        self.results.clear();
-        self.results.push(polygon);
-        for clip in &self.clips {
-            self.temp.clear();
-            mem::swap(&mut self.results, &mut self.temp);
-
-            for mut poly in self.temp.drain(..) {
-                if let Intersection::Inside(line) = poly.intersect_plane(clip) {
-                    let (res1, res2) = poly.split(&line);
-                    self.results.extend(
-                        res1
-                            .into_iter()
-                            .chain(res2.into_iter())
-                            .filter(|p| clip.signed_distance_sum_to(p) > T::zero())
-                    );
-                }
-                
-                
-                if clip.signed_distance_sum_to(&poly) > T::zero() {
-                    self.results.push(poly);
-                }
-            }
-        }
-
-        &self.results
     }
 }
 
