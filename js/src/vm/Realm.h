@@ -365,7 +365,6 @@ class JS::Realm : public JS::shadow::Realm
     js::ReadBarriered<js::ArgumentsObject*> mappedArgumentsTemplate_ { nullptr };
     js::ReadBarriered<js::ArgumentsObject*> unmappedArgumentsTemplate_ { nullptr };
     js::ReadBarriered<js::NativeObject*> iterResultTemplate_ { nullptr };
-    js::ReadBarriered<js::NativeObject*> iterResultWithoutPrototypeTemplate_ { nullptr };
 
     
     
@@ -388,14 +387,12 @@ class JS::Realm : public JS::shadow::Realm
         DebuggerObservesAllExecution = 1 << 1,
         DebuggerObservesAsmJS = 1 << 2,
         DebuggerObservesCoverage = 1 << 3,
-        DebuggerObservesBinarySource = 1 << 4,
-        DebuggerNeedsDelazification = 1 << 5
+        DebuggerNeedsDelazification = 1 << 4
     };
     static const unsigned DebuggerObservesMask = IsDebuggee |
                                                  DebuggerObservesAllExecution |
                                                  DebuggerObservesCoverage |
-                                                 DebuggerObservesAsmJS |
-                                                 DebuggerObservesBinarySource;
+                                                 DebuggerObservesAsmJS;
     unsigned debugModeBits_ = 0;
     friend class js::AutoRestoreRealmDebugMode;
 
@@ -696,13 +693,7 @@ class JS::Realm : public JS::shadow::Realm
     static const size_t IterResultObjectValueSlot = 0;
     static const size_t IterResultObjectDoneSlot = 1;
     js::NativeObject* getOrCreateIterResultTemplateObject(JSContext* cx);
-    js::NativeObject* getOrCreateIterResultWithoutPrototypeTemplateObject(JSContext* cx);
 
-  private:
-    enum class WithObjectPrototype { No, Yes };
-    js::NativeObject* createIterResultTemplateObject(JSContext* cx, WithObjectPrototype withProto);
-
-  public:
     js::ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx, bool mapped);
     js::ArgumentsObject* maybeArgumentsTemplateObject(bool mapped) const;
 
@@ -771,15 +762,6 @@ class JS::Realm : public JS::shadow::Realm
     }
     void updateDebuggerObservesAsmJS() {
         updateDebuggerObservesFlag(DebuggerObservesAsmJS);
-    }
-
-    bool debuggerObservesBinarySource() const {
-        static const unsigned Mask = IsDebuggee | DebuggerObservesBinarySource;
-        return (debugModeBits_ & Mask) == Mask;
-    }
-
-    void updateDebuggerObservesBinarySource() {
-        updateDebuggerObservesFlag(DebuggerObservesBinarySource);
     }
 
     

@@ -20,10 +20,6 @@ var source = s.source;
 
 
 assertEq(source.text.includes('module'), false);
-assertThrowsInstanceOf(() => source.binary, Error);
-
-
-dbg.allowWasmBinarySource = true;
 
 g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary('(module (func) (export "" 0))')));`);
 assertEq(s.format, "wasm");

@@ -56,7 +56,6 @@ class DebugState
 {
     const SharedCode         code_;
     const SharedModule       module_;
-    bool                     binarySource_;
 
     
     
@@ -70,15 +69,13 @@ class DebugState
     void toggleDebugTrap(uint32_t offset, bool enabled);
 
   public:
-    DebugState(const Code& code, const Module& module, bool binarySource);
+    DebugState(const Code& code, const Module& module);
 
     const Bytes& bytecode() const { return module_->debugBytecode(); }
-    bool binarySource() const { return binarySource_; }
 
     bool getLineOffsets(JSContext* cx, size_t lineno, Vector<uint32_t>* offsets);
     bool getAllColumnOffsets(JSContext* cx, Vector<ExprLoc>* offsets);
     bool getOffsetLocation(uint32_t offset, size_t* lineno, size_t* column);
-    uint32_t totalSourceLines();
 
     
     
