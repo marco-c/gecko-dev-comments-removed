@@ -60,6 +60,9 @@ class GamepadManager final : public nsIObserver
   
   already_AddRefed<Gamepad> GetGamepad(uint32_t aIndex) const;
 
+    
+  already_AddRefed<Gamepad> GetGamepad(uint32_t aGamepadId, GamepadServiceType aServiceType) const;
+
   
   void Update(const GamepadChangeEvent& aGamepadEvent);
 
@@ -132,7 +135,7 @@ class GamepadManager final : public nsIObserver
                                bool aHasSeen = true);
   
   
-  uint32_t GetGamepadIndexWithServiceType(uint32_t aIndex, GamepadServiceType aServiceType);
+  uint32_t GetGamepadIndexWithServiceType(uint32_t aIndex, GamepadServiceType aServiceType) const;
 
   
   
