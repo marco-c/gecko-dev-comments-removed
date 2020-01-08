@@ -835,6 +835,12 @@ public:
 
   void SetInTransform(bool aInTransform) { mInTransform = aInTransform; }
 
+  
+
+
+
+  bool IsInFilter() const { return mInFilter; }
+
   bool IsInPageSequence() const { return mInPageSequence; }
   void SetInPageSequence(bool aInPage) { mInPageSequence = aInPage; }
 
@@ -1172,21 +1178,26 @@ public:
   
 
 
-  class AutoFilterASRSetter {
+
+  class AutoEnterFilter {
   public:
-    AutoFilterASRSetter(nsDisplayListBuilder* aBuilder, bool aUsingFilter)
-      : mBuilder(aBuilder), mOldValue(aBuilder->mFilterASR)
+    AutoEnterFilter(nsDisplayListBuilder* aBuilder, bool aUsingFilter)
+      : mBuilder(aBuilder)
+      , mOldValue(aBuilder->mFilterASR)
+      , mOldInFilter(aBuilder->mInFilter)
     {
       if (!aBuilder->mFilterASR && aUsingFilter) {
         aBuilder->mFilterASR = aBuilder->CurrentActiveScrolledRoot();
+        aBuilder->mInFilter = true;
       }
     }
-    ~AutoFilterASRSetter() {
+    ~AutoEnterFilter() {
       mBuilder->mFilterASR = mOldValue;
     }
   private:
     nsDisplayListBuilder* mBuilder;
     const ActiveScrolledRoot* mOldValue;
+    bool mOldInFilter;
   };
 
   
@@ -1948,6 +1959,7 @@ private:
   
   
   bool                           mInTransform;
+  bool                           mInFilter;
   bool                           mInPageSequence;
   bool                           mIsInChromePresContext;
   bool                           mSyncDecodeImages;
