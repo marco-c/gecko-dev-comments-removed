@@ -5322,6 +5322,15 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         auto lParamString = reinterpret_cast<const wchar_t*>(lParam);
         if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
           
+          
+          
+          if (IsWin10OrLater() && mWindowType == eWindowType_toplevel) {
+            nsIPresShell* presShell = mWidgetListener->GetPresShell();
+            if (presShell) {
+              presShell->ThemeChanged();
+            }
+          }
+          
           OnSysColorChanged();
           break;
         }
