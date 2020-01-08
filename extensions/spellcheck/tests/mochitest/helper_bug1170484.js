@@ -3,7 +3,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 Cu.dispatch(function() {
-  let chromeWin = Services.ww.activeWindow.QueryInterface(Ci.nsIDOMChromeWindow);
+  let chromeWin = Services.ww.activeWindow;
   contextMenu = chromeWin.document.getElementById("contentAreaContextMenu");
   var suggestion = contextMenu.querySelector(".spell-suggestion");
   suggestion.doCommand();

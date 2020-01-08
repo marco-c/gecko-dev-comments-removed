@@ -5,8 +5,6 @@
 function ChromePowers(window) {
   this.window = Cu.getWeakReference(window);
 
-  
-  
   if (typeof(window) == "ChromeWindow" && typeof(content.window) == "Window") {
     this.DOMWindowUtils = bindDOMWindowUtils(content.window);
     this.window = Cu.getWeakReference(content.window);
