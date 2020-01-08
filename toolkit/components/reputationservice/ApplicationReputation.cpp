@@ -556,6 +556,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".osas", 
     ".osax", 
     
+    ".oxt", 
     
     
     
