@@ -846,14 +846,23 @@ async function setupTestFromUrl(url) {
 
 
 
-function threadClientTest(test) {
+
+
+
+
+function threadClientTest(test, options = {}) {
+  let { principal } = options;
+  if (!principal) {
+    principal = systemPrincipal;
+  }
+
   async function runThreadClientTestWithServer(server, test) {
     
     initTestDebuggerServer(server);
 
     
     
-    const debuggee = Cu.Sandbox(systemPrincipal);
+    const debuggee = Cu.Sandbox(principal);
     const scriptName = "debuggee.js";
     debuggee.__name = scriptName;
     server.addTestGlobal(debuggee);
