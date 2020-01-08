@@ -6,6 +6,7 @@ from __future__ import print_function, unicode_literals
 
 import codecs
 import itertools
+import logging
 import os
 import sys
 import textwrap
@@ -63,7 +64,7 @@ def config_status(config):
     
     
     
-    print("Creating config.status", file=sys.stderr)
+    logging.getLogger('moz.configure').info('Creating config.status')
     encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
     with codecs.open('config.status', 'w', encoding) as fh:
         fh.write(textwrap.dedent('''\
