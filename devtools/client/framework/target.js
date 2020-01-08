@@ -4,9 +4,7 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
 const EventEmitter = require("devtools/shared/event-emitter");
-const Services = require("Services");
 
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient",
@@ -311,23 +309,6 @@ TabTarget.prototype = {
   
   get isBrowsingContext() {
     return this._isBrowsingContext;
-  },
-
-  get window() {
-    
-    
-    
-    
-    if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-      console.error("The .window getter on devtools' |target| object isn't " +
-                    "e10s friendly!\n" + Error().stack);
-    }
-    
-    
-    if (this._tab && this._tab.linkedBrowser) {
-      return this._tab.linkedBrowser.contentWindow;
-    }
-    return null;
   },
 
   get name() {
