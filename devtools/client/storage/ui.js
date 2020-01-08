@@ -265,7 +265,7 @@ class StorageUI {
 
   setupToolbar() {
     this.searchBox = this._panelDoc.getElementById("storage-searchbox");
-    this.searchBox.addEventListener("command", this.filterItems);
+    this.searchBox.addEventListener("input", this.filterItems);
 
     
     this.sidebarToggleBtn = this._panelDoc.querySelector(".sidebar-toggle");
