@@ -1018,9 +1018,23 @@ EnqueuePromiseReactionJob(JSContext* cx, HandleObject reactionObj,
     
     
     RootedObject promise(cx, reaction->promise());
-    if (promise && promise->is<PromiseObject>()) {
-        if (!cx->compartment()->wrap(cx, &promise)) {
-            return false;
+    if (promise) {
+        if (promise->is<PromiseObject>()) {
+            if (!cx->compartment()->wrap(cx, &promise)) {
+                return false;
+            }
+        } else if (IsWrapper(promise)) {
+            
+            JSObject* unwrappedPromise = UncheckedUnwrap(promise);
+            if (unwrappedPromise->is<PromiseObject>()) {
+                if (!cx->compartment()->wrap(cx, &promise)) {
+                    return false;
+                }
+            } else {
+                promise = nullptr;
+            }
+        } else {
+            promise = nullptr;
         }
     }
 
