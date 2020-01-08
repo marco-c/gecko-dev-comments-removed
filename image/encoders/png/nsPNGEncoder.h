@@ -3,7 +3,8 @@
 
 
 
-#ifndef nsPNGEncoder_h
+#ifndef mozilla_image_encoders_png_nsPNGEncoder_h
+#define mozilla_image_encoders_png_nsPNGEncoder_h
 
 #include <png.h>
 
