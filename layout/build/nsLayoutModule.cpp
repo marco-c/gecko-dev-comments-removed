@@ -221,6 +221,11 @@ nsLayoutModuleInitialize()
 
   gInitialized = true;
 
+  if (XRE_GetProcessType() == GeckoProcessType_VR) {
+    
+    return;
+  }
+
   if (XRE_GetProcessType() == GeckoProcessType_GPU) {
     
     
@@ -670,7 +675,8 @@ Initialize()
 static void
 LayoutModuleDtor()
 {
-  if (XRE_GetProcessType() == GeckoProcessType_GPU) {
+  if (XRE_GetProcessType() == GeckoProcessType_GPU ||
+      XRE_GetProcessType() == GeckoProcessType_VR) {
     return;
   }
 
