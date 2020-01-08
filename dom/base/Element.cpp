@@ -1683,6 +1683,10 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       slots->mBindingParent = aBindingParent; 
     }
   }
+
+  const bool hadParent = !!GetParentNode();
+  const bool wasInShadowTree = IsInShadowTree();
+
   NS_ASSERTION(!aBindingParent || IsRootOfNativeAnonymousSubtree() ||
                !HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE) ||
                (aParent && aParent->IsInNativeAnonymousSubtree()),
@@ -1706,7 +1710,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     }
   }
 
-  bool hadParent = !!GetParentNode();
+  MOZ_ASSERT_IF(wasInShadowTree, IsInShadowTree());
 
   
   if (aParent) {
@@ -1837,7 +1841,9 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     nsNodeUtils::NativeAnonymousChildListChange(this, false);
   }
 
-  if (HasID()) {
+  
+  
+  if (HasID() && !wasInShadowTree) {
     AddToIdTable(DoGetID());
   }
 
