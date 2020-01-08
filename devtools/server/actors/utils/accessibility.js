@@ -196,27 +196,18 @@ function getContrastRatioFor(node, options = {}) {
   if (rgba.value) {
     return {
       value: colorUtils.calculateContrastRatio(rgba.value, color),
-      color,
-      backgroundColor: rgba.value,
       isLargeText,
     };
   }
 
-  let min = colorUtils.calculateContrastRatio(rgba.min, color);
-  let max = colorUtils.calculateContrastRatio(rgba.max, color);
-
   
-  if (min > max) {
-    [min, max] = [max, min];
-    [rgba.min, rgba.max] = [rgba.max, rgba.min];
-  }
+  
+  const min = colorUtils.calculateContrastRatio(rgba.min, Array.from(color));
+  const max = colorUtils.calculateContrastRatio(rgba.max, Array.from(color));
 
   return {
-    min,
-    max,
-    color,
-    backgroundColorMin: rgba.min,
-    backgroundColorMax: rgba.max,
+    min: min < max ? min : max,
+    max: min < max ? max : min,
     isLargeText,
   };
 }
