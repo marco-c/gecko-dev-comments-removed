@@ -508,8 +508,7 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
     return nullptr;
   }
 
-  if (!aElement->IsInComposedDoc()) {
-    
+  if (aElement->IsInNativeAnonymousSubtree() && !aElement->IsInComposedDoc()) {
     
     
     
