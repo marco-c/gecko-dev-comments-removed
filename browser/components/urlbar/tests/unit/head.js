@@ -40,13 +40,15 @@ Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", 
 
 
 
-function createContext(searchString = "foo") {
-  return new QueryContext({
+
+function createContext(searchString = "foo", properties = {}) {
+  let context = new QueryContext({
     searchString,
     lastKey: searchString ? searchString[searchString.length - 1] : "",
     maxResults: UrlbarPrefs.get("maxRichResults"),
     isPrivate: true,
   });
+  return Object.assign(context, properties);
 }
 
 
@@ -87,21 +89,11 @@ function promiseControllerNotification(controller, notification, expected = true
 
 
 
+
 function registerBasicTestProvider(results, cancelCallback) {
-  
-  for (let providers of UrlbarProvidersManager.providers.values()) {
-    for (let provider of providers.values()) {
-      
-      Assert.ok(Object.values(UrlbarUtils.PROVIDER_TYPE).includes(provider.type),
-        `The provider "${provider.name}" should have a valid type`);
-      Assert.ok(provider.name, "All providers should have a name");
-      UrlbarProvidersManager.unregisterProvider(provider);
-    }
-  }
+  let name = "TestProvider" + Math.floor(Math.random() * 100000);
   UrlbarProvidersManager.registerProvider({
-    get name() {
-      return "TestProvider";
-    },
+    name,
     get type() {
       return UrlbarUtils.PROVIDER_TYPE.PROFILE;
     },
@@ -123,4 +115,5 @@ function registerBasicTestProvider(results, cancelCallback) {
       }
     },
   });
+  return name;
 }
