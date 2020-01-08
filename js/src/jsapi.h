@@ -223,19 +223,6 @@ typedef void
                                       JS::PromiseRejectionHandlingState state,
                                       void* data);
 
-typedef bool
-(* JSLocaleToUpperCase)(JSContext* cx, JS::HandleString src, JS::MutableHandleValue rval);
-
-typedef bool
-(* JSLocaleToLowerCase)(JSContext* cx, JS::HandleString src, JS::MutableHandleValue rval);
-
-typedef bool
-(* JSLocaleCompare)(JSContext* cx, JS::HandleString src1, JS::HandleString src2,
-                    JS::MutableHandleValue rval);
-
-typedef bool
-(* JSLocaleToUnicode)(JSContext* cx, const char* src, JS::MutableHandleValue rval);
-
 
 
 
@@ -4722,55 +4709,6 @@ JS_PUBLIC_API(bool)
 PropertySpecNameToPermanentId(JSContext* cx, const char* name, jsid* idp);
 
 } 
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_SetDefaultLocale(JSRuntime* rt, const char* locale);
-
-
-
-
-
-extern JS_PUBLIC_API(JS::UniqueChars)
-JS_GetDefaultLocale(JSContext* cx);
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_ResetDefaultLocale(JSRuntime* rt);
-
-
-
-
-struct JSLocaleCallbacks {
-    JSLocaleToUpperCase     localeToUpperCase; 
-    JSLocaleToLowerCase     localeToLowerCase; 
-    JSLocaleCompare         localeCompare; 
-    JSLocaleToUnicode       localeToUnicode;
-};
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_SetLocaleCallbacks(JSRuntime* rt, const JSLocaleCallbacks* callbacks);
-
-
-
-
-
-extern JS_PUBLIC_API(const JSLocaleCallbacks*)
-JS_GetLocaleCallbacks(JSRuntime* rt);
 
 
 
