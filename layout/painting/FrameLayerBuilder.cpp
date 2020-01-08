@@ -218,15 +218,7 @@ public:
     return DisplayItemEntry { next, DisplayItemEntryType::ITEM };
   }
 
-  nsDisplayItem* GetNext()
-  {
-    
-    
-    
-    MOZ_ASSERT(mMarkers.empty());
-
-    return FlattenedDisplayItemIterator::GetNext();
-  }
+  nsDisplayItem* GetNext();
 
   bool HasNext() const
   {
@@ -1748,6 +1740,49 @@ protected:
   };
   CachedScrollMetadata mCachedScrollMetadata;
 };
+
+nsDisplayItem*
+FLBDisplayItemIterator::GetNext()
+{
+  
+  
+  
+  MOZ_ASSERT(mMarkers.empty());
+
+  nsDisplayItem* next = mNext;
+
+  
+  if (next) {
+    nsDisplayItem* peek = next->GetAbove();
+
+    
+    
+    if (peek && next->CanMerge(peek)) {
+      
+      AutoTArray<nsDisplayItem*, 2> mergedItems { next, peek };
+      while ((peek = peek->GetAbove())) {
+        if (!next->CanMerge(peek)) {
+          break;
+        }
+
+        mergedItems.AppendElement(peek);
+      }
+
+      
+      
+      MOZ_ASSERT(mergedItems.Length() > 1);
+      next = mState->mBuilder->MergeItems(mergedItems);
+    }
+
+    
+    
+    mNext = peek;
+
+    ResolveFlattening();
+  }
+
+  return next;
+}
 
 bool
 FLBDisplayItemIterator::NextItemWantsInactiveLayer()
@@ -4590,32 +4625,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         MOZ_ASSERT(selectedLayer);
         selectedLayer->AccumulateHitTestInfo(this, hitTestInfo, transformNode);
         continue;
-      }
-    }
-
-    if (marker == DisplayItemEntryType::ITEM) {
-      
-      
-      nsDisplayItem* peek = iter.PeekNext();
-      if (peek && item->CanMerge(peek)) {
-        
-        AutoTArray<nsDisplayItem*, 2> mergedItems { item };
-        while ((peek = iter.PeekNext())) {
-          if (!item->CanMerge(peek)) {
-            break;
-          }
-
-          mergedItems.AppendElement(peek);
-
-          
-          iter.GetNext();
-        }
-
-        
-        
-        MOZ_ASSERT(mergedItems.Length() > 1);
-        item = mBuilder->MergeItems(mergedItems);
-        MOZ_ASSERT(item && itemType == item->GetType());
       }
     }
 
