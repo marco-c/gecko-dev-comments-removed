@@ -67,7 +67,6 @@ public class Tabs implements BundleEventListener {
     
     
     private volatile Tab mSelectedTab;
-    private volatile int mPreviouslySelectedTabId = INVALID_TAB_ID;
 
     
     private final HashMap<Integer, Tab> mTabs = new HashMap<Integer, Tab>();
@@ -338,7 +337,6 @@ public class Tabs implements BundleEventListener {
         notifyListeners(tab, TabEvents.SELECTED);
 
         if (oldTab != null) {
-            mPreviouslySelectedTabId = oldTab.getId();
             notifyListeners(oldTab, TabEvents.UNSELECTED);
         }
 
@@ -494,12 +492,15 @@ public class Tabs implements BundleEventListener {
             }
         }
 
-        final Tab parentTab = getTab(tab.getParentId());
-        if (tab.getParentId() == mPreviouslySelectedTabId && tab.getParentId() != INVALID_TAB_ID && parentTab != null) {
-            return parentTab;
-        } else {
-            return nextTab;
+        Tab parent = getTab(tab.getParentId());
+        if (parent != null) {
+            
+            if (nextTab != null && nextTab.getParentId() == tab.getParentId())
+                return nextTab;
+            else
+                return parent;
         }
+        return nextTab;
     }
 
     public Iterable<Tab> getTabsInOrder() {
