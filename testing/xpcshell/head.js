@@ -59,6 +59,12 @@ var Assert = new AssertCls(function(err, message, stack) {
   }
 }, true);
 
+
+
+function record(condition, name, diag, stack) {
+  do_report_result(condition, name, stack);
+}
+
 var _add_params = function(params) {
   if (typeof _XPCSHELL_PROCESS != "undefined") {
     params.xpcshell_process = _XPCSHELL_PROCESS;
