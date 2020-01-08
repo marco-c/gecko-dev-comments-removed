@@ -135,14 +135,3 @@ bool MenuBoxObject::OpenedWithKey()
 
 } 
 } 
-
-
-
-using namespace mozilla::dom;
-
-nsresult
-NS_NewMenuBoxObject(nsIBoxObject** aResult)
-{
-  NS_ADDREF(*aResult = new MenuBoxObject());
-  return NS_OK;
-}
