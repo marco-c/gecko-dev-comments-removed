@@ -3,6 +3,7 @@
 
 
 var FastBlock = {
+  reportBreakageLabel: "fastblock",
   PREF_ENABLED: "browser.fastblock.enabled",
   PREF_UI_ENABLED: "browser.contentblocking.fastblock.control-center.ui.enabled",
 
@@ -22,6 +23,7 @@ var FastBlock = {
 };
 
 var TrackingProtection = {
+  reportBreakageLabel: "trackingprotection",
   PREF_ENABLED_GLOBALLY: "privacy.trackingprotection.enabled",
   PREF_ENABLED_IN_PRIVATE_WINDOWS: "privacy.trackingprotection.pbmode.enabled",
   PREF_UI_ENABLED: "browser.contentblocking.trackingprotection.control-center.ui.enabled",
@@ -139,6 +141,7 @@ var TrackingProtection = {
 };
 
 var ThirdPartyCookies = {
+  reportBreakageLabel: "cookierestrictions",
   PREF_ENABLED: "network.cookie.cookieBehavior",
   PREF_ENABLED_VALUES: [
     
@@ -416,6 +419,17 @@ var ContentBlocking = {
 
     formData.set("body", body);
 
+    let activatedBlockers = [];
+    for (let blocker of this.blockers) {
+      if (blocker.activated) {
+        activatedBlockers.push(blocker.reportBreakageLabel);
+      }
+    }
+
+    if (activatedBlockers.length) {
+      formData.set("labels", activatedBlockers.join(","));
+    }
+
     fetch(reportEndpoint, {
       method: "POST",
       credentials: "omit",
@@ -471,9 +485,14 @@ var ContentBlocking = {
     let anyBlockerActivated = false;
 
     for (let blocker of this.blockers) {
+      
+      
+      
+      
+      blocker.activated = blocker.isBlockerActivated(state);
       blocker.categoryItem.classList.toggle("blocked", this.enabled && blocker.enabled);
       blocker.categoryItem.hidden = !blocker.visible;
-      anyBlockerActivated = anyBlockerActivated || blocker.isBlockerActivated(state);
+      anyBlockerActivated = anyBlockerActivated || blocker.activated;
     }
 
     
