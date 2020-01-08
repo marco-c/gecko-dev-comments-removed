@@ -443,23 +443,6 @@ var SitePermissions = {
 
 
 
-  showGloballyBlocked(permissionID) {
-    if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].showGloballyBlocked)
-      return gPermissionObject[permissionID].showGloballyBlocked;
-
-    return false;
-  },
-
-  
-
-
-
-
-
-
-
-
   permitTemporaryAllow(permissionID) {
     if (permissionID in gPermissionObject &&
         gPermissionObject[permissionID].permitTemporaryAllow)
@@ -763,7 +746,6 @@ var gPermissionObject = {
 
   "autoplay-media": {
     exactHostMatch: true,
-    showGloballyBlocked: true,
     permitTemporaryAllow: true,
     notifyWhenTemporaryPermissionChanged: true,
     getDefault() {
