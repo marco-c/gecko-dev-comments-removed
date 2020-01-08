@@ -514,6 +514,15 @@ public:
                           MessageLoop* aThread = nullptr,
                           mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
 
+    
+    
+    
+    
+    
+    
+    bool OpenOnSameThread(MessageChannel* aChannel,
+                          mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
+
     void Close();
 
     void SetReplyTimeoutMs(int32_t aTimeoutMs);
