@@ -132,9 +132,14 @@ function onCanBeEnabledChange(state, { canBeEnabled }) {
 
 
 
-function onReset(state, { accessibility }) {
+function onReset(state, { accessibility, supports }) {
   const { enabled, canBeDisabled, canBeEnabled } = accessibility;
-  return Object.assign({}, state, { enabled, canBeDisabled, canBeEnabled });
+  const newState = { ...state, enabled, canBeDisabled, canBeEnabled };
+  if (supports) {
+    newState.supports = supports;
+  }
+
+  return newState;
 }
 
 

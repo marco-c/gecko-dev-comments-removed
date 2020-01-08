@@ -47,11 +47,14 @@ class AccessibilityStartup {
         
         
         this._walker = await this._accessibility.getWalker();
+        this._supports = {};
         
-        this._supportsLatestAccessibility =
+        this._supports.enableDisable =
           await this.target.actorHasMethod("accessibility", "enable");
 
-        if (this._supportsLatestAccessibility) {
+        if (this._supports.enableDisable) {
+          this._supports.relations =
+            await this.target.actorHasMethod("accessible", "getRelations");
           await this._accessibility.bootstrap();
         }
 
