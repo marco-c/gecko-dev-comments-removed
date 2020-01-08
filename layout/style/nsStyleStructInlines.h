@@ -252,11 +252,7 @@ nsStyleUI::GetEffectivePointerEvents(nsIFrame* aFrame) const
     
     
     
-    
-    nsIFrame* f = aFrame->GetContent()->GetPrimaryFrame();
-    if (f) {
-      return f->StyleUI()->mPointerEvents;
-    }
+    return NS_STYLE_POINTER_EVENTS_AUTO;
   }
   return mPointerEvents;
 }
