@@ -65,7 +65,7 @@ class EventEmitter {
       return;
     }
 
-    if (length === 3) {
+    if (length >= 3) {
       
       
       const listenersForType = events.get(type);
