@@ -2056,6 +2056,13 @@ class JSJitMethodCallArgs
   }
 
   JS::HandleValue get(unsigned i) const { return Base::get(i); }
+
+  bool requireAtLeast(JSContext* cx, const char* fnname,
+                      unsigned required) const {
+    
+    
+    return Base::requireAtLeast(cx, fnname, required);
+  }
 };
 
 struct JSJitMethodCallArgsTraits {

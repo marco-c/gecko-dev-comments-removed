@@ -246,6 +246,13 @@ class MOZ_STACK_CLASS CallArgsBase {
     return MutableHandleValue::fromMarkedLocation(&argv_[-2]);
   }
 
+  
+
+
+
+  JS_PUBLIC_API inline bool requireAtLeast(JSContext* cx, const char* fnname,
+                                           unsigned required) const;
+
  public:
   
   
@@ -309,29 +316,30 @@ class MOZ_STACK_CLASS CallArgs
     return args;
   }
 
+ public:
   
+
+
 
 
   static JS_PUBLIC_API void reportMoreArgsNeeded(JSContext* cx,
                                                  const char* fnname,
                                                  unsigned required,
                                                  unsigned actual);
-
- public:
-  
-
-
-
-  JS_PUBLIC_API inline bool requireAtLeast(JSContext* cx, const char* fnname,
-                                           unsigned required) const {
-    if (MOZ_LIKELY(required <= length())) {
-      return true;
-    }
-
-    reportMoreArgsNeeded(cx, fnname, required, length());
-    return false;
-  }
 };
+
+namespace detail {
+template <class WantUsedRval>
+JS_PUBLIC_API inline bool CallArgsBase<WantUsedRval>::requireAtLeast(
+    JSContext* cx, const char* fnname, unsigned required) const {
+  if (MOZ_LIKELY(required <= length())) {
+    return true;
+  }
+
+  CallArgs::reportMoreArgsNeeded(cx, fnname, required, length());
+  return false;
+}
+}  
 
 MOZ_ALWAYS_INLINE CallArgs CallArgsFromVp(unsigned argc, Value* vp) {
   return CallArgs::create(argc, vp + 2, vp[1].isMagic(JS_IS_CONSTRUCTING));
