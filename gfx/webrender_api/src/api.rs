@@ -10,7 +10,6 @@ use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::u32;
 use {BuiltDisplayList, BuiltDisplayListDescriptor, ColorF, DeviceIntPoint, DeviceUintRect};
 use {DeviceUintSize, ExternalScrollId, FontInstanceKey, FontInstanceOptions};
@@ -49,8 +48,6 @@ pub struct Transaction {
     
     payloads: Vec<Payload>,
 
-    notifications: Vec<NotificationRequest>,
-
     
     pub resource_updates: Vec<ResourceUpdate>,
 
@@ -70,7 +67,6 @@ impl Transaction {
             frame_ops: Vec::new(),
             resource_updates: Vec::new(),
             payloads: Vec::new(),
-            notifications: Vec::new(),
             use_scene_builder_thread: true,
             generate_frame: false,
             low_priority: false,
@@ -92,8 +88,7 @@ impl Transaction {
         !self.generate_frame &&
             self.scene_ops.is_empty() &&
             self.frame_ops.is_empty() &&
-            self.resource_updates.is_empty() &&
-            self.notifications.is_empty()
+            self.resource_updates.is_empty()
     }
 
     pub fn update_epoch(&mut self, pipeline_id: PipelineId, epoch: Epoch) {
@@ -174,21 +169,6 @@ impl Transaction {
 
     pub fn update_resources(&mut self, resources: Vec<ResourceUpdate>) {
         self.merge(resources);
-    }
-
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    pub fn notify(&mut self, event: NotificationRequest) {
-        self.notifications.push(event);
     }
 
     pub fn set_window_parameters(
@@ -277,7 +257,6 @@ impl Transaction {
                 scene_ops: self.scene_ops,
                 frame_ops: self.frame_ops,
                 resource_updates: self.resource_updates,
-                notifications: self.notifications,
                 use_scene_builder_thread: self.use_scene_builder_thread,
                 generate_frame: self.generate_frame,
                 low_priority: self.low_priority,
@@ -392,9 +371,6 @@ pub struct TransactionMsg {
     pub generate_frame: bool,
     pub use_scene_builder_thread: bool,
     pub low_priority: bool,
-
-    #[serde(skip)]
-    pub notifications: Vec<NotificationRequest>,
 }
 
 impl TransactionMsg {
@@ -402,8 +378,7 @@ impl TransactionMsg {
         !self.generate_frame &&
             self.scene_ops.is_empty() &&
             self.frame_ops.is_empty() &&
-            self.resource_updates.is_empty() &&
-            self.notifications.is_empty()
+            self.resource_updates.is_empty()
     }
 
     
@@ -412,7 +387,6 @@ impl TransactionMsg {
             scene_ops: Vec::new(),
             frame_ops: vec![msg],
             resource_updates: Vec::new(),
-            notifications: Vec::new(),
             generate_frame: false,
             use_scene_builder_thread: false,
             low_priority: false,
@@ -424,7 +398,6 @@ impl TransactionMsg {
             scene_ops: vec![msg],
             frame_ops: Vec::new(),
             resource_updates: Vec::new(),
-            notifications: Vec::new(),
             generate_frame: false,
             use_scene_builder_thread: false,
             low_priority: false,
@@ -1166,49 +1139,4 @@ pub trait RenderNotifier: Send {
         unimplemented!()
     }
     fn shut_down(&self) {}
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Checkpoint {
-    SceneBuilt,
-    FrameBuilt,
-    
-    
-    TransactionDropped,
-}
-
-pub trait NotificationHandler : Send + Sync {
-    fn notify(&self, when: Checkpoint);
-}
-
-#[derive(Clone)]
-pub struct NotificationRequest {
-    handler: Arc<NotificationHandler>,
-    when: Checkpoint,
-    done: bool,
-}
-
-impl NotificationRequest {
-    pub fn new(when: Checkpoint, handler: Arc<NotificationHandler>) -> Self {
-        NotificationRequest {
-            handler,
-            when,
-            done: false,
-        }
-    }
-
-    pub fn when(&self) -> Checkpoint { self.when }
-
-    pub fn notify(mut self) {
-        self.handler.notify(self.when);
-        self.done = true;
-    }
-}
-
-impl Drop for NotificationRequest {
-    fn drop(&mut self) {
-        if !self.done {
-            self.handler.notify(Checkpoint::TransactionDropped);
-        }
-    }
 }
