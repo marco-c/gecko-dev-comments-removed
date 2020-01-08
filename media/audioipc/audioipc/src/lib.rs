@@ -54,6 +54,13 @@ const MSG_CMSG_CLOEXEC: libc::c_int = 0;
 
 
 
+#[cfg(target_os = "windows")]
+pub type PlatformHandleType = *mut std::os::raw::c_void;
+#[cfg(not(target_os = "windows"))]
+pub type PlatformHandleType = libc::c_int;
+
+
+
 
 pub trait RecvMsg {
     fn recv_msg(
