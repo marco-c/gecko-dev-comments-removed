@@ -756,6 +756,10 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   await registerBrowsers;
   await browserListening;
 
+  if (this.mainFrame) {
+    this.mainFrame.focus();
+  }
+
   if (this.curBrowser.tab) {
     this.curBrowser.contentBrowser.focus();
   }
@@ -2824,13 +2828,7 @@ GeckoDriver.prototype.deleteSession = function() {
 
   
   this.curFrame = null;
-  if (this.mainFrame) {
-    try {
-      this.mainFrame.focus();
-    } catch (e) {
-      this.mainFrame = null;
-    }
-  }
+  this.mainFrame = null;
 
   if (this.observing !== null) {
     for (let topic in this.observing) {
