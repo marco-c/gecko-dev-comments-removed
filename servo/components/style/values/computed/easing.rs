@@ -1,0 +1,11 @@
+
+
+
+
+
+
+use values::computed::Number;
+use values::generics::easing::TimingFunction as GenericTimingFunction;
+
+
+pub type TimingFunction = GenericTimingFunction<u32, Number>;

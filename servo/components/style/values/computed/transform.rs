@@ -23,9 +23,6 @@ pub type Transform = generic::Transform<TransformOperation>;
 pub type TransformOrigin = generic::TransformOrigin<LengthOrPercentage, LengthOrPercentage, Length>;
 
 
-pub type TimingFunction = generic::TimingFunction<u32, Number>;
-
-
 pub type DirectionVector = Vector3D<CSSFloat>;
 
 impl TransformOrigin {
