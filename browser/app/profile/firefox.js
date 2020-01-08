@@ -858,6 +858,9 @@ pref("browser.sessionstore.dom_storage_limit", 2048);
 pref("browser.sessionstore.max_write_failures", 5);
 
 
+pref("browser.sessionstore.warnOnQuit", false);
+
+
 pref("accessibility.blockautorefresh", false);
 
 

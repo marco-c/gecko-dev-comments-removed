@@ -1767,6 +1767,10 @@ BrowserGlue.prototype = {
     
     
     
+    
+    
+    
+    
 
     if (aQuitType == "restart" || aQuitType == "os-restart")
       return;
@@ -1792,28 +1796,65 @@ BrowserGlue.prototype = {
       aQuitType = "quit";
 
     
-    
-    if (!Services.prefs.getBoolPref("browser.warnOnQuit") ||
-        !Services.prefs.getBoolPref("browser.tabs.warnOnClose"))
+    if (!Services.prefs.getBoolPref("browser.warnOnQuit"))
       return;
+
+    
+    let sessionWillBeRestored = Services.prefs.getIntPref("browser.startup.page") == 3 ||
+                                Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
+    
+    if (sessionWillBeRestored) {
+      if (!Services.prefs.getBoolPref("browser.sessionstore.warnOnQuit", false)) {
+        return;
+      }
+    
+    } else if (!Services.prefs.getBoolPref("browser.tabs.warnOnClose")) {
+      return;
+    }
 
     let win = BrowserWindowTracker.getTopWindow();
 
+    let warningMessage;
     
-    
-    if (windowcount == 1) {
-      aCancelQuit.data =
-        !win.gBrowser.warnAboutClosingTabs(pagecount, win.gBrowser.closingTabsEnum.ALL);
-    } else {
-      
+    if (windowcount > 1) {
       let tabSubstring = gTabbrowserBundle.GetStringFromName("tabs.closeWarningMultipleWindowsTabSnippet");
       tabSubstring = PluralForm.get(pagecount, tabSubstring).replace(/#1/, pagecount);
-      let windowString = gTabbrowserBundle.GetStringFromName("tabs.closeWarningMultipleWindows");
+
+      let stringID = sessionWillBeRestored ? "tabs.closeWarningMultipleWindowsSessionRestore"
+                                           : "tabs.closeWarningMultipleWindows";
+      let windowString = gTabbrowserBundle.GetStringFromName(stringID);
       windowString = PluralForm.get(windowcount, windowString).replace(/#1/, windowcount);
-      windowString = windowString.replace(/%(?:1\$)?S/i, tabSubstring);
-      aCancelQuit.data =
-        !win.gBrowser.warnAboutClosingTabs(pagecount, win.gBrowser.closingTabsEnum.ALL, windowString);
+      warningMessage = windowString.replace(/%(?:1\$)?S/i, tabSubstring);
+    } else {
+      let stringID = sessionWillBeRestored ? "tabs.closeWarningMultipleSessionRestore"
+                                           : "tabs.closeWarningMultiple";
+      warningMessage = gTabbrowserBundle.GetStringFromName(stringID);
+      warningMessage = PluralForm.get(pagecount, warningMessage).replace("#1", pagecount);
     }
+
+    let warnOnClose = {value: true};
+    let titleId = AppConstants.platform == "win" ? "tabs.closeAndQuitTitleTabsWin"
+                                                 : "tabs.closeAndQuitTitleTabs";
+    let flags = (Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0) +
+      (Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1);
+    
+    let checkboxLabel = !sessionWillBeRestored ?
+      gTabbrowserBundle.GetStringFromName("tabs.closeWarningPromptMe") : null;
+
+    
+    let buttonPressed = Services.prompt.confirmEx(win,
+      gTabbrowserBundle.GetStringFromName(titleId),
+      warningMessage, flags,
+      gTabbrowserBundle.GetStringFromName("tabs.closeButtonMultiple"),
+      null, null,
+      checkboxLabel,
+      warnOnClose);
+    
+    
+    if (!sessionWillBeRestored && buttonPressed == 0 && !warnOnClose.value) {
+      Services.prefs.setBoolPref("browser.tabs.warnOnClose", false);
+    }
+    aCancelQuit.data = buttonPressed != 0;
   },
 
   _showUpdateNotification: function BG__showUpdateNotification() {
