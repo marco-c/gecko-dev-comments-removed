@@ -223,6 +223,11 @@ ContentSearchUIController.prototype = {
   },
 
   handleEvent(event) {
+    
+    
+    if (!document.contains(this.input)) {
+      return;
+    }
     this["_on" + event.type[0].toUpperCase() + event.type.substr(1)](event);
   },
 
