@@ -122,12 +122,14 @@ class Mocks {
 
 
 
+
   createUSBRuntime(id, runtimeInfo = {}) {
     
     this._usbRuntimes.push({
       id: id,
       _socketPath: runtimeInfo.socketPath || "test/path",
       deviceName: runtimeInfo.deviceName || "test device name",
+      isUnknown: runtimeInfo.isUnknown || (() => false),
       shortName: runtimeInfo.shortName || "testshort",
     });
 
@@ -135,8 +137,8 @@ class Mocks {
     const mockUsbClient = createClientMock();
     mockUsbClient.getDeviceDescription = () => {
       return {
-        name: runtimeInfo.name || "TestBrand",
         channel: runtimeInfo.channel || "release",
+        name: runtimeInfo.name || "TestBrand",
         version: runtimeInfo.version || "1.0",
       };
     };
