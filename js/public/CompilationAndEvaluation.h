@@ -217,20 +217,6 @@ extern JS_PUBLIC_API bool CompileUtf8DontInflate(
 
 
 
-
-
-
-extern JS_PUBLIC_API bool CompileLatin1(JSContext* cx,
-                                        const ReadOnlyCompileOptions& options,
-                                        const char* bytes, size_t length,
-                                        MutableHandle<JSScript*> script);
-
-
-
-
-
-
-
 extern JS_PUBLIC_API bool CompileUtf8File(JSContext* cx,
                                           const ReadOnlyCompileOptions& options,
                                           FILE* file,
@@ -265,17 +251,6 @@ extern JS_PUBLIC_API bool CompileUtf8Path(JSContext* cx,
 extern JS_PUBLIC_API bool CompileForNonSyntacticScope(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool CompileLatin1ForNonSyntacticScope(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length, MutableHandle<JSScript*> script);
 
 
 
