@@ -212,7 +212,11 @@ TypeUtils::ToCacheResponse(JSContext* aCx, CacheResponse& aOut, Response& aIn,
                            nsTArray<UniquePtr<AutoIPCStream>>& aStreamCleanupList,
                            ErrorResult& aRv)
 {
-  if (aIn.BodyUsed()) {
+  bool bodyUsed = aIn.GetBodyUsed(aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+  if (bodyUsed) {
     aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
     return;
   }
@@ -446,7 +450,11 @@ TypeUtils::CheckAndSetBodyUsed(JSContext* aCx, Request* aRequest,
     return;
   }
 
-  if (aRequest->BodyUsed()) {
+  bool bodyUsed = aRequest->GetBodyUsed(aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+  if (bodyUsed) {
     aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
     return;
   }
@@ -511,26 +519,6 @@ TypeUtils::SerializeCacheStream(nsIInputStream* aStream,
   autoStream->Serialize(aStream, GetIPCManager());
 
   aStreamCleanupList.AppendElement(std::move(autoStream));
-
-  
-  
-  
-  
-  
-  
-  
-  if (cacheStream.stream().type() == OptionalIPCStream::TIPCStream) {
-    const auto& ipcStream = cacheStream.stream().get_IPCStream();
-    if (ipcStream.type() == IPCStream::TIPCRemoteStream) {
-      const auto& ipcRemoteStream = ipcStream.get_IPCRemoteStream();
-      using mozilla::ipc::IPCRemoteStreamType;
-      if (ipcRemoteStream.stream().type() == IPCRemoteStreamType::TPChildToParentStreamChild) {
-        if (!ipcRemoteStream.stream().get_PChildToParentStreamChild()) {
-          aRv.Throw(NS_ERROR_FAILURE);
-        }
-      }
-    }
-  }
 }
 
 } 

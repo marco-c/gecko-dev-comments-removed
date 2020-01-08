@@ -150,7 +150,12 @@ public:
   friend class FetchBodyConsumer<Derived>;
 
   bool
-  BodyUsed() const;
+  GetBodyUsed(ErrorResult& aRv) const;
+
+  
+  
+  bool
+  CheckBodyUsed() const;
 
   already_AddRefed<Promise>
   ArrayBuffer(JSContext* aCx, ErrorResult& aRv)

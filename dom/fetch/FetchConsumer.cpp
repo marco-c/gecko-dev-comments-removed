@@ -751,7 +751,7 @@ FetchBodyConsumer<Derived>::ContinueConsumeBody(nsresult aStatus,
 
   
   
-  MOZ_ASSERT(mBody->BodyUsed());
+  MOZ_ASSERT(mBody->CheckBodyUsed());
 
   MOZ_ASSERT(mConsumePromise);
   RefPtr<Promise> localPromise = mConsumePromise.forget();
@@ -869,7 +869,7 @@ FetchBodyConsumer<Derived>::ContinueConsumeBlobBody(BlobImpl* aBlobImpl,
 
   
   
-  MOZ_ASSERT(mBody->BodyUsed());
+  MOZ_ASSERT(mBody->CheckBodyUsed());
 
   MOZ_ASSERT(mConsumePromise);
   RefPtr<Promise> localPromise = mConsumePromise.forget();

@@ -209,8 +209,10 @@ enum class CreateDependentPromise {
 
 
 
+
+
 MOZ_MUST_USE bool
-OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
+OriginalPromiseThen(JSContext* cx, HandleObject promiseObj,
                     HandleValue onFulfilled, HandleValue onRejected,
                     MutableHandleObject dependent, CreateDependentPromise createDependent);
 

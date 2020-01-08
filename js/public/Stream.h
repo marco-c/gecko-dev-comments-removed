@@ -190,14 +190,6 @@ NewReadableDefaultStreamObject(JSContext* cx, HandleObject underlyingSource = nu
 
 
 
-extern JS_PUBLIC_API(JSObject*)
-NewReadableByteStreamObject(JSContext* cx, HandleObject underlyingSource = nullptr,
-                            double highWaterMark = 0, HandleObject proto = nullptr);
-
-
-
-
-
 
 
 
@@ -224,8 +216,14 @@ NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
 
 
 
-extern JS_PUBLIC_API(uint8_t)
-ReadableStreamGetEmbeddingFlags(const JSObject* stream);
+
+
+
+extern JS_PUBLIC_API(bool)
+ReadableStreamGetEmbeddingFlags(JSContext* cx, const JSObject* stream, uint8_t* flags);
+
+
+
 
 
 
@@ -260,8 +258,14 @@ ReadableStreamGetExternalUnderlyingSource(JSContext* cx, HandleObject stream, vo
 
 
 
-extern JS_PUBLIC_API(void)
-ReadableStreamReleaseExternalUnderlyingSource(JSObject* stream);
+
+
+
+extern JS_PUBLIC_API(bool)
+ReadableStreamReleaseExternalUnderlyingSource(JSContext* cx, JSObject* stream);
+
+
+
 
 
 
@@ -297,13 +301,6 @@ IsReadableStreamReader(const JSObject* obj);
 extern JS_PUBLIC_API(bool)
 IsReadableStreamDefaultReader(const JSObject* obj);
 
-
-
-
-
-extern JS_PUBLIC_API(bool)
-IsReadableStreamBYOBReader(const JSObject* obj);
-
 enum class ReadableStreamMode {
     Default,
     Byte,
@@ -317,12 +314,12 @@ enum class ReadableStreamMode {
 
 
 
-extern JS_PUBLIC_API(ReadableStreamMode)
-ReadableStreamGetMode(const JSObject* stream);
+
+extern JS_PUBLIC_API(bool)
+ReadableStreamGetMode(JSContext* cx, const JSObject* stream, ReadableStreamMode* mode);
 
 enum class ReadableStreamReaderMode {
-    Default,
-    BYOB
+    Default
 };
 
 
@@ -330,16 +327,10 @@ enum class ReadableStreamReaderMode {
 
 
 
-extern JS_PUBLIC_API(bool)
-ReadableStreamIsReadable(const JSObject* stream);
-
-
-
-
-
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamIsLocked(const JSObject* stream);
+ReadableStreamIsReadable(JSContext* cx, const JSObject* stream, bool* result);
+
 
 
 
@@ -347,7 +338,17 @@ ReadableStreamIsLocked(const JSObject* stream);
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamIsDisturbed(const JSObject* stream);
+ReadableStreamIsLocked(JSContext* cx, const JSObject* stream, bool* result);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+ReadableStreamIsDisturbed(JSContext* cx, const JSObject* stream, bool* result);
+
 
 
 
@@ -364,8 +365,11 @@ ReadableStreamCancel(JSContext* cx, HandleObject stream, HandleValue reason);
 
 
 
+
+
 extern JS_PUBLIC_API(JSObject*)
 ReadableStreamGetReader(JSContext* cx, HandleObject stream, ReadableStreamReaderMode mode);
+
 
 
 
@@ -392,8 +396,10 @@ ReadableStreamTee(JSContext* cx, HandleObject stream,
 
 
 
-extern JS_PUBLIC_API(void)
-ReadableStreamGetDesiredSize(JSObject* stream, bool* hasValue, double* value);
+
+extern JS_PUBLIC_API(bool)
+ReadableStreamGetDesiredSize(JSContext* cx, JSObject* stream, bool* hasValue, double* value);
+
 
 
 
@@ -416,7 +422,8 @@ ReadableStreamClose(JSContext* cx, HandleObject stream);
 
 
 extern JS_PUBLIC_API(bool)
-ReadableStreamReaderIsClosed(const JSObject* reader);
+ReadableStreamReaderIsClosed(JSContext* cx, const JSObject* reader, bool* result);
+
 
 
 
@@ -436,23 +443,6 @@ ReadableStreamReaderIsClosed(const JSObject* reader);
 extern JS_PUBLIC_API(bool)
 ReadableStreamEnqueue(JSContext* cx, HandleObject stream, HandleValue chunk);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-ReadableByteStreamEnqueueBuffer(JSContext* cx, HandleObject stream, HandleObject buffer);
 
 
 
@@ -501,21 +491,9 @@ ReadableStreamReaderReleaseLock(JSContext* cx, HandleObject reader);
 
 
 
+
 extern JS_PUBLIC_API(JSObject*)
 ReadableStreamDefaultReaderRead(JSContext* cx, HandleObject reader);
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(JSObject*)
-ReadableStreamBYOBReaderRead(JSContext* cx, HandleObject reader, HandleObject view);
 
 } 
 
