@@ -7,6 +7,10 @@ for (var name of imports) {
   window[name] = window.opener.wrappedJSObject[name];
 }
 ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+
 
 
 
@@ -30,6 +34,7 @@ var gOrigMaxTotalViewers =
   undefined; 
 
 var gExtractedPath = null; 
+
 
 
 
@@ -340,9 +345,7 @@ function finish() {
   
   
   if (typeof(gOrigMaxTotalViewers) != "undefined") {
-    var prefs = Cc["@mozilla.org/preferences-service;1"]
-                .getService(Ci.nsIPrefBranch);
-    prefs.setIntPref("browser.sessionhistory.max_total_viewers",
+    Services.prefs.setIntPref("browser.sessionhistory.max_total_viewers",
       gOrigMaxTotalViewers);
   }
 
@@ -351,11 +354,9 @@ function finish() {
   let SimpleTest = opener.wrappedJSObject.SimpleTest;
 
   
-  let ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-	             .getService(Ci.nsIWindowWatcher);
-  ww.registerNotification(function(subject, topic, data) {
+  Services.ww.registerNotification(function observer(subject, topic, data) {
     if (topic == "domwindowclosed") {
-      ww.unregisterNotification(arguments.callee);
+      Services.ww.unregisterNotification(observer);
       SimpleTest.waitForFocus(SimpleTest.finish, opener);
     }
   });
@@ -424,24 +425,21 @@ function waitForNextPaint(cb) {
 
 
 function enableBFCache(enable) {
-  var prefs = Cc["@mozilla.org/preferences-service;1"]
-              .getService(Ci.nsIPrefBranch);
-
   
   
   
   if (typeof(gOrigMaxTotalViewers) == "undefined") {
     gOrigMaxTotalViewers =
-      prefs.getIntPref("browser.sessionhistory.max_total_viewers");
+      Services.prefs.getIntPref("browser.sessionhistory.max_total_viewers");
   }
 
   if (typeof(enable) == "boolean") {
     if (enable)
-      prefs.setIntPref("browser.sessionhistory.max_total_viewers", -1);
+      Services.prefs.setIntPref("browser.sessionhistory.max_total_viewers", -1);
     else
-      prefs.setIntPref("browser.sessionhistory.max_total_viewers", 0);
+      Services.prefs.setIntPref("browser.sessionhistory.max_total_viewers", 0);
   } else if (typeof(enable) == "number") {
-    prefs.setIntPref("browser.sessionhistory.max_total_viewers", enable);
+    Services.prefs.setIntPref("browser.sessionhistory.max_total_viewers", enable);
   }
 }
 
