@@ -291,7 +291,7 @@ Decoder::AllocateFrame(const gfx::IntSize& aOutputSize,
 {
   mCurrentFrame = AllocateFrameInternal(aOutputSize, aFrameRect, aFormat,
                                         aPaletteDepth, aAnimParams,
-                                        std::move(mCurrentFrame));
+                                        mCurrentFrame.get());
 
   if (mCurrentFrame) {
     mHasFrameToTake = true;
@@ -321,7 +321,7 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
                                SurfaceFormat aFormat,
                                uint8_t aPaletteDepth,
                                const Maybe<AnimationParams>& aAnimParams,
-                               RawAccessFrameRef&& aPreviousFrame)
+                               imgFrame* aPreviousFrame)
 {
   if (HasError()) {
     return RawAccessFrameRef();
@@ -343,7 +343,7 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
   bool nonPremult = bool(mSurfaceFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
   if (NS_FAILED(frame->InitForDecoder(aOutputSize, aFrameRect, aFormat,
                                       aPaletteDepth, nonPremult,
-                                      aAnimParams, ShouldBlendAnimation()))) {
+                                      aAnimParams))) {
     NS_WARNING("imgFrame::Init should succeed");
     return RawAccessFrameRef();
   }
@@ -374,27 +374,7 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
 
     
     
-    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea,
-                                     ref->GetBoundedBlendRect());
-
-    if (ShouldBlendAnimation()) {
-      if (aPreviousFrame->GetDisposalMethod() !=
-          DisposalMethod::RESTORE_PREVIOUS) {
-        
-        
-        
-        
-        mRestoreFrame = std::move(aPreviousFrame);
-        mRestoreDirtyRect.SetBox(0, 0, 0, 0);
-      } else {
-        
-        
-        
-        
-        
-        mRestoreDirtyRect = aPreviousFrame->GetBoundedBlendRect();
-      }
-    }
+    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea, frame->GetRect());
   }
 
   mFrameCount++;

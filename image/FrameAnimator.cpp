@@ -316,10 +316,10 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   }
 
   if (nextFrameIndex == 0) {
-    MOZ_ASSERT(nextFrame->IsFullFrame());
     ret.mDirtyRect = aState.FirstFrameRefreshArea();
-  } else if (!nextFrame->IsFullFrame()) {
+  } else {
     MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
+
     
     if (!DoBlend(aCurrentFrame, nextFrame, nextFrameIndex, &ret.mDirtyRect)) {
       
@@ -336,8 +336,6 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
     }
 
     nextFrame->SetCompositingFailed(false);
-  } else {
-    ret.mDirtyRect = nextFrame->GetDirtyRect();
   }
 
   aState.mCurrentAnimationFrameTime =
@@ -486,12 +484,7 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   }
 
   
-  
-  
-  
-  
-  if (currentFrameEndTime > aTime && aState.mCompositedFrameInvalid &&
-      mLastCompositedFrameIndex >= 0) {
+  if (currentFrameEndTime > aTime) {
     aState.mCompositedFrameInvalid = false;
     ret.mDirtyRect = IntRect(IntPoint(0,0), mSize);
   }

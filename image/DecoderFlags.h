@@ -31,15 +31,7 @@ enum class DecoderFlags : uint8_t
 
 
 
-  CANNOT_SUBSTITUTE              = 1 << 4,
-
-  
-
-
-
-
-
-  BLEND_ANIMATION                = 1 << 5
+  CANNOT_SUBSTITUTE              = 1 << 4
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DecoderFlags)
 

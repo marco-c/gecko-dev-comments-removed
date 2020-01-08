@@ -54,13 +54,9 @@ enum class SurfacePipeFlags
 
   FLIP_VERTICALLY     = 1 << 2,  
 
-  PROGRESSIVE_DISPLAY = 1 << 3,  
+  PROGRESSIVE_DISPLAY = 1 << 3   
                                  
                                  
-                                 
-                                 
-
-  BLEND_ANIMATION     = 1 << 4   
                                  
                                  
 };
@@ -105,7 +101,6 @@ public:
     const bool downscale = aInputSize != aOutputSize;
     const bool removeFrameRect =
       !aFrameRect.IsEqualEdges(nsIntRect(0, 0, aInputSize.width, aInputSize.height));
-    const bool blendAnimation = bool(aFlags & SurfacePipeFlags::BLEND_ANIMATION);
 
     
     
@@ -119,8 +114,6 @@ public:
       return Nothing();
     }
 
-    MOZ_ASSERT_IF(blendAnimation, aAnimParams);
-
     
     
     
@@ -130,7 +123,6 @@ public:
     DeinterlacingConfig<uint32_t> deinterlacingConfig { progressiveDisplay };
     ADAM7InterpolatingConfig interpolatingConfig;
     RemoveFrameRectConfig removeFrameRectConfig { aFrameRect };
-    BlendAnimationConfig blendAnimationConfig { aDecoder };
     DownscalingConfig downscalingConfig { aInputSize, aFormat };
     SurfaceConfig surfaceConfig { aDecoder, aOutputSize, aFormat,
                                   flipVertically, aAnimParams };
@@ -138,7 +130,6 @@ public:
     Maybe<SurfacePipe> pipe;
 
     if (downscale) {
-      MOZ_ASSERT(!blendAnimation);
       if (removeFrameRect) {
         if (deinterlace) {
           pipe = MakePipe(deinterlacingConfig, removeFrameRectConfig,
@@ -159,15 +150,7 @@ public:
         }
       }
     } else {  
-      if (blendAnimation) {
-        if (deinterlace) {
-          pipe = MakePipe(deinterlacingConfig, blendAnimationConfig, surfaceConfig);
-        } else if (adam7Interpolate) {
-          pipe = MakePipe(interpolatingConfig, blendAnimationConfig, surfaceConfig);
-        } else {  
-          pipe = MakePipe(blendAnimationConfig, surfaceConfig);
-        }
-      } else if (removeFrameRect) {
+      if (removeFrameRect) {
         if (deinterlace) {
           pipe = MakePipe(deinterlacingConfig, removeFrameRectConfig, surfaceConfig);
         } else if (adam7Interpolate) {

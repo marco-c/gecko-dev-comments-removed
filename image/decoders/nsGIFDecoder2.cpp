@@ -179,7 +179,6 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
   MOZ_ASSERT(HasSize());
 
   bool hasTransparency = CheckForTransparency(aFrameRect);
-  bool blendAnimation = ShouldBlendAnimation();
 
   
   MOZ_ASSERT_IF(Size() != OutputSize(), !GetImageMetadata().HasAnimation());
@@ -196,23 +195,14 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
                              ? SurfacePipeFlags::DEINTERLACE
                              : SurfacePipeFlags();
 
-  gfx::SurfaceFormat format;
+  Maybe<SurfacePipe> pipe;
   if (mGIFStruct.images_decoded == 0) {
+    gfx::SurfaceFormat format = hasTransparency ? SurfaceFormat::B8G8R8A8
+                                                : SurfaceFormat::B8G8R8X8;
+
     
     pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
 
-    format = hasTransparency ? SurfaceFormat::B8G8R8A8
-                             : SurfaceFormat::B8G8R8X8;
-  } else {
-    format = SurfaceFormat::B8G8R8A8;
-  }
-
-  if (blendAnimation) {
-    pipeFlags |= SurfacePipeFlags::BLEND_ANIMATION;
-  }
-
-  Maybe<SurfacePipe> pipe;
-  if (mGIFStruct.images_decoded == 0 || blendAnimation) {
     
     pipe =
       SurfacePipeFactory::CreateSurfacePipe(this, Size(), OutputSize(),
@@ -230,8 +220,8 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
     MOZ_ASSERT(Size() == OutputSize());
     pipe =
       SurfacePipeFactory::CreatePalettedSurfacePipe(this, Size(), aFrameRect,
-                                                    format, aDepth,
-                                                    Some(animParams),
+                                                    SurfaceFormat::B8G8R8A8,
+                                                    aDepth, Some(animParams),
                                                     pipeFlags);
   }
 
@@ -918,29 +908,17 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
     
     mGIFStruct.local_colormap_size = 1 << depth;
 
-    if (!mColormap) {
+    if (mGIFStruct.images_decoded == 0) {
       
       
-      
-      MOZ_ASSERT(mGIFStruct.images_decoded == 0 || ShouldBlendAnimation());
-
       
       mColormapSize = sizeof(uint32_t) << realDepth;
-      if (mGIFStruct.local_colormap_buffer_size < mColormapSize) {
-        if (mGIFStruct.local_colormap) {
-          free(mGIFStruct.local_colormap);
-        }
-        mGIFStruct.local_colormap_buffer_size = mColormapSize;
+      if (!mGIFStruct.local_colormap) {
         mGIFStruct.local_colormap =
           static_cast<uint32_t*>(moz_xmalloc(mColormapSize));
-      } else {
-        mColormapSize = mGIFStruct.local_colormap_buffer_size;
       }
-
       mColormap = mGIFStruct.local_colormap;
     }
-
-    MOZ_ASSERT(mColormap);
 
     const size_t size = 3 << depth;
     if (mColormapSize > size) {
@@ -963,7 +941,7 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
 
   
   
-  if (mColormap) {
+  if (mGIFStruct.images_decoded > 0) {
     memcpy(mColormap, mGIFStruct.global_colormap, mColormapSize);
   } else {
     mColormap = mGIFStruct.global_colormap;
@@ -1073,7 +1051,7 @@ nsGIFDecoder2::ReadLZWData(const char* aData, size_t aLength)
          (length > 0 || mGIFStruct.bits >= mGIFStruct.codesize)) {
     size_t bytesRead = 0;
 
-    auto result = mGIFStruct.images_decoded == 0 || ShouldBlendAnimation()
+    auto result = mGIFStruct.images_decoded == 0
       ? mPipe.WritePixelBlocks<uint32_t>([&](uint32_t* aPixelBlock, int32_t aBlockSize) {
           return YieldPixels<uint32_t>(data, length, &bytesRead, aPixelBlock, aBlockSize);
         })

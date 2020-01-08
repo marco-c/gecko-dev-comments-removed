@@ -272,15 +272,6 @@ public:
 
 
 
-  bool ShouldBlendAnimation() const
-  {
-    return bool(mDecoderFlags & DecoderFlags::BLEND_ANIMATION);
-  }
-
-  
-
-
-
 
   Maybe<uint32_t> TakeCompleteFrameCount();
 
@@ -419,32 +410,6 @@ public:
                          : RawAccessFrameRef();
   }
 
-  
-
-
-
-  imgFrame* GetCurrentFrame()
-  {
-    MOZ_ASSERT(ShouldBlendAnimation());
-    return mCurrentFrame.get();
-  }
-
-  
-
-
-
-  const RawAccessFrameRef& GetRestoreFrameRef() const
-  {
-    MOZ_ASSERT(ShouldBlendAnimation());
-    return mRestoreFrame;
-  }
-
-  const gfx::IntRect& GetRestoreDirtyRect() const
-  {
-    MOZ_ASSERT(ShouldBlendAnimation());
-    return mRestoreDirtyRect;
-  }
-
   bool HasFrameToTake() const { return mHasFrameToTake; }
   void ClearHasFrameToTake() {
     MOZ_ASSERT(mHasFrameToTake);
@@ -453,7 +418,6 @@ public:
 
 protected:
   friend class AutoRecordDecoderTelemetry;
-  friend class DecoderTestHelper;
   friend class nsICODecoder;
   friend class PalettedSurfaceSink;
   friend class SurfaceSink;
@@ -580,7 +544,7 @@ private:
                                           gfx::SurfaceFormat aFormat,
                                           uint8_t aPaletteDepth,
                                           const Maybe<AnimationParams>& aAnimParams,
-                                          RawAccessFrameRef&& aPreviousFrame);
+                                          imgFrame* aPreviousFrame);
 
 protected:
   Maybe<Downscaler> mDownscaler;
@@ -593,19 +557,9 @@ protected:
 private:
   RefPtr<RasterImage> mImage;
   Maybe<SourceBufferIterator> mIterator;
-
-  
   RawAccessFrameRef mCurrentFrame;
-
-  
-  
-  RawAccessFrameRef mRestoreFrame;
-
   ImageMetadata mImageMetadata;
-
   gfx::IntRect mInvalidRect; 
-  gfx::IntRect mRestoreDirtyRect; 
-                                  
   Maybe<gfx::IntSize> mOutputSize;  
   Maybe<gfx::IntSize> mExpectedSize; 
   Progress mProgress;
