@@ -239,7 +239,7 @@ ZoomToResolution(CSSToScreenScale aZoom,
     / aCssToDev * ParentLayerToLayerScale(1);
 }
 
-CSSToScreenScale
+void
 MobileViewportManager::UpdateResolution(const nsViewportInfo& aViewportInfo,
                                         const ScreenIntSize& aDisplaySize,
                                         const CSSSize& aViewport,
@@ -249,6 +249,7 @@ MobileViewportManager::UpdateResolution(const nsViewportInfo& aViewportInfo,
       mPresShell->GetPresContext()->CSSToDevPixelScale();
   LayoutDeviceToLayerScale res(mPresShell->GetResolution());
   CSSToScreenScale zoom = ResolutionToZoom(res, cssToDev);
+  Maybe<CSSToScreenScale> newZoom;
 
   if (mIsFirstPaint) {
     ScreenIntSize compositionSize = GetCompositionSize(aDisplaySize);
@@ -283,47 +284,50 @@ MobileViewportManager::UpdateResolution(const nsViewportInfo& aViewportInfo,
     MOZ_ASSERT(aViewportInfo.GetMinZoom() <= defaultZoom &&
       defaultZoom <= aViewportInfo.GetMaxZoom());
 
-    zoom = defaultZoom;
+    
+    newZoom = Some(defaultZoom);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aDisplayWidthChangeRatio) {
+      newZoom = Some(ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),
+        aViewport, mMobileViewportSize));
+    }
+  }
 
-    LayoutDeviceToLayerScale resolution = ZoomToResolution(zoom, cssToDev);
+  
+  
+  if (newZoom) {
+    LayoutDeviceToLayerScale resolution = ZoomToResolution(*newZoom, cssToDev);
     MVM_LOG("%p: setting resolution %f\n", this, resolution.scale);
     mPresShell->SetResolutionAndScaleTo(resolution.scale);
 
-    return zoom;
+    MVM_LOG("%p: New zoom is %f\n", this, newZoom->scale);
+    UpdateVisualViewportSize(aDisplaySize, *newZoom);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aDisplayWidthChangeRatio) {
-    zoom = ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),
-      aViewport, mMobileViewportSize);
-    mPresShell->SetResolutionAndScaleTo(ZoomToResolution(zoom, cssToDev).scale);
-  }
-
-  return zoom;
 }
 
 
@@ -463,10 +467,7 @@ MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution)
     mIsFirstPaint, mMobileViewportSize != viewport);
 
   if (gfxPrefs::APZAllowZooming()) {
-    CSSToScreenScale zoom = UpdateResolution(viewportInfo, displaySize, viewport,
-      displayWidthChangeRatio);
-    MVM_LOG("%p: New zoom is %f\n", this, zoom.scale);
-    UpdateVisualViewportSize(displaySize, zoom);
+    UpdateResolution(viewportInfo, displaySize, viewport, displayWidthChangeRatio);
   }
   if (gfxPlatform::AsyncPanZoomEnabled()) {
     UpdateDisplayPortMargins();
@@ -517,10 +518,6 @@ MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
       nsLayoutUtils::CalculateScrollableRectForFrame(rootScrollableFrame,
                                                      nullptr);
     CSSSize contentSize = CSSSize::FromAppUnits(scrollableRect.Size());
-    CSSToScreenScale zoom =
-      UpdateResolution(aViewportInfo, aDisplaySize, contentSize, Nothing());
-
-    MVM_LOG("%p: Adapted zoom is %f\n", this, zoom.scale);
-    UpdateVisualViewportSize(aDisplaySize, zoom);
+    UpdateResolution(aViewportInfo, aDisplaySize, contentSize, Nothing());
   }
 }
