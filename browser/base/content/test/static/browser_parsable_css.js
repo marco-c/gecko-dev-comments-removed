@@ -126,10 +126,6 @@ let propNameWhitelist = [
    isFromDevTools: true},
   {propName: "--bezier-grid-color",
    isFromDevTools: true},
-
-  
-  {propName: "--tracking-protection-shield-color",
-   isFromDevTools: false},
 ];
 
 
@@ -256,11 +252,11 @@ let customPropsToReferencesMap = new Map();
 
 function processCSSRules(sheet) {
   for (let rule of sheet.cssRules) {
-    if (rule instanceof CSSMediaRule) {
+    if (rule instanceof CSSConditionRule || rule instanceof CSSKeyframesRule) {
       processCSSRules(rule);
       continue;
     }
-    if (!(rule instanceof CSSStyleRule))
+    if (!(rule instanceof CSSStyleRule) && !(rule instanceof CSSKeyframeRule))
       continue;
 
     
