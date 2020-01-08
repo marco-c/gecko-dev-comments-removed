@@ -342,7 +342,12 @@ function pauseGrip(func) {
 async function fetchSources() {
   const {
     sources
-  } = await threadClient.getSources();
+  } = await threadClient.getSources(); 
+
+  if (!sources) {
+    return;
+  }
+
   return sources.map(source => (0, _create.createSource)(source, {
     supportsWasm
   }));

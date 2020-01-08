@@ -57,10 +57,22 @@ async function paused(_, packet) {
   if (why.type === "interrupted" && !packet.why.onNext) {
     isInterrupted = true;
     return;
+  }
+
+  let response;
+
+  try {
+    
+    response = await threadClient.getFrames(0, CALL_STACK_PAGE_SIZE);
+  } catch (e) {
+    console.log(e);
+    return;
   } 
 
 
-  const response = await threadClient.getFrames(0, CALL_STACK_PAGE_SIZE);
+  if (!response.hasOwnProperty("frames")) {
+    return;
+  }
 
   if (why.type != "alreadyPaused") {
     const pause = (0, _create.createPause)(packet, response);

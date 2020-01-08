@@ -3,19 +3,6 @@
 
 
 
-async function waitForSourceCount(dbg, i) {
-  
-  
-  await waitUntil(() => {
-    return findAllElements(dbg, "sourceNodes").length === i;
-  }, `waiting for ${i} sources`);
-}
-
-async function assertSourceCount(dbg, count) {
-  await waitForSourceCount(dbg, count);
-  is(findAllElements(dbg, "sourceNodes").length, count, `${count} sources`);
-}
-
 function getLabel(dbg, index) {
   return findElement(dbg, "sourceNode", index)
     .textContent.trim()
