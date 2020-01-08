@@ -255,6 +255,12 @@ class DebuggerWeakMap
       zoneCounts.remove(zone);
     }
   }
+
+#ifdef JS_GC_ZEAL
+  
+  
+  virtual bool allowKeysInOtherZones() const override { return true; }
+#endif
 };
 
 class LeaveDebuggeeNoExecute;
