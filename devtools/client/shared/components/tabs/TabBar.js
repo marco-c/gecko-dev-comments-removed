@@ -317,9 +317,6 @@ class Tabbar extends Component {
       });
     }
 
-    
-    tab.panel.props = Object.assign({ id: tab.id, title: tab.title }, tab.panel.props);
-
     return tab.panel;
   }
 
