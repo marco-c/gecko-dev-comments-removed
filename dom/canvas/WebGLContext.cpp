@@ -83,7 +83,7 @@
 #endif
 
 #if defined(MOZ_WIDGET_ANDROID)
-    #include "../../gfx/vr/gfxVRExternal.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 #endif
 
 
@@ -236,6 +236,9 @@ WebGLContext::DestroyResourcesAndContext()
     mDefaultVertexArray = nullptr;
     mBoundTransformFeedback = nullptr;
     mDefaultTransformFeedback = nullptr;
+#if defined(MOZ_WIDGET_ANDROID)
+    mVRScreen = nullptr;
+#endif
 
     mQuerySlot_SamplesPassed = nullptr;
     mQuerySlot_TFPrimsWritten = nullptr;
@@ -788,7 +791,7 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
             return NS_OK;
 
         
-        PresentScreenBuffer();
+        PresentScreenBuffer(gl->Screen());
 
         if (IsContextLost()) {
             GenerateWarning("WebGL context was lost due to swap failure.");
@@ -1463,7 +1466,7 @@ WebGLContext::BlitBackbufferToCurDriverFB() const
 
 
 bool
-WebGLContext::PresentScreenBuffer()
+WebGLContext::PresentScreenBuffer(GLScreenBuffer* const targetScreen)
 {
     const FuncScope funcScope(*this, "<PresentScreenBuffer>");
     if (IsContextLost())
@@ -1475,8 +1478,8 @@ WebGLContext::PresentScreenBuffer()
     if (!ValidateAndInitFB(nullptr))
         return false;
 
-    const auto& screen = gl->Screen();
-    if (screen->Size() != mDefaultFB->mSize &&
+    const auto& screen = targetScreen ? targetScreen : gl->Screen();
+    if ((!screen->IsReadBufferReady() || screen->Size() != mDefaultFB->mSize) &&
         !screen->Resize(mDefaultFB->mSize))
     {
         GenerateWarning("screen->Resize failed. Losing context.");
@@ -1520,10 +1523,10 @@ WebGLContext::PresentScreenBuffer()
 
 
 void
-WebGLContext::BeginComposition()
+WebGLContext::BeginComposition(GLScreenBuffer* const screen)
 {
     
-    PresentScreenBuffer();
+    PresentScreenBuffer(screen);
     mDrawCallsSinceLastFlush = 0;
 }
 
@@ -2301,47 +2304,40 @@ WebGLContext::GetUnpackSize(bool isFunc3D, uint32_t width, uint32_t height,
 already_AddRefed<layers::SharedSurfaceTextureClient>
 WebGLContext::GetVRFrame()
 {
-  if (!gl)
-    return nullptr;
+    if (!gl)
+        return nullptr;
+    
+    
+    if (!mVRScreen) {
+        auto caps = gl->Screen()->mCaps;
+        mVRScreen = GLScreenBuffer::Create(gl, gfx::IntSize(1, 1), caps);
 
-  int frameId = gfx::impl::VRDisplayExternal::sPushIndex;
-  static int lastFrameId = -1;
-  
+        RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
+        if (imageBridge) {
+            TextureFlags flags = TextureFlags::ORIGIN_BOTTOM_LEFT;
+            UniquePtr<gl::SurfaceFactory> factory = gl::GLScreenBuffer::CreateFactory(gl, caps, imageBridge.get(), flags);
+            mVRScreen->Morph(std::move(factory));
+        }
+    }
 
+    
+    
+    BeginComposition(mVRScreen.get());
+    EndComposition();
 
+    if (IsContextLost())
+        return nullptr;
 
+    RefPtr<SharedSurfaceTextureClient> sharedSurface = mVRScreen->Front();
+    if (!sharedSurface || !sharedSurface->Surf())
+        return nullptr;
 
-  const bool ignoreFrame = lastFrameId == frameId || frameId == 0;
-  lastFrameId = frameId;
-  if (!ignoreFrame) {
-      BeginComposition();
-      EndComposition();
-  }
-
-  if (!gl) {
-    return nullptr;
-  }
-
-  gl::GLScreenBuffer* screen = gl->Screen();
-  if (!screen) {
-    return nullptr;
-  }
-
-  RefPtr<SharedSurfaceTextureClient> sharedSurface = screen->Front();
-  if (!sharedSurface || !sharedSurface->Surf()) {
-    return nullptr;
-  }
-
-  
-
-
-  if (!ignoreFrame) {
+    
     sharedSurface->Surf()->ProducerAcquire();
     sharedSurface->Surf()->Commit();
     sharedSurface->Surf()->ProducerRelease();
-  }
 
-  return sharedSurface.forget();
+    return sharedSurface.forget();
 }
 #else
 already_AddRefed<layers::SharedSurfaceTextureClient>
