@@ -13,9 +13,9 @@
 use super::UnknownUnit;
 use length::Length;
 use num::Zero;
-use core::fmt;
-use core::ops::Add;
-use core::marker::PhantomData;
+use std::fmt;
+use std::ops::Add;
+use std::marker::PhantomData;
 
 
 
@@ -45,10 +45,10 @@ impl<T: Copy, U> TypedSideOffsets2D<T, U> {
     
     pub fn new(top: T, right: T, bottom: T, left: T) -> Self {
         TypedSideOffsets2D {
-            top,
-            right,
-            bottom,
-            left,
+            top: top,
+            right: right,
+            bottom: bottom,
+            left: left,
             _unit: PhantomData,
         }
     }
