@@ -409,23 +409,6 @@ var SitePermissions = {
 
 
 
-  permitTemporaryAllow(permissionID) {
-    if (permissionID in gPermissionObject &&
-        gPermissionObject[permissionID].permitTemporaryAllow)
-      return gPermissionObject[permissionID].permitTemporaryAllow;
-
-    return false;
-  },
-
-  
-
-
-
-
-
-
-
-
 
 
 
@@ -522,7 +505,7 @@ var SitePermissions = {
       
       
       
-      if (state != this.BLOCK && !this.permitTemporaryAllow(permissionID)) {
+      if (state != this.BLOCK) {
         throw "'Block' is the only permission we can save temporarily on a browser";
       }
 
@@ -712,7 +695,6 @@ var gPermissionObject = {
 
   "autoplay-media": {
     exactHostMatch: true,
-    permitTemporaryAllow: true,
     getDefault() {
       let state = Services.prefs.getIntPref("media.autoplay.default",
                                             Ci.nsIAutoplay.BLOCKED);
