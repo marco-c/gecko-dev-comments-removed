@@ -391,7 +391,15 @@ OptionsPanel.prototype = {
 
     for (const prefDefinition of prefDefinitions) {
       const parent = this.panelDoc.getElementById(prefDefinition.parentId);
-      parent.appendChild(createPreferenceOption(prefDefinition));
+      
+      
+      
+      
+      
+      
+      
+      const referenceElement = parent.querySelector("label:last-of-type + *");
+      parent.insertBefore(createPreferenceOption(prefDefinition), referenceElement);
       parent.removeAttribute("hidden");
     }
   },
