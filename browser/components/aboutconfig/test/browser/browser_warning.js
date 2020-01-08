@@ -15,23 +15,21 @@ add_task(async function test_load_warningpage() {
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE_URL,
-  }, browser => {
+  }, async browser => {
     info("about:config loaded");
-    return ContentTask.spawn(browser, null, async () => {
-      
-      Assert.equal(content.document.getElementsByTagName("button").length, 1);
-      Assert.equal(content.document.getElementById("search"), undefined);
-      Assert.equal(content.document.getElementById("prefs"), undefined);
+    
+    Assert.equal(content.document.getElementsByTagName("button").length, 1);
+    Assert.equal(content.document.getElementById("search"), undefined);
+    Assert.equal(content.document.getElementById("prefs"), undefined);
 
-      
-      content.document.getElementById("showWarningNextTime").click();
-      content.document.querySelector("button").click();
-    });
+    
+    content.document.getElementById("showWarningNextTime").click();
+    content.document.querySelector("button").click();
   });
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE_URL,
-  }, browser => {
+  }, async browser => {
     Assert.ok(content.document.getElementById("search"));
     Assert.ok(content.document.getElementById("prefs"));
   });

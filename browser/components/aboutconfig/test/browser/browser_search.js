@@ -24,71 +24,57 @@ add_task(async function test_search() {
     await content.document.querySelector("button").click();
 
     
-    await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      
-      
-      
-      
-      
-      Assert.greater(content.document.getElementById("prefs").childElementCount,
-                     aPrefArray.length - 50);
+    
+    
+    
+    
+    Assert.greater(content.document.getElementById("prefs").childElementCount,
+                   prefArray.length - 50);
 
-      
-      
-      
-      let search = content.document.getElementById("search");
-      search.value = "wser.down   ";
-      search.focus();
-    });
-
+    
+    
+    
+    let search = content.document.getElementById("search");
+    search.value = "wser.down   ";
+    search.focus();
     EventUtils.sendKey("return");
-    await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      let filteredPrefArray =
-          aPrefArray.filter(pref => pref.includes("wser.down"));
-      
-      
-      
-      Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   filteredPrefArray.length + 1);
 
-      
-      let search = content.document.getElementById("search");
-      search.value = "";
-      search.focus();
-    });
+    let filteredPrefArray =
+        prefArray.filter(pref => pref.includes("wser.down"));
+    
+    
+    
+    Assert.equal(content.document.getElementById("prefs").childElementCount,
+                 filteredPrefArray.length + 1);
 
+    
+    search.value = "";
+    search.focus();
     EventUtils.sendKey("return");
-    await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      
-      
-      
-      
-      
-      Assert.greater(content.document.getElementById("prefs").childElementCount,
-                     aPrefArray.length - 50);
 
-      
-      let search = content.document.getElementById("search");
-      search.value = "aJunkValueasdf";
-      search.focus();
-    });
+    
+    
+    
+    
+    
+    Assert.greater(content.document.getElementById("prefs").childElementCount,
+                   prefArray.length - 50);
 
+    
+    search.value = "aJunkValueasdf";
+    search.focus();
     EventUtils.sendKey("return");
-    await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      
-      Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   1);
 
-      
-      let search = content.document.getElementById("search");
-      search.value = "test.aboutconfig.a";
-      search.focus();
-    });
+    
+    Assert.equal(content.document.getElementById("prefs").childElementCount,
+                 1);
 
+    
+    search.value = "test.aboutconfig.a";
+    search.focus();
     EventUtils.sendKey("return");
-    await ContentTask.spawn(browser, prefArray, aPrefArray => {
-      Assert.equal(content.document.getElementById("prefs").childElementCount,
-                   2);
-    });
+
+    Assert.equal(content.document.getElementById("prefs").childElementCount,
+                 2);
   });
 });
