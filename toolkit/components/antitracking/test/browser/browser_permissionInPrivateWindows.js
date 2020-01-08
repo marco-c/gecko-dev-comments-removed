@@ -35,6 +35,6 @@ AntiTracking.runTest("Test whether we receive any persistent permissions in priv
   null, 
   true, 
   true, 
-  false, 
+  0, 
   true); 
 

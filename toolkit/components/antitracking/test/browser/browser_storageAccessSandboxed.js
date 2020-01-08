@@ -26,7 +26,7 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  false, 
+  0, 
   false, 
   "allow-scripts allow-same-origin allow-popups"
 );
@@ -60,7 +60,7 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  true, 
+  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
   false, 
   "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
@@ -132,7 +132,7 @@ AntiTracking.runTest("Verify that private browsing contexts don't get the saved 
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  false, 
+  0, 
   true, 
   null 
 );
@@ -161,5 +161,5 @@ AntiTracking.runTest("Verify that non-sandboxed contexts get the" +
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  false 
+  0 
 );

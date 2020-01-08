@@ -42,6 +42,6 @@ AntiTracking.runTest("Test that we don't honour a private allow list exception i
   null, 
   false, 
   false, 
-  true, 
+  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
   false); 
 

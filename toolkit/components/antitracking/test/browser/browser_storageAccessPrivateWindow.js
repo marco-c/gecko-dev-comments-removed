@@ -19,7 +19,7 @@ AntiTracking.runTest("Storage Access API called in a private window",
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
-  false, 
+  0, 
   true, 
   null 
 );
