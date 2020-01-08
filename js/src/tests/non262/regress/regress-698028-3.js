@@ -2,7 +2,7 @@
 
 
 if (typeof Debugger === 'function') {
-    var g = newGlobal();
+    var g = newGlobal({newCompartment: true});
     var dbg = new Debugger(g);
     dbg.onDebuggerStatement = function (frame) { frame.eval(''); };
     var s = '{ let ';

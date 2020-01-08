@@ -148,7 +148,8 @@ function runNormalTests(global)
     
     
     
-    assertEq(e instanceof global.TypeError, true,
+    
+    assertEq(e instanceof global.TypeError || e instanceof TypeError, true,
              "expected TypeError, instead threw " + e);
   }
 
@@ -168,7 +169,7 @@ function runNormalTests(global)
   catch (e)
   {
     
-    assertEq(e instanceof global.TypeError, true,
+    assertEq(e instanceof global.TypeError || e instanceof TypeError, true,
              "expected TypeError, instead threw " + e);
   }
 }

@@ -258,8 +258,9 @@ method = g.eval("({ foo() {} }).foo");
 
 obj = {};
 Object.defineProperty(obj, "foo", {value: method, enumerable: true});
-assertEq(obj.toSource(),
-         "({foo:foo() {}})");
+assertEq((obj.toSource() === "({foo:foo() {}})" ||
+          obj.toSource() === "({foo() {}})"),
+         true);
 
 
 

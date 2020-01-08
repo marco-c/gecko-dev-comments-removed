@@ -4,7 +4,7 @@
 
 
 
-const otherGlobal = typeof newGlobal === "function" ? newGlobal() : undefined;
+const otherGlobal = typeof newGlobal === "function" ? newGlobal({newCompartment: true}) : undefined;
 const typedArrayLengths = [0, 1, 1024];
 
 function createTestCases(TAConstructor, constructor, constructorCrossRealm) {
@@ -23,6 +23,7 @@ function createTestCases(TAConstructor, constructor, constructorCrossRealm) {
         testCases.push({
             species: constructor,
             method: otherGlobal[TAConstructor.name].prototype.subarray,
+            
             
             
             error: TypeError,

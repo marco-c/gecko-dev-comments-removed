@@ -3,7 +3,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = new g.Debugger(this);
 
 if (typeof evalInFrame === 'function') {

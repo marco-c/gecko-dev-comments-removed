@@ -561,9 +561,12 @@ function test()
     check(() => view[3] == 77);
 
     
-    check(() => isProxy(alien_view));
-    check(() => isProxy(alien_buffer));
-    check(() => isProxy(view)); 
+    
+    if (isProxy(alien)) {
+        check(() => isProxy(alien_view));
+        check(() => isProxy(alien_buffer));
+        check(() => isProxy(view)); 
+    }
 
     
     check(() => alien_buffer.byteLength == 7);
