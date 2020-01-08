@@ -288,7 +288,8 @@ addCertToDB(certDBEntryCert *certEntry, dbRestoreInfo *info,
 
     
     allowOverride = (PRBool)((oldCert->keyUsage == certUsageSSLServer) ||
-                             (oldCert->keyUsage == certUsageSSLServerWithStepUp));
+                             (oldCert->keyUsage == certUsageSSLServerWithStepUp) ||
+                             (oldCert->keyUsage == certUsageIPsec));
     validity = CERT_CheckCertValidTimes(oldCert, PR_Now(), allowOverride);
     
     if ((validity != secCertTimeValid) &&
