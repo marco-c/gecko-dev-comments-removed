@@ -289,6 +289,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "dom.chrome_frame_access.enabled",
+   dom_chrome_frame_access_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
   "dom.performance.enable_user_timing_logging",
    dom_performance_enable_user_timing_logging,
   RelaxedAtomicBool, false

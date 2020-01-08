@@ -99,7 +99,9 @@ bool WindowNamedPropertiesHandler::getOwnPropDescriptor(
 
   
   nsGlobalWindowInner* win = xpc::WindowGlobalOrNull(aProxy);
-  if (win->Length() > 0) {
+  if (win->Length(nsContentUtils::IsSystemCaller(aCx)
+                      ? CallerType::System
+                      : CallerType::NonSystem) > 0) {
     nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(str);
     if (childWin && ShouldExposeChildWindow(str, childWin)) {
       
