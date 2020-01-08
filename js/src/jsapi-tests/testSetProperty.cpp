@@ -14,6 +14,8 @@ BEGIN_TEST(testSetProperty_InheritedGlobalSetter)
     
     MOZ_RELEASE_ASSERT(!JS_GetClass(global)->getResolve());
 
+    CHECK(JS::InitRealmStandardClasses(cx));
+
     CHECK(JS_DefineProperty(cx, global, "HOTLOOP", 8, 0));
     EXEC("var n = 0;\n"
          "var global = this;\n"
@@ -24,5 +26,29 @@ BEGIN_TEST(testSetProperty_InheritedGlobalSetter)
     EXEC("if (n != HOTLOOP)\n"
          "    throw 'FAIL';\n");
     return true;
+}
+
+const JSClass* getGlobalClass(void) override {
+    static const JSClassOps noResolveGlobalClassOps = {
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        JS_GlobalObjectTraceHook
+    };
+
+    static const JSClass noResolveGlobalClass = {
+        "testSetProperty_InheritedGlobalSetter_noResolveGlobalClass",
+        JSCLASS_GLOBAL_FLAGS,
+        &noResolveGlobalClassOps
+    };
+
+    return &noResolveGlobalClass;
 }
 END_TEST(testSetProperty_InheritedGlobalSetter)

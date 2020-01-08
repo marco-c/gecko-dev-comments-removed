@@ -95,14 +95,6 @@ JSObject* JSAPITest::createGlobal(JSPrincipals* principals)
         return nullptr;
     }
 
-    JSAutoRealm ar(cx, newGlobal);
-
-    
-    
-    if (!JS::InitRealmStandardClasses(cx)) {
-        return nullptr;
-    }
-
     global = newGlobal;
     return newGlobal;
 }
