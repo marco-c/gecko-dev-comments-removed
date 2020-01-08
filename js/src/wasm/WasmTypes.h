@@ -598,8 +598,16 @@ enum class Tier
 {
     Baseline,
     Debug = Baseline,
+    Optimized,
+    Serialized = Optimized
+};
+
+
+
+enum class OptimizedBackend
+{
     Ion,
-    Serialized = Ion
+    Cranelift,
 };
 
 
