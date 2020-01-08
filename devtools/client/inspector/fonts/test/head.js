@@ -37,7 +37,7 @@ selectNode = async function(node, inspector, reason) {
 
 var openFontInspectorForURL = async function(url) {
   const tab = await addTab(url);
-  const {toolbox, inspector} = await openInspector();
+  const {toolbox, inspector, testActor } = await openInspector();
 
   
   
@@ -46,6 +46,7 @@ var openFontInspectorForURL = async function(url) {
 
   return {
     tab,
+    testActor,
     toolbox,
     inspector,
     view: inspector.fontinspector
@@ -203,4 +204,46 @@ function getURL(fontEl) {
 
 function getFamilyName(fontEl) {
   return fontEl.querySelector(".font-family-name").textContent;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getPropertyValue(viewDoc, name) {
+  const selector = `#font-editor .font-value-slider[name=${name}]`;
+  return {
+    
+    value: viewDoc.querySelector(selector) &&
+           parseFloat(viewDoc.querySelector(selector).value),
+    
+    unit: viewDoc.querySelector(selector + ` ~ .font-unit-select`) &&
+          viewDoc.querySelector(selector + ` ~ .font-unit-select`).value
+  };
+}
+
+
+
+
+
+
+
+
+
+
+async function waitFor(condition) {
+  await BrowserTestUtils.waitForCondition(condition, "waitFor", 10, 500);
+  return condition();
 }

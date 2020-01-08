@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -16,16 +17,6 @@ add_task(async function() {
 
   await testKeywordValues(inspector, viewDoc);
 });
-
-function getPropertyValue(viewDoc, name) {
-  const selector = `#font-editor .font-value-slider[name=${name}]`;
-  return {
-    value: viewDoc.querySelector(selector).value,
-    
-    unit: viewDoc.querySelector(selector + ` ~ .font-unit-select`) &&
-          viewDoc.querySelector(selector + ` ~ .font-unit-select`).value
-  };
-}
 
 async function testKeywordValues(inspector, viewDoc) {
   await selectNode(".bold-text", inspector);

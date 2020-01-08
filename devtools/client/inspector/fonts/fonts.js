@@ -434,7 +434,12 @@ class FontInspector {
 
 
 
+
   getTextProperty(name, value) {
+    if (!this.selectedRule) {
+      return null;
+    }
+
     let textProperty =
       this.selectedRule.textProps.find(prop => prop.name === name);
     if (!textProperty) {
@@ -617,7 +622,14 @@ class FontInspector {
   syncChanges(name, value) {
     const textProperty = this.getTextProperty(name, value);
     if (textProperty) {
-      textProperty.setValue(value);
+      
+      
+      
+      try {
+        textProperty.setValue(value);
+      } catch (e) {
+        
+      }
     }
 
     this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
@@ -716,8 +728,12 @@ class FontInspector {
       let unit = fromUnit;
 
       if (toUnit && fromUnit) {
-        value = await this.convert(value, fromUnit, toUnit);
-        unit = toUnit;
+        try {
+          value = await this.convertUnits(value, fromUnit, toUnit);
+          unit = toUnit;
+        } catch (err) {
+          
+        }
       }
 
       this.onFontPropertyUpdate(property, value, unit);
@@ -1005,7 +1021,13 @@ class FontInspector {
     
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     
-    textProperty.rule.previewPropertyValue(textProperty, value, "");
+
+    try {
+      textProperty.rule.previewPropertyValue(textProperty, value, "");
+    } catch (e) {
+      
+    }
+
     
     this.syncChanges(name, value);
   }
