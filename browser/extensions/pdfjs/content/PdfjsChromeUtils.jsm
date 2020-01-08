@@ -94,25 +94,6 @@ var PdfjsChromeUtils = {
 
 
 
-
-
-  notifyChildOfSettingsChange(enabled) {
-    if (Services.appinfo.processType ===
-        Services.appinfo.PROCESS_TYPE_DEFAULT && this._ppmm) {
-      
-      
-      
-      
-      
-      this._ppmm.broadcastAsyncMessage("PDFJS:Child:updateSettings",
-                                       { enabled, });
-    }
-  },
-
-  
-
-
-
   observe(aSubject, aTopic, aData) {
     if (aTopic === "quit-application") {
       this.uninit();
