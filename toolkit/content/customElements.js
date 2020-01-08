@@ -44,6 +44,39 @@ const gXULDOMParser = new DOMParser();
 gXULDOMParser.forceEnableXULXBL();
 
 const MozElementMixin = Base => class MozElement extends Base {
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  inheritAttribute(child, attr) {
+    let attrName = attr;
+    let attrNewName = attr;
+    let split = attrName.split("=");
+    if (split.length == 2) {
+      attrName = split[1];
+      attrNewName = split[0];
+    }
+
+    if (attrNewName === "text") {
+      child.textContent =
+        this.hasAttribute(attrName) ? this.getAttribute(attrName) : "";
+    } else if (this.hasAttribute(attrName)) {
+      child.setAttribute(attrNewName, this.getAttribute(attrName));
+    } else {
+      child.removeAttribute(attrNewName);
+    }
+  }
+
   
 
 
