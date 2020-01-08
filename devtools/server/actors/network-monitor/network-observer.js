@@ -609,7 +609,7 @@ NetworkResponseListener.prototype = {
 
 
 
-function NetworkMonitor(filters, owner) {
+function NetworkObserver(filters, owner) {
   this.filters = filters;
   this.owner = owner;
   this.openRequests = new Map();
@@ -623,9 +623,9 @@ function NetworkMonitor(filters, owner) {
   this._throttler = null;
 }
 
-exports.NetworkMonitor = NetworkMonitor;
+exports.NetworkObserver = NetworkObserver;
 
-NetworkMonitor.prototype = {
+NetworkObserver.prototype = {
   filters: null,
 
   httpTransactionCodes: {
