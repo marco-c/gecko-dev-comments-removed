@@ -8,7 +8,6 @@
 
 #include "HTMLEditUtils.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/EditorUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Preferences.h"
@@ -1078,7 +1077,7 @@ HTMLEditor::SetFinalSize(int32_t aX,
   y = top - ((mResizedObjectIsAbsolutelyPositioned) ? mResizedObjectBorderTop+mResizedObjectMarginTop : 0);
 
   
-  AutoPlaceholderBatch batchIt(this);
+  AutoPlaceholderBatch treatAsOneTransaction(*this);
 
   if (mResizedObjectIsAbsolutelyPositioned) {
     if (setHeight) {

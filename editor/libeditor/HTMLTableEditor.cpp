@@ -451,7 +451,7 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
   
   MOZ_ASSERT(!tableSize.IsEmpty());
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertNode,
@@ -640,7 +640,7 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
   
   MOZ_ASSERT(!tableSize.IsEmpty());
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertNode,
@@ -863,7 +863,7 @@ HTMLEditor::DeleteTable()
     return NS_ERROR_FAILURE;
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   rv = DeleteTableElementAndChildrenWithTransaction(*selection, *table);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -904,7 +904,7 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
     return NS_OK;
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eDeleteNode,
@@ -1179,7 +1179,7 @@ HTMLEditor::DeleteTableCellContentsWithTransaction()
   }
 
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eDeleteNode,
@@ -1265,7 +1265,7 @@ HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
     return error.StealNSResult();
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
 
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
@@ -1495,7 +1495,7 @@ HTMLEditor::DeleteSelectedTableRowsWithTransaction(
     return error.StealNSResult();
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
 
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
@@ -2147,7 +2147,7 @@ HTMLEditor::SplitTableCell()
     return NS_OK;
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertNode,
@@ -2401,7 +2401,7 @@ HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
     return NS_ERROR_INVALID_ARG;
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
@@ -2416,7 +2416,7 @@ HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
     return NS_ERROR_FAILURE;
   }
 
-  AutoSelectionRestorer selectionRestorer(selection, this);
+  AutoSelectionRestorer restoreSelectionLater(*selection, *this);
 
   
   nsAtom* newCellName =
@@ -2459,7 +2459,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     return NS_OK;
   }
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTransactionsConserveSelection dontChangeSelection(*this);
 
@@ -3089,9 +3089,9 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
   }
 
   
-  AutoSelectionRestorer selectionRestorer(&aSelection, this);
+  AutoSelectionRestorer restoreSelectionLater(aSelection, *this);
 
-  AutoPlaceholderBatch beginBatching(this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertNode,

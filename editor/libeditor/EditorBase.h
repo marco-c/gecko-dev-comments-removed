@@ -7,6 +7,7 @@
 #define mozilla_EditorBase_h
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/EditAction.h"         
 #include "mozilla/EditorDOMPoint.h"     
 #include "mozilla/Maybe.h"              
 #include "mozilla/OwningNonNull.h"      
@@ -83,7 +84,6 @@ class TextInputListener;
 class TextServicesDocument;
 class TypeInState;
 class WSRunObject;
-enum class EditSubAction : int32_t;
 
 namespace dom {
 class DataTransfer;
@@ -1910,6 +1910,190 @@ private:
 
 
   nsresult SetTextDirectionTo(TextDirection aTextDirection);
+
+protected: 
+  
+
+
+  class MOZ_RAII AutoTransactionBatch final
+  {
+  public:
+    explicit AutoTransactionBatch(EditorBase& aEditorBase
+                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mEditorBase(aEditorBase)
+    {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      mEditorBase->BeginTransactionInternal();
+    }
+
+    ~AutoTransactionBatch()
+    {
+      mEditorBase->EndTransactionInternal();
+    }
+
+  protected:
+    OwningNonNull<EditorBase> mEditorBase;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  };
+
+  
+
+
+
+  class MOZ_RAII AutoPlaceholderBatch final
+  {
+  public:
+    explicit AutoPlaceholderBatch(EditorBase& aEditorBase
+                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mEditorBase(aEditorBase)
+    {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      mEditorBase->BeginPlaceholderTransaction(nullptr);
+    }
+
+    AutoPlaceholderBatch(EditorBase& aEditorBase,
+                         nsAtom& aTransactionName
+                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mEditorBase(aEditorBase)
+    {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      mEditorBase->BeginPlaceholderTransaction(&aTransactionName);
+    }
+
+    ~AutoPlaceholderBatch()
+    {
+      mEditorBase->EndPlaceholderTransaction();
+    }
+
+  protected:
+    OwningNonNull<EditorBase> mEditorBase;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  };
+
+  
+
+
+
+  class MOZ_RAII AutoSelectionRestorer final
+  {
+  public:
+    
+
+
+
+    AutoSelectionRestorer(Selection& aSelection,
+                          EditorBase& aEditorBase
+                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+
+    
+
+
+    ~AutoSelectionRestorer();
+
+    
+
+
+    void Abort();
+
+  protected:
+    RefPtr<Selection> mSelection;
+    EditorBase* mEditorBase;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  };
+
+  
+
+
+
+  class MOZ_RAII AutoTopLevelEditSubActionNotifier final
+  {
+  public:
+    AutoTopLevelEditSubActionNotifier(EditorBase& aEditorBase,
+                                      EditSubAction aEditSubAction,
+                                      nsIEditor::EDirection aDirection
+                                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mEditorBase(aEditorBase)
+      , mDoNothing(false)
+    {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      
+      
+      
+      
+      if (!mEditorBase.mTopLevelEditSubAction) {
+        mEditorBase.OnStartToHandleTopLevelEditSubAction(aEditSubAction,
+                                                         aDirection);
+      } else {
+        mDoNothing = true; 
+      }
+    }
+
+    ~AutoTopLevelEditSubActionNotifier()
+    {
+      if (!mDoNothing) {
+        mEditorBase.OnEndHandlingTopLevelEditSubAction();
+      }
+    }
+
+  protected:
+    EditorBase& mEditorBase;
+    bool mDoNothing;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  };
+
+  
+
+
+
+  class MOZ_RAII AutoTransactionsConserveSelection final
+  {
+  public:
+    explicit AutoTransactionsConserveSelection(EditorBase& aEditorBase
+                                               MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mEditorBase(aEditorBase)
+      , mAllowedTransactionsToChangeSelection(
+          aEditorBase.AllowsTransactionsToChangeSelection())
+    {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      mEditorBase.MakeThisAllowTransactionsToChangeSelection(false);
+    }
+
+    ~AutoTransactionsConserveSelection()
+    {
+      mEditorBase.MakeThisAllowTransactionsToChangeSelection(
+                    mAllowedTransactionsToChangeSelection);
+    }
+
+  protected:
+    EditorBase& mEditorBase;
+    bool mAllowedTransactionsToChangeSelection;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  };
+
+  
+
+
+  class MOZ_RAII AutoUpdateViewBatch final
+  {
+  public:
+    explicit AutoUpdateViewBatch(EditorBase& aEditorBase
+                                 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mEditorBase(aEditorBase)
+    {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      mEditorBase.BeginUpdateViewBatch();
+    }
+
+    ~AutoUpdateViewBatch()
+    {
+      mEditorBase.EndUpdateViewBatch();
+    }
+
+  protected:
+    EditorBase& mEditorBase;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  };
+
 protected:
   enum Tristate
   {
@@ -2001,12 +2185,6 @@ protected:
   
   bool mIsHTMLEditorClass;
 
-  friend class AutoPlaceholderBatch;
-  friend class AutoSelectionRestorer;
-  friend class AutoTopLevelEditSubActionNotifier;
-  friend class AutoTransactionBatch;
-  friend class AutoTransactionsConserveSelection;
-  friend class AutoUpdateViewBatch;
   friend class CompositionTransaction;
   friend class CreateElementTransaction;
   friend class CSSEditUtils;
