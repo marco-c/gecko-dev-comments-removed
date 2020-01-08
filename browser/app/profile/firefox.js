@@ -1473,9 +1473,9 @@ pref("media.gmp-widevinecdm.enabled", true);
 
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
-pref("media.autoplay.ask-permission", true);
+pref("media.autoplay.ask-permission", false);
 
-pref("media.autoplay.default", 2); 
+pref("media.autoplay.default", 1); 
 #else
 pref("media.autoplay.default", 0); 
 pref("media.autoplay.enabled.user-gestures-needed", false);
