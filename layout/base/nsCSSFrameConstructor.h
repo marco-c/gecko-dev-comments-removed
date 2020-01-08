@@ -781,6 +781,34 @@ private:
   static const PseudoParentData sPseudoParentData[eParentTypeCount];
 
   
+  
+  
+  
+  
+  struct MOZ_STACK_CLASS XBLBindingLoadInfo
+  {
+    RefPtr<ComputedStyle> mStyle;
+    mozilla::UniquePtr<PendingBinding> mPendingBinding;
+    nsAtom* mTag = nullptr;
+
+    
+    XBLBindingLoadInfo(nsIContent&, ComputedStyle&);
+
+    
+    XBLBindingLoadInfo(already_AddRefed<ComputedStyle> aStyle,
+                       mozilla::UniquePtr<PendingBinding> aPendingBinding,
+                       nsAtom* aTag);
+
+    
+    XBLBindingLoadInfo();
+  };
+
+  
+  XBLBindingLoadInfo LoadXBLBindingIfNeeded(nsIContent&,
+                                            ComputedStyle&,
+                                            uint32_t aFlags);
+
+  
 
 
 
