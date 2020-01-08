@@ -1150,6 +1150,19 @@ impl ResourceCache {
                 
                 
                 const MAX_TILES_PER_REQUEST: i32 = 64;
+                
+                
+                
+                
+                
+                if tiles.size.width > MAX_TILES_PER_REQUEST {
+                    tiles.origin.x += (tiles.size.width - MAX_TILES_PER_REQUEST) / 2;
+                    tiles.size.width = MAX_TILES_PER_REQUEST;
+                }
+                if tiles.size.height > MAX_TILES_PER_REQUEST {
+                    tiles.origin.y += (tiles.size.height - MAX_TILES_PER_REQUEST) / 2;
+                    tiles.size.height = MAX_TILES_PER_REQUEST;
+                }
                 while tiles.size.width as i32 * tiles.size.height as i32 > MAX_TILES_PER_REQUEST {
                     
                     if tiles.size.width > tiles.size.height {
