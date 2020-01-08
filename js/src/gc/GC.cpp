@@ -2994,7 +2994,6 @@ GCRuntime::updateCellPointers(Zone* zone, AllocKinds kinds, size_t bgTaskCount)
 
 
 
-
 static const AllocKinds UpdatePhaseOne {
     AllocKind::SCRIPT,
     AllocKind::BASE_SHAPE,
@@ -3002,14 +3001,14 @@ static const AllocKinds UpdatePhaseOne {
     AllocKind::ACCESSOR_SHAPE,
     AllocKind::OBJECT_GROUP,
     AllocKind::STRING,
-    AllocKind::JITCODE,
-    AllocKind::SCOPE
+    AllocKind::JITCODE
 };
 
 
 
 static const AllocKinds UpdatePhaseThree {
     AllocKind::LAZY_SCRIPT,
+    AllocKind::SCOPE,
     AllocKind::FUNCTION,
     AllocKind::FUNCTION_EXTENDED,
     AllocKind::OBJECT0,
