@@ -1131,7 +1131,7 @@ nsTypeAheadFind::Find(const nsAString& aSearchString, bool aLinksOnly,
   }
   else {
     
-    if (mTypeAheadBuffer.Length() > mLastFindLength)
+    if (!mEntireWord && mTypeAheadBuffer.Length() > mLastFindLength)
       PlayNotFoundSound();
   }
 
