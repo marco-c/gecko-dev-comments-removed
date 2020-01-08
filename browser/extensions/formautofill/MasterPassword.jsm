@@ -114,49 +114,11 @@ var MasterPassword = {
 
 
 
-
-
-
-
-
-
-  decryptSync(cipherText) {
-    if (this.isUIBusy) {
-      throw Components.Exception("\"ensureLoggedIn()\" should be called first", Cr.NS_ERROR_UNEXPECTED);
-    }
-    return cryptoSDR.decrypt(cipherText);
-  },
-
-  
-
-
-
-
-
   async encrypt(plainText) {
     if (!await this.ensureLoggedIn()) {
       throw Components.Exception("User canceled master password entry", Cr.NS_ERROR_ABORT);
     }
 
-    return cryptoSDR.encrypt(plainText);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  encryptSync(plainText) {
-    if (this.isUIBusy) {
-      throw Components.Exception("\"ensureLoggedIn()\" should be called first", Cr.NS_ERROR_UNEXPECTED);
-    }
     return cryptoSDR.encrypt(plainText);
   },
 
