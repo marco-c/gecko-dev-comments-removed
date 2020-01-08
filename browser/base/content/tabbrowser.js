@@ -286,10 +286,7 @@ window._gBrowser = {
   _setupInitialBrowserAndTab() {
     
     let userContextId = window.arguments && window.arguments[6];
-
-    
-    
-    let browser = this._createBrowser({uriIsAboutBlank: true, userContextId});
+    let browser = this._createBrowser({uriIsAboutBlank: false, userContextId});
     browser.setAttribute("primary", "true");
     browser.setAttribute("blank", "true");
     if (gBrowserAllowScriptsToCloseInitialTabs) {

@@ -1677,7 +1677,7 @@ var gBrowserInit = {
 
   _handleURIToLoad() {
     this._callWithURIToLoad(uriToLoad => {
-      if (!uriToLoad || uriToLoad == "about:blank") {
+      if (!uriToLoad) {
         
         
         return;
