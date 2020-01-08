@@ -8,11 +8,14 @@ const { PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
+
+const AUTOINCREMENT_DELAY = 300;
 const UNITS = ["em", "rem", "%", "px", "vh", "vw"];
 
 class FontPropertyValue extends PureComponent {
   static get propTypes() {
     return {
+      allowAutoIncrement: PropTypes.bool,
       defaultValue: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
       label: PropTypes.string.isRequired,
       min: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
@@ -28,27 +31,87 @@ class FontPropertyValue extends PureComponent {
 
   constructor(props) {
     super(props);
+    
+    this.interval = null;
     this.state = {
       
-      interactive: false
+      interactive: false,
+      value: null,
     };
+
+    this.autoIncrement = this.autoIncrement.bind(this);
     this.onChange = this.onChange.bind(this);
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onUnitChange = this.onUnitChange.bind(this);
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    
+    if (prevState.interactive && !this.state.interactive) {
+      this.stopAutoIncrement();
+    }
+  }
+
+  componentWillUnmount() {
+    this.stopAutoIncrement();
+  }
+
+  
+
+
+  autoIncrement() {
+    const value = this.props.value + this.props.step * 10;
+    this.updateValue(value);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  isAtUpperBound(value) {
+    return value >= Math.floor(this.props.max);
+  }
+
+  
+
+
+
+
+
+
+
   onChange(e) {
-    this.props.onChange(this.props.name, e.target.value, this.props.unit);
-    const value = e.target.value;
-    this.setState((prevState) => {
-      return { ...prevState, value };
-    });
+    const value = parseFloat(e.target.value);
+    this.updateValue(value);
+
+    
+    if (value < this.props.max && this.interval) {
+      this.stopAutoIncrement();
+    }
+
+    
+    if (this.isAtUpperBound(value) && this.state.interactive) {
+      this.startAutoIncrement();
+    }
   }
 
   onUnitChange(e) {
     this.props.onChange(this.props.name, this.props.value, this.props.unit,
        e.target.value);
+    
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        value: null
+      };
+    });
   }
 
   onMouseDown(e) {
@@ -60,6 +123,55 @@ class FontPropertyValue extends PureComponent {
   onMouseUp(e) {
     this.setState((prevState, props) => {
       return { ...prevState, interactive: false, value: props.value };
+    });
+  }
+
+  startAutoIncrement() {
+    
+    if (!this.props.allowAutoIncrement || this.interval) {
+      return;
+    }
+
+    this.interval = setInterval(this.autoIncrement, AUTOINCREMENT_DELAY);
+  }
+
+  stopAutoIncrement() {
+    clearInterval(this.interval);
+    this.interval = null;
+  }
+
+  
+
+
+
+
+
+
+
+  toggleInteractiveState(isInteractive) {
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        interactive: isInteractive
+      };
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  updateValue(value) {
+    this.props.onChange(this.props.name, value, this.props.unit);
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        value
+      };
     });
   }
 
