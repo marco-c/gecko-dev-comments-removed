@@ -20,10 +20,7 @@ const isDebugBuild = Cc["@mozilla.org/xpcom/debug;1"]
                        .getService(Ci.nsIDebug2).isDebugBuild;
 
 
-
-
-
-const gEVExpected = isDebugBuild && !("@mozilla.org/b2g-process-global;1" in Cc);
+const gEVExpected = isDebugBuild;
 
 const SSS_STATE_FILE_NAME = "SiteSecurityServiceState.txt";
 const PRELOAD_STATE_FILE_NAME = "SecurityPreloadState.txt";
