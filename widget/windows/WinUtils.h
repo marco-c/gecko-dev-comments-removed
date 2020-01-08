@@ -105,6 +105,7 @@ typedef DPI_AWARENESS_CONTEXT(WINAPI * SetThreadDpiAwarenessContextProc)(DPI_AWA
 typedef BOOL(WINAPI * EnableNonClientDpiScalingProc)(HWND);
 
 namespace mozilla {
+enum class PointerCapabilities : uint8_t;
 #if defined(ACCESSIBILITY)
 namespace a11y {
 class Accessible;
@@ -473,6 +474,11 @@ public:
 
 
   static POWER_PLATFORM_ROLE GetPowerPlatformRole();
+
+  
+  static PointerCapabilities GetPrimaryPointerCapabilities();
+  
+  static PointerCapabilities GetAllPointerCapabilities();
 
   
 
