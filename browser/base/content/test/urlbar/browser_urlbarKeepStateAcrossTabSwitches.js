@@ -10,7 +10,11 @@ add_task(async function() {
   let browser = tab.linkedBrowser;
   
   
-  await BrowserTestUtils.waitForCondition(() => browser.contentDocumentAsCPOW && !browser.contentDocumentAsCPOW.hidden);
+  await ContentTask.spawn(browser, null, async () => {
+    await ContentTaskUtils.waitForCondition(() => {
+      return content.document && !content.document.hidden;
+    });
+  });
   let errorPageLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
   gURLBar.value = input;
   gURLBar.select();
@@ -34,7 +38,11 @@ add_task(async function() {
   let browser = tab.linkedBrowser;
   
   
-  await BrowserTestUtils.waitForCondition(() => browser.contentDocumentAsCPOW && !browser.contentDocumentAsCPOW.hidden);
+  await ContentTask.spawn(browser, null, async () => {
+    await ContentTaskUtils.waitForCondition(() => {
+      return content.document && !content.document.hidden;
+    });
+  });
   let errorPageLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
   gURLBar.value = input;
   gURLBar.select();
