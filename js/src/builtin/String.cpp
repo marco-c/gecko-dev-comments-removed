@@ -137,14 +137,21 @@ Escape(JSContext* cx, const CharT* chars, uint32_t length, InlineCharBuffer<Lati
         }
 
         
-        newLength += (ch < 256) ? 2 : 5;
+
+
+
+        static_assert(JSString::MAX_LENGTH < UINT32_MAX - 5,
+                      "Adding 5 to valid string length should not overflow");
+
+        MOZ_ASSERT(newLength <= JSString::MAX_LENGTH);
 
         
+        newLength += (ch < 256) ? 2 : 5;
 
-
-
-        static_assert(JSString::MAX_LENGTH < UINT32_MAX / 6,
-                      "newlength must not overflow");
+        if (MOZ_UNLIKELY(newLength > JSString::MAX_LENGTH)) {
+            ReportAllocationOverflow(cx);
+            return false;
+        }
     }
 
     if (newLength == length) {
