@@ -12,12 +12,14 @@ ChromeUtils.defineModuleGetter(this, "OS",
   "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 const ATTR_CODE_MAX_LENGTH = 200;
 const ATTR_CODE_KEYS_REGEX = /^source|medium|campaign|content$/;
 const ATTR_CODE_VALUE_REGEX = /[a-zA-Z0-9_%\\-\\.\\(\\)]*/;
 const ATTR_CODE_FIELD_SEPARATOR = "%26"; 
 const ATTR_CODE_KEY_VALUE_SEPARATOR = "%3D"; 
+const ATTR_CODE_KEYS = ["source", "medium", "campaign", "content"];
 
 let gCachedAttrData = null;
 
@@ -66,24 +68,48 @@ var AttributionCode = {
 
 
 
+
+
+
+
   getAttrDataAsync() {
     return (async function() {
       if (gCachedAttrData != null) {
         return gCachedAttrData;
       }
 
-      let code = "";
-      try {
-        let bytes = await OS.File.read(getAttributionFile().path);
-        let decoder = new TextDecoder();
-        code = decoder.decode(bytes);
-      } catch (ex) {
-        
-        
-        
+      gCachedAttrData = {};
+      if (AppConstants.platform == "win") {
+        try {
+          let bytes = await OS.File.read(getAttributionFile().path);
+          let decoder = new TextDecoder();
+          let code = decoder.decode(bytes);
+          gCachedAttrData = parseAttributionCode(code);
+        } catch (ex) {
+          
+          
+          
+        }
+      } else if (AppConstants.platform == "macosx") {
+        try {
+          let appPath = Services.dirsvc.get("GreD", Ci.nsIFile).parent.parent.path;
+          let attributionSvc = Cc["@mozilla.org/mac-attribution;1"]
+                                  .getService(Ci.nsIMacAttributionService);
+          let referrer = attributionSvc.getReferrerUrl(appPath);
+          let params = new URL(referrer).searchParams;
+          for (let key of ATTR_CODE_KEYS) {
+            let utm_key = `utm_${key}`;
+            if (params.has(utm_key)) {
+              let value = params.get(utm_key);
+              if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
+                gCachedAttrData[key] = value;
+              }
+            }
+          }
+        } catch (ex) {
+          
+        }
       }
-
-      gCachedAttrData = parseAttributionCode(code);
       return gCachedAttrData;
     })();
   },
