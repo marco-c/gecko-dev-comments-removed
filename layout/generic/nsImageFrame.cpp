@@ -1819,6 +1819,45 @@ nsDisplayImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
   ImgDrawResult drawResult =
     mImage->GetImageContainerAtSize(aManager, decodeSize, svgContext,
                                     flags, getter_AddRefs(container));
+
+  
+  
+  
+  bool updatePrevImage = false;
+  switch (drawResult) {
+    case ImgDrawResult::NOT_READY:
+    case ImgDrawResult::INCOMPLETE:
+    case ImgDrawResult::TEMPORARY_ERROR:
+      if (mPrevImage && mPrevImage != mImage) {
+        RefPtr<ImageContainer> prevContainer;
+        drawResult = mPrevImage->GetImageContainerAtSize(aManager, decodeSize,
+                                                         svgContext, flags,
+                                                         getter_AddRefs(prevContainer));
+        if (prevContainer && drawResult == ImgDrawResult::SUCCESS) {
+          container = std::move(prevContainer);
+          break;
+        }
+
+        
+        updatePrevImage = true;
+      }
+      break;
+    default:
+      updatePrevImage = mPrevImage != mImage;
+      break;
+  }
+
+  
+  
+  
+  if (updatePrevImage) {
+    mPrevImage = mImage;
+    if (mFrame->IsImageFrame()) {
+      nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
+      f->mPrevImage = f->mImage;
+    }
+  }
+
   if (!container) {
     return false;
   }
