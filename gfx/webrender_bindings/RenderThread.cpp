@@ -335,9 +335,13 @@ static void
 NotifyDidRender(layers::CompositorBridgeParent* aBridge,
                 wr::WrPipelineInfo aInfo,
                 TimeStamp aStart,
-                TimeStamp aEnd)
+                TimeStamp aEnd,
+                bool aRender)
 {
-  if (aBridge->GetWrBridge()) {
+  if (aRender && aBridge->GetWrBridge()) {
+    
+    
+    
     aBridge->GetWrBridge()->RecordFrame();
   }
 
@@ -397,7 +401,8 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
     &NotifyDidRender,
     renderer->GetCompositorBridge(),
     info,
-    aStartTime, end
+    aStartTime, end,
+    aRender
   ));
 }
 
