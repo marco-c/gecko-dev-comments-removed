@@ -90,6 +90,7 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.mozstumbler.service.mainthread.SafeReceiver;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -985,9 +986,9 @@ public abstract class GeckoApp extends GeckoActivity
         
         
         
-        getApplicationContext().sendBroadcast(
-                new Intent(INTENT_REGISTER_STUMBLER_LISTENER)
-        );
+        final Intent stumblerIntent = new Intent(getApplicationContext(), SafeReceiver.class);
+        stumblerIntent.setAction(INTENT_REGISTER_STUMBLER_LISTENER);
+        getApplicationContext().sendBroadcast(stumblerIntent);
 
         
         
