@@ -4431,6 +4431,16 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     SmoothScrollTo(Metrics().GetSmoothScrollOffset());
   }
 
+  if (viewportUpdated) {
+    
+    
+    
+    
+    
+    
+    Metrics().RecalculateViewportOffset();
+  }
+
   if (needContentRepaint) {
     
     RequestContentRepaint(false);
