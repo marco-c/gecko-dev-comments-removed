@@ -7745,17 +7745,8 @@ var MousePosTracker = {
   _listeners: new Set(),
   _x: 0,
   _y: 0,
-  _mostRecentEvent: null,
 
   
-
-
-
-
-
-
-
-
 
 
 
@@ -7785,19 +7776,7 @@ var MousePosTracker = {
     listener._hover = false;
     this._listeners.add(listener);
 
-    
-    
-    
-    window.promiseDocumentFlushed(() => {
-      if (this._listeners.has(listener)) {
-        this._callListeners([listener]);
-        window.requestAnimationFrame(() => {
-          if (this._listeners.has(listener) && listener.onTrackingStarted) {
-            listener.onTrackingStarted();
-          }
-        });
-      }
-    });
+    this._callListener(listener);
   },
 
   removeListener(listener) {
@@ -7805,72 +7784,39 @@ var MousePosTracker = {
   },
 
   handleEvent(event) {
-    let firstEvent = !this._mostRecentEvent;
-    this._mostRecentEvent = event;
+    let fullZoom = window.windowUtils.fullZoom;
+    this._x = event.screenX / fullZoom - window.mozInnerScreenX;
+    this._y = event.screenY / fullZoom - window.mozInnerScreenY;
 
-    if (firstEvent) {
-      window.promiseDocumentFlushed(() => {
-        this.onDocumentFlushed();
-        this._mostRecentEvent = null;
-      });
-    }
-  },
-
-  onDocumentFlushed() {
-    let event = this._mostRecentEvent;
-
-    if (event) {
-      let fullZoom = window.windowUtils.fullZoom;
-      this._x = event.screenX / fullZoom - window.mozInnerScreenX;
-      this._y = event.screenY / fullZoom - window.mozInnerScreenY;
-
-      this._callListeners(this._listeners);
-    }
-  },
-
-  _callListeners(listeners) {
-    let functionsToCall = [];
-    for (let listener of listeners) {
-      let rect;
+    this._listeners.forEach(listener => {
       try {
-        rect = listener.getMouseTargetRect();
+        this._callListener(listener);
       } catch (e) {
         Cu.reportError(e);
-        continue;
-      }
-
-      let hover = this._x >= rect.left &&
-                  this._x <= rect.right &&
-                  this._y >= rect.top &&
-                  this._y <= rect.bottom;
-
-      if (hover == listener._hover) {
-        continue;
-      }
-
-      listener._hover = hover;
-      if (hover) {
-        if (listener.onMouseEnter) {
-          functionsToCall.push(listener.onMouseEnter.bind(listener));
-        }
-      } else if (listener.onMouseLeave) {
-        functionsToCall.push(listener.onMouseLeave.bind(listener));
-      }
-    }
-
-    
-    
-    
-    
-    window.requestAnimationFrame(() => {
-      for (let fn of functionsToCall) {
-        try {
-          fn();
-        } catch (e) {
-          Cu.reportError(e);
-        }
       }
     });
+  },
+
+  _callListener(listener) {
+    let rect = listener.getMouseTargetRect();
+    let hover = this._x >= rect.left &&
+                this._x <= rect.right &&
+                this._y >= rect.top &&
+                this._y <= rect.bottom;
+
+    if (hover == listener._hover) {
+      return;
+    }
+
+    listener._hover = hover;
+
+    if (hover) {
+      if (listener.onMouseEnter) {
+        listener.onMouseEnter();
+      }
+    } else if (listener.onMouseLeave) {
+      listener.onMouseLeave();
+    }
   },
 };
 
