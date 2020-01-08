@@ -1630,6 +1630,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "privacy.userInteraction.document.interval",
+   privacy_userInteraction_document_interval,
+  uint32_t, 1800 
+)
+
+
+VARCACHE_PREF(
   "privacy.resistFingerprinting",
    privacy_resistFingerprinting,
   RelaxedAtomicBool, false

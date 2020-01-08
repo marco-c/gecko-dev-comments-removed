@@ -1495,6 +1495,7 @@ nsIDocument::nsIDocument()
     mChildDocumentUseCounters(0),
     mNotifiedPageForUseCounter(0),
     mUserHasInteracted(false),
+    mHasUserInteractionTimerScheduled(false),
     mUserGestureActivated(false),
     mStackRefCnt(0),
     mUpdateNestLevel(0),
@@ -12626,6 +12627,10 @@ nsIDocument::SetUserHasInteracted()
 {
   MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug,
           ("Document %p has been interacted by user.", this));
+
+  
+  MaybeStoreUserInteractionAsPermission();
+
   if (mUserHasInteracted) {
     return;
   }
@@ -12638,7 +12643,6 @@ nsIDocument::SetUserHasInteracted()
   }
 
   MaybeAllowStorageForOpener();
-  MaybeStoreUserInteractionAsPermission();
 }
 
 void
@@ -12758,13 +12762,190 @@ nsIDocument::MaybeAllowStorageForOpener()
                                                                      AntiTrackingCommon::eHeuristic);
 }
 
+namespace {
+
+
+
+
+
+
+
+class UserIntractionTimer final : public Runnable
+                                , public nsITimerCallback
+                                , public nsIAsyncShutdownBlocker
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  explicit UserIntractionTimer(nsIDocument* aDocument)
+    : Runnable("UserIntractionTimer")
+    , mPrincipal(aDocument->NodePrincipal())
+    , mDocument(do_GetWeakReference(aDocument))
+  {
+    static int32_t userInteractionTimerId = 0;
+    
+    
+    mBlockerName.AppendPrintf("UserInteractionTimer %d for document %p",
+                              ++userInteractionTimerId, aDocument);
+  }
+
+  
+
+  NS_IMETHOD
+  Run() override
+  {
+    uint32_t interval =
+      StaticPrefs::privacy_userInteraction_document_interval();
+    if (!interval) {
+      return NS_OK;
+    }
+
+    RefPtr<UserIntractionTimer> self = this;
+    auto raii = MakeScopeExit([self] {
+      self->CancelTimerAndStoreUserInteraction();
+    });
+
+    nsresult rv = NS_NewTimerWithCallback(getter_AddRefs(mTimer),
+                                          this, interval * 1000,
+                                          nsITimer::TYPE_ONE_SHOT,
+                                          SystemGroup::EventTargetFor(TaskCategory::Other));
+    NS_ENSURE_SUCCESS(rv, NS_OK);
+
+    nsCOMPtr<nsIAsyncShutdownClient> phase = GetShutdownPhase();
+    NS_ENSURE_TRUE(!!phase, NS_OK);
+
+    rv = phase->AddBlocker(this, NS_LITERAL_STRING(__FILE__), __LINE__,
+                           NS_LITERAL_STRING("UserIntractionTimer shutdown"));
+    NS_ENSURE_SUCCESS(rv, NS_OK);
+
+    raii.release();
+    return NS_OK;
+  }
+
+  
+
+  NS_IMETHOD
+  Notify(nsITimer* aTimer) override
+  {
+    StoreUserInteraction();
+    return NS_OK;
+  }
+
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+  using nsINamed::GetName;
+#endif
+
+  
+
+  NS_IMETHOD
+  GetName(nsAString& aName) override
+  {
+    aName = mBlockerName;
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  BlockShutdown(nsIAsyncShutdownClient* aClient) override
+  {
+    CancelTimerAndStoreUserInteraction();
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  GetState(nsIPropertyBag**) override
+  {
+    return NS_OK;
+  }
+
+private:
+  ~UserIntractionTimer() = default;
+
+  void
+  StoreUserInteraction()
+  {
+    
+    nsCOMPtr<nsIAsyncShutdownClient> phase = GetShutdownPhase();
+    if (phase) {
+      phase->RemoveBlocker(this);
+    }
+
+    
+    nsCOMPtr<nsIDocument> document = do_QueryReferent(mDocument);
+    if (document) {
+      AntiTrackingCommon::StoreUserInteractionFor(mPrincipal);
+      document->ResetUserInteractionTimer();
+    }
+  }
+
+  void
+  CancelTimerAndStoreUserInteraction()
+  {
+    if (mTimer) {
+      mTimer->Cancel();
+      mTimer = nullptr;
+    }
+
+    StoreUserInteraction();
+  }
+
+  static already_AddRefed<nsIAsyncShutdownClient>
+  GetShutdownPhase()
+  {
+    nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdown();
+    NS_ENSURE_TRUE(!!svc, nullptr);
+
+    nsCOMPtr<nsIAsyncShutdownClient> phase;
+    nsresult rv = svc->GetXpcomWillShutdown(getter_AddRefs(phase));
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
+    return phase.forget();
+  }
+
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsWeakPtr mDocument;
+
+  nsCOMPtr<nsITimer> mTimer;
+
+  nsString mBlockerName;
+};
+
+NS_IMPL_ISUPPORTS_INHERITED(UserIntractionTimer, Runnable, nsITimerCallback,
+                            nsIAsyncShutdownBlocker)
+
+} 
+
 void
 nsIDocument::MaybeStoreUserInteractionAsPermission()
 {
   
-  if (!mParentDocument) {
-    AntiTrackingCommon::StoreUserInteractionFor(NodePrincipal());
+  if (GetSameTypeParentDocument()) {
+    return;
   }
+
+  if (!mUserHasInteracted) {
+    
+    AntiTrackingCommon::StoreUserInteractionFor(NodePrincipal());
+    return;
+  }
+
+  if (mHasUserInteractionTimerScheduled) {
+    return;
+  }
+
+  nsCOMPtr<nsIRunnable> task = new UserIntractionTimer(this);
+  nsresult rv = NS_IdleDispatchToCurrentThread(task.forget(), 2500);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  
+  mHasUserInteractionTimerScheduled = true;
+}
+
+void
+nsIDocument::ResetUserInteractionTimer()
+{
+  mHasUserInteractionTimerScheduled = false;
 }
 
 bool

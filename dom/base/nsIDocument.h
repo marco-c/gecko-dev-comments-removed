@@ -3505,6 +3505,7 @@ public:
   {
     return mUserHasInteracted;
   }
+  void ResetUserInteractionTimer();
 
   
   
@@ -4496,6 +4497,11 @@ protected:
 
   
   bool mUserHasInteracted;
+
+  
+  
+  
+  bool mHasUserInteractionTimerScheduled;
 
   
   
