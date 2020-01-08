@@ -684,6 +684,22 @@ IsSelectionInsideRuby(Selection* aSelection)
   return true;
 }
 
+static Element*
+GetElementOrNearestFlattenedTreeParentElement(nsINode* aNode)
+{
+  if (!aNode->IsContent()) {
+    return nullptr;
+  }
+  for (nsIContent* content = aNode->AsContent();
+      content;
+      content = content->GetFlattenedTreeParent()) {
+    if (content->IsElement()) {
+      return content->AsElement();
+    }
+  }
+  return nullptr;
+}
+
 bool
 nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
                                   int32_t aClipboardType,
@@ -717,28 +733,31 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     return false;
 
   
-  nsCOMPtr<nsIContent> content;
+  
+  RefPtr<Element> targetElement;
+
+  
   RefPtr<Selection> sel = aSelection;
   if (!sel) {
-    content = GetSelectionForCopy(doc, getter_AddRefs(sel));
+    GetSelectionForCopy(doc, getter_AddRefs(sel));
   }
 
   
   if (sel) {
-    RefPtr<nsRange> range = sel->GetRangeAt(0);
+    nsRange* range = sel->GetRangeAt(0);
     if (range) {
-      nsINode* startContainer = range->GetStartContainer();
-      if (startContainer) {
-        content = do_QueryInterface(startContainer);
-      }
+      targetElement =
+        GetElementOrNearestFlattenedTreeParentElement(
+          range->GetStartContainer());
     }
   }
 
   
-  if (!content) {
-    content = doc->GetRootElement();
-    if (!content)
+  if (!targetElement) {
+    targetElement = doc->GetBody();
+    if (!targetElement) {
       return false;
+    }
   }
 
   
@@ -762,7 +781,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     nsEventStatus status = nsEventStatus_eIgnore;
     InternalClipboardEvent evt(true, originalEventMessage);
     evt.mClipboardData = clipboardData;
-    EventDispatcher::Dispatch(content, presShell->GetPresContext(), &evt,
+    EventDispatcher::Dispatch(targetElement, presShell->GetPresContext(), &evt,
                               nullptr, &status);
     
     doDefault = (status != nsEventStatus_eConsumeNoDefault);
@@ -807,13 +826,13 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   uint32_t count = 0;
   if (doDefault) {
     
-    nsCOMPtr<nsIContent> srcNode = content;
-    if (content->IsInNativeAnonymousSubtree()) {
-      srcNode = content->FindFirstNonChromeOnlyAccessContent();
+    nsIContent* sourceContent = targetElement.get();
+    if (targetElement->IsInNativeAnonymousSubtree()) {
+      sourceContent = targetElement->FindFirstNonChromeOnlyAccessContent();
     }
 
     
-    nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(srcNode);
+    nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(sourceContent);
     if (formControl) {
       if (formControl->ControlType() == NS_FORM_INPUT_PASSWORD) {
         return false;
@@ -822,7 +841,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
 
     
     
-    if (originalEventMessage != eCut || content->IsEditable()) {
+    if (originalEventMessage != eCut || targetElement->IsEditable()) {
       
       if (sel->IsCollapsed()) {
         if (aActionTaken) {
