@@ -1142,8 +1142,6 @@ public:
   void PositionItemsInCrossAxis(nscoord aLineStartPosition,
                                 const FlexboxAxisTracker& aAxisTracker);
 
-  friend class AutoFlexLineListClearer; 
-
 private:
   
   void FreezeItemsEarly(bool aIsUsingFlexGrow,
@@ -1152,7 +1150,7 @@ private:
   void FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
                                        bool aIsFinalIteration);
 
-  LinkedList<FlexItem> mItems; 
+  AutoCleanLinkedList<FlexItem> mItems; 
 
   uint32_t mNumItems; 
                       
@@ -4542,34 +4540,6 @@ nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
 
 
-class MOZ_RAII AutoFlexLineListClearer
-{
-public:
-  explicit AutoFlexLineListClearer(LinkedList<FlexLine>& aLines
-                                   MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-  : mLines(aLines)
-  {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  }
-
-  ~AutoFlexLineListClearer()
-  {
-    while (FlexLine* line = mLines.popFirst()) {
-      while (FlexItem* item = line->mItems.popFirst()) {
-        delete item;
-      }
-      delete line;
-    }
-  }
-
-private:
-  LinkedList<FlexLine>& mLines;
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
-
-
-
 
 
 
@@ -4790,9 +4760,8 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
 {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
-  LinkedList<FlexLine> lines;
+  AutoCleanLinkedList<FlexLine> lines;
   nsTArray<nsIFrame*> placeholderKids;
-  AutoFlexLineListClearer cleanupLines(lines);
 
   GenerateFlexLines(aPresContext, aReflowInput,
                     aContentBoxMainSize,
