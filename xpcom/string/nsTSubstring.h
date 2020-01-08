@@ -15,6 +15,7 @@
 #include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
+#include "mozilla/Unused.h"
 
 #include "nsTStringRepr.h"
 
@@ -24,6 +25,264 @@
 
 template <typename T> class nsTSubstringSplitter;
 template <typename T> class nsTString;
+template <typename T> class nsTSubstring;
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class BulkWriteHandle final {
+  friend class nsTSubstring<T>;
+public:
+  typedef typename mozilla::detail::nsTStringRepr<T> base_string_type;
+  typedef typename base_string_type::size_type size_type;
+
+  
+
+
+
+
+
+
+
+  T* Elements() const
+  {
+    MOZ_ASSERT(mString);
+    return mString->mData;
+  }
+
+  
+
+
+
+
+
+
+
+
+  size_type Length() const
+  {
+    MOZ_ASSERT(mString);
+    return mCapacity;
+  }
+
+  
+
+
+
+
+
+
+
+  T* End() const
+  {
+    return Elements() + Length();
+  }
+
+  
+
+
+
+
+
+
+
+  mozilla::Span<T> AsSpan() const
+  {
+    return mozilla::MakeSpan(Elements(), Length());
+  }
+
+  
+
+
+
+
+
+
+
+  operator mozilla::Span<T>() const
+  {
+    return AsSpan();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  mozilla::Result<mozilla::Ok, nsresult> RestartBulkWrite(size_type aCapacity,
+                                                          size_type aPrefixToPreserve,
+                                                          bool aAllowShrinking)
+  {
+    MOZ_ASSERT(mString);
+    auto r = mString->StartBulkWriteImpl(aCapacity, aPrefixToPreserve, aAllowShrinking);
+    if (MOZ_UNLIKELY(r.isErr())) {
+      nsresult rv = r.unwrapErr();
+      
+      
+      
+      return mozilla::Err(rv);
+    }
+    mCapacity = r.unwrap();
+    return mozilla::Ok();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  void Finish(size_type aLength, bool aAllowShrinking)
+  {
+    MOZ_ASSERT(mString);
+    MOZ_ASSERT(aLength <= mCapacity);
+    if (!aLength) {
+      
+      mString->Truncate();
+      mString = nullptr;
+      return;
+    }
+    if (aAllowShrinking) {
+      mozilla::Unused << mString->StartBulkWriteImpl(aLength, aLength, true);
+    }
+    mString->FinishBulkWriteImpl(aLength);
+    mString = nullptr;
+  }
+
+  BulkWriteHandle(BulkWriteHandle&& aOther)
+   : mString(aOther.Forget())
+   , mCapacity(aOther.mCapacity)
+  {
+  }
+
+  ~BulkWriteHandle()
+  {
+    if (!mString || !mCapacity) {
+      return;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    auto ptr = Elements();
+    
+    if (sizeof(T) == 1) {
+      unsigned char* charPtr = reinterpret_cast<unsigned char*>(ptr);
+      if (mCapacity >= 3) {
+        *charPtr++ = 0xEF;
+        *charPtr++ = 0xBF;
+        *charPtr++ = 0xBD;
+        mString->mLength = 3;
+      } else {
+        *charPtr++ = 0x1A;
+        mString->mLength = 1;
+      }
+      *charPtr = 0;
+    } else if (sizeof(T) == 2){
+      char16_t* charPtr = reinterpret_cast<char16_t*>(ptr);
+      *charPtr++ = 0xFFFD;
+      *charPtr = 0;
+      mString->mLength = 1;
+    } else {
+      MOZ_ASSERT_UNREACHABLE("Only 8-bit and 16-bit code units supported.");
+    }
+  }
+
+  BulkWriteHandle() = delete;
+  BulkWriteHandle(const BulkWriteHandle&) = delete;
+  BulkWriteHandle& operator=(const BulkWriteHandle&) = delete;
+
+private:
+
+  BulkWriteHandle(nsTSubstring<T>* aString, size_type aCapacity)
+   : mString(aString)
+   , mCapacity(aCapacity)
+  {}
+
+  nsTSubstring<T>* Forget()
+  {
+    auto string = mString;
+    mString = nullptr;
+    return string;
+  }
+
+  nsTSubstring<T>* mString; 
+  size_type        mCapacity;
+};
+
+} 
 
 
 
@@ -40,6 +299,7 @@ template <typename T> class nsTString;
 template <typename T>
 class nsTSubstring : public mozilla::detail::nsTStringRepr<T>
 {
+  friend class mozilla::BulkWriteHandle<T>;
 public:
   typedef nsTSubstring<T> self_type;
 
@@ -78,6 +338,9 @@ public:
   }
 
   
+
+
+
 
 
 
@@ -888,6 +1151,50 @@ protected:
   void NS_FASTCALL Finalize();
 
 public:
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  mozilla::BulkWriteHandle<T>
+  NS_FASTCALL BulkWrite(size_type aCapacity,
+                        size_type aPrefixToPreserve,
+                        bool aAllowShrinking,
+                        nsresult& aRv);
+
   
 
 
@@ -936,12 +1243,12 @@ public:
 
 
   mozilla::Result<uint32_t, nsresult>
-  NS_FASTCALL StartBulkWrite(size_type aCapacity,
-                             size_type aPrefixToPreserve = 0,
-                             bool aAllowShrinking = true,
-                             size_type aSuffixLength = 0,
-                             size_type aOldSuffixStart = 0,
-                             size_type aNewSuffixStart = 0);
+  NS_FASTCALL StartBulkWriteImpl(size_type aCapacity,
+                                 size_type aPrefixToPreserve = 0,
+                                 bool aAllowShrinking = true,
+                                 size_type aSuffixLength = 0,
+                                 size_type aOldSuffixStart = 0,
+                                 size_type aNewSuffixStart = 0);
 
 protected:
   
@@ -950,7 +1257,7 @@ protected:
 
 
 
-  void NS_FASTCALL FinishBulkWrite(size_type aLength);
+  void NS_FASTCALL FinishBulkWriteImpl(size_type aLength);
 
   
 

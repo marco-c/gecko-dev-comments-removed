@@ -327,7 +327,7 @@ nsTString<T>::ReplaceSubstring(const self_type& aTarget,
   
   uint32_t oldLen = this->mLength;
   mozilla::Result<uint32_t, nsresult> r =
-    this->StartBulkWrite(XPCOM_MAX(oldLen, newLength.value()), oldLen);
+    this->StartBulkWriteImpl(XPCOM_MAX(oldLen, newLength.value()), oldLen);
   if (r.isErr()) {
     return false;
   }
@@ -367,7 +367,7 @@ nsTString<T>::ReplaceSubstring(const self_type& aTarget,
   }
 
   
-  this->FinishBulkWrite(newLength.value());
+  this->FinishBulkWriteImpl(newLength.value());
 
   return true;
 }
