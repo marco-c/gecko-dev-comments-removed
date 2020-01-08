@@ -579,8 +579,8 @@ ReadableStream::createDefaultStream(JSContext* cx, HandleValue underlyingSource,
 }
 
 static MOZ_MUST_USE ReadableByteStreamController*
-CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
-                                   void* underlyingSource);
+CreateExternalReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
+                                           void* underlyingSource);
 
 ReadableStream*
 ReadableStream::createExternalSourceStream(JSContext* cx, void* underlyingSource,
@@ -592,7 +592,7 @@ ReadableStream::createExternalSourceStream(JSContext* cx, void* underlyingSource
     }
 
     Rooted<ReadableStreamController*> controller(cx);
-    controller = CreateReadableByteStreamController(cx, stream, underlyingSource);
+    controller = CreateExternalReadableByteStreamController(cx, stream, underlyingSource);
     if (!controller) {
         return nullptr;
     }
@@ -3077,6 +3077,8 @@ ReadableStreamControllerGetDesiredSizeUnchecked(ReadableStreamController* contro
 
 
 
+#if 0 
+
 
 
 
@@ -3189,6 +3191,8 @@ CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream
     return controller;
 }
 
+#endif  
+
 
 
 
@@ -3204,8 +3208,8 @@ ReadableByteStreamController::constructor(JSContext* cx, unsigned argc, Value* v
 
 
 static MOZ_MUST_USE ReadableByteStreamController*
-CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
-                                   void* underlyingSource)
+CreateExternalReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
+                                           void* underlyingSource)
 {
     Rooted<ReadableByteStreamController*> controller(cx);
     controller = NewBuiltinClassInstance<ReadableByteStreamController>(cx);
