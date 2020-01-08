@@ -259,6 +259,72 @@ constexpr AutoXDRTree::Key AutoXDRTree::noKey;
 constexpr AutoXDRTree::Key AutoXDRTree::noSubTree;
 constexpr AutoXDRTree::Key AutoXDRTree::topLevel;
 
+class XDRIncrementalEncoder::DepthFirstSliceIterator {
+public:
+    DepthFirstSliceIterator(JSContext* cx, const SlicesTree& tree)
+        : stack_(cx)
+        , tree_(tree)
+    {
+    }
+
+    template<typename SliceFun>
+    bool iterate(SliceFun&& f) {
+        MOZ_ASSERT(stack_.empty());
+
+        if (!appendChildrenForKey(AutoXDRTree::topLevel)) {
+            return false;
+        }
+
+        while (!done()) {
+            SlicesNode::ConstRange& iter = next();
+            Slice slice = iter.popCopyFront();
+            
+            
+            MOZ_ASSERT_IF(slice.child == AutoXDRTree::noSubTree, iter.empty());
+            if (iter.empty()) {
+                pop();
+            }
+
+            if (!f(slice)) {
+                return false;
+            }
+
+            
+            if (slice.child == AutoXDRTree::noSubTree) {
+                continue;
+            }
+
+            if (!appendChildrenForKey(slice.child)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+private:
+    bool done() const {
+        return stack_.empty();
+    }
+    SlicesNode::ConstRange& next() {
+        return stack_.back();
+    }
+    void pop() {
+        stack_.popBack();
+    }
+
+    MOZ_MUST_USE bool appendChildrenForKey(AutoXDRTree::Key key) {
+        MOZ_ASSERT(key != AutoXDRTree::noSubTree);
+
+        SlicesTree::Ptr p = tree_.lookup(key);
+        MOZ_ASSERT(p);
+        return stack_.append(((const SlicesNode&) p->value()).all());
+    }
+
+    Vector<SlicesNode::ConstRange> stack_;
+    const SlicesTree& tree_;
+};
+
 AutoXDRTree::Key
 XDRIncrementalEncoder::getTopLevelTreeKey() const
 {
@@ -387,49 +453,22 @@ XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer)
     }
 
     
-    Vector<SlicesNode::ConstRange> depthFirst(cx());
+    DepthFirstSliceIterator dfs(cx(), tree_);
 
-    SlicesTree::Ptr p = tree_.lookup(AutoXDRTree::topLevel);
-    MOZ_ASSERT(p);
-
-    if (!depthFirst.append(((const SlicesNode&) p->value()).all())) {
-        ReportOutOfMemory(cx());
-        return fail(JS::TranscodeResult_Throw);
-    }
-
-    while (!depthFirst.empty()) {
-        SlicesNode::ConstRange& iter = depthFirst.back();
-        Slice slice = iter.popCopyFront();
-        
-        
-        MOZ_ASSERT_IF(slice.child == AutoXDRTree::noSubTree, iter.empty());
-        if (iter.empty()) {
-            depthFirst.popBack();
-        }
-
+    auto sliceCopier = [&](const Slice& slice) -> bool {
         
         
         MOZ_ASSERT(slice.sliceBegin <= slices_.length());
         MOZ_ASSERT(slice.sliceBegin + slice.sliceLength <= slices_.length());
         MOZ_ASSERT(buffer.length() % sizeof(XDRAlignment) == 0);
         MOZ_ASSERT(slice.sliceLength % sizeof(XDRAlignment) == 0);
-        if (!buffer.append(slices_.begin() + slice.sliceBegin, slice.sliceLength)) {
-            ReportOutOfMemory(cx());
-            return fail(JS::TranscodeResult_Throw);
-        }
 
-        
-        if (slice.child == AutoXDRTree::noSubTree) {
-            continue;
-        }
+        return buffer.append(slices_.begin() + slice.sliceBegin, slice.sliceLength);
+    };
 
-        
-        SlicesTree::Ptr p = tree_.lookup(slice.child);
-        MOZ_ASSERT(p);
-        if (!depthFirst.append(((const SlicesNode&) p->value()).all())) {
-            ReportOutOfMemory(cx());
-            return fail(JS::TranscodeResult_Throw);
-        }
+    if (!dfs.iterate(sliceCopier)) {
+        ReportOutOfMemory(cx());
+        return fail(JS::TranscodeResult_Throw);
     }
 
     tree_.clearAndCompact();
