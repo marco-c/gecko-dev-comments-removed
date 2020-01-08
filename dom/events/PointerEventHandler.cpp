@@ -266,6 +266,30 @@ PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent)
 
   PointerCaptureInfo* captureInfo = GetPointerCaptureInfo(aEvent->pointerId);
 
+  
+  
+  
+  
+  
+  
+  if (nsContentUtils::ShouldResistFingerprinting() &&
+      aEvent->pointerId != (uint32_t)GetSpoofedPointerIdForRFP() &&
+      !captureInfo) {
+    PointerCaptureInfo* spoofedCaptureInfo =
+      GetPointerCaptureInfo(GetSpoofedPointerIdForRFP());
+
+    
+    
+    
+    if (!spoofedCaptureInfo ||
+        (spoofedCaptureInfo->mPendingContent &&
+        spoofedCaptureInfo->mPendingContent->IsInChromeDocument())) {
+      return;
+    }
+
+    captureInfo = spoofedCaptureInfo;
+  }
+
   if (!captureInfo ||
       captureInfo->mPendingContent == captureInfo->mOverrideContent) {
     return;
