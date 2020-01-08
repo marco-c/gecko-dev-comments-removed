@@ -112,6 +112,7 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult PostHandleEvent(nsPresContext* aPresContext,
                            WidgetEvent* aEvent,
                            nsIFrame* aTargetFrame,
@@ -461,19 +462,90 @@ protected:
 
   void UpdateDragDataTransfer(WidgetDragEvent* dragEvent);
 
-  static nsresult InitAndDispatchClickEvent(WidgetMouseEvent* aEvent,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  static nsresult InitAndDispatchClickEvent(WidgetMouseEvent* aMouseUpEvent,
                                             nsEventStatus* aStatus,
                                             EventMessage aMessage,
                                             nsIPresShell* aPresShell,
-                                            nsIContent* aMouseTarget,
+                                            nsIContent* aMouseUpContent,
                                             AutoWeakFrame aCurrentTarget,
                                             bool aNoContentDispatch,
                                             nsIContent* aOverrideClickTarget);
+
   nsresult SetClickCount(WidgetMouseEvent* aEvent, nsEventStatus* aStatus,
                          nsIContent* aOverrideClickTarget = nullptr);
-  nsresult CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
-                                    nsEventStatus* aStatus,
-                                    nsIContent* aOverrideClickTarget);
+
+  
+
+
+
+
+
+  static bool EventCausesClickEvents(const WidgetMouseEvent& aMouseEvent);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  nsresult PostHandleMouseUp(WidgetMouseEvent* aMouseUpEvent,
+                             nsEventStatus* aStatus,
+                             nsIContent* aOverrideClickTarget);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  nsresult DispatchClickEvents(nsIPresShell* aPresShell,
+                               WidgetMouseEvent* aMouseUpEvent,
+                               nsEventStatus* aStatus,
+                               nsIContent* aMouseUpContent,
+                               nsIContent* aOverrideClickTarget);
+
   void EnsureDocument(nsPresContext* aPresContext);
   void FlushPendingEvents(nsPresContext* aPresContext);
 
