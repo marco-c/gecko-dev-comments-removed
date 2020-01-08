@@ -40,6 +40,7 @@ class BlockReflowInput {
       , mIsOverflowContainer(false)
       , mIsFloatListInBlockPropertyTable(false)
       , mFloatFragmentsInsideColumnEnabled(false)
+      , mCanHaveTextOverflow(false)
     {}
 
     

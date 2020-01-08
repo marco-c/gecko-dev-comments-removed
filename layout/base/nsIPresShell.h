@@ -1834,9 +1834,6 @@ protected:
   bool mFontSizeInflationDisabledInMasterProcess;
   bool mFontSizeInflationEnabled;
 
-  
-  bool mFontSizeInflationEnabledIsDirty;
-
   bool mPaintingIsFrozen;
 
   

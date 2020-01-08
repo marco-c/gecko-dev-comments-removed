@@ -134,7 +134,15 @@ public:
   
   
   struct SavedState {
-    explicit SavedState() {}
+    explicit SavedState()
+      : mFloatInfoCount(0)
+      , mLineLeft(0)
+      , mBlockStart(0)
+      , mPushedLeftFloatPastBreak(false)
+      , mPushedRightFloatPastBreak(false)
+      , mSplitLeftFloatAcrossBreak(false)
+      , mSplitRightFloatAcrossBreak(false) {}
+
   private:
     uint32_t mFloatInfoCount;
     nscoord mLineLeft, mBlockStart;
