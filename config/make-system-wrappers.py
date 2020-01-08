@@ -7,9 +7,11 @@ from mozbuild.util import FileAvoidWrite
 
 header_template = '''#pragma GCC system_header
 #pragma GCC visibility push(default)
-#include_next <%(header)s>
+{includes}
 #pragma GCC visibility pop
 '''
+
+include_next_template = '#include_next <{header}>'
 
 
 
@@ -17,6 +19,20 @@ header_template = '''#pragma GCC system_header
 def gen_wrappers(unused, outdir, *header_list):
     for header in header_list:
         with FileAvoidWrite(os.path.join(outdir, header)) as f:
-            f.write(header_template % {
-                'header': header,
-            })
+            includes = include_next_template.format(header=header)
+            if header == 'wayland-util.h':
+                
+                
+                
+                
+                includes = '#include <math.h>\n' + includes
+            elif header == 'wayland-client.h':
+                
+                
+                
+                
+                
+                
+                
+                includes = '#include "wayland-util.h"\n' + includes
+            f.write(header_template.format(includes=includes))
