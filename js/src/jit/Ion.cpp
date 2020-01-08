@@ -1503,8 +1503,7 @@ OptimizeMIR(MIRGenerator* mir)
         
         
         
-        JSScript* script = mir->info().script();
-        if (!script || !script->hadFrequentBailouts()) {
+        if (!mir->info().hadFrequentBailouts()) {
             if (!LICM(mir, graph)) {
                 return false;
             }

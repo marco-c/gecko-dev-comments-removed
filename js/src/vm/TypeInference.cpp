@@ -4886,7 +4886,7 @@ JSScript::sweepTypes(const js::AutoSweepTypeScript& sweep)
 
         
         
-        bitFields_.hasFreezeConstraints_ = false;
+        clearFlag(MutableFlags::HasFreezeConstraints);
 
         return;
     }
@@ -4902,7 +4902,7 @@ JSScript::sweepTypes(const js::AutoSweepTypeScript& sweep)
     if (zone()->types.hadOOMSweepingTypes()) {
         
         
-        bitFields_.hasFreezeConstraints_ = false;
+        clearFlag(MutableFlags::HasFreezeConstraints);
     }
 }
 
