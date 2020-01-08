@@ -2130,7 +2130,27 @@ void
 Selection::AddRangeInternal(nsRange& aRange, nsIDocument* aDocument,
                             ErrorResult& aRv)
 {
-  nsINode* rangeRoot = aRange.GetRoot();
+  
+  
+  RefPtr<nsRange> range;
+  if (aRange.IsInSelection() && aRange.GetSelection() != this) {
+    
+    
+    if (mCachedRange) {
+      range = std::move(mCachedRange);
+      nsresult rv = range->SetStartAndEnd(aRange.StartRef().AsRaw(),
+                                          aRange.EndRef().AsRaw());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return;
+      }
+    } else {
+      range = aRange.CloneRange();
+    }
+  } else {
+    range = &aRange;
+  }
+
+  nsINode* rangeRoot = range->GetRoot();
   if (aDocument != rangeRoot && (!rangeRoot ||
                                  aDocument != rangeRoot->GetComposedDoc())) {
     
@@ -2150,14 +2170,14 @@ Selection::AddRangeInternal(nsRange& aRange, nsIDocument* aDocument,
   
   bool didAddRange;
   int32_t rangeIndex;
-  nsresult result = AddTableCellRange(&aRange, &didAddRange, &rangeIndex);
+  nsresult result = AddTableCellRange(range, &didAddRange, &rangeIndex);
   if (NS_FAILED(result)) {
     aRv.Throw(result);
     return;
   }
 
   if (!didAddRange) {
-    result = AddItem(&aRange, &rangeIndex);
+    result = AddItem(range, &rangeIndex);
     if (NS_FAILED(result)) {
       aRv.Throw(result);
       return;
@@ -2176,7 +2196,7 @@ Selection::AddRangeInternal(nsRange& aRange, nsIDocument* aDocument,
   }
 
   RefPtr<nsPresContext>  presContext = GetPresContext();
-  SelectFrames(presContext, &aRange, true);
+  SelectFrames(presContext, range, true);
 
   if (!mFrameSelection)
     return;

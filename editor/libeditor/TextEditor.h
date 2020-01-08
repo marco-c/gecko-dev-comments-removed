@@ -166,7 +166,10 @@ public:
 
 
 
-  nsresult ReplaceTextAsAction(const nsAString& aString);
+
+
+  nsresult ReplaceTextAsAction(const nsAString& aString,
+                               nsRange* aReplaceRange = nullptr);
 
   
 
@@ -278,6 +281,13 @@ protected:
 
 
   nsresult SetTextAsSubAction(const nsAString& aString);
+
+  
+
+
+
+
+  nsresult ReplaceSelectionAsSubAction(const nsAString& aString);
 
   
 

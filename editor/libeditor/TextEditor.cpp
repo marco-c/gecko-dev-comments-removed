@@ -1145,7 +1145,8 @@ TextEditor::SetText(const nsAString& aString)
 }
 
 nsresult
-TextEditor::ReplaceTextAsAction(const nsAString& aString)
+TextEditor::ReplaceTextAsAction(const nsAString& aString,
+                                nsRange* aReplaceRange )
 {
   AutoPlaceholderBatch batch(this, nullptr);
 
@@ -1154,7 +1155,41 @@ TextEditor::ReplaceTextAsAction(const nsAString& aString)
                                       *this, EditSubAction::eInsertText,
                                       nsIEditor::eNext);
 
-  nsresult rv = SetTextAsSubAction(aString);
+  if (!aReplaceRange) {
+    nsresult rv = SetTextAsSubAction(aString);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
+  }
+
+  if (NS_WARN_IF(aString.IsEmpty() && aReplaceRange->Collapsed())) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  AutoUpdateViewBatch preventSelectionChangeEvent(this);
+
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  nsresult rv = selection->RemoveAllRangesTemporarily();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  ErrorResult error;
+  selection->AddRange(*aReplaceRange, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  rv = ReplaceSelectionAsSubAction(aString);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1216,17 +1251,31 @@ TextEditor::SetTextAsSubAction(const nsAString& aString)
       rv = EditorBase::SelectEntireDocument(selection);
     }
     if (NS_SUCCEEDED(rv)) {
-      if (aString.IsEmpty()) {
-        rv = DeleteSelectionAsSubAction(eNone, eStrip);
-        NS_WARNING_ASSERTION(NS_FAILED(rv), "Failed to remove all text");
-      } else {
-        rv = InsertTextAsSubAction(aString);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the new text");
-      }
+      rv = ReplaceSelectionAsSubAction(aString);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+        "Failed to replace selection with new string");
     }
   }
   
   return rules->DidDoAction(selection, subActionInfo, rv);
+}
+
+nsresult
+TextEditor::ReplaceSelectionAsSubAction(const nsAString& aString)
+{
+  if (aString.IsEmpty()) {
+    nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
+  }
+
+  nsresult rv = InsertTextAsSubAction(aString);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 bool

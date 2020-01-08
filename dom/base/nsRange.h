@@ -137,6 +137,11 @@ public:
   
 
 
+  mozilla::dom::Selection* GetSelection() const { return mSelection; }
+
+  
+
+
 
   bool IsGenerated() const
   {
