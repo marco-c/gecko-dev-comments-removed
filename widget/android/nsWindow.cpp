@@ -193,9 +193,9 @@ namespace {
 } 
 
 template<class Impl>
-template<class Instance, typename... Args> void
-nsWindow::NativePtr<Impl>::Attach(Instance aInstance, nsWindow* aWindow,
-                                  Args&&... aArgs)
+template<class Cls, typename... Args> void
+nsWindow::NativePtr<Impl>::Attach(const jni::LocalRef<Cls>& aInstance,
+                                  nsWindow* aWindow, Args&&... aArgs)
 {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(!mPtr && !mImpl);
@@ -205,16 +205,67 @@ nsWindow::NativePtr<Impl>::Attach(Instance aInstance, nsWindow* aWindow,
     mImpl = impl;
 
     
-    CallAttachNative<Instance, Impl>(aInstance, impl);
+    CallAttachNative<>(aInstance, impl);
 }
 
-template<class Impl> void
-nsWindow::NativePtr<Impl>::Detach()
+template<class Impl>
+template<class Cls, typename T> void
+nsWindow::NativePtr<Impl>::Detach(const jni::Ref<Cls, T>& aInstance)
 {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(mPtr && mImpl);
 
-    mImpl->OnDetach();
+    
+    
+    class ImplDisposer : public Runnable {
+        const typename Cls::GlobalRef mInstance;
+        const uintptr_t mOldImpl;
+
+    public:
+        ImplDisposer(const typename Cls::LocalRef& aInstance)
+            : Runnable("nsWindow::NativePtr::Detach")
+            , mInstance(aInstance.Env(), aInstance)
+            , mOldImpl(aInstance ? jni::GetNativeHandle(aInstance.Env(),
+                                                        aInstance.Get()) : 0)
+        {
+            MOZ_CATCH_JNI_EXCEPTION(aInstance.Env());
+        }
+
+        NS_IMETHOD Run() override
+        {
+            if (!mInstance) {
+                return NS_OK;
+            }
+
+            if (!NS_IsMainThread()) {
+                NS_DispatchToMainThread(this);
+                return NS_OK;
+            }
+
+            typename Cls::LocalRef instance(jni::GetGeckoThreadEnv(),
+                                            mInstance);
+            auto newImpl = jni::GetNativeHandle(instance.Env(), instance.Get());
+            MOZ_CATCH_JNI_EXCEPTION(instance.Env());
+
+            if (mOldImpl == newImpl) {
+                
+                Impl::DisposeNative(instance);
+            }
+            return NS_OK;
+        }
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    mImpl->OnDetach(do_AddRef(new ImplDisposer(
+            {jni::GetGeckoThreadEnv(), aInstance})));
+
     {
         Locked implLock(*this);
         mImpl = nullptr;
