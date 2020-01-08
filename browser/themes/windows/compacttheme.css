@@ -17,7 +17,7 @@
 
 
 @media (-moz-windows-compositor: 0) {
-  #main-window[tabsintitlebar] #titlebar:-moz-lwtheme {
+  #main-window[tabsintitlebar] > #navigator-toolbox > #titlebar:-moz-lwtheme {
     visibility: visible;
   }
 

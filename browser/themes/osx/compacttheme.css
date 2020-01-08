@@ -4,11 +4,6 @@
 
 %include ../shared/compacttheme.inc.css
 
-
-#main-window[tabsintitlebar] #titlebar-content {
-  background: var(--lwt-accent-color);
-}
-
 #TabsToolbar:-moz-lwtheme-darktext {
   -moz-appearance: -moz-mac-vibrant-titlebar-light;
   -moz-font-smoothing-background-color: -moz-mac-vibrant-titlebar-light;

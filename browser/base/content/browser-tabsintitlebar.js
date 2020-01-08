@@ -8,41 +8,8 @@ var TabsInTitlebar = {
     this._readPref();
     Services.prefs.addObserver(this._prefName, this);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let menu = document.getElementById("toolbar-menubar");
-    this._menuObserver = new MutationObserver(this._onMenuMutate);
-    this._menuObserver.observe(menu, {attributes: true});
-
-    this.onAreaReset = function(aArea) {
-      if (aArea == CustomizableUI.AREA_TABSTRIP || aArea == CustomizableUI.AREA_MENUBAR)
-        this.update();
-    };
-    this.onWidgetAdded = this.onWidgetRemoved = function(aWidgetId, aArea) {
-      if (aArea == CustomizableUI.AREA_TABSTRIP || aArea == CustomizableUI.AREA_MENUBAR)
-        this.update();
-    };
-    CustomizableUI.addListener(this);
-
-    window.addEventListener("resolutionchange", this);
-    window.addEventListener("resize", this);
-
     gDragSpaceObserver.init();
-
     this._initialized = true;
-    this.update();
-  },
-
-  whenWindowLayoutReady() {
-    this._windowLayoutReady = true;
     this.update();
   },
 
@@ -82,54 +49,9 @@ var TabsInTitlebar = {
       this._readPref();
   },
 
-  handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "resolutionchange":
-        if (aEvent.target == window) {
-          this.update();
-        }
-        break;
-      case "resize":
-        if (window.fullScreen || aEvent.target != window) {
-           break;
-        }
-        
-        
-        
-        
-        let sizemode = document.documentElement.getAttribute("sizemode");
-        if (this._lastSizeMode == sizemode) {
-          break;
-        }
-        let oldSizeMode = this._lastSizeMode;
-        this._lastSizeMode = sizemode;
-        
-        
-        
-        
-        if (oldSizeMode == "fullscreen") {
-          break;
-        }
-        this.update();
-        break;
-    }
-  },
-
-  _onMenuMutate(aMutations) {
-    for (let mutation of aMutations) {
-      if (mutation.attributeName == "inactive" ||
-          mutation.attributeName == "autohide") {
-        TabsInTitlebar.update();
-        return;
-      }
-    }
-  },
-
   _initialized: false,
-  _windowLayoutReady: false,
   _disallowed: {},
   _prefName: "browser.tabs.drawInTitlebar",
-  _lastSizeMode: null,
 
   _readPref() {
     this.allowedBy("pref",
@@ -159,148 +81,11 @@ var TabsInTitlebar = {
       }
     }
 
-    this._layOutTitlebar(allowed);
-
     ToolbarIconColor.inferFromText("tabsintitlebar", allowed);
-  },
-
-  _layOutTitlebar(drawInTitlebar) {
-    if (!this._windowLayoutReady) {
-      return;
-    }
-
-    let $ = id => document.getElementById(id);
-    let rect = ele => ele.getBoundingClientRect();
-    let verticalMargins = cstyle => parseFloat(cstyle.marginBottom) + parseFloat(cstyle.marginTop);
-
-    let titlebar = $("titlebar");
-    let menubar = $("toolbar-menubar");
-
-    if (!drawInTitlebar) {
-      if (AppConstants.platform == "macosx") {
-        let secondaryButtonsWidth = rect($("titlebar-secondary-buttonbox")).width;
-        this._sizePlaceholder("fullscreen-button", secondaryButtonsWidth);
-      }
-
-      
-      titlebar.style.marginBottom = "";
-      menubar.style.paddingBottom = "";
-      return;
-    }
-
-    let titlebarContent = $("titlebar-content");
-    let titlebarButtons = $("titlebar-buttonbox");
-
-    
-    
-    let buttonsShouldMatchTabHeight =
-      AppConstants.isPlatformAndVersionAtLeast("win", "10.0") ||
-      AppConstants.platform == "linux";
-    if (buttonsShouldMatchTabHeight &&
-        (menubar.getAttribute("inactive") != "true" ||
-         menubar.getAttribute("autohide") != "true")) {
-      titlebarButtons.style.removeProperty("height");
-    }
-
-    
-    
-
-    
-    let fullTabsHeight = rect($("TabsToolbar")).height;
-
-    
-    let captionButtonsBoxWidth = rect(titlebarButtons).width;
-
-    let secondaryButtonsWidth, menuHeight, fullMenuHeight, menuStyles;
-    if (AppConstants.platform == "macosx") {
-      secondaryButtonsWidth = rect($("titlebar-secondary-buttonbox")).width;
-      
-      menuHeight = 0;
-      fullMenuHeight = 0;
-    } else {
-      
-      menuHeight = rect(menubar).height;
-      menuStyles = window.getComputedStyle(menubar);
-      fullMenuHeight = verticalMargins(menuStyles) + menuHeight;
-    }
-
-    
-    let titlebarContentHeight = rect(titlebarContent).height;
-
-    
-
-    
-    
-    if (buttonsShouldMatchTabHeight && !menuHeight) {
-      titlebarContentHeight = fullTabsHeight;
-      titlebarButtons.style.height = titlebarContentHeight + "px";
-    }
-
-    
-    
-    
-    if (menuHeight) {
-      
-      let menuTitlebarDelta = titlebarContentHeight - fullMenuHeight;
-      let paddingBottom;
-      
-      if (menuTitlebarDelta > 0) {
-        fullMenuHeight += menuTitlebarDelta;
-        
-        
-        if ((paddingBottom = menuStyles.paddingBottom)) {
-          menuTitlebarDelta += parseFloat(paddingBottom);
-        }
-        menubar.style.paddingBottom = menuTitlebarDelta + "px";
-      
-      } else if (menuTitlebarDelta < 0 && (paddingBottom = menuStyles.paddingBottom)) {
-        let existingPadding = parseFloat(paddingBottom);
-        
-        let desiredPadding = Math.max(0, existingPadding + menuTitlebarDelta);
-        menubar.style.paddingBottom = desiredPadding + "px";
-        
-        fullMenuHeight += desiredPadding - existingPadding;
-      }
-    }
-
-    
-    
-    let tabAndMenuHeight = fullTabsHeight + fullMenuHeight;
-
-    if (tabAndMenuHeight > titlebarContentHeight) {
-      
-      
-      let extraMargin = tabAndMenuHeight - titlebarContentHeight;
-      if (AppConstants.platform != "macosx") {
-        titlebarContent.style.marginBottom = extraMargin + "px";
-      }
-
-      titlebarContentHeight += extraMargin;
-    } else {
-      titlebarContent.style.removeProperty("margin-bottom");
-    }
-
-    
-    
-    let maxTitlebarOrTabsHeight = Math.max(titlebarContentHeight, tabAndMenuHeight);
-    titlebar.style.marginBottom = "-" + maxTitlebarOrTabsHeight + "px";
-
-    
-    if (AppConstants.platform == "macosx") {
-      this._sizePlaceholder("fullscreen-button", secondaryButtonsWidth);
-    }
-    this._sizePlaceholder("caption-buttons", captionButtonsBoxWidth);
-  },
-
-  _sizePlaceholder(type, width) {
-    Array.forEach(document.querySelectorAll(".titlebar-placeholder[type='" + type + "']"),
-                  function(node) { node.style.width = width + "px"; });
   },
 
   uninit() {
     Services.prefs.removeObserver(this._prefName, this);
-    this._menuObserver.disconnect();
-    CustomizableUI.removeListener(this);
     gDragSpaceObserver.uninit();
   },
 };
