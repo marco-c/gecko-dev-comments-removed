@@ -10,7 +10,12 @@ AntiTracking.runTest("Storage Access API called in a private window",
   },
 
   null, 
-  null, 
+  
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value => resolve());
+    });
+  },
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 

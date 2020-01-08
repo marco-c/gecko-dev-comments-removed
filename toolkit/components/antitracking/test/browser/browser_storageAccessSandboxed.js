@@ -12,13 +12,23 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
   },
 
   null, 
-  null, 
+  
+  async _ => {
+    
+    
+    await new Promise(resolve => {
+      Services.clearData.deleteDataFromHost(Services.io.newURI(TEST_3RD_PARTY_DOMAIN).host,
+                                            true,
+                                            Ci.nsIClearDataService.CLEAR_PERMISSIONS,
+                                            value => resolve());
+    });
+  },
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   false, 
   false, 
-  "allow-scripts allow-same-origin"
+  "allow-scripts allow-same-origin allow-popups"
 );
 
 AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
@@ -52,7 +62,7 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
   false, 
   true, 
   false, 
-  "allow-scripts allow-same-origin allow-storage-access-by-user-activation"
+  "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
 
 AntiTracking.runTest("Verify that sandboxed contexts don't get the saved permission",
@@ -77,7 +87,7 @@ AntiTracking.runTest("Verify that sandboxed contexts don't get the saved permiss
   false, 
   false, 
   false, 
-  "allow-scripts allow-same-origin"
+  "allow-scripts allow-same-origin allow-popups"
 );
 
 AntiTracking.runTest("Verify that sandboxed contexts with" +
@@ -99,7 +109,7 @@ AntiTracking.runTest("Verify that sandboxed contexts with" +
   false, 
   false, 
   false, 
-  "allow-scripts allow-same-origin allow-storage-access-by-user-activation"
+  "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
 
 AntiTracking.runTest("Verify that private browsing contexts don't get the saved permission",
