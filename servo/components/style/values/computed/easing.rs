@@ -5,7 +5,10 @@
 
 
 use values::computed::{Integer, Number};
-use values::generics::easing::TimingFunction as GenericTimingFunction;
+use values::generics::easing;
 
 
-pub type TimingFunction = GenericTimingFunction<Integer, Number>;
+pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number>;
+
+
+pub type TimingFunction = ComputedTimingFunction;
