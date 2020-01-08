@@ -22,16 +22,21 @@ nsresult GetFileCreatorCode(CFURLRef aUrl, OSType* aCreatorCode);
 nsresult SetFileCreatorCode(CFURLRef aUrl, OSType aCreatorCode);
 nsresult GetFileTypeCode(CFURLRef aUrl, OSType* aTypeCode);
 nsresult SetFileTypeCode(CFURLRef aUrl, OSType aTypeCode);
+
+
 void     AddOriginMetadataToFile(const CFStringRef filePath,
                                  const CFURLRef sourceURL,
                                  const CFURLRef referrerURL);
+
 void     AddQuarantineMetadataToFile(const CFStringRef filePath,
                                      const CFURLRef sourceURL,
                                      const CFURLRef referrerURL,
                                      const bool isFromWeb,
                                      const bool createProps=false);
+
 void CopyQuarantineReferrerUrl(const CFStringRef aFilePath,
                                nsAString& aReferrer);
+
 CFURLRef GetTemporaryFolderCFURLRef();
 
 } 
