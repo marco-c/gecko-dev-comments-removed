@@ -1406,8 +1406,12 @@ nsDOMWindowUtils::ScrollToVisual(float aOffsetX, float aOffsetY) {
   
   NS_ENSURE_TRUE(presContext->IsRootContentDocument(), NS_ERROR_INVALID_ARG);
 
-  presContext->PresShell()->SetPendingVisualViewportOffset(
-      Some(CSSPoint::ToAppUnits(CSSPoint(aOffsetX, aOffsetY))));
+  
+  
+  
+  presContext->PresShell()->SetPendingVisualScrollUpdate(
+      CSSPoint::ToAppUnits(CSSPoint(aOffsetX, aOffsetY)),
+      FrameMetrics::eRestore);
 
   return NS_OK;
 }

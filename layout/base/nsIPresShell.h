@@ -18,6 +18,7 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include "FrameMetrics.h"
 #include "GeckoProfiler.h"
 #include "gfxPoint.h"
 #include "nsTHashtable.h"
@@ -176,6 +177,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
  protected:
   typedef mozilla::dom::Document Document;
+  typedef mozilla::layers::FrameMetrics FrameMetrics;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
@@ -1663,15 +1665,29 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   
+  struct VisualScrollUpdate {
+    nsPoint mVisualScrollOffset;
+    FrameMetrics::ScrollOffsetUpdateType mUpdateType;
+  };
+
   
   
   
-  void SetPendingVisualViewportOffset(
-      const mozilla::Maybe<nsPoint>& aPendingVisualViewportOffset) {
-    mPendingVisualViewportOffset = aPendingVisualViewportOffset;
+  
+  
+  
+  void SetPendingVisualScrollUpdate(
+      const nsPoint& aVisualViewportOffset,
+      FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
+    mPendingVisualScrollUpdate =
+        mozilla::Some(VisualScrollUpdate{aVisualViewportOffset, aUpdateType});
   }
-  const mozilla::Maybe<nsPoint>& GetPendingVisualViewportOffset() const {
-    return mPendingVisualViewportOffset;
+  void ClearPendingVisualScrollUpdate() {
+    mPendingVisualScrollUpdate = mozilla::Nothing();
+  }
+  const mozilla::Maybe<VisualScrollUpdate>& GetPendingVisualScrollUpdate()
+      const {
+    return mPendingVisualScrollUpdate;
   }
 
   nsPoint GetLayoutViewportOffset() const;
@@ -1758,7 +1774,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   
-  mozilla::Maybe<nsPoint> mPendingVisualViewportOffset;
+  mozilla::Maybe<VisualScrollUpdate> mPendingVisualScrollUpdate;
 
   
   

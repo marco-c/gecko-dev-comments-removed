@@ -4262,8 +4262,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       (aLayerMetrics.GetScrollGeneration() != Metrics().GetScrollGeneration());
 
   if (scrollOffsetUpdated && userScrolled &&
-      aLayerMetrics.GetScrollUpdateType() ==
-          FrameMetrics::ScrollOffsetUpdateType::eRestore) {
+      aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eRestore) {
     APZC_LOG(
         "%p dropping scroll update of type eRestore because of user scroll\n",
         this);
@@ -4273,6 +4272,23 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   bool smoothScrollRequested =
       aLayerMetrics.GetDoSmoothScroll() &&
       (aLayerMetrics.GetScrollGeneration() != Metrics().GetScrollGeneration());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool visualScrollOffsetUpdated =
+      aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone;
+  if (aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eMainThread ||
+      smoothScrollRequested) {
+    visualScrollOffsetUpdated = false;
+  }
 
   
   
@@ -4500,18 +4516,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     SmoothScrollTo(Metrics().GetSmoothScrollOffset());
   }
 
-  
-  
-  
-  
-  
-  
-  
-  FrameMetrics::ScrollOffsetUpdateType visualUpdateType =
-      aLayerMetrics.GetVisualScrollUpdateType();
-  MOZ_ASSERT(visualUpdateType == FrameMetrics::eNone ||
-             visualUpdateType == FrameMetrics::eMainThread);
-  if (visualUpdateType == FrameMetrics::eMainThread) {
+  if (visualScrollOffsetUpdated) {
     Metrics().ClampAndSetScrollOffset(aLayerMetrics.GetVisualViewportOffset());
 
     
