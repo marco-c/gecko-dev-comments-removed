@@ -484,10 +484,27 @@ AssertNotStackAllocated(T* aPtr)
   
   
   
-#if !(defined(XP_WIN) || defined(ANDROID))
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(uintptr_t(aPtr) < uintptr_t(&aPtr));
-#endif
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr size_t kFuzz = 2048;
+
+  MOZ_ASSERT(uintptr_t(aPtr) < uintptr_t(&aPtr) ||
+             uintptr_t(aPtr) > uintptr_t(&aPtr) + kFuzz);
 }
 
 static inline nsCString
