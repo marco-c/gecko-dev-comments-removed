@@ -59,7 +59,32 @@ const DEFAULT_COLOR = "#9400FF";
 
 function clearRect(ctx, x1, y1, x2, y2, matrix = identity()) {
   const p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
-  ctx.clearRect(p[0].x, p[0].y, p[1].x - p[0].x, p[3].y - p[0].y);
+
+  
+  
+  ctx.save();
+
+  
+  ctx.beginPath();
+  ctx.moveTo(Math.round(p[0].x), Math.round(p[0].y));
+  ctx.lineTo(Math.round(p[1].x), Math.round(p[1].y));
+  ctx.lineTo(Math.round(p[2].x), Math.round(p[2].y));
+  ctx.lineTo(Math.round(p[3].x), Math.round(p[3].y));
+  ctx.closePath();
+
+  
+  ctx.clip();
+
+  
+  
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  
+  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  
+  
+  ctx.restore();
 }
 
 
