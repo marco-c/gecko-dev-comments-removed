@@ -20,9 +20,6 @@ ChromeUtils.defineModuleGetter(this, "SiteDataManager",
 
 ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersRecommended",
-                                      "browser.contentblocking.cookies-site-data.ui.reject-trackers.recommended");
-
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersEnabled",
                                       "browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled");
 
@@ -31,9 +28,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingTrackingProtectionUi
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingRejectTrackersUiEnabled",
                                       "browser.contentblocking.rejecttrackers.ui.enabled");
-
-XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingRejectTrackersRecommended",
-                                      "browser.contentblocking.rejecttrackers.ui.recommended");
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingEnabled",
                                       "browser.contentblocking.enabled");
@@ -487,12 +481,6 @@ var gPrivacyPane = {
         }
       }
     }
-
-    
-    let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackersCB");
-    if (contentBlockingRejectTrackersRecommended) {
-      document.l10n.setAttributes(blockCookiesFromTrackers, "content-blocking-reject-trackers-block-trackers-option-recommended");
-    }
   },
 
   
@@ -537,11 +525,6 @@ var gPrivacyPane = {
 
     
     let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackers");
-    if (contentBlockingCookiesAndSiteDataRejectTrackersRecommended) {
-      document.l10n.setAttributes(blockCookiesFromTrackers, "sitedata-block-trackers-option-recommended");
-    }
-
-    
     if (!contentBlockingCookiesAndSiteDataRejectTrackersEnabled) {
       blockCookiesFromTrackers.remove();
     }
