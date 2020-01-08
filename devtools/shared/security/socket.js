@@ -22,8 +22,6 @@ loader.lazyRequireGetter(this, "DebuggerTransport",
   "devtools/shared/transport/transport", true);
 loader.lazyRequireGetter(this, "WebSocketDebuggerTransport",
   "devtools/shared/transport/websocket-transport");
-loader.lazyRequireGetter(this, "DebuggerServer",
-  "devtools/server/main", true);
 loader.lazyRequireGetter(this, "discovery",
   "devtools/shared/discovery/discovery");
 loader.lazyRequireGetter(this, "cert",
@@ -367,41 +365,67 @@ function _storeCertOverride(s, host, port) {
 
 
 
-function SocketListener() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SocketListener(debuggerServer, socketOptions) {
+  this._debuggerServer = debuggerServer;
+
+  
+  this._socketOptions = {
+    authenticator: socketOptions.authenticator || new (Authenticators.get().Server)(),
+    discoverable: !!socketOptions.discoverable,
+    encryption: !!socketOptions.encryption,
+    portOrPath: socketOptions.portOrPath || null,
+    webSocket: !!socketOptions.webSocket,
+  };
+
   EventEmitter.decorate(this);
 }
 
 SocketListener.prototype = {
+  get authenticator() {
+    return this._socketOptions.authenticator;
+  },
 
-  
+  get discoverable() {
+    return this._socketOptions.discoverable;
+  },
 
-  
+  get encryption() {
+    return this._socketOptions.encryption;
+  },
 
+  get portOrPath() {
+    return this._socketOptions.portOrPath;
+  },
 
-
-
-
-  portOrPath: null,
-
-  
-
-
-
-  discoverable: false,
-
-  
-
-
-  encryption: false,
-
-  
-
-
-
-
-
-
-  authenticator: new (Authenticators.get().Server)(),
+  get webSocket() {
+    return this._socketOptions.webSocket;
+  },
 
   
 
@@ -424,7 +448,7 @@ SocketListener.prototype = {
 
   open: function() {
     this._validateOptions();
-    DebuggerServer._addListener(this);
+    this._debuggerServer._addListener(this);
 
     let flags = Ci.nsIServerSocket.KeepWhenOffline;
     
@@ -507,7 +531,7 @@ SocketListener.prototype = {
       this._socket.close();
       this._socket = null;
     }
-    DebuggerServer._removeListener(this);
+    this._debuggerServer._removeListener(this);
   },
 
   get host() {
@@ -747,7 +771,7 @@ ServerSocketConnection.prototype = {
     });
     switch (result) {
       case AuthenticationResult.DISABLE_ALL:
-        DebuggerServer.closeAllListeners();
+        this._listener._debuggerServer.closeAllListeners();
         Services.prefs.setBoolPref("devtools.debugger.remote-enabled", false);
         return promise.reject(Cr.NS_ERROR_CONNECTION_REFUSED);
       case AuthenticationResult.DENY:
@@ -802,8 +826,5 @@ ServerSocketConnection.prototype = {
 
 };
 
-DebuggerSocket.createListener = function() {
-  return new SocketListener();
-};
-
 exports.DebuggerSocket = DebuggerSocket;
+exports.SocketListener = SocketListener;

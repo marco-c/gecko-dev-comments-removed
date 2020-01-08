@@ -13,7 +13,7 @@ add_task(async function() {
   
   
   let testResumed = false;
-  const DebuggerServer = _setupDebuggerServer([testFile.path], () => {
+  const { DebuggerServer } = _setupDebuggerServer([testFile.path], () => {
     testResumed = true;
   });
   const transport = DebuggerServer.connectPipe();

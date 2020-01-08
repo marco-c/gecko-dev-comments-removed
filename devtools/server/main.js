@@ -15,7 +15,6 @@ var { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
 
-loader.lazyRequireGetter(this, "DebuggerSocket", "devtools/shared/security/socket", true);
 loader.lazyRequireGetter(this, "Authentication", "devtools/shared/security/auth");
 loader.lazyRequireGetter(this, "LocalDebuggerTransport", "devtools/shared/transport/local-transport", true);
 loader.lazyRequireGetter(this, "ChildDebuggerTransport", "devtools/shared/transport/child-transport", true);
@@ -202,30 +201,12 @@ var DebuggerServer = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  createListener() {
+  _addListener(listener) {
     if (!Services.prefs.getBoolPref("devtools.debugger.remote-enabled")) {
-      throw new Error("Can't create listener, remote debugging disabled");
+      throw new Error("Can't add a SocketListener, remote debugging disabled");
     }
     this._checkInit();
-    return DebuggerSocket.createListener();
-  },
 
-  
-
-
-
-  _addListener(listener) {
     listener.on("accepted", this._onSocketListenerAccepted);
     this._listeners.push(listener);
   },

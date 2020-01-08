@@ -3,12 +3,15 @@
 
 "use strict";
 
+const { SocketListener } = require("devtools/shared/security/socket");
+
 function run_test() {
   
   
-  Assert.throws(() => DebuggerServer.createListener(),
+  const socketListener = new SocketListener(DebuggerServer, {});
+  Assert.throws(() => DebuggerServer._addListener(socketListener),
     /DebuggerServer has not been initialized/,
-    "createListener should throw before it has been initialized");
+    "_addListener should throw before it has been initialized");
   Assert.throws(DebuggerServer.closeAllListeners,
     /this is undefined/,
     "closeAllListeners should throw before it has been initialized");
@@ -32,7 +35,7 @@ function run_test() {
   DebuggerServer.setRootActor(createRootActor);
 
   
-  DebuggerServer.createListener();
+  DebuggerServer._addListener(socketListener);
   DebuggerServer.closeAllListeners();
 
   
