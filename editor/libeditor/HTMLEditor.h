@@ -1009,6 +1009,65 @@ protected:
   
 
 
+  struct MOZ_STACK_CLASS CellIndexes final
+  {
+    int32_t mRow;
+    int32_t mColumn;
+
+    
+
+
+
+
+
+
+
+    CellIndexes(Element& aCellElement, ErrorResult& aRv)
+      : mRow(-1)
+      , mColumn(-1)
+    {
+      MOZ_ASSERT(!aRv.Failed());
+      Update(aCellElement, aRv);
+    }
+
+    
+
+
+
+
+    void Update(Element& aCellElement, ErrorResult& aRv);
+
+    
+
+
+
+
+
+
+
+
+
+    CellIndexes(HTMLEditor& aHTMLEditor, Selection& aSelection,
+                ErrorResult& aRv)
+      : mRow(-1)
+      , mColumn(-1)
+    {
+      Update(aHTMLEditor, aSelection, aRv);
+    }
+
+    
+
+
+
+
+
+    void Update(HTMLEditor& aHTMLEditor, Selection& aSelection,
+                ErrorResult& aRv);
+  };
+
+  
+
+
 
 
 
