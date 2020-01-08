@@ -29,7 +29,6 @@ static FeatureMap sSupportedFeatures[] = {
   { "autoplay", FeatureMap::eSelf },
   
   { "camera", FeatureMap::eSelf  },
-  
   { "encrypted-media", FeatureMap::eSelf  },
   
   { "fullscreen", FeatureMap::eSelf  },
