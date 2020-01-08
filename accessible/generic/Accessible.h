@@ -656,7 +656,16 @@ public:
   bool IsTable() const { return HasGenericType(eTable); }
   virtual TableAccessible* AsTable() { return nullptr; }
 
-  bool IsTableCell() const { return HasGenericType(eTableCell); }
+  
+
+
+
+
+
+
+
+
+  bool IsTableCell() const { return mGenericTypes & eTableCell; }
   virtual TableCellAccessible* AsTableCell() { return nullptr; }
   const TableCellAccessible* AsTableCell() const
     { return const_cast<Accessible*>(this)->AsTableCell(); }
