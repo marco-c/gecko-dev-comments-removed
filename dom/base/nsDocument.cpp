@@ -7318,13 +7318,13 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     ScreenIntSize fakeDesktopSize = RoundedToInt(viewportSize * scaleToFit);
     return nsViewportInfo(fakeDesktopSize,
                           scaleToFit,
-                           true);
+                          nsViewportInfo::ZoomFlag::AllowZoom);
   }
 
   if (!nsLayoutUtils::ShouldHandleMetaViewport(this)) {
     return nsViewportInfo(aDisplaySize,
                           defaultScale,
-                           false);
+                          nsViewportInfo::ZoomFlag::DisallowZoom);
   }
 
   
@@ -7335,7 +7335,7 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
   case DisplayWidthHeight:
     return nsViewportInfo(aDisplaySize,
                           defaultScale,
-                           true);
+                          nsViewportInfo::ZoomFlag::AllowZoom);
   case Unknown:
   {
     nsAutoString viewport;
@@ -7355,7 +7355,7 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
           mViewportType = DisplayWidthHeight;
           return nsViewportInfo(aDisplaySize,
                                 defaultScale,
-                                true);
+                                nsViewportInfo::ZoomFlag::AllowZoom);
         }
       }
 
@@ -7364,7 +7364,7 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
       if (handheldFriendly.EqualsLiteral("true")) {
         mViewportType = DisplayWidthHeight;
         return nsViewportInfo(aDisplaySize, defaultScale,
-                              true);
+                              nsViewportInfo::ZoomFlag::AllowZoom);
       }
     }
 
@@ -7441,7 +7441,10 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     LayoutDeviceToScreenScale effectiveMinScale = mScaleMinFloat;
     LayoutDeviceToScreenScale effectiveMaxScale = mScaleMaxFloat;
     bool effectiveValidMaxScale = mValidMaxScale;
-    bool effectiveAllowZoom = mAllowZoom;
+
+    nsViewportInfo::ZoomFlag effectiveZoomFlag =
+      mAllowZoom ? nsViewportInfo::ZoomFlag::AllowZoom
+                 : nsViewportInfo::ZoomFlag::DisallowZoom;
     if (gfxPrefs::ForceUserScalable()) {
       
       
@@ -7453,7 +7456,7 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
       effectiveMinScale = kViewportMinScale;
       effectiveMaxScale = kViewportMaxScale;
       effectiveValidMaxScale = true;
-      effectiveAllowZoom = true;
+      effectiveZoomFlag = nsViewportInfo::ZoomFlag::AllowZoom;
     }
 
     
@@ -7566,16 +7569,21 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     CSSToScreenScale scaleMinFloat = effectiveMinScale * layoutDeviceScale;
     CSSToScreenScale scaleMaxFloat = effectiveMaxScale * layoutDeviceScale;
 
-    const bool autoSize =
-      mMaxWidth == nsViewportInfo::DeviceSize ||
-      (mWidthStrEmpty &&
-       (mMaxHeight == nsViewportInfo::DeviceSize ||
-        mScaleFloat.scale == 1.0f)) ||
-      (!mWidthStrEmpty && mMaxWidth == nsViewportInfo::Auto && mMaxHeight < 0);
+    nsViewportInfo::AutoSizeFlag sizeFlag =
+      nsViewportInfo::AutoSizeFlag::FixedSize;
+    if (mMaxWidth == nsViewportInfo::DeviceSize ||
+        (mWidthStrEmpty &&
+         (mMaxHeight == nsViewportInfo::DeviceSize ||
+          mScaleFloat.scale == 1.0f)) ||
+         (!mWidthStrEmpty &&
+          mMaxWidth == nsViewportInfo::Auto &&
+          mMaxHeight < 0)) {
+      sizeFlag = nsViewportInfo::AutoSizeFlag::AutoSize;
+    }
 
     
     
-    if (autoSize) {
+    if (sizeFlag == nsViewportInfo::AutoSizeFlag::AutoSize) {
       size = displaySize;
     }
 
@@ -7603,7 +7611,8 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     }
 
     return nsViewportInfo(scaleFloat, scaleMinFloat, scaleMaxFloat, size,
-                          autoSize, effectiveAllowZoom);
+                          sizeFlag,
+                          effectiveZoomFlag);
   }
 }
 
@@ -12903,7 +12912,7 @@ nsIDocument::SetUserHasInteracted()
     loadInfo->SetDocumentHasUserInteracted(true);
   }
 
-  MaybeAllowStorageForOpenerAfterUserInteraction();
+  MaybeAllowStorageForOpener();
 }
 
 void
@@ -12950,7 +12959,7 @@ nsIDocument::SetDocTreeHadPlayRevoked()
 }
 
 void
-nsIDocument::MaybeAllowStorageForOpenerAfterUserInteraction()
+nsIDocument::MaybeAllowStorageForOpener()
 {
   if (StaticPrefs::network_cookie_cookieBehavior() !=
         nsICookieService::BEHAVIOR_REJECT_TRACKER) {
@@ -13008,7 +13017,7 @@ nsIDocument::MaybeAllowStorageForOpenerAfterUserInteraction()
   
   Unused << AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(NodePrincipal(),
                                                                      openerInner,
-                                                                     AntiTrackingCommon::eOpenerAfterUserInteraction);
+                                                                     AntiTrackingCommon::eHeuristic);
 }
 
 namespace {
