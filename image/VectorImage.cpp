@@ -82,10 +82,12 @@ public:
 protected:
   virtual ~SVGRootRenderingObserver()
   {
+    
+    
     StopObserving();
   }
 
-  Element* GetReferencedElementWithoutObserving() override
+  Element* GetReferencedElementWithoutObserving() final
   {
     return mDocWrapper->GetRootSVGElem();
   }

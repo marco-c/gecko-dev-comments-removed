@@ -230,12 +230,15 @@ class SVGIDRenderingObserver : public SVGRenderingObserver
 public:
   SVGIDRenderingObserver(URLAndReferrerInfo* aURI, nsIContent* aObservingContent,
                          bool aReferenceImage);
+
+protected:
   virtual ~SVGIDRenderingObserver() {
+    
+    
     StopObserving();
   }
 
-protected:
-  Element* GetReferencedElementWithoutObserving() override {
+  Element* GetReferencedElementWithoutObserving() final {
     return mObservedElementTracker.get();
   }
 
