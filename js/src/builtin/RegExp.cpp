@@ -80,22 +80,22 @@ js::CreateRegExpMatchResult(JSContext* cx, HandleString input, const MatchPairs&
 
     
 
-    arr->setSlot(0, Int32Value(matches[0].start));
+    arr->setSlot(RegExpRealm::MatchResultObjectIndexSlot, Int32Value(matches[0].start));
 
     
 
-    arr->setSlot(1, StringValue(input));
+    arr->setSlot(RegExpRealm::MatchResultObjectInputSlot, StringValue(input));
 
 #ifdef DEBUG
     RootedValue test(cx);
     RootedId id(cx, NameToId(cx->names().index));
     if (!NativeGetProperty(cx, arr, id, &test))
         return false;
-    MOZ_ASSERT(test == arr->getSlot(0));
+    MOZ_ASSERT(test == arr->getSlot(RegExpRealm::MatchResultObjectIndexSlot));
     id = NameToId(cx->names().input);
     if (!NativeGetProperty(cx, arr, id, &test))
         return false;
-    MOZ_ASSERT(test == arr->getSlot(1));
+    MOZ_ASSERT(test == arr->getSlot(RegExpRealm::MatchResultObjectInputSlot));
 #endif
 
     
@@ -1030,7 +1030,7 @@ js::RegExpMatcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
 {
     
     
-    if (maybeMatches && maybeMatches->pairsRaw()[0] >= 0)
+    if (maybeMatches && maybeMatches->pairsRaw()[0] > MatchPair::NoMatch)
         return CreateRegExpMatchResult(cx, input, *maybeMatches, output);
 
     
@@ -1108,7 +1108,7 @@ js::RegExpSearcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
 
     
     
-    if (maybeMatches && maybeMatches->pairsRaw()[0] >= 0) {
+    if (maybeMatches && maybeMatches->pairsRaw()[0] > MatchPair::NoMatch) {
         *result = CreateRegExpSearchResult(*maybeMatches);
         return true;
     }

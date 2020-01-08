@@ -325,6 +325,9 @@ class RegExpRealm
 
     void sweep();
 
+    static const size_t MatchResultObjectIndexSlot = 0;
+    static const size_t MatchResultObjectInputSlot = 1;
+
     
     ArrayObject* getOrCreateMatchResultTemplateObject(JSContext* cx) {
         if (matchResultTemplateObject_)
