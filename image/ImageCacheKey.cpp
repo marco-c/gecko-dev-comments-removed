@@ -130,7 +130,10 @@ ImageCacheKey::SchemeIs(const char* aScheme)
  void*
 ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
 {
-  if (!aDocument) {
+  
+  
+  
+  if (!aDocument || aDocument->IsCookieAverse()) {
     return nullptr;
   }
 
@@ -143,8 +146,9 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
 
   
   
-  if (nsContentUtils::StorageDisabledByAntiTracking(aDocument, aURI)) {
-    return aDocument;
+  if (nsContentUtils::IsTrackingResourceWindow(aDocument->GetInnerWindow())) {
+    return nsContentUtils::StorageDisabledByAntiTracking(aDocument, aURI) ?
+             aDocument : nullptr;
   }
 
   
@@ -153,8 +157,7 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
   
   
   
-  if (!aDocument->IsCookieAverse() &&
-      !AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(aDocument->GetInnerWindow(),
+  if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(aDocument->GetInnerWindow(),
                                                                     aURI)) {
     return aDocument;
   }
