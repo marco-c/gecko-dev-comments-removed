@@ -1,8 +1,6 @@
 
 
 
-if (!wasmDebuggingIsSupported())
-  quit();
 
 load(libdir + "asserts.js");
 load(libdir + "wasm-binary.js");

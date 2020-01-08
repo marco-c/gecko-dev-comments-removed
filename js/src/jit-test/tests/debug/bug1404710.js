@@ -1,5 +1,4 @@
-if (!('stackTest' in this))
-    quit();
+
 stackTest(new Function(`
     var g = newGlobal();
     var dbg = new Debugger(g);

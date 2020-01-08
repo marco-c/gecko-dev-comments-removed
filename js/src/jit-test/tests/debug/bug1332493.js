@@ -1,14 +1,8 @@
 
 
 
-if (!wasmDebuggingIsSupported())
-    quit(3);
-
 var dbg;
 (function () { dbg = new (newGlobal().Debugger)(this); })();
-
-if (!wasmIsSupported())
-     throw "TestComplete";
 
 var m = new WebAssembly.Module(wasmTextToBinary(`(module
     (import "a" "b" (result f64))

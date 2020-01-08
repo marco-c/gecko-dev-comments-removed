@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-  quit();
-
 loadFile(`
   var o = {}
   var global = this;

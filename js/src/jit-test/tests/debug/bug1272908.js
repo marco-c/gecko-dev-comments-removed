@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-    quit();
-
 
 g = newGlobal();
 g.parent = this;

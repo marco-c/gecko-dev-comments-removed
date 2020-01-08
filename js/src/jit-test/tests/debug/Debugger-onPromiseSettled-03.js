@@ -1,7 +1,4 @@
 
-if (!('Promise' in this))
-    quit(0);
-
 var g = newGlobal();
 var dbg1 = new Debugger(g);
 var log1;

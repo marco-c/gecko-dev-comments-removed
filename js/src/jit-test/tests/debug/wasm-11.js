@@ -2,8 +2,6 @@
 
 
 
-if (!wasmDebuggingIsSupported())
-  quit();
 
 var g = newGlobal();
 g.parent = this;

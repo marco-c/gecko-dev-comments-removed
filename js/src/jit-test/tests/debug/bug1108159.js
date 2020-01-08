@@ -1,8 +1,5 @@
 
 
-if (helperThreadCount() == 0)
-  quit(0);
-
 var s = '';
 for (var i = 0; i < 70000; i++)
  {

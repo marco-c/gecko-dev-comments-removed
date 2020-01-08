@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-    quit();
-
 var g = newGlobal();
 var dbg = new Debugger(g);
 dbg.onNewScript = function (s) {

@@ -5,8 +5,7 @@
 
 
 
-if (typeof withSourceHook != 'function')
-  quit(0);
+
 
 let g = newGlobal();
 let dbg = new Debugger(g);

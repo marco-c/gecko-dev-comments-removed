@@ -1,9 +1,5 @@
 
 
-
-if (!('oomAfterAllocations' in this))
-  quit();
-
 (function() {
     g = newGlobal()
     dbg = new Debugger

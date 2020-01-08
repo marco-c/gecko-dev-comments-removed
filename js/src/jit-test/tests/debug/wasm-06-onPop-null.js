@@ -3,9 +3,6 @@
 
 load(libdir + "asserts.js");
 
-if (!wasmDebuggingIsSupported())
-    quit(3);
-
 var g = newGlobal('');
 var dbg = new Debugger();
 dbg.addDebuggee(g);

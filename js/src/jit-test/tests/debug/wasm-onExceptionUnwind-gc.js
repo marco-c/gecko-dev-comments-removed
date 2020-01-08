@@ -1,6 +1,4 @@
 
-if (!wasmDebuggingIsSupported())
-    quit();
 
 var sandbox = newGlobal();
 var dbg = new Debugger(sandbox);

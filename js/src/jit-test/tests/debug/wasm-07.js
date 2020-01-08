@@ -3,10 +3,8 @@
 
 
 
-load(libdir + "wasm.js");
 
-if (!wasmDebuggingIsSupported())
-    quit();
+load(libdir + "wasm.js");
 
 var offsets;
 wasmRunWithDebugger(

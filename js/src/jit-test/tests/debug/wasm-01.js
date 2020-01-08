@@ -1,7 +1,6 @@
 
 
-if (!wasmDebuggingIsSupported())
-  quit();
+
 
 var g = newGlobal();
 g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary('(module (func) (export "" 0))')));`);

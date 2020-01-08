@@ -3,9 +3,6 @@
 
 load(libdir + "asserts.js");
 
-if (!wasmDebuggingIsSupported())
-    quit();
-
 
 
 function getWasmScriptWithoutAllowUnobservedAsmJS(wast) {

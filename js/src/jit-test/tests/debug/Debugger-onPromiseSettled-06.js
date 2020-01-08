@@ -1,6 +1,4 @@
 
-if (!('Promise' in this))
-    quit(0);
 
 load(libdir + 'asserts.js');
 

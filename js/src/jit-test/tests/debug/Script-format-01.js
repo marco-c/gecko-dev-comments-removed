@@ -1,8 +1,7 @@
 
 
 
-if (!wasmDebuggingIsSupported())
-    quit(0);
+
 
 var g = newGlobal();
 var dbg = new Debugger(g);
@@ -14,9 +13,6 @@ dbg.onNewScript = (script) => {
 
 g.eval(`(() => {})()`);
 assertEq(gotScript.format, "js");
-
-if (!wasmIsSupported())
-  quit();
 
 g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary('(module (func) (export "" 0))')));`);
 assertEq(gotScript.format, "wasm");

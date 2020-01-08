@@ -1,5 +1,4 @@
-if (!wasmDebuggingIsSupported())
-  quit();
+
 
 fullcompartmentchecks(true);
 var g = newGlobal();

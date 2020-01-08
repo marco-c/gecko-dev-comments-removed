@@ -1,7 +1,4 @@
 
-if (!('Promise' in this))
-    quit(0);
-
 const root = newGlobal();
 const dbg = new Debugger();
 const wrappedRoot = dbg.addDebuggee(root)

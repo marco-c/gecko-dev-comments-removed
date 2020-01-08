@@ -1,10 +1,9 @@
 
 
 
-load(libdir + "asserts.js");
 
-if (!wasmDebuggingIsSupported())
-  quit();
+
+load(libdir + "asserts.js");
 
 var g = newGlobal();
 g.parent = this;

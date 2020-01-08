@@ -3,9 +3,6 @@
 
 load(libdir + "wasm.js");
 
-if (!wasmDebuggingIsSupported())
-    quit();
-
 function runTest(wast, initFunc, doneFunc) {
     let g = newGlobal('');
     let dbg = new Debugger(g);

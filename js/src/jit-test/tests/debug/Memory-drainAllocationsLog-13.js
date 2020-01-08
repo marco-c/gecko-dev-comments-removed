@@ -2,9 +2,7 @@
 
 
 
-if (helperThreadCount() === 0) {
-  quit(0);
-}
+
 
 const root = newGlobal();
 root.eval("this.dbg = new Debugger()");

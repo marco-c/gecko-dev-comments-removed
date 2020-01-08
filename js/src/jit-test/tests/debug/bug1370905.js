@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-    quit();
-
 function x() {
     var global = newGlobal({sameZoneAs: this});
     global.eval('function f() { debugger; }');

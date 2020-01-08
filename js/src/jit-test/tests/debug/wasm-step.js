@@ -1,10 +1,8 @@
 
 
 
-load(libdir + "wasm.js");
 
-if (!wasmDebuggingIsSupported())
-    quit();
+load(libdir + "wasm.js");
 
 
 var onEnterFrameCalled, onLeaveFrameCalled, onStepCalled;

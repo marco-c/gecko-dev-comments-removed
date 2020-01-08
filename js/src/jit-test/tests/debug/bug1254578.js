@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-    quit();
-
 var g = newGlobal();
 g.debuggeeGlobal = this;
 g.eval("(" + function() {

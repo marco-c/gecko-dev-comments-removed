@@ -1,10 +1,9 @@
 
 
+
+
 load(libdir + "asserts.js");
 load(libdir + "array-compare.js");
-
-if (!wasmDebuggingIsSupported())
-  quit();
 
 var g = newGlobal();
 var dbg = new Debugger(g);

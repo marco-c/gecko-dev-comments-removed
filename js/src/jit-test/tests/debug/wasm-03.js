@@ -1,9 +1,8 @@
 
 
-load(libdir + "asserts.js");
 
-if (!wasmDebuggingIsSupported())
-  quit();
+
+load(libdir + "asserts.js");
 
 var g = newGlobal();
 var dbg = new Debugger(g);

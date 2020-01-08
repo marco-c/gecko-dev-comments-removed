@@ -1,8 +1,6 @@
 
 
 
-if (!wasmDebuggingIsSupported())
-  quit();
 
 var g = newGlobal();
 var dbg = new Debugger(g);

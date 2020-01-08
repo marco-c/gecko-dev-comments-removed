@@ -3,8 +3,7 @@
 
 
 
-if (!('oomTest' in this))
-    quit();
+
 
 let g = newGlobal();
 g.eval(`\

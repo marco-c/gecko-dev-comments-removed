@@ -2,9 +2,6 @@
 
 load(libdir + "asserts.js");
 
-if (!wasmDebuggingIsSupported())
-    quit(3);
-
 var g = newGlobal();
 g.parent = this;
 g.eval("new Debugger(parent).onExceptionUnwind = function () {  some_error; };");

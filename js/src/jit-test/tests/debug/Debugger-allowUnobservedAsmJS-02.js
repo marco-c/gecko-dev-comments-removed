@@ -1,9 +1,9 @@
 
 
+
+
 load(libdir + "asm.js");
 
-if (helperThreadCount() == 0)
-    quit();
 
 var g = newGlobal();
 g.parent = this;

@@ -1,11 +1,5 @@
 
 
-if (!('oomAfterAllocations' in this))
-    quit();
-
-if (helperThreadCount() === 0)
-    quit(0);
-
 lfcode = new Array();
 dbg = Debugger();
 dbg.onEnterFrame = function() {};

@@ -4,9 +4,6 @@
 load(libdir + "wasm.js");
 load(libdir + 'eqArrayHelper.js');
 
-if (!wasmDebuggingIsSupported())
-    quit();
-
 function monitorLocalValues(wast, lib, expected) {
     function setupFrame(frame) {
         var locals = {};

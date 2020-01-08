@@ -2,9 +2,6 @@
 
 
 
-if (!wasmDebuggingIsSupported())
-  quit();
-
 try {
     WebAssembly.compileStreaming();
 } catch (err) {
