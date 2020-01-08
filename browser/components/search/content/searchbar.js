@@ -464,6 +464,11 @@ class MozSearchbar extends MozXULElement {
         return;
       }
 
+      
+      if (event.originalTarget.localName == "menuitem") {
+        return;
+      }
+
       let isIconClick = event.originalTarget.classList.contains("searchbar-search-button");
 
       
