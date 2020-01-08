@@ -3,7 +3,7 @@
 
 
 
-use entity::EntityMap;
+use entity::SecondaryMap;
 use ir::progpoint::{ExpandedProgramPoint, ProgramOrder};
 use ir::{Ebb, Inst};
 use packed_option::PackedOption;
@@ -28,11 +28,11 @@ use timing;
 pub struct Layout {
     
     
-    ebbs: EntityMap<Ebb, EbbNode>,
+    ebbs: SecondaryMap<Ebb, EbbNode>,
 
     
     
-    insts: EntityMap<Inst, InstNode>,
+    insts: SecondaryMap<Inst, InstNode>,
 
     
     first_ebb: Option<Ebb>,
@@ -45,8 +45,8 @@ impl Layout {
     
     pub fn new() -> Self {
         Self {
-            ebbs: EntityMap::new(),
-            insts: EntityMap::new(),
+            ebbs: SecondaryMap::new(),
+            insts: SecondaryMap::new(),
             first_ebb: None,
             last_ebb: None,
         }
@@ -782,8 +782,8 @@ mod tests {
     impl<'f> LayoutCursor<'f> {
         
         
-        pub fn new(layout: &'f mut Layout) -> LayoutCursor<'f> {
-            LayoutCursor {
+        pub fn new(layout: &'f mut Layout) -> Self {
+            Self {
                 layout,
                 pos: CursorPosition::Nowhere,
             }

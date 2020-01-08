@@ -194,7 +194,10 @@ impl InstructionData {
                 ref args,
                 ..
             } => BranchInfo::SingleDest(destination, &args.as_slice(pool)[2..]),
-            InstructionData::BranchTable { table, .. } => BranchInfo::Table(table),
+            InstructionData::BranchTable {
+                table, destination, ..
+            } => BranchInfo::Table(table, Some(destination)),
+            InstructionData::IndirectJump { table, .. } => BranchInfo::Table(table, None),
             _ => {
                 debug_assert!(!self.opcode().is_branch());
                 BranchInfo::NotABranch
@@ -213,7 +216,7 @@ impl InstructionData {
             | InstructionData::BranchInt { destination, .. }
             | InstructionData::BranchFloat { destination, .. }
             | InstructionData::BranchIcmp { destination, .. } => Some(destination),
-            InstructionData::BranchTable { .. } => None,
+            InstructionData::BranchTable { .. } | InstructionData::IndirectJump { .. } => None,
             _ => {
                 debug_assert!(!self.opcode().is_branch());
                 None
@@ -285,7 +288,7 @@ pub enum BranchInfo<'a> {
     SingleDest(Ebb, &'a [Value]),
 
     
-    Table(JumpTable),
+    Table(JumpTable, Option<Ebb>),
 }
 
 

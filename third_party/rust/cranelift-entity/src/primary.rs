@@ -1,9 +1,14 @@
 
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Index, IndexMut};
 use std::slice;
 use std::vec::Vec;
 use {EntityRef, Iter, IterMut, Keys};
+
+
+
+
+
 
 
 
@@ -43,6 +48,11 @@ where
     
     pub fn get(&self, k: K) -> Option<&V> {
         self.elems.get(k.index())
+    }
+
+    
+    pub fn get_mut(&mut self, k: K) -> Option<&mut V> {
+        self.elems.get_mut(k.index())
     }
 
     
@@ -96,6 +106,11 @@ where
         self.elems.push(v);
         k
     }
+
+    
+    pub fn last(&self) -> Option<&V> {
+        self.elems.last()
+    }
 }
 
 
@@ -142,26 +157,6 @@ where
 
     fn into_iter(self) -> Self::IntoIter {
         IterMut::new(self.elems.iter_mut())
-    }
-}
-
-impl<K, V> Deref for PrimaryMap<K, V>
-where
-    K: EntityRef,
-{
-    type Target = [V];
-
-    fn deref(&self) -> &Self::Target {
-        &self.elems
-    }
-}
-
-impl<K, V> DerefMut for PrimaryMap<K, V>
-where
-    K: EntityRef,
-{
-    fn deref_mut(&mut self) -> &mut [V] {
-        &mut self.elems
     }
 }
 
@@ -340,14 +335,5 @@ mod tests {
                 _ => panic!(),
             }
         }
-    }
-
-    #[test]
-    fn deref() {
-        let mut m = PrimaryMap::<E, isize>::new();
-        let _: &[isize] = m.as_ref();
-        let _: &mut [isize] = m.as_mut();
-        let _: &[isize] = &m;
-        let _: &mut [isize] = &mut m;
     }
 }

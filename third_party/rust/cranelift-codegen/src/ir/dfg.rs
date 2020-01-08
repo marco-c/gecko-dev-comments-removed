@@ -1,6 +1,6 @@
 
 
-use entity::{EntityMap, PrimaryMap};
+use entity::{self, PrimaryMap, SecondaryMap};
 use ir;
 use ir::builder::ReplaceBuilder;
 use ir::extfunc::ExtFuncData;
@@ -34,7 +34,7 @@ pub struct DataFlowGraph {
     
     
     
-    results: EntityMap<Inst, ValueList>,
+    results: SecondaryMap<Inst, ValueList>,
 
     
     
@@ -67,7 +67,7 @@ impl DataFlowGraph {
     pub fn new() -> Self {
         Self {
             insts: PrimaryMap::new(),
-            results: EntityMap::new(),
+            results: SecondaryMap::new(),
             ebbs: PrimaryMap::new(),
             value_lists: ValueListPool::new(),
             values: PrimaryMap::new(),
@@ -127,7 +127,7 @@ fn maybe_resolve_aliases(values: &PrimaryMap<Value, ValueData>, value: Value) ->
     let mut v = value;
 
     
-    for _ in 0..1 + values.len() {
+    for _ in 0..=values.len() {
         if let ValueData::Alias { original, .. } = values[v] {
             v = original;
         } else {
@@ -150,12 +150,49 @@ fn resolve_aliases(values: &PrimaryMap<Value, ValueData>, value: Value) -> Value
 }
 
 
+pub struct Values<'a> {
+    inner: entity::Iter<'a, Value, ValueData>,
+}
+
+
+fn valid_valuedata(data: &ValueData) -> bool {
+    if let ValueData::Alias {
+        ty: types::INVALID,
+        original,
+    } = *data
+    {
+        if original == Value::reserved_value() {
+            return false;
+        }
+    }
+    true
+}
+
+impl<'a> Iterator for Values<'a> {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner
+            .by_ref()
+            .find(|kv| valid_valuedata(kv.1))
+            .map(|kv| kv.0)
+    }
+}
+
+
 
 
 impl DataFlowGraph {
     
     fn make_value(&mut self, data: ValueData) -> Value {
         self.values.push(data)
+    }
+
+    
+    pub fn values<'a>(&'a self) -> Values {
+        Values {
+            inner: self.values.iter(),
+        }
     }
 
     
@@ -249,7 +286,7 @@ impl DataFlowGraph {
             self.value_type(dest),
             ty
         );
-        debug_assert_ne!(ty, types::VOID);
+        debug_assert_ne!(ty, types::INVALID);
 
         self.values[dest] = ValueData::Alias { ty, original };
     }
@@ -293,7 +330,7 @@ impl DataFlowGraph {
                 self.value_type(dest),
                 ty
             );
-            debug_assert_ne!(ty, types::VOID);
+            debug_assert_ne!(ty, types::INVALID);
 
             self.values[dest] = ValueData::Alias { ty, original };
         }
@@ -645,7 +682,7 @@ impl DataFlowGraph {
         let constraints = self[inst].opcode().constraints();
 
         if !constraints.is_polymorphic() {
-            types::VOID
+            types::INVALID
         } else if constraints.requires_typevar_operand() {
             
             
@@ -858,7 +895,7 @@ impl<'a> fmt::Display for DisplayInst<'a> {
         }
 
         let typevar = dfg.ctrl_typevar(inst);
-        if typevar.is_void() {
+        if typevar.is_invalid() {
             write!(f, "{}", dfg[inst].opcode())?;
         } else {
             write!(f, "{}.{}", dfg[inst].opcode(), typevar)?;
@@ -875,7 +912,7 @@ impl DataFlowGraph {
     fn set_value_type_for_parser(&mut self, v: Value, t: Type) {
         assert_eq!(
             self.value_type(v),
-            types::VOID,
+            types::INVALID,
             "this function is only for assigning types to previously invalid values"
         );
         match self.values[v] {
@@ -934,7 +971,7 @@ impl DataFlowGraph {
     
     
     #[cold]
-    pub fn make_value_alias_for_parser(&mut self, src: Value, dest: Value) {
+    pub fn make_value_alias_for_serialization(&mut self, src: Value, dest: Value) {
         assert_ne!(src, Value::reserved_value());
         assert_ne!(dest, Value::reserved_value());
 
@@ -943,7 +980,7 @@ impl DataFlowGraph {
         } else {
             
             
-            types::VOID
+            types::INVALID
         };
         let data = ValueData::Alias { ty, original: src };
         self.values[dest] = data;
@@ -953,7 +990,7 @@ impl DataFlowGraph {
     
     
     #[cold]
-    pub fn value_alias_dest_for_parser(&self, v: Value) -> Option<Value> {
+    pub fn value_alias_dest_for_serialization(&self, v: Value) -> Option<Value> {
         if let ValueData::Alias { original, .. } = self.values[v] {
             Some(original)
         } else {
@@ -968,7 +1005,7 @@ impl DataFlowGraph {
         if let Some(resolved) = maybe_resolve_aliases(&self.values, v) {
             let old_ty = self.value_type(v);
             let new_ty = self.value_type(resolved);
-            if old_ty == types::VOID {
+            if old_ty == types::INVALID {
                 self.set_value_type_for_parser(v, new_ty);
             } else {
                 assert_eq!(old_ty, new_ty);
@@ -984,7 +1021,7 @@ impl DataFlowGraph {
     #[cold]
     pub fn make_invalid_value_for_parser(&mut self) {
         let data = ValueData::Alias {
-            ty: types::VOID,
+            ty: types::INVALID,
             original: Value::reserved_value(),
         };
         self.make_value(data);
@@ -998,7 +1035,7 @@ impl DataFlowGraph {
             return false;
         }
         if let ValueData::Alias { ty, .. } = self.values[v] {
-            ty != types::VOID
+            ty != types::INVALID
         } else {
             true
         }

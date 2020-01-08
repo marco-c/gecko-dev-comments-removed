@@ -11,7 +11,7 @@ use std::mem;
 use std::slice;
 use std::u32;
 use std::vec::Vec;
-use {EntityMap, EntityRef};
+use {EntityRef, SecondaryMap};
 
 
 
@@ -56,7 +56,7 @@ where
     K: EntityRef,
     V: SparseMapValue<K>,
 {
-    sparse: EntityMap<K, u32>,
+    sparse: SecondaryMap<K, u32>,
     dense: Vec<V>,
 }
 
@@ -68,7 +68,7 @@ where
     
     pub fn new() -> Self {
         Self {
-            sparse: EntityMap::new(),
+            sparse: SecondaryMap::new(),
             dense: Vec::new(),
         }
     }

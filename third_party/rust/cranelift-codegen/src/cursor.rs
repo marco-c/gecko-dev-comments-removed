@@ -580,8 +580,8 @@ pub struct FuncCursor<'f> {
 
 impl<'f> FuncCursor<'f> {
     
-    pub fn new(func: &'f mut ir::Function) -> FuncCursor<'f> {
-        FuncCursor {
+    pub fn new(func: &'f mut ir::Function) -> Self {
+        Self {
             pos: CursorPosition::Nowhere,
             srcloc: Default::default(),
             func,
@@ -662,8 +662,8 @@ pub struct EncCursor<'f> {
 
 impl<'f> EncCursor<'f> {
     
-    pub fn new(func: &'f mut ir::Function, isa: &'f TargetIsa) -> EncCursor<'f> {
-        EncCursor {
+    pub fn new(func: &'f mut ir::Function, isa: &'f TargetIsa) -> Self {
+        Self {
             pos: CursorPosition::Nowhere,
             srcloc: Default::default(),
             built_inst: None,

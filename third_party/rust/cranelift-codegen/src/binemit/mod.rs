@@ -94,6 +94,9 @@ pub trait CodeSink {
 
     
     fn trap(&mut self, TrapCode, SourceLoc);
+
+    
+    fn begin_rodata(&mut self);
 }
 
 
@@ -121,6 +124,17 @@ where
         debug_assert_eq!(func.offsets[ebb], sink.offset());
         for inst in func.layout.ebb_insts(ebb) {
             emit_inst(func, inst, &mut divert, sink);
+        }
+    }
+
+    sink.begin_rodata();
+
+    
+    for (jt, jt_data) in func.jump_tables.iter() {
+        let jt_offset = func.jt_offsets[jt];
+        for ebb in jt_data.iter() {
+            let rel_offset: i32 = func.offsets[*ebb] as i32 - jt_offset as i32;
+            sink.put4(rel_offset as u32)
         }
     }
 }

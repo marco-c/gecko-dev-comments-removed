@@ -15,7 +15,7 @@ use {EntityRef, Iter, IterMut, Keys};
 
 
 #[derive(Debug, Clone)]
-pub struct EntityMap<K, V>
+pub struct SecondaryMap<K, V>
 where
     K: EntityRef,
     V: Clone,
@@ -26,7 +26,7 @@ where
 }
 
 
-impl<K, V> EntityMap<K, V>
+impl<K, V> SecondaryMap<K, V>
 where
     K: EntityRef,
     V: Clone,
@@ -103,7 +103,7 @@ where
 
 
 
-impl<K, V> Index<K> for EntityMap<K, V>
+impl<K, V> Index<K> for SecondaryMap<K, V>
 where
     K: EntityRef,
     V: Clone,
@@ -118,7 +118,7 @@ where
 
 
 
-impl<K, V> IndexMut<K> for EntityMap<K, V>
+impl<K, V> IndexMut<K> for SecondaryMap<K, V>
 where
     K: EntityRef,
     V: Clone,
@@ -154,7 +154,7 @@ mod tests {
         let r0 = E(0);
         let r1 = E(1);
         let r2 = E(2);
-        let mut m = EntityMap::new();
+        let mut m = SecondaryMap::new();
 
         let v: Vec<E> = m.keys().collect();
         assert_eq!(v, []);

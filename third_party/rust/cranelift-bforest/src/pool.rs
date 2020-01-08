@@ -90,7 +90,7 @@ impl<F: Forest> NodePool<F> {
 
         
         
-        if let &NodeData::Inner { size, .. } = &self[node] {
+        if let NodeData::Inner { size, .. } = self[node] {
             assert!(size > 0, "Root must have more than one sub-tree");
         }
 
