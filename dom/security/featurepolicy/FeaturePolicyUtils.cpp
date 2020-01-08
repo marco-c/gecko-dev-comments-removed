@@ -40,7 +40,6 @@ static FeatureMap sSupportedFeatures[] = {
   { "payment", FeatureMap::eSelf  },
   
   { "speaker", FeatureMap::eSelf  },
-  
   { "vr", FeatureMap::eSelf  },
 };
 
