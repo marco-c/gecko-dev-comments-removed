@@ -26,10 +26,8 @@ add_task(async function() {
   equal(desc.geckobuildid, Services.appinfo.platformBuildID, "device actor works");
 
   
-  const response = await client.mainRoot.getMainProcess();
-
-  const { chromeDebugger } = response.form;
-  const [, threadClient] = await client.attachThread(chromeDebugger);
+  const front = await client.mainRoot.getMainProcess();
+  const [, threadClient] = await front.attachThread();
   const onResumed = new Promise(resolve => {
     threadClient.addOneTimeListener("paused", (event, packet) => {
       equal(packet.why.type, "breakpoint",

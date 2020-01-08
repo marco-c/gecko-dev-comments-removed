@@ -525,8 +525,17 @@ Target.prototype = {
 
     
     const attachBrowsingContextTarget = async () => {
-      const [, targetFront] = await this._client.attachTarget(this.form.actor);
-      this.activeTab = targetFront;
+      
+      
+      
+      
+      
+      if (!this.activeTab) {
+        const [, targetFront] = await this._client.attachTarget(this.form.actor);
+        this.activeTab = targetFront;
+      } else {
+        await this.activeTab.attach();
+      }
 
       this.activeTab.on("tabNavigated", this._onTabNavigated);
       this._onFrameUpdate = packet => {

@@ -13,6 +13,10 @@ const ContentProcessTargetFront = protocol.FrontClassWithSpec(contentProcessTarg
     this.client = client;
     this.chromeDebugger = form.chromeDebugger;
 
+    
+    
+    this.targetForm = form;
+
     this.traits = {};
   },
 
