@@ -6,6 +6,7 @@
 
 const Services = require("Services");
 const promise = require("devtools/shared/deprecated-sync-thenables");
+const {AppConstants} = require("resource://gre/modules/AppConstants.jsm");
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { getStack, callFunctionWithAsyncStack } = require("devtools/shared/platform/stack");
@@ -29,9 +30,14 @@ loader.lazyRequireGetter(this, "WorkerClient", "devtools/shared/client/worker-cl
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
 
 
+const PLATFORM_MAJOR_VERSION = AppConstants.MOZ_APP_VERSION.match(/\d+/)[0];
 
 
-const MIN_SUPPORTED_PLATFORM_VERSION = "52.0a1";
+
+
+
+const MIN_SUPPORTED_PLATFORM_VERSION = (PLATFORM_MAJOR_VERSION - 2) + ".0a1";
+
 const MS_PER_DAY = 86400000;
 
 
