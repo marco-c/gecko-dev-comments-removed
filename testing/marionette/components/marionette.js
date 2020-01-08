@@ -82,6 +82,9 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.download.panel.shown", true],
 
   
+  ["browser.newtabpage.enabled", false],
+
+  
   
   ["browser.pagethumbnails.capturing_disabled", true],
 
@@ -111,9 +114,6 @@ const RECOMMENDED_PREFS = new Map([
 
   
   ["browser.startup.homepage_override.mstone", "ignore"],
-
-  
-  ["toolkit.cosmeticAnimations.enabled", false],
 
   
   ["browser.tabs.closeWindowWithLastTab", false],
@@ -254,6 +254,9 @@ const RECOMMENDED_PREFS = new Map([
   
   ["startup.homepage_welcome_url", "about:blank"],
   ["startup.homepage_welcome_url.additional", ""],
+
+  
+  ["toolkit.cosmeticAnimations.enabled", false],
 
   
   ["toolkit.startup.max_resumed_crashes", -1],
