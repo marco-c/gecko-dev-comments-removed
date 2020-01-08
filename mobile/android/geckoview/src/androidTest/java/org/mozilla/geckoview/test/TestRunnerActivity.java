@@ -51,8 +51,8 @@ public class TestRunnerActivity extends Activity {
         }
 
         @Override
-        public GeckoResult<AllowOrDeny> onLoadRequest(GeckoSession session, String uri,
-                                                      int target, int flags) {
+        public GeckoResult<AllowOrDeny> onLoadRequest(GeckoSession session,
+                                                  LoadRequest request) {
             
             return GeckoResult.fromValue(AllowOrDeny.ALLOW);
         }
