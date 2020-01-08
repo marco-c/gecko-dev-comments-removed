@@ -8,7 +8,7 @@
 
 
 add_task(async function test_default_bookmark_toolbar_visibility() {
-  const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
+  const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
   let xulStore = Services.xulStore;
 
   is(xulStore.getValue(BROWSER_DOCURL, "PersonalToolbar", "collapsed"), "",

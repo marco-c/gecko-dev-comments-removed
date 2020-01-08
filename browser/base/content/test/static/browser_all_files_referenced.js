@@ -580,7 +580,7 @@ add_task(async function checkAllTheFiles() {
 
   if (isDevtools) {
     
-    gReferencesFromCode.set("chrome://browser/content/browser.xul", null);
+    gReferencesFromCode.set(AppConstants.BROWSER_CHROME_URL, null);
     
     gReferencesFromCode.set("chrome://browser/skin/browser.css", null);
   }

@@ -22,7 +22,7 @@ var gObservedTopics = {};
 function ignoreEvent(aSubject, aTopic, aData) {
   
   
-  const kBrowserURL = "chrome://browser/content/browser.xul";
+  const kBrowserURL = AppConstants.BROWSER_CHROME_URL;
   const nsIPropertyBag = Ci.nsIPropertyBag;
   if (aTopic == "recording-device-events" &&
       aSubject.QueryInterface(nsIPropertyBag).getProperty("requestURL") == kBrowserURL) {

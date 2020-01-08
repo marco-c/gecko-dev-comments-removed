@@ -1,3 +1,5 @@
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+
 
 
 
@@ -113,7 +115,7 @@ function openBrowserWindowIntl() {
   }
 
   gBrowserContext.browserWnd =
-    window.openDialog(Services.prefs.getCharPref("browser.chromeURL"),
+    window.openDialog(AppConstants.BROWSER_CHROME_URL,
                       "_blank", params,
                       gBrowserContext.startURL);
 

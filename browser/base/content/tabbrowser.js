@@ -3405,7 +3405,7 @@ window._gBrowser = {
     }
 
     
-    return window.openDialog(getBrowserURL(), "_blank", options, aTab);
+    return window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", options, aTab);
   },
 
   

@@ -10,7 +10,7 @@ const URI = ROOT + "browser_tab_dragdrop2_frame1.xul";
 add_task(async function() {
   
   let args = "chrome,all,dialog=no";
-  let win = window.openDialog(getBrowserURL(), "_blank", args, URI);
+  let win = window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", args, URI);
 
   
   await promiseTestsDone(win);

@@ -505,7 +505,7 @@ var PlacesCommandHook = {
   updateBookmarkAllTabsCommand:
   function PCH_updateBookmarkAllTabsCommand() {
     
-    if (window.location.href != getBrowserURL())
+    if (window.location.href != AppConstants.BROWSER_CHROME_URL)
       return;
 
     
