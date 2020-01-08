@@ -6,7 +6,7 @@
 
 const TEST_URIs = [
   "http://www.mozilla.org/test1",
-  "http://www.mozilla.org/test2"
+  "http://www.mozilla.org/test2",
 ];
 
 

@@ -48,7 +48,7 @@ add_task(async function() {
           {
             url,
           },
-        ]
+        ],
       },
       {
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
@@ -56,7 +56,7 @@ add_task(async function() {
         children: [
           { 
             url,
-            lastModified: null
+            lastModified: null,
           },
           { 
             url: "fake_url",
@@ -64,7 +64,7 @@ add_task(async function() {
           },
           { 
             url,
-            dateAdded: undefined
+            dateAdded: undefined,
           },
           { 
             url,
@@ -73,11 +73,11 @@ add_task(async function() {
           { 
             url,
             dateAdded: new Date(now - 86400000),
-            lastModified: new Date(now - 172800000) 
+            lastModified: new Date(now - 172800000), 
           },
-        ]
-      }
-    ]
+        ],
+      },
+    ],
   };
 
   let bms = await insertTree(tree);

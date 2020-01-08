@@ -172,7 +172,7 @@ add_task(async function test_savedsearches_history() {
       
       await PlacesTestUtils.addVisits({
         uri: uri("http://foo.com"),
-        title: searchTerm + "blah"
+        title: searchTerm + "blah",
       });
       Assert.equal(node.childCount, 2);
 

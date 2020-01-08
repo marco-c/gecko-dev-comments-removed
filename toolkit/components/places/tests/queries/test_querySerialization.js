@@ -93,8 +93,8 @@ const querySwitches = [
       function(aQuery, aQueryOptions) {
         aQuery.beginTime = Date.now() * 1000;
         aQuery.beginTimeReference = Ci.nsINavHistoryQuery.TIME_RELATIVE_TODAY;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -110,8 +110,8 @@ const querySwitches = [
       function(aQuery, aQueryOptions) {
         aQuery.endTime = Date.now() * 1000;
         aQuery.endTimeReference = Ci.nsINavHistoryQuery.TIME_RELATIVE_TODAY;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -125,8 +125,8 @@ const querySwitches = [
       },
       function(aQuery, aQueryOptions) {
         aQuery.searchTerms = "";
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -145,8 +145,8 @@ const querySwitches = [
       },
       function(aQuery, aQueryOptions) {
         aQuery.domain = "";
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -158,7 +158,7 @@ const querySwitches = [
       function(aQuery, aQueryOptions) {
         aQuery.uri = uri("http://mozilla.com");
       },
-    ]
+    ],
   },
   
   {
@@ -174,8 +174,8 @@ const querySwitches = [
       function(aQuery, aQueryOptions) {
         aQuery.annotation = "bookmarks/toolbarFolder";
         aQuery.annotationIsNot = true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -186,8 +186,8 @@ const querySwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQuery.minVisits = 0x7fffffff; 
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -197,8 +197,8 @@ const querySwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQuery.maxVisits = 0x7fffffff; 
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -208,8 +208,8 @@ const querySwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQuery.onlyBookmarked = true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -239,8 +239,8 @@ const querySwitches = [
       function(aQuery, aQueryOptions) {
         aQuery.setParents([PlacesUtils.bookmarks.rootGuid,
                            PlacesUtils.bookmarks.tagsGuid], 2);
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -295,8 +295,8 @@ const querySwitches = [
           "あいうえお",
         ];
         aQuery.tagsAreNot =  true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -327,8 +327,8 @@ const querySwitches = [
       function(aQuery, aQueryOptions) {
         aQuery.setTransitions([Ci.nsINavHistoryService.TRANSITION_TYPED,
                                Ci.nsINavHistoryService.TRANSITION_BOOKMARK], 2);
-      }
-    ]
+      },
+    ],
   },
 ];
 
@@ -347,7 +347,7 @@ const queryOptionSwitches = [
       function(aQuery, aQueryOptions) {
         aQueryOptions.sortingMode = aQueryOptions.SORT_BY_DATE_ASCENDING;
       },
-    ]
+    ],
   },
   
   {
@@ -359,7 +359,7 @@ const queryOptionSwitches = [
       function(aQuery, aQueryOptions) {
         aQueryOptions.resultType = aQueryOptions.RESULTS_AS_URI;
       },
-    ]
+    ],
   },
   
   {
@@ -369,8 +369,8 @@ const queryOptionSwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQueryOptions.excludeItems = true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -380,8 +380,8 @@ const queryOptionSwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQueryOptions.excludeQueries = true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -391,8 +391,8 @@ const queryOptionSwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQueryOptions.expandQueries = true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -402,8 +402,8 @@ const queryOptionSwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQueryOptions.includeHidden = true;
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -413,8 +413,8 @@ const queryOptionSwitches = [
     runs:     [
       function(aQuery, aQueryOptions) {
         aQueryOptions.maxResults = 0xffffffff; 
-      }
-    ]
+      },
+    ],
   },
   
   {
@@ -427,8 +427,8 @@ const queryOptionSwitches = [
       },
       function(aQuery, aQueryOptions) {
         aQueryOptions.queryType = aQueryOptions.QUERY_TYPE_UNIFIED;
-      }
-    ]
+      },
+    ],
   },
 ];
 

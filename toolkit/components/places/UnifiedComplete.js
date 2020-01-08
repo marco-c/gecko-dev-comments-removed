@@ -24,7 +24,7 @@ const {
 const INSERTMETHOD = {
   APPEND: 0, 
   MERGE_RELATED: 1, 
-  MERGE: 2 
+  MERGE: 2, 
 };
 
 
@@ -140,7 +140,7 @@ const MATCHTYPE = {
   HEURISTIC: "heuristic",
   GENERAL: "general",
   SUGGESTION: "suggestion",
-  EXTENSION: "extension"
+  EXTENSION: "extension",
 };
 
 
@@ -168,7 +168,7 @@ const DEFAULT_BUCKETS_AFTER = [
 
 
 const DISALLOWED_URLLIKE_PREFIXES = [
-  "http", "https", "ftp"
+  "http", "https", "ftp",
 ];
 
 
@@ -550,7 +550,7 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
   shutdown() {
     this._conn = null;
     this._queue.clear();
-  }
+  },
 }));
 
 
@@ -711,8 +711,8 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
     },
     QueryInterface: ChromeUtils.generateQI([
       Ci.nsIObserver,
-      Ci.nsISupportsWeakReference
-    ])
+      Ci.nsISupportsWeakReference,
+    ]),
   };
   Services.prefs.addObserver(PREF_URLBAR_BRANCH, store, true);
   Services.prefs.addObserver("keyword.enabled", store, true);
@@ -934,8 +934,8 @@ function Search(searchString, searchParam, autocompleteListener,
       }
     },
     QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIAutoCompleteSimpleResultListener
-    ])
+      Ci.nsIAutoCompleteSimpleResultListener,
+    ]),
   });
   
   result.setDefaultIndex(-1);
@@ -1556,7 +1556,7 @@ Search.prototype = {
       value = PlacesUtils.mozActionURI("keyword", {
         url,
         input: this._originalSearchString,
-        postData
+        postData,
       });
     }
     
@@ -1569,7 +1569,7 @@ Search.prototype = {
       
       icon: iconHelper(entry.url),
       style,
-      frecency: Infinity
+      frecency: Infinity,
     });
     if (!this._keywordSubstitute) {
       this._keywordSubstitute = entry.url.host;
@@ -1632,7 +1632,7 @@ Search.prototype = {
       comment: match.engineName,
       icon: match.iconUrl,
       style: "priority-search",
-      frecency: Infinity
+      frecency: Infinity,
     });
     return true;
   },
@@ -1675,13 +1675,13 @@ Search.prototype = {
     this._addMatch({
       value: PlacesUtils.mozActionURI("extension", {
         content,
-        keyword: this._searchTokens[0]
+        keyword: this._searchTokens[0],
       }),
       comment,
       icon: "chrome://browser/content/extension.svg",
       style: "action extension",
       frecency: Infinity,
-      type: MATCHTYPE.EXTENSION
+      type: MATCHTYPE.EXTENSION,
     });
   },
 
@@ -1702,7 +1702,7 @@ Search.prototype = {
       comment: searchMatch.engineName,
       icon: searchMatch.iconUrl,
       style: "action searchengine",
-      frecency: FRECENCY_DEFAULT
+      frecency: FRECENCY_DEFAULT,
     };
     if (suggestion) {
       match.style += " suggestion";
@@ -1790,7 +1790,7 @@ Search.prototype = {
           value,
           comment: searchUrl,
           style: "action visiturl",
-          frecency: Infinity
+          frecency: Infinity,
         });
 
         return true;
@@ -1832,7 +1832,7 @@ Search.prototype = {
       value,
       comment: displayURL,
       style: "action visiturl",
-      frecency: Infinity
+      frecency: Infinity,
     };
 
     
@@ -2023,7 +2023,7 @@ Search.prototype = {
       this._buckets = buckets.map(([type, available]) => ({ type,
                                                             available,
                                                             insertIndex: 0,
-                                                            count: 0
+                                                            count: 0,
                                                           }));
 
       
@@ -2328,8 +2328,8 @@ Search.prototype = {
         userContextId: this._userContextId,
         
         
-        maxResults: Prefs.get("maxRichResults")
-      }
+        maxResults: Prefs.get("maxRichResults"),
+      },
     ];
   },
 
@@ -2350,8 +2350,8 @@ Search.prototype = {
         
         searchString: this._keywordSubstitutedSearchString,
         userContextId: this._userContextId,
-        maxResults: Prefs.get("maxRichResults")
-      }
+        maxResults: Prefs.get("maxRichResults"),
+      },
     ];
   },
 
@@ -2371,8 +2371,8 @@ Search.prototype = {
         matchBehavior: this._matchBehavior,
         searchBehavior: this._behavior,
         userContextId: this._userContextId,
-        maxResults: Prefs.get("maxRichResults")
-      }
+        maxResults: Prefs.get("maxRichResults"),
+      },
     ];
   },
 
@@ -2595,7 +2595,7 @@ UnifiedComplete.prototype = {
       this._promiseDatabase = (async () => {
         let conn = await Sqlite.cloneStorageConnection({
           connection: PlacesUtils.history.DBConnection,
-          readOnly: true
+          readOnly: true,
         });
 
         try {
@@ -2782,8 +2782,8 @@ UnifiedComplete.prototype = {
     Ci.nsIAutoCompleteSearchDescriptor,
     Ci.mozIPlacesAutoComplete,
     Ci.nsIObserver,
-    Ci.nsISupportsWeakReference
-  ])
+    Ci.nsISupportsWeakReference,
+  ]),
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([UnifiedComplete]);

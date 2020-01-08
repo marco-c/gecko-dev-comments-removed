@@ -17,7 +17,7 @@ function promiseOnItemVisited() {
         PlacesUtils.bookmarks.removeObserver(this);
         
         executeSoon(resolve);
-      }
+      },
     };
     PlacesUtils.bookmarks.addObserver(bookmarksObserver);
   });
@@ -42,8 +42,8 @@ add_task(async function test() {
         
         title: "a",
         url: uri1,
-      }, ]
-    }]
+      } ],
+    }],
   });
 
   let guid1 = bookmarks[1].guid;

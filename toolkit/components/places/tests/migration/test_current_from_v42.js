@@ -49,27 +49,27 @@ add_task(async function check_keywords() {
     { id: 2,
       keyword: "keyword2",
       post_data: "",
-      foreign_count: 3 
+      foreign_count: 3, 
     },
     { id: 3,
       keyword: "keyword3",
       post_data: "post3",
-      foreign_count: 3 
+      foreign_count: 3, 
     },
     { id: 4,
       keyword: "keyword4",
       post_data: "",
-      foreign_count: 2 
+      foreign_count: 2, 
     },
     { id: 5,
       keyword: "keyword5",
       post_data: "post5",
-      foreign_count: 3 
+      foreign_count: 3, 
     },
     { id: 6,
       keyword: "keyword6",
       post_data: "post6",
-      foreign_count: 3 
+      foreign_count: 3, 
     },
   ]);
 });

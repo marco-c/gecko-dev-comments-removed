@@ -65,7 +65,7 @@ add_task(async function test_import() {
   
   Assert.ok(!(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
+    index: 0,
   })));
 
   
@@ -76,7 +76,7 @@ add_task(async function test_import() {
   
   let bm = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
+    index: 0,
   });
   Assert.equal(bm.title, "example");
 
@@ -93,7 +93,7 @@ add_task(async function test_restore() {
   
   Assert.ok(!(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
+    index: 0,
   })));
 
   
@@ -104,7 +104,7 @@ add_task(async function test_restore() {
   
   Assert.ok(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
+    index: 0,
   }));
 
   
@@ -120,7 +120,7 @@ add_task(async function test_restore_import() {
   
   Assert.ok(!(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
+    index: 0,
   })));
 
   
@@ -132,7 +132,7 @@ add_task(async function test_restore_import() {
   
   Assert.ok(await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0
+    index: 0,
   }));
 
   

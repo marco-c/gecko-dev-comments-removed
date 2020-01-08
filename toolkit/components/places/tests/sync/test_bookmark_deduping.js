@@ -285,7 +285,7 @@ add_task(async function test_duping_remote_newer() {
   
   PlacesTestUtils.setBookmarkSyncFields({
     guid: "folderBBBBBB",
-    syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN
+    syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN,
   });
 
   

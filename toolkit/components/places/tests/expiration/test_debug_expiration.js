@@ -14,17 +14,17 @@ add_task(async function test_expire_orphans() {
   
   await PlacesTestUtils.addVisits({
     uri: uri("http://page1.mozilla.org/"),
-    visitDate: gNow++
+    visitDate: gNow++,
   });
   await PlacesTestUtils.addVisits({
     uri: uri("http://page2.mozilla.org/"),
-    visitDate: gNow++
+    visitDate: gNow++,
   });
   
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://page3.mozilla.org/",
-    title: ""
+    title: "",
   });
   await PlacesUtils.bookmarks.remove(bm);
 
@@ -44,17 +44,17 @@ add_task(async function test_expire_orphans_optionalarg() {
   
   await PlacesTestUtils.addVisits({
     uri: uri("http://page1.mozilla.org/"),
-    visitDate: gNow++
+    visitDate: gNow++,
   });
   await PlacesTestUtils.addVisits({
     uri: uri("http://page2.mozilla.org/"),
-    visitDate: gNow++
+    visitDate: gNow++,
   });
   
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://page3.mozilla.org/",
-    title: ""
+    title: "",
   });
   await PlacesUtils.bookmarks.remove(bm);
 
@@ -74,11 +74,11 @@ add_task(async function test_expire_limited() {
   await PlacesTestUtils.addVisits([
     { 
       uri: "http://old.mozilla.org/",
-      visitDate: gNow++
+      visitDate: gNow++,
     },
     { 
       uri: "http://new.mozilla.org/",
-      visitDate: gNow++
+      visitDate: gNow++,
     },
   ]);
 
@@ -99,16 +99,16 @@ add_task(async function test_expire_limited_longurl() {
   await PlacesTestUtils.addVisits([
     { 
       uri: "http://old.mozilla.org/",
-      visitDate: gNow++
+      visitDate: gNow++,
     },
     { 
       uri: longurl,
-      visitDate: gNow++
+      visitDate: gNow++,
     },
     { 
       uri: longurl,
-      visitDate: getExpirablePRTime(58)
-    }
+      visitDate: getExpirablePRTime(58),
+    },
   ]);
 
   await promiseForceExpirationStep(1);
@@ -126,18 +126,18 @@ add_task(async function test_expire_limited_exoticurl() {
   await PlacesTestUtils.addVisits([
     { 
       uri: "http://old.mozilla.org/",
-      visitDate: gNow++
+      visitDate: gNow++,
     },
     { 
       uri: "http://download.mozilla.org",
       visitDate: gNow++,
-      transition: 7
+      transition: 7,
     },
     { 
       uri: "http://nonexpirable-download.mozilla.org",
       visitDate: getExpirablePRTime(58),
-      transition: 7
-    }
+      transition: 7,
+    },
   ]);
 
   await promiseForceExpirationStep(1);
@@ -160,37 +160,37 @@ add_task(async function test_expire_unlimited() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://old.mozilla.org/",
-      visitDate: gNow++
+      visitDate: gNow++,
     },
     {
       uri: "http://new.mozilla.org/",
-      visitDate: gNow++
+      visitDate: gNow++,
     },
     
     {
       uri: "http://download.mozilla.org/",
       visitDate: gNow++,
-      transition: PlacesUtils.history.TRANSITION_DOWNLOAD
+      transition: PlacesUtils.history.TRANSITION_DOWNLOAD,
     },
     {
       uri: longurl,
-      visitDate: gNow++
+      visitDate: gNow++,
     },
 
     
     {
       uri: "http://nonexpirable.mozilla.org/",
-      visitDate: getExpirablePRTime(5)
+      visitDate: getExpirablePRTime(5),
     },
     {
       uri: "http://nonexpirable-download.mozilla.org/",
       visitDate: getExpirablePRTime(5),
-      transition: PlacesUtils.history.TRANSITION_DOWNLOAD
+      transition: PlacesUtils.history.TRANSITION_DOWNLOAD,
     },
     {
       uri: longurl,
-      visitDate: getExpirablePRTime(5)
-    }
+      visitDate: getExpirablePRTime(5),
+    },
   ]);
 
   await promiseForceExpirationStep(-1);
