@@ -6306,25 +6306,16 @@ class MGlobalNameConflictsCheck : public MNullaryInstruction {
 
 
 class MDefVar : public MUnaryInstruction, public NoTypePolicy::Data {
-  CompilerPropertyName name_;  
-  unsigned attrs_;             
-
  private:
-  MDefVar(PropertyName* name, unsigned attrs, MDefinition* envChain)
-      : MUnaryInstruction(classOpcode, envChain), name_(name), attrs_(attrs) {}
+  explicit MDefVar(MDefinition* envChain)
+      : MUnaryInstruction(classOpcode, envChain) {}
 
  public:
   INSTRUCTION_HEADER(DefVar)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, environmentChain))
 
-  PropertyName* name() const { return name_; }
-  unsigned attrs() const { return attrs_; }
-
   bool possiblyCalls() const override { return true; }
-  bool appendRoots(MRootList& roots) const override {
-    return roots.append(name_);
-  }
 };
 
 class MDefLexical : public MNullaryInstruction {
