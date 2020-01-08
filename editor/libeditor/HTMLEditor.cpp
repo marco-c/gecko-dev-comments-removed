@@ -1033,11 +1033,8 @@ HTMLEditor::IsVisibleBRElement(nsINode* aNode)
   
   selOffset++;
   WSRunObject wsObj(this, selNode, selOffset);
-  nsCOMPtr<nsINode> unused;
-  int32_t visOffset = 0;
   WSType visType;
-  wsObj.NextVisibleNode(EditorRawDOMPoint(selNode, selOffset),
-                        address_of(unused), &visOffset, &visType);
+  wsObj.NextVisibleNode(EditorRawDOMPoint(selNode, selOffset), &visType);
   if (visType & WSType::block) {
     return false;
   }
@@ -1522,10 +1519,9 @@ HTMLEditor::GetBetterInsertionPointFor(nsINode& aNodeToInsert,
   
   
   nsCOMPtr<nsINode> nextVisibleNode;
-  int32_t nextVisibleOffset = 0;
   WSType nextVisibleType;
   wsObj.NextVisibleNode(pointToInsert, address_of(nextVisibleNode),
-                        &nextVisibleOffset, &nextVisibleType);
+                        nullptr, &nextVisibleType);
   
   
   if (!nextVisibleNode ||
@@ -1538,10 +1534,9 @@ HTMLEditor::GetBetterInsertionPointFor(nsINode& aNodeToInsert,
   
   
   nsCOMPtr<nsINode> previousVisibleNode;
-  int32_t previousVisibleOffset = 0;
   WSType previousVisibleType;
   wsObj.PriorVisibleNode(pointToInsert, address_of(previousVisibleNode),
-                         &previousVisibleOffset, &previousVisibleType);
+                         nullptr, &previousVisibleType);
   
   
   
@@ -4113,11 +4108,10 @@ HTMLEditor::IsVisibleTextNode(Text& aText)
 
   WSRunObject wsRunObj(this, &aText, 0);
   nsCOMPtr<nsINode> nextVisibleNode;
-  int32_t unused = 0;
   WSType visibleNodeType;
   wsRunObj.NextVisibleNode(EditorRawDOMPoint(&aText, 0),
                            address_of(nextVisibleNode),
-                           &unused, &visibleNodeType);
+                           nullptr, &visibleNodeType);
   return (visibleNodeType == WSType::normalWS ||
           visibleNodeType == WSType::text) &&
          &aText == nextVisibleNode;

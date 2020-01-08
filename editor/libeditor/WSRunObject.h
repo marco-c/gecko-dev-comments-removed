@@ -278,12 +278,24 @@ public:
   
   
   
+  
+  
   template<typename PT, typename CT>
   void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
                         nsCOMPtr<nsINode>* outVisNode,
                         int32_t* outVisOffset,
-                        WSType* outType);
+                        WSType* outType) const;
 
+  template<typename PT, typename CT>
+  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
+                        WSType* outType) const
+  {
+    PriorVisibleNode(aPoint, nullptr, nullptr, outType);
+  }
+
+
+  
+  
   
   
   
@@ -292,7 +304,14 @@ public:
   void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
                        nsCOMPtr<nsINode>* outVisNode,
                        int32_t* outVisOffset,
-                       WSType* outType);
+                       WSType* outType) const;
+
+  template<typename PT, typename CT>
+  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
+                       WSType* outType) const
+  {
+    NextVisibleNode(aPoint, nullptr, nullptr, outType);
+  }
 
   
   
@@ -392,16 +411,16 @@ protected:
 
 
   template<typename PT, typename CT>
-  WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint);
-  WSPoint GetNextCharPoint(const WSPoint& aPoint);
+  WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
+  WSPoint GetNextCharPoint(const WSPoint& aPoint) const;
 
   
 
 
 
   template<typename PT, typename CT>
-  WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint);
-  WSPoint GetPreviousCharPoint(const WSPoint& aPoint);
+  WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
+  WSPoint GetPreviousCharPoint(const WSPoint& aPoint) const;
 
   
 
@@ -412,11 +431,12 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  WSPoint GetNextCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint);
   template<typename PT, typename CT>
   WSPoint
-  GetPreviousCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint);
+  GetNextCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint) const;
+  template<typename PT, typename CT>
+  WSPoint
+  GetPreviousCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   
 
@@ -476,9 +496,9 @@ protected:
 
   template<typename PT, typename CT>
   WSFragment* FindNearestRun(const EditorDOMPointBase<PT, CT>& aPoint,
-                             bool aForward);
+                             bool aForward) const;
 
-  char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset);
+  char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
   nsresult CheckTrailingNBSPOfRun(WSFragment *aRun);
 
   

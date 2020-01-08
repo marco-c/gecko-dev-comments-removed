@@ -620,11 +620,9 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
 
       
       WSRunObject wsRunObj(this, selNode, selOffset);
-      nsCOMPtr<nsINode> visNode;
-      int32_t outVisOffset=0;
       WSType visType;
       wsRunObj.PriorVisibleNode(EditorRawDOMPoint(selNode, selOffset),
-                                address_of(visNode), &outVisOffset, &visType);
+                                &visType);
       if (visType == WSType::br) {
         
         
@@ -638,6 +636,8 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
           selOffset = atStartReasonNode.Offset();
           
           WSRunObject wsRunObj(this, selNode, selOffset);
+          nsCOMPtr<nsINode> visNode;
+          int32_t outVisOffset;
           wsRunObj.PriorVisibleNode(EditorRawDOMPoint(selNode, selOffset),
                                     address_of(visNode),
                                     &outVisOffset, &visType);

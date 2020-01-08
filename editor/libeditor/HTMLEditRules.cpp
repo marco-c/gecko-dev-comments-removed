@@ -1988,16 +1988,12 @@ HTMLEditRules::InsertBRElement(const EditorDOMPoint& aPointToBreak)
   } else {
     EditorDOMPoint pointToBreak(aPointToBreak);
     WSRunObject wsObj(&HTMLEditorRef(), pointToBreak);
-    int32_t visOffset = 0;
     WSType wsType;
-    nsCOMPtr<nsINode> visNode;
-    wsObj.PriorVisibleNode(pointToBreak,
-                           address_of(visNode), &visOffset, &wsType);
+    wsObj.PriorVisibleNode(pointToBreak, &wsType);
     if (wsType & WSType::block) {
       brElementIsAfterBlock = true;
     }
-    wsObj.NextVisibleNode(pointToBreak,
-                          address_of(visNode), &visOffset, &wsType);
+    wsObj.NextVisibleNode(pointToBreak, &wsType);
     if (wsType & WSType::block) {
       brElementIsBeforeBlock = true;
     }
@@ -2067,10 +2063,9 @@ HTMLEditRules::InsertBRElement(const EditorDOMPoint& aPointToBreak)
     "Failed to advance offset after the new <br> element");
   WSRunObject wsObj(&HTMLEditorRef(), afterBRElement);
   nsCOMPtr<nsINode> maybeSecondBRNode;
-  int32_t visOffset = 0;
   WSType wsType;
   wsObj.NextVisibleNode(afterBRElement,
-                        address_of(maybeSecondBRNode), &visOffset, &wsType);
+                        address_of(maybeSecondBRNode), nullptr, &wsType);
   if (wsType == WSType::br) {
     
     
@@ -2149,9 +2144,8 @@ HTMLEditRules::SplitMailCites(bool* aHandled)
   
   WSRunObject wsObj(&HTMLEditorRef(), pointToSplit);
   nsCOMPtr<nsINode> visNode;
-  int32_t visOffset=0;
   WSType wsType;
-  wsObj.NextVisibleNode(pointToSplit, address_of(visNode), &visOffset, &wsType);
+  wsObj.NextVisibleNode(pointToSplit, address_of(visNode), nullptr, &wsType);
   
   
   if (wsType == WSType::br &&
@@ -2255,11 +2249,9 @@ HTMLEditRules::SplitMailCites(bool* aHandled)
                                              atBrNode.Offset());
 
     WSRunObject wsObj(&HTMLEditorRef(), pointToCreateNewBrNode);
-    nsCOMPtr<nsINode> visNode;
-    int32_t visOffset=0;
     WSType wsType;
-    wsObj.PriorVisibleNode(pointToCreateNewBrNode,
-                           address_of(visNode), &visOffset, &wsType);
+    wsObj.PriorVisibleNode(pointToCreateNewBrNode, nullptr, nullptr,
+                           &wsType);
     if (wsType == WSType::normalWS || wsType == WSType::text ||
         wsType == WSType::special) {
       EditorRawDOMPoint pointAfterNewBrNode(pointToCreateNewBrNode);
@@ -2267,8 +2259,7 @@ HTMLEditRules::SplitMailCites(bool* aHandled)
       NS_WARNING_ASSERTION(advanced,
         "Failed to advance offset after the <br> node");
       WSRunObject wsObjAfterBR(&HTMLEditorRef(), pointAfterNewBrNode);
-      wsObjAfterBR.NextVisibleNode(pointAfterNewBrNode,
-                                   address_of(visNode), &visOffset, &wsType);
+      wsObjAfterBR.NextVisibleNode(pointAfterNewBrNode, &wsType);
       if (wsType == WSType::normalWS || wsType == WSType::text ||
           wsType == WSType::special ||
           
@@ -2657,11 +2648,10 @@ HTMLEditRules::WillDeleteSelection(nsIEditor::EDirection aAction,
 
           WSType otherWSType;
           nsCOMPtr<nsINode> otherNode;
-          int32_t otherOffset;
 
           wsObj.NextVisibleNode(EditorRawDOMPoint(startNode, startOffset),
-                                address_of(otherNode),
-                                &otherOffset, &otherWSType);
+                                address_of(otherNode), nullptr,
+                                &otherWSType);
 
           if (otherWSType == WSType::br) {
             
@@ -2766,17 +2756,16 @@ HTMLEditRules::WillDeleteSelection(nsIEditor::EDirection aAction,
       bool bDeletedBR = false;
       WSType otherWSType;
       nsCOMPtr<nsINode> otherNode;
-      int32_t otherOffset;
 
       
       if (aAction == nsIEditor::eNext) {
         wsObj.PriorVisibleNode(EditorRawDOMPoint(startNode, startOffset),
-                               address_of(otherNode),
-                               &otherOffset, &otherWSType);
+                               address_of(otherNode), nullptr,
+                               &otherWSType);
       } else {
         wsObj.NextVisibleNode(EditorRawDOMPoint(startNode, startOffset),
-                              address_of(otherNode),
-                              &otherOffset, &otherWSType);
+                              address_of(otherNode), nullptr,
+                              &otherWSType);
       }
 
       
@@ -6735,8 +6724,7 @@ HTMLEditRules::ExpandSelectionForDeletion()
 
   
   nsCOMPtr<nsINode> firstBRParent;
-  nsCOMPtr<nsINode> unused;
-  int32_t visOffset = 0, firstBROffset = 0;
+  int32_t firstBROffset = 0;
   WSType wsType;
   RefPtr<Element> root = HTMLEditorRef().GetActiveEditingHost();
   if (NS_WARN_IF(!root)) {
@@ -6748,7 +6736,7 @@ HTMLEditRules::ExpandSelectionForDeletion()
     while (true) {
       WSRunObject wsObj(&HTMLEditorRef(), selStartNode, selStartOffset);
       wsObj.PriorVisibleNode(EditorRawDOMPoint(selStartNode, selStartOffset),
-                             address_of(unused), &visOffset, &wsType);
+                             &wsType);
       if (wsType != WSType::thisBlock) {
         break;
       }
@@ -6770,7 +6758,7 @@ HTMLEditRules::ExpandSelectionForDeletion()
     for (;;) {
       WSRunObject wsObj(&HTMLEditorRef(), selEndNode, selEndOffset);
       wsObj.NextVisibleNode(EditorRawDOMPoint(selEndNode, selEndOffset),
-                            address_of(unused), &visOffset, &wsType);
+                            &wsType);
       if (wsType == WSType::br) {
         if (HTMLEditorRef().IsVisibleBRElement(wsObj.mEndReasonNode)) {
           break;
@@ -6901,8 +6889,6 @@ HTMLEditRules::NormalizeSelection()
   uint32_t newEndOffset = endOffset;
 
   
-  nsCOMPtr<nsINode> unused;
-  int32_t offset = -1;
   WSType wsType;
 
   
@@ -6910,8 +6896,7 @@ HTMLEditRules::NormalizeSelection()
                        static_cast<int32_t>(endOffset));
   
   
-  wsEndObj.PriorVisibleNode(EditorRawDOMPoint(endNode, endOffset),
-                            address_of(unused), &offset, &wsType);
+  wsEndObj.PriorVisibleNode(EditorRawDOMPoint(endNode, endOffset), &wsType);
   if (wsType != WSType::text && wsType != WSType::normalWS) {
     
     
@@ -6953,7 +6938,7 @@ HTMLEditRules::NormalizeSelection()
   
   
   wsStartObj.NextVisibleNode(EditorRawDOMPoint(startNode, startOffset),
-                             address_of(unused), &offset, &wsType);
+                             &wsType);
   if (wsType != WSType::text && wsType != WSType::normalWS) {
     
     
