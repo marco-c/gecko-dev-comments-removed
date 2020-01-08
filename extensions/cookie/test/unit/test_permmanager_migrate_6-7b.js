@@ -16,6 +16,7 @@ function GetPermissionsFile(profile)
 add_task(function test() {
   
   let profile = do_get_profile();
+  Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
 
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
   db.schemaVersion = 6;

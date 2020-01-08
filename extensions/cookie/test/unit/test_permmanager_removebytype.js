@@ -2,6 +2,8 @@
 
 
 function run_test() {
+  Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
+
   
   let pm = Cc["@mozilla.org/permissionmanager;1"].
         getService(Ci.nsIPermissionManager);
