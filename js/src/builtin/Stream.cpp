@@ -3077,14 +3077,16 @@ ReadableStreamControllerGetDesiredSizeUnchecked(ReadableStreamController* contro
 
 
 
-
 static MOZ_MUST_USE ReadableByteStreamController*
-CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
+CreateReadableByteStreamController(JSContext* cx,
+                                   Handle<ReadableStream*> stream,
                                    HandleValue underlyingByteSource,
                                    HandleValue highWaterMarkVal)
 {
-    Rooted<ReadableByteStreamController*> controller(cx);
-    controller = NewBuiltinClassInstance<ReadableByteStreamController>(cx);
+    cx->check(stream, underlyingByteSource, highWaterMarkVal);
+
+    Rooted<ReadableByteStreamController*> controller(cx,
+        NewBuiltinClassInstance<ReadableByteStreamController>(cx));
     if (!controller) {
         return nullptr;
     }
@@ -3186,6 +3188,8 @@ CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream
 
 
 
+
+
 bool
 ReadableByteStreamController::constructor(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -3197,12 +3201,15 @@ ReadableByteStreamController::constructor(JSContext* cx, unsigned argc, Value* v
 
 
 
+
+
 static MOZ_MUST_USE ReadableByteStreamController*
-CreateExternalReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
+CreateExternalReadableByteStreamController(JSContext* cx,
+                                           Handle<ReadableStream*> stream,
                                            void* underlyingSource)
 {
-    Rooted<ReadableByteStreamController*> controller(cx);
-    controller = NewBuiltinClassInstance<ReadableByteStreamController>(cx);
+    Rooted<ReadableByteStreamController*> controller(cx,
+        NewBuiltinClassInstance<ReadableByteStreamController>(cx));
     if (!controller) {
         return nullptr;
     }
@@ -3315,26 +3322,22 @@ CLASS_SPEC(ReadableByteStreamController, 3, SlotCount, ClassSpec::DontDefineCons
 
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
-                                             Handle<ReadableStreamController*> controller);
-
-
-
-
+                                             Handle<ReadableStreamController*> unwrappedController);
 
 
 
 
 static MOZ_MUST_USE JSObject*
 ReadableByteStreamControllerPullSteps(JSContext* cx,
-                                      Handle<ReadableByteStreamController*> controller)
+                                      Handle<ReadableByteStreamController*> unwrappedController)
 {
     
-    Rooted<ReadableStream*> stream(cx, controller->stream());
+    Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
 
     
 #ifdef DEBUG
     bool result;
-    if (!ReadableStreamHasDefaultReader(cx, stream, &result)) {
+    if (!ReadableStreamHasDefaultReader(cx, unwrappedStream, &result)) {
         return nullptr;
     }
     MOZ_ASSERT(result);
@@ -3342,15 +3345,15 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
 
     RootedValue val(cx);
     
-    double queueTotalSize = controller->queueTotalSize();
+    double queueTotalSize = unwrappedController->queueTotalSize();
     if (queueTotalSize > 0) {
         
-        MOZ_ASSERT(ReadableStreamGetNumReadRequests(stream) == 0);
+        MOZ_ASSERT(ReadableStreamGetNumReadRequests(unwrappedStream) == 0);
 
         RootedObject view(cx);
 
-        if (stream->mode() == JS::ReadableStreamMode::ExternalSource) {
-            void* underlyingSource = controller->underlyingSource().toPrivate();
+        if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource) {
+            void* underlyingSource = unwrappedController->underlyingSource().toPrivate();
 
             view = JS_NewUint8Array(cx, queueTotalSize);
             if (!view) {
@@ -3359,7 +3362,7 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
 
             size_t bytesWritten;
             {
-                AutoRealm ar(cx, stream);
+                AutoRealm ar(cx, unwrappedStream);
                 JS::AutoSuppressGCAnalysis suppressGC(cx);
                 JS::AutoCheckCannotGC noGC;
                 bool dummy;
@@ -3368,8 +3371,8 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
                 auto cb = cx->runtime()->readableStreamWriteIntoReadRequestCallback;
                 MOZ_ASSERT(cb);
                 
-                cb(cx, stream, underlyingSource, stream->embeddingFlags(), buffer,
-                   queueTotalSize, &bytesWritten);
+                cb(cx, unwrappedStream, underlyingSource, unwrappedStream->embeddingFlags(),
+                   buffer, queueTotalSize, &bytesWritten);
             }
 
             queueTotalSize = queueTotalSize - bytesWritten;
@@ -3377,25 +3380,25 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
             
             
             
-            RootedNativeObject queue(cx, controller->queue());
-            Rooted<ByteStreamChunk*> entry(cx);
-            entry = ToUnwrapped<ByteStreamChunk>(cx, ShiftFromList<JSObject>(cx, queue));
-            if (!entry) {
+            RootedNativeObject unwrappedQueue(cx, unwrappedController->queue());
+            Rooted<ByteStreamChunk*> unwrappedEntry(cx,
+                ToUnwrapped<ByteStreamChunk>(cx, ShiftFromList<JSObject>(cx, unwrappedQueue)));
+            if (!unwrappedEntry) {
                 return nullptr;
             }
 
-            queueTotalSize = queueTotalSize - entry->byteLength();
+            queueTotalSize = queueTotalSize - unwrappedEntry->byteLength();
 
             
             
             
-            RootedObject buffer(cx, entry->buffer());
+            RootedObject buffer(cx, unwrappedEntry->buffer());
             if (!cx->compartment()->wrap(cx, &buffer)) {
                 return nullptr;
             }
 
-            uint32_t byteOffset = entry->byteOffset();
-            view = JS_NewUint8ArrayWithBuffer(cx, buffer, byteOffset, entry->byteLength());
+            uint32_t byteOffset = unwrappedEntry->byteOffset();
+            view = JS_NewUint8ArrayWithBuffer(cx, buffer, byteOffset, unwrappedEntry->byteLength());
             if (!view) {
                 return nullptr;
             }
@@ -3404,11 +3407,11 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
         
         
         
-        controller->setQueueTotalSize(queueTotalSize);
+        unwrappedController->setQueueTotalSize(queueTotalSize);
 
         
         
-        if (!ReadableByteStreamControllerHandleQueueDrain(cx, controller)) {
+        if (!ReadableByteStreamControllerHandleQueueDrain(cx, unwrappedController)) {
             return nullptr;
         }
 
@@ -3424,14 +3427,14 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
     }
 
     
-    val = controller->autoAllocateChunkSize();
+    val = unwrappedController->autoAllocateChunkSize();
 
     
     if (!val.isUndefined()) {
         double autoAllocateChunkSize = val.toNumber();
 
         
-        RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, autoAllocateChunkSize));
+        JSObject* bufferObj = JS_NewArrayBuffer(cx, autoAllocateChunkSize);
 
         
         
@@ -3447,18 +3450,18 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
         
         
         
-        RootedObject pullIntoDescriptor(cx);
-        pullIntoDescriptor = PullIntoDescriptor::create(cx, buffer, 0,
-                                                        autoAllocateChunkSize, 0, 1,
-                                                        nullptr,
-                                                        ReaderType_Default);
+        RootedObject pullIntoDescriptor(cx,
+            PullIntoDescriptor::create(cx, buffer, 0,
+                                       autoAllocateChunkSize, 0, 1,
+                                       nullptr,
+                                       ReaderType_Default));
         if (!pullIntoDescriptor) {
             return PromiseRejectedWithPendingError(cx);
         }
 
         
         if (!AppendToListAtSlot(cx,
-                                controller,
+                                unwrappedController,
                                 ReadableByteStreamController::Slot_PendingPullIntos,
                                 pullIntoDescriptor))
         {
@@ -3467,13 +3470,13 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
     }
 
     
-    RootedObject promise(cx, ReadableStreamAddReadOrReadIntoRequest(cx, stream));
+    RootedObject promise(cx, ReadableStreamAddReadOrReadIntoRequest(cx, unwrappedStream));
     if (!promise) {
         return nullptr;
     }
 
     
-    if (!ReadableStreamControllerCallPullIfNeeded(cx, controller)) {
+    if (!ReadableStreamControllerCallPullIfNeeded(cx, unwrappedController)) {
         return nullptr;
     }
 
@@ -3488,21 +3491,18 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
 
 
 
-
-
-
 static MOZ_MUST_USE JSObject*
-ReadableStreamControllerPullSteps(JSContext* cx, Handle<ReadableStreamController*> controller)
+ReadableStreamControllerPullSteps(JSContext* cx, Handle<ReadableStreamController*> unwrappedController)
 {
-    if (controller->is<ReadableStreamDefaultController>()) {
-        Rooted<ReadableStreamDefaultController*> defaultController(cx,
-            &controller->as<ReadableStreamDefaultController>());
-        return ReadableStreamDefaultControllerPullSteps(cx, defaultController);
+    if (unwrappedController->is<ReadableStreamDefaultController>()) {
+        Rooted<ReadableStreamDefaultController*> unwrappedDefaultController(cx,
+            &unwrappedController->as<ReadableStreamDefaultController>());
+        return ReadableStreamDefaultControllerPullSteps(cx, unwrappedDefaultController);
     }
 
-    Rooted<ReadableByteStreamController*> byteController(cx,
-        &controller->as<ReadableByteStreamController>());
-    return ReadableByteStreamControllerPullSteps(cx, byteController);
+    Rooted<ReadableByteStreamController*> unwrappedByteController(cx,
+        &unwrappedController->as<ReadableByteStreamController>());
+    return ReadableByteStreamControllerPullSteps(cx, unwrappedByteController);
 }
 
 
@@ -3519,69 +3519,62 @@ ReadableStreamControllerPullSteps(JSContext* cx, Handle<ReadableStreamController
 
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
-                                                  Handle<ReadableByteStreamController*> controller);
-
-
-
-
+                                                  Handle<ReadableByteStreamController*> unwrappedController);
 
 
 
 
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerClearPendingPullIntos(JSContext* cx,
-                                                  Handle<ReadableByteStreamController*> controller)
+                                                  Handle<ReadableByteStreamController*> unwrappedController)
 {
     
-    if (!ReadableByteStreamControllerInvalidateBYOBRequest(cx, controller)) {
+    if (!ReadableByteStreamControllerInvalidateBYOBRequest(cx, unwrappedController)) {
         return false;
     }
 
     
-    return SetNewList(cx, controller, ReadableByteStreamController::Slot_PendingPullIntos);
+    return SetNewList(cx, unwrappedController, ReadableByteStreamController::Slot_PendingPullIntos);
 }
 
 
 
 
-
-
-
 static MOZ_MUST_USE bool
-ReadableByteStreamControllerClose(JSContext* cx, Handle<ReadableByteStreamController*> controller)
+ReadableByteStreamControllerClose(JSContext* cx,
+                                  Handle<ReadableByteStreamController*> unwrappedController)
 {
     
-    Rooted<ReadableStream*> stream(cx, controller->stream());
+    Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
 
     
-    MOZ_ASSERT(!controller->closeRequested());
+    MOZ_ASSERT(!unwrappedController->closeRequested());
 
     
-    MOZ_ASSERT(stream->readable());
+    MOZ_ASSERT(unwrappedStream->readable());
 
     
-    if (controller->queueTotalSize() > 0) {
+    if (unwrappedController->queueTotalSize() > 0) {
         
-        controller->setCloseRequested();
+        unwrappedController->setCloseRequested();
 
         
         return true;
     }
 
     
-    RootedNativeObject pendingPullIntos(cx, controller->pendingPullIntos());
-    if (pendingPullIntos->getDenseInitializedLength() != 0) {
+    RootedNativeObject unwrappedPendingPullIntos(cx, unwrappedController->pendingPullIntos());
+    if (unwrappedPendingPullIntos->getDenseInitializedLength() != 0) {
         
         
-        Rooted<PullIntoDescriptor*> firstPendingPullInto(cx);
-        firstPendingPullInto = ToUnwrapped<PullIntoDescriptor>(cx,
-                                                               PeekList<JSObject>(pendingPullIntos));
-        if (!firstPendingPullInto) {
+        Rooted<PullIntoDescriptor*> unwrappedFirstPendingPullInto(cx,
+            ToUnwrapped<PullIntoDescriptor>(cx, PeekList<JSObject>(unwrappedPendingPullIntos)));
+        if (!unwrappedFirstPendingPullInto) {
             return false;
         }
 
         
-        if (firstPendingPullInto->bytesFilled() > 0) {
+        if (unwrappedFirstPendingPullInto->bytesFilled() > 0) {
             
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                       JSMSG_READABLEBYTESTREAMCONTROLLER_CLOSE_PENDING_PULL);
@@ -3593,7 +3586,7 @@ ReadableByteStreamControllerClose(JSContext* cx, Handle<ReadableByteStreamContro
             }
 
             
-            if (!ReadableStreamControllerError(cx, controller, e)) {
+            if (!ReadableStreamControllerError(cx, unwrappedController, e)) {
                 return false;
             }
 
@@ -3604,11 +3597,8 @@ ReadableByteStreamControllerClose(JSContext* cx, Handle<ReadableByteStreamContro
     }
 
     
-    return ReadableStreamCloseInternal(cx, stream);
+    return ReadableStreamCloseInternal(cx, unwrappedStream);
 }
-
-
-
 
 
 
@@ -3621,24 +3611,24 @@ ReadableByteStreamControllerClose(JSContext* cx, Handle<ReadableByteStreamContro
 
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
-                                             Handle<ReadableStreamController*> controller)
+                                             Handle<ReadableStreamController*> unwrappedController)
 {
-    MOZ_ASSERT(controller->is<ReadableByteStreamController>());
+    MOZ_ASSERT(unwrappedController->is<ReadableByteStreamController>());
 
     
-    Rooted<ReadableStream*> stream(cx, controller->stream());
-    MOZ_ASSERT(stream->readable());
+    Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
+    MOZ_ASSERT(unwrappedStream->readable());
 
     
     
-    if (controller->queueTotalSize() == 0 && controller->closeRequested()) {
+    if (unwrappedController->queueTotalSize() == 0 && unwrappedController->closeRequested()) {
         
-        return ReadableStreamCloseInternal(cx, stream);
+        return ReadableStreamCloseInternal(cx, unwrappedStream);
     }
 
     
     
-    return ReadableStreamControllerCallPullIfNeeded(cx, controller);
+    return ReadableStreamControllerCallPullIfNeeded(cx, unwrappedController);
 }
 
 enum BYOBRequestSlots {
@@ -3650,33 +3640,31 @@ enum BYOBRequestSlots {
 
 
 
-
-
-
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
-                                                  Handle<ReadableByteStreamController*> controller)
+                                                  Handle<ReadableByteStreamController*> unwrappedController)
 {
     
-    RootedValue byobRequestVal(cx, controller->byobRequest());
-    if (byobRequestVal.isUndefined()) {
+    RootedValue unwrappedBYOBRequestVal(cx, unwrappedController->byobRequest());
+    if (unwrappedBYOBRequestVal.isUndefined()) {
         return true;
     }
 
-    RootedNativeObject byobRequest(cx, ToUnwrapped<NativeObject>(cx, byobRequestVal));
-    if (!byobRequest) {
+    RootedNativeObject unwrappedBYOBRequest(cx,
+        ToUnwrapped<NativeObject>(cx, unwrappedBYOBRequestVal));
+    if (!unwrappedBYOBRequest) {
         return false;
     }
 
     
     
-    byobRequest->setFixedSlot(BYOBRequestSlot_Controller, UndefinedValue());
+    unwrappedBYOBRequest->setFixedSlot(BYOBRequestSlot_Controller, UndefinedValue());
 
     
-    byobRequest->setFixedSlot(BYOBRequestSlot_View, UndefinedValue());
+    unwrappedBYOBRequest->setFixedSlot(BYOBRequestSlot_View, UndefinedValue());
 
     
-    controller->clearBYOBRequest();
+    unwrappedController->clearBYOBRequest();
 
     return true;
 }
@@ -4358,6 +4346,9 @@ JS::ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, JS::HandleObject 
         
         
         JSObject* viewObj = JS_NewUint8Array(cx, availableData);
+        if (!viewObj) {
+            return false;
+        }
         Rooted<ArrayBufferViewObject*> transferredView(cx, &viewObj->as<ArrayBufferViewObject>());
         if (!transferredView) {
             return false;
