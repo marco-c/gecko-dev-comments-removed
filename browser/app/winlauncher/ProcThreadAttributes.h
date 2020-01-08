@@ -91,9 +91,7 @@ public:
 
 
 
-
-
-  Maybe<bool> AssignTo(STARTUPINFOEXW& aSiex)
+  LauncherResult<bool> AssignTo(STARTUPINFOEXW& aSiex)
   {
     ZeroMemory(&aSiex, sizeof(STARTUPINFOEXW));
 
@@ -111,14 +109,16 @@ public:
     }
 
     if (!numAttributes) {
-      return Some(false);
+      return false;
     }
 
     SIZE_T listSize = 0;
     if (!::InitializeProcThreadAttributeList(nullptr, numAttributes, 0,
-                                             &listSize) &&
-        ::GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-      return Nothing();
+                                             &listSize)) {
+      DWORD err = ::GetLastError();
+      if (err != ERROR_INSUFFICIENT_BUFFER) {
+        return LAUNCHER_ERROR_FROM_WIN32(err);
+      }
     }
 
     auto buf = MakeUnique<char[]>(listSize);
@@ -128,7 +128,7 @@ public:
 
     if (!::InitializeProcThreadAttributeList(tmpList, numAttributes, 0,
                                              &listSize)) {
-      return Nothing();
+      return LAUNCHER_ERROR_FROM_LAST();
     }
 
     
@@ -144,7 +144,7 @@ public:
                                        &mMitigationPolicies,
                                        sizeof(mMitigationPolicies), nullptr,
                                        nullptr)) {
-        return Nothing();
+        return LAUNCHER_ERROR_FROM_LAST();
       }
     }
 
@@ -154,14 +154,14 @@ public:
                                        mInheritableHandles.begin(),
                                        mInheritableHandles.length() * sizeof(HANDLE),
                                        nullptr, nullptr)) {
-        return Nothing();
+        return LAUNCHER_ERROR_FROM_LAST();
       }
     }
 
     mAttrList = std::move(attrList);
     aSiex.lpAttributeList = mAttrList.get();
     aSiex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    return Some(true);
+    return true;
   }
 
 private:
