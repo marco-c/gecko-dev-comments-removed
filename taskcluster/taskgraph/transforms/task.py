@@ -218,420 +218,10 @@ task_description_schema = Schema({
     Optional('release-artifacts'): [basestring],
 
     
-    'worker': Any({
-        Required('implementation'): 'docker-worker',
-        Required('os'): 'linux',
-
-        
-        
-        
-        
-        Required('docker-image'): Any(
-            
-            basestring,
-            
-            {'in-tree': basestring},
-            
-            {'indexed': basestring},
-        ),
-
-        
-        Required('relengapi-proxy'): bool,
-        Required('chain-of-trust'): bool,
-        Required('taskcluster-proxy'): bool,
-        Required('allow-ptrace'): bool,
-        Required('loopback-video'): bool,
-        Required('loopback-audio'): bool,
-        Required('docker-in-docker'): bool,  
-        Required('privileged'): bool,
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Optional('volumes'): [basestring],
-
-        
-        Optional('caches'): [{
-            
-            'type': 'persistent',
-
-            
-            
-            'name': basestring,
-
-            
-            'mount-point': basestring,
-
-            
-            
-            Optional('skip-untrusted'): bool,
-        }],
-
-        
-        Optional('artifacts'): [{
-            
-            'type': Any('file', 'directory'),
-
-            
-            'path': basestring,
-
-            
-            
-            'name': basestring,
-        }],
-
-        
-        Required('env'): {basestring: taskref_or_string},
-
-        
-        
-        Optional('command'): [taskref_or_string],
-
-        
-        Required('max-run-time'): int,
-
-        
-        Optional('retry-exit-status'): [int],
-
-        
-        
-        Optional('purge-caches-exit-status'): [int],
-
-        
-        Optional('skip-artifacts'): bool,
-    }, {
-        Required('implementation'): 'generic-worker',
-        Required('os'): Any('windows', 'macosx', 'linux'),
-        
-        
-
-        
-        
-        
-        Required('command'): Any(
-            [taskref_or_string],   
-            [[taskref_or_string]]  
-        ),
-
-        
-        
-        Optional('artifacts'): [{
-            
-            'type': Any('file', 'directory'),
-
-            
-            'path': basestring,
-
-            
-            Optional('name'): basestring
-        }],
-
-        
-        
-        
-        
-        Optional('mounts'): [{
-            
-            
-            Optional('cache-name'): basestring,
-            
-            
-            
-            Optional('content'): {
-
-                
-
-                
-                Optional('artifact'): basestring,
-                
-                Optional('task-id'): taskref_or_string,
-                
-                
-                Optional('url'): basestring
-            },
-
-            
-
-            
-            
-            
-            Optional('directory'): basestring,
-            
-            
-            Optional('file'): basestring,
-            
-            
-            
-            Optional('format'): Any('rar', 'tar.bz2', 'tar.gz', 'zip')
-        }],
-
-        
-        Required('env'): {basestring: taskref_or_string},
-
-        
-        Required('max-run-time'): int,
-
-        
-        Optional('os-groups'): [basestring],
-
-        
-        Optional('run-as-administrator'): bool,
-
-        
-        Required('chain-of-trust'): bool,
-        Optional('taskcluster-proxy'): bool,
-
-        
-        Optional('skip-artifacts'): bool,
-    }, {
-        Required('implementation'): 'native-engine',
-        Required('os'): Any('macosx', 'linux'),
-
-        
-        Required('max-run-time'): int,
-
-        
-        Optional('context'): basestring,
-
-        
-        
-        Optional('reboot'):
-            Any('always', 'on-exception', 'on-failure'),
-
-        
-        Optional('command'): [taskref_or_string],
-
-        
-        Optional('env'): {basestring: taskref_or_string},
-
-        
-        Optional('artifacts'): [{
-            
-            Required('type'): Any('file', 'directory'),
-
-            
-            Required('path'): basestring,
-
-            
-            
-            Required('name'): basestring,
-        }],
-        
-        Optional('skip-artifacts'): bool,
-    }, {
-        Required('implementation'): 'script-engine-autophone',
-        Required('os'): Any('macosx', 'linux'),
-
-        
-        Optional('context'): basestring,
-
-        
-        
-        Optional('reboot'):
-            Any(False, 'always', 'never', 'on-exception', 'on-failure'),
-
-        
-        Optional('command'): [taskref_or_string],
-
-        
-        Optional('env'): {basestring: taskref_or_string},
-
-        
-        Optional('artifacts'): [{
-            
-            Required('type'): Any('file', 'directory'),
-
-            
-            Required('path'): basestring,
-
-            
-            
-            Required('name'): basestring,
-        }],
-    }, {
-        Required('implementation'): 'scriptworker-signing',
-
-        
-        Required('max-run-time'): int,
-
-        
-        Required('upstream-artifacts'): [{
-            
-            Required('taskId'): taskref_or_string,
-
-            
-            Required('taskType'): basestring,
-
-            
-            Required('paths'): [basestring],
-
-            
-            Required('formats'): [basestring],
-        }],
-    }, {
-        Required('implementation'): 'binary-transparency',
-    }, {
-        Required('implementation'): 'beetmover',
-
-        
-        Required('max-run-time', default=600): int,
-
-        
-        Optional('locale'): basestring,
-
-        Optional('partner-public'): bool,
-
-        Required('release-properties'): {
-            'app-name': basestring,
-            'app-version': basestring,
-            'branch': basestring,
-            'build-id': basestring,
-            'hash-type': basestring,
-            'platform': basestring,
-        },
-
-        
-        Required('upstream-artifacts'): [{
-            
-            Required('taskId'): taskref_or_string,
-
-            
-            Required('taskType'): basestring,
-
-            
-            Required('paths'): [basestring],
-
-            
-            Required('locale'): basestring,
-        }],
-    }, {
-        Required('implementation'): 'beetmover-push-to-release',
-
-        
-        Required('max-run-time'): int,
-        Required('product'): basestring,
-    }, {
-        Required('implementation'): 'beetmover-maven',
-
-        Required('max-run-time', default=600): int,
-        Required('release-properties'): {
-            'app-name': basestring,
-            'app-version': basestring,
-            'branch': basestring,
-            'build-id': basestring,
-            'artifact-id': basestring,
-            'hash-type': basestring,
-            'platform': basestring,
-        },
-
-        Required('upstream-artifacts'): [{
-            Required('taskId'): taskref_or_string,
-            Required('taskType'): basestring,
-            Required('paths'): [basestring],
-            Required('zipExtract', default=False): bool,
-        }],
-    }, {
-        Required('implementation'): 'balrog',
-        Required('balrog-action'): Any(*BALROG_ACTIONS),
-        Optional('product'): basestring,
-        Optional('platforms'): [basestring],
-        Optional('release-eta'): basestring,
-        Optional('channel-names'): optionally_keyed_by('release-type', [basestring]),
-        Optional('require-mirrors'): bool,
-        Optional('publish-rules'): optionally_keyed_by('release-type', 'release-level', [int]),
-        Optional('rules-to-update'): optionally_keyed_by(
-            'release-type', 'release-level', [basestring]),
-        Optional('archive-domain'): optionally_keyed_by('release-level', basestring),
-        Optional('download-domain'): optionally_keyed_by('release-level', basestring),
-        Optional('blob-suffix'): basestring,
-        Optional('complete-mar-filename-pattern'): basestring,
-        Optional('complete-mar-bouncer-product-pattern'): basestring,
-
-        
-        Optional('upstream-artifacts'): [{
-            
-            Required('taskId'): taskref_or_string,
-
-            
-            Required('taskType'): basestring,
-
-            
-            Required('paths'): [basestring],
-        }],
-    }, {
-        Required('implementation'): 'bouncer-aliases',
-        Required('entries'): object,
-    }, {
-        Required('implementation'): 'bouncer-locations',
-        Required('bouncer-products'): [basestring],
-    }, {
-        Required('implementation'): 'bouncer-submission',
-        Required('locales'): [basestring],
-        Required('entries'): object,
-    }, {
-        Required('implementation'): 'invalid',
-        
-        
+    'worker': {
+        Required('implementation'): basestring,
         Extra: object,
-
-    }, {
-        Required('implementation'): 'always-optimized',
-        Extra: object,
-
-    }, {
-        Required('implementation'): 'push-apk',
-        Required('upstream-artifacts'): [{
-            Required('taskId'): taskref_or_string,
-            Required('taskType'): basestring,
-            Required('paths'): [basestring],
-            Optional('optional', default=False): bool,
-        }],
-
-        
-        Required('google-play-track'): Any('production', 'beta', 'alpha', 'rollout', 'internal'),
-        Required('commit'): bool,
-        Optional('rollout-percentage'): Any(int, None),
-    }, {
-        Required('implementation'): 'push-snap',
-        Required('upstream-artifacts'): [{
-            Required('taskId'): taskref_or_string,
-            Required('taskType'): basestring,
-            Required('paths'): [basestring],
-        }],
-    }, {
-        Required('implementation'): 'sign-and-push-addons',
-        Required('channel'): Any('listed', 'unlisted'),
-        Required('upstream-artifacts'): [{
-            Required('taskId'): taskref_or_string,
-            Required('taskType'): basestring,
-            Required('paths'): [basestring],
-        }],
-    }, {
-        Required('implementation'): 'shipit-shipped',
-        Required('release-name'): basestring,
-    }, {
-        Required('implementation'): 'shipit-started',
-        Required('release-name'): basestring,
-        Required('product'): basestring,
-        Required('branch'): basestring,
-        Required('locales'): basestring,
-    }, {
-        Required('implementation'): 'treescript',
-        Required('tags'): [Any('buildN', 'release', None)],
-        Required('bump'): bool,
-        Optional('bump-files'): [basestring],
-        Optional('repo-param-prefix'): basestring,
-        Optional('dontbuild'): bool,
-        Required('force-dry-run', default=True): bool,
-        Required('push', default=False): bool
-    }),
+    }
 })
 
 TC_TREEHERDER_SCHEMA_URL = 'https://github.com/taskcluster/taskcluster-treeherder/' \
@@ -730,9 +320,12 @@ BRANCH_PRIORITIES = {
 payload_builders = {}
 
 
-def payload_builder(name):
+def payload_builder(name, schema):
+    schema = Schema({Required('implementation'): name}).extend(schema)
+
     def wrap(func):
         payload_builders[name] = func
+        func.schema = Schema(schema)
         return func
     return wrap
 
@@ -778,7 +371,94 @@ def verify_index(config, index):
         raise Exception(UNSUPPORTED_INDEX_PRODUCT_ERROR.format(product=product))
 
 
-@payload_builder('docker-worker')
+@payload_builder('docker-worker', schema={
+    Required('os'): 'linux',
+
+    
+    
+    
+    
+    Required('docker-image'): Any(
+        
+        basestring,
+        
+        {'in-tree': basestring},
+        
+        {'indexed': basestring},
+    ),
+
+    
+    Required('relengapi-proxy'): bool,
+    Required('chain-of-trust'): bool,
+    Required('taskcluster-proxy'): bool,
+    Required('allow-ptrace'): bool,
+    Required('loopback-video'): bool,
+    Required('loopback-audio'): bool,
+    Required('docker-in-docker'): bool,  
+    Required('privileged'): bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Optional('volumes'): [basestring],
+
+    
+    Optional('caches'): [{
+        
+        'type': 'persistent',
+
+        
+        
+        'name': basestring,
+
+        
+        'mount-point': basestring,
+
+        
+        
+        Optional('skip-untrusted'): bool,
+    }],
+
+    
+    Optional('artifacts'): [{
+        
+        'type': Any('file', 'directory'),
+
+        
+        'path': basestring,
+
+        
+        
+        'name': basestring,
+    }],
+
+    
+    Required('env'): {basestring: taskref_or_string},
+
+    
+    
+    Optional('command'): [taskref_or_string],
+
+    
+    Required('max-run-time'): int,
+
+    
+    Optional('retry-exit-status'): [int],
+
+    
+    
+    Optional('purge-caches-exit-status'): [int],
+
+    
+    Optional('skip-artifacts'): bool,
+})
 def build_docker_worker_payload(config, task, task_def):
     worker = task['worker']
     level = int(config.params['level'])
@@ -985,7 +665,90 @@ def build_docker_worker_payload(config, task, task_def):
     check_caches_are_volumes(task)
 
 
-@payload_builder('generic-worker')
+@payload_builder('generic-worker', schema={
+    Required('os'): Any('windows', 'macosx', 'linux'),
+    
+    
+
+    
+    
+    
+    Required('command'): Any(
+        [taskref_or_string],   
+        [[taskref_or_string]]  
+    ),
+
+    
+    
+    Optional('artifacts'): [{
+        
+        'type': Any('file', 'directory'),
+
+        
+        'path': basestring,
+
+        
+        Optional('name'): basestring
+    }],
+
+    
+    
+    
+    
+    Optional('mounts'): [{
+        
+        
+        Optional('cache-name'): basestring,
+        
+        
+        
+        Optional('content'): {
+
+            
+
+            
+            Optional('artifact'): basestring,
+            
+            Optional('task-id'): taskref_or_string,
+            
+            
+            Optional('url'): basestring
+        },
+
+        
+
+        
+        
+        
+        Optional('directory'): basestring,
+        
+        
+        Optional('file'): basestring,
+        
+        
+        
+        Optional('format'): Any('rar', 'tar.bz2', 'tar.gz', 'zip')
+    }],
+
+    
+    Required('env'): {basestring: taskref_or_string},
+
+    
+    Required('max-run-time'): int,
+
+    
+    Optional('os-groups'): [basestring],
+
+    
+    Optional('run-as-administrator'): bool,
+
+    
+    Required('chain-of-trust'): bool,
+    Optional('taskcluster-proxy'): bool,
+
+    
+    Optional('skip-artifacts'): bool,
+})
 def build_generic_worker_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1062,7 +825,25 @@ def build_generic_worker_payload(config, task, task_def):
         task_def['payload']['supersederUrl'] = superseder_url(config, task)
 
 
-@payload_builder('scriptworker-signing')
+@payload_builder('scriptworker-signing', schema={
+    
+    Required('max-run-time'): int,
+
+    
+    Required('upstream-artifacts'): [{
+        
+        Required('taskId'): taskref_or_string,
+
+        
+        Required('taskType'): basestring,
+
+        
+        Required('paths'): [basestring],
+
+        
+        Required('formats'): [basestring],
+    }],
+})
 def build_scriptworker_signing_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1082,7 +863,7 @@ def build_scriptworker_signing_payload(config, task, task_def):
     task['release-artifacts'] = list(artifacts)
 
 
-@payload_builder('binary-transparency')
+@payload_builder('binary-transparency', schema={})
 def build_binary_transparency_payload(config, task, task_def):
     release_config = get_release_config(config)
 
@@ -1103,7 +884,39 @@ def build_binary_transparency_payload(config, task, task_def):
     }
 
 
-@payload_builder('beetmover')
+@payload_builder('beetmover', schema={
+    
+    Required('max-run-time', default=600): int,
+
+    
+    Optional('locale'): basestring,
+
+    Optional('partner-public'): bool,
+
+    Required('release-properties'): {
+        'app-name': basestring,
+        'app-version': basestring,
+        'branch': basestring,
+        'build-id': basestring,
+        'hash-type': basestring,
+        'platform': basestring,
+    },
+
+    
+    Required('upstream-artifacts'): [{
+        
+        Required('taskId'): taskref_or_string,
+
+        
+        Required('taskType'): basestring,
+
+        
+        Required('paths'): [basestring],
+
+        
+        Required('locale'): basestring,
+    }],
+})
 def build_beetmover_payload(config, task, task_def):
     worker = task['worker']
     release_config = get_release_config(config)
@@ -1130,7 +943,11 @@ def build_beetmover_payload(config, task, task_def):
         task_def['payload'].update(release_config)
 
 
-@payload_builder('beetmover-push-to-release')
+@payload_builder('beetmover-push-to-release', schema={
+    
+    Required('max-run-time'): int,
+    Required('product'): basestring,
+})
 def build_beetmover_push_to_release_payload(config, task, task_def):
     worker = task['worker']
     release_config = get_release_config(config)
@@ -1143,7 +960,25 @@ def build_beetmover_push_to_release_payload(config, task, task_def):
     }
 
 
-@payload_builder('beetmover-maven')
+@payload_builder('beetmover-maven', schema={
+    Required('max-run-time', default=600): int,
+    Required('release-properties'): {
+        'app-name': basestring,
+        'app-version': basestring,
+        'branch': basestring,
+        'build-id': basestring,
+        'artifact-id': basestring,
+        'hash-type': basestring,
+        'platform': basestring,
+    },
+
+    Required('upstream-artifacts'): [{
+        Required('taskId'): taskref_or_string,
+        Required('taskType'): basestring,
+        Required('paths'): [basestring],
+        Required('zipExtract', default=False): bool,
+    }],
+})
 def build_beetmover_maven_payload(config, task, task_def):
     build_beetmover_payload(config, task, task_def)
 
@@ -1153,7 +988,34 @@ def build_beetmover_maven_payload(config, task, task_def):
     del task_def['payload']['releaseProperties']['platform']
 
 
-@payload_builder('balrog')
+@payload_builder('balrog', schema={
+    Required('balrog-action'): Any(*BALROG_ACTIONS),
+    Optional('product'): basestring,
+    Optional('platforms'): [basestring],
+    Optional('release-eta'): basestring,
+    Optional('channel-names'): optionally_keyed_by('release-type', [basestring]),
+    Optional('require-mirrors'): bool,
+    Optional('publish-rules'): optionally_keyed_by('release-type', 'release-level', [int]),
+    Optional('rules-to-update'): optionally_keyed_by(
+        'release-type', 'release-level', [basestring]),
+    Optional('archive-domain'): optionally_keyed_by('release-level', basestring),
+    Optional('download-domain'): optionally_keyed_by('release-level', basestring),
+    Optional('blob-suffix'): basestring,
+    Optional('complete-mar-filename-pattern'): basestring,
+    Optional('complete-mar-bouncer-product-pattern'): basestring,
+
+    
+    Optional('upstream-artifacts'): [{
+        
+        Required('taskId'): taskref_or_string,
+
+        
+        Required('taskType'): basestring,
+
+        
+        Required('paths'): [basestring],
+    }],
+})
 def build_balrog_payload(config, task, task_def):
     worker = task['worker']
     release_config = get_release_config(config)
@@ -1200,7 +1062,9 @@ def build_balrog_payload(config, task, task_def):
             })
 
 
-@payload_builder('bouncer-aliases')
+@payload_builder('bouncer-aliases', schema={
+    Required('entries'): object,
+})
 def build_bouncer_aliases_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1209,7 +1073,10 @@ def build_bouncer_aliases_payload(config, task, task_def):
     }
 
 
-@payload_builder('bouncer-locations')
+@payload_builder('bouncer-locations', schema={
+    Required('implementation'): 'bouncer-locations',
+    Required('bouncer-products'): [basestring],
+})
 def build_bouncer_locations_payload(config, task, task_def):
     worker = task['worker']
     release_config = get_release_config(config)
@@ -1220,7 +1087,10 @@ def build_bouncer_locations_payload(config, task, task_def):
     }
 
 
-@payload_builder('bouncer-submission')
+@payload_builder('bouncer-submission', schema={
+    Required('locales'): [basestring],
+    Required('entries'): object,
+})
 def build_bouncer_submission_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1230,7 +1100,19 @@ def build_bouncer_submission_payload(config, task, task_def):
     }
 
 
-@payload_builder('push-apk')
+@payload_builder('push-apk', schema={
+    Required('upstream-artifacts'): [{
+        Required('taskId'): taskref_or_string,
+        Required('taskType'): basestring,
+        Required('paths'): [basestring],
+        Optional('optional', default=False): bool,
+    }],
+
+    
+    Required('google-play-track'): Any('production', 'beta', 'alpha', 'rollout', 'internal'),
+    Required('commit'): bool,
+    Optional('rollout-percentage'): Any(int, None),
+})
 def build_push_apk_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1244,7 +1126,13 @@ def build_push_apk_payload(config, task, task_def):
         task_def['payload']['rollout_percentage'] = worker['rollout-percentage']
 
 
-@payload_builder('push-snap')
+@payload_builder('push-snap', schema={
+    Required('upstream-artifacts'): [{
+        Required('taskId'): taskref_or_string,
+        Required('taskType'): basestring,
+        Required('paths'): [basestring],
+    }],
+})
 def build_push_snap_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1253,7 +1141,9 @@ def build_push_snap_payload(config, task, task_def):
     }
 
 
-@payload_builder('shipit-shipped')
+@payload_builder('shipit-shipped', schema={
+    Required('release-name'): basestring,
+})
 def build_ship_it_shipped_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1262,7 +1152,12 @@ def build_ship_it_shipped_payload(config, task, task_def):
     }
 
 
-@payload_builder('shipit-started')
+@payload_builder('shipit-started', schema={
+    Required('release-name'): basestring,
+    Required('product'): basestring,
+    Required('branch'): basestring,
+    Required('locales'): basestring,
+})
 def build_ship_it_started_payload(config, task, task_def):
     worker = task['worker']
     release_config = get_release_config(config)
@@ -1279,7 +1174,14 @@ def build_ship_it_started_payload(config, task, task_def):
     }
 
 
-@payload_builder('sign-and-push-addons')
+@payload_builder('sign-and-push-addons', schema={
+    Required('channel'): Any('listed', 'unlisted'),
+    Required('upstream-artifacts'): [{
+        Required('taskId'): taskref_or_string,
+        Required('taskType'): basestring,
+        Required('paths'): [basestring],
+    }],
+})
 def build_sign_and_push_addons_payload(config, task, task_def):
     worker = task['worker']
 
@@ -1289,7 +1191,15 @@ def build_sign_and_push_addons_payload(config, task, task_def):
     }
 
 
-@payload_builder('treescript')
+@payload_builder('treescript', schema={
+    Required('tags'): [Any('buildN', 'release', None)],
+    Required('bump'): bool,
+    Optional('bump-files'): [basestring],
+    Optional('repo-param-prefix'): basestring,
+    Optional('dontbuild'): bool,
+    Required('force-dry-run', default=True): bool,
+    Required('push', default=False): bool
+})
 def build_treescript_payload(config, task, task_def):
     worker = task['worker']
     release_config = get_release_config(config)
@@ -1336,17 +1246,57 @@ def build_treescript_payload(config, task, task_def):
         task_def['payload']['dontbuild'] = True
 
 
-@payload_builder('invalid')
+@payload_builder('invalid', schema={
+    
+    
+    Extra: object,
+})
 def build_invalid_payload(config, task, task_def):
     task_def['payload'] = 'invalid task - should never be created'
 
 
-@payload_builder('always-optimized')
+@payload_builder('always-optimized', schema={
+    Extra: object,
+})
 def build_always_optimized_payload(config, task, task_def):
     task_def['payload'] = {}
 
 
-@payload_builder('native-engine')
+@payload_builder('native-engine', schema={
+    Required('os'): Any('macosx', 'linux'),
+
+    
+    Required('max-run-time'): int,
+
+    
+    Optional('context'): basestring,
+
+    
+    
+    Optional('reboot'):
+    Any('always', 'on-exception', 'on-failure'),
+
+    
+    Optional('command'): [taskref_or_string],
+
+    
+    Optional('env'): {basestring: taskref_or_string},
+
+    
+    Optional('artifacts'): [{
+        
+        Required('type'): Any('file', 'directory'),
+
+        
+        Required('path'): basestring,
+
+        
+        
+        Required('name'): basestring,
+    }],
+    
+    Optional('skip-artifacts'): bool,
+})
 def build_macosx_engine_payload(config, task, task_def):
     worker = task['worker']
     artifacts = map(lambda artifact: {
@@ -1370,7 +1320,36 @@ def build_macosx_engine_payload(config, task, task_def):
         raise Exception('needs-sccache not supported in native-engine')
 
 
-@payload_builder('script-engine-autophone')
+@payload_builder('script-engine-autophone', schema={
+    Required('os'): Any('macosx', 'linux'),
+
+    
+    Optional('context'): basestring,
+
+    
+    
+    Optional('reboot'):
+    Any(False, 'always', 'never', 'on-exception', 'on-failure'),
+
+    
+    Optional('command'): [taskref_or_string],
+
+    
+    Optional('env'): {basestring: taskref_or_string},
+
+    
+    Optional('artifacts'): [{
+        
+        Required('type'): Any('file', 'directory'),
+
+        
+        Required('path'): basestring,
+
+        
+        
+        Required('name'): basestring,
+    }],
+})
 def build_script_engine_autophone_payload(config, task, task_def):
     worker = task['worker']
     artifacts = map(lambda artifact: {
@@ -1466,6 +1445,10 @@ def validate(config, tasks):
         validate_schema(
             task_description_schema, task,
             "In task {!r}:".format(task.get('label', '?no-label?')))
+        validate_schema(
+           payload_builders[task['worker']['implementation']].schema,
+           task['worker'],
+           "In task.run {!r}:".format(task.get('label', '?no-label?')))
         if task['shipping-product'] is not None:
             validate_shipping_product(config, task['shipping-product'])
         yield task
