@@ -724,6 +724,8 @@ class UserScript extends Script {
         return wrapUserScriptAPIMethod(userScriptAPIs[key], key);
       });
     }
+
+    context.userScriptsEvents.emit("on-before-script", clonedMetadata, userScriptScope);
   }
 }
 
@@ -853,6 +855,11 @@ class ContentScriptContextChild extends BaseContext {
     
     
     this.hasUserScriptAPIs = false;
+
+    
+    defineLazyGetter(this, "userScriptsEvents", () => {
+      return new ExtensionCommon.EventEmitter();
+    });
   }
 
   injectAPI() {
