@@ -32,18 +32,100 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "headers.h"
+
+enum Dav1dPixelLayout {
+    DAV1D_PIXEL_LAYOUT_I400, 
+    DAV1D_PIXEL_LAYOUT_I420, 
+    DAV1D_PIXEL_LAYOUT_I422, 
+    DAV1D_PIXEL_LAYOUT_I444, 
+};
+
+enum Dav1dFrameType {
+    DAV1D_FRAME_TYPE_KEY = 0,    
+    DAV1D_FRAME_TYPE_INTER = 1,  
+    DAV1D_FRAME_TYPE_INTRA = 2,  
+    DAV1D_FRAME_TYPE_SWITCH = 3, 
+};
+
+enum Dav1dColorPrimaries {
+    DAV1D_COLOR_PRI_BT709 = 1,
+    DAV1D_COLOR_PRI_UNKNOWN = 2,
+    DAV1D_COLOR_PRI_BT470M = 4,
+    DAV1D_COLOR_PRI_BT470BG = 5,
+    DAV1D_COLOR_PRI_BT601 = 6,
+    DAV1D_COLOR_PRI_SMPTE240 = 7,
+    DAV1D_COLOR_PRI_FILM = 8,
+    DAV1D_COLOR_PRI_BT2020 = 9,
+    DAV1D_COLOR_PRI_XYZ = 10,
+    DAV1D_COLOR_PRI_SMPTE431 = 11,
+    DAV1D_COLOR_PRI_SMPTE432 = 12,
+    DAV1D_COLOR_PRI_EBU3213 = 22,
+};
+
+enum Dav1dTransferCharacteristics {
+    DAV1D_TRC_BT709 = 1,
+    DAV1D_TRC_UNKNOWN = 2,
+    DAV1D_TRC_BT470M = 4,
+    DAV1D_TRC_BT470BG = 5,
+    DAV1D_TRC_BT601 = 6,
+    DAV1D_TRC_SMPTE240 = 7,
+    DAV1D_TRC_LINEAR = 8,
+    DAV1D_TRC_LOG100 = 9,         
+    DAV1D_TRC_LOG100_SQRT10 = 10, 
+    DAV1D_TRC_IEC61966 = 11,
+    DAV1D_TRC_BT1361 = 12,
+    DAV1D_TRC_SRGB = 13,
+    DAV1D_TRC_BT2020_10BIT = 14,
+    DAV1D_TRC_BT2020_12BIT = 15,
+    DAV1D_TRC_SMPTE2084 = 16,     
+    DAV1D_TRC_SMPTE428 = 17,
+    DAV1D_TRC_HLG = 18,           
+};
+
+enum Dav1dMatrixCoefficients {
+    DAV1D_MC_IDENTITY = 0,
+    DAV1D_MC_BT709 = 1,
+    DAV1D_MC_UNKNOWN = 2,
+    DAV1D_MC_FCC = 4,
+    DAV1D_MC_BT470BG = 5,
+    DAV1D_MC_BT601 = 6,
+    DAV1D_MC_SMPTE240 = 7,
+    DAV1D_MC_SMPTE_YCGCO = 8,
+    DAV1D_MC_BT2020_NCL = 9,
+    DAV1D_MC_BT2020_CL = 10,
+    DAV1D_MC_SMPTE2085 = 11,
+    DAV1D_MC_CHROMAT_NCL = 12, 
+    DAV1D_MC_CHROMAT_CL = 13,
+    DAV1D_MC_ICTCP = 14,
+};
+
+enum Dav1dChromaSamplePosition {
+    DAV1D_CHR_UNKNOWN = 0,
+    DAV1D_CHR_VERTICAL = 1,  
+                           
+    DAV1D_CHR_COLOCATED = 2, 
+};
 
 typedef struct Dav1dPictureParameters {
     int w; 
     int h; 
     enum Dav1dPixelLayout layout; 
+    enum Dav1dFrameType type; 
     int bpc; 
+
+    enum Dav1dColorPrimaries pri; 
+    enum Dav1dTransferCharacteristics trc; 
+    enum Dav1dMatrixCoefficients mtrx; 
+    enum Dav1dChromaSamplePosition chr; 
+    
+
+
+
+    int fullrange;
 } Dav1dPictureParameters;
 
 typedef struct Dav1dPicture {
-    Dav1dSequenceHeader *seq_hdr;
-    Dav1dFrameHeader *frame_hdr;
+    int poc; 
 
     
 
@@ -53,6 +135,7 @@ typedef struct Dav1dPicture {
 
 
     void *data[3];
+    struct Dav1dRef *ref; 
 
     
 
@@ -60,8 +143,6 @@ typedef struct Dav1dPicture {
     ptrdiff_t stride[2];
 
     Dav1dPictureParameters p;
-    Dav1dDataProps m;
-    struct Dav1dRef *frame_hdr_ref, *seq_hdr_ref, *ref; 
 
     void *allocator_data; 
 } Dav1dPicture;
@@ -92,7 +173,11 @@ typedef struct Dav1dPicAllocator {
 
 
 
-    void (*release_picture_callback)(Dav1dPicture *pic, void *cookie);
+
+
+
+    void (*release_picture_callback)(uint8_t *buf, void *allocator_data,
+                                     void *cookie);
 } Dav1dPicAllocator;
 
 

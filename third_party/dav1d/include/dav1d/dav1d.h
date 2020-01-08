@@ -41,16 +41,10 @@ extern "C" {
 typedef struct Dav1dContext Dav1dContext;
 typedef struct Dav1dRef Dav1dRef;
 
-#define DAV1D_MAX_FRAME_THREADS 256
-#define DAV1D_MAX_TILE_THREADS 64
-
 typedef struct Dav1dSettings {
     int n_frame_threads;
     int n_tile_threads;
     Dav1dPicAllocator allocator;
-    int apply_grain;
-    int operating_point; 
-    int all_layers; 
 } Dav1dSettings;
 
 
@@ -92,58 +86,9 @@ DAV1D_API int dav1d_open(Dav1dContext **c_out, const Dav1dSettings *s);
 
 
 
-DAV1D_API int dav1d_parse_sequence_header(Dav1dSequenceHeader *out,
-                                          const uint8_t *buf, const size_t sz);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 DAV1D_API int dav1d_send_data(Dav1dContext *c, Dav1dData *in);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -170,11 +115,6 @@ DAV1D_API int dav1d_get_picture(Dav1dContext *c, Dav1dPicture *out);
 
 
 DAV1D_API void dav1d_close(Dav1dContext **c_out);
-
-
-
-
-
 
 
 

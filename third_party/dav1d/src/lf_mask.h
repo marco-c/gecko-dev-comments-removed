@@ -40,7 +40,7 @@ typedef struct Av1FilterLUT {
 } Av1FilterLUT;
 
 typedef struct Av1RestorationUnit {
-    enum Dav1dRestorationType type;
+    enum RestorationType type;
     int16_t filter_h[3];
     int16_t filter_v[3];
     uint8_t sgr_idx;
@@ -54,16 +54,12 @@ typedef struct Av1Filter {
     uint16_t filter_uv[2 ][32][2][2];
     int8_t cdef_idx[4]; 
     uint16_t noskip_mask[32][2];
-} Av1Filter;
-
-
-typedef struct Av1Restoration {
     Av1RestorationUnit lr[3][4];
-} Av1Restoration;
+} Av1Filter;
 
 void dav1d_create_lf_mask_intra(Av1Filter *lflvl, uint8_t (*level_cache)[4],
                                 const ptrdiff_t b4_stride,
-                                const Dav1dFrameHeader *hdr,
+                                const Av1FrameHeader *hdr,
                                 const uint8_t (*level)[8][2], int bx, int by,
                                 int iw, int ih, enum BlockSize bs,
                                 enum RectTxfmSize ytx, enum RectTxfmSize uvtx,
@@ -71,7 +67,7 @@ void dav1d_create_lf_mask_intra(Av1Filter *lflvl, uint8_t (*level_cache)[4],
                                 uint8_t *ly, uint8_t *auv, uint8_t *luv);
 void dav1d_create_lf_mask_inter(Av1Filter *lflvl, uint8_t (*level_cache)[4],
                                 const ptrdiff_t b4_stride,
-                                const Dav1dFrameHeader *hdr,
+                                const Av1FrameHeader *hdr,
                                 const uint8_t (*level)[8][2], int bx, int by,
                                 int iw, int ih, int skip_inter,
                                 enum BlockSize bs, const uint16_t *tx_mask,
@@ -79,7 +75,7 @@ void dav1d_create_lf_mask_inter(Av1Filter *lflvl, uint8_t (*level_cache)[4],
                                 enum Dav1dPixelLayout layout, uint8_t *ay,
                                 uint8_t *ly, uint8_t *auv, uint8_t *luv);
 void dav1d_calc_eih(Av1FilterLUT *lim_lut, int filter_sharpness);
-void dav1d_calc_lf_values(uint8_t (*values)[4][8][2], const Dav1dFrameHeader *hdr,
+void dav1d_calc_lf_values(uint8_t (*values)[4][8][2], const Av1FrameHeader *hdr,
                           const int8_t lf_delta[4]);
 
 #endif 

@@ -25,11 +25,8 @@
 
 
 
-#ifndef __DAV1D_COMMON_H__
-#define __DAV1D_COMMON_H__
-
-#include <stddef.h>
-#include <stdint.h>
+#ifndef __COMMON_H__
+#define __COMMON_H__
 
 #ifndef DAV1D_API
     #if defined _WIN32
@@ -42,20 +39,5 @@
       #endif
     #endif
 #endif
-
-
-
-
-
-
-
-
-
-typedef struct Dav1dDataProps {
-    int64_t timestamp; 
-    uint64_t duration; 
-    int64_t offset; 
-    size_t size; 
-} Dav1dDataProps;
 
 #endif 
