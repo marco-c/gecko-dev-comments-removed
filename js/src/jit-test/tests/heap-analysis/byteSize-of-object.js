@@ -9,8 +9,7 @@
 
 
 
-if (!getBuildConfiguration()['moz-memory'])
-  quit(0);
+
 
 if (getBuildConfiguration()['pointer-byte-size'] == 4)
   var s = (s32, s64) => s32

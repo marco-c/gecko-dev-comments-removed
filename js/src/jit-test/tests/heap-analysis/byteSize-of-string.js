@@ -9,9 +9,9 @@
 
 
 
+
+
 var config = getBuildConfiguration();
-if (!config['moz-memory'])
-  quit(0);
 
 gczeal(0); 
 

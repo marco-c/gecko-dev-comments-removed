@@ -9,9 +9,9 @@
 
 
 
+
+
 var config = getBuildConfiguration();
-if (!config['moz-memory'])
-  quit(0);
 
 const SIZE_OF_SYMBOL = config['pointer-byte-size'] == 4 ? 16 : 16;
 
