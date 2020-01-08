@@ -157,6 +157,7 @@ IsClusterExtender(uint32_t aCh, uint8_t aCategory)
              aCategory <= HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) ||
             (aCh >= 0x200c && aCh <= 0x200d) || 
             (aCh >= 0xff9e && aCh <= 0xff9f) || 
+            (aCh >= 0x1F3FB && aCh <= 0x1F3FF) || 
             (aCh >= 0xe0020 && aCh <= 0xe007f)); 
 }
 
