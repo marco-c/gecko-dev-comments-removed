@@ -60,6 +60,15 @@ static int valid_unit_divide(SkScalar numer, SkScalar denom, SkScalar* ratio) {
 
 
 
+static int return_check_zero(int value) {
+    if (value == 0) {
+        return 0;
+    }
+    return value;
+}
+
+
+
 
 
 
@@ -68,22 +77,21 @@ int SkFindUnitQuadRoots(SkScalar A, SkScalar B, SkScalar C, SkScalar roots[2]) {
     SkASSERT(roots);
 
     if (A == 0) {
-        return valid_unit_divide(-C, B, roots);
+        return return_check_zero(valid_unit_divide(-C, B, roots));
     }
 
     SkScalar* r = roots;
 
-    SkScalar R = B*B - 4*A*C;
-    if (R < 0 || !SkScalarIsFinite(R)) {  
-        
-        
-        
-        
-        
-        
-        return 0;
+    
+    double dr = (double)B * B - 4 * (double)A * C;
+    if (dr < 0) {
+        return return_check_zero(0);
     }
-    R = SkScalarSqrt(R);
+    dr = sqrt(dr);
+    SkScalar R = SkDoubleToScalar(dr);
+    if (!SkScalarIsFinite(R)) {
+        return return_check_zero(0);
+    }
 
     SkScalar Q = (B < 0) ? -(B-R)/2 : -(B+R)/2;
     r += valid_unit_divide(Q, A, r);
@@ -94,7 +102,7 @@ int SkFindUnitQuadRoots(SkScalar A, SkScalar B, SkScalar C, SkScalar roots[2]) {
         else if (roots[0] == roots[1])  
             r -= 1; 
     }
-    return (int)(r - roots);
+    return return_check_zero((int)(r - roots));
 }
 
 
