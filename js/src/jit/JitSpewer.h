@@ -125,8 +125,6 @@ class TempAllocator;
 
 
 
-static const int NULL_ID = -1;
-
 #ifdef JS_JITSPEW
 
 
