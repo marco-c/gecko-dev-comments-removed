@@ -8,6 +8,7 @@
 #include "SVGObserverUtils.h"
 
 
+#include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/RestyleManager.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsISupportsImpl.h"
@@ -393,6 +394,37 @@ SVGFilterObserverListForCSSProp::OnRenderingChange()
     frame->GetContent()->AsElement(), nsRestyleHint(0), changeHint);
 }
 
+
+class SVGFilterObserverListForCanvasContext final : public SVGFilterObserverList
+{
+public:
+  SVGFilterObserverListForCanvasContext(CanvasRenderingContext2D* aContext,
+                                        Element* aCanvasElement,
+                                        nsTArray<nsStyleFilter>& aFilters)
+    : SVGFilterObserverList(aFilters, aCanvasElement)
+    , mContext(aContext)
+  {}
+
+  virtual void OnRenderingChange() override
+  {
+    if (!mContext) {
+      MOZ_CRASH("GFX: This should never be called without a context");
+    }
+    
+    
+    
+    
+    RefPtr<CanvasRenderingContext2D> kungFuDeathGrip(mContext);
+    kungFuDeathGrip->UpdateFilter();
+  }
+
+  void DetachFromContext() { mContext = nullptr; }
+
+private:
+  CanvasRenderingContext2D* mContext;
+};
+
+
 void
 SVGMarkerObserver::OnRenderingChange()
 {
@@ -648,6 +680,23 @@ SVGObserverUtils::GetAndObserveFilters(nsIFrame* aFilteredFrame,
   }
 
   return eHasRefsAllValid;
+}
+
+already_AddRefed<nsISupports>
+SVGObserverUtils::ObserveFiltersForCanvasContext(CanvasRenderingContext2D* aContext,
+                                                 Element* aCanvasElement,
+                                                 nsTArray<nsStyleFilter>& aFilters)
+{
+  return do_AddRef(new SVGFilterObserverListForCanvasContext(aContext,
+                                                             aCanvasElement,
+                                                             aFilters));
+}
+
+void
+SVGObserverUtils::DetachFromCanvasContext(nsISupports* aAutoObserver)
+{
+  static_cast<SVGFilterObserverListForCanvasContext*>(aAutoObserver)->
+    DetachFromContext();
 }
 
 SVGGeometryElement*

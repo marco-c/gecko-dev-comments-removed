@@ -36,6 +36,7 @@ class nsSVGMaskFrame;
 namespace mozilla {
 class SVGFilterObserverList;
 namespace dom {
+class CanvasRenderingContext2D;
 class SVGGeometryElement;
 }
 }
@@ -530,6 +531,7 @@ private:
 class SVGObserverUtils
 {
 public:
+  typedef mozilla::dom::CanvasRenderingContext2D CanvasRenderingContext2D;
   typedef mozilla::dom::Element Element;
   typedef dom::SVGGeometryElement SVGGeometryElement;
   typedef nsInterfaceHashtable<nsRefPtrHashKey<URLAndReferrerInfo>,
@@ -729,6 +731,38 @@ public:
   static ReferenceState
   GetAndObserveFilters(nsIFrame* aFilteredFrame,
                        nsTArray<nsSVGFilterFrame*>* aFilterFrames);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<nsISupports>
+  ObserveFiltersForCanvasContext(CanvasRenderingContext2D* aContext,
+                                 Element* aCanvasElement,
+                                 nsTArray<nsStyleFilter>& aFilters);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static void
+  DetachFromCanvasContext(nsISupports* aAutoObserver);
 
   
 

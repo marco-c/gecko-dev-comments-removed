@@ -45,7 +45,6 @@ class ImageData;
 class StringOrCanvasGradientOrCanvasPattern;
 class OwningStringOrCanvasGradientOrCanvasPattern;
 class TextMetrics;
-class SVGFilterObserverListForCanvas;
 class CanvasPath;
 
 extern const mozilla::gfx::Float SIGMA_MAX;
@@ -562,6 +561,13 @@ public:
   
   bool AllowOpenGLCanvas() const;
 
+  
+
+
+
+
+  void UpdateFilter();
+
 protected:
   nsresult GetImageDataArray(JSContext* aCx, int32_t aX, int32_t aY,
                              uint32_t aWidth, uint32_t aHeight,
@@ -727,13 +733,6 @@ protected:
 
 
   bool PatternIsOpaque(Style aStyle) const;
-
-  
-
-
-
-
-  void UpdateFilter();
 
   nsLayoutUtils::SurfaceFromElementResult
     CachedSurfaceFromElement(Element* aElement);
@@ -1052,7 +1051,7 @@ protected:
           lineJoin(aOther.lineJoin),
           filterString(aOther.filterString),
           filterChain(aOther.filterChain),
-          filterObserverList(aOther.filterObserverList),
+          autoSVGFiltersObserver(aOther.autoSVGFiltersObserver),
           filter(aOther.filter),
           filterAdditionalImages(aOther.filterAdditionalImages),
           filterSourceGraphicTainted(aOther.filterSourceGraphicTainted),
@@ -1130,7 +1129,9 @@ protected:
 
     nsString filterString;
     nsTArray<nsStyleFilter> filterChain;
-    RefPtr<SVGFilterObserverList> filterObserverList;
+    
+    
+    nsCOMPtr<nsISupports> autoSVGFiltersObserver;
     mozilla::gfx::FilterDescription filter;
     nsTArray<RefPtr<mozilla::gfx::SourceSurface>> filterAdditionalImages;
 
@@ -1162,7 +1163,6 @@ protected:
   }
 
   friend class CanvasGeneralPattern;
-  friend class SVGFilterObserverListForCanvas;
   friend class AdjustedTarget;
   friend class AdjustedTargetForShadow;
   friend class AdjustedTargetForFilter;
