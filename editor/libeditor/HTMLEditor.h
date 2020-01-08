@@ -1738,6 +1738,7 @@ protected:
 
   class BlobReader final
   {
+  typedef EditorBase::AutoEditActionDataSetter AutoEditActionDataSetter;
   public:
     BlobReader(dom::BlobImpl* aBlob, HTMLEditor* aHTMLEditor,
                bool aIsSafe, nsIDocument* aSourceDoc,
@@ -1757,10 +1758,11 @@ protected:
 
     RefPtr<dom::BlobImpl> mBlob;
     RefPtr<HTMLEditor> mHTMLEditor;
-    bool mIsSafe;
     nsCOMPtr<nsIDocument> mSourceDoc;
     nsCOMPtr<nsINode> mDestinationNode;
     int32_t mDestOffset;
+    EditAction mEditAction;
+    bool mIsSafe;
     bool mDoDeleteSelection;
   };
 
