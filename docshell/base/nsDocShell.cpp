@@ -10149,6 +10149,13 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         (aFlags & LOAD_FLAGS_ERROR_LOAD_CHANGES_RV) != 0) {
       return NS_ERROR_LOAD_SHOWED_ERRORPAGE;
     }
+
+    
+    
+    
+    if (NS_ERROR_UNKNOWN_PROTOCOL == rv) {
+      return NS_OK;
+    }
   }
 
   return rv;
