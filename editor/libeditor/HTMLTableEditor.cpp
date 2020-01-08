@@ -817,6 +817,13 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
 
   MOZ_ASSERT(selection->RangeCount());
 
+  TableSize tableSize(*this, *table, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  MOZ_ASSERT(!tableSize.IsEmpty());
+
   
   
   
@@ -842,11 +849,6 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
       if (numberOfCellsInRow == 1) {
         
         
-        TableSize tableSize(*this, *table, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-
         if (tableSize.mRowCount == 1) {
           rv = DeleteTableElementAndChildrenWithTransaction(*selection, *table);
           if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -861,6 +863,14 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
+
+        
+        
+        
+        
+        
+        MOZ_ASSERT(tableSize.mRowCount);
+        tableSize.mRowCount--;
         continue;
       }
 
@@ -877,17 +887,15 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
+      
+      
+      
     }
     return NS_OK;
   }
 
   
   
-  TableSize tableSize(*this, *table, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-
   CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
@@ -929,10 +937,24 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
           nextRow = nextSelectedCellIndexes.mRow;
           startColIndex = nextSelectedCellIndexes.mColumn;
         }
+        if (tableSize.mRowCount == 1) {
+          rv = DeleteTableElementAndChildrenWithTransaction(*selection, *table);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
+          return NS_OK;
+        }
         rv = DeleteTableRowWithTransaction(*table, startRowIndex);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
+        
+        
+        
+        
+        
+        MOZ_ASSERT(tableSize.mRowCount);
+        tableSize.mRowCount--;
         if (!cell) {
           break;
         }
@@ -973,6 +995,13 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
+        
+        
+        
+        
+        
+        MOZ_ASSERT(tableSize.mColumnCount);
+        tableSize.mColumnCount--;
         if (!cell) {
           break;
         }
@@ -1008,6 +1037,11 @@ HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
     startRowIndex = nextCellIndexes.mRow;
     startColIndex = nextCellIndexes.mColumn;
     cell = std::move(nextCell);
+    
+    
+    
+    
+    
   }
   return NS_OK;
 }

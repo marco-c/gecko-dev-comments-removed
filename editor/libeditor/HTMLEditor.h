@@ -1255,6 +1255,11 @@ protected:
 
     void Update(HTMLEditor& aHTMLEditor, Element& aTableOrElementInTable,
                 ErrorResult& aRv);
+
+    bool IsEmpty() const
+    {
+      return !mRowCount || !mColumnCount;
+    }
   };
 
   
