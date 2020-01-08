@@ -1667,19 +1667,6 @@ nsDocument::~nsDocument()
         }
       }
     }
-
-    
-    
-    
-    
-    if (StaticPrefs::browser_fastblock_enabled() &&
-        !nsContentUtils::IsInPrivateBrowsing(this)) {
-      for (auto label : mTrackerBlockedReasons) {
-        AccumulateCategorical(label);
-      }
-      
-      AccumulateCategorical(Telemetry::LABELS_DOCUMENT_ANALYTICS_TRACKER_FASTBLOCKED::all);
-    }
   }
 
   ReportUseCounters();
