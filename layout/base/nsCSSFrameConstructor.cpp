@@ -2980,8 +2980,7 @@ nsCSSFrameConstructor::CreatePlaceholderFrameFor(nsIPresShell*     aPresShell,
 
   
   nsPlaceholderFrame* placeholderFrame =
-    (nsPlaceholderFrame*)NS_NewPlaceholderFrame(aPresShell, placeholderStyle,
-                                                aTypeBit);
+    NS_NewPlaceholderFrame(aPresShell, placeholderStyle, aTypeBit);
 
   placeholderFrame->Init(aContent, aParentFrame, aPrevInFlow);
 
