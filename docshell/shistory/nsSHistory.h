@@ -178,6 +178,9 @@ private:
   int32_t mIndex;           
   int32_t mRequestedIndex;  
 
+  void WindowIndices(int32_t aIndex, int32_t* aOutStartIndex,
+                     int32_t* aOutEndIndex);
+
   
   int32_t Length() { return int32_t(mTransactions.Length()); }
 
