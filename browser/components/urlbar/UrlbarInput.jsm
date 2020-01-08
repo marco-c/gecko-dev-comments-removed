@@ -308,7 +308,7 @@ class UrlbarInput {
     this.controller.handleQuery(new QueryContext({
       searchString: event.target.value,
       lastKey: "",
-      maxResults: 12,
+      maxResults: UrlbarPrefs.get("maxRichResults"),
       isPrivate: this.isPrivate,
     }));
   }
