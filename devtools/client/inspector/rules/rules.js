@@ -179,8 +179,6 @@ function CssRuleView(inspector, document, store, pageStyle) {
 
   this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
 
-  this._showEmpty();
-
   
   this.tooltips = new TooltipsOverlay(this);
 }
