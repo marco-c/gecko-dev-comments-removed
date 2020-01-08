@@ -142,6 +142,16 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
 
 
 
+  getMainProcess() {
+    return this.getProcess(0);
+  },
+
+  
+
+
+
+
+
 
 
 
