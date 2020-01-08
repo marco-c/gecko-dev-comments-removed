@@ -1065,6 +1065,12 @@ nsGlobalWindowInner::~nsGlobalWindowInner()
     sInnerWindowsById->Remove(mWindowID);
   }
 
+  
+  
+  if (mAutoplayPermissionManager) {
+    mAutoplayPermissionManager->DenyPlayRequestIfExists();
+  }
+
   nsContentUtils::InnerOrOuterWindowDestroyed();
 
 #ifdef DEBUG
