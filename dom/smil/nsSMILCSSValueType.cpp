@@ -455,21 +455,6 @@ nsSMILCSSValueType::Interpolate(const nsSMILValue& aStartVal,
                              aResult);
 }
 
-
-static nsPresContext*
-GetPresContextForElement(Element* aElem)
-{
-  nsIDocument* doc = aElem->GetUncomposedDoc();
-  if (!doc) {
-    
-    
-    
-    return nullptr;
-  }
-  return doc->GetPresContext();
-}
-
-
 static ServoAnimationValues
 ValueFromStringHelper(nsCSSPropertyID aPropID,
                       Element* aTargetElement,
@@ -479,7 +464,7 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
 {
   ServoAnimationValues result;
 
-  nsIDocument* doc = aTargetElement->GetUncomposedDoc();
+  nsIDocument* doc = aTargetElement->GetComposedDoc();
   if (!doc) {
     return result;
   }
@@ -512,13 +497,14 @@ nsSMILCSSValueType::ValueFromString(nsCSSPropertyID aPropID,
                                     bool* aIsContextSensitive)
 {
   MOZ_ASSERT(aValue.IsNull(), "Outparam should be null-typed");
-  nsPresContext* presContext = GetPresContextForElement(aTargetElement);
+  nsPresContext* presContext =
+    nsContentUtils::GetContextForContent(aTargetElement);
   if (!presContext) {
     NS_WARNING("Not parsing animation value; unable to get PresContext");
     return;
   }
 
-  nsIDocument* doc = aTargetElement->GetUncomposedDoc();
+  nsIDocument* doc = aTargetElement->GetComposedDoc();
   if (doc && !nsStyleUtil::CSPAllowsInlineStyle(nullptr,
                                                 doc->NodePrincipal(),
                                                 nullptr,
@@ -556,7 +542,7 @@ nsSMILCSSValueType::ValueFromAnimationValue(nsCSSPropertyID aPropID,
 {
   nsSMILValue result;
 
-  nsIDocument* doc = aTargetElement->GetUncomposedDoc();
+  nsIDocument* doc = aTargetElement->GetComposedDoc();
   
   
   

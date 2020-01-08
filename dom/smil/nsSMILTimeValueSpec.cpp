@@ -96,7 +96,7 @@ nsSMILTimeValueSpec::ResolveReferences(nsIContent* aContextNode)
 
   
   
-  if (!aContextNode->IsInUncomposedDoc())
+  if (!aContextNode->IsInComposedDoc())
     return;
 
   

@@ -178,8 +178,8 @@ SVGAnimationElement::BindToTree(nsIDocument* aDocument,
   }
 
   
-  if (aDocument) {
-    nsSMILAnimationController *controller = aDocument->GetAnimationController();
+  if (nsIDocument* doc = GetComposedDoc()) {
+    nsSMILAnimationController* controller = doc->GetAnimationController();
     if (controller) {
       controller->RegisterAnimationElement(this);
     }
@@ -314,7 +314,7 @@ SVGAnimationElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       AnimationTargetChanged();
     } 
       
-  } else if (IsInUncomposedDoc() &&
+  } else if (IsInComposedDoc() &&
              !(aNamespaceID == kNameSpaceID_XLink &&
                HasAttr(kNameSpaceID_None, nsGkAtoms::href))) {
     
