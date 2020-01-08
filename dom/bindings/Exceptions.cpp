@@ -291,6 +291,51 @@ NS_INTERFACE_MAP_END
 
 
 
+static JSPrincipals*
+GetPrincipalsForStackGetter(JSContext* aCx, JS::Handle<JSObject*> aStack,
+                            bool* aCanCache)
+{
+  MOZ_ASSERT(JS::IsUnwrappedSavedFrame(aStack));
+
+  JSPrincipals* currentPrincipals =
+    JS::GetRealmPrincipals(js::GetContextRealm(aCx));
+  JSPrincipals* stackPrincipals =
+    JS::GetRealmPrincipals(js::GetNonCCWObjectRealm(aStack));
+
+  
+  
+  if (currentPrincipals == stackPrincipals) {
+    *aCanCache = true;
+    return stackPrincipals;
+  }
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (nsJSPrincipals::get(currentPrincipals)->Subsumes(
+        nsJSPrincipals::get(stackPrincipals))) {
+    
+    
+    
+    
+    
+
+    
+    
+    *aCanCache = true;
+    return stackPrincipals;
+  }
+
+  
+  
+  
+  *aCanCache = false;
+  return currentPrincipals;
+}
+
+
+
+
+
 
 
 
@@ -302,6 +347,7 @@ template<typename ReturnType, typename GetterOutParamType>
 static void
 GetValueIfNotCached(JSContext* aCx, const JS::Heap<JSObject*>& aStack,
                     JS::SavedFrameResult (*aPropGetter)(JSContext*,
+                                                        JSPrincipals*,
                                                         JS::Handle<JSObject*>,
                                                         GetterOutParamType,
                                                         JS::SavedFrameSelfHosted),
@@ -309,11 +355,11 @@ GetValueIfNotCached(JSContext* aCx, const JS::Heap<JSObject*>& aStack,
                     ReturnType aValue)
 {
   MOZ_ASSERT(aStack);
+  MOZ_ASSERT(JS::IsUnwrappedSavedFrame(aStack));
 
   JS::Rooted<JSObject*> stack(aCx, aStack);
-  
-  
-  *aCanCache = js::GetContextCompartment(aCx) == js::GetObjectCompartment(stack);
+
+  JSPrincipals* principals = GetPrincipalsForStackGetter(aCx, stack, aCanCache);
   if (*aCanCache && aIsCached) {
     *aUseCachedValue = true;
     return;
@@ -321,7 +367,8 @@ GetValueIfNotCached(JSContext* aCx, const JS::Heap<JSObject*>& aStack,
 
   *aUseCachedValue = false;
 
-  aPropGetter(aCx, stack, aValue, JS::SavedFrameSelfHosted::Exclude);
+  aPropGetter(aCx, principals, stack, aValue,
+              JS::SavedFrameSelfHosted::Exclude);
 }
 
 NS_IMETHODIMP JSStackFrame::GetFilenameXPCOM(JSContext* aCx, nsAString& aFilename)
@@ -613,19 +660,17 @@ JSStackFrame::GetFormattedStack(JSContext* aCx, nsAString& aStack)
   
   
 
-  
-  
-  bool canCache =
-    js::GetContextCompartment(aCx) == js::GetObjectCompartment(mStack);
+  JS::Rooted<JSObject*> stack(aCx, mStack);
+
+  bool canCache;
+  JSPrincipals* principals = GetPrincipalsForStackGetter(aCx, stack, &canCache);
   if (canCache && mFormattedStackInitialized) {
     aStack = mFormattedStack;
     return;
   }
 
-  JS::Rooted<JSObject*> stack(aCx, mStack);
-
   JS::Rooted<JSString*> formattedStack(aCx);
-  if (!JS::BuildStackString(aCx, stack, &formattedStack)) {
+  if (!JS::BuildStackString(aCx, principals, stack, &formattedStack)) {
     JS_ClearPendingException(aCx);
     aStack.Truncate();
     return;

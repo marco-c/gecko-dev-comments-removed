@@ -236,9 +236,13 @@ js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args)
         return true;
     }
 
+    
+    
+    JSPrincipals* principals = obj->as<ErrorObject>().realm()->principals();
+
     RootedObject savedFrameObj(cx, obj->as<ErrorObject>().stack());
     RootedString stackString(cx);
-    if (!BuildStackString(cx, savedFrameObj, &stackString))
+    if (!BuildStackString(cx, principals, savedFrameObj, &stackString))
         return false;
 
     if (cx->runtime()->stackFormat() == js::StackFormat::V8) {

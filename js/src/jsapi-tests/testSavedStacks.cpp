@@ -27,37 +27,39 @@ BEGIN_TEST(testSavedStacks_ApiDefaultValues)
 {
     js::RootedSavedFrame savedFrame(cx, nullptr);
 
+    JSPrincipals* principals = cx->realm()->principals();
+
     
     JS::RootedString str(cx);
-    JS::SavedFrameResult result = JS::GetSavedFrameSource(cx, savedFrame, &str);
+    JS::SavedFrameResult result = JS::GetSavedFrameSource(cx, principals, savedFrame, &str);
     CHECK(result == JS::SavedFrameResult::AccessDenied);
     CHECK(str.get() == cx->runtime()->emptyString);
 
     
     uint32_t line = 123;
-    result = JS::GetSavedFrameLine(cx, savedFrame, &line);
+    result = JS::GetSavedFrameLine(cx, principals, savedFrame, &line);
     CHECK(result == JS::SavedFrameResult::AccessDenied);
     CHECK(line == 0);
 
     
     uint32_t column = 123;
-    result = JS::GetSavedFrameColumn(cx, savedFrame, &column);
+    result = JS::GetSavedFrameColumn(cx, principals, savedFrame, &column);
     CHECK(result == JS::SavedFrameResult::AccessDenied);
     CHECK(column == 0);
 
     
-    result = JS::GetSavedFrameFunctionDisplayName(cx, savedFrame, &str);
+    result = JS::GetSavedFrameFunctionDisplayName(cx, principals, savedFrame, &str);
     CHECK(result == JS::SavedFrameResult::AccessDenied);
     CHECK(str.get() == nullptr);
 
     
     JS::RootedObject parent(cx);
-    result = JS::GetSavedFrameParent(cx, savedFrame, &parent);
+    result = JS::GetSavedFrameParent(cx, principals, savedFrame, &parent);
     CHECK(result == JS::SavedFrameResult::AccessDenied);
     CHECK(parent.get() == nullptr);
 
     
-    CHECK(JS::BuildStackString(cx, savedFrame, &str));
+    CHECK(JS::BuildStackString(cx, principals, savedFrame, &str));
     CHECK(str.get() == cx->runtime()->emptyString);
 
     return true;
@@ -114,7 +116,8 @@ BEGIN_TEST(testSavedStacks_RangeBasedForLoops)
     auto CheckStacks = [&]() {
         for (auto& expectation : expectations) {
             JS::RootedString str(cx);
-            CHECK(JS::BuildStackString(cx, savedFrame, &str, 0, expectation.format));
+            JSPrincipals* principals = cx->realm()->principals();
+            CHECK(JS::BuildStackString(cx, principals, savedFrame, &str, 0, expectation.format));
             JSLinearString* lin = str->ensureLinear(cx);
             CHECK(lin);
             CHECK(js::StringEqualsAscii(lin, expectation.expected));
@@ -225,9 +228,11 @@ BEGIN_TEST(testSavedStacks_selfHostedFrames)
     JS::Rooted<js::SavedFrame*> selfHostedFrame(cx, savedFrame->getParent());
     CHECK(selfHostedFrame->isSelfHosted(cx));
 
+    JSPrincipals* principals = cx->realm()->principals();
+
     
     JS::RootedString str(cx);
-    JS::SavedFrameResult result = JS::GetSavedFrameSource(cx, selfHostedFrame, &str,
+    JS::SavedFrameResult result = JS::GetSavedFrameSource(cx, principals, selfHostedFrame, &str,
                                                           JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
     JSLinearString* lin = str->ensureLinear(cx);
@@ -235,7 +240,8 @@ BEGIN_TEST(testSavedStacks_selfHostedFrames)
     CHECK(js::StringEqualsAscii(lin, "filename.js"));
 
     
-    result = JS::GetSavedFrameSource(cx, selfHostedFrame, &str, JS::SavedFrameSelfHosted::Include);
+    result = JS::GetSavedFrameSource(cx, principals, selfHostedFrame, &str,
+                                     JS::SavedFrameSelfHosted::Include);
     CHECK(result == JS::SavedFrameResult::Ok);
     lin = str->ensureLinear(cx);
     CHECK(lin);
@@ -243,19 +249,20 @@ BEGIN_TEST(testSavedStacks_selfHostedFrames)
 
     
     uint32_t line = 123;
-    result = JS::GetSavedFrameLine(cx, selfHostedFrame, &line, JS::SavedFrameSelfHosted::Exclude);
+    result = JS::GetSavedFrameLine(cx, principals, selfHostedFrame, &line,
+                                   JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
     CHECK_EQUAL(line, 3U);
 
     
     uint32_t column = 123;
-    result = JS::GetSavedFrameColumn(cx, selfHostedFrame, &column,
+    result = JS::GetSavedFrameColumn(cx, principals, selfHostedFrame, &column,
                                      JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
     CHECK_EQUAL(column, 5U);
 
     
-    result = JS::GetSavedFrameFunctionDisplayName(cx, selfHostedFrame, &str,
+    result = JS::GetSavedFrameFunctionDisplayName(cx, principals, selfHostedFrame, &str,
                                                   JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
     lin = str->ensureLinear(cx);
@@ -264,7 +271,8 @@ BEGIN_TEST(testSavedStacks_selfHostedFrames)
 
     
     JS::RootedObject parent(cx);
-    result = JS::GetSavedFrameParent(cx, savedFrame, &parent, JS::SavedFrameSelfHosted::Exclude);
+    result = JS::GetSavedFrameParent(cx, principals, savedFrame, &parent,
+                                     JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
     
     
@@ -277,7 +285,8 @@ BEGIN_TEST(testSavedStacks_selfHostedFrames)
     
     
     
-    result = JS::GetSavedFrameSource(cx, parent, &str, JS::SavedFrameSelfHosted::Exclude);
+    result = JS::GetSavedFrameSource(cx, principals, parent, &str,
+                                     JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
     lin = str->ensureLinear(cx);
     CHECK(lin);
