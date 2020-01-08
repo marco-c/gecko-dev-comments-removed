@@ -97,7 +97,7 @@ BEGIN_TEST(test_ubiNodeZone)
     {
         
         
-        JSAutoRealmAllowCCW ar(cx, global2);
+        JSAutoRealm ar(cx, global2);
 
         RootedString string2(cx, JS_NewStringCopyZ(cx, "A million household uses!"));
         CHECK(string2);
@@ -142,7 +142,7 @@ BEGIN_TEST(test_ubiNodeCompartment)
     {
         
         
-        JSAutoRealmAllowCCW ar(cx, global2);
+        JSAutoRealm ar(cx, global2);
 
         RootedScript script2(cx);
         CHECK(JS::Compile(cx, options, "", 0, &script2));
