@@ -29,6 +29,7 @@ pub enum SceneBuilderRequest {
     },
     WakeUp,
     Flush(MsgSender<()>),
+    SetFrameBuilderConfig(FrameBuilderConfig),
     Stop
 }
 
@@ -214,6 +215,9 @@ impl SceneBuilder {
                 
                 
                 return false;
+            }
+            SceneBuilderRequest::SetFrameBuilderConfig(cfg) => {
+                self.config = cfg;
             }
         }
 

@@ -486,6 +486,8 @@ impl<'a> ReftestHarness<'a> {
         reader.allow_mipmaps(allow_mipmaps);
         reader.do_frame(self.wrench);
 
+        self.wrench.api.flush_scene_builder();
+
         
         self.rx.recv().unwrap();
         let stats = self.wrench.render();

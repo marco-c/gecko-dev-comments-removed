@@ -65,7 +65,7 @@ impl Transaction {
             frame_ops: Vec::new(),
             resource_updates: Vec::new(),
             payloads: Vec::new(),
-            use_scene_builder_thread: false, 
+            use_scene_builder_thread: true,
             generate_frame: false,
         }
     }
@@ -978,6 +978,10 @@ impl RenderApi {
 
     
     pub fn load_capture(&self, path: PathBuf) -> Vec<CapturedDocument> {
+        
+        
+        self.flush_scene_builder();
+
         let (tx, rx) = channel::msg_channel().unwrap();
         let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, tx));
         self.send_message(msg);
