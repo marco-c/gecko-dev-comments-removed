@@ -83,6 +83,7 @@ HttpChannelParent::HttpChannelParent(const PBrowserOrId& iframeEmbedding,
   , mCacheNeedFlowControlInitialized(false)
   , mNeedFlowControl(true)
   , mSuspendedForFlowControl(false)
+  , mDoingCrossProcessRedirect(false)
 {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
@@ -313,7 +314,8 @@ NS_IMETHODIMP
 HttpChannelParent::GetInterface(const nsIID& aIID, void **result)
 {
   if (aIID.Equals(NS_GET_IID(nsIAuthPromptProvider)) ||
-      aIID.Equals(NS_GET_IID(nsISecureBrowserUI))) {
+      aIID.Equals(NS_GET_IID(nsISecureBrowserUI)) ||
+      aIID.Equals(NS_GET_IID(nsITabParent))) {
     if (mTabParent) {
       return mTabParent->QueryInterface(aIID, result);
     }
@@ -1322,6 +1324,45 @@ HttpChannelParent::MaybeFlushPendingDiversion()
 
 }
 
+static void
+FinishCrossProcessRedirect(nsHttpChannel *channel, nsresult status)
+{
+  if (NS_SUCCEEDED(status)) {
+    nsCOMPtr<nsINetworkInterceptController> controller;
+    NS_QueryNotificationCallbacks(channel, controller);
+    RefPtr<HttpChannelParentListener> parentListener = do_QueryObject(controller);
+    MOZ_ASSERT(parentListener);
+
+    
+    
+    parentListener->OnRedirectResult(status == NS_OK);
+  }
+
+  channel->OnRedirectVerifyCallback(status);
+}
+
+mozilla::ipc::IPCResult
+HttpChannelParent::RecvCrossProcessRedirectDone(const nsresult& aResult)
+{
+  RefPtr<nsHttpChannel> chan = do_QueryObject(mChannel);
+  if (!mBgParent) {
+    RefPtr<GenericPromise> promise = WaitForBgParent();
+    RefPtr<HttpChannelParent> self = this;
+    promise->Then(GetMainThreadSerialEventTarget(), __func__,
+                  [self, chan, aResult]() {
+                    FinishCrossProcessRedirect(chan, aResult);
+                  },
+                  [self, chan](const nsresult& aRejectionRv) {
+                    MOZ_ASSERT(NS_FAILED(aRejectionRv), "This should be an error code");
+                    FinishCrossProcessRedirect(chan, aRejectionRv);
+                  });
+  } else {
+    FinishCrossProcessRedirect(chan, aResult);
+  }
+
+  return IPC_OK();
+}
+
 void
 HttpChannelParent::ResponseSynthesized()
 {
@@ -2006,6 +2047,15 @@ HttpChannelParent::CompleteRedirect(bool succeeded)
   
   
   
+  if (mDoingCrossProcessRedirect && !mIPCClosed) {
+      MOZ_ASSERT(!mRedirectChannel);
+      Unused << SendCancelRedirected();
+      return NS_OK;
+  }
+
+  
+  
+  
   if (!mRedirectChannel) {
     return NS_OK;
   }
@@ -2421,7 +2471,7 @@ HttpChannelParent::IssueWarning(uint32_t aWarning, bool aAsError)
 NS_IMETHODIMP
 HttpChannelParent::ReadyToVerify(nsresult aResult)
 {
-  LOG(("HttpChannelParent::RecvRedirect2Verify [this=%p result=%" PRIx32 "]\n",
+  LOG(("HttpChannelParent::ReadyToVerify [this=%p result=%" PRIx32 "]\n",
        this, static_cast<uint32_t>(aResult)));
   MOZ_ASSERT(NS_IsMainThread());
 
