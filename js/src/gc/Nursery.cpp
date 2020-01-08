@@ -1253,8 +1253,6 @@ js::Nursery::maybeResizeNursery(JS::gcreason::Reason reason)
         float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
 
     if (promotionRate > GrowThreshold) {
-        
-        
         growAllocableSpace();
     } else if (maxChunkCount() > 1 && promotionRate < ShrinkThreshold) {
         shrinkAllocableSpace(maxChunkCount() - 1);

@@ -366,6 +366,10 @@ class Nursery
     uintptr_t position_;
 
     
+
+
+
+
     unsigned currentStartChunk_;
     uintptr_t currentStartPosition_;
 
