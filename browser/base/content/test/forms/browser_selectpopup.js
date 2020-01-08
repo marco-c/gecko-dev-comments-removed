@@ -462,51 +462,64 @@ async function performLargePopupTests(win) {
   
   await openSelectPopup(selectPopup, "mousedown", "select", win);
 
-  let scrollPos = selectPopup.scrollBox.scrollTop;
+  let getScrollPos = () => selectPopup.scrollBox.scrollbox.scrollTop;
+  let scrollPos = getScrollPos();
   let popupRect = selectPopup.getBoundingClientRect();
 
   
   
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 5, popupRect.top - 10, { type: "mousemove" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position after mousemove over button should not change");
+  is(getScrollPos(), scrollPos, "scroll position after mousemove over button should not change");
 
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top + 10, { type: "mousemove" }, win);
 
   
+  let scrolledPromise = BrowserTestUtils.waitForEvent(selectPopup, "scroll", false,
+    () => getScrollPos() < scrollPos - 5);
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top - 20, { type: "mousemove" }, win);
-  ok(selectPopup.scrollBox.scrollTop < scrollPos - 5, "scroll position at drag up");
+  await scrolledPromise;
+  ok(true, "scroll position at drag up");
 
   
-  scrollPos = selectPopup.scrollBox.scrollTop;
+  scrollPos = getScrollPos();
+  scrolledPromise = BrowserTestUtils.waitForEvent(selectPopup, "scroll", false,
+    () => getScrollPos() > scrollPos + 5);
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
-  ok(selectPopup.scrollBox.scrollTop > scrollPos + 5, "scroll position at drag down");
+  await scrolledPromise;
+  ok(true, "scroll position at drag down");
 
   
-  scrollPos = selectPopup.scrollBox.scrollTop;
+  scrollPos = getScrollPos();
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 25, { type: "mouseup" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mouseup should not change");
+  is(getScrollPos(), scrollPos, "scroll position at mouseup should not change");
 
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mousemove after mouseup should not change");
+  is(getScrollPos(), scrollPos, "scroll position at mousemove after mouseup should not change");
 
   
   let menuRect = selectPopup.children[51].getBoundingClientRect();
   EventUtils.synthesizeMouseAtPoint(menuRect.left + 5, menuRect.top + 5, { type: "mousedown" }, win);
 
   
+  scrolledPromise = BrowserTestUtils.waitForEvent(selectPopup, "scroll", false,
+    () => getScrollPos() > scrollPos + 5);
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
-  ok(selectPopup.scrollBox.scrollTop > scrollPos + 5, "scroll position at drag down from option");
+  await scrolledPromise;
+  ok(true, "scroll position at drag down from option");
 
   
+  scrolledPromise = BrowserTestUtils.waitForEvent(selectPopup, "scroll", false,
+    () => getScrollPos() < scrollPos - 5);
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top - 20, { type: "mousemove" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at drag up from option");
+  await scrolledPromise;
+  ok(true, "scroll position at drag up from option");
 
-  scrollPos = selectPopup.scrollBox.scrollTop;
+  scrollPos = getScrollPos();
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 25, { type: "mouseup" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mouseup from option should not change");
+  is(getScrollPos(), scrollPos, "scroll position at mouseup from option should not change");
 
   EventUtils.synthesizeMouseAtPoint(popupRect.left + 20, popupRect.bottom + 20, { type: "mousemove" }, win);
-  is(selectPopup.scrollBox.scrollTop, scrollPos, "scroll position at mousemove after mouseup should not change");
+  is(getScrollPos(), scrollPos, "scroll position at mousemove after mouseup should not change");
 
   await hideSelectPopup(selectPopup, "escape", win);
 
