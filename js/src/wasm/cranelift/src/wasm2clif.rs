@@ -27,12 +27,11 @@ use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::isa::{CallConv, TargetFrontendConfig, TargetIsa};
 use cranelift_codegen::packed_option::PackedOption;
-use cranelift_codegen::settings::Flags;
 use cranelift_wasm::{
-    self, FuncIndex, GlobalIndex, MemoryIndex, ReturnMode, SignatureIndex, TableIndex, WasmResult,
+    FuncEnvironment, FuncIndex, GlobalIndex, GlobalVariable, MemoryIndex, ReturnMode,
+    SignatureIndex, TableIndex, WasmResult,
 };
 use std::collections::HashMap;
-use target_lexicon::Triple;
 
 
 fn native_pointer_type() -> ir::Type {
@@ -373,7 +372,7 @@ impl<'a, 'b, 'c> TransEnv<'a, 'b, 'c> {
     }
 }
 
-impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
+impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
     fn target_config(&self) -> TargetFrontendConfig {
         self.isa.frontend_config()
     }
@@ -382,11 +381,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
         native_pointer_type()
     }
 
-    fn make_global(
-        &mut self,
-        func: &mut ir::Function,
-        index: GlobalIndex,
-    ) -> cranelift_wasm::GlobalVariable {
+    fn make_global(&mut self, func: &mut ir::Function, index: GlobalIndex) -> GlobalVariable {
         let global = self.env.global(index);
         if global.is_constant() {
             
@@ -394,7 +389,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
             let mut pos = FuncCursor::new(func);
             pos.next_ebb().expect("empty function");
             pos.next_inst();
-            cranelift_wasm::GlobalVariable::Const(global.emit_constant(&mut pos))
+            GlobalVariable::Const(global.emit_constant(&mut pos))
         } else {
             
             let offset = global.tls_offset();
@@ -419,7 +414,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
 
             
             
-            cranelift_wasm::GlobalVariable::Memory {
+            GlobalVariable::Memory {
                 gv,
                 ty: global.value_type().into(),
             }
@@ -689,23 +684,22 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
     fn translate_memory_grow(
         &mut self,
         mut pos: FuncCursor,
-        index: MemoryIndex,
-        heap: ir::Heap,
+        _index: MemoryIndex,
+        _heap: ir::Heap,
         val: ir::Value,
     ) -> WasmResult<ir::Value> {
-        use cranelift_codegen::ir::types::I32;
         
         
         let (fnref, sigref) =
             self.symbolic_funcref(pos.func, bd::SymbolicAddress::GrowMemory, || {
                 let mut sig = ir::Signature::new(CallConv::Baldrdash);
                 sig.params.push(ir::AbiParam::new(native_pointer_type()));
-                sig.params.push(ir::AbiParam::new(I32).uext());
+                sig.params.push(ir::AbiParam::new(ir::types::I32).uext());
                 sig.params.push(ir::AbiParam::special(
                     native_pointer_type(),
                     ir::ArgumentPurpose::VMContext,
                 ));
-                sig.returns.push(ir::AbiParam::new(I32).uext());
+                sig.returns.push(ir::AbiParam::new(ir::types::I32).uext());
                 sig
             });
 
@@ -728,10 +722,9 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
     fn translate_memory_size(
         &mut self,
         mut pos: FuncCursor,
-        index: MemoryIndex,
-        heap: ir::Heap,
+        _index: MemoryIndex,
+        _heap: ir::Heap,
     ) -> WasmResult<ir::Value> {
-        use cranelift_codegen::ir::types::I32;
         
         let (fnref, sigref) =
             self.symbolic_funcref(pos.func, bd::SymbolicAddress::CurrentMemory, || {
@@ -741,7 +734,7 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
                     native_pointer_type(),
                     ir::ArgumentPurpose::VMContext,
                 ));
-                sig.returns.push(ir::AbiParam::new(I32).uext());
+                sig.returns.push(ir::AbiParam::new(ir::types::I32).uext());
                 sig
             });
 
@@ -793,21 +786,6 @@ impl TableInfo {
         });
 
         TableInfo { global }
-    }
-
-    
-    pub fn load_length(&self, pos: &mut FuncCursor, addr: ir::Value) -> ir::Value {
-        pos.ins().load(ir::types::I32, ir::MemFlags::new(), addr, 0)
-    }
-
-    
-    pub fn load_base(&self, pos: &mut FuncCursor, addr: ir::Value) -> ir::Value {
-        pos.ins().load(
-            native_pointer_type(),
-            ir::MemFlags::new(),
-            addr,
-            native_pointer_size(),
-        )
     }
 
     

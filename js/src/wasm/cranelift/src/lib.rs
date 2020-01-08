@@ -13,9 +13,6 @@
 
 
 
-#![allow(unused)]
-#![warn(unused_must_use)]
-
 extern crate cranelift_codegen;
 extern crate cranelift_wasm;
 #[macro_use]
