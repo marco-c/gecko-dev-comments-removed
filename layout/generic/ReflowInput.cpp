@@ -2247,14 +2247,12 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
 
     
     
-    LayoutFrameType fType;
     if (NS_AUTOHEIGHT == cbSize.BSize(wm)) {
       
       
       
       if (cbri->mParentReflowInput) {
-        fType = cbri->mFrame->Type();
-        if (IS_TABLE_CELL(fType)) {
+        if (IS_TABLE_CELL(cbri->mFrame->Type())) {
           
           cbSize.BSize(wm) = cbri->ComputedSize(wm).BSize(wm);
         }
@@ -2291,7 +2289,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
           
           if (!wm.IsVertical() &&
               eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
-            if (!IS_TABLE_CELL(fType)) {
+            if (!IS_TABLE_CELL(cbri->mFrame->Type())) {
               cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
               if (cbSize.BSize(wm) == NS_AUTOHEIGHT) {
                 blockSizeUnit = eStyleUnit_Auto;
