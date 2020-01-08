@@ -29,6 +29,10 @@ enum ChaosFeature {
   HashTableIteration = 0x10,
   
   ImageCache = 0x20,
+  
+  TaskDispatching = 0x40,
+  
+  TaskRunning = 0x80,
   Any = 0xffffffff,
 };
 

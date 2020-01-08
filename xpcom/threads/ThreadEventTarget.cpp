@@ -15,6 +15,7 @@
 #include "nsThreadSyncDispatch.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOMPrivate.h" 
+#include "ThreadDelay.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -174,6 +175,8 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlag
   if (!mSink->PutEvent(event.take(), EventPriority::Normal)) {
     return NS_ERROR_UNEXPECTED;
   }
+  
+  DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
   return NS_OK;
 }
 
