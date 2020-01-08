@@ -186,7 +186,7 @@ typedef bool (*PrepDrawTargetForPaintingCallback)(CapturedPaintState* aPaintStat
 
 
 class CapturedTiledPaintState {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CapturedTiledPaintState)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CapturedPaintState)
 public:
   struct Copy {
     Copy(RefPtr<gfx::DrawTarget> aSource,
