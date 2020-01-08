@@ -678,6 +678,9 @@ pub fn is_utf16_latin1(buffer: &[u16]) -> bool {
 
 
 
+
+
+
 #[inline]
 pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
     
@@ -797,9 +800,9 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             {
                                 return true;
                             }
-                            if in_inclusive_range8(second, 0xAD, 0xB7) {
-                                if second == 0xAD {
-                                    if third > 0x8F {
+                            if in_inclusive_range8(second, 0xAC, 0xB7) {
+                                if second == 0xAC {
+                                    if third > 0x9C {
                                         return true;
                                     }
                                 } else {
@@ -808,6 +811,10 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             } else if in_inclusive_range8(second, 0xB9, 0xBB) {
                                 if second == 0xB9 {
                                     if third > 0xAF {
+                                        return true;
+                                    }
+                                } else if second == 0xBB {
+                                    if third != 0xBF {
                                         return true;
                                     }
                                 } else {
@@ -1013,9 +1020,9 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                     {
                         return true;
                     }
-                    if in_inclusive_range8(second, 0xAD, 0xB7) {
-                        if second == 0xAD {
-                            if third > 0x8F {
+                    if in_inclusive_range8(second, 0xAC, 0xB7) {
+                        if second == 0xAC {
+                            if third > 0x9C {
                                 return true;
                             }
                         } else {
@@ -1024,6 +1031,10 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                     } else if in_inclusive_range8(second, 0xB9, 0xBB) {
                         if second == 0xB9 {
                             if third > 0xAF {
+                                return true;
+                            }
+                        } else if second == 0xBB {
+                            if third != 0xBF {
                                 return true;
                             }
                         } else {
@@ -1078,6 +1089,9 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
         }
     }
 }
+
+
+
 
 
 
@@ -1178,10 +1192,10 @@ pub fn is_str_bidi(buffer: &str) -> bool {
                             }
                         } else {
                             debug_assert_eq!(byte, 0xEF);
-                            if in_inclusive_range8(second, 0xAD, 0xB7) {
-                                if second == 0xAD {
+                            if in_inclusive_range8(second, 0xAC, 0xB7) {
+                                if second == 0xAC {
                                     let third = bytes[read + 2];
-                                    if third > 0x8F {
+                                    if third > 0x9C {
                                         return true;
                                     }
                                 } else {
@@ -1191,6 +1205,11 @@ pub fn is_str_bidi(buffer: &str) -> bool {
                                 if second == 0xB9 {
                                     let third = bytes[read + 2];
                                     if third > 0xAF {
+                                        return true;
+                                    }
+                                } else if second == 0xBB {
+                                    let third = bytes[read + 2];
+                                    if third != 0xBF {
                                         return true;
                                     }
                                 } else {
@@ -1240,10 +1259,16 @@ pub fn is_str_bidi(buffer: &str) -> bool {
 
 
 
+
+
+
 #[inline]
 pub fn is_utf16_bidi(buffer: &[u16]) -> bool {
     is_utf16_bidi_impl(buffer)
 }
+
+
+
 
 
 
@@ -1273,12 +1298,13 @@ pub fn is_char_bidi(c: char) -> bool {
     
     
     
+    
     let code_point = c as u32;
     if code_point < 0x0590 {
         
         return false;
     }
-    if in_range32(code_point, 0x0900, 0xFB50) {
+    if in_range32(code_point, 0x0900, 0xFB1D) {
         
         if in_inclusive_range32(code_point, 0x200F, 0x2067) {
             
@@ -1297,7 +1323,7 @@ pub fn is_char_bidi(c: char) -> bool {
         
         return false;
     }
-    if in_range32(code_point, 0xFF00, 0x10800) {
+    if in_range32(code_point, 0xFEFF, 0x10800) {
         
         
         return false;
@@ -1308,6 +1334,9 @@ pub fn is_char_bidi(c: char) -> bool {
     }
     true
 }
+
+
+
 
 
 
@@ -1338,7 +1367,7 @@ pub fn is_utf16_code_unit_bidi(u: u16) -> bool {
         }
         return false;
     }
-    if in_range16(u, 0xD83C, 0xFB50) {
+    if in_range16(u, 0xD83C, 0xFB1D) {
         
         
         return false;
@@ -1347,7 +1376,7 @@ pub fn is_utf16_code_unit_bidi(u: u16) -> bool {
         
         return false;
     }
-    if u > 0xFEFF {
+    if u > 0xFEFE {
         
         return false;
     }
@@ -2370,13 +2399,14 @@ mod tests {
         assert!(!is_char_bidi('\u{1F4A9}'));
         assert!(!is_char_bidi('\u{FE00}'));
         assert!(!is_char_bidi('\u{202C}'));
+        assert!(!is_char_bidi('\u{FEFF}'));
         assert!(is_char_bidi('\u{0590}'));
         assert!(is_char_bidi('\u{08FF}'));
         assert!(is_char_bidi('\u{061C}'));
         assert!(is_char_bidi('\u{FB50}'));
         assert!(is_char_bidi('\u{FDFF}'));
         assert!(is_char_bidi('\u{FE70}'));
-        assert!(is_char_bidi('\u{FEFF}'));
+        assert!(is_char_bidi('\u{FEFE}'));
         assert!(is_char_bidi('\u{200F}'));
         assert!(is_char_bidi('\u{202B}'));
         assert!(is_char_bidi('\u{202E}'));
@@ -2395,13 +2425,15 @@ mod tests {
         assert!(!is_utf16_code_unit_bidi(0xD801));
         assert!(!is_utf16_code_unit_bidi(0xFE00));
         assert!(!is_utf16_code_unit_bidi(0x202C));
+        assert!(!is_utf16_code_unit_bidi(0xFEFF));
         assert!(is_utf16_code_unit_bidi(0x0590));
         assert!(is_utf16_code_unit_bidi(0x08FF));
         assert!(is_utf16_code_unit_bidi(0x061C));
+        assert!(is_utf16_code_unit_bidi(0xFB1D));
         assert!(is_utf16_code_unit_bidi(0xFB50));
         assert!(is_utf16_code_unit_bidi(0xFDFF));
         assert!(is_utf16_code_unit_bidi(0xFE70));
-        assert!(is_utf16_code_unit_bidi(0xFEFF));
+        assert!(is_utf16_code_unit_bidi(0xFEFE));
         assert!(is_utf16_code_unit_bidi(0x200F));
         assert!(is_utf16_code_unit_bidi(0x202B));
         assert!(is_utf16_code_unit_bidi(0x202E));
@@ -2420,13 +2452,14 @@ mod tests {
         assert!(!is_str_bidi("abcdefghijklmnop\u{1F4A9}abcdefghijklmnop"));
         assert!(!is_str_bidi("abcdefghijklmnop\u{FE00}abcdefghijklmnop"));
         assert!(!is_str_bidi("abcdefghijklmnop\u{202C}abcdefghijklmnop"));
+        assert!(!is_str_bidi("abcdefghijklmnop\u{FEFF}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{0590}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{08FF}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{061C}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{FB50}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{FDFF}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{FE70}abcdefghijklmnop"));
-        assert!(is_str_bidi("abcdefghijklmnop\u{FEFF}abcdefghijklmnop"));
+        assert!(is_str_bidi("abcdefghijklmnop\u{FEFE}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{200F}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{202B}abcdefghijklmnop"));
         assert!(is_str_bidi("abcdefghijklmnop\u{202E}abcdefghijklmnop"));
@@ -2457,6 +2490,9 @@ mod tests {
         assert!(!is_utf8_bidi(
             "abcdefghijklmnop\u{202C}abcdefghijklmnop".as_bytes()
         ));
+        assert!(!is_utf8_bidi(
+            "abcdefghijklmnop\u{FEFF}abcdefghijklmnop".as_bytes()
+        ));
         assert!(is_utf8_bidi(
             "abcdefghijklmnop\u{0590}abcdefghijklmnop".as_bytes()
         ));
@@ -2476,7 +2512,7 @@ mod tests {
             "abcdefghijklmnop\u{FE70}abcdefghijklmnop".as_bytes()
         ));
         assert!(is_utf8_bidi(
-            "abcdefghijklmnop\u{FEFF}abcdefghijklmnop".as_bytes()
+            "abcdefghijklmnop\u{FEFE}abcdefghijklmnop".as_bytes()
         ));
         assert!(is_utf8_bidi(
             "abcdefghijklmnop\u{200F}abcdefghijklmnop".as_bytes()
@@ -2530,6 +2566,10 @@ mod tests {
             0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x202C, 0x62, 0x63, 0x64, 0x65, 0x66,
             0x67, 0x68, 0x69,
         ]));
+        assert!(!is_utf16_bidi(&[
+            0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFEFF, 0x62, 0x63, 0x64, 0x65, 0x66,
+            0x67, 0x68, 0x69,
+        ]));
         assert!(is_utf16_bidi(&[
             0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x0590, 0x62, 0x63, 0x64, 0x65, 0x66,
             0x67, 0x68, 0x69,
@@ -2540,6 +2580,10 @@ mod tests {
         ]));
         assert!(is_utf16_bidi(&[
             0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x061C, 0x62, 0x63, 0x64, 0x65, 0x66,
+            0x67, 0x68, 0x69,
+        ]));
+        assert!(is_utf16_bidi(&[
+            0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFB1D, 0x62, 0x63, 0x64, 0x65, 0x66,
             0x67, 0x68, 0x69,
         ]));
         assert!(is_utf16_bidi(&[
@@ -2555,7 +2599,7 @@ mod tests {
             0x67, 0x68, 0x69,
         ]));
         assert!(is_utf16_bidi(&[
-            0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFEFF, 0x62, 0x63, 0x64, 0x65, 0x66,
+            0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFEFE, 0x62, 0x63, 0x64, 0x65, 0x66,
             0x67, 0x68, 0x69,
         ]));
         assert!(is_utf16_bidi(&[
@@ -2623,6 +2667,10 @@ mod tests {
             check_str_for_latin1_and_bidi("abcdefghijklmnop\u{202C}abcdefghijklmnop"),
             Latin1Bidi::Bidi
         );
+        assert_ne!(
+            check_str_for_latin1_and_bidi("abcdefghijklmnop\u{FEFF}abcdefghijklmnop"),
+            Latin1Bidi::Bidi
+        );
         assert_eq!(
             check_str_for_latin1_and_bidi("abcdefghijklmnop\u{0590}abcdefghijklmnop"),
             Latin1Bidi::Bidi
@@ -2648,7 +2696,7 @@ mod tests {
             Latin1Bidi::Bidi
         );
         assert_eq!(
-            check_str_for_latin1_and_bidi("abcdefghijklmnop\u{FEFF}abcdefghijklmnop"),
+            check_str_for_latin1_and_bidi("abcdefghijklmnop\u{FEFE}abcdefghijklmnop"),
             Latin1Bidi::Bidi
         );
         assert_eq!(
@@ -2711,6 +2759,10 @@ mod tests {
             check_utf8_for_latin1_and_bidi("abcdefghijklmnop\u{202C}abcdefghijklmnop".as_bytes()),
             Latin1Bidi::Bidi
         );
+        assert_ne!(
+            check_utf8_for_latin1_and_bidi("abcdefghijklmnop\u{FEFF}abcdefghijklmnop".as_bytes()),
+            Latin1Bidi::Bidi
+        );
         assert_eq!(
             check_utf8_for_latin1_and_bidi("abcdefghijklmnop\u{0590}abcdefghijklmnop".as_bytes()),
             Latin1Bidi::Bidi
@@ -2736,7 +2788,7 @@ mod tests {
             Latin1Bidi::Bidi
         );
         assert_eq!(
-            check_utf8_for_latin1_and_bidi("abcdefghijklmnop\u{FEFF}abcdefghijklmnop".as_bytes()),
+            check_utf8_for_latin1_and_bidi("abcdefghijklmnop\u{FEFE}abcdefghijklmnop".as_bytes()),
             Latin1Bidi::Bidi
         );
         assert_eq!(
@@ -2817,6 +2869,13 @@ mod tests {
             ]),
             Latin1Bidi::Bidi
         );
+        assert_ne!(
+            check_utf16_for_latin1_and_bidi(&[
+                0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFEFF, 0x62, 0x63, 0x64, 0x65,
+                0x66, 0x67, 0x68, 0x69,
+            ]),
+            Latin1Bidi::Bidi
+        );
         assert_eq!(
             check_utf16_for_latin1_and_bidi(&[
                 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x0590, 0x62, 0x63, 0x64, 0x65,
@@ -2834,6 +2893,13 @@ mod tests {
         assert_eq!(
             check_utf16_for_latin1_and_bidi(&[
                 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x061C, 0x62, 0x63, 0x64, 0x65,
+                0x66, 0x67, 0x68, 0x69,
+            ]),
+            Latin1Bidi::Bidi
+        );
+        assert_eq!(
+            check_utf16_for_latin1_and_bidi(&[
+                0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFB1D, 0x62, 0x63, 0x64, 0x65,
                 0x66, 0x67, 0x68, 0x69,
             ]),
             Latin1Bidi::Bidi
@@ -2861,7 +2927,7 @@ mod tests {
         );
         assert_eq!(
             check_utf16_for_latin1_and_bidi(&[
-                0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFEFF, 0x62, 0x63, 0x64, 0x65,
+                0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xFEFE, 0x62, 0x63, 0x64, 0x65,
                 0x66, 0x67, 0x68, 0x69,
             ]),
             Latin1Bidi::Bidi
@@ -2936,8 +3002,8 @@ mod tests {
     pub fn reference_is_char_bidi(c: char) -> bool {
         match c {
             '\u{0590}'...'\u{08FF}'
-            | '\u{FB50}'...'\u{FDFF}'
-            | '\u{FE70}'...'\u{FEFF}'
+            | '\u{FB1D}'...'\u{FDFF}'
+            | '\u{FE70}'...'\u{FEFE}'
             | '\u{10800}'...'\u{10FFF}'
             | '\u{1E800}'...'\u{1EFFF}'
             | '\u{200F}'
@@ -2952,8 +3018,8 @@ mod tests {
     pub fn reference_is_utf16_code_unit_bidi(u: u16) -> bool {
         match u {
             0x0590...0x08FF
-            | 0xFB50...0xFDFF
-            | 0xFE70...0xFEFF
+            | 0xFB1D...0xFDFF
+            | 0xFE70...0xFEFE
             | 0xD802
             | 0xD803
             | 0xD83A
@@ -3046,6 +3112,19 @@ mod tests {
                 }
             }
             assert_eq!(is_utf8_bidi(&buf[..]), expect);
+        }
+    }
+
+    #[test]
+    fn test_is_utf16_bidi_thoroughly() {
+        let mut buf = [0; 32];
+        for i in 0..0x10000u32 {
+            let u = i as u16;
+            buf[15] = u;
+            assert_eq!(
+                is_utf16_bidi(&buf[..]),
+                reference_is_utf16_code_unit_bidi(u)
+            );
         }
     }
 
