@@ -21,7 +21,8 @@ ChromeUtils.defineModuleGetter(this, "AsyncShutdown",
   "resource://gre/modules/AsyncShutdown.jsm");
 ChromeUtils.defineModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
-
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 const ACTION_ID_BOOKMARK = "bookmark";
 const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
@@ -524,6 +525,8 @@ var PageActions = {
 
 
 
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -550,6 +553,7 @@ function Action(options) {
     urlbarIDOverride: false,
     wantsIframe: false,
     wantsSubview: false,
+    disablePrivateBrowsing: false,
 
     
 
@@ -616,6 +620,25 @@ Action.prototype = {
 
   get id() {
     return this._id;
+  },
+
+  get disablePrivateBrowsing() {
+    return !!this._disablePrivateBrowsing;
+  },
+
+  
+
+
+
+  canShowInWindow(browserWindow) {
+    if (this._extensionID) {
+      let policy = WebExtensionPolicy.getByID(this._extensionID);
+      if (!policy.canAccessWindow(browserWindow)) {
+        return false;
+      }
+    }
+    return !(this.disablePrivateBrowsing &&
+             PrivateBrowsingUtils.isWindowPrivate(browserWindow));
   },
 
   
@@ -1021,7 +1044,8 @@ Action.prototype = {
 
 
   shouldShowInPanel(browserWindow) {
-    return !this.__transient || !this.getDisabled(browserWindow);
+    return (!this.__transient || !this.getDisabled(browserWindow)) &&
+            this.canShowInWindow(browserWindow);
   },
 
   
@@ -1033,7 +1057,8 @@ Action.prototype = {
 
 
   shouldShowInUrlbar(browserWindow) {
-    return this.pinnedToUrlbar && !this.getDisabled(browserWindow);
+    return (this.pinnedToUrlbar && !this.getDisabled(browserWindow)) &&
+            this.canShowInWindow(browserWindow);
   },
 
   get _isBuiltIn() {
