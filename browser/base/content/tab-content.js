@@ -52,6 +52,14 @@ addMessageListener("Browser:HideSessionRestoreButton", function(message) {
   }
 });
 
+if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
+  addMessageListener("Browser:HasSiblings", function(message) {
+    let tabChild = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                           .getInterface(Ci.nsITabChild);
+    let hasSiblings = message.data;
+    tabChild.hasSiblings = hasSiblings;
+  });
+}
 
 
 addMessageListener("Browser:Reload", function(message) {

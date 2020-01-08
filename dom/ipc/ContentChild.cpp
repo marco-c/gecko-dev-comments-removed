@@ -988,6 +988,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     CompositorOptions compositorOptions = info.compositorOptions();
     uint32_t maxTouchPoints = info.maxTouchPoints();
     DimensionInfo dimensionInfo = info.dimensions();
+    bool hasSiblings = info.hasSiblings();
 
     
     ready = true;
@@ -1030,6 +1031,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     }
 
     newChild->SetMaxTouchPoints(maxTouchPoints);
+    newChild->SetHasSiblings(hasSiblings);
 
     
     

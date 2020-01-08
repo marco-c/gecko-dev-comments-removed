@@ -1666,6 +1666,10 @@ window._gBrowser = {
       this.getCachedFindBar(tab).browser = aBrowser;
     }
 
+    tab.linkedBrowser
+       .messageManager
+       .sendAsyncMessage("Browser:HasSiblings", this.tabs.length > 1);
+
     evt = document.createEvent("Events");
     evt.initEvent("TabRemotenessChange", true, false);
     tab.dispatchEvent(evt);
@@ -2041,6 +2045,17 @@ window._gBrowser = {
     
     if (remoteType == E10SUtils.NOT_REMOTE) {
       this._outerWindowIDBrowserMap.set(browser.outerWindowID, browser);
+    }
+
+    
+    
+    if (this.tabs.length == 2) {
+      window.messageManager
+            .broadcastAsyncMessage("Browser:HasSiblings", true);
+    } else {
+      aTab.linkedBrowser
+          .messageManager
+          .sendAsyncMessage("Browser:HasSiblings", this.tabs.length > 1);
     }
 
     var evt = new CustomEvent("TabBrowserInserted", { bubbles: true, detail: { insertedOnTabCreation: aInsertedOnTabCreation } });
@@ -2814,6 +2829,13 @@ window._gBrowser = {
     var evt = new CustomEvent("TabClose", { bubbles: true, detail: { adoptedBy: aAdoptedByTab } });
     aTab.dispatchEvent(evt);
     Services.telemetry.recordEvent("savant", "tab", "close", null, { subcategory: "frame" });
+
+    if (this.tabs.length == 2) {
+      
+      
+      window.messageManager
+            .broadcastAsyncMessage("Browser:HasSiblings", false);
+    }
 
     if (aTab.linkedPanel) {
       if (!aAdoptedByTab && !gMultiProcessBrowser) {
