@@ -120,6 +120,7 @@ class AntiTrackingCommon final {
     eStorageChecks,
     eTrackingProtection,
     eTrackingAnnotations,
+    eFingerprinting,
   };
 
   

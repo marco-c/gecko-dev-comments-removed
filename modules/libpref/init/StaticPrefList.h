@@ -1785,6 +1785,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "privacy.trackingprotection.fingerprinting.enabled",
+   privacy_trackingprotection_fingerprinting_enabled,
+  bool, true
+)
+
+
 
 
 
