@@ -507,6 +507,10 @@ class JitRealm
 
     mozilla::EnumeratedArray<StubIndex, StubIndex::Count, ReadBarrieredJitCode> stubs_;
 
+    
+
+    mozilla::EnumeratedArray<SimdType, SimdType::Count, ReadBarrieredObject> simdTemplateObjects_;
+
     JitCode* generateStringConcatStub(JSContext* cx);
     JitCode* generateRegExpMatcherStub(JSContext* cx);
     JitCode* generateRegExpSearcherStub(JSContext* cx);
@@ -519,6 +523,23 @@ class JitRealm
     }
 
   public:
+    JSObject* getSimdTemplateObjectFor(JSContext* cx, Handle<SimdTypeDescr*> descr) {
+        ReadBarrieredObject& tpl = simdTemplateObjects_[descr->type()];
+        if (!tpl)
+            tpl.set(TypedObject::createZeroed(cx, descr, gc::TenuredHeap));
+        return tpl.get();
+    }
+
+    JSObject* maybeGetSimdTemplateObjectFor(SimdType type) const {
+        
+        
+        
+        
+
+        MOZ_ASSERT(CurrentThreadIsIonCompiling());
+        return simdTemplateObjects_[type].unbarrieredGet();
+    }
+
     JitCode* getStubCode(uint32_t key) {
         ICStubCodeMap::Ptr p = stubCodes_->lookup(key);
         if (p)
@@ -605,7 +626,9 @@ class JitRealm
     
     
     
+    
     void performStubReadBarriers(uint32_t stubsToBarrier) const;
+    void performSIMDTemplateReadBarriers(uint32_t simdTemplatesToBarrier) const;
 
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 

@@ -1112,6 +1112,29 @@ MacroAssembler::spectreZeroRegister(Condition cond, Register scratch, Register d
 
 
 void
+MacroAssembler::canonicalizeFloat32x4(FloatRegister reg, FloatRegister scratch)
+{
+    ScratchSimd128Scope scratch2(*this);
+
+    MOZ_ASSERT(scratch.asSimd128() != scratch2.asSimd128());
+    MOZ_ASSERT(reg.asSimd128() != scratch2.asSimd128());
+    MOZ_ASSERT(reg.asSimd128() != scratch.asSimd128());
+
+    FloatRegister mask = scratch;
+    vcmpordps(Operand(reg), reg, mask);
+
+    FloatRegister ifFalse = scratch2;
+    float nanf = float(JS::GenericNaN());
+    loadConstantSimd128Float(SimdConstant::SplatX4(nanf), ifFalse);
+
+    bitwiseAndSimd128(Operand(mask), reg);
+    bitwiseAndNotSimd128(Operand(ifFalse), mask);
+    bitwiseOrSimd128(Operand(mask), reg);
+}
+
+
+
+void
 MacroAssembler::storeUncanonicalizedDouble(FloatRegister src, const Address& dest)
 {
     vmovsd(src, dest);

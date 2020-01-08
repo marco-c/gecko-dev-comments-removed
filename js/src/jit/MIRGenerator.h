@@ -158,6 +158,10 @@ class MIRGenerator
         return needsOverrecursedCheck_;
     }
 
+    
+    
+    bool usesSimd();
+
     bool modifiesFrameArguments() const {
         return modifiesFrameArguments_;
     }
@@ -187,6 +191,8 @@ class MIRGenerator
     uint32_t wasmMaxStackArgBytes_;
     bool needsOverrecursedCheck_;
     bool needsStaticStackAlignment_;
+    bool usesSimd_;
+    bool cachedUsesSimd_;
 
     
     

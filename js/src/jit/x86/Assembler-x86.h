@@ -143,7 +143,7 @@ static_assert(JitStackAlignment % sizeof(Value) == 0 && JitStackValueAlignment >
 
 
 
-static constexpr bool SupportsSimd = false;
+static constexpr bool SupportsSimd = true;
 static constexpr uint32_t SimdMemoryAlignment = 16;
 
 static_assert(CodeAlignment % SimdMemoryAlignment == 0,

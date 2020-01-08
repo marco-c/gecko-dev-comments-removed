@@ -374,6 +374,9 @@ IsCompatibleLIRCoercion(MIRType to, MIRType from)
         (from == MIRType::Int32 || from == MIRType::Boolean)) {
         return true;
     }
+    
+    if (IsSimdType(to) && IsSimdType(from))
+        return true;
     return false;
 }
 

@@ -169,6 +169,7 @@ class TypedObjectPrediction {
 
     Scalar::Type scalarType() const;
     ReferenceType referenceType() const;
+    SimdType simdType() const;
 
     
     

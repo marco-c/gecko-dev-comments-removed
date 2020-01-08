@@ -87,6 +87,9 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(disableEaa, false);
 
     
+    SET_DEFAULT(disableEagerSimdUnbox, false);
+
+    
     SET_DEFAULT(disableEdgeCaseAnalysis, false);
 
     
