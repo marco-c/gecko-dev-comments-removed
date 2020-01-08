@@ -432,12 +432,6 @@ private:
   {
     
     
-#if defined(_M_ARM64)
-    
-    
-    return false;
-#endif
-
     if (!mModule) {
       return false;
     }
@@ -453,6 +447,12 @@ private:
   bool AddDetour(FARPROC aProc, intptr_t aHookDest, void** aOrigFunc)
   {
     MOZ_ASSERT(mModule && aProc);
+
+#if defined(_M_ARM64)
+    
+    
+    return false;
+#endif
 
     if (!mDetourPatcher.Initialized()) {
       mDetourPatcher.Init(mNHooks);

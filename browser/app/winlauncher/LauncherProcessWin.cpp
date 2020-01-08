@@ -40,7 +40,8 @@ PostCreationSetup(HANDLE aChildProcess, HANDLE aChildMainThread,
 {
   
   
-#if defined(MOZ_ASAN)
+  
+#if defined(MOZ_ASAN) || defined(_M_ARM64)
   return true;
 #else
   return mozilla::InitializeDllBlocklistOOP(aChildProcess);
