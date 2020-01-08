@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, BorderStyle, DeviceIntPoint, DeviceIntRect, DeviceIntSize, DevicePixelScale};
-use api::{DeviceUintPoint, DeviceUintRect, DeviceUintSize, DocumentLayer, FilterOp, ImageFormat};
+use api::{DocumentLayer, FilterOp, ImageFormat};
 use api::{MixBlendMode, PipelineId, DeviceRect, LayoutSize};
 use batch::{AlphaBatchBuilder, AlphaBatchContainer, ClipBatcher, resolve_image};
 use clip::ClipStore;
@@ -36,7 +36,7 @@ const STYLE_MASK: i32 = 0x00FF_FF00;
 
 
 
-const IDEAL_MAX_TEXTURE_DIMENSION: u32 = 2048;
+const IDEAL_MAX_TEXTURE_DIMENSION: i32 = 2048;
 
 
 #[derive(Debug, Copy, Clone)]
@@ -70,14 +70,14 @@ struct TextureAllocator {
 }
 
 impl TextureAllocator {
-    fn new(size: DeviceUintSize) -> Self {
+    fn new(size: DeviceIntSize) -> Self {
         TextureAllocator {
             allocator: GuillotineAllocator::new(size),
             used_rect: DeviceIntRect::zero(),
         }
     }
 
-    fn allocate(&mut self, size: &DeviceUintSize) -> Option<DeviceUintPoint> {
+    fn allocate(&mut self, size: &DeviceIntSize) -> Option<DeviceIntPoint> {
         let origin = self.allocator.allocate(size);
 
         if let Some(origin) = origin {
@@ -110,7 +110,7 @@ impl TextureAllocator {
 pub trait RenderTarget {
     
     fn new(
-        size: Option<DeviceUintSize>,
+        size: Option<DeviceIntSize>,
         screen_size: DeviceIntSize,
     ) -> Self;
 
@@ -119,7 +119,7 @@ pub trait RenderTarget {
     
     
     
-    fn allocate(&mut self, size: DeviceUintSize) -> Option<DeviceUintPoint>;
+    fn allocate(&mut self, size: DeviceIntSize) -> Option<DeviceIntPoint>;
 
     
     
@@ -204,7 +204,7 @@ pub struct RenderTargetList<T> {
     
     
     
-    pub max_dynamic_size: DeviceUintSize,
+    pub max_dynamic_size: DeviceIntSize,
     pub targets: Vec<T>,
     pub saved_index: Option<SavedTargetIndex>,
 }
@@ -217,7 +217,7 @@ impl<T: RenderTarget> RenderTargetList<T> {
         RenderTargetList {
             screen_size,
             format,
-            max_dynamic_size: DeviceUintSize::new(0, 0),
+            max_dynamic_size: DeviceIntSize::new(0, 0),
             targets: Vec::new(),
             saved_index: None,
         }
@@ -273,8 +273,8 @@ impl<T: RenderTarget> RenderTargetList<T> {
 
     fn allocate(
         &mut self,
-        alloc_size: DeviceUintSize,
-    ) -> (DeviceUintPoint, RenderTargetIndex) {
+        alloc_size: DeviceIntSize,
+    ) -> (DeviceIntPoint, RenderTargetIndex) {
         let existing_origin = self.targets
             .last_mut()
             .and_then(|target| target.allocate(alloc_size));
@@ -285,7 +285,7 @@ impl<T: RenderTarget> RenderTargetList<T> {
                 
                 
                 
-                let allocator_dimensions = DeviceUintSize::new(
+                let allocator_dimensions = DeviceIntSize::new(
                     cmp::max(IDEAL_MAX_TEXTURE_DIMENSION, self.max_dynamic_size.width),
                     cmp::max(IDEAL_MAX_TEXTURE_DIMENSION, self.max_dynamic_size.height),
                 );
@@ -392,7 +392,7 @@ pub struct ColorRenderTarget {
 }
 
 impl RenderTarget for ColorRenderTarget {
-    fn allocate(&mut self, size: DeviceUintSize) -> Option<DeviceUintPoint> {
+    fn allocate(&mut self, size: DeviceIntSize) -> Option<DeviceIntPoint> {
         self.allocator
             .as_mut()
             .expect("bug: calling allocate on framebuffer")
@@ -400,7 +400,7 @@ impl RenderTarget for ColorRenderTarget {
     }
 
     fn new(
-        size: Option<DeviceUintSize>,
+        size: Option<DeviceIntSize>,
         screen_size: DeviceIntSize,
     ) -> Self {
         ColorRenderTarget {
@@ -544,9 +544,6 @@ impl RenderTarget for ColorRenderTarget {
 
                         
                         
-                        
-                        
-                        
                         let source_rect = key.texel_rect.map_or(cache_item.uv_rect.to_i32(), |sub_rect| {
                             DeviceIntRect::new(
                                 DeviceIntPoint::new(
@@ -608,12 +605,12 @@ pub struct AlphaRenderTarget {
 }
 
 impl RenderTarget for AlphaRenderTarget {
-    fn allocate(&mut self, size: DeviceUintSize) -> Option<DeviceUintPoint> {
+    fn allocate(&mut self, size: DeviceIntSize) -> Option<DeviceIntPoint> {
         self.allocator.allocate(&size)
     }
 
     fn new(
-        size: Option<DeviceUintSize>,
+        size: Option<DeviceIntSize>,
         _: DeviceIntSize,
     ) -> Self {
         AlphaRenderTarget {
@@ -908,8 +905,8 @@ impl RenderPass {
                     RenderTargetKind::Color => &mut color.max_dynamic_size,
                     RenderTargetKind::Alpha => &mut alpha.max_dynamic_size,
                 };
-                max_size.width = cmp::max(max_size.width, size.width as u32);
-                max_size.height = cmp::max(max_size.height, size.height as u32);
+                max_size.width = cmp::max(max_size.width, size.width);
+                max_size.height = cmp::max(max_size.height, size.height);
             }
         }
 
@@ -992,12 +989,11 @@ impl RenderPass {
                                 None
                             }
                             RenderTaskLocation::Dynamic(ref mut origin, size) => {
-                                let alloc_size = DeviceUintSize::new(size.width as u32, size.height as u32);
                                 let (alloc_origin, target_index) =  match target_kind {
-                                    RenderTargetKind::Color => color.allocate(alloc_size),
-                                    RenderTargetKind::Alpha => alpha.allocate(alloc_size),
+                                    RenderTargetKind::Color => color.allocate(size),
+                                    RenderTargetKind::Alpha => alpha.allocate(size),
                                 };
-                                *origin = Some((alloc_origin.to_i32(), target_index));
+                                *origin = Some((alloc_origin, target_index));
                                 None
                             }
                         };
@@ -1105,8 +1101,8 @@ impl CompositeOps {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Frame {
     
-    pub window_size: DeviceUintSize,
-    pub inner_rect: DeviceUintRect,
+    pub window_size: DeviceIntSize,
+    pub inner_rect: DeviceIntRect,
     pub background_color: Option<ColorF>,
     pub layer: DocumentLayer,
     pub device_pixel_ratio: f32,

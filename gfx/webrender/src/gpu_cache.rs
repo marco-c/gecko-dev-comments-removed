@@ -35,9 +35,9 @@ use std::ops::Add;
 use std::os::raw::c_void;
 
 
-pub const GPU_CACHE_INITIAL_HEIGHT: u32 = 512;
+pub const GPU_CACHE_INITIAL_HEIGHT: i32 = 512;
 const FRAMES_BEFORE_EVICTION: usize = 10;
-const NEW_ROWS_PER_RESIZE: u32 = 512;
+const NEW_ROWS_PER_RESIZE: i32 = 512;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -247,7 +247,7 @@ pub struct GpuCacheUpdateList {
     pub frame_id: FrameId,
     
     
-    pub height: u32,
+    pub height: i32,
     
     pub updates: Vec<GpuCacheUpdate>,
     
@@ -316,7 +316,7 @@ impl FreeBlockLists {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Texture {
     
-    height: u32,
+    height: i32,
     
     blocks: Vec<Block>,
     
@@ -379,7 +379,7 @@ impl Texture {
 
         
         if free_list.is_none() {
-            if self.rows.len() as u32 == self.height {
+            if self.rows.len() as i32 == self.height {
                 self.height += NEW_ROWS_PER_RESIZE;
             }
 

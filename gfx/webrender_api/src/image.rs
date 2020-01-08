@@ -8,7 +8,7 @@ extern crate serde_bytes;
 
 use font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
 use std::sync::Arc;
-use {DevicePoint, DeviceUintPoint, DeviceUintRect, DeviceUintSize};
+use {DevicePoint, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
 use {IdNamespace, TileOffset, TileSize};
 use euclid::size2;
 
@@ -105,7 +105,7 @@ pub enum ImageFormat {
 
 impl ImageFormat {
     
-    pub fn bytes_per_pixel(self) -> u32 {
+    pub fn bytes_per_pixel(self) -> i32 {
         match self {
             ImageFormat::R8 => 1,
             ImageFormat::R16 => 2,
@@ -159,18 +159,18 @@ pub struct ImageDescriptor {
     
     pub format: ImageFormat,
     
-    pub size: DeviceUintSize,
+    pub size: DeviceIntSize,
     
     
     
     
-    pub stride: Option<u32>,
+    pub stride: Option<i32>,
     
     
     
     
     
-    pub offset: u32,
+    pub offset: i32,
     
     
     pub is_opaque: bool,
@@ -185,8 +185,8 @@ pub struct ImageDescriptor {
 impl ImageDescriptor {
     
     pub fn new(
-        width: u32,
-        height: u32,
+        width: i32,
+        height: i32,
         format: ImageFormat,
         is_opaque: bool,
         allow_mipmaps: bool,
@@ -203,19 +203,19 @@ impl ImageDescriptor {
 
     
     
-    pub fn compute_stride(&self) -> u32 {
+    pub fn compute_stride(&self) -> i32 {
         self.stride.unwrap_or(self.size.width * self.format.bytes_per_pixel())
     }
 
     
-    pub fn compute_total_size(&self) -> u32 {
+    pub fn compute_total_size(&self) -> i32 {
         self.compute_stride() * self.size.height
     }
 
     
-    pub fn full_rect(&self) -> DeviceUintRect {
-        DeviceUintRect::new(
-            DeviceUintPoint::zero(),
+    pub fn full_rect(&self) -> DeviceIntRect {
+        DeviceIntRect::new(
+            DeviceIntPoint::zero(),
             self.size,
         )
     }
@@ -322,7 +322,7 @@ pub trait BlobImageHandler: Send {
     fn add(&mut self, key: ImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>);
 
     
-    fn update(&mut self, key: ImageKey, data: Arc<BlobImageData>, dirty_rect: Option<DeviceUintRect>);
+    fn update(&mut self, key: ImageKey, data: Arc<BlobImageData>, dirty_rect: Option<DeviceIntRect>);
 
     
     fn delete(&mut self, key: ImageKey);
@@ -365,7 +365,7 @@ pub struct BlobImageParams {
     
     
     
-    pub dirty_rect: Option<DeviceUintRect>,
+    pub dirty_rect: Option<DeviceIntRect>,
 }
 
 
@@ -379,7 +379,7 @@ pub type BlobImageResult = Result<RasterizedBlobImage, BlobImageError>;
 #[derive(Copy, Clone, Debug)]
 pub struct BlobImageDescriptor {
     
-    pub size: DeviceUintSize,
+    pub size: DeviceIntSize,
     
     
     pub offset: DevicePoint,
@@ -391,7 +391,7 @@ pub struct BlobImageDescriptor {
 
 pub struct RasterizedBlobImage {
     
-    pub rasterized_rect: DeviceUintRect,
+    pub rasterized_rect: DeviceIntRect,
     
     pub data: Arc<Vec<u8>>,
 }

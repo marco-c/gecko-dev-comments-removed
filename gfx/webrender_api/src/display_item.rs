@@ -350,10 +350,10 @@ pub struct NinePatchBorder {
     pub source: NinePatchBorderSource,
 
     
-    pub width: u32,
+    pub width: i32,
 
     
-    pub height: u32,
+    pub height: i32,
 
     
     
@@ -362,7 +362,7 @@ pub struct NinePatchBorder {
     
     
     
-    pub slice: SideOffsets2D<u32>,
+    pub slice: SideOffsets2D<i32>,
 
     
     
