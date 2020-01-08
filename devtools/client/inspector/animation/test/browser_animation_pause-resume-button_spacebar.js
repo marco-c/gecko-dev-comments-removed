@@ -23,19 +23,19 @@ add_task(async function() {
   await clickOnPauseResumeButton(animationInspector, panel);
   
   await sendSpaceKeyEvent(animationInspector, panel);
-  assertAnimationsRunning(animationInspector, panel);
+  assertAnimationsRunning(animationInspector);
   
   await clickOnCurrentTimeScrubberController(animationInspector, panel, 0.5);
   
   await clickOnPauseResumeButton(animationInspector, panel);
   
   await sendSpaceKeyEvent(animationInspector, panel);
-  assertAnimationsPausing(animationInspector, panel);
+  assertAnimationsPausing(animationInspector);
 });
 
 async function testPauseAndResumeBySpacebar(animationInspector, element) {
   await sendSpaceKeyEvent(animationInspector, element);
-  assertAnimationsPausing(animationInspector, element);
+  assertAnimationsPausing(animationInspector);
   await sendSpaceKeyEvent(animationInspector, element);
-  assertAnimationsRunning(animationInspector, element);
+  assertAnimationsRunning(animationInspector);
 }

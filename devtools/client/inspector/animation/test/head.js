@@ -633,10 +633,8 @@ function assertAnimationsCurrentTime(animationInspector, time) {
 
 
 
-
-
-function assertAnimationsPausing(animationInspector, panel) {
-  assertAnimationsPausingOrRunning(animationInspector, panel, true);
+function assertAnimationsPausing(animationInspector) {
+  assertAnimationsPausingOrRunning(animationInspector, true);
 }
 
 
@@ -645,9 +643,7 @@ function assertAnimationsPausing(animationInspector, panel) {
 
 
 
-
-
-function assertAnimationsPausingOrRunning(animationInspector, panel, shouldPause) {
+function assertAnimationsPausingOrRunning(animationInspector, shouldPause) {
   const hasRunningAnimation =
     animationInspector.state.animations.some(({state}) => state.playState === "running");
 
@@ -663,10 +659,8 @@ function assertAnimationsPausingOrRunning(animationInspector, panel, shouldPause
 
 
 
-
-
-function assertAnimationsRunning(animationInspector, panel) {
-  assertAnimationsPausingOrRunning(animationInspector, panel, false);
+function assertAnimationsRunning(animationInspector) {
+  assertAnimationsPausingOrRunning(animationInspector, false);
 }
 
 
