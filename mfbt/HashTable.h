@@ -236,9 +236,8 @@ public:
   
   
   
-  
-  using Range = typename Impl::Range;
-  Range all() const { return mImpl.all(); }
+  using Iterator = typename Impl::Iterator;
+  Iterator iter() const { return mImpl.iter(); }
 
   
   
@@ -251,9 +250,14 @@ public:
   
   
   
+  using ModIterator = typename Impl::ModIterator;
+  ModIterator modIter() { return mImpl.modIter(); }
+
   
   
+  using Range = typename Impl::Range;
   using Enum = typename Impl::Enum;
+  Range all() const { return mImpl.all(); }
 
   
   
@@ -525,9 +529,8 @@ public:
   
   
   
-  
-  using Range = typename Impl::Range;
-  Range all() const { return mImpl.all(); }
+  typedef typename Impl::Iterator Iterator;
+  Iterator iter() const { return mImpl.iter(); }
 
   
   
@@ -540,9 +543,14 @@ public:
   
   
   
+  typedef typename Impl::ModIterator ModIterator;
+  ModIterator modIter() { return mImpl.modIter(); }
+
   
   
+  using Range = typename Impl::Range;
   using Enum = typename Impl::Enum;
+  Range all() const { return mImpl.all(); }
 
   
   
@@ -1198,6 +1206,163 @@ public:
   
   
   
+  class Iterator
+  {
+  protected:
+    friend class HashTable;
+
+    explicit Iterator(const HashTable& aTable)
+      : mCur(aTable.mTable)
+      , mEnd(aTable.mTable + aTable.capacity())
+#ifdef DEBUG
+      , mTable(aTable)
+      , mMutationCount(aTable.mMutationCount)
+      , mGeneration(aTable.generation())
+      , mValidEntry(true)
+#endif
+    {
+      while (mCur < mEnd && !mCur->isLive()) {
+        ++mCur;
+      }
+    }
+
+    Entry* mCur;
+    Entry* mEnd;
+#ifdef DEBUG
+    const HashTable& mTable;
+    uint64_t mMutationCount;
+    Generation mGeneration;
+    bool mValidEntry;
+#endif
+
+  public:
+    bool done() const
+    {
+#ifdef DEBUG
+      MOZ_ASSERT(mGeneration == mTable.generation());
+      MOZ_ASSERT(mMutationCount == mTable.mMutationCount);
+#endif
+      return mCur == mEnd;
+    }
+
+    T& get() const
+    {
+      MOZ_ASSERT(!done());
+#ifdef DEBUG
+      MOZ_ASSERT(mValidEntry);
+      MOZ_ASSERT(mGeneration == mTable.generation());
+      MOZ_ASSERT(mMutationCount == mTable.mMutationCount);
+#endif
+      return mCur->get();
+    }
+
+    void next()
+    {
+      MOZ_ASSERT(!done());
+#ifdef DEBUG
+      MOZ_ASSERT(mGeneration == mTable.generation());
+      MOZ_ASSERT(mMutationCount == mTable.mMutationCount);
+#endif
+      while (++mCur < mEnd && !mCur->isLive()) {
+        continue;
+      }
+#ifdef DEBUG
+      mValidEntry = true;
+#endif
+    }
+  };
+
+  
+  
+  
+  
+  
+  class ModIterator : public Iterator
+  {
+    friend class HashTable;
+
+    HashTable& mTable;
+    bool mRekeyed;
+    bool mRemoved;
+
+    
+    ModIterator(const ModIterator&) = delete;
+    void operator=(const ModIterator&) = delete;
+
+  protected:
+    explicit ModIterator(HashTable& aTable)
+      : Iterator(aTable)
+      , mTable(aTable)
+      , mRekeyed(false)
+      , mRemoved(false)
+    {
+    }
+
+  public:
+    MOZ_IMPLICIT ModIterator(ModIterator&& aOther)
+      : Iterator(aOther)
+      , mTable(aOther.mTable)
+      , mRekeyed(aOther.mRekeyed)
+      , mRemoved(aOther.mRemoved)
+    {
+      aOther.mRekeyed = false;
+      aOther.mRemoved = false;
+    }
+
+    
+    
+    void remove()
+    {
+      mTable.remove(*this->mCur);
+      mRemoved = true;
+#ifdef DEBUG
+      this->mValidEntry = false;
+      this->mMutationCount = mTable.mMutationCount;
+#endif
+    }
+
+    NonConstT& getMutable()
+    {
+      MOZ_ASSERT(!this->done());
+#ifdef DEBUG
+      MOZ_ASSERT(this->mValidEntry);
+      MOZ_ASSERT(this->mGeneration == this->Iterator::mTable.generation());
+      MOZ_ASSERT(this->mMutationCount == this->Iterator::mTable.mMutationCount);
+#endif
+      return this->mCur->getMutable();
+    }
+
+    
+    
+    
+    void rekey(const Lookup& l, const Key& k)
+    {
+      MOZ_ASSERT(&k != &HashPolicy::getKey(this->mCur->get()));
+      Ptr p(*this->mCur, mTable);
+      mTable.rekeyWithoutRehash(p, l, k);
+      mRekeyed = true;
+#ifdef DEBUG
+      this->mValidEntry = false;
+      this->mMutationCount = mTable.mMutationCount;
+#endif
+    }
+
+    void rekey(const Key& k) { rekey(k, k); }
+
+    
+    ~ModIterator()
+    {
+      if (mRekeyed) {
+        mTable.mGen++;
+        mTable.checkOverRemoved();
+      }
+
+      if (mRemoved) {
+        mTable.compactIfUnderloaded();
+      }
+    }
+  };
+
   
   class Range
   {
@@ -1266,10 +1431,6 @@ public:
   };
 
   
-  
-  
-  
-  
   class Enum : public Range
   {
     friend class HashTable;
@@ -1302,15 +1463,6 @@ public:
       aOther.mRemoved = false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     void removeFront()
     {
       mTable.remove(*this->mCur);
@@ -1332,9 +1484,6 @@ public:
       return this->mCur->getMutable();
     }
 
-    
-    
-    
     void rekeyFront(const Lookup& aLookup, const Key& aKey)
     {
       MOZ_ASSERT(&aKey != &HashPolicy::getKey(this->mCur->get()));
@@ -1349,7 +1498,6 @@ public:
 
     void rekeyFront(const Key& aKey) { rekeyFront(aKey, aKey); }
 
-    
     ~Enum()
     {
       if (mRekeyed) {
@@ -1952,6 +2100,18 @@ public:
 #ifdef DEBUG
     mMutationCount++;
 #endif
+  }
+
+  Iterator iter() const
+  {
+    MOZ_ASSERT(mTable);
+    return Iterator(*this);
+  }
+
+  ModIterator modIter()
+  {
+    MOZ_ASSERT(mTable);
+    return ModIterator(*this);
   }
 
   Range all() const
