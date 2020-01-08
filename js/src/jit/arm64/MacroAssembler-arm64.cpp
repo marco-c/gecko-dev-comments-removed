@@ -493,9 +493,9 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
     } else {
       MOZ_CRASH("Unknown register type.");
     }
+
   }
   MOZ_ASSERT(numFpu == 0);
-  
   
   diffF -= diffF % sizeof(uintptr_t);
   MOZ_ASSERT(diffF == 0);
@@ -666,7 +666,12 @@ CodeOffset MacroAssembler::callWithPatch() {
 void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
   Instruction* inst = getInstructionAt(BufferOffset(callerOffset - 4));
   MOZ_ASSERT(inst->IsBL());
-  bl(inst, ((int)calleeOffset - ((int)callerOffset - 4)) >> 2);
+  ptrdiff_t relTarget = (int)calleeOffset - ((int)callerOffset - 4);
+  ptrdiff_t relTarget00 = relTarget >> 2;
+  MOZ_RELEASE_ASSERT((relTarget & 0x3) == 0);
+  MOZ_RELEASE_ASSERT(vixl::is_int26(relTarget00));
+  bl(inst, relTarget00);
+  AutoFlushICache::flush(uintptr_t(inst), 4);
 }
 
 CodeOffset MacroAssembler::farJumpWithPatch() {
