@@ -1544,26 +1544,6 @@ public:
 #ifdef DEBUG
   uint64_t mMutationCount;
   mutable bool mEntered;
-
-  
-  
-  mutable struct Stats
-  {
-    uint32_t mSearches;       
-    uint32_t mSteps;          
-    uint32_t mHits;           
-    uint32_t mMisses;         
-    uint32_t mAddOverRemoved; 
-    uint32_t mRemoves;        
-    uint32_t mRemoveFrees;    
-    uint32_t mGrows;          
-    uint32_t mShrinks;        
-    uint32_t mCompresses;     
-    uint32_t mRehashes;       
-  } mStats;
-#define METER(x) x
-#else
-#define METER(x)
 #endif
 
   
@@ -1698,7 +1678,6 @@ public:
       return false;
     }
     setTableSizeLog2(log2);
-    METER(memset(&mStats, 0, sizeof(mStats)));
     return true;
   }
 
@@ -1766,9 +1745,6 @@ private:
 
   
   
-  
-  
-  
   template<LookupReason Reason>
   MOZ_ALWAYS_INLINE Entry& lookup(const Lookup& aLookup,
                                   HashNumber aKeyHash) const
@@ -1776,7 +1752,6 @@ private:
     MOZ_ASSERT(isLiveHash(aKeyHash));
     MOZ_ASSERT(!(aKeyHash & sCollisionBit));
     MOZ_ASSERT(mTable);
-    METER(mStats.mSearches++);
 
     
     HashNumber h1 = hash1(aKeyHash);
@@ -1784,13 +1759,11 @@ private:
 
     
     if (entry->isFree()) {
-      METER(mStats.mMisses++);
       return *entry;
     }
 
     
     if (entry->matchHash(aKeyHash) && match(*entry, aLookup)) {
-      METER(mStats.mHits++);
       return *entry;
     }
 
@@ -1809,17 +1782,14 @@ private:
         }
       }
 
-      METER(mStats.mSteps++);
       h1 = applyDoubleHash(h1, dh);
 
       entry = &mTable[h1];
       if (entry->isFree()) {
-        METER(mStats.mMisses++);
         return firstRemoved ? *firstRemoved : *entry;
       }
 
       if (entry->matchHash(aKeyHash) && match(*entry, aLookup)) {
-        METER(mStats.mHits++);
         return *entry;
       }
     }
@@ -1835,7 +1805,6 @@ private:
   {
     MOZ_ASSERT(!(aKeyHash & sCollisionBit));
     MOZ_ASSERT(mTable);
-    METER(mStats.mSearches++);
 
     
 
@@ -1845,7 +1814,6 @@ private:
 
     
     if (!entry->isLive()) {
-      METER(mStats.mMisses++);
       return *entry;
     }
 
@@ -1856,12 +1824,10 @@ private:
       MOZ_ASSERT(!entry->isRemoved());
       entry->setCollision();
 
-      METER(mStats.mSteps++);
       h1 = applyDoubleHash(h1, dh);
 
       entry = &mTable[h1];
       if (!entry->isLive()) {
-        METER(mStats.mMisses++);
         return *entry;
       }
     }
@@ -1929,15 +1895,7 @@ private:
       return NotOverloaded;
     }
 
-    int deltaLog2;
-    if (shouldCompressTable()) {
-      METER(mStats.mCompresses++);
-      deltaLog2 = 0;
-    } else {
-      METER(mStats.mGrows++);
-      deltaLog2 = 1;
-    }
-
+    int deltaLog2 = shouldCompressTable() ? 0 : 1;
     return changeTableSize(deltaLog2, aReportFailure);
   }
 
@@ -1954,13 +1912,11 @@ private:
   void remove(Entry& aEntry)
   {
     MOZ_ASSERT(mTable);
-    METER(mStats.mRemoves++);
 
     if (aEntry.hasCollision()) {
       aEntry.removeLive();
       mRemovedCount++;
     } else {
-      METER(mStats.mRemoveFrees++);
       aEntry.clearLive();
     }
     mEntryCount--;
@@ -1972,7 +1928,6 @@ private:
   void checkUnderloaded()
   {
     if (underloaded()) {
-      METER(mStats.mShrinks++);
       (void)changeTableSize(-1, DontReportFailure);
     }
   }
@@ -2001,7 +1956,6 @@ private:
   
   void rehashTableInPlace()
   {
-    METER(mStats.mRehashes++);
     mRemovedCount = 0;
     mGen++;
     for (size_t i = 0; i < capacity(); ++i) {
@@ -2053,7 +2007,6 @@ private:
     MOZ_ASSERT(entry);
 
     if (entry->isRemoved()) {
-      METER(mStats.mAddOverRemoved++);
       mRemovedCount--;
       keyHash |= sCollisionBit;
     }
@@ -2213,7 +2166,6 @@ public:
       if (!this->checkSimulatedOOM()) {
         return false;
       }
-      METER(mStats.mAddOverRemoved++);
       mRemovedCount--;
       aPtr.mKeyHash |= sCollisionBit;
     } else {
@@ -2319,8 +2271,6 @@ public:
     rekeyWithoutRehash(aPtr, aLookup, aKey);
     checkOverRemoved();
   }
-
-#undef METER
 };
 
 } 
