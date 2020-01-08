@@ -225,6 +225,8 @@ public:
 
   virtual nsCString GetDebugInfo() { return nsCString(); }
 
+  virtual void HandleLoopingChanged() {}
+
 private:
   template <class S, typename R, typename... As>
   auto ReturnTypeHelper(R(S::*)(As...)) -> R;
@@ -304,6 +306,8 @@ protected:
 
   RefPtr<MediaDecoder::SeekPromise>
   SetSeekingState(SeekJob&& aSeekJob, EventVisibility aVisibility);
+
+  void SetDecodingState();
 
   
   
@@ -706,6 +710,11 @@ public:
     return nsPrintfCString("mIsPrerolling=%d", mIsPrerolling);
   }
 
+  void HandleLoopingChanged() override
+  {
+    SetDecodingState();
+  }
+
 protected:
   virtual void EnsureAudioDecodeTaskQueued();
 
@@ -828,7 +837,9 @@ class MediaDecoderStateMachine::LoopingDecodingState
 public:
   explicit LoopingDecodingState(Master* aPtr)
     : DecodingState(aPtr)
-  {}
+  {
+    MOZ_ASSERT(mMaster->mLooping);
+  }
 
   void Exit() override
   {
@@ -1018,7 +1029,7 @@ protected:
 
   virtual void DoSeek() = 0;
   
-  virtual void GoToNextState() { SetState<DecodingState>(); }
+  virtual void GoToNextState() { SetDecodingState(); }
   void SeekCompleted();
   virtual TimeUnit CalculateNewCurrentTime() const = 0;
 };
@@ -2298,6 +2309,16 @@ StateObject::SetSeekingState(SeekJob&& aSeekJob, EventVisibility aVisibility)
 }
 
 void
+MediaDecoderStateMachine::StateObject::SetDecodingState()
+{
+  if (mMaster->mLooping) {
+    SetState<LoopingDecodingState>();
+    return;
+  }
+  SetState<DecodingState>();
+}
+
+void
 MediaDecoderStateMachine::
 DecodeMetadataState::OnMetadataRead(MetadataHolder&& aMetadata)
 {
@@ -2367,7 +2388,7 @@ DecodingFirstFrameState::Enter()
 {
   
   if (mMaster->mSentFirstFrameLoadedEvent) {
-    SetState<DecodingState>();
+    SetDecodingState();
     return;
   }
 
@@ -2397,7 +2418,7 @@ DecodingFirstFrameState::MaybeFinishDecodeFirstFrame()
   if (mPendingSeek.Exists()) {
     SetSeekingState(std::move(mPendingSeek), EventVisibility::Observable);
   } else {
-    SetState<DecodingState>();
+    SetDecodingState();
   }
 }
 
@@ -2713,7 +2734,7 @@ BufferingState::Step()
   }
 
   SLOG("Buffered for %.3lfs", (now - mBufferingStart).ToSeconds());
-  SetState<DecodingState>();
+  SetDecodingState();
 }
 
 void
@@ -3786,9 +3807,7 @@ void
 MediaDecoderStateMachine::LoopingChanged()
 {
   MOZ_ASSERT(OnTaskQueue());
-  if (mSeamlessLoopingAllowed) {
-    mReader->SetSeamlessLoopingEnabled(mLooping);
-  }
+  mStateObj->HandleLoopingChanged();
 }
 
 RefPtr<GenericPromise>
