@@ -17,6 +17,7 @@ const {Log} = ChromeUtils.import("chrome://marionette/content/log.js", {});
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
 this.EXPORTED_SYMBOLS = [
+  "DebounceCallback",
   "IdlePromise",
   "MessageManagerDestroyedPromise",
   "PollPromise",
@@ -285,3 +286,62 @@ function IdlePromise(win) {
     });
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DebounceCallback {
+  constructor(fn, {timeout = 250} = {}) {
+    if (typeof fn != "function" || typeof timeout != "number") {
+      throw new TypeError();
+    }
+    if (!Number.isInteger(timeout) || timeout < 0) {
+      throw new RangeError();
+    }
+
+    this.fn = fn;
+    this.timeout = timeout;
+    this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  }
+
+  handleEvent(ev) {
+    this.timer.cancel();
+    this.timer.initWithCallback(() => {
+      this.timer.cancel();
+      this.fn(ev);
+    }, this.timeout, TYPE_ONE_SHOT);
+  }
+}
+this.DebounceCallback = DebounceCallback;
