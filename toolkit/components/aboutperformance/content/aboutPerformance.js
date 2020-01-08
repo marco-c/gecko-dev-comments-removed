@@ -10,6 +10,8 @@ const { PerformanceStats } = ChromeUtils.import("resource://gre/modules/Performa
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 const { ObjectUtils } = ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm", {});
 
+const {WebExtensionPolicy} = Cu.getGlobalForObject(Services);
+
 
 
 
@@ -26,7 +28,7 @@ const BUFFER_SAMPLING_RATE_MS = 1000;
 const BUFFER_DURATION_MS = 10000;
 
 
-const UPDATE_INTERVAL_MS = 5000;
+const UPDATE_INTERVAL_MS = 2000;
 
 
 const BRAND_BUNDLE = Services.strings.createBundle(
@@ -64,6 +66,12 @@ const MIN_PROPORTION_FOR_NOTICEABLE_IMPACT = .1;
 const MODE_GLOBAL = "global";
 const MODE_RECENT = "recent";
 
+
+
+function performanceCountersEnabled() {
+  return Services.prefs.getBoolPref("dom.performance.enable_scheduler_timing", false);
+}
+
 let tabFinder = {
   update() {
     this._map = new Map();
@@ -76,6 +84,11 @@ let tabFinder = {
         if (id != null) {
           this._map.set(id, browser);
         }
+      }
+      if (tabbrowser._preloadedBrowser) {
+        let browser = tabbrowser._preloadedBrowser;
+        if (browser.outerWindowID)
+          this._map.set(browser.outerWindowID, browser);
       }
     }
   },
@@ -96,6 +109,10 @@ let tabFinder = {
       return null;
     }
     let tabbrowser = browser.getTabBrowser();
+    if (!tabbrowser)
+      return {tabbrowser: null,
+              tab: {getAttribute() { return ""; },
+                    linkedBrowser: browser}};
     return {tabbrowser, tab: tabbrowser.getTabForBrowser(browser)};
   },
 
@@ -380,6 +397,41 @@ var State = {
 
   _firstSeen: new Map(),
 
+  async _promiseSnapshot() {
+    if (!performanceCountersEnabled()) {
+      return this._monitor.promiseSnapshot();
+    }
+
+    let counters = await ChromeUtils.requestPerformanceMetrics();
+    let tabs = {};
+    for (let counter of counters) {
+      let {items, host, windowId, duration, isWorker, isTopLevel} = counter;
+      
+      
+      if (isWorker && (windowId == 18446744073709552000 || !windowId))
+        windowId = 1;
+      let dispatchCount = 0;
+      for (let {count} of items) {
+        dispatchCount += count;
+      }
+
+      let tab;
+      if (windowId in tabs) {
+        tab = tabs[windowId];
+      } else {
+        tab = {windowId, host, dispatchCount: 0, duration: 0, children: []};
+        tabs[windowId] = tab;
+      }
+      tab.dispatchCount += dispatchCount;
+      tab.duration += duration;
+      if (!isTopLevel) {
+        tab.children.push({host, isWorker, dispatchCount, duration});
+      }
+    }
+
+    return {tabs, date: Cu.now()};
+  },
+
   
 
 
@@ -391,7 +443,7 @@ var State = {
       if (this._oldest) {
         throw new Error("Internal Error, we shouldn't have a `_oldest` value yet.");
       }
-      this._latest = this._oldest = await this._monitor.promiseSnapshot();
+      this._latest = this._oldest = await this._promiseSnapshot();
       this._buffer.push(this._oldest);
       await wait(BUFFER_SAMPLING_RATE_MS * 1.1);
     }
@@ -403,7 +455,7 @@ var State = {
     let latestInBuffer = this._buffer[this._buffer.length - 1];
     let deltaT = now - latestInBuffer.date;
     if (deltaT > BUFFER_SAMPLING_RATE_MS) {
-      this._latest = await this._monitor.promiseSnapshot();
+      this._latest = await this._promiseSnapshot();
       this._buffer.push(this._latest);
     }
 
@@ -483,6 +535,76 @@ var State = {
     this._alerts = cleanedUpAlerts;
     return result;
   },
+
+  
+  
+  _trackingState: new Map(),
+  isTracker(host) {
+    if (!this._trackingState.has(host)) {
+      
+      
+      this._trackingState.set(host, false);
+      if (host.startsWith("about:"))
+        return false;
+
+      let principal =
+        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin("http://" + host);
+      let classifier =
+        Cc["@mozilla.org/url-classifier/dbservice;1"].getService(Ci.nsIURIClassifier);
+      classifier.classify(principal, null, true,
+                          (aErrorCode, aList, aProvider, aFullHash) => {
+        this._trackingState.set(host, aErrorCode == Cr.NS_ERROR_TRACKING_URI);
+      });
+    }
+    return this._trackingState.get(host);
+  },
+
+  getCounters() {
+    tabFinder.update();
+    
+    
+    
+
+    let oldestInBuffer = this._buffer[0].tabs;
+    let previous = this._buffer[Math.max(this._buffer.length - 2, 0)].tabs;
+    let current = this._latest.tabs;
+    return Object.keys(current).map(function(id) {
+      let tab = current[id];
+      let oldest = oldestInBuffer[id];
+      let prev = previous[id];
+      let dispatches = tab.dispatchCount;
+      let host = tab.host;
+
+      let name = `${host} (${id})`;
+      let image = "chrome://mozapps/skin/places/defaultFavicon.svg";
+      let found = tabFinder.get(parseInt(id));
+      if (found) {
+        name = found.tab.linkedBrowser.contentTitle;
+        if (found.tabbrowser) {
+          image = found.tab.getAttribute("image");
+        } else {
+          name = "Preloaded: " + name;
+        }
+      } else if (id == 1) {
+        name = BRAND_NAME;
+        image = "chrome://branding/content/icon32.png";
+      } else if (/[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}/.test(host)) {
+        let addon = WebExtensionPolicy.getByHostname(host);
+        name = `${addon.name} (${addon.id})`;
+        image = "chrome://mozapps/skin/extensions/extensionGeneric-16.svg";
+      } else if (id == 0 && !tab.isWorker) {
+        name = "Ghost windows";
+      }
+
+      return ({windowId: id, name, image,
+               totalDispatches: dispatches,
+               totalDuration: tab.duration,
+               durationSincePrevious: prev ? tab.duration - prev.duration : NaN,
+               dispatchesSincePrevious: prev ? dispatches - prev.dispatchCount : NaN,
+               dispatchesSinceStartOfBuffer: oldest ? dispatches - oldest.dispatchCount : NaN,
+               children: tab.children});
+    }).sort((a, b) => b.dispatchesSinceStartOfBuffer - a.dispatchesSinceStartOfBuffer);
+  }
 };
 
 var View = {
@@ -771,6 +893,37 @@ var View = {
 
     return cachedElements;
   },
+
+  _fragment: document.createDocumentFragment(),
+  commit() {
+    let tbody = document.getElementById("dispatch-tbody");
+
+    while (tbody.firstChild)
+      tbody.firstChild.remove();
+    tbody.appendChild(this._fragment);
+    this._fragment = document.createDocumentFragment();
+  },
+  appendRow(name, totalValue, recentValue, classes, image = "") {
+    let row = document.createElement("tr");
+
+    let elt = document.createElement("td");
+    elt.textContent = name;
+    row.appendChild(elt);
+    if (image)
+      elt.style.backgroundImage = `url('${image}')`;
+    if (classes)
+      elt.classList.add(...classes);
+
+    elt = document.createElement("td");
+    elt.textContent = totalValue;
+    row.appendChild(elt);
+
+    elt = document.createElement("td");
+    elt.textContent = recentValue;
+    row.appendChild(elt);
+
+    this._fragment.appendChild(row);
+  }
 };
 
 var Control = {
@@ -783,20 +936,59 @@ var Control = {
     if (this._autoRefreshInterval || !State._buffer[0]) {
       
       await State.update();
+      if (document.hidden)
+        return;
     }
     await wait(0);
-    let state = await (mode == MODE_GLOBAL ?
-      State.promiseDeltaSinceStartOfTime() :
-      State.promiseDeltaSinceStartOfBuffer());
+    if (!performanceCountersEnabled()) {
+      let state = await (mode == MODE_GLOBAL ?
+        State.promiseDeltaSinceStartOfTime() :
+        State.promiseDeltaSinceStartOfBuffer());
 
-    for (let category of ["webpages"]) {
+      for (let category of ["webpages"]) {
+        await wait(0);
+        await View.updateCategory(state[category], category, category, mode);
+      }
       await wait(0);
-      await View.updateCategory(state[category], category, category, mode);
-    }
-    await wait(0);
 
-    
-    View.DOMCache.trimTo(state.deltas);
+      
+      View.DOMCache.trimTo(state.deltas);
+    } else {
+      let counters = State.getCounters();
+      for (let {name, image, totalDispatches, dispatchesSincePrevious,
+                totalDuration, durationSincePrevious, children} of counters) {
+        function dispatchesAndDuration(dispatches, duration) {
+          let result = dispatches;
+          if (duration) {
+            duration /= 1000;
+            duration = Math.round(duration);
+            if (duration)
+              result += ` (${duration / 1000}s)`;
+            else
+              result += " (< 1ms)";
+          }
+          return result;
+        }
+        View.appendRow(name,
+                       dispatchesAndDuration(totalDispatches, totalDuration),
+                       dispatchesAndDuration(dispatchesSincePrevious,
+                                             durationSincePrevious),
+                       null, image);
+        children.sort((a, b) => b.dispatchCount - a.dispatchCount);
+        for (let row of children) {
+          let host = row.host.replace(/^blob:https?:\/\//, "");
+          let classes = ["indent"];
+          if (State.isTracker(host))
+            classes.push("tracking");
+          if (row.isWorker)
+            classes.push("worker");
+          View.appendRow(row.host,
+                         dispatchesAndDuration(row.dispatchCount, row.duration),
+                         "", classes);
+        }
+      }
+      View.commit();
+    }
 
     await wait(0);
 
@@ -863,6 +1055,14 @@ var Control = {
 var go = async function() {
 
   Control.init();
+
+  if (performanceCountersEnabled()) {
+    let opt = document.querySelector(".options");
+    opt.style.display = "none";
+    opt.nextElementSibling.style.display = "none";
+  } else {
+    document.getElementById("dispatch-table").parentNode.style.display = "none";
+  }
 
   
   let testUpdate = function(subject, topic, value) {
