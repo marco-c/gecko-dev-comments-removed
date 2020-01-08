@@ -98,6 +98,10 @@ browser.getTabBrowser = function(window) {
   
   } else if ("gBrowser" in window) {
     return window.gBrowser;
+
+  
+  } else if (window.document.getElementById("tabmail")) {
+    return window.document.getElementById("tabmail");
   }
 
   return null;
