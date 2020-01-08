@@ -28,6 +28,7 @@ loader.lazyRequireGetter(this, "PauseScopedObjectActor", "devtools/server/actors
 loader.lazyRequireGetter(this, "EventLoopStack", "devtools/server/actors/utils/event-loop", true);
 loader.lazyRequireGetter(this, "FrameActor", "devtools/server/actors/frame", true);
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
+loader.lazyRequireGetter(this, "throttle", "devtools/shared/throttle", true);
 
 
 
@@ -113,6 +114,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._dbg.onNewScript = this.onNewScript;
       if (this._dbg.replaying) {
         this._dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(this);
+        this._dbg.replayingOnPositionChange =
+          throttle(this.replayingOnPositionChange.bind(this), 100);
       }
       
       this._dbg.enabled = this._state != "detached";
@@ -1776,6 +1779,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   onSkipBreakpoints: function({ skip }) {
     this.skipBreakpoints = skip;
     return { skip };
+  },
+
+  
+
+
+
+
+  replayingOnPositionChange: function() {
+    const recording = this.dbg.replayIsRecording();
+    const executionPoint = this.dbg.replayCurrentExecutionPoint();
+    this.conn.send({ type: "progress", from: this.actorID, recording, executionPoint });
   },
 
   
