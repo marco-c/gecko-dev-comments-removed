@@ -123,12 +123,12 @@ function getPostUpdateOverridePage(defaultOverridePage) {
   
   if (um.activeUpdate) {
     var update = um.activeUpdate
-                   .QueryInterface(Ci.nsIPropertyBag);
+                   .QueryInterface(Ci.nsIWritablePropertyBag);
   } else {
     
     try {
       update = um.getUpdateAt(0)
-                 .QueryInterface(Ci.nsIPropertyBag);
+                 .QueryInterface(Ci.nsIWritablePropertyBag);
     } catch (e) {
       Cu.reportError("Unable to find update: " + e);
       return defaultOverridePage;

@@ -1865,7 +1865,7 @@ BrowserGlue.prototype = {
              getService(Ci.nsIUpdateManager);
     try {
       
-      var update = um.getUpdateAt(0).QueryInterface(Ci.nsIPropertyBag);
+      var update = um.getUpdateAt(0).QueryInterface(Ci.nsIWritablePropertyBag);
     } catch (e) {
       
       Cu.reportError("Unable to find update: " + e);
