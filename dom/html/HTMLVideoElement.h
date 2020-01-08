@@ -155,9 +155,17 @@ protected:
 
   virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  virtual void WakeLockCreate() override;
-  virtual void WakeLockRelease() override;
-  void UpdateScreenWakeLock();
+  
+
+
+
+
+
+  void WakeLockRelease() override;
+  void UpdateWakeLock() override;
+
+  void CreateVideoWakeLockIfNeeded();
+  void ReleaseVideoWakeLockIfExists();
 
   RefPtr<WakeLock> mScreenWakeLock;
 

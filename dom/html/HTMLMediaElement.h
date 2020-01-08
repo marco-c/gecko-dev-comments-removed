@@ -844,8 +844,6 @@ protected:
 
   void SetDecoder(MediaDecoder* aDecoder);
 
-  void UpdateWakeLock();
-
   
   
   struct OutputMediaStream {
@@ -885,8 +883,11 @@ protected:
 
 
 
-  virtual void WakeLockCreate();
   virtual void WakeLockRelease();
+  virtual void UpdateWakeLock();
+
+  void CreateAudioWakeLockIfNeeded();
+  void ReleaseAudioWakeLockIfExists();
   RefPtr<WakeLock> mWakeLock;
 
   
