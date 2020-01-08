@@ -109,8 +109,6 @@ nsThreadManager::ReleaseThread(void* aData)
 
   auto* thread = static_cast<nsThread*>(aData);
 
-  get().UnregisterCurrentThread(*thread, true);
-
   if (thread->mHasTLSEntry) {
     thread->mHasTLSEntry = false;
     thread->Release();
@@ -322,13 +320,10 @@ nsThreadManager::Shutdown()
   {
     
     
-    nsThreadArray threads;
-    {
-      OffTheBooksMutexAutoLock lock(mLock);
-      for (auto iter = mThreadsByPRThread.Iter(); !iter.Done(); iter.Next()) {
-        RefPtr<nsThread>& thread = iter.Data();
-        threads.AppendElement(WrapNotNull(thread));
-        iter.Remove();
+    nsTArray<RefPtr<nsThread>> threadsToShutdown;
+    for (auto* thread : nsThread::Enumerate()) {
+      if (thread->ShutdownRequired()) {
+        threadsToShutdown.AppendElement(thread);
       }
     }
 
@@ -342,11 +337,8 @@ nsThreadManager::Shutdown()
     
 
     
-    for (uint32_t i = 0; i < threads.Length(); ++i) {
-      NotNull<nsThread*> thread = threads[i];
-      if (thread->ShutdownRequired()) {
-        thread->Shutdown();
-      }
+    for (auto& thread : threadsToShutdown) {
+      thread->Shutdown();
     }
   }
 
@@ -360,12 +352,6 @@ nsThreadManager::Shutdown()
   NS_ProcessPendingEvents(mMainThread);
 
   
-
-  
-  {
-    OffTheBooksMutexAutoLock lock(mLock);
-    mThreadsByPRThread.Clear();
-  }
 
   
   
@@ -402,35 +388,15 @@ nsThreadManager::RegisterCurrentThread(nsThread& aThread)
 {
   MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
 
-  OffTheBooksMutexAutoLock lock(mLock);
-
-  ++mCurrentNumberOfThreads;
-  if (mCurrentNumberOfThreads > mHighestNumberOfThreads) {
-    mHighestNumberOfThreads = mCurrentNumberOfThreads;
-  }
-
-  mThreadsByPRThread.Put(aThread.GetPRThread(), &aThread);  
-
   aThread.AddRef();  
   aThread.mHasTLSEntry = true;
   PR_SetThreadPrivate(mCurThreadIndex, &aThread);
 }
 
 void
-nsThreadManager::UnregisterCurrentThread(nsThread& aThread, bool aIfExists)
+nsThreadManager::UnregisterCurrentThread(nsThread& aThread)
 {
-  {
-    OffTheBooksMutexAutoLock lock(mLock);
-
-    if (aIfExists && !mThreadsByPRThread.GetWeak(aThread.GetPRThread())) {
-      return;
-    }
-
-    MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
-
-    --mCurrentNumberOfThreads;
-    mThreadsByPRThread.Remove(aThread.GetPRThread());
-  }
+  MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
 
   PR_SetThreadPrivate(mCurThreadIndex, nullptr);
   
@@ -538,27 +504,6 @@ nsThreadManager::NewNamedThread(const nsACString& aName,
 }
 
 NS_IMETHODIMP
-nsThreadManager::GetThreadFromPRThread(PRThread* aThread, nsIThread** aResult)
-{
-  
-  if (NS_WARN_IF(!mMainThread)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  if (NS_WARN_IF(!aThread)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  RefPtr<nsThread> temp;
-  {
-    OffTheBooksMutexAutoLock lock(mLock);
-    mThreadsByPRThread.Get(aThread, getter_AddRefs(temp));
-  }
-
-  NS_IF_ADDREF(*aResult = temp);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsThreadManager::GetMainThread(nsIThread** aResult)
 {
   
@@ -660,8 +605,7 @@ nsThreadManager::GetSystemGroupEventTarget(nsIEventTarget** aTarget)
 uint32_t
 nsThreadManager::GetHighestNumberOfThreads()
 {
-  OffTheBooksMutexAutoLock lock(mLock);
-  return mHighestNumberOfThreads;
+  return nsThread::MaxActiveThreads();
 }
 
 NS_IMETHODIMP

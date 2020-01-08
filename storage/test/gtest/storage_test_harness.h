@@ -225,7 +225,7 @@ PRThread *watched_thread = nullptr;
 
 
 
-PRThread *last_non_watched_thread = nullptr;
+nsIThread* last_non_watched_thread = nullptr;
 
 
 
@@ -233,11 +233,10 @@ PRThread *last_non_watched_thread = nullptr;
 
 extern "C" void wrapped_MutexEnter(sqlite3_mutex *mutex)
 {
-  PRThread *curThread = ::PR_GetCurrentThread();
-  if (curThread == watched_thread)
+  if (PR_GetCurrentThread() == watched_thread)
     mutex_used_on_watched_thread = true;
   else
-    last_non_watched_thread = curThread;
+    last_non_watched_thread = NS_GetCurrentThread();
   orig_mutex_methods.xMutexEnter(mutex);
 }
 
@@ -351,19 +350,13 @@ get_conn_async_thread(mozIStorageConnection *db)
   blocking_async_execute(stmt);
   stmt->Finalize();
 
-  nsCOMPtr<nsIThreadManager> threadMan =
-    do_GetService("@mozilla.org/thread-manager;1");
-  nsCOMPtr<nsIThread> asyncThread;
-  threadMan->GetThreadFromPRThread(last_non_watched_thread,
-                                   getter_AddRefs(asyncThread));
+  nsCOMPtr<nsIThread> asyncThread = last_non_watched_thread;
 
   
   
   nsCOMPtr<nsIEventTarget> target = do_GetInterface(db);
   nsCOMPtr<nsIThread> allegedAsyncThread = do_QueryInterface(target);
-  PRThread *allegedPRThread;
-  (void)allegedAsyncThread->GetPRThread(&allegedPRThread);
-  do_check_eq(allegedPRThread, last_non_watched_thread);
+  do_check_eq(allegedAsyncThread, asyncThread);
   return asyncThread.forget();
 }
 
