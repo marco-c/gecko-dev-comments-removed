@@ -1141,10 +1141,8 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
     
     
     RootedObject wrappedTargetGlobal(cx_, &unwrapped->nonCCWGlobal());
-    if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal)) {
-        cx_->clearPendingException();
+    if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal))
         return false;
-    }
 
     bool isWindowProxy = false;
     RootedShape shape(cx_);
@@ -4031,6 +4029,8 @@ SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj, ObjOperandId objId, H
 bool
 SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape oldShape)
 {
+    AutoAssertNoPendingException aanpe(cx_);
+
     ValOperandId objValId(writer.setInputOperandId(0));
     ValOperandId rhsValId;
     if (cacheKind_ == CacheKind::SetProp) {
@@ -4468,6 +4468,7 @@ CallIRGenerator::tryAttachStringSplit()
     if (!group)
         return false;
 
+    AutoAssertNoPendingException aanpe(cx_);
     Int32OperandId argcId(writer.setInputOperandId(0));
 
     
@@ -4543,6 +4544,7 @@ CallIRGenerator::tryAttachArrayPush()
     
 
     
+    AutoAssertNoPendingException aanpe(cx_);
     Int32OperandId argcId(writer.setInputOperandId(0));
 
     
@@ -4621,6 +4623,7 @@ CallIRGenerator::tryAttachArrayJoin()
     
 
     
+    AutoAssertNoPendingException aanpe(cx_);
     Int32OperandId argcId(writer.setInputOperandId(0));
 
     
@@ -4669,8 +4672,6 @@ CallIRGenerator::tryAttachArrayJoin()
 bool
 CallIRGenerator::tryAttachStub()
 {
-    AutoAssertNoPendingException aanpe(cx_);
-
     
     if ((op_ != JSOP_CALL) && (op_ != JSOP_CALL_IGNORES_RV))
         return false;
@@ -5229,13 +5230,11 @@ GetIntrinsicIRGenerator::trackAttached(const char* name)
 bool
 GetIntrinsicIRGenerator::tryAttachStub()
 {
-    AutoAssertNoPendingException aanpe(cx_);
     writer.loadValueResult(val_);
     writer.returnFromIC();
     trackAttached("GetIntrinsic");
     return true;
 }
-
 UnaryArithIRGenerator::UnaryArithIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc, ICState::Mode mode,
                                              JSOp op, HandleValue val, HandleValue res)
   : IRGenerator(cx, script, pc, CacheKind::UnaryArith, mode),
@@ -5258,7 +5257,6 @@ UnaryArithIRGenerator::trackAttached(const char* name)
 bool
 UnaryArithIRGenerator::tryAttachStub()
 {
-    AutoAssertNoPendingException aanpe(cx_);
     if (tryAttachInt32())
         return true;
     if (tryAttachNumber())
@@ -5345,7 +5343,7 @@ BinaryArithIRGenerator::trackAttached(const char* name)
 bool
 BinaryArithIRGenerator::tryAttachStub()
 {
-    AutoAssertNoPendingException aanpe(cx_);
+
     
     if (tryAttachInt32())
         return true;
@@ -5693,7 +5691,6 @@ NewObjectIRGenerator::trackAttached(const char* name)
 bool
 NewObjectIRGenerator::tryAttachStub()
 {
-    AutoAssertNoPendingException aanpe(cx_);
     if (!templateObject_->is<UnboxedPlainObject>() &&
         templateObject_->as<PlainObject>().hasDynamicSlots())
     {
