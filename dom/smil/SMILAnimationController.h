@@ -27,7 +27,6 @@ namespace dom {
 class Element;
 class SVGAnimationElement;
 }  
-}  
 
 
 
@@ -42,10 +41,10 @@ class SVGAnimationElement;
 
 
 
-class nsSMILAnimationController final : public nsSMILTimeContainer,
+class SMILAnimationController final : public nsSMILTimeContainer,
                                         public nsARefreshObserver {
  public:
-  explicit nsSMILAnimationController(nsIDocument* aDoc);
+  explicit SMILAnimationController(nsIDocument* aDoc);
 
   
   void Disconnect();
@@ -112,7 +111,7 @@ class nsSMILAnimationController final : public nsSMILTimeContainer,
   bool PreTraverseInSubtree(mozilla::dom::Element* aRoot);
 
  protected:
-  ~nsSMILAnimationController();
+  ~SMILAnimationController();
 
   
   typedef nsPtrHashKey<nsSMILTimeContainer> TimeContainerPtrKey;
@@ -206,5 +205,7 @@ class nsSMILAnimationController final : public nsSMILTimeContainer,
   
   nsAutoPtr<nsSMILCompositorTable> mLastCompositorTable;
 };
+
+}  
 
 #endif  

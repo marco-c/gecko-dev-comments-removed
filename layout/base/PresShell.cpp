@@ -107,7 +107,7 @@
 #include "nsThreadUtils.h"
 #include "nsStyleSheetService.h"
 #include "gfxUtils.h"
-#include "nsSMILAnimationController.h"
+#include "mozilla/SMILAnimationController.h"
 #include "SVGContentUtils.h"
 #include "SVGObserverUtils.h"
 #include "SVGFragmentIdentifier.h"
@@ -1035,7 +1035,7 @@ void PresShell::Init(nsIDocument* aDocument, nsPresContext* aPresContext,
 #endif
 
   if (mDocument->HasAnimationController()) {
-    nsSMILAnimationController* animCtrl = mDocument->GetAnimationController();
+    SMILAnimationController* animCtrl = mDocument->GetAnimationController();
     animCtrl->NotifyRefreshDriverCreated(GetPresContext()->RefreshDriver());
   }
 
@@ -2037,8 +2037,8 @@ void PresShell::FireResizeEvent() {
   if (mDocument->EventHandlingSuppressed()) {
     if (MOZ_LIKELY(!mDocument->GetBFCacheEntry())) {
       mDocument->SetHasDelayedRefreshEvent();
-      mPresContext->RefreshDriver()->AddResizeEventFlushObserver(
-          this,  true);
+      mPresContext->RefreshDriver()->AddResizeEventFlushObserver
+          (this,  true);
     }
     return;
   }

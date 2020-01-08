@@ -112,7 +112,6 @@ class nsViewManager;
 class nsPresContext;
 class nsRange;
 class nsSimpleContentList;
-class nsSMILAnimationController;
 class nsTextNode;
 class nsUnblockOnloadEvent;
 class nsWindowSizes;
@@ -132,6 +131,7 @@ class FullscreenExit;
 class FullscreenRequest;
 class PendingAnimationTracker;
 class ServoStyleSet;
+class SMILAnimationController;
 template <typename>
 class OwningNonNull;
 struct URLExtraData;
@@ -213,8 +213,8 @@ enum class CallerType : uint32_t;
 namespace mozilla {
 namespace net {
 class ChannelEventQueue;
-}  
-}  
+} 
+} 
 
 
 #define NS_IDOCUMENT_IID                             \
@@ -2408,7 +2408,7 @@ class nsIDocument : public nsINode,
   
   
   
-  nsSMILAnimationController* GetAnimationController();
+  mozilla::SMILAnimationController* GetAnimationController();
 
   
   
@@ -2456,7 +2456,9 @@ class nsIDocument : public nsINode,
 
   void AddSuspendedChannelEventQueue(mozilla::net::ChannelEventQueue* aQueue);
 
-  void SetHasDelayedRefreshEvent() { mHasDelayedRefreshEvent = true; }
+  void SetHasDelayedRefreshEvent() {
+    mHasDelayedRefreshEvent = true;
+  }
 
   
 
@@ -3646,7 +3648,7 @@ class nsIDocument : public nsINode,
   LinksToUpdateList mLinksToUpdate;
 
   
-  RefPtr<nsSMILAnimationController> mAnimationController;
+  RefPtr<mozilla::SMILAnimationController> mAnimationController;
 
   
   nsPropertyTable mPropertyTable;

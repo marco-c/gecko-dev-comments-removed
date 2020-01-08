@@ -177,7 +177,7 @@
 #include "mozilla/Encoding.h"
 #include "nsDOMNavigationTiming.h"
 
-#include "nsSMILAnimationController.h"
+#include "mozilla/SMILAnimationController.h"
 #include "imgIContainer.h"
 #include "nsSVGUtils.h"
 
@@ -6129,14 +6129,14 @@ void nsIDocument::EnumerateExternalResources(nsSubDocEnumFunc aCallback,
   mExternalResourceMap.EnumerateResources(aCallback, aData);
 }
 
-nsSMILAnimationController* nsIDocument::GetAnimationController() {
+SMILAnimationController* nsIDocument::GetAnimationController() {
   
   
   if (mAnimationController) return mAnimationController;
   
   if (mLoadedAsData || mLoadedAsInteractiveData) return nullptr;
 
-  mAnimationController = new nsSMILAnimationController(this);
+  mAnimationController = new SMILAnimationController(this);
 
   
   
