@@ -37,33 +37,38 @@ namespace mozilla {
 
 
 
-struct FloatTypeTraits
+namespace detail {
+
+
+
+
+
+
+
+template<typename T>
+struct FloatingPointTrait;
+
+template<>
+struct FloatingPointTrait<float>
 {
+protected:
   using Bits = uint32_t;
 
-  static constexpr unsigned kExponentBias = 127;
-  static constexpr unsigned kExponentShift = 23;
-
-  static constexpr Bits kSignBit         = 0x80000000UL;
-  static constexpr Bits kExponentBits    = 0x7F800000UL;
-  static constexpr Bits kSignificandBits = 0x007FFFFFUL;
+  static constexpr unsigned kExponentWidth = 8;
+  static constexpr unsigned kSignificandWidth = 23;
 };
 
-struct DoubleTypeTraits
+template<>
+struct FloatingPointTrait<double>
 {
+protected:
   using Bits = uint64_t;
 
-  static constexpr unsigned kExponentBias = 1023;
-  static constexpr unsigned kExponentShift = 52;
-
-  static constexpr Bits kSignBit         = 0x8000000000000000ULL;
-  static constexpr Bits kExponentBits    = 0x7ff0000000000000ULL;
-  static constexpr Bits kSignificandBits = 0x000fffffffffffffULL;
+  static constexpr unsigned kExponentWidth = 11;
+  static constexpr unsigned kSignificandWidth = 52;
 };
 
-template<typename T> struct SelectTrait;
-template<> struct SelectTrait<float> : public FloatTypeTraits {};
-template<> struct SelectTrait<double> : public DoubleTypeTraits {};
+} 
 
 
 
@@ -92,21 +97,29 @@ template<> struct SelectTrait<double> : public DoubleTypeTraits {};
 
 
 template<typename T>
-struct FloatingPoint : public SelectTrait<T>
+struct FloatingPoint final : private detail::FloatingPointTrait<T>
 {
-  using Base = SelectTrait<T>;
+private:
+  using Base = detail::FloatingPointTrait<T>;
+
+public:
+  
+
+
+
   using Bits = typename Base::Bits;
 
-  static_assert((Base::kSignBit & Base::kExponentBits) == 0,
-                "sign bit shouldn't overlap exponent bits");
-  static_assert((Base::kSignBit & Base::kSignificandBits) == 0,
-                "sign bit shouldn't overlap significand bits");
-  static_assert((Base::kExponentBits & Base::kSignificandBits) == 0,
-                "exponent bits shouldn't overlap significand bits");
+  static_assert(sizeof(T) == sizeof(Bits), "Bits must be same size as T");
 
-  static_assert((Base::kSignBit | Base::kExponentBits | Base::kSignificandBits) ==
-                ~Bits(0),
-                "all bits accounted for");
+  
+  using Base::kExponentWidth;
+
+  
+  using Base::kSignificandWidth;
+
+  static_assert(1 + kExponentWidth + kSignificandWidth ==
+                CHAR_BIT * sizeof(T),
+                "sign bit plus bit widths should sum to overall bit width");
 
   
 
@@ -114,8 +127,35 @@ struct FloatingPoint : public SelectTrait<T>
 
 
 
+  static constexpr unsigned kExponentBias = (1U << (kExponentWidth - 1)) - 1;
 
-  static_assert(sizeof(T) == sizeof(Bits), "Bits must be same size as T");
+  
+
+
+
+  static constexpr unsigned kExponentShift = kSignificandWidth;
+
+  
+  static constexpr Bits kSignBit =
+    static_cast<Bits>(1) << (CHAR_BIT * sizeof(Bits) - 1);
+
+  
+  static constexpr Bits kExponentBits =
+    ((static_cast<Bits>(1) << kExponentWidth) - 1) << kSignificandWidth;
+
+  
+  static constexpr Bits kSignificandBits =
+    (static_cast<Bits>(1) << kSignificandWidth) - 1;
+
+  static_assert((kSignBit & kExponentBits) == 0,
+                "sign bit shouldn't overlap exponent bits");
+  static_assert((kSignBit & kSignificandBits) == 0,
+                "sign bit shouldn't overlap significand bits");
+  static_assert((kExponentBits & kSignificandBits) == 0,
+                "exponent bits shouldn't overlap significand bits");
+
+  static_assert((kSignBit | kExponentBits | kSignificandBits) == ~Bits(0),
+                "all bits accounted for");
 };
 
 
