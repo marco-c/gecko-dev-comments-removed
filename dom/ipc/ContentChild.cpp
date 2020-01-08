@@ -1584,6 +1584,8 @@ StartMacOSContentSandbox()
                    PR_GetEnv("MOZ_SANDBOX_LOGGING");
   info.appPath.assign(appPath.get());
   info.hasAudio = !Preferences::GetBool("media.cubeb.sandbox");
+  info.hasWindowServer = !Preferences::GetBool(
+      "security.sandbox.content.mac.disconnect-windowserver");
 
   
   
