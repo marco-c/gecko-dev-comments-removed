@@ -67,6 +67,8 @@ TestShellCommandParent::RunCallback(const nsString& aResponse)
 {
   NS_ENSURE_TRUE(mCallback.isObject(), false);
 
+  MOZ_RELEASE_ASSERT(js::IsFunctionObject(&mCallback.toObject()));
+
   
   
   dom::AutoEntryScript aes(&mCallback.toObject(), "TestShellCommand");
