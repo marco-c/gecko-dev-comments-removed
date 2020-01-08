@@ -4,7 +4,7 @@
 
 function test() {
   
-  CustomizableUI.addWidgetToArea("save-page-button", CustomizableUI.AREA_NAVBAR);
+  CustomizableUI.addWidgetToArea("feed-button", CustomizableUI.AREA_NAVBAR);
 
   let CustomizableUIBSPass = ChromeUtils.import("resource:///modules/CustomizableUI.jsm", {});
 

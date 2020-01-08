@@ -333,6 +333,12 @@ function loadPageInfo(frameOuterWindowID, imageElement, browser) {
   browser = browser || window.opener.gBrowser.selectedBrowser;
   let mm = browser.messageManager;
 
+  gStrings["application/rss+xml"]  = gBundle.getString("feedRss");
+  gStrings["application/atom+xml"] = gBundle.getString("feedAtom");
+  gStrings["text/xml"]             = gBundle.getString("feedXML");
+  gStrings["application/xml"]      = gBundle.getString("feedXML");
+  gStrings["application/rdf+xml"]  = gBundle.getString("feedXML");
+
   let imageInfo = imageElement;
 
   
@@ -359,6 +365,7 @@ function loadPageInfo(frameOuterWindowID, imageElement, browser) {
     document.getElementById("main-window").setAttribute("relatedUrl", docInfo.location);
 
     makeGeneralTab(pageInfoData.metaViewRows, docInfo);
+    initFeedTab(pageInfoData.feeds);
     onLoadPermission(uri, principal);
     securityOnLoad(uri, windowInfo);
   });
@@ -403,6 +410,11 @@ function resetPageInfo(args) {
   gImageHash = {};
 
   
+  var feedListbox = document.getElementById("feedListbox");
+  while (feedListbox.firstChild)
+    feedListbox.firstChild.remove();
+
+  
   onResetRegistry.forEach(function(func) { func(); });
 
   
@@ -423,6 +435,7 @@ function doHelpButton() {
   const helpTopics = {
     "generalPanel":  "pageinfo_general",
     "mediaPanel":    "pageinfo_media",
+    "feedPanel":     "pageinfo_feed",
     "permPanel":     "pageinfo_permissions",
     "securityPanel": "pageinfo_security",
   };
