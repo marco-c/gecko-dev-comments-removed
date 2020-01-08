@@ -9,7 +9,7 @@
 
 
 var body = "This frame was navigated.";
-var target_url = "navigation_target_url.html";
+var target_url = "navigation_target_url.html"
 
 var popup_body = "This is a popup";
 var target_popup_url = "navigation_target_popup_url.html";
@@ -21,7 +21,7 @@ var target_popup_url = "navigation_target_popup_url.html";
 function navigateByLocation(wnd) {
   try {
     wnd.location = target_url;
-  } catch (ex) {
+  } catch(ex) {
     
     
     window.open(target_url, "_blank", "width=10,height=10");
@@ -48,7 +48,7 @@ function navigateByHyperlink(name) {
   link.target = name;
   link.id = "navigation_hyperlink_" + hyperlink_count++;
   document.body.appendChild(link);
-  sendMouseEvent({type: "click"}, link.id);
+  sendMouseEvent({type:"click"}, link.id);
 }
 
 
@@ -59,7 +59,7 @@ function isNavigated(wnd, message) {
   var result = null;
   try {
     result = SpecialPowers.wrap(wnd).document.body.innerHTML.trim();
-  } catch (ex) {
+  } catch(ex) {
     result = ex;
   }
   is(result, body, message);
@@ -69,7 +69,7 @@ function isBlank(wnd, message) {
   var result = null;
   try {
     result = wnd.document.body.innerHTML.trim();
-  } catch (ex) {
+  } catch(ex) {
     result = ex;
   }
   is(result, "This is a blank document.", message);
@@ -79,7 +79,7 @@ function isAccessible(wnd, message) {
   try {
     wnd.document.body.innerHTML;
     ok(true, message);
-  } catch (ex) {
+  } catch(ex) {
     ok(false, message);
   }
 }
@@ -88,7 +88,7 @@ function isInaccessible(wnd, message) {
   try {
     wnd.document.body.innerHTML;
     ok(false, message);
-  } catch (ex) {
+  } catch(ex) {
     ok(true, message);
   }
 }
@@ -100,7 +100,6 @@ function isInaccessible(wnd, message) {
 function xpcEnumerateContentWindows(callback) {
 
   var Ci = SpecialPowers.Ci;
-  
   var ww = SpecialPowers.Cc["@mozilla.org/embedcomp/window-watcher;1"]
                         .getService(Ci.nsIWindowWatcher);
 
@@ -128,7 +127,6 @@ function xpcEnumerateContentWindows(callback) {
   while (contentWindows.length > 0)
     callback(contentWindows.pop());
 }
-
 
 
 function xpcGetFramesByName(name) {
@@ -180,10 +178,10 @@ function xpcWaitForFinishedFrames(callback, numFrames) {
   function searchForFinishedFrames(win) {
     if ((win.location.href.endsWith(target_url) ||
          win.location.href.endsWith(target_popup_url)) &&
-        win.document &&
-        win.document.body &&
+        win.document && 
+        win.document.body && 
         (win.document.body.textContent.trim() == body ||
-         win.document.body.textContent.trim() == popup_body) &&
+         win.document.body.textContent.trim() == popup_body) && 
         win.document.readyState == "complete") {
 
       var windowId = win.windowUtils.outerWindowID;
@@ -201,7 +199,7 @@ function xpcWaitForFinishedFrames(callback, numFrames) {
       
       
       xpcEnumerateContentWindows(searchForFinishedFrames);
-    } catch (ex) {
+    } catch(ex) {
       
       
     }

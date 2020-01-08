@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-var dirSvc = Services.dirSvc;
+var dirSvc = Cc["@mozilla.org/file/directory_service;1"].
+             getService(Ci.nsIProperties);
 var profileDir = do_get_profile();
