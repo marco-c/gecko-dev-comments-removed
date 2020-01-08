@@ -161,7 +161,18 @@ var Utils = Object.freeze({
 
   mapFrameTree(frame, ...dataCollectors) {
     
-    let objs = dataCollectors.map((dataCollector) => dataCollector(frame) || {});
+    let objs = dataCollectors.map(function(dataCollector) {
+      let obj = dataCollector(frame.document);
+        if (!obj || typeof(obj) == "object") {
+          return obj || {};
+        }
+        
+        
+        if (typeof(obj) == "string") {
+          return {scroll: obj};
+        }
+        return obj;
+    });
     let children = dataCollectors.map(() => []);
 
     

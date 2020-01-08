@@ -132,7 +132,7 @@ var FormDataInternal = {
 
 
 
-  collect({document: doc}) {
+  collect(doc) {
     let formNodes = doc.evaluate(
       this.restorableFormNodesXPath,
       doc,
