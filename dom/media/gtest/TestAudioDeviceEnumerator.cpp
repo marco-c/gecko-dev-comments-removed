@@ -116,9 +116,10 @@ class MockCubeb
 public:
   MockCubeb()
     : ops(&mock_ops)
-    , mDeviceCollectionChangeCallback(nullptr)
-    , mDeviceCollectionChangeType(CUBEB_DEVICE_TYPE_UNKNOWN)
-    , mDeviceCollectionChangeUserPtr(nullptr)
+    , mInputDeviceCollectionChangeCallback(nullptr)
+    , mOutputDeviceCollectionChangeCallback(nullptr)
+    , mInputDeviceCollectionChangeUserPtr(nullptr)
+    , mOutputDeviceCollectionChangeUserPtr(nullptr)
     , mSupportsDeviceCollectionChangedCallback(true)
   {
   }
@@ -171,9 +172,14 @@ public:
       return CUBEB_ERROR;
     }
 
-    mDeviceCollectionChangeType = aDevType;
-    mDeviceCollectionChangeCallback = aCallback;
-    mDeviceCollectionChangeUserPtr = aUserPtr;
+    if (aDevType & CUBEB_DEVICE_TYPE_INPUT) {
+      mInputDeviceCollectionChangeCallback = aCallback;
+      mInputDeviceCollectionChangeUserPtr = aUserPtr;
+    }
+    if (aDevType & CUBEB_DEVICE_TYPE_OUTPUT) {
+      mOutputDeviceCollectionChangeCallback = aCallback;
+      mOutputDeviceCollectionChangeUserPtr = aUserPtr;
+    }
 
     return CUBEB_OK;
   }
@@ -184,8 +190,6 @@ public:
   
   void AddDevice(cubeb_device_info aDevice)
   {
-    bool needToCall = false;
-
     if (aDevice.type == CUBEB_DEVICE_TYPE_INPUT) {
       mInputDevices.AppendElement(aDevice);
     } else if (aDevice.type == CUBEB_DEVICE_TYPE_OUTPUT) {
@@ -195,15 +199,13 @@ public:
     }
 
     bool isInput = aDevice.type & CUBEB_DEVICE_TYPE_INPUT;
-
-    needToCall |=
-      isInput && mDeviceCollectionChangeType & CUBEB_DEVICE_TYPE_INPUT;
-    needToCall |=
-      !isInput && mDeviceCollectionChangeType & CUBEB_DEVICE_TYPE_OUTPUT;
-
-    if (needToCall && mDeviceCollectionChangeCallback) {
-      mDeviceCollectionChangeCallback(AsCubebContext(),
-                                      mDeviceCollectionChangeUserPtr);
+    if (isInput && mInputDeviceCollectionChangeCallback) {
+      mInputDeviceCollectionChangeCallback(AsCubebContext(),
+                                           mInputDeviceCollectionChangeUserPtr);
+    }
+    if (!isInput && mOutputDeviceCollectionChangeCallback) {
+      mOutputDeviceCollectionChangeCallback(AsCubebContext(),
+                                            mOutputDeviceCollectionChangeUserPtr);
     }
   }
   
@@ -226,18 +228,14 @@ public:
         return foundThisTime;
       });
 
-    bool needToCall = false;
-
-    needToCall |=
-      foundInput && mDeviceCollectionChangeType & CUBEB_DEVICE_TYPE_INPUT;
-    needToCall |=
-      foundOutput && mDeviceCollectionChangeType & CUBEB_DEVICE_TYPE_OUTPUT;
-
-    if (needToCall && mDeviceCollectionChangeCallback) {
-      mDeviceCollectionChangeCallback(AsCubebContext(),
-                                      mDeviceCollectionChangeUserPtr);
+    if (foundInput && mInputDeviceCollectionChangeCallback) {
+      mInputDeviceCollectionChangeCallback(AsCubebContext(),
+                                           mInputDeviceCollectionChangeUserPtr);
     }
-
+    if (foundOutput && mOutputDeviceCollectionChangeCallback) {
+      mOutputDeviceCollectionChangeCallback(AsCubebContext(),
+                                            mOutputDeviceCollectionChangeUserPtr);
+    }
     
     
     bool foundDefault = false;
@@ -287,11 +285,11 @@ private:
   
   const cubeb_ops* ops;
   
-  cubeb_device_collection_changed_callback mDeviceCollectionChangeCallback;
+  cubeb_device_collection_changed_callback mInputDeviceCollectionChangeCallback;
+  cubeb_device_collection_changed_callback mOutputDeviceCollectionChangeCallback;
   
-  cubeb_device_type mDeviceCollectionChangeType;
-  
-  void* mDeviceCollectionChangeUserPtr;
+  void* mInputDeviceCollectionChangeUserPtr;
+  void* mOutputDeviceCollectionChangeUserPtr;
   
   
   
@@ -442,7 +440,7 @@ PrintDevice(AudioDeviceInfo* aInfo)
 }
 
 cubeb_device_info
-InputDeviceTemplate(cubeb_devid aId)
+DeviceTemplate(cubeb_devid aId, cubeb_device_type aType)
 {
   
   cubeb_device_info device;
@@ -451,7 +449,7 @@ InputDeviceTemplate(cubeb_devid aId)
   device.friendly_name = "an even nicer name";
   device.group_id = "the physical device";
   device.vendor_name = "mozilla";
-  device.type = CUBEB_DEVICE_TYPE_INPUT;
+  device.type = aType;
   device.state = CUBEB_DEVICE_STATE_ENABLED;
   device.preferred = CUBEB_DEVICE_PREF_NONE;
   device.format = CUBEB_DEVICE_FMT_F32NE;
@@ -475,44 +473,77 @@ enum DeviceOperation
 void
 TestEnumeration(MockCubeb* aMock,
                 uint32_t aExpectedDeviceCount,
-                DeviceOperation aOperation)
+                DeviceOperation aOperation,
+                cubeb_device_type aType)
 {
   RefPtr<CubebDeviceEnumerator> enumerator = CubebDeviceEnumerator::GetInstance();
 
-  nsTArray<RefPtr<AudioDeviceInfo>> inputDevices;
+  nsTArray<RefPtr<AudioDeviceInfo>> devices;
 
-  enumerator->EnumerateAudioInputDevices(inputDevices);
+  if (aType == CUBEB_DEVICE_TYPE_INPUT) {
+    enumerator->EnumerateAudioInputDevices(devices);
+  }
 
-  EXPECT_EQ(inputDevices.Length(), aExpectedDeviceCount)
+  if (aType == CUBEB_DEVICE_TYPE_OUTPUT) {
+    enumerator->EnumerateAudioOutputDevices(devices);
+  }
+
+  EXPECT_EQ(devices.Length(), aExpectedDeviceCount)
     << "Device count is correct when enumerating";
 
   if (DEBUG_PRINTS) {
-    for (uint32_t i = 0; i < inputDevices.Length(); i++) {
+    for (uint32_t i = 0; i < devices.Length(); i++) {
       printf("=== Before removal\n");
-      PrintDevice(inputDevices[i]);
+      PrintDevice(devices[i]);
     }
   }
 
   if (aOperation == DeviceOperation::REMOVE) {
     aMock->RemoveDevice(reinterpret_cast<cubeb_devid>(1));
   } else {
-    aMock->AddDevice(InputDeviceTemplate(reinterpret_cast<cubeb_devid>(123)));
+    aMock->AddDevice(DeviceTemplate(reinterpret_cast<cubeb_devid>(123), aType));
   }
 
-  enumerator->EnumerateAudioInputDevices(inputDevices);
+  if (aType == CUBEB_DEVICE_TYPE_INPUT) {
+    enumerator->EnumerateAudioInputDevices(devices);
+  }
+
+  if (aType == CUBEB_DEVICE_TYPE_OUTPUT) {
+    enumerator->EnumerateAudioOutputDevices(devices);
+  }
 
   uint32_t newExpectedDeviceCount = aOperation == DeviceOperation::REMOVE
                                       ? aExpectedDeviceCount - 1
                                       : aExpectedDeviceCount + 1;
 
-  EXPECT_EQ(inputDevices.Length(), newExpectedDeviceCount)
+  EXPECT_EQ(devices.Length(), newExpectedDeviceCount)
     << "Device count is correct when enumerating after operation";
 
   if (DEBUG_PRINTS) {
-    for (uint32_t i = 0; i < inputDevices.Length(); i++) {
+    for (uint32_t i = 0; i < devices.Length(); i++) {
       printf("=== After removal\n");
-      PrintDevice(inputDevices[i]);
+      PrintDevice(devices[i]);
     }
+  }
+}
+
+void
+AddDevices(MockCubeb* mock,
+           uint32_t device_count,
+           cubeb_device_type deviceType)
+{
+  mock->ClearDevices(deviceType);
+  
+  
+  
+  for (uintptr_t i = 0; i < device_count; i++) {
+    cubeb_device_info device =
+      DeviceTemplate(reinterpret_cast<void*>(i + 1), deviceType);
+    
+    if (i == device_count - 1) {
+      device.preferred = CUBEB_DEVICE_PREF_ALL;
+    }
+    mock->AddDevice(device);
   }
 }
 
@@ -533,29 +564,26 @@ TEST(CubebDeviceEnumerator, EnumerateSimple)
   DeviceOperation operations[2] = { DeviceOperation::ADD,
                                     DeviceOperation::REMOVE };
 
-  for (DeviceOperation op : operations) {
-    for (bool supports : supportsDeviceChangeCallback) {
-      mock->ClearDevices(CUBEB_DEVICE_TYPE_INPUT);
-      
-      
-      
+  for (bool supports : supportsDeviceChangeCallback) {
+    
+    CubebDeviceEnumerator::Shutdown();
+    mock->SetSupportDeviceChangeCallback(supports);
+    for (DeviceOperation op : operations) {
       uint32_t device_count = 4;
-      for (uintptr_t i = 0; i < device_count; i++) {
-        cubeb_device_info device =
-          InputDeviceTemplate(reinterpret_cast<void*>(i + 1));
-        
-        if (i == device_count - 1) {
-          device.preferred = CUBEB_DEVICE_PREF_ALL;
-        }
-        mock->AddDevice(device);
-      }
 
-      mock->SetSupportDeviceChangeCallback(supports);
-      TestEnumeration(mock, device_count, op);
+      cubeb_device_type deviceType = CUBEB_DEVICE_TYPE_INPUT;
+      AddDevices(mock, device_count, deviceType);
+      TestEnumeration(mock, device_count, op, deviceType);
+
+      deviceType = CUBEB_DEVICE_TYPE_OUTPUT;
+      AddDevices(mock, device_count, deviceType);
+      TestEnumeration(mock, device_count, op, deviceType);
     }
   }
+  
   CubebDeviceEnumerator::Shutdown();
 }
+
 #else 
 TEST(CubebDeviceEnumerator, EnumerateAndroid)
 {
@@ -568,9 +596,15 @@ TEST(CubebDeviceEnumerator, EnumerateAndroid)
   enumerator->EnumerateAudioInputDevices(inputDevices);
   EXPECT_EQ(inputDevices.Length(), 1u) <<  "Android always exposes a single input device.";
   EXPECT_EQ(inputDevices[0]->MaxChannels(), 1u) << "With a single channel.";
-  EXPECT_EQ(inputDevices[0]->DeviceID(), nullptr) << "It's always the default device.";
-  EXPECT_TRUE(inputDevices[0]->Preferred()) << "it's always the prefered device.";
-  CubebDeviceEnumerator::Shutdown();
+  EXPECT_EQ(inputDevices[0]->DeviceID(), nullptr) << "It's always the default input device.";
+  EXPECT_TRUE(inputDevices[0]->Preferred()) << "it's always the prefered input device.";
+
+  nsTArray<RefPtr<AudioDeviceInfo>> outputDevices;
+  enumerator->EnumerateAudioOutputDevices(outputDevices);
+  EXPECT_EQ(outputDevices.Length(), 1u) <<  "Android always exposes a single output device.";
+  EXPECT_EQ(outputDevices[0]->MaxChannels(), 2u) << "With stereo channels.";
+  EXPECT_EQ(outputDevices[0]->DeviceID(), nullptr) << "It's always the default output device.";
+  EXPECT_TRUE(outputDevices[0]->Preferred()) << "it's always the prefered output device.";
 }
 #endif
 
@@ -578,11 +612,13 @@ TEST(CubebDeviceEnumerator, ForceNullCubebContext)
 {
   mozilla::CubebUtils::ForceSetCubebContext(nullptr);
   RefPtr<CubebDeviceEnumerator> enumerator = CubebDeviceEnumerator::GetInstance();
+
   nsTArray<RefPtr<AudioDeviceInfo>> inputDevices;
   enumerator->EnumerateAudioInputDevices(inputDevices);
-  EXPECT_EQ(inputDevices.Length(), 0u) << "Enumeration must fail device list must be empty.";
+  EXPECT_EQ(inputDevices.Length(), 0u) << "Enumeration must fail, input device list must be empty.";
 
-  enumerator->Shutdown();
-  CubebDeviceEnumerator::Shutdown();
+  nsTArray<RefPtr<AudioDeviceInfo>> outputDevices;
+  enumerator->EnumerateAudioOutputDevices(outputDevices);
+  EXPECT_EQ(outputDevices.Length(), 0u) << "Enumeration must fail, output device list must be empty.";
 }
 

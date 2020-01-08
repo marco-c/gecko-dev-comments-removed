@@ -26,6 +26,8 @@ public:
   
   void EnumerateAudioInputDevices(nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
   
+  void EnumerateAudioOutputDevices(nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
+  
   
   
   already_AddRefed<AudioDeviceInfo>
@@ -37,19 +39,26 @@ private:
   
   
   
+  static void InputAudioDeviceListChanged_s(cubeb* aContext, void* aUser);
+  static void OutputAudioDeviceListChanged_s(cubeb* aContext, void* aUser);
+  enum class Side {
+    INPUT,
+    OUTPUT,
+  };
   
-  static void AudioDeviceListChanged_s(cubeb* aContext, void* aUser);
   
-  
-  void AudioDeviceListChanged();
+  void AudioDeviceListChanged(Side aSide);
+  void EnumerateAudioDevices(Side aSide);
   
   Mutex mMutex;
-  nsTArray<RefPtr<AudioDeviceInfo>> mDevices;
+  nsTArray<RefPtr<AudioDeviceInfo>> mInputDevices;
+  nsTArray<RefPtr<AudioDeviceInfo>> mOutputDevices;
   
   
   
-  bool mManualInvalidation;
-
+  bool mManualInputInvalidation;
+  bool mManualOutputInvalidation;
+  
   static StaticRefPtr<CubebDeviceEnumerator> sInstance;
 };
 
