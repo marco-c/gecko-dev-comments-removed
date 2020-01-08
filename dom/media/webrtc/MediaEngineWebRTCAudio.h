@@ -226,6 +226,8 @@ public:
   void UpdateNSSettingsIfNeeded(bool aEnable, webrtc::NsModes aMode);
   void UpdateAPMExtraOptions(bool aExtendedFilter, bool aDelayAgnostic);
 
+  void End();
+
 private:
   ~AudioInputProcessing() = default;
   RefPtr<SourceMediaStream> mStream;
@@ -277,6 +279,8 @@ private:
   
   
   bool mEnabled;
+  
+  bool mEnded;
 };
 
 
