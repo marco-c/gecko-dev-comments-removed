@@ -4,7 +4,7 @@
 
 
 
-const ROOT_URL = "http://example.com/browser/dom/tests/browser";
+const ROOT_URL = "http://example.com/browser/dom/tests/browser/perfmetrics";
 const DUMMY_URL = ROOT_URL + "/dummy.html";
 const WORKER_URL = ROOT_URL + "/ping_worker.html";
 const WORKER_URL2 = ROOT_URL + "/ping_worker2.html";
@@ -41,7 +41,7 @@ function postMessageToWorker(tab, message) {
 }
 
 add_task(async function test() {
-  SpecialPowers.setBoolPref("dom.performance.enable_scheduler_timing", true);
+  
   waitForExplicitFinish();
 
   
@@ -147,5 +147,4 @@ add_task(async function test() {
   BrowserTestUtils.removeTab(page1);
   BrowserTestUtils.removeTab(page2);
   BrowserTestUtils.removeTab(page3);
-  SpecialPowers.clearUserPref("dom.performance.enable_scheduler_timing");
 });
