@@ -364,6 +364,10 @@ public:
   BlendAnimationFilter()
     : mRow(0)
     , mRowLength(0)
+    , mRecycleRow(0)
+    , mRecycleRowMost(0)
+    , mRecycleRowOffset(0)
+    , mRecycleRowLength(0)
     , mOverProc(nullptr)
     , mBaseFrameStartPtr(nullptr)
     , mBaseFrameRowPtr(nullptr)
@@ -475,6 +479,15 @@ public:
         mClearRect = outputRect;
       }
     }
+
+    
+    
+    
+    const gfx::IntRect& recycleRect = aConfig.mDecoder->GetRecycleRect();
+    mRecycleRow = recycleRect.y;
+    mRecycleRowMost = recycleRect.YMost();
+    mRecycleRowOffset = recycleRect.x * sizeof(uint32_t);
+    mRecycleRowLength = recycleRect.width * sizeof(uint32_t);
 
     
     
@@ -628,9 +641,16 @@ private:
       return;
     }
 
+    
+    
+    bool needBaseFrame = mRow >= mRecycleRow &&
+                         mRow < mRecycleRowMost;
+
     if (!mBaseFrameRowPtr) {
       
-      memset(dest, 0, mRowLength);
+      if (needBaseFrame) {
+        memset(dest + mRecycleRowOffset, 0, mRecycleRowLength);
+      }
     } else if (mClearRect.height > 0 &&
                mClearRect.y <= mRow &&
                mClearRect.YMost() > mRow) {
@@ -644,8 +664,10 @@ private:
       memcpy(dest, mBaseFrameRowPtr, prefixLength);
       memset(dest + prefixLength, 0, clearLength);
       memcpy(dest + postfixOffset, mBaseFrameRowPtr + postfixOffset, postfixLength);
-    } else {
-      memcpy(dest, mBaseFrameRowPtr, mRowLength);
+    } else if (needBaseFrame) {
+      memcpy(dest + mRecycleRowOffset,
+             mBaseFrameRowPtr + mRecycleRowOffset,
+             mRecycleRowLength);
     }
   }
 
@@ -694,6 +716,10 @@ private:
                                        
   size_t mRowLength;                   
                                        
+  int32_t mRecycleRow;                 
+  int32_t mRecycleRowMost;             
+  size_t mRecycleRowOffset;            
+  size_t mRecycleRowLength;            
   SkBlitRow::Proc32 mOverProc;         
   const uint8_t* mBaseFrameStartPtr;   
                                        

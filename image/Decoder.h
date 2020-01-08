@@ -445,6 +445,12 @@ public:
     return mRestoreDirtyRect;
   }
 
+  const gfx::IntRect& GetRecycleRect() const
+  {
+    MOZ_ASSERT(ShouldBlendAnimation());
+    return mRecycleRect;
+  }
+
   bool HasFrameToTake() const { return mHasFrameToTake; }
   void ClearHasFrameToTake() {
     MOZ_ASSERT(mHasFrameToTake);
@@ -606,6 +612,8 @@ private:
   gfx::IntRect mInvalidRect; 
   gfx::IntRect mRestoreDirtyRect; 
                                   
+  gfx::IntRect mRecycleRect; 
+                             
   Maybe<gfx::IntSize> mOutputSize;  
   Maybe<gfx::IntSize> mExpectedSize; 
   Progress mProgress;

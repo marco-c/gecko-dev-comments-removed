@@ -339,6 +339,10 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
     return RawAccessFrameRef();
   }
 
+  
+  
+  mRecycleRect = IntRect(IntPoint(0, 0), aOutputSize);
+
   auto frame = MakeNotNull<RefPtr<imgFrame>>();
   bool nonPremult = bool(mSurfaceFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
   if (NS_FAILED(frame->InitForDecoder(aOutputSize, aFrameRect, aFormat,
