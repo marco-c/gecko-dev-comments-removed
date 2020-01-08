@@ -6997,7 +6997,7 @@ nsIDocument::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv)
       
       
       
-      JSAutoRealmAllowCCW ar(cx, GetScopeObject()->GetGlobalJSObject());
+      JSAutoRealm ar(cx, GetScopeObject()->GetGlobalJSObject());
       JS::Rooted<JS::Value> v(cx);
       rv = nsContentUtils::WrapNative(cx, this, this, &v,
                                        false);
@@ -7291,7 +7291,7 @@ nsIDocument::UpdateViewportOverflowType(nscoord aScrolledWidth,
 #ifdef DEBUG
   MOZ_ASSERT(mPresShell);
   nsPresContext* pc = GetPresContext();
-  MOZ_ASSERT(pc->GetViewportScrollStylesOverride().mHorizontal ==
+  MOZ_ASSERT(pc->GetViewportScrollbarStylesOverride().mHorizontal ==
              NS_STYLE_OVERFLOW_HIDDEN,
              "Should only be called when viewport has overflow-x: hidden");
   MOZ_ASSERT(aScrolledWidth > aScrollportWidth,
@@ -9649,7 +9649,7 @@ nsIDocument::GetStateObject(nsIVariant** aState)
     NS_ENSURE_TRUE(sgo, NS_ERROR_UNEXPECTED);
     JS::Rooted<JSObject*> global(cx, sgo->GetGlobalJSObject());
     NS_ENSURE_TRUE(global, NS_ERROR_UNEXPECTED);
-    JSAutoRealmAllowCCW ar(cx, global);
+    JSAutoRealm ar(cx, global);
 
     mStateObjectContainer->
       DeserializeToVariant(cx, getter_AddRefs(mStateObjectCached));
@@ -10696,7 +10696,7 @@ static void
 UpdateViewportScrollbarOverrideForFullscreen(nsIDocument* aDoc)
 {
   if (nsPresContext* presContext = aDoc->GetPresContext()) {
-    presContext->UpdateViewportScrollStylesOverride();
+    presContext->UpdateViewportScrollbarStylesOverride();
   }
 }
 
@@ -12636,13 +12636,6 @@ nsIDocument::HasBeenUserGestureActivated()
   }
 
   return mUserGestureActivated;
-}
-
-bool
-nsIDocument::IsExtensionPage() const
-{
-  return  Preferences::GetBool("media.autoplay.allow-extension-background-pages", true) &&
-          BasePrincipal::Cast(NodePrincipal())->AddonPolicy();
 }
 
 nsIDocument*

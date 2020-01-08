@@ -1001,7 +1001,7 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx,
     
     
     JS::RootedObject global(aCx, xpc::PrivilegedJunkScope());
-    JSAutoRealmAllowCCW ar(aCx, global);
+    JSAutoRealm ar(aCx, global);
 
     JS::RootedObject obj(aCx, JS_NewPlainObject(aCx));
     if (!obj) {

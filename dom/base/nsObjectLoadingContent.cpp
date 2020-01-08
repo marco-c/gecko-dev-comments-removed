@@ -3700,7 +3700,7 @@ nsObjectLoadingContent::TeardownProtoChain()
   MOZ_ASSERT(obj);
 
   JS::Rooted<JSObject*> proto(cx);
-  JSAutoRealmAllowCCW ar(cx, obj);
+  JSAutoRealm ar(cx, obj);
 
   
   
