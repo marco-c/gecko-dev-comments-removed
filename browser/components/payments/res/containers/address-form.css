@@ -2,11 +2,6 @@
 
 
 
-
-#country-warning-message {
-  display: none;
-}
-
 .error-text:not(:empty) {
   color: #fff;
   background-color: #d70022;
