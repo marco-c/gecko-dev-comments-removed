@@ -8,16 +8,9 @@
 #define mozilla_WinHeaderOnlyUtils_h
 
 #include <windows.h>
-#include <winerror.h>
-#include <winnt.h>
 #include <winternl.h>
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsWindowsHelpers.h"
 
@@ -39,164 +32,7 @@ typedef struct _FILE_ID_INFO
 
 #endif 
 
-#if !defined(STATUS_SUCCESS)
-#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
-#endif 
-
 namespace mozilla {
-
-class WindowsError final
-{
-private:
-  
-  
-  
-  
-  explicit WindowsError(HRESULT aHResult)
-    : mHResult(aHResult)
-  {
-  }
-
-public:
-  using UniqueString = UniquePtr<WCHAR[], LocalFreeDeleter>;
-
-  static WindowsError FromNtStatus(NTSTATUS aNtStatus)
-  {
-    if (aNtStatus == STATUS_SUCCESS) {
-      
-      
-      return WindowsError(S_OK);
-    }
-
-    return WindowsError(HRESULT_FROM_NT(aNtStatus));
-  }
-
-  static WindowsError FromHResult(HRESULT aHResult)
-  {
-    return WindowsError(aHResult);
-  }
-
-  static WindowsError FromWin32Error(DWORD aWin32Err)
-  {
-    return WindowsError(HRESULT_FROM_WIN32(aWin32Err));
-  }
-
-  static WindowsError FromLastError()
-  {
-    return FromWin32Error(::GetLastError());
-  }
-
-  static WindowsError CreateSuccess()
-  {
-    return WindowsError(S_OK);
-  }
-
-  static WindowsError CreateGeneric()
-  {
-    return FromWin32Error(ERROR_UNIDENTIFIED_ERROR);
-  }
-
-  explicit operator bool() const
-  {
-    return SUCCEEDED(mHResult);
-  }
-
-  bool IsAvailableAsWin32Error() const
-  {
-    return IsAvailableAsNtStatus() ||
-           HRESULT_FACILITY(mHResult) == FACILITY_WIN32;
-  }
-
-  bool IsAvailableAsNtStatus() const
-  {
-    return mHResult == S_OK || (mHResult & FACILITY_NT_BIT);
-  }
-
-  bool IsAvailableAsHResult() const
-  {
-    return true;
-  }
-
-  UniqueString AsString() const
-  {
-    LPWSTR rawMsgBuf = nullptr;
-    DWORD result = ::FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                                    FORMAT_MESSAGE_FROM_SYSTEM |
-                                    FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-                                    mHResult, 0,
-                                    reinterpret_cast<LPWSTR>(&rawMsgBuf), 0,
-                                    nullptr);
-    if (!result) {
-      return nullptr;
-    }
-
-    return UniqueString(rawMsgBuf);
-  }
-
-  HRESULT AsHResult() const
-  {
-    return mHResult;
-  }
-
-  
-  Maybe<DWORD> AsWin32Error() const
-  {
-    if (mHResult == S_OK) {
-      return Some(static_cast<DWORD>(ERROR_SUCCESS));
-    }
-
-    if (HRESULT_FACILITY(mHResult) == FACILITY_WIN32) {
-      
-      return Some(static_cast<DWORD>(HRESULT_CODE(mHResult)));
-    }
-
-    
-    
-    if (mHResult & FACILITY_NT_BIT) {
-      return Some(NtStatusToWin32Error(
-        static_cast<NTSTATUS>(mHResult & ~FACILITY_NT_BIT)));
-    }
-
-    return Nothing();
-  }
-
-  
-  Maybe<NTSTATUS> AsNtStatus() const
-  {
-    if (mHResult == S_OK) {
-      return Some(STATUS_SUCCESS);
-    }
-
-    
-    
-    if (mHResult & FACILITY_NT_BIT) {
-      return Some(static_cast<NTSTATUS>(mHResult & ~FACILITY_NT_BIT));
-    }
-
-    return Nothing();
-  }
-
-  static DWORD NtStatusToWin32Error(NTSTATUS aNtStatus)
-  {
-    static const DynamicallyLinkedFunctionPtr<decltype(&RtlNtStatusToDosError)>
-      pRtlNtStatusToDosError(L"ntdll.dll", "RtlNtStatusToDosError");
-
-    MOZ_ASSERT(!!pRtlNtStatusToDosError);
-    if (!pRtlNtStatusToDosError) {
-      return ERROR_UNIDENTIFIED_ERROR;
-    }
-
-    return pRtlNtStatusToDosError(aNtStatus);
-  }
-
-private:
-  
-  
-  HRESULT mHResult;
-};
-
-template <typename T>
-using WindowsErrorResult = Result<T, WindowsError>;
 
 
 
@@ -243,8 +79,7 @@ WaitForInputIdle(HANDLE aProcess, DWORD aTimeoutMs = kWaitForInputIdleTimeoutMS)
   }
 }
 
-enum class PathType
-{
+enum PathType {
   eNtPath,
   eDosPath,
 };
@@ -259,52 +94,43 @@ public:
       return;
     }
 
-    nsAutoHandle file;
-
+    nsAutoHandle file(INVALID_HANDLE_VALUE);
     switch (aPathType) {
-      default:
-        MOZ_ASSERT_UNREACHABLE("Unhandled PathType");
-        return;
+    default:
+      return;
 
-      case PathType::eNtPath: {
-          UNICODE_STRING unicodeString;
-          ::RtlInitUnicodeString(&unicodeString, aPath);
-          OBJECT_ATTRIBUTES objectAttributes;
-          InitializeObjectAttributes(&objectAttributes, &unicodeString,
-                                     OBJ_CASE_INSENSITIVE, nullptr, nullptr);
-          IO_STATUS_BLOCK ioStatus = {};
-          HANDLE ntHandle;
-          NTSTATUS status = ::NtOpenFile(&ntHandle, SYNCHRONIZE |
-                                         FILE_READ_ATTRIBUTES,
-                                         &objectAttributes, &ioStatus,
-                                         FILE_SHARE_READ | FILE_SHARE_WRITE |
-                                         FILE_SHARE_DELETE,
-                                         FILE_SYNCHRONOUS_IO_NONALERT |
-                                         FILE_OPEN_FOR_BACKUP_INTENT);
-          
-          
-          if (!NT_SUCCESS(status)) {
-            mError = Some(WindowsError::FromNtStatus(status));
-            return;
-          }
-
-          file.own(ntHandle);
-        }
-
-        break;
-
-      case PathType::eDosPath: {
-        file.own(::CreateFileW(aPath, 0, FILE_SHARE_READ |
-                               FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                               nullptr, OPEN_EXISTING,
-                               FILE_FLAG_BACKUP_SEMANTICS, nullptr));
-        if (file == INVALID_HANDLE_VALUE) {
-          mError = Some(WindowsError::FromLastError());
+    case eNtPath:
+      {
+        UNICODE_STRING unicodeString;
+        ::RtlInitUnicodeString(&unicodeString, aPath);
+        OBJECT_ATTRIBUTES objectAttributes;
+        InitializeObjectAttributes(&objectAttributes, &unicodeString,
+                                   OBJ_CASE_INSENSITIVE, nullptr, nullptr);
+        IO_STATUS_BLOCK ioStatus = {};
+        HANDLE ntHandle;
+        NTSTATUS status = ::NtOpenFile(&ntHandle, SYNCHRONIZE |
+                                       FILE_READ_ATTRIBUTES,
+                                       &objectAttributes, &ioStatus,
+                                       FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                       FILE_SHARE_DELETE,
+                                       FILE_SYNCHRONOUS_IO_NONALERT |
+                                       FILE_OPEN_FOR_BACKUP_INTENT);
+        if (!NT_SUCCESS(status) || ntHandle == INVALID_HANDLE_VALUE) {
           return;
         }
-
-        break;
+        file.own(ntHandle);
       }
+      break;
+
+    case eDosPath:
+      file.own(::CreateFileW(aPath, 0, FILE_SHARE_READ |
+                             FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                             nullptr, OPEN_EXISTING,
+                             FILE_FLAG_BACKUP_SEMANTICS, nullptr));
+      if (file == INVALID_HANDLE_VALUE) {
+        return;
+      }
+      break;
     }
 
     GetId(file);
@@ -318,7 +144,6 @@ public:
 
   FileUniqueId(const FileUniqueId& aOther)
     : mId(aOther.mId)
-    , mError(aOther.mError)
   {
   }
 
@@ -327,18 +152,12 @@ public:
   explicit operator bool() const
   {
     FILE_ID_INFO zeros = {};
-    return !mError && memcmp(&mId, &zeros, sizeof(FILE_ID_INFO));
-  }
-
-  Maybe<WindowsError> GetError() const
-  {
-    return mError;
+    return memcmp(&mId, &zeros, sizeof(FILE_ID_INFO));
   }
 
   FileUniqueId& operator=(const FileUniqueId& aOther)
   {
     mId = aOther.mId;
-    mError = aOther.mError;
     return *this;
   }
 
@@ -347,8 +166,7 @@ public:
 
   bool operator==(const FileUniqueId& aOther) const
   {
-    return !mError && !aOther.mError &&
-           !memcmp(&mId, &aOther.mId, sizeof(FILE_ID_INFO));
+    return !memcmp(&mId, &aOther.mId, sizeof(FILE_ID_INFO));
   }
 
   bool operator!=(const FileUniqueId& aOther) const
@@ -369,7 +187,6 @@ private:
 
     BY_HANDLE_FILE_INFORMATION info = {};
     if (!::GetFileInformationByHandle(aFile.get(), &info)) {
-      mError = Some(WindowsError::FromLastError());
       return;
     }
 
@@ -381,28 +198,25 @@ private:
   }
 
 private:
-  FILE_ID_INFO        mId;
-  Maybe<WindowsError> mError;
+  FILE_ID_INFO  mId;
 };
 
-inline WindowsErrorResult<bool>
+inline Maybe<bool>
 DoPathsPointToIdenticalFile(const wchar_t* aPath1, const wchar_t* aPath2,
-                            PathType aPathType1 = PathType::eDosPath,
-                            PathType aPathType2 = PathType::eDosPath)
+                            PathType aPathType1 = eDosPath,
+                            PathType aPathType2 = eDosPath)
 {
   FileUniqueId id1(aPath1, aPathType1);
   if (!id1) {
-    Maybe<WindowsError> error = id1.GetError();
-    return Err(error.valueOr(WindowsError::CreateGeneric()));
+    return Nothing();
   }
 
   FileUniqueId id2(aPath2, aPathType2);
   if (!id2) {
-    Maybe<WindowsError> error = id2.GetError();
-    return Err(error.valueOr(WindowsError::CreateGeneric()));
+    return Nothing();
   }
 
-  return id1 == id2;
+  return Some(id1 == id2);
 }
 
 } 
