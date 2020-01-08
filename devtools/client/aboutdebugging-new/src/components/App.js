@@ -22,18 +22,19 @@ class App extends PureComponent {
       
       
       dispatch: PropTypes.func.isRequired,
+      networkLocations: PropTypes.arrayOf(PropTypes.string).isRequired,
       selectedPage: PropTypes.string.isRequired,
     };
   }
 
   getSelectedPageComponent() {
-    const { dispatch, selectedPage } = this.props;
+    const { dispatch, networkLocations, selectedPage } = this.props;
 
     switch (selectedPage) {
       case PAGES.THIS_FIREFOX:
         return RuntimePage({ dispatch });
       case PAGES.CONNECT:
-        return ConnectPage();
+        return ConnectPage({ networkLocations });
       default:
         
         return null;
@@ -55,6 +56,7 @@ class App extends PureComponent {
 
 const mapStateToProps = state => {
   return {
+    networkLocations: state.ui.networkLocations,
     selectedPage: state.ui.selectedPage,
   };
 };
