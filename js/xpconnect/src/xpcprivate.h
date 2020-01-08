@@ -308,14 +308,12 @@ private:
 
 class WatchdogManager;
 
-
 MOZ_DEFINE_ENUM(WatchdogTimestampCategory, (
     TimestampWatchdogWakeup,
     TimestampWatchdogHibernateStart,
     TimestampWatchdogHibernateStop,
     TimestampContextStateChange
 ));
-
 
 class AsyncFreeSnowWhite;
 
@@ -1853,6 +1851,10 @@ public:
 
 
     JSObject* GetJSObjectPreserveColor() const { return mJSObj.unbarrieredGet(); }
+
+    JSObject* GetJSObjectGlobalPreserveColor() const {
+        return mJSObjGlobal.unbarrieredGet();
+    }
 
     
     
