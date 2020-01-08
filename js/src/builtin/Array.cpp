@@ -1006,15 +1006,18 @@ static bool
 AddLengthProperty(JSContext* cx, HandleArrayObject obj)
 {
     
+    
+    
+    
 
-
-
-
-
+    Shape* shape = obj->lastProperty();
+    if (!shape->isEmptyShape()) {
+        MOZ_ASSERT(JSID_IS_ATOM(shape->propidRaw(), cx->names().length));
+        MOZ_ASSERT(shape->previous()->isEmptyShape());
+        return true;
+    }
 
     RootedId lengthId(cx, NameToId(cx->names().length));
-    MOZ_ASSERT(!obj->lookup(cx, lengthId));
-
     return NativeObject::addAccessorProperty(cx, obj, lengthId,
                                              array_length_getter, array_length_setter,
                                              JSPROP_PERMANENT);
