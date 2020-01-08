@@ -11,8 +11,6 @@
 #include "mozilla/gfx/2D.h"
 #include "Units.h"
 
-namespace IPC { class Message; }
-
 namespace mozilla {
 
 class VsyncObserver;
@@ -55,10 +53,6 @@ void NotifyPaintComplete();
 
 
 already_AddRefed<gfx::DrawTarget> DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize);
-
-
-
-bool SuppressMessageAfterDiverge(IPC::Message* aMsg);
 
 } 
 } 

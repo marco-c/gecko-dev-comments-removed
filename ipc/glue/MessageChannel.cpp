@@ -991,17 +991,6 @@ MessageChannel::Echo(Message* aMsg)
 bool
 MessageChannel::Send(Message* aMsg)
 {
-    if (recordreplay::HasDivergedFromRecording() &&
-        recordreplay::child::SuppressMessageAfterDiverge(aMsg))
-    {
-        
-        
-        
-        
-        
-        return true;
-    }
-
     if (aMsg->size() >= kMinTelemetryMessageSize) {
         Telemetry::Accumulate(Telemetry::IPC_MESSAGE_SIZE2, aMsg->size());
     }

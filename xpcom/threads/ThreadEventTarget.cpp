@@ -134,14 +134,6 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlag
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
-  
-  
-  
-  
-  if (recordreplay::HasDivergedFromRecording()) {
-    return NS_ERROR_FAILURE;
-  }
-
 #ifdef MOZ_TASK_TRACER
   nsCOMPtr<nsIRunnable> tracedRunnable = CreateTracedRunnable(event.take());
   (static_cast<TracedRunnable*>(tracedRunnable.get()))->DispatchTask();
