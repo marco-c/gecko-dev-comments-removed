@@ -2817,24 +2817,20 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
         
         
         if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
-            static_assert(mozilla::IsSame<CharT, char16_t>::value,
-                          "need a getNonAsciiCodePoint that doesn't normalize "
-                          "LineTerminatorSequences to correctly handle UTF-8");
+            char32_t cp;
+            if (!getNonAsciiCodePointDontNormalize(toCharT(unit), &cp))
+                return false;
 
-            int32_t codePoint;
-            if (unit == unicode::LINE_SEPARATOR || unit == unicode::PARA_SEPARATOR) {
+            if (MOZ_UNLIKELY(cp == unicode::LINE_SEPARATOR || cp == unicode::PARA_SEPARATOR)) {
                 if (!updateLineInfoForEOL())
                     return false;
 
                 anyCharsAccess().updateFlagsForEOL();
-
-                codePoint = unit;
             } else {
-                if (!getNonAsciiCodePoint(unit, &codePoint))
-                    return false;
+                MOZ_ASSERT(!IsLineTerminator(cp));
             }
 
-            if (!appendCodePointToCharBuffer(codePoint))
+            if (!appendCodePointToCharBuffer(cp))
                 return false;
 
             continue;
