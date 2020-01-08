@@ -289,7 +289,18 @@ public:
                             oldItem->Frame() == aNewItem->Frame());
       if (!mOldItems[oldIndex.val].IsChanged()) {
         MOZ_DIAGNOSTIC_ASSERT(!mOldItems[oldIndex.val].IsUsed());
-        nsDisplayItem* destItem = ShouldUseNewItem(aNewItem) ? aNewItem : oldItem;
+        nsDisplayItem* destItem;
+        if (ShouldUseNewItem(aNewItem)) {
+          destItem = aNewItem;
+        } else {
+          destItem = oldItem;
+          
+          
+          
+          
+          oldItem->SetBuildingRect(aNewItem->GetBuildingRect());
+        }
+
         if (aNewItem->GetChildren()) {
           Maybe<const ActiveScrolledRoot*> containerASRForChildren;
           if (mBuilder->MergeDisplayLists(aNewItem->GetChildren(),
