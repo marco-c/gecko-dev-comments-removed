@@ -750,9 +750,7 @@ private:
 
 
   struct FrameConstructionDataByTag {
-    
-    
-    const nsStaticAtom* const* mTag;
+    const nsStaticAtom* const mTag;
     const FrameConstructionData mData;
   };
 
