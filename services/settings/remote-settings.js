@@ -14,31 +14,22 @@ var EXPORTED_SYMBOLS = [
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch", "indexedDB"]);
 
-ChromeUtils.defineModuleGetter(this, "Kinto",
-                               "resource://services-common/kinto-offline-client.js");
-ChromeUtils.defineModuleGetter(this, "KintoHttpClient",
-                               "resource://services-common/kinto-http-client.js");
-ChromeUtils.defineModuleGetter(this, "CanonicalJSON",
-                               "resource://gre/modules/CanonicalJSON.jsm");
 ChromeUtils.defineModuleGetter(this, "UptakeTelemetry",
                                "resource://services-common/uptake-telemetry.js");
-ChromeUtils.defineModuleGetter(this, "ClientEnvironmentBase",
-                               "resource://gre/modules/components-utils/ClientEnvironment.jsm");
-ChromeUtils.defineModuleGetter(this, "FilterExpressions",
-                               "resource://gre/modules/components-utils/FilterExpressions.jsm");
 ChromeUtils.defineModuleGetter(this, "pushBroadcastService",
                                "resource://gre/modules/PushBroadcastService.jsm");
-ChromeUtils.defineModuleGetter(this, "RemoteSettingsWorker",
-                               "resource://services-settings/RemoteSettingsWorker.jsm");
+ChromeUtils.defineModuleGetter(this, "RemoteSettingsClient",
+                               "resource://services-settings/RemoteSettingsClient.jsm");
+ChromeUtils.defineModuleGetter(this, "FilterExpressions",
+                               "resource://gre/modules/components-utils/FilterExpressions.jsm");
+
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 const PREF_SETTINGS_DEFAULT_BUCKET     = "services.settings.default_bucket";
 const PREF_SETTINGS_BRANCH             = "services.settings.";
 const PREF_SETTINGS_SERVER             = "server";
 const PREF_SETTINGS_DEFAULT_SIGNER     = "default_signer";
-const PREF_SETTINGS_VERIFY_SIGNATURE   = "verify_signature";
 const PREF_SETTINGS_SERVER_BACKOFF     = "server.backoff";
 const PREF_SETTINGS_CHANGES_PATH       = "changes.path";
 const PREF_SETTINGS_LAST_UPDATE        = "last_update_seconds";
@@ -47,48 +38,19 @@ const PREF_SETTINGS_CLOCK_SKEW_SECONDS = "clock_skew_seconds";
 const PREF_SETTINGS_LOAD_DUMP          = "load_dump";
 
 
-const DB_NAME = "remote-settings";
-
 
 const TELEMETRY_HISTOGRAM_KEY = "settings-changes-monitoring";
 
-const INVALID_SIGNATURE = "Invalid content signature";
-const MISSING_SIGNATURE = "Missing signature";
+const BROADCAST_ID = "remote-settings/monitor_changes";
 
 XPCOMUtils.defineLazyGetter(this, "gPrefs", () => {
   return Services.prefs.getBranch(PREF_SETTINGS_BRANCH);
 });
-XPCOMUtils.defineLazyPreferenceGetter(this, "gVerifySignature", PREF_SETTINGS_BRANCH + PREF_SETTINGS_VERIFY_SIGNATURE, true);
 XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL", PREF_SETTINGS_BRANCH + PREF_SETTINGS_SERVER);
 XPCOMUtils.defineLazyPreferenceGetter(this, "gChangesPath", PREF_SETTINGS_BRANCH + PREF_SETTINGS_CHANGES_PATH);
 
 
 
-
-function cacheProxy(target) {
-  const cache = new Map();
-  return new Proxy(target, {
-    get(target, prop, receiver) {
-      if (!cache.has(prop)) {
-        cache.set(prop, target[prop]);
-      }
-      return cache.get(prop);
-    },
-  });
-}
-
-class ClientEnvironment extends ClientEnvironmentBase {
-  static get appID() {
-    
-    Services.appinfo.QueryInterface(Ci.nsIXULAppInfo);
-    return Services.appinfo.ID;
-  }
-
-  static get toolkitVersion() {
-    Services.appinfo.QueryInterface(Ci.nsIPlatformInfo);
-    return Services.appinfo.platformVersion;
-  }
-}
 
 
 
@@ -109,21 +71,6 @@ async function jexlFilterFunc(entry, environment) {
     Cu.reportError(e);
   }
   return result ? entry : null;
-}
-
-async function fetchCollectionMetadata(remote, collection, expectedTimestamp) {
-  const client = new KintoHttpClient(remote);
-  const { signature } = await client.bucket(collection.bucket)
-                                    .collection(collection.name)
-                                    .getData({ query: { _expected: expectedTimestamp }});
-  return signature;
-}
-
-async function fetchRemoteCollection(collection, expectedTimestamp) {
-  const client = new KintoHttpClient(gServerURL);
-  return client.bucket(collection.bucket)
-           .collection(collection.name)
-           .listRecords({ sort: "id", filters: { _expected: expectedTimestamp } });
 }
 
 
@@ -201,362 +148,7 @@ async function fetchLatestChanges(url, lastEtag, expectedTimestamp) {
     }
   }
 
-  return {changes, currentEtag, serverTimeMillis, backoffSeconds};
-}
-
-
-class RemoteSettingsClient {
-
-  constructor(collectionName, { bucketNamePref, signerName, filterFunc = jexlFilterFunc, localFields = [], lastCheckTimePref }) {
-    this.collectionName = collectionName;
-    this.signerName = signerName;
-    this.filterFunc = filterFunc;
-    this.localFields = localFields;
-    this._lastCheckTimePref = lastCheckTimePref;
-
-    
-    
-    this.bucketNamePref = bucketNamePref;
-    XPCOMUtils.defineLazyPreferenceGetter(this, "bucketName", this.bucketNamePref);
-
-    this._listeners = new Map();
-    this._listeners.set("sync", []);
-  }
-
-  get identifier() {
-    return `${this.bucketName}/${this.collectionName}`;
-  }
-
-  get lastCheckTimePref() {
-    return this._lastCheckTimePref || `services.settings.${this.bucketName}.${this.collectionName}.last_check`;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async emit(event, payload) {
-    const callbacks = this._listeners.get("sync");
-    let firstError;
-    for (const cb of callbacks) {
-      try {
-        await cb(payload);
-      } catch (e) {
-        firstError = e;
-      }
-    }
-    if (firstError) {
-      throw firstError;
-    }
-  }
-
-  on(event, callback) {
-    if (!this._listeners.has(event)) {
-      throw new Error(`Unknown event type ${event}`);
-    }
-    this._listeners.get(event).push(callback);
-  }
-
-  off(event, callback) {
-    if (!this._listeners.has(event)) {
-      throw new Error(`Unknown event type ${event}`);
-    }
-    const callbacks = this._listeners.get(event);
-    const i = callbacks.indexOf(callback);
-    if (i < 0) {
-      throw new Error(`Unknown callback`);
-    } else {
-      callbacks.splice(i, 1);
-    }
-  }
-
-  
-
-
-
-  async openCollection() {
-    if (!this._kinto) {
-      this._kinto = new Kinto({
-        bucket: this.bucketName,
-        adapter: Kinto.adapters.IDB,
-        adapterOptions: { dbName: DB_NAME, migrateOldData: false },
-      });
-    }
-    const options = {
-      localFields: this.localFields,
-      bucket: this.bucketName,
-    };
-    return this._kinto.collection(this.collectionName, options);
-  }
-
-  
-
-
-
-
-
-
-
-  async get(options = {}) {
-    
-    
-    const { filters = {}, order = "" } = options; 
-    const c = await this.openCollection();
-
-    const timestamp = await c.db.getLastModified();
-    
-    
-    if (timestamp == null) {
-      try {
-        await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
-      } catch (e) {
-        
-        Cu.reportError(e);
-        return [];
-      }
-    }
-
-    const { data } = await c.list({ filters, order });
-    return this._filterEntries(data);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async maybeSync(expectedTimestamp, serverTime, options = { loadDump: true }) {
-    const {loadDump} = options;
-
-    let reportStatus = null;
-    try {
-      const collection = await this.openCollection();
-      
-      let collectionLastModified = await collection.db.getLastModified();
-
-      
-      
-      
-      
-      if (!collectionLastModified && loadDump) {
-        try {
-          await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
-          collectionLastModified = await collection.db.getLastModified();
-        } catch (e) {
-          
-          Cu.reportError(e);
-        }
-      }
-
-      
-      
-      if (expectedTimestamp <= collectionLastModified) {
-        this._updateLastCheck(serverTime);
-        reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
-        return;
-      }
-
-      
-      
-      if (this.signerName && gVerifySignature) {
-        collection.hooks["incoming-changes"] = [async (payload, collection) => {
-          await this._validateCollectionSignature(payload.changes,
-                                                  payload.lastModified,
-                                                  collection,
-                                                  { expectedTimestamp });
-          
-          return payload;
-        }];
-      }
-
-      
-      let syncResult;
-      try {
-        
-        const strategy = Kinto.syncStrategy.SERVER_WINS;
-        
-        
-        
-        syncResult = await collection.sync({ remote: gServerURL, strategy, expectedTimestamp });
-        const { ok } = syncResult;
-        if (!ok) {
-          
-          reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
-          throw new Error("Sync failed");
-        }
-      } catch (e) {
-        if (e.message.includes(INVALID_SIGNATURE)) {
-          
-          reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
-          
-          
-          
-          
-          const payload = await fetchRemoteCollection(collection, expectedTimestamp);
-          try {
-            await this._validateCollectionSignature(payload.data,
-                                                    payload.last_modified,
-                                                    collection,
-                                                    { expectedTimestamp, ignoreLocal: true });
-          } catch (e) {
-            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
-            throw e;
-          }
-
-          
-          
-          const { data: oldData } = await collection.list({ order: "" }); 
-
-          
-          syncResult = { created: [], updated: [], deleted: [] };
-
-          
-          
-          const localLastModified = await collection.db.getLastModified();
-          if (payload.last_modified >= localLastModified) {
-            const { data: newData } = payload;
-            await collection.clear();
-            await collection.loadDump(newData);
-
-            
-            const oldById = new Map(oldData.map(e => [e.id, e]));
-            for (const r of newData) {
-              const old = oldById.get(r.id);
-              if (old) {
-                if (old.last_modified != r.last_modified) {
-                  syncResult.updated.push({ old, new: r });
-                }
-                oldById.delete(r.id);
-              } else {
-                syncResult.created.push(r);
-              }
-            }
-            
-            syncResult.deleted = Array.from(oldById.values());
-          }
-
-        } else {
-          
-          if (e.message == MISSING_SIGNATURE) {
-            
-            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
-          } else if (/NetworkError/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
-          } else if (/Backoff/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.BACKOFF;
-          } else {
-            reportStatus = UptakeTelemetry.STATUS.SYNC_ERROR;
-          }
-          throw e;
-        }
-      }
-
-      
-      
-      const { created: allCreated, updated: allUpdated, deleted: allDeleted } = syncResult;
-      const [created, deleted, updatedFiltered] = await Promise.all(
-          [allCreated, allDeleted, allUpdated.map(e => e.new)].map(this._filterEntries.bind(this))
-        );
-      
-      const updatedFilteredIds = new Set(updatedFiltered.map(e => e.id));
-      const updated = allUpdated.filter(({ new: { id } }) => updatedFilteredIds.has(id));
-
-      
-      if (created.length || updated.length || deleted.length) {
-        
-        const { data: allData } = await collection.list({ order: "" }); 
-        const current = await this._filterEntries(allData);
-        const payload = { data: { current, created, updated, deleted } };
-        try {
-          await this.emit("sync", payload);
-        } catch (e) {
-          reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
-          throw e;
-        }
-      }
-
-      
-      this._updateLastCheck(serverTime);
-
-    } catch (e) {
-      
-      if (reportStatus === null) {
-        reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
-      }
-      throw e;
-    } finally {
-      
-      if (reportStatus === null) {
-        reportStatus = UptakeTelemetry.STATUS.SUCCESS;
-      }
-      
-      UptakeTelemetry.report(this.identifier, reportStatus);
-    }
-  }
-
-  async _validateCollectionSignature(remoteRecords, timestamp, collection, options = {}) {
-    const { expectedTimestamp, ignoreLocal = false } = options;
-    
-    const signaturePayload = await fetchCollectionMetadata(gServerURL, collection, expectedTimestamp);
-    if (!signaturePayload) {
-      throw new Error(MISSING_SIGNATURE);
-    }
-    const {x5u, signature} = signaturePayload;
-    const certChainResponse = await fetch(x5u);
-    const certChain = await certChainResponse.text();
-
-    const verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
-                       .createInstance(Ci.nsIContentSignatureVerifier);
-
-    let localRecords = [];
-    if (!ignoreLocal) {
-      const { data } = await collection.list({ order: "" }); 
-      
-      localRecords = data.map(r => collection.cleanLocalFields(r));
-    }
-
-    const serialized = await RemoteSettingsWorker.canonicalStringify(localRecords,
-                                                                     remoteRecords,
-                                                                     timestamp);
-    if (!verifier.verifyContentSignature(serialized,
-                                         "p384ecdsa=" + signature,
-                                         certChain,
-                                         this.signerName)) {
-      throw new Error(INVALID_SIGNATURE + ` (${collection.bucket}/${collection.name})`);
-    }
-  }
-
-  
-
-
-
-
-  _updateLastCheck(serverTime) {
-    const checkedServerTimeInSeconds = Math.round(serverTime / 1000);
-    Services.prefs.setIntPref(this.lastCheckTimePref, checkedServerTimeInSeconds);
-  }
-
-  async _filterEntries(data) {
-    
-    if (!this.filterFunc) {
-      return data;
-    }
-    const environment = cacheProxy(ClientEnvironment);
-    const dataPromises = data.map(e => this.filterFunc(e, environment));
-    const results = await Promise.all(dataPromises);
-    return results.filter(v => !!v);
-  }
+  return { changes, currentEtag, serverTimeMillis, backoffSeconds };
 }
 
 
@@ -596,6 +188,7 @@ function remoteSettingsFunction() {
   const defaultOptions = {
     bucketNamePref: PREF_SETTINGS_DEFAULT_BUCKET,
     signerName: defaultSigner,
+    filterFunc: jexlFilterFunc,
   };
 
   
@@ -800,7 +393,6 @@ function remoteSettingsFunction() {
 
   remoteSettings.init = () => {
     
-    const broadcastID = "remote-settings/monitor_changes";
     
     
     
@@ -811,7 +403,7 @@ function remoteSettingsFunction() {
       moduleURI: __URI__,
       symbolName: "remoteSettingsBroadcastHandler",
     };
-    pushBroadcastService.addListener(broadcastID, currentVersion, moduleInfo);
+    pushBroadcastService.addListener(BROADCAST_ID, currentVersion, moduleInfo);
   };
 
   return remoteSettings;
