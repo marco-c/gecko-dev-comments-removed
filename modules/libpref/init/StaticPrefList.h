@@ -446,6 +446,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.block_multiple_popups",
+   dom_block_multiple_popups,
+  bool, true
+)
+
+
 
 
 
