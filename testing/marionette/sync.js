@@ -16,10 +16,12 @@ const {Log} = ChromeUtils.import("chrome://marionette/content/log.js", {});
 XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 
 this.EXPORTED_SYMBOLS = [
-  "MessageManagerDestroyedPromise",
+  
   "PollPromise",
-  "Sleep",
   "TimedPromise",
+
+  
+  "MessageManagerDestroyedPromise",
 ];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
@@ -85,23 +87,8 @@ const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
 
 
-
-
-
-
 function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-
-  if (typeof func != "function") {
-    throw new TypeError();
-  }
-  if (!(typeof timeout == "number" && typeof interval == "number")) {
-    throw new TypeError();
-  }
-  if ((!Number.isInteger(timeout) || timeout < 0) ||
-      (!Number.isInteger(interval) || interval < 0)) {
-    throw new RangeError();
-  }
 
   return new Promise((resolve, reject) => {
     const start = new Date().getTime();
@@ -158,23 +145,8 @@ function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
 
 
 
-
-
-
-
-
 function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-
-  if (typeof fn != "function") {
-    throw new TypeError();
-  }
-  if (typeof timeout != "number") {
-    throw new TypeError();
-  }
-  if (!Number.isInteger(timeout) || timeout < 0) {
-    throw new RangeError();
-  }
 
   return new Promise((resolve, reject) => {
     
@@ -203,27 +175,6 @@ function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
     timer.cancel();
     throw err;
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Sleep(timeout) {
-  if (typeof timeout != "number") {
-    throw new TypeError();
-  }
-  return new TimedPromise(() => {}, {timeout, throws: null});
 }
 
 
