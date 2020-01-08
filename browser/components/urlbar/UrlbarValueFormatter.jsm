@@ -266,7 +266,6 @@ class UrlbarValueFormatter {
 
 
 
-
   _formatSearchAlias() {
     if (!UrlbarPrefs.get("formatting.enabled")) {
       return false;
@@ -279,6 +278,15 @@ class UrlbarValueFormatter {
     }
 
     if (popup.oneOffSearchButtons.selectedButton) {
+      return false;
+    }
+
+    let editor = this.urlbarInput.editor;
+    let textNode = editor.rootElement.firstChild;
+    let value = textNode.textContent;
+    let trimmedValue = value.trim();
+
+    if (!trimmedValue.startsWith("@")) {
       return false;
     }
 
@@ -316,10 +324,6 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    let editor = this.urlbarInput.editor;
-    let textNode = editor.rootElement.firstChild;
-    let value = textNode.textContent;
-
     
     
     
@@ -331,7 +335,7 @@ class UrlbarValueFormatter {
     
     
     
-    if (!value.trim().startsWith(decodeURIComponent(action.params.input).trim())) {
+    if (!trimmedValue.startsWith(action.params.input.trim())) {
       return false;
     }
 

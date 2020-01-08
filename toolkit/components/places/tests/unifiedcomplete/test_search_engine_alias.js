@@ -99,6 +99,25 @@ add_task(async function getPost() {
         }),
       ],
     });
+
+    
+    
+    
+    
+    for (let restrictToken in UrlbarTokenizer.RESTRICT) {
+      let search = `${restrictToken} ${alias} query string`;
+      await check_autocomplete({
+        search,
+        searchParam: "enable-actions",
+        matches: [
+          makeSearchMatch(search, {
+            engineName: "MozSearch",
+            searchQuery: search,
+            heuristic: true,
+          }),
+        ],
+      });
+    }
   }
 
   await cleanup();

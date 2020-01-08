@@ -538,6 +538,38 @@ function looksLikeOrigin(str) {
 
 
 
+function substringAt(sourceStr, targetStr) {
+  let index = sourceStr.indexOf(targetStr);
+  return index < 0 ? "" : sourceStr.substr(index);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function substringAfter(sourceStr, targetStr) {
+  let index = sourceStr.indexOf(targetStr);
+  return index < 0 ? "" : sourceStr.substr(index + targetStr.length);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -583,6 +615,20 @@ function Search(searchString, searchParam, autocompleteListener,
 
   this._searchTokens =
     this.filterTokens(getUnfilteredSearchTokens(this._searchString));
+
+  
+  
+  
+  
+  
+  
+  
+  this._heuristicToken =
+    this._searchTokens[0] &&
+      this._trimmedOriginalSearchString.startsWith(this._searchTokens[0]) ?
+    this._searchTokens[0] :
+    null;
+
   this._keywordSubstitute = null;
 
   this._prohibitSearchSuggestions = prohibitSearchSuggestions;
@@ -694,6 +740,7 @@ Search.prototype = {
   },
 
   
+
 
 
 
@@ -861,9 +908,9 @@ Search.prototype = {
     
     
     let extensionsCompletePromise = Promise.resolve();
-    if (this._searchTokens.length > 0 &&
-        ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
-        this._originalSearchString.length > this._searchTokens[0].length &&
+    if (this._heuristicToken &&
+        ExtensionSearchHandler.isKeywordRegistered(this._heuristicToken) &&
+        substringAfter(this._originalSearchString, this._heuristicToken) &&
         !this._searchEngineAliasMatch) {
       
       
@@ -878,13 +925,9 @@ Search.prototype = {
     if (this._enableActions &&
         this.hasBehavior("search") &&
         !this._inPrivateWindow) {
-      
-      
-      
-      
       let query =
         this._searchEngineAliasMatch ? this._searchEngineAliasMatch.query :
-        this._searchTokens.join(" ");
+        substringAt(this._originalSearchString, this._searchTokens[0]);
       if (query) {
         
         query = query.substr(0, UrlbarPrefs.get("maxCharsForSearchSuggestions"));
@@ -1116,11 +1159,8 @@ Search.prototype = {
 
   async _matchSearchEngineTokenAliasForAutofill() {
     
-    if (this._searchTokens.length != 1) {
-      return false;
-    }
-    let token = this._searchTokens[0];
-    if (token[0] != "@" || token.length == 1) {
+    let token = this._heuristicToken;
+    if (!token || token.length == 1 || !token.startsWith("@")) {
       return false;
     }
 
@@ -1375,9 +1415,11 @@ Search.prototype = {
   },
 
   _matchExtensionHeuristicResult() {
-    if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
-        this._originalSearchString.length > this._searchTokens[0].length) {
-      let description = ExtensionSearchHandler.getDescription(this._searchTokens[0]);
+    if (this._heuristicToken &&
+        ExtensionSearchHandler.isKeywordRegistered(this._heuristicToken) &&
+        substringAfter(this._originalSearchString, this._heuristicToken)) {
+      let description =
+        ExtensionSearchHandler.getDescription(this._heuristicToken);
       this._addExtensionMatch(this._originalSearchString, description);
       return true;
     }
@@ -1385,13 +1427,17 @@ Search.prototype = {
   },
 
   async _matchPlacesKeyword() {
-    
-    let keyword = this._strippedPrefix + this._searchTokens[0];
-    let entry = await PlacesUtils.keywords.fetch(keyword);
-    if (!entry)
+    if (!this._heuristicToken) {
       return false;
+    }
+    let keyword = this._heuristicToken;
+    let entry = await PlacesUtils.keywords.fetch(keyword);
+    if (!entry) {
+      return false;
+    }
 
-    let searchString = this._trimmedOriginalSearchString.substr(keyword.length + 1);
+    let searchString =
+      substringAfter(this._originalSearchString, keyword).trim();
 
     let url = null, postData = null;
     try {
@@ -1495,11 +1541,11 @@ Search.prototype = {
   },
 
   async _matchSearchEngineAlias() {
-    if (this._searchTokens.length < 1) {
+    if (!this._heuristicToken) {
       return false;
     }
 
-    let alias = this._searchTokens[0];
+    let alias = this._heuristicToken;
     let engine = await PlacesSearchAutocompleteProvider.engineForAlias(alias);
     if (!engine) {
       return false;
@@ -1508,7 +1554,7 @@ Search.prototype = {
     this._searchEngineAliasMatch = {
       engine,
       alias,
-      query: this._trimmedOriginalSearchString.substr(alias.length + 1),
+      query: substringAfter(this._originalSearchString, alias).trim(),
     };
     this._addSearchEngineMatch(this._searchEngineAliasMatch);
     if (!this._keywordSubstitute) {
@@ -1539,7 +1585,7 @@ Search.prototype = {
     this._addMatch({
       value: PlacesUtils.mozActionURI("extension", {
         content,
-        keyword: this._searchTokens[0],
+        keyword: this._heuristicToken,
       }),
       comment,
       icon: "chrome://browser/content/extension.svg",
@@ -1609,10 +1655,10 @@ Search.prototype = {
   },
 
   _matchExtensionSuggestions() {
-    let promise = ExtensionSearchHandler.handleSearch(this._searchTokens[0], this._originalSearchString,
+    let promise = ExtensionSearchHandler.handleSearch(this._heuristicToken, this._originalSearchString,
       suggestions => {
         for (let suggestion of suggestions) {
-          let content = `${this._searchTokens[0]} ${suggestion.content}`;
+          let content = `${this._heuristicToken} ${suggestion.content}`;
           this._addExtensionMatch(content, suggestion.description);
         }
       }
