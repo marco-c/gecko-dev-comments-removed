@@ -2347,9 +2347,9 @@ UniquePtr<ServoStyleSet> nsDocumentViewer::CreateStyleSet(Document* aDocument) {
     styleSet->AppendStyleSheet(SheetType::Agent, cache->XULSheet());
   }
 
-  
   styleSet->AppendStyleSheet(SheetType::Agent, cache->FormsSheet());
   styleSet->AppendStyleSheet(SheetType::Agent, cache->ScrollbarsSheet());
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->PluginProblemSheet());
 
   for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
     styleSet->AppendStyleSheet(SheetType::Agent, sheet);
