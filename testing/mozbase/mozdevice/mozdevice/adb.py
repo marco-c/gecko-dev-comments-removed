@@ -857,6 +857,7 @@ class ADBDevice(ADBCommand):
         """Get the exitcode from the last line of the file_obj for shell
         commands.
         """
+        re_returncode = re.compile(r'adb_returncode=([0-9]+)')
         file_obj.seek(0, os.SEEK_END)
 
         line = ''
@@ -874,13 +875,28 @@ class ADBDevice(ADBCommand):
                 break
             offset += 1
 
-        match = re.match(r'rc=([0-9]+)', line)
+        match = re_returncode.match(line)
         if match:
             exitcode = int(match.group(1))
+            
+            
             file_obj.seek(-1, os.SEEK_CUR)
             file_obj.truncate()
         else:
             exitcode = None
+            
+            
+            
+            
+            
+            file_obj.seek(0, os.SEEK_SET)
+            for line in file_obj:
+                match = re_returncode.search(line)
+                if match:
+                    exitcode = int(match.group(1))
+                    break
+            
+            file_obj.seek(0, os.SEEK_END)
 
         return exitcode
 
@@ -1308,7 +1324,7 @@ class ADBDevice(ADBCommand):
             envstr = '&& '.join(map(lambda x: 'export %s=%s' %
                                     (x[0], x[1]), env.iteritems()))
             cmd = envstr + "&& " + cmd
-        cmd += "; echo rc=$?"
+        cmd += "; echo adb_returncode=$?"
 
         args = [self._adb_path]
         if self._adb_host:
