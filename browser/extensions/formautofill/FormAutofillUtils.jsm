@@ -893,8 +893,22 @@ this.FormAutofillUtils = {
 
 
   getFormFormat(country) {
-    const dataset = this.getCountryAddressData(country);
+    let dataset = this.getCountryAddressData(country);
+    
+    if (country != dataset.key) {
+      
+      dataset = {
+        
+
+
+
+
+
+        fmt: "%N%n%O%n%A%n%C %S %Z",
+      };
+    }
     return {
+      
       
       
       addressLevel3Label: dataset.sublocality_name_type || "suburb",
