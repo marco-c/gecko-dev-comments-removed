@@ -5,6 +5,7 @@
 
 import json
 import os
+import posixpath
 import shutil
 import sys
 import tarfile
@@ -357,6 +358,14 @@ class CodeCoverageMixin(SingleTestMixin):
 
         report_file = str(uuid.uuid4()) + '.json'
         shutil.move(grcov_file, report_file)
+
+        
+        
+        test = self.test_src_path.get(test.replace(os.sep, posixpath.sep), test)
+
+        
+        if os.path.isabs(test):
+            self.warn("Found absolute path for test: {}".format(test))
 
         if suite not in self.per_test_reports:
             self.per_test_reports[suite] = {}
