@@ -421,7 +421,20 @@ table_tlsOffset(const TableDesc* table)
 bool
 table_isExternal(const TableDesc* table)
 {
-    return table->external;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    MOZ_CRASH("FIXME. This field has been removed.");
 }
 
 

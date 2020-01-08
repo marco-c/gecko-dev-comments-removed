@@ -1931,12 +1931,13 @@ class BaseCompiler final : public BaseCompilerInterface
     MIRTypeVector               SigPI_;
     MIRTypeVector               SigPL_;
     MIRTypeVector               SigPII_;
-    MIRTypeVector               SigPIP_;
+    MIRTypeVector               SigPIPI_;
     MIRTypeVector               SigPIII_;
     MIRTypeVector               SigPIIL_;
     MIRTypeVector               SigPIIP_;
     MIRTypeVector               SigPILL_;
     MIRTypeVector               SigPIIII_;
+    MIRTypeVector               SigPIIIII_;
     NonAssertingLabel           returnLabel_;
 
     LatentOp                    latentOp_;       
@@ -3874,13 +3875,13 @@ class BaseCompiler final : public BaseCompilerInterface
 
     
 
-    void callIndirect(uint32_t funcTypeIndex, const Stk& indexVal, const FunctionCall& call)
+    void callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex, const Stk& indexVal,
+                      const FunctionCall& call)
     {
         const FuncTypeWithId& funcType = env_.types[funcTypeIndex].funcType();
         MOZ_ASSERT(funcType.id.kind() != FuncTypeIdDescKind::None);
 
-        MOZ_ASSERT(env_.tables.length() == 1);
-        const TableDesc& table = env_.tables[0];
+        const TableDesc& table = env_.tables[tableIndex];
 
         loadI32(indexVal, RegI32(WasmTableCallIndexReg));
 
@@ -8186,9 +8187,10 @@ BaseCompiler::emitCallIndirect()
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
     uint32_t funcTypeIndex;
+    uint32_t tableIndex;
     Nothing callee_;
     BaseOpIter::ValueVector args_;
-    if (!iter_.readCallIndirect(&funcTypeIndex, &callee_, &args_)) {
+    if (!iter_.readCallIndirect(&funcTypeIndex, &tableIndex, &callee_, &args_)) {
         return false;
     }
 
@@ -8218,7 +8220,7 @@ BaseCompiler::emitCallIndirect()
         return false;
     }
 
-    callIndirect(funcTypeIndex, callee, baselineCall);
+    callIndirect(funcTypeIndex, tableIndex, callee, baselineCall);
 
     endCall(baselineCall, stackSpace);
 
@@ -9674,8 +9676,12 @@ BaseCompiler::emitMemOrTableCopy(bool isMem)
 {
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
+    uint32_t dstMemOrTableIndex = 0;
+    uint32_t srcMemOrTableIndex = 0;
     Nothing nothing;
-    if (!iter_.readMemOrTableCopy(isMem, &nothing, &nothing, &nothing)) {
+    if (!iter_.readMemOrTableCopy(isMem, &dstMemOrTableIndex, &nothing, &srcMemOrTableIndex,
+                                  &nothing, &nothing))
+    {
         return false;
     }
 
@@ -9684,9 +9690,15 @@ BaseCompiler::emitMemOrTableCopy(bool isMem)
     }
 
     
-    SymbolicAddress callee = isMem ? SymbolicAddress::MemCopy
-                                   : SymbolicAddress::TableCopy;
-    emitInstanceCall(lineOrBytecode, SigPIII_, ExprType::Void, callee);
+    if (isMem) {
+        MOZ_ASSERT(srcMemOrTableIndex == 0);
+        MOZ_ASSERT(dstMemOrTableIndex == 0);
+        emitInstanceCall(lineOrBytecode, SigPIII_, ExprType::Void, SymbolicAddress::MemCopy);
+    } else {
+        pushI32(dstMemOrTableIndex);
+        pushI32(srcMemOrTableIndex);
+        emitInstanceCall(lineOrBytecode, SigPIIIII_, ExprType::Void, SymbolicAddress::TableCopy);
+    }
 
     Label ok;
     masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
@@ -9757,8 +9769,9 @@ BaseCompiler::emitMemOrTableInit(bool isMem)
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
     uint32_t segIndex = 0;
+    uint32_t dstTableIndex = 0;
     Nothing nothing;
-    if (!iter_.readMemOrTableInit(isMem, &segIndex, &nothing, &nothing, &nothing)) {
+    if (!iter_.readMemOrTableInit(isMem, &segIndex, &dstTableIndex, &nothing, &nothing, &nothing)) {
         return false;
     }
 
@@ -9768,9 +9781,12 @@ BaseCompiler::emitMemOrTableInit(bool isMem)
 
     
     pushI32(int32_t(segIndex));
-    SymbolicAddress callee = isMem ? SymbolicAddress::MemInit
-                                   : SymbolicAddress::TableInit;
-    emitInstanceCall(lineOrBytecode, SigPIIII_, ExprType::Void, callee);
+    if (isMem) {
+        emitInstanceCall(lineOrBytecode, SigPIIII_, ExprType::Void, SymbolicAddress::MemInit);
+    } else {
+        pushI32(dstTableIndex);
+        emitInstanceCall(lineOrBytecode, SigPIIIII_, ExprType::Void, SymbolicAddress::TableInit);
+    }
 
     Label ok;
     masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
@@ -9787,7 +9803,8 @@ BaseCompiler::emitTableGet()
 {
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
     Nothing index;
-    if (!iter_.readTableGet(&index)) {
+    uint32_t tableIndex;
+    if (!iter_.readTableGet(&tableIndex, &index)) {
         return false;
     }
     if (deadCode_) {
@@ -9797,7 +9814,8 @@ BaseCompiler::emitTableGet()
     
     
     
-    emitInstanceCall(lineOrBytecode, SigPI_, ExprType::AnyRef, SymbolicAddress::TableGet);
+    pushI32(tableIndex);
+    emitInstanceCall(lineOrBytecode, SigPII_, ExprType::AnyRef, SymbolicAddress::TableGet);
     Label noTrap;
     masm.branchPtr(Assembler::NotEqual, ReturnReg, Imm32(-1), &noTrap);
     trap(Trap::ThrowReported);
@@ -9813,7 +9831,8 @@ BaseCompiler::emitTableGrow()
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
     Nothing delta;
     Nothing initValue;
-    if (!iter_.readTableGrow(&delta, &initValue)) {
+    uint32_t tableIndex;
+    if (!iter_.readTableGrow(&tableIndex, &delta, &initValue)) {
         return false;
     }
     if (deadCode_) {
@@ -9822,7 +9841,9 @@ BaseCompiler::emitTableGrow()
     
     
     
-    emitInstanceCall(lineOrBytecode, SigPIP_, ExprType::I32, SymbolicAddress::TableGrow);
+    pushI32(tableIndex);
+    emitInstanceCall(lineOrBytecode, SigPIPI_, ExprType::I32, SymbolicAddress::TableGrow);
+
     return true;
 }
 
@@ -9832,7 +9853,8 @@ BaseCompiler::emitTableSet()
 {
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
     Nothing index, value;
-    if (!iter_.readTableSet(&index, &value)) {
+    uint32_t tableIndex;
+    if (!iter_.readTableSet(&tableIndex, &index, &value)) {
         return false;
     }
     if (deadCode_) {
@@ -9841,7 +9863,8 @@ BaseCompiler::emitTableSet()
     
     
     
-    emitInstanceCall(lineOrBytecode, SigPIP_, ExprType::Void, SymbolicAddress::TableSet);
+    pushI32(tableIndex);
+    emitInstanceCall(lineOrBytecode, SigPIPI_, ExprType::Void, SymbolicAddress::TableSet);
     Label noTrap;
     masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &noTrap);
     trap(Trap::ThrowReported);
@@ -9854,7 +9877,8 @@ bool
 BaseCompiler::emitTableSize()
 {
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
-    if (!iter_.readTableSize()) {
+    uint32_t tableIndex;
+    if (!iter_.readTableSize(&tableIndex)) {
         return false;
     }
     if (deadCode_) {
@@ -9863,7 +9887,8 @@ BaseCompiler::emitTableSize()
     
     
     
-    emitInstanceCall(lineOrBytecode, SigP_, ExprType::I32, SymbolicAddress::TableSize);
+    pushI32(tableIndex);
+    emitInstanceCall(lineOrBytecode, SigPI_, ExprType::I32, SymbolicAddress::TableSize);
     return true;
 }
 
@@ -11153,8 +11178,8 @@ BaseCompiler::init()
     {
         return false;
     }
-    if (!SigPIP_.append(MIRType::Pointer) || !SigPIP_.append(MIRType::Int32) ||
-        !SigPIP_.append(MIRType::Pointer))
+    if (!SigPIPI_.append(MIRType::Pointer) || !SigPIPI_.append(MIRType::Int32) ||
+        !SigPIPI_.append(MIRType::Pointer) || !SigPIPI_.append(MIRType::Int32))
     {
         return false;
     }
@@ -11181,6 +11206,12 @@ BaseCompiler::init()
     if (!SigPIIII_.append(MIRType::Pointer) || !SigPIIII_.append(MIRType::Int32) ||
         !SigPIIII_.append(MIRType::Int32) || !SigPIIII_.append(MIRType::Int32) ||
         !SigPIIII_.append(MIRType::Int32))
+    {
+        return false;
+    }
+    if (!SigPIIIII_.append(MIRType::Pointer) || !SigPIIIII_.append(MIRType::Int32) ||
+        !SigPIIIII_.append(MIRType::Int32) || !SigPIIIII_.append(MIRType::Int32) ||
+        !SigPIIIII_.append(MIRType::Int32) || !SigPIIIII_.append(MIRType::Int32))
     {
         return false;
     }

@@ -266,5 +266,5 @@ assertEq(tbl.get(0).foo, 42);
     
     assertErrorMessage(() => new WebAssembly.Module(makeIt(0x02, 0x01)),
                        WebAssembly.CompileError,
-                       /table index must be zero/);
+                       /table index out of range/);
 }

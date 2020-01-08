@@ -3603,11 +3603,24 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     Register scratch = WasmTableCallScratchReg0;
     Register index = WasmTableCallIndexReg;
 
+    
+    
+    
+
+    static_assert(sizeof(wasm::FunctionTableElem) == 8 || sizeof(wasm::FunctionTableElem) == 16,
+                  "elements of function tables are two words");
+
     if (callee.which() == wasm::CalleeDesc::AsmJSTable) {
         
         
         loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
-        loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
+        if (sizeof(wasm::FunctionTableElem) == 8) {
+            computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
+        } else {
+            lshift32(Imm32(4), index);
+            addPtr(index, scratch);
+        }
+        loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
         call(desc, scratch);
         return;
     }
@@ -3643,35 +3656,24 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
 
     
-    if (callee.wasmTableIsExternal()) {
-        static_assert(sizeof(wasm::ExternalTableElem) == 8 || sizeof(wasm::ExternalTableElem) == 16,
-                      "elements of external tables are two words");
-        if (sizeof(wasm::ExternalTableElem) == 8) {
-            computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
-        } else {
-            lshift32(Imm32(4), index);
-            addPtr(index, scratch);
-        }
-
-        loadPtr(Address(scratch, offsetof(wasm::ExternalTableElem, tls)), WasmTlsReg);
-
-        Label nonNull;
-        branchTest32(Assembler::NonZero, WasmTlsReg, WasmTlsReg, &nonNull);
-        wasmTrap(wasm::Trap::IndirectCallToNull, trapOffset);
-        bind(&nonNull);
-
-        loadWasmPinnedRegsFromTls();
-        switchToWasmTlsRealm(index, WasmTableCallScratchReg1);
-
-        loadPtr(Address(scratch, offsetof(wasm::ExternalTableElem, code)), scratch);
+    if (sizeof(wasm::FunctionTableElem) == 8) {
+        computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
     } else {
-        loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
-
-        Label nonNull;
-        branchTest32(Assembler::NonZero, scratch, scratch, &nonNull);
-        wasmTrap(wasm::Trap::IndirectCallToNull, trapOffset);
-        bind(&nonNull);
+        lshift32(Imm32(4), index);
+        addPtr(index, scratch);
     }
+
+    loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, tls)), WasmTlsReg);
+
+    Label nonNull;
+    branchTest32(Assembler::NonZero, WasmTlsReg, WasmTlsReg, &nonNull);
+    wasmTrap(wasm::Trap::IndirectCallToNull, trapOffset);
+    bind(&nonNull);
+
+    loadWasmPinnedRegsFromTls();
+    switchToWasmTlsRealm(index, WasmTableCallScratchReg1);
+
+    loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
 
     call(desc, scratch);
 }

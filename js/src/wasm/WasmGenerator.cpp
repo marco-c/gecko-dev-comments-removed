@@ -329,13 +329,21 @@ ModuleGenerator::init(Metadata* maybeAsmJSMetadata)
     }
 
     for (const ElemSegment* seg : env_->elemSegments) {
-        if (env_->tables[seg->tableIndex].external) {
+        TableKind kind = !seg->active() ? TableKind::AnyFunction : env_->tables[seg->tableIndex].kind;
+        switch (kind) {
+          case TableKind::AnyFunction:
             if (!exportedFuncs.reserve(exportedFuncs.length() + seg->length())) {
                 return false;
             }
             for (uint32_t funcIndex : seg->elemFuncIndices) {
                 exportedFuncs.infallibleEmplaceBack(funcIndex, false);
             }
+            break;
+          case TableKind::TypedFunction:
+            
+            break;
+          case TableKind::AnyRef:
+            break;
         }
     }
 

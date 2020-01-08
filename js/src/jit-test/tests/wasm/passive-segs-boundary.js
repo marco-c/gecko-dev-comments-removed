@@ -207,16 +207,16 @@ tab_test("table.drop 3", "",
 
 
 tab_test("(table.init 1 (i32.const 12) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /can't table.init without a table/,
+         WebAssembly.CompileError, /table index out of range/,
          false);
 
 
 tab_test("table.drop 4", "",
-         WebAssembly.CompileError, /table.drop index out of range/);
+         WebAssembly.CompileError, /element segment index out of range for table.drop/);
 
 
 tab_test("(table.init 4 (i32.const 12) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /table.init index out of range/);
+         WebAssembly.CompileError, /table.init segment index out of range/);
 
 
 tab_test("table.drop 2", "",
