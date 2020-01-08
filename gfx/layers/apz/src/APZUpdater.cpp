@@ -455,7 +455,7 @@ APZUpdater::RunOnControllerThread(LayersId aLayersId, already_AddRefed<Runnable>
 bool
 APZUpdater::UsingWebRenderUpdaterThread() const
 {
-  return (mIsUsingWebRender && gfxPrefs::WebRenderAsyncSceneBuild());
+  return mIsUsingWebRender;
 }
 
  already_AddRefed<APZUpdater>
@@ -564,8 +564,6 @@ apz_register_updater(mozilla::wr::WrWindowId aWindowId)
 void
 apz_pre_scene_swap(mozilla::wr::WrWindowId aWindowId)
 {
-  
-  MOZ_ASSERT(gfxPrefs::WebRenderAsyncSceneBuild());
   mozilla::layers::APZUpdater::PrepareForSceneSwap(aWindowId);
 }
 
@@ -573,8 +571,6 @@ void
 apz_post_scene_swap(mozilla::wr::WrWindowId aWindowId,
                     mozilla::wr::WrPipelineInfo aInfo)
 {
-  
-  MOZ_ASSERT(gfxPrefs::WebRenderAsyncSceneBuild());
   mozilla::layers::APZUpdater::CompleteSceneSwap(aWindowId, aInfo);
   wr_pipeline_info_delete(aInfo);
 }
@@ -582,8 +578,6 @@ apz_post_scene_swap(mozilla::wr::WrWindowId aWindowId,
 void
 apz_run_updater(mozilla::wr::WrWindowId aWindowId)
 {
-  
-  MOZ_ASSERT(gfxPrefs::WebRenderAsyncSceneBuild());
   mozilla::layers::APZUpdater::ProcessPendingTasks(aWindowId);
 }
 
@@ -591,10 +585,5 @@ void
 apz_deregister_updater(mozilla::wr::WrWindowId aWindowId)
 {
   
-  
-  
-  
-  if (gfxPrefs::WebRenderAsyncSceneBuild()) {
-    mozilla::layers::APZUpdater::ProcessPendingTasks(aWindowId);
-  }
+  mozilla::layers::APZUpdater::ProcessPendingTasks(aWindowId);
 }

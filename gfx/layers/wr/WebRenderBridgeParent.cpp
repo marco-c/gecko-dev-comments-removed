@@ -741,11 +741,8 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
     mApi->SendTransaction(txn);
 
-    if (!gfxPrefs::WebRenderAsyncSceneBuild()) {
-      
-      
-      ScheduleGenerateFrame();
-    }
+    
+    
   }
 
   HoldPendingTransactionId(wrEpoch, aTransactionId, aRefreshStartTime, aTxnStartTime, aFwdTime);
@@ -929,29 +926,25 @@ WebRenderBridgeParent::FlushSceneBuilds()
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
-  if (gfxPrefs::WebRenderAsyncSceneBuild()) {
-    
-    
-    
-    
-    mApi->FlushSceneBuilder();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ScheduleGenerateFrame();
-  }
+  
+  
+  
+  
+  mApi->FlushSceneBuilder();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ScheduleGenerateFrame();
 }
 
 void
