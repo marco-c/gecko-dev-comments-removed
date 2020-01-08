@@ -170,7 +170,8 @@ var whitelist = [
   {file: "chrome://global/content/bindings/toolbar.xml",
    platforms: ["macosx", "win"]},
   
-  {file: "chrome://browser/content/browser.xhtml"},
+  {file: AppConstants.BROWSER_CHROME_URL == "chrome://browser/content/browser.xul" ?
+    "chrome://browser/content/browser.xhtml" : "chrome://browser/content/browser.xul" },
   
   
   
