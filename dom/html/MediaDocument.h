@@ -24,6 +24,9 @@ public:
   MediaDocument();
   virtual ~MediaDocument();
 
+  
+  enum MediaDocumentKind MediaDocumentKind() const override = 0;
+
   virtual nsresult Init() override;
 
   virtual nsresult StartDocumentLoad(const char*         aCommand,

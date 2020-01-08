@@ -2810,6 +2810,20 @@ public:
   virtual DocumentTheme ThreadSafeGetDocumentLWTheme() const { return Doc_Theme_None; }
 
   
+  enum class MediaDocumentKind
+  {
+    NotMedia,
+    Video,
+    Image,
+    Plugin,
+  };
+
+  virtual enum MediaDocumentKind MediaDocumentKind() const
+  {
+    return MediaDocumentKind::NotMedia;
+  }
+
+  
 
 
 
