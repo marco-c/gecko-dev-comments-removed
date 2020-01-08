@@ -486,17 +486,11 @@ VARCACHE_PREF(
 
 
 
-#ifdef ANDROID
-# define PREF_VALUE  32768    // Measured in KiB
-#else
-# define PREF_VALUE 524288    // Measured in KiB
-#endif
 VARCACHE_PREF(
   "media.memory_caches_combined_limit_kb",
    MediaMemoryCachesCombinedLimitKb,
-  uint32_t, PREF_VALUE
+  uint32_t, 524288
 )
-#undef PREF_VALUE
 
 
 
