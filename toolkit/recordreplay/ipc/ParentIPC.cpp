@@ -585,8 +585,7 @@ SpawnReplayingChildren()
 }
 
 
-static void HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind,
-                                   bool aRecordingBoundary = false);
+static void HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind);
 
 
 static void
@@ -1058,8 +1057,7 @@ Resume(bool aForward)
     
     if (targetCheckpoint == CheckpointId::Invalid) {
       SendMessageToUIProcess("HitRecordingBeginning");
-      HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause,
-                              true);
+      HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause);
       return;
     }
 
@@ -1086,8 +1084,7 @@ Resume(bool aForward)
       MOZ_RELEASE_ASSERT(!gActiveChild->IsRecording());
       if (!gRecordingChild) {
         SendMessageToUIProcess("HitRecordingEndpoint");
-        HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause,
-                                true);
+        HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause);
         return;
       }
 
@@ -1216,34 +1213,47 @@ RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
 }
 
 static void
-HitBreakpoint(uint32_t* aBreakpoints, size_t aNumBreakpoints, bool aRecordingBoundary)
+HitBreakpoint(uint32_t* aBreakpoints, size_t aNumBreakpoints,
+              js::BreakpointPosition::Kind aSharedKind)
 {
   if (!gActiveChild->IsPaused()) {
-    if (aNumBreakpoints) {
-      Print("Warning: Process resumed before breakpoints were hit.\n");
-    }
     delete[] aBreakpoints;
     return;
   }
 
-  MarkActiveChildExplicitPause();
-
-  gResumeForwardOrBackward = true;
-
-  
-  
-  for (size_t i = 0; i < aNumBreakpoints && gResumeForwardOrBackward; i++) {
-    AutoSafeJSContext cx;
-    if (!js::HitBreakpoint(cx, aBreakpoints[i])) {
-      Print("Warning: hitBreakpoint hook threw an exception.\n");
+  switch (aSharedKind) {
+  case js::BreakpointPosition::ForcedPause:
+    MarkActiveChildExplicitPause();
+    MOZ_FALLTHROUGH;
+  case js::BreakpointPosition::PositionChange:
+    
+    for (size_t i = 0; i < aNumBreakpoints; i++) {
+      AutoSafeJSContext cx;
+      if (!js::HitBreakpoint(cx, aBreakpoints[i])) {
+        Print("Warning: hitBreakpoint hook threw an exception.\n");
+      }
     }
-  }
+    break;
+  default:
+    gResumeForwardOrBackward = true;
 
-  
-  
-  
-  if (gResumeForwardOrBackward && !aRecordingBoundary) {
-    ResumeForwardOrBackward();
+    MarkActiveChildExplicitPause();
+
+    
+    
+    for (size_t i = 0; i < aNumBreakpoints && gResumeForwardOrBackward; i++) {
+      AutoSafeJSContext cx;
+      if (!js::HitBreakpoint(cx, aBreakpoints[i])) {
+        Print("Warning: hitBreakpoint hook threw an exception.\n");
+      }
+    }
+
+    
+    
+    if (gResumeForwardOrBackward) {
+      ResumeForwardOrBackward();
+    }
+    break;
   }
 
   delete[] aBreakpoints;
@@ -1256,11 +1266,11 @@ RecvHitBreakpoint(const HitBreakpointMessage& aMsg)
   PodCopy(breakpoints, aMsg.Breakpoints(), aMsg.NumBreakpoints());
   gMainThreadMessageLoop->PostTask(NewRunnableFunction("HitBreakpoint", HitBreakpoint,
                                                        breakpoints, aMsg.NumBreakpoints(),
-                                                        false));
+                                                       js::BreakpointPosition::Invalid));
 }
 
 static void
-HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind, bool aRecordingBoundary)
+HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind)
 {
   Vector<uint32_t> breakpoints;
   gActiveChild->GetMatchingInstalledBreakpoints([=](js::BreakpointPosition::Kind aInstalled) {
@@ -1271,7 +1281,7 @@ HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind, bool aRecordingBounda
     PodCopy(newBreakpoints, breakpoints.begin(), breakpoints.length());
     gMainThreadMessageLoop->PostTask(NewRunnableFunction("HitBreakpoint", HitBreakpoint,
                                                          newBreakpoints, breakpoints.length(),
-                                                         aRecordingBoundary));
+                                                         aKind));
   }
 }
 
