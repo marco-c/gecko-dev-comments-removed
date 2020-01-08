@@ -174,9 +174,12 @@ PromiseInvokeOrNoop(JSContext* cx, HandleValue O, HandlePropertyName P, HandleVa
 
 static MOZ_MUST_USE JSObject*
 PromiseRejectedWithPendingError(JSContext* cx) {
-    
     RootedValue exn(cx);
-    if (!GetAndClearException(cx, &exn)) {
+    if (!cx->isExceptionPending() || !GetAndClearException(cx, &exn)) {
+        
+        
+        
+        
         return nullptr;
     }
     return PromiseObject::unforgeableReject(cx, exn);
@@ -2048,8 +2051,9 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
     
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_READABLESTREAMREADER_RELEASED);
     RootedValue exn(cx);
-    
-    if (!GetAndClearException(cx, &exn)) {
+    if (!cx->isExceptionPending() || !GetAndClearException(cx, &exn)) {
+        
+        
         return false;
     }
 
@@ -3016,7 +3020,9 @@ ReadableStreamDefaultControllerEnqueue(JSContext* cx,
             
             
             RootedValue exn(cx);
-            if (!cx->getPendingException(&exn)) {
+            if (!cx->isExceptionPending() || !cx->getPendingException(&exn)) {
+                
+                
                 return false;
             }
 
@@ -3664,8 +3670,9 @@ ReadableByteStreamControllerClose(JSContext* cx, Handle<ReadableByteStreamContro
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                       JSMSG_READABLEBYTESTREAMCONTROLLER_CLOSE_PENDING_PULL);
             RootedValue e(cx);
-            
-            if (!cx->getPendingException(&e)) {
+            if (!cx->isExceptionPending() || !cx->getPendingException(&e)) {
+                
+                
                 return false;
             }
 
