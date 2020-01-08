@@ -10,11 +10,13 @@
 #include "PlatformDecoderModule.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
+
 namespace mozilla {
 
 class DecoderDoctorDiagnostics;
 
-DDLoggedTypeDeclNameAndBase(H264Converter, MediaDataDecoder);
+DDLoggedTypeDeclNameAndBase(MediaChangeMonitor, MediaDataDecoder);
 
 
 
@@ -23,15 +25,15 @@ DDLoggedTypeDeclNameAndBase(H264Converter, MediaDataDecoder);
 
 
 
-class H264Converter
+
+class MediaChangeMonitor
   : public MediaDataDecoder
-  , public DecoderDoctorLifeLogger<H264Converter>
+  , public DecoderDoctorLifeLogger<MediaChangeMonitor>
 {
 public:
-
-  H264Converter(PlatformDecoderModule* aPDM,
+  MediaChangeMonitor(PlatformDecoderModule* aPDM,
                 const CreateDecoderParams& aParams);
-  virtual ~H264Converter();
+  virtual ~MediaChangeMonitor();
 
   RefPtr<InitPromise> Init() override;
   RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
@@ -44,7 +46,7 @@ public:
     if (mDecoder) {
       return mDecoder->GetDescriptionName();
     }
-    return NS_LITERAL_CSTRING("H264Converter decoder (pending)");
+    return NS_LITERAL_CSTRING("MediaChangeMonitor decoder (pending)");
   }
   void SetSeekThreshold(const media::TimeUnit& aTime) override;
   bool SupportDecoderRecycling() const override
@@ -61,15 +63,31 @@ public:
       return mDecoder->NeedsConversion();
     }
     
-    return ConversionRequired::kNeedAVCC;
+    return ConversionRequired::kNeedNone;
   }
   MediaResult GetLastError() const { return mLastError; }
 
+  class CodecChangeMonitor
+  {
+  public:
+    virtual bool CanBeInstantiated() const = 0;
+    virtual MediaResult CheckForChange(MediaRawData* aSample) = 0;
+    virtual const TrackInfo& Config() const = 0;
+    virtual MediaResult PrepareSample(
+      MediaDataDecoder::ConversionRequired aConversion,
+      MediaRawData* aSample) = 0;
+    virtual ~CodecChangeMonitor() = default;
+  };
+
 private:
+  UniquePtr<CodecChangeMonitor> mChangeMonitor;
+
   void AssertOnTaskQueue()
   {
     MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
   }
+
+  bool CanRecycleDecoder() const;
 
   
   
@@ -77,10 +95,7 @@ private:
   MediaResult CreateDecoder(const VideoInfo& aConfig,
                          DecoderDoctorDiagnostics* aDiagnostics);
   MediaResult CreateDecoderAndInit(MediaRawData* aSample);
-  MediaResult CheckForSPSChange(MediaRawData* aSample);
-  void UpdateConfigFromExtraData(MediaByteBuffer* aExtraData);
-
-  bool CanRecycleDecoder() const;
+  MediaResult CheckForChange(MediaRawData* aSample);
 
   void DecodeFirstSample(MediaRawData* aSample);
   void DrainThenFlushDecoder(MediaRawData* aPendingSample);
@@ -90,8 +105,6 @@ private:
   RefPtr<PlatformDecoderModule> mPDM;
   const VideoInfo mOriginalConfig;
   VideoInfo mCurrentConfig;
-  
-  RefPtr<MediaByteBuffer> mOriginalExtraData;
   RefPtr<layers::KnowsCompositor> mKnowsCompositor;
   RefPtr<layers::ImageContainer> mImageContainer;
   const RefPtr<TaskQueue> mTaskQueue;
@@ -107,7 +120,6 @@ private:
   MozPromiseHolder<FlushPromise> mFlushPromise;
 
   RefPtr<GMPCrashHelper> mGMPCrashHelper;
-  Maybe<bool> mNeedAVCC;
   MediaResult mLastError;
   bool mNeedKeyframe = true;
   const TrackInfo::TrackType mType;
@@ -115,6 +127,7 @@ private:
   const CreateDecoderParams::OptionSet mDecoderOptions;
   const CreateDecoderParams::VideoFrameRate mRate;
   Maybe<bool> mCanRecycleDecoder;
+  Maybe<MediaDataDecoder::ConversionRequired> mConversionRequired;
   
   Atomic<bool> mInConstructor;
 };
