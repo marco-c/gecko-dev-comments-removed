@@ -1,12 +1,12 @@
-function openWindow(t, url) {
+function openWindow(url) {
   return new Promise(resolve => {
-    const win = window.open(url, '_blank');
-    t.add_cleanup(() => win.close());
-    window.onmessage = e => {
-      assert_equals(e.data, 'LOADED');
-      resolve(win);
-    };
-  });
+      let win = window.open(url, '_blank');
+      add_result_callback(() => win.close());
+      window.onmessage = e => {
+        assert_equals(e.data, 'LOADED');
+        resolve(win);
+      };
+    });
 }
 
 
@@ -14,95 +14,110 @@ function openWindow(t, url) {
 
 
 function runServiceWorkerInterceptionTests(worklet_type) {
-  const worklet = get_worklet(worklet_type);
-
-  
-  
-  
-  
-  
-  
-  promise_test(async t => {
-    const kWindowURL = 'resources/addmodule-window.html';
-    const kServiceWorkerScriptURL = 'resources/service-worker.js';
-    
-    
-    const kWorkletScriptURL = 'non-existent-worklet-script.js';
-
-    const registration = await service_worker_unregister_and_register(
-        t, kServiceWorkerScriptURL, kWindowURL);
-    t.add_cleanup(() => registration.unregister());
-    await wait_for_state(t, registration.installing, 'activated');
-
-    const win = await openWindow(t, kWindowURL);
-    assert_not_equals(win.navigator.serviceWorker.controller, null,
-                      'The document should be controlled.');
+    const worklet = get_worklet(worklet_type);
 
     
     
-    win.postMessage({ type: worklet_type, script_url: kWorkletScriptURL }, '*');
-    const msgEvent = await new Promise(resolve => window.onmessage = resolve);
-    assert_equals(msgEvent.data, 'RESOLVED');
-  }, 'addModule() on a controlled document should be intercepted by a ' +
-     'service worker.');
-
-  
-  
-  
-  
-  
-  
-  promise_test(async t => {
-    const kWindowURL = 'resources/addmodule-window.html';
-    const kServiceWorkerScriptURL = 'resources/service-worker.js';
     
     
-    const kWorkletScriptURL = 'non-existent-worklet-script.js';
-
-    const registration = await service_worker_unregister_and_register(
-        t, kServiceWorkerScriptURL, 'resources/' + kWorkletScriptURL);
-    t.add_cleanup(() => registration.unregister());
-    await wait_for_state(t, registration.installing, 'activated');
-
-    const win = await openWindow(t, kWindowURL);
-    assert_equals(win.navigator.serviceWorker.controller, null,
-                  'The document should not be controlled.');
-
     
     
-    win.postMessage({ type: worklet_type, script_url: kWorkletScriptURL }, '*');
-    const msgEvent = await new Promise(resolve => window.onmessage = resolve);
-    assert_equals(msgEvent.data, 'REJECTED');
-  }, 'addModule() on a non-controlled document should not be intercepted by ' +
-     'a service worker even if the script is under the service worker scope.');
+    promise_test(t => {
+        const kWindowURL = 'resources/addmodule-window.html';
+        const kServiceWorkerScriptURL = 'resources/service-worker.js';
+        
+        
+        const kWorkletScriptURL = 'non-existent-worklet-script.js';
 
-  
-  
-  
-  
-  
-  
-  
-  promise_test(async t => {
-    const kWindowURL = 'resources/addmodule-window.html';
-    const kServiceWorkerScriptURL = 'resources/service-worker.js';
-    
-    
-    const kWorkletScriptURL = 'import-non-existent-worklet-script.js';
-
-    const registration = await service_worker_unregister_and_register(
-        t, kServiceWorkerScriptURL, kWindowURL);
-    t.add_cleanup(() => registration.unregister());
-    await wait_for_state(t, registration.installing, 'activated');
-
-    const win = await openWindow(t, kWindowURL);
-    assert_not_equals(win.navigator.serviceWorker.controller, null,
-                      'The document should be controlled.');
+        return service_worker_unregister_and_register(
+            t, kServiceWorkerScriptURL, kWindowURL)
+          .then(r => {
+              add_result_callback(() => r.unregister());
+              return wait_for_state(t, r.installing, 'activated');
+            })
+          .then(() => openWindow(kWindowURL))
+          .then(win => {
+              assert_not_equals(win.navigator.serviceWorker.controller, null,
+                                'The document should be controlled.');
+              const promise = new Promise(r => window.onmessage = r);
+              
+              
+              win.postMessage({ type: worklet_type,
+                                script_url: kWorkletScriptURL }, '*');
+              return promise;
+            })
+          .then(msg_event => assert_equals(msg_event.data, 'RESOLVED'));
+    }, 'addModule() on a controlled document should be intercepted by a ' +
+       'service worker.');
 
     
     
-    win.postMessage({ type: worklet_type, script_url: kWorkletScriptURL }, '*');
-    const msgEvent = await new Promise(resolve => window.onmessage = resolve);
-    assert_equals(msgEvent.data, 'RESOLVED');
-  }, 'Static import should be intercepted by a service worker.');
+    
+    
+    
+    
+    promise_test(t => {
+        const kWindowURL = 'resources/addmodule-window.html';
+        const kServiceWorkerScriptURL = 'resources/service-worker.js';
+        
+        
+        const kWorkletScriptURL = 'non-existent-worklet-script.js';
+
+        return service_worker_unregister_and_register(
+            t, kServiceWorkerScriptURL, 'resources/' + kWorkletScriptURL)
+          .then(r =>  {
+              add_result_callback(() => r.unregister());
+              return wait_for_state(t, r.installing, 'activated');
+            })
+          .then(() => openWindow(kWindowURL))
+          .then(win => {
+              assert_equals(win.navigator.serviceWorker.controller, null,
+                            'The document should not be controlled.');
+              const promise = new Promise(r => window.onmessage = r);
+              
+              
+              
+              win.postMessage({ type: worklet_type,
+                                script_url: kWorkletScriptURL }, '*');
+              return promise;
+            })
+          .then(msg_event => assert_equals(msg_event.data, 'REJECTED'));
+    }, 'addModule() on a non-controlled document should not be intercepted ' +
+       'by a service worker even if the script is under the service worker ' +
+       'scope.');
+
+    
+    
+    
+    
+    
+    
+    
+    promise_test(t => {
+        const kWindowURL = 'resources/addmodule-window.html';
+        const kServiceWorkerScriptURL = 'resources/service-worker.js';
+        
+        
+        const kWorkletScriptURL = 'import-non-existent-worklet-script.js';
+
+        return service_worker_unregister_and_register(
+            t, kServiceWorkerScriptURL, kWindowURL)
+          .then(r => {
+              add_result_callback(() => r.unregister());
+              return wait_for_state(t, r.installing, 'activated');
+            })
+          .then(() => openWindow(kWindowURL))
+          .then(win => {
+              assert_not_equals(win.navigator.serviceWorker.controller, null,
+                                'The document should be controlled.');
+              const promise = new Promise(r => window.onmessage = r);
+              
+              
+              
+              win.postMessage({ type: worklet_type,
+                                script_url: kWorkletScriptURL }, '*');
+              return promise;
+            })
+          .then(msg_event => assert_equals(msg_event.data, 'RESOLVED'));
+    }, 'Static import should be intercepted by a service worker.');
 }

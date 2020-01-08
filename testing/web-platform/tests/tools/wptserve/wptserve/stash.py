@@ -104,7 +104,6 @@ class Stash(object):
 
     _proxy = None
     lock = None
-    _initializing = threading.Lock()
 
     def __init__(self, default_path, address=None, authkey=None):
         self.default_path = default_path
@@ -116,16 +115,7 @@ class Stash(object):
             Stash._proxy = {}
             Stash.lock = threading.Lock()
 
-        
-        
-        
-        
-        
-        
-        with Stash._initializing:
-            if Stash.lock:
-                return
-
+        if Stash._proxy is None:
             manager = ClientDictManager(address, authkey)
             manager.connect()
             Stash._proxy = manager.get_dict()

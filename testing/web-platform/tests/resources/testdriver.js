@@ -192,7 +192,7 @@
 
 
 
-        action_sequence(actions) {
+        action_sequence: function(actions) {
             return window.test_driver_internal.action_sequence(actions);
         }
     };
