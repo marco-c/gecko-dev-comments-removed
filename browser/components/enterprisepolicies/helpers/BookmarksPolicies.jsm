@@ -195,7 +195,7 @@ async function insertBookmark(bookmark) {
   await PlacesUtils.bookmarks.insert({
     url: Services.io.newURI(bookmark.URL.href),
     title: bookmark.Title,
-    guid: generateGuidWithPrefix(BookmarksPolicies.BOOKMARK_GUID_PREFIX),
+    guid: PlacesUtils.generateGuidWithPrefix(BookmarksPolicies.BOOKMARK_GUID_PREFIX),
     parentGuid,
   });
 
@@ -246,13 +246,6 @@ async function setFaviconForBookmark(bookmark) {
   });
 }
 
-function generateGuidWithPrefix(prefix) {
-  
-  
-  
-  return prefix + PlacesUtils.history.makeGuid().substring(prefix.length);
-}
-
 
 
 
@@ -290,7 +283,7 @@ async function getParentGuid(placement, folderTitle) {
     return foldersMap.get(folderName);
   }
 
-  let guid = generateGuidWithPrefix(BookmarksPolicies.FOLDER_GUID_PREFIX);
+  let guid = PlacesUtils.generateGuidWithPrefix(BookmarksPolicies.FOLDER_GUID_PREFIX);
   await PlacesUtils.bookmarks.insert({
     type: PlacesUtils.bookmarks.TYPE_FOLDER,
     title: folderTitle,

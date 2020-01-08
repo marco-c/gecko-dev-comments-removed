@@ -22,6 +22,11 @@ function DistributionCustomizer() {
 }
 
 DistributionCustomizer.prototype = {
+  
+  
+  BOOKMARK_GUID_PREFIX: "DstB-",
+  FOLDER_GUID_PREFIX: "DstF-",
+
   get _iniFile() {
     
     
@@ -147,6 +152,7 @@ DistributionCustomizer.prototype = {
 
         let folder = await PlacesUtils.bookmarks.insert({
           type: PlacesUtils.bookmarks.TYPE_FOLDER,
+          guid: PlacesUtils.generateGuidWithPrefix(this.FOLDER_GUID_PREFIX),
           parentGuid, index, title: item.title,
         });
 
@@ -185,6 +191,7 @@ DistributionCustomizer.prototype = {
           index = prependIndex++;
 
         await PlacesUtils.bookmarks.insert({
+          guid: PlacesUtils.generateGuidWithPrefix(this.BOOKMARK_GUID_PREFIX),
           parentGuid, index, title: item.title, url: item.link,
         });
 
@@ -199,15 +206,6 @@ DistributionCustomizer.prototype = {
               Services.io.newURI(item.link), faviconURI, false,
               PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
               Services.scriptSecurityManager.getSystemPrincipal());
-          } catch (e) {
-            Cu.reportError(e);
-          }
-        }
-
-        if (item.keyword) {
-          try {
-            await PlacesUtils.keywords.insert({ keyword: item.keyword,
-                                                url: item.link });
           } catch (e) {
             Cu.reportError(e);
           }

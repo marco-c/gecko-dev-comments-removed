@@ -477,6 +477,18 @@ var PlacesUtils = {
 
 
 
+
+  generateGuidWithPrefix(prefix) {
+    return prefix + this.history.makeGuid().substring(prefix.length);
+  },
+
+  
+
+
+
+
+
+
   toURI(url) {
     url = (url instanceof URL) ? url.href : url;
 

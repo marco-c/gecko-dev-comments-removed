@@ -47,6 +47,9 @@ registerCleanupFunction(function() {
 });
 
 add_task(async function() {
+  let {DistributionCustomizer} = ChromeUtils.import("resource:///modules/distribution.js", {});
+  let distribution = new DistributionCustomizer();
+
   let glue = Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver);
   
   
@@ -64,6 +67,8 @@ add_task(async function() {
     index: 0,
   });
   Assert.equal(menuItem.title, "Menu Link Before");
+  Assert.ok(menuItem.guid.startsWith(distribution.BOOKMARK_GUID_PREFIX),
+    "Guid of this bookmark has expected prefix");
 
   menuItem = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.menuGuid,
@@ -75,11 +80,6 @@ add_task(async function() {
   await Assert.rejects(waitForResolvedPromise(() => {
     return PlacesUtils.promiseFaviconData(menuItem.url.href);
   }, "Favicon not found", 10), /Favicon\snot\sfound/, "Favicon not found");
-
-  let keywordItem = await PlacesUtils.keywords.fetch({
-    url: menuItem.url.href,
-  });
-  Assert.strictEqual(keywordItem, null);
 
   
   let toolbarItem = await PlacesUtils.bookmarks.fetch({
@@ -100,17 +100,13 @@ add_task(async function() {
       base64EncodeString(String.fromCharCode.apply(String, faviconItem.data));
   Assert.equal(base64Icon, SMALLPNG_DATA_URI.spec);
 
-  keywordItem = await PlacesUtils.keywords.fetch({
-    url: toolbarItem.url.href,
-  });
-  Assert.notStrictEqual(keywordItem, null);
-  Assert.equal(keywordItem.keyword, "e:t:b");
-
   toolbarItem = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: 1 + DEFAULT_BOOKMARKS_ON_TOOLBAR,
   });
-  Assert.equal(toolbarItem.title, "Toolbar Link After");
+  Assert.equal(toolbarItem.title, "Toolbar Folder After");
+  Assert.ok(toolbarItem.guid.startsWith(distribution.FOLDER_GUID_PREFIX),
+    "Guid of this folder has expected prefix");
 
   
   Assert.ok(Services.prefs.getBoolPref(PREF_BMPROCESSED));
