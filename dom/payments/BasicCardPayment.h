@@ -27,6 +27,22 @@ public:
   bool IsValidBasicCardErrors(JSContext* aCx, JSObject* aData);
   bool IsValidExpiryMonth(const nsAString& aExpiryMonth);
   bool IsValidExpiryYear(const nsAString& aExpiryYear);
+
+
+
+
+
+  nsresult EncodeBasicCardData(const nsAString& aCardholderName,
+                               const nsAString& aCardNumber,
+                               const nsAString& aExpiryMonth,
+                               const nsAString& aExpiryYear,
+                               const nsAString& aCardSecurityCode,
+                               nsIPaymentAddress* aBillingAddress,
+                               nsAString& aResult);
+
+  nsresult DecodeBasicCardData(const nsAString& aData,
+                               nsPIDOMWindowInner* aWindow,
+                               BasicCardResponse& aResponse);
 private:
   BasicCardService() = default;
   ~BasicCardService() = default;
