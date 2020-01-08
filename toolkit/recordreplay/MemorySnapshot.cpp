@@ -1340,8 +1340,7 @@ void
 RestoreMemoryToLastSavedCheckpoint()
 {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
-
-  AutoDisallowMemoryChanges disallow;
+  MOZ_RELEASE_ASSERT(!gMemoryInfo->mMemoryChangesAllowed);
 
   
   
@@ -1357,9 +1356,8 @@ void
 RestoreMemoryToLastSavedDiffCheckpoint()
 {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
+  MOZ_RELEASE_ASSERT(!gMemoryInfo->mMemoryChangesAllowed);
   MOZ_RELEASE_ASSERT(gMemoryInfo->mActiveDirty.empty());
-
-  AutoDisallowMemoryChanges disallow;
 
   
   
