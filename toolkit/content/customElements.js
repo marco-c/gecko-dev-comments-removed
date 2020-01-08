@@ -210,6 +210,7 @@ const MozElementMixin = Base => class MozElement extends Base {
 
 
 
+
   static implementCustomInterface(cls, ifaces) {
     const numbers = new Set(ifaces.map(i => i.number));
     if (cls.prototype.customInterfaceNumbers) {
@@ -218,6 +219,7 @@ const MozElementMixin = Base => class MozElement extends Base {
     }
 
     cls.prototype.customInterfaceNumbers = numbers;
+    cls.prototype.QueryInterface = ChromeUtils.generateQI(ifaces);
     cls.prototype.getCustomInterfaceCallback = function getCustomInterfaceCallback(iface) {
       if (numbers.has(iface.number)) {
         return getInterfaceProxy(this);
