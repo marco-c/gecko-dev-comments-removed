@@ -1667,9 +1667,12 @@ class nsXPCWrappedJSClass final : public nsIXPCWrappedJSClass {
   
   
   
+  
+  
   static nsresult CheckForException(
       XPCCallContext& ccx, mozilla::dom::AutoEntryScript& aes,
-      const char* aPropertyName, const char* anInterfaceName,
+      JS::HandleObject aObj, const char* aPropertyName,
+      const char* anInterfaceName,
       mozilla::dom::Exception* aSyntheticException = nullptr);
   virtual ~nsXPCWrappedJSClass();
 
