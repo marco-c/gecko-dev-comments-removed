@@ -631,18 +631,6 @@ public:
   static bool IsAbsoluteURL(const nsACString& aURL);
 
   
-
-
-
-
-
-
-
-
-
-  static nsIDocument* GetDocumentFromCaller();
-
-  
   
   static bool InProlog(nsINode *aNode);
 
