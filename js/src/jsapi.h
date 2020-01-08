@@ -2536,6 +2536,7 @@ JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index);
 
 
 
+
 extern JS_PUBLIC_API(bool)
 JS_Enumerate(JSContext* cx, JS::HandleObject obj, JS::MutableHandle<JS::IdVector> props);
 
@@ -3795,6 +3796,7 @@ JS_PutEscapedString(JSContext* cx, char* buffer, size_t size, JSString* str, cha
 
 
 
+
 extern JS_PUBLIC_API(size_t)
 JS_GetStringLength(JSString* str);
 
@@ -4782,6 +4784,10 @@ GetWasmModule(HandleObject obj);
 
 extern JS_PUBLIC_API(RefPtr<WasmModule>)
 DeserializeWasmModule(PRFileDesc* bytecode, JS::UniqueChars filename, unsigned line);
+
+
+
+
 
 
 

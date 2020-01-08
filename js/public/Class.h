@@ -112,6 +112,8 @@ IsArray(JSContext* cx, HandleObject obj, IsArrayAnswer* answer);
 
 
 
+
+
 class ObjectOpResult
 {
   private:
@@ -157,6 +159,7 @@ class ObjectOpResult
     }
 
     
+
 
 
 

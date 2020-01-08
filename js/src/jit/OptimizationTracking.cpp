@@ -1274,6 +1274,7 @@ IonTrackedOptimizationsTypeInfo::ForEachOpAdapter::readType(const IonTrackedType
             
             
             
+            
             char locationBuf[20];
             if (!name) {
                 uintptr_t addr = JS_FUNC_TO_DATA_PTR(uintptr_t, fun->native());

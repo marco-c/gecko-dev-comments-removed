@@ -28,6 +28,8 @@ template <class ParseHandler> class PerHandlerParser;
 
 
 
+
+
 extern MOZ_MUST_USE bool
 FoldConstants(JSContext* cx, ParseNode** pnp, PerHandlerParser<FullParseHandler>* parser);
 

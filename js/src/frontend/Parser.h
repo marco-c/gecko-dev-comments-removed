@@ -819,6 +819,9 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 
 
 
+
+
+
     class MOZ_STACK_CLASS PossibleError
     {
       private:

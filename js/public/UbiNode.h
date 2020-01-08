@@ -985,6 +985,7 @@ class PreComputedEdgeRange : public EdgeRange {
 
 
 
+
 class MOZ_STACK_CLASS JS_PUBLIC_API(RootList) {
     Maybe<AutoCheckCannotGC>& noGC;
 
