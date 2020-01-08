@@ -59,4 +59,17 @@ public class GeckoDisplay {
             session.onScreenOriginChanged(left, top);
         }
     }
+
+    
+
+
+
+
+
+
+
+
+    public boolean shouldPinOnScreen() {
+        return session.getDisplay() == this && session.shouldPinOnScreen();
+    }
 }

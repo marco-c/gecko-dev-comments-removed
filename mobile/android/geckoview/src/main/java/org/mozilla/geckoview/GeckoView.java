@@ -159,6 +159,10 @@ public class GeckoView extends FrameLayout {
                 mDisplay.screenOriginChanged(mOrigin[0], mOrigin[1]);
             }
         }
+
+        public boolean shouldPinOnScreen() {
+            return mDisplay != null ? mDisplay.shouldPinOnScreen() : false;
+        }
     }
 
     public GeckoView(final Context context) {
@@ -210,6 +214,19 @@ public class GeckoView extends FrameLayout {
         if (mSurfaceView != null) {
             mSurfaceView.setBackgroundColor(color);
         }
+    }
+
+    
+
+
+
+
+
+
+
+
+    public boolean shouldPinOnScreen() {
+        return mDisplay.shouldPinOnScreen();
     }
 
      void setActive(final boolean active) {
