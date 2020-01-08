@@ -1920,23 +1920,23 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     static size_t ToggledCallSize(uint8_t* code) {
-        static const uint32_t syncStackInstruction = 0x9100039f; 
-
         
-        int ret = 8;
-        Instruction* cur = (Instruction*)code;
-        uint32_t* curw = (uint32_t*)code;
+        
+        
+        
+        
+        
+        
 
-        if (*curw == syncStackInstruction) {
-            ret += 4;
-            cur += 4;
-        }
-
-        if (cur->IsUncondB()) {
-            ret += cur->ImmPCRawOffset() << vixl::kInstructionSizeLog2;
-        }
-
-        return ret;
+        const Instruction* cur = (const Instruction*)code;
+        cur = cur->skipPool();
+        if (cur->IsStackPtrSync())
+            cur = cur->NextInstruction();
+        cur = cur->skipPool();
+        cur = cur->NextInstruction(); 
+        cur = cur->skipPool();
+        cur = cur->NextInstruction(); 
+        return (uint8_t*)cur - code;
     }
 
     void checkARMRegAlignment(const ARMRegister& reg) {
