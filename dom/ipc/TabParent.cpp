@@ -170,6 +170,7 @@ TabParent::TabParent(nsIContentParent* aManager,
   , mLayerTreeEpoch{1}
   , mPreserveLayers(false)
   , mRenderLayers(true)
+  , mActiveInPriorityManager(false)
   , mHasLayers(false)
   , mHasPresented(false)
   , mHasBeforeUnload(false)
@@ -2859,10 +2860,6 @@ TabParent::SetDocShellIsActive(bool isActive)
 #endif
 
   
-  
-  ProcessPriorityManager::TabActivityChanged(this, isActive);
-
-  
   if (Manager()->AsContentParent()->IsRecordingOrReplaying()) {
     SetIsActiveRecordReplayTab(isActive);
   }
@@ -2880,6 +2877,13 @@ TabParent::GetDocShellIsActive(bool* aIsActive)
 NS_IMETHODIMP
 TabParent::SetRenderLayers(bool aEnabled)
 {
+  if (mActiveInPriorityManager != aEnabled) {
+    mActiveInPriorityManager = aEnabled;
+    
+    
+    ProcessPriorityManager::TabActivityChanged(this, aEnabled);
+  }
+
   if (aEnabled == mRenderLayers) {
     if (aEnabled && mHasLayers && mPreserveLayers) {
       
@@ -2926,8 +2930,26 @@ TabParent::GetHasLayers(bool* aResult)
 }
 
 NS_IMETHODIMP
+TabParent::Deprioritize()
+{
+  if (mActiveInPriorityManager)   {
+    ProcessPriorityManager::TabActivityChanged(this, false);
+    mActiveInPriorityManager = false;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 TabParent::ForceRepaint()
 {
+  if (!mActiveInPriorityManager) {
+    
+    
+    
+    mActiveInPriorityManager = true;
+    ProcessPriorityManager::TabActivityChanged(this, true);
+  }
+
   SetRenderLayersInternal(true ,
                           true );
   return NS_OK;

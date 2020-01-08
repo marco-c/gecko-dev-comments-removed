@@ -776,6 +776,9 @@ private:
   bool mRenderLayers;
 
   
+  bool mActiveInPriorityManager;
+
+  
   
   bool mHasLayers;
 
