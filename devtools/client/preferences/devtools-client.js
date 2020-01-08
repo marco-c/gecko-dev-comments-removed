@@ -49,6 +49,8 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
+pref("devtools.inspector.showUserAgentShadowRoots", false);
+
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 pref("devtools.inspector.fonteditor.enabled", true);

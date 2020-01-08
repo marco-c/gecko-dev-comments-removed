@@ -123,6 +123,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+
+
+
+
+
   initialize: function(conn, targetActor, options) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
@@ -134,6 +139,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     this.customElementWatcher = new CustomElementWatcher(targetActor.chromeEventHandler);
 
     this.showAllAnonymousContent = options.showAllAnonymousContent;
+    this.showUserAgentShadowRoots = options.showUserAgentShadowRoots;
 
     this.walkerSearch = new WalkerSearch(this);
 
@@ -706,8 +712,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     const directShadowHostChild = isDirectShadowHostChild(node.rawNode);
     const shadowHost = isShadowHost(node.rawNode);
     const shadowRoot = isShadowRoot(node.rawNode);
-    const templateElement = isTemplateElement(node.rawNode);
 
+    
+    
+    
+    const isUAWidget = shadowHost && node.rawNode.openOrClosedShadowRoot.isUAWidget();
+    const hideShadowRoot = isUAWidget && !this.showUserAgentShadowRoots;
+
+    const templateElement = isTemplateElement(node.rawNode);
     if (templateElement) {
       
       
@@ -831,7 +843,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       nodes = [
         
-        node.rawNode.openOrClosedShadowRoot,
+        ...(hideShadowRoot ? [] : [node.rawNode.openOrClosedShadowRoot]),
         
         ...(hasBefore ? [first] : []),
         
