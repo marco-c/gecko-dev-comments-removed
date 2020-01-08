@@ -479,13 +479,14 @@
 
 
 #urlbar[cfr-recommendation-state] html|input.urlbar-input {
-  transition: mask-position-x ease-in-out var(--cfr-animation-duration);
-}
-#urlbar[cfr-recommendation-state="expanded"] html|input.urlbar-input {
   
 
 
+
   mask-image: linear-gradient(to left, transparent, black 3ch);
+  transition: mask-position-x ease-in-out var(--cfr-animation-duration);
+}
+#urlbar[cfr-recommendation-state="expanded"] html|input.urlbar-input {
   mask-position-x: calc(var(--cfr-label-width) * -1);
 }
 
