@@ -94,6 +94,14 @@ HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
 
   
   
+  if (!ActiveChildIsRecording() && nsContentUtils::IsMessageInputEvent(aMessage)) {
+    ipc::IProtocol::Result r = dom::ContentChild::GetSingleton()->PContentChild::OnMessageReceived(aMessage);
+    MOZ_RELEASE_ASSERT(r == ipc::IProtocol::MsgProcessed);
+    return true;
+  }
+
+  
+  
   if (type >= layers::PCompositorBridge::PCompositorBridgeStart &&
       type <= layers::PCompositorBridge::PCompositorBridgeEnd) {
     layers::CompositorBridgeChild* compositorChild = layers::CompositorBridgeChild::Get();
