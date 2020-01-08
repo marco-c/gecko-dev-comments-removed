@@ -1833,6 +1833,15 @@
         }
         this.message_target.removeEventListener("message", this.message_handler);
         this.running = false;
+
+        
+        
+        try {
+          this.remote.onerror = null;
+        } catch (e) {
+          
+        }
+
         this.remote = null;
         this.message_target = null;
         if (this.doneResolve) {

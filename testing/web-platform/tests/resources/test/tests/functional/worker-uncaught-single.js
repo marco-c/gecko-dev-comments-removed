@@ -3,6 +3,4 @@ importScripts("/resources/testharness.js");
 
 
 
-test(function() {}, "worker test that completes successfully before exception");
-
 throw new Error("This failure is expected.");
