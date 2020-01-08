@@ -53,14 +53,6 @@ function run_test() {
   let isParent = isParentProcess();
   if (isParent) {
     
-    
-    
-    
-    
-    
-    sendCommand("");
-
-    
     for (let def of testValues) {
       for (let user of testValues) {
         let currPref = prefName(def, user);
@@ -90,8 +82,8 @@ function run_test() {
         
         let prefExists;
         try {
-          let val = pb.getCharPref(pref_name);
-          prefExists = val.length > 128;
+          pb.getCharPref(pref_name);
+          prefExists = true;
         } catch(e) {
           prefExists = false;
         }

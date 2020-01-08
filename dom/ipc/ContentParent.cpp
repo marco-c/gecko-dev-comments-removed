@@ -2026,9 +2026,6 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   
 
-  size_t prefMapSize;
-  auto prefMapHandle = Preferences::EnsureSnapshot(&prefMapSize).ClonePlatformHandle();
-
   
   nsAutoCStringN<1024> prefs;
   Preferences::SerializePreferences(prefs);
@@ -2049,22 +2046,14 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   memcpy(static_cast<char*>(shm.memory()), prefs.get(), prefs.Length());
 
-  
-  
-  auto formatPtrArg = [] (auto arg) {
-    return nsPrintfCString("%zu", uintptr_t(arg));
-  };
-
 #if defined(XP_WIN)
   
   
   HANDLE prefsHandle = shm.handle();
   mSubprocess->AddHandleToShare(prefsHandle);
-  mSubprocess->AddHandleToShare(prefMapHandle.get());
   extraArgs.push_back("-prefsHandle");
-  extraArgs.push_back(formatPtrArg(prefsHandle).get());
-  extraArgs.push_back("-prefMapHandle");
-  extraArgs.push_back(formatPtrArg(prefMapHandle.get()).get());
+  extraArgs.push_back(
+    nsPrintfCString("%zu", reinterpret_cast<uintptr_t>(prefsHandle)).get());
 #else
   
   
@@ -2074,15 +2063,11 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   
   mSubprocess->AddFdToRemap(shm.handle().fd, kPrefsFileDescriptor);
-  mSubprocess->AddFdToRemap(prefMapHandle.get(), kPrefMapFileDescriptor);
 #endif
 
   
   extraArgs.push_back("-prefsLen");
-  extraArgs.push_back(formatPtrArg(prefs.Length()).get());
-
-  extraArgs.push_back("-prefMapSize");
-  extraArgs.push_back(formatPtrArg(prefMapSize).get());
+  extraArgs.push_back(nsPrintfCString("%zu", uintptr_t(prefs.Length())).get());
 
   
   
@@ -2921,12 +2906,9 @@ ContentParent::Observe(nsISupports* aSubject,
       BLACKLIST_ENTRY(u"app.update.lastUpdateTime."),
       BLACKLIST_ENTRY(u"datareporting.policy."),
       BLACKLIST_ENTRY(u"browser.safebrowsing.provider."),
-      BLACKLIST_ENTRY(u"browser.shell."),
-      BLACKLIST_ENTRY(u"browser.slowstartup."),
       BLACKLIST_ENTRY(u"extensions.getAddons.cache."),
       BLACKLIST_ENTRY(u"media.gmp-manager."),
       BLACKLIST_ENTRY(u"media.gmp-gmpopenh264."),
-      BLACKLIST_ENTRY(u"privacy.sanitize."),
     };
 #undef BLACKLIST_ENTRY
 

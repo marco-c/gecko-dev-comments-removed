@@ -51,9 +51,7 @@ private:
 
 #ifdef ANDROID
 
-
 void SetPrefsFd(int aFd);
-void SetPrefMapFd(int aFd);
 #endif
 
 } 
