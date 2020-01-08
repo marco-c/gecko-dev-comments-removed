@@ -181,8 +181,11 @@ nsXPCWrappedJSClass::~nsXPCWrappedJSClass()
 JSObject*
 nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
                                                   JSObject* jsobjArg,
+                                                  HandleObject scope,
                                                   REFNSIID aIID)
 {
+    js::AssertSameCompartment(scope, jsobjArg);
+
     RootedObject jsobj(cx, jsobjArg);
     JSObject* id;
     RootedValue retval(cx);
@@ -208,7 +211,7 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
 
     
     
-    if (!scriptEval.StartEvaluating(jsobj))
+    if (!scriptEval.StartEvaluating(scope))
         return nullptr;
 
     
@@ -239,10 +242,6 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
             return jsobj.get();
         return nullptr;
     }
-
-    
-    js::AssertSameCompartment(cx, jsobj);
-    RootedObject scope(cx, JS::CurrentGlobalOrNull(cx));
 
     if ((id = xpc_NewIDObject(cx, scope, aIID))) {
         
@@ -307,7 +306,7 @@ GetNamedPropertyAsVariantRaw(XPCCallContext& ccx,
     RootedValue val(ccx);
 
     return JS_GetPropertyById(ccx, aJSObj, aName, &val) &&
-           XPCConvert::JSData2Native(aResult, val, type,
+           XPCConvert::JSData2Native(ccx, aResult, val, type,
                                      &NS_GET_IID(nsIVariant), 0, pErr);
 }
 
@@ -315,6 +314,7 @@ GetNamedPropertyAsVariantRaw(XPCCallContext& ccx,
 nsresult
 nsXPCWrappedJSClass::GetNamedPropertyAsVariant(XPCCallContext& ccx,
                                                JSObject* aJSObjArg,
+                                               HandleObject scope,
                                                const nsAString& aName,
                                                nsIVariant** aResult)
 {
@@ -322,7 +322,7 @@ nsXPCWrappedJSClass::GetNamedPropertyAsVariant(XPCCallContext& ccx,
     RootedObject aJSObj(cx, aJSObjArg);
 
     AutoScriptEvaluate scriptEval(cx);
-    if (!scriptEval.StartEvaluating(aJSObj))
+    if (!scriptEval.StartEvaluating(scope))
         return NS_ERROR_FAILURE;
 
     
@@ -351,6 +351,7 @@ nsXPCWrappedJSClass::GetNamedPropertyAsVariant(XPCCallContext& ccx,
 nsresult
 nsXPCWrappedJSClass::BuildPropertyEnumerator(XPCCallContext& ccx,
                                              JSObject* aJSObjArg,
+                                             HandleObject scope,
                                              nsISimpleEnumerator** aEnumerate)
 {
     JSContext* cx = ccx.GetJSContext();
@@ -497,7 +498,7 @@ GetFunctionName(JSContext* cx, HandleObject obj)
     nsCString displayName("anonymous");
     if (funName) {
         RootedValue funNameVal(cx, StringValue(funName));
-        if (!XPCConvert::JSData2Native(&displayName, funNameVal,
+        if (!XPCConvert::JSData2Native(cx, &displayName, funNameVal,
                                        { nsXPTType::T_UTF8STRING },
                                        nullptr, 0, nullptr))
         {
@@ -566,19 +567,19 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
 
     
     
-    
-    
-    JSAutoRealmAllowCCW ar(aes.cx(), obj);
+    RootedObject objScope(RootingCx(), self->GetJSObjectGlobal());
+    JSAutoRealm ar(aes.cx(), objScope);
 
     
     
     if (aIID.Equals(NS_GET_IID(nsISupportsWeakReference))) {
         
         nsXPCWrappedJS* root = self->GetRootWrapper();
+        RootedObject rootScope(ccx, root->GetJSObjectGlobal());
 
         
         if (!root->IsValid() ||
-            !CallQueryInterfaceOnJSObject(ccx, root->GetJSObject(), aIID)) {
+            !CallQueryInterfaceOnJSObject(ccx, root->GetJSObject(), rootScope, aIID)) {
             *aInstancePtr = nullptr;
             return NS_NOINTERFACE;
         }
@@ -604,7 +605,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
     if (info && info->IsFunction()) {
         RefPtr<nsXPCWrappedJS> wrapper;
-        nsresult rv = nsXPCWrappedJS::GetNewOrUsed(obj, aIID, getter_AddRefs(wrapper));
+        nsresult rv = nsXPCWrappedJS::GetNewOrUsed(ccx, obj, aIID, getter_AddRefs(wrapper));
 
         
         if (NS_SUCCEEDED(rv) && wrapper) {
@@ -616,7 +617,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
 
     
-    RootedObject jsobj(ccx, CallQueryInterfaceOnJSObject(ccx, obj, aIID));
+    RootedObject jsobj(ccx, CallQueryInterfaceOnJSObject(ccx, obj, objScope, aIID));
     if (jsobj) {
         
         
@@ -630,7 +631,8 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
         
         
         RefPtr<nsXPCWrappedJS> wrapper;
-        nsresult rv = nsXPCWrappedJS::GetNewOrUsed(jsobj, aIID, getter_AddRefs(wrapper));
+        nsresult rv =
+            nsXPCWrappedJS::GetNewOrUsed(ccx, jsobj, aIID, getter_AddRefs(wrapper));
         if (NS_SUCCEEDED(rv) && wrapper) {
             
             
@@ -659,14 +661,12 @@ JSObject*
 nsXPCWrappedJSClass::GetRootJSObject(JSContext* cx, JSObject* aJSObjArg)
 {
     RootedObject aJSObj(cx, aJSObjArg);
-    JSObject* result = CallQueryInterfaceOnJSObject(cx, aJSObj,
+    RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
+    JSObject* result = CallQueryInterfaceOnJSObject(cx, aJSObj, global,
                                                     NS_GET_IID(nsISupports));
     if (!result)
         result = aJSObj;
-    JSObject* inner = js::UncheckedUnwrap(result);
-    if (inner)
-        return inner;
-    return result;
+    return js::UncheckedUnwrap(result);
 }
 
 bool
@@ -964,9 +964,8 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
 
     
     
-    
-    
-    JSAutoRealmAllowCCW ar(cx, obj);
+    RootedObject scope(cx, wrapper->GetJSObjectGlobal());
+    JSAutoRealm ar(cx, scope);
 
     
     
@@ -995,7 +994,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
         argc -= 1;
     }
 
-    if (!scriptEval.StartEvaluating(obj))
+    if (!scriptEval.StartEvaluating(scope))
         goto pre_call_clean_up;
 
     xpccx->SetPendingException(nullptr);
@@ -1203,7 +1202,7 @@ pre_call_clean_up:
         }
 
         MOZ_ASSERT(param.IsIndirect(), "outparams are always indirect");
-        if (!XPCConvert::JSData2Native(nativeParams[i].val.p, val, type,
+        if (!XPCConvert::JSData2Native(cx, nativeParams[i].val.p, val, type,
                                        &param_iid, 0, nullptr))
             break;
     }
@@ -1239,7 +1238,7 @@ pre_call_clean_up:
                 break;
 
             MOZ_ASSERT(param.IsIndirect(), "outparams are always indirect");
-            if (!XPCConvert::JSData2Native(nativeParams[i].val.p, val, type,
+            if (!XPCConvert::JSData2Native(cx, nativeParams[i].val.p, val, type,
                                            &param_iid, array_count, nullptr))
                 break;
         }
