@@ -220,6 +220,21 @@ public:
   }
 
   void
+  SetBodyLocalPath(nsAString& aLocalPath)
+  {
+    mBodyLocalPath = aLocalPath;
+  }
+
+  const nsAString&
+  BodyLocalPath() const
+  {
+    if (mWrappedResponse) {
+      return mWrappedResponse->BodyLocalPath();
+    }
+    return mBodyLocalPath;
+  }
+
+  void
   SetBody(nsIInputStream* aBody, int64_t aBodySize)
   {
     if (mWrappedResponse) {
@@ -373,6 +388,7 @@ private:
   const nsCString mStatusText;
   RefPtr<InternalHeaders> mHeaders;
   nsCOMPtr<nsIInputStream> mBody;
+  nsString mBodyLocalPath;
   int64_t mBodySize;
   
   

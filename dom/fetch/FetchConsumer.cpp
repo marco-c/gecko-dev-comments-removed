@@ -7,6 +7,11 @@
 #include "Fetch.h"
 #include "FetchConsumer.h"
 
+#include "mozilla/dom/BlobBinding.h"
+#include "mozilla/dom/File.h"
+#include "mozilla/dom/FileBinding.h"
+#include "mozilla/dom/FileCreatorHelper.h"
+#include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
@@ -16,6 +21,12 @@
 #include "nsIInputStreamPump.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsProxyRelease.h"
+
+
+
+#ifdef CreateFile
+#undef CreateFile
+#endif
 
 namespace mozilla {
 namespace dom {
@@ -284,34 +295,7 @@ public:
     
     mFetchBodyConsumer->NullifyConsumeBodyPump();
 
-    MOZ_ASSERT(aBlob);
-
-    
-    if (!mWorkerRef) {
-      mFetchBodyConsumer->ContinueConsumeBlobBody(aBlob->Impl());
-      return;
-    }
-
-    
-    {
-      RefPtr<ContinueConsumeBlobBodyRunnable<Derived>> r =
-        new ContinueConsumeBlobBodyRunnable<Derived>(mFetchBodyConsumer,
-                                                     mWorkerRef->Private(),
-                                                     aBlob->Impl());
-
-      if (r->Dispatch()) {
-        return;
-      }
-    }
-
-    
-    
-
-    RefPtr<AbortConsumeBlobBodyControlRunnable<Derived>> r =
-      new AbortConsumeBlobBodyControlRunnable<Derived>(mFetchBodyConsumer,
-                                                       mWorkerRef->Private());
-
-    Unused << NS_WARN_IF(!r->Dispatch());
+    mFetchBodyConsumer->OnBlobResult(aBlob, mWorkerRef);
   }
 
 private:
@@ -450,6 +434,7 @@ FetchBodyConsumer<Derived>::FetchBodyConsumer(nsIEventTarget* aMainThreadEventTa
 #endif
   , mBodyStream(aBodyStream)
   , mBlobStorageType(MutableBlobStorage::eOnlyInMemory)
+  , mBodyLocalPath(aBody ? aBody->BodyLocalPath() : VoidString())
   , mGlobal(aGlobalObject)
   , mConsumeType(aType)
   , mConsumePromise(aPromise)
@@ -487,6 +472,112 @@ FetchBodyConsumer<Derived>::AssertIsOnTargetThread() const
   MOZ_ASSERT(NS_GetCurrentThread() == mTargetThread);
 }
 
+namespace {
+
+template <class Derived>
+class FileCreationHandler final : public PromiseNativeHandler
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  static void
+  Create(Promise* aPromise, FetchBodyConsumer<Derived>* aConsumer)
+  {
+    AssertIsOnMainThread();
+    MOZ_ASSERT(aPromise);
+
+    RefPtr<FileCreationHandler> handler = new FileCreationHandler<Derived>(aConsumer);
+    aPromise->AppendNativeHandler(handler);
+  }
+
+  void
+  ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    AssertIsOnMainThread();
+
+    if (NS_WARN_IF(!aValue.isObject())) {
+      mConsumer->OnBlobResult(nullptr);
+      return;
+    }
+
+    RefPtr<Blob> blob;
+    if (NS_WARN_IF(NS_FAILED(UNWRAP_OBJECT(Blob, &aValue.toObject(), blob)))) {
+      mConsumer->OnBlobResult(nullptr);
+      return;
+    }
+
+    mConsumer->OnBlobResult(blob);
+  }
+
+  void
+  RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  {
+    AssertIsOnMainThread();
+
+    mConsumer->OnBlobResult(nullptr);
+  }
+
+private:
+  explicit FileCreationHandler<Derived>(FetchBodyConsumer<Derived>* aConsumer)
+    : mConsumer(aConsumer)
+  {
+    AssertIsOnMainThread();
+    MOZ_ASSERT(aConsumer);
+  }
+
+  ~FileCreationHandler() = default;
+
+  RefPtr<FetchBodyConsumer<Derived>> mConsumer;
+};
+
+template <class Derived>
+NS_IMPL_ADDREF(FileCreationHandler<Derived>)
+template <class Derived>
+NS_IMPL_RELEASE(FileCreationHandler<Derived>)
+template <class Derived>
+NS_INTERFACE_MAP_BEGIN(FileCreationHandler<Derived>)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+} 
+
+template <class Derived>
+nsresult
+FetchBodyConsumer<Derived>::GetBodyLocalFile(nsIFile** aFile) const
+{
+  AssertIsOnMainThread();
+
+  if (!mBodyLocalPath.Length()) {
+    return NS_OK;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1", &rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  rv = file->InitWithPath(mBodyLocalPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  bool exists;
+  rv = file->Exists(&exists);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!exists) {
+    return NS_ERROR_FILE_NOT_FOUND;
+  }
+
+  bool isDir;
+  rv = file->IsDirectory(&isDir);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (isDir) {
+    return NS_ERROR_FILE_IS_DIRECTORY;
+  }
+
+  file.forget(aFile);
+  return NS_OK;
+}
+
 
 
 
@@ -504,6 +595,28 @@ FetchBodyConsumer<Derived>::BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWor
     
     
     return;
+  }
+
+  
+  
+  if (mConsumeType == CONSUME_BLOB) {
+    nsCOMPtr<nsIFile> file;
+    nsresult rv = GetBodyLocalFile(getter_AddRefs(file));
+    if (!NS_WARN_IF(NS_FAILED(rv)) && file) {
+      ChromeFilePropertyBag bag;
+      bag.mType = NS_ConvertUTF8toUTF16(mBodyMimeType);
+
+      ErrorResult error;
+      RefPtr<Promise> promise =
+        FileCreatorHelper::CreateFile(mGlobal, file, bag, true, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return;
+      }
+
+      FileCreationHandler<Derived>::Create(promise, this);
+      autoReject.DontFail();
+      return;
+    }
   }
 
   nsCOMPtr<nsIInputStreamPump> pump;
@@ -554,6 +667,51 @@ FetchBodyConsumer<Derived>::BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWor
     }
   }
 }
+
+
+
+
+
+
+
+template <class Derived>
+void
+FetchBodyConsumer<Derived>::OnBlobResult(Blob* aBlob, ThreadSafeWorkerRef* aWorkerRef)
+{
+  MOZ_ASSERT(aBlob);
+
+  
+  if (!aWorkerRef) {
+    ContinueConsumeBlobBody(aBlob->Impl());
+    return;
+  }
+
+  
+  {
+    RefPtr<ContinueConsumeBlobBodyRunnable<Derived>> r =
+      new ContinueConsumeBlobBodyRunnable<Derived>(this, aWorkerRef->Private(),
+                                                   aBlob->Impl());
+
+    if (r->Dispatch()) {
+      return;
+    }
+  }
+
+  
+  
+
+  RefPtr<AbortConsumeBlobBodyControlRunnable<Derived>> r =
+    new AbortConsumeBlobBodyControlRunnable<Derived>(this,
+                                                     aWorkerRef->Private());
+
+  Unused << NS_WARN_IF(!r->Dispatch());
+}
+
+
+
+
+
+
 
 template <class Derived>
 void

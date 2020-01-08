@@ -187,6 +187,9 @@ public:
           JS::MutableHandle<JSObject*> aBodyOut,
           ErrorResult& aRv);
 
+  const nsAString&
+  BodyLocalPath() const;
+
   
   
   void
