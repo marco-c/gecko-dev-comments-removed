@@ -71,16 +71,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(global, ["fetch", "indexedDB"]);
-const {
-  EventEmitter
-} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
-const {
-  generateUUID
-} = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator); 
+ChromeUtils.defineModuleGetter(global, "EventEmitter", "resource://gre/modules/EventEmitter.jsm"); 
 
-const {
-  KintoHttpClient
-} = ChromeUtils.import("resource://services-common/kinto-http-client.js");
+ChromeUtils.defineModuleGetter(global, "KintoHttpClient", "resource://services-common/kinto-http-client.js");
+XPCOMUtils.defineLazyGetter(global, "generateUUID", () => {
+  const {
+    generateUUID
+  } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+  return generateUUID;
+});
 
 class Kinto extends _KintoBase.default {
   static get adapters() {
@@ -490,10 +489,13 @@ function createListRequest(cid, store, filters, done) {
 
   if (filterFields.length == 0) {
     const request = store.index("cid").getAll(IDBKeyRange.only(cid));
+
     request.onsuccess = event => done(event.target.result);
+
     return request;
-  }
-  
+  } 
+
+
   const indexField = filterFields.find(field => {
     return INDEXED_FIELDS.includes(field);
   });
@@ -506,13 +508,12 @@ function createListRequest(cid, store, filters, done) {
   } 
 
 
-  const remainingFilters = (0, _utils.omitKeys)(filters, indexField); 
+  const remainingFilters = (0, _utils.omitKeys)(filters, [indexField]); 
 
-  const value = filters[indexField];
-  
-  const indexStore = indexField == "id" ? store : store.index(indexField);
+  const value = filters[indexField]; 
 
-  
+  const indexStore = indexField == "id" ? store : store.index(indexField); 
+
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return done([]);
@@ -523,12 +524,14 @@ function createListRequest(cid, store, filters, done) {
     const request = indexStore.openCursor(range);
     request.onsuccess = cursorHandlers.in(values, remainingFilters, done);
     return request;
-  }
+  } 
 
-  
+
   if (remainingFilters.length == 0) {
     const request = indexStore.getAll(IDBKeyRange.only([cid, value]));
+
     request.onsuccess = event => done(event.target.result);
+
     return request;
   } 
 
@@ -767,10 +770,13 @@ class IDB extends _base.default {
       };
       createListRequest(this.cid, store, filters, records => {
         
-        const preloaded = records.reduce((acc, record) => {
-          acc[record.id] = (0, _utils.omitKeys)(record, ["_cid"]);
-          return acc;
-        }, {});
+        const preloaded = {};
+
+        for (const record of records) {
+          delete record["_cid"];
+          preloaded[record.id] = record;
+        }
+
         runCallback(preloaded);
       });
     }, {
@@ -820,7 +826,11 @@ class IDB extends _base.default {
         createListRequest(this.cid, store, filters, _results => {
           
           
-          results = _results.map(r => (0, _utils.omitKeys)(r, ["_cid"]));
+          for (const result of _results) {
+            delete result["_cid"];
+          }
+
+          results = _results;
         });
       }); 
       
@@ -885,7 +895,21 @@ class IDB extends _base.default {
   async loadDump(records) {
     try {
       await this.execute(transaction => {
-        records.forEach(record => transaction.update(record));
+        
+        
+        
+        let i = 0;
+        putNext();
+
+        function putNext() {
+          if (i == records.length) {
+            return;
+          } 
+
+
+          transaction.update(records[i]).onsuccess = putNext;
+          ++i;
+        }
       });
       const previousLastModified = await this.getLastModified();
       const lastModified = Math.max(...records.map(record => record.last_modified));
@@ -924,7 +948,7 @@ function transactionProxy(adapter, store, preloaded = []) {
     },
 
     update(record) {
-      store.put({ ...record,
+      return store.put({ ...record,
         _cid
       });
     },
@@ -3116,13 +3140,14 @@ function deepEqual(a, b) {
 
 
 function omitKeys(obj, keys = []) {
-  return Object.keys(obj).reduce((acc, key) => {
-    if (!keys.includes(key)) {
-      acc[key] = obj[key];
-    }
+  const result = { ...obj
+  };
 
-    return acc;
-  }, {});
+  for (const key of keys) {
+    delete result[key];
+  }
+
+  return result;
 }
 
 function arrayEqual(a, b) {
