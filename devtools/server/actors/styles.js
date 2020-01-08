@@ -1566,11 +1566,11 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         const value = change.newName ? prevValue : newValue;
 
-        data.add = { property: name, value };
+        data.add = { [name]: value };
         
         
         
-        data.remove = prevValue ? { property: prevName, value: prevValue } : null;
+        data.remove = prevValue ? { [prevName]: prevValue } : null;
 
         
         
@@ -1584,7 +1584,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       case "remove":
         data.add = null;
-        data.remove = { property: change.name, value: prevValue };
+        data.remove = { [change.name]: prevValue };
         break;
     }
 

@@ -169,6 +169,9 @@ const reducers = {
     const { selector, ancestors, ruleIndex } = change;
     const sourceId = getSourceHash(change.source);
     const ruleId = getRuleHash({ selector, ancestors, ruleIndex });
+    
+    const hasAdd = !!change.add;
+    const hasRemove = !!change.remove;
 
     
     const source = Object.assign({}, state[sourceId], { type, href, index });
@@ -184,31 +187,32 @@ const reducers = {
     
     const remove = Object.assign({}, rule.remove);
 
-    if (change.remove && change.remove.property) {
-      
-      
-      
-      if (!add[change.remove.property]) {
-        remove[change.remove.property] = change.remove.value;
-      }
+    if (hasRemove) {
+      Object.entries(change.remove).forEach(([property, value]) => {
+        
+        
+        
+        if (!add[property]) {
+          remove[property] = value;
+        }
 
-      
-      if (add[change.remove.property] === change.remove.value) {
-        delete add[change.remove.property];
-      }
+        
+        if (add[property] === value) {
+          delete add[property];
+        }
+      });
     }
 
-    if (change.add && change.add.property) {
-      add[change.add.property] = change.add.value;
-    }
+    if (hasAdd) {
+      Object.entries(change.add).forEach(([property, value]) => {
+        add[property] = value;
 
-    const property = change.add && change.add.property ||
-                     change.remove && change.remove.property;
-
-    
-    if (add[property] === remove[property]) {
-      delete add[property];
-      delete remove[property];
+        
+        if (add[property] === remove[property]) {
+          delete add[property];
+          delete remove[property];
+        }
+      });
     }
 
     
