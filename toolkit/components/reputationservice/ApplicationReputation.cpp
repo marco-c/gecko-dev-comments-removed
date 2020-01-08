@@ -491,6 +491,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".dart",        
     ".dc42",        
     ".deb",         
+    ".desktop",     
     ".dex",         
     ".dhtml",       
     ".dhtm",        
