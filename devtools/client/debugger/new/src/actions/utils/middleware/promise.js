@@ -9,9 +9,8 @@ var _lodash = require("devtools/client/shared/vendor/lodash");
 
 var _DevToolsUtils = require("../../../utils/DevToolsUtils");
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 let seqIdVal = 1;
 
@@ -36,29 +35,29 @@ function promiseMiddleware({
     const seqId = seqIdGen().toString(); 
     
 
-    action = _objectSpread({}, filterAction(action), {
+    action = { ...filterAction(action),
       seqId
-    });
-    dispatch(_objectSpread({}, action, {
+    };
+    dispatch({ ...action,
       status: "start"
-    })); 
+    }); 
     
 
     return new Promise((resolve, reject) => {
       promiseInst.then(value => {
         (0, _DevToolsUtils.executeSoon)(() => {
-          dispatch(_objectSpread({}, action, {
+          dispatch({ ...action,
             status: "done",
             value: value
-          }));
+          });
           resolve(value);
         });
       }, error => {
         (0, _DevToolsUtils.executeSoon)(() => {
-          dispatch(_objectSpread({}, action, {
+          dispatch({ ...action,
             status: "error",
             error: error.message || error
-          }));
+          });
           reject(error);
         });
       });

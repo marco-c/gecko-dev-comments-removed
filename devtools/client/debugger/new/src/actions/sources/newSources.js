@@ -24,9 +24,13 @@ var _source = require("../../utils/source");
 
 var _selectors = require("../../selectors/index");
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+
+
+
+
+
 
 function createOriginalSource(originalUrl, generatedSource, sourceMaps) {
   return {
@@ -82,9 +86,9 @@ function loadSourceMap(sourceId) {
       
       dispatch({
         type: "UPDATE_SOURCE",
-        source: _objectSpread({}, source, {
+        source: { ...source,
           sourceMapURL: ""
-        })
+        }
       });
       return;
     }
@@ -115,9 +119,9 @@ function checkSelectedSource(sourceId) {
         return await dispatch((0, _prettyPrint.togglePrettyPrint)(source.id));
       }
 
-      await dispatch((0, _sources.selectLocation)(_objectSpread({}, pendingLocation, {
+      await dispatch((0, _sources.selectLocation)({ ...pendingLocation,
         sourceId: source.id
-      })));
+      }));
     }
   };
 }

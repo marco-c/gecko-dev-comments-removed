@@ -34,9 +34,13 @@ var _sourceMaps = require("../../utils/source-maps");
 
 var _selectors = require("../../selectors/index");
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+
+
+
+
+
 
 const setSelectedLocation = exports.setSelectedLocation = (source, location) => ({
   type: "SET_SELECTED_LOCATION",
@@ -73,9 +77,9 @@ function selectSourceURL(url, options = {}) {
 
     if (source) {
       const sourceId = source.id;
-      const location = (0, _location.createLocation)(_objectSpread({}, options.location, {
+      const location = (0, _location.createLocation)({ ...options.location,
         sourceId
-      }));
+      });
       await dispatch(selectLocation(location));
     } else {
       dispatch(setPendingSelectedLocation(url, options));
@@ -110,6 +114,8 @@ function selectLocation(location) {
     getState,
     client
   }) => {
+    const currentSource = (0, _selectors.getSelectedSource)(getState());
+
     if (!client) {
       
       
@@ -145,7 +151,13 @@ function selectLocation(location) {
     }
 
     dispatch((0, _ast.setSymbols)(loadedSource.id));
-    dispatch((0, _ast.setOutOfScopeLocations)());
+    dispatch((0, _ast.setOutOfScopeLocations)()); 
+
+    const newSource = (0, _selectors.getSelectedSource)(getState());
+
+    if (currentSource && currentSource !== newSource) {
+      dispatch((0, _ui.updateActiveFileSearch)());
+    }
   };
 }
 
@@ -160,6 +172,8 @@ function selectSpecificLocation(location) {
     getState,
     client
   }) => {
+    const currentSource = (0, _selectors.getSelectedSource)(getState());
+
     if (!client) {
       
       
@@ -190,7 +204,13 @@ function selectSpecificLocation(location) {
 
     const sourceId = loadedSource.id;
     dispatch((0, _ast.setSymbols)(sourceId));
-    dispatch((0, _ast.setOutOfScopeLocations)());
+    dispatch((0, _ast.setOutOfScopeLocations)()); 
+
+    const newSource = (0, _selectors.getSelectedSource)(getState());
+
+    if (currentSource && currentSource !== newSource) {
+      dispatch((0, _ui.updateActiveFileSearch)());
+    }
   };
 }
 
@@ -235,7 +255,8 @@ function jumpToMappedLocation(location) {
       pairedLocation = await sourceMaps.getOriginalLocation(location, source);
     }
 
-    return dispatch(selectLocation(_objectSpread({}, pairedLocation)));
+    return dispatch(selectLocation({ ...pairedLocation
+    }));
   };
 }
 
