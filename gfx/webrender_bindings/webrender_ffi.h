@@ -35,8 +35,34 @@ void gecko_profiler_start_marker(const char* name);
 void gecko_profiler_end_marker(const char* name);
 
 
+
+#define WEBRENDER_FOR_EACH_INTERNER(macro) \
+  macro(clip);                             \
+  macro(prim);                             \
+  macro(normal_border);                    \
+  macro(image_border);                     \
+  macro(image);                            \
+  macro(yuv_image);                        \
+  macro(line_decoration);                  \
+  macro(linear_grad);                      \
+  macro(radial_grad);                      \
+  macro(picture);                          \
+  macro(text_run);
+
+
 namespace mozilla {
 namespace wr {
+
+
+
+#define DECLARE_MEMBERS(id) \
+  uintptr_t id##_interner;  \
+  uintptr_t id##_data_store;
+struct InterningMemoryReport {
+  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBERS)
+};
+
+#undef DECLARE_MEMBERS
 
 struct FontInstanceFlags {
   uint32_t bits;
@@ -155,4 +181,4 @@ inline ImageKey AsImageKey(BlobImageKey aKey) { return aKey._0; }
 }  
 }  
 
-#endif  
+#endif
