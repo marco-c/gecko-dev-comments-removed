@@ -2590,8 +2590,7 @@ nsFocusManager::GetSelectionLocation(nsIDocument* aDocument,
                                              false, 
                                              false, 
                                              true,  
-                                             false, 
-                                             false  
+                                             false 
                                              );
           NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3323,8 +3322,7 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
                                              false, 
                                              false, 
                                              true, 
-                                             true,  
-                                             false 
+                                             true  
                                              );
           if (NS_SUCCEEDED(rv)) {
             nsIFrame* frame =
@@ -3571,8 +3569,8 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
                                        false, 
                                        false, 
                                        true,  
-                                       aForDocumentNavigation,  
-                                       false);
+                                       aForDocumentNavigation  
+                                       );
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (iterStartContent == aRootContent) {

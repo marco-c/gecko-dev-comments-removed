@@ -128,29 +128,6 @@ protected:
 
 
 
-class nsLightFrameIterator final : public nsFrameIterator
-{
-public:
-  nsLightFrameIterator(nsPresContext* aPresContext, nsIFrame *aStart,
-                       nsIteratorType aType, bool aLockScroll,
-                       bool aFollowOOFs, bool aSkipPopupChecks) :
-  nsFrameIterator(aPresContext, aStart, aType, aLockScroll,
-                  aFollowOOFs, aSkipPopupChecks) {}
-
-protected:
-  nsIFrame* GetFirstChildInner(nsIFrame* aFrame) override;
-  nsIFrame* GetLastChildInner(nsIFrame* aFrame) override;
-
-  nsIFrame* GetNextSiblingInner(nsIFrame* aFrame) override;
-  nsIFrame* GetPrevSiblingInner(nsIFrame* aFrame) override;
-
-  
-  
-  bool IsLightFrame(nsIFrame* aFrame);
-};
-
-
-
 nsresult
 NS_CreateFrameTraversal(nsIFrameTraversal** aResult)
 {
@@ -170,8 +147,7 @@ NS_NewFrameTraversal(nsIFrameEnumerator **aEnumerator,
                      bool aVisual,
                      bool aLockInScrollView,
                      bool aFollowOOFs,
-                     bool aSkipPopupChecks,
-                     bool aSkipShadow)
+                     bool aSkipPopupChecks)
 {
   if (!aEnumerator || !aStart)
     return NS_ERROR_NULL_POINTER;
@@ -185,10 +161,6 @@ NS_NewFrameTraversal(nsIFrameEnumerator **aEnumerator,
     trav = new nsVisualIterator(aPresContext, aStart, aType,
                                 aLockInScrollView, aFollowOOFs,
                                 aSkipPopupChecks);
-  } else if (aSkipShadow) {
-    trav = new nsLightFrameIterator(aPresContext, aStart, aType,
-                                    aLockInScrollView, aFollowOOFs,
-                                    aSkipPopupChecks);
   } else {
     trav = new nsFrameIterator(aPresContext, aStart, aType,
                                aLockInScrollView, aFollowOOFs,
@@ -222,7 +194,7 @@ NS_IMETHODIMP
   return NS_NewFrameTraversal(aEnumerator, aPresContext, aStart,
                               static_cast<nsIteratorType>(aType),
                               aVisual, aLockInScrollView, aFollowOOFs,
-                              aSkipPopupChecks, false );
+                              aSkipPopupChecks);
 }
 
 
@@ -577,67 +549,4 @@ nsVisualIterator::GetPrevSiblingInner(nsIFrame* aFrame)
   if (!parent)
     return nullptr;
   return parent->PrincipalChildList().GetPrevVisualFor(aFrame);
-}
-
-
-
-nsIFrame*
-nsLightFrameIterator::GetFirstChildInner(nsIFrame* aFrame)
-{
-  nsIFrame* child = nsFrameIterator::GetFirstChildInner(aFrame);
-  return IsLightFrame(child) ? child : GetNextSiblingInner(child);
-}
-
-nsIFrame*
-nsLightFrameIterator::GetLastChildInner(nsIFrame* aFrame)
-{
-  nsIFrame* child = nsFrameIterator::GetLastChildInner(aFrame);
-  return IsLightFrame(child) ? child : GetPrevSiblingInner(child);
-}
-
-nsIFrame*
-nsLightFrameIterator::GetNextSiblingInner(nsIFrame* aFrame)
-{
-  nsIFrame* sibling;
-  for (sibling = nsFrameIterator::GetNextSiblingInner(aFrame);
-       !IsLightFrame(sibling);
-       sibling = nsFrameIterator::GetNextSiblingInner(sibling));
-  return sibling;
-}
-
-nsIFrame*
-nsLightFrameIterator::GetPrevSiblingInner(nsIFrame* aFrame)
-{
-  nsIFrame* sibling;
-  for (sibling = nsFrameIterator::GetPrevSiblingInner(aFrame);
-       !IsLightFrame(sibling);
-       sibling = nsFrameIterator::GetPrevSiblingInner(sibling));
-  return sibling;
-}
-
-bool
-nsLightFrameIterator::IsLightFrame(nsIFrame* aFrame)
-{
-  if (!aFrame) {
-    return true;
-  }
-
-  nsIContent* content = aFrame->GetContent();
-  if (!content) {
-    return true;
-  }
-
-  
-  if (content->IsInShadowTree()) {
-    return false;
-  }
-
-  
-  for (; content; content = content->GetParent()) {
-    if (content->GetAssignedSlot()) {
-      return false;
-    }
-  }
-
-  return true;
 }
