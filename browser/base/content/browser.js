@@ -343,28 +343,28 @@ function* browserWindows() {
 }
 
 function UpdateBackForwardCommands(aWebNavigation) {
-  var backBroadcaster = document.getElementById("Browser:Back");
-  var forwardBroadcaster = document.getElementById("Browser:Forward");
+  var backCommand = document.getElementById("Browser:Back");
+  var forwardCommand = document.getElementById("Browser:Forward");
 
   
   
   
   
 
-  var backDisabled = backBroadcaster.hasAttribute("disabled");
-  var forwardDisabled = forwardBroadcaster.hasAttribute("disabled");
+  var backDisabled = backCommand.hasAttribute("disabled");
+  var forwardDisabled = forwardCommand.hasAttribute("disabled");
   if (backDisabled == aWebNavigation.canGoBack) {
     if (backDisabled)
-      backBroadcaster.removeAttribute("disabled");
+      backCommand.removeAttribute("disabled");
     else
-      backBroadcaster.setAttribute("disabled", true);
+      backCommand.setAttribute("disabled", true);
   }
 
   if (forwardDisabled == aWebNavigation.canGoForward) {
     if (forwardDisabled)
-      forwardBroadcaster.removeAttribute("disabled");
+      forwardCommand.removeAttribute("disabled");
     else
-      forwardBroadcaster.setAttribute("disabled", true);
+      forwardCommand.setAttribute("disabled", true);
   }
 }
 
