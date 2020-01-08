@@ -312,8 +312,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   void SetIsBackgroundVideoDecodingAllowed(bool aAllowed);
 
-  bool IsVideoDecodingSuspended() const;
-
   
 
 
@@ -579,9 +577,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   MediaEventListener mOnWaitingForKey;
   MediaEventListener mOnDecodeWarning;
   MediaEventListener mOnNextFrameStatus;
-
-  
-  bool mIsVideoDecodingSuspended = false;
 
  protected:
   

@@ -435,11 +435,9 @@ void MediaDecoder::OnPlaybackEvent(MediaPlaybackEvent&& aEvent) {
       break;
     case MediaPlaybackEvent::EnterVideoSuspend:
       GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("mozentervideosuspend"));
-      mIsVideoDecodingSuspended = true;
       break;
     case MediaPlaybackEvent::ExitVideoSuspend:
       GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("mozexitvideosuspend"));
-      mIsVideoDecodingSuspended = false;
       break;
     case MediaPlaybackEvent::StartVideoSuspendTimer:
       GetOwner()->DispatchAsyncEvent(
@@ -460,10 +458,6 @@ void MediaDecoder::OnPlaybackEvent(MediaPlaybackEvent&& aEvent) {
     default:
       break;
   }
-}
-
-bool MediaDecoder::IsVideoDecodingSuspended() const {
-  return mIsVideoDecodingSuspended;
 }
 
 void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
@@ -975,11 +969,9 @@ void MediaDecoder::UpdateVideoDecodeMode() {
 
   
   
-  
   if (mIsElementInTree && mElementVisibility == Visibility::UNTRACKED) {
-    LOG("UpdateVideoDecodeMode(), set Suspend because element hasn't be "
-        "updated visibility state.");
-    mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Suspend);
+    LOG("UpdateVideoDecodeMode(), early return because we have incomplete "
+        "visibility states.");
     return;
   }
 

@@ -561,9 +561,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool HasSuspendTaint() const;
 
   
-  bool IsVideoDecodingSuspended() const;
-
-  
   
   
   
