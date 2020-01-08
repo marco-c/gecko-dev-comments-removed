@@ -5946,9 +5946,3 @@ pref("dom.datatransfer.mozAtAPIs", true);
 #ifdef MOZ_LIBPRIO
 pref("prio.enabled", false);
 #endif
-
-#ifdef NIGHTLY_BUILD
-
-
-pref("app.normandy.test.with_default", false);
-#endif
