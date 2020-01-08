@@ -2560,7 +2560,6 @@ IonBuilder::inspectOpcode(JSOp op)
 
       
       case JSOP_EXCEPTION:
-      case JSOP_THROWING:
       case JSOP_ISGENCLOSING:
       case JSOP_INITIALYIELD:
       case JSOP_YIELD:
@@ -2588,6 +2587,7 @@ IonBuilder::inspectOpcode(JSOp op)
         
         break;
 
+      case JSOP_UNUSED151:
       case JSOP_UNUSED206:
       case JSOP_LIMIT:
         break;

@@ -1627,17 +1627,8 @@
  \
     macro(JSOP_POW, 150, "pow", "**", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
-
-
-
-
-
-
-
-
-
  \
-    macro(JSOP_THROWING, 151, "throwing", NULL, 1, 1, 0, JOF_BYTE) \
+    macro(JSOP_UNUSED151, 151, "unused151", NULL, 1, 0, 0, JOF_BYTE) \
     
 
 

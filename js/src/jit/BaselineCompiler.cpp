@@ -1220,6 +1220,7 @@ BaselineCompiler::emitBody()
             
           case JSOP_SETINTRINSIC:
             
+          case JSOP_UNUSED151:
           case JSOP_UNUSED206:
           case JSOP_LIMIT:
             
@@ -3897,22 +3898,6 @@ BaselineCompiler::emit_JSOP_THROW()
     pushArg(R0);
 
     return callVM(ThrowInfo);
-}
-
-typedef bool (*ThrowingFn)(JSContext*, HandleValue);
-static const VMFunction ThrowingInfo =
-    FunctionInfo<ThrowingFn>(js::ThrowingOperation, "ThrowingOperation");
-
-bool
-BaselineCompiler::emit_JSOP_THROWING()
-{
-    
-    frame.popRegsAndSync(1);
-
-    prepareVMCall();
-    pushArg(R0);
-
-    return callVM(ThrowingInfo);
 }
 
 bool
