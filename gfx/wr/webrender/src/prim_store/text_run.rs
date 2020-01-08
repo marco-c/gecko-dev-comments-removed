@@ -65,7 +65,6 @@ impl AsInstanceKind<TextRunDataHandle> for TextRunKey {
             used_font: self.font.clone(),
             glyph_keys_range: storage::Range::empty(),
             shadow: self.shadow,
-            should_snap: true,
         });
 
         PrimitiveInstanceKind::TextRun{ data_handle, run_index }
@@ -228,7 +227,6 @@ pub struct TextRunPrimitive {
     pub used_font: FontInstance,
     pub glyph_keys_range: storage::Range<GlyphKey>,
     pub shadow: bool,
-    pub should_snap: bool,
 }
 
 impl TextRunPrimitive {
@@ -263,11 +261,6 @@ impl TextRunPrimitive {
         } else {
             FontTransform::identity()
         };
-
-        
-        self.should_snap =
-            transform.preserves_2d_axis_alignment() &&
-            raster_space == RasterSpace::Screen;
 
         
         
