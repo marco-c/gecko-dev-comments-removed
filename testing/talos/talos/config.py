@@ -332,7 +332,10 @@ def get_config(argv=None):
         except KeyError:
             raise ConfigurationError('No such suite: %r' % cli_opts.suite)
         argv += ['-a', ':'.join(suite_conf['tests'])]
-        argv += suite_conf.get('talos_options', [])
+        
+        
+        
+        argv = suite_conf.get('talos_options', []) + argv
         
     elif not cli_opts.activeTests:
         raise ConfigurationError('--activeTests or --suite required!')
