@@ -78,7 +78,10 @@ SimpleVelocityTracker::HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
 {
   float timeDelta = aEndTimestampMs - aStartTimestampMs;
   MOZ_ASSERT(timeDelta != 0);
-  float velocity = aDelta / timeDelta;
+  
+  
+  
+  float velocity = -aDelta / timeDelta;
   velocity = ApplyFlingCurveToVelocity(velocity);
   mVelocitySampleTimeMs = aEndTimestampMs;
 
