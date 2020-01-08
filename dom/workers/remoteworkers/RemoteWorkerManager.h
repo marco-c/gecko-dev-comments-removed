@@ -59,7 +59,12 @@ private:
 
   
   
-  nsTArray<RemoteWorkerServiceParent*> mActors;
+  
+  
+  
+  
+  nsTArray<RemoteWorkerServiceParent*> mChildActors;
+  RemoteWorkerServiceParent* mParentActor;
 
   struct Pending {
     RefPtr<RemoteWorkerController> mController;
