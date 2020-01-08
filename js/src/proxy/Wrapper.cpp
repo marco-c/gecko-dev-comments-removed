@@ -287,6 +287,12 @@ JSObject* Wrapper::weakmapKeyDelegate(JSObject* proxy) const {
 
 JSObject* Wrapper::New(JSContext* cx, JSObject* obj, const Wrapper* handler,
                        const WrapperOptions& options) {
+  
+  
+  mozilla::Maybe<AutoRealmUnchecked> ar;
+  if (handler->isCrossCompartmentWrapper()) {
+    ar.emplace(cx, cx->compartment()->realmForNewCCW());
+  }
   RootedValue priv(cx, ObjectValue(*obj));
   return NewProxyObject(cx, handler, priv, options.proto(), options);
 }
