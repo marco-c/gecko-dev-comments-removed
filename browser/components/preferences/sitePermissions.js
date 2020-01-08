@@ -466,7 +466,7 @@ var gSitePermissionsManager = {
     
     items.forEach(item => frag.appendChild(item));
 
-    let cols = list.querySelectorAll("treecol");
+    let cols = list.previousElementSibling.querySelectorAll("treecol");
     cols.forEach(c => {
       c.removeAttribute("data-isCurrentSortCol");
       c.removeAttribute("sortDirection");
