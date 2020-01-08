@@ -5155,7 +5155,7 @@ enum {
   
   kE10sForceDisabled = 8,
   
-  
+  kE10sDisabledForOperatingSystem = 10,
 };
 
 const char* kForceEnableE10sPref = "browser.tabs.remote.force-enable";
@@ -5185,6 +5185,12 @@ BrowserTabsRemoteAutostart()
   } else {
     status = kE10sDisabledByUser;
   }
+
+#if defined(__FreeBSD__)
+  
+  gBrowserTabsRemoteAutostart = false;
+  status = kE10sDisabledForOperatingSystem;
+#endif
 
   
   if (Preferences::GetBool(kForceEnableE10sPref, false)) {
