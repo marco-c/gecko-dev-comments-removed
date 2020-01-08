@@ -40,8 +40,6 @@
 #include "dwrite.h"
 #endif
 
-using mozilla::Telemetry::LABELS_CONTENT_FRAME_TIME_REASON;
-
 #ifdef MOZ_GECKO_PROFILER
 #include "ProfilerMarkerPayload.h"
 #endif
@@ -1916,128 +1914,27 @@ TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
 
     if (!IsRootWebRenderBridgeParent() && !mVsyncRate.IsZero() &&
         transactionId.mUseForTelemetry) {
-      double latencyMs =
-          (aEndTime - transactionId.mTxnStartTime).ToMilliseconds();
-      double latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-      int32_t fracLatencyNorm = lround(latencyNorm * 100.0);
+      auto fullPaintTime =
+          transactionId.mSceneBuiltTime
+              ? transactionId.mSceneBuiltTime - transactionId.mTxnStartTime
+              : TimeDuration::FromMilliseconds(0);
 
-#ifdef MOZ_GECKO_PROFILER
-      if (profiler_is_active()) {
-        class ContentFramePayload : public ProfilerMarkerPayload {
-         public:
-          ContentFramePayload(const mozilla::TimeStamp& aStartTime,
-                              const mozilla::TimeStamp& aEndTime)
-              : ProfilerMarkerPayload(aStartTime, aEndTime) {}
-          virtual void StreamPayload(SpliceableJSONWriter& aWriter,
-                                     const TimeStamp& aProcessStartTime,
-                                     UniqueStacks& aUniqueStacks) override {
-            StreamCommonProps("CONTENT_FRAME_TIME", aWriter, aProcessStartTime,
-                              aUniqueStacks);
-          }
-        };
-        profiler_add_marker_for_thread(
-            profiler_current_thread_id(), "CONTENT_FRAME_TIME",
-            MakeUnique<ContentFramePayload>(transactionId.mTxnStartTime,
-                                            aEndTime));
-      }
-#endif
-
-      if (fracLatencyNorm > 200) {
+      int32_t contentFrameTime = RecordContentFrameTime(
+          transactionId.mVsyncId, transactionId.mVsyncStartTime,
+          transactionId.mTxnStartTime, aCompositeStartId, aEndTime,
+          fullPaintTime, mVsyncRate, transactionId.mContainsSVGGroup, true,
+          aStats);
+      if (contentFrameTime > 200) {
         aOutputStats->AppendElement(FrameStats(
             transactionId.mId, aCompositeStartTime, aRenderStartTime, aEndTime,
-            fracLatencyNorm,
+            contentFrameTime,
             aStats ? (double(aStats->resource_upload_time) / 1000000.0) : 0.0,
             aStats ? (double(aStats->gpu_cache_upload_time) / 1000000.0) : 0.0,
             transactionId.mTxnStartTime, transactionId.mRefreshStartTime,
             transactionId.mFwdTime, transactionId.mSceneBuiltTime,
             transactionId.mSkippedComposites, transactionId.mTxnURL));
-      }
 
-      Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME, fracLatencyNorm);
-      if (fracLatencyNorm > 200) {
         wr::RenderThread::Get()->NotifySlowFrame(mApi->GetId());
-      }
-      if (transactionId.mContainsSVGGroup) {
-        Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME_WITH_SVG,
-                              fracLatencyNorm);
-      }
-
-      if (aStats) {
-        latencyMs -= (double(aStats->resource_upload_time) / 1000000.0);
-        latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-        fracLatencyNorm = lround(latencyNorm * 100.0);
-      }
-      Telemetry::Accumulate(
-          Telemetry::CONTENT_FRAME_TIME_WITHOUT_RESOURCE_UPLOAD,
-          fracLatencyNorm);
-
-      if (aStats) {
-        latencyMs -= (double(aStats->gpu_cache_upload_time) / 1000000.0);
-        latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-        fracLatencyNorm = lround(latencyNorm * 100.0);
-      }
-      Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME_WITHOUT_UPLOAD,
-                            fracLatencyNorm);
-
-      if (!(transactionId.mVsyncId == VsyncId()) &&
-          transactionId.mVsyncStartTime) {
-        latencyMs = (aEndTime - transactionId.mVsyncStartTime).ToMilliseconds();
-        latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-        fracLatencyNorm = lround(latencyNorm * 100.0);
-        Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME_VSYNC,
-                              fracLatencyNorm);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (fracLatencyNorm < 200) {
-          
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::OnTime);
-        } else {
-          if (transactionId.mVsyncId == VsyncId() ||
-              aCompositeStartId == VsyncId() ||
-              transactionId.mVsyncId >= aCompositeStartId) {
-            
-            
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
-          } else if (aCompositeStartId - transactionId.mVsyncId > 1) {
-            auto fullPaintTime =
-                transactionId.mSceneBuiltTime
-                    ? transactionId.mSceneBuiltTime - transactionId.mTxnStartTime
-                    : TimeDuration::FromMilliseconds(0);
-            
-            if (fullPaintTime >= TimeDuration::FromMilliseconds(20)) {
-              Telemetry::AccumulateCategorical(
-                  LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLong);
-            } else if (fullPaintTime >= TimeDuration::FromMilliseconds(10)) {
-              Telemetry::AccumulateCategorical(
-                  LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeMid);
-            } else if (fullPaintTime >= TimeDuration::FromMilliseconds(5)) {
-              Telemetry::AccumulateCategorical(
-                  LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLow);
-            } else {
-              Telemetry::AccumulateCategorical(
-                  LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
-            }
-          } else {
-            
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
-          }
-        }
       }
     }
 
