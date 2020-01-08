@@ -9,7 +9,7 @@ use device::TextureFilter;
 use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle};
 use gpu_types::{ImageSource, UvRectKind};
-use internal_types::{CacheTextureId, FastHashMap, TextureUpdateList, TextureUpdateSource};
+use internal_types::{CacheTextureId, TextureUpdateList, TextureUpdateSource};
 use internal_types::{RenderTargetInfo, TextureSource, TextureUpdate, TextureUpdateOp};
 use profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
 use render_backend::FrameId;
@@ -29,42 +29,6 @@ const TEXTURE_LAYER_DIMENSIONS: u32 = 2048;
 
 
 const TEXTURE_REGION_DIMENSIONS: u32 = 512;
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-struct CacheTextureIdList {
-    free_lists: FastHashMap<ImageFormat, Vec<CacheTextureId>>,
-    next_id: usize,
-}
-
-impl CacheTextureIdList {
-    fn new() -> Self {
-        CacheTextureIdList {
-            next_id: 0,
-            free_lists: FastHashMap::default(),
-        }
-    }
-
-    fn allocate(&mut self, format: ImageFormat) -> CacheTextureId {
-        
-        
-        self.free_lists.get_mut(&format)
-            .and_then(|fl| fl.pop())
-            .unwrap_or_else(|| {
-                self.next_id += 1;
-                CacheTextureId(self.next_id - 1)
-            })
-    }
-
-    fn free(&mut self, id: CacheTextureId, format: ImageFormat) {
-        self.free_lists
-            .entry(format)
-            .or_insert(Vec::new())
-            .push(id);
-    }
-}
 
 
 
@@ -245,10 +209,7 @@ pub struct TextureCache {
     max_texture_size: u32,
 
     
-    
-    
-    
-    cache_textures: CacheTextureIdList,
+    next_id: CacheTextureId,
 
     
     
@@ -297,7 +258,7 @@ impl TextureCache {
                 TextureFilter::Nearest,
                 TEXTURE_ARRAY_LAYERS_NEAREST,
             ),
-            cache_textures: CacheTextureIdList::new(),
+            next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
             frame_id: FrameId(0),
             entries: FreeList::new(),
@@ -336,7 +297,6 @@ impl TextureCache {
                 id: texture_id,
                 op: TextureUpdateOp::Free,
             });
-            self.cache_textures.free(texture_id, self.array_a8_linear.format);
         }
 
         if let Some(texture_id) = self.array_a16_linear.clear() {
@@ -344,7 +304,6 @@ impl TextureCache {
                 id: texture_id,
                 op: TextureUpdateOp::Free,
             });
-            self.cache_textures.free(texture_id, self.array_a16_linear.format);
         }
 
         if let Some(texture_id) = self.array_rgba8_linear.clear() {
@@ -352,7 +311,6 @@ impl TextureCache {
                 id: texture_id,
                 op: TextureUpdateOp::Free,
             });
-            self.cache_textures.free(texture_id, self.array_rgba8_linear.format);
         }
 
         if let Some(texture_id) = self.array_rgba8_nearest.clear() {
@@ -360,7 +318,6 @@ impl TextureCache {
                 id: texture_id,
                 op: TextureUpdateOp::Free,
             });
-            self.cache_textures.free(texture_id, self.array_rgba8_nearest.format);
         }
     }
 
@@ -736,7 +693,6 @@ impl TextureCache {
                     id: entry.texture_id,
                     op: TextureUpdateOp::Free,
                 });
-                self.cache_textures.free(entry.texture_id, entry.format);
                 None
             }
             EntryKind::Cache {
@@ -782,7 +738,8 @@ impl TextureCache {
 
         
         if texture_array.texture_id.is_none() {
-            let texture_id = self.cache_textures.allocate(descriptor.format);
+            let texture_id = self.next_id;
+            self.next_id.0 += 1;
 
             let update_op = TextureUpdate {
                 id: texture_id,
@@ -895,7 +852,8 @@ impl TextureCache {
         
         
         if new_cache_entry.is_none() {
-            let texture_id = self.cache_textures.allocate(descriptor.format);
+            let texture_id = self.next_id;
+            self.next_id.0 += 1;
 
             
             

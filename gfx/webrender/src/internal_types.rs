@@ -31,10 +31,12 @@ pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
 
 
 
+
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct CacheTextureId(pub usize);
+pub struct CacheTextureId(pub u64);
 
 
 
