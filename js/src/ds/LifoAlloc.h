@@ -224,7 +224,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     static constexpr uintptr_t magicNumber = uintptr_t(0x4c6966);
 #endif
 
-#if defined(DEBUG) || defined(MOZ_ASAN)
+#if defined(DEBUG)
 # define LIFO_CHUNK_PROTECT 1
 #endif
 
@@ -250,6 +250,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     do {                                         \
         uint8_t* base = (addr);                  \
         size_t sz = (size);                      \
+        MOZ_MAKE_MEM_UNDEFINED(base, sz);        \
         memset(base, undefinedChunkMemory, sz);  \
         MOZ_MAKE_MEM_NOACCESS(base, sz);         \
     } while (0)
@@ -267,6 +268,13 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
 # define LIFO_HAVE_MEM_CHECKS 1
 # define LIFO_MAKE_MEM_NOACCESS(addr, size) MOZ_MAKE_MEM_NOACCESS((addr), (size))
 # define LIFO_MAKE_MEM_UNDEFINED(addr, size) MOZ_MAKE_MEM_UNDEFINED((addr), (size))
+#endif
+
+#ifdef LIFO_HAVE_MEM_CHECKS
+    
+    static constexpr size_t RedZoneSize = 16;
+#else
+    static constexpr size_t RedZoneSize = 0;
 #endif
 
     void assertInvariants() {
@@ -319,10 +327,15 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
         MOZ_ASSERT(newBump <= capacity_);
 #if defined(LIFO_HAVE_MEM_CHECKS)
         
-        if (bump_ > newBump)
+        if (bump_ > newBump) {
             LIFO_MAKE_MEM_NOACCESS(newBump, bump_ - newBump);
-        else if (newBump > bump_)
-            LIFO_MAKE_MEM_UNDEFINED(bump_, newBump - bump_);
+        } else if (newBump > bump_) {
+            MOZ_ASSERT(newBump - RedZoneSize >= bump_);
+            LIFO_MAKE_MEM_UNDEFINED(bump_, newBump - RedZoneSize - bump_);
+            
+            
+            
+        }
 #endif
         bump_ = newBump;
     }
@@ -419,11 +432,25 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
 
     
     
-    bool canAlloc(size_t n);
+    
+    static uint8_t* nextAllocBase(uint8_t* e) {
+        return detail::AlignPtr(e);
+    }
+    static uint8_t* nextAllocEnd(uint8_t* b, size_t n) {
+        return b + n + RedZoneSize;
+    }
+
+    
+    
+    bool canAlloc(size_t n) const {
+        uint8_t* newBump = nextAllocEnd(nextAllocBase(end()), n);
+        
+        return bump_ <= newBump && newBump <= capacity_;
+    }
 
     
     size_t unused() const {
-        uint8_t* aligned = AlignPtr(end());
+        uint8_t* aligned = nextAllocBase(end());
         if (aligned < capacity_)
             return capacity_ - aligned;
         return 0;
@@ -432,8 +459,8 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     
     MOZ_ALWAYS_INLINE
     void* tryAlloc(size_t n) {
-        uint8_t* aligned = AlignPtr(end());
-        uint8_t* newBump = aligned + n;
+        uint8_t* aligned = nextAllocBase(end());
+        uint8_t* newBump = nextAllocEnd(aligned, n);
 
         if (newBump > capacity_)
             return nullptr;
@@ -903,15 +930,15 @@ class LifoAlloc
         uint8_t* seekBaseAndAdvanceBy(size_t size) {
             MOZ_ASSERT(!empty());
 
-            uint8_t* aligned = detail::AlignPtr(head_);
-            if (aligned + size > chunkIt_->end()) {
+            uint8_t* aligned = detail::BumpChunk::nextAllocBase(head_);
+            if (detail::BumpChunk::nextAllocEnd(aligned, size) > chunkIt_->end()) {
                 ++chunkIt_;
                 aligned = chunkIt_->begin();
                 
                 
                 MOZ_ASSERT(!chunkIt_->empty());
             }
-            head_ = aligned + size;
+            head_ = detail::BumpChunk::nextAllocEnd(aligned, size);
             MOZ_ASSERT(head_ <= chunkIt_->end());
             return aligned;
         }
