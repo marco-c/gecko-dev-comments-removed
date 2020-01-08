@@ -7200,6 +7200,12 @@ nsWindow::RoundsWidgetCoordinatesTo()
 
 void nsWindow::GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData)
 {
+  
+  
+  if (mXDisplay && mXWindow != X11None) {
+    XFlush(mXDisplay);
+  }
+
   *aInitData = mozilla::widget::GtkCompositorWidgetInitData(
                                 (mXWindow != X11None) ? mXWindow : (uintptr_t)nullptr,
                                 mXDisplay ? nsCString(XDisplayString(mXDisplay)) : nsCString(),
