@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 requestLongerTimeout(2);
@@ -18,10 +17,6 @@ add_task(async function() {
   await testBodyFonts(inspector, viewDoc);
   await testDivFonts(inspector, viewDoc);
 });
-
-function isRemote(fontLi) {
-  return fontLi.querySelector(".font-origin").classList.contains("remote");
-}
 
 async function testBodyFonts(inspector, viewDoc) {
   await selectNode("body", inspector);

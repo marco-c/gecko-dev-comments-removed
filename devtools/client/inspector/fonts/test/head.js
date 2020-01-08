@@ -27,7 +27,14 @@ selectNode = async function(node, inspector, reason) {
   const onInspectorUpdated = inspector.once("fontinspector-updated");
   const onEditorUpdated = inspector.once("fonteditor-updated");
   await _selectNode(node, inspector, reason);
-  await Promise.all([onInspectorUpdated, onEditorUpdated]);
+
+  if (Services.prefs.getBoolPref("devtools.inspector.fonteditor.enabled")) {
+    
+    await Promise.all([onInspectorUpdated, onEditorUpdated]);
+  } else {
+    
+    await onInspectorUpdated;
+  }
 };
 
 
@@ -108,19 +115,8 @@ function getUsedFontsEls(viewDoc) {
 
 
 
-function getRenderedFontsAccordion(viewDoc) {
-  return viewDoc.querySelectorAll("#font-container .accordion")[0];
-}
-
-
-
-
-
-
-
-
-function getOtherFontsAccordion(viewDoc) {
-  return viewDoc.querySelectorAll("#font-container .accordion")[1];
+function getFontsAccordion(viewDoc) {
+  return viewDoc.querySelector("#font-container .accordion");
 }
 
 
@@ -145,9 +141,9 @@ async function expandAccordion(accordion) {
 
 
 
-async function expandOtherFontsAccordion(viewDoc) {
+async function expandFontsAccordion(viewDoc) {
   info("Expanding the other fonts section");
-  await expandAccordion(getOtherFontsAccordion(viewDoc));
+  await expandAccordion(getFontsAccordion(viewDoc));
 }
 
 
@@ -156,18 +152,8 @@ async function expandOtherFontsAccordion(viewDoc) {
 
 
 
-function getRenderedFontsEls(viewDoc) {
-  return getRenderedFontsAccordion(viewDoc).querySelectorAll(".fonts-list > li");
-}
-
-
-
-
-
-
-
-function getOtherFontsEls(viewDoc) {
-  return getOtherFontsAccordion(viewDoc).querySelectorAll(".fonts-list > li");
+function getAllFontsEls(viewDoc) {
+  return getFontsAccordion(viewDoc).querySelectorAll(".fonts-list > li");
 }
 
 
@@ -232,6 +218,17 @@ function getPropertyValue(viewDoc, name) {
     unit: viewDoc.querySelector(selector + ` ~ .font-value-select`) &&
           viewDoc.querySelector(selector + ` ~ .font-value-select`).value
   };
+}
+
+
+
+
+
+
+
+
+function isRemote(fontEl) {
+  return fontEl.querySelector(".font-origin").classList.contains("remote");
 }
 
 
