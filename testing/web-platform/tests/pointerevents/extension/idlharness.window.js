@@ -1,0 +1,15 @@
+
+
+
+
+
+idl_test(
+  ['pointerevents-extension'],
+  ['pointerevents', 'uievents', 'dom'],
+  idl_array => {
+    idl_array.add_objects({
+      PointerEvent: ['new PointerEvent("pointer")'],
+    })
+  },
+  'pointerevents extension interfaces'
+);
