@@ -280,10 +280,48 @@ window._gBrowser = {
 
   _setupInitialBrowserAndTab() {
     
+    
     let userContextId = window.arguments && window.arguments[6];
-    let browser = this._createBrowser({uriIsAboutBlank: false, userContextId});
+
+    
+    
+    
+    
+    let remoteType;
+    if (gMultiProcessBrowser && !window.hasOpenerForInitialContentBrowser) {
+      remoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
+    } else {
+      remoteType = E10SUtils.NOT_REMOTE;
+    }
+
+    
+    let sameProcessAsFrameLoader;
+    let tabArgument = gBrowserInit.getTabToAdopt();
+    if (tabArgument) {
+      
+      
+      
+      if (tabArgument.hasAttribute("usercontextid")) {
+        userContextId = parseInt(tabArgument.getAttribute("usercontextid"), 10);
+      }
+
+      let linkedBrowser = tabArgument.linkedBrowser;
+      if (linkedBrowser) {
+        remoteType = linkedBrowser.remoteType;
+        sameProcessAsFrameLoader = linkedBrowser.frameLoader;
+      }
+    }
+    let createOptions = {
+      uriIsAboutBlank: false,
+      userContextId,
+      sameProcessAsFrameLoader,
+      remoteType,
+    };
+    let browser = this._createBrowser(createOptions);
     browser.setAttribute("primary", "true");
-    browser.setAttribute("blank", "true");
+    if (!tabArgument) {
+      browser.setAttribute("blank", "true");
+    }
     if (gBrowserAllowScriptsToCloseInitialTabs) {
       browser.setAttribute("allowscriptstoclose", "true");
     }
@@ -313,6 +351,8 @@ window._gBrowser = {
 
     this._appendStatusPanel();
 
+    
+    
     this.initialBrowser = browser;
 
     let autoScrollPopup = browser._createAutoScrollPopup();

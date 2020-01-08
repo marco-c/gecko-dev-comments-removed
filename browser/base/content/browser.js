@@ -1319,49 +1319,18 @@ var gBrowserInit = {
   },
 
   onDOMContentLoaded() {
-    gBrowser = window._gBrowser;
-    delete window._gBrowser;
-    gBrowser.init();
-
+    
     window.docShell.treeOwner
           .QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIXULWindow)
           .XULBrowserWindow = window.XULBrowserWindow;
     window.browserDOMWindow = new nsBrowserAccess();
+
+    gBrowser = window._gBrowser;
+    delete window._gBrowser;
+    gBrowser.init();
+
     BrowserWindowTracker.track(window);
-
-    let initBrowser = gBrowser.initialBrowser;
-
-    
-    
-    
-    
-    let isRemote = gMultiProcessBrowser;
-    let remoteType;
-    let sameProcessAsFrameLoader;
-
-    let tabArgument = this.getTabToAdopt();
-    if (tabArgument) {
-      
-      
-      
-      if (tabArgument.hasAttribute("usercontextid")) {
-        initBrowser.setAttribute("usercontextid",
-                                 tabArgument.getAttribute("usercontextid"));
-      }
-
-      let linkedBrowser = tabArgument.linkedBrowser;
-      if (linkedBrowser) {
-        remoteType = linkedBrowser.remoteType;
-        isRemote = remoteType != E10SUtils.NOT_REMOTE;
-        sameProcessAsFrameLoader = linkedBrowser.frameLoader;
-      }
-      initBrowser.removeAttribute("blank");
-    }
-
-    gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
-      remoteType, sameProcessAsFrameLoader,
-    });
 
     gNavToolbox.palette = document.getElementById("BrowserToolbarPalette");
     gNavToolbox.palette.remove();
