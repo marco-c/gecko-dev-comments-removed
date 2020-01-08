@@ -231,11 +231,7 @@ var generateCSSLines = function (resisting) {
 
 
 
-var green = (function () {
-  let temp = document.createElement("span");
-  temp.style.backgroundColor = "green";
-  return getComputedStyle(temp).backgroundColor;
-})();
+var green = "rgb(0, 128, 0)";
 
 
 
