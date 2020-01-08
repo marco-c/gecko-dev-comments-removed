@@ -13,6 +13,10 @@
 #include <memory>
 #include <string>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace mozilla;
 
 
@@ -75,6 +79,17 @@ void TestRing(int capacity) {
   }
 }
 
+void Delay() {
+  
+  
+  
+#ifdef _WIN32
+  Sleep(0);
+#else
+  std::this_thread::sleep_for(std::chrono::microseconds(10));
+#endif
+}
+
 template <typename T>
 void TestRingMultiThread(int capacity) {
   SPSCQueue<T> buf(capacity);
@@ -87,7 +102,7 @@ void TestRingMultiThread(int capacity) {
     SequenceGenerator<T> gen;
 
     while (iterations--) {
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
+      Delay();
       gen.Get(inBuffer.get(), BLOCK_SIZE);
       int rv = buf.Enqueue(inBuffer.get(), BLOCK_SIZE);
       MOZ_RELEASE_ASSERT(rv <= BLOCK_SIZE);
@@ -100,7 +115,7 @@ void TestRingMultiThread(int capacity) {
   int remaining = 1002;
 
   while (remaining--) {
-    std::this_thread::sleep_for(std::chrono::microseconds(10));
+    Delay();
     int rv = buf.Dequeue(outBuffer.get(), BLOCK_SIZE);
     MOZ_RELEASE_ASSERT(rv <= BLOCK_SIZE);
     checker.Check(outBuffer.get(), rv);
