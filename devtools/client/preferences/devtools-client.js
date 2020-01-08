@@ -319,6 +319,7 @@ pref("devtools.responsive.reloadNotification.enabled", true);
 
 
 pref("devtools.aboutdebugging.new-enabled", false);
+pref("devtools.aboutdebugging.network-locations", "[]");
 
 
 #ifdef MOZILLA_OFFICIAL
