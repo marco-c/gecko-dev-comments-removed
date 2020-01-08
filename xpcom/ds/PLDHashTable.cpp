@@ -245,10 +245,12 @@ PLDHashTable::operator=(PLDHashTable&& aOther)
 #endif
 
   
+  
   {
 #ifdef DEBUG
     AutoDestructorOp op(mChecker);
 #endif
+    aOther.mEntryCount = 0;
     aOther.mEntryStore.Set(nullptr, &aOther.mGeneration);
   }
 
