@@ -2932,6 +2932,8 @@ MainAxisPositionTracker::
     mJustifyContent(aJustifyContent)
 {
   
+  
+  
   uint8_t justifyContentFlags = mJustifyContent & NS_STYLE_JUSTIFY_FLAG_BITS;
   mJustifyContent &= ~NS_STYLE_JUSTIFY_FLAG_BITS;
 
@@ -2979,6 +2981,24 @@ MainAxisPositionTracker::
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aAxisTracker.AreAxesInternallyReversed()) {
+    if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_START) {
+      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_END;
+    } else if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_END) {
+      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
+    }
+  }
+
+  
   if (mJustifyContent == NS_STYLE_JUSTIFY_LEFT ||
       mJustifyContent == NS_STYLE_JUSTIFY_RIGHT) {
     if (aAxisTracker.IsColumnOriented()) {
@@ -2997,19 +3017,13 @@ MainAxisPositionTracker::
 
   
   if (mJustifyContent == NS_STYLE_JUSTIFY_START) {
-    mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
+    mJustifyContent = aAxisTracker.IsMainAxisReversed()
+                      ? NS_STYLE_JUSTIFY_FLEX_END
+                      : NS_STYLE_JUSTIFY_FLEX_START;
   } else if (mJustifyContent == NS_STYLE_JUSTIFY_END) {
-    mJustifyContent = NS_STYLE_JUSTIFY_FLEX_END;
-  }
-
-  
-  
-  if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_START) {
-      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_END;
-    } else if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_END) {
-      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
-    }
+    mJustifyContent = aAxisTracker.IsMainAxisReversed()
+                      ? NS_STYLE_JUSTIFY_FLEX_START
+                      : NS_STYLE_JUSTIFY_FLEX_END;
   }
 
   
@@ -3018,10 +3032,6 @@ MainAxisPositionTracker::
       mPackingSpaceRemaining != 0 &&
       !aLine->IsEmpty()) {
     switch (mJustifyContent) {
-      case NS_STYLE_JUSTIFY_BASELINE:
-      case NS_STYLE_JUSTIFY_LAST_BASELINE:
-        NS_WARNING("NYI: justify-content:left/right/baseline/last baseline");
-        MOZ_FALLTHROUGH;
       case NS_STYLE_JUSTIFY_FLEX_START:
         
         break;
@@ -3198,29 +3208,7 @@ CrossAxisPositionTracker::
   }
 
   
-  if (mAlignContent == NS_STYLE_ALIGN_LEFT ||
-      mAlignContent == NS_STYLE_ALIGN_RIGHT) {
-    if (aAxisTracker.IsRowOriented()) {
-      
-      
-      mAlignContent = NS_STYLE_ALIGN_START;
-    } else {
-      
-      
-      const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
-      const bool isAlignLeft = (mAlignContent == NS_STYLE_ALIGN_LEFT);
-      mAlignContent = (isAlignLeft == isLTR) ? NS_STYLE_ALIGN_START
-                                             : NS_STYLE_ALIGN_END;
-    }
-  }
-
   
-  if (mAlignContent == NS_STYLE_ALIGN_START) {
-    mAlignContent = NS_STYLE_ALIGN_FLEX_START;
-  } else if (mAlignContent == NS_STYLE_ALIGN_END) {
-    mAlignContent = NS_STYLE_ALIGN_FLEX_END;
-  }
-
   
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
@@ -3232,11 +3220,20 @@ CrossAxisPositionTracker::
   }
 
   
+  if (mAlignContent == NS_STYLE_ALIGN_START) {
+    mAlignContent = aAxisTracker.IsCrossAxisReversed()
+                    ? NS_STYLE_ALIGN_FLEX_END
+                    : NS_STYLE_ALIGN_FLEX_START;
+  } else if (mAlignContent == NS_STYLE_ALIGN_END) {
+    mAlignContent = aAxisTracker.IsCrossAxisReversed()
+                    ? NS_STYLE_ALIGN_FLEX_START
+                    : NS_STYLE_ALIGN_FLEX_END;
+  }
+
+  
   
   if (mPackingSpaceRemaining != 0) {
     switch (mAlignContent) {
-      case NS_STYLE_ALIGN_SELF_START:
-      case NS_STYLE_ALIGN_SELF_END:
       case NS_STYLE_ALIGN_BASELINE:
       case NS_STYLE_ALIGN_LAST_BASELINE:
         NS_WARNING("NYI: align-items/align-self:left/right/self-start/self-end/baseline/last baseline");
@@ -3506,29 +3503,6 @@ SingleLineCrossAxisPositionTracker::
   }
 
   
-  if (alignSelf == NS_STYLE_ALIGN_LEFT || alignSelf == NS_STYLE_ALIGN_RIGHT) {
-    if (aAxisTracker.IsRowOriented()) {
-      
-      
-      alignSelf = NS_STYLE_ALIGN_START;
-    } else {
-      
-      
-      const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
-      const bool isAlignLeft = (alignSelf == NS_STYLE_ALIGN_LEFT);
-      alignSelf = (isAlignLeft == isLTR) ? NS_STYLE_ALIGN_START
-                                         : NS_STYLE_ALIGN_END;
-    }
-  }
-
-  
-  if (alignSelf == NS_STYLE_ALIGN_START) {
-    alignSelf = NS_STYLE_ALIGN_FLEX_START;
-  } else if (alignSelf == NS_STYLE_ALIGN_END) {
-    alignSelf = NS_STYLE_ALIGN_FLEX_END;
-  }
-
-  
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
     if (alignSelf == NS_STYLE_ALIGN_FLEX_START) {
@@ -3536,6 +3510,31 @@ SingleLineCrossAxisPositionTracker::
     } else if (alignSelf == NS_STYLE_ALIGN_FLEX_END) {
       alignSelf = NS_STYLE_ALIGN_FLEX_START;
     }
+  }
+
+  
+  if (alignSelf == NS_STYLE_ALIGN_SELF_START ||
+      alignSelf == NS_STYLE_ALIGN_SELF_END) {
+    const LogicalAxis logCrossAxis = aAxisTracker.IsRowOriented()
+                                     ? eLogicalAxisBlock
+                                     : eLogicalAxisInline;
+    const WritingMode cWM = aAxisTracker.GetWritingMode();
+    const bool sameStart =
+      cWM.ParallelAxisStartsOnSameSide(logCrossAxis, aItem.GetWritingMode());
+    alignSelf = sameStart == (alignSelf == NS_STYLE_ALIGN_SELF_START)
+                ? NS_STYLE_ALIGN_START
+                : NS_STYLE_ALIGN_END;
+  }
+
+  
+  if (alignSelf == NS_STYLE_ALIGN_START) {
+    alignSelf = aAxisTracker.IsCrossAxisReversed()
+                ? NS_STYLE_ALIGN_FLEX_END
+                : NS_STYLE_ALIGN_FLEX_START;
+  } else if (alignSelf == NS_STYLE_ALIGN_END) {
+    alignSelf = aAxisTracker.IsCrossAxisReversed()
+                ? NS_STYLE_ALIGN_FLEX_START
+                : NS_STYLE_ALIGN_FLEX_END;
   }
 
   
@@ -3547,10 +3546,6 @@ SingleLineCrossAxisPositionTracker::
   }
 
   switch (alignSelf) {
-    case NS_STYLE_ALIGN_SELF_START:
-    case NS_STYLE_ALIGN_SELF_END:
-      NS_WARNING("NYI: align-items/align-self:left/right/self-start/self-end");
-      MOZ_FALLTHROUGH;
     case NS_STYLE_ALIGN_FLEX_START:
       
       break;
