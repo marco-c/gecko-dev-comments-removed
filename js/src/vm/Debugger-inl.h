@@ -9,6 +9,7 @@
 
 #include "vm/Debugger.h"
 
+#include "gc/WeakMap-inl.h"
 #include "vm/Stack-inl.h"
 
  inline bool
