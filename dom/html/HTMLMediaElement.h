@@ -849,7 +849,7 @@ protected:
   class MediaStreamTracksAvailableCallback;
   class MediaStreamTrackListener;
   class StreamListener;
-  class StreamSizeListener;
+  class VideoFrameListener;
   class ShutdownObserver;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
@@ -1450,7 +1450,7 @@ protected:
   RefPtr<StreamListener> mMediaStreamListener;
   
   
-  RefPtr<StreamSizeListener> mMediaStreamSizeListener;
+  RefPtr<VideoFrameListener> mVideoFrameListener;
   
   RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
 
