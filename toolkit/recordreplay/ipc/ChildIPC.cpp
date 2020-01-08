@@ -579,20 +579,19 @@ Repaint(size_t* aWidth, size_t* aHeight)
   if (!compositorThread->WillDivergeFromRecordingSoon()) {
     
     
+    
+    Thread::GetById(gCompositorThreadId)->SetShouldDivergeFromRecording();
+    Thread::ResumeSingleIdleThread(gCompositorThreadId);
+
+    
+    
     NotifyVsyncObserver();
 
-    if (gNumPendingPaints) {
-      
-      
-      
-      Thread::GetById(gCompositorThreadId)->SetShouldDivergeFromRecording();
-
-      
-      
-      MonitorAutoLock lock(*gMonitor);
-      while (gNumPendingPaints) {
-        gMonitor->Wait();
-      }
+    
+    
+    MonitorAutoLock lock(*gMonitor);
+    while (gNumPendingPaints) {
+      gMonitor->Wait();
     }
   }
 

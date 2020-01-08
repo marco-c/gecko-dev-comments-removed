@@ -199,6 +199,11 @@ DivergeFromRecording()
     
     child::SendResetMiddlemanCalls();
 
+    
+    
+    
+    Thread::WaitForIdleThreads();
+
     thread->DivergeFromRecording();
   }
 
