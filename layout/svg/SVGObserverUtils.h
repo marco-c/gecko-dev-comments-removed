@@ -95,6 +95,10 @@ private:
 
 class SVGRenderingObserver : public nsStubMutationObserver
 {
+
+protected:
+  virtual ~SVGRenderingObserver() = default;
+
 public:
   typedef mozilla::dom::Element Element;
 
@@ -121,7 +125,7 @@ public:
   
   
   
-  void NotifyEvictedFromRenderingObserverSet();
+  void NotifyEvictedFromRenderingObserverList();
 
   nsIFrame* GetAndObserveReferencedFrame();
   
@@ -136,10 +140,6 @@ public:
   virtual bool ObservesReflow() { return true; }
 
 protected:
-  virtual ~SVGRenderingObserver() {
-    StopObserving();
-  }
-
   void StartObserving();
   void StopObserving();
 
