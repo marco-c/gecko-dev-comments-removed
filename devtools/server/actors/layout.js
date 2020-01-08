@@ -315,21 +315,27 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     let currentNode = treeWalker.currentNode;
     let displayType = this.walker.getNode(currentNode).displayType;
 
-    if (!displayType) {
-      return null;
-    }
-
-    if (type == "flex") {
-      if (displayType == "inline-flex" || displayType == "flex") {
-        return new FlexboxActor(this, currentNode);
-      } else if (onlyLookAtCurrentNode) {
+    
+    if (currentNode.nodeType === currentNode.ELEMENT_NODE) {
+      if (!displayType) {
         return null;
       }
-    } else if (type == "grid" &&
-               (displayType == "inline-grid" || displayType == "grid")) {
-      return new GridActor(this, currentNode);
+
+      if (type == "flex") {
+        if (displayType == "inline-flex" || displayType == "flex") {
+          return new FlexboxActor(this, currentNode);
+        } else if (onlyLookAtCurrentNode) {
+          return null;
+        }
+      } else if (type == "grid" &&
+                 (displayType == "inline-grid" || displayType == "grid")) {
+        return new GridActor(this, currentNode);
+      }
     }
 
+    
+    
+    
     
     
     while ((currentNode = treeWalker.parentNode())) {
