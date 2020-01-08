@@ -1452,18 +1452,22 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
   }
 
   
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(aChannel, parentChannel);
-  if (parentChannel) {
-    
-    
-    if (aDecision == BlockingDecision::eBlock) {
-      parentChannel->NotifyTrackingCookieBlocked(aRejectedReason);
-    } else {
-      parentChannel->NotifyCookieAllowed();
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(aChannel, parentChannel);
+    if (parentChannel) {
+      
+      
+      if (aDecision == BlockingDecision::eBlock) {
+        parentChannel->NotifyTrackingCookieBlocked(aRejectedReason);
+      } else {
+        parentChannel->NotifyCookieAllowed();
+      }
     }
     return;
   }
+
+  MOZ_ASSERT(XRE_IsContentProcess());
 
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
   if (!thirdPartyUtil) {
