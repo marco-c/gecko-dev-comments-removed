@@ -87,14 +87,6 @@ WebConsole.prototype = {
 
 
 
-  get mainPopupSet() {
-    return this.chromeUtilsWindow.document.getElementById("mainPopupSet");
-  },
-
-  
-
-
-
   get outputNode() {
     return this.ui ? this.ui.outputNode : null;
   },
@@ -285,15 +277,6 @@ WebConsole.prototype = {
 
     this._destroyer = (async () => {
       this.hudService.consoles.delete(this.hudId);
-
-      
-      if (this.chromeUtilsWindow && this.mainPopupSet) {
-        const popupset = this.mainPopupSet;
-        const panels = popupset.querySelectorAll("panel[hudId=" + this.hudId + "]");
-        for (const panel of panels) {
-          panel.hidePopup();
-        }
-      }
 
       if (this.ui) {
         await this.ui.destroy();

@@ -8,6 +8,7 @@
 
 var { loader, require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 
+
 loader.require("devtools/client/framework/devtools-browser");
 
 var { gDevTools } = require("devtools/client/framework/devtools");
@@ -16,6 +17,9 @@ var { Toolbox } = require("devtools/client/framework/toolbox");
 var Services = require("Services");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
 var { PrefsHelper } = require("devtools/client/shared/prefs");
+const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
 
 
 
@@ -30,19 +34,23 @@ var Prefs = new PrefsHelper("devtools.debugger", {
   chromeDebuggingWebSocket: ["Bool", "chrome-debugging-websocket"],
 });
 
-var gToolbox, gClient;
+var gToolbox, gClient, gShortcuts;
 
 function appendStatusMessage(msg) {
   const statusMessage = document.getElementById("status-message");
-  statusMessage.value += msg + "\n";
+  statusMessage.textContent += msg + "\n";
   if (msg.stack) {
-    statusMessage.value += msg.stack + "\n";
+    statusMessage.textContent += msg.stack + "\n";
   }
 }
 
 function toggleStatusMessage(visible = true) {
   const statusMessageContainer = document.getElementById("status-message-container");
-  statusMessageContainer.hidden = !visible;
+  if (visible) {
+    statusMessageContainer.removeAttribute("hidden");
+  } else {
+    statusMessageContainer.setAttribute("hidden", "true");
+  }
 }
 
 function revealStatusMessage() {
@@ -108,9 +116,14 @@ function setPrefDefaults() {
 }
 
 window.addEventListener("load", async function() {
-  const cmdClose = document.getElementById("toolbox-cmd-close");
-  cmdClose.addEventListener("command", onCloseCommand);
+  gShortcuts = new KeyShortcuts({window});
+  gShortcuts.on("CmdOrCtrl+W", onCloseCommand);
+
+  const statusMessageContainer = document.getElementById("status-message-title");
+  statusMessageContainer.textContent = L10N.getStr("browserToolbox.statusMessage");
+
   setPrefDefaults();
+
   
   const delayedStatusReveal = setTimeout(revealStatusMessage, STATUS_REVEAL_TIME);
   try {
@@ -222,8 +235,6 @@ function updateBadgeText(paused) {
 function onUnload() {
   window.removeEventListener("unload", onUnload);
   window.removeEventListener("message", onMessage);
-  const cmdClose = document.getElementById("toolbox-cmd-close");
-  cmdClose.removeEventListener("command", onCloseCommand);
   gToolbox.destroy();
 }
 
