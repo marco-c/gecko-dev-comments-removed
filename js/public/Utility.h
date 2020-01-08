@@ -14,7 +14,6 @@
 #include "mozilla/Move.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/WrappingOperations.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -661,51 +660,6 @@ struct FreePolicy
 
 typedef mozilla::UniquePtr<char[], JS::FreePolicy> UniqueChars;
 typedef mozilla::UniquePtr<char16_t[], JS::FreePolicy> UniqueTwoByteChars;
-
-} 
-
-namespace js {
-
-namespace detail {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline uint32_t
-ScrambleHashCode(uint32_t h)
-{
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static const uint32_t goldenRatio = 0x9E3779B9U;
-    return mozilla::WrappingMultiply(h, goldenRatio);
-}
-
-} 
 
 } 
 

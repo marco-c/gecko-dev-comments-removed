@@ -503,10 +503,6 @@ public:
   }
 
 private:
-  
-  
-  static const uint32_t kGoldenRatio = 0x9E3779B9U;
-
   static uint32_t HashShift(uint32_t aEntrySize, uint32_t aLength);
 
   static const PLDHashNumber kCollisionFlag = 1;

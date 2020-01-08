@@ -66,6 +66,42 @@ static const uint32_t kHashNumberBits = 32;
 
 static const HashNumber kGoldenRatioU32 = 0x9E3779B9U;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr HashNumber
+ScrambleHashCode(HashNumber h)
+{
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  return mozilla::WrappingMultiply(h, kGoldenRatioU32);
+}
+
 namespace detail {
 
 MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
