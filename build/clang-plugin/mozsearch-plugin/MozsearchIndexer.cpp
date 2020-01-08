@@ -34,7 +34,7 @@
 #include "JSONFormatter.h"
 #include "StringOperations.h"
 
-#if CLANG_VERSION_FULL < 800
+#if CLANG_VERSION_MAJOR < 8
 
 #define getBeginLoc getLocStart
 #define getEndLoc getLocEnd
@@ -997,7 +997,7 @@ public:
   SourceRange getFunctionPeekRange(FunctionDecl* D) {
     
     
-    SourceLocation Start = D->getLocStart();
+    SourceLocation Start = D->getBeginLoc();
 
     
     SourceLocation End = D->getLocation();
@@ -1020,7 +1020,7 @@ public:
   }
 
   SourceRange getTagPeekRange(TagDecl* D) {
-    SourceLocation Start = D->getLocStart();
+    SourceLocation Start = D->getBeginLoc();
 
     
     SourceLocation End = D->getLocation();
@@ -1177,7 +1177,7 @@ public:
     
     if (isa<CXXDestructorDecl>(D)) {
       const char *P = SM.getCharacterData(Loc);
-      assert(*p == '~');
+      assert(*P == '~');
       P++;
 
       unsigned Skipped = 1;
@@ -1198,7 +1198,7 @@ public:
   }
 
   bool VisitCXXConstructExpr(CXXConstructExpr *E) {
-    SourceLocation Loc = E->getLocStart();
+    SourceLocation Loc = E->getBeginLoc();
     normalizeLocation(&Loc);
     if (!isInterestingLocation(Loc)) {
       return true;
