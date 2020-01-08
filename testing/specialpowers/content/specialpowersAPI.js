@@ -10,11 +10,15 @@
 
 
 
-var global = this;
+var EXPORTED_SYMBOLS = ["SpecialPowersAPI", "bindDOMWindowUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+Services.scriptloader.loadSubScript("resource://specialpowers/MozillaLogger.js", this);
+
+ChromeUtils.defineModuleGetter(this, "setTimeout",
+                               "resource://gre/modules/Timer.jsm");
 ChromeUtils.defineModuleGetter(this, "MockFilePicker",
                                "resource://specialpowers/MockFilePicker.jsm");
 ChromeUtils.defineModuleGetter(this, "MockColorPicker",
@@ -582,6 +586,9 @@ SpecialPowersAPI.prototype = {
         let messageId = aMessage.json.id;
         let name = aMessage.json.name;
         let message = aMessage.json.message;
+        if (this.mm) {
+          message = new StructuredCloneHolder(message).deserialize(this.mm.content);
+        }
         
         if (messageId != id)
           return;
@@ -754,12 +761,12 @@ SpecialPowersAPI.prototype = {
       setTimeout(callback, 0);
     
     else
-      content.window.setTimeout(callback, 0);
+      this.mm.content.setTimeout(callback, 0);
   },
 
   _delayCallbackTwice(callback) {
-     function delayedCallback() {
-       function delayAgain(aCallback) {
+     let delayedCallback = () => {
+       let delayAgain = (aCallback) => {
          
          
          
@@ -768,10 +775,10 @@ SpecialPowersAPI.prototype = {
            setTimeout(aCallback, 0);
          
          else
-           content.window.setTimeout(aCallback, 0);
-       }
-       delayAgain(delayAgain(callback));
-     }
+           this.mm.content.setTimeout(aCallback, 0);
+       };
+       delayAgain(delayAgain.bind(this, callback));
+     };
      return delayedCallback;
   },
 
@@ -1461,10 +1468,10 @@ SpecialPowersAPI.prototype = {
   
 
   addChromeEventListener(type, listener, capture, allowUntrusted) {
-    addEventListener(type, listener, capture, allowUntrusted);
+    this.mm.addEventListener(type, listener, capture, allowUntrusted);
   },
   removeChromeEventListener(type, listener, capture) {
-    removeEventListener(type, listener, capture);
+    this.mm.removeEventListener(type, listener, capture);
   },
 
   
@@ -1752,7 +1759,7 @@ SpecialPowersAPI.prototype = {
     
     if (aWindow)
       aWindow.focus();
-    var mm = global;
+    var mm = this.mm;
     if (aWindow) {
       let windowMM = aWindow.docShell.messageManager;
       if (windowMM) {
@@ -1775,7 +1782,7 @@ SpecialPowersAPI.prototype = {
     
     
     
-    xferable.init(this._getDocShell(typeof(window) == "undefined" ? content.window : window)
+    xferable.init(this._getDocShell(typeof(window) == "undefined" ? this.mm.content.window : window)
                       .QueryInterface(Ci.nsILoadContext));
     xferable.addDataFlavor(flavor);
     Services.clipboard.getData(xferable, whichClipboard);
@@ -2095,7 +2102,7 @@ SpecialPowersAPI.prototype = {
           state = "unloaded";
           resolveUnload();
         } else if (msg.data.type in handler) {
-          handler[msg.data.type](...msg.data.args);
+          handler[msg.data.type](...Cu.cloneInto(msg.data.args, this.window));
         } else {
           dump(`Unexpected: ${msg.data.type}\n`);
         }
@@ -2116,7 +2123,7 @@ SpecialPowersAPI.prototype = {
 
   createChromeCache(name, url) {
     let principal = this._getPrincipalFromArg(url);
-    return wrapIfUnwrapped(new content.window.CacheStorage(name, principal));
+    return wrapIfUnwrapped(new this.mm.content.CacheStorage(name, principal));
   },
 
   loadChannelAndReturnStatus(url, loadUsingSystemPrincipal) {
