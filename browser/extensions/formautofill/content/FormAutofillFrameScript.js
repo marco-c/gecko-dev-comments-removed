@@ -11,7 +11,10 @@
 
 
 ChromeUtils.import("resource://formautofill/FormAutofillContent.jsm");
-ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "FormAutofill",
+                               "resource://formautofill/FormAutofill.jsm");
+ChromeUtils.defineModuleGetter(this, "FormAutofillUtils",
+                               "resource://formautofill/FormAutofillUtils.jsm");
 
 
 
@@ -50,7 +53,7 @@ var FormAutofillFrameScript = {
   },
 
   handleEvent(evt) {
-    if (!evt.isTrusted || !FormAutofillUtils.isAutofillEnabled) {
+    if (!evt.isTrusted || !FormAutofill.isAutofillEnabled) {
       return;
     }
     FormAutofillContent.updateActiveInput();
@@ -77,7 +80,7 @@ var FormAutofillFrameScript = {
   },
 
   receiveMessage(message) {
-    if (!FormAutofillUtils.isAutofillEnabled) {
+    if (!FormAutofill.isAutofillEnabled) {
       return;
     }
 

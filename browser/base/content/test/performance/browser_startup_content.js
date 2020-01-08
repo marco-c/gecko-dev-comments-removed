@@ -49,8 +49,8 @@ const whitelist = {
     "resource://gre/modules/sessionstore/SessionHistory.jsm",
 
     
+    "resource://formautofill/FormAutofill.jsm",
     "resource://formautofill/FormAutofillContent.jsm",
-    "resource://formautofill/FormAutofillUtils.jsm",
 
     
     "resource:///modules/ContentLinkHandler.jsm",
