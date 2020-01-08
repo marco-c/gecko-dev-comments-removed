@@ -540,8 +540,6 @@ class Animation : public DOMEventTargetHelper,
   
   
   
-  
-  
   uint64_t mAnimationIndex;
 
   
