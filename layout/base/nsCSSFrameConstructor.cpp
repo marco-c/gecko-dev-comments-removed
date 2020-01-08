@@ -392,6 +392,41 @@ static bool ShouldSuppressFloatingOfDescendants(nsIFrame* aFrame) {
 
 
 
+static bool ShouldSuppressColumnSpanDescendants(nsIFrame* aFrame) {
+  MOZ_ASSERT(StaticPrefs::layout_css_column_span_enabled(),
+             "Call this only when layout.css.column-span.enabled is true!");
+
+  if (aFrame->Style()->GetPseudo() == nsCSSAnonBoxes::columnContent()) {
+    
+    return false;
+  }
+
+  if (aFrame->IsInlineFrame()) {
+    
+    return false;
+  }
+
+  if (!nsLayoutUtils::GetAsBlock(aFrame) ||
+      aFrame->HasAnyStateBits(NS_BLOCK_FLOAT_MGR | NS_FRAME_OUT_OF_FLOW)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+
+  return false;
+}
+
+
+
+
+
 static nsIContent* AnyKidsNeedBlockParent(nsIFrame* aFrameList) {
   for (nsIFrame* k = aFrameList; k; k = k->GetNextSibling()) {
     
@@ -10515,20 +10550,10 @@ void nsCSSFrameConstructor::ConstructBlock(
         *aNewFrame, aPositionedFrameForAbsPosContainer, absoluteSaveState);
   }
 
-  
-  
-  
-  
-  AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
   if (StaticPrefs::layout_css_column_span_enabled()) {
-    
-    
-    
-    if (needsColumn) {
-      aState.mAdditionalStateBits |= NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR;
-    } else if (blockFrame->HasAllStateBits(
-                   NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS)) {
-      aState.mAdditionalStateBits &= ~NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR;
+    if (aParentFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) &&
+        !ShouldSuppressColumnSpanDescendants(aParentFrame)) {
+      blockFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
     }
   }
 
@@ -10725,16 +10750,7 @@ bool nsCSSFrameConstructor::MayNeedToCreateColumnSpanSiblings(
     return false;
   }
 
-  if (aBlockFrame->HasAllStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS) &&
-      aBlockFrame->Style()->GetPseudo() != nsCSSAnonBoxes::columnContent()) {
-    
-    
-    
-    
-    
-    
-    
-    
+  if (ShouldSuppressColumnSpanDescendants(aBlockFrame)) {
     
     return false;
   }
@@ -10746,15 +10762,9 @@ bool nsCSSFrameConstructor::MayNeedToCreateColumnSpanSiblings(
 
   if (aBlockFrame->IsDetailsFrame()) {
     
-    return false;
-  }
-
-  if (aBlockFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-    
     
     return false;
   }
-
   
   return true;
 }
@@ -10785,7 +10795,8 @@ nsFrameItems nsCSSFrameConstructor::CreateColumnSpanSiblings(
     nsBlockFrame* columnSpanWrapper =
         NS_NewBlockFrame(mPresShell, columnSpanWrapperStyle);
     InitAndRestoreFrame(aState, content, parentFrame, columnSpanWrapper, false);
-    columnSpanWrapper->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    columnSpanWrapper->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR |
+                                    NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
 
     nsFrameList columnSpanKids =
         aChildList.Split([](nsIFrame* f) { return !f->IsColumnSpan(); });
@@ -10803,7 +10814,8 @@ nsFrameItems nsCSSFrameConstructor::CreateColumnSpanSiblings(
         NS_NewBlockFrame(mPresShell, initialBlockStyle);
     InitAndRestoreFrame(aState, content, parentFrame, nonColumnSpanWrapper,
                         false);
-    nonColumnSpanWrapper->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    nonColumnSpanWrapper->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR |
+                                       NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
 
     if (aChildList.NotEmpty()) {
       nsFrameList nonColumnSpanKids =
@@ -10923,6 +10935,13 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
     aState.PushAbsoluteContainingBlock(newFrame, newFrame, absoluteSaveState);
   }
 
+  if (StaticPrefs::layout_css_column_span_enabled()) {
+    if (aParentFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) &&
+        !ShouldSuppressColumnSpanDescendants(aParentFrame)) {
+      newFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+    }
+  }
+
   
   nsFrameItems childItems;
   ConstructFramesFromItemList(aState, aItem.mChildItems, newFrame,
@@ -10999,6 +11018,9 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     
     nsBlockFrame* blockFrame = NS_NewBlockFrame(mPresShell, blockSC);
     InitAndRestoreFrame(aState, content, parentFrame, blockFrame, false);
+    if (aInitialInline->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+      blockFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+    }
 
     
     
@@ -11039,6 +11061,10 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     nsInlineFrame* inlineFrame = NS_NewInlineFrame(mPresShell, computedStyle);
     InitAndRestoreFrame(aState, content, parentFrame, inlineFrame, false);
     inlineFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    if (aInitialInline->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+      inlineFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+    }
+
     if (aIsAbsPosCB) {
       inlineFrame->MarkAsAbsoluteContainingBlock();
     }
