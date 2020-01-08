@@ -131,6 +131,19 @@ let ACTORS = {
     },
   },
 
+  LinkHandler: {
+    child: {
+      module: "resource:///actors/LinkHandlerChild.jsm",
+      events: {
+        "DOMHeadElementParsed": {},
+        "DOMLinkAdded": {},
+        "DOMLinkChanged": {},
+        "pageshow": {},
+        "pagehide": {},
+      },
+    },
+  },
+
   NetError: {
     child: {
       module: "resource:///actors/NetErrorChild.jsm",
@@ -228,18 +241,6 @@ let ACTORS = {
       },
       matches: ["about:studies"],
     },
-  },
-
-  UAWidgets: {
-    child: {
-      module: "resource:///actors/UAWidgetsChild.jsm",
-      group: "browsers",
-      events: {
-        "UAWidgetBindToTree": {},
-        "UAWidgetAttributeChanged": {},
-        "UAWidgetUnbindFromTree": {}
-      },
-    }
   },
 
   UITour: {
