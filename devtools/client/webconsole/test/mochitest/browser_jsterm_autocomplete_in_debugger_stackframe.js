@@ -44,12 +44,12 @@ async function performTests() {
 
   
   await jstermComplete("foo");
-  is(getPopupLabels(popup).join("-"), "foo1Obj-foo1",
+  is(getPopupLabels(popup).join("-"), "foo1-foo1Obj",
     `"foo" gave the expected suggestions`);
 
   
   await jstermComplete("foo1Obj.");
-  is(getPopupLabels(popup).join("-"), "prop2-prop1",
+  is(getPopupLabels(popup).join("-"), "prop1-prop2",
     `"foo1Obj." gave the expected suggestions`);
 
   
@@ -69,7 +69,7 @@ async function performTests() {
   
   
   await jstermComplete("foo");
-  is(getPopupLabels(popup).join("-"), "foo3Obj-foo3-foo1Obj-foo1",
+  is(getPopupLabels(popup).join("-"), "foo1-foo1Obj-foo3-foo3Obj",
     `"foo" gave the expected suggestions`);
 
   await openDebugger();
@@ -83,7 +83,7 @@ async function performTests() {
   
   
   await jstermComplete("foo");
-  is(getPopupLabels(popup).join("-"), "foo2Obj-foo2-foo1Obj-foo1",
+  is(getPopupLabels(popup).join("-"), "foo1-foo1Obj-foo2-foo2Obj",
     `"foo" gave the expected suggestions`);
 
   
