@@ -25,9 +25,13 @@ class SVGGraphicsElement : public SVGGraphicsElementBase, public SVGTests {
   
   NS_DECL_ISUPPORTS_INHERITED
 
-  virtual bool IsSVGFocusable(bool* aIsFocusable, int32_t* aTabIndex);
   bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) override;
   nsSVGElement* AsSVGElement() final { return this; }
+
+ protected:
+  
+  
+  bool IsSVGFocusable(bool* aIsFocusable, int32_t* aTabIndex);
 };
 
 }  
