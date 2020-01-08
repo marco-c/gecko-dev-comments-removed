@@ -239,6 +239,9 @@ module.exports = {
     
     "camelcase": "error",
     
+    
+    "comma-dangle": "off",
+    
     "complexity": ["error", 53],
     
     
@@ -350,8 +353,6 @@ module.exports = {
     "no-return-assign": "error",
     
     "no-script-url": "off",
-    
-    "no-sequences": "error",
     
     
     

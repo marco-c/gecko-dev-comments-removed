@@ -52,9 +52,6 @@ module.exports = {
     "no-return-assign": ["error", "always"],
 
     
-    "no-sequences": "error",
-
-    
     "no-template-curly-in-string": "error",
 
     
