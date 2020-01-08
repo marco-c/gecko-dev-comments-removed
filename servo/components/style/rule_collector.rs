@@ -5,7 +5,7 @@
 
 
 use crate::applicable_declarations::{ApplicableDeclarationBlock, ApplicableDeclarationList};
-use crate::dom::{TElement, TShadowRoot};
+use crate::dom::{TElement, TNode, TShadowRoot};
 use crate::properties::{AnimationRules, PropertyDeclarationBlock};
 use crate::rule_tree::{CascadeLevel, ShadowCascadeOrder};
 use crate::selector_map::SelectorMap;
@@ -16,6 +16,43 @@ use crate::stylist::{AuthorStylesEnabled, Rule, RuleInclusion, Stylist};
 use selectors::matching::{ElementSelectorFlags, MatchingContext};
 use servo_arc::ArcBorrow;
 use smallvec::SmallVec;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn containing_shadow_ignoring_svg_use<E: TElement>(
+    element: E,
+) -> Option<<E::ConcreteNode as TNode>::ConcreteShadowRoot> {
+    let mut shadow = element.containing_shadow()?;
+    loop {
+        let host = shadow.host();
+        let host_is_svg_use_element =
+            host.is_svg_element() && host.local_name() == &*local_name!("use");
+        if !host_is_svg_use_element {
+            return Some(shadow);
+        }
+        debug_assert!(
+            shadow.style_data().is_none(),
+            "We allow no stylesheets in <svg:use> subtrees"
+        );
+        shadow = host.containing_shadow()?;
+    }
+}
 
 
 
@@ -213,43 +250,19 @@ where
             return;
         }
 
-        let mut current_containing_shadow = self.rule_hash_target.containing_shadow();
-        while let Some(containing_shadow) = current_containing_shadow {
-            let cascade_data = containing_shadow.style_data();
-            let host = containing_shadow.host();
-            if let Some(map) = cascade_data.and_then(|data| data.normal_rules(self.pseudo_element))
-            {
-                self.collect_rules_in_shadow_tree(host, map, CascadeLevel::SameTreeAuthorNormal);
-            }
-            let host_is_svg_use_element =
-                host.is_svg_element() && host.local_name() == &*local_name!("use");
-            if !host_is_svg_use_element {
-                self.matches_document_author_rules = false;
-                break;
-            }
+        let containing_shadow = containing_shadow_ignoring_svg_use(self.rule_hash_target);
+        let containing_shadow = match containing_shadow {
+            Some(s) => s,
+            None => return,
+        };
 
-            debug_assert!(
-                cascade_data.is_none(),
-                "We allow no stylesheets in <svg:use> subtrees"
-            );
+        self.matches_document_author_rules = false;
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            current_containing_shadow = host.containing_shadow();
-            self.matches_document_author_rules = current_containing_shadow.is_none();
+        let cascade_data = containing_shadow.style_data();
+        let host = containing_shadow.host();
+        if let Some(map) = cascade_data.and_then(|data| data.normal_rules(self.pseudo_element))
+        {
+            self.collect_rules_in_shadow_tree(host, map, CascadeLevel::SameTreeAuthorNormal);
         }
     }
 
