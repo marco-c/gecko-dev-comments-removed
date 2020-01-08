@@ -13,7 +13,7 @@
 #include "mozilla/dom/SVGAnimatedRect.h"
 #include "mozilla/dom/SVGIRect.h"
 #include "nsISMILAttr.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "nsSVGAttrTearoffTable.h"
@@ -47,6 +47,8 @@ struct nsSVGViewBoxRect {
 
 class nsSVGViewBox {
  public:
+  typedef mozilla::dom::SVGElement SVGElement;
+
   void Init();
 
   
@@ -71,26 +73,26 @@ class nsSVGViewBox {
   }
 
   const nsSVGViewBoxRect& GetBaseValue() const { return mBaseVal; }
-  void SetBaseValue(const nsSVGViewBoxRect& aRect, nsSVGElement* aSVGElement);
+  void SetBaseValue(const nsSVGViewBoxRect& aRect, SVGElement* aSVGElement);
   const nsSVGViewBoxRect& GetAnimValue() const {
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
-  void SetAnimValue(const nsSVGViewBoxRect& aRect, nsSVGElement* aSVGElement);
+  void SetAnimValue(const nsSVGViewBoxRect& aRect, SVGElement* aSVGElement);
 
-  nsresult SetBaseValueString(const nsAString& aValue,
-                              nsSVGElement* aSVGElement, bool aDoSetAttr);
+  nsresult SetBaseValueString(const nsAString& aValue, SVGElement* aSVGElement,
+                              bool aDoSetAttr);
   void GetBaseValueString(nsAString& aValue) const;
 
   already_AddRefed<mozilla::dom::SVGAnimatedRect> ToSVGAnimatedRect(
-      nsSVGElement* aSVGElement);
+      SVGElement* aSVGElement);
 
   already_AddRefed<mozilla::dom::SVGIRect> ToDOMBaseVal(
-      nsSVGElement* aSVGElement);
+      SVGElement* aSVGElement);
 
   already_AddRefed<mozilla::dom::SVGIRect> ToDOMAnimVal(
-      nsSVGElement* aSVGElement);
+      SVGElement* aSVGElement);
 
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement);
+  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   nsSVGViewBoxRect mBaseVal;
@@ -102,11 +104,11 @@ class nsSVGViewBox {
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
     NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMBaseVal)
 
-    DOMBaseVal(nsSVGViewBox* aVal, nsSVGElement* aSVGElement)
+    DOMBaseVal(nsSVGViewBox* aVal, SVGElement* aSVGElement)
         : mozilla::dom::SVGIRect(), mVal(aVal), mSVGElement(aSVGElement) {}
 
     nsSVGViewBox* mVal;  
-    RefPtr<nsSVGElement> mSVGElement;
+    RefPtr<SVGElement> mSVGElement;
 
     float X() const final { return mVal->GetBaseValue().x; }
 
@@ -131,11 +133,11 @@ class nsSVGViewBox {
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
     NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMAnimVal)
 
-    DOMAnimVal(nsSVGViewBox* aVal, nsSVGElement* aSVGElement)
+    DOMAnimVal(nsSVGViewBox* aVal, SVGElement* aSVGElement)
         : mozilla::dom::SVGIRect(), mVal(aVal), mSVGElement(aSVGElement) {}
 
     nsSVGViewBox* mVal;  
-    RefPtr<nsSVGElement> mSVGElement;
+    RefPtr<SVGElement> mSVGElement;
 
     
     
@@ -183,14 +185,14 @@ class nsSVGViewBox {
 
   struct SMILViewBox : public nsISMILAttr {
    public:
-    SMILViewBox(nsSVGViewBox* aVal, nsSVGElement* aSVGElement)
+    SMILViewBox(nsSVGViewBox* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
     nsSVGViewBox* mVal;
-    nsSVGElement* mSVGElement;
+    SVGElement* mSVGElement;
 
     
     virtual nsresult ValueFromString(

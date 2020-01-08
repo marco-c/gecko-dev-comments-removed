@@ -4,7 +4,7 @@
 
 
 
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "DOMSVGPointList.h"
 #include "DOMSVGPoint.h"
 #include "nsError.h"
@@ -92,7 +92,7 @@ class MOZ_RAII AutoChangePointListNotifier {
 };
 
  already_AddRefed<DOMSVGPointList> DOMSVGPointList::GetDOMWrapper(
-    void* aList, nsSVGElement* aElement, bool aIsAnimValList) {
+    void* aList, SVGElement* aElement, bool aIsAnimValList) {
   RefPtr<DOMSVGPointList> wrapper =
       SVGPointListTearoffTable().GetTearoff(aList);
   if (!wrapper) {

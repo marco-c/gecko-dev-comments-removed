@@ -15,12 +15,12 @@
 #include "SVGPathData.h"
 
 class nsSMILValue;
-class nsSVGElement;
 
 namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
+class SVGElement;
 }  
 
 
@@ -65,9 +65,9 @@ class SVGAnimatedPathSegList final {
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
 
-  nsresult SetAnimValue(const SVGPathData& aValue, nsSVGElement* aElement);
+  nsresult SetAnimValue(const SVGPathData& aValue, dom::SVGElement* aElement);
 
-  void ClearAnimValue(nsSVGElement* aElement);
+  void ClearAnimValue(dom::SVGElement* aElement);
 
   
 
@@ -83,7 +83,7 @@ class SVGAnimatedPathSegList final {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aElement);
+  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aElement);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -99,14 +99,14 @@ class SVGAnimatedPathSegList final {
   struct SMILAnimatedPathSegList : public nsISMILAttr {
    public:
     SMILAnimatedPathSegList(SVGAnimatedPathSegList* aVal,
-                            nsSVGElement* aElement)
+                            dom::SVGElement* aElement)
         : mVal(aVal), mElement(aElement) {}
 
     
     
     
     SVGAnimatedPathSegList* mVal;
-    nsSVGElement* mElement;
+    dom::SVGElement* mElement;
 
     
     virtual nsresult ValueFromString(

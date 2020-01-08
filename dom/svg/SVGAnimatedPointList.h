@@ -14,12 +14,12 @@
 #include "SVGPointList.h"
 
 class nsSMILValue;
-class nsSVGElement;
 
 namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
+class SVGElement;
 }  
 
 
@@ -64,9 +64,9 @@ class SVGAnimatedPointList {
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
 
-  nsresult SetAnimValue(const SVGPointList& aValue, nsSVGElement* aElement);
+  nsresult SetAnimValue(const SVGPointList& aValue, dom::SVGElement* aElement);
 
-  void ClearAnimValue(nsSVGElement* aElement);
+  void ClearAnimValue(dom::SVGElement* aElement);
 
   
 
@@ -77,7 +77,7 @@ class SVGAnimatedPointList {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aElement);
+  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aElement);
 
  private:
   
@@ -90,14 +90,14 @@ class SVGAnimatedPointList {
 
   struct SMILAnimatedPointList : public nsISMILAttr {
    public:
-    SMILAnimatedPointList(SVGAnimatedPointList* aVal, nsSVGElement* aElement)
+    SMILAnimatedPointList(SVGAnimatedPointList* aVal, dom::SVGElement* aElement)
         : mVal(aVal), mElement(aElement) {}
 
     
     
     
     SVGAnimatedPointList* mVal;
-    nsSVGElement* mElement;
+    dom::SVGElement* mElement;
 
     
     virtual nsresult ValueFromString(

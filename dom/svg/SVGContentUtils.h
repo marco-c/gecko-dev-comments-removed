@@ -22,7 +22,6 @@ class nsIDocument;
 class nsIFrame;
 class nsPresContext;
 class nsStyleCoord;
-class nsSVGElement;
 
 namespace mozilla {
 class ComputedStyle;
@@ -32,6 +31,7 @@ class SVGContextPaint;
 class SVGPreserveAspectRatio;
 namespace dom {
 class Element;
+class SVGElement;
 class SVGSVGElement;
 class SVGViewportElement;
 }  
@@ -81,7 +81,7 @@ class SVGContentUtils {
   
 
 
-  static dom::SVGSVGElement* GetOuterSVGElement(nsSVGElement* aSVGElement);
+  static dom::SVGSVGElement* GetOuterSVGElement(dom::SVGElement* aSVGElement);
 
   
 
@@ -148,7 +148,7 @@ class SVGContentUtils {
 
 
   static void GetStrokeOptions(AutoStrokeOptions* aStrokeOptions,
-                               nsSVGElement* aElement,
+                               dom::SVGElement* aElement,
                                ComputedStyle* aComputedStyle,
                                mozilla::SVGContextPaint* aContextPaint,
                                StrokeOptionFlags aFlags = eAllStrokeOptions);
@@ -162,7 +162,7 @@ class SVGContentUtils {
 
 
 
-  static Float GetStrokeWidth(nsSVGElement* aElement,
+  static Float GetStrokeWidth(dom::SVGElement* aElement,
                               ComputedStyle* aComputedStyle,
                               mozilla::SVGContextPaint* aContextPaint);
 
@@ -194,7 +194,7 @@ class SVGContentUtils {
                                   const char16_t** aParams,
                                   uint32_t aParamsLength);
 
-  static Matrix GetCTM(nsSVGElement* aElement, bool aScreenCTM);
+  static Matrix GetCTM(dom::SVGElement* aElement, bool aScreenCTM);
 
   
 
@@ -321,7 +321,8 @@ class SVGContentUtils {
 
 
 
-  static float CoordToFloat(nsSVGElement* aContent, const nsStyleCoord& aCoord);
+  static float CoordToFloat(dom::SVGElement* aContent,
+                            const nsStyleCoord& aCoord);
   
 
 

@@ -87,13 +87,13 @@ nsSMILTimedElement& SVGAnimationElement::TimedElement() {
   return mTimedElement;
 }
 
-nsSVGElement* SVGAnimationElement::GetTargetElement() {
+SVGElement* SVGAnimationElement::GetTargetElement() {
   FlushAnimations();
 
   
   nsIContent* target = GetTargetElementContent();
 
-  return (target && target->IsSVGElement()) ? static_cast<nsSVGElement*>(target)
+  return (target && target->IsSVGElement()) ? static_cast<SVGElement*>(target)
                                             : nullptr;
 }
 
@@ -109,12 +109,12 @@ float SVGAnimationElement::GetStartTime(ErrorResult& rv) {
   return float(double(startTime.GetMillis()) / PR_MSEC_PER_SEC);
 }
 
-float SVGAnimationElement::GetCurrentTimeAsFloat() {
+float SVGAnimationElement::GetCurrentTime() {
   
 
   nsSMILTimeContainer* root = GetTimeContainer();
   if (root) {
-    return float(double(root->GetCurrentTimeAsSMILTime()) / PR_MSEC_PER_SEC);
+    return float(double(root->GetCurrentTime()) / PR_MSEC_PER_SEC);
   }
 
   return 0.0f;

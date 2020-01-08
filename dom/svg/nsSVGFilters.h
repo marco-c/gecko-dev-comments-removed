@@ -11,7 +11,7 @@
 #include "nsImageLoadingContent.h"
 #include "nsSVGLength2.h"
 #include "nsSVGString.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsSVGNumber2.h"
 #include "nsSVGNumberPair.h"
 #include "FilterSupport.h"
@@ -20,14 +20,15 @@ class nsSVGFilterInstance;
 class nsSVGNumberPair;
 
 struct nsSVGStringInfo {
-  nsSVGStringInfo(const nsSVGString* aString, nsSVGElement* aElement)
+  nsSVGStringInfo(const nsSVGString* aString,
+                  mozilla::dom::SVGElement* aElement)
       : mString(aString), mElement(aElement) {}
 
   const nsSVGString* mString;
-  nsSVGElement* mElement;
+  mozilla::dom::SVGElement* mElement;
 };
 
-typedef nsSVGElement nsSVGFEBase;
+typedef mozilla::dom::SVGElement nsSVGFEBase;
 
 #define NS_SVG_FE_CID                                \
   {                                                  \
@@ -153,7 +154,7 @@ class nsSVGFE : public nsSVGFEBase {
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsSVGFE, NS_SVG_FE_CID)
 
-typedef nsSVGElement SVGFEUnstyledElementBase;
+typedef mozilla::dom::SVGElement SVGFEUnstyledElementBase;
 
 class SVGFEUnstyledElement : public SVGFEUnstyledElementBase {
  protected:

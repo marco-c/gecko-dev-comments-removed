@@ -38,7 +38,7 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace dom {
 
-nsSVGElement::LengthInfo SVGViewportElement::sLengthInfo[4] = {
+SVGElement::LengthInfo SVGViewportElement::sLengthInfo[4] = {
     {nsGkAtoms::x, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
      SVGContentUtils::X},
     {nsGkAtoms::y, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
@@ -332,7 +332,7 @@ nsSVGViewBoxRect SVGViewportElement::GetViewBoxWithSynthesis(
   return nsSVGViewBoxRect(0, 0, aViewportWidth, aViewportHeight);
 }
 
-nsSVGElement::LengthAttributesInfo SVGViewportElement::GetLengthInfo() {
+SVGElement::LengthAttributesInfo SVGViewportElement::GetLengthInfo() {
   return LengthAttributesInfo(mLengthAttributes, sLengthInfo,
                               ArrayLength(sLengthInfo));
 }

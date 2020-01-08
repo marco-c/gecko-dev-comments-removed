@@ -20,7 +20,7 @@ JSObject* SVGFESpotLightElement::WrapNode(JSContext* aCx,
   return SVGFESpotLightElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsSVGElement::NumberInfo SVGFESpotLightElement::sNumberInfo[8] = {
+SVGElement::NumberInfo SVGFESpotLightElement::sNumberInfo[8] = {
     {nsGkAtoms::x, 0, false},
     {nsGkAtoms::y, 0, false},
     {nsGkAtoms::z, 0, false},
@@ -106,7 +106,7 @@ already_AddRefed<SVGAnimatedNumber> SVGFESpotLightElement::LimitingConeAngle() {
 
 
 
-nsSVGElement::NumberAttributesInfo SVGFESpotLightElement::GetNumberInfo() {
+SVGElement::NumberAttributesInfo SVGFESpotLightElement::GetNumberInfo() {
   return NumberAttributesInfo(mNumberAttributes, sNumberInfo,
                               ArrayLength(sNumberInfo));
 }

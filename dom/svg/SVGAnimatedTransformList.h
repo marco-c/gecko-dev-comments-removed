@@ -10,7 +10,7 @@
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 
@@ -56,7 +56,7 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
 
 
   static already_AddRefed<SVGAnimatedTransformList> GetDOMWrapper(
-      nsSVGAnimatedTransformList* aList, nsSVGElement* aElement);
+      nsSVGAnimatedTransformList* aList, SVGElement* aElement);
 
   
 
@@ -88,7 +88,7 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
   bool IsAnimating() const;
 
   
-  nsSVGElement* GetParentObject() const { return mElement; }
+  SVGElement* GetParentObject() const { return mElement; }
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
   
@@ -100,7 +100,7 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
 
 
 
-  explicit SVGAnimatedTransformList(nsSVGElement* aElement)
+  explicit SVGAnimatedTransformList(SVGElement* aElement)
       : mBaseVal(nullptr), mAnimVal(nullptr), mElement(aElement) {}
 
   ~SVGAnimatedTransformList();
@@ -117,7 +117,7 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
 
   
   
-  RefPtr<nsSVGElement> mElement;
+  RefPtr<SVGElement> mElement;
 };
 
 }  

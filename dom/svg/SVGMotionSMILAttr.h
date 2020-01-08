@@ -14,12 +14,12 @@
 
 class nsIContent;
 class nsSMILValue;
-class nsSVGElement;
 
 namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
+class SVGElement;
 }  
 
 
@@ -31,7 +31,7 @@ class SVGAnimationElement;
 
 class SVGMotionSMILAttr : public nsISMILAttr {
  public:
-  explicit SVGMotionSMILAttr(nsSVGElement* aSVGElement)
+  explicit SVGMotionSMILAttr(dom::SVGElement* aSVGElement)
       : mSVGElement(aSVGElement) {}
 
   
@@ -47,7 +47,7 @@ class SVGMotionSMILAttr : public nsISMILAttr {
   
   
   
-  nsSVGElement* mSVGElement;
+  dom::SVGElement* mSVGElement;
 };
 
 }  

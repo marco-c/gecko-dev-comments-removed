@@ -38,14 +38,13 @@ class nsSVGNumberPair;
 class nsSVGString;
 class nsSVGViewBox;
 
+struct nsSVGEnumMapping;
+
+nsresult NS_NewSVGElement(mozilla::dom::Element** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+
 namespace mozilla {
 class DeclarationBlock;
-
-namespace dom {
-class SVGSVGElement;
-class SVGViewportElement;
-
-}  
 
 class SVGAnimatedNumberList;
 class SVGNumberList;
@@ -58,21 +57,21 @@ class nsSVGAnimatedTransformList;
 class SVGStringList;
 class DOMSVGStringList;
 
-}  
+namespace dom {
+class SVGSVGElement;
+class SVGViewportElement;
 
-struct nsSVGEnumMapping;
+typedef nsStyledElement SVGElementBase;
 
-typedef nsStyledElement nsSVGElementBase;
-
-class nsSVGElement : public nsSVGElementBase  
+class SVGElement : public SVGElementBase  
 {
  protected:
-  explicit nsSVGElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
-  friend nsresult NS_NewSVGElement(
-      mozilla::dom::Element** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  friend nsresult(
+      ::NS_NewSVGElement(mozilla::dom::Element** aResult,
+                         already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
   nsresult Init();
-  virtual ~nsSVGElement();
+  virtual ~SVGElement();
 
  public:
   virtual nsresult Clone(mozilla::dom::NodeInfo*,
@@ -90,7 +89,7 @@ class nsSVGElement : public nsSVGElementBase
   typedef mozilla::SVGStringList SVGStringList;
 
   
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsSVGElement, nsSVGElementBase)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(SVGElement, SVGElementBase)
 
   void DidAnimateClass();
 
@@ -125,7 +124,7 @@ class nsSVGElement : public nsSVGElementBase
   static const MappedAttributeEntry sLightingEffectsMap[];
   static const MappedAttributeEntry sMaskMap[];
 
-  NS_IMPL_FROMNODE(nsSVGElement, kNameSpaceID_SVG)
+  NS_IMPL_FROMNODE(SVGElement, kNameSpaceID_SVG)
 
   
   
@@ -157,7 +156,7 @@ class nsSVGElement : public nsSVGElementBase
 
   virtual gfxMatrix PrependLocalTransformsTo(
       const gfxMatrix& aMatrix,
-      mozilla::SVGTransformTypes aWhich = mozilla::eAllTransforms) const;
+      SVGTransformTypes aWhich = eAllTransforms) const;
 
   
   
@@ -301,7 +300,7 @@ class nsSVGElement : public nsSVGElementBase
 
   
   mozilla::dom::SVGSVGElement* GetOwnerSVGElement();
-  nsSVGElement* GetViewportElement();
+  SVGElement* GetViewportElement();
   already_AddRefed<mozilla::dom::SVGAnimatedString> ClassName();
 
   void UpdateContentDeclarationBlock();
@@ -479,7 +478,7 @@ class nsSVGElement : public nsSVGElementBase
     void Reset(uint8_t aAttrEnum);
   };
 
-  friend class nsSVGEnum;
+  friend class ::nsSVGEnum;
 
   struct EnumInfo {
     nsStaticAtom* const mName;
@@ -696,5 +695,8 @@ class nsSVGElement : public nsSVGElementBase
   NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(_val)                           \
     NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER                   \
   NS_IMPL_CYCLE_COLLECTION_TRACE_END
+
+}  
+}  
 
 #endif  

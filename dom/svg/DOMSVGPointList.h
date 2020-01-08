@@ -10,7 +10,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsTArray.h"
 #include "SVGPointList.h"  
 #include "mozilla/Attributes.h"
@@ -78,9 +78,8 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
 
 
-  static already_AddRefed<DOMSVGPointList> GetDOMWrapper(void* aList,
-                                                         nsSVGElement* aElement,
-                                                         bool aIsAnimValList);
+  static already_AddRefed<DOMSVGPointList> GetDOMWrapper(
+      void* aList, dom::SVGElement* aElement, bool aIsAnimValList);
 
   
 
@@ -159,14 +158,14 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
 
 
-  DOMSVGPointList(nsSVGElement* aElement, bool aIsAnimValList)
+  DOMSVGPointList(dom::SVGElement* aElement, bool aIsAnimValList)
       : mElement(aElement), mIsAnimValList(aIsAnimValList) {
     InternalListWillChangeTo(InternalList());  
   }
 
   ~DOMSVGPointList();
 
-  nsSVGElement* Element() const { return mElement.get(); }
+  dom::SVGElement* Element() const { return mElement.get(); }
 
   
   bool IsAnimValList() const { return mIsAnimValList; }
@@ -195,7 +194,7 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
   
   
-  RefPtr<nsSVGElement> mElement;
+  RefPtr<dom::SVGElement> mElement;
 
   bool mIsAnimValList;
 };

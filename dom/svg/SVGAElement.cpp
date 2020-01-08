@@ -27,7 +27,7 @@ JSObject* SVGAElement::WrapNode(JSContext* aCx,
   return SVGAElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsSVGElement::StringInfo SVGAElement::sStringInfo[3] = {
+SVGElement::StringInfo SVGAElement::sStringInfo[3] = {
     {nsGkAtoms::href, kNameSpaceID_None, true},
     {nsGkAtoms::href, kNameSpaceID_XLink, true},
     {nsGkAtoms::target, kNameSpaceID_None, true}};
@@ -343,7 +343,7 @@ nsresult SVGAElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
 
 
-nsSVGElement::StringAttributesInfo SVGAElement::GetStringInfo() {
+SVGElement::StringAttributesInfo SVGAElement::GetStringInfo() {
   return StringAttributesInfo(mStringAttributes, sStringInfo,
                               ArrayLength(sStringInfo));
 }

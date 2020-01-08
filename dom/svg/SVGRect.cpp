@@ -5,7 +5,7 @@
 
 
 #include "mozilla/dom/SVGRect.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 
 using namespace mozilla::gfx;
 

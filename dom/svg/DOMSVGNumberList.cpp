@@ -4,7 +4,7 @@
 
 
 
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "DOMSVGNumberList.h"
 #include "DOMSVGNumber.h"
 #include "nsError.h"

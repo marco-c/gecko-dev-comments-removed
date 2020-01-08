@@ -113,7 +113,6 @@ class nsPresContext;
 class nsRange;
 class nsSimpleContentList;
 class nsSMILAnimationController;
-class nsSVGElement;
 class nsTextNode;
 class nsUnblockOnloadEvent;
 class nsWindowSizes;
@@ -189,6 +188,7 @@ class Selection;
 class ServiceWorkerDescriptor;
 class StyleSheetList;
 class SVGDocument;
+class SVGElement;
 class SVGSVGElement;
 class SVGUseElement;
 class Touch;
@@ -447,6 +447,7 @@ class nsIDocument : public nsINode,
   typedef mozilla::FullscreenRequest FullscreenRequest;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicyEnum;
   typedef mozilla::dom::Element Element;
+  typedef mozilla::dom::SVGElement SVGElement;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
 
@@ -1253,13 +1254,13 @@ class nsIDocument : public nsINode,
 
 
 
-  void ScheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) {
+  void ScheduleSVGForPresAttrEvaluation(SVGElement* aSVG) {
     mLazySVGPresElements.PutEntry(aSVG);
   }
 
   
   
-  void UnscheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) {
+  void UnscheduleSVGForPresAttrEvaluation(SVGElement* aSVG) {
     mLazySVGPresElements.RemoveEntry(aSVG);
   }
 
@@ -2182,6 +2183,11 @@ class nsIDocument : public nsINode,
   Element* GetAnonymousElementByAttribute(nsIContent* aElement,
                                           nsAtom* aAttrName,
                                           const nsAString& aAttrValue) const;
+
+  nsresult NodesFromRectHelper(float aX, float aY, float aTopSize,
+                               float aRightSize, float aBottomSize,
+                               float aLeftSize, bool aIgnoreRootScrollFrame,
+                               bool aFlushLayout, nsINodeList** aReturn);
 
   
 
@@ -4302,7 +4308,7 @@ class nsIDocument : public nsINode,
   
   
   
-  nsTHashtable<nsPtrHashKey<nsSVGElement>> mLazySVGPresElements;
+  nsTHashtable<nsPtrHashKey<SVGElement>> mLazySVGPresElements;
 
   
   

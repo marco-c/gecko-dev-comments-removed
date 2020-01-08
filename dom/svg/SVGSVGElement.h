@@ -128,7 +128,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
   void PauseAnimations();
   void UnpauseAnimations();
   bool AnimationsPaused();
-  float GetCurrentTimeAsFloat();
+  float GetCurrentTime();
   void SetCurrentTime(float seconds);
   void DeselectAll();
   already_AddRefed<DOMSVGNumber> CreateSVGNumber();
@@ -261,8 +261,7 @@ class MOZ_RAII AutoSVGTimeSetRestore {
  public:
   AutoSVGTimeSetRestore(dom::SVGSVGElement* aRootElem,
                         float aFrameTime MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mRootElem(aRootElem),
-        mOriginalTime(mRootElem->GetCurrentTimeAsFloat()) {
+      : mRootElem(aRootElem), mOriginalTime(mRootElem->GetCurrentTime()) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     mRootElem->SetCurrentTime(
         aFrameTime);  

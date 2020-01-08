@@ -24,7 +24,7 @@ nsSVGEnumMapping SVGViewElement::sZoomAndPanMap[] = {
     {nsGkAtoms::magnify, SVG_ZOOMANDPAN_MAGNIFY},
     {nullptr, 0}};
 
-nsSVGElement::EnumInfo SVGViewElement::sEnumInfo[1] = {
+SVGElement::EnumInfo SVGViewElement::sEnumInfo[1] = {
     {nsGkAtoms::zoomAndPan, sZoomAndPanMap, SVG_ZOOMANDPAN_MAGNIFY}};
 
 
@@ -63,7 +63,7 @@ SVGViewElement::PreserveAspectRatio() {
 
 
 
-nsSVGElement::EnumAttributesInfo SVGViewElement::GetEnumInfo() {
+SVGElement::EnumAttributesInfo SVGViewElement::GetEnumInfo() {
   return EnumAttributesInfo(mEnumAttributes, sEnumInfo, ArrayLength(sEnumInfo));
 }
 

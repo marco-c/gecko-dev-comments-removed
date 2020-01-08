@@ -22,7 +22,7 @@ using namespace mozilla::dom::SVGTransform_Binding;
 namespace mozilla {
 
 nsresult nsSVGAnimatedTransformList::SetBaseValueString(
-    const nsAString& aValue, nsSVGElement* aSVGElement) {
+    const nsAString& aValue, SVGElement* aSVGElement) {
   SVGTransformList newBaseValue;
   nsresult rv = newBaseValue.SetValueFromString(aValue);
   if (NS_FAILED(rv)) {
@@ -33,7 +33,7 @@ nsresult nsSVGAnimatedTransformList::SetBaseValueString(
 }
 
 nsresult nsSVGAnimatedTransformList::SetBaseValue(
-    const SVGTransformList& aValue, nsSVGElement* aSVGElement) {
+    const SVGTransformList& aValue, SVGElement* aSVGElement) {
   SVGAnimatedTransformList* domWrapper =
       SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {
@@ -82,7 +82,7 @@ void nsSVGAnimatedTransformList::ClearBaseValue() {
 }
 
 nsresult nsSVGAnimatedTransformList::SetAnimValue(
-    const SVGTransformList& aValue, nsSVGElement* aElement) {
+    const SVGTransformList& aValue, SVGElement* aElement) {
   bool prevSet = HasTransform() || aElement->GetAnimateMotionTransform();
   SVGAnimatedTransformList* domWrapper =
       SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
@@ -125,7 +125,7 @@ nsresult nsSVGAnimatedTransformList::SetAnimValue(
   return NS_OK;
 }
 
-void nsSVGAnimatedTransformList::ClearAnimValue(nsSVGElement* aElement) {
+void nsSVGAnimatedTransformList::ClearAnimValue(SVGElement* aElement) {
   SVGAnimatedTransformList* domWrapper =
       SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {
@@ -162,7 +162,7 @@ bool nsSVGAnimatedTransformList::IsExplicitlySet() const {
 }
 
 UniquePtr<nsISMILAttr> nsSVGAnimatedTransformList::ToSMILAttr(
-    nsSVGElement* aSVGElement) {
+    SVGElement* aSVGElement) {
   return MakeUnique<SMILAnimatedTransformList>(this, aSVGElement);
 }
 

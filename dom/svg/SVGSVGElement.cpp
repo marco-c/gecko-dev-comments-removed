@@ -40,7 +40,7 @@ nsSVGEnumMapping SVGSVGElement::sZoomAndPanMap[] = {
     {nsGkAtoms::magnify, SVG_ZOOMANDPAN_MAGNIFY},
     {nullptr, 0}};
 
-nsSVGElement::EnumInfo SVGSVGElement::sEnumInfo[1] = {
+SVGElement::EnumInfo SVGSVGElement::sEnumInfo[1] = {
     {nsGkAtoms::zoomAndPan, sZoomAndPanMap, SVG_ZOOMANDPAN_MAGNIFY}};
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(DOMSVGTranslatePoint, nsISVGPoint, mElement)
@@ -212,10 +212,10 @@ bool SVGSVGElement::AnimationsPaused() {
   return root && root->IsPausedByType(nsSMILTimeContainer::PAUSE_SCRIPT);
 }
 
-float SVGSVGElement::GetCurrentTimeAsFloat() {
+float SVGSVGElement::GetCurrentTime() {
   nsSMILTimeContainer* root = GetTimedDocumentRoot();
   if (root) {
-    double fCurrentTimeMs = double(root->GetCurrentTimeAsSMILTime());
+    double fCurrentTimeMs = double(root->GetCurrentTime());
     return (float)(fCurrentTimeMs / PR_MSEC_PER_SEC);
   } else {
     return 0.f;
@@ -522,7 +522,7 @@ void SVGSVGElement::InvalidateTransformNotifyFrame() {
   }
 }
 
-nsSVGElement::EnumAttributesInfo SVGSVGElement::GetEnumInfo() {
+SVGElement::EnumAttributesInfo SVGSVGElement::GetEnumInfo() {
   return EnumAttributesInfo(mEnumAttributes, sEnumInfo, ArrayLength(sEnumInfo));
 }
 

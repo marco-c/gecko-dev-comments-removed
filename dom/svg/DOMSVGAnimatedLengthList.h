@@ -9,7 +9,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "mozilla/Attributes.h"
 
 namespace mozilla {
@@ -122,8 +122,8 @@ class DOMSVGAnimatedLengthList final : public nsWrapperCache {
 
 
   static already_AddRefed<DOMSVGAnimatedLengthList> GetDOMWrapper(
-      SVGAnimatedLengthList* aList, nsSVGElement* aElement, uint8_t aAttrEnum,
-      uint8_t aAxis);
+      SVGAnimatedLengthList* aList, dom::SVGElement* aElement,
+      uint8_t aAttrEnum, uint8_t aAxis);
 
   
 
@@ -155,7 +155,7 @@ class DOMSVGAnimatedLengthList final : public nsWrapperCache {
   bool IsAnimating() const;
 
   
-  nsSVGElement* GetParentObject() const { return mElement; }
+  dom::SVGElement* GetParentObject() const { return mElement; }
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
   
@@ -167,7 +167,7 @@ class DOMSVGAnimatedLengthList final : public nsWrapperCache {
 
 
 
-  DOMSVGAnimatedLengthList(nsSVGElement* aElement, uint8_t aAttrEnum,
+  DOMSVGAnimatedLengthList(dom::SVGElement* aElement, uint8_t aAttrEnum,
                            uint8_t aAxis)
       : mBaseVal(nullptr),
         mAnimVal(nullptr),
@@ -189,7 +189,7 @@ class DOMSVGAnimatedLengthList final : public nsWrapperCache {
 
   
   
-  RefPtr<nsSVGElement> mElement;
+  RefPtr<dom::SVGElement> mElement;
 
   uint8_t mAttrEnum;
   uint8_t mAxis;

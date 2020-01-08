@@ -24,7 +24,7 @@ JSObject* SVGMPathElement::WrapNode(JSContext* aCx,
   return SVGMPathElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsSVGElement::StringInfo SVGMPathElement::sStringInfo[2] = {
+SVGElement::StringInfo SVGMPathElement::sStringInfo[2] = {
     {nsGkAtoms::href, kNameSpaceID_None, false},
     {nsGkAtoms::href, kNameSpaceID_XLink, false}};
 
@@ -150,7 +150,7 @@ nsresult SVGMPathElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
 
 
 
-nsSVGElement::StringAttributesInfo SVGMPathElement::GetStringInfo() {
+SVGElement::StringAttributesInfo SVGMPathElement::GetStringInfo() {
   return StringAttributesInfo(mStringAttributes, sStringInfo,
                               ArrayLength(sStringInfo));
 }

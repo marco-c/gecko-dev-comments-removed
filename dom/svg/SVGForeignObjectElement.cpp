@@ -22,7 +22,7 @@ JSObject* SVGForeignObjectElement::WrapNode(JSContext* aCx,
   return SVGForeignObjectElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsSVGElement::LengthInfo SVGForeignObjectElement::sLengthInfo[4] = {
+SVGElement::LengthInfo SVGForeignObjectElement::sLengthInfo[4] = {
     {nsGkAtoms::x, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
      SVGContentUtils::X},
     {nsGkAtoms::y, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
@@ -114,7 +114,7 @@ SVGForeignObjectElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 
-nsSVGElement::LengthAttributesInfo SVGForeignObjectElement::GetLengthInfo() {
+SVGElement::LengthAttributesInfo SVGForeignObjectElement::GetLengthInfo() {
   return LengthAttributesInfo(mLengthAttributes, sLengthInfo,
                               ArrayLength(sLengthInfo));
 }

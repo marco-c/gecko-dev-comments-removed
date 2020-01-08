@@ -9,7 +9,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 
@@ -54,7 +54,8 @@ class DOMSVGAnimatedNumberList final : public nsISupports,
 
 
   static already_AddRefed<DOMSVGAnimatedNumberList> GetDOMWrapper(
-      SVGAnimatedNumberList* aList, nsSVGElement* aElement, uint8_t aAttrEnum);
+      SVGAnimatedNumberList* aList, dom::SVGElement* aElement,
+      uint8_t aAttrEnum);
 
   
 
@@ -86,7 +87,7 @@ class DOMSVGAnimatedNumberList final : public nsISupports,
   bool IsAnimating() const;
 
   
-  nsSVGElement* GetParentObject() const { return mElement; }
+  dom::SVGElement* GetParentObject() const { return mElement; }
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
   
@@ -98,7 +99,7 @@ class DOMSVGAnimatedNumberList final : public nsISupports,
 
 
 
-  DOMSVGAnimatedNumberList(nsSVGElement* aElement, uint8_t aAttrEnum)
+  DOMSVGAnimatedNumberList(dom::SVGElement* aElement, uint8_t aAttrEnum)
       : mBaseVal(nullptr),
         mAnimVal(nullptr),
         mElement(aElement),
@@ -118,7 +119,7 @@ class DOMSVGAnimatedNumberList final : public nsISupports,
 
   
   
-  RefPtr<nsSVGElement> mElement;
+  RefPtr<dom::SVGElement> mElement;
 
   uint8_t mAttrEnum;
 };

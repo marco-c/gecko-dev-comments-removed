@@ -27,7 +27,7 @@ JSObject* SVGMaskElement::WrapNode(JSContext* aCx,
 
 
 
-nsSVGElement::LengthInfo SVGMaskElement::sLengthInfo[4] = {
+SVGElement::LengthInfo SVGMaskElement::sLengthInfo[4] = {
     {nsGkAtoms::x, -10, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
      SVGContentUtils::X},
     {nsGkAtoms::y, -10, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
@@ -38,7 +38,7 @@ nsSVGElement::LengthInfo SVGMaskElement::sLengthInfo[4] = {
      SVGContentUtils::Y},
 };
 
-nsSVGElement::EnumInfo SVGMaskElement::sEnumInfo[2] = {
+SVGElement::EnumInfo SVGMaskElement::sEnumInfo[2] = {
     {nsGkAtoms::maskUnits, sSVGUnitTypesMap, SVG_UNIT_TYPE_OBJECTBOUNDINGBOX},
     {nsGkAtoms::maskContentUnits, sSVGUnitTypesMap,
      SVG_UNIT_TYPE_USERSPACEONUSE}};
@@ -91,12 +91,12 @@ already_AddRefed<SVGAnimatedLength> SVGMaskElement::Height() {
           mLengthAttributes[ATTR_HEIGHT].GetAnimValInSpecifiedUnits() > 0);
 }
 
-nsSVGElement::LengthAttributesInfo SVGMaskElement::GetLengthInfo() {
+SVGElement::LengthAttributesInfo SVGMaskElement::GetLengthInfo() {
   return LengthAttributesInfo(mLengthAttributes, sLengthInfo,
                               ArrayLength(sLengthInfo));
 }
 
-nsSVGElement::EnumAttributesInfo SVGMaskElement::GetEnumInfo() {
+SVGElement::EnumAttributesInfo SVGMaskElement::GetEnumInfo() {
   return EnumAttributesInfo(mEnumAttributes, sEnumInfo, ArrayLength(sEnumInfo));
 }
 

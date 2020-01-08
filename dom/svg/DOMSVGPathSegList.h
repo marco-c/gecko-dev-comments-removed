@@ -10,7 +10,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsTArray.h"
 #include "SVGPathData.h"  
 #include "mozilla/Attributes.h"
@@ -77,7 +77,7 @@ class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
 
 
   static already_AddRefed<DOMSVGPathSegList> GetDOMWrapper(
-      void* aList, nsSVGElement* aElement, bool aIsAnimValList);
+      void* aList, dom::SVGElement* aElement, bool aIsAnimValList);
 
   
 
@@ -156,14 +156,14 @@ class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
 
 
 
-  DOMSVGPathSegList(nsSVGElement* aElement, bool aIsAnimValList)
+  DOMSVGPathSegList(dom::SVGElement* aElement, bool aIsAnimValList)
       : mElement(aElement), mIsAnimValList(aIsAnimValList) {
     InternalListWillChangeTo(InternalList());  
   }
 
   ~DOMSVGPathSegList();
 
-  nsSVGElement* Element() const { return mElement.get(); }
+  dom::SVGElement* Element() const { return mElement.get(); }
 
   
   bool IsAnimValList() const { return mIsAnimValList; }
@@ -221,7 +221,7 @@ class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
 
   
   
-  RefPtr<nsSVGElement> mElement;
+  RefPtr<dom::SVGElement> mElement;
 
   bool mIsAnimValList;
 };

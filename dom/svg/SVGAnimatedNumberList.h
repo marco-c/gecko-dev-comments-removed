@@ -14,12 +14,12 @@
 #include "SVGNumberList.h"
 
 class nsSMILValue;
-class nsSVGElement;
 
 namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
+class SVGElement;
 }  
 
 
@@ -61,10 +61,10 @@ class SVGAnimatedNumberList {
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
 
-  nsresult SetAnimValue(const SVGNumberList& aValue, nsSVGElement* aElement,
+  nsresult SetAnimValue(const SVGNumberList& aValue, dom::SVGElement* aElement,
                         uint32_t aAttrEnum);
 
-  void ClearAnimValue(nsSVGElement* aElement, uint32_t aAttrEnum);
+  void ClearAnimValue(dom::SVGElement* aElement, uint32_t aAttrEnum);
 
   
   
@@ -75,7 +75,7 @@ class SVGAnimatedNumberList {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement,
+  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement,
                                     uint8_t aAttrEnum);
 
  private:
@@ -91,14 +91,14 @@ class SVGAnimatedNumberList {
   struct SMILAnimatedNumberList : public nsISMILAttr {
    public:
     SMILAnimatedNumberList(SVGAnimatedNumberList* aVal,
-                           nsSVGElement* aSVGElement, uint8_t aAttrEnum)
+                           dom::SVGElement* aSVGElement, uint8_t aAttrEnum)
         : mVal(aVal), mElement(aSVGElement), mAttrEnum(aAttrEnum) {}
 
     
     
     
     SVGAnimatedNumberList* mVal;
-    nsSVGElement* mElement;
+    dom::SVGElement* mElement;
     uint8_t mAttrEnum;
 
     

@@ -12,9 +12,11 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 
-class nsSVGElement;
-
 namespace mozilla {
+
+namespace dom {
+class SVGElement;
+}
 
 
 
@@ -93,7 +95,8 @@ class SVGLength {
 
 
 
-  float GetValueInUserUnits(const nsSVGElement *aElement, uint8_t aAxis) const {
+  float GetValueInUserUnits(const dom::SVGElement *aElement,
+                            uint8_t aAxis) const {
     return mValue * GetUserUnitsPerUnit(aElement, aAxis);
   }
 
@@ -103,7 +106,7 @@ class SVGLength {
 
 
 
-  float GetValueInSpecifiedUnit(uint8_t aUnit, const nsSVGElement *aElement,
+  float GetValueInSpecifiedUnit(uint8_t aUnit, const dom::SVGElement *aElement,
                                 uint8_t aAxis) const;
 
   bool IsPercentage() const {
@@ -122,7 +125,8 @@ class SVGLength {
 
 
 
-  float GetUserUnitsPerUnit(const nsSVGElement *aElement, uint8_t aAxis) const;
+  float GetUserUnitsPerUnit(const dom::SVGElement *aElement,
+                            uint8_t aAxis) const;
 
  private:
 #ifdef DEBUG
@@ -144,7 +148,7 @@ class SVGLength {
 
 
 
-  static float GetUserUnitsPerPercent(const nsSVGElement *aElement,
+  static float GetUserUnitsPerPercent(const dom::SVGElement *aElement,
                                       uint8_t aAxis);
 
   float mValue;

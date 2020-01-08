@@ -11,12 +11,12 @@
 #include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/SVGTests.h"
 #include "nsSMILTimedElement.h"
-#include "nsSVGElement.h"
-
-typedef nsSVGElement SVGAnimationElementBase;
+#include "SVGElement.h"
 
 namespace mozilla {
 namespace dom {
+
+typedef SVGElement SVGAnimationElementBase;
 
 enum nsSMILTargetAttrType {
   eSMILTargetAttrType_auto,
@@ -71,9 +71,9 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   void ActivateByHyperlink();
 
   
-  nsSVGElement* GetTargetElement();
+  SVGElement* GetTargetElement();
   float GetStartTime(ErrorResult& rv);
-  float GetCurrentTimeAsFloat();
+  float GetCurrentTime();
   float GetSimpleDuration(ErrorResult& rv);
   void BeginElement(ErrorResult& rv) { BeginElementAt(0.f, rv); }
   void BeginElementAt(float offset, ErrorResult& rv);
@@ -81,7 +81,7 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   void EndElementAt(float offset, ErrorResult& rv);
 
   
-  nsSVGElement* AsSVGElement() final { return this; }
+  SVGElement* AsSVGElement() final { return this; }
 
  protected:
   

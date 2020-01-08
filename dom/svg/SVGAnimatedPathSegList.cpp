@@ -8,7 +8,7 @@
 
 #include "DOMSVGPathSegList.h"
 #include "mozilla/Move.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsSVGAttrTearoffTable.h"
 #include "nsSMILValue.h"
 #include "SVGPathSegListSMILType.h"
@@ -89,7 +89,7 @@ void SVGAnimatedPathSegList::ClearBaseValue() {
 }
 
 nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData &aNewAnimValue,
-                                              nsSVGElement *aElement) {
+                                              SVGElement *aElement) {
   
   
   
@@ -121,7 +121,7 @@ nsresult SVGAnimatedPathSegList::SetAnimValue(const SVGPathData &aNewAnimValue,
   return rv;
 }
 
-void SVGAnimatedPathSegList::ClearAnimValue(nsSVGElement *aElement) {
+void SVGAnimatedPathSegList::ClearAnimValue(SVGElement *aElement) {
   
 
   DOMSVGPathSegList *domWrapper =
@@ -141,7 +141,7 @@ bool SVGAnimatedPathSegList::IsRendered() const {
 }
 
 UniquePtr<nsISMILAttr> SVGAnimatedPathSegList::ToSMILAttr(
-    nsSVGElement *aElement) {
+    SVGElement *aElement) {
   return MakeUnique<SMILAnimatedPathSegList>(this, aElement);
 }
 

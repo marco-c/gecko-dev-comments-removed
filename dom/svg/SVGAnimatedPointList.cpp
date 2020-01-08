@@ -8,7 +8,7 @@
 
 #include "DOMSVGPointList.h"
 #include "mozilla/Move.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsSVGAttrTearoffTable.h"
 #include "nsSMILValue.h"
 #include "SVGPointListSMILType.h"
@@ -89,7 +89,7 @@ void SVGAnimatedPointList::ClearBaseValue() {
 }
 
 nsresult SVGAnimatedPointList::SetAnimValue(const SVGPointList &aNewAnimValue,
-                                            nsSVGElement *aElement) {
+                                            SVGElement *aElement) {
   
   
   
@@ -124,7 +124,7 @@ nsresult SVGAnimatedPointList::SetAnimValue(const SVGPointList &aNewAnimValue,
   return NS_OK;
 }
 
-void SVGAnimatedPointList::ClearAnimValue(nsSVGElement *aElement) {
+void SVGAnimatedPointList::ClearAnimValue(SVGElement *aElement) {
   
 
   DOMSVGPointList *domWrapper =
@@ -139,8 +139,7 @@ void SVGAnimatedPointList::ClearAnimValue(nsSVGElement *aElement) {
   aElement->DidAnimatePointList();
 }
 
-UniquePtr<nsISMILAttr> SVGAnimatedPointList::ToSMILAttr(
-    nsSVGElement *aElement) {
+UniquePtr<nsISMILAttr> SVGAnimatedPointList::ToSMILAttr(SVGElement *aElement) {
   return MakeUnique<SMILAnimatedPointList>(this, aElement);
 }
 

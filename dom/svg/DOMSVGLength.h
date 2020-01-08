@@ -15,8 +15,6 @@
 #include "mozilla/Attributes.h"
 #include "nsWrapperCache.h"
 
-class nsSVGElement;
-
 
 
 
@@ -34,6 +32,10 @@ class nsSVGElement;
 namespace mozilla {
 
 class ErrorResult;
+
+namespace dom {
+class SVGElement;
+}
 
 
 
@@ -84,7 +86,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
 
 
 
-  DOMSVGLength(nsSVGLength2* aVal, nsSVGElement* aSVGElement, bool aAnimVal);
+  DOMSVGLength(nsSVGLength2* aVal, dom::SVGElement* aSVGElement, bool aAnimVal);
 
   ~DOMSVGLength();
 
@@ -106,7 +108,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
   DOMSVGLength();
 
   static already_AddRefed<DOMSVGLength> GetTearOff(nsSVGLength2* aVal,
-                                                   nsSVGElement* aSVGElement,
+                                                   dom::SVGElement* aSVGElement,
                                                    bool aAnimVal);
 
   
@@ -180,7 +182,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
  private:
-  nsSVGElement* Element() const { return mList->Element(); }
+  dom::SVGElement* Element() const { return mList->Element(); }
 
   uint8_t AttrEnum() const { return mAttrEnum; }
 
@@ -228,7 +230,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
 
   
   nsSVGLength2* mVal;  
-  RefPtr<nsSVGElement> mSVGElement;
+  RefPtr<dom::SVGElement> mSVGElement;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMSVGLength, MOZILLA_DOMSVGLENGTH_IID)

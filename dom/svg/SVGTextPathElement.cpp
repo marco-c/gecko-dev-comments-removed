@@ -8,7 +8,7 @@
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
 #include "mozilla/dom/SVGTextPathElementBinding.h"
-#include "nsSVGElement.h"
+#include "SVGElement.h"
 #include "nsGkAtoms.h"
 #include "nsError.h"
 
@@ -27,7 +27,7 @@ JSObject* SVGTextPathElement::WrapNode(JSContext* aCx,
   return SVGTextPathElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsSVGElement::LengthInfo SVGTextPathElement::sLengthInfo[2] = {
+SVGElement::LengthInfo SVGTextPathElement::sLengthInfo[2] = {
     
     {nsGkAtoms::textLength, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
      SVGContentUtils::XY},
@@ -50,7 +50,7 @@ nsSVGEnumMapping SVGTextPathElement::sSideMap[] = {
     {nsGkAtoms::right, TEXTPATH_SIDETYPE_RIGHT},
     {nullptr, 0}};
 
-nsSVGElement::EnumInfo SVGTextPathElement::sEnumInfo[4] = {
+SVGElement::EnumInfo SVGTextPathElement::sEnumInfo[4] = {
     
     {nsGkAtoms::lengthAdjust, sLengthAdjustMap, LENGTHADJUST_SPACING},
     
@@ -58,7 +58,7 @@ nsSVGElement::EnumInfo SVGTextPathElement::sEnumInfo[4] = {
     {nsGkAtoms::spacing, sSpacingMap, TEXTPATH_SPACINGTYPE_EXACT},
     {nsGkAtoms::side_, sSideMap, TEXTPATH_SIDETYPE_LEFT}};
 
-nsSVGElement::StringInfo SVGTextPathElement::sStringInfo[2] = {
+SVGElement::StringInfo SVGTextPathElement::sStringInfo[2] = {
     {nsGkAtoms::href, kNameSpaceID_None, true},
     {nsGkAtoms::href, kNameSpaceID_XLink, true}};
 
@@ -122,16 +122,16 @@ SVGTextPathElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 
-nsSVGElement::LengthAttributesInfo SVGTextPathElement::GetLengthInfo() {
+SVGElement::LengthAttributesInfo SVGTextPathElement::GetLengthInfo() {
   return LengthAttributesInfo(mLengthAttributes, sLengthInfo,
                               ArrayLength(sLengthInfo));
 }
 
-nsSVGElement::EnumAttributesInfo SVGTextPathElement::GetEnumInfo() {
+SVGElement::EnumAttributesInfo SVGTextPathElement::GetEnumInfo() {
   return EnumAttributesInfo(mEnumAttributes, sEnumInfo, ArrayLength(sEnumInfo));
 }
 
-nsSVGElement::StringAttributesInfo SVGTextPathElement::GetStringInfo() {
+SVGElement::StringAttributesInfo SVGTextPathElement::GetStringInfo() {
   return StringAttributesInfo(mStringAttributes, sStringInfo,
                               ArrayLength(sStringInfo));
 }
