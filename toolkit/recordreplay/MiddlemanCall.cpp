@@ -224,9 +224,13 @@ ResetMiddlemanCalls()
 
       MiddlemanCallContext cx(call, &arguments, MiddlemanCallPhase::MiddlemanRelease);
       GetRedirection(call->mCallId).mMiddlemanCall(cx);
-
-      delete call;
     }
+  }
+
+  
+  
+  for (MiddlemanCall* call : gMiddlemanCalls) {
+    delete call;
   }
 
   gMiddlemanCalls.clear();
@@ -234,6 +238,7 @@ ResetMiddlemanCalls()
     free(buffer);
   }
   gAllocatedBuffers.clear();
+  gMiddlemanCallMap->clear();
 }
 
 
