@@ -20,7 +20,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-const prefsSchemaVersion = "1.0.4";
+const prefsSchemaVersion = "1.0.3";
 const pref = _devtoolsServices2.default.pref;
 
 if ((0, _devtoolsEnvironment.isDevelopment)()) {
@@ -128,6 +128,5 @@ const asyncStore = exports.asyncStore = (0, _asyncStoreHelper.asyncStoreHelper)(
 if (prefs.debuggerPrefsSchemaVersion !== prefsSchemaVersion) {
   
   prefs.pendingBreakpoints = {};
-  prefs.tabs = [];
   prefs.debuggerPrefsSchemaVersion = prefsSchemaVersion;
 }
