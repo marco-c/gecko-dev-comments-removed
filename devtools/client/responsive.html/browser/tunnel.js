@@ -381,6 +381,10 @@ MessageManagerTunnel.prototype = {
   INNER_TO_OUTER_MESSAGES: [
     
     "Browser:LoadURI",
+    "Link:SetIcon",
+    "Link:SetFailedIcon",
+    "Link:AddFeed",
+    "Link:AddSearch",
     
     "Content:LoadURIResult",
     "Content:LocationChange",
