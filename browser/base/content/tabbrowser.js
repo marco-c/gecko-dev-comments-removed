@@ -5,6 +5,8 @@
 
 
 
+{ 
+
 
 
 
@@ -5251,6 +5253,8 @@ TabProgressListener.prototype.QueryInterface = ChromeUtils.generateQI(
   ["nsIWebProgressListener",
    "nsIWebProgressListener2",
    "nsISupportsWeakReference"]);
+
+} 
 
 var StatusPanel = {
   get panel() {
