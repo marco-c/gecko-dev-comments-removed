@@ -27,7 +27,20 @@ var add_task = (function () {
       
       
       
-      setTimeout(function () {
+      setTimeout(function nextTick() {
+        
+        
+        
+        
+        
+        if (typeof window !== "undefined" &&
+            typeof HTMLDocument !== "undefined" &&
+            window.document instanceof HTMLDocument &&
+            window.document.readyState !== "complete") {
+          setTimeout(nextTick);
+          return;
+        }
+
         (async () => {
           
           
