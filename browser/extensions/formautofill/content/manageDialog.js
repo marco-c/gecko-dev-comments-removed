@@ -326,7 +326,20 @@ class ManageCreditCards extends ManageRecords {
     if (!creditCard || await OSKeyStore.ensureLoggedIn(true)) {
       let decryptedCCNumObj = {};
       if (creditCard) {
-        decryptedCCNumObj["cc-number"] = await OSKeyStore.decrypt(creditCard["cc-number-encrypted"]);
+        try {
+          decryptedCCNumObj["cc-number"] = await OSKeyStore.decrypt(creditCard["cc-number-encrypted"]);
+        } catch (ex) {
+          if (ex.result == Cr.NS_ERROR_ABORT) {
+            
+            
+            return;
+          }
+          
+          
+          
+          decryptedCCNumObj["cc-number"] = "";
+          Cu.reportError(ex);
+        }
       }
       let decryptedCreditCard = Object.assign({}, creditCard, decryptedCCNumObj);
       this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, "resizable=no", {

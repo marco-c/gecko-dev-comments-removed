@@ -503,8 +503,16 @@ var paymentDialogWrapper = {
     selectedPaymentCardGUID: paymentCardGUID,
     selectedPaymentCardSecurityCode: cardSecurityCode,
   }) {
-    let methodData = await this._convertProfileBasicCardToPaymentMethodData(paymentCardGUID,
-                                                                            cardSecurityCode);
+    let methodData;
+    try {
+      methodData = await this._convertProfileBasicCardToPaymentMethodData(paymentCardGUID,
+                                                                          cardSecurityCode);
+    } catch (ex) {
+      
+      
+      Cu.reportError(ex);
+      return;
+    }
 
     if (!methodData) {
       
