@@ -359,7 +359,8 @@ nsComponentManagerImpl::Init()
   
   nsLayoutModuleInitialize();
 
-  bool loadChromeManifests = (XRE_GetProcessType() != GeckoProcessType_GPU);
+  bool loadChromeManifests = (XRE_GetProcessType() != GeckoProcessType_GPU &&
+                              XRE_GetProcessType() != GeckoProcessType_VR);
   if (loadChromeManifests) {
     
     
@@ -441,6 +442,10 @@ ProcessSelectorMatches(Module::ProcessSelector aSelector)
   GeckoProcessType type = XRE_GetProcessType();
   if (type == GeckoProcessType_GPU) {
     return !!(aSelector & Module::ALLOW_IN_GPU_PROCESS);
+  }
+
+  if (type == GeckoProcessType_VR) {
+    return !!(aSelector & Module::ALLOW_IN_VR_PROCESS);
   }
 
   if (aSelector & Module::MAIN_PROCESS_ONLY) {
