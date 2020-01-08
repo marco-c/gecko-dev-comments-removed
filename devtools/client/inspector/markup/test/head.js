@@ -42,7 +42,6 @@ registerCleanupFunction(() => {
 
 
 
-
 function loadHelperScript(filePath) {
   const testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
   Services.scriptloader.loadSubScript(testDir + "/" + filePath, this);
