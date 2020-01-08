@@ -36,7 +36,7 @@ pkix::Result GetPrecertLogEntry(pkix::Input leafCertificate,
 
 
 
-pkix::Result GetX509LogEntry(pkix::Input leafCertificate, LogEntry& output);
+void GetX509LogEntry(pkix::Input leafCertificate, LogEntry& output);
 
 } } 
 

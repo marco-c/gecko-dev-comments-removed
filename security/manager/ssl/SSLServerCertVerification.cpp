@@ -1294,7 +1294,7 @@ GatherCertificateTransparencyTelemetry(const UniqueCERTCertList& certList,
 
   
   uint32_t sctsCount =
-    static_cast<uint32_t>(info.verifyResult.verifiedScts.length());
+    static_cast<uint32_t>(info.verifyResult.verifiedScts.size());
   
   
   Telemetry::Accumulate(Telemetry::SSL_SCTS_PER_CONNECTION, sctsCount);

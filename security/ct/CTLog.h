@@ -8,8 +8,7 @@
 #define CTLog_h
 
 #include <stdint.h>
-
-#include "mozilla/Vector.h"
+#include <vector>
 
 namespace mozilla { namespace ct {
 
@@ -19,7 +18,7 @@ namespace mozilla { namespace ct {
 
 typedef int16_t CTLogOperatorId;
 
-typedef Vector<CTLogOperatorId, 8> CTLogOperatorList;
+typedef std::vector<CTLogOperatorId> CTLogOperatorList;
 
 
 

@@ -129,22 +129,11 @@ void ExtractSCTListFromOCSPResponse(pkix::Input cert,
                                     Buffer& result);
 
 
-Buffer cloneBuffer(const Buffer& buffer);
-
-
 pkix::Input InputForBuffer(const Buffer& buffer);
 
 
 pkix::Input InputForSECItem(const SECItem& item);
 
 } } 
-
-
-namespace mozilla {
-
-
-std::ostream& operator<<(std::ostream& stream, const ct::Buffer& buf);
-
-} 
 
 #endif  

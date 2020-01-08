@@ -8,11 +8,11 @@
 
 #include <algorithm>
 #include <stdint.h>
+#include <vector>
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Vector.h"
 
 extern mozilla::LazyLogModule gCertVerifierLog;
 
@@ -63,7 +63,7 @@ HasValidNonEmbeddedSct(const VerifiedSCTList& verifiedScts)
 
 
 template <typename SelectFunc>
-static Result
+void
 CountIndependentLogOperatorsForSelectedScts(const VerifiedSCTList& verifiedScts,
   const CTLogOperatorList& dependentOperators,
   size_t& count,
@@ -93,26 +93,23 @@ CountIndependentLogOperatorsForSelectedScts(const VerifiedSCTList& verifiedScts,
     }
     
     if (!alreadyAdded) {
-      if (!operatorIds.append(sctLogOperatorId)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
-      }
+      operatorIds.push_back(sctLogOperatorId);
     }
   }
-  count = operatorIds.length();
-  return Success;
+  count = operatorIds.size();
 }
 
 
 
 template <typename SelectFunc>
-static Result
+static void
 CountLogsForSelectedScts(const VerifiedSCTList& verifiedScts,
                          size_t& count,
                          SelectFunc selected)
 {
   
   
-  Vector<const Buffer*, 8> logIds;
+  std::vector<const Buffer*> logIds;
   for (const VerifiedSCT& verifiedSct : verifiedScts) {
     if (!selected(verifiedSct)) {
       continue;
@@ -129,13 +126,10 @@ CountLogsForSelectedScts(const VerifiedSCTList& verifiedScts,
     }
     
     if (!alreadyAdded) {
-      if (!logIds.append(sctLogId)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
-      }
+      logIds.push_back(sctLogId);
     }
   }
-  count = logIds.length();
-  return Success;
+  count = logIds.size();
 }
 
 
@@ -186,21 +180,18 @@ LogWasQualifiedForSct(const VerifiedSCT& verifiedSct, uint64_t certIssuanceTime)
 
 
 
-static Result
+static void
 CheckOperatorDiversityCompliance(const VerifiedSCTList& verifiedScts,
                                  uint64_t certIssuanceTime,
                                  const CTLogOperatorList& dependentOperators,
                                  bool& compliant)
 {
   size_t independentOperatorsCount;
-  Result rv = CountIndependentLogOperatorsForSelectedScts(verifiedScts,
+  CountIndependentLogOperatorsForSelectedScts(verifiedScts,
     dependentOperators, independentOperatorsCount,
     [certIssuanceTime](const VerifiedSCT& verifiedSct)->bool {
       return LogWasQualifiedForSct(verifiedSct, certIssuanceTime);
     });
-  if (rv != Success) {
-    return rv;
-  }
   
   
   
@@ -209,7 +200,6 @@ CheckOperatorDiversityCompliance(const VerifiedSCTList& verifiedScts,
   
   
   compliant = independentOperatorsCount >= 2;
-  return Success;
 }
 
 
@@ -218,28 +208,24 @@ CheckOperatorDiversityCompliance(const VerifiedSCTList& verifiedScts,
 
 
 
-static Result
+static void
 CheckNonEmbeddedCompliance(const VerifiedSCTList& verifiedScts, bool& compliant)
 {
   if (!HasValidNonEmbeddedSct(verifiedScts)) {
     compliant = false;
-    return Success;
+    return;
   }
 
   size_t validSctsCount;
-  Result rv = CountLogsForSelectedScts(verifiedScts, validSctsCount,
+  CountLogsForSelectedScts(verifiedScts, validSctsCount,
     [](const VerifiedSCT& verifiedSct)->bool {
       return verifiedSct.status == VerifiedSCT::Status::Valid;
     });
-  if (rv != Success) {
-    return rv;
-  }
 
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("CT Policy non-embedded case status: validSCTs=%zu\n",
            validSctsCount));
   compliant = validSctsCount >= 2;
-  return Success;
 }
 
 
@@ -249,7 +235,7 @@ CheckNonEmbeddedCompliance(const VerifiedSCTList& verifiedScts, bool& compliant)
 
 
 
-static Result
+static void
 CheckEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
                         size_t certLifetimeInCalendarMonths,
                         uint64_t certIssuanceTime,
@@ -257,21 +243,18 @@ CheckEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
 {
   if (!HasValidEmbeddedSct(verifiedScts)) {
     compliant = false;
-    return Success;
+    return;
   }
 
   
   
   
   size_t embeddedSctsCount;
-  Result rv = CountLogsForSelectedScts(verifiedScts, embeddedSctsCount,
+  CountLogsForSelectedScts(verifiedScts, embeddedSctsCount,
     [certIssuanceTime](const VerifiedSCT& verifiedSct)->bool {
       return verifiedSct.origin == VerifiedSCT::Origin::Embedded &&
         LogWasQualifiedForSct(verifiedSct, certIssuanceTime);
   });
-  if (rv != Success) {
-    return rv;
-  }
 
   size_t requiredSctsCount =
     GetRequiredEmbeddedSctsCount(certLifetimeInCalendarMonths);
@@ -282,10 +265,9 @@ CheckEmbeddedCompliance(const VerifiedSCTList& verifiedScts,
            requiredSctsCount, embeddedSctsCount));
 
   compliant = embeddedSctsCount >= requiredSctsCount;
-  return Success;
 }
 
-Result
+void
 CTPolicyEnforcer::CheckCompliance(const VerifiedSCTList& verifiedScts,
                                   size_t certLifetimeInCalendarMonths,
                                   const CTLogOperatorList& dependentOperators,
@@ -294,33 +276,23 @@ CTPolicyEnforcer::CheckCompliance(const VerifiedSCTList& verifiedScts,
   uint64_t certIssuanceTime = GetEffectiveCertIssuanceTime(verifiedScts);
 
   bool diversityOK;
-  Result rv = CheckOperatorDiversityCompliance(verifiedScts, certIssuanceTime,
-                                               dependentOperators,
-                                               diversityOK);
-  if (rv != Success) {
-    return rv;
-  }
+  CheckOperatorDiversityCompliance(verifiedScts, certIssuanceTime,
+                                   dependentOperators, diversityOK);
   if (diversityOK) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("CT Policy: diversity satisfied\n"));
   }
 
   bool nonEmbeddedCaseOK;
-  rv = CheckNonEmbeddedCompliance(verifiedScts, nonEmbeddedCaseOK);
-  if (rv != Success) {
-    return rv;
-  }
+  CheckNonEmbeddedCompliance(verifiedScts, nonEmbeddedCaseOK);
   if (nonEmbeddedCaseOK) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("CT Policy: non-embedded case satisfied)\n"));
   }
 
   bool embeddedCaseOK;
-  rv = CheckEmbeddedCompliance(verifiedScts, certLifetimeInCalendarMonths,
-                               certIssuanceTime, embeddedCaseOK);
-  if (rv != Success) {
-    return rv;
-  }
+  CheckEmbeddedCompliance(verifiedScts, certLifetimeInCalendarMonths,
+                          certIssuanceTime, embeddedCaseOK);
   if (embeddedCaseOK) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("CT Policy: embedded case satisfied\n"));
@@ -351,7 +323,6 @@ CTPolicyEnforcer::CheckCompliance(const VerifiedSCTList& verifiedScts,
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected CTPolicyCompliance type");
   }
-  return Success;
 }
 
 } } 

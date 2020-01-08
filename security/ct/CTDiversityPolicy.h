@@ -9,7 +9,6 @@
 
 #include "CTLog.h"
 #include "CTVerifyResult.h"
-#include "mozilla/Vector.h"
 #include "pkix/Result.h"
 #include "ScopedNSSTypes.h"
 
@@ -17,8 +16,8 @@ namespace mozilla { namespace ct {
 
 
 
-pkix::Result GetCTLogOperatorsFromVerifiedSCTList(const VerifiedSCTList& list,
-                                                  CTLogOperatorList& operators);
+void GetCTLogOperatorsFromVerifiedSCTList(const VerifiedSCTList& list,
+                                          CTLogOperatorList& operators);
 
 
 

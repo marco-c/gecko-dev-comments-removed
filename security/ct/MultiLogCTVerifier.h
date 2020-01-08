@@ -7,9 +7,10 @@
 #ifndef MultiLogCTVerifier_h
 #define MultiLogCTVerifier_h
 
+#include <vector>
+
 #include "CTLogVerifier.h"
 #include "CTVerifyResult.h"
-#include "mozilla/Vector.h"
 #include "pkix/Input.h"
 #include "pkix/Result.h"
 #include "pkix/Time.h"
@@ -23,7 +24,7 @@ class MultiLogCTVerifier
 {
 public:
   
-  pkix::Result AddLog(CTLogVerifier&& log);
+  void AddLog(CTLogVerifier&& log);
 
   
   
@@ -79,7 +80,7 @@ private:
                                CTVerifyResult& result);
 
   
-  Vector<CTLogVerifier> mLogs;
+  std::vector<CTLogVerifier> mLogs;
 };
 
 } } 

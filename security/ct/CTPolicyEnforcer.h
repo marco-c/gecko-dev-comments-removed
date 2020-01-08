@@ -54,10 +54,10 @@ public:
   
   
   
-  pkix::Result CheckCompliance(const VerifiedSCTList& verifiedScts,
-                               size_t certLifetimeInCalendarMonths,
-                               const CTLogOperatorList& dependentOperators,
-                               CTPolicyCompliance& compliance);
+  void CheckCompliance(const VerifiedSCTList& verifiedScts,
+                       size_t certLifetimeInCalendarMonths,
+                       const CTLogOperatorList& dependentOperators,
+                       CTPolicyCompliance& compliance);
 };
 
 } } 
