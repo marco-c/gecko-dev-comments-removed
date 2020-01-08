@@ -291,9 +291,11 @@ var BrowserUtils = {
 
 
 
-  shouldFastFind(elt) {
+
+
+
+  shouldFastFind(elt, win) {
     if (elt) {
-      let win = elt.ownerGlobal;
       if (elt instanceof win.HTMLInputElement && elt.mozIsTextField(false))
         return false;
 
