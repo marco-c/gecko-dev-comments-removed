@@ -5,14 +5,10 @@ use nsstring::{nsCString, nsACString};
 
 
 
-
-
-
-
+#[repr(transparent)]
 #[allow(non_camel_case_types)]
-pub type nsresult = u32;
-
-
+#[derive(Clone, Copy, Debug)]
+pub struct nsresult(pub u32);
 
 
 pub trait NsresultExt {
@@ -27,7 +23,7 @@ pub trait NsresultExt {
 
 impl NsresultExt for nsresult {
     fn failed(self) -> bool {
-        (self >> 31) != 0
+        (self.0 >> 31) != 0
     }
 
     fn succeeded(self) -> bool {
