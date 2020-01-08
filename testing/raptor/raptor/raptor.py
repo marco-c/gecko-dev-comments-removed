@@ -212,6 +212,15 @@ class Raptor(object):
             
             self.log.info("starting %s" % self.config['app'])
 
+            
+            
+            if self.config['app'] == "chrome" and test.get('playback', None) is not None:
+                chrome_args = [
+                    '--proxy-server="http=127.0.0.1:8080;https=127.0.0.1:8080;ssl=127.0.0.1:8080"',
+                    '--ignore-certificate-errors'
+                ]
+                self.runner.cmdargs.extend(chrome_args)
+
             self.runner.start()
             proc = self.runner.process_handler
             self.output_handler.proc = proc

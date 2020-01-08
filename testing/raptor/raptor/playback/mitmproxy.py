@@ -199,9 +199,12 @@ class Mitmproxy(Playback, Python3Virtualenv, TestingMixin, MercurialScript):
 
     def setup(self):
         
-        self.install_mitmproxy_cert(self.mitmproxy_proc,
-                                    self.browser_path)
-        return
+        
+        
+        if self.config['app'] == "firefox":
+            
+            self.install_mitmproxy_cert(self.mitmproxy_proc,
+                                        self.browser_path)
 
     def start(self):
         
@@ -343,7 +346,11 @@ class Mitmproxy(Playback, Python3Virtualenv, TestingMixin, MercurialScript):
 
     def turn_off_browser_proxy(self):
         """Turn off the browser proxy that was used for mitmproxy playback"""
-        LOG.info("Turning off the browser proxy")
+        
+        
+        
+        if self.config['app'] == "firefox":
+            LOG.info("Turning off the browser proxy")
 
-        write_autoconfig_files(fx_install_dir=self.browser_install,
-                               cfg_contents=MITMPROXY_OFF_SETTINGS)
+            write_autoconfig_files(fx_install_dir=self.browser_install,
+                                   cfg_contents=MITMPROXY_OFF_SETTINGS)
