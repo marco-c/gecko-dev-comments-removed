@@ -4,6 +4,7 @@
 
 "use strict";
 
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -26,6 +27,8 @@ this.EXPORTED_SYMBOLS = [
 ];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
+
+const PROMISE_TIMEOUT = AppConstants.DEBUG ? 4500 : 1500;
 
 
 
@@ -166,7 +169,10 @@ function PollPromise(func, {timeout = 2000, interval = 10} = {}) {
 
 
 
-function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
+
+
+function TimedPromise(fn,
+    {timeout = PROMISE_TIMEOUT, throws = TimeoutError} = {}) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
   if (typeof fn != "function") {
