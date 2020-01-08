@@ -269,8 +269,9 @@ class ExecuteState : public RunState
     InterpreterFrame* pushInterpreterFrame(JSContext* cx);
 
     void setReturnValue(const Value& v) {
-        if (result_)
+        if (result_) {
             *result_ = v;
+        }
     }
 };
 
@@ -300,10 +301,11 @@ class InvokeState final : public RunState
 inline void
 RunState::setReturnValue(const Value& v)
 {
-    if (isInvoke())
+    if (isInvoke()) {
         asInvoke()->setReturnValue(v);
-    else
+    } else {
         asExecute()->setReturnValue(v);
+    }
 }
 
 extern bool
@@ -357,8 +359,9 @@ class MOZ_STACK_CLASS TryNoteIter
     void settle() {
         for (; tn_ != tnEnd_; ++tn_) {
             
-            if (pcOffset_ - tn_->start >= tn_->length)
+            if (pcOffset_ - tn_->start >= tn_->length) {
                 continue;
+            }
 
             
 
@@ -379,8 +382,9 @@ class MOZ_STACK_CLASS TryNoteIter
 
 
 
-            if (tn_->stackDepth <= getStackDepth_())
+            if (tn_->stackDepth <= getStackDepth_()) {
                 break;
+            }
         }
     }
 
