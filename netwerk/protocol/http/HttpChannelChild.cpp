@@ -193,7 +193,6 @@ HttpChannelChild::HttpChannelChild()
   , mSuspendParentAfterSynthesizeResponse(false)
   , mCacheNeedToReportBytesReadInitialized(false)
   , mNeedToReportBytesRead(true)
-  , mSentAsyncOpen(false)
 {
   LOG(("Creating HttpChannelChild @%p\n", this));
 
@@ -267,7 +266,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release()
   
   
   
-  if ((mKeptAlive || !mSentAsyncOpen) && count == 1 && mIPCOpen) {
+  if (mKeptAlive && count == 1 && mIPCOpen) {
     mKeptAlive = false;
     
     
@@ -1652,8 +1651,7 @@ HttpChannelChild::DeleteSelf()
 
 void HttpChannelChild::FinishInterceptedRedirect()
 {
-  nsresult rv = InitIPCChannel(); 
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  nsresult rv;
   if (mLoadInfo && mLoadInfo->GetEnforceSecurity()) {
     MOZ_ASSERT(!mInterceptedRedirectContext, "the context should be null!");
     rv = AsyncOpen2(mInterceptedRedirectListener);
@@ -2210,13 +2208,24 @@ HttpChannelChild::ConnectParent(uint32_t registrarId)
 
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
+  
+  
+  AddIPDLReference();
+
+  
+  
+  
+  SetEventTarget();
+
   HttpChannelConnectArgs connectArgs(registrarId, mShouldParentIntercept);
   PBrowserOrId browser = static_cast<ContentChild*>(gNeckoChild->Manager())
                          ->GetBrowserOrId(tabChild);
-  if (!SendAsyncOpen(browser, IPC::SerializedLoadContext(this), connectArgs)) {
+  if (!gNeckoChild->
+        SendPHttpChannelConstructor(this, browser,
+                                    IPC::SerializedLoadContext(this),
+                                    connectArgs)) {
     return NS_ERROR_FAILURE;
   }
-  mSentAsyncOpen = true;
 
   {
     MutexAutoLock lock(mBgChildMutex);
@@ -2723,42 +2732,6 @@ HttpChannelChild::AsyncOpen2(nsIStreamListener *aListener)
   return AsyncOpen(listener, nullptr);
 }
 
-NS_IMETHODIMP
-HttpChannelChild::SetLoadInfo(nsILoadInfo* aLoadInfo)
-{
-  LOG(("HttpChannelChild::SetLoadInfo [this=%p, aLoadInfo=%p]",
-       this, aLoadInfo));
-  MOZ_ALWAYS_SUCCEEDS(HttpBaseChannel::SetLoadInfo(aLoadInfo));
-
-  
-  if (NS_WARN_IF(mIPCOpen)) {
-    return NS_OK;
-  }
-
-  return InitIPCChannel();
-}
-
-nsresult
-HttpChannelChild::InitIPCChannel()
-{
-  MOZ_ASSERT(!mIPCOpen);
-
-  
-  
-  
-  SetEventTarget();
-
-  LOG(("  Calling SendPHttpChannelConstructor"));
-  if (!gNeckoChild->SendPHttpChannelConstructor(this)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  AddIPDLReference();
-  return NS_OK;
-}
-
 
 
 void
@@ -2972,12 +2945,21 @@ HttpChannelChild::ContinueAsyncOpen()
 
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
 
-  LOG(("HttpChannelChild::ContinueAsyncOpen - SendAsyncOpen [this=%p]", this));
+  
+  
+  
+  SetEventTarget();
+
+  
+  
+  AddIPDLReference();
+
   PBrowserOrId browser = cc->GetBrowserOrId(tabChild);
-  if (!SendAsyncOpen(browser, IPC::SerializedLoadContext(this), openArgs)) {
+  if (!gNeckoChild->SendPHttpChannelConstructor(this, browser,
+                                                IPC::SerializedLoadContext(this),
+                                                openArgs)) {
     return NS_ERROR_FAILURE;
   }
-  mSentAsyncOpen = true;
 
   {
     MutexAutoLock lock(mBgChildMutex);
@@ -3753,14 +3735,6 @@ HttpChannelChild::ResetInterception()
   if (NS_FAILED(mStatus)) {
     return;
   }
-
-  if (!mIPCOpen) {
-    
-    
-    DebugOnly<nsresult> rv = InitIPCChannel();
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-  MOZ_ASSERT(mLoadInfo && mIPCOpen);
 
   
   nsresult rv = ContinueAsyncOpen();
