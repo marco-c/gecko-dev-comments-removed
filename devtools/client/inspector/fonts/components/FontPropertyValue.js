@@ -47,9 +47,8 @@ class FontPropertyValue extends PureComponent {
   }
 
   onUnitChange(e) {
-    
-    
-    this.props.onChange(this.props.name, this.props.value, e.target.value);
+    this.props.onChange(this.props.name, this.props.value, this.props.unit,
+       e.target.value);
   }
 
   onMouseDown(e) {
