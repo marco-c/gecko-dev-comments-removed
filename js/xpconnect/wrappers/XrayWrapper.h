@@ -225,7 +225,7 @@ public:
         }
 
         {
-            JSAutoRealm ar(cx, target);
+            JSAutoRealmAllowCCW ar(cx, target);
             if (!JS_GetClassPrototype(cx, key, protop))
                 return false;
         }
@@ -329,7 +329,7 @@ public:
         
         
         {
-            JSAutoRealm ar(cx, target);
+            JSAutoRealmAllowCCW ar(cx, target);
             if (!JS_GetClassPrototype(cx, JSProto_Object, protop))
                 return false;
         }

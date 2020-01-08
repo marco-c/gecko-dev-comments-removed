@@ -755,7 +755,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
       
       
       
-      JSAutoRealm ar(cx, object);
+      JSAutoRealmAllowCCW ar(cx, object);
 
       RootedDictionary<ReceiveMessageArgument> argument(cx);
 
@@ -1001,7 +1001,7 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx,
     
     
     JS::RootedObject global(aCx, xpc::PrivilegedJunkScope());
-    JSAutoRealm ar(aCx, global);
+    JSAutoRealmAllowCCW ar(aCx, global);
 
     JS::RootedObject obj(aCx, JS_NewPlainObject(aCx));
     if (!obj) {

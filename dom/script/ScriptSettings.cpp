@@ -379,7 +379,7 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
       
       
       exnObj = js::UncheckedUnwrap(exnObj);
-      JSAutoRealm ar(aCx, exnObj);
+      JSAutoRealmAllowCCW ar(aCx, exnObj);
 
       nsAutoJSString stack, filename, name, message;
       int32_t line;
@@ -570,7 +570,7 @@ AutoJSAPI::ReportException()
     }
   }
   MOZ_ASSERT(JS_IsGlobalObject(errorGlobal));
-  JSAutoRealm ar(cx(), errorGlobal);
+  JSAutoRealmAllowCCW ar(cx(), errorGlobal);
   JS::Rooted<JS::Value> exn(cx());
   js::ErrorReport jsReport(cx());
   if (StealException(&exn) &&
@@ -826,7 +826,7 @@ AutoSlowOperation::CheckForInterrupt()
   
   if (mIsMainThread) {
     
-    JSAutoRealm ar(cx(), xpc::UnprivilegedJunkScope());
+    JSAutoRealmAllowCCW ar(cx(), xpc::UnprivilegedJunkScope());
     JS_CheckForInterrupt(cx());
   }
 }

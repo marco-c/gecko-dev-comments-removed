@@ -3747,7 +3747,7 @@ Element::Animate(const Nullable<ElementOrCSSPseudoElement>& aTarget,
 
   
   
-  Maybe<JSAutoRealm> ar;
+  Maybe<JSAutoRealmAllowCCW> ar;
   if (js::GetContextCompartment(aContext) !=
       js::GetObjectCompartment(ownerGlobal->GetGlobalJSObject())) {
     ar.emplace(aContext, ownerGlobal->GetGlobalJSObject());

@@ -4163,7 +4163,7 @@ nsGlobalWindowInner::CallerInnerWindow()
   
   
   if (xpc::IsSandbox(scope)) {
-    JSAutoRealm ar(cx, scope);
+    JSAutoRealmAllowCCW ar(cx, scope);
     JS::Rooted<JSObject*> scopeProto(cx);
     bool ok = JS_GetPrototype(cx, scope, &scopeProto);
     NS_ENSURE_TRUE(ok, nullptr);

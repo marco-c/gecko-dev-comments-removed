@@ -536,10 +536,10 @@ JavaScriptShared::findObjectById(JSContext* cx, const ObjectId& objId)
     
     
     
-    JSAutoRealm ar(cx, scopeForTargetObjects());
+    JSAutoRealmAllowCCW ar(cx, scopeForTargetObjects());
     if (objId.hasXrayWaiver()) {
         {
-            JSAutoRealm ar2(cx, obj);
+            JSAutoRealmAllowCCW ar2(cx, obj);
             obj = js::ToWindowProxyIfWindow(obj);
             MOZ_ASSERT(obj);
         }

@@ -188,7 +188,7 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
 
     
     
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     
     if (initStandardClasses && !JS::InitRealmStandardClasses(cx))
@@ -342,7 +342,7 @@ XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
 
     RootedObject parent(cx, Scope->GetGlobalJSObject());
 
-    mozilla::Maybe<JSAutoRealm> ar;
+    mozilla::Maybe<JSAutoRealmAllowCCW> ar;
 
     if (scrWrapper && scrWrapper->WantPreCreate()) {
         RootedObject plannedParent(cx, parent);

@@ -67,7 +67,7 @@ AttachNewConstructorObject(JSContext* aCx, JS::HandleObject aGlobalObject)
 {
   
   
-  JSAutoRealm ar(aCx, aGlobalObject);
+  JSAutoRealmAllowCCW ar(aCx, aGlobalObject);
   JSFunction* xpcnativewrapper =
     JS_DefineFunction(aCx, aGlobalObject, "XPCNativeWrapper",
                       XrayWrapperConstructor, 1,

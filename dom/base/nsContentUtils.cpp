@@ -7028,7 +7028,7 @@ nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
 
   
   
-  JSAutoRealm ar(cx, xpc::UnprivilegedJunkScope());
+  JSAutoRealmAllowCCW ar(cx, xpc::UnprivilegedJunkScope());
 
   
   aPattern.InsertLiteral(u"^(?:", 0);

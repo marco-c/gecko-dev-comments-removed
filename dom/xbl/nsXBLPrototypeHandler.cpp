@@ -359,7 +359,7 @@ nsXBLPrototypeHandler::ExecuteHandler(EventTarget* aTarget,
 
   
   
-  JSAutoRealm ar(cx, scopeObject);
+  JSAutoRealmAllowCCW ar(cx, scopeObject);
   JS::Rooted<JSObject*> genericHandler(cx, handler.get());
   bool ok = JS_WrapObject(cx, &genericHandler);
   NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
@@ -430,7 +430,7 @@ nsXBLPrototypeHandler::EnsureEventHandler(AutoJSAPI& jsapi, nsAtom* aName,
                                    &argNames);
 
   
-  JSAutoRealm ar(cx, scopeObject);
+  JSAutoRealmAllowCCW ar(cx, scopeObject);
   JS::CompileOptions options(cx);
   options.setFileAndLine(bindingURI.get(), mLineNumber);
 
@@ -445,7 +445,7 @@ nsXBLPrototypeHandler::EnsureEventHandler(AutoJSAPI& jsapi, nsAtom* aName,
 
   
   
-  JSAutoRealm ar2(cx, globalObject);
+  JSAutoRealmAllowCCW ar2(cx, globalObject);
   bool ok = JS_WrapObject(cx, &handlerFun);
   NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
   aHandler.set(handlerFun);

@@ -739,7 +739,7 @@ nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocumen
         
 
         
-        JSAutoRealm ar(cx, scriptObject);
+        JSAutoRealmAllowCCW ar(cx, scriptObject);
 
         JS::Rooted<JSObject*> base(cx, scriptObject);
         JS::Rooted<JSObject*> proto(cx);
@@ -898,7 +898,7 @@ GetOrCreateMapEntryForPrototype(JSContext *cx, JS::Handle<JSObject*> proto)
   MOZ_ASSERT(JS_IsGlobalObject(scope));
 
   JS::Rooted<JSObject*> wrappedProto(cx, proto);
-  JSAutoRealm ar(cx, scope);
+  JSAutoRealmAllowCCW ar(cx, scope);
   if (!JS_WrapObject(cx, &wrappedProto)) {
     return nullptr;
   }
@@ -971,7 +971,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
   JS::Rooted<JSObject*> parent_proto(cx);
   {
     JS::RootedObject wrapped(cx, obj);
-    JSAutoRealm ar(cx, xblScope);
+    JSAutoRealmAllowCCW ar(cx, xblScope);
     if (!JS_WrapObject(cx, &wrapped)) {
       return NS_ERROR_FAILURE;
     }
@@ -990,14 +990,14 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
   if (parent_proto) {
     holder = GetOrCreateMapEntryForPrototype(cx, parent_proto);
   } else {
-    JSAutoRealm innerAR(cx, xblScope);
+    JSAutoRealmAllowCCW innerAR(cx, xblScope);
     holder = GetOrCreateClassObjectMap(cx, xblScope, "__ContentClassObjectMap__");
   }
   if (NS_WARN_IF(!holder)) {
     return NS_ERROR_FAILURE;
   }
   js::AssertSameCompartment(holder, xblScope);
-  JSAutoRealm ar(cx, holder);
+  JSAutoRealmAllowCCW ar(cx, holder);
 
   
   
@@ -1017,7 +1017,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
     
     
-    JSAutoRealm ar2(cx, global);
+    JSAutoRealmAllowCCW ar2(cx, global);
     proto = JS_NewObjectWithGivenProto(cx, &gPrototypeJSClass, parent_proto);
     if (!proto) {
       return NS_ERROR_OUT_OF_MEMORY;
@@ -1037,7 +1037,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
     
     
-    JSAutoRealm ar3(cx, holder);
+    JSAutoRealmAllowCCW ar3(cx, holder);
     if (!JS_WrapObject(cx, &proto) ||
         !JS_DefineUCProperty(cx, holder, aClassName.get(), -1, proto,
                              JSPROP_READONLY | JSPROP_PERMANENT))
@@ -1048,7 +1048,7 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
 
   
   
-  JSAutoRealm ar4(cx, obj);
+  JSAutoRealmAllowCCW ar4(cx, obj);
   if (!JS_WrapObject(cx, &proto) || !JS_SetPrototype(cx, obj, proto)) {
     return NS_ERROR_FAILURE;
   }
@@ -1127,7 +1127,7 @@ nsXBLBinding::LookupMember(JSContext* aCx, JS::Handle<jsid> aId,
 
   
   {
-    JSAutoRealm ar(aCx, xblScope);
+    JSAutoRealmAllowCCW ar(aCx, xblScope);
     JS::Rooted<jsid> id(aCx, aId);
     if (!LookupMemberInternal(aCx, name, id, aDesc, xblScope)) {
       return false;

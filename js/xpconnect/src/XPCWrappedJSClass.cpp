@@ -448,7 +448,7 @@ nsCString
 GetFunctionName(JSContext* cx, HandleObject obj)
 {
     RootedObject inner(cx, js::UncheckedUnwrap(obj));
-    JSAutoRealm ar(cx, inner);
+    JSAutoRealmAllowCCW ar(cx, inner);
 
     RootedFunction fun(cx, JS_GetObjectFunction(inner));
     if (!fun) {
@@ -565,7 +565,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
     
     
-    JSAutoRealm ar(aes.cx(), obj);
+    JSAutoRealmAllowCCW ar(aes.cx(), obj);
 
     
     
@@ -962,7 +962,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
     
     
-    JSAutoRealm ar(cx, obj);
+    JSAutoRealmAllowCCW ar(cx, obj);
 
     
     

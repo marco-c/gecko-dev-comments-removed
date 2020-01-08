@@ -340,7 +340,7 @@ protected:
     
     
     
-    Maybe<JSAutoRealm> mAr;
+    Maybe<JSAutoRealmAllowCCW> mAr;
 
     
     

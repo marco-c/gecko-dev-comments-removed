@@ -3569,7 +3569,7 @@ nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
   
   MOZ_ASSERT(aCx == nsContentUtils::GetCurrentJSContext());
 
-  JSAutoRealm ar(aCx, aObject);
+  JSAutoRealmAllowCCW ar(aCx, aObject);
 
   RefPtr<nsNPAPIPluginInstance> pi;
   nsresult rv = ScriptRequestPluginInstance(aCx, getter_AddRefs(pi));
@@ -3702,7 +3702,7 @@ nsObjectLoadingContent::TeardownProtoChain()
   MOZ_ASSERT(obj);
 
   JS::Rooted<JSObject*> proto(cx);
-  JSAutoRealm ar(cx, obj);
+  JSAutoRealmAllowCCW ar(cx, obj);
 
   
   

@@ -644,7 +644,7 @@ private:
     
     global = js::UncheckedUnwrap(global);
 
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     
     
@@ -762,7 +762,7 @@ protected:
     
     global = js::UncheckedUnwrap(global);
 
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     RunConsole(cx, aWorkerPrivate, nullptr, nullptr);
   }
@@ -928,7 +928,7 @@ private:
     
     global = js::UncheckedUnwrap(global);
 
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     
     
@@ -1927,7 +1927,7 @@ Console::PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
                                                       aData->mCountValue);
   }
 
-  JSAutoRealm ar2(aCx, targetScope);
+  JSAutoRealmAllowCCW ar2(aCx, targetScope);
 
   if (NS_WARN_IF(!ToJSValue(aCx, event, aEventValue))) {
     return false;
@@ -2726,7 +2726,7 @@ Console::RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
     JS::Rooted<JS::Value> value(aCx);
 
     JS::Rooted<JSObject*> sequenceScope(aCx, mCallDataStorage[i]->mGlobal);
-    JSAutoRealm ar(aCx, sequenceScope);
+    JSAutoRealmAllowCCW ar(aCx, sequenceScope);
 
     Sequence<JS::Value> sequence;
     SequenceRooter<JS::Value> arguments(aCx, &sequence);

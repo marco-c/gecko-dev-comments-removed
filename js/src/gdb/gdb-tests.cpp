@@ -88,7 +88,7 @@ main(int argc, const char** argv)
     JS::RealmOptions options;
     RootedObject global(cx, checkPtr(JS_NewGlobalObject(cx, &global_class,
                         nullptr, JS::FireOnNewGlobalHook, options)));
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     
 

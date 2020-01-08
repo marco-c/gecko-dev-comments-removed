@@ -615,7 +615,7 @@ impl GCMethods for JS::Value {
 
 
 
-impl Drop for JSAutoRealm {
+impl Drop for JSAutoRealmAllowCCW {
     fn drop(&mut self) {
         unsafe { JS::LeaveRealm(self.cx_, self.oldRealm_); }
     }

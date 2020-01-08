@@ -94,7 +94,7 @@ struct DevTools : public ::testing::Test {
     if (!newGlobal)
       return nullptr;
 
-    JSAutoRealm ar(cx, newGlobal);
+    JSAutoRealmAllowCCW ar(cx, newGlobal);
 
     
 

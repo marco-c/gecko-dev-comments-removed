@@ -466,7 +466,7 @@ CreateGlobalObject(JSContext* cx, const JSClass* clasp, nsIPrincipal* principal,
                                            JS::DontFireOnNewGlobalHook, aOptions));
     if (!global)
         return nullptr;
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     
     
@@ -531,7 +531,7 @@ InitGlobalObject(JSContext* aJSContext, JS::Handle<JSObject*> aGlobal, uint32_t 
 {
     
     
-    JSAutoRealm ar(aJSContext, aGlobal);
+    JSAutoRealmAllowCCW ar(aJSContext, aGlobal);
 
     
     MOZ_ASSERT(js::GetObjectClass(aGlobal)->flags & JSCLASS_DOM_GLOBAL);
@@ -604,7 +604,7 @@ NativeInterface2JSObject(HandleObject aScope,
                          MutableHandleValue aVal)
 {
     AutoJSContext cx;
-    JSAutoRealm ar(cx, aScope);
+    JSAutoRealmAllowCCW ar(cx, aScope);
 
     nsresult rv;
     xpcObjectHelper helper(aCOMObj, aCache);
@@ -673,7 +673,7 @@ nsXPConnect::WrapJS(JSContext * aJSContext,
     *result = nullptr;
 
     RootedObject aJSObj(aJSContext, aJSObjArg);
-    JSAutoRealm ar(aJSContext, aJSObj);
+    JSAutoRealmAllowCCW ar(aJSContext, aJSObj);
 
     nsresult rv = NS_ERROR_UNEXPECTED;
     if (!XPCConvert::JSObject2NativeInterface(result, aJSObj,
@@ -808,7 +808,7 @@ nsXPConnect::GetWrappedNativePrototype(JSContext* aJSContext,
                                        JSObject** aRetVal)
 {
     RootedObject aScope(aJSContext, aScopeArg);
-    JSAutoRealm ar(aJSContext, aScope);
+    JSAutoRealmAllowCCW ar(aJSContext, aScope);
 
     XPCWrappedNativeScope* scope = ObjectScope(aScope);
     if (!scope)

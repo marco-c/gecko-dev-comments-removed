@@ -43,7 +43,7 @@ testPreserveJitCode(bool preserveJitCode, unsigned remainingIonScripts)
 
     RootedObject global(cx, createTestGlobal(preserveJitCode));
     CHECK(global);
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
 
     
     

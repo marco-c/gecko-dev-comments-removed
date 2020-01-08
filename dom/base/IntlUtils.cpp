@@ -88,7 +88,7 @@ IntlUtils::GetDisplayNames(const Sequence<nsString>& aLocales,
   }
 
   
-  JSAutoRealm ar(cx, &retVal.toObject());
+  JSAutoRealmAllowCCW ar(cx, &retVal.toObject());
   if (!aResult.Init(cx, retVal)) {
     aError.Throw(NS_ERROR_FAILURE);
   }
@@ -135,7 +135,7 @@ IntlUtils::GetLocaleInfo(const Sequence<nsString>& aLocales,
   }
 
   
-  JSAutoRealm ar(cx, &retVal.toObject());
+  JSAutoRealmAllowCCW ar(cx, &retVal.toObject());
   if (!aResult.Init(cx, retVal)) {
     aError.Throw(NS_ERROR_FAILURE);
   }

@@ -77,7 +77,7 @@ PostMessageEvent::Run()
       targetWindow->IsDying())
     return NS_OK;
 
-  JSAutoRealm ar(cx, targetWindow->GetWrapper());
+  JSAutoRealmAllowCCW ar(cx, targetWindow->GetWrapper());
 
   
   

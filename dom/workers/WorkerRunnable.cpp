@@ -348,7 +348,7 @@ WorkerRunnable::Run()
   
   
   
-  Maybe<JSAutoRealm> ar;
+  Maybe<JSAutoRealmAllowCCW> ar;
   if (!targetIsWorkerThread &&
       mWorkerPrivate->IsDedicatedWorker() &&
       mWorkerPrivate->ParentEventTargetRef()->GetWrapper()) {

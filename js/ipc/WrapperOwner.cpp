@@ -1192,7 +1192,7 @@ WrapperOwner::fromRemoteObjectVariant(JSContext* cx, const RemoteObject& objVar)
 
         
         RootedObject junkScope(cx, xpc::PrivilegedJunkScope());
-        JSAutoRealm ar(cx, junkScope);
+        JSAutoRealmAllowCCW ar(cx, junkScope);
         RootedValue v(cx, UndefinedValue());
         
         

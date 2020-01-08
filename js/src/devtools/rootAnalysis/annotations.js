@@ -201,7 +201,7 @@ var ignoreFunctions = {
     
     
     "void js::AutoRealm::~AutoRealm(int32)" : true,
-    "void JSAutoRealm::~JSAutoRealm(int32)" : true,
+    "void JSAutoRealmAllowCCW::~JSAutoRealmAllowCCW(int32)" : true,
 
     
     

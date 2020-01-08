@@ -1117,7 +1117,7 @@ DoGetOrCreateDOMReflector(JSContext* cx, T* value,
 
   if (wrapBehavior == eDontWrapIntoContextCompartment) {
     if (TypeNeedsOuterization<T>::value) {
-      JSAutoRealm ar(cx, obj);
+      JSAutoRealmAllowCCW ar(cx, obj);
       return TryToOuterize(rval);
     }
 
@@ -1183,7 +1183,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
   {
     
     
-    Maybe<JSAutoRealm> ar;
+    Maybe<JSAutoRealmAllowCCW> ar;
     
     
     
@@ -1236,7 +1236,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
   {
     
     
-    Maybe<JSAutoRealm> ar;
+    Maybe<JSAutoRealmAllowCCW> ar;
     
     
     
@@ -2416,7 +2416,7 @@ XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
 {
   JS::Rooted<JSObject*> global(cx, JS::GetNonCCWObjectGlobal(obj));
   {
-    JSAutoRealm ar(cx, global);
+    JSAutoRealmAllowCCW ar(cx, global);
     const DOMJSClass* domClass = GetDOMClass(obj);
     if (domClass) {
       ProtoHandleGetter protoGetter = domClass->mGetProto;
@@ -3087,7 +3087,7 @@ CreateGlobal(JSContext* aCx, T* aNative, nsWrapperCache* aCache,
     return false;
   }
 
-  JSAutoRealm ar(aCx, aGlobal);
+  JSAutoRealmAllowCCW ar(aCx, aGlobal);
 
   {
     js::SetReservedSlot(aGlobal, DOM_OBJECT_SLOT, JS::PrivateValue(aNative));
@@ -3276,7 +3276,7 @@ WrappedJSToDictionary(JSContext* aCx, nsISupports* aObject, T& aDictionary)
     return false;
   }
 
-  JSAutoRealm ar(aCx, obj);
+  JSAutoRealmAllowCCW ar(aCx, obj);
   JS::Rooted<JS::Value> v(aCx, JS::ObjectValue(*obj));
   return aDictionary.Init(aCx, v);
 }

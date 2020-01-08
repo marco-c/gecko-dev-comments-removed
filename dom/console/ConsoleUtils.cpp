@@ -80,7 +80,7 @@ ConsoleUtils::ReportForServiceWorkerScopeInternal(const nsAString& aScope,
   
   global = js::UncheckedUnwrap(global);
 
-  JSAutoRealm ar(cx, global);
+  JSAutoRealmAllowCCW ar(cx, global);
 
   RootedDictionary<ConsoleEvent> event(cx);
 

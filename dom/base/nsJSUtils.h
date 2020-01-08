@@ -74,7 +74,7 @@ public:
     JSContext* mCx;
 
     
-    JSAutoRealm mRealm;
+    JSAutoRealmAllowCCW mRealm;
 
     
     JS::Rooted<JS::Value> mRetValue;
