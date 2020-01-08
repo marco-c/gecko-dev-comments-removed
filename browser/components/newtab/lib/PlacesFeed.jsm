@@ -283,38 +283,6 @@ class PlacesFeed {
     _target.browser.ownerGlobal.gURLBar.search(`${data.label} `);
   }
 
-  handoffSearchToAwesomebar({_target, data, meta}) {
-    const urlBar = _target.browser.ownerGlobal.gURLBar;
-
-    if (!data.hiddenFocus) {
-      
-      urlBar.focus();
-      this.store.dispatch(ac.OnlyToOneContent({type: at.SHOW_SEARCH}, meta.fromTarget));
-      return;
-    }
-
-    
-    urlBar.hiddenFocus();
-    const onKeydown = () => {
-      
-      
-      this.store.dispatch(ac.OnlyToOneContent({type: at.HIDE_SEARCH}, meta.fromTarget));
-      urlBar.removeHiddenFocus();
-      urlBar.removeEventListener("keydown", onKeydown);
-    };
-    const onDone = () => {
-      
-      this.store.dispatch(ac.OnlyToOneContent({type: at.SHOW_SEARCH}, meta.fromTarget));
-      urlBar.removeHiddenFocus();
-      urlBar.removeEventListener("keydown", onKeydown);
-      urlBar.removeEventListener("mousedown", onDone);
-      urlBar.removeEventListener("blur", onDone);
-    };
-    urlBar.addEventListener("keydown", onKeydown);
-    urlBar.addEventListener("mousedown", onDone);
-    urlBar.addEventListener("blur", onDone);
-  }
-
   onAction(action) {
     switch (action.type) {
       case at.INIT:
@@ -354,9 +322,6 @@ class PlacesFeed {
         break;
       case at.FILL_SEARCH_TERM:
         this.fillSearchTopSiteTerm(action);
-        break;
-      case at.HANDOFF_SEARCH_TO_AWESOMEBAR:
-        this.handoffSearchToAwesomebar(action);
         break;
       case at.OPEN_LINK: {
         this.openLink(action);

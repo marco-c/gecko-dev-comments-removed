@@ -47,18 +47,7 @@ const INITIAL_STATE = {
     pocketCta: {},
     waitingForSpoc: true,
   },
-  
-  DiscoveryStream: {
-    
-    config: {enabled: false, layout_endpoint: ""},
-    layout: [],
-  },
-  Search: {
-    
-    focus: false,
-    
-    hide: false,
-  },
+  Layout: [],
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -441,27 +430,10 @@ function Pocket(prevState = INITIAL_STATE.Pocket, action) {
   }
 }
 
-function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
+function Layout(prevState = INITIAL_STATE.Layout, action) {
   switch (action.type) {
-    case at.DISCOVERY_STREAM_CONFIG_CHANGE:
-    
-    case at.DISCOVERY_STREAM_CONFIG_SETUP:
-      return {...prevState, config: action.data || {}};
-    case at.DISCOVERY_STREAM_LAYOUT_UPDATE:
-      return {...prevState, layout: action.data || []};
-    default:
-      return prevState;
-  }
-}
-
-function Search(prevState = INITIAL_STATE.Search, action) {
-  switch (action.type) {
-    case at.HIDE_SEARCH:
-      return Object.assign({...prevState, hide: true});
-    case at.FOCUS_SEARCH:
-      return Object.assign({...prevState, focus: true});
-    case at.SHOW_SEARCH:
-      return Object.assign({...prevState, hide: false, focus: false});
+    case at.CONTENT_LAYOUT:
+      return action.data;
     default:
       return prevState;
   }
@@ -471,23 +443,6 @@ this.INITIAL_STATE = INITIAL_STATE;
 this.TOP_SITES_DEFAULT_ROWS = TOP_SITES_DEFAULT_ROWS;
 this.TOP_SITES_MAX_SITES_PER_ROW = TOP_SITES_MAX_SITES_PER_ROW;
 
-this.reducers = {
-  TopSites,
-  App,
-  ASRouter,
-  Snippets,
-  Prefs,
-  Dialog,
-  Sections,
-  Pocket,
-  DiscoveryStream,
-  Search,
-};
+this.reducers = {TopSites, App, ASRouter, Snippets, Prefs, Dialog, Sections, Pocket, Layout};
 
-const EXPORTED_SYMBOLS = [
-  "reducers",
-  "INITIAL_STATE",
-  "insertPinned",
-  "TOP_SITES_DEFAULT_ROWS",
-  "TOP_SITES_MAX_SITES_PER_ROW",
-];
+const EXPORTED_SYMBOLS = ["reducers", "INITIAL_STATE", "insertPinned", "TOP_SITES_DEFAULT_ROWS", "TOP_SITES_MAX_SITES_PER_ROW"];
