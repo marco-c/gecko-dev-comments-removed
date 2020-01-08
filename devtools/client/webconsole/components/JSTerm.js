@@ -431,10 +431,23 @@ class JSTerm extends Component {
 
 
 
-  async _executeResultCallback(response) {
+
+
+
+
+  async _executeResultCallback(response, options = {}) {
     if (!this.hud) {
       return null;
     }
+
+    
+    
+    
+    
+    if (options && options.mapped && options.mapped.await) {
+      return null;
+    }
+
     if (response.error) {
       console.error("Evaluation error " + response.error + ": " + response.message);
       return null;
@@ -546,18 +559,28 @@ class JSTerm extends Component {
     });
     this.hud.proxy.dispatchMessageAdd(cmdMessage);
 
+    let mappedExpressionRes = null;
+    try {
+      mappedExpressionRes = await this.hud.owner.getMappedExpression(executeString);
+    } catch (e) {
+      console.warn("Error when calling getMappedExpression", e);
+    }
+
+    executeString = mappedExpressionRes ? mappedExpressionRes.expression : executeString;
+
     const options = {
       frame: this.SELECTED_FRAME,
       selectedNodeActor,
     };
 
-    const mappedString = await this.hud.owner.getMappedExpression(executeString);
     
     
-    const onEvaluated = this.requestEvaluation(mappedString, options)
+    const onEvaluated = this.requestEvaluation(executeString, options)
       .then(res => res, res => res);
     const response = await onEvaluated;
-    return this._executeResultCallback(response);
+    return this._executeResultCallback(response, {
+      mapped: mappedExpressionRes ? mappedExpressionRes.mapped : null
+    });
   }
 
   

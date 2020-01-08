@@ -226,18 +226,37 @@ WebConsole.prototype = {
     return panel.getFrames();
   },
 
-  async getMappedExpression(expression) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getMappedExpression(expression) {
     const toolbox = gDevTools.getToolbox(this.target);
     if (!toolbox) {
-      return expression;
+      return null;
     }
+
     const panel = toolbox.getPanel("jsdebugger");
-
-    if (!panel) {
-      return expression;
+    if (panel) {
+      return panel.getMappedExpression(expression);
     }
 
-    return panel.getMappedExpression(expression);
+    if (toolbox.parserService && expression.includes("await ")) {
+      return toolbox.parserService.mapExpression(expression);
+    }
+
+    return null;
   },
 
   
