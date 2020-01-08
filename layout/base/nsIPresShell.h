@@ -1787,22 +1787,48 @@ protected:
   class DirtyRootsList
   {
   public:
-    void AppendElement(nsIFrame* aFrame);
-    void RemoveElement(nsIFrame* aFrame);
-    void RemoveElements(nsIFrame* aFrame);
-    void RemoveElementAt(size_t aIndex);
+    
+    void Add(nsIFrame* aFrame);
+    
+    void Remove(nsIFrame* aFrame);
+    
+    
+    nsIFrame* PopShallowestRoot();
+    
     void Clear();
+    
     bool Contains(nsIFrame* aFrame) const;
+    
     bool IsEmpty() const;
-    size_t Length() const;
-    auto begin() const { return mList.begin(); }
-    auto begin() { return mList.begin(); }
-    auto end() const { return mList.end(); }
-    auto end() { return mList.end(); }
-    auto& operator[](size_t i) { return mList[i]; }
+    
+    bool FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const;
 
   private:
-    nsTArray<nsIFrame*> mList;
+    struct FrameAndDepth
+    {
+      nsIFrame* mFrame;
+      const uint32_t mDepth;
+
+      
+      operator nsIFrame*() const { return mFrame; }
+
+      
+      class CompareByReverseDepth
+      {
+      public:
+        bool Equals(const FrameAndDepth& aA, const FrameAndDepth& aB) const
+        {
+          return aA.mDepth == aB.mDepth;
+        }
+        bool LessThan(const FrameAndDepth& aA, const FrameAndDepth& aB) const
+        {
+          
+          return aA.mDepth > aB.mDepth;
+        }
+      };
+    };
+    
+    nsTArray<FrameAndDepth> mList;
   };
 
   
