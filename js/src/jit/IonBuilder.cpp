@@ -1699,45 +1699,15 @@ AbortReasonOr<Ok> IonBuilder::visitBlock(const CFGBlock* cfgblock,
   return Ok();
 }
 
-bool IonBuilder::blockIsOSREntry(const CFGBlock* block,
-                                 const CFGBlock* predecessor) {
-  jsbytecode* entryPc = block->startPc();
-
-  if (!info().osrPc()) {
-    return false;
-  }
-
-  if (entryPc == predecessor->startPc()) {
-    
-    
-    MOZ_ASSERT(predecessor->stopPc() == predecessor->startPc());
-    return false;
-  }
-
-  if (block->stopPc() == block->startPc() && block->stopIns()->isBackEdge()) {
-    
-    return false;
-  }
-
-  MOZ_ASSERT(*info().osrPc() == JSOP_LOOPENTRY);
-  return info().osrPc() == entryPc;
+AbortReasonOr<Ok> IonBuilder::visitGoto(CFGGoto* ins) {
+  return emitGoto(ins->successor(), ins->popAmount());
 }
 
-AbortReasonOr<Ok> IonBuilder::visitGoto(CFGGoto* ins) {
-  
-  
-  const CFGBlock* successor = ins->getSuccessor(0);
-  if (blockIsOSREntry(successor, cfgCurrent)) {
-    MBasicBlock* preheader;
-    MOZ_TRY_VAR(preheader, newOsrPreheader(current, successor->startPc(), pc));
-    current->end(MGoto::New(alloc(), preheader));
-    MOZ_TRY(setCurrentAndSpecializePhis(preheader));
-  }
-
+AbortReasonOr<Ok> IonBuilder::emitGoto(CFGBlock* successor, size_t popAmount) {
   size_t id = successor->id();
   bool create = !blockWorklist[id] || blockWorklist[id]->isDead();
 
-  current->popn(ins->popAmount());
+  current->popn(popAmount);
 
   if (create) {
     MOZ_TRY_VAR(blockWorklist[id], newBlock(current, successor->startPc()));
@@ -1792,13 +1762,25 @@ AbortReasonOr<Ok> IonBuilder::visitBackEdge(CFGBackEdge* ins, bool* restarted) {
 AbortReasonOr<Ok> IonBuilder::visitLoopEntry(CFGLoopEntry* loopEntry) {
   unsigned stackPhiCount = loopEntry->stackPhiCount();
   const CFGBlock* successor = loopEntry->getSuccessor(0);
-  bool osr = blockIsOSREntry(successor, cfgCurrent);
+  bool osr = successor->startPc() == info().osrPc();
   if (osr) {
     MOZ_ASSERT(loopEntry->canOsr());
     MBasicBlock* preheader;
     MOZ_TRY_VAR(preheader, newOsrPreheader(current, successor->startPc(), pc));
     current->end(MGoto::New(alloc(), preheader));
     MOZ_TRY(setCurrentAndSpecializePhis(preheader));
+  }
+
+  if (loopEntry->isBrokenLoop()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return emitGoto(loopEntry->successor(),  0);
   }
 
   loopDepth_++;

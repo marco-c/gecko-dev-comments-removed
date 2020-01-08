@@ -992,10 +992,7 @@ ControlFlowGenerator::ControlStatus ControlFlowGenerator::processBrokenLoop(
     CFGState& state) {
   MOZ_ASSERT(!current);
 
-  {
-    state.loop.entry->setStopIns(CFGGoto::New(
-        alloc(), state.loop.entry->stopIns()->toLoopEntry()->successor()));
-  }
+  state.loop.entry->stopIns()->toLoopEntry()->setIsBrokenLoop();
 
   
   
