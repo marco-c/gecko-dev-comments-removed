@@ -2,25 +2,18 @@
 
 
 
-
-
-
-
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm");
 ChromeUtils.import("resource://gre/modules/FormLikeFactory.jsm");
 ChromeUtils.import("resource://testing-common/FileTestUtils.jsm");
 ChromeUtils.import("resource://testing-common/MockDocument.jsm");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 
-
 ChromeUtils.defineModuleGetter(this, "DownloadPaths",
                                "resource://gre/modules/DownloadPaths.jsm");
-
 ChromeUtils.defineModuleGetter(this, "FileUtils",
                                "resource://gre/modules/FileUtils.jsm");
 

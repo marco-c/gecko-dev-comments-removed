@@ -1,6 +1,7 @@
 "use strict";
 
 
+
 ChromeUtils.import("resource://formautofill/ProfileAutoCompleteResult.jsm");
 
 let matchingProfiles = [{

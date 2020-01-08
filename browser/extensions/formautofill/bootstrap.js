@@ -130,6 +130,7 @@ function startup(data) {
   Services.ppmm.loadProcessScript("data:,new " + function() {
     ChromeUtils.import("resource://formautofill/FormAutofillContent.jsm");
   }, true);
+  
   Services.mm.loadFrameScript("chrome://formautofill/content/FormAutofillFrameScript.js", true);
 }
 
