@@ -141,27 +141,34 @@ bool STUNUDPSocketFilter::filter_incoming_packet(const mozilla::net::NetAddr *re
 
   
   
+  if (nr_is_stun_response_message(
+        reinterpret_cast<UCHAR*>(const_cast<uint8_t*>(data)), len)) {
+    const nr_stun_message_header *msg =
+      reinterpret_cast<const nr_stun_message_header*>(data);
+    PendingSTUNRequest pending_req(*remote_addr, msg->id);
+    std::set<PendingSTUNRequest>::iterator it = pending_requests_.find(pending_req);
+    if (it != pending_requests_.end()) {
+      pending_requests_.erase(it);
+      response_allowed_.erase(pending_req);
+      white_list_.insert(*remote_addr);
+      return true;
+    }
+  }
+  
+  
+  if (nr_is_stun_request_message(
+      reinterpret_cast<UCHAR*>(const_cast<uint8_t*>(data)), len)) {
+    const nr_stun_message_header *msg =
+      reinterpret_cast<const nr_stun_message_header*>(data);
+    response_allowed_.insert(PendingSTUNRequest(*remote_addr, msg->id));
+    return true;
+  }
+  
+  
+  
   std::set<PendingSTUNRequest>::iterator it =
     pending_requests_.find(PendingSTUNRequest(*remote_addr));
   if (it != pending_requests_.end()) {
-    if (nr_is_stun_message(reinterpret_cast<UCHAR*>(const_cast<uint8_t*>(data)), len)) {
-      const nr_stun_message_header *msg = reinterpret_cast<const nr_stun_message_header*>(data);
-      
-      
-      if (nr_is_stun_response_message(reinterpret_cast<UCHAR*>(const_cast<uint8_t*>(data)), len)) {
-        PendingSTUNRequest pending_req(*remote_addr, msg->id);
-        std::set<PendingSTUNRequest>::iterator it = pending_requests_.find(pending_req);
-        if (it != pending_requests_.end()) {
-          pending_requests_.erase(it);
-          response_allowed_.erase(pending_req);
-          white_list_.insert(*remote_addr);
-        }
-      } else {
-        
-        
-        response_allowed_.insert(PendingSTUNRequest(*remote_addr, msg->id));
-      }
-    }
     return true;
   }
 
@@ -190,6 +197,8 @@ bool STUNUDPSocketFilter::filter_outgoing_packet(const mozilla::net::NetAddr *re
     std::set<PendingSTUNRequest>::iterator it =
       response_allowed_.find(PendingSTUNRequest(*remote_addr, msg->id));
     if (it != response_allowed_.end()) {
+      white_list_.insert(*remote_addr);
+      response_allowed_.erase(it);
       return true;
     }
   }
