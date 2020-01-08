@@ -466,6 +466,17 @@ class TabBase {
 
 
 
+  get attention() {
+    throw new Error("Not implemented");
+  }
+
+
+  
+
+
+
+
+
 
   get isArticle() {
     throw new Error("Not implemented");
@@ -582,6 +593,7 @@ class TabBase {
       windowId: this.windowId,
       highlighted: this.highlighted,
       active: this.active,
+      attention: this.attention,
       pinned: this.pinned,
       status: this.status,
       hidden: this.hidden,

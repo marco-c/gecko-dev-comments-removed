@@ -959,6 +959,7 @@ window._gBrowser = {
 
       newTab.removeAttribute("titlechanged");
       newTab.removeAttribute("attention");
+      this._tabAttrModified(newTab, ["attention"]);
 
       
       
@@ -4432,9 +4433,11 @@ window._gBrowser = {
         
         let promptPrincipal = event.detail.promptPrincipal || docPrincipal ||
           tabForEvent.linkedBrowser.contentPrincipal;
+
         
         if (!promptPrincipal || promptPrincipal.isNullPrincipal) {
           tabForEvent.setAttribute("attention", "true");
+          this._tabAttrModified(tabForEvent, ["attention"]);
           return;
         }
 
@@ -4448,6 +4451,7 @@ window._gBrowser = {
             let tabPrompt = this.getTabModalPromptBox(tabForEvent.linkedBrowser);
             tabPrompt.onNextPromptShowAllowFocusCheckboxFor(promptPrincipal);
             tabForEvent.setAttribute("attention", "true");
+            this._tabAttrModified(tabForEvent, ["attention"]);
             return;
           }
         }
