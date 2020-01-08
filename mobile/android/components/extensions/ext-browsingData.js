@@ -23,10 +23,7 @@ const clearCookies = async function(options) {
     
     let since =  options.since * 1000;
     
-    let cookiesEnum = cookieMgr.enumerator;
-    while (cookiesEnum.hasMoreElements()) {
-      let cookie = cookiesEnum.getNext().QueryInterface(Ci.nsICookie2);
-
+    for (let cookie of cookieMgr.enumerator) {
       if (cookie.creationTime >= since) {
         
         cookieMgr.remove(cookie.host, cookie.name, cookie.path,
