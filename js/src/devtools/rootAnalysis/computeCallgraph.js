@@ -176,17 +176,6 @@ function process(functionName, functionBodies)
     if (markerPos > 0) {
         var inChargeXTor = functionName.replace(internalMarker, "");
         print("D " + memo(inChargeXTor) + " " + memo(functionName));
-
-        
-        
-        
-        
-        
-        
-        if (functionName.indexOf("::~") > 0) {
-            var calledDestructor = inChargeXTor.replace("(int32)", "()");
-            print("D " + memo(calledDestructor) + " " + memo(inChargeXTor));
-        }
     }
 
     
@@ -210,18 +199,35 @@ function process(functionName, functionBodies)
     
     
     
-    if (functionName.indexOf("C4E") != -1 || functionName.indexOf("D4Ev") != -1) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (functionName.indexOf("C4") != -1) {
         var [ mangled, unmangled ] = splitFunction(functionName);
         
         
         
         
-        for (let [synthetic, variant] of [['C4E', 'C1E'],
-                                          ['C4E', 'C2E'],
-                                          ['C4E', 'C3E'],
-                                          ['D4Ev', 'D1Ev'],
-                                          ['D4Ev', 'D2Ev'],
-                                          ['D4Ev', 'D3Ev']])
+        
+        
+        
+        
+        for (let [synthetic, variant] of [
+            ['C4E', 'C1E'],
+            ['C4E', 'C2E'],
+            ['C4E', 'C3E'],
+            ['C4I', 'C1I'],
+            ['C4I', 'C2I'],
+            ['C4I', 'C3I']])
         {
             if (mangled.indexOf(synthetic) == -1)
                 continue;
@@ -230,6 +236,30 @@ function process(functionName, functionBodies)
             let variant_full = variant_mangled + "$" + unmangled;
             print("D " + memo(variant_full) + " " + memo(functionName));
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (functionName.indexOf("D4Ev") != -1 && functionName.indexOf("::~") != -1) {
+        const not_in_charge_dtor = functionName.replace("(int32)", "()");
+        const D0 = not_in_charge_dtor.replace("D4Ev", "D0Ev");
+        const D1 = not_in_charge_dtor.replace("D4Ev", "D1Ev");
+        const D2 = not_in_charge_dtor.replace("D4Ev", "D2Ev");
+        print("D " + memo(D0) + " " + memo(D1));
+        print("D " + memo(D1) + " " + memo(D2));
+        print("D " + memo(D2) + " " + memo(functionName));
     }
 }
 
