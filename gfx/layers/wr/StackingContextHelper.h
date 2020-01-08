@@ -66,7 +66,7 @@ class MOZ_RAII StackingContextHelper {
   Maybe<gfx::Matrix4x4> GetDeferredTransformMatrix() const;
 
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
-  Maybe<wr::WrClipId> ReferenceFrameId() const { return mReferenceFrameId; }
+  Maybe<wr::WrSpatialId> ReferenceFrameId() const { return mReferenceFrameId; }
 
  private:
   wr::DisplayListBuilder* mBuilder;
@@ -81,7 +81,8 @@ class MOZ_RAII StackingContextHelper {
   
   gfx::Matrix mSnappingSurfaceTransform;
   bool mAffectsClipPositioning;
-  Maybe<wr::WrClipId> mReferenceFrameId;
+  Maybe<wr::WrSpatialId> mReferenceFrameId;
+  Maybe<wr::SpaceAndClipChainHelper> mSpaceAndClipChainHelper;
 
   
   

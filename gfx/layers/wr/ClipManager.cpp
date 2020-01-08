@@ -22,8 +22,6 @@
 
 
 
-
-
 namespace mozilla {
 namespace layers {
 
@@ -66,12 +64,17 @@ void ClipManager::BeginList(const StackingContextHelper& aStackingContext) {
   if (!mItemClipStack.empty()) {
     clips.CopyOutputsFrom(mItemClipStack.top());
   }
+
+  if (aStackingContext.ReferenceFrameId()) {
+    clips.mScrollId = aStackingContext.ReferenceFrameId().ref();
+  }
+
   mItemClipStack.push(clips);
 }
 
 void ClipManager::EndList(const StackingContextHelper& aStackingContext) {
   MOZ_ASSERT(!mItemClipStack.empty());
-  mItemClipStack.top().Unapply(mBuilder);
+  mBuilder->SetClipChainLeaf(Nothing());
   mItemClipStack.pop();
 
   if (aStackingContext.AffectsClipPositioning()) {
@@ -86,14 +89,16 @@ void ClipManager::EndList(const StackingContextHelper& aStackingContext) {
 }
 
 void ClipManager::PushOverrideForASR(const ActiveScrolledRoot* aASR,
-                                     const wr::WrClipId& aClipId) {
-  Maybe<wr::WrClipId> scrollId = GetScrollLayer(aASR);
-  MOZ_ASSERT(scrollId.isSome());
+                                     const wr::WrSpatialId& aSpatialId) {
+  Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(aASR);
+  MOZ_ASSERT(spaceAndClip.isSome());
 
-  CLIP_LOG("Pushing override %zu -> %s\n", scrollId->id,
-           Stringify(aClipId.id).c_str());
-  auto it = mASROverride.insert({*scrollId, std::stack<wr::WrClipId>()});
-  it.first->second.push(aClipId);
+  CLIP_LOG("Pushing %p override %zu -> %s\n", aASR, spaceAndClip->space.id,
+           Stringify(aSpatialId.id).c_str());
+
+  auto it =
+      mASROverride.insert({spaceAndClip->space, std::stack<wr::WrSpatialId>()});
+  it.first->second.push(aSpatialId);
 
   
   mCacheStack.emplace();
@@ -103,41 +108,39 @@ void ClipManager::PopOverrideForASR(const ActiveScrolledRoot* aASR) {
   MOZ_ASSERT(!mCacheStack.empty());
   mCacheStack.pop();
 
-  Maybe<wr::WrClipId> scrollId = GetScrollLayer(aASR);
-  MOZ_ASSERT(scrollId.isSome());
+  Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(aASR);
+  MOZ_ASSERT(spaceAndClip.isSome());
 
-  auto it = mASROverride.find(*scrollId);
-  MOZ_ASSERT(it != mASROverride.end());
-  MOZ_ASSERT(!(it->second.empty()));
-  CLIP_LOG("Popping override %zu -> %s\n", scrollId->id,
+  auto it = mASROverride.find(spaceAndClip->space);
+  CLIP_LOG("Popping %p override %zu -> %s\n", aASR, spaceAndClip->space.id,
            Stringify(it->second.top().id).c_str());
+
   it->second.pop();
   if (it->second.empty()) {
     mASROverride.erase(it);
   }
 }
 
-Maybe<wr::WrClipId> ClipManager::ClipIdAfterOverride(
-    const Maybe<wr::WrClipId>& aClipId) {
-  if (!aClipId) {
-    return Nothing();
-  }
-  auto it = mASROverride.find(*aClipId);
+wr::WrSpatialId ClipManager::SpatialIdAfterOverride(
+    const wr::WrSpatialId& aSpatialId) {
+  auto it = mASROverride.find(aSpatialId);
   if (it == mASROverride.end()) {
-    return aClipId;
+    return aSpatialId;
   }
   MOZ_ASSERT(!it->second.empty());
-  CLIP_LOG("Overriding %zu with %s\n", aClipId->id,
+  CLIP_LOG("Overriding %zu with %s\n", aSpatialId.id,
            Stringify(it->second.top().id).c_str());
-  return Some(it->second.top());
+
+  return it->second.top();
 }
 
-void ClipManager::BeginItem(nsDisplayItem* aItem,
-                            const StackingContextHelper& aStackingContext) {
-  CLIP_LOG("processing item %p\n", aItem);
-
+wr::WrSpaceAndClipChain ClipManager::SwitchItem(
+    nsDisplayItem* aItem, const StackingContextHelper& aStackingContext) {
   const DisplayItemClipChain* clip = aItem->GetClipChain();
   const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
+  CLIP_LOG("processing item %p (%s) asr %p\n", aItem,
+           DisplayItemTypeName(aItem->GetType()), asr);
+
   DisplayItemType type = aItem->GetType();
   if (type == DisplayItemType::TYPE_STICKY_POSITION) {
     
@@ -174,13 +177,12 @@ void ClipManager::BeginItem(nsDisplayItem* aItem,
     
     
     
-    CLIP_LOG("early-exit for %p\n", aItem);
-    return;
+    CLIP_LOG("\tearly-exit for %p\n", aItem);
+    return mItemClipStack.top().GetSpaceAndClipChain();
   }
 
   
   
-  mItemClipStack.top().Unapply(mBuilder);
   mItemClipStack.pop();
 
   
@@ -197,6 +199,7 @@ void ClipManager::BeginItem(nsDisplayItem* aItem,
   
   
   if (separateLeaf) {
+    CLIP_LOG("\tseparate leaf detected, ignoring the last clip\n");
     clip = clip->mParent;
   }
 
@@ -211,44 +214,36 @@ void ClipManager::BeginItem(nsDisplayItem* aItem,
   if (clip) {
     leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR, clip->mASR);
   }
-  Maybe<wr::WrClipId> leafmostId =
+  Maybe<wr::WrSpaceAndClip> leafmostId =
       DefineScrollLayers(leafmostASR, aItem, aStackingContext);
 
   
   
   clips.mClipChainId = DefineClipChain(clip, auPerDevPixel, aStackingContext);
 
-  if (clip) {
-    
-    
-    Maybe<wr::WrClipId> scrollId = GetScrollLayer(asr);
-    MOZ_ASSERT(scrollId.isSome());
-    clips.mScrollId = ClipIdAfterOverride(scrollId);
-  } else {
-    
-    
-    
-    
-    
-    
-    
-  }
+  Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(asr);
+  MOZ_ASSERT(spaceAndClip.isSome());
+  clips.mScrollId = SpatialIdAfterOverride(spaceAndClip->space);
+  CLIP_LOG("\tassigning %d -> %d\n", (int)spaceAndClip->space.id,
+           (int)clips.mScrollId.id);
 
   
   
-  clips.Apply(mBuilder, auPerDevPixel);
+  clips.UpdateSeparateLeaf(*mBuilder, auPerDevPixel);
+  auto spaceAndClipChain = clips.GetSpaceAndClipChain();
   mItemClipStack.push(clips);
 
   CLIP_LOG("done setup for %p\n", aItem);
+  return spaceAndClipChain;
 }
 
-Maybe<wr::WrClipId> ClipManager::GetScrollLayer(
+Maybe<wr::WrSpaceAndClip> ClipManager::GetScrollLayer(
     const ActiveScrolledRoot* aASR) {
   for (const ActiveScrolledRoot* asr = aASR; asr; asr = asr->mParent) {
-    Maybe<wr::WrClipId> scrollId =
+    Maybe<wr::WrSpaceAndClip> spaceAndClip =
         mBuilder->GetScrollIdForDefinedScrollLayer(asr->GetViewId());
-    if (scrollId) {
-      return scrollId;
+    if (spaceAndClip) {
+      return spaceAndClip;
     }
 
     
@@ -256,13 +251,14 @@ Maybe<wr::WrClipId> ClipManager::GetScrollLayer(
     
   }
 
-  Maybe<wr::WrClipId> scrollId = mBuilder->GetScrollIdForDefinedScrollLayer(
-      ScrollableLayerGuid::NULL_SCROLL_ID);
-  MOZ_ASSERT(scrollId.isSome());
-  return scrollId;
+  Maybe<wr::WrSpaceAndClip> spaceAndClip =
+      mBuilder->GetScrollIdForDefinedScrollLayer(
+          ScrollableLayerGuid::NULL_SCROLL_ID);
+  MOZ_ASSERT(spaceAndClip.isSome());
+  return spaceAndClip;
 }
 
-Maybe<wr::WrClipId> ClipManager::DefineScrollLayers(
+Maybe<wr::WrSpaceAndClip> ClipManager::DefineScrollLayers(
     const ActiveScrolledRoot* aASR, nsDisplayItem* aItem,
     const StackingContextHelper& aSc) {
   if (!aASR) {
@@ -270,14 +266,14 @@ Maybe<wr::WrClipId> ClipManager::DefineScrollLayers(
     return Nothing();
   }
   ScrollableLayerGuid::ViewID viewId = aASR->GetViewId();
-  Maybe<wr::WrClipId> scrollId =
+  Maybe<wr::WrSpaceAndClip> spaceAndClip =
       mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
-  if (scrollId) {
+  if (spaceAndClip) {
     
-    return scrollId;
+    return spaceAndClip;
   }
   
-  Maybe<wr::WrClipId> ancestorScrollId =
+  Maybe<wr::WrSpaceAndClip> ancestorSpaceAndClip =
       DefineScrollLayers(aASR->mParent, aItem, aSc);
 
   Maybe<ScrollMetadata> metadata =
@@ -285,13 +281,13 @@ Maybe<wr::WrClipId> ClipManager::DefineScrollLayers(
           mManager, aItem->ReferenceFrame(), Nothing(), nullptr);
   if (!metadata) {
     MOZ_ASSERT_UNREACHABLE("Expected scroll metadata to be available!");
-    return ancestorScrollId;
+    return ancestorSpaceAndClip;
   }
 
   FrameMetrics& metrics = metadata->GetMetrics();
   if (!metrics.IsScrollable()) {
     
-    return ancestorScrollId;
+    return ancestorSpaceAndClip;
   }
 
   LayoutDeviceRect contentRect =
@@ -309,12 +305,13 @@ Maybe<wr::WrClipId> ClipManager::DefineScrollLayers(
   
   contentRect.MoveTo(clipBounds.TopLeft());
 
-  Maybe<wr::WrClipId> parent = ClipIdAfterOverride(ancestorScrollId);
-  scrollId = Some(mBuilder->DefineScrollLayer(
-      viewId, parent, wr::ToRoundedLayoutRect(contentRect),
-      wr::ToRoundedLayoutRect(clipBounds)));
-
-  return scrollId;
+  Maybe<wr::WrSpaceAndClip> parent = ancestorSpaceAndClip;
+  if (parent) {
+    parent->space = SpatialIdAfterOverride(parent->space);
+  }
+  return Some(mBuilder->DefineScrollLayer(viewId, parent,
+                                          wr::ToRoundedLayoutRect(contentRect),
+                                          wr::ToRoundedLayoutRect(clipBounds)));
 }
 
 Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
@@ -345,15 +342,15 @@ Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
     chain->mClip.ToComplexClipRegions(aAppUnitsPerDevPixel, aSc,
                                       wrRoundedRects);
 
-    Maybe<wr::WrClipId> scrollId = GetScrollLayer(chain->mASR);
+    Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(chain->mASR);
     
     
-    MOZ_ASSERT(scrollId.isSome());
+    MOZ_ASSERT(spaceAndClip.isSome());
 
     
-    Maybe<wr::WrClipId> parent = ClipIdAfterOverride(scrollId);
+    spaceAndClip->space = SpatialIdAfterOverride(spaceAndClip->space);
     wr::WrClipId clipId = mBuilder->DefineClip(
-        parent, wr::ToRoundedLayoutRect(clip), &wrRoundedRects);
+        spaceAndClip, wr::ToRoundedLayoutRect(clip), &wrRoundedRects);
     clipIds.AppendElement(clipId);
     cache[chain] = clipId;
     CLIP_LOG("cache[%p] <= %zu\n", chain, clipId.id);
@@ -386,16 +383,12 @@ ClipManager::~ClipManager() {
 ClipManager::ItemClips::ItemClips(const ActiveScrolledRoot* aASR,
                                   const DisplayItemClipChain* aChain,
                                   bool aSeparateLeaf)
-    : mASR(aASR),
-      mChain(aChain),
-      mSeparateLeaf(aSeparateLeaf),
-      mApplied(false) {}
+    : mASR(aASR), mChain(aChain), mSeparateLeaf(aSeparateLeaf) {
+  mScrollId.id = 0;
+}
 
-void ClipManager::ItemClips::Apply(wr::DisplayListBuilder* aBuilder,
-                                   int32_t aAppUnitsPerDevPixel) {
-  MOZ_ASSERT(!mApplied);
-  mApplied = true;
-
+void ClipManager::ItemClips::UpdateSeparateLeaf(
+    wr::DisplayListBuilder& aBuilder, int32_t aAppUnitsPerDevPixel) {
   Maybe<wr::LayoutRect> clipLeaf;
   if (mSeparateLeaf) {
     MOZ_ASSERT(mChain);
@@ -403,15 +396,7 @@ void ClipManager::ItemClips::Apply(wr::DisplayListBuilder* aBuilder,
         mChain->mClip.GetClipRect(), aAppUnitsPerDevPixel)));
   }
 
-  aBuilder->PushClipAndScrollInfo(mScrollId.ptrOr(nullptr),
-                                  mClipChainId.ptrOr(nullptr), clipLeaf);
-}
-
-void ClipManager::ItemClips::Unapply(wr::DisplayListBuilder* aBuilder) {
-  if (mApplied) {
-    mApplied = false;
-    aBuilder->PopClipAndScrollInfo(mScrollId.ptrOr(nullptr));
-  }
+  aBuilder.SetClipChainLeaf(clipLeaf);
 }
 
 bool ClipManager::ItemClips::HasSameInputs(const ItemClips& aOther) {
@@ -422,6 +407,15 @@ bool ClipManager::ItemClips::HasSameInputs(const ItemClips& aOther) {
 void ClipManager::ItemClips::CopyOutputsFrom(const ItemClips& aOther) {
   mScrollId = aOther.mScrollId;
   mClipChainId = aOther.mClipChainId;
+}
+
+wr::WrSpaceAndClipChain ClipManager::ItemClips::GetSpaceAndClipChain() const {
+  auto spaceAndClipChain = wr::RootScrollNodeWithChain();
+  spaceAndClipChain.space = mScrollId;
+  if (mClipChainId) {
+    spaceAndClipChain.clip_chain = mClipChainId->id;
+  }
+  return spaceAndClipChain;
 }
 
 }  
