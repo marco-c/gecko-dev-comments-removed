@@ -2560,9 +2560,9 @@ extern "C" {
                                width: u32,
                                height: u32,
                                format: ImageFormat,
-                               tile_size: *const u16,
-                               tile_offset: *const TileOffset,
-                               dirty_rect: *const DeviceUintRect,
+                               tile_size: Option<&u16>,
+                               tile_offset: Option<&TileOffset>,
+                               dirty_rect: Option<&DeviceUintRect>,
                                output: MutByteSlice)
                                -> bool;
 }
