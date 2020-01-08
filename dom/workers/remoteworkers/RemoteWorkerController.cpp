@@ -4,9 +4,12 @@
 
 
 
+#include "mozilla/dom/MessagePort.h"
+#include "mozilla/dom/MessagePortParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "RemoteWorkerController.h"
 #include "RemoteWorkerManager.h"
+#include "RemoteWorkerParent.h"
 
 namespace mozilla {
 
@@ -15,20 +18,17 @@ using namespace ipc;
 namespace dom {
 
  already_AddRefed<RemoteWorkerController>
-RemoteWorkerController::Create()
+RemoteWorkerController::Create(const RemoteWorkerData& aData)
 {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(XRE_IsParentProcess());
 
   RefPtr<RemoteWorkerController> controller = new RemoteWorkerController();
 
-  
-  RemoteWorkerData data;
-
   RefPtr<RemoteWorkerManager> manager = RemoteWorkerManager::GetOrCreate();
   MOZ_ASSERT(manager);
 
-  manager->Launch(controller, data);
+  manager->Launch(controller, aData);
 
   return controller.forget();
 }
@@ -62,10 +62,11 @@ RemoteWorkerController::CreationFailed()
 {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(mActor);
+  MOZ_ASSERT(mState == ePending || mState == eTerminated);
 
-  mState = eTerminated;
-  mActor = nullptr;
+  
+
+  Shutdown();
 }
 
 void
@@ -73,11 +74,260 @@ RemoteWorkerController::CreationSucceeded()
 {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(mActor);
+  MOZ_ASSERT(mState == ePending || mState == eTerminated);
 
+  if (mState == eTerminated) {
+    MOZ_ASSERT(!mActor);
+    MOZ_ASSERT(mPendingOps.IsEmpty());
+    
+    return;
+  }
+
+  MOZ_ASSERT(mActor);
   mState = eReady;
 
   
+
+  for (UniquePtr<Op>& op : mPendingOps) {
+    switch (op->mType) {
+      case Op::eTerminate:
+        Terminate();
+        break;
+
+      case Op::eSuspend:
+        Suspend();
+        break;
+
+      case Op::eResume:
+        Resume();
+        break;
+
+      case Op::eFreeze:
+        Freeze();
+        break;
+
+      case Op::eThaw:
+        Thaw();
+        break;
+
+      case Op::ePortIdentifier:
+        AddPortIdentifier(op->mPortIdentifier);
+        break;
+
+      case Op::eAddWindowID:
+        AddWindowID(op->mWindowID);
+        break;
+
+      case Op::eRemoveWindowID:
+        RemoveWindowID(op->mWindowID);
+        break;
+
+      default:
+        MOZ_CRASH("Unknown op.");
+    }
+
+    op->Completed();
+  }
+
+  mPendingOps.Clear();
+}
+
+void
+RemoteWorkerController::ErrorPropagation(const ErrorValue& aValue)
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+}
+
+void
+RemoteWorkerController::WorkerTerminated()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(mState == eReady);
+
+  
+  Shutdown();
+}
+
+void
+RemoteWorkerController::Shutdown()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(mState == ePending || mState == eReady);
+
+  mState = eTerminated;
+
+  mPendingOps.Clear();
+
+  if (mActor) {
+    mActor->SetController(nullptr);
+    Unused << mActor->SendExecOp(RemoteWorkerTerminateOp());
+    mActor = nullptr;
+  }
+}
+
+void
+RemoteWorkerController::AddWindowID(uint64_t aWindowID)
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aWindowID);
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(Op::eAddWindowID, aWindowID));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerAddWindowIDOp(aWindowID));
+}
+
+void
+RemoteWorkerController::RemoveWindowID(uint64_t aWindowID)
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aWindowID);
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(Op::eRemoveWindowID, aWindowID));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerRemoveWindowIDOp(aWindowID));
+}
+
+void
+RemoteWorkerController::AddPortIdentifier(const MessagePortIdentifier& aPortIdentifier)
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(aPortIdentifier));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerPortIdentifierOp(aPortIdentifier));
+}
+
+void
+RemoteWorkerController::Terminate()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  Shutdown();
+}
+
+void
+RemoteWorkerController::Suspend()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(Op::eSuspend));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerSuspendOp());
+}
+
+void
+RemoteWorkerController::Resume()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(Op::eResume));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerResumeOp());
+}
+
+void
+RemoteWorkerController::Freeze()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(Op::eFreeze));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerFreezeOp());
+}
+
+void
+RemoteWorkerController::Thaw()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mState == ePending) {
+    mPendingOps.AppendElement(new Op(Op::eThaw));
+    return;
+  }
+
+  if (mState == eTerminated) {
+    return;
+  }
+
+  MOZ_ASSERT(mState == eReady);
+  Unused << mActor->SendExecOp(RemoteWorkerThawOp());
+}
+
+RemoteWorkerController::Op::~Op()
+{
+  MOZ_COUNT_DTOR(Op);
+
+  
+  if (!mCompleted && mType == ePortIdentifier) {
+    MessagePortParent::ForceClose(mPortIdentifier.uuid(),
+                                  mPortIdentifier.destinationUuid(),
+                                  mPortIdentifier.sequenceId());
+  }
 }
 
 } 

@@ -44,7 +44,7 @@ class Function;
 class MessagePort;
 class MessagePortIdentifier;
 class PerformanceStorage;
-class SharedWorkerManager;
+class RemoteWorkerChild;
 class WorkerControlRunnable;
 class WorkerCSPEventListener;
 class WorkerDebugger;
@@ -461,7 +461,7 @@ public:
   }
 
   bool
-  ConnectMessagePort(JSContext* aCx, MessagePortIdentifier& aIdentifier);
+  ConnectMessagePort(JSContext* aCx, const MessagePortIdentifier& aIdentifier);
 
   WorkerGlobalScope*
   GetOrCreateGlobalScope(JSContext* aCx);
@@ -1079,11 +1079,11 @@ public:
     mLoadingWorkerScript = aLoadingWorkerScript;
   }
 
-  SharedWorkerManager*
-  GetSharedWorkerManager();
+  RemoteWorkerChild*
+  GetRemoteWorkerController();
 
   void
-  SetSharedWorkerManager(SharedWorkerManager* aWorkerManager);
+  SetRemoteWorkerController(RemoteWorkerChild* aController);
 
   
   
@@ -1393,7 +1393,7 @@ private:
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
   
-  RefPtr<SharedWorkerManager> mSharedWorkerManager;
+  RefPtr<RemoteWorkerChild> mRemoteWorkerController;
 
   JS::UniqueChars mDefaultLocale; 
   TimeStamp mKillTime;
