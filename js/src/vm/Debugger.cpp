@@ -1070,9 +1070,26 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
 {
     mozilla::DebugOnly<Handle<GlobalObject*>> debuggeeGlobal = cx->global();
 
+    
+    bool suspending = false;
+    Rooted<GeneratorObject*> genObj(cx);
+    if (frame.isGeneratorFrame()) {
+        
+        
+        
+        genObj = GetGeneratorObjectForFrame(cx, frame);
+        suspending =
+            frameOk &&
+            pc && (*pc == JSOP_INITIALYIELD || *pc == JSOP_YIELD || *pc == JSOP_AWAIT) &&
+            !genObj->isClosed();
+    }
+
+    bool success = false;
     auto frameMapsGuard = MakeScopeExit([&] {
         
-        removeFromFrameMapsAndClearBreakpointsIn(cx, frame);
+        
+        
+        removeFromFrameMapsAndClearBreakpointsIn(cx, frame, suspending && success);
     });
 
     
@@ -1090,13 +1107,6 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
     ResumeMode resumeMode;
     RootedValue value(cx);
     Debugger::resultToCompletion(cx, frameOk, frame.returnValue(), &resumeMode, &value);
-
-    
-    
-    Rooted<GeneratorObject*> genObj(cx);
-    if (frame.isFunctionFrame() && (frame.callee()->isGenerator() || frame.callee()->isAsync())) {
-        genObj = GetGeneratorObjectForFrame(cx, frame);
-    }
 
     
     
@@ -1151,6 +1161,7 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
     switch (resumeMode) {
       case ResumeMode::Return:
         frame.setReturnValue(value);
+        success = true;
         return true;
 
       case ResumeMode::Throw:
@@ -7289,7 +7300,8 @@ Debugger::inFrameMaps(AbstractFramePtr frame)
 }
 
  void
-Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx, AbstractFramePtr frame)
+Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx, AbstractFramePtr frame,
+                                                   bool suspending)
 {
     forEachDebuggerFrame(frame, [&](DebuggerFrame* frameobj) {
         Debugger* dbg = Debugger::fromChildJSObject(frameobj);
