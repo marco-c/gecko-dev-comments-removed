@@ -2377,7 +2377,7 @@
 
 
  \
-    MACRO(JSOP_TRY_DESTRUCTURING_ITERCLOSE, 220, "try-destructuring-iterclose", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_TRY_DESTRUCTURING, 220, "try-destructuring", NULL, 1, 0, 0, JOF_BYTE) \
     
 
 

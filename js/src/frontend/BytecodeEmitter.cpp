@@ -2955,8 +2955,8 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
 }
 
 template <typename InnerEmitter>
-bool BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(
-    int32_t iterDepth, InnerEmitter emitter) {
+bool BytecodeEmitter::wrapWithDestructuringTryNote(int32_t iterDepth,
+                                                   InnerEmitter emitter) {
   MOZ_ASSERT(this->stackDepth >= iterDepth);
 
   
@@ -2964,7 +2964,7 @@ bool BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(
   
   
   
-  if (!emit1(JSOP_TRY_DESTRUCTURING_ITERCLOSE)) {
+  if (!emit1(JSOP_TRY_DESTRUCTURING)) {
     return false;
   }
 
@@ -2974,7 +2974,7 @@ bool BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(
   }
   ptrdiff_t end = offset();
   if (start != end) {
-    return addTryNote(JSTRY_DESTRUCTURING_ITERCLOSE, iterDepth, start, end);
+    return addTryNote(JSTRY_DESTRUCTURING, iterDepth, start, end);
   }
   return true;
 }
@@ -3224,8 +3224,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         return bce->emitDestructuringLHSRef(lhsPattern, &emitted);
         
       };
-      if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth,
-                                                     emitLHSRef)) {
+      if (!wrapWithDestructuringTryNote(tryNoteDepth, emitLHSRef)) {
         return false;
       }
     }
@@ -3320,8 +3319,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         return bce->emitSetOrInitializeDestructuring(member, flav);
         
       };
-      if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth,
-                                                     emitAssignment)) {
+      if (!wrapWithDestructuringTryNote(tryNoteDepth, emitAssignment)) {
         return false;
       }
 
@@ -3447,8 +3445,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         
       };
 
-      if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth,
-                                                     emitDefault)) {
+      if (!wrapWithDestructuringTryNote(tryNoteDepth, emitDefault)) {
         return false;
       }
     }
@@ -3459,8 +3456,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         
       };
 
-      if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth,
-                                                     emitAssignment)) {
+      if (!wrapWithDestructuringTryNote(tryNoteDepth, emitAssignment)) {
         return false;
       }
     } else {

@@ -508,7 +508,7 @@ static bool HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc,
         }
         break;
 
-      case JSTRY_DESTRUCTURING_ITERCLOSE:
+      case JSTRY_DESTRUCTURING:
         
         
         if (stackDepth == tn.stackDepth || stackDepth == tn.stackDepth - 1) {

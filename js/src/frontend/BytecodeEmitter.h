@@ -774,8 +774,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
 
   template <typename InnerEmitter>
-  MOZ_MUST_USE bool wrapWithDestructuringIteratorCloseTryNote(
-      int32_t iterDepth, InnerEmitter emitter);
+  MOZ_MUST_USE bool wrapWithDestructuringTryNote(int32_t iterDepth,
+                                                 InnerEmitter emitter);
 
   
   
