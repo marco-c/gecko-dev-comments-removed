@@ -1214,6 +1214,13 @@ public:
   
   
   
+  
+  static bool
+  IsURIInList(nsIURI* aURI, const nsCString& aList);
+
+  
+  
+  
   static bool
   IsURIInPrefList(nsIURI* aURI, const char* aPrefName);
 

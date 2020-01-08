@@ -61,6 +61,9 @@ public:
 
     already_AddRefed<nsIChannel> GetChannel();
 
+    
+    bool IsTrackingURLWhitelisted(nsIURI *aUri);
+
 private:
     
     bool mIsAllowListed;
