@@ -734,6 +734,29 @@ LayerTransactionParent::RecvGetAnimationTransform(const uint64_t& aCompositorAni
 }
 
 mozilla::ipc::IPCResult
+LayerTransactionParent::RecvGetAnimationValue(const uint64_t& aCompositorAnimationsId,
+                                              OMTAValue* aValue)
+{
+  if (mDestroyed || !mLayerManager || mLayerManager->IsDestroyed()) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  
+  
+  
+  
+  mCompositorBridge->ApplyAsyncProperties(
+    this, CompositorBridgeParentBase::TransformsToSkip::APZ);
+
+  if (!mAnimStorage) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  *aValue = mAnimStorage->GetOMTAValue(aCompositorAnimationsId);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 LayerTransactionParent::RecvGetTransform(const LayerHandle& aLayerHandle,
                                          MaybeTransform* aTransform)
 {
