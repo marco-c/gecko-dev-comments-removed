@@ -6,6 +6,7 @@
 
 #include "RemoteWorkerManager.h"
 
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/RemoteWorkerParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundParent.h"
@@ -196,6 +197,18 @@ RemoteWorkerManager::LaunchNewContentProcess()
   MOZ_ASSERT(XRE_IsParentProcess());
 
   
+  nsCOMPtr<nsIRunnable> r =
+    NS_NewRunnableFunction("LaunchNewContentProcess", [] () {
+      RefPtr<ContentParent> unused =
+        ContentParent::GetNewOrUsedBrowserProcess(
+          nullptr,
+          NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+    }
+  );
+
+  nsCOMPtr<nsIEventTarget> target =
+    SystemGroup::EventTargetFor(TaskCategory::Other);
+  target->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
 }
 
 } 
