@@ -173,6 +173,16 @@ def get_raptor_test_list(args, oskey):
                 tests_to_run.append(next_test)
 
     
+    if args.gecko_profile is True:
+        for next_test in tests_to_run:
+            next_test['gecko_profile'] = True
+            if next_test['page_cycles'] > 3:
+                LOG.info("gecko profiling enabled, limiting pagecycles "
+                         "to 3 for test %s" % next_test['name'])
+                next_test['page_cycles'] = 3
+
+    
+    
     
     if args.page_cycles is not None:
         LOG.info("setting page-cycles to %d as specified on the command line" % args.page_cycles)
@@ -183,15 +193,6 @@ def get_raptor_test_list(args, oskey):
     if args.page_timeout is not None:
         LOG.info("setting page-timeout to %d as specified on the command line" % args.page_timeout)
         next_test['page_timeout'] = args.page_timeout
-
-    
-    if args.gecko_profile is True:
-        for next_test in tests_to_run:
-            next_test['gecko_profile'] = True
-            if next_test['page_cycles'] > 2:
-                LOG.info("gecko profiling enabled, limiting pagecycles "
-                         "to 2 for test %s" % next_test['name'])
-                next_test['page_cycles'] = 2
 
     
     if len(tests_to_run) != 0:
