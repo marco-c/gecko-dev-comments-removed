@@ -175,15 +175,6 @@ static JS::GCSliceCallback sPrevGCSliceCallback;
 
 static bool sHasRunGC;
 
-
-
-
-
-
-
-static uint32_t sPendingLoadCount;
-static bool sLoadingInProgress;
-
 static uint32_t sCCollectedWaitingForGC;
 static uint32_t sCCollectedZonesWaitingForGC;
 static uint32_t sLikelyShortLivingObjectsNeedingGC;
@@ -1211,15 +1202,6 @@ nsJSContext::GarbageCollectNow(JS::gcreason::Reason aReason,
 
   
   
-  
-  
-  
-  
-  sPendingLoadCount = 0;
-  sLoadingInProgress = false;
-
-  
-  
   JSContext* cx = danger::GetJSContext();
 
   if (!nsContentUtils::XPConnect() || !cx) {
@@ -2038,31 +2020,6 @@ nsJSContext::CleanupsSinceLastGC()
 }
 
 
-void
-nsJSContext::LoadStart()
-{
-  sLoadingInProgress = true;
-  ++sPendingLoadCount;
-}
-
-
-void
-nsJSContext::LoadEnd()
-{
-  if (!sLoadingInProgress)
-    return;
-
-  
-  
-  if (sPendingLoadCount > 0) {
-    --sPendingLoadCount;
-    return;
-  }
-
-  sLoadingInProgress = false;
-}
-
-
 
 
 
@@ -2514,8 +2471,6 @@ mozilla::dom::StartupJSEnvironment()
   sLastCCEndTime = TimeStamp();
   sLastForgetSkippableCycleEndTime = TimeStamp();
   sHasRunGC = false;
-  sPendingLoadCount = 0;
-  sLoadingInProgress = false;
   sCCollectedWaitingForGC = 0;
   sCCollectedZonesWaitingForGC = 0;
   sLikelyShortLivingObjectsNeedingGC = 0;

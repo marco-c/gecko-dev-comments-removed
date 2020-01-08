@@ -1034,7 +1034,6 @@ nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
           Destroy();
           return rv;
         }
-        nsJSContext::LoadStart();
       }
     }
   }
@@ -1217,8 +1216,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
   if (mDocument && mDocument->ScriptLoader()) {
     mDocument->ScriptLoader()->LoadEventFired();
   }
-
-  nsJSContext::LoadEnd();
 
   
   nsJSContext::PokeGC(JS::gcreason::LOAD_END,
