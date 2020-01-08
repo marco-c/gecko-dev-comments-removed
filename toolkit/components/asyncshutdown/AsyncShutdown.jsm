@@ -43,8 +43,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 ChromeUtils.defineModuleGetter(this, "PromiseUtils",
   "resource://gre/modules/PromiseUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Task",
-  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "gDebug",
   "@mozilla.org/xpcom/debug;1", "nsIDebug2");
 Object.defineProperty(this, "gCrashReporter", {
@@ -313,17 +311,11 @@ function getOrigin(topFrame, filename = null, lineNumber = null, stack = null) {
     if (stack == null) {
       
       
-      let frames = [];
+      stack = [];
       while (frame != null) {
-        frames.push(frame.filename + ":" + frame.name + ":" + frame.lineNumber);
+        stack.push(frame.filename + ":" + frame.name + ":" + frame.lineNumber);
         frame = frame.caller;
       }
-      stack = frames.join("\n");
-      
-      if (stack.includes("/Task.jsm:")) {
-        stack = Task.Debugging.generateReadableStack(stack);
-      }
-      stack = stack.split("\n");
     }
 
     return {
