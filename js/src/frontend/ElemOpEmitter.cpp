@@ -63,7 +63,7 @@ bool ElemOpEmitter::emitGet() {
     }
   }
   if (isSuper()) {
-    if (!bce_->emit1(JSOP_SUPERBASE)) {
+    if (!bce_->emitSuperBase()) {
       
       return false;
     }
@@ -132,7 +132,7 @@ bool ElemOpEmitter::prepareForRhs() {
   if (isSimpleAssignment()) {
     
     if (isSuper()) {
-      if (!bce_->emit1(JSOP_SUPERBASE)) {
+      if (!bce_->emitSuperBase()) {
         
         return false;
       }
@@ -164,7 +164,7 @@ bool ElemOpEmitter::emitDelete() {
       
       return false;
     }
-    if (!bce_->emit1(JSOP_SUPERBASE)) {
+    if (!bce_->emitSuperBase()) {
       
       return false;
     }

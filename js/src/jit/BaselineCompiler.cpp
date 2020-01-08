@@ -1214,7 +1214,6 @@ MethodStatus BaselineCompiler::emitBody() {
       case JSOP_SETINTRINSIC:
         
       case JSOP_UNUSED151:
-      case JSOP_UNUSED206:
       case JSOP_LIMIT:
         
         
@@ -4544,36 +4543,21 @@ bool BaselineCodeGen<Handler>::emit_JSOP_CALLEE() {
 }
 
 template <typename Handler>
-void BaselineCodeGen<Handler>::getThisEnvironmentCallee(Register reg) {
-  
-  if (function() && function()->allowSuperProperty()) {
-    masm.loadFunctionFromCalleeToken(frame.addressOfCalleeToken(), reg);
-    return;
+bool BaselineCodeGen<Handler>::emit_JSOP_ENVCALLEE() {
+  frame.syncStack(0);
+  uint8_t numHops = GET_UINT8(pc);
+  Register scratch = R0.scratchReg();
+
+  masm.loadPtr(frame.addressOfEnvironmentChain(), scratch);
+  for (unsigned i = 0; i < numHops; i++) {
+    Address nextAddr(scratch,
+                     EnvironmentObject::offsetOfEnclosingEnvironment());
+    masm.unboxObject(nextAddr, scratch);
   }
 
-  
-  masm.loadPtr(frame.addressOfEnvironmentChain(), reg);
-
-  
-  for (ScopeIter si(script->innermostScope(pc)); si; si++) {
-    
-    if (si.hasSyntacticEnvironment() && si.scope()->is<FunctionScope>()) {
-      JSFunction* fn = si.scope()->as<FunctionScope>().canonicalFunction();
-
-      if (!fn->isArrow()) {
-        break;
-      }
-    }
-
-    
-    if (si.scope()->hasEnvironment()) {
-      Address nextAddr(reg, EnvironmentObject::offsetOfEnclosingEnvironment());
-      masm.unboxObject(nextAddr, reg);
-    }
-  }
-
-  
-  masm.unboxObject(Address(reg, CallObject::offsetOfCallee()), reg);
+  masm.loadValue(Address(scratch, CallObject::offsetOfCallee()), R0);
+  frame.push(R0);
+  return true;
 }
 
 typedef JSObject* (*HomeObjectSuperBaseFn)(JSContext*, HandleObject);
@@ -4583,13 +4567,13 @@ static const VMFunction HomeObjectSuperBaseInfo =
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_JSOP_SUPERBASE() {
-  frame.syncStack(0);
+  frame.popRegsAndSync(1);
 
   Register scratch = R0.scratchReg();
   Register proto = R1.scratchReg();
 
   
-  getThisEnvironmentCallee(scratch);
+  masm.unboxObject(R0, scratch);
 
   
   Address homeObjAddr(scratch,
@@ -4630,14 +4614,14 @@ static const VMFunction SuperFunOperationInfo =
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_JSOP_SUPERFUN() {
-  frame.syncStack(0);
+  frame.popRegsAndSync(1);
 
   Register callee = R0.scratchReg();
   Register proto = R1.scratchReg();
   Register scratch = R2.scratchReg();
 
   
-  getThisEnvironmentCallee(callee);
+  masm.unboxObject(R0, callee);
 
   
   masm.loadObjProto(callee, proto);

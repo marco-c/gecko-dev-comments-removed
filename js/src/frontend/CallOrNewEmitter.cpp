@@ -101,6 +101,10 @@ bool CallOrNewEmitter::prepareForFunctionCallee() {
 bool CallOrNewEmitter::emitSuperCallee() {
   MOZ_ASSERT(state_ == State::Start);
 
+  if (!bce_->emitThisEnvironmentCallee()) {
+    
+    return false;
+  }
   if (!bce_->emit1(JSOP_SUPERFUN)) {
     
     return false;

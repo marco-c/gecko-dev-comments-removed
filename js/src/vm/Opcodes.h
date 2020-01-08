@@ -1059,7 +1059,7 @@
 
 
  \
-    MACRO(JSOP_SUPERBASE, 103, "superbase", NULL, 1, 0, 1, JOF_BYTE) \
+    MACRO(JSOP_SUPERBASE, 103, "superbase", NULL, 1, 1, 1, JOF_BYTE) \
     
 
 
@@ -1783,8 +1783,9 @@
 
 
 
+
  \
-    MACRO(JSOP_SUPERFUN, 164, "superfun", NULL, 1, 0, 1, JOF_BYTE) \
+    MACRO(JSOP_SUPERFUN, 164, "superfun", NULL, 1, 1, 1, JOF_BYTE) \
     
 
 
@@ -2223,8 +2224,16 @@
  \
     MACRO(JSOP_RESUME, 205, "resume", NULL, 3, 2, 1, JOF_UINT16|JOF_INVOKE) \
     
+
+
+
+
+
+
+
+
  \
-    MACRO(JSOP_UNUSED206, 206, "unused206", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_ENVCALLEE, 206, "envcallee", NULL, 2, 0, 1, JOF_UINT8) \
     
 
 
