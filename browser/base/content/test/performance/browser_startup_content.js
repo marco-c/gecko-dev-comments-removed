@@ -59,7 +59,6 @@ const whitelist = {
     "resource://gre/modules/PrivateBrowsingUtils.jsm",
     "resource://gre/modules/ReaderMode.jsm",
     "resource://gre/modules/WebProgressChild.jsm",
-    "resource://gre/actors/ZoomChild.jsm",
 
     
     "chrome://pocket/content/AboutPocket.jsm",
