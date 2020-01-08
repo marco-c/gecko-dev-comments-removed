@@ -689,6 +689,11 @@ CrossProcessCpowHolder::~CrossProcessCpowHolder()
         
         
         
+        
+        
+        
+        if (recordreplay::IsMiddleman())
+            return;
         AutoJSAPI jsapi;
         if (!jsapi.Init(xpc::PrivilegedJunkScope()))
             return;
@@ -713,6 +718,9 @@ bool
 JavaScriptShared::Unwrap(JSContext* cx, const InfallibleTArray<CpowEntry>& aCpows,
                          JS::MutableHandleObject objp)
 {
+    
+    MOZ_ASSERT(!recordreplay::IsMiddleman());
+
     objp.set(nullptr);
 
     if (!aCpows.Length())
