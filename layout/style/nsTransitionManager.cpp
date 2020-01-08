@@ -233,7 +233,7 @@ CSSTransition::QueueEvents(const StickyTimeDuration& aActiveTime)
 
   auto appendTransitionEvent = [&](EventMessage aMessage,
                                    const StickyTimeDuration& aElapsedTime,
-                                   const TimeStamp& aTimeStamp) {
+                                   const TimeStamp& aScheduledEventTimeStamp) {
     double elapsedTime = aElapsedTime.ToSeconds();
     if (aMessage == eTransitionCancel) {
       
@@ -247,7 +247,7 @@ CSSTransition::QueueEvents(const StickyTimeDuration& aActiveTime)
                                             mOwningElement.Target(),
                                             aMessage,
                                             elapsedTime,
-                                            aTimeStamp,
+                                            aScheduledEventTimeStamp,
                                             this));
   };
 
