@@ -3026,40 +3026,40 @@ nsresult nsNativeThemeWin::ClassicGetMinimumWidgetSize(
         (*aResult).width = (*aResult).height = 15;
       *aIsOverridable = false;
       break;
-      case StyleAppearance::ScrollbarthumbVertical:
-        (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
-        (*aResult).height = ::GetSystemMetrics(SM_CYVTHUMB);
-        
-        
-        if (!GetTheme(aAppearance)) {
-          (*aResult).height >>= 1;
-        }
-        
-        
-        if (IsScrollbarWidthThin(aFrame)) {
-          aResult->width >>= 1;
-        }
-        *aIsOverridable = false;
-        break;
-      case StyleAppearance::ScrollbarthumbHorizontal:
-        (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB);
-        (*aResult).height = ::GetSystemMetrics(SM_CYHSCROLL);
-        
-        
-        if (!GetTheme(aAppearance)) {
-          (*aResult).width >>= 1;
-        }
-        
-        
-        if (IsScrollbarWidthThin(aFrame)) {
-          aResult->height >>= 1;
-        }
-        *aIsOverridable = false;
-        break;
-      case StyleAppearance::ScrollbarHorizontal:
-        (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB) << 1;
-        break;
     }
+    case StyleAppearance::ScrollbarthumbVertical:
+      (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
+      (*aResult).height = ::GetSystemMetrics(SM_CYVTHUMB);
+      
+      
+      if (!GetTheme(aAppearance)) {
+        (*aResult).height >>= 1;
+      }
+      
+      
+      if (IsScrollbarWidthThin(aFrame)) {
+        aResult->width >>= 1;
+      }
+      *aIsOverridable = false;
+      break;
+    case StyleAppearance::ScrollbarthumbHorizontal:
+      (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB);
+      (*aResult).height = ::GetSystemMetrics(SM_CYHSCROLL);
+      
+      
+      if (!GetTheme(aAppearance)) {
+        (*aResult).width >>= 1;
+      }
+      
+      
+      if (IsScrollbarWidthThin(aFrame)) {
+        aResult->height >>= 1;
+      }
+      *aIsOverridable = false;
+      break;
+    case StyleAppearance::ScrollbarHorizontal:
+      (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB) << 1;
+      break;
     case StyleAppearance::Menuseparator: {
       aResult->width = 0;
       aResult->height = 10;
