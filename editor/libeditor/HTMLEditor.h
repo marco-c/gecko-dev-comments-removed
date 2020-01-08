@@ -548,9 +548,36 @@ protected:
 
 
 
+
   already_AddRefed<Element>
   GetFirstSelectedTableCellElement(Selection& aSelection,
                                    ErrorResult& aRv) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  GetNextSelectedTableCellElement(Selection& aSelection,
+                                  ErrorResult& aRv) const;
 
   void IsNextCharInNodeWhitespace(nsIContent* aContent,
                                   int32_t aOffset,
@@ -1879,7 +1906,8 @@ protected:
 
   
   
-  mutable int32_t mSelectedCellIndex;
+  
+  mutable uint32_t mSelectedCellIndex;
 
   nsString mLastStyleSheetURL;
   nsString mLastOverrideStyleSheetURL;

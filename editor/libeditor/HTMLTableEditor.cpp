@@ -812,8 +812,10 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
           
           int32_t nextRow = startRowIndex;
           while (nextRow == startRowIndex) {
-            rv = GetNextSelectedCell(nullptr, getter_AddRefs(cell));
-            NS_ENSURE_SUCCESS(rv, rv);
+            cell = GetNextSelectedTableCellElement(*selection, error);
+            if (NS_WARN_IF(error.Failed())) {
+              return error.StealNSResult();
+            }
             if (!cell) {
               break;
             }
@@ -850,8 +852,10 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
             
             int32_t nextCol = startColIndex;
             while (nextCol == startColIndex) {
-              rv = GetNextSelectedCell(nullptr, getter_AddRefs(cell));
-              NS_ENSURE_SUCCESS(rv, rv);
+              cell = GetNextSelectedTableCellElement(*selection, error);
+              if (NS_WARN_IF(error.Failed())) {
+                return error.StealNSResult();
+              }
               if (!cell) {
                 break;
               }
@@ -875,8 +879,11 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
         }
         if (!deleteCol) {
           
-          RefPtr<Element> nextCell;
-          rv = GetNextSelectedCell(nullptr, getter_AddRefs(nextCell));
+          RefPtr<Element> nextCell =
+            GetNextSelectedTableCellElement(*selection, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
           NS_ENSURE_SUCCESS(rv, rv);
 
           
@@ -1005,9 +1012,9 @@ HTMLEditor::DeleteTableCellContents()
     DeleteCellContents(cell);
     if (firstSelectedCellElement) {
       
-      nsresult rv = GetNextSelectedCell(nullptr, getter_AddRefs(cell));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      cell = GetNextSelectedTableCellElement(*selection, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
       }
     } else {
       cell = nullptr;
@@ -1109,8 +1116,10 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
       
       int32_t nextCol = startColIndex;
       while (nextCol == startColIndex) {
-        rv = GetNextSelectedCell(nullptr, getter_AddRefs(cell));
-        NS_ENSURE_SUCCESS(rv, rv);
+        cell = GetNextSelectedTableCellElement(*selection, error);
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
         if (!cell) {
           break;
         }
@@ -1299,8 +1308,10 @@ HTMLEditor::DeleteTableRow(int32_t aNumber)
       
       int32_t nextRow = startRowIndex;
       while (nextRow == startRowIndex) {
-        nsresult rv = GetNextSelectedCell(nullptr, getter_AddRefs(cell));
-        NS_ENSURE_SUCCESS(rv, rv);
+        cell = GetNextSelectedTableCellElement(*selection, error);
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
         if (!cell) {
           break;
         }
@@ -1566,12 +1577,16 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
         currentCellIndexes.mColumn > maxColumn) {
       selection->RemoveRange(*range, IgnoreErrors());
       
+      MOZ_ASSERT(mSelectedCellIndex > 0);
       mSelectedCellIndex--;
     }
-    nsresult rv =
-      GetNextSelectedCell(getter_AddRefs(range), getter_AddRefs(cell));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    cell = GetNextSelectedTableCellElement(*selection, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    if (cell) {
+      MOZ_ASSERT(mSelectedCellIndex > 0);
+      range = selection->GetRangeAt(mSelectedCellIndex - 1);
     }
   }
 
@@ -2174,17 +2189,25 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
   
   
 
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+
   RefPtr<Element> firstCell;
   int32_t firstRowIndex, firstColIndex;
   rv = GetFirstSelectedCellInTable(&firstRowIndex, &firstColIndex,
                                    getter_AddRefs(firstCell));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  ErrorResult error;
   bool joinSelectedCells = false;
   if (firstCell) {
-    RefPtr<Element> secondCell;
-    rv = GetNextSelectedCell(nullptr, getter_AddRefs(secondCell));
-    NS_ENSURE_SUCCESS(rv, rv);
+    RefPtr<Element> secondCell =
+      GetNextSelectedTableCellElement(*selection, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
 
     
     joinSelectedCells = (secondCell != nullptr);
@@ -2193,7 +2216,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
   if (joinSelectedCells) {
     
     
-    ErrorResult error;
     TableSize tableSize(*this, *table, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
@@ -3362,53 +3384,83 @@ HTMLEditor::GetFirstSelectedTableCellElement(Selection& aSelection,
 }
 
 NS_IMETHODIMP
-HTMLEditor::GetNextSelectedCell(nsRange** aRange,
-                                Element** aCell)
+HTMLEditor::GetNextSelectedCell(nsRange** aNextSelectedCellRange,
+                                Element** aNextSelectedCellElement)
 {
-  NS_ENSURE_TRUE(aCell, NS_ERROR_NULL_POINTER);
-  *aCell = nullptr;
-  if (aRange) {
-    *aRange = nullptr;
+  if (NS_WARN_IF(!aNextSelectedCellElement)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  *aNextSelectedCellElement = nullptr;
+  if (aNextSelectedCellRange) {
+    *aNextSelectedCellRange = nullptr;
   }
 
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
-
-  int32_t rangeCount = selection->RangeCount();
-
-  
-  if (mSelectedCellIndex >= rangeCount) {
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
   }
 
-  
-  RefPtr<nsRange> range;
-  for (; mSelectedCellIndex < rangeCount; mSelectedCellIndex++) {
-    range = selection->GetRangeAt(mSelectedCellIndex);
-    NS_ENSURE_TRUE(range, NS_ERROR_FAILURE);
+  ErrorResult error;
+  RefPtr<Element> nextSelectedCellElement =
+    GetNextSelectedTableCellElement(*selection, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
 
-    nsresult rv = HTMLEditor::GetCellFromRange(range, aCell);
+  if (!nextSelectedCellElement) {
     
-    NS_ENSURE_SUCCESS(rv, NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND);
+    return NS_OK;
+  }
 
+  if (aNextSelectedCellRange) {
+    MOZ_ASSERT(mSelectedCellIndex > 0);
+    *aNextSelectedCellRange =
+      do_AddRef(selection->GetRangeAt(mSelectedCellIndex - 1)).take();
+  }
+  nextSelectedCellElement.forget(aNextSelectedCellElement);
+  return NS_OK;
+}
+
+already_AddRefed<Element>
+HTMLEditor::GetNextSelectedTableCellElement(Selection& aSelection,
+                                            ErrorResult& aRv) const
+{
+  MOZ_ASSERT(!aRv.Failed());
+
+  if (mSelectedCellIndex >= aSelection.RangeCount()) {
     
-    if (*aCell) {
-      break;
+    return nullptr;
+  }
+
+  MOZ_ASSERT(mSelectedCellIndex > 0);
+  for (; mSelectedCellIndex < aSelection.RangeCount(); mSelectedCellIndex++) {
+    nsRange* range = aSelection.GetRangeAt(mSelectedCellIndex);
+    if (NS_WARN_IF(!range)) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return nullptr;
     }
 
-    
+    RefPtr<Element> nextSelectedCellElement;
+    nsresult rv =
+      HTMLEditor::GetCellFromRange(range,
+                                   getter_AddRefs(nextSelectedCellElement));
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      
+      return nullptr;
+    }
+
+    if (nextSelectedCellElement) {
+      mSelectedCellIndex++;
+      return nextSelectedCellElement.forget();
+    }
   }
-  
-  NS_ENSURE_TRUE(*aCell, NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND);
-
-  if (aRange) {
-    range.forget(aRange);
-  }
 
   
-  mSelectedCellIndex++;
-
-  return NS_OK;
+  return nullptr;
 }
 
 NS_IMETHODIMP
@@ -3667,6 +3719,7 @@ HTMLEditor::GetSelectedCellsType(Element* aElement,
 
   bool allCellsInRowAreSelected = false;
   bool allCellsInColAreSelected = false;
+  IgnoredErrorResult ignoredError;
   while (selectedCell) {
     CellIndexes selectedCellIndexes(*selectedCell, error);
     if (NS_WARN_IF(error.Failed())) {
@@ -3682,9 +3735,8 @@ HTMLEditor::GetSelectedCellsType(Element* aElement,
         break;
       }
     }
-    DebugOnly<nsresult> rv =
-      GetNextSelectedCell(nullptr, getter_AddRefs(selectedCell));
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+    selectedCell = GetNextSelectedTableCellElement(*selection, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
       "Failed to get next selected table cell element");
   }
 
@@ -3698,7 +3750,6 @@ HTMLEditor::GetSelectedCellsType(Element* aElement,
   indexArray.Clear();
 
   
-  IgnoredErrorResult ignoredError;
   selectedCell = GetFirstSelectedTableCellElement(*selection, ignoredError);
   while (selectedCell) {
     CellIndexes selectedCellIndexes(*selectedCell, error);
@@ -3716,9 +3767,8 @@ HTMLEditor::GetSelectedCellsType(Element* aElement,
         break;
       }
     }
-    DebugOnly<nsresult> rv =
-      GetNextSelectedCell(nullptr, getter_AddRefs(selectedCell));
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+    selectedCell = GetNextSelectedTableCellElement(*selection, ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
       "Failed to get next selected table cell element");
   }
   if (allCellsInColAreSelected) {
