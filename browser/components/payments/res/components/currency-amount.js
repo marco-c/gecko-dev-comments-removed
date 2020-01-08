@@ -12,61 +12,26 @@ import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
 
 export default class CurrencyAmount extends ObservedPropertiesMixin(HTMLElement) {
   static get observedAttributes() {
-    return [
-      "currency",
-      "display-code",
-      "value",
-    ];
-  }
-
-  constructor() {
-    super();
-    this._currencyAmountTextNode = document.createTextNode("");
-    this._currencyCodeElement = document.createElement("span");
-    this._currencyCodeElement.classList.add("currency-code");
-  }
-
-  connectedCallback() {
-    if (super.connectedCallback) {
-      super.connectedCallback();
-    }
-
-    this.append(this._currencyAmountTextNode, this._currencyCodeElement);
+    return ["currency", "value"];
   }
 
   render() {
-    let currencyAmount = "";
-    let currencyCode = "";
+    let output = "";
     try {
       if (this.value && this.currency) {
         let number = Number.parseFloat(this.value);
         if (Number.isNaN(number) || !Number.isFinite(number)) {
           throw new RangeError("currency-amount value must be a finite number");
         }
-        const symbolFormatter = new Intl.NumberFormat(navigator.languages, {
+        const formatter = new Intl.NumberFormat(navigator.languages, {
           style: "currency",
           currency: this.currency,
           currencyDisplay: "symbol",
         });
-        currencyAmount = symbolFormatter.format(this.value);
-
-        if (this.displayCode !== null) {
-          
-          currencyAmount += " ";
-
-          const codeFormatter = new Intl.NumberFormat(navigator.languages, {
-            style: "currency",
-            currency: this.currency,
-            currencyDisplay: "code",
-          });
-          let parts = codeFormatter.formatToParts(this.value);
-          let currencyPart = parts.find(part => part.type == "currency");
-          currencyCode = currencyPart.value;
-        }
+        output = formatter.format(this.value);
       }
     } finally {
-      this._currencyAmountTextNode.textContent = currencyAmount;
-      this._currencyCodeElement.textContent = currencyCode;
+      this.textContent = output;
     }
   }
 }

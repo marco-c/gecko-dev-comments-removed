@@ -3,6 +3,9 @@
 
 
 html {
+  
+  -moz-appearance: dialog;
+  background-color: -moz-Dialog;
   color: -moz-DialogText;
   font: message-box;
   
