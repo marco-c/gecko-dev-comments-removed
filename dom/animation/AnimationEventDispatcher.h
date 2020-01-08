@@ -247,6 +247,10 @@ private:
       return;
     }
 
+    for (auto& pending : mPendingEvents) {
+      pending.mAnimation->CachedChildIndexRef() = -1;
+    }
+
     
     
     std::stable_sort(mPendingEvents.begin(), mPendingEvents.end(),

@@ -435,7 +435,13 @@ public:
 
 
 
-  static bool PositionIsBefore(nsINode* aNode1, nsINode* aNode2);
+
+
+
+
+  static bool PositionIsBefore(nsINode* aNode1, nsINode* aNode2,
+                               int32_t* aNode1Index = nullptr,
+                               int32_t* aNode2Index = nullptr);
 
   
 

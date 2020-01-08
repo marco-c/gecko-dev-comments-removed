@@ -155,7 +155,10 @@ CSSAnimation::HasLowerCompositeOrderThan(const CSSAnimation& aOther) const
 
   
   if (!mOwningElement.Equals(aOther.mOwningElement)) {
-    return mOwningElement.LessThan(aOther.mOwningElement);
+    return mOwningElement.LessThan(
+      const_cast<CSSAnimation*>(this)->CachedChildIndexRef(),
+      aOther.mOwningElement,
+      const_cast<CSSAnimation*>(&aOther)->CachedChildIndexRef());
   }
 
   

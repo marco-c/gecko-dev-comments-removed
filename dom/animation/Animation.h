@@ -61,6 +61,7 @@ public:
     : DOMEventTargetHelper(aGlobal)
     , mPlaybackRate(1.0)
     , mAnimationIndex(sNextAnimationIndex++)
+    , mCachedChildIndex(-1)
     , mPendingState(PendingState::NotPending)
     , mFinishedAtLastComposeStyle(false)
     , mIsRelevant(false)
@@ -405,6 +406,8 @@ public:
 
   virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) {};
 
+  int32_t& CachedChildIndexRef() { return mCachedChildIndex; }
+
 protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -578,6 +581,10 @@ protected:
   
   
   uint64_t mAnimationIndex;
+
+  
+  
+  int32_t mCachedChildIndex;
 
   
   

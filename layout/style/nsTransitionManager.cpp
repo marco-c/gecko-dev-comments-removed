@@ -362,7 +362,10 @@ CSSTransition::HasLowerCompositeOrderThan(const CSSTransition& aOther) const
 
   
   if (!mOwningElement.Equals(aOther.mOwningElement)) {
-    return mOwningElement.LessThan(aOther.mOwningElement);
+    return mOwningElement.LessThan(
+      const_cast<CSSTransition*>(this)->CachedChildIndexRef(),
+      aOther.mOwningElement,
+      const_cast<CSSTransition*>(&aOther)->CachedChildIndexRef());
   }
 
   
