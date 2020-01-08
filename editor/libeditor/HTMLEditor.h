@@ -765,6 +765,16 @@ protected:
 
 
 
+  nsresult PasteInternal(int32_t aClipboardType);
+
+  
+
+
+
+
+
+
+
 
 
 
