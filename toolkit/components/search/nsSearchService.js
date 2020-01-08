@@ -989,9 +989,10 @@ function EngineURL(aType, aMethod, aTemplate, aResultDomain) {
       FAIL("new EngineURL: template uses invalid scheme!", Cr.NS_ERROR_FAILURE);
   }
 
+  this.templateHost = templateURI.host;
   
   
-  this.resultDomain = aResultDomain || templateURI.host;
+  this.resultDomain = aResultDomain || this.templateHost;
 }
 EngineURL.prototype = {
 
@@ -4151,6 +4152,33 @@ SearchService.prototype = {
             sendSubmissionURL = true;
             break;
           }
+        }
+      }
+
+      if (!sendSubmissionURL) {
+        
+        let engineHost = engine._getURLOfType(URLTYPE_SEARCH_HTML).templateHost;
+        for (let name in this._engines) {
+          let innerEngine = this._engines[name];
+          if (!innerEngine._isDefault) {
+            continue;
+          }
+
+          let innerEngineURL = innerEngine._getURLOfType(URLTYPE_SEARCH_HTML);
+          if (innerEngineURL.templateHost == engineHost) {
+            sendSubmissionURL = true;
+            break;
+          }
+        }
+
+        if (!sendSubmissionURL) {
+          
+          
+          
+          
+          
+          const urlTest = /^(?:www\.google\.|search\.aol\.|yandex\.)|(?:search\.yahoo|\.ask|\.bing|\.startpage|\.baidu|\.duckduckgo)\.com$/;
+          sendSubmissionURL = urlTest.test(engineHost);
         }
       }
 
