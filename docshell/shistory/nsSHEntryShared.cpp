@@ -97,17 +97,15 @@ nsSHEntryShared::RemoveFromExpirationTracker()
   }
 }
 
-nsresult
+void
 nsSHEntryShared::SyncPresentationState()
 {
   if (mContentViewer && mWindowState) {
     
-    return NS_OK;
+    return;
   }
 
   DropPresentationState();
-
-  return NS_OK;
 }
 
 void
