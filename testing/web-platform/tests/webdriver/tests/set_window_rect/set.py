@@ -168,6 +168,11 @@ def test_restore_from_maximized(session):
 
 
 def test_height_width(session):
+    
+    
+    
+    session.window.position = (50, 50)
+
     original = session.window.rect
     max = session.execute_script("""
         return {
@@ -250,10 +255,16 @@ def test_negative_x_y(session):
     
     
     elif os == "mac":
-        assert_success(response, {"x": -8,
-                                  "y": 23,
-                                  "width": original["width"],
-                                  "height": original["height"]})
+        value = assert_success(response)
+
+        
+        
+        avail_top = session.execute_script("return window.screen.availTop;")
+
+        assert value == {"x": -8,
+                         "y": avail_top,
+                         "width": original["width"],
+                         "height": original["height"]}
 
     
     
