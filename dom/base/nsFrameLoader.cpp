@@ -2562,6 +2562,10 @@ nsFrameLoader::TryRemoteBrowser()
 {
   NS_ASSERTION(!mRemoteBrowser, "TryRemoteBrowser called with a remote browser already?");
 
+  if (!mOwnerContent) {
+    return false;
+  }
+
   
   
   
