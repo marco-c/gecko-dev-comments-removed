@@ -543,7 +543,9 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
 #if ENABLE_APZCTM_LOGGING
   
   printf_stderr("APZCTreeManager (%p)\n", this);
-  mRootNode->Dump("  ");
+  if (mRootNode) {
+    mRootNode->Dump("  ");
+  }
 #endif
 }
 
