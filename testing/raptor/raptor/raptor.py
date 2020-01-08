@@ -150,6 +150,8 @@ class Raptor(object):
             self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
         
+        
+        
         raptor_webext = os.path.join(webext_dir, 'raptor')
         self.log.info("installing webext %s" % raptor_webext)
         self.profile.addons.install(raptor_webext)
@@ -258,10 +260,13 @@ class Raptor(object):
             self.playback.stop()
 
         
-        
+        self.log.info("removing webext %s" % raptor_webext)
         if self.config['app'] in ["firefox", "geckoview"]:
-            self.log.info("removing webext %s" % raptor_webext)
             self.profile.addons.remove_addon(webext_id)
+
+        
+        if self.config['app'] in ["chrome", "chrome-android"]:
+            self.profile.addons.remove(raptor_webext)
 
         if self.config['app'] != "geckoview":
             if self.runner.is_running():
