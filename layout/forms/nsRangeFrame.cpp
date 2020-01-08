@@ -493,7 +493,10 @@ nsRangeFrame::GetValueAsFractionOfRange()
              "type=range should have a default maximum/minimum");
 
   if (maximum <= minimum) {
-    MOZ_ASSERT(value == minimum, "Unsanitized value");
+    
+    MOZ_ASSERT((value - minimum).abs().toDouble() <
+                 std::numeric_limits<float>::epsilon(),
+               "Unsanitized value");
     return 0.0;
   }
 
