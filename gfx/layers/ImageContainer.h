@@ -702,8 +702,6 @@ private:
   bool mIsAsync;
   CompositableHandle mAsyncContainerHandle;
 
-  nsTArray<FrameID> mFrameIDsNotYetComposited;
-  
   
   ProducerID mCurrentProducerID;
 
