@@ -186,13 +186,15 @@ def get_raptor_test_list(args, oskey):
     
     if args.page_cycles is not None:
         LOG.info("setting page-cycles to %d as specified on the command line" % args.page_cycles)
-        next_test['page_cycles'] = args.page_cycles
+        for next_test in tests_to_run:
+            next_test['page_cycles'] = args.page_cycles
 
     
     
     if args.page_timeout is not None:
         LOG.info("setting page-timeout to %d as specified on the command line" % args.page_timeout)
-        next_test['page_timeout'] = args.page_timeout
+        for next_test in tests_to_run:
+            next_test['page_timeout'] = args.page_timeout
 
     
     if len(tests_to_run) != 0:
