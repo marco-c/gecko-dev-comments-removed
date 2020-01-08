@@ -55,8 +55,12 @@ NS_IMETHODIMP
 DocumentResizeEventListener::HandleEvent(Event* aMouseEvent)
 {
   RefPtr<HTMLEditor> htmlEditor = mHTMLEditorWeak.get();
-  if (htmlEditor) {
-    return htmlEditor->RefreshResizers();
+  if (!htmlEditor) {
+    return NS_OK;
+  }
+  nsresult rv = htmlEditor->RefreshResizersInternal();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
   return NS_OK;
 }
@@ -175,16 +179,15 @@ HTMLEditor::CreateResizingInfo(nsIContent& aParentContent)
 nsresult
 HTMLEditor::SetAllResizersPosition()
 {
-  NS_ENSURE_TRUE(mTopLeftHandle, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!mTopLeftHandle)) {
+    return NS_ERROR_FAILURE; 
+  }
 
   int32_t x = mResizedObjectX;
   int32_t y = mResizedObjectY;
   int32_t w = mResizedObjectWidth;
   int32_t h = mResizedObjectHeight;
 
-  
-
-  
   nsAutoString value;
   float resizerWidth, resizerHeight;
   RefPtr<nsAtom> dummyUnit;
@@ -195,19 +198,54 @@ HTMLEditor::SetAllResizersPosition()
                                     value);
   CSSEditUtils::ParseLength(value, &resizerHeight, getter_AddRefs(dummyUnit));
 
-  int32_t rw  = (int32_t)((resizerWidth + 1) / 2);
-  int32_t rh =  (int32_t)((resizerHeight+ 1) / 2);
+  int32_t rw = static_cast<int32_t>((resizerWidth + 1) / 2);
+  int32_t rh = static_cast<int32_t>((resizerHeight+ 1) / 2);
 
-  SetAnonymousElementPosition(x-rw,     y-rh, mTopLeftHandle);
-  SetAnonymousElementPosition(x+w/2-rw, y-rh, mTopHandle);
-  SetAnonymousElementPosition(x+w-rw-1, y-rh, mTopRightHandle);
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Element> topLeftHandle = mTopLeftHandle.get();
+  SetAnonymousElementPosition(x - rw,     y - rh, mTopLeftHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
+  SetAnonymousElementPosition(x + w/2-rw, y - rh, mTopHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
+  SetAnonymousElementPosition(x + w-rw-1, y - rh, mTopRightHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  SetAnonymousElementPosition(x-rw,     y+h/2-rh, mLeftHandle);
-  SetAnonymousElementPosition(x+w-rw-1, y+h/2-rh, mRightHandle);
+  SetAnonymousElementPosition(x - rw,     y + h / 2 - rh, mLeftHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
+  SetAnonymousElementPosition(x + w-rw-1, y + h / 2 - rh, mRightHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  SetAnonymousElementPosition(x-rw,     y+h-rh-1, mBottomLeftHandle);
-  SetAnonymousElementPosition(x+w/2-rw, y+h-rh-1, mBottomHandle);
-  SetAnonymousElementPosition(x+w-rw-1, y+h-rh-1, mBottomRightHandle);
+  SetAnonymousElementPosition(x - rw,         y + h - rh - 1,
+                              mBottomLeftHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
+  SetAnonymousElementPosition(x + w / 2 - rw, y + h - rh - 1,
+                              mBottomHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
+  SetAnonymousElementPosition(x + w - rw - 1, y + h - rh - 1,
+                              mBottomRightHandle);
+  if (NS_WARN_IF(topLeftHandle != mTopLeftHandle)) {
+    return NS_ERROR_FAILURE;
+  }
 
   return NS_OK;
 }
@@ -215,26 +253,49 @@ HTMLEditor::SetAllResizersPosition()
 NS_IMETHODIMP
 HTMLEditor::RefreshResizers()
 {
-  
-  NS_ENSURE_TRUE(mResizedObject, NS_OK);
+  if (NS_WARN_IF(!mResizedObject)) {
+    return NS_OK;
+  }
+  nsresult rv = RefreshResizersInternal();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
 
-  nsresult rv =
-    GetPositionAndDimensions(
-      *mResizedObject,
-      mResizedObjectX,
-      mResizedObjectY,
-      mResizedObjectWidth,
-      mResizedObjectHeight,
-      mResizedObjectBorderLeft,
-      mResizedObjectBorderTop,
-      mResizedObjectMarginLeft,
-      mResizedObjectMarginTop);
+nsresult
+HTMLEditor::RefreshResizersInternal()
+{
+  if (!mResizedObject) {
+    return NS_OK;
+  }
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = GetPositionAndDimensions(*mResizedObject,
+                                         mResizedObjectX,
+                                         mResizedObjectY,
+                                         mResizedObjectWidth,
+                                         mResizedObjectHeight,
+                                         mResizedObjectBorderLeft,
+                                         mResizedObjectBorderTop,
+                                         mResizedObjectMarginLeft,
+                                         mResizedObjectMarginTop);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   rv = SetAllResizersPosition();
-  NS_ENSURE_SUCCESS(rv, rv);
-  return SetShadowPosition(mResizingShadow, mResizedObject,
-                           mResizedObjectX, mResizedObjectY);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  MOZ_ASSERT(mResizingShadow,
+    "SetAllResizersPosition() should return error if resizers are hidden");
+  rv = SetShadowPosition(*mResizingShadow, *mResizedObject,
+                         mResizedObjectX, mResizedObjectY);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -261,56 +322,110 @@ HTMLEditor::ShowResizersInternal(Element& aResizedElement)
     mResizedObject = &aResizedElement;
 
     
-    mTopLeftHandle =
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ManualNACPtr newResizer =
       CreateResizer(nsIHTMLObjectResizer::eTopLeft, *parentContent);
-    if (NS_WARN_IF(!mTopLeftHandle)) {
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
-    mTopHandle = CreateResizer(nsIHTMLObjectResizer::eTop, *parentContent);
-    if (NS_WARN_IF(!mTopHandle)) {
+    if (NS_WARN_IF(mTopLeftHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+    mTopLeftHandle = std::move(newResizer);
+    newResizer = CreateResizer(nsIHTMLObjectResizer::eTop, *parentContent);
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
-    mTopRightHandle =
-      CreateResizer(nsIHTMLObjectResizer::eTopRight, *parentContent);
-    if (NS_WARN_IF(!mTopRightHandle)) {
+    if (NS_WARN_IF(mTopHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mTopHandle = std::move(newResizer);
+    newResizer = CreateResizer(nsIHTMLObjectResizer::eTopRight, *parentContent);
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
+    if (NS_WARN_IF(mTopRightHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mTopRightHandle = std::move(newResizer);
 
-    mLeftHandle = CreateResizer(nsIHTMLObjectResizer::eLeft, *parentContent);
-    if (NS_WARN_IF(!mLeftHandle)) {
+    newResizer = CreateResizer(nsIHTMLObjectResizer::eLeft, *parentContent);
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
-    mRightHandle = CreateResizer(nsIHTMLObjectResizer::eRight, *parentContent);
-    if (NS_WARN_IF(!mRightHandle)) {
+    if (NS_WARN_IF(mLeftHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mLeftHandle = std::move(newResizer);
+    newResizer = CreateResizer(nsIHTMLObjectResizer::eRight, *parentContent);
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
+    if (NS_WARN_IF(mRightHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mRightHandle = std::move(newResizer);
 
-    mBottomLeftHandle =
+    newResizer =
       CreateResizer(nsIHTMLObjectResizer::eBottomLeft, *parentContent);
-    if (NS_WARN_IF(!mBottomLeftHandle)) {
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
-    mBottomHandle =
-      CreateResizer(nsIHTMLObjectResizer::eBottom, *parentContent);
-    if (NS_WARN_IF(!mBottomHandle)) {
+    if (NS_WARN_IF(mBottomLeftHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mBottomLeftHandle = std::move(newResizer);
+    newResizer = CreateResizer(nsIHTMLObjectResizer::eBottom, *parentContent);
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
-    mBottomRightHandle =
+    if (NS_WARN_IF(mBottomHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mBottomHandle = std::move(newResizer);
+    newResizer =
       CreateResizer(nsIHTMLObjectResizer::eBottomRight, *parentContent);
-    if (NS_WARN_IF(!mBottomRightHandle)) {
+    if (NS_WARN_IF(!newResizer)) {
       break;
     }
+    if (NS_WARN_IF(mBottomRightHandle) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mBottomRightHandle = std::move(newResizer);
 
-    nsresult rv =
-      GetPositionAndDimensions(aResizedElement,
-                               mResizedObjectX,
-                               mResizedObjectY,
-                               mResizedObjectWidth,
-                               mResizedObjectHeight,
-                               mResizedObjectBorderLeft,
-                               mResizedObjectBorderTop,
-                               mResizedObjectMarginLeft,
-                               mResizedObjectMarginTop);
+    
+    
+    
+    RefPtr<Element> createdBottomRightNalde = mBottomRightHandle.get();
+
+    nsresult rv = GetPositionAndDimensions(aResizedElement,
+                                           mResizedObjectX,
+                                           mResizedObjectY,
+                                           mResizedObjectWidth,
+                                           mResizedObjectHeight,
+                                           mResizedObjectBorderLeft,
+                                           mResizedObjectBorderTop,
+                                           mResizedObjectMarginLeft,
+                                           mResizedObjectMarginTop);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       break;
     }
@@ -318,26 +433,43 @@ HTMLEditor::ShowResizersInternal(Element& aResizedElement)
     
     rv = SetAllResizersPosition();
     if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_WARN_IF(mBottomRightHandle.get() != createdBottomRightNalde)) {
+        return NS_ERROR_FAILURE;
+      }
       break;
     }
 
     
-    mResizingShadow = CreateShadow(*parentContent, aResizedElement);
-    if (NS_WARN_IF(!mResizingShadow)) {
+    ManualNACPtr newShadow = CreateShadow(*parentContent, aResizedElement);
+    if (NS_WARN_IF(!newShadow)) {
       break;
     }
+    if (NS_WARN_IF(mResizingShadow) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mResizingShadow = std::move(newShadow);
+
     
-    rv = SetShadowPosition(mResizingShadow, &aResizedElement,
+    rv = SetShadowPosition(*mResizingShadow, aResizedElement,
                            mResizedObjectX, mResizedObjectY);
     if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_WARN_IF(mBottomRightHandle.get() != createdBottomRightNalde)) {
+        return NS_ERROR_FAILURE;
+      }
       break;
     }
 
     
-    mResizingInfo = CreateResizingInfo(*parentContent);
-    if (NS_WARN_IF(!mResizingInfo)) {
+    ManualNACPtr newResizingInfo = CreateResizingInfo(*parentContent);
+    if (NS_WARN_IF(!newResizingInfo)) {
       break;
     }
+    if (NS_WARN_IF(mResizingInfo) ||
+        NS_WARN_IF(mResizedObject != &aResizedElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    mResizingInfo = std::move(newResizingInfo);
 
     
     
@@ -734,19 +866,33 @@ HTMLEditor::SetResizingInfoPosition(int32_t aX,
 }
 
 nsresult
-HTMLEditor::SetShadowPosition(Element* aShadow,
-                              Element* aOriginalObject,
-                              int32_t aOriginalObjectX,
-                              int32_t aOriginalObjectY)
+HTMLEditor::SetShadowPosition(Element& aShadowElement,
+                              Element& aElement,
+                              int32_t aElementX,
+                              int32_t aElementY)
 {
-  SetAnonymousElementPosition(aOriginalObjectX, aOriginalObjectY, aShadow);
+  MOZ_ASSERT(&aShadowElement == mResizingShadow ||
+             &aShadowElement == mPositioningShadow);
+  RefPtr<Element> handlingShadowElement =
+    &aShadowElement == mResizingShadow ?
+      mResizingShadow.get() : mPositioningShadow.get();
 
-  if (HTMLEditUtils::IsImage(aOriginalObject)) {
-    nsAutoString imageSource;
-    aOriginalObject->GetAttr(kNameSpaceID_None, nsGkAtoms::src, imageSource);
-    nsresult rv = aShadow->SetAttr(kNameSpaceID_None, nsGkAtoms::src,
-                                   imageSource, true);
-    NS_ENSURE_SUCCESS(rv, rv);
+  SetAnonymousElementPosition(aElementX, aElementY, &aShadowElement);
+  if (NS_WARN_IF(&aShadowElement != handlingShadowElement)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!HTMLEditUtils::IsImage(&aElement)) {
+    return NS_OK;
+  }
+
+  nsAutoString imageSource;
+  aElement.GetAttr(kNameSpaceID_None, nsGkAtoms::src, imageSource);
+  nsresult rv = aShadowElement.SetAttr(kNameSpaceID_None, nsGkAtoms::src,
+                                       imageSource, true);
+  if (NS_WARN_IF(NS_FAILED(rv)) ||
+      NS_WARN_IF(&aShadowElement != handlingShadowElement)) {
+    return NS_ERROR_FAILURE;
   }
   return NS_OK;
 }
@@ -995,7 +1141,8 @@ HTMLEditor::SetFinalSize(int32_t aX,
   mResizedObjectWidth  = width;
   mResizedObjectHeight = height;
 
-  RefreshResizers();
+  DebugOnly<nsresult> rv = RefreshResizersInternal();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed ot refresh resizers");
 }
 
 NS_IMETHODIMP

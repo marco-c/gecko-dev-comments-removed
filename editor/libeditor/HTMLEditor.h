@@ -43,6 +43,7 @@ class nsRange;
 
 namespace mozilla {
 class AutoSelectionSetterAfterTableEdit;
+class DocumentResizeEventListener;
 class EmptyEditableFunctor;
 class ResizerSelectionListener;
 enum class EditSubAction : int32_t;
@@ -1797,6 +1798,12 @@ protected:
 
   void UpdateRootElement();
 
+  
+
+
+
+
+
   nsresult SetAllResizersPosition();
 
   
@@ -1811,15 +1818,31 @@ protected:
 
   nsresult HideResizersInternal();
 
+  
+
+
+
+  nsresult RefreshResizersInternal();
+
   ManualNACPtr CreateResizer(int16_t aLocation, nsIContent& aParentContent);
   void SetAnonymousElementPosition(int32_t aX, int32_t aY,
                                    Element* aResizer);
 
   ManualNACPtr CreateShadow(nsIContent& aParentContent,
                             Element& aOriginalObject);
-  nsresult SetShadowPosition(Element* aShadow, Element* aOriginalObject,
-                             int32_t aOriginalObjectX,
-                             int32_t aOriginalObjectY);
+
+  
+
+
+
+
+
+
+
+  nsresult SetShadowPosition(Element& aShadowElement,
+                             Element& aElement,
+                             int32_t aElementLeft,
+                             int32_t aElementTop);
 
   ManualNACPtr CreateResizingInfo(nsIContent& aParentContent);
   nsresult SetResizingInfoPosition(int32_t aX, int32_t aY,
@@ -2092,6 +2115,7 @@ protected:
 
   friend class AutoSelectionSetterAfterTableEdit;
   friend class CSSEditUtils;
+  friend class DocumentResizeEventListener;
   friend class EditorBase;
   friend class EmptyEditableFunctor;
   friend class HTMLEditRules;
