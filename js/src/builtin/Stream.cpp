@@ -566,11 +566,11 @@ bool ReadableStream::constructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  int32_t cmp;
-  if (!CompareStrings(cx, typeString, cx->names().bytes, &cmp)) {
+  bool equal;
+  if (!EqualStrings(cx, typeString, cx->names().bytes, &equal)) {
     return false;
   }
-  if (cmp == 0) {
+  if (equal) {
     
     
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -718,19 +718,21 @@ static bool ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp) {
 
     
     
-    int32_t notByob;
-    if (!CompareStrings(cx, mode, cx->names().byob, &notByob)) {
+    bool equal;
+    if (!EqualStrings(cx, mode, cx->names().byob, &equal)) {
       return false;
     }
-    if (notByob) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_READABLESTREAM_INVALID_READER_MODE);
-      
+    if (equal) {
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_READABLESTREAM_BYTES_TYPE_NOT_IMPLEMENTED);
       return false;
     }
 
+    
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAM_BYTES_TYPE_NOT_IMPLEMENTED);
+                              JSMSG_READABLESTREAM_INVALID_READER_MODE);
+    return false;
   }
 
   
