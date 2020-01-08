@@ -27,6 +27,7 @@
 #endif
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videoadapter.h"
@@ -466,6 +467,10 @@ private:
   
   UniquePtr<cricket::VideoAdapter> mVideoAdapter;
   rtc::VideoBroadcaster mVideoBroadcaster;
+
+  
+  
+  webrtc::I420BufferPool mBufferPool;
 
   
   mozilla::Atomic<bool> mEngineTransmitting; 

@@ -27,7 +27,6 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/api/video/i420_buffer.h"
 
 #ifdef WEBRTC_MAC
 #include <AvailabilityMacros.h>
@@ -76,6 +75,14 @@ using LocalDirection = MediaSessionConduitLocalDirection;
 static const int kNullPayloadType = -1;
 static const char* kUlpFecPayloadName = "ulpfec";
 static const char* kRedPayloadName = "red";
+
+
+
+
+
+
+
+#define SCALER_BUFFER_POOL_SIZE 5
 
 
 #define KBPS(kbps) kbps * 1000
@@ -234,6 +241,7 @@ WebrtcVideoConduit::WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall,
                                        UniquePtr<cricket::VideoAdapter>&& aVideoAdapter)
   : mTransportMonitor("WebrtcVideoConduit")
   , mVideoAdapter(std::move(aVideoAdapter))
+  , mBufferPool(false, SCALER_BUFFER_POOL_SIZE)
   , mEngineTransmitting(false)
   , mEngineReceiving(false)
   , mCodecMutex("VideoConduit codec db")
@@ -1844,9 +1852,12 @@ WebrtcVideoConduit::SendVideoFrame(const webrtc::VideoFrame& frame)
     buffer = frame.video_frame_buffer();
   } else {
     
-    
     rtc::scoped_refptr<webrtc::I420Buffer> i420Buffer =
-      webrtc::I420Buffer::Create(adaptedWidth, adaptedHeight);
+      mBufferPool.CreateBuffer(adaptedWidth, adaptedHeight);
+    if (!i420Buffer) {
+      CSFLogWarn(LOGTAG, "Creating a buffer for scaling failed, pool is empty");
+      return kMediaConduitNoError;
+    }
     i420Buffer->CropAndScaleFrom(*frame.video_frame_buffer(), cropX, cropY, cropWidth, cropHeight);
     buffer = i420Buffer;
   }
