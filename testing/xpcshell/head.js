@@ -23,7 +23,6 @@
 
 
 
-
 var _quit = false;
 var _passed = true;
 var _tests_pending = 0;
@@ -1480,10 +1479,18 @@ function run_next_test() {
 try {
   
   if (runningInParent) {
-    let prefsFile = Cc["@mozilla.org/file/local;1"]
-      .createInstance(Ci.nsIFile);
-    prefsFile.initWithPath(_PREFS_FILE);
-    _Services.prefs.readUserPrefsFromFile(prefsFile);
+    
+    
+    _Services.prefs.setBoolPref("geo.provider.testing", true);
+
+    
+    _Services.prefs.setCharPref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
+    _Services.prefs.setCharPref("media.gmp-manager.updateEnabled", false);
+    _Services.prefs.setCharPref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
+    _Services.prefs.setCharPref("app.normandy.api_url", "https://%(server)s/selfsupport-dummy/");
+    _Services.prefs.setCharPref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
+    _Services.prefs.setCharPref("browser.search.geoip.url", "https://%(server)s/geoip-dummy");
+    _Services.prefs.setCharPref("browser.safebrowsing.downloads.remote.url", "https://%(server)s/safebrowsing-dummy");
 
     
     
