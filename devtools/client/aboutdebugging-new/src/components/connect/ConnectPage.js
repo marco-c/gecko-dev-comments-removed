@@ -26,7 +26,7 @@ class ConnectPage extends PureComponent {
       dispatch: PropTypes.func.isRequired,
       
       getString: PropTypes.func.isRequired,
-      networkLocations: PropTypes.arrayOf(PropTypes.object).isRequired,
+      networkLocations: PropTypes.arrayOf(PropTypes.string).isRequired,
     };
   }
 
