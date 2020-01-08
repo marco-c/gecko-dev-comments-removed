@@ -196,6 +196,20 @@ CompileUtf8File(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
+
+
+
+extern JS_PUBLIC_API(bool)
+CompileUtf8FileDontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
+                           FILE* file, MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
 CompileUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
                 const char* filename, MutableHandle<JSScript*> script);
