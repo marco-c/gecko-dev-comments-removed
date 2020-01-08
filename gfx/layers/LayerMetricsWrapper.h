@@ -433,6 +433,15 @@ public:
     return mLayer->GetFixedPositionScrollContainerId();
   }
 
+  Maybe<uint64_t> GetZoomAnimationId() const
+  {
+    MOZ_ASSERT(IsValid());
+    
+    
+    
+    return Nothing();
+  }
+
   bool IsBackfaceHidden() const
   {
     MOZ_ASSERT(IsValid());

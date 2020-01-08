@@ -134,6 +134,16 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   DeferredTransformMap mPerspectiveTransformsDeferredToChildren;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<uint64_t> mZoomAnimationId;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -885,6 +895,10 @@ APZCTreeManager::PrepareNodeForLayer(const RecursiveMutexAutoLock& aProofOfTreeL
 
   bool parentHasPerspective = aState.mParentHasPerspective.top();
 
+  if (Maybe<uint64_t> zoomAnimationId = aLayer.GetZoomAnimationId()) {
+    aState.mZoomAnimationId = zoomAnimationId;
+  }
+
   RefPtr<HitTestingTreeNode> node = nullptr;
   if (!needsApzc) {
     
@@ -993,6 +1007,11 @@ APZCTreeManager::PrepareNodeForLayer(const RecursiveMutexAutoLock& aProofOfTreeL
       aState.mNodesToDestroy.RemoveElement(node);
       node->SetPrevSibling(nullptr);
       node->SetLastChild(nullptr);
+    }
+
+    if (aMetrics.IsRootContent()) {
+      apzc->SetZoomAnimationId(aState.mZoomAnimationId);
+      aState.mZoomAnimationId = Nothing();
     }
 
     APZCTM_LOG("Using APZC %p for layer %p with identifiers %" PRIx64 " %" PRId64 "\n",

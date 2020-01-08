@@ -982,6 +982,15 @@ private:
 
   UniquePtr<OverscrollEffectBase> mOverscrollEffect;
 
+  
+  
+  
+  
+  
+  
+  
+  Maybe<uint64_t> mZoomAnimationId;
+
   friend class Axis;
 
 public:
@@ -998,6 +1007,9 @@ public:
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     return callable(mLastContentPaintMetrics);
   }
+
+  void SetZoomAnimationId(const Maybe<uint64_t>& aZoomAnimationId);
+  Maybe<uint64_t> GetZoomAnimationId() const;
 
   
 
