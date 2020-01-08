@@ -35,6 +35,11 @@ VRProcessManager::VRProcessManager() : mProcess(nullptr) {
 VRProcessManager::~VRProcessManager() {
   MOZ_COUNT_DTOR(VRProcessManager);
 
+  if (mObserver) {
+    nsContentUtils::UnregisterShutdownObserver(mObserver);
+    mObserver = nullptr;
+  }
+
   DestroyProcess();
   
   MOZ_ASSERT(!mProcess);

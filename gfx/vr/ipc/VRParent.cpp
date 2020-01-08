@@ -85,13 +85,16 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
     ProcessChild::QuickExit();
   }
 
-  mVRGPUParent->Close();
+  mVRGPUParent = nullptr;
 #if defined(XP_WIN)
   DeviceManagerDx::Shutdown();
 #endif
   gfxVars::Shutdown();
   gfxConfig::Shutdown();
   gfxPrefs::DestroySingleton();
+  
+  
+  
   XRE_ShutdownChildProcess();
 }
 

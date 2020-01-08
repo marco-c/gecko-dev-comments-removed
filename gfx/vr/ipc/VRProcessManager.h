@@ -26,7 +26,6 @@ class VRProcessManager final {
 
   
   void LaunchVRProcess();
-  void DestroyProcess();
 
   bool CreateGPUBridges(base::ProcessId aOtherProcess,
                         mozilla::ipc::Endpoint<PVRGPUChild>* aOutVRBridge);
@@ -42,6 +41,7 @@ class VRProcessManager final {
                           mozilla::ipc::Endpoint<PVRGPUChild>* aOutEndpoint);
   void OnXPCOMShutdown();
   void CleanShutdown();
+  void DestroyProcess();
 
   
   void DisableVRProcess(const char* aMessage);
