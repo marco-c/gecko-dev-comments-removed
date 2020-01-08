@@ -29,12 +29,12 @@ public:
   nsresult SetPrefixes(const mozilla::safebrowsing::PrefixStringMap& aPrefixMap);
   nsresult GetPrefixes(mozilla::safebrowsing::PrefixStringMap& aPrefixMap);
   nsresult GetFixedLengthPrefixes(FallibleTArray<uint32_t>& aPrefixes);
-  nsresult Matches(const nsACString& aFullHash, uint32_t* aLength);
-  nsresult IsEmpty(bool* aEmpty);
+  nsresult Matches(const nsACString& aFullHash, uint32_t* aLength) const;
+  nsresult IsEmpty(bool* aEmpty) const;
   nsresult LoadFromFile(nsIFile* aFile);
-  nsresult StoreToFile(nsIFile* aFile);
+  nsresult StoreToFile(nsIFile* aFile) const;
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
@@ -47,19 +47,19 @@ private:
 
   bool BinarySearch(const nsACString& aFullHash,
                     const nsACString& aPrefixes,
-                    uint32_t aPrefixSize);
+                    uint32_t aPrefixSize) const;
 
-  uint32_t CalculatePreallocateSize();
-  nsresult WritePrefixes(nsIOutputStream* out);
+  uint32_t CalculatePreallocateSize() const;
+  nsresult WritePrefixes(nsIOutputStream* out) const;
   nsresult LoadPrefixes(nsIInputStream* in);
 
   
   
   
   
-  mozilla::Mutex mLock;
+  mutable mozilla::Mutex mLock;
 
-  RefPtr<nsUrlClassifierPrefixSet> mFixedPrefixSet;
+  const RefPtr<nsUrlClassifierPrefixSet> mFixedPrefixSet;
   mozilla::safebrowsing::PrefixStringMap mVLPrefixSet;
 
   nsCString mMemoryReportPath;
