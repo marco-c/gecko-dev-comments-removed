@@ -7,9 +7,12 @@
 #define mozilla_net_SocketProcessChild_h
 
 #include "mozilla/net/PSocketProcessChild.h"
+#include "nsRefPtrHashtable.h"
 
 namespace mozilla {
 namespace net {
+
+class SocketProcessBridgeParent;
 
 
 
@@ -30,10 +33,18 @@ class SocketProcessChild final : public PSocketProcessChild {
       const uint32_t& generation, const bool& anonymize,
       const bool& minimizeMemoryUsage, const MaybeFileDesc& DMDFile) override;
   mozilla::ipc::IPCResult RecvSetOffline(const bool& aOffline) override;
+  mozilla::ipc::IPCResult RecvInitSocketProcessBridgeParent(
+      const ProcessId& aContentProcessId,
+      Endpoint<mozilla::net::PSocketProcessBridgeParent>&& aEndpoint) override;
 
   void CleanUp();
+  void DestroySocketProcessBridgeParent(ProcessId aId);
 
  private:
+  
+  
+  nsRefPtrHashtable<nsUint32HashKey, SocketProcessBridgeParent>
+      mSocketProcessBridgeParentMap;
 };
 
 }  
