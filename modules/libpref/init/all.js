@@ -3069,6 +3069,9 @@ pref("layout.idle_period.time_limit", 1);
 pref("layout.css.webkit-appearance.enabled", false);
 
 
+
+
+
 #ifdef RELEASE_OR_BETA
 pref("dom.animations-api.core.enabled", false);
 #else
@@ -4824,7 +4827,7 @@ pref("layers.max-active", -1);
 
 pref("layers.offmainthreadcomposition.frame-rate", -1);
 
-#if defined(XP_MACOSX) || defined (OS_OPENBSD)
+#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
 pref("layers.enable-tiles", true);
 #else
 pref("layers.enable-tiles", false);
