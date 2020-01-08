@@ -8,6 +8,7 @@
 
 
 #include "DevTools.h"
+#include "js/SavedFrameAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/devtools/DeserializedNode.h"
 

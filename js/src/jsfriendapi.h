@@ -2802,15 +2802,6 @@ extern JS_FRIEND_API(void)
 SetJitExceptionHandler(JitExceptionHandler handler);
 #endif
 
-
-
-
-
-
-
-extern JS_FRIEND_API(JSObject*)
-GetFirstSubsumedSavedFrame(JSContext* cx, JSPrincipals* principals, JS::HandleObject savedFrame, JS::SavedFrameSelfHosted selfHosted);
-
 extern JS_FRIEND_API(bool)
 ReportIsNotFunction(JSContext* cx, JS::HandleValue v);
 
