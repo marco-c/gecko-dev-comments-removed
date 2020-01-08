@@ -394,6 +394,8 @@ async function waitUntilApzStable() {
 
 
 async function forceLayerTreeToCompositor() {
+  
+  document.body.style.left = "1px";
   var utils = SpecialPowers.getDOMWindowUtils(window);
   if (!utils.isMozAfterPaintPending) {
     dump("Forcing a paint since none was pending already...\n");
