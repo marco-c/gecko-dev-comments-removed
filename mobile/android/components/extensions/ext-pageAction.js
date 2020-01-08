@@ -169,7 +169,7 @@ class PageAction extends EventEmitter {
     
     
     let {icon} = IconDetails.getPreferredIcon(this.defaults.icons, this.extension,
-                                              18 * contentWindow.devicePixelRatio);
+                                              16 * contentWindow.devicePixelRatio);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
     return IconDetails.convertImageURLToDataURL(icon, contentWindow, browserWindow).then(dataURI => {
