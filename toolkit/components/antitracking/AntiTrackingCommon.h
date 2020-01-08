@@ -48,10 +48,13 @@ public:
 
   
   
+  static bool
+  IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel, nsIURI* aURI);
+
+  
   
   static bool
-  IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* a3rdPartyTrackingChannel,
-                                      nsIURI* aURI);
+  IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal);
 
   
   

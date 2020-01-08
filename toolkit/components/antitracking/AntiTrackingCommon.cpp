@@ -13,10 +13,13 @@
 #include "mozIThirdPartyUtil.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsICookiePermission.h"
+#include "nsICookieService.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
 #include "nsPIDOMWindow.h"
+#include "nsScriptSecurityManager.h"
 #include "prtime.h"
 
 #define ANTITRACKING_PERM_KEY "3rdPartyStorage"
@@ -71,6 +74,43 @@ CreatePermissionKey(const nsCString& aTrackingOrigin,
                                    aGrantedOrigin.get());
 }
 
+
+
+nsCookieAccess
+CheckCookiePermissionForPrincipal(nsIPrincipal* aPrincipal)
+{
+  nsCookieAccess access = nsICookiePermission::ACCESS_DEFAULT;
+  if (!aPrincipal->GetIsCodebasePrincipal()) {
+    return access;
+  }
+
+  nsCOMPtr<nsICookiePermission> cps =
+    do_GetService(NS_COOKIEPERMISSION_CONTRACTID);
+  if (NS_WARN_IF(!cps)) {
+    return access;
+  }
+
+  nsresult rv = cps->CanAccess(aPrincipal, &access);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return access;
+  }
+
+  
+  return access;
+}
+
+int32_t
+CookiesBehavior(nsIPrincipal* aPrincipal)
+{
+  
+  
+  if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+    return nsICookieService::BEHAVIOR_ACCEPT;
+  }
+
+  return StaticPrefs::network_cookie_cookieBehavior();
+}
+
 } 
 
  RefPtr<AntiTrackingCommon::StorageAccessGrantPromise>
@@ -79,7 +119,8 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigi
 {
   MOZ_ASSERT(aParentWindow);
 
-  if (!StaticPrefs::privacy_restrict3rdpartystorage_enabled()) {
+  if (StaticPrefs::network_cookie_cookieBehavior() !=
+        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
     return StorageAccessGrantPromise::CreateAndResolve(true, __func__);
   }
 
@@ -175,25 +216,60 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(n
 }
 
 bool
-AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
+AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWindow,
                                                         nsIURI* aURI)
 {
-  MOZ_ASSERT(a3rdPartyTrackingWindow);
+  MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aURI);
 
-  if (!StaticPrefs::privacy_restrict3rdpartystorage_enabled()) {
+  nsGlobalWindowInner* innerWindow = nsGlobalWindowInner::Cast(aWindow);
+  nsIPrincipal* toplevelPrincipal = innerWindow->GetTopLevelPrincipal();
+  if (!toplevelPrincipal) {
+    
+    toplevelPrincipal = innerWindow->GetPrincipal();
+  }
+
+  if (!toplevelPrincipal) {
+    
+    return false;
+  }
+
+  nsCookieAccess access = CheckCookiePermissionForPrincipal(toplevelPrincipal);
+  if (access != nsICookiePermission::ACCESS_DEFAULT) {
+    return access != nsICookiePermission::ACCESS_DENY;
+  }
+
+  int32_t behavior = CookiesBehavior(toplevelPrincipal);
+  if (behavior == nsICookieService::BEHAVIOR_ACCEPT) {
     return true;
   }
 
-  if (!nsContentUtils::IsThirdPartyWindowOrChannel(a3rdPartyTrackingWindow,
-                                                   nullptr, aURI) ||
-      !nsContentUtils::IsTrackingResourceWindow(a3rdPartyTrackingWindow)) {
+  if (behavior == nsICookieService::BEHAVIOR_REJECT) {
+    return false;
+  }
+
+  
+  if (!nsContentUtils::IsThirdPartyWindowOrChannel(aWindow, nullptr, aURI)) {
+    return true;
+  }
+
+  if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
+      behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
+    
+    
+    
+    
+    return false;
+  }
+
+  MOZ_ASSERT(behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER);
+  if (!nsContentUtils::IsTrackingResourceWindow(aWindow)) {
     return true;
   }
 
   nsCOMPtr<nsIPrincipal> parentPrincipal;
   nsAutoCString trackingOrigin;
-  if (!GetParentPrincipalAndTrackingOrigin(nsGlobalWindowInner::Cast(a3rdPartyTrackingWindow),
+  if (!GetParentPrincipalAndTrackingOrigin(nsGlobalWindowInner::Cast(aWindow),
                                            getter_AddRefs(parentPrincipal),
                                            trackingOrigin)) {
     return false;
@@ -228,12 +304,89 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
 {
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aChannel);
-  MOZ_ASSERT(aChannel->GetIsTrackingResource());
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   if (!loadInfo) {
     return true;
   }
+
+  
+  
+  
+  nsIPrincipal* toplevelPrincipal = loadInfo->TopLevelPrincipal();
+
+  
+  
+  if (!toplevelPrincipal) {
+    toplevelPrincipal = loadInfo->LoadingPrincipal();
+  }
+
+  nsCOMPtr<nsIPrincipal> channelPrincipal;
+  nsIScriptSecurityManager* ssm = nsScriptSecurityManager::GetScriptSecurityManager();
+  nsresult rv = ssm->GetChannelResultPrincipal(aChannel,
+                                               getter_AddRefs(channelPrincipal));
+
+  
+  
+  if (!toplevelPrincipal) {
+    bool isDocument = false;
+    nsresult rv2 = aChannel->GetIsMainDocumentChannel(&isDocument);
+    if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(rv2) && isDocument) {
+      toplevelPrincipal = channelPrincipal;
+    }
+  }
+
+  
+  if (!toplevelPrincipal) {
+    toplevelPrincipal = loadInfo->TriggeringPrincipal();
+  }
+
+  if (NS_WARN_IF(!toplevelPrincipal)) {
+    return false;
+  }
+
+  nsCookieAccess access = CheckCookiePermissionForPrincipal(toplevelPrincipal);
+  if (access != nsICookiePermission::ACCESS_DEFAULT) {
+    return access != nsICookiePermission::ACCESS_DENY;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv) || !channelPrincipal)) {
+    return false;
+  }
+
+  int32_t behavior = CookiesBehavior(channelPrincipal);
+  if (behavior == nsICookieService::BEHAVIOR_ACCEPT) {
+    return true;
+  }
+
+  if (behavior == nsICookieService::BEHAVIOR_REJECT) {
+    return false;
+  }
+
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+  if (!thirdPartyUtil) {
+    return true;
+  }
+
+  bool thirdParty = false;
+  Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
+                                                nullptr,
+                                                &thirdParty);
+  
+  if (!thirdParty) {
+    return true;
+  }
+
+  if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
+      behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
+    
+    
+    
+    
+    return false;
+  }
+
+  MOZ_ASSERT(behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER);
 
   nsIPrincipal* parentPrincipal = loadInfo->TopLevelStorageAreaPrincipal();
   if (!parentPrincipal) {
@@ -250,8 +403,15 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
     }
   }
 
+  
+  if (!aChannel->GetIsTrackingResource()) {
+    return true;
+  }
+
+  
+
   nsCOMPtr<nsIURI> trackingURI;
-  nsresult rv = aChannel->GetURI(getter_AddRefs(trackingURI));
+  rv = aChannel->GetURI(getter_AddRefs(trackingURI));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return true;
   }
@@ -286,6 +446,20 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   return result == nsIPermissionManager::ALLOW_ACTION;
 }
 
+bool
+AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal)
+{
+  MOZ_ASSERT(aPrincipal);
+
+  nsCookieAccess access = CheckCookiePermissionForPrincipal(aPrincipal);
+  if (access != nsICookiePermission::ACCESS_DEFAULT) {
+    return access != nsICookiePermission::ACCESS_DENY;
+  }
+
+  int32_t behavior = CookiesBehavior(aPrincipal);
+  return behavior != nsICookieService::BEHAVIOR_REJECT;
+}
+
  bool
 AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aFirstPartyWindow,
                                                              nsIURI* aURI)
@@ -294,7 +468,8 @@ AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner*
   MOZ_ASSERT(!nsContentUtils::IsTrackingResourceWindow(aFirstPartyWindow));
   MOZ_ASSERT(aURI);
 
-  if (!StaticPrefs::privacy_restrict3rdpartystorage_enabled()) {
+  if (StaticPrefs::network_cookie_cookieBehavior() !=
+        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
     return true;
   }
 
@@ -307,6 +482,11 @@ AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner*
     nsGlobalWindowInner::Cast(aFirstPartyWindow)->GetPrincipal();
   if (NS_WARN_IF(!parentPrincipal)) {
     return false;
+  }
+
+  nsCookieAccess access = CheckCookiePermissionForPrincipal(parentPrincipal);
+  if (access != nsICookiePermission::ACCESS_DEFAULT) {
+    return access != nsICookiePermission::ACCESS_DENY;
   }
 
   nsAutoString origin;

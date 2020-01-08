@@ -1093,10 +1093,11 @@ VARCACHE_PREF(
 
 
 
+
 VARCACHE_PREF(
   "network.cookie.cookieBehavior",
   network_cookie_cookieBehavior,
-  int32_t, 0
+  RelaxedAtomicInt32, 0
 )
 
 
@@ -1230,12 +1231,6 @@ PREF("preferences.allow.omt-write", bool, true)
 
 
 
-
-VARCACHE_PREF(
-  "privacy.restrict3rdpartystorage.enabled",
-   privacy_restrict3rdpartystorage_enabled,
-  RelaxedAtomicBool, false
-)
 
 VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.ui.enabled",

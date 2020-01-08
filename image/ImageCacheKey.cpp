@@ -8,13 +8,13 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Move.h"
 #include "nsContentUtils.h"
+#include "nsICookieService.h"
 #include "nsLayoutUtils.h"
 #include "nsString.h"
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/StaticPrefs.h"
 #include "nsIDocument.h"
 #include "nsPrintfCString.h"
 
@@ -143,18 +143,11 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
 
   
   
-  if (!StaticPrefs::privacy_restrict3rdpartystorage_enabled() ||
-      !nsContentUtils::IsThirdPartyWindowOrChannel(aDocument->GetInnerWindow(),
-                                                   nullptr, aURI)) {
-    return nullptr;
-  }
-
-  
-  
-  if (nsContentUtils::IsTrackingResourceWindow(aDocument->GetInnerWindow())) {
-    return nsContentUtils::StorageDisabledByAntiTracking(aDocument->GetInnerWindow(),
-                                                         nullptr, aURI)
-             ? aDocument : nullptr;
+  if (nsContentUtils::StorageDisabledByAntiTracking(aDocument->GetInnerWindow(),
+                                                    nullptr,
+                                                    aDocument->NodePrincipal(),
+                                                    aURI)) {
+    return aDocument;
   }
 
   
@@ -163,7 +156,8 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
   
   
   
-  if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(aDocument->GetInnerWindow(),
+  if (!aDocument->IsCookieAverse() &&
+      !AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(aDocument->GetInnerWindow(),
                                                                     aURI)) {
     return aDocument;
   }

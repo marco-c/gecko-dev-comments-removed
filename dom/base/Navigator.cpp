@@ -11,6 +11,7 @@
 #include "nsIXULAppInfo.h"
 #include "nsPluginArray.h"
 #include "nsMimeTypeArray.h"
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/FetchBinding.h"
@@ -63,6 +64,7 @@
 #include "nsRFPService.h"
 #include "nsStringStream.h"
 #include "nsComponentManagerUtils.h"
+#include "nsICookieService.h"
 #include "nsIStringStream.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
@@ -513,15 +515,11 @@ Navigator::Storage()
   return mStorageManager;
 }
 
-
-
-#define COOKIE_BEHAVIOR_REJECT 2
-
 bool
 Navigator::CookieEnabled()
 {
   bool cookieEnabled = (StaticPrefs::network_cookie_cookieBehavior() !=
-                        COOKIE_BEHAVIOR_REJECT);
+                        nsICookieService::BEHAVIOR_REJECT);
 
   
   
@@ -544,20 +542,8 @@ Navigator::CookieEnabled()
     return cookieEnabled;
   }
 
-  nsCOMPtr<nsICookiePermission> permMgr =
-    do_GetService(NS_COOKIEPERMISSION_CONTRACTID);
-  NS_ENSURE_TRUE(permMgr, cookieEnabled);
-
-  
-  nsCookieAccess access;
-  nsresult rv = permMgr->CanAccess(doc->NodePrincipal(), &access);
-  NS_ENSURE_SUCCESS(rv, cookieEnabled);
-
-  if (access != nsICookiePermission::ACCESS_DEFAULT) {
-    cookieEnabled = access != nsICookiePermission::ACCESS_DENY;
-  }
-
-  return cookieEnabled;
+  return AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(mWindow,
+                                                                 codebaseURI);
 }
 
 bool

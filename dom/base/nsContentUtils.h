@@ -2956,6 +2956,7 @@ public:
 
   static bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
                                             nsIChannel* aChannel,
+                                            nsIPrincipal* aPrincipal,
                                             nsIURI* aURI);
 
   
@@ -3347,9 +3348,8 @@ private:
 
 
 
-  static void GetCookieBehaviorForPrincipal(nsIPrincipal* aPrincipal,
-                                            uint32_t* aLifetimePolicy,
-                                            uint32_t* aBehavior);
+  static void GetCookieLifetimePolicyForPrincipal(nsIPrincipal* aPrincipal,
+                                                  uint32_t* aLifetimePolicy);
 
   
 
