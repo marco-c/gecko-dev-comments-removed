@@ -88,24 +88,10 @@ ReauthenticateUserWindows(const nsACString& aPrompt,
 {
   reauthenticated = false;
 
-  HANDLE lsa;
   
-  
-  if (LsaConnectUntrusted(&lsa) != ERROR_SUCCESS) {
-    MOZ_LOG(gCredentialManagerSecretLog,
-            LogLevel::Debug,
-            ("Error aquiring lsa. Authentication attempts will fail."));
-    return NS_ERROR_FAILURE;
-  }
-  ScopedHANDLE scopedLsa(lsa);
-
+  DWORD err = 0;
+  uint8_t numAttempts = 3;
   std::unique_ptr<char[]> userTokenInfo = GetUserTokenInfo();
-  if (!userTokenInfo || lsa == INVALID_HANDLE_VALUE) {
-    MOZ_LOG(gCredentialManagerSecretLog,
-            LogLevel::Debug,
-            ("Error setting up login and user token."));
-    return NS_ERROR_FAILURE;
-  }
 
   
   CREDUI_INFOW credui = {};
@@ -117,92 +103,116 @@ ReauthenticateUserWindows(const nsACString& aPrompt,
   credui.pszCaptionText = nullptr;
   credui.hbmBanner = nullptr; 
 
-  ULONG authPackage = 0;
-  LPVOID outCredBuffer = nullptr;
-  ULONG outCredSize = 0;
-  BOOL save = false;
-  
-  DWORD err = 0;
+  while (!reauthenticated && numAttempts > 0) {
+    --numAttempts;
 
-  
-  
-  err = CredUIPromptForWindowsCredentialsW(&credui, err, &authPackage,
-                          nullptr, 0, &outCredBuffer, &outCredSize, &save,
-                          CREDUIWIN_ENUMERATE_CURRENT_USER);
-  ScopedBuffer scopedOutCredBuffer(outCredBuffer);
-  if (err != ERROR_SUCCESS) {
-    MOZ_LOG(gCredentialManagerSecretLog,
-            LogLevel::Debug,
-            ("Error getting authPackage for user login"));
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  TOKEN_SOURCE source;
-  PCHAR contextName = const_cast<PCHAR>("Mozilla");
-  size_t nameLength = std::min(TOKEN_SOURCE_LENGTH,
-                               static_cast<int>(strlen(contextName)));
-  
-  memcpy(source.SourceName, contextName, nameLength);
-  
-  if (!AllocateLocallyUniqueId(&source.SourceIdentifier)) {
+    HANDLE lsa;
+    
+    
+    if (LsaConnectUntrusted(&lsa) != ERROR_SUCCESS) {
       MOZ_LOG(gCredentialManagerSecretLog,
               LogLevel::Debug,
-              ("Error allocating ID for logon process."));
+              ("Error aquiring lsa. Authentication attempts will fail."));
       return NS_ERROR_FAILURE;
-  }
+    }
+    ScopedHANDLE scopedLsa(lsa);
 
-  NTSTATUS substs;
-  void* profileBuffer = nullptr;
-  ULONG profileBufferLength = 0;
-  QUOTA_LIMITS limits = {0};
-  LUID luid;
-  HANDLE token;
-  LSA_STRING name;
-  name.Buffer = contextName;
-  name.Length = strlen(name.Buffer);
-  name.MaximumLength = name.Length;
-  
-  NTSTATUS sts = LsaLogonUser(scopedLsa.get(), &name, (SECURITY_LOGON_TYPE)Interactive,
-                      authPackage, scopedOutCredBuffer.get(),
-                      outCredSize, nullptr, &source, &profileBuffer,
-                      &profileBufferLength, &luid, &token, &limits,
-                      &substs);
-  ScopedHANDLE scopedToken(token);
-  LsaFreeReturnBuffer(profileBuffer);
-  LsaDeregisterLogonProcess(scopedLsa.get());
-  if (sts == ERROR_SUCCESS) {
+    if (!userTokenInfo || lsa == INVALID_HANDLE_VALUE) {
       MOZ_LOG(gCredentialManagerSecretLog,
               LogLevel::Debug,
-              ("User logged in successfully."));
-  } else {
-      MOZ_LOG(gCredentialManagerSecretLog,
-              LogLevel::Debug,
-              ("Login failed with %lx (%lx).", sts, LsaNtStatusToWinError(sts)));
+              ("Error setting up login and user token."));
       return NS_ERROR_FAILURE;
-  }
+    }
 
-  
-  
-  std::unique_ptr<char[]> logonTokenInfo = GetTokenInfo(scopedToken);
-  if (!logonTokenInfo) {
+    ULONG authPackage = 0;
+    ULONG outCredSize = 0;
+    LPVOID outCredBuffer = nullptr;
+    BOOL save = false;
+
+    
+    
+    err = CredUIPromptForWindowsCredentialsW(&credui, err, &authPackage,
+                            nullptr, 0, &outCredBuffer, &outCredSize, &save,
+                            CREDUIWIN_ENUMERATE_CURRENT_USER);
+    ScopedBuffer scopedOutCredBuffer(outCredBuffer);
+    if (err == ERROR_CANCELLED) {
       MOZ_LOG(gCredentialManagerSecretLog,
               LogLevel::Debug,
-              ("Error getting logon token info."));
+              ("Error getting authPackage for user login, user cancel."));
+      return NS_OK; 
+    }
+    if (err != ERROR_SUCCESS) {
+      MOZ_LOG(gCredentialManagerSecretLog,
+              LogLevel::Debug,
+              ("Error getting authPackage for user login."));
       return NS_ERROR_FAILURE;
+    }
+
+    
+    TOKEN_SOURCE source;
+    PCHAR contextName = const_cast<PCHAR>("Mozilla");
+    size_t nameLength = std::min(TOKEN_SOURCE_LENGTH,
+                                 static_cast<int>(strlen(contextName)));
+    
+    memcpy(source.SourceName, contextName, nameLength);
+    
+    if (!AllocateLocallyUniqueId(&source.SourceIdentifier)) {
+        MOZ_LOG(gCredentialManagerSecretLog,
+                LogLevel::Debug,
+                ("Error allocating ID for logon process."));
+        return NS_ERROR_FAILURE;
+    }
+
+    NTSTATUS substs;
+    void* profileBuffer = nullptr;
+    ULONG profileBufferLength = 0;
+    QUOTA_LIMITS limits = {0};
+    LUID luid;
+    HANDLE token;
+    LSA_STRING name;
+    name.Buffer = contextName;
+    name.Length = strlen(name.Buffer);
+    name.MaximumLength = name.Length;
+    
+    NTSTATUS sts = LsaLogonUser(scopedLsa.get(), &name, (SECURITY_LOGON_TYPE)Interactive,
+                        authPackage, scopedOutCredBuffer.get(),
+                        outCredSize, nullptr, &source, &profileBuffer,
+                        &profileBufferLength, &luid, &token, &limits,
+                        &substs);
+    ScopedHANDLE scopedToken(token);
+    LsaFreeReturnBuffer(profileBuffer);
+    LsaDeregisterLogonProcess(scopedLsa.get());
+    if (sts == ERROR_SUCCESS) {
+        MOZ_LOG(gCredentialManagerSecretLog,
+                LogLevel::Debug,
+                ("User logged in successfully."));
+    } else {
+        MOZ_LOG(gCredentialManagerSecretLog,
+                LogLevel::Debug,
+                ("Login failed with %lx (%lx).", sts, LsaNtStatusToWinError(sts)));
+        continue;
+    }
+
+    
+    
+    std::unique_ptr<char[]> logonTokenInfo = GetTokenInfo(scopedToken);
+    if (!logonTokenInfo) {
+        MOZ_LOG(gCredentialManagerSecretLog,
+                LogLevel::Debug,
+                ("Error getting logon token info."));
+        return NS_ERROR_FAILURE;
+    }
+    PSID logonSID = reinterpret_cast<TOKEN_USER*>(logonTokenInfo.get())->User.Sid;
+    PSID userSID = reinterpret_cast<TOKEN_USER*>(userTokenInfo.get())->User.Sid;
+    if (EqualSid(userSID, logonSID)) {
+        MOZ_LOG(gCredentialManagerSecretLog,
+                LogLevel::Debug,
+                ("Login successfully (correct user)."));
+        reauthenticated = true;
+        break;
+    }
   }
-  PSID logonSID = reinterpret_cast<TOKEN_USER*>(logonTokenInfo.get())->User.Sid;
-  PSID userSID = reinterpret_cast<TOKEN_USER*>(userTokenInfo.get())->User.Sid;
-  if (EqualSid(userSID, logonSID)) {
-      MOZ_LOG(gCredentialManagerSecretLog,
-              LogLevel::Debug,
-              ("Login successfully (correct user)."));
-      reauthenticated = true;
-      return NS_OK;
-  }
-  MOZ_LOG(gCredentialManagerSecretLog, LogLevel::Debug,
-          ("Login failed (wrong user)."));
-  return NS_ERROR_FAILURE;
+  return NS_OK;
 }
 #endif 
 
