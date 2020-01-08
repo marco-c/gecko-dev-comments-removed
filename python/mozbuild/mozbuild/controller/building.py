@@ -1331,6 +1331,7 @@ class BuildDriver(MozbuildObject):
         
         
         mkdir(self.topobjdir, not_indexed=True)
+        self._write_mozconfig_json()
 
         def on_line(line):
             self.log(logging.INFO, 'build_output', {'line': line}, '{line}')
