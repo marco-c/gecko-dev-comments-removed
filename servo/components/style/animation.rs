@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 use Atom;
 use bezier::Bezier;
 use context::SharedStyleContext;
@@ -15,8 +19,11 @@ use properties::longhands::animation_direction::computed_value::single_value::T 
 use properties::longhands::animation_play_state::computed_value::single_value::T as AnimationPlayState;
 use rule_tree::CascadeLevel;
 use servo_arc::Arc;
+#[cfg(feature = "servo")]
 use servo_channel::Sender;
 use std::fmt;
+#[cfg(feature = "gecko")]
+use std::sync::mpsc::Sender;
 use stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
 use timer::Timer;
 use values::computed::Time;
@@ -24,6 +31,7 @@ use values::computed::box_::TransitionProperty;
 use values::computed::transform::TimingFunction;
 use values::generics::box_::AnimationIterationCount;
 use values::generics::transform::{StepPosition, TimingFunction as GenericTimingFunction};
+
 
 
 
