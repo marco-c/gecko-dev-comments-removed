@@ -2,26 +2,17 @@
 
 
 
-
-
-
-
-
-
 setSharedObject(0);
 evalInWorker(`
-    oomTest(() => {
-        if (getSharedObject() < 2) {
+    try {
+        oomTest(crash);
+    } catch (e) {
+        if (e.toString().includes("main thread")) {
             setSharedObject(1);
-            while (getSharedObject() != 2) {
-            }
         }
-    });
+    }
 `);
 
 while (getSharedObject() != 1) {
     
 }
-
-stackTest(() => 42);
-setSharedObject(2);

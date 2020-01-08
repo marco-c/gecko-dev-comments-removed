@@ -72,7 +72,6 @@ enum ThreadType {
     THREAD_TYPE_ION_FREE,       
     THREAD_TYPE_WASM_TIER2,     
     THREAD_TYPE_WORKER,         
-    THREAD_TYPE_CURRENT,        
     THREAD_TYPE_MAX             
 };
 
@@ -93,13 +92,10 @@ namespace oom {
 
 const ThreadType FirstThreadTypeToTest = THREAD_TYPE_MAIN;
 const ThreadType LastThreadTypeToTest = THREAD_TYPE_WASM_TIER2;
-const ThreadType WorkerFirstThreadTypeToTest = THREAD_TYPE_CURRENT;
-const ThreadType WorkerLastThreadTypeToTest = THREAD_TYPE_CURRENT;
 
 extern bool InitThreadType(void);
 extern void SetThreadType(ThreadType);
 extern JS_FRIEND_API(uint32_t) GetThreadType(void);
-extern JS_FRIEND_API(uint32_t) GetSimulatingThreadType(void);
 
 # else
 
@@ -161,7 +157,7 @@ class FailureSimulator
         return targetThread_;
     }
     bool isThreadSimulatingAny() const {
-        return targetThread_ && targetThread_ == js::oom::GetSimulatingThreadType();
+        return targetThread_ && targetThread_ == js::oom::GetThreadType();
     }
     bool isThreadSimulating(Kind kind) const {
         return kind_ == kind && isThreadSimulatingAny();

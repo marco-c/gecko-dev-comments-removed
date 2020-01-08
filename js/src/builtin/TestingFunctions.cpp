@@ -1885,6 +1885,10 @@ RunIterativeFailureTest(JSContext* cx, const IterativeFailureTestParams& params,
         return true;
     }
 
+    if (!CheckCanSimulateOOM(cx)) {
+        return false;
+    }
+
     
     if (cx->runningOOMTest) {
         JS_ReportErrorASCII(cx, "Nested call to iterative failure test is not allowed.");
@@ -2046,21 +2050,14 @@ ParseIterativeFailureTestParams(JSContext* cx, const CallArgs& args,
     }
 
     
-    
-    
-    if (js::oom::GetThreadType() == js::THREAD_TYPE_WORKER) {
-        params->threadStart = oom::WorkerFirstThreadTypeToTest;
-        params->threadEnd = oom::WorkerLastThreadTypeToTest;
-    } else {
-        params->threadStart = oom::FirstThreadTypeToTest;
-        params->threadEnd = oom::LastThreadTypeToTest;
-    }
+    params->threadStart = oom::FirstThreadTypeToTest;
+    params->threadEnd = oom::LastThreadTypeToTest;
 
     
     int threadOption = 0;
     if (EnvVarAsInt("OOM_THREAD", &threadOption)) {
-        if (threadOption < oom::FirstThreadTypeToTest || threadOption > oom::LastThreadTypeToTest ||
-            threadOption != js::THREAD_TYPE_CURRENT)
+        if (threadOption < oom::FirstThreadTypeToTest ||
+            threadOption > oom::LastThreadTypeToTest)
         {
             JS_ReportErrorASCII(cx, "OOM_THREAD value out of range.");
             return false;
