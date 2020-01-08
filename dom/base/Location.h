@@ -17,6 +17,7 @@
 
 class nsIDocShell;
 class nsIURI;
+class nsDocShellLoadState;
 
 namespace mozilla {
 namespace dom {
@@ -167,6 +168,7 @@ protected:
   
   
   nsresult GetURI(nsIURI** aURL, bool aGetInnermostURI = false);
+
   void SetURI(nsIURI* aURL, nsIPrincipal& aSubjectPrincipal,
               ErrorResult& aRv, bool aReplace = false);
   void SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
@@ -184,7 +186,7 @@ protected:
   
   
   
-  already_AddRefed<nsDocShellLoadInfo> CheckURL(nsIURI *url,
+  already_AddRefed<nsDocShellLoadState> CheckURL(nsIURI *url,
                                                 nsIPrincipal& aSubjectPrincipal,
                                                 ErrorResult& aRv);
 
