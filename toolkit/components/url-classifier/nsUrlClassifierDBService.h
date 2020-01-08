@@ -153,6 +153,13 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
 
   nsresult ReadTablesFromPrefs();
 
+  
+  
+  bool AsyncClassifyLocalWithFeaturesUsingPreferences(
+      nsIURI* aURI, const nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures,
+      nsIUrlClassifierFeature::listType aListType,
+      nsIUrlClassifierFeatureCallback* aCallback);
+
   RefPtr<nsUrlClassifierDBServiceWorker> mWorker;
   RefPtr<UrlClassifierDBServiceWorkerProxy> mWorkerProxy;
 
@@ -216,7 +223,8 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
 
   
   
-  nsresult DoLocalLookup(const nsACString& spec, const nsACString& tables,
+  nsresult DoLocalLookup(const nsACString& spec,
+                         const nsTArray<nsCString>& tables,
                          LookupResultArray& results);
 
   

@@ -59,7 +59,7 @@ class Classifier {
   
 
 
-  nsresult Check(const nsACString& aSpec, const nsACString& tables,
+  nsresult Check(const nsACString& aSpec, const nsTArray<nsCString>& tables,
                  LookupResultArray& aResults);
 
   
