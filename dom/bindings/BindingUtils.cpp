@@ -3815,31 +3815,42 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     ns = kNameSpaceID_XHTML;
   }
 
+  constructorGetterCallback cb = nullptr;
+  if (ns == kNameSpaceID_XUL) {
+    if (definition->mLocalName == nsGkAtoms::menupopup ||
+        definition->mLocalName == nsGkAtoms::popup ||
+        definition->mLocalName == nsGkAtoms::panel ||
+        definition->mLocalName == nsGkAtoms::tooltip) {
+      cb = XULPopupElement_Binding::GetConstructorObject;
+    } else if (definition->mLocalName == nsGkAtoms::iframe ||
+                definition->mLocalName == nsGkAtoms::browser ||
+                definition->mLocalName == nsGkAtoms::editor) {
+      cb = XULFrameElement_Binding::GetConstructorObject;
+    } else if (definition->mLocalName == nsGkAtoms::scrollbox) {
+      cb = XULScrollElement_Binding::GetConstructorObject;
+    } else {
+      cb = XULElement_Binding::GetConstructorObject;
+    }
+  }
+
   int32_t tag = eHTMLTag_userdefined;
   if (!definition->IsCustomBuiltIn()) {
     
     
     
+    if (!cb) {
+      cb = HTMLElement_Binding::GetConstructorObject;
+    }
+
     
     
     JSAutoRealmAllowCCW ar(aCx, global.Get());
-
-    JS::Rooted<JSObject*> constructor(aCx);
-    if (ns == kNameSpaceID_XUL) {
-      constructor = XULElement_Binding::GetConstructorObject(aCx);
-    } else {
-      constructor = HTMLElement_Binding::GetConstructorObject(aCx);
-    }
-
-    if (!constructor) {
-      return false;
-    }
+    JS::Rooted<JSObject*> constructor(aCx, cb(aCx));
 
     if (constructor != js::CheckedUnwrap(callee)) {
       return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
     }
   } else {
-    constructorGetterCallback cb;
     if (ns == kNameSpaceID_XHTML) {
       
       
@@ -3854,21 +3865,6 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       
       
       cb = sConstructorGetterCallback[tag];
-    } else { 
-      if (definition->mLocalName == nsGkAtoms::menupopup ||
-          definition->mLocalName == nsGkAtoms::popup ||
-          definition->mLocalName == nsGkAtoms::panel ||
-          definition->mLocalName == nsGkAtoms::tooltip) {
-        cb = XULPopupElement_Binding::GetConstructorObject;
-      } else if (definition->mLocalName == nsGkAtoms::iframe ||
-                 definition->mLocalName == nsGkAtoms::browser ||
-                 definition->mLocalName == nsGkAtoms::editor) {
-        cb = XULFrameElement_Binding::GetConstructorObject;
-      } else if (definition->mLocalName == nsGkAtoms::scrollbox) {
-          cb = XULScrollElement_Binding::GetConstructorObject;
-      } else {
-        cb = XULElement_Binding::GetConstructorObject;
-      }
     }
 
     if (!cb) {
