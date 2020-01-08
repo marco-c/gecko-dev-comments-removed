@@ -29,6 +29,14 @@ use core_foundation::string::CFString;
 #[cfg(target_os = "macos")]
 use core_graphics::font::CGFont;
 
+
+#[repr(C)]
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub enum AntialiasBorder {
+    No = 0,
+    Yes,
+}
+
 #[repr(C)]
 pub enum WrExternalImageBufferType {
     TextureHandle = 0,
@@ -84,8 +92,6 @@ pub type WrFontKey = FontKey;
 pub type WrFontInstanceKey = FontInstanceKey;
 /// cbindgen:field-names=[mNamespace, mHandle]
 type WrYuvColorSpace = YuvColorSpace;
-/// cbindgen:field-names=[mNamespace, mHandle]
-type WrColorDepth = ColorDepth;
 
 fn make_slice<'a, T>(ptr: *const T, len: usize) -> &'a [T] {
     if ptr.is_null() {
@@ -2049,7 +2055,6 @@ pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
                                               image_key_0: WrImageKey,
                                               image_key_1: WrImageKey,
                                               image_key_2: WrImageKey,
-                                              color_depth: WrColorDepth,
                                               color_space: WrYuvColorSpace,
                                               image_rendering: ImageRendering) {
     debug_assert!(unsafe { is_in_main_thread() || is_in_compositor_thread() });
@@ -2061,7 +2066,7 @@ pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
          .dl_builder
          .push_yuv_image(&prim_info,
                          YuvData::PlanarYCbCr(image_key_0, image_key_1, image_key_2),
-                         color_depth,
+                         ColorDepth::Color8,
                          color_space,
                          image_rendering);
 }
@@ -2074,7 +2079,6 @@ pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
                                             is_backface_visible: bool,
                                             image_key_0: WrImageKey,
                                             image_key_1: WrImageKey,
-                                            color_depth: WrColorDepth,
                                             color_space: WrYuvColorSpace,
                                             image_rendering: ImageRendering) {
     debug_assert!(unsafe { is_in_main_thread() || is_in_compositor_thread() });
@@ -2086,7 +2090,7 @@ pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
          .dl_builder
          .push_yuv_image(&prim_info,
                          YuvData::NV12(image_key_0, image_key_1),
-                         color_depth,
+                         ColorDepth::Color8,
                          color_space,
                          image_rendering);
 }
@@ -2098,7 +2102,6 @@ pub extern "C" fn wr_dp_push_yuv_interleaved_image(state: &mut WrState,
                                                    clip: LayoutRect,
                                                    is_backface_visible: bool,
                                                    image_key_0: WrImageKey,
-                                                   color_depth: WrColorDepth,
                                                    color_space: WrYuvColorSpace,
                                                    image_rendering: ImageRendering) {
     debug_assert!(unsafe { is_in_main_thread() || is_in_compositor_thread() });
@@ -2110,7 +2113,7 @@ pub extern "C" fn wr_dp_push_yuv_interleaved_image(state: &mut WrState,
          .dl_builder
          .push_yuv_image(&prim_info,
                          YuvData::InterleavedYCbCr(image_key_0),
-                         color_depth,
+                         ColorDepth::Color8,
                          color_space,
                          image_rendering);
 }
@@ -2191,6 +2194,7 @@ pub extern "C" fn wr_dp_push_border(state: &mut WrState,
                                     rect: LayoutRect,
                                     clip: LayoutRect,
                                     is_backface_visible: bool,
+                                    do_aa: AntialiasBorder,
                                     widths: LayoutSideOffsets,
                                     top: BorderSide,
                                     right: BorderSide,
@@ -2200,13 +2204,14 @@ pub extern "C" fn wr_dp_push_border(state: &mut WrState,
     debug_assert!(unsafe { is_in_main_thread() });
 
     let border_details = BorderDetails::Normal(NormalBorder {
-                                                   left: left.into(),
-                                                   right: right.into(),
-                                                   top: top.into(),
-                                                   bottom: bottom.into(),
-                                                   radius: radius.into(),
-                                                   do_aa: true,
-                                               });
+        left: left.into(),
+        right: right.into(),
+        top: top.into(),
+        bottom: bottom.into(),
+        radius: radius.into(),
+        do_aa: do_aa == AntialiasBorder::Yes,
+    });
+
     let mut prim_info = LayoutPrimitiveInfo::with_clip_rect(rect, clip.into());
     prim_info.is_backface_visible = is_backface_visible;
     prim_info.tag = state.current_tag;

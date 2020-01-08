@@ -21,6 +21,14 @@ static const uint32_t MAX_CACHED_PROGRAM_COUNT = 15;
 
 static const uint64_t MAX_LOAD_TIME_MS = 400;
 
+
+enum class AntialiasBorder {
+  No = 0,
+  Yes,
+
+  Sentinel 
+};
+
 enum class BorderStyle : uint32_t {
   None = 0,
   Solid = 1,
@@ -57,18 +65,6 @@ enum class Checkpoint : uint32_t {
 enum class ClipMode {
   Clip,
   ClipOut,
-
-  Sentinel 
-};
-
-
-enum class ColorDepth : uint8_t {
-  
-  Color8,
-  
-  Color10,
-  
-  Color12,
 
   Sentinel 
 };
@@ -946,8 +942,6 @@ struct GlyphOptions {
   }
 };
 
-using WrColorDepth = ColorDepth;
-
 using WrYuvColorSpace = YuvColorSpace;
 
 struct ByteSlice {
@@ -1299,6 +1293,7 @@ void wr_dp_push_border(WrState *aState,
                        LayoutRect aRect,
                        LayoutRect aClip,
                        bool aIsBackfaceVisible,
+                       AntialiasBorder aDoAa,
                        LayoutSideOffsets aWidths,
                        BorderSide aTop,
                        BorderSide aRight,
@@ -1504,7 +1499,6 @@ void wr_dp_push_yuv_NV12_image(WrState *aState,
                                bool aIsBackfaceVisible,
                                WrImageKey aImageKey0,
                                WrImageKey aImageKey1,
-                               WrColorDepth aColorDepth,
                                WrYuvColorSpace aColorSpace,
                                ImageRendering aImageRendering)
 WR_FUNC;
@@ -1516,7 +1510,6 @@ void wr_dp_push_yuv_interleaved_image(WrState *aState,
                                       LayoutRect aClip,
                                       bool aIsBackfaceVisible,
                                       WrImageKey aImageKey0,
-                                      WrColorDepth aColorDepth,
                                       WrYuvColorSpace aColorSpace,
                                       ImageRendering aImageRendering)
 WR_FUNC;
@@ -1530,7 +1523,6 @@ void wr_dp_push_yuv_planar_image(WrState *aState,
                                  WrImageKey aImageKey0,
                                  WrImageKey aImageKey1,
                                  WrImageKey aImageKey2,
-                                 WrColorDepth aColorDepth,
                                  WrYuvColorSpace aColorSpace,
                                  ImageRendering aImageRendering)
 WR_FUNC;

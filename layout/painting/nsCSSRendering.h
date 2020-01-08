@@ -600,10 +600,40 @@ struct nsCSSRendering
     nscolor aBGColor,
     const nsRect& aBorderRect,
     int32_t aAppUnitsPerDevPixel,
-    mozilla::Side aStartBevelSide = mozilla::eSideTop,
-    nscoord aStartBevelOffset = 0,
-    mozilla::Side aEndBevelSide = mozilla::eSideTop,
-    nscoord aEndBevelOffset = 0);
+    mozilla::Side aStartBevelSide,
+    nscoord aStartBevelOffset,
+    mozilla::Side aEndBevelSide,
+    nscoord aEndBevelOffset);
+
+  
+  struct Bevel
+  {
+    mozilla::Side mSide;
+    nscoord mOffset;
+  };
+
+  
+  struct SolidBeveledBorderSegment
+  {
+    nsRect mRect;
+    nscolor mColor;
+    Bevel mStartBevel;
+    Bevel mEndBevel;
+  };
+
+  
+  
+  static void GetTableBorderSolidSegments(
+      nsTArray<SolidBeveledBorderSegment>& aSegments,
+      uint8_t aBorderStyle,
+      nscolor aBorderColor,
+      nscolor aBGColor,
+      const nsRect& aBorderRect,
+      int32_t aAppUnitsPerDevPixel,
+      mozilla::Side aStartBevelSide,
+      nscoord aStartBevelOffset,
+      mozilla::Side aEndBevelSide,
+      nscoord aEndBevelOffset);
 
   
   
