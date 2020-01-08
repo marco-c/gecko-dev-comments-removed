@@ -10,6 +10,8 @@
 #include "mozilla/Types.h" 
 #include "mozilla/layers/SharedSurfacesChild.h"
 
+#include "base/process_util.h"
+
 #ifdef DEBUG
 
 
