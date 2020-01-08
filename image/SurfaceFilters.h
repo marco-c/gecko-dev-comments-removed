@@ -368,6 +368,13 @@ public:
     , mRecycleRowMost(0)
     , mRecycleRowOffset(0)
     , mRecycleRowLength(0)
+    , mClearRow(0)
+    , mClearRowMost(0)
+    , mClearPrefixLength(0)
+    , mClearInfixOffset(0)
+    , mClearInfixLength(0)
+    , mClearPostfixOffset(0)
+    , mClearPostfixLength(0)
     , mOverProc(nullptr)
     , mBaseFrameStartPtr(nullptr)
     , mBaseFrameRowPtr(nullptr)
@@ -434,6 +441,7 @@ public:
     
     
     gfx::IntRect dirtyRect(outputRect);
+    gfx::IntRect clearRect;
     if (!fullFrame || blendMethod != BlendMethod::SOURCE) {
       const RawAccessFrameRef& restoreFrame =
         aConfig.mDecoder->GetRestoreFrameRef();
@@ -462,21 +470,21 @@ public:
             
             if (!mFrameRect.Contains(restoreBlendRect) ||
                 blendMethod == BlendMethod::OVER) {
-              mClearRect = restoreBlendRect;
+              clearRect = restoreBlendRect;
             }
 
             
             
-            if (outputRect.IsEqualEdges(mClearRect)) {
+            if (outputRect.IsEqualEdges(clearRect)) {
               mBaseFrameStartPtr = nullptr;
             } else {
-              dirtyRect = mFrameRect.Union(restoreDirtyRect).Union(mClearRect);
+              dirtyRect = mFrameRect.Union(restoreDirtyRect).Union(clearRect);
             }
             break;
         }
       } else if (!fullFrame) {
         
-        mClearRect = outputRect;
+        clearRect = outputRect;
       }
     }
 
@@ -488,6 +496,31 @@ public:
     mRecycleRowMost = recycleRect.YMost();
     mRecycleRowOffset = recycleRect.x * sizeof(uint32_t);
     mRecycleRowLength = recycleRect.width * sizeof(uint32_t);
+
+    if (!clearRect.IsEmpty()) {
+      
+      
+      
+      mClearRow = clearRect.y;
+      mClearRowMost = clearRect.YMost();
+      mClearInfixOffset = clearRect.x * sizeof(uint32_t);
+      mClearInfixLength = clearRect.width * sizeof(uint32_t);
+
+      
+      
+      
+      if (mClearInfixOffset > mRecycleRowOffset) {
+        mClearPrefixLength = mClearInfixOffset - mRecycleRowOffset;
+      }
+
+      
+      
+      mClearPostfixOffset = mClearInfixOffset + mClearInfixLength;
+      size_t recycleRowEndOffset = mRecycleRowOffset + mRecycleRowLength;
+      if (mClearPostfixOffset < recycleRowEndOffset) {
+        mClearPostfixLength = recycleRowEndOffset - mClearPostfixOffset;
+      }
+    }
 
     
     
@@ -651,19 +684,18 @@ private:
       if (needBaseFrame) {
         memset(dest + mRecycleRowOffset, 0, mRecycleRowLength);
       }
-    } else if (mClearRect.height > 0 &&
-               mClearRect.y <= mRow &&
-               mClearRect.YMost() > mRow) {
+    } else if (mClearRow <= mRow && mClearRowMost > mRow) {
       
       
-      size_t prefixLength = mClearRect.x * sizeof(uint32_t);
-      size_t clearLength = mClearRect.width * sizeof(uint32_t);
-      size_t postfixOffset = prefixLength + clearLength;
-      size_t postfixLength = mRowLength - postfixOffset;
-      MOZ_ASSERT(prefixLength + clearLength + postfixLength == mRowLength);
-      memcpy(dest, mBaseFrameRowPtr, prefixLength);
-      memset(dest + prefixLength, 0, clearLength);
-      memcpy(dest + postfixOffset, mBaseFrameRowPtr + postfixOffset, postfixLength);
+      if (needBaseFrame) {
+        memcpy(dest + mRecycleRowOffset,
+               mBaseFrameRowPtr + mRecycleRowOffset,
+               mClearPrefixLength);
+        memcpy(dest + mClearPostfixOffset,
+               mBaseFrameRowPtr + mClearPostfixOffset,
+               mClearPostfixLength);
+      }
+      memset(dest + mClearInfixOffset, 0, mClearInfixLength);
     } else if (needBaseFrame) {
       memcpy(dest + mRecycleRowOffset,
              mBaseFrameRowPtr + mRecycleRowOffset,
@@ -720,12 +752,20 @@ private:
   int32_t mRecycleRowMost;             
   size_t mRecycleRowOffset;            
   size_t mRecycleRowLength;            
+
+  
+  int32_t mClearRow;                   
+  int32_t mClearRowMost;               
+  size_t mClearPrefixLength;           
+  size_t mClearInfixOffset;            
+  size_t mClearInfixLength;            
+  size_t mClearPostfixOffset;          
+  size_t mClearPostfixLength;          
+
   SkBlitRow::Proc32 mOverProc;         
   const uint8_t* mBaseFrameStartPtr;   
                                        
   const uint8_t* mBaseFrameRowPtr;     
-                                       
-  gfx::IntRect mClearRect;             
                                        
 };
 
