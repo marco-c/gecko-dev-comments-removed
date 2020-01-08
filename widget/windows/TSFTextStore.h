@@ -380,6 +380,33 @@ protected:
   void     MaybeDestroyNativeCaret();
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd);
+
+  
   RefPtr<nsWindowBase>       mWidget;
   
   RefPtr<TextEventDispatcher> mDispatcher;
