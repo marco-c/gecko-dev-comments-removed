@@ -39,7 +39,7 @@ class MozDropmarker extends MozXULElement {
   connectedCallback() {
     
     if (!this.firstChild) {
-      let image = document.createXULElement("image");
+      let image = document.createElement("image");
       image.classList.add("dropmarker-icon");
       this.appendChild(image);
     }
