@@ -110,6 +110,14 @@ public:
 
   bool IsSessionOnly() const { return mIsSessionOnly; }
 
+  virtual void
+  Open(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
+  { }
+
+  virtual void
+  Close(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
+  { }
+
   
   
   
