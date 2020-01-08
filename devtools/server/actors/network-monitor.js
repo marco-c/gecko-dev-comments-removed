@@ -33,38 +33,38 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
 
 
-
-
-
-  initialize(conn, filters, parentID, messageManager, stackTraceCollector) {
+  initialize(conn, filters, parentID, messageManager) {
     Actor.prototype.initialize.call(this, conn);
 
     this.parentID = parentID;
     this.messageManager = messageManager;
-    this.stackTraceCollector = stackTraceCollector;
 
     
     
     this.netMonitor = new NetworkMonitor(filters, this);
     this.netMonitor.init();
 
-    if (this.messageManager) {
-      this.stackTraces = new Set();
-      this.onStackTraceAvailable = this.onStackTraceAvailable.bind(this);
-      this.messageManager.addMessageListener("debug:request-stack-available",
-        this.onStackTraceAvailable);
-      this.onRequestContent = this.onRequestContent.bind(this);
-      this.messageManager.addMessageListener("debug:request-content",
-        this.onRequestContent);
-      this.onSetPreference = this.onSetPreference.bind(this);
-      this.messageManager.addMessageListener("debug:netmonitor-preference",
-        this.onSetPreference);
-      this.onGetNetworkEventActor = this.onGetNetworkEventActor.bind(this);
-      this.messageManager.addMessageListener("debug:get-network-event-actor",
-        this.onGetNetworkEventActor);
-      this.destroy = this.destroy.bind(this);
-      this.messageManager.addMessageListener("debug:destroy-network-monitor",
-        this.destroy);
+    this.stackTraces = new Set();
+    this.onStackTraceAvailable = this.onStackTraceAvailable.bind(this);
+    this.messageManager.addMessageListener("debug:request-stack-available",
+      this.onStackTraceAvailable);
+    this.onRequestContent = this.onRequestContent.bind(this);
+    this.messageManager.addMessageListener("debug:request-content",
+      this.onRequestContent);
+    this.onSetPreference = this.onSetPreference.bind(this);
+    this.messageManager.addMessageListener("debug:netmonitor-preference",
+      this.onSetPreference);
+    this.onGetNetworkEventActor = this.onGetNetworkEventActor.bind(this);
+    this.messageManager.addMessageListener("debug:get-network-event-actor",
+      this.onGetNetworkEventActor);
+    this.onDestroyMessage = this.onDestroyMessage.bind(this);
+    this.messageManager.addMessageListener("debug:destroy-network-monitor",
+      this.onDestroyMessage);
+  },
+
+  onDestroyMessage({ data }) {
+    if (data.actorID == this.parentID) {
+      this.destroy();
     }
   },
 
@@ -76,8 +76,8 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
       this.netMonitor = null;
     }
 
+    this.stackTraces.clear();
     if (this.messageManager) {
-      this.stackTraces.clear();
       this.messageManager.removeMessageListener("debug:request-stack-available",
         this.onStackTraceAvailable);
       this.messageManager.removeMessageListener("debug:request-content",
@@ -87,7 +87,7 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
       this.messageManager.removeMessageListener("debug:get-network-event-actor",
         this.onGetNetworkEventActor);
       this.messageManager.removeMessageListener("debug:destroy-network-monitor",
-        this.destroy);
+        this.onDestroyMessage);
       this.messageManager = null;
     }
   },
@@ -101,11 +101,7 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
     }
   },
 
-  getRequestContentForURL(url) {
-    const actor = this._networkEventActorsByURL.get(url);
-    if (!actor) {
-      return null;
-    }
+  getRequestContentForActor(actor) {
     const content = actor._response.content;
     if (actor._discardResponseBody || actor._truncated || !content || !content.size) {
       
@@ -133,7 +129,10 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
   onRequestContent(msg) {
     const { url } = msg.data;
-    const content = this.getRequestContentForURL(url);
+    const actor = this._networkEventActorsByURL.get(url);
+    
+    
+    const content = actor ? this.getRequestContentForActor(actor) : null;
     this.messageManager.sendAsyncMessage("debug:request-content", {
       url,
       content,
@@ -151,7 +150,10 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
   onGetNetworkEventActor({ data }) {
     const actor = this.getNetworkEventActor(data.channelId);
-    this.messageManager.sendAsyncMessage("debug:get-network-event-actor", actor.form());
+    this.messageManager.sendAsyncMessage("debug:get-network-event-actor", {
+      channelId: data.channelId,
+      actor: actor.form()
+    });
   },
 
   getNetworkEventActor(channelId) {
@@ -175,13 +177,9 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
     const actor = this.getNetworkEventActor(channelId);
     this._netEvents.set(channelId, actor);
 
-    if (this.messageManager) {
-      event.cause.stacktrace = this.stackTraces.has(channelId);
-      if (event.cause.stacktrace) {
-        this.stackTraces.delete(channelId);
-      }
-    } else {
-      event.cause.stacktrace = this.stackTraceCollector.getStackTrace(channelId);
+    event.cause.stacktrace = this.stackTraces.has(channelId);
+    if (event.cause.stacktrace) {
+      this.stackTraces.delete(channelId);
     }
     actor.init(event);
 

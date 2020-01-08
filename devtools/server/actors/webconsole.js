@@ -30,6 +30,7 @@ loader.lazyRequireGetter(this, "addWebConsoleCommands", "devtools/server/actors/
 loader.lazyRequireGetter(this, "formatCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "validCommands", "devtools/server/actors/webconsole/commands", true);
+loader.lazyRequireGetter(this, "createMessageManagerMocks", "devtools/server/actors/webconsole/message-manager-mock", true);
 loader.lazyRequireGetter(this, "CONSOLE_WORKER_IDS", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "WebConsoleUtils", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
@@ -325,22 +326,13 @@ WebConsoleActor.prototype =
       this.consoleServiceListener.destroy();
       this.consoleServiceListener = null;
     }
-    if (this.networkMonitorActor) {
-      this.networkMonitorActor.destroy();
-      this.networkMonitorActor = null;
-    }
-    if (this.networkMonitorActorId) {
-      const messageManager = this.parentActor.messageManager;
-      if (messageManager) {
+    if (this.netmonitors) {
+      for (const { messageManager } of this.netmonitors) {
         messageManager.sendAsyncMessage("debug:destroy-network-monitor", {
-          actorId: this.networkMonitorActorId
+          actorID: this.actorID
         });
       }
-      this.networkMonitorActorId = null;
-    }
-    if (this.networkMonitorChildActor) {
-      this.networkMonitorChildActor.destroy();
-      this.networkMonitorChildActor = null;
+      this.netmonitors = null;
     }
     if (this.consoleAPIListener) {
       this.consoleAPIListener.destroy();
@@ -589,20 +581,6 @@ WebConsoleActor.prototype =
   startListeners: async function(request) {
     const startedListeners = [];
     const window = !this.parentActor.isRootActor ? this.window : null;
-    let messageManager = null;
-
-    
-    
-    
-    const processBoundary = Services.appinfo && (
-      Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT
-    );
-
-    
-    
-    if (processBoundary) {
-      messageManager = this.parentActor.messageManager;
-    }
 
     while (request.listeners.length > 0) {
       const listener = request.listeners.shift();
@@ -634,19 +612,33 @@ WebConsoleActor.prototype =
           if (isWorker) {
             break;
           }
-          if (!this.networkMonitorActorId && !this.networkMonitorActor) {
+          if (!this.netmonitors) {
             
             
             
             
-            this.stackTraceCollector = new StackTraceCollector({ window },
-              messageManager);
-            this.stackTraceCollector.init();
+            
+            
+            
+            const [ mmMockParent, mmMockChild ] = createMessageManagerMocks();
 
-            if (messageManager && processBoundary) {
+            
+            
+            
+            
+            
+            
+            this.netmonitors = [];
+
+            
+            const isInContentProcess =
+              Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT &&
+              this.parentActor.messageManager;
+            if (isInContentProcess) {
               
               
-              this.networkMonitorActorId = await this.conn.spawnActorInParentProcess(
+              
+              await this.conn.spawnActorInParentProcess(
                 this.actorID, {
                   module: "devtools/server/actors/network-monitor",
                   constructor: "NetworkMonitorActor",
@@ -655,17 +647,34 @@ WebConsoleActor.prototype =
                     this.actorID
                   ],
                 });
-
-              
-              this.networkMonitorChildActor = new NetworkMonitorActor(this.conn,
-                { window },
-                this.actorID,
-                null,
-                this.stackTraceCollector);
-            } else {
-              this.networkMonitorActor = new NetworkMonitorActor(this.conn, { window },
-                this.actorID, null, this.stackTraceCollector);
+              this.netmonitors.push({
+                messageManager: this.parentActor.messageManager,
+                parentProcess: true
+              });
             }
+
+            
+            
+            
+            
+            
+            new NetworkMonitorActor(this.conn,
+              { window },
+              this.actorID,
+              mmMockParent);
+
+            this.netmonitors.push({
+              messageManager: mmMockChild,
+              parentProcess: !isInContentProcess
+            });
+
+            
+            
+            
+            
+            this.stackTraceCollector = new StackTraceCollector({ window },
+              this.netmonitors);
+            this.stackTraceCollector.init();
           }
           startedListeners.push(listener);
           break;
@@ -764,22 +773,13 @@ WebConsoleActor.prototype =
           stoppedListeners.push(listener);
           break;
         case "NetworkActivity":
-          if (this.networkMonitorActor) {
-            this.networkMonitorActor.destroy();
-            this.networkMonitorActor = null;
-          }
-          if (this.networkMonitorActorId) {
-            const messageManager = this.parentActor.messageManager;
-            if (messageManager) {
+          if (this.netmonitors) {
+            for (const { messageManager } of this.netmonitors) {
               messageManager.sendAsyncMessage("debug:destroy-network-monitor", {
-                actorId: this.networkMonitorActorId
+                actorID: this.actorID
               });
             }
-            this.networkMonitorActorId = null;
-          }
-          if (this.networkMonitorChildActor) {
-            this.networkMonitorChildActor.destroy();
-            this.networkMonitorChildActor = null;
+            this.netmonitors = null;
           }
           if (this.stackTraceCollector) {
             this.stackTraceCollector.destroy();
@@ -1252,31 +1252,19 @@ WebConsoleActor.prototype =
     for (const key in request.preferences) {
       this._prefs[key] = request.preferences[key];
 
-      if (key == "NetworkMonitor.saveRequestAndResponseBodies") {
-        if (this.networkMonitorActor) {
-          this.networkMonitorActor.netMonitor.saveRequestAndResponseBodies =
-            this._prefs[key];
-        }
-        if (this.networkMonitorChildActor) {
-          this.networkMonitorChildActor.netMonitor.saveRequestAndResponseBodies =
-            this._prefs[key];
-        }
-        if (this.networkMonitorActorId) {
-          const messageManager = this.parentActor.messageManager;
-          messageManager.sendAsyncMessage("debug:netmonitor-preference",
-            { saveRequestAndResponseBodies: this._prefs[key] });
-        }
-      } else if (key == "NetworkMonitor.throttleData") {
-        if (this.networkMonitorActor) {
-          this.networkMonitorActor.netMonitor.throttleData = this._prefs[key];
-        }
-        if (this.networkMonitorChildActor) {
-          this.networkMonitorChildActor.netMonitor.throttleData = this._prefs[key];
-        }
-        if (this.networkMonitorActorId) {
-          const messageManager = this.parentActor.messageManager;
-          messageManager.sendAsyncMessage("debug:netmonitor-preference",
-            { throttleData: this._prefs[key] });
+      if (this.netmonitors) {
+        if (key == "NetworkMonitor.saveRequestAndResponseBodies") {
+          for (const { messageManager } of this.netmonitors) {
+            messageManager.sendAsyncMessage("debug:netmonitor-preference", {
+              saveRequestAndResponseBodies: this._prefs[key]
+            });
+          }
+        } else if (key == "NetworkMonitor.throttleData") {
+          for (const { messageManager } of this.netmonitors) {
+            messageManager.sendAsyncMessage("debug:netmonitor-preference", {
+              throttleData: this._prefs[key]
+            });
+          }
         }
       }
     }
@@ -1818,26 +1806,30 @@ WebConsoleActor.prototype =
 
 
   getRequestContentForURL(url) {
-    
-    if (this.networkMonitorActor) {
-      return this.networkMonitorActor.getRequestContentForURL(url);
-    } else if (this.networkMonitorActorId) {
-      
-      
-      const messageManager = this.parentActor.messageManager;
-      return new Promise(resolve => {
-        const onMessage = ({ data }) => {
-          if (data.url == url) {
+    if (!this.netmonitors) {
+      return null;
+    }
+    return new Promise(resolve => {
+      let messagesReceived = 0;
+      const onMessage = ({ data }) => {
+        if (data.url != url) {
+          return;
+        }
+        messagesReceived++;
+        
+        
+        if (data.content || messagesReceived == this.netmonitors.length) {
+          for (const { messageManager } of this.netmonitors) {
             messageManager.removeMessageListener("debug:request-content", onMessage);
-            resolve(data.content);
           }
-        };
+          resolve(data.content);
+        }
+      };
+      for (const { messageManager } of this.netmonitors) {
         messageManager.addMessageListener("debug:request-content", onMessage);
         messageManager.sendAsyncMessage("debug:request-content", { url });
-      });
-    }
-    
-    return null;
+      }
+    });
   },
 
   
@@ -1883,30 +1875,28 @@ WebConsoleActor.prototype =
 
     NetUtil.asyncFetch(channel, () => {});
 
-    
+    if (!this.netmonitors) {
+      return null;
+    }
     const { channelId } = channel;
-    if (this.networkMonitorActor) {
-      const actor = this.networkMonitorActor.getNetworkEventActor(channelId);
-      return {
-        eventActor: actor.form()
-      };
-    } else if (this.networkMonitorActorId) {
-      
-      
-      const messageManager = this.parentActor.messageManager;
-      return new Promise(resolve => {
-        const onMessage = ({ data }) => {
+    
+    
+    
+    const netmonitor = this.netmonitors.filter(({ parentProcess }) => parentProcess)[0];
+    const { messageManager } = netmonitor;
+    return new Promise(resolve => {
+      const onMessage = ({ data }) => {
+        if (data.channelId == channelId) {
           messageManager.removeMessageListener("debug:get-network-event-actor",
             onMessage);
           resolve({
-            eventActor: data
+            eventActor: data.actor
           });
-        };
-        messageManager.addMessageListener("debug:get-network-event-actor", onMessage);
-        messageManager.sendAsyncMessage("debug:get-network-event-actor", { channelId });
-      });
-    }
-    return null;
+        }
+      };
+      messageManager.addMessageListener("debug:get-network-event-actor", onMessage);
+      messageManager.sendAsyncMessage("debug:get-network-event-actor", { channelId });
+    });
   },
 
   
