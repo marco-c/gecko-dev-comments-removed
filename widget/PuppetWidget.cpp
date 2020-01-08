@@ -425,6 +425,15 @@ PuppetWidget::DispatchInputEvent(WidgetInputEvent* aEvent)
     return nsEventStatus_eIgnore;
   }
 
+  if (nsCOMPtr<nsIPresShell> presShell = mTabChild->GetPresShell()) {
+    
+    
+    
+    LayoutDevicePoint pt(aEvent->mRefPoint);
+    pt = pt * presShell->GetResolution();
+    aEvent->mRefPoint = LayoutDeviceIntPoint::Round(pt);
+  }
+
   switch (aEvent->mClass) {
     case eWheelEventClass:
       Unused <<
