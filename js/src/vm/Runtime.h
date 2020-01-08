@@ -36,6 +36,7 @@
 #ifdef DEBUG
 # include "js/Proxy.h" 
 #endif
+#include "js/Stream.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
