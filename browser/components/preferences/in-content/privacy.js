@@ -29,6 +29,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRe
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersEnabled",
                                       "browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled");
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingRejectTrackersUiEnabled",
+                                      "browser.contentblocking.rejecttrackers.ui.enabled");
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingRejectTrackersRecommended",
+                                      "browser.contentblocking.rejecttrackers.ui.recommended");
+
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingEnabled",
                                       "browser.contentblocking.enabled");
 
@@ -457,10 +463,26 @@ var gPrivacyPane = {
       this.restoreContentBlockingPrefs);
     setEventListener("trackingProtectionMenu", "command",
       this.trackingProtectionWritePrefs);
+    setEventListener("contentBlockingChangeCookieSettings", "command",
+      this.changeCookieSettings);
 
     let link = document.getElementById("contentBlockingLearnMore");
     let url = Services.urlFormatter.formatURLPref("app.support.baseURL") + "tracking-protection";
     link.setAttribute("href", url);
+
+    
+    if (!contentBlockingRejectTrackersUiEnabled) {
+      let elements = document.querySelectorAll(".reject-trackers-ui");
+      for (let element of elements) {
+        element.hidden = true;
+      }
+    }
+
+    
+    let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackersCB");
+    if (contentBlockingRejectTrackersRecommended) {
+      document.l10n.setAttributes(blockCookiesFromTrackers, "content-blocking-reject-trackers-block-trackers-option-recommended");
+    }
   },
 
   
@@ -476,6 +498,8 @@ var gPrivacyPane = {
     clearIfNotLocked("browser.contentblocking.enabled");
     clearIfNotLocked("browser.fastblock.enabled");
     clearIfNotLocked("urlclassifier.trackingTable");
+    clearIfNotLocked("network.cookie.cookieBehavior");
+    clearIfNotLocked("network.cookie.lifetimePolicy");
 
     let controllingExtension = await getControllingExtension(
       PREF_SETTING_TYPE, TRACKING_PROTECTION_KEY);
@@ -484,6 +508,13 @@ var gPrivacyPane = {
         clearIfNotLocked(preference);
       }
     }
+  },
+
+  
+
+
+  changeCookieSettings() {
+    gotoPref("privacy-sitedata");
   },
 
   
@@ -548,22 +579,33 @@ var gPrivacyPane = {
       ".content-blocking-category-menu",
       ".content-blocking-category-name",
       "#changeBlockListLink",
+      "#contentBlockingChangeCookieSettings",
+      "#blockCookiesCB, #blockCookiesCB > radio",
     ];
 
+    this._toggleControls(dependentControls, contentBlockingEnabled);
+
+    
+    this._updateTrackingProtectionUI();
+
+    
+    
+    
+    this.readBlockCookiesCB();
+  },
+
+  _toggleControls(dependentControls, enabled) {
     for (let selector of dependentControls) {
       let controls = document.querySelectorAll(selector);
 
       for (let control of controls) {
-        if (contentBlockingEnabled) {
+        if (enabled) {
           control.removeAttribute("disabled");
         } else {
           control.setAttribute("disabled", "true");
         }
       }
     }
-
-    
-    this._updateTrackingProtectionUI();
   },
 
   
@@ -1026,6 +1068,78 @@ var gPrivacyPane = {
     }
 
     return Ci.nsICookieService.BEHAVIOR_ACCEPT;
+  },
+
+  enableThirdPartyCookiesUI() {
+    document.getElementById("blockCookiesCBDeck").selectedIndex = 0;
+    document.getElementById("contentBlockingChangeCookieSettings").hidden = true;
+
+    let dependentControls = [
+      ".reject-trackers-ui .content-blocking-icon",
+      ".reject-trackers-ui .content-blocking-category-menu",
+      ".reject-trackers-ui .content-blocking-category-name",
+      "#blockCookiesCB > radio",
+      "#blockCookiesCBDeck",
+    ];
+
+    this._toggleControls(dependentControls, contentBlockingEnabled);
+  },
+
+  disableThirdPartyCookiesUI(reason) {
+    let deckIndex = 0;
+    switch (reason) {
+      case "always":
+        deckIndex = 1;
+        break;
+      case "unvisited":
+        deckIndex = 2;
+        break;
+    }
+    document.getElementById("blockCookiesCBDeck").selectedIndex = deckIndex;
+    document.getElementById("contentBlockingChangeCookieSettings").hidden = false;
+
+    let dependentControls = [
+      ".reject-trackers-ui .content-blocking-icon",
+      ".reject-trackers-ui .content-blocking-category-menu",
+      ".reject-trackers-ui .content-blocking-category-name",
+      "#blockCookiesCB > radio",
+      "#blockCookiesCBDeck",
+    ];
+
+    this._toggleControls(dependentControls, false);
+  },
+
+  
+
+
+  readBlockCookiesCB() {
+    let pref = Preferences.get("network.cookie.cookieBehavior");
+    switch (pref.value) {
+      case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
+        this.enableThirdPartyCookiesUI();
+        return "all-third-parties";
+      case Ci.nsICookieService.BEHAVIOR_REJECT:
+        return this.disableThirdPartyCookiesUI("always");
+      case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
+        return this.disableThirdPartyCookiesUI("unvisited");
+      case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
+        this.enableThirdPartyCookiesUI();
+        return "trackers";
+      default:
+        return undefined;
+    }
+  },
+
+  writeBlockCookiesCB() {
+    let block = document.getElementById("blockCookiesCB").selectedItem;
+    switch (block.value) {
+      case "trackers":
+        return Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER;
+      case "all-third-parties":
+        return Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
+      default:
+        return undefined;
+    }
   },
 
   
