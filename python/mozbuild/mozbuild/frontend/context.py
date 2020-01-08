@@ -417,13 +417,6 @@ class LinkFlags(BaseCompileFlags):
             if self._context.config.substs.get('MOZ_DEBUG_SYMBOLS'):
                 flags.append('-DEBUG')
 
-
-            if self._context.config.substs.get('MOZ_DMD'):
-                
-                
-                
-                flags = ['-DEBUG']
-
             if self._context.config.substs.get('MOZ_OPTIMIZE'):
                 flags.append('-OPT:REF,ICF')
 
