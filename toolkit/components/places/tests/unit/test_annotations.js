@@ -65,7 +65,6 @@ add_task(async function test_execute() {
   Assert.equal(annoObserver.PAGE_lastSet_AnnoName, testAnnoName);
 
   
-  Assert.ok(annosvc.pageHasAnnotation(testURI, testAnnoName));
   var storedAnnoVal = annosvc.getPageAnnotation(testURI, testAnnoName);
   Assert.ok(testAnnoVal === storedAnnoVal);
   
@@ -102,32 +101,6 @@ add_task(async function test_execute() {
   }
 
   
-  var uri2 = uri("http://www.tests.tld");
-  await PlacesTestUtils.addVisits(uri2);
-  annosvc.setPageAnnotation(uri2, testAnnoName, testAnnoVal, 0, 0);
-  var pages = annosvc.getPagesWithAnnotation(testAnnoName);
-  Assert.equal(pages.length, 2);
-  
-  Assert.ok(!pages[0].equals(pages[1]));
-  Assert.ok(pages[0].equals(testURI) || pages[1].equals(testURI));
-  Assert.ok(pages[0].equals(uri2) || pages[1].equals(uri2));
-
-  
-  let testItem2 = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.menuGuid,
-    title: "",
-    url: uri2,
-  });
-  let testItemId2 = await PlacesUtils.promiseItemId(testItem2.guid);
-  annosvc.setItemAnnotation(testItemId2, testAnnoName, testAnnoVal, 0, 0);
-  var items = annosvc.getItemsWithAnnotation(testAnnoName);
-  Assert.equal(items.length, 2);
-  
-  Assert.ok(items[0] != items[1]);
-  Assert.ok(items[0] == testItemId || items[1] == testItemId);
-  Assert.ok(items[0] == testItemId2 || items[1] == testItemId2);
-
-  
   try {
     annosvc.getPageAnnotation(testURI, "blah");
     do_throw("fetching page-annotation that doesn't exist, should've thrown");
@@ -158,7 +131,6 @@ add_task(async function test_execute() {
   var int32Key = testAnnoName + "/types/Int32";
   var int32Val = 23;
   annosvc.setPageAnnotation(testURI, int32Key, int32Val, 0, 0);
-  Assert.ok(annosvc.pageHasAnnotation(testURI, int32Key));
   value = {}, flags = {}, exp = {}, storageType = {};
   annosvc.getPageAnnotationInfo(testURI, int32Key, flags, exp, storageType);
   Assert.equal(flags.value, 0);
@@ -242,8 +214,8 @@ add_task(async function test_execute() {
 
   
   
-  Assert.equal(annosvc.getItemsWithAnnotation(int32Key).length, 0);
-  Assert.equal(annosvc.getPagesWithAnnotation(int32Key).length, 0);
+  Assert.equal((await getItemsWithAnnotation(int32Key)).length, 0);
+  Assert.equal((await getPagesWithAnnotation(int32Key)).length, 0);
 
   
   var invalidIds = [-1, 0, 37643];
