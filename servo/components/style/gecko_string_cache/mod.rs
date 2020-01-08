@@ -15,6 +15,7 @@ use crate::gecko_bindings::bindings::Gecko_Atomize;
 use crate::gecko_bindings::bindings::Gecko_Atomize16;
 use crate::gecko_bindings::bindings::Gecko_ReleaseAtom;
 use crate::gecko_bindings::structs::{nsAtom, nsDynamicAtom, nsStaticAtom};
+use crate::gecko_bindings::structs::root::mozilla::detail::gGkAtoms;
 use nsstring::{nsAString, nsStr};
 use precomputed_hash::PrecomputedHash;
 use std::borrow::{Borrow, Cow};
@@ -44,8 +45,11 @@ macro_rules! local_name {
 }
 
 
+
+
+
 #[derive(Eq, PartialEq)]
-pub struct Atom(*mut WeakAtom);
+pub struct Atom(usize);
 
 
 
@@ -53,12 +57,31 @@ pub struct Atom(*mut WeakAtom);
 
 pub struct WeakAtom(nsAtom);
 
+#[inline]
+fn valid_static_atom_addr(addr: usize) -> bool {
+    unsafe {
+        let start = gGkAtoms.mAtoms.get_unchecked(0) as *const _;
+        let end = gGkAtoms.mAtoms.get_unchecked(gGkAtoms.mAtoms.len()) as *const _;
+        let in_range = addr >= start as usize && addr < end as usize;
+        let aligned = addr % mem::align_of::<nsStaticAtom>() == 0;
+        in_range && aligned
+    }
+}
+
 impl Deref for Atom {
     type Target = WeakAtom;
 
     #[inline]
     fn deref(&self) -> &WeakAtom {
-        unsafe { &*self.0 }
+        unsafe {
+            let addr = if self.is_static() {
+                (&gGkAtoms as *const _ as usize) + (self.0 >> 1)
+            } else {
+                self.0
+            };
+            debug_assert!(!self.is_static() || valid_static_atom_addr(addr));
+            WeakAtom::new(addr as *const nsAtom)
+        }
     }
 }
 
@@ -277,13 +300,38 @@ impl fmt::Display for WeakAtom {
     }
 }
 
+#[inline]
+unsafe fn make_handle(ptr: *const nsAtom) -> usize {
+    debug_assert!(!ptr.is_null());
+    if !WeakAtom::new(ptr).is_static() {
+        ptr as usize
+    } else {
+        make_static_handle(ptr as *mut nsStaticAtom)
+    }
+}
+
+#[inline]
+unsafe fn make_static_handle(ptr: *const nsStaticAtom) -> usize {
+    
+    
+    debug_assert!(valid_static_atom_addr(ptr as usize));
+    let base = &gGkAtoms as *const _;
+    let offset = ptr as usize - base as usize;
+    (offset << 1) | 1
+}
+
 impl Atom {
+    #[inline]
+    fn is_static(&self) -> bool {
+        self.0 & 1 == 1
+    }
+
     
     pub unsafe fn with<F, R>(ptr: *const nsAtom, callback: F) -> R
     where
         F: FnOnce(&Atom) -> R,
     {
-        let atom = Atom(WeakAtom::new(ptr));
+        let atom = Atom(make_handle(ptr as *mut nsAtom));
         let ret = callback(&atom);
         mem::forget(atom);
         ret
@@ -291,24 +339,22 @@ impl Atom {
 
     
     
-    
-    
-    
-    
     #[inline]
-    pub unsafe fn from_static(ptr: *const nsStaticAtom) -> Self {
-        let atom = Atom(ptr as *mut WeakAtom);
-        debug_assert!(
-            atom.is_static(),
-            "Called from_static for a non-static atom!"
-        );
+    pub unsafe fn from_index(index: u16) -> Self {
+        let ptr = gGkAtoms.mAtoms.get_unchecked(index as usize) as *const _;
+        let handle = make_static_handle(ptr);
+        let atom = Atom(handle);
+        debug_assert!(valid_static_atom_addr(ptr as usize));
+        debug_assert!(atom.is_static());
+        debug_assert!((*atom).is_static());
+        debug_assert!(handle == make_handle(atom.as_ptr()));
         atom
     }
 
     
     #[inline(always)]
     pub unsafe fn from_raw(ptr: *mut nsAtom) -> Self {
-        let atom = Atom(ptr as *mut WeakAtom);
+        let atom = Atom(make_handle(ptr));
         if !atom.is_static() {
             Gecko_AddRefAtom(ptr);
         }
@@ -320,7 +366,7 @@ impl Atom {
     #[inline]
     pub unsafe fn from_addrefed(ptr: *mut nsAtom) -> Self {
         assert!(!ptr.is_null());
-        Atom(WeakAtom::new(ptr))
+        Atom(make_handle(ptr))
     }
 
     
@@ -353,7 +399,13 @@ impl Hash for WeakAtom {
 impl Clone for Atom {
     #[inline(always)]
     fn clone(&self) -> Atom {
-        unsafe { Atom::from_raw(self.as_ptr()) }
+        unsafe {
+            let atom = Atom(self.0);
+            if !atom.is_static() {
+                Gecko_AddRefAtom(atom.as_ptr());
+            }
+            atom
+        }
     }
 }
 
@@ -377,13 +429,13 @@ impl Default for Atom {
 
 impl fmt::Debug for Atom {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "Gecko Atom({:p}, {})", self.0, self)
+        write!(w, "Atom(0x{:08x}, {})", self.0, self)
     }
 }
 
 impl fmt::Display for Atom {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        unsafe { (&*self.0).fmt(w) }
+        self.deref().fmt(w)
     }
 }
 
@@ -392,10 +444,10 @@ impl<'a> From<&'a str> for Atom {
     fn from(string: &str) -> Atom {
         debug_assert!(string.len() <= u32::max_value() as usize);
         unsafe {
-            Atom(WeakAtom::new(Gecko_Atomize(
+            Atom::from_addrefed(Gecko_Atomize(
                 string.as_ptr() as *const _,
                 string.len() as u32,
-            )))
+            ))
         }
     }
 }
@@ -410,7 +462,7 @@ impl<'a> From<&'a [u16]> for Atom {
 impl<'a> From<&'a nsAString> for Atom {
     #[inline]
     fn from(string: &nsAString) -> Atom {
-        unsafe { Atom(WeakAtom::new(Gecko_Atomize16(string))) }
+        unsafe { Atom::from_addrefed(Gecko_Atomize16(string)) }
     }
 }
 
