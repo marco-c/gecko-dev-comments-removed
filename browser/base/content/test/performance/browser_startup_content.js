@@ -45,7 +45,6 @@ const whitelist = {
     "resource://gre/modules/Log.jsm",
 
     
-    "resource:///modules/sessionstore/ContentRestore.jsm",
     "resource://gre/modules/sessionstore/SessionHistory.jsm",
 
     
