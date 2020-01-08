@@ -67,7 +67,13 @@ def main(argv):
     ret = 1
     try:
         with FileAvoidWrite(args.output_file, mode='rb') as output:
-            ret = module.__dict__[method](output, *args.additional_arguments, **kwargs)
+            try:
+                ret = module.__dict__[method](output, *args.additional_arguments, **kwargs)
+            except:
+                
+                output.avoid_writing_to_file()
+                raise
+
             
             
             
@@ -100,6 +106,10 @@ def main(argv):
                 mk.create_rule([args.dep_target]).add_dependencies(deps)
                 with FileAvoidWrite(args.dep_file) as dep_file:
                     mk.dump(dep_file)
+            else:
+                
+                output.avoid_writing_to_file()
+
     except IOError as e:
         print('Error opening file "{0}"'.format(e.filename), file=sys.stderr)
         traceback.print_exc()
