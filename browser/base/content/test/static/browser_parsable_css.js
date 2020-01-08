@@ -98,9 +98,6 @@ let propNameWhitelist = [
   {propName: "--in-content-category-text-active",
    isFromDevTools: false},
   
-  {propName: "--theme-search-overlays-semitransparent",
-   isFromDevTools: true},
-  
   
   
   {propName: "--clickToPlay-width",
