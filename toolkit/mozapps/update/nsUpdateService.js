@@ -13,16 +13,6 @@ ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "XMLHttpRequest"]);
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
-  CertUtils: "resource://gre/modules/CertUtils.jsm",
-  ctypes: "resource://gre/modules/ctypes.jsm",
-  DeferredTask: "resource://gre/modules/DeferredTask.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
-  UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
-  WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
-});
-
 const UPDATESERVICE_CID = Components.ID("{B3C290A6-3943-4B89-8BBE-C01EB7B3B311}");
 
 const PREF_APP_UPDATE_ALTWINDOWTYPE        = "app.update.altwindowtype";
@@ -200,6 +190,16 @@ var gUpdateMutexHandle = null;
 
 
 var gUpdateDirPermissionFixAttempted = false;
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  CertUtils: "resource://gre/modules/CertUtils.jsm",
+  ctypes: "resource://gre/modules/ctypes.jsm",
+  DeferredTask: "resource://gre/modules/DeferredTask.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
+  WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
+});
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false);
@@ -1186,16 +1186,8 @@ function handleCriticalWriteResult(wroteSuccessfully, path) {
 
 function UpdatePatch(patch) {
   this._properties = {};
-  this.errorCode = 0;
-  this.state = STATE_NONE;
-
-  for (let i = 0; i < patch.attributes.length; ++i) {
+  for (var i = 0; i < patch.attributes.length; ++i) {
     var attr = patch.attributes.item(i);
-    
-    
-    if (attr.value == "undefined") {
-      continue;
-    }
     switch (attr.name) {
       case "xmlns":
         
@@ -1208,25 +1200,18 @@ function UpdatePatch(patch) {
           LOG("UpdatePatch:init - 0-sized patch!");
           throw Cr.NS_ERROR_ILLEGAL_VALUE;
         }
-        this[attr.name] = attr.value;
-        break;
-      case "errorCode":
-        if (attr.value) {
-          let val = parseInt(attr.value);
-          
-          
-          if (val) {
-            this.errorCode = val;
-          }
-        }
-        break;
-      case "finalURL":
-      case "state":
+        
       case "type":
       case "URL":
+      case "finalURL":
+      case "state":
+      case "errorCode":
         this[attr.name] = attr.value;
         break;
       default:
+        this[attr.name] = attr.value;
+        
+        
         
         this.setProperty(attr.name, attr.value);
         break;
@@ -1239,9 +1224,6 @@ UpdatePatch.prototype = {
 
   serialize: function UpdatePatch_serialize(updates) {
     var patch = updates.createElementNS(URI_UPDATE_NS, "patch");
-    patch.setAttribute("size", this.size);
-    patch.setAttribute("type", this.type);
-    patch.setAttribute("URL", this.URL);
     
     
     if (this.errorCode) {
@@ -1251,21 +1233,27 @@ UpdatePatch.prototype = {
     if (this.finalURL) {
       patch.setAttribute("finalURL", this.finalURL);
     }
-    
     if (this.selected) {
       patch.setAttribute("selected", this.selected);
     }
-    if (this.state != STATE_NONE) {
-      patch.setAttribute("state", this.state);
-    }
+    patch.setAttribute("size", this.size);
+    patch.setAttribute("state", this.state);
+    patch.setAttribute("type", this.type);
+    patch.setAttribute("URL", this.URL);
 
-    for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
-        patch.setAttribute(name, value.data);
+    for (let p in this._properties) {
+      if (this._properties[p].present) {
+        patch.setAttribute(p, this._properties[p].data);
       }
     }
+
     return patch;
   },
+
+  
+
+
+  _properties: null,
 
   
 
@@ -1278,11 +1266,10 @@ UpdatePatch.prototype = {
 
 
   deleteProperty: function UpdatePatch_deleteProperty(name) {
-    if (name in this._properties) {
+    if (name in this._properties)
       this._properties[name].present = false;
-    } else {
+    else
       throw Cr.NS_ERROR_FAILURE;
-    }
   },
 
   
@@ -1296,20 +1283,13 @@ UpdatePatch.prototype = {
   },
 
   * enumerate() {
-    
-    
-    let ip = Cc["@mozilla.org/supports-interface-pointer;1"].
-             createInstance(Ci.nsISupportsInterfacePointer);
-    let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
-    for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
+    for (let propName in this._properties) {
+      if (this._properties[propName].present) {
         
         
-        
-        
-        
-        ip.data = {name, value: value.data, QueryInterface: qi};
-        yield ip.data.QueryInterface(Ci.nsIProperty);
+        yield { name: propName,
+                value: this._properties[propName].data,
+                QueryInterface: ChromeUtils.generateQI([Ci.nsIProperty])};
       }
     }
   },
@@ -1319,12 +1299,32 @@ UpdatePatch.prototype = {
 
 
 
-
   getProperty: function UpdatePatch_getProperty(name) {
-    if (name in this._properties && this._properties[name].present) {
+    if (name in this._properties &&
+        this._properties[name].present) {
       return this._properties[name].data;
     }
     return null;
+  },
+
+  
+
+
+  get errorCode() {
+    return this._properties.errorCode || 0;
+  },
+  set errorCode(val) {
+    this._properties.errorCode = val;
+  },
+
+  
+
+
+  get state() {
+    return this._properties.state || STATE_NONE;
+  },
+  set state(val) {
+    this._properties.state = val;
   },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdatePatch,
@@ -1341,12 +1341,12 @@ UpdatePatch.prototype = {
 
 
 function Update(update) {
-  this._patches = [];
   this._properties = {};
+  this._patches = [];
   this.isCompleteUpdate = false;
+  this.unsupported = false;
   this.channel = "default";
   this.promptWaitTime = Services.prefs.getIntPref(PREF_APP_UPDATE_PROMPTWAITTIME, 43200);
-  this.unsupported = false;
 
   
   
@@ -1354,6 +1354,7 @@ function Update(update) {
     return;
   }
 
+  let patch;
   for (let i = 0; i < update.childNodes.length; ++i) {
     let patchElement = update.childNodes.item(i);
     if (patchElement.nodeType != patchElement.ELEMENT_NODE ||
@@ -1361,7 +1362,6 @@ function Update(update) {
       continue;
     }
 
-    let patch;
     try {
       patch = new UpdatePatch(patchElement);
     } catch (e) {
@@ -1378,17 +1378,14 @@ function Update(update) {
   
   
   this.installDate = (new Date()).getTime();
-  this.patchCount = update.childNodes.length;
 
   for (let i = 0; i < update.attributes.length; ++i) {
-    let attr = update.attributes.item(i);
+    var attr = update.attributes.item(i);
     if (attr.name == "xmlns" || attr.value == "undefined") {
-      
-      
       
       continue;
     } else if (attr.name == "detailsURL") {
-      this.detailsURL = attr.value;
+      this._detailsURL = attr.value;
     } else if (attr.name == "installDate" && attr.value) {
       let val = parseInt(attr.value);
       if (val) {
@@ -1397,10 +1394,7 @@ function Update(update) {
     } else if (attr.name == "errorCode" && attr.value) {
       let val = parseInt(attr.value);
       if (val) {
-        
-        
-        
-        this._errorCode = val;
+        this.errorCode = val;
       }
     } else if (attr.name == "isCompleteUpdate") {
       this.isCompleteUpdate = attr.value == "true";
@@ -1411,20 +1405,22 @@ function Update(update) {
     } else if (attr.name == "unsupported") {
       this.unsupported = attr.value == "true";
     } else {
+      this[attr.name] = attr.value;
+
       switch (attr.name) {
         case "appVersion":
         case "buildID":
         case "channel":
         case "displayVersion":
-        case "elevationFailure":
         case "name":
         case "previousAppVersion":
         case "serviceURL":
         case "statusText":
         case "type":
-          this[attr.name] = attr.value;
           break;
         default:
+          
+          
           
           this.setProperty(attr.name, attr.value);
           break;
@@ -1432,38 +1428,31 @@ function Update(update) {
     }
   }
 
-  if (!this.previousAppVersion) {
-    this.previousAppVersion = Services.appinfo.version;
-  }
-
-  if (!this.elevationFailure) {
-    this.elevationFailure = false;
-  }
-
-  if (!this.detailsURL) {
-    try {
-      
-      
-      this.detailsURL = Services.urlFormatter.formatURLPref(PREF_APP_UPDATE_URL_DETAILS);
-    } catch (e) {
-      this.detailsURL = "";
-    }
-  }
-
   if (!this.displayVersion) {
     this.displayVersion = this.appVersion;
   }
 
-  if (!this.name) {
-    
-    
-    let brandBundle = Services.strings.createBundle(URI_BRAND_PROPERTIES);
-    let appName = brandBundle.GetStringFromName("brandShortName");
-    this.name = gUpdateBundle.formatStringFromName("updateName",
-                                                   [appName, this.displayVersion], 2);
+  
+  
+  var name = "";
+  if (update.hasAttribute("name")) {
+    name = update.getAttribute("name");
+  } else {
+    var brandBundle = Services.strings.createBundle(URI_BRAND_PROPERTIES);
+    var appName = brandBundle.GetStringFromName("brandShortName");
+    name = gUpdateBundle.formatStringFromName("updateName",
+                                              [appName, this.displayVersion], 2);
   }
+  this.name = name;
 }
 Update.prototype = {
+  
+
+
+  get patchCount() {
+    return this._patches.length;
+  },
+
   
 
 
@@ -1515,12 +1504,26 @@ Update.prototype = {
 
 
   get selectedPatch() {
-    for (let i = 0; i < this.patchCount; ++i) {
-      if (this._patches[i].selected) {
+    for (var i = 0; i < this.patchCount; ++i) {
+      if (this._patches[i].selected)
         return this._patches[i];
-      }
     }
     return null;
+  },
+
+  
+
+
+  get detailsURL() {
+    if (!this._detailsURL) {
+      try {
+        
+        
+        return Services.urlFormatter.formatURLPref(PREF_APP_UPDATE_URL_DETAILS);
+      } catch (e) {
+      }
+    }
+    return this._detailsURL || "";
   },
 
   
@@ -1532,33 +1535,35 @@ Update.prototype = {
     if (!this.appVersion) {
       return null;
     }
-    let update = updates.createElementNS(URI_UPDATE_NS, "update");
+    var update = updates.createElementNS(URI_UPDATE_NS, "update");
     update.setAttribute("appVersion", this.appVersion);
     update.setAttribute("buildID", this.buildID);
     update.setAttribute("channel", this.channel);
-    update.setAttribute("detailsURL", this.detailsURL);
     update.setAttribute("displayVersion", this.displayVersion);
     update.setAttribute("installDate", this.installDate);
     update.setAttribute("isCompleteUpdate", this.isCompleteUpdate);
     update.setAttribute("name", this.name);
-    update.setAttribute("previousAppVersion", this.previousAppVersion);
     update.setAttribute("promptWaitTime", this.promptWaitTime);
     update.setAttribute("serviceURL", this.serviceURL);
     update.setAttribute("type", this.type);
 
+    if (this.detailsURL) {
+      update.setAttribute("detailsURL", this.detailsURL);
+    }
+    if (this.previousAppVersion) {
+      update.setAttribute("previousAppVersion", this.previousAppVersion);
+    }
     if (this.statusText) {
       update.setAttribute("statusText", this.statusText);
     }
     if (this.unsupported) {
       update.setAttribute("unsupported", this.unsupported);
     }
-    if (this.elevationFailure) {
-      update.setAttribute("elevationFailure", this.elevationFailure);
-    }
+    updates.documentElement.appendChild(update);
 
-    for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
-        update.setAttribute(name, value.data);
+    for (let p in this._properties) {
+      if (this._properties[p].present) {
+        update.setAttribute(p, this._properties[p].data);
       }
     }
 
@@ -1566,9 +1571,13 @@ Update.prototype = {
       update.appendChild(this.getPatchAt(i).serialize(updates));
     }
 
-    updates.documentElement.appendChild(update);
     return update;
   },
+
+  
+
+
+  _properties: null,
 
   
 
@@ -1581,11 +1590,10 @@ Update.prototype = {
 
 
   deleteProperty: function Update_deleteProperty(name) {
-    if (name in this._properties) {
+    if (name in this._properties)
       this._properties[name].present = false;
-    } else {
+    else
       throw Cr.NS_ERROR_FAILURE;
-    }
   },
 
   
@@ -1599,20 +1607,13 @@ Update.prototype = {
   },
 
   * enumerate() {
-    
-    
-    let ip = Cc["@mozilla.org/supports-interface-pointer;1"].
-             createInstance(Ci.nsISupportsInterfacePointer);
-    let qi = ChromeUtils.generateQI([Ci.nsIProperty]);
-    for (let [name, value] of Object.entries(this._properties)) {
-      if (value.present) {
+    for (let propName in this._properties) {
+      if (this._properties[propName].present) {
         
         
-        
-        
-        
-        ip.data = {name, value: value.data, QueryInterface: qi};
-        yield ip.data.QueryInterface(Ci.nsIProperty);
+        yield { name: propName,
+                value: this._properties[propName].data,
+                QueryInterface: ChromeUtils.generateQI([Ci.nsIProperty])};
       }
     }
   },
@@ -1637,9 +1638,8 @@ Update.prototype = {
 const UpdateServiceFactory = {
   _instance: null,
   createInstance(outer, iid) {
-    if (outer != null) {
+    if (outer != null)
       throw Cr.NS_ERROR_NO_AGGREGATION;
-    }
     return this._instance == null ? this._instance = new UpdateService() :
                                     this._instance;
   },
@@ -2582,6 +2582,8 @@ UpdateService.prototype = {
       }
       this._downloader.cancel();
     }
+    
+    update.previousAppVersion = Services.appinfo.version;
     this._downloader = new Downloader(background, this);
     return this._downloader.downloadUpdate(update);
   },
