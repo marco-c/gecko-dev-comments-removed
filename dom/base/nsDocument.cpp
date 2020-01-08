@@ -3307,39 +3307,6 @@ nsDocument::IsWebAnimationsEnabled(CallerType aCallerType)
          nsContentUtils::AnimationsAPICoreEnabled();
 }
 
-bool
-nsDocument::IsWebAnimationsGetAnimationsEnabled(JSContext* aCx,
-                                                JSObject* 
-)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_getAnimations_enabled();
-}
-
-bool
-nsDocument::AreWebAnimationsImplicitKeyframesEnabled(JSContext* aCx,
-                                                     JSObject* 
-)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_implicit_keyframes_enabled();
-}
-
-bool
-nsDocument::AreWebAnimationsTimelinesEnabled(JSContext* aCx,
-                                             JSObject* 
-)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_timelines_enabled();
-}
-
 DocumentTimeline*
 nsIDocument::Timeline()
 {
@@ -12602,6 +12569,17 @@ ArrayContainsTable(const nsTArray<nsCString>& aTableArray,
 
 namespace {
 
+static const char* gCallbackPrefs[] = {
+  
+  "urlclassifier.flashAllowTable",
+  "urlclassifier.flashAllowExceptTable",
+  "urlclassifier.flashTable",
+  "urlclassifier.flashExceptTable",
+  "urlclassifier.flashSubDocTable",
+  "urlclassifier.flashSubDocExceptTable",
+  nullptr,
+};
+
 
 struct PrefStore
 {
@@ -12614,25 +12592,14 @@ struct PrefStore
     Preferences::AddBoolVarCache(&mPluginsHttpOnly,
                                  "plugins.http_https_only");
 
-    
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowExceptTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashExceptTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocTable", this);
-    Preferences::RegisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocExceptTable", this);
+    Preferences::RegisterCallbacks(UpdateStringPrefs, gCallbackPrefs, this);
 
     UpdateStringPrefs();
   }
 
   ~PrefStore()
   {
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashAllowExceptTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashExceptTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocTable", this);
-    Preferences::UnregisterCallback(UpdateStringPrefs, "urlclassifier.flashSubDocExceptTable", this);
+    Preferences::UnregisterCallbacks(UpdateStringPrefs, gCallbackPrefs, this);
   }
 
   void UpdateStringPrefs()
