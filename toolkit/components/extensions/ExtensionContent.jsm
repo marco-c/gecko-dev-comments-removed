@@ -274,6 +274,15 @@ defineLazyGetter(BrowserExtensionContent.prototype, "authorCSSCode", function() 
 
 
 class Script {
+  
+
+
+
+
+
+
+
+
   constructor(extension, matcher) {
     this.extension = extension;
     this.matcher = matcher;
