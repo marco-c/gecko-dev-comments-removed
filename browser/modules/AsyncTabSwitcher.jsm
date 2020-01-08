@@ -438,21 +438,7 @@ class AsyncTabSwitcher {
             TelemetryStopwatch.cancel("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
           }
 
-          if (this._requestingTab) {
-            
-
-
-
-
-
-
-            this.tabbrowser.addEventListener("select", () => {
-              this.tabbrowser._adjustFocusAfterTabSwitch(showTab);
-            }, { once: true });
-          } else {
-            this.tabbrowser._adjustFocusAfterTabSwitch(showTab);
-          }
-
+          this.tabbrowser._adjustFocusAfterTabSwitch(showTab);
           this.maybeActivateDocShell(this.requestedTab);
         }
       }
@@ -1006,7 +992,6 @@ class AsyncTabSwitcher {
         .add(warmingState);
     }
 
-    this._requestingTab = true;
     this.logState("requestTab " + this.tinfo(tab));
     this.startTabSwitch();
 
@@ -1025,7 +1010,6 @@ class AsyncTabSwitcher {
     this.lastPrimaryTab = tab;
 
     this.queueUnload(this.UNLOAD_DELAY);
-    this._requestingTab = false;
   }
 
   queueUnload(unloadTimeout) {
