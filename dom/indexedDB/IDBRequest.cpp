@@ -316,7 +316,7 @@ IDBRequest::SetResultCallback(ResultCallback* aCallback)
   }
 
   AutoJSAPI autoJS;
-  Maybe<JSAutoRealmAllowCCW> ar;
+  Maybe<JSAutoRealm> ar;
 
   if (GetScriptOwner()) {
     
