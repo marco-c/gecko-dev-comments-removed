@@ -1076,6 +1076,12 @@ class SourceUnits
         return false;
     }
 
+    void consumeKnownCodeUnit(CharT c) {
+        MOZ_ASSERT(ptr, "shouldn't use poisoned SourceUnits");
+        MOZ_ASSERT(*ptr == c, "consuming the wrong code unit");
+        ptr++;
+    }
+
     
 
 
@@ -1218,16 +1224,14 @@ class TokenStreamCharsBase
         return MOZ_LIKELY(!sourceUnits.atEnd()) ? CodeUnitValue(sourceUnits.peekCodeUnit()) : EOF;
     }
 
-    void consumeKnownCodeUnit(int32_t unit) {
-        MOZ_ASSERT(unit != EOF, "shouldn't be matching EOF");
-        MOZ_ASSERT(!sourceUnits.atEnd(), "must have units to consume");
-#ifdef DEBUG
-        CharT next =
-#endif
-            sourceUnits.getCodeUnit();
-        MOZ_ASSERT(CodeUnitValue(next) == unit,
-                   "must be consuming the correct unit");
-    }
+    
+    inline void consumeKnownCodeUnit(int32_t unit);
+
+    
+    
+    
+    
+    template<typename T> inline void consumeKnownCodeUnit(T) = delete;
 
     MOZ_MUST_USE inline bool
     fillCharBufferWithTemplateStringContents(const CharT* cur, const CharT* end);
@@ -1251,6 +1255,13 @@ TokenStreamCharsBase<mozilla::Utf8Unit>::toCharT(int32_t value)
 {
     MOZ_ASSERT(value != EOF, "EOF is not a CharT");
     return mozilla::Utf8Unit(static_cast<unsigned char>(value));
+}
+
+template<typename CharT>
+inline void
+TokenStreamCharsBase<CharT>::consumeKnownCodeUnit(int32_t unit)
+{
+    sourceUnits.consumeKnownCodeUnit(toCharT(unit));
 }
 
 template<>
@@ -1307,6 +1318,24 @@ class SpecializedTokenStreamCharsBase<char16_t>
     using CharsBase = TokenStreamCharsBase<char16_t>;
 
   protected:
+    
+
+    using typename CharsBase::SourceUnits;
+
+  protected:
+    
+
+    
+
+
+
+
+    void infallibleConsumeRestOfSingleLineComment();
+
+  protected:
+    
+    
+
     using CharsBase::CharsBase;
 };
 
@@ -1317,6 +1346,15 @@ class SpecializedTokenStreamCharsBase<mozilla::Utf8Unit>
     using CharsBase = TokenStreamCharsBase<mozilla::Utf8Unit>;
 
   protected:
+    
+
+  protected:
+    
+
+  protected:
+    
+    
+
     using CharsBase::CharsBase;
 };
 
@@ -1459,12 +1497,6 @@ class GeneralTokenStreamChars
         CharsBase::ungetCodeUnit(c);
     }
 
-    
-
-
-
-    void consumeRestOfSingleLineComment();
-
     MOZ_MUST_USE MOZ_ALWAYS_INLINE bool updateLineInfoForEOL() {
         return anyCharsAccess().internalUpdateLineInfoForEOL(this->sourceUnits.offset());
     }
@@ -1481,6 +1513,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 {
   private:
     using CharsBase = TokenStreamCharsBase<char16_t>;
+    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<char16_t>;
     using GeneralCharsBase = GeneralTokenStreamChars<char16_t, AnyCharsAccess>;
     using Self = TokenStreamChars<char16_t, AnyCharsAccess>;
 
@@ -1491,6 +1524,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
   protected:
     using GeneralCharsBase::anyCharsAccess;
     using GeneralCharsBase::getCodeUnit;
+    using SpecializedCharsBase::infallibleConsumeRestOfSingleLineComment;
     using TokenStreamCharsShared::isAsciiCodePoint;
     
     using GeneralCharsBase::ungetCodeUnit;
@@ -1593,6 +1627,17 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
     void ungetLineTerminator();
+
+    
+
+
+
+    MOZ_MUST_USE bool consumeRestOfSingleLineComment() {
+        
+        
+        infallibleConsumeRestOfSingleLineComment();
+        return true;
+    }
 };
 
 
@@ -1644,8 +1689,9 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 {
   public:
     using CharsBase = TokenStreamCharsBase<CharT>;
+    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
     using GeneralCharsBase = GeneralTokenStreamChars<CharT, AnyCharsAccess>;
-    using SpecializedCharsBase = TokenStreamChars<CharT, AnyCharsAccess>;
+    using SpecializedChars = TokenStreamChars<CharT, AnyCharsAccess>;
 
     using Position = TokenStreamPosition<CharT>;
 
@@ -1672,14 +1718,14 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::badToken;
     
     using CharsBase::consumeKnownCodeUnit;
-    using GeneralCharsBase::consumeRestOfSingleLineComment;
+    using SpecializedChars::consumeRestOfSingleLineComment;
     using TokenStreamCharsShared::copyCharBufferTo;
     using TokenStreamCharsShared::drainCharBufferIntoAtom;
     using CharsBase::fillCharBufferWithTemplateStringContents;
-    using SpecializedCharsBase::getCodePoint;
+    using SpecializedChars::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
-    using SpecializedCharsBase::getFullAsciiCodePoint;
-    using SpecializedCharsBase::getNonAsciiCodePoint;
+    using SpecializedChars::getFullAsciiCodePoint;
+    using SpecializedChars::getNonAsciiCodePoint;
     using TokenStreamCharsShared::isAsciiCodePoint;
     using CharsBase::matchCodeUnit;
     using GeneralCharsBase::matchUnicodeEscapeIdent;
@@ -1691,9 +1737,9 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::newSimpleToken;
     using CharsBase::peekCodeUnit;
     
-    using SpecializedCharsBase::ungetCodePointIgnoreEOL;
+    using SpecializedChars::ungetCodePointIgnoreEOL;
     using GeneralCharsBase::ungetCodeUnit;
-    using SpecializedCharsBase::ungetNonAsciiNormalizedCodePoint;
+    using SpecializedChars::ungetNonAsciiNormalizedCodePoint;
     using GeneralCharsBase::updateLineInfoForEOL;
 
     template<typename CharU> friend class TokenStreamPosition;
