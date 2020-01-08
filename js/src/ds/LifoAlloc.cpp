@@ -208,6 +208,14 @@ LifoAlloc::newChunkWithCapacity(size_t n)
     bool protect = false;
 #ifdef LIFO_CHUNK_PROTECT
     protect = protect_;
+    
+    
+    
+    
+    
+    const size_t MaxPeakSize = 32 * 1024 * 1024;
+    if (protect && MaxPeakSize <= this->peakSize_)
+        protect = false;
 #endif
 
     
