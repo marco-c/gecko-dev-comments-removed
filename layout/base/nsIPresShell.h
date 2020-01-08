@@ -1784,55 +1784,8 @@ protected:
   
   nsTHashtable<nsPtrHashKey<WeakFrame>> mWeakFrames;
 
-  class DirtyRootsList
-  {
-  public:
-    
-    void Add(nsIFrame* aFrame);
-    
-    void Remove(nsIFrame* aFrame);
-    
-    
-    nsIFrame* PopShallowestRoot();
-    
-    void Clear();
-    
-    bool Contains(nsIFrame* aFrame) const;
-    
-    bool IsEmpty() const;
-    
-    bool FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const;
-
-  private:
-    struct FrameAndDepth
-    {
-      nsIFrame* mFrame;
-      const uint32_t mDepth;
-
-      
-      operator nsIFrame*() const { return mFrame; }
-
-      
-      class CompareByReverseDepth
-      {
-      public:
-        bool Equals(const FrameAndDepth& aA, const FrameAndDepth& aB) const
-        {
-          return aA.mDepth == aB.mDepth;
-        }
-        bool LessThan(const FrameAndDepth& aA, const FrameAndDepth& aB) const
-        {
-          
-          return aA.mDepth > aB.mDepth;
-        }
-      };
-    };
-    
-    nsTArray<FrameAndDepth> mList;
-  };
-
   
-  DirtyRootsList mDirtyRoots;
+  nsTArray<nsIFrame*> mDirtyRoots;
 
 #ifdef MOZ_GECKO_PROFILER
   

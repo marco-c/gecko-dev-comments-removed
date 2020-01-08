@@ -51,7 +51,6 @@ class Selection;
 }  
 
 class EventDispatchingCallback;
-class OverflowChangedTracker;
 
 
 
@@ -452,10 +451,7 @@ private:
   void     ScheduleReflow();
 
   
-  
-  
-  bool DoReflow(nsIFrame* aFrame, bool aInterruptible,
-                mozilla::OverflowChangedTracker* aOverflowTracker);
+  bool DoReflow(nsIFrame* aFrame, bool aInterruptible);
 #ifdef DEBUG
   void DoVerifyReflow();
   void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
