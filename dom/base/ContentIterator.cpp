@@ -4,22 +4,32 @@
 
 
 
+#include "ContentIterator.h"
+
 #include "mozilla/DebugOnly.h"
-#include "nsISupports.h"
-#include "nsIContentIterator.h"
-#include "nsRange.h"
-#include "nsIContent.h"
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
+#include "mozilla/RangeBoundary.h"
+
 #include "nsContentUtils.h"
-#include "nsINode.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsElementTable.h"
+#include "nsIContent.h"
+#include "nsRange.h"
 
-using mozilla::DebugOnly;
-using mozilla::RawRangeBoundary;
+already_AddRefed<nsIContentIterator> NS_NewContentIterator() {
+  nsCOMPtr<nsIContentIterator> iter = new mozilla::ContentIterator(false);
+  return iter.forget();
+}
 
+already_AddRefed<nsIContentIterator> NS_NewPreContentIterator() {
+  nsCOMPtr<nsIContentIterator> iter = new mozilla::ContentIterator(true);
+  return iter.forget();
+}
 
+already_AddRefed<nsIContentIterator> NS_NewContentSubtreeIterator() {
+  nsCOMPtr<nsIContentIterator> iter = new mozilla::ContentSubtreeIterator();
+  return iter.forget();
+}
+
+namespace mozilla {
 
 
 
@@ -73,139 +83,33 @@ static bool NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
          nsContentUtils::ComparePoints(aEnd, beforeNode) > 0;
 }
 
-
-
-
-class nsContentIterator : public nsIContentIterator {
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(nsContentIterator)
-
-  explicit nsContentIterator(bool aPre);
-
-  
-
-  virtual nsresult Init(nsINode* aRoot) override;
-
-  virtual nsresult Init(nsRange* aRange) override;
-
-  virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
-                        nsINode* aEndContainer, uint32_t aEndOffset) override;
-
-  virtual nsresult Init(const RawRangeBoundary& aStart,
-                        const RawRangeBoundary& aEnd) override;
-
-  virtual void First() override;
-
-  virtual void Last() override;
-
-  virtual void Next() override;
-
-  virtual void Prev() override;
-
-  virtual nsINode* GetCurrentNode() override;
-
-  virtual bool IsDone() override;
-
-  virtual nsresult PositionAt(nsINode* aCurNode) override;
-
- protected:
-  virtual ~nsContentIterator();
-
-  
-
-
-
-
-
-  nsresult InitInternal(const RawRangeBoundary& aStart,
-                        const RawRangeBoundary& aEnd);
-
-  
-  
-  nsINode* GetDeepFirstChild(nsINode* aRoot);
-  nsIContent* GetDeepFirstChild(nsIContent* aRoot);
-  nsINode* GetDeepLastChild(nsINode* aRoot);
-  nsIContent* GetDeepLastChild(nsIContent* aRoot);
-
-  
-  
-  
-  nsIContent* GetNextSibling(nsINode* aNode);
-  nsIContent* GetPrevSibling(nsINode* aNode);
-
-  nsINode* NextNode(nsINode* aNode);
-  nsINode* PrevNode(nsINode* aNode);
-
-  void MakeEmpty();
-
-  virtual void LastRelease();
-
-  nsCOMPtr<nsINode> mCurNode;
-  nsCOMPtr<nsINode> mFirst;
-  nsCOMPtr<nsINode> mLast;
-  nsCOMPtr<nsINode> mCommonParent;
-
-  bool mIsDone;
-  bool mPre;
-
- private:
-  
-  nsContentIterator(const nsContentIterator&);
-  nsContentIterator& operator=(const nsContentIterator&);
-};
-
-
-
-
-
-already_AddRefed<nsIContentIterator> NS_NewContentIterator() {
-  nsCOMPtr<nsIContentIterator> iter = new nsContentIterator(false);
-  return iter.forget();
-}
-
-already_AddRefed<nsIContentIterator> NS_NewPreContentIterator() {
-  nsCOMPtr<nsIContentIterator> iter = new nsContentIterator(true);
-  return iter.forget();
-}
-
-
-
-
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(nsContentIterator)
-NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(nsContentIterator,
+NS_IMPL_CYCLE_COLLECTING_ADDREF(ContentIterator)
+NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(ContentIterator,
                                                    LastRelease())
 
-NS_INTERFACE_MAP_BEGIN(nsContentIterator)
+NS_INTERFACE_MAP_BEGIN(ContentIterator)
   NS_INTERFACE_MAP_ENTRY(nsIContentIterator)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIContentIterator)
-  NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(nsContentIterator)
+  NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(ContentIterator)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION(nsContentIterator, mCurNode, mFirst, mLast,
+NS_IMPL_CYCLE_COLLECTION(ContentIterator, mCurNode, mFirst, mLast,
                          mCommonParent)
 
-void nsContentIterator::LastRelease() {
+void ContentIterator::LastRelease() {
   mCurNode = nullptr;
   mFirst = nullptr;
   mLast = nullptr;
   mCommonParent = nullptr;
 }
 
-
-
-
-
-nsContentIterator::nsContentIterator(bool aPre) : mIsDone(false), mPre(aPre) {}
-
-nsContentIterator::~nsContentIterator() {}
+ContentIterator::ContentIterator(bool aPre) : mIsDone(false), mPre(aPre) {}
 
 
 
 
 
-nsresult nsContentIterator::Init(nsINode* aRoot) {
+nsresult ContentIterator::Init(nsINode* aRoot) {
   if (NS_WARN_IF(!aRoot)) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -227,7 +131,7 @@ nsresult nsContentIterator::Init(nsINode* aRoot) {
   return NS_OK;
 }
 
-nsresult nsContentIterator::Init(nsRange* aRange) {
+nsresult ContentIterator::Init(nsRange* aRange) {
   mIsDone = false;
 
   if (NS_WARN_IF(!aRange)) {
@@ -241,9 +145,8 @@ nsresult nsContentIterator::Init(nsRange* aRange) {
   return InitInternal(aRange->StartRef().AsRaw(), aRange->EndRef().AsRaw());
 }
 
-nsresult nsContentIterator::Init(nsINode* aStartContainer,
-                                 uint32_t aStartOffset, nsINode* aEndContainer,
-                                 uint32_t aEndOffset) {
+nsresult ContentIterator::Init(nsINode* aStartContainer, uint32_t aStartOffset,
+                               nsINode* aEndContainer, uint32_t aEndOffset) {
   mIsDone = false;
 
   if (NS_WARN_IF(!nsRange::IsValidPoints(aStartContainer, aStartOffset,
@@ -255,8 +158,8 @@ nsresult nsContentIterator::Init(nsINode* aStartContainer,
                       RawRangeBoundary(aEndContainer, aEndOffset));
 }
 
-nsresult nsContentIterator::Init(const RawRangeBoundary& aStart,
-                                 const RawRangeBoundary& aEnd) {
+nsresult ContentIterator::Init(const RawRangeBoundary& aStart,
+                               const RawRangeBoundary& aEnd) {
   mIsDone = false;
 
   if (NS_WARN_IF(!nsRange::IsValidPoints(aStart.Container(), aStart.Offset(),
@@ -267,8 +170,8 @@ nsresult nsContentIterator::Init(const RawRangeBoundary& aStart,
   return InitInternal(aStart, aEnd);
 }
 
-nsresult nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
-                                         const RawRangeBoundary& aEnd) {
+nsresult ContentIterator::InitInternal(const RawRangeBoundary& aStart,
+                                       const RawRangeBoundary& aEnd) {
   
   mCommonParent =
       nsContentUtils::GetCommonAncestor(aStart.Container(), aEnd.Container());
@@ -420,7 +323,7 @@ nsresult nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
 
     if (NS_WARN_IF(!cChild)) {
       
-      MOZ_ASSERT_UNREACHABLE("nsContentIterator::nsContentIterator");
+      MOZ_ASSERT_UNREACHABLE("ContentIterator::ContentIterator");
       return NS_ERROR_FAILURE;
     }
 
@@ -450,7 +353,7 @@ nsresult nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
   return NS_OK;
 }
 
-void nsContentIterator::MakeEmpty() {
+void ContentIterator::MakeEmpty() {
   mCurNode = nullptr;
   mFirst = nullptr;
   mLast = nullptr;
@@ -458,7 +361,7 @@ void nsContentIterator::MakeEmpty() {
   mIsDone = true;
 }
 
-nsINode* nsContentIterator::GetDeepFirstChild(nsINode* aRoot) {
+nsINode* ContentIterator::GetDeepFirstChild(nsINode* aRoot) {
   if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
     return aRoot;
   }
@@ -466,7 +369,7 @@ nsINode* nsContentIterator::GetDeepFirstChild(nsINode* aRoot) {
   return GetDeepFirstChild(aRoot->GetFirstChild());
 }
 
-nsIContent* nsContentIterator::GetDeepFirstChild(nsIContent* aRoot) {
+nsIContent* ContentIterator::GetDeepFirstChild(nsIContent* aRoot) {
   if (NS_WARN_IF(!aRoot)) {
     return nullptr;
   }
@@ -482,7 +385,7 @@ nsIContent* nsContentIterator::GetDeepFirstChild(nsIContent* aRoot) {
   return node;
 }
 
-nsINode* nsContentIterator::GetDeepLastChild(nsINode* aRoot) {
+nsINode* ContentIterator::GetDeepLastChild(nsINode* aRoot) {
   if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
     return aRoot;
   }
@@ -490,7 +393,7 @@ nsINode* nsContentIterator::GetDeepLastChild(nsINode* aRoot) {
   return GetDeepLastChild(aRoot->GetLastChild());
 }
 
-nsIContent* nsContentIterator::GetDeepLastChild(nsIContent* aRoot) {
+nsIContent* ContentIterator::GetDeepLastChild(nsIContent* aRoot) {
   if (NS_WARN_IF(!aRoot)) {
     return nullptr;
   }
@@ -504,7 +407,7 @@ nsIContent* nsContentIterator::GetDeepLastChild(nsIContent* aRoot) {
 }
 
 
-nsIContent* nsContentIterator::GetNextSibling(nsINode* aNode) {
+nsIContent* ContentIterator::GetNextSibling(nsINode* aNode) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
@@ -529,7 +432,7 @@ nsIContent* nsContentIterator::GetNextSibling(nsINode* aNode) {
 }
 
 
-nsIContent* nsContentIterator::GetPrevSibling(nsINode* aNode) {
+nsIContent* ContentIterator::GetPrevSibling(nsINode* aNode) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
@@ -553,7 +456,7 @@ nsIContent* nsContentIterator::GetPrevSibling(nsINode* aNode) {
   return GetPrevSibling(parent);
 }
 
-nsINode* nsContentIterator::NextNode(nsINode* aNode) {
+nsINode* ContentIterator::NextNode(nsINode* aNode) {
   nsINode* node = aNode;
 
   
@@ -587,7 +490,7 @@ nsINode* nsContentIterator::NextNode(nsINode* aNode) {
   return parent;
 }
 
-nsINode* nsContentIterator::PrevNode(nsINode* aNode) {
+nsINode* ContentIterator::PrevNode(nsINode* aNode) {
   nsINode* node = aNode;
 
   
@@ -620,7 +523,7 @@ nsINode* nsContentIterator::PrevNode(nsINode* aNode) {
 
 
 
-void nsContentIterator::First() {
+void ContentIterator::First() {
   if (mFirst) {
     mozilla::DebugOnly<nsresult> rv = PositionAt(mFirst);
     NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
@@ -629,7 +532,7 @@ void nsContentIterator::First() {
   mIsDone = mFirst == nullptr;
 }
 
-void nsContentIterator::Last() {
+void ContentIterator::Last() {
   
   
   if (!mLast) {
@@ -643,7 +546,7 @@ void nsContentIterator::Last() {
   mIsDone = mLast == nullptr;
 }
 
-void nsContentIterator::Next() {
+void ContentIterator::Next() {
   if (mIsDone || NS_WARN_IF(!mCurNode)) {
     return;
   }
@@ -656,7 +559,7 @@ void nsContentIterator::Next() {
   mCurNode = NextNode(mCurNode);
 }
 
-void nsContentIterator::Prev() {
+void ContentIterator::Prev() {
   if (NS_WARN_IF(mIsDone) || NS_WARN_IF(!mCurNode)) {
     return;
   }
@@ -669,11 +572,11 @@ void nsContentIterator::Prev() {
   mCurNode = PrevNode(mCurNode);
 }
 
-bool nsContentIterator::IsDone() { return mIsDone; }
+bool ContentIterator::IsDone() { return mIsDone; }
 
 
 
-nsresult nsContentIterator::PositionAt(nsINode* aCurNode) {
+nsresult ContentIterator::PositionAt(nsINode* aCurNode) {
   if (NS_WARN_IF(!aCurNode)) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -732,7 +635,7 @@ nsresult nsContentIterator::PositionAt(nsINode* aCurNode) {
   return NS_OK;
 }
 
-nsINode* nsContentIterator::GetCurrentNode() {
+nsINode* ContentIterator::GetCurrentNode() {
   if (mIsDone) {
     return nullptr;
   }
@@ -746,102 +649,29 @@ nsINode* nsContentIterator::GetCurrentNode() {
 
 
 
+NS_IMPL_ADDREF_INHERITED(ContentSubtreeIterator, ContentIterator)
+NS_IMPL_RELEASE_INHERITED(ContentSubtreeIterator, ContentIterator)
 
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ContentSubtreeIterator)
+NS_INTERFACE_MAP_END_INHERITING(ContentIterator)
 
-
-
-
-
-class nsContentSubtreeIterator : public nsContentIterator {
- public:
-  nsContentSubtreeIterator() : nsContentIterator(false) {}
-
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsContentSubtreeIterator,
-                                           nsContentIterator)
-
-  
-
-  virtual nsresult Init(nsINode* aRoot) override;
-
-  virtual nsresult Init(nsRange* aRange) override;
-
-  virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
-                        nsINode* aEndContainer, uint32_t aEndOffset) override;
-
-  virtual nsresult Init(const RawRangeBoundary& aStart,
-                        const RawRangeBoundary& aEnd) override;
-
-  virtual void Next() override;
-
-  virtual void Prev() override;
-
-  virtual nsresult PositionAt(nsINode* aCurNode) override;
-
-  
-  virtual void First() override;
-
-  
-  virtual void Last() override;
-
- protected:
-  virtual ~nsContentSubtreeIterator() {}
-
-  
-
-
-  nsresult InitWithRange();
-
-  
-  
-  
-  
-  
-  nsIContent* GetTopAncestorInRange(nsINode* aNode);
-
-  
-  nsContentSubtreeIterator(const nsContentSubtreeIterator&);
-  nsContentSubtreeIterator& operator=(const nsContentSubtreeIterator&);
-
-  virtual void LastRelease() override;
-
-  RefPtr<nsRange> mRange;
-
-  AutoTArray<nsIContent*, 8> mEndNodes;
-};
-
-NS_IMPL_ADDREF_INHERITED(nsContentSubtreeIterator, nsContentIterator)
-NS_IMPL_RELEASE_INHERITED(nsContentSubtreeIterator, nsContentIterator)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsContentSubtreeIterator)
-NS_INTERFACE_MAP_END_INHERITING(nsContentIterator)
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(nsContentSubtreeIterator, nsContentIterator,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ContentSubtreeIterator, ContentIterator,
                                    mRange)
 
-void nsContentSubtreeIterator::LastRelease() {
+void ContentSubtreeIterator::LastRelease() {
   mRange = nullptr;
-  nsContentIterator::LastRelease();
+  ContentIterator::LastRelease();
 }
 
 
 
 
 
-already_AddRefed<nsIContentIterator> NS_NewContentSubtreeIterator() {
-  nsCOMPtr<nsIContentIterator> iter = new nsContentSubtreeIterator();
-  return iter.forget();
-}
-
-
-
-
-
-nsresult nsContentSubtreeIterator::Init(nsINode* aRoot) {
+nsresult ContentSubtreeIterator::Init(nsINode* aRoot) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult nsContentSubtreeIterator::Init(nsRange* aRange) {
+nsresult ContentSubtreeIterator::Init(nsRange* aRange) {
   MOZ_ASSERT(aRange);
 
   mIsDone = false;
@@ -855,16 +685,16 @@ nsresult nsContentSubtreeIterator::Init(nsRange* aRange) {
   return InitWithRange();
 }
 
-nsresult nsContentSubtreeIterator::Init(nsINode* aStartContainer,
-                                        uint32_t aStartOffset,
-                                        nsINode* aEndContainer,
-                                        uint32_t aEndOffset) {
+nsresult ContentSubtreeIterator::Init(nsINode* aStartContainer,
+                                      uint32_t aStartOffset,
+                                      nsINode* aEndContainer,
+                                      uint32_t aEndOffset) {
   return Init(RawRangeBoundary(aStartContainer, aStartOffset),
               RawRangeBoundary(aEndContainer, aEndOffset));
 }
 
-nsresult nsContentSubtreeIterator::Init(const RawRangeBoundary& aStart,
-                                        const RawRangeBoundary& aEnd) {
+nsresult ContentSubtreeIterator::Init(const RawRangeBoundary& aStart,
+                                      const RawRangeBoundary& aEnd) {
   mIsDone = false;
 
   RefPtr<nsRange> range;
@@ -884,7 +714,7 @@ nsresult nsContentSubtreeIterator::Init(const RawRangeBoundary& aStart,
   return InitWithRange();
 }
 
-nsresult nsContentSubtreeIterator::InitWithRange() {
+nsresult ContentSubtreeIterator::InitWithRange() {
   MOZ_ASSERT(mRange);
   MOZ_ASSERT(mRange->IsPositioned());
 
@@ -983,7 +813,7 @@ nsresult nsContentSubtreeIterator::InitWithRange() {
     lastCandidate = mRange->EndRef().Ref();
     MOZ_ASSERT(lastCandidate == endContainer->GetChildAt_Deprecated(--offset));
     NS_ASSERTION(lastCandidate,
-                 "tree traversal trouble in nsContentSubtreeIterator::Init");
+                 "tree traversal trouble in ContentSubtreeIterator::Init");
   }
 
   if (!lastCandidate) {
@@ -1024,20 +854,20 @@ nsresult nsContentSubtreeIterator::InitWithRange() {
 
 
 
-void nsContentSubtreeIterator::First() {
+void ContentSubtreeIterator::First() {
   mIsDone = mFirst == nullptr;
 
   mCurNode = mFirst;
 }
 
 
-void nsContentSubtreeIterator::Last() {
+void ContentSubtreeIterator::Last() {
   mIsDone = mLast == nullptr;
 
   mCurNode = mLast;
 }
 
-void nsContentSubtreeIterator::Next() {
+void ContentSubtreeIterator::Next() {
   if (mIsDone || !mCurNode) {
     return;
   }
@@ -1072,7 +902,7 @@ void nsContentSubtreeIterator::Next() {
   mIsDone = mCurNode == nullptr;
 }
 
-void nsContentSubtreeIterator::Prev() {
+void ContentSubtreeIterator::Prev() {
   
   
   if (mIsDone || !mCurNode) {
@@ -1100,7 +930,7 @@ void nsContentSubtreeIterator::Prev() {
   mIsDone = mCurNode == nullptr;
 }
 
-nsresult nsContentSubtreeIterator::PositionAt(nsINode* aCurNode) {
+nsresult ContentSubtreeIterator::PositionAt(nsINode* aCurNode) {
   NS_ERROR("Not implemented!");
 
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -1110,7 +940,7 @@ nsresult nsContentSubtreeIterator::PositionAt(nsINode* aCurNode) {
 
 
 
-nsIContent* nsContentSubtreeIterator::GetTopAncestorInRange(nsINode* aNode) {
+nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(nsINode* aNode) {
   if (!aNode || !aNode->GetParentNode()) {
     return nullptr;
   }
@@ -1150,3 +980,5 @@ nsIContent* nsContentSubtreeIterator::GetTopAncestorInRange(nsINode* aNode) {
 
   MOZ_CRASH("This should only be possible if aNode was null");
 }
+
+}  
