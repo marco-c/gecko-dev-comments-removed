@@ -662,21 +662,13 @@ var Impl = {
         this._clientID = await ClientID.getClientID();
 
         
-        if (IS_UNIFIED_TELEMETRY) {
-          
-          const uploadEnabled = Services.prefs.getBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, false);
-          if (uploadEnabled && this._clientID == Utils.knownClientID) {
-            this._log.trace("Upload enabled, but got canary client ID. Resetting.");
-            this._clientID = await ClientID.resetClientID();
-          } else if (!uploadEnabled && this._clientID != Utils.knownClientID) {
-            this._log.trace("Upload disabled, but got a valid client ID. Setting canary client ID.");
-            this._clientID = await ClientID.setClientID(TelemetryUtils.knownClientID);
-          }
-        } else if (this._clientID == Utils.knownClientID) {
-          
-          
-          this._log.trace("Not unified, but got canary client ID. Resetting.");
+        const uploadEnabled = Services.prefs.getBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+        if (uploadEnabled && this._clientID == Utils.knownClientID) {
+          this._log.trace("Upload enabled, but got canary client ID. Resetting.");
           this._clientID = await ClientID.resetClientID();
+        } else if (!uploadEnabled && this._clientID != Utils.knownClientID) {
+          this._log.trace("Upload disabled, but got a valid client ID. Setting canary client ID.");
+          this._clientID = await ClientID.setClientID(TelemetryUtils.knownClientID);
         }
 
         await TelemetrySend.setup(this._testMode);
