@@ -291,20 +291,6 @@ public:
 
   
   
-  Ptr lookupWithDefault(const Key& aKey, const Value& aDefaultValue)
-  {
-    AddPtr p = lookupForAdd(aKey);
-    if (p) {
-      return p;
-    }
-    bool ok = add(p, aKey, aDefaultValue);
-    MOZ_ASSERT_IF(!ok, !p); 
-    (void)ok;
-    return p;
-  }
-
-  
-  
   
   
   

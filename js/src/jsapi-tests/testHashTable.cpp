@@ -353,7 +353,8 @@ END_TEST(testHashSetOfMoveOnlyType)
 
 
 static bool
-LookupWithDefaultUntilResize() {
+GrowUntilResize()
+{
     IntMap m;
 
     if (!m.init())
@@ -364,32 +365,34 @@ LookupWithDefaultUntilResize() {
     size_t resizes = 0;
     uint32_t key = 0;
     while (resizes < 4) {
-        if (!m.lookupWithDefault(key++, 0))
-            return false;
+        auto p = m.lookupForAdd(key);
+        if (!p && !m.add(p, key, 0))
+            return false;   
 
         size_t capacity = m.capacity();
         if (capacity != lastCapacity) {
             resizes++;
             lastCapacity = capacity;
         }
+        key++;
     }
 
     return true;
 }
 
-BEGIN_TEST(testHashMapLookupWithDefaultOOM)
+BEGIN_TEST(testHashMapGrowOOM)
 {
     uint32_t timeToFail;
     for (timeToFail = 1; timeToFail < 1000; timeToFail++) {
         js::oom::SimulateOOMAfter(timeToFail, js::THREAD_TYPE_MAIN, false);
-        LookupWithDefaultUntilResize();
+        GrowUntilResize();
     }
 
     js::oom::ResetSimulatedOOM();
     return true;
 }
 
-END_TEST(testHashMapLookupWithDefaultOOM)
+END_TEST(testHashMapGrowOOM)
 #endif 
 
 BEGIN_TEST(testHashTableMovableModIterator)
