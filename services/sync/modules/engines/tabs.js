@@ -62,8 +62,9 @@ TabEngine.prototype = {
   async getChangedIDs() {
     
     let changedIDs = {};
-    if (this._tracker.modified)
+    if (this._tracker.modified) {
       changedIDs[this.service.clientsEngine.localID] = 0;
+    }
     return changedIDs;
   },
 

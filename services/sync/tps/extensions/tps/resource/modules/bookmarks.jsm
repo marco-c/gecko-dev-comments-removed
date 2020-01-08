@@ -30,7 +30,6 @@ function extend(child, supertype) {
 
 
 
-
 function PlacesItemProps(props) {
   this.location = null;
   this.uri = null;
@@ -49,8 +48,9 @@ function PlacesItemProps(props) {
   this.type = null;
 
   for (var prop in props) {
-    if (prop in this)
+    if (prop in this) {
       this[prop] = props[prop];
+    }
   }
 }
 
@@ -59,12 +59,13 @@ function PlacesItemProps(props) {
 
 function PlacesItem(props) {
   this.props = new PlacesItemProps(props);
-  if (this.props.location == null)
+  if (this.props.location == null) {
     this.props.location = "menu";
-  if ("changes" in props)
+  } if ("changes" in props) {
     this.updateProps = new PlacesItemProps(props.changes);
-  else
+  } else {
     this.updateProps = null;
+  }
 }
 
 
@@ -127,13 +128,14 @@ PlacesItem.prototype = {
     for (let node of children) {
       if (node.title == title) {
         let nodeType = this._typeMap.get(node.type);
-        if (type == null || type == undefined || nodeType == type)
+        if (type == null || type == undefined || nodeType == type) {
           if (uri == undefined || uri == null || node.uri.spec == uri.spec) {
             
             
             
             guid = node.guid;
           }
+        }
       }
     }
     return guid;
@@ -177,8 +179,9 @@ PlacesItem.prototype = {
 
 
   async GetItemIndex() {
-    if (this.props.guid == null)
+    if (this.props.guid == null) {
       return -1;
+    }
     return (await PlacesUtils.bookmarks.fetch(this.props.guid)).index;
   },
 
@@ -254,8 +257,9 @@ PlacesItem.prototype = {
 
   async GetOrCreateFolder(location) {
     let parentGuid = await this.GetFolder(location);
-    if (parentGuid == null)
+    if (parentGuid == null) {
       parentGuid = await this.CreateFolder(location);
+    }
     return parentGuid;
   },
 
@@ -273,10 +277,16 @@ PlacesItem.prototype = {
 
 
   async CheckPosition(before, after, last_item_pos) {
-    if (after)
-      if (!(await this.IsAdjacentTo(after, 1))) return false;
-    if (before)
-      if (!(await this.IsAdjacentTo(before, -1))) return false;
+    if (after) {
+      if (!(await this.IsAdjacentTo(after, 1))) {
+         return false;
+       }
+    }
+    if (before) {
+      if (!(await this.IsAdjacentTo(before, -1))) {
+         return false;
+       }
+     }
     if (last_item_pos != null && last_item_pos > -1) {
       let index = await this.GetItemIndex();
       if (index != last_item_pos + 1) {
@@ -362,8 +372,9 @@ PlacesItem.prototype = {
 
 function Bookmark(props) {
   PlacesItem.call(this, props);
-  if (this.props.title == null)
+  if (this.props.title == null) {
     this.props.title = this.props.uri;
+  }
   this.props.type = "bookmark";
 }
 
@@ -422,8 +433,9 @@ Bookmark.prototype = {
     if (tags != null) {
       let URI = Services.io.newURI(this.props.uri);
       PlacesUtils.tagging.untagURI(URI, null);
-      if (tags.length > 0)
+      if (tags.length > 0) {
         PlacesUtils.tagging.tagURI(URI, tags);
+      }
     }
   },
 
@@ -518,8 +530,9 @@ Bookmark.prototype = {
     }
     if (!(await this.CheckPosition(this.props.before,
                                  this.props.after,
-                                 this.props.last_item_pos)))
+                                 this.props.last_item_pos))) {
       return null;
+    }
     return this.props.guid;
   },
 

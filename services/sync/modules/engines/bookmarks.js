@@ -97,8 +97,9 @@ PlacesItem.prototype = {
     let clear = await CryptoWrapper.prototype.decrypt.call(this, keyBundle);
 
     
-    if (!this.deleted)
+    if (!this.deleted) {
       this.__proto__ = this.getTypeObject(this.type).prototype;
+    }
 
     return clear;
   },
@@ -551,8 +552,9 @@ BookmarksEngine.prototype = {
       }
 
       let parentName = parent.title || "";
-      if (guidMap[parentName] == null)
+      if (guidMap[parentName] == null) {
         guidMap[parentName] = {};
+      }
 
       
       let entry = {
@@ -991,20 +993,23 @@ BaseBookmarksStore.prototype = {
 
   async _calculateIndex(record) {
     
-    if (record.type == "folder")
+    if (record.type == "folder") {
       return FOLDER_SORTINDEX;
+    }
 
     
     
     let index = 0;
-    if (record.parentid == "toolbar")
+    if (record.parentid == "toolbar") {
       index += 150;
+    }
 
     
     if (record.bmkUri != null) {
       let frecency = await PlacesSyncUtils.history.fetchURLFrecency(record.bmkUri);
-      if (frecency != -1)
+      if (frecency != -1) {
         index += frecency;
+      }
     }
 
     return index;
@@ -1390,13 +1395,15 @@ BookmarksTracker.prototype = {
       return;
     }
 
-    if (isAnno && (!ANNOS_TO_TRACK.includes(property)))
+    if (isAnno && (!ANNOS_TO_TRACK.includes(property))) {
       
       return;
+    }
 
     
-    if (property == "favicon")
+    if (property == "favicon") {
       return;
+    }
 
     this._log.trace("onItemChanged: " + itemId +
                     (", " + property + (isAnno ? " (anno)" : "")) +
