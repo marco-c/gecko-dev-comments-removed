@@ -1622,7 +1622,12 @@ protected:
 
 
 
-  int32_t GetNumberOfCellsInRow(Element* aTable, int32_t rowIndex);
+
+
+
+
+
+  int32_t GetNumberOfCellsInRow(Element& aTableElement, int32_t aRowIndex);
 
   
 
