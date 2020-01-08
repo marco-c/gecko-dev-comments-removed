@@ -14,6 +14,7 @@
 namespace mozilla {
 namespace dom {
 class Function;
+class LoadedScript;
 }  
 }  
 
@@ -46,6 +47,9 @@ class nsIScriptTimeoutHandler : public nsITimeoutHandler {
 
   
   virtual const nsTArray<JS::Value>& GetArgs() = 0;
+
+  
+  virtual mozilla::dom::LoadedScript* GetInitiatingScript() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIScriptTimeoutHandler,

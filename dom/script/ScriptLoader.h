@@ -42,6 +42,7 @@ namespace mozilla {
 namespace dom {
 
 class AutoJSAPI;
+class LoadedScript;
 class ModuleLoadRequest;
 class ModuleScript;
 class ScriptLoadHandler;
@@ -314,6 +315,12 @@ class ScriptLoader final : public nsISupports {
   void FinishDynamicImport(ModuleLoadRequest* aRequest, nsresult aResult);
   void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
                            nsresult aResult);
+
+  
+
+
+
+  static LoadedScript* GetActiveScript(JSContext* aCx);
 
  private:
   virtual ~ScriptLoader();
