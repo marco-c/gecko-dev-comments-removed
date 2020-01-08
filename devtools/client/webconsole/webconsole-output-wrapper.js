@@ -449,6 +449,13 @@ WebConsoleOutputWrapper.prototype = {
       setTimeout(() => {
         this.throttledDispatchPromise = null;
 
+        if (!store) {
+          
+          
+          this.setTimeoutIfNeeded();
+          return;
+        }
+
         store.dispatch(actions.messagesAdd(this.queuedMessageAdds));
 
         const length = this.queuedMessageAdds.length;
