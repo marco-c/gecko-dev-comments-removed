@@ -24,6 +24,7 @@ class FlexboxInspector {
   constructor(inspector, window) {
     this.document = window.document;
     this.inspector = inspector;
+    this.selection = inspector.selection;
     this.store = inspector.store;
     this.walker = inspector.walker;
 
@@ -85,7 +86,7 @@ class FlexboxInspector {
       this.highlighters.off("flexbox-highlighter-shown", this.onHighlighterShown);
     }
 
-    this.inspector.selection.off("new-node-front", this.onUpdatePanel);
+    this.selection.off("new-node-front", this.onUpdatePanel);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.inspector.off("new-root", this.onUpdatePanel);
 
@@ -96,6 +97,7 @@ class FlexboxInspector {
     this.hasGetCurrentFlexbox = null;
     this.inspector = null;
     this.layoutInspector = null;
+    this.selection = null;
     this.store = null;
     this.walker = null;
   }
@@ -180,14 +182,14 @@ class FlexboxInspector {
   async onReflow() {
     if (!this.isPanelVisible() ||
         !this.store ||
-        !this.inspector.selection.nodeFront ||
+        !this.selection.nodeFront ||
         !this.hasGetCurrentFlexbox) {
       return;
     }
 
     try {
       const flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-        this.inspector.selection.nodeFront);
+        this.selection.nodeFront);
 
       
       
@@ -243,14 +245,14 @@ class FlexboxInspector {
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
       this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
-      this.inspector.selection.off("new-node-front", this.onUpdatePanel);
       this.inspector.off("new-root", this.onUpdatePanel);
+      this.selection.off("new-node-front", this.onUpdatePanel);
       return;
     }
 
     this.inspector.reflowTracker.trackReflows(this, this.onReflow);
-    this.inspector.selection.on("new-node-front", this.onUpdatePanel);
     this.inspector.on("new-root", this.onUpdatePanel);
+    this.selection.on("new-node-front", this.onUpdatePanel);
 
     this.update();
   }
@@ -307,7 +309,7 @@ class FlexboxInspector {
     
     if (!this.inspector ||
         !this.store ||
-        !this.inspector.selection.nodeFront ||
+        !this.selection.nodeFront ||
         !this.hasGetCurrentFlexbox) {
       return;
     }
@@ -316,7 +318,7 @@ class FlexboxInspector {
       
       if (!flexboxFront) {
         flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-          this.inspector.selection.nodeFront);
+          this.selection.nodeFront);
       }
 
       
@@ -336,14 +338,22 @@ class FlexboxInspector {
       }
 
       
-      const flexItems = [];
       const flexItemFronts = await flexboxFront.getFlexItems();
+      const flexItems = [];
+      let flexItemShown = null;
 
       for (const flexItemFront of flexItemFronts) {
+        
         let itemNodeFront = flexItemFront.nodeFront;
         if (!itemNodeFront) {
           itemNodeFront = await this.walker.getNodeFromActor(flexItemFront.actorID,
             ["element"]);
+        }
+
+        
+        
+        if (!flexItemShown && itemNodeFront === this.selection.nodeFront) {
+          flexItemShown = itemNodeFront.actorID;
         }
 
         flexItems.push({
@@ -362,16 +372,6 @@ class FlexboxInspector {
       const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
       const customColors = await this.getCustomFlexboxColors();
       const color = customColors[hostname] ? customColors[hostname] : FLEXBOX_COLOR;
-
-      const { flexbox } = this.store.getState();
-      let { flexItemShown } = flexbox;
-
-      
-      
-      if (flexItemShown &&
-          !flexItemFronts.find(item => item.nodeFront.actorID === flexItemShown)) {
-        flexItemShown = null;
-      }
 
       this.store.dispatch(updateFlexbox({
         actorID: flexboxFront.actorID,
