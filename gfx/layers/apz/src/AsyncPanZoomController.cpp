@@ -990,17 +990,14 @@ AsyncPanZoomController::ArePointerEventsConsumable(TouchBlockState* aBlock, cons
     pannable = pannableX || pannableY;
   }
 
+  if (touchPoints == 1) {
+    return pannable;
+  }
+
   bool zoomable = mZoomConstraints.mAllowZoom;
   zoomable &= (aBlock->TouchActionAllowsPinchZoom());
 
-  
-  
-  bool consumable = (touchPoints == 1 ? pannable : zoomable);
-  if (!consumable) {
-    return false;
-  }
-
-  return true;
+  return pannable || zoomable;
 }
 
 nsEventStatus AsyncPanZoomController::HandleDragEvent(const MouseInput& aEvent,
