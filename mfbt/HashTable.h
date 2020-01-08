@@ -1697,27 +1697,6 @@ private:
     return (aHash1 - aDoubleHash.mHash2) & aDoubleHash.mSizeMask;
   }
 
-  
-  bool overloaded()
-  {
-    static_assert(sMaxCapacity <= UINT32_MAX / sMaxAlphaNumerator,
-                  "multiplication below could overflow");
-
-    
-    
-    return mEntryCount + mRemovedCount >=
-           capacity() * sMaxAlphaNumerator / sAlphaDenominator;
-  }
-
-  
-  bool underloaded()
-  {
-    static_assert(sMaxCapacity <= UINT32_MAX / sMinAlphaNumerator,
-                  "multiplication below could overflow");
-    return capacity() > sMinCapacity &&
-           mEntryCount <= capacity() * sMinAlphaNumerator / sAlphaDenominator;
-  }
-
   static MOZ_ALWAYS_INLINE bool match(Entry& aEntry, const Lookup& aLookup)
   {
     return HashPolicy::match(HashPolicy::getKey(aEntry.get()), aLookup);
@@ -1871,7 +1850,15 @@ private:
   RebuildStatus rehashIfOverloaded(
     FailureBehavior aReportFailure = ReportFailure)
   {
-    if (!overloaded()) {
+    static_assert(sMaxCapacity <= UINT32_MAX / sMaxAlphaNumerator,
+                  "multiplication below could overflow");
+
+    
+    
+    bool overloaded = mEntryCount + mRemovedCount >=
+                      capacity() * sMaxAlphaNumerator / sAlphaDenominator;
+
+    if (!overloaded) {
       return NotOverloaded;
     }
 
@@ -1909,7 +1896,13 @@ private:
 
   void shrinkIfUnderloaded()
   {
-    if (underloaded()) {
+    static_assert(sMaxCapacity <= UINT32_MAX / sMinAlphaNumerator,
+                  "multiplication below could overflow");
+    bool underloaded =
+      capacity() > sMinCapacity &&
+      mEntryCount <= capacity() * sMinAlphaNumerator / sAlphaDenominator;
+
+    if (underloaded) {
       (void)changeTableSize(capacity() / 2, DontReportFailure);
     }
   }
