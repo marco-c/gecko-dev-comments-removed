@@ -79,6 +79,11 @@ class FlexItemSizingOutline extends PureComponent {
     mainFinalSize = Math.min(mainFinalSize, mainMaxSize);
 
     
+    if (!mainFinalSize && !mainBaseSize && !mainDeltaSize) {
+      return null;
+    }
+
+    
     
     
     const showMax = mainMaxSize === mainFinalSize;
