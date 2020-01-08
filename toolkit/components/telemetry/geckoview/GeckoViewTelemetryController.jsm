@@ -88,14 +88,14 @@ const GeckoViewTelemetryController = {
   retrieveSnapshots(aClear, aCallback) {
     debug `retrieveSnapshots`;
 
-    const rawHistograms = Services.telemetry.getSnapshotForHistograms("main",  false);
-    const rawKeyedHistograms = Services.telemetry.getSnapshotForKeyedHistograms("main",  false);
+    const histograms = Services.telemetry.getSnapshotForHistograms("main",  false);
+    const keyedHistograms = Services.telemetry.getSnapshotForKeyedHistograms("main",  false);
     const scalars = Services.telemetry.getSnapshotForScalars("main",  false);
     const keyedScalars = Services.telemetry.getSnapshotForKeyedScalars("main",  false);
 
     const snapshots = {
-      histograms: TelemetryUtils.packHistograms(rawHistograms),
-      keyedHistograms: TelemetryUtils.packKeyedHistograms(rawKeyedHistograms),
+      histograms,
+      keyedHistograms,
       scalars,
       keyedScalars,
     };
