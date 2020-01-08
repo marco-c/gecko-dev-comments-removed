@@ -163,14 +163,15 @@ ExtensionManager = {
 
       for (let [scriptId, options] of getData(extension, "contentScripts") || []) {
         const script = new WebExtensionContentScript(policy, options);
-        policy.registerContentScript(script);
-        registeredContentScripts.set(scriptId, script);
 
         
         
         if ("userScriptOptions" in options) {
           script.userScriptOptions = options.userScriptOptions;
         }
+
+        policy.registerContentScript(script);
+        registeredContentScripts.set(scriptId, script);
       }
 
       policy.active = true;
