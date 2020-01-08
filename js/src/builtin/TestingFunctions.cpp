@@ -1894,7 +1894,7 @@ RunIterativeFailureTest(JSContext* cx, const IterativeFailureTestParams& params,
 
     simulator.setup(cx);
 
-    for (unsigned thread = params.threadStart; thread < params.threadEnd; thread++) {
+    for (unsigned thread = params.threadStart; thread <= params.threadEnd; thread++) {
         if (params.verbose) {
             fprintf(stderr, "thread %d\n", thread);
         }
@@ -2036,19 +2036,28 @@ ParseIterativeFailureTestParams(JSContext* cx, const CallArgs& args,
     }
 
     
-    params->threadStart = oom::FirstThreadTypeToTest;
-    params->threadEnd = oom::LastThreadTypeToTest;
+    
+    
+    if (js::oom::GetThreadType() == js::THREAD_TYPE_WORKER) {
+        params->threadStart = oom::WorkerFirstThreadTypeToTest;
+        params->threadEnd = oom::WorkerLastThreadTypeToTest;
+    } else {
+        params->threadStart = oom::FirstThreadTypeToTest;
+        params->threadEnd = oom::LastThreadTypeToTest;
+    }
 
     
     int threadOption = 0;
     if (EnvVarAsInt("OOM_THREAD", &threadOption)) {
-        if (threadOption < oom::FirstThreadTypeToTest || threadOption > oom::LastThreadTypeToTest) {
+        if (threadOption < oom::FirstThreadTypeToTest || threadOption > oom::LastThreadTypeToTest ||
+            threadOption != js::THREAD_TYPE_CURRENT)
+        {
             JS_ReportErrorASCII(cx, "OOM_THREAD value out of range.");
             return false;
         }
 
         params->threadStart = threadOption;
-        params->threadEnd = threadOption + 1;
+        params->threadEnd = threadOption;
     }
 
     params->verbose = EnvVarIsDefined("OOM_VERBOSE");
