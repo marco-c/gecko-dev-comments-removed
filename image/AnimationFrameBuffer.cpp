@@ -324,6 +324,7 @@ AnimationFrameDiscardingQueue::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf
 
 AnimationFrameRecyclingQueue::AnimationFrameRecyclingQueue(AnimationFrameRetainedBuffer&& aQueue)
   : AnimationFrameDiscardingQueue(std::move(aQueue))
+  , mForceUseFirstFrameRefreshArea(false)
 {
   
   
@@ -361,31 +362,20 @@ AnimationFrameRecyclingQueue::AdvanceInternal()
   MOZ_ASSERT(!mDisplay.empty());
   MOZ_ASSERT(mDisplay.front());
 
+  
+  
+  
+  if (mGetIndex == 1) {
+    mForceUseFirstFrameRefreshArea = false;
+  }
+
   RefPtr<imgFrame>& front = mDisplay.front();
-
-  
-  
-  
-  MOZ_ASSERT_IF(mGetIndex == 1,
-                front->GetRect().IsEqualEdges(front->GetDirtyRect()));
-
-  RecycleEntry newEntry(mGetIndex == 1 ? mFirstFrameRefreshArea
-                                       : front->GetDirtyRect());
+  RecycleEntry newEntry(mForceUseFirstFrameRefreshArea ? mFirstFrameRefreshArea
+                                                       : front->GetDirtyRect());
 
   
   
   if (front->ShouldRecycle()) {
-    
-    
-    
-    
-    for (const RefPtr<imgFrame>& frame : mDisplay) {
-      newEntry.mRecycleRect = newEntry.mRecycleRect.Union(frame->GetDirtyRect());
-    }
-    for (const RecycleEntry& entry : mRecycle) {
-      newEntry.mRecycleRect = newEntry.mRecycleRect.Union(entry.mDirtyRect);
-    }
-
     newEntry.mFrame = std::move(front);
   }
 
@@ -428,20 +418,62 @@ AnimationFrameRecyclingQueue::ResetInternal()
 RawAccessFrameRef
 AnimationFrameRecyclingQueue::RecycleFrame(gfx::IntRect& aRecycleRect)
 {
+  if (mInsertIndex == 0) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mSizeKnown);
+    MOZ_ASSERT(!mFirstFrameRefreshArea.IsEmpty());
+    for (RecycleEntry& entry : mRecycle) {
+      MOZ_ASSERT(mFirstFrameRefreshArea.Contains(entry.mDirtyRect));
+      entry.mDirtyRect = mFirstFrameRefreshArea;
+    }
+    
+    
+    mForceUseFirstFrameRefreshArea = true;
+  }
+
   if (mRecycle.empty()) {
     return RawAccessFrameRef();
   }
 
-  RawAccessFrameRef frame;
+  RawAccessFrameRef recycledFrame;
   if (mRecycle.front().mFrame) {
-    frame = mRecycle.front().mFrame->RawAccessRef();
-    if (frame) {
-      aRecycleRect = mRecycle.front().mRecycleRect;
+    recycledFrame = mRecycle.front().mFrame->RawAccessRef();
+    MOZ_ASSERT(recycledFrame);
+    mRecycle.pop_front();
+
+    if (mForceUseFirstFrameRefreshArea) {
+      
+      
+      
+      aRecycleRect = mFirstFrameRefreshArea;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      aRecycleRect.SetRect(0, 0, 0, 0);
+      for (const RefPtr<imgFrame>& frame : mDisplay) {
+        aRecycleRect = aRecycleRect.Union(frame->GetDirtyRect());
+      }
+      for (const RecycleEntry& entry : mRecycle) {
+        aRecycleRect = aRecycleRect.Union(entry.mDirtyRect);
+      }
     }
+  } else {
+    mRecycle.pop_front();
   }
 
-  mRecycle.pop_front();
-  return frame;
+  return recycledFrame;
 }
 
 bool

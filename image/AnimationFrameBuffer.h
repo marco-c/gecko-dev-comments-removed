@@ -449,15 +449,12 @@ public:
     RecycleEntry(RecycleEntry&& aOther)
       : mFrame(std::move(aOther.mFrame))
       , mDirtyRect(aOther.mDirtyRect)
-      , mRecycleRect(aOther.mRecycleRect)
-    {
-    }
+    { }
 
     RecycleEntry& operator=(RecycleEntry&& aOther)
     {
       mFrame = std::move(aOther.mFrame);
       mDirtyRect = aOther.mDirtyRect;
-      mRecycleRect = aOther.mRecycleRect;
       return *this;
     }
 
@@ -466,8 +463,6 @@ public:
 
     RefPtr<imgFrame> mFrame;   
     gfx::IntRect mDirtyRect;   
-    gfx::IntRect mRecycleRect; 
-                               
   };
 
   const std::deque<RecycleEntry>& Recycle() const { return mRecycle; }
@@ -488,6 +483,11 @@ protected:
   
   
   gfx::IntRect mFirstFrameRefreshArea;
+
+  
+  
+  
+  bool mForceUseFirstFrameRefreshArea;
 };
 
 } 
