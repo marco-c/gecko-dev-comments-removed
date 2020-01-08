@@ -365,7 +365,7 @@ static LPTOP_LEVEL_EXCEPTION_FILTER WINAPI patched_SetUnhandledExceptionFilter(
   return nullptr;
 }
 
-#ifdef _WIN64
+#if defined(HAVE_64BIT_BUILD) && defined(_M_X64)
 static LPTOP_LEVEL_EXCEPTION_FILTER sUnhandledExceptionFilter = nullptr;
 
 static long JitExceptionHandler(void* exceptionRecord, void* context) {
@@ -1403,16 +1403,18 @@ static nsresult LocateExecutable(nsIFile* aXREDirectory,
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   if (gExceptionHandler) return NS_ERROR_ALREADY_INITIALIZED;
 
-#if !defined(DEBUG)
+#if defined(DEBUG) || defined(_M_ARM64)
   
   
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER_DISABLE");
-  if (envvar && *envvar && !force) return NS_OK;
-#else
   
   
   const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER");
   if ((!envvar || !*envvar) && !force) return NS_OK;
+#else
+  
+  
+  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER_DISABLE");
+  if (envvar && *envvar && !force) return NS_OK;
 #endif
 
 #if defined(XP_WIN)
@@ -1568,7 +1570,7 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   
   
   SetIncludeContextHeap(true);
-#ifdef _WIN64
+#if defined(HAVE_64BIT_BUILD) && defined(_M_X64)
   
   SetJitExceptionHandler();
 #endif
@@ -3291,7 +3293,7 @@ bool SetRemoteExceptionHandler(const nsACString& crashPipe,
       NS_ConvertASCIItoUTF16(crashPipe).get(), nullptr);
   gExceptionHandler->set_handle_debug_exceptions(true);
 
-#ifdef _WIN64
+#if defined(HAVE_64BIT_BUILD) && defined(_M_X64)
   SetJitExceptionHandler();
 #endif
 
