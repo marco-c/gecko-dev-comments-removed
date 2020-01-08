@@ -152,6 +152,9 @@ const TEST_GLOBAL = {
     File: function() {}, 
   },
   Services: {
+    dirsvc: {
+      get: () => ({parent: {parent: {path: "appPath"}}}),
+    },
     locale: {
       get appLocaleAsLangTag() { return "en-US"; },
       negotiateLanguages() {},

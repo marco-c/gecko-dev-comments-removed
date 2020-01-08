@@ -108,6 +108,7 @@ AboutNewTabService.prototype = {
       case "nsPref:changed":
         if (data === PREF_SEPARATE_PRIVILEGED_CONTENT_PROCESS) {
           this._privilegedContentProcess = Services.prefs.getBoolPref(PREF_SEPARATE_PRIVILEGED_CONTENT_PROCESS);
+          this.updatePrerenderedPath();
           this.notifyChange();
         } else if (data === PREF_ACTIVITY_STREAM_PRERENDER_ENABLED) {
           this._activityStreamPrerender = Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_PRERENDER_ENABLED);
@@ -230,8 +231,9 @@ AboutNewTabService.prototype = {
 
   updatePrerenderedPath() {
     
-    this._activityStreamPath = `${this._activityStreamDebug ? "static" :
-      this.activityStreamLocale}/`;
+    
+    this._activityStreamPath = `${this._activityStreamDebug &&
+      !this._privilegedContentProcess ? "static" : this.activityStreamLocale}/`;
   },
 
   
@@ -250,7 +252,8 @@ AboutNewTabService.prototype = {
       this._activityStreamPath,
       "activity-stream",
       this._activityStreamPrerender ? "-prerendered" : "",
-      this._activityStreamDebug ? "-debug" : "",
+      
+      this._activityStreamDebug && !this._privilegedContentProcess ? "-debug" : "",
       this._privilegedContentProcess ? "-noscripts" : "",
       ".html",
     ].join("");
