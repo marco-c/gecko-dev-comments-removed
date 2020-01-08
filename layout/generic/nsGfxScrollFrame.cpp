@@ -1096,6 +1096,17 @@ nsHTMLScrollFrame::Reflow(nsPresContext*           aPresContext,
       reflowScrollCorner = showResizer == mHelper.mCollapsedResizer;
       mHelper.mCollapsedResizer = !showResizer;
     }
+
+    
+    
+    
+    
+    ComputedStyle* scrollbarStyle = nsLayoutUtils::StyleForScrollbar(this);
+    auto scrollbarWidth = scrollbarStyle->StyleUIReset()->mScrollbarWidth;
+    if (scrollbarWidth == StyleScrollbarWidth::None) {
+      state.mVScrollbar = ShowScrollbar::Never;
+      state.mHScrollbar = ShowScrollbar::Never;
+    }
   }
 
   nsRect oldScrollAreaBounds = mHelper.mScrollPort;
@@ -4662,9 +4673,15 @@ ScrollFrameHelper::CreateAnonymousContent(
   bool canHaveHorizontal;
   bool canHaveVertical;
   if (!mIsRoot) {
-    ScrollStyles styles = scrollable->GetScrollStyles();
-    canHaveHorizontal = styles.mHorizontal != NS_STYLE_OVERFLOW_HIDDEN;
-    canHaveVertical = styles.mVertical != NS_STYLE_OVERFLOW_HIDDEN;
+    if (mOuter->StyleUIReset()->mScrollbarWidth == StyleScrollbarWidth::None) {
+      
+      canHaveHorizontal = false;
+      canHaveVertical = false;
+    } else {
+      ScrollStyles styles = scrollable->GetScrollStyles();
+      canHaveHorizontal = styles.mHorizontal != NS_STYLE_OVERFLOW_HIDDEN;
+      canHaveVertical = styles.mVertical != NS_STYLE_OVERFLOW_HIDDEN;
+    }
     if (!canHaveHorizontal && !canHaveVertical && !isResizable) {
       
       return NS_OK;
