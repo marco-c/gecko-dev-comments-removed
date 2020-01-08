@@ -25,10 +25,6 @@ add_task(async function() {
   let toolbox = await gDevTools.showToolbox(target, null,
     Toolbox.HostType.BOTTOM);
 
-  let onTitleChanged = waitForTitleChange(toolbox);
-  await toolbox.selectTool("inspector");
-  await onTitleChanged;
-
   await toolbox.switchHost(Toolbox.HostType.WINDOW);
   
   
@@ -65,7 +61,7 @@ add_task(async function() {
   
   const willNavigate = toolbox.target.once("will-navigate");
 
-  onTitleChanged = waitForTitleChange(toolbox);
+  const onTitleChanged = waitForTitleChange(toolbox);
 
   
   
