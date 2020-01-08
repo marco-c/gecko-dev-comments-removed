@@ -1259,6 +1259,9 @@ pref("browser.newtabpage.activity-stream.debug", false);
 pref("browser.library.activity-stream.enabled", true);
 
 
+pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "https://accounts.firefox.com/");
+
+
 pref("full-screen-api.enabled", true);
 
 

@@ -8,6 +8,8 @@ user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
 user_pref("browser.newtabpage.activity-stream.feeds.snippets", false);
 user_pref("browser.newtabpage.activity-stream.tippyTop.service.endpoint", "");
 
+user_pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "");
+
 
 user_pref("browser.search.countryCode", "US");
 user_pref("browser.search.region", "US");
