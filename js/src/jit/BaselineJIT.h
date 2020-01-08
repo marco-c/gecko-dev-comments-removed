@@ -278,8 +278,6 @@ struct BaselineScript final
   public:
     enum Flag {
         
-        
-        NEEDS_ARGS_OBJ = 1 << 0,
 
         
         
@@ -415,10 +413,6 @@ struct BaselineScript final
     }
     void resetActive() {
         flags_ &= ~ACTIVE;
-    }
-
-    void setNeedsArgsObj() {
-        flags_ |= NEEDS_ARGS_OBJ;
     }
 
     void setModifiesArguments() {

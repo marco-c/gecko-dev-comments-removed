@@ -4581,15 +4581,6 @@ JSScript::argumentsOptimizationFailed(JSContext* cx, HandleScript script)
 
 
 
-    if (script->hasBaselineScript()) {
-        script->baselineScript()->setNeedsArgsObj();
-    }
-
-    
-
-
-
-
 
 
 

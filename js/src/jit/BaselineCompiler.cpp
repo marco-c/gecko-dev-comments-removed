@@ -4769,9 +4769,10 @@ BaselineCompiler::emit_JSOP_ARGUMENTS()
 {
     frame.syncStack(0);
 
+    MOZ_ASSERT(script->argumentsHasVarBinding());
+
     Label done;
-    if (!script->argumentsHasVarBinding() || !script->needsArgsObj()) {
-        
+    if (!script->needsArgsObj()) {
         
         
         
@@ -4780,11 +4781,8 @@ BaselineCompiler::emit_JSOP_ARGUMENTS()
         
         Register scratch = R1.scratchReg();
         masm.movePtr(ImmGCPtr(script), scratch);
-        masm.loadPtr(Address(scratch, JSScript::offsetOfBaselineScript()), scratch);
-
-        
-        masm.branchTest32(Assembler::Zero, Address(scratch, BaselineScript::offsetOfFlags()),
-                          Imm32(BaselineScript::NEEDS_ARGS_OBJ), &done);
+        masm.branchTest32(Assembler::Zero, Address(scratch, JSScript::offsetOfMutableFlags()),
+                          Imm32(uint32_t(JSScript::MutableFlags::NeedsArgsObj)), &done);
     }
 
     prepareVMCall();

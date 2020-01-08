@@ -1705,6 +1705,7 @@ class JSScript : public js::gc::TenuredCell
 
     
     
+  public:
     enum class MutableFlags : uint32_t {
         
         WarnedAboutUndefinedProp = 1 << 0,
@@ -1769,6 +1770,7 @@ class JSScript : public js::gc::TenuredCell
         
         HideScriptFromDebugger = 1 << 19,
     };
+  private:
     uint32_t mutableFlags_ = 0;
 
     
@@ -2239,6 +2241,10 @@ class JSScript : public js::gc::TenuredCell
 
     bool hasInnerFunctions() const {
         return hasFlag(ImmutableFlags::HasInnerFunctions);
+    }
+
+    static constexpr size_t offsetOfMutableFlags() {
+        return offsetof(JSScript, mutableFlags_);
     }
 
     bool hasAnyIonScript() const {
