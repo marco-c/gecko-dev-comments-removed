@@ -61,22 +61,19 @@
 
 
 #devtools-har-button {
-  width: 35px;
-  margin-inline-start: 2px;
-  padding-inline-start: 0;
-  padding-inline-end: 12px;
+  margin-inline-end: 10px;
+  padding-left: 2px;
+  padding-right: 10px;
   background-position: right center;
-}
-
-
-#devtools-har-button .title {
-  width: 24px;
 }
 
 
 
 #network-throttling-menu {
-  margin-inline-start: 6px;
+  margin-inline-start: 10px;
+  padding-left: 2px;
+  padding-right: 10px;
+  background-position: right center;
 }
 
 .devtools-checkbox {
