@@ -238,7 +238,14 @@ async function test(window) {
   }
 
   for (let tab of tabs) {
+    
+    
+    
+    
     gBrowser.moveTabTo(tab, 1);
+    await new Promise(resolve => win.requestAnimationFrame(resolve));
+    await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+
     await forceGC(win, tab.linkedBrowser);
     TalosParentProfiler.resume("start: " + tab.linkedBrowser.currentURI.spec);
     let time = await switchToTab(tab);
