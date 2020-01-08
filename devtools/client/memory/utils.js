@@ -43,8 +43,7 @@ exports.getSnapshotTitle = function(snapshot) {
 
   if (snapshot.imported) {
     
-    
-    return OS.Path.basename(snapshot.path.replace(/\.fxsnapshot(?:\.gz)?$/, ""));
+    return OS.Path.basename(snapshot.path.replace(/\.fxsnapshot$/, ""));
   }
 
   const date = new Date(snapshot.creationTime / 1000);
