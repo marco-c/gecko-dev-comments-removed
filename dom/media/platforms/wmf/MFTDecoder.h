@@ -38,12 +38,10 @@ public:
   
   
   
-  typedef HRESULT (*ConfigureOutputCallback)(IMFMediaType* aOutputType,
-                                             void* aData);
   HRESULT SetMediaTypes(IMFMediaType* aInputType,
                         IMFMediaType* aOutputType,
-                        ConfigureOutputCallback aCallback = nullptr,
-                        void* aData = nullptr);
+                        std::function<HRESULT(IMFMediaType*)>&& aCallback =
+                          [](IMFMediaType* aOutput) { return S_OK; });
 
   
   already_AddRefed<IMFAttributes> GetAttributes();
@@ -94,11 +92,11 @@ public:
 private:
   
   
-  HRESULT SetDecoderOutputType(const GUID& aSubType,
-                               IMFMediaType* aTypeToUse,
-                               bool aMatchAllAttributes,
-                               ConfigureOutputCallback aCallback,
-                               void* aData);
+  HRESULT SetDecoderOutputType(
+    const GUID& aSubType,
+    IMFMediaType* aTypeToUse,
+    bool aMatchAllAttributes,
+    std::function<HRESULT(IMFMediaType*)>&& aCallback);
   HRESULT CreateOutputSample(RefPtr<IMFSample>* aOutSample);
 
   MFT_INPUT_STREAM_INFO mInputStreamInfo;
