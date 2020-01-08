@@ -6,7 +6,9 @@
 
 
 
+import os
 import sys
+
 
 config = {
     "options": [
@@ -27,7 +29,7 @@ config = {
     "download_minidump_stackwalk": True,
 
     
-    "geckodriver": "%(test_install_path)s/bin/geckodriver",
+    "geckodriver": os.path.join("%(abs_test_bin_dir)s", "geckodriver.exe"),
 
     "per_test_category": "web-platform",
 }
