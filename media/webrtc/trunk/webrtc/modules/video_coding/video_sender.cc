@@ -393,11 +393,5 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
   return VCM_OK;
 }
 
-
-
-
-
-
-
 }  
 }  

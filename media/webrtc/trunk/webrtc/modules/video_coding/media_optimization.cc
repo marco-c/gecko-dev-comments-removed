@@ -149,12 +149,5 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
   }
 }
 
-
-
-
-
-
-
-
 }  
 }  
