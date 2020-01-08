@@ -10,6 +10,7 @@ const {
   TOGGLE_REQUEST_FILTER_TYPE,
   ENABLE_REQUEST_FILTER_TYPE_ONLY,
   SET_REQUEST_FILTER_TEXT,
+  SELECT_DETAILS_PANEL_TAB,
 } = require("../constants");
 
 
@@ -27,6 +28,7 @@ function eventTelemetryMiddleware(connector, telemetry) {
     }
 
     const state = store.getState();
+    const sessionId = toolbox.sessionId;
 
     const filterChangeActions = [
       TOGGLE_REQUEST_FILTER_TYPE,
@@ -34,19 +36,35 @@ function eventTelemetryMiddleware(connector, telemetry) {
       SET_REQUEST_FILTER_TEXT,
     ];
 
+    
     if (filterChangeActions.includes(action.type)) {
       filterChange({
         action,
         state,
         oldState,
         telemetry,
-        sessionId: toolbox.sessionId,
+        sessionId,
       });
+    }
+
+    
+    if (action.type == SELECT_DETAILS_PANEL_TAB) {
+      sidePanelChange({
+        action,
+        state,
+        oldState,
+        telemetry,
+        sessionId,
+      })
     }
 
     return res;
   };
 }
+
+
+
+
 
 function filterChange({action, state, oldState, telemetry, sessionId}) {
   const oldFilterState = oldState.filters;
@@ -79,7 +97,20 @@ function filterChange({action, state, oldState, telemetry, sessionId}) {
     "trigger": trigger,
     "active": activeFilters.join(","),
     "inactive": inactiveFilters.join(","),
-    "session_id": sessionId
+    "session_id": sessionId,
+  });
+}
+
+
+
+
+
+
+function sidePanelChange({action, state, oldState, telemetry, sessionId}) {
+  telemetry.recordEvent("devtools.main", "sidepanel_changed", "netmonitor", null, {
+    "oldpanel": oldState.ui.detailsPanelSelectedTab,
+    "newpanel": state.ui.detailsPanelSelectedTab,
+    "session_id": sessionId,
   });
 }
 
