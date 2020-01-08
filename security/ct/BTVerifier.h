@@ -16,7 +16,7 @@ namespace mozilla { namespace ct {
 
 
 
-pkix::Result DecodeInclusionProof(pkix::Reader& input,
+pkix::Result DecodeInclusionProof(pkix::Input input,
   InclusionProofDataV2& output);
 
 
