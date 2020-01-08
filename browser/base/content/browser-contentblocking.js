@@ -429,8 +429,8 @@ var ThirdPartyCookies = {
         }
         
         
-        if (this.isBlocking(state) && blocked) {
-          info.isAllowed = false;
+        if (this.isBlocking(state)) {
+          info.isAllowed = !blocked;
         }
       }
 
