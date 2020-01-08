@@ -3430,9 +3430,16 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
 
 MOZ_MUST_USE bool js::RejectPromiseWithPendingError(
     JSContext* cx, Handle<PromiseObject*> promise) {
-  
+  if (!cx->isExceptionPending()) {
+    
+    mozilla::Unused << PromiseObject::reject(cx, promise, UndefinedHandleValue);
+    return false;
+  }
+
   RootedValue exn(cx);
-  if (!GetAndClearException(cx, &exn)) return false;
+  if (!GetAndClearException(cx, &exn)) {
+    return false;
+  }
   return PromiseObject::reject(cx, promise, exn);
 }
 
