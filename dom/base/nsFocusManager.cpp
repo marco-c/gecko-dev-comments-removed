@@ -3455,6 +3455,24 @@ nsFocusManager::GetNextTabbableContentInAncestorScopes(
   return nullptr;
 }
 
+static nsIContent*
+GetTopLevelHost(nsIContent* aContent)
+{
+  nsIContent* topLevelhost = nullptr;
+  while (aContent) {
+    if (HTMLSlotElement* slot = aContent->GetAssignedSlot()) {
+      aContent = slot;
+    } else if (ShadowRoot* shadowRoot = aContent->GetContainingShadow()) {
+      aContent = shadowRoot->Host();
+      topLevelhost = aContent;
+    } else {
+      aContent = aContent->GetParent();
+    }
+  }
+
+  return topLevelhost;
+}
+
 nsresult
 nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
                                        nsIContent* aRootContent,
@@ -3471,6 +3489,8 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
   nsCOMPtr<nsIContent> startContent = aStartContent;
   if (!startContent)
     return NS_OK;
+
+  nsIContent* currentTopLevelHost = GetTopLevelHost(aStartContent);
 
   LOGCONTENTNAVIGATION("GetNextTabbable: %s", aStartContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
@@ -3552,8 +3572,7 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
                                        false, 
                                        true,  
                                        aForDocumentNavigation,  
-                                       nsDocument::IsShadowDOMEnabled(aRootContent) 
-                                       );
+                                       false);
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (iterStartContent == aRootContent) {
@@ -3577,7 +3596,29 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
     
     nsIFrame* frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
     while (frame) {
+      
+      
       nsIContent* currentContent = frame->GetContent();
+      nsIContent* oldTopLevelHost = currentTopLevelHost;
+      nsIContent* topLevel = GetTopLevelHost(currentContent);
+      currentTopLevelHost = topLevel;
+      if (topLevel) {
+        if (topLevel == oldTopLevelHost) {
+          
+          do {
+            if (aForward) {
+              frameTraversal->Next();
+            } else {
+              frameTraversal->Prev();
+            }
+            frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+            
+            
+          } while (frame && frame->GetPrevContinuation());
+          continue;
+        }
+        currentContent = topLevel;
+      }
 
       
       
