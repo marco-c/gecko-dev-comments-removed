@@ -207,10 +207,36 @@ public:
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
     size_t amount = 0;
+
 #if defined(MOZ_LIBAV_FFT)
-    amount += aMallocSizeOf(mAvRDFT);
-    amount += aMallocSizeOf(mAvIRDFT);
+    auto ComputedSizeOfContextIfSet = [this](void* aContext) -> size_t {
+      if (!aContext) {
+        return 0;
+      }
+      
+      
+      
+      
+      size_t amount = 232;
+      
+      
+      
+      MOZ_ASSERT(mFFTSize <= 32768);
+      amount += mFFTSize * (sizeof(uint16_t) + 2 * sizeof(float));
+
+      return amount;
+    };
+
+    amount += ComputedSizeOfContextIfSet(mAvRDFT);
+    amount += ComputedSizeOfContextIfSet(mAvIRDFT);
 #else
+#ifdef BUILD_ARM_NEON
+    amount += aMallocSizeOf(mOmxFFT);
+    amount += aMallocSizeOf(mOmxIFFT);
+#endif
+#ifdef USE_SIMD
+#error kiss fft uses malloc only when USE_SIMD is not defined
+#endif
     amount += aMallocSizeOf(mKissFFT);
     amount += aMallocSizeOf(mKissIFFT);
 #endif
