@@ -276,9 +276,6 @@ public:
   Create(nsGlobalWindowOuter* aOuter, bool aIsChrome);
 
   
-  void ReallyCloseWindow();
-
-  
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   
@@ -352,6 +349,14 @@ public:
   void Suspend();
   void Resume();
   virtual bool IsSuspended() const override;
+
+  
+  
+  
+  
+  
+  
+  
   void Freeze();
   void Thaw();
   virtual bool IsFrozen() const override;
@@ -448,14 +453,6 @@ public:
   
   
   bool DialogsAreBeingAbused();
-
-  
-  
-  
-  
-  
-  void EnableDialogs();
-  void DisableDialogs();
 
   nsIScriptContext *GetContextInternal();
 
@@ -676,7 +673,6 @@ public:
   void GetEvent(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval);
   already_AddRefed<nsPIDOMWindowOuter> GetParent(mozilla::ErrorResult& aError);
   nsPIDOMWindowOuter* GetScriptableParent() override;
-  nsPIDOMWindowOuter* GetScriptableParentOrNull() override;
   mozilla::dom::Element*
   GetFrameElement(nsIPrincipal& aSubjectPrincipal,
                   mozilla::ErrorResult& aError);
