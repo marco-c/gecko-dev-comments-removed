@@ -3275,6 +3275,15 @@ public:
 
   static bool CanShowPopup(nsIPrincipal* aPrincipal);
 
+  
+
+
+
+
+
+
+  static bool StringifyJSON(JSContext* aCx, JS::MutableHandle<JS::Value> vp, nsAString& aOutStr);
+
 private:
   static bool InitializeEventTable();
 
