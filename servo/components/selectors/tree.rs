@@ -46,12 +46,6 @@ pub trait Element: Sized + Clone + Debug {
     }
 
     
-    fn first_child_element(&self) -> Option<Self>;
-
-    
-    fn last_child_element(&self) -> Option<Self>;
-
-    
     fn prev_sibling_element(&self) -> Option<Self>;
 
     
