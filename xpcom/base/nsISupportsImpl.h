@@ -339,7 +339,7 @@ public:
     
     
     
-    detail::AutoRecordAtomicAccess<Recording> record;
+    detail::AutoRecordAtomicAccess<Recording> record(this);
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
   MOZ_ALWAYS_INLINE nsrefcnt operator--()
@@ -348,7 +348,7 @@ public:
     
     
     
-    detail::AutoRecordAtomicAccess<Recording> record;
+    detail::AutoRecordAtomicAccess<Recording> record(this);
     nsrefcnt result = mValue.fetch_sub(1, std::memory_order_release) - 1;
     if (result == 0) {
       
@@ -364,7 +364,7 @@ public:
   {
     
     
-    detail::AutoRecordAtomicAccess<Recording> record;
+    detail::AutoRecordAtomicAccess<Recording> record(this);
     mValue.store(aValue, std::memory_order_release);
     return aValue;
   }
@@ -373,7 +373,7 @@ public:
   {
     
     
-    detail::AutoRecordAtomicAccess<Recording> record;
+    detail::AutoRecordAtomicAccess<Recording> record(this);
     return mValue.load(std::memory_order_acquire);
   }
 

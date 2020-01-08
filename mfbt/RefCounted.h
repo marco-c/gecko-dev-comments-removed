@@ -124,7 +124,7 @@ public:
     
     
     
-    AutoRecordAtomicAccess<Recording> record;
+    AutoRecordAtomicAccess<Recording> record(this);
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
@@ -134,7 +134,7 @@ public:
     
     
     
-    AutoRecordAtomicAccess<Recording> record;
+    AutoRecordAtomicAccess<Recording> record(this);
     T result = mValue.fetch_sub(1, std::memory_order_release) - 1;
     if (result == 0) {
       
@@ -149,7 +149,7 @@ public:
   
   
   void operator=(const T& aValue) {
-    AutoRecordAtomicAccess<Recording> record;
+    AutoRecordAtomicAccess<Recording> record(this);
     mValue.store(aValue, std::memory_order_seq_cst);
   }
 
@@ -157,7 +157,7 @@ public:
   {
     
     
-    AutoRecordAtomicAccess<Recording> record;
+    AutoRecordAtomicAccess<Recording> record(this);
     return mValue.load(std::memory_order_acquire);
   }
 
