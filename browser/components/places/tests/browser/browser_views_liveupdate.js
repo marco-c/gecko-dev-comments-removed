@@ -97,7 +97,9 @@ add_task(async function test() {
   
   await withSidebarTree("bookmarks", async () => {
     
+    bookmarksObserver.handlePlacesEvents = bookmarksObserver.handlePlacesEvents.bind(bookmarksObserver);
     PlacesUtils.bookmarks.addObserver(bookmarksObserver);
+    PlacesUtils.observers.addListener(["bookmark-added"], bookmarksObserver.handlePlacesEvents);
     var addedBookmarks = [];
 
     
@@ -124,6 +126,7 @@ add_task(async function test() {
 
     
     PlacesUtils.bookmarks.removeObserver(bookmarksObserver);
+    PlacesUtils.observers.removeListener(["bookmark-added"], bookmarksObserver.handlePlacesEvents);
   });
 
   
@@ -143,10 +146,10 @@ var bookmarksObserver = {
     Ci.nsINavBookmarkObserver,
   ]),
 
-  
-  onItemAdded(itemId, folderId, index, itemType, uri, title, dataAdded, guid,
-              parentGuid) {
-    this._notifications.push(["assertItemAdded", parentGuid, guid, index]);
+  handlePlacesEvents(events) {
+    for (let {parentGuid, guid, index} of events) {
+      this._notifications.push(["assertItemAdded", parentGuid, guid, index]);
+    }
   },
 
   onItemRemoved(itemId, folderId, index, itemType, uri, guid, parentGuid) {
