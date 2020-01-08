@@ -9,7 +9,9 @@
 
 #include "mozilla/GuardObjects.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Vector.h"
 
 #include <utility>
 
@@ -17,6 +19,7 @@
 #include "js/HashTable.h"
 #include "js/TypeDecls.h"
 #include "js/Vector.h"
+#include "threading/LockGuard.h"
 #include "vm/MutexIDs.h"
 #include "vm/TraceLoggingGraph.h"
 #include "vm/TraceLoggingTypes.h"
@@ -104,6 +107,7 @@ class TraceLoggerEvent {
             return (TraceLoggerEventPayload*) payload_;
         }
         void setEventPayload(TraceLoggerEventPayload* payload) {
+            MOZ_ASSERT(payload);
             payload_ = (uintptr_t)payload;
             MOZ_ASSERT((payload_ & 1) == 0);
         }
@@ -177,14 +181,17 @@ bool CurrentThreadOwnsTraceLoggerThreadStateLock();
 
 class TraceLoggerEventPayload {
     uint32_t textId_;
-    UniqueChars string_;
+    uint32_t dictionaryId_;
+    mozilla::Maybe<uint32_t> line_;
+    mozilla::Maybe<uint32_t> col_;
     mozilla::Atomic<uint32_t> uses_;
-    mozilla::Atomic<uint32_t> pointerCount_;
 
   public:
-    TraceLoggerEventPayload(uint32_t textId, UniqueChars string)
+    TraceLoggerEventPayload(uint32_t textId, uint32_t dictionaryId)
       : textId_(textId),
-        string_(std::move(string)),
+        dictionaryId_(dictionaryId),
+        line_(mozilla::Nothing()),
+        col_(mozilla::Nothing()),
         uses_(0)
     { }
 
@@ -192,17 +199,27 @@ class TraceLoggerEventPayload {
         MOZ_ASSERT(uses_ == 0);
     }
 
+    void setLine(uint32_t line) {
+        line_ = mozilla::Some(line);
+    }
+    void setColumn(uint32_t col) {
+        col_ = mozilla::Some(col);
+    }
+
+    mozilla::Maybe<uint32_t> line() {
+        return line_;
+    }
+    mozilla::Maybe<uint32_t> column() {
+        return col_;
+    }
     uint32_t textId() {
         return textId_;
     }
-    const char* string() {
-        return string_.get();
+    uint32_t dictionaryId() {
+        return dictionaryId_;
     }
     uint32_t uses() {
         return uses_;
-    }
-    uint32_t pointerCount() {
-        return pointerCount_;
     }
 
     
@@ -216,19 +233,8 @@ class TraceLoggerEventPayload {
     void release() {
         uses_--;
     }
-    void incPointerCount() {
-        MOZ_ASSERT(CurrentThreadOwnsTraceLoggerThreadStateLock());
-        pointerCount_++;
-    }
-    void decPointerCount() {
-        MOZ_ASSERT(CurrentThreadOwnsTraceLoggerThreadStateLock());
-        pointerCount_--;
-    }
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mallocSizeOf(string_.get());
-    }
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+        return mallocSizeOf(this);
     }
 };
 
@@ -271,6 +277,8 @@ class TraceLoggerThread : public mozilla::LinkedListElement<TraceLoggerThread>
     bool init(uint32_t loggerId);
     void initGraph();
 
+    void clear();
+
     bool enable();
     bool enable(JSContext* cx);
     bool disable(bool force = false, const char* = "");
@@ -308,12 +316,6 @@ class TraceLoggerThread : public mozilla::LinkedListElement<TraceLoggerThread>
         *size = events.size();
     }
 
-    
-    
-    void extractScriptDetails(uint32_t textId, const char** filename, size_t* filename_len,
-                              const char** lineno, size_t* lineno_len, const char** colno,
-                              size_t* colno_len);
-
     bool lostEvents(uint32_t lastIteration, uint32_t lastSize) {
         
         if (lastIteration == iteration_) {
@@ -339,7 +341,6 @@ class TraceLoggerThread : public mozilla::LinkedListElement<TraceLoggerThread>
         MOZ_ASSERT(text);
         return text;
     };
-    bool textIdIsScriptEvent(uint32_t id);
 
   public:
     
@@ -383,20 +384,42 @@ class TraceLoggerThreadState
     bool spewErrors;
     mozilla::LinkedList<TraceLoggerThread> threadLoggers;
 
-    typedef HashMap<const void*,
-                    TraceLoggerEventPayload*,
-                    PointerHasher<const void*>,
-                    SystemAllocPolicy> PointerHashMap;
+    
+    
+    
     typedef HashMap<uint32_t,
                     TraceLoggerEventPayload*,
                     DefaultHasher<uint32_t>,
-                    SystemAllocPolicy> TextIdHashMap;
-    PointerHashMap pointerMap;
-    TextIdHashMap textIdPayloads;
+                    SystemAllocPolicy> TextIdToPayloadMap;
+
+    
+    
+    typedef mozilla::Vector<UniqueChars,
+                            0,
+                            SystemAllocPolicy> DictionaryVector;
+
+
+    
+    
+    
+    
+    typedef HashMap<const char*,
+                    uint32_t,
+                    mozilla::CStringHasher,
+                    SystemAllocPolicy> StringHashToDictionaryMap;
+
+    TextIdToPayloadMap textIdPayloads;
+    StringHashToDictionaryMap payloadDictionary;
+    DictionaryVector dictionaryData;
+
     uint32_t nextTextId;
+    uint32_t nextDictionaryId;
 
   public:
     uint64_t startupTime;
+
+    
+    
     Mutex lock;
 
     TraceLoggerThreadState()
@@ -410,12 +433,19 @@ class TraceLoggerThreadState
         graphFileEnabled(false),
         spewErrors(false),
         nextTextId(TraceLogger_Last),
+        nextDictionaryId(0),
         startupTime(0),
         lock(js::mutexid::TraceLoggerThreadState)
     { }
 
     bool init();
     ~TraceLoggerThreadState();
+
+    void enableDefaultLogging();
+    void enableIonLogging();
+    void enableFrontendLogging();
+
+    void clear();
 
     TraceLoggerThread* forCurrentThread(JSContext* cx);
     void destroyLogger(TraceLoggerThread* logger);
@@ -435,6 +465,7 @@ class TraceLoggerThreadState
     }
 
     const char* maybeEventText(uint32_t id);
+    const char* maybeEventText(TraceLoggerEventPayload *p);
 
     void purgeUnusedPayloads();
 
@@ -444,20 +475,26 @@ class TraceLoggerThreadState
     
     TraceLoggerEventPayload* getOrCreateEventPayload(const char* text);
     TraceLoggerEventPayload* getOrCreateEventPayload(JSScript* script);
-    TraceLoggerEventPayload* getOrCreateEventPayload(const char* filename, uint32_t lineno,
-                                                     uint32_t colno, const void* p);
+    TraceLoggerEventPayload* getOrCreateEventPayload(const char* filename,
+                                                     uint32_t lineno, uint32_t colno);
+    TraceLoggerEventPayload* getPayload (uint32_t id);
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
         return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
     }
 
-    bool IsGraphFileEnabled()  { return graphFileEnabled; }
-    bool IsGraphEnabled()      { return graphEnabled;  }
+    bool isGraphFileEnabled()  { return graphFileEnabled; }
+    bool isGraphEnabled()      { return graphEnabled;  }
+
+    void enableTextIdsForProfiler();
+    void disableTextIdsForProfiler();
+    void disableAllTextIds();
 #endif
 };
 
 #ifdef JS_TRACE_LOGGING
+void ResetTraceLogger();
 void DestroyTraceLoggerThreadState();
 void DestroyTraceLogger(TraceLoggerThread* logger);
 
