@@ -106,12 +106,6 @@ AccessCheck::isChrome(JSObject* obj)
     return isChrome(js::GetObjectCompartment(obj));
 }
 
-nsIPrincipal*
-AccessCheck::getPrincipal(JS::Compartment* compartment)
-{
-    return GetCompartmentPrincipal(compartment);
-}
-
 
 static bool
 IsPermitted(CrossOriginObjectType type, JSFlatString* prop, bool set)
