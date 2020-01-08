@@ -110,18 +110,6 @@ class TreeMetadataEmitter(LoggingMixin):
         self.populate_logger()
 
         self.config = config
-
-        mozinfo.find_and_update_from_json(config.topobjdir)
-
-        
-        
-        
-        self.info = {}
-        for k, v in mozinfo.info.items():
-            if isinstance(k, unicode):
-                k = k.encode('ascii')
-            self.info[k] = v
-
         self._libs = OrderedDefaultDict(list)
         self._binaries = OrderedDict()
         self._compile_dirs = set()
