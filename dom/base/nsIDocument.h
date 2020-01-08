@@ -2800,8 +2800,9 @@ public:
 
 
 
-  virtual DocumentTheme GetDocumentLWTheme() { return Doc_Theme_None; }
-  virtual DocumentTheme ThreadSafeGetDocumentLWTheme() const { return Doc_Theme_None; }
+  DocumentTheme GetDocumentLWTheme();
+  DocumentTheme ThreadSafeGetDocumentLWTheme() const;
+  void ResetDocumentLWTheme() { mDocLWTheme = Doc_Theme_Uninitialized; }
 
   
   enum class MediaDocumentKind
@@ -4539,6 +4540,10 @@ protected:
   
   uint32_t mNumTrackersFound;
   uint32_t mNumTrackersBlocked;
+
+  
+  
+  DocumentTheme                         mDocLWTheme;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)

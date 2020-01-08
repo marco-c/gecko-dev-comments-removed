@@ -868,10 +868,8 @@ nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                 } else if (aName == nsGkAtoms::lwtheme ||
                          aName == nsGkAtoms::lwthemetextcolor) {
                     
-                    if (document->IsXULDocument()) {
-                        document->AsXULDocument()->ResetDocumentLWTheme();
-                        UpdateBrightTitlebarForeground(document);
-                    }
+                    document->ResetDocumentLWTheme();
+                    UpdateBrightTitlebarForeground(document);
                 } else if (aName == nsGkAtoms::brighttitlebarforeground) {
                     UpdateBrightTitlebarForeground(document);
                 }
@@ -895,10 +893,8 @@ nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                 } else if ((aName == nsGkAtoms::lwtheme ||
                             aName == nsGkAtoms::lwthemetextcolor)) {
                     
-                    if (doc->IsXULDocument()) {
-                        doc->AsXULDocument()->ResetDocumentLWTheme();
-                        UpdateBrightTitlebarForeground(doc);
-                    }
+                    doc->ResetDocumentLWTheme();
+                    UpdateBrightTitlebarForeground(doc);
                 } else if (aName == nsGkAtoms::brighttitlebarforeground) {
                     UpdateBrightTitlebarForeground(doc);
                 } else if (aName == nsGkAtoms::drawintitlebar) {
