@@ -472,8 +472,7 @@ MessageManagerTunnel.prototype = {
     
     
     const docShell = this.outer[FRAME_LOADER].docShell;
-    return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIContentFrameMessageManager);
+    return docShell.messageManager;
   },
 
   get inner() {

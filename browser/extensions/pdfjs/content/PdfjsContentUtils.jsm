@@ -72,9 +72,7 @@ var PdfjsContentUtils = {
 
   displayWarning(aWindow, aMessage, aLabel, aAccessKey) {
     
-    let winmm = aWindow.docShell
-                       .QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIContentFrameMessageManager);
+    let winmm = aWindow.docShell.messageManager;
     winmm.sendAsyncMessage("PDFJS:Parent:displayWarning", {
       message: aMessage,
       label: aLabel,

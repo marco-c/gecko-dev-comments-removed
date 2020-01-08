@@ -359,8 +359,7 @@ function openTabPrompt(domWin, tabPrompt, args) {
     let winUtils = domWin.windowUtils;
     winUtils.enterModalState();
 
-    let frameMM = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIContentFrameMessageManager);
+    let frameMM = docShell.messageManager;
 
     
     
@@ -443,7 +442,7 @@ function openRemotePrompt(domWin, args, tabPrompt) {
     winUtils.enterModalState();
     let closed = false;
 
-    let frameMM = docShell.getInterface(Ci.nsIContentFrameMessageManager);
+    let frameMM = docShell.messageManager;
 
     
     

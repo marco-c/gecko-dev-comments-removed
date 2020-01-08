@@ -306,9 +306,8 @@ var E10SUtils = {
 
   redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aFreshProcess, aFlags) {
     
-    let messageManager = aDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                  .getInterface(Ci.nsIContentFrameMessageManager);
-    let sessionHistory = aDocShell.getInterface(Ci.nsIWebNavigation).sessionHistory;
+    let messageManager = aDocShell.messageManager;
+    let sessionHistory = aDocShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
 
     messageManager.sendAsyncMessage("Browser:LoadURI", {
       loadOptions: {

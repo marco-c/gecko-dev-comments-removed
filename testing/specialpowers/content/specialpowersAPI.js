@@ -1754,14 +1754,14 @@ SpecialPowersAPI.prototype = {
       aWindow.focus();
     var mm = global;
     if (aWindow) {
-      try {
-        mm = aWindow.docShell
-                    .QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIContentFrameMessageManager);
-      } catch (ex) {
-        
-
+      let windowMM = aWindow.docShell.messageManager;
+      if (windowMM) {
+        mm = windowMM;
       }
+      
+
+
+
     }
     mm.sendAsyncMessage("SpecialPowers.Focus", {});
   },

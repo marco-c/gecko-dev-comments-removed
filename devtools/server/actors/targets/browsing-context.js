@@ -314,13 +314,7 @@ const browsingContextTargetPrototype = {
 
 
   get messageManager() {
-    try {
-      return this.docShell
-        .QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIContentFrameMessageManager);
-    } catch (e) {
-      return null;
-    }
+    return this.docShell.messageManager;
   },
 
   
