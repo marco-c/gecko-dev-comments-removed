@@ -824,9 +824,6 @@ impl Stylist {
     
     
     
-    
-    
-    
     pub fn cascade_style_and_visited<E>(
         &self,
         element: Option<E>,
