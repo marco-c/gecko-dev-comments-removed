@@ -6,10 +6,10 @@
 """output formats for Talos"""
 from __future__ import absolute_import
 
-import filter
+from talos import filter
 
 import simplejson as json
-import utils
+from talos import utils
 from mozlog import get_proxy_logger
 
 LOG = get_proxy_logger()
