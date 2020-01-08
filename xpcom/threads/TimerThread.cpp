@@ -715,6 +715,16 @@ already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
   
   
 
+#ifdef MOZ_TASK_TRACER
+  
+  
+  
+  AutoSaveCurTraceInfo saveCurTraceInfo;
+  (timer->GetTracedTask()).SetTLSTraceInfo();
+#endif
+
+  nsCOMPtr<nsIEventTarget> target = timer->mEventTarget;
+
   void* p = nsTimerEvent::operator new(sizeof(nsTimerEvent));
   if (!p) {
     return timer.forget();
@@ -725,15 +735,6 @@ already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
     event->mInitTime = TimeStamp::Now();
   }
 
-#ifdef MOZ_TASK_TRACER
-  
-  
-  
-  AutoSaveCurTraceInfo saveCurTraceInfo;
-  (timer->GetTracedTask()).SetTLSTraceInfo();
-#endif
-
-  nsCOMPtr<nsIEventTarget> target = timer->mEventTarget;
   event->SetTimer(timer.forget());
 
   nsresult rv;
