@@ -70,6 +70,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
   UrlbarInput: "resource:///modules/UrlbarInput.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
   UrlbarValueFormatter: "resource:///modules/UrlbarValueFormatter.jsm",
   Utils: "resource://gre/modules/sessionstore/Utils.jsm",
   Weave: "resource://services-sync/main.js",
@@ -2465,80 +2466,6 @@ function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-async function getShortcutOrURIAndPostData(url) {
-  let mayInheritPrincipal = false;
-  let postData = null;
-  
-  let [keyword, param = ""] = url.trim().split(/\s(.+)/, 2);
-
-  if (!keyword) {
-    return { url, postData, mayInheritPrincipal };
-  }
-
-  let engine = Services.search.getEngineByAlias(keyword);
-  if (engine) {
-    let submission = engine.getSubmission(param, null, "keyword");
-    return { url: submission.uri.spec,
-             postData: submission.postData,
-             mayInheritPrincipal };
-  }
-
-  
-  
-  let entry = null;
-  try {
-    entry = await PlacesUtils.keywords.fetch(keyword);
-  } catch (ex) {
-    Cu.reportError(`Unable to fetch Places keyword "${keyword}": ${ex}`);
-  }
-  if (!entry || !entry.url) {
-    
-    return { url, postData, mayInheritPrincipal };
-  }
-
-  try {
-    [url, postData] =
-      await BrowserUtils.parseUrlAndPostData(entry.url.href,
-                                             entry.postData,
-                                             param);
-    if (postData) {
-      postData = getPostDataStream(postData);
-    }
-
-    
-    
-    mayInheritPrincipal = true;
-  } catch (ex) {
-    
-  }
-
-  return { url, postData, mayInheritPrincipal };
-}
-
-function getPostDataStream(aPostDataString,
-                           aType = "application/x-www-form-urlencoded") {
-  let dataStream = Cc["@mozilla.org/io/string-input-stream;1"]
-                     .createInstance(Ci.nsIStringInputStream);
-  dataStream.data = aPostDataString;
-
-  let mimeStream = Cc["@mozilla.org/network/mime-input-stream;1"]
-                     .createInstance(Ci.nsIMIMEInputStream);
-  mimeStream.addHeader("Content-Type", aType);
-  mimeStream.setData(dataStream);
-  return mimeStream.QueryInterface(Ci.nsIInputStream);
-}
-
 function getLoadContext() {
   return window.docShell.QueryInterface(Ci.nsILoadContext);
 }
@@ -3703,7 +3630,7 @@ var newTabButtonObserver = {
 
     for (let link of links) {
       if (link.url) {
-        let data = await getShortcutOrURIAndPostData(link.url);
+        let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
         
         openNewTabWith(data.url, shiftKey, {
           
@@ -3738,7 +3665,7 @@ var newWindowButtonObserver = {
 
     for (let link of links) {
       if (link.url) {
-        let data = await getShortcutOrURIAndPostData(link.url);
+        let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
         
         openNewWindowWith(data.url, {
           
@@ -4383,14 +4310,6 @@ function FillHistoryMenu(aParent) {
 
   updateSessionHistory(sessionHistory, true);
   return true;
-}
-
-function addToUrlbarHistory(aUrlToAdd) {
-  if (!PrivateBrowsingUtils.isWindowPrivate(window) &&
-      aUrlToAdd &&
-      !aUrlToAdd.includes(" ") &&
-      !/[\x00-\x1F]/.test(aUrlToAdd)) 
-    PlacesUIUtils.markPageAsTyped(aUrlToAdd);
 }
 
 function BrowserDownloadsUI() {
@@ -6240,7 +6159,7 @@ function middleMousePaste(event) {
     lastLocationChange = gBrowser.selectedBrowser.lastLocationChange;
   }
 
-  getShortcutOrURIAndPostData(clipboard).then(data => {
+  UrlbarUtils.getShortcutOrURIAndPostData(clipboard).then(data => {
     try {
       makeURI(data.url);
     } catch (ex) {
@@ -6249,7 +6168,7 @@ function middleMousePaste(event) {
     }
 
     try {
-      addToUrlbarHistory(data.url);
+      UrlbarUtils.addToUrlbarHistory(data.url, window);
     } catch (ex) {
       
       
@@ -6326,7 +6245,7 @@ function handleDroppedLink(event, urlOrLinks, nameOrTriggeringPrincipal, trigger
     let urls = [];
     let postDatas = [];
     for (let link of links) {
-      let data = await getShortcutOrURIAndPostData(link.url);
+      let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
       urls.push(data.url);
       postDatas.push(data.postData);
     }

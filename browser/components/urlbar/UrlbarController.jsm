@@ -177,8 +177,6 @@ class UrlbarController {
       
       
       
-      
-      
       return;
     }
 
@@ -308,8 +306,7 @@ class UrlbarController {
       browser.initialPageLoadedFromURLBar = url;
     }
     try {
-      
-      this.window.addToUrlbarHistory(url);
+      UrlbarUtils.addToUrlbarHistory(url);
     } catch (ex) {
       
       

@@ -170,16 +170,30 @@ var gReplacedMethods = [
 ];
 
 
+function getStub(replacedMethod) {
+  let targetObj = replacedMethod == "getShortcutOrURIAndPostData" ? UrlbarUtils : gTestWin;
+  return targetObj[replacedMethod];
+}
+
+
 var gTestWin = null;
-
-
-var gInvokedMethods = [];
 
 
 var gCurrentTest = null;
 
+var sandbox;
+
 function test() {
   waitForExplicitFinish();
+
+  
+  Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
+  sandbox = sinon.sandbox.create();
+
+  registerCleanupFunction(function() {
+    sandbox.restore();
+    delete window.sinon;
+  });
 
   gTestWin = openDialog(location, "", "chrome,all,dialog=no", "about:blank");
   whenDelayedStartupFinished(gTestWin, function() {
@@ -210,14 +224,16 @@ var gClickHandler = {
        gCurrentTest.desc + ": event.defaultPrevented is correct (" + prevent + ")");
 
     
-    gCurrentTest.expectedInvokedMethods.forEach(function(aExpectedMethodName) {
-      isnot(gInvokedMethods.indexOf(aExpectedMethodName), -1,
-            gCurrentTest.desc + ":" + aExpectedMethodName + " was invoked");
-    });
+    for (let expectedMethod of gCurrentTest.expectedInvokedMethods) {
+      ok(getStub(expectedMethod).called,
+        `${gCurrentTest.desc}:${expectedMethod} should have been invoked`);
+    }
 
-    if (gInvokedMethods.length != gCurrentTest.expectedInvokedMethods.length) {
-      ok(false, "Wrong number of invoked methods");
-      gInvokedMethods.forEach(method => info(method + " was invoked"));
+    for (let method of gReplacedMethods) {
+      if (getStub(method).called &&
+          !gCurrentTest.expectedInvokedMethods.includes(method)) {
+        ok(false, `Should have not called ${method}`);
+      }
     }
 
     event.preventDefault();
@@ -227,23 +243,14 @@ var gClickHandler = {
   },
 };
 
-
-function wrapperMethod(aInvokedMethods, aMethodName) {
-  return function() {
-    aInvokedMethods.push(aMethodName);
-    
-    return (aMethodName == "getShortcutOrURIAndPostData") ? arguments.url : arguments[0];
-  };
-}
-
 function setupTestBrowserWindow() {
   
   gTestWin.addEventListener("click", gClickHandler, true);
 
   
-  gReplacedMethods.forEach(function(aMethodName) {
-    gTestWin["old_" + aMethodName] = gTestWin[aMethodName];
-    gTestWin[aMethodName] = wrapperMethod(gInvokedMethods, aMethodName);
+  gReplacedMethods.forEach(function(methodName) {
+    let targetObj = methodName == "getShortcutOrURIAndPostData" ? UrlbarUtils : gTestWin;
+    sandbox.stub(targetObj, methodName).returnsArg(0);
   });
 
   
@@ -279,7 +286,7 @@ function runNextTest() {
   }
 
   
-  gInvokedMethods.length = 0;
+  sandbox.resetHistory();
   let target = gCurrentTest.targets.shift();
 
   info(gCurrentTest.desc + ": testing " + target);
@@ -293,13 +300,6 @@ function runNextTest() {
 function finishTest() {
   info("Restoring browser...");
   gTestWin.removeEventListener("click", gClickHandler, true);
-
-  
-  gReplacedMethods.forEach(function(aMethodName) {
-    gTestWin[aMethodName] = gTestWin["old_" + aMethodName];
-    delete gTestWin["old_" + aMethodName];
-  });
-
   gTestWin.close();
   finish();
 }
