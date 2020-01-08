@@ -171,7 +171,7 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
   for (let device of aDevices) {
     device = device.QueryInterface(Ci.nsIMediaDevice);
     switch (device.type) {
-      case "audioinput":
+      case "audio":
         
         
         
@@ -181,7 +181,7 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
           devices.push(device);
         }
         break;
-      case "videoinput":
+      case "video":
         
         
         if (video && (device.mediaSource == "camera") != sharingScreen) {

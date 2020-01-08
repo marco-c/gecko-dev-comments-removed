@@ -603,10 +603,6 @@ pref("media.cubeb.sandbox", false);
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
 
 
-
-pref("media.setsinkid.enabled", false);
-
-
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
