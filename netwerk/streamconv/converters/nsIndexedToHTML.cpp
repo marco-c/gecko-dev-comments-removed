@@ -687,7 +687,7 @@ nsIndexedToHTML::OnIndexAvailable(nsIRequest *aRequest,
     
     
     nsCString loc;
-    aIndex->GetLocation(getter_Copies(loc));
+    aIndex->GetLocation(loc);
 
     
     loc.Truncate(nsUnescapeCount(loc.BeginWriting()));
