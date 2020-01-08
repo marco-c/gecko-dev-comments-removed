@@ -8,6 +8,9 @@
 
 
 
+
+
+
 const TEST_URI = URL_ROOT + "doc_browser_fontinspector.html";
 
 add_task(async function() {
@@ -35,7 +38,8 @@ add_task(async function() {
   allFontsEls = getAllFontsEls(viewDoc);
 
   for (const otherFontEl of allFontsEls) {
-    ok(![...getUsedFontsEls(viewDoc)].some(el => getName(el) === getName(otherFontEl)),
+    ok(![...getUsedFontsEls_obsolete(viewDoc)].some(el =>
+      getName(el) === getName(otherFontEl)),
        "Other font isn't listed in the main fonts section");
   }
 });

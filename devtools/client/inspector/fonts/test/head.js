@@ -104,8 +104,32 @@ async function updatePreviewText(view, text) {
 
 
 
-function getUsedFontsEls(viewDoc) {
+
+
+
+
+function getUsedFontsEls_obsolete(viewDoc) {
   return viewDoc.querySelectorAll("#font-editor .fonts-list li");
+}
+
+
+
+
+
+
+
+function getUsedFontsEls(viewDoc) {
+  return viewDoc.querySelectorAll("#font-editor .font-control-used-fonts .font-name");
+}
+
+
+
+
+
+
+
+function getUsedFontGroupsEls(viewDoc) {
+  return viewDoc.querySelectorAll("#font-editor .font-control-used-fonts .font-group");
 }
 
 
