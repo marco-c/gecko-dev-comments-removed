@@ -193,7 +193,7 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
       mFocusTextColor(mDefaultColor),
       mBodyTextColor(mDefaultColor),
       mViewportScrollOverrideElement(nullptr),
-      mViewportScrollStyles(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO),
+      mViewportScrollStyles(StyleOverflow::Auto, StyleOverflow::Auto),
       mFocusRingWidth(1),
       mExistThrottledUpdates(false),
       
@@ -1240,7 +1240,7 @@ gfxSize nsPresContext::ScreenSizeInchesForFontInflation(bool* aChanged) {
 
 static bool CheckOverflow(const nsStyleDisplay* aDisplay,
                           ScrollStyles* aStyles) {
-  if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE &&
+  if (aDisplay->mOverflowX == StyleOverflow::Visible &&
       aDisplay->mScrollBehavior == NS_STYLE_SCROLL_BEHAVIOR_AUTO &&
       aDisplay->mOverscrollBehaviorX == StyleOverscrollBehavior::Auto &&
       aDisplay->mOverscrollBehaviorY == StyleOverscrollBehavior::Auto &&
@@ -1255,9 +1255,9 @@ static bool CheckOverflow(const nsStyleDisplay* aDisplay,
     return false;
   }
 
-  if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_CLIP) {
-    *aStyles = ScrollStyles(NS_STYLE_OVERFLOW_HIDDEN, NS_STYLE_OVERFLOW_HIDDEN,
-                            aDisplay);
+  if (aDisplay->mOverflowX == StyleOverflow::MozHiddenUnscrollable) {
+    *aStyles =
+        ScrollStyles(StyleOverflow::Hidden, StyleOverflow::Hidden, aDisplay);
   } else {
     *aStyles = ScrollStyles(aDisplay);
   }
@@ -1315,7 +1315,7 @@ static Element* GetPropagatedScrollStylesForViewport(
 Element* nsPresContext::UpdateViewportScrollStylesOverride() {
   
   mViewportScrollStyles =
-      ScrollStyles(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
+      ScrollStyles(StyleOverflow::Auto, StyleOverflow::Auto);
   mViewportScrollOverrideElement = nullptr;
   
   if (!IsPaginated()) {
@@ -1333,7 +1333,7 @@ Element* nsPresContext::UpdateViewportScrollStylesOverride() {
     if (fullscreenElement != document->GetRootElement() &&
         fullscreenElement != mViewportScrollOverrideElement) {
       mViewportScrollStyles =
-          ScrollStyles(NS_STYLE_OVERFLOW_HIDDEN, NS_STYLE_OVERFLOW_HIDDEN);
+          ScrollStyles(StyleOverflow::Hidden, StyleOverflow::Hidden);
     }
   }
   return mViewportScrollOverrideElement;
@@ -1351,7 +1351,7 @@ bool nsPresContext::ElementWouldPropagateScrollStyles(const Element& aElement) {
   
   
   
-  ScrollStyles dummy(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
+  ScrollStyles dummy(StyleOverflow::Auto, StyleOverflow::Auto);
   return GetPropagatedScrollStylesForViewport(this, &dummy) == &aElement;
 }
 

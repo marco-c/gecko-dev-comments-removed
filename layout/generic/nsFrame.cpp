@@ -8895,8 +8895,8 @@ bool nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   
   
   
-  NS_ASSERTION((disp->mOverflowY == NS_STYLE_OVERFLOW_CLIP) ==
-                   (disp->mOverflowX == NS_STYLE_OVERFLOW_CLIP),
+  NS_ASSERTION((disp->mOverflowY == StyleOverflow::MozHiddenUnscrollable) ==
+                   (disp->mOverflowX == StyleOverflow::MozHiddenUnscrollable),
                "If one overflow is clip, the other should be too");
   if (applyOverflowClipping) {
     

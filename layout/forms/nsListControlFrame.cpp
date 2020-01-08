@@ -602,12 +602,11 @@ void nsListControlFrame::ReflowAsDropdown(nsPresContext* aPresContext,
 ScrollStyles nsListControlFrame::GetScrollStyles() const {
   
   
-  int32_t style =
-      IsInDropDownMode() ? NS_STYLE_OVERFLOW_AUTO : NS_STYLE_OVERFLOW_SCROLL;
+  auto style = IsInDropDownMode() ? StyleOverflow::Auto : StyleOverflow::Scroll;
   if (GetWritingMode().IsVertical()) {
-    return ScrollStyles(style, NS_STYLE_OVERFLOW_HIDDEN);
+    return ScrollStyles(style, StyleOverflow::Hidden);
   } else {
-    return ScrollStyles(NS_STYLE_OVERFLOW_HIDDEN, style);
+    return ScrollStyles(StyleOverflow::Hidden, style);
   }
 }
 

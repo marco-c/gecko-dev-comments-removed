@@ -588,7 +588,8 @@ class nsFrame : public nsBox {
                                           const nsStyleDisplay* aDisp) {
     
     
-    if (MOZ_UNLIKELY(aDisp->mOverflowX == NS_STYLE_OVERFLOW_CLIP &&
+    if (MOZ_UNLIKELY(aDisp->mOverflowX ==
+                         mozilla::StyleOverflow::MozHiddenUnscrollable &&
                      !aFrame->IsListControlFrame())) {
       return true;
     }
@@ -603,8 +604,8 @@ class nsFrame : public nsBox {
     }
 
     
-    if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN &&
-        aDisp->mOverflowY == NS_STYLE_OVERFLOW_HIDDEN) {
+    if (aDisp->mOverflowX == mozilla::StyleOverflow::Hidden &&
+        aDisp->mOverflowY == mozilla::StyleOverflow::Hidden) {
       
       mozilla::LayoutFrameType type = aFrame->Type();
       if (type == mozilla::LayoutFrameType::Table ||

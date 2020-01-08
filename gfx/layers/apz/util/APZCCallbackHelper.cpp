@@ -121,7 +121,7 @@ static CSSPoint ScrollFrameTo(nsIScrollableFrame* aFrame,
   
   
   
-  if (aFrame->GetScrollStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
+  if (aFrame->GetScrollStyles().mVertical == StyleOverflow::Hidden &&
       targetScrollPosition.y != geckoScrollPosition.y) {
     NS_WARNING(
         nsPrintfCString(
@@ -129,7 +129,7 @@ static CSSPoint ScrollFrameTo(nsIScrollableFrame* aFrame,
             targetScrollPosition.y, geckoScrollPosition.y)
             .get());
   }
-  if (aFrame->GetScrollStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
+  if (aFrame->GetScrollStyles().mHorizontal == StyleOverflow::Hidden &&
       targetScrollPosition.x != geckoScrollPosition.x) {
     NS_WARNING(
         nsPrintfCString(

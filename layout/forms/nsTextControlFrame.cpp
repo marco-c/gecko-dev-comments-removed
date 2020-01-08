@@ -446,8 +446,8 @@ nsresult nsTextControlFrame::CreateRootNode() {
     
     
     const nsStyleDisplay* disp = StyleDisplay();
-    if (disp->mOverflowX != NS_STYLE_OVERFLOW_VISIBLE &&
-        disp->mOverflowX != NS_STYLE_OVERFLOW_CLIP) {
+    if (disp->mOverflowX != StyleOverflow::Visible &&
+        disp->mOverflowX != StyleOverflow::MozHiddenUnscrollable) {
       classValue.AppendLiteral(" inherit-overflow");
     }
   }
