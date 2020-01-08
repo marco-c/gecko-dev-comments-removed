@@ -133,6 +133,9 @@ struct BaseEventFlags {
   bool mOnlySystemGroupDispatchInContent : 1;
   
   
+  bool mOnlySystemGroupDispatch : 1;
+  
+  
   bool mHandledByAPZ : 1;
   
   
