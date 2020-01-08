@@ -154,11 +154,22 @@ class EngineRecord {
     
     this.startTime = tryGetMonotonicTimestamp();
     this.name = name;
+
+    
+    
+    let engineImpl = Weave.Service.engineManager.get(name);
+    if (engineImpl && engineImpl.overrideTelemetryName) {
+      this.overrideTelemetryName = engineImpl.overrideTelemetryName;
+    }
   }
 
   toJSON() {
-    let result = Object.assign({}, this);
-    delete result.startTime;
+    let result = { name: this.overrideTelemetryName || this.name };
+    let properties = ["took", "status", "failureReason", "incoming", "outgoing",
+      "validation"];
+    for (let property of properties) {
+      result[property] = this[property];
+    }
     return result;
   }
 
@@ -169,12 +180,6 @@ class EngineRecord {
     }
     if (error) {
       this.failureReason = SyncTelemetry.transformError(error);
-    }
-    
-    
-    let engineImpl = Weave.Service.engineManager.get(this.name);
-    if (engineImpl && engineImpl.overrideTelemetryName) {
-      this.name = engineImpl.overrideTelemetryName;
     }
   }
 
