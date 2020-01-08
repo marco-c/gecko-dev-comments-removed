@@ -1,7 +1,12 @@
 import os
 
 config = {
+    'default_actions': [
+        'clobber',
+        'build',
+    ],
     'stage_platform': 'linux64-tup-opt',
+    'enable_talos_sendchange': False,
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),
         'DISPLAY': ':2',
@@ -20,6 +25,7 @@ config = {
         
         'SCCACHE_DISABLE': '1',
     },
+    'mozconfig_variant': 'tup',
     'disable_package_metrics': True, 
     'artifact_flag_build_variant_in_try': None,
 }
