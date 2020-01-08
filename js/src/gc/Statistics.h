@@ -312,7 +312,8 @@ struct Statistics
     
     EnumeratedArray<Stat,
                     STAT_LIMIT,
-                    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire>> counts;
+                    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                                    mozilla::recordreplay::Behavior::DontPreserve>> counts;
 
     
     size_t preBytes;

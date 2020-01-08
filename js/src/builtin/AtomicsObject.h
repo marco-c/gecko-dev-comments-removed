@@ -137,7 +137,8 @@ public:
     
     
     
-    static mozilla::Atomic<js::Mutex*> lock_;
+    static mozilla::Atomic<js::Mutex*, mozilla::SequentiallyConsistent,
+                           mozilla::recordreplay::Behavior::DontPreserve> lock_;
 
     
     ThreadData<bool> canWait_;

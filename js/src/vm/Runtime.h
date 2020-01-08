@@ -345,7 +345,8 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::UnprotectedData<JS::ReadableStreamFinalizeCallback> readableStreamFinalizeCallback;
 
     
-    mozilla::Atomic<bool> hadOutOfMemory;
+    mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> hadOutOfMemory;
 
     
 
@@ -472,7 +473,8 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 #endif
 
     
-    mozilla::Atomic<size_t> numActiveHelperThreadZones;
+    mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> numActiveHelperThreadZones;
 
     
     mozilla::Atomic<JS::HeapState> heapState_;
@@ -844,8 +846,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
   private:
     
-    mozilla::Atomic<bool> offthreadIonCompilationEnabled_;
-    mozilla::Atomic<bool> parallelParsingEnabled_;
+    mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> offthreadIonCompilationEnabled_;
+    mozilla::Atomic<bool, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> parallelParsingEnabled_;
 
     mozilla::Atomic<uint32_t> offThreadParsesRunning_;
 #ifdef DEBUG

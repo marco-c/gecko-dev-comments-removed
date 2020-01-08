@@ -154,7 +154,9 @@ class JitRuntime
     
     
     
-    mozilla::Atomic<size_t> numFinishedBuilders_;
+    typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
+                            mozilla::recordreplay::Behavior::DontPreserve> NumFinishedBuildersType;
+    NumFinishedBuildersType numFinishedBuilders_;
 
     
     using IonBuilderList = mozilla::LinkedList<js::jit::IonBuilder>;
@@ -315,7 +317,7 @@ class JitRuntime
     size_t numFinishedBuilders() const {
         return numFinishedBuilders_;
     }
-    mozilla::Atomic<size_t>& numFinishedBuildersRef(const AutoLockHelperThreadState& locked) {
+    NumFinishedBuildersType& numFinishedBuildersRef(const AutoLockHelperThreadState& locked) {
         return numFinishedBuilders_;
     }
 

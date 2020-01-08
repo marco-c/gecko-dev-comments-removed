@@ -393,7 +393,8 @@ class ScriptSource
     };
 
   private:
-    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refs;
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> refs;
 
     
     

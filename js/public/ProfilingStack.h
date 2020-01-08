@@ -132,21 +132,26 @@ class ProfilingStackFrame
 
     
     
-    mozilla::Atomic<const char*, mozilla::ReleaseAcquire> label_;
+    mozilla::Atomic<const char*, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> label_;
 
     
     
     
-    mozilla::Atomic<const char*, mozilla::ReleaseAcquire> dynamicString_;
+    mozilla::Atomic<const char*, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> dynamicString_;
 
     
-    mozilla::Atomic<void*, mozilla::ReleaseAcquire> spOrScript;
+    mozilla::Atomic<void*, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> spOrScript;
 
     
-    mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> lineOrPcOffset;
+    mozilla::Atomic<int32_t, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> lineOrPcOffset;
 
     
-    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> kindAndCategory_;
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> kindAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
@@ -431,7 +436,8 @@ class ProfilingStack final
     
     
     
-    mozilla::Atomic<js::ProfilingStackFrame*> frames { nullptr };
+    mozilla::Atomic<js::ProfilingStackFrame*, mozilla::SequentiallyConsistent,
+                    mozilla::recordreplay::Behavior::DontPreserve> frames { nullptr };
 
     
     
@@ -444,7 +450,8 @@ class ProfilingStack final
     
     
     
-    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> stackPointer;
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                    mozilla::recordreplay::Behavior::DontPreserve> stackPointer;
 };
 
 namespace js {
