@@ -50,6 +50,15 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+inline nsresult
+SetEditorFlagsIfNecessary(EditorBase& aEditorBase, uint32_t aFlags)
+{
+  if (aEditorBase.Flags() == aFlags) {
+    return NS_OK;
+  }
+  return aEditorBase.SetFlags(aFlags);
+}
+
 class MOZ_STACK_CLASS ValueSetter
 {
 public:
@@ -139,19 +148,24 @@ public:
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(mTextEditor);
 
+    
+    
+    
+    
     uint32_t flags = mSavedFlags;
     flags &= ~(nsIPlaintextEditor::eEditorDisabledMask);
     flags &= ~(nsIPlaintextEditor::eEditorReadonlyMask);
     flags |= nsIPlaintextEditor::eEditorDontEchoPassword;
-    mTextEditor->SetFlags(flags);
-
+    if (mSavedFlags != flags) {
+      mTextEditor->SetFlags(flags);
+    }
     mTextEditor->SetMaxTextLength(-1);
   }
 
   ~AutoRestoreEditorState()
   {
      mTextEditor->SetMaxTextLength(mSavedMaxLength);
-     mTextEditor->SetFlags(mSavedFlags);
+     SetEditorFlagsIfNecessary(*mTextEditor, mSavedFlags);
   }
 
 private:
@@ -1482,7 +1496,7 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
       mSelCon->SetDisplaySelection(nsISelectionController::SELECTION_OFF);
     }
 
-    newTextEditor->SetFlags(editorFlags);
+    SetEditorFlagsIfNecessary(*newTextEditor, editorFlags);
   }
 
   if (shouldInitializeEditor) {
@@ -1496,8 +1510,10 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   
 
   if (!defaultValue.IsEmpty()) {
-    rv = newTextEditor->SetFlags(editorFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = SetEditorFlagsIfNecessary(*newTextEditor, editorFlags);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     
     
@@ -1509,8 +1525,10 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     NS_ENSURE_TRUE(success, NS_ERROR_OUT_OF_MEMORY);
 
     
-    rv = newTextEditor->SetFlags(editorFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = SetEditorFlagsIfNecessary(*newTextEditor, editorFlags);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   if (IsPasswordTextControl()) {
