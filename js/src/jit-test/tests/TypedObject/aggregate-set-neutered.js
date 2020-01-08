@@ -1,9 +1,6 @@
 
 
 
-if (typeof TypedObject === "undefined")
-  quit();
-
 load(libdir + "asserts.js")
 
 var StructType = TypedObject.StructType;

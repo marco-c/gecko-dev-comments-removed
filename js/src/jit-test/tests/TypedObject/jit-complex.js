@@ -1,9 +1,6 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
-
 setJitCompilerOption("ion.warmup.trigger", 30);
 
 var PointType = new TypedObject.StructType({x: TypedObject.float64,

@@ -3,9 +3,6 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
-
 
 
 

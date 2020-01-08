@@ -3,9 +3,6 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
-
 
 
 var A = TypedObject.uint8.array(0);

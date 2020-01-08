@@ -3,9 +3,6 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
-
 var T = TypedObject;
 var PointType = T.uint16.array(3);
 var VecPointType = PointType.array(3);

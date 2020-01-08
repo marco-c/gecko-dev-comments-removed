@@ -1,8 +1,4 @@
 
-if (typeof TypedObject === "undefined")
-    quit();
-
-
 
 var TO = TypedObject;
 

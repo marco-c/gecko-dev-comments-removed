@@ -1,5 +1,3 @@
-if (typeof TypedObject === "undefined" || typeof Intl === "undefined")
-    quit();
 
 try {
     gczeal(4)

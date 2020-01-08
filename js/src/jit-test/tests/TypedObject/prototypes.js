@@ -2,9 +2,6 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
-
 load(libdir + "asserts.js");
 
 var {StructType, uint32, Object, Any, objectType} = TypedObject;

@@ -1,8 +1,5 @@
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  throw new TypeError();
-
 
 
 

@@ -3,9 +3,6 @@
 
 
 
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
-
 setJitCompilerOption("ion.warmup.trigger", 30);
 
 var PointType = TypedObject.uint32.array(3);

@@ -1,8 +1,4 @@
 
-if (typeof TypedObject === "undefined")
-    quit();
-
-
 
 var arrA = new TypedObject.ArrayType(TypedObject.int32, 10);
 var arrB = new TypedObject.ArrayType(TypedObject.int32, 20);

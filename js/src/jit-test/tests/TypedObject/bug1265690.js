@@ -1,5 +1,4 @@
-if (!('oomTest' in this) || !this.hasOwnProperty("TypedObject"))
-    quit();
+
 lfCodeBuffer = `
     ArrayType = TypedObject.ArrayType;
     var StructType = TypedObject.StructType;
