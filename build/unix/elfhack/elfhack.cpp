@@ -1095,10 +1095,10 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     ElfSection* eh_frame_hdr = eh_frame_segment ? eh_frame_segment->getFirstSection() : nullptr;
     
     ElfSection* eh_frame = eh_frame_hdr ? eh_frame_hdr->getNext() : nullptr;
-    if (eh_frame_hdr && (!eh_frame || strcmp(eh_frame->getName(), ".eh_frame"))) {
+    if (eh_frame_hdr && !eh_frame) {
         throw std::runtime_error("Expected to find an .eh_frame section after .eh_frame_hdr");
     }
-    if (eh_frame && eh_frame_hdr->getAddr() > relhack->getAddr() && eh_frame->getAddr() < relhackcode->getAddr()) {
+    if (eh_frame && strcmp(eh_frame->getName(), ".eh_frame") == 0) {
         
         
         
