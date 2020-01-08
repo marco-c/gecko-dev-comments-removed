@@ -13,8 +13,6 @@ const DISABLE_AUTOHIDE_PREF = "ui.popup.disable_autohide";
 const HOST_HISTOGRAM = "DEVTOOLS_TOOLBOX_HOST";
 const CURRENT_THEME_SCALAR = "devtools.current_theme";
 const HTML_NS = "http://www.w3.org/1999/xhtml";
-const REGEX_PANEL =
-  /^(?:webconsole|inspector|jsdebugger|styleeditor|netmonitor|storage)$/;
 
 var {Ci, Cc} = require("chrome");
 var promise = require("promise");
@@ -1929,16 +1927,17 @@ Toolbox.prototype = {
     const pending = ["host", "width", "start_state", "panel_name", "cold", "session_id"];
     if (id === "webconsole") {
       pending.push("message_count");
-
-      
-      
-      if (!cold) {
-        this.telemetry.addEventProperty(
-          "devtools.main", "enter", "webconsole", null, "message_count", 0);
-      }
     }
-    this.telemetry.preparePendingEvent(
-      "devtools.main", "enter", panelName, null, pending);
+
+    this.telemetry.preparePendingEvent("devtools.main", "enter", panelName, null, pending);
+
+    
+    
+    if (!cold && id === "webconsole") {
+      this.telemetry.addEventProperty(
+        "devtools.main", "enter", "webconsole", null, "message_count", 0);
+    }
+
     this.telemetry.addEventProperty(
       "devtools.main", "open", "tools", null, "session_id", this.sessionId
     );
@@ -2910,6 +2909,7 @@ Toolbox.prototype = {
     }
 
     this.browserRequire = null;
+    this._toolNames = null;
 
     
     
@@ -3378,7 +3378,13 @@ Toolbox.prototype = {
   },
 
   getTelemetryPanelNameOrOther: function(id) {
-    if (!REGEX_PANEL.test(id)) {
+    if (!this._toolNames) {
+      const definitions = gDevTools.getToolDefinitionArray();
+      const definitionIds = definitions.map(definition => definition.id);
+
+      this._toolNames = new Set(definitionIds);
+    }
+    if (!this._toolNames.has(id)) {
       return "other";
     }
     return id;
