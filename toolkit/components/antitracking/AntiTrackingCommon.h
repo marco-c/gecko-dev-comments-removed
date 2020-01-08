@@ -94,6 +94,9 @@ public:
   
   static void
   NotifyRejection(nsIChannel* aChannel);
+
+  static void
+  NotifyRejection(nsPIDOMWindowInner* aWindow);
 };
 
 } 
