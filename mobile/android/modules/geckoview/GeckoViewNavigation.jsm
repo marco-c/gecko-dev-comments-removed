@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 class GeckoViewNavigation extends GeckoViewModule {
   onInitBrowser() {
-    this.window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = this;
+    this.window.browserDOMWindow = this;
 
     
     
