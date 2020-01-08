@@ -121,6 +121,51 @@ JS::SetProfilingThreadCallbacks(JS::RegisterThreadCallback registerThread,
     HelperThreadState().unregisterThread = unregisterThread;
 }
 
+ void
+HelperThread::WakeupAll()
+{
+    AutoLockHelperThreadState lock;
+    HelperThreadState().notifyAll(GlobalHelperThreadState::PRODUCER, lock);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+MaybeWaitForRecordReplayCheckpointSave(AutoLockHelperThreadState& locked)
+{
+    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+        
+        
+        
+        
+        {
+            AutoUnlockHelperThreadState unlock(locked);
+            mozilla::recordreplay::MaybeWaitForCheckpointSave();
+        }
+
+        
+        JS::AutoSuppressGCAnalysis nogc;
+
+        
+        
+        mozilla::recordreplay::NotifyUnrecordedWait(HelperThread::WakeupAll);
+    }
+}
+
 bool
 js::StartOffThreadWasmCompile(wasm::CompileTask* task, wasm::CompileMode mode)
 {
@@ -186,7 +231,11 @@ CancelOffThreadWasmTier2GeneratorLocked(AutoLockHelperThreadState& lock)
             
             
             uint32_t oldFinishedCount = HelperThreadState().wasmTier2GeneratorsFinished(lock);
-            while (HelperThreadState().wasmTier2GeneratorsFinished(lock) == oldFinishedCount) {
+            while (true) {
+                MaybeWaitForRecordReplayCheckpointSave(lock);
+                if (HelperThreadState().wasmTier2GeneratorsFinished(lock) != oldFinishedCount) {
+                    break;
+                }
                 HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
             }
 
@@ -331,6 +380,7 @@ CancelOffThreadIonCompileLocked(const CompilationSelector& selector, bool discar
     
     bool cancelled;
     do {
+        MaybeWaitForRecordReplayCheckpointSave(lock);
         cancelled = false;
         for (auto& helper : *HelperThreadState().threads) {
             if (helper.ionBuilder() &&
@@ -665,6 +715,7 @@ js::CancelOffThreadParses(JSRuntime* rt)
     
     
     while (true) {
+        MaybeWaitForRecordReplayCheckpointSave(lock);
         bool pending = false;
         GlobalHelperThreadState::ParseTaskVector& worklist = HelperThreadState().parseWorklist(lock);
         for (size_t i = 0; i < worklist.length(); i++) {
@@ -1178,7 +1229,11 @@ GlobalHelperThreadState::waitForAllThreadsLocked(AutoLockHelperThreadState& lock
     CancelOffThreadIonCompileLocked(CompilationSelector(AllCompilations()), false, lock);
     CancelOffThreadWasmTier2GeneratorLocked(lock);
 
-    while (hasActiveThreads(lock)) {
+    while (true) {
+        MaybeWaitForRecordReplayCheckpointSave(lock);
+        if (!hasActiveThreads(lock)) {
+            break;
+        }
         wait(lock, CONSUMER);
     }
 }
@@ -1646,7 +1701,11 @@ js::GCParallelTask::joinWithLockHeld(AutoLockHelperThreadState& lock)
         return;
     }
 
-    while (!isFinished(lock)) {
+    while (true) {
+        MaybeWaitForRecordReplayCheckpointSave(lock);
+        if (isFinished(lock)) {
+            break;
+        }
         HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
     }
 
@@ -2350,6 +2409,8 @@ js::CancelOffThreadCompressions(JSRuntime* runtime)
     
     
     while (true) {
+        MaybeWaitForRecordReplayCheckpointSave(lock);
+
         bool inProgress = false;
         for (auto& thread : *HelperThreadState().threads) {
             SourceCompressionTask* task = thread.compressionTask();
@@ -2452,13 +2513,6 @@ GlobalHelperThreadState::trace(JSTracer* trc)
     for (auto parseTask : parseWaitingOnGC_) {
         parseTask->trace(trc);
     }
-}
-
- void
-HelperThread::WakeupAll()
-{
-    AutoLockHelperThreadState lock;
-    HelperThreadState().notifyAll(GlobalHelperThreadState::PRODUCER, lock);
 }
 
 void
@@ -2567,22 +2621,7 @@ HelperThread::threadLoop()
     while (!terminate) {
         MOZ_ASSERT(idle());
 
-        if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-            
-            
-            
-            
-            
-            {
-                AutoUnlockHelperThreadState unlock(lock);
-                mozilla::recordreplay::MaybeWaitForCheckpointSave();
-            }
-            
-            
-            
-            
-            mozilla::recordreplay::NotifyUnrecordedWait(WakeupAll);
-        }
+        MaybeWaitForRecordReplayCheckpointSave(lock);
 
         maybeFreeUnusedMemory(&cx);
 
