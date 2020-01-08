@@ -674,10 +674,21 @@ class JSTerm extends Component {
   setInputValue(newValue = "") {
     if (this.props.codeMirrorEnabled) {
       if (this.editor) {
-        this.editor.setText(newValue);
         
-        this.editor.setCursor({line: this.editor.getDoc().lineCount(), ch: 0});
-        this.editor.setAutoCompletionText();
+        
+        
+        
+        this.editor.codeMirror.operation(() => {
+          this.editor.setText(newValue);
+
+          
+          const lines = newValue.split("\n");
+          this.editor.setCursor({
+            line: lines.length - 1,
+            ch: lines[lines.length - 1].length
+          });
+          this.editor.setAutoCompletionText();
+        });
       }
     } else {
       if (!this.inputNode) {
