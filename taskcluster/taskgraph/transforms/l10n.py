@@ -72,7 +72,7 @@ l10n_description_schema = Schema({
         Optional('config-paths'): [basestring],
 
         
-        Required('options'): _by_platform([basestring]),
+        Optional('options'): _by_platform([basestring]),
 
         
         Required('actions'): _by_platform([basestring]),
