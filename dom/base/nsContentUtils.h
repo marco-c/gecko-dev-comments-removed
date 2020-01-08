@@ -2967,6 +2967,12 @@ public:
   
 
 
+
+  static bool IsTrackingResourceWindow(nsPIDOMWindowInner* aWindow);
+
+  
+
+
   static bool SerializeNodeToMarkup(nsINode* aRoot,
                                     bool aDescendentsOnly,
                                     nsAString& aOut);
