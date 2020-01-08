@@ -421,7 +421,7 @@ private:
 static void
 UpdateOldAnimationPropertiesWithNew(
     CSSAnimation& aOld,
-    TimingParams& aNewTiming,
+    TimingParams&& aNewTiming,
     nsTArray<Keyframe>&& aNewKeyframes,
     bool aNewIsStylePaused,
     ServoCSSAnimationBuilder& aBuilder)
@@ -433,7 +433,7 @@ UpdateOldAnimationPropertiesWithNew(
   if (aOld.GetEffect()) {
     dom::AnimationEffect* oldEffect = aOld.GetEffect();
     animationChanged = oldEffect->SpecifiedTiming() != aNewTiming;
-    oldEffect->SetSpecifiedTiming(aNewTiming);
+    oldEffect->SetSpecifiedTiming(std::move(aNewTiming));
 
     KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect();
     if (oldKeyframeEffect) {
@@ -517,7 +517,7 @@ BuildAnimation(nsPresContext* aPresContext,
     
     
     UpdateOldAnimationPropertiesWithNew(*oldAnim,
-                                        timing,
+                                        std::move(timing),
                                         std::move(keyframes),
                                         isStylePaused,
                                         aBuilder);
