@@ -283,26 +283,22 @@ XPCNativeInterface::NewInstance(const nsXPTInterfaceInfo* aInfo)
     
 
     for (i = 0; i < methodCount; i++) {
-        const nsXPTMethodInfo* info;
-        if (NS_FAILED(aInfo->GetMethodInfo(i, &info))) {
-            failed = true;
-            break;
-        }
+        const nsXPTMethodInfo& info = aInfo->Method(i);
 
         
         if (i == 1 || i == 2) {
             continue;
         }
 
-        if (!XPCConvert::IsMethodReflectable(*info)) {
+        if (!XPCConvert::IsMethodReflectable(info)) {
             continue;
         }
 
         jsid name;
-        if (info->IsSymbol()) {
-            name = SYMBOL_TO_JSID(info->GetSymbol(cx));
+        if (info.IsSymbol()) {
+            name = SYMBOL_TO_JSID(info.GetSymbol(cx));
         } else {
-            str = JS_AtomizeAndPinString(cx, info->GetName());
+            str = JS_AtomizeAndPinString(cx, info.GetName());
             if (!str) {
                 NS_ERROR("bad method name");
                 failed = true;
@@ -311,7 +307,7 @@ XPCNativeInterface::NewInstance(const nsXPTInterfaceInfo* aInfo)
             name = INTERNED_STRING_TO_JSID(cx, str);
         }
 
-        if (info->IsSetter()) {
+        if (info.IsSetter()) {
             MOZ_ASSERT(realTotalCount,"bad setter");
             
             
@@ -330,7 +326,7 @@ XPCNativeInterface::NewInstance(const nsXPTInterfaceInfo* aInfo)
             }
             cur = &members[realTotalCount];
             cur->SetName(name);
-            if (info->IsGetter()) {
+            if (info.IsGetter()) {
                 cur->SetReadOnlyAttribute(i);
             } else {
                 cur->SetMethod(i);
