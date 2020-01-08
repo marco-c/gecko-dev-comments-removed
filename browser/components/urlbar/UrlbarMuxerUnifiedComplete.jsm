@@ -59,7 +59,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
                     UrlbarPrefs.get("matchBuckets");
     logger.debug(`Buckets: ${buckets}`);
     let sortedMatches = [];
-    let handled = new Set();
     for (let [group, count] of buckets) {
       
       for (let match of context.results) {
@@ -67,20 +66,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           
           break;
         }
-        if (handled.has(match)) {
-          
-          continue;
-        }
 
         
         if (group == UrlbarUtils.MATCH_GROUP.HEURISTIC &&
             match == firstMatch && context.preselected) {
           sortedMatches.push(match);
-          handled.add(match);
           count--;
         } else if (group == MATCH_TYPE_TO_GROUP.get(match.type)) {
           sortedMatches.push(match);
-          handled.add(match);
           count--;
         } else if (!MATCH_TYPE_TO_GROUP.has(match.type)) {
           let errorMsg = `Match type ${match.type} is not mapped to a match group.`;
@@ -89,7 +82,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         }
       }
     }
-    context.results = sortedMatches;
   }
 }
 
