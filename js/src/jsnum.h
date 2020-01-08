@@ -192,6 +192,9 @@ GetDecimalInteger(JSContext* cx, const CharT* start, const CharT* end, double* d
 extern MOZ_MUST_USE bool
 StringToNumber(JSContext* cx, JSString* str, double* result);
 
+extern MOZ_MUST_USE bool
+StringToNumberDontReportOOM(JSContext* cx, JSString* str, double* result);
+
 
 MOZ_ALWAYS_INLINE MOZ_MUST_USE bool
 ToNumber(JSContext* cx, JS::MutableHandleValue vp)

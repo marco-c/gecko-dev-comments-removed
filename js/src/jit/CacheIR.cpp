@@ -5009,6 +5009,38 @@ CompareIRGenerator::tryAttachNullUndefined(ValOperandId lhsId, ValOperandId rhsI
 }
 
 bool
+CompareIRGenerator::tryAttachStringNumber(ValOperandId lhsId, ValOperandId rhsId)
+{
+    
+    if (!(lhsVal_.isString() && rhsVal_.isNumber()) &&
+        !(rhsVal_.isString() && lhsVal_.isNumber()))
+    {
+        return false;
+    }
+
+    
+    MOZ_ASSERT(op_ != JSOP_STRICTEQ && op_ != JSOP_STRICTNE);
+
+    auto createGuards = [&](HandleValue v, ValOperandId vId) {
+        if (v.isString()) {
+            StringOperandId strId = writer.guardIsString(vId);
+            return writer.guardAndGetNumberFromString(strId);
+        }
+        MOZ_ASSERT(v.isNumber());
+        writer.guardIsNumber(vId);
+        return vId;
+    };
+
+    ValOperandId lhsGuardedId = createGuards(lhsVal_, lhsId);
+    ValOperandId rhsGuardedId = createGuards(rhsVal_, rhsId);
+    writer.compareDoubleResult(op_, lhsGuardedId, rhsGuardedId);
+    writer.returnFromIC();
+
+    trackAttached("StringNumber");
+    return true;
+}
+
+bool
 CompareIRGenerator::tryAttachStub()
 {
     MOZ_ASSERT(cacheKind_ == CacheKind::Compare);
@@ -5027,7 +5059,6 @@ CompareIRGenerator::tryAttachStub()
     ValOperandId lhsId(writer.setInputOperandId(lhsIndex));
     ValOperandId rhsId(writer.setInputOperandId(rhsIndex));
 
-    
     
     
     
@@ -5071,6 +5102,9 @@ CompareIRGenerator::tryAttachStub()
     if (tryAttachInt32(lhsId, rhsId))
         return true;
     if (tryAttachNumber(lhsId, rhsId))
+        return true;
+
+    if (tryAttachStringNumber(lhsId, rhsId))
         return true;
 
     trackAttached(IRGenerator::NotAttached);
