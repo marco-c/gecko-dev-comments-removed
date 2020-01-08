@@ -1405,10 +1405,10 @@ void RuntimeService::UnregisterWorker(WorkerPrivate* aWorkerPrivate) {
                                    aWorkerPrivate->CreationTimeStamp());
   }
 
-  if (aWorkerPrivate->IsSharedWorker()) {
-    AssertIsOnMainThread();
-    aWorkerPrivate->GetRemoteWorkerController()->CloseWorkerOnMainThread();
-  }
+  
+  
+  
+  
 
   if (parent) {
     parent->RemoveChildWorker(aWorkerPrivate);
