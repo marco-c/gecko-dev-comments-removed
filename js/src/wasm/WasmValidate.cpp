@@ -1817,7 +1817,7 @@ DecodeExport(Decoder& d, ModuleEnvironment* env, CStringSet* dupSet)
             return d.fail("exported table index out of bounds");
 
         MOZ_ASSERT(env->tables.length() == 1);
-        env->tables[0].external = true;
+        env->tables[tableIndex].external = true;
 
         return env->exports.emplaceBack(std::move(fieldName), DefinitionKind::Table);
       }
@@ -1953,14 +1953,20 @@ DecodeElemSection(Decoder& d, ModuleEnvironment* env)
         for (uint32_t i = 0; i < numElems; i++) {
             if (!d.readVarU32(&elemFuncIndices[i]))
                 return d.fail("failed to read element function index");
-            if (elemFuncIndices[i] >= env->numFuncs())
+
+            uint32_t funcIndex = elemFuncIndices[i];
+            if (funcIndex >= env->numFuncs())
                 return d.fail("table element out of range");
+
+            
+            
+            
+            if (env->funcIsImport(funcIndex))
+                env->tables[tableIndex].external = true;
         }
 
-        if (!env->elemSegments.emplaceBack(0, offset, std::move(elemFuncIndices)))
+        if (!env->elemSegments.emplaceBack(tableIndex, offset, std::move(elemFuncIndices)))
             return false;
-
-        env->tables[env->elemSegments.back().tableIndex].external = true;
     }
 
     return d.finishSection(*range, "elem");

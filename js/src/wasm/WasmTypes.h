@@ -1863,6 +1863,10 @@ enum class TableKind
 
 struct TableDesc
 {
+    
+    
+    
+
     TableKind kind;
     bool external;
     uint32_t globalDataOffset;

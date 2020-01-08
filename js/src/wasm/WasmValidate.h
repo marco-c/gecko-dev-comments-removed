@@ -77,10 +77,10 @@ struct ModuleEnvironment
     ImportVector              imports;
     ExportVector              exports;
     Maybe<uint32_t>           startFuncIndex;
+    ElemSegmentVector         elemSegments;
     MaybeSectionRange         codeSection;
 
     
-    ElemSegmentVector         elemSegments;
     DataSegmentVector         dataSegments;
     Maybe<NameInBytecode>     moduleName;
     NameInBytecodeVector      funcNames;
