@@ -93,14 +93,11 @@ NS_CopyUnicodeToNative(const nsAString&  aInput, nsACString& aOutput)
     return NS_ERROR_OUT_OF_MEMORY;
   }
   if (resultLen > 0) {
-    nsACString::iterator out_iter;
-    aOutput.BeginWriting(out_iter);
+    char* result = aOutput.BeginWriting();
 
     
     
     const char defaultChar = '_';
-
-    char* result = out_iter.get();
 
     ::WideCharToMultiByte(CP_ACP, 0, buf, inputLen, result, resultLen,
                           &defaultChar, nullptr);
