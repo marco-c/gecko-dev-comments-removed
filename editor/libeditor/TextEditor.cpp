@@ -1095,7 +1095,7 @@ TextEditor::InsertParagraphSeparatorAsAction()
     }
 
     
-    AutoTransactionsConserveSelection dontChangeMySelection(this);
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
     
     EditorRawDOMPoint pointAfterInsertedLineBreak;

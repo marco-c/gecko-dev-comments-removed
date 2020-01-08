@@ -491,7 +491,7 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
                          (aEditSubAction == EditSubAction::eRedo))) {
     
     
-    AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
     
     PromoteRange(*mDocChangeRange, aEditSubAction);
@@ -1449,7 +1449,7 @@ HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
   AutoLockListener lockit(&mListenerEnabled);
 
   
-  AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+  AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
   nsAutoString tString(*inString);
   const char16_t *unicodeBuf = tString.get();
   int32_t pos = 0;
@@ -2967,7 +2967,7 @@ HTMLEditRules::WillDeleteSelection(nsIEditor::EDirection aAction,
   
   
   if (!IsPlaintextEditor()) {
-    AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
     rv = WSRunObject::PrepareToDeleteRange(&HTMLEditorRef(),
                                            address_of(startNode), &startOffset,
                                            address_of(endNode), &endOffset);
@@ -3383,7 +3383,7 @@ HTMLEditRules::TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
     }
   }
 
-  AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+  AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
   
   
@@ -4506,7 +4506,7 @@ HTMLEditRules::MakeBasicBlock(nsAtom& blockType)
   }
 
   AutoSelectionRestorer selectionRestorer(&SelectionRef(), &HTMLEditorRef());
-  AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+  AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
@@ -5921,7 +5921,7 @@ HTMLEditRules::CreateStyleForInsertText(nsIDocument& aDocument)
 
   {
     
-    AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
     while (item && node != rootElement) {
       
@@ -7548,7 +7548,7 @@ HTMLEditRules::GetListActionNodes(
 
   {
     
-    AutoTransactionsConserveSelection dontChangeMySelection(&HTMLEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
 
     
     nsresult rv = GetNodesFromSelection(EditSubAction::eCreateOrChangeList,

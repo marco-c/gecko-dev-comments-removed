@@ -1547,12 +1547,17 @@ WSRunObject::InsertNBSPAndRemoveFollowingASCIIWhitespaces(WSPoint aPoint)
     return NS_ERROR_NULL_POINTER;
   }
 
- 
-  AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+
+  
+  AutoTransactionsConserveSelection dontChangeMySelection(*htmlEditor);
   nsresult rv =
-    mHTMLEditor->InsertTextIntoTextNodeWithTransaction(
-                   nsDependentSubstring(&kNBSP, 1),
-                   *aPoint.mTextNode, aPoint.mOffset, true);
+    htmlEditor->InsertTextIntoTextNodeWithTransaction(
+                  nsDependentSubstring(&kNBSP, 1),
+                  *aPoint.mTextNode, aPoint.mOffset, true);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1891,14 +1896,16 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
     }
     if (leftCheck && rightCheck) {
       
-      AutoTransactionsConserveSelection dontChangeMySelection(htmlEditor);
+      AutoTransactionsConserveSelection dontChangeMySelection(*htmlEditor);
       nsAutoString spaceStr(char16_t(32));
       nsresult rv =
         htmlEditor->InsertTextIntoTextNodeWithTransaction(spaceStr,
                                                           *thePoint.mTextNode,
                                                           thePoint.mOffset,
                                                           true);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
@@ -1933,12 +1940,14 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
       }
 
       
-      AutoTransactionsConserveSelection dontChangeMySelection(htmlEditor);
+      AutoTransactionsConserveSelection dontChangeMySelection(*htmlEditor);
       rv =
         htmlEditor->InsertTextIntoTextNodeWithTransaction(
                       nsDependentSubstring(&kNBSP, 1),
                       *startNode, startOffset, true);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   }
   return NS_OK;
@@ -1985,13 +1994,18 @@ WSRunObject::ReplacePreviousNBSPIfUnncessary(
     return NS_OK;
   }
 
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+
   
-  AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+  AutoTransactionsConserveSelection dontChangeMySelection(*htmlEditor);
   nsAutoString spaceStr(char16_t(32));
   nsresult rv =
-    mHTMLEditor->InsertTextIntoTextNodeWithTransaction(spaceStr,
-                                                       *thePoint.mTextNode,
-                                                       thePoint.mOffset, true);
+    htmlEditor->InsertTextIntoTextNodeWithTransaction(spaceStr,
+                                                      *thePoint.mTextNode,
+                                                      thePoint.mOffset, true);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2034,15 +2048,22 @@ WSRunObject::CheckLeadingNBSP(WSFragment* aRun,
     }
   }
   if (canConvert) {
+    if (NS_WARN_IF(!mHTMLEditor)) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
+
     
-    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+    AutoTransactionsConserveSelection dontChangeMySelection(*htmlEditor);
     nsAutoString spaceStr(char16_t(32));
     nsresult rv =
-      mHTMLEditor->InsertTextIntoTextNodeWithTransaction(spaceStr,
-                                                         *thePoint.mTextNode,
-                                                         thePoint.mOffset,
-                                                         true);
-    NS_ENSURE_SUCCESS(rv, rv);
+      htmlEditor->InsertTextIntoTextNodeWithTransaction(spaceStr,
+                                                        *thePoint.mTextNode,
+                                                        thePoint.mOffset,
+                                                        true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     
     rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,

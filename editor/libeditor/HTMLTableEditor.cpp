@@ -139,7 +139,7 @@ HTMLEditor::InsertCell(Element* aCell,
   }
 
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
   return InsertNodeWithTransaction(*newCell, pointToInsert);
 }
 
@@ -199,7 +199,7 @@ HTMLEditor::InsertTableCell(int32_t aNumber,
                                              newCellIndex, ePreviousColumn,
                                              false);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   for (int32_t i = 0; i < aNumber; i++) {
     RefPtr<Element> newCell;
@@ -400,7 +400,7 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
                                              startColIndex, ePreviousRow,
                                              false);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   
   
@@ -532,7 +532,7 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
                                              startColIndex, ePreviousColumn,
                                              false);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   RefPtr<Element> cellForRowParent;
   int32_t cellsInRow = 0;
@@ -749,7 +749,7 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
     AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
                                                startColIndex, ePreviousColumn,
                                                false);
-    AutoTransactionsConserveSelection dontChangeSelection(this);
+    AutoTransactionsConserveSelection dontChangeSelection(*this);
 
     bool    checkToDeleteRow = true;
     bool    checkToDeleteColumn = true;
@@ -878,7 +878,7 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
         AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
                                                    startColIndex, ePreviousColumn,
                                                    false);
-        AutoTransactionsConserveSelection dontChangeSelection(this);
+        AutoTransactionsConserveSelection dontChangeSelection(*this);
         rv = DeleteNodeWithTransaction(*cell);
         
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -913,7 +913,7 @@ HTMLEditor::DeleteTableCellContents()
                                       *this, EditSubAction::eDeleteNode,
                                       nsIEditor::eNext);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
 
   RefPtr<Element> firstCell;
@@ -1177,7 +1177,7 @@ HTMLEditor::DeleteTableRow(int32_t aNumber)
                                              startColIndex, ePreviousRow,
                                              false);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   if (firstCell && rangeCount > 1) {
     
@@ -1688,7 +1688,7 @@ HTMLEditor::SplitTableCell()
                                              startColIndex, ePreviousColumn,
                                              false);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   RefPtr<Element> newCell;
   int32_t rowIndex = startRowIndex;
@@ -1973,7 +1973,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
 
   AutoPlaceholderBatch beginBatching(this);
   
-  AutoTransactionsConserveSelection dontChangeSelection(this);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
 
   
   

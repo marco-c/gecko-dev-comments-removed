@@ -378,7 +378,7 @@ TextEditRules::DidDoAction(Selection* aSelection,
 
   
   
-  AutoTransactionsConserveSelection dontChangeMySelection(&TextEditorRef());
+  AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
 
   switch (aInfo.mEditSubAction) {
     case EditSubAction::eDeleteSelectedContent:
@@ -849,7 +849,7 @@ TextEditRules::WillInsertText(EditSubAction aEditSubAction,
     
 
     
-    AutoTransactionsConserveSelection dontChangeMySelection(&TextEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
 
     EditorRawDOMPoint pointAfterStringInserted;
     rv = TextEditorRef().InsertTextWithTransaction(*doc, *outString,
@@ -1477,7 +1477,7 @@ TextEditRules::CreateTrailingBRIfNeeded()
   }
 
   if (!lastChild->IsHTMLElement(nsGkAtoms::br)) {
-    AutoTransactionsConserveSelection dontChangeMySelection(&TextEditorRef());
+    AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
     EditorRawDOMPoint endOfRoot;
     endOfRoot.SetToEndOf(rootElement);
     CreateElementResult createMozBrResult = CreateMozBR(endOfRoot);
