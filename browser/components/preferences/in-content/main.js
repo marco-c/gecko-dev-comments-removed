@@ -105,6 +105,9 @@ Preferences.addAll([
   { id: "browser.ctrlTab.recentlyUsedOrder", type: "bool" },
 
   
+  {id: "browser.newtabpage.activity-stream.asrouter.userprefs.cfr", type: "bool"},
+
+  
   { id: "font.language.group", type: "wstring" },
 
   
@@ -311,6 +314,10 @@ var gMainPane = {
     if (Services.prefs.getBoolPref("intl.multilingual.enabled")) {
       gMainPane.initBrowserLocale();
     }
+
+    let cfrLearnMoreLink = document.getElementById("cfrLearnMore");
+    let cfrLearnMoreUrl = Services.urlFormatter.formatURLPref("app.support.baseURL") + "extensionrecommendations";
+    cfrLearnMoreLink.setAttribute("href", cfrLearnMoreUrl);
 
     if (AppConstants.platform == "win") {
       
