@@ -1769,13 +1769,9 @@ CreateReadableStreamDefaultReader(JSContext* cx,
   }
 
   
+  
   if (!ReadableStreamReaderGenericInitialize(cx, reader, unwrappedStream,
                                              forAuthorCode)) {
-    return nullptr;
-  }
-
-  
-  if (!SetNewList(cx, reader, ReadableStreamReader::Slot_Requests)) {
     return nullptr;
   }
 
@@ -2024,14 +2020,6 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
   }
 
   
-  {
-    AutoRealm ar(cx, unwrappedStream);
-    RootedObject streamCompartmentReader(cx, reader);
-    if (!cx->compartment()->wrap(cx, &streamCompartmentReader)) {
-      return false;
-    }
-    unwrappedStream->setReader(streamCompartmentReader);
-  }
 
   
   RootedObject promise(cx);
@@ -2067,6 +2055,25 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
   
   
   reader->setForAuthorCode(forAuthorCode);
+
+  
+  
+  
+  if (!SetNewList(cx, reader, ReadableStreamReader::Slot_Requests)) {
+    return false;
+  }
+
+  
+  
+  
+  {
+    AutoRealm ar(cx, unwrappedStream);
+    RootedObject streamCompartmentReader(cx, reader);
+    if (!cx->compartment()->wrap(cx, &streamCompartmentReader)) {
+      return false;
+    }
+    unwrappedStream->setReader(streamCompartmentReader);
+  }
 
   return true;
 }
