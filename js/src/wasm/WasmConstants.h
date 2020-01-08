@@ -360,6 +360,7 @@ enum class Op
     
     RefNull                              = 0xd0,
     RefIsNull                            = 0xd1,
+    RefEq                                = 0xd2, 
 
     FirstPrefix                          = 0xfc,
     MiscPrefix                           = 0xfc,
