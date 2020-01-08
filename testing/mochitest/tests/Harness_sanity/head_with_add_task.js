@@ -1,0 +1,26 @@
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function workaround_function_in_header() {
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+});
