@@ -182,17 +182,51 @@ class JSTerm extends Component {
           tabIndex: "0",
           viewportMargin: Infinity,
           extraKeys: {
-            "Enter": (e, cm) => {
-              if (!this.autocompletePopup.isOpen && (
-                e.shiftKey || !Debugger.isCompilableUnit(this.getInputValue())
-              )) {
+            "Enter": () => {
+              
+              if (
+                !this.autocompletePopup.isOpen &&
+                !Debugger.isCompilableUnit(this.getInputValue())
+              ) {
                 
                 return "CodeMirror.Pass";
+              }
+
+              if (this._autocompletePopupNavigated &&
+                this.autocompletePopup.isOpen &&
+                this.autocompletePopup.selectedIndex > -1
+              ) {
+                return this.acceptProposedCompletion();
               }
 
               this.execute();
               return null;
             },
+
+            "Tab": () => {
+              
+              if (
+                this.complete(this.COMPLETE_HINT_ONLY) &&
+                this.lastCompletion &&
+                this.acceptProposedCompletion()
+              ) {
+                return false;
+              }
+
+              if (this.hasEmptyInput()) {
+                this.editor.codeMirror.getInputField().blur();
+                return false;
+              }
+
+              if (!this.editor.somethingSelected()) {
+                this.insertStringAtCursor("\t");
+                return false;
+              }
+
+              
+              return true;
+            },
+
             "Up": () => {
               let inputUpdated;
               if (this.autocompletePopup.isOpen) {
@@ -209,6 +243,7 @@ class JSTerm extends Component {
               }
               return null;
             },
+
             "Down": () => {
               let inputUpdated;
               if (this.autocompletePopup.isOpen) {
@@ -224,6 +259,36 @@ class JSTerm extends Component {
                 return "CodeMirror.Pass";
               }
               return null;
+            },
+
+            "Left": () => {
+              if (this.autocompletePopup.isOpen || this.lastCompletion.value) {
+                this.clearCompletion();
+              }
+              return "CodeMirror.Pass";
+            },
+
+            "Right": () => {
+              const haveSuggestion =
+                this.autocompletePopup.isOpen || this.lastCompletion.value;
+              const useCompletion =
+                this.canCaretGoNext() || this._autocompletePopupNavigated;
+
+              if (
+                haveSuggestion &&
+                useCompletion &&
+                this.complete(this.COMPLETE_HINT_ONLY) &&
+                this.lastCompletion.value &&
+                this.acceptProposedCompletion()
+              ) {
+                return null;
+              }
+
+              if (this.autocompletePopup.isOpen) {
+                this.clearCompletion();
+              }
+
+              return "CodeMirror.Pass";
             },
 
             "Ctrl-N": () => {
@@ -256,10 +321,61 @@ class JSTerm extends Component {
 
               this.clearCompletion();
               return "CodeMirror.Pass";
+            },
+
+            "Esc": () => {
+              if (this.autocompletePopup.isOpen) {
+                this.clearCompletion();
+                return null;
+              }
+
+              return "CodeMirror.Pass";
+            },
+
+            "PageUp": () => {
+              if (this.autocompletePopup.isOpen) {
+                if (this.complete(this.COMPLETE_PAGEUP)) {
+                  this._autocompletePopupNavigated = true;
+                }
+                return null;
+              }
+
+              return "CodeMirror.Pass";
+            },
+
+            "PageDown": () => {
+              if (this.autocompletePopup.isOpen) {
+                if (this.complete(this.COMPLETE_PAGEDOWN)) {
+                  this._autocompletePopupNavigated = true;
+                }
+                return null;
+              }
+
+              return "CodeMirror.Pass";
+            },
+
+            "Home": () => {
+              if (this.autocompletePopup.isOpen) {
+                this.autocompletePopup.selectedIndex = 0;
+                return null;
+              }
+
+              return "CodeMirror.Pass";
+            },
+
+            "End": () => {
+              if (this.autocompletePopup.isOpen) {
+                this.autocompletePopup.selectedIndex =
+                  this.autocompletePopup.itemCount - 1;
+                return null;
+              }
+
+              return "CodeMirror.Pass";
             }
           }
         });
 
+        this.editor.on("change", this._inputEventHandler);
         this.editor.appendToLocalElement(this.node);
         const cm = this.editor.codeMirror;
         cm.on("paste", (_, event) => this.props.onPaste(event));
@@ -576,12 +692,13 @@ class JSTerm extends Component {
 
 
 
-  setInputValue(newValue) {
+  setInputValue(newValue = "") {
     if (this.props.codeMirrorEnabled) {
       if (this.editor) {
         this.editor.setText(newValue);
         
         this.editor.setCursor({line: this.editor.getDoc().lineCount(), ch: 0});
+        this.editor.setAutoCompletionText();
       }
     } else {
       if (!this.inputNode) {
@@ -603,10 +720,18 @@ class JSTerm extends Component {
 
   getInputValue() {
     if (this.props.codeMirrorEnabled) {
-      return this.editor.getText() || "";
+      return this.editor ? this.editor.getText() || "" : "";
     }
 
     return this.inputNode ? this.inputNode.value || "" : "";
+  }
+
+  getSelectionStart() {
+    if (this.props.codeMirrorEnabled) {
+      return this.getInputValueBeforeCursor().length;
+    }
+
+    return this.inputNode ? this.inputNode.selectionStart : null;
   }
 
   
@@ -614,10 +739,11 @@ class JSTerm extends Component {
 
 
   _inputEventHandler() {
-    if (this.lastInputValue != this.getInputValue()) {
+    const value = this.getInputValue();
+    if (this.lastInputValue !== value) {
       this.resizeInput();
       this.complete(this.COMPLETE_HINT_ONLY);
-      this.lastInputValue = this.getInputValue();
+      this.lastInputValue = value;
     }
   }
 
@@ -642,7 +768,6 @@ class JSTerm extends Component {
     const inputNode = this.inputNode;
     const inputValue = this.getInputValue();
     let inputUpdated = false;
-
     if (event.ctrlKey) {
       switch (event.charCode) {
         case 101:
@@ -999,10 +1124,8 @@ class JSTerm extends Component {
 
 
   complete(type, callback) {
-    const inputNode = this.inputNode;
     const inputValue = this.getInputValue();
     const frameActor = this.getFrameActor(this.SELECTED_FRAME);
-
     
     if (!inputValue) {
       this.clearCompletion();
@@ -1011,8 +1134,12 @@ class JSTerm extends Component {
       return false;
     }
 
+    const {editor, inputNode} = this;
     
-    if (inputNode.selectionStart != inputNode.selectionEnd) {
+    if (
+      (inputNode && inputNode.selectionStart != inputNode.selectionEnd) ||
+      (editor && editor.getSelection())
+    ) {
       this.clearCompletion();
       this.callback && callback(this);
       this.emit("autocomplete-updated");
@@ -1020,8 +1147,7 @@ class JSTerm extends Component {
     }
 
     
-    if (this.lastCompletion.value != inputValue ||
-        frameActor != this._lastFrameActorId) {
+    if (this.lastCompletion.value != inputValue || frameActor != this._lastFrameActorId) {
       this._updateCompletionResult(type, callback);
       return false;
     }
@@ -1058,15 +1184,15 @@ class JSTerm extends Component {
 
 
   _updateCompletionResult(type, callback) {
+    const value = this.getInputValue();
     const frameActor = this.getFrameActor(this.SELECTED_FRAME);
-    if (this.lastCompletion.value == this.getInputValue() &&
-        frameActor == this._lastFrameActorId) {
+    if (this.lastCompletion.value == value && frameActor == this._lastFrameActorId) {
       return;
     }
 
     const requestId = gSequenceId();
-    const cursor = this.inputNode.selectionStart;
-    const input = this.getInputValue().substring(0, cursor);
+    const cursor = this.getSelectionStart();
+    const input = value.substring(0, cursor);
     const cache = this._autocompleteCache;
 
     
@@ -1079,7 +1205,6 @@ class JSTerm extends Component {
       this._autocompleteQuery = null;
       this._autocompleteCache = null;
     }
-
     if (this._autocompleteQuery && input.startsWith(this._autocompleteQuery)) {
       let filterBy = input;
       
@@ -1090,9 +1215,7 @@ class JSTerm extends Component {
         filterBy = input.substring(input.lastIndexOf(lastNonAlpha) + 1);
       }
 
-      const newList = cache.sort().filter(function(l) {
-        return l.startsWith(filterBy);
-      });
+      const newList = cache.sort().filter(l => l.startsWith(filterBy));
 
       this.lastCompletion = {
         requestId: null,
@@ -1104,7 +1227,6 @@ class JSTerm extends Component {
       this._receiveAutocompleteProperties(null, callback, response);
       return;
     }
-
     this._lastFrameActorId = frameActor;
 
     this.lastCompletion = {
@@ -1118,6 +1240,19 @@ class JSTerm extends Component {
 
     this.webConsoleClient.autocomplete(
       input, cursor, autocompleteCallback, frameActor);
+  }
+
+  getInputValueBeforeCursor() {
+    if (this.editor) {
+      return this.editor.getDoc().getRange({line: 0, ch: 0}, this.editor.getCursor());
+    }
+
+    if (this.inputNode) {
+      const cursor = this.inputNode.selectionStart;
+      return this.getInputValue().substring(0, cursor);
+    }
+
+    return null;
   }
 
   
@@ -1134,7 +1269,6 @@ class JSTerm extends Component {
 
 
   _receiveAutocompleteProperties(requestId, callback, message) {
-    const inputNode = this.inputNode;
     const inputValue = this.getInputValue();
     if (this.lastCompletion.value == inputValue ||
         requestId != this.lastCompletion.requestId) {
@@ -1142,8 +1276,7 @@ class JSTerm extends Component {
     }
     
     
-    const cursor = inputNode.selectionStart;
-    const inputUntilCursor = inputValue.substring(0, cursor);
+    const inputUntilCursor = this.getInputValueBeforeCursor();
 
     if (requestId != null && /[a-zA-Z0-9.]$/.test(inputUntilCursor)) {
       this._autocompleteCache = message.matches;
@@ -1159,10 +1292,7 @@ class JSTerm extends Component {
       return;
     }
 
-    const items = matches.reverse().map(function(match) {
-      return { preLabel: lastPart, label: match };
-    });
-
+    const items = matches.reverse().map(match => ({ preLabel: lastPart, label: match }));
     const popup = this.autocompletePopup;
     popup.setItems(items);
 
@@ -1172,11 +1302,27 @@ class JSTerm extends Component {
       matchProp: lastPart,
     };
     if (items.length > 1 && !popup.isOpen) {
-      const str = this.getInputValue().substr(0, this.inputNode.selectionStart);
-      const offset = str.length - (str.lastIndexOf("\n") + 1) - lastPart.length;
-      const x = offset * this._inputCharWidth;
-      popup.openPopup(inputNode, x + this._chevronWidth);
-      this._autocompletePopupNavigated = false;
+      let popupAlignElement;
+      let xOffset;
+      let yOffset;
+
+      if (this.editor) {
+        popupAlignElement = this.node.querySelector(".CodeMirror-cursor");
+        
+        xOffset = -1 * lastPart.length * this._inputCharWidth;
+        yOffset = 4;
+      } else if (this.inputNode) {
+        const offset = inputUntilCursor.length -
+          (inputUntilCursor.lastIndexOf("\n") + 1) -
+          lastPart.length;
+        xOffset = (offset * this._inputCharWidth) + this._chevronWidth;
+        popupAlignElement = this.inputNode;
+      }
+
+      if (popupAlignElement) {
+        popup.openPopup(popupAlignElement, xOffset, yOffset);
+        this._autocompletePopupNavigated = false;
+      }
     } else if (items.length < 2 && popup.isOpen) {
       popup.hidePopup();
       this._autocompletePopupNavigated = false;
@@ -1201,7 +1347,7 @@ class JSTerm extends Component {
 
   onAutocompleteSelect() {
     
-    if (this.inputNode.selectionStart != this.getInputValue().length) {
+    if (this.getSelectionStart() != this.getInputValue().length) {
       return;
     }
 
@@ -1228,9 +1374,11 @@ class JSTerm extends Component {
       if (this.autocompletePopup.isOpen) {
         
         
-        this.inputNode.blur();
+        if (this.inputNode) {
+          this.inputNode.blur();
+        }
         this.autocompletePopup.once("popup-closed", () => {
-          this.inputNode.focus();
+          this.focus();
         });
         this.autocompletePopup.hidePopup();
         this._autocompletePopupNavigated = false;
@@ -1253,6 +1401,7 @@ class JSTerm extends Component {
       this.insertStringAtCursor(
         currentItem.label.substring(this.lastCompletion.matchProp.length)
       );
+
       updated = true;
     }
 
@@ -1268,12 +1417,25 @@ class JSTerm extends Component {
 
 
   insertStringAtCursor(str) {
-    const cursor = this.inputNode.selectionStart;
     const value = this.getInputValue();
-    this.setInputValue(value.substr(0, cursor) +
-      str + value.substr(cursor));
-    const newCursor = cursor + str.length;
-    this.inputNode.selectionStart = this.inputNode.selectionEnd = newCursor;
+    const prefix = this.getInputValueBeforeCursor();
+    const suffix = value.replace(prefix, "");
+
+    
+    const editorCursor = this.editor && this.editor.getCursor();
+
+    this.setInputValue(prefix + str + suffix);
+
+    if (this.inputNode) {
+      const newCursor = prefix.length + str.length;
+      this.inputNode.selectionStart = this.inputNode.selectionEnd = newCursor;
+    } else if (this.editor) {
+      
+      this.editor.setCursor({
+        line: editorCursor.line,
+        ch: editorCursor.ch + str.length
+      });
+    }
   }
 
   
@@ -1283,13 +1445,15 @@ class JSTerm extends Component {
 
 
   updateCompleteNode(suffix) {
-    if (!this.completeNode) {
-      return;
+    if (this.completeNode) {
+      
+      const prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
+      this.completeNode.value = prefix + suffix;
     }
 
-    
-    const prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
-    this.completeNode.value = prefix + suffix;
+    if (this.editor) {
+      this.editor.setAutoCompletionText(suffix);
+    }
   }
 
   
