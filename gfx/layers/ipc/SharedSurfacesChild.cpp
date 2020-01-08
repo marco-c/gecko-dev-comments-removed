@@ -9,9 +9,10 @@
 #include "CompositorManagerChild.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/image/RecyclingSourceSurface.h"
+#include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/SystemGroup.h"  
 
 namespace mozilla {
@@ -21,8 +22,8 @@ using namespace mozilla::gfx;
 
  UserDataKey SharedSurfacesChild::sSharedKey;
 
-SharedSurfacesChild::ImageKeyData::ImageKeyData(WebRenderLayerManager* aManager,
-                                                const wr::ImageKey& aImageKey)
+SharedSurfacesChild::ImageKeyData::ImageKeyData(
+    RenderRootStateManager* aManager, const wr::ImageKey& aImageKey)
     : mManager(aManager), mImageKey(aImageKey) {}
 
 SharedSurfacesChild::ImageKeyData::ImageKeyData(
@@ -85,7 +86,7 @@ SharedSurfacesChild::SharedUserData::~SharedUserData() {
 }
 
 wr::ImageKey SharedSurfacesChild::SharedUserData::UpdateKey(
-    WebRenderLayerManager* aManager, wr::IpcResourceUpdateQueue& aResources,
+    RenderRootStateManager* aManager, wr::IpcResourceUpdateQueue& aResources,
     const Maybe<IntRect>& aDirtyRect) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aManager->IsDestroyed());
@@ -286,7 +287,7 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
 }
 
  nsresult SharedSurfacesChild::Share(
-    SourceSurfaceSharedData* aSurface, WebRenderLayerManager* aManager,
+    SourceSurfaceSharedData* aSurface, RenderRootStateManager* aManager,
     wr::IpcResourceUpdateQueue& aResources, wr::ImageKey& aKey) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
@@ -308,7 +309,7 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
 }
 
  nsresult SharedSurfacesChild::Share(
-    ImageContainer* aContainer, WebRenderLayerManager* aManager,
+    ImageContainer* aContainer, RenderRootStateManager* aManager,
     wr::IpcResourceUpdateQueue& aResources, wr::ImageKey& aKey) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aContainer);
@@ -439,7 +440,7 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return anim->SetCurrentFrame(aSurface, sharedSurface, aDirtyRect);
 }
 
-AnimationImageKeyData::AnimationImageKeyData(WebRenderLayerManager* aManager,
+AnimationImageKeyData::AnimationImageKeyData(RenderRootStateManager* aManager,
                                              const wr::ImageKey& aImageKey)
     : SharedSurfacesChild::ImageKeyData(aManager, aImageKey),
       mRecycling(false) {}
@@ -537,7 +538,7 @@ nsresult SharedSurfacesAnimation::SetCurrentFrame(
 
 nsresult SharedSurfacesAnimation::UpdateKey(
     SourceSurface* aParentSurface, SourceSurfaceSharedData* aSurface,
-    WebRenderLayerManager* aManager, wr::IpcResourceUpdateQueue& aResources,
+    RenderRootStateManager* aManager, wr::IpcResourceUpdateQueue& aResources,
     wr::ImageKey& aKey) {
   SharedSurfacesChild::SharedUserData* data = nullptr;
   nsresult rv = SharedSurfacesChild::ShareInternal(aSurface, &data);
@@ -597,7 +598,7 @@ nsresult SharedSurfacesAnimation::UpdateKey(
 }
 
 void SharedSurfacesAnimation::ReleasePreviousFrame(
-    WebRenderLayerManager* aManager, const wr::ExternalImageId& aId) {
+    RenderRootStateManager* aManager, const wr::ExternalImageId& aId) {
   MOZ_ASSERT(aManager);
 
   auto i = mKeys.Length();
@@ -629,7 +630,7 @@ void SharedSurfacesAnimation::ReleasePreviousFrame(
   }
 }
 
-void SharedSurfacesAnimation::Invalidate(WebRenderLayerManager* aManager) {
+void SharedSurfacesAnimation::Invalidate(RenderRootStateManager* aManager) {
   auto i = mKeys.Length();
   while (i > 0) {
     --i;
