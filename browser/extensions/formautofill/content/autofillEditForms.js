@@ -381,6 +381,8 @@ class EditCreditCard extends EditAutofillForm {
       
       this.populateNetworks();
       
+      this.generateMonths();
+      
       this.generateYears();
       super.loadRecord(record);
 
@@ -388,6 +390,28 @@ class EditCreditCard extends EditAutofillForm {
       
       
       this._elements.ccNumber.setCustomValidity("");
+    }
+  }
+
+  generateMonths() {
+    const count = 12;
+
+    
+    this._elements.month.textContent = "";
+
+    
+    this._elements.month.appendChild(new Option());
+
+    
+    let dateFormat = new Intl.DateTimeFormat(navigator.language, {month: "long"}).format;
+    for (let i = 0; i < count; i++) {
+      let monthNumber = (i + 1).toString();
+      let monthName = dateFormat(new Date(Date.UTC(1970, i, 1)));
+      let option = new Option();
+      option.value = monthNumber;
+      
+      option.textContent = `${monthNumber.padStart(2, "0")} - ${monthName}`;
+      this._elements.month.appendChild(option);
     }
   }
 
