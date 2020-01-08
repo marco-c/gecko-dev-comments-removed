@@ -1,0 +1,8 @@
+
+
+"use strict";
+
+browser.runtime.onUpdateAvailable.addListener(details => {
+  
+  
+});
