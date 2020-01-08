@@ -835,13 +835,16 @@ Inspector.prototype = {
     if (this._panels.has(id)) {
       return this._panels.get(id);
     }
-
     let panel;
     switch (id) {
-      case "animationinspector":
-        const AnimationInspector =
-          this.browserRequire("devtools/client/inspector/animation/animation");
-        panel = new AnimationInspector(this, this.panelWin);
+      case "computedview":
+        const {ComputedViewTool} =
+          this.browserRequire("devtools/client/inspector/computed/computed");
+        panel = new ComputedViewTool(this, this.panelWin);
+        break;
+      case "ruleview":
+        const {RuleViewTool} = require("devtools/client/inspector/rules/rules");
+        panel = new RuleViewTool(this, this.panelWin);
         break;
       case "boxmodel":
         
@@ -849,39 +852,11 @@ Inspector.prototype = {
         const BoxModel = require("devtools/client/inspector/boxmodel/box-model");
         panel = new BoxModel(this, this.panelWin);
         break;
-      case "changesview":
-        const ChangesView =
-          this.browserRequire("devtools/client/inspector/changes/ChangesView");
-        panel = new ChangesView(this, this.panelWin);
-        break;
-      case "computedview":
-        const {ComputedViewTool} =
-          this.browserRequire("devtools/client/inspector/computed/computed");
-        panel = new ComputedViewTool(this, this.panelWin);
-        break;
-      case "fontinspector":
-        const FontInspector =
-          this.browserRequire("devtools/client/inspector/fonts/fonts");
-        panel = new FontInspector(this, this.panelWin);
-        break;
-      case "layoutview":
-        const LayoutView =
-          this.browserRequire("devtools/client/inspector/layout/layout");
-        panel = new LayoutView(this, this.panelWin);
-        break;
-      case "ruleview":
-        const {RuleViewTool} = require("devtools/client/inspector/rules/rules");
-        panel = new RuleViewTool(this, this.panelWin);
-        break;
       default:
         
         return null;
     }
-
-    if (panel) {
-      this._panels.set(id, panel);
-    }
-
+    this._panels.set(id, panel);
     return panel;
   },
 
@@ -921,49 +896,102 @@ Inspector.prototype = {
     await this.addRuleView({ defaultTab });
 
     
-    const sidebarPanels = [
+    
+    const layoutId = "layoutview";
+    const layoutTitle = INSPECTOR_L10N.getStr("inspector.sidebar.layoutViewTitle2");
+    this.sidebar.queueTab(
+      layoutId,
+      layoutTitle,
       {
-        id: "layoutview",
-        title: INSPECTOR_L10N.getStr("inspector.sidebar.layoutViewTitle2"),
-      },
-      {
-        id: "computedview",
-        title: INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
-      },
-      {
-        id: "animationinspector",
-        title: INSPECTOR_L10N.getStr("inspector.sidebar.animationInspectorTitle"),
-      },
-      {
-        id: "fontinspector",
-        title: INSPECTOR_L10N.getStr("inspector.sidebar.fontInspectorTitle"),
-      },
-      {
-        id: "changesview",
-        title: INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle"),
-      },
-    ];
+        props: {
+          id: layoutId,
+          title: layoutTitle,
+        },
+        panel: () => {
+          if (!this.layoutview) {
+            const LayoutView =
+              this.browserRequire("devtools/client/inspector/layout/layout");
+            this.layoutview = new LayoutView(this, this.panelWin);
+          }
 
-    for (const { id, title } of sidebarPanels) {
+          return this.layoutview.provider;
+        },
+      },
+      defaultTab == layoutId);
+
+    this.sidebar.queueExistingTab(
+      "computedview",
+      INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
+      defaultTab == "computedview");
+
+    const animationId = "animationinspector";
+    const animationTitle =
+      INSPECTOR_L10N.getStr("inspector.sidebar.animationInspectorTitle");
+    this.sidebar.queueTab(
+      animationId,
+      animationTitle,
+      {
+        props: {
+          id: animationId,
+          title: animationTitle,
+        },
+        panel: () => {
+          const AnimationInspector =
+            this.browserRequire("devtools/client/inspector/animation/animation");
+          this.animationinspector = new AnimationInspector(this, this.panelWin);
+          return this.animationinspector.provider;
+        },
+      },
+      defaultTab == animationId);
+
+    
+    
+    const fontId = "fontinspector";
+    const fontTitle = INSPECTOR_L10N.getStr("inspector.sidebar.fontInspectorTitle");
+    this.sidebar.queueTab(
+      fontId,
+      fontTitle,
+      {
+        props: {
+          id: fontId,
+          title: fontTitle,
+        },
+        panel: () => {
+          if (!this.fontinspector) {
+            const FontInspector =
+              this.browserRequire("devtools/client/inspector/fonts/fonts");
+            this.fontinspector = new FontInspector(this, this.panelWin);
+          }
+
+          return this.fontinspector.provider;
+        },
+      },
+      defaultTab == fontId);
+
+    if (Services.prefs.getBoolPref(TRACK_CHANGES_PREF)) {
       
       
-      
-      if (id === "computedview") {
-        this.sidebar.queueExistingTab(id, title, defaultTab === id);
-      } else {
-        
-        
-        
-        this.sidebar.queueTab(id, title, {
+      const changesId = "changesview";
+      const changesTitle = INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle");
+      this.sidebar.queueTab(
+        changesId,
+        changesTitle,
+        {
           props: {
-            id,
-            title,
+            id: changesId,
+            title: changesTitle,
           },
           panel: () => {
-            return this.getPanel(id).provider;
+            if (!this.changesView) {
+              const ChangesView =
+                this.browserRequire("devtools/client/inspector/changes/ChangesView");
+              this.changesView = new ChangesView(this, this.panelWin);
+            }
+
+            return this.changesView.provider;
           },
-        }, defaultTab === id);
-      }
+        },
+        defaultTab == changesId);
     }
 
     this.sidebar.addAllQueuedTabs();
@@ -1411,6 +1439,22 @@ Inspector.prototype = {
       panel.destroy();
     }
     this._panels.clear();
+
+    if (this.layoutview) {
+      this.layoutview.destroy();
+    }
+
+    if (this.changesView) {
+      this.changesView.destroy();
+    }
+
+    if (this.fontinspector) {
+      this.fontinspector.destroy();
+    }
+
+    if (this.animationinspector) {
+      this.animationinspector.destroy();
+    }
 
     if (this._highlighters) {
       this._highlighters.destroy();
