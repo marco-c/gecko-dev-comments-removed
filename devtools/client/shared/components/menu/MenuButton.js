@@ -14,6 +14,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { button } = dom;
 const { HTMLTooltip } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
+const { focusableSelector } = require("devtools/client/shared/focus");
 
 const isMacOS = Services.appinfo.OS === "Darwin";
 
@@ -313,7 +314,9 @@ class MenuButton extends PureComponent {
     
     
     
-    } else if (this.state.expanded && !e.defaultPrevented) {
+    } else if (this.state.expanded &&
+               !e.defaultPrevented &&
+               e.target.matches(focusableSelector)) {
       this.hideMenu();
     }
   }
