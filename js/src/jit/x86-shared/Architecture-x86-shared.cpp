@@ -46,8 +46,9 @@ js::jit::FloatRegister::ReduceSetForPush(const FloatRegisterSet& s)
     SetType bits = s.bits();
 
     
-    if (!JitSupportsSimd())
+    if (!JitSupportsSimd()) {
         bits &= Codes::AllPhysMask * Codes::SpreadScalar;
+    }
 
     
     
