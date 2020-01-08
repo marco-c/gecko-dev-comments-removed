@@ -10,7 +10,7 @@ use internal_types::{FastHashMap, FastHashSet};
 use print_tree::{PrintTree, PrintTreePrinter};
 use scene::SceneProperties;
 use smallvec::SmallVec;
-use spatial_node::{ScrollFrameInfo, SpatialNode, SpatialNodeType, StickyFrameInfo};
+use spatial_node::{ScrollFrameInfo, SpatialNode, SpatialNodeType, StickyFrameInfo, ScrollFrameKind};
 use util::{LayoutToWorldFastTransform, ScaleOffset};
 
 pub type ScrollStates = FastHashMap<ExternalScrollId, ScrollFrameInfo>;
@@ -326,6 +326,7 @@ impl ClipScrollTree {
         frame_rect: &LayoutRect,
         content_size: &LayoutSize,
         scroll_sensitivity: ScrollSensitivity,
+        frame_kind: ScrollFrameKind,
     ) -> SpatialNodeIndex {
         let node = SpatialNode::new_scroll_frame(
             pipeline_id,
@@ -334,6 +335,7 @@ impl ClipScrollTree {
             frame_rect,
             content_size,
             scroll_sensitivity,
+            frame_kind,
         );
         self.add_spatial_node(node)
     }
@@ -434,6 +436,53 @@ impl ClipScrollTree {
         if !self.spatial_nodes.is_empty() {
             self.print_node(self.root_reference_frame_index(), pt);
         }
+    }
+
+    
+    
+    
+    pub fn node_is_identity(
+        &self,
+        spatial_node_index: SpatialNodeIndex,
+    ) -> bool {
+        let mut current = spatial_node_index;
+
+        while current != ROOT_SPATIAL_NODE_INDEX {
+            let node = &self.spatial_nodes[current.0];
+
+            match node.node_type {
+                SpatialNodeType::ReferenceFrame(ref info) => {
+                    if !info.source_perspective.is_identity() {
+                        return false;
+                    }
+
+                    match info.source_transform {
+                        PropertyBinding::Value(transform) => {
+                            if transform != LayoutTransform::identity() {
+                                return false;
+                            }
+                        }
+                        PropertyBinding::Binding(..) => {
+                            
+                            return false;
+                        }
+                    }
+                }
+                SpatialNodeType::ScrollFrame(ref info) => {
+                    
+                    if let ScrollFrameKind::Explicit = info.frame_kind {
+                        return false;
+                    }
+                }
+                SpatialNodeType::StickyFrame(..) => {
+                    
+                    return false;
+                }
+            }
+            current = node.parent.unwrap();
+        }
+
+        true
     }
 }
 

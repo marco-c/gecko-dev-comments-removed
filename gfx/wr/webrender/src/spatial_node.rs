@@ -96,6 +96,7 @@ impl SpatialNode {
         frame_rect: &LayoutRect,
         content_size: &LayoutSize,
         scroll_sensitivity: ScrollSensitivity,
+        frame_kind: ScrollFrameKind,
     ) -> Self {
         let node_type = SpatialNodeType::ScrollFrame(ScrollFrameInfo::new(
                 *frame_rect,
@@ -105,6 +106,7 @@ impl SpatialNode {
                     (content_size.height - frame_rect.size.height).max(0.0)
                 ),
                 external_id,
+                frame_kind,
             )
         );
 
@@ -558,6 +560,14 @@ impl SpatialNode {
     }
 }
 
+
+
+#[derive(Copy, Clone, Debug)]
+pub enum ScrollFrameKind {
+    PipelineRoot,
+    Explicit,
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct ScrollFrameInfo {
     
@@ -575,6 +585,14 @@ pub struct ScrollFrameInfo {
     
     pub external_id: Option<ExternalScrollId>,
 
+    
+    
+    
+    
+    
+    
+    
+    pub frame_kind: ScrollFrameKind,
 }
 
 
@@ -584,6 +602,7 @@ impl ScrollFrameInfo {
         scroll_sensitivity: ScrollSensitivity,
         scrollable_size: LayoutSize,
         external_id: Option<ExternalScrollId>,
+        frame_kind: ScrollFrameKind,
     ) -> ScrollFrameInfo {
         ScrollFrameInfo {
             viewport_rect,
@@ -591,6 +610,7 @@ impl ScrollFrameInfo {
             scroll_sensitivity,
             scrollable_size,
             external_id,
+            frame_kind,
         }
     }
 
@@ -611,6 +631,7 @@ impl ScrollFrameInfo {
             scroll_sensitivity: self.scroll_sensitivity,
             scrollable_size: self.scrollable_size,
             external_id: self.external_id,
+            frame_kind: self.frame_kind,
         }
     }
 }

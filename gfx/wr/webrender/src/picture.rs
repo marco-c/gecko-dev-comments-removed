@@ -775,7 +775,7 @@ impl TileCache {
                     
                     if let Some(handle) = retained_tiles.remove(&tile.descriptor) {
                         
-                        if !resource_cache.texture_cache.request(&handle, gpu_cache) {
+                        if resource_cache.texture_cache.is_allocated(&handle) {
                             
                             tile.handle = handle;
                             tile.is_valid = true;
@@ -847,12 +847,19 @@ impl TileCache {
                     .expect("bug: unable to map tile to world coords");
                 tile.is_visible = frame_context.screen_world_rect.intersects(&tile_world_rect);
 
-                
-                
-                if !tile.is_valid && tile.is_visible && tile.in_use {
-                    dirty_rect = dirty_rect.union(&tile_rect);
-                    tile_offset.x = tile_offset.x.min(x);
-                    tile_offset.y = tile_offset.y.min(y);
+                if tile.is_visible && tile.in_use {
+                    
+                    
+                    
+                    resource_cache.texture_cache.request(&tile.handle, gpu_cache);
+
+                    
+                    
+                    if !tile.is_valid {
+                        dirty_rect = dirty_rect.union(&tile_rect);
+                        tile_offset.x = tile_offset.x.min(x);
+                        tile_offset.y = tile_offset.y.min(y);
+                    }
                 }
             }
         }
