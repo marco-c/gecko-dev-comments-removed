@@ -1842,16 +1842,11 @@ public:
 
 
 
-
-  bool SetRefreshObserver(ScrollFrameHelper *aCallee) {
+  void SetRefreshObserver(ScrollFrameHelper* aCallee) {
     NS_ASSERTION(aCallee && !mCallee, "AsyncSmoothMSDScroll::SetRefreshObserver - Invalid usage.");
 
-    if (!RefreshDriver(aCallee)->AddRefreshObserver(this, FlushType::Style)) {
-      return false;
-    }
-
+    RefreshDriver(aCallee)->AddRefreshObserver(this, FlushType::Style);
     mCallee = aCallee;
-    return true;
   }
 
   
@@ -1955,19 +1950,14 @@ public:
 
 
 
-
-  bool SetRefreshObserver(ScrollFrameHelper *aCallee) {
+  void SetRefreshObserver(ScrollFrameHelper* aCallee) {
     NS_ASSERTION(aCallee && !mCallee, "AsyncScroll::SetRefreshObserver - Invalid usage.");
 
-    if (!RefreshDriver(aCallee)->AddRefreshObserver(this, FlushType::Style)) {
-      return false;
-    }
-
+    RefreshDriver(aCallee)->AddRefreshObserver(this, FlushType::Style);
     mCallee = aCallee;
     nsIPresShell* shell = mCallee->mOuter->PresShell();
     MOZ_ASSERT(shell);
     shell->SuppressDisplayport(true);
-    return true;
   }
 
   virtual void WillRefresh(mozilla::TimeStamp aTime) override {
@@ -2470,11 +2460,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
                                    currentVelocity, GetScrollRangeForClamping(),
                                    now, presContext);
 
-        if (!mAsyncSmoothMSDScroll->SetRefreshObserver(this)) {
-          
-          CompleteAsyncScroll(range, aOrigin);
-          return;
-        }
+        mAsyncSmoothMSDScroll->SetRefreshObserver(this);
       } else {
         
         
@@ -2493,11 +2479,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
 
   if (!mAsyncScroll) {
     mAsyncScroll = new AsyncScroll();
-    if (!mAsyncScroll->SetRefreshObserver(this)) {
-      
-      CompleteAsyncScroll(range, aOrigin);
-      return;
-    }
+    mAsyncScroll->SetRefreshObserver(this);
   }
 
   if (isSmoothScroll) {

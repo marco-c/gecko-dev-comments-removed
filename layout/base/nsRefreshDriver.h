@@ -137,9 +137,9 @@ public:
 
 
 
-  bool AddRefreshObserver(nsARefreshObserver *aObserver,
+  void AddRefreshObserver(nsARefreshObserver* aObserver,
                           mozilla::FlushType aFlushType);
-  bool RemoveRefreshObserver(nsARefreshObserver *aObserver,
+  bool RemoveRefreshObserver(nsARefreshObserver* aObserver,
                              mozilla::FlushType aFlushType);
   
 
