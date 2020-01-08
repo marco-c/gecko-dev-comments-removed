@@ -43,7 +43,8 @@ AntiTracking.runTest("Image cache - should load the image twice.",
   null, 
   null, 
   false, 
-  false 
+  false, 
+  expectedBlockingNotifications
 );
 
 
