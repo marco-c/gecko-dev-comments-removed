@@ -96,21 +96,29 @@ rtc::Optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
     if (seq_scaling_matrix_present_flag) {
       
       
-      uint32_t seq_scaling_list_present_flags;
-      if (chroma_format_idc != 3) {
+      
+      int scaling_list_count = (chroma_format_idc == 3 ? 12 : 8);
+      for (int i = 0; i < scaling_list_count; ++i) {
+        
+        uint32_t seq_scaling_list_present_flags;
         RETURN_EMPTY_ON_FAIL(
-            buffer->ReadBits(&seq_scaling_list_present_flags, 8));
-      } else {
-        RETURN_EMPTY_ON_FAIL(
-            buffer->ReadBits(&seq_scaling_list_present_flags, 12));
-      }
-      
-      
-      
-      if (seq_scaling_list_present_flags > 0) {
-        RTC_LOG(LS_WARNING)
-            << "SPS contains scaling lists, which are unsupported.";
-        return OptionalSps();
+            buffer->ReadBits(&seq_scaling_list_present_flags, 1));
+        if (seq_scaling_list_present_flags != 0) {
+          int last_scale = 8;
+          int next_scale = 8;
+          int size_of_scaling_list = i < 6 ? 16 : 64;
+          for (int j = 0; j < size_of_scaling_list; j++) {
+            if (next_scale != 0) {
+              int32_t delta_scale;
+              
+              RETURN_EMPTY_ON_FAIL(
+                  buffer->ReadSignedExponentialGolomb(&delta_scale));
+              next_scale = (last_scale + delta_scale + 256) % 256;
+            }
+            if (next_scale != 0)
+              last_scale = next_scale;
+          }
+        }
       }
     }
   }
