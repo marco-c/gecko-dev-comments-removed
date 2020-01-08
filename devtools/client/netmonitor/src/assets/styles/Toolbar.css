@@ -9,6 +9,17 @@
   line-height: 23px;
 }
 
+
+.monitor-panel .devtools-button {
+  background-color: transparent;
+}
+
+
+.theme-light .monitor-panel .devtools-button.checked {
+  color: var(--grey-90);
+  background-color: var(--grey-90-a10);
+}
+
 .devtools-toolbar-container {
   height: auto;
   flex-wrap: wrap;
