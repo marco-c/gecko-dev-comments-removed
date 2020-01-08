@@ -23,14 +23,19 @@ def test_create_profile(options, app, get_prefs):
         return
 
     
-    firefox_pref = 'user_pref("app.update.enabled", false);'
+    firefox_prefs = [
+        'user_pref("app.update.disabledForTesting", true);',
+        'user_pref("'
+        'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer", true);'
+    ]
     
     raptor_pref = 'user_pref("security.enable_java", false);'
 
     prefs_file = os.path.join(raptor.profile.profile, 'user.js')
     with open(prefs_file, 'r') as fh:
         prefs = fh.read()
-        assert firefox_pref in prefs
+        for firefox_pref in firefox_prefs:
+            assert firefox_pref in prefs
         assert raptor_pref in prefs
 
 
