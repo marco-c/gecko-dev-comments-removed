@@ -17,15 +17,17 @@ const {
 
 const FieldPair = createFactory(require("./FieldPair"));
 
+const Types = require("../../types/index");
+
 
 
 
 class WorkerDetail extends PureComponent {
   static get propTypes() {
     return {
-      target: PropTypes.object.isRequired,
       
       getString: PropTypes.func.isRequired,
+      target: Types.debugTarget.isRequired,
     };
   }
 
