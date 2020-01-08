@@ -366,6 +366,11 @@ public:
       
       
       return true;
+    } else if (type == DisplayItemType::TYPE_CARET) {
+      
+      
+      
+      return true;
     }
     return false;
   }
