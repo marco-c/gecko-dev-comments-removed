@@ -100,6 +100,9 @@ struct TupleImpl<Index> {
   {
     return true;
   }
+
+  template <typename F>
+  void ForEach(const F& aFunc) {}
 };
 
 
@@ -190,6 +193,27 @@ struct TupleImpl<Index, HeadT, TailT...>
   bool operator==(const TupleImpl& aOther) const
   {
     return Head(*this) == Head(aOther) && Tail(*this) == Tail(aOther);
+  }
+
+  template <typename F>
+  void ForEach(const F& aFunc) const &
+  {
+    aFunc(Head(*this));
+    Tail(*this).ForEach(aFunc);
+  }
+
+  template <typename F>
+  void ForEach(const F& aFunc) &
+  {
+    aFunc(Head(*this));
+    Tail(*this).ForEach(aFunc);
+  }
+
+  template <typename F>
+  void ForEach(const F& aFunc) &&
+  {
+    aFunc(std::move(Head(*this)));
+    std::move(Tail(*this)).ForEach(aFunc);
   }
 private:
   HeadT mHead;  
@@ -418,6 +442,50 @@ auto Get(Tuple<Elements...>&& aTuple)
   
   
   return std::move(mozilla::Get<Index>(aTuple));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename F>
+inline void
+ForEach(const Tuple<>& aTuple, const F& aFunc)
+{
+}
+
+template <typename F>
+inline void
+ForEach(Tuple<>& aTuple, const F& aFunc)
+{
+}
+
+template <typename F, typename... Elements>
+void
+ForEach(const Tuple<Elements...>& aTuple, const F& aFunc)
+{
+  aTuple.ForEach(aTuple, aFunc);
+}
+
+template <typename F, typename... Elements>
+void
+ForEach(Tuple<Elements...>& aTuple, const F& aFunc)
+{
+  aTuple.ForEach(aFunc);
+}
+
+template <typename F, typename... Elements>
+void
+ForEach(Tuple<Elements...>&& aTuple, const F& aFunc)
+{
+  std::forward<Tuple<Elements...>>(aTuple).ForEach(aFunc);
 }
 
 
