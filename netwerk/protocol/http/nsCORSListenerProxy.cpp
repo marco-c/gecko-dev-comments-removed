@@ -86,10 +86,11 @@ LogBlockedRequest(nsIRequest* aRequest,
   }
 
   nsAutoString msg(blockedMessage.get());
+  nsDependentCString category(aProperty);
 
   if (XRE_IsParentProcess()) {
     if (aCreatingChannel) {
-      rv = aCreatingChannel->LogBlockedCORSRequest(msg);
+      rv = aCreatingChannel->LogBlockedCORSRequest(msg, category);
       if (NS_SUCCEEDED(rv)) {
         return;
       }
@@ -106,9 +107,10 @@ LogBlockedRequest(nsIRequest* aRequest,
   }
 
   
+  
   uint64_t innerWindowID = nsContentUtils::GetInnerWindowID(aRequest);
   nsCORSListenerProxy::LogBlockedCORSRequest(innerWindowID, privateBrowsing,
-                                             msg);
+                                             msg, category);
 }
 
 
@@ -1578,7 +1580,8 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
 void
 nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                            bool aPrivateBrowsing,
-                                           const nsAString& aMessage)
+                                           const nsAString& aMessage,
+                                           const nsACString& aCategory)
 {
   nsresult rv = NS_OK;
 
@@ -1605,17 +1608,18 @@ nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                               0,             
                                               0,             
                                               nsIScriptError::warningFlag,
-                                              "CORS",
+                                              aCategory,
                                               aInnerWindowID);
   }
   else {
+    nsCString category = PromiseFlatCString(aCategory);
     rv = scriptError->Init(aMessage,
                            EmptyString(), 
                            EmptyString(), 
                            0,             
                            0,             
                            nsIScriptError::warningFlag,
-                           "CORS",
+                           category.get(),
                            aPrivateBrowsing);
   }
   if (NS_FAILED(rv)) {
