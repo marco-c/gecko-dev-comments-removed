@@ -152,16 +152,17 @@ var AppManager = exports.AppManager = {
       this.preferenceFront = null;
     } else {
       const response = await this.connection.client.listTabs();
-      
-      
-      
-      Object.defineProperty(this.connection.client.mainRoot, "rootForm", {
-        value: response
-      });
       this._listTabsResponse = response;
-      this.deviceFront = await this.connection.client.mainRoot.getFront("device");
-      this.preferenceFront = await this.connection.client.mainRoot.getFront("preference");
-      this._recordRuntimeInfo();
+      try {
+        this.deviceFront = await this.connection.client.mainRoot.getFront("device");
+        this.preferenceFront = await this.connection.client.mainRoot.getFront("preference");
+        this._recordRuntimeInfo();
+      } catch (e) {
+        
+        
+        
+        console.error(e);
+      }
       this.update("runtime-global-actors");
     }
 
@@ -510,10 +511,6 @@ var AppManager = exports.AppManager = {
            this.connection.client.mainRoot.traits.allowChromeProcess ||
            (this._listTabsResponse &&
             this._listTabsResponse.consoleActor);
-  },
-
-  get listTabsForm() {
-    return this._listTabsResponse;
   },
 
   disconnectRuntime: function() {

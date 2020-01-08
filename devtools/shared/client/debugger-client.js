@@ -206,18 +206,34 @@ DebuggerClient.prototype = {
 
 
 
-  async checkRuntimeVersion(listTabsForm) {
-    let incompatible = null;
+  async checkRuntimeVersion() {
+    const localID = Services.appinfo.appBuildID.substr(0, 8);
 
-    const deviceFront = await this.mainRoot.getFront("device");
+    let deviceFront;
+    try {
+      deviceFront = await this.mainRoot.getFront("device");
+    } catch (e) {
+      
+      
+      if (e.error == "unrecognizedPacketType") {
+        return {
+          incompatible: "too-old",
+          minVersion: MIN_SUPPORTED_PLATFORM_VERSION,
+          runtimeVersion: "<55",
+          localID,
+          runtimeID: "?",
+        };
+      }
+      throw e;
+    }
     const desc = await deviceFront.getDescription();
+    let incompatible = null;
 
     
     
     
     
     const runtimeID = desc.appbuildid.substr(0, 8);
-    const localID = Services.appinfo.appBuildID.substr(0, 8);
     function buildIDToDate(buildID) {
       const fields = buildID.match(/(\d{4})(\d{2})(\d{2})/);
       
