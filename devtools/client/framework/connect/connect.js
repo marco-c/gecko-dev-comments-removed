@@ -110,20 +110,12 @@ var onConnectionReady = async function([aType, aTraits]) {
 
   const gParent = document.getElementById("globalActors");
 
-  const globals = await gClient.mainRoot.rootForm;
   
-  
-  
-  if (globals.consoleActor || gClient.mainRoot.traits.allowChromeProcess) {
+  if (gClient.mainRoot.traits.allowChromeProcess) {
     const a = document.createElement("a");
     a.onclick = function() {
       if (gClient.mainRoot.traits.allowChromeProcess) {
-        gClient.mainRoot.getMainProcess()
-               .then(front => {
-                 openToolbox(null, true, null, front);
-               });
-      } else if (globals.consoleActor) {
-        openToolbox(globals, true, "webconsole", false);
+        gClient.mainRoot.getMainProcess().then(front => openToolbox(front, true));
       }
     };
     a.title = a.textContent = L10N.getStr("mainProcess");
@@ -153,7 +145,7 @@ var onConnectionReady = async function([aType, aTraits]) {
 function buildAddonLink(addon, parent) {
   const a = document.createElement("a");
   a.onclick = async function() {
-    openToolbox(null, true, "webconsole", addon);
+    openToolbox(addon, true);
   };
 
   a.textContent = addon.name;
@@ -212,16 +204,15 @@ function handleConnectionTimeout() {
 
 
 
-function openToolbox(form, chrome = false, tool = "webconsole", activeTab = null) {
+function openToolbox(activeTab, chrome = false) {
   const options = {
-    form,
     activeTab,
     client: gClient,
     chrome,
   };
   TargetFactory.forRemoteTab(options).then((target) => {
     const hostType = Toolbox.HostType.WINDOW;
-    gDevTools.showToolbox(target, tool, hostType).then((toolbox) => {
+    gDevTools.showToolbox(target, "webconsole", hostType).then((toolbox) => {
       toolbox.once("destroyed", function() {
         gClient.close();
       });
