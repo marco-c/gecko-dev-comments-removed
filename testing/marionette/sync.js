@@ -13,41 +13,22 @@ const {
   stack,
   TimeoutError,
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
-const {truncate} = ChromeUtils.import("chrome://marionette/content/format.js", {});
 const {Log} = ChromeUtils.import("chrome://marionette/content/log.js", {});
 
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
 this.EXPORTED_SYMBOLS = [
-  "executeSoon",
   "DebounceCallback",
   "IdlePromise",
+  "MessageManagerDestroyedPromise",
   "PollPromise",
   "Sleep",
   "TimedPromise",
-  "waitForEvent",
-  "waitForMessage",
-  "waitForObserverTopic",
 ];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
 const PROMISE_TIMEOUT = AppConstants.DEBUG ? 4500 : 1500;
-
-
-
-
-
-
-
-
-function executeSoon(func) {
-  if (typeof func != "function") {
-    throw new TypeError();
-  }
-
-  Services.tm.dispatchToMainThread(func);
-}
 
 
 
@@ -264,6 +245,46 @@ function Sleep(timeout) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MessageManagerDestroyedPromise(messageManager) {
+  return new Promise(resolve => {
+    function observe(subject, topic) {
+      log.trace(`Received observer notification ${topic}`);
+
+      if (subject == messageManager) {
+        Services.obs.removeObserver(this, "message-manager-disconnect");
+        resolve();
+      }
+    }
+
+    Services.obs.addObserver(observe, "message-manager-disconnect");
+  });
+}
+
+
+
+
+
+
+
+
+
+
 function IdlePromise(win) {
   return new Promise(resolve => {
     Services.tm.idleDispatchToMainThread(() => {
@@ -330,192 +351,3 @@ class DebounceCallback {
   }
 }
 this.DebounceCallback = DebounceCallback;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForEvent(subject, eventName,
-    {capture = false, checkFn = null, wantsUntrusted = false} = {}) {
-  if (subject == null || !("addEventListener" in subject)) {
-    throw new TypeError();
-  }
-  if (typeof eventName != "string") {
-    throw new TypeError();
-  }
-  if (capture != null && typeof capture != "boolean") {
-    throw new TypeError();
-  }
-  if (checkFn != null && typeof checkFn != "function") {
-    throw new TypeError();
-  }
-  if (wantsUntrusted != null && typeof wantsUntrusted != "boolean") {
-    throw new TypeError();
-  }
-
-  return new Promise((resolve, reject) => {
-    subject.addEventListener(eventName, function listener(event) {
-      log.trace(`Received DOM event ${event.type} for ${event.target}`);
-      try {
-        if (checkFn && !checkFn(event)) {
-          return;
-        }
-        subject.removeEventListener(eventName, listener, capture);
-        executeSoon(() => resolve(event));
-      } catch (ex) {
-        try {
-          subject.removeEventListener(eventName, listener, capture);
-        } catch (ex2) {
-          
-        }
-        executeSoon(() => reject(ex));
-      }
-    }, capture, wantsUntrusted);
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForMessage(messageManager, messageName,
-    {checkFn = undefined} = {}) {
-  if (messageManager == null || !("addMessageListener" in messageManager)) {
-    throw new TypeError();
-  }
-  if (typeof messageName != "string") {
-    throw new TypeError();
-  }
-  if (checkFn && typeof checkFn != "function") {
-    throw new TypeError();
-  }
-
-  return new Promise(resolve => {
-    messageManager.addMessageListener(messageName, function onMessage(msg) {
-      log.trace(`Received ${messageName} for ${msg.target}`);
-      if (checkFn && !checkFn(msg)) {
-        return;
-      }
-      messageManager.removeMessageListener(messageName, onMessage);
-      resolve(msg.data);
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForObserverTopic(topic, {checkFn = null} = {}) {
-  if (typeof topic != "string") {
-    throw new TypeError();
-  }
-  if (checkFn != null && typeof checkFn != "function") {
-    throw new TypeError();
-  }
-
-  return new Promise((resolve, reject) => {
-    Services.obs.addObserver(function observer(subject, topic, data) {
-      log.trace(`Received observer notification ${topic}`);
-      try {
-        if (checkFn && !checkFn(subject, data)) {
-          return;
-        }
-        Services.obs.removeObserver(observer, topic);
-        resolve({subject, data});
-      } catch (ex) {
-        Services.obs.removeObserver(observer, topic);
-        reject(ex);
-      }
-    }, topic);
-  });
-}
