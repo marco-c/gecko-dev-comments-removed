@@ -1780,7 +1780,6 @@ window._gBrowser = {
     nextTabParentId,
     openerWindow,
     recordExecution,
-    remote,
     remoteType,
     replayExecution,
     sameProcessAsFrameLoader,
@@ -1796,11 +1795,6 @@ window._gBrowser = {
 
     if (userContextId) {
       b.setAttribute("usercontextid", userContextId);
-    }
-
-    
-    if (remote && !remoteType) {
-      remoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
     }
 
     if (remoteType) {
