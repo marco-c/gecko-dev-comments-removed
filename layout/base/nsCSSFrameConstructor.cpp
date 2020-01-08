@@ -8735,12 +8735,27 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
   MOZ_ASSERT(aFrame == aFrame->FirstContinuation(),
              "aFrame not the result of GetPrimaryFrame()?");
 
+  nsIFrame* inFlowFrame =
+    (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
+      aFrame->GetPlaceholderFrame() : aFrame;
+  MOZ_ASSERT(inFlowFrame, "How did that happen?");
+  MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
+             "placeholder for primary frame has previous continuations?");
+  nsIFrame* parent = inFlowFrame->GetParent();
+
   if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
-    nsIFrame* parent = aFrame->GetParent();
+    nsIFrame* grandparent = parent->GetParent();
+    MOZ_ASSERT(grandparent);
+
     bool needsReframe =
       
       
       aFrame->IsColumnSpan() ||
+      
+      
+      
+      
+      aFrame->GetProperty(nsIFrame::HasColumnSpanSiblings()) ||
       
       
       
@@ -8756,7 +8771,7 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
        !parent->GetPrevInFlow() &&
        
        
-       parent->GetPrevContinuation());
+       grandparent->GetPrevSibling());
 
     if (needsReframe) {
       nsIFrame* containingBlock = GetMultiColumnContainingBlockFor(aFrame);
@@ -8795,14 +8810,6 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
                              InsertionKind::Async);
     return true;
   }
-
-  nsIFrame* inFlowFrame =
-    (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
-      aFrame->GetPlaceholderFrame() : aFrame;
-  MOZ_ASSERT(inFlowFrame, "How did that happen?");
-  MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
-             "placeholder for primary frame has previous continuations?");
-  nsIFrame* parent = inFlowFrame->GetParent();
 
   if (parent && parent->IsDetailsFrame()) {
     HTMLSummaryElement* summary =
@@ -11118,10 +11125,6 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
   
   
   
-  
-  
-  
-  
 
   nsBlockFrame* blockFrame = do_QueryFrame(*aNewFrame);
   MOZ_ASSERT(blockFrame->IsBlockFrame() || blockFrame->IsDetailsFrame(),
@@ -11424,8 +11427,10 @@ nsCSSFrameConstructor::CreateColumnSpanSiblings(nsFrameConstructorState& aState,
   ComputedStyle* const initialBlockStyle = aInitialBlock->Style();
   nsContainerFrame* const parentFrame = aInitialBlock->GetParent();
 
+  aInitialBlock->SetProperty(nsIFrame::HasColumnSpanSiblings(), true);
+
   nsFrameItems siblings;
-  nsContainerFrame* lastNewBlock = aInitialBlock;
+  nsContainerFrame* lastNonColumnSpanWrapper = aInitialBlock;
   do {
     MOZ_ASSERT(aChildList.NotEmpty(), "Why call this if child list is empty?");
     MOZ_ASSERT(aChildList.FirstChild()->IsColumnSpan(),
@@ -11448,8 +11453,6 @@ nsCSSFrameConstructor::CreateColumnSpanSiblings(nsFrameConstructorState& aState,
       aState.ReparentAbsoluteItems(columnSpanWrapper);
     }
 
-    lastNewBlock->SetNextContinuation(columnSpanWrapper);
-    columnSpanWrapper->SetPrevContinuation(lastNewBlock);
     siblings.AddChild(columnSpanWrapper);
 
     
@@ -11470,11 +11473,11 @@ nsCSSFrameConstructor::CreateColumnSpanSiblings(nsFrameConstructorState& aState,
       }
     }
 
-    columnSpanWrapper->SetNextContinuation(nonColumnSpanWrapper);
-    nonColumnSpanWrapper->SetPrevContinuation(columnSpanWrapper);
+    lastNonColumnSpanWrapper->SetNextContinuation(nonColumnSpanWrapper);
+    nonColumnSpanWrapper->SetPrevContinuation(lastNonColumnSpanWrapper);
     siblings.AddChild(nonColumnSpanWrapper);
 
-    lastNewBlock = nonColumnSpanWrapper;
+    lastNonColumnSpanWrapper = nonColumnSpanWrapper;
   } while (aChildList.NotEmpty());
 
   return siblings;

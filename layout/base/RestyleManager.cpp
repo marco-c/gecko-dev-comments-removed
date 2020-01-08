@@ -2009,11 +2009,11 @@ ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const
 {
   MOZ_ASSERT(mOwner);
   MOZ_ASSERT(!mOwner->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
+  MOZ_ASSERT(!mOwner->IsColumnSpanInMulticolSubtree());
   
   
   
   
-#ifdef DEBUG
   if (aParent.mOwner) {
     const nsIFrame* owner = ExpectedOwnerForChild(mOwner);
     if (owner != aParent.mOwner) {
@@ -2029,7 +2029,6 @@ ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const
       MOZ_ASSERT(found, "Must have aParent.mOwner on our expected owner chain");
     }
   }
-#endif
 }
 
 nsChangeHint
@@ -2657,6 +2656,13 @@ RestyleManager::ProcessPostTraversal(
     primaryFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
 
   
+  
+  
+  const bool isColumnSpan =
+    primaryFrame &&
+    primaryFrame->IsColumnSpanInMulticolSubtree();
+
+  
   bool wasRestyled;
   nsChangeHint changeHint =
     static_cast<nsChangeHint>(Servo_TakeChangeHint(aElement, &wasRestyled));
@@ -2683,8 +2689,11 @@ RestyleManager::ProcessPostTraversal(
       maybeAnonBoxChild = primaryFrame->GetPlaceholderFrame();
     } else {
       maybeAnonBoxChild = primaryFrame;
-      changeHint = NS_RemoveSubsumedHints(
-        changeHint, aRestyleState.ChangesHandledFor(styleFrame));
+      
+      if (!isColumnSpan) {
+        changeHint = NS_RemoveSubsumedHints(
+          changeHint, aRestyleState.ChangesHandledFor(styleFrame));
+      }
     }
 
     
@@ -2739,7 +2748,7 @@ RestyleManager::ProcessPostTraversal(
 
   Maybe<ServoRestyleState> thisFrameRestyleState;
   if (styleFrame) {
-    auto type = isOutOfFlow
+    auto type = isOutOfFlow || isColumnSpan
       ? ServoRestyleState::Type::OutOfFlow
       : ServoRestyleState::Type::InFlow;
 

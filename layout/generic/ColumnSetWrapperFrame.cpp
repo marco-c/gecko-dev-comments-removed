@@ -6,6 +6,8 @@
 
 #include "ColumnSetWrapperFrame.h"
 
+#include "nsContentUtils.h"
+
 using namespace mozilla;
 
 nsBlockFrame*
@@ -59,26 +61,17 @@ ColumnSetWrapperFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aRes
 
   
   
+  
+  
+  
+  
+  
+  
+  
   nsIFrame* columnSet = PrincipalChildList().FirstChild();
   MOZ_ASSERT(columnSet && columnSet->IsColumnSetFrame(),
              "The first child should always be ColumnSet!");
   aResult.AppendElement(OwnedAnonBox(columnSet));
-
-#ifdef DEBUG
-  
-  
-  
-  for (nsIFrame* child : PrincipalChildList()) {
-    if (child == columnSet) {
-      
-      continue;
-    }
-    MOZ_ASSERT((child->IsColumnSetFrame() ||
-                child->Style()->GetPseudo() == nsCSSAnonBoxes::columnSpanWrapper()) &&
-               child->GetPrevContinuation(),
-               "Prev continuation is not set properly?");
-  }
-#endif
 }
 
 #ifdef DEBUG_FRAME_DUMP
@@ -102,6 +95,19 @@ ColumnSetWrapperFrame::AppendFrames(ChildListID aListID,
 #endif
 
   nsBlockFrame::AppendFrames(aListID, aFrameList);
+
+#ifdef DEBUG
+  nsIFrame* firstColumnSet = PrincipalChildList().FirstChild();
+  for (nsIFrame* child : PrincipalChildList()) {
+    if (child->IsColumnSpan()) {
+      AssertColumnSpanWrapperSubtreeIsSane(child);
+    } else if (child != firstColumnSet) {
+      
+      MOZ_ASSERT(child->IsColumnSetFrame() && child->GetPrevContinuation(),
+                 "ColumnSet's prev-continuation is not set properly?");
+    }
+  }
+#endif
 }
 
 void
@@ -119,3 +125,37 @@ ColumnSetWrapperFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame)
   MOZ_ASSERT_UNREACHABLE("Unsupported operation!");
   nsBlockFrame::RemoveFrame(aListID, aOldFrame);
 }
+
+#ifdef DEBUG
+
+ void
+ColumnSetWrapperFrame::AssertColumnSpanWrapperSubtreeIsSane(
+  const nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame->IsColumnSpan(), "aFrame is not column-span?");
+
+  if (!aFrame->Style()->IsAnonBox()) {
+    
+    
+    return;
+  }
+
+  MOZ_ASSERT(aFrame->Style()->GetPseudo() == nsCSSAnonBoxes::columnSpanWrapper(),
+             "aFrame should be ::-moz-column-span-wrapper");
+
+  MOZ_ASSERT(!aFrame->HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES),
+             "::-moz-column-span-wrapper anonymous blocks cannot own "
+             "other types of anonymous blocks!");
+
+  nsTArray<nsIContent*> anonKids;
+  nsContentUtils::AppendNativeAnonymousChildren(
+    aFrame->GetContent(), anonKids, 0);
+  MOZ_ASSERT(anonKids.IsEmpty(),
+             "We support only column-span on block and inline frame. They "
+             "should not create any native anonymous children.");
+
+  for (const nsIFrame* child : aFrame->PrincipalChildList()) {
+    AssertColumnSpanWrapperSubtreeIsSane(child);
+  }
+}
+
+#endif
