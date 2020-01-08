@@ -132,11 +132,14 @@ namespace dom {
 #define NS_ORIGINAL_CHECKED_VALUE (1 << 10)
 #define NS_NO_CONTENT_DISPATCH (1 << 11)
 #define NS_ORIGINAL_INDETERMINATE_VALUE (1 << 12)
-#define NS_CONTROL_TYPE(bits)                                       \
-  ((bits) & ~(NS_OUTER_ACTIVATE_EVENT | NS_ORIGINAL_CHECKED_VALUE | \
-              NS_NO_CONTENT_DISPATCH | NS_ORIGINAL_INDETERMINATE_VALUE))
 #define NS_PRE_HANDLE_BLUR_EVENT (1 << 13)
 #define NS_PRE_HANDLE_INPUT_EVENT (1 << 14)
+#define NS_IN_SUBMIT_CLICK (1 << 15)
+#define NS_CONTROL_TYPE(bits)                                             \
+  ((bits) & ~(NS_OUTER_ACTIVATE_EVENT | NS_ORIGINAL_CHECKED_VALUE |       \
+              NS_NO_CONTENT_DISPATCH |  NS_ORIGINAL_INDETERMINATE_VALUE | \
+              NS_PRE_HANDLE_BLUR_EVENT | NS_PRE_HANDLE_INPUT_EVENT |      \
+              NS_IN_SUBMIT_CLICK))
 
 
 
@@ -3180,7 +3183,10 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
       case NS_FORM_INPUT_SUBMIT:
       case NS_FORM_INPUT_IMAGE:
-        if (mForm) {
+        if (mForm && !aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented) {
+          
+          aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented = true;
+          aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
           
           
           
@@ -3736,17 +3742,15 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     }
   }
 
-  if (outerActivateEvent) {
+  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) && mForm) {
     switch (oldType) {
       case NS_FORM_INPUT_SUBMIT:
       case NS_FORM_INPUT_IMAGE:
-        if (mForm) {
-          
-          
-          
-          
-          mForm->OnSubmitClickEnd();
-        }
+        
+        
+        
+        
+        mForm->OnSubmitClickEnd();
         break;
       default:
         break;
@@ -4112,7 +4116,8 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       if (outerActivateEvent) {
         if (mForm && (oldType == NS_FORM_INPUT_SUBMIT ||
                       oldType == NS_FORM_INPUT_IMAGE)) {
-          if (mType != NS_FORM_INPUT_SUBMIT && mType != NS_FORM_INPUT_IMAGE) {
+          if (mType != NS_FORM_INPUT_SUBMIT && mType != NS_FORM_INPUT_IMAGE &&
+              aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) {
             
             
             
@@ -4152,7 +4157,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
             break;
         }  
       }    
-    } else if (outerActivateEvent &&
+    } else if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) &&
                (oldType == NS_FORM_INPUT_SUBMIT ||
                 oldType == NS_FORM_INPUT_IMAGE) &&
                mForm) {

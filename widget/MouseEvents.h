@@ -263,6 +263,10 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
 
   
   
+  nsCOMPtr<dom::EventTarget> mClickTarget;
+
+  
+  
   
   
   Reason mReason;

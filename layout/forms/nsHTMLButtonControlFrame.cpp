@@ -97,7 +97,9 @@ void nsHTMLButtonControlFrame::BuildDisplayList(
   nsDisplayListCollection set(aBuilder);
 
   
-  if (!isForEventDelivery || aBuilder->HitTestIsForVisibility()) {
+  
+  if (!isForEventDelivery || mContent->IsHTMLElement(nsGkAtoms::button) ||
+      aBuilder->HitTestIsForVisibility()) {
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
 
     if (ShouldClipPaintingToBorderBox()) {
