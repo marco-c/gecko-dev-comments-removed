@@ -819,12 +819,14 @@ var gMainPane = {
         "confirm-browser-language-change-button"));
     button.setAttribute("locales", locales.join(","));
     messageBar.hidden = false;
+    gMainPane.requestingLocales = locales;
   },
 
   hideConfirmLanguageChangeMessageBar() {
     let messageBar = document.getElementById("confirmBrowserLanguage");
     messageBar.hidden = true;
     messageBar.querySelector(".message-bar-button").removeAttribute("locales");
+    gMainPane.requestingLocales = null;
   },
 
   
@@ -985,7 +987,7 @@ var gMainPane = {
   showBrowserLanguages() {
     gSubDialog.open(
       "chrome://browser/content/preferences/browserLanguages.xul",
-      null, null, this.browserLanguagesClosed);
+      null, gMainPane.requestingLocales, this.browserLanguagesClosed);
   },
 
   
