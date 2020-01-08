@@ -1318,6 +1318,7 @@ class SpecializedTokenStreamCharsBase<char16_t>
     using CharsBase = TokenStreamCharsBase<char16_t>;
 
   protected:
+    using TokenStreamCharsShared::isAsciiCodePoint;
     
 
     using typename CharsBase::SourceUnits;
@@ -1331,6 +1332,28 @@ class SpecializedTokenStreamCharsBase<char16_t>
 
 
     void infallibleConsumeRestOfSingleLineComment();
+
+    
+
+
+
+
+    char32_t infallibleGetNonAsciiCodePointDontNormalize(char16_t lead) {
+        MOZ_ASSERT(!isAsciiCodePoint(lead));
+        MOZ_ASSERT(this->sourceUnits.previousCodeUnit() == lead);
+
+        
+        if (MOZ_LIKELY(!unicode::IsLeadSurrogate(lead)) ||
+            
+            MOZ_UNLIKELY(this->sourceUnits.atEnd() ||
+                         !unicode::IsTrailSurrogate(this->sourceUnits.peekCodeUnit())))
+        {
+            return lead;
+        }
+
+        
+        return unicode::UTF16Decode(lead, this->sourceUnits.getCodeUnit());
+    }
 
   protected:
     
@@ -1525,6 +1548,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     using GeneralCharsBase::anyCharsAccess;
     using GeneralCharsBase::getCodeUnit;
     using SpecializedCharsBase::infallibleConsumeRestOfSingleLineComment;
+    using SpecializedCharsBase::infallibleGetNonAsciiCodePointDontNormalize;
     using TokenStreamCharsShared::isAsciiCodePoint;
     
     using GeneralCharsBase::ungetCodeUnit;
@@ -1534,6 +1558,18 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
   protected:
     using GeneralCharsBase::GeneralCharsBase;
+
+    
+
+
+
+
+    MOZ_MUST_USE bool getNonAsciiCodePointDontNormalize(char16_t lead, char32_t* codePoint) {
+        
+        
+        *codePoint = infallibleGetNonAsciiCodePointDontNormalize(lead);
+        return true;
+    }
 
     
     
@@ -1726,6 +1762,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::getCodeUnit;
     using SpecializedChars::getFullAsciiCodePoint;
     using SpecializedChars::getNonAsciiCodePoint;
+    using SpecializedChars::getNonAsciiCodePointDontNormalize;
     using TokenStreamCharsShared::isAsciiCodePoint;
     using CharsBase::matchCodeUnit;
     using GeneralCharsBase::matchUnicodeEscapeIdent;
