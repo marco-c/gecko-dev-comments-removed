@@ -26,6 +26,7 @@ class nsIConsoleReportCollector;
 class nsIThreadInternal;
 
 namespace mozilla {
+class ThrottledEventQueue;
 namespace dom {
 
 
