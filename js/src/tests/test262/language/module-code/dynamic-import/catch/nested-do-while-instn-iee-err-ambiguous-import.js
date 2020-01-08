@@ -1,0 +1,60 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+do {
+  import('./instn-iee-err-ambiguous-export_FIXTURE.js').catch(error => {
+
+    assert.sameValue(error.name, 'SyntaxError');
+
+  }).then($DONE, $DONE);
+} while (false);

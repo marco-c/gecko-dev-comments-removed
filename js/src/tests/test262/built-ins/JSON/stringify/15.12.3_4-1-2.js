@@ -6,8 +6,12 @@
 
 
 
-var obj = {};
-obj.prop = obj;
+var obj = {
+  p1: {
+    p2: {}
+  }
+};
+obj.p1.p2.prop = obj;
 
 assert.throws(TypeError, function() {
   JSON.stringify(obj);

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = "prototype";
+
+assert.throws(TypeError, function() {
+  class C {
+    static [x] = 42;
+  }
+});
+
+assert.throws(TypeError, function() {
+  class C {
+    static [x];
+  }
+});
+
+reportCompare(0, 0);

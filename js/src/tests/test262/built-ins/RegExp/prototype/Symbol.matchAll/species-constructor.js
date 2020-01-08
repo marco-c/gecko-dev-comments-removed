@@ -18,7 +18,6 @@
 
 
 
-
 var callCount = 0;
 var callArgs;
 var regexp = /\d/u;
@@ -39,7 +38,6 @@ assert.sameValue(callArgs[1], 'u');
 
 assert.compareIterator(iter, [
   matchValidator(['a'], 0, str),
-  matchValidator(['b'], 2, str)
 ]);
 
 reportCompare(0, 0);

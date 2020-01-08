@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.asyncIterator, 'symbol');
+
+verifyProperty(Symbol, 'asyncIterator', {
+    enumerable: false,
+    writable: false,
+    configurable: false,
+});
+
+reportCompare(0, 0);

@@ -18,7 +18,6 @@
 
 
 
-
 var internalCount = 0;
 Object.defineProperty(RegExp.prototype, Symbol.match, {
   get: function() {
@@ -27,17 +26,35 @@ Object.defineProperty(RegExp.prototype, Symbol.match, {
   }
 });
 
-var count = 0;
+var calls = [];
 var o = {
   get [Symbol.match]() {
-    ++count;
+    calls.push('get @@match');
     return false;
-  }
+  },
+  get flags() {
+    calls.push('get flags');
+    return {
+      toString() {
+        calls.push('flags toString');
+        return "";
+      }
+    };
+  },
 };
 
-RegExp.prototype[Symbol.matchAll].call(o, '1');
+RegExp.prototype[Symbol.matchAll].call(o, {
+  toString() {
+    calls.push('arg toString')
+  }
+});
 
 assert.sameValue(0, internalCount);
-assert.sameValue(1, count);
+
+assert.sameValue(calls.length, 4);
+assert.sameValue(calls[0], 'arg toString');
+assert.sameValue(calls[1], 'get flags');
+assert.sameValue(calls[2], 'flags toString');
+assert.sameValue(calls[3], 'get @@match');
 
 reportCompare(0, 0);

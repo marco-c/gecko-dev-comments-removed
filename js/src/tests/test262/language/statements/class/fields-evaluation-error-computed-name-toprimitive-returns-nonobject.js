@@ -1,0 +1,59 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  [Symbol.toPrimitive]: 42
+};
+
+
+
+function evaluate() {
+  class C {
+    [obj] = refErrorIfEvaluated;
+  }
+}
+
+assert.throws(TypeError, evaluate);
+
+reportCompare(0, 0);

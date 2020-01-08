@@ -44,6 +44,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   static async method(a, b = 39,) {

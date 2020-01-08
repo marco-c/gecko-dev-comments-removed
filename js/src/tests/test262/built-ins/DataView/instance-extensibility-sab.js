@@ -31,9 +31,27 @@
 
 
 
+
 var buffer = new SharedArrayBuffer(8);
 var sample = new DataView(buffer, 0);
 
 assert(Object.isExtensible(sample));
+
+Object.defineProperty(sample, 'baz', {});
+assert(sample.hasOwnProperty('baz'), 'confirms extensibility adding a new property');
+
+Object.defineProperty(sample, 'foo', {
+  value: 'bar',
+  writable: true,
+  configurable: true,
+  enumerable: false,
+});
+
+verifyProperty(sample, 'foo', {
+  value: 'bar',
+  writable: true,
+  configurable: true,
+  enumerable: false,
+});
 
 reportCompare(0, 0);

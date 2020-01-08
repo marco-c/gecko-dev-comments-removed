@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const value = new Intl.ListFormat();
+assert.sameValue(
+  Object.getPrototypeOf(value),
+  Intl.ListFormat.prototype,
+  "Object.getPrototypeOf(value) equals the value of Intl.ListFormat.prototype"
+);
+
+reportCompare(0, 0);

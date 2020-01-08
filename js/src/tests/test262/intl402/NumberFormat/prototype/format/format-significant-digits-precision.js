@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var locales = [
+    new Intl.NumberFormat().resolvedOptions().locale,
+    "ar", "de", "th", "ja"
+];
+var numberingSystems = [
+    "arab",
+    "latn",
+    "thai",
+    "hanidec"
+];
+var testData = {
+    
+    "123.44500": "123.44",
+    "-123.44500": "-123.44",
+};
+
+testNumberFormat(locales, numberingSystems,
+    {useGrouping: false, minimumSignificantDigits: 3, maximumSignificantDigits: 5},
+    testData);
+
+reportCompare(0, 0);

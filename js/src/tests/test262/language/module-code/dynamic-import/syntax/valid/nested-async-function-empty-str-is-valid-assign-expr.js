@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function f() {
+  import('');
+}
+
+
+reportCompare(0, 0);

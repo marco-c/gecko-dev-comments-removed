@@ -17,16 +17,8 @@
 
 
 
-
-
-
-
-
-
-
-class A {}
-
 var executed = false;
+class A {}
 class C extends A {
   x = eval('executed = true; super().x;');
 }

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var smoosh; function smoosh() {}
+
+
+async function f() {
+  import('./empty_FIXTURE.js');
+}
+
+
+reportCompare(0, 0);

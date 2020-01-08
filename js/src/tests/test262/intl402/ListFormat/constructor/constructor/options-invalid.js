@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() { new Intl.ListFormat([], null) })
+
+reportCompare(0, 0);

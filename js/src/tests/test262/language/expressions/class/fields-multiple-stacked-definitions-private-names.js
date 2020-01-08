@@ -29,7 +29,7 @@ var C = class {
   #x; #y
   foo = "foobar"
   bar = "barbaz";
-x() {
+  x() {
     this.#x = 42;
     return this.#x;
   }

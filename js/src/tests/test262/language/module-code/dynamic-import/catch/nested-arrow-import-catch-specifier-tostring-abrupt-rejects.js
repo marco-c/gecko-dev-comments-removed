@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const obj = {
+    toString() {
+        throw 'custom error';
+    }
+};
+
+
+let f = () => {
+  import(obj).catch(error => {
+
+    assert.sameValue(error, 'custom error');
+
+  }).then($DONE, $DONE);
+};
+
+f();

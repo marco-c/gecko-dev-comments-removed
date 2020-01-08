@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  constructor() {
+    class B {
+      #m() {}
+    }
+  }
+
+  #m() {}
+};
+
+reportCompare(0, 0);

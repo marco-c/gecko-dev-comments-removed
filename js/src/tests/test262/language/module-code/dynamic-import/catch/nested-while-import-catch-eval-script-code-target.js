@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let x = 0;
+while (!x) {
+  x++;
+  import('./script-code_FIXTURE.js').catch(error => {
+
+    assert.sameValue(error.name, 'SyntaxError');
+
+  }).then($DONE, $DONE);
+};

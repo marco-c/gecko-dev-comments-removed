@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export default class { static name() { return 'name method'; } }
+import('./eval-export-dflt-cls-name-meth.js').then(imported => {
+  assert.sameValue(imported.default.name(), 'name method', '`name` property is not over-written');
+}).then($DONE, $DONE).catch($DONE);

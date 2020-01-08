@@ -19,27 +19,18 @@
 
 
 
-const testData = [
-    {
-        tag: "nb",
-        options: {
-            language: "no-bok",
-        },
-    },
+assert.throws(RangeError, function() {
+  new Intl.Locale("nb", {
+    language: "no-bok",
+  });
+}, `new Intl.Locale("nb", {language: "no-bok"}) throws RangeError`);
 
-    {
-        tag: "nb",
-        options: {
-            language: "no-bok",
-            region: "NO",
-        },
-    },
-];
+assert.throws(RangeError, function() {
+  new Intl.Locale("nb", {
+    language: "no-bok",
+    region: "NO",
+  });
+}, `new Intl.Locale("nb", {language: "no-bok", region: "NO"}) throws RangeError`);
 
-for (const {tag, options} of testData) {
-    assert.throws(RangeError, function() {
-        new Intl.Locale(tag, options);
-    });
-}
 
 reportCompare(0, 0);

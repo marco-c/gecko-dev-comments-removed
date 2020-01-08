@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.isExtensible(new Intl.ListFormat()),
+  true,
+  "Object.isExtensible(new Intl.ListFormat()) returns true"
+);
+
+reportCompare(0, 0);

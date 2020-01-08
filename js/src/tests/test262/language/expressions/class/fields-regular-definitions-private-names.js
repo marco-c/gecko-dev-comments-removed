@@ -26,7 +26,7 @@
 
 var C = class {
   #x; #y
-x() {
+  x() {
     this.#x = 42;
     return this.#x;
   }

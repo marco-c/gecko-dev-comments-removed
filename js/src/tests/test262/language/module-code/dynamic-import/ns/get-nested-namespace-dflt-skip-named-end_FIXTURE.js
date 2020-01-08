@@ -1,0 +1,7 @@
+
+
+
+
+var x = 42;
+export var namedOther = null;
+export { x as default };

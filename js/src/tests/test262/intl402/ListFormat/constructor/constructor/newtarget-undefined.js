@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Intl.ListFormat();
+});
+
+assert.throws(TypeError, function() {
+  Intl.ListFormat("en");
+});
+
+assert.throws(TypeError, function() {
+  Intl.ListFormat("not-valid-tag");
+});
+
+reportCompare(0, 0);

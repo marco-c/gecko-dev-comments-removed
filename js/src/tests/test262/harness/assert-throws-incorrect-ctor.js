@@ -7,7 +7,6 @@
 
 
 
-
 var threw = false;
 
 try {

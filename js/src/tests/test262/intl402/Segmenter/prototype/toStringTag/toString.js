@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(Object.prototype.toString.call(Intl.Segmenter.prototype), "[object Intl.Segmenter]");
 assert.sameValue(Object.prototype.toString.call(new Intl.Segmenter()), "[object Intl.Segmenter]");
 

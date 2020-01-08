@@ -18,7 +18,6 @@
 
 
 
-
 var regexp = /./;
 regexp.constructor = {
   [Symbol.species]: function() {
@@ -30,8 +29,6 @@ regexp.constructor = {
   }
 };
 
-assert.throws(Test262Error, function() {
-  regexp[Symbol.matchAll]('');
-});
+regexp[Symbol.matchAll]('');
 
 reportCompare(0, 0);

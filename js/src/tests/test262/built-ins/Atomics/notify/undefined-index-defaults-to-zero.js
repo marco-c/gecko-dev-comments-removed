@@ -68,7 +68,7 @@ assert.sameValue($262.agent.getReport(), 'ok', '$262.agent.getReport() returns "
 
 
 var woken = 0;
-while ((woken = Atomics.notify(i32a, )) === 0) ;
+while ((woken = Atomics.notify(i32a )) === 0) ;
 assert.sameValue(woken, 1, 'Atomics.notify(i32a /*, default values used */) returns 1');
 
 assert.sameValue($262.agent.getReport(), 'ok', '$262.agent.getReport() returns "ok"');

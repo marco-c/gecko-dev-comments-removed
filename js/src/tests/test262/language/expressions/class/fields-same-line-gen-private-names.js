@@ -27,7 +27,7 @@
 
 var C = class {
   #x; #y; *m() { return 42; }
-x() {
+  x() {
     this.#x = 42;
     return this.#x;
   }

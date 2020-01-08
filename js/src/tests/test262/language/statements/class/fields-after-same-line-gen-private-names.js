@@ -27,7 +27,7 @@
 
 class C {
   *m() { return 42; } #x; #y;
-x() {
+  x() {
     this.#x = 42;
     return this.#x;
   }

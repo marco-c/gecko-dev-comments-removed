@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.ListFormat.prototype.resolvedOptions,
+  "function",
+  "typeof Intl.ListFormat.prototype.resolvedOptions is function"
+);
+
+verifyProperty(Intl.ListFormat.prototype, "resolvedOptions", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+
+reportCompare(0, 0);

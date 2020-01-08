@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Array.prototype.flatMap,
+  'function',
+  '`typeof Array.prototype.flatMap` is `function`'
+);
+
+verifyProperty(Array.prototype, 'flatMap', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
+
+reportCompare(0, 0);

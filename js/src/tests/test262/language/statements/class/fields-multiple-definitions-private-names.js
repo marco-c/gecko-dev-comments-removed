@@ -31,7 +31,7 @@ class C {
   #x; #y
   m2() { return 39 }
   bar = "barbaz";
-x() {
+  x() {
     this.#x = 42;
     return this.#x;
   }

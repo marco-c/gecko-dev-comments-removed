@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(Float32Array, "length", {
   value: 3,
   writable: false,

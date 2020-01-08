@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function f() {
+  await import('./script-code_FIXTURE.js').catch(error => {
+
+    assert.sameValue(error.name, 'SyntaxError');
+
+  }).then($DONE, $DONE);
+}
+
+f();

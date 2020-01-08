@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.isExtensible(new Intl.Segmenter()),
+  true,
+  "Object.isExtensible(new Intl.Segmenter()) returns true"
+);
+
+reportCompare(0, 0);

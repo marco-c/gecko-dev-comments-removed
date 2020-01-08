@@ -9,14 +9,26 @@
 
 
 
+
 var nf = new Intl.NumberFormat();
 
+const implicit = nf.formatToParts();
+const explicit = nf.formatToParts(undefined);
 
-var implicit = nf.formatToParts();
-var explicit = nf.formatToParts(undefined);
 
-assert(partsEquals(implicit, explicit),
-  "formatToParts() should be equivalent to formatToParts(undefined)");
+
+const resultNaN = nf.format(NaN);
+const result = [{ type: 'nan', value: resultNaN }];
+
+assert(
+  partsEquals(implicit, explicit),
+  'formatToParts() should be equivalent to formatToParts(undefined)'
+);
+
+assert(
+  partsEquals(implicit, result),
+  'Both implicit and explicit calls should have the correct result'
+);
 
 function partsEquals(parts1, parts2) {
   if (parts1.length !== parts2.length) return false;

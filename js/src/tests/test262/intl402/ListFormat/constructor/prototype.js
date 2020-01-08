@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Intl.ListFormat),
+  Function.prototype,
+  "Object.getPrototypeOf(Intl.ListFormat) equals the value of Function.prototype"
+);
+
+reportCompare(0, 0);

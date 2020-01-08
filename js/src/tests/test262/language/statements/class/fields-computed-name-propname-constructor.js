@@ -23,14 +23,34 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var x = "constructor";
-class C {
+class C1 {
   [x];
 }
 
-var c = new C();
+var c1 = new C1();
 
-assert.sameValue(c.hasOwnProperty("constructor"), true);
-assert.sameValue(C.hasOwnProperty("constructor"), false);
+assert.sameValue(c1.hasOwnProperty("constructor"), true);
+assert.sameValue(C1.hasOwnProperty("constructor"), false);
 
 reportCompare(0, 0);

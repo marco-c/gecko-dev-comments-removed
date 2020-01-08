@@ -9,15 +9,16 @@
 
 
 
-
 assert.sameValue(
   typeof Array.prototype.flat,
   'function',
   '`typeof Array.prototype.flat` is `function`'
 );
 
-verifyNotEnumerable(Array.prototype, 'flat');
-verifyWritable(Array.prototype, 'flat');
-verifyConfigurable(Array.prototype, 'flat');
+verifyProperty(Array.prototype, 'flat', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
 
 reportCompare(0, 0);

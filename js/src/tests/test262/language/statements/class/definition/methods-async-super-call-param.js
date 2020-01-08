@@ -9,6 +9,7 @@
 
 
 
+
 class A {
   async method() {
     return 'sup';

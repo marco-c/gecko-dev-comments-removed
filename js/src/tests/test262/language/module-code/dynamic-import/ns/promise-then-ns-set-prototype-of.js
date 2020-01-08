@@ -1,0 +1,85 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import('./module-code_FIXTURE.js').then(ns => {
+
+    var newProto = {};
+
+    assert.sameValue(typeof Object.setPrototypeOf, 'function');
+
+    assert.throws(TypeError, function() {
+      Object.setPrototypeOf(ns, newProto);
+    });
+
+}).then($DONE, $DONE).catch($DONE);

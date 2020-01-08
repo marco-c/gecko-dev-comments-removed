@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  static async #prototype() {}
+};
+
+reportCompare(0, 0);

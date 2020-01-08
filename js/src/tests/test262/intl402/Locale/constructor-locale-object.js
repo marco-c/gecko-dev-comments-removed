@@ -16,17 +16,25 @@
 const enUS = new Intl.Locale("en-US");
 const enGB = new Intl.Locale(enUS, {region: "GB"});
 
-assert.sameValue(enUS.toString(), "en-US");
-assert.sameValue(enGB.toString(), "en-GB");
+assert.sameValue(enUS.toString(), "en-US", 'enUS.toString() returns "en-US"');
+assert.sameValue(enGB.toString(), "en-GB", 'enGB.toString() returns "en-GB"');
 
 
 const zhUnihan = new Intl.Locale("zh-u-co-unihan");
 const zhZhuyin = new Intl.Locale(zhUnihan, {collation: "zhuyin"});
 
-assert.sameValue(zhUnihan.toString(), "zh-u-co-unihan");
-assert.sameValue(zhZhuyin.toString(), "zh-u-co-zhuyin");
+assert.sameValue(
+  zhUnihan.toString(),
+  "zh-u-co-unihan",
+  'zhUnihan.toString() returns "zh-u-co-unihan"'
+);
+assert.sameValue(
+  zhZhuyin.toString(),
+  "zh-u-co-zhuyin",
+  'zhZhuyin.toString() returns "zh-u-co-zhuyin"'
+);
 
-assert.sameValue(zhUnihan.collation, "unihan");
-assert.sameValue(zhZhuyin.collation, "zhuyin");
+assert.sameValue(zhUnihan.collation, "unihan", 'The value of zhUnihan.collation is "unihan"');
+assert.sameValue(zhZhuyin.collation, "zhuyin", 'The value of zhZhuyin.collation is "zhuyin"');
 
 reportCompare(0, 0);

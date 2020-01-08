@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import('./dynamic-import-module_FIXTURE.js').then(imported => {
+
+  assert.sameValue(imported.x, 1);
+
+}).then($DONE, $DONE).catch($DONE);

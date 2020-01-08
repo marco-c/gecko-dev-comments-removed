@@ -10,15 +10,9 @@
 
 
 
+var o = JSON;
+var desc = Object.getOwnPropertyDescriptor(o, "stringify");
 
-
-
-
-
-
-
-var f = JSON.stringify;
-
-assert.sameValue(typeof(f), "function", 'typeof(f)');
+assert.sameValue(desc.configurable, true, 'desc.configurable');
 
 reportCompare(0, 0);

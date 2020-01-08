@@ -24,7 +24,7 @@
 
 var loc = new Intl.Locale("x-private");
 assert.sameValue(loc.baseName, "x-private");
-assert.sameValue(loc.language, undefined);
+assert.sameValue(loc.language, "x-private");
 assert.sameValue(loc.script, undefined);
 assert.sameValue(loc.region, undefined);
 

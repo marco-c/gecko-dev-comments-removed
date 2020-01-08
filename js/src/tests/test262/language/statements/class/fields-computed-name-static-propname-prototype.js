@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  class C {
+    static ['prototype'] = 42;
+  }
+});
+
+assert.throws(TypeError, function() {
+  class C {
+    static ['prototype'];
+  }
+});
+
+reportCompare(0, 0);

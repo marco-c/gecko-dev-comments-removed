@@ -16,12 +16,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 delete RegExp.prototype[Symbol.matchAll];
-var str = 'a*b';
+var str = '/a/g*/b/g';
 
 assert.compareIterator(str.matchAll(/\w/g), [
-  matchValidator(['a'], 0, str),
-  matchValidator(['b'], 2, str)
+  matchValidator(['/a/g'], 0, str),
+  matchValidator(['/b/g'], 5, str)
 ]);
 
 reportCompare(0, 0);

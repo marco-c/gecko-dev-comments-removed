@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.Segmenter.prototype.resolvedOptions,
+  "function",
+  "typeof Intl.Segmenter.prototype.resolvedOptions is function"
+);
+
+verifyProperty(Intl.Segmenter.prototype, "resolvedOptions", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);
