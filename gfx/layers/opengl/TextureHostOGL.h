@@ -224,7 +224,7 @@ protected:
 
 
 
-class GLTextureSource : public TextureSource
+class GLTextureSource : public DataTextureSource
                       , public TextureSourceOGL
 {
 public:
@@ -234,7 +234,7 @@ public:
                   gfx::IntSize aSize,
                   gfx::SurfaceFormat aFormat);
 
-  ~GLTextureSource();
+  virtual ~GLTextureSource();
 
   virtual const char* Name() const override { return "GLTextureSource"; }
 
@@ -269,6 +269,13 @@ public:
     return mGL;
   }
 
+  virtual bool Update(gfx::DataSourceSurface* aSurface,
+                      nsIntRegion* aDestRegion = nullptr,
+                      gfx::IntPoint* aSrcOffset = nullptr) override
+  {
+    return false;
+  }
+
 protected:
   void DeleteTextureHandle();
 
@@ -278,6 +285,33 @@ protected:
   GLenum mTextureTarget;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
+};
+
+
+
+
+
+
+class DirectMapTextureSource : public GLTextureSource
+{
+public:
+  DirectMapTextureSource(TextureSourceProvider* aProvider,
+                         gfx::DataSourceSurface* aSurface);
+
+  virtual bool Update(gfx::DataSourceSurface* aSurface,
+                      nsIntRegion* aDestRegion = nullptr,
+                      gfx::IntPoint* aSrcOffset = nullptr) override;
+
+  virtual bool IsDirectMap() override { return true; }
+
+  
+  virtual void Sync() override;
+
+private:
+  bool UpdateInternal(gfx::DataSourceSurface* aSurface,
+                      nsIntRegion* aDestRegion,
+                      gfx::IntPoint* aSrcOffset,
+                      bool aInit);
 };
 
 class GLTextureHost : public TextureHost
