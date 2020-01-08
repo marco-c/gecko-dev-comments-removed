@@ -5403,7 +5403,7 @@ pref("dom.vr.display.rafMaxDuration", 50);
 
 pref("dom.vr.test.enabled", false);
 
-pref("dom.vr.service.enabled", false);
+pref("dom.vr.service.enabled", true);
 
 
 
