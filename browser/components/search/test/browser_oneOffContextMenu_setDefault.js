@@ -9,12 +9,8 @@ const ONEOFF_URLBAR_PREF = "browser.urlbar.oneOffSearches";
 const urlbar = document.getElementById("urlbar");
 const searchPopup = document.getElementById("PopupSearchAutoComplete");
 const urlbarPopup = document.getElementById("PopupAutoCompleteRichResult");
-const searchOneOffElement = document.getAnonymousElementByAttribute(
-  searchPopup, "anonid", "search-one-off-buttons"
-);
-const urlBarOneOffElement = document.getAnonymousElementByAttribute(
-  urlbarPopup, "anonid", "one-off-search-buttons"
-);
+const searchOneOff = searchPopup.oneOffButtons;
+const urlBarOneOff = urlbarPopup.oneOffSearchButtons;
 
 let originalEngine = Services.search.defaultEngine;
 
@@ -40,10 +36,10 @@ add_task(async function init() {
 
 add_task(async function test_searchBarChangeEngine() {
   let oneOffButton = await openPopupAndGetEngineButton(true, searchPopup,
-                                                       searchOneOffElement,
+                                                       searchOneOff,
                                                        SEARCHBAR_BASE_ID);
 
-  const setDefaultEngineMenuItem = searchOneOffElement.querySelector(
+  const setDefaultEngineMenuItem = searchOneOff.querySelector(
     ".search-one-offs-context-set-default"
   );
 
@@ -74,10 +70,10 @@ add_task(async function test_urlBarChangeEngine() {
   resetEngine();
 
   let oneOffButton = await openPopupAndGetEngineButton(false, urlbarPopup,
-                                                       urlBarOneOffElement,
+                                                       urlBarOneOff,
                                                        URLBAR_BASE_ID);
 
-  const setDefaultEngineMenuItem = urlBarOneOffElement.querySelector(
+  const setDefaultEngineMenuItem = urlBarOneOff.querySelector(
     ".search-one-offs-context-set-default"
   );
 
@@ -134,7 +130,7 @@ function promiseCurrentEngineChanged() {
 
 
 
-async function openPopupAndGetEngineButton(isSearch, popup, oneOffElement, baseId) {
+async function openPopupAndGetEngineButton(isSearch, popup, oneOffInstance, baseId) {
   
   let promise = promiseEvent(popup, "popupshown");
   info("Opening panel");
@@ -150,8 +146,8 @@ async function openPopupAndGetEngineButton(isSearch, popup, oneOffElement, baseI
   }
   await promise;
 
-  const contextMenu = oneOffElement.contextMenuPopup;
-  const oneOffButtons = oneOffElement.buttons;
+  const contextMenu = oneOffInstance.contextMenuPopup;
+  const oneOffButtons = oneOffInstance.buttons;
 
   
   let oneOffButton;
