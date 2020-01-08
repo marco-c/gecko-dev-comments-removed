@@ -2906,51 +2906,51 @@ nsLineLayout::ApplyFrameJustification(PerSpanData* aPSD,
 
   nscoord deltaICoord = 0;
   for (PerFrameData* pfd = aPSD->mFirstFrame; pfd != nullptr; pfd = pfd->mNext) {
-    if (!pfd->ParticipatesInJustification()) {
-      continue;
-    }
+    
+    if (!pfd->mIsBullet) {
+      nscoord dw = 0;
+      WritingMode lineWM = mRootSpan->mWritingMode;
+      const auto& assign = pfd->mJustificationAssignment;
+      bool isInlineText = pfd->mIsTextFrame &&
+                          !pfd->mWritingMode.IsOrthogonalTo(lineWM);
 
-    nscoord dw = 0;
-    WritingMode lineWM = mRootSpan->mWritingMode;
-    const auto& assign = pfd->mJustificationAssignment;
-    bool isInlineText = pfd->mIsTextFrame &&
-                        !pfd->mWritingMode.IsOrthogonalTo(lineWM);
+      if (isInlineText) {
+        if (aState.IsJustifiable()) {
+          
+          
+          const auto& info = pfd->mJustificationInfo;
+          auto textFrame = static_cast<nsTextFrame*>(pfd->mFrame);
+          textFrame->AssignJustificationGaps(assign);
+          dw = aState.Consume(JustificationUtils::CountGaps(info, assign));
+        }
 
-    if (isInlineText) {
-      if (aState.IsJustifiable()) {
+        if (dw) {
+          pfd->mRecomputeOverflow = true;
+        }
+      }
+      else {
+        if (nullptr != pfd->mSpan) {
+          dw = ApplyFrameJustification(pfd->mSpan, aState);
+        }
+      }
+
+      pfd->mBounds.ISize(lineWM) += dw;
+      nscoord gapsAtEnd = 0;
+      if (!isInlineText && assign.TotalGaps()) {
         
         
-        const auto& info = pfd->mJustificationInfo;
-        auto textFrame = static_cast<nsTextFrame*>(pfd->mFrame);
-        textFrame->AssignJustificationGaps(assign);
-        dw = aState.Consume(JustificationUtils::CountGaps(info, assign));
+        deltaICoord += aState.Consume(assign.mGapsAtStart);
+        gapsAtEnd = aState.Consume(assign.mGapsAtEnd);
+        dw += gapsAtEnd;
       }
+      pfd->mBounds.IStart(lineWM) += deltaICoord;
 
-      if (dw) {
-        pfd->mRecomputeOverflow = true;
-      }
-    } else {
-      if (nullptr != pfd->mSpan) {
-        dw = ApplyFrameJustification(pfd->mSpan, aState);
-      }
-    }
-
-    pfd->mBounds.ISize(lineWM) += dw;
-    nscoord gapsAtEnd = 0;
-    if (!isInlineText && assign.TotalGaps()) {
       
       
-      deltaICoord += aState.Consume(assign.mGapsAtStart);
-      gapsAtEnd = aState.Consume(assign.mGapsAtEnd);
-      dw += gapsAtEnd;
+      ApplyLineJustificationToAnnotations(pfd, deltaICoord, dw - gapsAtEnd);
+      deltaICoord += dw;
+      pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(aPSD));
     }
-    pfd->mBounds.IStart(lineWM) += deltaICoord;
-
-    
-    
-    ApplyLineJustificationToAnnotations(pfd, deltaICoord, dw - gapsAtEnd);
-    deltaICoord += dw;
-    pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(aPSD));
   }
   return deltaICoord;
 }
