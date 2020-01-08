@@ -635,6 +635,15 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     }
   }
 
+  if (disp->IsContainLayout() && disp->IsContainSize() &&
+      
+      IsFrameOfType(eSupportsContainLayoutAndPaint)) {
+    
+    
+    
+    AddStateBits(NS_FRAME_REFLOW_ROOT);
+  }
+
   if (nsLayoutUtils::FontSizeInflationEnabled(PresContext()) ||
       !GetParent()
 #ifdef DEBUG
