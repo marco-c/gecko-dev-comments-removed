@@ -1,18 +1,22 @@
-
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
+/* eslint-disable no-shadow, max-nested-callbacks */
 
 "use strict";
 
-
-
-
+/**
+ * Check eval resume/re-pause with a throw.
+ */
 
 var gDebuggee;
 var gClient;
 var gThreadClient;
 
 function run_test() {
+  Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
+  });
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
@@ -30,9 +34,9 @@ function test_throw_eval() {
   gThreadClient.addOneTimeListener("paused", function(event, packet) {
     gThreadClient.eval(null, "throw 'failure'", function(response) {
       Assert.equal(response.type, "resumed");
-      
+      // Expect a pause notification immediately.
       gThreadClient.addOneTimeListener("paused", function(event, packet) {
-        
+        // Check the return value...
         Assert.equal(packet.type, "paused");
         Assert.equal(packet.why.type, "clientEvaluated");
         Assert.equal(packet.why.frameFinished.throw, "failure");
@@ -43,10 +47,10 @@ function test_throw_eval() {
     });
   });
 
-  
+  /* eslint-disable */
   gDebuggee.eval("(" + function () {
     function stopMe(arg1) { debugger; }
     stopMe({obj: true});
   } + ")()");
-  
+  /* eslint-enable */
 }
