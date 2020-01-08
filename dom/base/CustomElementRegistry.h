@@ -445,9 +445,6 @@ public:
 
 
 
-
-
-
   static already_AddRefed<nsISupports> CallGetCustomInterface(
     Element* aElement, const nsIID& aIID);
 
