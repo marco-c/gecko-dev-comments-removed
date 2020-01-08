@@ -14,6 +14,7 @@ use gleam::gl;
 use internal_types::{FastHashMap, LayerIndex, RenderTargetInfo};
 use log::Level;
 use smallvec::SmallVec;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::cmp;
 use std::collections::hash_map::Entry;
@@ -182,7 +183,7 @@ fn get_shader_version(gl: &gl::Gl) -> &'static str {
 
 
 
-fn get_shader_source(shader_name: &str, base_path: &Option<PathBuf>) -> Option<String> {
+fn get_shader_source(shader_name: &str, base_path: &Option<PathBuf>) -> Option<Cow<'static, str>> {
     if let Some(ref base) = *base_path {
         let shader_path = base.join(&format!("{}.glsl", shader_name));
         if shader_path.exists() {
@@ -191,18 +192,18 @@ fn get_shader_source(shader_name: &str, base_path: &Option<PathBuf>) -> Option<S
                 .unwrap()
                 .read_to_string(&mut source)
                 .unwrap();
-            return Some(source);
+            return Some(Cow::Owned(source));
         }
     }
 
     shader_source::SHADERS
         .get(shader_name)
-        .map(|s| s.to_string())
+        .map(|s| Cow::Borrowed(*s))
 }
 
 
 
-fn parse_shader_source(source: String, base_path: &Option<PathBuf>, output: &mut String) {
+fn parse_shader_source<F: FnMut(&str)>(source: Cow<'static, str>, base_path: &Option<PathBuf>, output: &mut F) {
     for line in source.lines() {
         if line.starts_with(SHADER_IMPORT) {
             let imports = line[SHADER_IMPORT.len() ..].split(',');
@@ -214,50 +215,72 @@ fn parse_shader_source(source: String, base_path: &Option<PathBuf>, output: &mut
                 }
             }
         } else {
-            output.push_str(line);
-            output.push_str("\n");
+            output(line);
+            output("\n");
         }
     }
 }
 
+
+
 pub fn build_shader_strings(
+     gl_version_string: &str,
+     features: &str,
+     base_filename: &str,
+     override_path: &Option<PathBuf>,
+) -> (String, String) {
+    let mut vs_source = String::new();
+    build_shader_string(
+        gl_version_string,
+        features,
+        SHADER_KIND_VERTEX,
+        base_filename,
+        override_path,
+        |s| vs_source.push_str(s),
+    );
+
+    let mut fs_source = String::new();
+    build_shader_string(
+        gl_version_string,
+        features,
+        SHADER_KIND_FRAGMENT,
+        base_filename,
+        override_path,
+        |s| fs_source.push_str(s),
+    );
+
+    (vs_source, fs_source)
+}
+
+
+
+
+fn build_shader_string<F: FnMut(&str)>(
     gl_version_string: &str,
     features: &str,
+    kind: &str,
     base_filename: &str,
     override_path: &Option<PathBuf>,
-) -> (String, String) {
+    mut output: F,
+) {
     
-    let mut vs_source = String::new();
-    let mut fs_source = String::new();
-
-    
-    vs_source.push_str(gl_version_string);
-    fs_source.push_str(gl_version_string);
+    output(gl_version_string);
 
     
     let name_string = format!("// {}\n", base_filename);
-    vs_source.push_str(&name_string);
-    fs_source.push_str(&name_string);
+    output(&name_string);
 
     
-    vs_source.push_str(SHADER_KIND_VERTEX);
-    fs_source.push_str(SHADER_KIND_FRAGMENT);
+    output(kind);
 
     
-    vs_source.push_str(features);
-    fs_source.push_str(features);
+    output(features);
 
     
     
-    let mut shared_result = String::new();
     if let Some(shared_source) = get_shader_source(base_filename, override_path) {
-        parse_shader_source(shared_source, override_path, &mut shared_result);
+        parse_shader_source(shared_source, override_path, &mut output);
     }
-
-    vs_source.push_str(&shared_result);
-    fs_source.push_str(&shared_result);
-
-    (vs_source, fs_source)
 }
 
 pub trait FileWatcherHandler: Send {
