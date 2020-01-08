@@ -517,7 +517,7 @@ protected:
 
 
 
-  bool CheckFormValidity(nsIMutableArray* aInvalidElements) const;
+  bool CheckFormValidity(nsTArray<RefPtr<Element>>* aInvalidElements) const;
 
   
   void Clear();

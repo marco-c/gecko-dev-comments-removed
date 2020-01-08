@@ -80,17 +80,9 @@ FormSubmitObserver.prototype =
 
   notifyInvalidSubmit(aFormElement, aInvalidElements) {
     
-    
-    
-    if (!aInvalidElements.length) {
-      return;
-    }
-
-    
-    for (let i = 0; i < aInvalidElements.length; i++) {
+    for (let element of aInvalidElements) {
       
       
-      let element = aInvalidElements.queryElementAt(i, Ci.nsISupports);
       if (this._content != element.ownerGlobal.top.document.defaultView) {
         return;
       }
