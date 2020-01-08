@@ -1355,10 +1355,11 @@ void
 Accessible::Value(nsString& aValue) const
 {
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-  if (!roleMapEntry)
-    return;
 
-  if (roleMapEntry->valueRule != eNoValue) {
+  if ((roleMapEntry && roleMapEntry->valueRule != eNoValue) ||
+      
+      
+      HasNumericValue()) {
     
     
     
@@ -1371,6 +1372,10 @@ Accessible::Value(nsString& aValue) const
       mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_valuenow,
                                      aValue);
     }
+    return;
+  }
+
+  if (!roleMapEntry) {
     return;
   }
 
