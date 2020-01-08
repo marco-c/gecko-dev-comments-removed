@@ -100,6 +100,7 @@ function isInaccessible(wnd, message) {
 function xpcEnumerateContentWindows(callback) {
 
   var Ci = SpecialPowers.Ci;
+  
   var ww = SpecialPowers.Cc["@mozilla.org/embedcomp/window-watcher;1"]
                         .getService(Ci.nsIWindowWatcher);
 
@@ -127,6 +128,7 @@ function xpcEnumerateContentWindows(callback) {
   while (contentWindows.length > 0)
     callback(contentWindows.pop());
 }
+
 
 
 function xpcGetFramesByName(name) {
