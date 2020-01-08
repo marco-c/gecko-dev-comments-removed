@@ -7,8 +7,13 @@
 loader.lazyRequireGetter(this, "Ci", "chrome", true);
 loader.lazyRequireGetter(this, "colorUtils", "devtools/shared/css/color", true);
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
-loader.lazyRequireGetter(this, "InspectorActorUtils", "devtools/server/actors/inspector/utils");
+loader.lazyRequireGetter(this, "getBounds", "devtools/server/actors/highlighters/utils/accessibility", true);
+loader.lazyRequireGetter(this, "getCurrentZoom", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "Services");
+loader.lazyRequireGetter(this, "addPseudoClassLock", "devtools/server/actors/highlighters/utils/markup", true);
+loader.lazyRequireGetter(this, "removePseudoClassLock", "devtools/server/actors/highlighters/utils/markup", true);
+
+const HIGHLIGHTED_PSEUDO_CLASS = ":-moz-devtools-highlighted";
 
 
 
@@ -17,20 +22,18 @@ loader.lazyRequireGetter(this, "Services");
 
 
 
-
-function getContrastRatioFor(node) {
-  const backgroundColor = InspectorActorUtils.getClosestBackgroundColor(node);
-  const backgroundImage = InspectorActorUtils.getClosestBackgroundImage(node);
+function getTextProperties(node) {
   const computedStyles = CssLogic.getComputedStyle(node);
   if (!computedStyles) {
     return null;
   }
 
   const { color, "font-size": fontSize, "font-weight": fontWeight } = computedStyles;
-  const isBoldText = parseInt(fontWeight, 10) >= 600;
-  const backgroundRgbaColor = new colorUtils.CssColor(backgroundColor, true);
-  const textRgbaColor = new colorUtils.CssColor(color, true);
+  const opacity = parseFloat(computedStyles.opacity);
 
+  let { r, g, b, a } = colorUtils.colorToRGBA(color, true);
+  a = opacity * a;
+  const textRgbaColor = new colorUtils.CssColor(`rgba(${r}, ${g}, ${b}, ${a})`, true);
   
   
   
@@ -40,27 +43,175 @@ function getContrastRatioFor(node) {
     return null;
   }
 
+  const isBoldText = parseInt(fontWeight, 10) >= 600;
+  const isLargeText = Math.ceil(parseFloat(fontSize) * 72) / 96 >= (isBoldText ? 14 : 18);
+
+  return {
+    
+    color: colorUtils.blendColors([r, g, b, a]),
+    isLargeText,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getImageCtx(win, bounds, node) {
+  const doc = win.document;
+  const canvas = doc.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+  const scale = getCurrentZoom(win);
+
+  const { left, top, width, height } = bounds;
+  canvas.width = width / scale;
+  canvas.height = height / scale;
+  const ctx = canvas.getContext("2d", { alpha: false });
+
   
+  if (node) {
+    addPseudoClassLock(node, HIGHLIGHTED_PSEUDO_CLASS);
+  }
+
+  ctx.drawWindow(win, left / scale, top / scale, width / scale, height / scale, "#fff",
+                 ctx.DRAWWINDOW_USE_WIDGET_LAYERS);
+
   
-  if (backgroundImage !== "none") {
+  if (node) {
+    removePseudoClassLock(node, HIGHLIGHTED_PSEUDO_CLASS);
+  }
+
+  return ctx;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getBgRGBA(dataText, dataBackground) {
+  let min = [0, 0, 0, 1];
+  let max = [255, 255, 255, 1];
+  let minLuminance = 1;
+  let maxLuminance = 0;
+  const luminances = {};
+
+  let foundDistinctColor = false;
+  for (let i = 0; i < dataText.length; i = i + 4) {
+    const tR = dataText[i];
+    const bgR = dataBackground[i];
+    const tG = dataText[i + 1];
+    const bgG = dataBackground[i + 1];
+    const tB = dataText[i + 2];
+    const bgB = dataBackground[i + 2];
+
+    
+    
+    if (tR === bgR && tG === bgG && tB === bgB) {
+      continue;
+    }
+
+    foundDistinctColor = true;
+
+    const bgColor = `rgb(${bgR}, ${bgG}, ${bgB})`;
+    let luminance = luminances[bgColor];
+
+    if (!luminance) {
+      
+      luminance = colorUtils.calculateLuminance([bgR, bgG, bgB]);
+      luminances[bgColor] = luminance;
+    }
+
+    if (minLuminance >= luminance) {
+      minLuminance = luminance;
+      min = [bgR, bgG, bgB, 1];
+    }
+
+    if (maxLuminance <= luminance) {
+      maxLuminance = luminance;
+      max = [bgR, bgG, bgB, 1];
+    }
+  }
+
+  if (!foundDistinctColor) {
     return null;
   }
 
-  let { r: bgR, g: bgG, b: bgB, a: bgA} = backgroundRgbaColor.getRGBATuple();
-  let { r: textR, g: textG, b: textB, a: textA } = textRgbaColor.getRGBATuple();
+  return minLuminance === maxLuminance ? { value: max } : { min, max };
+}
 
-  
-  
-  const opacity = parseFloat(computedStyles.opacity);
-  if (opacity < 1) {
-    bgA = opacity * bgA;
-    textA = opacity * textA;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getContrastRatioFor(node, options = {}) {
+  const props = getTextProperties(node);
+  if (!props) {
+    return {
+      error: true,
+    };
   }
 
+  const bounds = getBounds(options.win, options.bounds);
+  const textContext = getImageCtx(options.win, bounds);
+  const backgroundContext = getImageCtx(options.win, bounds, node);
+
+  const { data: dataText } = textContext.getImageData(0, 0, bounds.width, bounds.height);
+  const { data: dataBackground } = backgroundContext.getImageData(
+    0, 0, bounds.width, bounds.height);
+
+  const rgba = getBgRGBA(dataText, dataBackground);
+  if (!rgba) {
+    return {
+      error: true,
+    };
+  }
+
+  const { color, isLargeText } = props;
+  if (rgba.value) {
+    return {
+      value: colorUtils.calculateContrastRatio(rgba.value, color),
+      isLargeText,
+    };
+  }
+
+  
+  
+  const min = colorUtils.calculateContrastRatio(rgba.min, Array.from(color));
+  const max = colorUtils.calculateContrastRatio(rgba.max, Array.from(color));
+
   return {
-    ratio: colorUtils.calculateContrastRatio([ bgR, bgG, bgB, bgA ],
-                                             [ textR, textG, textB, textA ]),
-    largeText: Math.ceil(parseFloat(fontSize) * 72) / 96 >= (isBoldText ? 14 : 18),
+    min: min < max ? min : max,
+    max: min < max ? max : min,
+    isLargeText,
   };
 }
 

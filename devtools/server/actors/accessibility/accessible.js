@@ -294,8 +294,15 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
 
 
   _getContrastRatio() {
-    return getContrastRatioFor(this._isValidTextLeaf(this.rawAccessible) ?
-      this.rawAccessible.DOMNode.parentNode : this.rawAccessible.DOMNode);
+    if (!this._isValidTextLeaf(this.rawAccessible)) {
+      return null;
+    }
+
+    return getContrastRatioFor(this.rawAccessible.DOMNode.parentNode, {
+      bounds: this.bounds,
+      contexts: this.walker.contexts,
+      win: this.walker.rootWin,
+    });
   },
 
   

@@ -19,9 +19,21 @@ loader.lazyRequireGetter(this, "isDefunct", "devtools/server/actors/utils/access
 loader.lazyRequireGetter(this, "isTypeRegistered", "devtools/server/actors/highlighters", true);
 loader.lazyRequireGetter(this, "isWindowIncluded", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isXUL", "devtools/server/actors/highlighters/utils/markup", true);
+loader.lazyRequireGetter(this, "loadSheet", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "register", "devtools/server/actors/highlighters", true);
+loader.lazyRequireGetter(this, "removeSheet", "devtools/shared/layout/utils", true);
 
 const kStateHover = 0x00000004; 
+
+const HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
+* {
+  transition: none !important;
+}
+
+:-moz-devtools-highlighted {
+  color: transparent !important;
+  text-shadow: none !important;
+}`;
 
 const nsIAccessibleEvent = Ci.nsIAccessibleEvent;
 const nsIAccessibleStateChangeEvent = Ci.nsIAccessibleStateChangeEvent;
@@ -336,7 +348,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   },
 
   async getAncestry(accessible) {
-    if (accessible.indexInParent === -1) {
+    if (!accessible || accessible.indexInParent === -1) {
       return [];
     }
     const doc = await this.getDocument();
@@ -478,14 +490,23 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   highlightAccessible(accessible, options = {}) {
+    this.unhighlight();
     const { bounds } = accessible;
     if (!bounds) {
       return false;
     }
 
+    
+    
+    
+    
+    loadSheet(this.rootWin, HIGHLIGHTER_STYLES_SHEET);
     const { audit, name, role } = accessible;
-    return this.highlighter.show({ rawNode: accessible.rawAccessible.DOMNode },
-                                 { ...options, ...bounds, name, role, audit });
+    const shown = this.highlighter.show({ rawNode: accessible.rawAccessible.DOMNode },
+                                      { ...options, ...bounds, name, role, audit });
+    
+    removeSheet(this.rootWin, HIGHLIGHTER_STYLES_SHEET);
+    return shown;
   },
 
   
@@ -746,6 +767,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
+
   _unsetPickerEnvironment: function() {
     const target = this.targetActor.chromeEventHandler;
 
@@ -799,9 +821,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   cancelPick: function() {
-    if (this._highlighter) {
-      this.highlighter.hide();
-    }
+    this.unhighlight();
 
     if (this._isPicking) {
       this._unsetPickerEnvironment();
