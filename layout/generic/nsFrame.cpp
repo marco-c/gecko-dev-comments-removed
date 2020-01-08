@@ -2675,13 +2675,12 @@ WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
 
 
 static Maybe<nsRect>
-ComputeClipForMaskItem(nsDisplayListBuilder* aBuilder, nsIFrame* aMaskedFrame,
-                       bool aHandleOpacity)
+ComputeClipForMaskItem(nsDisplayListBuilder* aBuilder, nsIFrame* aMaskedFrame)
 {
   const nsStyleSVGReset* svgReset = aMaskedFrame->StyleSVGReset();
 
   nsSVGUtils::MaskUsage maskUsage;
-  nsSVGUtils::DetermineMaskUsage(aMaskedFrame, aHandleOpacity, maskUsage);
+  nsSVGUtils::DetermineMaskUsage(aMaskedFrame, false, maskUsage);
 
   nsPoint offsetToUserSpace = nsLayoutUtils::ComputeOffsetToUserSpace(aBuilder, aMaskedFrame);
   int32_t devPixelRatio = aMaskedFrame->PresContext()->AppUnitsPerDevPixel();
@@ -2935,16 +2934,18 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->EnterSVGEffectsContents(&hoistedScrollInfoItemsStorage);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool useOpacity =
+    HasVisualOpacity(effectSet) && !nsSVGUtils::CanOptimizeOpacity(this);
 
-  bool needsActiveOpacityLayer = false;
-  
-  
-  
-  
-  
-  bool useOpacity = HasVisualOpacity(effectSet) &&
-                    !nsSVGUtils::CanOptimizeOpacity(this) &&
-                    ((needsActiveOpacityLayer = nsDisplayOpacity::NeedsActiveLayer(aBuilder, this)) || !usingSVGEffects);
   bool useBlendMode = effects->mMixBlendMode != NS_STYLE_BLEND_NORMAL;
   bool useStickyPosition = disp->mPosition == NS_STYLE_POSITION_STICKY &&
     IsScrollFrameActive(aBuilder,
@@ -3016,7 +3017,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   Maybe<nsRect> clipForMask;
   if (usingMask) {
-    clipForMask = ComputeClipForMaskItem(aBuilder, this, !useOpacity);
+    clipForMask = ComputeClipForMaskItem(aBuilder, this);
   }
 
   nsDisplayListCollection set(aBuilder);
@@ -3196,14 +3197,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     if (usingFilter && !aBuilder->IsForGenerateGlyphMask()) {
       
-      
-      
-      bool handleOpacity = !usingMask && !useOpacity;
-
-      
-      resultList.AppendToTop(
-        MakeDisplayItem<nsDisplayFilters>(aBuilder, this, &resultList,
-                                          handleOpacity));
+      resultList.AppendToTop(MakeDisplayItem<nsDisplayFilters>(
+        aBuilder, this, &resultList));
     }
 
     if (usingMask) {
@@ -3221,9 +3216,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                         ? aBuilder->CurrentActiveScrolledRoot()
                                         : containerItemASR;
       
-      resultList.AppendToTop(
-        MakeDisplayItem<nsDisplayMasksAndClipPaths>(aBuilder, this, &resultList,
-                                                    !useOpacity, maskASR));
+      resultList.AppendToTop(MakeDisplayItem<nsDisplayMasksAndClipPaths>(
+        aBuilder, this, &resultList, maskASR));
     }
 
     
@@ -3243,6 +3237,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
+    const bool needsActiveOpacityLayer =
+      nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
+
     resultList.AppendToTop(
       MakeDisplayItem<nsDisplayOpacity>(aBuilder, this, &resultList,
                                         containerItemASR,

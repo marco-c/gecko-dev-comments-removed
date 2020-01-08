@@ -414,6 +414,13 @@ public:
       return true;
     }
 
+    if (type == DisplayItemType::TYPE_MASK ||
+        type == DisplayItemType::TYPE_FILTER ||
+        type == DisplayItemType::TYPE_SVG_WRAPPER) {
+      
+      return true;
+    }
+
     return false;
   }
 
