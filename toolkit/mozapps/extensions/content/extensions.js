@@ -2135,7 +2135,8 @@ var gDiscoverView = {
     aRequest.cancel(Cr.NS_BINDING_ABORTED);
   },
 
-  onSecurityChange(aWebProgress, aRequest, aState) {
+  onSecurityChange(aWebProgress, aRequest, aOldState, aState,
+                   aContentBlockingLogJSON) {
     
     if (!this.homepageURL.schemeIs("https"))
       return;

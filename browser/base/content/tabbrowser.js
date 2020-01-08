@@ -944,8 +944,13 @@ window._gBrowser = {
     if (securityUI) {
       
       
+      
+      
+      let state = securityUI.state;
+      let oldState = securityUI.oldState;
       this._callProgressListeners(null, "onSecurityChange",
-                                  [webProgress, null, securityUI.state, true],
+                                  [webProgress, null, oldState, state,
+                                   securityUI.contentBlockingLogJSON, true],
                                   true, false);
     }
 
@@ -1665,12 +1670,17 @@ window._gBrowser = {
 
     
     let securityUI = aBrowser.securityUI;
+    
+    
     let state = securityUI ? securityUI.state :
+      Ci.nsIWebProgressListener.STATE_IS_INSECURE;
+    let oldState = securityUI ? securityUI.oldState :
       Ci.nsIWebProgressListener.STATE_IS_INSECURE;
     
     
     this._callProgressListeners(aBrowser, "onSecurityChange",
-                                [aBrowser.webProgress, null, state, true],
+                                [aBrowser.webProgress, null, oldState, state,
+                                 securityUI.contentBlockingLogJSON, true],
                                 true, false);
 
     if (aShouldBeRemote) {
@@ -5060,9 +5070,10 @@ class TabProgressListener {
     this.mMessage = aMessage;
   }
 
-  onSecurityChange(aWebProgress, aRequest, aState) {
+  onSecurityChange(aWebProgress, aRequest, aOldState, aState, aContentBlockingLogJSON) {
     this._callProgressListeners("onSecurityChange",
-                                [aWebProgress, aRequest, aState]);
+                                [aWebProgress, aRequest, aOldState, aState,
+                                 aContentBlockingLogJSON]);
   }
 
   onRefreshAttempted(aWebProgress, aURI, aDelay, aSameURI) {
