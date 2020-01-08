@@ -11,15 +11,9 @@
 
 
 
-
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
-
-#if defined(__GLIBCXX__) && !defined(__UCLIBC__)
-#include <cxxabi.h>
-#include <execinfo.h>
-#endif
 
 #if defined(WEBRTC_ANDROID)
 #define RTC_LOG_TAG_ANDROID "rtc"
@@ -56,40 +50,6 @@ void PrintError(const char* format, ...) {
   va_end(args);
 }
 
-
-
-
-void DumpBacktrace() {
-#if defined(__GLIBCXX__) && !defined(__UCLIBC__)
-  void* trace[100];
-  int size = backtrace(trace, sizeof(trace) / sizeof(*trace));
-  char** symbols = backtrace_symbols(trace, size);
-  PrintError("\n==== C stack trace ===============================\n\n");
-  if (size == 0) {
-    PrintError("(empty)\n");
-  } else if (symbols == nullptr) {
-    PrintError("(no symbols)\n");
-  } else {
-    for (int i = 1; i < size; ++i) {
-      char mangled[201];
-      if (sscanf(symbols[i], "%*[^(]%*[(]%200[^)+]", mangled) == 1) {  
-        PrintError("%2d: ", i);
-        int status;
-        size_t length;
-        char* demangled =
-            abi::__cxa_demangle(mangled, nullptr, &length, &status);
-        PrintError("%s\n", demangled != nullptr ? demangled : mangled);
-        free(demangled);
-      } else {
-        
-        PrintError("%s\n", symbols[i]);
-      }
-    }
-  }
-  free(symbols);
-#endif
-}
-
 FatalMessage::FatalMessage(const char* file, int line) {
   Init(file, line);
 }
@@ -105,7 +65,6 @@ NO_RETURN FatalMessage::~FatalMessage() {
   fflush(stderr);
   stream_ << std::endl << "#" << std::endl;
   PrintError(stream_.str().c_str());
-  DumpBacktrace();
   fflush(stderr);
   abort();
 }
