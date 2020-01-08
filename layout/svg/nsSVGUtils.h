@@ -231,11 +231,6 @@ public:
   
 
 
-  static void NotifyAncestorsOfFilterRegionChange(nsIFrame *aFrame);
-
-  
-
-
 
 
 
