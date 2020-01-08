@@ -5181,13 +5181,6 @@ pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 pref("layout.css.touch_action.enabled", true);
 
-#if defined(MOZ_WIDGET_ANDROID)
-
-pref("dom.netinfo.enabled", true);
-#else
-pref("dom.netinfo.enabled", false);
-#endif
-
 
 
 

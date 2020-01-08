@@ -314,6 +314,19 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+#if defined(MOZ_WIDGET_ANDROID)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "dom.netinfo.enabled",
+   dom_netinfo_enabled,
+  RelaxedAtomicBool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 
 
 
