@@ -38,10 +38,7 @@ enum class SectionId
     Start                                = 8,
     Elem                                 = 9,
     Code                                 = 10,
-    Data                                 = 11,
-#ifdef ENABLE_WASM_GC
-    GcFeatureOptIn                       = 42 
-#endif
+    Data                                 = 11
 };
 
 enum class TypeCode
