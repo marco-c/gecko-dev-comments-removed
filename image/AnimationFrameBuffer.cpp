@@ -352,9 +352,7 @@ void AnimationFrameRecyclingQueue::AdvanceInternal() {
 
   
   
-  if (front->ShouldRecycle()) {
-    newEntry.mFrame = std::move(front);
-  }
+  newEntry.mFrame = std::move(front);
 
   
   
@@ -393,11 +391,9 @@ bool AnimationFrameRecyclingQueue::ResetInternal() {
   
   
   for (RefPtr<imgFrame>& frame : mDisplay) {
-    if (frame->ShouldRecycle()) {
-      RecycleEntry newEntry(mFirstFrameRefreshArea);
-      newEntry.mFrame = std::move(frame);
-      mRecycle.push_back(std::move(newEntry));
-    }
+    RecycleEntry newEntry(mFirstFrameRefreshArea);
+    newEntry.mFrame = std::move(frame);
+    mRecycle.push_back(std::move(newEntry));
   }
 
   return AnimationFrameDiscardingQueue::ResetInternal();
