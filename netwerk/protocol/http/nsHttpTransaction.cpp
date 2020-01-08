@@ -1718,6 +1718,21 @@ nsHttpTransaction::HandleContentStart()
             break;
         }
 
+        
+        
+        
+        
+        
+        
+        if (mCaps & NS_HTTP_CONNECT_ONLY) {
+            MOZ_ASSERT(!(mCaps & NS_HTTP_ALLOW_KEEPALIVE) &&
+                       (mCaps & NS_HTTP_STICKY_CONNECTION),
+                       "connection should be sticky and no keep-alive");
+            
+            
+            mNoContent = true;
+        }
+
         if (mResponseHead->Status() == 200 &&
             mH2WSTransaction) {
             

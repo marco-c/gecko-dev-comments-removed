@@ -119,6 +119,11 @@ namespace net {
 
 
 
+#define NS_HTTP_CONNECT_ONLY            (1<<16)
+
+
+
+
 
 #define NS_HTTP_DEFAULT_PORT  80
 #define NS_HTTPS_DEFAULT_PORT 443

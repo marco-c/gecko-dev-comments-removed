@@ -1285,20 +1285,41 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
         bool isHttps =
             mTransaction ? mTransaction->ConnectionInfo()->EndToEndSSL() :
             mConnInfo->EndToEndSSL();
+        bool onlyConnect = mTransactionCaps & NS_HTTP_CONNECT_ONLY;
 
         if (responseStatus == 200) {
-            LOG(("proxy CONNECT succeeded! endtoendssl=%d\n", isHttps));
-            *reset = true;
+            LOG(("proxy CONNECT succeeded! endtoendssl=%d onlyconnect=%d\n",
+                 isHttps, onlyConnect));
+            
+            
+            
+            if (!onlyConnect) {
+                *reset = true;
+            }
             nsresult rv;
+            
+            
             if (isHttps) {
-                if (mConnInfo->UsingHttpsProxy()) {
-                    LOG(("%p new TLSFilterTransaction %s %d\n",
-                         this, mConnInfo->Origin(), mConnInfo->OriginPort()));
-                    SetupSecondaryTLS();
-                }
+                if (!onlyConnect) {
+                    if (mConnInfo->UsingHttpsProxy()) {
+                        LOG(("%p new TLSFilterTransaction %s %d\n",
+                             this,
+                             mConnInfo->Origin(),
+                             mConnInfo->OriginPort()));
+                        SetupSecondaryTLS();
+                    }
 
-                rv = InitSSLParams(false, true);
-                LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
+                    rv = InitSSLParams(false, true);
+                    LOG(("InitSSLParams [rv=%" PRIx32 "]\n",
+                         static_cast<uint32_t>(rv)));
+                } else {
+                    
+                    
+                    
+                    
+                    
+                    mNPNComplete = true;
+                }
             }
             mCompletedProxyConnect = true;
             mProxyConnectInProgress = false;
@@ -1307,7 +1328,8 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
             MOZ_ASSERT(NS_SUCCEEDED(rv), "mSocketOut->AsyncWait failed");
         }
         else {
-            LOG(("proxy CONNECT failed! endtoendssl=%d\n", isHttps));
+            LOG(("proxy CONNECT failed! endtoendssl=%d onlyconnect=%d\n",
+                 isHttps, onlyConnect));
             mTransaction->SetProxyConnectFailed();
         }
     }
@@ -1881,6 +1903,25 @@ nsHttpConnection::OnSocketWritable()
 
     mForceSendDuringFastOpenPending = false;
 
+    if (mTransactionCaps & NS_HTTP_CONNECT_ONLY) {
+        if (!mCompletedProxyConnect && !mProxyConnectStream) {
+            
+            
+            LOG(("return failure because proxy connect will never happen\n"));
+            return NS_ERROR_FAILURE;
+        }
+
+        if (mCompletedProxyConnect) {
+            
+            
+            
+            
+            
+            LOG(("return ok because proxy connect successful\n"));
+            return NS_OK;
+        }
+    }
+
     do {
         ++writeAttempts;
         rv = mSocketOutCondition = NS_OK;
@@ -2042,6 +2083,14 @@ nsHttpConnection::OnSocketReadable()
     
     mResponseTimeoutEnabled = false;
 
+    if ((mTransactionCaps & NS_HTTP_CONNECT_ONLY) &&
+        !mCompletedProxyConnect && !mProxyConnectStream) {
+        
+        
+        LOG(("return failure because proxy connect will never happen\n"));
+        return NS_ERROR_FAILURE;
+    }
+
     if (mKeepAliveMask && (delta >= mMaxHangTime)) {
         LOG(("max hang time exceeded!\n"));
         
@@ -2197,6 +2246,18 @@ nsHttpConnection::MakeConnectString(nsAHttpTransaction *trans,
         
         
         rv = request->SetHeader(nsHttp::Proxy_Authorization, val);
+        MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+
+    if ((trans->Caps() & NS_HTTP_CONNECT_ONLY) &&
+        NS_SUCCEEDED(trans->RequestHead()->GetHeader(
+                         nsHttp::Upgrade,
+                         val))) {
+        
+        
+        
+        
+        rv = request->SetHeader(NS_LITERAL_CSTRING("ALPN"), val);
         MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
 
