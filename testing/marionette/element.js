@@ -38,13 +38,11 @@ const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const XUL_CHECKED_ELS = new Set([
   "button",
   "checkbox",
-  "listitem",
   "toolbarbutton",
 ]);
 
 
 const XUL_SELECTED_ELS = new Set([
-  "listitem",
   "menu",
   "menuitem",
   "menuseparator",
