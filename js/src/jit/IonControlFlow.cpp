@@ -293,7 +293,7 @@ ControlFlowGenerator::snoopControlFlow(JSOp op)
           case SRC_FOR_IN:
           case SRC_FOR_OF:
             
-            return processWhileOrForInLoop(sn);
+            return processWhileOrForInOrForOfLoop(sn);
 
           default:
             
@@ -897,7 +897,7 @@ ControlFlowGenerator::processForUpdateEnd(CFGState& state)
 }
 
 ControlFlowGenerator::ControlStatus
-ControlFlowGenerator::processWhileOrForInLoop(jssrcnote* sn)
+ControlFlowGenerator::processWhileOrForInOrForOfLoop(jssrcnote* sn)
 {
     
     
@@ -912,6 +912,8 @@ ControlFlowGenerator::processWhileOrForInLoop(jssrcnote* sn)
     MOZ_ASSERT(SN_TYPE(sn) == SRC_FOR_OF || SN_TYPE(sn) == SRC_FOR_IN || SN_TYPE(sn) == SRC_WHILE);
     
     static_assert(unsigned(SrcNote::ForIn::BackJumpOffset) == 0,
+                  "SrcNote::{While,ForIn,ForOf}::BackJumpOffset should be same");
+    static_assert(unsigned(SrcNote::ForOf::BackJumpOffset) == 0,
                   "SrcNote::{While,ForIn,ForOf}::BackJumpOffset should be same");
     int backjumppcOffset = GetSrcNoteOffset(sn, SrcNote::ForIn::BackJumpOffset);
     jsbytecode* backjumppc = pc + backjumppcOffset;

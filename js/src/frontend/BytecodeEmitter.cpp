@@ -28,6 +28,7 @@
 #include "frontend/CForEmitter.h"
 #include "frontend/EmitterScope.h"
 #include "frontend/ForInEmitter.h"
+#include "frontend/ForOfEmitter.h"
 #include "frontend/ForOfLoopControl.h"
 #include "frontend/IfEmitter.h"
 #include "frontend/Parser.h"
@@ -390,11 +391,19 @@ BytecodeEmitter::emitJumpTargetAndPatch(JumpList jump)
 }
 
 bool
+BytecodeEmitter::emitCall(JSOp op, uint16_t argc, const Maybe<uint32_t>& sourceCoordOffset)
+{
+    if (sourceCoordOffset.isSome()) {
+        if (!updateSourceCoordNotes(*sourceCoordOffset))
+            return false;
+    }
+    return emit3(op, ARGC_LO(argc), ARGC_HI(argc));
+}
+
+bool
 BytecodeEmitter::emitCall(JSOp op, uint16_t argc, ParseNode* pn)
 {
-    if (pn && !updateSourceCoordNotes(pn->pn_pos.begin))
-        return false;
-    return emit3(op, ARGC_LO(argc), ARGC_HI(argc));
+    return emitCall(op, argc, pn ? Some(pn->pn_pos.begin) : Nothing());
 }
 
 bool
@@ -2839,7 +2848,8 @@ BytecodeEmitter::emitSetOrInitializeDestructuring(ParseNode* target, Destructuri
 }
 
 bool
-BytecodeEmitter::emitIteratorNext(ParseNode* pn, IteratorKind iterKind ,
+BytecodeEmitter::emitIteratorNext(const Maybe<uint32_t>& callSourceCoordOffset,
+                                  IteratorKind iterKind ,
                                   bool allowSelfHosted )
 {
     MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
@@ -2848,7 +2858,7 @@ BytecodeEmitter::emitIteratorNext(ParseNode* pn, IteratorKind iterKind ,
 
     MOZ_ASSERT(this->stackDepth >= 2);                    
 
-    if (!emitCall(JSOP_CALL, 0, pn))                      
+    if (!emitCall(JSOP_CALL, 0, callSourceCoordOffset))   
         return false;
 
     if (iterKind == IteratorKind::Async) {
@@ -3381,7 +3391,7 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             return false;
         if (!emitDupAt(emitted + 1))                              
             return false;
-        if (!emitIteratorNext(pattern))                           
+        if (!emitIteratorNext(Some(pattern->pn_pos.begin)))       
             return false;
         if (!emit1(JSOP_DUP))                                     
             return false;
@@ -4689,8 +4699,8 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
             return false;
         if (!emitDupAt(3))                                
             return false;
-        if (!emitIteratorNext(nullptr, IteratorKind::Sync, allowSelfHosted))  
-            return false;
+        if (!emitIteratorNext(Nothing(), IteratorKind::Sync, allowSelfHosted))
+            return false;                                 
         if (!emit1(JSOP_DUP))                             
             return false;
         if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
@@ -4703,8 +4713,11 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
     }
 
     
-1    if (!setSrcNoteOffset(noteIndex, 0, loopInfo.loopEndOffsetFromEntryJump()))
+    if (!setSrcNoteOffset(noteIndex, SrcNote::ForOf::BackJumpOffset,
+                          loopInfo.loopEndOffsetFromEntryJump()))
+    {
         return false;
+    }
 
     
     MOZ_ASSERT(loopInfo.breaks.offset == -1);
@@ -4815,166 +4828,38 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, const EmitterScope* headLexical
         allowSelfHostedIter = true;
     }
 
-    
-    
-    
-    if (!emitTreeInBranch(forHeadExpr))                   
-        return false;
-    if (iterKind == IteratorKind::Async) {
-        if (!emitAsyncIterator())                         
-            return false;
-    } else {
-        if (!emitIterator())                              
-            return false;
-    }
+    ForOfEmitter forOf(this, headLexicalEmitterScope, allowSelfHostedIter, iterKind);
 
-    int32_t iterDepth = stackDepth;
-
-    
-    
-    
-    if (!emit1(JSOP_UNDEFINED))                           
+    if (!forOf.emitIterated())                            
         return false;
 
-    ForOfLoopControl loopInfo(this, iterDepth, allowSelfHostedIter, iterKind);
-
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_FOR_OF, &noteIndex))
+    if (!emitTree(forHeadExpr))                           
         return false;
 
-    if (!loopInfo.emitEntryJump(this))                    
-        return false;
-
-    if (!loopInfo.emitLoopHead(this, Nothing()))          
-        return false;
-
-    
-    
     if (headLexicalEmitterScope) {
-        
-        
-        
-        
-        
         DebugOnly<ParseNode*> forOfTarget = forOfHead->pn_kid1;
         MOZ_ASSERT(forOfTarget->isKind(ParseNodeKind::Let) ||
                    forOfTarget->isKind(ParseNodeKind::Const));
-        MOZ_ASSERT(headLexicalEmitterScope == innermostEmitterScope());
-        MOZ_ASSERT(headLexicalEmitterScope->scope(this)->kind() == ScopeKind::Lexical);
-
-        if (headLexicalEmitterScope->hasEnvironment()) {
-            if (!emit1(JSOP_RECREATELEXICALENV))          
-                return false;
-        }
-
-        
-        if (!headLexicalEmitterScope->deadZoneFrameSlots(this))
-            return false;
     }
 
-    {
-#ifdef DEBUG
-        auto loopDepth = this->stackDepth;
-#endif
+    if (!forOf.emitInitialize(Some(forOfHead->pn_pos.begin)))
+        return false;                                     
 
-        
-        if (!updateSourceCoordNotes(forOfHead->pn_pos.begin))
-            return false;
+    if (!emitInitializeForInOrOfTarget(forOfHead))        
+        return false;
 
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!emit1(JSOP_DUP2))                            
-            return false;
-
-        if (!emitIteratorNext(forOfHead, iterKind, allowSelfHostedIter))
-            return false;                                 
-
-        if (!emit1(JSOP_DUP))                             
-            return false;
-        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
-            return false;
-
-        InternalIfEmitter ifDone(this);
-
-        if (!ifDone.emitThen())                           
-            return false;
-
-        
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!emit1(JSOP_UNDEFINED))                       
-            return false;
-
-        
-        
-        if (!loopInfo.emitSpecialBreakForDone(this))      
-            return false;
-
-        if (!ifDone.emitEnd())                            
-            return false;
-
-        
-        
-        
-        
-        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
-            return false;
-
-        if (!loopInfo.emitBeginCodeNeedingIteratorClose(this))
-            return false;
-
-        if (!emitInitializeForInOrOfTarget(forOfHead))    
-            return false;
-
-        MOZ_ASSERT(stackDepth == loopDepth,
-                   "the stack must be balanced around the initializing "
-                   "operation");
-
-        
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!emit1(JSOP_UNDEFINED))                       
-            return false;
-
-        
-        ParseNode* forBody = forOfLoop->pn_right;
-        if (!emitTree(forBody))                           
-            return false;
-
-        MOZ_ASSERT(stackDepth == loopDepth,
-                   "the stack must be balanced around the for-of body");
-
-        if (!loopInfo.emitEndCodeNeedingIteratorClose(this))
-            return false;
-
-        loopInfo.setContinueTarget(offset());
-
-        if (!loopInfo.emitLoopEntry(this, getOffsetForLoop(forHeadExpr)))
-            return false;                                 
-
-        if (!emit1(JSOP_FALSE))                           
-            return false;
-        if (!loopInfo.emitLoopEnd(this, JSOP_IFEQ))       
-            return false;
-
-        MOZ_ASSERT(this->stackDepth == loopDepth);
-    }
+    if (!forOf.emitBody())                                
+        return false;
 
     
-    if (!setSrcNoteOffset(noteIndex, 0, loopInfo.loopEndOffsetFromEntryJump()))
+    ParseNode* forBody = forOfLoop->pn_right;
+    if (!emitTree(forBody))                               
         return false;
 
-    if (!loopInfo.patchBreaksAndContinues(this))
+    if (!forOf.emitEnd(Some(forHeadExpr->pn_pos.begin)))  
         return false;
 
-    if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, loopInfo.headOffset(),
-                            loopInfo.breakTargetOffset()))
-    {
-        return false;
-    }
-
-    return emitPopN(3);                                   
+    return true;
 }
 
 bool

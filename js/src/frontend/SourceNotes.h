@@ -65,6 +65,16 @@ class SrcNote {
         };
     };
     
+    
+    class ForOf {
+      public:
+        enum Fields {
+            
+            BackJumpOffset,
+            Count,
+        };
+    };
+    
     class TableSwitch {
       public:
         enum Fields {
@@ -137,8 +147,7 @@ class SrcNote {
     M(SRC_WHILE,        "while",       1)  /* JSOP_GOTO to for or while loop condition from before \
                                               loop, else JSOP_NOP at top of do-while loop. */      \
     M(SRC_FOR_IN,       "for-in",      SrcNote::ForIn::Count) \
-    M(SRC_FOR_OF,       "for-of",      1)  /* JSOP_GOTO to for-of loop condition from before       \
-                                              loop. */                                             \
+    M(SRC_FOR_OF,       "for-of",      SrcNote::ForOf::Count) \
     M(SRC_CONTINUE,     "continue",    0)  /* JSOP_GOTO is a continue. */                          \
     M(SRC_BREAK,        "break",       0)  /* JSOP_GOTO is a break. */                             \
     M(SRC_BREAK2LABEL,  "break2label", 0)  /* JSOP_GOTO for 'break label'. */                      \
