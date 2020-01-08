@@ -215,7 +215,7 @@ this.VideoControlsImplPageWidget = class {
         this.updateOrientationState(this.isVideoInFullScreen);
 
         if (this.isAudioOnly) {
-          this.clickToPlay.hidden = true;
+          this.startFadeOut(this.clickToPlay, true);
         }
 
         
@@ -235,7 +235,7 @@ this.VideoControlsImplPageWidget = class {
 
         
         if (this.hasError()) {
-          this.clickToPlay.hidden = true;
+          this.startFadeOut(this.clickToPlay, true);
           this.statusIcon.setAttribute("type", "error");
           this.updateErrorText();
           this.setupStatusFader(true);
@@ -283,7 +283,10 @@ this.VideoControlsImplPageWidget = class {
                 control._isHiddenExplicitly = v;
                 control._updateHiddenAttribute();
               },
-              get: () => control.hasAttribute("hidden")
+              get: () => {
+                return control.hasAttribute("hidden") ||
+                  control.classList.contains("fadeout");
+              }
             },
             hiddenByAdjustment: {
               set: (v) => {
@@ -421,7 +424,7 @@ this.VideoControlsImplPageWidget = class {
               this.startFadeOut(this.controlBar);
             }
             if (!this._triggeredByControls) {
-              this.clickToPlay.hidden = true;
+              this.startFadeOut(this.clickToPlay, true);
             }
             this._triggeredByControls = false;
             break;
@@ -462,7 +465,7 @@ this.VideoControlsImplPageWidget = class {
             if (this.video instanceof this.window.HTMLVideoElement &&
                 (this.video.videoWidth == 0 || this.video.videoHeight == 0)) {
               this.isAudioOnly = true;
-              this.clickToPlay.hidden = true;
+              this.startFadeOut(this.clickToPlay, true);
               this.startFadeIn(this.controlBar);
               this.setFullscreenButtonState();
             }
@@ -561,7 +564,7 @@ this.VideoControlsImplPageWidget = class {
             
             if (this.hasError()) {
               this.suppressError = false;
-              this.clickToPlay.hidden = true;
+              this.startFadeOut(this.clickToPlay, true);
               this.statusIcon.setAttribute("type", "error");
               this.updateErrorText();
               this.setupStatusFader(true);
@@ -1155,7 +1158,8 @@ this.VideoControlsImplPageWidget = class {
           }
 
           
-          if (!element.hidden && !element.classList.contains("fadeout")) {
+          
+          if (!element.hidden) {
             return;
           }
 
@@ -1167,6 +1171,7 @@ this.VideoControlsImplPageWidget = class {
             this.controlsSpacer.setAttribute("hideCursor", true);
           }
 
+          
           
           if (element.hidden) {
             return;
@@ -1310,7 +1315,7 @@ this.VideoControlsImplPageWidget = class {
           if (this.video.error.code != this.video.error.MEDIA_ERR_ABORTED) {
             return;
           }
-          this.statusOverlay.hidden = true;
+          this.startFadeOut(this.statusOverlay, true);
           this.suppressError = true;
           return;
         }
