@@ -10,7 +10,7 @@ add_task(async function() {
   win.gBrowser.removeTab(tab);
 
   
-  await promiseWindowWillBeClosed(win);
+  await BrowserTestUtils.domWindowClosed(win);
 });
 
 add_task(async function() {
