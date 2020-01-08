@@ -6482,6 +6482,12 @@ function reducer(state = initialState(), action = {}) {
     });
   }
 
+  
+  
+  if (type === "RESUME" || type == "NAVIGATE") {
+    return initialState();
+  }
+
   return state;
 }
 
