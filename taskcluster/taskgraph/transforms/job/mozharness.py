@@ -182,6 +182,9 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     if config.params.is_try():
         env['TRY_COMMIT_MSG'] = config.params['message']
 
+    if run['comm-checkout']:
+        env['MOZ_SOURCE_CHANGESET'] = env['COMM_HEAD_REV']
+
     
     
     
