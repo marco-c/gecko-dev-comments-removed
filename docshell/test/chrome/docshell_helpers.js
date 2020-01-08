@@ -17,19 +17,19 @@ const NAV_FORWARD = 2;
 const NAV_URI = 3;
 const NAV_RELOAD = 4;
 
-var gExpectedEvents;          
+var gExpectedEvents; 
                               
-var gUnexpectedEvents;        
+var gUnexpectedEvents; 
                               
-var gFinalEvent;              
-var gUrisNotInBFCache = [];   
+var gFinalEvent; 
+var gUrisNotInBFCache = []; 
                               
-var gNavType = NAV_NONE;      
+var gNavType = NAV_NONE; 
                               
 var gOrigMaxTotalViewers =    
-  undefined;                  
+  undefined; 
 
-var gExtractedPath = null;    
+var gExtractedPath = null; 
 
 
 
@@ -96,15 +96,15 @@ function doPageNavigation(params) {
   let uri = params.uri ? params.uri : false;
   let eventsToListenFor = typeof(params.eventsToListenFor) != "undefined" ?
     params.eventsToListenFor : ["pageshow"];
-  gExpectedEvents = typeof(params.eventsToListenFor) == "undefined" || 
-    eventsToListenFor.length == 0 ? undefined : params.expectedEvents; 
-  gUnexpectedEvents = typeof(params.eventsToListenFor) == "undefined" || 
-    eventsToListenFor.length == 0 ? undefined : params.unexpectedEvents; 
-  let preventBFCache = (typeof[params.preventBFCache] == "undefined") ? 
+  gExpectedEvents = typeof(params.eventsToListenFor) == "undefined" ||
+    eventsToListenFor.length == 0 ? undefined : params.expectedEvents;
+  gUnexpectedEvents = typeof(params.eventsToListenFor) == "undefined" ||
+    eventsToListenFor.length == 0 ? undefined : params.unexpectedEvents;
+  let preventBFCache = (typeof[params.preventBFCache] == "undefined") ?
     false : params.preventBFCache;
-  let waitOnly = (typeof(params.waitForEventsOnly) == "boolean" 
+  let waitOnly = (typeof(params.waitForEventsOnly) == "boolean"
     && params.waitForEventsOnly);
-  
+
   
   if (back && forward)
     throw "Can't specify both back and forward";
@@ -146,16 +146,16 @@ function doPageNavigation(params) {
       throw "Event type " + anEventType + " is specified in " +
         "eventsToListenFor, but not in expectedEvents";
   }
+
   
   
-  
-  gFinalEvent = eventsToListenFor.length == 0 ? true : false;
-  
+  gFinalEvent = eventsToListenFor.length == 0;
+
   
   
   for (let eventType of eventsToListenFor) {
     dump("TEST: registering a listener for " + eventType + " events\n");
-    TestWindow.getBrowser().addEventListener(eventType, pageEventListener, 
+    TestWindow.getBrowser().addEventListener(eventType, pageEventListener,
       true);
   }
 
@@ -163,34 +163,28 @@ function doPageNavigation(params) {
   if (back) {
     gNavType = NAV_BACK;
     TestWindow.getBrowser().goBack();
-  }
-  else if (forward) {
+  } else if (forward) {
     gNavType = NAV_FORWARD;
     TestWindow.getBrowser().goForward();
-  }
-  else if (uri) {
+  } else if (uri) {
     gNavType = NAV_URI;
     BrowserTestUtils.loadURI(TestWindow.getBrowser(), uri);
-  }
-  else if (reload) {
+  } else if (reload) {
     gNavType = NAV_RELOAD;
     TestWindow.getBrowser().reload();
-  }
-  else if (waitOnly) {
+  } else if (waitOnly) {
     gNavType = NAV_NONE;
-  }
-  else {
+  } else {
     throw "No valid navigation type passed to doPageNavigation!";
   }
+
   
   
-  
-  if (eventsToListenFor.length > 0 && params.onNavComplete)
-  {
+  if (eventsToListenFor.length > 0 && params.onNavComplete) {
     waitForTrue(
       function() { return gFinalEvent; },
-      function() { 
-        doPageNavigation_complete(eventsToListenFor, params.onNavComplete, 
+      function() {
+        doPageNavigation_complete(eventsToListenFor, params.onNavComplete,
           preventBFCache);
       } );
   }
@@ -202,29 +196,29 @@ function doPageNavigation(params) {
 
 
 
-function doPageNavigation_complete(eventsToListenFor, onNavComplete, 
+function doPageNavigation_complete(eventsToListenFor, onNavComplete,
   preventBFCache) {
   
   dump("TEST: removing event listeners\n");
   for (let eventType of eventsToListenFor) {
-    TestWindow.getBrowser().removeEventListener(eventType, pageEventListener, 
+    TestWindow.getBrowser().removeEventListener(eventType, pageEventListener,
       true);
   }
-  
+
   
   
   let uri = TestWindow.getBrowser().currentURI.spec;
   if (preventBFCache) {
-    TestWindow.getWindow().addEventListener("unload", function() { 
+    TestWindow.getWindow().addEventListener("unload", function() {
         dump("TEST: Called dummy unload function to prevent page from " +
-          "being bfcached.\n"); 
+          "being bfcached.\n");
       }, true);
-      
+
     
     
     if (!(uri in gUrisNotInBFCache)) {
       gUrisNotInBFCache.push(uri);
-    }  
+    }
   } else if (gNavType == NAV_URI) {
     
     
@@ -235,7 +229,7 @@ function doPageNavigation_complete(eventsToListenFor, onNavComplete,
         }
       }, this);
   }
-  
+
   
   onNavComplete.call();
 }
@@ -257,15 +251,15 @@ function pageEventListener(event) {
   try {
     dump("TEST: eventListener received a " + event.type + " event for page " +
       event.originalTarget.title + ", persisted=" + event.persisted + "\n");
-  } catch(e) {
+  } catch (e) {
     
   }
+
   
   
   
   
-  
-  if ( (event.type == "pageshow") && 
+  if ( (event.type == "pageshow") &&
     (gNavType == NAV_BACK || gNavType == NAV_FORWARD) ) {
     let uri = TestWindow.getBrowser().currentURI.spec;
     if (uri in gUrisNotInBFCache) {
@@ -277,46 +271,45 @@ function pageEventListener(event) {
   if (typeof(gUnexpectedEvents) != "undefined") {
     is(gUnexpectedEvents.indexOf(event.type), -1,
        "Should not get unexpected event " + event.type);
-  }  
+  }
 
   
   
   
-  if ((typeof(gExpectedEvents) == "undefined") && event.type == "pageshow")
-  {
+  if ((typeof(gExpectedEvents) == "undefined") && event.type == "pageshow") {
     waitForNextPaint(function() { gFinalEvent = true; });
     return;
   }
-  
+
   
   
   if (gExpectedEvents.length == 0) {
     ok(false, "Unexpected event (" + event.type + ") occurred");
     return;
   }
-  
+
   
   
   let expected = gExpectedEvents.shift();
-  
-  is(event.type, expected.type, 
+
+  is(event.type, expected.type,
     "A " + expected.type + " event was expected, but a " +
     event.type + " event occurred");
-    
+
   if (typeof(expected.title) != "undefined") {
     ok(event.originalTarget instanceof HTMLDocument,
-       "originalTarget for last " + event.type + 
+       "originalTarget for last " + event.type +
        " event not an HTMLDocument");
-    is(event.originalTarget.title, expected.title, 
+    is(event.originalTarget.title, expected.title,
       "A " + event.type + " event was expected for page " +
-      expected.title + ", but was fired for page " + 
+      expected.title + ", but was fired for page " +
       event.originalTarget.title);
-  }  
-  
+  }
+
   if (typeof(expected.persisted) != "undefined") {
-    is(event.persisted, expected.persisted, 
+    is(event.persisted, expected.persisted,
       "The persisted property of the " + event.type + " event on page " +
-      event.originalTarget.location + " had an unexpected value"); 
+      event.originalTarget.location + " had an unexpected value");
   }
 
   if ("visibilityState" in expected) {
@@ -343,7 +336,7 @@ function finish() {
   
   var history = TestWindow.getBrowser().webNavigation.sessionHistory;
   history.legacySHistory.PurgeHistory(history.count);
-  
+
   
   
   if (typeof(gOrigMaxTotalViewers) != "undefined") {
@@ -395,17 +388,17 @@ function waitForTrue(fn, onWaitComplete, timeout) {
     if (timeout < 500)
       timeout *= 1000;
   }
-  
+
   
   
   var intervalid;
   intervalid =
     setInterval(
-      function() {  
+      function() {
         var timeoutHit = false;
         if (typeof(timeout) != "undefined") {
-          timeoutHit = new Date().valueOf() - start >= 
-            timeout ? true : false;
+          timeoutHit = new Date().valueOf() - start >=
+            timeout;
           if (timeoutHit) {
             ok(false, "Timed out waiting for condition");
           }
@@ -413,8 +406,8 @@ function waitForTrue(fn, onWaitComplete, timeout) {
         if (timeoutHit || fn.call()) {
           
           clearInterval(intervalid);
-          onWaitComplete.call();          
-        } 
+          onWaitComplete.call();
+        }
       }, 20);
 }
 
@@ -433,7 +426,7 @@ function waitForNextPaint(cb) {
 function enableBFCache(enable) {
   var prefs = Cc["@mozilla.org/preferences-service;1"]
               .getService(Ci.nsIPrefBranch);
-  
+
   
   
   
@@ -441,15 +434,14 @@ function enableBFCache(enable) {
     gOrigMaxTotalViewers =
       prefs.getIntPref("browser.sessionhistory.max_total_viewers");
   }
-  
+
   if (typeof(enable) == "boolean") {
     if (enable)
       prefs.setIntPref("browser.sessionhistory.max_total_viewers", -1);
     else
-      prefs.setIntPref("browser.sessionhistory.max_total_viewers", 0);    
-  }
-  else if (typeof(enable) == "number") {
-    prefs.setIntPref("browser.sessionhistory.max_total_viewers", enable);    
+      prefs.setIntPref("browser.sessionhistory.max_total_viewers", 0);
+  } else if (typeof(enable) == "number") {
+    prefs.setIntPref("browser.sessionhistory.max_total_viewers", enable);
   }
 }
 
@@ -470,7 +462,7 @@ function getHttpRoot() {
   } else {
     return null;
   }
-  return "file://" + gExtractedPath + '/';
+  return "file://" + gExtractedPath + "/";
 }
 
 
@@ -490,12 +482,12 @@ function getHttpUrl(filename) {
 
 
 var TestWindow = {};
-TestWindow.getWindow = function () {
+TestWindow.getWindow = function() {
   return document.getElementById("content").contentWindow;
-}
-TestWindow.getBrowser = function () {
+};
+TestWindow.getBrowser = function() {
   return document.getElementById("content");
-}
-TestWindow.getDocument = function () {
+};
+TestWindow.getDocument = function() {
   return document.getElementById("content").contentDocument;
-}
+};

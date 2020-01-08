@@ -12,16 +12,14 @@
       
       
 
-      function getErrorCode()
-      {
+      function getErrorCode() {
         var url = document.documentURI;
         var error = url.search(/e\=/);
         var duffUrl = url.search(/\&u\=/);
         return decodeURIComponent(url.slice(error + 2, duffUrl));
       }
 
-      function getCSSClass()
-      {
+      function getCSSClass() {
         var url = document.documentURI;
         var matches = url.match(/s\=([^&]+)\&/);
         
@@ -32,8 +30,7 @@
         return decodeURIComponent(matches[1]);
       }
 
-      function getDescription()
-      {
+      function getDescription() {
         var url = document.documentURI;
         var desc = url.search(/d\=/);
 
@@ -45,8 +42,7 @@
         return decodeURIComponent(url.slice(desc + 2));
       }
 
-      function retryThis(buttonEl)
-      {
+      function retryThis(buttonEl) {
         
         
 
@@ -63,23 +59,20 @@
         buttonEl.disabled = true;
       }
 
-      function initPage()
-      {
+      function initPage() {
         var err = getErrorCode();
 
         
         
         var errTitle = document.getElementById("et_" + err);
         var errDesc  = document.getElementById("ed_" + err);
-        if (!errTitle || !errDesc)
-        {
+        if (!errTitle || !errDesc) {
           errTitle = document.getElementById("et_generic");
           errDesc  = document.getElementById("ed_generic");
         }
 
         var title = document.getElementById("errorTitleText");
-        if (title)
-        {
+        if (title) {
           title.parentNode.replaceChild(errTitle, title);
           
           errTitle.id = "errorTitleText";
@@ -90,8 +83,7 @@
           sd.textContent = getDescription();
 
         var ld = document.getElementById("errorLongDesc");
-        if (ld)
-        {
+        if (ld) {
           ld.parentNode.replaceChild(errDesc, ld);
           
           errDesc.id = "errorLongDesc";
@@ -139,8 +131,7 @@
           document.getElementById("errorTryAgain").style.display = "none";
           document.getElementById("errorPageContainer").setAttribute("class", "certerror");
           addDomainErrorLink();
-        }
-        else {
+        } else {
           
           
           var secOverride = document.getElementById("securityOverrideDiv");
@@ -165,8 +156,8 @@
 
       function showSecuritySection() {
         
-        document.getElementById('securityOverrideContent').style.display = '';
-        document.getElementById('securityOverrideLink').style.display = 'none';
+        document.getElementById("securityOverrideContent").style.display = "";
+        document.getElementById("securityOverrideLink").style.display = "none";
       }
 
       
@@ -187,7 +178,7 @@
           
           var re = /<a id="cert_domain_link" title="([^"]+)">/;
           var result = re.exec(desc);
-          if(!result)
+          if (!result)
             return;
 
           
@@ -207,7 +198,7 @@
           sd.appendChild(document.createTextNode(desc.slice(desc.indexOf("</a>") + "</a>".length)));
         }
 
-        var link = document.getElementById('cert_domain_link');
+        var link = document.getElementById("cert_domain_link");
         if (!link)
           return;
 
