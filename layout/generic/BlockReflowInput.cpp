@@ -742,7 +742,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   if (StyleClear::None != floatDisplay->mBreakType) {
     
-    mBCoord = ClearFloats(mBCoord, floatDisplay->mBreakType);
+    mBCoord = ClearFloats(mBCoord, floatDisplay->PhysicalBreakType(wm));
   }
   
   nsFlowAreaRect floatAvailableSpace =
@@ -785,7 +785,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   
-  StyleFloat floatStyle = floatDisplay->mFloat;
+  StyleFloat floatStyle = floatDisplay->PhysicalFloats(wm);
   MOZ_ASSERT(StyleFloat::Left == floatStyle || StyleFloat::Right == floatStyle,
              "Invalid float type!");
 
@@ -1045,7 +1045,8 @@ BlockReflowInput::PushFloatPastBreak(nsIFrame *aFloat)
   
   
   
-  StyleFloat floatStyle = aFloat->StyleDisplay()->mFloat;
+  StyleFloat floatStyle =
+    aFloat->StyleDisplay()->PhysicalFloats(mReflowInput.GetWritingMode());
   if (floatStyle == StyleFloat::Left) {
     FloatManager()->SetPushedLeftFloatPastBreak();
   } else {

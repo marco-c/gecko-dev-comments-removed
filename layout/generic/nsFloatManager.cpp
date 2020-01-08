@@ -206,7 +206,7 @@ nsFloatManager::GetFlowArea(WritingMode aWM, nscoord aBCoord, nscoord aBSize,
       
 
       
-      StyleFloat floatStyle = fi.mFrame->StyleDisplay()->mFloat;
+      StyleFloat floatStyle = fi.mFrame->StyleDisplay()->PhysicalFloats(aWM);
 
       
       
@@ -283,7 +283,7 @@ nsFloatManager::AddFloat(nsIFrame* aFloatFrame, const LogicalRect& aMarginRect,
     info.mLeftBEnd = nscoord_MIN;
     info.mRightBEnd = nscoord_MIN;
   }
-  StyleFloat floatStyle = aFloatFrame->StyleDisplay()->mFloat;
+  StyleFloat floatStyle = aFloatFrame->StyleDisplay()->PhysicalFloats(aWM);
   MOZ_ASSERT(floatStyle == StyleFloat::Left || floatStyle == StyleFloat::Right,
              "Unexpected float style!");
   nscoord& sideBEnd =
@@ -316,7 +316,7 @@ nsFloatManager::CalculateRegionFor(WritingMode          aWM,
     
     
     const nsStyleDisplay* display = aFloat->StyleDisplay();
-    StyleFloat floatStyle = display->mFloat;
+    StyleFloat floatStyle = display->PhysicalFloats(aWM);
     if ((StyleFloat::Left == floatStyle) == aWM.IsBidiLTR()) {
       region.IStart(aWM) = region.IEnd(aWM);
     }

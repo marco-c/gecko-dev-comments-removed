@@ -77,10 +77,9 @@ enum class StyleClear : uint8_t {
   None = 0,
   Left,
   Right,
+  InlineStart,
+  InlineEnd,
   Both,
-  
-  
-  
   
   
   Line = 8,
@@ -145,6 +144,8 @@ enum class StyleFloat : uint8_t {
   None,
   Left,
   Right,
+  InlineStart,
+  InlineEnd
 };
 
 
