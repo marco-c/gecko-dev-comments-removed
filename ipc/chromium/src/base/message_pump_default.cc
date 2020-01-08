@@ -60,19 +60,6 @@ void MessagePumpDefault::Run(Delegate* delegate) {
       AUTO_PROFILER_LABEL("MessagePumpDefault::Run:Wait", IDLE);
       {
         AUTO_PROFILER_THREAD_SLEEP;
-        
-        
-        
-        
-        if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-          
-          
-          void* thiz = this;
-
-          mozilla::recordreplay::MaybeWaitForCheckpointSave();
-          mozilla::recordreplay::NotifyUnrecordedWait([=]() { ((MessagePumpDefault*)thiz)->ScheduleWork(); },
-                                                       true);
-        }
         event_.Wait();
       }
     } else {
