@@ -36,8 +36,10 @@ protected:
   virtual ~AbortFollower();
 
   
+  
   RefPtr<AbortSignalImpl> mFollowingSignal;
 };
+
 
 
 class AbortSignalImpl : public AbortFollower
