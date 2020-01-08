@@ -109,7 +109,4 @@ exports.fontData = {
 
   
   fonts: PropTypes.arrayOf(PropTypes.shape(font)),
-
-  
-  otherFonts: PropTypes.arrayOf(PropTypes.shape(font)),
 };
