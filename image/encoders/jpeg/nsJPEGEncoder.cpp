@@ -9,6 +9,10 @@
 #include "nsStreamUtils.h"
 #include "gfxColor.h"
 
+extern "C" {
+  #include "jpeglib.h"
+}
+
 #include <setjmp.h>
 #include "jerror.h"
 
@@ -16,6 +20,45 @@ using namespace mozilla;
 
 NS_IMPL_ISUPPORTS(nsJPEGEncoder, imgIEncoder, nsIInputStream,
                   nsIAsyncInputStream)
+
+class nsJPEGEncoderInternal {
+  friend class nsJPEGEncoder;
+
+ protected:
+  
+
+
+
+
+  static void initDestination(jpeg_compress_struct* cinfo);
+
+ 
+
+
+
+
+
+
+
+
+
+  static boolean emptyOutputBuffer(jpeg_compress_struct* cinfo);
+
+
+  
+
+
+
+
+
+  static void termDestination(jpeg_compress_struct* cinfo);
+
+  
+
+
+
+  static void errorExit(jpeg_common_struct* cinfo);
+};
 
 
 struct encoder_error_mgr {
@@ -111,7 +154,7 @@ nsJPEGEncoder::InitFromData(const uint8_t* aData,
   
   encoder_error_mgr errmgr;
   cinfo.err = jpeg_std_error(&errmgr.pub);
-  errmgr.pub.error_exit = errorExit;
+  errmgr.pub.error_exit = nsJPEGEncoderInternal::errorExit;
   
   if (setjmp(errmgr.setjmp_buffer)) {
     
@@ -138,9 +181,9 @@ nsJPEGEncoder::InitFromData(const uint8_t* aData,
 
   
   jpeg_destination_mgr destmgr;
-  destmgr.init_destination = initDestination;
-  destmgr.empty_output_buffer = emptyOutputBuffer;
-  destmgr.term_destination = termDestination;
+  destmgr.init_destination = nsJPEGEncoderInternal::initDestination;
+  destmgr.empty_output_buffer = nsJPEGEncoderInternal::emptyOutputBuffer;
+  destmgr.term_destination = nsJPEGEncoderInternal::termDestination;
   cinfo.dest = &destmgr;
   cinfo.client_data = this;
 
@@ -348,13 +391,38 @@ void nsJPEGEncoder::ConvertRGBARow(const uint8_t* aSrc, uint8_t* aDest,
 }
 
 
+void nsJPEGEncoder::NotifyListener() {
+  
+  
+  
+  
+  ReentrantMonitorAutoEnter autoEnter(mReentrantMonitor);
+
+  if (mCallback &&
+      (mImageBufferUsed - mImageBufferReadPoint >= mNotifyThreshold ||
+       mFinished)) {
+    nsCOMPtr<nsIInputStreamCallback> callback;
+    if (mCallbackTarget) {
+      callback = NS_NewInputStreamReadyEvent("nsJPEGEncoder::NotifyListener",
+                                             mCallback, mCallbackTarget);
+    } else {
+      callback = mCallback;
+    }
+
+    NS_ASSERTION(callback, "Shouldn't fail to make the callback");
+    
+    
+    mCallback = nullptr;
+    mCallbackTarget = nullptr;
+    mNotifyThreshold = 0;
+
+    callback->OnInputStreamReady(this);
+  }
+}
 
 
-
-
-
-void  
-nsJPEGEncoder::initDestination(jpeg_compress_struct* cinfo) {
+ void
+nsJPEGEncoderInternal::initDestination(jpeg_compress_struct* cinfo) {
   nsJPEGEncoder* that = static_cast<nsJPEGEncoder*>(cinfo->client_data);
   NS_ASSERTION(!that->mImageBuffer, "Image buffer already initialized");
 
@@ -366,19 +434,8 @@ nsJPEGEncoder::initDestination(jpeg_compress_struct* cinfo) {
   cinfo->dest->free_in_buffer = that->mImageBufferSize;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-boolean  
-nsJPEGEncoder::emptyOutputBuffer(jpeg_compress_struct* cinfo) {
+ boolean
+nsJPEGEncoderInternal::emptyOutputBuffer(jpeg_compress_struct* cinfo) {
   nsJPEGEncoder* that = static_cast<nsJPEGEncoder*>(cinfo->client_data);
   NS_ASSERTION(that->mImageBuffer, "No buffer to empty!");
 
@@ -413,15 +470,8 @@ nsJPEGEncoder::emptyOutputBuffer(jpeg_compress_struct* cinfo) {
   return 1;
 }
 
-
-
-
-
-
-
-
-void  
-nsJPEGEncoder::termDestination(jpeg_compress_struct* cinfo) {
+ void
+nsJPEGEncoderInternal::termDestination(jpeg_compress_struct* cinfo) {
   nsJPEGEncoder* that = static_cast<nsJPEGEncoder*>(cinfo->client_data);
   if (!that->mImageBuffer) {
     return;
@@ -432,13 +482,8 @@ nsJPEGEncoder::termDestination(jpeg_compress_struct* cinfo) {
   that->NotifyListener();
 }
 
-
-
-
-
-
-void  
-nsJPEGEncoder::errorExit(jpeg_common_struct* cinfo) {
+ void
+nsJPEGEncoderInternal::errorExit(jpeg_common_struct* cinfo) {
   nsresult error_code;
   encoder_error_mgr* err = (encoder_error_mgr*)cinfo->err;
 
@@ -454,33 +499,4 @@ nsJPEGEncoder::errorExit(jpeg_common_struct* cinfo) {
   
   
   longjmp(err->setjmp_buffer, static_cast<int>(error_code));
-}
-
-void nsJPEGEncoder::NotifyListener() {
-  
-  
-  
-  
-  ReentrantMonitorAutoEnter autoEnter(mReentrantMonitor);
-
-  if (mCallback &&
-      (mImageBufferUsed - mImageBufferReadPoint >= mNotifyThreshold ||
-       mFinished)) {
-    nsCOMPtr<nsIInputStreamCallback> callback;
-    if (mCallbackTarget) {
-      callback = NS_NewInputStreamReadyEvent("nsJPEGEncoder::NotifyListener",
-                                             mCallback, mCallbackTarget);
-    } else {
-      callback = mCallback;
-    }
-
-    NS_ASSERTION(callback, "Shouldn't fail to make the callback");
-    
-    
-    mCallback = nullptr;
-    mCallbackTarget = nullptr;
-    mNotifyThreshold = 0;
-
-    callback->OnInputStreamReady(this);
-  }
 }
