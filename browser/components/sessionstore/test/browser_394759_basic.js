@@ -25,7 +25,7 @@ function test() {
   forgetClosedWindows();
 
   provideWindow(function onTestURLLoaded(newWin) {
-    newWin.gBrowser.addTab().linkedBrowser.stop();
+    BrowserTestUtils.addTab(newWin.gBrowser).linkedBrowser.stop();
 
     
     ss.setWindowValue(newWin, uniqueKey, uniqueValue);

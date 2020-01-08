@@ -576,7 +576,10 @@ Tester.prototype = {
 
     
     if (window.gBrowser) {
-      gBrowser.addTab("about:blank", { skipAnimation: true });
+      gBrowser.addTab("about:blank", {
+        skipAnimation: true,
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
       gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
       gBrowser.stop();
     }

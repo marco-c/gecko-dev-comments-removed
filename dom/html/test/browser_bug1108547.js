@@ -43,7 +43,7 @@ function runPass(getterFile, finishedCallback) {
 
   function afterPrivateWindowOpened() {
     
-    privateWin.gBrowser.selectedTab = privateWin.gBrowser.addTab(rootDir + getterFile);
+    privateWin.gBrowser.selectedTab = BrowserTestUtils.addTab(privateWin.gBrowser, rootDir + getterFile);
     testBrowser = privateWin.gBrowser.selectedBrowser;
     privateWin.gBrowser.tabContainer.addEventListener("TabOpen", onNewTabOpened, true);
   }
@@ -77,7 +77,7 @@ function runPass(getterFile, finishedCallback) {
 
   function afterPrivateWindowOpened2() {
     
-    privateWin.gBrowser.selectedTab = privateWin.gBrowser.addTab(rootDir + "file_bug1108547-1.html");
+    privateWin.gBrowser.selectedTab = BrowserTestUtils.addTab(privateWin.gBrowser, rootDir + "file_bug1108547-1.html");
     BrowserTestUtils.browserLoaded(privateWin.gBrowser.selectedBrowser).then(afterOpenCookieSetter2);
   }
 

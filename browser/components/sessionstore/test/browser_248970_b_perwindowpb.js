@@ -97,7 +97,7 @@ function test() {
     let state = { entries: [{ url: testURL }], extData: { key: value } };
 
     
-    let tab_A = aWin.gBrowser.addTab(testURL);
+    let tab_A = BrowserTestUtils.addTab(aWin.gBrowser, testURL);
     ss.setTabState(tab_A, JSON.stringify(state));
     promiseBrowserLoaded(tab_A.linkedBrowser).then(() => {
       
@@ -134,7 +134,7 @@ function test() {
             entries: [{ url: testURL2 }], extData: { key1: value1 }
           };
 
-          let tab_B = win.gBrowser.addTab(testURL2);
+          let tab_B = BrowserTestUtils.addTab(win.gBrowser, testURL2);
           promiseTabState(tab_B, state1).then(() => {
             
             for (let item in fieldList)

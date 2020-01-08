@@ -21,7 +21,7 @@ function test() {
 
   testState(false);
 
-  let pinnedTab = gBrowser.addTab();
+  let pinnedTab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.pinTab(pinnedTab);
 
   
@@ -45,7 +45,7 @@ function test() {
   testState(true);
 
   
-  let pinnedTab2 = gBrowser.addTab();
+  let pinnedTab2 = BrowserTestUtils.addTab(gBrowser);
   gBrowser.pinTab(pinnedTab2);
   gBrowser.selectedTab = pinnedTab;
 
