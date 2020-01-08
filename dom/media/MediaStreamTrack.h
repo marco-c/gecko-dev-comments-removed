@@ -155,13 +155,14 @@ class MediaStreamTrackSource : public nsISupports {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  typedef media::Pledge<bool, dom::MediaStreamError*> PledgeVoid;
+  typedef MozPromise<bool , RefPtr<dom::MediaStreamError>, true>
+      ApplyConstraintsPromise;
 
   
 
 
 
-  virtual already_AddRefed<PledgeVoid> ApplyConstraints(
+  virtual RefPtr<ApplyConstraintsPromise> ApplyConstraints(
       nsPIDOMWindowInner* aWindow,
       const dom::MediaTrackConstraints& aConstraints, CallerType aCallerType);
 
