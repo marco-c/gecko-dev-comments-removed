@@ -45,7 +45,7 @@ function checkEventFormat(events) {
 
 function checkEventSummary(summaries, clearScalars) {
   let scalars = Telemetry.snapshotKeyedScalars(OPTOUT, clearScalars);
-  dump(JSON.stringify(summaries));
+
   for (let [process, [category, eObject, method], count] of summaries) {
     let uniqueEventName = `${category}#${eObject}#${method}`;
     let summaryCount;
@@ -56,6 +56,30 @@ function checkEventSummary(summaries, clearScalars) {
     }
     Assert.equal(summaryCount, count, `${uniqueEventName} had wrong summary count`);
   }
+}
+
+function checkRegistrationFailure(failureType) {
+  let snapshot = Telemetry.snapshotHistograms(OPTIN, true);
+  Assert.ok("parent" in snapshot,
+            "There should be at least one parent histogram when checking for registration failures.");
+  Assert.ok("TELEMETRY_EVENT_REGISTRATION_ERROR" in snapshot.parent,
+            "TELEMETRY_EVENT_REGISTRATION_ERROR should exist when checking for registration failures.");
+  let counts = snapshot.parent.TELEMETRY_EVENT_REGISTRATION_ERROR.counts;
+  Assert.ok(!!counts,
+            "TELEMETRY_EVENT_REGISTRATION_ERROR's counts should exist when checking for registration failures.");
+  Assert.equal(counts[failureType], 1, `Event registration ought to have failed due to type ${failureType}`);
+}
+
+function checkRecordingFailure(failureType) {
+  let snapshot = Telemetry.snapshotHistograms(OPTIN, true);
+  Assert.ok("parent" in snapshot,
+            "There should be at least one parent histogram when checking for recording failures.");
+  Assert.ok("TELEMETRY_EVENT_RECORDING_ERROR" in snapshot.parent,
+            "TELEMETRY_EVENT_RECORDING_ERROR should exist when checking for recording failures.");
+  let counts = snapshot.parent.TELEMETRY_EVENT_RECORDING_ERROR.counts;
+  Assert.ok(!!counts,
+            "TELEMETRY_EVENT_RECORDING_ERROR's counts should exist when checking for recording failures.");
+  Assert.equal(counts[failureType], 1, `Event recording ought to have failed due to type ${failureType}`);
 }
 
 add_task(async function test_event_summary_limit() {
@@ -198,12 +222,15 @@ add_task(async function test_recording() {
   Assert.throws(() => Telemetry.recordEvent("unknown.category", "test1", "object1"),
                 /Error: Unknown event: \["unknown.category", "test1", "object1"\]/,
                 "Should throw on unknown category.");
+  checkRecordingFailure(0 );
   Assert.throws(() => Telemetry.recordEvent("telemetry.test", "unknown", "object1"),
                 /Error: Unknown event: \["telemetry.test", "unknown", "object1"\]/,
                 "Should throw on unknown method.");
+  checkRecordingFailure(0 );
   Assert.throws(() => Telemetry.recordEvent("telemetry.test", "test1", "unknown"),
                 /Error: Unknown event: \["telemetry.test", "test1", "unknown"\]/,
                 "Should throw on unknown object.");
+  checkRecordingFailure(0 );
 
   let checkEvents = (events, expectedEvents) => {
     checkEventFormat(events);
@@ -280,6 +307,7 @@ add_task(async function test_expiry() {
 
   
   Telemetry.recordEvent("telemetry.test", "expired_version", "object1");
+  checkRecordingFailure(1 );
   let snapshot = Telemetry.snapshotEvents(OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should not record event with expired version.");
 
@@ -297,21 +325,25 @@ add_task(async function test_invalidParams() {
   Telemetry.recordEvent("telemetry.test", "test1", "object1", 1);
   let snapshot = Telemetry.snapshotEvents(OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should not record event when value argument with invalid type is passed.");
+  checkRecordingFailure(3 );
 
   
   Telemetry.recordEvent("telemetry.test", "test1", "object1", null, "invalid");
   snapshot = Telemetry.snapshotEvents(OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should not record event when extra argument with invalid type is passed.");
+  checkRecordingFailure(4 );
 
   
   Telemetry.recordEvent("telemetry.test", "test1", "object1", null, {"key3": "x"});
   snapshot = Telemetry.snapshotEvents(OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should not record event when extra argument with invalid key is passed.");
+  checkRecordingFailure(2 );
 
   
   Telemetry.recordEvent("telemetry.test", "test1", "object1", null, {"key3": 1});
   snapshot = Telemetry.snapshotEvents(OPTIN, true);
   Assert.equal(Object.keys(snapshot).length, 0, "Should not record event when extra argument with invalid value type is passed.");
+  checkRecordingFailure(4 );
 });
 
 add_task(async function test_storageLimit() {
@@ -445,6 +477,7 @@ add_task(async function test_dynamicEvents() {
   Assert.throws(() => Telemetry.recordEvent("telemetry.test.dynamic", "unknown", "unknown"),
                 /Error: Unknown event: \["telemetry\.test\.dynamic", "unknown", "unknown"\]/,
                 "Should throw when recording an unknown dynamic event.");
+  checkRecordingFailure(0 );
 
   
   let snapshot = Telemetry.snapshotEvents(OPTIN, false);
@@ -507,6 +540,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
   Telemetry.clearEvents();
 
   
+  Telemetry.snapshotHistograms(OPTIN, true); 
   Assert.throws(() => Telemetry.registerEvents("telemetry+test+dynamic", {
       "test1": {
         methods: ["test1"],
@@ -515,6 +549,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Category parameter should match the identifier pattern\./,
     "Should throw when registering category names with invalid characters.");
+  checkRegistrationFailure(2 );
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.test.test.test.test.test.test.test", {
       "test1": {
         methods: ["test1"],
@@ -523,6 +558,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Category parameter should match the identifier pattern\./,
     "Should throw when registering overly long category names.");
+  checkRegistrationFailure(2 );
 
   
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic1", {
@@ -533,6 +569,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Event names should match the identifier pattern\./,
     "Should throw when registering event names with invalid characters.");
+  checkRegistrationFailure(1 );
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic2", {
       "test1test1test1test1test1test1test1": {
         methods: ["test1"],
@@ -541,6 +578,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Event names should match the identifier pattern\./,
     "Should throw when registering overly long event names.");
+  checkRegistrationFailure(1 );
 
   
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic3", {
@@ -551,6 +589,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Method names should match the identifier pattern\./,
     "Should throw when registering method names with invalid characters.");
+  checkRegistrationFailure(3 );
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic", {
       "test1": {
         methods: ["test1test1test1test1test1test1test1"],
@@ -559,6 +598,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Method names should match the identifier pattern\./,
     "Should throw when registering overly long method names.");
+  checkRegistrationFailure(3 );
 
   
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic4", {
@@ -569,6 +609,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Object names should match the identifier pattern\./,
     "Should throw when registering object names with invalid characters.");
+  checkRegistrationFailure(4 );
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic5", {
       "test1": {
         methods: ["test1"],
@@ -577,6 +618,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Object names should match the identifier pattern\./,
     "Should throw when registering overly long object names.");
+  checkRegistrationFailure(4 );
 
   
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic6", {
@@ -588,6 +630,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Extra key names should match the identifier pattern\./,
     "Should throw when registering extra key names with invalid characters.");
+  checkRegistrationFailure(5 );
 
   
   Assert.throws(() => Telemetry.registerEvents("telemetry.test.dynamic7", {
@@ -599,6 +642,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /Extra key names should match the identifier pattern\./,
     "Should throw when registering extra key names which are too long.");
+  checkRegistrationFailure(5 );
   Telemetry.registerEvents("telemetry.test.dynamic8", {
     "test1": {
       methods: ["test1"],
@@ -617,6 +661,7 @@ add_task(async function test_dynamicEventRegistrationValidation() {
     }),
     /No more than 10 extra keys can be registered\./,
     "Should throw when registering too many extra keys.");
+  checkRegistrationFailure(5 );
   Telemetry.registerEvents("telemetry.test.dynamic10", {
     "test1": {
       methods: ["test1"],
