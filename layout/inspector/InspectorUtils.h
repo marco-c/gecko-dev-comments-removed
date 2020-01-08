@@ -274,6 +274,13 @@ public:
 
   static void ScrollElementIntoView(GlobalObject& aGlobal, Element& aElement);
 
+  
+
+
+  static bool IsCustomElementName(GlobalObject&,
+                                  const nsAString& aName,
+                                  const nsAString& aNamespaceURI);
+
 private:
   static already_AddRefed<ComputedStyle>
     GetCleanComputedStyleForElement(Element* aElement, nsAtom* aPseudo);
