@@ -1,5 +1,3 @@
-use std::ascii::AsciiExt;
-
 extern crate nserror;
 use self::nserror::*;
 
@@ -113,7 +111,7 @@ pub extern "C" fn rust_prepare_accept_languages<'a, 'b>(i_accept_languages: &'a 
 
 fn canonicalize_language_tag(token: &mut [u8]) {
     for c in token.iter_mut() {
-        *c = AsciiExt::to_ascii_lowercase(c);
+        *c = c.to_ascii_lowercase();
     }
 
     let sub_tags = token.split_mut(|c| *c == ('-' as u8));
@@ -130,12 +128,12 @@ fn canonicalize_language_tag(token: &mut [u8]) {
             1 => break,
             
             2 => {
-                sub_tag[0] = AsciiExt::to_ascii_uppercase(&sub_tag[0]);
-                sub_tag[1] = AsciiExt::to_ascii_uppercase(&sub_tag[1]);
+                sub_tag[0] = sub_tag[0].to_ascii_uppercase();
+                sub_tag[1] = sub_tag[1].to_ascii_uppercase();
             },
             
             4  => {
-                sub_tag[0] = AsciiExt::to_ascii_uppercase(&sub_tag[0]);
+                sub_tag[0] = sub_tag[0].to_ascii_uppercase();
             },
             _ => {},
         };
