@@ -90,6 +90,12 @@ class CSSStyleSheet;
     }                                                                          \
   }
 
+
+extern "C" {
+  RawGeckoURLExtraDataBorrowedMut Servo_CssUrlData_GetExtraData(
+    RawServoCssUrlDataBorrowed url);
+}
+
 namespace mozilla {
 namespace css {
 
@@ -98,14 +104,11 @@ struct URLValue final
 public:
   
   URLValue(already_AddRefed<RawServoCssUrlData> aCssUrl,
-           URLExtraData* aExtraData,
            CORSMode aCORSMode)
-    : mExtraData(aExtraData)
-    , mURIResolved(false)
+    : mURIResolved(false)
     , mCssUrl(aCssUrl)
     , mCORSMode(aCORSMode)
   {
-    MOZ_ASSERT(mExtraData);
     MOZ_ASSERT(mCssUrl);
   }
 
@@ -155,15 +158,16 @@ public:
 
   CORSMode CorsMode() const { return mCORSMode; }
 
+  URLExtraData* ExtraData() const
+  {
+    return Servo_CssUrlData_GetExtraData(mCssUrl);
+  }
+
 private:
   
   
   mutable nsCOMPtr<nsIURI> mURI;
 
-public:
-  RefPtr<URLExtraData> mExtraData;
-
-private:
   mutable bool mURIResolved;
 
   

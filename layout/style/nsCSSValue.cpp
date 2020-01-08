@@ -826,8 +826,8 @@ css::URLValue::Equals(const URLValue& aOther) const
   MOZ_ASSERT(NS_IsMainThread());
 
   bool eq;
-  const URLExtraData* self = mExtraData;
-  const URLExtraData* other = aOther.mExtraData;
+  const URLExtraData* self = ExtraData();
+  const URLExtraData* other = aOther.ExtraData();
   return GetString() == aOther.GetString() &&
           (GetURI() == aOther.GetURI() || 
            (mURI && aOther.mURI &&
@@ -843,7 +843,7 @@ css::URLValue::Equals(const URLValue& aOther) const
 bool
 css::URLValue::DefinitelyEqualURIs(const URLValue& aOther) const
 {
-  if (mExtraData->BaseURI() != aOther.mExtraData->BaseURI()) {
+  if (ExtraData()->BaseURI() != aOther.ExtraData()->BaseURI()) {
     return false;
   }
   return GetString() == aOther.GetString();
@@ -853,7 +853,7 @@ bool
 css::URLValue::DefinitelyEqualURIsAndPrincipal(
     const URLValue& aOther) const
 {
-  return mExtraData->Principal() == aOther.mExtraData->Principal() &&
+  return ExtraData()->Principal() == aOther.ExtraData()->Principal() &&
          DefinitelyEqualURIs(aOther);
 }
 
@@ -876,7 +876,7 @@ css::URLValue::GetURI() const
     nsCOMPtr<nsIURI> newURI;
     NS_NewURI(getter_AddRefs(newURI),
               GetString(),
-              nullptr, mExtraData->BaseURI());
+              nullptr, ExtraData()->BaseURI());
     mURI = newURI.forget();
     mURIResolved = true;
   }
@@ -969,7 +969,6 @@ css::URLValue::GetSourceString(nsString& aRef) const
 size_t
 css::URLValue::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
-  
   
   
   
