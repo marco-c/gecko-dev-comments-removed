@@ -15,9 +15,7 @@
   
   exports.registerTestActor = async function(client) {
     
-    const response = await client.listTabs();
-    const { ActorRegistryFront } = require("devtools/shared/fronts/actor-registry");
-    const registryFront = ActorRegistryFront(client, response);
+    const registryFront = await client.mainRoot.getFront("actorRegistry");
 
     
     const options = {
