@@ -529,6 +529,12 @@ private:
 
   
   
+  
+  
+  UniquePtr<cricket::VideoAdapter> mSimulcastAdapter;
+
+  
+  
   AutoTArray<rtc::VideoSinkInterface<webrtc::VideoFrame>*, 1> mRegisteredSinks;
 
   

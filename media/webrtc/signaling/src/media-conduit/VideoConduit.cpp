@@ -85,6 +85,10 @@ static const char* kRedPayloadName = "red";
 #define SCALER_BUFFER_POOL_SIZE 5
 
 
+
+#define SIMULCAST_RESOLUTION_ALIGNMENT 16
+
+
 #define KBPS(kbps) kbps * 1000
 
 
@@ -805,13 +809,6 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
   webrtc::VideoCodecMode codecMode = mConduit->mCodecMode;
 
   
-  
-  
-  streamCount = std::min(streamCount, static_cast<size_t>(
-                         1 + std::min(CountTrailingZeroes32(width),
-                                      CountTrailingZeroes32(height))));
-
-  
   if (codecMode == webrtc::VideoCodecMode::kScreensharing) {
     streamCount = 1;
   }
@@ -822,50 +819,78 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
   MutexAutoLock lock(mConduit->mMutex);
 
   
-  
-  
-  
-  
-  
-  
-#if 0
-  
-  if (simulcastEncoding.constraints.scaleDownBy > 1.0) {
-    uint32_t new_width = width / simulcastEncoding.constraints.scaleDownBy;
-    uint32_t new_height = height / simulcastEncoding.constraints.scaleDownBy;
 
-    if (new_width != width || new_height != height) {
-      if (streamCount == 1) {
-        CSFLogVerbose(LOGTAG, "%s: ConstrainPreservingAspectRatio", __FUNCTION__);
-        
-        ConstrainPreservingAspectRatio(new_width, new_height,
-                                       &width, &height);
-      } else {
-        CSFLogVerbose(LOGTAG, "%s: ConstrainPreservingAspectRatioExact", __FUNCTION__);
-        
-        
-        ConstrainPreservingAspectRatioExact(new_width * new_height,
-                                            &width, &height);
-      }
-    }
-  }
-#endif
+  
+  mConduit->mSimulcastAdapter->OnOutputFormatRequest(
+    cricket::VideoFormat(width, height, 0, 0));
 
   for (size_t idx = streamCount - 1; streamCount > 0; idx--, streamCount--) {
     webrtc::VideoStream video_stream;
-    
-    
-    
-
-    
-    
-    video_stream.width = width >> idx;
-    video_stream.height = height >> idx;
-    
-    video_stream.max_framerate = mConduit->mSendingFramerate;
-
     auto& simulcastEncoding = mConduit->mCurSendCodecConfig->mSimulcastEncodings[idx];
     MOZ_ASSERT(simulcastEncoding.constraints.scaleDownBy >= 1.0);
+
+    
+    
+    
+    int unusedCropWidth, unusedCropHeight, outWidth, outHeight;
+    if (idx == 0) {
+      
+      
+      
+      
+      outWidth = width;
+      outHeight = height;
+    } else {
+      float effectiveScaleDownBy =
+        simulcastEncoding.constraints.scaleDownBy /
+        mConduit->mCurSendCodecConfig->mSimulcastEncodings[0].constraints.scaleDownBy;
+      MOZ_ASSERT(effectiveScaleDownBy >= 1.0);
+      mConduit->mSimulcastAdapter->OnScaleResolutionBy(
+        effectiveScaleDownBy > 1.0 ?
+          rtc::Optional<float>(effectiveScaleDownBy) :
+          rtc::Optional<float>());
+      bool rv = mConduit->mSimulcastAdapter->AdaptFrameResolution(
+        width,
+        height,
+        0, 
+        &unusedCropWidth,
+        &unusedCropHeight,
+        &outWidth,
+        &outHeight);
+
+      if (!rv) {
+        
+        
+        outWidth = 0;
+        outHeight = 0;
+      }
+    }
+
+    if (outWidth == 0 || outHeight == 0) {
+      CSFLogInfo(LOGTAG,
+                 "%s Stream with RID %s ignored because of no resolution.",
+                 __FUNCTION__, simulcastEncoding.rid.c_str());
+      continue;
+    }
+
+    MOZ_ASSERT(outWidth > 0);
+    MOZ_ASSERT(outHeight > 0);
+    video_stream.width = outWidth;
+    video_stream.height = outHeight;
+
+    CSFLogInfo(LOGTAG, "%s Input frame %ux%u, RID %s scaling to %zux%zu",
+               __FUNCTION__, width, height, simulcastEncoding.rid.c_str(),
+               video_stream.width, video_stream.height);
+
+    if (video_stream.width * height != width * video_stream.height) {
+      CSFLogInfo(LOGTAG,
+                 "%s Stream with RID %s ignored because of bad aspect ratio.",
+                 __FUNCTION__, simulcastEncoding.rid.c_str());
+      continue;
+    }
+
+    
+    video_stream.max_framerate = mConduit->mSendingFramerate;
 
     mConduit->SelectBitrates(
       video_stream.width, video_stream.height,
@@ -935,8 +960,8 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
 
   size_t streamCount = std::min(codecConfig->mSimulcastEncodings.size(),
                                 (size_t)webrtc::kMaxSimulcastStreams);
-  CSFLogDebug(LOGTAG, "%s for VideoConduit:%p stream count:%d", __FUNCTION__,
-              this, static_cast<int>(streamCount));
+  CSFLogDebug(LOGTAG, "%s for VideoConduit:%p stream count:%zu", __FUNCTION__,
+              this, streamCount);
 
   mSendingFramerate = 0;
   mEncoderConfig.ClearStreams();
@@ -957,7 +982,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   
   mNegotiatedMaxBitrate = codecConfig->mTias;
 
-  if (mLastWidth == 0 && mMinBitrateEstimate) {
+  if (mLastWidth == 0 && mMinBitrateEstimate != 0) {
     
     
     webrtc::Call::Config::BitrateConfig config;
@@ -978,7 +1003,9 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
       codecConfig->mName, this));
 
   
-  mVideoAdapter = MakeUnique<cricket::VideoAdapter>();
+  mVideoAdapter = MakeUnique<cricket::VideoAdapter>(
+    streamCount > 1 ? SIMULCAST_RESOLUTION_ALIGNMENT : 1);
+  mSimulcastAdapter = MakeUnique<cricket::VideoAdapter>();
   mVideoAdapter->OnScaleResolutionBy(
     (streamCount >= 1 && codecConfig->mSimulcastEncodings[0].constraints.scaleDownBy > 1.0) ?
       rtc::Optional<float>(codecConfig->mSimulcastEncodings[0].constraints.scaleDownBy) :
@@ -994,7 +1021,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   
   mEncoderConfig.SetMinTransmitBitrateBps(0);
   
-  mEncoderConfig.SetMaxEncodings(codecConfig->mSimulcastEncodings.size());
+  mEncoderConfig.SetMaxEncodings(streamCount);
 
   
   
