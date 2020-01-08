@@ -135,4 +135,12 @@ WorkletImpl::TerminateThread()
   mWorkletLoadInfo.mPrincipal = nullptr;
 }
 
+nsresult
+WorkletImpl::DispatchRunnable(already_AddRefed<nsIRunnable> aRunnable)
+{
+  
+  MOZ_ASSERT(mWorkletThread);
+  return mWorkletThread->DispatchRunnable(std::move(aRunnable));
+}
+
 } 
