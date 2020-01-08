@@ -634,7 +634,7 @@ public:
                                   const nsINode* unTrustedNode);
 
   
-  static bool CanCallerAccess(nsINode* aNode);
+  static bool CanCallerAccess(const nsINode* aNode);
 
   
   
