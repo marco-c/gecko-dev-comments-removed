@@ -346,11 +346,9 @@ nsXBLBinding::GenerateAnonymousContent()
           point->AppendInsertedChild(child, false);
         } else {
           NodeInfo *ni = child->NodeInfo();
-          if (!child->TextIsOnlyWhitespace() &&
-              (ni->NamespaceID() != kNameSpaceID_XUL ||
-               (!ni->Equals(nsGkAtoms::_template) &&
-                !ni->Equals(nsGkAtoms::observes)))
-          ) {
+          if (ni->NamespaceID() != kNameSpaceID_XUL ||
+              (!ni->Equals(nsGkAtoms::_template) &&
+               !ni->Equals(nsGkAtoms::observes))) {
             
             
             
