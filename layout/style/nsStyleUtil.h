@@ -76,16 +76,6 @@ public:
     aResult.AppendFloat(aNumber);
   }
 
-  static void AppendStepsTimingFunction(uint32_t aStepNumber,
-                                        mozilla::StyleStepPosition aStepPos,
-                                        nsAString& aResult);
-  static void AppendCubicBezierTimingFunction(float aX1, float aY1,
-                                              float aX2, float aY2,
-                                              nsAString& aResult);
-  static void AppendCubicBezierKeywordTimingFunction(
-      mozilla::StyleTimingKeyword aType,
-      nsAString& aResult);
-
   
 
 
