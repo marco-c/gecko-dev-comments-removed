@@ -14,7 +14,6 @@
 #include "mozilla/GeckoBindings.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/layers/AnimationInfo.h"
-#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/Unused.h"
@@ -774,10 +773,6 @@ static bool RecomputePosition(nsIFrame* aFrame) {
       }
     }
 
-    if (aFrame->IsInScrollAnchorChain()) {
-      ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(aFrame);
-      container->ApplyAdjustments();
-    }
     return true;
   }
 
@@ -883,10 +878,6 @@ static bool RecomputePosition(nsIFrame* aFrame) {
                     reflowInput.ComputedPhysicalMargin().top);
     aFrame->SetPosition(pos);
 
-    if (aFrame->IsInScrollAnchorChain()) {
-      ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(aFrame);
-      container->ApplyAdjustments();
-    }
     return true;
   }
 
@@ -1502,16 +1493,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       
       
-      bool wasAbsPosStyle = false;
-      ScrollAnchorContainer* previousAnchorContainer = nullptr;
-      if (frame) {
-        wasAbsPosStyle = frame->StyleDisplay()->IsAbsolutelyPositionedStyle();
-        previousAnchorContainer = ScrollAnchorContainer::FindFor(frame);
-      }
-
-      
-      
-      
       
       
       
@@ -1520,34 +1501,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       frameConstructor->RecreateFramesForContent(
           content, nsCSSFrameConstructor::InsertionKind::Sync);
-      frame = content->GetPrimaryFrame();
-
-      
-      bool isAbsPosStyle = false;
-      ScrollAnchorContainer* newAnchorContainer = nullptr;
-      if (frame) {
-        isAbsPosStyle = frame->StyleDisplay()->IsAbsolutelyPositionedStyle();
-        newAnchorContainer = ScrollAnchorContainer::FindFor(frame);
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (wasAbsPosStyle != isAbsPosStyle) {
-        if (previousAnchorContainer) {
-          previousAnchorContainer->SuppressAdjustments();
-        }
-        if (newAnchorContainer) {
-          newAnchorContainer->SuppressAdjustments();
-        }
-      }
     } else {
       NS_ASSERTION(frame, "This shouldn't happen");
 
@@ -2961,11 +2914,6 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     
     return;
   }
-
-  
-  
-  
-  presContext->PresShell()->FlushDirtyScrollAnchorContainers();
 
   
   

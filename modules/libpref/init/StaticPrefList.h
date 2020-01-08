@@ -884,25 +884,6 @@ VARCACHE_PREF(
 )
 
 
-#ifdef NIGHTLY_BUILD
-#define PREF_VALUE true
-#else
-#define PREF_VALUE false
-#endif
-VARCACHE_PREF(
-  "layout.css.scroll-anchoring.enabled",
-   layout_css_scroll_anchoring_enabled,
-  bool, PREF_VALUE
-)
-#undef PREF_VALUE
-
-VARCACHE_PREF(
-  "layout.css.scroll-anchoring.highlight",
-   layout_css_scroll_anchoring_highlight,
-  bool, false
-)
-
-
 
 
 

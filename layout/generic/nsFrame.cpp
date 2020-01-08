@@ -22,7 +22,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/StaticPrefs.h"
 
 #include "nsCOMPtr.h"
 #include "nsFlexContainerFrame.h"
@@ -112,7 +111,6 @@
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/layers/WebRenderUserData.h"
-#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsPrintfCString.h"
 #include "ActiveLayerTracker.h"
 
@@ -729,11 +727,6 @@ void nsFrame::DestroyFrom(nsIFrame* aDestructRoot,
     ActiveLayerTracker::TransferActivityToContent(this, mContent);
   }
 
-  ScrollAnchorContainer* anchor = nullptr;
-  if (IsScrollAnchor(&anchor)) {
-    anchor->InvalidateAnchor();
-  }
-
   if (HasCSSAnimations() || HasCSSTransitions() ||
       EffectSet::GetEffectSet(this)) {
     
@@ -1057,32 +1050,23 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
     
     
     
-    bool needAnchorSuppression = false;
-
-    
-    
-    
     
     
     nsMargin oldValue(0, 0, 0, 0);
     nsMargin newValue(0, 0, 0, 0);
     const nsStyleMargin* oldMargin = aOldComputedStyle->PeekStyleMargin();
     if (oldMargin && oldMargin->GetMargin(oldValue)) {
-      if (!StyleMargin()->GetMargin(newValue) || oldValue != newValue) {
-        if (!HasProperty(UsedMarginProperty())) {
-          AddProperty(UsedMarginProperty(), new nsMargin(oldValue));
-        }
-        needAnchorSuppression = true;
+      if ((!StyleMargin()->GetMargin(newValue) || oldValue != newValue) &&
+          !HasProperty(UsedMarginProperty())) {
+        AddProperty(UsedMarginProperty(), new nsMargin(oldValue));
       }
     }
 
     const nsStylePadding* oldPadding = aOldComputedStyle->PeekStylePadding();
     if (oldPadding && oldPadding->GetPadding(oldValue)) {
-      if (!StylePadding()->GetPadding(newValue) || oldValue != newValue) {
-        if (!HasProperty(UsedPaddingProperty())) {
-          AddProperty(UsedPaddingProperty(), new nsMargin(oldValue));
-        }
-        needAnchorSuppression = true;
+      if ((!StylePadding()->GetPadding(newValue) || oldValue != newValue) &&
+          !HasProperty(UsedPaddingProperty())) {
+        AddProperty(UsedPaddingProperty(), new nsMargin(oldValue));
       }
     }
 
@@ -1093,31 +1077,6 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
       if (oldValue != newValue && !HasProperty(UsedBorderProperty())) {
         AddProperty(UsedBorderProperty(), new nsMargin(oldValue));
       }
-    }
-
-    if (mInScrollAnchorChain) {
-      const nsStylePosition* oldPosition =
-          aOldComputedStyle->PeekStylePosition();
-      if (oldPosition &&
-          (oldPosition->mOffset != StylePosition()->mOffset ||
-           oldPosition->mWidth != StylePosition()->mWidth ||
-           oldPosition->mMinWidth != StylePosition()->mMinWidth ||
-           oldPosition->mMaxWidth != StylePosition()->mMaxWidth ||
-           oldPosition->mHeight != StylePosition()->mHeight ||
-           oldPosition->mMinHeight != StylePosition()->mMinHeight ||
-           oldPosition->mMaxHeight != StylePosition()->mMaxHeight)) {
-        needAnchorSuppression = true;
-      }
-
-      const nsStyleDisplay* oldDisp = aOldComputedStyle->PeekStyleDisplay();
-      if (oldDisp && (oldDisp->mPosition != StyleDisplay()->mPosition ||
-                      oldDisp->TransformChanged(*StyleDisplay()))) {
-        needAnchorSuppression = true;
-      }
-    }
-
-    if (mInScrollAnchorChain && needAnchorSuppression) {
-      ScrollAnchorContainer::FindFor(this)->SuppressAdjustments();
     }
   }
 
@@ -3517,17 +3476,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
       (child->GetStateBits() & NS_FRAME_SIMPLE_DISPLAYLIST) &&
       
       !(child->MayHaveTransformAnimation() || child->MayHaveOpacityAnimation());
-
-  if (StaticPrefs::layout_css_scroll_anchoring_highlight()) {
-    if (child->FirstContinuation()->IsScrollAnchor()) {
-      nsRect bounds = child->GetContentRectRelativeToSelf() +
-                      aBuilder->ToReferenceFrame(child);
-      nsDisplaySolidColor* color = MakeDisplayItem<nsDisplaySolidColor>(
-          aBuilder, child, bounds, NS_RGBA(255, 0, 255, 64));
-      color->SetOverrideZIndex(INT32_MAX);
-      aLists.PositionedDescendants()->AppendToTop(color);
-    }
-  }
 
   if (doingShortcut) {
     BuildDisplayListForSimpleChild(aBuilder, child, aLists);
@@ -9193,28 +9141,6 @@ void nsIFrame::ComputePreserve3DChildrenOverflow(
       }
     }
   }
-}
-
-bool nsIFrame::IsScrollAnchor(ScrollAnchorContainer** aOutContainer) {
-  if (!mInScrollAnchorChain) {
-    return false;
-  }
-
-  ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(this);
-  if (container->AnchorNode() != this) {
-    return false;
-  }
-
-  if (aOutContainer) {
-    *aOutContainer = container;
-  }
-  return true;
-}
-
-bool nsIFrame::IsInScrollAnchorChain() const { return mInScrollAnchorChain; }
-
-void nsIFrame::SetInScrollAnchorChain(bool aInChain) {
-  mInScrollAnchorChain = aInChain;
 }
 
 uint32_t nsIFrame::GetDepthInFrameTree() const {
