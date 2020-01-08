@@ -598,7 +598,7 @@ APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
   AssertOnSamplerThread();
   MutexAutoLock lock(mMapLock);
 
-  bool activeAnimations = false;
+  
   for (const auto& mapping : mApzcMap) {
     AsyncPanZoomController* apzc = mapping.second;
 
@@ -621,7 +621,6 @@ APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
         wr::ToLayoutPoint(LayoutDevicePoint::FromUnknownPoint(asyncScrollDelta.ToUnknownPoint())));
 
     apzc->ReportCheckerboard(aSampleTime);
-    activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
   }
 
   
@@ -654,6 +653,15 @@ APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
   }
   aTxn.AppendTransformProperties(scrollbarTransforms);
 
+  
+  
+  
+  
+  bool activeAnimations = false;
+  for (const auto& mapping : mApzcMap) {
+    AsyncPanZoomController* apzc = mapping.second;
+    activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
+  }
   if (activeAnimations) {
     RefPtr<CompositorController> controller;
     CompositorBridgeParent::CallWithIndirectShadowTree(mRootLayersId,
