@@ -2018,8 +2018,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     using GeneralCharsBase::ungetCodeUnit;
     using GeneralCharsBase::updateLineInfoForEOL;
 
-    using typename GeneralCharsBase::SourceUnits;
-
   protected:
     using GeneralCharsBase::GeneralCharsBase;
 
@@ -2074,6 +2072,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
     using GeneralCharsBase::internalComputeLineOfContext;
     using TokenStreamCharsShared::isAsciiCodePoint;
     
+    using GeneralCharsBase::updateLineInfoForEOL;
 
   private:
     static char toHexChar(uint8_t nibble) {
@@ -2182,6 +2181,18 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
     MOZ_MUST_USE bool
     getNonAsciiCodePointDontNormalize(mozilla::Utf8Unit lead, char32_t* codePoint);
+
+    
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
 };
 
 
