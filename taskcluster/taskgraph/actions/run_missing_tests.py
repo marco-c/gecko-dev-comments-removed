@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
         "This action is for use on pushes that will be merged into another branch,"
         "to check that optimization hasn't hidden any failures."
     ),
-    order=100,  
+    order=250,
     context=[],  
 )
 def run_missing_tests(parameters, graph_config, input, task_group_id, task_id, task):
