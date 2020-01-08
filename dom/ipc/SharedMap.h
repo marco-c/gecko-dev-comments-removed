@@ -122,6 +122,7 @@ public:
 
 
   void Update(const FileDescriptor& aMapFile, size_t aMapSize,
+              nsTArray<RefPtr<BlobImpl>>&& aBlobs,
               nsTArray<nsCString>&& aChangedKeys);
 
 
@@ -156,6 +157,8 @@ protected:
       buffer.codeString(mName);
       buffer.codeUint32(DataOffset());
       buffer.codeUint32(mSize);
+      buffer.codeUint16(mBlobOffset);
+      buffer.codeUint16(mBlobCount);
 
       MOZ_ASSERT(buffer.cursor() == startOffset + HeaderSize());
     }
@@ -168,7 +171,9 @@ protected:
     {
       return (sizeof(uint16_t) + mName.Length() +
               sizeof(DataOffset()) +
-              sizeof(mSize));
+              sizeof(mSize) +
+              sizeof(mBlobOffset) +
+              sizeof(mBlobCount));
     }
 
     
@@ -193,7 +198,7 @@ protected:
 
 
 
-    void ExtractData(char* aDestPtr, uint32_t aNewOffset);
+    void ExtractData(char* aDestPtr, uint32_t aNewOffset, uint16_t aNewBlobOffset);
 
     
     
@@ -228,6 +233,19 @@ protected:
       return mData.as<uint32_t>();
     }
 
+  public:
+    uint16_t BlobOffset() const { return mBlobOffset; }
+    uint16_t BlobCount() const { return mBlobCount; }
+
+    Span<const RefPtr<BlobImpl>> Blobs()
+    {
+      if (mData.is<StructuredCloneData>()) {
+        return mData.as<StructuredCloneData>().BlobImpls();
+      }
+      return {&mMap.mBlobImpls[mBlobOffset], BlobCount()};
+    }
+
+  private:
     
     
     
@@ -258,9 +276,14 @@ protected:
 
     
     uint32_t mSize = 0;
+
+    uint16_t mBlobOffset = 0;
+    uint16_t mBlobCount = 0;
   };
 
   const nsTArray<Entry*>& EntryArray() const;
+
+  nsTArray<RefPtr<BlobImpl>> mBlobImpls;
 
   
   
