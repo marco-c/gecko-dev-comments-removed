@@ -44,6 +44,9 @@ inline const nsXPTMethodInfo& GetMethod(uint16_t aIndex);
 inline const nsXPTDOMObjectInfo& GetDOMObjectInfo(uint16_t aIndex);
 inline const char* GetString(uint32_t aIndex);
 
+const nsXPTInterfaceInfo* InterfaceByIID(const nsIID& aIID);
+const nsXPTInterfaceInfo* InterfaceByName(const char* aName);
+
 extern const uint16_t sInterfacesSize;
 
 } 
@@ -57,8 +60,12 @@ extern const uint16_t sInterfacesSize;
 struct nsXPTInterfaceInfo
 {
   
-  static const nsXPTInterfaceInfo* ByIID(const nsIID& aIID);
-  static const nsXPTInterfaceInfo* ByName(const char* aName);
+  static const nsXPTInterfaceInfo* ByIID(const nsIID& aIID) {
+    return xpt::detail::InterfaceByIID(aIID);
+  }
+  static const nsXPTInterfaceInfo* ByName(const char* aName) {
+    return xpt::detail::InterfaceByName(aName);
+  }
 
   
   static const nsXPTInterfaceInfo* ByIndex(uint16_t aIndex) {
@@ -596,12 +603,6 @@ extern const ConstInfo sConsts[];
 
 
 extern const mozilla::dom::NativePropertyHooks* sPropHooks[];
-
-
-static const uint16_t kPHFSize = 512;
-extern const uint32_t sPHF_IIDs[]; 
-extern const uint32_t sPHF_Names[]; 
-extern const uint16_t sPHF_NamesIdxs[]; 
 
 
 

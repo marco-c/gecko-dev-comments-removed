@@ -11,8 +11,7 @@
 import json
 from perfecthash import PerfectHash
 from collections import OrderedDict
-
-
+import buildconfig
 
 
 PHFSIZE = 512
@@ -143,12 +142,10 @@ def iid_bytes(iid):
     for num in split_iid(iid):
         b = bytearray.fromhex(num)
         
-        
-        
-        b.reverse()
+        if buildconfig.substs['TARGET_ENDIANNESS'] == 'little':
+            b.reverse()
         bs += b
     return bs
-
 
 
 
@@ -188,21 +185,19 @@ utility_types = [
 
 def link_to_cpp(interfaces, fd):
     
-    iid_phf = PerfectHash(PHFSIZE, [
-        (iid_bytes(iface['uuid']), iface)
-        for iface in interfaces
-    ])
+    iid_phf = PerfectHash(interfaces, PHFSIZE,
+                          key=lambda i: iid_bytes(i['uuid']))
+    for idx, iface in enumerate(iid_phf.entries):
+        iface['idx'] = idx  
+
     
-    name_phf = PerfectHash(PHFSIZE, [
-        (bytearray(iface['name'], 'ascii'), idx)
-        for idx, iface in enumerate(iid_phf.values)
-    ])
+    name_phf = PerfectHash(interfaces, PHFSIZE,
+                           key=lambda i: i['name'].encode('ascii'))
 
     def interface_idx(name):
-        if name is not None:
-            idx = name_phf.lookup(bytearray(name, 'ascii'))
-            if iid_phf.values[idx]['name'] == name:
-                return idx + 1  
+        entry = name and name_phf.get_entry(name.encode('ascii'))
+        if entry:
+            return entry['idx'] + 1  
         return 0
 
     
@@ -210,7 +205,6 @@ def link_to_cpp(interfaces, fd):
     includes = set()
     types = []
     type_cache = {}
-    ifaces = []
     params = []
     param_cache = {}
     methods = []
@@ -268,6 +262,8 @@ def link_to_cpp(interfaces, fd):
         if tag == 'legacy_array':
             return '%s[size_is=%d]' % (
                 describe_type(type['element']), type['size_is'])
+        elif tag == 'array':
+            return 'Array<%s>' % describe_type(type['element'])
         elif tag == 'interface_type' or tag == 'domobject':
             return type['name']
         elif tag == 'interface_is_type':
@@ -386,18 +382,11 @@ def link_to_cpp(interfaces, fd):
             "mozilla::dom::%s_Binding::sNativePropertyHooks, // %d = %s(%s)" %
             (iface['shim'], len(prophooks), iface['name'], iface['shim']))
 
-    def collect_base_info(iface):
-        methods = 0
-        consts = 0
-        while iface is not None:
-            methods += len(iface['methods'])
-            consts += len(iface['consts'])
-            idx = interface_idx(iface['parent'])
-            if idx == 0:
-                break
-            iface = iid_phf.values[idx - 1]
-
-        return methods, consts
+    def ancestors(iface):
+        yield iface
+        while iface['parent']:
+            iface = name_phf.get_entry(iface['parent'].encode('ascii'))
+            yield iface
 
     def lower_iface(iface):
         isshim = iface['shim'] is not None
@@ -413,7 +402,8 @@ def link_to_cpp(interfaces, fd):
             
             consts_off = len(prophooks)
         else:
-            method_cnt, const_cnt = collect_base_info(iface)
+            method_cnt = sum(len(i['methods']) for i in ancestors(iface))
+            const_cnt = sum(len(i['consts']) for i in ancestors(iface))
 
         
         
@@ -424,8 +414,9 @@ def link_to_cpp(interfaces, fd):
         assert method_cnt < 250, "%s has too many methods" % iface['name']
         assert const_cnt < 256, "%s has too many constants" % iface['name']
 
-        ifaces.append(nsXPTInterfaceInfo(
-            "%d = %s" % (len(ifaces), iface['name']),
+        
+        iface['cxx'] = nsXPTInterfaceInfo(
+            "%d = %s" % (iface['idx'], iface['name']),
 
             mIID=lower_uuid(iface['uuid']),
             mName=lower_string(iface['name']),
@@ -441,7 +432,7 @@ def link_to_cpp(interfaces, fd):
             mBuiltinClass='builtinclass' in iface['flags'],
             mMainProcessScriptableOnly='main_process_only' in iface['flags'],
             mFunction='function' in iface['flags'],
-        ))
+        )
 
         if isshim:
             lower_prop_hooks(iface)
@@ -460,7 +451,7 @@ def link_to_cpp(interfaces, fd):
         assert got == expected, "Wrong index when lowering"
 
     
-    for iface in iid_phf.values:
+    for iface in iid_phf.entries:
         lower_iface(iface)
 
     
@@ -507,7 +498,6 @@ namespace detail {
     def array(ty, name, els):
         fd.write("const %s %s[] = {%s\n};\n\n" %
                  (ty, name, ','.join(indented('\n' + str(e)) for e in els)))
-    array("nsXPTInterfaceInfo", "sInterfaces", ifaces)
     array("nsXPTType", "sTypes", types)
     array("nsXPTParamInfo", "sParams", params)
     array("nsXPTMethodInfo", "sMethods", methods)
@@ -522,17 +512,33 @@ namespace detail {
     fd.write("};\n\n")
 
     
+    fd.write(iid_phf.cxx_codegen(
+        name='InterfaceByIID',
+        entry_type='nsXPTInterfaceInfo',
+        entries_name='sInterfaces',
+        lower_entry=lambda iface: iface['cxx'],
+
+        
+        return_type='const nsXPTInterfaceInfo*',
+        return_entry='return entry.IID().Equals(aKey) ? &entry : nullptr;',
+
+        key_type='const nsIID&',
+        key_bytes='reinterpret_cast<const char*>(&aKey)',
+        key_length='sizeof(nsIID)'))
+    fd.write('\n')
+
     
-    def phfarr(name, ty, it):
-        fd.write("const %s %s[] = {" % (ty, name))
-        for idx, v in enumerate(it):
-            if idx % 8 == 0:
-                fd.write('\n ')
-            fd.write(" 0x%04x," % v)
-        fd.write("\n};\n\n")
-    phfarr("sPHF_IIDs", "uint32_t", iid_phf.intermediate)
-    phfarr("sPHF_Names", "uint32_t", name_phf.intermediate)
-    phfarr("sPHF_NamesIdxs", "uint16_t", name_phf.values)
+    fd.write(name_phf.cxx_codegen(
+        name='InterfaceByName',
+        entry_type='uint16_t',
+        lower_entry=lambda iface: '%-4d /* %s */' % (iface['idx'], iface['name']),
+
+        
+        
+        return_type='const nsXPTInterfaceInfo*',
+        return_entry='return strcmp(sInterfaces[entry].Name(), aKey) == 0'
+                     ' ? &sInterfaces[entry] : nullptr;'))
+    fd.write('\n')
 
     
     
@@ -540,16 +546,8 @@ namespace detail {
         fd.write("static_assert(%d == (uint8_t)nsXPTType::Idx::%s, \"Bad idx\");\n" %
                  (idx, ty['tag'][3:]))
 
-    
     fd.write("""
 const uint16_t sInterfacesSize = mozilla::ArrayLength(sInterfaces);
-static_assert(sInterfacesSize == mozilla::ArrayLength(sPHF_NamesIdxs),
-              "sPHF_NamesIdxs must have same size as sInterfaces");
-
-static_assert(kPHFSize == mozilla::ArrayLength(sPHF_Names),
-              "sPHF_IIDs must have size kPHFSize");
-static_assert(kPHFSize == mozilla::ArrayLength(sPHF_IIDs),
-              "sPHF_Names must have size kPHFSize");
 
 } // namespace detail
 } // namespace xpt
