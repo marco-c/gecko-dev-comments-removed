@@ -2119,19 +2119,20 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericRelease(
 
   
   
+  Rooted<PromiseObject*> unwrappedClosedPromise(cx);
   if (unwrappedStream->readable()) {
-    Rooted<PromiseObject*> closedPromise(
-        cx, UnwrapInternalSlot<PromiseObject>(
-                cx, unwrappedReader, ReadableStreamReader::Slot_ClosedPromise));
-    if (!closedPromise) {
+    unwrappedClosedPromise = 
+      UnwrapInternalSlot<PromiseObject>(
+        cx, unwrappedReader, ReadableStreamReader::Slot_ClosedPromise);
+    if (!unwrappedClosedPromise) {
       return false;
     }
 
-    AutoRealm ar(cx, closedPromise);
+    AutoRealm ar(cx, unwrappedClosedPromise);
     if (!cx->compartment()->wrap(cx, &exn)) {
       return false;
     }
-    if (!PromiseObject::reject(cx, closedPromise, exn)) {
+    if (!PromiseObject::reject(cx, unwrappedClosedPromise, exn)) {
       return false;
     }
   } else {
@@ -2141,6 +2142,7 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericRelease(
     if (!closedPromise) {
       return false;
     }
+    unwrappedClosedPromise = &closedPromise->as<PromiseObject>();
 
     AutoRealm ar(cx, unwrappedReader);
     if (!cx->compartment()->wrap(cx, &closedPromise)) {
@@ -2148,6 +2150,10 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericRelease(
     }
     unwrappedReader->setClosedPromise(closedPromise);
   }
+
+  
+  unwrappedClosedPromise->setHandled();
+  cx->runtime()->removeUnhandledRejectedPromise(cx, unwrappedClosedPromise);
 
   
   unwrappedStream->clearReader();
