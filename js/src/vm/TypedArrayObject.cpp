@@ -1767,10 +1767,18 @@ TypedArrayObject::staticProperties[] = {
     JS_PS_END
 };
 
+static JSObject*
+CreateSharedTypedArrayPrototype(JSContext* cx, JSProtoKey key)
+{
+    return GlobalObject::createBlankPrototype(cx,
+                                              cx->global(),
+                                              &TypedArrayObject::sharedTypedArrayPrototypeClass);
+}
+
 static const ClassSpec
 TypedArrayObjectSharedTypedArrayPrototypeClassSpec = {
     GenericCreateConstructor<TypedArrayConstructor, 0, gc::AllocKind::FUNCTION>,
-    GenericCreatePrototype,
+    CreateSharedTypedArrayPrototype,
     TypedArrayObject::staticFunctions,
     TypedArrayObject::staticProperties,
     TypedArrayObject::protoFunctions,
@@ -1781,13 +1789,7 @@ TypedArrayObjectSharedTypedArrayPrototypeClassSpec = {
 
  const Class
 TypedArrayObject::sharedTypedArrayPrototypeClass = {
-    
-    
-    
-    
-    
-    
-    "???",
+    "TypedArrayPrototype",
     JSCLASS_HAS_CACHED_PROTO(JSProto_TypedArray),
     JS_NULL_CLASS_OPS,
     &TypedArrayObjectSharedTypedArrayPrototypeClassSpec
