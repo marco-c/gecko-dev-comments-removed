@@ -12,7 +12,9 @@ fn main() {
     } else if ver >= Version::parse("1.28.0-alpha").unwrap() && ver < Version::parse("1.29.0").unwrap() {
         println!("cargo:rustc-cfg=feature=\"oom_with_hook\"");
         bootstrap = true;
-    } else if std::env::var("MOZ_AUTOMATION").is_ok() {
+    } else if std::env::var("MOZ_AUTOMATION").is_ok() && ver >= Version::parse("1.29.0-alpha").unwrap() {
+        
+        
         panic!("Builds on automation must use a version of rust that supports OOM hooking")
     }
 
