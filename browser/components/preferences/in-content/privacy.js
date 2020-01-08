@@ -400,15 +400,10 @@ var gPrivacyPane = {
       }
     }
 
-    Services.obs.addObserver(this, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(this, "sitedatamanager:updating-sites");
-    let unload = () => {
-      window.removeEventListener("unload", unload);
-      Services.obs.removeObserver(this, "sitedatamanager:sites-updated");
-      Services.obs.removeObserver(this, "sitedatamanager:updating-sites");
-    };
-    window.addEventListener("unload", unload);
-    SiteDataManager.updateSites();
+    if (!contentBlockingUiEnabled) {
+      
+      this.initSiteDataControls();
+    }
     setEventListener("clearSiteDataButton", "command",
       gPrivacyPane.clearSiteData);
     setEventListener("siteDataSettings", "command",
@@ -464,6 +459,18 @@ var gPrivacyPane = {
 
     
     Services.obs.notifyObservers(window, "privacy-pane-loaded");
+  },
+
+  initSiteDataControls() {
+    Services.obs.addObserver(this, "sitedatamanager:sites-updated");
+    Services.obs.addObserver(this, "sitedatamanager:updating-sites");
+    let unload = () => {
+      window.removeEventListener("unload", unload);
+      Services.obs.removeObserver(this, "sitedatamanager:sites-updated");
+      Services.obs.removeObserver(this, "sitedatamanager:updating-sites");
+    };
+    window.addEventListener("unload", unload);
+    SiteDataManager.updateSites();
   },
 
   
@@ -538,6 +545,12 @@ var gPrivacyPane = {
                                                      browserPrivacyCategory.nextSibling);
       browserPrivacyCategory.parentNode.insertBefore(trackingGroup,
                                                      browserPrivacyCategory.nextSibling);
+
+      
+      
+      
+      
+      this.initSiteDataControls();
     }, 0);
   },
 
