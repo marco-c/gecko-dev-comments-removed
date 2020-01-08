@@ -76,7 +76,6 @@ struct nsXPTCVariant
         ExtendedVal ext;
     };
 
-    void*     ptr;
     nsXPTType type;
     uint8_t   flags;
 
@@ -88,19 +87,7 @@ struct nsXPTCVariant
 
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        PTR_IS_DATA    = 0x1,
+        IS_INDIRECT    = 0x1,
 
         
         
@@ -112,14 +99,11 @@ struct nsXPTCVariant
     };
 
     void ClearFlags()         {flags = 0;}
-    void SetIndirect()        {ptr = &val; flags |= PTR_IS_DATA;}
+    void SetIndirect()        {flags |= IS_INDIRECT;}
     void SetValNeedsCleanup() {flags |= VAL_NEEDS_CLEANUP;}
 
-    bool IsIndirect()         const  {return 0 != (flags & PTR_IS_DATA);}
+    bool IsIndirect()         const  {return 0 != (flags & IS_INDIRECT);}
     bool DoesValNeedCleanup() const  {return 0 != (flags & VAL_NEEDS_CLEANUP);}
-
-    
-    bool IsPtrData()       const  {return 0 != (flags & PTR_IS_DATA);}
 
     
     operator nsXPTCMiniVariant&() {

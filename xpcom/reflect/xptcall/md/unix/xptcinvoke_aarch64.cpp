@@ -94,8 +94,8 @@ invoke_copy_to_stack(uint64_t* stk, uint64_t *end,
     for (uint32_t i = 0; i < paramCount; i++, s++) {
         uint64_t word;
 
-        if (s->IsPtrData()) {
-            word = (uint64_t)s->ptr;
+        if (s->IsIndirect()) {
+            word = (uint64_t)&s->val;
         } else {
             
             
