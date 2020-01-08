@@ -21,7 +21,7 @@ var BrowserActions = {
   _maybeRegisterListeners() {
     if (!this._initialized && Object.keys(this._browserActions).length) {
       this._initialized = true;
-      EventDispatcher.instance.registerListener(this, "Menu:BrowserActionClicked");
+      EventDispatcher.instance.registerListener(this, "Menu:Clicked");
     }
   },
 
@@ -32,7 +32,7 @@ var BrowserActions = {
   _maybeUnregisterListeners() {
     if (this._initialized && !Object.keys(this._browserActions).length) {
       this._initialized = false;
-      EventDispatcher.instance.unregisterListener(this, "Menu:BrowserActionClicked");
+      EventDispatcher.instance.unregisterListener(this, "Menu:Clicked");
     }
   },
 
@@ -45,13 +45,14 @@ var BrowserActions = {
 
 
   onEvent(event, data) {
-    if (event !== "Menu:BrowserActionClicked") {
-      throw new Error(`Expected "Menu:BrowserActionClicked" event - received "${event}" instead`);
+    if (event !== "Menu:Clicked") {
+      throw new Error(`Expected "Menu:Clicked" event - received "${event}" instead`);
     }
 
     let browserAction = this._browserActions[data.item];
     if (!browserAction) {
-      throw new Error(`No browser action found with UUID ${data.item}`);
+      
+      return;
     }
     browserAction.onClicked();
   },
