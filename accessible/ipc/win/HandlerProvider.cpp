@@ -4,8 +4,6 @@
 
 
 
-#define INITGUID
-
 #include "mozilla/a11y/HandlerProvider.h"
 
 #include "Accessible2_3.h"
