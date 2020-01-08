@@ -1869,6 +1869,9 @@ gboolean nsWindow::OnExposeEvent(cairo_t *cr) {
 
   
   if (!mGdkWindow || mIsFullyObscured || !mHasMappedToplevel) return FALSE;
+#ifdef MOZ_WAYLAND
+  if (mContainer && !mContainer->ready_to_draw) return FALSE;
+#endif
 
   nsIWidgetListener *listener = GetListener();
   if (!listener) return FALSE;
