@@ -76,20 +76,26 @@ class FontEditor extends PureComponent {
       return null;
     }
 
-    return fontAxes.map(axis => {
+    const controls = fontAxes.map(axis => {
       return FontPropertyValue({
         key: axis.tag,
-        className: "font-control-axis",
-        label: axis.name,
         min: axis.minValue,
         max: axis.maxValue,
+        value: editedAxes[axis.tag] || axis.defaultValue,
+        step: this.getAxisStep(axis.minValue, axis.maxValue),
+        label: axis.name,
         name: axis.tag,
         onChange: this.props.onPropertyChange,
-        step: this.getAxisStep(axis.minValue, axis.maxValue),
-        unit: null,
-        value: editedAxes[axis.tag] || axis.defaultValue,
+        unit: null
       });
     });
+
+    return dom.div(
+      {
+        className: "font-axes-controls"
+      },
+      controls
+    );
   }
 
   renderFamilesNotUsed(familiesNotUsed = []) {
@@ -251,7 +257,7 @@ class FontEditor extends PureComponent {
     
     const instanceSelect = dom.select(
       {
-        className: "font-control-input font-value-select",
+        className: "font-control-input",
         onChange: (e) => {
           const instance = fontInstances.find(inst => e.target.value === inst.name);
           instance && this.props.onInstanceChange(instance.name, instance.values);
