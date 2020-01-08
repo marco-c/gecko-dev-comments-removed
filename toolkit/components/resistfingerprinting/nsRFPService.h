@@ -52,6 +52,14 @@
 #define SPOOFED_POINTER_INTERFACE MouseEvent_Binding::MOZ_SOURCE_MOUSE
 
 
+
+#if defined(MOZ_WIDGET_ANDROID)
+#define SPOOFED_HTTP_UA_OS "Android 6.0; Mobile"
+#else
+#define SPOOFED_HTTP_UA_OS "Windows NT 6.1"
+#endif
+
+
 class LRUCache;
 
 namespace mozilla {
@@ -177,7 +185,8 @@ class nsRFPService final : public nsIObserver {
                                             uint32_t aHeight);
 
   
-  static nsresult GetSpoofedUserAgent(nsACString& userAgent);
+  static nsresult GetSpoofedUserAgent(nsACString& userAgent,
+                                      bool isForHTTPHeader);
 
   
 

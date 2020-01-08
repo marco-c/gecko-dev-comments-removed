@@ -1683,6 +1683,19 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
     }
   }
 
+  
+  
+  
+  if (!aIsCallerChrome && nsContentUtils::ShouldResistFingerprinting()) {
+    nsAutoCString spoofedUA;
+    nsresult rv = nsRFPService::GetSpoofedUserAgent(spoofedUA, false);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    CopyASCIItoUTF16(spoofedUA, aUserAgent);
+    return NS_OK;
+  }
+
   nsresult rv;
   nsCOMPtr<nsIHttpProtocolHandler> service(
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http", &rv));

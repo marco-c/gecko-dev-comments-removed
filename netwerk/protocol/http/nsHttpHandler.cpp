@@ -498,7 +498,7 @@ nsresult nsHttpHandler::Init() {
   }
 
   
-  rv = nsRFPService::GetSpoofedUserAgent(mSpoofedUserAgent);
+  rv = nsRFPService::GetSpoofedUserAgent(mSpoofedUserAgent, true);
   if (NS_FAILED(rv)) {
     
     
