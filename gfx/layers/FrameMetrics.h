@@ -513,7 +513,7 @@ public:
   
   
   
-  bool IsHorizontalContentRightToLeft() {
+  bool IsHorizontalContentRightToLeft() const {
     return mScrollableRect.x < 0;
   }
 

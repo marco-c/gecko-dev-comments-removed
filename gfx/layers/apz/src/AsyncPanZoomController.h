@@ -517,6 +517,13 @@ public:
 
   bool OverscrollBehaviorAllowsSwipe() const;
 
+  
+  
+
+  const FrameMetrics& Metrics() const;
+  FrameMetrics& Metrics();
+
+
 private:
   
   
@@ -890,7 +897,6 @@ protected:
   
   
   ScrollMetadata mScrollMetadata;
-  FrameMetrics& mFrameMetrics;  
 
   
   
@@ -1273,7 +1279,7 @@ public:
 
   bool IsRootContent() const {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    return mFrameMetrics.IsRootContent();
+    return Metrics().IsRootContent();
   }
 
 private:
