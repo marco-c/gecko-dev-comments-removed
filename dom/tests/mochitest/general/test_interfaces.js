@@ -518,7 +518,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "HTMLSelectElement", insecureContext: true},
 
-    {name: "HTMLSlotElement", insecureContext: true, disabled: true},
+    {name: "HTMLSlotElement", insecureContext: true},
 
     {name: "HTMLSourceElement", insecureContext: true},
 
@@ -872,7 +872,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "ScopedCredentialInfo", insecureContext: true, disabled: true},
 
-    {name: "ShadowRoot", insecureContext: true, disabled: true},
+    {name: "ShadowRoot", insecureContext: true},
 
     {name: "SharedWorker", insecureContext: true},
 
