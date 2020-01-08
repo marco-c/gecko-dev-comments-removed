@@ -279,7 +279,7 @@ class FontEditor extends PureComponent {
     );
   }
 
-  renderWarning() {
+  renderWarning(warning) {
     return dom.div(
       {
         id: "font-editor"
@@ -288,14 +288,14 @@ class FontEditor extends PureComponent {
         {
           className: "devtools-sidepanel-no-result"
         },
-        getStr("fontinspector.noFontsOnSelectedElement")
+        warning
       )
     );
   }
 
   render() {
     const { fontEditor } = this.props;
-    const { fonts, families, axes, instance, properties } = fontEditor;
+    const { fonts, families, axes, instance, properties, warning } = fontEditor;
     
     const font = fonts[0];
     const hasFontAxes = font && font.variationAxes;
@@ -310,7 +310,7 @@ class FontEditor extends PureComponent {
 
     
     if (!font) {
-      return this.renderWarning();
+      return this.renderWarning(warning);
     }
 
     return dom.div(

@@ -35,4 +35,7 @@ createEnum([
   
   "UPDATE_PROPERTY_VALUE",
 
+  
+  "UPDATE_WARNING_MESSAGE",
+
 ], module.exports);
