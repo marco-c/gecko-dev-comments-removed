@@ -381,12 +381,12 @@ TabTarget.prototype = {
   
   
   
-  getInspector(typeName) {
+  async getInspector(typeName) {
     
     if (this._inspector && this._inspector.actorID) {
       return this._inspector;
     }
-    this._inspector = getFront(this.client, "inspector", this.form);
+    this._inspector = await getFront(this.client, "inspector", this.form);
     return this._inspector;
   },
 
