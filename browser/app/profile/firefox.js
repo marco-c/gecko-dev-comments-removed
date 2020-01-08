@@ -139,6 +139,7 @@ pref("app.update.elevation.promptMaxAttempts", 2);
 
 
 
+
 #ifndef XP_WIN
 pref("app.update.auto", true);
 #endif
@@ -1795,3 +1796,5 @@ pref("prio.enabled", true);
 pref("browser.discovery.enabled", false);
 pref("browser.discovery.containers.enabled", true);
 pref("browser.discovery.sites", "addons.mozilla.org");
+
+pref("browser.engagement.recent_visited_origins.expiry", 86400); 
