@@ -12,18 +12,6 @@
 
 #define RECENTLY_USED_PARSER_ATOMS_SIZE 31
 
-class nsHtml5AtomEntry : public nsStringHashKey
-{
-public:
-  explicit nsHtml5AtomEntry(KeyTypePointer aStr);
-  nsHtml5AtomEntry(nsHtml5AtomEntry&& aOther);
-  ~nsHtml5AtomEntry();
-  inline nsAtom* GetAtom() { return mAtom; }
-
-private:
-  nsDynamicAtom* mAtom;
-};
-
 
 
 
@@ -75,8 +63,8 @@ public:
   ~nsHtml5AtomTable();
 
   
-
-
+  
+  
   nsAtom* GetAtom(const nsAString& aKey);
 
   
@@ -87,7 +75,6 @@ public:
     for (uint32_t i = 0; i < RECENTLY_USED_PARSER_ATOMS_SIZE; ++i) {
       mRecentlyUsedParserAtoms[i] = nullptr;
     }
-    mTable.Clear();
   }
 
 #ifdef DEBUG
@@ -98,8 +85,7 @@ public:
 #endif
 
 private:
-  nsTHashtable<nsHtml5AtomEntry> mTable;
-  nsAtom* mRecentlyUsedParserAtoms[RECENTLY_USED_PARSER_ATOMS_SIZE];
+  RefPtr<nsAtom> mRecentlyUsedParserAtoms[RECENTLY_USED_PARSER_ATOMS_SIZE];
 #ifdef DEBUG
   nsCOMPtr<nsISerialEventTarget> mPermittedLookupEventTarget;
 #endif

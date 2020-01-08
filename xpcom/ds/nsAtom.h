@@ -38,16 +38,6 @@ public:
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               mozilla::AtomsSizes& aSizes) const;
 
-  
-  
-  
-  
-  enum class AtomKind : uint8_t {
-    Static = 0,
-    DynamicNormal = 1,
-    DynamicHTML5 = 2,
-  };
-
   bool Equals(char16ptr_t aString, uint32_t aLength) const
   {
     return mLength == aLength &&
@@ -59,18 +49,8 @@ public:
     return Equals(aString.BeginReading(), aString.Length());
   }
 
-  AtomKind Kind() const { return static_cast<AtomKind>(mKind); }
-
-  bool IsStatic() const { return Kind() == AtomKind::Static; }
-  bool IsDynamic() const
-  {
-    return Kind() == AtomKind::DynamicNormal ||
-           Kind() == AtomKind::DynamicHTML5;
-  }
-  bool IsDynamicHTML5() const
-  {
-    return Kind() == AtomKind::DynamicHTML5;
-  }
+  bool IsStatic() const { return mIsStatic; }
+  bool IsDynamic() const { return !IsStatic(); }
 
   const nsStaticAtom* AsStatic() const;
   const nsDynamicAtom* AsDynamic() const;
@@ -93,11 +73,7 @@ public:
   
   
   
-  uint32_t hash() const
-  {
-    MOZ_ASSERT(!IsDynamicHTML5());
-    return mHash;
-  }
+  uint32_t hash() const { return mHash; }
 
   
   
@@ -110,24 +86,23 @@ protected:
   
   constexpr nsAtom(uint32_t aLength, uint32_t aHash)
     : mLength(aLength)
-    , mKind(static_cast<uint32_t>(nsAtom::AtomKind::Static))
+    , mIsStatic(true)
     , mHash(aHash)
   {}
 
   
-  nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash)
+  nsAtom(const nsAString& aString, uint32_t aHash)
     : mLength(aString.Length())
-    , mKind(static_cast<uint32_t>(aKind))
+    , mIsStatic(false)
     , mHash(aHash)
   {
-    MOZ_ASSERT(aKind == AtomKind::DynamicNormal ||
-               aKind == AtomKind::DynamicHTML5);
   }
 
   ~nsAtom() = default;
 
   const uint32_t mLength:30;
-  const uint32_t mKind:2; 
+  
+  const uint32_t mIsStatic:1;
   const uint32_t mHash;
 };
 
@@ -189,8 +164,6 @@ public:
 private:
   friend class nsAtomTable;
   friend class nsAtomSubTable;
-  
-  friend class nsHtml5AtomEntry;
 
   
   
