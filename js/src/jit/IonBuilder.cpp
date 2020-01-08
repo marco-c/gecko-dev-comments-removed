@@ -10401,7 +10401,7 @@ IonBuilder::commonPrototypeWithGetterSetter(TemporaryTypeSet* types, PropertyNam
     return foundProto;
 }
 
-void
+AbortReasonOr<Ok>
 IonBuilder::freezePropertiesForCommonPrototype(TemporaryTypeSet* types, PropertyName* name,
                                                JSObject* foundProto,
                                                bool allowEmptyTypesforGlobal)
@@ -10419,6 +10419,10 @@ IonBuilder::freezePropertiesForCommonPrototype(TemporaryTypeSet* types, Property
         }
 
         while (true) {
+            if (!alloc().ensureBallast()) {
+                return abort(AbortReason::Alloc);
+            }
+
             HeapTypeSetKey property = key->property(NameToId(name));
             MOZ_ALWAYS_TRUE(!property.isOwnProperty(constraints(), allowEmptyTypesforGlobal));
 
@@ -10431,9 +10435,10 @@ IonBuilder::freezePropertiesForCommonPrototype(TemporaryTypeSet* types, Property
             key = TypeSet::ObjectKey::get(key->proto().toObjectOrNull());
         }
     }
+    return Ok();
 }
 
-bool
+AbortReasonOr<bool>
 IonBuilder::testCommonGetterSetter(TemporaryTypeSet* types, PropertyName* name,
                                    bool isGetter, JSFunction* getterOrSetter,
                                    MDefinition** guard,
@@ -10455,7 +10460,7 @@ IonBuilder::testCommonGetterSetter(TemporaryTypeSet* types, PropertyName* name,
     
     
     
-    freezePropertiesForCommonPrototype(types, name, foundProto, guardGlobal);
+    MOZ_TRY(freezePropertiesForCommonPrototype(types, name, foundProto, guardGlobal));
 
     
     
@@ -11518,9 +11523,10 @@ IonBuilder::getPropTryCommonGetter(bool* emitted, MDefinition* obj, PropertyName
             if (!isOwnProperty) {
                 
                 
-                canUseTIForGetter = testCommonGetterSetter(objTypes, name,  true,
-                                                           commonGetter, &guard,
-                                                           globalShape, &globalGuard);
+                MOZ_TRY_VAR(canUseTIForGetter,
+                            testCommonGetterSetter(objTypes, name,  true,
+                                                   commonGetter, &guard,
+                                                   globalShape, &globalGuard));
             }
             if (!canUseTIForGetter) {
                 
@@ -11536,9 +11542,11 @@ IonBuilder::getPropTryCommonGetter(bool* emitted, MDefinition* obj, PropertyName
                                                               &commonGetter))
         {
             
-            if (!testCommonGetterSetter(objTypes, name,  true,
-                                        commonGetter, &guard))
-            {
+            bool canUseTIForGetter = false;
+            MOZ_TRY_VAR(canUseTIForGetter,
+                        testCommonGetterSetter(objTypes, name,  true,
+                                               commonGetter, &guard));
+            if (!canUseTIForGetter) {
                 return Ok();
             }
         } else {
@@ -12183,8 +12191,9 @@ IonBuilder::setPropTryCommonSetter(bool* emitted, MDefinition* obj,
             if (!isOwnProperty) {
                 
                 
-                canUseTIForSetter = testCommonGetterSetter(objTypes, name,  false,
-                                                           commonSetter, &guard);
+                MOZ_TRY_VAR(canUseTIForSetter,
+                            testCommonGetterSetter(objTypes, name,  false,
+                                                   commonSetter, &guard));
             }
             if (!canUseTIForSetter) {
                 
@@ -12200,9 +12209,11 @@ IonBuilder::setPropTryCommonSetter(bool* emitted, MDefinition* obj,
                                                               &commonSetter))
         {
             
-            if (!testCommonGetterSetter(objTypes, name,  false,
-                                        commonSetter, &guard))
-            {
+            bool canUseTIForSetter = false;
+            MOZ_TRY_VAR(canUseTIForSetter,
+                        testCommonGetterSetter(objTypes, name,  false,
+                                               commonSetter, &guard));
+            if (!canUseTIForSetter) {
                 return Ok();
             }
         } else {
