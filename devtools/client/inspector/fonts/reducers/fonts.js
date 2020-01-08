@@ -9,14 +9,18 @@ const {
 } = require("../actions/index");
 
 const INITIAL_FONT_DATA = {
+  
+  allFonts: [],
+  
   fonts: [],
-  otherFonts: []
+  
+  otherFonts: [],
 };
 
 const reducers = {
 
-  [UPDATE_FONTS](_, { fonts, otherFonts }) {
-    return { fonts, otherFonts };
+  [UPDATE_FONTS](_, { fonts, otherFonts, allFonts }) {
+    return { fonts, otherFonts, allFonts };
   },
 
 };

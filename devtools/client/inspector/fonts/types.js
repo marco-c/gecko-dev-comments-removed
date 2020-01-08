@@ -116,6 +116,9 @@ exports.fontEditor = {
 
 exports.fontData = {
   
+  allFonts: PropTypes.arrayOf(PropTypes.shape(font)),
+
+  
   fonts: PropTypes.arrayOf(PropTypes.shape(font)),
 
   

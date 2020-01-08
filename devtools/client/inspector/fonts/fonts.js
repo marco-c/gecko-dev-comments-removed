@@ -136,23 +136,6 @@ class FontInspector {
 
 
 
-  excludeNodeFonts(allFonts, nodeFonts) {
-    return allFonts.filter(font => {
-      return !nodeFonts.some(nodeFont => nodeFont.name === font.name);
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -451,7 +434,7 @@ class FontInspector {
     return fonts;
   }
 
-  async getFontsNotInNode(nodeFonts, options) {
+  async getAllFonts(options) {
     
     if (!this.document) {
       return [];
@@ -462,7 +445,7 @@ class FontInspector {
       allFonts = [];
     }
 
-    return this.excludeNodeFonts(allFonts, nodeFonts);
+    return allFonts;
   }
 
   
@@ -1005,11 +988,12 @@ class FontInspector {
       return;
     }
 
+    let allFonts = [];
     let fonts = [];
     let otherFonts = [];
 
     if (!this.isSelectedNodeValid()) {
-      this.store.dispatch(updateFonts(fonts, otherFonts));
+      this.store.dispatch(updateFonts(fonts, otherFonts, allFonts));
       return;
     }
 
@@ -1029,17 +1013,21 @@ class FontInspector {
 
     const node = this.inspector.selection.nodeFront;
     fonts = await this.getFontsForNode(node, options);
-    otherFonts = await this.getFontsNotInNode(fonts, options);
+    allFonts = await this.getAllFonts(options);
+    
+    otherFonts = allFonts.filter(font => {
+      return !fonts.some(nodeFont => nodeFont.name === font.name);
+    });
 
     if (!fonts.length && !otherFonts.length) {
       
       if (this.store) {
-        this.store.dispatch(updateFonts(fonts, otherFonts));
+        this.store.dispatch(updateFonts(fonts, otherFonts, allFonts));
       }
       return;
     }
 
-    for (const font of [...fonts, ...otherFonts]) {
+    for (const font of [...allFonts]) {
       font.previewUrl = await font.preview.data.string();
     }
 
@@ -1048,7 +1036,7 @@ class FontInspector {
       return;
     }
 
-    this.store.dispatch(updateFonts(fonts, otherFonts));
+    this.store.dispatch(updateFonts(fonts, otherFonts, allFonts));
 
     this.inspector.emit("fontinspector-updated");
   }
