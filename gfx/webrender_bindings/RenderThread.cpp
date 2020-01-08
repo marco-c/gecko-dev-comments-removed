@@ -161,6 +161,9 @@ RenderThread::AccumulateMemoryReport(MemoryReport aInitial)
   MOZ_ASSERT(!IsInRenderThread());
   if (!Get() || !Get()->Loop()) {
     
+    
+    
+    
     NS_WARNING("No render thread, returning empty memory report");
     p->Resolve(aInitial, __func__);
     return p;
