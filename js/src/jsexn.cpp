@@ -766,8 +766,12 @@ IsDuckTypedErrorObject(JSContext* cx, HandleObject exnObject, const char** filen
         return false;
     }
 
+    
     const char* filename_str = *filename_strp;
-    if (!JS_HasProperty(cx, exnObject, filename_str, &found) || !found) {
+    if (!JS_HasProperty(cx, exnObject, filename_str, &found)) {
+        return false;
+    }
+    if (!found) {
         
         filename_str = js_fileName_str;
         if (!JS_HasProperty(cx, exnObject, filename_str, &found) || !found) {
