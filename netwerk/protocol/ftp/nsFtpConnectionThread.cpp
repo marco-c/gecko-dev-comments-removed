@@ -9,6 +9,7 @@
 #include "prprf.h"
 #include "mozilla/Logging.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/TextUtils.h"
 #include "prtime.h"
 
 #include "nsIOService.h"
@@ -186,9 +187,9 @@ nsFtpState::OnControlDataAvailable(const char *aData, uint32_t aDataLen)
 
         
         bool startNum = (line.Length() >= 3 &&
-                           isdigit(line[0]) &&
-                           isdigit(line[1]) &&
-                           isdigit(line[2]));
+                           IsAsciiDigit(line[0]) &&
+                           IsAsciiDigit(line[1]) &&
+                           IsAsciiDigit(line[2]));
 
         if (mResponseMsg.IsEmpty()) {
             
