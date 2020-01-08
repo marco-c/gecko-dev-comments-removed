@@ -536,6 +536,9 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipa
   
   topInnerWindow->SaveStorageAccessGranted(permissionKey);
 
+  
+  parentWindow->StorageAccessGranted();
+
   nsIChannel* channel =
     pwin->GetCurrentInnerWindow()->GetExtantDoc()->GetChannel();
 

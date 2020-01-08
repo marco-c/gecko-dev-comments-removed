@@ -1241,6 +1241,11 @@ public:
   
   nsIPrincipal* GetTopLevelStorageAreaPrincipal();
 
+  
+  
+  
+  void StorageAccessGranted();
+
 protected:
   static void NotifyDOMWindowDestroyed(nsGlobalWindowInner* aWindow);
   void NotifyWindowIDDestroyed(const char* aTopic);
