@@ -39,6 +39,10 @@ class AdbRuntime {
     });
   }
 
+  isUnknown() {
+    return false;
+  }
+
   _channel() {
     const packageName = this._packageName();
 
@@ -68,5 +72,32 @@ class AdbRuntime {
       this._socketPath.split("/")[3];
   }
 }
-
 exports.AdbRuntime = AdbRuntime;
+
+
+
+
+
+
+class UnknownAdbRuntime extends AdbRuntime {
+  constructor(adbDevice) {
+    super(adbDevice);
+  }
+
+  get id() {
+    return this._adbDevice.id;
+  }
+
+  get shortName() {
+    return "Unknown runtime";
+  }
+
+  connect(connection) {
+    throw new Error("Cannot connect on unknown runtime");
+  }
+
+  isUnknown() {
+    return true;
+  }
+}
+exports.UnknownAdbRuntime = UnknownAdbRuntime;
