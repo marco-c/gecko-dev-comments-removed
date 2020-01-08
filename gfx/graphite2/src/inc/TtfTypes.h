@@ -79,7 +79,7 @@ enum
 
 namespace Sfnt
 {
-#pragma pack(1) // We need this or the structure members aren't aligned
+#pragma pack(push,1) // We need this or the structure members aren't aligned
                         
                         
                         
@@ -412,7 +412,7 @@ namespace Sfnt
         };
     };
 
-#pragma pack()
+#pragma pack(pop)
 } 
 
 } 

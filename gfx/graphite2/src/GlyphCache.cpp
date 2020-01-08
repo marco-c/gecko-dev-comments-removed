@@ -164,6 +164,10 @@ GlyphCache::GlyphCache(const Face & face, const uint32 face_options)
         }
         delete _glyph_loader;
         _glyph_loader = 0;
+	
+	
+	
+	
     }
 
     if (_glyphs && glyph(0) == 0)
