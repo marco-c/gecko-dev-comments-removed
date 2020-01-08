@@ -95,6 +95,8 @@ private:
   nsresult ACEtoUTF8(const nsACString& input, nsACString& _retval,
                      stringPrepFlag flag);
 
+  void InitializeBlocklist();
+
   bool isInWhitelist(const nsACString &host);
   void prefsChanged(const char *pref);
 
@@ -173,7 +175,7 @@ private:
   mozilla::Mutex mLock;
 
   
-  nsString mIDNBlacklist;
+  nsTArray<char16_t> mIDNBlocklist;
 
   
 
