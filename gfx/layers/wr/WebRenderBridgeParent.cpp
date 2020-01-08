@@ -1541,6 +1541,9 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
 void
 WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame)
 {
+  
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
+
   TimeStamp start = TimeStamp::Now();
   mAsyncImageManager->SetCompositionTime(start);
 
@@ -1552,7 +1555,6 @@ WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame)
 
   
   wr::TransactionBuilder sceneBuilderTxn;
-  sceneBuilderTxn.SetLowPriority(!IsRootWebRenderBridgeParent());
   wr::AutoTransactionSender sender(mApi, &sceneBuilderTxn);
 
   
