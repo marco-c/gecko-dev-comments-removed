@@ -18,6 +18,10 @@ class XULMenuitemAccessibleWrap : public XULMenuitemAccessible {
 
   
   virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
+
+  virtual  HRESULT STDMETHODCALLTYPE get_accKeyboardShortcut(
+       VARIANT varChild,
+       BSTR __RPC_FAR* pszKeyboardShortcut) override;
 };
 
 }  
