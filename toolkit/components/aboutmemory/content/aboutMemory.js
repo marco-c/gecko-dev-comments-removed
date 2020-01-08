@@ -1430,14 +1430,6 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
     link.style = "text-decoration: none";
 
     
-    
-    link.addEventListener("click", function(event) {
-      document.documentElement.scrollTop =
-        document.querySelector(event.target.href).offsetTop;
-      event.preventDefault();
-    });
-
-    
     appendElementWithText(aP, "span", "", "\n");
   };
 
