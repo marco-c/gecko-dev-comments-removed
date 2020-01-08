@@ -268,6 +268,17 @@ GetPointerCapabilities(nsIDocument* aDocument, LookAndFeel::IntID aID)
 {
   MOZ_ASSERT(aID == LookAndFeel::eIntID_PrimaryPointerCapabilities ||
              aID == LookAndFeel::eIntID_AllPointerCapabilities);
+  MOZ_ASSERT(aDocument);
+
+  if (nsIDocShell* docShell = aDocument->GetDocShell()) {
+    
+    
+    uint32_t touchEventsOverride = nsIDocShell::TOUCHEVENTS_OVERRIDE_NONE;
+    docShell->GetTouchEventsOverride(&touchEventsOverride);
+    if (touchEventsOverride == nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED) {
+      return PointerCapabilities::Coarse;
+    }
+  }
 
   
   const PointerCapabilities kDefaultCapabilities =
