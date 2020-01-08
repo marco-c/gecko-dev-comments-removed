@@ -30,7 +30,9 @@
 #include "nsAccessibilityService.h"
 #endif
 
-#define LONG_SIDE_TO_SHORT_SIDE_RATIO 10
+
+#define MAIN_AXIS_EM_SIZE 12
+#define CROSS_AXIS_EM_SIZE 1.3f
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -774,61 +776,34 @@ nsRangeFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
                               const LogicalSize&  aPadding,
                               ComputeSizeFlags    aFlags)
 {
-  nscoord oneEm = NSToCoordRound(StyleFont()->mFont.size *
-                                 nsLayoutUtils::FontSizeInflationFor(this)); 
-
   bool isInlineOriented = IsInlineOriented();
+  auto em = StyleFont()->mFont.size * nsLayoutUtils::FontSizeInflationFor(this);
 
   const WritingMode wm = GetWritingMode();
   LogicalSize autoSize(wm);
-
-  
-  
-  
-  
-  
-
   if (isInlineOriented) {
-    autoSize.ISize(wm) = LONG_SIDE_TO_SHORT_SIDE_RATIO * oneEm;
-    autoSize.BSize(wm) = IsThemed() ? 0 : oneEm;
+    autoSize.ISize(wm) = NSToCoordRound(MAIN_AXIS_EM_SIZE * em);
+    autoSize.BSize(wm) = NSToCoordRound(CROSS_AXIS_EM_SIZE * em);
   } else {
-    autoSize.ISize(wm) = IsThemed() ? 0 : oneEm;
-    autoSize.BSize(wm) = LONG_SIDE_TO_SHORT_SIDE_RATIO * oneEm;
+    autoSize.ISize(wm) = NSToCoordRound(CROSS_AXIS_EM_SIZE * em);
+    autoSize.BSize(wm) = NSToCoordRound(MAIN_AXIS_EM_SIZE * em);
   }
 
   return autoSize.ConvertTo(aWM, wm);
 }
 
 nscoord
-nsRangeFrame::GetMinISize(gfxContext *aRenderingContext)
+nsRangeFrame::GetMinISize(gfxContext* aRenderingContext)
 {
-  
-  
-  
   return nscoord(0);
 }
 
 nscoord
-nsRangeFrame::GetPrefISize(gfxContext *aRenderingContext)
+nsRangeFrame::GetPrefISize(gfxContext* aRenderingContext)
 {
   bool isInline = IsInlineOriented();
-
-  if (!isInline && IsThemed()) {
-    
-    
-    
-    
-    return 0;
-  }
-
-  nscoord prefISize = NSToCoordRound(StyleFont()->mFont.size *
-                                     nsLayoutUtils::FontSizeInflationFor(this)); 
-
-  if (isInline) {
-    prefISize *= LONG_SIDE_TO_SHORT_SIDE_RATIO;
-  }
-
-  return prefISize;
+  auto em = StyleFont()->mFont.size * nsLayoutUtils::FontSizeInflationFor(this);
+  return NSToCoordRound(em * (isInline ? MAIN_AXIS_EM_SIZE : CROSS_AXIS_EM_SIZE));
 }
 
 bool
