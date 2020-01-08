@@ -29,6 +29,7 @@ const {TopSitesFeed} = ChromeUtils.import("resource://activity-stream/lib/TopSit
 const {TopStoriesFeed} = ChromeUtils.import("resource://activity-stream/lib/TopStoriesFeed.jsm", {});
 const {HighlightsFeed} = ChromeUtils.import("resource://activity-stream/lib/HighlightsFeed.jsm", {});
 const {ASRouterFeed} = ChromeUtils.import("resource://activity-stream/lib/ASRouterFeed.jsm", {});
+const {DiscoveryStreamFeed} = ChromeUtils.import("resource://activity-stream/lib/DiscoveryStreamFeed.jsm", {});
 
 const DEFAULT_SITES = new Map([
   
@@ -192,6 +193,10 @@ const PREFS_CONFIG = new Map([
     title: "A comma-delimited list of search shortcuts that have previously been pinned",
     value: "",
   }],
+  ["improvesearch.handoffToAwesomebar", {
+    title: "Should the search box handoff to the Awesomebar?",
+    value: true,
+  }],
   ["asrouter.devtoolsEnabled", {
     title: "Are the asrouter devtools enabled?",
     value: false,
@@ -210,6 +215,14 @@ const PREFS_CONFIG = new Map([
     }),
   }],
   
+  ["discoverystream.config", {
+    title: "Configuration for the new pocket new tab",
+    value: JSON.stringify({
+      enabled: false,
+      
+      layout_endpoint: "",
+    }),
+  }],
 ]);
 
 
@@ -304,6 +317,12 @@ const FEEDS_DATA = [
     name: "asrouterfeed",
     factory: () => new ASRouterFeed(),
     title: "Handles AS Router messages, such as snippets and onboaridng",
+    value: true,
+  },
+  {
+    name: "discoverystreamfeed",
+    factory: () => new DiscoveryStreamFeed(),
+    title: "Handles new pocket ui for the new tab page",
     value: true,
   },
 ];
