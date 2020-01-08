@@ -132,6 +132,16 @@ static bool PrepareScript(nsIURI* uri, JSContext* cx, bool wantGlobalScript,
   JS::CompileOptions options(cx);
   options.setFileAndLine(uriStr, 1).setNoScriptRval(!wantReturnValue);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  options.setSourceIsLazy(true);
+
   if (wantGlobalScript) {
     return JS::CompileUtf8(cx, options, buf, len, script);
   }
