@@ -1051,7 +1051,7 @@ pref("security.sandbox.content.level", 3);
 
 
 
-pref("dom.ipc.plugins.sandbox-level.flash", 2);
+pref("dom.ipc.plugins.sandbox-level.flash", 1);
 
 
 pref("dom.ipc.plugins.sandbox-level.flash.legacy", 1);
@@ -1060,7 +1060,7 @@ pref("dom.ipc.plugins.sandbox-level.flash.max-legacy-os-minor", 10);
 
 
 
-pref("dom.ipc.plugins.sandbox-level.default", 2);
+pref("dom.ipc.plugins.sandbox-level.default", 1);
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
