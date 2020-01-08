@@ -200,8 +200,7 @@ async function contentSpawnMutation(browser, waitFor, func, args = null) {
     
     
     
-    content.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindowUtils).advanceTimeAndRefresh(100);
+    content.windowUtils.advanceTimeAndRefresh(100);
   }
 
   
@@ -220,8 +219,7 @@ async function contentSpawnMutation(browser, waitFor, func, args = null) {
 
   
   await ContentTask.spawn(browser, null, function() {
-    content.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindowUtils).restoreNormalRefresh();
+    content.windowUtils.restoreNormalRefresh();
   });
 
   return events;
