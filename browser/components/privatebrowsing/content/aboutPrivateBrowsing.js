@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function() {
   let introURL = RPMGetFormatURLPref("privacy.trackingprotection.introURL");
   
   
-  let variation = contentBlockingUIEnabled ? "?variation=1" : "";
+  let variation = "?variation=" + (contentBlockingUIEnabled ? "1" : "0");
 
   document.getElementById("startTour").setAttribute("href", introURL + variation);
 
