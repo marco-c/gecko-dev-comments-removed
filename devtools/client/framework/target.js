@@ -516,8 +516,8 @@ TabTarget.prototype = {
 
     
     const attachTarget = async () => {
-      const [response, tabClient] = await this._client.attachTarget(this._form.actor);
-      this.activeTab = tabClient;
+      const [response, targetFront] = await this._client.attachTarget(this._form.actor);
+      this.activeTab = targetFront;
       this.threadActor = response.threadActor;
 
       this.activeTab.on("tabNavigated", this._onTabNavigated);

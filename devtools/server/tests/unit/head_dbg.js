@@ -190,9 +190,9 @@ function waitForNewSource(threadClient, url) {
   });
 }
 
-function attachThread(tabClient, options = {}) {
+function attachThread(targetFront, options = {}) {
   dump("Attaching to thread.\n");
-  return tabClient.attachThread(options);
+  return targetFront.attachThread(options);
 }
 
 function resume(threadClient) {
@@ -358,8 +358,8 @@ function getTestTab(client, title, callback) {
 
 function attachTestTab(client, title, callback) {
   getTestTab(client, title, function(tab) {
-    client.attachTarget(tab.actor).then(([response, tabClient]) => {
-      callback(response, tabClient);
+    client.attachTarget(tab.actor).then(([response, targetFront]) => {
+      callback(response, targetFront);
     });
   });
 }
@@ -369,11 +369,11 @@ function attachTestTab(client, title, callback) {
 
 
 function attachTestThread(client, title, callback) {
-  attachTestTab(client, title, function(tabResponse, tabClient) {
+  attachTestTab(client, title, function(tabResponse, targetFront) {
     function onAttach([response, threadClient]) {
-      callback(response, tabClient, threadClient, tabResponse);
+      callback(response, targetFront, threadClient, tabResponse);
     }
-    tabClient.attachThread({
+    targetFront.attachThread({
       useSourceMaps: true,
       autoBlackBox: true
     }).then(onAttach);
@@ -386,10 +386,10 @@ function attachTestThread(client, title, callback) {
 
 function attachTestTabAndResume(client, title, callback = () => {}) {
   return new Promise((resolve) => {
-    attachTestThread(client, title, function(response, tabClient, threadClient) {
+    attachTestThread(client, title, function(response, targetFront, threadClient) {
       threadClient.resume(function(response) {
-        callback(response, tabClient, threadClient);
-        resolve([response, tabClient, threadClient]);
+        callback(response, targetFront, threadClient);
+        resolve([response, targetFront, threadClient]);
       });
     });
   });
@@ -862,9 +862,9 @@ async function setupTestFromUrl(url) {
 
   const { tabs } = await listTabs(debuggerClient);
   const tab = findTab(tabs, "test");
-  const [, tabClient] = await attachTarget(debuggerClient, tab);
+  const [, targetFront] = await attachTarget(debuggerClient, tab);
 
-  const [, threadClient] = await attachThread(tabClient);
+  const [, threadClient] = await attachThread(targetFront);
   await resume(threadClient);
 
   const sourceUrl = getFileUrl(url);

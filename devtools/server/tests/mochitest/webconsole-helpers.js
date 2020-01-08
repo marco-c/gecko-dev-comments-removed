@@ -59,12 +59,12 @@ async function attachURL(url) {
     throw new Error(`Could not find a tab matching URL ${url}`);
   }
 
-  const [, tabClient] = await client.attachTarget(attachedTab.actor);
+  const [, targetFront] = await client.attachTarget(attachedTab.actor);
   const [, consoleClient] = await client.attachConsole(attachedTab.consoleActor, []);
 
   return {
     tab: attachedTab,
-    tabClient,
+    targetFront,
     consoleClient,
     cleanup,
   };
