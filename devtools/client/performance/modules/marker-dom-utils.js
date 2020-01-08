@@ -115,7 +115,7 @@ exports.MarkerDOMUtils = {
 
 
   buildStackTrace: function(doc, { type, frameIndex, frames }) {
-    const container = doc.createElement("vbox");
+    const container = doc.createXULElement("vbox");
     container.className = "marker-details-stack";
     container.setAttribute("type", type);
 
