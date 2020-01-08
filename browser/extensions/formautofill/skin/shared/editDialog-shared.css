@@ -30,7 +30,8 @@ select {
   padding-bottom: 5px;
 }
 
-form :-moz-any(label, div) {
+form label,
+form div {
   
 
   position: relative;

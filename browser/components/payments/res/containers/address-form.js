@@ -186,11 +186,11 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     
     let formRect = this.form.getBoundingClientRect();
     let errorSpanData = [...this.form.querySelectorAll(".error-text:not(:empty)")].map(span => {
-      let relatedInput = span.previousElementSibling;
+      let relatedInput = span.parentNode.querySelector("input, textarea, select");
       let relatedRect = relatedInput.getBoundingClientRect();
       return {
         span,
-        top: relatedRect.bottom,
+        top: relatedRect.height,
         left: relatedRect.left - formRect.left,
         right: formRect.right - relatedRect.right,
       };
@@ -198,7 +198,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     let isRTL = this.form.matches(":dir(rtl)");
     for (let data of errorSpanData) {
       
-      data.span.style.top = (data.top - 10) + "px";
+      data.span.style.top = (data.top + 10) + "px";
       if (isRTL) {
         data.span.style.right = data.right + "px";
       } else {
