@@ -66,6 +66,13 @@ async function takeNodeScreenshot(inspector) {
   info("Remove the downloaded screenshot file");
   await OS.File.remove(filePath);
 
+  
+  
+  
+  
+  info("Wait for one second to make sure future screenshots will use a different name");
+  await new Promise(r => setTimeout(r, 1000));
+
   return image;
 }
 
