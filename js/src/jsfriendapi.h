@@ -1007,25 +1007,8 @@ GetPropertyKeys(JSContext* cx, JS::HandleObject obj, unsigned flags, JS::AutoIdV
 JS_FRIEND_API(bool)
 AppendUnique(JSContext* cx, JS::AutoIdVector& base, JS::AutoIdVector& others);
 
-
-
-
-
-
-
-
 JS_FRIEND_API(bool)
 StringIsArrayIndex(JSLinearString* str, uint32_t* indexp);
-
-
-
-
-
-JS_FRIEND_API(bool)
-StringIsArrayIndex(const char* str, uint32_t length, uint32_t* indexp);
-
-JS_FRIEND_API(bool)
-StringIsArrayIndex(const char16_t* str, uint32_t length, uint32_t* indexp);
 
 JS_FRIEND_API(void)
 SetPreserveWrapperCallback(JSContext* cx, PreserveWrapperCallback callback);
