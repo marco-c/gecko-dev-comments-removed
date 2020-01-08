@@ -335,7 +335,7 @@ function waitForNewEngine(basename, numImages) {
   
   let addDeferred = PromiseUtils.defer();
   let url = getRootDirectory(gTestPath) + basename;
-  Services.search.addEngine(url, "", false, {
+  Services.search.addEngine(url, null, "", false, {
     onSuccess(engine) {
       info("Search engine added: " + basename);
       addDeferred.resolve(engine);
