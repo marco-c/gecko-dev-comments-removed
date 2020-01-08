@@ -258,7 +258,8 @@ public:
   
   
   bool ShouldBlockAsyncTransformAnimations(
-    const nsIFrame* aFrame, AnimationPerformanceWarning::Type& aPerformanceWarning) const;
+    const nsIFrame* aFrame,
+    AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
   bool HasGeometricProperties() const;
   bool AffectsGeometry() const override
   {
@@ -301,6 +302,27 @@ public:
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }
+
+  enum class MatchForCompositor {
+    
+    Yes,
+    
+    
+    
+    IfNeeded,
+    
+    No,
+    
+    
+    
+    NoAndBlockThisProperty
+  };
+
+  MatchForCompositor IsMatchForCompositor(
+    nsCSSPropertyID aProperty,
+    const nsIFrame* aFrame,
+    const EffectSet& aEffects,
+    AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
 
   static bool HasComputedTimingChanged(
     const ComputedTiming& aComputedTiming,
@@ -437,7 +459,7 @@ private:
   
   static bool CanAnimateTransformOnCompositor(
     const nsIFrame* aFrame,
-    AnimationPerformanceWarning::Type& aPerformanceWarning);
+    AnimationPerformanceWarning::Type& aPerformanceWarning );
   static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();

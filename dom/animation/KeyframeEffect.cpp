@@ -1468,7 +1468,7 @@ KeyframeEffect::IsGeometricProperty(const nsCSSPropertyID aProperty)
  bool
 KeyframeEffect::CanAnimateTransformOnCompositor(
   const nsIFrame* aFrame,
-  AnimationPerformanceWarning::Type& aPerformanceWarning)
+  AnimationPerformanceWarning::Type& aPerformanceWarning )
 {
   
   
@@ -1500,7 +1500,7 @@ KeyframeEffect::CanAnimateTransformOnCompositor(
 bool
 KeyframeEffect::ShouldBlockAsyncTransformAnimations(
   const nsIFrame* aFrame,
-  AnimationPerformanceWarning::Type& aPerformanceWarning) const
+  AnimationPerformanceWarning::Type& aPerformanceWarning ) const
 {
   EffectSet* effectSet =
     EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
@@ -1528,8 +1528,7 @@ KeyframeEffect::ShouldBlockAsyncTransformAnimations(
 
     
     if (property.mProperty == eCSSProperty_transform) {
-      if (!CanAnimateTransformOnCompositor(aFrame,
-                                           aPerformanceWarning)) {
+      if (!CanAnimateTransformOnCompositor(aFrame, aPerformanceWarning)) {
         return true;
       }
     }
@@ -1852,6 +1851,43 @@ KeyframeEffect::UpdateEffectSet(EffectSet* aEffectSet) const
       }
     );
   }
+}
+
+KeyframeEffect::MatchForCompositor
+KeyframeEffect::IsMatchForCompositor(
+  nsCSSPropertyID aProperty,
+  const nsIFrame* aFrame,
+  const EffectSet& aEffects,
+  AnimationPerformanceWarning::Type& aPerformanceWarning ) const
+{
+  MOZ_ASSERT(mAnimation);
+
+  if (!mAnimation->IsRelevant()) {
+    return KeyframeEffect::MatchForCompositor::No;
+  }
+
+  if (mAnimation->ShouldBeSynchronizedWithMainThread(aProperty, aFrame,
+                                                     aPerformanceWarning)) {
+    
+    
+    
+    return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
+  }
+
+  if (!HasEffectiveAnimationOfProperty(aProperty, aEffects)) {
+    return KeyframeEffect::MatchForCompositor::No;
+  }
+
+  
+  
+  if (!aFrame->IsVisibleOrMayHaveVisibleDescendants() ||
+      aFrame->IsScrolledOutOfView()) {
+    return KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty;
+  }
+
+  return mAnimation->IsPlaying()
+         ? KeyframeEffect::MatchForCompositor::Yes
+         : KeyframeEffect::MatchForCompositor::IfNeeded;
 }
 
 } 

@@ -62,64 +62,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(EffectCompositor, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(EffectCompositor, Release)
 
-namespace {
-enum class MatchForCompositor {
-  
-  Yes,
-  
-  
-  
-  IfNeeded,
-  
-  No,
-  
-  
-  
-  NoAndBlockThisProperty
-};
-}
-
-static MatchForCompositor
-IsMatchForCompositor(const KeyframeEffect& aEffect,
-                     nsCSSPropertyID aProperty,
-                     const nsIFrame* aFrame,
-                     const EffectSet& aEffects)
-{
-  const Animation* animation = aEffect.GetAnimation();
-  MOZ_ASSERT(animation);
-
-  if (!animation->IsRelevant()) {
-    return MatchForCompositor::No;
-  }
-
-  AnimationPerformanceWarning::Type warningType;
-  if (animation->ShouldBeSynchronizedWithMainThread(aProperty, aFrame,
-                                                    warningType)) {
-    EffectCompositor::SetPerformanceWarning(
-      aFrame, aProperty,
-      AnimationPerformanceWarning(warningType));
-    
-    
-    
-    return MatchForCompositor::NoAndBlockThisProperty;
-  }
-
-  if (!aEffect.HasEffectiveAnimationOfProperty(aProperty, aEffects)) {
-    return MatchForCompositor::No;
-  }
-
-  
-  
-  if (!aFrame->IsVisibleOrMayHaveVisibleDescendants() ||
-      aFrame->IsScrolledOutOfView()) {
-    return MatchForCompositor::NoAndBlockThisProperty;
-  }
-
-  return animation->IsPlaying()
-         ? MatchForCompositor::Yes
-         : MatchForCompositor::IfNeeded;
-}
-
  bool
 EffectCompositor::AllowCompositorAnimationsOnFrame(
   const nsIFrame* aFrame,
@@ -224,10 +166,18 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
 
   bool foundRunningAnimations = false;
   for (KeyframeEffect* effect : *effects) {
-    MatchForCompositor matchResult =
-      IsMatchForCompositor(*effect, aProperty, aFrame, *effects);
+    AnimationPerformanceWarning::Type effectWarning =
+      AnimationPerformanceWarning::Type::None;
+    KeyframeEffect::MatchForCompositor matchResult =
+      effect->IsMatchForCompositor(aProperty, aFrame, *effects, effectWarning);
+    if (effectWarning != AnimationPerformanceWarning::Type::None) {
+      EffectCompositor::SetPerformanceWarning(
+        aFrame, aProperty,
+        AnimationPerformanceWarning(effectWarning));
+    }
 
-    if (matchResult == MatchForCompositor::NoAndBlockThisProperty) {
+    if (matchResult ==
+          KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty) {
       
       
       
@@ -237,7 +187,7 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
       return false;
     }
 
-    if (matchResult == MatchForCompositor::No) {
+    if (matchResult == KeyframeEffect::MatchForCompositor::No) {
       continue;
     }
 
@@ -245,7 +195,7 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
       aMatches->AppendElement(effect->GetAnimation());
     }
 
-    if (matchResult == MatchForCompositor::Yes) {
+    if (matchResult == KeyframeEffect::MatchForCompositor::Yes) {
       foundRunningAnimations = true;
     }
   }
