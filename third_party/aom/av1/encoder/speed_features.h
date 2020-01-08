@@ -400,6 +400,9 @@ typedef struct SPEED_FEATURES {
   
   int ml_prune_ab_partition;
 
+  
+  int ml_prune_4_partition;
+
   int fast_cdef_search;
 
   
@@ -414,7 +417,7 @@ typedef struct SPEED_FEATURES {
   int less_rectangular_check;
 
   
-  int use_square_partition_only;
+  BLOCK_SIZE use_square_partition_only_threshold;
 
   
   

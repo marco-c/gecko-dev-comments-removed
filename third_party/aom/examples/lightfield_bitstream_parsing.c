@@ -21,7 +21,6 @@
 
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,13 +34,13 @@
 #include "common/video_reader.h"
 #include "common/video_writer.h"
 
+#define MAX_TILES 512
+
 static const char *exec_name;
 
 void usage_exit(void) {
-  fprintf(
-      stderr,
-      "Usage: %s <infile> <outfile> <lf_width> <lf_height> <lf_blocksize> \n",
-      exec_name);
+  fprintf(stderr, "Usage: %s <infile> <outfile> <num_references> \n",
+          exec_name);
   exit(EXIT_FAILURE);
 }
 
@@ -95,39 +94,36 @@ const TILE_LIST_INFO tile_list[2][9] = {
     { 50, 2, 5, 4 } },
 };
 
+static int get_image_bps(aom_img_fmt_t fmt) {
+  switch (fmt) {
+    case AOM_IMG_FMT_I420: return 12;
+    case AOM_IMG_FMT_I422: return 16;
+    case AOM_IMG_FMT_I444: return 24;
+    case AOM_IMG_FMT_I42016: return 24;
+    case AOM_IMG_FMT_I42216: return 32;
+    case AOM_IMG_FMT_I44416: return 48;
+    default: die("Invalid image format");
+  }
+}
+
 int main(int argc, char **argv) {
   aom_codec_ctx_t codec;
   AvxVideoReader *reader = NULL;
   AvxVideoWriter *writer = NULL;
   const AvxInterface *decoder = NULL;
   const AvxVideoInfo *info = NULL;
-  const char *lf_width_arg;
-  const char *lf_height_arg;
-  const char *lf_blocksize_arg;
-  int width, height;
-  int lf_width, lf_height;
-  int lf_blocksize;
-  int u_blocks, v_blocks;
+  int num_references;
   int n, i;
   aom_codec_pts_t pts;
 
   exec_name = argv[0];
-  if (argc != 6) die("Invalid number of arguments.");
+  if (argc != 4) die("Invalid number of arguments.");
 
   reader = aom_video_reader_open(argv[1]);
   if (!reader) die("Failed to open %s for reading.", argv[1]);
 
-  lf_width_arg = argv[3];
-  lf_height_arg = argv[4];
-  lf_blocksize_arg = argv[5];
-
-  lf_width = (int)strtol(lf_width_arg, NULL, 0);
-  lf_height = (int)strtol(lf_height_arg, NULL, 0);
-  lf_blocksize = (int)strtol(lf_blocksize_arg, NULL, 0);
-
+  num_references = (int)strtol(argv[3], NULL, 0);
   info = aom_video_reader_get_info(reader);
-  width = info->frame_width;
-  height = info->frame_height;
 
   
   
@@ -144,11 +140,6 @@ int main(int argc, char **argv) {
   
   aom_codec_control_(&codec, AV1_SET_TILE_MODE, 0);
 
-  
-  u_blocks = (lf_width + lf_blocksize - 1) / lf_blocksize;
-  v_blocks = (lf_height + lf_blocksize - 1) / lf_blocksize;
-
-  int num_references = v_blocks * u_blocks;
   for (i = 0; i < num_references; ++i) {
     aom_video_reader_read_frame(reader);
 
@@ -224,9 +215,19 @@ int main(int argc, char **argv) {
   }
 
   
+  aom_img_fmt_t ref_fmt = 0;
+  if (aom_codec_control(&codec, AV1D_GET_IMG_FORMAT, &ref_fmt))
+    die_codec(&codec, "Failed to get the image format");
+  const int bps = get_image_bps(ref_fmt);
   
-  size_t data_sz =
-      ALIGN_POWER_OF_TWO(width, 5) * ALIGN_POWER_OF_TWO(height, 5) * 12 / 8;
+  unsigned int tile_size = 0;
+  if (aom_codec_control(&codec, AV1D_GET_TILE_SIZE, &tile_size))
+    die_codec(&codec, "Failed to get the tile size");
+  const unsigned int tile_width = tile_size >> 16;
+  const unsigned int tile_height = tile_size & 65535;
+  
+  const size_t data_sz = MAX_TILES * ALIGN_POWER_OF_TWO(tile_width, 5) *
+                         ALIGN_POWER_OF_TWO(tile_height, 5) * bps / 8;
   unsigned char *tl_buf = (unsigned char *)malloc(data_sz);
   if (tl_buf == NULL) die_codec(&codec, "Failed to allocate tile list buffer.");
 
@@ -251,7 +252,8 @@ int main(int argc, char **argv) {
 
     
     saved_obu_size_loc = tl;
-    aom_wb_write_literal(&wb, 0, 32);
+    
+    aom_wb_write_unsigned_literal(&wb, 0, 32);
     tl += 4;
     tile_list_obu_header_size += 4;
 

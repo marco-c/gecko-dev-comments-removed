@@ -81,7 +81,7 @@ typedef struct yv12_buffer_config {
 
   
   
-  int use_external_refernce_buffers;
+  int use_external_reference_buffers;
   
   
   

@@ -417,7 +417,7 @@ struct aom_internal_error_info {
   aom_codec_err_t error_code;
   int has_detail;
   char detail[80];
-  int setjmp;
+  int setjmp;  
   jmp_buf jmp;
 };
 

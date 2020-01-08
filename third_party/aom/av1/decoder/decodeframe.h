@@ -18,12 +18,13 @@ extern "C" {
 
 struct AV1Decoder;
 struct aom_read_bit_buffer;
+struct ThreadData;
 
 
 
 
-
-void read_sequence_header(AV1_COMMON *cm, struct aom_read_bit_buffer *rb);
+void av1_read_sequence_header(AV1_COMMON *cm, struct aom_read_bit_buffer *rb,
+                              SequenceHeader *seq_params);
 
 void av1_read_frame_size(struct aom_read_bit_buffer *rb, int num_bits_width,
                          int num_bits_height, int *width, int *height);
@@ -34,11 +35,14 @@ BITSTREAM_PROFILE av1_read_profile(struct aom_read_bit_buffer *rb);
 int av1_check_trailing_bits(struct AV1Decoder *pbi,
                             struct aom_read_bit_buffer *rb);
 
-int av1_decode_frame_headers_and_setup(struct AV1Decoder *pbi,
-                                       struct aom_read_bit_buffer *rb,
-                                       const uint8_t *data,
-                                       const uint8_t **p_data_end,
-                                       int trailing_bits_present);
+
+
+
+uint32_t av1_decode_frame_headers_and_setup(struct AV1Decoder *pbi,
+                                            struct aom_read_bit_buffer *rb,
+                                            const uint8_t *data,
+                                            const uint8_t **p_data_end,
+                                            int trailing_bits_present);
 
 void av1_decode_tg_tiles_and_wrapup(struct AV1Decoder *pbi, const uint8_t *data,
                                     const uint8_t *data_end,
@@ -47,8 +51,9 @@ void av1_decode_tg_tiles_and_wrapup(struct AV1Decoder *pbi, const uint8_t *data,
 
 
 
-void av1_read_color_config(AV1_COMMON *cm, struct aom_read_bit_buffer *rb,
-                           int allow_lowbitdepth);
+void av1_read_color_config(struct aom_read_bit_buffer *rb,
+                           int allow_lowbitdepth, SequenceHeader *seq_params,
+                           struct aom_internal_error_info *error_info);
 
 
 
@@ -69,7 +74,7 @@ struct aom_read_bit_buffer *av1_init_read_bit_buffer(
     struct AV1Decoder *pbi, struct aom_read_bit_buffer *rb, const uint8_t *data,
     const uint8_t *data_end);
 
-void av1_free_mc_tmp_buf(void *td, int use_highbd);
+void av1_free_mc_tmp_buf(struct ThreadData *thread_data, int use_highbd);
 
 void av1_set_single_tile_decoding_mode(AV1_COMMON *const cm);
 

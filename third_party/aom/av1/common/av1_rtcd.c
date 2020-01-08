@@ -18,5 +18,5 @@
 void av1_rtcd() {
   
   
-  once(setup_rtcd_internal);
+  aom_once(setup_rtcd_internal);
 }

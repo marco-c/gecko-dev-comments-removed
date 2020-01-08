@@ -37,6 +37,15 @@ typedef void (*HighbdIntraPred)(uint16_t *dst, ptrdiff_t stride,
 typedef void (*IntraPred)(uint8_t *dst, ptrdiff_t stride, const uint8_t *above,
                           const uint8_t *left);
 
+}  
+
+
+
+
+
+
+
+
 template <typename FuncType>
 struct IntraPredFunc {
   IntraPredFunc(FuncType pred = NULL, FuncType ref = NULL,
@@ -51,6 +60,8 @@ struct IntraPredFunc {
   int block_height;
   int bit_depth;
 };
+
+namespace {
 
 template <typename FuncType, typename Pixel>
 class AV1IntraPredTest

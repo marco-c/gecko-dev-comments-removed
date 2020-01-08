@@ -18,6 +18,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "aom_dsp/grain_synthesis.h"
+#include "aom_scale/yv12config.h"
 
 
 
@@ -280,6 +281,42 @@ int aom_wiener_denoise_2d(const uint8_t *const data[3], uint8_t *denoised[3],
                           int w, int h, int stride[3], int chroma_sub_log2[2],
                           float *noise_psd[3], int block_size, int bit_depth,
                           int use_highbd);
+
+struct aom_denoise_and_model_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int aom_denoise_and_model_run(struct aom_denoise_and_model_t *ctx,
+                              YV12_BUFFER_CONFIG *buf, aom_film_grain_t *grain);
+
+
+
+
+
+
+
+
+
+struct aom_denoise_and_model_t *aom_denoise_and_model_alloc(int bit_depth,
+                                                            int block_size,
+                                                            float noise_level);
+
+
+
+void aom_denoise_and_model_free(struct aom_denoise_and_model_t *denoise_model);
+
 #ifdef __cplusplus
 }  
 #endif  

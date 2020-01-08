@@ -217,6 +217,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
       
       
       decoder->Control(AV1_SET_TILE_MODE, cfg_.large_scale_tile);
+      decoder->Control(AV1D_EXT_TILE_DEBUG, 1);
       decoder->Control(AV1_SET_DECODE_TILE_ROW, -1);
       decoder->Control(AV1_SET_DECODE_TILE_COL, -1);
     }

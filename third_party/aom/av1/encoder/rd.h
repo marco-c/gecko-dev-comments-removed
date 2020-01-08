@@ -44,6 +44,9 @@ extern "C" {
 #define RD_THRESH_INC 1
 
 
+#define SWITCHABLE_INTERP_RATE_FACTOR 1
+
+
 
 typedef enum {
   THR_NEARESTMV,
