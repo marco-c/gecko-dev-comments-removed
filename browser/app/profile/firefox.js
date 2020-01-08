@@ -1494,29 +1494,32 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 
 pref("media.gmp-provider.enabled", true);
 
-pref("browser.contentblocking.cookies-site-data.ui.reject-trackers.recommended", true);
-pref("browser.contentblocking.fastblock.control-center.ui.enabled", true);
-pref("browser.contentblocking.trackingprotection.control-center.ui.enabled", true);
-pref("browser.contentblocking.rejecttrackers.ui.recommended", true);
-pref("browser.contentblocking.fastblock.ui.enabled", true);
-pref("browser.contentblocking.trackingprotection.ui.enabled", true);
+
 #ifdef NIGHTLY_BUILD
 pref("browser.contentblocking.ui.enabled", true);
-pref("browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled", true);
-pref("browser.contentblocking.rejecttrackers.control-center.ui.enabled", true);
-pref("browser.contentblocking.rejecttrackers.ui.enabled", true);
 #else
 pref("browser.contentblocking.ui.enabled", false);
-pref("browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled", false);
-pref("browser.contentblocking.rejecttrackers.control-center.ui.enabled", false);
-pref("browser.contentblocking.rejecttrackers.ui.enabled", false);
 #endif
-#ifdef NIGHTLY_BUILD
+
+
+pref("browser.contentblocking.fastblock.ui.enabled", true);
+pref("browser.contentblocking.fastblock.control-center.ui.enabled", true);
+pref("browser.contentblocking.trackingprotection.ui.enabled", true);
+pref("browser.contentblocking.trackingprotection.control-center.ui.enabled", true);
+pref("browser.contentblocking.rejecttrackers.ui.enabled", true);
+pref("browser.contentblocking.rejecttrackers.ui.recommended", true);
+pref("browser.contentblocking.rejecttrackers.control-center.ui.enabled", true);
+pref("browser.contentblocking.cookies-site-data.ui.reject-trackers.recommended", true);
+pref("browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled", true);
+
+
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.contentblocking.reportBreakage.enabled", true);
 #else
 pref("browser.contentblocking.reportBreakage.enabled", false);
 #endif
 pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-issues.herokuapp.com/new");
+
 
 
 pref("browser.contentblocking.introCount", 0);
