@@ -683,7 +683,7 @@ ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
 
   
   
-  if (IS_TABLE_CELL(aFrameType) &&
+  if (IsTableCell(aFrameType) &&
       (mFlags.mSpecialBSizeReflow ||
        (mFrame->FirstInFlow()->GetStateBits() &
          NS_TABLE_CELL_HAD_SPECIAL_REFLOW)) &&
@@ -763,7 +763,7 @@ ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
   
   
   if (!IsBResize() && mCBReflowInput &&
-      (IS_TABLE_CELL(mCBReflowInput->mFrame->Type()) ||
+      (IsTableCell(mCBReflowInput->mFrame->Type()) ||
        mCBReflowInput->mFlags.mHeightDependsOnAncestorCell) &&
       !mCBReflowInput->mFlags.mSpecialBSizeReflow &&
       dependsOnCBBSize) {
@@ -2252,7 +2252,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
       
       
       if (cbri->mParentReflowInput) {
-        if (IS_TABLE_CELL(cbri->mFrame->Type())) {
+        if (IsTableCell(cbri->mFrame->Type())) {
           
           cbSize.BSize(wm) = cbri->ComputedSize(wm).BSize(wm);
         }
@@ -2289,7 +2289,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
           
           if (!wm.IsVertical() &&
               eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
-            if (!IS_TABLE_CELL(cbri->mFrame->Type())) {
+            if (!IsTableCell(cbri->mFrame->Type())) {
               cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
               if (cbSize.BSize(wm) == NS_AUTOHEIGHT) {
                 blockSizeUnit = eStyleUnit_Auto;

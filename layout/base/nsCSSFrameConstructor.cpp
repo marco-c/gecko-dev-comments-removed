@@ -8392,7 +8392,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
     nsIFrame* cellFrame = aFrame->PrincipalChildList().FirstChild();
     while (cellFrame) {
       
-      if (IS_TABLE_CELL(cellFrame->Type())) {
+      if (IsTableCell(cellFrame->Type())) {
         nsIFrame* continuingCellFrame =
           CreateContinuingFrame(aPresContext, cellFrame, rowFrame);
         newChildList.AddChild(continuingCellFrame);
@@ -8403,7 +8403,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
     rowFrame->SetInitialChildList(kPrincipalList, newChildList);
     newFrame = rowFrame;
 
-  } else if (IS_TABLE_CELL(frameType)) {
+  } else if (IsTableCell(frameType)) {
     
     
     
