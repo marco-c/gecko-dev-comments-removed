@@ -298,6 +298,8 @@ this.AppConstants = Object.freeze({
   MOZ_GOOGLE_API_KEY: "@MOZ_GOOGLE_API_KEY@",
   MOZ_MOZILLA_API_KEY: "@MOZ_MOZILLA_API_KEY@",
 
+  BROWSER_CHROME_URL: "@BROWSER_CHROME_URL@",
+
   
   
   
