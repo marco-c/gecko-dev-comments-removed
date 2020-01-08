@@ -483,6 +483,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".com",        
     ".command",    
     ".cpgz",       
+    ".cpi",        
     
     ".cpl",         
     ".crt",         
