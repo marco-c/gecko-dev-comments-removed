@@ -2595,16 +2595,11 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(const nsACStri
   
   if (!found) {
     rv = NS_ERROR_FAILURE;
-#ifdef XP_WIN
     
-
-
-
-
-
-
+    
+    
+    
     if (!typeToUse.Equals(APPLICATION_OCTET_STREAM, nsCaseInsensitiveCStringComparator()))
-#endif
       rv = FillMIMEInfoForMimeTypeFromExtras(typeToUse, *_retval);
     LOG(("Searched extras (by type), rv 0x%08" PRIX32 "\n", static_cast<uint32_t>(rv)));
     
