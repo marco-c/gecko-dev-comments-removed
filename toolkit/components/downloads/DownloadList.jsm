@@ -14,6 +14,8 @@ var EXPORTED_SYMBOLS = [
   "DownloadSummary",
 ];
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 
 
 

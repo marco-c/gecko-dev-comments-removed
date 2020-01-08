@@ -2,11 +2,14 @@
 
 
 
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["TraversalRules", "TraversalHelper"]; 
 
 ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Roles", 
   "resource://gre/modules/accessibility/Constants.jsm");
 ChromeUtils.defineModuleGetter(this, "Filters", 

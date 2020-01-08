@@ -2,6 +2,8 @@
 
 "use strict";
 
+ChromeUtils.import("resource://gre/modules/Subprocess.jsm");
+
 const MAX_ROUND_TRIP_TIME_MS = AppConstants.DEBUG || AppConstants.ASAN ? 60 : 30;
 const MAX_RETRIES = 5;
 

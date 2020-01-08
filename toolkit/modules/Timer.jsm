@@ -11,6 +11,8 @@
 var EXPORTED_SYMBOLS = ["setTimeout", "setTimeoutWithTarget", "clearTimeout",
                         "setInterval", "setIntervalWithTarget", "clearInterval"];
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 
 var gNextId = 1; 
 

@@ -1,5 +1,7 @@
 "use strict";
 
+ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+
 
 
 ExtensionTestUtils.mockAppInfo();

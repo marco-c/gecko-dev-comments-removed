@@ -2,10 +2,13 @@
 
 
 
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["AddressResult", "CreditCardResult"];
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://formautofill/FormAutofill.jsm");
 ChromeUtils.defineModuleGetter(this, "FormAutofillUtils",

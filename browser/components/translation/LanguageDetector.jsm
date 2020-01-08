@@ -7,6 +7,7 @@
 var EXPORTED_SYMBOLS = ["LanguageDetector"];
 
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 

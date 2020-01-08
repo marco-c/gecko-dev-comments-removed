@@ -3,6 +3,7 @@
 
 
 ChromeUtils.import("resource://gre/modules/Extension.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const {LegacyExtensionContext} = ChromeUtils.import("resource://gre/modules/LegacyExtensionsUtils.jsm", {});
 
