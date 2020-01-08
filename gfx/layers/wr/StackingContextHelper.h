@@ -80,7 +80,25 @@ private:
   gfx::Matrix mSnappingSurfaceTransform;
   bool mAffectsClipPositioning;
   Maybe<wr::WrClipId> mReferenceFrameId;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Maybe<nsDisplayTransform*> mDeferredTransformItem;
+
   bool mIsPreserve3D;
   bool mRasterizeLocally;
 };

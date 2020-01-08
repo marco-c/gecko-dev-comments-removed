@@ -1489,7 +1489,6 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
         
         
         
-        
         Maybe<nsDisplayTransform*> deferred = aSc.GetDeferredTransformItem();
         if (deferred && (*deferred)->GetActiveScrolledRoot() != item->GetActiveScrolledRoot()) {
           
