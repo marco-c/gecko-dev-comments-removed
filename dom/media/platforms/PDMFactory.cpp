@@ -44,6 +44,7 @@
 #include "DecoderDoctorDiagnostics.h"
 
 #include "MP4Decoder.h"
+#include "VPXDecoder.h"
 #include "mozilla/dom/RemoteVideoDecoder.h"
 
 #include "H264.h"
@@ -294,11 +295,13 @@ PDMFactory::CreateDecoderWithPDM(PlatformDecoderModule* aPDM,
     return nullptr;
   }
 
-  if (MP4Decoder::IsH264(config.mMimeType) && !aParams.mUseNullDecoder.mUse &&
-      !aParams.mNoWrapper.mDontUseWrapper) {
+  if ((MP4Decoder::IsH264(config.mMimeType) ||
+       VPXDecoder::IsVPX(config.mMimeType)) &&
+      !aParams.mUseNullDecoder.mUse && !aParams.mNoWrapper.mDontUseWrapper) {
     RefPtr<MediaChangeMonitor> h = new MediaChangeMonitor(aPDM, aParams);
     const MediaResult result = h->GetLastError();
     if (NS_SUCCEEDED(result) || result == NS_ERROR_NOT_INITIALIZED) {
+      
       
       
       
