@@ -560,52 +560,69 @@ var paymentDialogWrapper = {
     window.close();
   },
 
-  async onUpdateAutofillRecord(collectionName, record, guid, messageID) {
-    let responseMessage = {
-      guid,
-      messageID,
-      stateChange: {},
-    };
-    try {
-      if (collectionName == "creditCards" && !guid && !record.isTemporary) {
-        
-        
-        
-        
-        if (!await MasterPassword.ensureLoggedIn()) {
-          throw new Error("User canceled master password entry");
-        }
+  async onUpdateAutofillRecord(collectionName, record, guid, {
+    errorStateChange,
+    preserveOldProperties,
+    selectedStateKey,
+    successStateChange,
+  }) {
+    if (collectionName == "creditCards" && !guid && !record.isTemporary) {
+      
+      
+      
+      
+      if (!await MasterPassword.ensureLoggedIn()) {
+        Cu.reportError("User canceled master password entry");
+        return;
       }
+    }
+    let isTemporary = record.isTemporary;
+    let collection = isTemporary ? this.temporaryStore[collectionName] :
+                                   formAutofillStorage[collectionName];
 
-      let isTemporary = record.isTemporary;
-      let collection = isTemporary ? this.temporaryStore[collectionName] :
-                                     formAutofillStorage[collectionName];
-
+    try {
       if (guid) {
-        let preserveOldProperties = true;
         await collection.update(guid, record, preserveOldProperties);
       } else {
-        responseMessage.guid = await collection.add(record);
+        guid = await collection.add(record);
       }
 
       if (isTemporary && collectionName == "addresses") {
         
         
-        Object.assign(responseMessage.stateChange, {
+        Object.assign(successStateChange, {
           tempAddresses: this.temporaryStore.addresses.getAll(),
         });
       }
       if (isTemporary && collectionName == "creditCards") {
         
         
-        Object.assign(responseMessage.stateChange, {
+        Object.assign(successStateChange, {
           tempBasicCards: this.temporaryStore.creditCards.getAll(),
         });
       }
+
+      
+      if (selectedStateKey) {
+        if (selectedStateKey.length == 1) {
+          Object.assign(successStateChange, {
+            [selectedStateKey[0]]: guid,
+          });
+        } else if (selectedStateKey.length == 2) {
+          
+          let subObj = Object.assign({}, successStateChange[selectedStateKey[0]]);
+          subObj[selectedStateKey[1]] = guid;
+          Object.assign(successStateChange, {
+            [selectedStateKey[0]]: subObj,
+          });
+        } else {
+          throw new Error(`selectedStateKey not supported: '${selectedStateKey}'`);
+        }
+      }
+
+      this.sendMessageToContent("updateState", successStateChange);
     } catch (ex) {
-      responseMessage.error = true;
-    } finally {
-      this.sendMessageToContent("updateAutofillRecord:Response", responseMessage);
+      this.sendMessageToContent("updateState", errorStateChange);
     }
   },
 
@@ -678,7 +695,12 @@ var paymentDialogWrapper = {
         break;
       }
       case "updateAutofillRecord": {
-        this.onUpdateAutofillRecord(data.collectionName, data.record, data.guid, data.messageID);
+        this.onUpdateAutofillRecord(data.collectionName, data.record, data.guid, {
+          errorStateChange: data.errorStateChange,
+          preserveOldProperties: data.preserveOldProperties,
+          selectedStateKey: data.selectedStateKey,
+          successStateChange: data.successStateChange,
+        });
         break;
       }
     }

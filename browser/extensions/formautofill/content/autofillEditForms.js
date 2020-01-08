@@ -208,7 +208,6 @@ class EditCreditCard extends EditAutofillForm {
     Object.assign(this, config);
     Object.assign(this._elements, {
       ccNumber: this._elements.form.querySelector("#cc-number"),
-      invalidCardNumberStringElement: this._elements.form.querySelector("#invalidCardNumberString"),
       year: this._elements.form.querySelector("#cc-exp-year"),
       billingAddress: this._elements.form.querySelector("#billingAddressGUID"),
       billingAddressRow: this._elements.form.querySelector(".billingAddressRow"),
@@ -237,9 +236,6 @@ class EditCreditCard extends EditAutofillForm {
 
     
     this._elements.year.textContent = "";
-
-    
-    this._elements.year.appendChild(new Option());
 
     if (ccExpYear && ccExpYear < currentYear) {
       this._elements.year.appendChild(new Option(ccExpYear));
@@ -290,8 +286,7 @@ class EditCreditCard extends EditAutofillForm {
 
     
     if (!this.isCCNumber(ccNumberField.value)) {
-      let invalidCardNumberString = this._elements.invalidCardNumberStringElement.textContent;
-      ccNumberField.setCustomValidity(invalidCardNumberString || " ");
+      ccNumberField.setCustomValidity(true);
     }
   }
 
