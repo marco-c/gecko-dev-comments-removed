@@ -15,9 +15,6 @@
 #include "mozilla/layers/Effects.h"     
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "mozilla/layers/TextureHostOGL.h"  
-#ifdef XP_DARWIN
-#include "mozilla/layers/TextureSync.h" 
-#endif
 #include "nsAString.h"
 #include "nsDebug.h"                    
 #include "nsPoint.h"                    
@@ -301,9 +298,6 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
   TextureSourceRecycler oldRetainedTiles(std::move(mRetainedTiles));
   mRetainedTiles.SetLength(tileDescriptors.Length());
 
-  AutoTArray<uint64_t, 10> lockedTextureSerials;
-  base::ProcessId lockedTexturePid = 0;
-
   
   
   
@@ -328,15 +322,6 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
     tile.mTextureHost = TextureHost::AsTextureHost(texturedDesc.textureParent());
     if (texturedDesc.readLocked()) {
       tile.mTextureHost->SetReadLocked();
-      auto actor = tile.mTextureHost->GetIPDLActor();
-      if (actor && tile.mTextureHost->IsDirectMap()) {
-        lockedTextureSerials.AppendElement(TextureHost::GetTextureSerial(actor));
-
-        if (lockedTexturePid) {
-          MOZ_ASSERT(lockedTexturePid == actor->OtherPid());
-        }
-        lockedTexturePid = actor->OtherPid();
-      }
     }
 
     if (texturedDesc.textureOnWhite().type() == MaybeTexture::TPTextureParent) {
@@ -345,10 +330,6 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
       );
       if (texturedDesc.readLockedOnWhite()) {
         tile.mTextureHostOnWhite->SetReadLocked();
-        auto actor = tile.mTextureHostOnWhite->GetIPDLActor();
-        if (actor && tile.mTextureHostOnWhite->IsDirectMap()) {
-          lockedTextureSerials.AppendElement(TextureHost::GetTextureSerial(actor));
-        }
       }
     }
 
@@ -372,12 +353,6 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
         tile.mFadeStart + TimeDuration::FromMilliseconds(gfxPrefs::LayerTileFadeInDuration()));
     }
   }
-
-  #ifdef XP_DARWIN
-  if (lockedTextureSerials.Length() > 0) {
-    TextureSync::SetTexturesLocked(lockedTexturePid, lockedTextureSerials);
-  }
-  #endif
 
   
   
