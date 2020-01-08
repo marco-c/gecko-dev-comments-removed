@@ -221,27 +221,26 @@ exports.modules = {
 };
 
 defineLazyGetter(exports.modules, "Debugger", () => {
+  const global = Cu.getGlobalForObject(this);
   
-  
-  
-  const sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
-  Cu.evalInSandbox(
-    "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
-    "addDebuggerToGlobal(this);",
-    sandbox
-  );
-  return sandbox.Debugger;
+  if (global.Debugger) {
+    return global.Debugger;
+  }
+  const { addDebuggerToGlobal } = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm", {});
+  addDebuggerToGlobal(global);
+  return global.Debugger;
 });
 
 defineLazyGetter(exports.modules, "RecordReplayControl", () => {
   
-  const sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
-  Cu.evalInSandbox(
-    "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
-    "addDebuggerToGlobal(this);",
-    sandbox
-  );
-  return sandbox.RecordReplayControl;
+  const global = Cu.getGlobalForObject(this);
+  
+  if (global.RecordReplayControl) {
+    return global.RecordReplayControl;
+  }
+  const { addDebuggerToGlobal } = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm", {});
+  addDebuggerToGlobal(global);
+  return global.RecordReplayControl;
 });
 
 defineLazyGetter(exports.modules, "Timer", () => {
