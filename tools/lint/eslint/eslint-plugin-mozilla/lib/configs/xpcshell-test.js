@@ -64,6 +64,20 @@ module.exports = {
     "uneval": false
   },
 
+  "overrides": [{
+    
+    
+    
+    
+    "files": "head*.js",
+    "rules": {
+      "no-unused-vars": ["error", {
+        "args": "none",
+        "vars": "local"
+      }]
+    }
+  }],
+
   rules: {
     "mozilla/import-headjs-globals": "error",
     "mozilla/mark-test-function-used": "error",
