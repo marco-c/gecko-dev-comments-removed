@@ -736,7 +736,6 @@ struct DIGroup
       if (mInvalidRect.Contains(bounds)) {
         GP("Wholely contained\n");
         BlobItemData* data = GetBlobItemData(item);
-        data->mInvalid = false;
       } else {
         BlobItemData* data = GetBlobItemData(item);
         if (data->mInvalid) {
@@ -1099,6 +1098,11 @@ Grouper::ConstructItemInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
 {
   nsDisplayList* children = aItem->GetChildren();
   BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
+
+  
+
+
+  data->mInvalid = false;
 
   if (aItem->GetType() == DisplayItemType::TYPE_FILTER) {
     gfx::Size scale(1, 1);
