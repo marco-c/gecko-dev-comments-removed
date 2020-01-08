@@ -503,12 +503,30 @@ impl Document {
         self.clip_scroll_tree.get_scroll_node_state()
     }
 
-    pub fn new_async_scene_ready(&mut self, built_scene: BuiltScene) {
+    pub fn new_async_scene_ready(
+        &mut self,
+        mut built_scene: BuiltScene,
+    ) {
         self.scene = built_scene.scene;
         self.frame_is_valid = false;
         self.hit_tester_is_valid = false;
 
+        
+        
+        
+        let mut retained_tiles = FastHashMap::default();
+        if let Some(frame_builder) = self.frame_builder.take() {
+            frame_builder.destroy(
+                &mut retained_tiles,
+            );
+        }
+
+        
+        
+        built_scene.frame_builder.set_retained_tiles(retained_tiles);
+
         self.frame_builder = Some(built_scene.frame_builder);
+
         self.scratch.recycle();
 
         let old_scrolling_states = self.clip_scroll_tree.drain();
@@ -741,7 +759,9 @@ impl RenderBackend {
                             doc.removed_pipelines.append(&mut txn.removed_pipelines);
 
                             if let Some(mut built_scene) = txn.built_scene.take() {
-                                doc.new_async_scene_ready(built_scene);
+                                doc.new_async_scene_ready(
+                                    built_scene,
+                                );
                             }
 
                             if let Some(tx) = result_tx {

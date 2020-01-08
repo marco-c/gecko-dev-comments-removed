@@ -7,20 +7,20 @@ use api::{DeviceIntRect, DevicePoint, LayoutRect, PictureToRasterTransform, Layo
 use api::{DevicePixelScale, RasterRect, RasterSpace, PictureSize, DeviceIntPoint, ColorF, ImageKey, DirtyRect};
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor};
 use box_shadow::{BLUR_SAMPLE_SCALE};
-use clip::{ClipNodeCollector, ClipStore, ClipChainId, ClipChainNode};
+use clip::{ClipNodeCollector, ClipStore, ClipChainId, ClipChainNode, ClipUid};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
 use device::TextureFilter;
 use euclid::{TypedScale, vec3, TypedRect, TypedPoint2D, TypedSize2D};
 use euclid::approxeq::ApproxEq;
 use internal_types::{FastHashMap, PlaneSplitter};
 use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
-use gpu_cache::{GpuCacheAddress, GpuCacheHandle};
+use gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use gpu_types::{TransformPalette, TransformPaletteId, UvRectKind};
 use internal_types::FastHashSet;
 use plane_split::{Clipper, Polygon, Splitter};
-use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, VisibleFace, PrimitiveInstanceKind};
+use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, VisibleFace, PrimitiveInstanceKind, PrimitiveUid};
 use prim_store::{get_raster_rects, PrimitiveDataInterner, PrimitiveDataStore, CoordinateSpaceMapping};
-use prim_store::{OpacityBindingStorage, PrimitiveTemplateKind, ImageInstanceStorage};
+use prim_store::{OpacityBindingStorage, PrimitiveTemplateKind, ImageInstanceStorage, OpacityBindingIndex, SizeKey};
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle, TileBlit};
 use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use resource_cache::ResourceCache;
@@ -65,7 +65,17 @@ pub const TILE_SIZE_DP: i32 = 512;
 
 
 #[derive(Debug)]
-pub struct TransformInfo {
+pub struct TileTransformInfo {
+    
+    
+    spatial_node_index: SpatialNodeIndex,
+    
+    changed: bool,
+}
+
+#[derive(Debug)]
+pub struct GlobalTransformInfo {
+    
     
     key: TransformKey,
     
@@ -74,12 +84,18 @@ pub struct TransformInfo {
 
 
 #[derive(Debug)]
+pub struct OpacityBindingInfo {
+    
+    value: f32,
+    
+    changed: bool,
+}
+
+
+#[derive(Debug)]
 pub struct Tile {
     
-    
-    transforms: FastHashSet<SpatialNodeIndex>,
-    
-    opacity_bindings: FastHashMap<PropertyBindingId, f32>,
+    opacity_bindings: FastHashSet<PropertyBindingId>,
     
     image_keys: FastHashSet<ImageKey>,
     
@@ -95,27 +111,155 @@ pub struct Tile {
     
     
     
-    in_use: bool,
+    pub in_use: bool,
     
     
     pub is_visible: bool,
     
     pub handle: TextureCacheHandle,
+    
+    
+    
+    
+    tile_transform_map: FastHashMap<SpatialNodeIndex, TileTransformIndex>,
+    
+    transform_info: Vec<TileTransformInfo>,
+    
+    
+    descriptor: TileDescriptor,
 }
 
 impl Tile {
     
-    fn new() -> Self {
+    fn new(tile_offset: TileOffset) -> Self {
         Tile {
-            transforms: FastHashSet::default(),
-            opacity_bindings: FastHashMap::default(),
+            opacity_bindings: FastHashSet::default(),
             image_keys: FastHashSet::default(),
             is_valid: false,
             is_visible: false,
             is_cacheable: true,
             in_use: false,
             handle: TextureCacheHandle::invalid(),
+            descriptor: TileDescriptor::new(tile_offset),
+            tile_transform_map: FastHashMap::default(),
+            transform_info: Vec::new(),
         }
+    }
+
+    
+    fn push_transform_dependency(
+        &mut self,
+        spatial_node_index: SpatialNodeIndex,
+        surface_spatial_node_index: SpatialNodeIndex,
+        clip_scroll_tree: &ClipScrollTree,
+        global_transforms: &[GlobalTransformInfo],
+    ) {
+        let transform_info = &mut self.transform_info;
+        let descriptor = &mut self.descriptor;
+
+        
+        
+        let tile_transform_index = self
+            .tile_transform_map
+            .entry(spatial_node_index)
+            .or_insert_with(|| {
+                let index = transform_info.len();
+
+                let mapping: CoordinateSpaceMapping<LayoutPixel, PicturePixel> = CoordinateSpaceMapping::new(
+                    surface_spatial_node_index,
+                    spatial_node_index,
+                    clip_scroll_tree,
+                ).expect("todo: handle invalid mappings");
+
+                transform_info.push(TileTransformInfo {
+                    changed: global_transforms[spatial_node_index.0].changed,
+                    spatial_node_index,
+                });
+
+                let key = mapping.into();
+
+                descriptor.transforms.push(key);
+
+                TileTransformIndex(index as u32)
+            });
+
+        
+        
+        
+        descriptor.transform_ids.push(*tile_transform_index);
+    }
+
+    
+    
+    fn destroy(self) -> Option<(TileDescriptor, TextureCacheHandle)> {
+        if self.is_valid {
+            Some((self.descriptor, self.handle))
+        } else {
+            None
+        }
+    }
+}
+
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct TileTransformIndex(u32);
+
+
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct TileDescriptor {
+    
+    
+    pub prim_uids: Vec<PrimitiveUid>,
+
+    
+    
+    pub clip_uids: Vec<ClipUid>,
+
+    
+    
+    pub transform_ids: Vec<TileTransformIndex>,
+
+    
+    
+    pub transforms: Vec<TransformKey>,
+
+    
+    
+    pub opacity_bindings: Vec<PropertyBindingId>,
+
+    
+    pub tile_offset: TileOffset,
+    pub local_tile_size: SizeKey,
+
+    
+    
+    
+    pub raster_transform: TransformKey,
+}
+
+impl TileDescriptor {
+    fn new(tile_offset: TileOffset) -> Self {
+        TileDescriptor {
+            prim_uids: Vec::new(),
+            clip_uids: Vec::new(),
+            transform_ids: Vec::new(),
+            opacity_bindings: Vec::new(),
+            transforms: Vec::new(),
+            tile_offset,
+            raster_transform: TransformKey::Local,
+            local_tile_size: SizeKey::zero(),
+        }
+    }
+
+    
+    
+    fn clear(&mut self) {
+        self.prim_uids.clear();
+        self.clip_uids.clear();
+        self.transform_ids.clear();
+        self.transforms.clear();
+        self.opacity_bindings.clear();
     }
 }
 
@@ -142,7 +286,10 @@ pub struct TileCache {
     pub tile_rect: TileRect,
     
     
-    pub transforms: Vec<TransformInfo>,
+    pub transforms: Vec<GlobalTransformInfo>,
+    
+    
+    pub opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
     pub space_mapper: SpaceMapper<LayoutPixel, PicturePixel>,
     
@@ -164,6 +311,7 @@ impl TileCache {
             tile_rect: TileRect::zero(),
             local_tile_size: PictureSize::zero(),
             transforms: Vec::new(),
+            opacity_bindings: FastHashMap::default(),
             needs_update: true,
             dirty_region: None,
             space_mapper: SpaceMapper::new(
@@ -179,6 +327,8 @@ impl TileCache {
     pub fn update_transforms(
         &mut self,
         surface_spatial_node_index: SpatialNodeIndex,
+        raster_spatial_node_index: SpatialNodeIndex,
+        raster_space: RasterSpace,
         frame_context: &FrameBuildingContext,
     ) {
         
@@ -217,11 +367,7 @@ impl TileCache {
         
         
         
-        self.needs_update = if self.transforms.len() == frame_context.clip_scroll_tree.spatial_nodes.len() {
-            
-            
-            let mut any_transforms_changed = false;
-
+        if self.transforms.len() == frame_context.clip_scroll_tree.spatial_nodes.len() {
             for (i, transform) in self.transforms.iter_mut().enumerate() {
                 let mapping: CoordinateSpaceMapping<LayoutPixel, PicturePixel> = CoordinateSpaceMapping::new(
                     surface_spatial_node_index,
@@ -232,11 +378,7 @@ impl TileCache {
                 let key = mapping.into();
                 transform.changed = transform.key != key;
                 transform.key = key;
-
-                any_transforms_changed |= transform.changed;
             }
-
-            any_transforms_changed
         } else {
             
             self.transforms.clear();
@@ -248,14 +390,79 @@ impl TileCache {
                     frame_context.clip_scroll_tree,
                 ).expect("todo: handle invalid mappings");
 
-                self.transforms.push(TransformInfo {
+                self.transforms.push(GlobalTransformInfo {
                     key: mapping.into(),
                     changed: true,
                 });
             }
-
-            true
         };
+
+        
+        
+        let current_properties = frame_context.scene_properties.float_properties();
+        let old_properties = mem::replace(&mut self.opacity_bindings, FastHashMap::default());
+        for (id, value) in current_properties {
+            let changed = match old_properties.get(id) {
+                Some(old_property) => !old_property.value.approx_eq(value),
+                None => true,
+            };
+            self.opacity_bindings.insert(*id, OpacityBindingInfo {
+                value: *value,
+                changed,
+            });
+        }
+
+        
+        let raster_transform = match raster_space {
+            RasterSpace::Screen => {
+                
+                
+                
+                
+                
+                
+
+                let mut key = CoordinateSpaceMapping::<LayoutPixel, PicturePixel>::new(
+                    raster_spatial_node_index,
+                    surface_spatial_node_index,
+                    frame_context.clip_scroll_tree,
+                ).expect("bug: unable to get coord mapping").into();
+
+                if let TransformKey::ScaleOffset(ref mut key) = key {
+                    key.offset_x = 0.0;
+                    key.offset_y = 0.0;
+                }
+
+                key
+            }
+            RasterSpace::Local(..) => {
+                TransformKey::local()
+            }
+        };
+
+        
+        
+        
+        
+        for tile in &mut self.tiles {
+            tile.descriptor.local_tile_size = self.local_tile_size.into();
+            tile.descriptor.raster_transform = raster_transform.clone();
+
+            debug_assert_eq!(tile.transform_info.len(), tile.descriptor.transforms.len());
+            for (info, transform) in tile.transform_info.iter_mut().zip(tile.descriptor.transforms.iter_mut()) {
+                let mapping: CoordinateSpaceMapping<LayoutPixel, PicturePixel> = CoordinateSpaceMapping::new(
+                    surface_spatial_node_index,
+                    info.spatial_node_index,
+                    frame_context.clip_scroll_tree,
+                ).expect("todo: handle invalid mappings");
+                let new_transform = mapping.into();
+
+                info.changed = *transform != new_transform;
+                *transform = new_transform;
+
+                self.needs_update |= info.changed;
+            }
+        }
 
         
         
@@ -268,7 +475,9 @@ impl TileCache {
             for (i, mut tile) in self.tiles.drain(..).enumerate() {
                 let y = i as i32 / self.tile_rect.size.width;
                 let x = i as i32 % self.tile_rect.size.width;
-                tile.transforms.clear();
+                tile.descriptor.clear();
+                tile.transform_info.clear();
+                tile.tile_transform_map.clear();
                 tile.opacity_bindings.clear();
                 tile.image_keys.clear();
                 tile.in_use = false;
@@ -321,12 +530,15 @@ impl TileCache {
                 
                 let tx = x0 - self.tile_rect.origin.x + x;
                 let ty = y0 - self.tile_rect.origin.y + y;
+                let tile_offset = TileOffset::new(x + x0, y + y0);
 
                 let tile = if tx >= 0 && ty >= 0 && tx < self.tile_rect.size.width && ty < self.tile_rect.size.height {
                     let index = (ty * self.tile_rect.size.width + tx) as usize;
-                    mem::replace(&mut self.tiles[index], Tile::new())
+                    mem::replace(&mut self.tiles[index], Tile::new(tile_offset))
                 } else {
-                    self.old_tiles.remove(&TileOffset::new(x + x0, y + y0)).unwrap_or_else(Tile::new)
+                    self.old_tiles.remove(&tile_offset).unwrap_or_else(|| {
+                        Tile::new(tile_offset)
+                    })
                 };
                 new_tiles.push(tile);
             }
@@ -347,7 +559,6 @@ impl TileCache {
         clip_chain_nodes: &[ClipChainNode],
         pictures: &[PicturePrimitive],
         resource_cache: &ResourceCache,
-        scene_properties: &SceneProperties,
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
     ) {
@@ -382,8 +593,9 @@ impl TileCache {
         self.reconfigure_tiles_if_required(x0, y0, x1, y1);
 
         
-        let mut opacity_bindings: SmallVec<[(PropertyBindingId, f32); 4]> = SmallVec::new();
+        let mut opacity_bindings: SmallVec<[PropertyBindingId; 4]> = SmallVec::new();
         let mut clip_chain_spatial_nodes: SmallVec<[SpatialNodeIndex; 8]> = SmallVec::new();
+        let mut clip_chain_uids: SmallVec<[ClipUid; 8]> = SmallVec::new();
         let mut image_keys: SmallVec<[ImageKey; 8]> = SmallVec::new();
         let mut current_clip_chain_id = prim_instance.clip_chain_id;
 
@@ -398,16 +610,18 @@ impl TileCache {
                 
                 let pic = &pictures[pic_index.0];
                 if let Some(PictureCompositeMode::Filter(FilterOp::Opacity(binding, _))) = pic.requested_composite_mode {
-                    if let PropertyBinding::Binding(key, default) = binding {
-                        opacity_bindings.push((key.id, default));
+                    if let PropertyBinding::Binding(key, _) = binding {
+                        opacity_bindings.push(key.id);
                     }
                 }
             }
             PrimitiveInstanceKind::Rectangle { opacity_binding_index, .. } => {
-                let opacity_binding = &opacity_binding_store[opacity_binding_index];
-                for binding in &opacity_binding.bindings {
-                    if let PropertyBinding::Binding(key, default) = binding {
-                        opacity_bindings.push((key.id, *default));
+                if opacity_binding_index != OpacityBindingIndex::INVALID {
+                    let opacity_binding = &opacity_binding_store[opacity_binding_index];
+                    for binding in &opacity_binding.bindings {
+                        if let PropertyBinding::Binding(key, _) = binding {
+                            opacity_bindings.push(key.id);
+                        }
                     }
                 }
             }
@@ -415,10 +629,12 @@ impl TileCache {
                 let image_instance = &image_instances[image_instance_index];
                 let opacity_binding_index = image_instance.opacity_binding_index;
 
-                let opacity_binding = &opacity_binding_store[opacity_binding_index];
-                for binding in &opacity_binding.bindings {
-                    if let PropertyBinding::Binding(key, default) = binding {
-                        opacity_bindings.push((key.id, *default));
+                if opacity_binding_index != OpacityBindingIndex::INVALID {
+                    let opacity_binding = &opacity_binding_store[opacity_binding_index];
+                    for binding in &opacity_binding.bindings {
+                        if let PropertyBinding::Binding(key, _) = binding {
+                            opacity_bindings.push(key.id);
+                        }
                     }
                 }
 
@@ -452,12 +668,6 @@ impl TileCache {
             }
         }
 
-        for (key, current) in &mut opacity_bindings {
-            if let Some(value) = scene_properties.get_float_value(*key) {
-                *current = value;
-            }
-        }
-
         
         
         while current_clip_chain_id != ClipChainId::NONE {
@@ -467,6 +677,7 @@ impl TileCache {
             
             if clip_chain_node.spatial_node_index > surface_spatial_node_index {
                 clip_chain_spatial_nodes.push(clip_chain_node.spatial_node_index);
+                clip_chain_uids.push(clip_chain_node.handle.uid());
             }
             current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
@@ -488,17 +699,33 @@ impl TileCache {
                 }
 
                 
-                tile.transforms.insert(prim_instance.spatial_node_index);
+                tile.push_transform_dependency(
+                    prim_instance.spatial_node_index,
+                    surface_spatial_node_index,
+                    clip_scroll_tree,
+                    &self.transforms,
+                );
 
                 
                 for clip_chain_spatial_node in &clip_chain_spatial_nodes {
-                    tile.transforms.insert(*clip_chain_spatial_node);
+                    tile.push_transform_dependency(
+                        *clip_chain_spatial_node,
+                        surface_spatial_node_index,
+                        clip_scroll_tree,
+                        &self.transforms,
+                    );
                 }
 
                 
-                for &(id, value) in &opacity_bindings {
-                    tile.opacity_bindings.insert(id, value);
+                for id in &opacity_bindings {
+                    if tile.opacity_bindings.insert(*id) {
+                        tile.descriptor.opacity_bindings.push(*id);
+                    }
                 }
+
+                
+                tile.descriptor.prim_uids.push(prim_instance.prim_data_handle.uid());
+                tile.descriptor.clip_uids.extend_from_slice(&clip_chain_uids);
             }
         }
     }
@@ -510,6 +737,8 @@ impl TileCache {
         surface_spatial_node_index: SpatialNodeIndex,
         frame_context: &FrameBuildingContext,
         resource_cache: &mut ResourceCache,
+        gpu_cache: &mut GpuCache,
+        retained_tiles: &mut FastHashMap<TileDescriptor, TextureCacheHandle>,
     ) {
         self.needs_update = false;
 
@@ -539,6 +768,29 @@ impl TileCache {
                 let i = y * self.tile_rect.size.width + x;
                 let tile = &mut self.tiles[i as usize];
 
+                
+                
+                if !resource_cache.texture_cache.is_allocated(&tile.handle) {
+                    
+                    
+                    if let Some(handle) = retained_tiles.remove(&tile.descriptor) {
+                        
+                        if !resource_cache.texture_cache.request(&handle, gpu_cache) {
+                            
+                            tile.handle = handle;
+                            tile.is_valid = true;
+                            
+                            
+                            
+                            
+                            
+                            for info in &mut tile.transform_info {
+                                info.changed = false;
+                            }
+                        }
+                    }
+                }
+
                 let tile_rect = PictureRect::new(
                     PicturePoint::new(
                         (self.tile_rect.origin.x + x) as f32 * self.local_tile_size.width,
@@ -565,20 +817,22 @@ impl TileCache {
                 }
 
                 
-                for node_index in &tile.transforms {
-                    if self.transforms[node_index.0].changed {
+                for info in &tile.transform_info {
+                    if info.changed {
                         tile.is_valid = false;
                         break;
                     }
                 }
 
                 
-                for (id, old) in &mut tile.opacity_bindings {
-                    if let Some(new) = frame_context.scene_properties.get_float_value(*id) {
-                        if !new.approx_eq(old) {
-                            tile.is_valid = false;
-                            break;
-                        }
+                for id in &tile.opacity_bindings {
+                    let changed = match self.opacity_bindings.get(id) {
+                        Some(info) => info.changed,
+                        None => true,
+                    };
+                    if changed {
+                        tile.is_valid = false;
+                        break;
                     }
                 }
 
@@ -595,12 +849,20 @@ impl TileCache {
 
                 
                 
-                if !tile.is_valid && tile.is_visible {
+                if !tile.is_valid && tile.is_visible && tile.in_use {
                     dirty_rect = dirty_rect.union(&tile_rect);
                     tile_offset.x = tile_offset.x.min(x);
                     tile_offset.y = tile_offset.y.min(y);
                 }
             }
+        }
+
+        
+        
+        
+        
+        for (_, handle) in retained_tiles.drain() {
+            resource_cache.texture_cache.mark_unused(&handle);
         }
 
         self.dirty_region = if dirty_rect.is_empty() {
@@ -1105,6 +1367,22 @@ impl PicturePrimitive {
         }
     }
 
+    
+    
+    
+    
+    pub fn destroy(
+        mut self,
+        retained_tiles: &mut FastHashMap<TileDescriptor, TextureCacheHandle>,
+    ) {
+        if let Some(tile_cache) = self.tile_cache.take() {
+            debug_assert!(tile_cache.old_tiles.is_empty());
+            for tile in tile_cache.tiles {
+                retained_tiles.extend(tile.destroy());
+            }
+        }
+    }
+
     pub fn new_image(
         requested_composite_mode: Option<PictureCompositeMode>,
         context_3d: Picture3DContext<OrderedPictureChild>,
@@ -1469,18 +1747,6 @@ impl PicturePrimitive {
         }
 
         
-        
-        
-        if let Some(mut tile_cache) = self.tile_cache.take() {
-            tile_cache.update_transforms(
-                self.spatial_node_index,
-                frame_context,
-            );
-
-            state.push_tile_cache(tile_cache);
-        }
-
-        
         state.push_picture(PictureInfo {
             spatial_node_index: self.spatial_node_index,
         });
@@ -1556,6 +1822,20 @@ impl PicturePrimitive {
 
             
             
+            
+            if let Some(mut tile_cache) = self.tile_cache.take() {
+                tile_cache.update_transforms(
+                    surface_spatial_node_index,
+                    raster_spatial_node_index,
+                    raster_space,
+                    frame_context,
+                );
+
+                state.push_tile_cache(tile_cache);
+            }
+
+            
+            
             if let Some(ref mut surface_desc) = self.surface_desc {
                 surface_desc.update(
                     surface_spatial_node_index,
@@ -1586,17 +1866,18 @@ impl PicturePrimitive {
             return;
         }
 
+        let surface_spatial_node_index = state.current_surface().surface_spatial_node_index;
+
         for prim_instance in &self.prim_list.prim_instances {
             for tile_cache in &mut state.tile_cache_stack {
                 tile_cache.update_prim_dependencies(
                     prim_instance,
-                    self.spatial_node_index,
+                    surface_spatial_node_index,
                     &frame_context.clip_scroll_tree,
                     prim_data_store,
                     &clip_store.clip_chain_nodes,
                     pictures,
                     resource_cache,
-                    frame_context.scene_properties,
                     opacity_binding_store,
                     image_instances,
                 );
@@ -1612,6 +1893,8 @@ impl PicturePrimitive {
         state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
         resource_cache: &mut ResourceCache,
+        gpu_cache: &mut GpuCache,
+        retained_tiles: &mut FastHashMap<TileDescriptor, TextureCacheHandle>,
     ) {
         
         state.pop_picture();
@@ -1704,6 +1987,8 @@ impl PicturePrimitive {
                     self.spatial_node_index,
                     frame_context,
                     resource_cache,
+                    gpu_cache,
+                    retained_tiles,
                 );
 
                 self.tile_cache = Some(tile_cache);
@@ -1849,7 +2134,7 @@ impl PicturePrimitive {
                                         frame_state.gpu_cache,
                                         None,
                                         UvRectKind::Rect,
-                                        Eviction::Eager,
+                                        Eviction::Auto,
                                     );
 
                                     let cache_item = frame_state
