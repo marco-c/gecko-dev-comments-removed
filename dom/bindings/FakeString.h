@@ -111,9 +111,9 @@ private:
   }
 
   
-  nsString::char_type* mData;
+  MOZ_INIT_OUTSIDE_CTOR nsString::char_type* mData;
   
-  nsString::size_type mLength;
+  MOZ_INIT_OUTSIDE_CTOR nsString::size_type mLength;
   nsString::DataFlags mDataFlags;
   nsString::ClassFlags mClassFlags;
 

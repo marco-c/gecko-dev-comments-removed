@@ -151,9 +151,6 @@ private:
   bool mGCOnDestruction;
   bool mProcessingScriptTag;
 
-  PRTime mModalStateTime;
-  uint32_t mModalStateDepth;
-
   
   
   nsCOMPtr<nsIScriptGlobalObject> mGlobalObjectRef;

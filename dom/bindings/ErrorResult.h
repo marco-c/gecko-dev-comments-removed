@@ -522,7 +522,10 @@ private:
     
     
     MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
-    Extra() {}
+    Extra()
+      : mMessage(nullptr)
+    {
+    }
     MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
   } mExtra;
 

@@ -482,7 +482,7 @@ public:
 
 protected:
   
-  T* ptr;
+  MOZ_INIT_OUTSIDE_CTOR T* ptr;
 #ifdef DEBUG
   bool inited;
 #endif
