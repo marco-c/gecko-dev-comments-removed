@@ -5902,6 +5902,12 @@ pref("dom.xhr.lowercase_header.enabled", true);
 
 pref("dom.clients.openwindow_favors_same_process", true);
 
+#ifdef RELEASE_OR_BETA
+pref("toolkit.aboutPerformance.showInternals", false);
+#else
+pref("toolkit.aboutPerformance.showInternals", true);
+#endif
+
 
 
 #ifdef RELEASE_OR_BETA
