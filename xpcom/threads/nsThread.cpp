@@ -441,15 +441,12 @@ nsThread::AddToThreadList()
 void
 nsThread::MaybeRemoveFromThreadList()
 {
-  
-  
-  
-  
-  
   if (isInList()) {
     OffTheBooksMutexAutoLock mal(ThreadListMutex());
-    sActiveThreads--;
-    removeFrom(ThreadList());
+    if (isInList()) {
+      sActiveThreads--;
+      removeFrom(ThreadList());
+    }
   }
 }
 
