@@ -5,6 +5,7 @@
 
 
 #include "VRLayerChild.h"
+#include "gfxPlatform.h"
 #include "GLScreenBuffer.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "SharedSurface.h"                

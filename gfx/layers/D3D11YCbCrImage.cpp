@@ -5,6 +5,8 @@
 
 
 #include "D3D11YCbCrImage.h"
+
+#include "gfx2DGlue.h"
 #include "YCbCrUtils.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
