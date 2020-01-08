@@ -180,8 +180,10 @@ var DownloadNotifications = {
 };
 
 function getCookieFromDownload(download) {
+  
+  const maxUrlLength = 1024;
   return download.target.path +
-         download.source.url +
+         download.source.url.slice(-maxUrlLength) +
          download.startTime;
 }
 
