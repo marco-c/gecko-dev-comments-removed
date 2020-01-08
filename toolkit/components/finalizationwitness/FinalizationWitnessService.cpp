@@ -102,7 +102,10 @@ ExtractFinalizationEvent(JSObject *objSelf)
 void Finalize(JSFreeOp *fop, JSObject *objSelf)
 {
   RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
-  if (event == nullptr || gShuttingDown) {
+
+  
+  
+  if (event == nullptr || gShuttingDown || recordreplay::IsRecordingOrReplaying()) {
     
     return;
   }
