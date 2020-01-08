@@ -53,8 +53,6 @@ khmer_features[] =
 
 
 
-
-
   {HB_TAG('p','r','e','s'), F_GLOBAL},
   {HB_TAG('a','b','v','s'), F_GLOBAL},
   {HB_TAG('b','l','w','s'), F_GLOBAL},
@@ -92,13 +90,9 @@ setup_syllables (const hb_ot_shape_plan_t *plan,
 		 hb_font_t *font,
 		 hb_buffer_t *buffer);
 static void
-initial_reordering (const hb_ot_shape_plan_t *plan,
-		    hb_font_t *font,
-		    hb_buffer_t *buffer);
-static void
-final_reordering (const hb_ot_shape_plan_t *plan,
-		  hb_font_t *font,
-		  hb_buffer_t *buffer);
+reorder (const hb_ot_shape_plan_t *plan,
+	 hb_font_t *font,
+	 hb_buffer_t *buffer);
 static void
 clear_syllables (const hb_ot_shape_plan_t *plan,
 		 hb_font_t *font,
@@ -111,20 +105,28 @@ collect_features_khmer (hb_ot_shape_planner_t *plan)
 
   
   map->add_gsub_pause (setup_syllables);
+  map->add_gsub_pause (reorder);
 
-  map->add_global_bool_feature (HB_TAG('l','o','c','l'));
   
 
+
+
+
+
+
+
+
+
+  map->add_global_bool_feature (HB_TAG('l','o','c','l'));
   map->add_global_bool_feature (HB_TAG('c','c','m','p'));
 
-
   unsigned int i = 0;
-  map->add_gsub_pause (initial_reordering);
   for (; i < KHMER_BASIC_FEATURES; i++) {
     map->add_feature (khmer_features[i].tag, 1, khmer_features[i].flags | F_MANUAL_ZWJ | F_MANUAL_ZWNJ);
-    map->add_gsub_pause (nullptr);
   }
-  map->add_gsub_pause (final_reordering);
+
+  map->add_gsub_pause (clear_syllables);
+
   for (; i < KHMER_NUM_FEATURES; i++) {
     map->add_feature (khmer_features[i].tag, 1, khmer_features[i].flags | F_MANUAL_ZWJ | F_MANUAL_ZWNJ);
   }
@@ -132,7 +134,6 @@ collect_features_khmer (hb_ot_shape_planner_t *plan)
   map->add_global_bool_feature (HB_TAG('c','a','l','t'));
   map->add_global_bool_feature (HB_TAG('c','l','i','g'));
 
-  map->add_gsub_pause (clear_syllables);
 }
 
 static void
@@ -264,162 +265,58 @@ setup_syllables (const hb_ot_shape_plan_t *plan HB_UNUSED,
     buffer->unsafe_to_break (start, end);
 }
 
-static int
-compare_khmer_order (const hb_glyph_info_t *pa, const hb_glyph_info_t *pb)
-{
-  int a = pa->khmer_position();
-  int b = pb->khmer_position();
-
-  return a < b ? -1 : a == b ? 0 : +1;
-}
-
 
 
 
 
 static void
-initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
-				       hb_face_t *face,
-				       hb_buffer_t *buffer,
-				       unsigned int start, unsigned int end)
+reorder_consonant_syllable (const hb_ot_shape_plan_t *plan,
+			    hb_face_t *face,
+			    hb_buffer_t *buffer,
+			    unsigned int start, unsigned int end)
 {
   const khmer_shape_plan_t *khmer_plan = (const khmer_shape_plan_t *) plan->data;
   hb_glyph_info_t *info = buffer->info;
 
   
-
-  
-  unsigned int base = start;
-  info[base].khmer_position() = POS_BASE_C;
-
-  
-  for (unsigned int i = base + 1; i < end; i++)
-    if (is_consonant_or_vowel (info[i]))
-      info[i].khmer_position() = POS_BELOW_C;
-
-  
-
-  for (unsigned int i = base + 1; i < end; i++)
-    if (info[i].khmer_category() == OT_M) {
-      for (unsigned int j = i + 1; j < end; j++)
-        if (is_consonant_or_vowel (info[j])) {
-	  info[j].khmer_position() = POS_FINAL_C;
-	  break;
-	}
-      break;
-    }
-
-  
-  {
-    khmer_position_t last_pos = POS_START;
-    for (unsigned int i = start; i < end; i++)
-    {
-      if ((FLAG_UNSAFE (info[i].khmer_category()) & (JOINER_FLAGS | FLAG (OT_N) | FLAG (OT_RS) | MEDIAL_FLAGS | FLAG (OT_Coeng))))
-      {
-	info[i].khmer_position() = last_pos;
-	if (unlikely (info[i].khmer_category() == OT_Coeng &&
-		      info[i].khmer_position() == POS_PRE_M))
-	{
-	  
-
-
-
-
-
-
-
-
-	  for (unsigned int j = i; j > start; j--)
-	    if (info[j - 1].khmer_position() != POS_PRE_M) {
-	      info[i].khmer_position() = info[j - 1].khmer_position();
-	      break;
-	    }
-	}
-      } else if (info[i].khmer_position() != POS_SMVD) {
-        last_pos = (khmer_position_t) info[i].khmer_position();
-      }
-    }
-  }
-  
-
-  {
-    unsigned int last = base;
-    for (unsigned int i = base + 1; i < end; i++)
-      if (is_consonant_or_vowel (info[i]))
-      {
-	for (unsigned int j = last + 1; j < i; j++)
-	  if (info[j].khmer_position() < POS_SMVD)
-	    info[j].khmer_position() = info[i].khmer_position();
-	last = i;
-      } else if (info[i].khmer_category() == OT_M)
-        last = i;
-  }
-
   {
     
-    unsigned int syllable = info[start].syllable();
-    for (unsigned int i = start; i < end; i++)
-      info[i].syllable() = i - start;
-
-    
-    hb_stable_sort (info + start, end - start, compare_khmer_order);
-    
-    base = end;
-    for (unsigned int i = start; i < end; i++)
-      if (info[i].khmer_position() == POS_BASE_C)
-      {
-	base = i;
-	break;
-      }
-
-    if (unlikely (end - start >= 127))
-      buffer->merge_clusters (start, end);
-    else
-      
-      for (unsigned int i = base; i < end; i++)
-	if (info[i].syllable() != 255)
-	{
-	  unsigned int max = i;
-	  unsigned int j = start + info[i].syllable();
-	  while (j != i)
-	  {
-	    max = MAX (max, j);
-	    unsigned int next = start + info[j].syllable();
-	    info[j].syllable() = 255; 
-	    j = next;
-	  }
-	  if (i != max)
-	    buffer->merge_clusters (i, max + 1);
-	}
-
-    
-    for (unsigned int i = start; i < end; i++)
-      info[i].syllable() = syllable;
-  }
-
-  
-
-  {
-    hb_mask_t mask;
-
-    
-    mask = khmer_plan->mask_array[BLWF] | khmer_plan->mask_array[ABVF] | khmer_plan->mask_array[PSTF];
-    for (unsigned int i = base + 1; i < end; i++)
+    hb_mask_t mask = khmer_plan->mask_array[BLWF] | khmer_plan->mask_array[ABVF] | khmer_plan->mask_array[PSTF];
+    for (unsigned int i = start + 1; i < end; i++)
       info[i].mask  |= mask;
   }
 
-  unsigned int pref_len = 2;
-  if (khmer_plan->mask_array[PREF] && base + pref_len < end)
+  unsigned int num_coengs = 0;
+  for (unsigned int i = start + 1; i < end; i++)
   {
     
-    for (unsigned int i = base + 1; i + pref_len - 1 < end; i++) {
-      hb_codepoint_t glyphs[2];
-      for (unsigned int j = 0; j < pref_len; j++)
-        glyphs[j] = info[i + j].codepoint;
-      if (khmer_plan->pref.would_substitute (glyphs, pref_len, face))
+
+
+
+
+
+
+
+
+
+
+
+    if (info[i].khmer_category() == OT_Coeng && num_coengs <= 2 && i + 1 < end)
+    {
+      num_coengs++;
+
+      if (info[i + 1].khmer_category() == OT_Ra)
       {
-	for (unsigned int j = 0; j < pref_len; j++)
-	  info[i++].mask |= khmer_plan->mask_array[PREF];
+	for (unsigned int j = 0; j < 2; j++)
+	  info[i + j].mask |= khmer_plan->mask_array[PREF];
+
+	
+	buffer->merge_clusters (start, i + 2);
+	hb_glyph_info_t t0 = info[i];
+	hb_glyph_info_t t1 = info[i + 1];
+	memmove (&info[start + 2], &info[start], (i - start) * sizeof (info[0]));
+	info[start] = t0;
+	info[start + 1] = t1;
 
 	
 
@@ -428,11 +325,21 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
 
 
 	if (khmer_plan->mask_array[CFAR])
-	  for (; i < end; i++)
-	    info[i].mask |= khmer_plan->mask_array[CFAR];
+	  for (unsigned int j = i + 2; j < end; j++)
+	    info[j].mask |= khmer_plan->mask_array[CFAR];
 
-	break;
+	num_coengs = 2; 
       }
+    }
+
+    
+    else if (info[i].khmer_position() == POS_PRE_M)
+    {
+      
+      buffer->merge_clusters (start, i + 1);
+      hb_glyph_info_t t = info[i];
+      memmove (&info[start + 1], &info[start], (i - start) * sizeof (info[0]));
+      info[start] = t;
     }
   }
 }
@@ -448,7 +355,7 @@ initial_reordering_syllable (const hb_ot_shape_plan_t *plan,
   {
     case broken_cluster: 
     case consonant_syllable:
-     initial_reordering_consonant_syllable (plan, face, buffer, start, end);
+     reorder_consonant_syllable (plan, face, buffer, start, end);
      break;
 
     case non_khmer_cluster:
@@ -518,263 +425,26 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
 }
 
 static void
-initial_reordering (const hb_ot_shape_plan_t *plan,
-		    hb_font_t *font,
-		    hb_buffer_t *buffer)
+reorder (const hb_ot_shape_plan_t *plan,
+	 hb_font_t *font,
+	 hb_buffer_t *buffer)
 {
   insert_dotted_circles (plan, font, buffer);
 
   foreach_syllable (buffer, start, end)
     initial_reordering_syllable (plan, font->face, buffer, start, end);
-}
-
-static void
-final_reordering_syllable (const hb_ot_shape_plan_t *plan,
-			   hb_buffer_t *buffer,
-			   unsigned int start, unsigned int end)
-{
-  const khmer_shape_plan_t *khmer_plan = (const khmer_shape_plan_t *) plan->data;
-  hb_glyph_info_t *info = buffer->info;
-
-
-  
-
-
-
-
-  if (khmer_plan->virama_glyph)
-  {
-    unsigned int virama_glyph = khmer_plan->virama_glyph;
-    for (unsigned int i = start; i < end; i++)
-      if (info[i].codepoint == virama_glyph &&
-	  _hb_glyph_info_ligated (&info[i]) &&
-	  _hb_glyph_info_multiplied (&info[i]))
-      {
-        
-	info[i].khmer_category() = OT_Coeng;
-	_hb_glyph_info_clear_ligated_and_multiplied (&info[i]);
-      }
-  }
-
-
-  
-
-
-
-
-
-
-
-  bool try_pref = !!khmer_plan->mask_array[PREF];
-
-  
-  unsigned int base;
-  for (base = start; base < end; base++)
-    if (info[base].khmer_position() >= POS_BASE_C)
-    {
-      if (try_pref && base + 1 < end)
-      {
-	for (unsigned int i = base + 1; i < end; i++)
-	  if ((info[i].mask & khmer_plan->mask_array[PREF]) != 0)
-	  {
-	    if (!(_hb_glyph_info_substituted (&info[i]) &&
-		  _hb_glyph_info_ligated_and_didnt_multiply (&info[i])))
-	    {
-	      
-
-	      base = i;
-	      while (base < end && is_coeng (info[base]))
-		base++;
-	      info[base].khmer_position() = POS_BASE_C;
-
-	      try_pref = false;
-	    }
-	    break;
-	  }
-      }
-
-      if (start < base && info[base].khmer_position() > POS_BASE_C)
-        base--;
-      break;
-    }
-  if (base == end && start < base &&
-      is_one_of (info[base - 1], FLAG (OT_ZWJ)))
-    base--;
-  if (base < end)
-    while (start < base &&
-	   is_one_of (info[base], (FLAG (OT_N) | FLAG (OT_Coeng))))
-      base--;
-
-
-  
-
-
-
-
-
-
-
-
-
-  if (start + 1 < end && start < base) 
-  {
-    
-    unsigned int new_pos = base == end ? base - 2 : base - 1;
-
-    while (new_pos > start &&
-	   !(is_one_of (info[new_pos], (FLAG (OT_M) | FLAG (OT_Coeng)))))
-      new_pos--;
-
-    
-
-
-    if (is_coeng (info[new_pos]) &&
-	info[new_pos].khmer_position() != POS_PRE_M)
-    {
-      
-      if (new_pos + 1 < end && is_joiner (info[new_pos + 1]))
-	new_pos++;
-    }
-    else
-      new_pos = start; 
-
-    if (start < new_pos && info[new_pos].khmer_position () != POS_PRE_M)
-    {
-      
-      for (unsigned int i = new_pos; i > start; i--)
-	if (info[i - 1].khmer_position () == POS_PRE_M)
-	{
-	  unsigned int old_pos = i - 1;
-	  if (old_pos < base && base <= new_pos) 
-	    base--;
-
-	  hb_glyph_info_t tmp = info[old_pos];
-	  memmove (&info[old_pos], &info[old_pos + 1], (new_pos - old_pos) * sizeof (info[0]));
-	  info[new_pos] = tmp;
-
-	  
-
-	  buffer->merge_clusters (new_pos, MIN (end, base + 1));
-
-	  new_pos--;
-	}
-    } else {
-      for (unsigned int i = start; i < base; i++)
-	if (info[i].khmer_position () == POS_PRE_M) {
-	  buffer->merge_clusters (i, MIN (end, base + 1));
-	  break;
-	}
-    }
-  }
-
-
-  
-
-
-
-
-
-  if (try_pref && base + 1 < end) 
-  {
-    for (unsigned int i = base + 1; i < end; i++)
-      if ((info[i].mask & khmer_plan->mask_array[PREF]) != 0)
-      {
-	
-
-
-
-        
-
-
-
-	if (_hb_glyph_info_ligated_and_didnt_multiply (&info[i]))
-	{
-	  
-
-
-
-
-
-
-
-	  unsigned int new_pos = base;
-	  while (new_pos > start &&
-		 !(is_one_of (info[new_pos - 1], FLAG(OT_M) | FLAG (OT_Coeng))))
-	    new_pos--;
-
-	  
-
-	  if (new_pos > start && info[new_pos - 1].khmer_category() == OT_M)
-	  {
-	    unsigned int old_pos = i;
-	    for (unsigned int j = base + 1; j < old_pos; j++)
-	      if (info[j].khmer_category() == OT_M)
-	      {
-		new_pos--;
-		break;
-	      }
-	  }
-
-	  if (new_pos > start && is_coeng (info[new_pos - 1]))
-	  {
-	    
-	    if (new_pos < end && is_joiner (info[new_pos]))
-	      new_pos++;
-	  }
-
-	  {
-	    unsigned int old_pos = i;
-
-	    buffer->merge_clusters (new_pos, old_pos + 1);
-	    hb_glyph_info_t tmp = info[old_pos];
-	    memmove (&info[new_pos + 1], &info[new_pos], (old_pos - new_pos) * sizeof (info[0]));
-	    info[new_pos] = tmp;
-
-	    if (new_pos <= base && base < old_pos)
-	      base++;
-	  }
-	}
-
-        break;
-      }
-  }
-
-
-  
-
-
-  if (hb_options ().uniscribe_bug_compatible)
-  {
-    
-
-
-
-    buffer->merge_clusters (start, end);
-  }
-}
-
-
-static void
-final_reordering (const hb_ot_shape_plan_t *plan,
-		  hb_font_t *font HB_UNUSED,
-		  hb_buffer_t *buffer)
-{
-  unsigned int count = buffer->len;
-  if (unlikely (!count)) return;
-
-  foreach_syllable (buffer, start, end)
-    final_reordering_syllable (plan, buffer, start, end);
 
   HB_BUFFER_DEALLOCATE_VAR (buffer, khmer_category);
   HB_BUFFER_DEALLOCATE_VAR (buffer, khmer_position);
 }
-
 
 static void
 clear_syllables (const hb_ot_shape_plan_t *plan HB_UNUSED,
 		 hb_font_t *font HB_UNUSED,
 		 hb_buffer_t *buffer)
 {
+  
+
   hb_glyph_info_t *info = buffer->info;
   unsigned int count = buffer->len;
   for (unsigned int i = 0; i < count; i++)

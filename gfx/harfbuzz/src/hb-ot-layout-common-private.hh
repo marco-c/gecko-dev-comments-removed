@@ -41,6 +41,15 @@
 #ifndef HB_MAX_CONTEXT_LENGTH
 #define HB_MAX_CONTEXT_LENGTH	64
 #endif
+#ifndef HB_CLOSURE_MAX_STAGES
+
+
+
+
+
+
+#define HB_CLOSURE_MAX_STAGES	32
+#endif
 
 
 namespace OT {
@@ -164,7 +173,7 @@ struct RangeRecord
   public:
   DEFINE_SIZE_STATIC (6);
 };
-DEFINE_NULL_DATA (OT, RangeRecord, "\000\001");
+DECLARE_NULL_NAMESPACE_BYTES (OT, RangeRecord);
 
 
 struct IndexArray : ArrayOf<Index>
@@ -180,6 +189,11 @@ struct IndexArray : ArrayOf<Index>
 	_indexes[i] = arr[i];
     }
     return this->len;
+  }
+
+  inline void add_indexes_to (hb_set_t* output ) const
+  {
+    output->add_array (arrayZ, len);
   }
 };
 
@@ -199,6 +213,8 @@ struct LangSys
 					   unsigned int *feature_count ,
 					   unsigned int *feature_indexes ) const
   { return featureIndex.get_indexes (start_offset, feature_count, feature_indexes); }
+  inline void add_feature_indexes_to (hb_set_t *feature_indexes) const
+  { featureIndex.add_indexes_to (feature_indexes); }
 
   inline bool has_required_feature (void) const { return reqFeatureIndex != 0xFFFFu; }
   inline unsigned int get_required_feature_index (void) const
@@ -224,8 +240,7 @@ struct LangSys
   public:
   DEFINE_SIZE_ARRAY (6, featureIndex);
 };
-DEFINE_NULL_DATA (OT, LangSys, "\0\0\xFF\xFF");
-
+DECLARE_NULL_NAMESPACE_BYTES (OT, LangSys);
 
 struct Script
 {
@@ -540,9 +555,6 @@ struct Feature
 	  c->try_set (&featureParams, new_offset) &&
 	  !featureParams.sanitize (c, this, closure ? closure->tag : HB_TAG_NONE))
 	return_trace (false);
-
-      if (c->edit_count > 1)
-        c->edit_count--; 
     }
 
     return_trace (true);
@@ -597,6 +609,14 @@ struct Lookup
   inline OffsetArrayOf<SubTableType>& get_subtables (void)
   { return CastR<OffsetArrayOf<SubTableType> > (subTable); }
 
+  inline unsigned int get_size (void) const
+  {
+    const HBUINT16 &markFilteringSet = StructAfter<const HBUINT16> (subTable);
+    if (lookupFlag & LookupFlag::UseMarkFilteringSet)
+      return (const char *) &StructAfter<const char> (markFilteringSet) - (const char *) this;
+    return (const char *) &markFilteringSet - (const char *) this;
+  }
+
   inline unsigned int get_type (void) const { return lookupType; }
 
   
@@ -639,6 +659,7 @@ struct Lookup
     if (unlikely (!subTable.serialize (c, num_subtables))) return_trace (false);
     if (lookupFlag & LookupFlag::UseMarkFilteringSet)
     {
+      if (unlikely (!c->extend (*this))) return_trace (false);
       HBUINT16 &markFilteringSet = StructAfter<HBUINT16> (subTable);
       markFilteringSet.set (lookup_props >> 16);
     }

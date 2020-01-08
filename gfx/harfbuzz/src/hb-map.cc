@@ -159,8 +159,6 @@ hb_map_allocation_successful (const hb_map_t  *map)
 
 
 
-
-
 void
 hb_map_set (hb_map_t       *map,
 	    hb_codepoint_t  key,

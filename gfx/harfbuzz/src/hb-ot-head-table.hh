@@ -141,8 +141,8 @@ struct head
 
 
   public:
-  HBINT16	indexToLocFormat;	
-  HBINT16	glyphDataFormat;	
+  HBUINT16	indexToLocFormat;	
+  HBUINT16	glyphDataFormat;	
 
   DEFINE_SIZE_STATIC (54);
 };

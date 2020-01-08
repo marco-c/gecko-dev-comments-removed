@@ -328,6 +328,9 @@ def map_to_use(data):
 		
 		if U == 0xA8B4: UISC = Consonant_Medial
 
+		
+		if U == 0x11134: UISC = Gemination_Mark
+
 		values = [k for k,v in items if v(U,UISC,UGC)]
 		assert len(values) == 1, "%s %s %s %s" % (hex(U), UISC, UGC, values)
 		USE = values[0]
@@ -355,6 +358,13 @@ def map_to_use(data):
 		if 0x1CF8 <= U <= 0x1CF9: UIPC = Top
 		
 		if U == 0x0A51: UIPC = Bottom
+
+		
+		if UBlock == 'Chakma' and is_VOWEL (U, UISC, UGC):
+			if UIPC == Top:
+				UIPC = Bottom
+			elif UIPC == Bottom:
+				UIPC = Top
 
 		assert (UIPC in [Not_Applicable, Visual_Order_Left] or
 			USE in use_positions), "%s %s %s %s %s" % (hex(U), UIPC, USE, UISC, UGC)

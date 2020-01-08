@@ -251,10 +251,10 @@ struct indic_shape_plan_t
 {
   ASSERT_POD ();
 
-  inline bool get_virama_glyph (hb_font_t *font, hb_codepoint_t *pglyph) const
+  inline bool load_virama_glyph (hb_font_t *font, hb_codepoint_t *pglyph) const
   {
-    hb_codepoint_t glyph = virama_glyph;
-    if (unlikely (virama_glyph == (hb_codepoint_t) -1))
+    hb_codepoint_t glyph = virama_glyph.get_relaxed ();
+    if (unlikely (glyph == (hb_codepoint_t) -1))
     {
       if (!config->virama || !font->get_nominal_glyph (config->virama, &glyph))
 	glyph = 0;
@@ -263,7 +263,7 @@ struct indic_shape_plan_t
 
       
 
-      virama_glyph = glyph;
+      virama_glyph.set_relaxed ((int) glyph);
     }
 
     *pglyph = glyph;
@@ -273,7 +273,7 @@ struct indic_shape_plan_t
   const indic_config_t *config;
 
   bool is_old_spec;
-  mutable hb_codepoint_t virama_glyph;
+  mutable hb_atomic_int_t virama_glyph;
 
   would_substitute_feature_t rphf;
   would_substitute_feature_t pref;
@@ -298,7 +298,7 @@ data_create_indic (const hb_ot_shape_plan_t *plan)
     }
 
   indic_plan->is_old_spec = indic_plan->config->has_old_spec && ((plan->map.chosen_script[0] & 0x000000FFu) != '2');
-  indic_plan->virama_glyph = (hb_codepoint_t) -1;
+  indic_plan->virama_glyph.set_relaxed (-1);
 
   
 
@@ -419,7 +419,7 @@ update_consonant_positions (const hb_ot_shape_plan_t *plan,
     return;
 
   hb_codepoint_t virama;
-  if (indic_plan->get_virama_glyph (font, &virama))
+  if (indic_plan->load_virama_glyph (font, &virama))
   {
     hb_face_t *face = font->face;
     unsigned int count = buffer->len;
@@ -686,10 +686,14 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
 
 
 
+
+
+
+
+
   if (indic_plan->is_old_spec)
   {
-    bool disallow_double_halants = buffer->props.script != HB_SCRIPT_MALAYALAM &&
-				   buffer->props.script != HB_SCRIPT_BENGALI;
+    bool disallow_double_halants = buffer->props.script == HB_SCRIPT_KANNADA;
     for (unsigned int i = base + 1; i < end; i++)
       if (info[i].indic_category() == OT_H)
       {
@@ -1036,9 +1040,11 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
 
 
 
-  if (indic_plan->virama_glyph)
+  
+
+  hb_codepoint_t virama_glyph = indic_plan->virama_glyph.get_relaxed ();
+  if (virama_glyph)
   {
-    unsigned int virama_glyph = indic_plan->virama_glyph;
     for (unsigned int i = start; i < end; i++)
       if (info[i].codepoint == virama_glyph &&
 	  _hb_glyph_info_ligated (&info[i]) &&

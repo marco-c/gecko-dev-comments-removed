@@ -484,8 +484,6 @@ struct ResourceForkHeader
 
 struct OpenTypeFontFile
 {
-  static const hb_tag_t tableTag	= HB_TAG ('_','_','_','_'); 
-
   enum {
     CFFTag		= HB_TAG ('O','T','T','O'), 
     TrueTypeTag	= HB_TAG ( 0 , 1 , 0 , 0 ), 
