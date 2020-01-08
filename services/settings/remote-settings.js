@@ -47,6 +47,9 @@ const PREF_SETTINGS_CLOCK_SKEW_SECONDS = "clock_skew_seconds";
 const PREF_SETTINGS_LOAD_DUMP          = "load_dump";
 
 
+const DB_NAME = "remote-settings";
+
+
 const TELEMETRY_HISTOGRAM_KEY = "settings-changes-monitoring";
 
 const INVALID_SIGNATURE = "Invalid content signature";
@@ -282,7 +285,7 @@ class RemoteSettingsClient {
       this._kinto = new Kinto({
         bucket: this.bucketName,
         adapter: Kinto.adapters.IDB,
-        adapterOptions: { dbName: "remote-settings", migrateOldData: false },
+        adapterOptions: { dbName: DB_NAME, migrateOldData: false },
       });
     }
     const options = {
