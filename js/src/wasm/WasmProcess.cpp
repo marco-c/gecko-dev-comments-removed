@@ -76,10 +76,12 @@ class ProcessCodeSegmentMap
         const void* pc;
         explicit CodeSegmentPC(const void* pc) : pc(pc) {}
         int operator()(const CodeSegment* cs) const {
-            if (cs->containsCodePC(pc))
+            if (cs->containsCodePC(pc)) {
                 return 0;
-            if (pc < cs->base())
+            }
+            if (pc < cs->base()) {
                 return -1;
+            }
             return 1;
         }
     };
@@ -142,8 +144,9 @@ class ProcessCodeSegmentMap
         MOZ_ALWAYS_FALSE(BinarySearchIf(*mutableCodeSegments_, 0, mutableCodeSegments_->length(),
                                         CodeSegmentPC(cs->base()), &index));
 
-        if (!mutableCodeSegments_->insert(mutableCodeSegments_->begin() + index, cs))
+        if (!mutableCodeSegments_->insert(mutableCodeSegments_->begin() + index, cs)) {
             return false;
+        }
 
         CodeExists = true;
 
@@ -161,8 +164,9 @@ class ProcessCodeSegmentMap
         
         
         AutoEnterOOMUnsafeRegion oom;
-        if (!mutableCodeSegments_->insert(mutableCodeSegments_->begin() + index, cs))
+        if (!mutableCodeSegments_->insert(mutableCodeSegments_->begin() + index, cs)) {
             oom.crash("when inserting a CodeSegment in the process-wide map");
+        }
 
         return true;
     }
@@ -176,8 +180,9 @@ class ProcessCodeSegmentMap
 
         mutableCodeSegments_->erase(mutableCodeSegments_->begin() + index);
 
-        if (!mutableCodeSegments_->length())
+        if (!mutableCodeSegments_->length()) {
             CodeExists = false;
+        }
 
         swapAndWait();
 
@@ -195,8 +200,9 @@ class ProcessCodeSegmentMap
         const CodeSegmentVector* readonly = readonlyCodeSegments_;
 
         size_t index;
-        if (!BinarySearchIf(*readonly, 0, readonly->length(), CodeSegmentPC(pc), &index))
+        if (!BinarySearchIf(*readonly, 0, readonly->length(), CodeSegmentPC(pc), &index)) {
             return nullptr;
+        }
 
         
         
@@ -227,8 +233,9 @@ wasm::LookupCodeSegment(const void* pc, const CodeRange** codeRange )
     
     
     
-    if (!CodeExists)
+    if (!CodeExists) {
         return nullptr;
+    }
 
     
     
@@ -240,8 +247,9 @@ wasm::LookupCodeSegment(const void* pc, const CodeRange** codeRange )
 
     
     
-    if (sShuttingDown)
+    if (sShuttingDown) {
         return nullptr;
+    }
 
     if (const CodeSegment* found = sProcessCodeSegmentMap.lookup(pc)) {
         if (codeRange) {
@@ -252,8 +260,9 @@ wasm::LookupCodeSegment(const void* pc, const CodeRange** codeRange )
         return found;
     }
 
-    if (codeRange)
+    if (codeRange) {
         *codeRange = nullptr;
+    }
 
     return nullptr;
 }
@@ -272,8 +281,9 @@ wasm::ShutDown()
     
     
     
-    if (JSRuntime::hasLiveRuntimes())
+    if (JSRuntime::hasLiveRuntimes()) {
         return;
+    }
 
     
     sShuttingDown = true;
