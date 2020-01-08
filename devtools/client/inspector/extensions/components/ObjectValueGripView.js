@@ -8,7 +8,9 @@ const { createFactory, PureComponent } = require("devtools/client/shared/vendor/
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 const Accordion = createFactory(require("devtools/client/inspector/layout/components/Accordion"));
-const reps = require("devtools/client/shared/components/reps/reps");
+
+
+const reps = require("devtools/client/shared/components/reps/reps-old");
 const Types = require("../types");
 
 const { REPS, MODE } = reps;

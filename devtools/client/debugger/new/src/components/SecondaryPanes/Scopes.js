@@ -27,6 +27,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
+const {
+  ObjectInspector
+} = _devtoolsReps.objectInspector;
+
 class Scopes extends _react.PureComponent {
   constructor(props, ...args) {
     const {
@@ -79,7 +83,7 @@ class Scopes extends _react.PureComponent {
     if (scopes && !isLoading) {
       return _react2.default.createElement("div", {
         className: "pane scopes-list"
-      }, _react2.default.createElement(_devtoolsReps.ObjectInspector, {
+      }, _react2.default.createElement(ObjectInspector, {
         roots: scopes,
         autoExpandAll: false,
         autoExpandDepth: 1,

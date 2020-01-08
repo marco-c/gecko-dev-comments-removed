@@ -16,6 +16,8 @@ var _frames = require("../../pause/frames/index");
 
 
 
+const { utils: { node: { NODE_TYPES } } } = _devtoolsReps.objectInspector;
+
 function getScopeTitle(type, scope) {
   if (type === "block" && scope.block && scope.block.displayName) {
     return scope.block.displayName;
@@ -65,7 +67,7 @@ function getScope(scope, selectedFrame, frameScopes, why, scopeIndex) {
         name: title,
         path: key,
         contents: vars,
-        type: _devtoolsReps.ObjectInspectorUtils.node.NODE_TYPES.BLOCK
+        type: NODE_TYPES.BLOCK
       };
     }
   } else if (type === "object" && scope.object) {

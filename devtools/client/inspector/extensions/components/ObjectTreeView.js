@@ -7,7 +7,8 @@
 const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
+
+const { REPS, MODE } = require("devtools/client/shared/components/reps/reps-old");
 const { Rep } = REPS;
 const TreeViewClass = require("devtools/client/shared/components/tree/TreeView");
 const TreeView = createFactory(TreeViewClass);

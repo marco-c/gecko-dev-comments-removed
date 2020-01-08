@@ -28,12 +28,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 const {
-  createNode,
-  getChildren
-} = _devtoolsReps.ObjectInspectorUtils.node;
-const {
-  loadItemProperties
-} = _devtoolsReps.ObjectInspectorUtils.loadProperties;
+  component: ObjectInspector,
+  utils: {
+    createNode,
+    getChildren,
+    loadProperties: {
+      loadItemProperties
+    }
+  }
+} = _devtoolsReps.objectInspector;
 
 class FrameworkComponent extends _react.PureComponent {
   async componentWillMount() {
@@ -83,7 +86,7 @@ class FrameworkComponent extends _react.PureComponent {
     roots = roots.filter(r => ["state", "props"].includes(r.name));
     return _react2.default.createElement("div", {
       className: "pane framework-component"
-    }, _react2.default.createElement(_devtoolsReps.ObjectInspector, {
+    }, _react2.default.createElement(ObjectInspector, {
       roots: roots,
       autoExpandAll: false,
       autoExpandDepth: 0,
