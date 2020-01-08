@@ -2404,11 +2404,6 @@ public:
   
 
 
-  static bool CSSFiltersEnabled();
-
-  
-
-
   static bool IsInterCharacterRubyEnabled();
 
   
