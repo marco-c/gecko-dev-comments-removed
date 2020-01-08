@@ -593,8 +593,34 @@ class GTestCommands(MachCommandBase):
               debugger_args):
 
         
-        self._run_make(directory="testing/gtest", target='gtest',
-                       print_directory=False, ensure_exit_code=True)
+        try:
+            config = self.config_environment
+        except Exception:
+            print("Please run |./mach build| before |./mach gtest|.")
+            return 1
+
+        active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
+        if 'Tup' in active_backend:
+            gtest_build_path = mozpath.join(self.topobjdir, '<gtest>')
+        else:
+            
+            
+            gtest_build_path = mozpath.relpath(mozpath.join(self.topobjdir,
+                                                            'toolkit', 'library',
+                                                            'gtest', 'rust'),
+                                               self.topsrcdir)
+
+        os.environ[b'LINK_GTEST_DURING_COMPILE'] = b'1'
+        res = self._mach_context.commands.dispatch('build', self._mach_context,
+                                                   what=[gtest_build_path])
+        del os.environ[b'LINK_GTEST_DURING_COMPILE']
+        if res:
+            print("Could not build xul-gtest")
+            return res
+
+        if self.substs.get('MOZ_WIDGET_TOOLKIT') == 'cocoa':
+            self._run_make(directory='browser/app', target='repackage',
+                           ensure_exit_code=True)
 
         app_path = self.get_binary_path('app')
         args = [app_path, '-unittest', '--gtest_death_test_style=threadsafe'];
