@@ -18,6 +18,7 @@
 #include "nsObjCExceptions.h"
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/StaticPtr.h"
 
 
 
@@ -38,7 +39,13 @@ class TimeStamp;
 namespace gfx {
 class SourceSurface;
 } 
+namespace dom {
+class Promise;
 } 
+} 
+
+using mozilla::StaticAutoPtr;
+using mozilla::StaticMutex;
 
 
 class nsAutoRetainCocoaObject {
@@ -102,11 +109,18 @@ struct KeyBindingsCommand
 
 @end 
 
+#if !defined(MAC_OS_X_VERSION_10_14) || \
+  MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_14
+typedef NSString* AVMediaType;
+#endif
+
 class nsCocoaUtils
 {
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
   typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+  typedef mozilla::dom::Promise Promise;
+  typedef StaticAutoPtr<nsTArray<RefPtr<Promise>>> PromiseArray;
 
 public:
 
@@ -396,6 +410,84 @@ public:
 
 
   static mozilla::TimeStamp GetEventTimeStamp(NSTimeInterval aEventTime);
+
+  
+
+
+
+  static nsresult GetVideoCapturePermissionState(uint16_t& aPermissionState);
+
+  
+
+
+
+  static nsresult GetAudioCapturePermissionState(uint16_t& aPermissionState);
+
+  
+
+
+
+
+  static nsresult RequestVideoCapturePermission(RefPtr<Promise>& aPromise);
+
+  
+
+
+
+
+  static nsresult RequestAudioCapturePermission(RefPtr<Promise>& aPromise);
+
+private:
+  
+
+
+
+
+  static void (^AudioCompletionHandler)(BOOL);
+  static void (^VideoCompletionHandler)(BOOL);
+
+  
+
+
+
+  static void ResolveAudioCapturePromises(bool aGranted);
+  static void ResolveVideoCapturePromises(bool aGranted);
+
+  
+
+
+
+
+
+
+
+
+
+  static nsresult RequestCapturePermission(NSString* aType,
+                                           RefPtr<Promise>& aPromise,
+                                           PromiseArray& aPromiseList,
+                                           void (^aHandler)(BOOL granted));
+  
+
+
+
+  static void ResolveMediaCapturePromises(bool aGranted,
+                                          PromiseArray& aPromiseList);
+
+  
+
+
+  static PromiseArray sVideoCapturePromises;
+
+  
+
+
+  static PromiseArray sAudioCapturePromises;
+
+  
+
+
+  static StaticMutex sMediaCaptureMutex;
 };
 
 #endif 

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef nsOSPermissionRequest_h__
+#define nsOSPermissionRequest_h__
+
+#include "nsOSPermissionRequestBase.h"
+
+
+
+
+
+class nsOSPermissionRequest : public nsOSPermissionRequestBase
+{
+};
+
+#endif 
