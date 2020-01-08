@@ -268,14 +268,14 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
 
   nsCOMPtr<nsILoadInfo> loadInfo = oldChannel->GetLoadInfo();
 
-  nsCOMPtr<nsICSPEventListener> cspEventListener;
-  rv = loadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   if (!loadInfo) {
     return NS_OK;
   }
+
+  nsCOMPtr<nsICSPEventListener> cspEventListener;
+  rv = loadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
