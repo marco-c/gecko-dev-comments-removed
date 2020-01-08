@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sharedLibFunc() {
+  
+
+
+
+  return TEST_DEFINE;
+}

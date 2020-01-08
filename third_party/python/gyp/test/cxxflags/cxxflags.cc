@@ -1,0 +1,15 @@
+
+
+
+
+#include <stdio.h>
+
+int main(void)
+{
+#ifdef ABC
+  printf("With define\n");
+#else
+  printf("No define\n");
+#endif
+  return 0;
+}

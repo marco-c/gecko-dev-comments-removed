@@ -1,0 +1,12 @@
+
+
+
+
+__declspec(dllexport)
+void AnExportedFunction() {
+    
+}
+
+int main() {
+  return 0;
+}

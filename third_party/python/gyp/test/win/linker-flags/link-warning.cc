@@ -1,0 +1,10 @@
+
+
+
+
+
+#pragma comment(linker, "/merge:.data=.text")
+
+int main() {
+  return 0;
+}

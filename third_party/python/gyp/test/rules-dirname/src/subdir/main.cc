@@ -1,0 +1,14 @@
+
+
+
+namespace gen {
+  extern void nodir();
+  extern void c();
+  extern void baz();
+}
+
+int main() {
+  gen::nodir();
+  gen::c();
+  gen::baz();
+}

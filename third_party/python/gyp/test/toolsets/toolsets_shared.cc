@@ -1,0 +1,11 @@
+
+
+
+
+const char *GetToolsetShared() {
+#ifdef TARGET
+  return "Target";
+#else
+  return "Host";
+#endif
+}

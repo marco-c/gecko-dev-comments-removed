@@ -1,0 +1,11 @@
+
+
+
+
+#include <stdio.h>
+
+int main(void)
+{
+  printf(TEST_FORMAT, TEST_ARGS);
+  return 0;
+}

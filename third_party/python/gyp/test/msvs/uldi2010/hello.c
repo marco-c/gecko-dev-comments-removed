@@ -1,0 +1,13 @@
+
+
+
+
+#include <stdio.h>
+
+extern int hello2();
+
+int main(void) {
+  printf("Hello, world!\n");
+  hello2();
+  return 0;
+}

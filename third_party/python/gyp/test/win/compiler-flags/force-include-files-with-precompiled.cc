@@ -1,0 +1,10 @@
+
+
+
+
+#include <stdio.h>
+
+int main() {
+  std::string s;
+  return 0;
+}
