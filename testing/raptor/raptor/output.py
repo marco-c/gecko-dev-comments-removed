@@ -91,6 +91,8 @@ class Output(object):
                     subtests, vals = self.parseSpeedometerOutput(test)
                 elif 'motionmark' in test.measurements:
                     subtests, vals = self.parseMotionmarkOutput(test)
+                elif 'webaudio' in test.measurements:
+                    subtests, vals = self.parseWebaudioOutput(test)
                 suite['subtests'] = subtests
             else:
                 LOG.error("output.summarize received unsupported test results type")
@@ -143,6 +145,54 @@ class Output(object):
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
+        return subtests, vals
+
+    def parseWebaudioOutput(self, test):
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        _subtests = {}
+        data = test.measurements['webaudio']
+        for page_cycle in data:
+            data = json.loads(page_cycle[0])
+            for item in data:
+                
+                sub = item['name']
+                replicates = [item['duration']]
+                if sub not in _subtests.keys():
+                    
+                    _subtests[sub] = {'unit': test.unit,
+                                      'alertThreshold': float(test.alert_threshold),
+                                      'lowerIsBetter': test.lower_is_better,
+                                      'name': sub,
+                                      'replicates': []}
+                _subtests[sub]['replicates'].extend([round(x, 3) for x in replicates])
+
+        vals = []
+        subtests = []
+        names = _subtests.keys()
+        names.sort(reverse=True)
+        for name in names:
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
+            subtests.append(_subtests[name])
+            vals.append([_subtests[name]['value'], name])
+
+        print subtests
         return subtests, vals
 
     def parseMotionmarkOutput(self, test):
@@ -267,6 +317,14 @@ class Output(object):
         return filter.mean(results)
 
     @classmethod
+    def webaudio_score(cls, val_list):
+        """
+        webaudio_score: self reported as 'Geometric Mean'
+        """
+        results = [i for i, j in val_list if j == 'Geometric Mean']
+        return filter.mean(results)
+
+    @classmethod
     def stylebench_score(cls, val_list):
         """
         stylebench_score: https://bug-172968-attachments.webkit.org/attachment.cgi?id=319888
@@ -294,6 +352,8 @@ class Output(object):
             return self.speedometer_score(vals)
         elif testname.startswith('raptor-stylebench'):
             return self.stylebench_score(vals)
+        elif testname.startswith('raptor-webaudio'):
+            return self.webaudio_score(vals)
         elif len(vals) > 1:
             return filter.geometric_mean([i for i, j in vals])
         else:
