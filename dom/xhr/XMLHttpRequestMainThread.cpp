@@ -2884,6 +2884,12 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
   }
 
   
+  if (IsBlobURI(mRequestURL) && !mRequestMethod.EqualsLiteral("GET")) {
+    mFlagSend = true; 
+    return MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
+  }
+
+  
   
   
 
