@@ -146,8 +146,6 @@ struct RequestInfo
 };
 typedef InfallibleVector<RequestInfo, 4, UntrackedAllocPolicy> UntrackedRequestVector;
 
-typedef InfallibleVector<uint32_t> BreakpointVector;
-
 
 class PausedPhase final : public NavigationPhase
 {
@@ -177,7 +175,6 @@ class PausedPhase final : public NavigationPhase
 
 public:
   void Enter(const ExecutionPoint& aPoint,
-             const BreakpointVector& aBreakpoints = BreakpointVector(),
              bool aRewind = false, bool aRecordingEndpoint = false);
 
   void ToString(nsAutoCString& aStr) override {
@@ -322,13 +319,6 @@ class NavigationState
 public:
   
   InfallibleVector<BreakpointPosition, 4, UntrackedAllocPolicy> mBreakpoints;
-
-  BreakpointPosition& GetBreakpoint(size_t id) {
-    while (id >= mBreakpoints.length()) {
-      mBreakpoints.emplaceBack();
-    }
-    return mBreakpoints[id];
-  }
 
   CheckpointId LastCheckpoint() {
     return mLastCheckpoint;
@@ -491,18 +481,6 @@ public:
 
 static NavigationState* gNavigation;
 
-static void
-GetAllBreakpointHits(const ExecutionPoint& aPoint, BreakpointVector& aHitBreakpoints)
-{
-  MOZ_RELEASE_ASSERT(aPoint.HasPosition());
-  for (size_t id = 0; id < gNavigation->mBreakpoints.length(); id++) {
-    const BreakpointPosition& breakpoint = gNavigation->mBreakpoints[id];
-    if (breakpoint.IsValid() && breakpoint.Subsumes(aPoint.mPosition)) {
-      aHitBreakpoints.append(id);
-    }
-  }
-}
-
 
 
 
@@ -514,8 +492,7 @@ ThisProcessCanRewind()
 }
 
 void
-PausedPhase::Enter(const ExecutionPoint& aPoint, const BreakpointVector& aBreakpoints,
-                   bool aRewind, bool aRecordingEndpoint)
+PausedPhase::Enter(const ExecutionPoint& aPoint, bool aRewind, bool aRecordingEndpoint)
 {
   mPoint = aPoint;
   mRecordingEndpoint = aRecordingEndpoint;
@@ -527,9 +504,6 @@ PausedPhase::Enter(const ExecutionPoint& aPoint, const BreakpointVector& aBreakp
 
   gNavigation->SetPhase(this);
 
-  
-  MOZ_RELEASE_ASSERT(aPoint.HasPosition() || aBreakpoints.empty());
-
   if (aRewind) {
     MOZ_RELEASE_ASSERT(!aPoint.HasPosition());
     RestoreCheckpointAndResume(CheckpointId(aPoint.mCheckpoint));
@@ -537,7 +511,7 @@ PausedPhase::Enter(const ExecutionPoint& aPoint, const BreakpointVector& aBreakp
   }
 
   if (aPoint.HasPosition()) {
-    child::HitBreakpoint(aRecordingEndpoint, aBreakpoints.begin(), aBreakpoints.length());
+    child::HitBreakpoint(aRecordingEndpoint);
   } else {
     child::HitCheckpoint(aPoint.mCheckpoint, aRecordingEndpoint);
   }
@@ -613,7 +587,7 @@ PausedPhase::RestoreCheckpoint(size_t aCheckpoint)
 {
   ExecutionPoint target = gNavigation->CheckpointExecutionPoint(aCheckpoint);
   bool rewind = target != mPoint;
-  Enter(target, BreakpointVector(), rewind,  false);
+  Enter(target, rewind,  false);
 }
 
 void
@@ -808,9 +782,7 @@ ForwardPhase::Enter(const ExecutionPoint& aPoint)
 
   
   for (const BreakpointPosition& breakpoint : gNavigation->mBreakpoints) {
-    if (breakpoint.IsValid()) {
-      js::EnsurePositionHandler(breakpoint);
-    }
+    js::EnsurePositionHandler(breakpoint);
   }
 
   ResumeExecution();
@@ -827,11 +799,15 @@ ForwardPhase::AfterCheckpoint(const CheckpointId& aCheckpoint)
 void
 ForwardPhase::PositionHit(const ExecutionPoint& aPoint)
 {
-  BreakpointVector hitBreakpoints;
-  GetAllBreakpointHits(aPoint, hitBreakpoints);
+  bool hitBreakpoint = false;
+  for (const BreakpointPosition& breakpoint : gNavigation->mBreakpoints) {
+    if (breakpoint.Subsumes(aPoint.mPosition)) {
+      hitBreakpoint = true;
+    }
+  }
 
-  if (!hitBreakpoints.empty()) {
-    gNavigation->mPausedPhase.Enter(aPoint, hitBreakpoints);
+  if (hitBreakpoint) {
+    gNavigation->mPausedPhase.Enter(aPoint);
   }
 }
 
@@ -841,11 +817,7 @@ ForwardPhase::HitRecordingEndpoint(const ExecutionPoint& aPoint)
   nsAutoCString str;
   ExecutionPointToString(aPoint, str);
 
-  
-  
-  
-  gNavigation->mPausedPhase.Enter(aPoint, BreakpointVector(),
-                                   false,  true);
+  gNavigation->mPausedPhase.Enter(aPoint,  false,  true);
 }
 
 
@@ -926,9 +898,7 @@ ReachBreakpointPhase::PositionHit(const ExecutionPoint& aPoint)
   }
 
   if (mPoint == aPoint) {
-    BreakpointVector hitBreakpoints;
-    GetAllBreakpointHits(aPoint, hitBreakpoints);
-    gNavigation->mPausedPhase.Enter(aPoint, hitBreakpoints);
+    gNavigation->mPausedPhase.Enter(aPoint);
   }
 }
 
@@ -1032,9 +1002,6 @@ FindLastHitPhase::OnRegionEnd()
   
   Maybe<TrackedPosition> lastBreakpoint;
   for (const BreakpointPosition& breakpoint : gNavigation->mBreakpoints) {
-    if (!breakpoint.IsValid()) {
-      continue;
-    }
     const TrackedPosition& tracked = FindTrackedPosition(breakpoint);
     if (tracked.mLastHit.HasPosition() &&
         (lastBreakpoint.isNothing() ||
@@ -1064,7 +1031,7 @@ FindLastHitPhase::OnRegionEnd()
 
     
     gNavigation->mPausedPhase.Enter(gNavigation->CheckpointExecutionPoint(mStart.mNormal),
-                                    BreakpointVector(),  true);
+                                     true);
     Unreachable();
   }
 
@@ -1149,9 +1116,17 @@ DebuggerRequest(js::CharBuffer* aRequestBuffer)
 }
 
 void
-SetBreakpoint(size_t aId, const BreakpointPosition& aPosition)
+AddBreakpoint(const BreakpointPosition& aPosition)
 {
-  gNavigation->GetBreakpoint(aId) = aPosition;
+  gNavigation->mBreakpoints.append(aPosition);
+}
+
+void
+ClearBreakpoints()
+{
+  if (gNavigation) {
+    gNavigation->mBreakpoints.clear();
+  }
 }
 
 void

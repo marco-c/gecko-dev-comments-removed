@@ -110,62 +110,14 @@ ChildProcessInfo::IsPausedAtRecordingEndpoint()
 }
 
 void
-ChildProcessInfo::GetInstalledBreakpoints(Vector<SetBreakpointMessage*>& aBreakpoints)
+ChildProcessInfo::GetInstalledBreakpoints(InfallibleVector<AddBreakpointMessage*>& aBreakpoints)
 {
+  MOZ_RELEASE_ASSERT(aBreakpoints.empty());
   for (Message* msg : mMessages) {
-    if (msg->mType == MessageType::SetBreakpoint) {
-      SetBreakpointMessage* nmsg = static_cast<SetBreakpointMessage*>(msg);
-      for (SetBreakpointMessage*& existing : aBreakpoints) {
-        if (existing->mId == nmsg->mId) {
-          aBreakpoints.erase(&existing);
-          break;
-        }
-      }
-      if (nmsg->mPosition.IsValid()) {
-        if (!aBreakpoints.append(nmsg)) {
-          MOZ_CRASH("OOM");
-        }
-      }
-    }
-  }
-}
-
-bool
-ChildProcessInfo::IsPausedAtMatchingBreakpoint(const BreakpointFilter& aFilter)
-{
-  if (!IsPaused() || mPausedMessage->mType != MessageType::HitBreakpoint) {
-    return false;
-  }
-
-  Vector<SetBreakpointMessage*> installed;
-  GetInstalledBreakpoints(installed);
-
-  HitBreakpointMessage* npaused = static_cast<HitBreakpointMessage*>(mPausedMessage);
-  for (size_t i = 0; i < npaused->NumBreakpoints(); i++) {
-    uint32_t breakpointId = npaused->Breakpoints()[i];
-
-    
-    
-    for (SetBreakpointMessage* msg : installed) {
-      if (msg->mId == breakpointId && aFilter(msg->mPosition.mKind)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-void
-ChildProcessInfo::GetMatchingInstalledBreakpoints(const BreakpointFilter& aFilter,
-                                                  Vector<uint32_t>& aBreakpointIds)
-{
-  Vector<SetBreakpointMessage*> installed;
-  GetInstalledBreakpoints(installed);
-
-  for (SetBreakpointMessage* msg : installed) {
-    if (aFilter(msg->mPosition.mKind) && !aBreakpointIds.append(msg->mId)) {
-      MOZ_CRASH("OOM");
+    if (msg->mType == MessageType::AddBreakpoint) {
+      aBreakpoints.append(static_cast<AddBreakpointMessage*>(msg));
+    } else if (msg->mType == MessageType::ClearBreakpoints) {
+      aBreakpoints.clear();
     }
   }
 }
@@ -243,21 +195,15 @@ ChildProcessInfo::OnIncomingMessage(size_t aChannelId, const Message& aMsg)
     
     InfallibleVector<Message*> newMessages;
     for (Message* msg : mMessages) {
-      if (msg->mType == MessageType::SetBreakpoint) {
-        
-        bool found = false;
-        for (Message*& older : newMessages) {
-          if (static_cast<SetBreakpointMessage*>(msg)->mId ==
-              static_cast<SetBreakpointMessage*>(older)->mId) {
-            free(older);
-            older = msg;
-            found = true;
-          }
-        }
-        if (!found) {
-          newMessages.emplaceBack(msg);
-        }
+      if (msg->mType == MessageType::AddBreakpoint) {
+        newMessages.append(msg);
       } else {
+        if (msg->mType == MessageType::ClearBreakpoints) {
+          for (Message* existing : newMessages) {
+            free(existing);
+          }
+          newMessages.clear();
+        }
         free(msg);
       }
     }
@@ -300,7 +246,8 @@ ChildProcessInfo::SendMessage(const Message& aMsg)
   case MessageType::RestoreCheckpoint:
   case MessageType::RunToPoint:
   case MessageType::DebuggerRequest:
-  case MessageType::SetBreakpoint:
+  case MessageType::AddBreakpoint:
+  case MessageType::ClearBreakpoints:
     mMessages.emplaceBack(aMsg.Clone());
     break;
   default:
@@ -338,13 +285,10 @@ ChildProcessInfo::Recover(bool aPaused, Message* aPausedMessage, size_t aLastChe
 
   
   for (Message* msg : mMessages) {
-    if (msg->mType == MessageType::SetBreakpoint) {
-      SetBreakpointMessage* nmsg = static_cast<SetBreakpointMessage*>(msg);
-      SendMessageRaw(SetBreakpointMessage(nmsg->mId, js::BreakpointPosition()));
-    }
     free(msg);
   }
   mMessages.clear();
+  SendMessageRaw(ClearBreakpointsMessage());
 
   mPaused = aPaused;
   mPausedMessage = aPausedMessage;
@@ -452,7 +396,8 @@ ChildProcessInfo::SendNextRecoveryMessage()
 
     
     
-  } while (msg->mType == MessageType::SetBreakpoint);
+  } while (msg->mType == MessageType::AddBreakpoint ||
+           msg->mType == MessageType::ClearBreakpoints);
 
   
   

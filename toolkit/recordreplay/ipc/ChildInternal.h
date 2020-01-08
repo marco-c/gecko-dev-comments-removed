@@ -44,7 +44,8 @@ void AlwaysSaveTemporaryCheckpoints();
 
 
 void DebuggerRequest(js::CharBuffer* aBuffer);
-void SetBreakpoint(size_t aId, const js::BreakpointPosition& aPosition);
+void AddBreakpoint(const js::BreakpointPosition& aPosition);
+void ClearBreakpoints();
 void Resume(bool aForward);
 void RestoreCheckpoint(size_t aId);
 void RunToPoint(const js::ExecutionPoint& aPoint);
@@ -86,7 +87,7 @@ namespace child {
 
 void RespondToRequest(const js::CharBuffer& aBuffer);
 void HitCheckpoint(size_t aId, bool aRecordingEndpoint);
-void HitBreakpoint(bool aRecordingEndpoint, const uint32_t* aBreakpoints, size_t aNumBreakpoints);
+void HitBreakpoint(bool aRecordingEndpoint);
 
 
 

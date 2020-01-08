@@ -194,9 +194,6 @@ struct ExecutionPoint
 typedef InfallibleVector<char16_t> CharBuffer;
 
 
-bool HitBreakpoint(JSContext* aCx, size_t id);
-
-
 
 void SetupDevtoolsSandbox();
 
