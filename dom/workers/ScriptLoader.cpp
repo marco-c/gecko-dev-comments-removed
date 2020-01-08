@@ -222,7 +222,7 @@ ChannelFromScriptURL(nsIPrincipal* principal,
                        nullptr, 
                        aLoadFlags,
                        ios);
-    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SECURITY_ERR);
   } else {
     
     
@@ -262,7 +262,7 @@ ChannelFromScriptURL(nsIPrincipal* principal,
                          ios);
     }
 
-    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SECURITY_ERR);
 
     if (cspEventListener) {
       nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
