@@ -1491,31 +1491,6 @@ var PlacesUtils = {
 
 
 
-  setCharsetForURI: function PU_setCharsetForURI(aURI, aCharset) {
-    return new Promise(resolve => {
-      
-      
-      Services.tm.dispatchToMainThread(function() {
-        if (aCharset && aCharset.length > 0) {
-          PlacesUtils.annotations.setPageAnnotation(
-            aURI, PlacesUtils.CHARSET_ANNO, aCharset, 0,
-            Ci.nsIAnnotationService.EXPIRE_NEVER);
-        } else {
-          PlacesUtils.annotations.removePageAnnotation(
-            aURI, PlacesUtils.CHARSET_ANNO);
-        }
-        resolve();
-      });
-    });
-  },
-
-  
-
-
-
-
-
-
 
   promiseFaviconData(aPageUrl) {
     return new Promise((resolve, reject) => {

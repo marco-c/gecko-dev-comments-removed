@@ -212,7 +212,10 @@ add_task(async function() {
                        annotations: [{ name: "TestAnnoA", value: "TestVal2"}]});
   let urlWithCharsetAndFavicon = uri("http://charset.and.favicon");
   await new_bookmark({ parentGuid: folderGuid, url: urlWithCharsetAndFavicon });
-  await PlacesUtils.setCharsetForURI(urlWithCharsetAndFavicon, "UTF-8");
+  await PlacesUtils.history.update({
+    url: urlWithCharsetAndFavicon,
+    annotations: new Map([[PlacesUtils.CHARSET_ANNO, "UTF-16"]]),
+  });
   await setFaviconForPage(urlWithCharsetAndFavicon, SMALLPNG_DATA_URI);
   
   await test_promiseBookmarksTreeAgainstResult();

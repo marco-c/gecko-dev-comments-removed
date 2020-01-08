@@ -468,6 +468,32 @@ var PlacesUIUtils = {
 
 
 
+  async setCharsetForPage(url, charset, window) {
+    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+      return;
+    }
+
+    
+    
+    if (charset.toLowerCase() == "utf-8") {
+      charset = null;
+    }
+
+    await PlacesUtils.history.update({
+      url,
+      annotations: new Map([[PlacesUtils.CHARSET_ANNO, charset]])
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
 
   checkURLSecurity: function PUIU_checkURLSecurity(aURINode, aWindow) {
     if (PlacesUtils.nodeIsBookmark(aURINode))
