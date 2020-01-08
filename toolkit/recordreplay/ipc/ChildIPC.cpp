@@ -86,9 +86,17 @@ ChannelMessageHandler(Message* aMsg)
     break;
   }
   case MessageType::Terminate: {
-    PrintSpew("Terminate message received, exiting...\n");
-    MOZ_RELEASE_ASSERT(IsRecording());
-    _exit(0);
+    
+    
+    
+    
+    
+    if (IsRecording()) {
+      PrintSpew("Terminate message received, exiting...\n");
+      _exit(0);
+    } else {
+      MOZ_CRASH("Hanged replaying process");
+    }
   }
   case MessageType::SetIsActive: {
     const SetIsActiveMessage& nmsg = (const SetIsActiveMessage&) *aMsg;

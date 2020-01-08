@@ -643,6 +643,7 @@ ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  bool sentTerminateMessage = false;
   while (!aCallback()) {
     MonitorAutoLock lock(*gMonitor);
     if (!MaybeProcessPendingMessage(this)) {
@@ -653,7 +654,19 @@ ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback)
         TimeStamp deadline = mLastMessageTime + TimeDuration::FromSeconds(HangSeconds);
         if (TimeStamp::Now() >= deadline) {
           MonitorAutoUnlock unlock(*gMonitor);
-          AttemptRestart("Child process non-responsive");
+          if (!sentTerminateMessage) {
+            
+            
+            
+            CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplayHang,
+                                               true);
+            SendMessage(TerminateMessage());
+            sentTerminateMessage = true;
+          } else {
+            
+            
+            AttemptRestart("Child process non-responsive");
+          }
         }
         gMonitor->WaitUntil(deadline);
       }
