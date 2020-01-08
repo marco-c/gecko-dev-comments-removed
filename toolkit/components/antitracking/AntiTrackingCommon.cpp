@@ -1386,16 +1386,14 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
   
   
   
-  nsresult rv = NS_ERROR_FAILURE;
-  nsCOMPtr<nsIURL> url = do_QueryInterface(aTopWinURI, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;  
-  }
-
   nsAutoCString escaped(NS_LITERAL_CSTRING("https://"));
   nsAutoCString temp;
-  rv = url->GetHostPort(temp);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = aTopWinURI ? aTopWinURI->GetHostPort(temp) : NS_ERROR_FAILURE;
+  
+  
+  if (NS_FAILED(rv) || temp.IsEmpty()) {
+    return rv;  
+  }
   escaped.Append(temp);
 
   nsCOMPtr<nsIPermissionManager> permMgr = services::GetPermissionManager();
