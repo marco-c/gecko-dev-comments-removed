@@ -76,8 +76,7 @@ public:
   
   static void LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                     bool aPrivateBrowsing,
-                                    const nsAString& aMessage,
-                                    const nsACString& aCategory);
+                                    const nsAString& aMessage);
 private:
   
   friend class mozilla::net::HttpChannelParent;

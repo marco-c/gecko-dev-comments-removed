@@ -129,7 +129,7 @@ CSP_LogMessage(const nsAString& aMessage,
                uint32_t aLineNumber,
                uint32_t aColumnNumber,
                uint32_t aFlags,
-               const nsACString& aCategory,
+               const char *aCategory,
                uint64_t aInnerWindowID,
                bool aFromPrivateWindow)
 {
@@ -158,25 +158,20 @@ CSP_LogMessage(const nsAString& aMessage,
     cspMsg.AppendLiteral(u".");
   }
 
-  
-  
-  
-  
-  nsCString category("CSP_");
-  category.Append(aCategory);
-
   nsresult rv;
   if (aInnerWindowID > 0) {
+    nsCString catStr;
+    catStr.AssignASCII(aCategory);
     rv = error->InitWithWindowID(cspMsg, aSourceName,
                                  aSourceLine, aLineNumber,
                                  aColumnNumber, aFlags,
-                                 category, aInnerWindowID);
+                                 catStr, aInnerWindowID);
   }
   else {
     rv = error->Init(cspMsg, aSourceName,
                      aSourceLine, aLineNumber,
                      aColumnNumber, aFlags,
-                     category.get(), aFromPrivateWindow);
+                     aCategory, aFromPrivateWindow);
   }
   if (NS_FAILED(rv)) {
     return;
@@ -196,7 +191,7 @@ CSP_LogLocalizedStr(const char* aName,
                     uint32_t aLineNumber,
                     uint32_t aColumnNumber,
                     uint32_t aFlags,
-                    const nsACString& aCategory,
+                    const char* aCategory,
                     uint64_t aInnerWindowID,
                     bool aFromPrivateWindow)
 {
@@ -768,11 +763,6 @@ nsCSPHostSrc::visit(nsCSPSrcVisitor* aVisitor) const
 void
 nsCSPHostSrc::toString(nsAString& outStr) const
 {
-  if (mGeneratedFromSelfKeyword) {
-    outStr.AppendASCII("'self'");
-    return;
-  }
-
   
   if (mHost.EqualsASCII("*") &&
       mScheme.IsEmpty() &&
