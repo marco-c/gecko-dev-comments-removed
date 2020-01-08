@@ -58,6 +58,8 @@ class SynchronizedEventQueue : public ThreadTargetSink {
                                                  EventPriority* aPriority) = 0;
   virtual bool HasPendingEvent() = 0;
 
+  virtual bool HasPendingHighPriorityEvents() = 0;
+
   
   
   

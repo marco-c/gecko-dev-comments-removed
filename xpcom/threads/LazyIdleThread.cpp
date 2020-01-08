@@ -478,6 +478,14 @@ LazyIdleThread::HasPendingEvents(bool* aHasPendingEvents) {
 }
 
 NS_IMETHODIMP
+LazyIdleThread::HasPendingHighPriorityEvents(bool* aHasPendingEvents) {
+  
+  
+  MOZ_ASSERT_UNREACHABLE("Shouldn't ever call this!");
+  return NS_ERROR_UNEXPECTED;
+}
+
+NS_IMETHODIMP
 LazyIdleThread::IdleDispatch(already_AddRefed<nsIRunnable> aEvent) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }

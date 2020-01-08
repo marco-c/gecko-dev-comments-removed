@@ -64,6 +64,9 @@ class AbstractEventQueue {
   
   virtual bool HasReadyEvent(const MutexAutoLock& aProofOfLock) = 0;
 
+  virtual bool HasPendingHighPriorityEvents(
+      const MutexAutoLock& aProofOfLock) = 0;
+
   
   virtual size_t Count(const MutexAutoLock& aProofOfLock) const = 0;
 
