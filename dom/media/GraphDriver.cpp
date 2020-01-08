@@ -850,13 +850,12 @@ AudioCallbackDriver::AddMixerCallback()
 void
 AudioCallbackDriver::WaitForNextIteration()
 {
+  
 }
 
 void
 AudioCallbackDriver::WakeUp()
 {
-  mGraphImpl->GetMonitor().AssertCurrentThreadOwns();
-  mGraphImpl->GetMonitor().Notify();
 }
 
 void
