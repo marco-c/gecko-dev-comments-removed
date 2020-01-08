@@ -8,17 +8,17 @@
 
 use crate::hash::map::Entry;
 use crate::properties::{CSSWideKeyword, CustomDeclarationValue};
-use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
+use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet, PrecomputedHasher};
 use crate::Atom;
 use cssparser::{Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType};
-use precomputed_hash::PrecomputedHash;
+use indexmap::IndexMap;
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
 use smallvec::SmallVec;
-use std::borrow::{Borrow, Cow};
+use std::borrow::Cow;
 use std::cmp;
 use std::fmt::{self, Write};
-use std::hash::Hash;
+use std::hash::BuildHasherDefault;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
@@ -131,7 +131,8 @@ impl ToCss for SpecifiedValue {
 
 
 
-pub type CustomPropertiesMap = OrderedMap<Name, Arc<VariableValue>>;
+pub type CustomPropertiesMap =
+    IndexMap<Name, Arc<VariableValue>, BuildHasherDefault<PrecomputedHasher>>;
 
 
 
@@ -139,130 +140,6 @@ pub type SpecifiedValue = VariableValue;
 
 
 pub type ComputedValue = VariableValue;
-
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct OrderedMap<K, V>
-where
-    K: PrecomputedHash + Hash + Eq + Clone,
-{
-    
-    index: Vec<K>,
-    
-    values: PrecomputedHashMap<K, V>,
-}
-
-impl<K, V> OrderedMap<K, V>
-where
-    K: Eq + PrecomputedHash + Hash + Clone,
-{
-    
-    pub fn new() -> Self {
-        OrderedMap {
-            index: Vec::new(),
-            values: PrecomputedHashMap::default(),
-        }
-    }
-
-    
-    
-    
-    
-    #[allow(unused_mut)]
-    pub fn insert(&mut self, key: K, value: V) {
-        let OrderedMap {
-            ref mut index,
-            ref mut values,
-        } = *self;
-        match values.entry(key) {
-            Entry::Vacant(mut entry) => {
-                index.push(entry.key().clone());
-                entry.insert(value);
-            },
-            Entry::Occupied(mut entry) => {
-                entry.insert(value);
-            },
-        }
-    }
-
-    
-    pub fn get(&self, key: &K) -> Option<&V> {
-        let value = self.values.get(key);
-        debug_assert_eq!(value.is_some(), self.index.contains(key));
-        value
-    }
-
-    
-    pub fn contains_key(&self, key: &K) -> bool {
-        self.values.contains_key(key)
-    }
-
-    
-    pub fn get_key_at(&self, index: u32) -> Option<&K> {
-        self.index.get(index as usize)
-    }
-
-    
-    pub fn iter<'a>(&'a self) -> OrderedMapIterator<'a, K, V> {
-        OrderedMapIterator {
-            inner: self,
-            pos: 0,
-        }
-    }
-
-    
-    pub fn len(&self) -> usize {
-        debug_assert_eq!(self.values.len(), self.index.len());
-        self.values.len()
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    
-    fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
-    where
-        K: Borrow<Q>,
-        Q: PrecomputedHash + Hash + Eq,
-    {
-        let index = self.index.iter().position(|k| k.borrow() == key)?;
-        self.index.remove(index);
-        self.values.remove(key)
-    }
-}
-
-
-
-
-
-pub struct OrderedMapIterator<'a, K, V>
-where
-    K: 'a + Eq + PrecomputedHash + Hash + Clone,
-    V: 'a,
-{
-    
-    inner: &'a OrderedMap<K, V>,
-    
-    pos: usize,
-}
-
-impl<'a, K, V> Iterator for OrderedMapIterator<'a, K, V>
-where
-    K: Eq + PrecomputedHash + Hash + Clone,
-{
-    type Item = (&'a K, &'a V);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let key = self.inner.index.get(self.pos)?;
-
-        self.pos += 1;
-        let value = &self.inner.values[key];
-
-        Some((key, value))
-    }
-}
 
 
 
@@ -648,7 +525,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
         if self.custom_properties.is_none() {
             self.custom_properties = Some(match self.inherited {
                 Some(inherited) => (**inherited).clone(),
-                None => CustomPropertiesMap::new(),
+                None => CustomPropertiesMap::default(),
             });
         }
 
@@ -933,7 +810,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
 
     
     
-    let names = custom_properties_map.index.clone();
+    let names: Vec<_> = custom_properties_map.keys().cloned().collect();
     for name in names.into_iter() {
         let mut context = Context {
             count: 0,
@@ -1112,7 +989,7 @@ pub fn substitute<'i>(
     let mut input = ParserInput::new(input);
     let mut input = Parser::new(&mut input);
     let mut position = (input.position(), first_token_type);
-    let empty_map = CustomPropertiesMap::new();
+    let empty_map = CustomPropertiesMap::default();
     let custom_properties = match computed_values_map {
         Some(m) => &**m,
         None => &empty_map,
