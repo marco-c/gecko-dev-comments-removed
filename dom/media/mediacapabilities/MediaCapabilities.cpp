@@ -361,7 +361,7 @@ MediaCapabilities::DecodingInfo(
                 powerEfficient = decoder->IsHardwareAccelerated(reason);
                 if (!powerEfficient && VPXDecoder::IsVP9(config->mMimeType)) {
                   smooth = VP9Benchmark::IsVP9DecodeFast(true );
-                  uint32_t fps = StaticPrefs::MediaBenchmarkVp9Fps();
+                  uint32_t fps = VP9Benchmark::MediaBenchmarkVp9Fps();
                   if (!smooth && fps > 0) {
                     
                     
