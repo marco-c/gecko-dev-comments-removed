@@ -81,9 +81,8 @@ using mozilla::IsAsciiDigit;
     return false;
   }
 
-  if (!buffer->addView(cx, tarray)) {
-    return false;
-  }
+  
+  MOZ_ALWAYS_TRUE(buffer->addView(cx, tarray));
 
   
   memcpy(buffer->dataPointer(), tarray->dataPointerUnshared(),

@@ -58,25 +58,12 @@ bool JSObject::is<js::ArrayBufferViewObject>() const {
   return is<DataViewObject>() || is<TypedArrayObject>();
 }
 
-void ArrayBufferViewObject::notifyBufferDetached(JSContext* cx, void* newData) {
-  if (isSharedMemory()) {
-    return;
-  }
-
+void ArrayBufferViewObject::notifyBufferDetached(void* newData) {
   MOZ_ASSERT(!isSharedMemory());
+  MOZ_ASSERT(hasBuffer());
+
   setFixedSlot(LENGTH_SLOT, Int32Value(0));
   setFixedSlot(BYTEOFFSET_SLOT, Int32Value(0));
-
-  
-  
-  if (is<TypedArrayObject>()) {
-    TypedArrayObject& tarr = as<TypedArrayObject>();
-    Nursery& nursery = cx->nursery();
-    if (isTenured() && !hasBuffer() && !tarr.hasInlineElements() &&
-        !nursery.isInside(tarr.elements())) {
-      js_free(tarr.elements());
-    }
-  }
 
   setPrivate(newData);
 }
