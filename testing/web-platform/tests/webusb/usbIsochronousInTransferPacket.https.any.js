@@ -1,4 +1,3 @@
-
 'use strict';
 
 test(t => {
