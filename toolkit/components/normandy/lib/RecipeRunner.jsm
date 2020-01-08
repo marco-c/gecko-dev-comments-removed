@@ -248,9 +248,6 @@ var RecipeRunner = {
 
     await actions.finalize();
 
-    
-    await AddonStudies.close();
-
     Uptake.reportRunner(Uptake.RUNNER_SUCCESS);
   },
 

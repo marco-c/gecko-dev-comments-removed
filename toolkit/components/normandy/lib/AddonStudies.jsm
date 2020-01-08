@@ -78,8 +78,14 @@ async function getDatabase() {
 
 
 
-function getStore(db) {
-  return db.objectStore(STORE_NAME, "readwrite");
+
+
+
+function getStore(db, mode) {
+  if (!mode) {
+    throw new Error("mode is required");
+  }
+  return db.objectStore(STORE_NAME, mode);
 }
 
 var AddonStudies = {
@@ -99,21 +105,16 @@ var AddonStudies = {
         const oldStudies = await AddonStudies.getAll();
         let db = await getDatabase();
         await AddonStudies.clear();
-        for (const study of studies) {
-          await getStore(db).add(study);
-        }
-        await AddonStudies.close();
+        const store = getStore(db, "readwrite");
+        await Promise.all(studies.map(study => store.add(study)));
 
         try {
           await testFunction(...args, studies);
         } finally {
           db = await getDatabase();
           await AddonStudies.clear();
-          for (const study of oldStudies) {
-            await getStore(db).add(study);
-          }
-
-          await AddonStudies.close();
+          const store = getStore(db, "readwrite");
+          await Promise.all(oldStudies.map(study => store.add(study)));
         }
       };
     };
@@ -129,7 +130,6 @@ var AddonStudies = {
         await this.markAsEnded(study, "uninstalled-sideload");
       }
     }
-    await this.close();
 
     
     AddonManager.addAddonListener(this);
@@ -146,11 +146,7 @@ var AddonStudies = {
     const activeStudies = (await this.getAll()).filter(study => study.active);
     const matchingStudy = activeStudies.find(study => study.addonId === addon.id);
     if (matchingStudy) {
-      
-      
-      const db = await openDatabase();
       await this.markAsEnded(matchingStudy, "uninstalled");
-      await db.close();
     }
   },
 
@@ -159,19 +155,7 @@ var AddonStudies = {
 
   async clear() {
     const db = await getDatabase();
-    await getStore(db).clear();
-  },
-
-  
-
-
-  async close() {
-    if (databasePromise) {
-      const promise = databasePromise;
-      databasePromise = null;
-      const db = await promise;
-      await db.close();
-    }
+    await getStore(db, "readwrite").clear();
   },
 
   
@@ -181,7 +165,7 @@ var AddonStudies = {
 
   async has(recipeId) {
     const db = await getDatabase();
-    const study = await getStore(db).get(recipeId);
+    const study = await getStore(db, "readonly").get(recipeId);
     return !!study;
   },
 
@@ -192,7 +176,7 @@ var AddonStudies = {
 
   async get(recipeId) {
     const db = await getDatabase();
-    return getStore(db).get(recipeId);
+    return getStore(db, "readonly").get(recipeId);
   },
 
   
@@ -201,7 +185,7 @@ var AddonStudies = {
 
   async getAll() {
     const db = await getDatabase();
-    return getStore(db).getAll();
+    return getStore(db, "readonly").getAll();
   },
 
   
@@ -210,7 +194,7 @@ var AddonStudies = {
 
   async add(study) {
     const db = await getDatabase();
-    return getStore(db).add(study);
+    return getStore(db, "readwrite").add(study);
   },
 
   
@@ -220,7 +204,7 @@ var AddonStudies = {
 
   async delete(recipeId) {
     const db = await getDatabase();
-    return getStore(db).delete(recipeId);
+    return getStore(db, "readwrite").delete(recipeId);
   },
 
   
@@ -237,7 +221,7 @@ var AddonStudies = {
     study.active = false;
     study.studyEndDate = new Date();
     const db = await getDatabase();
-    await getStore(db).put(study);
+    await getStore(db, "readwrite").put(study);
 
     Services.obs.notifyObservers(study, STUDY_ENDED_TOPIC, `${study.recipeId}`);
     TelemetryEvents.sendEvent("unenroll", "addon_study", study.name, {
