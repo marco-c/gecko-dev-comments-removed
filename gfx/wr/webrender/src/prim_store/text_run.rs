@@ -52,6 +52,8 @@ impl TextRunKey {
     }
 }
 
+impl intern::InternDebug for TextRunKey {}
+
 impl AsInstanceKind<TextRunDataHandle> for TextRunKey {
     
     
