@@ -1790,7 +1790,7 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   
   
-  rv = referrer->CloneIgnoringRef(getter_AddRefs(clone));
+  rv = NS_GetURIWithoutRef(referrer, getter_AddRefs(clone));
   if (NS_FAILED(rv)) return rv;
 
   nsAutoCString currentHost;
@@ -1835,7 +1835,7 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   
   if (userSpoofReferrerSource) {
     nsCOMPtr<nsIURI> mURIclone;
-    rv = mURI->CloneIgnoringRef(getter_AddRefs(mURIclone));
+    rv = NS_GetURIWithoutRef(mURI, getter_AddRefs(mURIclone));
     if (NS_FAILED(rv)) return rv;
     clone = mURIclone;
     currentHost = referrerHost;

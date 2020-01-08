@@ -376,7 +376,7 @@ nsContentSink::LinkContextIsOurDocument(const nsAString& aAnchor)
   
   
   nsCOMPtr<nsIURI> contextUri;
-  nsresult rv = docUri->CloneIgnoringRef(getter_AddRefs(contextUri));
+  nsresult rv = NS_GetURIWithoutRef(docUri, getter_AddRefs(contextUri));
 
   if (NS_FAILED(rv)) {
     

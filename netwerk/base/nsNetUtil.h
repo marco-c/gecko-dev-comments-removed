@@ -103,6 +103,19 @@ nsresult NS_NewFileURI(nsIURI **result,
                        nsIFile *spec,
                        nsIIOService *ioService = nullptr);     
 
+
+
+
+
+
+
+
+nsresult NS_GetURIWithNewRef(nsIURI* aInput,
+                             const nsACString& aRef,
+                             nsIURI** aOutput);
+nsresult NS_GetURIWithoutRef(nsIURI* aInput,
+                             nsIURI** aOutput);
+
 nsresult NS_GetSanitizedURIStringFromURI(nsIURI *aUri,
                                          nsAString &aSanitizedSpec);
 

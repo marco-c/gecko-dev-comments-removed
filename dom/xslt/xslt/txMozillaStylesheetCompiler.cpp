@@ -688,7 +688,7 @@ TX_CompileStylesheet(nsINode* aNode, txMozillaXSLTProcessor* aProcessor,
 
     
     
-    docUri->CloneIgnoringRef(getter_AddRefs(uri));
+    NS_GetURIWithoutRef(docUri, getter_AddRefs(uri));
     NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 
     uri->GetSpec(spec);

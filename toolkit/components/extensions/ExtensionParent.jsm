@@ -470,7 +470,7 @@ ProxyMessenger = {
       
       
       
-      if (browser.currentURI.cloneIgnoringRef().spec === "about:addons") {
+      if (browser.currentURI.specIgnoringRef === "about:addons") {
         let optionsBrowser = browser.contentDocument.querySelector(".inline-options-browser");
         if (optionsBrowser) {
           browser = optionsBrowser;

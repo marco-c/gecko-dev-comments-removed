@@ -1368,7 +1368,7 @@ public:
     
     
     nsCOMPtr<nsIURI> uriNoFragment;
-    rv = uri->CloneIgnoringRef(getter_AddRefs(uriNoFragment));
+    rv = NS_GetURIWithoutRef(uri, getter_AddRefs(uriNoFragment));
     NS_ENSURE_SUCCESS(rv, rv);
     rv = uriNoFragment->GetSpec(mSpec);
     NS_ENSURE_SUCCESS(rv, rv);

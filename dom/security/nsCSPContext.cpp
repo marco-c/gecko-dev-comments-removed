@@ -1518,7 +1518,7 @@ nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell, bool* outPermitsAncestry)
       
       
       if (NS_FAILED(rv)) {
-        rv = currentURI->CloneIgnoringRef(getter_AddRefs(uriClone));
+        rv = NS_GetURIWithoutRef(currentURI, getter_AddRefs(uriClone));
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
