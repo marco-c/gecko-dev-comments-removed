@@ -13,7 +13,7 @@ use std::slice;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 use style_traits::values::SequenceWriter;
 use values::CSSFloat;
-use values::animated::{Animate, Procedure};
+use values::animated::{Animate, Procedure, ToAnimatedZero};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
@@ -198,9 +198,7 @@ pub enum PathCommand {
         rx: CSSFloat,
         ry: CSSFloat,
         angle: CSSFloat,
-        #[animation(constant)]
         large_arc_flag: ArcFlag,
-        #[animation(constant)]
         sweep_flag: ArcFlag,
         point: CoordPair,
         absolute: IsAbsolute,
@@ -537,6 +535,34 @@ impl ToCss for ArcFlag {
         (self.0 as i32).to_css(dest)
     }
 }
+
+impl Animate for ArcFlag {
+    #[inline]
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        (self.0 as i32)
+            .animate(&(other.0 as i32), procedure)
+            .map(|v| ArcFlag(v > 0))
+    }
+}
+
+impl ComputeSquaredDistance for ArcFlag {
+    #[inline]
+    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        (self.0 as i32).compute_squared_distance(&(other.0 as i32))
+    }
+}
+
+impl ToAnimatedZero for ArcFlag {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> {
+        
+        
+        
+        
+        Ok(*self)
+    }
+}
+
 
 
 struct PathParser<'a> {
