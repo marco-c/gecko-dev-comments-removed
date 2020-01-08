@@ -337,7 +337,7 @@ StorageActors.defaults = function(typeName, observationTopics) {
 
 
     async getStoreObjects(host, names, options = {}) {
-      const offset = options.offset || 0;
+      let offset = options.offset || 0;
       let size = options.size || MAX_STORE_OBJECT_COUNT;
       if (size > MAX_STORE_OBJECT_COUNT) {
         size = MAX_STORE_OBJECT_COUNT;
@@ -381,6 +381,19 @@ StorageActors.defaults = function(typeName, observationTopics) {
         }
 
         toReturn.total = this.getObjectsSize(host, names, options);
+
+        if (offset > toReturn.total) {
+          
+          toReturn.offset = toReturn.total;
+          toReturn.data = [];
+        } else {
+          
+          const sorted = toReturn.data.sort((a, b) => {
+            return naturalSortCaseInsensitive(a[sortOn], b[sortOn]);
+          });
+          const sliced = sorted.slice(offset, offset + size);
+          toReturn.data = sliced.map(a => this.toStoreObject(a));
+        }
       } else {
         let obj = await this.getValuesForHost(host, undefined, undefined,
                                               this.hostVsStores, principal);
@@ -389,28 +402,19 @@ StorageActors.defaults = function(typeName, observationTopics) {
         }
 
         toReturn.total = obj.length;
-        toReturn.data = obj;
-      }
 
-      if (offset > toReturn.total) {
-        
-        toReturn.offset = toReturn.total;
-        toReturn.data = [];
-      } else {
-        
-        const sorted = toReturn.data.sort((a, b) => {
-          return naturalSortCaseInsensitive(a[sortOn], b[sortOn]);
-        });
-        let sliced;
-        if (this.typeName === "indexedDB") {
+        if (offset > toReturn.total) {
           
-          
-          
-          sliced = sorted;
+          toReturn.offset = offset = toReturn.total;
+          toReturn.data = [];
         } else {
-          sliced = sorted.slice(offset, offset + size);
+          
+          const sorted = obj.sort((a, b) => {
+            return naturalSortCaseInsensitive(a[sortOn], b[sortOn]);
+          });
+          const sliced = sorted.slice(offset, offset + size);
+          toReturn.data = sliced.map(object => this.toStoreObject(object));
         }
-        toReturn.data = sliced.map(a => this.toStoreObject(a));
       }
 
       return toReturn;
@@ -2354,7 +2358,7 @@ var indexedDBHelpers = {
       objectStore: objectStore,
       id: id,
       index: options.index,
-      offset: options.offset,
+      offset: 0,
       size: options.size
     });
     return this.backToChild("getValuesForHost", {result: result});
