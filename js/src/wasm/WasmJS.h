@@ -56,7 +56,7 @@ bool HasCachingSupport(JSContext* cx);
 
 
 
-bool HasGcSupport(JSContext* cx);
+bool HasReftypesSupport(JSContext* cx);
 
 
 

@@ -144,7 +144,7 @@ struct ModuleEnvironment {
 
   
   
-#ifdef ENABLE_WASM_GC
+#ifdef ENABLE_WASM_REFTYPES
   
   
   
@@ -185,7 +185,7 @@ struct ModuleEnvironment {
         sharedMemoryEnabled(sharedMemoryEnabled),
         gcTypesConfigured(gcTypesConfigured),
         compilerEnv(compilerEnv),
-#ifdef ENABLE_WASM_GC
+#ifdef ENABLE_WASM_REFTYPES
         gcFeatureOptIn(HasGcTypes::False),
 #endif
         memoryUsage(MemoryUsage::None),
