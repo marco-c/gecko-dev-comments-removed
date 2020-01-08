@@ -299,6 +299,9 @@ private:
 
   dom::TabId mNestedFrameId;
 
+  
+  TimeStamp mResumedTimestamp;
+
   Atomic<bool> mIPCClosed; 
 
   
