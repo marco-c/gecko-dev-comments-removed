@@ -106,6 +106,9 @@ HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
       type == dom::PBrowser::Msg_SetDocShellIsActive__ID ||
       type == dom::PBrowser::Msg_PRenderFrameConstructor__ID ||
       type == dom::PBrowser::Msg_RenderLayers__ID ||
+      type == dom::PBrowser::Msg_UpdateDimensions__ID ||
+      
+      type == dom::PBrowser::Msg_LoadURL__ID ||
       
       type == dom::PBrowser::Msg_LoadRemoteScript__ID ||
       

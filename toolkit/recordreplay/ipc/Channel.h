@@ -339,7 +339,10 @@ struct FatalErrorMessage : public Message
   const char* Error() const { return Data<FatalErrorMessage, const char>(); }
 };
 
-static const gfx::SurfaceFormat gSurfaceFormat = gfx::SurfaceFormat::B8G8R8X8;
+
+
+
+static const gfx::SurfaceFormat gSurfaceFormat = gfx::SurfaceFormat::R8G8B8X8;
 
 struct PaintMessage : public Message
 {
