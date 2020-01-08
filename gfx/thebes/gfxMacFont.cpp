@@ -61,6 +61,7 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
         
         
         const uint32_t kOpszTag = HB_TAG('o','p','s','z');
+        const float kOpszFudgeAmount = 0.01f;
 
         if (!aFontEntry->mCheckedForOpszAxis) {
             aFontEntry->mCheckedForOpszAxis = true;
@@ -79,8 +80,8 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
                 
                 aFontEntry->mAdjustedDefaultOpsz =
                     axis.mDefaultValue == axis.mMinValue
-                        ? axis.mDefaultValue + 0.001f
-                        : axis.mDefaultValue - 0.001f;
+                        ? axis.mDefaultValue + kOpszFudgeAmount
+                        : axis.mDefaultValue - kOpszFudgeAmount;
             }
         }
 
@@ -97,7 +98,7 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
                 auto& value = vars[index].mValue;
                 auto& axis = aFontEntry->mOpszAxis;
                 value = fmin(fmax(value, axis.mMinValue), axis.mMaxValue);
-                if (std::abs(value - axis.mDefaultValue) < 0.001f) {
+                if (std::abs(value - axis.mDefaultValue) < kOpszFudgeAmount) {
                     value = aFontEntry->mAdjustedDefaultOpsz;
                 }
             }
