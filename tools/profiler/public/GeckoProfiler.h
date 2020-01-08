@@ -799,13 +799,14 @@ class MOZ_RAII AutoProfilerLabel
 public:
   
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    js::ProfilingStackFrame::Category aCategory
+                    js::ProfilingStackFrame::Category aCategory,
+                    uint32_t aFlags = 0
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
-    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory);
+    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory, aFlags);
   }
 
   

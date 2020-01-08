@@ -1428,9 +1428,6 @@ pref("dom.ua_widget.enabled", true);
 pref("dom.ua_widget.enabled", false);
 #endif
 
-pref("dom.webcomponents.shadowdom.enabled", true);
-pref("dom.webcomponents.customelements.enabled", true);
-
 pref("javascript.enabled",                  true);
 pref("javascript.options.strict",           false);
 #ifdef DEBUG
