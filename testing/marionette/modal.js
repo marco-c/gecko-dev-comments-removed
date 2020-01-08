@@ -65,7 +65,6 @@ modal.findModalDialogs = function(context) {
   for (let win of Services.wm.getEnumerator(null)) {
     
     
-    
     if (win.document.documentURI === COMMON_DIALOG &&
         win.opener && win.opener === context.window) {
       return new modal.Dialog(() => context, Cu.getWeakReference(win));
