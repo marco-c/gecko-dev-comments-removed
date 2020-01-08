@@ -253,9 +253,7 @@ class CodeCoverageMixin(SingleTestMixin):
         env['GCOV_PREFIX'] = self.gcov_dir
 
         
-        
-        
-        if self.per_test_coverage and not is_baseline_test and self._is_linux():
+        if self.per_test_coverage and not is_baseline_test:
             env['GCOV_RESULTS_DIR'] = tempfile.mkdtemp()
             env['JSVM_RESULTS_DIR'] = tempfile.mkdtemp()
 
