@@ -9,6 +9,7 @@ var EXPORTED_SYMBOLS = ["UrlbarInput"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   QueryContext: "resource:///modules/UrlbarUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -293,6 +294,11 @@ class UrlbarInput {
 
     switch (result.type) {
       case UrlbarUtils.MATCH_TYPE.TAB_SWITCH: {
+        if (this._overrideDefaultAction(event)) {
+          where = "current";
+          break;
+        }
+
         this.handleRevert();
         let prevTab = this.window.gBrowser.selectedTab;
         let loadOpts = {
@@ -304,13 +310,6 @@ class UrlbarInput {
           this.window.gBrowser.removeTab(prevTab);
         }
         return;
-
-        
-        
-        
-        
-        
-        
       }
       case UrlbarUtils.MATCH_TYPE.SEARCH:
         
@@ -520,6 +519,13 @@ class UrlbarInput {
     }
 
     return selectedVal;
+  }
+
+  _overrideDefaultAction(event) {
+    return event.shiftKey ||
+           event.altKey ||
+           (AppConstants.platform == "macosx" ?
+              event.metaKey : event.ctrlKey);
   }
 
   
