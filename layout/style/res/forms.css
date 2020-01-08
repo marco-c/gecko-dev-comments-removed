@@ -312,10 +312,6 @@ select > button[orientation="right"]:active {
   background-image: url("arrowd-right.gif") !important;
 }
 
-select:empty {
-  inline-size: 2.5em;
-}
-
 *|*::-moz-display-comboboxcontrol-frame {
   overflow: -moz-hidden-unscrollable;
   
