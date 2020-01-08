@@ -221,6 +221,17 @@ class EventEmitter {
 
 
 
+  has(event) {
+    return this[LISTENERS].has(event);
+  }
+
+  
+
+
+
+
+
+
 
 
 
