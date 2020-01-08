@@ -1294,7 +1294,8 @@ impl AlphaBatchBuilder {
                 for (segment_index, (segment, segment_data)) in segment_desc.segments
                     .iter()
                     .zip(segment_data.iter())
-                    .enumerate() {
+                    .enumerate()
+                {
                     self.add_segment_to_batch(
                         segment,
                         segment_data,
@@ -1315,7 +1316,8 @@ impl AlphaBatchBuilder {
                 
                 for (segment_index, segment) in segment_desc.segments
                     .iter()
-                    .enumerate() {
+                    .enumerate()
+                {
                     self.add_segment_to_batch(
                         segment,
                         segment_data,
@@ -1332,6 +1334,7 @@ impl AlphaBatchBuilder {
                 }
             }
             (None, SegmentDataKind::Shared(ref segment_data)) => {
+                
                 
                 let batch_key = BatchKey {
                     blend_mode: non_segmented_blend_mode,
