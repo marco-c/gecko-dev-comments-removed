@@ -44,7 +44,6 @@
 #include "ProfilerIOInterposeObserver.h"
 #include "mozilla/AutoProfilerLabel.h"
 #include "mozilla/ExtensionPolicyService.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Scheduler.h"
 #include "mozilla/StackWalk.h"
 #include "mozilla/StaticPtr.h"
@@ -344,8 +343,6 @@ private:
 
 CorePS* CorePS::sInstance = nullptr;
 
-static const uint32_t kInitialProfileBufferCapacity = 4096;
-
 class SamplerThread;
 
 static SamplerThread*
@@ -393,7 +390,7 @@ private:
     , mCapacity(aCapacity)
     , mInterval(aInterval)
     , mFeatures(AdjustFeatures(aFeatures, aFilterCount))
-    , mBuffer(MakeUnique<ProfileBuffer>(std::min(kInitialProfileBufferCapacity, aCapacity)))
+    , mBuffer(MakeUnique<ProfileBuffer>(aCapacity))
       
       
       
@@ -670,49 +667,6 @@ public:
         MOZ_RELEASE_ASSERT(bufferPosition, "should have unregistered this thread");
         return *bufferPosition < bufferRangeStart;
       });
-  }
-
-  static void EnsureAdequateBufferCapacity(PSLockRef aLockRef)
-  {
-    ProfileBuffer& buffer = Buffer(aLockRef);
-    uint32_t maxCapacity = RoundUpPow2(Capacity(aLockRef));
-    uint32_t minCapacity = std::min(kInitialProfileBufferCapacity, maxCapacity);
-    uint32_t usedSize = buffer.Length();
-    uint32_t currentCapacity = buffer.mCapacity;
-    
-    
-    
-    
-    
-    
-    
-    uint32_t minDesiredCapacity = usedSize * 100 / 90;
-    uint32_t maxDesiredCapacity = usedSize * 100 / 25;
-
-    
-    minDesiredCapacity = Clamp(minDesiredCapacity, minCapacity, maxCapacity);
-    maxDesiredCapacity = Clamp(maxDesiredCapacity, minCapacity, maxCapacity);
-
-    
-    
-    
-    
-    
-    
-    
-    uint32_t newCapacity = currentCapacity;
-    while (newCapacity < minDesiredCapacity) {
-      
-      newCapacity *= 2;
-    }
-    while (newCapacity > maxDesiredCapacity) {
-      
-      newCapacity /= 2;
-    }
-
-    MOZ_RELEASE_ASSERT(newCapacity >= minCapacity);
-    MOZ_RELEASE_ASSERT(newCapacity <= maxCapacity);
-    buffer.SetCapacityPow2(newCapacity);
   }
 
 private:
@@ -2310,14 +2264,6 @@ SamplerThread::Run()
         CorePS::Lul(lock)->MaybeShowStats();
 #endif
       }
-
-      
-      
-      
-      
-      
-      
-      ActivePS::EnsureAdequateBufferCapacity(lock);
     }
     
 
