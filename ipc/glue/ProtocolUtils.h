@@ -555,12 +555,7 @@ class IToplevelProtocol : public IProtocol {
     return false;
   }
 
-  
-  
-  
-#ifdef EARLY_BETA_OR_EARLIER
   virtual void OnChannelReceivedMessage(const Message& aMsg) {}
-#endif
 
   bool IsMainThreadProtocol() const { return mIsMainThreadProtocol; }
   void SetIsMainThreadProtocol() { mIsMainThreadProtocol = NS_IsMainThread(); }
