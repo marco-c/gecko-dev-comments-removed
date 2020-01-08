@@ -672,6 +672,19 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       current = current.parentNode;
     }
     return "rgba(255, 255, 255, 1)";
+  },
+
+  
+
+
+
+
+  getOwnerGlobalDimensions: function() {
+    const win = this.rawNode.ownerGlobal;
+    return {
+      innerWidth: win.innerWidth,
+      innerHeight: win.innerHeight,
+    };
   }
 });
 
