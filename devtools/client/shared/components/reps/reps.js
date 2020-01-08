@@ -1877,7 +1877,9 @@ const IGNORED_SOURCE_URLS = ["debugger eval code"];
 ErrorRep.propTypes = {
   object: PropTypes.object.isRequired,
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  
+  renderStacktrace: PropTypes.func
 };
 
 function ErrorRep(props) {
@@ -1909,7 +1911,8 @@ function ErrorRep(props) {
   }
 
   if (preview.stack && props.mode !== MODE.TINY) {
-    content.push("\n", getStacktraceElements(props, preview));
+    const stacktrace = props.renderStacktrace ? props.renderStacktrace(parseStackString(preview.stack)) : getStacktraceElements(props, preview);
+    content.push("\n", stacktrace);
   }
 
   return span({
@@ -1940,8 +1943,65 @@ function getStacktraceElements(props, preview) {
     return stack;
   }
 
-  const isStacktraceALongString = isLongString(preview.stack);
-  const stackString = isStacktraceALongString ? preview.stack.initial : preview.stack;
+  parseStackString(preview.stack).forEach((frame, index, frames) => {
+    let onLocationClick;
+    const {
+      filename,
+      lineNumber,
+      columnNumber,
+      functionName,
+      location
+    } = frame;
+
+    if (props.onViewSourceInDebugger && !IGNORED_SOURCE_URLS.includes(filename)) {
+      onLocationClick = e => {
+        
+        e.stopPropagation();
+        props.onViewSourceInDebugger({
+          url: filename,
+          line: lineNumber,
+          column: columnNumber
+        });
+      };
+    }
+
+    stack.push("\t", span({
+      key: `fn${index}`,
+      className: "objectBox-stackTrace-fn"
+    }, cleanFunctionName(functionName)), " ", span({
+      key: `location${index}`,
+      className: "objectBox-stackTrace-location",
+      onClick: onLocationClick,
+      title: onLocationClick ? `View source in debugger → ${location}` : undefined
+    }, location), "\n");
+  });
+
+  return span({
+    key: "stack",
+    className: "objectBox-stackTrace-grid"
+  }, stack);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseStackString(stack) {
+  const res = [];
+  if (!stack) {
+    return res;
+  }
+
+  const isStacktraceALongString = isLongString(stack);
+  const stackString = isStacktraceALongString ? stack.initial : stack;
 
   stackString.split("\n").forEach((frame, index, frames) => {
     if (!frame) {
@@ -1980,40 +2040,24 @@ function getStacktraceElements(props, preview) {
       functionName = "<anonymous>";
     }
 
-    let onLocationClick;
     
     
     
     const locationParts = location.match(/^(.*):(\d+):(\d+)$/);
 
-    if (props.onViewSourceInDebugger && location && locationParts && !IGNORED_SOURCE_URLS.includes(locationParts[1])) {
-      const [, url, line, column] = locationParts;
-      onLocationClick = e => {
-        
-        e.stopPropagation();
-        props.onViewSourceInDebugger({
-          url,
-          line: Number(line),
-          column: Number(column)
-        });
-      };
+    if (location && locationParts) {
+      const [, filename, line, column] = locationParts;
+      res.push({
+        filename,
+        functionName,
+        location,
+        columnNumber: Number(column),
+        lineNumber: Number(line)
+      });
     }
-
-    stack.push("\t", span({
-      key: `fn${index}`,
-      className: "objectBox-stackTrace-fn"
-    }, cleanFunctionName(functionName)), " ", span({
-      key: `location${index}`,
-      className: "objectBox-stackTrace-location",
-      onClick: onLocationClick,
-      title: onLocationClick ? `View source in debugger → ${location}` : undefined
-    }, location), "\n");
   });
 
-  return span({
-    key: "stack",
-    className: "objectBox-stackTrace-grid"
-  }, stack);
+  return res;
 }
 
 
