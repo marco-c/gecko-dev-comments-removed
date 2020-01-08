@@ -4,7 +4,6 @@
 "use strict";
 
 const { adbAddon } = require("devtools/shared/adb/adb-addon");
-const { adbProcess } = require("devtools/shared/adb/adb-process");
 
 
 
@@ -25,17 +24,16 @@ add_task(async function() {
   
   adbAddon.install("internal");
   await waitUntil(() => usbStatusElement.textContent.includes("USB devices enabled"));
-
   
   
   
   
-  info("Wait until ADB has started.");
-  await waitUntil(() => adbProcess.ready);
+  await waitForAdbStart();
 
   info("Uninstall the adb extension and wait for the message to udpate");
   adbAddon.uninstall();
   await waitUntil(() => usbStatusElement.textContent.includes("USB devices disabled"));
+  await waitForAdbStop();
 
   await removeTab(tab);
 });
