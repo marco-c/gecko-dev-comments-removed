@@ -283,9 +283,6 @@ enum class FillMode : uint8_t;
 }
 
 
-#define NS_STYLE_ANIMATION_ITERATION_COUNT_INFINITE 0
-
-
 enum class StyleAnimationPlayState : uint8_t {
     Running,
     Paused
@@ -299,21 +296,6 @@ enum class StyleImageLayerAttachment : uint8_t {
 };
 
 
-
-
-
-
-#define NS_STYLE_IMAGELAYER_CLIP_MOZ_ALMOST_PADDING  127
-
-
-
-#define NS_STYLE_IMAGELAYER_POSITION_CENTER          (1<<0)
-#define NS_STYLE_IMAGELAYER_POSITION_TOP             (1<<1)
-#define NS_STYLE_IMAGELAYER_POSITION_BOTTOM          (1<<2)
-#define NS_STYLE_IMAGELAYER_POSITION_LEFT            (1<<3)
-#define NS_STYLE_IMAGELAYER_POSITION_RIGHT           (1<<4)
-
-
 enum class StyleImageLayerRepeat : uint8_t {
   NoRepeat = 0x00,
   RepeatX,
@@ -324,18 +306,9 @@ enum class StyleImageLayerRepeat : uint8_t {
 };
 
 
-#define NS_STYLE_IMAGELAYER_SIZE_CONTAIN             0
-#define NS_STYLE_IMAGELAYER_SIZE_COVER               1
-
-
 #define NS_STYLE_MASK_MODE_ALPHA                0
 #define NS_STYLE_MASK_MODE_LUMINANCE            1
 #define NS_STYLE_MASK_MODE_MATCH_SOURCE         2
-
-
-#define NS_STYLE_BG_INLINE_POLICY_EACH_BOX      0
-#define NS_STYLE_BG_INLINE_POLICY_CONTINUOUS    1
-#define NS_STYLE_BG_INLINE_POLICY_BOUNDING_BOX  2
 
 
 #define NS_STYLE_BORDER_COLLAPSE                0
@@ -527,13 +500,6 @@ enum class StyleContent : uint8_t {
 #define NS_STYLE_ORDER_INITIAL                  0
 
 
-#define NS_STYLE_JUSTIFY_CONTENT_FLEX_START     NS_STYLE_JUSTIFY_FLEX_START
-#define NS_STYLE_JUSTIFY_CONTENT_FLEX_END       NS_STYLE_JUSTIFY_FLEX_END
-#define NS_STYLE_JUSTIFY_CONTENT_CENTER         NS_STYLE_JUSTIFY_CENTER
-#define NS_STYLE_JUSTIFY_CONTENT_SPACE_BETWEEN  NS_STYLE_JUSTIFY_SPACE_BETWEEN
-#define NS_STYLE_JUSTIFY_CONTENT_SPACE_AROUND   NS_STYLE_JUSTIFY_SPACE_AROUND
-
-
 #define NS_STYLE_FILTER_NONE                    0
 #define NS_STYLE_FILTER_URL                     1
 #define NS_STYLE_FILTER_BLUR                    2
@@ -548,17 +514,6 @@ enum class StyleContent : uint8_t {
 #define NS_STYLE_FILTER_DROP_SHADOW             11
 
 
-
-#define NS_STYLE_FONT_STYLE_NORMAL              NS_FONT_STYLE_NORMAL
-#define NS_STYLE_FONT_STYLE_ITALIC              NS_FONT_STYLE_ITALIC
-#define NS_STYLE_FONT_STYLE_OBLIQUE             NS_FONT_STYLE_OBLIQUE
-
-
-
-#define NS_STYLE_FONT_WEIGHT_BOLDER             (-1)
-#define NS_STYLE_FONT_WEIGHT_LIGHTER            (-2)
-
-
 #define NS_STYLE_FONT_SIZE_XXSMALL              0
 #define NS_STYLE_FONT_SIZE_XSMALL               1
 #define NS_STYLE_FONT_SIZE_SMALL                2
@@ -570,24 +525,6 @@ enum class StyleContent : uint8_t {
 #define NS_STYLE_FONT_SIZE_LARGER               8
 #define NS_STYLE_FONT_SIZE_SMALLER              9
 #define NS_STYLE_FONT_SIZE_NO_KEYWORD          10 // Used by Servo to track the "no keyword" case
-
-
-#define NS_STYLE_FONT_CAPTION                   1   // css2
-#define NS_STYLE_FONT_ICON                      2
-#define NS_STYLE_FONT_MENU                      3
-#define NS_STYLE_FONT_MESSAGE_BOX               4
-#define NS_STYLE_FONT_SMALL_CAPTION             5
-#define NS_STYLE_FONT_STATUS_BAR                6
-#define NS_STYLE_FONT_WINDOW                    7   // css3
-#define NS_STYLE_FONT_DOCUMENT                  8
-#define NS_STYLE_FONT_WORKSPACE                 9
-#define NS_STYLE_FONT_DESKTOP                   10
-#define NS_STYLE_FONT_INFO                      11
-#define NS_STYLE_FONT_DIALOG                    12
-#define NS_STYLE_FONT_BUTTON                    13
-#define NS_STYLE_FONT_PULL_DOWN_MENU            14
-#define NS_STYLE_FONT_LIST                      15
-#define NS_STYLE_FONT_FIELD                     16
 
 
 #define NS_STYLE_GRID_AUTO_FLOW_ROW             (1 << 0)
@@ -720,9 +657,6 @@ enum class StyleGridTrackBreadth : uint8_t {
 
 #define NS_STYLE_LIST_STYLE_POSITION_INSIDE     0
 #define NS_STYLE_LIST_STYLE_POSITION_OUTSIDE    1
-
-
-#define NS_STYLE_MARGIN_SIZE_AUTO               0
 
 
 #define NS_STYLE_POINTER_EVENTS_NONE            0
