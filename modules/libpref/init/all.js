@@ -1818,10 +1818,6 @@ pref("network.http.focused_window_transaction_ratio", "0.9");
 
 
 
-pref("network.http.send_window_size", 1024);
-
-
-
 #ifdef ANDROID
 
 pref("network.http.active_tab_priority", false);

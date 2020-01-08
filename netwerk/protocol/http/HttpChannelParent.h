@@ -209,7 +209,6 @@ protected:
   virtual mozilla::ipc::IPCResult RecvDivertComplete() override;
   virtual mozilla::ipc::IPCResult RecvRemoveCorsPreflightCacheEntry(const URIParams& uri,
                                                                     const mozilla::ipc::PrincipalInfo& requestingPrincipal) override;
-  virtual mozilla::ipc::IPCResult RecvBytesRead(const int32_t& aCount) override;
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
   
@@ -263,15 +262,6 @@ private:
   
   void CleanupBackgroundChannel();
 
-  
-  
-  
-  bool NeedFlowControl();
-  bool mCacheNeedFlowControlInitialized = false;
-  bool mNeedFlowControl = true;
-  bool mSuspendedForFlowControl = false;
-  int32_t mSendWindowSize;
-
   friend class HttpBackgroundChannelParent;
   friend class DivertDataAvailableEvent;
   friend class DivertStopRequestEvent;
@@ -319,7 +309,6 @@ private:
 
   uint8_t mSentRedirect1BeginFailed    : 1;
   uint8_t mReceivedRedirect2Verify     : 1;
-  uint8_t mHasSuspendedByBackPressure  : 1;
 
   
   
