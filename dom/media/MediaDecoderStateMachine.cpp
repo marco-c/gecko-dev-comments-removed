@@ -895,7 +895,8 @@ public:
       mMaster->mAudioDecodedDuration.emplace(mMaster->mDecodedAudioEndTime);
     }
 
-    SLOG("received EOS when seamless looping, starts seeking");
+    SLOG("received EOS when seamless looping, starts seeking, "
+         "AudioLoopingOffset=[%" PRId64 "]", mAudioLoopingOffset.ToMicroseconds());
     Reader()->ResetDecode(TrackInfo::kAudioTrack);
     Reader()->Seek(SeekTarget(media::TimeUnit::Zero(), SeekTarget::Accurate))
       ->Then(OwnerThread(), __func__,
@@ -955,6 +956,9 @@ private:
 
   bool ShouldDiscardLoopedAudioData() const
   {
+    if (!mMaster->mMediaSink->IsStarted()) {
+      return false;
+    }
     
 
 
@@ -968,7 +972,7 @@ private:
 
 
     return (mAudioLoopingOffset != media::TimeUnit::Zero() &&
-            mMaster->mCurrentPosition.Ref() < mAudioLoopingOffset &&
+            mMaster->GetClock() < mAudioLoopingOffset &&
             mAudioLoopingOffset < mMaster->mDecodedAudioEndTime);
   }
 
