@@ -4,6 +4,7 @@
 
 
 add_task(async function test_theme_transition_effects() {
+  const ACCENT_COLOR = "#aaf442";
   const TOOLBAR = "#f27489";
   const TEXT_COLOR = "#000000";
   const TRANSITION_PROPERTY = "background-color";
@@ -12,6 +13,7 @@ add_task(async function test_theme_transition_effects() {
     manifest: {
       "theme": {
         "colors": {
+          "accentcolor": ACCENT_COLOR,
           "textcolor": TEXT_COLOR,
           "toolbar": TOOLBAR,
           "toolbar_text": TEXT_COLOR,
@@ -21,6 +23,17 @@ add_task(async function test_theme_transition_effects() {
   });
 
   await extension.startup();
+
+  
+  
+  let docEl = window.document.documentElement;
+  let rootCS = window.getComputedStyle(docEl);
+
+  Assert.equal(
+    rootCS.getPropertyValue("transition-property"),
+    TRANSITION_PROPERTY,
+    "Transition property set for root"
+  );
 
   
   let navbar = document.querySelector("#nav-bar");
