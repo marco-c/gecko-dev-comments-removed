@@ -32,7 +32,7 @@ export let requestStore = new PaymentsStore({
     
   },
   request: {
-    completeStatus: "",
+    completeStatus: "initial",
     tabId: null,
     topLevelPrincipal: {URI: {displayHost: null}},
     requestId: null,

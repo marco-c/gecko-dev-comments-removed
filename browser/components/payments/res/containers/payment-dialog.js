@@ -224,6 +224,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
   _renderPayButton(state) {
     let completeStatus = state.request.completeStatus;
     switch (completeStatus) {
+      case "initial":
       case "processing":
       case "success":
       case "unknown": {
@@ -231,18 +232,22 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
         this._payButton.textContent = this._payButton.dataset[completeStatus + "Label"];
         break;
       }
-      case "": 
       case "fail":
       case "timeout": {
         
-        this._payButton.textContent = this._payButton.dataset.label;
-        this._payButton.disabled = completeStatus !== "" || state.changesPrevented;
+        this._payButton.textContent = this._payButton.dataset.initialLabel;
+        this._payButton.disabled = true;
+        break;
+      }
+      case "": {
+        completeStatus = "initial";
         break;
       }
       default: {
         throw new Error(`Invalid completeStatus: ${completeStatus}`);
       }
     }
+    this._payButton.textContent = this._payButton.dataset[completeStatus + "Label"];
   }
 
   stateChangeCallback(state) {

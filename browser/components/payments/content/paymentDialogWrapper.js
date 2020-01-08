@@ -199,8 +199,6 @@ var paymentDialogWrapper = {
       throw new Error("Invalid PaymentRequest ID");
     }
 
-    window.addEventListener("unload", this);
-
     
     
     this.request = paymentSrv.getPaymentRequestById(requestId);
@@ -623,24 +621,6 @@ var paymentDialogWrapper = {
       this.sendMessageToContent("updateState", successStateChange);
     } catch (ex) {
       this.sendMessageToContent("updateState", errorStateChange);
-    }
-  },
-
-  
-
-
-
-  handleEvent(event) {
-    switch (event.type) {
-      case "unload": {
-        
-        
-        Services.obs.removeObserver(this, "formautofill-storage-changed");
-        break;
-      }
-      default: {
-        throw new Error("Unexpected event handled");
-      }
     }
   },
 
