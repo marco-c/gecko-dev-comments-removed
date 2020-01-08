@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
   UrlbarValueFormatter: "resource:///modules/UrlbarValueFormatter.jsm",
   UrlbarView: "resource:///modules/UrlbarView.jsm",
 });
@@ -218,7 +219,36 @@ class UrlbarInput {
       return;
     }
 
-    this.controller.handleEnteredText(event, url);
+    let where = openWhere || this._whereToOpen(event);
+
+    openParams.postData = null;
+    openParams.allowInheritPrincipal = false;
+
+    
+    
+    
+    
+
+    url = url.trim();
+
+    try {
+      new URL(url);
+    } catch (ex) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return;
+    }
+
+    this._loadURL(url, where, openParams);
 
     this.view.close();
   }
@@ -231,7 +261,45 @@ class UrlbarInput {
 
   resultSelected(event, result) {
     this.setValueFromResult(result);
-    this.controller.resultSelected(event, result);
+
+    
+    
+    
+    
+
+    let where = this._whereToOpen(event);
+    let openParams = {
+      postData: null,
+      allowInheritPrincipal: false,
+    };
+    let url = result.url;
+
+    switch (result.type) {
+      case UrlbarUtils.MATCH_TYPE.TAB_SWITCH: {
+        
+        
+        let prevTab = this.browserWindow.gBrowser.selectedTab;
+        let loadOpts = {
+          adoptIntoActiveWindow: UrlbarPrefs.get("switchTabs.adoptIntoActiveWindow"),
+        };
+
+        if (this.browserWindow.switchToTabHavingURI(url, false, loadOpts) &&
+            prevTab.isEmpty) {
+          this.browserWindow.gBrowser.removeTab(prevTab);
+        }
+        return;
+
+        
+        
+        
+        
+        
+        
+
+      }
+    }
+
+    this._loadURL(url, where, openParams);
   }
 
   
@@ -423,6 +491,114 @@ class UrlbarInput {
     }
 
     return action;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _loadURL(url, openUILinkWhere, params) {
+    let browser = this.browserWindow.gBrowser.selectedBrowser;
+
+    
+    
+    
+    if (this.browserWindow.gInitialPages.includes(url)) {
+      browser.initialPageLoadedFromURLBar = url;
+    }
+    try {
+      UrlbarUtils.addToUrlbarHistory(url);
+    } catch (ex) {
+      
+      
+      Cu.reportError(ex);
+    }
+
+    params.allowThirdPartyFixup = true;
+
+    if (openUILinkWhere == "current") {
+      params.targetBrowser = browser;
+      params.indicateErrorPageLoad = true;
+      params.allowPinnedTabHostChange = true;
+      params.allowPopups = url.startsWith("javascript:");
+    } else {
+      params.initiatingDoc = this.browserWindow.document;
+    }
+
+    
+    
+    
+    browser.focus();
+
+    if (openUILinkWhere != "current") {
+      
+      
+    }
+
+    try {
+      this.browserWindow.openTrustedLinkIn(url, openUILinkWhere, params);
+    } catch (ex) {
+      
+      
+      if (ex.result != Cr.NS_ERROR_LOAD_SHOWED_ERRORPAGE) {
+        
+        
+      }
+    }
+
+    
+    
+    
+  }
+
+  
+
+
+
+
+
+  _whereToOpen(event) {
+    let isMouseEvent = event instanceof MouseEvent;
+    let reuseEmpty = !isMouseEvent;
+    let where = undefined;
+    if (!isMouseEvent && event && event.altKey) {
+      
+      
+      where = event.shiftKey ? "tabshifted" : "tab";
+    } else if (!isMouseEvent && this._ctrlCanonizesURLs && event && event.ctrlKey) {
+      
+      
+      where = "current";
+    } else {
+      where = this.browserWindow.whereToOpenLink(event, false, false);
+    }
+    if (this.openInTab) {
+      if (where == "current") {
+        where = "tab";
+      } else if (where == "tab") {
+        where = "current";
+      }
+      reuseEmpty = true;
+    }
+    if (where == "tab" &&
+        reuseEmpty &&
+        this.browserWindow.gBrowser.selectedTab.isEmpty) {
+      where = "current";
+    }
+    return where;
   }
 
   
