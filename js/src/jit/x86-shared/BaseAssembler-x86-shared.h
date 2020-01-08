@@ -4522,6 +4522,10 @@ threeByteOpImmSimd("vblendps", VEX_PD, OP3_BLENDPS_VpsWpsIb, ESCAPE_3A, imm, off
         
         
         
+        
+        
+        
+        
 
         void oneByteOp(OneByteOpcodeID opcode)
         {

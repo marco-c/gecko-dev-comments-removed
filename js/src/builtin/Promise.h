@@ -279,6 +279,7 @@ AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind comple
 class MOZ_NON_TEMPORARY_CLASS PromiseLookup final
 {
     
+    
 
 
 
@@ -303,6 +304,7 @@ class MOZ_NON_TEMPORARY_CLASS PromiseLookup final
 
 
 
+    
 
     
     MOZ_INIT_OUTSIDE_CTOR Shape* promiseConstructorShape_;

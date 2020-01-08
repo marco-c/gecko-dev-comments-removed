@@ -1467,6 +1467,7 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
     JitSpew(JitSpew_Codegen, "# Emitting PrepareAndExecuteRegExp");
 
     
+    
 
 
 
@@ -1498,6 +1499,7 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
 
 
 
+    
 
     size_t matchPairsStartOffset = inputOutputDataStartOffset + sizeof(irregexp::InputOutputData);
     size_t pairsVectorStartOffset = RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
@@ -2133,6 +2135,7 @@ JitRealm::generateRegExpMatcherStub(JSContext* cx)
     masm.storeValue(nativeTemplateObj.getSlot(RegExpRealm::MatchResultObjectInputSlot),
                     Address(temp2, sizeof(Value)));
 
+    
    
 
 
@@ -2162,6 +2165,7 @@ JitRealm::generateRegExpMatcherStub(JSContext* cx)
 
 
 
+    
 
     static_assert(sizeof(MatchPair) == 2 * sizeof(int32_t),
                   "MatchPair consists of two int32 values representing the start"
@@ -2429,6 +2433,7 @@ JitRealm::generateRegExpSearcherStub(JSContext* cx)
     }
 
     
+    
 
 
 
@@ -2457,6 +2462,7 @@ JitRealm::generateRegExpSearcherStub(JSContext* cx)
 
 
 
+    
 
     size_t pairsVectorStartOffset = RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
     Address matchPairStart(masm.getStackPointer(),

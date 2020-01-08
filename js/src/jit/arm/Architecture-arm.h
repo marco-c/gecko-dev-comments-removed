@@ -315,6 +315,8 @@ class FloatRegisters
     
     
     
+    
+    
     typedef uint64_t SetType;
     static const SetType AllSingleMask = (1ull << TotalSingle) - 1;
     static const SetType AllDoubleMask = ((1ull << TotalDouble) - 1) << TotalSingle;
@@ -636,6 +638,8 @@ VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float32>(SetType set)
 template <> inline VFPRegister::SetType
 VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set)
 {
+    
+    
     
     
     

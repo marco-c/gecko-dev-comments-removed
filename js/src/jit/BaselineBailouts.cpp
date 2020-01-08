@@ -619,6 +619,7 @@ IsPrologueBailout(const SnapshotIterator& iter, const ExceptionBailoutInfo* excI
 
 
 
+
 static bool
 InitFromBailout(JSContext* cx, size_t frameNo,
                 HandleFunction fun, HandleScript script,
