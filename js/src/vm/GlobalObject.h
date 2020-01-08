@@ -802,9 +802,6 @@ class GlobalObject : public NativeObject
     static bool initIntlObject(JSContext* cx, Handle<GlobalObject*> global);
 
     
-    static bool addRelativeTimeFormatConstructor(JSContext* cx, HandleObject intl);
-
-    
     static bool initModuleProto(JSContext* cx, Handle<GlobalObject*> global);
     static bool initImportEntryProto(JSContext* cx, Handle<GlobalObject*> global);
     static bool initExportEntryProto(JSContext* cx, Handle<GlobalObject*> global);

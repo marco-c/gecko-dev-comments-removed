@@ -4,8 +4,6 @@
 
 
 
-addIntlExtras(Intl);
-
 var obj = new Intl.RelativeTimeFormat();
 
 

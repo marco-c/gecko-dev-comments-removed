@@ -49,10 +49,16 @@ function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
     internalProps.locale = r.locale;
 
     
+    assert(r.locale === r.dataLocale,
+           "resolved locale matches the resolved data-locale when no extension-keys are present");
+
+    
     internalProps.style = lazyRelativeTimeFormatData.style;
 
     
     internalProps.numeric = lazyRelativeTimeFormatData.numeric;
+
+    
 
     return internalProps;
 }
@@ -228,20 +234,26 @@ function Intl_RelativeTimeFormat_format(value, unit) {
 
 
 function Intl_RelativeTimeFormat_resolvedOptions() {
-    var relativeTimeFormat;
     
-    if (!IsObject(this) || (relativeTimeFormat = GuardToRelativeTimeFormat(this)) === null) {
+    var relativeTimeFormat = this;
+
+    
+    if (!IsObject(relativeTimeFormat) ||
+        (relativeTimeFormat = GuardToRelativeTimeFormat(relativeTimeFormat)) === null)
+    {
         return callFunction(CallRelativeTimeFormatMethodIfWrapped, this,
                             "Intl_RelativeTimeFormat_resolvedOptions");
     }
 
     var internals = getRelativeTimeFormatInternals(relativeTimeFormat, "resolvedOptions");
 
+    
     var result = {
         locale: internals.locale,
         style: internals.style,
         numeric: internals.numeric,
     };
 
+    
     return result;
 }

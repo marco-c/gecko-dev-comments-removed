@@ -366,8 +366,6 @@ var locales = [
     "zh-Hant-TW",
 ];
 
-addIntlExtras(Intl);
-
 const result = Intl.RelativeTimeFormat.supportedLocalesOf(locales);
 
 assertEqArray(locales, result);

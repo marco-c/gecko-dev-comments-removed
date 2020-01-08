@@ -7,8 +7,6 @@
 
 var rtf;
 
-addIntlExtras(Intl);
-
 {
   
   rtf = new Intl.RelativeTimeFormat("en-US");

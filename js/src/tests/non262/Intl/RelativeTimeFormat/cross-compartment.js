@@ -1,9 +1,6 @@
 
 
-addIntlExtras(Intl);
-
 var otherGlobal = newGlobal();
-otherGlobal.addIntlExtras(otherGlobal.Intl);
 
 var relativeTimeFormat = new Intl.RelativeTimeFormat();
 var ccwRelativeTimeFormat = new otherGlobal.Intl.RelativeTimeFormat();
