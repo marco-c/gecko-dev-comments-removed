@@ -538,8 +538,8 @@ TextPropertyEditor.prototype = {
     const gridToggle = this.valueSpan.querySelector(".ruleview-grid");
     if (gridToggle) {
       gridToggle.setAttribute("title", l10n("rule.gridToggle.tooltip"));
-      if (this.ruleView.highlighters.gridHighlighterShown ===
-          this.ruleView.inspector.selection.nodeFront) {
+      if (this.ruleView.highlighters.gridHighlighters.has(
+            this.ruleView.inspector.selection.nodeFront)) {
         gridToggle.classList.add("active");
       }
     }
@@ -933,7 +933,8 @@ TextPropertyEditor.prototype = {
     }
 
     if (this.isDisplayGrid()) {
-      this.ruleView.highlighters.hideGridHighlighter();
+      this.ruleView.highlighters.hideGridHighlighter(
+        this.ruleView.inspector.selection.nodeFront);
     }
 
     
