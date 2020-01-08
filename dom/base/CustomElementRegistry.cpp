@@ -14,7 +14,6 @@
 #include "mozilla/dom/DocGroup.h"
 #include "nsHTMLTags.h"
 #include "jsapi.h"
-#include "xpcprivate.h"
 #include "nsGlobalWindow.h"
 
 namespace mozilla {
@@ -92,9 +91,6 @@ CustomElementCallback::Call()
     case nsIDocument::eAttributeChanged:
       static_cast<LifecycleAttributeChangedCallback *>(mCallback.get())->Call(mThisObject,
         mArgs.name, mArgs.oldValue, mArgs.newValue, mArgs.namespaceURI);
-      break;
-    case nsIDocument::eGetCustomInterface:
-      NS_NOTREACHED("Don't call GetCustomInterface through callback");
       break;
   }
 }
@@ -479,10 +475,6 @@ CustomElementRegistry::CreateCustomElementCallback(
         func = aDefinition->mCallbacks->mAttributeChangedCallback.Value();
       }
       break;
-
-    case nsIDocument::eGetCustomInterface:
-      NS_NOTREACHED("Don't call GetCustomInterface through callback");
-      break;
   }
 
   
@@ -848,7 +840,6 @@ CustomElementRegistry::Define(JSContext* aCx,
 
 
 
-
     if (!callbacksHolder->Init(aCx, prototype)) {
       aRv.NoteJSContextException(aCx);
       return;
@@ -1170,51 +1161,6 @@ CustomElementRegistry::Upgrade(Element* aElement,
   aElement->SetCustomElementDefinition(aDefinition);
 }
 
-already_AddRefed<nsISupports>
-CustomElementRegistry::CallGetCustomInterface(Element* aElement,
-                                              const nsIID& aIID)
-{
-  MOZ_ASSERT(aElement);
-
-  if (nsContentUtils::IsChromeDoc(aElement->OwnerDoc())) {
-    CustomElementDefinition* definition = aElement->GetCustomElementDefinition();
-    if (definition && definition->mCallbacks &&
-        definition->mCallbacks->mGetCustomInterfaceCallback.WasPassed() &&
-        definition->mLocalName == aElement->NodeInfo()->NameAtom()) {
-
-      LifecycleGetCustomInterfaceCallback* func =
-        definition->mCallbacks->mGetCustomInterfaceCallback.Value();
-      JS::Rooted<JSObject*> customInterface(RootingCx());
-
-      nsCOMPtr<nsIJSID> iid = nsJSID::NewID(aIID);
-      func->Call(aElement, iid, &customInterface);
-      if (customInterface) {
-        RefPtr<nsXPCWrappedJS> wrappedJS;
-        nsresult rv =
-          nsXPCWrappedJS::GetNewOrUsed(customInterface,
-                                       NS_GET_IID(nsISupports),
-                                       getter_AddRefs(wrappedJS)); 
-        if (NS_SUCCEEDED(rv) && wrappedJS) {
-          
-          nsCOMPtr<nsISupports> retval;
-          if (NS_SUCCEEDED(wrappedJS->QueryInterface(aIID,
-                                                     getter_AddRefs(retval)))) {        
-            return retval.forget();
-          }
-        }
-      }
-    }
-  }
-
-  
-  nsCOMPtr<nsISupports> supports;
-  if (NS_SUCCEEDED(aElement->QueryInterface(aIID, getter_AddRefs(supports)))) {
-    return supports.forget();
-  }
-
-  return nullptr;
-}
-
 
 
 
@@ -1424,11 +1370,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementDefinition)
   if (callbacks->mAdoptedCallback.WasPassed()) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mCallbacks->mAdoptedCallback");
     cb.NoteXPCOMChild(callbacks->mAdoptedCallback.Value());
-  }
-
-  if (callbacks->mGetCustomInterfaceCallback.WasPassed()) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mCallbacks->mGetCustomInterfaceCallback");
-    cb.NoteXPCOMChild(callbacks->mGetCustomInterfaceCallback.Value());
   }
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mConstructor");

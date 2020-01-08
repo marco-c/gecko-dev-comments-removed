@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -61,54 +59,6 @@ class MozXULElement extends XULElement {
     range.selectNodeContents(doc.querySelector("box"));
     return range.extractContents();
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static implementCustomInterface(cls, ifaces) {
-    cls.prototype.QueryInterface = ChromeUtils.generateQI(ifaces);
-    cls.prototype.getCustomInterfaceCallback = function getCustomInterfaceCallback(iface) {
-      if (ifaces.includes(Ci[Components.interfacesByID[iface.number]])) {
-        return getInterfaceProxy(this);
-      }
-      return null;
-    };
-  }
-}
-
-
-
-
-
-function getInterfaceProxy(obj) {
-  if (!obj._customInterfaceProxy) {
-    obj._customInterfaceProxy = new Proxy(obj, {
-      get(target, prop, receiver) {
-        let propOrMethod = target[prop];
-        if (typeof propOrMethod == "function") {
-          if (propOrMethod instanceof MozQueryInterface) {
-            return Reflect.get(target, prop, receiver);
-          }
-          return function(...args) {
-            return propOrMethod.apply(target, args);
-          };
-        }
-        return propOrMethod;
-      }
-    });
-  }
-
-  return obj._customInterfaceProxy;
 }
 
 

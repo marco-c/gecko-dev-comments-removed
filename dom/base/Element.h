@@ -1988,14 +1988,6 @@ private:
   MOZ_CAN_RUN_SCRIPT nsRect GetClientAreaRect();
 
   
-
-
-
-
-
-  template<class T> void GetCustomInterface(nsGetterAddRefs<T> aResult);
-
-  
   void IsElement() = delete;
   void AsElement() = delete;
 
