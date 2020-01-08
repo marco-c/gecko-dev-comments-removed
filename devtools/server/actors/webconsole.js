@@ -33,6 +33,8 @@ loader.lazyRequireGetter(this, "CONSOLE_WORKER_IDS", "devtools/server/actors/web
 loader.lazyRequireGetter(this, "WebConsoleUtils", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
+loader.lazyRequireGetter(this, "stringToCauseType",
+    "devtools/server/actors/network-monitor/network-observer", true);
 
 
 loader.lazyRequireGetter(this, "RESERVED_JS_KEYWORDS", "devtools/shared/webconsole/reserved-js-words");
@@ -1602,8 +1604,7 @@ WebConsoleActor.prototype =
 
 
   async sendHTTPRequest({ request }) {
-    const { url, method, headers, body } = request;
-
+    const { url, method, headers, body, cause } = request;
     
     
     const doc = this.window.document;
@@ -1612,7 +1613,8 @@ WebConsoleActor.prototype =
       uri: NetUtil.newURI(url),
       loadingNode: doc,
       securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+      contentPolicyType: stringToCauseType(cause.type)
+      || Ci.nsIContentPolicy.TYPE_OTHER,
     });
 
     channel.QueryInterface(Ci.nsIHttpChannel);
