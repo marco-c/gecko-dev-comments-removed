@@ -91,6 +91,19 @@ VARCACHE_PREF(
 
 
 
+
+#ifdef RELEASE_OR_BETA
+# define PREF_VALUE false
+#else
+# define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "dom.animations-api.timelines.enabled",
+   dom_animations_api_timelines_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
 VARCACHE_PREF(
   "dom.webcomponents.shadowdom.report_usage",
    dom_webcomponents_shadowdom_report_usage,
