@@ -18,52 +18,52 @@ const FAIL = 0x4c494146;
 const _sockets = [ ];
 
 
-function getBuffer(aPacket) {
-  return aPacket.buffer ? aPacket.buffer : aPacket;
+function getBuffer(packet) {
+  return packet.buffer ? packet.buffer : packet;
 }
 
 
 
 
-function unpackPacket(aPacket, aIgnoreResponse) {
-  const buffer = getBuffer(aPacket);
+function unpackPacket(packet, ignoreResponse) {
+  const buffer = getBuffer(packet);
   console.debug("Len buffer: " + buffer.byteLength);
-  if (buffer.byteLength === 4 && !aIgnoreResponse) {
+  if (buffer.byteLength === 4 && !ignoreResponse) {
     console.debug("Packet empty");
     return { length: 0, data: "" };
   }
-  const lengthView = new Uint8Array(buffer, aIgnoreResponse ? 0 : 4, 4);
+  const lengthView = new Uint8Array(buffer, ignoreResponse ? 0 : 4, 4);
   const decoder = new TextDecoder();
   const length = parseInt(decoder.decode(lengthView), 16);
-  const text = new Uint8Array(buffer, aIgnoreResponse ? 4 : 8, length);
+  const text = new Uint8Array(buffer, ignoreResponse ? 4 : 8, length);
   return { length, data: decoder.decode(text) };
 }
 
 
 
-function checkResponse(aPacket, aExpected = OKAY) {
-  const buffer = getBuffer(aPacket);
+function checkResponse(packet, expected = OKAY) {
+  const buffer = getBuffer(packet);
   const view = new Uint32Array(buffer, 0, 1);
   if (view[0] == FAIL) {
     console.debug("Response: FAIL");
   }
   console.debug("view[0] = " + view[0]);
-  return view[0] == aExpected;
+  return view[0] == expected;
 }
 
 
 
 
 
-function createRequest(aCommand) {
-  let length = aCommand.length.toString(16).toUpperCase();
+function createRequest(command) {
+  let length = command.length.toString(16).toUpperCase();
   while (length.length < 4) {
     length = "0" + length;
   }
 
   const encoder = new TextEncoder();
-  console.debug("Created request: " + length + aCommand);
-  return encoder.encode(length + aCommand);
+  console.debug("Created request: " + length + command);
+  return encoder.encode(length + command);
 }
 
 function close() {

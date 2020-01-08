@@ -29,9 +29,9 @@ class AdbSocket {
 
 
 
-  _hexdump(aArray) {
+  _hexdump(inputArray) {
     const decoder = new TextDecoder("windows-1252");
-    const array = new Uint8Array(aArray.buffer);
+    const array = new Uint8Array(inputArray.buffer);
     const s = decoder.decode(array);
     const len = array.length;
     let dbg = "len=" + len + " ";
@@ -57,10 +57,10 @@ class AdbSocket {
   }
 
   
-  send(aArray) {
-    this._hexdump(aArray);
+  send(array) {
+    this._hexdump(array);
 
-    this.s.send(aArray.buffer, aArray.byteOffset, aArray.byteLength);
+    this.s.send(array.buffer, array.byteOffset, array.byteLength);
   }
 
   close() {
