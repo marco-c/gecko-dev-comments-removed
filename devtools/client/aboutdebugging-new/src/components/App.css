@@ -20,3 +20,7 @@
   overflow: hidden;
   width: 100vw;
 }
+
+.page {
+  padding-block-start: 60px;
+}
