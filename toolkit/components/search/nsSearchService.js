@@ -4495,7 +4495,7 @@ SearchService.prototype = {
         let secondaryCode = queries.get("form");
         
         if (secondaryCode == "QBRE") {
-          for (let cookie of Services.cookies.getCookiesFromHost("www.bing.com")) {
+          for (let cookie of Services.cookies.getCookiesFromHost("www.bing.com", {})) {
             if (cookie.name == "SRCHS") {
               
               

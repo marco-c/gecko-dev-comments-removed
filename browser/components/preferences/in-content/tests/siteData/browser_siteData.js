@@ -152,10 +152,10 @@ add_task(async function() {
 
   
   
-  let cookiesEnum1 = Services.cookies.getCookiesFromHost(uri.host);
+  let cookiesEnum1 = Services.cookies.getCookiesFromHost(uri.host, {});
   
   cookiesEnum1.getNext();
-  let cookiesEnum2 = Services.cookies.getCookiesFromHost(uri2.host);
+  let cookiesEnum2 = Services.cookies.getCookiesFromHost(uri2.host, {});
   let cookie1 = cookiesEnum1.getNext().QueryInterface(Ci.nsICookie2);
   let cookie2 = cookiesEnum2.getNext().QueryInterface(Ci.nsICookie2);
 
