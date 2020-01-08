@@ -2010,10 +2010,12 @@ MakeDisplayItem(nsDisplayListBuilder* aBuilder, Args&&... aArgs)
   for (uint32_t i = 0; i < array.Length(); i++) {
     mozilla::DisplayItemData* did = array.ElementAt(i);
     if (did->GetDisplayItemKey() == item->GetPerFrameKey()) {
-      if (!did->HasMergedFrames()) {
-        item->SetDisplayItemData(did);
+      if (did->GetLayer()->AsPaintedLayer()) {
+        if (!did->HasMergedFrames()) {
+          item->SetDisplayItemData(did, did->GetLayer()->Manager());
+        }
+        break;
       }
-      break;
     }
   }
 
@@ -2095,6 +2097,7 @@ public:
 protected:
   virtual ~nsDisplayItem() {
     MOZ_COUNT_DTOR(nsDisplayItem);
+    SetDisplayItemData(nullptr, nullptr);
     if (mFrame) {
       mFrame->RemoveDisplayItem(this);
     }
@@ -2120,7 +2123,7 @@ public:
     if (mFrame && aFrame == mFrame) {
       MOZ_ASSERT(!mFrame->HasDisplayItem(this));
       mFrame = nullptr;
-      mDisplayItemData = nullptr;
+      SetDisplayItemData(nullptr, nullptr);
     }
   }
 
@@ -2828,11 +2831,23 @@ public:
       nsDisplayListBuilder* aBuilder,
       const ActiveScrolledRoot* aASR) const;
 
-  void SetDisplayItemData(mozilla::DisplayItemData* aDID) {
+  void SetDisplayItemData(mozilla::DisplayItemData* aDID, mozilla::layers::LayerManager* aLayerManager) {
+    if (mDisplayItemData) {
+      MOZ_ASSERT(!mDisplayItemData->GetItem() || mDisplayItemData->GetItem() == this);
+      mDisplayItemData->SetItem(nullptr);
+    }
+    if (aDID) {
+      if (aDID->GetItem()) {
+        aDID->GetItem()->SetDisplayItemData(nullptr, nullptr);
+      }
+      aDID->SetItem(this);
+    }
     mDisplayItemData = aDID;
+    mDisplayItemDataLayerManager = aLayerManager;
   }
 
   mozilla::DisplayItemData* GetDisplayItemData() { return mDisplayItemData; }
+  mozilla::layers::LayerManager* GetDisplayItemDataLayerManager() { return mDisplayItemDataLayerManager; }
 
   
   
@@ -2878,7 +2893,8 @@ protected:
   RefPtr<struct AnimatedGeometryRoot> mAnimatedGeometryRoot;
   
   nsPoint   mToReferenceFrame;
-  RefPtr<mozilla::DisplayItemData> mDisplayItemData;
+  mozilla::DisplayItemData* mDisplayItemData = nullptr;
+  mozilla::layers::LayerManager* mDisplayItemDataLayerManager = nullptr;
 
 private:
   
