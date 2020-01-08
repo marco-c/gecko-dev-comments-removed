@@ -199,6 +199,7 @@ MM_ObjCInput(MiddlemanCallContext& aCx, id* aThingPtr)
     
     static const char* gStaticClasses[] = {
       
+      "NSAutoreleasePool",
       "NSBezierPath",
       "NSButtonCell",
       "NSColor",
@@ -1131,31 +1132,23 @@ RR_objc_msgSend(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
   }
 }
 
-static PreambleResult
-MiddlemanPreamble_objc_msgSend(CallArguments* aArguments)
+static void
+MM_Alloc(MiddlemanCallContext& aCx)
 {
-  auto obj = aArguments->Arg<0, id>();
-  auto message = aArguments->Arg<1, const char*>();
-
-  
-  static const size_t FakeId = 1;
-
-  
-  
-  
-  
-  
-  if ((!strcmp(message, "alloc") && obj == (id) objc_lookUpClass("NSAutoreleasePool")) ||
-      (!strcmp(message, "init") && obj == (id) FakeId) ||
-      !strcmp(message, "drain") ||
-      !strcmp(message, "release")) {
+  if (aCx.mPhase == MiddlemanCallPhase::MiddlemanInput) {
     
-    aArguments->Rval<size_t>() = 1;
-    return PreambleResult::Veto;
+    
+    
+    
+    
+    
+    auto& obj = aCx.mArguments->Arg<0, id>();
+    if (obj == (id) objc_lookUpClass("NSAutoreleasePool")) {
+      obj = (id) objc_lookUpClass("NSString");
+    }
   }
 
-  
-  return PreambleResult::Redirect;
+  MM_CreateCFTypeRval(aCx);
 }
 
 static void
@@ -1255,14 +1248,18 @@ struct ObjCMessageInfo
 
 static ObjCMessageInfo gObjCMiddlemanCallMessages[] = {
   
-  { "alloc", MM_CreateCFTypeRval },
+  { "alloc", MM_Alloc },
   { "init", MM_AutoreleaseCFTypeRval },
   { "performSelector:withObject:", MM_PerformSelector },
+  { "release", MM_SkipInMiddleman },
   { "respondsToSelector:", MM_CString<2> },
 
   
   { "_drawInRect:context:options:",
     MM_Compose<MM_StackArgumentData<sizeof(CGRect)>, MM_CFTypeArg<2>, MM_CFTypeArg<3>> },
+
+  
+  { "drain", MM_SkipInMiddleman },
 
   
   { "count" },
@@ -2088,7 +2085,7 @@ static SystemRedirection gSystemRedirections[] = {
   { "objc_autoreleasePoolPop" },
   { "objc_autoreleasePoolPush", RR_ScalarRval },
   { "objc_msgSend",
-    RR_objc_msgSend, Preamble_objc_msgSend, MM_objc_msgSend, MiddlemanPreamble_objc_msgSend },
+    RR_objc_msgSend, Preamble_objc_msgSend, MM_objc_msgSend },
 
   
   

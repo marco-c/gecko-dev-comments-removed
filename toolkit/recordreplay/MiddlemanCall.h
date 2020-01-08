@@ -174,6 +174,10 @@ struct MiddlemanCallContext
 
   
   
+  bool mSkipCallInMiddleman;
+
+  
+  
   InfallibleVector<MiddlemanCall*>* mDependentCalls;
 
   
@@ -198,7 +202,8 @@ struct MiddlemanCallContext
 
   MiddlemanCallContext(MiddlemanCall* aCall, CallArguments* aArguments, MiddlemanCallPhase aPhase)
     : mCall(aCall), mArguments(aArguments), mPhase(aPhase),
-      mFailed(false), mDependentCalls(nullptr), mReplayOutputIsOld(false)
+      mFailed(false), mSkipCallInMiddleman(false),
+      mDependentCalls(nullptr), mReplayOutputIsOld(false)
   {
     switch (mPhase) {
     case MiddlemanCallPhase::ReplayPreface:
@@ -426,6 +431,15 @@ MM_StackArgumentData(MiddlemanCallContext& aCx)
   if (aCx.AccessPreface()) {
     auto stack = aCx.mArguments->StackAddress<0>();
     aCx.ReadOrWritePrefaceBytes(stack, ByteSize);
+  }
+}
+
+
+static inline void
+MM_SkipInMiddleman(MiddlemanCallContext& aCx)
+{
+  if (aCx.mPhase == MiddlemanCallPhase::MiddlemanInput) {
+    aCx.mSkipCallInMiddleman = true;
   }
 }
 
