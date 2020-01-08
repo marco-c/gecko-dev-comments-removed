@@ -102,11 +102,11 @@ BEGIN_TEST(testGCUID)
         }
     }
     vec.clear();
-    MinimizeHeap(cx);
 
     
     obj = vec2.back();
     CHECK(obj);
+    CHECK(!js::gc::IsInsideNursery(obj));
     tenuredAddr = uintptr_t(obj.get());
     CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
 
@@ -114,7 +114,11 @@ BEGIN_TEST(testGCUID)
     
     JS::PrepareForFullGC(cx);
     JS::NonIncrementalGC(cx, GC_SHRINK, JS::gcreason::API);
-    MinimizeHeap(cx);
+
+    
+    
+    
+    
     CHECK(uintptr_t(obj.get()) != tenuredAddr);
     CHECK(obj->zone()->hasUniqueId(obj));
     CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
