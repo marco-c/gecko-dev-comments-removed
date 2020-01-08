@@ -3007,48 +3007,49 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
   }
 
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
-
-  RefPtr<Element> selectedElement;
-  bool found = false;
   iter->Init(firstRange);
-  
-  while (!iter->IsDone()) {
-    
-    
-    
-    
-    
-    
-    selectedElement = Element::FromNodeOrNull(iter->GetCurrentNode());
-    if (selectedElement) {
-      if (found) {
-        
-        return nullptr;
-      }
 
-      if (!aTagName) {
-        found = true;
-      }
-      
-      
-      else if ((isLinkTag &&
-                HTMLEditUtils::IsLink(selectedElement)) ||
-               (isNamedAnchorTag &&
-                HTMLEditUtils::IsNamedAnchor(selectedElement))) {
-        found = true;
-      }
-      
-      else if (aTagName == selectedElement->NodeInfo()->NameAtom()) {
-        found = true;
-      }
-
-      if (!found) {
-        return nullptr;
-      }
+  RefPtr<Element> lastElementInRange;
+  for (bool foundElementInRange = false; !iter->IsDone(); iter->Next()) {
+    
+    
+    
+    
+    
+    
+    lastElementInRange = Element::FromNodeOrNull(iter->GetCurrentNode());
+    if (!lastElementInRange) {
+      continue;
     }
-    iter->Next();
+
+    if (foundElementInRange) {
+      
+      return nullptr;
+    }
+
+    foundElementInRange = true;
+
+    if (!aTagName) {
+      continue;
+    }
+
+    if (isLinkTag && HTMLEditUtils::IsLink(lastElementInRange)) {
+      continue;
+    }
+
+    if (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(lastElementInRange)) {
+      continue;
+    }
+
+    if (aTagName == lastElementInRange->NodeInfo()->NameAtom()) {
+      continue;
+    }
+
+    
+    
+    return nullptr;
   }
-  return selectedElement.forget();
+  return lastElementInRange.forget();
 }
 
 already_AddRefed<Element>
