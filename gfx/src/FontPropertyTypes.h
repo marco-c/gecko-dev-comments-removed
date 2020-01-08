@@ -54,11 +54,14 @@ class FontPropertyValue
 {
 public:
   
-  constexpr FontPropertyValue()
-    : FontPropertyValue(Min)
-  {
-  }
-
+  
+  
+  
+  
+  
+  
+  
+  FontPropertyValue() = default;
   explicit FontPropertyValue(const FontPropertyValue& aOther) = default;
   FontPropertyValue& operator=(const FontPropertyValue& aOther) = default;
 
@@ -107,12 +110,12 @@ public:
 protected:
   
   
-  explicit constexpr FontPropertyValue(float aValue)
+  explicit FontPropertyValue(float aValue)
     : mValue(std::round(aValue * kScale))
   {
     MOZ_ASSERT(aValue >= kMin && aValue <= kMax);
   }
-  explicit constexpr FontPropertyValue(int aValue)
+  explicit FontPropertyValue(int aValue)
     : mValue(aValue << kFractionBits)
   {
     MOZ_ASSERT(aValue >= Min && aValue <= Max);
@@ -121,7 +124,7 @@ protected:
   
   
   
-  explicit constexpr FontPropertyValue(InternalType aValue)
+  explicit FontPropertyValue(InternalType aValue)
     : mValue(aValue)
   {
   }
@@ -153,9 +156,11 @@ protected:
 class FontWeight final : public FontPropertyValue<uint16_t,6,1,1000>
 {
 public:
-  constexpr FontWeight() = default;
+  
+  
+  FontWeight() = default;
 
-  explicit constexpr FontWeight(float aValue)
+  explicit FontWeight(float aValue)
     : FontPropertyValue(aValue)
   {
   }
@@ -164,22 +169,22 @@ public:
 
 
 
-  explicit constexpr FontWeight(int aValue)
+  explicit FontWeight(int aValue)
     : FontPropertyValue(aValue)
   {
   }
 
-  static constexpr FontWeight Normal()
+  static FontWeight Normal()
   {
     return FontWeight(kNormal);
   }
 
-  static constexpr FontWeight Thin()
+  static FontWeight Thin()
   {
     return FontWeight(kThin);
   }
 
-  static constexpr FontWeight Bold()
+  static FontWeight Bold()
   {
     return FontWeight(kBold);
   }
@@ -195,7 +200,7 @@ public:
 private:
   friend class WeightRange;
 
-  explicit constexpr FontWeight(InternalType aValue)
+  explicit FontWeight(InternalType aValue)
     : FontPropertyValue(aValue)
   {
   }
@@ -224,46 +229,48 @@ private:
 class FontStretch final : public FontPropertyValue<uint16_t,6,0,1000>
 {
 public:
-  constexpr FontStretch() = default;
+  
+  
+  FontStretch() = default;
 
-  explicit constexpr FontStretch(float aPercent)
+  explicit FontStretch(float aPercent)
     : FontPropertyValue(aPercent)
   {
   }
 
-  static constexpr FontStretch Normal()
+  static FontStretch Normal()
   {
     return FontStretch(kNormal);
   }
-  static constexpr FontStretch UltraCondensed()
+  static FontStretch UltraCondensed()
   {
     return FontStretch(kUltraCondensed);
   }
-  static constexpr FontStretch ExtraCondensed()
+  static FontStretch ExtraCondensed()
   {
     return FontStretch(kExtraCondensed);
   }
-  static constexpr FontStretch Condensed()
+  static FontStretch Condensed()
   {
     return FontStretch(kCondensed);
   }
-  static constexpr FontStretch SemiCondensed()
+  static FontStretch SemiCondensed()
   {
     return FontStretch(kSemiCondensed);
   }
-  static constexpr FontStretch SemiExpanded()
+  static FontStretch SemiExpanded()
   {
     return FontStretch(kSemiExpanded);
   }
-  static constexpr FontStretch Expanded()
+  static FontStretch Expanded()
   {
     return FontStretch(kExpanded);
   }
-  static constexpr FontStretch ExtraExpanded()
+  static FontStretch ExtraExpanded()
   {
     return FontStretch(kExtraExpanded);
   }
-  static constexpr FontStretch UltraExpanded()
+  static FontStretch UltraExpanded()
   {
     return FontStretch(kUltraExpanded);
   }
@@ -273,7 +280,7 @@ public:
   
   
   
-  static constexpr FontStretch FromStyle(float aStylePercentage)
+  static FontStretch FromStyle(float aStylePercentage)
   {
     return FontStretch(std::min(aStylePercentage * 100.0f, float(kMax)));
   }
@@ -286,7 +293,7 @@ public:
 private:
   friend class StretchRange;
 
-  explicit constexpr FontStretch(InternalType aValue)
+  explicit FontStretch(InternalType aValue)
     : FontPropertyValue(aValue)
   {
   }
@@ -317,19 +324,21 @@ class FontSlantStyle final : public FontPropertyValue<int16_t,8,-90,90>
 public:
   const static constexpr float kDefaultAngle = 14.0;
 
-  constexpr FontSlantStyle() = default;
+  
+  
+  FontSlantStyle() = default;
 
-  static constexpr FontSlantStyle Normal()
+  static FontSlantStyle Normal()
   {
     return FontSlantStyle(kNormal);
   }
 
-  static constexpr FontSlantStyle Italic()
+  static FontSlantStyle Italic()
   {
     return FontSlantStyle(kItalic);
   }
 
-  static constexpr FontSlantStyle Oblique(float aAngle = kDefaultAngle)
+  static FontSlantStyle Oblique(float aAngle = kDefaultAngle)
   {
     return FontSlantStyle(aAngle);
   }
@@ -341,18 +350,18 @@ public:
   {
     if (strcmp(aString, "normal") == 0) {
       return Normal();
-    }
-    if (strcmp(aString, "italic") == 0) {
+    } else if (strcmp(aString, "italic") == 0) {
       return Italic();
+    } else {
+      if (mozilla::IsAsciiDigit(aString[0]) && strstr(aString, "deg")) {
+        float angle = strtof(aString, nullptr);
+        return Oblique(angle);
+      }
+      
+      
+      
+      return aString[0] == '0' ? Normal() : Italic();
     }
-    if (mozilla::IsAsciiDigit(aString[0]) && strstr(aString, "deg")) {
-      float angle = strtof(aString, nullptr);
-      return Oblique(angle);
-    }
-    
-    
-    
-    return aString[0] == '0' ? Normal() : Italic();
   }
 
   bool IsNormal() const { return mValue == kNormal; }
@@ -389,12 +398,12 @@ public:
 private:
   friend class SlantStyleRange;
 
-  explicit constexpr FontSlantStyle(InternalType aConstant)
+  explicit FontSlantStyle(InternalType aConstant)
     : FontPropertyValue(aConstant)
   {
   }
 
-  explicit constexpr FontSlantStyle(float aAngle)
+  explicit FontSlantStyle(float aAngle)
     : FontPropertyValue(aAngle)
   {
   }
