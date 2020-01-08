@@ -31,59 +31,6 @@ using mozilla::CheckedUint32;
 
 
 
-
-
-
-
-
-
-
-#define CACHE_POINTER_SHIFT 5
-#define CACHE_NUM_SLOTS 128
-#define CACHE_CHILD_LIMIT 10
-
-#define CACHE_GET_INDEX(_array) \
-  ((NS_PTR_TO_INT32(_array) >> CACHE_POINTER_SHIFT) & \
-   (CACHE_NUM_SLOTS - 1))
-
-struct IndexCacheSlot
-{
-  const AttrArray* array;
-  int32_t index;
-};
-
-
-
-
-static IndexCacheSlot indexCache[CACHE_NUM_SLOTS];
-
-static
-inline
-void
-AddIndexToCache(const AttrArray* aArray, int32_t aIndex)
-{
-  uint32_t ix = CACHE_GET_INDEX(aArray);
-  indexCache[ix].array = aArray;
-  indexCache[ix].index = aIndex;
-}
-
-static
-inline
-int32_t
-GetIndexFromCache(const AttrArray* aArray)
-{
-  uint32_t ix = CACHE_GET_INDEX(aArray);
-  return indexCache[ix].array == aArray ? indexCache[ix].index : -1;
-}
-
-
-
-
-
-
-
-
-
 #define ATTRS(_impl) \
   reinterpret_cast<InternalAttr*>(&((_impl)->mBuffer[0]))
 
@@ -218,9 +165,6 @@ AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
     }
   }
 
-  NS_ENSURE_TRUE(i < ATTRCHILD_ARRAY_MAX_ATTR_COUNT,
-                 NS_ERROR_FAILURE);
-
   if (i == slotCount && !AddAttrSlot()) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -252,9 +196,6 @@ AttrArray::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
       return NS_OK;
     }
   }
-
-  NS_ENSURE_TRUE(i < ATTRCHILD_ARRAY_MAX_ATTR_COUNT,
-                 NS_ERROR_FAILURE);
 
   if (i == slotCount && !AddAttrSlot()) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -503,7 +444,7 @@ AttrArray::Clear()
     ATTRS(mImpl)[i].~InternalAttr();
   }
 
-  SetAttrSlotAndChildCount(0, 0);
+  SetAttrSlotCount(0);
 }
 
 uint32_t
@@ -630,7 +571,7 @@ AttrArray::EnsureCapacityToClone(const AttrArray& aOther,
   
   
   memset(static_cast<void*>(mImpl->mBuffer), 0, sizeof(InternalAttr) * attrCount);
-  SetAttrSlotAndChildCount(attrCount, 0);
+  SetAttrSlotCount(attrCount);
 
   return NS_OK;
 }
@@ -685,7 +626,7 @@ AttrArray::GrowBy(uint32_t aGrowSize)
   
   if (needToInitialize) {
     mImpl->mMappedAttrs = nullptr;
-    SetAttrSlotAndChildCount(0, 0);
+    SetAttrSlotCount(0);
   }
 
   mImpl->mBufferSize = size.value() - NS_IMPL_EXTRA_SIZE;
