@@ -688,9 +688,6 @@ private:
     
     nsresult ConnectOnTailUnblock();
 
-    
-    bool CheckFastBlocked();
-
     nsCString mUsername;
 
     
