@@ -8,13 +8,13 @@
 #define MOZILLA_SVGVIEWBOXSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 
 class nsSMILValue;
 
 namespace mozilla {
 
-class SVGViewBoxSMILType : public nsISMILType {
+class SVGViewBoxSMILType : public SMILType {
  public:
   
   static SVGViewBoxSMILType sSingleton;

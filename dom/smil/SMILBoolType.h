@@ -8,11 +8,11 @@
 #define MOZILLA_SMILBOOLTYPE_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 
 namespace mozilla {
 
-class SMILBoolType : public nsISMILType {
+class SMILBoolType : public SMILType {
  public:
   
   static SMILBoolType* Singleton() {

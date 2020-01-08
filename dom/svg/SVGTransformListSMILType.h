@@ -8,7 +8,7 @@
 #define SVGTRANSFORMLISTSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 #include "nsTArray.h"
 
 class nsSMILValue;
@@ -78,7 +78,7 @@ class SVGTransformSMILData;
 
 
 
-class SVGTransformListSMILType : public nsISMILType {
+class SVGTransformListSMILType : public SMILType {
  public:
   
   static SVGTransformListSMILType* Singleton() {

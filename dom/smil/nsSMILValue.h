@@ -7,7 +7,7 @@
 #ifndef NS_SMILVALUE_H_
 #define NS_SMILVALUE_H_
 
-#include "nsISMILType.h"
+#include "SMILType.h"
 #include "SMILNullType.h"
 
 
@@ -22,9 +22,10 @@
 class nsSMILValue {
  public:
   typedef mozilla::SMILNullType SMILNullType;
+  typedef mozilla::SMILType SMILType;
 
   nsSMILValue() : mU(), mType(SMILNullType::Singleton()) {}
-  explicit nsSMILValue(const nsISMILType* aType);
+  explicit nsSMILValue(const SMILType* aType);
   nsSMILValue(const nsSMILValue& aVal);
 
   ~nsSMILValue() { mType->Destroy(*this); }
@@ -62,12 +63,12 @@ class nsSMILValue {
     float mNumberPair[2];
     void* mPtr;
   } mU;
-  const nsISMILType* mType;
+  const SMILType* mType;
 
  protected:
-  void InitAndCheckPostcondition(const nsISMILType* aNewType);
+  void InitAndCheckPostcondition(const SMILType* aNewType);
   void DestroyAndCheckPostcondition();
-  void DestroyAndReinit(const nsISMILType* aNewType);
+  void DestroyAndReinit(const SMILType* aNewType);
 };
 
 #endif  

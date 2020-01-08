@@ -8,7 +8,7 @@
 #define MOZILLA_SVGPOINTLISTSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 
 class nsSMILValue;
 
@@ -19,7 +19,7 @@ namespace mozilla {
 
 
 
-class SVGPointListSMILType : public nsISMILType {
+class SVGPointListSMILType : public SMILType {
  public:
   
   static SVGPointListSMILType sSingleton;

@@ -12,6 +12,7 @@
 
 class nsSMILValue;
 
+namespace mozilla {
 
 
 
@@ -45,11 +46,12 @@ class nsSMILValue;
 
 
 
-class nsISMILType {
+
+class SMILType {
   
 
 
-  friend class nsSMILValue;
+  friend class ::nsSMILValue;
 
  protected:
   
@@ -206,5 +208,7 @@ class nsISMILType {
                                const nsSMILValue& aEndVal, double aUnitDistance,
                                nsSMILValue& aResult) const = 0;
 };
+
+}  
 
 #endif  

@@ -8,7 +8,7 @@
 #define MOZILLA_SVGLENGTHLISTSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 
 class nsSMILValue;
 
@@ -19,7 +19,7 @@ namespace mozilla {
 
 
 
-class SVGLengthListSMILType : public nsISMILType {
+class SVGLengthListSMILType : public SMILType {
  public:
   
   static SVGLengthListSMILType sSingleton;

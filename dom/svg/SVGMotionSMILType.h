@@ -11,7 +11,7 @@
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 
 class nsSMILValue;
 
@@ -33,7 +33,7 @@ enum RotateType {
 
 
 
-class SVGMotionSMILType : public nsISMILType {
+class SVGMotionSMILType : public SMILType {
   typedef mozilla::gfx::Path Path;
 
  public:

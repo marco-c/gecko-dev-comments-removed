@@ -8,7 +8,7 @@
 #define MOZILLA_SVGORIENTSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILType.h"
+#include "SMILType.h"
 
 class nsSMILValue;
 
@@ -34,7 +34,7 @@ class nsSMILValue;
 
 namespace mozilla {
 
-class SVGOrientSMILType : public nsISMILType {
+class SVGOrientSMILType : public SMILType {
  public:
   
   static SVGOrientSMILType sSingleton;

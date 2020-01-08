@@ -9,7 +9,7 @@
 #ifndef NS_SMILCSSVALUETYPE_H_
 #define NS_SMILCSSVALUETYPE_H_
 
-#include "nsISMILType.h"
+#include "SMILType.h"
 #include "nsCSSPropertyID.h"
 #include "nsStringFwd.h"
 #include "mozilla/Attributes.h"
@@ -24,7 +24,7 @@ class Element;
 
 
 
-class SMILCSSValueType : public nsISMILType {
+class SMILCSSValueType : public SMILType {
  public:
   typedef mozilla::dom::Element Element;
   typedef mozilla::AnimationValue AnimationValue;
