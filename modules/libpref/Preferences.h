@@ -39,44 +39,11 @@ class Pref;
 class PrefValue;
 } 
 
-namespace ipc {
-class FileDescriptor;
-} 
-
 struct PrefsSizes;
-
-
-
-#ifndef Bool
-
-
-enum class PrefType : uint8_t
-{
-  None = 0, 
-  String = 1,
-  Int = 2,
-  Bool = 3,
-};
-
-#endif
 
 #ifdef XP_UNIX
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 static const int kPrefsFileDescriptor = 8;
-static const int kPrefMapFileDescriptor = 9;
 #endif
 
 
@@ -513,9 +480,6 @@ public:
   
   static void SerializePreferences(nsCString& aStr);
   static void DeserializePreferences(char* aStr, size_t aPrefsLen);
-
-  static mozilla::ipc::FileDescriptor EnsureSnapshot(size_t* aSize);
-  static void InitSnapshot(const mozilla::ipc::FileDescriptor&, size_t aSize);
 
   
   
