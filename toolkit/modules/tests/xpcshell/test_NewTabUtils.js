@@ -818,7 +818,7 @@ add_task(async function getTopFrecentSites_order() {
     
     {uri: "https://mozilla3.com/2", visitDate: timeLater, transition: TRANSITION_TYPED},
     
-    {uri: "https://mozilla4.com/3", visitDate: timeLater}
+    {uri: "https://mozilla0.com/", visitDate: timeLater}
   ];
 
   let links = await provider.getTopSites({topsiteFrecency: 0});
