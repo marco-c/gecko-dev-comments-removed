@@ -54,14 +54,20 @@ public:
 class nsJSObjWrapper : public NPObject
 {
 public:
-  JS::Heap<JSObject *> mJSObj;
+  JS::Heap<JSObject*> mJSObj;
+  
+  
+  
+  JS::Heap<JSObject*> mJSObjGlobal;
   const NPP mNpp;
   bool mDestroyPending;
 
-  static NPObject* GetNewOrUsed(NPP npp, JS::Handle<JSObject*> obj);
+  static NPObject* GetNewOrUsed(NPP npp, JS::Handle<JSObject*> obj,
+                                JS::Handle<JSObject*> objGlobal);
 
   void trace(JSTracer* trc) {
-      JS::TraceEdge(trc, &mJSObj, "nsJSObjWrapper");
+      JS::TraceEdge(trc, &mJSObj, "nsJSObjWrapper::mJSObj");
+      JS::TraceEdge(trc, &mJSObjGlobal, "nsJSObjWrapper::mJSObjGlobal");
   }
 
 protected:
