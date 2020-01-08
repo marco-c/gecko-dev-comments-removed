@@ -1170,6 +1170,12 @@ TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame)
         return;
     }
 
+    if (frame.isExitFrameLayout<DirectWasmJitCallFrameLayout>()) {
+        
+        
+        return;
+    }
+
     if (frame.isBareExit()) {
         
         

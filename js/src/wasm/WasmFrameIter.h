@@ -19,6 +19,7 @@
 #ifndef wasm_frame_iter_h
 #define wasm_frame_iter_h
 
+#include "jit/JSJitFrameIter.h"
 #include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 #include "wasm/WasmTypes.h"
@@ -64,6 +65,7 @@ class WasmFrameIter
     unsigned lineOrBytecode_;
     Frame* fp_;
     uint8_t* unwoundIonCallerFP_;
+    jit::FrameType unwoundIonFrameType_;
     Unwind unwind_;
     void** unwoundAddressOfReturnAddress_;
 
@@ -88,6 +90,7 @@ class WasmFrameIter
     void** unwoundAddressOfReturnAddress() const;
     bool debugEnabled() const;
     DebugFrame* debugFrame() const;
+    jit::FrameType unwoundIonFrameType() const;
     uint8_t* unwoundIonCallerFP() const { return unwoundIonCallerFP_; }
 };
 
@@ -263,6 +266,19 @@ typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 bool
 StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
                bool* unwoundCaller);
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uintptr_t ExitOrJitEntryFPTag = 0x1;
 
 } 
 } 

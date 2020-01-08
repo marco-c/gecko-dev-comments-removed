@@ -597,6 +597,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline uint32_t callJit(Register callee);
     inline uint32_t callJit(JitCode* code);
     inline uint32_t callJit(TrampolinePtr code);
+    inline uint32_t callJit(ImmPtr callee);
 
     
     

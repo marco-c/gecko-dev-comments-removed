@@ -119,7 +119,7 @@ class JSJitFrameIter
 
     
     
-    JSJitFrameIter(const JitActivation* activation, uint8_t* fp);
+    JSJitFrameIter(const JitActivation* activation, FrameType frameType, uint8_t* fp);
 
     
     void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
