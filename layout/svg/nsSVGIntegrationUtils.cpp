@@ -809,13 +809,13 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
 
   
   gfxContextAutoSaveRestore basicShapeSR;
-  if (maskUsage.shouldApplyBasicShape) {
+  if (maskUsage.shouldApplyBasicShapeOrPath) {
     matSR.SetContext(&ctx);
 
     MoveContextOriginToUserSpace(firstFrame, aParams);
 
     basicShapeSR.SetContext(&ctx);
-    nsCSSClipPathInstance::ApplyBasicShapeClip(ctx, frame);
+    nsCSSClipPathInstance::ApplyBasicShapeOrPathClip(ctx, frame);
     if (!maskUsage.shouldGenerateMaskLayer) {
       
       
@@ -997,17 +997,17 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
   
 
 
-  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShape) {
+  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShapeOrPath) {
     gfxContextMatrixAutoSaveRestore matSR(&context);
 
     MoveContextOriginToUserSpace(firstFrame, aParams);
 
     MOZ_ASSERT(!maskUsage.shouldApplyClipPath ||
-               !maskUsage.shouldApplyBasicShape);
+               !maskUsage.shouldApplyBasicShapeOrPath);
     if (maskUsage.shouldApplyClipPath) {
       clipPathFrame->ApplyClipPath(context, frame, cssPxToDevPxMatrix);
     } else {
-      nsCSSClipPathInstance::ApplyBasicShapeClip(context, frame);
+      nsCSSClipPathInstance::ApplyBasicShapeOrPathClip(context, frame);
     }
   }
 
@@ -1036,7 +1036,7 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
         maskUsage.shouldGenerateClipMaskLayer) {
       overlayColor.g = 1.0f; 
     }
-    if (maskUsage.shouldApplyBasicShape) {
+    if (maskUsage.shouldApplyBasicShapeOrPath) {
       overlayColor.b = 1.0f; 
                              
     }
@@ -1045,7 +1045,7 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
     context.Fill();
   }
 
-  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShape) {
+  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShapeOrPath) {
     context.PopClip();
   }
 
