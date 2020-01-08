@@ -307,7 +307,7 @@ AsyncGeneratorObject::create(JSContext* cx, HandleFunction asyncGen, HandleValue
  AsyncGeneratorRequest*
 AsyncGeneratorObject::createRequest(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                                     CompletionKind completionKind, HandleValue completionValue,
-                                    HandleObject promise)
+                                    Handle<PromiseObject*> promise)
 {
     if (!asyncGenObj->hasCachedRequest())
         return AsyncGeneratorRequest::create(cx, completionKind, completionValue, promise);
@@ -377,7 +377,7 @@ const Class AsyncGeneratorRequest::class_ = {
 
  AsyncGeneratorRequest*
 AsyncGeneratorRequest::create(JSContext* cx, CompletionKind completionKind,
-                              HandleValue completionValue, HandleObject promise)
+                              HandleValue completionValue, Handle<PromiseObject*> promise)
 {
     AsyncGeneratorRequest* request = NewObjectWithGivenProto<AsyncGeneratorRequest>(cx, nullptr);
     if (!request)
