@@ -159,7 +159,7 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
   uint32_t mDragActionFromChildProcess;
 
   nsCOMPtr<nsINode> mSourceNode;
-  nsCString mTriggeringPrincipalURISpec;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
 
   
   

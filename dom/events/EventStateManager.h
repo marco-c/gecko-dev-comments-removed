@@ -1064,13 +1064,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-
   void DetermineDragTargetAndDefaultData(nsPIDOMWindowOuter* aWindow,
                                          nsIContent* aSelectionTarget,
                                          dom::DataTransfer* aDataTransfer,
                                          dom::Selection** aSelection,
                                          nsIContent** aTargetNode,
-                                         nsACString& aPrincipalURISpec);
+                                         nsIPrincipal** aPrincipal);
 
   
 
@@ -1088,7 +1087,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
                           WidgetDragEvent* aDragEvent,
                           dom::DataTransfer* aDataTransfer,
                           nsIContent* aDragTarget, dom::Selection* aSelection,
-                          const nsACString& aPrincipalURISpec);
+                          nsIPrincipal* aPrincipal);
 
   bool IsTrackingDragGesture() const { return mGestureDownContent != nullptr; }
   
