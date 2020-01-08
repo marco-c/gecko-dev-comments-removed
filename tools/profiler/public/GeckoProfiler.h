@@ -736,12 +736,8 @@ public:
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    if (profiler_is_active()) {
-      Push(js::GetContextProfilingStack(aJSContext),
-           aLabel, aDynamicString, aLine, aCategory);
-    } else {
-      mProfilingStack = nullptr;
-    }
+    Push(js::GetContextProfilingStackIfEnabled(aJSContext),
+         aLabel, aDynamicString, aLine, aCategory);
   }
 
   void Push(ProfilingStack* aProfilingStack,

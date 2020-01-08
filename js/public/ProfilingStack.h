@@ -471,12 +471,16 @@ class GeckoProfilerThread
 
     ProfilingStack*         profilingStack_;
 
+    
+    ProfilingStack*         profilingStackIfEnabled_;
+
   public:
     GeckoProfilerThread();
 
     uint32_t stackPointer() { MOZ_ASSERT(infraInstalled()); return profilingStack_->stackPointer; }
     ProfilingStackFrame* stack() { return profilingStack_->frames; }
     ProfilingStack* getProfilingStack() { return profilingStack_; }
+    ProfilingStack* getProfilingStackIfEnabled() { return profilingStackIfEnabled_; }
 
     
 
@@ -485,7 +489,8 @@ class GeckoProfilerThread
 
     bool infraInstalled() { return profilingStack_ != nullptr; }
 
-    void setProfilingStack(ProfilingStack* profilingStack);
+    void setProfilingStack(ProfilingStack* profilingStack, bool enabled);
+    void enable(bool enable) { profilingStackIfEnabled_ = enable ? profilingStack_ : nullptr; }
     void trace(JSTracer* trc);
 
     
