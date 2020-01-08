@@ -226,47 +226,11 @@ public:
 
   
   
-  template<typename CapturedState>
-  void NotifyBeginAsyncPaint(CapturedState& aState)
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    MonitorAutoLock lock(mPaintLock);
-
-    
-    
-    
-    MOZ_ASSERT(!mIsDelayingForAsyncPaints);
-
-    mOutstandingAsyncPaints++;
-
-    
-    
-    aState->ForEachTextureClient([this] (auto aClient) {
-      aClient->AddPaintThreadRef();
-      mTextureClientsForAsyncPaint.AppendElement(aClient);
-    });
-  }
+  void NotifyBeginAsyncPaint(PaintTask* aTask);
 
   
   
-  template<typename CapturedState>
-  bool NotifyFinishedAsyncWorkerPaint(CapturedState& aState)
-  {
-    MOZ_ASSERT(PaintThread::IsOnPaintThread());
-
-    MonitorAutoLock lock(mPaintLock);
-    mOutstandingAsyncPaints--;
-
-    aState->ForEachTextureClient([] (auto aClient) {
-      aClient->DropPaintThreadRef();
-    });
-    aState->DropTextureClients();
-
-    
-    
-    return mOutstandingAsyncEndTransaction && mOutstandingAsyncPaints == 0;
-  }
+  bool NotifyFinishedAsyncWorkerPaint(PaintTask* aTask);
 
   
   

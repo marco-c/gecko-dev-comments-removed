@@ -1183,6 +1183,48 @@ CompositorBridgeChild::FlushAsyncPaints()
   }
 }
 
+void
+CompositorBridgeChild::NotifyBeginAsyncPaint(PaintTask* aTask)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock(mPaintLock);
+
+  
+  
+  
+  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
+
+  mOutstandingAsyncPaints++;
+
+  
+  
+  for (auto& client : aTask->mClients) {
+    client->AddPaintThreadRef();
+    mTextureClientsForAsyncPaint.AppendElement(client);
+  };
+}
+
+
+
+bool
+CompositorBridgeChild::NotifyFinishedAsyncWorkerPaint(PaintTask* aTask)
+{
+  MOZ_ASSERT(PaintThread::IsOnPaintThread());
+
+  MonitorAutoLock lock(mPaintLock);
+  mOutstandingAsyncPaints--;
+
+  for (auto& client : aTask->mClients) {
+    client->DropPaintThreadRef();
+  };
+  aTask->DropTextureClients();
+
+  
+  
+  return mOutstandingAsyncEndTransaction && mOutstandingAsyncPaints == 0;
+}
+
 bool
 CompositorBridgeChild::NotifyBeginAsyncEndLayerTransaction(SyncObjectClient* aSyncObject)
 {
