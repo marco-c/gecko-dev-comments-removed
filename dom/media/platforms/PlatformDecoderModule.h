@@ -323,7 +323,6 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   
   
   
-  
   virtual void SetSeekThreshold(const media::TimeUnit& aTime) {}
 
   

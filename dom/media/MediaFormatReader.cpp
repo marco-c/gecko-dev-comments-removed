@@ -2889,9 +2889,10 @@ void MediaFormatReader::SetVideoDecodeThreshold() {
 
     
     
-    threshold = keyframe.IsValid() && !keyframe.IsInfinite()
-                    ? mOriginalSeekTarget.GetTime()
-                    : TimeUnit::Invalid();
+    if (!keyframe.IsValid() || keyframe.IsInfinite()) {
+      return;
+    }
+    threshold = mOriginalSeekTarget.GetTime();
   } else {
     return;
   }
