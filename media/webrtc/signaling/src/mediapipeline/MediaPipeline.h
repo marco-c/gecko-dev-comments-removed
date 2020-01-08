@@ -189,7 +189,7 @@ public:
     virtual nsresult SendRtcpPacket(const uint8_t* aData, size_t aLen) override;
 
   private:
-    nsresult SendRtpRtcpPacket_s(nsAutoPtr<MediaPacket> aData);
+    void SendRtpRtcpPacket_s(nsAutoPtr<MediaPacket> aPacket);
 
     
     RefPtr<MediaPipeline> mPipeline;
@@ -209,7 +209,7 @@ protected:
   virtual void OnRtpPacketReceived() {};
   void IncrementRtcpPacketsReceived();
 
-  virtual nsresult SendPacket(MediaPacket& packet);
+  virtual void SendPacket(MediaPacket& packet);
 
   
   void RtpStateChange(const std::string& aTransportId, TransportLayer::State);

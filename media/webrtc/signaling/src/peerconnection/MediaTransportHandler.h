@@ -34,8 +34,8 @@ struct RTCStatsReportInternal;
 
 class MediaTransportBase {
   public:
-    virtual nsresult SendPacket(const std::string& aTransportId,
-                                MediaPacket& aPacket) = 0;
+    virtual void SendPacket(const std::string& aTransportId,
+                            MediaPacket& aPacket) = 0;
 
     virtual TransportLayer::State GetState(const std::string& aTransportId,
                                            bool aRtcp) const = 0;
@@ -61,7 +61,7 @@ class MediaTransportHandler : public MediaTransportBase,
 
     
     
-    nsresult SetProxyServer(NrSocketProxyConfig&& aProxyConfig);
+    void SetProxyServer(NrSocketProxyConfig&& aProxyConfig);
 
     void EnsureProvisionalTransport(const std::string& aTransportId,
                                     const std::string& aLocalUfrag,
@@ -79,33 +79,33 @@ class MediaTransportHandler : public MediaTransportBase,
                            const nsTArray<NrIceStunAddr>& aStunAddrs);
 
 
-    nsresult ActivateTransport(const std::string& aTransportId,
-                               const std::string& aLocalUfrag,
-                               const std::string& aLocalPwd,
-                               size_t aComponentCount,
-                               const std::string& aUfrag,
-                               const std::string& aPassword,
-                               const std::vector<std::string>& aCandidateList,
-                               
-                               RefPtr<DtlsIdentity> aDtlsIdentity,
-                               bool aDtlsClient,
-                               
-                               const SdpFingerprintAttributeList& aFingerprints,
-                               bool aPrivacyRequested);
+    void ActivateTransport(const std::string& aTransportId,
+                           const std::string& aLocalUfrag,
+                           const std::string& aLocalPwd,
+                           size_t aComponentCount,
+                           const std::string& aUfrag,
+                           const std::string& aPassword,
+                           const std::vector<std::string>& aCandidateList,
+                           
+                           RefPtr<DtlsIdentity> aDtlsIdentity,
+                           bool aDtlsClient,
+                           
+                           const SdpFingerprintAttributeList& aFingerprints,
+                           bool aPrivacyRequested);
 
     void RemoveTransportsExcept(const std::set<std::string>& aTransportIds);
 
-    nsresult StartIceChecks(bool aIsControlling,
-                            bool aIsOfferer,
-                            const std::vector<std::string>& aIceOptions);
+    void StartIceChecks(bool aIsControlling,
+                        bool aIsOfferer,
+                        const std::vector<std::string>& aIceOptions);
 
-    nsresult AddIceCandidate(const std::string& aTransportId,
-                             const std::string& aCandidate);
+    void AddIceCandidate(const std::string& aTransportId,
+                         const std::string& aCandidate);
 
     void UpdateNetworkState(bool aOnline);
 
-    nsresult SendPacket(const std::string& aTransportId,
-                        MediaPacket& aPacket) override;
+    void SendPacket(const std::string& aTransportId,
+                    MediaPacket& aPacket) override;
 
     
     
@@ -113,13 +113,11 @@ class MediaTransportHandler : public MediaTransportBase,
                                    bool aRtcp) const override;
 
     
-    void GetAllIceStats(bool internalStats,
-                        DOMHighResTimeStamp now,
+    void GetAllIceStats(DOMHighResTimeStamp now,
                         dom::RTCStatsReportInternal* report);
 
     
     void GetIceStats(const std::string& aTransportId,
-                     bool internalStats,
                      DOMHighResTimeStamp now,
                      dom::RTCStatsReportInternal* report);
 
@@ -165,7 +163,6 @@ class MediaTransportHandler : public MediaTransportBase,
     RefPtr<TransportFlow> GetTransportFlow(const std::string& aId,
                                            bool aIsRtcp) const;
     void GetIceStats(const NrIceMediaStream& aStream,
-                     bool aInternalStats,
                      DOMHighResTimeStamp aNow,
                      dom::RTCStatsReportInternal* aReport) const;
 
