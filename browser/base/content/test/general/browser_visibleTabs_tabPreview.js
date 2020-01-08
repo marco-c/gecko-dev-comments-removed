@@ -3,7 +3,7 @@
 
 
 add_task(async function test() {
-  Services.prefs.setBoolPref("browser.ctrlTab.previews", true);
+  await SpecialPowers.pushPrefEnv({"set": [["browser.ctrlTab.recentlyUsedOrder", true]]});
 
   let [origTab] = gBrowser.visibleTabs;
   let tabOne = BrowserTestUtils.addTab(gBrowser);
@@ -27,9 +27,6 @@ add_task(async function test() {
   
   gBrowser.removeTab(tabOne);
   gBrowser.removeTab(tabTwo);
-
-  if (Services.prefs.prefHasUserValue("browser.ctrlTab.previews"))
-    Services.prefs.clearUserPref("browser.ctrlTab.previews");
 });
 
 function pressCtrlTab(aShiftKey) {
