@@ -28,12 +28,18 @@
 
 
 mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 NSErrorToLabel(
-    nsresult rv);
+    nsresult aRv);
 
 
 
 
 mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 HTTPStatusToLabel(
-    uint32_t status);
+    uint32_t aStatus);
+
+
+
+
+mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_VERDICT_2
+VerdictToLabel(uint32_t aVerdict);
 
 #endif  
