@@ -30,10 +30,7 @@ add_task(async function selectInternalOptionForFeed() {
   container.selectItem(feedItem);
   Assert.ok(feedItem.selected, "Should be able to select our item.");
 
-  
-  let list = await TestUtils.waitForCondition(() =>
-    win.document.getAnonymousElementByAttribute(feedItem, "class", "actionsMenu"));
-  info("Got list after item was selected");
+  let list = feedItem.querySelector(".actionsMenu");
 
   
   let chooseItems = list.getElementsByAttribute("action", Ci.nsIHandlerInfo.handleInternally);
@@ -45,9 +42,6 @@ add_task(async function selectInternalOptionForFeed() {
   chooseItems[0].dispatchEvent(cmdEvent);
 
   
-  list = await TestUtils.waitForCondition(() =>
-    win.document.getAnonymousElementByAttribute(feedItem, "class", "actionsMenu"));
-  info("Got list after item was selected");
   Assert.ok(list.selectedItem, "Should have a selected item.");
   Assert.equal(list.selectedItem.getAttribute("action"),
                Ci.nsIHandlerInfo.handleInternally,
@@ -63,16 +57,9 @@ add_task(async function reselectInternalOptionForFeed() {
   container.selectItem(anotherItem);
 
   
-  await TestUtils.waitForCondition(() =>
-    win.document.getAnonymousElementByAttribute(anotherItem, "class", "actionsMenu"));
-  info("Got list after item was selected");
-
-  
   container.selectItem(feedItem);
 
-  let list = await TestUtils.waitForCondition(() =>
-    win.document.getAnonymousElementByAttribute(feedItem, "class", "actionsMenu"));
-  info("Got list after item was selected");
+  let list = feedItem.querySelector(".actionsMenu");
 
   Assert.ok(list.selectedItem,
             "Should have a selected item");
@@ -117,6 +104,10 @@ add_task(async function sortingCheck() {
 
   actionColumn.click();
   assertSortByAction("descending");
+
+  
+  typeColumn.click();
+  assertSortByType("ascending");
 
   function assertSortByAction(order) {
   Assert.equal(actionColumn.getAttribute("sortDirection"),
