@@ -647,8 +647,9 @@ js::RemapWrapper(JSContext* cx, JSObject* wobjArg, JSObject* newTargetArg)
     
     RootedObject tobj(cx, newTarget);
     AutoRealmUnchecked ar(cx, wrealm);
+    AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!wcompartment->rewrap(cx, &tobj, wobj)) {
-        MOZ_CRASH();
+        oomUnsafe.crash("js::RemapWrapper");
     }
 
     
@@ -670,7 +671,7 @@ js::RemapWrapper(JSContext* cx, JSObject* wobjArg, JSObject* newTargetArg)
     
     MOZ_ASSERT(wobj->is<WrapperObject>());
     if (!wcompartment->putWrapper(cx, CrossCompartmentKey(newTarget), ObjectValue(*wobj))) {
-        MOZ_CRASH();
+        oomUnsafe.crash("js::RemapWrapper");
     }
 }
 
