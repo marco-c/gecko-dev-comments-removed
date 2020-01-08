@@ -19,7 +19,9 @@
 #include "nsReadableUtils.h"
 #include "nsContentUtils.h"
 #include "nsISHistory.h"
+#include "mozilla/dom/Location.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/RefPtr.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -182,6 +184,21 @@ nsHistory::Go(int32_t aDelta, ErrorResult& aRv)
       nsPresContext *pcx;
       if (doc && (pcx = doc->GetPresContext())) {
         pcx->RebuildAllStyleData(NS_STYLE_HINT_REFLOW, eRestyle_Subtree);
+      }
+
+      return;
+    }
+
+    
+    
+    
+    RefPtr<Location> location = window ? window->GetLocation() : nullptr;
+
+    if (location) {
+      nsresult rv = location->Reload(false);
+
+      if (NS_FAILED(rv)) {
+        aRv.Throw(NS_ERROR_FAILURE);
       }
 
       return;
