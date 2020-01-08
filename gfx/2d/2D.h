@@ -1306,6 +1306,11 @@ public:
   
 
 
+  virtual bool Unrotate(IntPoint aRotation);
+
+  
+
+
 
 
 
