@@ -247,6 +247,37 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mDisplayDensityOverride = density;
             return this;
         }
+
+        
+
+
+
+
+
+
+
+
+
+        public @NonNull Builder blockMalware(boolean enabled) {
+            mSettings.mSafebrowsingMalware.set(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+        public @NonNull Builder blockPhishing(boolean enabled) {
+            mSettings.mSafebrowsingPhishing.set(enabled);
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -305,6 +336,10 @@ public final class GeckoRuntimeSettings implements Parcelable {
             TrackingProtectionDelegate.CATEGORY_AD));
      Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
         "geckoview.console.enabled", false);
+     Pref<Boolean> mSafebrowsingMalware = new Pref<Boolean>(
+        "browser.safebrowsing.malware.enabled", true);
+     Pref<Boolean> mSafebrowsingPhishing = new Pref<Boolean>(
+        "browser.safebrowsing.phishing.enabled", true);
 
      boolean mNativeCrashReporting;
      boolean mJavaCrashReporting;
@@ -314,7 +349,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
         mCookieBehavior, mCookieLifetime, mConsoleOutput,
-        mJavaScript, mRemoteDebugging, mTrackingProtection, mWebFonts
+        mJavaScript, mRemoteDebugging, mSafebrowsingMalware,
+        mSafebrowsingPhishing, mTrackingProtection, mWebFonts,
     };
 
      GeckoRuntimeSettings() {
@@ -627,6 +663,54 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
     public boolean getConsoleOutputEnabled() {
         return mConsoleOutput.get();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setBlockMalware(boolean enabled) {
+        mSafebrowsingMalware.set(enabled);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getBlockMalware() {
+        return mSafebrowsingMalware.get();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setBlockPhishing(boolean enabled) {
+        mSafebrowsingPhishing.set(enabled);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getBlockPhishing() {
+        return mSafebrowsingPhishing.get();
     }
 
     @Override 
