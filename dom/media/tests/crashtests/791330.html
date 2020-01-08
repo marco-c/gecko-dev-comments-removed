@@ -21,7 +21,7 @@
           pc.createOffer(function (offer) {});
         }
         finally {
-          stream.stop();
+          stream.getTracks().forEach(t => t.stop());
 
           finish();
         }
