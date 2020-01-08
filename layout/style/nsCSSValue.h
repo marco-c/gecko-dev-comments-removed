@@ -109,7 +109,6 @@ public:
     , mCORSMode(aCORSMode)
   {
     MOZ_ASSERT(mExtraData);
-    MOZ_ASSERT(mExtraData->GetPrincipal());
   }
 
   
