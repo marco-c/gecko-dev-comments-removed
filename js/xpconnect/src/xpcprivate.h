@@ -2874,7 +2874,9 @@ public:
     bool isContentXBLCompartment;
 
     
-    bool isSandboxCompartment;
+    
+    
+    bool isAddonCompartment;
 
     
     
