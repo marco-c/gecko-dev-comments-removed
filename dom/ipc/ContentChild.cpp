@@ -988,7 +988,6 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     CompositorOptions compositorOptions = info.compositorOptions();
     uint32_t maxTouchPoints = info.maxTouchPoints();
     DimensionInfo dimensionInfo = info.dimensions();
-    bool hasSiblings = info.hasSiblings();
 
     
     ready = true;
@@ -1031,7 +1030,6 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     }
 
     newChild->SetMaxTouchPoints(maxTouchPoints);
-    newChild->SetHasSiblings(hasSiblings);
 
     
     
@@ -3345,7 +3343,7 @@ ContentChild::RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
             variant->SetAsAString(data);
           } else if (item.data().type() == IPCDataTransferData::TShmem) {
             Shmem data = item.data().get_Shmem();
-            variant->SetAsACString(nsDependentCString(data.get<char>(), data.Size<char>()));
+            variant->SetAsACString(nsDependentCSubstring(data.get<char>(), data.Size<char>()));
             Unused << DeallocShmem(data);
           } else if (item.data().type() == IPCDataTransferData::TIPCBlob) {
             RefPtr<BlobImpl> blobImpl =
