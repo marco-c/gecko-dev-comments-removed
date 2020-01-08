@@ -1963,31 +1963,6 @@ public:
     
     static bool GetISupportsFromJSObject(JSObject* obj, nsISupports** iface);
 
-    
-
-
-
-
-
-
-
-
-
-
-    static bool NativeArray2JS(JS::MutableHandleValue d, const void* const* s,
-                               const nsXPTType& type, const nsID* iid,
-                               uint32_t count, nsresult* pErr);
-
-    static bool JSArray2Native(void** d, JS::HandleValue s,
-                               uint32_t count, const nsXPTType& type,
-                               const nsID* iid, nsresult* pErr);
-
-    static bool JSTypedArray2Native(void** d,
-                                    JSObject* jsarray,
-                                    uint32_t count,
-                                    const nsXPTType& type,
-                                    nsresult* pErr);
-
     static nsresult JSValToXPCException(JS::MutableHandleValue s,
                                         const char* ifaceName,
                                         const char* methodName,
@@ -2002,6 +1977,40 @@ public:
                                        JS::Value* jsExceptionPtr);
 
 private:
+    
+
+
+
+
+
+
+
+
+
+
+    static bool NativeArray2JS(JS::MutableHandleValue d, const void* buf,
+                               const nsXPTType& type, const nsID* iid,
+                               uint32_t count, nsresult* pErr);
+
+    typedef std::function<void* (uint32_t*)> ArrayAllocFixupLen;
+
+    
+
+
+
+
+
+
+
+
+
+
+    static bool JSArray2Native(JS::HandleValue aJSVal,
+                               const nsXPTType& aEltType,
+                               const nsIID* aIID,
+                               nsresult* pErr,
+                               ArrayAllocFixupLen aAllocFixupLen);
+
     XPCConvert() = delete;
 
 };
