@@ -33,8 +33,8 @@ public:
     return mInflationEnabled;
   }
 
-  nscoord UsableISize() const {
-    return mUsableISize;
+  nscoord EffectiveISize() const {
+    return mNCAISize;
   }
 
 private:
@@ -67,7 +67,7 @@ private:
   }
 
   nsIFrame *mBFCFrame;
-  nscoord mUsableISize;
+  nscoord mNCAISize;
   nscoord mTextAmount, mTextThreshold;
   bool mInflationEnabled; 
   bool mTextDirty;

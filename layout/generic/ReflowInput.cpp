@@ -348,38 +348,31 @@ ReflowInput::SetComputedHeight(nscoord aComputedHeight)
   }
 }
 
- void
-ReflowInput::MarkFrameChildrenDirty(nsIFrame* aFrame)
-{
-  if (aFrame->IsXULBoxFrame()) {
-    return;
-  }
-  
-  
-  
-  
-  for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
-       childLists.Next()) {
-    for (nsIFrame* childFrame : childLists.CurrentList()) {
-      if (!childFrame->IsTableColGroupFrame()) {
-        childFrame->AddStateBits(NS_FRAME_IS_DIRTY);
-      }
-    }
-  }
-}
-
 void
 ReflowInput::Init(nsPresContext*     aPresContext,
                         const LogicalSize* aContainingBlockSize,
                         const nsMargin*    aBorder,
                         const nsMargin*    aPadding)
 {
-  if ((mFrame->GetStateBits() & NS_FRAME_IS_DIRTY)) {
+  if ((mFrame->GetStateBits() & NS_FRAME_IS_DIRTY) &&
+      !mFrame->IsXULBoxFrame()) {
     
     
     
     
-    MarkFrameChildrenDirty(mFrame);
+    
+    
+    
+    
+    
+    for (nsIFrame::ChildListIterator childLists(mFrame);
+         !childLists.IsDone(); childLists.Next()) {
+      for (nsIFrame* childFrame : childLists.CurrentList()) {
+        if (!childFrame->IsTableColGroupFrame()) {
+          childFrame->AddStateBits(NS_FRAME_IS_DIRTY);
+        }
+      }
+    }
   }
 
   if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
@@ -644,11 +637,9 @@ ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
         nsIFrame *kid = mFrame->PrincipalChildList().FirstChild();
         if (kid) {
           kid->AddStateBits(NS_FRAME_IS_DIRTY);
-          MarkFrameChildrenDirty(kid);
         }
       } else {
         mFrame->AddStateBits(NS_FRAME_IS_DIRTY);
-        MarkFrameChildrenDirty(mFrame);
       }
 
       
@@ -2598,7 +2589,7 @@ SizeComputationInput::InitOffsets(WritingMode aWM,
   else if (aPadding) { 
     ComputedPhysicalPadding() = *aPadding;
     needPaddingProp = mFrame->StylePadding()->IsWidthDependent() ||
-    (mFrame->GetStateBits() & NS_FRAME_REFLOW_ROOT);
+	  (mFrame->GetStateBits() & NS_FRAME_REFLOW_ROOT);
   }
   else {
     needPaddingProp = ComputePadding(aWM, aPercentBasis, aFrameType);
