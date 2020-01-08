@@ -5069,7 +5069,17 @@ void nsGlobalWindowOuter::NotifyContentBlockingState(unsigned aState,
     state &= ~aState;
   }
 
-  if (state == oldState) {
+  if (state == oldState
+#ifdef ANDROID
+      
+      
+      
+      
+      
+      
+      && aState != nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT
+#endif
+  ) {
     
     return;
   }
