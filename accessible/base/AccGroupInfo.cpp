@@ -59,7 +59,7 @@ void AccGroupInfo::Update() {
 
     
     
-    if (sibling->mBits.groupInfo) {
+    if (sibling->mBits.groupInfo && !sibling->HasDirtyGroupInfo()) {
       mPosInSet += sibling->mBits.groupInfo->mPosInSet;
       mParent = sibling->mBits.groupInfo->mParent;
       mSetSize = sibling->mBits.groupInfo->mSetSize;
@@ -93,7 +93,7 @@ void AccGroupInfo::Update() {
 
     
     
-    if (sibling->mBits.groupInfo) {
+    if (sibling->mBits.groupInfo && !sibling->HasDirtyGroupInfo()) {
       mParent = sibling->mBits.groupInfo->mParent;
       mSetSize = sibling->mBits.groupInfo->mSetSize;
       return;
