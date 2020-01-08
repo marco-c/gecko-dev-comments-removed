@@ -972,9 +972,10 @@ protected:
   
 
 
+
+
+
   StyleSheet* GetStyleSheetForURL(const nsAString& aURL);
-  void GetURLForStyleSheet(StyleSheet* aStyleSheet,
-                           nsAString& aURL);
 
   
 
