@@ -8,12 +8,29 @@ const protocol = require("devtools/shared/protocol");
 const {custom} = protocol;
 
 const AddonTargetFront = protocol.FrontClassWithSpec(addonTargetSpec, {
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
+  initialize: function(client) {
+    protocol.Front.prototype.initialize.call(this, client);
 
     this.client = client;
 
     this.traits = {};
+  },
+
+  form(json) {
+    this.actorID = json.actor;
+
+    
+    
+    this.targetForm = json;
+
+    
+    
+    for (const name in json) {
+      if (name == "actor") {
+        continue;
+      }
+      this[name] = json[name];
+    }
   },
 
   attach: custom(async function() {

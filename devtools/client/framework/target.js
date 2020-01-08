@@ -576,14 +576,11 @@ Target.prototype = {
       
       if (this.isBrowsingContext) {
         await attachBrowsingContextTarget();
-      } else if (this.isLegacyAddon) {
-        const [, addonTargetFront] = await this._client.attachAddon(this.form);
-        this.activeTab = addonTargetFront;
 
       
       
       
-      } else if (this.isWorkerTarget) {
+      } else if (this.isWorkerTarget || this.isLegacyAddon) {
         
         
         await this.activeTab.attach();
