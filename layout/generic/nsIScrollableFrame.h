@@ -156,6 +156,15 @@ public:
 
 
 
+
+
+
+
+  virtual nsPoint GetVisualViewportOffset() const = 0;
+  
+
+
+
   virtual nsSize GetLineScrollAmount() const = 0;
   
 
