@@ -1199,15 +1199,10 @@ pref("extensions.spellcheck.inline.max-misspellings", 500);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("editor.resizing.enabled_by_default", false);
 pref("editor.inline_table_editing.enabled_by_default", false);
 pref("editor.positioning.enabled_by_default", false);
-#else
-pref("editor.resizing.enabled_by_default", true);
-pref("editor.inline_table_editing.enabled_by_default", true);
-pref("editor.positioning.enabled_by_default", true);
-#endif
+
 
 
 pref("editor.use_div_for_default_newlines",  true);
@@ -2583,8 +2578,6 @@ pref("security.notification_enable_delay", 500);
 
 #if defined(DEBUG) && !defined(ANDROID)
 pref("csp.content_privileged_about_uris_without_csp", "blank,printpreview,srcdoc");
-
-pref("csp.overrule_content_privileged_about_uris_without_csp_whitelist", false);
 #endif
 
 
