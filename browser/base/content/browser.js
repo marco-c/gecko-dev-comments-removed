@@ -7049,19 +7049,18 @@ function warnAboutClosingWindow() {
 
   
   let otherPBWindowExists = false;
-  let nonPopupPresent = false;
+  let otherWindowExists = false;
   for (let win of browserWindows()) {
     if (!win.closed && win != window) {
+      otherWindowExists = true;
       if (isPBWindow && PrivateBrowsingUtils.isWindowPrivate(win))
         otherPBWindowExists = true;
-      if (win.toolbar.visible)
-        nonPopupPresent = true;
       
       
       
       
       
-      if ((!isPBWindow || otherPBWindowExists) && nonPopupPresent)
+      if (!isPBWindow || otherPBWindowExists)
         break;
     }
   }
@@ -7076,7 +7075,7 @@ function warnAboutClosingWindow() {
       return false;
   }
 
-  if (nonPopupPresent) {
+  if (otherWindowExists) {
     return isPBWindow || gBrowser.warnAboutClosingTabs(closingTabs, gBrowser.closingTabsEnum.ALL);
   }
 
