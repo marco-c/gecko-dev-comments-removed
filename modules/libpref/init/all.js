@@ -4621,6 +4621,10 @@ pref("image.animated.resume-from-last-displayed", true);
 pref("image.cache.factor2.threshold-surfaces", 4);
 
 
+
+pref("image.cache.max-rasterized-svg-threshold-kb", 92160);
+
+
 pref("image.cache.size", 5242880);
 
 
