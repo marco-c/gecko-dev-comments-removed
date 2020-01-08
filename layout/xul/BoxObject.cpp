@@ -23,7 +23,6 @@
 
 
 
-
 namespace mozilla {
 namespace dom {
 
@@ -68,7 +67,6 @@ BoxObject::GetElement(Element** aResult) {
   element.forget(aResult);
   return NS_OK;
 }
-
 
 
 

@@ -299,6 +299,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
+
   nsIFrame* GetFirstRowContaining(nscoord aY, nscoord* aOverflowAbove);
 
   

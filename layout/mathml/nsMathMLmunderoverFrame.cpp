@@ -20,6 +20,7 @@ using namespace mozilla;
 
 
 
+
 nsIFrame* NS_NewMathMLmunderoverFrame(nsIPresShell* aPresShell,
                                       ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLmunderoverFrame(aStyle);

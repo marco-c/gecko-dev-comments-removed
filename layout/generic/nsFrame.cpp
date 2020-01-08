@@ -8015,8 +8015,6 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
       
       
       
-      
-      
       PeekWordState state;
       int32_t offsetAdjustment = 0;
       bool done = false;

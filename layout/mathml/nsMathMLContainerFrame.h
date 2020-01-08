@@ -362,6 +362,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
+
 class nsMathMLmathBlockFrame final : public nsBlockFrame {
  public:
   NS_DECL_QUERYFRAME

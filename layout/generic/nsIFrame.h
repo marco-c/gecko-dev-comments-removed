@@ -4387,6 +4387,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
   nsresult PeekOffsetParagraph(nsPeekOffsetStruct* aPos);
 
  private:
