@@ -53,12 +53,11 @@ extern mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 struct nsHostKey
 {
     const nsCString host;
-    uint16_t type;
     uint16_t flags;
     uint16_t af;
     bool     pb;
     const nsCString originSuffix;
-    explicit nsHostKey(const nsACString& host, uint16_t  type, uint16_t flags,
+    explicit nsHostKey(const nsACString& host, uint16_t flags,
                        uint16_t af, bool pb, const nsACString& originSuffix);
     bool operator==(const nsHostKey& other) const;
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -162,9 +161,6 @@ public:
 
     mozilla::net::ResolverMode mResolverMode;
 
-    nsTArray<nsCString> mRequestByTypeResult;
-    Mutex mRequestByTypeResultLock;
-
 private:
     friend class nsHostResolver;
 
@@ -199,7 +195,6 @@ private:
     Mutex mTrrLock; 
     RefPtr<mozilla::net::TRR> mTrrA;
     RefPtr<mozilla::net::TRR> mTrrAAAA;
-    RefPtr<mozilla::net::TRR> mTrrTxt;
 
     
     
@@ -276,9 +271,6 @@ public:
     };
 
     virtual LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb) = 0;
-    virtual LookupStatus CompleteLookupByType(nsHostRecord *, nsresult,
-                                              const nsTArray<nsCString> *aResult,
-                                              uint32_t aTtl, bool pb) = 0;
     virtual nsresult GetHostRecord(const nsACString &host,
                                    uint16_t flags, uint16_t af, bool pb,
                                    const nsCString &originSuffix,
@@ -332,7 +324,6 @@ public:
 
 
     nsresult ResolveHost(const nsACString &hostname,
-                         uint16_t                         type,
                          const mozilla::OriginAttributes &aOriginAttributes,
                          uint16_t                         flags,
                          uint16_t                         af,
@@ -345,7 +336,6 @@ public:
 
 
     void DetachCallback(const nsACString &hostname,
-                        uint16_t                         type,
                         const mozilla::OriginAttributes &aOriginAttributes,
                         uint16_t                         flags,
                         uint16_t                         af,
@@ -360,7 +350,6 @@ public:
 
 
     void CancelAsyncRequest(const nsACString &host,
-                            uint16_t                         type,
                             const mozilla::OriginAttributes &aOriginAttributes,
                             uint16_t                         flags,
                             uint16_t                         af,
@@ -395,9 +384,6 @@ public:
     void FlushCache();
 
     LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb) override;
-    LookupStatus CompleteLookupByType(nsHostRecord *, nsresult,
-                                      const nsTArray<nsCString> *aResult,
-                                      uint32_t aTtl, bool pb) override;
     nsresult GetHostRecord(const nsACString &host,
                            uint16_t flags, uint16_t af, bool pb,
                            const nsCString &originSuffix,
@@ -434,8 +420,6 @@ private:
 
 
     nsresult ConditionallyRefreshRecord(nsHostRecord *rec, const nsACString &host);
-
-    void AddToEvictionQ(nsHostRecord* rec);
 
     void ThreadFunc();
 
