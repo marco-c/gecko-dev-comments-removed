@@ -19,7 +19,6 @@
 
 
 
-DOM_PREF(NotificationEnabled, "dom.webnotifications.enabled")
 DOM_PREF(NotificationEnabledInServiceWorkers, "dom.webnotifications.serviceworker.enabled")
 DOM_PREF(NotificationRIEnabled, "dom.webnotifications.requireinteraction.enabled")
 DOM_PREF(ServiceWorkersEnabled, "dom.serviceWorkers.enabled")
