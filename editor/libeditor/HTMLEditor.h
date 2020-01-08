@@ -222,6 +222,32 @@ public:
   nsresult OnMouseMove(dom::MouseEvent* aMouseEvent);
 
   
+
+
+
+  void EnableObjectResizer(bool aEnable)
+  {
+    mIsObjectResizingEnabled = aEnable;
+  }
+  bool IsObjectResizerEnabled() const
+  {
+    return mIsObjectResizingEnabled;
+  }
+
+  
+
+
+
+  void EnableInlineTableEditor(bool aEnable)
+  {
+    mIsInlineTableEditingEnabled = aEnable;
+  }
+  bool IsInlineTableEditorEnabled() const
+  {
+    return mIsInlineTableEditingEnabled;
+  }
+
+  
   bool AbsolutePositioningEnabled() const
   {
     return mIsAbsolutelyPositioningEnabled;

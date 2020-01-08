@@ -344,10 +344,7 @@ SetDocumentStateCommand::DoCommandParams(const char* aCommandName,
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
-    nsresult rv = htmlEditor->SetObjectResizingEnabled(enabled);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    htmlEditor->EnableObjectResizer(enabled);
     return NS_OK;
   }
 
@@ -361,10 +358,7 @@ SetDocumentStateCommand::DoCommandParams(const char* aCommandName,
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
-    nsresult rv = htmlEditor->SetInlineTableEditingEnabled(enabled);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    htmlEditor->EnableInlineTableEditor(enabled);
     return NS_OK;
   }
 
@@ -379,6 +373,12 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
   if (NS_WARN_IF(!aParams) || NS_WARN_IF(!refCon)) {
     return NS_ERROR_INVALID_ARG;
   }
+
+  
+  
+  
+  
+  
 
   
   nsCOMPtr<nsIEditor> editor = do_QueryInterface(refCon);
@@ -398,12 +398,14 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     return rv;
   }
 
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_setDocumentModified")) {
     bool modified;
     rv = textEditor->GetDocumentModified(&modified);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+    
     rv = params->SetBool(STATE_ATTRIBUTE, modified);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -411,7 +413,9 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     return NS_OK;
   }
 
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_setDocumentReadOnly")) {
+    
     rv = params->SetBool(STATE_ATTRIBUTE, textEditor->IsReadonly());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -419,6 +423,7 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     return NS_OK;
   }
 
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_setDocumentUseCSS")) {
     HTMLEditor* htmlEditor = textEditor->AsHTMLEditor();
     if (NS_WARN_IF(!htmlEditor)) {
@@ -433,6 +438,7 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     return NS_OK;
   }
 
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_insertBrOnReturn")) {
     HTMLEditor* htmlEditor = textEditor->AsHTMLEditor();
     if (NS_WARN_IF(!htmlEditor)) {
@@ -440,6 +446,7 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     }
     bool createPOnReturn;
     htmlEditor->GetReturnInParagraphCreatesNewParagraph(&createPOnReturn);
+    
     rv = params->SetBool(STATE_ATTRIBUTE, !createPOnReturn);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -447,6 +454,8 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     return NS_OK;
   }
 
+  
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_defaultParagraphSeparator")) {
     HTMLEditor* htmlEditor = textEditor->AsHTMLEditor();
     if (NS_WARN_IF(!htmlEditor)) {
@@ -481,28 +490,34 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     }
   }
 
+  
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_enableObjectResizing")) {
     HTMLEditor* htmlEditor = textEditor->AsHTMLEditor();
     if (NS_WARN_IF(!htmlEditor)) {
       return NS_ERROR_INVALID_ARG;
     }
-    bool enabled;
-    htmlEditor->GetObjectResizingEnabled(&enabled);
-    rv = params->SetBool(STATE_ATTRIBUTE, enabled);
+    
+    
+    
+    rv = params->SetBool(STATE_ALL, htmlEditor->IsObjectResizerEnabled());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
     return NS_OK;
   }
 
+  
+  
   if (!nsCRT::strcmp(aCommandName, "cmd_enableInlineTableEditing")) {
     HTMLEditor* htmlEditor = textEditor->AsHTMLEditor();
     if (NS_WARN_IF(!htmlEditor)) {
       return NS_ERROR_INVALID_ARG;
     }
-    bool enabled;
-    htmlEditor->GetInlineTableEditingEnabled(&enabled);
-    rv = params->SetBool(STATE_ATTRIBUTE, enabled);
+    
+    
+    
+    rv = params->SetBool(STATE_ALL, htmlEditor->IsInlineTableEditorEnabled());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

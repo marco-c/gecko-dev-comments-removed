@@ -294,9 +294,11 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   }
 
   
-  NS_ENSURE_TRUE(mIsObjectResizingEnabled ||
-      mIsAbsolutelyPositioningEnabled ||
-      mIsInlineTableEditingEnabled, NS_OK);
+  if (NS_WARN_IF(!IsObjectResizerEnabled() &&
+                 !mIsAbsolutelyPositioningEnabled &&
+                 !IsInlineTableEditorEnabled())) {
+    return NS_OK;
+  }
 
   
   if (mIsMoving) {
@@ -325,14 +327,14 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   }
 
   RefPtr<Element> cellElement;
-  if (mIsObjectResizingEnabled || mIsInlineTableEditingEnabled) {
+  if (IsObjectResizerEnabled() || IsInlineTableEditorEnabled()) {
     
     
     cellElement =
       GetElementOrParentByTagNameAtSelection(*aSelection, *nsGkAtoms::td);
   }
 
-  if (mIsObjectResizingEnabled && cellElement) {
+  if (IsObjectResizerEnabled() && cellElement) {
     
     
 
@@ -365,7 +367,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
     NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
   }
 
-  if (mIsObjectResizingEnabled && mResizedObject &&
+  if (IsObjectResizerEnabled() && mResizedObject &&
       mResizedObject != focusElement) {
     nsresult rv = HideResizers();
     NS_ENSURE_SUCCESS(rv, rv);
@@ -382,7 +384,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   
   nsIContent* hostContent = GetActiveEditingHost();
 
-  if (mIsObjectResizingEnabled && focusElement &&
+  if (IsObjectResizerEnabled() && focusElement &&
       IsModifiableNode(*focusElement) && focusElement != hostContent) {
     if (nsGkAtoms::img == focusTagAtom) {
       mResizedObjectIsAnImage = true;
