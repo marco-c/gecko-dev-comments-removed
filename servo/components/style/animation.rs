@@ -631,12 +631,30 @@ pub fn update_style_for_animation_frame(
 }
 
 
+pub enum AnimationUpdate {
+    
+    Regular,
+    
+    AnimationCanceled,
+}
+
+
+
+
+
+
+
+
+
+
+
 pub fn update_style_for_animation<E>(
     context: &SharedStyleContext,
     animation: &Animation,
     style: &mut Arc<ComputedValues>,
     font_metrics_provider: &FontMetricsProvider,
-) where
+) -> AnimationUpdate
+where
     E: TElement,
 {
     debug!("update_style_for_animation: entering");
@@ -652,6 +670,12 @@ pub fn update_style_for_animation<E>(
             if updated_style {
                 *style = new_style
             }
+            
+            
+            
+            
+            
+            AnimationUpdate::Regular
         },
         Animation::Keyframes(_, ref animation, ref name, ref state) => {
             debug!(
@@ -675,28 +699,18 @@ pub fn update_style_for_animation<E>(
 
             let index = match maybe_index {
                 Some(index) => index,
-                None => {
-                    warn!(
-                        "update_style_for_animation: Animation {:?} not found in style",
-                        name
-                    );
-                    return;
-                },
+                None => return AnimationUpdate::AnimationCanceled,
             };
 
             let total_duration = style.get_box().animation_duration_mod(index).seconds() as f64;
             if total_duration == 0. {
-                debug!(
-                    "update_style_for_animation: zero duration for animation {:?}",
-                    name
-                );
-                return;
+                return AnimationUpdate::AnimationCanceled;
             }
 
             let mut total_progress = (now - started_at) / total_duration;
             if total_progress < 0. {
                 warn!("Negative progress found for animation {:?}", name);
-                return;
+                return AnimationUpdate::Regular;
             }
             if total_progress > 1. {
                 total_progress = 1.;
@@ -748,11 +762,7 @@ pub fn update_style_for_animation<E>(
 
             let target_keyframe = match target_keyframe_position {
                 Some(target) => &animation.steps[target],
-                None => {
-                    warn!("update_style_for_animation: No current keyframe found for animation \"{}\" at progress {}",
-                          name, total_progress);
-                    return;
-                },
+                None => return AnimationUpdate::Regular,
             };
 
             let last_keyframe = &animation.steps[last_keyframe_position];
@@ -836,6 +846,7 @@ pub fn update_style_for_animation<E>(
                 name
             );
             *style = new_style;
+            AnimationUpdate::Regular
         },
     }
 }
