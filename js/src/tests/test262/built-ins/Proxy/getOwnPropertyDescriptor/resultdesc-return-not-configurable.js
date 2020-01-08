@@ -7,7 +7,6 @@
 
 
 
-
 var target = {};
 
 Object.defineProperty(target, "attr", {

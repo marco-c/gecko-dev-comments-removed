@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.construct.length, 2,
   'The value of `Reflect.construct.length` is `2`'

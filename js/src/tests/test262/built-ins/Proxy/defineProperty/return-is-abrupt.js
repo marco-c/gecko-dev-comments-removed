@@ -14,7 +14,6 @@
 
 
 
-
 var p = new Proxy({}, {
   defineProperty: function(t, prop, desc) {
     throw new Test262Error();

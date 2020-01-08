@@ -14,7 +14,6 @@
 
 
 
-
 assert(compareArray(Reflect.ownKeys({}), []));
 
 var o = {

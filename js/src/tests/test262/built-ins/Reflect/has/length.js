@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.has.length, 2,
   'The value of `Reflect.has.length` is `2`'

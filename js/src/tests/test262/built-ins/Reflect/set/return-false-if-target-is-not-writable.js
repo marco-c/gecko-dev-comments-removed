@@ -26,7 +26,6 @@
 
 
 
-
 var o1 = {};
 var receiver = {};
 Object.defineProperty(receiver, 'p', {

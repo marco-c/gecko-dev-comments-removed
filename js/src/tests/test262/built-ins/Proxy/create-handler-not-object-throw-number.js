@@ -9,7 +9,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   new Proxy({}, 0);
 });

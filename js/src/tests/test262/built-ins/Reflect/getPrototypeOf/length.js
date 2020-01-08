@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.getPrototypeOf.length, 1,
   'The value of `Reflect.getPrototypeOf.length` is `1`'

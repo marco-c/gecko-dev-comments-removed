@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.ownKeys.name, 'ownKeys',
   'The value of `Reflect.ownKeys.name` is `"ownKeys"`'

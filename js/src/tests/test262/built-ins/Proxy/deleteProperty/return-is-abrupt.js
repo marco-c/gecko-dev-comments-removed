@@ -9,7 +9,6 @@
 
 
 
-
 var p = new Proxy({}, {
   deleteProperty: function(t, prop) {
     throw new Test262Error();

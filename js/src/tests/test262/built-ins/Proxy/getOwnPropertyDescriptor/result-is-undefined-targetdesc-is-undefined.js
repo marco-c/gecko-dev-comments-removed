@@ -14,7 +14,6 @@
 
 
 
-
 var t = {};
 var trapped;
 var p = new Proxy(t, {

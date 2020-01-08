@@ -13,7 +13,6 @@
 
 
 
-
 var p = new Proxy({}, {
   getOwnPropertyDescriptor: function(t, prop) {
     throw new Test262Error();

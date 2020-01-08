@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Object.getPrototypeOf(Proxy),
   Function.prototype,

@@ -11,7 +11,6 @@
 
 
 
-
 var o = {};
 assert.sameValue(Reflect.isExtensible(o), true);
 

@@ -17,7 +17,6 @@
 
 
 
-
 var o1 = {};
 Object.preventExtensions(o1);
 assert.sameValue(Reflect.setPrototypeOf(o1, Object.prototype), true);

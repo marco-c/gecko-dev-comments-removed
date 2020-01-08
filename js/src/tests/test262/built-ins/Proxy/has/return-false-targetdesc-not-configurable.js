@@ -17,7 +17,6 @@
 
 
 
-
 var target = {};
 var handler = {
   has: function(t, prop) {

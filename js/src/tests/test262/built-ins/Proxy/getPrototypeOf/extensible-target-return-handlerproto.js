@@ -22,7 +22,6 @@
 
 
 
-
 var prot = {
   foo: 1
 };

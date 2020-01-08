@@ -11,7 +11,6 @@
 
 
 
-
 var r = Proxy.revocable({}, {});
 
 assert.sameValue(r.revoke(), undefined);

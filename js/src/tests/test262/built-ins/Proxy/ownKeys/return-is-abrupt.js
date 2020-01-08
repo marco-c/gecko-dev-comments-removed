@@ -13,7 +13,6 @@
 
 
 
-
 var p = new Proxy({}, {
   ownKeys: function() {
     throw new Test262Error();

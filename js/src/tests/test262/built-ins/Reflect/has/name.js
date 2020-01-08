@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.has.name, 'has',
   'The value of `Reflect.has.name` is `"has"`'

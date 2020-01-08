@@ -35,7 +35,6 @@
 
 
 
-
 var o1 = {};
 var fn = function() {};
 Object.defineProperty(o1, 'p', {

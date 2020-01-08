@@ -11,7 +11,6 @@
 
 
 
-
 var handler = Object.defineProperty({}, "setPrototypeOf", {
   get: function() {
     throw new Test262Error();

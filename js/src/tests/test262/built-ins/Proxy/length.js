@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(Proxy.length, 2, "The value of `Proxy.length` is `2`");
 
 verifyNotEnumerable(Proxy, "length");

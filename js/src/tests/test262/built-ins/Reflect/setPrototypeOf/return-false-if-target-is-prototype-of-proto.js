@@ -23,7 +23,6 @@
 
 
 
-
 var target = {};
 var proto = Object.create(target);
 assert.sameValue(Reflect.setPrototypeOf(target, proto), false);

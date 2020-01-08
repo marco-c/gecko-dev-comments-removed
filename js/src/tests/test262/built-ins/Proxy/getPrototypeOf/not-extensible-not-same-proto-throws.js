@@ -25,7 +25,6 @@
 
 
 
-
 var target = Object.create({
   foo: 1
 });

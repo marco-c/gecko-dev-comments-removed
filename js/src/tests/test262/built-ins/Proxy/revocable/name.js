@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(Proxy.revocable.name, "revocable");
 
 verifyNotEnumerable(Proxy.revocable, "name");

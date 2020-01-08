@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.preventExtensions.length, 1,
   'The value of `Reflect.preventExtensions.length` is `1`'
