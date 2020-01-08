@@ -484,13 +484,14 @@ ConstructSavedFrameStackSlow(JSContext* cx,
 
 
 enum class CoarseType: uint32_t {
-    Other  = 0,
-    Object = 1,
-    Script = 2,
-    String = 3,
+    Other   = 0,
+    Object  = 1,
+    Script  = 2,
+    String  = 3,
+    DOMNode = 4,
 
-    FIRST  = Other,
-    LAST   = String
+    FIRST   = Other,
+    LAST    = DOMNode
 };
 
 inline uint32_t
@@ -618,6 +619,13 @@ class JS_PUBLIC_API(Base) {
         MOZ_CRASH("Concrete classes that have an allocation stack must override both "
                   "hasAllocationStack and allocationStack.");
     }
+
+    
+    
+    
+    
+    
+    virtual const char16_t* descriptiveTypeName() const { return nullptr; }
 
     
     
@@ -778,12 +786,13 @@ class Node {
     
     JS::Value exposeToJS() const;
 
-    CoarseType coarseType()         const { return base()->coarseType(); }
-    const char16_t* typeName()      const { return base()->typeName(); }
-    JS::Zone* zone()                const { return base()->zone(); }
-    JS::Compartment* compartment()  const { return base()->compartment(); }
-    JS::Realm* realm()              const { return base()->realm(); }
-    const char* jsObjectClassName() const { return base()->jsObjectClassName(); }
+    CoarseType coarseType()               const { return base()->coarseType(); }
+    const char16_t* typeName()            const { return base()->typeName(); }
+    JS::Zone* zone()                      const { return base()->zone(); }
+    JS::Compartment* compartment()        const { return base()->compartment(); }
+    JS::Realm* realm()                    const { return base()->realm(); }
+    const char* jsObjectClassName()       const { return base()->jsObjectClassName(); }
+    const char16_t* descriptiveTypeName() const { return base()->descriptiveTypeName(); }
     MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName) const {
         return base()->jsObjectConstructorName(cx, outName);
     }
