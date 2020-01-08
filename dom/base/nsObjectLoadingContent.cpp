@@ -1612,10 +1612,7 @@ nsObjectLoadingContent::UpdateObjectParameters()
   thisElement->GetAttr(kNameSpaceID_None, nsGkAtoms::type, rawTypeAttr);
   if (!rawTypeAttr.IsEmpty()) {
     typeAttr = rawTypeAttr;
-    nsAutoString params;
-    nsAutoString mime;
-    nsContentUtils::SplitMimeType(rawTypeAttr, mime, params);
-    CopyUTF16toUTF8(mime, newMime);
+    CopyUTF16toUTF8(rawTypeAttr, newMime);
   }
 
   
@@ -1799,6 +1796,7 @@ nsObjectLoadingContent::UpdateObjectParameters()
   
   
   
+
   ObjectType newMime_Type = GetTypeOfContent(newMime, mSkipFakePlugins);
 
   if (stateInvalid) {
