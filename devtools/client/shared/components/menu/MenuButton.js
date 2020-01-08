@@ -126,8 +126,8 @@ class MenuButton extends PureComponent {
     
     
     this.setState({ expanded: false });
-    this.tooltip.destroy();
     this.tooltip.off("hidden", this.onHidden);
+    this.tooltip.destroy();
     this.tooltip = null;
   }
 
