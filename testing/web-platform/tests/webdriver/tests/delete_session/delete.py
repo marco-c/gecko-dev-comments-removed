@@ -13,6 +13,9 @@ def test_null_response_value(session):
     response = delete_session(session)
     value = assert_success(response)
     assert value is None
+    
+    
+    session.end()
 
 
 def test_dismissed_beforeunload_prompt(session):
@@ -33,3 +36,7 @@ def test_dismissed_beforeunload_prompt(session):
     
     with pytest.raises(error.InvalidSessionIdException):
         session.alert.text
+
+    
+    
+    session.end()
