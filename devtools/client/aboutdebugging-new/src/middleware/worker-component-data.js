@@ -44,9 +44,14 @@ function toComponentData(workers, isServiceWorker) {
   return workers.map(worker => {
     
     const type = DEBUG_TARGETS.WORKER;
-    const front = worker.workerTargetFront;
     const icon = "chrome://devtools/skin/images/debugging-workers.svg";
-    let { fetch, name, registrationActor, scope } = worker;
+    let { fetch, name, registrationActor, scope, workerTargetFront } = worker;
+
+    
+    
+    
+    const id = workerTargetFront ? workerTargetFront.actorID : registrationActor;
+
     let isActive = false;
     let isRunning = false;
     let status = null;
@@ -60,10 +65,6 @@ function toComponentData(workers, isServiceWorker) {
     }
 
     return {
-      name,
-      icon,
-      front,
-      type,
       details: {
         fetch,
         isActive,
@@ -72,6 +73,10 @@ function toComponentData(workers, isServiceWorker) {
         scope,
         status,
       },
+      icon,
+      id,
+      name,
+      type,
     };
   });
 }
