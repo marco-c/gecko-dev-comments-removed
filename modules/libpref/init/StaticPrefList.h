@@ -266,6 +266,19 @@ VARCACHE_PREF(
 )
 
 
+#if !defined(MOZ_WIDGET_ANDROID)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "dom.storageManager.enabled",
+   dom_storageManager_enabled,
+  RelaxedAtomicBool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 
 
 
