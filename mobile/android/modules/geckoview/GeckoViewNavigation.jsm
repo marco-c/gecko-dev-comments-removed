@@ -146,6 +146,11 @@ class GeckoViewNavigation extends GeckoViewModule {
             }
 
             if (opener) {
+              if (aSubject.browser.hasAttribute("remote")) {
+                
+                aSubject.browser.setAttribute("remote", "false");
+                aSubject.browser.removeAttribute("remoteType");
+              }
               aSubject.browser.presetOpenerWindow(opener);
             }
             Services.obs.removeObserver(handler, "geckoview-window-created");
