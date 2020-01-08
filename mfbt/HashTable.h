@@ -279,13 +279,15 @@ public:
 
   
   
-  size_t sizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+  
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
-    return mImpl.sizeOfExcludingThis(aMallocSizeOf);
+    return mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
-  size_t sizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   {
-    return aMallocSizeOf(this) + mImpl.sizeOfExcludingThis(aMallocSizeOf);
+    return aMallocSizeOf(this) +
+           mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   Generation generation() const { return mImpl.generation(); }
@@ -566,13 +568,15 @@ public:
 
   
   
-  size_t sizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+  
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
-    return mImpl.sizeOfExcludingThis(aMallocSizeOf);
+    return mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
-  size_t sizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   {
-    return aMallocSizeOf(this) + mImpl.sizeOfExcludingThis(aMallocSizeOf);
+    return aMallocSizeOf(this) +
+           mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   Generation generation() const { return mImpl.generation(); }
@@ -1992,14 +1996,14 @@ public:
     return Generation(mGen);
   }
 
-  size_t sizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
     return aMallocSizeOf(mTable);
   }
 
-  size_t sizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   {
-    return aMallocSizeOf(this) + sizeOfExcludingThis(aMallocSizeOf);
+    return aMallocSizeOf(this) + shallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const

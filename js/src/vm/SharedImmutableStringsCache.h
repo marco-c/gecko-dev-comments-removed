@@ -143,7 +143,7 @@ class SharedImmutableStringsCache
             return n;
 
         
-        n += locked->set.sizeOfExcludingThis(mallocSizeOf);
+        n += locked->set.shallowSizeOfExcludingThis(mallocSizeOf);
 
         
         for (auto r = locked->set.all(); !r.empty(); r.popFront()) {

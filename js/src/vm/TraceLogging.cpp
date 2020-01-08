@@ -355,9 +355,9 @@ TraceLoggerThreadState::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
     
 
     size_t size = 0;
-    size += pointerMap.sizeOfExcludingThis(mallocSizeOf);
+    size += pointerMap.shallowSizeOfExcludingThis(mallocSizeOf);
     if (textIdPayloads.initialized()) {
-        size += textIdPayloads.sizeOfExcludingThis(mallocSizeOf);
+        size += textIdPayloads.shallowSizeOfExcludingThis(mallocSizeOf);
         for (TextIdHashMap::Range r = textIdPayloads.all(); !r.empty(); r.popFront())
             r.front().value()->sizeOfIncludingThis(mallocSizeOf);
     }

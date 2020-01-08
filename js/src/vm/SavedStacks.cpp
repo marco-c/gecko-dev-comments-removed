@@ -1307,8 +1307,8 @@ SavedStacks::clear()
 size_t
 SavedStacks::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
 {
-    return frames.sizeOfExcludingThis(mallocSizeOf) +
-           pcLocationMap.sizeOfExcludingThis(mallocSizeOf);
+    return frames.shallowSizeOfExcludingThis(mallocSizeOf) +
+           pcLocationMap.shallowSizeOfExcludingThis(mallocSizeOf);
 }
 
 
