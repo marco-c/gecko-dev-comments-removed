@@ -77,11 +77,14 @@ class ADBScanner extends EventEmitter {
     return this._updatingPromise;
   }
 
-  async _detectRuntimes(device) {
-    const model = await device.getModel();
-    const detectedRuntimes =
-      await FirefoxOnAndroidRuntime.detect(device, model);
-    this._runtimes.push(...detectedRuntimes);
+  async _detectRuntimes(adbDevice) {
+    const model = await adbDevice.getModel();
+    const socketPaths = await adbDevice.getRuntimeSocketPaths();
+    for (const socketPath of socketPaths) {
+      const runtime = new FirefoxOnAndroidRuntime(adbDevice, model, socketPath);
+      dumpn("Found " + runtime.name);
+      this._runtimes.push(runtime);
+    }
   }
 
   scan() {
@@ -116,31 +119,6 @@ Runtime.prototype = {
 function FirefoxOnAndroidRuntime(adbDevice, model, socketPath) {
   Runtime.call(this, adbDevice, model, socketPath);
 }
-
-
-FirefoxOnAndroidRuntime.detect = async function(adbDevice, model) {
-  const runtimes = [];
-  
-  
-  
-  const query = "cat /proc/net/unix";
-  const rawSocketInfo = await ADB.shell(query);
-  let socketInfos = rawSocketInfo.split(/\r?\n/);
-  
-  socketInfos = socketInfos.filter(l => l.includes("firefox-debugger-socket"));
-  
-  const socketPaths = new Set();
-  for (const socketInfo of socketInfos) {
-    const socketPath = socketInfo.split(" ").pop();
-    socketPaths.add(socketPath);
-  }
-  for (const socketPath of socketPaths) {
-    const runtime = new FirefoxOnAndroidRuntime(adbDevice, model, socketPath);
-    dumpn("Found " + runtime.name);
-    runtimes.push(runtime);
-  }
-  return runtimes;
-};
 
 FirefoxOnAndroidRuntime.prototype = Object.create(Runtime.prototype);
 
