@@ -32,7 +32,7 @@ class ContextMenusClickPropHandler {
       
       
       
-      withHandlingUserInput(this.context.contentWindow, () => onclick(info, tab));
+      onclick(info, tab);
     }
   }
 
