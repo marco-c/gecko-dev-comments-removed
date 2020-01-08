@@ -154,6 +154,7 @@ enum class GridLineSide
 struct nsGridContainerFrame::TrackSize
 {
   enum StateBits : uint16_t {
+    
     eAutoMinSizing =              0x1,
     eMinContentMinSizing =        0x2,
     eMaxContentMinSizing =        0x4,
@@ -173,6 +174,7 @@ struct nsGridContainerFrame::TrackSize
     eBreakBefore =              0x800,
     eFitContent =              0x1000,
     eInfinitelyGrowable =      0x2000,
+    
   };
 
   StateBits Initialize(nscoord aPercentageBasis,
@@ -534,6 +536,7 @@ struct nsGridContainerFrame::GridItemInfo
 
 
   enum StateBits : uint8_t {
+    
     eIsFlexing =              0x1, 
     eFirstBaseline =          0x2, 
     
@@ -550,6 +553,7 @@ struct nsGridContainerFrame::GridItemInfo
     
     eClampMarginBoxMinSize = 0x40,
     eIsSubgrid =             0x80,
+    
   };
 
   explicit GridItemInfo(nsIFrame* aFrame,
