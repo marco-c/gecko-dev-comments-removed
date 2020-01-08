@@ -1510,6 +1510,13 @@ protected:
   void DeleteRefToAnonymousNode(ManualNACPtr aContent,
                                 nsIPresShell* aShell);
 
+  
+
+
+
+
+  nsresult RefereshEditingUI(Selection& aSelection);
+
   nsresult ShowResizersInner(Element& aResizedElement);
 
   

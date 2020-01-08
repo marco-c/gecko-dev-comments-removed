@@ -282,21 +282,26 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
   
 }
 
-
-
-
-
 NS_IMETHODIMP
 HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 {
   if (NS_WARN_IF(!aSelection)) {
     return NS_ERROR_INVALID_ARG;
   }
+  nsresult rv = RefereshEditingUI(*aSelection);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
 
+nsresult
+HTMLEditor::RefereshEditingUI(Selection& aSelection)
+{
   
-  if (NS_WARN_IF(!IsObjectResizerEnabled() &&
-                 !IsAbsolutePositionEditorEnabled() &&
-                 !IsInlineTableEditorEnabled())) {
+  if (!IsObjectResizerEnabled() &&
+      !IsAbsolutePositionEditorEnabled() &&
+      !IsInlineTableEditorEnabled()) {
     return NS_OK;
   }
 
@@ -306,7 +311,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   }
 
   
-  RefPtr<Element> focusElement = GetSelectionContainerElement(*aSelection);
+  RefPtr<Element> focusElement = GetSelectionContainerElement(aSelection);
   if (NS_WARN_IF(!focusElement)) {
     return NS_OK;
   }
@@ -331,7 +336,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
     
     
     cellElement =
-      GetElementOrParentByTagNameAtSelection(*aSelection, *nsGkAtoms::td);
+      GetElementOrParentByTagNameAtSelection(aSelection, *nsGkAtoms::td);
   }
 
   if (IsObjectResizerEnabled() && cellElement) {
@@ -340,6 +345,9 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 
     
     if (nsGkAtoms::img != focusTagAtom) {
+      
+      
+      
       
       
       focusElement = GetEnclosingTable(cellElement);
@@ -369,15 +377,24 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 
   if (IsObjectResizerEnabled() && mResizedObject &&
       mResizedObject != focusElement) {
+    
+    
+    
     nsresult rv = HideResizers();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     NS_ASSERTION(!mResizedObject, "HideResizers failed");
   }
 
   if (mIsInlineTableEditingEnabled && mInlineEditedCell &&
       mInlineEditedCell != cellElement) {
+    
+    
     nsresult rv = HideInlineTableEditingUI();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
   }
 

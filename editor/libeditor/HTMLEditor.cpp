@@ -445,7 +445,8 @@ HTMLEditor::NotifySelectionChanged(nsIDocument* aDocument,
       
       
       
-      CheckSelectionStateForAnonymousButtons(aSelection);
+      DebugOnly<nsresult> rv = RefereshEditingUI(*aSelection);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RefereshEditingUI() failed");
     }
   }
 
@@ -2220,7 +2221,7 @@ HTMLEditor::MakeOrChangeList(const nsAString& aListType,
 }
 
 NS_IMETHODIMP
-HTMLEditor::RemoveList(const nsAString&)
+HTMLEditor::RemoveList(const nsAString& aListType)
 {
   if (!mRules) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -2241,6 +2242,11 @@ HTMLEditor::RemoveList(const nsAString&)
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   EditSubActionInfo subActionInfo(EditSubAction::eRemoveList);
+  if (aListType.LowerCaseEqualsLiteral("ol")) {
+    subActionInfo.bOrdered = true;
+  } else {
+    subActionInfo.bOrdered = false;
+  }
   nsresult rv =
     rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
   if (cancel || NS_FAILED(rv)) {
