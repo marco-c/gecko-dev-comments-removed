@@ -2243,13 +2243,8 @@ XULDocument::OnStreamComplete(nsIStreamLoader* aLoader,
                 
                 
                 
+                MOZ_RELEASE_ASSERT(!srcBuf.ownsChars());
                 mOffThreadCompiling = true;
-                
-                
-                mOffThreadCompileStringBuf = srcBuf.take();
-                if (mOffThreadCompileStringBuf) {
-                  mOffThreadCompileStringLength = srcBuf.length();
-                }
                 BlockOnload();
                 return NS_OK;
             }
