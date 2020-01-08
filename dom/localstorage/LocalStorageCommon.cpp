@@ -15,6 +15,8 @@ Atomic<int32_t> gNextGenLocalStorageEnabled(-1);
 
 } 
 
+const char16_t* kLocalStorageType = u"localStorage";
+
 bool
 NextGenLocalStorageEnabled()
 {

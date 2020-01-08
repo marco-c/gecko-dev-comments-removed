@@ -127,6 +127,9 @@ private:
 LSObject::LSObject(nsPIDOMWindowInner* aWindow,
                    nsIPrincipal* aPrincipal)
   : Storage(aWindow, aPrincipal)
+  , mActor(nullptr)
+  , mPrivateBrowsingId(0)
+  , mActorFailed(false)
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(NextGenLocalStorageEnabled());
@@ -135,6 +138,14 @@ LSObject::LSObject(nsPIDOMWindowInner* aWindow,
 LSObject::~LSObject()
 {
   AssertIsOnOwningThread();
+  MOZ_ASSERT_IF(mActorFailed, !mActor);
+
+  DropObserver();
+
+  if (mActor) {
+    mActor->SendDeleteMeInternal();
+    MOZ_ASSERT(!mActor, "SendDeleteMeInternal should have cleared!");
+  }
 }
 
 
@@ -165,8 +176,31 @@ LSObject::Create(nsPIDOMWindowInner* aWindow,
 
   MOZ_ASSERT(principalInfo->type() == PrincipalInfo::TContentPrincipalInfo);
 
+  nsCString origin;
+  rv = QuotaManager::GetInfoFromPrincipal(principal, nullptr, nullptr, &origin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  uint32_t privateBrowsingId;
+  rv = principal->GetPrivateBrowsingId(&privateBrowsingId);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsString documentURI;
+  if (nsCOMPtr<nsIDocument> doc = aWindow->GetExtantDoc()) {
+    rv = doc->GetDocumentURI(documentURI);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
   RefPtr<LSObject> object = new LSObject(aWindow, principal);
   object->mPrincipalInfo = std::move(principalInfo);
+  object->mPrivateBrowsingId = privateBrowsingId;
+  object->mOrigin = origin;
+  object->mDocumentURI = documentURI;
 
   object.forget(aStorage);
   return NS_OK;
@@ -239,8 +273,13 @@ bool
 LSObject::IsForkOf(const Storage* aStorage) const
 {
   AssertIsOnOwningThread();
+  MOZ_ASSERT(aStorage);
 
-  return false;
+  if (aStorage->Type() != eLocalStorage) {
+    return false;
+  }
+
+  return static_cast<const LSObject*>(aStorage)->mOrigin == mOrigin;
 }
 
 int64_t
@@ -351,10 +390,16 @@ LSObject::SetItem(const nsAString& aKey,
     return;
   }
 
-  rv = mDatabase->SetItem(aKey, aValue);
+  bool changed;
+  nsString oldValue;
+  rv = mDatabase->SetItem(aKey, aValue, &changed, oldValue);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aError.Throw(rv);
     return;
+  }
+
+  if (changed) {
+    OnChange(aKey, oldValue, aValue);
   }
 }
 
@@ -371,10 +416,16 @@ LSObject::RemoveItem(const nsAString& aKey,
     return;
   }
 
-  rv = mDatabase->RemoveItem(aKey);
+  bool changed;
+  nsString oldValue;
+  rv = mDatabase->RemoveItem(aKey, &changed, oldValue);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aError.Throw(rv);
     return;
+  }
+
+  if (changed) {
+    OnChange(aKey, oldValue, VoidString());
   }
 }
 
@@ -390,10 +441,15 @@ LSObject::Clear(nsIPrincipal& aSubjectPrincipal,
     return;
   }
 
-  rv = mDatabase->Clear();
+  bool changed;
+  rv = mDatabase->Clear(&changed);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aError.Throw(rv);
     return;
+  }
+
+  if (changed) {
+    OnChange(VoidString(), VoidString(), VoidString());
   }
 }
 
@@ -415,6 +471,37 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(LSObject, Storage)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 nsresult
+LSObject::DoRequestSynchronously(const LSRequestParams& aParams,
+                                 LSRequestResponse& aResponse)
+{
+  
+  
+  
+  
+  PBackgroundChild* backgroundActor =
+    BackgroundChild::GetOrCreateForCurrentThread();
+  if (NS_WARN_IF(!backgroundActor)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<RequestHelper> helper = new RequestHelper(this, aParams);
+
+  
+  
+  
+  nsresult rv = helper->StartAndReturnResponse(aResponse);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (aResponse.type() == LSRequestResponse::Tnsresult) {
+    return aResponse.get_nsresult();
+  }
+
+  return NS_OK;
+}
+
+nsresult
 LSObject::EnsureDatabase()
 {
   AssertIsOnOwningThread();
@@ -425,32 +512,41 @@ LSObject::EnsureDatabase()
 
   mDatabase = nullptr;
 
-  
-  
-  
-  PBackgroundChild* backgroundActor =
-    BackgroundChild::GetOrCreateForCurrentThread();
-  if (NS_WARN_IF(!backgroundActor)) {
+  if (mActorFailed) {
     return NS_ERROR_FAILURE;
+  }
+
+  if (!mActor) {
+    PBackgroundChild* backgroundActor =
+      BackgroundChild::GetOrCreateForCurrentThread();
+    if (NS_WARN_IF(!backgroundActor)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    LSObjectChild* actor = new LSObjectChild(this);
+
+    mActor =
+      static_cast<LSObjectChild*>(
+        backgroundActor->SendPBackgroundLSObjectConstructor(
+                                                           actor,
+                                                           *mPrincipalInfo,
+                                                           mDocumentURI,
+                                                           mPrivateBrowsingId));
+
+    if (NS_WARN_IF(!mActor)) {
+      mActorFailed = true;
+      return NS_ERROR_FAILURE;
+    }
   }
 
   LSRequestPrepareDatastoreParams params;
   params.principalInfo() = *mPrincipalInfo;
 
-  RefPtr<RequestHelper> helper = new RequestHelper(this, params);
-
   LSRequestResponse response;
 
-  
-  
-  
-  nsresult rv = helper->StartAndReturnResponse(response);
+  nsresult rv = DoRequestSynchronously(params, response);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
-  }
-
-  if (response.type() == LSRequestResponse::Tnsresult) {
-    return response.get_nsresult();
   }
 
   MOZ_ASSERT(response.type() ==
@@ -467,12 +563,13 @@ LSObject::EnsureDatabase()
   
   
   
+
   RefPtr<LSDatabase> database = new LSDatabase();
 
   LSDatabaseChild* actor = new LSDatabaseChild(database);
 
   MOZ_ALWAYS_TRUE(
-    backgroundActor->SendPBackgroundLSDatabaseConstructor(actor, datastoreId));
+    mActor->SendPBackgroundLSDatabaseConstructor(actor, datastoreId));
 
   database->SetActor(actor);
 
@@ -492,6 +589,91 @@ LSObject::DropDatabase()
     }
     mDatabase = nullptr;
   }
+}
+
+nsresult
+LSObject::EnsureObserver()
+{
+  AssertIsOnOwningThread();
+
+  if (mObserver) {
+    return NS_OK;
+  }
+
+  mObserver = LSObserver::Get(mOrigin);
+
+  if (mObserver) {
+    return NS_OK;
+  }
+
+  LSRequestPrepareObserverParams params;
+  params.principalInfo() = *mPrincipalInfo;
+
+  LSRequestResponse response;
+
+  nsresult rv = DoRequestSynchronously(params, response);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  MOZ_ASSERT(response.type() ==
+               LSRequestResponse::TLSRequestPrepareObserverResponse);
+
+  const LSRequestPrepareObserverResponse& prepareObserverResponse =
+    response.get_LSRequestPrepareObserverResponse();
+
+  uint64_t observerId = prepareObserverResponse.observerId();
+
+  
+  
+  
+  
+  
+  
+
+  PBackgroundChild* backgroundActor = BackgroundChild::GetForCurrentThread();
+  MOZ_ASSERT(backgroundActor);
+
+  RefPtr<LSObserver> observer = new LSObserver(mOrigin);
+
+  LSObserverChild* actor = new LSObserverChild(observer);
+
+  MOZ_ALWAYS_TRUE(
+    backgroundActor->SendPBackgroundLSObserverConstructor(actor, observerId));
+
+  observer->SetActor(actor);
+
+  mObserver = std::move(observer);
+
+  return NS_OK;
+}
+
+void
+LSObject::DropObserver()
+{
+  AssertIsOnOwningThread();
+
+  if (mObserver) {
+    mObserver = nullptr;
+  }
+}
+
+void
+LSObject::OnChange(const nsAString& aKey,
+                   const nsAString& aOldValue,
+                   const nsAString& aNewValue)
+{
+  AssertIsOnOwningThread();
+
+  NotifyChange( this,
+               Principal(),
+               aKey,
+               aOldValue,
+               aNewValue,
+                kLocalStorageType,
+               mDocumentURI,
+                !!mPrivateBrowsingId,
+                false);
 }
 
 void
