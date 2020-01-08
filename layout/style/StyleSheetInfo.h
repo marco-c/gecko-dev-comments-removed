@@ -56,14 +56,13 @@ struct StyleSheetInfo final
   
   ReferrerPolicy         mReferrerPolicy;
   dom::SRIMetadata       mIntegrity;
-  bool                   mComplete;
 
   
   
   
   
   
-  RefPtr<StyleSheet>     mFirstChild;
+  RefPtr<StyleSheet> mFirstChild;
   AutoTArray<StyleSheet*, 8> mSheets;
 
   

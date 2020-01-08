@@ -53,6 +53,29 @@ class ShadowRoot;
 class SRIMetadata;
 } 
 
+enum class StyleSheetState : uint8_t
+{
+  
+  
+  Disabled = 1 << 0,
+  
+  
+  Complete = 1 << 1,
+  
+  
+  
+  
+  ForcedUniqueInner = 1 << 2,
+  
+  
+  
+  
+  
+  ModifiedRules = 1 << 3,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StyleSheetState)
+
 class StyleSheet final : public nsICSSLoaderObserver
                        , public nsWrapperCache
 {
@@ -63,6 +86,8 @@ class StyleSheet final : public nsICSSLoaderObserver
              nsINode* aOwningNodeToUse);
 
   virtual ~StyleSheet();
+
+  using State = StyleSheetState;
 
 public:
   StyleSheet(css::SheetParsingMode aParsingMode,
@@ -149,19 +174,17 @@ public:
   
 
 
-  bool IsComplete() const;
+  bool IsComplete() const
+  {
+    return bool(mState & State::Complete);
+  }
+
   void SetComplete();
 
-  
-
-
-
-
-
-
-
-
-  void SetEnabled(bool aEnabled);
+  void SetEnabled(bool aEnabled)
+  {
+    SetDisabled(!aEnabled);
+  }
 
   
   bool IsInline() const
@@ -206,7 +229,7 @@ public:
 
   bool IsApplicable() const
   {
-    return !mDisabled && Inner().mComplete;
+    return !Disabled() && IsComplete();
   }
 
   already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
@@ -216,17 +239,17 @@ public:
 
   bool HasForcedUniqueInner() const
   {
-    return mDirtyFlags & FORCED_UNIQUE_INNER;
+    return bool(mState & State::ForcedUniqueInner);
   }
 
   bool HasModifiedRules() const
   {
-    return mDirtyFlags & MODIFIED_RULES;
+    return bool(mState & State::ModifiedRules);
   }
 
   void ClearModifiedRules()
   {
-    mDirtyFlags &= ~MODIFIED_RULES;
+    mState &= ~State::ModifiedRules;
   }
 
   bool HasUniqueInner() const
@@ -366,7 +389,10 @@ public:
   }
   void GetTitle(nsAString& aTitle);
   dom::MediaList* Media();
-  bool Disabled() const { return mDisabled; }
+  bool Disabled() const
+  {
+    return bool(mState & State::Disabled);
+  }
   void SetDisabled(bool aDisabled);
   void GetSourceMapURL(nsAString& aTitle);
   void SetSourceMapURL(const nsAString& aSourceMapURL);
@@ -511,15 +537,12 @@ protected:
   
   
   
+  
+  
+  
   css::SheetParsingMode mParsingMode;
 
-  bool mDisabled;
-
-  enum dirtyFlagAttributes {
-    FORCED_UNIQUE_INNER = 0x1,
-    MODIFIED_RULES = 0x2,
-  };
-  uint8_t mDirtyFlags; 
+  State mState;
 
   
   
