@@ -956,11 +956,17 @@ struct JSContext : public JS::RootingContext,
     void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
 
   private:
-    template <class T1>
-    inline void checkImpl(int argIndex, const T1& t1);
+    
+    inline void checkImpl(int argIndex) {}
 
     template <class Head, class... Tail>
     inline void checkImpl(int argIndex, const Head& head, const Tail&... tail);
+
+    bool contextChecksEnabled() const {
+        
+        
+        return !RuntimeHeapIsCollecting(runtime()->heapState());
+    }
 
   public:
     

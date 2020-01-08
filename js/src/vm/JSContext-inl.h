@@ -176,20 +176,10 @@ class ContextChecks
 
 } 
 
-template <class T1> inline void
-JSContext::checkImpl(int argIndex, const T1& t1)
-{
-    
-    
-    if (JS::RuntimeHeapIsCollecting(runtime()->heapState()))
-        return;
-    js::ContextChecks(this).check(t1, argIndex);
-}
-
 template <class Head, class... Tail> inline void
 JSContext::checkImpl(int argIndex, const Head& head, const Tail&... tail)
 {
-    checkImpl(argIndex, head);
+    js::ContextChecks(this).check(head, argIndex);
     checkImpl(argIndex + 1, tail...);
 }
 
@@ -197,21 +187,24 @@ template <class... Args> inline void
 JSContext::check(const Args&... args)
 {
 #ifdef JS_CRASH_DIAGNOSTICS
-    checkImpl(0, args...);
+    if (contextChecksEnabled())
+        checkImpl(0, args...);
 #endif
 }
 
 template <class... Args> inline void
 JSContext::releaseCheck(const Args&... args)
 {
-    checkImpl(0, args...);
+    if (contextChecksEnabled())
+        checkImpl(0, args...);
 }
 
 template <class... Args> MOZ_ALWAYS_INLINE void
 JSContext::debugOnlyCheck(const Args&... args)
 {
 #if defined(DEBUG) && defined(JS_CRASH_DIAGNOSTICS)
-    checkImpl(0, args...);
+    if (contextChecksEnabled())
+        checkImpl(0, args...);
 #endif
 }
 
@@ -348,9 +341,7 @@ JSContext::setPendingException(JS::HandleValue v)
     this->overRecursed_ = false;
     this->throwing = true;
     this->unwrappedException() = v;
-    
-    
-    MOZ_ASSERT_IF(v.isObject(), v.toObject().compartment() == compartment());
+    check(v);
 }
 
 inline bool
