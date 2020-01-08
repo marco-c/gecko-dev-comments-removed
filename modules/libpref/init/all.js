@@ -3108,9 +3108,6 @@ pref("layout.css.overflow-clip-box.enabled", false);
 pref("layout.css.contain.enabled", false);
 
 
-pref("layout.css.box-decoration-break.enabled", true);
-
-
 pref("layout.css.outline-style-auto.enabled", false);
 
 
