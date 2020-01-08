@@ -7,6 +7,7 @@
 #define nsIDocument_h___
 
 #include "mozilla/FlushType.h"           
+#include "mozilla/Pair.h"                
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
 #include "nsCompatibility.h"             
@@ -29,6 +30,7 @@
 #include "nsIServiceManager.h"
 #include "nsIURI.h"                      
 #include "nsIUUIDGenerator.h"
+#include "nsIWebProgressListener.h"      
 #include "nsPIDOMWindow.h"               
 #include "nsPropertyTable.h"             
 #include "nsStringFwd.h"
@@ -43,6 +45,7 @@
 #include "nsExpirationTracker.h"
 #include "nsClassHashtable.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/EnumSet.h"
@@ -1027,49 +1030,73 @@ public:
   
 
 
-  void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked)
+  void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked,
+                                    const nsAString& aOriginBlocked)
   {
     mHasTrackingContentBlocked = aHasTrackingContentBlocked;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
+                             aHasTrackingContentBlocked);
   }
 
   
 
 
-  void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked)
+  void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked,
+                                        const nsAString& aOriginBlocked)
   {
     mHasSlowTrackingContentBlocked = aHasSlowTrackingContentBlocked;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT,
+                             aHasSlowTrackingContentBlocked);
   }
 
   
 
 
-  void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked)
+  void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked,
+                               const nsAString& aOriginBlocked)
   {
     mHasAllCookiesBlocked = aHasAllCookiesBlocked;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL,
+                             aHasAllCookiesBlocked);
   }
 
   
 
 
-  void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked)
+  void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked,
+                                    const nsAString& aOriginBlocked)
   {
     mHasTrackingCookiesBlocked = aHasTrackingCookiesBlocked;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
+                             aHasTrackingCookiesBlocked);
   }
 
   
 
 
-  void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked)
+  void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked,
+                                   const nsAString& aOriginBlocked)
   {
     mHasForeignCookiesBlocked = aHasForeignCookiesBlocked;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN,
+                             aHasForeignCookiesBlocked);
   }
 
   
 
 
-  void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission)
+  void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission,
+                                        const nsAString& aOriginBlocked)
   {
     mHasCookiesBlockedByPermission = aHasCookiesBlockedByPermission;
+    RecordContentBlockingLog(aOriginBlocked,
+                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
+                             aHasCookiesBlockedByPermission);
   }
 
   
@@ -3850,6 +3877,12 @@ protected:
                                        bool aUpdateCSSLoader);
 
 private:
+  void RecordContentBlockingLog(const nsAString& aOrigin,
+                                uint32_t aType, bool aBlocked)
+  {
+    mContentBlockingLog.RecordLog(aOrigin, aType, aBlocked);
+  }
+
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
 
@@ -4518,6 +4551,11 @@ protected:
   
   
   nsTHashtable<nsCStringHashKey> mTrackingScripts;
+
+  
+  
+  
+  mozilla::dom::ContentBlockingLog mContentBlockingLog;
 
   
   
