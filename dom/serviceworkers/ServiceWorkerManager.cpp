@@ -357,16 +357,17 @@ RefPtr<GenericPromise> ServiceWorkerManager::StartControllingClient(
 
     
     
-    promise->Then(SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-                  [](bool) {
-                    
-                  },
-                  [self, aClientInfo](nsresult aRv) {
-                    
-                    self->StopControllingClient(aClientInfo);
-                  });
-
-    return promise;
+    return promise->Then(
+        SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
+        [](bool) {
+          
+          return GenericPromise::CreateAndResolve(true, __func__);
+        },
+        [self, aClientInfo](nsresult aRv) {
+          
+          self->StopControllingClient(aClientInfo);
+          return GenericPromise::CreateAndReject(aRv, __func__);
+        });
   }
 
   RefPtr<ClientHandle> clientHandle = ClientManager::CreateHandle(
@@ -392,16 +393,17 @@ RefPtr<GenericPromise> ServiceWorkerManager::StartControllingClient(
 
   
   
-  promise->Then(SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-                [](bool) {
-                  
-                },
-                [self, aClientInfo](nsresult aRv) {
-                  
-                  self->StopControllingClient(aClientInfo);
-                });
-
-  return promise.forget();
+  return promise->Then(
+      SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
+      [](bool) {
+        
+        return GenericPromise::CreateAndResolve(true, __func__);
+      },
+      [self, aClientInfo](nsresult aRv) {
+        
+        self->StopControllingClient(aClientInfo);
+        return GenericPromise::CreateAndReject(aRv, __func__);
+      });
 }
 
 void ServiceWorkerManager::StopControllingClient(
