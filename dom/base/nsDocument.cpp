@@ -5307,7 +5307,10 @@ void
 nsDocument::EndLoad()
 {
 #if defined(DEBUG) && !defined(ANDROID)
-  AssertContentPrivilegedAboutPageHasCSP(mDocumentURI, NodePrincipal());
+  
+  if (!mParserAborted) {
+    AssertContentPrivilegedAboutPageHasCSP(mDocumentURI, NodePrincipal());
+  }
 #endif
 
   
