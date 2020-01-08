@@ -3,85 +3,69 @@
 
 "use strict";
 
-function test() {
-  
-  waitForExplicitFinish();
+let gNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
+  .getService(Ci.nsIAboutNewTabService);
 
-  let aboutNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
-                             .getService(Ci.nsIAboutNewTabService);
+async function doTest(isPrivate) {
+  let win = await BrowserTestUtils.openNewBrowserWindow({private: isPrivate});
+  let defaultURL = gNewTabService.newTabURL;
   let newTabURL;
-  let testURL = "http://example.com/";
-  let defaultURL = aboutNewTabService.newTabURL;
   let mode;
-
-  function doTest(aIsPrivateMode, aWindow, aCallback) {
-    openNewTab(aWindow, function() {
-      if (aIsPrivateMode) {
-        mode = "per window private browsing";
-        newTabURL = "about:privatebrowsing";
-      } else {
-        mode = "normal";
-        newTabURL = "about:newtab";
-      }
-
-      
-      is(aWindow.gBrowser.selectedBrowser.currentURI.spec, newTabURL,
-        "URL of NewTab should be " + newTabURL + " in " + mode + " mode");
-      
-      aboutNewTabService.newTabURL = testURL;
-      is(aboutNewTabService.newTabURL, testURL, "Custom newtab url is set");
-
-      
-      openNewTab(aWindow, function() {
-        is(aWindow.gBrowser.selectedBrowser.currentURI.spec, testURL,
-           "URL of NewTab should be the custom url");
-
-        
-        aboutNewTabService.resetNewTabURL();
-        is(aboutNewTabService.newTabURL, defaultURL, "No custom newtab url is set");
-
-        aWindow.gBrowser.removeTab(aWindow.gBrowser.selectedTab);
-        aWindow.gBrowser.removeTab(aWindow.gBrowser.selectedTab);
-        aWindow.close();
-        aCallback();
-      });
-    });
+  let testURL = "http://example.com/";
+  if (isPrivate) {
+    mode = "per window private browsing";
+    newTabURL = "about:privatebrowsing";
+  } else {
+    mode = "normal";
+    newTabURL = "about:newtab";
   }
 
-  function testOnWindow(aIsPrivate, aCallback) {
-    whenNewWindowLoaded({private: aIsPrivate}, function(win) {
-      executeSoon(() => aCallback(win));
-    });
-  }
+  await openNewTab(win, newTabURL);
+  
+  is(win.gBrowser.selectedBrowser.currentURI.spec, newTabURL,
+    "URL of NewTab should be " + newTabURL + " in " + mode + " mode");
 
   
-  ok(!aboutNewTabService.overridden, "No custom newtab url is set");
+  gNewTabService.newTabURL = testURL;
+  is(gNewTabService.newTabURL, testURL, "Custom newtab url is set");
 
   
-  testOnWindow(false, function(aWindow) {
-    doTest(false, aWindow, function() {
-      
-      testOnWindow(true, function(aWindow2) {
-        doTest(true, aWindow2, function() {
-          finish();
-        });
-      });
-    });
-  });
+  await openNewTab(win, testURL);
+  is(win.gBrowser.selectedBrowser.currentURI.spec, testURL,
+     "URL of NewTab should be the custom url");
+
+  
+  gNewTabService.resetNewTabURL();
+  is(gNewTabService.newTabURL, defaultURL, "No custom newtab url is set");
+
+  win.gBrowser.removeTab(win.gBrowser.selectedTab);
+  win.gBrowser.removeTab(win.gBrowser.selectedTab);
+  await BrowserTestUtils.closeWindow(win);
 }
 
-function openNewTab(aWindow, aCallback) {
+
+add_task(async function test_newTabService() {
+  
+  ok(!gNewTabService.overridden, "No custom newtab url is set");
+
+  
+  await doTest(false);
+
+  
+  await doTest(true);
+});
+
+async function openNewTab(aWindow, aExpectedURL) {
   
   aWindow.BrowserOpenTab();
 
   let browser = aWindow.gBrowser.selectedBrowser;
-  let doc = browser.contentDocumentAsCPOW;
-  if (doc && doc.readyState === "complete") {
-    executeSoon(aCallback);
-    return;
-  }
-
-  BrowserTestUtils.browserLoaded(browser).then(() => {
-    executeSoon(aCallback);
+  let loadPromise = BrowserTestUtils.browserLoaded(browser, false, aExpectedURL);
+  let alreadyLoaded = await ContentTask.spawn(browser, aExpectedURL, url => {
+    let doc = content.document;
+    return doc && doc.readyState === "complete" && doc.location.href == url;
   });
+  if (!alreadyLoaded) {
+    await loadPromise;
+  }
 }
