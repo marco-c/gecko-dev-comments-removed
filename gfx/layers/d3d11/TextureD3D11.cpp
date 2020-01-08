@@ -1716,23 +1716,21 @@ SyncObjectD3D11Host::GetSyncHandle()
 }
 
 bool
-SyncObjectD3D11Host::Synchronize(bool aFallible)
+SyncObjectD3D11Host::Synchronize()
 {
   HRESULT hr;
   AutoTextureLock lock(mKeyedMutex, hr, 10000);
 
   if (hr == WAIT_TIMEOUT) {
     hr = mDevice->GetDeviceRemovedReason();
-    if (hr != S_OK ) {
-      
-      
-      gfxCriticalNote << "GFX: D3D11 timeout with device-removed:" << gfx::hexa(hr);
-    } else if (aFallible) {
-      gfxCriticalNote << "GFX: D3D11 timeout on the D3D11 sync lock.";
-    } else {
+    if (hr == S_OK) {
       
       MOZ_CRASH("GFX: D3D11 normal status timeout");
     }
+
+    
+    
+    gfxCriticalNote << "GFX: D3D11 timeout with device-removed:" << gfx::hexa(hr);
 
     return false;
   }

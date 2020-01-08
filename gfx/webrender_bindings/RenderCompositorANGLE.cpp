@@ -330,7 +330,7 @@ RenderCompositorANGLE::BeginFrame()
   }
 
   if (mSyncObject) {
-    if (!mSyncObject->Synchronize( true)) {
+    if (!mSyncObject->Synchronize()) {
       
       RenderThread::Get()->HandleDeviceReset("SyncObject",  true);
       return false;
