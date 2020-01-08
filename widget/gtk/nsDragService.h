@@ -67,7 +67,6 @@ public:
     NS_IMETHOD InvokeDragSession (nsINode *aDOMNode,
                                   const nsACString& aPrincipalURISpec,
                                   nsIArray * anArrayTransferables,
-                                  nsIScriptableRegion * aRegion,
                                   uint32_t aActionType,
                                   nsContentPolicyType aContentPolicyType) override;
     NS_IMETHOD StartDragSession() override;
@@ -208,8 +207,6 @@ private:
     GtkWidget     *mHiddenWidget;
     
     nsCOMPtr<nsIArray> mSourceDataItems;
-
-    nsCOMPtr<nsIScriptableRegion> mSourceRegion;
 
     
     GtkTargetList *GetSourceList(void);
