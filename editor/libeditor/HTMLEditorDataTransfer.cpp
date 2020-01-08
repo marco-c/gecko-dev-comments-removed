@@ -1556,10 +1556,23 @@ HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable)
 }
 
 NS_IMETHODIMP
-HTMLEditor::PasteAsQuotation(int32_t aSelectionType)
+HTMLEditor::PasteAsQuotation(int32_t aClipboardType)
 {
+  if (NS_WARN_IF(aClipboardType != nsIClipboard::kGlobalClipboard &&
+                 aClipboardType != nsIClipboard::kSelectionClipboard)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  return HTMLEditor::PasteAsQuotationAsAction(aClipboardType);
+}
+
+nsresult
+HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType)
+{
+  MOZ_ASSERT(aClipboardType == nsIClipboard::kGlobalClipboard ||
+             aClipboardType == nsIClipboard::kSelectionClipboard);
+
   if (IsPlaintextEditor()) {
-    return PasteAsPlaintextQuotation(aSelectionType);
+    return PasteAsPlaintextQuotation(aClipboardType);
   }
 
   
@@ -1606,7 +1619,7 @@ HTMLEditor::PasteAsQuotation(int32_t aSelectionType)
   }
 
   
-  rv = Paste(aSelectionType);
+  rv = Paste(aClipboardType);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

@@ -1845,45 +1845,64 @@ TextEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
 NS_IMETHODIMP
 TextEditor::PasteAsQuotation(int32_t aSelectionType)
 {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsresult
+TextEditor::PasteAsQuotationAsAction(int32_t aClipboardType)
+{
+  MOZ_ASSERT(aClipboardType == nsIClipboard::kGlobalClipboard ||
+             aClipboardType == nsIClipboard::kSelectionClipboard);
+
   
   nsresult rv;
-  nsCOMPtr<nsIClipboard> clipboard(do_GetService("@mozilla.org/widget/clipboard;1", &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIClipboard> clipboard =
+    do_GetService("@mozilla.org/widget/clipboard;1", &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   nsCOMPtr<nsITransferable> trans;
   rv = PrepareTransferable(getter_AddRefs(trans));
-  if (NS_SUCCEEDED(rv) && trans) {
-    
-    clipboard->GetData(trans, aSelectionType);
-
-    
-    
-    
-    nsCOMPtr<nsISupports> genericDataObj;
-    uint32_t len;
-    nsAutoCString flav;
-    rv = trans->GetAnyTransferData(flav, getter_AddRefs(genericDataObj),
-                                   &len);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    if (flav.EqualsLiteral(kUnicodeMime) ||
-        flav.EqualsLiteral(kMozTextInternal)) {
-      nsCOMPtr<nsISupportsString> textDataObj ( do_QueryInterface(genericDataObj) );
-      if (textDataObj && len > 0) {
-        nsAutoString stuffToPaste;
-        textDataObj->GetData ( stuffToPaste );
-        AutoPlaceholderBatch beginBatching(this);
-        rv = InsertWithQuotationsAsSubAction(stuffToPaste);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-          "Failed to insert the text with quotations");
-      }
-    }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (!trans) {
+    return NS_OK;
   }
 
-  return rv;
+  
+  clipboard->GetData(trans, aClipboardType);
+
+  
+  
+  
+  nsCOMPtr<nsISupports> genericDataObj;
+  uint32_t len;
+  nsAutoCString flav;
+  rv = trans->GetAnyTransferData(flav, getter_AddRefs(genericDataObj),
+                                 &len);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (!flav.EqualsLiteral(kUnicodeMime) &&
+      !flav.EqualsLiteral(kMozTextInternal)) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsISupportsString> textDataObj = do_QueryInterface(genericDataObj);
+  if (textDataObj && len > 0) {
+    nsAutoString stuffToPaste;
+    textDataObj->GetData ( stuffToPaste );
+    AutoPlaceholderBatch beginBatching(this);
+    rv = InsertWithQuotationsAsSubAction(stuffToPaste);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
