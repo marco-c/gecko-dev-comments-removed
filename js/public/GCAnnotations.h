@@ -30,6 +30,12 @@
 
 
 
+# define JS_HAZ_ROOTED_BASE __attribute__((tag("Rooted Base")))
+
+
+
+
+
 
 
 
@@ -52,6 +58,7 @@
 # define JS_HAZ_GC_POINTER
 # define JS_HAZ_ROOTED
 # define JS_HAZ_GC_INVALIDATED
+# define JS_HAZ_ROOTED_BASE
 # define JS_HAZ_NON_GC_POINTER
 # define JS_HAZ_GC_CALL
 # define JS_HAZ_GC_SUPPRESSED
