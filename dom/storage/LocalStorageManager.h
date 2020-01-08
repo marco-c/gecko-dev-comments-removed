@@ -117,7 +117,7 @@ private:
                    const nsACString& aKeyPrefix);
 
   
-  static LocalStorageManager* Self() { return sSelf; }
+  static LocalStorageManager* Self();
 
   
   static LocalStorageManager* Ensure();

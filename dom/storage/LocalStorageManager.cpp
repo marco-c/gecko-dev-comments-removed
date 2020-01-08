@@ -21,6 +21,7 @@
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/LocalStorageCommon.h"
 
 
 
@@ -61,6 +62,8 @@ NS_IMPL_ISUPPORTS(LocalStorageManager,
 LocalStorageManager::LocalStorageManager()
   : mCaches(8)
 {
+  MOZ_ASSERT(!NextGenLocalStorageEnabled());
+
   StorageObserver* observer = StorageObserver::Self();
   NS_ASSERTION(observer, "No StorageObserver, cannot observe private data delete notifications!");
 
@@ -473,9 +476,20 @@ LocalStorageManager::Observe(const char* aTopic,
   return NS_ERROR_UNEXPECTED;
 }
 
+
+LocalStorageManager*
+LocalStorageManager::Self()
+{
+  MOZ_ASSERT(!NextGenLocalStorageEnabled());
+
+  return sSelf;
+}
+
 LocalStorageManager*
 LocalStorageManager::Ensure()
 {
+  MOZ_ASSERT(!NextGenLocalStorageEnabled());
+
   if (sSelf) {
     return sSelf;
   }
