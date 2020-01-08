@@ -5,15 +5,17 @@
 
 
 #include "PaintWorkletGlobalScope.h"
+
 #include "mozilla/dom/WorkletPrincipal.h"
 #include "mozilla/dom/PaintWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/FunctionBinding.h"
+#include "PaintWorkletImpl.h"
 
 namespace mozilla {
 namespace dom {
 
-PaintWorkletGlobalScope::PaintWorkletGlobalScope(WorkletImpl* aImpl)
-  : WorkletGlobalScope(aImpl)
+PaintWorkletGlobalScope::PaintWorkletGlobalScope(PaintWorkletImpl* aImpl)
+  : mImpl(aImpl)
 {
 }
 
@@ -33,6 +35,11 @@ PaintWorkletGlobalScope::RegisterPaint(const nsAString& aType,
                                        VoidFunction& aProcessorCtor)
 {
   
+}
+
+WorkletImpl* PaintWorkletGlobalScope::Impl() const
+{
+  return mImpl;
 }
 
 } 

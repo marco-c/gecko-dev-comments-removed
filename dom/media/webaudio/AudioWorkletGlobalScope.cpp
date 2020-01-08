@@ -5,6 +5,8 @@
 
 
 #include "AudioWorkletGlobalScope.h"
+
+#include "AudioWorkletImpl.h"
 #include "jsapi.h"
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/WorkletPrincipal.h"
@@ -21,8 +23,8 @@ NS_INTERFACE_MAP_END_INHERITING(WorkletGlobalScope)
 NS_IMPL_ADDREF_INHERITED(AudioWorkletGlobalScope, WorkletGlobalScope)
 NS_IMPL_RELEASE_INHERITED(AudioWorkletGlobalScope, WorkletGlobalScope)
 
-AudioWorkletGlobalScope::AudioWorkletGlobalScope(WorkletImpl* aImpl)
-  : WorkletGlobalScope(aImpl)
+AudioWorkletGlobalScope::AudioWorkletGlobalScope(AudioWorkletImpl* aImpl)
+  : mImpl(aImpl)
   , mCurrentFrame(0)
   , mCurrentTime(0)
   , mSampleRate(0.0)
@@ -187,6 +189,11 @@ AudioWorkletGlobalScope::RegisterProcessor(JSContext* aCx,
   
   
   
+}
+
+WorkletImpl* AudioWorkletGlobalScope::Impl() const
+{
+  return mImpl;
 }
 
 uint64_t AudioWorkletGlobalScope::CurrentFrame() const
