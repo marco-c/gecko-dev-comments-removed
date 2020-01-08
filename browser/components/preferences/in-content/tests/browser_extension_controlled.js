@@ -266,8 +266,9 @@ add_task(async function testPrefLockedHomepage() {
   });
 
   
+  let mutationsDone = waitForAllMutations();
   lockPrefs();
-  await waitForAllMutations();
+  await mutationsDone;
 
   
   is(getHomepage(), lockedHomepage, "The reported homepage is set by the pref");

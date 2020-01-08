@@ -2,6 +2,9 @@
 
 "use strict";
 
+ChromeUtils.defineModuleGetter(this, "HomePage",
+                               "resource:///modules/HomePage.jsm");
+
 registerCleanupFunction(function restore_pref_values() {
   
   
@@ -11,7 +14,7 @@ registerCleanupFunction(function restore_pref_values() {
 });
 
 async function check_homepage({expectedURL, expectedPageVal = 1, locked = false}) {
-  is(gHomeButton.getHomePage(),
+  is(HomePage.get(),
      expectedURL, "Homepage URL should match expected");
   is(Services.prefs.getIntPref("browser.startup.page", -1), expectedPageVal,
      "Pref page value should match expected");
