@@ -49,10 +49,6 @@ pub struct Atom(*mut WeakAtom);
 
 pub struct WeakAtom(nsAtom);
 
-
-
-pub type BorrowedAtom<'a> = &'a WeakAtom;
-
 impl Deref for Atom {
     type Target = WeakAtom;
 
