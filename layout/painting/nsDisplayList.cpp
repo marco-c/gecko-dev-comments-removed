@@ -368,16 +368,18 @@ AddTransformFunctions(const nsCSSValueList* aList,
         break;
       }
       case eCSSKeyword_interpolatematrix: {
+        bool dummy;
         Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessInterpolateMatrix(
-          matrix, array, aRefBox);
+          matrix, array, aRefBox, &dummy);
         aFunctions.AppendElement(TransformMatrix(matrix));
         break;
       }
       case eCSSKeyword_accumulatematrix: {
+        bool dummy;
         Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessAccumulateMatrix(
-          matrix, array, aRefBox);
+          matrix, array, aRefBox, &dummy);
         aFunctions.AppendElement(TransformMatrix(matrix));
         break;
       }
@@ -442,10 +444,13 @@ SetAnimatable(nsCSSPropertyID aProperty,
       break;
     case eCSSProperty_transform: {
       aAnimatable = InfallibleTArray<TransformFunction>();
-      MOZ_ASSERT(aAnimationValue.mServo);
-      RefPtr<nsCSSValueSharedList> list;
-      Servo_AnimationValue_GetTransform(aAnimationValue.mServo, &list);
-      AddTransformFunctions(list, aFrame, aRefBox, aAnimatable);
+      if (aAnimationValue.mServo) {
+        RefPtr<nsCSSValueSharedList> list;
+        Servo_AnimationValue_GetTransform(aAnimationValue.mServo, &list);
+        AddTransformFunctions(list, aFrame, aRefBox, aAnimatable);
+      } else {
+        MOZ_CRASH("old style system disabled");
+      }
       break;
     }
     default:
@@ -8374,6 +8379,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
   }
 
   
+  bool dummyBool;
   Matrix4x4 result;
   
   
@@ -8392,7 +8398,8 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
       aProperties.mMotion,
       aProperties.mTransformList ? aProperties.mTransformList->mHead : nullptr,
       refBox,
-      aAppUnitsPerPixel);
+      aAppUnitsPerPixel,
+      &dummyBool);
   } else if (hasSVGTransforms) {
     
     float pixelsPerCSSPx = AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
@@ -10372,16 +10379,10 @@ ClampStdDeviation(float aStdDeviation)
 }
 
 bool
-nsDisplayFilters::CreateWebRenderCommands(
-  mozilla::wr::DisplayListBuilder& aBuilder,
-  mozilla::wr::IpcResourceUpdateQueue& aResources,
-  const StackingContextHelper& aSc,
-  mozilla::layers::WebRenderLayerManager* aManager,
-  nsDisplayListBuilder* aDisplayListBuilder)
+nsDisplayFilters::CreateWebRenderCSSFilters(nsTArray<mozilla::wr::WrFilterOp>& wrFilters)
 {
   
   
-  nsTArray<mozilla::wr::WrFilterOp> wrFilters;
   const nsTArray<nsStyleFilter>& filters = mFrame->StyleEffects()->mFilters;
   for (const nsStyleFilter& filter : filters) {
     switch (filter.GetType()) {
@@ -10454,16 +10455,38 @@ nsDisplayFilters::CreateWebRenderCommands(
     }
   }
 
+  return true;
+}
+
+bool
+nsDisplayFilters::CreateWebRenderCommands(
+  mozilla::wr::DisplayListBuilder& aBuilder,
+  mozilla::wr::IpcResourceUpdateQueue& aResources,
+  const StackingContextHelper& aSc,
+  mozilla::layers::WebRenderLayerManager* aManager,
+  nsDisplayListBuilder* aDisplayListBuilder)
+{
   bool snap;
   float auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
   nsRect displayBounds = GetBounds(aDisplayListBuilder, &snap);
-  auto bounds = LayoutDeviceRect::FromAppUnits(displayBounds, auPerDevPixel);
-  
-  
-  
-  
+  auto postFilterBounds = LayoutDeviceIntRect::Round(
+    LayoutDeviceRect::FromAppUnits(displayBounds, auPerDevPixel)
+  );
+  auto preFilterBounds = LayoutDeviceIntRect::Round(
+    LayoutDeviceRect::FromAppUnits(mBounds, auPerDevPixel)
+  );
+
+  nsTArray<mozilla::wr::WrFilterOp> wrFilters;
+  if (!CreateWebRenderCSSFilters(wrFilters) &&
+      !nsSVGIntegrationUtils::BuildWebRenderFilters(mFrame,
+                                                    preFilterBounds,
+                                                    wrFilters,
+                                                    postFilterBounds)) {
+    return false;
+  }
+
   wr::WrClipId clipId =
-    aBuilder.DefineClip(Nothing(), wr::ToRoundedLayoutRect(bounds));
+    aBuilder.DefineClip(Nothing(), wr::ToLayoutRect(postFilterBounds));
 
   float opacity = mFrame->StyleEffects()->mOpacity;
   StackingContextHelper sc(aSc,
