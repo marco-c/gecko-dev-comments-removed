@@ -1763,8 +1763,8 @@ WebConsoleActor.prototype =
 
 
 
-  sendHTTPRequest(message) {
-    const { url, method, headers, body } = message.request;
+  async sendHTTPRequest({ request }) {
+    const { url, method, headers, body } = request;
 
     
     
@@ -1800,15 +1800,30 @@ WebConsoleActor.prototype =
 
     NetUtil.asyncFetch(channel, () => {});
 
-    const actor = this.getNetworkEventActor(channel.channelId);
-
     
-    this._netEvents.set(channel.channelId, actor);
-
-    return {
-      from: this.actorID,
-      eventActor: actor.form()
-    };
+    const { channelId } = channel;
+    if (this.networkMonitorActor) {
+      const actor = this.networkMonitorActor.getNetworkEventActor(channelId);
+      return {
+        eventActor: actor.form()
+      };
+    } else if (this.networkMonitorActorId) {
+      
+      
+      const messageManager = this.parentActor.messageManager;
+      return new Promise(resolve => {
+        const onMessage = ({ data }) => {
+          messageManager.removeMessageListener("debug:get-network-event-actor",
+            onMessage);
+          resolve({
+            eventActor: data
+          });
+        };
+        messageManager.addMessageListener("debug:get-network-event-actor", onMessage);
+        messageManager.sendAsyncMessage("debug:get-network-event-actor", { channelId });
+      });
+    }
+    return null;
   },
 
   
