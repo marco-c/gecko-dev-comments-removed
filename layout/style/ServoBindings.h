@@ -245,7 +245,7 @@ Gecko_GetActiveLinkAttrDeclarationBlock(RawGeckoElementBorrowed element);
 
 
 
-bool Gecko_IsPrivateBrowsingEnabled(const nsIDocument* aDoc);
+bool Gecko_VisitedStylesEnabled(const nsIDocument*);
 
 
 bool

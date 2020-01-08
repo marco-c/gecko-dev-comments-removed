@@ -169,6 +169,11 @@ where
             trace!(" > visitedness change, force subtree restyle");
             
             
+            
+            
+            debug_assert!(self.shared_context.visited_styles_enabled);
+            
+            
             self.data.hint.insert(RestyleHint::restyle_subtree());
         }
 
