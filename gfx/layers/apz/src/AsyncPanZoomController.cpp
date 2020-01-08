@@ -4380,6 +4380,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       
+      Maybe<CSSPoint> relativeDelta;
       if (gfxPrefs::APZRelativeUpdate() && aLayerMetrics.IsRelative()) {
         APZC_LOG("%p relative updating scroll offset from %s by %s\n", this,
           ToString(Metrics().GetScrollOffset()).c_str(),
@@ -4395,7 +4396,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
           userAction = true;
         }
 
-        Metrics().ApplyRelativeScrollUpdateFrom(aLayerMetrics);
+        relativeDelta = Some(Metrics().ApplyRelativeScrollUpdateFrom(aLayerMetrics));
       } else {
         APZC_LOG("%p updating scroll offset from %s to %s\n", this,
           ToString(Metrics().GetScrollOffset()).c_str(),
@@ -4411,7 +4412,14 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       
-      CancelAnimation();
+      if (!mAnimation ||
+          relativeDelta.isNothing() ||
+          !mAnimation->ApplyContentShift(relativeDelta.value())) {
+        
+        
+        
+        CancelAnimation();
+      }
 
       
       

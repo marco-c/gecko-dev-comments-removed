@@ -19,6 +19,8 @@ public:
                       const nsPoint& aDestination,
                       const nsSize& aCurrentVelocity) = 0;
 
+  virtual void ApplyContentShift(const CSSPoint& aShiftDelta) = 0;
+
   
   virtual nsSize VelocityAt(const TimeStamp& aTime) = 0;
 

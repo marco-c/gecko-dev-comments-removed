@@ -31,6 +31,19 @@ public:
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
                         const TimeDuration& aDelta) = 0;
 
+  
+
+
+
+
+
+
+
+  virtual bool ApplyContentShift(const CSSPoint& aShiftDelta)
+  {
+    return false;
+  }
+
   bool Sample(FrameMetrics& aFrameMetrics,
               const TimeDuration& aDelta) {
     

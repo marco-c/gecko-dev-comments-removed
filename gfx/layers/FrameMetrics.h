@@ -276,13 +276,27 @@ public:
     mDoSmoothScroll = aOther.mDoSmoothScroll;
   }
 
-  void ApplyRelativeScrollUpdateFrom(const FrameMetrics& aOther)
+  
+
+
+
+
+
+
+  CSSPoint ApplyRelativeScrollUpdateFrom(const FrameMetrics& aOther)
   {
     MOZ_ASSERT(aOther.IsRelative());
+    CSSPoint origin = mScrollOffset;
     CSSPoint delta = (aOther.mScrollOffset - aOther.mBaseScrollOffset);
     ClampAndSetScrollOffset(mScrollOffset + delta);
     mScrollGeneration = aOther.mScrollGeneration;
+    return mScrollOffset - origin;
   }
+
+  
+
+
+
 
   void ApplyRelativeSmoothScrollUpdateFrom(const FrameMetrics& aOther)
   {

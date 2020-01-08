@@ -22,6 +22,13 @@ public:
 
   bool DoSample(FrameMetrics& aFrameMetrics, const TimeDuration& aDelta) override;
 
+  bool ApplyContentShift(const CSSPoint& aShiftDelta) override
+  {
+    
+    
+    return true;
+  }
+
   void Cancel(CancelAnimationFlags aFlags) override;
 private:
   AsyncPanZoomController& mApzc;

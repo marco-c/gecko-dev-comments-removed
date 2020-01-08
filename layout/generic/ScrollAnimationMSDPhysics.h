@@ -25,6 +25,8 @@ public:
               const nsPoint& aDestination,
               const nsSize& aCurrentVelocity) override;
 
+  void ApplyContentShift(const CSSPoint& aShiftDelta) override;
+
   
   nsSize VelocityAt(const TimeStamp& aTime) override;
 
