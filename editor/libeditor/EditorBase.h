@@ -1556,6 +1556,16 @@ protected:
     return mAllowsTransactionsToChangeSelection;
   }
 
+  
+
+
+
+
+  inline void MakeThisAllowTransactionsToChangeSelection(bool aAllow)
+  {
+    mAllowsTransactionsToChangeSelection = aAllow;
+  }
+
   nsresult HandleInlineSpellCheck(EditSubAction aEditSubAction,
                                   Selection& aSelection,
                                   nsINode* previousSelectedNode,
