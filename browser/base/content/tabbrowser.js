@@ -2532,16 +2532,30 @@ window._gBrowser = {
   },
 
   getTabsToTheEndFrom(aTab) {
+    let tab;
+    if (aTab.multiselected) {
+      
+      
+      let selectedTabs = this.selectedTabs;
+      tab = selectedTabs[selectedTabs.length - 1];
+    } else {
+      tab = aTab;
+    }
+
     let tabsToEnd = [];
     let tabs = this.visibleTabs;
     for (let i = tabs.length - 1; i >= 0; --i) {
-      if (tabs[i] == aTab || tabs[i].pinned) {
+      if (tabs[i] == tab || tabs[i].pinned) {
         break;
       }
       tabsToEnd.push(tabs[i]);
     }
     return tabsToEnd;
   },
+
+  
+
+
 
   removeTabsToTheEndFrom(aTab) {
     let tabs = this.getTabsToTheEndFrom(aTab);
@@ -2562,7 +2576,6 @@ window._gBrowser = {
       tabsToRemove = this.visibleTabs.filter(tab => !tab.multiselected && !tab.pinned);
     } else {
       tabsToRemove = this.visibleTabs.filter(tab => tab != aTab && !tab.pinned);
-      this.selectedTab = aTab;
     }
 
     if (!this.warnAboutClosingTabs(tabsToRemove.length, this.closingTabsEnum.OTHER)) {
@@ -2582,27 +2595,36 @@ window._gBrowser = {
   },
 
   removeTabs(tabs) {
-    let tabsWithBeforeUnload = [];
-    let lastToClose;
-    let params = { animate: true };
-    for (let tab of tabs) {
-      if (tab.selected) {
-        lastToClose = tab;
-      } else if (this._hasBeforeUnload(tab)) {
-        tabsWithBeforeUnload.push(tab);
-      } else {
-        this.removeTab(tab, params);
-      }
-    }
-    for (let tab of tabsWithBeforeUnload) {
-      this.removeTab(tab, params);
-    }
+    this._clearMultiSelectionLocked = true;
 
     
-    
-    if (lastToClose) {
-      this.removeTab(lastToClose, params);
+    try {
+      let tabsWithBeforeUnload = [];
+      let lastToClose;
+      let aParams = { animate: true };
+      for (let tab of tabs) {
+        if (tab.selected)
+          lastToClose = tab;
+        else if (this._hasBeforeUnload(tab))
+          tabsWithBeforeUnload.push(tab);
+        else
+          this.removeTab(tab, aParams);
+      }
+      for (let tab of tabsWithBeforeUnload) {
+        this.removeTab(tab, aParams);
+      }
+
+      
+      
+      if (lastToClose) {
+        this.removeTab(lastToClose, aParams);
+      }
+    } catch (e) {
+      Cu.reportError(e);
     }
+
+    this._clearMultiSelectionLocked = false;
+    this.avoidSingleSelectedTab();
   },
 
   removeCurrentTab(aParams) {
@@ -3693,12 +3715,11 @@ window._gBrowser = {
       return;
     }
 
-    let selectedTabs = this.selectedTabs;
-    if (selectedTabs.length < 2) {
+    if (this.multiSelectedTabsCount < 1) {
       return;
     }
 
-    for (let tab of selectedTabs) {
+    for (let tab of this.selectedTabs) {
       tab.removeAttribute("multiselected");
     }
     this._multiSelectedTabsSet = new WeakSet();
@@ -3716,14 +3737,39 @@ window._gBrowser = {
   
 
 
-  updateActiveTabMultiSelectState() {
-    if (this.selectedTabs.length == 1) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  avoidSingleSelectedTab() {
+    if (this.multiSelectedTabsCount == 1 ) {
       this.clearMultiSelectedTabs();
     }
   },
 
   switchToNextMultiSelectedTab() {
     this._clearMultiSelectionLocked = true;
+
+    
     try {
       let lastMultiSelectedTab = gBrowser.lastMultiSelectedTab;
       if (lastMultiSelectedTab != gBrowser.selectedTab) {
@@ -3737,6 +3783,7 @@ window._gBrowser = {
     } catch (e) {
       Cu.reportError(e);
     }
+
     this._clearMultiSelectionLocked = false;
   },
 
@@ -5098,10 +5145,9 @@ var TabContextMenu = {
       gBrowser.getTabsToTheEndFrom(this.contextTab).length == 0;
 
     
-    let unpinnedTabsToClose = gBrowser.visibleTabs.length - gBrowser._numPinnedTabs;
-    if (!this.contextTab.pinned) {
-      unpinnedTabsToClose--;
-    }
+    let unpinnedTabsToClose = multiselectionContext ?
+      gBrowser.visibleTabs.filter(t => !t.multiselected && !t.pinned).length :
+      gBrowser.visibleTabs.filter(t => t != this.contextTab && !t.pinned).length;
     document.getElementById("context_closeOtherTabs").disabled = unpinnedTabsToClose < 1;
 
     
