@@ -129,6 +129,7 @@ const loadListener = {
     this.timerPageUnload = null;
 
     
+    
     timeout = startTime + timeout - new Date().getTime();
 
     if (timeout <= 0) {
@@ -188,6 +189,7 @@ const loadListener = {
     removeEventListener("pageshow", this, true);
     removeEventListener("unload", this, true);
 
+    
     
     
     try {

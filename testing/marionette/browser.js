@@ -432,13 +432,14 @@ browser.Context = class {
   
 
 
+
+
   flushPendingCommands() {
     if (!this._needsFlushPendingCommands) {
       return;
     }
 
     this.pendingCommands.forEach(cb => cb());
-    this.pendingCommands = [];
     this._needsFlushPendingCommands = false;
   }
 
