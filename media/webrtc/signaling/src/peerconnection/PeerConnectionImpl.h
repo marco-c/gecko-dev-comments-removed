@@ -721,7 +721,7 @@ private:
   static void DeliverStatsReportToPCObserver_m(
       const std::string& pcHandle,
       nsresult result,
-      nsAutoPtr<RTCStatsQuery> query);
+      const nsAutoPtr<RTCStatsQuery>& query);
 
   
   
