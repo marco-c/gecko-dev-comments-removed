@@ -290,6 +290,14 @@ void ScrollAnchorContainer::ApplyAdjustments() {
       nsIScrollableFrame::INSTANT, nullptr, nsGkAtoms::relative);
   mApplyingAnchorAdjustment = false;
 
+  nsPresContext* pc = Frame()->PresContext();
+  Document* doc = pc->Document();
+  if (writingMode.IsVertical()) {
+    doc->UpdateForScrollAnchorAdjustment(adjustment.x);
+  } else {
+    doc->UpdateForScrollAnchorAdjustment(adjustment.y);
+  }
+
   
   
   mLastAnchorPos =

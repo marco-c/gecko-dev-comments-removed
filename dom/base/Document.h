@@ -1282,6 +1282,8 @@ class Document : public nsINode,
   void UpdateViewportOverflowType(nscoord aScrolledWidth,
                                   nscoord aScrollportWidth);
 
+  void UpdateForScrollAnchorAdjustment(nscoord aLength);
+
   
 
 
@@ -4340,6 +4342,9 @@ class Document : public nsINode,
   nsWeakPtr mAutoFocusElement;
 
   nsCString mScrollToRef;
+
+  nscoord mScrollAnchorAdjustmentLength;
+  int32_t mScrollAnchorAdjustmentCount;
 
   
   
