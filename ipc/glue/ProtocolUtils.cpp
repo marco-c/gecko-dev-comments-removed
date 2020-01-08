@@ -676,10 +676,8 @@ IToplevelProtocol::IToplevelProtocol(const char* aName,
                                      ProtocolId aProtoId,
                                      Side aSide)
   : IProtocol(aSide, MakeUnique<ToplevelState>(aName, this, aSide))
-  , mMonitor("mozilla.ipc.IToplevelProtocol.mMonitor")
   , mProtocolId(aProtoId)
   , mOtherPid(mozilla::ipc::kInvalidProcessId)
-  , mOtherPidState(ProcessIdState::eUnstarted)
   , mIsMainThreadProtocol(false)
 {
 }
@@ -704,27 +702,12 @@ IToplevelProtocol::OtherPid() const
 base::ProcessId
 IToplevelProtocol::OtherPidMaybeInvalid() const
 {
-  MonitorAutoLock lock(mMonitor);
-
-  if (mOtherPidState == ProcessIdState::eUnstarted) {
-    
-    
-    return kInvalidProcessId;
-  }
-
-  while (mOtherPidState < ProcessIdState::eReady) {
-    lock.Wait();
-  }
-  MOZ_RELEASE_ASSERT(mOtherPidState == ProcessIdState::eReady);
-
   return mOtherPid;
 }
 
 void
-IToplevelProtocol::SetOtherProcessId(base::ProcessId aOtherPid,
-                                     ProcessIdState aState)
+IToplevelProtocol::SetOtherProcessId(base::ProcessId aOtherPid)
 {
-  MonitorAutoLock lock(mMonitor);
   
   
   
@@ -734,8 +717,6 @@ IToplevelProtocol::SetOtherProcessId(base::ProcessId aOtherPid,
   } else {
     mOtherPid = aOtherPid;
   }
-  mOtherPidState = aState;
-  lock.NotifyAll();
 }
 
 bool
