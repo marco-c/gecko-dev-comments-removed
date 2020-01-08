@@ -449,6 +449,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "layout.css.column-span.enabled",
+   layout_css_column_span_enabled,
+  bool, false
+)
+
+
 
 
 

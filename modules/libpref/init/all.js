@@ -3066,9 +3066,6 @@ pref("layout.css.shape-outside.enabled", true);
 pref("layout.css.font-loading-api.enabled", true);
 
 
-pref("layout.css.column-span.enabled", false);
-
-
 pref("layout.css.ruby.intercharacter.enabled", false);
 
 
