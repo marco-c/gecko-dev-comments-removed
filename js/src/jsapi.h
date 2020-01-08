@@ -2716,8 +2716,10 @@ JS_NewArrayObject(JSContext* cx, size_t length);
 
 
 
+
 extern JS_PUBLIC_API(bool)
 JS_IsArrayObject(JSContext* cx, JS::HandleValue value, bool* isArray);
+
 
 
 
