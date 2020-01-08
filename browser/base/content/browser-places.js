@@ -1642,20 +1642,14 @@ var BookmarkingUI = {
 
   onPanelMenuViewShowing: function BUI_onViewShowing(aEvent) {
     let panelview = aEvent.target;
+
     this.updateBookmarkPageMenuItem();
-    
-    let viewToolbar = document.getElementById("panelMenu_viewBookmarksToolbar");
-    if (viewToolbar) {
-      let personalToolbar = document.getElementById("PersonalToolbar");
-      if (personalToolbar.collapsed)
-        viewToolbar.removeAttribute("checked");
-      else
-        viewToolbar.setAttribute("checked", "true");
-    }
+
     
     let staticButtons = panelview.getElementsByTagName("toolbarbutton");
     for (let i = 0, l = staticButtons.length; i < l; ++i)
       CustomizableUI.addShortcut(staticButtons[i]);
+
     
     
     let query = "place:queryType=" + Ci.nsINavHistoryQueryOptions.QUERY_TYPE_BOOKMARKS +
