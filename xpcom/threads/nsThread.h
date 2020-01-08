@@ -60,10 +60,6 @@ public:
            MainThreadFlag aMainThread,
            uint32_t aStackSize);
 
-private:
-  nsThread();
-
-public:
   
   nsresult Init(const nsACString& aName = NS_LITERAL_CSTRING(""));
 
@@ -150,8 +146,6 @@ public:
 
   static nsThreadEnumerator Enumerate();
 
-  static uint32_t MaxActiveThreads();
-
 private:
   void DoMainThreadSpecificProcessing(bool aReallyWait);
 
@@ -180,21 +174,6 @@ protected:
   static mozilla::LinkedList<nsThread>& ThreadList();
   static void ClearThreadList();
 
-  
-  static uint32_t sActiveThreads;
-  
-  static uint32_t sMaxActiveThreads;
-
-  void AddToThreadList();
-  void MaybeRemoveFromThreadList();
-
-
-  
-  
-  
-  
-  
-  
   RefPtr<mozilla::SynchronizedEventQueue> mEvents;
   RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 
