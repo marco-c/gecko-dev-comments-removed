@@ -4252,10 +4252,8 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   
   
   
-  
-  
-  
-  nscoord crossAxisBorderPadding = aItem.GetBorderPadding().TopBottom();
+  nscoord crossAxisBorderPadding =
+    aItem.GetBorderPaddingSizeInAxis(aAxisTracker.GetCrossAxis());
   if (reflowResult.BSize() < crossAxisBorderPadding) {
     
     
