@@ -1,0 +1,83 @@
+
+
+
+
+
+#ifndef nsFilteredContentIterator_h__
+#define nsFilteredContentIterator_h__
+
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIContentIterator.h"
+#include "nsISupportsImpl.h"
+#include "nscore.h"
+#include "mozilla/UniquePtr.h"
+
+class nsAtom;
+class nsComposeTxtSrvFilter;
+class nsINode;
+class nsRange;
+
+class nsFilteredContentIterator final : public nsIContentIterator {
+ public:
+  
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(nsFilteredContentIterator)
+
+  explicit nsFilteredContentIterator(
+      mozilla::UniquePtr<nsComposeTxtSrvFilter> aFilter);
+
+  
+  virtual nsresult Init(nsINode* aRoot) override;
+  virtual nsresult Init(nsRange* aRange) override;
+  virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
+                        nsINode* aEndContainer, uint32_t aEndOffset) override;
+  virtual nsresult Init(const mozilla::RawRangeBoundary& aStart,
+                        const mozilla::RawRangeBoundary& aEnd) override;
+  virtual void First() override;
+  virtual void Last() override;
+  virtual void Next() override;
+  virtual void Prev() override;
+  virtual nsINode* GetCurrentNode() override;
+  virtual bool IsDone() override;
+  virtual nsresult PositionAt(nsINode* aCurNode) override;
+
+  
+  bool DidSkip() { return mDidSkip; }
+  void ClearDidSkip() { mDidSkip = false; }
+
+ protected:
+  nsFilteredContentIterator()
+      : mDidSkip(false), mIsOutOfRange(false), mDirection{eDirNotSet} {}
+
+  virtual ~nsFilteredContentIterator();
+
+  
+
+
+  nsresult InitWithRange();
+
+  
+  typedef enum { eDirNotSet, eForward, eBackward } eDirectionType;
+  nsresult AdvanceNode(nsINode* aNode, nsINode*& aNewNode, eDirectionType aDir);
+  void CheckAdvNode(nsINode* aNode, bool& aDidSkip, eDirectionType aDir);
+  nsresult SwitchDirections(bool aChangeToForward);
+
+  nsCOMPtr<nsIContentIterator> mCurrentIterator;
+  nsCOMPtr<nsIContentIterator> mIterator;
+  nsCOMPtr<nsIContentIterator> mPreIterator;
+
+  RefPtr<nsAtom> mBlockQuoteAtom;
+  RefPtr<nsAtom> mScriptAtom;
+  RefPtr<nsAtom> mTextAreaAtom;
+  RefPtr<nsAtom> mSelectAreaAtom;
+  RefPtr<nsAtom> mMapAtom;
+
+  mozilla::UniquePtr<nsComposeTxtSrvFilter> mFilter;
+  RefPtr<nsRange> mRange;
+  bool mDidSkip;
+  bool mIsOutOfRange;
+  eDirectionType mDirection;
+};
+
+#endif

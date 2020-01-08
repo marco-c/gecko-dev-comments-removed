@@ -6,7 +6,6 @@
 #include "mozilla/HTMLEditor.h"
 
 #include "mozilla/ComposerCommandsUpdater.h"
-#include "mozilla/ContentIterator.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
@@ -35,6 +34,7 @@
 #include "mozilla/css/Loader.h"
 
 #include "nsIContent.h"
+#include "nsIContentIterator.h"
 #include "nsIMutableArray.h"
 #include "nsContentUtils.h"
 #include "nsIDocumentEncoder.h"
@@ -1124,13 +1124,13 @@ nsresult HTMLEditor::TabInTable(bool inIsShift, bool* outHandled) {
 
   
   
-  PostContentIterator postOrderIter;
-  nsresult rv = postOrderIter.Init(table);
+  nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
+  nsresult rv = iter->Init(table);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   
-  rv = postOrderIter.PositionAt(cellElement);
+  rv = iter->PositionAt(cellElement);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1138,12 +1138,12 @@ nsresult HTMLEditor::TabInTable(bool inIsShift, bool* outHandled) {
   nsCOMPtr<nsINode> node;
   do {
     if (inIsShift) {
-      postOrderIter.Prev();
+      iter->Prev();
     } else {
-      postOrderIter.Next();
+      iter->Next();
     }
 
-    node = postOrderIter.GetCurrentNode();
+    node = iter->GetCurrentNode();
 
     if (node && HTMLEditUtils::IsTableCell(node) &&
         GetEnclosingTable(node) == table) {
@@ -1151,7 +1151,7 @@ nsresult HTMLEditor::TabInTable(bool inIsShift, bool* outHandled) {
       *outHandled = true;
       return NS_OK;
     }
-  } while (!postOrderIter.IsDone());
+  } while (!iter->IsDone());
 
   if (!(*outHandled) && !inIsShift) {
     
@@ -2786,12 +2786,11 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
     return nullptr;
   }
 
-  PostContentIterator postOrderIter;
-  postOrderIter.Init(firstRange);
+  nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
+  iter->Init(firstRange);
 
   RefPtr<Element> lastElementInRange;
-  for (nsINode* lastNodeInRange = nullptr; !postOrderIter.IsDone();
-       postOrderIter.Next()) {
+  for (nsINode* lastNodeInRange = nullptr; !iter->IsDone(); iter->Next()) {
     if (lastElementInRange) {
       
       
@@ -2809,7 +2808,7 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
     
     
     
-    nsINode* currentNode = postOrderIter.GetCurrentNode();
+    nsINode* currentNode = iter->GetCurrentNode();
     MOZ_ASSERT(currentNode);
     if (lastNodeInRange && lastNodeInRange->GetParentNode() != currentNode &&
         lastNodeInRange->GetNextSibling() != currentNode) {
@@ -3062,15 +3061,15 @@ HTMLEditor::GetLinkedObjects(nsIArray** aNodeList) {
     return rv;
   }
 
+  nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
   RefPtr<Document> doc = GetDocument();
   NS_ENSURE_TRUE(doc, NS_ERROR_UNEXPECTED);
 
-  PostContentIterator postOrderIter;
-  postOrderIter.Init(doc->GetRootElement());
+  iter->Init(doc->GetRootElement());
 
   
-  for (; !postOrderIter.IsDone(); postOrderIter.Next()) {
-    nsCOMPtr<nsINode> node = postOrderIter.GetCurrentNode();
+  while (!iter->IsDone()) {
+    nsCOMPtr<nsINode> node = iter->GetCurrentNode();
     if (node) {
       
       nsCOMPtr<nsIURIRefObject> refObject;
@@ -3079,6 +3078,7 @@ HTMLEditor::GetLinkedObjects(nsIArray** aNodeList) {
         nodes->AppendElement(refObject);
       }
     }
+    iter->Next();
   }
 
   nodes.forget(aNodeList);
@@ -3778,14 +3778,18 @@ nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange) {
   
 
   
-  ContentSubtreeIterator subtreeIter;
-  subtreeIter.Init(aInRange);
-  for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-    nsINode* node = subtreeIter.GetCurrentNode();
+  nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+
+  iter->Init(aInRange);
+
+  while (!iter->IsDone()) {
+    nsINode* node = iter->GetCurrentNode();
     if (node->NodeType() == nsINode::TEXT_NODE &&
         IsEditable(node->AsContent())) {
       textNodes.AppendElement(node);
     }
+
+    iter->Next();
   }
 
   
@@ -4436,18 +4440,19 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
         
         
 
+        OwningNonNull<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+
         nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
         nsCOMPtr<nsINode> node;
 
         
-        ContentSubtreeIterator subtreeIter;
-        rv = subtreeIter.Init(range);
+        rv = iter->Init(range);
         
         
         
         if (NS_SUCCEEDED(rv)) {
-          for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-            node = subtreeIter.GetCurrentNode();
+          for (; !iter->IsDone(); iter->Next()) {
+            node = iter->GetCurrentNode();
             NS_ENSURE_TRUE(node, NS_ERROR_FAILURE);
 
             if (IsEditable(node)) {
