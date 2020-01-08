@@ -5436,10 +5436,6 @@ pref("network.captive-portal-service.maxInterval", 1500000);
 pref("network.captive-portal-service.backoffFactor", "5.0");
 pref("network.captive-portal-service.enabled", false);
 
-pref("network.connectivity-service.enabled", true);
-pref("network.connectivity-service.DNSv4.domain", "mozilla.org");
-pref("network.connectivity-service.DNSv6.domain", "mozilla.org");
-
 
 
 pref("network.trr.mode", 0);
