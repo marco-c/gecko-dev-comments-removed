@@ -5,8 +5,7 @@
 
 
 
-#include "Telemetry.h"
-#include "TelemetryCommon.h"
+#include "mozilla/Telemetry.h"
 #include "WebrtcTelemetry.h"
 #include "jsapi.h"
 #include "nsPrintfCString.h"
