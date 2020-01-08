@@ -27,7 +27,10 @@ loader.lazyRequireGetter(this, "UPDATE_PRESERVING_RULES",
   "devtools/server/actors/stylesheets", true);
 loader.lazyRequireGetter(this, "UPDATE_GENERAL",
   "devtools/server/actors/stylesheets", true);
-loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "findCssSelector",
+  "devtools/shared/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "CSSRuleTypeName",
+  "devtools/shared/inspector/css-logic", true);
 
 loader.lazyGetter(this, "PSEUDO_ELEMENTS", () => {
   return InspectorUtils.getCSSPseudoElementNames();
@@ -986,13 +989,13 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     if (CSSRule.isInstance(item)) {
       this.type = item.type;
       this.rawRule = item;
+      this._computeRuleIndex();
       if ((this.type === CSSRule.STYLE_RULE ||
            this.type === CSSRule.KEYFRAME_RULE) &&
           this.rawRule.parentStyleSheet) {
         this.line = InspectorUtils.getRelativeRuleLine(this.rawRule);
         this.column = InspectorUtils.getRuleColumn(this.rawRule);
         this._parentSheet = this.rawRule.parentStyleSheet;
-        this._computeRuleIndex();
         this.sheetActor = this.pageStyle._sheetRef(this._parentSheet);
         this.sheetActor.on("style-applied", this._onStyleApplied);
       }
@@ -1047,6 +1050,25 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
             
             
             this._parentSheet.href !== "about:PreferenceStyleSheet");
+  },
+
+  
+
+
+
+
+
+
+  get ancestorRules() {
+    const ancestors = [];
+    let rule = this.rawRule;
+
+    while (rule.parentRule) {
+      ancestors.push(this.pageStyle._styleRef(rule.parentRule));
+      rule = rule.parentRule;
+    }
+
+    return ancestors;
   },
 
   getDocument: function(sheet) {
@@ -1186,10 +1208,10 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     const result = [];
 
     while (rule) {
-      let cssRules;
+      let cssRules = [];
       if (rule.parentRule) {
         cssRules = rule.parentRule.cssRules;
-      } else {
+      } else if (rule.parentStyleSheet) {
         cssRules = rule.parentStyleSheet.cssRules;
       }
 
@@ -1476,19 +1498,53 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
     
     const data = {};
-    data.type = change.type;
-    data.selector = this.rawRule.selectorText;
+    
+    
+    data.ancestors = this.ancestorRules.map(rule => {
+      return {
+        
+        
+        type: rule.rawRule.type,
+        
+        typeName: CSSRuleTypeName[rule.rawRule.type],
+        
+        conditionText: rule.rawRule.conditionText,
+        
+        name: rule.rawRule.name,
+        
+        keyText: rule.rawRule.keyText,
+        
+        ruleIndex: rule._ruleIndex,
+      };
+    });
 
     
     if (this.type === ELEMENT_STYLE) {
-      data.tag = this.rawNode.tagName;
-      data.href = "inline";
       
       try {
         data.selector = findCssSelector(this.rawNode);
       } catch (err) {}
+
+      data.source = {
+        type: "element",
+        
+        
+        href: this.rawNode.baseURI,
+        
+        index: data.selector,
+      };
+      data.ruleIndex = 0;
     } else {
-      data.href = this._parentSheet.href || "inline stylesheet";
+      data.selector = (this.type === CSSRule.KEYFRAME_RULE)
+        ? this.rawRule.keyText
+        : this.rawRule.selectorText;
+      data.source = {
+        type: "stylesheet",
+        href: this.sheetActor.href,
+        index: this.sheetActor.styleSheetIndex,
+      };
+      
+      data.ruleIndex = this._ruleIndex;
     }
 
     switch (change.type) {
@@ -1511,14 +1567,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         data.add = null;
         data.remove = { property: change.name, value: prevValue };
         break;
-    }
-
-    
-    
-    if (data.add && data.remove &&
-        data.add.property === data.remove.property &&
-        data.add.value === data.remove.value) {
-      return;
     }
 
     TrackChangeEmitter.trackChange(data);

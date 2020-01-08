@@ -86,6 +86,26 @@ exports.STATUS = {
 
 
 
+exports.CSSRuleTypeName = {
+  1: "", 
+  3: "@import",
+  4: "@media",
+  5: "@font-face",
+  6: "@page",
+  7: "@keyframes",
+  8: "@keyframe",
+  10: "@namespace",
+  11: "@counter-style",
+  12: "@supports",
+  13: "@document",
+  14: "@font-feature-values",
+  15: "@viewport",
+};
+
+
+
+
+
 
 
 
