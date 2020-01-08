@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AlertDialog;
@@ -50,7 +51,13 @@ public class ExternalIntentDuringPrivateBrowsingPromptFragment extends DialogFra
                 .setTitle(intent.getDataString())
                 .setPositiveButton(R.string.button_yes, new DialogInterface.OnClickListener() {
                     public void onClick(final DialogInterface dialog, final int id) {
+                        
+                        
+                        
+                        StrictMode.VmPolicy prevPolicy = StrictMode.getVmPolicy();
+                        StrictMode.setVmPolicy(StrictMode.VmPolicy.LAX);
                         context.startActivity(intent);
+                        StrictMode.setVmPolicy(prevPolicy);
                     }
                 })
                 .setNegativeButton(R.string.button_no, null  );
