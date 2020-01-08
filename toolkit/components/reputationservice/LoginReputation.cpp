@@ -145,7 +145,11 @@ LoginWhitelist::QueryLoginWhitelist(nsILoginReputationQuery* aParam)
 
   
   
-  rv = uriClassifier->AsyncClassifyLocalWithTables(uri, mTables, this);
+  
+  rv = uriClassifier->AsyncClassifyLocalWithTables(uri, mTables,
+                                                   nsTArray<nsCString>(),
+                                                   nsTArray<nsCString>(),
+                                                   this);
   if (NS_FAILED(rv)) {
     return p;
   }

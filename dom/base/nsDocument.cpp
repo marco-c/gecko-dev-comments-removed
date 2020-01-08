@@ -13165,8 +13165,11 @@ PrincipalFlashClassifier::AsyncClassifyInternal(nsIPrincipal* aPrincipal)
     return FlashClassification::Denied;
   }
 
+  
   rv = mUriClassifier->AsyncClassifyLocalWithTables(mClassificationURI,
                                                     tables,
+                                                    nsTArray<nsCString>(),
+                                                    nsTArray<nsCString>(),
                                                     this);
 
   if (NS_FAILED(rv)) {
