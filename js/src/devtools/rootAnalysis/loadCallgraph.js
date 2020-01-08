@@ -28,16 +28,11 @@ loadRelativeToScript('utility.js');
 
 
 var readableNames = {}; 
-var mangledName = {}; 
 var calleesOf = {}; 
 var callersOf; 
 var gcFunctions = {}; 
 var limitedFunctions = {}; 
 var gcEdges = {};
-
-
-var idToMangled = [""];
-
 
 
 var functionNames = [""];
@@ -51,7 +46,7 @@ function addGCFunction(caller, reason, functionLimits)
     if (functionLimits[caller] & LIMIT_CANNOT_GC)
         return false;
 
-    if (ignoreGCFunction(idToMangled[caller]))
+    if (ignoreGCFunction(functionNames[caller]))
         return false;
 
     if (!(caller in gcFunctions)) {
@@ -123,18 +118,22 @@ function loadCallgraph(file)
 
         let match;
         if (match = line.charAt(0) == "#" && /^\#(\d+) (.*)/.exec(line)) {
-            assert(functionNames.length == match[1]);
-            functionNames.push(match[2]);
-            const [ mangled, readable ] = splitFunction(match[2]);
+            const [ _, id, mangled ] = match;
+            assert(functionNames.length == id);
+            functionNames.push(mangled);
+            mangledToId[mangled] = id;
+            continue;
+        }
+        if (match = line.charAt(0) == "=" && /^= (\d+) (.*)/.exec(line)) {
+            const [ _, id, readable ] = match;
+            const mangled = functionNames[id];
             if (mangled in readableNames)
                 readableNames[mangled].push(readable);
             else
                 readableNames[mangled] = [ readable ];
-            mangledName[readable] = mangled;
-            mangledToId[mangled] = idToMangled.length;
-            idToMangled.push(mangled);
             continue;
         }
+
         let limits = 0;
         
         
@@ -188,10 +187,10 @@ function loadCallgraph(file)
             
             resolvedFieldCalls.add(callerField);
         } else if (match = tag == 'T' && /^T (\d+) (.*)/.exec(line)) {
-            const mangled = match[1]|0;
+            const id = match[1]|0;
             let tag = match[2];
             if (tag == 'GC Call') {
-                addGCFunction(mangled, "GC", functionLimits);
+                addGCFunction(id, "GC", functionLimits);
                 numGCCalls++;
             }
         } else {
@@ -265,9 +264,9 @@ function loadCallgraph(file)
     for (const [name, csuName] of fieldCallCSU) {
         if (resolvedFieldCalls.has(name))
             continue; 
-        const fullFieldName = idToMangled[name];
+        const fullFieldName = functionNames[name];
         if (!fieldCallCannotGC(csuName, fullFieldName)) {
-            gcFunctions[name] = 'unresolved ' + idToMangled[name];
+            gcFunctions[name] = 'unresolved ' + fullFieldName;
             worklist.push(name);
         }
     }
@@ -291,7 +290,7 @@ function loadCallgraph(file)
     
 
     for (const [id, limits] of Object.entries(functionLimits))
-        limitedFunctions[idToMangled[id]] = limits;
+        limitedFunctions[functionNames[id]] = limits;
 
     
     
@@ -403,22 +402,22 @@ function remap_ids_to_mangled_names() {
     var tmp = gcFunctions;
     gcFunctions = {};
     for (const [caller, reason] of Object.entries(tmp))
-        gcFunctions[idToMangled[caller]] = idToMangled[reason] || reason;
+        gcFunctions[functionNames[caller]] = functionNames[reason] || reason;
 
     tmp = calleesOf;
     calleesOf = {};
     for (const [callerId, callees] of Object.entries(calleesOf)) {
-        const caller = idToMangled[callerId];
+        const caller = functionNames[callerId];
         for (const {calleeId, limits} of callees)
-            calleesOf[caller][idToMangled[calleeId]] = limits;
+            calleesOf[caller][functionNames[calleeId]] = limits;
     }
 
     tmp = callersOf;
     callersOf = {};
     for (const [calleeId, callers] of Object.entries(callersOf)) {
-        const callee = idToMangled[calleeId];
+        const callee = functionNames[calleeId];
         callersOf[callee] = {};
         for (const {callerId, limits} of callers)
-            callersOf[callee][idToMangled[caller]] = limits;
+            callersOf[callee][functionNames[caller]] = limits;
     }
 }
