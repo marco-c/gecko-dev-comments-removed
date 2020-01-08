@@ -4802,8 +4802,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   if (aState.mBelowCurrentLineFloats.NotEmpty()) {
     
     
-    aState.PlaceBelowCurrentLineFloats(aState.mBelowCurrentLineFloats, aLine);
-    aLine->AppendFloats(aState.mBelowCurrentLineFloats);
+    aState.PlaceBelowCurrentLineFloats(aLine);
   }
 
   

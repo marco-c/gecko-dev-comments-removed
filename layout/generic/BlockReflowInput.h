@@ -154,8 +154,7 @@ public:
 
   bool FlowAndPlaceFloat(nsIFrame* aFloat);
 
-  void PlaceBelowCurrentLineFloats(nsFloatCacheFreeList& aFloats,
-                                   nsLineBox* aLine);
+  void PlaceBelowCurrentLineFloats(nsLineBox* aLine);
 
   
   
