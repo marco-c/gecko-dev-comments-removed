@@ -307,7 +307,7 @@ private:
 
 
 
-  bool UpdateSelectionCache();
+  bool UpdateSelectionCache(bool aRequireFlush = true);
 
   nsCOMPtr<nsIWidget> mWidget;
   
