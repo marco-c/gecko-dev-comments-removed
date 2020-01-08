@@ -69,6 +69,27 @@ class IMEHandler final {
   
 
 
+
+
+
+  static bool CreateNativeCaret(nsWindow* aWindow,
+                                const LayoutDeviceIntRect& aCaretRect);
+
+  
+
+
+
+  static void MaybeDestroyNativeCaret();
+
+  
+
+
+
+  static bool HasNativeCaret() { return sNativeCaretIsCreated; }
+
+  
+
+
   static bool IsComposing();
 
   
@@ -151,6 +172,7 @@ class IMEHandler final {
 
   static bool sForceDisableCurrentIMM_IME;
   static bool sPluginHasFocus;
+  static bool sNativeCaretIsCreated;
 
 #ifdef NS_ENABLE_TSF
   static decltype(SetInputScopes)* sSetInputScopes;

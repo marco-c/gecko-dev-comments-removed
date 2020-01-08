@@ -1037,8 +1037,6 @@ class TSFTextStore final : public ITextStoreACP,
   
   bool mDeferClearingContentForTSF;
   
-  bool mNativeCaretIsCreated;
-  
   
   
   
