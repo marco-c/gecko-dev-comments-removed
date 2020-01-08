@@ -378,7 +378,7 @@ namespace JS {
 
 
 
-class SourceBufferHolder final
+class MOZ_STACK_CLASS SourceBufferHolder final
 {
   public:
     enum Ownership {
@@ -391,15 +391,14 @@ class SourceBufferHolder final
         length_(dataLength),
         ownsChars_(ownership == GiveOwnership)
     {
-        fixEmptyBuffer();
-    }
-
-    SourceBufferHolder(UniqueTwoByteChars&& data, size_t dataLength)
-      : data_(data.release()),
-        length_(dataLength),
-        ownsChars_(true)
-    {
-        fixEmptyBuffer();
+        
+        
+        static const char16_t NullChar_ = 0;
+        if (!get()) {
+            data_ = &NullChar_;
+            length_ = 0;
+            ownsChars_ = false;
+        }
     }
 
     SourceBufferHolder(SourceBufferHolder&& other)
@@ -448,17 +447,6 @@ class SourceBufferHolder final
   private:
     SourceBufferHolder(SourceBufferHolder&) = delete;
     SourceBufferHolder& operator=(SourceBufferHolder&) = delete;
-
-    void fixEmptyBuffer() {
-        
-        
-        static const char16_t NullChar_ = 0;
-        if (!get()) {
-            data_ = &NullChar_;
-            length_ = 0;
-            ownsChars_ = false;
-        }
-    }
 
     const char16_t* data_;
     size_t length_;
@@ -1315,24 +1303,6 @@ JS_freeop(JSFreeOp* fop, void* p);
 
 extern JS_PUBLIC_API(void)
 JS_updateMallocCounter(JSContext* cx, size_t nbytes);
-
-
-
-
-
-
-
-
-
-class JS_PUBLIC_API(JSMallocAllocPolicy) : public js::AllocPolicyBase
-{
-public:
-    void reportAllocOverflow() const {}
-
-    MOZ_MUST_USE bool checkSimulatedOOM() const {
-        return true;
-    }
-};
 
 
 
@@ -3203,7 +3173,7 @@ JS_CompileScript(JSContext* cx, const char* ascii, size_t length,
 
 
 extern JS_PUBLIC_API(bool)
-JS_CompileUCScript(JSContext* cx, JS::SourceBufferHolder& srcBuf,
+JS_CompileUCScript(JSContext* cx, const char16_t* chars, size_t length,
                    const JS::CompileOptions& options,
                    JS::MutableHandleScript script);
 
@@ -3618,6 +3588,10 @@ Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 extern JS_PUBLIC_API(bool)
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
+        const char16_t* chars, size_t length, JS::MutableHandleScript script);
+
+extern JS_PUBLIC_API(bool)
+Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
         FILE* file, JS::MutableHandleScript script);
 
 extern JS_PUBLIC_API(bool)
@@ -3631,6 +3605,10 @@ CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
                             const char* bytes, size_t length, JS::MutableHandleScript script);
+
+extern JS_PUBLIC_API(bool)
+CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
+                            const char16_t* chars, size_t length, JS::MutableHandleScript script);
 
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -3665,7 +3643,7 @@ CanDecodeOffThread(JSContext* cx, const ReadOnlyCompileOptions& options, size_t 
 
 extern JS_PUBLIC_API(bool)
 CompileOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
-                 JS::SourceBufferHolder& srcBuf,
+                 const char16_t* chars, size_t length,
                  OffThreadCompileCallback callback, void* callbackData);
 
 extern JS_PUBLIC_API(JSScript*)
@@ -3676,7 +3654,7 @@ CancelOffThreadScript(JSContext* cx, OffThreadToken* token);
 
 extern JS_PUBLIC_API(bool)
 CompileOffThreadModule(JSContext* cx, const ReadOnlyCompileOptions& options,
-                       JS::SourceBufferHolder& srcBuf,
+                       const char16_t* chars, size_t length,
                        OffThreadCompileCallback callback, void* callbackData);
 
 extern JS_PUBLIC_API(JSObject*)
@@ -3716,6 +3694,15 @@ CancelMultiOffThreadScriptsDecoder(JSContext* cx, OffThreadToken* token);
 
 
 
+
+
+
+
+extern JS_PUBLIC_API(bool)
+CompileFunction(JSContext* cx, AutoObjectVector& envChain,
+                const ReadOnlyCompileOptions& options,
+                const char* name, unsigned nargs, const char* const* argnames,
+                const char16_t* chars, size_t length, JS::MutableHandleFunction fun);
 
 
 
@@ -3836,6 +3823,22 @@ Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
 extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, AutoObjectVector& envChain, const ReadOnlyCompileOptions& options,
          SourceBufferHolder& srcBuf, JS::MutableHandleValue rval);
+
+
+
+
+extern JS_PUBLIC_API(bool)
+Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
+         const char16_t* chars, size_t length, JS::MutableHandleValue rval);
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+Evaluate(JSContext* cx, AutoObjectVector& envChain, const ReadOnlyCompileOptions& options,
+         const char16_t* chars, size_t length, JS::MutableHandleValue rval);
 
 
 
