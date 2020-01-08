@@ -27,6 +27,14 @@ include!(concat!(
 impl ::selectors::parser::PseudoElement for PseudoElement {
     type Impl = SelectorImpl;
 
+    fn valid_after_slotted(&self) -> bool {
+        
+        
+        
+        
+        self.is_before_or_after()
+    }
+
     fn supports_pseudo_class(&self, pseudo_class: &NonTSPseudoClass) -> bool {
         if !self.supports_user_action_state() {
             return false;

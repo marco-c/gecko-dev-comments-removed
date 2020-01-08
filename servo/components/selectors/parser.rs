@@ -36,6 +36,11 @@ pub trait PseudoElement: Sized + ToCss {
     ) -> bool {
         false
     }
+
+    
+    fn valid_after_slotted(&self) -> bool {
+        false
+    }
 }
 
 
@@ -69,6 +74,8 @@ pub enum SelectorParseErrorKind<'i> {
     DanglingCombinator,
     NonSimpleSelectorInNegation,
     NonCompoundSelector,
+    NonPseudoElementAfterSlotted,
+    InvalidPseudoElementAfterSlotted,
     UnexpectedTokenInAttributeSelector(Token<'i>),
     PseudoElementExpectedColon(Token<'i>),
     PseudoElementExpectedIdent(Token<'i>),
@@ -1832,7 +1839,6 @@ where
     input.skip_whitespace();
 
     let mut empty = true;
-    let mut slot = false;
     if !parse_type_selector(parser, input, builder)? {
         if let Some(url) = parser.default_namespace() {
             
@@ -1845,6 +1851,7 @@ where
     }
 
     let mut pseudo = false;
+    let mut slot = false;
     loop {
         let parse_result =
             match parse_one_simple_selector(parser, input,  false)? {
@@ -1852,75 +1859,111 @@ where
                 Some(result) => result,
             };
 
+        empty = false;
+
+        let slotted_selector;
+        let pseudo_element;
+
         match parse_result {
             SimpleSelectorParseResult::SimpleSelector(s) => {
                 builder.push_simple_selector(s);
-                empty = false
+                continue;
             },
             SimpleSelectorParseResult::PseudoElement(p) => {
-                
-                
-                let mut state_selectors = SmallVec::<[Component<Impl>; 3]>::new();
+                slotted_selector = None;
+                pseudo_element = Some(p);
+            }
+            SimpleSelectorParseResult::SlottedPseudo(selector) => {
+                slotted_selector = Some(selector);
+                let maybe_pseudo = parse_one_simple_selector(
+                    parser,
+                    input,
+                     false,
+                )?;
 
-                loop {
-                    let location = input.current_source_location();
-                    match input.next_including_whitespace() {
-                        Ok(&Token::Colon) => {},
-                        Ok(&Token::WhiteSpace(_)) | Err(_) => break,
-                        Ok(t) => {
-                            let e = SelectorParseErrorKind::PseudoElementExpectedColon(t.clone());
-                            return Err(location.new_custom_error(e));
-                        },
+                pseudo_element = match maybe_pseudo {
+                    None => None,
+                    Some(SimpleSelectorParseResult::PseudoElement(pseudo)) => {
+                        if !pseudo.valid_after_slotted() {
+                            return Err(input.new_custom_error(
+                                SelectorParseErrorKind::InvalidPseudoElementAfterSlotted
+                            ));
+                        }
+                        Some(pseudo)
                     }
-
-                    let location = input.current_source_location();
-                    
-                    
-                    let name = match input.next_including_whitespace()? {
-                        &Token::Ident(ref name) => name.clone(),
-                        t => {
-                            return Err(location.new_custom_error(
-                                SelectorParseErrorKind::NoIdentForPseudo(t.clone()),
-                            ))
-                        },
-                    };
-
-                    let pseudo_class =
-                        P::parse_non_ts_pseudo_class(parser, location, name.clone())?;
-                    if !p.supports_pseudo_class(&pseudo_class) {
+                    Some(SimpleSelectorParseResult::SimpleSelector(..)) |
+                    Some(SimpleSelectorParseResult::SlottedPseudo(..)) => {
                         return Err(input.new_custom_error(
-                            SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
+                            SelectorParseErrorKind::NonPseudoElementAfterSlotted
                         ));
                     }
-                    state_selectors.push(Component::NonTSPseudoClass(pseudo_class));
-                }
-
-                if !builder.is_empty() {
-                    builder.push_combinator(Combinator::PseudoElement);
-                }
-
-                builder.push_simple_selector(Component::PseudoElement(p));
-                for state_selector in state_selectors.drain() {
-                    builder.push_simple_selector(state_selector);
-                }
-
-                pseudo = true;
-                empty = false;
-                break;
-            },
-            SimpleSelectorParseResult::SlottedPseudo(selector) => {
-                empty = false;
-                slot = true;
-                if !builder.is_empty() {
-                    builder.push_combinator(Combinator::SlotAssignment);
-                }
-                builder.push_simple_selector(Component::Slotted(selector));
-                
-                
-                
-                break;
-            },
+                };
+            }
         }
+
+        debug_assert!(slotted_selector.is_some() || pseudo_element.is_some());
+        
+        
+        
+        
+        let mut state_selectors = SmallVec::<[Component<Impl>; 3]>::new();
+        if let Some(ref p) = pseudo_element {
+            loop {
+                let location = input.current_source_location();
+                match input.next_including_whitespace() {
+                    Ok(&Token::Colon) => {},
+                    Ok(&Token::WhiteSpace(_)) | Err(_) => break,
+                    Ok(t) => {
+                        let e = SelectorParseErrorKind::PseudoElementExpectedColon(t.clone());
+                        return Err(location.new_custom_error(e));
+                    },
+                }
+
+                let location = input.current_source_location();
+                
+                
+                let name = match input.next_including_whitespace()? {
+                    &Token::Ident(ref name) => name.clone(),
+                    t => {
+                        return Err(location.new_custom_error(
+                            SelectorParseErrorKind::NoIdentForPseudo(t.clone()),
+                        ))
+                    },
+                };
+
+                let pseudo_class =
+                    P::parse_non_ts_pseudo_class(parser, location, name.clone())?;
+                if !p.supports_pseudo_class(&pseudo_class) {
+                    return Err(input.new_custom_error(
+                        SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
+                    ));
+                }
+                state_selectors.push(Component::NonTSPseudoClass(pseudo_class));
+            }
+        }
+
+        if let Some(slotted) = slotted_selector {
+            slot = true;
+            if !builder.is_empty() {
+                builder.push_combinator(Combinator::SlotAssignment);
+            }
+            builder.push_simple_selector(Component::Slotted(slotted));
+        }
+
+        if let Some(p) = pseudo_element {
+            pseudo = true;
+            if !builder.is_empty() {
+                builder.push_combinator(Combinator::PseudoElement);
+            }
+
+            builder.push_simple_selector(Component::PseudoElement(p));
+
+            for state_selector in state_selectors.drain() {
+                builder.push_simple_selector(state_selector);
+            }
+        }
+
+        break;
     }
     if empty {
         
@@ -2132,6 +2175,10 @@ pub mod tests {
                 PseudoClass::Hover => true,
                 PseudoClass::Active | PseudoClass::Lang(..) => false,
             }
+        }
+
+        fn valid_after_slotted(&self) -> bool {
+            true
         }
     }
 
@@ -2818,8 +2865,7 @@ pub mod tests {
         assert!(parse("div + slot::slotted(div)").is_ok());
         assert!(parse("div + slot::slotted(div.foo)").is_ok());
         assert!(parse("slot::slotted(div,foo)::first-line").is_err());
-        
-        assert!(parse("::slotted(div)::before").is_err());
+        assert!(parse("::slotted(div)::before").is_ok());
         assert!(parse("slot::slotted(div,foo)").is_err());
     }
 
