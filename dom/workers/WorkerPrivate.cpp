@@ -2715,7 +2715,6 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   
   
   if (aParent) {
-    mMainThreadThrottledEventQueue = aParent->mMainThreadThrottledEventQueue;
     mMainThreadEventTarget = aParent->mMainThreadEventTarget;
     return;
   }
@@ -2730,16 +2729,7 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
 
   
   
-  mMainThreadThrottledEventQueue = ThrottledEventQueue::Create(target);
-
-  
-  
-  
-  if (mMainThreadThrottledEventQueue) {
-    mMainThreadEventTarget = mMainThreadThrottledEventQueue;
-  } else {
-    mMainThreadEventTarget = target.forget();
-  }
+  mMainThreadEventTarget = ThrottledEventQueue::Create(target);
 }
 
 WorkerPrivate::~WorkerPrivate()
@@ -3315,9 +3305,8 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
     
     
     
-    if (mMainThreadThrottledEventQueue &&
-        mMainThreadThrottledEventQueue->Length() > 5000) {
-      mMainThreadThrottledEventQueue->AwaitIdle();
+    if (mMainThreadEventTarget->Length() > 5000) {
+      mMainThreadEventTarget->AwaitIdle();
     }
   }
 
