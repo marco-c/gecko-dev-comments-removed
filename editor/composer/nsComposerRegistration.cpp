@@ -34,64 +34,14 @@ class nsISupports;
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(EditorSpellCheck)
 
-
-
-
-
-
-
-
-static nsresult
-CreateControllerWithSingletonCommandTable(
-    already_AddRefed<nsIControllerCommandTable> aComposerCommandTable,
-    nsIController **aResult)
-{
-  nsCOMPtr<nsIController> controller = new nsBaseCommandController();
-
-  nsCOMPtr<nsIControllerCommandTable> composerCommandTable(aComposerCommandTable);
-
-  
-  composerCommandTable->MakeImmutable();
-
-  nsresult rv;
-  nsCOMPtr<nsIControllerContext> controllerContext = do_QueryInterface(controller, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = controllerContext->Init(composerCommandTable);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  *aResult = controller;
-  NS_ADDREF(*aResult);
-  return NS_OK;
-}
-
-
-
-
-static nsresult
-nsHTMLEditorDocStateControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
-                                              void **aResult)
-{
-  nsCOMPtr<nsIController> controller;
-  nsresult rv = CreateControllerWithSingletonCommandTable(
-                  nsControllerCommandTable::CreateHTMLEditorDocStateCommandTable(),
-                  getter_AddRefs(controller));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return controller->QueryInterface(aIID, aResult);
-}
-
-NS_DEFINE_NAMED_CID(NS_EDITORDOCSTATECONTROLLER_CID);
 NS_DEFINE_NAMED_CID(NS_EDITORSPELLCHECK_CID);
 
 static const mozilla::Module::CIDEntry kComposerCIDs[] = {
-  { &kNS_EDITORDOCSTATECONTROLLER_CID, false, nullptr, nsHTMLEditorDocStateControllerConstructor },
   { &kNS_EDITORSPELLCHECK_CID, false, nullptr, EditorSpellCheckConstructor },
   { nullptr }
 };
 
 static const mozilla::Module::ContractIDEntry kComposerContracts[] = {
-  { "@mozilla.org/editor/editordocstatecontroller;1", &kNS_EDITORDOCSTATECONTROLLER_CID },
   { "@mozilla.org/editor/editorspellchecker;1", &kNS_EDITORSPELLCHECK_CID },
   { nullptr }
 };
