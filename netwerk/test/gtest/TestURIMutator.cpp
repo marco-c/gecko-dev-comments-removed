@@ -63,11 +63,10 @@ TEST(TestURIMutator, Mutator)
   ASSERT_TRUE(out == NS_LITERAL_CSTRING("https://mozilla.org/path?query#originalRef"));
 
   
-  
   nsCOMPtr<nsIURI> uri2;
   rv = NS_MutateURI(url2)
          .SetQuery(NS_LITERAL_CSTRING("newquery"))
-         .Finalize<nsIURI>(getter_AddRefs(uri2));
+         .Finalize(getter_AddRefs(uri2));
   ASSERT_EQ(rv, NS_OK);
   ASSERT_EQ(uri2->GetSpec(out), NS_OK);
   ASSERT_TRUE(out == NS_LITERAL_CSTRING("https://mozilla.org/path?newquery#newref"));
