@@ -27,6 +27,25 @@ let appStartupPromise = new Promise((resolve, reject) => {
 });
 
 const prefs = Services.prefs;
+const prefObserver = {
+  register() {
+    prefs.addObserver(PREF_BRANCH, this, false); 
+  },
+
+  unregister() {
+    prefs.removeObserver(PREF_BRANCH, this, false); 
+  },
+
+  observe(aSubject, aTopic, aData) {
+    
+    
+    if (aData === USER_DISABLE_PREF) {
+      
+      appStartupPromise = appStartupPromise.then(handleStartup);
+    }
+  }
+};
+
 
 const appStartupObserver = {
   register() {
@@ -109,12 +128,14 @@ function startup(data, reason) {
   } else {
     appStartupDone();
   }
+  prefObserver.register();
   addonResourceURI = data.resourceURI;
   
   appStartupPromise = appStartupPromise.then(handleStartup);
 }
 
 function shutdown(data, reason) { 
+  prefObserver.unregister();
   const webExtension = LegacyExtensionsUtils.getEmbeddedExtensionFor({
     id: ADDON_ID,
     resourceURI: addonResourceURI

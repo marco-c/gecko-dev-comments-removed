@@ -1402,22 +1402,6 @@ BrowserGlue.prototype = {
   },
 
   
-  
-  _monitorScreenshotsPref() {
-    const PREF = "extensions.screenshots.disabled";
-    const ID = "screenshots@mozilla.org";
-    Services.prefs.addObserver(PREF, async () => {
-      let addon = await AddonManager.getAddonByID(ID);
-      let disabled = Services.prefs.getBoolPref(PREF, false);
-      if (disabled) {
-        await addon.disable({allowSystemAddons: true});
-      } else {
-        await addon.enable({allowSystemAddons: true});
-      }
-    });
-  },
-
-  
   _onWindowsRestored: function BG__onWindowsRestored() {
     if (this._windowsWereRestored) {
       return;
@@ -1473,8 +1457,6 @@ BrowserGlue.prototype = {
     };
     this._idleService.addIdleObserver(
       this._lateTasksIdleObserver, LATE_TASKS_IDLE_TIME_SEC);
-
-    this._monitorScreenshotsPref();
   },
 
   
