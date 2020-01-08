@@ -1258,6 +1258,26 @@ protected:
 
 
 
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  GetSelectedOrParentTableElement(Selection& aSelection,
+                                  ErrorResult& aRv,
+                                  bool* aIsCellSelected = nullptr) const;
+
+  
+
+
+
+
+
+
+
   nsresult PasteInternal(int32_t aClipboardType);
 
   

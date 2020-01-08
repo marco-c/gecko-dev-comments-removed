@@ -3238,27 +3238,29 @@ HTMLEditor::GetCellContext(Selection** aSelection,
   
   if (!cell) {
     
-    RefPtr<Element> cellOrTableElement;
-    int32_t selectedCount;
-    nsAutoString tagName;
-    nsresult rv =
-      GetSelectedOrParentTableElement(tagName, &selectedCount,
-                                      getter_AddRefs(cellOrTableElement));
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (tagName.EqualsLiteral("table")) {
+    ErrorResult error;
+    RefPtr<Element> cellOrRowOrTableElement =
+      GetSelectedOrParentTableElement(*selection, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    if (!cellOrRowOrTableElement) {
+      return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+    }
+    if (cellOrRowOrTableElement->IsHTMLElement(nsGkAtoms::table)) {
       
       if (aTable) {
-        cellOrTableElement.forget(aTable);
+        cellOrRowOrTableElement.forget(aTable);
       }
       return NS_OK;
     }
-    if (!tagName.EqualsLiteral("td")) {
+    if (!cellOrRowOrTableElement->IsAnyOfHTMLElements(nsGkAtoms::td,
+                                                      nsGkAtoms::th)) {
       return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
     }
 
     
-    MOZ_ASSERT(cellOrTableElement);
-    cell = cellOrTableElement;
+    cell = std::move(cellOrRowOrTableElement);
   }
   if (aCell) {
     
@@ -3653,12 +3655,14 @@ HTMLEditor::SetSelectionAfterTableEdit(Element* aTable,
 NS_IMETHODIMP
 HTMLEditor::GetSelectedOrParentTableElement(nsAString& aTagName,
                                             int32_t* aSelectedCount,
-                                            Element** aTableElement)
+                                            Element** aCellOrRowOrTableElement)
 {
-  NS_ENSURE_ARG_POINTER(aTableElement);
-  NS_ENSURE_ARG_POINTER(aSelectedCount);
-  *aTableElement = nullptr;
+  if (NS_WARN_IF(!aSelectedCount) || NS_WARN_IF(!aCellOrRowOrTableElement)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   aTagName.Truncate();
+  *aCellOrRowOrTableElement = nullptr;
   *aSelectedCount = 0;
 
   RefPtr<Selection> selection = GetSelection();
@@ -3666,59 +3670,114 @@ HTMLEditor::GetSelectedOrParentTableElement(nsAString& aTagName,
     return NS_ERROR_FAILURE;
   }
 
-  
-  ErrorResult error;
-  RefPtr<Element> tableOrCellElement =
-    GetFirstSelectedTableCellElement(*selection, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
+  bool isCellSelected = false;
+  ErrorResult aRv;
+  RefPtr<Element> cellOrRowOrTableElement =
+    GetSelectedOrParentTableElement(*selection, aRv, &isCellSelected);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return aRv.StealNSResult();
+  }
+  if (!cellOrRowOrTableElement) {
+    return NS_OK;
   }
 
-  if (tableOrCellElement) {
-      
-      
-      *aSelectedCount = selection->RangeCount();
-      aTagName = NS_LITERAL_STRING("td");
-  } else {
-    nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
-    if (NS_WARN_IF(!anchorNode)) {
-      return NS_ERROR_FAILURE;
-    }
+  if (isCellSelected) {
+    aTagName.AssignLiteral("td");
+    *aSelectedCount = selection->RangeCount();
+    cellOrRowOrTableElement.forget(aCellOrRowOrTableElement);
+    return NS_OK;
+  }
 
+  if (cellOrRowOrTableElement->IsAnyOfHTMLElements(nsGkAtoms::td,
+                                                   nsGkAtoms::th)) {
+    aTagName.AssignLiteral("td");
     
-    if (anchorNode->HasChildNodes()) {
-      nsINode* selectedNode = selection->GetChildAtAnchorOffset();
-      if (selectedNode) {
-        if (selectedNode->IsHTMLElement(nsGkAtoms::td)) {
-          tableOrCellElement = selectedNode->AsElement();
-          aTagName = NS_LITERAL_STRING("td");
-          
-          
-          *aSelectedCount = selection->RangeCount();
-        } else if (selectedNode->IsHTMLElement(nsGkAtoms::table)) {
-          tableOrCellElement = selectedNode->AsElement();
-          aTagName.AssignLiteral("table");
-          *aSelectedCount = 1;
-        } else if (selectedNode->IsHTMLElement(nsGkAtoms::tr)) {
-          tableOrCellElement = selectedNode->AsElement();
-          aTagName.AssignLiteral("tr");
-          *aSelectedCount = 1;
-        }
-      }
+    cellOrRowOrTableElement.forget(aCellOrRowOrTableElement);
+    return NS_OK;
+  }
+
+  if (cellOrRowOrTableElement->IsHTMLElement(nsGkAtoms::table)) {
+    aTagName.AssignLiteral("table");
+    *aSelectedCount = 1;
+    cellOrRowOrTableElement.forget(aCellOrRowOrTableElement);
+    return NS_OK;
+  }
+
+  if (cellOrRowOrTableElement->IsHTMLElement(nsGkAtoms::tr)) {
+    aTagName.AssignLiteral("tr");
+    *aSelectedCount = 1;
+    cellOrRowOrTableElement.forget(aCellOrRowOrTableElement);
+    return NS_OK;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Which element was returned?");
+  return NS_ERROR_UNEXPECTED;
+}
+
+already_AddRefed<Element>
+HTMLEditor::GetSelectedOrParentTableElement(
+              Selection& aSelection,
+              ErrorResult& aRv,
+              bool* aIsCellSelected ) const
+{
+  MOZ_ASSERT(!aRv.Failed());
+
+  if (aIsCellSelected) {
+    *aIsCellSelected = false;
+  }
+
+  
+  RefPtr<Element> cellElement =
+    GetFirstSelectedTableCellElement(aSelection, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
+  if (cellElement) {
+    if (aIsCellSelected) {
+      *aIsCellSelected = true;
     }
-    if (!tableOrCellElement) {
+    return cellElement.forget();
+  }
+
+  const RangeBoundary& anchorRef = aSelection.AnchorRef();
+  if (NS_WARN_IF(!anchorRef.IsSet())) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  
+  if (anchorRef.Container()->HasChildNodes()) {
+    nsIContent* selectedContent = anchorRef.GetChildAtOffset();
+    if (selectedContent) {
       
-      tableOrCellElement =
-        GetElementOrParentByTagNameInternal(*nsGkAtoms::td, *anchorNode);
-      if (tableOrCellElement) {
-        aTagName = NS_LITERAL_STRING("td");
+      if (selectedContent->IsHTMLElement(nsGkAtoms::td)) {
+        
+        
+        
+        
+        if (aIsCellSelected) {
+          *aIsCellSelected = true;
+        }
+        return do_AddRef(selectedContent->AsElement());
+      }
+      if (selectedContent->IsAnyOfHTMLElements(nsGkAtoms::table,
+                                               nsGkAtoms::tr)) {
+        return do_AddRef(selectedContent->AsElement());
       }
     }
   }
-  if (tableOrCellElement) {
-    tableOrCellElement.forget(aTableElement);
+
+  
+  
+  cellElement = GetElementOrParentByTagNameInternal(*nsGkAtoms::td,
+                                                    *anchorRef.Container());
+  if (!cellElement) {
+    return nullptr; 
   }
-  return NS_OK;
+  
+  
+  return cellElement.forget();
 }
 
 NS_IMETHODIMP
