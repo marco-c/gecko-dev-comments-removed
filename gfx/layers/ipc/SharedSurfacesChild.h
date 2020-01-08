@@ -207,6 +207,19 @@ public:
                      WebRenderLayerManager* aManager,
                      wr::IpcResourceUpdateQueue& aResources,
                      wr::ImageKey& aKey);
+
+  
+
+
+
+  void ReleasePreviousFrame(WebRenderLayerManager* aManager,
+                            const wr::ExternalImageId& aId);
+
+  
+
+
+
+  void Invalidate(WebRenderLayerManager* aManager);
 };
 
 } 
