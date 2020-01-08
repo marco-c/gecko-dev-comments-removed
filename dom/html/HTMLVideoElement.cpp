@@ -315,10 +315,19 @@ HTMLVideoElement::UpdateWakeLock()
   }
 }
 
+bool
+HTMLVideoElement::ShouldCreateVideoWakeLock() const
+{
+  
+  
+  
+  return HasVideo() && HasAudio();
+}
+
 void
 HTMLVideoElement::CreateVideoWakeLockIfNeeded()
 {
-  if (!mScreenWakeLock && HasVideo()) {
+  if (!mScreenWakeLock && ShouldCreateVideoWakeLock()) {
     RefPtr<power::PowerManagerService> pmService =
       power::PowerManagerService::GetInstance();
     NS_ENSURE_TRUE_VOID(pmService);
