@@ -52,9 +52,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
-#ifdef XP_LINUX
-#include <sys/prctl.h>
-#endif
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -7677,13 +7674,6 @@ static bool AddMarkObservers(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-#ifdef ENABLE_WASM_GC
-  if (gc::GCRuntime::temporaryAbortIfWasmGc(cx)) {
-    JS_ReportErrorASCII(cx, "API temporarily unavailable under wasm gc");
-    return false;
-  }
-#endif
-
   
   
   
@@ -10944,16 +10934,6 @@ int main(int argc, char** argv, char** envp) {
   if (op.getHelpOption()) {
     return EXIT_SUCCESS;
   }
-
-  
-
-
-
-#ifdef XP_LINUX
-  if (op.getBoolOption("fuzzing-safe")) {
-    prctl(PR_SET_DUMPABLE, 1);
-  }
-#endif
 
 #ifdef DEBUG
   
