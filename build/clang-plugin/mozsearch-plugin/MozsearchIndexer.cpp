@@ -96,6 +96,7 @@ struct FileInfo {
       
       
       Interesting = true;
+      Generated = true;
       Realname.replace(0, Objdir.length(), GENERATED);
       return;
     }
@@ -105,6 +106,7 @@ struct FileInfo {
     
     Interesting = (Rname.length() > Srcdir.length()) &&
                   (Rname.compare(0, Srcdir.length(), Srcdir) == 0);
+    Generated = false;
     if (Interesting) {
       
       Realname.erase(0, Srcdir.length() + 1);
@@ -113,6 +115,7 @@ struct FileInfo {
   std::string Realname;
   std::vector<std::string> Output;
   bool Interesting;
+  bool Generated;
 };
 
 class IndexConsumer;
@@ -329,6 +332,14 @@ private:
     std::string Filename = F->Realname;
     if (Filename.length() == 0 && Backup.length() != 0) {
       return Backup;
+    }
+    if (F->Generated) {
+      
+      
+      
+      
+      char* Platform = getenv("MOZSEARCH_PLATFORM");
+      Filename = std::string(Platform ? Platform : "") + std::string("@") + Filename;
     }
     return hash(Filename + std::string("@") + locationToString(Loc));
   }
