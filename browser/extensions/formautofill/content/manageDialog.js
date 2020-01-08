@@ -105,7 +105,11 @@ class ManageRecords {
     let storage = await this.getStorage();
     let records = await storage.getAll();
     
-    records.sort((a, b) => b.timeLastModified - a.timeLastModified);
+    records.sort((a, b) => {
+      let aLastUsed = a.timeLastUsed || a.timeLastModified;
+      let bLastUsed = b.timeLastUsed || b.timeLastModified;
+      return bLastUsed - aLastUsed;
+    });
     await this.renderRecordElements(records);
     this.updateButtonsStates(this._selectedOptions.length);
   }
