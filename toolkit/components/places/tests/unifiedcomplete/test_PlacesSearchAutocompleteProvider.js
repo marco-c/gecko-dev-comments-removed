@@ -3,6 +3,8 @@
 
 
 ChromeUtils.import("resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
+ChromeUtils.import("resource://testing-common/AppInfo.jsm");
+updateAppInfo();
 
 add_task(async function() {
     
