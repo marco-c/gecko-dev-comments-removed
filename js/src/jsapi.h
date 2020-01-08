@@ -3398,6 +3398,14 @@ GetPromiseResult(JS::HandleObject promise);
 
 
 
+
+extern JS_PUBLIC_API(bool)
+GetPromiseIsHandled(JS::HandleObject promise);
+
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 GetPromiseAllocationSite(JS::HandleObject promise);
 
