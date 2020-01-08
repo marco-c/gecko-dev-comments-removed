@@ -145,6 +145,13 @@ Animation::SetEffectNoUpdate(AnimationEffect* aEffect)
   bool wasRelevant = mIsRelevant;
 
   if (mEffect) {
+    if (!aEffect) {
+      
+      
+      
+      ResetPendingTasks();
+    }
+
     
     
     if (mIsRelevant) {
@@ -227,7 +234,11 @@ Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline)
 void
 Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
 {
-  if (aNewStartTime == mStartTime) {
+  
+  
+  
+  
+  if (!Pending() && aNewStartTime == mStartTime) {
     return;
   }
 
