@@ -206,23 +206,19 @@ AnimationSurfaceProvider::LogicalSizeInBytes() const
 
 void
 AnimationSurfaceProvider::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
-                                                 const AddSizeOfCb& aCallback)
+                                                 size_t& aHeapSizeOut,
+                                                 size_t& aNonHeapSizeOut,
+                                                 size_t& aExtHandlesOut)
 {
   
   
   
   MutexAutoLock lock(mFramesMutex);
 
-  size_t i = 0;
   for (const RawAccessFrameRef& frame : mFrames.Frames()) {
-    ++i;
     if (frame) {
-      frame->AddSizeOfExcludingThis(aMallocSizeOf,
-        [&](AddSizeOfCbData& aMetadata) {
-          aMetadata.index = i;
-          aCallback(aMetadata);
-        }
-      );
+      frame->AddSizeOfExcludingThis(aMallocSizeOf, aHeapSizeOut,
+                                    aNonHeapSizeOut, aExtHandlesOut);
     }
   }
 }

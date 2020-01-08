@@ -19,8 +19,6 @@ namespace layers {
 
 using namespace mozilla::gfx;
 
- UserDataKey SharedSurfacesChild::sSharedKey;
-
 class SharedSurfacesChild::ImageKeyData final
 {
 public:
@@ -226,6 +224,7 @@ SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  static UserDataKey sSharedKey;
   SharedUserData* data =
     static_cast<SharedUserData*>(aSurface->GetUserData(&sSharedKey));
   if (!data) {
@@ -454,21 +453,6 @@ SharedSurfacesChild::Unshare(const wr::ExternalImageId& aId,
     
     manager->SendRemoveSharedSurface(aId);
   }
-}
-
- Maybe<wr::ExternalImageId>
-SharedSurfacesChild::GetExternalId(const SourceSurfaceSharedData* aSurface)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aSurface);
-
-  SharedUserData* data =
-    static_cast<SharedUserData*>(aSurface->GetUserData(&sSharedKey));
-  if (!data || !data->IsShared()) {
-    return Nothing();
-  }
-
-  return Some(data->Id());
 }
 
 } 

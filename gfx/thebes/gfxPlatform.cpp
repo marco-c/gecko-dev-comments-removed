@@ -4,7 +4,6 @@
 
 
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/image/ImageMemoryReporter.h"
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeChild.h"
@@ -1145,7 +1144,6 @@ gfxPlatform::InitLayersIPC()
   if (XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying()) {
     if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) && gfxVars::UseWebRender()) {
       wr::RenderThread::Start();
-      image::ImageMemoryReporter::InitForWebRender();
     }
 
     layers::CompositorThreadHolder::Start();
@@ -1179,7 +1177,6 @@ gfxPlatform::ShutdownLayersIPC()
         
         layers::CompositorThreadHolder::Shutdown();
         gfx::VRListenerThreadHolder::Shutdown();
-        image::ImageMemoryReporter::ShutdownForWebRender();
         
         
         if (wr::RenderThread::Get()) {

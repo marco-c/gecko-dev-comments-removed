@@ -22,7 +22,6 @@
 #include "mozilla/dom/VideoDecoderManagerParent.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/image/ImageMemoryReporter.h"
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/layers/APZInputBridgeParent.h"
@@ -269,7 +268,6 @@ GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
   
   if (gfxVars::UseWebRender()) {
     wr::RenderThread::Start();
-    image::ImageMemoryReporter::InitForWebRender();
   }
 
   VRManager::ManagerInit();
@@ -539,8 +537,6 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   if (wr::RenderThread::Get()) {
     wr::RenderThread::ShutDown();
   }
-
-  image::ImageMemoryReporter::ShutdownForWebRender();
 
   
   gl::GLContextProvider::Shutdown();

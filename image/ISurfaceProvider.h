@@ -65,21 +65,21 @@ public:
   
   virtual size_t LogicalSizeInBytes() const = 0;
 
-  typedef imgFrame::AddSizeOfCbData AddSizeOfCbData;
-  typedef imgFrame::AddSizeOfCb AddSizeOfCb;
-
   
   
   
   virtual void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
-                                      const AddSizeOfCb& aCallback)
+                                      size_t& aHeapSizeOut,
+                                      size_t& aNonHeapSizeOut,
+                                      size_t& aExtHandlesOut)
   {
     DrawableFrameRef ref = DrawableRef( 0);
     if (!ref) {
       return;
     }
 
-    ref->AddSizeOfExcludingThis(aMallocSizeOf, aCallback);
+    ref->AddSizeOfExcludingThis(aMallocSizeOf, aHeapSizeOut,
+                                aNonHeapSizeOut, aExtHandlesOut);
   }
 
   virtual void Reset() { }
