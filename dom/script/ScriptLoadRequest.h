@@ -273,6 +273,9 @@ class ScriptLoadRequest
   
   
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
+
+  
+  nsCOMPtr<nsIURI> mBaseURL;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {

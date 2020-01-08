@@ -59,7 +59,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   static ModuleLoadRequest* CreateDynamicImport(
-      nsIURI* aURI, ModuleScript* aScript,
+      nsIURI* aURI, LoadedScript* aScript,
       JS::Handle<JS::Value> aReferencingPrivate,
       JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
 
@@ -86,9 +86,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   const bool mIsDynamicImport;
-
-  
-  nsCOMPtr<nsIURI> mBaseURL;
 
   
   
