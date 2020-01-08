@@ -61,92 +61,94 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Location, mInnerWindow)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Location)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Location)
 
-nsresult
-Location::CheckURL(nsIURI* aURI, nsDocShellLoadInfo** aLoadInfo)
+already_AddRefed<nsDocShellLoadInfo>
+Location::CheckURL(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
+                   ErrorResult& aRv)
 {
-  *aLoadInfo = nullptr;
-
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
-  NS_ENSURE_TRUE(docShell, NS_ERROR_NOT_AVAILABLE);
+  if (NS_WARN_IF(!docShell)) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
+  }
 
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   nsCOMPtr<nsIURI> sourceURI;
   net::ReferrerPolicy referrerPolicy = net::RP_Unset;
 
-  if (JSContext *cx = nsContentUtils::GetCurrentJSContext()) {
-    
-    
-    
-    
-    
+  
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  if (NS_WARN_IF(!ssm)) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
 
-    
-    nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-    NS_ENSURE_STATE(ssm);
+  
+  nsresult rv = ssm->CheckLoadURIWithPrincipal(&aSubjectPrincipal, aURI,
+                                               nsIScriptSecurityManager::STANDARD);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    nsAutoCString spec;
+    aURI->GetSpec(spec);
+    aRv.ThrowTypeError<MSG_URL_NOT_LOADABLE>(NS_ConvertUTF8toUTF16(spec));
+    return nullptr;
+  }
 
-    
-    nsresult rv = ssm->CheckLoadURIFromScript(cx, aURI);
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  nsCOMPtr<nsPIDOMWindowInner> incumbent =
+    do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+  nsCOMPtr<nsIDocument> doc = incumbent ? incumbent->GetDoc() : nullptr;
 
-    nsCOMPtr<nsPIDOMWindowInner> incumbent =
-      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
-    nsCOMPtr<nsIDocument> doc = incumbent ? incumbent->GetDoc() : nullptr;
+  if (doc) {
+    nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
+    docOriginalURI = doc->GetOriginalURI();
+    docCurrentURI = doc->GetDocumentURI();
+    rv = doc->NodePrincipal()->GetURI(getter_AddRefs(principalURI));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return nullptr;
+    }
 
-    if (doc) {
-      nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
-      docOriginalURI = doc->GetOriginalURI();
-      docCurrentURI = doc->GetDocumentURI();
-      rv = doc->NodePrincipal()->GetURI(getter_AddRefs(principalURI));
-      NS_ENSURE_SUCCESS(rv, rv);
+    triggeringPrincipal = doc->NodePrincipal();
+    referrerPolicy = doc->GetReferrerPolicy();
 
-      triggeringPrincipal = doc->NodePrincipal();
-      referrerPolicy = doc->GetReferrerPolicy();
-
-      bool urisEqual = false;
-      if (docOriginalURI && docCurrentURI && principalURI) {
-        principalURI->Equals(docOriginalURI, &urisEqual);
-      }
-      if (urisEqual) {
-        sourceURI = docCurrentURI;
-      }
-      else {
-        
-        
-        
-        
-        
-        if (principalURI) {
-          bool isNullPrincipalScheme;
-          rv = principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME,
-                                     &isNullPrincipalScheme);
-          if (NS_SUCCEEDED(rv) && !isNullPrincipalScheme) {
-            sourceURI = principalURI;
-          }
-        }
-      }
+    bool urisEqual = false;
+    if (docOriginalURI && docCurrentURI && principalURI) {
+      principalURI->Equals(docOriginalURI, &urisEqual);
+    }
+    if (urisEqual) {
+      sourceURI = docCurrentURI;
     }
     else {
       
       
       
       
-      triggeringPrincipal = nsContentUtils::SubjectPrincipal();
+      
+      if (principalURI) {
+        bool isNullPrincipalScheme;
+        rv = principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME,
+                                    &isNullPrincipalScheme);
+        if (NS_SUCCEEDED(rv) && !isNullPrincipalScheme) {
+          sourceURI = principalURI;
+        }
+      }
     }
+  } else {
+    
+    triggeringPrincipal = &aSubjectPrincipal;
   }
 
   
@@ -159,9 +161,7 @@ Location::CheckURL(nsIURI* aURI, nsDocShellLoadInfo** aLoadInfo)
     loadInfo->SetReferrerPolicy(referrerPolicy);
   }
 
-  loadInfo.swap(*aLoadInfo);
-
-  return NS_OK;
+  return loadInfo.forget();
 }
 
 nsresult
@@ -207,14 +207,14 @@ Location::GetURI(nsIURI** aURI, bool aGetInnermostURI)
 }
 
 void
-Location::SetURI(nsIURI* aURI, ErrorResult& aRv, bool aReplace)
+Location::SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
+                 ErrorResult& aRv, bool aReplace)
 {
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
   if (docShell) {
-    RefPtr<nsDocShellLoadInfo> loadInfo;
-
-    if (NS_FAILED(CheckURL(aURI, getter_AddRefs(loadInfo)))) {
-      aRv.Throw(NS_ERROR_FAILURE);
+    RefPtr<nsDocShellLoadInfo> loadInfo =
+      CheckURL(aURI, aSubjectPrincipal, aRv);
+    if (aRv.Failed()) {
       return;
     }
 
@@ -308,7 +308,7 @@ Location::SetHash(const nsAString& aHash,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 void
@@ -362,7 +362,7 @@ Location::SetHost(const nsAString& aHost,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 void
@@ -407,7 +407,7 @@ Location::SetHostname(const nsAString& aHostname,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 nsresult
@@ -433,21 +433,24 @@ Location::GetHref(nsAString& aHref)
 
 void
 Location::SetHref(const nsAString& aHref,
+                  nsIPrincipal& aSubjectPrincipal,
                   ErrorResult& aRv)
 {
-  DoSetHref(aHref, false, aRv);
+  DoSetHref(aHref, aSubjectPrincipal, false, aRv);
 }
 
 void
-Location::DoSetHref(const nsAString& aHref, bool aReplace, ErrorResult& aRv)
+Location::DoSetHref(const nsAString& aHref, nsIPrincipal& aSubjectPrincipal,
+                    bool aReplace, ErrorResult& aRv)
 {
   
   nsCOMPtr<nsIURI> base = GetSourceBaseURL();
-  SetHrefWithBase(aHref, base, aReplace, aRv);
+  SetHrefWithBase(aHref, base, aSubjectPrincipal, aReplace, aRv);
 }
 
 void
 Location::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
+                          nsIPrincipal& aSubjectPrincipal,
                           bool aReplace, ErrorResult& aRv)
 {
   nsresult result;
@@ -490,7 +493,7 @@ Location::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
       }
     }
 
-    SetURI(newUri, aRv, aReplace || inScriptTag);
+    SetURI(newUri, aSubjectPrincipal, aRv, aReplace || inScriptTag);
     return;
   }
 
@@ -575,7 +578,7 @@ Location::SetPathname(const nsAString& aPathname,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 void
@@ -644,7 +647,7 @@ Location::SetPort(const nsAString& aPort,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 void
@@ -741,7 +744,7 @@ Location::SetProtocol(const nsAString& aProtocol,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 void
@@ -806,7 +809,7 @@ Location::SetSearch(const nsAString& aSearch,
     return;
   }
 
-  SetURI(uri, aRv);
+  SetURI(uri, aSubjectPrincipal, aRv);
 }
 
 nsresult
@@ -862,7 +865,7 @@ Location::Replace(const nsAString& aUrl,
                   nsIPrincipal& aSubjectPrincipal,
                   ErrorResult& aRv)
 {
-  DoSetHref(aUrl, true, aRv);
+  DoSetHref(aUrl, aSubjectPrincipal, true, aRv);
 }
 
 void
@@ -875,7 +878,7 @@ Location::Assign(const nsAString& aUrl,
     return;
   }
 
-  DoSetHref(aUrl, false, aRv);
+  DoSetHref(aUrl, aSubjectPrincipal, false, aRv);
 }
 
 already_AddRefed<nsIURI>
