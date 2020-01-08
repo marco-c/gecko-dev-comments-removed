@@ -15,7 +15,6 @@
 #include "WebMDemuxer.h"
 #include "WebMBufferedParser.h"
 #include "gfx2DGlue.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/SharedThreadPool.h"
 #include "MediaDataDemuxer.h"
@@ -49,8 +48,6 @@ LazyLogModule gNesteggLog("Nestegg");
 
 
 #define MAX_LOOK_AHEAD 10000000
-
-static Atomic<uint32_t> sStreamSourceID(0u);
 
 
 
@@ -712,31 +709,6 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
           NS_WARNING("Cannot detect keyframes in unknown WebM video codec");
           return NS_ERROR_FAILURE;
         }
-        if (isKeyframe) {
-          
-          
-          auto dimensions = gfx::IntSize(0, 0);
-          switch (mVideoCodec) {
-          case NESTEGG_CODEC_VP8:
-            dimensions = VPXDecoder::GetFrameSize(sample, VPXDecoder::Codec::VP8);
-            break;
-          case NESTEGG_CODEC_VP9:
-            dimensions = VPXDecoder::GetFrameSize(sample, VPXDecoder::Codec::VP9);
-            break;
-#ifdef MOZ_AV1
-          case NESTEGG_CODEC_AV1:
-            dimensions = AOMDecoder::GetFrameSize(sample);
-            break;
-#endif
-          }
-          if (mLastSeenFrameSize.isSome() &&
-              (dimensions != mLastSeenFrameSize.value())) {
-            mInfo.mVideo.mDisplay = dimensions;
-            mSharedVideoTrackInfo =
-              new TrackInfoSharedPtr(mInfo.mVideo, ++sStreamSourceID);
-          }
-          mLastSeenFrameSize = Some(dimensions);
-        }
       }
     }
 
@@ -870,9 +842,6 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
                  == length));
         }
       }
-    }
-    if (aType == TrackInfo::kVideoTrack) {
-      sample->mTrackInfo = mSharedVideoTrackInfo;
     }
     aSamples->Push(sample);
   }
