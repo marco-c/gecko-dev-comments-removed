@@ -42,18 +42,18 @@ VsyncParent::~VsyncParent() {
   
 }
 
-bool VsyncParent::NotifyVsync(TimeStamp aTimeStamp) {
+bool VsyncParent::NotifyVsync(const VsyncEvent& aVsync) {
   
   MOZ_ASSERT(!IsOnBackgroundThread());
-  nsCOMPtr<nsIRunnable> vsyncEvent = NewRunnableMethod<TimeStamp>(
+  nsCOMPtr<nsIRunnable> vsyncEvent = NewRunnableMethod<VsyncEvent>(
       "layout::VsyncParent::DispatchVsyncEvent", this,
-      &VsyncParent::DispatchVsyncEvent, aTimeStamp);
+      &VsyncParent::DispatchVsyncEvent, aVsync);
   MOZ_ALWAYS_SUCCEEDS(
       mBackgroundThread->Dispatch(vsyncEvent, NS_DISPATCH_NORMAL));
   return true;
 }
 
-void VsyncParent::DispatchVsyncEvent(TimeStamp aTimeStamp) {
+void VsyncParent::DispatchVsyncEvent(const VsyncEvent& aVsync) {
   AssertIsOnBackgroundThread();
 
   
@@ -62,7 +62,7 @@ void VsyncParent::DispatchVsyncEvent(TimeStamp aTimeStamp) {
   
   
   if (mObservingVsync && !mDestroyed) {
-    Unused << SendNotify(aTimeStamp);
+    Unused << SendNotify(aVsync);
   }
 }
 

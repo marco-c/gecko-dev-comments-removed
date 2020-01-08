@@ -41,6 +41,7 @@
 #include "nsISupportsImpl.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
+#include "mozilla/VsyncDispatcher.h"
 
 class MessageLoop;
 class nsIWidget;
@@ -393,8 +394,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
-  static void NotifyVsync(const TimeStamp& aTimeStamp,
-                          const LayersId& aLayersId);
+  static void NotifyVsync(const VsyncEvent& aVsync, const LayersId& aLayersId);
 
   
 
