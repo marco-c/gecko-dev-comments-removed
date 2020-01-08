@@ -232,13 +232,6 @@ pub enum GpuCacheUpdate {
     },
 }
 
-pub struct GpuDebugChunk {
-    pub address: GpuCacheAddress,
-    pub fresh: bool,
-    pub tag: u8,
-    pub size: u16,
-}
-
 #[must_use]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -253,9 +246,6 @@ pub struct GpuCacheUpdateList {
     
     
     pub blocks: Vec<GpuBlockData>,
-    
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub debug_chunks: Vec<GpuDebugChunk>,
 }
 
 
@@ -545,9 +535,6 @@ pub struct GpuCache {
     
     
     saved_block_count: usize,
-    
-    
-    in_debug: bool,
 }
 
 impl GpuCache {
@@ -556,7 +543,6 @@ impl GpuCache {
             frame_id: FrameId::new(0),
             texture: Texture::new(),
             saved_block_count: 0,
-            in_debug: false,
         }
     }
 
@@ -657,29 +643,9 @@ impl GpuCache {
         GpuCacheUpdateList {
             frame_id: self.frame_id,
             height: self.texture.height,
-            debug_chunks: if self.in_debug {
-                self.texture.updates
-                    .iter()
-                    .map(|update| match *update {
-                        GpuCacheUpdate::Copy { address, block_index, block_count } => GpuDebugChunk {
-                            address,
-                            fresh: self.frame_id == self.texture.blocks[block_index].last_access_time,
-                            tag: 0, 
-                            size: block_count.min(0xFFFF) as u16,
-                        }
-                    })
-                    .collect()
-            } else {
-                Vec::new()
-            },
             updates: mem::replace(&mut self.texture.updates, Vec::new()),
             blocks: mem::replace(&mut self.texture.pending_blocks, Vec::new()),
         }
-    }
-
-    
-    pub fn set_debug(&mut self, enable: bool) {
-        self.in_debug = enable;
     }
 
     

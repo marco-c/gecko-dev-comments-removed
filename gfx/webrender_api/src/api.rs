@@ -609,8 +609,6 @@ pub enum DebugCommand {
     
     EnableRenderTargetDebug(bool),
     
-    EnableGpuCacheDebug(bool),
-    
     EnableGpuTimeQueries(bool),
     
     EnableGpuSampleQueries(bool),
@@ -640,12 +638,6 @@ pub enum DebugCommand {
     ClearCaches(ClearCache),
     
     InvalidateGpuCache,
-    
-    
-    SimulateLongSceneBuild(u32),
-    
-    
-    SimulateLongLowPrioritySceneBuild(u32),
 }
 
 #[derive(Clone, Deserialize, Serialize)]

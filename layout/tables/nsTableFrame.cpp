@@ -7554,7 +7554,7 @@ BCBlockDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
 
   
   
-  wr::LayoutSideOffsets borderWidths = wr::ToBorderWidths(roundedRect.size.width,
+  wr::BorderWidths borderWidths = wr::ToBorderWidths(roundedRect.size.width,
                                                      roundedRect.size.width,
                                                      roundedRect.size.width,
                                                      roundedRect.size.width);
@@ -7841,7 +7841,7 @@ BCInlineDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
 
   
   
-  wr::LayoutSideOffsets borderWidths = wr::ToBorderWidths(roundedRect.size.height,
+  wr::BorderWidths borderWidths = wr::ToBorderWidths(roundedRect.size.height,
                                                      roundedRect.size.height,
                                                      roundedRect.size.height,
                                                      roundedRect.size.height);
@@ -8086,7 +8086,7 @@ nsTableFrame::CreateWebRenderCommandsForBCBorders(wr::DisplayListBuilder& aBuild
 
   LayoutDeviceRect allBorderRect;
   wr::BorderSide wrSide[4];
-  wr::LayoutSideOffsets wrWidths;
+  wr::BorderWidths wrWidths;
   wr::BorderRadius borderRadii = wr::EmptyBorderRadius();
   bool backfaceIsVisible = false;
   NS_FOR_CSS_SIDES(side) {
