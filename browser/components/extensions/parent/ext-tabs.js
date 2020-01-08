@@ -580,15 +580,12 @@ this.tabs = class extends ExtensionAPI {
             if (!discardable) {
               
               
-              options.allowInheritPrincipal = false;
+              options.disallowInheritPrincipal = true;
               
               principal = Services.scriptSecurityManager.createCodebasePrincipal(Services.io.newURI(url), {
                 userContextId: options.userContextId,
                 privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(window.gBrowser) ? 1 : 0,
               });
-            } else {
-              options.allowInheritPrincipal = true;
-              options.triggeringPrincipal = context.principal;
             }
 
             tabListener.initTabReady();

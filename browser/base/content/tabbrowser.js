@@ -1330,7 +1330,6 @@ window._gBrowser = {
     var aReferrerPolicy;
     var aFromExternal;
     var aRelatedToCurrent;
-    var aAllowInheritPrincipal;
     var aAllowMixedContent;
     var aSkipAnimation;
     var aForceNotRemote;
@@ -1358,7 +1357,6 @@ window._gBrowser = {
       aAllowThirdPartyFixup = params.allowThirdPartyFixup;
       aFromExternal = params.fromExternal;
       aRelatedToCurrent = params.relatedToCurrent;
-      aAllowInheritPrincipal = !!params.allowInheritPrincipal;
       aAllowMixedContent = params.allowMixedContent;
       aSkipAnimation = params.skipAnimation;
       aForceNotRemote = params.forceNotRemote;
@@ -1391,7 +1389,6 @@ window._gBrowser = {
       charset: aCharset,
       postData: aPostData,
       ownerTab: owner,
-      allowInheritPrincipal: aAllowInheritPrincipal,
       allowThirdPartyFixup: aAllowThirdPartyFixup,
       fromExternal: aFromExternal,
       relatedToCurrent: aRelatedToCurrent,
@@ -2168,12 +2165,12 @@ window._gBrowser = {
 
   
   addTab(aURI, {
-    allowInheritPrincipal,
     allowMixedContent,
     allowThirdPartyFixup,
     bulkOrderedOpen,
     charset,
     createLazyBrowser,
+    disallowInheritPrincipal,
     eventDetail,
     focusUrlBar,
     forceNotRemote,
@@ -2475,7 +2472,7 @@ window._gBrowser = {
 
     
     
-    if (!usingPreloadedContent && (!uriIsAboutBlank || !allowInheritPrincipal)) {
+    if (!usingPreloadedContent && (!uriIsAboutBlank || disallowInheritPrincipal)) {
       
       
       if (aURI && !gInitialPages.includes(aURI)) {
@@ -2493,7 +2490,7 @@ window._gBrowser = {
       if (allowMixedContent) {
         flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;
       }
-      if (!allowInheritPrincipal) {
+      if (disallowInheritPrincipal) {
         flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
       }
       try {
