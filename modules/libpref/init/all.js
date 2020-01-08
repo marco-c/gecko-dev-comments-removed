@@ -568,6 +568,9 @@ pref("media.recorder.video.frame_drops", true);
 pref("media.autoplay.default", 0);
 
 
+pref("media.autoplay.block-webaudio", false);
+
+
 
 
 
@@ -601,6 +604,10 @@ pref("media.cubeb.sandbox", false);
 #endif
 
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
+
+
+
+pref("media.setsinkid.enabled", false);
 
 
 pref("layers.amd-switchable-gfx.enabled", true);
@@ -889,6 +896,8 @@ pref("gfx.webrender.debug.compact-profiler", false);
 pref("gfx.webrender.debug.echo-driver-messages", false);
 pref("gfx.webrender.debug.new-frame-indicator", false);
 pref("gfx.webrender.debug.new-scene-indicator", false);
+pref("gfx.webrender.dl.dump-parent", false);
+pref("gfx.webrender.dl.dump-content", false);
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
