@@ -12455,7 +12455,8 @@ nsIDocument::MaybeAllowStorageForOpener()
 
   
   if (!nsContentUtils::IsThirdPartyWindowOrChannel(openerInner, nullptr,
-                                                   nullptr)) {
+                                                   nullptr) ||
+      !nsContentUtils::IsTrackingResourceWindow(openerInner)) {
     return;
   }
 

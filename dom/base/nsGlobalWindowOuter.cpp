@@ -6897,18 +6897,22 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
     }
   }
 
+  bool windowExists = WindowExists(aName, forceNoOpener, !aCalledNoScript);
+
   
   
   
   
   const bool checkForPopup = !nsContentUtils::LegacyIsCallerChromeOrNativeCode() &&
-    !aDialog && !WindowExists(aName, forceNoOpener, !aCalledNoScript);
+    !aDialog && !windowExists;
 
   
   
   nsCString url;
   url.SetIsVoid(true);
   nsresult rv = NS_OK;
+
+  nsCOMPtr<nsIURI> uri;
 
   
   
@@ -6923,7 +6927,7 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
     
     
     if (!url.IsVoid() && !aDialog && aNavigate)
-      rv = SecurityCheckURL(url.get());
+      rv = SecurityCheckURL(url.get(), getter_AddRefs(uri));
   }
 
   if (NS_FAILED(rv))
@@ -7025,6 +7029,10 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
   
 
+  if (!aCalledNoScript && !windowExists && uri) {
+    MaybeAllowStorageForOpenedWindow(uri);
+  }
+
   NS_ENSURE_TRUE(domReturn, NS_OK);
   nsCOMPtr<nsPIDOMWindowOuter> outerReturn =
     nsPIDOMWindowOuter::From(domReturn);
@@ -7047,6 +7055,29 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
   }
 
   return rv;
+}
+
+void
+nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI)
+{
+  nsGlobalWindowInner *inner = GetCurrentInnerWindowInternal();
+  if (NS_WARN_IF(!inner)) {
+    return;
+  }
+
+  
+  if (!nsContentUtils::IsThirdPartyWindowOrChannel(inner, nullptr, nullptr) ||
+      !nsContentUtils::IsTrackingResourceWindow(inner)) {
+    return;
+  }
+
+  nsAutoString origin;
+  nsresult rv = nsContentUtils::GetUTFOrigin(aURI, origin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  inner->AddFirstPartyStorageAccessGrantedFor(origin, true);
 }
 
 
@@ -7108,7 +7139,7 @@ nsGlobalWindowOuter::GetScrollFrame()
 }
 
 nsresult
-nsGlobalWindowOuter::SecurityCheckURL(const char *aURL)
+nsGlobalWindowOuter::SecurityCheckURL(const char *aURL, nsIURI** aURI)
 {
   nsCOMPtr<nsPIDOMWindowInner> sourceWindow = do_QueryInterface(GetEntryGlobal());
   if (!sourceWindow) {
@@ -7141,6 +7172,7 @@ nsGlobalWindowOuter::SecurityCheckURL(const char *aURL)
     return NS_ERROR_FAILURE;
   }
 
+  uri.forget(aURI);
   return NS_OK;
 }
 
