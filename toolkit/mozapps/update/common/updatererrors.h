@@ -4,8 +4,8 @@
 
 
 
-#ifndef Errors_h__
-#define Errors_h__
+#ifndef UPDATEERRORS_H
+#define UPDATEERRORS_H
 
 #define OK 0
 
