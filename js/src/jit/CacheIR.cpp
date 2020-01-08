@@ -818,9 +818,10 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
 }
 
 static void
-GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
+GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId,
+                            bool alwaysGuardFirstProto)
 {
-    if (obj->hasUncacheableProto()) {
+    if (alwaysGuardFirstProto || obj->hasUncacheableProto()) {
         GuardGroupProto(writer, obj, objId);
     }
 
@@ -2208,7 +2209,8 @@ GetPropIRGenerator::tryAttachDenseElementHole(HandleObject obj, ObjOperandId obj
 
     
     TestMatchingNativeReceiver(writer, nobj, objId);
-    GeneratePrototypeHoleGuards(writer, nobj, objId);
+    GeneratePrototypeHoleGuards(writer, nobj, objId,
+                                 false);
     writer.loadDenseElementHoleResult(objId, indexId);
     writer.typeMonitorResult();
 
@@ -2267,7 +2269,8 @@ GetPropIRGenerator::tryAttachSparseElement(HandleObject obj, ObjOperandId objId,
     
     
     
-    GeneratePrototypeHoleGuards(writer, nobj, objId);
+    GeneratePrototypeHoleGuards(writer, nobj, objId,
+                                 true);
 
     
     
@@ -2385,7 +2388,8 @@ GetPropIRGenerator::tryAttachUnboxedElementHole(HandleObject obj, ObjOperandId o
     TestMatchingReceiver(writer, obj, objId, &tempId);
 
     
-    GeneratePrototypeHoleGuards(writer, obj, objId);
+    GeneratePrototypeHoleGuards(writer, obj, objId,
+                                 false);
 
     writer.loadUndefinedResult();
     
@@ -2988,7 +2992,8 @@ HasPropIRGenerator::tryAttachDenseHole(HandleObject obj, ObjOperandId objId,
     
     
     if (!hasOwn) {
-        GeneratePrototypeHoleGuards(writer, nobj, objId);
+        GeneratePrototypeHoleGuards(writer, nobj, objId,
+                                     false);
     }
 
     writer.loadDenseElementHoleExistsResult(objId, indexId);
@@ -3022,13 +3027,8 @@ HasPropIRGenerator::tryAttachSparse(HandleObject obj, ObjOperandId objId,
     
     
     if (!hasOwn) {
-        
-        
-        if (!obj->hasUncacheableProto()) {
-            GuardGroupProto(writer, obj, objId);
-        }
-
-        GeneratePrototypeHoleGuards(writer, obj, objId);
+        GeneratePrototypeHoleGuards(writer, obj, objId,
+                                     true);
     }
 
     
@@ -4177,6 +4177,10 @@ SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(HandleObject obj, ObjOpera
     
     
     
+    GuardGroupProto(writer, obj, objId);
+
+    
+    
     
     
     ShapeGuardProtoChain(writer, obj, objId);
@@ -4930,7 +4934,8 @@ GetIteratorIRGenerator::tryAttachNativeIterator(ObjOperandId objId, HandleObject
     }
 
     
-    GeneratePrototypeHoleGuards(writer, obj, objId);
+    GeneratePrototypeHoleGuards(writer, obj, objId,
+                                 false);
 
     ObjOperandId iterId =
         writer.guardAndGetIterator(objId, iterobj, &ObjectRealm::get(obj).enumerators);
