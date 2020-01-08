@@ -41,7 +41,6 @@ struct PLDHashTableOps;
 
 
 
-
 struct PLDHashEntryHdr
 {
   PLDHashEntryHdr() = default;
@@ -52,8 +51,6 @@ struct PLDHashEntryHdr
 
 private:
   friend class PLDHashTable;
-
-  PLDHashNumber mKeyHash;
 };
 
 #ifdef DEBUG
@@ -225,18 +222,15 @@ class PLDHashTable
 private:
   
   
-  
-  
   struct Slot
   {
-    Slot(PLDHashEntryHdr* aEntry)
+    Slot(PLDHashEntryHdr* aEntry, PLDHashNumber* aKeyHash)
       : mEntry(aEntry)
+      , mKeyHash(aKeyHash)
     {}
 
     Slot(const Slot&) = default;
-    Slot(Slot&& aOther)
-      : mEntry(aOther.mEntry)
-    {}
+    Slot(Slot&& aOther) = default;
 
     Slot& operator=(Slot&& aOther) {
       this->~Slot();
@@ -244,13 +238,10 @@ private:
       return *this;
     }
 
-    bool operator==(const Slot& aOther)
-    {
-      return mEntry == aOther.mEntry;
-    }
+    bool operator==(const Slot& aOther) { return mEntry == aOther.mEntry; }
 
-    PLDHashNumber KeyHash() const { return mEntry->mKeyHash; }
-    void SetKeyHash(PLDHashNumber aHash) { mEntry->mKeyHash = aHash; }
+    PLDHashNumber KeyHash() const { return *HashPtr(); }
+    void SetKeyHash(PLDHashNumber aHash) { *HashPtr() = aHash; }
 
     PLDHashEntryHdr* ToEntry() const { return mEntry; }
 
@@ -258,19 +249,66 @@ private:
     bool IsRemoved() const { return KeyHash() == 1; }
     bool IsLive() const { return KeyHash() >= 2; }
 
-    void MarkFree() { mEntry->mKeyHash = 0; }
-    void MarkRemoved() { mEntry->mKeyHash = 1; }
-    void MarkColliding() { mEntry->mKeyHash |= kCollisionFlag; }
+    void MarkFree() { *HashPtr() = 0; }
+    void MarkRemoved() { *HashPtr() = 1; }
+    void MarkColliding() { *HashPtr() |= kCollisionFlag; }
 
     void Next(uint32_t aEntrySize) {
       char* p = reinterpret_cast<char*>(mEntry);
       p += aEntrySize;
       mEntry = reinterpret_cast<PLDHashEntryHdr*>(p);
+      mKeyHash++;
     }
   private:
+    PLDHashNumber* HashPtr() const { return mKeyHash; }
+
     PLDHashEntryHdr* mEntry;
+    PLDHashNumber* mKeyHash;
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -283,9 +321,16 @@ private:
   private:
     char* mEntryStore;
 
-    PLDHashEntryHdr* EntryAt(uint32_t aIndex, uint32_t aEntrySize) const {
-      return reinterpret_cast<PLDHashEntryHdr*>(Get() + aIndex * aEntrySize);
+    static char* Entries(char* aStore, uint32_t aCapacity)
+    {
+      return aStore + aCapacity * sizeof(PLDHashNumber);
     }
+
+    char* Entries(uint32_t aCapacity) const
+    {
+      return Entries(Get(), aCapacity);
+    }
+
   public:
     EntryStore() : mEntryStore(nullptr) {}
 
@@ -296,8 +341,24 @@ private:
     }
 
     char* Get() const { return mEntryStore; }
-    Slot SlotForIndex(uint32_t aIndex, uint32_t aEntrySize) const {
-      return Slot(EntryAt(aIndex, aEntrySize));
+
+    Slot SlotForIndex(uint32_t aIndex, uint32_t aEntrySize,
+                      uint32_t aCapacity) const
+    {
+      char* entries = Entries(aCapacity);
+      auto entry = reinterpret_cast<PLDHashEntryHdr*>(entries + aIndex * aEntrySize);
+      auto hashes = reinterpret_cast<PLDHashNumber*>(Get());
+      return Slot(entry, &hashes[aIndex]);
+    }
+
+    Slot SlotForPLDHashEntry(PLDHashEntryHdr* aEntry,
+                             uint32_t aCapacity, uint32_t aEntrySize)
+    {
+      char* entries = Entries(aCapacity);
+      char* entry = reinterpret_cast<char*>(aEntry);
+      uint32_t entryOffset = entry - entries;
+      uint32_t slotIndex = entryOffset / aEntrySize;
+      return SlotForIndex(slotIndex, aEntrySize, aCapacity);
     }
 
     template<typename F>
@@ -308,7 +369,9 @@ private:
     template<typename F>
     static void ForEachSlot(char* aStore, uint32_t aCapacity, uint32_t aEntrySize,
                             F&& aFunc) {
-      Slot slot(reinterpret_cast<PLDHashEntryHdr*>(aStore));
+      char* entries = Entries(aStore, aCapacity);
+      Slot slot(reinterpret_cast<PLDHashEntryHdr*>(entries),
+                reinterpret_cast<PLDHashNumber*>(aStore));
       for (size_t i = 0; i < aCapacity; ++i) {
         aFunc(slot);
         slot.Next(aEntrySize);
@@ -410,8 +473,6 @@ public:
   
   PLDHashEntryHdr* Search(const void* aKey) const;
 
-  
-  
   
   
   
@@ -583,37 +644,12 @@ private:
 
   static const PLDHashNumber kCollisionFlag = 1;
 
-  static bool EntryIsFree(const PLDHashEntryHdr* aEntry)
-  {
-    return aEntry->mKeyHash == 0;
-  }
-  static bool EntryIsRemoved(const PLDHashEntryHdr* aEntry)
-  {
-    return aEntry->mKeyHash == 1;
-  }
-  static bool EntryIsLive(const PLDHashEntryHdr* aEntry)
-  {
-    return aEntry->mKeyHash >= 2;
-  }
-
-  static void MarkEntryFree(PLDHashEntryHdr* aEntry)
-  {
-    aEntry->mKeyHash = 0;
-  }
-  static void MarkEntryRemoved(PLDHashEntryHdr* aEntry)
-  {
-    aEntry->mKeyHash = 1;
-  }
-
   PLDHashNumber Hash1(PLDHashNumber aHash0) const;
   void Hash2(PLDHashNumber aHash,
              uint32_t& aHash2Out, uint32_t& aSizeMaskOut) const;
 
   static bool MatchSlotKeyhash(Slot& aSlot, const PLDHashNumber aHash);
-  static bool MatchEntryKeyhash(const PLDHashEntryHdr* aEntry,
-                                const PLDHashNumber aHash);
   Slot SlotForIndex(uint32_t aIndex) const;
-  PLDHashEntryHdr* AddressEntry(uint32_t aIndex) const;
 
   
   
@@ -668,10 +704,7 @@ typedef void (*PLDHashClearEntry)(PLDHashTable* aTable,
 
 
 
-
-
 typedef void (*PLDHashInitEntry)(PLDHashEntryHdr* aEntry, const void* aKey);
-
 
 
 
