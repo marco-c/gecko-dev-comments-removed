@@ -1048,9 +1048,13 @@ Tester.prototype = {
       this._scriptLoader.loadSubScript(headPath, scope);
     } catch (ex) {
       
+      const isImportError = /^Error opening input stream/.test(ex.toString());
+
       
       
-      if (!/^Error opening input stream/.test(ex.toString())) {
+      const containsHeadPath = ex.toString().includes(headPath);
+
+      if (!isImportError || !containsHeadPath) {
        this.currentTest.addResult(new testResult({
          name: "head.js import threw an exception",
          ex,
