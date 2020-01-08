@@ -322,6 +322,15 @@ public:
 
     virtual int32_t GetProtocolTypeId() = 0;
 
+    
+    
+    bool IPCOpen() const { return mIPCOpen; }
+
+    
+    
+    
+    virtual void ActorDestroy(ActorDestroyReason aWhy) {}
+
     int32_t Id() const { return mId; }
     IProtocol* Manager() const { return mManager; }
 
@@ -350,6 +359,7 @@ protected:
     IProtocol(Side aSide, UniquePtr<ProtocolState> aState)
         : mId(0)
         , mSide(aSide)
+        , mIPCOpen(false)
         , mManager(nullptr)
         , mState(std::move(aState))
     {}
@@ -368,12 +378,28 @@ protected:
     void SetManagerAndRegister(IProtocol* aManager);
     void SetManagerAndRegister(IProtocol* aManager, int32_t aId);
 
+    
+    
+    
+    void ActorDestroyInternal(ActorDestroyReason aWhy) {
+        mIPCOpen = false;
+        ActorDestroy(aWhy);
+    }
+
+    
+    
+    
+    void ActorOpenedInternal() {
+        mIPCOpen = true;
+    }
+
     static const int32_t kNullActorId = 0;
     static const int32_t kFreedActorId = 1;
 
 private:
     int32_t mId;
     Side mSide;
+    bool mIPCOpen;
     IProtocol* mManager;
     UniquePtr<ProtocolState> mState;
 };
