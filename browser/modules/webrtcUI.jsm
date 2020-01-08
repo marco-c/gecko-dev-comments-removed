@@ -23,6 +23,10 @@ XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
   return Services.strings.createBundle("chrome://branding/locale/brand.properties");
 });
 
+XPCOMUtils.defineLazyServiceGetter(this, "OSPermissions",
+                                   "@mozilla.org/ospermissionrequest;1",
+                                   "nsIOSPermissionRequest");
+
 var webrtcUI = {
   peerConnectionBlockers: new Set(),
   emitter: new EventEmitter(),
@@ -300,6 +304,67 @@ function denyRequest(aBrowser, aRequest) {
                                             windowID: aRequest.windowID});
 }
 
+
+
+
+
+
+
+function denyRequestNoPermission(aBrowser, aRequest) {
+  aBrowser.messageManager.sendAsyncMessage("webrtc:Deny",
+                                           {callID: aRequest.callID,
+                                            windowID: aRequest.windowID,
+                                            noOSPermission: true});
+}
+
+
+
+
+
+
+async function checkOSPermission(camNeeded, micNeeded) {
+  let camStatus = {}, micStatus = {};
+  OSPermissions.getMediaCapturePermissionState(camStatus, micStatus);
+  if (camNeeded) {
+    let camPermission = camStatus.value;
+    let camAccessible = await checkAndGetOSPermission(camPermission,
+      OSPermissions.requestVideoCapturePermission);
+    if (!camAccessible) {
+      return false;
+    }
+  }
+  if (micNeeded) {
+    let micPermission = micStatus.value;
+    let micAccessible = await checkAndGetOSPermission(micPermission,
+      OSPermissions.requestAudioCapturePermission);
+    if (!micAccessible) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+async function checkAndGetOSPermission(devicePermission,
+                                       requestPermissionFunc) {
+  if (devicePermission == OSPermissions.PERMISSION_STATE_DENIED ||
+      devicePermission == OSPermissions.PERMISSION_STATE_RESTRICTED) {
+    return false;
+  }
+  if (devicePermission == OSPermissions.PERMISSION_STATE_NOTDETERMINED) {
+    let deviceAllowed = await requestPermissionFunc();
+    if (!deviceAllowed) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function getHostOrExtensionName(uri, href) {
   let host;
   try {
@@ -517,10 +582,19 @@ function prompt(aBrowser, aRequest) {
           browser._devicePermissionURIs = browser._devicePermissionURIs || [];
           browser._devicePermissionURIs.push(uri);
 
-          let mm = browser.messageManager;
-          mm.sendAsyncMessage("webrtc:Allow", {callID: aRequest.callID,
-                                               windowID: aRequest.windowID,
-                                               devices: allowedDevices});
+          let camNeeded = videoDevices.length > 0;
+          let micNeeded = audioDevices.length > 0;
+          checkOSPermission(camNeeded, micNeeded).then((havePermission) => {
+            if (havePermission) {
+              let mm = browser.messageManager;
+              mm.sendAsyncMessage("webrtc:Allow", {callID: aRequest.callID,
+                                                   windowID: aRequest.windowID,
+                                                   devices: allowedDevices});
+            } else {
+              denyRequestNoPermission(browser, aRequest);
+            }
+          });
+
           this.remove();
           return true;
         }
@@ -717,7 +791,7 @@ function prompt(aBrowser, aRequest) {
       if (!sharingAudio)
         listDevices(micMenupopup, audioDevices);
 
-      this.mainAction.callback = function(aState) {
+      this.mainAction.callback = async function(aState) {
         let remember = aState && aState.checkboxChecked;
         let allowedDevices = [];
         let perms = Services.perms;
@@ -782,6 +856,14 @@ function prompt(aBrowser, aRequest) {
           
           aBrowser._devicePermissionURIs = aBrowser._devicePermissionURIs || [];
           aBrowser._devicePermissionURIs.push(uri);
+        }
+
+        let camNeeded = videoDevices.length > 0;
+        let micNeeded = audioDevices.length > 0;
+        let havePermission = await checkOSPermission(camNeeded, micNeeded);
+        if (!havePermission) {
+          denyRequestNoPermission(notification.browser, aRequest);
+          return;
         }
 
         let mm = notification.browser.messageManager;
