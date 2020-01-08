@@ -54,6 +54,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
@@ -2240,8 +2241,9 @@ public abstract class GeckoApp extends GeckoActivity
                 
                 
                 
-                File dir = new File("res/fonts");
-                if (dir.exists() && dir.isDirectory()) {
+                final File dataDir = new File(context.getApplicationInfo().dataDir);
+                final File dir = new File(dataDir, "res/fonts");
+                if (dir.exists() && dir.isDirectory() && dir.listFiles() != null) {
                     for (File file : dir.listFiles()) {
                         if (file.isFile() && file.getName().endsWith(".ttf")) {
                             file.delete();
