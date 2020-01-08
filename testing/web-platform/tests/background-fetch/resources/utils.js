@@ -1,17 +1,27 @@
 'use strict';
 
+let nextBackgroundFetchId = 0;
+
+
+
+
+
 
 async function registerAndActivateServiceWorker(test) {
   const script = 'resources/sw.js';
   const scope = 'resources/scope' + location.pathname;
+
   let serviceWorkerRegistration =
       await service_worker_unregister_and_register(test, script, scope);
-  add_completion_callback(() => {
-    serviceWorkerRegistration.unregister();
-  });
+
+  add_completion_callback(() => serviceWorkerRegistration.unregister());
+
   await wait_for_state(test, serviceWorkerRegistration.installing, 'activated');
   return serviceWorkerRegistration;
 }
+
+
+
 
 function backgroundFetchTest(func, description) {
   promise_test(async t => {
@@ -20,7 +30,7 @@ function backgroundFetchTest(func, description) {
   }, description);
 }
 
-let _nextBackgroundFetchTag = 0;
-function uniqueTag() {
-  return 'tag' + _nextBackgroundFetchTag++;
+
+function uniqueId() {
+  return 'id' + nextBackgroundFetchId++;
 }
