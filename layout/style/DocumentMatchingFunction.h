@@ -1,0 +1,27 @@
+
+
+
+
+
+
+#ifndef mozilla_css_DocumentMatchingFunction_h
+#define mozilla_css_DocumentMatchingFunction_h
+
+namespace mozilla {
+namespace css {
+
+
+
+
+
+enum class DocumentMatchingFunction {
+  URL = 0,
+  URLPrefix,
+  Domain,
+  RegExp,
+};
+
+} 
+} 
+
+#endif 
