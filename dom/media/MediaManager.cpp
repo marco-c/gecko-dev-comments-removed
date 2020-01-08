@@ -987,12 +987,13 @@ nsresult MediaDevice::Allocate(const dom::MediaTrackConstraints& aConstraints,
                            aOutBadConstraint);
 }
 
-void MediaDevice::SetTrack(const RefPtr<SourceMediaStream>& aStream,
-                           TrackID aTrackID,
-                           const PrincipalHandle& aPrincipalHandle) {
+nsresult MediaDevice::SetTrack(const RefPtr<SourceMediaStream>& aStream,
+                               TrackID aTrackID,
+                               const PrincipalHandle& aPrincipalHandle) {
   MOZ_ASSERT(MediaManager::IsInMediaThread());
   MOZ_ASSERT(mSource);
-  mSource->SetTrack(mAllocationHandle, aStream, aTrackID, aPrincipalHandle);
+  return mSource->SetTrack(mAllocationHandle, aStream, aTrackID,
+                           aPrincipalHandle);
 }
 
 nsresult MediaDevice::Start() {
@@ -3984,19 +3985,11 @@ SourceListener::InitializeAsync() {
                   mVideoDeviceState ? mVideoDeviceState->mDevice : nullptr](
                  MozPromiseHolder<SourceListenerPromise>& aHolder) {
                if (audioDevice) {
-                 audioDevice->SetTrack(stream, kAudioTrack, principal);
-               }
-
-               if (videoDevice) {
-                 videoDevice->SetTrack(stream, kVideoTrack, principal);
-               }
-
-               
-               
-               stream->FinishAddTracks();
-
-               if (audioDevice) {
-                 nsresult rv = audioDevice->Start();
+                 nsresult rv =
+                     audioDevice->SetTrack(stream, kAudioTrack, principal);
+                 if (NS_SUCCEEDED(rv)) {
+                   rv = audioDevice->Start();
+                 }
                  if (NS_FAILED(rv)) {
                    nsString log;
                    if (rv == NS_ERROR_NOT_AVAILABLE) {
@@ -4016,7 +4009,11 @@ SourceListener::InitializeAsync() {
                }
 
                if (videoDevice) {
-                 nsresult rv = videoDevice->Start();
+                 nsresult rv =
+                     videoDevice->SetTrack(stream, kVideoTrack, principal);
+                 if (NS_SUCCEEDED(rv)) {
+                   rv = videoDevice->Start();
+                 }
                  if (NS_FAILED(rv)) {
                    if (audioDevice) {
                      if (NS_WARN_IF(NS_FAILED(audioDevice->Stop()))) {
@@ -4032,6 +4029,9 @@ SourceListener::InitializeAsync() {
                  }
                }
 
+               
+               
+               stream->FinishAddTracks();
                LOG("started all sources");
                aHolder.Resolve(true, __func__);
              })
@@ -4055,8 +4055,15 @@ SourceListener::InitializeAsync() {
                  state->mTrackEnabled = true;
                  state->mTrackEnabledTime = TimeStamp::Now();
 
-                 if (state == mVideoDeviceState.get()) {
-                   mStream->SetPullingEnabled(kVideoTrack, true);
+                 if (state->mDevice->GetMediaSource() !=
+                     MediaSourceEnum::AudioCapture) {
+                   
+                   
+                   
+                   mStream->SetPullingEnabled(state == mAudioDeviceState.get()
+                                                  ? kAudioTrack
+                                                  : kVideoTrack,
+                                              true);
                  }
                }
                return SourceListenerPromise::CreateAndResolve(true, __func__);
@@ -4135,7 +4142,7 @@ void SourceListener::Remove() {
     
     
     if (mAudioDeviceState) {
-      
+      mStream->SetPullingEnabled(kAudioTrack, false);
       mStream->RemoveTrackListener(mAudioDeviceState->mListener, kAudioTrack);
     }
     if (mVideoDeviceState) {

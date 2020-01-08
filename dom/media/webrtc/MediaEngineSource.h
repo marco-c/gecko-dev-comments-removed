@@ -137,14 +137,12 @@ class MediaEngineSourceInterface {
 
 
 
-  virtual void SetTrack(const RefPtr<const AllocationHandle>& aHandle,
-                        const RefPtr<SourceMediaStream>& aStream,
-                        TrackID aTrackID,
-                        const PrincipalHandle& aPrincipal) = 0;
+  virtual nsresult SetTrack(const RefPtr<const AllocationHandle>& aHandle,
+                            const RefPtr<SourceMediaStream>& aStream,
+                            TrackID aTrackID,
+                            const PrincipalHandle& aPrincipal) = 0;
 
   
-
-
 
 
 
@@ -190,8 +188,6 @@ class MediaEngineSourceInterface {
                                const char** aOutBadConstraint) = 0;
 
   
-
-
 
 
 
