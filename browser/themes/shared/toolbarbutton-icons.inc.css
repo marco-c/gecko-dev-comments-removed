@@ -19,6 +19,22 @@ toolbar[brighttext] {
   fill-opacity: var(--toolbarbutton-icon-fill-opacity);
 }
 
+.toolbarbutton-animatable-box {
+  position: absolute;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
+  animation-fill-mode: forwards;
+  animation-iteration-count: 1;
+  list-style-image: none;
+  
+
+
+  height: var(--toolbarbutton-height);
+}
+
 #back-button:-moz-locale-dir(rtl) > .toolbarbutton-icon,
 #forward-button:-moz-locale-dir(rtl) > .toolbarbutton-icon,
 #reload-button:-moz-locale-dir(rtl) > .toolbarbutton-icon,
@@ -35,12 +51,6 @@ toolbar[brighttext] {
 
 #forward-button {
   list-style-image: url("chrome://browser/skin/forward.svg");
-}
-
-.toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
-  animation-fill-mode: forwards;
-  animation-iteration-count: 1;
-  list-style-image: none;
 }
 
 
@@ -100,19 +110,12 @@ toolbar[brighttext] {
 
 #reload-button > .toolbarbutton-animatable-box,
 #stop-button > .toolbarbutton-animatable-box {
-  position: absolute;
-  overflow: hidden;
   top: calc(50% - 10px); 
   
 
   margin-inline-start: calc((16px + 2 * var(--toolbarbutton-inner-padding) - 18px) / 2);
   width: 18px; 
   height: 20px; 
-}
-
-#reload-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image,
-#stop-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
-  height: var(--toolbarbutton-height); 
 }
 
 #stop-reload-button[animate] > #reload-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
@@ -338,8 +341,6 @@ toolbar[brighttext] {
 }
 
 #nav-bar-overflow-button > .toolbarbutton-animatable-box {
-  position: absolute;
-  overflow: hidden;
   top: calc(50% - 18px); 
   
 
@@ -349,10 +350,6 @@ toolbar[brighttext] {
 }
 
 #nav-bar-overflow-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
-  
-
-
-  height: var(--toolbarbutton-height);
   min-height: 36px; 
 }
 
@@ -459,29 +456,24 @@ toolbar[brighttext] {
   fill: transparent;
 }
 
-.toolbarbutton-animatable-box[animate] {
-  position: absolute;
-  overflow: hidden;
+#library-animatable-box[animate] {
   
 
 
-
-  top: calc(var(--library-button-y) + var(--library-button-height) / 2 - 27px - var(--toolbox-y));
+  top: calc(var(--library-button-height) / 2 - 27px);
   
 
 
   left: calc(var(--library-icon-x) + (16px + 2 * var(--toolbarbutton-inner-padding) - 22px) / 2);
   width: 22px; 
   height: 54px; 
-  z-index: 2;
 }
 
-.toolbarbutton-animatable-box[animate] > .toolbarbutton-animatable-image {
-  height: var(--toolbarbutton-height);
+#library-animatable-box[animate] > .toolbarbutton-animatable-image {
   min-height: 54px; 
 }
 
-.toolbarbutton-animatable-box[animate="bookmark"] > .toolbarbutton-animatable-image {
+#library-animatable-box[animate="bookmark"] > .toolbarbutton-animatable-image {
   background-image: url("chrome://browser/skin/library-bookmark-animation.svg");
   width: 1078px;
   animation-name: library-bookmark-animation;
@@ -491,11 +483,11 @@ toolbar[brighttext] {
   stroke: var(--toolbarbutton-icon-fill-attention);
 }
 
-.toolbarbutton-animatable-box[animate="bookmark"]:-moz-locale-dir(rtl) > .toolbarbutton-animatable-image {
+#library-animatable-box[animate="bookmark"]:-moz-locale-dir(rtl) > .toolbarbutton-animatable-image {
   animation-name: library-bookmark-animation-rtl;
 }
 
-.toolbarbutton-animatable-box[animate="bookmark"][fade] > .toolbarbutton-animatable-image {
+#library-animatable-box[animate="bookmark"][fade] > .toolbarbutton-animatable-image {
   animation-name: library-bookmark-fade;
   animation-duration: 2s;
   animation-timing-function: ease-out;
