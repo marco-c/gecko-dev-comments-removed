@@ -46,6 +46,7 @@ enum class BoxShadowClipMode : uint32_t {
 enum class Checkpoint : uint32_t {
   SceneBuilt,
   FrameBuilt,
+  FrameRendered,
   
   
   TransactionDropped,
@@ -105,6 +106,8 @@ enum class ImageFormat : uint32_t {
   
   R8 = 1,
   
+  R16 = 2,
+  
   BGRA8 = 3,
   
   RGBAF32 = 4,
@@ -158,14 +161,6 @@ enum class MixBlendMode : uint32_t {
   Saturation = 13,
   Color = 14,
   Luminosity = 15,
-
-  Sentinel 
-};
-
-
-enum class OpacityType : uint8_t {
-  Opaque = 0,
-  HasAlphaChannel = 1,
 
   Sentinel 
 };
@@ -509,6 +504,10 @@ struct MemoryReport {
   uintptr_t fonts;
   uintptr_t images;
   uintptr_t rasterized_blobs;
+  uintptr_t gpu_cache_textures;
+  uintptr_t vertex_data_textures;
+  uintptr_t render_target_textures;
+  uintptr_t texture_cache_textures;
 
   bool operator==(const MemoryReport& aOther) const {
     return primitive_stores == aOther.primitive_stores &&
@@ -519,7 +518,11 @@ struct MemoryReport {
            hit_testers == aOther.hit_testers &&
            fonts == aOther.fonts &&
            images == aOther.images &&
-           rasterized_blobs == aOther.rasterized_blobs;
+           rasterized_blobs == aOther.rasterized_blobs &&
+           gpu_cache_textures == aOther.gpu_cache_textures &&
+           vertex_data_textures == aOther.vertex_data_textures &&
+           render_target_textures == aOther.render_target_textures &&
+           texture_cache_textures == aOther.texture_cache_textures;
   }
 };
 
@@ -553,13 +556,16 @@ struct BuiltDisplayListDescriptor {
   uintptr_t total_clip_nodes;
   
   uintptr_t total_spatial_nodes;
+  
+  uintptr_t prim_count_estimate;
 
   bool operator==(const BuiltDisplayListDescriptor& aOther) const {
     return builder_start_time == aOther.builder_start_time &&
            builder_finish_time == aOther.builder_finish_time &&
            send_start_time == aOther.send_start_time &&
            total_clip_nodes == aOther.total_clip_nodes &&
-           total_spatial_nodes == aOther.total_spatial_nodes;
+           total_spatial_nodes == aOther.total_spatial_nodes &&
+           prim_count_estimate == aOther.prim_count_estimate;
   }
 };
 
@@ -1005,14 +1011,14 @@ struct WrImageDescriptor {
   uint32_t width;
   uint32_t height;
   uint32_t stride;
-  OpacityType opacity;
+  bool is_opaque;
 
   bool operator==(const WrImageDescriptor& aOther) const {
     return format == aOther.format &&
            width == aOther.width &&
            height == aOther.height &&
            stride == aOther.stride &&
-           opacity == aOther.opacity;
+           is_opaque == aOther.is_opaque;
   }
 };
 
