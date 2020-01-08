@@ -176,14 +176,6 @@ public:
   }
 
   
-  
-  bool IsContiguous() const
-  {
-    MOZ_ASSERT(mState == READY, "Calling IsContiguous() in the wrong state");
-    return mState == READY ? mData.mIterating.mChunk == 0 : false;
-  }
-
-  
   uint32_t ChunkCount() const { return mChunkCount; }
 
   
