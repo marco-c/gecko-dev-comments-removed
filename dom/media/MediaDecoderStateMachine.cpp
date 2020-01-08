@@ -586,6 +586,7 @@ private:
 
 
 
+
 class MediaDecoderStateMachine::DecodingState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -705,9 +706,11 @@ public:
     return nsPrintfCString("mIsPrerolling=%d", mIsPrerolling);
   }
 
+protected:
+  virtual void EnsureAudioDecodeTaskQueued();
+
 private:
   void DispatchDecodeTasksIfNeeded();
-  void EnsureAudioDecodeTaskQueued();
   void EnsureVideoDecodeTaskQueued();
   void MaybeStartBuffering();
 
@@ -804,6 +807,124 @@ private:
 
   MediaEventListener mOnAudioPopped;
   MediaEventListener mOnVideoPopped;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MediaDecoderStateMachine::LoopingDecodingState
+  : public MediaDecoderStateMachine::DecodingState
+{
+public:
+  explicit LoopingDecodingState(Master* aPtr)
+    : DecodingState(aPtr)
+  {}
+
+  void Exit() override
+  {
+    mAudioDataRequest.DisconnectIfExists();
+    mAudioSeekRequest.DisconnectIfExists();
+    DecodingState::Exit();
+  }
+
+  State GetState() const override
+  {
+    return DECODER_STATE_LOOPING_DECODING;
+  }
+
+  void HandleAudioDecoded(AudioData* aAudio) override
+  {
+    MediaResult rv = LoopingAudioTimeAdjustment(aAudio);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      mMaster->DecodeError(rv);
+      return;
+    }
+    mMaster->mDecodedAudioEndTime = std::max(
+      aAudio->GetEndTime(), mMaster->mDecodedAudioEndTime);
+    SLOG("sample after time-adjustment [%" PRId64 ",%" PRId64 "]",
+         aAudio->mTime.ToMicroseconds(),
+         aAudio->GetEndTime().ToMicroseconds());
+    DecodingState::HandleAudioDecoded(aAudio);
+  }
+
+  void HandleEndOfAudio() override
+  {
+    
+    
+    
+    mAudioLoopingOffset = mMaster->mDecodedAudioEndTime;
+
+    SLOG("received EOS when seamless looping, starts seeking");
+    Reader()->ResetDecode(TrackInfo::kAudioTrack);
+    Reader()->Seek(SeekTarget(media::TimeUnit::Zero(), SeekTarget::Accurate))
+      ->Then(OwnerThread(), __func__,
+              [this] () -> void {
+                mAudioSeekRequest.Complete();
+                SLOG("seeking completed, start to request first sample, "
+                     "queueing audio task - queued=%zu, decoder-queued=%zu",
+                     AudioQueue().GetSize(), Reader()->SizeOfAudioQueueInFrames());
+
+                Reader()->RequestAudioData()
+                  ->Then(OwnerThread(), __func__, [this] (RefPtr<AudioData> aAudio) {
+                          mAudioDataRequest.Complete();
+                          SLOG("got audio decoded sample [%" PRId64 ",%" PRId64 "]",
+                               aAudio->mTime.ToMicroseconds(),
+                               aAudio->GetEndTime().ToMicroseconds());
+                          HandleAudioDecoded(aAudio);
+                        }, [this] (const MediaResult& aError) {
+                          mAudioDataRequest.Complete();
+                          HandleError(aError);
+                        })
+                  ->Track(mAudioDataRequest);
+              },
+              [this] (const SeekRejectValue& aReject) -> void {
+                mAudioSeekRequest.Complete();
+                HandleError(aReject.mError);
+              })
+      ->Track(mAudioSeekRequest);
+  }
+
+private:
+  void HandleError(const MediaResult& aError)
+  {
+    SLOG("audio looping failed, aError=%s", aError.ErrorName().get());
+    MOZ_ASSERT(aError != NS_ERROR_DOM_MEDIA_END_OF_STREAM);
+    mMaster->DecodeError(aError);
+  }
+
+  void EnsureAudioDecodeTaskQueued() override
+  {
+    if (mAudioSeekRequest.Exists() ||
+        mAudioDataRequest.Exists()) {
+      return;
+    }
+    DecodingState::EnsureAudioDecodeTaskQueued();
+  }
+
+  MediaResult LoopingAudioTimeAdjustment(AudioData* aAudio)
+  {
+    if (mAudioLoopingOffset != media::TimeUnit::Zero()) {
+      aAudio->mTime += mAudioLoopingOffset;
+    }
+    return aAudio->mTime.IsValid() ?
+              MediaResult(NS_OK) :
+              MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
+                          "Audio sample overflow during looping time adjustment");
+  }
+
+  media::TimeUnit mAudioLoopingOffset = media::TimeUnit::Zero();
+  MozPromiseRequestHolder<MediaFormatReader::SeekPromise> mAudioSeekRequest;
+  MozPromiseRequestHolder<AudioDataPromise> mAudioDataRequest;
 };
 
 
@@ -3009,6 +3130,7 @@ MediaDecoderStateMachine::ToStateStr(State aState)
     case DECODER_STATE_BUFFERING:           return "BUFFERING";
     case DECODER_STATE_COMPLETED:           return "COMPLETED";
     case DECODER_STATE_SHUTDOWN:            return "SHUTDOWN";
+    case DECODER_STATE_LOOPING_DECODING:    return "LOOPING_DECODING";
     default: MOZ_ASSERT_UNREACHABLE("Invalid state.");
   }
   return "UNKNOWN";
