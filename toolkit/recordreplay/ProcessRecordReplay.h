@@ -233,6 +233,9 @@ MOZ_MakeRecordReplayPrinter(PrintSpew, true)
 #undef MOZ_MakeRecordReplayPrinter
 
 
+int GetRecordingPid();
+
+
 
 
 

@@ -52,6 +52,9 @@ char* gRecordingFilename;
 static int gPid;
 
 
+static int gRecordingPid;
+
+
 static bool gSpewEnabled;
 
 extern "C" {
@@ -154,6 +157,7 @@ RecordReplayInterface_Initialize(int aArgc, char* aArgv[])
 
   Lock::InitializeLocks();
   InitializeRewindState();
+  gRecordingPid = RecordReplayValue(gPid);
 
   gInitialized = true;
 }
@@ -325,6 +329,12 @@ ThreadEventName(ThreadEvent aEvent)
   }
   size_t callId = (size_t) aEvent - (size_t) ThreadEvent::CallStart;
   return gRedirections[callId].mName;
+}
+
+int
+GetRecordingPid()
+{
+  return gRecordingPid;
 }
 
 
