@@ -745,25 +745,27 @@ nsXPCWrappedJSClass::CleanupOutparams(const nsXPTMethodInfo* info,
         if (!param.IsOut())
             continue;
 
-        
-        uint32_t arrayLen = 0;
-        if (!GetArraySizeFromParam(info, param.Type(), nativeParams, &arrayLen))
-            continue;
-
         MOZ_ASSERT(param.IsIndirect(), "Outparams are always indirect");
 
         
         
         
-        if (!inOutOnly || param.IsIn()) {
+        
+        
+        
+        
+        if (param.Type().IsComplex() || param.IsIn() || !inOutOnly) {
+            uint32_t arrayLen = 0;
+            if (!GetArraySizeFromParam(info, param.Type(), nativeParams, &arrayLen))
+                continue;
+
             xpc::CleanupValue(param.Type(), nativeParams[i].val.p, arrayLen);
         }
 
         
         
-        
-        if (param.Type().HasPointerRepr()) {
-            *(void**)nativeParams[i].val.p = nullptr;
+        if (!param.Type().IsComplex()) {
+            param.Type().ZeroValue(nativeParams[i].val.p);
         }
     }
 }

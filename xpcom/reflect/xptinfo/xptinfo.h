@@ -154,6 +154,13 @@ static_assert(sizeof(nsXPTInterfaceInfo) == 28, "wrong size?");
 enum nsXPTTypeTag : uint8_t
 {
   
+  
+  
+  
+  
+  
+  
+  
   TD_INT8              = 0,
   TD_INT16             = 1,
   TD_INT32             = 2,
@@ -167,26 +174,41 @@ enum nsXPTTypeTag : uint8_t
   TD_BOOL              = 10,
   TD_CHAR              = 11,
   TD_WCHAR             = 12,
+  _TD_LAST_ARITHMETIC  = TD_WCHAR,
 
+  
+  
+  
+  
   
   TD_VOID              = 13,
   TD_PNSIID            = 14,
-  TD_DOMSTRING         = 15,
-  TD_PSTRING           = 16,
-  TD_PWSTRING          = 17,
-  TD_INTERFACE_TYPE    = 18,
-  TD_INTERFACE_IS_TYPE = 19,
-  TD_ARRAY             = 20,
-  TD_PSTRING_SIZE_IS   = 21,
-  TD_PWSTRING_SIZE_IS  = 22,
-  TD_UTF8STRING        = 23,
-  TD_CSTRING           = 24,
-  TD_ASTRING           = 25,
-  TD_JSVAL             = 26,
-  TD_DOMOBJECT         = 27,
-  TD_PROMISE           = 28,
-  TD_SEQUENCE          = 29
+  TD_PSTRING           = 15,
+  TD_PWSTRING          = 16,
+  TD_INTERFACE_TYPE    = 17,
+  TD_INTERFACE_IS_TYPE = 18,
+  TD_ARRAY             = 19,
+  TD_PSTRING_SIZE_IS   = 20,
+  TD_PWSTRING_SIZE_IS  = 21,
+  TD_DOMOBJECT         = 22,
+  TD_PROMISE           = 23,
+  _TD_LAST_POINTER     = TD_PROMISE,
+
+  
+  
+  
+  
+  
+  TD_DOMSTRING         = 24,
+  TD_UTF8STRING        = 25,
+  TD_CSTRING           = 26,
+  TD_ASTRING           = 27,
+  TD_JSVAL             = 28,
+  TD_SEQUENCE          = 29,
+  _TD_LAST_COMPLEX     = TD_SEQUENCE
 };
+
+static_assert(_TD_LAST_COMPLEX < 32, "nsXPTTypeTag must fit in 5 bits");
 
 
 
@@ -241,29 +263,18 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  bool IsArithmetic() const { return Tag() <= TD_WCHAR; }
+  bool IsArithmetic() const { return Tag() <= _TD_LAST_ARITHMETIC; }
+  bool IsPointer() const { return !IsArithmetic() && Tag() <= _TD_LAST_POINTER; }
+  bool IsComplex() const { return Tag() > _TD_LAST_POINTER; }
 
   bool IsInterfacePointer() const {
     return Tag() == TD_INTERFACE_TYPE || Tag() == TD_INTERFACE_IS_TYPE;
   }
 
-  bool IsArray() const { return Tag() == TD_ARRAY; }
-
   bool IsDependent() const {
     return (Tag() == TD_SEQUENCE && InnermostType().IsDependent()) ||
            Tag() == TD_INTERFACE_IS_TYPE || Tag() == TD_ARRAY ||
            Tag() == TD_PSTRING_SIZE_IS || Tag() == TD_PWSTRING_SIZE_IS;
-  }
-
-  bool IsAlwaysIndirect() const {
-    return Tag() == TD_ASTRING || Tag() == TD_DOMSTRING ||
-           Tag() == TD_CSTRING || Tag() == TD_UTF8STRING ||
-           Tag() == TD_JSVAL || Tag() == TD_SEQUENCE;
   }
 
   
@@ -276,11 +287,16 @@ public:
 
   
   inline size_t Stride() const;
-  inline bool HasPointerRepr() const;
 
   
   void* ElementPtr(const void* aBase, uint32_t aIndex) const {
     return (char*)aBase + (aIndex * Stride());
+  }
+
+  
+  void ZeroValue(void* aValue) const {
+    MOZ_RELEASE_ASSERT(!IsComplex(), "Cannot zero a complex value");
+    memset(aValue, 0, Stride());
   }
 
   
@@ -397,7 +413,7 @@ struct nsXPTParamInfo
   
   
   bool IsIndirect() const {
-    return IsOut() || Type().IsAlwaysIndirect();
+    return IsOut() || Type().IsComplex();
   }
 
   
@@ -634,29 +650,6 @@ GetString(uint32_t aIndex)
 } 
 } 
 
-inline bool
-nsXPTType::HasPointerRepr() const
-{
-  
-  
-  switch (Tag()) {
-    case TD_VOID:
-    case TD_PNSIID:
-    case TD_PSTRING:
-    case TD_PWSTRING:
-    case TD_INTERFACE_TYPE:
-    case TD_INTERFACE_IS_TYPE:
-    case TD_ARRAY:
-    case TD_PSTRING_SIZE_IS:
-    case TD_PWSTRING_SIZE_IS:
-    case TD_DOMOBJECT:
-    case TD_PROMISE:
-        return true;
-    default:
-        return false;
-  }
-}
-
 inline size_t
 nsXPTType::Stride() const
 {
@@ -675,6 +668,7 @@ nsXPTType::Stride() const
     case TD_BOOL:              return sizeof(bool);
     case TD_CHAR:              return sizeof(char);
     case TD_WCHAR:             return sizeof(char16_t);
+
     case TD_VOID:              return sizeof(void*);
     case TD_PNSIID:            return sizeof(nsIID*);
     case TD_DOMSTRING:         return sizeof(nsString);
@@ -685,12 +679,13 @@ nsXPTType::Stride() const
     case TD_ARRAY:             return sizeof(void*);
     case TD_PSTRING_SIZE_IS:   return sizeof(char*);
     case TD_PWSTRING_SIZE_IS:  return sizeof(char16_t*);
+    case TD_DOMOBJECT:         return sizeof(void*);
+    case TD_PROMISE:           return sizeof(void*);
+
     case TD_UTF8STRING:        return sizeof(nsCString);
     case TD_CSTRING:           return sizeof(nsCString);
     case TD_ASTRING:           return sizeof(nsString);
     case TD_JSVAL:             return sizeof(JS::Value);
-    case TD_DOMOBJECT:         return sizeof(void*);
-    case TD_PROMISE:           return sizeof(void*);
     case TD_SEQUENCE:          return sizeof(xpt::detail::UntypedSequence);
   }
 

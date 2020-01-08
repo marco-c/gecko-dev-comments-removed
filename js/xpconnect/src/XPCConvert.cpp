@@ -1638,8 +1638,8 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
     }
 
     
-    if (aType.HasPointerRepr()) {
-        *(void**)aValue = nullptr;
+    if (!aType.IsComplex()) {
+        aType.ZeroValue(aValue);
     }
 }
 
@@ -1672,7 +1672,7 @@ xpc::InitializeValue(const nsXPTType& aType, void* aValue)
 
         
         default:
-            memset(aValue, 0, aType.Stride());
+            aType.ZeroValue(aValue);
             break;
     }
 }
