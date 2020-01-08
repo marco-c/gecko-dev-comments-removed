@@ -264,10 +264,13 @@ function switchPerformancePanel() {
       return new NewPerformancePanel(frame, target);
     };
     Tools.performance.isTargetSupported = function(target) {
-     
-     
-     
-      return true;
+      
+      
+      
+      
+      
+      
+      return target.isLocalTab;
     };
   } else {
     Tools.performance.url = "chrome://devtools/content/performance/index.xul";
