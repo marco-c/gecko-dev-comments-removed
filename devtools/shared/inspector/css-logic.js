@@ -6,6 +6,7 @@
 
 "use strict";
 
+const { getTabPrefs } = require("devtools/shared/indentation");
 const InspectorUtils = require("InspectorUtils");
 
 const MAX_DATA_URL_LENGTH = 40;
@@ -46,9 +47,11 @@ const MAX_DATA_URL_LENGTH = 40;
 
 const Services = require("Services");
 
-loader.lazyRequireGetter(this, "getCSSLexer", "devtools/shared/css/lexer", true);
-loader.lazyRequireGetter(this, "getTabPrefs", "devtools/shared/indentation", true);
+loader.lazyImporter(this, "findCssSelector", "resource://gre/modules/css-selector.js");
+loader.lazyImporter(this, "getCssPath", "resource://gre/modules/css-selector.js");
+loader.lazyImporter(this, "getXPath", "resource://gre/modules/css-selector.js");
 
+const CSSLexer = require("devtools/shared/css/lexer");
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const styleInspectorL10N =
   new LocalizationHelper("devtools/shared/locales/styleinspector.properties");
@@ -187,7 +190,7 @@ function prettifyCSS(text, ruleCount) {
   
   let indent = "";
   let indentLevel = 0;
-  const tokens = getCSSLexer(text);
+  const tokens = CSSLexer.getCSSLexer(text);
   let result = "";
   let pushbackToken = undefined;
 
@@ -358,6 +361,28 @@ function prettifyCSS(text, ruleCount) {
 }
 
 exports.prettifyCSS = prettifyCSS;
+
+
+
+
+
+
+exports.findCssSelector = findCssSelector;
+
+
+
+
+
+
+
+exports.getCssPath = getCssPath;
+
+
+
+
+
+
+exports.getXPath = getXPath;
 
 
 
