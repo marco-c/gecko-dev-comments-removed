@@ -332,9 +332,6 @@ private:
   already_AddRefed<CSSValue> DoGetOutlineRadiusTopRight();
 
   
-  already_AddRefed<CSSValue> DoGetQuotes();
-
-  
   already_AddRefed<CSSValue> DoGetZIndex();
 
   
