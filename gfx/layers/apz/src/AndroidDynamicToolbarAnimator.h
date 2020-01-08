@@ -99,11 +99,6 @@ public:
   void MaybeUpdateCompositionSizeAndRootFrameMetrics(const FrameMetrics& aMetrics);
   
   
-  void EnableLayersUpdateNotifications(bool aEnable);
-  
-  void NotifyLayersUpdated();
-  
-  
   
   void AdoptToolbarPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize);
   
@@ -226,7 +221,6 @@ protected:
   
   bool mCompositorShutdown;             
   bool mCompositorAnimationDeferred;    
-  bool mCompositorLayersUpdateEnabled;  
   bool mCompositorAnimationStarted;     
   bool mCompositorReceivedFirstPaint;   
   bool mCompositorWaitForPageResize;    

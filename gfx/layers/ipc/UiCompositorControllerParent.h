@@ -49,6 +49,9 @@ public:
   void ToolbarAnimatorMessageFromCompositor(int32_t aMessage);
   bool AllocPixelBuffer(const int32_t aSize, Shmem* aMem);
 
+  
+  void NotifyLayersUpdated();
+
 private:
   explicit UiCompositorControllerParent(const LayersId& aRootLayerTreeId);
   ~UiCompositorControllerParent();
@@ -62,6 +65,7 @@ private:
 
 #if defined(MOZ_WIDGET_ANDROID)
   RefPtr<AndroidDynamicToolbarAnimator> mAnimator;
+  bool mCompositorLayersUpdateEnabled;  
 #endif 
 
   int32_t mMaxToolbarHeight;
