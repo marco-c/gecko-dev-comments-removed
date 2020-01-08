@@ -368,4 +368,23 @@ JS_EncodeStringToLatin1(JSContext* cx, JSString* str);
 extern JS_PUBLIC_API(JS::UniqueChars)
 JS_EncodeStringToUTF8(JSContext* cx, JS::Handle<JSString*> str);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(JS::UniqueChars)
+JS_EncodeStringToASCII(JSContext* cx, JSString* str);
+
 #endif 

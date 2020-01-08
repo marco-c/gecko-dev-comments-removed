@@ -1663,6 +1663,12 @@ CompareAtoms(JSAtom* atom1, JSAtom* atom2);
 
 
 extern bool
+StringIsAscii(JSLinearString* str);
+
+
+
+
+extern bool
 StringEqualsAscii(JSLinearString* str, const char* asciiBytes);
 
 extern int
@@ -1687,6 +1693,14 @@ SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t lengt
 
 
 
+
+
+
+
+
+
+UniqueChars
+EncodeAscii(JSContext* cx, JSString* str);
 
 
 

@@ -842,7 +842,7 @@ num_toLocaleString_impl(JSContext* cx, const CallArgs& args)
 
 
 
-    UniqueChars numBytes = JS_EncodeStringToLatin1(cx, str);
+    UniqueChars numBytes = EncodeAscii(cx, str);
     if (!numBytes) {
         return false;
     }
