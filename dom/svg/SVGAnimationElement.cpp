@@ -72,7 +72,10 @@ SVGAnimationElement::GetTargetElementContent()
              "if we don't have an xlink:href or href attribute");
 
   
-  return GetFlattenedTreeParentElement();
+  
+  
+  
+  return GetParentElement();
 }
 
 bool
@@ -169,15 +172,6 @@ SVGAnimationElement::BindToTree(nsIDocument* aDocument,
   NS_ENSURE_SUCCESS(rv,rv);
 
   
-  if (!GetCtx()) {
-    
-    
-    
-    
-    return NS_OK;
-  }
-
-  
   if (nsIDocument* doc = GetComposedDoc()) {
     nsSMILAnimationController* controller = doc->GetAnimationController();
     if (controller) {
@@ -208,7 +202,7 @@ SVGAnimationElement::BindToTree(nsIDocument* aDocument,
 void
 SVGAnimationElement::UnbindFromTree(bool aDeep, bool aNullParent)
 {
-  nsSMILAnimationController *controller = OwnerDoc()->GetAnimationController();
+  nsSMILAnimationController* controller = OwnerDoc()->GetAnimationController();
   if (controller) {
     controller->UnregisterAnimationElement(this);
   }
