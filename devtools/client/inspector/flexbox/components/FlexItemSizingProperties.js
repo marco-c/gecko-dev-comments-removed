@@ -284,6 +284,7 @@ class FlexItemSizingProperties extends PureComponent {
 
   render() {
     const {
+      flexDirection,
       flexItem,
     } = this.props;
     const {
@@ -292,13 +293,12 @@ class FlexItemSizingProperties extends PureComponent {
       properties,
     } = flexItem;
     const {
-      mainAxisDirection,
       mainBaseSize,
       mainDeltaSize,
       mainMaxSize,
       mainMinSize,
     } = flexItemSizing;
-    const dimension = mainAxisDirection.startsWith("horizontal") ? "width" : "height";
+    const dimension = flexDirection.startsWith("row") ? "width" : "height";
 
     
     let mainFinalSize = mainBaseSize + mainDeltaSize;
