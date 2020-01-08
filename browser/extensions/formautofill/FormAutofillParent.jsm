@@ -318,9 +318,9 @@ FormAutofillParent.prototype = {
       return;
     }
 
-    let isCCAndMPEnabled = collectionName == CREDITCARDS_COLLECTION_NAME && OSKeyStore.isEnabled;
+    let isCC = collectionName == CREDITCARDS_COLLECTION_NAME;
     
-    if (isCCAndMPEnabled && info.fieldName == "cc-number") {
+    if (isCC && info.fieldName == "cc-number") {
       recordsInCollection = recordsInCollection.filter(record => !!record["cc-number"]);
       target.sendAsyncMessage("FormAutofill:Records", recordsInCollection);
       return;
@@ -333,17 +333,6 @@ FormAutofillParent.prototype = {
       let fieldValue = record[info.fieldName];
       if (!fieldValue) {
         continue;
-      }
-
-      
-      
-      if (!isCCAndMPEnabled && record["cc-number-encrypted"]) {
-        record["cc-number-decrypted"] = await OSKeyStore.decrypt(record["cc-number-encrypted"]);
-      }
-
-      
-      if (info.fieldName == "cc-number") {
-        fieldValue = record["cc-number-decrypted"];
       }
 
       if (collectionName == ADDRESSES_COLLECTION_NAME && record.country

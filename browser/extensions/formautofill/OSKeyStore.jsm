@@ -44,17 +44,6 @@ var OSKeyStore = {
 
 
 
-
-  get isEnabled() {
-    return true;
-  },
-
-  
-
-
-
-
-
   get isLoggedIn() {
     return !this._isLocked;
   },

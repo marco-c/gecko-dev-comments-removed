@@ -1692,12 +1692,9 @@ class CreditCards extends AutofillRecords {
           return !creditCard[field];
         }
         if (field == "cc-number" && creditCard[field]) {
-          if (OSKeyStore.isEnabled) {
-            
-            
-            return CreditCard.getLongMaskedNumber(clonedTargetCreditCard[field]) == creditCard[field];
-          }
-          return (clonedTargetCreditCard[field] == await OSKeyStore.decrypt(creditCard["cc-number-encrypted"]));
+          
+          
+          return CreditCard.getLongMaskedNumber(clonedTargetCreditCard[field]) == creditCard[field];
         }
         return clonedTargetCreditCard[field] == creditCard[field];
       })).then(fieldResults => fieldResults.every(result => result));
