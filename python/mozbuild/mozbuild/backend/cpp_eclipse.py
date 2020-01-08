@@ -233,6 +233,7 @@ class CppEclipseBackend(CommonBackend):
 
         
         dirsettings_template = dirsettings_template.replace('@PREINCLUDE_FILE_PATH@', os.path.join(self.environment.topobjdir, 'dist/include/mozilla-config.h'))
+        dirsettings_template += add_define('MOZILLA_CLIENT', '1')
 
         
         dirsettings_template += add_objdir_include_path('dist/include')
@@ -240,6 +241,7 @@ class CppEclipseBackend(CommonBackend):
         
         
         dirsettings_template += add_objdir_include_path('dist/include/nspr')
+        dirsettings_template += add_objdir_include_path('dist/include/nss')
 
         
         
