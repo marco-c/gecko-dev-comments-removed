@@ -96,6 +96,16 @@ function updateDiff(diff = {}, change = {}) {
 const reducers = {
 
   [TRACK_CHANGE](state, { data }) {
+    const defaults = {
+      href: "",
+      selector: "",
+      tag: null,
+      add: null,
+      remove: null
+    };
+
+    data = { ...defaults, ...data };
+
     
     
     
