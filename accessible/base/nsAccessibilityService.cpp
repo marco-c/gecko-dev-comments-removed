@@ -132,13 +132,14 @@ MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument)
         }
       }
     }
-  }
 
-  
-  
-  nsAutoString id;
-  if (nsCoreUtils::GetID(aContent, id) && !id.IsEmpty())
-    return aDocument->IsDependentID(id);
+    
+    
+    nsAutoString id;
+    if (nsCoreUtils::GetID(aContent, id) && !id.IsEmpty()) {
+      return aDocument->IsDependentID(aContent->AsElement(), id);
+    }
+  }
 
   return false;
 }

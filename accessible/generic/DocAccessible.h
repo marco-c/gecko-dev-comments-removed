@@ -329,8 +329,8 @@ public:
 
 
 
-  bool IsDependentID(const nsAString& aID) const
-    { return mDependentIDsHash.Get(aID, nullptr); }
+  bool IsDependentID(dom::Element* aElement, const nsAString& aID) const
+    { return GetRelProviders(aElement, aID); }
 
   
 
@@ -674,12 +674,26 @@ protected:
     AttrRelProvider& operator =(const AttrRelProvider&);
   };
 
+  typedef nsTArray<nsAutoPtr<AttrRelProvider> > AttrRelProviders;
+  typedef nsClassHashtable<nsStringHashKey, AttrRelProviders> DependentIDsHashtable;
+
   
 
 
-  typedef nsTArray<nsAutoPtr<AttrRelProvider> > AttrRelProviderArray;
-  nsClassHashtable<nsStringHashKey, AttrRelProviderArray>
-    mDependentIDsHash;
+
+
+  AttrRelProviders* GetRelProviders(dom::Element* aElement,
+                                    const nsAString& aID) const;
+  AttrRelProviders* GetOrCreateRelProviders(dom::Element* aElement,
+                                            const nsAString& aID);
+  void RemoveRelProvidersIfEmpty(dom::Element* aElement,
+                                 const nsAString& aID);
+
+  
+
+
+  nsClassHashtable<nsPtrHashKey<dom::DocumentOrShadowRoot>, DependentIDsHashtable>
+    mDependentIDsHashes;
 
   friend class RelatedAccIterator;
 
