@@ -10,7 +10,8 @@ function run_test() {
   
   do_content_crash(function() {
                      crashType = CrashTestUtils.CRASH_MOZ_CRASH;
-                     crashReporter.annotateCrashReport("TestKey", "TestValue");
+                     crashReporter.annotateCrashReport(
+                      CrashReporter.annotations.TestKey, "TestValue");
                      crashReporter.appendAppNotesToCrashReport("!!!foo!!!");
                    },
                    function(mdump, extra) {

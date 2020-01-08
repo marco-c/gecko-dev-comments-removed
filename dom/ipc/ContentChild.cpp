@@ -1619,8 +1619,7 @@ GetDirectoryPath(const char *aPath) {
 #endif 
 
 extern "C" {
-CGError
-CGSSetDenyWindowServerConnections(bool);
+void CGSSetDenyWindowServerConnections(bool);
 void CGSShutdownServerConnections();
 };
 
@@ -1632,15 +1631,13 @@ StartMacOSContentSandbox()
     return false;
   }
 
-  if (Preferences::GetBool(
-        "security.sandbox.content.mac.disconnect-windowserver")) {
+  if (!XRE_UseNativeEventProcessing()) {
     
     
     
     
+    CGSSetDenyWindowServerConnections(true);
     CGSShutdownServerConnections();
-    CGError result = CGSSetDenyWindowServerConnections(true);
-    MOZ_DIAGNOSTIC_ASSERT(result == kCGErrorSuccess);
   }
 
   nsAutoCString appPath, appBinaryPath, appDir;
@@ -1771,16 +1768,13 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
 #endif
 
   CrashReporter::AnnotateCrashReport(
-    NS_LITERAL_CSTRING("ContentSandboxEnabled"),
-    sandboxEnabled? NS_LITERAL_CSTRING("1") : NS_LITERAL_CSTRING("0"));
+    CrashReporter::Annotation::ContentSandboxEnabled, sandboxEnabled);
 #if defined(XP_LINUX) && !defined(OS_ANDROID)
-  nsAutoCString flagsString;
-  flagsString.AppendInt(SandboxInfo::Get().AsInteger());
-
   CrashReporter::AnnotateCrashReport(
-    NS_LITERAL_CSTRING("ContentSandboxCapabilities"), flagsString);
+    CrashReporter::Annotation::ContentSandboxCapabilities,
+    static_cast<int>(SandboxInfo::Get().AsInteger()));
 #endif 
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("RemoteType"),
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
                                      NS_ConvertUTF16toUTF8(GetRemoteType()));
 #endif 
 
@@ -2442,7 +2436,8 @@ ContentChild::ProcessingError(Result aCode, const char* aReason)
   }
 
   nsDependentCString reason(aReason);
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ipc_channel_error"), reason);
+  CrashReporter::AnnotateCrashReport(
+    CrashReporter::Annotation::ipc_channel_error, reason);
 
   MOZ_CRASH("Content child abort due to IPC error");
 }
@@ -3117,8 +3112,9 @@ ContentChild::ShutdownInternal()
   
   
   
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
-                                     NS_LITERAL_CSTRING("RecvShutdown"));
+  CrashReporter::AnnotateCrashReport(
+    CrashReporter::Annotation::IPCShutdownState,
+    NS_LITERAL_CSTRING("RecvShutdown"));
 
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<nsThread> mainThread = nsThreadManager::get().GetCurrentThread();
@@ -3176,10 +3172,11 @@ ContentChild::ShutdownInternal()
   
   StartForceKillTimer();
 
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
-                                     NS_LITERAL_CSTRING("SendFinishShutdown (sending)"));
+  CrashReporter::AnnotateCrashReport(
+    CrashReporter::Annotation::IPCShutdownState,
+    NS_LITERAL_CSTRING("SendFinishShutdown (sending)"));
   bool sent = SendFinishShutdown();
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::IPCShutdownState,
                                      sent ? NS_LITERAL_CSTRING("SendFinishShutdown (sent)")
                                           : NS_LITERAL_CSTRING("SendFinishShutdown (failed)"));
 }

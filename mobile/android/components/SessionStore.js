@@ -1283,7 +1283,8 @@ SessionStore.prototype = {
                                .finalize();
       } catch (ex) { } 
 
-      Services.appinfo.annotateCrashReport("URL", currentURI.spec);
+      Services.appinfo.annotateCrashReport(Services.appinfo.URL,
+                                           currentURI.spec);
     } catch (ex) {
       
       if (ex.result != Cr.NS_ERROR_NOT_INITIALIZED) {

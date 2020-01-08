@@ -348,19 +348,12 @@ GfxInfo::GetIsGPU2Active(bool* aIsGPU2Active)
 void
 GfxInfo::AddCrashReportAnnotations()
 {
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterVendorID"),
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterVendorID,
                                      mGLStrings->Vendor());
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterDeviceID"),
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterDeviceID,
                                      mGLStrings->Renderer());
-  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("AdapterDriverVersion"),
-                                     mGLStrings->Version());
-
-  
-
-  nsAutoCString note;
-  note.AppendPrintf("AdapterDescription: '%s'\n", mAdapterDescription.get());
-
-  CrashReporter::AppendAppNotesToCrashReport(note);
+  CrashReporter::AnnotateCrashReport(
+    CrashReporter::Annotation::AdapterDriverVersion, mGLStrings->Version());
 }
 
 const nsTArray<GfxDriverInfo>&

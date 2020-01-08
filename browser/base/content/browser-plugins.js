@@ -6,6 +6,10 @@
 ChromeUtils.defineModuleGetter(this, "Blocklist",
                                "resource://gre/modules/Blocklist.jsm");
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PluginCrashReporter: "resource:///modules/ContentCrashHandlers.jsm",
+});
+
 var gPluginHandler = {
   PREF_SESSION_PERSIST_MINUTES: "plugin.sessionPermissionNow.intervalInMinutes",
   PREF_PERSISTENT_DAYS: "plugin.persistentPermissionAlways.intervalInDays",
@@ -582,7 +586,7 @@ var gPluginHandler = {
     
     
     let state;
-    if (!AppConstants.MOZ_CRASHREPORTER || !gCrashReporter.enabled) {
+    if (!AppConstants.MOZ_CRASHREPORTER || !CrashReporter.enabled) {
       
       
       state = "noSubmit";
