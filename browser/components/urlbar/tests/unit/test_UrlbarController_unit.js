@@ -9,6 +9,15 @@
 "use strict";
 
 
+
+
+
+ChromeUtils.import("resource://gre/modules/Timer.jsm");
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
+
+
+
+
 let fPM;
 let sandbox;
 let generalListener;

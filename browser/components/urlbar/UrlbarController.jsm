@@ -13,26 +13,11 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const ProvidersManager = {
   queryStart(queryContext, controller) {
-    queryContext.results = [];
-    for (let i = 0; i < 12; i++) {
-      const SWITCH_TO_TAB = Math.random() < .3;
-      let url = "http://www." + queryContext.searchString;
-      while (Math.random() < .9) {
-        url += queryContext.searchString;
-      }
-      let title = queryContext.searchString;
-      while (Math.random() < .5) {
-        title += queryContext.isPrivate ? " private" : " foo bar";
-      }
-      queryContext.results.push({
-        title,
-        type: SWITCH_TO_TAB ? "switchtotab" : "normal",
-        url,
-      });
-    }
+    queryContext.results = [{url: queryContext.searchString}];
     controller.receiveResults(queryContext);
   },
 };
+
 
 
 
@@ -123,9 +108,9 @@ class UrlbarController {
   handleQuery(queryContext) {
     queryContext.autoFill = Services.prefs.getBoolPref("browser.urlbar.autoFill", true);
 
-    this._notify("onQueryStarted", queryContext);
-
     this.manager.queryStart(queryContext, this);
+
+    this._notify("onQueryStarted", queryContext);
   }
 
   

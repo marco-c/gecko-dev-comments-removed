@@ -14,21 +14,10 @@ if (commonFile) {
 
 
 ChromeUtils.import("resource:///modules/UrlbarController.jsm");
-ChromeUtils.defineModuleGetter(this, "UrlbarInput",
-                               "resource:///modules/UrlbarInput.jsm");
 ChromeUtils.defineModuleGetter(this, "UrlbarTokenizer",
                                "resource:///modules/UrlbarTokenizer.jsm");
 ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
                                "resource://testing-common/PlacesTestUtils.jsm");
-
-
-
-
-
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
-Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
-
-
 
 
 
