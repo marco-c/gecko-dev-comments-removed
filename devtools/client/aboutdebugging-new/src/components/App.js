@@ -21,7 +21,6 @@ const Sidebar = createFactory(require("./sidebar/Sidebar"));
 class App extends PureComponent {
   static get propTypes() {
     return {
-      adbAddonStatus: PropTypes.string,
       
       
       
@@ -52,7 +51,6 @@ class App extends PureComponent {
 
   render() {
     const {
-      adbAddonStatus,
       dispatch,
       messageContexts,
       runtimes,
@@ -63,15 +61,7 @@ class App extends PureComponent {
       { messages: messageContexts },
       dom.div(
         { className: "app" },
-        Sidebar(
-          {
-            adbAddonStatus,
-            className: "app__sidebar",
-            dispatch,
-            runtimes,
-            selectedPage
-          }
-        ),
+        Sidebar({ className: "app__sidebar", dispatch, runtimes, selectedPage }),
         dom.main(
           { className: "app__content" },
           this.getSelectedPageComponent()
@@ -83,7 +73,6 @@ class App extends PureComponent {
 
 const mapStateToProps = state => {
   return {
-    adbAddonStatus: state.ui.adbAddonStatus,
     runtimes: state.runtimes,
     networkLocations: state.ui.networkLocations,
     selectedPage: state.ui.selectedPage,
