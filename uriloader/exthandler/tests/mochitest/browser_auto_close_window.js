@@ -111,8 +111,9 @@ add_task(async function nested_window_opens() {
   
   
   await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function(outerBrowser) {
+    let secondTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, `${URL}?newwin`, true);
     BrowserTestUtils.synthesizeMouseAtCenter("#open_in_new_tab", {}, outerBrowser);
-    let secondTab = await BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+    let secondTab = await secondTabPromise;
     let nestedBrowser = secondTab.linkedBrowser;
 
     await ContentTask.spawn(nestedBrowser, null, function() {
