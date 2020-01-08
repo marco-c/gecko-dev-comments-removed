@@ -7949,34 +7949,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-align-unsafe-value.enabled")) {
 
 gCSSProperties["display"].other_values.push("flow-root");
 
-
-for (var prop in gCSSProperties) {
-  var entry = gCSSProperties[prop];
-  if (entry.alias_for) {
-    var aliasTargetEntry = gCSSProperties[entry.alias_for];
-    if (!aliasTargetEntry) {
-      ok(false,
-         "Alias '" + prop + "' alias_for field, '" + entry.alias_for + "', " +
-         "must be set to a recognized CSS property in gCSSProperties");
-    } else {
-      
-      var fieldsToCopy =
-          ["initial_values", "other_values", "invalid_values",
-           "quirks_values", "unbalanced_values",
-           "prerequisites"];
-
-      fieldsToCopy.forEach(function(fieldName) {
-        
-        
-        if (!(fieldName in entry) &&
-            fieldName in aliasTargetEntry) {
-          entry[fieldName] = aliasTargetEntry[fieldName]
-        }
-      });
-    }
-  }
-}
-
 if (IsCSSPropertyPrefEnabled("layout.css.column-span.enabled")) {
   gCSSProperties["column-span"] = {
     domProp: "columnSpan",
@@ -8129,19 +8101,6 @@ if (false) {
     other_values: [ "green", "#fc3" ],
     invalid_values: [ "000000", "ff00ff" ]
   };
-
-  
-  gCSSProperties["clip-path"].other_values.push(
-    "path(nonzero, 'M 10 10 h 100 v 100 h-100 v-100 z')",
-    "path(evenodd, 'M 10 10 h 100 v 100 h-100 v-100 z')",
-    "path('M10,30A20,20 0,0,1 50,30A20,20 0,0,1 90,30Q90,60 50,90Q10,60 10,30z')",
-  );
-
-  gCSSProperties["clip-path"].invalid_values.push(
-    "path(nonzero)",
-    "path(evenodd, '')",
-    "path(abs, 'M 10 10 L 10 10 z')",
-  );
 }
 
 if (IsCSSPropertyPrefEnabled("layout.css.filters.enabled")) {
@@ -8218,3 +8177,34 @@ if (IsCSSPropertyPrefEnabled("layout.css.overflow.moz-scrollbars.enabled")) {
 } else {
   gCSSProperties["overflow"].invalid_values.push(...OVERFLOW_MOZKWS);
 }
+
+
+
+
+for (var prop in gCSSProperties) {
+  var entry = gCSSProperties[prop];
+  if (entry.alias_for) {
+    var aliasTargetEntry = gCSSProperties[entry.alias_for];
+    if (!aliasTargetEntry) {
+      ok(false,
+         "Alias '" + prop + "' alias_for field, '" + entry.alias_for + "', " +
+         "must be set to a recognized CSS property in gCSSProperties");
+    } else {
+      
+      var fieldsToCopy =
+          ["initial_values", "other_values", "invalid_values",
+           "quirks_values", "unbalanced_values",
+           "prerequisites"];
+
+      fieldsToCopy.forEach(function(fieldName) {
+        
+        
+        if (!(fieldName in entry) &&
+            fieldName in aliasTargetEntry) {
+          entry[fieldName] = aliasTargetEntry[fieldName]
+        }
+      });
+    }
+  }
+}
+
