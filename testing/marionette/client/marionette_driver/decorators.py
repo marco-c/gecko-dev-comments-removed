@@ -25,9 +25,14 @@ def do_process_check(func):
         try:
             return func(*args, **kwargs)
         except (socket.error, socket.timeout):
-            
-            
             m = _find_marionette_in_args(*args, **kwargs)
+
+            
+            
+            
+            if m.is_shutting_down:
+                raise
+
             m._handle_socket_failure()
 
     return _
