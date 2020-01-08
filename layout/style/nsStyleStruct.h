@@ -2456,10 +2456,6 @@ private:
     mozilla::ComputedStyle&) const;
   void GenerateCombinedTransform();
 public:
-  
-  
-  
-  inline mozilla::StyleFloat PhysicalFloats(mozilla::WritingMode aWM) const;
   inline mozilla::StyleClear PhysicalBreakType(mozilla::WritingMode aWM) const;
 };
 
