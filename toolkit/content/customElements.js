@@ -2,13 +2,22 @@
 
 
 
+ 
+ 
 
 
 "use strict";
 
 
 
-{
+(() => {
+
+
+
+
+if (window.MozXULElement) {
+  return;
+}
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
@@ -188,6 +197,7 @@ const MozXULElement = MozElementMixin(XULElement);
 
 
 function getInterfaceProxy(obj) {
+  
   if (!obj._customInterfaceProxy) {
     obj._customInterfaceProxy = new Proxy(obj, {
       get(target, prop, receiver) {
@@ -266,4 +276,4 @@ if (!isDummyDocument) {
     });
   }
 }
-}
+})();
