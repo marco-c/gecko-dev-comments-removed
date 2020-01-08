@@ -17,6 +17,7 @@
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
+#include "mozilla/dom/Document.h"  
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/KeyframeEffect.h"  
@@ -27,7 +28,6 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h"  
-#include "mozilla/dom/Document.h"  
 #include "nsIScriptError.h"
 #include "nsTArray.h"
 #include <algorithm>  
