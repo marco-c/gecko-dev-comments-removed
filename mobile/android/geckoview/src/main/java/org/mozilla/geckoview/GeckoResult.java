@@ -550,6 +550,7 @@ public class GeckoResult<T> {
 
 
 
+
         @Nullable GeckoResult<U> onValue(@Nullable T value) throws Throwable;
     }
 
@@ -560,6 +561,7 @@ public class GeckoResult<T> {
 
     public interface OnExceptionListener<V> {
         
+
 
 
 
