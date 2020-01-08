@@ -141,6 +141,20 @@ impl Animate for f64 {
     }
 }
 
+
+
+
+impl Animate for bool {
+    #[inline]
+    fn animate(&self, other: &Self, _procedure: Procedure) -> Result<Self, ()> {
+        if *self == *other {
+            Ok(*other)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl<T> Animate for Option<T>
 where
     T: Animate,

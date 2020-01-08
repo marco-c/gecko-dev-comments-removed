@@ -54,7 +54,6 @@ pub enum ShapeSource<BasicShape, ReferenceBox, ImageOrUrl> {
     Shape(BasicShape, Option<ReferenceBox>),
     #[animation(error)]
     Box(ReferenceBox),
-    #[animation(error)]
     #[css(function)]
     Path(Path),
     #[animation(error)]
@@ -152,10 +151,12 @@ pub enum FillRule {
 
 
 #[css(comma)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
 pub struct Path {
     
     #[css(skip_if = "fill_is_default")]
+    #[animation(constant)]
     pub fill: FillRule,
     
     pub path: SVGPathData,
@@ -177,6 +178,13 @@ where
             {
                 this.compute_squared_distance(other)
             },
+            (
+                &ShapeSource::Path(ref this),
+                &ShapeSource::Path(ref other),
+            ) if this.fill == other.fill =>
+            {
+                this.path.compute_squared_distance(&other.path)
+            }
             _ => Err(()),
         }
     }
