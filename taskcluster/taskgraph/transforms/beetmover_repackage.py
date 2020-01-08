@@ -57,7 +57,21 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "target_info.txt",
     "target.jsshell.zip",
     "mozharness.zip",
+    
+    
+    "target.langpack.xpi",
 ]
+
+
+
+
+
+_DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N = [
+    
+    
+    "target.langpack.xpi",
+]
+
 
 
 
@@ -86,7 +100,8 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
             'host/bin/mar.exe',
             'host/bin/mbsdiff.exe',
         ],
-    r'^(linux(|64)|macosx64|win(32|64))(|-devedition)-nightly-l10n$': [],
+    r'^(linux(|64)|macosx64|win(32|64))(|-devedition)-nightly-l10n$':
+        _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
 }
 
 
@@ -304,6 +319,14 @@ def generate_upstream_artifacts(job, build_task_ref, build_signing_task_ref,
                     if not use_stub:
                         if 'target.stub-installer.exe' in usable_paths:
                             usable_paths.remove('target.stub-installer.exe')
+                    if 'target.langpack.xpi' in usable_paths and \
+                            not project == "mozilla-central":
+                        
+                        
+                        usable_paths.remove('target.langpack.xpi')
+                        if not len(usable_paths):
+                            
+                            continue
                     upstream_artifacts.append({
                         "taskId": {"task-reference": ref},
                         "taskType": tasktype,
