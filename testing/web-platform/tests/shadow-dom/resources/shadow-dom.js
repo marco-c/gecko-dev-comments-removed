@@ -53,7 +53,9 @@ function createTestTree(node) {
   return ids;
 }
 
-function dispatchEventWithLog(nodes, target, event) {
+
+
+function dispatchEventWithLog(nodes, target, event, options) {
 
   function labelFor(e) {
     return e.id || e.tagName;
@@ -70,15 +72,40 @@ function dispatchEventWithLog(nodes, target, event) {
       if (!id)
         continue;
       attachedNodes.push(node);
-      node.addEventListener(event.type, (e) => {
+      if (options && options.capture) {
         
-        log.push([id,
-                  labelFor(e.target),
-                  e.relatedTarget ? labelFor(e.relatedTarget) : null,
-                  e.composedPath().map((n) => {
-                    return labelFor(n);
-                  })]);
-      });
+        
+        
+        node.addEventListener(event.type, (e) => {
+          log.push([id,
+                    labelFor(e.target),
+                    e.relatedTarget ? labelFor(e.relatedTarget) : null,
+                    e.composedPath().map((n) => {
+                      return labelFor(n);
+                    }),
+                    'capture']);
+        }, true);
+        node.addEventListener(event.type, (e) => {
+          log.push([id,
+                    labelFor(e.target),
+                    e.relatedTarget ? labelFor(e.relatedTarget) : null,
+                    e.composedPath().map((n) => {
+                      return labelFor(n);
+                    }),
+                    'non-capture']);
+        });
+      } else {
+        
+        node.addEventListener(event.type, (e) => {
+          log.push([id,
+                    labelFor(e.target),
+                    e.relatedTarget ? labelFor(e.relatedTarget) : null,
+                    e.composedPath().map((n) => {
+                      return labelFor(n);
+                    })]
+                  );
+        });
+      }
     }
   }
   target.dispatchEvent(event);
@@ -122,9 +149,13 @@ function dispatchUAEventWithLog(nodes, target, eventType, callback) {
 function assert_event_path_equals(actual, expected) {
   assert_equals(actual.length, expected.length);
   for (let i = 0; i < actual.length; ++i) {
+    assert_equals(actual[i].length, expected[i].length);
     assert_equals(actual[i][0], expected[i][0], 'currentTarget at ' + i + ' should be same');
     assert_equals(actual[i][1], expected[i][1], 'target at ' + i + ' should be same');
     assert_equals(actual[i][2], expected[i][2], 'relatedTarget at ' + i + ' should be same');
     assert_array_equals(actual[i][3], expected[i][3], 'composedPath at ' + i + ' should be same');
+    if (actual[i][4]) {
+      assert_equals(actual[i][4], expected[i][4], 'listener type should be same at ' + i);
+    }
   }
 }
