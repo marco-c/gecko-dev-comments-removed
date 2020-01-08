@@ -42,7 +42,7 @@ protected:
     kLargeDatasetSize = 1000000        
   };
   
-  nsresult WriteCache(nsISupports* aData, uint32_t aDataLen );
+  nsresult WriteCache(void* aData, uint32_t aDataLen);
   nsresult ReadCache(nsISupports** aData, uint32_t* aDataLen );
   
   

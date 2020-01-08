@@ -58,22 +58,32 @@ DataStruct::~DataStruct()
 }
 
 
+
 void
 DataStruct::SetData(nsISupports* aData, uint32_t aDataLen, bool aIsPrivateData)
 {
   
   
-  if (aDataLen > kLargeDatasetSize && !aIsPrivateData &&
+  
+  if (!aIsPrivateData && XRE_IsParentProcess()) {
+    void* data = nullptr;
+    uint32_t dataLen = 0;
+    nsPrimitiveHelpers::CreateDataFromPrimitive(mFlavor, aData, &data, &dataLen);
+
+    if (dataLen > kLargeDatasetSize) {
       
-      XRE_IsParentProcess()) {
-    
-    if (NS_SUCCEEDED(WriteCache(aData, aDataLen))) {
-      
-      mData = nullptr;
-      mDataLen = 0;
-      return;
+      if (NS_SUCCEEDED(WriteCache(data, dataLen))) {
+        free(data);
+        
+        mData = nullptr;
+        mDataLen = 0;
+        return;
+      }
+
+      NS_WARNING("Oh no, couldn't write data to the cache file");
     }
-    NS_WARNING("Oh no, couldn't write data to the cache file");
+
+    free(data);
   }
 
   if (mCacheFD) {
@@ -114,8 +124,12 @@ DataStruct::GetData(nsISupports** aData, uint32_t* aDataLen)
 
 
 nsresult
-DataStruct::WriteCache(nsISupports* aData, uint32_t aDataLen)
+DataStruct::WriteCache(void* aData, uint32_t aDataLen)
 {
+  MOZ_ASSERT(aData && aDataLen);
+  MOZ_ASSERT(aDataLen <= std::numeric_limits<int32_t>::max(),
+             "too large size for PR_Write");
+
   nsresult rv;
   if (!mCacheFD) {
     rv = NS_OpenAnonymousTemporaryFile(&mCacheFD);
@@ -127,16 +141,11 @@ DataStruct::WriteCache(nsISupports* aData, uint32_t aDataLen)
   }
 
   
-  void* buff = nullptr;
-  uint32_t dataLen = 0;
-  nsPrimitiveHelpers::CreateDataFromPrimitive(mFlavor, aData, &buff, &dataLen);
-  if (buff) {
-    int32_t written = PR_Write(mCacheFD, buff, dataLen);
-    free(buff);
-    if (written) {
-      return NS_OK;
-    }
+  int32_t written = PR_Write(mCacheFD, aData, aDataLen);
+  if (written == aDataLen) {
+    return NS_OK;
   }
+
   PR_Close(mCacheFD);
   mCacheFD = nullptr;
   return NS_ERROR_FAILURE;
