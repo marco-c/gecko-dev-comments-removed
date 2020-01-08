@@ -35,6 +35,10 @@ export default class OutlineFilter extends Component<Props, State> {
       
       e.preventDefault();
       this.props.updateFilter("");
+    } else if (e.key === "Enter") {
+      
+      
+      e.preventDefault();
     }
   };
 

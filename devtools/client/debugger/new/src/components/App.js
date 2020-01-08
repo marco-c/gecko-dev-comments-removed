@@ -242,6 +242,15 @@ class App extends Component<Props, State> {
     }));
   }
 
+  
+  
+  triggerEditorPaneResize() {
+    const editorPane = window.document.querySelector(".editor-pane");
+    if (editorPane) {
+      editorPane.dispatchEvent(new Event("resizeend"));
+    }
+  }
+
   renderLayout = () => {
     const { startPanelCollapsed, endPanelCollapsed } = this.props;
     const horizontal = this.isHorizontal();
@@ -282,6 +291,7 @@ class App extends Component<Props, State> {
           />
         }
         endPanelCollapsed={endPanelCollapsed}
+        onResizeEnd={this.triggerEditorPaneResize}
       />
     );
   };
