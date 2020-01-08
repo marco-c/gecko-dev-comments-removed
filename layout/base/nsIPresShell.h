@@ -1367,7 +1367,16 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsresult SetResolution(float aResolution) = 0;
+
+
+
+
+
+
+
+
+  virtual nsresult SetResolutionAndScaleTo(float aResolution,
+                                           nsAtom* aOrigin) = 0;
   float GetResolution() const { return mResolution.valueOr(1.0); }
   virtual float GetCumulativeResolution() = 0;
 
@@ -1388,24 +1397,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   bool IsResolutionSet() { return mResolution.isSome(); }
-
-  
-
-
-
-
-
-
-
-  virtual nsresult SetResolutionAndScaleTo(float aResolution,
-                                           nsAtom* aOrigin) = 0;
-
-  
-
-
-
-
-  virtual bool ScaleToResolution() const = 0;
 
   
 

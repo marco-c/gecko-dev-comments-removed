@@ -194,16 +194,8 @@ class PresShell final : public nsIPresShell,
 
   void SetIgnoreViewportScrolling(bool aIgnore) override;
 
-  nsresult SetResolution(float aResolution) override {
-    return SetResolutionImpl(aResolution,  false,
-                             nsGkAtoms::other);
-  }
   nsresult SetResolutionAndScaleTo(float aResolution,
-                                   nsAtom* aOrigin) override {
-    return SetResolutionImpl(aResolution,  true,
-                             aOrigin);
-  }
-  bool ScaleToResolution() const override;
+                                   nsAtom* aOrigin) override;
   bool IsResolutionUpdated() const override { return mResolutionUpdated; }
   void SetResolutionUpdated(bool aUpdated) override {
     mResolutionUpdated = aUpdated;
@@ -819,11 +811,6 @@ class PresShell final : public nsIPresShell,
   bool mNextPaintCompressed : 1;
 
   bool mHasCSSBackgroundColor : 1;
-
-  
-  
-  
-  bool mScaleToResolution : 1;
 
   
   bool mIsLastChromeOnlyEscapeKeyConsumed : 1;
