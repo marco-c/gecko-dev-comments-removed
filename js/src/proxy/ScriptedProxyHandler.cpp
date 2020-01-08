@@ -1445,9 +1445,7 @@ bool IsRevokedScriptedProxy(JSObject* obj) {
 
 
 static bool ProxyCreate(JSContext* cx, CallArgs& args, const char* callerName) {
-  if (args.length() < 2) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_MORE_ARGS_NEEDED, callerName, "1", "s");
+  if (!args.requireAtLeast(cx, callerName, 2)) {
     return false;
   }
 
