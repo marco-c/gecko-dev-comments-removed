@@ -165,16 +165,19 @@ ResetSimulatedInterrupt()
 #endif 
 
 JS_PUBLIC_DATA(arena_id_t) js::MallocArena;
+JS_PUBLIC_DATA(arena_id_t) js::ArrayBufferContentsArena;
 
 void
 js::InitMallocAllocator()
 {
     MallocArena = moz_create_arena();
+    ArrayBufferContentsArena = moz_create_arena();
 }
 
 void
 js::ShutDownMallocAllocator()
 {
+    
     
     
 }
