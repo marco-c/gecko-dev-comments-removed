@@ -123,13 +123,6 @@ struct InefficientNonFlatteningStringHashPolicy
     static bool match(const JSString* const& k, const Lookup& l);
 };
 
-struct CStringHashPolicy
-{
-    typedef const char* Lookup;
-    static HashNumber hash(const Lookup& l);
-    static bool match(const char* const& k, const Lookup& l);
-};
-
 
 
 
@@ -604,7 +597,7 @@ struct RuntimeSizes
     GCSizes gc;
 
     typedef js::HashMap<const char*, ScriptSourceInfo,
-                        js::CStringHashPolicy,
+                        mozilla::CStringHasher,
                         js::SystemAllocPolicy> ScriptSourcesHashMap;
 
     
@@ -901,7 +894,7 @@ struct RealmStats
     void* extra;            
 
     typedef js::HashMap<const char*, ClassInfo,
-                        js::CStringHashPolicy,
+                        mozilla::CStringHasher,
                         js::SystemAllocPolicy> ClassesHashMap;
 
     
