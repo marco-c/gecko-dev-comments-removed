@@ -41,10 +41,6 @@ public:
     return Nothing();
   }
 
-  gfx::Point GetDestOrigin() const {
-    return mDestOrigin;
-  }
-
   
   
   
@@ -67,7 +63,6 @@ protected:
   RefPtr<TextureSource> mTexture;
   RefPtr<TextureSource> mBigImageTexture;
   gfx::IntRect mPictureRect;
-  gfx::IntPoint mDestOrigin;
 };
 
 

@@ -61,25 +61,11 @@ public:
     }
   }
 
-  
-
-
-
-
-  void SetRepeatSize(const gfx::IntSize& aRepeatSize)
-  {
-    if (mRepeatSize == aRepeatSize) {
-      return;
-    }
-    mRepeatSize = aRepeatSize;
-    Mutated();
-  }
 
   ImageContainer* GetContainer() { return mContainer; }
   gfx::SamplingFilter GetSamplingFilter() { return mSamplingFilter; }
   const gfx::IntSize& GetScaleToSize() { return mScaleToSize; }
   ScaleMode GetScaleMode() { return mScaleMode; }
-  const gfx::IntSize& GetRepeatSize() { return mRepeatSize; }
 
   MOZ_LAYER_DECL_NAME("ImageLayer", TYPE_IMAGE)
 
@@ -98,18 +84,10 @@ protected:
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
   virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
 
-  
-
-
-  static gfx::IntPoint GetTopLeftTilePos(const gfx::IntRect& aDestRect,
-                                         const gfx::IntRect& aFillRect,
-                                         const gfx::IntSize& aRepeatSize);
-
   RefPtr<ImageContainer> mContainer;
   gfx::SamplingFilter mSamplingFilter;
   gfx::IntSize mScaleToSize;
   ScaleMode mScaleMode;
-  gfx::IntSize mRepeatSize;
   gfx::Matrix4x4 mEffectiveTransformForBuffer;
 };
 

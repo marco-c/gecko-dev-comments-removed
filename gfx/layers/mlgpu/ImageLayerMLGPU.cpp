@@ -78,23 +78,17 @@ ImageLayerMLGPU::IsContentOpaque()
 void
 ImageLayerMLGPU::SetRenderRegion(LayerIntRegion&& aRegion)
 {
-  LayerIntRect bounds;
-
   switch (mScaleMode) {
   case ScaleMode::STRETCH:
     
-    bounds = LayerIntRect(aRegion.GetBounds().X(), aRegion.GetBounds().Y(),
-                          mScaleToSize.width, mScaleToSize.height);
+    aRegion.AndWith(LayerIntRect(0, 0, mScaleToSize.width, mScaleToSize.height));
     break;
   default:
     
     MOZ_ASSERT(mScaleMode == ScaleMode::SCALE_NONE);
-    bounds = LayerIntRect(aRegion.GetBounds().X(), aRegion.GetBounds().Y(),
-                          mPictureRect.Width(), mPictureRect.Height());
+    aRegion.AndWith(LayerIntRect(0, 0, mPictureRect.Width(), mPictureRect.Height()));
     break;
   }
-
-  aRegion.AndWith(bounds);
   LayerMLGPU::SetRenderRegion(std::move(aRegion));
 }
 
@@ -108,43 +102,6 @@ ImageLayerMLGPU::CleanupResources()
   mTexture = nullptr;
   mBigImageTexture = nullptr;
   mHost = nullptr;
-}
-
-void
-ImageLayerMLGPU::AssignToView(FrameBuilder* aBuilder,
-                              RenderViewMLGPU* aView,
-                              Maybe<Polygon>&& aGeometry)
-{
-  LayerIntRegion visible = GetShadowVisibleRegion();
-
-  const IntRect destRect(IntPoint(0, 0), mHost->GetImageSize());
-  const IntRect fillRect = mVisibleRegion.GetBounds().ToUnknownRect();
-  const IntPoint topLeft = GetTopLeftTilePos(destRect, fillRect, mRepeatSize);
-
-  for (int x = topLeft.x; x < fillRect.XMost(); x += mRepeatSize.width) {
-    for (int y = topLeft.y; y < fillRect.YMost(); y += mRepeatSize.height) {
-      mDestOrigin = gfx::IntPoint(x - destRect.x, y - destRect.y);
-      LayerIntRegion region = LayerIntRect(x - destRect.x, y - destRect.y,
-                                           destRect.width, destRect.height);
-      SetShadowVisibleRegion(region);
-
-      
-      
-      
-      
-      Maybe<Polygon> geometry = aGeometry;
-      LayerMLGPU::AssignToView(aBuilder, aView, std::move(geometry));
-
-      if (!mRepeatSize.height) {
-      break;
-     }
-    }
-    if (!mRepeatSize.width) {
-      break;
-    }
-  }
-
-  SetShadowVisibleRegion(visible);
 }
 
 void

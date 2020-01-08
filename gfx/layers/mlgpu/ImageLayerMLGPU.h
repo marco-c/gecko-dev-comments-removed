@@ -43,12 +43,6 @@ protected:
   ~ImageLayerMLGPU() override;
 
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  
-  void AssignToView(FrameBuilder* aBuilder,
-                    RenderViewMLGPU* aView,
-                    Maybe<gfx::Polygon>&& aGeometry) override;
-
   void CleanupResources();
 
 private:
