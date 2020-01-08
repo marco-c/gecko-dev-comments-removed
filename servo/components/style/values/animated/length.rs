@@ -4,11 +4,11 @@
 
 
 
+use super::{Animate, Procedure, ToAnimatedValue, ToAnimatedZero};
 use values::computed::MaxLength as ComputedMaxLength;
 use values::computed::MozLength as ComputedMozLength;
 use values::computed::Percentage;
 use values::computed::length::{Length, CalcLengthOrPercentage, LengthOrPercentageOrNone, LengthOrPercentageOrAuto};
-use super::{Animate, Procedure, ToAnimatedValue, ToAnimatedZero};
 
 
 impl Animate for CalcLengthOrPercentage {
