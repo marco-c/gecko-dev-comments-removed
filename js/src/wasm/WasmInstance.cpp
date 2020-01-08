@@ -1143,6 +1143,36 @@ bool Instance::memoryAccessInGuardRegion(uint8_t* addr,
          lastByteOffset < memoryMappedSize();
 }
 
+bool Instance::memoryAccessInBounds(uint8_t* addr,
+                                    unsigned numBytes) const {
+  MOZ_ASSERT(numBytes > 0 && numBytes <= sizeof(double));
+
+  if (!metadata().usesMemory()) {
+    return false;
+  }
+
+  uint8_t* base = memoryBase().unwrap();
+  if (addr < base) {
+    return false;
+  }
+
+  uint32_t length = memory()->volatileMemoryLength();
+  if (addr >= base + length) {
+    return false;
+  }
+
+  
+  
+  
+  
+  size_t lastByteOffset = addr - base + (numBytes - 1);
+  if (lastByteOffset >= length) {
+    return false;
+  }
+
+  return true;
+}
+
 void Instance::tracePrivate(JSTracer* trc) {
   
   

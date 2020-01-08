@@ -5907,6 +5907,8 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
       ScratchRegisterScope scratch(asMasm());
       ma_add(memoryBase, ptr, scratch);
 
+      
+      
       load = ma_vldr(Operand(Address(scratch, 0)).toVFPAddr(), output.fpu());
       append(access, load.getOffset());
     } else {
@@ -5961,6 +5963,8 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
       MOZ_ASSERT((byteSize == 4) == val.isSingle());
       ma_add(memoryBase, ptr, scratch);
 
+      
+      
       store = ma_vstr(val, Operand(Address(scratch, 0)).toVFPAddr());
       append(access, store.getOffset());
     } else {
