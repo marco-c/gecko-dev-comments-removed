@@ -7,6 +7,7 @@ package org.mozilla.gecko.tests;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.PowerManager;
 import android.test.ActivityInstrumentationTestCase2;
 import android.text.TextUtils;
@@ -27,6 +28,7 @@ import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.firstrun.OnboardingHelper;
 import org.mozilla.gecko.updater.UpdateServiceHelper;
 
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
@@ -197,6 +199,23 @@ public abstract class BaseRobocopTest extends ActivityInstrumentationTestCase2<A
         }
     }
 
+    private void generateCoverageReport(String coverageFilePath) {
+        Log.i(LOGTAG, "Starting dump of code coverage report to " + coverageFilePath + ".");
+        java.io.File coverageFile = new java.io.File(coverageFilePath);
+        try {
+            Class<?> emmaRTClass = Class.forName("com.vladium.emma.rt.RT");
+            Method dumpCoverageMethod = emmaRTClass.getMethod("dumpCoverageData",
+                    coverageFile.getClass(), boolean.class, boolean.class);
+
+            dumpCoverageMethod.invoke(null, coverageFile, false, false);
+            Log.i(LOGTAG, "Code coverage report dump finished.");
+        } catch (ClassNotFoundException e) {
+            Log.e(LOGTAG, "Is JaCoCo jar on classpath?", e);
+        } catch (Exception e) {
+            Log.e(LOGTAG, "Failed to generate coverage report.", e);
+        }
+    }
+
     @Override
     public void tearDown() throws Exception {
         try {
@@ -210,9 +229,16 @@ public abstract class BaseRobocopTest extends ActivityInstrumentationTestCase2<A
             
             
             
-            final String quitAndFinish = FennecInstrumentationTestRunner.getFennecArguments()
-                    .getString("quit_and_finish"); 
+            final Bundle arguments = FennecInstrumentationTestRunner.getFennecArguments();
+            
+            final String quitAndFinish = arguments.getString("quit_and_finish");
+            final String coverage = arguments.getString("coverage");
+            final String coverageFile = arguments.getString("coverageFile");
             if ("1".equals(quitAndFinish)) {
+                
+                if ("true".equals(coverage)) {
+                    generateCoverageReport(coverageFile);
+                }
                 
                 Log.i(LOGTAG, "Requesting force quit.");
                 mActions.sendGlobalEvent("Robocop:Quit", null);
