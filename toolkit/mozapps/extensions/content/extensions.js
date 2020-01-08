@@ -2380,6 +2380,13 @@ var gListView = {
     this.node.setAttribute("type", aType);
     this.showEmptyNotice(false);
 
+    try {
+      document.getElementById("list-view-heading-name")
+        .textContent = gStrings.ext.GetStringFromName(`listHeading.${aType}`);
+    } catch (e) {
+      
+    }
+
     this._listBox.textContent = "";
 
     if (aType == "plugin") {
