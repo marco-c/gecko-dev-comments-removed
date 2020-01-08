@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/Maybe.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/Types.h"
 #include "mozilla/Utf8.h"
 
@@ -14,66 +16,24 @@ MFBT_API bool
 mozilla::IsValidUtf8(const void* aCodeUnits, size_t aCount)
 {
   const auto* s = static_cast<const unsigned char*>(aCodeUnits);
-  const auto* limit = s + aCount;
+  const auto* const limit = s + aCount;
 
   while (s < limit) {
-    uint32_t n = *s++;
+    unsigned char c = *s++;
 
     
     
-    if ((n & 0x80) == 0) {
+    if (IsAscii(c)) {
       continue;
     }
 
-    
-    
-    
-    uint_fast8_t remaining;
-    uint32_t min;
-    if ((n & 0xE0) == 0xC0) {
-      remaining = 1;
-      min = 0x80;
-      n &= 0x1F;
-    } else if ((n & 0xF0) == 0xE0) {
-      remaining = 2;
-      min = 0x800;
-      n &= 0x0F;
-    } else if ((n & 0xF8) == 0xF0) {
-      remaining = 3;
-      min = 0x10000;
-      n &= 0x07;
-    } else {
-      
-      
+    Maybe<char32_t> maybeCodePoint =
+      DecodeOneUtf8CodePoint(Utf8Unit(c), &s, limit);
+    if (maybeCodePoint.isNothing()) {
       return false;
     }
-
-    
-    
-    if (s + remaining > limit) {
-      return false;
-    }
-
-    for (uint_fast8_t i = 0; i < remaining; i++) {
-      
-      
-      if ((s[i] & 0xC0) != 0x80) {
-        return false;
-      }
-
-      
-      
-      n = (n << 6) | (s[i] & 0x3F);
-    }
-
-    
-    
-    if (n < min || (0xD800 <= n && n < 0xE000) || n >= 0x110000) {
-      return false;
-    }
-
-    s += remaining;
   }
 
+  MOZ_ASSERT(s == limit);
   return true;
 }
