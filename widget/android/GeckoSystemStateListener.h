@@ -3,8 +3,8 @@
 
 
 
-#ifndef GeckoInputDeviceListener_h
-#define GeckoInputDeviceListener_h
+#ifndef GeckoSystemStateListener_h
+#define GeckoSystemStateListener_h
 
 #include "GeneratedJNINatives.h"
 #include "nsIDocument.h"
@@ -15,10 +15,10 @@
 
 namespace mozilla {
 
-class GeckoInputDeviceListener final
-    : public java::GeckoInputDeviceListener::Natives<GeckoInputDeviceListener>
+class GeckoSystemStateListener final
+    : public java::GeckoSystemStateListener::Natives<GeckoSystemStateListener>
 {
-    GeckoInputDeviceListener() = delete;
+    GeckoSystemStateListener() = delete;
 
 public:
     static void
