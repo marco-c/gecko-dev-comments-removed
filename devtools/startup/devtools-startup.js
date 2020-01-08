@@ -841,6 +841,18 @@ DevToolsStartup.prototype = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
   sendEntryPointTelemetry(reason, key = "") {
     if (!reason) {
       return;

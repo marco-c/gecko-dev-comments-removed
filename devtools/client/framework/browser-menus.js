@@ -18,6 +18,9 @@ const MENUS_L10N = new LocalizationHelper("devtools/client/locales/menus.propert
 
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
+loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
+
+let telemetry = null;
 
 
 
@@ -78,6 +81,7 @@ function createToolMenuElements(toolDefinition, doc) {
   const oncommand = function(id, event) {
     const window = event.target.ownerDocument.defaultView;
     gDevToolsBrowser.selectToolCommand(window.gBrowser, id, Cu.now());
+    sendEntryPointTelemetry();
   }.bind(null, id);
 
   const menuitem = createMenuItem({
@@ -94,6 +98,26 @@ function createToolMenuElements(toolDefinition, doc) {
   return {
     menuitem
   };
+}
+
+
+
+
+
+
+
+function sendEntryPointTelemetry() {
+  if (!telemetry) {
+    telemetry = new Telemetry();
+  }
+
+  telemetry.addEventProperty(
+    "devtools.main", "open", "tools", null, "shortcut", ""
+  );
+
+  telemetry.addEventProperty(
+    "devtools.main", "open", "tools", null, "entrypoint", "SystemMenu"
+  );
 }
 
 
