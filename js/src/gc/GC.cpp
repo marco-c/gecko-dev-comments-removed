@@ -2464,13 +2464,21 @@ RelocateArena(Arena* arena, SliceBudget& sliceBudget)
 }
 
 static inline bool
+CanProtectArenas()
+{
+    
+    
+    return SystemPageSize() <= ArenaSize;
+}
+
+static inline bool
 ShouldProtectRelocatedArenas(JS::gcreason::Reason reason)
 {
     
     
     
 #ifdef DEBUG
-    return reason == JS::gcreason::DEBUG_GC;
+    return reason == JS::gcreason::DEBUG_GC && CanProtectArenas();
 #else
     return false;
 #endif
