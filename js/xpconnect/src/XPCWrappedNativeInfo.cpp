@@ -238,12 +238,7 @@ XPCNativeInterface::NewInstance(const nsXPTInterfaceInfo* aInfo)
     
     
 
-    if (!aInfo->IsScriptable()) {
-        return nullptr;
-    }
-
-    bool mainProcessScriptableOnly = aInfo->IsMainProcessScriptableOnly();
-    if (mainProcessScriptableOnly && !XRE_IsParentProcess()) {
+    if (aInfo->IsMainProcessScriptableOnly() && !XRE_IsParentProcess()) {
         nsCOMPtr<nsIConsoleService> console(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
         if (console) {
             const char* intfNameChars = aInfo->Name();

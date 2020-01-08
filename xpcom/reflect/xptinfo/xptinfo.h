@@ -79,7 +79,6 @@ struct nsXPTInterfaceInfo
 
 
   
-  bool IsScriptable() const { return true; } 
   bool IsFunction() const { return mFunction; }
   bool IsBuiltinClass() const { return mBuiltinClass; }
   bool IsMainProcessScriptableOnly() const { return mMainProcessScriptableOnly; }

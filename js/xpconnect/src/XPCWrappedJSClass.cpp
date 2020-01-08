@@ -107,7 +107,7 @@ private:
 
 
 already_AddRefed<nsXPCWrappedJSClass>
-nsXPCWrappedJSClass::GetNewOrUsed(JSContext* cx, REFNSIID aIID, bool allowNonScriptable)
+nsXPCWrappedJSClass::GetNewOrUsed(JSContext* cx, REFNSIID aIID)
 {
     XPCJSRuntime* xpcrt = nsXPConnect::GetRuntimeInstance();
     IID2WrappedJSClassMap* map = xpcrt->GetWrappedJSClassMap();
@@ -116,11 +116,7 @@ nsXPCWrappedJSClass::GetNewOrUsed(JSContext* cx, REFNSIID aIID, bool allowNonScr
     if (!clasp) {
         const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
         if (info) {
-            bool canScript = info->IsScriptable();
-            bool isBuiltin = info->IsBuiltinClass();
-            if ((canScript || allowNonScriptable) && !isBuiltin &&
-                nsXPConnect::IsISupportsDescendant(info))
-            {
+            if (!info->IsBuiltinClass() && nsXPConnect::IsISupportsDescendant(info)) {
                 clasp = new nsXPCWrappedJSClass(cx, aIID, info);
                 if (!clasp->mDescriptors) {
                     clasp = nullptr;
@@ -220,18 +216,9 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
     }
 
     
-    
-    
-    
-    
-    
     if (!aIID.Equals(NS_GET_IID(nsISupports))) {
-        bool allowNonScriptable = mozilla::jsipc::IsWrappedCPOW(jsobj);
-
         const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
-        if (!info || info->IsBuiltinClass() ||
-            (!info->IsScriptable() && !allowNonScriptable))
-        {
+        if (!info || info->IsBuiltinClass()) {
             return nullptr;
         }
     }
