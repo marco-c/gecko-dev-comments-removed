@@ -1443,31 +1443,6 @@ GeckoDriver.prototype.setWindowRect = async function(cmd) {
   await this._handleUserPrompts();
 
   let {x, y, width, height} = cmd.parameters;
-  let origRect = this.curBrowser.rect;
-
-  
-  async function resizeWindow(width, height) {
-    await new Promise(resolve => {
-      win.addEventListener("resize", resolve, {once: true});
-      win.resizeTo(width, height);
-    });
-    await new IdlePromise(win);
-  }
-
-  
-  
-  
-  const windowResizeChange = async () => {
-    return new PollPromise((resolve, reject) => {
-      let curRect = this.curBrowser.rect;
-      if (curRect.width != origRect.width &&
-          curRect.height != origRect.height) {
-        resolve();
-      } else {
-        reject();
-      }
-    });
-  };
 
   switch (WindowState.from(win.windowState)) {
     case WindowState.Fullscreen:
@@ -1483,10 +1458,22 @@ GeckoDriver.prototype.setWindowRect = async function(cmd) {
     assert.positiveInteger(height);
     assert.positiveInteger(width);
 
-    if (win.outerWidth != width || win.outerHeight != height) {
-      await resizeWindow(width, height);
-      await windowResizeChange();
-    }
+    let debounce = new DebounceCallback(() => {
+      win.dispatchEvent(new win.CustomEvent("resizeEnd"));
+    });
+
+    await new TimedPromise(async resolve => {
+      if (win.outerWidth == width && win.outerHeight == height) {
+        resolve();
+        return;
+      }
+
+      win.addEventListener("resize", debounce);
+      win.addEventListener("resizeEnd", resolve, {once: true});
+      win.resizeTo(width, height);
+    }, {timeout: 5000});
+
+    win.removeEventListener("resize", debounce);
   }
 
   if (x != null && y != null) {
