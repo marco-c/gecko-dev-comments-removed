@@ -274,6 +274,7 @@ public:
   }
 
   
+  
   template<typename KeyInput, typename ValueInput>
   MOZ_MUST_USE bool putNew(KeyInput&& aKey, ValueInput&& aValue)
   {
@@ -281,6 +282,19 @@ public:
       aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   template<typename KeyInput, typename ValueInput>
   void putNewInfallible(KeyInput&& aKey, ValueInput&& aValue)
@@ -570,6 +584,7 @@ public:
   }
 
   
+  
   template<typename U>
   MOZ_MUST_USE bool putNew(U&& aU)
   {
@@ -583,6 +598,19 @@ public:
     return mImpl.putNew(aLookup, std::forward<U>(aU));
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   template<typename U>
   void putNewInfallible(const Lookup& aLookup, U&& aU)
@@ -1777,9 +1805,6 @@ private:
   
   
   
-  
-  
-  
   Entry& findFreeEntry(HashNumber aKeyHash)
   {
     MOZ_ASSERT(!(aKeyHash & sCollisionBit));
@@ -1800,7 +1825,6 @@ private:
     DoubleHash dh = hash2(aKeyHash);
 
     while (true) {
-      MOZ_ASSERT(!entry->isRemoved());
       entry->setCollision();
 
       h1 = applyDoubleHash(h1, dh);
