@@ -49,6 +49,7 @@ enum class EditSubAction : int32_t;
 struct PropItem;
 template<class T> class OwningNonNull;
 namespace dom {
+class Blob;
 class DocumentFragment;
 class Event;
 class MouseEvent;
@@ -1933,6 +1934,18 @@ protected:
                                       nsIContent& aParentContent,
                                       const nsAString& aAnonClass,
                                       bool aIsCreatedHidden);
+
+  
+
+
+
+
+
+
+
+  static nsresult SlurpBlob(dom::Blob* aBlob,
+                            nsPIDOMWindowOuter* aWindow,
+                            BlobReader* aBlobReader);
 protected:
   RefPtr<TypeInState> mTypeInState;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
