@@ -536,7 +536,6 @@ public:
   
   
   nsPoint mDestination;
-  nsPoint mScrollPosAtLastPaint;
 
   
   
