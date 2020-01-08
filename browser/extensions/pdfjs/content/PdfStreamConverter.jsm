@@ -121,6 +121,18 @@ function getLocalizedString(strings, id, property) {
   return id;
 }
 
+function isValidMatchesCount(data) {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  const {current, total} = data;
+  if ((typeof total !== "number" || total < 0) ||
+      (typeof current !== "number" || current < 0 || current > total)) {
+    return false;
+  }
+  return true;
+}
+
 
 function PdfDataListener(length) {
   this.length = length; 
@@ -434,10 +446,30 @@ class ChromeActions {
         (findPreviousType !== "undefined" && findPreviousType !== "boolean")) {
       return;
     }
+    
+    
+    let matchesCount = null;
+    if (isValidMatchesCount(data.matchesCount)) {
+      matchesCount = data.matchesCount;
+    }
 
     var winmm = this.domWindow.docShell.messageManager;
+    winmm.sendAsyncMessage("PDFJS:Parent:updateControlState", {
+      result, findPrevious, matchesCount,
+    });
+  }
 
-    winmm.sendAsyncMessage("PDFJS:Parent:updateControlState", data);
+  updateFindMatchesCount(data) {
+    if (!this.supportsIntegratedFind()) {
+      return;
+    }
+    
+    if (!isValidMatchesCount(data)) {
+      return;
+    }
+
+    const winmm = this.domWindow.docShell.messageManager;
+    winmm.sendAsyncMessage("PDFJS:Parent:updateMatchesCount", data);
   }
 
   setPreferences(prefs, sendResponse) {
