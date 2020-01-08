@@ -28,9 +28,8 @@ class ConvolverNodeEngine final : public AudioNodeEngine
 {
   typedef PlayingRefChangeHandler PlayingRefChanged;
 public:
-  ConvolverNodeEngine(AudioNode* aNode, bool aNormalize, uint64_t aWindowID)
+  ConvolverNodeEngine(AudioNode* aNode, bool aNormalize)
     : AudioNodeEngine(aNode)
-    , mWindowID(aWindowID)
     , mUseBackgroundThreads(!aNode->Context()->IsOffline())
     , mNormalize(aNormalize)
   {
@@ -141,16 +140,8 @@ public:
       aBuffer.ChannelCount() == 1 ? RightConvolverMode::Direct
       : RightConvolverMode::Always;
 
-    bool allocationFailure = false;
     mReverb = new WebCore::Reverb(aBuffer, MaxFFTSize, mUseBackgroundThreads,
-                                  mNormalize, mSampleRate, &allocationFailure);
-    if (allocationFailure) {
-      
-      
-      mReverb = nullptr;
-      WebAudioUtils::LogToDeveloperConsole(mWindowID,
-                                           "ConvolverNodeAllocationError");
-    }
+                                  mNormalize, mSampleRate);
   }
 
   void AllocateReverbInput(const AudioBlock& aInput,
@@ -205,7 +196,6 @@ private:
   
   AudioBlock mReverbInput;
   nsAutoPtr<WebCore::Reverb> mReverb;
-  uint64_t mWindowID;
   
   
   
@@ -407,8 +397,7 @@ ConvolverNode::ConvolverNode(AudioContext* aContext)
               ChannelInterpretation::Speakers)
   , mNormalize(true)
 {
-  uint64_t windowID = aContext->GetParentObject()->WindowID();
-  ConvolverNodeEngine* engine = new ConvolverNodeEngine(this, mNormalize, windowID);
+  ConvolverNodeEngine* engine = new ConvolverNodeEngine(this, mNormalize);
   mStream = AudioNodeStream::Create(aContext, engine,
                                     AudioNodeStream::NO_STREAM_FLAGS,
                                     aContext->Graph());
