@@ -110,6 +110,18 @@ HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
   return false;
 }
 
+
+
+static bool
+AlwaysForwardMessage(const IPC::Message& aMessage)
+{
+  IPC::Message::msgid_t type = aMessage.type();
+
+  
+  
+  return type == dom::PBrowser::Msg_Destroy__ID;
+}
+
 static bool gMainThreadIsWaitingForIPDLReply = false;
 
 bool
@@ -154,7 +166,7 @@ public:
   }
 
   static void ForwardMessageAsync(MiddlemanProtocol* aProtocol, Message* aMessage) {
-    if (ActiveChildIsRecording()) {
+    if (ActiveChildIsRecording() || AlwaysForwardMessage(*aMessage)) {
       PrintSpew("ForwardAsyncMsg %s %s %d\n",
                 (aProtocol->mSide == ipc::ChildSide) ? "Child" : "Parent",
                 IPC::StringFromIPCMessageType(aMessage->type()),
