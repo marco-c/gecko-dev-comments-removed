@@ -403,6 +403,7 @@ class RemoteAutomation(Automation):
                         top = self.device.get_top_activity(timeout=60)
             
             self.read_stdout()
+            print("wait for %s complete; top activity=%s" % (self.procName, top))
             return status
 
         def kill(self, stagedShutdown=False):
