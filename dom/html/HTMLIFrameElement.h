@@ -223,7 +223,7 @@ private:
 
   static const DOMTokenListSupportedToken sSupportedSandboxTokens[];
 
-  void RefreshFeaturePolicy();
+  void RefreshFeaturePolicy(bool aParseAllowAttribute);
 
   
   
