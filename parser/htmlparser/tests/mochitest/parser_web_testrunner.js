@@ -15,6 +15,10 @@
 
 
 
+
+
+
+
 var functionsToRunAsync = [];
 
 window.addEventListener("message", function(event) {
@@ -87,6 +91,7 @@ function makeFragmentTestChecker(input,
       context = document.createElementNS("http://www.w3.org/1999/xhtml",
                                          fragment);
     }
+    
     context.innerHTML = input;
     var domAsString = fragmentToTestOutput(context);
     is(domAsString, expected, "HTML5 expected success. " + new Date());
@@ -99,7 +104,6 @@ function makeFragmentTestChecker(input,
 
 var testcases;
 function nextTest(testframe) {
-  var test = 0;
   var {done, value} = testcases.next();
   if (done) {
     SimpleTest.finish();
