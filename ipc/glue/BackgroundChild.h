@@ -21,6 +21,12 @@ class ContentParent;
 
 }  
 
+namespace net {
+
+class SocketProcessImpl;
+
+}  
+
 namespace ipc {
 
 class PBackgroundChild;
@@ -43,9 +49,14 @@ class PBackgroundChild;
 
 
 
+
+
+
+
 class BackgroundChild final {
   friend class mozilla::dom::ContentChild;
   friend class mozilla::dom::ContentParent;
+  friend class mozilla::net::SocketProcessImpl;
 
   typedef mozilla::ipc::Transport Transport;
 
@@ -59,6 +70,10 @@ class BackgroundChild final {
 
   
   static void CloseForCurrentThread();
+
+  
+  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread(
+      nsIEventTarget* aMainEventTarget = nullptr);
 
  private:
   

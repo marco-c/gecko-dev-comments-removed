@@ -27,6 +27,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/ipc/ProtocolTypes.h"
+#include "mozilla/net/SocketProcessBridgeChild.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
@@ -43,6 +44,8 @@
 #include "nsXULAppAPI.h"
 #include "nsXPCOMPrivate.h"
 #include "prthread.h"
+
+#include <functional>
 
 #ifdef RELEASE_OR_BETA
 #define THREADSAFETY_ASSERT MOZ_ASSERT
@@ -62,6 +65,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
+using namespace mozilla::net;
 
 namespace {
 
@@ -72,6 +76,10 @@ class ChildImpl;
 
 
 void AssertIsInMainProcess() { MOZ_ASSERT(XRE_IsParentProcess()); }
+
+void AssertIsInMainOrSocketProcess() {
+  MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess());
+}
 
 void AssertIsOnMainThread() { THREADSAFETY_ASSERT(NS_IsMainThread()); }
 
@@ -101,7 +109,7 @@ class ParentImpl final : public BackgroundParentImpl {
 
     TimerCallbackClosure(nsIThread* aThread, nsTArray<ParentImpl*>* aLiveActors)
         : mThread(aThread), mLiveActors(aLiveActors) {
-      AssertIsInMainProcess();
+      AssertIsInMainOrSocketProcess();
       AssertIsOnMainThread();
       MOZ_ASSERT(aThread);
       MOZ_ASSERT(aLiveActors);
@@ -220,13 +228,12 @@ class ParentImpl final : public BackgroundParentImpl {
         mLiveActorArray(nullptr),
         mIsOtherProcessActor(true),
         mActorDestroyed(false) {
-    AssertIsInMainProcess();
+    MOZ_ASSERT((XRE_IsParentProcess() && aContent) || XRE_IsSocketProcess());
     AssertIsOnMainThread();
-    MOZ_ASSERT(aContent);
   }
 
   ~ParentImpl() {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
     MOZ_ASSERT(!mContent);
   }
@@ -234,7 +241,7 @@ class ParentImpl final : public BackgroundParentImpl {
   void MainThreadActorDestroy();
 
   void SetLiveActorArray(nsTArray<ParentImpl*>* aLiveActorArray) {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnBackgroundThread();
     MOZ_ASSERT(aLiveActorArray);
     MOZ_ASSERT(!aLiveActorArray->Contains(this));
@@ -270,6 +277,7 @@ class ChildImpl final : public BackgroundChildImpl {
   
   
   static unsigned int sThreadLocalIndex;
+  static unsigned int sThreadLocalIndexForSocketProcess;
 
   struct ThreadLocalInfo {
     ThreadLocalInfo()
@@ -292,6 +300,8 @@ class ChildImpl final : public BackgroundChildImpl {
   
   static ThreadLocalInfo* sMainThreadInfo;
 
+  static ThreadLocalInfo* sMainThreadInfoForSocketProcess;
+
   
   
   static bool sShutdownHasStarted;
@@ -307,6 +317,8 @@ class ChildImpl final : public BackgroundChildImpl {
 
  public:
   static void Shutdown();
+
+  static void ShutdownWithThreadLocalIndex(unsigned int aThreadLocalIndex);
 
   void AssertIsOnOwningThread() {
     THREADSAFETY_ASSERT(mOwningEventTarget);
@@ -358,11 +370,21 @@ class ChildImpl final : public BackgroundChildImpl {
   static PBackgroundChild* GetForCurrentThread();
 
   
+  static PBackgroundChild* GetFromThreadInfo(nsIEventTarget* aMainEventTarget,
+                                             ThreadLocalInfo* aThreadLocalInfo);
+
+  
   static PBackgroundChild* GetOrCreateForCurrentThread(
       nsIEventTarget* aMainEventTarget);
 
   
+  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread(
+      nsIEventTarget* aMainEventTarget);
+
+  
   static void CloseForCurrentThread();
+
+  static void CloseThreadWithIndex(unsigned int aThreadLocalIndex);
 
   
   static BackgroundChildImpl::ThreadLocal* GetThreadLocalForCurrentThread();
@@ -400,7 +422,7 @@ class ParentImpl::RequestMessageLoopRunnable final : public Runnable {
       : Runnable("Background::ParentImpl::RequestMessageLoopRunnable"),
         mTargetThread(aTargetThread),
         mMessageLoop(nullptr) {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
     MOZ_ASSERT(aTargetThread);
   }
@@ -415,7 +437,7 @@ class ParentImpl::ShutdownBackgroundThreadRunnable final : public Runnable {
  public:
   ShutdownBackgroundThreadRunnable()
       : Runnable("Background::ParentImpl::ShutdownBackgroundThreadRunnable") {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
   }
 
@@ -433,7 +455,7 @@ class ParentImpl::ForceCloseBackgroundActorsRunnable final : public Runnable {
       nsTArray<ParentImpl*>* aActorArray)
       : Runnable("Background::ParentImpl::ForceCloseBackgroundActorsRunnable"),
         mActorArray(aActorArray) {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
     MOZ_ASSERT(aActorArray);
   }
@@ -457,14 +479,14 @@ class ParentImpl::ConnectActorRunnable final : public Runnable {
         mActor(aActor),
         mEndpoint(std::move(aEndpoint)),
         mLiveActorArray(aLiveActorArray) {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
     MOZ_ASSERT(mEndpoint.IsValid());
     MOZ_ASSERT(aLiveActorArray);
   }
 
  private:
-  ~ConnectActorRunnable() { AssertIsInMainProcess(); }
+  ~ConnectActorRunnable() { AssertIsInMainOrSocketProcess(); }
 
   NS_DECL_NSIRUNNABLE
 };
@@ -482,7 +504,7 @@ class ParentImpl::CreateActorHelper final : public Runnable {
         mMonitor("CreateActorHelper::mMonitor"),
         mMainThreadResultCode(NS_OK),
         mWaiting(true) {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsNotOnMainThread();
   }
 
@@ -491,7 +513,7 @@ class ParentImpl::CreateActorHelper final : public Runnable {
                               nsCOMPtr<nsIThread>& aThread);
 
  private:
-  ~CreateActorHelper() { AssertIsInMainProcess(); }
+  ~CreateActorHelper() { AssertIsInMainOrSocketProcess(); }
 
   nsresult RunOnMainThread();
 
@@ -532,10 +554,12 @@ class ChildImpl::SendInitBackgroundRunnable final : public CancelableRunnable {
   Endpoint<PBackgroundParent> mParent;
   mozilla::Mutex mMutex;
   bool mSentInitBackground;
+  std::function<void(Endpoint<PBackgroundParent>&& aParent)> mSendInitfunc;
 
  public:
   static already_AddRefed<SendInitBackgroundRunnable> Create(
-      Endpoint<PBackgroundParent>&& aParent);
+      Endpoint<PBackgroundParent>&& aParent,
+      std::function<void(Endpoint<PBackgroundParent>&& aParent)>&& aFunc);
 
   void ClearEventTarget() {
     mWorkerRef = nullptr;
@@ -545,12 +569,15 @@ class ChildImpl::SendInitBackgroundRunnable final : public CancelableRunnable {
   }
 
  private:
-  explicit SendInitBackgroundRunnable(Endpoint<PBackgroundParent>&& aParent)
+  explicit SendInitBackgroundRunnable(
+      Endpoint<PBackgroundParent>&& aParent,
+      std::function<void(Endpoint<PBackgroundParent>&& aParent)>&& aFunc)
       : CancelableRunnable("Background::ChildImpl::SendInitBackgroundRunnable"),
         mOwningEventTarget(GetCurrentThreadSerialEventTarget()),
         mParent(std::move(aParent)),
         mMutex("SendInitBackgroundRunnable::mMutex"),
-        mSentInitBackground(false) {}
+        mSentInitBackground(false),
+        mSendInitfunc(std::move(aFunc)) {}
 
   ~SendInitBackgroundRunnable() {}
 
@@ -632,6 +659,12 @@ PBackgroundChild* BackgroundChild::GetOrCreateForCurrentThread(
 }
 
 
+PBackgroundChild* BackgroundChild::GetOrCreateSocketActorForCurrentThread(
+    nsIEventTarget* aMainEventTarget) {
+  return ChildImpl::GetOrCreateSocketActorForCurrentThread(aMainEventTarget);
+}
+
+
 void BackgroundChild::CloseForCurrentThread() {
   ChildImpl::CloseForCurrentThread();
 }
@@ -671,6 +704,8 @@ bool ParentImpl::sShutdownHasStarted = false;
 
 
 unsigned int ChildImpl::sThreadLocalIndex = kBadThreadLocalIndex;
+unsigned int ChildImpl::sThreadLocalIndexForSocketProcess =
+    kBadThreadLocalIndex;
 
 bool ChildImpl::sShutdownHasStarted = false;
 
@@ -776,7 +811,7 @@ bool ParentImpl::GetLiveActorArray(
 
 bool ParentImpl::Alloc(ContentParent* aContent,
                        Endpoint<PBackgroundParent>&& aEndpoint) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(aEndpoint.IsValid());
 
@@ -867,7 +902,7 @@ already_AddRefed<ChildImpl> ParentImpl::CreateActorForSameProcess(
 
 
 bool ParentImpl::CreateBackgroundThread() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(!sBackgroundThread);
   MOZ_ASSERT(!sLiveActorsForBackgroundThread);
@@ -931,7 +966,7 @@ bool ParentImpl::CreateBackgroundThread() {
 
 
 void ParentImpl::ShutdownBackgroundThread() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(sShutdownHasStarted);
   MOZ_ASSERT_IF(!sBackgroundThread, !sLiveActorCount);
@@ -976,7 +1011,7 @@ void ParentImpl::ShutdownBackgroundThread() {
 
 
 void ParentImpl::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(sShutdownHasStarted);
   MOZ_ASSERT(sLiveActorCount);
@@ -997,7 +1032,7 @@ void ParentImpl::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure) {
 void ParentImpl::Destroy() {
   
 
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
 
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
       NewNonOwningRunnableMethod("ParentImpl::MainThreadActorDestroy", this,
@@ -1005,9 +1040,9 @@ void ParentImpl::Destroy() {
 }
 
 void ParentImpl::MainThreadActorDestroy() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
-  MOZ_ASSERT_IF(mIsOtherProcessActor, mContent);
+  MOZ_ASSERT_IF(mIsOtherProcessActor && XRE_IsParentProcess(), mContent);
   MOZ_ASSERT_IF(!mIsOtherProcessActor, !mContent);
 
   mContent = nullptr;
@@ -1020,7 +1055,7 @@ void ParentImpl::MainThreadActorDestroy() {
 }
 
 void ParentImpl::ActorDestroy(ActorDestroyReason aWhy) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mActorDestroyed);
   MOZ_ASSERT_IF(mIsOtherProcessActor, mLiveActorArray);
@@ -1051,7 +1086,7 @@ NS_IMPL_ISUPPORTS(ParentImpl::ShutdownObserver, nsIObserver)
 NS_IMETHODIMP
 ParentImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
                                       const char16_t* aData) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(!sShutdownHasStarted);
   MOZ_ASSERT(!strcmp(aTopic, NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID));
@@ -1060,7 +1095,11 @@ ParentImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
 
   
   
-  ChildImpl::Shutdown();
+  
+  
+  if (!XRE_IsSocketProcess()) {
+    ChildImpl::Shutdown();
+  }
 
   ShutdownBackgroundThread();
 
@@ -1069,7 +1108,7 @@ ParentImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
 
 NS_IMETHODIMP
 ParentImpl::RequestMessageLoopRunnable::Run() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   MOZ_ASSERT(mTargetThread);
 
   if (NS_IsMainThread()) {
@@ -1115,7 +1154,7 @@ ParentImpl::RequestMessageLoopRunnable::Run() {
 
 NS_IMETHODIMP
 ParentImpl::ShutdownBackgroundThreadRunnable::Run() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
 
   
   
@@ -1127,7 +1166,7 @@ ParentImpl::ShutdownBackgroundThreadRunnable::Run() {
 
 NS_IMETHODIMP
 ParentImpl::ForceCloseBackgroundActorsRunnable::Run() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   MOZ_ASSERT(mActorArray);
 
   if (NS_IsMainThread()) {
@@ -1154,7 +1193,7 @@ ParentImpl::ForceCloseBackgroundActorsRunnable::Run() {
 
 NS_IMETHODIMP
 ParentImpl::ConnectActorRunnable::Run() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
 
   
@@ -1246,12 +1285,19 @@ void ChildImpl::Startup() {
 
   MOZ_ASSERT(sThreadLocalIndex == kBadThreadLocalIndex,
              "BackgroundChild::Startup() called more than once!");
+  MOZ_ASSERT(sThreadLocalIndexForSocketProcess == kBadThreadLocalIndex,
+             "BackgroundChild::Startup() called more than once!");
 
   PRStatus status =
       PR_NewThreadPrivateIndex(&sThreadLocalIndex, ThreadLocalDestructor);
   MOZ_RELEASE_ASSERT(status == PR_SUCCESS, "PR_NewThreadPrivateIndex failed!");
 
+  status = PR_NewThreadPrivateIndex(&sThreadLocalIndexForSocketProcess,
+                                    ThreadLocalDestructor);
+  MOZ_RELEASE_ASSERT(status == PR_SUCCESS, "PR_NewThreadPrivateIndex failed!");
+
   MOZ_ASSERT(sThreadLocalIndex != kBadThreadLocalIndex);
+  MOZ_ASSERT(sThreadLocalIndexForSocketProcess != kBadThreadLocalIndex);
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   MOZ_RELEASE_ASSERT(observerService);
@@ -1263,27 +1309,18 @@ void ChildImpl::Startup() {
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
 }
 
-
-void ChildImpl::Shutdown() {
-  AssertIsOnMainThread();
-
-  if (sShutdownHasStarted) {
-    MOZ_ASSERT_IF(sThreadLocalIndex != kBadThreadLocalIndex,
-                  !PR_GetThreadPrivate(sThreadLocalIndex));
-    return;
-  }
-
-  sShutdownHasStarted = true;
-
-  MOZ_ASSERT(sThreadLocalIndex != kBadThreadLocalIndex);
+void ChildImpl::ShutdownWithThreadLocalIndex(unsigned int aThreadLocalIndex) {
+  MOZ_ASSERT(aThreadLocalIndex != kBadThreadLocalIndex);
 
   ThreadLocalInfo* threadLocalInfo;
 #ifdef DEBUG
   threadLocalInfo =
-      static_cast<ThreadLocalInfo*>(PR_GetThreadPrivate(sThreadLocalIndex));
+      static_cast<ThreadLocalInfo*>(PR_GetThreadPrivate(aThreadLocalIndex));
   MOZ_ASSERT(!threadLocalInfo);
 #endif
-  threadLocalInfo = sMainThreadInfo;
+  threadLocalInfo = aThreadLocalIndex == sThreadLocalIndex
+                        ? sMainThreadInfo
+                        : sMainThreadInfoForSocketProcess;
 
   if (threadLocalInfo) {
 #ifdef DEBUG
@@ -1292,11 +1329,38 @@ void ChildImpl::Shutdown() {
 #endif
 
     ThreadLocalDestructor(threadLocalInfo);
-    sMainThreadInfo = nullptr;
+    if (aThreadLocalIndex == sThreadLocalIndex) {
+      sMainThreadInfo = nullptr;
+    } else {
+      sMainThreadInfoForSocketProcess = nullptr;
+    }
+  }
+}
+
+
+void ChildImpl::Shutdown() {
+  AssertIsOnMainThread();
+
+  if (sShutdownHasStarted) {
+    MOZ_ASSERT_IF(sThreadLocalIndex != kBadThreadLocalIndex,
+                  !PR_GetThreadPrivate(sThreadLocalIndex));
+    MOZ_ASSERT_IF(sThreadLocalIndexForSocketProcess != kBadThreadLocalIndex,
+                  !PR_GetThreadPrivate(sThreadLocalIndexForSocketProcess));
+    return;
+  }
+
+  sShutdownHasStarted = true;
+
+  ShutdownWithThreadLocalIndex(sThreadLocalIndex);
+
+  if (sThreadLocalIndexForSocketProcess != kBadThreadLocalIndex) {
+    ShutdownWithThreadLocalIndex(sThreadLocalIndexForSocketProcess);
   }
 }
 
 ChildImpl::ThreadLocalInfo* ChildImpl::sMainThreadInfo = nullptr;
+ChildImpl::ThreadLocalInfo* ChildImpl::sMainThreadInfoForSocketProcess =
+    nullptr;
 
 
 PBackgroundChild* ChildImpl::GetForCurrentThread() {
@@ -1312,6 +1376,41 @@ PBackgroundChild* ChildImpl::GetForCurrentThread() {
   }
 
   return threadLocalInfo->mActor;
+}
+
+
+PBackgroundChild* ChildImpl::GetFromThreadInfo(
+    nsIEventTarget* aMainEventTarget, ThreadLocalInfo* aThreadLocalInfo) {
+  MOZ_ASSERT(aThreadLocalInfo);
+
+  if (aThreadLocalInfo->mActor) {
+    RefPtr<SendInitBackgroundRunnable>& runnable =
+        aThreadLocalInfo->mSendInitBackgroundRunnable;
+
+    if (aMainEventTarget && runnable) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      MOZ_ALWAYS_SUCCEEDS(
+          aMainEventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL));
+    }
+
+    return aThreadLocalInfo->mActor;
+  }
+
+  return nullptr;
 }
 
 
@@ -1346,31 +1445,10 @@ PBackgroundChild* ChildImpl::GetOrCreateForCurrentThread(
     threadLocalInfo = newInfo.forget();
   }
 
-  if (threadLocalInfo->mActor) {
-    RefPtr<SendInitBackgroundRunnable>& runnable =
-        threadLocalInfo->mSendInitBackgroundRunnable;
-
-    if (aMainEventTarget && runnable) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      MOZ_ALWAYS_SUCCEEDS(
-          aMainEventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL));
-    }
-
-    return threadLocalInfo->mActor;
+  PBackgroundChild* bgChild =
+      GetFromThreadInfo(aMainEventTarget, threadLocalInfo);
+  if (bgChild) {
+    return bgChild;
   }
 
   if (XRE_IsParentProcess()) {
@@ -1407,7 +1485,15 @@ PBackgroundChild* ChildImpl::GetOrCreateForCurrentThread(
 
   RefPtr<SendInitBackgroundRunnable> runnable;
   if (!NS_IsMainThread()) {
-    runnable = SendInitBackgroundRunnable::Create(std::move(parent));
+    runnable = SendInitBackgroundRunnable::Create(
+        std::move(parent), [](Endpoint<PBackgroundParent>&& aParent) {
+          RefPtr<ContentChild> content = ContentChild::GetSingleton();
+          MOZ_ASSERT(content);
+
+          if (!content->SendInitBackground(std::move(aParent))) {
+            MOZ_CRASH("Failed to create top level actor!");
+          }
+        });
     if (!runnable) {
       return nullptr;
     }
@@ -1446,17 +1532,115 @@ PBackgroundChild* ChildImpl::GetOrCreateForCurrentThread(
 }
 
 
-void ChildImpl::CloseForCurrentThread() {
-  MOZ_ASSERT(!NS_IsMainThread(),
-             "PBackground for the main thread should be shut down via "
-             "ChildImpl::Shutdown().");
+PBackgroundChild* ChildImpl::GetOrCreateSocketActorForCurrentThread(
+    nsIEventTarget* aMainEventTarget) {
+  MOZ_ASSERT_IF(NS_IsMainThread(), !aMainEventTarget);
 
-  if (sThreadLocalIndex == kBadThreadLocalIndex) {
-    return;
+  MOZ_ASSERT(sThreadLocalIndexForSocketProcess != kBadThreadLocalIndex,
+             "BackgroundChild::Startup() was never called!");
+
+  if (NS_IsMainThread() && sShutdownHasStarted) {
+    return nullptr;
   }
 
   auto threadLocalInfo =
-      static_cast<ThreadLocalInfo*>(PR_GetThreadPrivate(sThreadLocalIndex));
+      NS_IsMainThread() ? sMainThreadInfoForSocketProcess
+                        : static_cast<ThreadLocalInfo*>(PR_GetThreadPrivate(
+                              sThreadLocalIndexForSocketProcess));
+
+  if (!threadLocalInfo) {
+    nsAutoPtr<ThreadLocalInfo> newInfo(new ThreadLocalInfo());
+
+    if (NS_IsMainThread()) {
+      sMainThreadInfoForSocketProcess = newInfo;
+    } else {
+      if (PR_SetThreadPrivate(sThreadLocalIndexForSocketProcess, newInfo) !=
+          PR_SUCCESS) {
+        CRASH_IN_CHILD_PROCESS("PR_SetThreadPrivate failed!");
+        return nullptr;
+      }
+    }
+
+    threadLocalInfo = newInfo.forget();
+  }
+
+  PBackgroundChild* bgChild =
+      GetFromThreadInfo(aMainEventTarget, threadLocalInfo);
+  if (bgChild) {
+    return bgChild;
+  }
+
+  RefPtr<SocketProcessBridgeChild> bridgeChild =
+      SocketProcessBridgeChild::GetSingleton();
+
+  if (!bridgeChild || bridgeChild->IsShuttingDown()) {
+    
+    
+    return nullptr;
+  }
+
+  Endpoint<PBackgroundParent> parent;
+  Endpoint<PBackgroundChild> child;
+  nsresult rv;
+  rv = PBackground::CreateEndpoints(bridgeChild->SocketProcessPid(),
+                                    base::GetCurrentProcId(), &parent, &child);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Failed to create top level actor!");
+    return nullptr;
+  }
+
+  RefPtr<SendInitBackgroundRunnable> runnable;
+  if (!NS_IsMainThread()) {
+    runnable = SendInitBackgroundRunnable::Create(
+        std::move(parent), [](Endpoint<PBackgroundParent>&& aParent) {
+          RefPtr<SocketProcessBridgeChild> bridgeChild =
+              SocketProcessBridgeChild::GetSingleton();
+
+          if (!bridgeChild->SendInitBackground(std::move(aParent))) {
+            MOZ_CRASH("Failed to create top level actor!");
+          }
+        });
+    if (!runnable) {
+      return nullptr;
+    }
+  }
+
+  RefPtr<ChildImpl> strongActor = new ChildImpl();
+
+  if (!child.Bind(strongActor)) {
+    CRASH_IN_CHILD_PROCESS("Failed to bind ChildImpl!");
+
+    return nullptr;
+  }
+
+  strongActor->SetActorAlive();
+
+  if (NS_IsMainThread()) {
+    if (!bridgeChild->SendInitBackground(std::move(parent))) {
+      NS_WARNING("Failed to create top level actor!");
+      return nullptr;
+    }
+  } else {
+    if (aMainEventTarget) {
+      MOZ_ALWAYS_SUCCEEDS(
+          aMainEventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL));
+    } else {
+      MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable));
+    }
+
+    threadLocalInfo->mSendInitBackgroundRunnable = runnable;
+  }
+
+  RefPtr<ChildImpl>& actor = threadLocalInfo->mActor;
+  strongActor.swap(actor);
+
+  return actor;
+}
+
+
+void ChildImpl::CloseThreadWithIndex(unsigned int aThreadLocalIndex) {
+  auto threadLocalInfo =
+      static_cast<ThreadLocalInfo*>(PR_GetThreadPrivate(aThreadLocalIndex));
 
   if (!threadLocalInfo) {
     return;
@@ -1468,8 +1652,22 @@ void ChildImpl::CloseForCurrentThread() {
 #endif
 
   
-  DebugOnly<PRStatus> status = PR_SetThreadPrivate(sThreadLocalIndex, nullptr);
+  DebugOnly<PRStatus> status = PR_SetThreadPrivate(aThreadLocalIndex, nullptr);
   MOZ_ASSERT(status == PR_SUCCESS);
+}
+
+
+void ChildImpl::CloseForCurrentThread() {
+  MOZ_ASSERT(!NS_IsMainThread(),
+             "PBackground for the main thread should be shut down via "
+             "ChildImpl::Shutdown().");
+
+  if (sThreadLocalIndex != kBadThreadLocalIndex) {
+    CloseThreadWithIndex(sThreadLocalIndex);
+  }
+  if (sThreadLocalIndexForSocketProcess != kBadThreadLocalIndex) {
+    CloseThreadWithIndex(sThreadLocalIndexForSocketProcess);
+  }
 }
 
 
@@ -1541,11 +1739,12 @@ ChildImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
 
 already_AddRefed<ChildImpl::SendInitBackgroundRunnable>
 ChildImpl::SendInitBackgroundRunnable::Create(
-    Endpoint<PBackgroundParent>&& aParent) {
+    Endpoint<PBackgroundParent>&& aParent,
+    std::function<void(Endpoint<PBackgroundParent>&& aParent)>&& aFunc) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   RefPtr<SendInitBackgroundRunnable> runnable =
-      new SendInitBackgroundRunnable(std::move(aParent));
+      new SendInitBackgroundRunnable(std::move(aParent), std::move(aFunc));
 
   WorkerPrivate* workerPrivate = mozilla::dom::GetCurrentThreadWorkerPrivate();
   if (!workerPrivate) {
@@ -1572,12 +1771,7 @@ ChildImpl::SendInitBackgroundRunnable::Run() {
 
     mSentInitBackground = true;
 
-    RefPtr<ContentChild> content = ContentChild::GetSingleton();
-    MOZ_ASSERT(content);
-
-    if (!content->SendInitBackground(std::move(mParent))) {
-      MOZ_CRASH("Failed to create top level actor!");
-    }
+    mSendInitfunc(std::move(mParent));
 
     nsCOMPtr<nsISerialEventTarget> owningEventTarget;
     {
