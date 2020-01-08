@@ -16,17 +16,6 @@
 namespace mozilla {
 
 struct LayerAnimationInfo {
-#ifdef DEBUG
-  static void Initialize();
-#endif
-  
-  
-  struct Record {
-    nsCSSPropertyID mProperty;
-    DisplayItemType mDisplayItemType;
-    nsChangeHint mChangeHint;
-  };
-
   
   
   
@@ -89,10 +78,6 @@ struct LayerAnimationInfo {
   static const Array<DisplayItemType,
                      nsCSSPropertyIDSet::CompositorAnimatableCount()>
     sDisplayItemTypes;
-
-  static const size_t kRecords =
-    nsCSSPropertyIDSet::CompositorAnimatableCount();
-  static const Record sRecords[kRecords];
 };
 
 } 
