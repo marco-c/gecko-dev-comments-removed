@@ -10002,6 +10002,15 @@ nsContentUtils::NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* a
     nsIGlobalObject* global;
     if (aFromParser == dom::NOT_FROM_PARSER) {
       global = GetEntryGlobal();
+
+      
+      
+      if (!global) {
+        nsIDocument* doc = nodeInfo->GetDocument();
+        if (doc && doc->IsXULDocument()) {
+          global = doc->GetScopeObject();
+        }
+      }
     } else {
       global = nodeInfo->GetDocument()->GetScopeObject();
     }
@@ -10122,7 +10131,7 @@ nsContentUtils::LookupCustomElementDefinition(nsIDocument* aDoc,
     return nullptr;
   }
 
-  return registry->LookupCustomElementDefinition(aNameAtom, aTypeAtom);
+  return registry->LookupCustomElementDefinition(aNameAtom, aNameSpaceID, aTypeAtom);
 }
 
  void

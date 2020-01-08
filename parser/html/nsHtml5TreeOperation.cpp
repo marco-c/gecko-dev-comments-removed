@@ -382,7 +382,7 @@ nsHtml5TreeOperation::CreateHTMLElement(
   dom::CustomElementDefinition* definition = nullptr;
 
   
-  if (nsContentUtils::IsCustomElementsEnabled()) {
+  if (dom::CustomElementRegistry::IsCustomElementEnabled(document)) {
     if (aAttributes) {
       nsHtml5String is = aAttributes->getValue(nsHtml5AttributeName::ATTR_IS);
       if (is) {

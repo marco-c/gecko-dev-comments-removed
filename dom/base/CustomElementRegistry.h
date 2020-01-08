@@ -157,6 +157,7 @@ struct CustomElementDefinition
 
   CustomElementDefinition(nsAtom* aType,
                           nsAtom* aLocalName,
+                          int32_t aNamespaceID,
                           Function* aConstructor,
                           nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
                           UniquePtr<LifecycleCallbacks>&& aCallbacks);
@@ -167,6 +168,9 @@ struct CustomElementDefinition
 
   
   RefPtr<nsAtom> mLocalName;
+
+  
+  int32_t mNamespaceID;
 
   
   RefPtr<CustomElementConstructor> mConstructor;
@@ -399,7 +403,7 @@ public:
 
 
   CustomElementDefinition* LookupCustomElementDefinition(
-    nsAtom* aNameAtom, nsAtom* aTypeAtom);
+    nsAtom* aNameAtom, int32_t aNameSpaceID, nsAtom* aTypeAtom);
 
   CustomElementDefinition* LookupCustomElementDefinition(
     JSContext* aCx, JSObject *aConstructor) const;
@@ -554,6 +558,8 @@ private:
     private:
       CustomElementRegistry* mRegistry;
   };
+
+  int32_t InferNamespace(JSContext* aCx, JS::Handle<JSObject*> constructor);
 
 public:
   nsISupports* GetParentObject() const;
