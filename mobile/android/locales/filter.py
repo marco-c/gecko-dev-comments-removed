@@ -26,8 +26,6 @@ def test(mod, path, entity=None):
             "chrome/global/intl.css",
             "chrome/search/search.properties",
             "chrome/pluginproblem/pluginproblem.dtd",
-            "chrome/global/aboutSupport.dtd",
-            "chrome/global/aboutSupport.properties",
             "chrome/global/mozilla.dtd",
             "chrome/global/aboutTelemetry.dtd",
             "chrome/global/aboutTelemetry.properties",
@@ -41,6 +39,9 @@ def test(mod, path, entity=None):
             
             return "error"
         if re.match(r"toolkit/about/[^/]*Plugins.ftl", path):
+            
+            return "error"
+        if re.match(r"toolkit/about/[^/]*Support.ftl", path):
             
             return "error"
         return "ignore"
