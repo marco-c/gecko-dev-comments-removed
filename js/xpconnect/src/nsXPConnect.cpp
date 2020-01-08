@@ -324,7 +324,8 @@ xpc::ErrorReport::LogToConsole()
 
 void
 xpc::ErrorReport::LogToConsoleWithStack(JS::HandleObject aStack,
-                                        JS::HandleObject aStackGlobal)
+                                        JS::HandleObject aStackGlobal,
+                                        uint64_t aTimeWarpTarget )
 {
     
     
@@ -364,6 +365,7 @@ xpc::ErrorReport::LogToConsoleWithStack(JS::HandleObject aStack,
       errorObject = new nsScriptError();
     }
     errorObject->SetErrorMessageName(mErrorMsgName);
+    errorObject->SetTimeWarpTarget(aTimeWarpTarget);
 
     nsresult rv = errorObject->InitWithWindowID(mErrorMsg, mFileName, mSourceLine,
                                                 mLineNumber, mColumn, mFlags,
