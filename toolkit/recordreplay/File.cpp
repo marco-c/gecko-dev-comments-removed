@@ -47,13 +47,7 @@ Stream::ReadBytes(void* aData, size_t aSize)
     }
 
     MOZ_RELEASE_ASSERT(mBufferPos == mBufferLength);
-
-    
-    
-    while (mChunkIndex == mChunks.length()) {
-      MOZ_RELEASE_ASSERT(mName == StreamName::Event);
-      HitEndOfRecording();
-    }
+    MOZ_RELEASE_ASSERT(mChunkIndex < mChunks.length());
 
     const StreamChunkLocation& chunk = mChunks[mChunkIndex++];
 
@@ -89,6 +83,7 @@ void
 Stream::WriteBytes(const void* aData, size_t aSize)
 {
   MOZ_RELEASE_ASSERT(mFile->OpenForWriting());
+  MOZ_RELEASE_ASSERT(mName != StreamName::Event || mInRecordingEventSection);
 
   
   AutoReadSpinLock streamLock(mFile->mStreamLock);

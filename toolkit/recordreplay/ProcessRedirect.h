@@ -527,15 +527,6 @@ RR_WriteBufferViaRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aEr
 }
 
 
-
-
-static inline void
-RR_OrderCall(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
-  AutoOrderedAtomicAccess();
-}
-
-
 static inline void
 RR_ScalarRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
 {

@@ -6,8 +6,6 @@
 
 #include "Lock.h"
 
-#include "mozilla/StaticMutex.h"
-
 #include "ChunkAllocator.h"
 #include "InfallibleVector.h"
 #include "SpinLock.h"
@@ -69,12 +67,11 @@ static ReadWriteSpinLock gLocksLock;
 Lock::New(void* aNativeLock)
 {
   Thread* thread = Thread::Current();
-  if (!thread || thread->PassThroughEvents() || HasDivergedFromRecording()) {
+  RecordingEventSection res(thread);
+  if (!res.CanAccessEvents()) {
     Destroy(aNativeLock); 
     return;
   }
-
-  MOZ_RELEASE_ASSERT(thread->CanAccessRecording());
 
   thread->Events().RecordOrReplayThreadEvent(ThreadEvent::CreateLock);
 
@@ -152,7 +149,11 @@ void
 Lock::Enter()
 {
   Thread* thread = Thread::Current();
-  MOZ_RELEASE_ASSERT(thread->CanAccessRecording());
+
+  RecordingEventSection res(thread);
+  if (!res.CanAccessEvents()) {
+    return;
+  }
 
   
   
@@ -166,7 +167,8 @@ Lock::Enter()
     acquires->mAcquires->WriteScalar(thread->Id());
   } else {
     
-    while (thread->Id() != acquires->mNextOwner) {
+    
+    while (thread->Id() != acquires->mNextOwner && !thread->MaybeDivergeFromRecording()) {
       Thread::Wait();
     }
   }
@@ -175,10 +177,11 @@ Lock::Enter()
 void
 Lock::Exit()
 {
-  if (IsReplaying()) {
+  Thread* thread = Thread::Current();
+  if (IsReplaying() && !thread->HasDivergedFromRecording()) {
     
     LockAcquires* acquires = gLockAcquires.Get(mId);
-    acquires->ReadAndNotifyNextOwner(Thread::Current());
+    acquires->ReadAndNotifyNextOwner(thread);
   }
 }
 
@@ -187,8 +190,6 @@ struct AtomicLock : public detail::MutexImpl
   using detail::MutexImpl::lock;
   using detail::MutexImpl::unlock;
 };
-
-
 
 
 static AtomicLock* gAtomicLock = nullptr;

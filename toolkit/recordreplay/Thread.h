@@ -100,6 +100,10 @@ private:
 
   
   
+  Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve> mShouldDivergeFromRecording;
+
+  
+  
   
   
   
@@ -176,6 +180,26 @@ public:
     mDivergedFromRecording = true;
   }
   bool HasDivergedFromRecording() const {
+    return mDivergedFromRecording;
+  }
+
+  
+  
+  
+  
+  void SetShouldDivergeFromRecording() {
+    MOZ_RELEASE_ASSERT(CurrentIsMainThread());
+    mShouldDivergeFromRecording = true;
+    Notify(mId);
+  }
+  bool WillDivergeFromRecordingSoon() {
+    MOZ_RELEASE_ASSERT(CurrentIsMainThread());
+    return mShouldDivergeFromRecording;
+  }
+  bool MaybeDivergeFromRecording() {
+    if (mShouldDivergeFromRecording) {
+      mDivergedFromRecording = true;
+    }
     return mDivergedFromRecording;
   }
 
@@ -287,6 +311,60 @@ public:
     if (!mPassedThrough) {
       mThread->SetPassThrough(false);
     }
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII RecordingEventSection
+{
+  Thread* mThread;
+
+public:
+  explicit RecordingEventSection(Thread* aThread)
+    : mThread(aThread)
+  {
+    if (!aThread || !aThread->CanAccessRecording()) {
+      return;
+    }
+    if (IsRecording()) {
+      MOZ_RELEASE_ASSERT(!aThread->Events().mInRecordingEventSection);
+      aThread->Events().mFile->mStreamLock.ReadLock();
+      aThread->Events().mInRecordingEventSection = true;
+    } else {
+      while (!aThread->MaybeDivergeFromRecording() && aThread->Events().AtEnd()) {
+        HitEndOfRecording();
+      }
+    }
+  }
+
+  ~RecordingEventSection() {
+    if (!mThread || !mThread->CanAccessRecording()) {
+      return;
+    }
+    if (IsRecording()) {
+      mThread->Events().mFile->mStreamLock.ReadUnlock();
+      mThread->Events().mInRecordingEventSection = false;
+    }
+  }
+
+  bool CanAccessEvents() {
+    if (!mThread || mThread->PassThroughEvents() || mThread->HasDivergedFromRecording()) {
+      return false;
+    }
+    MOZ_RELEASE_ASSERT(mThread->CanAccessRecording());
+    return true;
   }
 };
 

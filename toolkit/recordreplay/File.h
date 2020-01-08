@@ -60,10 +60,12 @@ enum class StreamName
 };
 
 class File;
+class RecordingEventSection;
 
 class Stream
 {
   friend class File;
+  friend class RecordingEventSection;
 
   
   File* mFile;
@@ -117,6 +119,9 @@ class Stream
   
   size_t mFlushedChunks;
 
+  
+  bool mInRecordingEventSection;
+
   Stream(File* aFile, StreamName aName, size_t aNameIndex)
     : mFile(aFile)
     , mName(aName)
@@ -133,6 +138,7 @@ class Stream
     , mLastEvent((ThreadEvent) 0)
     , mChunkIndex(0)
     , mFlushedChunks(0)
+    , mInRecordingEventSection(false)
   {}
 
 public:
@@ -204,6 +210,7 @@ public:
   };
 
   friend class Stream;
+  friend class RecordingEventSection;
 
 private:
   
