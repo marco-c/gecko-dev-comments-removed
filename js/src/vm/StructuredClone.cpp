@@ -1386,6 +1386,7 @@ JSStructuredCloneWriter::traverseObject(HandleObject obj, ESClass cls)
 
     for (size_t i = properties.length(); i > 0; --i) {
         MOZ_ASSERT(JSID_IS_STRING(properties[i - 1]) || JSID_IS_INT(properties[i - 1]));
+        
         RootedValue val(context(), IdToValue(properties[i - 1]));
         if (!entries.append(val))
             return false;
@@ -1907,14 +1908,23 @@ JSStructuredCloneWriter::write(HandleValue v)
                 if (!startWrite(key))
                     return false;
             } else {
-                if (!ValueToId<CanGC>(context(), key, &id))
-                  return false;
-                MOZ_ASSERT(JSID_IS_STRING(id) || JSID_IS_INT(id));
+                
+                
+                if (key.isString())
+                    id = AtomToId(&key.toString()->asAtom());
+                else
+                    id = INT_TO_JSID(key.toInt32());
 
                 
-                
-                
                 bool found;
+                if (GetOwnPropertyPure(context(), obj, id, val.address(), &found)) {
+                    if (found) {
+                        if (!startWrite(key) || !startWrite(val))
+                            return false;
+                    }
+                    continue;
+                }
+
                 if (!HasOwnProperty(context(), obj, id, &found))
                     return false;
 
