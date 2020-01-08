@@ -113,6 +113,16 @@ RootClient.prototype = {
 
 
 
+  getProcess: DebuggerClient.requester({ type: "getProcess", id: arg(0) }),
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -138,7 +148,7 @@ RootClient.prototype = {
         if (process.parent) {
           continue;
         }
-        const { form } = await this._client.getProcess(process.id);
+        const { form } = await this.getProcess(process.id);
         const processActor = form.actor;
         const response = await this._client.request({
           to: processActor,

@@ -493,25 +493,6 @@ DebuggerClient.prototype = {
 
 
 
-
-
-  getProcess: function(id) {
-    const packet = {
-      to: "root",
-      type: "getProcess"
-    };
-    if (typeof (id) == "number") {
-      packet.id = id;
-    }
-    return this.request(packet);
-  },
-
-  
-
-
-
-
-
   release: DebuggerClient.requester({
     to: arg(0),
     type: "release"
