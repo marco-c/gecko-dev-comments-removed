@@ -15,6 +15,7 @@
 
 #include "js/CompileOptions.h" 
 #include "js/RootingAPI.h" 
+#include "js/Value.h" 
 
 struct JSContext;
 class JSFunction;
@@ -26,7 +27,6 @@ namespace JS {
 template<typename T> class AutoVector;
 
 class SourceBufferHolder;
-union Value;
 
 } 
 
@@ -121,9 +121,57 @@ Evaluate(JSContext* cx, AutoVector<JSObject*>& envChain, const ReadOnlyCompileOp
 
 
 
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
+EvaluateUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
+             const char* bytes, size_t length, MutableHandle<Value> rval);
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+EvaluateLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
+               const char* bytes, size_t length, MutableHandle<Value> rval);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline bool
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         const char* bytes, size_t length, MutableHandle<Value> rval);
+         const char* bytes, size_t length, MutableHandle<Value> rval)
+{
+    return options.utf8
+           ? EvaluateUtf8(cx, options, bytes, length, rval)
+           : EvaluateLatin1(cx, options, bytes, length, rval);
+}
 
 
 
