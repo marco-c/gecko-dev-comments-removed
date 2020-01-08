@@ -36,12 +36,6 @@
 
 
 
-
-#define NS_THREADPOOL_CONTRACTID "@mozilla.org/thread-pool;1"
-
-
-
-
 #define XULAPPINFO_SERVICE_CONTRACTID \
   "@mozilla.org/xre/app-info;1"
 
