@@ -940,6 +940,33 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
     
     
     
+    int32_t yieldAwaitIndex = 0;
+    Rooted<GeneratorObject*> genObj(cx);
+    if (frame.isFunctionFrame() && (frame.callee()->isGenerator() || frame.callee()->isAsync())) {
+        genObj = GetGeneratorObjectForFrame(cx, frame);
+        if (genObj) {
+            if (!genObj->isClosed() && genObj->isSuspended()) {
+                yieldAwaitIndex =
+                    genObj->getFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT).toInt32();
+                genObj->setRunning();
+            } else {
+                
+                
+                genObj = nullptr;
+            }
+        }
+    }
+    auto restoreGenSuspended = MakeScopeExit([&] {
+        if (genObj) {
+            genObj->setFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT,
+                                 Int32Value(yieldAwaitIndex));
+        }
+    });
+
+    
+    
+    
+    
     if (!cx->isThrowingOverRecursed() && !cx->isThrowingOutOfMemory()) {
         
         for (size_t i = 0; i < frames.length(); i++) {

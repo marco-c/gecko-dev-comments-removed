@@ -196,6 +196,15 @@ class GeneratorObject : public NativeObject
 
 bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame, Handle<GeneratorObject*> obj,
                             HandleValue val, uint32_t resumeKind);
+
+
+
+
+
+
+GeneratorObject*
+GetGeneratorObjectForFrame(JSContext* cx, AbstractFramePtr frame);
+
 void SetGeneratorClosed(JSContext* cx, AbstractFramePtr frame);
 
 MOZ_MUST_USE bool
