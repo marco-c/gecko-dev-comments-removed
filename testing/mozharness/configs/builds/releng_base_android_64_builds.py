@@ -8,7 +8,6 @@ config = {
     'default_actions': [
         'build',
         'multi-l10n',
-        'update',  
     ],
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     'max_build_output_timeout': 0,

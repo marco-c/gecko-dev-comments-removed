@@ -3,7 +3,6 @@ import os
 config = {
     'default_actions': [
         'build',
-        'update',  
     ],
     'stage_platform': 'macosx64-debug',
     'debug_build': True,

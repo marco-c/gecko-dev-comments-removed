@@ -7,7 +7,6 @@ config = {
     
     'default_actions': [
         'build',
-        'update',  
     ],
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     

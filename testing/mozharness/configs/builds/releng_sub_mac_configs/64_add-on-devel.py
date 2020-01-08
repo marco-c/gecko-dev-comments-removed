@@ -5,7 +5,6 @@ config = {
         'clobber',
         'build',
         'check-test',
-
     ],
     'stage_platform': 'macosx64-add-on-devel',
     

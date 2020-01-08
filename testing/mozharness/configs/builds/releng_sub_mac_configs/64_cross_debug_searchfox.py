@@ -4,7 +4,6 @@ config = {
     'default_actions': [
         'clobber',
         'build',
-        'update',  
     ],
     'stage_platform': 'macosx64-searchfox-debug',
     'debug_build': True,

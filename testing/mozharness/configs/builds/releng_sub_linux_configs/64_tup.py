@@ -4,7 +4,6 @@ config = {
     'default_actions': [
         'clobber',
         'build',
-        'update',  
     ],
     'stage_platform': 'linux64-tup-opt',
     'enable_talos_sendchange': False,

@@ -4,7 +4,6 @@ config = {
     'default_actions': [
         'clobber',
         'build',
-        'update',  
     ],
     'debug_build': True,
     'stage_platform': 'macosx64-st-an-debug',

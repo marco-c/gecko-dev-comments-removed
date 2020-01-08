@@ -5,7 +5,6 @@ config = {
         'clobber',
         'build',
         'check-test',
-        'update',  
     ],
     'debug_build': True,
     'stage_platform': 'linux-debug',
