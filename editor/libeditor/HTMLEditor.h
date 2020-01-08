@@ -779,6 +779,17 @@ protected:
 
 
 
+  nsresult SelectContentInternal(Selection& aSelection,
+                                 nsIContent& aContentToSelect);
+
+  
+
+
+
+
+
+
+
   nsresult PasteInternal(int32_t aClipboardType);
 
   

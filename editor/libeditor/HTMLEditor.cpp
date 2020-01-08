@@ -1731,27 +1731,51 @@ HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
 NS_IMETHODIMP
 HTMLEditor::SelectElement(Element* aElement)
 {
+  if (NS_WARN_IF(!aElement)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = SelectContentInternal(*selection, *aElement);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::SelectContentInternal(Selection& aSelection,
+                                  nsIContent& aContentToSelect)
+{
   
-  if (!IsDescendantOfEditorRoot(aElement)) {
-    return NS_ERROR_NULL_POINTER;
+  if (!IsDescendantOfEditorRoot(&aContentToSelect)) {
+    return NS_ERROR_FAILURE;
   }
 
-  RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  nsINode* parent = aElement->GetParentNode();
+  nsINode* parent = aContentToSelect.GetParentNode();
   if (NS_WARN_IF(!parent)) {
     return NS_ERROR_FAILURE;
   }
 
-  int32_t offsetInParent = parent->ComputeIndexOf(aElement);
+  
+  AutoUpdateViewBatch notifySelectionChangeOnce(this);
 
   
-  nsresult rv = selection->Collapse(parent, offsetInParent);
-  if (NS_SUCCEEDED(rv)) {
-    
-    rv = selection->Extend(parent, offsetInParent + 1);
+  int32_t offsetInParent = parent->ComputeIndexOf(&aContentToSelect);
+
+  
+  nsresult rv = aSelection.Collapse(parent, offsetInParent);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
-  return rv;
+  
+  rv = aSelection.Extend(parent, offsetInParent + 1);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
