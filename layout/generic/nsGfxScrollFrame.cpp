@@ -1853,6 +1853,18 @@ public:
     return true;
   }
 
+  
+
+
+
+
+  void RemoveObserver() {
+    if (mCallee) {
+      RefreshDriver(mCallee)->RemoveRefreshObserver(this, FlushType::Style);
+      mCallee = nullptr;
+    }
+  }
+
 private:
   
   ~AsyncSmoothMSDScroll() {
@@ -1863,17 +1875,6 @@ private:
 
   nsRefreshDriver* RefreshDriver(ScrollFrameHelper* aCallee) {
     return aCallee->mOuter->PresContext()->RefreshDriver();
-  }
-
-  
-
-
-
-
-  void RemoveObserver() {
-    if (mCallee) {
-      RefreshDriver(mCallee)->RemoveRefreshObserver(this, FlushType::Style);
-    }
   }
 
   mozilla::layers::AxisPhysicsMSDModel mXAxisModel, mYAxisModel;
@@ -1974,13 +1975,6 @@ public:
     ScrollFrameHelper::AsyncScrollCallback(mCallee, aTime);
   }
 
-private:
-  ScrollFrameHelper *mCallee;
-
-  nsRefreshDriver* RefreshDriver(ScrollFrameHelper* aCallee) {
-    return aCallee->mOuter->PresContext()->RefreshDriver();
-  }
-
   
 
 
@@ -1992,7 +1986,14 @@ private:
       if (nsIPresShell* shell = mCallee->mOuter->PresShell()) {
         shell->SuppressDisplayport(false);
       }
+      mCallee = nullptr;
     }
+  }
+private:
+  ScrollFrameHelper *mCallee;
+
+  nsRefreshDriver* RefreshDriver(ScrollFrameHelper* aCallee) {
+    return aCallee->mOuter->PresContext()->RefreshDriver();
   }
 };
 
@@ -4890,6 +4891,12 @@ ScrollFrameHelper::Destroy(PostDestroyData& aPostDestroyData)
   if (mScrollActivityTimer) {
     mScrollActivityTimer->Cancel();
     mScrollActivityTimer = nullptr;
+  }
+  if (mAsyncScroll) {
+    mAsyncScroll->RemoveObserver();
+  }
+  if (mAsyncSmoothMSDScroll) {
+    mAsyncSmoothMSDScroll->RemoveObserver();
   }
 }
 
