@@ -19,7 +19,6 @@
 
 
 
-DOM_PREF(ServiceWorkersTestingEnabled, "dom.serviceWorkers.testing.enabled")
 DOM_PREF(StorageManagerEnabled, "dom.storageManager.enabled")
 DOM_PREF(PromiseRejectionEventsEnabled, "dom.promise_rejection_events.enabled")
 DOM_PREF(PushEnabled, "dom.push.enabled")
