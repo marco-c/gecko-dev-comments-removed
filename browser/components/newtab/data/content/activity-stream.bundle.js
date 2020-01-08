@@ -211,7 +211,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 const actionTypes = {};
 
-for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM_POCKET", "AS_ROUTER_INITIALIZED", "AS_ROUTER_PREF_CHANGED", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISCOVERY_STREAM_CONFIG_CHANGE", "DISCOVERY_STREAM_CONFIG_SETUP", "DISCOVERY_STREAM_CONFIG_SET_VALUE", "DISCOVERY_STREAM_LAYOUT_RESET", "DISCOVERY_STREAM_LAYOUT_UPDATE", "DOWNLOAD_CHANGED", "FILL_SEARCH_TERM", "FOCUS_SEARCH", "HANDOFF_SEARCH_TO_AWESOMEBAR", "HIDE_SEARCH", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "POCKET_CTA", "POCKET_LOGGED_IN", "POCKET_WAITING_FOR_SPOC", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SHOW_SEARCH", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_PREVIEW_MODE", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_OPEN_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "UNINIT", "UPDATE_PINNED_SEARCH_SHORTCUTS", "UPDATE_SEARCH_SHORTCUTS", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
+for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM_POCKET", "AS_ROUTER_INITIALIZED", "AS_ROUTER_PREF_CHANGED", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISCOVERY_STREAM_CONFIG_CHANGE", "DISCOVERY_STREAM_CONFIG_SETUP", "DISCOVERY_STREAM_CONFIG_SET_VALUE", "DISCOVERY_STREAM_FEEDS_UPDATE", "DISCOVERY_STREAM_LAYOUT_RESET", "DISCOVERY_STREAM_LAYOUT_UPDATE", "DOWNLOAD_CHANGED", "FILL_SEARCH_TERM", "FOCUS_SEARCH", "HANDOFF_SEARCH_TO_AWESOMEBAR", "HIDE_SEARCH", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "POCKET_CTA", "POCKET_LOGGED_IN", "POCKET_WAITING_FOR_SPOC", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SHOW_SEARCH", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_PREVIEW_MODE", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_OPEN_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "UNINIT", "UPDATE_PINNED_SEARCH_SHORTCUTS", "UPDATE_SEARCH_SHORTCUTS", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
   actionTypes[type] = type;
 }
 
@@ -2221,13 +2221,13 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(56);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(29);
- var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(30);
- var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(31);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(32);
+ var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(43);
+ var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(44);
  var react__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_9___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_9__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(32);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(34);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(45);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(47);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -2494,8 +2494,87 @@ class DiscoveryStreamAdmin extends react__WEBPACK_IMPORTED_MODULE_4___default.a.
     this.setConfigValue("enabled", event.target.checked);
   }
 
+  renderComponent(width, component) {
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+      "table",
+      null,
+      react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        "tbody",
+        null,
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          Row,
+          null,
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "td",
+            { className: "min" },
+            "Type"
+          ),
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "td",
+            null,
+            component.type
+          )
+        ),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          Row,
+          null,
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "td",
+            { className: "min" },
+            "Width"
+          ),
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "td",
+            null,
+            width
+          )
+        ),
+        component.feed && this.renderFeed(component.feed)
+      )
+    );
+  }
+
+  renderFeed(feed) {
+    const { feeds } = this.props.state;
+    if (!feed.url) {
+      return null;
+    }
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+      react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment,
+      null,
+      react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        Row,
+        null,
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "td",
+          { className: "min" },
+          "Feed url"
+        ),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "td",
+          null,
+          feed.url
+        )
+      ),
+      react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        Row,
+        null,
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "td",
+          { className: "min" },
+          "Data last fetched"
+        ),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "td",
+          null,
+          relativeTime(feeds[feed.url].lastUpdated) || "(no data)"
+        )
+      )
+    );
+  }
+
   render() {
-    const { config, lastUpdated } = this.props.state;
+    const { config, lastUpdated, layout } = this.props.state;
     return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
       "div",
       null,
@@ -2540,7 +2619,21 @@ class DiscoveryStreamAdmin extends react__WEBPACK_IMPORTED_MODULE_4___default.a.
             )
           )
         )
-      )
+      ),
+      react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        "h3",
+        null,
+        "Layout"
+      ),
+      layout.map((row, rowIndex) => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        "div",
+        { key: `row-${rowIndex}` },
+        row.components.map((component, componentIndex) => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "div",
+          { key: `component-${componentIndex}`, className: "ds-component" },
+          this.renderComponent(row.width, component)
+        ))
+      ))
     );
   }
 }
@@ -3607,466 +3700,22 @@ const ConfirmDialog = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"]
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
- __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-
-
-
-class ErrorBoundaryFallback extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.windowObj = this.props.windowObj || window;
-    this.onClick = this.onClick.bind(this);
-  }
-
-  
-
-
-
-  onClick() {
-    this.windowObj.location.reload(true);
-  }
-
-  render() {
-    const defaultClass = "as-error-fallback";
-    let className;
-    if ("className" in this.props) {
-      className = `${this.props.className} ${defaultClass}`;
-    } else {
-      className = defaultClass;
-    }
-
-    
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-      "div",
-      { className: className },
-      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-        "div",
-        null,
-        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], {
-          defaultMessage: "Oops, something went wrong loading this content.",
-          id: "error_fallback_default_info" })
-      ),
-      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-        "span",
-        null,
-        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-          "a",
-          { href: "#", className: "reload-button", onClick: this.onClick },
-          react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], {
-            defaultMessage: "Refresh page to try again.",
-            id: "error_fallback_default_refresh_suggestion" })
-        )
-      )
-    );
-  }
-}
-ErrorBoundaryFallback.defaultProps = { className: "as-error-fallback" };
-
-class ErrorBoundary extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  componentDidCatch(error, info) {
-    this.setState({ hasError: true });
-  }
-
-  render() {
-    if (!this.state.hasError) {
-      return this.props.children;
-    }
-
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(this.props.FallbackComponent, { className: this.props.className });
-  }
-}
-
-ErrorBoundary.defaultProps = { FallbackComponent: ErrorBoundaryFallback };
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "_ManualMigration", function() { return _ManualMigration; });
- __webpack_require__.d(__webpack_exports__, "ManualMigration", function() { return ManualMigration; });
+(function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
+ __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
-
-
-
-
-
-
-
-
-
-class _ManualMigration extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onLaunchTour = this.onLaunchTour.bind(this);
-    this.onCancelTour = this.onCancelTour.bind(this);
-  }
-
-  onLaunchTour() {
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_START }));
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_START }));
-  }
-
-  onCancelTour() {
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_CANCEL }));
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_CANCEL }));
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
-      "div",
-      { className: "manual-migration-container" },
-      react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
-        "p",
-        null,
-        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", { className: "icon icon-import" }),
-        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], { id: "manual_migration_explanation2" })
-      ),
-      react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
-        "div",
-        { className: "manual-migration-actions actions" },
-        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
-          "button",
-          { className: "dismiss", onClick: this.onCancelTour },
-          react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], { id: "manual_migration_cancel_button" })
-        ),
-        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
-          "button",
-          { onClick: this.onLaunchTour },
-          react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], { id: "manual_migration_import_button" })
-        )
-      )
-    );
-  }
-}
-
-const ManualMigration = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])()(_ManualMigration);
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "_PrerenderData", function() { return _PrerenderData; });
- __webpack_require__.d(__webpack_exports__, "PrerenderData", function() { return PrerenderData; });
-class _PrerenderData {
-  constructor(options) {
-    this.initialPrefs = options.initialPrefs;
-    this.initialSections = options.initialSections;
-    this._setValidation(options.validation);
-  }
-
-  get validation() {
-    return this._validation;
-  }
-
-  set validation(value) {
-    this._setValidation(value);
-  }
-
-  get invalidatingPrefs() {
-    return this._invalidatingPrefs;
-  }
-
-  
-  _setValidation(value = []) {
-    this._validation = value;
-    this._invalidatingPrefs = value.reduce((result, next) => {
-      if (typeof next === "string") {
-        result.push(next);
-        return result;
-      } else if (next && next.oneOf) {
-        return result.concat(next.oneOf);
-      } else if (next && next.indexedDB) {
-        return result.concat(next.indexedDB);
-      }
-      throw new Error("Your validation configuration is not properly configured");
-    }, []);
-  }
-
-  arePrefsValid(getPref, indexedDBPrefs) {
-    for (const prefs of this.validation) {
-      
-      if (prefs && prefs.oneOf && !prefs.oneOf.some(name => getPref(name) === this.initialPrefs[name])) {
-        return false;
-
-        
-      } else if (indexedDBPrefs && prefs && prefs.indexedDB) {
-        const anyModifiedPrefs = prefs.indexedDB.some(prefName => indexedDBPrefs.some(pref => pref && pref[prefName]));
-        if (anyModifiedPrefs) {
-          return false;
-        }
-        
-      } else if (getPref(prefs) !== this.initialPrefs[prefs]) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
-var PrerenderData = new _PrerenderData({
-  initialPrefs: {
-    "migrationExpired": true,
-    "feeds.topsites": true,
-    "showSearch": true,
-    "topSitesRows": 1,
-    "feeds.section.topstories": true,
-    "feeds.section.highlights": true,
-    "sectionOrder": "topsites,topstories,highlights",
-    "collapsed": false
-  },
-  
-  
-  
-  
-  
-  
-  validation: ["feeds.topsites", "showSearch", "topSitesRows", "sectionOrder",
-  
-  
-  { oneOf: ["feeds.section.topstories", "feeds.section.highlights"] },
-  
-  
-  { indexedDB: ["collapsed"] }],
-  initialSections: [{
-    enabled: true,
-    icon: "pocket",
-    id: "topstories",
-    order: 1,
-    title: { id: "header_recommended_by", values: { provider: "Pocket" } }
-  }, {
-    enabled: true,
-    id: "highlights",
-    icon: "highlights",
-    order: 2,
-    title: { id: "header_highlights" }
-  }]
-});
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "_Search", function() { return _Search; });
- __webpack_require__.d(__webpack_exports__, "Search", function() { return Search; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(33);
- var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
-
-
-
-
-
-
-
-
-
-class _Search extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onSearchClick = this.onSearchClick.bind(this);
-    this.onSearchHandoffClick = this.onSearchHandoffClick.bind(this);
-    this.onInputMount = this.onInputMount.bind(this);
-  }
-
-  handleEvent(event) {
-    
-    if (event.detail.type === "Search") {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: "SEARCH" }));
-    }
-  }
-
-  onSearchClick(event) {
-    window.gContentSearchController.search(event);
-  }
-
-  onSearchHandoffClick(event) {
-    
-    
-    
-    
-    
-    
-    
-    const isKeyboardClick = event.clientX === 0 && event.clientY === 0;
-    const hiddenFocus = !isKeyboardClick;
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].HANDOFF_SEARCH_TO_AWESOMEBAR, data: { hiddenFocus } }));
-    this.props.dispatch({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].FOCUS_SEARCH });
-
-    
-  }
-
-  componentWillUnmount() {
-    delete window.gContentSearchController;
-  }
-
-  onInputMount(input) {
-    if (input) {
-      
-      
-      
-      
-      
-      const healthReportKey = content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__["IS_NEWTAB"] ? "newtab" : "abouthome";
-
-      
-      
-      
-      
-      
-      const searchSource = content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__["IS_NEWTAB"] ? "newtab" : "homepage";
-
-      
-      
-      
-      window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey, searchSource);
-      addEventListener("ContentSearchClient", this);
-    } else {
-      window.gContentSearchController = null;
-      removeEventListener("ContentSearchClient", this);
-    }
-  }
-
-  
-
-
-
-
-  render() {
-    const wrapperClassName = ["search-wrapper", this.props.hide && "search-hidden", this.props.focus && "search-active"].filter(v => v).join(" ");
-
-    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-      "div",
-      { className: wrapperClassName },
-      this.props.showLogo && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-        "div",
-        { className: "logo-and-wordmark" },
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "logo" }),
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "wordmark" })
-      ),
-      !this.props.handoffEnabled && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-        "div",
-        { className: "search-inner-wrapper" },
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-          "label",
-          { htmlFor: "newtab-search-text", className: "search-label" },
-          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-            "span",
-            { className: "sr-only" },
-            react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "search_web_placeholder" })
-          )
-        ),
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
-          id: "newtab-search-text",
-          maxLength: "256",
-          placeholder: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
-          ref: this.onInputMount,
-          title: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
-          type: "search" }),
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-          "button",
-          {
-            id: "searchSubmit",
-            className: "search-button",
-            onClick: this.onSearchClick,
-            title: this.props.intl.formatMessage({ id: "search_button" }) },
-          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-            "span",
-            { className: "sr-only" },
-            react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "search_button" })
-          )
-        )
-      ),
-      this.props.handoffEnabled && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-        "div",
-        { className: "search-inner-wrapper" },
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-          "button",
-          {
-            className: "search-handoff-button",
-            onClick: this.onSearchHandoffClick,
-            title: this.props.intl.formatMessage({ id: "search_web_placeholder" }) },
-          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
-            "div",
-            { className: "fake-textbox" },
-            this.props.intl.formatMessage({ id: "search_web_placeholder" })
-          ),
-          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "fake-caret" })
-        ),
-        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
-          type: "search",
-          style: { display: "none" },
-          ref: this.onInputMount })
-      )
-    );
-  }
-}
-
-const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_2__["connect"])()(Object(react_intl__WEBPACK_IMPORTED_MODULE_1__["injectIntl"])(_Search));
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "IS_NEWTAB", function() { return IS_NEWTAB; });
-const IS_NEWTAB = global.document && global.document.documentURI === "about:newtab";
-}.call(this, __webpack_require__(1)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "Section", function() { return Section; });
- __webpack_require__.d(__webpack_exports__, "SectionIntl", function() { return SectionIntl; });
- __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
- __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(58);
- var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(39);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(42);
- var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(44);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(45);
- var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(46);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(47);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(36);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
+ var react_intl__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_5__);
+ var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(38);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(57);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(59);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(39);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -4081,259 +3730,165 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const VISIBLE = "visible";
-const VISIBILITY_CHANGE_EVENT = "visibilitychange";
-const CARDS_PER_ROW_DEFAULT = 3;
-const CARDS_PER_ROW_COMPACT_WIDE = 4;
-
-function getFormattedMessage(message) {
-  return typeof message === "string" ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-    "span",
-    null,
-    message
-  ) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], message);
+function topSiteIconType(link) {
+  if (link.customScreenshotURL) {
+    return "custom_screenshot";
+  }
+  if (link.tippyTopIcon || link.faviconRef === "tippytop") {
+    return "tippytop";
+  }
+  if (link.faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_RICH_FAVICON_SIZE"]) {
+    return "rich_icon";
+  }
+  if (link.screenshot && link.faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_CORNER_FAVICON_SIZE"]) {
+    return "screenshot_with_icon";
+  }
+  if (link.screenshot) {
+    return "screenshot";
+  }
+  return "no_image";
 }
 
-class Section extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureComponent {
-  get numRows() {
-    const { rowsPref, maxRows, Prefs } = this.props;
-    return rowsPref ? Prefs.values[rowsPref] : maxRows;
+
+
+
+
+
+function countTopSitesIconsTypes(topSites) {
+  const countTopSitesTypes = (acc, link) => {
+    acc[topSiteIconType(link)]++;
+    return acc;
+  };
+
+  return topSites.reduce(countTopSitesTypes, {
+    "custom_screenshot": 0,
+    "screenshot_with_icon": 0,
+    "screenshot": 0,
+    "tippytop": 0,
+    "rich_icon": 0,
+    "no_image": 0
+  });
+}
+
+class _TopSites extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onEditFormClose = this.onEditFormClose.bind(this);
+    this.onSearchShortcutsFormClose = this.onSearchShortcutsFormClose.bind(this);
   }
 
-  _dispatchImpressionStats() {
-    const { props } = this;
-    let cardsPerRow = CARDS_PER_ROW_DEFAULT;
-    if (props.compactCards && global.matchMedia(`(min-width: 1072px)`).matches) {
-      
-      
-      
-      cardsPerRow = CARDS_PER_ROW_COMPACT_WIDE;
-    }
-    const maxCards = cardsPerRow * this.numRows;
-    const cards = props.rows.slice(0, maxCards);
-
-    if (this.needsImpressionStats(cards)) {
-      props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-        source: props.eventSource,
-        tiles: cards.map(link => ({ id: link.guid }))
-      }));
-      this.impressionCardGuids = cards.map(link => link.guid);
-    }
-  }
-
   
-  
-  
-  sendImpressionStatsOrAddListener() {
-    const { props } = this;
 
-    if (!props.shouldSendImpressionStats || !props.dispatch) {
-      return;
-    }
 
-    if (props.document.visibilityState === VISIBLE) {
-      this._dispatchImpressionStats();
-    } else {
-      
-      
-      if (this._onVisibilityChange) {
-        props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+  _dispatchTopSitesStats() {
+    const topSites = this._getVisibleTopSites();
+    const topSitesIconsStats = countTopSitesIconsTypes(topSites);
+    const topSitesPinned = topSites.filter(site => !!site.isPinned).length;
+    const searchShortcuts = topSites.filter(site => !!site.searchTopSite).length;
+    
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_SESSION_PERF_DATA,
+      data: {
+        topsites_icon_stats: topSitesIconsStats,
+        topsites_pinned: topSitesPinned,
+        topsites_search_shortcuts: searchShortcuts
       }
-
-      
-      this._onVisibilityChange = () => {
-        if (props.document.visibilityState === VISIBLE) {
-          if (!this.props.pref.collapsed) {
-            this._dispatchImpressionStats();
-          }
-          props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-        }
-      };
-      props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-    }
+    }));
   }
 
-  componentWillMount() {
-    this.sendNewTabRehydrated(this.props.initialized);
+  
+
+
+  _getVisibleTopSites() {
+    
+    let sitesPerRow = common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__["TOP_SITES_MAX_SITES_PER_ROW"];
+    
+    if (!global.matchMedia(`(min-width: 1072px)`).matches) {
+      sitesPerRow -= 2;
+    }
+    return this.props.TopSites.rows.slice(0, this.props.TopSitesRows * sitesPerRow);
+  }
+
+  componentDidUpdate() {
+    this._dispatchTopSitesStats();
   }
 
   componentDidMount() {
-    if (this.props.rows.length && !this.props.pref.collapsed) {
-      this.sendImpressionStatsOrAddListener();
-    }
+    this._dispatchTopSitesStats();
   }
 
-  componentDidUpdate(prevProps) {
-    const { props } = this;
-    const isCollapsed = props.pref.collapsed;
-    const wasCollapsed = prevProps.pref.collapsed;
-    if (
-    
-    props.rows.length && (
-    
-    
-    props.rows !== prevProps.rows && !isCollapsed ||
-    
-    wasCollapsed && !isCollapsed)) {
-      this.sendImpressionStatsOrAddListener();
-    }
+  onEditFormClose() {
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+      source: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
+      event: "TOP_SITES_EDIT_CLOSE"
+    }));
+    this.props.dispatch({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_CANCEL_EDIT });
   }
 
-  componentWillUpdate(nextProps) {
-    this.sendNewTabRehydrated(nextProps.initialized);
-  }
-
-  componentWillUnmount() {
-    if (this._onVisibilityChange) {
-      this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-    }
-  }
-
-  needsImpressionStats(cards) {
-    if (!this.impressionCardGuids || this.impressionCardGuids.length !== cards.length) {
-      return true;
-    }
-
-    for (let i = 0; i < cards.length; i++) {
-      if (cards[i].guid !== this.impressionCardGuids[i]) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  
-  
-  
-  sendNewTabRehydrated(initialized) {
-    if (initialized && !this.renderNotified) {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].NEW_TAB_REHYDRATED, data: {} }));
-      this.renderNotified = true;
-    }
+  onSearchShortcutsFormClose() {
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
+      source: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
+      event: "SEARCH_EDIT_CLOSE"
+    }));
+    this.props.dispatch({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL });
   }
 
   render() {
-    const {
-      id, eventSource, title, icon, rows, Pocket, topics,
-      emptyState, dispatch, compactCards, read_more_endpoint,
-      contextMenuOptions, initialized, learnMore,
-      pref, privacyNoticeURL, isFirst, isLast
-    } = this.props;
-
-    const waitingForSpoc = id === "topstories" && this.props.Pocket.waitingForSpoc;
-    const maxCardsPerRow = compactCards ? CARDS_PER_ROW_COMPACT_WIDE : CARDS_PER_ROW_DEFAULT;
-    const { numRows } = this;
-    const maxCards = maxCardsPerRow * numRows;
-    const maxCardsOnNarrow = CARDS_PER_ROW_DEFAULT * numRows;
-
-    const { pocketCta, isUserLoggedIn } = Pocket || {};
-    const { useCta } = pocketCta || {};
-
-    
-    
-    const isPocketLoggedInDefined = isUserLoggedIn === true || isUserLoggedIn === false;
-
-    const hasTopics = topics && topics.length > 0;
-
-    const shouldShowPocketCta = id === "topstories" && useCta && isUserLoggedIn === false;
-
-    
-    
-    const shouldShowTopics = id === "topstories" && hasTopics && (useCta && isUserLoggedIn === true || !useCta && isPocketLoggedInDefined);
-
-    
-    const shouldShowReadMore = read_more_endpoint && hasTopics;
-
-    const realRows = rows.slice(0, maxCards);
-
-    
-    
-    const shouldShowEmptyState = initialized && !rows.length;
-
-    const cards = [];
-    if (!shouldShowEmptyState) {
-      for (let i = 0; i < maxCards; i++) {
-        const link = realRows[i];
-        
-        
-        const className = i >= maxCardsOnNarrow ? "hide-for-narrow" : "";
-        let usePlaceholder = !link;
-        
-        
-        if (!usePlaceholder && i === 2 && waitingForSpoc) {
-          usePlaceholder = true;
-        }
-        cards.push(!usePlaceholder ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__["Card"], { key: i,
-          index: i,
-          className: className,
-          dispatch: dispatch,
-          link: link,
-          contextMenuOptions: contextMenuOptions,
-          eventSource: eventSource,
-          shouldSendImpressionStats: this.props.shouldSendImpressionStats,
-          isWebExtension: this.props.isWebExtension }) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__["PlaceholderCard"], { key: i, className: className }));
-      }
+    const { props } = this;
+    const { editForm, showSearchShortcutsForm } = props.TopSites;
+    const extraMenuOptions = ["AddTopSite"];
+    if (props.Prefs.values["improvesearch.topSiteSearchShortcuts"]) {
+      extraMenuOptions.push("AddSearchShortcut");
     }
 
-    const sectionClassName = ["section", compactCards ? "compact-cards" : "normal-cards"].join(" ");
-
-    
-    
-    return react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-      content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__["ComponentPerfTimer"],
-      this.props,
-      react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-        content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__["CollapsibleSection"],
-        { className: sectionClassName, icon: icon,
-          title: title,
-          id: id,
-          eventSource: eventSource,
-          collapsed: this.props.pref.collapsed,
-          showPrefName: pref && pref.feed || id,
-          privacyNoticeURL: privacyNoticeURL,
-          Prefs: this.props.Prefs,
-          isFirst: isFirst,
-          isLast: isLast,
-          learnMore: learnMore,
-          dispatch: this.props.dispatch,
-          isWebExtension: this.props.isWebExtension },
-        !shouldShowEmptyState && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-          "ul",
-          { className: "section-list", style: { padding: 0 } },
-          cards
-        ),
-        shouldShowEmptyState && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
+      content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__["ComponentPerfTimer"],
+      { id: "topsites", initialized: props.TopSites.initialized, dispatch: props.dispatch },
+      react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
+        content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__["CollapsibleSection"],
+        {
+          className: "top-sites",
+          icon: "topsites",
+          id: "topsites",
+          title: { id: "header_top_sites" },
+          extraMenuOptions: extraMenuOptions,
+          showPrefName: "feeds.topsites",
+          eventSource: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
+          collapsed: props.TopSites.pref ? props.TopSites.pref.collapsed : undefined,
+          isFirst: props.isFirst,
+          isLast: props.isLast,
+          dispatch: props.dispatch },
+        react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_TopSite__WEBPACK_IMPORTED_MODULE_10__["TopSiteList"], { TopSites: props.TopSites, TopSitesRows: props.TopSitesRows, dispatch: props.dispatch, intl: props.intl, topSiteIconType: topSiteIconType }),
+        react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
           "div",
-          { className: "section-empty-state" },
-          react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+          { className: "edit-topsites-wrapper" },
+          editForm && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
             "div",
-            { className: "empty-state" },
-            emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("span", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("span", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
-            react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-              "p",
-              { className: "empty-state-message" },
-              getFormattedMessage(emptyState.message)
+            { className: "edit-topsites" },
+            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", { className: "modal-overlay", onClick: this.onEditFormClose }),
+            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
+              "div",
+              { className: "modal" },
+              react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_TopSiteForm__WEBPACK_IMPORTED_MODULE_9__["TopSiteForm"], _extends({
+                site: props.TopSites.rows[editForm.index],
+                onClose: this.onEditFormClose,
+                dispatch: this.props.dispatch,
+                intl: this.props.intl
+              }, editForm))
             )
-          )
-        ),
-        id === "topstories" && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-          "div",
-          { className: "top-stories-bottom-container" },
-          shouldShowTopics && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-            "div",
-            { className: "wrapper-topics" },
-            react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__["Topics"], { topics: this.props.topics })
           ),
-          shouldShowPocketCta && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+          showSearchShortcutsForm && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
             "div",
-            { className: "wrapper-cta" },
-            react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__["PocketLoggedInCta"], null)
-          ),
-          react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-            "div",
-            { className: "wrapper-more-recommendations" },
-            shouldShowReadMore && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__["MoreRecommendations"], { read_more_endpoint: read_more_endpoint })
+            { className: "edit-search-shortcuts" },
+            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", { className: "modal-overlay", onClick: this.onSearchShortcutsFormClose }),
+            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
+              "div",
+              { className: "modal" },
+              react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__["SearchShortcutsForm"], {
+                TopSites: props.TopSites,
+                onClose: this.onSearchShortcutsFormClose,
+                dispatch: this.props.dispatch })
+            )
           )
         )
       )
@@ -4341,52 +3896,11 @@ class Section extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureComponent
   }
 }
 
-Section.defaultProps = {
-  document: global.document,
-  rows: [],
-  emptyState: {},
-  pref: {},
-  title: ""
-};
-
-const SectionIntl = Object(react_redux__WEBPACK_IMPORTED_MODULE_5__["connect"])(state => ({ Prefs: state.Prefs, Pocket: state.Pocket }))(Object(react_intl__WEBPACK_IMPORTED_MODULE_2__["injectIntl"])(Section));
-
-class _Sections extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureComponent {
-  renderSections() {
-    const sections = [];
-    const enabledSections = this.props.Sections.filter(section => section.enabled);
-    const { sectionOrder, "feeds.topsites": showTopSites } = this.props.Prefs.values;
-    
-    const expectedCount = enabledSections.length + ~~showTopSites;
-
-    for (const sectionId of sectionOrder.split(",")) {
-      const commonProps = {
-        key: sectionId,
-        isFirst: sections.length === 0,
-        isLast: sections.length === expectedCount - 1
-      };
-      if (sectionId === "topsites" && showTopSites) {
-        sections.push(react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__["TopSites"], commonProps));
-      } else {
-        const section = enabledSections.find(s => s.id === sectionId);
-        if (section) {
-          sections.push(react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(SectionIntl, _extends({}, section, commonProps)));
-        }
-      }
-    }
-    return sections;
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
-      "div",
-      { className: "sections-list" },
-      this.renderSections()
-    );
-  }
-}
-
-const Sections = Object(react_redux__WEBPACK_IMPORTED_MODULE_5__["connect"])(state => ({ Sections: state.Sections, Prefs: state.Prefs }))(_Sections);
+const TopSites = Object(react_redux__WEBPACK_IMPORTED_MODULE_4__["connect"])(state => ({
+  TopSites: state.TopSites,
+  Prefs: state.Prefs,
+  TopSitesRows: state.Prefs.values.topSitesRows
+}))(Object(react_intl__WEBPACK_IMPORTED_MODULE_5__["injectIntl"])(_TopSites));
 }.call(this, __webpack_require__(1)))
 
  }),
@@ -4395,456 +3909,19 @@ const Sections = Object(react_redux__WEBPACK_IMPORTED_MODULE_5__["connect"])(sta
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "GetPlatformString", function() { return GetPlatformString; });
- __webpack_require__.d(__webpack_exports__, "LinkMenuOptions", function() { return LinkMenuOptions; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ __webpack_require__.d(__webpack_exports__, "TOP_SITES_SOURCE", function() { return TOP_SITES_SOURCE; });
+ __webpack_require__.d(__webpack_exports__, "TOP_SITES_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_CONTEXT_MENU_OPTIONS; });
+ __webpack_require__.d(__webpack_exports__, "TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS; });
+ __webpack_require__.d(__webpack_exports__, "MIN_RICH_FAVICON_SIZE", function() { return MIN_RICH_FAVICON_SIZE; });
+ __webpack_require__.d(__webpack_exports__, "MIN_CORNER_FAVICON_SIZE", function() { return MIN_CORNER_FAVICON_SIZE; });
+const TOP_SITES_SOURCE = "TOP_SITES";
+const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
 
+const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"];
 
-const _OpenInPrivateWindow = site => ({
-  id: "menu_action_open_private_window",
-  icon: "new-window-private",
-  action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-    type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_PRIVATE_WINDOW,
-    data: { url: site.url, referrer: site.referrer }
-  }),
-  userEvent: "OPEN_PRIVATE_WINDOW"
-});
+const MIN_RICH_FAVICON_SIZE = 96;
 
-const GetPlatformString = platform => {
-  switch (platform) {
-    case "win":
-      return "menu_action_show_file_windows";
-    case "macosx":
-      return "menu_action_show_file_mac_os";
-    case "linux":
-      return "menu_action_show_file_linux";
-    default:
-      return "menu_action_show_file_default";
-  }
-};
-
-
-
-
-
-
-const LinkMenuOptions = {
-  Separator: () => ({ type: "separator" }),
-  EmptyItem: () => ({ type: "empty" }),
-  RemoveBookmark: site => ({
-    id: "menu_action_remove_bookmark",
-    icon: "bookmark-added",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_BOOKMARK_BY_ID,
-      data: site.bookmarkGuid
-    }),
-    userEvent: "BOOKMARK_DELETE"
-  }),
-  AddBookmark: site => ({
-    id: "menu_action_bookmark",
-    icon: "bookmark-hollow",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BOOKMARK_URL,
-      data: { url: site.url, title: site.title, type: site.type }
-    }),
-    userEvent: "BOOKMARK_ADD"
-  }),
-  OpenInNewWindow: site => ({
-    id: "menu_action_open_new_window",
-    icon: "new-window",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_NEW_WINDOW,
-      data: {
-        referrer: site.referrer,
-        typedBonus: site.typedBonus,
-        url: site.url
-      }
-    }),
-    userEvent: "OPEN_NEW_WINDOW"
-  }),
-  BlockUrl: (site, index, eventSource) => ({
-    id: "menu_action_dismiss",
-    icon: "dismiss",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BLOCK_URL,
-      data: { url: site.open_url || site.url, pocket_id: site.pocket_id }
-    }),
-    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-      source: eventSource,
-      block: 0,
-      tiles: [{ id: site.guid, pos: index }]
-    }),
-    userEvent: "BLOCK"
-  }),
-
-  
-  
-  WebExtDismiss: (site, index, eventSource) => ({
-    id: "menu_action_webext_dismiss",
-    string_id: "menu_action_dismiss",
-    icon: "dismiss",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].WebExtEvent(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].WEBEXT_DISMISS, {
-      source: eventSource,
-      url: site.url,
-      action_position: index
-    })
-  }),
-  DeleteUrl: (site, index, eventSource, isEnabled, siteInfo) => ({
-    id: "menu_action_delete",
-    icon: "delete",
-    action: {
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DIALOG_OPEN,
-      data: {
-        onConfirm: [common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_HISTORY_URL, data: { url: site.url, pocket_id: site.pocket_id, forceBlock: site.bookmarkGuid } }), common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(Object.assign({ event: "DELETE", source: eventSource, action_position: index }, siteInfo))],
-        eventSource,
-        body_string_id: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
-        confirm_button_string_id: "menu_action_delete",
-        cancel_button_string_id: "topsites_form_cancel_button",
-        icon: "modal-delete"
-      }
-    },
-    userEvent: "DIALOG_OPEN"
-  }),
-  ShowFile: (site, index, eventSource, isEnabled, siteInfo, platform) => ({
-    id: GetPlatformString(platform),
-    icon: "search",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SHOW_DOWNLOAD_FILE,
-      data: { url: site.url }
-    })
-  }),
-  OpenFile: site => ({
-    id: "menu_action_open_file",
-    icon: "open-file",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_DOWNLOAD_FILE,
-      data: { url: site.url }
-    })
-  }),
-  CopyDownloadLink: site => ({
-    id: "menu_action_copy_download_link",
-    icon: "copy",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].COPY_DOWNLOAD_LINK,
-      data: { url: site.url }
-    })
-  }),
-  GoToDownloadPage: site => ({
-    id: "menu_action_go_to_download_page",
-    icon: "download",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_LINK,
-      data: { url: site.referrer }
-    }),
-    disabled: !site.referrer
-  }),
-  RemoveDownload: site => ({
-    id: "menu_action_remove_download",
-    icon: "delete",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].REMOVE_DOWNLOAD_FILE,
-      data: { url: site.url }
-    })
-  }),
-  PinTopSite: ({ url, searchTopSite, label }, index) => ({
-    id: "menu_action_pin",
-    icon: "pin",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_PIN,
-      data: {
-        site: Object.assign({
-          url
-        }, searchTopSite && { searchTopSite, label }),
-        index
-      }
-    }),
-    userEvent: "PIN"
-  }),
-  UnpinTopSite: site => ({
-    id: "menu_action_unpin",
-    icon: "unpin",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_UNPIN,
-      data: { site: { url: site.url } }
-    }),
-    userEvent: "UNPIN"
-  }),
-  SaveToPocket: (site, index, eventSource) => ({
-    id: "menu_action_save_to_pocket",
-    icon: "pocket-save",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_TO_POCKET,
-      data: { site: { url: site.url, title: site.title } }
-    }),
-    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-      source: eventSource,
-      pocket: 0,
-      tiles: [{ id: site.guid, pos: index }]
-    }),
-    userEvent: "SAVE_TO_POCKET"
-  }),
-  DeleteFromPocket: site => ({
-    id: "menu_action_delete_pocket",
-    icon: "delete",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_FROM_POCKET,
-      data: { pocket_id: site.pocket_id }
-    }),
-    userEvent: "DELETE_FROM_POCKET"
-  }),
-  ArchiveFromPocket: site => ({
-    id: "menu_action_archive_pocket",
-    icon: "check",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].ARCHIVE_FROM_POCKET,
-      data: { pocket_id: site.pocket_id }
-    }),
-    userEvent: "ARCHIVE_FROM_POCKET"
-  }),
-  EditTopSite: (site, index) => ({
-    id: "edit_topsites_button_text",
-    icon: "edit",
-    action: {
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_EDIT,
-      data: { index }
-    }
-  }),
-  CheckBookmark: site => site.bookmarkGuid ? LinkMenuOptions.RemoveBookmark(site) : LinkMenuOptions.AddBookmark(site),
-  CheckPinTopSite: (site, index) => site.isPinned ? LinkMenuOptions.UnpinTopSite(site) : LinkMenuOptions.PinTopSite(site, index),
-  CheckSavedToPocket: (site, index) => site.pocket_id ? LinkMenuOptions.DeleteFromPocket(site) : LinkMenuOptions.SaveToPocket(site, index),
-  CheckBookmarkOrArchive: site => site.pocket_id ? LinkMenuOptions.ArchiveFromPocket(site) : LinkMenuOptions.CheckBookmark(site),
-  OpenInPrivateWindow: (site, index, eventSource, isEnabled) => isEnabled ? _OpenInPrivateWindow(site) : LinkMenuOptions.EmptyItem()
-};
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
- __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(37);
- var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
- var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
-
-
-
-
-
-
-
-const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
-
-class _LinkMenu extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureComponent {
-  getOptions() {
-    const { props } = this;
-    const { site, index, source, isPrivateBrowsingEnabled, siteInfo, platform } = props;
-
-    
-    const propOptions = !site.isDefault || site.searchTopSite ? props.options : DEFAULT_SITE_MENU_OPTIONS;
-
-    const options = propOptions.map(o => content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__["LinkMenuOptions"][o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
-      const { action, impression, id, string_id, type, userEvent } = option;
-      if (!type && id) {
-        option.label = props.intl.formatMessage({ id: string_id || id });
-        option.onClick = () => {
-          props.dispatch(action);
-          if (userEvent) {
-            const userEventData = Object.assign({
-              event: userEvent,
-              source,
-              action_position: index
-            }, siteInfo);
-            props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(userEventData));
-          }
-          if (impression && props.shouldSendImpressionStats) {
-            props.dispatch(impression);
-          }
-        };
-      }
-      return option;
-    });
-
-    
-    
-    
-    options[0].first = true;
-    options[options.length - 1].last = true;
-    return options;
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__["ContextMenu"], {
-      onUpdate: this.props.onUpdate,
-      options: this.getOptions() });
-  }
-}
-
-const getState = state => ({ isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled, platform: state.Prefs.values.platform });
-const LinkMenu = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(getState)(Object(react_intl__WEBPACK_IMPORTED_MODULE_3__["injectIntl"])(_LinkMenu));
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "ContextMenu", function() { return ContextMenu; });
- __webpack_require__.d(__webpack_exports__, "ContextMenuItem", function() { return ContextMenuItem; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-
-
-class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.hideContext = this.hideContext.bind(this);
-    this.onClick = this.onClick.bind(this);
-  }
-
-  hideContext() {
-    this.props.onUpdate(false);
-  }
-
-  componentDidMount() {
-    setTimeout(() => {
-      global.addEventListener("click", this.hideContext);
-    }, 0);
-  }
-
-  componentWillUnmount() {
-    global.removeEventListener("click", this.hideContext);
-  }
-
-  onClick(event) {
-    
-    
-    
-    event.stopPropagation();
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-      "span",
-      { className: "context-menu", onClick: this.onClick },
-      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-        "ul",
-        { role: "menu", className: "context-menu-list" },
-        this.props.options.map((option, i) => option.type === "separator" ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", { key: i, className: "separator" }) : option.type !== "empty" && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(ContextMenuItem, { key: i, option: option, hideContext: this.hideContext }))
-      )
-    );
-  }
-}
-
-class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-  }
-
-  onClick() {
-    this.props.hideContext();
-    this.props.option.onClick();
-  }
-
-  onKeyDown(event) {
-    const { option } = this.props;
-    switch (event.key) {
-      case "Tab":
-        
-        
-        
-        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
-          this.props.hideContext();
-        }
-        break;
-      case "Enter":
-        this.props.hideContext();
-        option.onClick();
-        break;
-    }
-  }
-
-  render() {
-    const { option } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-      "li",
-      { role: "menuitem", className: "context-menu-item" },
-      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-        "a",
-        { onClick: this.onClick, onKeyDown: this.onKeyDown, tabIndex: "0", className: option.disabled ? "disabled" : "" },
-        option.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
-        option.label
-      )
-    );
-  }
-}
-}.call(this, __webpack_require__(1)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "ScreenshotUtils", function() { return ScreenshotUtils; });
-
-
-
-
-
-
-
-
-
-
-
-
-const ScreenshotUtils = {
-  isBlob(isLocal, image) {
-    return !!(image && image.path && (!isLocal && image.data || isLocal && image.url));
-  },
-
-  
-  createLocalImageObject(remoteImage) {
-    if (!remoteImage) {
-      return null;
-    }
-    if (this.isBlob(false, remoteImage)) {
-      return { url: global.URL.createObjectURL(remoteImage.data), path: remoteImage.path };
-    }
-    return { url: remoteImage };
-  },
-
-  
-  
-  maybeRevokeBlobObjectURL(localImage) {
-    if (this.isBlob(true, localImage)) {
-      global.URL.revokeObjectURL(localImage.url);
-    }
-  },
-
-  
-  isRemoteImageLocal(localImage, remoteImage) {
-    
-    if (remoteImage && localImage) {
-      return this.isBlob(false, remoteImage) ? localImage.path === remoteImage.path : localImage.url === remoteImage;
-    }
-
-    
-    
-    return !remoteImage && !localImage;
-  }
-};
-}.call(this, __webpack_require__(1)))
+const MIN_CORNER_FAVICON_SIZE = 16;
 
  }),
 
@@ -4857,11 +3934,11 @@ __webpack_require__.r(__webpack_exports__);
  var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(29);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(32);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(40);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(41);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(33);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(35);
 
 
 
@@ -5119,15 +4196,102 @@ const CollapsibleSection = Object(react_intl__WEBPACK_IMPORTED_MODULE_0__["injec
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
+ __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+class ErrorBoundaryFallback extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.windowObj = this.props.windowObj || window;
+    this.onClick = this.onClick.bind(this);
+  }
+
+  
+
+
+
+  onClick() {
+    this.windowObj.location.reload(true);
+  }
+
+  render() {
+    const defaultClass = "as-error-fallback";
+    let className;
+    if ("className" in this.props) {
+      className = `${this.props.className} ${defaultClass}`;
+    } else {
+      className = defaultClass;
+    }
+
+    
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+      "div",
+      { className: className },
+      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+        "div",
+        null,
+        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], {
+          defaultMessage: "Oops, something went wrong loading this content.",
+          id: "error_fallback_default_info" })
+      ),
+      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+        "span",
+        null,
+        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+          "a",
+          { href: "#", className: "reload-button", onClick: this.onClick },
+          react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], {
+            defaultMessage: "Refresh page to try again.",
+            id: "error_fallback_default_refresh_suggestion" })
+        )
+      )
+    );
+  }
+}
+ErrorBoundaryFallback.defaultProps = { className: "as-error-fallback" };
+
+class ErrorBoundary extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  componentDidCatch(error, info) {
+    this.setState({ hasError: true });
+  }
+
+  render() {
+    if (!this.state.hasError) {
+      return this.props.children;
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(this.props.FallbackComponent, { className: this.props.className });
+  }
+}
+
+ErrorBoundary.defaultProps = { FallbackComponent: ErrorBoundaryFallback };
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_SectionMenu", function() { return _SectionMenu; });
  __webpack_require__.d(__webpack_exports__, "SectionMenu", function() { return SectionMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(37);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(34);
  var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(41);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
 
 
 
@@ -5184,6 +4348,105 @@ class _SectionMenu extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComp
 }
 
 const SectionMenu = Object(react_intl__WEBPACK_IMPORTED_MODULE_2__["injectIntl"])(_SectionMenu);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "ContextMenu", function() { return ContextMenu; });
+ __webpack_require__.d(__webpack_exports__, "ContextMenuItem", function() { return ContextMenuItem; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.hideContext = this.hideContext.bind(this);
+    this.onClick = this.onClick.bind(this);
+  }
+
+  hideContext() {
+    this.props.onUpdate(false);
+  }
+
+  componentDidMount() {
+    setTimeout(() => {
+      global.addEventListener("click", this.hideContext);
+    }, 0);
+  }
+
+  componentWillUnmount() {
+    global.removeEventListener("click", this.hideContext);
+  }
+
+  onClick(event) {
+    
+    
+    
+    event.stopPropagation();
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+      "span",
+      { className: "context-menu", onClick: this.onClick },
+      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+        "ul",
+        { role: "menu", className: "context-menu-list" },
+        this.props.options.map((option, i) => option.type === "separator" ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", { key: i, className: "separator" }) : option.type !== "empty" && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(ContextMenuItem, { key: i, option: option, hideContext: this.hideContext }))
+      )
+    );
+  }
+}
+
+class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onClick = this.onClick.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+  }
+
+  onClick() {
+    this.props.hideContext();
+    this.props.option.onClick();
+  }
+
+  onKeyDown(event) {
+    const { option } = this.props;
+    switch (event.key) {
+      case "Tab":
+        
+        
+        
+        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
+          this.props.hideContext();
+        }
+        break;
+      case "Enter":
+        this.props.hideContext();
+        option.onClick();
+        break;
+    }
+  }
+
+  render() {
+    const { option } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+      "li",
+      { role: "menuitem", className: "context-menu-item" },
+      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+        "a",
+        { onClick: this.onClick, onKeyDown: this.onKeyDown, tabIndex: "0", className: option.disabled ? "disabled" : "" },
+        option.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
+        option.label
+      )
+    );
+  }
+}
+}.call(this, __webpack_require__(1)))
 
  }),
 
@@ -5282,7 +4545,7 @@ const SectionMenuOptions = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(43);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(37);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -5589,364 +4852,13 @@ var perfService = new _PerfService();
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "MoreRecommendations", function() { return MoreRecommendations; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-
-
-
-class MoreRecommendations extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  render() {
-    const { read_more_endpoint } = this.props;
-    if (read_more_endpoint) {
-      return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-        "a",
-        { className: "more-recommendations", href: read_more_endpoint },
-        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], { id: "pocket_more_reccommendations" })
-      );
-    }
-    return null;
-  }
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "_PocketLoggedInCta", function() { return _PocketLoggedInCta; });
- __webpack_require__.d(__webpack_exports__, "PocketLoggedInCta", function() { return PocketLoggedInCta; });
- var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
-
-
-
-
-class _PocketLoggedInCta extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
-  render() {
-    const { pocketCta } = this.props.Pocket;
-    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
-      "span",
-      { className: "pocket-logged-in-cta" },
-      react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
-        "a",
-        { className: "pocket-cta-button", href: pocketCta.ctaUrl ? pocketCta.ctaUrl : "https://getpocket.com/" },
-        pocketCta.ctaButton ? pocketCta.ctaButton : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "pocket_cta_button" })
-      ),
-      react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
-        "a",
-        { href: pocketCta.ctaUrl ? pocketCta.ctaUrl : "https://getpocket.com/" },
-        react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
-          "span",
-          { className: "cta-text" },
-          pocketCta.ctaText ? pocketCta.ctaText : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "pocket_cta_text" })
-        )
-      )
-    );
-  }
-}
-
-const PocketLoggedInCta = Object(react_redux__WEBPACK_IMPORTED_MODULE_0__["connect"])(state => ({ Pocket: state.Pocket }))(_PocketLoggedInCta);
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Topic", function() { return Topic; });
- __webpack_require__.d(__webpack_exports__, "Topics", function() { return Topics; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-
-
-
-class Topic extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  render() {
-    const { url, name } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-      "li",
-      null,
-      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-        "a",
-        { key: name, href: url },
-        name
-      )
-    );
-  }
-}
-
-class Topics extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  render() {
-    const { topics } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-      "span",
-      { className: "topics" },
-      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-        "span",
-        null,
-        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], { id: "pocket_read_more" })
-      ),
-      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-        "ul",
-        null,
-        topics && topics.map(t => react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(Topic, { key: t.name, url: t.url, name: t.name }))
-      )
-    );
-  }
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
- __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(48);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(39);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(42);
- var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var react_intl__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_5__);
- var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(49);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(57);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(59);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(50);
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-
-
-
-
-
-
-
-
-
-
-
-
-function topSiteIconType(link) {
-  if (link.customScreenshotURL) {
-    return "custom_screenshot";
-  }
-  if (link.tippyTopIcon || link.faviconRef === "tippytop") {
-    return "tippytop";
-  }
-  if (link.faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_RICH_FAVICON_SIZE"]) {
-    return "rich_icon";
-  }
-  if (link.screenshot && link.faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_CORNER_FAVICON_SIZE"]) {
-    return "screenshot_with_icon";
-  }
-  if (link.screenshot) {
-    return "screenshot";
-  }
-  return "no_image";
-}
-
-
-
-
-
-
-function countTopSitesIconsTypes(topSites) {
-  const countTopSitesTypes = (acc, link) => {
-    acc[topSiteIconType(link)]++;
-    return acc;
-  };
-
-  return topSites.reduce(countTopSitesTypes, {
-    "custom_screenshot": 0,
-    "screenshot_with_icon": 0,
-    "screenshot": 0,
-    "tippytop": 0,
-    "rich_icon": 0,
-    "no_image": 0
-  });
-}
-
-class _TopSites extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onEditFormClose = this.onEditFormClose.bind(this);
-    this.onSearchShortcutsFormClose = this.onSearchShortcutsFormClose.bind(this);
-  }
-
-  
-
-
-  _dispatchTopSitesStats() {
-    const topSites = this._getVisibleTopSites();
-    const topSitesIconsStats = countTopSitesIconsTypes(topSites);
-    const topSitesPinned = topSites.filter(site => !!site.isPinned).length;
-    const searchShortcuts = topSites.filter(site => !!site.searchTopSite).length;
-    
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_SESSION_PERF_DATA,
-      data: {
-        topsites_icon_stats: topSitesIconsStats,
-        topsites_pinned: topSitesPinned,
-        topsites_search_shortcuts: searchShortcuts
-      }
-    }));
-  }
-
-  
-
-
-  _getVisibleTopSites() {
-    
-    let sitesPerRow = common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__["TOP_SITES_MAX_SITES_PER_ROW"];
-    
-    if (!global.matchMedia(`(min-width: 1072px)`).matches) {
-      sitesPerRow -= 2;
-    }
-    return this.props.TopSites.rows.slice(0, this.props.TopSitesRows * sitesPerRow);
-  }
-
-  componentDidUpdate() {
-    this._dispatchTopSitesStats();
-  }
-
-  componentDidMount() {
-    this._dispatchTopSitesStats();
-  }
-
-  onEditFormClose() {
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-      source: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
-      event: "TOP_SITES_EDIT_CLOSE"
-    }));
-    this.props.dispatch({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_CANCEL_EDIT });
-  }
-
-  onSearchShortcutsFormClose() {
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-      source: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
-      event: "SEARCH_EDIT_CLOSE"
-    }));
-    this.props.dispatch({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL });
-  }
-
-  render() {
-    const { props } = this;
-    const { editForm, showSearchShortcutsForm } = props.TopSites;
-    const extraMenuOptions = ["AddTopSite"];
-    if (props.Prefs.values["improvesearch.topSiteSearchShortcuts"]) {
-      extraMenuOptions.push("AddSearchShortcut");
-    }
-
-    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-      content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__["ComponentPerfTimer"],
-      { id: "topsites", initialized: props.TopSites.initialized, dispatch: props.dispatch },
-      react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-        content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__["CollapsibleSection"],
-        {
-          className: "top-sites",
-          icon: "topsites",
-          id: "topsites",
-          title: { id: "header_top_sites" },
-          extraMenuOptions: extraMenuOptions,
-          showPrefName: "feeds.topsites",
-          eventSource: _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["TOP_SITES_SOURCE"],
-          collapsed: props.TopSites.pref ? props.TopSites.pref.collapsed : undefined,
-          isFirst: props.isFirst,
-          isLast: props.isLast,
-          dispatch: props.dispatch },
-        react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_TopSite__WEBPACK_IMPORTED_MODULE_10__["TopSiteList"], { TopSites: props.TopSites, TopSitesRows: props.TopSitesRows, dispatch: props.dispatch, intl: props.intl, topSiteIconType: topSiteIconType }),
-        react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-          "div",
-          { className: "edit-topsites-wrapper" },
-          editForm && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-            "div",
-            { className: "edit-topsites" },
-            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", { className: "modal-overlay", onClick: this.onEditFormClose }),
-            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-              "div",
-              { className: "modal" },
-              react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_TopSiteForm__WEBPACK_IMPORTED_MODULE_9__["TopSiteForm"], _extends({
-                site: props.TopSites.rows[editForm.index],
-                onClose: this.onEditFormClose,
-                dispatch: this.props.dispatch,
-                intl: this.props.intl
-              }, editForm))
-            )
-          ),
-          showSearchShortcutsForm && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-            "div",
-            { className: "edit-search-shortcuts" },
-            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", { className: "modal-overlay", onClick: this.onSearchShortcutsFormClose }),
-            react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-              "div",
-              { className: "modal" },
-              react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__["SearchShortcutsForm"], {
-                TopSites: props.TopSites,
-                onClose: this.onSearchShortcutsFormClose,
-                dispatch: this.props.dispatch })
-            )
-          )
-        )
-      )
-    );
-  }
-}
-
-const TopSites = Object(react_redux__WEBPACK_IMPORTED_MODULE_4__["connect"])(state => ({
-  TopSites: state.TopSites,
-  Prefs: state.Prefs,
-  TopSitesRows: state.Prefs.values.topSitesRows
-}))(Object(react_intl__WEBPACK_IMPORTED_MODULE_5__["injectIntl"])(_TopSites));
-}.call(this, __webpack_require__(1)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "TOP_SITES_SOURCE", function() { return TOP_SITES_SOURCE; });
- __webpack_require__.d(__webpack_exports__, "TOP_SITES_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_CONTEXT_MENU_OPTIONS; });
- __webpack_require__.d(__webpack_exports__, "TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS; });
- __webpack_require__.d(__webpack_exports__, "MIN_RICH_FAVICON_SIZE", function() { return MIN_RICH_FAVICON_SIZE; });
- __webpack_require__.d(__webpack_exports__, "MIN_CORNER_FAVICON_SIZE", function() { return MIN_CORNER_FAVICON_SIZE; });
-const TOP_SITES_SOURCE = "TOP_SITES";
-const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
-
-const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"];
-
-const MIN_RICH_FAVICON_SIZE = 96;
-
-const MIN_CORNER_FAVICON_SIZE = 16;
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "SearchShortcutsForm", function() { return SearchShortcutsForm; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(48);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(30);
 
 
 
@@ -6128,11 +5040,11 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(48);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(36);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(42);
  var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(57);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -6663,9 +5575,1237 @@ const TopSiteList = Object(react_intl__WEBPACK_IMPORTED_MODULE_1__["injectIntl"]
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
+ __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
+ var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_3__);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(41);
+ var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
+
+
+
+
+
+
+
+const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
+
+class _LinkMenu extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureComponent {
+  getOptions() {
+    const { props } = this;
+    const { site, index, source, isPrivateBrowsingEnabled, siteInfo, platform } = props;
+
+    
+    const propOptions = !site.isDefault || site.searchTopSite ? props.options : DEFAULT_SITE_MENU_OPTIONS;
+
+    const options = propOptions.map(o => content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__["LinkMenuOptions"][o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
+      const { action, impression, id, string_id, type, userEvent } = option;
+      if (!type && id) {
+        option.label = props.intl.formatMessage({ id: string_id || id });
+        option.onClick = () => {
+          props.dispatch(action);
+          if (userEvent) {
+            const userEventData = Object.assign({
+              event: userEvent,
+              source,
+              action_position: index
+            }, siteInfo);
+            props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(userEventData));
+          }
+          if (impression && props.shouldSendImpressionStats) {
+            props.dispatch(impression);
+          }
+        };
+      }
+      return option;
+    });
+
+    
+    
+    
+    options[0].first = true;
+    options[options.length - 1].last = true;
+    return options;
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__["ContextMenu"], {
+      onUpdate: this.props.onUpdate,
+      options: this.getOptions() });
+  }
+}
+
+const getState = state => ({ isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled, platform: state.Prefs.values.platform });
+const LinkMenu = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(getState)(Object(react_intl__WEBPACK_IMPORTED_MODULE_3__["injectIntl"])(_LinkMenu));
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "GetPlatformString", function() { return GetPlatformString; });
+ __webpack_require__.d(__webpack_exports__, "LinkMenuOptions", function() { return LinkMenuOptions; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+
+
+const _OpenInPrivateWindow = site => ({
+  id: "menu_action_open_private_window",
+  icon: "new-window-private",
+  action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+    type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_PRIVATE_WINDOW,
+    data: { url: site.url, referrer: site.referrer }
+  }),
+  userEvent: "OPEN_PRIVATE_WINDOW"
+});
+
+const GetPlatformString = platform => {
+  switch (platform) {
+    case "win":
+      return "menu_action_show_file_windows";
+    case "macosx":
+      return "menu_action_show_file_mac_os";
+    case "linux":
+      return "menu_action_show_file_linux";
+    default:
+      return "menu_action_show_file_default";
+  }
+};
+
+
+
+
+
+
+const LinkMenuOptions = {
+  Separator: () => ({ type: "separator" }),
+  EmptyItem: () => ({ type: "empty" }),
+  RemoveBookmark: site => ({
+    id: "menu_action_remove_bookmark",
+    icon: "bookmark-added",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_BOOKMARK_BY_ID,
+      data: site.bookmarkGuid
+    }),
+    userEvent: "BOOKMARK_DELETE"
+  }),
+  AddBookmark: site => ({
+    id: "menu_action_bookmark",
+    icon: "bookmark-hollow",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BOOKMARK_URL,
+      data: { url: site.url, title: site.title, type: site.type }
+    }),
+    userEvent: "BOOKMARK_ADD"
+  }),
+  OpenInNewWindow: site => ({
+    id: "menu_action_open_new_window",
+    icon: "new-window",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_NEW_WINDOW,
+      data: {
+        referrer: site.referrer,
+        typedBonus: site.typedBonus,
+        url: site.url
+      }
+    }),
+    userEvent: "OPEN_NEW_WINDOW"
+  }),
+  BlockUrl: (site, index, eventSource) => ({
+    id: "menu_action_dismiss",
+    icon: "dismiss",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BLOCK_URL,
+      data: { url: site.open_url || site.url, pocket_id: site.pocket_id }
+    }),
+    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+      source: eventSource,
+      block: 0,
+      tiles: [{ id: site.guid, pos: index }]
+    }),
+    userEvent: "BLOCK"
+  }),
+
+  
+  
+  WebExtDismiss: (site, index, eventSource) => ({
+    id: "menu_action_webext_dismiss",
+    string_id: "menu_action_dismiss",
+    icon: "dismiss",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].WebExtEvent(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].WEBEXT_DISMISS, {
+      source: eventSource,
+      url: site.url,
+      action_position: index
+    })
+  }),
+  DeleteUrl: (site, index, eventSource, isEnabled, siteInfo) => ({
+    id: "menu_action_delete",
+    icon: "delete",
+    action: {
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DIALOG_OPEN,
+      data: {
+        onConfirm: [common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_HISTORY_URL, data: { url: site.url, pocket_id: site.pocket_id, forceBlock: site.bookmarkGuid } }), common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(Object.assign({ event: "DELETE", source: eventSource, action_position: index }, siteInfo))],
+        eventSource,
+        body_string_id: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
+        confirm_button_string_id: "menu_action_delete",
+        cancel_button_string_id: "topsites_form_cancel_button",
+        icon: "modal-delete"
+      }
+    },
+    userEvent: "DIALOG_OPEN"
+  }),
+  ShowFile: (site, index, eventSource, isEnabled, siteInfo, platform) => ({
+    id: GetPlatformString(platform),
+    icon: "search",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SHOW_DOWNLOAD_FILE,
+      data: { url: site.url }
+    })
+  }),
+  OpenFile: site => ({
+    id: "menu_action_open_file",
+    icon: "open-file",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_DOWNLOAD_FILE,
+      data: { url: site.url }
+    })
+  }),
+  CopyDownloadLink: site => ({
+    id: "menu_action_copy_download_link",
+    icon: "copy",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].COPY_DOWNLOAD_LINK,
+      data: { url: site.url }
+    })
+  }),
+  GoToDownloadPage: site => ({
+    id: "menu_action_go_to_download_page",
+    icon: "download",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_LINK,
+      data: { url: site.referrer }
+    }),
+    disabled: !site.referrer
+  }),
+  RemoveDownload: site => ({
+    id: "menu_action_remove_download",
+    icon: "delete",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].REMOVE_DOWNLOAD_FILE,
+      data: { url: site.url }
+    })
+  }),
+  PinTopSite: ({ url, searchTopSite, label }, index) => ({
+    id: "menu_action_pin",
+    icon: "pin",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_PIN,
+      data: {
+        site: Object.assign({
+          url
+        }, searchTopSite && { searchTopSite, label }),
+        index
+      }
+    }),
+    userEvent: "PIN"
+  }),
+  UnpinTopSite: site => ({
+    id: "menu_action_unpin",
+    icon: "unpin",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_UNPIN,
+      data: { site: { url: site.url } }
+    }),
+    userEvent: "UNPIN"
+  }),
+  SaveToPocket: (site, index, eventSource) => ({
+    id: "menu_action_save_to_pocket",
+    icon: "pocket-save",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_TO_POCKET,
+      data: { site: { url: site.url, title: site.title } }
+    }),
+    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+      source: eventSource,
+      pocket: 0,
+      tiles: [{ id: site.guid, pos: index }]
+    }),
+    userEvent: "SAVE_TO_POCKET"
+  }),
+  DeleteFromPocket: site => ({
+    id: "menu_action_delete_pocket",
+    icon: "delete",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_FROM_POCKET,
+      data: { pocket_id: site.pocket_id }
+    }),
+    userEvent: "DELETE_FROM_POCKET"
+  }),
+  ArchiveFromPocket: site => ({
+    id: "menu_action_archive_pocket",
+    icon: "check",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].ARCHIVE_FROM_POCKET,
+      data: { pocket_id: site.pocket_id }
+    }),
+    userEvent: "ARCHIVE_FROM_POCKET"
+  }),
+  EditTopSite: (site, index) => ({
+    id: "edit_topsites_button_text",
+    icon: "edit",
+    action: {
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_EDIT,
+      data: { index }
+    }
+  }),
+  CheckBookmark: site => site.bookmarkGuid ? LinkMenuOptions.RemoveBookmark(site) : LinkMenuOptions.AddBookmark(site),
+  CheckPinTopSite: (site, index) => site.isPinned ? LinkMenuOptions.UnpinTopSite(site) : LinkMenuOptions.PinTopSite(site, index),
+  CheckSavedToPocket: (site, index) => site.pocket_id ? LinkMenuOptions.DeleteFromPocket(site) : LinkMenuOptions.SaveToPocket(site, index),
+  CheckBookmarkOrArchive: site => site.pocket_id ? LinkMenuOptions.ArchiveFromPocket(site) : LinkMenuOptions.CheckBookmark(site),
+  OpenInPrivateWindow: (site, index, eventSource, isEnabled) => isEnabled ? _OpenInPrivateWindow(site) : LinkMenuOptions.EmptyItem()
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "ScreenshotUtils", function() { return ScreenshotUtils; });
+
+
+
+
+
+
+
+
+
+
+
+
+const ScreenshotUtils = {
+  isBlob(isLocal, image) {
+    return !!(image && image.path && (!isLocal && image.data || isLocal && image.url));
+  },
+
+  
+  createLocalImageObject(remoteImage) {
+    if (!remoteImage) {
+      return null;
+    }
+    if (this.isBlob(false, remoteImage)) {
+      return { url: global.URL.createObjectURL(remoteImage.data), path: remoteImage.path };
+    }
+    return { url: remoteImage };
+  },
+
+  
+  
+  maybeRevokeBlobObjectURL(localImage) {
+    if (this.isBlob(true, localImage)) {
+      global.URL.revokeObjectURL(localImage.url);
+    }
+  },
+
+  
+  isRemoteImageLocal(localImage, remoteImage) {
+    
+    if (remoteImage && localImage) {
+      return this.isBlob(false, remoteImage) ? localImage.path === remoteImage.path : localImage.url === remoteImage;
+    }
+
+    
+    
+    return !remoteImage && !localImage;
+  }
+};
+}.call(this, __webpack_require__(1)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_ManualMigration", function() { return _ManualMigration; });
+ __webpack_require__.d(__webpack_exports__, "ManualMigration", function() { return ManualMigration; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+
+
+
+
+
+
+
+
+
+class _ManualMigration extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onLaunchTour = this.onLaunchTour.bind(this);
+    this.onCancelTour = this.onCancelTour.bind(this);
+  }
+
+  onLaunchTour() {
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_START }));
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_START }));
+  }
+
+  onCancelTour() {
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_CANCEL }));
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].MIGRATION_CANCEL }));
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
+      "div",
+      { className: "manual-migration-container" },
+      react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
+        "p",
+        null,
+        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", { className: "icon icon-import" }),
+        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], { id: "manual_migration_explanation2" })
+      ),
+      react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
+        "div",
+        { className: "manual-migration-actions actions" },
+        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
+          "button",
+          { className: "dismiss", onClick: this.onCancelTour },
+          react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], { id: "manual_migration_cancel_button" })
+        ),
+        react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(
+          "button",
+          { onClick: this.onLaunchTour },
+          react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], { id: "manual_migration_import_button" })
+        )
+      )
+    );
+  }
+}
+
+const ManualMigration = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])()(_ManualMigration);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_PrerenderData", function() { return _PrerenderData; });
+ __webpack_require__.d(__webpack_exports__, "PrerenderData", function() { return PrerenderData; });
+class _PrerenderData {
+  constructor(options) {
+    this.initialPrefs = options.initialPrefs;
+    this.initialSections = options.initialSections;
+    this._setValidation(options.validation);
+  }
+
+  get validation() {
+    return this._validation;
+  }
+
+  set validation(value) {
+    this._setValidation(value);
+  }
+
+  get invalidatingPrefs() {
+    return this._invalidatingPrefs;
+  }
+
+  
+  _setValidation(value = []) {
+    this._validation = value;
+    this._invalidatingPrefs = value.reduce((result, next) => {
+      if (typeof next === "string") {
+        result.push(next);
+        return result;
+      } else if (next && next.oneOf) {
+        return result.concat(next.oneOf);
+      } else if (next && next.indexedDB) {
+        return result.concat(next.indexedDB);
+      }
+      throw new Error("Your validation configuration is not properly configured");
+    }, []);
+  }
+
+  arePrefsValid(getPref, indexedDBPrefs) {
+    for (const prefs of this.validation) {
+      
+      if (prefs && prefs.oneOf && !prefs.oneOf.some(name => getPref(name) === this.initialPrefs[name])) {
+        return false;
+
+        
+      } else if (indexedDBPrefs && prefs && prefs.indexedDB) {
+        const anyModifiedPrefs = prefs.indexedDB.some(prefName => indexedDBPrefs.some(pref => pref && pref[prefName]));
+        if (anyModifiedPrefs) {
+          return false;
+        }
+        
+      } else if (getPref(prefs) !== this.initialPrefs[prefs]) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+var PrerenderData = new _PrerenderData({
+  initialPrefs: {
+    "migrationExpired": true,
+    "feeds.topsites": true,
+    "showSearch": true,
+    "topSitesRows": 1,
+    "feeds.section.topstories": true,
+    "feeds.section.highlights": true,
+    "sectionOrder": "topsites,topstories,highlights",
+    "collapsed": false
+  },
+  
+  
+  
+  
+  
+  
+  validation: ["feeds.topsites", "showSearch", "topSitesRows", "sectionOrder",
+  
+  
+  { oneOf: ["feeds.section.topstories", "feeds.section.highlights"] },
+  
+  
+  { indexedDB: ["collapsed"] }],
+  initialSections: [{
+    enabled: true,
+    icon: "pocket",
+    id: "topstories",
+    order: 1,
+    title: { id: "header_recommended_by", values: { provider: "Pocket" } }
+  }, {
+    enabled: true,
+    id: "highlights",
+    icon: "highlights",
+    order: 2,
+    title: { id: "header_highlights" }
+  }]
+});
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "_Search", function() { return _Search; });
+ __webpack_require__.d(__webpack_exports__, "Search", function() { return Search; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
+ var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(46);
+ var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
+
+
+
+
+
+
+
+
+
+class _Search extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onSearchClick = this.onSearchClick.bind(this);
+    this.onSearchHandoffClick = this.onSearchHandoffClick.bind(this);
+    this.onSearchHandoffKeyDown = this.onSearchHandoffKeyDown.bind(this);
+    this.onSearchHandoffPaste = this.onSearchHandoffPaste.bind(this);
+    this.onInputMount = this.onInputMount.bind(this);
+    this.onSearchHandoffButtonMount = this.onSearchHandoffButtonMount.bind(this);
+  }
+
+  handleEvent(event) {
+    
+    if (event.detail.type === "Search") {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: "SEARCH" }));
+    }
+  }
+
+  onSearchClick(event) {
+    window.gContentSearchController.search(event);
+  }
+
+  onSearchHandoffClick(event) {
+    
+    
+    
+    
+    
+    
+    
+    const isKeyboardClick = event.clientX === 0 && event.clientY === 0;
+    const hiddenFocus = !isKeyboardClick;
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].HANDOFF_SEARCH_TO_AWESOMEBAR, data: { hiddenFocus } }));
+    this.props.dispatch({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].FOCUS_SEARCH });
+
+    
+  }
+
+  onSearchHandoffKeyDown(event) {
+    if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      
+      const text = event.key;
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].HANDOFF_SEARCH_TO_AWESOMEBAR, data: { text } }));
+
+      
+    }
+  }
+
+  onSearchHandoffPaste(event) {
+    if (!this._searchHandoffButton || !this._searchHandoffButton.contains(global.document.activeElement)) {
+      
+      
+      return;
+    }
+    event.preventDefault();
+    const text = event.clipboardData.getData("Text");
+    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].HANDOFF_SEARCH_TO_AWESOMEBAR, data: { text } }));
+
+    
+  }
+
+  componentWillMount() {
+    if (global.document) {
+      
+      
+      
+      global.document.addEventListener("paste", this.onSearchHandoffPaste);
+    }
+  }
+
+  componentWillUnmount() {
+    if (global.document) {
+      global.document.removeEventListener("paste", this.onDocumentPaste);
+    }
+    delete window.gContentSearchController;
+  }
+
+  onInputMount(input) {
+    if (input) {
+      
+      
+      
+      
+      
+      const healthReportKey = content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__["IS_NEWTAB"] ? "newtab" : "abouthome";
+
+      
+      
+      
+      
+      
+      const searchSource = content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__["IS_NEWTAB"] ? "newtab" : "homepage";
+
+      
+      
+      
+      window.gContentSearchController = new ContentSearchUIController(input, input.parentNode, healthReportKey, searchSource);
+      addEventListener("ContentSearchClient", this);
+    } else {
+      window.gContentSearchController = null;
+      removeEventListener("ContentSearchClient", this);
+    }
+  }
+
+  onSearchHandoffButtonMount(button) {
+    
+    this._searchHandoffButton = button;
+  }
+
+  
+
+
+
+
+  render() {
+    const wrapperClassName = ["search-wrapper", this.props.hide && "search-hidden", this.props.focus && "search-active"].filter(v => v).join(" ");
+
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+      "div",
+      { className: wrapperClassName },
+      this.props.showLogo && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        "div",
+        { className: "logo-and-wordmark" },
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "logo" }),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "wordmark" })
+      ),
+      !this.props.handoffEnabled && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        "div",
+        { className: "search-inner-wrapper" },
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "label",
+          { htmlFor: "newtab-search-text", className: "search-label" },
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "span",
+            { className: "sr-only" },
+            react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "search_web_placeholder" })
+          )
+        ),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
+          id: "newtab-search-text",
+          maxLength: "256",
+          placeholder: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
+          ref: this.onInputMount,
+          title: this.props.intl.formatMessage({ id: "search_web_placeholder" }),
+          type: "search" }),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "button",
+          {
+            id: "searchSubmit",
+            className: "search-button",
+            onClick: this.onSearchClick,
+            title: this.props.intl.formatMessage({ id: "search_button" }) },
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "span",
+            { className: "sr-only" },
+            react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "search_button" })
+          )
+        )
+      ),
+      this.props.handoffEnabled && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+        "div",
+        { className: "search-inner-wrapper" },
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+          "button",
+          {
+            className: "search-handoff-button",
+            ref: this.onSearchHandoffButtonMount,
+            onClick: this.onSearchHandoffClick,
+            onKeyDown: this.onSearchHandoffKeyDown,
+            title: this.props.intl.formatMessage({ id: "search_web_placeholder" }) },
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(
+            "div",
+            { className: "fake-textbox" },
+            this.props.intl.formatMessage({ id: "search_web_placeholder" })
+          ),
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "fake-editable", tabIndex: "-1", "aria-hidden": "true", contentEditable: "" }),
+          react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", { className: "fake-caret" })
+        ),
+        react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
+          type: "search",
+          style: { display: "none" },
+          ref: this.onInputMount })
+      )
+    );
+  }
+}
+
+const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_2__["connect"])()(Object(react_intl__WEBPACK_IMPORTED_MODULE_1__["injectIntl"])(_Search));
+}.call(this, __webpack_require__(1)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "IS_NEWTAB", function() { return IS_NEWTAB; });
+const IS_NEWTAB = global.document && global.document.documentURI === "about:newtab";
+}.call(this, __webpack_require__(1)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "Section", function() { return Section; });
+ __webpack_require__.d(__webpack_exports__, "SectionIntl", function() { return SectionIntl; });
+ __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
+ __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(58);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(31);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(36);
+ var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(48);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(49);
+ var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(50);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(29);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+
+
+
+
+
+
+
+
+const VISIBLE = "visible";
+const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const CARDS_PER_ROW_DEFAULT = 3;
+const CARDS_PER_ROW_COMPACT_WIDE = 4;
+
+function getFormattedMessage(message) {
+  return typeof message === "string" ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+    "span",
+    null,
+    message
+  ) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_2__["FormattedMessage"], message);
+}
+
+class Section extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureComponent {
+  get numRows() {
+    const { rowsPref, maxRows, Prefs } = this.props;
+    return rowsPref ? Prefs.values[rowsPref] : maxRows;
+  }
+
+  _dispatchImpressionStats() {
+    const { props } = this;
+    let cardsPerRow = CARDS_PER_ROW_DEFAULT;
+    if (props.compactCards && global.matchMedia(`(min-width: 1072px)`).matches) {
+      
+      
+      
+      cardsPerRow = CARDS_PER_ROW_COMPACT_WIDE;
+    }
+    const maxCards = cardsPerRow * this.numRows;
+    const cards = props.rows.slice(0, maxCards);
+
+    if (this.needsImpressionStats(cards)) {
+      props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+        source: props.eventSource,
+        tiles: cards.map(link => ({ id: link.guid }))
+      }));
+      this.impressionCardGuids = cards.map(link => link.guid);
+    }
+  }
+
+  
+  
+  
+  sendImpressionStatsOrAddListener() {
+    const { props } = this;
+
+    if (!props.shouldSendImpressionStats || !props.dispatch) {
+      return;
+    }
+
+    if (props.document.visibilityState === VISIBLE) {
+      this._dispatchImpressionStats();
+    } else {
+      
+      
+      if (this._onVisibilityChange) {
+        props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+      }
+
+      
+      this._onVisibilityChange = () => {
+        if (props.document.visibilityState === VISIBLE) {
+          if (!this.props.pref.collapsed) {
+            this._dispatchImpressionStats();
+          }
+          props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+        }
+      };
+      props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+    }
+  }
+
+  componentWillMount() {
+    this.sendNewTabRehydrated(this.props.initialized);
+  }
+
+  componentDidMount() {
+    if (this.props.rows.length && !this.props.pref.collapsed) {
+      this.sendImpressionStatsOrAddListener();
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { props } = this;
+    const isCollapsed = props.pref.collapsed;
+    const wasCollapsed = prevProps.pref.collapsed;
+    if (
+    
+    props.rows.length && (
+    
+    
+    props.rows !== prevProps.rows && !isCollapsed ||
+    
+    wasCollapsed && !isCollapsed)) {
+      this.sendImpressionStatsOrAddListener();
+    }
+  }
+
+  componentWillUpdate(nextProps) {
+    this.sendNewTabRehydrated(nextProps.initialized);
+  }
+
+  componentWillUnmount() {
+    if (this._onVisibilityChange) {
+      this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+    }
+  }
+
+  needsImpressionStats(cards) {
+    if (!this.impressionCardGuids || this.impressionCardGuids.length !== cards.length) {
+      return true;
+    }
+
+    for (let i = 0; i < cards.length; i++) {
+      if (cards[i].guid !== this.impressionCardGuids[i]) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  
+  
+  
+  sendNewTabRehydrated(initialized) {
+    if (initialized && !this.renderNotified) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].NEW_TAB_REHYDRATED, data: {} }));
+      this.renderNotified = true;
+    }
+  }
+
+  render() {
+    const {
+      id, eventSource, title, icon, rows, Pocket, topics,
+      emptyState, dispatch, compactCards, read_more_endpoint,
+      contextMenuOptions, initialized, learnMore,
+      pref, privacyNoticeURL, isFirst, isLast
+    } = this.props;
+
+    const waitingForSpoc = id === "topstories" && this.props.Pocket.waitingForSpoc;
+    const maxCardsPerRow = compactCards ? CARDS_PER_ROW_COMPACT_WIDE : CARDS_PER_ROW_DEFAULT;
+    const { numRows } = this;
+    const maxCards = maxCardsPerRow * numRows;
+    const maxCardsOnNarrow = CARDS_PER_ROW_DEFAULT * numRows;
+
+    const { pocketCta, isUserLoggedIn } = Pocket || {};
+    const { useCta } = pocketCta || {};
+
+    
+    
+    const isPocketLoggedInDefined = isUserLoggedIn === true || isUserLoggedIn === false;
+
+    const hasTopics = topics && topics.length > 0;
+
+    const shouldShowPocketCta = id === "topstories" && useCta && isUserLoggedIn === false;
+
+    
+    
+    const shouldShowTopics = id === "topstories" && hasTopics && (useCta && isUserLoggedIn === true || !useCta && isPocketLoggedInDefined);
+
+    
+    const shouldShowReadMore = read_more_endpoint && hasTopics;
+
+    const realRows = rows.slice(0, maxCards);
+
+    
+    
+    const shouldShowEmptyState = initialized && !rows.length;
+
+    const cards = [];
+    if (!shouldShowEmptyState) {
+      for (let i = 0; i < maxCards; i++) {
+        const link = realRows[i];
+        
+        
+        const className = i >= maxCardsOnNarrow ? "hide-for-narrow" : "";
+        let usePlaceholder = !link;
+        
+        
+        if (!usePlaceholder && i === 2 && waitingForSpoc) {
+          usePlaceholder = true;
+        }
+        cards.push(!usePlaceholder ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__["Card"], { key: i,
+          index: i,
+          className: className,
+          dispatch: dispatch,
+          link: link,
+          contextMenuOptions: contextMenuOptions,
+          eventSource: eventSource,
+          shouldSendImpressionStats: this.props.shouldSendImpressionStats,
+          isWebExtension: this.props.isWebExtension }) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__["PlaceholderCard"], { key: i, className: className }));
+      }
+    }
+
+    const sectionClassName = ["section", compactCards ? "compact-cards" : "normal-cards"].join(" ");
+
+    
+    
+    return react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+      content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__["ComponentPerfTimer"],
+      this.props,
+      react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+        content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__["CollapsibleSection"],
+        { className: sectionClassName, icon: icon,
+          title: title,
+          id: id,
+          eventSource: eventSource,
+          collapsed: this.props.pref.collapsed,
+          showPrefName: pref && pref.feed || id,
+          privacyNoticeURL: privacyNoticeURL,
+          Prefs: this.props.Prefs,
+          isFirst: isFirst,
+          isLast: isLast,
+          learnMore: learnMore,
+          dispatch: this.props.dispatch,
+          isWebExtension: this.props.isWebExtension },
+        !shouldShowEmptyState && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+          "ul",
+          { className: "section-list", style: { padding: 0 } },
+          cards
+        ),
+        shouldShowEmptyState && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+          "div",
+          { className: "section-empty-state" },
+          react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+            "div",
+            { className: "empty-state" },
+            emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("span", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("span", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
+            react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+              "p",
+              { className: "empty-state-message" },
+              getFormattedMessage(emptyState.message)
+            )
+          )
+        ),
+        id === "topstories" && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+          "div",
+          { className: "top-stories-bottom-container" },
+          shouldShowTopics && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+            "div",
+            { className: "wrapper-topics" },
+            react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__["Topics"], { topics: this.props.topics })
+          ),
+          shouldShowPocketCta && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+            "div",
+            { className: "wrapper-cta" },
+            react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__["PocketLoggedInCta"], null)
+          ),
+          react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+            "div",
+            { className: "wrapper-more-recommendations" },
+            shouldShowReadMore && react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__["MoreRecommendations"], { read_more_endpoint: read_more_endpoint })
+          )
+        )
+      )
+    );
+  }
+}
+
+Section.defaultProps = {
+  document: global.document,
+  rows: [],
+  emptyState: {},
+  pref: {},
+  title: ""
+};
+
+const SectionIntl = Object(react_redux__WEBPACK_IMPORTED_MODULE_5__["connect"])(state => ({ Prefs: state.Prefs, Pocket: state.Pocket }))(Object(react_intl__WEBPACK_IMPORTED_MODULE_2__["injectIntl"])(Section));
+
+class _Sections extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureComponent {
+  renderSections() {
+    const sections = [];
+    const enabledSections = this.props.Sections.filter(section => section.enabled);
+    const { sectionOrder, "feeds.topsites": showTopSites } = this.props.Prefs.values;
+    
+    const expectedCount = enabledSections.length + ~~showTopSites;
+
+    for (const sectionId of sectionOrder.split(",")) {
+      const commonProps = {
+        key: sectionId,
+        isFirst: sections.length === 0,
+        isLast: sections.length === expectedCount - 1
+      };
+      if (sectionId === "topsites" && showTopSites) {
+        sections.push(react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__["TopSites"], commonProps));
+      } else {
+        const section = enabledSections.find(s => s.id === sectionId);
+        if (section) {
+          sections.push(react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(SectionIntl, _extends({}, section, commonProps)));
+        }
+      }
+    }
+    return sections;
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(
+      "div",
+      { className: "sections-list" },
+      this.renderSections()
+    );
+  }
+}
+
+const Sections = Object(react_redux__WEBPACK_IMPORTED_MODULE_5__["connect"])(state => ({ Sections: state.Sections, Prefs: state.Prefs }))(_Sections);
+}.call(this, __webpack_require__(1)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "MoreRecommendations", function() { return MoreRecommendations; });
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+class MoreRecommendations extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  render() {
+    const { read_more_endpoint } = this.props;
+    if (read_more_endpoint) {
+      return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+        "a",
+        { className: "more-recommendations", href: read_more_endpoint },
+        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], { id: "pocket_more_reccommendations" })
+      );
+    }
+    return null;
+  }
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_PocketLoggedInCta", function() { return _PocketLoggedInCta; });
+ __webpack_require__.d(__webpack_exports__, "PocketLoggedInCta", function() { return PocketLoggedInCta; });
+ var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+
+class _PocketLoggedInCta extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
+  render() {
+    const { pocketCta } = this.props.Pocket;
+    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
+      "span",
+      { className: "pocket-logged-in-cta" },
+      react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
+        "a",
+        { className: "pocket-cta-button", href: pocketCta.ctaUrl ? pocketCta.ctaUrl : "https://getpocket.com/" },
+        pocketCta.ctaButton ? pocketCta.ctaButton : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "pocket_cta_button" })
+      ),
+      react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
+        "a",
+        { href: pocketCta.ctaUrl ? pocketCta.ctaUrl : "https://getpocket.com/" },
+        react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(
+          "span",
+          { className: "cta-text" },
+          pocketCta.ctaText ? pocketCta.ctaText : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_1__["FormattedMessage"], { id: "pocket_cta_text" })
+        )
+      )
+    );
+  }
+}
+
+const PocketLoggedInCta = Object(react_redux__WEBPACK_IMPORTED_MODULE_0__["connect"])(state => ({ Pocket: state.Pocket }))(_PocketLoggedInCta);
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Topic", function() { return Topic; });
+ __webpack_require__.d(__webpack_exports__, "Topics", function() { return Topics; });
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+class Topic extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  render() {
+    const { url, name } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+      "li",
+      null,
+      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+        "a",
+        { key: name, href: url },
+        name
+      )
+    );
+  }
+}
+
+class Topics extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
+  render() {
+    const { topics } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+      "span",
+      { className: "topics" },
+      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+        "span",
+        null,
+        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react_intl__WEBPACK_IMPORTED_MODULE_0__["FormattedMessage"], { id: "pocket_read_more" })
+      ),
+      react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+        "ul",
+        null,
+        topics && topics.map(t => react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(Topic, { key: t.name, url: t.url, name: t.name }))
+      )
+    );
+  }
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(43);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(37);
 
 
 
@@ -7182,6 +7322,8 @@ class SubmitFormSnippet_SubmitFormSnippet extends external_React_default.a.PureC
   }
 
   expandSnippet() {
+    this.props.sendUserActionTelemetry({ event: "CLICK_BUTTON", value: "scene1-button-learn-more", id: this.props.UISurface });
+
     this.setState({
       expanded: true,
       signupSuccess: false,
@@ -10154,14 +10296,19 @@ __webpack_require__.d(__webpack_exports__, "isReactLocalization", function() { r
 "use strict";
 
 
+var external_ReactRedux_ = __webpack_require__(24);
+
+
 var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
 
 
+
 class CardGrid_CardGrid extends external_React_default.a.PureComponent {
   render() {
+    
     return external_React_default.a.createElement(
       "div",
       null,
@@ -10170,20 +10317,104 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
   }
 }
 
-var external_ReactRedux_ = __webpack_require__(24);
+const CardGrid = Object(external_ReactRedux_["connect"])(state => ({ DiscoveryStream: state.DiscoveryStream }))(CardGrid_CardGrid);
+
+
+
+class DSCard_DSCard extends external_React_default.a.PureComponent {
+  render() {
+    return external_React_default.a.createElement(
+      "div",
+      { className: "ds-card" },
+      external_React_default.a.createElement("img", { src: this.props.image_src }),
+      external_React_default.a.createElement(
+        "div",
+        { className: "meta" },
+        external_React_default.a.createElement(
+          "header",
+          null,
+          this.props.title
+        ),
+        external_React_default.a.createElement(
+          "p",
+          null,
+          this.props.excerpt
+        ),
+        external_React_default.a.createElement(
+          "p",
+          null,
+          this.props.source
+        )
+      )
+    );
+  }
+}
+
 
 
 
 
 class Hero_Hero extends external_React_default.a.PureComponent {
   render() {
+    const feed = this.props.DiscoveryStream.feeds[this.props.feed.url];
+
+    
+    if (!feed) {
+      return external_React_default.a.createElement("div", null);
+    }
+
+    let [heroRec, ...otherRecs] = feed.data.recommendations;
+
+    
+    let cards = otherRecs.slice(1, 5).map((rec, index) => external_React_default.a.createElement(DSCard_DSCard, {
+      key: `dscard-${index}`,
+      image_src: rec.image_src,
+      title: rec.title,
+      excerpt: rec.excerpt,
+      source: "TODO: SOURCE" }));
+
     return external_React_default.a.createElement(
       "div",
-      null,
-      "Hero"
+      { className: `ds-hero ds-hero-${this.props.style}` },
+      external_React_default.a.createElement(
+        "div",
+        { className: "wrapper" },
+        external_React_default.a.createElement("img", { src: heroRec.image_src }),
+        external_React_default.a.createElement(
+          "div",
+          { className: "meta" },
+          external_React_default.a.createElement(
+            "header",
+            null,
+            heroRec.title
+          ),
+          external_React_default.a.createElement(
+            "p",
+            null,
+            heroRec.excerpt
+          ),
+          external_React_default.a.createElement(
+            "p",
+            null,
+            "TODO: SOURCE"
+          )
+        )
+      ),
+      external_React_default.a.createElement(
+        "div",
+        { className: "cards" },
+        cards
+      )
     );
   }
 }
+
+Hero_Hero.defaultProps = {
+  style: `border`,
+  items: 1 
+};
+
+const Hero = Object(external_ReactRedux_["connect"])(state => ({ DiscoveryStream: state.DiscoveryStream }))(Hero_Hero);
 
 
 
@@ -10195,15 +10426,19 @@ class HorizontalRule_HorizontalRule extends external_React_default.a.PureCompone
 
 
 
+
 class List_List extends external_React_default.a.PureComponent {
   render() {
+    
     return external_React_default.a.createElement(
       "div",
-      null,
+      { className: "ds-list" },
       "List"
     );
   }
 }
+
+const List = Object(external_ReactRedux_["connect"])(state => ({ DiscoveryStream: state.DiscoveryStream }))(List_List);
 
 
 
@@ -10227,7 +10462,7 @@ class SectionTitle_SectionTitle extends external_React_default.a.PureComponent {
     const { topics } = this.props;
     return external_React_default.a.createElement(
       "span",
-      { className: "section-title" },
+      { className: "ds-section-title" },
       external_React_default.a.createElement(
         "ul",
         null,
@@ -10246,6 +10481,10 @@ class SectionTitle_SectionTitle extends external_React_default.a.PureComponent {
   }
 }
 
+var TopSites = __webpack_require__(29);
+
+
+
 
 
 
@@ -10253,13 +10492,13 @@ class TopSites_TopSites extends external_React_default.a.PureComponent {
   render() {
     return external_React_default.a.createElement(
       "div",
-      { className: "ds-topsites" },
-      "Top Sites"
+      { className: "ds-top-sites" },
+      external_React_default.a.createElement(TopSites["TopSites"], null)
     );
   }
 }
 
-const TopSites = Object(external_ReactRedux_["connect"])(state => ({ TopSites: state.TopSites }))(TopSites_TopSites);
+const TopSites_TopSites_TopSites = Object(external_ReactRedux_["connect"])(state => ({ TopSites: state.TopSites }))(TopSites_TopSites);
 
  __webpack_require__.d(__webpack_exports__, "_DiscoveryStreamBase", function() { return DiscoveryStreamBase_DiscoveryStreamBase; });
  __webpack_require__.d(__webpack_exports__, "DiscoveryStreamBase", function() { return DiscoveryStreamBase; });
@@ -10276,17 +10515,20 @@ class DiscoveryStreamBase_DiscoveryStreamBase extends external_React_default.a.P
   renderComponent(component) {
     switch (component.type) {
       case "TopSites":
-        return external_React_default.a.createElement(TopSites, null);
+        return external_React_default.a.createElement(TopSites_TopSites_TopSites, null);
       case "SectionTitle":
         return external_React_default.a.createElement(SectionTitle_SectionTitle, null);
       case "CardGrid":
-        return external_React_default.a.createElement(CardGrid_CardGrid, null);
+        return external_React_default.a.createElement(CardGrid, { feed: component.feed });
       case "Hero":
-        return external_React_default.a.createElement(Hero_Hero, null);
+        return external_React_default.a.createElement(Hero, {
+          feed: component.feed,
+          style: component.properties.style,
+          items: component.properties.items });
       case "HorizontalRule":
         return external_React_default.a.createElement(HorizontalRule_HorizontalRule, null);
       case "List":
-        return external_React_default.a.createElement(List_List, null);
+        return external_React_default.a.createElement(List, { feed: component.feed });
       default:
         return external_React_default.a.createElement(
           "div",
@@ -10300,10 +10542,10 @@ class DiscoveryStreamBase_DiscoveryStreamBase extends external_React_default.a.P
     const { layout } = this.props.DiscoveryStream;
     return external_React_default.a.createElement(
       "div",
-      { className: "discovery-stream layout" },
+      { className: "discovery-stream ds-layout" },
       layout.map((row, rowIndex) => external_React_default.a.createElement(
         "div",
-        { key: `row-${rowIndex}`, className: `column column-${row.width}` },
+        { key: `row-${rowIndex}`, className: `ds-column ds-column-${row.width}` },
         row.components.map((component, componentIndex) => external_React_default.a.createElement(
           "div",
           { key: `component-${componentIndex}` },
@@ -10822,6 +11064,8 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
       return Object.assign({}, prevState, { lastUpdated: action.data.lastUpdated || null, layout: action.data.layout || [] });
     case Actions["actionTypes"].DISCOVERY_STREAM_LAYOUT_RESET:
       return Object.assign({}, prevState, { lastUpdated: INITIAL_STATE.DiscoveryStream.lastUpdated, layout: INITIAL_STATE.DiscoveryStream.layout });
+    case Actions["actionTypes"].DISCOVERY_STREAM_FEEDS_UPDATE:
+      return Object.assign({}, prevState, { feeds: action.data || prevState.feeds });
     default:
       return prevState;
   }
@@ -10896,17 +11140,17 @@ const cardContextTypes = {
 var external_ReactRedux_ = __webpack_require__(24);
 
 
-var link_menu_options = __webpack_require__(35);
+var link_menu_options = __webpack_require__(41);
 
 
-var LinkMenu = __webpack_require__(36);
+var LinkMenu = __webpack_require__(40);
 
 
 var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var screenshot_utils = __webpack_require__(38);
+var screenshot_utils = __webpack_require__(42);
 
 
  __webpack_require__.d(__webpack_exports__, "_Card", function() { return Card_Card; });
@@ -11234,7 +11478,7 @@ var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(48);
+var TopSitesConstants = __webpack_require__(30);
 
 
 
@@ -11312,7 +11556,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(50);
+var TopSite = __webpack_require__(39);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });

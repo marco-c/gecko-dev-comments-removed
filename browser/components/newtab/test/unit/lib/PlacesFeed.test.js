@@ -326,6 +326,7 @@ describe("PlacesFeed", () => {
     beforeEach(() => {
       fakeUrlBar = {
         focus: sinon.spy(),
+        search: sinon.spy(),
         hiddenFocus: sinon.spy(),
         removeHiddenFocus: sinon.spy(),
         addEventListener: (ev, cb) => {
@@ -366,7 +367,19 @@ describe("PlacesFeed", () => {
 
       
       feed.store.dispatch.resetHistory();
-      listeners.keydown();
+      listeners.keydown({key: "Ctrl"});
+      assert.notCalled(fakeUrlBar.removeHiddenFocus);
+      assert.notCalled(feed.store.dispatch);
+
+      
+      feed.store.dispatch.resetHistory();
+      listeners.keydown({key: "f", ctrlKey: true});
+      assert.notCalled(fakeUrlBar.removeHiddenFocus);
+      assert.notCalled(feed.store.dispatch);
+
+      
+      feed.store.dispatch.resetHistory();
+      listeners.keydown({key: "f"});
       assert.calledOnce(fakeUrlBar.removeHiddenFocus);
       assert.calledOnce(feed.store.dispatch);
       assert.calledWith(feed.store.dispatch, {
@@ -393,6 +406,27 @@ describe("PlacesFeed", () => {
           toTarget: {},
         },
         type: "SHOW_SEARCH",
+      });
+    });
+    it("should properly handle text data passed in", () => {
+      feed.handoffSearchToAwesomebar({
+        _target: {browser: {ownerGlobal: {gURLBar: fakeUrlBar}}},
+        data: {text: "f"},
+        meta: {fromTarget: {}},
+      });
+      assert.calledOnce(fakeUrlBar.search);
+      assert.calledWith(fakeUrlBar.search, "f");
+      assert.notCalled(fakeUrlBar.hiddenFocus);
+      assert.notCalled(fakeUrlBar.focus);
+      assert.calledOnce(feed.store.dispatch);
+      assert.calledWith(feed.store.dispatch, {
+        meta: {
+          from: "ActivityStream:Main",
+          skipMain: true,
+          to: "ActivityStream:Content",
+          toTarget: {},
+        },
+        type: "HIDE_SEARCH",
       });
     });
   });

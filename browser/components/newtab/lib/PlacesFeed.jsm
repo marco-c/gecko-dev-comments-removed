@@ -286,21 +286,32 @@ class PlacesFeed {
   handoffSearchToAwesomebar({_target, data, meta}) {
     const urlBar = _target.browser.ownerGlobal.gURLBar;
 
-    if (!data.hiddenFocus) {
+    if (!data.hiddenFocus && !data.text) {
       
       urlBar.focus();
       this.store.dispatch(ac.OnlyToOneContent({type: at.SHOW_SEARCH}, meta.fromTarget));
+      
       return;
     }
 
-    
-    urlBar.hiddenFocus();
-    const onKeydown = () => {
+    if (data.text) {
       
-      
+      urlBar.search(data.text);
       this.store.dispatch(ac.OnlyToOneContent({type: at.HIDE_SEARCH}, meta.fromTarget));
-      urlBar.removeHiddenFocus();
-      urlBar.removeEventListener("keydown", onKeydown);
+    } else {
+      
+      urlBar.hiddenFocus();
+    }
+
+    const onKeydown = event => {
+      
+      if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        
+        
+        this.store.dispatch(ac.OnlyToOneContent({type: at.HIDE_SEARCH}, meta.fromTarget));
+        urlBar.removeHiddenFocus();
+        urlBar.removeEventListener("keydown", onKeydown);
+      }
     };
     const onDone = () => {
       
