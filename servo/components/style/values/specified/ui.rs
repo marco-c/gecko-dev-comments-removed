@@ -140,3 +140,39 @@ impl Parse for ScrollbarColor {
         })
     }
 }
+
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
+#[repr(u8)]
+pub enum UserSelect {
+    Auto,
+    Text,
+    #[parse(aliases = "-moz-none")]
+    None,
+    Element,
+    Elements,
+    All,
+    Toggle,
+    TriState,
+    
+    
+    
+    MozAll,
+    
+    
+    MozText,
+}
