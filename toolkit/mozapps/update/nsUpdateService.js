@@ -814,38 +814,6 @@ function cleanupActiveUpdate() {
 
 
 
-function ArrayEnumerator(aItems) {
-  this._index = 0;
-  if (aItems) {
-    for (var i = 0; i < aItems.length; ++i) {
-      if (!aItems[i])
-        aItems.splice(i, 1);
-    }
-  }
-  this._contents = aItems;
-}
-
-ArrayEnumerator.prototype = {
-  _index: 0,
-  _contents: [],
-
-  [Symbol.iterator]() {
-    return this._contents.values();
-  },
-
-  hasMoreElements: function ArrayEnumerator_hasMoreElements() {
-    return this._index < this._contents.length;
-  },
-
-  getNext: function ArrayEnumerator_getNext() {
-    return this._contents[this._index++];
-  },
-};
-
-
-
-
-
 function writeStringToFile(file, text) {
   let fos = FileUtils.openSafeFileOutputStream(file);
   text += "\n";
@@ -1158,10 +1126,16 @@ UpdatePatch.prototype = {
 
 
   get enumerator() {
-    var properties = [];
-    for (var p in this._properties)
-      properties.push(this._properties[p].data);
-    return new ArrayEnumerator(properties);
+    return this.enumerate();
+  },
+
+  * enumerate() {
+    for (var p in this._properties) {
+      let prop = this.properties[p].data;
+      if (prop) {
+        yield prop;
+      }
+    }
   },
 
   
@@ -1479,11 +1453,16 @@ Update.prototype = {
 
 
   get enumerator() {
-    var properties = [];
-    for (let p in this._properties) {
-      properties.push(this._properties[p].data);
+    return this.enumerate();
+  },
+
+  * enumerate() {
+    for (var p in this._properties) {
+      let prop = this.properties[p].data;
+      if (prop) {
+        yield prop;
+      }
     }
-    return new ArrayEnumerator(properties);
   },
 
   
