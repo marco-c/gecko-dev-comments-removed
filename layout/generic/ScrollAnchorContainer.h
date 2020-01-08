@@ -75,6 +75,12 @@ class ScrollAnchorContainer final {
 
 
 
+  void SuppressAdjustments();
+
+  
+
+
+
   void InvalidateAnchor();
 
   
@@ -135,6 +141,8 @@ class ScrollAnchorContainer final {
   bool mAnchorNodeIsDirty : 1;
   
   bool mApplyingAnchorAdjustment : 1;
+  
+  bool mSuppressAnchorAdjustment : 1;
 };
 
 }  
