@@ -11,6 +11,7 @@ const {
   ENABLE_REQUEST_FILTER_TYPE_ONLY,
   SET_REQUEST_FILTER_TEXT,
   SELECT_DETAILS_PANEL_TAB,
+  SEND_CUSTOM_REQUEST,
 } = require("../constants");
 
 
@@ -50,9 +51,16 @@ function eventTelemetryMiddleware(connector, telemetry) {
     
     if (action.type == SELECT_DETAILS_PANEL_TAB) {
       sidePanelChange({
-        action,
         state,
         oldState,
+        telemetry,
+        sessionId,
+      });
+    }
+
+    
+    if (action.type == SEND_CUSTOM_REQUEST) {
+      sendCustomRequest({
         telemetry,
         sessionId,
       });
@@ -106,10 +114,20 @@ function filterChange({action, state, oldState, telemetry, sessionId}) {
 
 
 
-function sidePanelChange({action, state, oldState, telemetry, sessionId}) {
+function sidePanelChange({state, oldState, telemetry, sessionId}) {
   telemetry.recordEvent("devtools.main", "sidepanel_changed", "netmonitor", null, {
     "oldpanel": oldState.ui.detailsPanelSelectedTab,
     "newpanel": state.ui.detailsPanelSelectedTab,
+    "session_id": sessionId,
+  });
+}
+
+
+
+
+
+function sendCustomRequest({telemetry, sessionId}) {
+  telemetry.recordEvent("devtools.main", "edit_resend", "netmonitor", null, {
     "session_id": sessionId,
   });
 }
