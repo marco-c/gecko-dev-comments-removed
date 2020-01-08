@@ -34,7 +34,7 @@ const INITIAL_STATE = {
   
   id: "",
   
-  warning: getStr("fontinspector.noFontsOnSelectedElement"),
+  warning: getStr("fontinspector.noFontsUsedOnCurrentElement"),
 };
 
 const reducers = {
