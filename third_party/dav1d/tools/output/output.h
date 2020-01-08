@@ -38,4 +38,12 @@ int output_open(MuxerContext **c, const char *name, const char *filename,
 int output_write(MuxerContext *ctx, Dav1dPicture *pic);
 void output_close(MuxerContext *ctx);
 
+
+
+
+
+
+
+int output_verify(MuxerContext *ctx, const char *hash_string);
+
 #endif 

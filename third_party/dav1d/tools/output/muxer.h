@@ -39,6 +39,14 @@ typedef struct Muxer {
                         const Dav1dPictureParameters *p, const unsigned fps[2]);
     int (*write_picture)(MuxerPriv *ctx, Dav1dPicture *p);
     void (*write_trailer)(MuxerPriv *ctx);
+    
+
+
+
+
+
+
+    int (*verify)(MuxerPriv *ctx, const char *hash_string);
 } Muxer;
 
 #endif 

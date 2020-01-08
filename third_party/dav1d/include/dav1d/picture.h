@@ -125,6 +125,8 @@ typedef struct Dav1dPictureParameters {
 } Dav1dPictureParameters;
 
 typedef struct Dav1dPicture {
+    int poc; 
+
     
 
 
@@ -141,8 +143,6 @@ typedef struct Dav1dPicture {
     ptrdiff_t stride[2];
 
     Dav1dPictureParameters p;
-
-    int poc; 
 
     void *allocator_data; 
 } Dav1dPicture;

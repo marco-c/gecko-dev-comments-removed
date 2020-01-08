@@ -28,6 +28,12 @@
 #ifndef __DAV1D_H__
 #define __DAV1D_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <errno.h>
+
 #include "common.h"
 #include "picture.h"
 #include "data.h"
@@ -82,11 +88,26 @@ DAV1D_API int dav1d_open(Dav1dContext **c_out, const Dav1dSettings *s);
 
 
 
+DAV1D_API int dav1d_send_data(Dav1dContext *c, Dav1dData *in);
 
 
 
 
-DAV1D_API int dav1d_decode(Dav1dContext *c, Dav1dData *in, Dav1dPicture *out);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DAV1D_API int dav1d_get_picture(Dav1dContext *c, Dav1dPicture *out);
 
 
 
@@ -101,5 +122,9 @@ DAV1D_API void dav1d_close(Dav1dContext **c_out);
 
 
 DAV1D_API void dav1d_flush(Dav1dContext *c);
+
+# ifdef __cplusplus
+}
+# endif
 
 #endif 

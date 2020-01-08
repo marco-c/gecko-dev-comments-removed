@@ -9,48 +9,52 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef __DAV1D_SRC_MSAC_H__
 #define __DAV1D_SRC_MSAC_H__
 
 #include <stdint.h>
 #include <stdlib.h>
 
+
+typedef uint64_t ec_win;
+
 typedef struct MsacContext {
-    const uint8_t *buf, *end, *bptr;
-    int32_t tell_offs;
-    uint32_t dif;
+    const uint8_t *buf_pos;
+    const uint8_t *buf_end;
+    ec_win dif;
     uint16_t rng;
-    int16_t cnt;
-    int error;
+    int cnt;
+    int allow_update_cdf;
 } MsacContext;
 
-void msac_init(MsacContext *c, const uint8_t *data, size_t sz);
-unsigned msac_decode_symbol(MsacContext *c, const uint16_t *cdf,
+#define EC_PROB_SHIFT 6
+#define EC_BOOL_EPROB 256
+
+void msac_init(MsacContext *c, const uint8_t *data, size_t sz, int disable_cdf_update_flag);
+unsigned msac_decode_symbol(MsacContext *s, const uint16_t *cdf,
                             const unsigned n_symbols);
-unsigned msac_decode_bool(MsacContext *c, unsigned cdf);
+unsigned msac_decode_symbol_adapt(MsacContext *s, uint16_t *cdf,
+                                  const unsigned n_symbols);
+unsigned msac_decode_bool(MsacContext *s, unsigned f);
+unsigned msac_decode_bool_adapt(MsacContext *s, uint16_t *cdf);
 unsigned msac_decode_bools(MsacContext *c, unsigned l);
-int msac_decode_subexp(MsacContext *c, int ref, unsigned n, unsigned k);
+int msac_decode_subexp(MsacContext *c, int ref, int n, unsigned k);
 int msac_decode_uniform(MsacContext *c, unsigned n);
-void update_cdf(uint16_t *cdf, unsigned val, unsigned nsymbs);
-
-static inline unsigned msac_decode_symbol_adapt(MsacContext *const c,
-                                                uint16_t *const cdf,
-                                                const unsigned n_symbols)
-{
-    const unsigned val = msac_decode_symbol(c, cdf, n_symbols);
-    update_cdf(cdf, val, n_symbols);
-    return val;
-}
-
-static inline unsigned msac_decode_bool_adapt(MsacContext *const c,
-                                              uint16_t *const cdf)
-{
-    const unsigned bit = msac_decode_bool(c, *cdf);
-    uint16_t bak_cdf[3] = { cdf[0], 0, cdf[1] };
-    update_cdf(bak_cdf, bit, 2);
-    cdf[0] = bak_cdf[0];
-    cdf[1] = bak_cdf[2];
-    return bit;
-}
 
 #endif 

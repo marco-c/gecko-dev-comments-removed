@@ -9,6 +9,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "config.h"
 
 #include <assert.h>
@@ -18,123 +34,22 @@
 
 #include "src/msac.h"
 
-typedef MsacContext od_ec_dec;
-
-
-#define CDF_PROB_BITS 15
-#define CDF_PROB_TOP (1 << CDF_PROB_BITS)
-
-#define CDF_SHIFT (15 - CDF_PROB_BITS)
-
-#define OD_CLZ0 (1)
-#define OD_CLZ(x) (-get_msb(x))
-#define OD_ILOG_NZ(x) (OD_CLZ0 - OD_CLZ(x))
-
-static inline int get_msb(unsigned int n) {
-    assert(n != 0);
-    return 31 ^ clz(n);
-}
-
-#define EC_PROB_SHIFT 6
 #define EC_MIN_PROB 4  // must be <= (1<<EC_PROB_SHIFT)/16
 
-
-
-typedef uint32_t od_ec_window;
-
-#define OD_EC_WINDOW_SIZE ((int)sizeof(od_ec_window) * CHAR_BIT)
-
-
-
-#define OD_BITRES (3)
-
-#define OD_ICDF AOM_ICDF
-
-#define AOM_ICDF(a) (32768-(a))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define OD_EC_LOTS_OF_BITS (0x4000)
-
-static void od_ec_dec_refill(od_ec_dec *dec) {
-  int s;
-  od_ec_window dif;
-  int16_t cnt;
-  const unsigned char *bptr;
-  const unsigned char *end;
-  dif = dec->dif;
-  cnt = dec->cnt;
-  bptr = dec->bptr;
-  end = dec->end;
-  s = OD_EC_WINDOW_SIZE - 9 - (cnt + 15);
-  for (; s >= 0 && bptr < end; s -= 8, bptr++) {
-    assert(s <= OD_EC_WINDOW_SIZE - 8);
-    dif ^= (od_ec_window)bptr[0] << s;
-    cnt += 8;
-  }
-  if (bptr >= end) {
-    dec->tell_offs += OD_EC_LOTS_OF_BITS - cnt;
-    cnt = OD_EC_LOTS_OF_BITS;
-  }
-  dec->dif = dif;
-  dec->cnt = cnt;
-  dec->bptr = bptr;
+#define EC_WIN_SIZE (sizeof(ec_win) << 3)
+
+static inline void ctx_refill(MsacContext *s) {
+    const uint8_t *buf_pos = s->buf_pos;
+    const uint8_t *buf_end = s->buf_end;
+    int c = EC_WIN_SIZE - s->cnt - 24;
+    ec_win dif = s->dif;
+    while (c >= 0 && buf_pos < buf_end) {
+        dif ^= ((ec_win)*buf_pos++) << c;
+        c -= 8;
+    }
+    s->dif = dif;
+    s->cnt = EC_WIN_SIZE - c - 24;
+    s->buf_pos = buf_pos;
 }
 
 
@@ -142,177 +57,137 @@ static void od_ec_dec_refill(od_ec_dec *dec) {
 
 
 
-
-
-
-static int od_ec_dec_normalize(od_ec_dec *dec, od_ec_window dif, unsigned rng,
-                               int ret) {
-  int d;
-  assert(rng <= 65535U);
-  d = 16 - OD_ILOG_NZ(rng);
-  dec->cnt -= d;
-  
-  dec->dif = ((dif + 1) << d) - 1;
-  dec->rng = rng << d;
-  if (dec->cnt < 0) od_ec_dec_refill(dec);
-  return ret;
+static inline void ctx_norm(MsacContext *s, ec_win dif, uint32_t rng) {
+    const uint16_t d = 15 - (31 ^ clz(rng));
+    assert(rng <= 65535U);
+    s->cnt -= d;
+    s->dif = ((dif + 1) << d) - 1; 
+    s->rng = rng << d;
+    if (s->cnt < 0)
+        ctx_refill(s);
 }
 
 
 
-
-static void od_ec_dec_init(od_ec_dec *dec, const unsigned char *buf,
-                    uint32_t storage) {
-  dec->buf = buf;
-  dec->tell_offs = 10 - (OD_EC_WINDOW_SIZE - 8);
-  dec->end = buf + storage;
-  dec->bptr = buf;
-  dec->dif = ((od_ec_window)1 << (OD_EC_WINDOW_SIZE - 1)) - 1;
-  dec->rng = 0x8000;
-  dec->cnt = -15;
-  dec->error = 0;
-  od_ec_dec_refill(dec);
-}
-
-
-
-
-static int od_ec_decode_bool_q15(od_ec_dec *dec, unsigned f) {
-  od_ec_window dif;
-  od_ec_window vw;
-  unsigned r;
-  unsigned r_new;
-  unsigned v;
-  int ret;
-  assert(0 < f);
-  assert(f < 32768U);
-  dif = dec->dif;
-  r = dec->rng;
-  assert(dif >> (OD_EC_WINDOW_SIZE - 16) < r);
-  assert(32768U <= r);
-  v = ((r >> 8) * (uint32_t)(f >> EC_PROB_SHIFT) >> (7 - EC_PROB_SHIFT));
-  v += EC_MIN_PROB;
-  vw = (od_ec_window)v << (OD_EC_WINDOW_SIZE - 16);
-  ret = 1;
-  r_new = v;
-  if (dif >= vw) {
-    r_new = r - v;
-    dif -= vw;
-    ret = 0;
-  }
-  return od_ec_dec_normalize(dec, dif, r_new, ret);
-}
-
-
-
-
-
-
-
-
-
-
-static int od_ec_decode_cdf_q15(od_ec_dec *dec, const uint16_t *icdf, int nsyms) {
-  od_ec_window dif;
-  unsigned r;
-  unsigned c;
-  unsigned u;
-  unsigned v;
-  int ret;
-  (void)nsyms;
-  dif = dec->dif;
-  r = dec->rng;
-  const int N = nsyms - 1;
-
-  assert(dif >> (OD_EC_WINDOW_SIZE - 16) < r);
-  assert(icdf[nsyms - 1] == OD_ICDF(CDF_PROB_TOP));
-  assert(32768U <= r);
-  assert(7 - EC_PROB_SHIFT - CDF_SHIFT >= 0);
-  c = (unsigned)(dif >> (OD_EC_WINDOW_SIZE - 16));
-  v = r;
-  ret = -1;
-  do {
-    u = v;
-    v = ((r >> 8) * (uint32_t)(icdf[++ret] >> EC_PROB_SHIFT) >>
-         (7 - EC_PROB_SHIFT - CDF_SHIFT));
-    v += EC_MIN_PROB * (N - ret);
-  } while (c < v);
-  assert(v < u);
-  assert(u <= r);
-  r = u - v;
-  dif -= (od_ec_window)v << (OD_EC_WINDOW_SIZE - 16);
-  return od_ec_dec_normalize(dec, dif, r, ret);
-}
-
-void msac_init(MsacContext *const c,
-               const uint8_t *const data, const size_t sz)
-{
-    od_ec_dec_init(c, data, sz);
-}
-
-unsigned msac_decode_symbol(MsacContext *const c, const uint16_t *const cdf,
+unsigned msac_decode_symbol(MsacContext *const s, const uint16_t *const cdf,
                             const unsigned n_symbols)
 {
-    return od_ec_decode_cdf_q15(c, cdf, n_symbols);
+    ec_win u, v = s->rng, r = s->rng >> 8;
+    const ec_win c = s->dif >> (EC_WIN_SIZE - 16);
+    unsigned ret = 0;
+
+    assert(!cdf[n_symbols - 1]);
+
+    do {
+        u = v;
+        v = r * (cdf[ret++] >> EC_PROB_SHIFT);
+        v >>= 7 - EC_PROB_SHIFT;
+        v += EC_MIN_PROB * (n_symbols - ret);
+    } while (c < v);
+
+    assert(u <= s->rng);
+
+    ctx_norm(s, s->dif - (v << (EC_WIN_SIZE - 16)), u - v);
+    return ret - 1;
 }
 
-unsigned msac_decode_bool(MsacContext *const c, const unsigned cdf) {
-    return od_ec_decode_bool_q15(c, cdf);
+
+
+
+unsigned msac_decode_bool(MsacContext *const s, const unsigned f) {
+    ec_win v, vw, dif = s->dif;
+    uint16_t r = s->rng;
+    unsigned ret;
+    assert((dif >> (EC_WIN_SIZE - 16)) < r);
+    v = ((r >> 8) * f >> (7 - EC_PROB_SHIFT)) + EC_MIN_PROB;
+    vw   = v << (EC_WIN_SIZE - 16);
+    ret  = dif >= vw;
+    dif -= ret*vw;
+    v   += ret*(r - 2*v);
+    ctx_norm(s, dif, v);
+    return !ret;
 }
 
 unsigned msac_decode_bools(MsacContext *const c, const unsigned l) {
     int v = 0;
     for (int n = (int) l - 1; n >= 0; n--)
-        v = (v << 1) | msac_decode_bool(c, 128 << 7);
+        v = (v << 1) | msac_decode_bool(c, EC_BOOL_EPROB);
     return v;
 }
 
 int msac_decode_subexp(MsacContext *const c, const int ref,
-                       const unsigned n, const unsigned k)
+                       const int n, const unsigned k)
 {
     int i = 0;
     int a = 0;
     int b = k;
-    while ((2U << b) < n) {
-        if (!msac_decode_bool(c, 128 << 7)) break;
+    while ((2 << b) < n) {
+        if (!msac_decode_bool(c, EC_BOOL_EPROB)) break;
         b = k + i++;
         a = (1 << b);
     }
     const unsigned v = msac_decode_bools(c, b) + a;
-    return ref * 2U <= n ? inv_recenter(ref, v) :
-                           n - 1 - inv_recenter(n - 1 - ref, v);
+    return ref * 2 <= n ? inv_recenter(ref, v) :
+                          n - 1 - inv_recenter(n - 1 - ref, v);
 }
 
 int msac_decode_uniform(MsacContext *const c, const unsigned n) {
     assert(n > 0);
     const int l = ulog2(n) + 1;
     assert(l > 1);
-    const unsigned m = (1U << l) - n;
+    const unsigned m = (1 << l) - n;
     const unsigned v = msac_decode_bools(c, l - 1);
-    return v < m ? v : (v << 1) - m + msac_decode_bool(c, 128 << 7);
+    return v < m ? v : (v << 1) - m + msac_decode_bool(c, EC_BOOL_EPROB);
 }
 
-void update_cdf(uint16_t *cdf, unsigned val, unsigned nsymbs) {
-    int rate;
-    unsigned i, tmp;
+static void update_cdf(uint16_t *const cdf, const unsigned val,
+                       const unsigned n_symbols)
+{
+    const unsigned count = cdf[n_symbols];
+    const int rate = ((count >> 4) | 4) + (n_symbols > 3);
+    unsigned i;
+    for (i = 0; i < val; i++)
+        cdf[i] += (32768 - cdf[i]) >> rate;
+    for (; i < n_symbols - 1; i++)
+        cdf[i] -= cdf[i] >> rate;
+    cdf[n_symbols] = count + (count < 32);
+}
 
-    static const int nsymbs2speed[17] = {
-        0, 0, 1, 1, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2
-    };
-    assert(nsymbs < 17);
-    rate = 3 + (cdf[nsymbs] > 15) + (cdf[nsymbs] > 31) + nsymbs2speed[nsymbs];
-    tmp = 32768U;
+unsigned msac_decode_symbol_adapt(MsacContext *const c,
+                                  uint16_t *const cdf, const unsigned n_symbols)
+{
+    const unsigned val = msac_decode_symbol(c, cdf, n_symbols);
+    if(c->allow_update_cdf)
+        update_cdf(cdf, val, n_symbols);
+    return val;
+}
 
-    
-    for (i = 0; i < nsymbs - 1; ++i) {
-        tmp = (i == val) ? 0 : tmp;
-        if (tmp < cdf[i]) {
-            cdf[i] -= ((cdf[i] - tmp) >> rate);
+unsigned msac_decode_bool_adapt(MsacContext *const c, uint16_t *const cdf) {
+    const unsigned bit = msac_decode_bool(c, *cdf >> EC_PROB_SHIFT);
+
+    if(c->allow_update_cdf){
+        
+        const unsigned count = cdf[1];
+        const int rate = (count >> 4) | 4;
+        if (bit) {
+            cdf[0] += (32768 - cdf[0]) >> rate;
         } else {
-            cdf[i] += ((tmp - cdf[i]) >> rate);
+            cdf[0] -= cdf[0] >> rate;
         }
+        cdf[1] = count + (count < 32);
     }
 
-    cdf[nsymbs] += (cdf[nsymbs] < 32);
+    return bit;
+}
+
+void msac_init(MsacContext *const s, const uint8_t *const data,
+               const size_t sz, const int disable_cdf_update_flag)
+{
+    s->buf_pos = data;
+    s->buf_end = data + sz;
+    s->dif = ((ec_win)1 << (EC_WIN_SIZE - 1)) - 1;
+    s->rng = 0x8000;
+    s->cnt = -15;
+    s->allow_update_cdf = !disable_cdf_update_flag;
+    ctx_refill(s);
 }

@@ -85,7 +85,12 @@ enum IntraPredMode
 
 
 
-#define ANGLE_SMOOTH_EDGE_FLAG 512
+
+
+
+#define ANGLE_USE_EDGE_FILTER_FLAG 1024
+#define ANGLE_SMOOTH_EDGE_FLAG      512
+
 static inline int sm_flag(const BlockContext *const b, const int idx) {
     if (!b->intra[idx]) return 0;
     const enum IntraPredMode m = b->mode[idx];
