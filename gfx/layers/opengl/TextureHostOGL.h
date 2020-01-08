@@ -232,8 +232,7 @@ public:
                   GLuint aTextureHandle,
                   GLenum aTarget,
                   gfx::IntSize aSize,
-                  gfx::SurfaceFormat aFormat,
-                  bool aExternallyOwned = false);
+                  gfx::SurfaceFormat aFormat);
 
   ~GLTextureSource();
 
@@ -279,9 +278,6 @@ protected:
   GLenum mTextureTarget;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
-  
-  
-  bool mExternallyOwned;
 };
 
 class GLTextureHost : public TextureHost
