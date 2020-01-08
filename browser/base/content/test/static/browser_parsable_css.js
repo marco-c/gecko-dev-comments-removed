@@ -95,6 +95,14 @@ if (!Services.prefs.getBoolPref("layout.css.scrollbar-width.enabled")) {
   });
 }
 
+if (!Services.prefs.getBoolPref("layout.css.scroll-anchoring.enabled")) {
+  whitelist.push({
+    sourceName: /webconsole\.css$/i,
+    errorMessage: /Unknown property .*\boverflow-anchor\b/i,
+    isFromDevTools: true,
+  });
+}
+
 let propNameWhitelist = [
   
   
