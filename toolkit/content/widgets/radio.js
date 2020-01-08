@@ -246,19 +246,26 @@ class MozRadiogroup extends MozElements.BaseControl {
     event.initEvent("select", false, true);
     this.dispatchEvent(event);
 
-    if (!alreadySelected && focused) {
-      
-      var myEvent;
-      if (val) {
-        myEvent = document.createEvent("Events");
-        myEvent.initEvent("RadioStateChange", true, true);
-        val.dispatchEvent(myEvent);
-      }
+    if (focused) {
+      if (alreadySelected) {
+        
+        event = document.createEvent("Events");
+        event.initEvent("DOMMenuItemActive", true, true);
+        val.dispatchEvent(event);
+      } else {
+        
+        if (val) {
+          
+          event = document.createEvent("Events");
+          event.initEvent("RadioStateChange", true, true);
+          val.dispatchEvent(event);
+        }
 
-      if (previousItem) {
-        myEvent = document.createEvent("Events");
-        myEvent.initEvent("RadioStateChange", true, true);
-        previousItem.dispatchEvent(myEvent);
+        if (previousItem) {
+          event = document.createEvent("Events");
+          event.initEvent("RadioStateChange", true, true);
+          previousItem.dispatchEvent(event);
+        }
       }
     }
 
@@ -275,7 +282,13 @@ class MozRadiogroup extends MozElements.BaseControl {
   }
 
   set focusedItem(val) {
-    if (val) val.setAttribute("focused", "true");
+    if (val) {
+      val.setAttribute("focused", "true");
+      
+      let event = document.createEvent("Events");
+      event.initEvent("DOMMenuItemActive", true, true);
+      val.dispatchEvent(event);
+    }
 
     
     var children = this._getRadioChildren();
@@ -375,7 +388,10 @@ class MozRadiogroup extends MozElements.BaseControl {
   }
 }
 
-MozXULElement.implementCustomInterface(MozRadiogroup, [Ci.nsIDOMXULSelectControlElement]);
+MozXULElement.implementCustomInterface(MozRadiogroup, [
+  Ci.nsIDOMXULSelectControlElement,
+  Ci.nsIDOMXULRadioGroupElement,
+]);
 
 customElements.define("radiogroup", MozRadiogroup);
 
