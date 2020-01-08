@@ -255,13 +255,13 @@ class QueryContext {
 
 
 
-
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
-      "searchString",
+      "enableAutofill",
+      "isPrivate",
       "lastKey",
       "maxResults",
-      "isPrivate",
+      "searchString",
     ]);
 
     if (isNaN(parseInt(options.maxResults))) {
@@ -277,8 +277,6 @@ class QueryContext {
         (!Array.isArray(options.sources) || !options.sources.length)) {
       throw new Error(`Invalid sources list`);
     }
-
-    this.autofill = !!options.autofill;
   }
 
   
