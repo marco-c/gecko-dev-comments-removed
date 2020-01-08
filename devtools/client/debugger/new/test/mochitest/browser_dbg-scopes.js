@@ -8,13 +8,16 @@ function getLabel(dbg, index) {
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
 
-  invokeInTab("firstCall");
-  await waitForPaused(dbg);
-  await waitForLoadedSource(dbg, "switching-02");
+  const ready = Promise.all([
+    waitForPaused(dbg),
+    waitForLoadedSource(dbg, "switching-02"),
 
-  
-  
-  await waitForDispatch(dbg, "MAP_FRAMES");
+    
+    
+    waitForDispatch(dbg, "MAP_FRAMES"),
+  ]);
+  invokeInTab("firstCall");
+  await ready;
 
   is(getLabel(dbg, 1), "secondCall");
   is(getLabel(dbg, 2), "<this>");
