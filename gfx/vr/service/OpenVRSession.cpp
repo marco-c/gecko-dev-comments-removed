@@ -4,7 +4,9 @@
 #if defined(XP_WIN)
 #include <d3d11.h>
 #include "mozilla/gfx/DeviceManagerDx.h"
-#endif 
+#elif defined(XP_MACOSX)
+#include "mozilla/gfx/MacIOSurface.h"
+#endif
 
 #include "mozilla/dom/GamepadEventTypes.h"
 #include "mozilla/dom/GamepadBinding.h"
@@ -819,26 +821,38 @@ OpenVRSession::SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer,
                      ::vr::ETextureType::TextureType_DirectX,
                      aLayer.mLeftEyeRect, aLayer.mRightEyeRect);
 }
-
 #elif defined(XP_MACOSX)
 bool
 OpenVRSession::SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer,
-                           MacIOSurface* aTexture)
+                           const VRLayerTextureHandle& aTexture)
 {
-  return SubmitFrame((void *)aTexture,
+  return SubmitFrame(aTexture,
                      ::vr::ETextureType::TextureType_IOSurface,
                      aLayer.mLeftEyeRect, aLayer.mRightEyeRect);
 }
 #endif
 
 bool
-OpenVRSession::SubmitFrame(void* aTextureHandle,
+OpenVRSession::SubmitFrame(const VRLayerTextureHandle& aTextureHandle,
                            ::vr::ETextureType aTextureType,
                            const VRLayerEyeRect& aLeftEyeRect,
                            const VRLayerEyeRect& aRightEyeRect)
 {
   ::vr::Texture_t tex;
+#if defined(XP_MACOSX)
+  
+  
+  RefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(aTextureHandle);
+  if (!surf) {
+    NS_WARNING("OpenVRSession::SubmitFrame failed to get a MacIOSurface");
+    return false;
+  }
+
+  const void* ioSurface = surf->GetIOSurfacePtr();
+  tex.handle = (void *)ioSurface;
+#else
   tex.handle = aTextureHandle;
+#endif
   tex.eType = aTextureType;
   tex.eColorSpace = ::vr::EColorSpace::ColorSpace_Auto;
 
