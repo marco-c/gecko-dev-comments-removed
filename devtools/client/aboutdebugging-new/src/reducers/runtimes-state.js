@@ -25,9 +25,9 @@ const TYPE_TO_RUNTIMES_KEY = {
   [RUNTIMES.USB]: "usbRuntimes",
 };
 
-function RuntimesState(networkRuntimes = []) {
+function RuntimesState() {
   return {
-    networkRuntimes,
+    networkRuntimes: [],
     selectedRuntimeId: null,
     thisFirefoxRuntimes: [{
       id: RUNTIMES.THIS_FIREFOX,
@@ -37,42 +37,44 @@ function RuntimesState(networkRuntimes = []) {
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+function _updateRuntimeById(runtimeId, updatedRuntime, state) {
+  
+  const runtime = findRuntimeById(runtimeId, state);
+  const key = TYPE_TO_RUNTIMES_KEY[runtime.type];
+  const runtimesToUpdate = state[key];
+
+  
+  const updatedRuntimes = runtimesToUpdate.map(r => {
+    if (r.id === runtimeId) {
+      return Object.assign({}, r, updatedRuntime);
+    }
+    return r;
+  });
+  return Object.assign({}, state, { [key]: updatedRuntimes });
+}
+
 function runtimesReducer(state = RuntimesState(), action) {
   switch (action.type) {
     case CONNECT_RUNTIME_SUCCESS: {
       const { id, client } = action.runtime;
-
-      
-      const runtime = findRuntimeById(id, state);
-      const key = TYPE_TO_RUNTIMES_KEY[runtime.type];
-      const runtimesToUpdate = state[key];
-
-      
-      const updatedRuntimes = runtimesToUpdate.map(r => {
-        if (r.id === id) {
-          return Object.assign({}, r, { client });
-        }
-        return r;
-      });
-      return Object.assign({}, state, { [key]: updatedRuntimes });
+      return _updateRuntimeById(id, { client }, state);
     }
 
     case DISCONNECT_RUNTIME_SUCCESS: {
       const { id } = action.runtime;
-
-      
-      const runtime = findRuntimeById(id, state);
-      const key = TYPE_TO_RUNTIMES_KEY[runtime.type];
-      const runtimesToUpdate = state[key];
-
-      
-      const updatedRuntimes = runtimesToUpdate.map(r => {
-        if (r.id === id) {
-          return Object.assign({}, r, { client: null });
-        }
-        return r;
-      });
-      return Object.assign({}, state, { [key]: updatedRuntimes });
+      return _updateRuntimeById(id, { client: null }, state);
     }
 
     case NETWORK_LOCATIONS_UPDATED: {

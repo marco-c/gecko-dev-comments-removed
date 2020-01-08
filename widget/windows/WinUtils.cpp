@@ -13,6 +13,7 @@
 #include "gfxUtils.h"
 #include "nsWindow.h"
 #include "nsWindowDefs.h"
+#include "InputDeviceUtils.h"
 #include "KeyboardLayout.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/BackgroundHangMonitor.h"
@@ -1997,7 +1998,26 @@ IsTabletDevice()
 static bool
 IsMousePresent()
 {
-  return ::GetSystemMetrics(SM_MOUSEPRESENT);
+  if (!::GetSystemMetrics(SM_MOUSEPRESENT)) {
+    return false;
+  }
+
+  DWORD count = InputDeviceUtils::CountMouseDevices();
+  if (!count) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (count == 1 &&
+      (WinUtils::IsTouchDeviceSupportPresent() ||
+       IsTabletDevice())) {
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -2009,7 +2029,7 @@ WinUtils::GetPrimaryPointerCapabilities()
   }
 
   if (IsMousePresent()) {
-    return PointerCapabilities::Fine|
+    return PointerCapabilities::Fine |
            PointerCapabilities::Hover;
   }
 
