@@ -24,7 +24,6 @@
 
 
 
-#include "hb-object-private.hh"
 #include "hb-subset-private.hh"
 #include "hb-set-private.hh"
 

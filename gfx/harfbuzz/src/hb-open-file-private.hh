@@ -290,6 +290,197 @@ struct TTCHeader
 
 
 
+struct ResourceRefItem
+{
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    
+    return_trace (likely (c->check_struct (this)));
+  }
+
+  HBINT16	id;		
+  HBINT16	nameOffset;	
+
+  HBUINT8	attr;		
+  HBUINT24	dataOffset;	
+
+  HBUINT32	reserved;	
+  public:
+  DEFINE_SIZE_STATIC (12);
+};
+
+struct ResourceTypeItem
+{
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    
+    return_trace (likely (c->check_struct (this)));
+  }
+
+  inline unsigned int get_resource_count () const
+  {
+    return numRes + 1;
+  }
+
+  inline bool is_sfnt () const
+  {
+    return type == HB_TAG ('s','f','n','t');
+  }
+
+  inline const ResourceRefItem& get_ref_item (const void *base,
+					      unsigned int i) const
+  {
+    return (base+refList)[i];
+  }
+
+  protected:
+  Tag		type;		
+  HBUINT16	numRes;		
+  OffsetTo<UnsizedArrayOf<ResourceRefItem> >
+		refList;	
+
+  public:
+  DEFINE_SIZE_STATIC (8);
+};
+
+struct ResourceMap
+{
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    if (unlikely (!c->check_struct (this)))
+      return_trace (false);
+    for (unsigned int i = 0; i < get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = get_type (i);
+      if (unlikely (!type.sanitize (c)))
+        return_trace (false);
+      for (unsigned int j = 0; j < type.get_resource_count (); ++j)
+	if (unlikely (!get_ref_item (type, j).sanitize (c)))
+	  return_trace (false);
+    }
+    return_trace (true);
+  }
+
+  inline const ResourceTypeItem& get_type (unsigned int i) const
+  {
+    
+    return ((&reserved[2])+typeList)[i];
+  }
+
+  inline unsigned int get_types_count () const
+  {
+    return nTypes + 1;
+  }
+
+  inline const ResourceRefItem &get_ref_item (const ResourceTypeItem &type,
+					      unsigned int i) const
+  {
+    return type.get_ref_item (&(this+typeList), i);
+  }
+
+  inline const PString& get_name (const ResourceRefItem &item,
+				  unsigned int i) const
+  {
+    if (item.nameOffset == -1)
+      return Null (PString);
+
+    return StructAtOffset<PString> (this, nameList + item.nameOffset);
+  }
+
+  protected:
+  HBUINT8	reserved[16];	
+  LOffsetTo<ResourceMap>
+		reserved1;	
+  HBUINT16	reserved2;	
+  HBUINT16	attr;		
+  OffsetTo<UnsizedArrayOf<ResourceTypeItem> >
+		typeList;	
+
+  HBUINT16	nameList;	
+
+  HBUINT16	nTypes;		
+  public:
+  DEFINE_SIZE_STATIC (30);
+};
+
+struct ResourceForkHeader
+{
+  inline unsigned int get_face_count () const
+  {
+    const ResourceMap &resource_map = this+map;
+    for (unsigned int i = 0; i < resource_map.get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = resource_map.get_type (i);
+      if (type.is_sfnt ())
+	return type.get_resource_count ();
+    }
+    return 0;
+  }
+
+  inline const LArrayOf<HBUINT8>& get_data (const ResourceTypeItem& type,
+					    unsigned int idx) const
+  {
+    const ResourceMap &resource_map = this+map;
+    unsigned int offset = dataOffset;
+    offset += resource_map.get_ref_item (type, idx).dataOffset;
+    return StructAtOffset<LArrayOf<HBUINT8> > (this, offset);
+  }
+
+  inline const OpenTypeFontFace& get_face (unsigned int idx) const
+  {
+    const ResourceMap &resource_map = this+map;
+    for (unsigned int i = 0; i < resource_map.get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = resource_map.get_type (i);
+      if (type.is_sfnt () && idx < type.get_resource_count ())
+	return (OpenTypeFontFace&) get_data (type, idx).arrayZ;
+    }
+    return Null (OpenTypeFontFace);
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    if (unlikely (!c->check_struct (this)))
+      return_trace (false);
+
+    const ResourceMap &resource_map = this+map;
+    if (unlikely (!resource_map.sanitize (c)))
+      return_trace (false);
+
+    for (unsigned int i = 0; i < resource_map.get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = resource_map.get_type (i);
+      for (unsigned int j = 0; j < type.get_resource_count (); ++j)
+      {
+        const LArrayOf<HBUINT8>& data = get_data (type, j);
+	if (unlikely (!(data.sanitize (c) &&
+			((OpenTypeFontFace&) data.arrayZ).sanitize (c))))
+	  return_trace (false);
+      }
+    }
+
+    return_trace (true);
+  }
+
+  protected:
+  HBUINT32	dataOffset;	
+
+  LOffsetTo<ResourceMap>
+		map;		
+
+  HBUINT32	dataLen;	
+  HBUINT32	mapLen;		
+  public:
+  DEFINE_SIZE_STATIC (16);
+};
+
+
+
+
 
 struct OpenTypeFontFile
 {
@@ -299,6 +490,7 @@ struct OpenTypeFontFile
     CFFTag		= HB_TAG ('O','T','T','O'), 
     TrueTypeTag	= HB_TAG ( 0 , 1 , 0 , 0 ), 
     TTCTag		= HB_TAG ('t','t','c','f'), 
+    DFontTag		= HB_TAG ( 0 , 0 , 1 , 0 ), 
     TrueTag		= HB_TAG ('t','r','u','e'), 
     Typ1Tag		= HB_TAG ('t','y','p','1')  
   };
@@ -313,6 +505,7 @@ struct OpenTypeFontFile
     case Typ1Tag:
     case TrueTypeTag:	return 1;
     case TTCTag:	return u.ttcHeader.get_face_count ();
+
     default:		return 0;
     }
   }
@@ -327,6 +520,7 @@ struct OpenTypeFontFile
     case Typ1Tag:
     case TrueTypeTag:	return u.fontFace;
     case TTCTag:	return u.ttcHeader.get_face (i);
+
     default:		return Null(OpenTypeFontFace);
     }
   }
@@ -353,6 +547,7 @@ struct OpenTypeFontFile
     case Typ1Tag:
     case TrueTypeTag:	return_trace (u.fontFace.sanitize (c));
     case TTCTag:	return_trace (u.ttcHeader.sanitize (c));
+
     default:		return_trace (true);
     }
   }
@@ -362,6 +557,7 @@ struct OpenTypeFontFile
   Tag			tag;		
   OpenTypeFontFace	fontFace;
   TTCHeader		ttcHeader;
+  ResourceForkHeader	rfHeader;
   } u;
   public:
   DEFINE_SIZE_UNION (4, tag);

@@ -560,7 +560,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
 
   
 
-   VMAbv, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,
+   VMAbv, VMAbv, VMAbv, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,
        B,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
        B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     O, CMBlw, CMBlw,     B,  VPst,  VPst,
@@ -673,7 +673,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,
     VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,     O,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMAbv, VMPst,     H,
-       B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     O,     O,     O,    GB,    GB,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,
 

@@ -680,9 +680,16 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
 
 
 
+
+
+
+
+
+
   if (indic_plan->is_old_spec)
   {
-    bool disallow_double_halants = buffer->props.script != HB_SCRIPT_MALAYALAM;
+    bool disallow_double_halants = buffer->props.script != HB_SCRIPT_MALAYALAM &&
+				   buffer->props.script != HB_SCRIPT_BENGALI;
     for (unsigned int i = base + 1; i < end; i++)
       if (info[i].indic_category() == OT_H)
       {
@@ -1122,6 +1129,24 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   if (start + 1 < end && start < base) 
   {
     
@@ -1133,6 +1158,7 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
 
     if (buffer->props.script != HB_SCRIPT_MALAYALAM && buffer->props.script != HB_SCRIPT_TAMIL)
     {
+    search:
       while (new_pos > start &&
 	     !(is_one_of (info[new_pos], (FLAG (OT_M) | FLAG (OT_H)))))
 	new_pos--;
@@ -1143,9 +1169,27 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
       if (is_halant (info[new_pos]) &&
 	  info[new_pos].indic_position() != POS_PRE_M)
       {
+#if 0 
 	
 	if (new_pos + 1 < end && is_joiner (info[new_pos + 1]))
 	  new_pos++;
+#endif
+	if (new_pos + 1 < end)
+	{
+	  
+	  if (info[new_pos + 1].indic_category() == OT_ZWJ)
+	  {
+	    
+	    if (new_pos > start)
+	    {
+	      new_pos--;
+	      goto search;
+	    }
+	  }
+	  
+	  if (info[new_pos + 1].indic_category() == OT_ZWNJ)
+	    new_pos++;
+	}
       }
       else
         new_pos = start; 
