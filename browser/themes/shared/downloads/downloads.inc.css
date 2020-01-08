@@ -202,7 +202,7 @@
 
 
 @item@.downloadHoveringButton > .downloadMainArea > .downloadContainer > .downloadDetailsHover,
-@item@:not(.downloadHoveringButton) > .downloadMainArea > .downloadContainer > .downloadButtonLabels {
+@item@:not(.downloadHoveringButton) > .downloadMainArea > .downloadContainer > .downloadDetailsButtonHover {
   display: none;
 }
 
@@ -218,7 +218,7 @@
 
 
 @item@[verdict] > .downloadMainArea > .downloadContainer > .downloadDetailsHover,
-@item@[verdict] > .downloadMainArea > .downloadContainer > .downloadButtonLabels,
+@item@[verdict] > .downloadMainArea > .downloadContainer > .downloadDetailsButtonHover,
 @item@:not([verdict]) > .downloadMainArea > .downloadContainer > .downloadShowMoreInfo,
 @item@:not(:hover) > .downloadMainArea > .downloadContainer > .downloadShowMoreInfo {
   display: none;
