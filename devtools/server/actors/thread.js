@@ -108,6 +108,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._dbg.onDebuggerStatement = this.onDebuggerStatement;
       this._dbg.onNewScript = this.onNewScript;
       this._dbg.on("newGlobal", this.onNewGlobal);
+      if (this._dbg.replaying) {
+        this._dbg.replayingOnForcedPause = this.replayingOnForcedPause.bind(this);
+      }
       
       this._dbg.enabled = this._state != "detached";
     }
@@ -645,11 +648,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   _handleResumeLimit: async function(request) {
     const steppingType = request.resumeLimit.type;
     const rewinding = request.rewind;
-    if (!["break", "step", "next", "finish"].includes(steppingType)) {
+    if (!["break", "step", "next", "finish", "warp"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
         message: "Unknown resumeLimit type"
       });
+    }
+
+    if (steppingType == "warp") {
+      
+      return true;
     }
 
     const generatedLocation = this.sources.getFrameLocation(this.youngestFrame);
@@ -660,6 +668,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       rewinding
     );
 
+    
     
     const stepFrame = this._getNextStepFrame(this.youngestFrame, rewinding);
     if (stepFrame) {
@@ -799,7 +808,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       if (this.dbg.replaying) {
-        if (rewinding) {
+        if (request && request.resumeLimit && request.resumeLimit.type == "warp") {
+          this.dbg.replayTimeWarp(request.resumeLimit.target);
+        } else if (rewinding) {
           this.dbg.replayResumeBackward();
         } else {
           this.dbg.replayResumeForward();
@@ -1633,6 +1644,29 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   onSkipBreakpoints: function({ skip }) {
     this.skipBreakpoints = skip;
     return { skip };
+  },
+
+  
+
+
+
+
+
+
+
+  replayingOnForcedPause: function(frame) {
+    if (frame) {
+      this._pauseAndRespond(frame, { type: "replayForcedPause" });
+    } else {
+      const packet = this._paused(frame);
+      if (!packet) {
+        return;
+      }
+      packet.why = "replayForcedPause";
+
+      this.conn.send(packet);
+      this._pushThreadPause();
+    }
   },
 
   

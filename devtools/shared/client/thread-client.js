@@ -251,6 +251,25 @@ ThreadClient.prototype = {
 
 
 
+
+
+  timeWarp: function(target, onResponse) {
+    const warp = () => {
+      this._doResume({ type: "warp", target }, true, onResponse);
+    };
+    if (this.paused) {
+      warp();
+    } else {
+      this.interrupt(warp);
+    }
+  },
+
+  
+
+
+
+
+
   _doInterrupt: DebuggerClient.requester({
     type: "interrupt",
     when: arg(0)
