@@ -2315,6 +2315,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::newSimpleToken;
     using CharsBase::peekCodeUnit;
     
+    using CharsBase::toCharT;
     using GeneralCharsBase::ungetCodeUnit;
     using GeneralCharsBase::updateLineInfoForEOL;
 
