@@ -26,11 +26,13 @@ class TimeScale {
     let animationsCurrentTime = -Number.MAX_VALUE;
     let minStartTime = Infinity;
     let maxEndTime = 0;
+    let zeroPositionTime = 0;
 
     for (const animation of animations) {
       const {
         createdTime,
         currentTime,
+        currentTimeAtCreated,
         delay,
         duration,
         endDelay = 0,
@@ -39,7 +41,30 @@ class TimeScale {
       } = animation.state;
 
       const toRate = v => v / playbackRate;
-      const startTime = createdTime + toRate(Math.min(delay, 0));
+      const negativeDelay = toRate(Math.min(delay, 0));
+      let startPositionTime = createdTime + negativeDelay;
+      
+      
+      const originalCurrentTime =
+            toRate(currentTimeAtCreated ? currentTimeAtCreated : startPositionTime);
+      const startPositionTimeAtCreated =
+            createdTime + originalCurrentTime;
+      let animationZeroPositionTime = 0;
+
+      
+      
+      
+      
+      
+      
+      if (originalCurrentTime < negativeDelay &&
+          startPositionTimeAtCreated < minStartTime) {
+        startPositionTime = startPositionTimeAtCreated;
+        animationZeroPositionTime = Math.abs(originalCurrentTime);
+      } else if (negativeDelay < 0 && startPositionTime < minStartTime) {
+        animationZeroPositionTime = Math.abs(negativeDelay);
+      }
+
       let endTime = 0;
 
       if (duration === Infinity) {
@@ -56,15 +81,24 @@ class TimeScale {
                          Math.max(endDelay, 0));
       }
 
-      minStartTime = Math.min(minStartTime, startTime);
       maxEndTime = Math.max(maxEndTime, endTime);
       animationsCurrentTime =
         Math.max(animationsCurrentTime, createdTime + toRate(currentTime));
+
+      if (startPositionTime < minStartTime) {
+        minStartTime = startPositionTime;
+        
+        
+        zeroPositionTime = animationZeroPositionTime;
+      } else {
+        zeroPositionTime = Math.max(zeroPositionTime, animationZeroPositionTime);
+      }
     }
 
     this.minStartTime = minStartTime;
     this.maxEndTime = maxEndTime;
     this.currentTime = animationsCurrentTime;
+    this.zeroPositionTime = zeroPositionTime;
   }
 
   
@@ -111,6 +145,7 @@ class TimeScale {
       this.maxEndTime = Math.max(this.maxEndTime, endTime);
 
       this.documentCurrentTime = Math.max(this.documentCurrentTime, documentCurrentTime);
+      this.zeroPositionTime = this.minStartTime;
     }
   }
 
@@ -120,20 +155,13 @@ class TimeScale {
 
 
 
-  distanceToTime(distance) {
-    return this.minStartTime + (this.getDuration() * distance / 100);
-  }
-
-  
-
-
 
 
 
 
   distanceToRelativeTime(distance) {
-    const time = this.distanceToTime(distance);
-    return time - this.minStartTime;
+    return (this.getDuration() * distance / 100)
+           - this.zeroPositionTime;
   }
 
   
@@ -144,6 +172,11 @@ class TimeScale {
 
 
   formatTime(time) {
+    
+    if (Math.abs(time) < (1 / 1000)) {
+      time = 0.0;
+    }
+
     
     if (this.getDuration() <= TIME_FORMAT_MAX_DURATION_IN_MS) {
       return getFormatStr("timeline.timeGraduationLabel", time.toFixed(0));

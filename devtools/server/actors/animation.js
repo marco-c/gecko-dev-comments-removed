@@ -88,6 +88,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     }
 
     this.createdTime = createdTime;
+    this.currentTimeAtCreated = player.currentTime;
   },
 
   destroy: function() {
@@ -336,6 +337,8 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       documentCurrentTime: this.node.ownerDocument.timeline.currentTime,
       
       createdTime: this.createdTime,
+      
+      currentTimeAtCreated: this.currentTimeAtCreated,
     };
   },
 
