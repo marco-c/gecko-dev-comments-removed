@@ -195,16 +195,16 @@ EnterprisePoliciesManager.prototype = {
 
     DisallowedFeatures = {};
 
+    Services.ppmm.sharedData.delete("EnterprisePolicies:Status");
+    Services.ppmm.sharedData.delete("EnterprisePolicies:DisallowedFeatures");
+
     this._status = Ci.nsIEnterprisePolicies.UNINITIALIZED;
     for (let timing of Object.keys(this._callbacks)) {
       this._callbacks[timing] = [];
     }
-    delete Services.ppmm.initialProcessData.policies;
-    Services.ppmm.broadcastAsyncMessage("EnterprisePolicies:Restart", null);
 
     let { PromiseUtils } = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm",
                                               {});
-
     
     
 
@@ -259,21 +259,13 @@ EnterprisePoliciesManager.prototype = {
   },
 
   disallowFeature(feature, neededOnContentProcess = false) {
-    DisallowedFeatures[feature] = true;
+    DisallowedFeatures[feature] = neededOnContentProcess;
 
     
     
     if (neededOnContentProcess) {
-      Services.ppmm.initialProcessData.policies
-                                      .disallowedFeatures.push(feature);
-
-      if (Services.ppmm.childCount > 1) {
-        
-        
-        Services.ppmm.broadcastAsyncMessage(
-          "EnterprisePolicies:DisallowFeature", {feature}
-        );
-      }
+      Services.ppmm.sharedData.set("EnterprisePolicies:DisallowedFeatures",
+        new Set(Object.keys(DisallowedFeatures).filter(key => DisallowedFeatures[key])));
     }
   },
 
@@ -286,10 +278,7 @@ EnterprisePoliciesManager.prototype = {
   set status(val) {
     this._status = val;
     if (val != Ci.nsIEnterprisePolicies.INACTIVE) {
-      Services.ppmm.initialProcessData.policies = {
-        status: val,
-        disallowedFeatures: [],
-      };
+      Services.ppmm.sharedData.set("EnterprisePolicies:Status", val);
     }
     return val;
   },
