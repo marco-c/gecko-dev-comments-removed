@@ -214,6 +214,14 @@
 %include ../shared/menupanel.inc.css
 
 
+.findbar-button {
+  background: none;
+  box-shadow: none;
+  border: none;
+  color: inherit;
+}
+
+
 
 :root:not([customizing]) #back-button[disabled="true"] {
   opacity: 1 !important;
