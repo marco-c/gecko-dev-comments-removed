@@ -248,11 +248,11 @@ JS_Utf8BufferIsCompilableUnit(JSContext* cx, HandleObject obj, const char* utf8,
         return false;
     }
 
+    JS::AutoSuppressWarningReporter suppressWarnings(cx);
     Parser<FullParseHandler, char16_t> parser(cx, cx->tempLifoAlloc(), options,
                                               chars.get(), length,  true,
                                               usedNames, nullptr, nullptr, sourceObject,
                                               ParseGoal::Script);
-    JS::WarningReporter older = JS::SetWarningReporter(cx, nullptr);
     if (!parser.checkOptions() || !parser.parse()) {
         
         
@@ -263,7 +263,6 @@ JS_Utf8BufferIsCompilableUnit(JSContext* cx, HandleObject obj, const char* utf8,
 
         cx->clearPendingException();
     }
-    JS::SetWarningReporter(cx, older);
 
     return result;
 }
