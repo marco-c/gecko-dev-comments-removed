@@ -555,7 +555,7 @@ public:
   
 
 
-  virtual void ScrollTo(uint32_t aHow) const;
+  void ScrollTo(uint32_t aHow) const;
 
   
 

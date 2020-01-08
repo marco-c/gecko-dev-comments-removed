@@ -14,6 +14,8 @@ ChromeUtils.defineModuleGetter(this, "TraversalRules",
   "resource://gre/modules/accessibility/Traversal.jsm");
 ChromeUtils.defineModuleGetter(this, "TraversalHelper",
   "resource://gre/modules/accessibility/Traversal.jsm");
+ChromeUtils.defineModuleGetter(this, "Presentation",
+  "resource://gre/modules/accessibility/Presentation.jsm");
 
 var EXPORTED_SYMBOLS = ["ContentControl"];
 
@@ -153,6 +155,9 @@ this.ContentControl.prototype = {
       
       
       this.sendToParent(aMessage);
+    } else {
+      this._contentScope.get().sendAsyncMessage("AccessFu:Present",
+        Presentation.noMove(action));
     }
   },
 
@@ -223,6 +228,13 @@ this.ContentControl.prototype = {
           node.dispatchEvent(evt);
         }
       }
+
+      
+      if (!Utils.getState(aAccessible).contains(States.CHECKABLE) &&
+          !Utils.getState(aAccessible).contains(States.SELECTABLE)) {
+        this._contentScope.get().sendAsyncMessage("AccessFu:Present",
+          Presentation.actionInvoked());
+      }
     };
 
     let focusedAcc = Utils.AccService.getAccessibleFor(
@@ -230,11 +242,15 @@ this.ContentControl.prototype = {
     if (focusedAcc && this.vc.position === focusedAcc
         && focusedAcc.role === Roles.ENTRY) {
       let accText = focusedAcc.QueryInterface(Ci.nsIAccessibleText);
+      let oldOffset = accText.caretOffset;
       let newOffset = aMessage.json.offset;
+      let text = accText.getText(0, accText.characterCount);
+
       if (newOffset >= 0 && newOffset <= accText.characterCount) {
         accText.caretOffset = newOffset;
       }
 
+      this.presentCaretChange(text, oldOffset, accText.caretOffset);
       return;
     }
 
@@ -383,6 +399,15 @@ this.ContentControl.prototype = {
     }
   },
 
+  presentCaretChange: function cc_presentCaretChange(
+    aText, aOldOffset, aNewOffset) {
+    if (aOldOffset !== aNewOffset) {
+      let msg = Presentation.textSelectionChanged(aText, aNewOffset, aNewOffset,
+        aOldOffset, aOldOffset, true);
+      this._contentScope.get().sendAsyncMessage("AccessFu:Present", msg);
+    }
+  },
+
   getChildCursor: function cc_getChildCursor(aAccessible) {
     let acc = aAccessible || this.vc.position;
     if (Utils.isAliveAndVisible(acc) && acc.role === Roles.INTERNAL_FRAME) {
@@ -441,6 +466,7 @@ this.ContentControl.prototype = {
 
 
 
+
   autoMove: function cc_autoMove(aAnchor, aOptions = {}) {
     this.cancelAutoMove();
 
@@ -449,9 +475,19 @@ this.ContentControl.prototype = {
       let acc = aAnchor;
       let rule = aOptions.onScreenOnly ?
         TraversalRules.SimpleOnScreen : TraversalRules.Simple;
+      let forcePresentFunc = () => {
+        if (aOptions.forcePresent) {
+          this._contentScope.get().sendAsyncMessage(
+            "AccessFu:Present", Presentation.pivotChanged(
+              vc.position, null, vc.startOffset, vc.endOffset,
+              Ci.nsIAccessiblePivot.REASON_NONE,
+              Ci.nsIAccessiblePivot.NO_BOUNDARY));
+        }
+      };
 
       if (aOptions.noOpIfOnScreen &&
         Utils.isAliveAndVisible(vc.position, true)) {
+        forcePresentFunc();
         return;
       }
 
@@ -473,14 +509,19 @@ this.ContentControl.prototype = {
         moved = vc[moveMethod](rule, true);
       }
 
-      this.sendToChild(vc, {
+      let sentToChild = this.sendToChild(vc, {
         name: "AccessFu:AutoMove",
         json: {
           moveMethod: aOptions.moveMethod,
           moveToFocused: aOptions.moveToFocused,
           noOpIfOnScreen: true,
+          forcePresent: true
         }
       }, null, true);
+
+      if (!moved && !sentToChild) {
+        forcePresentFunc();
+      }
     };
 
     if (aOptions.delay) {
