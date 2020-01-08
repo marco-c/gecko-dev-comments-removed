@@ -2,6 +2,10 @@
 
 "use strict";
 
+add_task(async function testSetup() {
+  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
+});
+
 add_task(async function testPopupSelectPopup() {
   let extension = ExtensionTestUtils.loadExtension({
     background() {
@@ -46,6 +50,13 @@ add_task(async function testPopupSelectPopup() {
   async function testPanel(browser) {
     let popupPromise = promisePopupShown(selectPopup);
 
+    
+    
+    await ContentTask.spawn(browser, null, async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document && content.document.querySelector("#select");
+      });
+    });
     BrowserTestUtils.synthesizeMouseAtCenter("#select", {}, browser);
 
     await popupPromise;
@@ -65,6 +76,11 @@ add_task(async function testPopupSelectPopup() {
 
     is(Math.floor(boxObject.screenY + elemRect.bottom), popupRect.top,
        "Select popup has the correct y origin");
+
+    
+    const onPopupHidden = BrowserTestUtils.waitForEvent(selectPopup, "popuphidden");
+    selectPopup.hidePopup();
+    await onPopupHidden;
   }
 
   {
@@ -86,4 +102,8 @@ add_task(async function testPopupSelectPopup() {
   }
 
   await extension.unload();
+});
+
+add_task(async function testTeardown() {
+  Services.prefs.clearUserPref("toolkit.cosmeticAnimations.enabled");
 });
