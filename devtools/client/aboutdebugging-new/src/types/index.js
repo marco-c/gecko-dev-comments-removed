@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+const { runtime } = require("./runtime");
+
+module.exports = Object.assign({}, {
+  runtime,
+});
