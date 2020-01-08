@@ -49,11 +49,6 @@
       window.console.log = function() { };
       window.console.error = function() { };
       window.internals.settings.setWebGLErrorsToConsoleEnabled(false);
-
-      
-      
-      window.requestAnimationFrame = undefined;
-      window.webkitRequestAnimationFrame = undefined;
     }
 
     
@@ -697,7 +692,9 @@ function webglHarnessCollectGarbage() {
     }
 
     try {
-        window.windowUtils.garbageCollect();
+        window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+              .getInterface(Components.interfaces.nsIDOMWindowUtils)
+              .garbageCollect();
         return;
     } catch(e) {}
 

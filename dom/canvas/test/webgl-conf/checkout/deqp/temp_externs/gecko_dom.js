@@ -507,6 +507,7 @@ Document.prototype.importNode = function(externalNode, deep) {};
 
 
 Document.prototype.load = function(uri) {};
+Document.prototype.loadOverlay;
 
 
 
