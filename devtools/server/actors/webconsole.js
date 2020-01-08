@@ -1796,8 +1796,27 @@ WebConsoleActor.prototype =
 
 
 
-  getNetworkEventActorForURL(url) {
-    return this._networkEventActorsByURL.get(url);
+  getRequestContentForURL(url) {
+    
+    if (this.networkMonitorActor) {
+      return this.networkMonitorActor.getRequestContentForURL(url);
+    } else if (this.networkMonitorActorId) {
+      
+      
+      const messageManager = this.parentActor.messageManager;
+      return new Promise(resolve => {
+        const onMessage = ({ data }) => {
+          if (data.url == url) {
+            messageManager.removeMessageListener("debug:request-content", onMessage);
+            resolve(data.content);
+          }
+        };
+        messageManager.addMessageListener("debug:request-content", onMessage);
+        messageManager.sendAsyncMessage("debug:request-content", { url });
+      });
+    }
+    
+    return null;
   },
 
   
