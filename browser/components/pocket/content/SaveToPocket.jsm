@@ -7,8 +7,6 @@
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.defineModuleGetter(this, "AboutPocket",
-                               "chrome://pocket/content/AboutPocket.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
                                "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
@@ -29,10 +27,6 @@ XPCOMUtils.defineLazyGetter(this, "gPocketStyleURI", function() {
 });
 
 var EXPORTED_SYMBOLS = ["SaveToPocket"];
-
-
-
-const PROCESS_SCRIPT = "chrome://pocket/content/pocket-content-process.js?" + Math.random();
 
 const PREF_BRANCH = "extensions.pocket.";
 const PREFS = {
@@ -401,7 +395,6 @@ var PocketOverlay = {
     this._sheetType = styleSheetService.AUTHOR_SHEET;
     this._cachedSheet = styleSheetService.preloadSheet(gPocketStyleURI,
                                                        this._sheetType);
-    Services.ppmm.loadProcessScript(PROCESS_SCRIPT, true);
     Services.obs.addObserver(this, "browser-delayed-startup-finished");
     PocketReader.startup();
     PocketPageAction.init();
@@ -411,13 +404,7 @@ var PocketOverlay = {
     }
   },
   shutdown() {
-    Services.ppmm.broadcastAsyncMessage("PocketShuttingDown");
     Services.obs.removeObserver(this, "browser-delayed-startup-finished");
-    
-    
-    
-    AboutPocket.aboutSaved.unregister();
-    AboutPocket.aboutSignup.unregister();
 
     PocketPageAction.shutdown();
 
