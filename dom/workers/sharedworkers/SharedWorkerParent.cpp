@@ -1,0 +1,29 @@
+
+
+
+
+
+
+#include "SharedWorkerParent.h"
+
+namespace mozilla {
+
+using ipc::PrincipalInfo;
+
+namespace dom {
+
+SharedWorkerParent::SharedWorkerParent()
+{
+  
+}
+
+SharedWorkerParent::~SharedWorkerParent() = default;
+
+void
+SharedWorkerParent::ActorDestroy(IProtocol::ActorDestroyReason aReason)
+{
+  
+}
+
+} 
+} 

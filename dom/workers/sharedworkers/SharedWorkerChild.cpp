@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "SharedWorkerChild.h"
+
+namespace mozilla {
+namespace dom {
+
+SharedWorkerChild::SharedWorkerChild()
+{
+}
+
+SharedWorkerChild::~SharedWorkerChild() = default;
+
+} 
+} 
