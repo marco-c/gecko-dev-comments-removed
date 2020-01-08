@@ -30,6 +30,7 @@ enum class EditAction
   eInsertParagraphSeparator,
 
   
+  
   eInsertLineBreak,
 
   
@@ -397,6 +398,10 @@ enum class EditSubAction : int32_t
 
   
   eSetText,
+
+  
+  
+  eInsertLineBreak,
 
   
   
