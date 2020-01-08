@@ -1087,6 +1087,61 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource)
         if (!script->appendSourceDataForToString(cx, out)) {
             return nullptr;
         }
+    } else if (!isToSource) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        auto hasGetterOrSetterPrefix = [](JSAtom* name) {
+            auto hasGetterOrSetterPrefix = [](const auto* chars) {
+                return (chars[0] == 'g' || chars[0] == 's') &&
+                       chars[1] == 'e' &&
+                       chars[2] == 't' &&
+                       chars[3] == ' ';
+            };
+
+            JS::AutoCheckCannotGC nogc;
+            return name->length() >= 4 &&
+                   (name->hasLatin1Chars()
+                    ? hasGetterOrSetterPrefix(name->latin1Chars(nogc))
+                    : hasGetterOrSetterPrefix(name->twoByteChars(nogc)));
+        };
+
+        if (!out.append("function")) {
+            return nullptr;
+        }
+
+        
+        
+        
+        if (fun->explicitName() &&
+            !fun->isBoundFunction() &&
+            (fun->kind() == JSFunction::NormalFunction ||
+             fun->kind() == JSFunction::ClassConstructor))
+        {
+            if (!out.append(' ')) {
+                return nullptr;
+            }
+
+            
+            
+            JSAtom* name = fun->explicitName();
+            size_t offset = hasGetterOrSetterPrefix(name) ? 4 : 0;
+            if (!out.appendSubstring(name, offset, name->length() - offset)) {
+                return nullptr;
+            }
+        }
+
+        if (!out.append("() {\n    [native code]\n}")) {
+            return nullptr;
+        }
     } else {
         if (fun->isAsync()) {
             if (!out.append("async ")) {
@@ -1123,28 +1178,8 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource)
             }
         }
 
-        if (fun->isInterpreted() &&
-            (!fun->isSelfHostedBuiltin() ||
-             fun->infallibleIsDefaultClassConstructor(cx)))
-        {
-            
-            
-            
-            
-            
-            
-            MOZ_ASSERT_IF(fun->infallibleIsDefaultClassConstructor(cx),
-                          !cx->runtime()->sourceHook.ref() ||
-                          !script->scriptSource()->sourceRetrievable() ||
-                          fun->realm()->behaviors().discardSource());
-
-            if (!out.append("() {\n    [sourceless code]\n}")) {
-                return nullptr;
-            }
-        } else {
-            if (!out.append("() {\n    [native code]\n}")) {
-                return nullptr;
-            }
+        if (!out.append("() {\n    [native code]\n}")) {
+            return nullptr;
         }
     }
 
@@ -1171,8 +1206,7 @@ fun_toStringHelper(JSContext* cx, HandleObject obj, bool isToSource)
         return nullptr;
     }
 
-    RootedFunction fun(cx, &obj->as<JSFunction>());
-    return FunctionToString(cx, fun, isToSource);
+    return FunctionToString(cx, obj.as<JSFunction>(), isToSource);
 }
 
 bool
