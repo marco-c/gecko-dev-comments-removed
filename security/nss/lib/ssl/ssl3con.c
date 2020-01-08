@@ -6386,11 +6386,14 @@ ssl_CheckServerSessionIdCorrectness(sslSocket *ss, SECItem *sidBytes)
 
     
     if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        return !sentFakeSid || !sidMatch;
+        if (sentFakeSid) {
+            return !sidMatch;
+        }
+        return PR_TRUE;
     }
 
     
-    if (sentRealSid || sentFakeSid) {
+    if (!IS_DTLS(ss) && (sentRealSid || sentFakeSid)) {
         return sidMatch;
     }
 
