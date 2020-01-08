@@ -14,7 +14,7 @@ import re
 import sys
 
 
-ALIGNMENT_COLUMN = 30
+ALIGNMENT_COLUMN = 20
 
 
 MAX_CHARS_PER_LINE = 80
