@@ -761,7 +761,7 @@ private:
 #endif
 
 #ifdef MOZ_REFLOW_PERF
-  ReflowCountMgr* mReflowCountMgr;
+  UniquePtr<ReflowCountMgr> mReflowCountMgr;
 #endif
 
   
