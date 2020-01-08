@@ -767,11 +767,19 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
   
   GetCompositorBridgeChild()->PostponeMessagesIfAsyncPainting();
 
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::child::NotifyPaintStart();
+  }
+
   MOZ_LAYERS_LOG(("[LayersForwarder] sending transaction..."));
   RenderTraceScope rendertrace3("Forward Transaction", "000093");
   if (!mShadowManager->SendUpdate(info)) {
     MOZ_LAYERS_LOG(("[LayersForwarder] WARNING: sending transaction failed!"));
     return false;
+  }
+
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::child::WaitForPaintToComplete();
   }
 
   if (startTime) {
