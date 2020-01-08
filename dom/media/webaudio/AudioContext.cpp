@@ -165,8 +165,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
                                           aIsOffline,
                                           allowedToStart,
                                           aNumberOfChannels,
-                                          aLength,
-                                          aSampleRate);
+                                          aLength);
 
   
   if (mute) {

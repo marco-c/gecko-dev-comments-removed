@@ -269,6 +269,7 @@ private:
 
 protected:
   
+  
   RefPtr<AudioNodeStream> mStream;
 
 private:
