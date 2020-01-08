@@ -755,7 +755,7 @@ var gPopupBlockerObserver = {
 
   onPopupHiding(aEvent) {
     let item = aEvent.target.lastChild;
-    while (item && item.getAttribute("observes") != "blockedPopupsSeparator") {
+    while (item && item.id != "blockedPopupsSeparator") {
       let next = item.previousSibling;
       item.remove();
       item = next;
@@ -2716,9 +2716,13 @@ function URLBarSetURI(aURI) {
     valid = true;
   }
 
+  let isDifferentValidValue = valid && value != gURLBar.value;
   gURLBar.value = value;
   gURLBar.valueIsTyped = !valid;
   gURLBar.removeAttribute("usertyping");
+  if (isDifferentValidValue) {
+    gURLBar.selectionStart = gURLBar.selectionEnd = 0;
+  }
 
   SetPageProxyState(valid ? "valid" : "invalid");
 }
