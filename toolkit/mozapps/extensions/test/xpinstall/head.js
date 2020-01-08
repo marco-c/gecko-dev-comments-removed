@@ -113,6 +113,7 @@ var Harness = {
       Services.wm.addListener(this);
 
       window.addEventListener("popupshown", this);
+      PanelUI.notificationPanel.addEventListener("popupshown", this);
 
       var self = this;
       registerCleanupFunction(async function() {
@@ -131,6 +132,7 @@ var Harness = {
         Services.wm.removeListener(self);
 
         window.removeEventListener("popupshown", self);
+        PanelUI.notificationPanel.removeEventListener("popupshown", self);
 
         let aInstalls = await AddonManager.getAllInstalls();
         is(aInstalls.length, 0, "Should be no active installs at the end of the test");
@@ -147,6 +149,11 @@ var Harness = {
   },
 
   finish() {
+    
+    
+    
+    
+    PanelUI.notificationPanel.hidePopup();
     finish();
   },
 
@@ -236,11 +243,13 @@ var Harness = {
 
   handleEvent(event) {
     if (event.type === "popupshown") {
-      if (event.target.firstElementChild) {
+      if (event.target == PanelUI.notificationPanel) {
+        PanelUI.notificationPanel.hidePopup();
+      } else if (event.target.firstElementChild) {
         let popupId = event.target.getAttribute("popupid");
         if (popupId === "addon-webext-permissions") {
           this.popupReady(event.target.firstElementChild);
-        } else if (popupId === "addon-installed" || popupId === "addon-install-failed") {
+        } else if (popupId === "addon-install-failed") {
           event.target.firstElementChild.button.click();
         }
       }
