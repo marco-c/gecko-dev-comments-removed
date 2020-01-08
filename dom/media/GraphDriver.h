@@ -254,6 +254,8 @@ class ThreadedDriver : public GraphDriver
 public:
   explicit ThreadedDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~ThreadedDriver();
+  void WaitForNextIteration() override;
+  void WakeUp() override;
   void Start() override;
   void Revive() override;
   void Shutdown() override;
@@ -276,7 +278,10 @@ public:
   {
     return mThreadRunning;
   }
+  
 
+
+  virtual TimeDuration WaitInterval() = 0;
   
 
 
@@ -299,9 +304,8 @@ class SystemClockDriver : public ThreadedDriver
 public:
   explicit SystemClockDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~SystemClockDriver();
+  TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
-  void WaitForNextIteration() override;
-  void WakeUp() override;
   void MarkAsFallback();
   bool IsFallback();
   SystemClockDriver* AsSystemClockDriver() override {
@@ -328,9 +332,8 @@ class OfflineClockDriver : public ThreadedDriver
 public:
   OfflineClockDriver(MediaStreamGraphImpl* aGraphImpl, GraphTime aSlice);
   virtual ~OfflineClockDriver();
+  TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
-  void WaitForNextIteration() override;
-  void WakeUp() override;
   TimeStamp GetCurrentTimeStamp() override;
   OfflineClockDriver* AsOfflineClockDriver() override {
     return this;
