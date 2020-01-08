@@ -11,6 +11,7 @@
 
 
 
+
 const actual = [];
 const expected = [
   'Promise: 6',

@@ -24,6 +24,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 export * as namespace from './parse-err-semi-name-space-export.js' null;

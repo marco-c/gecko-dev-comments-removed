@@ -12,6 +12,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 var insta\u{6e}ceof = 123;

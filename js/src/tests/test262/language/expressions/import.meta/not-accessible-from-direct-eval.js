@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+    eval("import.meta");
+});
+
+reportCompare(0, 0);

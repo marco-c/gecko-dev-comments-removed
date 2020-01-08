@@ -27,6 +27,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 10._e1

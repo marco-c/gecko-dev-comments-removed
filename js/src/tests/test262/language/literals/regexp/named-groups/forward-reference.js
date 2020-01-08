@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert(/\k<a>(?<a>x)/.test("x"));
+
+reportCompare(0, 0);

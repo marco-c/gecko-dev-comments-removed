@@ -13,7 +13,7 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 var o = { a: 1 };
 for (let in o) { }
 

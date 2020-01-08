@@ -813,6 +813,7 @@ function getInvalidLocaleArguments() {
     "u-nu-latn-cu-bob", 
     "hans-cmn-cn", 
                    
+    "abcdefghi", 
     "cmn-hans-cn-u-u", 
     "cmn-hans-cn-t-u-ca-u", 
     "de-gregory-gregory", 

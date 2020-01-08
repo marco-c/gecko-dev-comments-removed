@@ -16,6 +16,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 while (false) async function f() {}

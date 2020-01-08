@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+    new (import(''))
+});
+
+assert.throws(TypeError, () => {
+    new (function() {}, import(''))
+});
+
+assert.sameValue(
+    typeof new (import(''), function() {}),
+    'object',
+);
+
+reportCompare(0, 0);

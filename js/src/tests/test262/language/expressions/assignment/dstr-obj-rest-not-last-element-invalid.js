@@ -20,7 +20,7 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 var rest, b;
 
 0, {...rest, b} = {}

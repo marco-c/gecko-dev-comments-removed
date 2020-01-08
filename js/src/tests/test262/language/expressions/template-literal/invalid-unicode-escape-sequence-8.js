@@ -9,6 +9,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 `\u{10FFFFF}${'inner'}right`;

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+const options = new Intl.RelativeTimeFormat().resolvedOptions();
+
+const expected = [
+  "locale",
+  "style",
+  "numeric",
+];
+
+assert.compareArray(Object.getOwnPropertyNames(options), expected);
+
+reportCompare(0, 0);

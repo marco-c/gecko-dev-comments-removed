@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var AsyncFunction = async function(){}.constructor;
+
+assert.throws(SyntaxError, function() {
+    AsyncFunction("import.meta");
+}, "import.meta in AsyncFunctionBody");
+
+assert.throws(SyntaxError, function() {
+    AsyncFunction("a = import.meta", "");
+}, "import.meta in FormalParameters");
+
+reportCompare(0, 0);

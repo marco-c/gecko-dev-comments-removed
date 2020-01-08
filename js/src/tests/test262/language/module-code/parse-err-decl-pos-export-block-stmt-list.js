@@ -10,6 +10,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 { void 0; export default null; }

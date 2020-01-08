@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var Generator = function*(){}.constructor;
+
+assert.throws(SyntaxError, function() {
+    Generator("import.meta");
+}, "import.meta in GeneratorBody");
+
+assert.throws(SyntaxError, function() {
+    Generator("a = import.meta", "");
+}, "import.meta in FormalParameters");
+
+reportCompare(0, 0);

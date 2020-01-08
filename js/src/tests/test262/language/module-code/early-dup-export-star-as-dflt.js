@@ -13,8 +13,8 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 var x;
 export default x;
-export * as default from 'early-dup-export-start-as-dflt.js';
+export * as default from './early-dup-export-start-as-dflt.js';

@@ -1,0 +1,17 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+var a, arguments = 42, b;

@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const await = './module-code_FIXTURE.js';
+
+const getpromise = () => import(await); 
+
+async function fn() {
+    const ns1 = await getpromise();
+
+    assert.sameValue(ns1.local1, 'Test262');
+    assert.sameValue(ns1.default, 42);
+}
+
+fn().then($DONE, $DONE).catch($DONE);

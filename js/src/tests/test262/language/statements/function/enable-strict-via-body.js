@@ -17,7 +17,7 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 function _13_0_10_fun() {
     function _13_0_10_inner() {

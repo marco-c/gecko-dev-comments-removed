@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+    Function("import.meta");
+}, "import.meta in FunctionBody");
+
+assert.throws(SyntaxError, function() {
+    Function("a = import.meta", "");
+}, "import.meta in FormalParameters");
+
+reportCompare(0, 0);

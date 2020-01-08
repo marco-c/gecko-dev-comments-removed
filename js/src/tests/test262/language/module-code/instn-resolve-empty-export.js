@@ -36,6 +36,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 export {} from './instn-resolve-empty-export_FIXTURE.js';

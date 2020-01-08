@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function * f() {
+  await import('./THIS_FILE_DOES_NOT_EXIST.js');
+}
+
+f().next().catch(error => {
+
+  assert.notSameValue(typeof error, 'undefined');
+
+}).then($DONE, $DONE);

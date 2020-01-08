@@ -45,7 +45,7 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 var iterCount = 0;
 var asyncIter = (async function*() {

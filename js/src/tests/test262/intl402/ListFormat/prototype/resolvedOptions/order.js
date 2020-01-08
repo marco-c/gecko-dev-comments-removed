@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+const options = new Intl.ListFormat().resolvedOptions();
+
+const expected = [
+  "locale",
+  "type",
+  "style",
+];
+
+assert.compareArray(Object.getOwnPropertyNames(options), expected);
+
+reportCompare(0, 0);

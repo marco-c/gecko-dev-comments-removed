@@ -1,0 +1,5 @@
+
+
+
+
+export default import('indirect-resolution-2_FIXTURE.js');

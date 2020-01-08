@@ -69,6 +69,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 /\u{1F_639}/u;

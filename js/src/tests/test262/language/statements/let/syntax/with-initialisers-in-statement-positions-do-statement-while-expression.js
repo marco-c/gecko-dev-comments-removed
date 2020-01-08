@@ -11,5 +11,5 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 do let x = 1; while (false)

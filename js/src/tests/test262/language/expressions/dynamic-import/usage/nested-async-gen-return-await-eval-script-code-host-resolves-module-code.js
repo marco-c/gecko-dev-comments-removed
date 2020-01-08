@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var smoosh; function smoosh() {}
+
+
+async function * f() {
+  return await import('./module-code_FIXTURE.js');
+}
+
+f().next().then(({value: imported}) => {
+
+  assert.sameValue(imported.default, 42);
+  assert.sameValue(imported.x, 'Test262');
+  assert.sameValue(imported.z, 42);
+
+}).then($DONE, $DONE).catch($DONE);

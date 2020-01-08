@@ -17,6 +17,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 try { } catch (x) { for (var x of []) {} }

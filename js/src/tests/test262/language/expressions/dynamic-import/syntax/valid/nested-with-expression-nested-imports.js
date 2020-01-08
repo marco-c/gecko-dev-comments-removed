@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+with (import(import(import('./empty_FIXTURE.js')))) {
+    assert.sameValue(then, Promise.prototype.then);
+    assert.sameValue(constructor, Promise);
+}
+
+reportCompare(0, 0);

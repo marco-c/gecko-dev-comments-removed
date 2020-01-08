@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const f = async () => await import('./eval-rqstd-abrupt-err-uri_FIXTURE.js');
+
+f().catch(error => {
+
+  assert.sameValue(error.name, 'URIError');
+
+}).then($DONE, $DONE);

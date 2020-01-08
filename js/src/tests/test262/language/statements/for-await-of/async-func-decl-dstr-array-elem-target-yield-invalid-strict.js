@@ -29,7 +29,7 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 async function fn() {
   for await ([ x[yield] ] of [[]])

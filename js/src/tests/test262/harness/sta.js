@@ -11,5 +11,6 @@
 assert(typeof Test262Error === "function");
 assert(typeof Test262Error.prototype.toString === "function");
 assert(typeof $ERROR === "function");
+assert(typeof $DONOTEVALUATE === "function");
 
 reportCompare(0, 0);

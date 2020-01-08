@@ -14,6 +14,6 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
+$DONOTEVALUATE();
 
 /\P{ General_Category=Uppercase_Letter }/u;
