@@ -18,10 +18,10 @@ const TEST_URL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML);
 
 const TEST_DATA = [{
   selector: "#id",
-  attribute: "class"
+  attribute: "class",
 }, {
   selector: "#id",
-  attribute: "data-id"
+  attribute: "data-id",
 }];
 
 add_task(async function() {

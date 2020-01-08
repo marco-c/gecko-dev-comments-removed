@@ -19,7 +19,7 @@ add_task(async function() {
       id: "top",
       classes: ".class1.class2",
       dims: "500" + " \u00D7 " + "100",
-      arrowed: true
+      arrowed: true,
     },
     {
       selector: "#vertical",
@@ -27,7 +27,7 @@ add_task(async function() {
       tag: "div",
       id: "vertical",
       classes: "",
-      arrowed: false
+      arrowed: false,
       
     },
     {
@@ -37,14 +37,14 @@ add_task(async function() {
       id: "bottom",
       classes: "",
       dims: "500" + " \u00D7 " + "100",
-      arrowed: true
+      arrowed: true,
     },
     {
       selector: "body",
       position: "bottom",
       tag: "body",
       classes: "",
-      arrowed: true
+      arrowed: true,
       
     },
     {
@@ -53,7 +53,7 @@ add_task(async function() {
       tag: "clipPath",
       id: "clip",
       classes: "",
-      arrowed: false
+      arrowed: false,
       
     },
   ];

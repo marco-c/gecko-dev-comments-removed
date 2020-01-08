@@ -644,7 +644,7 @@ MarkupView.prototype = {
       "inspector-open",
       "navigateaway",
       "nodeselected",
-      "test"
+      "test",
     ];
 
     const isHighlight = this._isContainerSelected(this._hoveredContainer);
@@ -717,7 +717,7 @@ MarkupView.prototype = {
       
       "browser-context-menu",
       
-      "node-inserted"
+      "node-inserted",
     ];
 
     
@@ -1578,7 +1578,7 @@ MarkupView.prototype = {
         this.telemetry.recordEvent("edit_html", "inspector", null, {
           "made_changes": commit,
           "time_open": end - start,
-          "session_id": this.toolbox.sessionId
+          "session_id": this.toolbox.sessionId,
         });
       });
 
@@ -1890,7 +1890,7 @@ MarkupView.prototype = {
 
     return this.walker.children(container.node, {
       maxNodes: maxChildren,
-      center: centered
+      center: centered,
     });
   },
 
@@ -2067,7 +2067,7 @@ MarkupView.prototype = {
     }
 
     return {parent, nextSibling};
-  }
+  },
 };
 
 

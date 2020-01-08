@@ -53,7 +53,7 @@ const TEST_DATA = [
           inner
         class="no-slot-class"
           no-slot-text
-          inner`
+          inner`,
 
   }, {
     
@@ -75,7 +75,7 @@ const TEST_DATA = [
       test-component
         #shadow-root
           slot
-            fallback-content`
+            fallback-content`,
 
   }, {
     
@@ -128,7 +128,7 @@ const TEST_DATA = [
         div
         third-component
           #shadow-root
-            div`
+            div`,
 
   }, {
     
@@ -172,7 +172,7 @@ const TEST_DATA = [
             ::after
         ::before
         class="light-dom"
-        ::after`
+        ::after`,
 
   }, {
     
@@ -192,8 +192,8 @@ const TEST_DATA = [
       </script>`,
     tree: `
       test-component
-        #shadow-root`
-  }
+        #shadow-root`,
+  },
 ];
 
 for (const {url, tree, title} of TEST_DATA) {

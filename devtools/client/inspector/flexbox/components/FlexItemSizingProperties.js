@@ -141,7 +141,7 @@ class FlexItemSizingProperties extends PureComponent {
       mainDeltaSize,
       mainBaseSize,
       mainFinalSize,
-      lineGrowthState
+      lineGrowthState,
     } = flexItemSizing;
 
     

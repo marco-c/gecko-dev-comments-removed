@@ -131,7 +131,7 @@ InspectorSearch.prototype = {
     this.searchBox.value = "";
     this.searchClearButton.hidden = true;
     this.emit("search-cleared");
-  }
+  },
 };
 
 
@@ -427,7 +427,7 @@ SelectorAutocompleter.prototype = {
 
       const item = {
         preLabel: query,
-        label: value
+        label: value,
       };
 
       
@@ -533,5 +533,5 @@ SelectorAutocompleter.prototype = {
       
       return this._showPopup(result.suggestions, state);
     });
-  }
+  },
 };

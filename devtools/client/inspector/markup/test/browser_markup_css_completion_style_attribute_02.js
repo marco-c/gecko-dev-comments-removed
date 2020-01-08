@@ -40,7 +40,7 @@ const TEST_DATA_DOUBLE = [
   ["t", "style=\"color:beige\" dat", 23, 23, false],
   ["a", "style=\"color:beige\" data", 24, 24, false],
   ["VK_RETURN", "style=\"color:beige\"",
-   -1, -1, false]
+   -1, -1, false],
 ];
 
 
@@ -64,7 +64,7 @@ const TEST_DATA_SINGLE = [
   ["t", "style='color:beige' dat", 23, 23, false],
   ["a", "style='color:beige' data", 24, 24, false],
   ["VK_RETURN", "style=\"color:beige\"",
-   -1, -1, false]
+   -1, -1, false],
 ];
 
 
@@ -94,7 +94,7 @@ const TEST_DATA_INNER = [
   ["VK_RIGHT", "style=\"background:url('1'); color", 33, 33, false],
   [":", "style=\"background:url('1'); color:aliceblue", 34, 43, true],
   ["b", "style=\"background:url('1'); color:beige", 35, 39, true],
-  ["VK_RETURN", "style=\"background:url('1'); color:beige\"", -1, -1, false]
+  ["VK_RETURN", "style=\"background:url('1'); color:beige\"", -1, -1, false],
 ];
 
 add_task(async function() {

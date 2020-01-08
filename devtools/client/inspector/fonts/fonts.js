@@ -373,7 +373,7 @@ class FontInspector {
       "font-size",
       "font-weight",
       "font-stretch",
-      "line-height"
+      "line-height",
     ].reduce((acc, property) => {
       return acc.concat(this.cssProperties.getValues(property));
     }, []);
@@ -842,7 +842,7 @@ class FontInspector {
     try {
       
       this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
-        filterProperties: FONT_PROPERTIES
+        filterProperties: FONT_PROPERTIES,
       });
     } catch (e) {
       
@@ -919,7 +919,7 @@ class FontInspector {
     const options = {
       includePreviews: true,
       previewText,
-      previewFillStyle: getColor("body-color")
+      previewFillStyle: getColor("body-color"),
     };
 
     

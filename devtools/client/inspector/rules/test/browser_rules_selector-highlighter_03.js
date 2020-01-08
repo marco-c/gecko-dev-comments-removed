@@ -31,7 +31,7 @@ add_task(async function() {
     },
     hide: function() {
       this.isShown = false;
-    }
+    },
   };
 
   

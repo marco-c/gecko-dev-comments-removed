@@ -13,28 +13,28 @@ const TEST_URL = URL_ROOT + "doc_markup_pagesize_01.html";
 const TEST_DATA = [{
   desc: "Select the last item",
   selector: "#z",
-  expected: "*more*vwxyz"
+  expected: "*more*vwxyz",
 }, {
   desc: "Select the first item",
   selector: "#a",
-  expected: "abcde*more*"
+  expected: "abcde*more*",
 }, {
   desc: "Select the last item",
   selector: "#z",
-  expected: "*more*vwxyz"
+  expected: "*more*vwxyz",
 }, {
   desc: "Select an already-visible item",
   selector: "#v",
   
   
-  expected: "*more*vwxyz"
+  expected: "*more*vwxyz",
 }, {
   desc: "Verify childrenDirty reloads the page",
   selector: "#w",
   forceReload: true,
   
   
-  expected: "*more*uvwxy*more*"
+  expected: "*more*uvwxy*more*",
 }];
 
 add_task(async function() {

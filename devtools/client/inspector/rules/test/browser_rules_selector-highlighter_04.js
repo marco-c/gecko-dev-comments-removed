@@ -32,7 +32,7 @@ add_task(async function() {
       this.nodeFront = null;
       this.options = null;
       this.isShown = false;
-    }
+    },
   };
   
   view.selectorHighlighter = HighlighterFront;

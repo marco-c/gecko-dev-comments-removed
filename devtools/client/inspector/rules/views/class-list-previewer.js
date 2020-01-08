@@ -161,7 +161,7 @@ ClassListPreviewerModel.prototype = {
     
     this.lastStateChange = {
       node: this.currentNode,
-      className: this.currentClassesPreview
+      className: this.currentClassesPreview,
     };
 
     
@@ -188,7 +188,7 @@ ClassListPreviewerModel.prototype = {
         }
       }
     }
-  }
+  },
 };
 
 
@@ -353,7 +353,7 @@ ClassListPreviewer.prototype = {
 
   onCurrentNodeClassChanged() {
     this.render();
-  }
+  },
 };
 
 module.exports = ClassListPreviewer;
