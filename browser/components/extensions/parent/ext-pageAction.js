@@ -6,9 +6,6 @@ ChromeUtils.defineModuleGetter(this, "PageActions",
                                "resource:///modules/PageActions.jsm");
 ChromeUtils.defineModuleGetter(this, "PanelPopup",
                                "resource:///modules/ExtensionPopups.jsm");
-ChromeUtils.defineModuleGetter(this, "TelemetryStopwatch",
-                               "resource://gre/modules/TelemetryStopwatch.jsm");
-
 
 ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 
@@ -19,9 +16,8 @@ var {
 
 var {
   DefaultWeakMap,
+  ExtensionTelemetry,
 } = ExtensionUtils;
-
-const popupOpenTimingHistogram = "WEBEXT_PAGEACTION_POPUP_OPEN_MS";
 
 
 let pageActionMap = new WeakMap();
@@ -264,7 +260,9 @@ this.pageAction = class extends ExtensionAPI {
   
   
   async handleClick(window) {
-    TelemetryStopwatch.start(popupOpenTimingHistogram, this);
+    const {extension} = this;
+
+    ExtensionTelemetry.pageActionPopupOpen.stopwatchStart(extension, this);
     let tab = window.gBrowser.selectedTab;
     let popupURL = this.tabContext.get(tab).popup;
 
@@ -277,13 +275,13 @@ this.pageAction = class extends ExtensionAPI {
     if (popupURL) {
       if (this.popupNode && this.popupNode.panel.state !== "closed") {
         
-        TelemetryStopwatch.cancel(popupOpenTimingHistogram, this);
+        ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
         window.BrowserPageActions.togglePanelForAction(this.browserPageAction,
                                                        this.popupNode.panel);
         return;
       }
 
-      this.popupNode = new PanelPopup(this.extension, window.document, popupURL,
+      this.popupNode = new PanelPopup(extension, window.document, popupURL,
                                       this.browserStyle);
       
       this.popupNode.panel.addEventListener("popuphiding", () => {
@@ -292,9 +290,9 @@ this.pageAction = class extends ExtensionAPI {
       await this.popupNode.contentReady;
       window.BrowserPageActions.togglePanelForAction(this.browserPageAction,
                                                      this.popupNode.panel);
-      TelemetryStopwatch.finish(popupOpenTimingHistogram, this);
+      ExtensionTelemetry.pageActionPopupOpen.stopwatchFinish(extension, this);
     } else {
-      TelemetryStopwatch.cancel(popupOpenTimingHistogram, this);
+      ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
       this.emit("click", tab);
     }
   }

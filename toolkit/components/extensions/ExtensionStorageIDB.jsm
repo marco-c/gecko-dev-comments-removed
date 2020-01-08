@@ -8,6 +8,7 @@ this.EXPORTED_SYMBOLS = ["ExtensionStorageIDB"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/IndexedDB.jsm");
+ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
@@ -22,6 +23,10 @@ XPCOMUtils.defineLazyGetter(this, "WEBEXT_STORAGE_USER_CONTEXT_ID", () => {
   return ContextualIdentityService.getDefaultPrivateIdentity(
     "userContextIdInternal.webextStorageLocal").userContextId;
 });
+
+var {
+  getTrimmedString,
+} = ExtensionUtils;
 
 const IDB_NAME = "webExtensions-storage-local";
 const IDB_DATA_STORENAME = "storage-local-data";
@@ -57,29 +62,6 @@ var DataMigrationTelemetry = {
 
 
 
-  getTrimmedString(str) {
-    if (str.length <= 80) {
-      return str;
-    }
-
-    const length = str.length;
-
-    
-    
-    
-    return `${str.slice(0, 40)}...${str.slice(length - 37, length)}`;
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
   getErrorName(error) {
     if (!error) {
@@ -88,7 +70,7 @@ var DataMigrationTelemetry = {
 
     if (error instanceof DOMException) {
       if (error.name.length > 80) {
-        return this.getTrimmedString(error.name);
+        return getTrimmedString(error.name);
       }
 
       return error.name;
@@ -150,7 +132,7 @@ var DataMigrationTelemetry = {
       }
 
       Services.telemetry.recordEvent("extensions.data", "migrateResult", "storageLocal",
-                                     this.getTrimmedString(extensionId), extra);
+                                     getTrimmedString(extensionId), extra);
     } catch (err) {
       
       
