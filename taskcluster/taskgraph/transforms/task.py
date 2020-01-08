@@ -158,6 +158,9 @@ task_description_schema = Schema({
     Optional('run-on-projects'): optionally_keyed_by('build-platform', [basestring]),
 
     
+    Optional('run-on-hg-branches'): optionally_keyed_by('project', [basestring]),
+
+    
     
     Required('shipping-phase'): Any(
         None,
