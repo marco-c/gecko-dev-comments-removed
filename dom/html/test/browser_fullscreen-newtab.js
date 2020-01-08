@@ -1,5 +1,11 @@
 "use strict";
 
+
+
+
+
+SimpleTest.ignoreAllUncaughtExceptions(true);
+
 const kPage = "http://example.org/browser/" +
               "dom/html/test/file_fullscreen-newtab.html";
 

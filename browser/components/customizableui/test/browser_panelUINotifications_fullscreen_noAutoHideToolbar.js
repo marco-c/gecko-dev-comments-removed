@@ -1,5 +1,11 @@
 "use strict";
 
+
+
+
+
+SimpleTest.ignoreAllUncaughtExceptions(true);
+
 ChromeUtils.import("resource://gre/modules/AppMenuNotifications.jsm");
 
 function waitForDocshellActivated() {
