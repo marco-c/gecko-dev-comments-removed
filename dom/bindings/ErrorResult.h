@@ -509,23 +509,23 @@ private:
   union Extra {
     
     
+    MOZ_INIT_OUTSIDE_CTOR
     Message* mMessage; 
 
     
     
+    MOZ_INIT_OUTSIDE_CTOR
     JS::Value mJSException; 
 
     
     
+    MOZ_INIT_OUTSIDE_CTOR
     DOMExceptionInfo* mDOMExceptionInfo; 
 
     
     
     MOZ_PUSH_DISABLE_NONTRIVIAL_UNION_WARNINGS
-    Extra()
-      : mMessage(nullptr)
-    {
-    }
+    Extra() {}
     MOZ_POP_DISABLE_NONTRIVIAL_UNION_WARNINGS
   } mExtra;
 
