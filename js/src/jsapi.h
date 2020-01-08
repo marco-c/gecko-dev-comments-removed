@@ -424,6 +424,42 @@ JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(JSContext*)
 JS_NewContext(uint32_t maxbytes,
               uint32_t maxNurseryBytes = JS::DefaultNurseryBytes,
