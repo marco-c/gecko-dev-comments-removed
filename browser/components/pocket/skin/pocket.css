@@ -58,6 +58,8 @@
 }
 
 #pocket-button-box[animate="true"] > #pocket-animatable-box {
+  position: absolute;
+  overflow: hidden;
   
 
   margin-inline-start: 4px;
