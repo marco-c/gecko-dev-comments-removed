@@ -282,6 +282,10 @@ SVGAnimationElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
     }
   }
 
+  if (!IsInComposedDoc()) {
+    return rv;
+  }
+
   if (!((aNamespaceID == kNameSpaceID_None ||
          aNamespaceID == kNameSpaceID_XLink) &&
         aName == nsGkAtoms::href)) {
@@ -305,8 +309,7 @@ SVGAnimationElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       AnimationTargetChanged();
     } 
       
-  } else if (IsInComposedDoc() &&
-             !(aNamespaceID == kNameSpaceID_XLink &&
+  } else if (!(aNamespaceID == kNameSpaceID_XLink &&
                HasAttr(kNameSpaceID_None, nsGkAtoms::href))) {
     
     
