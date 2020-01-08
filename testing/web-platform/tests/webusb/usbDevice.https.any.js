@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/fake-devices.js"></script>
-<script src="resources/usb-helpers.js"></script>
-<script>
+
+
+
 'use strict';
 
 function assertRejectsWithNotFoundError(promise) {
@@ -12,7 +9,7 @@ function assertRejectsWithNotFoundError(promise) {
 
 function assertRejectsWithNotOpenError(promise) {
   return assertRejectsWithError(
-      promise, 'InvalidStateError', 'The device must be opened first.')
+      promise, 'InvalidStateError', 'The device must be opened first.');
 }
 
 function assertRejectsWithNotConfiguredError(promise) {
@@ -340,7 +337,7 @@ usb_test(() => {
       assert_equals(result.status, 'ok');
       assert_equals(result.bytesWritten, 8);
       return device.close();
-    })
+    });
   });
 }, 'can issue OUT control transfer');
 
@@ -366,14 +363,14 @@ usb_test(() => {
         recipient: 'interface',
         request: 0x42,
         value: 0x1234,
-        index: 0x5600  // Last byte of index is interface number.
+        index: 0x5600  
     };
     let endpointRequest = {
         requestType: 'vendor',
         recipient: 'endpoint',
         request: 0x42,
         value: 0x1234,
-        index: 0x5681  // Last byte of index is endpoint address.
+        index: 0x5681  
     };
     let data = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
     return device.open()
@@ -452,15 +449,15 @@ usb_test(() => {
       .then(() => device.claimInterface(0))
       .then(() => Promise.all([
           assertRejectsWithError(device.transferIn(2, 8),
-                                 'NotFoundError', notFoundMessage), // Unclaimed
+                                 'NotFoundError', notFoundMessage), 
           assertRejectsWithError(device.transferIn(3, 8), 'NotFoundError',
-                                 notFoundMessage), // Non-existent
+                                 notFoundMessage), 
           assertRejectsWithError(
               device.transferIn(16, 8), 'IndexSizeError', rangeError),
           assertRejectsWithError(device.transferOut(2, data),
-                                 'NotFoundError', notFoundMessage), // Unclaimed
+                                 'NotFoundError', notFoundMessage), 
           assertRejectsWithError(device.transferOut(3, data), 'NotFoundError',
-                                 notFoundMessage), // Non-existent
+                                 notFoundMessage), 
           assertRejectsWithError(
               device.transferOut(16, data), 'IndexSizeError', rangeError),
       ]));
@@ -651,4 +648,3 @@ usb_test(() => {
       .then(() => assertRejectsWithNotFoundError(device.reset()));
   });
 }, 'resetDevice rejects when called on a disconnected device');
-</script>
