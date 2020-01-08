@@ -22,8 +22,13 @@
 #include "mozilla/widget/CompositorWidget.h"
 
 #ifdef XP_WIN
+#include "GLLibraryEGL.h"
 #include "mozilla/widget/WinCompositorWindowThread.h"
 #endif
+
+using namespace mozilla;
+
+static already_AddRefed<gl::GLContext> CreateGLContext();
 
 namespace mozilla {
 namespace wr {
@@ -76,6 +81,11 @@ RenderThread::Start()
 #endif
   layers::SharedSurfacesParent::Initialize();
 
+  RefPtr<Runnable> runnable = WrapRunnable(
+    RefPtr<RenderThread>(sRenderThread.get()),
+    &RenderThread::InitSharedGLContext);
+  sRenderThread->Loop()->PostTask(runnable.forget());
+
   if (XRE_IsGPUProcess() &&
       gfx::gfxVars::UseWebRenderProgramBinary()) {
     MOZ_ASSERT(gfx::gfxVars::UseWebRender());
@@ -126,6 +136,7 @@ RenderThread::ShutDownTask(layers::SynchronousTask* aTask)
   layers::SharedSurfacesParent::Shutdown();
 
   ClearAllBlobImageResources();
+  ClearSharedGL();
 }
 
 
@@ -721,6 +732,33 @@ RenderThread::ProgramCache()
   return mProgramCache.get();
 }
 
+void
+RenderThread::InitSharedGLContext()
+{
+  MOZ_ASSERT(IsInRenderThread());
+
+  if (!mSharedGL) {
+    mSharedGL = CreateGLContext();
+  }
+}
+
+gl::GLContext*
+RenderThread::SharedGL()
+{
+  MOZ_ASSERT(IsInRenderThread());
+  InitSharedGLContext();
+
+  return mSharedGL.get();
+}
+
+void
+RenderThread::ClearSharedGL()
+{
+  MOZ_ASSERT(IsInRenderThread());
+  mSharedGL = nullptr;
+}
+
+
 WebRenderThreadPool::WebRenderThreadPool()
 {
   mThreadPool = wr_thread_pool_new();
@@ -750,6 +788,49 @@ WebRenderProgramCache::~WebRenderProgramCache()
 
 } 
 } 
+
+#ifdef XP_WIN
+static already_AddRefed<gl::GLContext>
+CreateGLContextANGLE()
+{
+  nsCString discardFailureId;
+  if (!gl::GLLibraryEGL::EnsureInitialized( true, &discardFailureId)) {
+    gfxCriticalNote << "Failed to load EGL library: " << discardFailureId.get();
+    return nullptr;
+  }
+
+  auto* egl = gl::GLLibraryEGL::Get();
+  auto flags = gl::CreateContextFlags::PREFER_ES3;
+
+  
+  
+  RefPtr<gl::GLContext> gl = gl::GLContextProviderEGL::CreateHeadless(flags, &discardFailureId);
+  if (!gl || !gl->IsANGLE()) {
+    gfxCriticalNote << "Failed ANGLE GL context creation for WebRender: " << gfx::hexa(gl.get());
+    return nullptr;
+  }
+
+  if (!gl->MakeCurrent()) {
+    gfxCriticalNote << "Failed GL context creation for WebRender: " << gfx::hexa(gl.get());
+    return nullptr;
+  }
+
+  return gl.forget();
+}
+#endif
+
+static already_AddRefed<gl::GLContext>
+CreateGLContext()
+{
+#ifdef XP_WIN
+  if (gfx::gfxVars::UseWebRenderANGLE()) {
+    return CreateGLContextANGLE();
+  }
+#endif
+  
+  
+  return nullptr;
+}
 
 extern "C" {
 

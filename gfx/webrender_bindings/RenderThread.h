@@ -19,6 +19,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/layers/SynchronousTask.h"
+#include "GLContext.h"
 
 #include <list>
 #include <queue>
@@ -180,6 +181,13 @@ public:
   WebRenderProgramCache* ProgramCache();
 
   
+  void InitSharedGLContext();
+  
+  gl::GLContext* SharedGL();
+
+  void ClearSharedGL();
+
+  
   void HandleDeviceReset(const char* aWhere, bool aNotify);
   
   bool IsHandlingDeviceReset();
@@ -203,6 +211,10 @@ private:
 
   WebRenderThreadPool mThreadPool;
   UniquePtr<WebRenderProgramCache> mProgramCache;
+
+  
+  
+  RefPtr<gl::GLContext> mSharedGL;
 
   std::map<wr::WindowId, UniquePtr<RendererOGL>> mRenderers;
 
