@@ -75,7 +75,16 @@ class UAWidgetsChild extends ActorChild {
       Services.scriptloader.loadSubScript(uri, sandbox, "UTF-8");
     }
 
-    let widget = new sandbox[widgetName](shadowRoot);
+    let widget;
+    try {
+      widget = new sandbox[widgetName](shadowRoot);
+    } catch (ex) {
+      
+      
+      shadowRoot.innerHTML = "";
+      Cu.reportError(ex);
+      return;
+    }
     this.widgets.set(aElement, widget);
   }
 
@@ -85,7 +94,14 @@ class UAWidgetsChild extends ActorChild {
       return;
     }
     if (typeof widget.wrappedJSObject.destructor == "function") {
-      widget.wrappedJSObject.destructor();
+      try {
+        widget.wrappedJSObject.destructor();
+      } catch (ex) {
+        
+        
+        aElement.openOrClosedShadowRoot.innerHTML = "";
+        Cu.reportError(ex);
+      }
     }
     this.widgets.delete(aElement);
   }
