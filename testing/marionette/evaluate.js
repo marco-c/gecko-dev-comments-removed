@@ -453,7 +453,8 @@ sandbox.createMutable = function(window) {
     wantComponents: false,
     wantXrays: false,
   };
-  return sandbox.create(window, null, opts);
+  
+  return Cu.waiveXrays(sandbox.create(window, null, opts));
 };
 
 sandbox.createSystemPrincipal = function(window) {
