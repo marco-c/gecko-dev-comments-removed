@@ -57,26 +57,12 @@ public:
 
   inline void ReleaseValue() { mValue.Release(); }
 
-  inline nsHtml5AttributeEntry Clone(nsHtml5AtomTable* aInterner)
+  inline nsHtml5AttributeEntry Clone()
   {
     
     nsHtml5AttributeEntry clone(*this);
     
     clone.mValue = this->mValue.Clone();
-    if (aInterner) {
-      
-      
-      
-      nsAtom* local = GetLocal(0);
-      if (!local->IsStatic()) {
-        nsAutoString str;
-        local->ToString(str);
-        nsAtom* local = aInterner->GetAtom(str);
-        clone.mLocals[0] = local;
-        clone.mLocals[1] = local;
-        clone.mLocals[2] = local;
-      }
-    }
     return clone;
   }
 

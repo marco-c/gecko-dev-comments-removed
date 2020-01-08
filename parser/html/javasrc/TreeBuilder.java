@@ -4786,7 +4786,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 assert node == listOfActiveFormattingElements[nodeListPos];
                 assert node == stack[nodePos];
                 T clone = createElement("http://www.w3.org/1999/xhtml",
-                        node.name, node.attributes.cloneAttributes(null), commonAncestor.node
+                        node.name, node.attributes.cloneAttributes(), commonAncestor.node
                         
                         );
                 StackNode<T> newNode = createStackNode(node.getFlags(), node.ns,
@@ -4818,7 +4818,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             }
             T clone = createElement("http://www.w3.org/1999/xhtml",
                     formattingElt.name,
-                    formattingElt.attributes.cloneAttributes(null), furthestBlock.node
+                    formattingElt.attributes.cloneAttributes(), furthestBlock.node
                     
                     );
             StackNode<T> formattingClone = createStackNode(
@@ -5005,12 +5005,12 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             T clone;
             if (currentNode.isFosterParenting()) {
                 clone = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", entry.name,
-                        entry.attributes.cloneAttributes(null)
+                        entry.attributes.cloneAttributes()
                         
                         );
             } else {
                 clone = createElement("http://www.w3.org/1999/xhtml", entry.name,
-                        entry.attributes.cloneAttributes(null), currentNode.node
+                        entry.attributes.cloneAttributes(), currentNode.node
                         
                         );
                 appendElement(clone, currentNode.node);
@@ -5424,7 +5424,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         checkAttributes(attributes, "http://www.w3.org/1999/xhtml");
         
         
-        HtmlAttributes clone = attributes.cloneAttributes(null);
+        HtmlAttributes clone = attributes.cloneAttributes();
         
         
         T elt;
@@ -6130,7 +6130,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 StackNode<T> newNode = new StackNode<T>(-1);
                 newNode.setValues(node.getFlags(), node.ns,
                         node.name, node.node, node.popName,
-                        node.attributes.cloneAttributes(null)
+                        node.attributes.cloneAttributes()
                         
                         
                         , node.getLocator()
@@ -6217,7 +6217,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     @SuppressWarnings("unchecked") public void loadState(
-            TreeBuilderState<T> snapshot, Interner interner)
+            TreeBuilderState<T> snapshot)
             throws SAXException {
         
         StackNode<T>[] stackCopy = snapshot.getStack();
@@ -6254,9 +6254,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             StackNode<T> node = listCopy[i];
             if (node != null) {
                 StackNode<T> newNode = createStackNode(node.getFlags(), node.ns,
-                        Portability.newLocalFromLocal(node.name, interner), node.node,
-                        Portability.newLocalFromLocal(node.popName, interner),
-                        node.attributes.cloneAttributes(null)
+                        node.name, node.node,
+                        node.popName,
+                        node.attributes.cloneAttributes()
                         
                         
                         , node.getLocator()
@@ -6272,8 +6272,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             int listIndex = findInArray(node, listCopy);
             if (listIndex == -1) {
                 StackNode<T> newNode = createStackNode(node.getFlags(), node.ns,
-                        Portability.newLocalFromLocal(node.name, interner), node.node,
-                        Portability.newLocalFromLocal(node.popName, interner),
+                        node.name, node.node,
+                        node.popName,
                         null
                         
                         

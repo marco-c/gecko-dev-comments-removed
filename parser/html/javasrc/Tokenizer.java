@@ -6859,13 +6859,7 @@ public class Tokenizer implements Locator {
         seenDigits = other.seenDigits;
         endTag = other.endTag;
         shouldSuspend = false;
-
-        if (other.doctypeName == null) {
-            doctypeName = null;
-        } else {
-            doctypeName = Portability.newLocalFromLocal(other.doctypeName,
-                    interner);
-        }
+        doctypeName = other.doctypeName;
 
         Portability.releaseString(systemIdentifier);
         if (other.systemIdentifier == null) {
@@ -6890,7 +6884,7 @@ public class Tokenizer implements Locator {
             
             
             
-            nonInternedTagName.setNameForNonInterned(Portability.newLocalFromLocal(other.tagName.getName(), interner)
+            nonInternedTagName.setNameForNonInterned(other.tagName.getName()
                     
                     );
             tagName = nonInternedTagName;
@@ -6915,7 +6909,7 @@ public class Tokenizer implements Locator {
         if (other.attributes == null) {
             attributes = null;
         } else {
-            attributes = other.attributes.cloneAttributes(interner);
+            attributes = other.attributes.cloneAttributes();
         }
     }
 
@@ -7151,8 +7145,9 @@ public class Tokenizer implements Locator {
 
     void destructor() {
         Portability.delete(nonInternedTagName);
-        
         nonInternedTagName = null;
+        
+        
         
         Portability.delete(attributes);
         attributes = null;

@@ -17,14 +17,6 @@ nsHtml5Portability::newLocalNameFromBuffer(char16_t* buf,
   return interner->GetAtom(nsDependentSubstring(buf, buf + length));
 }
 
-nsAtom*
-nsHtml5Portability::newLocalFromLocal(nsAtom* local,
-                                      nsHtml5AtomTable* interner)
-{
-  
-  return local;
-}
-
 static bool
 ContainsWhiteSpace(mozilla::Span<char16_t> aSpan)
 {

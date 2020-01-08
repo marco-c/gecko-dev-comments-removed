@@ -1685,7 +1685,7 @@ nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
       
       mLastWasCR = aLastWasCR;
       mTokenizer->loadState(aTokenizer);
-      mTreeBuilder->loadState(aTreeBuilder, &mAtomTable);
+      mTreeBuilder->loadState(aTreeBuilder);
     } else {
       
       
