@@ -957,8 +957,6 @@ pref("browser.security.newcerterrorpage.enabled", true);
 pref("browser.security.newcerterrorpage.enabled", false);
 #endif
 
-pref("security.certerrors.recordEventTelemetry", true);
-
 
 pref("browser.privatebrowsing.autostart", false);
 
