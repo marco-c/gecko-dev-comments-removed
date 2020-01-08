@@ -44,11 +44,6 @@ void
 HTMLOptGroupElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mCanHandle = false;
-  
-  
-  if (IsDisabled()) {
-    return;
-  }
 
   if (nsIFrame* frame = GetPrimaryFrame()) {
     

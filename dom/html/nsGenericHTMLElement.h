@@ -1133,7 +1133,7 @@ protected:
                               void* aData);
 
   
-  bool IsElementDisabledForEvents(mozilla::EventMessage aMessage,
+  bool IsElementDisabledForEvents(mozilla::WidgetEvent* aEvent,
                                   nsIFrame* aFrame);
 
   

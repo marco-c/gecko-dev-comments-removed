@@ -2180,10 +2180,17 @@ nsGenericHTMLFormElement::FormIdUpdated(Element* aOldElement,
 }
 
 bool
-nsGenericHTMLFormElement::IsElementDisabledForEvents(EventMessage aMessage,
+nsGenericHTMLFormElement::IsElementDisabledForEvents(WidgetEvent* aEvent,
                                                      nsIFrame* aFrame)
 {
-  switch (aMessage) {
+  MOZ_ASSERT(aEvent);
+
+  
+  if (!aEvent->IsTrusted()) {
+    return false;
+  }
+
+  switch (aEvent->mMessage) {
     case eMouseMove:
     case eMouseOver:
     case eMouseOut:
@@ -2440,8 +2447,9 @@ nsGenericHTMLFormElement::GetFormAction(nsString& aValue)
 void
 nsGenericHTMLElement::Click(CallerType aCallerType)
 {
-  if (HandlingClick())
+  if (IsDisabled() || HandlingClick()) {
     return;
+  }
 
   
   nsCOMPtr<nsIDocument> doc = GetComposedDoc();

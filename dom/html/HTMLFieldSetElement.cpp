@@ -49,9 +49,9 @@ NS_IMPL_ELEMENT_CLONE(HTMLFieldSetElement)
 
 
 bool
-HTMLFieldSetElement::IsDisabledForEvents(EventMessage aMessage)
+HTMLFieldSetElement::IsDisabledForEvents(WidgetEvent* aEvent)
 {
-  return IsElementDisabledForEvents(aMessage, nullptr);
+  return IsElementDisabledForEvents(aEvent, nullptr);
 }
 
 
@@ -60,7 +60,7 @@ HTMLFieldSetElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   
   aVisitor.mCanHandle = false;
-  if (IsDisabledForEvents(aVisitor.mEvent->mMessage)) {
+  if (IsDisabledForEvents(aVisitor.mEvent)) {
     return;
   }
 
