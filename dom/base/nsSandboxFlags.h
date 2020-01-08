@@ -112,10 +112,5 @@ const unsigned long SANDBOXED_ORIENTATION_LOCK = 0x2000;
 
 const unsigned long SANDBOXED_PRESENTATION = 0x4000;
 
-
-
-
-const unsigned long SANDBOXED_STORAGE_ACCESS = 0x8000;
-
-const unsigned long SANDBOX_ALL_FLAGS = 0xFFFF;
+const unsigned long SANDBOX_ALL_FLAGS = 0x7FFF;
 #endif
