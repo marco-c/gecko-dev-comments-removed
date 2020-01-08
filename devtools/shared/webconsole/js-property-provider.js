@@ -234,13 +234,21 @@ function analyzeInputString(str) {
 
 
 
-function JSPropertyProvider(
+
+
+
+
+
+
+function JSPropertyProvider({
   dbgObject,
-  anEnvironment,
+  environment,
   inputValue,
   cursor,
-  invokeUnsafeGetter = false
-) {
+  invokeUnsafeGetter = false,
+  webconsoleActor,
+  selectedNodeActor,
+}) {
   if (cursor === undefined) {
     cursor = inputValue.length;
   }
@@ -365,7 +373,7 @@ function JSPropertyProvider(
 
   
   
-  const env = anEnvironment || obj.asEnvironment();
+  const env = environment || obj.asEnvironment();
 
   if (properties.length === 0) {
     return {
@@ -383,6 +391,17 @@ function JSPropertyProvider(
       obj = env.object;
     } catch (e) {
       
+    }
+  } else if (firstProp === "$_" && webconsoleActor) {
+    obj = webconsoleActor.getLastConsoleInputEvaluation();
+  } else if (firstProp === "$0" && selectedNodeActor && webconsoleActor) {
+    const actor = webconsoleActor.conn.getActor(selectedNodeActor);
+    if (actor) {
+      try {
+        obj = webconsoleActor.makeDebuggeeValue(actor.rawNode);
+      } catch (e) {
+        
+      }
     }
   } else if (hasArrayIndex(firstProp)) {
     obj = getArrayMemberProperty(null, env, firstProp);
@@ -527,15 +546,15 @@ function isObjectUsable(object) {
 
 
 
-function getVariableInEnvironment(anEnvironment, name) {
-  return getExactMatchImpl(anEnvironment, name, DebuggerEnvironmentSupport);
+function getVariableInEnvironment(environment, name) {
+  return getExactMatchImpl(environment, name, DebuggerEnvironmentSupport);
 }
 
 
 
 
-function getMatchedPropsInEnvironment(anEnvironment, match) {
-  return getMatchedPropsImpl(anEnvironment, match, DebuggerEnvironmentSupport);
+function getMatchedPropsInEnvironment(environment, match) {
+  return getMatchedPropsImpl(environment, match, DebuggerEnvironmentSupport);
 }
 
 

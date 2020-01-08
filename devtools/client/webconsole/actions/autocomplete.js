@@ -22,12 +22,14 @@ const {
 
 
 
+
 function autocompleteUpdate({
   inputValue,
   cursor,
   client,
   frameActorId,
   force,
+  selectedNodeActor,
 }) {
   return ({dispatch, getState}) => {
     const {cache} = getState().autocomplete;
@@ -51,7 +53,12 @@ function autocompleteUpdate({
       return dispatch(autoCompleteDataRetrieveFromCache(input));
     }
 
-    return dispatch(autocompleteDataFetch({input, frameActorId, client}));
+    return dispatch(autocompleteDataFetch({
+      input,
+      frameActorId,
+      client,
+      selectedNodeActor,
+    }));
   };
 }
 
@@ -90,15 +97,17 @@ function generateRequestId() {
 
 
 
+
 function autocompleteDataFetch({
   input,
   frameActorId,
   client,
+  selectedNodeActor,
 }) {
   return ({dispatch}) => {
     const id = generateRequestId();
     dispatch({type: AUTOCOMPLETE_PENDING_REQUEST, id});
-    client.autocomplete(input, undefined, frameActorId).then(res => {
+    client.autocomplete(input, undefined, frameActorId, selectedNodeActor).then(res => {
       dispatch(autocompleteDataReceive(id, input, frameActorId, res));
     }).catch(e => {
       console.error("failed autocomplete", e);

@@ -379,13 +379,15 @@ WebConsoleClient.prototype = {
 
 
 
-  autocomplete: function(string, cursor, frameActor) {
+
+  autocomplete: function(string, cursor, frameActor, selectedNodeActor) {
     const packet = {
       to: this._actor,
       type: "autocomplete",
       text: string,
-      cursor: cursor,
-      frameActor: frameActor,
+      cursor,
+      frameActor,
+      selectedNodeActor,
     };
     return this._client.request(packet);
   },
