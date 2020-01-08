@@ -20,8 +20,6 @@
 
 const { Localization } =
   ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
-const { Services } =
-  ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 
 
 
@@ -574,20 +572,7 @@ class DOMLocalization extends Localization {
   translateRoots() {
     const roots = Array.from(this.roots);
     return Promise.all(
-      roots.map(async root => {
-        
-        
-        
-        
-        
-        await this.translateFragment(root);
-        let primaryLocale = Services.locale.getAppLocaleAsBCP47();
-        let direction = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
-        root.setAttribute("lang", primaryLocale);
-        root.setAttribute(root.namespaceURI ===
-          "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-          ? "localedir" : "dir", direction);
-      })
+      roots.map(root => this.translateFragment(root))
     );
   }
 
