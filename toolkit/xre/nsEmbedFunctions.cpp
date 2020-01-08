@@ -442,6 +442,13 @@ XRE_InitChildProcess(int aArgc,
 #ifdef XP_MACOSX
   if (aArgc < 1)
     return NS_ERROR_FAILURE;
+
+#if defined(MOZ_CONTENT_SANDBOX)
+  
+  
+  int allArgc = aArgc;
+#endif 
+
   const char* const mach_port_name = aArgv[--aArgc];
 
   Maybe<recordreplay::AutoPassThroughThreadEvents> pt;
@@ -513,8 +520,16 @@ XRE_InitChildProcess(int aArgc,
     return NS_ERROR_FAILURE;
   }
 
+#if defined(MOZ_CONTENT_SANDBOX)
+  std::string sandboxError;
+  if (!EarlyStartMacSandboxIfEnabled(allArgc, aArgv, sandboxError)) {
+    printf_stderr("Sandbox error: %s\n", sandboxError.c_str());
+    MOZ_CRASH("Sandbox initialization failed");
+  }
+#endif 
+
   pt.reset();
-#endif
+#endif 
 
   SetupErrorHandling(aArgv[0]);
 
