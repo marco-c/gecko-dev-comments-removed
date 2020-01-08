@@ -71,11 +71,7 @@ function awaitBrowserLoaded(browser, includeSubFrames = false, wantLoad = null) 
 
 
 
-function Damp() {
-  Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", true);
-  
-  Services.prefs.setBoolPref("devtools.inspector.show-three-pane-tooltip", false);
-}
+function Damp() {}
 
 Damp.prototype = {
   async garbageCollect() {
