@@ -29,7 +29,9 @@ RenderDXGITextureHostOGL::RenderDXGITextureHostOGL(WindowsHandle aHandle,
   , mLocked(false)
 {
   MOZ_COUNT_CTOR_INHERITED(RenderDXGITextureHostOGL, RenderTextureHostOGL);
-  MOZ_ASSERT(mFormat != gfx::SurfaceFormat::NV12 ||
+  MOZ_ASSERT((mFormat != gfx::SurfaceFormat::NV12 &&
+              mFormat != gfx::SurfaceFormat::P010 &&
+              mFormat != gfx::SurfaceFormat::P016) ||
              (mSize.width % 2 == 0 && mSize.height % 2 == 0));
   MOZ_ASSERT(aHandle);
 }
@@ -54,7 +56,9 @@ RenderDXGITextureHostOGL::EnsureLockable(wr::ImageRendering aRendering)
       
       mCachedRendering = aRendering;
       
-      if (mFormat == gfx::SurfaceFormat::NV12) {
+      if (mFormat == gfx::SurfaceFormat::NV12 ||
+          mFormat == gfx::SurfaceFormat::P010 ||
+          mFormat == gfx::SurfaceFormat::P016) {
         ActivateBindAndTexParameteri(mGL,
                                      LOCAL_GL_TEXTURE1,
                                      LOCAL_GL_TEXTURE_EXTERNAL_OES,
@@ -100,7 +104,9 @@ RenderDXGITextureHostOGL::EnsureLockable(wr::ImageRendering aRendering)
   mStream = egl->fCreateStreamKHR(egl->Display(), nullptr);
   MOZ_ASSERT(mStream);
 
-  if (mFormat != gfx::SurfaceFormat::NV12) {
+  if (mFormat != gfx::SurfaceFormat::NV12 &&
+      mFormat != gfx::SurfaceFormat::P010 &&
+      mFormat != gfx::SurfaceFormat::P016) {
     
 
     mGL->fGenTextures(1, mTextureHandle);
@@ -236,17 +242,22 @@ RenderDXGITextureHostOGL::DeleteTextureHandle()
 GLuint
 RenderDXGITextureHostOGL::GetGLHandle(uint8_t aChannelIndex) const
 {
-  MOZ_ASSERT(mFormat != gfx::SurfaceFormat::NV12 || aChannelIndex < 2);
-  MOZ_ASSERT(mFormat == gfx::SurfaceFormat::NV12 || aChannelIndex < 1);
-
+  MOZ_ASSERT(((mFormat == gfx::SurfaceFormat::NV12 ||
+               mFormat == gfx::SurfaceFormat::P010 ||
+               mFormat == gfx::SurfaceFormat::P016) &&
+              aChannelIndex < 2) ||
+             aChannelIndex < 1);
   return mTextureHandle[aChannelIndex];
 }
 
 gfx::IntSize
 RenderDXGITextureHostOGL::GetSize(uint8_t aChannelIndex) const
 {
-  MOZ_ASSERT(mFormat != gfx::SurfaceFormat::NV12 || aChannelIndex < 2);
-  MOZ_ASSERT(mFormat == gfx::SurfaceFormat::NV12 || aChannelIndex < 1);
+  MOZ_ASSERT(((mFormat == gfx::SurfaceFormat::NV12 ||
+               mFormat == gfx::SurfaceFormat::P010 ||
+               mFormat == gfx::SurfaceFormat::P016) &&
+              aChannelIndex < 2) ||
+             aChannelIndex < 1);
 
   if (aChannelIndex == 0) {
     return mSize;
