@@ -315,14 +315,6 @@ class SessionHistoryListener extends Handler {
   OnHistoryReplaceEntry(index) {
     this.collect();
   }
-
-  OnLengthChanged(aCount) {
-    
-  }
-
-  OnIndexChanged(aIndex) {
-    
-  }
 }
 SessionHistoryListener.prototype.QueryInterface =
   ChromeUtils.generateQI([Ci.nsISHistoryListener,
