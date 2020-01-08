@@ -898,7 +898,9 @@ Search.prototype = {
       
       
       
-      if (this._searchEngineAliasMatch && !this._searchEngineAliasMatch.query) {
+      if (this._searchEngineAliasMatch &&
+          this._searchEngineAliasMatch.isTokenAlias &&
+          !this._searchEngineAliasMatch.query) {
         this._cleanUpNonCurrentMatches(null, false);
         this._autocompleteSearch.finishSearch(true);
         return;
@@ -951,7 +953,9 @@ Search.prototype = {
           
           
           
-          if (alias || this.hasBehavior("restrict")) {
+          if ((this._searchEngineAliasMatch &&
+               this._searchEngineAliasMatch.isTokenAlias) ||
+              this.hasBehavior("restrict")) {
             
             await searchSuggestionsCompletePromise;
             this._cleanUpNonCurrentMatches(null);
@@ -1364,7 +1368,8 @@ Search.prototype = {
 
     
     
-    if (this._searchEngineAliasMatch) {
+    if (this._searchEngineAliasMatch &&
+        this._searchEngineAliasMatch.isTokenAlias) {
       return false;
     }
 
@@ -1555,6 +1560,7 @@ Search.prototype = {
       engine,
       alias,
       query: substringAfter(this._originalSearchString, alias).trim(),
+      isTokenAlias: alias.startsWith("@"),
     };
     this._addSearchEngineMatch(this._searchEngineAliasMatch);
     if (!this._keywordSubstitute) {

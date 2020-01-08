@@ -3,23 +3,21 @@
 
 const SUGGESTIONS_ENGINE_NAME = "engine-suggestions.xml";
 
-add_task(async function init() {
-  
-  
-  
-  await PlacesTestUtils.addVisits("http://s.example.com/search?q=firefox");
-});
 
 
-
-
-add_task(async function getPost() {
+add_task(async function basicGetAndPost() {
   
   
   Services.search.addEngineWithDetails("AliasedGETMozSearch", "", "get", "",
                                        "GET", "http://s.example.com/search");
   Services.search.addEngineWithDetails("AliasedPOSTMozSearch", "", "post", "",
                                        "POST", "http://s.example.com/search");
+
+  await PlacesTestUtils.addVisits("http://s.example.com/search?q=firefox");
+  let historyMatch = {
+    value: "http://s.example.com/search?q=firefox",
+    comment: "test visit for http://s.example.com/search?q=firefox",
+  };
 
   for (let alias of ["get", "post"]) {
     await check_autocomplete({
@@ -32,6 +30,7 @@ add_task(async function getPost() {
           alias,
           heuristic: true,
         }),
+        historyMatch,
       ],
     });
 
@@ -45,6 +44,7 @@ add_task(async function getPost() {
           alias,
           heuristic: true,
         }),
+        historyMatch,
       ],
     });
 
@@ -58,6 +58,7 @@ add_task(async function getPost() {
           alias,
           heuristic: true,
         }),
+        historyMatch,
       ],
     });
 
@@ -128,35 +129,50 @@ add_task(async function getPost() {
 add_task(async function engineWithSuggestions() {
   let engine = await addTestSuggestionsEngine();
 
+  await PlacesTestUtils.addVisits(engine.searchForm);
+  let historyMatch = {
+    value: "http://localhost:9000/search",
+    comment: "test visit for http://localhost:9000/search",
+  };
+
   
   
   for (let alias of ["moz", "@moz"]) {
     engine.alias = alias;
+    Assert.equal(engine.alias, alias);
 
+    let expectedMatches = [
+      makeSearchMatch(`${alias} `, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        searchQuery: "",
+        heuristic: true,
+      }),
+    ];
+    if (alias[0] != "@") {
+      expectedMatches.push(historyMatch);
+    }
     await check_autocomplete({
       search: alias,
       searchParam: "enable-actions",
-      matches: [
-        makeSearchMatch(`${alias} `, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          searchQuery: "",
-          heuristic: true,
-        }),
-      ],
+      matches: expectedMatches,
     });
 
+    expectedMatches = [
+      makeSearchMatch(`${alias} `, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        searchQuery: "",
+        heuristic: true,
+      }),
+    ];
+    if (alias[0] != "@") {
+      expectedMatches.push(historyMatch);
+    }
     await check_autocomplete({
       search: `${alias} `,
       searchParam: "enable-actions",
-      matches: [
-        makeSearchMatch(`${alias} `, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          searchQuery: "",
-          heuristic: true,
-        }),
-      ],
+      matches: expectedMatches,
     });
 
     await check_autocomplete({
