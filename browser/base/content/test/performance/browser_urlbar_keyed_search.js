@@ -32,22 +32,6 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
   {
     stack: [
-      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
-      "onxblpopupshown@chrome://global/content/bindings/autocomplete.xml"
-    ],
-    maxCount: 5, 
-  },
-
-  {
-    stack: [
-      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
-      "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
-    ],
-    maxCount: 51, 
-  },
-
-  {
-    stack: [
       "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
       "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
       "_reuseAcItem@chrome://global/content/bindings/autocomplete.xml",
