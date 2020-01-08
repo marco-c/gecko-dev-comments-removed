@@ -133,7 +133,6 @@ inline void ConvertLatin1toUTF16(mozilla::Span<const char> aSource,
 
 
 
-
 inline size_t ConvertUTF16toUTF8(mozilla::Span<const char16_t> aSource,
                                  mozilla::Span<char> aDest) {
   return encoding_mem_convert_utf16_to_utf8(

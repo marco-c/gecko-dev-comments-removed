@@ -24,8 +24,7 @@ void TextEncoder::Encode(JSContext* aCx, JS::Handle<JSObject*> aObj,
   
   
   CheckedInt<uint32_t> bufLen(aString.Length());
-  bufLen *= 3;
-  bufLen += 1;  
+  bufLen *= 3;  
   if (!bufLen.isValid()) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;

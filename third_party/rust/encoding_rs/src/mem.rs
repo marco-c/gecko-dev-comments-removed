@@ -29,7 +29,6 @@ use super::in_inclusive_range8;
 use super::in_range16;
 use super::in_range32;
 use super::DecoderResult;
-use super::EncoderResult;
 use ascii::*;
 use utf_8::*;
 
@@ -37,10 +36,16 @@ macro_rules! non_fuzz_debug_assert {
     ($($arg:tt)*) => (if !cfg!(fuzzing) { debug_assert!($($arg)*); })
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(feature = "simd-accel")] {
+        use ::std::intrinsics::likely;
         use ::std::intrinsics::unlikely;
     } else {
+        #[inline(always)]
+        // Unsafe to match the intrinsic, which is needlessly unsafe.
+        unsafe fn likely(b: bool) -> bool {
+            b
+        }
         #[inline(always)]
         // Unsafe to match the intrinsic, which is needlessly unsafe.
         unsafe fn unlikely(b: bool) -> bool {
@@ -220,7 +225,7 @@ macro_rules! by_unit_check_simd {
     };
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_feature = "neon"))))] {
         use simd_funcs::*;
         use simd::u8x16;
@@ -352,7 +357,7 @@ fn utf16_valid_up_to_alu(buffer: &[u16]) -> (usize, bool) {
     }
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_feature = "neon"))))] {
         #[inline(always)]
         fn is_str_latin1_impl(buffer: &str) -> Option<usize> {
@@ -441,7 +446,7 @@ fn is_utf8_latin1_impl(buffer: &[u8]) -> Option<usize> {
     }
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_feature = "neon"))))] {
         #[inline(always)]
         fn is_utf16_bidi_impl(buffer: &[u16]) -> bool {
@@ -491,7 +496,7 @@ cfg_if!{
     }
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_feature = "neon"))))] {
         #[inline(always)]
         fn check_utf16_for_latin1_and_bidi_impl(buffer: &[u16]) -> Latin1Bidi {
@@ -687,10 +692,7 @@ pub fn is_utf16_latin1(buffer: &[u16]) -> bool {
 
 
 
-#[cfg_attr(
-    feature = "cargo-clippy",
-    allow(collapsible_if, cyclomatic_complexity)
-)]
+#[cfg_attr(feature = "cargo-clippy", allow(collapsible_if, cyclomatic_complexity))]
 #[inline]
 pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
     
@@ -771,9 +773,11 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             
                             let second = unsafe { *(src.get_unchecked(read + 1)) };
                             let third = unsafe { *(src.get_unchecked(read + 2)) };
-                            if ((UTF8_DATA.table[usize::from(second)] & unsafe {
-                                *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
-                            }) | (third >> 6))
+                            if ((UTF8_DATA.table[usize::from(second)]
+                                & unsafe {
+                                    *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
+                                })
+                                | (third >> 6))
                                 != 2
                             {
                                 return true;
@@ -784,9 +788,11 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             
                             let second = unsafe { *(src.get_unchecked(read + 1)) };
                             let third = unsafe { *(src.get_unchecked(read + 2)) };
-                            if ((UTF8_DATA.table[usize::from(second)] & unsafe {
-                                *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
-                            }) | (third >> 6))
+                            if ((UTF8_DATA.table[usize::from(second)]
+                                & unsafe {
+                                    *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
+                                })
+                                | (third >> 6))
                                 != 2
                             {
                                 return true;
@@ -806,9 +812,11 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             
                             let second = unsafe { *(src.get_unchecked(read + 1)) };
                             let third = unsafe { *(src.get_unchecked(read + 2)) };
-                            if ((UTF8_DATA.table[usize::from(second)] & unsafe {
-                                *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
-                            }) | (third >> 6))
+                            if ((UTF8_DATA.table[usize::from(second)]
+                                & unsafe {
+                                    *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
+                                })
+                                | (third >> 6))
                                 != 2
                             {
                                 return true;
@@ -840,9 +848,11 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             
                             let second = unsafe { *(src.get_unchecked(read + 1)) };
                             let third = unsafe { *(src.get_unchecked(read + 2)) };
-                            if ((UTF8_DATA.table[usize::from(second)] & unsafe {
-                                *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
-                            }) | (third >> 6))
+                            if ((UTF8_DATA.table[usize::from(second)]
+                                & unsafe {
+                                    *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
+                                })
+                                | (third >> 6))
                                 != 2
                             {
                                 return true;
@@ -857,9 +867,11 @@ pub fn is_utf8_bidi(buffer: &[u8]) -> bool {
                             
                             let second = unsafe { *(src.get_unchecked(read + 1)) };
                             let third = unsafe { *(src.get_unchecked(read + 2)) };
-                            if ((UTF8_DATA.table[usize::from(second)] & unsafe {
-                                *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
-                            }) | (third >> 6))
+                            if ((UTF8_DATA.table[usize::from(second)]
+                                & unsafe {
+                                    *(UTF8_DATA.table.get_unchecked(byte as usize + 0x80))
+                                })
+                                | (third >> 6))
                                 != 2
                             {
                                 return true;
@@ -1609,12 +1621,28 @@ pub fn convert_str_to_utf16(src: &str, dst: &mut [u16]) -> usize {
 
 
 
-#[inline]
+
+
+
+
+
+
+#[inline(always)]
 pub fn convert_utf16_to_utf8_partial(src: &[u16], dst: &mut [u8]) -> (usize, usize) {
-    let mut encoder = Utf8Encoder;
-    let (result, read, written) = encoder.encode_from_utf16_raw(src, dst, true);
-    debug_assert!(result == EncoderResult::OutputFull || read == src.len());
-    (read, written)
+    
+    
+    
+    
+    
+    
+    
+    let (read, written) = convert_utf16_to_utf16_partial_inner(src, dst);
+    if unsafe { likely(read == src.len()) } {
+        return (read, written);
+    }
+    let (tail_read, tail_written) =
+        convert_utf16_to_utf16_partial_tail(&src[read..], &mut dst[written..]);
+    (read + tail_read, written + tail_written)
 }
 
 
@@ -1634,10 +1662,9 @@ pub fn convert_utf16_to_utf8_partial(src: &[u16], dst: &mut [u8]) -> (usize, usi
 
 
 
-
-#[inline]
+#[inline(always)]
 pub fn convert_utf16_to_utf8(src: &[u16], dst: &mut [u8]) -> usize {
-    assert!(dst.len() > src.len() * 3);
+    assert!(dst.len() >= src.len() * 3);
     let (read, written) = convert_utf16_to_utf8_partial(src, dst);
     debug_assert_eq!(read, src.len());
     written
@@ -1662,11 +1689,6 @@ pub fn convert_utf16_to_str_partial(src: &[u16], dst: &mut str) -> (usize, usize
     let (read, written) = convert_utf16_to_utf8_partial(src, bytes);
     let len = bytes.len();
     let mut trail = written;
-    let max = ::std::cmp::min(len, trail + MAX_STRIDE_SIZE);
-    while trail < max {
-        bytes[trail] = 0;
-        trail += 1;
-    }
     while trail < len && ((bytes[trail] & 0xC0) == 0x80) {
         bytes[trail] = 0;
         trail += 1;
@@ -1686,9 +1708,9 @@ pub fn convert_utf16_to_str_partial(src: &[u16], dst: &mut str) -> (usize, usize
 
 
 
-#[inline]
+#[inline(always)]
 pub fn convert_utf16_to_str(src: &[u16], dst: &mut str) -> usize {
-    assert!(dst.len() > src.len() * 3);
+    assert!(dst.len() >= src.len() * 3);
     let (read, written) = convert_utf16_to_str_partial(src, dst);
     debug_assert_eq!(read, src.len());
     written

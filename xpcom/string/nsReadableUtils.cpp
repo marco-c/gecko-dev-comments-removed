@@ -57,7 +57,7 @@ char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count) {
   
   mozilla::CheckedInt<uint32_t> destLen(len);
   destLen *= 3;
-  destLen += 2;
+  destLen += 1;
   if (!destLen.isValid()) {
     return nullptr;
   }
