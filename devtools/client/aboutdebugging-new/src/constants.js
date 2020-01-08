@@ -68,6 +68,8 @@ const PREFERENCES = {
   
   NETWORK_ENABLED: "devtools.aboutdebugging.network",
   
+  SHOW_SYSTEM_ADDONS: "devtools.aboutdebugging.showSystemAddons",
+  
   WIFI_ENABLED: "devtools.aboutdebugging.wifi",
 };
 

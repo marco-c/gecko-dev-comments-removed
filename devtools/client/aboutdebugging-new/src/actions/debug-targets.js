@@ -147,7 +147,13 @@ function requestExtensions() {
 
     try {
       const { addons } = await clientWrapper.listAddons();
-      const extensions = addons.filter(a => a.debuggable);
+      let extensions = addons.filter(a => a.debuggable);
+
+      
+      if (!getState().ui.showSystemAddons) {
+        extensions = extensions.filter(e => !e.isSystem);
+      }
+
       if (runtime.type !== RUNTIMES.THIS_FIREFOX) {
         
         
@@ -155,6 +161,7 @@ function requestExtensions() {
           extension.manifestURL = null;
         });
       }
+
       const installedExtensions = extensions.filter(e => !e.temporarilyInstalled);
       const temporaryExtensions = extensions.filter(e => e.temporarilyInstalled);
 
