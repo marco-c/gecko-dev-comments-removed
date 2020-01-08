@@ -46,7 +46,7 @@ class LCovSource
 
     
     
-    void exportInto(GenericPrinter& out) const;
+    void exportInto(GenericPrinter& out);
 
   private:
     
