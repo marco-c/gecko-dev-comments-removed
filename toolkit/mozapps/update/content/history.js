@@ -3,8 +3,6 @@
 
 
 
-const NS_XUL  = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-
 var gUpdateHistory = {
   _view: null,
 
@@ -35,7 +33,7 @@ var gUpdateHistory = {
         if (!update.statusText)
           continue;
 
-        var element = document.createElementNS(NS_XUL, "richlistitem");
+        var element = document.createXULElement("richlistitem");
         element.className = "update";
         this._view.appendChild(element);
         element.name = bundle.getFormattedString("updateFullName",

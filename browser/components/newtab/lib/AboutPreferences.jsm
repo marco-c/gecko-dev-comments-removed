@@ -127,7 +127,7 @@ this.AboutPreferences = class AboutPreferences {
   renderPreferences({document, Preferences, gHomePane}, strings, prefStructure) {
     
     const createAppend = (tag, parent) => parent.appendChild(
-      document.createElementNS(XUL_NS, tag));
+      document.createXULElement(tag));
 
     
     const formatString = id => {

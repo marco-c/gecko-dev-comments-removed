@@ -878,7 +878,7 @@ HTMLTooltip.prototype = {
   },
 
   _createXulPanelWrapper: function() {
-    const panel = this.doc.createElementNS(XUL_NS, "panel");
+    const panel = this.doc.createXULElement("panel");
 
     
     
