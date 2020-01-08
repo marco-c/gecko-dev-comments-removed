@@ -84,7 +84,7 @@ function assert(aCond, aMsg) {
 
 function assertInput(aCond, aMsg) {
   if (!aCond) {
-    throw new Error("Invalid memory report(s): " + aMsg);
+    throw new Error(`Invalid memory report(s): ${aMsg}`);
   }
 }
 
@@ -143,7 +143,7 @@ function updateTitleMainAndFooter(aTitleNote, aMsg, aShowTimestamp,
                                   aFooterAction, aClassName) {
   document.title = gPageName;
   if (aTitleNote) {
-    document.title += " (" + aTitleNote + ")";
+    document.title += ` (${aTitleNote})`;
   }
 
   
@@ -168,7 +168,7 @@ function updateTitleMainAndFooter(aTitleNote, aMsg, aShowTimestamp,
       
       
       
-      aMsg += " (" + (new Date()).toISOString() + ")";
+      aMsg += ` (${(new Date()).toISOString()})`;
     }
     msgElement = appendElementWithText(gMain, "div", className, aMsg);
   }
@@ -681,7 +681,7 @@ function updateAboutMemoryFromFile(aFilename) {
 
 
 function updateAboutMemoryFromTwoFiles(aFilename1, aFilename2) {
-  let titleNote = "diff of " + aFilename1 + " and " + aFilename2;
+  let titleNote = `diff of ${aFilename1} and ${aFilename2}`;
   loadMemoryReportsFromFile(aFilename1, titleNote, function(aStr1) {
     loadMemoryReportsFromFile(aFilename2, titleNote, function(aStr2) {
       try {
@@ -1005,8 +1005,8 @@ function appendAboutMemoryMain(aProcessReports, aHasMozMallocUsableSize) {
     let processes = Object.keys(pcollsByProcess);
     processes.sort(function(aProcessA, aProcessB) {
       assert(aProcessA != aProcessB,
-             "Elements of Object.keys() should be unique, but " +
-             "saw duplicate '" + aProcessA + "' elem.");
+             `Elements of Object.keys() should be unique, but ` +
+             `saw duplicate '${aProcessA}' elem.`);
 
       
       if (aProcessA == gUnnamedProcessStr) {
@@ -1311,7 +1311,7 @@ function sortTreeAndInsertAggregateNodes(aTotalBytes, aT) {
       let nAgg = aT._kids.length - i0;
       
       
-      let aggT = new TreeNode("(" + nAgg + " tiny)", aT._units);
+      let aggT = new TreeNode(`(${nAgg} tiny)`, aT._units);
       aggT._kids = [];
       let aggBytes = 0;
       for ( ; i < aT._kids.length; i++) {
@@ -1415,7 +1415,7 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
     let link = appendElementWithText(aP, "a", "upDownArrow", aArrow);
     link.href = "#" + aThere + aN;
     link.id = aHere + aN;
-    link.title = "Go to the " + aThere + " of " + aProcess;
+    link.title = `Go to the ${aThere} of ${aProcess}`;
     link.style = "text-decoration: none";
 
     
@@ -1618,7 +1618,7 @@ function appendMrNameSpan(aP, aDescription, aUnsafeName, aIsInvalid, aNMerged,
   }
 
   if (aNMerged) {
-    let noteText = " [" + aNMerged + "]";
+    let noteText = ` [${aNMerged}]`;
     if (!aPresence) {
       noteText += "\n";
     }
@@ -1648,8 +1648,7 @@ function appendMrNameSpan(aP, aDescription, aUnsafeName, aIsInvalid, aNMerged,
      default: assert(false, "bad presence");
       break;
     }
-    let noteSpan = appendElementWithText(aP, "span", "mrNote",
-                                         " [" + c + "]\n");
+    let noteSpan = appendElementWithText(aP, "span", "mrNote", ` [${c}]\n`);
     noteSpan.title = title;
   }
 }
@@ -1790,9 +1789,9 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
       tIsInvalid = true;
       let unsafePath = aUnsafeNames.join("/");
       gUnsafePathsWithInvalidValuesForThisProcess.push(unsafePath);
-      reportAssertionFailure("Invalid value (" + aT._amount + " / " +
-                             aRoot._amount + ") for " +
-                             flipBackslashes(unsafePath));
+      reportAssertionFailure(
+        `Invalid value (${aT._amount} / ${aRoot._amount}) for ` +
+        flipBackslashes(unsafePath));
     }
 
     
@@ -1804,7 +1803,7 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
       
       
       let unsafePath = aUnsafeNames.join("/");
-      let safeTreeId = aProcess + ":" + flipBackslashes(unsafePath);
+      let safeTreeId = `${aProcess}:${flipBackslashes(unsafePath)}`;
       showSubtrees = !aT._hideKids;
       if (gShowSubtreesBySafeTreeId[safeTreeId] !== undefined) {
         showSubtrees = gShowSubtreesBySafeTreeId[safeTreeId];
