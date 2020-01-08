@@ -3,9 +3,7 @@
 
 
 "use strict";
-const {
-  utils: Cu,
-} = Components;
+
 ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
 
 var ManifestFinder = {

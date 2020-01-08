@@ -54,7 +54,8 @@
       // no point in continuing
       if (!hasOnAppInstalledProp) {
         const err = new Error("No 'onappinstalled' IDL attribute. Aborting early.");
-        return reject(err);
+        reject(err);
+        return;
       }
       is(ifrWindow.onappinstalled, null, "window install is initially set to null");
 
