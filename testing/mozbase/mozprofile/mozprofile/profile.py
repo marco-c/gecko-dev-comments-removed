@@ -427,61 +427,22 @@ class Profile(BaseProfile):
 
 class FirefoxProfile(Profile):
     """Specialized Profile subclass for Firefox"""
-
-    preferences = {  
-        'app.update.disabledForTesting': True,
-        'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True,
-        
-        'browser.sessionstore.resume_from_crash': False,
-        
-        'browser.shell.checkDefaultBrowser': False,
-        
-        'browser.tabs.warnOnClose': False,
-        
-        'browser.warnOnQuit': False,
-        
-        'datareporting.healthreport.documentServerURI': 'http://%(server)s/healthreport/',
-        
-        'datareporting.policy.dataSubmissionPolicyBypassNotification': True,
-        
-        
-        
-        'extensions.enabledScopes': 5,
-        'extensions.autoDisableScopes': 10,
-        
-        'extensions.getAddons.cache.enabled': False,
-        
-        'extensions.installDistroAddons': False,
-        
-        'extensions.update.enabled': False,
-        
-        'extensions.update.notifyUser': False,
-        
-        'focusmanager.testmode': True,
-        
-        'geo.provider.testing': True,
-        
-        'security.notification_enable_delay': 0,
-        
-        'toolkit.startup.max_resumed_crashes': -1,
-        
-        
-        'toolkit.telemetry.server': 'http://%(server)s/telemetry-dummy/',
-    }
+    preferences = {}
 
 
 class ThunderbirdProfile(Profile):
     """Specialized Profile subclass for Thunderbird"""
 
-    preferences = {'extensions.update.enabled': False,
-                   'extensions.update.notifyUser': False,
-                   'browser.shell.checkDefaultBrowser': False,
-                   'browser.tabs.warnOnClose': False,
-                   'browser.warnOnQuit': False,
-                   'browser.sessionstore.resume_from_crash': False,
-                   
-                   'mail.provider.enabled': False,
-                   }
+    preferences = {
+        'extensions.update.enabled': False,
+        'extensions.update.notifyUser': False,
+        'browser.shell.checkDefaultBrowser': False,
+        'browser.tabs.warnOnClose': False,
+        'browser.warnOnQuit': False,
+        'browser.sessionstore.resume_from_crash': False,
+        
+        'mail.provider.enabled': False,
+    }
 
 
 class ChromeProfile(BaseProfile):
