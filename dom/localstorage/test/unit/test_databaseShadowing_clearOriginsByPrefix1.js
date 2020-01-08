@@ -15,12 +15,17 @@ function* testSteps()
 
   verifyData([]);
 
+  let principal = getPrincipal("http://prefix.test", {});
+  clearOriginsByPrefix(principal, "default", continueToNextStepSync);
+  yield undefined;
+
   
   reset(continueToNextStepSync);
   yield undefined;
 
-  exportShadowDatabase("shadowdb.sqlite");
+  exportShadowDatabase("shadowdb-clearedOriginsByPrefix.sqlite");
 
+  
   
 
   finishTest();

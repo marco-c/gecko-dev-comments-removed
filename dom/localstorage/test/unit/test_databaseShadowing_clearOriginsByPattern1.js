@@ -15,12 +15,19 @@ function* testSteps()
 
   verifyData([]);
 
+  clearOriginsByPattern(JSON.stringify({ userContextId: 15 }),
+                        continueToNextStepSync);
+  yield undefined;
+
+  verifyData([4,5,6]);
+
   
   reset(continueToNextStepSync);
   yield undefined;
 
-  exportShadowDatabase("shadowdb.sqlite");
+  exportShadowDatabase("shadowdb-clearedOriginsByPattern.sqlite");
 
+  
   
 
   finishTest();

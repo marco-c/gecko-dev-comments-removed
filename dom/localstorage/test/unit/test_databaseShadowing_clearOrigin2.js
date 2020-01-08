@@ -13,12 +13,12 @@ function* testSteps()
 
   disableNextGenLocalStorage();
 
-  if (!importShadowDatabase("shadowdb.sqlite")) {
+  if (!importShadowDatabase("shadowdb-clearedOrigin.sqlite")) {
     finishTest();
     return;
   }
 
-  verifyData([]);
+  verifyData([1]);
 
   finishTest();
 }

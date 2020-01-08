@@ -10,15 +10,16 @@ loadSubscript("databaseShadowing-shared.js");
 function* testSteps()
 {
   
+  
 
   disableNextGenLocalStorage();
 
-  if (!importShadowDatabase("shadowdb.sqlite")) {
+  if (!importShadowDatabase("shadowdb-clearedOriginsByPrefix.sqlite")) {
     finishTest();
     return;
   }
 
-  verifyData([]);
+  verifyData([2,3]);
 
   finishTest();
 }
