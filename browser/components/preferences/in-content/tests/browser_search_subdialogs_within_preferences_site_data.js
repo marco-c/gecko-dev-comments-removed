@@ -8,6 +8,11 @@ add_task(async function() {
 });
 
 
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [["browser.contentblocking.ui.enabled", false]]});
+});
+
+
 
 
 add_task(async function() {
@@ -31,5 +36,37 @@ add_task(async function() {
 add_task(async function() {
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   await evaluateSearchResults("third-party", "siteDataGroup");
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [["browser.contentblocking.ui.enabled", true]]});
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await evaluateSearchResults("cookies", ["siteDataGroup", "trackingGroup"]);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await evaluateSearchResults("site data", ["siteDataGroup"]);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await evaluateSearchResults("cache", ["siteDataGroup"]);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await evaluateSearchResults("third-party", ["siteDataGroup", "trackingGroup"]);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
