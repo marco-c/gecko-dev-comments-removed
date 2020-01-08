@@ -16,11 +16,19 @@ const TreeRow = require("devtools/client/shared/components/tree/TreeRow");
 
 const {flashElementOn, flashElementOff} =
   require("devtools/client/inspector/markup/utils");
+const { openDocLink } = require("devtools/client/shared/link");
 const { VALUE_FLASHING_DURATION, VALUE_HIGHLIGHT_DURATION } = require("../constants");
 
 
 const { updateDetails } = require("../actions/details");
 const { unhighlight } = require("../actions/accessibles");
+
+const { L10N } = require("../utils/l10n");
+
+loader.lazyRequireGetter(this, "Menu", "devtools/client/framework/menu");
+loader.lazyRequireGetter(this, "MenuItem", "devtools/client/framework/menu-item");
+
+const JSON_URL_PREFIX = "data:application/json;charset=UTF-8,";
 
 class HighlightableTreeRowClass extends TreeRow {
   shouldComponentUpdate(nextProps) {
@@ -138,6 +146,44 @@ class AccessibilityRow extends Component {
     walker.unhighlight().catch(error => console.warn(error));
   }
 
+  async printToJSON() {
+    const { member, supports } = this.props;
+    if (!supports.snapshot) {
+      
+      return;
+    }
+
+    const snapshot = await member.object.snapshot();
+    openDocLink(`${JSON_URL_PREFIX}${encodeURIComponent(JSON.stringify(snapshot))}`);
+  }
+
+  onContextMenu(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!gToolbox) {
+      return;
+    }
+
+    const menu = new Menu({ id: "accessibility-row-contextmenu" });
+    const { supports } = this.props;
+
+    if (supports.snapshot) {
+      menu.append(new MenuItem({
+        id: "menu-printtojson",
+        label: L10N.getStr("accessibility.tree.menu.printToJSON"),
+        click: () => this.printToJSON(),
+      }));
+    }
+
+    menu.popup(e.screenX, e.screenY, gToolbox);
+  }
+
+  get hasContextMenu() {
+    const { supports } = this.props;
+    return supports.snapshot;
+  }
+
   
 
 
@@ -145,6 +191,7 @@ class AccessibilityRow extends Component {
   render() {
     const { object } = this.props.member;
     const props = Object.assign({}, this.props, {
+      onContextMenu: this.hasContextMenu && (e => this.onContextMenu(e)),
       onMouseOver: () => this.highlight(object),
       onMouseOut: () => this.unhighlight(),
     });
