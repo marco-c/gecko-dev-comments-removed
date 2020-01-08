@@ -23,8 +23,17 @@ class SVGAngle final : public nsWrapperCache {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SVGAngle)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(SVGAngle)
 
+  
+
+
   SVGAngle(nsSVGAngle* aVal, SVGElement* aSVGElement, AngleType aType)
       : mVal(aVal), mSVGElement(aSVGElement), mType(aType) {}
+
+  
+
+
+
+  explicit SVGAngle(SVGElement* aSVGElement);
 
   
   SVGElement* GetParentObject() { return mSVGElement; }
