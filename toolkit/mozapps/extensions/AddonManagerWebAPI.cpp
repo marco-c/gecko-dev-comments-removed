@@ -6,6 +6,7 @@
 
 #include "AddonManagerWebAPI.h"
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/NavigatorBinding.h"
 
@@ -120,7 +121,7 @@ bool AddonManagerWebAPI::IsAPIEnabled(JSContext* aCx, JSObject* aGlobal) {
 
     
     
-    if (principal->GetIsSystemPrincipal()) {
+    if (principal->IsSystemPrincipal()) {
       return true;
     }
 
@@ -148,7 +149,7 @@ bool AddonManagerWebAPI::IsAPIEnabled(JSContext* aCx, JSObject* aGlobal) {
       return true;
     }
 
-    Document* doc = win->GetDoc();
+    nsIDocument* doc = win->GetDoc();
     if (!doc) {
       return false;
     }

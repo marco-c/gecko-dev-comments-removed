@@ -29,7 +29,7 @@
 #include "nsIBufferedStreams.h"
 #include "nsIChannelEventSink.h"
 #include "nsIContentSniffer.h"
-#include "mozilla/dom/Document.h"
+#include "nsIDocument.h"
 #include "nsIDownloader.h"
 #include "nsIFileProtocolHandler.h"
 #include "nsIFileStreams.h"
@@ -264,7 +264,7 @@ void AssertLoadingPrincipalAndClientInfoMatch(
   
 
   
-  if (aLoadingPrincipal->GetIsSystemPrincipal() &&
+  if (aLoadingPrincipal->IsSystemPrincipal() &&
       (aType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
        aType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER ||
        aType == nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER ||
@@ -2580,7 +2580,7 @@ nsresult NS_ShouldSecureUpgrade(nsIURI *aURI, nsILoadInfo *aLoadInfo,
           Telemetry::AccumulateCategorical(
               Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::CSP);
         } else {
-          RefPtr<dom::Document> doc;
+          nsCOMPtr<nsIDocument> doc;
           nsINode *node = aLoadInfo->LoadingNode();
           if (node) {
             doc = node->OwnerDoc();
@@ -2709,9 +2709,12 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel) {
   bool isAboutPage = false;
   nsINode *node = loadInfo->LoadingNode();
   if (node) {
-    nsIURI *uri = node->OwnerDoc()->GetDocumentURI();
-    nsresult rv = uri->SchemeIs("about", &isAboutPage);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsIDocument *doc = node->OwnerDoc();
+    if (doc) {
+      nsIURI *uri = doc->GetDocumentURI();
+      nsresult rv = uri->SchemeIs("about", &isAboutPage);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
 
   if (isAboutPage) {
