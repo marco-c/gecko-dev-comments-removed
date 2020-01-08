@@ -1501,8 +1501,8 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   
   
   if (!allowZoom) {
-    mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.x, 0, aEvent.mTime);
-    mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y, 0, aEvent.mTime);
+    mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.x, aEvent.mTime);
+    mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y, aEvent.mTime);
   }
 
   if (!gfxPrefs::APZAllowZooming()) {
@@ -2453,8 +2453,14 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent, bool 
   
   
   
-  mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalPanStartPoint.x, logicalPanDisplacement.x, aEvent.mTime);
-  mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalPanStartPoint.y, logicalPanDisplacement.y, aEvent.mTime);
+  
+  
+  
+  
+  
+  
+  mX.UpdateWithTouchAtDevicePoint(mX.GetPos() + logicalPanDisplacement.x, aEvent.mTime);
+  mY.UpdateWithTouchAtDevicePoint(mY.GetPos() + logicalPanDisplacement.y, aEvent.mTime);
 
   HandlePanningUpdate(physicalPanDisplacement);
 
@@ -2891,8 +2897,8 @@ AsyncPanZoomController::StartPanning(const ParentLayerPoint& aStartPoint) {
 
 void AsyncPanZoomController::UpdateWithTouchAtDevicePoint(const MultiTouchInput& aEvent) {
   ParentLayerPoint point = GetFirstTouchPoint(aEvent);
-  mX.UpdateWithTouchAtDevicePoint(point.x, 0, aEvent.mTime);
-  mY.UpdateWithTouchAtDevicePoint(point.y, 0, aEvent.mTime);
+  mX.UpdateWithTouchAtDevicePoint(point.x, aEvent.mTime);
+  mY.UpdateWithTouchAtDevicePoint(point.y, aEvent.mTime);
 }
 
 bool AsyncPanZoomController::AttemptScroll(ParentLayerPoint& aStartPoint,

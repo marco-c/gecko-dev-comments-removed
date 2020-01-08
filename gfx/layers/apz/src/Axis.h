@@ -50,7 +50,7 @@ public:
 
 
 
-  void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, ParentLayerCoord aAdditionalDelta, uint32_t aTimestampMs);
+  void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, uint32_t aTimestampMs);
 
 protected:
   float ApplyFlingCurveToVelocity(float aVelocity) const;
@@ -251,6 +251,13 @@ public:
   virtual const char* Name() const = 0;
 
 protected:
+  
+  
+  
+  
+  
+  
+  
   ParentLayerCoord mPos;
 
   
