@@ -1,2 +1,22 @@
+
+
 import * as module from './export-on-dynamic-import-script.js';
-module.ready.then(() => postMessage(module.importedModules));
+
+const sourcePromise = new Promise(resolve => {
+  self.onmessage = e => {
+    
+    
+    const source = e.source ? e.source : e.target;
+    resolve(source);
+  };
+});
+
+export let importedModules = ['export-on-dynamic-import-script.js'];
+const importedModulesPromise = module.ready
+  .then(importedModules => importedModules)
+  .catch(error => `Failed to do dynamic import: ${error}`);
+
+Promise.all([sourcePromise, importedModulesPromise]).then(results => {
+  const [source, importedModules] = results;
+  source.postMessage(importedModules);
+});
