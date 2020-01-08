@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#include "mozilla/ipc/InProcessParent.h"
+
+namespace mozilla {
+namespace ipc {
+
+NS_IMPL_ISUPPORTS(InProcessParent, nsIObserver)
+
+} 
+} 
