@@ -178,7 +178,7 @@ struct ModuleEnvironment
     MaybeSectionRange         codeSection;
 
     
-    DataSegmentVector         dataSegments;
+    DataSegmentEnvVector      dataSegments;
     Maybe<NameInBytecode>     moduleName;
     NameInBytecodeVector      funcNames;
     CustomSectionVector       customSections;
