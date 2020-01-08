@@ -17,6 +17,15 @@ const {
   HTMLTooltip,
 } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
 
+
+const omit = (obj, fields) => {
+  const objCopy = { ...obj };
+  for (const field of fields) {
+    delete objCopy[field];
+  }
+  return objCopy;
+};
+
 class MenuButton extends PureComponent {
   static get propTypes() {
     return {
@@ -266,7 +275,9 @@ class MenuButton extends PureComponent {
     );
 
     const buttonProps = {
-      ...this.props,
+      
+      
+      ...omit(this.props, Object.keys(MenuButton.propTypes)),
       onClick: this.onClick,
       "aria-expanded": this.state.expanded,
       "aria-haspopup": "menu",
