@@ -94,17 +94,8 @@ public final class CodecProxy {
             if (mOutputSurface != null) {
                 
                 mSurfaceOutputs.offer(sample);
-                mCallbacks.onOutput(sample);
-            } else {
-                
-                try {
-                    mCallbacks.onOutput(sample);
-                    mRemote.releaseOutput(sample, false);
-                    sample.dispose();
-                } catch (Exception e) {
-                    reportError(true);
-                }
             }
+            mCallbacks.onOutput(sample);
         }
 
         @Override
