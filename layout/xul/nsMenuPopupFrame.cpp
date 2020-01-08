@@ -306,17 +306,6 @@ nsMenuPopupFrame::CreateWidgetForView(nsView* aView)
   bool remote = HasRemoteContent();
 
   nsTransparencyMode mode = nsLayoutUtils::GetFrameTransparency(this, this);
-#ifdef MOZ_WIDGET_GTK
-  if (remote) {
-    
-    
-    
-    
-    
-    mode = eTransparencyOpaque;
-  }
-#endif
-
   nsIContent* parentContent = GetContent()->GetParent();
   nsAtom *tag = nullptr;
   if (parentContent && parentContent->IsXULElement())
