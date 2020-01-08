@@ -17,6 +17,7 @@ const PREF_TO_TYPE = {
 
 
 const MAIN_ROOT_EVENTS = [
+  "addonListChanged",
   "processListChanged",
   "serviceWorkerRegistrationListChanged",
   "tabListChanged",
