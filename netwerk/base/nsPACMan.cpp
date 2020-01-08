@@ -544,6 +544,29 @@ nsPACMan::LoadPACFromURI(const nsACString &aSpec)
   NS_ENSURE_STATE(loader);
 
   LOG(("nsPACMan::LoadPACFromURI aSpec: %s\n", aSpec.BeginReading()));
+
+  CancelExistingLoad();
+
+  mLoader = loader;
+  mPACURIRedirectSpec.Truncate();
+  mNormalPACURISpec.Truncate(); 
+  mLoadFailureCount = 0;  
+  mAutoDetect = aSpec.IsEmpty();
+  mPACURISpec.Assign(aSpec);
+
+  
+  mScheduledReload = TimeStamp();
+
+  
+  
+  if (mAutoDetect && NS_IsMainThread()) {
+    nsresult rv = GetNetworkProxyTypeFromPref(&mProxyConfigType);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    MOZ_RELEASE_ASSERT(mProxyConfigType == nsIProtocolProxyService::PROXYCONFIG_WPAD,
+            "WPAD is being executed when not selected by user");
+  }
   
   
   
@@ -561,17 +584,6 @@ nsPACMan::LoadPACFromURI(const nsACString &aSpec)
     mLoadPending = true;
   }
 
-  CancelExistingLoad();
-
-  mLoader = loader;
-  mPACURIRedirectSpec.Truncate();
-  mNormalPACURISpec.Truncate(); 
-  mLoadFailureCount = 0;  
-  mAutoDetect = aSpec.IsEmpty();
-  mPACURISpec.Assign(aSpec);
-
-  
-  mScheduledReload = TimeStamp();
   return NS_OK;
 }
 
@@ -638,7 +650,11 @@ nsPACMan::StartLoading()
   }
 
   if (mAutoDetect) {
-    GetNetworkProxyTypeFromPref(&mProxyConfigType);
+    nsresult rv = GetNetworkProxyTypeFromPref(&mProxyConfigType);
+    if (!NS_SUCCEEDED(rv)) {
+      NS_WARNING("Could not retrieve Network Proxy Type pref when auto-detecting proxy. Halting.");
+      return;
+    }
     RefPtr<ExecutePACThreadAction> wpadConfigurer =
       new ExecutePACThreadAction(this);
     wpadConfigurer->ConfigureWPAD();
