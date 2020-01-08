@@ -25,8 +25,10 @@ ChromeUtils.import("resource://testing-common/httpd.js");
 
 
 
-ChromeUtils.defineModuleGetter(this, "UrlbarProviderOpenTabs",
-  "resource:///modules/UrlbarProviderOpenTabs.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
+});
 
 const TITLE_SEARCH_ENGINE_SEPARATOR = " \u00B7\u2013\u00B7 ";
 
