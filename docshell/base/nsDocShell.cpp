@@ -656,7 +656,7 @@ nsDocShell::GetInterface(const nsIID& aIID, void** aSink)
 
 NS_IMETHODIMP
 nsDocShell::LoadURI(nsIURI* aURI,
-                    nsIDocShellLoadInfo* aLoadInfo,
+                    nsDocShellLoadInfo* aLoadInfo,
                     uint32_t aLoadFlags,
                     bool aFirstParty)
 {
@@ -709,7 +709,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
     aLoadInfo->GetOriginalURI(getter_AddRefs(originalURI));
     GetMaybeResultPrincipalURI(aLoadInfo, resultPrincipalURI);
     aLoadInfo->GetLoadReplace(&loadReplace);
-    nsDocShellInfoLoadType lt = nsIDocShellLoadInfo::loadNormal;
+    nsDocShellLoadInfo::nsDocShellInfoLoadType lt = nsDocShellLoadInfo::loadNormal;
     aLoadInfo->GetLoadType(&lt);
     
     loadType = ConvertDocShellInfoLoadTypeToLoadType(lt);
@@ -1025,10 +1025,10 @@ nsDocShell::LoadURI(nsIURI* aURI,
 }
 
 NS_IMETHODIMP
-nsDocShell::CreateLoadInfo(nsIDocShellLoadInfo** aLoadInfo)
+nsDocShell::CreateLoadInfo(nsDocShellLoadInfo** aLoadInfo)
 {
   nsDocShellLoadInfo* loadInfo = new nsDocShellLoadInfo();
-  nsCOMPtr<nsIDocShellLoadInfo> localRef(loadInfo);
+  RefPtr<nsDocShellLoadInfo> localRef(loadInfo);
 
   localRef.forget(aLoadInfo);
   return NS_OK;
@@ -3726,21 +3726,21 @@ nsDocShell::GetChildSHEntry(int32_t aChildOffset, nsISHEntry** aResult)
     
 
 
-    uint32_t loadType = nsIDocShellLoadInfo::loadHistory;
+    uint32_t loadType = nsDocShellLoadInfo::loadHistory;
     mLSHE->GetLoadType(&loadType);
     
     
-    if (loadType == nsIDocShellLoadInfo::loadReloadBypassCache ||
-        loadType == nsIDocShellLoadInfo::loadReloadBypassProxy ||
-        loadType == nsIDocShellLoadInfo::loadReloadBypassProxyAndCache ||
-        loadType == nsIDocShellLoadInfo::loadRefresh) {
+    if (loadType == nsDocShellLoadInfo::loadReloadBypassCache ||
+        loadType == nsDocShellLoadInfo::loadReloadBypassProxy ||
+        loadType == nsDocShellLoadInfo::loadReloadBypassProxyAndCache ||
+        loadType == nsDocShellLoadInfo::loadRefresh) {
       return rv;
     }
 
     
 
 
-    if (parentExpired && (loadType == nsIDocShellLoadInfo::loadReloadNormal)) {
+    if (parentExpired && (loadType == nsDocShellLoadInfo::loadReloadNormal)) {
       
       *aResult = nullptr;
       return rv;
@@ -4228,11 +4228,7 @@ nsDocShell::LoadURIWithOptions(const char16_t* aURI,
   uint32_t extraFlags = (aLoadFlags & EXTRA_LOAD_FLAGS);
   aLoadFlags &= ~EXTRA_LOAD_FLAGS;
 
-  nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
-  rv = CreateLoadInfo(getter_AddRefs(loadInfo));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  RefPtr<nsDocShellLoadInfo> loadInfo = new nsDocShellLoadInfo();
 
   
 
@@ -6190,9 +6186,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
 {
   NS_ENSURE_ARG(aURI);
 
-  nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
-  CreateLoadInfo(getter_AddRefs(loadInfo));
-  NS_ENSURE_TRUE(loadInfo, NS_ERROR_OUT_OF_MEMORY);
+  RefPtr<nsDocShellLoadInfo> loadInfo = new nsDocShellLoadInfo();
 
   
 
@@ -6228,7 +6222,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
 
 
 
-    loadInfo->SetLoadType(nsIDocShellLoadInfo::loadNormalReplace);
+    loadInfo->SetLoadType(nsDocShellLoadInfo::loadNormalReplace);
 
     
 
@@ -6239,7 +6233,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
       loadInfo->SetReferrer(internalReferrer);
     }
   } else {
-    loadInfo->SetLoadType(nsIDocShellLoadInfo::loadRefresh);
+    loadInfo->SetLoadType(nsDocShellLoadInfo::loadRefresh);
   }
 
   
@@ -7091,7 +7085,7 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   
   if (mLSHE) {
-    mLSHE->SetLoadType(nsIDocShellLoadInfo::loadHistory);
+    mLSHE->SetLoadType(nsDocShellLoadInfo::loadHistory);
 
     
     
@@ -9425,11 +9419,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         MOZ_ASSERT(!aSHEntry);
         MOZ_ASSERT(aFirstParty); 
 
-        nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
-        rv = CreateLoadInfo(getter_AddRefs(loadInfo));
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
+        RefPtr<nsDocShellLoadInfo> loadInfo = new nsDocShellLoadInfo();
 
         
         
