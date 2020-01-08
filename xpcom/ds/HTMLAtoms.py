@@ -9,6 +9,8 @@ HTML_PARSER_ATOMS = [
     
     Atom("xml_lang", "xml:lang"),
     
+    Atom("xml_base", "xml:base"),
+    
     Atom("aria_grab", "aria-grab"),
     
     Atom("aria_channel", "aria-channel"),
