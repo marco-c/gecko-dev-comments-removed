@@ -424,25 +424,6 @@ class BaseContext {
     this.messageManager = null;
     this.contentWindow = null;
     this.innerWindowID = 0;
-
-    
-    
-    
-    
-    this.cloneScopeError = null;
-    this.cloneScopePromise = null;
-  }
-
-  get Error() {
-    
-    
-    return this.cloneScopeError || this.cloneScope.Error;
-  }
-
-  get Promise() {
-    
-    
-    return this.cloneScopePromise || this.cloneScope.Promise;
   }
 
   setContentWindow(contentWindow) {
@@ -616,7 +597,7 @@ class BaseContext {
 
 
   normalizeError(error, caller) {
-    if (error instanceof this.Error) {
+    if (error instanceof this.cloneScope.Error) {
       return error;
     }
     let message, fileName;
@@ -642,7 +623,7 @@ class BaseContext {
       Cu.reportError(error);
       message = "An unexpected error occurred";
     }
-    return new this.Error(message, fileName);
+    return new this.cloneScope.Error(message, fileName);
   }
 
   
@@ -742,7 +723,7 @@ class BaseContext {
           });
         });
     } else {
-      return new this.Promise((resolve, reject) => {
+      return new this.cloneScope.Promise((resolve, reject) => {
         promise.then(
           value => {
             if (this.unloaded) {

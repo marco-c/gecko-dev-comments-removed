@@ -42,7 +42,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["crypto", "TextEncoder"]);
 const {
   DefaultMap,
   DefaultWeakMap,
-  ExtensionError,
   getInnerWindowID,
   getWinUtils,
   promiseDocumentIdle,
@@ -472,7 +471,24 @@ class Script {
       }
     }
 
-    let scripts = await this.awaitCompiledScripts(context);
+    let scriptPromises = this.compileScripts();
+
+    let scripts = scriptPromises.map(promise => promise.script);
+    
+    
+    if (!scripts.every(script => script)) {
+      let promise = Promise.all(scriptPromises);
+
+      
+      
+      
+      let {document} = context.contentWindow;
+      if (this.runAt === "document_start" && document.readyState !== "complete") {
+        document.blockParsing(promise, {blockScriptCreated: false});
+      }
+
+      scripts = await promise;
+    }
 
     let result;
 
@@ -496,235 +512,10 @@ class Script {
     await cssPromise;
     return result;
   }
-
-  async awaitCompiledScripts(context) {
-    let scriptPromises = this.compileScripts();
-    let scripts = scriptPromises.map(promise => promise.script);
-
-    
-    
-    if (!scripts.every(script => script)) {
-      let promise = Promise.all(scriptPromises);
-
-      
-      
-      
-      let {document} = context.contentWindow;
-      if (this.runAt === "document_start" && document.readyState !== "complete") {
-        document.blockParsing(promise, {blockScriptCreated: false});
-      }
-
-      scripts = await promise;
-    }
-
-    return scripts;
-  }
-}
-
-
-class UserScript extends Script {
-  
-
-
-
-
-
-  constructor(extension, matcher) {
-    super(extension, matcher);
-
-    
-    
-    
-    this.scriptMetadata = matcher.userScriptOptions.scriptMetadata;
-    this.apiScriptURL = extension.manifest.userScripts && extension.manifest.userScripts.apiScript;
-
-    this.promiseAPIScript = null;
-    this.scriptPromises = null;
-
-    
-    this.sandboxes = new DefaultWeakMap((context) => {
-      return this.createSandbox(context);
-    });
-  }
-
-  compileScripts() {
-    if (this.apiScriptURL && !this.promiseAPIScript) {
-      this.promiseAPIScript = this.scriptCache.get(this.apiScriptURL);
-    }
-
-    if (!this.scriptPromises) {
-      this.scriptPromises = this.js.map(url => this.scriptCache.get(url));
-    }
-
-    if (this.promiseAPIScript) {
-      return [this.promiseAPIScript, ...this.scriptPromises];
-    }
-
-    return this.scriptPromises;
-  }
-
-  async inject(context) {
-    const {extension} = context;
-
-    DocumentManager.lazyInit();
-
-    let scripts = await this.awaitCompiledScripts(context);
-
-    let apiScript, sandboxScripts;
-
-    if (this.promiseAPIScript) {
-      [apiScript, ...sandboxScripts] = scripts;
-    } else {
-      sandboxScripts = scripts;
-    }
-
-    
-    if (apiScript) {
-      context.executeAPIScript(apiScript);
-    }
-
-    
-    
-    ExtensionTelemetry.userScriptInjection.stopwatchStart(extension, context);
-    try {
-      let userScriptSandbox = this.sandboxes.get(context);
-
-      context.callOnClose({
-        close: () => {
-          
-          
-          this.sandboxes.delete(context);
-          Cu.nukeSandbox(userScriptSandbox);
-        },
-      });
-
-      
-      if (apiScript) {
-        this.injectUserScriptAPIs(userScriptSandbox, context);
-      }
-
-      for (let script of sandboxScripts) {
-        script.executeInGlobal(userScriptSandbox);
-      }
-    } finally {
-      ExtensionTelemetry.userScriptInjection.stopwatchFinish(extension, context);
-    }
-  }
-
-  createSandbox(context) {
-    const {contentWindow} = context;
-    const contentPrincipal = contentWindow.document.nodePrincipal;
-    const ssm = Services.scriptSecurityManager;
-
-    let principal;
-    if (ssm.isSystemPrincipal(contentPrincipal)) {
-      principal = ssm.createNullPrincipal(contentPrincipal.originAttributes);
-    } else {
-      principal = [contentPrincipal];
-    }
-
-    const sandbox = Cu.Sandbox(principal, {
-      sandboxName: `User Script registered by ${this.extension.policy.debugName}`,
-      sandboxPrototype: contentWindow,
-      sameZoneAs: contentWindow,
-      wantXrays: true,
-      wantGlobalProperties: ["XMLHttpRequest", "fetch"],
-      originAttributes: contentPrincipal.originAttributes,
-      metadata: {
-        "inner-window-id": context.innerWindowID,
-        addonId: this.extension.policy.id,
-      },
-    });
-
-    return sandbox;
-  }
-
-  injectUserScriptAPIs(userScriptScope, context) {
-    const {extension, scriptMetadata} = this;
-    const {userScriptAPIs, cloneScope: apiScope} = context;
-
-    if (!userScriptAPIs) {
-      return;
-    }
-
-    const clonedMetadata = scriptMetadata ?
-            Cu.cloneInto(scriptMetadata, apiScope) : undefined;
-
-    const UserScriptError = userScriptScope.Error;
-    const UserScriptPromise = userScriptScope.Promise;
-
-    const wrappedFnMap = new WeakMap();
-
-    function safeReturnCloned(res) {
-      try {
-        return Cu.cloneInto(res, userScriptScope);
-      } catch (err) {
-        Cu.reportError(
-          `userScripts API method wrapper for ${extension.policy.debugName}: ${err}`
-        );
-        throw new UserScriptError("Unable to clone object in the userScript sandbox");
-      }
-    }
-
-    function wrapUserScriptAPIMethod(fn, fnName) {
-      return Cu.exportFunction(function(...args) {
-        let fnArgs = Cu.cloneInto([], apiScope);
-
-        try {
-          for (let arg of args) {
-            if (typeof arg === "function") {
-              if (!wrappedFnMap.has(arg)) {
-                wrappedFnMap.set(arg, Cu.exportFunction(arg, apiScope));
-              }
-              fnArgs.push(wrappedFnMap.get(arg));
-            } else {
-              fnArgs.push(Cu.cloneInto(arg, apiScope));
-            }
-          }
-        } catch (err) {
-          Cu.reportError(`Error cloning userScriptAPIMethod parameters in ${fnName}: ${err}`);
-          throw new UserScriptError("Only serializable parameters are supported");
-        }
-
-        const res = runSafeSyncWithoutClone(fn, fnArgs, clonedMetadata, userScriptScope);
-
-        if (res instanceof context.Promise) {
-          return UserScriptPromise.resolve().then(async () => {
-            let value;
-            try {
-              value = await res;
-            } catch (err) {
-              if (err instanceof context.Error) {
-                throw new UserScriptError(err.message);
-              } else {
-                throw safeReturnCloned(err);
-              }
-            }
-            return safeReturnCloned(value);
-          });
-        }
-
-        return safeReturnCloned(res);
-      }, userScriptScope);
-    }
-
-    for (let key of Object.keys(userScriptAPIs)) {
-      Schemas.exportLazyGetter(userScriptScope, key, () => {
-        
-        return wrapUserScriptAPIMethod(userScriptAPIs[key], key);
-      });
-    }
-  }
 }
 
 var contentScripts = new DefaultWeakMap(matcher => {
-  const extension = processScript.extensions.get(matcher.extension);
-
-  if ("userScriptOptions" in matcher) {
-    return new UserScript(extension, matcher);
-  }
-
-  return new Script(extension, matcher);
+  return new Script(processScript.extensions.get(matcher.extension), matcher);
 });
 
 
@@ -799,12 +590,6 @@ class ContentScriptContextChild extends BaseContext {
       
       
       
-      this.cloneScopePromise = this.sandbox.Promise;
-      this.cloneScopeError = this.sandbox.Error;
-
-      
-      
-      
       
       Cu.evalInSandbox(`
         this.content = {
@@ -835,14 +620,6 @@ class ContentScriptContextChild extends BaseContext {
 
     Schemas.exportLazyGetter(this.sandbox, "browser", () => this.chromeObj);
     Schemas.exportLazyGetter(this.sandbox, "chrome", () => this.chromeObj);
-
-    
-    this.userScriptAPIs = null;
-
-    
-    
-    
-    this.hasUserScriptAPIs = false;
   }
 
   injectAPI() {
@@ -859,23 +636,6 @@ class ContentScriptContextChild extends BaseContext {
 
   get cloneScope() {
     return this.sandbox;
-  }
-
-  setUserScriptAPIs(extCustomAPIs) {
-    if (this.userScriptAPIs) {
-      throw new ExtensionError("userScripts APIs may only be set once");
-    }
-
-    this.userScriptAPIs = extCustomAPIs;
-  }
-
-  async executeAPIScript(apiScript) {
-    
-    
-    if (apiScript && !this.hasUserScriptAPIs) {
-      this.hasUserScriptAPIs = true;
-      apiScript.executeInGlobal(this.cloneScope);
-    }
   }
 
   addScript(script) {
@@ -901,7 +661,6 @@ class ContentScriptContextChild extends BaseContext {
       }
     }
     Cu.nukeSandbox(this.sandbox);
-
     this.sandbox = null;
   }
 }
