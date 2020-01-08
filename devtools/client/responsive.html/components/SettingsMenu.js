@@ -1,0 +1,73 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const { getStr } = require("../utils/l10n");
+const Types = require("../types");
+
+loader.lazyRequireGetter(this, "showMenu", "devtools/client/shared/components/menu/utils", true);
+
+class SettingsMenu extends PureComponent {
+  static get propTypes() {
+    return {
+      reloadConditions: PropTypes.shape(Types.reloadConditions).isRequired,
+      onChangeReloadCondition: PropTypes.func.isRequired,
+    };
+  }
+
+  constructor(props) {
+    super(props);
+    this.onToggleSettingMenu = this.onToggleSettingMenu.bind(this);
+  }
+
+  onToggleSettingMenu(event) {
+    const {
+      reloadConditions,
+      onChangeReloadCondition,
+    } = this.props;
+
+    const menuItems = [
+      {
+        id: "touchSimulation",
+        checked: reloadConditions.touchSimulation,
+        label: getStr("responsive.reloadConditions.touchSimulation"),
+        type: "checkbox",
+        click: () => {
+          onChangeReloadCondition("touchSimulation", !reloadConditions.touchSimulation);
+        },
+      },
+      {
+        id: "userAgent",
+        checked: reloadConditions.userAgent,
+        label: getStr("responsive.reloadConditions.userAgent"),
+        type: "checkbox",
+        click: () => {
+          onChangeReloadCondition("userAgent", !reloadConditions.userAgent);
+        },
+      },
+    ];
+
+    showMenu(menuItems, {
+      button: event.target,
+      useTopLevelWindow: true,
+    });
+  }
+
+  render() {
+    return (
+      dom.button({
+        id: "settings-button",
+        className: "devtools-button",
+        onClick: this.onToggleSettingMenu,
+      })
+    );
+  }
+}
+
+module.exports = SettingsMenu;
