@@ -413,7 +413,8 @@ var State = {
     let counters = await ChromeUtils.requestPerformanceMetrics();
     let tabs = {};
     for (let counter of counters) {
-      let {items, host, windowId, duration, isWorker, isTopLevel} = counter;
+      let {items, host, pid, counterId, windowId, duration, isWorker,
+           isTopLevel} = counter;
       
       
       if (isWorker && (windowId == 18446744073709552000 || !windowId))
@@ -436,8 +437,9 @@ var State = {
       }
       tab.dispatchCount += dispatchCount;
       tab.duration += duration;
-      if (!isTopLevel) {
-        tab.children.push({host, isWorker, dispatchCount, duration});
+      if (!isTopLevel || isWorker) {
+        tab.children.push({host, isWorker, dispatchCount, duration,
+                           counterId: pid + ":" + counterId});
       }
     }
 
@@ -598,14 +600,18 @@ var State = {
     
     
 
-    let oldestInBuffer = this._buffer[0].tabs;
     let previous = this._buffer[Math.max(this._buffer.length - 2, 0)].tabs;
     let current = this._latest.tabs;
-    return Object.keys(current).map(function(id) {
+    return Object.keys(current).map(id => {
       let tab = current[id];
-      let oldest = oldestInBuffer[id];
+      let oldest;
+      for (let index = 0; index <= this._buffer.length - 2; ++index) {
+        if (id in this._buffer[index].tabs) {
+          oldest = this._buffer[index].tabs[id];
+          break;
+        }
+      }
       let prev = previous[id];
-      let dispatches = tab.dispatchCount;
       let host = tab.host;
 
       let name = `${host} (${id})`;
@@ -629,13 +635,63 @@ var State = {
         name = "Ghost windows";
       }
 
+      
+      
+      
+      let prevChildren = new Map();
+      if (prev) {
+        for (let child of prev.children) {
+          prevChildren.set(child.counterId, child);
+        }
+      }
+      
+      let children = tab.children.map(child => {
+        let {host, dispatchCount, duration, isWorker, counterId} = child;
+
+        let dispatchesSincePrevious = dispatchCount;
+        let durationSincePrevious = duration;
+        if (prevChildren.has(counterId)) {
+          let prevCounter = prevChildren.get(counterId);
+          dispatchesSincePrevious -= prevCounter.dispatchCount;
+          durationSincePrevious -= prevCounter.duration;
+          prevChildren.delete(counterId);
+        }
+
+        return {host, dispatchCount, duration, isWorker,
+                dispatchesSincePrevious, durationSincePrevious};
+      });
+
+      
+      
+      
+      tab.dispatchesFromFormerChildren = prev && prev.dispatchesFromFormerChildren || 0;
+      tab.durationFromFormerChildren = prev && prev.durationFromFormerChildren || 0;
+      for (let [, counter] of prevChildren) {
+        tab.dispatchesFromFormerChildren += counter.dispatchCount;
+        tab.durationFromFormerChildren += counter.duration;
+      }
+
+      
+      
+      let dispatches = tab.dispatchCount + tab.dispatchesFromFormerChildren;
+      let duration = tab.duration + tab.durationFromFormerChildren;
+      let durationSincePrevious = NaN;
+      let dispatchesSincePrevious = NaN;
+      let dispatchesSinceStartOfBuffer = NaN;
+      if (prev) {
+        durationSincePrevious =
+          duration - prev.duration - (prev.durationFromFormerChildren || 0);
+        dispatchesSincePrevious =
+          dispatches - prev.dispatchCount - (prev.dispatchesFromFormerChildren || 0);
+      }
+      if (oldest) {
+        dispatchesSinceStartOfBuffer =
+          dispatches - oldest.dispatchCount - (oldest.dispatchesFromFormerChildren || 0);
+      }
       return ({id, name, image,
-               totalDispatches: dispatches,
-               totalDuration: tab.duration,
-               durationSincePrevious: prev ? tab.duration - prev.duration : NaN,
-               dispatchesSincePrevious: prev ? dispatches - prev.dispatchCount : NaN,
-               dispatchesSinceStartOfBuffer: oldest ? dispatches - oldest.dispatchCount : NaN,
-               children: tab.children});
+               totalDispatches: dispatches, totalDuration: duration,
+               durationSincePrevious, dispatchesSincePrevious,
+               dispatchesSinceStartOfBuffer, children});
     });
   },
 };
@@ -1028,7 +1084,7 @@ var Control = {
             duration /= 1000;
             duration = Math.round(duration);
             if (duration)
-              result += ` (${duration / 1000}s)`;
+              result += duration >= 1000 ? ` (${duration / 1000}s)` : ` (${duration}ms)`;
             else
               result += " (< 1ms)";
           }
@@ -1045,7 +1101,7 @@ var Control = {
           row.setAttribute("selected", "true");
           this.selectedRow = row;
         }
-        children.sort((a, b) => b.dispatchCount - a.dispatchCount);
+        children.sort((a, b) => b.dispatchesSincePrevious - a.dispatchesSincePrevious);
         for (let row of children) {
           let host = row.host.replace(/^blob:https?:\/\//, "");
           let classes = ["indent"];
@@ -1055,7 +1111,9 @@ var Control = {
             classes.push("worker");
           View.appendRow(row.host,
                          dispatchesAndDuration(row.dispatchCount, row.duration),
-                         "", classes);
+                         dispatchesAndDuration(row.dispatchesSincePrevious,
+                                               row.durationSincePrevious),
+                         classes);
         }
       }
       View.commit();
