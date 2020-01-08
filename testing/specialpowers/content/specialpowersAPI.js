@@ -37,13 +37,11 @@ ChromeUtils.defineModuleGetter(this, "ServiceWorkerCleanUp",
 ChromeUtils.defineModuleGetter(this, "PerTestCoverageUtils",
   "resource://testing-common/PerTestCoverageUtils.jsm");
 
-
-
-
-
-
-if (!(function() { var e = eval; return e("this"); })().File) { 
+try {
     Cu.importGlobalProperties(["DOMParser", "File", "InspectorUtils", "NodeFilter"]);
+} catch (e) {
+ 
+ 
 }
 
 
