@@ -182,7 +182,12 @@ exports.defineLazyPrototypeGetter = function(object, key, callback) {
 
 
 
-exports.getProperty = function(object, key) {
+
+
+
+
+
+exports.getProperty = function(object, key, invokeUnsafeGetters = false) {
   const root = object;
   while (object && exports.isSafeDebuggerObject(object)) {
     let desc;
@@ -198,7 +203,7 @@ exports.getProperty = function(object, key) {
         return desc.value;
       }
       
-      if (exports.hasSafeGetter(desc)) {
+      if (exports.hasSafeGetter(desc) || invokeUnsafeGetters === true) {
         try {
           return desc.get.call(root).return;
         } catch (e) {
@@ -303,6 +308,40 @@ exports.hasSafeGetter = function(desc) {
   let fn = desc.get;
   fn = fn && exports.unwrap(fn);
   return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.isUnsafeGetter = function(object, key) {
+  while (object && exports.isSafeDebuggerObject(object)) {
+    let desc;
+    try {
+      desc = object.getOwnPropertyDescriptor(key);
+    } catch (e) {
+      
+      
+      return false;
+    }
+    if (desc) {
+      if (Object.getOwnPropertyNames(desc).includes("get")) {
+        return !exports.hasSafeGetter(desc);
+      }
+    }
+    object = object.proto;
+  }
+
+  return false;
 };
 
 

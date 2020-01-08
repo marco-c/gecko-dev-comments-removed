@@ -219,7 +219,28 @@ function analyzeInputString(str) {
 
 
 
-function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function JSPropertyProvider(
+  dbgObject,
+  anEnvironment,
+  inputValue,
+  cursor,
+  invokeUnsafeGetter = false
+) {
   if (cursor === undefined) {
     cursor = inputValue.length;
   }
@@ -367,10 +388,25 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
   
   
-  for (let prop of properties) {
+  for (let [index, prop] of properties.entries()) {
     prop = prop.trim();
     if (!prop) {
       return null;
+    }
+
+    if (!invokeUnsafeGetter && DevToolsUtils.isUnsafeGetter(obj, prop)) {
+      
+      
+      if (index !== properties.length - 1) {
+        return null;
+      }
+
+      
+      
+      return {
+        isUnsafeGetter: true,
+        getterName: prop,
+      };
     }
 
     if (hasArrayIndex(prop)) {
@@ -378,7 +414,7 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
       
       obj = getArrayMemberProperty(obj, null, prop);
     } else {
-      obj = DevToolsUtils.getProperty(obj, prop);
+      obj = DevToolsUtils.getProperty(obj, prop, invokeUnsafeGetter);
     }
 
     if (!isObjectUsable(obj)) {
