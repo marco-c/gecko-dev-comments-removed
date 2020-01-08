@@ -223,7 +223,7 @@ impl SharedTextures {
             array_rgba8_linear: TextureArray::new(
                 ImageFormat::BGRA8,
                 TextureFilter::Linear,
-                16 * 4,
+                32, 
             ),
             
             
