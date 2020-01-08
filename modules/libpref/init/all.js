@@ -5868,11 +5868,17 @@ pref("general.document_open_conversion_depth_limit", 20);
 
 pref("dom.event.default_to_passive_touch_listeners", true);
 
-
 pref("browser.fastblock.enabled", false);
 
 
 pref("browser.fastblock.timeout", 5000);
+
+
+#ifdef NIGHTLY_BUILD
+pref("browser.fastblock.limit", 20000);
+#else
+pref("browser.fastblock.limit", 0);
+#endif
 
 
 pref("dom.events.asyncClipboard", true);
