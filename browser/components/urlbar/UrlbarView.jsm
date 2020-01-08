@@ -45,6 +45,12 @@ class UrlbarView {
     this.controller.addQueryListener(this);
   }
 
+  get oneOffSearchButtons() {
+    return this._oneOffSearchButtons ||
+      (this._oneOffSearchButtons =
+         new this.window.SearchOneOffs(this.panel.querySelector(".search-one-offs")));
+  }
+
   
 
 
@@ -65,6 +71,10 @@ class UrlbarView {
 
     
     this._mainContainer.style.maxWidth = (width - 2) + "px";
+
+    
+    
+    this.oneOffSearchButtons;
 
     this.panel.openPopup(this.urlbar.textbox.closest("toolbar"), "after_end", 0, -1);
 
