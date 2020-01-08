@@ -709,7 +709,7 @@ VARCACHE_PREF(
 )
 
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
 # define PREF_VALUE false
 #else
 # define PREF_VALUE true
