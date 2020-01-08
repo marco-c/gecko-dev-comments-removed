@@ -197,6 +197,10 @@ class MenuButton extends PureComponent {
 
   async onClick(e) {
     if (e.target === this.buttonRef) {
+      
+      
+      this.buttonRef.focus();
+
       if (this.props.onClick) {
         this.props.onClick(e);
       }
