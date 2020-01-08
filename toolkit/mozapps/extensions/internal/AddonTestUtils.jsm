@@ -1533,7 +1533,6 @@ var AddonTestUtils = {
 
 
 
-
   async promiseConsoleOutput(task) {
     const DONE = "=== xpcshell test console listener done ===";
 
