@@ -46,6 +46,11 @@ public:
   
 
 
+  nsINode* FocusedDOMNode() const;
+
+  
+
+
   inline bool HasDOMFocus(const nsINode* aNode) const
     { return aNode == FocusedDOMNode(); }
 
@@ -112,11 +117,6 @@ protected:
 private:
   FocusManager(const FocusManager&);
   FocusManager& operator =(const FocusManager&);
-
-  
-
-
-  nsINode* FocusedDOMNode() const;
 
   
 

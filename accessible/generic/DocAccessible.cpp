@@ -921,6 +921,7 @@ DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
 
   if (aAttribute == nsGkAtoms::id) {
     RelocateARIAOwnedIfNeeded(elm);
+    ARIAActiveDescendantIDMaybeMoved(elm);
   }
 
   
@@ -2477,4 +2478,47 @@ DocAccessible::DispatchScrollingEvent(uint32_t aEventType)
                                                  scrollRange.height);
 
   nsEventShell::FireEvent(event);
+}
+
+void
+DocAccessible::ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm)
+{
+  nsINode* focusNode = FocusMgr()->FocusedDOMNode();
+  
+  if (!focusNode || focusNode->OwnerDoc() != mDocumentNode) {
+    return;
+  }
+
+  dom::Element* focusElm = nullptr;
+  if (focusNode == mDocumentNode) {
+    
+    
+    focusElm = Elm();
+    if (!focusElm) {
+      return;
+    }
+  } else {
+    MOZ_ASSERT(focusNode->IsElement());
+    focusElm = focusNode->AsElement();
+  }
+
+  
+  
+  nsAutoString id;
+  aElm->GetAttr(kNameSpaceID_None, nsGkAtoms::id, id);
+  if (!focusElm->AttrValueIs(kNameSpaceID_None,
+      nsGkAtoms::aria_activedescendant, id, eCaseMatters)) {
+    return;
+  }
+
+  
+  Accessible* acc = GetAccessibleEvenIfNotInMapOrContainer(focusNode);
+  if (!acc) {
+    return;
+  }
+  
+  
+  
+  mNotificationController->ScheduleNotification<DocAccessible, Accessible>
+    (this, &DocAccessible::ARIAActiveDescendantChanged, acc);
 }
