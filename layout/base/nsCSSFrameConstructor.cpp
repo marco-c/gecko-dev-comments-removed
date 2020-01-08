@@ -10490,14 +10490,6 @@ void nsCSSFrameConstructor::ConstructBlock(
     
     blockFrame->SetComputedStyleWithoutNotification(aComputedStyle);
     InitAndRestoreFrame(aState, aContent, aParentFrame, blockFrame);
-
-    if (StaticPrefs::layout_css_column_span_enabled()) {
-      if (blockFrame->IsColumnSpan()) {
-        
-        
-        blockFrame->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
-      }
-    }
   }
 
   aState.AddChild(*aNewFrame, aFrameItems, aContent,

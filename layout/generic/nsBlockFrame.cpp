@@ -6719,10 +6719,14 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   
+  
+  
+  
   if (StyleDisplay()->mDisplay == mozilla::StyleDisplay::FlowRoot ||
       (GetParent() && StyleVisibility()->mWritingMode !=
                           GetParent()->StyleVisibility()->mWritingMode) ||
-      StyleDisplay()->IsContainPaint() || StyleDisplay()->IsContainLayout()) {
+      StyleDisplay()->IsContainPaint() || StyleDisplay()->IsContainLayout() ||
+      (StaticPrefs::layout_css_column_span_enabled() && IsColumnSpan())) {
     AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
   }
 
