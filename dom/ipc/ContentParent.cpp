@@ -4719,7 +4719,6 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
                                   nsresult& aResult,
                                   nsCOMPtr<nsITabParent>& aNewTabParent,
                                   bool* aWindowIsNew,
-                                  int32_t& aOpenLocation,
                                   nsIPrincipal* aTriggeringPrincipal,
                                   uint32_t aReferrerPolicy,
                                   bool aLoadURI)
@@ -4776,11 +4775,11 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
     }
   }
 
-  aOpenLocation = nsWindowWatcher::GetWindowOpenLocation(
+  int32_t openLocation = nsWindowWatcher::GetWindowOpenLocation(
     outerWin, aChromeFlags, aCalledFromJS, aPositionSpecified, aSizeSpecified);
 
-  MOZ_ASSERT(aOpenLocation == nsIBrowserDOMWindow::OPEN_NEWTAB ||
-             aOpenLocation == nsIBrowserDOMWindow::OPEN_NEWWINDOW);
+  MOZ_ASSERT(openLocation == nsIBrowserDOMWindow::OPEN_NEWTAB ||
+             openLocation == nsIBrowserDOMWindow::OPEN_NEWWINDOW);
 
   
   OriginAttributes openerOriginAttributes;
@@ -4791,7 +4790,7 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
     openerOriginAttributes.mPrivateBrowsingId = 1;
   }
 
-  if (aOpenLocation == nsIBrowserDOMWindow::OPEN_NEWTAB) {
+  if (openLocation == nsIBrowserDOMWindow::OPEN_NEWTAB) {
     if (NS_WARN_IF(!browserDOMWin)) {
       aResult = NS_ERROR_ABORT;
       return IPC_OK();
@@ -4809,13 +4808,13 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
     nsCOMPtr<nsIFrameLoaderOwner> frameLoaderOwner;
     if (aLoadURI) {
       aResult = browserDOMWin->OpenURIInFrame(aURIToLoad,
-                                              params, aOpenLocation,
+                                              params, openLocation,
                                               nsIBrowserDOMWindow::OPEN_NEW,
                                               aNextTabParentId, aName,
                                               getter_AddRefs(frameLoaderOwner));
     } else {
       aResult = browserDOMWin->CreateContentWindowInFrame(aURIToLoad,
-                                              params, aOpenLocation,
+                                              params, openLocation,
                                               nsIBrowserDOMWindow::OPEN_NEW,
                                               aNextTabParentId, aName,
                                               getter_AddRefs(frameLoaderOwner));
@@ -4834,13 +4833,13 @@ ContentParent::CommonCreateWindow(PBrowserParent* aThisTab,
     } else if (NS_SUCCEEDED(aResult) && !frameLoaderOwner) {
       
       
-      aOpenLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
+      openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
     } else {
       *aWindowIsNew = false;
     }
 
     
-    if (aOpenLocation != nsIBrowserDOMWindow::OPEN_NEWWINDOW) {
+    if (openLocation != nsIBrowserDOMWindow::OPEN_NEWWINDOW) {
       return IPC_OK();
     }
   }
@@ -4942,7 +4941,6 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
   cwi.windowOpened() = true;
   cwi.layersId() = LayersId{0};
   cwi.maxTouchPoints() = 0;
-  cwi.hasSiblings() = false;
 
   
   
@@ -4975,13 +4973,12 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
   const nsCOMPtr<nsIURI> uriToLoad = DeserializeURI(aURIToLoad);
 
   nsCOMPtr<nsITabParent> newRemoteTab;
-  int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   mozilla::ipc::IPCResult ipcResult =
     CommonCreateWindow(aThisTab,  true, aChromeFlags,
                        aCalledFromJS, aPositionSpecified, aSizeSpecified,
                        uriToLoad, aFeatures, aBaseURI, aFullZoom,
                        nextTabParentId, VoidString(), rv,
-                       newRemoteTab, &cwi.windowOpened(), openLocation,
+                       newRemoteTab, &cwi.windowOpened(),
                        aTriggeringPrincipal, aReferrerPolicy,
                         false);
   if (!ipcResult) {
@@ -5012,8 +5009,6 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
     cwi.dimensions() = newTab->GetDimensionInfo();
   }
 
-  cwi.hasSiblings() = (openLocation == nsIBrowserDOMWindow::OPEN_NEWTAB);
-
   return IPC_OK();
 }
 
@@ -5035,16 +5030,14 @@ ContentParent::RecvCreateWindowInDifferentProcess(
   nsCOMPtr<nsITabParent> newRemoteTab;
   bool windowIsNew;
   nsCOMPtr<nsIURI> uriToLoad = DeserializeURI(aURIToLoad);
-  int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   nsresult rv;
   mozilla::ipc::IPCResult ipcResult =
     CommonCreateWindow(aThisTab,  false, aChromeFlags,
                        aCalledFromJS, aPositionSpecified, aSizeSpecified,
                        uriToLoad, aFeatures, aBaseURI, aFullZoom,
                         0, aName, rv,
-                       newRemoteTab, &windowIsNew, openLocation,
-                       aTriggeringPrincipal, aReferrerPolicy,
-                        true);
+                       newRemoteTab, &windowIsNew, aTriggeringPrincipal,
+                       aReferrerPolicy,  true);
   if (!ipcResult) {
     return ipcResult;
   }
@@ -5787,10 +5780,12 @@ ContentParent::RecvBHRThreadHang(const HangDetails& aDetails)
 mozilla::ipc::IPCResult
 ContentParent::RecvFirstPartyStorageAccessGrantedForOrigin(const Principal& aParentPrincipal,
                                                            const nsCString& aTrackingOrigin,
-                                                           const nsCString& aGrantedOrigin)
+                                                           const nsCString& aGrantedOrigin,
+                                                           FirstPartyStorageAccessGrantedForOriginResolver&& aResolver)
 {
   AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(aParentPrincipal,
                                                                                  aTrackingOrigin,
-                                                                                 aGrantedOrigin);
+                                                                                 aGrantedOrigin,
+                                                                                 std::move(aResolver));
   return IPC_OK();
 }

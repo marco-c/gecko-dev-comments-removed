@@ -736,7 +736,6 @@ private:
                      nsresult& aResult,
                      nsCOMPtr<nsITabParent>& aNewTabParent,
                      bool* aWindowIsNew,
-                     int32_t& aOpenLocation,
                      nsIPrincipal* aTriggeringPrincipal,
                      uint32_t aReferrerPolicy,
                      bool aLoadUri);
@@ -1228,7 +1227,8 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvFirstPartyStorageAccessGrantedForOrigin(const Principal& aParentPrincipal,
                                               const nsCString& aTrackingOrigin,
-                                              const nsCString& aGrantedOrigin) override;
+                                              const nsCString& aGrantedOrigin,
+                                              FirstPartyStorageAccessGrantedForOriginResolver&& aResolver) override;
 
   
   

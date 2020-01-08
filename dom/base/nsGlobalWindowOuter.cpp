@@ -4508,24 +4508,23 @@ nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType)
     }
 
     
+    uint32_t itemCount = 0;
     if (XRE_IsContentProcess()) {
       nsCOMPtr<nsIDocShell> docShell = GetDocShell();
       if (docShell) {
         nsCOMPtr<nsITabChild> child = docShell->GetTabChild();
-        bool hasSiblings = true;
-        if (child &&
-            NS_SUCCEEDED(child->GetHasSiblings(&hasSiblings)) &&
-            hasSiblings) {
-          return false;
+        if (child) {
+          child->SendGetTabCount(&itemCount);
         }
       }
     } else {
       nsCOMPtr<nsIDocShellTreeOwner> treeOwner = GetTreeOwner();
-      uint32_t itemCount = 0;
-      if (treeOwner && NS_SUCCEEDED(treeOwner->GetTabCount(&itemCount)) &&
-          itemCount > 1) {
-        return false;
+      if (!treeOwner || NS_FAILED(treeOwner->GetTabCount(&itemCount))) {
+        itemCount = 0;
       }
+    }
+    if (itemCount > 1) {
+      return false;
     }
   }
 
@@ -7149,7 +7148,9 @@ nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI)
     return;
   }
 
-  AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(origin, inner);
+  
+  Unused << AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(origin,
+                                                                     inner);
 }
 
 
