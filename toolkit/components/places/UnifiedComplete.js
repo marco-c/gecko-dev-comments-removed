@@ -831,6 +831,15 @@ Search.prototype = {
       await this._sleep(UrlbarPrefs.get("delay"));
       if (!this.pending)
         return;
+
+      
+      
+      
+      if (this._searchEngineAliasHasEmptyQuery) {
+        this._cleanUpNonCurrentMatches(null, false);
+        this._autocompleteSearch.finishSearch(true);
+        return;
+      }
     }
 
     
@@ -1361,6 +1370,7 @@ Search.prototype = {
     let query = this._trimmedOriginalSearchString.substr(alias.length + 1);
 
     this._addSearchEngineMatch(match, query);
+    this._searchEngineAliasHasEmptyQuery = !query;
     if (!this._keywordSubstitute) {
       this._keywordSubstitute = match.resultDomain;
     }
@@ -1789,6 +1799,7 @@ Search.prototype = {
 
 
 
+
   _cleanUpNonCurrentMatches(type, notify = true) {
     if (this._previousSearchMatchTypes.length == 0 || !this.pending)
       return;
@@ -1799,14 +1810,14 @@ Search.prototype = {
       
       
       while (this._previousSearchMatchTypes.length &&
-             this._previousSearchMatchTypes[0] == type) {
+             (!type || this._previousSearchMatchTypes[0] == type)) {
         this._previousSearchMatchTypes.shift();
         this._result.removeMatchAt(0);
         changed = true;
       }
     } else {
       for (let bucket of this._buckets) {
-        if (bucket.type != type) {
+        if (type && bucket.type != type) {
           index += bucket.count;
           continue;
         }
