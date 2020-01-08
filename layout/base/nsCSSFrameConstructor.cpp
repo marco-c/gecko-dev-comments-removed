@@ -10462,6 +10462,19 @@ void nsCSSFrameConstructor::ConstructBlock(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   nsBlockFrame* blockFrame = do_QueryFrame(*aNewFrame);
   MOZ_ASSERT(blockFrame->IsBlockFrame() || blockFrame->IsDetailsFrame(),
