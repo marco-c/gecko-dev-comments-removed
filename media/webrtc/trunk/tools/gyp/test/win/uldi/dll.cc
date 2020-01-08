@@ -1,6 +1,0 @@
-
-
-
-
-__declspec(dllexport) void SomeFunction() {
-}

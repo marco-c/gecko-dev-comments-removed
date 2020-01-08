@@ -1,7 +1,0 @@
-
-
-
-
-
-import sys
-print >>sys.stderr, "This will go to stderr"
