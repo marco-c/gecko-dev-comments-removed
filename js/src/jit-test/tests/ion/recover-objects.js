@@ -160,7 +160,7 @@ function dynamicSlots(i) {
     
     resumeHere(); bailout();
     assertEq(obj.p0 + obj.p10 + obj.p20 + obj.p30 + obj.p40, 5 * i + 100);
-    assertRecoveredOnBailout(obj, false);
+    assertRecoveredOnBailout(obj, true);
 }
 
 
