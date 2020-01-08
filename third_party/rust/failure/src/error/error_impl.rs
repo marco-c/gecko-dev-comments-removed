@@ -1,5 +1,4 @@
-use core::mem;
-use core::ptr;
+use core::any::TypeId;
 
 use Fail;
 use backtrace::Backtrace;
@@ -39,21 +38,13 @@ impl ErrorImpl {
     }
 
     pub(crate) fn downcast<T: Fail>(self) -> Result<T, ErrorImpl> {
-        let ret: Option<T> = self.failure().downcast_ref().map(|fail| {
-            unsafe {
-                
-                let _ = ptr::read(&self.inner.backtrace as *const Backtrace);
-                
-                ptr::read(fail as *const T)
-            }
-        });
-        match ret {
-            Some(ret) => {
-                
-                mem::forget(self);
-                Ok(ret)
-            }
-            _ => Err(self)
+        if self.failure().__private_get_type_id__() == TypeId::of::<T>() {
+            let ErrorImpl { inner } = self;
+            let casted = unsafe { Box::from_raw(Box::into_raw(inner) as *mut Inner<T>) };
+            let Inner { backtrace:_, failure } = *casted;
+            Ok(failure)
+        } else {
+            Err(self)
         }
     }
 }

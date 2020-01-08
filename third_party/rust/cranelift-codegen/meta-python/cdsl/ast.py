@@ -523,10 +523,14 @@ class ConstantInt(Literal):
 
     def __str__(self):
         
-        """
-        Get the Rust expression form of this constant.
-        """
-        return str(self.value)
+        
+        if self.value >= -(2**63) and self.value < (2**63):
+            return str(self.value)
+        
+        
+        if self.value >= (2**63) and self.value < (2**64):
+            return str(self.value - (2**64))
+        assert False, "immediate value not in signed or unsigned imm64 range"
 
 
 class ConstantBits(Literal):

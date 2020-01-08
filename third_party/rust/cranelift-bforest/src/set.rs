@@ -207,12 +207,8 @@ where
     C: Comparator<K>,
 {
     
-    fn new(
-        container: &'a mut Set<K>,
-        forest: &'a mut SetForest<K>,
-        comp: &'a C,
-    ) -> SetCursor<'a, K, C> {
-        SetCursor {
+    fn new(container: &'a mut Set<K>, forest: &'a mut SetForest<K>, comp: &'a C) -> Self {
+        Self {
             root: &mut container.root,
             pool: &mut forest.nodes,
             comp,
@@ -229,6 +225,7 @@ where
     
     
     
+    #[cfg_attr(feature = "cargo-clippy", allow(should_implement_trait))]
     pub fn next(&mut self) -> Option<K> {
         self.path.next(self.pool).map(|(k, _)| k)
     }
@@ -357,7 +354,7 @@ where
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::super::NodeData;
     use super::*;
     use std::mem;

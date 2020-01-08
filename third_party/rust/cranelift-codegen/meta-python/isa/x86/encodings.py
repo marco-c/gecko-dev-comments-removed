@@ -173,7 +173,8 @@ enc_i32_i64(x86.smulx, r.mulx, 0xf7, rrr=5)
 enc_i32_i64(x86.umulx, r.mulx, 0xf7, rrr=4)
 
 enc_i32_i64(base.copy, r.umr, 0x89)
-enc_both(base.copy.b1, r.umr, 0x89)
+for ty in [types.b1, types.i8, types.i16]:
+    enc_both(base.copy.bind(ty), r.umr, 0x89)
 
 
 
@@ -304,8 +305,9 @@ enc_i32_i64(base.regspill, r.regspill32, 0x89)
 
 
 
-enc_both(base.spill.b1, r.spillSib32, 0x89)
-enc_both(base.regspill.b1, r.regspill32, 0x89)
+for ty in [types.b1, types.i8, types.i16]:
+    enc_both(base.spill.bind(ty), r.spillSib32, 0x89)
+    enc_both(base.regspill.bind(ty), r.regspill32, 0x89)
 
 for recipe in [r.ld, r.ldDisp8, r.ldDisp32]:
     enc_i32_i64_ld_st(base.load, True, recipe, 0x8b)
@@ -320,8 +322,9 @@ enc_i32_i64(base.fill, r.fillSib32, 0x8b)
 enc_i32_i64(base.regfill, r.regfill32, 0x8b)
 
 
-enc_both(base.fill.b1, r.fillSib32, 0x8b)
-enc_both(base.regfill.b1, r.regfill32, 0x8b)
+for ty in [types.b1, types.i8, types.i16]:
+    enc_both(base.fill.bind(ty), r.fillSib32, 0x8b)
+    enc_both(base.regfill.bind(ty), r.regfill32, 0x8b)
 
 
 X86_32.enc(x86.push.i32, *r.pushq(0x50))
@@ -428,18 +431,18 @@ X86_64.enc(base.func_addr.i64, *r.got_fnaddr8.rex(0x8b, w=1),
 
 
 
-X86_32.enc(base.globalsym_addr.i32, *r.gvaddr4(0xb8),
+X86_32.enc(base.symbol_value.i32, *r.gvaddr4(0xb8),
            isap=Not(is_pic))
-X86_64.enc(base.globalsym_addr.i64, *r.gvaddr8.rex(0xb8, w=1),
+X86_64.enc(base.symbol_value.i64, *r.gvaddr8.rex(0xb8, w=1),
            isap=Not(is_pic))
 
 
-X86_64.enc(base.globalsym_addr.i64, *r.pcrel_gvaddr8.rex(0x8d, w=1),
+X86_64.enc(base.symbol_value.i64, *r.pcrel_gvaddr8.rex(0x8d, w=1),
            isap=is_pic,
            instp=IsColocatedData())
 
 
-X86_64.enc(base.globalsym_addr.i64, *r.got_gvaddr8.rex(0x8b, w=1),
+X86_64.enc(base.symbol_value.i64, *r.got_gvaddr8.rex(0x8b, w=1),
            isap=is_pic)
 
 
@@ -510,6 +513,17 @@ enc_both(base.brnz.b1, r.t8jccd_abcd, 0x85)
 
 
 
+X86_64.enc(base.jump_table_entry.i64.any.any, *r.jt_entry.rex(0x63, w=1))
+X86_32.enc(base.jump_table_entry.i32.any.any, *r.jt_entry(0x8b))
+
+X86_64.enc(base.jump_table_base.i64, *r.jt_base.rex(0x8d, w=1))
+X86_32.enc(base.jump_table_base.i32, *r.jt_base(0x8d))
+
+enc_x86_64(base.indirect_jump_table_br.i64, r.indirect_jmp, 0xff, rrr=4)
+X86_32.enc(base.indirect_jump_table_br.i32, *r.indirect_jmp(0xff, rrr=4))
+
+
+
 X86_32.enc(base.trap, *r.trap(0x0f, 0x0b))
 X86_64.enc(base.trap, *r.trap(0x0f, 0x0b))
 
@@ -567,8 +581,11 @@ X86_64.enc(base.bint.i32.b1, *r.urm_noflags_abcd(0x0f, 0xb6))
 
 
 
+X86_32.enc(base.ireduce.i8.i16, r.null, 0)
 X86_32.enc(base.ireduce.i8.i32, r.null, 0)
 X86_32.enc(base.ireduce.i16.i32, r.null, 0)
+
+X86_64.enc(base.ireduce.i8.i16, r.null, 0)
 X86_64.enc(base.ireduce.i8.i32, r.null, 0)
 X86_64.enc(base.ireduce.i16.i32, r.null, 0)
 X86_64.enc(base.ireduce.i8.i64, r.null, 0)

@@ -93,33 +93,33 @@ def LUI():
 
 
 R = EncRecipe(
-        'R', Binary, size=4, ins=(GPR, GPR), outs=GPR,
+        'R', Binary, base_size=4, ins=(GPR, GPR), outs=GPR,
         emit='put_r(bits, in_reg0, in_reg1, out_reg0, sink);')
 
 
 Rshamt = EncRecipe(
-        'Rshamt', BinaryImm, size=4, ins=GPR, outs=GPR,
+        'Rshamt', BinaryImm, base_size=4, ins=GPR, outs=GPR,
         emit='put_rshamt(bits, in_reg0, imm.into(), out_reg0, sink);')
 
 
 Ricmp = EncRecipe(
-        'Ricmp', IntCompare, size=4, ins=(GPR, GPR), outs=GPR,
+        'Ricmp', IntCompare, base_size=4, ins=(GPR, GPR), outs=GPR,
         emit='put_r(bits, in_reg0, in_reg1, out_reg0, sink);')
 
 Ii = EncRecipe(
-        'Ii', BinaryImm, size=4, ins=GPR, outs=GPR,
+        'Ii', BinaryImm, base_size=4, ins=GPR, outs=GPR,
         instp=IsSignedInt(BinaryImm.imm, 12),
         emit='put_i(bits, in_reg0, imm.into(), out_reg0, sink);')
 
 
 Iz = EncRecipe(
-        'Iz', UnaryImm, size=4, ins=(), outs=GPR,
+        'Iz', UnaryImm, base_size=4, ins=(), outs=GPR,
         instp=IsSignedInt(UnaryImm.imm, 12),
         emit='put_i(bits, 0, imm.into(), out_reg0, sink);')
 
 
 Iicmp = EncRecipe(
-        'Iicmp', IntCompareImm, size=4, ins=GPR, outs=GPR,
+        'Iicmp', IntCompareImm, base_size=4, ins=GPR, outs=GPR,
         instp=IsSignedInt(IntCompareImm.imm, 12),
         emit='put_i(bits, in_reg0, imm.into(), out_reg0, sink);')
 
@@ -127,7 +127,7 @@ Iicmp = EncRecipe(
 
 
 Iret = EncRecipe(
-        'Iret', MultiAry, size=4, ins=(), outs=(),
+        'Iret', MultiAry, base_size=4, ins=(), outs=(),
         emit='''
         // Return instructions are always a jalr to %x1.
         // The return address is provided as a special-purpose link argument.
@@ -142,7 +142,7 @@ Iret = EncRecipe(
 
 
 Icall = EncRecipe(
-        'Icall', CallIndirect, size=4, ins=GPR, outs=(),
+        'Icall', CallIndirect, base_size=4, ins=GPR, outs=(),
         emit='''
         // call_indirect instructions are jalr with rd=%x1.
         put_i(
@@ -157,23 +157,23 @@ Icall = EncRecipe(
 
 
 Icopy = EncRecipe(
-        'Icopy', Unary, size=4, ins=GPR, outs=GPR,
+        'Icopy', Unary, base_size=4, ins=GPR, outs=GPR,
         emit='put_i(bits, in_reg0, 0, out_reg0, sink);')
 
 
 Irmov = EncRecipe(
-        'Irmov', RegMove, size=4, ins=GPR, outs=(),
+        'Irmov', RegMove, base_size=4, ins=GPR, outs=(),
         emit='put_i(bits, src, 0, dst, sink);')
 
 
 U = EncRecipe(
-        'U', UnaryImm, size=4, ins=(), outs=GPR,
+        'U', UnaryImm, base_size=4, ins=(), outs=GPR,
         instp=IsSignedInt(UnaryImm.imm, 32, 12),
         emit='put_u(bits, imm.into(), out_reg0, sink);')
 
 
 UJ = EncRecipe(
-        'UJ', Jump, size=4, ins=(), outs=(), branch_range=(0, 21),
+        'UJ', Jump, base_size=4, ins=(), outs=(), branch_range=(0, 21),
         emit='''
         let dest = i64::from(func.offsets[destination]);
         let disp = dest - i64::from(sink.offset());
@@ -181,7 +181,7 @@ UJ = EncRecipe(
         ''')
 
 UJcall = EncRecipe(
-        'UJcall', Call, size=4, ins=(), outs=(),
+        'UJcall', Call, base_size=4, ins=(), outs=(),
         emit='''
         sink.reloc_external(Reloc::RiscvCall,
                             &func.dfg.ext_funcs[func_ref].name,
@@ -192,7 +192,7 @@ UJcall = EncRecipe(
 
 
 SB = EncRecipe(
-        'SB', BranchIcmp, size=4,
+        'SB', BranchIcmp, base_size=4,
         ins=(GPR, GPR), outs=(),
         branch_range=(0, 13),
         emit='''
@@ -203,7 +203,7 @@ SB = EncRecipe(
 
 
 SBzero = EncRecipe(
-        'SBzero', Branch, size=4,
+        'SBzero', Branch, base_size=4,
         ins=(GPR), outs=(),
         branch_range=(0, 13),
         emit='''
@@ -214,12 +214,12 @@ SBzero = EncRecipe(
 
 
 GPsp = EncRecipe(
-        'GPsp', Unary, size=4,
+        'GPsp', Unary, base_size=4,
         ins=GPR, outs=Stack(GPR),
         emit='unimplemented!();')
 
 
 GPfi = EncRecipe(
-        'GPfi', Unary, size=4,
+        'GPfi', Unary, base_size=4,
         ins=Stack(GPR), outs=GPR,
         emit='unimplemented!();')

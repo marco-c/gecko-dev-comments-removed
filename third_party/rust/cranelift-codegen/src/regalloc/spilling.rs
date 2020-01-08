@@ -17,8 +17,8 @@
 
 use cursor::{Cursor, EncCursor};
 use dominator_tree::DominatorTree;
-use ir::{Ebb, Function, Inst, InstBuilder, SigRef, Value, ValueLoc};
-use isa::registers::{RegClassIndex, RegClassMask};
+use ir::{ArgumentLoc, Ebb, Function, Inst, InstBuilder, SigRef, Value, ValueLoc};
+use isa::registers::{RegClass, RegClassIndex, RegClassMask, RegUnit};
 use isa::{ConstraintKind, EncInfo, RecipeConstraints, RegInfo, TargetIsa};
 use regalloc::affinity::Affinity;
 use regalloc::live_value_tracker::{LiveValue, LiveValueTracker};
@@ -29,6 +29,15 @@ use std::fmt;
 use std::vec::Vec;
 use timing;
 use topo_order::TopoOrder;
+
+
+fn toprc_containing_regunit(unit: RegUnit, reginfo: &RegInfo) -> RegClass {
+    let bank = reginfo.bank_containing_regunit(unit).unwrap();
+    reginfo.classes[bank.first_toprc..(bank.first_toprc + bank.num_toprcs)]
+        .iter()
+        .find(|&rc| rc.contains(unit))
+        .expect("reg unit should be in a toprc")
+}
 
 
 pub struct Spilling {
@@ -335,6 +344,34 @@ impl<'a> Context<'a> {
                 self.reg_uses.push(reguse);
             }
         }
+
+        
+        
+        if self.cur.func.dfg[inst].opcode().is_return() {
+            debug_assert_eq!(
+                self.cur.func.dfg.inst_variable_args(inst).len(),
+                self.cur.func.signature.returns.len(),
+                "The non-fixed arguments in a return should follow the function's signature."
+            );
+            for (ret_idx, (ret, &arg)) in
+                self.cur.func.signature.returns.iter().zip(args).enumerate()
+            {
+                let idx = constraints.ins.len() + ret_idx;
+                let unit = match ret.location {
+                    ArgumentLoc::Unassigned => {
+                        panic!("function return signature should be legalized")
+                    }
+                    ArgumentLoc::Reg(unit) => unit,
+                    ArgumentLoc::Stack(_) => continue,
+                };
+                let toprc = toprc_containing_regunit(unit, &self.reginfo);
+                let mut reguse = RegUse::new(arg, idx, toprc.into());
+                reguse.fixed = true;
+
+                debug!("  reguse: {}", reguse);
+                self.reg_uses.push(reguse);
+            }
+        }
     }
 
     
@@ -463,8 +500,7 @@ impl<'a> Context<'a> {
                     }
                 }
                 None
-            })
-            .min_by(|&a, &b| {
+            }).min_by(|&a, &b| {
                 
                 self.domtree.rpo_cmp(
                     self.cur.func.dfg.value_def(a),
