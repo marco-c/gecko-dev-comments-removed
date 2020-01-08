@@ -12663,6 +12663,11 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
     }
   }
 
+  
+  
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+      aTriggeringPrincipal ? aTriggeringPrincipal : aContent->NodePrincipal();
+
   uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
   if (IsElementAnchorOrArea(aContent)) {
     MOZ_ASSERT(aContent->IsHTMLElement());
@@ -12700,7 +12705,8 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
     }
 
     if (targetBlank && StaticPrefs::dom_targetBlankNoOpener_enabled() &&
-        !explicitOpenerSet) {
+        !explicitOpenerSet &&
+        !nsContentUtils::IsSystemPrincipal(triggeringPrincipal)) {
       flags |= INTERNAL_LOAD_FLAGS_NO_OPENER;
     }
 
@@ -12755,11 +12761,6 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
     NS_ParseRequestContentType(utf8Hint, type, dummy);
     CopyUTF8toUTF16(type, typeHint);
   }
-
-  
-  
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal =
-      aTriggeringPrincipal ? aTriggeringPrincipal : aContent->NodePrincipal();
 
   
   
