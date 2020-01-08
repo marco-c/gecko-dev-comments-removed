@@ -1398,6 +1398,10 @@ ProcessHasSignalHandlers()
     return false;
 #endif
 
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying())
+        return false;
+
 #if defined(ANDROID) && defined(MOZ_LINKER)
     
     if (IsSignalHandlingBroken())
