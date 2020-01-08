@@ -547,6 +547,10 @@ MakeSchemaVersion(uint32_t aMajorSchemaVersion,
   return int32_t((aMajorSchemaVersion << 4) + aMinorSchemaVersion);
 }
 
+
+
+
+
 uint32_t
 HashName(const nsAString& aName)
 {
@@ -607,6 +611,8 @@ GetDatabaseFilename(const nsAString& aName,
 {
   MOZ_ASSERT(aDatabaseFilename.IsEmpty());
 
+  
+  
   aDatabaseFilename.AppendInt(HashName(aName));
 
   nsCString escapedName;
