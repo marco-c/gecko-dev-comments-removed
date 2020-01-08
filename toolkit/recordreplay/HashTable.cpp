@@ -87,7 +87,7 @@ class StableHashTableInfo
   
   KeyInfo* FindKeyInfo(HashNumber aOriginalHash, const void* aKey, HashInfo** aHashInfo = nullptr) {
     HashToKeyMap::iterator iter = mHashToKey.find(aOriginalHash);
-    MOZ_ASSERT(iter != mHashToKey.end());
+    MOZ_RELEASE_ASSERT(iter != mHashToKey.end());
 
     HashInfo* hashInfo = iter->second.get();
     for (KeyInfo& keyInfo : hashInfo->mKeys) {
@@ -114,7 +114,7 @@ public:
   }
 
   ~StableHashTableInfo() {
-    MOZ_ASSERT(mHashToKey.empty());
+    MOZ_RELEASE_ASSERT(mHashToKey.empty());
     DeallocateMemory(mCallbackStorage, CallbackStorageCapacity, MemoryKind::Tracked);
   }
 
@@ -175,7 +175,7 @@ public:
 
   HashNumber GetOriginalHashNumber(const void* aKey) {
     KeyToHashMap::iterator iter = mKeyToHash.find(aKey);
-    MOZ_ASSERT(iter != mKeyToHash.end());
+    MOZ_RELEASE_ASSERT(iter != mKeyToHash.end());
     return iter->second;
   }
 
@@ -212,7 +212,7 @@ public:
   }
 
   HashNumber GetLastNewHash(const void* aKey) {
-    MOZ_ASSERT(aKey == mLastKey);
+    MOZ_RELEASE_ASSERT(aKey == mLastKey);
     return mLastNewHash;
   }
 
@@ -302,7 +302,7 @@ WrapPLHashAllocEntry(void* aAllocPrivate, const void* aKey)
     
     
     
-    MOZ_ASSERT(info->IsEmpty());
+    MOZ_RELEASE_ASSERT(info->IsEmpty());
   }
 
   return info->mAllocOps
