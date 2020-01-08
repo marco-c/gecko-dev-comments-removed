@@ -12,6 +12,7 @@ import paymentRequest from "../paymentRequest.js";
 
 
 
+
 export default class PaymentMethodPicker extends RichPicker {
   constructor() {
     super();
@@ -93,7 +94,11 @@ export default class PaymentMethodPicker extends RichPicker {
       return true;
     }
 
-    let acceptedNetworks = paymentRequest.getAcceptedNetworks(state.request);
+    let basicCardMethod = state.request.paymentMethods
+      .find(method => method.supportedMethods == "basic-card");
+    let merchantNetworks = basicCardMethod && basicCardMethod.data &&
+                           basicCardMethod.data.supportedNetworks;
+    let acceptedNetworks = merchantNetworks || PaymentDialogUtils.getCreditCardNetworks();
     let selectedCard = paymentRequest.getBasicCards(state)[selectedOption.value];
     let isSupported = selectedCard["cc-type"] &&
                       acceptedNetworks.includes(selectedCard["cc-type"]);

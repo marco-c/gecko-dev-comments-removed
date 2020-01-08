@@ -154,7 +154,6 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
     this.addressAddLink.textContent = this.dataset.addressAddLinkLabel;
     this.addressEditLink.textContent = this.dataset.addressEditLinkLabel;
     this.acceptedCardsList.label = this.dataset.acceptedCardsLabel;
-    this.acceptedCardsList.hidden = editing;
 
     
     

@@ -103,6 +103,11 @@ let PaymentFrameScript = {
         }, waivedContent);
         return Cu.cloneInto(prefValues, waivedContent);
       },
+
+      isOfficialBranding() {
+        
+        return false;
+      },
     };
     waivedContent.PaymentDialogUtils = Cu.cloneInto(PaymentDialogUtils, waivedContent, {
       cloneFunctions: true,
