@@ -750,30 +750,6 @@ nsSHistory::PrintHistory()
 }
 #endif
 
-
-NS_IMETHODIMP
-nsSHistory::GetMaxLength(int32_t* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = gHistoryMaxSize;
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsSHistory::SetMaxLength(int32_t aMaxSize)
-{
-  if (aMaxSize < 0) {
-    return NS_ERROR_ILLEGAL_VALUE;
-  }
-
-  gHistoryMaxSize = aMaxSize;
-  if (Length() > aMaxSize) {
-    PurgeHistory(Length() - aMaxSize);
-  }
-  return NS_OK;
-}
-
 void
 nsSHistory::WindowIndices(int32_t aIndex, int32_t* aOutStartIndex,
                           int32_t* aOutEndIndex)
