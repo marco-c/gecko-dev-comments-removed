@@ -66,7 +66,6 @@ registerCleanupFunction(async function() {
 async function openNewTabAndConsole(url, clearJstermHistory = true) {
   const toolbox = await openNewTabAndToolbox(url, "webconsole");
   const hud = toolbox.getCurrentPanel().hud;
-  hud.jsterm._lazyVariablesView = false;
 
   if (clearJstermHistory) {
     
@@ -862,4 +861,53 @@ async function resetFilters(hud) {
 
   const store = hud.ui.consoleOutput.getStore();
   store.dispatch(wcActions.filtersClear());
+}
+
+
+
+
+
+
+
+async function openReverseSearch(hud) {
+  info("Open the reverse search UI with a keyboard shortcut");
+  const onReverseSearchUiOpen = waitFor(() => getReverseSearchElement(hud));
+  const isMacOS = AppConstants.platform === "macosx";
+  if (isMacOS) {
+    EventUtils.synthesizeKey("r", {ctrlKey: true});
+  } else {
+    EventUtils.synthesizeKey("VK_F9");
+  }
+
+  const element = await onReverseSearchUiOpen;
+  return element;
+}
+
+function getReverseSearchElement(hud) {
+  const {outputNode} = hud.ui;
+  return outputNode.querySelector(".reverse-search");
+}
+
+function getReverseSearchInfoElement(hud) {
+  const reverseSearchElement = getReverseSearchElement(hud);
+  if (!reverseSearchElement) {
+    return null;
+  }
+
+  return reverseSearchElement.querySelector(".reverse-search-info");
+}
+
+
+
+
+
+
+
+function isReverseSearchInputFocused(hud) {
+  const {outputNode} = hud.ui;
+  const document = outputNode.ownerDocument;
+  const documentIsFocused = document.hasFocus();
+  const reverseSearchInput = outputNode.querySelector(".reverse-search-input");
+
+  return document.activeElement == reverseSearchInput && documentIsFocused;
 }
