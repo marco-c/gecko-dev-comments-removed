@@ -364,15 +364,19 @@ public class GeckoSession implements Parcelable {
                     close();
                     delegate.onCrash(GeckoSession.this);
                 } else if ("GeckoView:ContextMenu".equals(event)) {
-                    final int type = getContentElementType(
-                        message.getString("elementType"));
+                    final ContentDelegate.ContextElement elem =
+                        new ContentDelegate.ContextElement(
+                            message.getString("uri"),
+                            message.getString("title"),
+                            message.getString("alt"),
+                            message.getString("elementType"),
+                            message.getString("elementSrc"));
 
                     delegate.onContextMenu(GeckoSession.this,
                                            message.getInt("screenX"),
                                            message.getInt("screenY"),
-                                           message.getString("uri"),
-                                           type,
-                                           message.getString("elementSrc"));
+                                           elem);
+
                 } else if ("GeckoView:DOMTitleChanged".equals(event)) {
                     delegate.onTitleChange(GeckoSession.this,
                                            message.getString("title"));
@@ -2498,17 +2502,6 @@ public class GeckoSession implements Parcelable {
         void onSecurityChange(GeckoSession session, SecurityInformation securityInfo);
     }
 
-    private static int getContentElementType(final String name) {
-        if ("HTMLImageElement".equals(name)) {
-            return ContentDelegate.ELEMENT_TYPE_IMAGE;
-        } else if ("HTMLVideoElement".equals(name)) {
-            return ContentDelegate.ELEMENT_TYPE_VIDEO;
-        } else if ("HTMLAudioElement".equals(name)) {
-            return ContentDelegate.ELEMENT_TYPE_AUDIO;
-        }
-        return ContentDelegate.ELEMENT_TYPE_NONE;
-    }
-
     
 
 
@@ -2557,14 +2550,6 @@ public class GeckoSession implements Parcelable {
     }
 
     public interface ContentDelegate {
-        @IntDef({ELEMENT_TYPE_NONE, ELEMENT_TYPE_IMAGE, ELEMENT_TYPE_VIDEO,
-                 ELEMENT_TYPE_AUDIO})
-         @interface ElementType {}
-        static final int ELEMENT_TYPE_NONE = 0;
-        static final int ELEMENT_TYPE_IMAGE = 1;
-        static final int ELEMENT_TYPE_VIDEO = 2;
-        static final int ELEMENT_TYPE_AUDIO = 3;
-
         
 
 
@@ -2596,6 +2581,69 @@ public class GeckoSession implements Parcelable {
 
         void onFullScreen(GeckoSession session, boolean fullScreen);
 
+        
+
+
+        public static final class ContextElement {
+            @IntDef({TYPE_NONE, TYPE_IMAGE, TYPE_VIDEO, TYPE_AUDIO})
+             @interface Type {}
+            static final int TYPE_NONE = 0;
+            static final int TYPE_IMAGE = 1;
+            static final int TYPE_VIDEO = 2;
+            static final int TYPE_AUDIO = 3;
+
+
+            
+
+
+            public final @Nullable String linkUri;
+
+            
+
+
+            public final @Nullable String title;
+
+            
+
+
+            public final @Nullable String altText;
+
+            
+
+
+
+            public final @Type int type;
+
+            
+
+
+
+            public final @Nullable String srcUri;
+
+            protected ContextElement(
+                    final @Nullable String linkUri,
+                    final @Nullable String title,
+                    final @Nullable String altText,
+                    final @NonNull String typeStr,
+                    final @Nullable String srcUri) {
+                this.linkUri = linkUri;
+                this.title = title;
+                this.altText = altText;
+                this.type = getType(typeStr);
+                this.srcUri = srcUri;
+            }
+
+            private static int getType(final String name) {
+                if ("HTMLImageElement".equals(name)) {
+                    return TYPE_IMAGE;
+                } else if ("HTMLVideoElement".equals(name)) {
+                    return TYPE_VIDEO;
+                } else if ("HTMLAudioElement".equals(name)) {
+                    return TYPE_AUDIO;
+                }
+                return TYPE_NONE;
+            }
+        }
 
         
 
@@ -2607,14 +2655,9 @@ public class GeckoSession implements Parcelable {
 
 
 
-
-
-
-
-
-        void onContextMenu(GeckoSession session, int screenX, int screenY,
-                           String uri, @ElementType int elementType,
-                           String elementSrc);
+        void onContextMenu(@NonNull GeckoSession session,
+                           int screenX, int screenY,
+                           @NonNull ContextElement element);
 
         
 
