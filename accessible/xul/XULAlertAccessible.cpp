@@ -59,8 +59,5 @@ XULAlertAccessible::IsWidget() const
 Accessible*
 XULAlertAccessible::ContainerWidget() const
 {
-  
-  if (mParent && mParent->IsMenuButton())
-    return mParent;
   return nullptr;
 }
