@@ -67,6 +67,11 @@ function* testSteps()
 
   storages[0].clear();
 
+  
+  
+  continueToNextStep();
+  yield undefined;
+
   info("Verifying more data can be written");
 
   for (let i = 0; i < urls.length; i++) {
