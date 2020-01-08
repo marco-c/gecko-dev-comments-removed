@@ -225,31 +225,28 @@ public:
   }
 };
 
-class NotificationPermissionRequest : public ContentPermissionRequestBase,
+class NotificationPermissionRequest : public nsIContentPermissionRequest,
                                       public nsIRunnable,
                                       public nsINamed
 {
 public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_NSICONTENTPERMISSIONREQUEST
   NS_DECL_NSIRUNNABLE
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(NotificationPermissionRequest,
-                                           ContentPermissionRequestBase)
-
-  
-  NS_IMETHOD Cancel(void) override;
-  NS_IMETHOD Allow(JS::HandleValue choices) override;
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(NotificationPermissionRequest,
+                                           nsIContentPermissionRequest)
 
   NotificationPermissionRequest(nsIPrincipal* aPrincipal, bool aIsHandlingUserInput,
                                 nsPIDOMWindowInner* aWindow, Promise* aPromise,
                                 NotificationPermissionCallback* aCallback)
-    : ContentPermissionRequestBase(aPrincipal, aIsHandlingUserInput,
-                                   aWindow, NS_LITERAL_CSTRING("notification"),
-                                   NS_LITERAL_CSTRING("desktop-notification")),
+    : mPrincipal(aPrincipal), mWindow(aWindow),
       mPermission(NotificationPermission::Default),
       mPromise(aPromise),
-      mCallback(aCallback)
+      mCallback(aCallback),
+      mIsHandlingUserInput(aIsHandlingUserInput)
   {
     MOZ_ASSERT(aPromise);
+    mRequester = new nsContentPermissionRequester(mWindow);
   }
 
   NS_IMETHOD GetName(nsACString& aName) override
@@ -259,13 +256,17 @@ public:
   }
 
 protected:
-  ~NotificationPermissionRequest() = default;
+  virtual ~NotificationPermissionRequest() {}
 
   nsresult ResolvePromise();
   nsresult DispatchResolvePromise();
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
   NotificationPermission mPermission;
   RefPtr<Promise> mPromise;
   RefPtr<NotificationPermissionCallback> mCallback;
+  nsCOMPtr<nsIContentPermissionRequester> mRequester;
+  bool mIsHandlingUserInput;
 };
 
 namespace {
@@ -537,17 +538,18 @@ protected:
 
 uint32_t Notification::sCount = 0;
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(NotificationPermissionRequest,
-                                   ContentPermissionRequestBase,
-                                   mCallback)
-NS_IMPL_ADDREF_INHERITED(NotificationPermissionRequest,
-                         ContentPermissionRequestBase)
-NS_IMPL_RELEASE_INHERITED(NotificationPermissionRequest,
-                          ContentPermissionRequestBase)
+NS_IMPL_CYCLE_COLLECTION(NotificationPermissionRequest, mWindow, mPromise,
+                                                        mCallback)
 
-NS_IMPL_QUERY_INTERFACE_CYCLE_COLLECTION_INHERITED(NotificationPermissionRequest,
-                                                   ContentPermissionRequestBase,
-                                                   nsIRunnable, nsINamed)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NotificationPermissionRequest)
+  NS_INTERFACE_MAP_ENTRY(nsIContentPermissionRequest)
+  NS_INTERFACE_MAP_ENTRY(nsIRunnable)
+  NS_INTERFACE_MAP_ENTRY(nsINamed)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIContentPermissionRequest)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(NotificationPermissionRequest)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(NotificationPermissionRequest)
 
 NS_IMETHODIMP
 NotificationPermissionRequest::Run()
@@ -569,20 +571,12 @@ NotificationPermissionRequest::Run()
   }
 
   
-  
-  
-  
-  PromptResult pr = CheckPromptPrefs();
-  switch (pr) {
-  case PromptResult::Granted:
-    mPermission = NotificationPermission::Granted;
-    break;
-  case PromptResult::Denied:
-    mPermission = NotificationPermission::Denied;
-    break;
-  default:
-    
-    break;
+  if (Preferences::GetBool("notification.prompt.testing", false)) {
+    if (Preferences::GetBool("notification.prompt.testing.allow", true)) {
+      mPermission = NotificationPermission::Granted;
+    } else {
+      mPermission = NotificationPermission::Denied;
+    }
   }
 
   if (mPermission != NotificationPermission::Default) {
@@ -590,6 +584,35 @@ NotificationPermissionRequest::Run()
   }
 
   return nsContentPermissionUtils::AskPermission(this, mWindow);
+}
+
+NS_IMETHODIMP
+NotificationPermissionRequest::GetPrincipal(nsIPrincipal** aRequestingPrincipal)
+{
+  NS_ADDREF(*aRequestingPrincipal = mPrincipal);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NotificationPermissionRequest::GetWindow(mozIDOMWindow** aRequestingWindow)
+{
+  NS_ADDREF(*aRequestingWindow = mWindow);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NotificationPermissionRequest::GetElement(Element** aElement)
+{
+  NS_ENSURE_ARG_POINTER(aElement);
+  *aElement = nullptr;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NotificationPermissionRequest::GetIsHandlingUserInput(bool* aIsHandlingUserInput)
+{
+  *aIsHandlingUserInput = mIsHandlingUserInput;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -610,6 +633,16 @@ NotificationPermissionRequest::Allow(JS::HandleValue aChoices)
 
   mPermission = NotificationPermission::Granted;
   return DispatchResolvePromise();
+}
+
+NS_IMETHODIMP
+NotificationPermissionRequest::GetRequester(nsIContentPermissionRequester** aRequester)
+{
+  NS_ENSURE_ARG_POINTER(aRequester);
+
+  nsCOMPtr<nsIContentPermissionRequester> requester = mRequester;
+  requester.forget(aRequester);
+  return NS_OK;
 }
 
 inline nsresult
@@ -640,6 +673,15 @@ NotificationPermissionRequest::ResolvePromise()
   }
   mPromise->MaybeResolve(mPermission);
   return rv;
+}
+
+NS_IMETHODIMP
+NotificationPermissionRequest::GetTypes(nsIArray** aTypes)
+{
+  nsTArray<nsString> emptyOptions;
+  return nsContentPermissionUtils::CreatePermissionArray(NS_LITERAL_CSTRING("desktop-notification"),
+                                                         emptyOptions,
+                                                         aTypes);
 }
 
 NS_IMPL_ISUPPORTS(NotificationTelemetryService, nsIObserver)
@@ -1233,37 +1275,6 @@ private:
 };
 
 NS_IMPL_ISUPPORTS(ServiceWorkerNotificationObserver, nsIObserver)
-
-
-bool
-Notification::DispatchNotificationClickEvent()
-{
-  MOZ_ASSERT(mWorkerPrivate);
-  MOZ_ASSERT(mWorkerPrivate->IsServiceWorker());
-  mWorkerPrivate->AssertIsOnWorkerThread();
-
-  NotificationEventInit options;
-  options.mNotification = this;
-
-  ErrorResult result;
-  RefPtr<EventTarget> target = mWorkerPrivate->GlobalScope();
-  RefPtr<NotificationEvent> event =
-    NotificationEvent::Constructor(target,
-                                   NS_LITERAL_STRING("notificationclick"),
-                                   options,
-                                   result);
-  if (NS_WARN_IF(result.Failed())) {
-    return false;
-  }
-
-  event->SetTrusted(true);
-  WantsPopupControlCheck popupControlCheck(event);
-  target->DispatchEvent(*event);
-  
-  
-  
-  return false;
-}
 
 bool
 Notification::DispatchClickEvent()
