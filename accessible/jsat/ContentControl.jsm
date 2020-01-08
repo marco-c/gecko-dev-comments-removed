@@ -220,7 +220,8 @@ this.ContentControl.prototype = {
       }
 
       
-      if (!Utils.getState(aAccessible).contains(States.CHECKABLE)) {
+      if (!Utils.getState(aAccessible).contains(States.CHECKABLE) &&
+          !Utils.getState(aAccessible).contains(States.SELECTABLE)) {
         this._contentScope.get().sendAsyncMessage("AccessFu:Present",
           Presentation.actionInvoked(aAccessible, "click"));
       }
