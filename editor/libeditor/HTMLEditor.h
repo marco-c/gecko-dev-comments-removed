@@ -183,6 +183,12 @@ public:
   
 
 
+  nsresult IndentAsAction();
+  nsresult OutdentAsAction();
+
+  
+
+
 
 
 
@@ -839,6 +845,16 @@ protected:
 
 
   nsresult InsertTextWithQuotationsInternal(const nsAString& aStringToInsert);
+
+  
+
+
+
+
+
+
+
+  nsresult IndentOrOutdentAsSubAction(EditSubAction aEditSubAction);
 
   nsresult LoadHTML(const nsAString& aInputString);
 
