@@ -1123,7 +1123,7 @@ static bool WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput) {
   return APZInputBridge::ActionForWheelEvent(&wheelEvent).isSome();
 }
 
-void APZCTreeManager::FlushApzRepaints(LayersId aLayersId) {
+ void APZCTreeManager::FlushApzRepaints(LayersId aLayersId) {
   
   
   

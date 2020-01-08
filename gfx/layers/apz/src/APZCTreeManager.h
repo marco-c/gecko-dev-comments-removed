@@ -227,13 +227,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void FlushApzRepaints(LayersId aLayersId);
-
-  
-
-
-
-
 
 
 
@@ -535,6 +528,12 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       AsyncPanZoomController* aApzc, const FrameMetrics& aMetrics,
       const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant,
       AsyncTransformComponentMatrix* aOutClipTransform);
+
+  
+
+
+
+  static void FlushApzRepaints(LayersId aLayersId);
 
   
   void AssertOnSamplerThread();
