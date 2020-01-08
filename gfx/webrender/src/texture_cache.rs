@@ -27,7 +27,7 @@ const TEXTURE_REGION_DIMENSIONS: u32 = 512;
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-enum EntryKind {
+enum EntryDetails {
     Standalone,
     Cache {
         
@@ -37,11 +37,21 @@ enum EntryKind {
     },
 }
 
-impl EntryKind {
+impl EntryDetails {
     
-    fn is_standalone(&self) -> bool {
-        matches!(*self, EntryKind::Standalone)
+    fn kind(&self) -> EntryKind {
+        match *self {
+            EntryDetails::Standalone => EntryKind::Standalone,
+            EntryDetails::Cache { .. } => EntryKind::Shared,
+        }
     }
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum EntryKind {
+    Standalone,
+    Shared,
 }
 
 #[derive(Debug)]
@@ -57,7 +67,7 @@ struct CacheEntry {
     
     size: DeviceUintSize,
     
-    kind: EntryKind,
+    details: EntryDetails,
     
     user_data: [f32; 3],
     
@@ -81,24 +91,20 @@ impl CacheEntry {
     
     fn new_standalone(
         texture_id: CacheTextureId,
-        size: DeviceUintSize,
-        format: ImageFormat,
-        filter: TextureFilter,
-        user_data: [f32; 3],
         last_access: FrameId,
-        uv_rect_kind: UvRectKind,
+        params: &CacheAllocParams,
     ) -> Self {
         CacheEntry {
-            size,
-            user_data,
+            size: params.descriptor.size,
+            user_data: params.user_data,
             last_access,
-            kind: EntryKind::Standalone,
+            details: EntryDetails::Standalone,
             texture_id,
-            format,
-            filter,
+            format: params.descriptor.format,
+            filter: params.filter,
             uv_rect_handle: GpuCacheHandle::new(),
             eviction_notice: None,
-            uv_rect_kind,
+            uv_rect_kind: params.uv_rect_kind,
             eviction: Eviction::Auto,
         }
     }
@@ -109,9 +115,9 @@ impl CacheEntry {
     
     fn update_gpu_cache(&mut self, gpu_cache: &mut GpuCache) {
         if let Some(mut request) = gpu_cache.request(&mut self.uv_rect_handle) {
-            let (origin, layer_index) = match self.kind {
-                EntryKind::Standalone { .. } => (DeviceUintPoint::zero(), 0.0),
-                EntryKind::Cache {
+            let (origin, layer_index) = match self.details {
+                EntryDetails::Standalone { .. } => (DeviceUintPoint::zero(), 0.0),
+                EntryDetails::Cache {
                     origin,
                     layer_index,
                     ..
@@ -210,32 +216,24 @@ impl SharedTextures {
             array_a8_linear: TextureArray::new(
                 ImageFormat::R8,
                 TextureFilter::Linear,
-                4,
             ),
             
             
             array_a16_linear: TextureArray::new(
                 ImageFormat::R16,
                 TextureFilter::Linear,
-                4,
             ),
             
             array_rgba8_linear: TextureArray::new(
                 ImageFormat::BGRA8,
                 TextureFilter::Linear,
-                32, 
             ),
-            
-            
-            
-            
             
             
             
             array_rgba8_nearest: TextureArray::new(
                 ImageFormat::BGRA8,
                 TextureFilter::Nearest,
-                4,
             ),
         }
     }
@@ -258,6 +256,38 @@ impl SharedTextures {
             (_, _) => unreachable!(),
         }
     }
+}
+
+
+
+
+#[derive(Default)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+struct EntryHandles {
+    
+    standalone: Vec<FreeListHandle<CacheEntryMarker>>,
+    
+    shared: Vec<FreeListHandle<CacheEntryMarker>>,
+}
+
+impl EntryHandles {
+    
+    fn select(&mut self, kind: EntryKind) -> &mut Vec<FreeListHandle<CacheEntryMarker>> {
+        if kind == EntryKind::Standalone {
+            &mut self.standalone
+        } else {
+            &mut self.shared
+        }
+    }
+}
+
+
+struct CacheAllocParams {
+    descriptor: ImageDescriptor,
+    filter: TextureFilter,
+    user_data: [f32; 3],
+    uv_rect_kind: UvRectKind,
 }
 
 
@@ -287,9 +317,11 @@ pub struct TextureCache {
     max_texture_size: u32,
 
     
-    next_id: CacheTextureId,
+    max_texture_layers: usize,
 
     
+    next_id: CacheTextureId,
+
     
     
     #[cfg_attr(all(feature = "serde", any(feature = "capture", feature = "replay")), serde(skip))]
@@ -299,37 +331,58 @@ pub struct TextureCache {
     frame_id: FrameId,
 
     
+    last_shared_cache_expiration: FrameId,
+
     
     entries: FreeList<CacheEntry, CacheEntryMarker>,
 
     
-    
-    
-    standalone_entry_handles: Vec<FreeListHandle<CacheEntryMarker>>,
-
-    
-    
-    
-    shared_entry_handles: Vec<FreeListHandle<CacheEntryMarker>>,
+    handles: EntryHandles,
 }
 
 impl TextureCache {
-    pub fn new(max_texture_size: u32) -> Self {
+    pub fn new(max_texture_size: u32, mut max_texture_layers: usize) -> Self {
+        if cfg!(target_os = "macos") {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            max_texture_layers = max_texture_layers.min(32);
+        }
         TextureCache {
             shared_textures: SharedTextures::new(),
             max_texture_size,
+            max_texture_layers,
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
             frame_id: FrameId::invalid(),
+            last_shared_cache_expiration: FrameId::invalid(),
             entries: FreeList::new(),
-            standalone_entry_handles: Vec::new(),
-            shared_entry_handles: Vec::new(),
+            handles: EntryHandles::default(),
         }
     }
 
     pub fn clear(&mut self) {
         let standalone_entry_handles = mem::replace(
-            &mut self.standalone_entry_handles,
+            &mut self.handles.standalone,
             Vec::new(),
         );
 
@@ -340,7 +393,7 @@ impl TextureCache {
         }
 
         let shared_entry_handles = mem::replace(
-            &mut self.shared_entry_handles,
+            &mut self.handles.shared,
             Vec::new(),
         );
 
@@ -404,6 +457,11 @@ impl TextureCache {
         self.max_texture_size
     }
 
+    #[allow(dead_code)]
+    pub fn max_texture_layers(&self) -> usize {
+        self.max_texture_layers
+    }
+
     pub fn pending_updates(&mut self) -> TextureUpdateList {
         mem::replace(&mut self.pending_updates, TextureUpdateList::new())
     }
@@ -439,13 +497,8 @@ impl TextureCache {
         };
 
         if realloc {
-            self.allocate(
-                handle,
-                descriptor,
-                filter,
-                user_data,
-                uv_rect_kind,
-            );
+            let params = CacheAllocParams { descriptor, filter, user_data, uv_rect_kind };
+            self.allocate(&params, handle);
 
             
             dirty_rect = None;
@@ -471,9 +524,9 @@ impl TextureCache {
         
         
         if let Some(data) = data {
-            let (layer_index, origin) = match entry.kind {
-                EntryKind::Standalone { .. } => (0, DeviceUintPoint::zero()),
-                EntryKind::Cache {
+            let (layer_index, origin) = match entry.details {
+                EntryDetails::Standalone { .. } => (0, DeviceUintPoint::zero()),
+                EntryDetails::Cache {
                     layer_index,
                     origin,
                     ..
@@ -519,11 +572,11 @@ impl TextureCache {
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
         debug_assert_eq!(entry.last_access, self.frame_id);
-        let (layer_index, origin) = match entry.kind {
-            EntryKind::Standalone { .. } => {
+        let (layer_index, origin) = match entry.details {
+            EntryDetails::Standalone { .. } => {
                 (0, DeviceUintPoint::zero())
             }
-            EntryKind::Cache {
+            EntryDetails::Cache {
                 layer_index,
                 origin,
                 ..
@@ -549,11 +602,11 @@ impl TextureCache {
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
         debug_assert_eq!(entry.last_access, self.frame_id);
-        let (layer_index, origin) = match entry.kind {
-            EntryKind::Standalone { .. } => {
+        let (layer_index, origin) = match entry.details {
+            EntryDetails::Standalone { .. } => {
                 (0, DeviceUintPoint::zero())
             }
-            EntryKind::Cache {
+            EntryDetails::Cache {
                 layer_index,
                 origin,
                 ..
@@ -574,20 +627,25 @@ impl TextureCache {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn expire_old_standalone_entries(&mut self) {
+        self.expire_old_entries(EntryKind::Standalone);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn expire_old_entries(&mut self, kind: EntryKind) {
         
         
         
@@ -614,9 +672,9 @@ impl TextureCache {
         
         
         
-        for i in (0..self.standalone_entry_handles.len()).rev() {
+        for i in (0..self.handles.select(kind).len()).rev() {
             let evict = {
-                let entry = self.entries.get(&self.standalone_entry_handles[i]);
+                let entry = self.entries.get(&self.handles.select(kind)[i]);
                 match entry.eviction {
                     Eviction::Manual => false,
                     Eviction::Auto => entry.last_access < frame_id_threshold,
@@ -624,7 +682,7 @@ impl TextureCache {
                 }
             };
             if evict {
-                let handle = self.standalone_entry_handles.swap_remove(i);
+                let handle = self.handles.select(kind).swap_remove(i);
                 let entry = self.entries.free(handle);
                 entry.evict();
                 self.free(entry);
@@ -635,71 +693,23 @@ impl TextureCache {
     
     
     
-    
-    fn expire_old_shared_entries(&mut self, required_alloc: &ImageDescriptor) {
-        let mut eviction_candidates = Vec::new();
-        let mut retained_entries = Vec::new();
-
-        
-        
-        for handle in self.shared_entry_handles.drain(..) {
-            let entry = self.entries.get(&handle);
-            if entry.eviction == Eviction::Manual || entry.last_access == self.frame_id {
-                retained_entries.push(handle);
-            } else {
-                eviction_candidates.push(handle);
-            }
+    fn maybe_expire_old_shared_entries(&mut self) -> bool {
+        let old_len = self.handles.shared.len();
+        if self.last_shared_cache_expiration + 25 < self.frame_id {
+            self.expire_old_entries(EntryKind::Shared);
+            self.last_shared_cache_expiration = self.frame_id;
         }
-
-        
-        eviction_candidates.sort_by_key(|handle| {
-            let entry = self.entries.get(handle);
-            entry.last_access
-        });
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let needed_slab_size = SlabSize::new(required_alloc.size);
-        let mut found_matching_slab = false;
-        let mut freed_complete_page = false;
-        let mut evicted_items = 0;
-
-        for handle in eviction_candidates {
-            if evicted_items > 512 && (found_matching_slab || freed_complete_page) {
-                retained_entries.push(handle);
-            } else {
-                let entry = self.entries.free(handle);
-                entry.evict();
-                if let Some(region) = self.free(entry) {
-                    found_matching_slab |= region.slab_size == needed_slab_size;
-                    freed_complete_page |= region.is_empty();
-                }
-                evicted_items += 1;
-            }
-        }
-
-        
-        self.shared_entry_handles = retained_entries;
+        self.handles.shared.len() != old_len
     }
 
     
-    fn free(&mut self, entry: CacheEntry) -> Option<&TextureRegion> {
-        match entry.kind {
-            EntryKind::Standalone { .. } => {
+    fn free(&mut self, entry: CacheEntry) {
+        match entry.details {
+            EntryDetails::Standalone { .. } => {
                 
                 self.pending_updates.push_free(entry.texture_id);
-                None
             }
-            EntryKind::Cache {
+            EntryDetails::Cache {
                 origin,
                 layer_index,
             } => {
@@ -710,7 +720,6 @@ impl TextureCache {
                     layer_index,
                 );
                 region.free(origin);
-                Some(region)
             }
         }
     }
@@ -718,13 +727,13 @@ impl TextureCache {
     
     fn allocate_from_shared_cache(
         &mut self,
-        descriptor: &ImageDescriptor,
-        filter: TextureFilter,
-        user_data: [f32; 3],
-        uv_rect_kind: UvRectKind,
+        params: &CacheAllocParams
     ) -> Option<CacheEntry> {
         
-        let texture_array = self.shared_textures.select(descriptor.format, filter);
+        let texture_array = self.shared_textures.select(
+            params.descriptor.format,
+            params.filter,
+        );
 
         
         if texture_array.texture_id.is_none() {
@@ -735,7 +744,7 @@ impl TextureCache {
             let info = TextureCacheAllocInfo {
                 width: TEXTURE_REGION_DIMENSIONS,
                 height: TEXTURE_REGION_DIMENSIONS,
-                format: descriptor.format,
+                format: params.descriptor.format,
                 filter: texture_array.filter,
                 layer_count: 1,
             };
@@ -747,12 +756,7 @@ impl TextureCache {
 
         
         
-        texture_array.alloc(
-            descriptor.size,
-            user_data,
-            self.frame_id,
-            uv_rect_kind,
-        )
+        texture_array.alloc(params, self.frame_id)
     }
 
     
@@ -785,107 +789,96 @@ impl TextureCache {
     }
 
     
-    
-    
-    fn allocate(
+    fn allocate_standalone_entry(
         &mut self,
-        handle: &mut TextureCacheHandle,
-        descriptor: ImageDescriptor,
-        filter: TextureFilter,
-        user_data: [f32; 3],
-        uv_rect_kind: UvRectKind,
-    ) {
-        assert!(descriptor.size.width > 0 && descriptor.size.height > 0);
+        params: &CacheAllocParams,
+    ) -> CacheEntry {
+        let texture_id = self.next_id;
+        self.next_id.0 += 1;
 
         
-        let allowed_in_shared_cache = self.is_allowed_in_shared_cache(
-            filter,
-            &descriptor,
+        let info = TextureCacheAllocInfo {
+            width: params.descriptor.size.width,
+            height: params.descriptor.size.height,
+            format: params.descriptor.format,
+            filter: params.filter,
+            layer_count: 1,
+        };
+        self.pending_updates.push_alloc(texture_id, info);
+
+        return CacheEntry::new_standalone(
+            texture_id,
+            self.frame_id,
+            params,
         );
-        let mut allocated_standalone = false;
-        let mut new_cache_entry = None;
-        let frame_id = self.frame_id;
+    }
+
+    
+    
+    
+    
+    
+    fn allocate_cache_entry(
+        &mut self,
+        params: &CacheAllocParams,
+    ) -> CacheEntry {
+        assert!(params.descriptor.size.width > 0 && params.descriptor.size.height > 0);
 
         
-        if allowed_in_shared_cache {
+        
+        if !self.is_allowed_in_shared_cache(params.filter, &params.descriptor) {
+            return self.allocate_standalone_entry(params);
+        }
 
-            new_cache_entry = self.allocate_from_shared_cache(
-                &descriptor,
-                filter,
-                user_data,
-                uv_rect_kind,
-            );
 
-            
-            
-            
-            
-            
-            
-            if new_cache_entry.is_none() {
-                let reallocated = {
-                    let texture_array = self.shared_textures.select(descriptor.format, filter);
-                    let num_regions = texture_array.regions.len();
-                    if num_regions < texture_array.max_layer_count {
-                        
-                        let info = TextureCacheAllocInfo {
-                            width: TEXTURE_REGION_DIMENSIONS,
-                            height: TEXTURE_REGION_DIMENSIONS,
-                            format: descriptor.format,
-                            filter: texture_array.filter,
-                            layer_count: (num_regions + 1) as i32,
-                        };
-                        self.pending_updates.push_realloc(texture_array.texture_id.unwrap(), info);
-                        texture_array.regions.push(TextureRegion::new(num_regions));
-                        true
-                    } else {
-                        false
-                    }
-                };
-                if !reallocated {
-                    
-                    self.expire_old_shared_entries(&descriptor);
-                }
+        
+        if let Some(entry) = self.allocate_from_shared_cache(params) {
+            return entry;
+        }
 
-                new_cache_entry = self.allocate_from_shared_cache(
-                    &descriptor,
-                    filter,
-                    user_data,
-                    uv_rect_kind,
-                );
+        
+        
+        if self.maybe_expire_old_shared_entries() {
+            if let Some(entry) = self.allocate_from_shared_cache(params) {
+                return entry;
             }
         }
 
-        
-        
-        
-        if new_cache_entry.is_none() {
-            let texture_id = self.next_id;
-            self.next_id.0 += 1;
-
+        let added_layer = {
             
-            let info = TextureCacheAllocInfo {
-                width: descriptor.size.width,
-                height: descriptor.size.height,
-                format: descriptor.format,
-                filter,
-                layer_count: 1,
-            };
-            self.pending_updates.push_alloc(texture_id, info);
+            let texture_array =
+                self.shared_textures.select(params.descriptor.format, params.filter);
+            let num_regions = texture_array.regions.len();
+            
+            if num_regions < self.max_texture_layers as usize {
+                let info = TextureCacheAllocInfo {
+                    width: TEXTURE_REGION_DIMENSIONS,
+                    height: TEXTURE_REGION_DIMENSIONS,
+                    format: params.descriptor.format,
+                    filter: texture_array.filter,
+                    layer_count: (num_regions + 1) as i32,
+                };
+                self.pending_updates.push_realloc(texture_array.texture_id.unwrap(), info);
+                texture_array.regions.push(TextureRegion::new(num_regions));
+                true
+            } else {
+                false
+            }
+        };
 
-            new_cache_entry = Some(CacheEntry::new_standalone(
-                texture_id,
-                descriptor.size,
-                descriptor.format,
-                filter,
-                user_data,
-                frame_id,
-                uv_rect_kind,
-            ));
-
-            allocated_standalone = true;
+        if added_layer {
+            self.allocate_from_shared_cache(params)
+                .expect("Allocation should succeed after adding a fresh layer")
+        } else {
+            self.allocate_standalone_entry(params)
         }
-        let new_cache_entry = new_cache_entry.expect("BUG: must have allocated by now");
+    }
+
+    
+    
+    fn allocate(&mut self, params: &CacheAllocParams, handle: &mut TextureCacheHandle) {
+        let new_cache_entry = self.allocate_cache_entry(params);
+        let new_kind = new_cache_entry.details.kind();
 
         
         
@@ -898,14 +891,14 @@ impl TextureCache {
         
         match self.entries.upsert(handle, new_cache_entry) {
             UpsertResult::Updated(old_entry) => {
-                if allocated_standalone != old_entry.kind.is_standalone() {
+                if new_kind != old_entry.details.kind() {
                     
                     
                     
-                    let (from, to) = if allocated_standalone {
-                        (&mut self.shared_entry_handles, &mut self.standalone_entry_handles)
+                    let (from, to) = if new_kind == EntryKind::Standalone {
+                        (&mut self.handles.shared, &mut self.handles.standalone)
                     } else {
-                        (&mut self.standalone_entry_handles, &mut self.shared_entry_handles)
+                        (&mut self.handles.standalone, &mut self.handles.shared)
                     };
                     let idx = from.iter().position(|h| h.weak() == *handle).unwrap();
                     to.push(from.remove(idx));
@@ -914,11 +907,7 @@ impl TextureCache {
             }
             UpsertResult::Inserted(new_handle) => {
                 *handle = new_handle.weak();
-                if allocated_standalone {
-                    self.standalone_entry_handles.push(new_handle);
-                } else {
-                    self.shared_entry_handles.push(new_handle);
-                }
+                self.handles.select(new_kind).push(new_handle);
             }
         }
     }
@@ -1068,7 +1057,6 @@ impl TextureRegion {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureArray {
     filter: TextureFilter,
-    max_layer_count: usize,
     format: ImageFormat,
     regions: Vec<TextureRegion>,
     texture_id: Option<CacheTextureId>,
@@ -1078,12 +1066,10 @@ impl TextureArray {
     fn new(
         format: ImageFormat,
         filter: TextureFilter,
-        max_layer_count: usize,
     ) -> Self {
         TextureArray {
             format,
             filter,
-            max_layer_count,
             regions: Vec::new(),
             texture_id: None,
         }
@@ -1110,14 +1096,12 @@ impl TextureArray {
     
     fn alloc(
         &mut self,
-        size: DeviceUintSize,
-        user_data: [f32; 3],
+        params: &CacheAllocParams,
         frame_id: FrameId,
-        uv_rect_kind: UvRectKind,
     ) -> Option<CacheEntry> {
         
         
-        let slab_size = SlabSize::new(size);
+        let slab_size = SlabSize::new(params.descriptor.size);
 
         
         
@@ -1128,7 +1112,7 @@ impl TextureArray {
         
         
         let mut empty_region_index = None;
-        let mut entry_kind = None;
+        let mut entry_details = None;
 
         
         
@@ -1137,7 +1121,7 @@ impl TextureArray {
                 empty_region_index = Some(i);
             } else if region.slab_size == slab_size {
                 if let Some(location) = region.alloc() {
-                    entry_kind = Some(EntryKind::Cache {
+                    entry_details = Some(EntryDetails::Cache {
                         layer_index: region.layer_index,
                         origin: location,
                     });
@@ -1147,12 +1131,12 @@ impl TextureArray {
         }
 
         
-        if entry_kind.is_none() {
+        if entry_details.is_none() {
             if let Some(empty_region_index) = empty_region_index {
                 let region = &mut self.regions[empty_region_index];
                 region.init(slab_size);
-                entry_kind = region.alloc().map(|location| {
-                    EntryKind::Cache {
+                entry_details = region.alloc().map(|location| {
+                    EntryDetails::Cache {
                         layer_index: region.layer_index,
                         origin: location,
                     }
@@ -1160,18 +1144,18 @@ impl TextureArray {
             }
         }
 
-        entry_kind.map(|kind| {
+        entry_details.map(|details| {
             CacheEntry {
-                size,
-                user_data,
+                size: params.descriptor.size,
+                user_data: params.user_data,
                 last_access: frame_id,
-                kind,
+                details,
                 uv_rect_handle: GpuCacheHandle::new(),
                 format: self.format,
                 filter: self.filter,
                 texture_id: self.texture_id.unwrap(),
                 eviction_notice: None,
-                uv_rect_kind,
+                uv_rect_kind: params.uv_rect_kind,
                 eviction: Eviction::Auto,
             }
         })
