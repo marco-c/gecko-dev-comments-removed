@@ -139,6 +139,8 @@ PluginProcessChild::Init(int aArgc, char* aArgv[])
     
     
     
+    
+    
     pluginFilename = WideToUTF8(values[0]);
 
     
@@ -150,11 +152,12 @@ PluginProcessChild::Init(int aArgc, char* aArgv[])
     nsThreadManager::get().Init();
 
 #if defined(MOZ_SANDBOX)
-    MOZ_ASSERT(values.size() >= 2, "not enough loose args for sandboxed plugin process");
+    MOZ_ASSERT(values.size() >= 3, "not enough loose args for sandboxed plugin process");
 
     
     
     SetSandboxTempPath(values[1]);
+    PluginModuleChild::SetFlashRoamingPath(values[2]);
 
     
     
