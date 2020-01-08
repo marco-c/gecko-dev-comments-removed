@@ -3,6 +3,7 @@
 
 "use strict";
 
+const Services = require("Services");
 const { createElement, createFactory } = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
@@ -245,7 +246,8 @@ WebConsoleOutputWrapper.prototype = {
         hud,
         onFirstMeaningfulPaint: resolve,
         closeSplitConsole: this.closeSplitConsole.bind(this),
-        jstermCodeMirror: store.getState().prefs.jstermCodeMirror,
+        jstermCodeMirror: store.getState().prefs.jstermCodeMirror
+          && !Services.appinfo.accessibilityEnabled,
       });
 
       

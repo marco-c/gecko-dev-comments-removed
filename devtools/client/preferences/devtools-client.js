@@ -280,7 +280,11 @@ pref("devtools.webconsole.sidebarToggle", false);
 #endif
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.webconsole.jsterm.codeMirror", true);
+#else
 pref("devtools.webconsole.jsterm.codeMirror", false);
+#endif
 
 
 pref("devtools.performance.new-panel-enabled", false);
