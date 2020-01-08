@@ -2266,11 +2266,11 @@ nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   mOpener = opener.forget();
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
 
-  if (mDocShell && aOpener) {
+  if (mDocShell) {
     
     
     
-    GetBrowsingContext()->SetOpener(aOpener->GetBrowsingContext());
+    GetBrowsingContext()->SetOpener(aOpener ? aOpener->GetBrowsingContext() : nullptr);
   }
 
   
