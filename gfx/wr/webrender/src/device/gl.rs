@@ -858,6 +858,9 @@ pub struct Device {
     texture_storage_usage: TexStorageUsage,
 
     
+    supports_copy_image_sub_data: bool,
+
+    
     extensions: Vec<String>,
 }
 
@@ -1024,6 +1027,9 @@ impl Device {
             )
         };
 
+        let supports_copy_image_sub_data = supports_extension(&extensions, "GL_EXT_copy_image") ||
+            supports_extension(&extensions, "GL_ARB_copy_image");
+
         
         gl.disable(gl::FRAMEBUFFER_SRGB);
         gl.disable(gl::MULTISAMPLE);
@@ -1066,6 +1072,7 @@ impl Device {
             frame_id: GpuFrameId(0),
             extensions,
             texture_storage_usage,
+            supports_copy_image_sub_data
         }
     }
 
@@ -1621,15 +1628,27 @@ impl Device {
         debug_assert!(dst.size.height >= src.size.height);
         debug_assert!(dst.layer_count >= src.layer_count);
 
-        
-        let rect = DeviceIntRect::new(DeviceIntPoint::zero(), src.get_dimensions().to_i32());
-        for (read_fbo, draw_fbo) in src.fbos.iter().zip(&dst.fbos) {
-            self.bind_read_target_impl(*read_fbo);
-            self.bind_draw_target_impl(*draw_fbo);
-            self.blit_render_target(rect, rect);
+        if self.supports_copy_image_sub_data {
+            assert_ne!(src.id, dst.id,
+                    "glCopyImageSubData's behaviour is undefined if src and dst images are identical and the rectangles overlap.");
+            unsafe {
+                self.gl.copy_image_sub_data(src.id, src.target, 0,
+                                            0, 0, 0,
+                                            dst.id, dst.target, 0,
+                                            0, 0, 0,
+                                            src.size.width as _, src.size.height as _, src.layer_count);
+            }
+        } else {
+            
+            let rect = DeviceIntRect::new(DeviceIntPoint::zero(), src.get_dimensions().to_i32());
+            for (read_fbo, draw_fbo) in src.fbos.iter().zip(&dst.fbos) {
+                self.bind_read_target_impl(*read_fbo);
+                self.bind_draw_target_impl(*draw_fbo);
+                self.blit_render_target(rect, rect);
+            }
+            self.reset_draw_target();
+            self.reset_read_target();
         }
-        self.reset_draw_target();
-        self.reset_read_target();
     }
 
     
