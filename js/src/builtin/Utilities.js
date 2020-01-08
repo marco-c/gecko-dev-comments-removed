@@ -112,15 +112,6 @@ function ToLength(v) {
 
 
 
-function SameValue(x, y) {
-    if (x === y) {
-        return (x !== 0) || (1 / x === 1 / y);
-    }
-    return (x !== x && y !== y);
-}
-
-
-
 function SameValueZero(x, y) {
     return x === y || (x !== x && y !== y);
 }

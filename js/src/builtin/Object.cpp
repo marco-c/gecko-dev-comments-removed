@@ -1655,8 +1655,8 @@ obj_entries(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
-static bool
-obj_is(JSContext* cx, unsigned argc, Value* vp)
+bool
+js::obj_is(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
