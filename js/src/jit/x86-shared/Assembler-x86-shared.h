@@ -1624,6 +1624,8 @@ class AssemblerX86Shared : public AssemblerShared
         masm.popcntl_rr(src.encoding(), dest.encoding());
     }
     void imull(Register multiplier) {
+        
+        
         masm.imull_r(multiplier.encoding());
     }
     void umull(Register multiplier) {
