@@ -2139,28 +2139,9 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
                                                 action, event, dataTransfer);
   }
   else {
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIScriptableRegion> region;
-#ifdef MOZ_XUL
-    if (dragTarget && !dragImage) {
-      if (dragTarget->NodeInfo()->Equals(nsGkAtoms::treechildren,
-                                         kNameSpaceID_XUL)) {
-        nsTreeBodyFrame* treeBody =
-          do_QueryFrame(dragTarget->GetPrimaryFrame());
-        if (treeBody) {
-          treeBody->GetSelectionRegion(getter_AddRefs(region));
-        }
-      }
-    }
-#endif
-
     dragService->InvokeDragSessionWithImage(dragTarget,
                                             aPrincipalURISpec, transArray,
-                                            region, action,
+                                            nullptr, action,
                                             dragImage,
                                             imageX, imageY, event,
                                             dataTransfer);
