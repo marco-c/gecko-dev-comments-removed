@@ -284,16 +284,11 @@ static const char16_t REPLACEMENT_CHARACTER = 0xFFFD;
 
 
 
-
-template <InflateUTF8Action Action, OnUTF8Error ErrorAction, typename CharT>
+template <InflateUTF8Action Action, OnUTF8Error ErrorAction, typename OutputFn>
 static bool
-InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstlenp,
+InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, OutputFn dst,
                    JS::SmallestEncoding *smallestEncoding)
 {
-    static_assert(std::is_same<CharT, char16_t>::value ||
-                  std::is_same<CharT, Latin1Char>::value,
-                  "bad CharT");
-
     if (Action != Nop) {
         *smallestEncoding = JS::SmallestEncoding::ASCII;
     }
@@ -304,17 +299,12 @@ InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstle
         *smallestEncoding = JS::SmallestEncoding::UTF16;
     };
 
-    
-    
     size_t srclen = src.length();
-    uint32_t j = 0;
-    for (uint32_t i = 0; i < srclen; i++, j++) {
+    for (uint32_t i = 0; i < srclen; i++) {
         uint32_t v = uint32_t(src[i]);
         if (!(v & 0x80)) {
             
-            if (Action == Copy) {
-                dst[j] = CharT(v);
-            }
+            dst(uint16_t(v));
 
         } else {
             
@@ -338,9 +328,7 @@ InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstle
                         MOZ_ASSERT(ErrorAction == OnUTF8Error::InsertQuestionMark); \
                         replacement = '?';                              \
                     }                                                   \
-                    if (Action == Copy) {                               \
-                        dst[j] = CharT(replacement);                    \
-                    }                                                   \
+                    dst(replacement);                                   \
                     n = n2;                                             \
                     goto invalidMultiByteCodeUnit;                      \
                 }                                                       \
@@ -379,7 +367,6 @@ InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstle
                 if (v > 0xff) {
                     RequireUTF16();
                     if (Action == FindEncoding) {
-                        MOZ_ASSERT(dst == nullptr);
                         return true;
                     }
                 } else {
@@ -388,21 +375,13 @@ InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstle
             }
             if (v < 0x10000) {
                 
-                if (Action == Copy) {
-                    dst[j] = CharT(v);
-                }
+                dst(char16_t(v));
             } else {
                 v -= 0x10000;
                 if (v <= 0xFFFFF) {
                     
-                    if (Action == Copy) {
-                        dst[j] = CharT((v >> 10) + 0xD800);
-                    }
-                    j++;
-                    if (Action == Copy) {
-                        dst[j] = CharT((v & 0x3FF) + 0xDC00);
-                    }
-
+                    dst(char16_t((v >> 10) + 0xD800));
+                    dst(char16_t((v & 0x3FF) + 0xDC00));
                 } else {
                     
                     INVALID(ReportTooBigCharacter, v, 1);
@@ -420,10 +399,6 @@ InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, CharT* dst, size_t* dstle
         }
     }
 
-    if (Action != Nop && Action != FindEncoding) {
-        *dstlenp = j;
-    }
-
     return true;
 }
 
@@ -432,12 +407,19 @@ static CharsT
 InflateUTF8StringHelper(JSContext* cx, const UTF8Chars src, size_t* outlen)
 {
     using CharT = typename CharsT::CharT;
+    static_assert(std::is_same<CharT, char16_t>::value ||
+                  std::is_same<CharT, Latin1Char>::value,
+                  "bad CharT");
+
     *outlen = 0;
 
     JS::SmallestEncoding encoding;
-    if (!InflateUTF8ToUTF16<Count, ErrorAction, CharT>(cx, src,  nullptr, outlen, &encoding)) {
+    size_t len = 0;
+    auto count = [&](char16_t) { len++; };
+    if (!InflateUTF8ToUTF16<Count, ErrorAction>(cx, src, count, &encoding)) {
         return CharsT();
     }
+    *outlen = len;
 
     CharT* dst = cx->template pod_malloc<CharT>(*outlen + 1);  
     if (!dst) {
@@ -451,12 +433,15 @@ InflateUTF8StringHelper(JSContext* cx, const UTF8Chars src, size_t* outlen)
         for (uint32_t i = 0; i < srclen; i++) {
             dst[i] = CharT(src[i]);
         }
-    } else if (std::is_same<decltype(dst[0]), Latin1Char>::value) {
-        MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<Copy, OnUTF8Error::InsertQuestionMark, CharT>(cx, src, dst, outlen, &encoding)));
     } else {
-        MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<Copy, OnUTF8Error::InsertReplacementCharacter, CharT>(cx, src, dst, outlen, &encoding)));
+        constexpr OnUTF8Error errorMode = std::is_same<CharT, Latin1Char>::value
+            ? OnUTF8Error::InsertQuestionMark
+            : OnUTF8Error::InsertReplacementCharacter;
+        size_t j = 0;
+        auto push = [&](char16_t c) { dst[j++] = CharT(c); };
+        MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<Copy, errorMode>(cx, src, push, &encoding)));
+        MOZ_ASSERT(j == len);
     }
-
     dst[*outlen] = 0;    
 
     return CharsT(dst, *outlen);
@@ -492,11 +477,10 @@ JS::SmallestEncoding
 JS::FindSmallestEncoding(UTF8Chars utf8)
 {
     JS::SmallestEncoding encoding;
-    MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<FindEncoding, OnUTF8Error::InsertReplacementCharacter, char16_t>(
+    MOZ_ALWAYS_TRUE((InflateUTF8ToUTF16<FindEncoding, OnUTF8Error::InsertReplacementCharacter>(
                           nullptr,
                          utf8,
-                          nullptr,
-                          nullptr,
+                         [](char16_t) {},
                          &encoding)));
     return encoding;
 }
@@ -519,11 +503,10 @@ JS::ConstUTF8CharsZ::validate(size_t aLength)
 {
     MOZ_ASSERT(data_);
     UTF8Chars chars(data_, aLength);
-    InflateUTF8ToUTF16<Nop, OnUTF8Error::Crash, char16_t>(
+    InflateUTF8ToUTF16<Nop, OnUTF8Error::Crash>(
          nullptr,
         chars,
-         nullptr,
-         nullptr,
+        [](char16_t) {},
          nullptr);
 }
 #endif
