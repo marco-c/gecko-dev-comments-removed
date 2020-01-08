@@ -128,8 +128,6 @@ def xz_compress(path):
     '''
     Execute xz to compress the given path.
     '''
-    path = os.path.abspath(path)
-
     if open(path, 'rb').read(5)[1:] == '7zXZ':
         print('%s is already compressed' % path)
         return
@@ -160,25 +158,12 @@ def xz_compress(path):
     
     
     
-
-    if not substs.get('DEVELOPER_OPTIONS'):
-        
-        cmd.extend(['--lzma2=dict=8MiB,lc=3,lp=0,pb=2,mode=normal,nice=64,mf=bt4,depth=0'])
-    else:
-        
-        
-        cmd.extend(['--lzma2=dict=8MiB,lc=3,lp=0,pb=2,mode=fast,nice=273,mf=hc4,depth=24'])
-
-    print('xz-compressing %s with "%s"...' % (path, ' '.join(cmd)))
-
-    import time
-    t0 = time.time()
+    
+    cmd.extend(['--lzma2=dict=8MiB,lc=3,lp=0,pb=2,mode=normal,nice=64,mf=bt4,depth=0'])
+    print('xz-compressing %s with %s' % (path, ' '.join(cmd)))
 
     if subprocess.call(cmd) != 0:
         errors.fatal('Error executing ' + ' '.join(cmd))
         return
-
-    elapsed = time.time() - t0
-    print('xz-compressing %s with "%s"... DONE (%.2fs)' % (path, ' '.join(cmd), elapsed))
 
     os.rename(path + '.xz', path)
