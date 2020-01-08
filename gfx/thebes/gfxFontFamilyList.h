@@ -15,6 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TimeStamp.h"
 
 namespace mozilla {
 
@@ -415,14 +416,12 @@ public:
     
     bool Contains(const nsACString& aFamilyName) const {
         NS_ConvertUTF8toUTF16 fam(aFamilyName);
-        ToLowerCase(fam);
         for (const FontFamilyName& name : mFontlist->mNames) {
             if (!name.IsNamed()) {
                 continue;
             }
-            nsAtomString listname(name.mName);
-            ToLowerCase(listname);
-            if (listname.Equals(fam)) {
+            nsDependentAtomString listname(name.mName);
+            if (listname.Equals(fam, nsCaseInsensitiveStringComparator())) {
                 return true;
             }
         }
