@@ -437,7 +437,8 @@ Toolbox.prototype = {
         useOnlyShared: true,
       }).require;
 
-      if (this.win.location.href.startsWith(this._URL)) {
+      const isToolboxURL = this.win.location.href.startsWith(this._URL);
+      if (isToolboxURL) {
         
         this._URL = this.win.location.href;
       }
@@ -454,6 +455,15 @@ Toolbox.prototype = {
 
       
       await this._target.attach();
+
+      
+      
+      if (isToolboxURL) {
+        this._showDebugTargetInfo = true;
+        const deviceFront = await this.target.client.mainRoot.getFront("device");
+        
+        this._deviceDescription = await deviceFront.getDescription();
+      }
 
       
       
@@ -1146,6 +1156,8 @@ Toolbox.prototype = {
       closeToolbox: this.destroy,
       focusButton: this._onToolbarFocus,
       toolbox: this,
+      showDebugTargetInfo: this._showDebugTargetInfo,
+      deviceDescription: this._deviceDescription,
       onTabsOrderUpdated: this._onTabsOrderUpdated,
     });
 
