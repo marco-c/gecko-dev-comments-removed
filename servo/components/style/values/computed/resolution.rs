@@ -21,6 +21,12 @@ impl Resolution {
     pub fn dppx(&self) -> CSSFloat {
         self.0
     }
+
+    
+    #[inline]
+    pub fn from_dppx(dppx: CSSFloat) -> Self {
+        Resolution(dppx)
+    }
 }
 
 impl ToComputedValue for specified::Resolution {
