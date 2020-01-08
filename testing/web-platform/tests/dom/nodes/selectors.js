@@ -70,7 +70,7 @@ var validSelectors = [
   {name: "Type selector, matching body element", selector: "body", expect: [] , exclude: ["document"],                        level: 1, testType: TEST_QSA},
 
   
-  
+  {name: "Universal selector, matching all elements",                                    selector: "*",              expect: ["universal", "universal-p1", "universal-code1", "universal-hr1", "universal-pre1", "universal-span1", "universal-p2", "universal-a1", "universal-address1", "universal-code2", "universal-a2"], level: 2, testType: TEST_MATCH},
   {name: "Universal selector, matching all children of element with specified ID",       selector: "#universal>*",   expect: ["universal-p1", "universal-hr1", "universal-pre1", "universal-p2", "universal-address1"], level: 2, testType: TEST_QSA | TEST_MATCH},
   {name: "Universal selector, matching all grandchildren of element with specified ID",  selector: "#universal>*>*", expect: ["universal-code1", "universal-span1", "universal-a1", "universal-code2"],                 level: 2, testType: TEST_QSA | TEST_MATCH},
   {name: "Universal selector, matching all children of empty element with specified ID", selector: "#empty>*",       expect: [] ,                                                                         level: 2, testType: TEST_QSA},
@@ -448,10 +448,6 @@ var validSelectors = [
 
 var scopedSelectors = [
   
-
-  
-  {name: "Universal selector, matching all descendants of the specified reference element",    selector: "*",    ctx: "#universal", expect: ["universal-p1", "universal-code1", "universal-hr1", "universal-pre1", "universal-span1",
-                                                                                                                                             "universal-p2", "universal-a1", "universal-address1", "universal-code2", "universal-a2"], unexpected: ["universal", "empty"], level: 2, testType: TEST_FIND | TEST_MATCH},
 
   
   
