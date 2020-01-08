@@ -204,9 +204,6 @@ this.VideoControlsImplPageWidget = class {
           }
 
           
-          
-          
-          
           if (!this.isAudioOnly && !this.video.mozHasAudio) {
             this.muteButton.setAttribute("noAudio", "true");
             this.muteButton.setAttribute("disabled", "true");
@@ -323,13 +320,6 @@ this.VideoControlsImplPageWidget = class {
       },
 
       setupNewLoadState() {
-        
-        
-        
-        
-        
-        
-        
         
         
         
@@ -838,15 +828,7 @@ this.VideoControlsImplPageWidget = class {
           this.durationSpan.modifier = "long";
         }
 
-        
-        
-        this.scrubber.durationValue = timeString;
-
         this.scrubber.max = duration;
-        
-        
-        
-        this.scrubber.pageIncrement = Math.round(duration / 10);
       },
 
       pauseVideoDuringDragging() {
@@ -1140,13 +1122,6 @@ this.VideoControlsImplPageWidget = class {
       },
 
       startFade(element, fadeIn, immediate = false) {
-        
-        
-        
-        if (element == this.controlBar && fadeIn && element.hidden) {
-          this.scrubber.value = this.video.currentTime * 1000;
-        }
-
         let animationProp =
           this.animationProps[element.id];
         if (!animationProp) {
