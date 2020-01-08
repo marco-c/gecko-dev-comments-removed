@@ -499,6 +499,8 @@ io = {
 
   running: true,
 
+  polling: false,
+
   init(details) {
     this.signal = new Signal(details.signalFd);
     this.updatePollFds();
@@ -545,6 +547,16 @@ io = {
 
     handlers = handlers.filter(handler => handler.pollEvents);
 
+    
+    
+    if (handlers.length == 1) {
+      this.polling = false;
+    } else if (!this.polling && this.running) {
+      
+      setTimeout(this.loop.bind(this), 0);
+      this.polling = true;
+    }
+
     let pollfds = unix.pollfd.array(handlers.length)();
 
     for (let [i, handler] of handlers.entries()) {
@@ -561,7 +573,7 @@ io = {
 
   loop() {
     this.poll();
-    if (this.running) {
+    if (this.running && this.polling) {
       setTimeout(this.loop.bind(this), 0);
     }
   },
