@@ -169,7 +169,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     telemetry.getHistogramById(TELEMETRY_PICKER_EYEDROPPER_OPEN_COUNT).add(true);
 
     
-    inspector.nodePicker.cancel();
+    toolbox.highlighterUtils.cancelPicker();
 
     
     

@@ -15,7 +15,6 @@ class HighlighterFront extends FrontClassWithSpec(highlighterSpec) {
     super(client, form);
 
     this.isNodeFrontHighlighted = false;
-    this.isPicking = false;
   }
 
   
@@ -25,35 +24,11 @@ class HighlighterFront extends FrontClassWithSpec(highlighterSpec) {
     this.traits = json.traits || {};
   }
 
-  
-
-
-
-
-
-
   pick(doFocus) {
-    if (this.isPicking) {
-      return null;
-    }
-    this.isPicking = true;
     if (doFocus && super.pickAndFocus) {
       return super.pickAndFocus();
     }
     return super.pick();
-  }
-
-  
-
-
-
-
-  cancelPick() {
-    if (!this.isPicking) {
-      return Promise.resolve();
-    }
-    this.isPicking = false;
-    return super.cancelPick();
   }
 
   

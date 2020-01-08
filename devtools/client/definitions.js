@@ -85,7 +85,7 @@ Tools.inspector = {
 
   preventClosingOnKey: true,
   onkey: function(panel, toolbox) {
-    toolbox.inspector.nodePicker.togglePicker();
+    toolbox.highlighterUtils.togglePicker();
   },
 
   isTargetSupported: function(target) {
@@ -582,9 +582,8 @@ function createHighlightButton(highlighterName, id) {
     description: l10n(`toolbox.buttons.${id}`),
     isTargetSupported: target => !target.chrome,
     async onClick(event, toolbox) {
-      await toolbox.initInspector();
       const highlighter =
-        await toolbox.inspector.getOrCreateHighlighterByType(highlighterName);
+        await toolbox.highlighterUtils.getOrCreateHighlighterByType(highlighterName);
       if (highlighter.isShown()) {
         return highlighter.hide();
       }
@@ -594,17 +593,7 @@ function createHighlightButton(highlighterName, id) {
       return highlighter.show({});
     },
     isChecked(toolbox) {
-      
-      
-      const inspectorFront = toolbox.target.getCachedFront("inspector");
-      if (!inspectorFront) {
-        
-        
-        
-        
-        return false;
-      }
-      const highlighter = inspectorFront.getKnownHighlighter(highlighterName);
+      const highlighter = toolbox.highlighterUtils.getKnownHighlighter(highlighterName);
       return highlighter && highlighter.isShown();
     },
   };
