@@ -160,9 +160,14 @@ class Localization {
       this.generateMessages(this.resourceIds));
   }
 
-  addResourceIds(resourceIds) {
+  
+
+
+
+
+  addResourceIds(resourceIds, eager = false) {
     this.resourceIds.push(...resourceIds);
-    this.onChange();
+    this.onChange(eager);
     return this.resourceIds.length;
   }
 
@@ -319,9 +324,22 @@ class Localization {
 
 
 
-  onChange() {
+
+
+  onChange(eager = false) {
     this.ctxs = CachedAsyncIterable.from(
       this.generateMessages(this.resourceIds));
+    if (eager) {
+      
+      
+      
+      
+      
+      const appLocale = Services.locale.getAppLocaleAsBCP47();
+      const lastFallback = Services.locale.lastFallbackLocale;
+      const prefetchCount = appLocale === lastFallback ? 1 : 2;
+      this.ctxs.touchNext(prefetchCount);
+    }
   }
 }
 
