@@ -7,6 +7,9 @@
 #ifndef mozilla_layout_ScrollAnchorContainer_h_
 #define mozilla_layout_ScrollAnchorContainer_h_
 
+#include "nsPoint.h"
+
+class nsIFrame;
 namespace mozilla {
 class ScrollFrameHelper;
 }  
@@ -36,6 +39,12 @@ class ScrollAnchorContainer final {
 
 
 
+  nsIFrame* AnchorNode() const { return mAnchorNode; }
+
+  
+
+
+
   nsIFrame* Frame() const;
 
   
@@ -44,9 +53,80 @@ class ScrollAnchorContainer final {
 
   nsIScrollableFrame* ScrollableFrame() const;
 
+  
+
+
+
+  void SelectAnchor();
+
+  
+
+
+
+  void UserScrolled();
+
+  
+
+
+
+  void InvalidateAnchor();
+
+  
+
+
+
+  void Destroy();
+
  private:
   
+  
+  
+  enum class ExamineResult {
+    
+    
+    Exclude,
+    
+    
+    
+    
+    
+    
+    PassThrough,
+    
+    
+    
+    Traverse,
+    
+    
+    Accept,
+  };
+
+  ExamineResult ExamineAnchorCandidate(nsIFrame* aPrimaryFrame) const;
+
+  
+  
+  
+  nsIFrame* FindAnchorIn(nsIFrame* aFrame) const;
+
+  
+  
+  nsIFrame* FindAnchorInList(const nsFrameList& aFrameList) const;
+
+  
   ScrollFrameHelper* mScrollFrame;
+
+  
+  
+  
+  nsIFrame* mAnchorNode;
+
+  
+  
+  
+  nsPoint mLastAnchorPos;
+
+  
+  bool mAnchorNodeIsDirty : 1;
 };
 
 }  
