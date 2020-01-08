@@ -536,7 +536,7 @@ class UserScript extends Script {
     
     
     this.scriptMetadata = matcher.userScriptOptions.scriptMetadata;
-    this.apiScriptURL = extension.manifest.userScripts && extension.manifest.userScripts.apiScript;
+    this.apiScriptURL = extension.manifest.user_scripts && extension.manifest.user_scripts.api_script;
 
     this.promiseAPIScript = null;
     this.scriptPromises = null;
