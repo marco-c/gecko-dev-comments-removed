@@ -57,7 +57,6 @@ if (!('subsetTestByKey' in self)) {
 }
 
 function constValue (cnt)
-
 {
     if (cnt.type === "null") return null;
     if (cnt.type === "NaN") return NaN;
@@ -66,9 +65,7 @@ function constValue (cnt)
     return cnt.value;
 }
 
-
 function minOverloadLength(overloads)
-
 {
     
     
@@ -87,9 +84,7 @@ function minOverloadLength(overloads)
     .reduce(function(m, n) { return Math.min(m, n); });
 }
 
-
 function throwOrReject(a_test, operation, fn, obj, args, message, cb)
-
 {
     if (operation.idlType.generic !== "Promise") {
         assert_throws(new TypeError(), function() {
@@ -108,9 +103,7 @@ function throwOrReject(a_test, operation, fn, obj, args, message, cb)
     }
 }
 
-
 function awaitNCallbacks(n, cb, ctx)
-
 {
     var counter = 0;
     return function() {
@@ -121,9 +114,7 @@ function awaitNCallbacks(n, cb, ctx)
     };
 }
 
-
 var fround =
-
 (function(){
     if (Math.fround) return Math.fround;
 
@@ -136,9 +127,7 @@ var fround =
 
 
 
-
 self.IdlHarnessError = function(message)
-
 {
     
 
@@ -148,9 +137,7 @@ self.IdlHarnessError = function(message)
 
 IdlHarnessError.prototype = Object.create(Error.prototype);
 
-
 IdlHarnessError.prototype.toString = function()
-
 {
     return this.message;
 };
@@ -158,9 +145,7 @@ IdlHarnessError.prototype.toString = function()
 
 
 
-
 self.IdlArray = function()
-
 {
     
 
@@ -210,17 +195,13 @@ self.IdlArray = function()
     this["inheritance"] = {};
 };
 
-
 IdlArray.prototype.add_idls = function(raw_idls, options)
-
 {
     
     this.internal_add_idls(WebIDL2.parse(raw_idls), options);
 };
 
-
 IdlArray.prototype.add_untested_idls = function(raw_idls, options)
-
 {
     
     var parsed_idls = WebIDL2.parse(raw_idls);
@@ -228,9 +209,7 @@ IdlArray.prototype.add_untested_idls = function(raw_idls, options)
     this.internal_add_idls(parsed_idls, options);
 };
 
-
 IdlArray.prototype.mark_as_untested = function (parsed_idls)
-
 {
     for (var i = 0; i < parsed_idls.length; i++) {
         parsed_idls[i].untested = true;
@@ -242,20 +221,14 @@ IdlArray.prototype.mark_as_untested = function (parsed_idls)
     }
 };
 
-
-
 IdlArray.prototype.is_excluded_by_options = function (name, options)
-
 {
     return options &&
         (options.except && options.except.includes(name)
          || options.only && !options.only.includes(name));
 };
 
-
-
 IdlArray.prototype.add_dependency_idls = function(raw_idls, options)
-
 {
     const parsed_idls = WebIDL2.parse(raw_idls);
     const new_options = { only: [] }
@@ -361,9 +334,7 @@ IdlArray.prototype.add_dependency_idls = function(raw_idls, options)
     }
 }
 
-
 IdlArray.prototype.internal_add_idls = function(parsed_idls, options)
-
 {
     
 
@@ -501,9 +472,7 @@ IdlArray.prototype.internal_add_idls = function(parsed_idls, options)
     }.bind(this));
 };
 
-
 IdlArray.prototype.add_objects = function(dict)
-
 {
     
     for (var k in dict)
@@ -519,17 +488,13 @@ IdlArray.prototype.add_objects = function(dict)
     }
 };
 
-
 IdlArray.prototype.prevent_multiple_testing = function(name)
-
 {
     
     this.members[name].prevent_multiple_testing = true;
 };
 
-
 IdlArray.prototype.recursively_get_implements = function(interface_name)
-
 {
     
 
@@ -557,9 +522,7 @@ IdlArray.prototype.recursively_get_implements = function(interface_name)
     return ret;
 };
 
-
 IdlArray.prototype.recursively_get_includes = function(interface_name)
-
 {
     
 
@@ -587,9 +550,7 @@ IdlArray.prototype.recursively_get_includes = function(interface_name)
     return ret;
 };
 
-
 IdlArray.prototype.is_json_type = function(type)
-
 {
     
 
@@ -759,9 +720,7 @@ function exposed_in(globals) {
 
 
 
-
 IdlArray.prototype.assert_throws = function(error, idlArrayFunc)
-
 {
     try {
         idlArrayFunc.call(this, this);
@@ -781,9 +740,7 @@ IdlArray.prototype.assert_throws = function(error, idlArrayFunc)
     throw new IdlHarnessError(`${idlArrayFunc} did not throw the expected IdlHarnessError`);
 }
 
-
 IdlArray.prototype.test = function()
-
 {
     
 
@@ -872,9 +829,7 @@ IdlArray.prototype.test = function()
     }
 };
 
-
 IdlArray.prototype.collapse_partials = function()
-
 {
     const testedPartials = new Map();
     this.partials.forEach(function(parsed_idl)
@@ -955,9 +910,7 @@ IdlArray.prototype.collapse_partials = function()
     this.partials = [];
 }
 
-
 IdlArray.prototype.assert_type_is = function(value, type)
-
 {
     if (type.idlType in this.members
     && this.members[type.idlType] instanceof IdlTypedef) {
@@ -1178,10 +1131,8 @@ IdlArray.prototype.assert_type_is = function(value, type)
 };
 
 
-
 function IdlObject() {}
 IdlObject.prototype.test = function()
-
 {
     
 
@@ -1189,9 +1140,7 @@ IdlObject.prototype.test = function()
 
 };
 
-
 IdlObject.prototype.has_extended_attribute = function(name)
-
 {
     
 
@@ -1206,9 +1155,7 @@ IdlObject.prototype.has_extended_attribute = function(name)
 
 
 
-
 function IdlDictionary(obj)
-
 {
     
 
@@ -1231,7 +1178,6 @@ function IdlDictionary(obj)
     this.base = obj.inheritance;
 }
 
-
 IdlDictionary.prototype = Object.create(IdlObject.prototype);
 
 IdlDictionary.prototype.get_inheritance_stack = function() {
@@ -1240,7 +1186,6 @@ IdlDictionary.prototype.get_inheritance_stack = function() {
 
 
 function IdlInterface(obj, is_callback, is_mixin)
-
 {
     
 
@@ -1279,30 +1224,23 @@ function IdlInterface(obj, is_callback, is_mixin)
     this._is_callback = is_callback;
     this._is_mixin = is_mixin;
 }
-
 IdlInterface.prototype = Object.create(IdlObject.prototype);
 IdlInterface.prototype.is_callback = function()
-
 {
     return this._is_callback;
 };
 
-
 IdlInterface.prototype.is_mixin = function()
-
 {
     return this._is_mixin;
 };
 
-
 IdlInterface.prototype.has_constants = function()
-
 {
     return this.members.some(function(member) {
         return member.type === "const";
     });
 };
-
 
 IdlInterface.prototype.get_unscopables = function()
 {
@@ -1312,13 +1250,11 @@ IdlInterface.prototype.get_unscopables = function()
 };
 
 IdlInterface.prototype.is_global = function()
-
 {
     return this.extAttrs.some(function(attribute) {
         return attribute.name === "Global";
     });
 };
-
 
 IdlInterface.prototype.has_to_json_regular_operation = function() {
     return this.members.some(function(m) {
@@ -1446,7 +1382,6 @@ function _traverse_inherited_and_consequential_interfaces(stack, callback) {
 }
 
 IdlInterface.prototype.test = function()
-
 {
     if (this.has_extended_attribute("NoInterfaceObject") || this.is_mixin())
     {
@@ -1479,9 +1414,7 @@ IdlInterface.prototype.test = function()
     this.test_members();
 };
 
-
 IdlInterface.prototype.test_self = function()
-
 {
     subsetTestByKey(this.name, test, function()
     {
@@ -1916,9 +1849,7 @@ IdlInterface.prototype.test_self = function()
     }.bind(this), this.name + ' interface: existence and properties of interface prototype object\'s @@unscopables property');
 };
 
-
 IdlInterface.prototype.test_immutable_prototype = function(type, obj)
-
 {
     if (typeof Object.setPrototypeOf !== "function") {
         return;
@@ -2020,9 +1951,7 @@ IdlInterface.prototype.test_immutable_prototype = function(type, obj)
         "should return true");
 };
 
-
 IdlInterface.prototype.test_member_const = function(member)
-
 {
     if (!this.has_constants()) {
         throw new IdlHarnessError("Internal error: test_member_const called without any constants");
@@ -2081,9 +2010,7 @@ IdlInterface.prototype.test_member_const = function(member)
 };
 
 
-
 IdlInterface.prototype.test_member_attribute = function(member)
-
   {
     if (!shouldRunSubTest(this.name)) {
         return;
@@ -2176,9 +2103,7 @@ IdlInterface.prototype.test_member_attribute = function(member)
     }.bind(this));
 };
 
-
 IdlInterface.prototype.test_member_operation = function(member)
-
 {
     if (!shouldRunSubTest(this.name)) {
         return;
@@ -2273,9 +2198,7 @@ IdlInterface.prototype.do_member_unscopable_asserts = function(member)
                   this.name + '.prototype[Symbol.unscopables].' + prop + ' must have the value `true`');
 };
 
-
 IdlInterface.prototype.do_member_operation_asserts = function(memberHolderObject, member, a_test)
-
 {
     var done = a_test.done.bind(a_test);
     var operationUnforgeable = member.isUnforgeable;
@@ -2342,9 +2265,7 @@ IdlInterface.prototype.do_member_operation_asserts = function(memberHolderObject
     }
 }
 
-
 IdlInterface.prototype.add_iterable_members = function(member)
-
 {
     this.members.push(new IdlInterfaceMember(
         { type: "operation", name: "entries", idlType: "iterator", arguments: []}));
@@ -2384,9 +2305,7 @@ IdlInterface.prototype.test_to_json_operation = function(memberHolderObject, mem
     }
 };
 
-
 IdlInterface.prototype.test_member_iterable = function(member)
-
 {
     var interfaceName = this.name;
     var isPairIterator = member.idlType.length === 2;
@@ -2412,9 +2331,7 @@ IdlInterface.prototype.test_member_iterable = function(member)
     }
 };
 
-
 IdlInterface.prototype.test_member_stringifier = function(member)
-
 {
     subsetTestByKey(this.name, test, function()
     {
@@ -2476,9 +2393,7 @@ IdlInterface.prototype.test_member_stringifier = function(member)
     }.bind(this), this.name + " interface: stringifier");
 };
 
-
 IdlInterface.prototype.test_members = function()
-
 {
     for (var i = 0; i < this.members.length; i++)
     {
@@ -2555,9 +2470,7 @@ IdlInterface.prototype.test_members = function()
     }
 };
 
-
 IdlInterface.prototype.test_object = function(desc)
-
 {
     var obj, exception = null;
     try
@@ -2592,9 +2505,7 @@ IdlInterface.prototype.test_object = function(desc)
     }
 };
 
-
 IdlInterface.prototype.test_primary_interface_of = function(desc, obj, exception, expected_typeof)
-
 {
     
     
@@ -2656,9 +2567,7 @@ IdlInterface.prototype.test_primary_interface_of = function(desc, obj, exception
     }.bind(this), "Stringification of " + desc);
 };
 
-
 IdlInterface.prototype.test_interface_of = function(desc, obj, exception, expected_typeof)
-
 {
     
     this.already_tested = true;
@@ -2803,9 +2712,7 @@ IdlInterface.prototype.test_interface_of = function(desc, obj, exception, expect
     }
 };
 
-
 IdlInterface.prototype.has_stringifier = function()
-
 {
     if (this.name === "DOMException") {
         
@@ -2822,9 +2729,7 @@ IdlInterface.prototype.has_stringifier = function()
     return false;
 };
 
-
 IdlInterface.prototype.do_interface_attribute_asserts = function(obj, member, a_test)
-
 {
     
     
@@ -2949,9 +2854,7 @@ IdlInterface.prototype.do_interface_attribute_asserts = function(obj, member, a_
 }
 
 
-
 function IdlInterfaceMember(obj)
-
 {
     
 
@@ -2971,7 +2874,6 @@ function IdlInterfaceMember(obj)
     this.isUnscopable = this.has_extended_attribute("Unscopable");
 }
 
-
 IdlInterfaceMember.prototype = Object.create(IdlObject.prototype);
 
 IdlInterfaceMember.prototype.is_to_json_regular_operation = function() {
@@ -2980,7 +2882,6 @@ IdlInterfaceMember.prototype.is_to_json_regular_operation = function() {
 
 
 function create_suitable_object(type)
-
 {
     
 
@@ -3019,9 +2920,7 @@ function create_suitable_object(type)
 
 
 
-
 function IdlEnum(obj)
-
 {
     
 
@@ -3036,13 +2935,11 @@ function IdlEnum(obj)
 
 }
 
-
 IdlEnum.prototype = Object.create(IdlObject.prototype);
 
 
 
 function IdlTypedef(obj)
-
 {
     
 
@@ -3057,12 +2954,10 @@ function IdlTypedef(obj)
 
 }
 
-
 IdlTypedef.prototype = Object.create(IdlObject.prototype);
 
 
 function IdlNamespace(obj)
-
 {
     this.name = obj.name;
     this.extAttrs = obj.extAttrs;
@@ -3074,11 +2969,9 @@ function IdlNamespace(obj)
     this.members = obj.members.map(m => new IdlInterfaceMember(m));
 }
 
-
 IdlNamespace.prototype = Object.create(IdlObject.prototype);
 
 IdlNamespace.prototype.do_member_operation_asserts = function (memberHolderObject, member, a_test)
-
 {
     var desc = Object.getOwnPropertyDescriptor(memberHolderObject, member.name);
 
@@ -3108,9 +3001,7 @@ IdlNamespace.prototype.do_member_operation_asserts = function (memberHolderObjec
     a_test.done();
 }
 
-
 IdlNamespace.prototype.test_member_operation = function(member)
-
 {
     if (!shouldRunSubTest(this.name)) {
         return;
@@ -3136,9 +3027,7 @@ IdlNamespace.prototype.test_member_operation = function(member)
     }.bind(this));
 };
 
-
 IdlNamespace.prototype.test_member_attribute = function (member)
-
 {
     if (!shouldRunSubTest(this.name)) {
         return;
@@ -3160,9 +3049,7 @@ IdlNamespace.prototype.test_member_attribute = function (member)
     }.bind(this));
 };
 
-
 IdlNamespace.prototype.test = function ()
-
 {
     
 
@@ -3188,7 +3075,6 @@ IdlNamespace.prototype.test = function ()
         }
     };
 };
-
 
 }());
 
