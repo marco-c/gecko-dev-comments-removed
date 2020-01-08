@@ -554,16 +554,6 @@ def target_tasks_nightly_desktop(full_task_graph, parameters, graph_config):
 
 
 
-@_target_task('nightly_dmd')
-def target_tasks_dmd(full_task_graph, parameters, graph_config):
-    """Target DMD that run nightly on the m-c branch."""
-    def filter(task):
-        platform = task.attributes.get('build_platform', '')
-        return platform.endswith('-dmd')
-    return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
-
-
-
 @_target_task('searchfox_index')
 def target_tasks_searchfox(full_task_graph, parameters, graph_config):
     """Select tasks required for indexing Firefox for Searchfox web site each day"""
