@@ -10,6 +10,7 @@ import requests
 from collections import defaultdict
 from redo import retry
 from requests import exceptions
+import attr
 
 logger = logging.getLogger(__name__)
 
@@ -23,19 +24,20 @@ SETA_ENDPOINT = "https://treeherder.mozilla.org/api/project/%s/seta/" \
 PUSH_ENDPOINT = "https://hg.mozilla.org/integration/%s/json-pushes/?startID=%d&endID=%d"
 
 
+@attr.s(frozen=True)
 class SETA(object):
     """
     Interface to the SETA service, which defines low-value tasks that can be optimized out
     of the taskgraph.
     """
-    def __init__(self):
-        
-        self.low_value_tasks = {}
-        self.low_value_bb_tasks = {}
-        
-        self.push_dates = defaultdict(dict)
-        
-        self.failed_json_push_calls = []
+
+    
+    low_value_tasks = attr.ib(factory=dict, init=False)
+    low_value_bb_tasks = attr.ib(factory=dict, init=False)
+    
+    push_dates = attr.ib(factory=lambda: defaultdict(dict), init=False)
+    
+    failed_json_push_calls = attr.ib(factory=list, init=False)
 
     def _get_task_string(self, task_tuple):
         
