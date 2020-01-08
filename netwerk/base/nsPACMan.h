@@ -209,6 +209,20 @@ private:
 
   void ContinueLoadingAfterPACUriKnown();
 
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult LoadPACFromURI(const nsACString &aSpec, bool aResetLoadFailureCount);
+
   
 
 
