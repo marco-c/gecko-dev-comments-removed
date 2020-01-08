@@ -343,6 +343,10 @@ add_task(async function setup_head() {
       
       return;
     }
+    if (msg.errorMessage == "AbortError: The operation was aborted. " &&
+        msg.sourceName == "" && msg.lineNumber == 0) {
+      return;
+    }
     ok(false, msg.message || msg.errorMessage);
   });
   await setupFormAutofillStorage();
