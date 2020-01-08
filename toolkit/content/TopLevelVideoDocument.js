@@ -9,7 +9,16 @@ let videoElement = document.getElementsByTagName("video")[0];
 
 
 
-document.addEventListener("focus", () => videoElement.focus(), true);
+document.addEventListener("focus", (e) => {
+  
+  
+  
+  
+  if (e.target == videoElement) {
+    return;
+  }
+  videoElement.focus();
+}, true);
 
 
 document.addEventListener("keypress", ev => {
