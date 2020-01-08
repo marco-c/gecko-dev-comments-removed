@@ -2643,6 +2643,12 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   const bool isUsingFlexGrow =
     (mTotalOuterHypotheticalMainSize < aFlexContainerMainSize);
 
+  if (aLineInfo) {
+    aLineInfo->mGrowthState = isUsingFlexGrow ?
+                              mozilla::dom::FlexLineGrowthState::Growing :
+                              mozilla::dom::FlexLineGrowthState::Shrinking;
+  }
+
   
   
   FreezeItemsEarly(isUsingFlexGrow, aLineInfo);
@@ -2872,30 +2878,6 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
                 aLineInfo->mItems[itemIndex].mMainBaseSize;
 
               aLineInfo->mItems[itemIndex].mMainDeltaSize = deltaSize;
-              
-              
-              
-              
-              
-              if (deltaSize > 0) {
-                MOZ_ASSERT(isUsingFlexGrow,
-                           "Unfrozen items can only grow if we're "
-                           "distributing (positive) space with flex-grow");
-                MOZ_ASSERT(aLineInfo->mGrowthState !=
-                           ComputedFlexLineInfo::GrowthState::SHRINKING,
-                           "shouldn't flip flop from shrinking to growing");
-                aLineInfo->mGrowthState =
-                  ComputedFlexLineInfo::GrowthState::GROWING;
-              } else if (deltaSize < 0) {
-                MOZ_ASSERT(!isUsingFlexGrow,
-                           "Unfrozen items can only shrink if we're "
-                           "distributing (negative) space with flex-shrink");
-                MOZ_ASSERT(aLineInfo->mGrowthState !=
-                           ComputedFlexLineInfo::GrowthState::GROWING,
-                           "shouldn't flip flop from growing to shrinking");
-                aLineInfo->mGrowthState =
-                  ComputedFlexLineInfo::GrowthState::SHRINKING;
-              }
             }
           }
         }
@@ -4770,12 +4752,6 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
          line = line->getNext()) {
       ComputedFlexLineInfo* lineInfo =
         containerInfo->mLines.AppendElement();
-      
-      
-      
-      lineInfo->mGrowthState =
-        ComputedFlexLineInfo::GrowthState::UNCHANGED;
-
       
       
       

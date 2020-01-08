@@ -30,18 +30,7 @@ FlexLineValues::FlexLineValues(Flex* aParent,
 
   
   
-  switch (aLine->mGrowthState) {
-    case ComputedFlexLineInfo::GrowthState::SHRINKING:
-      mGrowthState = FlexLineGrowthState::Shrinking;
-      break;
-
-    case ComputedFlexLineInfo::GrowthState::GROWING:
-      mGrowthState = FlexLineGrowthState::Growing;
-      break;
-
-    default:
-      mGrowthState = FlexLineGrowthState::Unchanged;
-  };
+  mGrowthState = aLine->mGrowthState;
 
   
   mCrossStart = nsPresContext::AppUnitsToDoubleCSSPixels(
