@@ -6,11 +6,13 @@ from sync import SyncFromUpstreamRunner
 from tree import GitTree, HgTree, NoVCSTree
 
 from base import Step, StepRunner, exit_clean, exit_unclean
-from state import State
+from state import SavedState, UnsavedState
+
 
 def setup_paths(sync_path):
     sys.path.insert(0, os.path.abspath(sync_path))
     from tools import localpaths  
+
 
 class LoadConfig(Step):
     """Step for loading configuration from the ini file and kwargs."""
@@ -122,7 +124,10 @@ class WPTUpdate(object):
                 
                 setup_paths(kwargs["sync_path"])
 
-        self.state = State(logger)
+        if kwargs["store_state"]:
+            self.state = SavedState(logger)
+        else:
+            self.state = UnsavedState(logger)
         self.kwargs = kwargs
         self.logger = logger
 
