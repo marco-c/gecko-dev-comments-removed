@@ -17,12 +17,6 @@ namespace mozilla {
  nsresult
 DebuggerOnGCRunnable::Enqueue(JSContext* aCx, const JS::GCDescription& aDesc)
 {
-  
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return NS_OK;
-  }
-
   auto gcEvent = aDesc.toGCEvent(aCx);
   if (!gcEvent) {
     return NS_ERROR_OUT_OF_MEMORY;

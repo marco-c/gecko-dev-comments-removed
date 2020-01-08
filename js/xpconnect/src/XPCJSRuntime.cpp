@@ -146,26 +146,8 @@ public:
       return NS_OK;
   }
 
-  
-  
-  
-  
-  void RecordReplayRun()
-  {
-      
-      mActive = recordreplay::RecordReplayValue(mActive);
-      mPurge = recordreplay::RecordReplayValue(mPurge);
-      mContinuation = recordreplay::RecordReplayValue(mContinuation);
-
-      Run();
-  }
-
   nsresult Dispatch()
   {
-      if (recordreplay::IsRecordingOrReplaying()) {
-          recordreplay::ActivateTrigger(this);
-          return NS_OK;
-      }
       nsCOMPtr<nsIRunnable> self(this);
       return NS_IdleDispatchToCurrentThread(self.forget(), 500);
   }
@@ -181,28 +163,12 @@ public:
       }
   }
 
-  
-  struct RawSelfPtr { AsyncFreeSnowWhite* mPtr; };
-
   AsyncFreeSnowWhite()
     : Runnable("AsyncFreeSnowWhite")
     , mContinuation(false)
     , mActive(false)
     , mPurge(false)
-  {
-      if (recordreplay::IsRecordingOrReplaying()) {
-          RawSelfPtr ptr;
-          ptr.mPtr = this;
-          recordreplay::RegisterTrigger(this, [=]() { ptr.mPtr->RecordReplayRun(); });
-      }
-  }
-
-  ~AsyncFreeSnowWhite()
-  {
-      if (recordreplay::IsRecordingOrReplaying()) {
-          recordreplay::UnregisterTrigger(this);
-      }
-  }
+  {}
 
 public:
   bool mContinuation;

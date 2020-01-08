@@ -572,18 +572,6 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
 #ifdef MOZ_JS_DEV_ERROR_INTERCEPTOR
   JS_SetErrorInterceptorCallback(mJSRuntime, &mErrorInterceptor);
 #endif 
-
-  if (recordreplay::IsRecordingOrReplaying()) {
-    
-    
-    
-    
-    
-    recordreplay::RegisterTrigger(this,
-                                  [=]() {
-                                    FinalizeDeferredThings(CycleCollectedJSContext::FinalizeNow);
-                                  });
-  }
 }
 
 void
@@ -604,10 +592,6 @@ CycleCollectedJSRuntime::~CycleCollectedJSRuntime()
   MOZ_COUNT_DTOR(CycleCollectedJSRuntime);
   MOZ_ASSERT(!mDeferredFinalizerTable.Count());
   MOZ_ASSERT(mShutdownCalled);
-
-  if (recordreplay::IsRecordingOrReplaying()) {
-    recordreplay::UnregisterTrigger(this);
-  }
 }
 
 void
@@ -969,17 +953,14 @@ CycleCollectedJSRuntime::GCNurseryCollectionCallback(JSContext* aContext,
   MOZ_ASSERT(CycleCollectedJSContext::Get()->Context() == aContext);
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!recordreplay::IsRecordingOrReplaying()) {
-    RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
-    if (timelines && !timelines->IsEmpty()) {
-      UniquePtr<AbstractTimelineMarker> abstractMarker(
-        MakeUnique<MinorGCMarker>(aProgress, aReason));
-      timelines->AddMarkerForAllObservedDocShells(abstractMarker);
-    }
+  RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
+  if (timelines && !timelines->IsEmpty()) {
+    UniquePtr<AbstractTimelineMarker> abstractMarker(
+      MakeUnique<MinorGCMarker>(aProgress, aReason));
+    timelines->AddMarkerForAllObservedDocShells(abstractMarker);
   }
 
   if (aProgress == JS::GCNurseryProgress::GC_NURSERY_COLLECTION_START) {
-    recordreplay::AutoPassThroughThreadEvents pt;
     self->mLatestNurseryCollectionStart = TimeStamp::Now();
   }
 #ifdef MOZ_GECKO_PROFILER
@@ -1532,16 +1513,10 @@ CycleCollectedJSRuntime::OnGC(JSContext* aContext,
       
       
       
-      if (recordreplay::IsRecordingOrReplaying()) {
-        
-        
-        recordreplay::ActivateTrigger(this);
-      } else {
-        bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) || JS_IsExceptionPending(aContext);
-        FinalizeDeferredThings(finalizeIncrementally
-                               ? CycleCollectedJSContext::FinalizeIncrementally
-                               : CycleCollectedJSContext::FinalizeNow);
-      }
+      bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) || JS_IsExceptionPending(aContext);
+      FinalizeDeferredThings(finalizeIncrementally
+                             ? CycleCollectedJSContext::FinalizeIncrementally
+                             : CycleCollectedJSContext::FinalizeNow);
 
       break;
     }
