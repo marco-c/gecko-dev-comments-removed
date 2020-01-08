@@ -201,24 +201,21 @@ function saveDocument(aDocument, aSkipPrompt) {
   } else if (aDocument.nodeType == 9 ) {
     
     
-    let ifreq =
-      aDocument.defaultView
-               .QueryInterface(Ci.nsIInterfaceRequestor);
+    let win = aDocument.defaultView;
 
     try {
-      contentDisposition =
-        ifreq.getInterface(Ci.nsIDOMWindowUtils)
-             .getDocumentMetadata("content-disposition");
+      contentDisposition = win.windowUtils
+                              .getDocumentMetadata("content-disposition");
     } catch (ex) {
       
     }
 
     try {
       let shEntry =
-        ifreq.getInterface(Ci.nsIWebNavigation)
-             .QueryInterface(Ci.nsIWebPageDescriptor)
-             .currentDescriptor
-             .QueryInterface(Ci.nsISHEntry);
+        win.getInterface(Ci.nsIWebNavigation)
+           .QueryInterface(Ci.nsIWebPageDescriptor)
+           .currentDescriptor
+           .QueryInterface(Ci.nsISHEntry);
 
       cacheKey = shEntry.cacheKey;
     } catch (ex) {

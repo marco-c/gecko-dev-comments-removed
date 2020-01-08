@@ -91,8 +91,7 @@ var PageThumbUtils = {
 
 
   getContentSize(aWindow) {
-    let utils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDOMWindowUtils);
+    let utils = aWindow.windowUtils;
     
     let sbWidth = {}, sbHeight = {};
 
@@ -261,8 +260,7 @@ var PageThumbUtils = {
     if (Cu.isCrossProcessWrapper(aWindow)) {
       throw new Error("Do not pass cpows here.");
     }
-    let utils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDOMWindowUtils);
+    let utils = aWindow.windowUtils;
     
     let sbWidth = {}, sbHeight = {};
 

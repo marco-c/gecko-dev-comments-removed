@@ -62,10 +62,7 @@ const backgroundPageThumbsContent = {
     
     
     if (content && subj == content.document) {
-      content.
-        QueryInterface(Ci.nsIInterfaceRequestor).
-        getInterface(Ci.nsIDOMWindowUtils).
-        disableDialogs();
+      content.windowUtils.disableDialogs();
     }
   },
 

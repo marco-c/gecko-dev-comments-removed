@@ -144,8 +144,7 @@ var PrintingContent = {
         onStateChange(webProgress, req, flags, status) {
           if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
             webProgress.removeProgressListener(webProgressListener);
-            let domUtils = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                                        .getInterface(Ci.nsIDOMWindowUtils);
+            let domUtils = contentWindow.windowUtils;
             
             
             if (domUtils.isMozAfterPaintPending) {

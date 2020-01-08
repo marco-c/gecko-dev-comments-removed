@@ -40,8 +40,7 @@ var ScrollPositionInternal = {
 
 
   collect(frame) {
-    let ifreq = frame.QueryInterface(Ci.nsIInterfaceRequestor);
-    let utils = ifreq.getInterface(Ci.nsIDOMWindowUtils);
+    let utils = frame.windowUtils;
     let scrollX = {}, scrollY = {};
     utils.getScrollXY(false , scrollX, scrollY);
 

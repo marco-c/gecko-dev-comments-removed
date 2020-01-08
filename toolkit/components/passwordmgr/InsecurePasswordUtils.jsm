@@ -40,8 +40,7 @@ var InsecurePasswordUtils = {
 
 
   _getInnerWindowId(window) {
-      return window.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+    return window.windowUtils.currentInnerWindowID;
   },
 
   _sendWebConsoleMessage(messageTag, domDoc) {

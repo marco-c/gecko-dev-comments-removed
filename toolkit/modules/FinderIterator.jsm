@@ -577,7 +577,7 @@ var FinderIterator = {
 
     
     
-    let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+    let dwu = window.windowUtils;
     for (let i = 0, l = window.frames.length; i < l; ++i) {
       let frame = window.frames[i];
       

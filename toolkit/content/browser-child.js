@@ -614,7 +614,5 @@ addMessageListener("PermitUnload", msg => {
 
 
 
-var outerWindowID = content.QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIDOMWindowUtils)
-                           .outerWindowID;
+var outerWindowID = content.windowUtils.outerWindowID;
 sendAsyncMessage("Browser:Init", {outerWindowID});
