@@ -160,6 +160,36 @@ void ReplayInvokeCallback(size_t aCallbackId) {
 
 
 
+static const char* gStaticClassNames[] = {
+  
+  "NSAutoreleasePool",
+  "NSBezierPath",
+  "NSButtonCell",
+  "NSColor",
+  "NSComboBoxCell",
+  "NSDictionary",
+  "NSGraphicsContext",
+  "NSFont",
+  "NSFontManager",
+  "NSLevelIndicatorCell",
+  "NSNumber",
+  "NSPopUpButtonCell",
+  "NSProgressBarCell",
+  "NSString",
+  "NSWindow",
+
+  
+  "CellDrawView",
+  "CheckboxCell",
+  "RadioButtonCell",
+  "SearchFieldCellWithFocusRing",
+  "ToolbarSearchFieldCellWithFocusRing",
+};
+
+
+static Class* gStaticClasses;
+
+
 
 enum class ObjCInputKind {
   StaticClass,
@@ -173,6 +203,22 @@ struct CFConstantString {
   char* mData;
   size_t mLength;
 };
+
+static Class gCFConstantStringClass;
+
+static void
+InitializeStaticClasses()
+{
+  gStaticClasses = new Class[ArrayLength(gStaticClassNames)];
+
+  for (size_t i = 0; i < ArrayLength(gStaticClassNames); i++) {
+    gStaticClasses[i] = objc_lookUpClass(gStaticClassNames[i]);
+    MOZ_RELEASE_ASSERT(gStaticClasses[i]);
+  }
+
+  gCFConstantStringClass = objc_lookUpClass("__NSCFConstantString");
+  MOZ_RELEASE_ASSERT(gCFConstantStringClass);
+}
 
 
 
@@ -191,36 +237,9 @@ static void MM_ObjCInput(MiddlemanCallContext& aCx, id* aThingPtr) {
     
 
     
-    static const char* gStaticClasses[] = {
-        
-        "NSAutoreleasePool",
-        "NSBezierPath",
-        "NSButtonCell",
-        "NSColor",
-        "NSComboBoxCell",
-        "NSDictionary",
-        "NSGraphicsContext",
-        "NSFont",
-        "NSFontManager",
-        "NSLevelIndicatorCell",
-        "NSNumber",
-        "NSPopUpButtonCell",
-        "NSProgressBarCell",
-        "NSString",
-        "NSWindow",
-
-        
-        "CellDrawView",
-        "CheckboxCell",
-        "RadioButtonCell",
-        "SearchFieldCellWithFocusRing",
-        "ToolbarSearchFieldCellWithFocusRing",
-    };
-
-    
-    for (const char* className : gStaticClasses) {
-      Class cls = objc_lookUpClass(className);
-      if (cls == (Class)*aThingPtr) {
+    for (size_t i = 0; i < ArrayLength(gStaticClassNames); i++) {
+      if (gStaticClasses[i] == (Class)*aThingPtr) {
+        const char* className = gStaticClassNames[i];
         aCx.WriteInputScalar((size_t)ObjCInputKind::StaticClass);
         size_t len = strlen(className) + 1;
         aCx.WriteInputScalar(len);
@@ -237,7 +256,7 @@ static void MM_ObjCInput(MiddlemanCallContext& aCx, id* aThingPtr) {
     
     if (MemoryRangeIsTracked(*aThingPtr, sizeof(CFConstantString))) {
       CFConstantString* str = (CFConstantString*)*aThingPtr;
-      if (str->mClass == objc_lookUpClass("__NSCFConstantString") &&
+      if (str->mClass == gCFConstantStringClass &&
           str->mLength <= 4096 &&  
           MemoryRangeIsTracked(str->mData, str->mLength)) {
         InfallibleVector<UniChar> buffer;
@@ -2653,6 +2672,8 @@ void EarlyInitializeRedirections() {
   
   
   LateInitializeRedirections();
+
+  InitializeStaticClasses();
 }
 
 void LateInitializeRedirections() {
