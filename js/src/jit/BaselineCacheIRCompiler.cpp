@@ -1333,13 +1333,8 @@ BaselineCacheIRCompiler::emitStoreDenseElement()
     
     
     
-    if (cx_->runtime()->jitSupportsFloatingPoint) {
-        
-        
-        masm.convertInt32ValueToDouble(val);
-    } else {
-        masm.assumeUnreachable("There shouldn't be double arrays when there is no FP support.");
-    }
+    
+    masm.convertInt32ValueToDouble(val);
 
     masm.bind(&noSpecialHandling);
 
@@ -1461,13 +1456,8 @@ BaselineCacheIRCompiler::emitStoreDenseElementHole()
     
     
     
-    if (cx_->runtime()->jitSupportsFloatingPoint) {
-        
-        
-        masm.convertInt32ValueToDouble(val);
-    } else {
-        masm.assumeUnreachable("There shouldn't be double arrays when there is no FP support.");
-    }
+    
+    masm.convertInt32ValueToDouble(val);
 
     masm.bind(&noConversion);
 
@@ -1594,13 +1584,8 @@ BaselineCacheIRCompiler::emitArrayPush()
     
     
     
-    if (cx_->runtime()->jitSupportsFloatingPoint) {
-        
-        
-        masm.convertInt32ValueToDouble(val);
-    } else {
-        masm.assumeUnreachable("There shouldn't be double arrays when there is no FP support.");
-    }
+    
+    masm.convertInt32ValueToDouble(val);
 
     masm.bind(&noConversion);
 
