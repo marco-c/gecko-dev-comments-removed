@@ -1017,6 +1017,17 @@ protected:
 
 
 
+  void EnableStyleSheetInternal(const nsAString& aURL, bool aEnable);
+
+  
+
+
+
+
+
+
+
+
 
 
 
