@@ -147,10 +147,19 @@
 
 
 
-use super::{Item, Numeric, Fixed, Pad};
 
 
-#[derive(Clone)]
+
+
+
+
+
+
+
+use super::{Item, Numeric, Fixed, InternalFixed, InternalInternal, Pad};
+
+
+#[derive(Clone, Debug)]
 pub struct StrftimeItems<'a> {
     
     remainder: &'a str,
@@ -168,20 +177,22 @@ impl<'a> StrftimeItems<'a> {
     }
 }
 
+const HAVE_ALTERNATES: &'static str = "z";
+
 impl<'a> Iterator for StrftimeItems<'a> {
     type Item = Item<'a>;
 
     fn next(&mut self) -> Option<Item<'a>> {
         
         if !self.recons.is_empty() {
-            let item = self.recons[0];
+            let item = self.recons[0].clone();
             self.recons = &self.recons[1..];
             return Some(item);
         }
 
         match self.remainder.chars().next() {
             
-            None => return None,
+            None => None,
 
             
             Some('%') => {
@@ -206,7 +217,11 @@ impl<'a> Iterator for StrftimeItems<'a> {
                     '_' => Some(Pad::Space),
                     _ => None,
                 };
-                let spec = if pad_override.is_some() { next!() } else { spec };
+                let is_alternate = spec == '#';
+                let spec = if pad_override.is_some() || is_alternate { next!() } else { spec };
+                if is_alternate && !HAVE_ALTERNATES.contains(spec) {
+                    return Some(Item::Error);
+                }
 
                 macro_rules! recons {
                     [$head:expr, $($tail:expr),+] => ({
@@ -238,7 +253,7 @@ impl<'a> Iterator for StrftimeItems<'a> {
                     'Y' => num0!(Year),
                     'Z' => fix!(TimezoneName),
                     'a' => fix!(ShortWeekdayName),
-                    'b' => fix!(ShortMonthName),
+                    'b' | 'h' => fix!(ShortMonthName),
                     'c' => recons![fix!(ShortWeekdayName), sp!(" "), fix!(ShortMonthName),
                                    sp!(" "), nums!(Day), sp!(" "), num0!(Hour), lit!(":"),
                                    num0!(Minute), lit!(":"), num0!(Second), sp!(" "), num0!(Year)],
@@ -246,7 +261,6 @@ impl<'a> Iterator for StrftimeItems<'a> {
                     'e' => nums!(Day),
                     'f' => num0!(Nanosecond),
                     'g' => num0!(IsoYearMod100),
-                    'h' => fix!(ShortMonthName),
                     'j' => num0!(Ordinal),
                     'k' => nums!(Hour),
                     'l' => nums!(Hour12),
@@ -264,7 +278,11 @@ impl<'a> Iterator for StrftimeItems<'a> {
                     'x' => recons![num0!(Month), lit!("/"), num0!(Day), lit!("/"),
                                    num0!(YearMod100)],
                     'y' => num0!(YearMod100),
-                    'z' => fix!(TimezoneOffset),
+                    'z' => if is_alternate {
+                        internal_fix!(TimezoneOffsetPermissive)
+                    } else {
+                        fix!(TimezoneOffset)
+                    },
                     '+' => fix!(RFC3339),
                     ':' => match next!() {
                         'z' => fix!(TimezoneOffsetColon),
@@ -286,6 +304,18 @@ impl<'a> Iterator for StrftimeItems<'a> {
                         'f' => fix!(Nanosecond),
                         _ => Item::Error,
                     },
+                    '3' => match next!() {
+                        'f' => internal_fix!(Nanosecond3NoDot),
+                        _ => Item::Error,
+                    },
+                    '6' => match next!() {
+                        'f' => internal_fix!(Nanosecond6NoDot),
+                        _ => Item::Error,
+                    },
+                    '9' => match next!() {
+                        'f' => internal_fix!(Nanosecond9NoDot),
+                        _ => Item::Error,
+                    },
                     '%' => lit!("%"),
                     _ => Item::Error, 
                 };
@@ -293,8 +323,8 @@ impl<'a> Iterator for StrftimeItems<'a> {
                 
                 if let Some(new_pad) = pad_override {
                     match item {
-                        Item::Numeric(kind, _pad) if self.recons.is_empty() =>
-                            Some(Item::Numeric(kind, new_pad)),
+                        Item::Numeric(ref kind, _pad) if self.recons.is_empty() =>
+                            Some(Item::Numeric(kind.clone(), new_pad)),
                         _ => Some(Item::Error), 
                     }
                 } else {
@@ -306,7 +336,7 @@ impl<'a> Iterator for StrftimeItems<'a> {
             Some(c) if c.is_whitespace() => {
                 
                 let nextspec = self.remainder.find(|c: char| !c.is_whitespace())
-                                             .unwrap_or(self.remainder.len());
+                                             .unwrap_or_else(|| self.remainder.len());
                 assert!(nextspec > 0);
                 let item = sp!(&self.remainder[..nextspec]);
                 self.remainder = &self.remainder[nextspec..];
@@ -316,7 +346,7 @@ impl<'a> Iterator for StrftimeItems<'a> {
             
             _ => {
                 let nextspec = self.remainder.find(|c: char| c.is_whitespace() || c == '%')
-                                             .unwrap_or(self.remainder.len());
+                                             .unwrap_or_else(|| self.remainder.len());
                 assert!(nextspec > 0);
                 let item = lit!(&self.remainder[..nextspec]);
                 self.remainder = &self.remainder[nextspec..];
@@ -370,14 +400,17 @@ fn test_strftime_items() {
     assert_eq!(parse_and_collect("%-e"), [num!(Day)]);
     assert_eq!(parse_and_collect("%0e"), [num0!(Day)]);
     assert_eq!(parse_and_collect("%_e"), [nums!(Day)]);
+    assert_eq!(parse_and_collect("%z"), [fix!(TimezoneOffset)]);
+    assert_eq!(parse_and_collect("%#z"), [internal_fix!(TimezoneOffsetPermissive)]);
+    assert_eq!(parse_and_collect("%#m"), [Item::Error]);
 }
 
 #[cfg(test)]
 #[test]
 fn test_strftime_docs() {
-    use {FixedOffset, TimeZone};
+    use {FixedOffset, TimeZone, Timelike};
 
-    let dt = FixedOffset::east(34200).ymd(2001, 7, 8).and_hms_nano(0, 34, 59, 1_026_490_000);
+    let dt = FixedOffset::east(34200).ymd(2001, 7, 8).and_hms_nano(0, 34, 59, 1_026_490_708);
 
     
     assert_eq!(dt.format("%Y").to_string(), "2001");
@@ -416,11 +449,16 @@ fn test_strftime_docs() {
     assert_eq!(dt.format("%p").to_string(), "AM");
     assert_eq!(dt.format("%M").to_string(), "34");
     assert_eq!(dt.format("%S").to_string(), "60");
-    assert_eq!(dt.format("%f").to_string(), "026490000");
-    assert_eq!(dt.format("%.f").to_string(), ".026490");
+    assert_eq!(dt.format("%f").to_string(), "026490708");
+    assert_eq!(dt.format("%.f").to_string(), ".026490708");
+    assert_eq!(dt.with_nanosecond(1_026_490_000).unwrap().format("%.f").to_string(),
+               ".026490");
     assert_eq!(dt.format("%.3f").to_string(), ".026");
     assert_eq!(dt.format("%.6f").to_string(), ".026490");
-    assert_eq!(dt.format("%.9f").to_string(), ".026490000");
+    assert_eq!(dt.format("%.9f").to_string(), ".026490708");
+    assert_eq!(dt.format("%3f").to_string(), "026");
+    assert_eq!(dt.format("%6f").to_string(), "026490");
+    assert_eq!(dt.format("%9f").to_string(), "026490708");
     assert_eq!(dt.format("%R").to_string(), "00:34");
     assert_eq!(dt.format("%T").to_string(), "00:34:60");
     assert_eq!(dt.format("%X").to_string(), "00:34:60");
@@ -433,7 +471,9 @@ fn test_strftime_docs() {
 
     
     assert_eq!(dt.format("%c").to_string(), "Sun Jul  8 00:34:60 2001");
-    assert_eq!(dt.format("%+").to_string(), "2001-07-08T00:34:60.026490+09:30");
+    assert_eq!(dt.format("%+").to_string(), "2001-07-08T00:34:60.026490708+09:30");
+    assert_eq!(dt.with_nanosecond(1_026_490_000).unwrap().format("%+").to_string(),
+               "2001-07-08T00:34:60.026490+09:30");
     assert_eq!(dt.format("%s").to_string(), "994518299");
 
     

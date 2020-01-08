@@ -3,19 +3,23 @@
 
 
 
-
-
-
+use std::ops::{Add, Sub};
 use std::fmt;
+use oldtime::Duration as OldDuration;
 
+use Timelike;
 use div::div_mod_floor;
-use duration::Duration;
-use naive::date::NaiveDate;
-use naive::datetime::NaiveDateTime;
+use naive::{NaiveTime, NaiveDate, NaiveDateTime};
+use DateTime;
 use super::{TimeZone, Offset, LocalResult};
 
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+
+
+
+
+
+#[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub struct FixedOffset {
     local_minus_utc: i32,
 }
@@ -23,21 +27,14 @@ pub struct FixedOffset {
 impl FixedOffset {
     
     
-    #[cfg(feature = "rustc-serialize")]
-    fn from_serialized(secs: i32) -> Option<FixedOffset> {
-        
-        if secs <= -86400 || 86400 <= secs { return None; }
-
-        let offset = FixedOffset { local_minus_utc: secs };
-        Some(offset)
-    }
-
     
-    #[cfg(feature = "rustc-serialize")]
-    fn to_serialized(&self) -> i32 {
-        self.local_minus_utc
-    }
-
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -51,13 +48,23 @@ impl FixedOffset {
     
     
     pub fn east_opt(secs: i32) -> Option<FixedOffset> {
-        if -86400 < secs && secs < 86400 {
+        if -86_400 < secs && secs < 86_400 {
             Some(FixedOffset { local_minus_utc: secs })
         } else {
             None
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -71,32 +78,42 @@ impl FixedOffset {
     
     
     pub fn west_opt(secs: i32) -> Option<FixedOffset> {
-        if -86400 < secs && secs < 86400 {
+        if -86_400 < secs && secs < 86_400 {
             Some(FixedOffset { local_minus_utc: -secs })
         } else {
             None
         }
+    }
+
+    
+    pub fn local_minus_utc(&self) -> i32 {
+        self.local_minus_utc
+    }
+
+    
+    pub fn utc_minus_local(&self) -> i32 {
+        -self.local_minus_utc
     }
 }
 
 impl TimeZone for FixedOffset {
     type Offset = FixedOffset;
 
-    fn from_offset(offset: &FixedOffset) -> FixedOffset { offset.clone() }
+    fn from_offset(offset: &FixedOffset) -> FixedOffset { *offset }
 
     fn offset_from_local_date(&self, _local: &NaiveDate) -> LocalResult<FixedOffset> {
-        LocalResult::Single(self.clone())
+        LocalResult::Single(*self)
     }
     fn offset_from_local_datetime(&self, _local: &NaiveDateTime) -> LocalResult<FixedOffset> {
-        LocalResult::Single(self.clone())
+        LocalResult::Single(*self)
     }
 
-    fn offset_from_utc_date(&self, _utc: &NaiveDate) -> FixedOffset { self.clone() }
-    fn offset_from_utc_datetime(&self, _utc: &NaiveDateTime) -> FixedOffset { self.clone() }
+    fn offset_from_utc_date(&self, _utc: &NaiveDate) -> FixedOffset { *self }
+    fn offset_from_utc_datetime(&self, _utc: &NaiveDateTime) -> FixedOffset { *self }
 }
 
 impl Offset for FixedOffset {
-    fn local_minus_utc(&self) -> Duration { Duration::seconds(self.local_minus_utc as i64) }
+    fn fix(&self) -> FixedOffset { *self }
 }
 
 impl fmt::Debug for FixedOffset {
@@ -117,72 +134,91 @@ impl fmt::Display for FixedOffset {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Debug::fmt(self, f) }
 }
 
-#[cfg(feature = "rustc-serialize")]
-mod rustc_serialize {
+
+
+
+
+
+fn add_with_leapsecond<T>(lhs: &T, rhs: i32) -> T
+    where T: Timelike + Add<OldDuration, Output=T>
+{
+    
+    let nanos = lhs.nanosecond();
+    let lhs = lhs.with_nanosecond(0).unwrap();
+    (lhs + OldDuration::seconds(i64::from(rhs))).with_nanosecond(nanos).unwrap()
+}
+
+impl Add<FixedOffset> for NaiveTime {
+    type Output = NaiveTime;
+
+    #[inline]
+    fn add(self, rhs: FixedOffset) -> NaiveTime {
+        add_with_leapsecond(&self, rhs.local_minus_utc)
+    }
+}
+
+impl Sub<FixedOffset> for NaiveTime {
+    type Output = NaiveTime;
+
+    #[inline]
+    fn sub(self, rhs: FixedOffset) -> NaiveTime {
+        add_with_leapsecond(&self, -rhs.local_minus_utc)
+    }
+}
+
+impl Add<FixedOffset> for NaiveDateTime {
+    type Output = NaiveDateTime;
+
+    #[inline]
+    fn add(self, rhs: FixedOffset) -> NaiveDateTime {
+        add_with_leapsecond(&self, rhs.local_minus_utc)
+    }
+}
+
+impl Sub<FixedOffset> for NaiveDateTime {
+    type Output = NaiveDateTime;
+
+    #[inline]
+    fn sub(self, rhs: FixedOffset) -> NaiveDateTime {
+        add_with_leapsecond(&self, -rhs.local_minus_utc)
+    }
+}
+
+impl<Tz: TimeZone> Add<FixedOffset> for DateTime<Tz> {
+    type Output = DateTime<Tz>;
+
+    #[inline]
+    fn add(self, rhs: FixedOffset) -> DateTime<Tz> {
+        add_with_leapsecond(&self, rhs.local_minus_utc)
+    }
+}
+
+impl<Tz: TimeZone> Sub<FixedOffset> for DateTime<Tz> {
+    type Output = DateTime<Tz>;
+
+    #[inline]
+    fn sub(self, rhs: FixedOffset) -> DateTime<Tz> {
+        add_with_leapsecond(&self, -rhs.local_minus_utc)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use offset::TimeZone;
     use super::FixedOffset;
-    use rustc_serialize::{Encodable, Encoder, Decodable, Decoder};
-
-    
-    
-    
-    
-
-    impl Encodable for FixedOffset {
-        fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-            let secs = self.to_serialized();
-            s.emit_struct("FixedOffset", 1, |s| {
-                try!(s.emit_struct_field("local_minus_utc", 0, |s| secs.encode(s)));
-                Ok(())
-            })
-        }
-    }
-
-    impl Decodable for FixedOffset {
-        fn decode<D: Decoder>(d: &mut D) -> Result<FixedOffset, D::Error> {
-            d.read_struct("FixedOffset", 1, |d| {
-                let secs = try!(d.read_struct_field("local_minus_utc", 0, Decodable::decode));
-                FixedOffset::from_serialized(secs).ok_or_else(|| d.error("invalid offset"))
-            })
-        }
-    }
 
     #[test]
-    fn test_encodable() {
-        use rustc_serialize::json::encode;
-
-        assert_eq!(encode(&FixedOffset::east(0)).ok(),
-                   Some(r#"{"local_minus_utc":0}"#.into()));
-        assert_eq!(encode(&FixedOffset::east(1234)).ok(),
-                   Some(r#"{"local_minus_utc":1234}"#.into()));
-        assert_eq!(encode(&FixedOffset::east(86399)).ok(),
-                   Some(r#"{"local_minus_utc":86399}"#.into()));
-        assert_eq!(encode(&FixedOffset::west(1234)).ok(),
-                   Some(r#"{"local_minus_utc":-1234}"#.into()));
-        assert_eq!(encode(&FixedOffset::west(86399)).ok(),
-                   Some(r#"{"local_minus_utc":-86399}"#.into()));
-    }
-
-    #[test]
-    fn test_decodable() {
-        use rustc_serialize::json;
-
-        let decode = |s: &str| json::decode::<FixedOffset>(s);
-
-        assert_eq!(decode(r#"{"local_minus_utc":0}"#).ok(), Some(FixedOffset::east(0)));
-        assert_eq!(decode(r#"{"local_minus_utc": 1234}"#).ok(), Some(FixedOffset::east(1234)));
-        assert_eq!(decode(r#"{"local_minus_utc":86399}"#).ok(), Some(FixedOffset::east(86399)));
-        assert_eq!(decode(r#"{"local_minus_utc":-1234}"#).ok(), Some(FixedOffset::west(1234)));
-        assert_eq!(decode(r#"{"local_minus_utc":-86399}"#).ok(), Some(FixedOffset::west(86399)));
-
-        assert!(decode(r#"{"local_minus_utc":86400}"#).is_err());
-        assert!(decode(r#"{"local_minus_utc":-86400}"#).is_err());
-        assert!(decode(r#"{"local_minus_utc":0.1}"#).is_err());
-        assert!(decode(r#"{"local_minus_utc":null}"#).is_err());
-        assert!(decode(r#"{}"#).is_err());
-        assert!(decode(r#"0"#).is_err());
-        assert!(decode(r#"1234"#).is_err());
-        assert!(decode(r#""string""#).is_err());
-        assert!(decode(r#"null"#).is_err());
+    fn test_date_extreme_offset() {
+        
+        
+        assert_eq!(format!("{:?}", FixedOffset::east(86399).ymd(2012, 2, 29)),
+                   "2012-02-29+23:59:59".to_string());
+        assert_eq!(format!("{:?}", FixedOffset::east(86399).ymd(2012, 2, 29).and_hms(5, 6, 7)),
+                   "2012-02-29T05:06:07+23:59:59".to_string());
+        assert_eq!(format!("{:?}", FixedOffset::west(86399).ymd(2012, 3, 4)),
+                   "2012-03-04-23:59:59".to_string());
+        assert_eq!(format!("{:?}", FixedOffset::west(86399).ymd(2012, 3, 4).and_hms(5, 6, 7)),
+                   "2012-03-04T05:06:07-23:59:59".to_string());
     }
 }
 

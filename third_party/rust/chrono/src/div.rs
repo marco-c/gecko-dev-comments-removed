@@ -7,8 +7,7 @@
 
 
 
-
-pub use num::integer::{div_rem, div_floor, mod_floor, div_mod_floor};
+pub use num_integer::{div_rem, div_floor, mod_floor, div_mod_floor};
 
 #[cfg(test)]
 mod tests {

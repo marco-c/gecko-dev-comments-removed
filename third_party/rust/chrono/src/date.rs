@@ -3,22 +3,17 @@
 
 
 
-
-
-
 use std::{fmt, hash};
 use std::cmp::Ordering;
 use std::ops::{Add, Sub};
+use oldtime::Duration as OldDuration;
 
 use {Weekday, Datelike};
-use duration::Duration;
-use offset::{TimeZone, Offset};
-use offset::utc::UTC;
-use naive;
-use naive::date::NaiveDate;
-use naive::time::NaiveTime;
-use datetime::DateTime;
+use offset::{TimeZone, Utc};
+use naive::{self, NaiveDate, NaiveTime, IsoWeek};
+use DateTime;
 use format::{Item, DelayedFormat, StrftimeItems};
+
 
 
 
@@ -50,9 +45,9 @@ pub struct Date<Tz: TimeZone> {
 }
 
 
-pub const MIN: Date<UTC> = Date { date: naive::date::MIN, offset: UTC };
+pub const MIN_DATE: Date<Utc> = Date { date: naive::MIN_DATE, offset: Utc };
 
-pub const MAX: Date<UTC> = Date { date: naive::date::MAX, offset: UTC };
+pub const MAX_DATE: Date<Utc> = Date { date: naive::MAX_DATE, offset: Utc };
 
 impl<Tz: TimeZone> Date<Tz> {
     
@@ -189,7 +184,7 @@ impl<Tz: TimeZone> Date<Tz> {
 
     
     #[inline]
-    pub fn offset<'a>(&'a self) -> &'a Tz::Offset {
+    pub fn offset(&self) -> &Tz::Offset {
         &self.offset
     }
 
@@ -210,8 +205,8 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
-    pub fn checked_add(self, rhs: Duration) -> Option<Date<Tz>> {
-        let date = try_opt!(self.date.checked_add(rhs));
+    pub fn checked_add_signed(self, rhs: OldDuration) -> Option<Date<Tz>> {
+        let date = try_opt!(self.date.checked_add_signed(rhs));
         Some(Date { date: date, offset: self.offset })
     }
 
@@ -219,9 +214,20 @@ impl<Tz: TimeZone> Date<Tz> {
     
     
     #[inline]
-    pub fn checked_sub(self, rhs: Duration) -> Option<Date<Tz>> {
-        let date = try_opt!(self.date.checked_sub(rhs));
+    pub fn checked_sub_signed(self, rhs: OldDuration) -> Option<Date<Tz>> {
+        let date = try_opt!(self.date.checked_sub_signed(rhs));
         Some(Date { date: date, offset: self.offset })
+    }
+
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+    #[inline]
+    pub fn signed_duration_since<Tz2: TimeZone>(self, rhs: Date<Tz2>) -> OldDuration {
+        self.date.signed_duration_since(rhs.date)
     }
 
     
@@ -231,9 +237,13 @@ impl<Tz: TimeZone> Date<Tz> {
     }
 
     
+    
+    
+    
+    
     #[inline]
     pub fn naive_local(&self) -> NaiveDate {
-        self.date + self.offset.local_minus_utc()
+        self.date
     }
 }
 
@@ -269,7 +279,7 @@ impl<Tz: TimeZone> Datelike for Date<Tz> {
     #[inline] fn ordinal(&self) -> u32 { self.naive_local().ordinal() }
     #[inline] fn ordinal0(&self) -> u32 { self.naive_local().ordinal0() }
     #[inline] fn weekday(&self) -> Weekday { self.naive_local().weekday() }
-    #[inline] fn isoweekdate(&self) -> (i32, u32, Weekday) { self.naive_local().isoweekdate() }
+    #[inline] fn iso_week(&self) -> IsoWeek { self.naive_local().iso_week() }
 
     #[inline]
     fn with_year(&self, year: i32) -> Option<Date<Tz>> {
@@ -332,28 +342,30 @@ impl<Tz: TimeZone> hash::Hash for Date<Tz> {
     fn hash<H: hash::Hasher>(&self, state: &mut H) { self.date.hash(state) }
 }
 
-impl<Tz: TimeZone> Add<Duration> for Date<Tz> {
+impl<Tz: TimeZone> Add<OldDuration> for Date<Tz> {
     type Output = Date<Tz>;
 
     #[inline]
-    fn add(self, rhs: Duration) -> Date<Tz> {
-        self.checked_add(rhs).expect("`Date + Duration` overflowed")
+    fn add(self, rhs: OldDuration) -> Date<Tz> {
+        self.checked_add_signed(rhs).expect("`Date + Duration` overflowed")
     }
 }
 
-impl<Tz: TimeZone, Tz2: TimeZone> Sub<Date<Tz2>> for Date<Tz> {
-    type Output = Duration;
-
-    #[inline]
-    fn sub(self, rhs: Date<Tz2>) -> Duration { self.date - rhs.date }
-}
-
-impl<Tz: TimeZone> Sub<Duration> for Date<Tz> {
+impl<Tz: TimeZone> Sub<OldDuration> for Date<Tz> {
     type Output = Date<Tz>;
 
     #[inline]
-    fn sub(self, rhs: Duration) -> Date<Tz> {
-        self.checked_sub(rhs).expect("`Date - Duration` overflowed")
+    fn sub(self, rhs: OldDuration) -> Date<Tz> {
+        self.checked_sub_signed(rhs).expect("`Date - Duration` overflowed")
+    }
+}
+
+impl<Tz: TimeZone> Sub<Date<Tz>> for Date<Tz> {
+    type Output = OldDuration;
+
+    #[inline]
+    fn sub(self, rhs: Date<Tz>) -> OldDuration {
+        self.signed_duration_since(rhs)
     }
 }
 
@@ -366,117 +378,6 @@ impl<Tz: TimeZone> fmt::Debug for Date<Tz> {
 impl<Tz: TimeZone> fmt::Display for Date<Tz> where Tz::Offset: fmt::Display {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}{}", self.naive_local(), self.offset)
-    }
-}
-
-#[cfg(feature = "rustc-serialize")]
-mod rustc_serialize {
-    use super::Date;
-    use offset::TimeZone;
-    use rustc_serialize::{Encodable, Encoder, Decodable, Decoder};
-
-    
-    
-
-    impl<Tz: TimeZone> Encodable for Date<Tz> where Tz::Offset: Encodable {
-        fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-            s.emit_struct("Date", 2, |s| {
-                try!(s.emit_struct_field("date", 0, |s| self.date.encode(s)));
-                try!(s.emit_struct_field("offset", 1, |s| self.offset.encode(s)));
-                Ok(())
-            })
-        }
-    }
-
-    impl<Tz: TimeZone> Decodable for Date<Tz> where Tz::Offset: Decodable {
-        fn decode<D: Decoder>(d: &mut D) -> Result<Date<Tz>, D::Error> {
-            d.read_struct("Date", 2, |d| {
-                let date = try!(d.read_struct_field("date", 0, Decodable::decode));
-                let offset = try!(d.read_struct_field("offset", 1, Decodable::decode));
-                Ok(Date::from_utc(date, offset))
-            })
-        }
-    }
-
-    #[test]
-    fn test_encodable() {
-        use offset::utc::UTC;
-        use rustc_serialize::json::encode;
-
-        assert_eq!(encode(&UTC.ymd(2014, 7, 24)).ok(),
-                   Some(r#"{"date":{"ymdf":16501977},"offset":{}}"#.into()));
-    }
-
-    #[test]
-    fn test_decodable() {
-        use offset::utc::UTC;
-        use rustc_serialize::json;
-
-        let decode = |s: &str| json::decode::<Date<UTC>>(s);
-
-        assert_eq!(decode(r#"{"date":{"ymdf":16501977},"offset":{}}"#).ok(),
-                   Some(UTC.ymd(2014, 7, 24)));
-
-        assert!(decode(r#"{"date":{"ymdf":0},"offset":{}}"#).is_err());
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::fmt;
-
-    use Datelike;
-    use duration::Duration;
-    use naive::date::NaiveDate;
-    use naive::datetime::NaiveDateTime;
-    use offset::{TimeZone, Offset, LocalResult};
-    use offset::local::Local;
-
-    #[derive(Copy, Clone, PartialEq, Eq)]
-    struct UTC1y; 
-
-    #[derive(Copy, Clone, PartialEq, Eq)]
-    struct OneYear;
-
-    impl TimeZone for UTC1y {
-        type Offset = OneYear;
-
-        fn from_offset(_offset: &OneYear) -> UTC1y { UTC1y }
-
-        fn offset_from_local_date(&self, _local: &NaiveDate) -> LocalResult<OneYear> {
-            LocalResult::Single(OneYear)
-        }
-        fn offset_from_local_datetime(&self, _local: &NaiveDateTime) -> LocalResult<OneYear> {
-            LocalResult::Single(OneYear)
-        }
-
-        fn offset_from_utc_date(&self, _utc: &NaiveDate) -> OneYear { OneYear }
-        fn offset_from_utc_datetime(&self, _utc: &NaiveDateTime) -> OneYear { OneYear }
-    }
-
-    impl Offset for OneYear {
-        fn local_minus_utc(&self) -> Duration { Duration::days(365) }
-    }
-
-    impl fmt::Debug for OneYear {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "+8760:00") }
-    }
-
-    #[test]
-    fn test_date_weird_offset() {
-        assert_eq!(format!("{:?}", UTC1y.ymd(2012, 2, 29)),
-                   "2012-02-29+8760:00".to_string());
-        assert_eq!(format!("{:?}", UTC1y.ymd(2012, 2, 29).and_hms(5, 6, 7)),
-                   "2012-02-29T05:06:07+8760:00".to_string());
-        assert_eq!(format!("{:?}", UTC1y.ymd(2012, 3, 4)),
-                   "2012-03-04+8760:00".to_string());
-        assert_eq!(format!("{:?}", UTC1y.ymd(2012, 3, 4).and_hms(5, 6, 7)),
-                   "2012-03-04T05:06:07+8760:00".to_string());
-    }
-
-    #[test]
-    fn test_local_date_sanity_check() { 
-        assert_eq!(Local.ymd(2999, 12, 28).day(), 28);
     }
 }
 
