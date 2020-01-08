@@ -57,7 +57,10 @@ ruleTester.run("no-useless-removeEventListener", rule, {
     
     "elt.addEventListener(event1, function listener() {" +
     "  elt.removeEventListener(event2, listener);" +
-    "});"
+    "});",
+
+    
+    "myfunc.addEventListener(listener);",
   ],
   invalid: [
     invalidCode("elt.addEventListener('click', function listener() {" +
