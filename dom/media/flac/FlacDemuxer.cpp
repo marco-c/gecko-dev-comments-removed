@@ -43,7 +43,7 @@ public:
   
   
   
-  bool Parse(const uint8_t* aPacket, size_t aBytes, int64_t aPrevIndex)
+  bool Parse(const uint8_t* aPacket, size_t aBytes)
   {
     BitReader br(aPacket, aBytes * 8);
 
@@ -111,20 +111,6 @@ public:
     
     mIndex = mVariableBlockSize ? frame_or_sample_num
                                 : frame_or_sample_num * mBlocksize;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aPrevIndex && frame_or_sample_num > 0) {
-      int64_t minIndex = mVariableBlockSize ? aPrevIndex + 1
-                                            : aPrevIndex + mBlocksize;
-      mIndex = std::max(minIndex, mIndex);
-    }
 
     
     if (sr_code < 12) {
@@ -241,7 +227,7 @@ public:
   
   
   
-  int64_t FindNext(const uint8_t* aData, const uint32_t aLength, int64_t aCurrentIndex = 0)
+  int64_t FindNext(const uint8_t* aData, const uint32_t aLength)
   {
     
     
@@ -255,7 +241,7 @@ public:
 
     for (i = 0; i < modOffset; i++) {
       if ((BigEndian::readUint16(aData + i) & 0xfffe) == 0xfff8) {
-        if (mHeader.Parse(aData + i, aLength - i, aCurrentIndex)) {
+        if (mHeader.Parse(aData + i, aLength - i)) {
           return i;
         }
       }
@@ -266,7 +252,7 @@ public:
       if (((x & ~(x + 0x01010101)) & 0x80808080)) {
         for (j = 0; j < 4; j++) {
           if ((BigEndian::readUint16(aData + i + j) & 0xfffe) == 0xfff8) {
-            if (mHeader.Parse(aData + i + j, aLength - i - j, aCurrentIndex)) {
+            if (mHeader.Parse(aData + i + j, aLength - i - j)) {
               return i + j;
             }
           }
@@ -278,7 +264,7 @@ public:
 
   
   
-  bool FindNext(MediaResourceIndex& aResource, int64_t aCurrentIndex = 0)
+  bool FindNext(MediaResourceIndex& aResource)
   {
     static const int BUFFER_SIZE = 4096;
 
@@ -300,7 +286,7 @@ public:
 
       const size_t bufSize = read + innerOffset;
       int64_t foundOffset =
-        FindNext(reinterpret_cast<uint8_t*>(buffer.Elements()), bufSize, aCurrentIndex);
+        FindNext(reinterpret_cast<uint8_t*>(buffer.Elements()), bufSize);
 
       if (foundOffset >= 0) {
         SetOffset(aResource, foundOffset + offset);
@@ -464,7 +450,7 @@ public:
 private:
   bool GetNextFrame(MediaResourceIndex& aResource)
   {
-    while (mNextFrame.FindNext(aResource, mFrame.Header().Index())) {
+    while (mNextFrame.FindNext(aResource)) {
       
       
       aResource.Seek(SEEK_CUR, mNextFrame.Header().Size());

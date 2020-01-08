@@ -63,7 +63,7 @@ ReaderProxy::OnAudioDataRequestCompleted(RefPtr<AudioData> aAudio)
     StartTime().ToMicroseconds() - mLoopingOffset.ToMicroseconds();
   aAudio->AdjustForStartTime(offset);
   if (aAudio->mTime.IsValid()) {
-    mLastAudioEndTime = aAudio->GetEndTime();
+    mLastAudioEndTime = aAudio->mTime;
     return AudioDataPromise::CreateAndResolve(aAudio.forget(), __func__);
   }
   return AudioDataPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
@@ -87,10 +87,7 @@ ReaderProxy::OnAudioDataRequestFailed(const MediaResult& aError)
 
   
   if (!mAudioDuration.IsValid()) {
-    
-    
-    
-    mAudioDuration = std::max(mLastAudioEndTime, mDuration.Ref().ref());
+    mAudioDuration = mLastAudioEndTime;
   }
 
   
