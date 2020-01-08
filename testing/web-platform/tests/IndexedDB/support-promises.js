@@ -7,9 +7,37 @@ function databaseName(testCase) {
 
 
 
+
 function requestWatcher(testCase, request) {
   return new EventWatcher(testCase, request,
-      ['abort', 'blocked', 'complete', 'error', 'success', 'upgradeneeded']);
+                          ['blocked', 'error', 'success', 'upgradeneeded']);
+}
+
+
+
+
+function transactionWatcher(testCase, request) {
+  return new EventWatcher(testCase, request, ['abort', 'complete', 'error']);
+}
+
+
+
+
+
+
+
+function promiseForRequest(testCase, request) {
+  const eventWatcher = requestWatcher(testCase, request);
+  return eventWatcher.wait_for('success').then(event => event.target.result);
+}
+
+
+
+
+
+function promiseForTransaction(testCase, request) {
+  const eventWatcher = transactionWatcher(testCase, request);
+  return eventWatcher.wait_for('complete').then(() => {});
 }
 
 
@@ -64,7 +92,7 @@ function migrateNamedDatabase(
         requestEventPromise = new Promise((resolve, reject) => {
           request.onerror = event => {
             event.preventDefault();
-            resolve(event);
+            resolve(event.target.error);
           };
           request.onsuccess = () => reject(new Error(
               'indexedDB.open should not succeed for an aborted ' +
@@ -79,8 +107,7 @@ function migrateNamedDatabase(
       if (!shouldBeAborted) {
         request.onerror = null;
         request.onsuccess = null;
-        requestEventPromise =
-            requestWatcher(testCase, request).wait_for('success');
+        requestEventPromise = promiseForRequest(testCase, request);
       }
 
       
@@ -95,12 +122,10 @@ function migrateNamedDatabase(
           'indexedDB.open should not succeed without creating a ' +
           'versionchange transaction'));
     };
-  }).then(event => {
-    const database = event.target.result;
-    if (database) {
-      testCase.add_cleanup(() => { database.close(); });
-    }
-    return database || event.target.error;
+  }).then(databaseOrError => {
+    if (databaseOrError instanceof IDBDatabase)
+      testCase.add_cleanup(() => { databaseOrError.close(); });
+    return databaseOrError;
   });
 }
 
@@ -126,9 +151,7 @@ function createDatabase(testCase, setupCallback) {
 
 function createNamedDatabase(testCase, databaseName, setupCallback) {
   const request = indexedDB.deleteDatabase(databaseName);
-  const eventWatcher = requestWatcher(testCase, request);
-
-  return eventWatcher.wait_for('success').then(event => {
+  return promiseForRequest(testCase, request).then(() => {
     testCase.add_cleanup(() => { indexedDB.deleteDatabase(databaseName); });
     return migrateNamedDatabase(testCase, databaseName, 1, setupCallback)
   });
@@ -152,9 +175,7 @@ function openDatabase(testCase, version) {
 
 function openNamedDatabase(testCase, databaseName, version) {
   const request = indexedDB.open(databaseName, version);
-  const eventWatcher = requestWatcher(testCase, request);
-  return eventWatcher.wait_for('success').then(() => {
-    const database = request.result;
+  return promiseForRequest(testCase, request).then(database => {
     testCase.add_cleanup(() => { database.close(); });
     return database;
   });
@@ -215,9 +236,7 @@ function checkStoreIndexes (testCase, store, errorMessage) {
 function checkStoreGenerator(testCase, store, expectedKey, errorMessage) {
   const request = store.put(
       { title: 'Bedrock Nights ' + expectedKey, author: 'Barney' });
-  const eventWatcher = requestWatcher(testCase, request);
-  return eventWatcher.wait_for('success').then(() => {
-    const result = request.result;
+  return promiseForRequest(testCase, request).then(result => {
     assert_equals(result, expectedKey, errorMessage);
   });
 }
@@ -230,9 +249,7 @@ function checkStoreGenerator(testCase, store, expectedKey, errorMessage) {
 
 function checkStoreContents(testCase, store, errorMessage) {
   const request = store.get(123456);
-  const eventWatcher = requestWatcher(testCase, request);
-  return eventWatcher.wait_for('success').then(() => {
-    const result = request.result;
+  return promiseForRequest(testCase, request).then(result => {
     assert_equals(result.isbn, BOOKS_RECORD_DATA[0].isbn, errorMessage);
     assert_equals(result.author, BOOKS_RECORD_DATA[0].author, errorMessage);
     assert_equals(result.title, BOOKS_RECORD_DATA[0].title, errorMessage);
@@ -247,9 +264,7 @@ function checkStoreContents(testCase, store, errorMessage) {
 
 function checkAuthorIndexContents(testCase, index, errorMessage) {
   const request = index.get(BOOKS_RECORD_DATA[2].author);
-  const eventWatcher = requestWatcher(testCase, request);
-  return eventWatcher.wait_for('success').then(() => {
-    const result = request.result;
+  return promiseForRequest(testCase, request).then(result => {
     assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
     assert_equals(result.title, BOOKS_RECORD_DATA[2].title, errorMessage);
   });
@@ -263,10 +278,28 @@ function checkAuthorIndexContents(testCase, index, errorMessage) {
 
 function checkTitleIndexContents(testCase, index, errorMessage) {
   const request = index.get(BOOKS_RECORD_DATA[2].title);
-  const eventWatcher = requestWatcher(testCase, request);
-  return eventWatcher.wait_for('success').then(() => {
-    const result = request.result;
+  return promiseForRequest(testCase, request).then(result => {
     assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
     assert_equals(result.author, BOOKS_RECORD_DATA[2].author, errorMessage);
   });
+}
+
+
+
+
+
+function largeValue(size, seed) {
+  const buffer = new Uint8Array(size);
+
+  
+  let state = 1000 + seed;
+
+  for (let i = 0; i < size; ++i) {
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
+    buffer[i] = state & 0xff;
+  }
+
+  return buffer;
 }
