@@ -22,12 +22,12 @@ class Layer;
 class LayerManager;
 struct AnimData;
 
-class AnimationInfo
+class AnimationInfo final
 {
   typedef InfallibleTArray<Animation> AnimationArray;
 public:
-  explicit AnimationInfo(LayerManager* aManager);
-  virtual ~AnimationInfo();
+  AnimationInfo();
+  ~AnimationInfo();
 
   
   
@@ -70,7 +70,6 @@ public:
                                                 DisplayItemType aDisplayItemKey);
 
 protected:
-  LayerManager* mManager;
   AnimationArray mAnimations;
   uint64_t mCompositorAnimationsId;
   nsAutoPtr<AnimationArray> mPendingAnimations;
