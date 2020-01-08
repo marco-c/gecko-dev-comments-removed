@@ -9,13 +9,15 @@
 
 #include <stdint.h>
 
+#include "mozilla/ArrayUtils.h"
+
 namespace mozilla {
 
-template <typename CharType>
+template <typename StrType>
 struct DllBlockInfoT {
   
   
-  const CharType* name;
+  StrType name;
 
   
   
@@ -73,22 +75,25 @@ MAKE_VERSION(uint16_t a, uint16_t b, uint16_t c, uint16_t d)
 
 #endif
 
-#if !defined(DLL_BLOCKLIST_CHAR_TYPE)
-#error "You must define DLL_BLOCKLIST_CHAR_TYPE"
+#if !defined(DLL_BLOCKLIST_STRING_TYPE)
+#error "You must define DLL_BLOCKLIST_STRING_TYPE"
 #endif 
 
 #define DLL_BLOCKLIST_DEFINITIONS_BEGIN \
-  using DllBlockInfo = mozilla::DllBlockInfoT<DLL_BLOCKLIST_CHAR_TYPE>; \
+  using DllBlockInfo = mozilla::DllBlockInfoT<DLL_BLOCKLIST_STRING_TYPE>; \
   static const DllBlockInfo gWindowsDllBlocklist[] = {
 
 #define ALL_VERSIONS DllBlockInfo::ALL_VERSIONS
 #define UNVERSIONED DllBlockInfo::UNVERSIONED
 
 #define DLL_BLOCKLIST_DEFINITIONS_END \
-    {nullptr, 0} \
+    {} \
   };
 
 #define DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY(name) \
   const DllBlockInfo* name = &gWindowsDllBlocklist[0]
+
+#define DECLARE_POINTER_TO_LAST_DLL_BLOCKLIST_ENTRY(name) \
+  const DllBlockInfo* name = &gWindowsDllBlocklist[mozilla::ArrayLength(gWindowsDllBlocklist) - 1]
 
 #endif 
