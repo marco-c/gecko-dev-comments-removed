@@ -659,8 +659,6 @@ public:
 
 
   nsRegion mVerticalPanRegion;
-
-  bool mCollapsedTouchActions = false;
   
 
 
@@ -3880,20 +3878,7 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
   auto touchFlags = hitTestInfo & CompositorHitTestInfo::eTouchActionMask;
   if (touchFlags) {
     
-    
-    
-    
-    
-    
-    if (mCollapsedTouchActions) {
-      mDispatchToContentHitRegion.OrWith(area);
-    } else if (!CombinedTouchActionRegion().IsEmpty()) {
-      mDispatchToContentHitRegion.OrWith(CombinedTouchActionRegion());
-      mNoActionRegion.SetEmpty();
-      mHorizontalPanRegion.SetEmpty();
-      mVerticalPanRegion.SetEmpty();
-      mCollapsedTouchActions = true;
-    } else if (touchFlags == CompositorHitTestInfo::eTouchActionMask) {
+    if (touchFlags == CompositorHitTestInfo::eTouchActionMask) {
       
       mNoActionRegion.OrWith(area);
     } else {
@@ -3927,6 +3912,20 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
         
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  const int alreadyHadRegions = mNoActionRegion.GetNumRects() +
+    mHorizontalPanRegion.GetNumRects() +
+    mVerticalPanRegion.GetNumRects();
+
+  if (alreadyHadRegions > 1) {
+    mDispatchToContentHitRegion.OrWith(CombinedTouchActionRegion());
   }
 
   
