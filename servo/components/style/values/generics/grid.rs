@@ -120,7 +120,9 @@ impl Parse for GridLine<specified::Integer> {
                 if val_before_span || grid_line.ident.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
-                grid_line.ident = Some(CustomIdent::from_ident(location, &name, &[])?);
+                
+                
+                grid_line.ident = Some(CustomIdent::from_ident(location, &name, &["auto"])?);
             } else {
                 break;
             }

@@ -6687,7 +6687,7 @@ gCSSProperties["grid-template-columns"] = {
 if (isGridTemplateSubgridValueEnabled) {
   gCSSProperties["grid-template-columns"].other_values.push(
     
-    "[none auto subgrid min-content max-content foo] 40px",
+    "[none subgrid min-content max-content foo] 40px",
 
     "subgrid",
     "subgrid [] [foo bar]",
