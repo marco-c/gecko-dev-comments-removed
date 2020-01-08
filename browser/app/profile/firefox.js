@@ -1421,6 +1421,9 @@ pref("identity.fxaccounts.migrateToDevEdition", false);
 pref("identity.fxaccounts.commands.enabled", true);
 
 
+pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
+
+
 #ifdef MOZ_WIDGET_GTK
 pref("ui.key.menuAccessKeyFocuses", true);
 #endif
