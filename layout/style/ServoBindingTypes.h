@@ -10,7 +10,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoComputedData.h"
 #include "mozilla/ServoTypes.h"
-#include "mozilla/SheetType.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Types.h"
 #include "nsCSSPropertyID.h"
@@ -83,15 +82,6 @@ typedef nsTArray<const RawServoStyleRule*> RawGeckoServoStyleRuleList;
 typedef nsTArray<nsCSSPropertyID> RawGeckoCSSPropertyIDList;
 typedef mozilla::gfx::Float RawGeckoGfxMatrix4x4[16];
 typedef mozilla::dom::StyleChildrenIterator RawGeckoStyleChildrenIterator;
-
-
-
-struct DeclarationBlockMutationClosure
-{
-  
-  void (*function)(void*) = nullptr;
-  void* data = nullptr;
-};
 
 
 
@@ -253,13 +243,6 @@ DEFINE_BOXED_TYPE(UseCounters, StyleUseCounters);
 
 #undef DEFINE_BOXED_TYPE
 
-
-struct nsFontFaceRuleContainer
-{
-  RefPtr<RawServoFontFaceRule> mRule;
-  mozilla::SheetType mSheetType;
-};
-
 #define DEFINE_ARRAY_TYPE_FOR(type_)                                \
   struct nsTArrayBorrowed_##type_ {                                 \
     nsTArray<type_>* mArray;                                        \
@@ -268,11 +251,5 @@ struct nsFontFaceRuleContainer
   }
 DEFINE_ARRAY_TYPE_FOR(uintptr_t);
 #undef DEFINE_ARRAY_TYPE_FOR
-
-struct MediumFeaturesChangedResult {
-  bool mAffectsDocumentRules;
-  bool mAffectsNonDocumentRules;
-  bool mUsesViewportUnits;
-};
 
 #endif 

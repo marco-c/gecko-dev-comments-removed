@@ -7,8 +7,6 @@
 #ifndef mozilla_ServoComputedData_h
 #define mozilla_ServoComputedData_h
 
-#include "mozilla/ServoTypes.h"
-
 class nsWindowSizes;
 
 
@@ -21,29 +19,41 @@ class nsWindowSizes;
 
 namespace mozilla {
 
-struct ServoWritingMode {
+template<typename T>
+struct ServoRawOffsetArc
+{
+  
+  
+  T* mPtr;
+};
+
+struct ServoWritingMode
+{
   uint8_t mBits;
 };
 
-struct ServoCustomPropertiesMap {
+struct ServoCustomPropertiesMap
+{
   uintptr_t mPtr;
 };
 
-struct ServoRuleNode {
+struct ServoRuleNode
+{
   uintptr_t mPtr;
 };
 
 class ComputedStyle;
 
-struct ServoVisitedStyle {
-  
+struct ServoVisitedStyle
+{
   
   
   
   ComputedStyle* mPtr;
 };
 
-struct ServoComputedValueFlags {
+struct ServoComputedValueFlags
+{
   uint16_t mFlags;
 };
 

@@ -4,15 +4,28 @@
 
 
 
+
+
 #ifndef mozilla_ServoTypes_h
 #define mozilla_ServoTypes_h
 
+#include "mozilla/RefPtr.h"
+#include "mozilla/SheetType.h"
 #include "mozilla/TypedEnumBits.h"
+#include "nsCoord.h"
+
+struct RawServoFontFaceRule;
+
+namespace mozilla {
+  struct LangGroupFontPrefs;
+}
 
 
-
-
-
+struct nsFontFaceRuleContainer
+{
+  RefPtr<RawServoFontFaceRule> mRule;
+  mozilla::SheetType mSheetType;
+};
 
 namespace mozilla {
 
@@ -134,11 +147,32 @@ public:
   {}
 };
 
-template <typename T>
-struct ServoRawOffsetArc {
+
+
+struct DeclarationBlockMutationClosure
+{
   
-  
-  T* mPtr;
+  void (*function)(void*) = nullptr;
+  void* data = nullptr;
+};
+
+struct MediumFeaturesChangedResult
+{
+  bool mAffectsDocumentRules;
+  bool mAffectsNonDocumentRules;
+  bool mUsesViewportUnits;
+};
+
+struct FontSizePrefs
+{
+  void CopyFrom(const mozilla::LangGroupFontPrefs&);
+  nscoord mDefaultVariableSize;
+  nscoord mDefaultFixedSize;
+  nscoord mDefaultSerifSize;
+  nscoord mDefaultSansSerifSize;
+  nscoord mDefaultMonospaceSize;
+  nscoord mDefaultCursiveSize;
+  nscoord mDefaultFantasySize;
 };
 
 } 
