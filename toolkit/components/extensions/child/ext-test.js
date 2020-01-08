@@ -19,6 +19,11 @@
 
 
 const errorMatches = (error, expectedError, context) => {
+  if (typeof error === "object" && error !== null &&
+      !context.principal.subsumes(Cu.getObjectPrincipal(error))) {
+    Cu.reportError("Error object belongs to the wrong scope.");
+    return false;
+  }
   if (expectedError === null) {
     return true;
   }
