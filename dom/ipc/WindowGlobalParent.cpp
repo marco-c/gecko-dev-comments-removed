@@ -14,9 +14,14 @@ using namespace mozilla::ipc;
 namespace mozilla {
 namespace dom {
 
+typedef nsRefPtrHashtable<nsUint64HashKey, WindowGlobalParent> WGPByIdMap;
+static StaticAutoPtr<WGPByIdMap> gWindowGlobalParentsById;
+
 WindowGlobalParent::WindowGlobalParent(const WindowGlobalInit& aInit,
                                        bool aInProcess)
   : mDocumentPrincipal(aInit.principal())
+  , mInnerWindowId(aInit.innerWindowId())
+  , mOuterWindowId(aInit.outerWindowId())
   , mInProcess(aInProcess)
   , mIPCClosed(true)  
 {
@@ -36,6 +41,15 @@ WindowGlobalParent::Init(const WindowGlobalInit& aInit)
 
   MOZ_ASSERT(mIPCClosed, "IPC shouldn't be open yet");
   mIPCClosed = false;
+
+  
+  if (!gWindowGlobalParentsById) {
+    gWindowGlobalParentsById = new WGPByIdMap();
+    ClearOnShutdown(&gWindowGlobalParentsById);
+  }
+  auto entry = gWindowGlobalParentsById->LookupForAdd(mInnerWindowId);
+  MOZ_RELEASE_ASSERT(!entry, "Duplicate WindowGlobalParent entry for ID!");
+  entry.OrInsert([&] { return this; });
 
   
   ContentParentId processId(0);
@@ -82,6 +96,15 @@ WindowGlobalParent::Init(const WindowGlobalInit& aInit)
   }
 }
 
+ already_AddRefed<WindowGlobalParent>
+WindowGlobalParent::GetByInnerWindowId(uint64_t aInnerWindowId)
+{
+  if (!gWindowGlobalParentsById) {
+    return nullptr;
+  }
+  return gWindowGlobalParentsById->Get(aInnerWindowId);
+}
+
 already_AddRefed<WindowGlobalChild>
 WindowGlobalParent::GetChildActor()
 {
@@ -105,11 +128,14 @@ void
 WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   mIPCClosed = true;
+  gWindowGlobalParentsById->Remove(mInnerWindowId);
   mBrowsingContext->UnregisterWindowGlobal(this);
 }
 
 WindowGlobalParent::~WindowGlobalParent()
 {
+  MOZ_ASSERT(!gWindowGlobalParentsById ||
+             !gWindowGlobalParentsById->Contains(mInnerWindowId));
 }
 
 JSObject*

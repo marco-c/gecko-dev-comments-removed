@@ -31,6 +31,14 @@ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WindowGlobalParent)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WindowGlobalParent)
 
+  static already_AddRefed<WindowGlobalParent>
+  GetByInnerWindowId(uint64_t aInnerWindowId);
+
+  static already_AddRefed<WindowGlobalParent>
+  GetByInnerWindowId(const GlobalObject& aGlobal, uint64_t aInnerWindowId) {
+    return GetByInnerWindowId(aInnerWindowId);
+  }
+
   
   bool IsClosed() { return mIPCClosed; }
 
@@ -60,6 +68,10 @@ public:
   nsIURI* GetDocumentURI() { return mDocumentURI; }
 
   
+  uint64_t OuterWindowId() { return mOuterWindowId; }
+  uint64_t InnerWindowId() { return mInnerWindowId; }
+
+  
   
   WindowGlobalParent(const WindowGlobalInit& aInit, bool aInProcess);
 
@@ -86,6 +98,8 @@ private:
   nsCOMPtr<nsIURI> mDocumentURI;
   RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<ChromeBrowsingContext> mBrowsingContext;
+  uint64_t mInnerWindowId;
+  uint64_t mOuterWindowId;
   bool mInProcess;
   bool mIPCClosed;
 };
