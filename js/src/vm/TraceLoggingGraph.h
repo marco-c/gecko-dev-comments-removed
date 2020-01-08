@@ -104,8 +104,16 @@ class TraceLoggerGraphState
     }
 };
 
+namespace js {
+class TraceLoggerThread;
+} 
+
 class TraceLoggerGraph
 {
+  
+  friend class js::TraceLoggerThread;
+
+  private:
     
     
     struct TreeEntry {
@@ -219,6 +227,9 @@ class TraceLoggerGraph
 
     
     void addTextId(uint32_t id, const char* text);
+    void addTextId(uint32_t id, const char* text,
+                   mozilla::Maybe<uint32_t>& line,
+                   mozilla::Maybe<uint32_t>& column);
 
     
     void log(ContinuousSpace<EventEntry>& events);
