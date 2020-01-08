@@ -930,23 +930,68 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     ListNodeType parse();
 
   private:
-    template<typename ConditionT>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    template<typename ConditionT, typename ErrorReportT>
     MOZ_MUST_USE bool mustMatchTokenInternal(ConditionT condition, Modifier modifier,
-                                             unsigned errorNumber);
+                                             ErrorReportT errorReport);
 
   public:
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier, unsigned errorNumber) {
-        return mustMatchTokenInternal([expected](TokenKind actual) { return actual == expected; },
-                                      modifier, errorNumber);
+    
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier, JSErrNum errorNumber) {
+        return mustMatchTokenInternal([expected](TokenKind actual) {
+                                          return actual == expected;
+                                      },
+                                      modifier,
+                                      [this, errorNumber](TokenKind) {
+                                          this->error(errorNumber);
+                                      });
     }
 
-    MOZ_MUST_USE bool mustMatchToken(TokenKind excpected, unsigned errorNumber) {
+    MOZ_MUST_USE bool mustMatchToken(TokenKind excpected, JSErrNum errorNumber) {
         return mustMatchToken(excpected, TokenStream::None, errorNumber);
     }
 
     template<typename ConditionT>
-    MOZ_MUST_USE bool mustMatchToken(ConditionT condition, unsigned errorNumber) {
-        return mustMatchTokenInternal(condition, TokenStream::None, errorNumber);
+    MOZ_MUST_USE bool mustMatchToken(ConditionT condition, JSErrNum errorNumber) {
+        return mustMatchTokenInternal(condition, TokenStream::None,
+                                      [this, errorNumber](TokenKind) {
+                                          this->error(errorNumber);
+                                      });
+    }
+
+    template<typename ErrorReportT>
+    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier,
+                                     ErrorReportT errorReport) {
+        return mustMatchTokenInternal([expected](TokenKind actual) {
+                                          return actual == expected;
+                                      },
+                                      modifier, errorReport);
+    }
+
+    template<typename ErrorReportT>
+    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, ErrorReportT errorReport) {
+        return mustMatchToken(expected, TokenStream::None, errorReport);
     }
 
     
