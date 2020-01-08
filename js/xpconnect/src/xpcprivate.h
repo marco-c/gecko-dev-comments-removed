@@ -2758,8 +2758,25 @@ class CompartmentPrivate {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
+  struct SweepPolicy {
+    static bool needsSweep(const void* ,
+                           JS::Heap<JSObject*>* value) {
+      return JS::GCPolicy<JS::Heap<JSObject*>>::needsSweep(value);
+    }
+  };
+
+  typedef JS::GCHashMap<const void*, JS::Heap<JSObject*>,
+                        mozilla::PointerHasher<const void*>,
+                        js::SystemAllocPolicy, SweepPolicy>
+      RemoteProxyMap;
+  RemoteProxyMap& GetRemoteProxyMap() { return mRemoteProxies; }
+
  private:
   JSObject2WrappedJSMap* mWrappedJSMap;
+
+  
+  
+  RemoteProxyMap mRemoteProxies;
 };
 
 bool IsUniversalXPConnectEnabled(JS::Compartment* compartment);

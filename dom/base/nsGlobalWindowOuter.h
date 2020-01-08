@@ -527,7 +527,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool GetClosedOuter();
   bool Closed() override;
   void StopOuter(mozilla::ErrorResult& aError);
-  void FocusOuter(mozilla::ErrorResult& aError);
+  void FocusOuter();
   nsresult Focus() override;
   void BlurOuter();
   mozilla::dom::BrowsingContext* GetFramesOuter();
@@ -968,6 +968,33 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                            nsIPrincipal& aSubjectPrincipal,
                            mozilla::ErrorResult& aError);
 
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool GetPrincipalForPostMessage(const nsAString& aTargetOrigin,
+                                  nsIURI* aTargetOriginURI,
+                                  nsIPrincipal* aCallerPrincipal,
+                                  nsIPrincipal& aSubjectPrincipal,
+                                  nsIPrincipal** aProvidedPrincipal);
+
  private:
   
 
@@ -1002,33 +1029,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
       JSContext* aCx, const nsAString& aTargetOrigin,
       mozilla::dom::BrowsingContext** aSource, nsAString& aOrigin,
       nsIURI** aTargetOriginURI, nsIPrincipal** aCallerPrincipal,
-      uint64_t* aCallerInnerWindowID, nsIURI** aCallerDocumentURI,
+      nsGlobalWindowInner** aCallerInnerWindow, nsIURI** aCallerDocumentURI,
       mozilla::ErrorResult& aError);
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetPrincipalForPostMessage(const nsAString& aTargetOrigin,
-                                  nsIURI* aTargetOriginURI,
-                                  nsIPrincipal* aCallerPrincipal,
-                                  nsIPrincipal& aSubjectPrincipal,
-                                  nsIPrincipal** aProvidedPrincipal);
 
   
   
