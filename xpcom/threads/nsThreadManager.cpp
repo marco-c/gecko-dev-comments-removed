@@ -94,12 +94,26 @@ AssertIsOnMainThread()
 
 typedef nsTArray<NotNull<RefPtr<nsThread>>> nsThreadArray;
 
+static bool sShutdownComplete;
 
 
-static void
-ReleaseObject(void* aData)
+
+ void
+nsThreadManager::ReleaseThread(void* aData)
 {
-  static_cast<nsISupports*>(aData)->Release();
+  if (sShutdownComplete) {
+    
+    
+    return;
+  }
+
+  auto* thread = static_cast<nsThread*>(aData);
+  MOZ_ASSERT(thread->mHasTLSEntry);
+
+  get().UnregisterCurrentThread(*thread, true);
+
+  thread->mHasTLSEntry = false;
+  thread->Release();
 }
 
 
@@ -236,7 +250,7 @@ nsThreadManager::Init()
 
   Scheduler::EventLoopActivation::Init();
 
-  if (PR_NewThreadPrivateIndex(&mCurThreadIndex, ReleaseObject) == PR_FAILURE) {
+  if (PR_NewThreadPrivateIndex(&mCurThreadIndex, ReleaseThread) == PR_FAILURE) {
     return NS_ERROR_FAILURE;
   }
 
@@ -304,32 +318,34 @@ nsThreadManager::Shutdown()
   
   NS_ProcessPendingEvents(mMainThread);
 
-  
-  
-  nsThreadArray threads;
   {
-    OffTheBooksMutexAutoLock lock(mLock);
-    for (auto iter = mThreadsByPRThread.Iter(); !iter.Done(); iter.Next()) {
-      RefPtr<nsThread>& thread = iter.Data();
-      threads.AppendElement(WrapNotNull(thread));
-      iter.Remove();
+    
+    
+    nsThreadArray threads;
+    {
+      OffTheBooksMutexAutoLock lock(mLock);
+      for (auto iter = mThreadsByPRThread.Iter(); !iter.Done(); iter.Next()) {
+        RefPtr<nsThread>& thread = iter.Data();
+        threads.AppendElement(WrapNotNull(thread));
+        iter.Remove();
+      }
     }
-  }
 
-  
-  
-  
-  
-  
-  
-  
-  
+    
+    
+    
+    
+    
+    
+    
+    
 
-  
-  for (uint32_t i = 0; i < threads.Length(); ++i) {
-    NotNull<nsThread*> thread = threads[i];
-    if (thread->ShutdownRequired()) {
-      thread->Shutdown();
+    
+    for (uint32_t i = 0; i < threads.Length(); ++i) {
+      NotNull<nsThread*> thread = threads[i];
+      if (thread->ShutdownRequired()) {
+        thread->Shutdown();
+      }
     }
   }
 
@@ -360,6 +376,24 @@ nsThreadManager::Shutdown()
 
   
   PR_SetThreadPrivate(mCurThreadIndex, nullptr);
+
+  {
+    
+    nsTArray<RefPtr<nsThread>> threads;
+    for (auto* thread : nsThread::Enumerate()) {
+      if (thread->mHasTLSEntry) {
+        threads.AppendElement(dont_AddRef(thread));
+        thread->mHasTLSEntry = false;
+      }
+    }
+  }
+
+  
+  
+  
+  nsThread::ClearThreadList();
+
+  sShutdownComplete = true;
 }
 
 void
@@ -377,18 +411,25 @@ nsThreadManager::RegisterCurrentThread(nsThread& aThread)
   mThreadsByPRThread.Put(aThread.GetPRThread(), &aThread);  
 
   aThread.AddRef();  
+  aThread.mHasTLSEntry = true;
   PR_SetThreadPrivate(mCurThreadIndex, &aThread);
 }
 
 void
-nsThreadManager::UnregisterCurrentThread(nsThread& aThread)
+nsThreadManager::UnregisterCurrentThread(nsThread& aThread, bool aIfExists)
 {
   MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
 
-  OffTheBooksMutexAutoLock lock(mLock);
+  {
+    OffTheBooksMutexAutoLock lock(mLock);
 
-  --mCurrentNumberOfThreads;
-  mThreadsByPRThread.Remove(aThread.GetPRThread());
+    if (aIfExists && !mThreadsByPRThread.GetWeak(aThread.GetPRThread())) {
+      return;
+    }
+
+    --mCurrentNumberOfThreads;
+    mThreadsByPRThread.Remove(aThread.GetPRThread());
+  }
 
   PR_SetThreadPrivate(mCurThreadIndex, nullptr);
   
