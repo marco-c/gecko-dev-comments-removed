@@ -385,8 +385,8 @@ ArgumentsObject::createForIon(JSContext* cx, jit::JitFrameLayout* frame, HandleO
 }
 
  ArgumentsObject*
-ArgumentsObject::finishForIon(JSContext* cx, jit::JitFrameLayout* frame,
-                              JSObject* scopeChain, ArgumentsObject* obj)
+ArgumentsObject::finishForIonPure(JSContext* cx, jit::JitFrameLayout* frame,
+                                  JSObject* scopeChain, ArgumentsObject* obj)
 {
     
     

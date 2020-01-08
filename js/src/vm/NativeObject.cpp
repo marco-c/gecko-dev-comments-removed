@@ -465,7 +465,7 @@ NativeObject::growSlots(JSContext* cx, uint32_t oldCount, uint32_t newCount)
 }
 
  bool
-NativeObject::growSlotsDontReportOOM(JSContext* cx, NativeObject* obj, uint32_t newCount)
+NativeObject::growSlotsPure(JSContext* cx, NativeObject* obj, uint32_t newCount)
 {
     
     AutoUnsafeCallWithABI unsafe;
@@ -478,7 +478,7 @@ NativeObject::growSlotsDontReportOOM(JSContext* cx, NativeObject* obj, uint32_t 
 }
 
  bool
-NativeObject::addDenseElementDontReportOOM(JSContext* cx, NativeObject* obj)
+NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj)
 {
     
     AutoUnsafeCallWithABI unsafe;

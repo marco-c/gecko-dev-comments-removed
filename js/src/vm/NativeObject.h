@@ -834,14 +834,14 @@ class NativeObject : public ShapedObject
 
 
 
-    static bool growSlotsDontReportOOM(JSContext* cx, NativeObject* obj, uint32_t newCount);
+    static bool growSlotsPure(JSContext* cx, NativeObject* obj, uint32_t newCount);
 
     
 
 
 
 
-    static bool addDenseElementDontReportOOM(JSContext* cx, NativeObject* obj);
+    static bool addDenseElementPure(JSContext* cx, NativeObject* obj);
 
     bool hasDynamicSlots() const { return !!slots_; }
 

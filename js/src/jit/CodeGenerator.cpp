@@ -6933,7 +6933,7 @@ CodeGenerator::visitCreateArgumentsObject(LCreateArgumentsObject* lir)
         masm.passABIArg(callObj);
         masm.passABIArg(objTemp);
 
-        masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, ArgumentsObject::finishForIon));
+        masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, ArgumentsObject::finishForIonPure));
         masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, &failure);
 
         
