@@ -3544,7 +3544,6 @@ GeckoDriver.prototype.teardownReftest = function() {
 GeckoDriver.prototype.commands = {
   
   "Marionette:AcceptConnections": GeckoDriver.prototype.acceptConnections,
-  "acceptConnections": GeckoDriver.prototype.acceptConnections,  
   "Marionette:GetContext": GeckoDriver.prototype.getContext,
   "Marionette:GetScreenOrientation": GeckoDriver.prototype.getScreenOrientation,
   "Marionette:GetWindowType": GeckoDriver.prototype.getWindowType,
@@ -3554,7 +3553,6 @@ GeckoDriver.prototype.commands = {
   "Marionette:ActionChain": GeckoDriver.prototype.actionChain,  
   "Marionette:MultiAction": GeckoDriver.prototype.multiAction,  
   "Marionette:SingleTap": GeckoDriver.prototype.singleTap,
-  "singleTap": GeckoDriver.prototype.singleTap,  
 
   
   "Addon:Install": GeckoDriver.prototype.installAddon,
