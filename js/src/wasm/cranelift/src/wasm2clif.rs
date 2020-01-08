@@ -594,23 +594,15 @@ impl<'a, 'b, 'c> cranelift_wasm::FuncEnvironment for TransEnv<'a, 'b, 'c> {
             .trapz(callee_func, ir::TrapCode::IndirectCallToNull);
 
         
-        let vmctx;
-        if wtable.external {
-            
-            vmctx = pos.ins().load(
-                native_pointer_type(),
-                ir::MemFlags::new(),
-                entry,
-                native_pointer_size(),
-            );
-            self.switch_to_indirect_callee_realm(&mut pos, vmctx);
-        } else {
-            
-            vmctx = pos
-                .func
-                .special_param(ir::ArgumentPurpose::VMContext)
-                .expect("Missing vmctx arg");
-        }
+        
+        
+        let vmctx = pos.ins().load(
+            native_pointer_type(),
+            ir::MemFlags::new(),
+            entry,
+            native_pointer_size(),
+        );
+        self.switch_to_indirect_callee_realm(&mut pos, vmctx);
 
         
         let mut args = ir::ValueList::default();
@@ -785,9 +777,6 @@ struct TableInfo {
     
     
     pub global: ir::GlobalValue,
-
-    
-    pub external: bool,
 }
 
 impl TableInfo {
@@ -803,10 +792,7 @@ impl TableInfo {
             global_type: native_pointer_type(),
         });
 
-        TableInfo {
-            global,
-            external: wtab.is_external(),
-        }
+        TableInfo { global }
     }
 
     
@@ -826,13 +812,8 @@ impl TableInfo {
 
     
     pub fn entry_size(&self) -> i64 {
-        native_pointer_size() as i64 * if self.external {
-            
-            
-            2
-        } else {
-            
-            1
-        }
+        
+        
+        native_pointer_size() as i64 * 2
     }
 }

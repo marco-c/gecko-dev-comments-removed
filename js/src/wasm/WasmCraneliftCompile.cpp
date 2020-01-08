@@ -415,26 +415,10 @@ global_tlsOffset(const GlobalDesc* global)
 size_t
 table_tlsOffset(const TableDesc* table)
 {
+    MOZ_RELEASE_ASSERT(table->kind == TableKind::AnyFunction ||
+                       table->kind == TableKind::TypedFunction,
+                       "cranelift doesn't support AnyRef tables yet.");
     return globalToTlsOffset(table->globalDataOffset);
-}
-
-bool
-table_isExternal(const TableDesc* table)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    MOZ_CRASH("FIXME. This field has been removed.");
 }
 
 
