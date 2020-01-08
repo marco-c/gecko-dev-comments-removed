@@ -58,7 +58,12 @@ struct BreakpointPosition
     NewScript,
 
     
-    WarpTarget
+    WarpTarget,
+
+    
+    
+    
+    ForcedPause
   ));
 
   Kind mKind;
@@ -110,6 +115,7 @@ struct BreakpointPosition
     case EnterFrame: return "EnterFrame";
     case NewScript: return "NewScript";
     case WarpTarget: return "WarpTarget";
+    case ForcedPause: return "ForcedPause";
     }
     MOZ_CRASH("Bad BreakpointPosition kind");
   }

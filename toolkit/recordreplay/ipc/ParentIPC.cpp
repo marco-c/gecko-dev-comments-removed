@@ -354,7 +354,8 @@ ReplayingChildResponsibleForSavingCheckpoint(size_t aId)
 
 
 
-static bool ActiveChildIsPausedOrRewinding();
+
+static Maybe<size_t> ActiveChildTargetCheckpoint();
 
 
 
@@ -383,16 +384,15 @@ ChildRoleStandby::Poke()
   do {
     
     
-    if (!ActiveChildIsPausedOrRewinding()) {
+    Maybe<size_t> targetCheckpoint = ActiveChildTargetCheckpoint();
+    if (targetCheckpoint.isNothing()) {
       break;
     }
 
     
     
-    size_t targetCheckpoint = gActiveChild->RewindTargetCheckpoint();
-    size_t lastMajorCheckpoint = LastMajorCheckpointPreceding(mProcess, targetCheckpoint);
+    size_t lastMajorCheckpoint = LastMajorCheckpointPreceding(mProcess, targetCheckpoint.ref());
 
-    
     
     if (lastMajorCheckpoint == CheckpointId::Invalid) {
       return;
@@ -401,22 +401,24 @@ ChildRoleStandby::Poke()
     
     
     if (mProcess->LastCheckpoint() < lastMajorCheckpoint) {
-      break;
+      ClearIfSavedNonMajorCheckpoint(mProcess, mProcess->LastCheckpoint() + 1);
+      mProcess->SendMessage(ResumeMessage( true));
+      return;
     }
 
     
     
     
     size_t otherMajorCheckpoint =
-      LastMajorCheckpointPreceding(OtherReplayingChild(mProcess), targetCheckpoint);
+      LastMajorCheckpointPreceding(OtherReplayingChild(mProcess), targetCheckpoint.ref());
     if (otherMajorCheckpoint > lastMajorCheckpoint) {
-      MOZ_RELEASE_ASSERT(otherMajorCheckpoint <= targetCheckpoint);
-      targetCheckpoint = otherMajorCheckpoint - 1;
+      MOZ_RELEASE_ASSERT(otherMajorCheckpoint <= targetCheckpoint.ref());
+      targetCheckpoint.ref() = otherMajorCheckpoint - 1;
     }
 
     
     Maybe<size_t> missingCheckpoint;
-    for (size_t i = lastMajorCheckpoint; i <= targetCheckpoint; i++) {
+    for (size_t i = lastMajorCheckpoint; i <= targetCheckpoint.ref(); i++) {
       if (!mProcess->HasSavedCheckpoint(i)) {
         missingCheckpoint.emplace(i);
         break;
@@ -573,13 +575,21 @@ SpawnReplayingChildren()
 
 
 static void
-SwitchActiveChild(ChildProcessInfo* aChild)
+SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
 {
   MOZ_RELEASE_ASSERT(aChild != gActiveChild);
   ChildProcessInfo* oldActiveChild = gActiveChild;
   aChild->WaitUntilPaused();
   if (!aChild->IsRecording()) {
-    aChild->Recover(gActiveChild);
+    if (aRecoverPosition) {
+      aChild->Recover(gActiveChild);
+    } else {
+      Vector<SetBreakpointMessage*> breakpoints;
+      gActiveChild->GetInstalledBreakpoints(breakpoints);
+      for (SetBreakpointMessage* msg : breakpoints) {
+        aChild->SendMessage(*msg);
+      }
+    }
   }
   aChild->SetRole(MakeUnique<ChildRoleActive>());
   if (oldActiveChild->IsRecording()) {
@@ -745,6 +755,9 @@ SaveRecording(const ipc::FileDescriptor& aFile)
 
 static size_t gLastExplicitPause;
 
+
+static Maybe<size_t> gTimeWarpTarget;
+
 static bool
 HasSavedCheckpointsInRange(ChildProcessInfo* aChild, size_t aStart, size_t aEnd)
 {
@@ -810,10 +823,16 @@ MarkActiveChildExplicitPause()
   PokeChildren();
 }
 
-static bool
-ActiveChildIsPausedOrRewinding()
+static Maybe<size_t>
+ActiveChildTargetCheckpoint()
 {
-  return gActiveChild->RewindTargetCheckpoint() <= gLastExplicitPause;
+  if (gTimeWarpTarget.isSome()) {
+    return gTimeWarpTarget;
+  }
+  if (gActiveChild->RewindTargetCheckpoint() <= gLastExplicitPause) {
+    return Some(gActiveChild->RewindTargetCheckpoint());
+  }
+  return Nothing();
 }
 
 
@@ -921,6 +940,9 @@ static bool gChildExecuteBackward = false;
 
 static bool gResumeForwardOrBackward = false;
 
+
+static void HitForcedPauseBreakpoints(bool aRecordingBoundary);
+
 void
 Resume(bool aForward)
 {
@@ -934,12 +956,12 @@ Resume(bool aForward)
   
   
   if (!aForward && !gActiveChild->HasSavedCheckpoint(gActiveChild->RewindTargetCheckpoint())) {
-    MOZ_RELEASE_ASSERT(ActiveChildIsPausedOrRewinding());
     size_t targetCheckpoint = gActiveChild->RewindTargetCheckpoint();
 
     
     if (targetCheckpoint == CheckpointId::Invalid) {
       SendMessageToUIProcess("HitRecordingBeginning");
+      HitForcedPauseBreakpoints(true);
       return;
     }
 
@@ -965,8 +987,8 @@ Resume(bool aForward)
       
       MOZ_RELEASE_ASSERT(!gActiveChild->IsRecording());
       if (!gRecordingChild) {
-        MarkActiveChildExplicitPause();
         SendMessageToUIProcess("HitRecordingEndpoint");
+        HitForcedPauseBreakpoints(true);
         return;
       }
 
@@ -981,6 +1003,57 @@ Resume(bool aForward)
   }
 
   gActiveChild->SendMessage(ResumeMessage(aForward));
+}
+
+void
+TimeWarp(const js::ExecutionPoint& aTarget)
+{
+  gActiveChild->WaitUntilPaused();
+
+  
+  gResumeForwardOrBackward = false;
+  gChildExecuteForward = false;
+  gChildExecuteBackward = false;
+
+  
+  
+  MOZ_RELEASE_ASSERT(gTimeWarpTarget.isNothing());
+  gTimeWarpTarget.emplace(aTarget.mCheckpoint);
+
+  PokeChildren();
+
+  if (!gActiveChild->HasSavedCheckpoint(aTarget.mCheckpoint)) {
+    
+    ChildProcessInfo* targetChild = ReplayingChildResponsibleForSavingCheckpoint(aTarget.mCheckpoint);
+
+    if (targetChild == gActiveChild) {
+      
+      
+      SwitchActiveChild(OtherReplayingChild(gActiveChild));
+    }
+
+    
+    
+    targetChild->WaitUntil([=]() {
+        return targetChild->HasSavedCheckpoint(aTarget.mCheckpoint)
+            && targetChild->IsPaused();
+      });
+
+    SwitchActiveChild(targetChild,  false);
+  }
+
+  gTimeWarpTarget.reset();
+
+  if (!gActiveChild->IsPausedAtCheckpoint() || gActiveChild->LastCheckpoint() != aTarget.mCheckpoint) {
+    gActiveChild->SendMessage(RestoreCheckpointMessage(aTarget.mCheckpoint));
+    gActiveChild->WaitUntilPaused();
+  }
+
+  gActiveChild->SendMessage(RunToPointMessage(aTarget));
+
+  gActiveChild->WaitUntilPaused();
+  SendMessageToUIProcess("TimeWarpFinished");
+  HitForcedPauseBreakpoints(false);
 }
 
 void
@@ -1026,11 +1099,18 @@ RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
 }
 
 static void
-HitBreakpoint(uint32_t* aBreakpoints, size_t aNumBreakpoints)
+HitBreakpoint(uint32_t* aBreakpoints, size_t aNumBreakpoints, bool aRecordingBoundary)
 {
+  if (!gActiveChild->IsPaused()) {
+    if (aNumBreakpoints) {
+      Print("Warning: Process resumed before breakpoints were hit.\n");
+    }
+    delete[] aBreakpoints;
+    return;
+  }
+
   MarkActiveChildExplicitPause();
 
-  MOZ_RELEASE_ASSERT(!gResumeForwardOrBackward);
   gResumeForwardOrBackward = true;
 
   
@@ -1044,7 +1124,8 @@ HitBreakpoint(uint32_t* aBreakpoints, size_t aNumBreakpoints)
 
   
   
-  if (gResumeForwardOrBackward) {
+  
+  if (gResumeForwardOrBackward && !aRecordingBoundary) {
     ResumeForwardOrBackward();
   }
 
@@ -1057,7 +1138,24 @@ RecvHitBreakpoint(const HitBreakpointMessage& aMsg)
   uint32_t* breakpoints = new uint32_t[aMsg.NumBreakpoints()];
   PodCopy(breakpoints, aMsg.Breakpoints(), aMsg.NumBreakpoints());
   gMainThreadMessageLoop->PostTask(NewRunnableFunction("HitBreakpoint", HitBreakpoint,
-                                                       breakpoints, aMsg.NumBreakpoints()));
+                                                       breakpoints, aMsg.NumBreakpoints(),
+                                                        false));
+}
+
+static void
+HitForcedPauseBreakpoints(bool aRecordingBoundary)
+{
+  Vector<uint32_t> breakpoints;
+  gActiveChild->GetMatchingInstalledBreakpoints([=](js::BreakpointPosition::Kind aKind) {
+      return aKind == js::BreakpointPosition::ForcedPause;
+    }, breakpoints);
+  if (!breakpoints.empty()) {
+    uint32_t* newBreakpoints = new uint32_t[breakpoints.length()];
+    PodCopy(newBreakpoints, breakpoints.begin(), breakpoints.length());
+    gMainThreadMessageLoop->PostTask(NewRunnableFunction("HitBreakpoint", HitBreakpoint,
+                                                         newBreakpoints, breakpoints.length(),
+                                                         aRecordingBoundary));
+  }
 }
 
 } 

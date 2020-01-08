@@ -58,6 +58,9 @@ void Resume(bool aForward);
 void Pause();
 
 
+void TimeWarp(const js::ExecutionPoint& target);
+
+
 
 void SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse);
 
@@ -286,9 +289,16 @@ public:
   bool IsPausedAtRecordingEndpoint();
 
   
-  
+  void GetInstalledBreakpoints(Vector<SetBreakpointMessage*>& aBreakpoints);
+
   typedef std::function<bool(js::BreakpointPosition::Kind)> BreakpointFilter;
+
+  
   bool IsPausedAtMatchingBreakpoint(const BreakpointFilter& aFilter);
+
+  
+  void GetMatchingInstalledBreakpoints(const BreakpointFilter& aFilter,
+                                       Vector<uint32_t>& aBreakpointIds);
 
   
   
