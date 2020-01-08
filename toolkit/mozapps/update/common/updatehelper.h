@@ -22,6 +22,11 @@ BOOL IsUnpromptedElevation(BOOL &isUnpromptedElevation);
 #define BASE_SERVICE_REG_KEY L"SOFTWARE\\Mozilla\\MaintenanceService"
 
 
+#ifndef EARLY_BETA_OR_EARLIER
+#define DISABLE_USER_IMPERSONATION
+#endif
+
+
 #define USER_TOKEN_VAR_NAME "MOZ_USER_TOKEN"
 
 

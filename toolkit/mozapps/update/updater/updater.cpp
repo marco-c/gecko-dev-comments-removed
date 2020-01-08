@@ -2588,6 +2588,8 @@ int NS_main(int argc, NS_tchar **argv) {
 #if XP_WIN
   
   gUserToken = nullptr;
+
+#ifndef DISABLE_USER_IMPERSONATION
   if (sUsingService) {
     char *tokenStr = getenv(USER_TOKEN_VAR_NAME);
 
@@ -2615,6 +2617,7 @@ int NS_main(int argc, NS_tchar **argv) {
       
     }
   }
+#endif  
 #endif
 #endif
 
