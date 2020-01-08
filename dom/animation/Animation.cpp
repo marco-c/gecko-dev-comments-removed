@@ -374,6 +374,11 @@ Animation::UpdatePlaybackRate(double aPlaybackRate)
     return;
   }
 
+  
+  
+  
+  AnimationPlayState playState = PlayState();
+
   mPendingPlaybackRate = Some(aPlaybackRate);
 
   
@@ -384,7 +389,6 @@ Animation::UpdatePlaybackRate(double aPlaybackRate)
 
   AutoMutationBatchForAnimation mb(*this);
 
-  AnimationPlayState playState = PlayState();
   if (playState == AnimationPlayState::Idle ||
       playState == AnimationPlayState::Paused) {
     
@@ -457,9 +461,10 @@ Animation::PlayState() const
     return AnimationPlayState::Paused;
   }
 
+  double playbackRate = CurrentOrPendingPlaybackRate();
   if (!currentTime.IsNull() &&
-      ((mPlaybackRate > 0.0 && currentTime.Value() >= EffectEnd()) ||
-       (mPlaybackRate < 0.0 && currentTime.Value() <= TimeDuration())))  {
+      ((playbackRate > 0.0 && currentTime.Value() >= EffectEnd()) ||
+       (playbackRate < 0.0 && currentTime.Value() <= TimeDuration())))  {
     return AnimationPlayState::Finished;
   }
 
