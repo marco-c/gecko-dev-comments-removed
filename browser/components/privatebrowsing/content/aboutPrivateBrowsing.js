@@ -65,8 +65,13 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("startTour").addEventListener("click", function() {
     RPMSendAsyncMessage("DontShowIntroPanelAgain");
   });
-  document.getElementById("startTour").setAttribute("href",
-    RPMGetFormatURLPref("privacy.trackingprotection.introURL"));
+
+  let introURL = RPMGetFormatURLPref("privacy.trackingprotection.introURL");
+  
+  
+  let variation = contentBlockingUIEnabled ? "?variation=1" : "";
+
+  document.getElementById("startTour").setAttribute("href", introURL + variation);
 
   document.getElementById("learnMore").setAttribute("href",
     RPMGetFormatURLPref("app.support.baseURL") + "private-browsing");
