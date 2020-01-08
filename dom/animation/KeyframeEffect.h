@@ -397,7 +397,12 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
-  bool mInEffectOnLastAnimationTimingUpdate;
+  bool mInEffectOnLastAnimationTimingUpdate = false;
+
+  
+  
+  
+  bool mInEffectSet = false;
 
   
   
@@ -405,11 +410,6 @@ class KeyframeEffect : public AnimationEffect {
   using BaseValuesHashmap =
       nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>;
   BaseValuesHashmap mBaseValues;
-
-  
-  
-  
-  bool mInEffectSet = false;
 
  private:
   nsChangeHint mCumulativeChangeHint;
