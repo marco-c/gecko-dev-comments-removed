@@ -2018,6 +2018,7 @@ public class GeckoSession extends LayerSession
                 if (res == null) {
                     
                     callback.sendSuccess(false);
+                    return;
                 }
 
                 res.then(new GeckoResult.OnValueListener<Boolean, Void>() {
