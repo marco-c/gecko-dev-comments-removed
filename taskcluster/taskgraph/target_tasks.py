@@ -540,10 +540,9 @@ def target_tasks_nightly_desktop(full_task_graph, parameters, graph_config):
 @_target_task('searchfox_index')
 def target_tasks_searchfox(full_task_graph, parameters, graph_config):
     """Select tasks required for indexing Firefox for Searchfox web site each day"""
-    
-    
     return ['searchfox-linux64-searchfox/debug',
-            'searchfox-macosx64-searchfox/debug']
+            'searchfox-macosx64-searchfox/debug',
+            'searchfox-win64-searchfox/debug']
 
 
 @_target_task('pipfile_update')
