@@ -8998,17 +8998,6 @@ IonBuilder::getElemAddCache(MDefinition* obj, MDefinition* index)
         } else {
             barrier = BarrierKind::TypeSet;
         }
-
-        
-        
-        if (barrier != BarrierKind::TypeSet) {
-            BarrierKind protoBarrier;
-            MOZ_TRY_VAR(protoBarrier, PropertyReadOnPrototypeNeedsTypeBarrier(this, obj, nullptr, types));
-            if (protoBarrier != BarrierKind::NoBarrier) {
-                MOZ_ASSERT(barrier <= protoBarrier);
-                barrier = protoBarrier;
-            }
-        }
     } else {
         
         
