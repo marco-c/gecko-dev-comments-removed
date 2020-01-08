@@ -2860,37 +2860,44 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
           uint32_t itemIndex = 0;
           for (FlexItem* item = mItems.getFirst(); item; item = item->getNext(),
                                                          ++itemIndex) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            nscoord deltaSize = item->GetMainSize() -
-              aLineInfo->mItems[itemIndex].mMainBaseSize;
+            if (!item->IsFrozen()) {
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              nscoord deltaSize = item->GetMainSize() -
+                aLineInfo->mItems[itemIndex].mMainBaseSize;
 
-            aLineInfo->mItems[itemIndex].mMainDeltaSize = deltaSize;
-            
-            
-            
-            if (deltaSize > 0) {
-              MOZ_ASSERT(item->IsFrozen() || isUsingFlexGrow,
-                "Unfrozen items shouldn't grow without isUsingFlexGrow.");
-              MOZ_ASSERT(aLineInfo->mGrowthState !=
-                         ComputedFlexLineInfo::GrowthState::SHRINKING);
-              aLineInfo->mGrowthState =
-                ComputedFlexLineInfo::GrowthState::GROWING;
-            } else if (deltaSize < 0) {
-              MOZ_ASSERT(item->IsFrozen() || !isUsingFlexGrow,
-               "Unfrozen items shouldn't shrink with isUsingFlexGrow.");
-              MOZ_ASSERT(aLineInfo->mGrowthState !=
-                         ComputedFlexLineInfo::GrowthState::GROWING);
-              aLineInfo->mGrowthState =
-                ComputedFlexLineInfo::GrowthState::SHRINKING;
+              aLineInfo->mItems[itemIndex].mMainDeltaSize = deltaSize;
+              
+              
+              
+              
+              
+              if (deltaSize > 0) {
+                MOZ_ASSERT(isUsingFlexGrow,
+                           "Unfrozen items can only grow if we're "
+                           "distributing (positive) space with flex-grow");
+                MOZ_ASSERT(aLineInfo->mGrowthState !=
+                           ComputedFlexLineInfo::GrowthState::SHRINKING,
+                           "shouldn't flip flop from shrinking to growing");
+                aLineInfo->mGrowthState =
+                  ComputedFlexLineInfo::GrowthState::GROWING;
+              } else if (deltaSize < 0) {
+                MOZ_ASSERT(!isUsingFlexGrow,
+                           "Unfrozen items can only shrink if we're "
+                           "distributing (negative) space with flex-shrink");
+                MOZ_ASSERT(aLineInfo->mGrowthState !=
+                           ComputedFlexLineInfo::GrowthState::GROWING,
+                           "shouldn't flip flop from growing to shrinking");
+                aLineInfo->mGrowthState =
+                  ComputedFlexLineInfo::GrowthState::SHRINKING;
+              }
             }
           }
         }
