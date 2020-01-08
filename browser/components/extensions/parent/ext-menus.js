@@ -129,6 +129,10 @@ var gMenuBuilder = {
     
     if (root.extension.manifest.icons) {
       this.setMenuItemIcon(rootElement, root.extension, contextData, root.extension.manifest.icons);
+    } else {
+      
+      rootElement.removeAttribute("class");
+      rootElement.removeAttribute("image");
     }
     return rootElement;
   },
