@@ -690,6 +690,9 @@ protected:
 
   bool IsForTextControlWithNoScrollbars() const;
 
+  
+  void RemoveObservers();
+
   static void EnsureFrameVisPrefsCached();
   static bool sFrameVisPrefsCached;
   
