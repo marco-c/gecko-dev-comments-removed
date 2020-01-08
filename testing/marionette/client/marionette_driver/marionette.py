@@ -1428,6 +1428,20 @@ class Marionette(object):
         return self._send_message("WebDriver:GetPageSource",
                                   key="value")
 
+    def open(self, type=None, focus=False):
+        """Open a new window, or tab based on the specified context type.
+
+        If no context type is given the application will choose the best
+        option based on tab and window support.
+
+        :param type: Type of window to be opened. Can be one of "tab" or "window"
+        :param focus: If true, the opened window will be focused
+
+        :returns: Dict with new window handle, and type of opened window
+        """
+        body = {"type": type, "focus": focus}
+        return self._send_message("WebDriver:NewWindow", body)
+
     def close(self):
         """Close the current window, ending the session if it's the last
         window currently open.
@@ -1665,7 +1679,7 @@ class Marionette(object):
             return value
 
     def execute_script(self, script, script_args=(), new_sandbox=True,
-                       sandbox="default", script_timeout=None):
+                       sandbox="default"):
         """Executes a synchronous JavaScript script, and returns the
         result (or None if the script does return a value).
 
@@ -1735,14 +1749,13 @@ class Marionette(object):
                 "args": args,
                 "newSandbox": new_sandbox,
                 "sandbox": sandbox,
-                "scriptTimeout": script_timeout,
                 "line": int(frame[1]),
                 "filename": filename}
         rv = self._send_message("WebDriver:ExecuteScript", body, key="value")
         return self._from_json(rv)
 
     def execute_async_script(self, script, script_args=(), new_sandbox=True,
-                             sandbox="default", script_timeout=None):
+                             sandbox="default"):
         """Executes an asynchronous JavaScript script, and returns the
         result (or None if the script does return a value).
 
@@ -1782,7 +1795,6 @@ class Marionette(object):
                 "args": args,
                 "newSandbox": new_sandbox,
                 "sandbox": sandbox,
-                "scriptTimeout": script_timeout,
                 "line": int(frame[1]),
                 "filename": filename}
 
