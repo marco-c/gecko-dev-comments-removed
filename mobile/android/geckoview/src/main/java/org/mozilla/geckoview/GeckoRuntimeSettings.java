@@ -20,10 +20,6 @@ import android.support.annotation.Nullable;
 import org.mozilla.geckoview.GeckoSession.TrackingProtectionDelegate;
 
 public final class GeckoRuntimeSettings implements Parcelable {
-    
-
-
-    public static final String EXTRA_CRASH_REPORTING_JOB_ID = "crashReporterJobId";
 
     
 
@@ -121,21 +117,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
         public @NonNull Builder webFontsEnabled(final boolean flag) {
             mSettings.mWebFonts.set(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder crashReportingJobId(final int id) {
-            mSettings.mCrashReportingJobId = id;
             return this;
         }
 
@@ -334,7 +315,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
      Pref<Boolean> mSafebrowsingPhishing = new Pref<Boolean>(
         "browser.safebrowsing.phishing.enabled", true);
 
-     int mCrashReportingJobId;
      boolean mDebugPause;
      float mDisplayDensityOverride = -1.0f;
      int mDisplayDpiOverride;
@@ -376,7 +356,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
             uncheckedPref.set(settings.mPrefs[i].get());
         }
 
-        mCrashReportingJobId = settings.mCrashReportingJobId;
         mDebugPause = settings.mDebugPause;
         mDisplayDensityOverride = settings.mDisplayDensityOverride;
         mDisplayDpiOverride = settings.mDisplayDpiOverride;
@@ -475,13 +454,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
     public @NonNull GeckoRuntimeSettings setWebFontsEnabled(final boolean flag) {
         mWebFonts.set(flag);
         return this;
-    }
-
-    
-
-
-    public int getCrashReportingServiceJobId() {
-        return mCrashReportingJobId;
     }
 
     
@@ -730,7 +702,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
             out.writeValue(pref.get());
         }
 
-        out.writeInt(mCrashReportingJobId);
         ParcelableUtils.writeBoolean(out, mDebugPause);
         out.writeFloat(mDisplayDensityOverride);
         out.writeInt(mDisplayDpiOverride);
@@ -751,7 +722,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
             uncheckedPref.set(source.readValue(getClass().getClassLoader()));
         }
 
-        mCrashReportingJobId = source.readInt();
         mDebugPause = ParcelableUtils.readBoolean(source);
         mDisplayDensityOverride = source.readFloat();
         mDisplayDpiOverride = source.readInt();
