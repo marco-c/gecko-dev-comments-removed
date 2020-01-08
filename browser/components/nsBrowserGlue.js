@@ -1552,6 +1552,13 @@ BrowserGlue.prototype = {
       ContextualIdentityService.load();
     });
 
+    Services.tm.idleDispatchToMainThread(() => {
+      let enableCertErrorUITelemetry =
+        Services.prefs.getBoolPref("security.certerrors.recordEventTelemetry", false);
+      Services.telemetry.setEventRecordingEnabled("security.ui.certerror",
+        enableCertErrorUITelemetry);
+    });
+
     
     
     
