@@ -83,15 +83,71 @@ module.exports = __webpack_require__(1630);
 
  }),
 
- 1363:
+ 1630:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _prettyFast = __webpack_require__(802);
+
+var _prettyFast2 = _interopRequireDefault(_prettyFast);
+
+var _devtoolsUtils = __webpack_require__(3651);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
+
+const { workerHandler } = _devtoolsUtils.workerUtils;
+
+function prettyPrint({ url, indent, sourceText }) {
+  const prettified = (0, _prettyFast2.default)(sourceText, {
+    url: url,
+    indent: " ".repeat(indent)
+  });
+
+  return {
+    code: prettified.code,
+    mappings: invertMappings(prettified.map._mappings)
+  };
+}
+
+function invertMappings(mappings) {
+  return mappings._array.map(m => {
+    const mapping = {
+      generated: {
+        line: m.originalLine,
+        column: m.originalColumn
+      }
+    };
+    if (m.source) {
+      mapping.source = m.source;
+      mapping.original = {
+        line: m.generatedLine,
+        column: m.generatedColumn
+      };
+      mapping.name = m.name;
+    }
+    return mapping;
+  });
+}
+
+self.onmessage = workerHandler({ prettyPrint });
+
+ }),
+
+ 3651:
  (function(module, exports, __webpack_require__) {
 
 
 
 
 
-const networkRequest = __webpack_require__(1367);
-const workerUtils = __webpack_require__(1368);
+const networkRequest = __webpack_require__(3653);
+const workerUtils = __webpack_require__(3654);
 
 module.exports = {
   networkRequest,
@@ -100,7 +156,7 @@ module.exports = {
 
  }),
 
- 1367:
+ 3653:
  (function(module, exports) {
 
 
@@ -122,7 +178,7 @@ module.exports = networkRequest;
 
  }),
 
- 1368:
+ 3654:
  (function(module, exports) {
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
@@ -171,8 +227,16 @@ WorkerDispatcher.prototype = {
       const items = calls.slice();
       calls.length = 0;
 
+      if (!this.worker) {
+        return;
+      }
+
       const id = this.msgId++;
-      this.worker.postMessage({ id, method, calls: items.map(item => item[0]) });
+      this.worker.postMessage({
+        id,
+        method,
+        calls: items.map(item => item[0])
+      });
 
       const listener = ({ data: result }) => {
         if (result.id !== id) {
@@ -215,9 +279,8 @@ function workerHandler(publicInterface) {
           
           
           err => ({ error: err.toString() }));
-        } else {
-          return { response };
         }
+        return { response };
       } catch (error) {
         
         
@@ -234,7 +297,7 @@ function streamingWorkerHandler(publicInterface, { timeout = 100 } = {}, worker 
     var _ref = _asyncToGenerator(function* (id, tasks) {
       let isWorking = true;
 
-      const intervalId = setTimeout(function () {
+      const timeoutId = setTimeout(function () {
         isWorking = false;
       }, timeout);
 
@@ -245,7 +308,7 @@ function streamingWorkerHandler(publicInterface, { timeout = 100 } = {}, worker 
         results.push(result);
       }
       worker.postMessage({ id, status: "pending", data: results });
-      clearInterval(intervalId);
+      clearTimeout(timeoutId);
 
       if (tasks.length !== 0) {
         yield streamingWorker(id, tasks);
@@ -286,62 +349,6 @@ module.exports = {
   workerHandler,
   streamingWorkerHandler
 };
-
- }),
-
- 1630:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _prettyFast = __webpack_require__(802);
-
-var _prettyFast2 = _interopRequireDefault(_prettyFast);
-
-var _devtoolsUtils = __webpack_require__(1363);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-
-
-
-
-const { workerHandler } = _devtoolsUtils.workerUtils;
-
-function prettyPrint({ url, indent, sourceText }) {
-  const prettified = (0, _prettyFast2.default)(sourceText, {
-    url: url,
-    indent: " ".repeat(indent)
-  });
-
-  return {
-    code: prettified.code,
-    mappings: invertMappings(prettified.map._mappings)
-  };
-}
-
-function invertMappings(mappings) {
-  return mappings._array.map(m => {
-    const mapping = {
-      generated: {
-        line: m.originalLine,
-        column: m.originalColumn
-      }
-    };
-    if (m.source) {
-      mapping.source = m.source;
-      mapping.original = {
-        line: m.generatedLine,
-        column: m.generatedColumn
-      };
-      mapping.name = m.name;
-    }
-    return mapping;
-  });
-}
-
-self.onmessage = workerHandler({ prettyPrint });
 
  }),
 

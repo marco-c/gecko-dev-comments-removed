@@ -3,64 +3,18 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.findGeneratedBindingForStandardBinding = findGeneratedBindingForStandardBinding;
-exports.findGeneratedBindingForImportBinding = findGeneratedBindingForImportBinding;
-exports.findGeneratedBindingForNormalDeclaration = findGeneratedBindingForNormalDeclaration;
-exports.findGeneratedBindingForImportDeclaration = findGeneratedBindingForImportDeclaration;
+exports.findGeneratedReference = findGeneratedReference;
+exports.findGeneratedImportReference = findGeneratedImportReference;
+exports.findGeneratedImportDeclaration = findGeneratedImportDeclaration;
 
 var _locColumn = require("./locColumn");
 
 var _mappingContains = require("./mappingContains");
 
-var _getGeneratedLocationRanges = require("./getGeneratedLocationRanges");
-
 var _firefox = require("../../../client/firefox");
 
 
 
-
-
-
-
-
-
-async function findGeneratedBindingForStandardBinding(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
-  return await findGeneratedReference((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos, bindingType, pos.type, sourceMaps)));
-}
-
-
-
-
-
-
-async function findGeneratedBindingForImportBinding(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
-  return await findGeneratedImportReference((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos, bindingType, pos.type, sourceMaps)));
-}
-
-
-
-
-
-
-async function findGeneratedBindingForNormalDeclaration(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
-  return await findGeneratedReference((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos.declaration, bindingType, pos.type, sourceMaps)));
-}
-
-
-
-
-
-
-async function findGeneratedBindingForImportDeclaration(sourceMaps, client, source, pos, name, bindingType, generatedAstBindings) {
-  const importName = pos.importName;
-
-  if (typeof importName !== "string") {
-    
-    return null;
-  }
-
-  return await findGeneratedImportDeclaration((await (0, _getGeneratedLocationRanges.getGeneratedLocationRanges)(generatedAstBindings, source, pos.declaration, bindingType, pos.type, sourceMaps)), importName);
-}
 
 
 

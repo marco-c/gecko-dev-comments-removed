@@ -3,9 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = addBreakpoint;
+exports.addHiddenBreakpoint = addHiddenBreakpoint;
+exports.enableBreakpoint = enableBreakpoint;
+exports.addBreakpoint = addBreakpoint;
 
 var _breakpoint = require("../../utils/breakpoint/index");
+
+var _promise = require("../utils/middleware/promise");
 
 var _selectors = require("../../selectors/index");
 
@@ -16,7 +20,7 @@ var _source = require("../../utils/source");
 
 
 
-async function addBreakpoint(getState, client, sourceMaps, breakpoint) {
+async function addBreakpointPromise(getState, client, sourceMaps, breakpoint) {
   const state = getState();
   const source = (0, _selectors.getSource)(state, breakpoint.location.sourceId);
   const location = { ...breakpoint.location,
@@ -67,5 +71,88 @@ async function addBreakpoint(getState, client, sourceMaps, breakpoint) {
   return {
     breakpoint: newBreakpoint,
     previousLocation
+  };
+}
+
+
+
+
+
+
+
+
+
+function addHiddenBreakpoint(location) {
+  return ({
+    dispatch
+  }) => {
+    return dispatch(addBreakpoint(location, {
+      hidden: true
+    }));
+  };
+}
+
+
+
+
+
+
+
+
+
+
+function enableBreakpoint(location) {
+  return async ({
+    dispatch,
+    getState,
+    client,
+    sourceMaps
+  }) => {
+    const breakpoint = (0, _selectors.getBreakpoint)(getState(), location);
+
+    if (!breakpoint || breakpoint.loading) {
+      return;
+    } 
+
+
+    const enabledBreakpoint = { ...breakpoint,
+      disabled: false
+    };
+    return dispatch({
+      type: "ENABLE_BREAKPOINT",
+      breakpoint: enabledBreakpoint,
+      [_promise.PROMISE]: addBreakpointPromise(getState, client, sourceMaps, breakpoint)
+    });
+  };
+}
+
+
+
+
+
+
+
+
+
+
+function addBreakpoint(location, {
+  condition,
+  hidden
+} = {}) {
+  const breakpoint = (0, _breakpoint.createBreakpoint)(location, {
+    condition,
+    hidden
+  });
+  return ({
+    dispatch,
+    getState,
+    sourceMaps,
+    client
+  }) => {
+    return dispatch({
+      type: "ADD_BREAKPOINT",
+      breakpoint,
+      [_promise.PROMISE]: addBreakpointPromise(getState, client, sourceMaps, breakpoint)
+    });
   };
 }
