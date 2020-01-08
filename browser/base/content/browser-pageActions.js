@@ -1203,6 +1203,12 @@ BrowserPageActions.addSearchEngine = {
 
 
 BrowserPageActions.shareURL = {
+  onCommand(event, buttonNode) {
+    let browser = gBrowser.selectedBrowser;
+    let currentURI = gURLBar.makeURIReadable(browser.currentURI).displaySpec;
+    this._windowsUIUtils.shareUrl(currentURI, browser.contentTitle);
+  },
+
   onShowingInPanel(buttonNode) {
     this._cached = false;
   },
@@ -1264,7 +1270,7 @@ BrowserPageActions.shareURL = {
 };
 
 
-XPCOMUtils.defineLazyServiceGetter(BrowserPageActions.shareURL,
-                                   "_sharingService",
-                                   "@mozilla.org/widget/macsharingservice;1",
-                                   "nsIMacSharingService");
+XPCOMUtils.defineLazyServiceGetters(BrowserPageActions.shareURL, {
+  _sharingService: ["@mozilla.org/widget/macsharingservice;1", "nsIMacSharingService"],
+  _windowsUIUtils: ["@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils"],
+});
