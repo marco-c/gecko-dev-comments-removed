@@ -66,9 +66,7 @@
 
 class nsDOMStyleSheetSetList;
 class nsDocument;
-class nsIRadioVisitor;
 class nsIFormControl;
-struct nsRadioGroupStruct;
 class nsOnloadBlocker;
 class nsDOMNavigationTiming;
 class nsWindowSizes;
@@ -147,30 +145,57 @@ public:
   
   NS_IMETHOD WalkRadioGroup(const nsAString& aName,
                             nsIRadioVisitor* aVisitor,
-                            bool aFlushContent) override;
+                            bool aFlushContent) override
+  {
+    return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor, aFlushContent);
+  }
   virtual void
     SetCurrentRadioButton(const nsAString& aName,
-                          mozilla::dom::HTMLInputElement* aRadio) override;
+                          mozilla::dom::HTMLInputElement* aRadio) override
+  {
+    DocumentOrShadowRoot::SetCurrentRadioButton(aName, aRadio);
+  }
   virtual mozilla::dom::HTMLInputElement*
-    GetCurrentRadioButton(const nsAString& aName) override;
+    GetCurrentRadioButton(const nsAString& aName) override
+  {
+    return DocumentOrShadowRoot::GetCurrentRadioButton(aName);
+  }
   NS_IMETHOD
     GetNextRadioButton(const nsAString& aName,
                        const bool aPrevious,
-                       mozilla::dom::HTMLInputElement*  aFocusedRadio,
-                       mozilla::dom::HTMLInputElement** aRadioOut) override;
+                       mozilla::dom::HTMLInputElement* aFocusedRadio,
+                       mozilla::dom::HTMLInputElement** aRadioOut) override
+  {
+    return DocumentOrShadowRoot::GetNextRadioButton(aName, aPrevious,
+                                                    aFocusedRadio, aRadioOut);
+  }
   virtual void AddToRadioGroup(const nsAString& aName,
-                               mozilla::dom::HTMLInputElement* aRadio) override;
+                               mozilla::dom::HTMLInputElement* aRadio) override
+  {
+    DocumentOrShadowRoot::AddToRadioGroup(aName, aRadio);
+  }
   virtual void RemoveFromRadioGroup(const nsAString& aName,
-                                    mozilla::dom::HTMLInputElement* aRadio) override;
-  virtual uint32_t GetRequiredRadioCount(const nsAString& aName) const override;
+                                    mozilla::dom::HTMLInputElement* aRadio) override
+  {
+    DocumentOrShadowRoot::RemoveFromRadioGroup(aName, aRadio);
+  }
+  virtual uint32_t GetRequiredRadioCount(const nsAString& aName) const override
+  {
+    return DocumentOrShadowRoot::GetRequiredRadioCount(aName);
+  }
   virtual void RadioRequiredWillChange(const nsAString& aName,
-                                       bool aRequiredAdded) override;
-  virtual bool GetValueMissingState(const nsAString& aName) const override;
-  virtual void SetValueMissingState(const nsAString& aName, bool aValue) override;
-
-  
-  nsRadioGroupStruct* GetRadioGroup(const nsAString& aName) const;
-  nsRadioGroupStruct* GetOrCreateRadioGroup(const nsAString& aName);
+                                       bool aRequiredAdded) override
+  {
+    DocumentOrShadowRoot::RadioRequiredWillChange(aName, aRequiredAdded);
+  }
+  virtual bool GetValueMissingState(const nsAString& aName) const override
+  {
+    return DocumentOrShadowRoot::GetValueMissingState(aName);
+  }
+  virtual void SetValueMissingState(const nsAString& aName, bool aValue) override
+  {
+    return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
+  }
 
   
   static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aGlobal);
@@ -261,8 +286,6 @@ public:
   
   
   js::ExpandoAndGeneration mExpandoAndGeneration;
-
-  nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
   friend class nsCallRequestFullscreen;
 

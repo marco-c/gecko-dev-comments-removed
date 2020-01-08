@@ -8,13 +8,16 @@
 #define mozilla_dom_DocumentOrShadowRoot_h__
 
 #include "mozilla/dom/NameSpaceConstants.h"
+#include "nsClassHashtable.h"
 #include "nsContentListDeclarations.h"
 #include "nsTArray.h"
 #include "nsIdentifierMapEntry.h"
 
 class nsContentList;
+class nsCycleCollectionTraversalCallback;
 class nsIDocument;
 class nsINode;
+class nsIRadioVisitor;
 class nsWindowSizes;
 
 namespace mozilla {
@@ -23,6 +26,9 @@ class StyleSheet;
 namespace dom {
 
 class Element;
+class DocumentOrShadowRoot;
+class HTMLInputElement;
+struct nsRadioGroupStruct;
 class StyleSheetList;
 class ShadowRoot;
 
@@ -44,6 +50,11 @@ class DocumentOrShadowRoot
 public:
   explicit DocumentOrShadowRoot(nsIDocument&);
   explicit DocumentOrShadowRoot(mozilla::dom::ShadowRoot&);
+
+  
+  static void Traverse(DocumentOrShadowRoot* tmp,
+                       nsCycleCollectionTraversalCallback &cb);
+  static void Unlink(DocumentOrShadowRoot* tmp);
 
   nsINode& AsNode()
   {
@@ -186,6 +197,31 @@ public:
 
   void ReportEmptyGetElementByIdArg();
 
+  
+  NS_IMETHOD WalkRadioGroup(const nsAString& aName,
+                            nsIRadioVisitor* aVisitor,
+                            bool aFlushContent);
+  void SetCurrentRadioButton(const nsAString& aName,
+                             HTMLInputElement* aRadio);
+  HTMLInputElement* GetCurrentRadioButton(const nsAString& aName);
+  nsresult GetNextRadioButton(const nsAString& aName,
+                              const bool aPrevious,
+                              HTMLInputElement* aFocusedRadio,
+                              HTMLInputElement** aRadioOut);
+  void AddToRadioGroup(const nsAString& aName,
+                       HTMLInputElement* aRadio);
+  void RemoveFromRadioGroup(const nsAString& aName,
+                            HTMLInputElement* aRadio);
+  uint32_t GetRequiredRadioCount(const nsAString& aName) const;
+  void RadioRequiredWillChange(const nsAString& aName,
+                                       bool aRequiredAdded);
+  bool GetValueMissingState(const nsAString& aName) const;
+  void SetValueMissingState(const nsAString& aName, bool aValue);
+
+  
+  nsRadioGroupStruct* GetRadioGroup(const nsAString& aName) const;
+  nsRadioGroupStruct* GetOrCreateRadioGroup(const nsAString& aName);
+
 protected:
   
   already_AddRefed<StyleSheet> RemoveSheet(StyleSheet& aSheet);
@@ -217,6 +253,8 @@ protected:
 
 
   nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
+
+  nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
 
   nsINode& mAsNode;
   const Kind mKind;

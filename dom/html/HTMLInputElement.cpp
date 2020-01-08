@@ -3052,8 +3052,14 @@ HTMLInputElement::GetRadioGroupContainer() const
     return nullptr;
   }
 
-  
-  return static_cast<nsDocument*>(GetUncomposedDoc());
+  DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
+  if (!docOrShadow) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIRadioGroupContainer> container =
+    do_QueryInterface(&(docOrShadow->AsNode()));
+  return container;
 }
 
 HTMLInputElement*
@@ -4632,7 +4638,8 @@ HTMLInputElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   
   
-  if (aDocument && !mForm && mType == NS_FORM_INPUT_RADIO) {
+  if (!mForm && mType == NS_FORM_INPUT_RADIO &&
+      GetUncomposedDocOrConnectedShadowRoot()) {
     AddedToRadioGroup();
   }
 
@@ -6567,7 +6574,7 @@ HTMLInputElement::AddedToRadioGroup()
 {
   
   
-  if (!mForm && (!IsInUncomposedDoc() || IsInAnonymousSubtree())) {
+  if (!mForm && (!GetUncomposedDocOrConnectedShadowRoot() || IsInAnonymousSubtree())) {
     return;
   }
 
