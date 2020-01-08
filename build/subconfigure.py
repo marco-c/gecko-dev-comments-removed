@@ -120,7 +120,7 @@ def maybe_clear_cache(data):
     return False
 
 
-def prepare(srcdir, objdir, shell, args):
+def prepare(srcdir, objdir, args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--target', type=str)
     parser.add_argument('--host', type=str)
@@ -166,7 +166,6 @@ def prepare(srcdir, objdir, shell, args):
         'host': args.host,
         'build': args.build,
         'args': others,
-        'shell': shell,
         'srcdir': srcdir,
         'objdir': objdir,
         'env': environ,
@@ -212,8 +211,6 @@ def execute_and_prefix(*args, **kwargs):
 
 
 def run(data):
-    ret = 0
-
     objdir = data['objdir']
     relobjdir = data['relobjdir'] = os.path.relpath(objdir, os.getcwd())
 
@@ -248,23 +245,20 @@ def run(data):
                 skip_configure = False
 
     if not skip_configure:
-        if mozpath.normsep(relobjdir) == 'js/src':
-            
-            
-            
-            
-            
-            
-            
-            command = [
-                sys.executable,
-                os.path.join(os.path.dirname(__file__), '..', 'configure.py'),
-                '--enable-project=js',
-            ]
-            data['env']['OLD_CONFIGURE'] = os.path.join(
-                os.path.dirname(configure), 'old-configure')
-        else:
-            command = [data['shell'], configure]
+        
+        
+        
+        
+        
+        
+        
+        command = [
+            sys.executable,
+            os.path.join(os.path.dirname(__file__), '..', 'configure.py'),
+            '--enable-project=js',
+        ]
+        data['env']['OLD_CONFIGURE'] = os.path.join(
+            os.path.dirname(configure), 'old-configure')
         for kind in ('target', 'build', 'host'):
             if data.get(kind) is not None:
                 command += ['--%s=%s' % (kind, data[kind])]
@@ -283,43 +277,15 @@ def run(data):
         if returncode:
             return returncode
 
-    
-    
-    
-    
-    skip_config_status = True
-    if mozpath.normsep(relobjdir) == 'js/src':
-        
-        
-        pass
-    elif not config_status or config_status.modified:
-        
-        
-        if os.path.exists(config_status_path):
-            skip_config_status = False
-
-    if not skip_config_status:
-        if skip_configure:
-            print(prefix_lines('running config.status', relobjdir))
-            sys.stdout.flush()
-        ret = execute_and_prefix([data['shell'], '-c', './config.status'],
-                                 cwd=objdir, env=data['env'], prefix=relobjdir)
-
-    return ret
+    return 0
 
 
 def main(args):
     topsrcdir = os.path.abspath(args[0])
-    subdir = args[1]
-    
-    if ':' in subdir:
-        srcdir, subdir = subdir.split(':', 1)
-    else:
-        srcdir = subdir
-    srcdir = os.path.join(topsrcdir, srcdir)
-    objdir = os.path.abspath(subdir)
+    srcdir = os.path.join(topsrcdir, 'js/src')
+    objdir = os.path.abspath('js/src')
 
-    data = prepare(srcdir, objdir, args[2], args[3:])
+    data = prepare(srcdir, objdir, args[1:])
     return run(data)
 
 
