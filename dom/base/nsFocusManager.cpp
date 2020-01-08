@@ -3226,59 +3226,67 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
   bool getNextFrame = true;
   nsCOMPtr<nsIContent> iterStartContent = aStartContent;
+  
   while (1) {
-    nsIFrame* startFrame = iterStartContent->GetPrimaryFrame();
+    nsIFrame* frame = iterStartContent->GetPrimaryFrame();
     
-    if (!startFrame) {
+    while (!frame) {
       
-      if (iterStartContent == aRootContent) return NS_OK;
+      if (iterStartContent == aRootContent) {
+        return NS_OK;
+      }
 
       
       iterStartContent = aForward ? iterStartContent->GetNextNode()
                                   : iterStartContent->GetPreviousContent();
+      if (!iterStartContent) {
+        break;
+      }
+
+      frame = iterStartContent->GetPrimaryFrame();
       
       
       getNextFrame = false;
-      if (iterStartContent) continue;
-
-      
-      iterStartContent = aRootContent;
-      continue;
     }
 
-    
-    
-    
     nsCOMPtr<nsIFrameEnumerator> frameTraversal;
-    nsresult rv = NS_NewFrameTraversal(
-        getter_AddRefs(frameTraversal), presContext, startFrame, ePreOrder,
-        false,                  
-        false,                  
-        true,                   
-        aForDocumentNavigation  
-    );
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (frame) {
+      
+      
+      
+      nsresult rv = NS_NewFrameTraversal(
+          getter_AddRefs(frameTraversal), presContext, frame, ePreOrder,
+          false,                  
+          false,                  
+          true,                   
+          aForDocumentNavigation  
+      );
+      NS_ENSURE_SUCCESS(rv, rv);
 
-    if (iterStartContent == aRootContent) {
-      if (!aForward) {
-        frameTraversal->Last();
-      } else if (aRootContent->IsFocusable()) {
-        frameTraversal->Next();
+      if (iterStartContent == aRootContent) {
+        if (!aForward) {
+          frameTraversal->Last();
+        } else if (aRootContent->IsFocusable()) {
+          frameTraversal->Next();
+        }
+        frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+      } else if (getNextFrame &&
+                 (!iterStartContent ||
+                  !iterStartContent->IsHTMLElement(nsGkAtoms::area))) {
+        
+        
+        
+        if (aForward) {
+          frameTraversal->Next();
+        } else {
+          frameTraversal->Prev();
+        }
+
+        frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
       }
-    } else if (getNextFrame &&
-               (!iterStartContent ||
-                !iterStartContent->IsHTMLElement(nsGkAtoms::area))) {
-      
-      
-      
-      if (aForward)
-        frameTraversal->Next();
-      else
-        frameTraversal->Prev();
     }
 
     
-    nsIFrame* frame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
     while (frame) {
       
       
@@ -3339,9 +3347,9 @@ nsresult nsFocusManager::GetNextTabbableContent(
             
             
             
-            rv = GetNextTabbableContent(aPresShell, currentContent, nullptr,
-                                        currentContent, true, 1, false, false,
-                                        aResultContent);
+            nsresult rv = GetNextTabbableContent(
+                aPresShell, currentContent, nullptr, currentContent, true, 1,
+                false, false, aResultContent);
             if (NS_SUCCEEDED(rv) && *aResultContent) {
               return rv;
             }
