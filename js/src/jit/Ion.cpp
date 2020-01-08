@@ -697,6 +697,9 @@ JitRuntime::getVMWrapper(const VMFunction& f) const
 void
 JitCodeHeader::init(JitCode* jitCode)
 {
+    
+    
+    MOZ_ASSERT(!gc::IsMovableKind(gc::AllocKind::JITCODE));
     jitCode_ = jitCode;
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
