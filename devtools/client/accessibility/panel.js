@@ -61,7 +61,7 @@ AccessibilityPanel.prototype = {
 
     
     if (!this.target.isRemote) {
-      await this.target.makeRemote();
+      await this.target.attach();
     }
 
     this._telemetry = new Telemetry();
