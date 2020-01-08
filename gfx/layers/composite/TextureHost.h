@@ -189,7 +189,9 @@ public:
   
   
   
-  virtual void Sync() { }
+  
+  
+  virtual bool Sync(bool aBlocking) { return true; }
 
 protected:
 
@@ -670,10 +672,14 @@ public:
 
   virtual MacIOSurface* GetMacIOSurface() { return nullptr; }
 
+  virtual bool IsDirectMap() { return false; }
+
 protected:
   virtual void ReadUnlock();
 
   void RecycleTexture(TextureFlags aFlags);
+
+  virtual void MaybeNotifyUnlocked() {}
 
   virtual void UpdatedInternal(const nsIntRegion *Region) {}
 
@@ -777,6 +783,9 @@ public:
                                 const Range<wr::ImageKey>& aImageKeys) override;
 
   virtual void ReadUnlock() override;
+  virtual bool IsDirectMap() override { return mFirstSource && mFirstSource->IsDirectMap(); };
+
+  bool CanUnlock() { return !mFirstSource || mFirstSource->Sync(false); }
 
 protected:
   bool Upload(nsIntRegion *aRegion = nullptr);
@@ -785,6 +794,8 @@ protected:
   bool EnsureWrappingTextureSource();
 
   virtual void UpdatedInternal(const nsIntRegion* aRegion = nullptr) override;
+  virtual void MaybeNotifyUnlocked() override;
+
 
   BufferDescriptor mDescriptor;
   RefPtr<Compositor> mCompositor;

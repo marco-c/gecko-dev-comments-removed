@@ -21,6 +21,9 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureClient.h"
+#ifdef XP_DARWIN
+#include "mozilla/layers/TextureSync.h"
+#endif
 #include "mozilla/layers/GPUVideoTextureHost.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
 #include "mozilla/webrender/RenderBufferTextureHost.h"
@@ -370,11 +373,14 @@ TextureHost::TextureHost(TextureFlags aFlags)
 
 TextureHost::~TextureHost()
 {
-  
-  
-  
-  
-  ReadUnlock();
+  if (mReadLocked) {
+    
+    
+    
+    
+    ReadUnlock();
+    MaybeNotifyUnlocked();
+  }
 }
 
 void TextureHost::Finalize()
@@ -400,6 +406,7 @@ TextureHost::UnbindTextureSource()
       
       
       ReadUnlock();
+      MaybeNotifyUnlocked();
     }
   }
 }
@@ -701,6 +708,9 @@ TextureHost::SetReadLocked()
   
   MOZ_ASSERT(!mReadLocked);
   mReadLocked = true;
+  if (mProvider) {
+    mProvider->MaybeUnlockBeforeNextComposition(this);
+  }
 }
 
 void
@@ -890,10 +900,23 @@ void
 BufferTextureHost::ReadUnlock()
 {
   if (mFirstSource) {
-    mFirstSource->Sync();
+    mFirstSource->Sync(true);
   }
 
   TextureHost::ReadUnlock();
+}
+
+void
+BufferTextureHost::MaybeNotifyUnlocked()
+{
+#ifdef XP_DARWIN
+  auto actor = GetIPDLActor();
+  if (actor) {
+    AutoTArray<uint64_t, 1> serials;
+    serials.AppendElement(TextureHost::GetTextureSerial(actor));
+    TextureSync::SetTexturesUnlocked(actor->OtherPid(), serials);
+  }
+#endif
 }
 
 void
@@ -911,6 +934,7 @@ BufferTextureHost::UnbindTextureSource()
   
   
   ReadUnlock();
+  MaybeNotifyUnlocked();
 }
 
 gfx::SurfaceFormat
@@ -977,6 +1001,7 @@ BufferTextureHost::MaybeUpload(nsIntRegion *aRegion)
     
     
     ReadUnlock();
+    MaybeNotifyUnlocked();
   }
 
   
@@ -1290,9 +1315,12 @@ TextureParent::Destroy()
     return;
   }
 
-  
-  
-  mTextureHost->ReadUnlock();
+  if (mTextureHost->mReadLocked) {
+    
+    
+    mTextureHost->ReadUnlock();
+    mTextureHost->MaybeNotifyUnlocked();
+  }
 
   if (mTextureHost->GetFlags() & TextureFlags::DEALLOCATE_CLIENT) {
     mTextureHost->ForgetSharedData();
