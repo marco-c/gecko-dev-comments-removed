@@ -2664,6 +2664,7 @@ class SplitBox extends Component {
     doc.documentElement.style.cursor = this.state.vert ? "ew-resize" : "ns-resize";
 
     splitBox.classList.add("dragging");
+    document.dispatchEvent(new CustomEvent("drag:start"));
 
     this.setState({
       defaultCursor: defaultCursor
@@ -2676,6 +2677,7 @@ class SplitBox extends Component {
     doc.documentElement.style.cursor = this.state.defaultCursor;
 
     splitBox.classList.remove("dragging");
+    document.dispatchEvent(new CustomEvent("drag:end"));
 
     if (this.props.onResizeEnd) {
       this.props.onResizeEnd(this.state.vert ? this.state.width : this.state.height);
@@ -2853,6 +2855,12 @@ class Draggable extends Component {
 
   onMove(ev) {
     ev.preventDefault();
+
+    
+    if (!ev.target.tagName) {
+      return
+    }
+
     
     
     this.props.onMove(ev);
@@ -9349,26 +9357,26 @@ module.exports = g;
  (function(module, exports) {
 
 module.exports = function(module) {
-	if(!module.webpackPolyfill) {
-		module.deprecate = function() {};
-		module.paths = [];
-		
-		if(!module.children) module.children = [];
-		Object.defineProperty(module, "loaded", {
-			enumerable: true,
-			get: function() {
-				return module.l;
-			}
-		});
-		Object.defineProperty(module, "id", {
-			enumerable: true,
-			get: function() {
-				return module.i;
-			}
-		});
-		module.webpackPolyfill = 1;
-	}
-	return module;
+   if(!module.webpackPolyfill) {
+           module.deprecate = function() {};
+           module.paths = [];
+           
+           if(!module.children) module.children = [];
+           Object.defineProperty(module, "loaded", {
+                   enumerable: true,
+                   get: function() {
+                           return module.l;
+                   }
+           });
+           Object.defineProperty(module, "id", {
+                   enumerable: true,
+                   get: function() {
+                           return module.i;
+                   }
+           });
+           module.webpackPolyfill = 1;
+   }
+   return module;
 };
 
 

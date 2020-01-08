@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const { Task } = require("devtools/shared/task");
@@ -32,7 +32,7 @@ DebuggerPanel.prototype = {
       debuggerClient: this.toolbox.target.client,
       sourceMaps: this.toolbox.sourceMapService,
       toolboxActions: {
-        
+        // Open a link in a new browser tab.
         openLink: this.openLink.bind(this),
         openWorkerToolbox: this.openWorkerToolbox.bind(this)
       }
@@ -43,6 +43,10 @@ DebuggerPanel.prototype = {
     this._selectors = selectors;
     this._client = client;
     this.isReady = true;
+
+    this.panelWin.document.addEventListener("drag:start", this.toolbox.toggleDragging);
+    this.panelWin.document.addEventListener("drag:end", this.toolbox.toggleDragging);
+
     return this;
   },
 
@@ -74,7 +78,7 @@ DebuggerPanel.prototype = {
   getFrames: function() {
     let frames = this._selectors.getFrames(this._getState());
 
-    
+    // Frames is null when the debugger is not paused.
     if (!frames) {
       return {
         frames: [],

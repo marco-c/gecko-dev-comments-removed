@@ -158,6 +158,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this.toggleSplitConsole = this.toggleSplitConsole.bind(this);
   this.toggleOptions = this.toggleOptions.bind(this);
   this.togglePaintFlashing = this.togglePaintFlashing.bind(this);
+  this.toggleDragging = this.toggleDragging.bind(this);
   this.isPaintFlashing = false;
 
   this._target.on("close", this.destroy);
@@ -324,6 +325,10 @@ Toolbox.prototype = {
 
   getCurrentPanel: function() {
     return this._toolPanels.get(this.currentToolId);
+  },
+
+  toggleDragging: function() {
+    this.doc.querySelector("window").classList.toggle("dragging");
   },
 
   
@@ -2760,9 +2765,28 @@ Toolbox.prototype = {
       
       await this._initInspector;
 
+      const currentPanel = this.getCurrentPanel();
+      if (currentPanel.stopPicker) {
+        await currentPanel.stopPicker();
+      } else {
+        await this.highlighterUtils.stopPicker();
+      }
       
       
-      await this._inspector.destroy();
+      this._inspector.destroy();
+
+      if (this._highlighter) {
+        await this._highlighter.destroy();
+      }
+      if (this._selection) {
+        this._selection.off("new-node-front", this._onNewSelectedNodeFront);
+        this._selection.destroy();
+      }
+
+      if (this.walker) {
+        this.walker.off("highlighter-ready", this._highlighterReady);
+        this.walker.off("highlighter-hide", this._highlighterHidden);
+      }
 
       this._inspector = null;
       this._highlighter = null;
