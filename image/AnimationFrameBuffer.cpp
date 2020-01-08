@@ -305,10 +305,13 @@ AnimationFrameDiscardingQueue::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf
   for (const RefPtr<imgFrame>& frame : mDisplay) {
     ++i;
     if (mSize < i) {
-      
-      MOZ_ASSERT(mFirstFrame.get() == frame.get());
       i = 1;
-      continue;
+      if (mFirstFrame.get() == frame.get()) {
+        
+        
+        
+        continue;
+      }
     }
 
     frame->AddSizeOfExcludingThis(aMallocSizeOf,
