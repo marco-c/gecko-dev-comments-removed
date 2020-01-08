@@ -3170,6 +3170,12 @@ public:
 
 
 
+  static uint64_t GenerateBrowsingContextId();
+
+  
+
+
+
   static bool
   SkipCursorMoveForSameValueSet() { return sSkipCursorMoveForSameValueSet; }
 

@@ -36,6 +36,7 @@
 #include "mozilla/DataStorage.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
 #include "mozilla/docshell/OfflineCacheUpdateParent.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ClientOpenWindowOpActors.h"
 #include "mozilla/dom/DataTransfer.h"
@@ -5975,5 +5976,112 @@ ContentParent::RecvFirstPartyStorageAccessGrantedForOrigin(const Principal& aPar
                                                                                  aTrackingOrigin,
                                                                                  aGrantedOrigin,
                                                                                  std::move(aResolver));
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentParent::RecvAttachBrowsingContext(
+  const BrowsingContextId& aParentId,
+  const BrowsingContextId& aChildId,
+  const nsString& aName)
+{
+  RefPtr<BrowsingContext> parent = BrowsingContext::Get(aParentId);
+  if (aParentId && !parent) {
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    MOZ_LOG(
+      BrowsingContext::GetLog(),
+      LogLevel::Debug,
+      ("ParentIPC: Trying to attach to already detached parent 0x%08" PRIx64,
+       (uint64_t)aParentId));
+    return IPC_OK();
+  }
+
+  if (parent && parent->OwnerProcessId() != ChildID()) {
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    MOZ_LOG(BrowsingContext::GetLog(),
+            LogLevel::Warning,
+            ("ParentIPC: Trying to attach to out of process parent context "
+             "0x%08" PRIx64,
+             parent->Id()));
+    return IPC_OK();
+  }
+
+  RefPtr<BrowsingContext> child = BrowsingContext::Get(aChildId);
+  if (child) {
+    
+    
+    
+
+    
+    
+    MOZ_LOG(BrowsingContext::GetLog(),
+            LogLevel::Warning,
+            ("ParentIPC: Trying to attach already attached 0x%08" PRIx64
+             " to 0x%08" PRIx64,
+             child->Id(),
+             (uint64_t)aParentId));
+    return IPC_OK();
+  }
+
+  if (!child) {
+    child = new BrowsingContext(aChildId, aName, Some(ChildID()));
+  }
+  child->Attach(parent);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentParent::RecvDetachBrowsingContext(const BrowsingContextId& aContextId,
+                                         const bool& aMoveToBFCache)
+{
+  RefPtr<BrowsingContext> context = BrowsingContext::Get(aContextId);
+
+  if (!context) {
+    MOZ_LOG(BrowsingContext::GetLog(),
+            LogLevel::Debug,
+            ("ParentIPC: Trying to detach already detached 0x%08" PRIx64,
+             (uint64_t)aContextId));
+    return IPC_OK();
+  }
+
+  if (context->OwnerProcessId() != ChildID()) {
+    
+    
+    
+    
+
+    
+    
+    MOZ_LOG(BrowsingContext::GetLog(),
+            LogLevel::Warning,
+            ("ParentIPC: Trying to detach out of process context 0x%08" PRIx64,
+             context->Id()));
+    return IPC_OK();
+  }
+
+  context->Detach();
+
   return IPC_OK();
 }

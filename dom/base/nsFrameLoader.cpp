@@ -689,6 +689,8 @@ nsFrameLoader::AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
   
   if (aParentNode) {
     aParentNode->AddChild(aItem);
+  } else if (nsCOMPtr<nsIDocShell> childAsDocShell = do_QueryInterface(aItem)) {
+    childAsDocShell->AttachBrowsingContext(aParentNode);
   }
 
   bool retval = false;

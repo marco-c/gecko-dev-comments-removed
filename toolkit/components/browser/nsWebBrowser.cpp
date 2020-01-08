@@ -1250,6 +1250,7 @@ nsWebBrowser::Create()
     mDocShell->SetItemType(nsIDocShellTreeItem::typeContent);
   }
   mDocShell->SetTreeOwner(mDocShellTreeOwner);
+  mDocShell->AttachBrowsingContext(nullptr);
 
   
   
