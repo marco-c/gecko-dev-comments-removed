@@ -42,6 +42,7 @@ class RemoteDataDecoder : public MediaDataDecoder,
                     const nsString& aDrmStubId, TaskQueue* aTaskQueue);
 
   
+  RefPtr<FlushPromise> ProcessFlush();
   RefPtr<ShutdownPromise> ProcessShutdown();
   void UpdateInputStatus(int64_t aTimestamp, bool aProcessed);
   void UpdateOutputStatus(RefPtr<MediaData>&& aSample);
