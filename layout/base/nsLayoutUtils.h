@@ -2375,6 +2375,8 @@ public:
 
   static bool AreRetainedDisplayListsEnabled();
 
+  static bool DisplayRootHasRetainedDisplayListBuilder(nsIFrame* aFrame);
+
   
 
 
