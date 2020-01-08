@@ -13,6 +13,7 @@ def test_null_response_value(session):
     response = delete_session(session)
     value = assert_success(response)
     assert value is None
+
     
     
     session.end()
