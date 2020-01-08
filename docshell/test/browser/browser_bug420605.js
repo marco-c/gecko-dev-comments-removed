@@ -113,5 +113,5 @@ function test() {
     
     gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
     BrowserTestUtils.waitForContentEvent(gBrowser.selectedBrowser, "DOMContentLoaded", true).then(onPageLoad);
-    gBrowser.selectedBrowser.loadURI(pageurl);
+    BrowserTestUtils.loadURI(gBrowser.selectedBrowser, pageurl);
 }
