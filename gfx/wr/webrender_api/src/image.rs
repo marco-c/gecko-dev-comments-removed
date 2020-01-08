@@ -8,9 +8,10 @@ extern crate serde_bytes;
 
 use font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
 use std::sync::Arc;
-use {DevicePoint, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
-use {IdNamespace, TileOffset, TileSize};
-use euclid::size2;
+use {DeviceIntPoint, DeviceIntRect, DeviceIntSize, LayoutIntRect};
+use {BlobDirtyRect, IdNamespace, TileOffset, TileSize};
+use euclid::{size2, TypedRect, num::Zero};
+use std::ops::{Add, Sub};
 
 
 
@@ -26,6 +27,20 @@ impl ImageKey {
     
     pub fn new(namespace: IdNamespace, key: u32) -> Self {
         ImageKey(namespace, key)
+    }
+}
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct BlobImageKey(pub ImageKey);
+
+impl BlobImageKey {
+    
+    pub fn as_image(&self) -> ImageKey {
+        self.0
     }
 }
 
@@ -230,9 +245,6 @@ pub enum ImageData {
     Raw(#[serde(with = "serde_image_data_raw")] Arc<Vec<u8>>),
     
     
-    Blob(#[serde(with = "serde_image_data_raw")] Arc<BlobImageData>),
-    
-    
     External(ExternalImageData),
 }
 
@@ -261,34 +273,6 @@ impl ImageData {
     pub fn new_shared(bytes: Arc<Vec<u8>>) -> Self {
         ImageData::Raw(bytes)
     }
-
-    
-    pub fn new_blob_image(commands: BlobImageData) -> Self {
-        ImageData::Blob(Arc::new(commands))
-    }
-
-    
-    #[inline]
-    pub fn is_blob(&self) -> bool {
-        match *self {
-            ImageData::Blob(_) => true,
-            _ => false,
-        }
-    }
-
-    
-    
-    #[inline]
-    pub fn uses_texture_cache(&self) -> bool {
-        match *self {
-            ImageData::External(ref ext_data) => match ext_data.image_type {
-                ExternalImageType::TextureHandle(_) => false,
-                ExternalImageType::Buffer => true,
-            },
-            ImageData::Blob(_) => true,
-            ImageData::Raw(_) => true,
-        }
-    }
 }
 
 
@@ -297,8 +281,6 @@ pub trait BlobImageResources {
     fn get_font_data(&self, key: FontKey) -> &FontTemplate;
     
     fn get_font_instance_data(&self, key: FontInstanceKey) -> Option<FontInstanceData>;
-    
-    fn get_image(&self, key: ImageKey) -> Option<(&ImageData, &ImageDescriptor)>;
 }
 
 
@@ -319,13 +301,13 @@ pub trait BlobImageHandler: Send {
     );
 
     
-    fn add(&mut self, key: ImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>);
+    fn add(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>);
 
     
-    fn update(&mut self, key: ImageKey, data: Arc<BlobImageData>, dirty_rect: Option<DeviceIntRect>);
+    fn update(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, dirty_rect: &BlobDirtyRect);
 
     
-    fn delete(&mut self, key: ImageKey);
+    fn delete(&mut self, key: BlobImageKey);
 
     
     
@@ -365,7 +347,100 @@ pub struct BlobImageParams {
     
     
     
-    pub dirty_rect: Option<DeviceIntRect>,
+    pub dirty_rect: BlobDirtyRect,
+}
+
+
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DirtyRect<T: Copy, U> {
+    
+    All,
+    
+    Partial(TypedRect<T, U>)
+}
+
+impl<T, U> DirtyRect<T, U>
+where
+    T: Copy + Clone
+        + PartialOrd + PartialEq
+        + Add<T, Output = T>
+        + Sub<T, Output = T>
+        + Zero
+{
+    
+    pub fn empty() -> Self {
+        DirtyRect::Partial(TypedRect::zero())
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        match self {
+            DirtyRect::All => false,
+            DirtyRect::Partial(rect) => rect.is_empty(),
+        }
+    }
+
+    
+    pub fn replace_with_empty(&mut self) -> Self {
+        ::std::mem::replace(self, DirtyRect::empty())
+    }
+
+    
+    pub fn map<F>(self, func: F) -> Self
+        where F: FnOnce(TypedRect<T, U>) -> TypedRect<T, U>,
+    {
+        use DirtyRect::*;
+
+        match self {
+            All        => All,
+            Partial(rect) => Partial(func(rect)),
+        }
+    }
+
+    
+    pub fn union(&self, other: &Self) -> Self {
+        use DirtyRect::*;
+
+        match (*self, *other) {
+            (All, _) | (_, All)        => All,
+            (Partial(rect1), Partial(rect2)) => Partial(rect1.union(&rect2)),
+        }
+    }
+
+    
+    pub fn intersection(&self, other: &Self) -> Self {
+        use DirtyRect::*;
+
+        match (*self, *other) {
+            (All, rect) | (rect, All)  => rect,
+            (Partial(rect1), Partial(rect2)) => Partial(rect1.intersection(&rect2)
+                                                                   .unwrap_or(TypedRect::zero()))
+        }
+    }
+
+    
+    pub fn to_subrect_of(&self, rect: &TypedRect<T, U>) -> TypedRect<T, U> {
+        use DirtyRect::*;
+
+        match *self {
+            All              => *rect,
+            Partial(dirty_rect) => dirty_rect.intersection(rect)
+                                               .unwrap_or(TypedRect::zero()),
+        }
+    }
+}
+
+impl<T: Copy, U> Copy for DirtyRect<T, U> {}
+impl<T: Copy, U> Clone for DirtyRect<T, U> {
+    fn clone(&self) -> Self { *self }
+}
+
+impl<T: Copy, U> From<TypedRect<T, U>> for DirtyRect<T, U> {
+    fn from(rect: TypedRect<T, U>) -> Self {
+        DirtyRect::Partial(rect)
+    }
 }
 
 
@@ -379,10 +454,8 @@ pub type BlobImageResult = Result<RasterizedBlobImage, BlobImageError>;
 #[derive(Copy, Clone, Debug)]
 pub struct BlobImageDescriptor {
     
-    pub size: DeviceIntSize,
     
-    
-    pub offset: DevicePoint,
+    pub rect: LayoutIntRect,
     
     pub format: ImageFormat,
 }
@@ -390,6 +463,7 @@ pub struct BlobImageDescriptor {
 
 
 pub struct RasterizedBlobImage {
+    
     
     pub rasterized_rect: DeviceIntRect,
     
@@ -412,7 +486,7 @@ pub enum BlobImageError {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct BlobImageRequest {
     
-    pub key: ImageKey,
+    pub key: BlobImageKey,
     
     
     
