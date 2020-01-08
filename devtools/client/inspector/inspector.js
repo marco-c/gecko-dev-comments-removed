@@ -1585,7 +1585,7 @@ Inspector.prototype = {
     }));
 
     
-    for (const name of ["hover", "active", "focus"]) {
+    for (const name of ["hover", "active", "focus", "focus-within"]) {
       const menuitem = new MenuItem({
         id: "node-menu-pseudo-" + name,
         label: name,
