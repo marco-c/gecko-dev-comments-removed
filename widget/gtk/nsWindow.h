@@ -416,6 +416,7 @@ class nsWindow final : public nsBaseWidget {
   static CSDSupportLevel GetSystemCSDSupportLevel();
 
   static bool TopLevelWindowUseARGBVisual();
+  static bool GetTopLevelWindowActiveState(nsIFrame* aFrame);
 
  protected:
   virtual ~nsWindow();
@@ -535,6 +536,8 @@ class nsWindow final : public nsBaseWidget {
   CSDSupportLevel mCSDSupportLevel;
   
   bool mDrawInTitlebar;
+  
+  bool mTitlebarBackdropState;
   
   LayoutDeviceIntRegion mDraggableRegion;
 

@@ -434,6 +434,7 @@ nsWindow::nsWindow() {
   mPendingConfigures = 0;
   mCSDSupportLevel = CSD_SUPPORT_NONE;
   mDrawInTitlebar = false;
+  mTitlebarBackdropState = false;
 
   mHasAlphaVisual = false;
 }
@@ -3085,6 +3086,20 @@ void nsWindow::OnWindowStateEvent(GtkWidget *aWidget,
              aEvent->new_window_state & GDK_WINDOW_STATE_MAXIMIZED) {
     aEvent->changed_mask = static_cast<GdkWindowState>(
         aEvent->changed_mask | GDK_WINDOW_STATE_MAXIMIZED);
+  }
+
+  
+  
+  
+  
+  if (mDrawInTitlebar && (aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED)) {
+    
+    
+    
+    mTitlebarBackdropState =
+        !(aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED);
+
+    return;
   }
 
   
@@ -6682,4 +6697,39 @@ already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
 already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   nsCOMPtr<nsIWidget> window = new nsWindow();
   return window.forget();
+}
+
+bool nsWindow::GetTopLevelWindowActiveState(nsIFrame *aFrame) {
+  
+  
+  
+  if (!XRE_IsParentProcess()) {
+    return false;
+  }
+  
+  if (gfxPlatform::IsHeadless()) {
+    return true;
+  }
+  
+  
+  nsWindow *window = static_cast<nsWindow *>(aFrame->GetNearestWidget());
+  if (!window) {
+    return false;
+  }
+
+  
+  if (!window->mIsTopLevel) {
+    GtkWidget *widget = window->GetMozContainerWidget();
+    if (!widget) {
+      return false;
+    }
+
+    GtkWidget *toplevelWidget = gtk_widget_get_toplevel(widget);
+    window = get_window_for_gtk_widget(toplevelWidget);
+    if (!window) {
+      return false;
+    }
+  }
+
+  return !window->mTitlebarBackdropState;
 }
