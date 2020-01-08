@@ -112,6 +112,8 @@ struct CacheEntry {
     eviction_notice: Option<EvictionNotice>,
     
     uv_rect_kind: UvRectKind,
+    
+    eviction: Eviction,
 }
 
 impl CacheEntry {
@@ -136,6 +138,7 @@ impl CacheEntry {
             uv_rect_handle: GpuCacheHandle::new(),
             eviction_notice: None,
             uv_rect_kind,
+            eviction: Eviction::Auto,
         }
     }
 
@@ -190,6 +193,14 @@ impl TextureCacheHandle {
     pub fn new() -> Self {
         TextureCacheHandle { entry: None }
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum Eviction {
+    Auto,
+    Manual,
 }
 
 
@@ -410,6 +421,7 @@ impl TextureCache {
         gpu_cache: &mut GpuCache,
         eviction_notice: Option<&EvictionNotice>,
         uv_rect_kind: UvRectKind,
+        eviction: Eviction,
     ) {
         
         
@@ -462,6 +474,8 @@ impl TextureCache {
 
         
         entry.update_gpu_cache(gpu_cache);
+
+        entry.eviction = eviction;
 
         
         
@@ -581,6 +595,17 @@ impl TextureCache {
          DeviceUintRect::new(origin, entry.size))
     }
 
+    pub fn mark_unused(&mut self, handle: &TextureCacheHandle) {
+        if let Some(ref handle) = handle.entry {
+            if let Some(entry) = self.entries.get_opt_mut(handle) {
+                
+                
+                entry.last_access = FrameId(0);
+                entry.eviction = Eviction::Auto;
+            }
+        }
+    }
+
     
     fn expire_old_standalone_entries(&mut self) {
         let mut eviction_candidates = Vec::new();
@@ -590,7 +615,7 @@ impl TextureCache {
         
         for handle in self.standalone_entry_handles.drain(..) {
             let entry = self.entries.get(&handle);
-            if entry.last_access == self.frame_id {
+            if entry.eviction == Eviction::Manual || entry.last_access == self.frame_id {
                 retained_entries.push(handle);
             } else {
                 eviction_candidates.push(handle);
@@ -1205,6 +1230,7 @@ impl TextureArray {
                 texture_id: self.texture_id.unwrap(),
                 eviction_notice: None,
                 uv_rect_kind,
+                eviction: Eviction::Auto,
             }
         })
     }
