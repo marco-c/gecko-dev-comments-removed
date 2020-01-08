@@ -379,6 +379,11 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual void MarkEverScrolled() = 0;
+  
+
+
+
   virtual bool IsRectNearlyVisible(const nsRect& aRect) = 0;
   
 

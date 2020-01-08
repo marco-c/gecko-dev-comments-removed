@@ -220,6 +220,18 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
   nsSize GetVisualViewportSize() const;
   nsPoint GetVisualViewportOffset() const;
+  
+
+
+
+
+  nsPoint GetLogicalVisualViewportOffset() const {
+    nsPoint pt = GetVisualViewportOffset();
+    if (!IsPhysicalLTR()) {
+      pt.x += GetVisualViewportSize().width - mScrolledFrame->GetRect().width;
+    }
+    return pt;
+  }
   void ScrollSnap(
       nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::SMOOTH_MSD);
   void ScrollSnap(
@@ -410,6 +422,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool ShouldClampScrollPosition() const;
 
   bool IsAlwaysActive() const;
+  void MarkEverScrolled();
   void MarkRecentlyScrolled();
   void MarkNotRecentlyScrolled();
   nsExpirationState* GetExpirationState() { return &mActivityExpirationState; }
@@ -541,7 +554,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   
+  
+  
+  
   nsPoint mRestorePos;
+  
+  
   
   
   
@@ -966,6 +984,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   virtual void ClearDidHistoryRestore() override {
     mHelper.mDidHistoryRestore = false;
   }
+  virtual void MarkEverScrolled() override { mHelper.MarkEverScrolled(); }
   virtual bool IsRectNearlyVisible(const nsRect& aRect) override {
     return mHelper.IsRectNearlyVisible(aRect);
   }
@@ -1433,6 +1452,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
   virtual void ClearDidHistoryRestore() override {
     mHelper.mDidHistoryRestore = false;
   }
+  virtual void MarkEverScrolled() override { mHelper.MarkEverScrolled(); }
   virtual bool IsRectNearlyVisible(const nsRect& aRect) override {
     return mHelper.IsRectNearlyVisible(aRect);
   }

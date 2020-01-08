@@ -2436,6 +2436,14 @@ static void RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure) {
   helper->mScrollableByAPZ = false;
 }
 
+void ScrollFrameHelper::MarkEverScrolled() {
+  
+  
+  
+  
+  mHasBeenScrolled = true;
+}
+
 void ScrollFrameHelper::MarkNotRecentlyScrolled() {
   if (!mHasBeenScrolledRecently) return;
 
@@ -2500,11 +2508,7 @@ void ScrollFrameHelper::TriggerDisplayPortExpiration() {
 }
 
 void ScrollFrameHelper::ScrollVisual() {
-  
-  
-  
-  
-  mHasBeenScrolled = true;
+  MarkEverScrolled();
 
   AdjustViews(mScrolledFrame);
   
@@ -4319,7 +4323,7 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
   
 
   
-  if (GetLogicalScrollPosition() == mLastPos) {
+  if (GetLogicalVisualViewportOffset() == mLastPos) {
     
     
     
@@ -4331,8 +4335,8 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
       nsPoint scrollToPos = mRestorePos;
       if (!IsPhysicalLTR()) {
         
-        scrollToPos.x = mScrollPort.x - (mScrollPort.XMost() - scrollToPos.x -
-                                         mScrolledFrame->GetRect().width);
+        scrollToPos.x -=
+            (GetVisualViewportSize().width - mScrolledFrame->GetRect().width);
       }
       AutoWeakFrame weakFrame(mOuter);
       
@@ -4348,7 +4352,7 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
         
         
         
-        mLastPos = GetLogicalScrollPosition();
+        mLastPos = GetLogicalVisualViewportOffset();
         return;
       }
     }
@@ -6140,7 +6144,7 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
   
   
   
-  nsPoint pt = GetLogicalScrollPosition();
+  nsPoint pt = GetLogicalVisualViewportOffset();
   if (isInSmoothScroll) {
     pt = mDestination;
     allowScrollOriginDowngrade = false;
@@ -6163,7 +6167,7 @@ void ScrollFrameHelper::RestoreState(PresState* aState) {
   MOZ_ASSERT(mLastScrollOrigin == nsGkAtoms::other);
   mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
   mDidHistoryRestore = true;
-  mLastPos = mScrolledFrame ? GetLogicalScrollPosition() : nsPoint(0, 0);
+  mLastPos = mScrolledFrame ? GetLogicalVisualViewportOffset() : nsPoint(0, 0);
 
   
   MOZ_ASSERT(mIsRoot || aState->resolution() == 1.0);
