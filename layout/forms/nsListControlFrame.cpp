@@ -137,7 +137,7 @@ void
 nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
 {
   
-  ENSURE_TRUE(mContent);
+  NS_ENSURE_TRUE_VOID(mContent);
 
   
   

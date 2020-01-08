@@ -685,7 +685,7 @@ protected:
                                     mozilla::TableSelection* aTarget);
 
   
-  static void FillCursorInformationFromStyle(const nsStyleUI* ui,
+  static void FillCursorInformationFromStyle(const nsStyleUserInterface* ui,
                                              nsIFrame::Cursor& aCursor);
   NS_IMETHOD DoXULLayout(nsBoxLayoutState& aBoxLayoutState) override;
 
@@ -896,12 +896,4 @@ public:
 #endif
 
 
-
-#define ENSURE_TRUE(x)                                        \
-  PR_BEGIN_MACRO                                              \
-    if (!(x)) {                                               \
-       NS_WARNING("ENSURE_TRUE(" #x ") failed");              \
-       return;                                                \
-    }                                                         \
-  PR_END_MACRO
 #endif 

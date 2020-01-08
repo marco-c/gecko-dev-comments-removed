@@ -929,7 +929,7 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   
   AutoWeakFrame weakFrame(aPopupFrame);
   aPopupFrame->ShowPopup(aIsContextMenu);
-  ENSURE_TRUE(weakFrame.IsAlive());
+  NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
   
   
@@ -1152,7 +1152,7 @@ nsXULPopupManager::HidePopupCallback(nsIContent* aPopup,
 
   AutoWeakFrame weakFrame(aPopupFrame);
   aPopupFrame->HidePopup(aDeselectMenu, ePopupClosed);
-  ENSURE_TRUE(weakFrame.IsAlive());
+  NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
   
   
@@ -1161,7 +1161,7 @@ nsXULPopupManager::HidePopupCallback(nsIContent* aPopup,
                          WidgetMouseEvent::eReal);
   EventDispatcher::Dispatch(aPopup, aPopupFrame->PresContext(),
                             &event, nullptr, &status);
-  ENSURE_TRUE(weakFrame.IsAlive());
+  NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
   
   UpdatePopupPositions(aPopupFrame->PresContext()->RefreshDriver());

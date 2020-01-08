@@ -319,7 +319,7 @@ nsTreeBodyFrame::EnsureBoxObject()
           nsTreeBodyFrame* innerTreeBoxObject =
             static_cast<dom::TreeBoxObject*>(realTreeBoxObject.get())
               ->GetCachedTreeBodyFrame();
-          ENSURE_TRUE(!innerTreeBoxObject || innerTreeBoxObject == this);
+          NS_ENSURE_TRUE_VOID(!innerTreeBoxObject || innerTreeBoxObject == this);
           mTreeBoxObject = realTreeBoxObject;
         }
       }
@@ -351,12 +351,12 @@ nsTreeBodyFrame::EnsureView()
 
         
         SetView(treeView);
-        ENSURE_TRUE(weakFrame.IsAlive());
+        NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
         
         
         ScrollToRow(rowIndex);
-        ENSURE_TRUE(weakFrame.IsAlive());
+        NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
         
         
@@ -906,7 +906,7 @@ nsTreeBodyFrame::InvalidateScrollbars(const ScrollParts& aParts, AutoWeakFrame& 
     maxposStr.AppendInt(size);
     aParts.mVScrollbarContent->
       SetAttr(kNameSpaceID_None, nsGkAtoms::maxpos, maxposStr, true);
-    ENSURE_TRUE(weakFrame.IsAlive());
+    NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
     
     nscoord pageincrement = mPageLength*rowHeightAsPixels;
@@ -914,7 +914,7 @@ nsTreeBodyFrame::InvalidateScrollbars(const ScrollParts& aParts, AutoWeakFrame& 
     pageStr.AppendInt(pageincrement);
     aParts.mVScrollbarContent->
       SetAttr(kNameSpaceID_None, nsGkAtoms::pageincrement, pageStr, true);
-    ENSURE_TRUE(weakFrame.IsAlive());
+    NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
   }
 
   if (aParts.mHScrollbar && aParts.mColumnsFrame && aWeakColumnsFrame.IsAlive()) {
@@ -925,13 +925,13 @@ nsTreeBodyFrame::InvalidateScrollbars(const ScrollParts& aParts, AutoWeakFrame& 
     maxposStr.AppendInt(mHorzWidth > bounds.width ? mHorzWidth - bounds.width : 0);
     aParts.mHScrollbarContent->
       SetAttr(kNameSpaceID_None, nsGkAtoms::maxpos, maxposStr, true);
-    ENSURE_TRUE(weakFrame.IsAlive());
+    NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
     nsAutoString pageStr;
     pageStr.AppendInt(bounds.width);
     aParts.mHScrollbarContent->
       SetAttr(kNameSpaceID_None, nsGkAtoms::pageincrement, pageStr, true);
-    ENSURE_TRUE(weakFrame.IsAlive());
+    NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
     pageStr.Truncate();
     pageStr.AppendInt(nsPresContext::CSSPixelsToAppUnits(16));
@@ -2442,7 +2442,8 @@ nsTreeBodyFrame::GetCursor(const nsPoint& aPoint,
       
       ComputedStyle* childContext = GetPseudoComputedStyle(child);
 
-      FillCursorInformationFromStyle(childContext->StyleUI(), aCursor);
+      FillCursorInformationFromStyle(childContext->StyleUserInterface(),
+                                     aCursor);
       if (aCursor.mCursor == NS_STYLE_CURSOR_AUTO)
         aCursor.mCursor = NS_STYLE_CURSOR_DEFAULT;
 
