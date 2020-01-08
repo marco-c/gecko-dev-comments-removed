@@ -1,6 +1,3 @@
-var databaseName = "database";
-var databaseVersion = 1;
-
 
 
 
@@ -178,10 +175,10 @@ function keep_alive(tx, store_name) {
   let completed = false;
   tx.addEventListener('complete', () => { completed = true; });
 
-  let pin = true;
+  let keepSpinning = true;
 
   function spin() {
-    if (!pin)
+    if (!keepSpinning)
       return;
     tx.objectStore(store_name).get(0).onsuccess = spin;
   }
@@ -189,6 +186,6 @@ function keep_alive(tx, store_name) {
 
   return () => {
     assert_false(completed, 'Transaction completed while kept alive');
-    pin = false;
+    keepSpinning = false;
   };
 }
