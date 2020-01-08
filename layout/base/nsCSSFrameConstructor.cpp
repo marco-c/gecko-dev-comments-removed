@@ -8739,19 +8739,19 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
              "placeholder for primary frame has previous continuations?");
   nsIFrame* parent = inFlowFrame->GetParent();
 
-  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+  if (inFlowFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
     nsIFrame* grandparent = parent->GetParent();
     MOZ_ASSERT(grandparent);
 
     bool needsReframe =
       
       
-      aFrame->IsColumnSpan() ||
+      inFlowFrame->IsColumnSpan() ||
       
       
       
       
-      aFrame->GetProperty(nsIFrame::HasColumnSpanSiblings()) ||
+      inFlowFrame->GetProperty(nsIFrame::HasColumnSpanSiblings()) ||
       
       
       
@@ -8762,7 +8762,7 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
       (parent->Style()->GetPseudo() == nsCSSAnonBoxes::columnContent() &&
        
        
-       !aFrame->GetPrevSibling() && !aFrame->GetNextSibling() &&
+       !inFlowFrame->GetPrevSibling() && !inFlowFrame->GetNextSibling() &&
        
        !parent->GetPrevInFlow() &&
        
@@ -8770,11 +8770,11 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
        grandparent->GetPrevSibling());
 
     if (needsReframe) {
-      nsIFrame* containingBlock = GetMultiColumnContainingBlockFor(aFrame);
+      nsIFrame* containingBlock = GetMultiColumnContainingBlockFor(inFlowFrame);
 
 #ifdef DEBUG
-      if (IsFramePartOfIBSplit(aFrame)) {
-        nsIFrame* ibContainingBlock = GetIBContainingBlockFor(aFrame);
+      if (IsFramePartOfIBSplit(inFlowFrame)) {
+        nsIFrame* ibContainingBlock = GetIBContainingBlockFor(inFlowFrame);
         MOZ_ASSERT(containingBlock == ibContainingBlock ||
                    nsLayoutUtils::IsProperAncestorFrame(containingBlock,
                                                         ibContainingBlock),
