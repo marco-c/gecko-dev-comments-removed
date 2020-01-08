@@ -28,14 +28,19 @@
 
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+ChromeUtils.defineModuleGetter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "IndexedDB", "resource://gre/modules/IndexedDB.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "Addons", "resource://normandy/lib/Addons.jsm");
 ChromeUtils.defineModuleGetter(
   this, "CleanupManager", "resource://normandy/lib/CleanupManager.jsm"
 );
 ChromeUtils.defineModuleGetter(this, "LogManager", "resource://normandy/lib/LogManager.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryEvents", "resource://normandy/lib/TelemetryEvents.jsm");
+
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]); 
 
 var EXPORTED_SYMBOLS = ["AddonStudies"];
 
@@ -82,6 +87,29 @@ function getStore(db) {
   return db.objectStore(STORE_NAME, "readwrite");
 }
 
+
+
+
+
+
+
+async function markAsEnded(db, study, reason) {
+  if (reason === "unknown") {
+    log.warn(`Study ${study.name} ending for unknown reason.`);
+  }
+
+  study.active = false;
+  study.studyEndDate = new Date();
+  await getStore(db).put(study);
+
+  Services.obs.notifyObservers(study, STUDY_ENDED_TOPIC, `${study.recipeId}`);
+  TelemetryEvents.sendEvent("unenroll", "addon_study", study.name, {
+    addonId: study.addonId,
+    addonVersion: study.addonVersion,
+    reason,
+  });
+}
+
 var AddonStudies = {
   
 
@@ -123,10 +151,11 @@ var AddonStudies = {
     
     
     const activeStudies = (await this.getAll()).filter(study => study.active);
+    const db = await getDatabase();
     for (const study of activeStudies) {
       const addon = await AddonManager.getAddonByID(study.addonId);
       if (!addon) {
-        await this.markAsEnded(study, "uninstalled-sideload");
+        await markAsEnded(db, study, "uninstalled-sideload");
       }
     }
     await this.close();
@@ -149,7 +178,7 @@ var AddonStudies = {
       
       
       const db = await openDatabase();
-      await this.markAsEnded(matchingStudy, "uninstalled");
+      await markAsEnded(db, matchingStudy, "uninstalled");
       await db.close();
     }
   },
@@ -208,42 +237,119 @@ var AddonStudies = {
 
 
 
-  async add(study) {
-    const db = await getDatabase();
-    return getStore(db).add(study);
-  },
-
-  
-
-
-
-
-  async delete(recipeId) {
-    const db = await getDatabase();
-    return getStore(db).delete(recipeId);
-  },
-
-  
 
 
 
 
 
-  async markAsEnded(study, reason) {
-    if (reason === "unknown") {
-      log.warn(`Study ${study.name} ending for unknown reason.`);
+
+
+
+  async start({recipeId, name, description, addonUrl}) {
+    if (!recipeId || !name || !description || !addonUrl) {
+      throw new Error("Required arguments (recipeId, name, description, addonUrl) missing.");
     }
 
-    study.active = false;
-    study.studyEndDate = new Date();
     const db = await getDatabase();
-    await getStore(db).put(study);
+    if (await getStore(db).get(recipeId)) {
+      throw new Error(`A study for recipe ${recipeId} already exists.`);
+    }
 
-    Services.obs.notifyObservers(study, STUDY_ENDED_TOPIC, `${study.recipeId}`);
-    TelemetryEvents.sendEvent("unenroll", "addon_study", study.name, {
-      addonId: study.addonId,
-      addonVersion: study.addonVersion,
-      reason,
-    });
+    let addonFile;
+    try {
+      addonFile = await this.downloadAddonToTemporaryFile(addonUrl);
+      const install = await AddonManager.getInstallForFile(addonFile);
+      const study = {
+        recipeId,
+        name,
+        description,
+        addonId: install.addon.id,
+        addonVersion: install.addon.version,
+        addonUrl,
+        active: true,
+        studyStartDate: new Date(),
+      };
+
+      await getStore(db).add(study);
+      await Addons.applyInstall(install, false);
+
+      TelemetryEvents.sendEvent("enroll", "addon_study", name, {
+        addonId: install.addon.id,
+        addonVersion: install.addon.version,
+      });
+
+      return study;
+    } catch (err) {
+      await getStore(db).delete(recipeId);
+
+      
+      
+      
+      
+      const safeErrorMessage = `${err.fileName}:${err.lineNumber}:${err.columnNumber} ${err.name}`;
+      TelemetryEvents.sendEvent("enrollFailed", "addon_study", name, {
+        reason: safeErrorMessage.slice(0, 80),  
+      });
+
+      throw err;
+    } finally {
+      if (addonFile) {
+        Services.obs.notifyObservers(addonFile, "flush-cache-entry");
+        await OS.File.remove(addonFile.path);
+      }
+    }
+  },
+
+  
+
+
+
+
+  async downloadAddonToTemporaryFile(addonUrl) {
+    const response = await fetch(addonUrl);
+    if (!response.ok) {
+      throw new Error(`Download for ${addonUrl} failed: ${response.status} ${response.statusText}`);
+    }
+
+    
+    const path = OS.Path.join(OS.Constants.Path.tmpDir, "study.xpi");
+    const {file, path: uniquePath} = await OS.File.openUnique(path);
+
+    
+    try {
+      const xpiArrayBufferView = new Uint8Array(await response.arrayBuffer());
+      await file.write(xpiArrayBufferView);
+    } finally {
+      await file.close();
+    }
+
+    return new FileUtils.File(uniquePath);
+  },
+
+  
+
+
+
+
+
+
+
+  async stop(recipeId, reason = "unknown") {
+    const db = await getDatabase();
+    const study = await getStore(db).get(recipeId);
+    if (!study) {
+      throw new Error(`No study found for recipe ${recipeId}.`);
+    }
+    if (!study.active) {
+      throw new Error(`Cannot stop study for recipe ${recipeId}; it is already inactive.`);
+    }
+
+    await markAsEnded(db, study, reason);
+
+    try {
+      await Addons.uninstall(study.addonId);
+    } catch (err) {
+      log.warn(`Could not uninstall addon ${study.addonId} for recipe ${study.recipeId}:`, err);
+    }
   },
 };
