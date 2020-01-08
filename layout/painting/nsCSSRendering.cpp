@@ -2926,6 +2926,12 @@ nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayerWithSC(const PaintBG
                       aParams.paintFlags, paintBorderArea,
                       clipState.mBGClipArea, layer, nullptr);
   result &= state.mImageRenderer.PrepareResult();
+
+  
+  
+  
+  aParams.frame->AssociateImage(layer.mImage, &aParams.presCtx, 0);
+
   if (!state.mFillArea.IsEmpty()) {
     return state.mImageRenderer.BuildWebRenderDisplayItemsForLayer(&aParams.presCtx,
                                      aBuilder, aResources, aSc,
