@@ -128,7 +128,6 @@ MediaEngineWebRTCMicrophoneSource::MediaEngineWebRTCMicrophoneSource(
   , mMutex("WebRTCMic::Mutex")
   , mDelayAgnostic(aDelayAgnostic)
   , mExtendedFilter(aExtendedFilter)
-  , mStarted(false)
   , mDeviceName(aDeviceName)
   , mDeviceUUID(aDeviceUUID)
   , mSettings(
@@ -1002,13 +1001,6 @@ MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraphImpl* aGr
     
     mPacketizerInput =
       new AudioPacketizer<AudioDataValue, float>(aRate/100, aChannels);
-  }
-
-  
-  
-  
-  if (!mStarted) {
-    mStarted  = true;
   }
 
   
