@@ -253,28 +253,37 @@ UnwrapAndTypeCheckArgument(JSContext* cx,
 
 template <class T>
 MOZ_MUST_USE T*
-UnwrapAndDowncastValue(JSContext* cx, const Value& value)
+UnwrapAndDowncastObject(JSContext* cx, JSObject* obj)
 {
     static_assert(!std::is_convertible<T*, Wrapper*>::value,
                   "T can't be a Wrapper type; this function discards wrappers");
 
-    JSObject* result = &value.toObject();
-    if (IsProxy(result)) {
-        if (JS_IsDeadWrapper(result)) {
+    if (IsProxy(obj)) {
+        if (JS_IsDeadWrapper(obj)) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
             return nullptr;
         }
 
         
         
-        result = CheckedUnwrap(result);
-        if (!result) {
+        obj = CheckedUnwrap(obj);
+        if (!obj) {
             ReportAccessDenied(cx);
             return nullptr;
         }
     }
 
-    return &result->as<T>();
+    return &obj->as<T>();
+}
+
+
+
+
+template <class T>
+inline MOZ_MUST_USE T*
+UnwrapAndDowncastValue(JSContext* cx, const Value& value)
+{
+    return UnwrapAndDowncastObject<T>(cx, &value.toObject());
 }
 
 
