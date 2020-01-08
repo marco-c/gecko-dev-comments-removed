@@ -1076,9 +1076,15 @@ public class BrowserApp extends GeckoApp
             } else {
                 
                 
+                final boolean userReturnedToFullApp = !isApplicationInBackground();
+
                 
                 
-                ActivityUtils.setFullScreen(this, true);
+                
+                
+                if (userReturnedToFullApp) {
+                    ActivityUtils.setFullScreen(this, true);
+                }
             }
         }
     }
