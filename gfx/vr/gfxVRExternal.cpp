@@ -233,6 +233,16 @@ VRDisplayExternal::SubmitFrame(const layers::SurfaceDescriptor& aTexture,
 
   VRDisplayState displayState;
   memset(&displayState, 0, sizeof(VRDisplayState));
+#if defined(MOZ_WIDGET_ANDROID)
+  manager->PullState(&displayState, &mLastSensorState, mDisplayInfo.mControllerState, [&]() {
+    return (displayState.mLastSubmittedFrameId >= aFrameId) || displayState.mSuppressFrames || !displayState.mIsConnected;
+  });
+
+  if (displayState.mSuppressFrames || !displayState.mIsConnected) {
+    
+    return false;
+  }
+#else
   while (displayState.mLastSubmittedFrameId < aFrameId) {
     if (manager->PullState(&displayState, &mLastSensorState, mDisplayInfo.mControllerState)) {
       if (displayState.mSuppressFrames || !displayState.mIsConnected) {
@@ -246,6 +256,7 @@ VRDisplayExternal::SubmitFrame(const layers::SurfaceDescriptor& aTexture,
     sleep(0);
 #endif
   }
+#endif 
 
   return displayState.mLastSubmittedFrameSuccessful;
 }
@@ -263,6 +274,7 @@ VRSystemManagerExternal::VRSystemManagerExternal(VRExternalShmem* aAPIShmem )
 #elif defined(MOZ_WIDGET_ANDROID)
   mDoShutdown = false;
   mExternalStructFailed = false;
+  mEnumerationCompleted = false;
 #endif
 }
 
@@ -463,13 +475,20 @@ VRSystemManagerExternal::Enumerate()
       
       
       
+#if defined(MOZ_WIDGET_ANDROID)
+      PullState(&displayState, nullptr, nullptr, [&](){
+        return mEnumerationCompleted;
+      });
+#else
       while (!PullState(&displayState)) {
 #ifdef XP_WIN
         Sleep(0);
 #else
         sleep(0);
-#endif
+#endif 
       }
+#endif 
+
       if (displayState.mIsConnected) {
         mDisplay = new VRDisplayExternal(displayState);
       }
@@ -561,6 +580,48 @@ VRSystemManagerExternal::RemoveControllers()
   
 }
 
+
+#if defined(MOZ_WIDGET_ANDROID)
+bool
+VRSystemManagerExternal::PullState(VRDisplayState* aDisplayState,
+                                   VRHMDSensorState* aSensorState ,
+                                   VRControllerState* aControllerState ,
+                                   const std::function<bool()>& aWaitCondition )
+{
+  MOZ_ASSERT(mExternalShmem);
+  if (!mExternalShmem) {
+    return false;
+  }
+  bool done = false;
+  while(!done) {
+    if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) == 0) {
+      while (true) {
+        memcpy(aDisplayState, (void*)&(mExternalShmem->state.displayState), sizeof(VRDisplayState));
+        if (aSensorState) {
+          memcpy(aSensorState, (void*)&(mExternalShmem->state.sensorState), sizeof(VRHMDSensorState));
+        }
+        if (aControllerState) {
+          memcpy(aControllerState, (void*)&(mExternalShmem->state.controllerState), sizeof(VRControllerState) * kVRControllerMaxCount);
+        }
+        mEnumerationCompleted = mExternalShmem->state.enumerationCompleted;
+        mDoShutdown = aDisplayState->shutdown;
+        if (!aWaitCondition || aWaitCondition()) {
+          done = true;
+          break;
+        }
+        
+        pthread_cond_wait((pthread_cond_t*)&mExternalShmem->systemCond, (pthread_mutex_t*)&mExternalShmem->systemMutex);
+      }
+      pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
+    } else if (!aWaitCondition) {
+      
+      
+      return false;
+    }
+  }
+  return true;
+}
+#else 
 bool
 VRSystemManagerExternal::PullState(VRDisplayState* aDisplayState,
                                    VRHMDSensorState* aSensorState ,
@@ -569,20 +630,6 @@ VRSystemManagerExternal::PullState(VRDisplayState* aDisplayState,
   bool success = false;
   MOZ_ASSERT(mExternalShmem);
   if (mExternalShmem) {
-#if defined(MOZ_WIDGET_ANDROID)
-    if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) == 0) {
-      memcpy(aDisplayState, (void*)&(mExternalShmem->state.displayState), sizeof(VRDisplayState));
-      if (aSensorState) {
-        memcpy(aSensorState, (void*)&(mExternalShmem->state.sensorState), sizeof(VRHMDSensorState));
-      }
-      if (aControllerState) {
-        memcpy(aControllerState, (void*)&(mExternalShmem->state.controllerState), sizeof(VRControllerState) * kVRControllerMaxCount);
-      }
-      success = mExternalShmem->state.enumerationCompleted;
-      pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
-      mDoShutdown = aDisplayState->shutdown;
-    }
-#else
     VRExternalShmem tmp;
     memcpy(&tmp, (void *)mExternalShmem, sizeof(VRExternalShmem));
     if (tmp.generationA == tmp.generationB && tmp.generationA != 0 && tmp.generationA != -1 && tmp.state.enumerationCompleted) {
@@ -595,11 +642,12 @@ VRSystemManagerExternal::PullState(VRDisplayState* aDisplayState,
       }
       success = true;
     }
-#endif 
   }
 
   return success;
 }
+#endif 
+
 
 void
 VRSystemManagerExternal::PushState(VRBrowserState* aBrowserState, bool aNotifyCond)
