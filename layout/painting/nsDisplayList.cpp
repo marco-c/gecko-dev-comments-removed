@@ -8340,15 +8340,21 @@ nsDisplayTransform::UpdateScrollData(mozilla::layers::WebRenderScrollData* aData
   return true;
 }
 
+bool
+nsDisplayTransform::ShouldSkipTransform(nsDisplayListBuilder* aBuilder) const
+{
+  return (aBuilder->RootReferenceFrame() == mFrame) &&
+    (aBuilder->IsForGenerateGlyphMask() ||
+     aBuilder->IsForPaintingSelectionBG());
+}
+
 already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBuilder,
                                                        LayerManager *aManager,
                                                        const ContainerLayerParameters& aContainerParameters)
 {
   
   
-  const bool shouldSkipTransform =
-    (aBuilder->RootReferenceFrame() == mFrame) &&
-    (aBuilder->IsForGenerateGlyphMask() || aBuilder->IsForPaintingSelectionBG());
+  const bool shouldSkipTransform = ShouldSkipTransform(aBuilder);
 
   
 
