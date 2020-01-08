@@ -36,17 +36,16 @@ class Theme {
 
 
 
-  constructor(extension, windowId) {
-    
-    this.baseURI = extension.baseURI;
-    
-    this.logger = extension.logger;
-
+  constructor({extension, details, windowId}) {
     this.extension = extension;
+    this.details = details;
     this.windowId = windowId;
+
     this.lwtStyles = {
       icons: {},
     };
+
+    this.load();
   }
 
   
@@ -56,8 +55,8 @@ class Theme {
 
 
 
-  load(details) {
-    this.details = details;
+  load() {
+    const {details} = this;
 
     if (details.colors) {
       this.loadColors(details.colors);
@@ -174,6 +173,8 @@ class Theme {
 
 
   loadImages(images) {
+    const {baseURI} = this.extension;
+
     for (let image of Object.keys(images)) {
       let val = images[image];
 
@@ -183,13 +184,13 @@ class Theme {
 
       switch (image) {
         case "additional_backgrounds": {
-          let backgroundImages = val.map(img => this.baseURI.resolve(img));
+          let backgroundImages = val.map(img => baseURI.resolve(img));
           this.lwtStyles.additionalBackgrounds = backgroundImages;
           break;
         }
         case "headerURL":
         case "theme_frame": {
-          let resolvedURL = this.baseURI.resolve(val);
+          let resolvedURL = baseURI.resolve(val);
           this.lwtStyles.headerURL = resolvedURL;
           break;
         }
@@ -203,6 +204,8 @@ class Theme {
 
 
   loadIcons(icons) {
+    const {baseURI} = this.extension;
+
     if (!Services.prefs.getBoolPref("extensions.webextensions.themes.icons.enabled")) {
       
       return;
@@ -213,11 +216,11 @@ class Theme {
       
       
       
-      if (!val || val == this.baseURI.spec || !ICONS.includes(icon)) {
+      if (!val || val == baseURI.spec || !ICONS.includes(icon)) {
         continue;
       }
       let variableName = `--${icon}-icon`;
-      let resolvedURL = this.baseURI.resolve(val);
+      let resolvedURL = baseURI.resolve(val);
       this.lwtStyles.icons[variableName] = resolvedURL;
     }
   }
@@ -233,13 +236,14 @@ class Theme {
     let additionalBackgroundsCount = (this.lwtStyles.additionalBackgrounds &&
       this.lwtStyles.additionalBackgrounds.length) || 0;
     const assertValidAdditionalBackgrounds = (property, valueCount) => {
+      const {logger} = this.extension;
       if (!additionalBackgroundsCount) {
-        this.logger.warn(`The '${property}' property takes effect only when one ` +
+        logger.warn(`The '${property}' property takes effect only when one ` +
           `or more additional background images are specified using the 'additional_backgrounds' property.`);
         return false;
       }
       if (additionalBackgroundsCount !== valueCount) {
-        this.logger.warn(`The amount of values specified for '${property}' ` +
+        logger.warn(`The amount of values specified for '${property}' ` +
           `(${valueCount}) is not equal to the amount of additional background ` +
           `images (${additionalBackgroundsCount}), which may lead to unexpected results.`);
       }
@@ -311,8 +315,10 @@ this.theme = class extends ExtensionAPI {
     let {extension} = this;
     let {manifest} = extension;
 
-    defaultTheme = new Theme(extension);
-    defaultTheme.load(manifest.theme);
+    defaultTheme = new Theme({
+      extension,
+      details: manifest.theme,
+    });
   }
 
   onShutdown(reason) {
@@ -356,8 +362,11 @@ this.theme = class extends ExtensionAPI {
             }
           }
 
-          let theme = new Theme(extension, windowId);
-          theme.load(details);
+          new Theme({
+            extension,
+            details,
+            windowId,
+          });
         },
         reset: (windowId) => {
           if (windowId) {
