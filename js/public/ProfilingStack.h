@@ -394,12 +394,17 @@ class ProfilingStack final
     void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
                         js::ProfilingStackFrame::Category category,
                         uint32_t flags = 0) {
-        uint32_t oldStackPointer = stackPointer;
+        
+        
+        
+        
+        
+        uint32_t stackPointerVal = stackPointer;
 
-        if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
+        if (MOZ_UNLIKELY(stackPointerVal >= capacity)) {
             ensureCapacitySlow();
         }
-        frames[oldStackPointer].initLabelFrame(label, dynamicString, sp,
+        frames[stackPointerVal].initLabelFrame(label, dynamicString, sp,
                                                category, flags);
 
         
@@ -410,7 +415,8 @@ class ProfilingStack final
         
         
         
-        stackPointer = oldStackPointer + 1;
+        
+        stackPointer = stackPointer + 1;
     }
 
     void pushSpMarkerFrame(void* sp) {
@@ -427,6 +433,8 @@ class ProfilingStack final
 
     void pushJsFrame(const char* label, const char* dynamicString, JSScript* script,
                      jsbytecode* pc) {
+        
+        
         uint32_t oldStackPointer = stackPointer;
 
         if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
@@ -435,7 +443,7 @@ class ProfilingStack final
         frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
 
         
-        stackPointer = oldStackPointer + 1;
+        stackPointer = stackPointer + 1;
     }
 
     void pop() {
