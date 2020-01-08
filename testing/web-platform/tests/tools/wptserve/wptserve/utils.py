@@ -98,7 +98,7 @@ def is_bad_port(port):
         6697,  
     ]
 
-def get_port(host):
+def get_port(host=''):
     port = 0
     while True:
         free_socket = _open_socket(host, 0)
