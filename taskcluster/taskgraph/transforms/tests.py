@@ -147,6 +147,9 @@ test_description_schema = Schema({
         basestring),
 
     
+    Optional('workdir'): basestring,
+
+    
     
     
     Optional('try-name'): basestring,
@@ -1096,6 +1099,9 @@ def make_job_description(config, tests):
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
         run['test'] = test
+
+        if 'workdir' in test:
+            run['workdir'] = test.pop('workdir')
 
         jobdesc['worker-type'] = test.pop('worker-type')
         if test.get('fetches'):
