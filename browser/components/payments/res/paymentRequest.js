@@ -277,6 +277,18 @@ var paymentRequest = {
     let cards = Object.assign({}, state.savedBasicCards, state.tempBasicCards);
     return cards;
   },
+
+  getAcceptedNetworks(request) {
+    let basicCardMethod = request.paymentMethods
+      .find(method => method.supportedMethods == "basic-card");
+    let merchantNetworks = basicCardMethod && basicCardMethod.data &&
+                           basicCardMethod.data.supportedNetworks;
+    if (merchantNetworks && merchantNetworks.length) {
+      return merchantNetworks;
+    }
+    
+    return PaymentDialogUtils.getCreditCardNetworks();
+  },
 };
 
 paymentRequest.init();
