@@ -153,9 +153,6 @@ add_task(async function test_check_signatures() {
     `http://localhost:${server.identity.primaryPort}/v1`);
 
   
-  let startTime = Date.now();
-
-  
   const RECORD1 = {
     details: {
       bug: "https://bugzilla.mozilla.org/show_bug.cgi?id=1155145",
@@ -298,7 +295,7 @@ add_task(async function test_check_signatures() {
   
   
   
-  await OneCRLBlocklistClient.maybeSync(1000, startTime, {loadDump: false});
+  await OneCRLBlocklistClient.maybeSync(1000, { loadDump: false });
 
   let endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
@@ -336,7 +333,7 @@ add_task(async function test_check_signatures() {
       [RESPONSE_META_TWO_ITEMS_SIG],
   };
   registerHandlers(twoItemsResponses);
-  await OneCRLBlocklistClient.maybeSync(3000, startTime);
+  await OneCRLBlocklistClient.maybeSync(3000);
 
 
   
@@ -368,7 +365,7 @@ add_task(async function test_check_signatures() {
       [RESPONSE_META_THREE_ITEMS_SIG],
   };
   registerHandlers(oneAddedOneRemovedResponses);
-  await OneCRLBlocklistClient.maybeSync(4000, startTime);
+  await OneCRLBlocklistClient.maybeSync(4000);
 
   
 
@@ -390,7 +387,7 @@ add_task(async function test_check_signatures() {
       [RESPONSE_META_THREE_ITEMS_SIG],
   };
   registerHandlers(noOpResponses);
-  await OneCRLBlocklistClient.maybeSync(4100, startTime);
+  await OneCRLBlocklistClient.maybeSync(4100);
 
 
   
@@ -451,7 +448,7 @@ add_task(async function test_check_signatures() {
   let syncEventSent = false;
   OneCRLBlocklistClient.on("sync", ({ data }) => { syncEventSent = true; });
 
-  await OneCRLBlocklistClient.maybeSync(5000, startTime);
+  await OneCRLBlocklistClient.maybeSync(5000);
 
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
@@ -492,7 +489,7 @@ add_task(async function test_check_signatures() {
   syncEventSent = false;
   OneCRLBlocklistClient.on("sync", ({ data }) => { syncEventSent = true; });
 
-  await OneCRLBlocklistClient.maybeSync(5000, startTime);
+  await OneCRLBlocklistClient.maybeSync(5000);
 
   
   
@@ -528,7 +525,7 @@ add_task(async function test_check_signatures() {
   let syncData;
   OneCRLBlocklistClient.on("sync", ({ data }) => { syncData = data; });
 
-  await OneCRLBlocklistClient.maybeSync(5000, startTime, { loadDump: false });
+  await OneCRLBlocklistClient.maybeSync(5000, { loadDump: false });
 
   
   equal(syncData.current.length, 2);
@@ -559,7 +556,7 @@ add_task(async function test_check_signatures() {
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(allBadSigResponses);
   try {
-    await OneCRLBlocklistClient.maybeSync(6000, startTime);
+    await OneCRLBlocklistClient.maybeSync(6000);
     do_throw("Sync should fail (the signature is intentionally bad)");
   } catch (e) {
     await checkRecordCount(OneCRLBlocklistClient, 2);
@@ -581,7 +578,7 @@ add_task(async function test_check_signatures() {
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(missingSigResponses);
   try {
-    await OneCRLBlocklistClient.maybeSync(6000, startTime);
+    await OneCRLBlocklistClient.maybeSync(6000);
     do_throw("Sync should fail (the signature is missing)");
   } catch (e) {
     await checkRecordCount(OneCRLBlocklistClient, 2);

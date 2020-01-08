@@ -21,6 +21,8 @@ ChromeUtils.defineModuleGetter(this, "pushBroadcastService",
                                "resource://gre/modules/PushBroadcastService.jsm");
 ChromeUtils.defineModuleGetter(this, "RemoteSettingsClient",
                                "resource://services-settings/RemoteSettingsClient.jsm");
+ChromeUtils.defineModuleGetter(this, "Utils",
+                               "resource://services-settings/Utils.jsm");
 ChromeUtils.defineModuleGetter(this, "FilterExpressions",
                                "resource://gre/modules/components-utils/FilterExpressions.jsm");
 
@@ -71,112 +73,6 @@ async function jexlFilterFunc(entry, environment) {
     Cu.reportError(e);
   }
   return result ? entry : null;
-}
-
-
-
-
-
-
-
-
-
-
-async function fetchLatestChanges(url, lastEtag, expectedTimestamp) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  const headers = {};
-  const params = {};
-  if (lastEtag) {
-    headers["If-None-Match"] = lastEtag;
-    params._since = lastEtag;
-  }
-  if (expectedTimestamp) {
-    params._expected = expectedTimestamp;
-  }
-  if (params) {
-    url += "?" + Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
-  }
-  const response = await fetch(url, {headers});
-
-  let changes = [];
-  
-  if (response.status != 304) {
-    let payload;
-    try {
-      payload = await response.json();
-    } catch (e) {
-      payload = e.message;
-    }
-
-    if (!payload.hasOwnProperty("data")) {
-      
-      
-      
-      const is404FromCustomServer = response.status == 404 && gPrefs.prefHasUserValue(PREF_SETTINGS_SERVER);
-      if (!is404FromCustomServer) {
-        throw new Error(`Server error ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`);
-      }
-    } else {
-      changes = payload.data;
-    }
-  }
-  
-  
-  const currentEtag = response.headers.has("ETag") ? response.headers.get("ETag") : undefined;
-  let serverTimeMillis = Date.parse(response.headers.get("Date"));
-  
-  const ageSeconds = response.headers.has("Age") ? parseInt(response.headers.get("Age"), 10) : 0;
-  serverTimeMillis += ageSeconds * 1000;
-
-  
-  let backoffSeconds;
-  if (response.headers.has("Backoff")) {
-    const value = parseInt(response.headers.get("Backoff"), 10);
-    if (!isNaN(value)) {
-      backoffSeconds = value;
-    }
-  }
-
-  return { changes, currentEtag, serverTimeMillis, backoffSeconds };
-}
-
-
-
-
-
-
-
-async function hasLocalData(client) {
-  const kintoCol = await client.openCollection();
-  const timestamp = await kintoCol.db.getLastModified();
-  return timestamp !== null;
-}
-
-
-
-
-
-
-
-
-async function hasLocalDump(bucket, collection) {
-  try {
-    await fetch(`resource://app/defaults/settings/${bucket}/${collection}.json`);
-    return true;
-  } catch (e) {
-    return false;
-  }
 }
 
 
@@ -236,8 +132,8 @@ function remoteSettingsFunction() {
     if (bucketName == Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET)) {
       const c = new RemoteSettingsClient(collectionName, defaultOptions);
       const [dbExists, localDump] = await Promise.all([
-        hasLocalData(c),
-        hasLocalDump(bucketName, collectionName),
+        Utils.hasLocalData(c),
+        Utils.hasLocalDump(bucketName, collectionName),
       ]);
       if (dbExists || localDump) {
         return c;
@@ -272,14 +168,11 @@ function remoteSettingsFunction() {
       }
     }
 
-    let lastEtag;
-    if (gPrefs.prefHasUserValue(PREF_SETTINGS_LAST_ETAG)) {
-      lastEtag = gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG);
-    }
+    const lastEtag = gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG, "");
 
     let pollResult;
     try {
-      pollResult = await fetchLatestChanges(remoteSettings.pollingEndpoint, lastEtag, expectedTimestamp);
+      pollResult = await Utils.fetchLatestChanges(remoteSettings.pollingEndpoint, { expectedTimestamp, lastEtag });
     } catch (e) {
       
       let report;
@@ -313,7 +206,9 @@ function remoteSettingsFunction() {
     
     const clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
     gPrefs.setIntPref(PREF_SETTINGS_CLOCK_SKEW_SECONDS, clockDifference);
-    gPrefs.setIntPref(PREF_SETTINGS_LAST_UPDATE, serverTimeMillis / 1000);
+    const checkedServerTimeInSeconds = Math.round(serverTimeMillis / 1000);
+    gPrefs.setIntPref(PREF_SETTINGS_LAST_UPDATE, checkedServerTimeInSeconds);
+
 
     const loadDump = gPrefs.getBoolPref(PREF_SETTINGS_LOAD_DUMP, true);
 
@@ -330,7 +225,9 @@ function remoteSettingsFunction() {
       
       
       try {
-        await client.maybeSync(last_modified, serverTimeMillis, {loadDump});
+        await client.maybeSync(last_modified, { loadDump });
+        
+        Services.prefs.setIntPref(client.lastCheckTimePref, checkedServerTimeInSeconds);
       } catch (e) {
         if (!firstError) {
           firstError = e;
@@ -356,7 +253,7 @@ function remoteSettingsFunction() {
 
 
   remoteSettings.inspect = async () => {
-    const { changes, currentEtag: serverTimestamp } = await fetchLatestChanges(remoteSettings.pollingEndpoint);
+    const { changes, currentEtag: serverTimestamp } = await Utils.fetchLatestChanges(remoteSettings.pollingEndpoint);
 
     const collections = await Promise.all(changes.map(async (change) => {
       const { bucket, collection, last_modified: serverTimestamp } = change;

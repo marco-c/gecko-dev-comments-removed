@@ -21,6 +21,8 @@ ChromeUtils.defineModuleGetter(this, "ClientEnvironmentBase",
                                "resource://gre/modules/components-utils/ClientEnvironment.jsm");
 ChromeUtils.defineModuleGetter(this, "RemoteSettingsWorker",
                                "resource://services-settings/RemoteSettingsWorker.jsm");
+ChromeUtils.defineModuleGetter(this, "Utils",
+                               "resource://services-settings/Utils.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -32,6 +34,8 @@ const MISSING_SIGNATURE = "Missing signature";
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL",
                                       "services.settings.server");
+XPCOMUtils.defineLazyPreferenceGetter(this, "gChangesPath",
+                                      "services.settings.changes.path");
 XPCOMUtils.defineLazyPreferenceGetter(this, "gVerifySignature",
                                       "services.settings.verify_signature", true);
 
@@ -125,7 +129,7 @@ class EventEmitter {
 
 
   async emit(event, payload) {
-    const callbacks = this._listeners.get("sync");
+    const callbacks = this._listeners.get(event);
     let lastError;
     for (const cb of callbacks) {
       try {
@@ -164,7 +168,7 @@ class EventEmitter {
 class RemoteSettingsClient extends EventEmitter {
 
   constructor(collectionName, { bucketNamePref, signerName, filterFunc, localFields = [], lastCheckTimePref }) {
-    super(["sync"]);
+    super(["sync"]); 
 
     this.collectionName = collectionName;
     this.signerName = signerName;
@@ -212,20 +216,19 @@ class RemoteSettingsClient extends EventEmitter {
 
 
   async get(options = {}) {
-    const {
-      filters = {},
-      order = "", 
-    } = options;
+    const { filters = {}, order = "" } = options; 
 
-    const c = await this.openCollection();
-
-    const timestamp = await c.db.getLastModified();
-    if (timestamp == null) {
-      
-      
+    if (!(await Utils.hasLocalData(this))) {
       try {
         
-        await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
+        
+        if (await Utils.hasLocalDump(this.bucketName, this.collectionName)) {
+          
+          await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
+        } else {
+          
+          await this.sync({ loadDump: false });
+        }
       } catch (e) {
         
         Cu.reportError(e);
@@ -234,9 +237,33 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     
-    const { data } = await c.list({ filters, order });
+    const kintoCol = await this.openCollection();
+    const { data } = await kintoCol.list({ filters, order });
     
     return this._filterEntries(data);
+  }
+
+  
+
+
+
+
+  async sync(options) {
+    
+    
+    const { changes } = await Utils.fetchLatestChanges(gServerURL + gChangesPath, {
+      filters: {
+        collection: this.collectionName,
+        bucket: this.bucketName,
+      },
+    });
+    if (changes.length === 0) {
+      throw new Error(`Unknown collection "${this.identifier}"`);
+    }
+    
+    const [{ last_modified: expectedTimestamp }] = changes;
+
+    return this.maybeSync(expectedTimestamp, options);
   }
 
   
@@ -249,9 +276,7 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
-
-  async maybeSync(expectedTimestamp, serverTimeMillis, options = { loadDump: true }) {
+  async maybeSync(expectedTimestamp, options = { loadDump: true }) {
     const { loadDump } = options;
 
     let reportStatus = null;
@@ -277,7 +302,6 @@ class RemoteSettingsClient extends EventEmitter {
       
       
       if (expectedTimestamp <= collectionLastModified) {
-        this._updateLastCheck(serverTimeMillis);
         reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
         return;
       }
@@ -398,9 +422,6 @@ class RemoteSettingsClient extends EventEmitter {
         }
       }
 
-      
-      this._updateLastCheck(serverTimeMillis);
-
     } catch (e) {
       
       if (reportStatus === null) {
@@ -418,6 +439,12 @@ class RemoteSettingsClient extends EventEmitter {
   }
 
   
+
+
+
+
+
+
 
 
 
@@ -456,17 +483,8 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-  _updateLastCheck(serverTimeMillis) {
-    const checkedServerTimeInSeconds = Math.round(serverTimeMillis / 1000);
-    Services.prefs.setIntPref(this.lastCheckTimePref, checkedServerTimeInSeconds);
-  }
-
-  
-
-
 
   async _filterEntries(data) {
-    
     if (!this.filterFunc) {
       return data;
     }

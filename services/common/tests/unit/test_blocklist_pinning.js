@@ -80,7 +80,7 @@ add_task(async function test_something() {
                       Services.io.newURI("https://five.example.com"), 0));
 
   
-  await PinningPreloadClient.maybeSync(2000, Date.now());
+  await PinningPreloadClient.maybeSync(2000);
 
   
   
@@ -92,7 +92,7 @@ add_task(async function test_something() {
                      Services.io.newURI("https://one.example.com"), 0));
 
   
-  await PinningPreloadClient.maybeSync(4000, Date.now());
+  await PinningPreloadClient.maybeSync(4000);
 
   
   
@@ -114,17 +114,10 @@ add_task(async function test_something() {
   
   
   Services.prefs.clearUserPref("services.settings.server");
-  await PinningPreloadClient.maybeSync(4000, Date.now());
+  await PinningPreloadClient.maybeSync(4000);
 
   
-  await PinningPreloadClient.maybeSync(3000, Date.now());
-
-  
-  
-  Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
-  await PinningPreloadClient.maybeSync(3000, Date.now());
-  let newValue = Services.prefs.getIntPref("services.blocklist.pinning.checked");
-  Assert.notEqual(newValue, 0);
+  await PinningPreloadClient.maybeSync(3000);
 
   
   ok(sss.isSecureURI(sss.HEADER_HSTS,
@@ -139,7 +132,7 @@ add_task(async function test_something() {
   
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
-  await PinningPreloadClient.maybeSync(5000, Date.now());
+  await PinningPreloadClient.maybeSync(5000);
 
   
   

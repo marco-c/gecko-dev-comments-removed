@@ -51,7 +51,7 @@ add_task(async function test_something() {
   server.registerPathHandler(recordsPath, handleResponse);
 
   
-  await OneCRLBlocklistClient.maybeSync(2000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(2000);
 
   
   const list = await OneCRLBlocklistClient.get();
@@ -63,9 +63,7 @@ add_task(async function test_something() {
   Services.prefs.clearUserPref("services.settings.server");
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
   
-  await OneCRLBlocklistClient.maybeSync(123456, Date.now());
-  
-  Assert.notEqual(0, Services.prefs.getIntPref("services.blocklist.onecrl.checked"));
+  await OneCRLBlocklistClient.maybeSync(123456);
 
   
   Services.prefs.setCharPref("services.settings.server", dummyServerURL);
@@ -78,7 +76,7 @@ add_task(async function test_something() {
   
   await collection.db.saveLastModified(1000);
 
-  await OneCRLBlocklistClient.maybeSync(2000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(2000);
 
   
   
@@ -86,7 +84,7 @@ add_task(async function test_something() {
   Assert.equal(before.length, 1);
 
   
-  await OneCRLBlocklistClient.maybeSync(4000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(4000);
 
   
   
@@ -97,23 +95,16 @@ add_task(async function test_something() {
   
   
   Services.prefs.clearUserPref("services.settings.server");
-  await OneCRLBlocklistClient.maybeSync(4000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(4000);
 
   
-  await OneCRLBlocklistClient.maybeSync(3000, Date.now());
-
-  
-  
-  Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
-  await OneCRLBlocklistClient.maybeSync(3000, Date.now());
-  let newValue = Services.prefs.getIntPref("services.blocklist.onecrl.checked");
-  Assert.notEqual(newValue, 0);
+  await OneCRLBlocklistClient.maybeSync(3000);
 
   
   
   
   Services.prefs.setCharPref("services.settings.server", dummyServerURL);
-  await OneCRLBlocklistClient.maybeSync(5000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(5000);
 });
 
 function run_test() {
