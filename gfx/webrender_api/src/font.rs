@@ -268,14 +268,16 @@ impl Default for FontInstanceOptions {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Hash, Eq, PartialEq, PartialOrd, Ord, Serialize)]
 pub struct FontInstancePlatformOptions {
-    pub unused: u32,
+    pub gamma: u16, 
+    pub contrast: u16, 
 }
 
 #[cfg(target_os = "windows")]
 impl Default for FontInstancePlatformOptions {
     fn default() -> FontInstancePlatformOptions {
         FontInstancePlatformOptions {
-            unused: 0,
+            gamma: 180, 
+            contrast: 100,
         }
     }
 }

@@ -4,9 +4,9 @@
 
 use api::{DevicePoint, DeviceSize, DeviceRect, LayoutRect, LayoutToWorldTransform};
 use api::{PremultipliedColorF, WorldToLayoutTransform};
-use clip_scroll_tree::TransformIndex;
+use clip_scroll_tree::SpatialNodeIndex;
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
-use prim_store::{EdgeAaSegmentMask};
+use prim_store::{EdgeAaSegmentMask, Transform};
 use render_task::RenderTaskAddress;
 use util::{MatrixHelpers, TransformedRectKind};
 
@@ -412,7 +412,7 @@ impl TransformPalette {
     
     pub fn set(
         &mut self,
-        index: TransformIndex,
+        index: SpatialNodeIndex,
         data: TransformData,
     ) {
         let index = index.0 as usize;
@@ -439,9 +439,35 @@ impl TransformPalette {
     
     
     
-    pub fn get_id(&self, index: TransformIndex) -> TransformPaletteId {
+    
+    pub fn get_transform(
+        &self,
+        index: SpatialNodeIndex,
+    ) -> Transform {
+        let index = index.0;
+        let transform = &self.transforms[index];
+        let metadata = &self.metadata[index];
+
+        Transform {
+            m: transform.transform,
+            transform_kind: metadata.transform_kind,
+            backface_is_visible: transform.transform.is_backface_visible(),
+        }
+    }
+
+    
+    
+    
+    
+    pub fn get_id(
+        &self,
+        index: SpatialNodeIndex,
+    ) -> TransformPaletteId {
         let transform_kind = self.metadata[index.0 as usize].transform_kind as u32;
-        TransformPaletteId(index.0 | (transform_kind << 24))
+        TransformPaletteId(
+            (index.0 as u32) |
+            (transform_kind << 24)
+        )
     }
 }
 
