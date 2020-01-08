@@ -1679,7 +1679,7 @@ HTMLFormElement::GetActionURL(nsIURI** aActionURL,
     
     
     
-    rv = csp->Permits(this, actionURL,
+    rv = csp->Permits(this, nullptr , actionURL,
                       nsIContentSecurityPolicy::FORM_ACTION_DIRECTIVE,
                       true, &permitsFormAction);
     NS_ENSURE_SUCCESS(rv, rv);

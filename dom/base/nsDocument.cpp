@@ -12378,6 +12378,7 @@ nsIDocument::InlineScriptAllowedByCSP()
                                        EmptyString(), 
                                        true,          
                                        nullptr,       
+                                       nullptr,       
                                        EmptyString(), 
                                        0,             
                                        0,             

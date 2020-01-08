@@ -1250,7 +1250,9 @@ CSPAllowsInlineScript(nsIScriptElement* aElement, nsIDocument* aDocument)
 
   bool allowInlineScript = false;
   rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
-                            nonce, parserCreated, scriptContent, EmptyString(),
+                            nonce, parserCreated, scriptContent,
+                            nullptr ,
+                            EmptyString(),
                             aElement->GetScriptLineNumber(),
                             aElement->GetScriptColumnNumber(),
                             &allowInlineScript);
@@ -2941,6 +2943,7 @@ ScriptLoader::VerifySRI(ScriptLoadRequest* aRequest,
       uint32_t columnNo = aRequest->Element() ? aRequest->Element()->GetScriptColumnNumber() : 0;
       csp->LogViolationDetails(
         nsIContentSecurityPolicy::VIOLATION_TYPE_REQUIRE_SRI_FOR_SCRIPT,
+        nullptr, 
         nullptr, 
         NS_ConvertUTF8toUTF16(violationURISpec),
         EmptyString(), lineNo, columnNo, EmptyString(), EmptyString());

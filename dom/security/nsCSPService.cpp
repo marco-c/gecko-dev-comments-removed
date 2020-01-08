@@ -136,6 +136,10 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
     loadingPrincipal->GetURI(getter_AddRefs(requestOrigin));
   }
 
+  nsCOMPtr<nsICSPEventListener> cspEventListener;
+  nsresult rv = aLoadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
+  NS_ENSURE_SUCCESS(rv, rv);
+
   if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
     MOZ_LOG(gCspPRLog, LogLevel::Debug,
            ("CSPService::ShouldLoad called for %s",
@@ -171,7 +175,6 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
     
     return NS_OK;
   }
-  nsresult rv = NS_OK;
 
   
   bool isPreload = nsContentUtils::IsPreloadType(contentType);
@@ -184,6 +187,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
     if (preloadCsp) {
       
       rv = preloadCsp->ShouldLoad(contentType,
+                                  cspEventListener,
                                   aContentLocation,
                                   requestOrigin,
                                   requestContext,
@@ -209,6 +213,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   if (csp) {
     
     rv = csp->ShouldLoad(contentType,
+                         cspEventListener,
                          aContentLocation,
                          requestOrigin,
                          requestContext,
@@ -272,6 +277,10 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
 
   nsCOMPtr<nsILoadInfo> loadInfo = oldChannel->GetLoadInfo();
 
+  nsCOMPtr<nsICSPEventListener> cspEventListener;
+  rv = loadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
+  NS_ENSURE_SUCCESS(rv, rv);
+
   
   if (!loadInfo) {
     return NS_OK;
@@ -322,6 +331,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
     if (preloadCsp) {
       
       preloadCsp->ShouldLoad(policyType,     
+                             cspEventListener,
                              newUri,         
                              nullptr,        
                              requestContext, 
@@ -347,6 +357,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   if (csp) {
     
     csp->ShouldLoad(policyType,     
+                    cspEventListener,
                     newUri,         
                     nullptr,        
                     requestContext, 

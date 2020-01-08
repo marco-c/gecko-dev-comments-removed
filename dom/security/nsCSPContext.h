@@ -105,6 +105,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
 
     nsresult FireViolationEvent(
       mozilla::dom::Element* aTriggeringElement,
+      nsICSPEventListener* aCSPEventListener,
       const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
 
     enum BlockedContentSource
@@ -116,6 +117,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
     };
 
     nsresult AsyncReportViolation(mozilla::dom::Element* aTriggeringElement,
+                                  nsICSPEventListener* aCSPEventListener,
                                   nsIURI* aBlockedURI,
                                   BlockedContentSource aBlockedContentSource,
                                   nsIURI* aOriginalURI,
@@ -148,6 +150,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
   private:
     bool permitsInternal(CSPDirective aDir,
                          mozilla::dom::Element* aTriggeringElement,
+                         nsICSPEventListener* aCSPEventListener,
                          nsIURI* aContentLocation,
                          nsIURI* aOriginalURIIfRedirect,
                          const nsAString& aNonce,
@@ -160,6 +163,7 @@ class nsCSPContext : public nsIContentSecurityPolicy
     
     void reportInlineViolation(nsContentPolicyType aContentType,
                                mozilla::dom::Element* aTriggeringElement,
+                               nsICSPEventListener* aCSPEventListener,
                                const nsAString& aNonce,
                                const nsAString& aContent,
                                const nsAString& aViolatedDirective,
@@ -177,7 +181,6 @@ class nsCSPContext : public nsIContentSecurityPolicy
     
     
     nsIPrincipal*                              mLoadingPrincipal;
-    nsCOMPtr<nsICSPEventListener>              mEventListener;
 
     
     

@@ -110,6 +110,7 @@ function run_test() {
                                        "", 
                                        false, 
                                        null, 
+                                       null, 
                                        "", 
                                        0, 
                                        0); 
@@ -137,6 +138,7 @@ function run_test() {
           
           csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_EVAL,
                                   null, 
+                                  null, 
                                   selfuri.asciiSpec,
                                   
                                   
@@ -151,6 +153,7 @@ function run_test() {
       function(csp) {
         
         csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
+                      null, 
                       NetUtil.newURI("http://blocked.test/foo.js"),
                       null, null, null, null, true);
       });
@@ -162,6 +165,7 @@ function run_test() {
         inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
                                        "", 
                                        false, 
+                                       null, 
                                        null, 
                                        "", 
                                        0, 
@@ -186,6 +190,7 @@ function run_test() {
           
           csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
                                   null, 
+                                  null, 
                                   selfuri.asciiSpec,
                                   "script sample",
                                   4, 
@@ -201,6 +206,7 @@ function run_test() {
         "P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
       
       csp.shouldLoad(Ci.nsIContentPolicy.TYPE_IMAGE,
+                     null, 
                      NetUtil.newURI("data:image/png;base64," + base64data),
                      null, null, null, null, true);
       });
@@ -210,6 +216,7 @@ function run_test() {
     function(csp) {
       
       csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SUBDOCUMENT,
+                     null, 
                      NetUtil.newURI("intent://mymaps.com/maps?um=1&ie=UTF-8&fb=1&sll"),
                      null, null, null, null, true);
       });
@@ -221,6 +228,7 @@ function run_test() {
       var uri = NetUtil
       
       csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
+                     null, 
                      NetUtil.newURI(selfSpec + "#bar"),
                      null, null, null, null, true);
       });
@@ -230,6 +238,7 @@ function run_test() {
     function(csp) {
       
       csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
+                     null, 
                     NetUtil.newURI("ftp://blocked.test/profile.png"),
                     null, null, null, null, true);
     });
