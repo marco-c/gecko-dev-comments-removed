@@ -1,0 +1,17 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['gyroscope'],
+  ['generic-sensor', 'dom'],
+  idl_array => {
+    idl_array.add_objects({
+      Gyroscope: ['new Gyroscope();']
+    });
+  },
+  'Test IDL implementation of Gyroscope Sensor'
+);
