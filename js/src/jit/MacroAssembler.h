@@ -2121,9 +2121,42 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void loadDependentStringBase(Register str, Register dest);
     void storeDependentStringBase(Register base, Register str);
-    void leaNewDependentStringBase(Register str, Register dest);
 
     void loadStringIndexValue(Register str, Register dest, Label* fail);
+
+    
+
+
+    template <typename T>
+    void storeChar(const T& src, Address dest, CharEncoding encoding) {
+        if (encoding == CharEncoding::Latin1)
+            store8(src, dest);
+        else
+            store16(src, dest);
+    }
+
+    
+
+
+    template <typename T>
+    void loadChar(const T& src, Register dest, CharEncoding encoding) {
+        if (encoding == CharEncoding::Latin1)
+            load8ZeroExtend(src, dest);
+        else
+            load16ZeroExtend(src, dest);
+    }
+
+    
+
+
+
+    void loadChar(Register chars, Register index, Register dest, CharEncoding encoding,
+                  int32_t offset = 0);
+
+    
+
+
+    void addToCharPtr(Register chars, Register index, CharEncoding encoding);
 
     void loadJSContext(Register dest);
 
