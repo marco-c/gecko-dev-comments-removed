@@ -127,12 +127,6 @@ nsDOMCSSDeclaration::SetCssText(const nsAString& aCssText,
   ParsingEnvironment servoEnv =
     GetParsingEnvironment(aSubjectPrincipal);
   if (!servoEnv.mUrlExtraData) {
-    if (created) {
-      
-      
-      
-      SetCSSDeclaration(olddecl, &closureData);
-    }
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return;
   }
@@ -287,22 +281,12 @@ nsDOMCSSDeclaration::ModifyDeclaration(nsIPrincipal* aSubjectPrincipal,
   ParsingEnvironment servoEnv =
     GetParsingEnvironment(aSubjectPrincipal);
   if (!servoEnv.mUrlExtraData) {
-    if (created) {
-      
-      
-      
-      SetCSSDeclaration(olddecl, aClosureData);
-    }
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   changed = aFunc(decl, servoEnv);
 
   if (!changed) {
-    if (created) {
-      
-      SetCSSDeclaration(olddecl, aClosureData);
-    }
     
     return NS_OK;
   }

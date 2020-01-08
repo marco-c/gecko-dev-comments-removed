@@ -80,10 +80,7 @@ nsDOMCSSAttributeDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl,
 
   
   
-  
-  if (aClosureData && aClosureData->mClosure) {
-    aClosureData->mClosure(aClosureData);
-  }
+  MOZ_ASSERT_IF(aClosureData, !aClosureData->mClosure);
 
   aDecl->SetDirty();
   return mIsSMILOverride
