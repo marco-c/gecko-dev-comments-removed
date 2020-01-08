@@ -78,8 +78,7 @@ const AboutDebugging = {
       this.mount
     );
 
-    this.actions.updateNetworkLocations(getNetworkLocations());
-
+    this.onNetworkLocationsUpdated();
     addNetworkLocationsObserver(this.onNetworkLocationsUpdated);
 
     
