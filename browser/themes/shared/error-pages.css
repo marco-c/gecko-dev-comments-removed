@@ -50,8 +50,6 @@ body {
 
 @media only screen and (max-width: 480px) {
   .button-container button {
-    
-    display: block;
     width: 100%;
     margin: 0.66em 0 0;
   }
