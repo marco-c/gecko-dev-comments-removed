@@ -291,16 +291,25 @@ void Assembler::bind(Label* label, BufferOffset targetOffset) {
 }
 
 void Assembler::bind(RepatchLabel* label) {
+  BufferOffset next = nextOffset();
+
   
   
   
   if (!label->used() || oom()) {
-    label->bind(nextOffset().getOffset());
+    label->bind(next.getOffset());
     return;
   }
   int branchOffset = label->offset();
-  Instruction* inst = getInstructionAt(BufferOffset(branchOffset));
-  inst->SetImmPCOffsetTarget(inst + nextOffset().getOffset() - branchOffset);
+  Instruction* branch = getInstructionAt(BufferOffset(branchOffset));
+  MOZ_ASSERT(branch->IsUncondB());
+
+  
+  ptrdiff_t relativeByteOffset = next.getOffset() - branchOffset;
+  MOZ_ASSERT(branch->IsTargetReachable(branch + relativeByteOffset));
+  branch->SetImmPCOffsetTarget(branch + relativeByteOffset);
+
+  label->bind(next.getOffset());
 }
 
 void Assembler::addJumpRelocation(BufferOffset src, RelocationKind reloc) {
@@ -346,8 +355,26 @@ size_t Assembler::addPatchableJump(BufferOffset src, RelocationKind reloc) {
   return extendedTableIndex;
 }
 
+
+
+
+
 void PatchJump(CodeLocationJump& jump_, CodeLocationLabel label) {
-  MOZ_CRASH("PatchJump");
+  MOZ_ASSERT(label.isSet());
+
+  Instruction* load = (Instruction*)jump_.raw();
+  MOZ_ASSERT(load->IsLDR());
+
+  Instruction* branch = (Instruction*)load->NextInstruction()->skipPool();
+  MOZ_ASSERT(branch->IsUncondB());
+
+  
+  
+  if (branch->IsTargetReachable((Instruction*)label.raw())) {
+    branch->SetImmPCOffsetTarget((Instruction*)label.raw());
+  } else {
+    MOZ_CRASH("PatchJump target not reachable");
+  }
 }
 
 void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
