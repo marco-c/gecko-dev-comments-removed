@@ -1871,6 +1871,9 @@ public:
     "intl.ime.hack.set_input_scope_of_url_bar_to_default",
     ShouldSetInputScopeOfURLBarToDefault, true)
   DECL_AND_IMPL_BOOL_PREF(
+    "intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later",
+    AllowToStopHackingOnBuild17643OrLater, false)
+  DECL_AND_IMPL_BOOL_PREF(
     "intl.tsf.hack.atok.create_native_caret",
     NeedToCreateNativeCaretForLegacyATOK, true)
   DECL_AND_IMPL_BOOL_PREF(
@@ -4766,7 +4769,9 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
                mContentForTSF.LatestCompositionEndOffset());
 
   
-  static const bool sTSFHasTheBug = !IsWindows10BuildOrLater(17643);
+  static const bool sAlllowToStopHackingIfFine =
+    IsWindows10BuildOrLater(17643) &&
+    TSFPrefs::AllowToStopHackingOnBuild17643OrLater();
 
   
   
@@ -4779,7 +4784,7 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
     
     
     case TextInputProcessorID::eMicrosoftIMEForJapanese:
-      if (!sTSFHasTheBug) {
+      if (sAlllowToStopHackingIfFine) {
         return false;
       }
       
@@ -4851,7 +4856,7 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
     case TextInputProcessorID::eATOK2015:
     case TextInputProcessorID::eATOK2016:
     case TextInputProcessorID::eATOKUnknown:
-      if (!sTSFHasTheBug) {
+      if (sAlllowToStopHackingIfFine) {
         return false;
       }
       
@@ -4893,7 +4898,7 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
     
     
     case TextInputProcessorID::eFreeChangJie:
-      if (!sTSFHasTheBug) {
+      if (sAlllowToStopHackingIfFine) {
         return false;
       }
       if (!TSFPrefs::DoNotReturnNoLayoutErrorToFreeChangJie()) {
@@ -4906,7 +4911,7 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
     
     case TextInputProcessorID::eMicrosoftChangJie:
     case TextInputProcessorID::eMicrosoftQuick:
-      if (!sTSFHasTheBug) {
+      if (sAlllowToStopHackingIfFine) {
         return false;
       }
       if (!IsWin8OrLater() ||
