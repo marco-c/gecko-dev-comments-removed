@@ -13,6 +13,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EventForwards.h" 
 #include "mozilla/FontRange.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
@@ -596,7 +597,44 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+  static CodeNameIndex
+  ComputeCodeNameIndexFromKeyNameIndex(KeyNameIndex aKeyNameIndex,
+                                       const Maybe<uint32_t>& aLocation);
+
+  
+
+
+
   static Modifier GetModifierForKeyName(KeyNameIndex aKeyNameIndex);
+
+  
+
+
+
+  static bool IsLeftOrRightModiferKeyNameIndex(KeyNameIndex aKeyNameIndex)
+  {
+    switch (aKeyNameIndex) {
+      case KEY_NAME_INDEX_Alt:
+      case KEY_NAME_INDEX_Control:
+      case KEY_NAME_INDEX_Meta:
+      case KEY_NAME_INDEX_OS:
+      case KEY_NAME_INDEX_Shift:
+        return true;
+      default:
+        return false;
+    }
+  }
 
   
 

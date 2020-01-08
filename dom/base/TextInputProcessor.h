@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "nsITextInputProcessor.h"
@@ -48,6 +49,26 @@ public:
                       WidgetKeyboardEvent& aKeyboardEvent,
                       uint32_t aIndexOfKeypress,
                       void* aData) override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static CodeNameIndex
+  GuessCodeNameIndexOfPrintableKeyInUSEnglishLayout(
+    const nsAString& aKeyValue,
+    const Maybe<uint32_t>& aLocation);
 
 protected:
   virtual ~TextInputProcessor();
