@@ -295,6 +295,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.streams.enabled",
+   dom_streams_enabled,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 
