@@ -713,8 +713,11 @@ this.tabs = class extends ExtensionAPI {
               if (!nativeTab.selected && !nativeTab.multiselected) {
                 tabbrowser.addToMultiSelectedTabs(nativeTab, false);
                 
-                tabbrowser.lockClearMultiSelectionOnce();
-                tabbrowser.selectedTab = nativeTab;
+                
+                if (updateProperties.active !== false) {
+                  tabbrowser.lockClearMultiSelectionOnce();
+                  tabbrowser.selectedTab = nativeTab;
+                }
               }
             } else {
               tabbrowser.removeFromMultiSelectedTabs(nativeTab, true);
