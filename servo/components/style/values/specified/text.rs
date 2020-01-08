@@ -744,7 +744,7 @@ pub enum TextEmphasisVerticalWritingModeValue {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
          ToComputedValue, ToCss)]
 pub struct TextEmphasisPosition(
     pub TextEmphasisHorizontalWritingModeValue,

@@ -1359,7 +1359,7 @@ impl VariantEastAsian {
 impl_gecko_keyword_conversions!(VariantEastAsian, u16);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
 
 pub enum FontVariantEastAsian {
     
@@ -1570,7 +1570,7 @@ impl VariantLigatures {
 impl_gecko_keyword_conversions!(VariantLigatures, u16);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
 
 
 pub enum FontVariantLigatures {
@@ -1786,7 +1786,7 @@ impl VariantNumeric {
 impl_gecko_keyword_conversions!(VariantNumeric, u8);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
 
 pub enum FontVariantNumeric {
     
