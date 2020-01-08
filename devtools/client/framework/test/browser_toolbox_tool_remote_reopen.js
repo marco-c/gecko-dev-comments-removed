@@ -109,6 +109,10 @@ function test() {
 
       for (const actor of pool.__poolMap.keys()) {
         
+        if (actor == "root") {
+          continue;
+        }
+        
         
         
         if (actor.includes("framerateActor")) {

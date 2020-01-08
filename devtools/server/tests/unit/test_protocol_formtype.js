@@ -153,6 +153,11 @@ const run_test = Test(async function() {
 
   await client.connect();
 
+  
+  
+  
+  protocol.types.registeredTypes.get("root").actorSpec = rootSpec;
+
   const rootFront = RootFront(conn);
 
   
