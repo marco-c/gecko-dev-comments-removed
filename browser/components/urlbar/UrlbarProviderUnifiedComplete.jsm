@@ -91,6 +91,8 @@ class ProviderUnifiedComplete extends UrlbarProvider {
     
     
     
+    
+    
     let params = ["enable-actions"];
     params.push(`max-results:${queryContext.maxResults}`);
     
@@ -107,6 +109,9 @@ class ProviderUnifiedComplete extends UrlbarProvider {
     }
     if (queryContext.userContextId) {
       params.push(`user-context-id:${queryContext.userContextId}}`);
+    }
+    if (!queryContext.enableAutofill) {
+      params.push("prohibit-autofill");
     }
 
     let urls = new Set();
@@ -195,9 +200,7 @@ function convertResultToMatches(context, result, urls) {
     matches.push(match);
     
     if (i == 0) {
-      if (style.includes("autofill") &&
-          result.defaultIndex == 0 &&
-          context.enableAutofill) {
+      if (style.includes("autofill") && result.defaultIndex == 0) {
         context.autofill = true;
       }
       if (style.includes("heuristic")) {
