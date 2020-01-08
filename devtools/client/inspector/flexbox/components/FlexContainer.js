@@ -75,34 +75,55 @@ class FlexContainer extends PureComponent {
       onHideBoxModelHighlighter,
       onShowBoxModelHighlighterForNode,
     } = this.props;
-    const { nodeFront } = flexContainer;
+    const {
+      nodeFront,
+      properties,
+    } = flexContainer;
 
     return createElement(Fragment, null,
-      Rep({
-        defaultRep: ElementNode,
-        mode: MODE.TINY,
-        object: translateNodeFrontToGrip(nodeFront),
-        onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
-        onDOMNodeMouseOver: () => onShowBoxModelHighlighterForNode(nodeFront),
-      }),
-      dom.div({
-        className: "layout-color-swatch",
-        ref: this.swatchEl,
-        style: {
-          backgroundColor: color,
-        },
-        title: color,
-      }),
-      
-      
-      
-      
-      dom.span(
-        {
-          className: "layout-color-value",
-          ref: this.colorValueEl,
-        },
-        color
+      dom.div({ className: "flex-header-container-label" },
+        Rep({
+          defaultRep: ElementNode,
+          mode: MODE.TINY,
+          object: translateNodeFrontToGrip(nodeFront),
+          onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
+          onDOMNodeMouseOver: () => onShowBoxModelHighlighterForNode(nodeFront),
+        }),
+        dom.div({
+          className: "layout-color-swatch",
+          ref: this.swatchEl,
+          style: {
+            backgroundColor: color,
+          },
+          title: color,
+        }),
+        
+        
+        
+        
+        dom.span(
+          {
+            className: "layout-color-value",
+            ref: this.colorValueEl,
+          },
+          color
+        )
+      ),
+      dom.div({ className: "flex-header-container-properties" },
+        dom.div(
+          {
+            className: "inspector-badge",
+            title: `flex-direction: ${properties["flex-direction"]}`,
+          },
+          properties["flex-direction"]
+        ),
+        dom.div(
+          {
+            className: "inspector-badge",
+            title: `flex-wrap: ${properties["flex-wrap"]}`,
+          },
+          properties["flex-wrap"]
+        )
       )
     );
   }
