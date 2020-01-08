@@ -7,11 +7,13 @@
 #ifndef mozilla_glue_WindowsDllServices_h
 #define mozilla_glue_WindowsDllServices_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Authenticode.h"
 #include "mozilla/WindowsDllBlocklist.h"
 
 #if defined(MOZILLA_INTERNAL_API)
 
+#include "MainThreadUtils.h"
 #include "mozilla/SystemGroup.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
@@ -42,7 +44,14 @@ public:
     mAuthenticode = aAuthenticode;
   }
 
+  
+  
+  
+#if defined(DEBUG)
+  UniquePtr<wchar_t[]> GetBinaryOrgName(const wchar_t* aFilePath) override
+#else
   UniquePtr<wchar_t[]> GetBinaryOrgName(const wchar_t* aFilePath) final
+#endif 
   {
     if (!mAuthenticode) {
       return nullptr;
@@ -97,6 +106,16 @@ public:
 
     SystemGroup::Dispatch(TaskCategory::Other, runnable.forget());
   }
+
+#if defined(DEBUG)
+  UniquePtr<wchar_t[]> GetBinaryOrgName(const wchar_t* aFilePath) final
+  {
+    
+    
+    MOZ_ASSERT(!NS_IsMainThread());
+    return detail::DllServicesBase::GetBinaryOrgName(aFilePath);
+  }
+#endif 
 
   NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(DllServices)
 
