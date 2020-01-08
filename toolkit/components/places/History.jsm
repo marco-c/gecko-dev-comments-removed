@@ -649,11 +649,20 @@ var History = Object.freeze({
 
 
 
+
+
+
+
+
+
+
+
   update(pageInfo) {
     let info = PlacesUtils.validatePageInfo(pageInfo, false);
 
-    if (info.description === undefined && info.previewImageURL === undefined) {
-      throw new TypeError("pageInfo object must at least have either a description or a previewImageURL property");
+    if (info.description === undefined && info.previewImageURL === undefined &&
+        info.annotations === undefined) {
+      throw new TypeError("pageInfo object must at least have either a description, previewImageURL or annotations property.");
     }
 
     return PlacesUtils.withConnectionWrapper("History.jsm: update", db => update(db, info));
@@ -1433,15 +1442,16 @@ var insertMany = function(db, pageInfos, onResult, onError) {
 var update = async function(db, pageInfo) {
   let updateFragments = [];
   let whereClauseFragment = "";
+  let baseParams = {};
   let params = {};
 
   
   if (typeof pageInfo.guid === "string") {
     whereClauseFragment = "guid = :guid";
-    params.guid = pageInfo.guid;
+    baseParams.guid = pageInfo.guid;
   } else {
     whereClauseFragment = "url_hash = hash(:url) AND url = :url";
-    params.url = pageInfo.url.href;
+    baseParams.url = pageInfo.url.href;
   }
 
   if (pageInfo.description || pageInfo.description === null) {
@@ -1452,12 +1462,74 @@ var update = async function(db, pageInfo) {
     updateFragments.push("preview_image_url");
     params.preview_image_url = pageInfo.previewImageURL ? pageInfo.previewImageURL.href : null;
   }
-  
-  
-  await db.execute(`
-    UPDATE moz_places
-    SET ${updateFragments.map(v => `${v} = :${v}`).join(", ")}
-    WHERE ${whereClauseFragment}
-      AND (${updateFragments.map(v => `IFNULL(${v}, "") <> IFNULL(:${v}, "")`).join(" OR ")})
-  `, params);
+  if (updateFragments.length > 0) {
+    
+    
+    await db.execute(`
+      UPDATE moz_places
+      SET ${updateFragments.map(v => `${v} = :${v}`).join(", ")}
+      WHERE ${whereClauseFragment}
+        AND (${updateFragments.map(v => `IFNULL(${v}, "") <> IFNULL(:${v}, "")`).join(" OR ")})
+    `, {...baseParams, ...params});
+  }
+
+  if (pageInfo.annotations) {
+    let annosToRemove = [];
+    let annosToUpdate = [];
+
+    for (let anno of pageInfo.annotations) {
+      anno[1] ? annosToUpdate.push(anno[0]) : annosToRemove.push(anno[0]);
+    }
+
+    await db.executeTransaction(async function() {
+      if (annosToUpdate.length) {
+        await db.execute(`
+          INSERT OR IGNORE INTO moz_anno_attributes (name)
+          VALUES ${Array.from(annosToUpdate.keys()).map(k => `(:${k})`).join(", ")}
+        `, Object.assign({}, annosToUpdate));
+
+        for (let anno of annosToUpdate) {
+          let content = pageInfo.annotations.get(anno);
+          
+          
+          let type = typeof content == "string" ? Ci.nsIAnnotationService.TYPE_STRING :
+            Ci.nsIAnnotationService.TYPE_INT64;
+          let date = PlacesUtils.toPRTime(new Date());
+
+          
+          
+          await db.execute(`
+            INSERT OR REPLACE INTO moz_annos
+              (place_id, anno_attribute_id, content, flags,
+               expiration, type, dateAdded, lastModified)
+            VALUES ((SELECT id FROM moz_places WHERE ${whereClauseFragment}),
+                    (SELECT id FROM moz_anno_attributes WHERE name = :anno_name),
+                    :content, 0, :expiration, :type, :date_added,
+                    :last_modified)
+          `, {
+            ...baseParams,
+            anno_name: anno,
+            content,
+            expiration: PlacesUtils.annotations.EXPIRE_NEVER,
+            type,
+            
+            date_added: date,
+            last_modified: date,
+          });
+        }
+      }
+
+      for (let anno of annosToRemove) {
+        
+        
+        
+        await db.execute(`
+          DELETE FROM moz_annos
+          WHERE place_id = (SELECT id FROM moz_places WHERE ${whereClauseFragment})
+          AND anno_attribute_id =
+            (SELECT id FROM moz_anno_attributes WHERE name = :anno_name)
+        `, { ...baseParams, anno_name: anno });
+      }
+    });
+  }
 };

@@ -47,6 +47,8 @@
   ")" \
 )
 
+
+
 #define CREATE_MOZ_ANNOS NS_LITERAL_CSTRING( \
   "CREATE TABLE moz_annos (" \
     "  id INTEGER PRIMARY KEY" \
