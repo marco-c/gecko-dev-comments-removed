@@ -865,9 +865,8 @@ for (var task of todo) {
 }
 
 
-if (todo.length == 0) {
-    todo.push({ 'action': 'repl' });
-}
+
+todo.push({ 'action': 'repl' });
 
 while (rerun) {
     print("Top of run loop");
@@ -880,7 +879,12 @@ while (rerun) {
             debuggeeGlobal['scriptArgs'] = task.scriptArgs;
             debuggeeGlobal['scriptPath'] = task.script;
             print("Loading JavaScript file " + task.script);
-            debuggeeGlobal.evaluate(read(task.script), { 'fileName': task.script, 'lineNumber': 1 });
+            try {
+                debuggeeGlobal.evaluate(read(task.script), { 'fileName': task.script, 'lineNumber': 1 });
+            } catch (exc) {
+                print("Caught exception " + exc);
+                print(exc.stack);
+            }
         } else if (task.action == 'repl') {
             repl();
         }
