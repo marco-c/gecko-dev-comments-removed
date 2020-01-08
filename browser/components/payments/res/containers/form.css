@@ -3,6 +3,5 @@
 
 
 :-moz-any(label, div)[required] > span:first-of-type::after {
-  
-  content: "*";
+  content: attr(fieldRequiredSymbol);
 }
