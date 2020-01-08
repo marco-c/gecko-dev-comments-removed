@@ -14,6 +14,7 @@
 #include "frontend/SourceNotes.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineInspector.h"
+#include "jit/CacheIR.h"
 #include "jit/Ion.h"
 #include "jit/IonControlFlow.h"
 #include "jit/IonOptimizationLevels.h"
@@ -11881,13 +11882,9 @@ MDefinition* IonBuilder::tryInnerizeWindow(MDefinition* obj) {
     return obj;
   }
 
-  if (!IsWindowProxy(singleton)) {
+  if (!IsWindowProxyForScriptGlobal(script(), singleton)) {
     return obj;
   }
-
-  
-  
-  MOZ_ASSERT(ToWindowIfWindowProxy(singleton) == &script()->global());
 
   
   

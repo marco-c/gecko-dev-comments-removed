@@ -2092,6 +2092,9 @@ inline ReferenceType ReferenceTypeFromSimpleTypeDescrKey(uint32_t key) {
   return ReferenceType(key >> 1);
 }
 
+
+extern bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj);
+
 }  
 }  
 
