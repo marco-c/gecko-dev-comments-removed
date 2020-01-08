@@ -194,6 +194,7 @@ private:
       }
 
       
+      AUTO_PROFILER_LABEL("DecodePoolImpl::PopWorkLocked::Wait", IDLE);
       if (!aShutdownIdle) {
         
         
