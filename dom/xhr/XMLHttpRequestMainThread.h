@@ -623,8 +623,6 @@ protected:
   
   mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
-  const Encoding* mResponseCharset;
-
   void MatchCharsetAndDecoderToResponseDocument();
 
   XMLHttpRequestResponseType mResponseType;
@@ -764,6 +762,12 @@ protected:
   
   
   bool mEventDispatchingSuspended;
+
+  
+  
+  
+  
+  bool mEofDecoded;
 
   
   RefPtr<nsXHRParseEndListener> mParseEndListener;

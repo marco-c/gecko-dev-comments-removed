@@ -193,7 +193,6 @@ XMLHttpRequestMainThread::sDontWarnAboutSyncXHR = false;
 
 XMLHttpRequestMainThread::XMLHttpRequestMainThread()
   : mResponseBodyDecodedPos(0),
-    mResponseCharset(nullptr),
     mResponseType(XMLHttpRequestResponseType::_empty),
     mRequestObserver(nullptr),
     mState(XMLHttpRequest_Binding::UNSENT),
@@ -219,7 +218,8 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
     mResultArrayBuffer(nullptr),
     mIsMappedArrayBuffer(false),
     mXPCOMifier(nullptr),
-    mEventDispatchingSuspended(false)
+    mEventDispatchingSuspended(false),
+    mEofDecoded(false)
 {
   mozilla::HoldJSObjects(this);
 }
@@ -309,6 +309,7 @@ XMLHttpRequestMainThread::ResetResponse()
   mResultJSON.setUndefined();
   mLoadTransferred = 0;
   mResponseBodyDecodedPos = 0;
+  mEofDecoded = false;
 }
 
 void
@@ -455,7 +456,6 @@ XMLHttpRequestMainThread::GetResponseXML(ErrorResult& aRv)
 nsresult
 XMLHttpRequestMainThread::DetectCharset()
 {
-  mResponseCharset = nullptr;
   mDecoder = nullptr;
 
   if (mResponseType != XMLHttpRequestResponseType::_empty &&
@@ -480,8 +480,6 @@ XMLHttpRequestMainThread::DetectCharset()
     LogMessage("JSONCharsetWarning", GetOwner());
     encoding = UTF_8_ENCODING;
   }
-
-  mResponseCharset = encoding;
 
   
   if (mResponseType == XMLHttpRequestResponseType::Json) {
@@ -534,6 +532,12 @@ XMLHttpRequestMainThread::AppendToResponseText(const char * aSrcBuffer,
   MOZ_ASSERT(written <= destBufferLen.value());
   Unused << hadErrors;
   helper.AddLength(written);
+  if (aLast) {
+    
+    
+    mDecoder = nullptr;
+    mEofDecoded = true;
+  }
   return NS_OK;
 }
 
@@ -580,24 +584,28 @@ XMLHttpRequestMainThread::GetResponseText(XMLHttpRequestStringSnapshot& aSnapsho
   
   
   if ((!mResponseXML && !mErrorParsingXML) ||
-      mResponseBodyDecodedPos == mResponseBody.Length()) {
+      (mResponseBodyDecodedPos == mResponseBody.Length() &&
+       (mState != XMLHttpRequest_Binding::DONE ||
+        mEofDecoded))) {
     mResponseText.CreateSnapshot(aSnapshot);
     return;
   }
 
   MatchCharsetAndDecoderToResponseDocument();
 
-  NS_ASSERTION(mResponseBodyDecodedPos < mResponseBody.Length(),
-               "Unexpected mResponseBodyDecodedPos");
+  MOZ_ASSERT(mResponseBodyDecodedPos < mResponseBody.Length() ||
+             mState == XMLHttpRequest_Binding::DONE,
+             "Unexpected mResponseBodyDecodedPos");
   aRv = AppendToResponseText(mResponseBody.get() + mResponseBodyDecodedPos,
-                             mResponseBody.Length() - mResponseBodyDecodedPos);
+                             mResponseBody.Length() - mResponseBodyDecodedPos,
+                             mState == XMLHttpRequest_Binding::DONE);
   if (aRv.Failed()) {
     return;
   }
 
   mResponseBodyDecodedPos = mResponseBody.Length();
 
-  if (mState == XMLHttpRequest_Binding::DONE) {
+  if (mEofDecoded) {
     
     mResponseBody.Truncate();
     mResponseBodyDecodedPos = 0;
@@ -1597,8 +1605,8 @@ XMLHttpRequestMainThread::StreamReaderFunc(nsIInputStream* in,
   } else if (xmlHttpRequest->mResponseType == XMLHttpRequestResponseType::_empty ||
              xmlHttpRequest->mResponseType == XMLHttpRequestResponseType::Text ||
              xmlHttpRequest->mResponseType == XMLHttpRequestResponseType::Json) {
-    NS_ASSERTION(!xmlHttpRequest->mResponseXML,
-                 "We shouldn't be parsing a doc here");
+    MOZ_ASSERT(!xmlHttpRequest->mResponseXML,
+               "We shouldn't be parsing a doc here");
     rv = xmlHttpRequest->AppendToResponseText(fromRawSegment, count);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -2086,10 +2094,11 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
 
   
   
-  if (mDecoder && !mFlagParseBody) {
+  if (mDecoder &&
+      ((mResponseType == XMLHttpRequestResponseType::Text) ||
+        (mResponseType == XMLHttpRequestResponseType::Json) ||
+        (mResponseType == XMLHttpRequestResponseType::_empty && !mResponseXML))) {
     AppendToResponseText(nullptr, 0, true);
-    
-    mDecoder = nullptr;
   }
 
   mWaitingForOnStopRequest = false;
@@ -2278,11 +2287,11 @@ XMLHttpRequestMainThread::OnBodyParseEnd()
 void
 XMLHttpRequestMainThread::MatchCharsetAndDecoderToResponseDocument()
 {
-  if (mResponseXML && mResponseCharset != mResponseXML->GetDocumentCharacterSet()) {
-    mResponseCharset = mResponseXML->GetDocumentCharacterSet();
+  if (mResponseXML && (!mDecoder || mDecoder->Encoding() != mResponseXML->GetDocumentCharacterSet())) {
     TruncateResponseText();
     mResponseBodyDecodedPos = 0;
-    mDecoder = mResponseCharset->NewDecoder();
+    mEofDecoded = false;
+    mDecoder = mResponseXML->GetDocumentCharacterSet()->NewDecoder();
   }
 }
 
