@@ -4927,8 +4927,7 @@ var XULBrowserWindow = {
   
   
   
-  onSecurityChange(aWebProgress, aRequest, aOldState, aState,
-                   aContentBlockingLogJSON, aIsSimulated) {
+  onSecurityChange(aWebProgress, aRequest, aState, aIsSimulated) {
     
     
     let uri = gBrowser.currentURI;
@@ -4955,8 +4954,7 @@ var XULBrowserWindow = {
       uri = Services.uriFixup.createExposableURI(uri);
     } catch (e) {}
     gIdentityHandler.updateIdentity(this._state, uri);
-    ContentBlocking.onSecurityChange(aOldState, this._state, aWebProgress, aIsSimulated,
-                                     aContentBlockingLogJSON);
+    ContentBlocking.onSecurityChange(this._state, aWebProgress, aIsSimulated);
   },
 
   
@@ -5912,7 +5910,8 @@ if (AppConstants.platform == "macosx") {
 }
 
 const gDynamicTooltipCache = new Map();
-function GetDynamicShortcutTooltipText(nodeId) {
+function UpdateDynamicShortcutTooltipText(aTooltip) {
+  let nodeId = aTooltip.triggerNode.id || aTooltip.triggerNode.getAttribute("anonid");
   if (!gDynamicTooltipCache.has(nodeId) && nodeId in nodeToTooltipMap) {
     let strId = nodeToTooltipMap[nodeId];
     let args = [];
@@ -5925,14 +5924,8 @@ function GetDynamicShortcutTooltipText(nodeId) {
     }
     gDynamicTooltipCache.set(nodeId, gNavigatorBundle.getFormattedString(strId, args));
   }
-  return gDynamicTooltipCache.get(nodeId);
+  aTooltip.setAttribute("label", gDynamicTooltipCache.get(nodeId));
 }
-
-function UpdateDynamicShortcutTooltipText(aTooltip) {
-  let nodeId = aTooltip.triggerNode.id || aTooltip.triggerNode.getAttribute("anonid");
-  aTooltip.setAttribute("label", GetDynamicShortcutTooltipText(nodeId));
-}
-
 
 
 
