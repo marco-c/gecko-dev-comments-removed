@@ -3402,6 +3402,8 @@ public:
     }
   }
 
+  const StyleUseCounters* GetStyleUseCounters();
+
   void SetPageUseCounter(mozilla::UseCounter aUseCounter);
 
   void SetDocumentAndPageUseCounter(mozilla::UseCounter aUseCounter)
@@ -4318,6 +4320,9 @@ protected:
   
   
   std::bitset<mozilla::eUseCounter_Count> mNotifiedPageForUseCounter;
+
+  
+  RefPtr<const StyleUseCounters> mStyleUseCounters;
 
   
   bool mUserHasInteracted;

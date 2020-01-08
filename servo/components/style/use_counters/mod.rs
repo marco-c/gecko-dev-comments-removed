@@ -33,6 +33,7 @@ impl NonCustomPropertyUseCounters {
 }
 
 
+#[derive(Default)]
 pub struct UseCounters {
     
     
