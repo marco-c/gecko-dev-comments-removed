@@ -117,8 +117,28 @@ HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
       type == dom::PBrowser::Msg_AsyncMessage__ID ||
       
       type == dom::PBrowser::Msg_Destroy__ID) {
-    ipc::IProtocol::Result r =
-      dom::ContentChild::GetSingleton()->PContentChild::OnMessageReceived(aMessage);
+    dom::ContentChild* contentChild = dom::ContentChild::GetSingleton();
+
+    if (type >= dom::PBrowser::PBrowserStart && type <= dom::PBrowser::PBrowserEnd) {
+      
+      
+      
+      
+      nsTArray<dom::PBrowserChild*> browsers;
+      contentChild->ManagedPBrowserChild(browsers);
+      bool found = false;
+      for (ipc::IProtocol* child : browsers) {
+        if (child->Id() == aMessage.routing_id()) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return false;
+      }
+    }
+
+    ipc::IProtocol::Result r = contentChild->PContentChild::OnMessageReceived(aMessage);
     MOZ_RELEASE_ASSERT(r == ipc::IProtocol::MsgProcessed);
     if (type == dom::PContent::Msg_SetXPCOMProcessAttributes__ID) {
       
