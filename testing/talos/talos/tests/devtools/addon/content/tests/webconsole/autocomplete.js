@@ -54,15 +54,31 @@ async function showAndHideAutoCompletePopup(jsterm) {
 async function triggerAutocompletePopup(jsterm) {
   const onPopupOpened = jsterm.autocompletePopup.once("popup-opened");
   jsterm.setInputValue("window.autocompleteTest.");
+  if (!jsterm.editor) {
+    
+    
+    
+    
+    jsterm.lastInputValue = null;
+    jsterm.updateAutocompletion();
+  }
   await onPopupOpened;
 
   const onPopupUpdated = jsterm.once("autocomplete-updated");
   jsterm.setInputValue("window.autocompleteTest.item9");
+  if (!jsterm.editor) {
+    jsterm.lastInputValue = null;
+    jsterm.updateAutocompletion();
+  }
   await onPopupUpdated;
 }
 
 function hideAutocompletePopup(jsterm) {
   let onPopUpClosed = jsterm.autocompletePopup.once("popup-closed");
   jsterm.setInputValue("");
+  if (!jsterm.editor) {
+    jsterm.lastInputValue = null;
+    jsterm.updateAutocompletion();
+  }
   return onPopUpClosed;
 }
