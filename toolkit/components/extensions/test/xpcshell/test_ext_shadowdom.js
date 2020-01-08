@@ -1,8 +1,5 @@
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "Preferences",
-                               "resource://gre/modules/Preferences.jsm");
-
 
 
 ExtensionTestUtils.mockAppInfo();
@@ -13,22 +10,6 @@ server.registerDirectory("/data/", do_get_file("data"));
 const BASE_URL = `http://localhost:${server.identity.primaryPort}/data`;
 
 add_task(async function test_contentscript_shadowDOM() {
-  const PREFS = {
-    "dom.webcomponents.shadowdom.enabled": true,
-  };
-
-  
-  for (let pref in PREFS) {
-    Preferences.set(pref, PREFS[pref]);
-  }
-
-  registerCleanupFunction(() => {
-    
-    for (let pref in PREFS) {
-      Preferences.reset(pref);
-    }
-  });
-
   function backgroundScript() {
     browser.test.assertTrue("openOrClosedShadowRoot" in document.documentElement,
                             "Should have openOrClosedShadowRoot in Element in background script.");

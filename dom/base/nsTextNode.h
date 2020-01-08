@@ -60,10 +60,6 @@ public:
   nsresult AppendTextForNormalize(const char16_t* aBuffer, uint32_t aLength,
                                   bool aNotify, nsIContent* aNextSibling);
 
-  
-  
-  static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);
-
 #ifdef DEBUG
   virtual void List(FILE* out, int32_t aIndent) const override;
   virtual void DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const override;

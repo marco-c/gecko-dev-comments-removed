@@ -16,7 +16,7 @@
 SimpleTest.waitForExplicitFinish();
 
 var content = '<div id="grabme"></div>';
-setShadowDOMPrefAndCreateIframe(content).then(aDocument => {
+createIframe(content).then(aDocument => {
   var element = aDocument.getElementById("grabme");
   var shadow = element.attachShadow({mode: "open"});
 

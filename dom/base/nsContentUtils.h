@@ -3239,10 +3239,7 @@ public:
 
 
   static bool
-  IsUAWidgetEnabled() { return sIsShadowDOMEnabled && sIsUAWidgetEnabled; }
-
-  static bool
-  IsShadowDOMEnabled() { return sIsShadowDOMEnabled; }
+  IsUAWidgetEnabled() { return sIsUAWidgetEnabled; }
 
   
 
@@ -3555,7 +3552,6 @@ private:
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
   static bool sIsUAWidgetEnabled;
-  static bool sIsShadowDOMEnabled;
   static bool sIsCustomElementsEnabled;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;

@@ -3519,46 +3519,44 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
   LOGCONTENTNAVIGATION("GetNextTabbable: %s", aStartContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
 
-  if (nsDocument::IsShadowDOMEnabled(aRootContent)) {
-    
-    
-    if (aForward && IsHostOrSlot(aStartContent)) {
-      nsIContent* contentToFocus =
-        GetNextTabbableContentInScope(aStartContent, aStartContent,
-                                      aOriginalStartContent, aForward,
-                                      aForward ? 1 : 0, aIgnoreTabIndex,
-                                      aForDocumentNavigation,
-                                      true );
-      if (contentToFocus) {
-        NS_ADDREF(*aResultContent = contentToFocus);
-        return NS_OK;
-      }
+  
+  
+  if (aForward && IsHostOrSlot(aStartContent)) {
+    nsIContent* contentToFocus =
+      GetNextTabbableContentInScope(aStartContent, aStartContent,
+                                    aOriginalStartContent, aForward,
+                                    aForward ? 1 : 0, aIgnoreTabIndex,
+                                    aForDocumentNavigation,
+                                    true );
+    if (contentToFocus) {
+      NS_ADDREF(*aResultContent = contentToFocus);
+      return NS_OK;
     }
-
-    
-    
-    
-    nsIContent* rootElement = aRootContent->OwnerDoc()->GetRootElement();
-    nsIContent* owner = FindOwner(aStartContent);
-    if (owner && rootElement != owner) {
-      nsIContent* contentToFocus =
-        GetNextTabbableContentInAncestorScopes(&aStartContent,
-                                               aOriginalStartContent,
-                                               aForward,
-                                               &aCurrentTabIndex,
-                                               aIgnoreTabIndex,
-                                               aForDocumentNavigation);
-      if (contentToFocus) {
-        NS_ADDREF(*aResultContent = contentToFocus);
-        return NS_OK;
-      }
-    }
-
-    
-    
-    
-    
   }
+
+  
+  
+  
+  nsIContent* rootElement = aRootContent->OwnerDoc()->GetRootElement();
+  nsIContent* owner = FindOwner(aStartContent);
+  if (owner && rootElement != owner) {
+    nsIContent* contentToFocus =
+      GetNextTabbableContentInAncestorScopes(&aStartContent,
+                                             aOriginalStartContent,
+                                             aForward,
+                                             &aCurrentTabIndex,
+                                             aIgnoreTabIndex,
+                                             aForDocumentNavigation);
+    if (contentToFocus) {
+      NS_ADDREF(*aResultContent = contentToFocus);
+      return NS_OK;
+    }
+  }
+
+  
+  
+  
+  
 
   nsPresContext* presContext = aPresShell->GetPresContext();
 
@@ -3697,8 +3695,7 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
       
       
       
-      if (currentContent && nsDocument::IsShadowDOMEnabled(currentContent) &&
-          IsHostOrSlot(currentContent)) {
+      if (currentContent && IsHostOrSlot(currentContent)) {
         bool focusableHostSlot;
         int32_t tabIndex = HostOrSlotTabIndexValue(currentContent,
                                                    &focusableHostSlot);
@@ -3798,22 +3795,20 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
                      (currentContent != startContent &&
                       (aForward || !GetRedirectedFocus(currentContent)))) {
 
-              if (nsDocument::IsShadowDOMEnabled(aRootContent)) {
-                
-                
-                if (!aForward && currentContent->GetShadowRoot()) {
-                  nsIContent* contentToFocus =
-                    GetNextTabbableContentInScope(currentContent,
-                                                  currentContent,
-                                                  aOriginalStartContent,
-                                                  aForward, aForward ? 1 : 0,
-                                                  aIgnoreTabIndex,
-                                                  aForDocumentNavigation,
-                                                  true );
-                  if (contentToFocus) {
-                    NS_ADDREF(*aResultContent = contentToFocus);
-                    return NS_OK;
-                  }
+              
+              
+              if (!aForward && currentContent->GetShadowRoot()) {
+                nsIContent* contentToFocus =
+                  GetNextTabbableContentInScope(currentContent,
+                                                currentContent,
+                                                aOriginalStartContent,
+                                                aForward, aForward ? 1 : 0,
+                                                aIgnoreTabIndex,
+                                                aForDocumentNavigation,
+                                                true );
+                if (contentToFocus) {
+                  NS_ADDREF(*aResultContent = contentToFocus);
+                  return NS_OK;
                 }
               }
 
@@ -3995,7 +3990,7 @@ nsFocusManager::GetNextTabIndex(nsIContent* aParent,
          child = iter.GetNextChild()) {
       
       
-      if (!(nsDocument::IsShadowDOMEnabled(aParent) && IsHostOrSlot(child))) {
+      if (!IsHostOrSlot(child)) {
         childTabIndex = GetNextTabIndex(child, aCurrentTabIndex, aForward);
         if (childTabIndex > aCurrentTabIndex && childTabIndex != tabIndex) {
           tabIndex = (tabIndex == 0 || childTabIndex < tabIndex) ? childTabIndex : tabIndex;
@@ -4020,7 +4015,7 @@ nsFocusManager::GetNextTabIndex(nsIContent* aParent,
          child = iter.GetNextChild()) {
       
       
-      if (!(nsDocument::IsShadowDOMEnabled(aParent) && IsHostOrSlot(child))) {
+      if (!IsHostOrSlot(child)) {
         childTabIndex = GetNextTabIndex(child, aCurrentTabIndex, aForward);
         if ((aCurrentTabIndex == 0 && childTabIndex > tabIndex) ||
             (childTabIndex < aCurrentTabIndex && childTabIndex > tabIndex)) {
