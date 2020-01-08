@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AntiTrackingCommon.h"
 
@@ -70,20 +70,20 @@ GetParentPrincipalAndTrackingOrigin(nsGlobalWindowInner* a3rdPartyTrackingWindow
   }
 
   nsIDocument* doc = a3rdPartyTrackingWindow->GetDocument();
-  
+  // Make sure storage access isn't disabled
   if (doc && ((doc->GetSandboxFlags() & SANDBOXED_STORAGE_ACCESS) != 0 ||
               nsContentUtils::IsInPrivateBrowsing(doc))) {
     return false;
   }
 
-  
+  // Now we need the principal and the origin of the parent window.
   nsCOMPtr<nsIPrincipal> topLevelStoragePrincipal =
     a3rdPartyTrackingWindow->GetTopLevelStorageAreaPrincipal();
   if (NS_WARN_IF(!topLevelStoragePrincipal)) {
     return false;
   }
 
-  
+  // Let's take the principal and the origin of the tracker.
   nsIPrincipal* trackingPrincipal = a3rdPartyTrackingWindow->GetPrincipal();
   if (NS_WARN_IF(!trackingPrincipal)) {
     return false;
@@ -114,8 +114,8 @@ CreatePermissionKey(const nsCString& aTrackingOrigin,
                                    aGrantedOrigin.get());
 }
 
-
-
+// This internal method returns ACCESS_DENY if the access is denied,
+// ACCESS_DEFAULT if unknown, some other access code if granted.
 nsCookieAccess
 CheckCookiePermissionForPrincipal(nsIPrincipal* aPrincipal)
 {
@@ -131,15 +131,15 @@ CheckCookiePermissionForPrincipal(nsIPrincipal* aPrincipal)
     return access;
   }
 
-  
+  // If we have a custom cookie permission, let's use it.
   return access;
 }
 
 int32_t
 CookiesBehavior(nsIPrincipal* aPrincipal)
 {
-  
-  
+  // WebExtensions principals always get BEHAVIOR_ACCEPT as cookieBehavior
+  // (See Bug 1406675 for rationale).
   if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
     return nsICookieService::BEHAVIOR_ACCEPT;
   }
@@ -325,15 +325,15 @@ ReportUnblockingConsole(nsPIDOMWindowInner* aWindow,
   }
 }
 
-} 
+} // anonymous
 
- bool
+/* static */ bool
 AntiTrackingCommon::ShouldHonorContentBlockingCookieRestrictions()
 {
   return StaticPrefs::browser_contentblocking_enabled();
 }
 
- RefPtr<AntiTrackingCommon::StorageAccessGrantPromise>
+/* static */ RefPtr<AntiTrackingCommon::StorageAccessGrantPromise>
 AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigin,
                                                          nsPIDOMWindowInner* aParentWindow,
                                                          StorageAccessGrantedReason aReason)
@@ -373,7 +373,7 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigi
   LOG(("The current resource is %s-party",
        outerParentWindow->IsTopLevelWindow() ? "first" : "third"));
 
-  
+  // We are a first party resource.
   if (outerParentWindow->IsTopLevelWindow()) {
     CopyUTF16toUTF8(aOrigin, trackingOrigin);
     topLevelStoragePrincipal = parentWindow->GetPrincipal();
@@ -382,7 +382,7 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigi
       return StorageAccessGrantPromise::CreateAndReject(false, __func__);
     }
 
-  
+  // We are a 3rd party source.
   } else if (!GetParentPrincipalAndTrackingOrigin(parentWindow,
                                                   getter_AddRefs(topLevelStoragePrincipal),
                                                   trackingOrigin)) {
@@ -415,8 +415,8 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigi
   LOG(("Asking the parent process to save the permission for us: trackingOrigin=%s, grantedOrigin=%s",
        trackingOrigin.get(), grantedOrigin.get()));
 
-  
-  
+  // This is not really secure, because here we have the content process sending
+  // the request of storing a permission.
   RefPtr<StorageAccessGrantPromise::Private> p = new StorageAccessGrantPromise::Private(__func__);
   cc->SendFirstPartyStorageAccessGrantedForOrigin(IPC::Principal(topLevelStoragePrincipal),
                                                   trackingOrigin,
@@ -430,7 +430,7 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigi
   return p;
 }
 
- void
+/* static */ void
 AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(nsIPrincipal* aParentPrincipal,
                                                                                const nsCString& aTrackingOrigin,
                                                                                const nsCString& aGrantedOrigin,
@@ -444,7 +444,7 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(n
             _spec, aTrackingOrigin.get(), aGrantedOrigin.get()), parentPrincipalURI);
 
   if (NS_WARN_IF(!aParentPrincipal)) {
-    
+    // The child process is sending something wrong. Let's ignore it.
     LOG(("aParentPrincipal is null, bailing out early"));
     aResolver(false);
     return;
@@ -457,7 +457,7 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(n
     return;
   }
 
-  
+  // Remember that this pref is stored in seconds!
   uint32_t expirationType = nsIPermissionManager::EXPIRE_TIME;
   uint32_t expirationTime =
     StaticPrefs::privacy_restrict3rdpartystorage_expiration() * 1000;
@@ -466,8 +466,8 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(n
   uint32_t privateBrowsingId = 0;
   nsresult rv = aParentPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
   if (!NS_WARN_IF(NS_FAILED(rv)) && privateBrowsingId > 0) {
-    
-    
+    // If we are coming from a private window, make sure to store a session-only
+    // permission which won't get persisted to disk.
     expirationType = nsIPermissionManager::EXPIRE_SESSION;
     when = 0;
   }
@@ -495,7 +495,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWin
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aURI);
 
-  
+  // Let's avoid a null check on aRejectedReason everywhere else.
   uint32_t rejectedReason = 0;
   if (!aRejectedReason) {
     aRejectedReason = &rejectedReason;
@@ -506,13 +506,13 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWin
   nsGlobalWindowInner* innerWindow = nsGlobalWindowInner::Cast(aWindow);
   nsIPrincipal* toplevelPrincipal = innerWindow->GetTopLevelPrincipal();
   if (!toplevelPrincipal) {
-    
+    // We are already the top-level principal. Let's use the window's principal.
     LOG(("Our inner window lacks a top-level principal, use the window's principal instead"));
     toplevelPrincipal = innerWindow->GetPrincipal();
   }
 
   if (!toplevelPrincipal) {
-    
+    // This should not be possible, right?
     LOG(("No top-level principal, this shouldn't be happening! Bail out early"));
     return false;
   }
@@ -542,14 +542,14 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWin
     return false;
   }
 
-  
+  // Let's check if this is a 3rd party context.
   if (!nsContentUtils::IsThirdPartyWindowOrChannel(aWindow, nullptr, aURI)) {
     LOG(("Our window isn't a third-party window"));
     return true;
   }
 
   if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN) {
-    
+    // Now, we have to also honour the Content Blocking pref.
     if (!ShouldHonorContentBlockingCookieRestrictions()) {
       LOG(("The content blocking pref has been disabled, bail out early by "
            "by pretending our window isn't a third-party window"));
@@ -564,10 +564,10 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWin
 
   if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
       behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
-    
-    
-    
-    
+    // XXX For non-cookie forms of storage, we handle BEHAVIOR_LIMIT_FOREIGN by
+    // simply rejecting the request to use the storage. In the future, if we
+    // change the meaning of BEHAVIOR_LIMIT_FOREIGN to be one which makes sense
+    // for non-cookie storage types, this may change.
     LOG(("Nothing more to do due to the behavior code %d", int(behavior)));
     *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN;
     return false;
@@ -575,7 +575,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aWin
 
   MOZ_ASSERT(behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER);
 
-  
+  // Now, we have to also honour the Content Blocking pref.
   if (!ShouldHonorContentBlockingCookieRestrictions()) {
     LOG(("The content blocking pref has been disabled, bail out early by "
          "by pretending our window isn't a tracking window"));
@@ -646,7 +646,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aChannel);
 
-  
+  // Let's avoid a null check on aRejectedReason everywhere else.
   uint32_t rejectedReason = 0;
   if (!aRejectedReason) {
     aRejectedReason = &rejectedReason;
@@ -663,13 +663,13 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
     return true;
   }
 
-  
-  
-  
+  // We need to find the correct principal to check the cookie permission. For
+  // third-party contexts, we want to check if the top-level window has a custom
+  // cookie permission.
   nsIPrincipal* toplevelPrincipal = loadInfo->TopLevelPrincipal();
 
-  
-  
+  // If this is already the top-level window, we should use the loading
+  // principal.
   if (!toplevelPrincipal) {
     LOG(("Our loadInfo lacks a top-level principal, use the loadInfo's loading principal instead"));
     toplevelPrincipal = loadInfo->LoadingPrincipal();
@@ -680,8 +680,8 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   nsresult rv = ssm->GetChannelResultPrincipal(aChannel,
                                                getter_AddRefs(channelPrincipal));
 
-  
-  
+  // If we don't have a loading principal and this is a document channel, we are
+  // a top-level window!
   if (!toplevelPrincipal) {
     LOG(("We don't have a loading principal, let's see if this is a document channel"
          " that belongs to a top-level window"));
@@ -695,7 +695,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
     }
   }
 
-  
+  // Let's use the triggering principal then.
   if (!toplevelPrincipal) {
     LOG(("Our loadInfo lacks a top-level principal, use the loadInfo's triggering principal instead"));
     toplevelPrincipal = loadInfo->TriggeringPrincipal();
@@ -746,17 +746,17 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   rv = thirdPartyUtil->IsThirdPartyChannel(aChannel,
                                            aURI,
                                            &thirdParty);
-  
-  
-  
-  
+  // Grant if it's not a 3rd party.
+  // Be careful to check the return value of IsThirdPartyChannel, since
+  // IsThirdPartyChannel() will fail if the channel's loading principal is the
+  // system principal...
   if (NS_SUCCEEDED(rv) && !thirdParty) {
     LOG(("Our channel isn't a third-party channel"));
     return true;
   }
 
   if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN) {
-    
+    // Now, we have to also honour the Content Blocking pref.
     if (!ShouldHonorContentBlockingCookieRestrictions()) {
       LOG(("The content blocking pref has been disabled, bail out early by "
            "by pretending our window isn't a third-party window"));
@@ -771,10 +771,10 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
 
   if (behavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
       behavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN) {
-    
-    
-    
-    
+    // XXX For non-cookie forms of storage, we handle BEHAVIOR_LIMIT_FOREIGN by
+    // simply rejecting the request to use the storage. In the future, if we
+    // change the meaning of BEHAVIOR_LIMIT_FOREIGN to be one which makes sense
+    // for non-cookie storage types, this may change.
     LOG(("Nothing more to do due to the behavior code %d", int(behavior)));
     *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN;
     return false;
@@ -782,7 +782,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
 
   MOZ_ASSERT(behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER);
 
-  
+  // Now, we have to also honour the Content Blocking pref.
   if (!ShouldHonorContentBlockingCookieRestrictions()) {
     LOG(("The content blocking pref has been disabled, bail out early by "
          "pretending our channel isn't a tracking channel"));
@@ -793,7 +793,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
     return true;
   }
 
-  
+  // Not a tracker.
   if (!aChannel->GetIsTrackingResource()) {
     LOG(("Our channel isn't a tracking channel"));
     return true;
@@ -803,8 +803,8 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   if (!parentPrincipal) {
     LOG(("No top-level storage area principal at hand"));
 
-    
-    
+    // parentPrincipal can be null if the parent window is not the top-level
+    // window.
     if (loadInfo->TopLevelPrincipal()) {
       LOG(("Parent window is the top-level window, bail out early"));
       return false;
@@ -813,12 +813,12 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
     parentPrincipal = toplevelPrincipal;
     if (NS_WARN_IF(!parentPrincipal)) {
       LOG(("No triggering principal, this shouldn't be happening! Bail out early"));
-      
+      // Why we are here?!?
       return true;
     }
   }
 
-  
+  // Let's see if we have to grant the access for this particular channel.
 
   nsCOMPtr<nsIURI> trackingURI;
   rv = aChannel->GetURI(getter_AddRefs(trackingURI));
@@ -887,7 +887,7 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal
   return behavior != nsICookieService::BEHAVIOR_REJECT;
 }
 
- bool
+/* static */ bool
 AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aFirstPartyWindow,
                                                              nsIURI* aURI)
 {
@@ -904,7 +904,7 @@ AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner*
     return true;
   }
 
-  
+  // Now, we have to also honour the Content Blocking pref.
   if (!ShouldHonorContentBlockingCookieRestrictions()) {
     LOG(("The content blocking pref has been disabled, bail out early"));
     return true;
@@ -977,9 +977,9 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
 {
   aIsAllowListed = false;
 
-  
-  
-  
+  // For storage checks, check the storage pref, and for annotations checks,
+  // check the corresponding pref as well.  This allows each set of checks to
+  // be disabled individually if needed.
   if ((aPurpose == eStorageChecks &&
        !StaticPrefs::browser_contentblocking_allowlist_storage_enabled()) ||
       (aPurpose == eTrackingAnnotations &&
@@ -995,13 +995,13 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
   nsCOMPtr<nsIIOService> ios = services::GetIOService();
   NS_ENSURE_TRUE(ios, NS_ERROR_FAILURE);
 
-  
-  
-  
+  // Take the host/port portion so we can allowlist by site. Also ignore the
+  // scheme, since users who put sites on the allowlist probably don't expect
+  // allowlisting to depend on scheme.
   nsresult rv = NS_ERROR_FAILURE;
   nsCOMPtr<nsIURL> url = do_QueryInterface(aTopWinURI, &rv);
   if (NS_FAILED(rv)) {
-    return rv; 
+    return rv; // normal for some loads, no need to print a warning
   }
 
   nsCString escaped(NS_LITERAL_CSTRING("https://"));
@@ -1010,7 +1010,7 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
   NS_ENSURE_SUCCESS(rv, rv);
   escaped.Append(temp);
 
-  
+  // Stuff the whole thing back into a URI for the permission manager.
   nsCOMPtr<nsIURI> topWinURI;
   rv = ios->NewURI(escaped, nullptr, nullptr, getter_AddRefs(topWinURI));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1019,7 +1019,7 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
     do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Check both the normal mode and private browsing mode user override permissions.
   const char* types[] = {
     "trackingprotection",
     "trackingprotection-pb"
@@ -1034,7 +1034,7 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
       aIsAllowListed = true;
       LOG_SPEC(("Found user override type %s for %s", types[i], _spec),
                topWinURI);
-      
+      // Stop checking the next permisson type if we decided to override.
       break;
     }
   }
@@ -1046,7 +1046,7 @@ AntiTrackingCommon::IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
   return NS_OK;
 }
 
- void
+/* static */ void
 AntiTrackingCommon::NotifyRejection(nsIChannel* aChannel,
                                     uint32_t aRejectedReason)
 {
@@ -1060,12 +1060,12 @@ AntiTrackingCommon::NotifyRejection(nsIChannel* aChannel,
     return;
   }
 
-  
+  // Can be called in EITHER the parent or child process.
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(aChannel, parentChannel);
   if (parentChannel) {
-    
-    
+    // This channel is a parent-process proxy for a child process request.
+    // Tell the child process channel to do this instead.
     parentChannel->NotifyTrackingCookieBlocked(aRejectedReason);
     return;
   }
@@ -1088,12 +1088,12 @@ AntiTrackingCommon::NotifyRejection(nsIChannel* aChannel,
   nsCOMPtr<nsIURI> uri;
   aChannel->GetURI(getter_AddRefs(uri));
 
-  pwin->NotifyContentBlockingState(aRejectedReason, aChannel);
+  pwin->NotifyContentBlockingState(aRejectedReason, aChannel, uri);
 
   ReportBlockingToConsole(pwin, uri, aRejectedReason);
 }
 
- void
+/* static */ void
 AntiTrackingCommon::NotifyRejection(nsPIDOMWindowInner* aWindow,
                                     uint32_t aRejectedReason)
 {
@@ -1127,12 +1127,12 @@ AntiTrackingCommon::NotifyRejection(nsPIDOMWindowInner* aWindow,
   nsCOMPtr<nsIURI> uri;
   channel->GetURI(getter_AddRefs(uri));
 
-  pwin->NotifyContentBlockingState(aRejectedReason, channel);
+  pwin->NotifyContentBlockingState(aRejectedReason, channel, uri);
 
   ReportBlockingToConsole(pwin, uri, aRejectedReason);
 }
 
- void
+/* static */ void
 AntiTrackingCommon::StoreUserInteractionFor(nsIPrincipal* aPrincipal)
 {
   if (XRE_IsParentProcess()) {
@@ -1146,7 +1146,7 @@ AntiTrackingCommon::StoreUserInteractionFor(nsIPrincipal* aPrincipal)
       return;
     }
 
-    
+    // Remember that this pref is stored in seconds!
     uint32_t expirationType = nsIPermissionManager::EXPIRE_TIME;
     uint32_t expirationTime =
       StaticPrefs::privacy_userInteraction_expiration() * 1000;
@@ -1155,8 +1155,8 @@ AntiTrackingCommon::StoreUserInteractionFor(nsIPrincipal* aPrincipal)
     uint32_t privateBrowsingId = 0;
     nsresult rv = aPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
     if (!NS_WARN_IF(NS_FAILED(rv)) && privateBrowsingId > 0) {
-      
-      
+      // If we are coming from a private window, make sure to store a session-only
+      // permission which won't get persisted to disk.
       expirationType = nsIPermissionManager::EXPIRE_SESSION;
       when = 0;
     }
