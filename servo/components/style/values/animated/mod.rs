@@ -13,7 +13,9 @@ use crate::properties::PropertyId;
 use crate::values::computed::length::CalcLengthOrPercentage;
 use crate::values::computed::url::ComputedUrl;
 use crate::values::computed::Angle as ComputedAngle;
+use crate::values::computed::Image;
 use crate::values::CSSFloat;
+use crate::values::specified::SVGPathData;
 use euclid::{Point2D, Size2D};
 use smallvec::SmallVec;
 use std::cmp;
@@ -338,6 +340,19 @@ trivial_to_animated_value!(ComputedAngle);
 trivial_to_animated_value!(ComputedUrl);
 trivial_to_animated_value!(bool);
 trivial_to_animated_value!(f32);
+
+
+
+
+
+
+
+
+trivial_to_animated_value!(SVGPathData);
+
+
+
+trivial_to_animated_value!(Image);
 
 impl ToAnimatedZero for Au {
     #[inline]

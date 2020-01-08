@@ -23,20 +23,26 @@ pub type ClippingShape = generic::ClippingShape<BasicShape, ComputedUrl>;
 pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
 
 
-pub type BasicShape =
-    generic::BasicShape<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage, NonNegativeLengthOrPercentage>;
+pub type BasicShape = generic::BasicShape<
+    LengthOrPercentage,
+    LengthOrPercentage,
+    LengthOrPercentage,
+    NonNegativeLengthOrPercentage,
+>;
 
 
 pub type InsetRect = generic::InsetRect<LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
-pub type Circle = generic::Circle<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
+pub type Circle =
+    generic::Circle<LengthOrPercentage, LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
-pub type Ellipse = generic::Ellipse<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
+pub type Ellipse =
+    generic::Ellipse<LengthOrPercentage, LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
-pub type ShapeRadius = generic::ShapeRadius<LengthOrPercentage>;
+pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthOrPercentage>;
 
 impl ToCss for Circle {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
