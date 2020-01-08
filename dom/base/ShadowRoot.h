@@ -204,8 +204,7 @@ protected:
   
   bool mIsComposedDocParticipant;
 
-  nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult,
-                 bool aPreallocateChildren) const override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 };
 
 } 

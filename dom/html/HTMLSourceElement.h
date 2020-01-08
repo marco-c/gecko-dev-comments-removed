@@ -30,8 +30,7 @@ public:
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLSourceElement, source)
 
-  virtual nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult,
-                         bool aPreallocateChildren) const override;
+  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
   

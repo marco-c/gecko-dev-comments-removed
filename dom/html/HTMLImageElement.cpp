@@ -797,15 +797,14 @@ HTMLImageElement::NaturalWidth()
 }
 
 nsresult
-HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
+HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest)
 {
   bool destIsStatic = aDest->OwnerDoc()->IsStaticDocument();
-  auto dest = static_cast<HTMLImageElement*>(aDest);
   if (destIsStatic) {
-    CreateStaticImageClone(dest);
+    CreateStaticImageClone(aDest);
   }
 
-  nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest, aPreallocateChildren);
+  nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -815,16 +814,16 @@ HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
     
     
     
-    if (!dest->InResponsiveMode() &&
-        dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
-        dest->OwnerDoc()->ShouldLoadImages()) {
+    if (!aDest->InResponsiveMode() &&
+        aDest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
+        aDest->OwnerDoc()->ShouldLoadImages()) {
       
       
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
       nsContentUtils::AddScriptRunner(
         NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
-                                dest,
+                                aDest,
                                 &HTMLImageElement::MaybeLoadImage,
                                 false));
     }

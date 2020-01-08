@@ -82,8 +82,7 @@ public:
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   
-  virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
-                         bool aPreallocateChildren) const override = 0;
+  virtual nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   virtual bool HasValidDimensions() const override;
 
@@ -160,8 +159,7 @@ protected:
     : SVGFEUnstyledElementBase(aNodeInfo) {}
 
 public:
-  virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
-                         bool aPreallocateChildren) const override = 0;
+  virtual nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   
   

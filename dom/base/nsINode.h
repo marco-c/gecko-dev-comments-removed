@@ -1100,10 +1100,7 @@ public:
 
 
 
-
-
-  virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
-                         bool aPreallocateChildren) const = 0;
+  virtual nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const = 0;
 
   
   

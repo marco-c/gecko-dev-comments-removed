@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsXMLElement_h___
 #define nsXMLElement_h___
@@ -19,12 +19,11 @@ public:
   {
   }
 
-  // nsISupports
+  
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsXMLElement, mozilla::dom::Element)
 
-  // nsINode interface methods
-  virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
-                         bool aPreallocateChildren) const override;
+  
+  virtual nsresult Clone(mozilla::dom::NodeInfo*, nsINode **aResult) const override;
 
   virtual void UnbindFromTree(bool aDeep = true,
                               bool aNullParent = true) override;
@@ -35,4 +34,4 @@ protected:
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 };
 
-#endif // nsXMLElement_h___
+#endif 

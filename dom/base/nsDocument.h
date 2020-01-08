@@ -242,7 +242,7 @@ public:
     mLoadedAsInteractiveData = aLoadedAsInteractiveData;
   }
 
-  nsresult CloneDocHelper(nsDocument* clone, bool aPreallocateChildren) const;
+  nsresult CloneDocHelper(nsDocument* clone) const;
 
   
   void AsyncBlockOnload();

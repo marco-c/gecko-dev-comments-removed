@@ -308,16 +308,14 @@ NS_INTERFACE_MAP_END_INHERITING(nsStyledElement)
 
 
 nsresult
-nsXULElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
-                    bool aPreallocateChildren) const
+nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) const
 {
     *aResult = nullptr;
 
     RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
     RefPtr<nsXULElement> element = Construct(ni.forget());
 
-    nsresult rv = element->mAttrs.EnsureCapacityToClone(mAttrs,
-                                                        aPreallocateChildren);
+    nsresult rv = element->mAttrs.EnsureCapacityToClone(mAttrs);
     NS_ENSURE_SUCCESS(rv, rv);
 
     

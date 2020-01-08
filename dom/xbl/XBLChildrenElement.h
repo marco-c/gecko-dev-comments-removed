@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsXBLChildrenElement_h___
 #define nsXBLChildrenElement_h___
@@ -28,17 +28,16 @@ public:
   {
   }
 
-  // nsISupports
+  
   NS_INLINE_DECL_REFCOUNTING_INHERITED(XBLChildrenElement, nsXMLElement)
 
-  // nsINode interface methods
-  virtual nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult,
-                         bool aPreallocateChildren) const override;
+  
+  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   void AppendInsertedChild(nsIContent* aChild, bool aNotify)
   {
-    // Appending an inserted child causes the inserted
-    // children to be projected instead of default content.
+    
+    
     MaybeRemoveDefaultContent(aNotify);
 
     mInsertedChildren.AppendElement(aChild);
@@ -47,8 +46,8 @@ public:
 
   void InsertInsertedChildAt(nsIContent* aChild, uint32_t aIndex)
   {
-    // Inserting an inserted child causes the inserted
-    // children to be projected instead of default content.
+    
+    
     MaybeRemoveDefaultContent(true);
 
     mInsertedChildren.InsertElementAt(aIndex, aChild);
@@ -57,17 +56,17 @@ public:
 
   void RemoveInsertedChild(nsIContent* aChild)
   {
-    // Can't use this assertion as we cheat for dynamic insertions and
-    // only insert in the innermost insertion point.
-    //NS_ASSERTION(mInsertedChildren.Contains(aChild),
-    //             "Removing child that's not there");
+    
+    
+    
+    
     mInsertedChildren.RemoveElement(aChild);
 
-    // After removing the inserted child, default content
-    // may be projected into this insertion point.
-    //
-    // FIXME: Layout should be told about this before clearing
-    // mInsertedChildren, this leaves stale styles and frames in the frame tree.
+    
+    
+    
+    
+    
     MaybeSetupDefaultContent();
   }
 
@@ -78,11 +77,11 @@ public:
     }
     mInsertedChildren.Clear();
 
-    // After clearing inserted children, default content
-    // will be projected into this insertion point.
-    //
-    // FIXME: Layout should be told about this before clearing
-    // mInsertedChildren, this leaves stale styles and frames in the frame tree.
+    
+    
+    
+    
+    
     MaybeSetupDefaultContent();
   }
 
@@ -145,12 +144,12 @@ protected:
   void DoRemoveDefaultContent(bool aNotify);
 
 private:
-  nsTArray<nsIContent*> mInsertedChildren; // WEAK
+  nsTArray<nsIContent*> mInsertedChildren; 
   nsTArray<RefPtr<nsAtom> > mIncludes;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 class nsAnonymousContentList final : public nsINodeList
 {
@@ -163,7 +162,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsAnonymousContentList)
 
-  // nsINodeList interface
+  
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsINode* GetParentObject() override { return mParent; }
   virtual nsIContent* Item(uint32_t aIndex) override;
@@ -183,4 +182,4 @@ private:
   nsCOMPtr<nsIContent> mParent;
 };
 
-#endif // nsXBLChildrenElement_h___
+#endif 

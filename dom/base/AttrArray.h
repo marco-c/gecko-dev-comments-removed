@@ -124,10 +124,7 @@ public:
 
   
   
-  
-  
-  nsresult EnsureCapacityToClone(const AttrArray& aOther,
-                                 bool aAllocateChildren);
+  nsresult EnsureCapacityToClone(const AttrArray& aOther);
 
 private:
   AttrArray(const AttrArray& aOther) = delete;
