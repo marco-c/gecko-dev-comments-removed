@@ -124,7 +124,7 @@ mod details {
     }
 
     
-    #[derive(Default, Copy, Clone)]
+    #[derive(Default)]
     struct PassTime {
         
         total: Duration,
@@ -134,16 +134,9 @@ mod details {
     }
 
     
+    #[derive(Default)]
     pub struct PassTimes {
         pass: [PassTime; NUM_PASSES],
-    }
-
-    impl Default for PassTimes {
-        fn default() -> Self {
-            PassTimes {
-                pass: [Default::default(); NUM_PASSES],
-            }
-        }
     }
 
     impl fmt::Display for PassTimes {
@@ -151,7 +144,7 @@ mod details {
             writeln!(f, "======== ========  ==================================")?;
             writeln!(f, "   Total     Self  Pass")?;
             writeln!(f, "-------- --------  ----------------------------------")?;
-            for (time, desc) in self.pass.iter().zip(&DESCRIPTIONS[..]) {
+            for (time, desc) in self.pass.iter().zip(&DESCRIPTIONS) {
                 
                 if time.total == Duration::default() {
                     continue;
@@ -161,7 +154,7 @@ mod details {
                 fn fmtdur(mut dur: Duration, f: &mut fmt::Formatter) -> fmt::Result {
                     
                     dur += Duration::new(0, 500_000);
-                    let ms = dur.subsec_millis();
+                    let ms = dur.subsec_nanos() / 1_000_000;
                     write!(f, "{:4}.{:03} ", dur.as_secs(), ms)
                 }
 
@@ -219,7 +212,7 @@ mod details {
     
     pub fn add_to_current(times: &PassTimes) {
         PASS_TIME.with(|rc| {
-            for (a, b) in rc.borrow_mut().pass.iter_mut().zip(&times.pass[..]) {
+            for (a, b) in rc.borrow_mut().pass.iter_mut().zip(&times.pass) {
                 a.total += b.total;
                 a.child += b.child;
             }
@@ -249,7 +242,7 @@ mod details {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use std::string::ToString;
 

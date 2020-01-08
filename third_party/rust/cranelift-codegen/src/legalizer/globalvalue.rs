@@ -28,68 +28,34 @@ pub fn expand_global_value(
     };
 
     match func.global_values[gv] {
-        ir::GlobalValueData::VMContext => vmctx_addr(inst, func),
-        ir::GlobalValueData::IAddImm {
+        ir::GlobalValueData::VMContext { offset } => vmctx_addr(inst, func, offset.into()),
+        ir::GlobalValueData::Deref {
             base,
             offset,
-            global_type,
-        } => iadd_imm_addr(inst, func, base, offset.into(), global_type),
-        ir::GlobalValueData::Load {
-            base,
-            offset,
-            global_type,
-            readonly,
-        } => load_addr(inst, func, base, offset, global_type, readonly, isa),
-        ir::GlobalValueData::Symbol { .. } => symbol(inst, func, gv, isa),
+            memory_type,
+        } => deref_addr(inst, func, base, offset.into(), memory_type, isa),
+        ir::GlobalValueData::Sym { .. } => globalsym(inst, func, gv, isa),
     }
 }
 
 
-fn vmctx_addr(inst: ir::Inst, func: &mut ir::Function) {
+fn vmctx_addr(inst: ir::Inst, func: &mut ir::Function, offset: i64) {
     
     let vmctx = func
         .special_param(ir::ArgumentPurpose::VMContext)
         .expect("Missing vmctx parameter");
 
     
-    let result = func.dfg.first_result(inst);
-    func.dfg.clear_results(inst);
-    func.dfg.change_to_alias(result, vmctx);
-    func.layout.remove_inst(inst);
+    func.dfg.replace(inst).iadd_imm(vmctx, offset);
 }
 
 
-fn iadd_imm_addr(
+fn deref_addr(
     inst: ir::Inst,
     func: &mut ir::Function,
     base: ir::GlobalValue,
     offset: i64,
-    global_type: ir::Type,
-) {
-    let mut pos = FuncCursor::new(func).at_inst(inst);
-
-    
-    
-    let lhs = if let ir::GlobalValueData::VMContext = pos.func.global_values[base] {
-        pos.func
-            .special_param(ir::ArgumentPurpose::VMContext)
-            .expect("Missing vmctx parameter")
-    } else {
-        pos.ins().global_value(global_type, base)
-    };
-
-    
-    pos.func.dfg.replace(inst).iadd_imm(lhs, offset);
-}
-
-
-fn load_addr(
-    inst: ir::Inst,
-    func: &mut ir::Function,
-    base: ir::GlobalValue,
-    offset: ir::immediates::Offset32,
-    global_type: ir::Type,
-    readonly: bool,
+    memory_type: ir::Type,
     isa: &TargetIsa,
 ) {
     
@@ -99,33 +65,17 @@ fn load_addr(
     let mut pos = FuncCursor::new(func).at_inst(inst);
     pos.use_srcloc(inst);
 
-    
-    
-    let base_addr = if let ir::GlobalValueData::VMContext = pos.func.global_values[base] {
-        pos.func
-            .special_param(ir::ArgumentPurpose::VMContext)
-            .expect("Missing vmctx parameter")
-    } else {
-        pos.ins().global_value(ptr_ty, base)
-    };
-
-    
+    let base_addr = pos.ins().global_value(ptr_ty, base);
     let mut mflags = ir::MemFlags::new();
+    
     mflags.set_notrap();
     mflags.set_aligned();
-    if readonly {
-        mflags.set_readonly();
-    }
-
-    
-    pos.func
-        .dfg
-        .replace(inst)
-        .load(global_type, mflags, base_addr, offset);
+    let loaded = pos.ins().load(memory_type, mflags, base_addr, 0);
+    pos.func.dfg.replace(inst).iadd_imm(loaded, offset);
 }
 
 
-fn symbol(inst: ir::Inst, func: &mut ir::Function, gv: ir::GlobalValue, isa: &TargetIsa) {
+fn globalsym(inst: ir::Inst, func: &mut ir::Function, gv: ir::GlobalValue, isa: &TargetIsa) {
     let ptr_ty = isa.pointer_type();
-    func.dfg.replace(inst).symbol_value(ptr_ty, gv);
+    func.dfg.replace(inst).globalsym_addr(ptr_ty, gv);
 }

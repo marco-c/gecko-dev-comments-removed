@@ -87,6 +87,7 @@ class RegBank(object):
         self.names = names
         self.classes = list()  
         self.toprcs = list()  
+        self.first_toprc_index = None  
 
         assert len(names) <= units
 
@@ -247,7 +248,7 @@ class RegClass(object):
     def intersect(self, other):
         
         """
-        Get a tuple representing the intersection of two register classes.
+        Get a tuple representing the intersction of two register classes.
 
         Returns `None` if the two classes are disjoint.
         """

@@ -13,7 +13,7 @@ use cursor::{Cursor, EncCursor};
 use dominator_tree::DominatorTree;
 use entity::{SparseMap, SparseMapValue};
 use ir::{AbiParam, ArgumentLoc, InstBuilder};
-use ir::{Ebb, Function, Inst, InstructionData, Opcode, Value};
+use ir::{Ebb, Function, Inst, Value};
 use isa::RegClass;
 use isa::{ConstraintKind, EncInfo, Encoding, RecipeConstraints, TargetIsa};
 use regalloc::affinity::Affinity;
@@ -125,15 +125,11 @@ impl<'a> Context<'a> {
 
         
         while let Some(inst) = self.cur.current_inst() {
-            if !self.cur.func.dfg[inst].opcode().is_ghost() {
-                
-                
-                let encoding = self.cur.func.encodings[inst];
+            let encoding = self.cur.func.encodings[inst];
+            if encoding.is_legal() {
                 self.visit_inst(ebb, inst, encoding, tracker);
                 tracker.drop_dead(inst);
             } else {
-                
-                
                 self.cur.next_inst();
             }
         }
@@ -204,95 +200,15 @@ impl<'a> Context<'a> {
         self.cur.use_srcloc(inst);
 
         
-        let constraints = self.encinfo.operand_constraints(encoding);
+        let constraints = self
+            .encinfo
+            .operand_constraints(encoding)
+            .expect("Missing instruction encoding");
 
         
         debug_assert!(self.candidates.is_empty());
         self.find_candidates(inst, constraints);
 
-        if let InstructionData::Unary {
-            opcode: Opcode::Copy,
-            ..
-        } = self.cur.func.dfg[inst]
-        {
-            self.reload_copy_candidates(inst);
-        } else {
-            self.reload_inst_candidates(ebb, inst);
-        }
-
-        
-        self.reloads.clear();
-
-        let (_throughs, _kills, defs) =
-            tracker.process_inst(inst, &self.cur.func.dfg, self.liveness);
-
-        
-        self.cur.next_inst();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if let Some(constraints) = constraints {
-            for (lv, op) in defs.iter().zip(constraints.outs) {
-                if lv.affinity.is_stack() && op.kind != ConstraintKind::Stack {
-                    if let InstructionData::Unary {
-                        opcode: Opcode::Copy,
-                        arg,
-                    } = self.cur.func.dfg[inst]
-                    {
-                        self.cur.func.dfg.replace(inst).spill(arg);
-                        let ok = self.cur.func.update_encoding(inst, self.cur.isa).is_ok();
-                        debug_assert!(ok);
-                    } else {
-                        let value_type = self.cur.func.dfg.value_type(lv.value);
-                        let reg = self.cur.func.dfg.replace_result(lv.value, value_type);
-                        self.liveness.create_dead(reg, inst, Affinity::new(op));
-                        self.insert_spill(ebb, lv.value, reg);
-                    }
-                }
-            }
-        }
-
-        
-        let retvals = &defs[self.cur.func.dfg[inst]
-                                .opcode()
-                                .constraints()
-                                .fixed_results()..];
-        if !retvals.is_empty() {
-            let sig = self
-                .cur
-                .func
-                .dfg
-                .call_signature(inst)
-                .expect("Extra results on non-call instruction");
-            for (i, lv) in retvals.iter().enumerate() {
-                let abi = self.cur.func.dfg.signatures[sig].returns[i];
-                debug_assert!(
-                    abi.location.is_reg(),
-                    "expected reg; got {:?}",
-                    abi.location
-                );
-                if lv.affinity.is_stack() {
-                    let reg = self.cur.func.dfg.replace_result(lv.value, abi.value_type);
-                    self.liveness
-                        .create_dead(reg, inst, Affinity::abi(&abi, self.cur.isa));
-                    self.insert_spill(ebb, lv.value, reg);
-                }
-            }
-        }
-    }
-
-    
-    fn reload_inst_candidates(&mut self, ebb: Ebb, inst: Inst) {
         
         for cand in self.candidates.iter_mut() {
             if let Some(reload) = self.reloads.get(cand.value) {
@@ -328,46 +244,81 @@ impl<'a> Context<'a> {
                 args[cand.argidx] = cand.value;
             }
         }
-    }
 
-    
-    
-    
-    
-    fn reload_copy_candidates(&mut self, inst: Inst) {
         
-        debug_assert!(self.candidates.is_empty() || self.candidates.len() == 1);
+        self.reloads.clear();
 
-        if let Some(cand) = self.candidates.pop() {
-            self.cur.func.dfg.replace(inst).fill(cand.value);
-            let ok = self.cur.func.update_encoding(inst, self.cur.isa).is_ok();
-            debug_assert!(ok);
-        }
-    }
+        let (_throughs, _kills, defs) =
+            tracker.process_inst(inst, &self.cur.func.dfg, self.liveness);
 
-    
-    
-    
-    fn find_candidates(&mut self, inst: Inst, constraints: Option<&RecipeConstraints>) {
-        let args = self.cur.func.dfg.inst_args(inst);
+        
+        self.cur.next_inst();
 
-        if let Some(constraints) = constraints {
-            for (argidx, (op, &arg)) in constraints.ins.iter().zip(args).enumerate() {
-                if op.kind != ConstraintKind::Stack && self.liveness[arg].affinity.is_stack() {
-                    self.candidates.push(ReloadCandidate {
-                        argidx,
-                        value: arg,
-                        regclass: op.regclass,
-                    })
-                }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for (lv, op) in defs.iter().zip(constraints.outs) {
+            if lv.affinity.is_stack() && op.kind != ConstraintKind::Stack {
+                let value_type = self.cur.func.dfg.value_type(lv.value);
+                let reg = self.cur.func.dfg.replace_result(lv.value, value_type);
+                self.liveness.create_dead(reg, inst, Affinity::new(op));
+                self.insert_spill(ebb, lv.value, reg);
             }
         }
 
         
-        let offset = self.cur.func.dfg[inst]
-            .opcode()
-            .constraints()
-            .fixed_value_arguments();
+        let retvals = &defs[constraints.outs.len()..];
+        if !retvals.is_empty() {
+            let sig = self
+                .cur
+                .func
+                .dfg
+                .call_signature(inst)
+                .expect("Extra results on non-call instruction");
+            for (i, lv) in retvals.iter().enumerate() {
+                let abi = self.cur.func.dfg.signatures[sig].returns[i];
+                debug_assert!(
+                    abi.location.is_reg(),
+                    "expected reg; got {:?}",
+                    abi.location
+                );
+                if lv.affinity.is_stack() {
+                    let reg = self.cur.func.dfg.replace_result(lv.value, abi.value_type);
+                    self.liveness
+                        .create_dead(reg, inst, Affinity::abi(&abi, self.cur.isa));
+                    self.insert_spill(ebb, lv.value, reg);
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    fn find_candidates(&mut self, inst: Inst, constraints: &RecipeConstraints) {
+        let args = self.cur.func.dfg.inst_args(inst);
+
+        for (argidx, (op, &arg)) in constraints.ins.iter().zip(args).enumerate() {
+            if op.kind != ConstraintKind::Stack && self.liveness[arg].affinity.is_stack() {
+                self.candidates.push(ReloadCandidate {
+                    argidx,
+                    value: arg,
+                    regclass: op.regclass,
+                })
+            }
+        }
+
+        
+        let offset = constraints.ins.len();
         if args.len() == offset {
             return;
         }

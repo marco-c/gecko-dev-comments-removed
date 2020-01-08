@@ -1,19 +1,21 @@
 
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
-use cranelift_codegen::entity::{EntitySet, SecondaryMap};
+use cranelift_codegen::entity::{EntityMap, EntitySet};
 use cranelift_codegen::ir;
 use cranelift_codegen::ir::function::DisplayFunction;
 use cranelift_codegen::ir::{
-    types, AbiParam, DataFlowGraph, Ebb, ExtFuncData, ExternalName, FuncRef, Function, GlobalValue,
-    GlobalValueData, Heap, HeapData, Inst, InstBuilder, InstBuilderBase, InstructionData,
-    JumpTable, JumpTableData, LibCall, MemFlags, SigRef, Signature, StackSlot, StackSlotData, Type,
-    Value,
+    DataFlowGraph, Ebb, ExtFuncData, FuncRef, Function, GlobalValue, GlobalValueData, Heap,
+    HeapData, Inst, InstBuilderBase, InstructionData, JumpTable, JumpTableData, SigRef, Signature,
+    StackSlot, StackSlotData, Type, Value,
 };
-use cranelift_codegen::isa::{TargetFrontendConfig, TargetIsa};
+use cranelift_codegen::isa::TargetIsa;
 use cranelift_codegen::packed_option::PackedOption;
 use ssa::{Block, SSABuilder, SideEffects};
-use std::vec::Vec;
 use variable::Variable;
+
+
+
+
 
 
 
@@ -22,8 +24,8 @@ use variable::Variable;
 
 pub struct FunctionBuilderContext {
     ssa: SSABuilder,
-    ebbs: SecondaryMap<Ebb, EbbData>,
-    types: SecondaryMap<Variable, Type>,
+    ebbs: EntityMap<Ebb, EbbData>,
+    types: EntityMap<Variable, Type>,
 }
 
 
@@ -77,8 +79,8 @@ impl FunctionBuilderContext {
     pub fn new() -> Self {
         Self {
             ssa: SSABuilder::new(),
-            ebbs: SecondaryMap::new(),
-            types: SecondaryMap::new(),
+            ebbs: EntityMap::new(),
+            types: EntityMap::new(),
         }
     }
 
@@ -101,8 +103,8 @@ pub struct FuncInstBuilder<'short, 'long: 'short> {
 }
 
 impl<'short, 'long> FuncInstBuilder<'short, 'long> {
-    fn new(builder: &'short mut FunctionBuilder<'long>, ebb: Ebb) -> Self {
-        Self { builder, ebb }
+    fn new<'s, 'l>(builder: &'s mut FunctionBuilder<'l>, ebb: Ebb) -> FuncInstBuilder<'s, 'l> {
+        FuncInstBuilder { builder, ebb }
     }
 }
 
@@ -139,10 +141,7 @@ impl<'short, 'long> InstBuilderBase<'short> for FuncInstBuilder<'short, 'long> {
                 None => {
                     
                     
-                    if let InstructionData::BranchTable {
-                        table, destination, ..
-                    } = data
-                    {
+                    if let InstructionData::BranchTable { table, .. } = data {
                         
                         
                         
@@ -153,20 +152,16 @@ impl<'short, 'long> InstBuilderBase<'short> for FuncInstBuilder<'short, 'long> {
                             .jump_tables
                             .get(table)
                             .expect("you are referencing an undeclared jump table")
-                            .iter()
-                            .filter(|&dest_ebb| unique.insert(*dest_ebb))
+                            .entries()
+                            .map(|(_, ebb)| ebb)
+                            .filter(|dest_ebb| unique.insert(*dest_ebb))
                         {
                             self.builder.func_ctx.ssa.declare_ebb_predecessor(
-                                *dest_ebb,
+                                dest_ebb,
                                 self.builder.position.basic_block.unwrap(),
                                 inst,
-                            );
+                            )
                         }
-                        self.builder.func_ctx.ssa.declare_ebb_predecessor(
-                            destination,
-                            self.builder.position.basic_block.unwrap(),
-                            inst,
-                        );
                     }
                 }
             }
@@ -216,9 +211,12 @@ impl<'short, 'long> InstBuilderBase<'short> for FuncInstBuilder<'short, 'long> {
 impl<'a> FunctionBuilder<'a> {
     
     
-    pub fn new(func: &'a mut Function, func_ctx: &'a mut FunctionBuilderContext) -> Self {
+    pub fn new(
+        func: &'a mut Function,
+        func_ctx: &'a mut FunctionBuilderContext,
+    ) -> FunctionBuilder<'a> {
         debug_assert!(func_ctx.is_empty());
-        Self {
+        FunctionBuilder {
             func,
             srcloc: Default::default(),
             func_ctx,
@@ -336,6 +334,11 @@ impl<'a> FunctionBuilder<'a> {
     
     pub fn create_jump_table(&mut self, data: JumpTableData) -> JumpTable {
         self.func.create_jump_table(data)
+    }
+
+    
+    pub fn insert_jump_table_entry(&mut self, jt: JumpTable, index: usize, ebb: Ebb) {
+        self.func.insert_jump_table_entry(jt, index, ebb)
     }
 
     
@@ -514,10 +517,11 @@ impl<'a> FunctionBuilder<'a> {
             None => false,
             Some(entry) => self.position.ebb.unwrap() == entry,
         };
-        !is_entry && self.func_ctx.ssa.is_sealed(self.position.ebb.unwrap()) && !self
-            .func_ctx
-            .ssa
-            .has_any_predecessors(self.position.ebb.unwrap())
+        !is_entry && self.func_ctx.ssa.is_sealed(self.position.ebb.unwrap())
+            && !self
+                .func_ctx
+                .ssa
+                .has_any_predecessors(self.position.ebb.unwrap())
     }
 
     
@@ -540,242 +544,6 @@ impl<'a> FunctionBuilder<'a> {
     pub fn display<'b, I: Into<Option<&'b TargetIsa>>>(&'b self, isa: I) -> DisplayFunction {
         self.func.display(isa)
     }
-}
-
-
-impl<'a> FunctionBuilder<'a> {
-    
-    
-    
-    
-    
-    
-    pub fn call_memcpy(
-        &mut self,
-        config: TargetFrontendConfig,
-        dest: Value,
-        src: Value,
-        size: Value,
-    ) {
-        let pointer_type = config.pointer_type();
-        let signature = {
-            let mut s = Signature::new(config.default_call_conv);
-            s.params.push(AbiParam::new(pointer_type));
-            s.params.push(AbiParam::new(pointer_type));
-            s.params.push(AbiParam::new(pointer_type));
-            self.import_signature(s)
-        };
-
-        let libc_memcpy = self.import_function(ExtFuncData {
-            name: ExternalName::LibCall(LibCall::Memcpy),
-            signature,
-            colocated: false,
-        });
-
-        self.ins().call(libc_memcpy, &[dest, src, size]);
-    }
-
-    
-    pub fn emit_small_memcpy(
-        &mut self,
-        config: TargetFrontendConfig,
-        dest: Value,
-        src: Value,
-        size: u64,
-        dest_align: u8,
-        src_align: u8,
-    ) {
-        
-        const THRESHOLD: u64 = 4;
-
-        let access_size = greatest_divisible_power_of_two(size);
-        assert!(
-            access_size.is_power_of_two(),
-            "`size` is not a power of two"
-        );
-        assert!(
-            access_size >= ::std::cmp::min(src_align, dest_align) as u64,
-            "`size` is smaller than `dest` and `src`'s alignment value."
-        );
-        let load_and_store_amount = size / access_size;
-
-        if load_and_store_amount > THRESHOLD {
-            let size_value = self.ins().iconst(config.pointer_type(), size as i64);
-            self.call_memcpy(config, dest, src, size_value);
-            return;
-        }
-
-        let mut flags = MemFlags::new();
-        flags.set_aligned();
-
-        for i in 0..load_and_store_amount {
-            let offset = (access_size * i) as i32;
-            let int_type = Type::int(access_size as u16).unwrap();
-            let value = self.ins().load(int_type, flags, src, offset);
-            self.ins().store(flags, value, dest, offset);
-        }
-    }
-
-    
-    
-    
-    pub fn call_memset(
-        &mut self,
-        config: TargetFrontendConfig,
-        buffer: Value,
-        ch: Value,
-        size: Value,
-    ) {
-        let pointer_type = config.pointer_type();
-        let signature = {
-            let mut s = Signature::new(config.default_call_conv);
-            s.params.push(AbiParam::new(pointer_type));
-            s.params.push(AbiParam::new(types::I32));
-            s.params.push(AbiParam::new(pointer_type));
-            self.import_signature(s)
-        };
-
-        let libc_memset = self.import_function(ExtFuncData {
-            name: ExternalName::LibCall(LibCall::Memset),
-            signature,
-            colocated: false,
-        });
-
-        let ch = self.ins().uextend(types::I32, ch);
-        self.ins().call(libc_memset, &[buffer, ch, size]);
-    }
-
-    
-    
-    
-    pub fn emit_small_memset(
-        &mut self,
-        config: TargetFrontendConfig,
-        buffer: Value,
-        ch: u32,
-        size: u64,
-        buffer_align: u8,
-    ) {
-        
-        const THRESHOLD: u64 = 4;
-
-        let access_size = greatest_divisible_power_of_two(size);
-        assert!(
-            access_size.is_power_of_two(),
-            "`size` is not a power of two"
-        );
-        assert!(
-            access_size >= buffer_align as u64,
-            "`size` is smaller than `dest` and `src`'s alignment value."
-        );
-        let load_and_store_amount = size / access_size;
-
-        if load_and_store_amount > THRESHOLD {
-            let ch = self.ins().iconst(types::I32, ch as i64);
-            let size = self.ins().iconst(config.pointer_type(), size as i64);
-            self.call_memset(config, buffer, ch, size);
-        } else {
-            let mut flags = MemFlags::new();
-            flags.set_aligned();
-
-            let ch = ch as u64;
-            let int_type = Type::int(access_size as u16).unwrap();
-            let raw_value = if int_type == types::I64 {
-                (ch << 32) | (ch << 16) | (ch << 8) | ch
-            } else if int_type == types::I32 {
-                (ch << 16) | (ch << 8) | ch
-            } else if int_type == types::I16 {
-                (ch << 8) | ch
-            } else {
-                assert_eq!(int_type, types::I8);
-                ch
-            };
-
-            let value = self.ins().iconst(int_type, raw_value as i64);
-            for i in 0..load_and_store_amount {
-                let offset = (access_size * i) as i32;
-                self.ins().store(flags, value, buffer, offset);
-            }
-        }
-    }
-
-    
-    
-    
-    
-    pub fn call_memmove(
-        &mut self,
-        config: TargetFrontendConfig,
-        dest: Value,
-        source: Value,
-        size: Value,
-    ) {
-        let pointer_type = config.pointer_type();
-        let signature = {
-            let mut s = Signature::new(config.default_call_conv);
-            s.params.push(AbiParam::new(pointer_type));
-            s.params.push(AbiParam::new(pointer_type));
-            s.params.push(AbiParam::new(pointer_type));
-            self.import_signature(s)
-        };
-
-        let libc_memmove = self.import_function(ExtFuncData {
-            name: ExternalName::LibCall(LibCall::Memmove),
-            signature,
-            colocated: false,
-        });
-
-        self.ins().call(libc_memmove, &[dest, source, size]);
-    }
-
-    
-    pub fn emit_small_memmove(
-        &mut self,
-        config: TargetFrontendConfig,
-        dest: Value,
-        src: Value,
-        size: u64,
-        dest_align: u8,
-        src_align: u8,
-    ) {
-        
-        const THRESHOLD: u64 = 4;
-
-        let access_size = greatest_divisible_power_of_two(size);
-        assert!(
-            access_size.is_power_of_two(),
-            "`size` is not a power of two"
-        );
-        assert!(
-            access_size >= ::std::cmp::min(src_align, dest_align) as u64,
-            "`size` is smaller than `dest` and `src`'s alignment value."
-        );
-        let load_and_store_amount = size / access_size;
-
-        if load_and_store_amount > THRESHOLD {
-            let size_value = self.ins().iconst(config.pointer_type(), size as i64);
-            self.call_memmove(config, dest, src, size_value);
-            return;
-        }
-
-        let mut flags = MemFlags::new();
-        flags.set_aligned();
-
-        
-        let registers: Vec<_> = (0..load_and_store_amount)
-            .map(|i| {
-                let offset = (access_size * i) as i32;
-                (self.ins().load(types::I8, flags, src, offset), offset)
-            }).collect();
-
-        for (value, offset) in registers {
-            self.ins().store(flags, value, dest, offset);
-        }
-    }
-}
-
-fn greatest_divisible_power_of_two(size: u64) -> u64 {
-    (size as i64 & -(size as i64)) as u64
 }
 
 
@@ -812,15 +580,14 @@ impl<'a> FunctionBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::greatest_divisible_power_of_two;
+
     use cranelift_codegen::entity::EntityRef;
     use cranelift_codegen::ir::types::*;
     use cranelift_codegen::ir::{AbiParam, ExternalName, Function, InstBuilder, Signature};
-    use cranelift_codegen::isa::CallConv;
     use cranelift_codegen::settings;
+    use cranelift_codegen::settings::CallConv;
     use cranelift_codegen::verifier::verify_function;
     use frontend::{FunctionBuilder, FunctionBuilderContext};
-    use std::string::ToString;
     use Variable;
 
     fn sample_function(lazy_seal: bool) {
@@ -924,74 +691,5 @@ mod tests {
     #[test]
     fn sample_with_lazy_seal() {
         sample_function(true)
-    }
-
-    #[test]
-    fn memcpy() {
-        use cranelift_codegen::{isa, settings};
-        use std::str::FromStr;
-
-        let shared_builder = settings::builder();
-        let shared_flags = settings::Flags::new(shared_builder);
-
-        let triple = ::target_lexicon::Triple::from_str("arm").expect("Couldn't create arm triple");
-
-        let target = isa::lookup(triple)
-            .ok()
-            .map(|b| b.finish(shared_flags))
-            .expect("This test requires arm support.");
-
-        let mut sig = Signature::new(target.default_call_conv());
-        sig.returns.push(AbiParam::new(I32));
-
-        let mut fn_ctx = FunctionBuilderContext::new();
-        let mut func = Function::with_name_signature(ExternalName::testcase("sample"), sig);
-        {
-            let mut builder = FunctionBuilder::new(&mut func, &mut fn_ctx);
-
-            let block0 = builder.create_ebb();
-            let x = Variable::new(0);
-            let y = Variable::new(1);
-            let z = Variable::new(2);
-            builder.declare_var(x, target.pointer_type());
-            builder.declare_var(y, target.pointer_type());
-            builder.declare_var(z, I32);
-            builder.append_ebb_params_for_function_params(block0);
-            builder.switch_to_block(block0);
-
-            let src = builder.use_var(x);
-            let dest = builder.use_var(y);
-            let size = builder.use_var(y);
-            builder.call_memcpy(target.frontend_config(), dest, src, size);
-            builder.ins().return_(&[size]);
-
-            builder.seal_all_blocks();
-            builder.finalize();
-        }
-
-        assert_eq!(
-            func.display(None).to_string(),
-            "function %sample() -> i32 system_v {
-    sig0 = (i32, i32, i32) system_v
-    fn0 = %Memcpy sig0
-
-ebb0:
-    v3 = iconst.i32 0
-    v1 -> v3
-    v2 = iconst.i32 0
-    v0 -> v2
-    call fn0(v1, v0, v1)
-    return v1
-}
-"
-        );
-    }
-
-    #[test]
-    fn test_greatest_divisible_power_of_two() {
-        assert_eq!(64, greatest_divisible_power_of_two(64));
-        assert_eq!(16, greatest_divisible_power_of_two(48));
-        assert_eq!(8, greatest_divisible_power_of_two(24));
-        assert_eq!(1, greatest_divisible_power_of_two(25));
     }
 }
