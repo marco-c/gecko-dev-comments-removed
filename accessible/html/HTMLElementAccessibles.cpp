@@ -248,3 +248,29 @@ HTMLHeaderOrFooterAccessible::LandmarkRole() const
 
   return nullptr;
 }
+
+
+
+
+
+
+role
+HTMLSectionAccessible::NativeRole() const
+{
+  nsAutoString name;
+  const_cast<HTMLSectionAccessible*>(this)->Name(name);
+  return name.IsEmpty() ? roles::SECTION : roles::LANDMARK;
+}
+
+nsAtom*
+HTMLSectionAccessible::LandmarkRole() const
+{
+  if (!HasOwnContent()) {
+    return nullptr;
+  }
+
+  
+  nsAutoString name;
+  const_cast<HTMLSectionAccessible*>(this)->Name(name);
+  return name.IsEmpty() ? nullptr : nsGkAtoms::region;
+}
