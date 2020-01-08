@@ -239,8 +239,8 @@ EnsureNotDivergedFromRecording()
 
     
     
-    if (parent::InRepaintStressMode()) {
-      MOZ_CRASH("Recording divergence in repaint stress mode");
+    if (child::CurrentRepaintCannotFail()) {
+      MOZ_CRASH("Recording divergence while repainting");
     }
 
     PrintSpew("Unhandled recording divergence, restoring checkpoint...\n");

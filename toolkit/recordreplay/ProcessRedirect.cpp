@@ -8,6 +8,7 @@
 
 #include "InfallibleVector.h"
 #include "MiddlemanCall.h"
+#include "ipc/ChildInternal.h"
 #include "ipc/ParentInternal.h"
 #include "mozilla/Sprintf.h"
 
@@ -100,9 +101,11 @@ RecordReplayInterceptCall(int aCallId, CallArguments* aArguments)
       }
     }
 
-    if (parent::InRepaintStressMode()) {
+    if (child::CurrentRepaintCannotFail()) {
       
-      Print("Could not perform middleman call: %s\n", redirection.mName);
+      
+      child::ReportFatalError(Nothing(), "Could not perform middleman call: %s\n",
+                              redirection.mName);
     }
 
     

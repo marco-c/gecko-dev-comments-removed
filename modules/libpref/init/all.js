@@ -1110,6 +1110,7 @@ pref("devtools.recordreplay.enableRewinding", true);
 
 pref("devtools.recordreplay.mvp.enabled", false);
 pref("devtools.recordreplay.timeline.enabled", false);
+pref("devtools.recordreplay.allowRepaintFailures", true);
 
 
 pref("view_source.syntax_highlight", true);
@@ -1154,6 +1155,12 @@ pref("browser.fixup.alternate.prefix", "www.");
 pref("browser.fixup.alternate.suffix", ".com");
 pref("browser.fixup.dns_first_for_single_words", false);
 pref("browser.fixup.hide_user_pass", true);
+
+
+pref("browser.urlbar.autocomplete.enabled", true);
+
+pref("browser.urlbar.usepreloadedtopurls.enabled", false);
+pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
 

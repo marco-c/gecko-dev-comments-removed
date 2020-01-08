@@ -116,9 +116,6 @@ void NotifyFlushedRecording();
 void NotifyAlwaysMarkMajorCheckpoints();
 
 
-void ReportFatalError(const char* aFormat, ...);
-
-
 void BeginIdleTime();
 void EndIdleTime();
 
@@ -129,6 +126,10 @@ bool DebuggerRunsInMiddleman();
 void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
                               InfallibleVector<char>* aOutputData);
 void SendResetMiddlemanCalls();
+
+
+
+bool CurrentRepaintCannotFail();
 
 } 
 

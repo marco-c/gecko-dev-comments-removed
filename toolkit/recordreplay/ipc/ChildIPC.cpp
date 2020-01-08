@@ -475,6 +475,9 @@ static Atomic<int32_t, SequentiallyConsistent, Behavior::DontPreserve> gNumPendi
 
 static Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> gCompositorThreadId;
 
+
+static bool gAllowRepaintFailures;
+
 already_AddRefed<gfx::DrawTarget>
 DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize)
 {
@@ -521,6 +524,17 @@ void
 NotifyPaintStart()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  static bool gPainted;
+  if (!gPainted) {
+    gPainted = true;
+
+    
+    gAllowRepaintFailures =
+      Preferences::GetBool("devtools.recordreplay.allowRepaintFailures") &&
+      !parent::InRepaintStressMode();
+  }
 
   
   
@@ -571,6 +585,9 @@ NotifyPaintComplete()
 
 static bool gDidRepaint;
 
+
+static bool gRepainting;
+
 void
 Repaint(size_t* aWidth, size_t* aHeight)
 {
@@ -588,6 +605,7 @@ Repaint(size_t* aWidth, size_t* aHeight)
   
   if (!gDidRepaint) {
     gDidRepaint = true;
+    gRepainting = true;
 
     
     
@@ -611,6 +629,7 @@ Repaint(size_t* aWidth, size_t* aHeight)
     }
 
     Thread::WaitForIdleThreads();
+    gRepainting = false;
   }
 
   if (gDrawTargetBuffer) {
@@ -621,6 +640,12 @@ Repaint(size_t* aWidth, size_t* aHeight)
     *aWidth = 0;
     *aHeight = 0;
   }
+}
+
+bool
+CurrentRepaintCannotFail()
+{
+  return gRepainting && !gAllowRepaintFailures;
 }
 
 
