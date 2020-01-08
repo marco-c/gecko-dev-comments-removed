@@ -206,11 +206,11 @@ class TabBar(UIBaseLib):
         
         
         handle = marionette.execute_script("""
-          let win = arguments[0].linkedBrowser;
-          if (!win) {
+          let browser = arguments[0].linkedBrowser;
+          if (!browser || browser.outerWindowID == null) {
             return null;
           }
-          return win.outerWindowID.toString();
+          return browser.outerWindowID.toString();
         """, script_args=[tab_element])
 
         return handle
