@@ -16,12 +16,12 @@ const { LongStringActor } = require("devtools/server/actors/string");
 
 
 const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
-  initialize(webConsoleActor) {
+  initialize(netMonitorActor) {
     
-    protocol.Actor.prototype.initialize.call(this, webConsoleActor.conn);
+    protocol.Actor.prototype.initialize.call(this, netMonitorActor.conn);
 
-    this.webConsoleActor = webConsoleActor;
-    this.conn = this.webConsoleActor.conn;
+    this.netMonitorActor = netMonitorActor;
+    this.conn = this.netMonitorActor.conn;
 
     this._request = {
       method: null,
@@ -72,22 +72,17 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   destroy(conn) {
-    if (!this.webConsoleActor) {
+    if (!this.netMonitorActor) {
       return;
     }
     if (this._request.url) {
-      this.webConsoleActor._networkEventActorsByURL.delete(this._request.url);
+      this.netMonitorActor._networkEventActorsByURL.delete(this._request.url);
     }
     if (this.channel) {
-      this.webConsoleActor._netEvents.delete(this.channel);
+      this.netMonitorActor._netEvents.delete(this.channel);
     }
 
-    
-    
-    const actor = this.webConsoleActor;
-    this.webConsoleActor = null;
-    actor.releaseActor(this);
-
+    this.netMonitorActor = null;
     protocol.Actor.prototype.destroy.call(this, conn);
   },
 
