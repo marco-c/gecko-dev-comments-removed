@@ -91,12 +91,13 @@
 
 
 
+
  \
     macro(JSOP_NOP, 0, "nop", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     /* Long-standing JavaScript bytecodes. */ \
     /*
      * Pushes 'undefined' onto the stack.
+     *
      *   Category: Literals
      *   Type: Constants
      *   Operands:
@@ -104,6 +105,7 @@
      */ \
     macro(JSOP_UNDEFINED, 1, js_undefined_str, "", 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -122,9 +124,11 @@
 
 
 
+
  \
     macro(JSOP_ENTERWITH, 3, "enterwith", NULL, 5, 1, 0, JOF_SCOPE) \
     
+
 
 
 
@@ -139,6 +143,7 @@
 
 
 
+
  \
     macro(JSOP_RETURN, 5, "return", NULL, 1, 1, 0, JOF_BYTE) \
     
@@ -147,9 +152,11 @@
 
 
 
+
  \
     macro(JSOP_GOTO, 6, "goto", NULL, 5, 0, 0, JOF_JUMP) \
     
+
 
 
 
@@ -169,10 +176,11 @@
 
 
 
+
  \
     macro(JSOP_IFNE, 8, "ifne", NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
-    \
     
+
 
 
 
@@ -186,8 +194,8 @@
 
  \
     macro(JSOP_ARGUMENTS, 9, "arguments", NULL, 1, 0, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -203,11 +211,12 @@
 
 
 
+
  \
     macro(JSOP_POPN, 11, "popn", NULL, 3, -1, 0, JOF_UINT16) \
-    \
      \
     
+
 
 
 
@@ -221,10 +230,11 @@
 
 
 
+
  \
     macro(JSOP_DUP2, 13, "dup2", NULL, 1, 2, 4, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -234,8 +244,8 @@
 
  \
     macro(JSOP_CHECKISOBJ, 14, "checkisobj", NULL, 2, 1, 1, JOF_UINT8) \
-    \
     
+
 
 
 
@@ -248,6 +258,7 @@
     macro(JSOP_BITXOR, 16, "bitxor", "^", 1, 2, 1, JOF_BYTE|JOF_IC) \
     macro(JSOP_BITAND, 17, "bitand", "&", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
 
 
 
@@ -268,10 +279,12 @@
 
 
 
+
  \
     macro(JSOP_LSH, 24, "lsh", "<<", 1, 2, 1, JOF_BYTE|JOF_IC) \
     macro(JSOP_RSH, 25, "rsh", ">>", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
 
 
 
@@ -287,9 +300,11 @@
 
 
 
+
  \
     macro(JSOP_ADD, 27, "add", "+", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
 
 
 
@@ -307,9 +322,11 @@
 
 
 
+
  \
     macro(JSOP_NOT, 32, "not", "!", 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     
+
 
 
 
@@ -323,9 +340,11 @@
 
 
 
+
  \
     macro(JSOP_NEG, 34, "neg", "- ", 1, 1, 1, JOF_BYTE|JOF_IC) \
     
+
 
 
 
@@ -344,9 +363,11 @@
 
 
 
+
  \
     macro(JSOP_DELNAME, 36, "delname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY) \
     
+
 
 
 
@@ -363,9 +384,11 @@
 
 
 
+
  \
     macro(JSOP_DELELEM, 38, "delelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSLOPPY) \
     
+
 
 
 
@@ -379,10 +402,11 @@
 
 
 
+
  \
     macro(JSOP_VOID, 40, js_void_str, NULL, 1, 1, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -404,6 +428,7 @@
 
 
 
+
  \
     macro(JSOP_SPREADNEW, 42, "spreadnew", NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
@@ -417,10 +442,11 @@
 
 
 
+
  \
     macro(JSOP_SPREADEVAL, 43, "spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
-    \
     
+
 
 
 
@@ -429,8 +455,8 @@
 
  \
     macro(JSOP_DUPAT, 44, "dupat", NULL, 4, 0, 1, JOF_UINT24) \
-    \
     
+
 
 
 
@@ -438,8 +464,8 @@
 
  \
     macro(JSOP_SYMBOL, 45, "symbol", NULL, 2, 0, 1, JOF_UINT8) \
-    \
     
+
 
 
 
@@ -458,6 +484,7 @@
 
 
 
+
  \
     macro(JSOP_STRICTDELELEM, 47, "strict-delelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSTRICT) \
     
@@ -468,9 +495,11 @@
 
 
 
+
  \
     macro(JSOP_STRICTSETPROP, 48, "strict-setprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT|JOF_IC) \
     
+
 
 
 
@@ -491,9 +520,12 @@
 
 
 
+
  \
     macro(JSOP_STRICTSPREADEVAL, 50, "strict-spreadeval", NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
     
+
+
 
 
 
@@ -507,10 +539,11 @@
 
 
 
+
  \
     macro(JSOP_FUNWITHPROTO, 52, "funwithproto", NULL, 5, 1, 1, JOF_OBJECT) \
-    \
     
+
 
 
 
@@ -525,9 +558,11 @@
 
 
 
+
  \
     macro(JSOP_SETPROP, 54, "setprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC) \
     
+
 
 
 
@@ -565,9 +600,12 @@
 
 
 
+
  \
     macro(JSOP_CALL, 58, "call", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
+
+
 
 
 
@@ -581,9 +619,11 @@
 
 
 
+
  \
     macro(JSOP_DOUBLE, 60, "double", NULL, 5, 0, 1, JOF_DOUBLE) \
     
+
 
 
 
@@ -597,9 +637,11 @@
 
 
 
+
  \
     macro(JSOP_ZERO, 62, "zero", "0", 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -613,6 +655,7 @@
 
 
 
+
  \
     macro(JSOP_NULL, 64, js_null_str, js_null_str, 1, 0, 1, JOF_BYTE) \
     
@@ -621,9 +664,11 @@
 
 
 
+
  \
     macro(JSOP_IS_CONSTRUCTING, 65, "is-constructing", NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -639,6 +684,7 @@
 
 
 
+
  \
     macro(JSOP_OR, 68, "or", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC) \
     
@@ -648,10 +694,12 @@
 
 
 
+
  \
     macro(JSOP_AND, 69, "and", NULL, 5, 1, 1, JOF_JUMP|JOF_DETECTING|JOF_IC) \
-    \
     
+
+
 
 
 
@@ -665,8 +713,8 @@
 
  \
     macro(JSOP_TABLESWITCH, 70, "tableswitch", NULL, -1, 1, 0, JOF_TABLESWITCH|JOF_DETECTING|JOF_IC) \
-    \
     
+
 
 
 
@@ -675,9 +723,9 @@
 
  \
     macro(JSOP_RUNONCE, 71, "runonce", NULL, 1, 0, 0, JOF_BYTE) \
-    \
      \
     
+
 
 
 
@@ -687,7 +735,6 @@
  \
     macro(JSOP_STRICTEQ, 72, "stricteq", "===", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
     macro(JSOP_STRICTNE, 73, "strictne", "!==", 1, 2, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
-    \
     
 
 
@@ -699,8 +746,8 @@
 
  \
     macro(JSOP_THROWMSG, 74, "throwmsg", NULL, 3, 0, 0, JOF_UINT16) \
-    \
     
+
 
 
 
@@ -736,10 +783,11 @@
 
 
 
+
  \
     macro(JSOP_ENDITER, 78, "enditer", NULL, 1, 1, 0, JOF_BYTE|JOF_IC) \
-    \
     
+
 
 
 
@@ -751,8 +799,8 @@
 
  \
     macro(JSOP_FUNAPPLY, 79, "funapply", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    \
     
+
 
 
 
@@ -760,8 +808,8 @@
 
  \
     macro(JSOP_OBJECT, 80, "object", NULL, 5, 0, 1, JOF_OBJECT) \
-    \
     
+
 
 
 
@@ -769,8 +817,8 @@
 
  \
     macro(JSOP_POP, 81, "pop", NULL, 1, 1, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -789,8 +837,8 @@
 
  \
     macro(JSOP_OBJWITHPROTO, 83, "objwithproto", NULL, 1, 1, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -808,9 +856,11 @@
 
 
 
+
  \
     macro(JSOP_SETARG, 85, "setarg", NULL, 3, 1, 1, JOF_QARG|JOF_NAME) \
     
+
 
 
 
@@ -824,10 +874,11 @@
 
 
 
+
  \
     macro(JSOP_SETLOCAL, 87, "setlocal", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING) \
-    \
     
+
 
 
 
@@ -835,9 +886,9 @@
 
  \
     macro(JSOP_UINT16, 88, "uint16", NULL, 3, 0, 1, JOF_UINT16) \
-    \
      \
     
+
 
 
 
@@ -856,6 +907,7 @@
 
 
 
+
  \
     macro(JSOP_NEWARRAY, 90, "newarray", NULL, 5, 0, 1, JOF_UINT32|JOF_IC) \
     
@@ -867,10 +919,11 @@
 
 
 
+
  \
     macro(JSOP_NEWOBJECT, 91, "newobject", NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
-    \
     
+
 
 
 
@@ -881,8 +934,8 @@
 
  \
     macro(JSOP_INITHOMEOBJECT, 92, "inithomeobject", NULL, 2, 2, 2, JOF_UINT8) \
-    \
     
+
 
 
 
@@ -893,8 +946,8 @@
 
  \
     macro(JSOP_INITPROP, 93, "initprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
-    \
     
+
 
 
 
@@ -905,8 +958,8 @@
 
  \
     macro(JSOP_INITELEM, 94, "initelem", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
-    \
     
+
 
 
 
@@ -919,8 +972,8 @@
 
  \
     macro(JSOP_INITELEM_INC, 95, "initelem_inc", NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
-    \
     
+
 
 
 
@@ -931,8 +984,8 @@
 
  \
     macro(JSOP_INITELEM_ARRAY, 96, "initelem_array", NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
-    \
     
+
 
 
 
@@ -952,9 +1005,11 @@
 
 
 
+
  \
     macro(JSOP_INITPROP_SETTER, 98, "initprop_setter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
     
+
 
 
 
@@ -976,6 +1031,7 @@
 
 
 
+
  \
     macro(JSOP_INITELEM_SETTER, 100, "initelem_setter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING) \
     
@@ -986,9 +1042,10 @@
 
 
 
+
+
  \
     macro(JSOP_CALLSITEOBJ, 101, "callsiteobj", NULL, 5, 0, 1, JOF_OBJECT) \
-    \
     
 
 
@@ -999,8 +1056,8 @@
 
  \
     macro(JSOP_NEWARRAY_COPYONWRITE, 102, "newarray_copyonwrite", NULL, 5, 0, 1, JOF_OBJECT) \
-    \
     
+
 
 
 
@@ -1010,6 +1067,7 @@
  \
     macro(JSOP_SUPERBASE, 103, "superbase", NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -1026,10 +1084,12 @@
 
 
 
+
+
  \
     macro(JSOP_STRICTSETPROP_SUPER, 105, "strictsetprop-super", NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT) \
-    \
     
+
 
 
 
@@ -1040,8 +1100,8 @@
 
  \
     macro(JSOP_LABEL, 106, "label", NULL, 5, 0, 0, JOF_JUMP) \
-    \
     
+
 
 
 
@@ -1050,8 +1110,8 @@
 
  \
     macro(JSOP_SETPROP_SUPER, 107, "setprop-super", NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY) \
-    \
     
+
 
 
 
@@ -1068,8 +1128,8 @@
 
  \
     macro(JSOP_FUNCALL, 108, "funcall", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
-    \
     
+
 
 
 
@@ -1079,9 +1139,9 @@
 
  \
     macro(JSOP_LOOPHEAD, 109, "loophead", NULL, 1, 0, 0, JOF_BYTE) \
-    \
      \
     
+
 
 
 
@@ -1098,9 +1158,9 @@
 
 
 
+
  \
     macro(JSOP_SETNAME, 111, "setname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC) \
-    \
      \
     
 
@@ -1109,10 +1169,11 @@
 
 
 
+
  \
     macro(JSOP_THROW, 112, js_throw_str, NULL, 1, 1, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1131,10 +1192,11 @@
 
 
 
+
  \
     macro(JSOP_INSTANCEOF, 114, js_instanceof_str, js_instanceof_str, 1, 2, 1, JOF_BYTE|JOF_IC) \
-    \
     
+
 
 
 
@@ -1142,8 +1204,8 @@
 
  \
     macro(JSOP_DEBUGGER, 115, "debugger", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1173,7 +1235,6 @@
 
  \
     macro(JSOP_RETSUB, 117, "retsub", NULL, 1, 2, 0, JOF_BYTE) \
-    \
      \
     
 
@@ -1184,18 +1245,20 @@
 
 
 
+
  \
     macro(JSOP_EXCEPTION, 118, "exception", NULL, 1, 0, 1, JOF_BYTE) \
-    \
     
+
 
 
 
 
  \
     macro(JSOP_LINENO, 119, "lineno", NULL, 5, 0, 0, JOF_UINT32) \
-    \
     
+
+
 
 
 
@@ -1236,6 +1299,7 @@
 
 
 
+
  \
     macro(JSOP_CASE, 121, "case", NULL, 5, 2, 1, JOF_JUMP) \
     
@@ -1247,11 +1311,12 @@
 
 
 
+
  \
     macro(JSOP_DEFAULT, 122, "default", NULL, 5, 1, 0, JOF_JUMP) \
-    \
      \
     
+
 
 
 
@@ -1263,9 +1328,9 @@
 
  \
     macro(JSOP_EVAL, 123, "eval", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
-    \
      \
     
+
 
 
 
@@ -1278,6 +1343,7 @@
  \
     macro(JSOP_STRICTEVAL, 124, "strict-eval", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
     
+
 
 
 
@@ -1298,8 +1364,8 @@
 
  \
     macro(JSOP_RESUMEINDEX, 126, "resume-index", NULL, 4, 0, 1, JOF_UINT24) \
-    \
     
+
 
 
 
@@ -1311,6 +1377,8 @@
  \
     macro(JSOP_DEFFUN, 127, "deffun", NULL, 1, 1, 0, JOF_BYTE) \
     
+
+
 
 
 
@@ -1335,10 +1403,11 @@
 
 
 
+
  \
     macro(JSOP_DEFVAR, 129, "defvar", NULL, 5, 0, 0, JOF_ATOM) \
-    \
     
+
 
 
 
@@ -1354,10 +1423,11 @@
 
 
 
+
  \
     macro(JSOP_LAMBDA_ARROW, 131, "lambda_arrow", NULL, 5, 1, 1, JOF_OBJECT) \
-    \
     
+
 
 
 
@@ -1367,8 +1437,8 @@
 
  \
     macro(JSOP_CALLEE, 132, "callee", NULL, 1, 0, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1377,8 +1447,8 @@
 
  \
     macro(JSOP_PICK, 133, "pick", NULL, 2, 0, 0, JOF_UINT8) \
-    \
     
+
 
 
 
@@ -1396,10 +1466,11 @@
 
 
 
+
  \
     macro(JSOP_FINALLY, 135, "finally", NULL, 1, 0, 2, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1425,10 +1496,11 @@
 
 
 
+
  \
     macro(JSOP_SETALIASEDVAR, 137, "setaliasedvar", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_IC) \
-    \
     
+
 
 
 
@@ -1444,9 +1516,11 @@
 
 
 
+
  \
     macro(JSOP_INITLEXICAL, 139, "initlexical", NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME|JOF_DETECTING) \
     
+
 
 
 
@@ -1462,9 +1536,11 @@
 
 
 
+
  \
     macro(JSOP_INITALIASEDLEXICAL, 141, "initaliasedlexical", NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
     
+
 
 
 
@@ -1486,6 +1562,8 @@
 
 
 
+
+
  \
     macro(JSOP_GETINTRINSIC, 143, "getintrinsic", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
     
@@ -1494,9 +1572,11 @@
 
 
 
+
  \
     macro(JSOP_SETINTRINSIC, 144, "setintrinsic", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_DETECTING) \
     
+
 
 
 
@@ -1515,9 +1595,12 @@
 
 
 
+
+
  \
     macro(JSOP_INITLOCKEDPROP, 146, "initlockedprop", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING|JOF_IC) \
     
+
 
 
 
@@ -1544,6 +1627,7 @@
 
 
 
+
  \
     macro(JSOP_TOASYNC, 149, "toasync", NULL, 1, 1, 1, JOF_BYTE) \
     
@@ -1553,10 +1637,11 @@
 
 
 
+
  \
     macro(JSOP_POW, 150, "pow", "**", 1, 2, 1, JOF_BYTE|JOF_IC) \
-    \
     
+
 
 
 
@@ -1567,8 +1652,8 @@
 
  \
     macro(JSOP_THROWING, 151, "throwing", NULL, 1, 1, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1587,10 +1672,11 @@
 
 
 
+
  \
     macro(JSOP_RETRVAL, 153, "retrval", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1613,10 +1699,11 @@
 
 
 
+
  \
     macro(JSOP_SETGNAME, 155, "setgname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC) \
-    \
     
+
 
 
 
@@ -1653,6 +1740,7 @@
 
 
 
+
  \
     macro(JSOP_SETELEM_SUPER, 158, "setelem-super", NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY) \
     
@@ -1662,10 +1750,11 @@
 
 
 
+
  \
     macro(JSOP_STRICTSETELEM_SUPER, 159, "strict-setelem-super", NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSTRICT) \
-    \
     
+
 
 
 
@@ -1674,8 +1763,8 @@
 
  \
     macro(JSOP_REGEXP, 160, "regexp", NULL, 5, 0, 1, JOF_REGEXP) \
-    \
     
+
 
 
 
@@ -1684,8 +1773,9 @@
 
  \
     macro(JSOP_INITGLEXICAL, 161, "initglexical", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_PROPINIT|JOF_GNAME|JOF_IC) \
-    \
     
+
+
 
 
 
@@ -1697,6 +1787,8 @@
  \
     macro(JSOP_DEFLET, 162, "deflet", NULL, 5, 0, 0, JOF_ATOM) \
     
+
+
 
 
 
@@ -1714,6 +1806,7 @@
  \
     macro(JSOP_SUPERFUN, 164, "superfun", NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -1781,6 +1874,7 @@
 
 
 
+
  \
     macro(JSOP_INITHIDDENPROP_GETTER, 171, "inithiddenprop_getter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
     
@@ -1792,9 +1886,11 @@
 
 
 
+
  \
     macro(JSOP_INITHIDDENPROP_SETTER, 172, "inithiddenprop_setter", NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_DETECTING) \
     
+
 
 
 
@@ -1816,9 +1912,12 @@
 
 
 
+
  \
     macro(JSOP_INITHIDDENELEM_SETTER, 174, "inithiddenelem_setter", NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_DETECTING) \
     
+
+
 
 
 
@@ -1835,6 +1934,7 @@
 
 
 
+
  \
     macro(JSOP_GETIMPORT, 176, "getimport", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
     
@@ -1844,9 +1944,11 @@
 
 
 
+
  \
     macro(JSOP_DEBUGCHECKSELFHOSTED, 177, "debug-checkselfhosted", NULL, 1, 1, 1, JOF_BYTE) \
     
+
 
 
 
@@ -1875,9 +1977,11 @@
 
 
 
+
  \
     macro(JSOP_PUSHVARENV, 180, "pushvarenv", NULL, 5, 0, 0, JOF_SCOPE) \
     
+
 
 
 
@@ -1893,6 +1997,7 @@
 
 
 
+
  \
     macro(JSOP_SETFUNNAME, 182, "setfunname", NULL, 2, 2, 1, JOF_UINT8) \
     
@@ -1901,9 +2006,11 @@
 
 
 
+
  \
     macro(JSOP_UNPICK, 183, "unpick", NULL, 2, 0, 0, JOF_UINT8) \
     
+
 
 
 
@@ -1920,9 +2027,12 @@
 
 
 
+
+
  \
     macro(JSOP_FUNCTIONTHIS, 185, "functionthis", NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -1947,9 +2057,11 @@
 
 
 
+
  \
     macro(JSOP_UINT24, 188, "uint24", NULL, 4, 0, 1, JOF_UINT24) \
     
+
 
 
 
@@ -1966,9 +2078,11 @@
 
 
 
+
  \
     macro(JSOP_CHECKRETURN, 190, "checkreturn", NULL, 1, 1, 0, JOF_BYTE) \
     
+
 
 
 
@@ -1984,10 +2098,11 @@
 
 
 
+
  \
     macro(JSOP_TOASYNCGEN, 192, "toasyncgen", NULL, 1, 1, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -1998,8 +2113,8 @@
 
  \
     macro(JSOP_CALLELEM, 193, "callelem", NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
-    \
     
+
 
 
 
@@ -2011,8 +2126,8 @@
 
  \
     macro(JSOP_MUTATEPROTO, 194, "mutateproto", NULL, 1, 2, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -2022,8 +2137,8 @@
 
  \
     macro(JSOP_GETBOUNDNAME, 195, "getboundname", NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
-    \
     
+
 
 
 
@@ -2034,9 +2149,9 @@
 
  \
     macro(JSOP_TYPEOFEXPR, 196, "typeofexpr", NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
-    \
      \
     
+
 
 
 
@@ -2057,9 +2172,11 @@
 
 
 
+
  \
     macro(JSOP_RECREATELEXICALENV, 198, "recreatelexicalenv", NULL, 1, 0, 0, JOF_BYTE) \
     
+
 
 
 
@@ -2073,6 +2190,7 @@
 
 
 
+
  \
     macro(JSOP_POPLEXICALENV, 200, "poplexicalenv", NULL, 1, 0, 0, JOF_BYTE) \
     
@@ -2081,10 +2199,11 @@
 
 
 
+
  \
     macro(JSOP_DEBUGLEAVELEXICALENV, 201, "debugleavelexicalenv", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -2100,9 +2219,11 @@
 
 
 
+
  \
     macro(JSOP_YIELD, 203, "yield", NULL, 4, 2, 1, JOF_UINT24) \
     
+
 
 
 
@@ -2119,11 +2240,12 @@
 
 
 
+
  \
     macro(JSOP_RESUME, 205, "resume", NULL, 3, 2, 1, JOF_UINT8|JOF_INVOKE) \
-    \
+    
+ \
     macro(JSOP_UNUSED206, 206, "unused206", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     
 
 
@@ -2133,7 +2255,6 @@
 
  \
     macro(JSOP_FORCEINTERPRETER, 207, "forceinterpreter", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     
 
 
@@ -2151,9 +2272,11 @@
 
 
 
+
  \
     macro(JSOP_AWAIT, 209, "await", NULL, 4, 2, 1, JOF_UINT24) \
     
+
 
 
 
@@ -2172,9 +2295,11 @@
 
 
 
+
  \
     macro(JSOP_HASOWN, 211, "hasown", NULL, 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
 
 
 
@@ -2201,10 +2326,11 @@
 
 
 
+
  \
     macro(JSOP_BINDGNAME, 214, "bindgname", NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC) \
-    \
     
+
 
 
 
@@ -2218,10 +2344,11 @@
 
 
 
+
  \
     macro(JSOP_INT32, 216, "int32", NULL, 5, 0, 1, JOF_INT32) \
-    \
     
+
 
 
 
@@ -2230,8 +2357,8 @@
 
  \
     macro(JSOP_LENGTH, 217, "length", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
-    \
     
+
 
 
 
@@ -2242,8 +2369,8 @@
 
  \
     macro(JSOP_HOLE, 218, "hole", NULL, 1, 0, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -2253,8 +2380,8 @@
 
  \
     macro(JSOP_CHECKISCALLABLE, 219, "checkiscallable", NULL, 2, 1, 1, JOF_UINT8) \
-    \
     
+
 
 
 
@@ -2263,8 +2390,8 @@
 
  \
     macro(JSOP_TRY_DESTRUCTURING_ITERCLOSE, 220, "try-destructuring-iterclose", NULL, 1, 0, 0, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -2272,8 +2399,8 @@
 
  \
     macro(JSOP_BUILTINPROTO, 221, "builtinproto", NULL, 2, 0, 1, JOF_UINT8) \
-    \
     
+
 
 
 
@@ -2291,10 +2418,11 @@
 
 
 
+
  \
     macro(JSOP_TRYSKIPAWAIT, 223, "tryskipawait", NULL, 1, 1, 2, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -2303,8 +2431,8 @@
 
  \
     macro(JSOP_REST, 224, "rest", NULL, 1, 0, 1, JOF_BYTE|JOF_TYPESET|JOF_IC) \
-    \
     
+
 
 
 
@@ -2313,8 +2441,8 @@
 
  \
     macro(JSOP_TOID, 225, "toid", NULL, 1, 1, 1, JOF_BYTE) \
-    \
     
+
 
 
 
@@ -2323,8 +2451,8 @@
 
  \
     macro(JSOP_IMPLICITTHIS, 226, "implicitthis", "", 5, 0, 1, JOF_ATOM) \
-    \
     
+
 
 
 
@@ -2342,9 +2470,11 @@
 
 
 
+
  \
     macro(JSOP_TOSTRING, 228, "tostring", NULL, 1, 1, 1, JOF_BYTE) \
     
+
 
 
 
@@ -2360,9 +2490,11 @@
 
 
 
+
  \
     macro(JSOP_JUMPTARGET, 230, "jumptarget", NULL, 1, 0, 0, JOF_BYTE)\
     
+
 
 
 
