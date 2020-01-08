@@ -187,7 +187,14 @@
 
 #if (defined(__ARM_ARCH) && (__ARM_ARCH == 8)) || \
     defined(__aarch64__) || defined(__ARM64_ARCH_8__)
-#define BROTLI_TARGET_ARMV8
+#define BROTLI_TARGET_ARMV8_ANY
+
+#if defined(__ARM_32BIT_STATE)
+#define BROTLI_TARGET_ARMV8_32
+#elif defined(__ARM_64BIT_STATE)
+#define BROTLI_TARGET_ARMV8_64
+#endif
+
 #endif  
 
 #if defined(__i386) || defined(_M_IX86)
@@ -210,7 +217,7 @@
 #define BROTLI_64_BITS 1
 #elif defined(BROTLI_BUILD_32_BIT)
 #define BROTLI_64_BITS 0
-#elif defined(BROTLI_TARGET_X64) || defined(BROTLI_TARGET_ARMV8) || \
+#elif defined(BROTLI_TARGET_X64) || defined(BROTLI_TARGET_ARMV8_64) || \
     defined(BROTLI_TARGET_POWERPC64) || defined(BROTLI_TARGET_RISCV64)
 #define BROTLI_64_BITS 1
 #else
@@ -261,7 +268,7 @@
 #if defined(BROTLI_BUILD_PORTABLE)
 #define BROTLI_ALIGNED_READ (!!1)
 #elif defined(BROTLI_TARGET_X86) || defined(BROTLI_TARGET_X64) || \
-    defined(BROTLI_TARGET_ARMV7) || defined(BROTLI_TARGET_ARMV8) || \
+    defined(BROTLI_TARGET_ARMV7) || defined(BROTLI_TARGET_ARMV8_ANY) || \
     defined(BROTLI_TARGET_RISCV64)
 
 #define BROTLI_ALIGNED_READ (!!0)
@@ -291,6 +298,33 @@ static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
 }
 #else  
 
+#if defined(ADDRESS_SANITIZER) || defined(THREAD_SANITIZER) || \
+    defined(MEMORY_SANITIZER)
+
+
+
+
+
+
+
+
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+  uint16_t __sanitizer_unaligned_load16(const void* p);
+  uint32_t __sanitizer_unaligned_load32(const void* p);
+  uint64_t __sanitizer_unaligned_load64(const void* p);
+  void __sanitizer_unaligned_store64(void* p, uint64_t v);
+#if defined(__cplusplus)
+}  
+#endif  
+#define BrotliUnalignedRead16 __sanitizer_unaligned_load16
+#define BrotliUnalignedRead32 __sanitizer_unaligned_load32
+#define BrotliUnalignedRead64 __sanitizer_unaligned_load64
+#define BrotliUnalignedWrite64 __sanitizer_unaligned_store64
+#else
 static BROTLI_INLINE uint16_t BrotliUnalignedRead16(const void* p) {
   return *(const uint16_t*)p;
 }
@@ -306,17 +340,32 @@ static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
 }
 #else  
 
+
+
+#if BROTLI_GNUC_HAS_ATTRIBUTE(aligned, 2, 7, 0)
+typedef  __attribute__((aligned(1))) uint64_t brotli_unaligned_uint64_t;
+
 static BROTLI_INLINE uint64_t BrotliUnalignedRead64(const void* p) {
-  const uint32_t* dwords = (const uint32_t*)p;
-  return dwords[0] | ((uint64_t)dwords[1] << 32);
+  return (uint64_t) ((brotli_unaligned_uint64_t*) p)[0];
 }
 static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
-  uint32_t* dwords = (uint32_t *)p;
-  dwords[0] = (uint32_t)v;
-  dwords[1] = (uint32_t)(v >> 32);
+  brotli_unaligned_uint64_t* dwords = (brotli_unaligned_uint64_t*) p;
+  dwords[0] = (brotli_unaligned_uint64_t) v;
+}
+#else 
+static BROTLI_INLINE uint64_t BrotliUnalignedRead64(const void* p) {
+  uint64_t v;
+  memcpy(&v, p, sizeof(uint64_t));
+  return v;
+}
+
+static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
+  memcpy(p, &v, sizeof(uint64_t));
 }
 #endif  
 #endif  
+#endif
+#endif
 
 #if BROTLI_LITTLE_ENDIAN
 
@@ -400,7 +449,7 @@ static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64LE(void* p, uint64_t v) {
 #define BROTLI_IS_CONSTANT(x) (!!0)
 #endif
 
-#if defined(BROTLI_TARGET_ARMV7) || defined(BROTLI_TARGET_ARMV8)
+#if defined(BROTLI_TARGET_ARMV7) || defined(BROTLI_TARGET_ARMV8_ANY)
 #define BROTLI_HAS_UBFX (!!1)
 #else
 #define BROTLI_HAS_UBFX (!!0)
@@ -427,7 +476,7 @@ static BROTLI_INLINE void BrotliDump(const char* f, int l, const char* fn) {
 
 #if (BROTLI_GNUC_VERSION_CHECK(3, 0, 0) || defined(__llvm__)) && \
     !defined(BROTLI_BUILD_NO_RBIT)
-#if defined(BROTLI_TARGET_ARMV7) || defined(BROTLI_TARGET_ARMV8)
+#if defined(BROTLI_TARGET_ARMV7) || defined(BROTLI_TARGET_ARMV8_ANY)
 
 static BROTLI_INLINE brotli_reg_t BrotliRBit(brotli_reg_t input) {
   brotli_reg_t output;
@@ -506,4 +555,4 @@ BROTLI_UNUSED_FUNCTION void BrotliSuppressUnusedFunctions(void) {
 #endif
 }
 
-#endif  
+#endif
