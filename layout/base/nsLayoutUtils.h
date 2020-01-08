@@ -801,25 +801,25 @@ class nsLayoutUtils {
   static mozilla::LayoutDeviceIntPoint WidgetToWidgetOffset(
       nsIWidget* aFromWidget, nsIWidget* aToWidget);
 
-  enum FrameForPointFlags {
+  enum class FrameForPointOption {
     
 
 
 
-    IGNORE_PAINT_SUPPRESSION = 0x01,
+    IgnorePaintSuppression = 1,
     
 
 
 
-    IGNORE_ROOT_SCROLL_FRAME = 0x02,
+    IgnoreRootScrollFrame,
     
 
 
-    IGNORE_CROSS_DOC = 0x04,
+    IgnoreCrossDoc,
     
 
 
-    ONLY_VISIBLE = 0x08
+    OnlyVisible,
   };
 
   
@@ -830,7 +830,7 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetFrameForPoint(nsIFrame* aFrame, nsPoint aPt,
-                                    uint32_t aFlags = 0);
+                                    mozilla::EnumSet<FrameForPointOption> = {});
 
   
 
@@ -842,7 +842,7 @@ class nsLayoutUtils {
 
   static nsresult GetFramesForArea(nsIFrame* aFrame, const nsRect& aRect,
                                    nsTArray<nsIFrame*>& aOutFrames,
-                                   uint32_t aFlags = 0);
+                                   mozilla::EnumSet<FrameForPointOption> = {});
 
   
 

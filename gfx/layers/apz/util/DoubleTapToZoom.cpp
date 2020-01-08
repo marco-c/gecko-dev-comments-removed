@@ -23,6 +23,10 @@
 namespace mozilla {
 namespace layers {
 
+namespace {
+
+using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
+
 
 
 
@@ -33,24 +37,30 @@ namespace layers {
 
 static already_AddRefed<dom::Element> ElementFromPoint(
     const nsCOMPtr<nsIPresShell>& aShell, const CSSPoint& aPoint) {
-  if (nsIFrame* rootFrame = aShell->GetRootFrame()) {
-    if (nsIFrame* frame = nsLayoutUtils::GetFrameForPoint(
-            rootFrame, CSSPoint::ToAppUnits(aPoint),
-            nsLayoutUtils::IGNORE_PAINT_SUPPRESSION |
-                nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME)) {
-      while (frame && (!frame->GetContent() ||
-                       frame->GetContent()->IsInAnonymousSubtree())) {
-        frame = nsLayoutUtils::GetParentOrPlaceholderFor(frame);
-      }
-      nsIContent* content = frame->GetContent();
-      if (content && !content->IsElement()) {
-        content = content->GetParent();
-      }
-      if (content) {
-        nsCOMPtr<dom::Element> result = content->AsElement();
-        return result.forget();
-      }
-    }
+  nsIFrame* rootFrame = aShell->GetRootFrame();
+  if (!rootFrame) {
+    return nullptr;
+  }
+  nsIFrame* frame = nsLayoutUtils::GetFrameForPoint(
+      rootFrame, CSSPoint::ToAppUnits(aPoint),
+      {FrameForPointOption::IgnorePaintSuppression,
+       FrameForPointOption::IgnoreRootScrollFrame});
+  while (frame && (!frame->GetContent() ||
+                   frame->GetContent()->IsInAnonymousSubtree())) {
+    frame = nsLayoutUtils::GetParentOrPlaceholderFor(frame);
+  }
+  if (!frame) {
+    return nullptr;
+  }
+  
+  
+  nsIContent* content = frame->GetContent();
+  if (content && !content->IsElement()) {
+    content = content->GetParent();
+  }
+  if (content && content->IsElement()) {
+    nsCOMPtr<dom::Element> result = content->AsElement();
+    return result.forget();
   }
   return nullptr;
 }
@@ -83,6 +93,8 @@ static bool IsRectZoomedIn(const CSSRect& aRect,
 
   return showing > 0.9 && (ratioW > 0.9 || ratioH > 0.9);
 }
+
+}  
 
 CSSRect CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
                               const CSSPoint& aPoint) {

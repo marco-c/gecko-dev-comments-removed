@@ -637,6 +637,10 @@ static nsIFrame* UpdateRootFrameForTouchTargetDocument(nsIFrame* aRootFrame) {
   return aRootFrame;
 }
 
+namespace {
+
+using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
+
 
 
 
@@ -648,15 +652,16 @@ static bool PrepareForSetTargetAPZCNotification(
                            ScrollableLayerGuid::NULL_SCROLL_ID);
   nsPoint point = nsLayoutUtils::GetEventCoordinatesRelativeTo(
       aWidget, aRefPoint, aRootFrame);
-  uint32_t flags = 0;
+  EnumSet<FrameForPointOption> options;
   if (gfxPrefs::APZAllowZooming()) {
     
     
     
     
-    flags = nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME;
+    options += FrameForPointOption::IgnoreRootScrollFrame;
   }
-  nsIFrame* target = nsLayoutUtils::GetFrameForPoint(aRootFrame, point, flags);
+  nsIFrame* target =
+      nsLayoutUtils::GetFrameForPoint(aRootFrame, point, options);
   nsIScrollableFrame* scrollAncestor =
       target ? nsLayoutUtils::GetAsyncScrollableAncestorFrame(target)
              : aRootFrame->PresShell()->GetRootScrollFrameAsScrollable();
@@ -736,6 +741,8 @@ static void SendLayersDependentApzcTargetConfirmation(
 
   shadow->SendSetConfirmedTargetAPZC(aInputBlockId, aTargets);
 }
+
+}  
 
 DisplayportSetListener::DisplayportSetListener(
     nsIWidget* aWidget, nsIPresShell* aPresShell, const uint64_t& aInputBlockId,

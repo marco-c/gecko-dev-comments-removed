@@ -496,16 +496,20 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   }
 
   
-  uint32_t flags =
-      nsLayoutUtils::IGNORE_PAINT_SUPPRESSION | nsLayoutUtils::IGNORE_CROSS_DOC;
+  EnumSet<nsLayoutUtils::FrameForPointOption> options = {
+      nsLayoutUtils::FrameForPointOption::IgnorePaintSuppression,
+      nsLayoutUtils::FrameForPointOption::IgnoreCrossDoc};
 #ifdef MOZ_WIDGET_ANDROID
   
   
-  flags = nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME;
+  
+  
+  options = nsLayoutUtils::FrameForPointOption::IgnoreRootScrollFrame;
 #endif
+
   AutoWeakFrame ptFrame =
-      nsLayoutUtils::GetFrameForPoint(rootFrame, aPoint, flags);
-  if (!ptFrame.IsAlive()) {
+      nsLayoutUtils::GetFrameForPoint(rootFrame, aPoint, options);
+  if (!ptFrame.GetFrame()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1086,10 +1090,10 @@ nsresult AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint) {
       nsPoint(aPoint.x, aPoint.y + mOffsetYToCaretLogicalPosition));
 
   
-  nsIFrame* ptFrame =
-      nsLayoutUtils::GetFrameForPoint(rootFrame, point,
-                                      nsLayoutUtils::IGNORE_PAINT_SUPPRESSION |
-                                          nsLayoutUtils::IGNORE_CROSS_DOC);
+  nsIFrame* ptFrame = nsLayoutUtils::GetFrameForPoint(
+      rootFrame, point,
+      {nsLayoutUtils::FrameForPointOption::IgnorePaintSuppression,
+       nsLayoutUtils::FrameForPointOption::IgnoreCrossDoc});
   if (!ptFrame) {
     return NS_ERROR_FAILURE;
   }

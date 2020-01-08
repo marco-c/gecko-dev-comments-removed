@@ -1335,6 +1335,7 @@ nsTypeAheadFind::IsRangeRendered(nsRange* aRange, bool* aResult) {
 bool nsTypeAheadFind::IsRangeRendered(nsIPresShell* aPresShell,
                                       nsPresContext* aPresContext,
                                       nsRange* aRange) {
+  using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
   NS_ASSERTION(aPresShell && aPresContext && aRange, "params are invalid");
 
   nsCOMPtr<nsIContent> content = do_QueryInterface(aRange->GetCommonAncestor());
@@ -1366,9 +1367,9 @@ bool nsTypeAheadFind::IsRangeRendered(nsIPresShell* aPresShell,
     
     nsLayoutUtils::GetFramesForArea(
         rootFrame, r, frames,
-        nsLayoutUtils::IGNORE_PAINT_SUPPRESSION |
-            nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME |
-            nsLayoutUtils::ONLY_VISIBLE);
+        {FrameForPointOption::IgnorePaintSuppression,
+         FrameForPointOption::IgnoreRootScrollFrame,
+         FrameForPointOption::OnlyVisible});
 
     
     
