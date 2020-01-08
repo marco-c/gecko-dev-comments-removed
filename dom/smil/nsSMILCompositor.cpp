@@ -34,7 +34,7 @@ void nsSMILCompositor::Traverse(nsCycleCollectionTraversalCallback* aCallback) {
 }
 
 
-void nsSMILCompositor::AddAnimationFunction(nsSMILAnimationFunction* aFunc) {
+void nsSMILCompositor::AddAnimationFunction(SMILAnimationFunction* aFunc) {
   if (aFunc) {
     mAnimationFunctions.AppendElement(aFunc);
   }
@@ -68,7 +68,7 @@ void nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
   }
 
   
-  nsSMILAnimationFunction::Comparator comparator;
+  SMILAnimationFunction::Comparator comparator;
   mAnimationFunctions.Sort(comparator);
 
   
@@ -169,7 +169,7 @@ bool nsSMILCompositor::MightNeedBaseStyle() const {
 
   
   
-  for (const nsSMILAnimationFunction* func : mAnimationFunctions) {
+  for (const SMILAnimationFunction* func : mAnimationFunctions) {
     if (!func->WillReplace()) {
       return true;
     }
@@ -193,7 +193,7 @@ uint32_t nsSMILCompositor::GetFirstFuncToAffectSandwich() {
 
   uint32_t i;
   for (i = mAnimationFunctions.Length(); i > 0; --i) {
-    nsSMILAnimationFunction* curAnimFunc = mAnimationFunctions[i - 1];
+    SMILAnimationFunction* curAnimFunc = mAnimationFunctions[i - 1];
     
     
     

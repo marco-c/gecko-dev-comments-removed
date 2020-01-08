@@ -22,7 +22,6 @@ namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
 }  
-}  
 
 
 
@@ -36,9 +35,9 @@ class SVGAnimationElement;
 
 
 
-class nsSMILAnimationFunction {
+class SMILAnimationFunction {
  public:
-  nsSMILAnimationFunction();
+  SMILAnimationFunction();
 
   
 
@@ -138,7 +137,7 @@ class nsSMILAnimationFunction {
 
 
 
-  int8_t CompareTo(const nsSMILAnimationFunction* aOther) const;
+  int8_t CompareTo(const SMILAnimationFunction* aOther) const;
 
   
 
@@ -247,12 +246,12 @@ class nsSMILAnimationFunction {
   
   class Comparator {
    public:
-    bool Equals(const nsSMILAnimationFunction* aElem1,
-                const nsSMILAnimationFunction* aElem2) const {
+    bool Equals(const SMILAnimationFunction* aElem1,
+                const SMILAnimationFunction* aElem2) const {
       return (aElem1->CompareTo(aElem2) == 0);
     }
-    bool LessThan(const nsSMILAnimationFunction* aElem1,
-                  const nsSMILAnimationFunction* aElem2) const {
+    bool LessThan(const SMILAnimationFunction* aElem1,
+                  const SMILAnimationFunction* aElem2) const {
       return (aElem1->CompareTo(aElem2) < 0);
     }
   };
@@ -440,5 +439,7 @@ class nsSMILAnimationFunction {
   bool mPrevSampleWasSingleValueAnimation : 1;
   bool mWasSkippedInPrevSample : 1;
 };
+
+}  
 
 #endif  

@@ -12,7 +12,7 @@
 #include "mozilla/TaskCategory.h"
 #include "nsSMILTimedElement.h"
 #include "nsAttrValueInlines.h"
-#include "nsSMILAnimationFunction.h"
+#include "SMILAnimationFunction.h"
 #include "nsSMILTimeValue.h"
 #include "nsSMILTimeValueSpec.h"
 #include "nsSMILInstanceTime.h"
@@ -449,7 +449,7 @@ void nsSMILTimedElement::RemoveInstanceTimesForCreator(
   UpdateCurrentInterval();
 }
 
-void nsSMILTimedElement::SetTimeClient(nsSMILAnimationFunction* aClient) {
+void nsSMILTimedElement::SetTimeClient(SMILAnimationFunction* aClient) {
   
   
   

@@ -79,8 +79,8 @@ bool SVGMotionSMILAnimationFunction::SetAttr(nsAtom* aAttribute,
     }
   } else {
     
-    return nsSMILAnimationFunction::SetAttr(aAttribute, aValue, aResult,
-                                            aParseResult);
+    return SMILAnimationFunction::SetAttr(aAttribute, aValue, aResult,
+                                          aParseResult);
   }
 
   return true;
@@ -97,13 +97,13 @@ bool SVGMotionSMILAnimationFunction::UnsetAttr(nsAtom* aAttribute) {
     MarkStaleIfAttributeAffectsPath(aAttribute);
   } else {
     
-    return nsSMILAnimationFunction::UnsetAttr(aAttribute);
+    return SMILAnimationFunction::UnsetAttr(aAttribute);
   }
 
   return true;
 }
 
-nsSMILAnimationFunction::nsSMILCalcMode
+SMILAnimationFunction::nsSMILCalcMode
 SVGMotionSMILAnimationFunction::GetCalcMode() const {
   const nsAttrValue* value = GetAttr(nsGkAtoms::calcMode);
   if (!value) {
@@ -320,7 +320,7 @@ nsresult SVGMotionSMILAnimationFunction::GetValues(const nsISMILAttr& aSMILAttr,
 void SVGMotionSMILAnimationFunction::CheckValueListDependentAttrs(
     uint32_t aNumValues) {
   
-  nsSMILAnimationFunction::CheckValueListDependentAttrs(aNumValues);
+  SMILAnimationFunction::CheckValueListDependentAttrs(aNumValues);
 
   
   CheckKeyPoints();
@@ -332,7 +332,7 @@ bool SVGMotionSMILAnimationFunction::IsToAnimation() const {
   
   
   return !GetFirstMPathChild(mAnimationElement) && !HasAttr(nsGkAtoms::path) &&
-         nsSMILAnimationFunction::IsToAnimation();
+         SMILAnimationFunction::IsToAnimation();
 }
 
 void SVGMotionSMILAnimationFunction::CheckKeyPoints() {

@@ -1,0 +1,83 @@
+
+
+
+
+
+
+#include "SMILSetAnimationFunction.h"
+
+namespace mozilla {
+
+inline bool SMILSetAnimationFunction::IsDisallowedAttribute(
+    const nsAtom* aAttribute) const {
+  
+  
+  
+  
+  
+  
+  if (aAttribute == nsGkAtoms::calcMode || aAttribute == nsGkAtoms::values ||
+      aAttribute == nsGkAtoms::keyTimes ||
+      aAttribute == nsGkAtoms::keySplines || aAttribute == nsGkAtoms::from ||
+      aAttribute == nsGkAtoms::by || aAttribute == nsGkAtoms::additive ||
+      aAttribute == nsGkAtoms::accumulate) {
+    return true;
+  }
+
+  return false;
+}
+
+bool SMILSetAnimationFunction::SetAttr(nsAtom* aAttribute,
+                                       const nsAString& aValue,
+                                       nsAttrValue& aResult,
+                                       nsresult* aParseResult) {
+  if (IsDisallowedAttribute(aAttribute)) {
+    aResult.SetTo(aValue);
+    if (aParseResult) {
+      
+      
+      
+      
+      
+      
+      
+      
+      *aParseResult = NS_OK;
+    }
+    return true;
+  }
+
+  return SMILAnimationFunction::SetAttr(aAttribute, aValue, aResult,
+                                        aParseResult);
+}
+
+bool SMILSetAnimationFunction::UnsetAttr(nsAtom* aAttribute) {
+  if (IsDisallowedAttribute(aAttribute)) {
+    return true;
+  }
+
+  return SMILAnimationFunction::UnsetAttr(aAttribute);
+}
+
+bool SMILSetAnimationFunction::HasAttr(nsAtom* aAttName) const {
+  if (IsDisallowedAttribute(aAttName)) return false;
+
+  return SMILAnimationFunction::HasAttr(aAttName);
+}
+
+const nsAttrValue* SMILSetAnimationFunction::GetAttr(nsAtom* aAttName) const {
+  if (IsDisallowedAttribute(aAttName)) return nullptr;
+
+  return SMILAnimationFunction::GetAttr(aAttName);
+}
+
+bool SMILSetAnimationFunction::GetAttr(nsAtom* aAttName,
+                                       nsAString& aResult) const {
+  if (IsDisallowedAttribute(aAttName)) return false;
+
+  return SMILAnimationFunction::GetAttr(aAttName, aResult);
+}
+
+bool SMILSetAnimationFunction::WillReplace() const { return true; }
+
+}  

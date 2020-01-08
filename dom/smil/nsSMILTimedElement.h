@@ -22,12 +22,12 @@
 #include "nsAutoPtr.h"
 #include "nsAttrValue.h"
 
-class nsSMILAnimationFunction;
 class nsSMILTimeContainer;
 class nsSMILTimeValue;
 class nsAtom;
 
 namespace mozilla {
+class SMILAnimationFunction;
 namespace dom {
 class SVGAnimationElement;
 }  
@@ -42,6 +42,7 @@ class nsSMILTimedElement {
   ~nsSMILTimedElement();
 
   typedef mozilla::dom::Element Element;
+  typedef mozilla::SMILAnimationFunction SMILAnimationFunction;
 
   
 
@@ -194,7 +195,7 @@ class nsSMILTimedElement {
 
 
 
-  void SetTimeClient(nsSMILAnimationFunction* aClient);
+  void SetTimeClient(SMILAnimationFunction* aClient);
 
   
 
@@ -580,7 +581,7 @@ class nsSMILTimedElement {
   InstanceTimeList mEndInstances;
   uint32_t mInstanceSerialIndex;
 
-  nsSMILAnimationFunction* mClient;
+  SMILAnimationFunction* mClient;
   mozilla::UniquePtr<nsSMILInterval> mCurrentInterval;
   IntervalList mOldIntervals;
   uint32_t mCurrentRepeatIteration;

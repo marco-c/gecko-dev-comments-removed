@@ -11,7 +11,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsTHashtable.h"
 #include "nsString.h"
-#include "nsSMILAnimationFunction.h"
+#include "SMILAnimationFunction.h"
 #include "nsSMILTargetIdentifier.h"
 #include "nsSMILCompositorTable.h"
 #include "PLDHashTable.h"
@@ -46,7 +46,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   enum { ALLOW_MEMMOVE = false };
 
   
-  void AddAnimationFunction(nsSMILAnimationFunction* aFunc);
+  void AddAnimationFunction(mozilla::SMILAnimationFunction* aFunc);
 
   
   
@@ -104,7 +104,7 @@ class nsSMILCompositor : public PLDHashEntryHdr {
   KeyType mKey;
 
   
-  nsTArray<nsSMILAnimationFunction*> mAnimationFunctions;
+  nsTArray<mozilla::SMILAnimationFunction*> mAnimationFunctions;
 
   
   

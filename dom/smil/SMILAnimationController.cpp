@@ -570,7 +570,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     
     return;
 
-  nsSMILAnimationFunction& func = aElement->AnimationFunction();
+  SMILAnimationFunction& func = aElement->AnimationFunction();
 
   
   

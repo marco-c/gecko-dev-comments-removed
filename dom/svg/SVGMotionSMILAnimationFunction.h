@@ -9,7 +9,7 @@
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
-#include "nsSMILAnimationFunction.h"
+#include "mozilla/SMILAnimationFunction.h"
 #include "nsTArray.h"
 #include "SVGMotionSMILType.h"  
 
@@ -31,7 +31,7 @@ class SVGMPathElement;
 
 
 
-class SVGMotionSMILAnimationFunction final : public nsSMILAnimationFunction {
+class SVGMotionSMILAnimationFunction final : public SMILAnimationFunction {
   typedef mozilla::gfx::Path Path;
 
  public:

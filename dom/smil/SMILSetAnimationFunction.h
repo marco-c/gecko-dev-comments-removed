@@ -8,7 +8,9 @@
 #define NS_SMILSETANIMATIONFUNCTION_H_
 
 #include "mozilla/Attributes.h"
-#include "nsSMILAnimationFunction.h"
+#include "mozilla/SMILAnimationFunction.h"
+
+namespace mozilla {
 
 
 
@@ -16,7 +18,7 @@
 
 
 
-class nsSMILSetAnimationFunction : public nsSMILAnimationFunction {
+class SMILSetAnimationFunction : public SMILAnimationFunction {
  public:
   
 
@@ -59,5 +61,7 @@ class nsSMILSetAnimationFunction : public nsSMILAnimationFunction {
 
   bool IsDisallowedAttribute(const nsAtom* aAttribute) const;
 };
+
+}  
 
 #endif  
