@@ -59,7 +59,7 @@ async function checkEventsForNode(test, inspector, testActor) {
 
   if (expected.length === 0) {
     
-    is(evHolder.style.display, "none", "event bubble should be hidden");
+    ok(!evHolder, "event bubble should be hidden");
     return;
   }
 
