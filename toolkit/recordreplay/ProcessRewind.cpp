@@ -193,7 +193,13 @@ DivergeFromRecording()
 
   Thread* thread = Thread::Current();
   MOZ_RELEASE_ASSERT(thread->IsMainThread());
-  thread->DivergeFromRecording();
+
+  if (!thread->HasDivergedFromRecording()) {
+    
+    child::SendResetMiddlemanCalls();
+
+    thread->DivergeFromRecording();
+  }
 
   gUnhandledDivergeAllowed = true;
 }

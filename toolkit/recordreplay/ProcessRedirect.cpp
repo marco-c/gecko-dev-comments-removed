@@ -7,6 +7,7 @@
 #include "ProcessRedirect.h"
 
 #include "InfallibleVector.h"
+#include "MiddlemanCall.h"
 #include "mozilla/Sprintf.h"
 
 #include <dlfcn.h>
@@ -27,6 +28,24 @@ namespace recordreplay {
 
 
 
+static bool
+CallPreambleHook(PreambleFn aPreamble, size_t aCallId, CallArguments* aArguments)
+{
+  PreambleResult result = aPreamble(aArguments);
+  switch (result) {
+  case PreambleResult::Veto:
+    return true;
+  case PreambleResult::PassThrough: {
+    AutoEnsurePassThroughThreadEvents pt;
+    RecordReplayInvokeCall(aCallId, aArguments);
+    return true;
+  }
+  case PreambleResult::Redirect:
+    return false;
+  }
+  Unreachable();
+}
+
 extern "C" {
 
 __attribute__((used)) int
@@ -37,42 +56,64 @@ RecordReplayInterceptCall(int aCallId, CallArguments* aArguments)
   
   
   if (redirection.mPreamble) {
-    PreambleResult result = redirection.mPreamble(aArguments);
-    switch (result) {
-    case PreambleResult::Veto:
+    if (CallPreambleHook(redirection.mPreamble, aCallId, aArguments)) {
       return 0;
-    case PreambleResult::PassThrough: {
-      AutoEnsurePassThroughThreadEvents pt;
-      RecordReplayInvokeCall(aCallId, aArguments);
-      return 0;
-    }
-    case PreambleResult::Redirect:
-      break;
     }
   }
 
   Thread* thread = Thread::Current();
+  Maybe<RecordingEventSection> res;
+  res.emplace(thread);
 
-  
-  
-  if (!thread || thread->PassThroughEvents()) {
+  if (!res.ref().CanAccessEvents()) {
     
     
-    aArguments->Rval<uint8_t*>() = redirection.mOriginalFunction;
-    return 1;
+    if (!thread || thread->PassThroughEvents()) {
+      
+      
+      aArguments->Rval<uint8_t*>() = redirection.mOriginalFunction;
+      return 1;
+    }
+
+    MOZ_RELEASE_ASSERT(thread->HasDivergedFromRecording());
+
+    
+    
+
+    
+    
+    
+    
+    
+    if (redirection.mMiddlemanPreamble) {
+      if (CallPreambleHook(redirection.mMiddlemanPreamble, aCallId, aArguments)) {
+        return 0;
+      }
+    }
+
+    
+    
+    if (redirection.mMiddlemanCall) {
+      if (SendCallToMiddleman(aCallId, aArguments,  true)) {
+        return 0;
+      }
+    }
+
+    
+    
+    EnsureNotDivergedFromRecording();
+    Unreachable();
   }
-
-  
-  
-  EnsureNotDivergedFromRecording();
-
-  MOZ_RELEASE_ASSERT(thread->CanAccessRecording());
 
   if (IsRecording()) {
     
+    
+    
+    res.reset();
     thread->SetPassThrough(true);
     RecordReplayInvokeCall(aCallId, aArguments);
     thread->SetPassThrough(false);
+    res.emplace(thread);
   }
 
   
@@ -84,6 +125,13 @@ RecordReplayInterceptCall(int aCallId, CallArguments* aArguments)
   
   if (redirection.mSaveOutput) {
     redirection.mSaveOutput(thread->Events(), aArguments, &error);
+  }
+
+  
+  
+  
+  if (IsReplaying() && redirection.mMiddlemanCall) {
+    (void) SendCallToMiddleman(aCallId, aArguments,  false);
   }
 
   RestoreError(error);

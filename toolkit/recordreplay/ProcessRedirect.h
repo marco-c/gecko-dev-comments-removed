@@ -13,7 +13,6 @@
 #include "ProcessRecordReplay.h"
 #include "ProcessRewind.h"
 #include "Thread.h"
-#include "ipc/Channel.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
@@ -74,18 +73,11 @@ namespace recordreplay {
 
 
 
+struct CallArguments;
 
 
 
-
-
-
-
-
-
-
-
-struct CallArguments
+struct CallRegisterArguments
 {
 protected:
   size_t arg0;      
@@ -101,6 +93,28 @@ protected:
   size_t rval1;     
   double floatrval0; 
   double floatrval1; 
+                     
+
+public:
+  void CopyFrom(const CallRegisterArguments* aArguments);
+  void CopyTo(CallRegisterArguments* aArguments) const;
+  void CopyRvalFrom(const CallRegisterArguments* aArguments);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct CallArguments : public CallRegisterArguments
+{
+protected:
   size_t stack[64]; 
                     
 
@@ -119,6 +133,12 @@ public:
     case 5: return (T&)arg5;
     default: return (T&)stack[Index - 6];
     }
+  }
+
+  template <size_t Offset>
+  size_t* StackAddress() {
+    static_assert(Offset % sizeof(size_t) == 0, "Bad stack offset");
+    return &stack[Offset / sizeof(size_t)];
   }
 
   template <typename T, size_t Index = 0>
@@ -141,6 +161,27 @@ public:
     }
   }
 };
+
+inline void
+CallRegisterArguments::CopyFrom(const CallRegisterArguments* aArguments)
+{
+  memcpy(this, aArguments, sizeof(CallRegisterArguments));
+}
+
+inline void
+CallRegisterArguments::CopyTo(CallRegisterArguments* aArguments) const
+{
+  memcpy(aArguments, this, sizeof(CallRegisterArguments));
+}
+
+inline void
+CallRegisterArguments::CopyRvalFrom(const CallRegisterArguments* aArguments)
+{
+  rval0 = aArguments->rval0;
+  rval1 = aArguments->rval1;
+  floatrval0 = aArguments->floatrval0;
+  floatrval1 = aArguments->floatrval1;
+}
 
 
 typedef ssize_t ErrorType;
@@ -165,6 +206,15 @@ enum class PreambleResult {
 };
 
 
+
+typedef PreambleResult (*PreambleFn)(CallArguments* aArguments);
+
+
+
+struct MiddlemanCallContext;
+typedef void (*MiddlemanCallFn)(MiddlemanCallContext& aCx);
+
+
 struct Redirection
 {
   
@@ -187,7 +237,15 @@ struct Redirection
   SaveOutputFn mSaveOutput;
 
   
-  PreambleResult (*mPreamble)(CallArguments* aArguments);
+  PreambleFn mPreamble;
+
+  
+  
+  MiddlemanCallFn mMiddlemanCall;
+
+  
+  
+  PreambleFn mMiddlemanPreamble;
 };
 
 
