@@ -710,6 +710,64 @@ Instance::structNew(Instance* instance, uint32_t typeIndex)
     return TypedObject::createZeroed(cx, typeDescr);
 }
 
+ void*
+Instance::structNarrow(Instance* instance, uint32_t mustUnboxAnyref, uint32_t outputTypeIndex,
+                       void* nonnullPtr)
+{
+    JSContext* cx = TlsContext.get();
+
+    Rooted<TypedObject*> obj(cx);
+    Rooted<StructTypeDescr*> typeDescr(cx);
+
+    if (mustUnboxAnyref) {
+        Rooted<NativeObject*> no(cx, static_cast<NativeObject*>(nonnullPtr));
+        if (!no->is<TypedObject>()) {
+            return nullptr;
+        }
+        obj = &no->as<TypedObject>();
+        Rooted<TypeDescr*> td(cx, &obj->typeDescr());
+        if (td->kind() != type::Struct) {
+            return nullptr;
+        }
+        typeDescr = &td->as<StructTypeDescr>();
+    } else {
+        obj = static_cast<TypedObject*>(nonnullPtr);
+        typeDescr = &obj->typeDescr().as<StructTypeDescr>();
+    }
+
+    
+    
+    
+    
+    
+
+    uint32_t found = UINT32_MAX;
+    for (uint32_t i = 0; i < instance->structTypeDescrs_.length(); i++) {
+        if (instance->structTypeDescrs_[i] == typeDescr) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found == UINT32_MAX) {
+        return nullptr;
+    }
+
+    
+
+    MOZ_ASSERT(instance->structTypeDescrs_.length() == instance->structTypes().length());
+
+    
+    
+    
+
+    if (!instance->structTypes()[found].hasPrefix(instance->structTypes()[outputTypeIndex])) {
+        return nullptr;
+    }
+
+    return nonnullPtr;
+}
+
 Instance::Instance(JSContext* cx,
                    Handle<WasmInstanceObject*> object,
                    SharedCode code,
@@ -731,6 +789,7 @@ Instance::Instance(JSContext* cx,
     structTypeDescrs_(std::move(structTypeDescrs))
 {
     MOZ_ASSERT(!!maybeDebug_ == metadata().debugEnabled);
+    MOZ_ASSERT(structTypeDescrs_.length() == structTypes().length());
 
 #ifdef DEBUG
     for (auto t : code_->tiers()) {
