@@ -787,6 +787,9 @@ const Class cls::protoClass_ = { \
 };
 
 
+
+
+
 ReadableStream*
 ReadableStream::createStream(JSContext* cx, HandleObject proto )
 {
@@ -1117,6 +1120,18 @@ static const JSPropertySpec ReadableStream_properties[] = {
 };
 
 CLASS_SPEC(ReadableStream, 0, StreamSlotCount, 0, 0, JS_NULL_CLASS_OPS);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1517,6 +1532,9 @@ ReadableStreamTee(JSContext* cx, Handle<ReadableStream*> stream, bool cloneForBr
     
     return true;
 }
+
+
+
 
 inline static MOZ_MUST_USE bool
 AppendToListAtSlot(JSContext* cx, HandleNativeObject container, uint32_t slot, HandleObject obj);
@@ -1936,6 +1954,9 @@ ReadableStreamGetReaderMode(JSContext* cx, ReadableStream* stream, ReaderMode* m
     return true;
 }
 
+
+
+
 static MOZ_MUST_USE bool
 ReadableStreamReaderGenericInitialize(JSContext* cx,
                                       Handle<ReadableStreamReader*> reader,
@@ -2179,9 +2200,8 @@ const Class ReadableStreamReader::class_ = {
 CLASS_SPEC(ReadableStreamDefaultReader, 1, ReaderSlotCount, ClassSpec::DontDefineConstructor, 0,
            JS_NULL_CLASS_OPS);
 
-inline static MOZ_MUST_USE bool
-ReadableStreamControllerCallPullIfNeeded(JSContext* cx,
-                                         Handle<ReadableStreamController*> controller);
+
+
 
 
 
@@ -2394,6 +2414,13 @@ ReadableStreamDefaultReader::read(JSContext* cx, Handle<ReadableStreamDefaultRea
     Rooted<ReadableStreamController*> controller(cx, ControllerFromStream(stream));
     return ReadableStreamControllerPullSteps(cx, controller);
 }
+
+
+
+
+inline static MOZ_MUST_USE bool
+ReadableStreamControllerCallPullIfNeeded(JSContext* cx,
+                                         Handle<ReadableStreamController*> controller);
 
 
 
@@ -2962,6 +2989,12 @@ ReadableStreamDefaultControllerPullSteps(JSContext* cx,
 
 
 
+
+
+
+
+
+
 static bool
 ControllerPullHandler(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -3360,6 +3393,9 @@ ReadableStreamControllerGetDesiredSizeUnchecked(ReadableStreamController* contro
 
 
 
+
+
+
 static MOZ_MUST_USE ReadableByteStreamController*
 CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
                                    HandleValue underlyingByteSource,
@@ -3627,6 +3663,9 @@ CLASS_SPEC(ReadableByteStreamController, 3, 9, ClassSpec::DontDefineConstructor,
 
 
 
+
+
+
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
                                              Handle<ReadableStreamController*> controller);
@@ -3822,6 +3861,9 @@ ReadableStreamControllerPullSteps(JSContext* cx, Handle<ReadableStreamController
 
 
 
+
+
+
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
                                                   Handle<ReadableStreamController*> controller);
@@ -3990,6 +4032,9 @@ ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
 
 
 
+
+
+
 bool
 js::ByteLengthQueuingStrategy::constructor(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -4091,6 +4136,9 @@ static const JSFunctionSpec CountQueuingStrategy_methods[] = {
 CLASS_SPEC(CountQueuingStrategy, 1, 0, 0, 0, JS_NULL_CLASS_OPS);
 
 #undef CLASS_SPEC
+
+
+
 
 
 
@@ -4253,6 +4301,9 @@ SetQueueSize(NativeObject* container, double size)
 
 
 
+
+
+
 inline static MOZ_MUST_USE bool
 AppendToListAtSlot(JSContext* cx, HandleNativeObject container, uint32_t slot, HandleObject obj)
 {
@@ -4360,6 +4411,9 @@ ValidateAndNormalizeQueuingStrategy(JSContext* cx, HandleValue size,
     return true;
 }
 
+
+
+
 MOZ_MUST_USE bool
 js::ReadableStreamReaderCancel(JSContext* cx, HandleObject readerObj, HandleValue reason)
 {
@@ -4452,8 +4506,6 @@ ReadableStream::embeddingFlags() const
     MOZ_ASSERT_IF(flags, mode() == JS::ReadableStreamMode::ExternalSource);
     return flags;
 }
-
-
 
 
 
