@@ -5342,11 +5342,10 @@ pref("dom.vr.external.quit.timeout", 10000);
 
 pref("dom.vr.navigation.timeout", 5000);
 
-#if defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
+#if defined(HAVE_64BIT_BUILD)
 
 pref("dom.vr.oculus.enabled", true);
 #else
-
 pref("dom.vr.oculus.enabled", false);
 #endif
 
@@ -5375,7 +5374,7 @@ pref("dom.vr.oculus.invisible.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 
-#if !defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
+#if !defined(HAVE_64BIT_BUILD)
 
 pref("dom.vr.openvr.enabled", false);
 #elif defined(XP_WIN) || defined(XP_MACOSX)
