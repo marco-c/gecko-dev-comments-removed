@@ -18,8 +18,7 @@
     }
 
     function getdocviewer() {
-      var navigator1 = top.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
-      var docShell = navigator1.QueryInterface(Ci.nsIDocShell);
+      var docShell = top.docShell;
       var docviewer = docShell.contentViewer;
       return docviewer;
     }

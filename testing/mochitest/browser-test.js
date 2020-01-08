@@ -95,8 +95,8 @@ function testInit() {
       
       
       
-      var webNav = content.window.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIWebNavigation);
+      var webNav = content.window.docShell
+                          .QueryInterface(Ci.nsIWebNavigation);
       webNav.loadURI(url, null, null, null, null);
     };
 
