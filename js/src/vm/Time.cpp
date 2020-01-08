@@ -160,12 +160,7 @@ static int64_t PRMJ_NowImpl() {
     
     FILETIME ft;
     pGetSystemTimePreciseAsFileTime(&ft);
-    int64_t now = int64_t(FileTimeToUnixMicroseconds(ft));
-    
-    
-    return mozilla::TimeStamp::NowFuzzyTime() > now
-               ? mozilla::TimeStamp::NowFuzzyTime()
-               : now;
+    return int64_t(FileTimeToUnixMicroseconds(ft));
   }
 
   bool calibrated = false;
