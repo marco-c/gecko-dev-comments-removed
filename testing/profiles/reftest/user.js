@@ -103,3 +103,5 @@ user_pref("ui.caretWidth", 1);
 user_pref("ui.prefersReducedMotion", 0);
 
 user_pref("dom.push.serverURL", "");
+
+user_pref("toolkit.telemetry.initDelay", 99999999);
