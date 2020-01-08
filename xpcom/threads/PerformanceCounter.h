@@ -113,6 +113,19 @@ public:
 
   uint64_t GetTotalDispatchCount();
 
+  
+
+
+
+
+
+
+
+
+
+
+  uint64_t GetID() const;
+
 private:
   ~PerformanceCounter() {}
 
@@ -120,6 +133,7 @@ private:
   Atomic<uint64_t> mTotalDispatchCount;
   DispatchCounter mDispatchCounter;
   nsCString mName;
+  const uint64_t mID;
 };
 
 } 

@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PerformanceCounter.h"
 
@@ -14,14 +15,29 @@ static mozilla::LazyLogModule sPerformanceCounter("PerformanceCounter");
 #define LOG(args) MOZ_LOG(sPerformanceCounter, mozilla::LogLevel::Debug, args)
 
 
+static Atomic<uint64_t> gNextCounterID(0);
+
+static uint64_t
+NextCounterID()
+{
+  
+  
+  
+  return ++gNextCounterID;
+}
+
+
+
 const DispatchCategory DispatchCategory::Worker = DispatchCategory((uint32_t)TaskCategory::Count);
 
 PerformanceCounter::PerformanceCounter(const nsACString& aName)
   : mExecutionDuration(0),
     mTotalDispatchCount(0),
     mDispatchCounter(),
-    mName(aName)
+    mName(aName),
+    mID(NextCounterID())
 {
+  LOG(("PerformanceCounter created with ID %" PRIu64, mID));
 }
 
 void
@@ -29,14 +45,16 @@ PerformanceCounter::IncrementDispatchCounter(DispatchCategory aCategory)
 {
   mDispatchCounter[aCategory.GetValue()] += 1;
   mTotalDispatchCount += 1;
-  LOG(("[%s] Total dispatch %" PRIu64, mName.get(), uint64_t(mTotalDispatchCount)));
+  LOG(("[%s][%" PRIu64 "] Total dispatch %" PRIu64, mName.get(),
+      GetID(), uint64_t(mTotalDispatchCount)));
 }
 
 void
 PerformanceCounter::IncrementExecutionDuration(uint32_t aMicroseconds)
 {
   mExecutionDuration += aMicroseconds;
-  LOG(("[%s] Total duration %" PRIu64, mName.get(), uint64_t(mExecutionDuration)));
+  LOG(("[%s][%" PRIu64 "] Total duration %" PRIu64, mName.get(),
+      GetID(), uint64_t(mExecutionDuration)));
 }
 
 const DispatchCounter&
@@ -61,4 +79,10 @@ uint32_t
 PerformanceCounter::GetDispatchCount(DispatchCategory aCategory)
 {
   return mDispatchCounter[aCategory.GetValue()];
+}
+
+uint64_t
+PerformanceCounter::GetID() const
+{
+  return mID;
 }
