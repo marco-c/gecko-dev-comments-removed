@@ -87,6 +87,11 @@ a {
   overflow: hidden;
 }
 
+
+.message .network-info * {
+  overflow: unset;
+}
+
 .message:hover {
   border-inline-start-color: var(--theme-highlight-blue);
 }
