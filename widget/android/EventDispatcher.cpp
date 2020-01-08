@@ -656,16 +656,12 @@ class NativeCallbackDelegateSupport final :
         MOZ_ASSERT(NS_IsMainThread());
 
         
-        
-        
-        nsCOMPtr<nsIXPConnectWrappedJS> wrappedJS(do_QueryInterface(mCallback));
 
         dom::AutoJSAPI jsapi;
-        if (!wrappedJS && mWindow) {
+        if (mWindow) {
             NS_ENSURE_TRUE_VOID(jsapi.Init(mWindow->GetCurrentInnerWindow()));
         } else {
-            NS_ENSURE_TRUE_VOID(jsapi.Init(wrappedJS ?
-                    wrappedJS->GetJSObject() : xpc::PrivilegedJunkScope()));
+            NS_ENSURE_TRUE_VOID(jsapi.Init(xpc::PrivilegedJunkScope()));
         }
 
         JS::RootedValue data(jsapi.cx());
