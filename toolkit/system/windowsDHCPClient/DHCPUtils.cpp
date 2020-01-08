@@ -41,7 +41,6 @@ GetActiveDHCPNetworkAdapterName(nsACString& aNetworkAdapterName,
 {
   
 
-  uint32_t dwSize = 0;
   uint32_t dwRetVal = 0;
   nsresult rv = NS_ERROR_FAILURE;
 
