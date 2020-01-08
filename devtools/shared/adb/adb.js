@@ -49,6 +49,38 @@ const ADB = {
     return this._adbFilePromise;
   },
 
+  async _runProcess(process, params) {
+    return new Promise((resolve, reject) => {
+      process.runAsync(params, params.length, {
+        observe(subject, topic, data) {
+          switch (topic) {
+            case "process-finished":
+              resolve();
+              break;
+            case "process-failed":
+              reject();
+              break;
+          }
+        }
+      }, false);
+    });
+  },
+
+  
+  
+  async _waitUntil(predicate, retry = 20) {
+    let count = 0;
+    while (count++ < retry) {
+      if (await predicate()) {
+        return true;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return false;
+  },
+
   
   
   async start() {
@@ -83,20 +115,19 @@ const ADB = {
       } catch (e) {
       }
       const params = ["start-server"];
-      const self = this;
-      process.runAsync(params, params.length, {
-        observe(subject, topic, data) {
-          switch (topic) {
-            case "process-finished":
-              onSuccessfulStart();
-              break;
-            case "process-failed":
-              self.ready = false;
-              reject();
-              break;
-          }
-        }
-      }, false);
+      let isStarted = false;
+      try {
+        await this._runProcess(process, params);
+        isStarted = await this._waitUntil(check);
+      } catch (e) {
+      }
+
+      if (isStarted) {
+        onSuccessfulStart();
+      } else {
+        this.ready = false;
+        reject();
+      }
     });
   },
 
@@ -116,14 +147,9 @@ const ADB = {
     
     
     
-    
-    
-    while (true) {
-      const isAdbRunning = await check();
-      if (!isAdbRunning) {
-        break;
-      }
-    }
+    await this._waitUntil(async () => {
+      return !await check();
+    });
   },
 
   
