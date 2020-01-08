@@ -93,7 +93,9 @@ def eslint_setup(should_clobber=False):
     extra_parameters = ["--loglevel=error"]
 
     
-    cmd = [npm_path, "install"]
+    
+    
+    cmd = [npm_path, "install", "--no-package-lock"]
     cmd.extend(extra_parameters)
     print("Installing eslint for mach using \"%s\"..." % (" ".join(cmd)))
     if not call_process("eslint", cmd):
