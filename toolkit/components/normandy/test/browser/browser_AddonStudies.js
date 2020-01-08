@@ -70,6 +70,30 @@ decorate_task(
 );
 
 decorate_task(
+  AddonStudies.withStudies(),
+  async function testCloseDatabase() {
+    await AddonStudies.close();
+    const openSpy = sinon.spy(IndexedDB, "open");
+    sinon.assert.notCalled(openSpy);
+
+    
+    await AddonStudies.has("foo");
+    await AddonStudies.get("foo");
+    sinon.assert.calledOnce(openSpy);
+
+    
+    await AddonStudies.close();
+    await AddonStudies.close();
+
+    
+    await AddonStudies.has("test-study");
+    sinon.assert.calledTwice(openSpy);
+
+    openSpy.restore();
+  }
+);
+
+decorate_task(
   AddonStudies.withStudies([
     addonStudyFactory({name: "test-study1"}),
     addonStudyFactory({name: "test-study2"}),
