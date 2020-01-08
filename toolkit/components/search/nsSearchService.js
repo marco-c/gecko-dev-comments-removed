@@ -1061,7 +1061,7 @@ EngineURL.prototype = {
 
     
     
-    let dataArray = [];
+    var dataString = "";
     for (var i = 0; i < this.params.length; ++i) {
       var param = this.params[i];
 
@@ -1071,9 +1071,8 @@ EngineURL.prototype = {
 
       var value = ParamSubstitution(param.value, aSearchTerms, aEngine);
 
-      dataArray.push(param.name + "=" + value);
+      dataString += (i > 0 ? "&" : "") + param.name + "=" + value;
     }
-    let dataString = dataArray.join("&");
 
     var postData = null;
     if (this.method == "GET") {
@@ -3122,6 +3121,11 @@ SearchService.prototype = {
 
   _blackList: [
     "blacklist=true",
+    "hspart=lvs",
+    "form=CONBDF",
+    "clid=2308146",
+    "fr=mcafee",
+    "PC=MC0",
   ],
 
   _addEngineToStore: function SRCH_SVC_addEngineToStore(aEngine) {
