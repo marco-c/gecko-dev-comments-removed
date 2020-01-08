@@ -107,11 +107,6 @@ protected:
   URLValueData(ServoRawOffsetArc<RustString> aString,
                already_AddRefed<URLExtraData> aExtraData,
                CORSMode aCORSMode);
-  
-  URLValueData(already_AddRefed<nsIURI> aURI,
-               ServoRawOffsetArc<RustString> aString,
-               already_AddRefed<URLExtraData> aExtraData,
-               CORSMode aCORSMode);
 
 public:
   
@@ -208,24 +203,6 @@ struct ImageValue final : public URLValueData
   
   
   
-  
-  
-  ImageValue(nsIURI* aURI, const nsAString& aString,
-             already_AddRefed<URLExtraData> aExtraData,
-             nsIDocument* aDocument,
-             CORSMode aCORSMode);
-
-  
-  ImageValue(nsIURI* aURI, ServoRawOffsetArc<RustString> aString,
-             already_AddRefed<URLExtraData> aExtraData,
-             nsIDocument* aDocument,
-             CORSMode aCORSMode);
-
-  
-  
-  ImageValue(const nsAString& aString,
-             already_AddRefed<URLExtraData> aExtraData,
-             CORSMode aCORSMode);
 
   
   
