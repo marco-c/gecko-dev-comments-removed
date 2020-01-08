@@ -34,7 +34,10 @@ already_AddRefed<TimelineConsumers> TimelineConsumers::Get() {
   
   
   
-  MOZ_ASSERT(XRE_IsContentProcess() || XRE_IsParentProcess());
+
+  
+  MOZ_ASSERT(XRE_IsContentProcess() || XRE_IsParentProcess() ||
+             XRE_IsSocketProcess());
 
   
   
