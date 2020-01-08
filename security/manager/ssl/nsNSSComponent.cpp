@@ -574,7 +574,7 @@ nsNSSComponent::MaybeEnableFamilySafetyCompatibility()
     return;
   }
   
-  uint32_t familySafetyMode = Preferences::GetUint(kFamilySafetyModePref, 0);
+  uint32_t familySafetyMode = Preferences::GetUint(kFamilySafetyModePref, 1);
   if (familySafetyMode > 2) {
     familySafetyMode = 0;
   }
