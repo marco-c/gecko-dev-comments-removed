@@ -90,6 +90,8 @@ const PREFS_WHITELIST = [
 
 
 const PREFS_BLACKLIST = [
+  /^media[.]webrtc[.]debug[.]aec_log_dir/,
+  /^media[.]webrtc[.]debug[.]log_file/,
   /^network[.]proxy[.]/,
   /[.]print_to_filename$/,
   /^print[.]macosx[.]pagesetup/,
