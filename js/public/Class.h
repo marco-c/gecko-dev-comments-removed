@@ -662,6 +662,9 @@ struct MOZ_STATIC_CLASS ClassOps
 typedef JSObject* (*ClassObjectCreationOp)(JSContext* cx, JSProtoKey key);
 
 
+
+
+
 typedef bool (*FinishClassInitOp)(JSContext* cx, JS::HandleObject ctor,
                                   JS::HandleObject proto);
 

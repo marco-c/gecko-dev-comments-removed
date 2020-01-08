@@ -422,6 +422,7 @@ ToSignedInteger<int32_t>(double d)
     
     
     
+    
 
     
 "   mov     %1, %R4, LSR #20\n"
@@ -431,6 +432,7 @@ ToSignedInteger<int32_t>(double d)
     
 "   orr     %R4, %R4, #(1 << 20)\n"
 
+    
     
     
     

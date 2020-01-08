@@ -92,6 +92,7 @@ CallMethodIfWrapped(JSContext* cx, IsAcceptableThis test, NativeImpl impl, const
 
 
 
+
 template<IsAcceptableThis Test, NativeImpl Impl>
 MOZ_ALWAYS_INLINE bool
 CallNonGenericMethod(JSContext* cx, const CallArgs& args)
