@@ -172,7 +172,7 @@ private:
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  nsTArray<nsCOMPtr<nsISHTransaction>> mTransactions;
+  nsTArray<nsCOMPtr<nsISHTransaction>> mTransactions; 
   int32_t mIndex;           
   int32_t mRequestedIndex;  
 

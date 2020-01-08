@@ -610,6 +610,12 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
     return NS_ERROR_FAILURE;
   }
 
+  nsCOMPtr<nsISHTransaction> currentTxn;
+  if (mIndex >= 0) {
+    nsresult rv = GetTransactionAtIndex(mIndex, getter_AddRefs(currentTxn));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   aSHEntry->SetSHistory(this);
 
   
@@ -619,15 +625,7 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist)
     aSHEntry->SetDocshellID(&docshellID);
   }
 
-  nsCOMPtr<nsISHTransaction> currentTxn;
-  GetTransactionAtIndex(mIndex, getter_AddRefs(currentTxn));
-
-  bool currentPersist = true;
-  if (currentTxn) {
-    currentPersist = currentTxn->GetPersist();
-  }
-
-  if (!currentPersist) {
+  if (currentTxn && !currentTxn->GetPersist()) {
     NOTIFY_LISTENERS(OnHistoryReplaceEntry, (mIndex));
     currentTxn->SetSHEntry(aSHEntry);
     currentTxn->SetPersist(aPersist);
@@ -689,22 +687,21 @@ NS_IMETHODIMP
 nsSHistory::GetEntryAtIndex(int32_t aIndex, bool aModifyIndex,
                             nsISHEntry** aResult)
 {
-  nsresult rv;
+  
   nsCOMPtr<nsISHTransaction> txn;
+  nsresult rv = GetTransactionAtIndex(aIndex, getter_AddRefs(txn));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = GetTransactionAtIndex(aIndex, getter_AddRefs(txn));
-  if (NS_SUCCEEDED(rv) && txn) {
-    
-    txn->GetSHEntry(aResult);
+  txn->GetSHEntry(aResult);
 
-    
-    if (aModifyIndex) {
-      mIndex = aIndex;
-      NOTIFY_LISTENERS(OnIndexChanged, (mIndex))
-    }
+  
+  if (aModifyIndex) {
+    mIndex = aIndex;
+    NOTIFY_LISTENERS(OnIndexChanged, (mIndex))
   }
-  return rv;
+
+  return NS_OK;
 }
 
 
@@ -877,30 +874,29 @@ NS_IMETHODIMP
 nsSHistory::ReplaceEntry(int32_t aIndex, nsISHEntry* aReplaceEntry)
 {
   NS_ENSURE_ARG(aReplaceEntry);
-  nsresult rv;
-  nsCOMPtr<nsISHTransaction> currentTxn;
 
-  rv = GetTransactionAtIndex(aIndex, getter_AddRefs(currentTxn));
-
-  if (currentTxn) {
-    nsCOMPtr<nsISHistory> shistoryOfEntry;
-    aReplaceEntry->GetSHistory(getter_AddRefs(shistoryOfEntry));
-    if (shistoryOfEntry && shistoryOfEntry != this) {
-      NS_WARNING("The entry has been associated to another nsISHistory instance. "
-                 "Try nsISHEntry.clone() and nsISHEntry.abandonBFCacheEntry() "
-                 "first if you're copying an entry from another nsISHistory.");
-      return NS_ERROR_FAILURE;
-    }
-
-    aReplaceEntry->SetSHistory(this);
-
-    NOTIFY_LISTENERS(OnHistoryReplaceEntry, (aIndex));
-
-    
-    currentTxn->SetSHEntry(aReplaceEntry);
-    currentTxn->SetPersist(true);
+  nsCOMPtr<nsISHistory> shistoryOfEntry;
+  aReplaceEntry->GetSHistory(getter_AddRefs(shistoryOfEntry));
+  if (shistoryOfEntry && shistoryOfEntry != this) {
+    NS_WARNING("The entry has been associated to another nsISHistory instance. "
+               "Try nsISHEntry.clone() and nsISHEntry.abandonBFCacheEntry() "
+               "first if you're copying an entry from another nsISHistory.");
+    return NS_ERROR_FAILURE;
   }
-  return rv;
+
+  nsCOMPtr<nsISHTransaction> currentTxn;
+  nsresult rv = GetTransactionAtIndex(aIndex, getter_AddRefs(currentTxn));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aReplaceEntry->SetSHistory(this);
+
+  NOTIFY_LISTENERS(OnHistoryReplaceEntry, (aIndex));
+
+  
+  currentTxn->SetSHEntry(aReplaceEntry);
+  currentTxn->SetPersist(true);
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
