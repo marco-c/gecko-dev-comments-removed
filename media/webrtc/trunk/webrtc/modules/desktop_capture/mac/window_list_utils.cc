@@ -149,19 +149,6 @@ bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
     }
 
     
-    CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
-         CFDictionaryGetValue(window, kCGWindowBounds));
-    CGRect bounds_rect;
-    if(!(bounds_ref) ||
-      !(CGRectMakeWithDictionaryRepresentation(bounds_ref, &bounds_rect))){
-      continue;
-    }
-    bounds_rect = CGRectStandardize(bounds_rect);
-    if((bounds_rect.size.width <= 0) || (bounds_rect.size.height <= 0)){
-      continue;
-    }
-
-    
     
     
     

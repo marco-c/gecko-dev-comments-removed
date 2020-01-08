@@ -82,13 +82,6 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   if (window.title.empty())
     return TRUE;
 
-  
-  RECT bounds;
-  if(GetClientRect(hwnd,&bounds) && !IsIconic(hwnd)
-    && IsRectEmpty(&bounds)){
-    return TRUE;
-  }
-
   list->push_back(window);
 
   return TRUE;
