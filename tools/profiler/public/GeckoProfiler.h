@@ -118,46 +118,46 @@ class TimeStamp;
 
 
 
-#define PROFILER_FOR_EACH_FEATURE(macro)
+#define PROFILER_FOR_EACH_FEATURE(MACRO)
  \
-  macro(0, "java", Java) \
+  MACRO(0, "java", Java) \
   \
   /* Get the JS engine to expose the JS stack to the profiler */ \
-  macro(1, "js", JS) \
+  MACRO(1, "js", JS) \
   \
   /* Include the C++ leaf node if not stackwalking. */ \
   /* The DevTools profiler doesn't want the native addresses. */ \
-  macro(2, "leaf", Leaf) \
+  MACRO(2, "leaf", Leaf) \
   \
   /* Add main thread I/O to the profile. */ \
-  macro(3, "mainthreadio", MainThreadIO) \
+  MACRO(3, "mainthreadio", MainThreadIO) \
   \
   /* Add memory measurements (e.g. RSS). */ \
-  macro(4, "memory", Memory) \
+  MACRO(4, "memory", Memory) \
   \
   /* Do not include user-identifiable information. */ \
-  macro(5, "privacy", Privacy) \
+  MACRO(5, "privacy", Privacy) \
   \
   /* Collect thread responsiveness information. */ \
-  macro(6, "responsiveness", Responsiveness) \
+  MACRO(6, "responsiveness", Responsiveness) \
   \
   /* Take a snapshot of the window on every composition. */ \
-  macro(7, "screenshots", Screenshots) \
+  MACRO(7, "screenshots", Screenshots) \
   \
   /* Disable parallel traversal in styling. */ \
-  macro(8, "seqstyle", SequentialStyle) \
+  MACRO(8, "seqstyle", SequentialStyle) \
   \
   /* Walk the C++ stack. Not available on all platforms. */ \
-  macro(9, "stackwalk", StackWalk) \
+  MACRO(9, "stackwalk", StackWalk) \
   \
   /* Start profiling with feature TaskTracer. */ \
-  macro(10, "tasktracer", TaskTracer) \
+  MACRO(10, "tasktracer", TaskTracer) \
   \
   /* Profile the registered secondary threads. */ \
-  macro(11, "threads", Threads) \
+  MACRO(11, "threads", Threads) \
   \
   /* Have the JavaScript engine track JIT optimizations. */ \
-  macro(12, "trackopts", TrackOptimizations)
+  MACRO(12, "trackopts", TrackOptimizations)
 
 struct ProfilerFeature
 {
