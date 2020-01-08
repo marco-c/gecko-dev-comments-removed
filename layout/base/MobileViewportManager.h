@@ -68,7 +68,7 @@ private:
   void RefreshViewportSize(bool aForceAdjustResolution);
 
   
-  void RefreshSPCSPS();
+  void RefreshVisualViewportSize();
 
   
   mozilla::CSSToScreenScale ClampZoom(const mozilla::CSSToScreenScale& aZoom,
@@ -87,9 +87,8 @@ private:
                                              const mozilla::CSSSize& aViewport,
                                              const mozilla::Maybe<float>& aDisplayWidthChangeRatio);
 
-  
-  void UpdateSPCSPS(const mozilla::ScreenIntSize& aDisplaySize,
-                    const mozilla::CSSToScreenScale& aZoom);
+  void UpdateVisualViewportSize(const mozilla::ScreenIntSize& aDisplaySize,
+                                const mozilla::CSSToScreenScale& aZoom);
 
   
   void UpdateDisplayPortMargins();
