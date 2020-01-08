@@ -109,6 +109,15 @@ LogBlockedRequest(nsIRequest* aRequest,
   
   
   uint64_t innerWindowID = nsContentUtils::GetInnerWindowID(aRequest);
+  
+  
+  
+  if (!innerWindowID) {
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
+    if (httpChannel) {
+      Unused << httpChannel->GetTopLevelContentWindowId(&innerWindowID);
+    }
+  }
   nsCORSListenerProxy::LogBlockedCORSRequest(innerWindowID, privateBrowsing,
                                              msg, category);
 }
