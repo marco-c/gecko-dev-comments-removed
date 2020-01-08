@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const EventEmitter = require("devtools/shared/event-emitter");
 const { ConnectionManager } =
   require("devtools/shared/client/connection-manager");
@@ -10,7 +12,7 @@ const { Devices } =
 const { RuntimeTypes } =
   require("devtools/client/webide/modules/runtime-types");
 
-let Scanner = {
+const ADBScanner = {
 
   _runtimes: [],
 
@@ -37,9 +39,9 @@ let Scanner = {
       return this._updatingPromise;
     }
     this._runtimes = [];
-    let promises = [];
-    for (let id of Devices.available()) {
-      let device = Devices.getByName(id);
+    const promises = [];
+    for (const id of Devices.available()) {
+      const device = Devices.getByName(id);
       promises.push(this._detectRuntimes(device));
     }
     this._updatingPromise = Promise.all(promises);
@@ -53,7 +55,7 @@ let Scanner = {
   },
 
   _detectRuntimes: async function(device) {
-    let model = await device.getModel();
+    const model = await device.getModel();
     let detectedRuntimes = await FirefoxOSRuntime.detect(device, model);
     this._runtimes.push(...detectedRuntimes);
     detectedRuntimes = await FirefoxOnAndroidRuntime.detect(device, model);
@@ -70,7 +72,7 @@ let Scanner = {
 
 };
 
-EventEmitter.decorate(Scanner);
+EventEmitter.decorate(ADBScanner);
 
 function Runtime(device, model, socketPath) {
   this.device = device;
@@ -81,13 +83,13 @@ function Runtime(device, model, socketPath) {
 Runtime.prototype = {
   type: RuntimeTypes.USB,
   connect(connection) {
-    let port = ConnectionManager.getFreeTCPPort();
-    let local = "tcp:" + port;
+    const port = ConnectionManager.getFreeTCPPort();
+    const local = "tcp:" + port;
     let remote;
     if (this._socketPath.startsWith("@")) {
-        remote = "localabstract:" + this._socketPath.substring(1);
+      remote = "localabstract:" + this._socketPath.substring(1);
     } else {
-        remote = "localfilesystem:" + this._socketPath;
+      remote = "localfilesystem:" + this._socketPath;
     }
     return this.device.forwardPort(local, remote).then(() => {
       connection.host = "localhost";
@@ -106,8 +108,8 @@ function FirefoxOSRuntime(device, model) {
 }
 
 FirefoxOSRuntime.detect = async function(device, model) {
-  let runtimes = [];
-  let query = "test -f /system/b2g/b2g; echo $?";
+  const runtimes = [];
+  const query = "test -f /system/b2g/b2g; echo $?";
   let b2gExists = await device.shell(query);
   
   
@@ -119,7 +121,7 @@ FirefoxOSRuntime.detect = async function(device, model) {
     }
   }
   if (b2gExists === "0\r\n") {
-    let runtime = new FirefoxOSRuntime(device, model);
+    const runtime = new FirefoxOSRuntime(device, model);
     console.log("Found " + runtime.name);
     runtimes.push(runtime);
   }
@@ -140,22 +142,23 @@ function FirefoxOnAndroidRuntime(device, model, socketPath) {
 
 
 FirefoxOnAndroidRuntime.detect = async function(device, model) {
-  let runtimes = [];
+  const runtimes = [];
   
   
-  let query = "cat /proc/net/unix";
-  let rawSocketInfo = await device.shell(query);
+  
+  const query = "cat /proc/net/unix";
+  const rawSocketInfo = await device.shell(query);
   let socketInfos = rawSocketInfo.split(/\r?\n/);
   
   socketInfos = socketInfos.filter(l => l.includes("firefox-debugger-socket"));
   
-  let socketPaths = new Set();
-  for (let socketInfo of socketInfos) {
-    let socketPath = socketInfo.split(" ").pop();
+  const socketPaths = new Set();
+  for (const socketInfo of socketInfos) {
+    const socketPath = socketInfo.split(" ").pop();
     socketPaths.add(socketPath);
   }
-  for (let socketPath of socketPaths) {
-    let runtime = new FirefoxOnAndroidRuntime(device, model, socketPath);
+  for (const socketPath of socketPaths) {
+    const runtime = new FirefoxOnAndroidRuntime(device, model, socketPath);
     console.log("Found " + runtime.name);
     runtimes.push(runtime);
   }
@@ -198,15 +201,4 @@ Object.defineProperty(FirefoxOnAndroidRuntime.prototype, "name", {
   }
 });
 
-exports.register = function() {
-  
-  if (Runtimes && Runtimes.RuntimeScanners) {
-    Runtimes.RuntimeScanners.add(Scanner);
-  }
-};
-
-exports.unregister = function() {
-  if (Runtimes && Runtimes.RuntimeScanners) {
-    Runtimes.RuntimeScanners.remove(Scanner);
-  }
-};
+exports.ADBScanner = ADBScanner;
