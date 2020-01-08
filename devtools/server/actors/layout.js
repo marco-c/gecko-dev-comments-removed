@@ -52,8 +52,18 @@ const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
       return this.actorID;
     }
 
+    const styles = CssLogic.getComputedStyle(this.containerEl);
+
     const form = {
       actor: this.actorID,
+      
+      properties: {
+        "align-content": styles.alignContent,
+        "align-items": styles.alignItems,
+        "flex-direction": styles.flexDirection,
+        "flex-wrap": styles.flexWrap,
+        "justify-content": styles.justifyContent,
+      },
     };
 
     
