@@ -2534,13 +2534,7 @@ FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow,
     if (!item->IsFrozen()) {
       numUnfrozenItemsToBeSeen--;
       bool shouldFreeze = (0.0f == item->GetFlexFactor(aIsUsingFlexGrow));
-      
-      
-      
-      
-      
-      
-      if (!shouldFreeze && !aLineInfo) {
+      if (!shouldFreeze) {
         if (aIsUsingFlexGrow) {
           if (item->GetFlexBaseSize() > item->GetMainSize()) {
             shouldFreeze = true;
