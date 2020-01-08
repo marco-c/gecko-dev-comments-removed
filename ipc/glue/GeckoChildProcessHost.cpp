@@ -346,6 +346,9 @@ GeckoChildProcessHost::AsyncLaunch(std::vector<std::string> aExtraOpts)
 
   MessageLoop* ioLoop = XRE_GetIOMessageLoop();
 
+  MOZ_ASSERT(mHandlePromise == nullptr);
+  mHandlePromise = new HandlePromise::Private(__func__);
+
   
   
   
@@ -494,6 +497,7 @@ GeckoChildProcessHost::RunPerformAsyncLaunch(std::vector<std::string> aExtraOpts
     
     MonitorAutoLock lock(mMonitor);
     mProcessState = PROCESS_ERROR;
+    mHandlePromise->Reject(LaunchError{}, __func__);
     lock.Notify();
     CHROMIUM_LOG(ERROR) << "Failed to launch " <<
       XRE_ChildProcessTypeToString(mProcessType) << " subprocess";
@@ -1115,6 +1119,7 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 
   MonitorAutoLock lock(mMonitor);
   mProcessState = PROCESS_CREATED;
+  mHandlePromise->Resolve(process, __func__);
   lock.Notify();
 
   mLaunchOptions = nullptr;
@@ -1139,6 +1144,7 @@ GeckoChildProcessHost::OnChannelConnected(int32_t peer_pid)
     MOZ_CRASH("can't open handle to child process");
   }
   MonitorAutoLock lock(mMonitor);
+  MOZ_DIAGNOSTIC_ASSERT(mProcessState == PROCESS_CREATED);
   mProcessState = PROCESS_CONNECTED;
   lock.Notify();
 }
@@ -1160,10 +1166,18 @@ GeckoChildProcessHost::OnChannelError()
   
   MonitorAutoLock lock(mMonitor);
   if (mProcessState < PROCESS_CONNECTED) {
+    MOZ_DIAGNOSTIC_ASSERT(mProcessState == PROCESS_CREATED);
     mProcessState = PROCESS_ERROR;
     lock.Notify();
   }
   
+}
+
+RefPtr<GeckoChildProcessHost::HandlePromise>
+GeckoChildProcessHost::WhenProcessHandleReady()
+{
+  MOZ_ASSERT(mHandlePromise != nullptr);
+  return mHandlePromise;
 }
 
 void
