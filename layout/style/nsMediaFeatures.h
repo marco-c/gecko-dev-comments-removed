@@ -17,6 +17,27 @@ struct nsCSSKTableEntry;
 class nsCSSValue;
 class nsStaticAtom;
 
+struct nsCSSKeywordAndBoolTableEntry : public nsCSSKTableEntry {
+  constexpr nsCSSKeywordAndBoolTableEntry(nsCSSKeyword aKeyword, int16_t aValue)
+    : nsCSSKTableEntry(aKeyword, aValue)
+    , mValueInBooleanContext(true)
+  {
+  }
+
+  template<typename T,
+           typename = typename std::enable_if<std::is_enum<T>::value>::type>
+  constexpr nsCSSKeywordAndBoolTableEntry(
+      nsCSSKeyword aKeyword,
+      T aValue,
+      bool aValueInBooleanContext)
+    : nsCSSKTableEntry(aKeyword, aValue)
+    , mValueInBooleanContext(aValueInBooleanContext)
+  {
+  }
+
+  bool mValueInBooleanContext;
+};
+
 struct nsMediaFeature;
 typedef void (*nsMediaFeatureValueGetter)(nsIDocument* aDocument,
                                           const nsMediaFeature* aFeature,
@@ -32,16 +53,18 @@ struct nsMediaFeature
   enum ValueType {
     
     
-    eLength,     
-    eInteger,    
-    eFloat,      
-    eBoolInteger,
-    eIntRatio,   
-    eResolution, 
-                 
-                 
-    eEnumerated, 
-    eIdent       
+    eLength,         
+    eInteger,        
+    eFloat,          
+    eBoolInteger,    
+    eIntRatio,       
+    eResolution,     
+                     
+                     
+    eEnumerated,     
+    eBoolEnumerated, 
+                     
+    eIdent           
     
     
     
@@ -73,6 +96,9 @@ struct nsMediaFeature
     
     
     const nsCSSKTableEntry* mKeywordTable;
+    
+    
+    const nsCSSKeywordAndBoolTableEntry* mKeywordAndBoolTable;
     
     
     nsAtom * const * mMetric;
