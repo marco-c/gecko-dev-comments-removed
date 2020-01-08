@@ -1795,6 +1795,12 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
              aPseudoElement == CSSPseudoElementType::after,
              "unexpected aPseudoElement");
 
+  if (aParentFrame && aParentFrame->IsHTMLVideoFrame()) {
+    
+    MOZ_ASSERT(aOriginatingElement.GetShadowRoot()->IsUAWidget());
+    return;
+  }
+
   ServoStyleSet* styleSet = mPresShell->StyleSet();
 
   
