@@ -5,6 +5,7 @@
 
 
 
+#include "mozilla/dom/ContentChild.h"
 #include "nsIURI.h"
 #include "nsIURL.h"
 #include "nsExternalProtocolHandler.h"

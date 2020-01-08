@@ -7,7 +7,6 @@
 #include "LayerTreeOwnerTracker.h"
 
 #include "mozilla/StaticPtr.h"              
-#include "mozilla/dom/ContentParent.h"      
 #include "mozilla/gfx/GPUChild.h"           
 #include "mozilla/gfx/GPUProcessManager.h"  
 

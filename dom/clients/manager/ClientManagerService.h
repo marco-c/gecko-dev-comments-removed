@@ -15,6 +15,7 @@ namespace dom {
 
 class ClientManagerParent;
 class ClientSourceParent;
+class ContentParent;
 
 
 
