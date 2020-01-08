@@ -2621,13 +2621,11 @@ window._gBrowser = {
     this.removeTab(this.selectedTab, aParams);
   },
 
-  removeTab(aTab, aParams) {
-    if (aParams) {
-      var animate = aParams.animate;
-      var byMouse = aParams.byMouse;
-      var skipPermitUnload = aParams.skipPermitUnload;
-    }
-
+  removeTab(aTab, {
+    animate,
+    byMouse,
+    skipPermitUnload,
+  } = {}) {
     
     
     if (!TelemetryStopwatch.running("FX_TAB_CLOSE_TIME_ANIM_MS", aTab) &&
