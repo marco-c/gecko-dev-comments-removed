@@ -84,17 +84,16 @@ private:
   nsresult setEnabledTLSVersions();
   nsresult RegisterObservers();
 
-  void MaybeEnableFamilySafetyCompatibility();
   void MaybeImportEnterpriseRoots();
+  void UnloadEnterpriseRoots();
+
+  void MaybeEnableFamilySafetyCompatibility();
+  void UnloadFamilySafetyRoot();
+
 #ifdef XP_WIN
-  void ImportEnterpriseRootsForLocation(
-    DWORD locationFlag, const mozilla::MutexAutoLock& proofOfLock);
   nsresult MaybeImportFamilySafetyRoot(PCCERT_CONTEXT certificate,
                                        bool& wasFamilySafetyRoot);
   nsresult LoadFamilySafetyRoot();
-  void UnloadFamilySafetyRoot();
-
-  void UnloadEnterpriseRoots();
 #endif 
 
   
@@ -114,11 +113,8 @@ private:
   RefPtr<mozilla::psm::SharedCertVerifier> mDefaultCertVerifier;
   nsString mMitmCanaryIssuer;
   bool mMitmDetecionEnabled;
-#ifdef XP_WIN
-  mozilla::UniqueCERTCertificate mFamilySafetyRoot;
-#endif 
-  
   mozilla::UniqueCERTCertList mEnterpriseRoots;
+  mozilla::UniqueCERTCertificate mFamilySafetyRoot;
 
   
   static int mInstanceCount;
