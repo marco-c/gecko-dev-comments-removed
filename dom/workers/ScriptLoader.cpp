@@ -67,6 +67,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ServiceWorkerBinding.h"
+#include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/UniquePtr.h"
 #include "Principal.h"
 #include "WorkerHolder.h"
@@ -755,6 +756,33 @@ private:
     ScriptLoadInfo& loadInfo = mLoadInfos[aIndex];
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+
+    
+    
+    
+    
+    
+    if (mWorkerPrivate->IsServiceWorker()) {
+      nsAutoCString mimeType;
+      channel->GetContentType(mimeType);
+
+      if (!nsContentUtils::IsJavascriptMIMEType(NS_ConvertUTF8toUTF16(mimeType))) {
+        const nsCString& scope =
+          mWorkerPrivate->GetServiceWorkerRegistrationDescriptor().Scope();
+
+        ServiceWorkerManager::LocalizeAndReportToAllClients(
+          scope, "ServiceWorkerRegisterMimeTypeError2",
+          nsTArray<nsString> {
+            NS_ConvertUTF8toUTF16(scope),
+            NS_ConvertUTF8toUTF16(mimeType),
+            loadInfo.mURL
+          }
+        );
+
+        channel->Cancel(NS_ERROR_DOM_NETWORK_ERR);
+        return NS_ERROR_DOM_NETWORK_ERR;
+      }
+    }
 
     
     
