@@ -537,6 +537,7 @@ CoercingCompare(MCompare::CompareType type)
     return false;
 }
 
+
 static MCompare::CompareType
 CompatibleType(MCompare::CompareType first, MCompare::CompareType second)
 {
@@ -544,13 +545,19 @@ CompatibleType(MCompare::CompareType first, MCompare::CompareType second)
     MOZ_ASSERT(first != second);
 
     
+    
     if (CoercingCompare(first))
         return first;
 
     if (CoercingCompare(second))
         return second;
 
-    return first;
+    
+    MOZ_ASSERT(first == MCompare::Compare_Int32 || first == MCompare::Compare_Double);
+    MOZ_ASSERT(second == MCompare::Compare_Int32 || second == MCompare::Compare_Double);
+    MOZ_ASSERT(first != second);
+
+    return MCompare::Compare_Double;
 }
 
 MCompare::CompareType
