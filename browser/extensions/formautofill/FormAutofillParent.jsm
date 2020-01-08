@@ -42,7 +42,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FormAutofillPreferences: "resource://formautofill/FormAutofillPreferences.jsm",
   FormAutofillDoorhanger: "resource://formautofill/FormAutofillDoorhanger.jsm",
   FormAutofillUtils: "resource://formautofill/FormAutofillUtils.jsm",
-  OSKeyStore: "resource://formautofill/OSKeyStore.jsm",
+  MasterPassword: "resource://formautofill/MasterPassword.jsm",
 });
 
 this.log = null;
@@ -226,8 +226,8 @@ FormAutofillParent.prototype = {
         break;
       }
       case "FormAutofill:SaveCreditCard": {
-        if (!await OSKeyStore.ensureLoggedIn()) {
-          log.warn("User canceled encryption login");
+        if (!await MasterPassword.ensureLoggedIn()) {
+          log.warn("User canceled master password entry");
           return;
         }
         await this.formAutofillStorage.creditCards.add(data.creditcard);
@@ -254,12 +254,12 @@ FormAutofillParent.prototype = {
         let {cipherText, reauth} = data;
         let string;
         try {
-          string = await OSKeyStore.decrypt(cipherText, reauth);
+          string = await MasterPassword.decrypt(cipherText, reauth);
         } catch (e) {
           if (e.result != Cr.NS_ERROR_ABORT) {
             throw e;
           }
-          log.warn("User canceled encryption login");
+          log.warn("User canceled master password entry");
         }
         target.sendAsyncMessage("FormAutofill:DecryptedString", string);
         break;
@@ -318,9 +318,9 @@ FormAutofillParent.prototype = {
       return;
     }
 
-    let isCC = collectionName == CREDITCARDS_COLLECTION_NAME;
+    let isCCAndMPEnabled = collectionName == CREDITCARDS_COLLECTION_NAME && MasterPassword.isEnabled;
     
-    if (isCC && info.fieldName == "cc-number") {
+    if (isCCAndMPEnabled && info.fieldName == "cc-number") {
       recordsInCollection = recordsInCollection.filter(record => !!record["cc-number"]);
       target.sendAsyncMessage("FormAutofill:Records", recordsInCollection);
       return;
@@ -333,6 +333,17 @@ FormAutofillParent.prototype = {
       let fieldValue = record[info.fieldName];
       if (!fieldValue) {
         continue;
+      }
+
+      
+      
+      if (!isCCAndMPEnabled && record["cc-number-encrypted"]) {
+        record["cc-number-decrypted"] = await MasterPassword.decrypt(record["cc-number-encrypted"]);
+      }
+
+      
+      if (info.fieldName == "cc-number") {
+        fieldValue = record["cc-number-decrypted"];
       }
 
       if (collectionName == ADDRESSES_COLLECTION_NAME && record.country
@@ -528,8 +539,8 @@ FormAutofillParent.prototype = {
         return;
       }
 
-      if (!await OSKeyStore.ensureLoggedIn()) {
-        log.warn("User canceled encryption login");
+      if (!await MasterPassword.ensureLoggedIn()) {
+        log.warn("User canceled master password entry");
         return;
       }
 
