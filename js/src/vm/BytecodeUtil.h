@@ -394,8 +394,7 @@ struct JSCodeSpec {
 namespace js {
 
 extern const JSCodeSpec CodeSpec[];
-extern const unsigned   NumCodeSpecs;
-extern const char       * const CodeName[];
+extern const char* const CodeName[];
 
 
 
@@ -535,20 +534,6 @@ DecompileValueGenerator(JSContext* cx, int spindex, HandleValue v,
 
 UniqueChars
 DecompileArgument(JSContext* cx, int formalIndex, HandleValue v);
-
-extern bool
-CallResultEscapes(jsbytecode* pc);
-
-static inline unsigned
-GetDecomposeLength(jsbytecode* pc, size_t len)
-{
-    
-
-
-
-    MOZ_ASSERT(size_t(CodeSpec[*pc].length) == len);
-    return (unsigned) pc[len - 1];
-}
 
 static inline unsigned
 GetBytecodeLength(jsbytecode* pc)
