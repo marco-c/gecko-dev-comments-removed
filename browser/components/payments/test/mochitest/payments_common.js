@@ -48,8 +48,17 @@ function deepClone(obj) {
 }
 
 
+
+
+
+let filterFunction = null;
+function registerConsoleFilter(filterFn) {
+  filterFunction = filterFn;
+}
+
+
 SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
-  if (msg.isWarning || !msg.errorMessage) {
+  if (msg.isWarning || !msg.errorMessage || msg.errorMessage == "paymentRequest.xhtml:") {
     
     return;
   }
@@ -57,8 +66,15 @@ SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
     
     return;
   }
+  if (msg.message == "SENTINEL") {
+    filterFunction = null;
+  }
+  if (filterFunction && filterFunction(msg)) {
+    return;
+  }
   ok(false, msg.message || msg.errorMessage);
 });
+
 SimpleTest.registerCleanupFunction(function cleanup() {
   SpecialPowers.postConsoleSentinel();
 });
