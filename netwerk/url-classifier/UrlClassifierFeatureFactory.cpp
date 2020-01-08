@@ -7,6 +7,7 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 
 
+#include "UrlClassifierFeatureLoginReputation.h"
 #include "UrlClassifierFeatureTrackingProtection.h"
 #include "UrlClassifierFeatureTrackingAnnotation.h"
 
@@ -31,6 +32,7 @@ namespace net {
     return;
   }
 
+  UrlClassifierFeatureLoginReputation::MaybeShutdown();
   UrlClassifierFeatureTrackingAnnotation::Shutdown();
   UrlClassifierFeatureTrackingProtection::Shutdown();
 }
@@ -59,6 +61,12 @@ namespace net {
   if (feature) {
     aFeatures.AppendElement(feature);
   }
+}
+
+
+nsIUrlClassifierFeature*
+UrlClassifierFeatureFactory::GetFeatureLoginReputation() {
+  return UrlClassifierFeatureLoginReputation::MaybeGetOrCreate();
 }
 
 }  

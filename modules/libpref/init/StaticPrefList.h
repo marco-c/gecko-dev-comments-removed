@@ -1813,6 +1813,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "browser.safebrowsing.passwords.enabled",
+   browser_safebrowsing_passwords_enabled,
+  bool, false
+)
+
+
 
 
 
