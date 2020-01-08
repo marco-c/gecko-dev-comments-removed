@@ -128,8 +128,12 @@ this.AutoCompletePopup = {
       }
 
       case "popuphidden": {
+        let selectedIndex = this.openedPopup.selectedIndex;
+        let selectedRowStyle = selectedIndex != -1 ?
+          AutoCompleteResultView.getStyleAt(selectedIndex) : "";
+        this.sendMessageToBrowser("FormAutoComplete:PopupClosed",
+                                  { selectedRowStyle });
         AutoCompleteResultView.clearResults();
-        this.sendMessageToBrowser("FormAutoComplete:PopupClosed");
         
         
         
