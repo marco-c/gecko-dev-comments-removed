@@ -7966,207 +7966,198 @@ nsContentUtils::TransferableToIPCTransferable(nsITransferable* aTransferable,
   MOZ_ASSERT((aChild && !aParent) || (!aChild && aParent));
 
   if (aTransferable) {
-    nsCOMPtr<nsIArray> flavorList;
-    aTransferable->FlavorsTransferableCanExport(getter_AddRefs(flavorList));
-    if (flavorList) {
-      uint32_t flavorCount = 0;
-      flavorList->GetLength(&flavorCount);
-      for (uint32_t j = 0; j < flavorCount; ++j) {
-        nsCOMPtr<nsISupportsCString> flavor = do_QueryElementAt(flavorList, j);
-        if (!flavor) {
+    nsTArray<nsCString> flavorList;
+    aTransferable->FlavorsTransferableCanExport(flavorList);
+
+    for (uint32_t j = 0; j < flavorList.Length(); ++j) {
+      nsCString& flavorStr = flavorList[j];
+      if (!flavorStr.Length()) {
+        continue;
+      }
+
+      nsCOMPtr<nsISupports> data;
+      uint32_t dataLen = 0;
+      aTransferable->GetTransferData(flavorStr.get(), getter_AddRefs(data), &dataLen);
+
+      nsCOMPtr<nsISupportsString> text = do_QueryInterface(data);
+      nsCOMPtr<nsISupportsCString> ctext = do_QueryInterface(data);
+      if (text) {
+        nsAutoString dataAsString;
+        text->GetData(dataAsString);
+        IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+        item->flavor() = flavorStr;
+        item->data() = dataAsString;
+      } else if (ctext) {
+        nsAutoCString dataAsString;
+        ctext->GetData(dataAsString);
+        IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+        item->flavor() = flavorStr;
+
+        Shmem dataAsShmem = ConvertToShmem(aChild, aParent, dataAsString);
+        if (!dataAsShmem.IsReadable() || !dataAsShmem.Size<char>()) {
           continue;
         }
 
-        nsAutoCString flavorStr;
-        flavor->GetData(flavorStr);
-        if (!flavorStr.Length()) {
-          continue;
-        }
-
-        nsCOMPtr<nsISupports> data;
-        uint32_t dataLen = 0;
-        aTransferable->GetTransferData(flavorStr.get(), getter_AddRefs(data), &dataLen);
-
-        nsCOMPtr<nsISupportsString> text = do_QueryInterface(data);
-        nsCOMPtr<nsISupportsCString> ctext = do_QueryInterface(data);
-        if (text) {
-          nsAutoString dataAsString;
-          text->GetData(dataAsString);
-          IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
-          item->flavor() = flavorStr;
-          item->data() = dataAsString;
-        } else if (ctext) {
-          nsAutoCString dataAsString;
-          ctext->GetData(dataAsString);
+        item->data() = dataAsShmem;
+      } else {
+        
+        nsCOMPtr<nsIInputStream> stream(do_QueryInterface(data));
+        if (stream) {
           IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
           item->flavor() = flavorStr;
 
-          Shmem dataAsShmem = ConvertToShmem(aChild, aParent, dataAsString);
-          if (!dataAsShmem.IsReadable() || !dataAsShmem.Size<char>()) {
+          nsCString imageData;
+          NS_ConsumeStream(stream, UINT32_MAX, imageData);
+
+          Shmem imageDataShmem = ConvertToShmem(aChild, aParent, imageData);
+          if (!imageDataShmem.IsReadable() || !imageDataShmem.Size<char>()) {
             continue;
           }
 
-          item->data() = dataAsShmem;
+          item->data() = imageDataShmem;
+          continue;
+        }
+
+        
+        nsCOMPtr<imgIContainer> image(do_QueryInterface(data));
+        if (image) {
+          RefPtr<mozilla::gfx::SourceSurface> surface =
+            image->GetFrame(imgIContainer::FRAME_CURRENT,
+                            imgIContainer::FLAG_SYNC_DECODE);
+          if (!surface) {
+            continue;
+          }
+          RefPtr<mozilla::gfx::DataSourceSurface> dataSurface =
+            surface->GetDataSurface();
+          if (!dataSurface) {
+            continue;
+          }
+          size_t length;
+          int32_t stride;
+          IShmemAllocator* allocator = aChild ? static_cast<IShmemAllocator*>(aChild)
+                                              : static_cast<IShmemAllocator*>(aParent);
+          Maybe<Shmem> surfaceData = GetSurfaceData(dataSurface, &length, &stride,
+                                                    allocator);
+
+          if (surfaceData.isNothing()) {
+            continue;
+          }
+
+          IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+          item->flavor() = flavorStr;
+          
+          item->data() = surfaceData.ref();
+
+          IPCDataTransferImage& imageDetails = item->imageDetails();
+          mozilla::gfx::IntSize size = dataSurface->GetSize();
+          imageDetails.width() = size.width;
+          imageDetails.height() = size.height;
+          imageDetails.stride() = stride;
+          imageDetails.format() = dataSurface->GetFormat();
+
+          continue;
+        }
+
+        
+        nsCOMPtr<BlobImpl> blobImpl;
+        nsCOMPtr<nsIFile> file = do_QueryInterface(data);
+        if (file) {
+          
+          
+          
+          
+          
+          if (aInSyncMessage) {
+            nsAutoCString type;
+            if (IsFileImage(file, type)) {
+              IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+              item->flavor() = type;
+              nsAutoCString data;
+              SlurpFileToString(file, data);
+
+              Shmem dataAsShmem = ConvertToShmem(aChild, aParent, data);
+              item->data() = dataAsShmem;
+            }
+
+            continue;
+          }
+
+          if (aParent) {
+            bool isDir = false;
+            if (NS_SUCCEEDED(file->IsDirectory(&isDir)) && isDir) {
+              nsAutoString path;
+              if (NS_WARN_IF(NS_FAILED(file->GetPath(path)))) {
+                continue;
+              }
+
+              RefPtr<FileSystemSecurity> fss = FileSystemSecurity::GetOrCreate();
+              fss->GrantAccessToContentProcess(aParent->ChildID(), path);
+            }
+          }
+
+          blobImpl = new FileBlobImpl(file);
+
+          IgnoredErrorResult rv;
+
+          
+          
+          blobImpl->GetSize(rv);
+          if (NS_WARN_IF(rv.Failed())) {
+            continue;
+          }
+
+          blobImpl->GetLastModified(rv);
+          if (NS_WARN_IF(rv.Failed())) {
+            continue;
+          }
+        } else {
+          if (aInSyncMessage) {
+            
+            continue;
+          }
+          blobImpl = do_QueryInterface(data);
+        }
+        if (blobImpl) {
+          IPCDataTransferData data;
+          IPCBlob ipcBlob;
+
+          
+          
+          
+          if (aChild) {
+            nsresult rv = IPCBlobUtils::Serialize(blobImpl, aChild, ipcBlob);
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              continue;
+            }
+
+            data = ipcBlob;
+          } else if (aParent) {
+            nsresult rv = IPCBlobUtils::Serialize(blobImpl, aParent, ipcBlob);
+            if (NS_WARN_IF(NS_FAILED(rv))) {
+              continue;
+            }
+
+            data = ipcBlob;
+          }
+
+          IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+          item->flavor() = flavorStr;
+          item->data() = data;
         } else {
           
-          nsCOMPtr<nsIInputStream> stream(do_QueryInterface(data));
-          if (stream) {
-            IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
-            item->flavor() = flavorStr;
-
-            nsCString imageData;
-            NS_ConsumeStream(stream, UINT32_MAX, imageData);
-
-            Shmem imageDataShmem = ConvertToShmem(aChild, aParent, imageData);
-            if (!imageDataShmem.IsReadable() || !imageDataShmem.Size<char>()) {
-              continue;
-            }
-
-            item->data() = imageDataShmem;
-            continue;
-          }
-
           
-          nsCOMPtr<imgIContainer> image(do_QueryInterface(data));
-          if (image) {
-            RefPtr<mozilla::gfx::SourceSurface> surface =
-              image->GetFrame(imgIContainer::FRAME_CURRENT,
-                              imgIContainer::FLAG_SYNC_DECODE);
-            if (!surface) {
-              continue;
-            }
-            RefPtr<mozilla::gfx::DataSourceSurface> dataSurface =
-              surface->GetDataSurface();
-            if (!dataSurface) {
-              continue;
-            }
-            size_t length;
-            int32_t stride;
-            IShmemAllocator* allocator = aChild ? static_cast<IShmemAllocator*>(aChild)
-                                                : static_cast<IShmemAllocator*>(aParent);
-            Maybe<Shmem> surfaceData = GetSurfaceData(dataSurface, &length, &stride,
-                                                      allocator);
-
-            if (surfaceData.isNothing()) {
-              continue;
-            }
-
-            IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
-            item->flavor() = flavorStr;
-            
-            item->data() = surfaceData.ref();
-
-            IPCDataTransferImage& imageDetails = item->imageDetails();
-            mozilla::gfx::IntSize size = dataSurface->GetSize();
-            imageDetails.width() = size.width;
-            imageDetails.height() = size.height;
-            imageDetails.stride() = stride;
-            imageDetails.format() = dataSurface->GetFormat();
-
-            continue;
-          }
-
           
-          nsCOMPtr<BlobImpl> blobImpl;
-          nsCOMPtr<nsIFile> file = do_QueryInterface(data);
-          if (file) {
-            
-            
-            
-            
-            
-            if (aInSyncMessage) {
-              nsAutoCString type;
-              if (IsFileImage(file, type)) {
-                IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
-                item->flavor() = type;
-                nsAutoCString data;
-                SlurpFileToString(file, data);
-
-                Shmem dataAsShmem = ConvertToShmem(aChild, aParent, data);
-                item->data() = dataAsShmem;
-              }
-
-              continue;
-            }
-
-            if (aParent) {
-              bool isDir = false;
-              if (NS_SUCCEEDED(file->IsDirectory(&isDir)) && isDir) {
-                nsAutoString path;
-                if (NS_WARN_IF(NS_FAILED(file->GetPath(path)))) {
-                  continue;
-                }
-
-                RefPtr<FileSystemSecurity> fss = FileSystemSecurity::GetOrCreate();
-                fss->GrantAccessToContentProcess(aParent->ChildID(), path);
-              }
-            }
-
-            blobImpl = new FileBlobImpl(file);
-
-            IgnoredErrorResult rv;
-
-            
-            
-            blobImpl->GetSize(rv);
-            if (NS_WARN_IF(rv.Failed())) {
-              continue;
-            }
-
-            blobImpl->GetLastModified(rv);
-            if (NS_WARN_IF(rv.Failed())) {
-              continue;
-            }
-          } else {
-            if (aInSyncMessage) {
-              
-              continue;
-            }
-            blobImpl = do_QueryInterface(data);
-          }
-          if (blobImpl) {
-            IPCDataTransferData data;
-            IPCBlob ipcBlob;
-
-            
-            
-            
-            if (aChild) {
-              nsresult rv = IPCBlobUtils::Serialize(blobImpl, aChild, ipcBlob);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                continue;
-              }
-
-              data = ipcBlob;
-            } else if (aParent) {
-              nsresult rv = IPCBlobUtils::Serialize(blobImpl, aParent, ipcBlob);
-              if (NS_WARN_IF(NS_FAILED(rv))) {
-                continue;
-              }
-
-              data = ipcBlob;
-            }
-
+          
+          if (flavorStr.EqualsLiteral(kFilePromiseMime)) {
             IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
             item->flavor() = flavorStr;
-            item->data() = data;
-          } else {
+            item->data() = NS_ConvertUTF8toUTF16(flavorStr);
+          } else if (!data) {
             
-            
-            
-            
-            if (flavorStr.EqualsLiteral(kFilePromiseMime)) {
-              IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
-              item->flavor() = flavorStr;
-              item->data() = NS_ConvertUTF8toUTF16(flavorStr);
-            } else if (!data) {
-              
-              IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
-              item->flavor() = flavorStr;
-              item->data() = nsString();
-              continue;
-            }
+            IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
+            item->flavor() = flavorStr;
+            item->data() = nsString();
+            continue;
           }
         }
       }

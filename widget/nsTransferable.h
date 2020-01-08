@@ -73,8 +73,8 @@ public:
 protected:
   virtual ~nsTransferable();
 
-    
-  already_AddRefed<nsIMutableArray> GetTransferDataFlavors();
+  
+  void GetTransferDataFlavors(nsTArray<nsCString>& aFlavors);
  
   nsTArray<DataStruct> mDataArray;
   nsCOMPtr<nsIFormatConverter> mFormatConv;

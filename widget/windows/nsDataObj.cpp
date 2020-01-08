@@ -1278,22 +1278,15 @@ bool nsDataObj :: IsFlavourPresent(const char *inFlavour)
   NS_ENSURE_TRUE(mTransferable, false);
   
   
-  nsCOMPtr<nsIArray> flavorList;
-  mTransferable->FlavorsTransferableCanExport(getter_AddRefs(flavorList));
-  NS_ENSURE_TRUE(flavorList, false);
+  nsTArray<nsCString> flavors;
+  nsresult rv = mTransferable->FlavorsTransferableCanExport(flavors);
+  NS_ENSURE_SUCCESS(rv, false);
 
   
-  uint32_t cnt;
-  flavorList->GetLength(&cnt);
-  for (uint32_t i = 0; i < cnt; ++i) {
-    nsCOMPtr<nsISupportsCString> currentFlavor = do_QueryElementAt(flavorList, i);
-    if (currentFlavor) {
-      nsAutoCString flavorStr;
-      currentFlavor->GetData(flavorStr);
-      if (flavorStr.Equals(inFlavour)) {
-        retval = true;         
-        break;
-      }
+  for (uint32_t i = 0; i < flavors.Length(); ++i) {
+    if (flavors[i].Equals(inFlavour)) {
+      retval = true;         
+      break;
     }
   } 
 

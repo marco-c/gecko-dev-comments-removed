@@ -231,25 +231,15 @@ nsTransferable::Init(nsILoadContext* aContext)
 
 
 
-
-already_AddRefed<nsIMutableArray>
-nsTransferable::GetTransferDataFlavors()
+void
+nsTransferable::GetTransferDataFlavors(nsTArray<nsCString>& aFlavors)
 {
   MOZ_ASSERT(mInitialized);
 
-  nsCOMPtr<nsIMutableArray> array = nsArray::Create();
-
   for (size_t i = 0; i < mDataArray.Length(); ++i) {
     DataStruct& data = mDataArray.ElementAt(i);
-    nsCOMPtr<nsISupportsCString> flavorWrapper = do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
-    if ( flavorWrapper ) {
-      flavorWrapper->SetData ( data.GetFlavor() );
-      nsCOMPtr<nsISupports> genericWrapper ( do_QueryInterface(flavorWrapper) );
-      array->AppendElement( genericWrapper );
-    }
+    aFlavors.AppendElement(data.GetFlavor());
   }
-
-  return array.forget();
 }
 
 
@@ -500,21 +490,18 @@ NS_IMETHODIMP nsTransferable::GetConverter(nsIFormatConverter * *aConverter)
 
 
 NS_IMETHODIMP
-nsTransferable::FlavorsTransferableCanImport(nsIArray **_retval)
+nsTransferable::FlavorsTransferableCanImport(nsTArray<nsCString>& aFlavors)
 {
   MOZ_ASSERT(mInitialized);
 
-  NS_ENSURE_ARG_POINTER(_retval);
+  
+  
+  
+  GetTransferDataFlavors(aFlavors);
 
-  
-  
-  
-  nsCOMPtr<nsIMutableArray> array = GetTransferDataFlavors();
-  nsCOMPtr<nsIFormatConverter> converter;
-  GetConverter(getter_AddRefs(converter));
-  if ( converter ) {
+  if (mFormatConv) {
     nsCOMPtr<nsIArray> convertedList;
-    converter->GetInputDataFlavors(getter_AddRefs(convertedList));
+    mFormatConv->GetInputDataFlavors(getter_AddRefs(convertedList));
 
     if ( convertedList ) {
       uint32_t importListLen;
@@ -526,16 +513,16 @@ nsTransferable::FlavorsTransferableCanImport(nsIArray **_retval)
         nsAutoCString flavorStr;
         flavorWrapper->GetData( flavorStr );
 
-        if (GetDataForFlavor (mDataArray, flavorStr.get())
-            == mDataArray.NoIndex) 
-          array->AppendElement (flavorWrapper);
-      } 
+        
+        if (!aFlavors.Contains(flavorStr)) {
+          aFlavors.AppendElement(flavorStr);
+        }
+      }
     }
-  } 
+  }
 
-  array.forget(_retval);
   return NS_OK;
-} 
+}
 
 
 
@@ -545,21 +532,19 @@ nsTransferable::FlavorsTransferableCanImport(nsIArray **_retval)
 
 
 NS_IMETHODIMP
-nsTransferable::FlavorsTransferableCanExport(nsIArray **_retval)
+nsTransferable::FlavorsTransferableCanExport(nsTArray<nsCString>& aFlavors)
 {
   MOZ_ASSERT(mInitialized);
 
-  NS_ENSURE_ARG_POINTER(_retval);
 
   
   
   
-  nsCOMPtr<nsIMutableArray> array = GetTransferDataFlavors();
-  nsCOMPtr<nsIFormatConverter> converter;
-  GetConverter(getter_AddRefs(converter));
-  if ( converter ) {
+  GetTransferDataFlavors(aFlavors);
+
+  if (mFormatConv) {
     nsCOMPtr<nsIArray> convertedList;
-    converter->GetOutputDataFlavors(getter_AddRefs(convertedList));
+    mFormatConv->GetOutputDataFlavors(getter_AddRefs(convertedList));
 
     if ( convertedList ) {
       uint32_t importListLen;
@@ -571,16 +556,16 @@ nsTransferable::FlavorsTransferableCanExport(nsIArray **_retval)
         nsAutoCString flavorStr;
         flavorWrapper->GetData( flavorStr );
 
-        if (GetDataForFlavor (mDataArray, flavorStr.get())
-            == mDataArray.NoIndex) 
-          array->AppendElement (flavorWrapper);
-      } 
+        
+        if (!aFlavors.Contains(flavorStr)) {
+          aFlavors.AppendElement(flavorStr);
+        }
+      }
     }
-  } 
+  }
 
-  array.forget(_retval);
   return NS_OK;
-} 
+}
 
 NS_IMETHODIMP
 nsTransferable::GetIsPrivateData(bool *aIsPrivateData)
