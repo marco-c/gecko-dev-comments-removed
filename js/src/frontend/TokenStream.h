@@ -1555,6 +1555,16 @@ class GeneralTokenStreamChars
     uint32_t matchUnicodeEscapeIdStart(uint32_t* codePoint);
     bool matchUnicodeEscapeIdent(uint32_t* codePoint);
 
+    
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool internalComputeLineOfContext(ErrorMetadata* err, uint32_t offset);
+
   public:
     JSAtom* getRawTemplateStringAtom() {
         TokenStreamAnyChars& anyChars = anyCharsAccess();
@@ -1822,6 +1832,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using SpecializedChars::getFullAsciiCodePoint;
     using SpecializedChars::getNonAsciiCodePoint;
     using SpecializedChars::getNonAsciiCodePointDontNormalize;
+    using GeneralCharsBase::internalComputeLineOfContext;
     using TokenStreamCharsShared::isAsciiCodePoint;
     using CharsBase::matchCodeUnit;
     using CharsBase::matchLineTerminator;
@@ -1901,12 +1912,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
     
     MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
-
-  private:
-    
-    
-    
-    MOZ_MUST_USE bool computeLineOfContext(ErrorMetadata* err, uint32_t offset);
 
   public:
     

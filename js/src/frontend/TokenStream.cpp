@@ -808,17 +808,14 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::computeErrorMetadata(ErrorMetadata* 
         return true;
 
     
-    return computeLineOfContext(err, offset);
+    return internalComputeLineOfContext(err, offset);
 }
 
 template<typename CharT, class AnyCharsAccess>
 bool
-TokenStreamSpecific<CharT, AnyCharsAccess>::computeLineOfContext(ErrorMetadata* err,
-                                                                 uint32_t offset)
+GeneralTokenStreamChars<CharT, AnyCharsAccess>::internalComputeLineOfContext(ErrorMetadata* err,
+                                                                             uint32_t offset)
 {
-    
-    
-    
     TokenStreamAnyChars& anyChars = anyCharsAccess();
 
     
@@ -851,7 +848,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::computeLineOfContext(ErrorMetadata* 
     
     
     StringBuffer windowBuf(anyChars.cx);
-    if (!windowBuf.append(codeUnitPtrAt(windowStart), windowLength) ||
+    if (!windowBuf.append(this->sourceUnits.codeUnitPtrAt(windowStart), windowLength) ||
         !windowBuf.append('\0'))
     {
         return false;
