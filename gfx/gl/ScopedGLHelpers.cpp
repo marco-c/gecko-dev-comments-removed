@@ -11,14 +11,6 @@
 namespace mozilla {
 namespace gl {
 
-#ifdef DEBUG
-bool
-IsContextCurrent(GLContext* gl)
-{
-    return gl->IsCurrent();
-}
-#endif
-
 
 
 

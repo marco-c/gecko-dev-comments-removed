@@ -908,19 +908,11 @@ WebGLContext::CreateTexture()
     return globj.forget();
 }
 
-static GLenum
-GetAndClearError(GLenum* errorVar)
-{
-    MOZ_ASSERT(errorVar);
-    GLenum ret = *errorVar;
-    *errorVar = LOCAL_GL_NO_ERROR;
-    return ret;
-}
-
 GLenum
 WebGLContext::GetError()
 {
     const FuncScope funcScope(*this, "getError");
+
     
 
 
@@ -933,28 +925,26 @@ WebGLContext::GetError()
 
 
 
-    if (IsContextLost()) {
-        if (mEmitContextLostErrorOnce) {
-            mEmitContextLostErrorOnce = false;
-            return LOCAL_GL_CONTEXT_LOST_WEBGL;
-        }
+    auto err = mWebGLError;
+    mWebGLError = 0;
+    if (IsContextLost() || err) 
+        return err;
+
+    
+    
+    err = gl->fGetError();
+    if (gl->IsContextLost()) {
+        UpdateContextLossStatus();
+        return GetError();
+    }
+    MOZ_ASSERT(err != LOCAL_GL_CONTEXT_LOST);
+
+    if (err) {
+        GenerateWarning("Driver error unexpected by WebGL: 0x%04x", err);
+        
         
         
     }
-
-    GLenum err = GetAndClearError(&mWebGLError);
-    if (err != LOCAL_GL_NO_ERROR)
-        return err;
-
-    if (IsContextLost())
-        return LOCAL_GL_NO_ERROR;
-
-    
-    
-
-    GetAndFlushUnderlyingGLErrors();
-
-    err = GetAndClearError(&mUnderlyingGLError);
     return err;
 }
 

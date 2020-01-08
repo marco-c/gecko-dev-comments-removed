@@ -632,20 +632,6 @@ WebGLContext::ErrorInvalidEnumArg(const char* argName, GLenum val) const
     ErrorInvalidEnum("Bad `%s`: %s", argName, enumName.BeginReading());
 }
 
-GLenum
-WebGLContext::GetAndFlushUnderlyingGLErrors() const
-{
-    
-    GLenum error = gl->fGetError();
-
-    
-    
-    if (!mUnderlyingGLError)
-        mUnderlyingGLError = error;
-
-    return error;
-}
-
 #ifdef DEBUG
 
 static bool
@@ -699,7 +685,7 @@ void
 WebGLContext::AssertCachedBindings() const
 {
 #ifdef DEBUG
-    GetAndFlushUnderlyingGLErrors();
+    gl::GLContext::LocalErrorScope errorScope(*gl);
 
     if (IsWebGL2() || IsExtensionEnabled(WebGLExtensionID::OES_vertex_array_object)) {
         AssertUintParamCorrect(gl, LOCAL_GL_VERTEX_ARRAY_BINDING,
@@ -739,7 +725,7 @@ WebGLContext::AssertCachedBindings() const
     bound = curBuff ? curBuff->mGLName : 0;
     AssertUintParamCorrect(gl, LOCAL_GL_ELEMENT_ARRAY_BUFFER_BINDING, bound);
 
-    MOZ_ASSERT(!GetAndFlushUnderlyingGLErrors());
+    MOZ_ASSERT(!gl::GLContext::IsBadCallError(errorScope.GetError()));
 #endif
 
     
@@ -749,7 +735,7 @@ void
 WebGLContext::AssertCachedGlobalState() const
 {
 #ifdef DEBUG
-    GetAndFlushUnderlyingGLErrors();
+    gl::GLContext::LocalErrorScope errorScope(*gl);
 
     
 
@@ -807,7 +793,7 @@ WebGLContext::AssertCachedGlobalState() const
         AssertUintParamCorrect(gl, LOCAL_GL_PACK_SKIP_PIXELS   , mPixelStore_PackSkipPixels);
     }
 
-    MOZ_ASSERT(!GetAndFlushUnderlyingGLErrors());
+    MOZ_ASSERT(!gl::GLContext::IsBadCallError(errorScope.GetError()));
 #endif
 }
 

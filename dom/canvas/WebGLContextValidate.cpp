@@ -327,7 +327,6 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     mDisableExtensions = gfxPrefs::WebGLDisableExtensions();
     mLoseContextOnMemoryPressure = gfxPrefs::WebGLLoseContextOnMemoryPressure();
     mCanLoseContextInForeground = gfxPrefs::WebGLCanLoseContextInForeground();
-    mRestoreWhenVisible = gfxPrefs::WebGLRestoreWhenVisible();
 
     
     
@@ -383,9 +382,7 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     mDefaultFB_DrawBuffer0 = LOCAL_GL_BACK;
     mDefaultFB_ReadBuffer = LOCAL_GL_BACK;
 
-    mEmitContextLostErrorOnce = true;
     mWebGLError = LOCAL_GL_NO_ERROR;
-    mUnderlyingGLError = LOCAL_GL_NO_ERROR;
 
     mBound2DTextures.Clear();
     mBoundCubeMapTextures.Clear();
