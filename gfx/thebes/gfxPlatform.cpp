@@ -2557,6 +2557,11 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
   return (env && *env == '1');
 }
 
+static bool WebRenderEnvvarDisabled() {
+  const char* env = PR_GetEnv("MOZ_WEBRENDER");
+  return (env && *env == '0');
+}
+
 
 
 
@@ -2722,7 +2727,7 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   
-  if (gfxPrefs::WebRenderForceDisabled()) {
+  if (gfxPrefs::WebRenderForceDisabled() || WebRenderEnvvarDisabled()) {
     featureWebRender.UserDisable(
         "User force-disabled WR",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_USER_FORCE_DISABLED"));
