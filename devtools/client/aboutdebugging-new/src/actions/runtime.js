@@ -10,6 +10,7 @@ const { BrowserToolboxProcess } =
 const { Cc, Ci } = require("chrome");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 const { DebuggerServer } = require("devtools/server/main");
+const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
 
 const {
   CONNECT_RUNTIME_FAILURE,
@@ -71,26 +72,39 @@ function disconnectRuntime() {
 }
 
 function inspectDebugTarget(type, id) {
-  if (type === DEBUG_TARGETS.TAB) {
-    window.open(`about:devtools-toolbox?type=tab&id=${ id }`);
-  } else if (type === DEBUG_TARGETS.EXTENSION) {
-    
-    if (browserToolboxProcess) {
-      browserToolboxProcess.close();
-    }
-
-    browserToolboxProcess = BrowserToolboxProcess.init({
-      addonID: id,
-      onClose: () => {
-        browserToolboxProcess = null;
+  return async (_, getState) => {
+    switch (type) {
+      case DEBUG_TARGETS.TAB: {
+        
+        window.open(`about:devtools-toolbox?type=tab&id=${ id }`);
+        break;
       }
-    });
-  } else {
-    console.error(`Failed to inspect the debug target of type: ${ type } id: ${ id }`);
-  }
+      case DEBUG_TARGETS.EXTENSION: {
+        
+        if (browserToolboxProcess) {
+          browserToolboxProcess.close();
+        }
 
-  
-  return () => {};
+        browserToolboxProcess = BrowserToolboxProcess.init({
+          addonID: id,
+          onClose: () => {
+            browserToolboxProcess = null;
+          }
+        });
+        break;
+      }
+      case DEBUG_TARGETS.WORKER: {
+        
+        gDevToolsBrowser.openWorkerToolbox(getState().runtime.client, id);
+        break;
+      }
+
+      default: {
+        console.error("Failed to inspect the debug target of " +
+                      `type: ${ type } id: ${ id }`);
+      }
+    }
+  };
 }
 
 function installTemporaryExtension() {
@@ -118,6 +132,18 @@ function installTemporaryExtension() {
   });
 
   return () => {};
+}
+
+function pushServiceWorker(actor) {
+  return async (_, getState) => {
+    const client = getState().runtime.client;
+
+    try {
+      await client.request({ to: actor, type: "push" });
+    } catch (e) {
+      console.error(e);
+    }
+  };
 }
 
 function reloadTemporaryExtension(actor) {
@@ -210,14 +236,28 @@ function requestWorkers() {
   };
 }
 
+function startServiceWorker(actor) {
+  return async (_, getState) => {
+    const client = getState().runtime.client;
+
+    try {
+      await client.request({ to: actor, type: "start" });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
+
 module.exports = {
   connectRuntime,
   disconnectRuntime,
   inspectDebugTarget,
   installTemporaryExtension,
+  pushServiceWorker,
   reloadTemporaryExtension,
   removeTemporaryExtension,
   requestTabs,
   requestExtensions,
   requestWorkers,
+  startServiceWorker,
 };
