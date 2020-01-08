@@ -1342,6 +1342,15 @@ class BuildReader(object):
 
         r = {}
 
+        
+        
+        
+        def path_matches_pattern(relpath, pattern):
+            if pattern == relpath:
+                return True
+
+            return '*' in pattern and mozpath.match(relpath, pattern)
+
         for path, ctxs in paths.items():
             
             assert '\\' not in path
@@ -1364,13 +1373,7 @@ class BuildReader(object):
                 else:
                     relpath = path
 
-                pattern = ctx.pattern
-
-                
-                
-                
-                if pattern == relpath or \
-                        ('*' in pattern and mozpath.match(relpath, pattern)):
+                if any(path_matches_pattern(relpath, p) for p in ctx.patterns):
                     flags += ctx
 
             if not any([flags.test_tags, flags.test_files, flags.test_flavors]):
