@@ -230,7 +230,7 @@ async function spotlight(subcategory) {
     if (!gSearchResultsPane.categoriesInitialized) {
       await waitForSystemAddonInjectionsFinished([{
         isGoingToInject: formAutofillParent.initialized,
-        elementId: "formAutofillGroup",
+        elementId: "formAutofillGroupBox",
       }]);
     }
     scrollAndHighlight(subcategory);
