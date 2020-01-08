@@ -196,32 +196,45 @@ Element* DocumentOrShadowRoot::GetFullscreenElement() {
 
 namespace {
 
-enum class FromPointRequestKind {
-  Element,
-  Elements,
+using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
+
+
+enum class Multiple {
+  No,
+  Yes,
 };
+
 
 enum class FlushLayout {
   No,
   Yes,
 };
 
-using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
+template <typename NodeOrElement>
+NodeOrElement* CastTo(nsIContent* aContent);
 
-static void ElementsFromPointHelper(
-    DocumentOrShadowRoot& aRoot, float aX, float aY,
-    EnumSet<FrameForPointOption> aOptions, FlushLayout aShouldFlushLayout,
-    FromPointRequestKind aRequestKind,
-    nsTArray<RefPtr<mozilla::dom::Element>>& aElements) {
-  
-  if (!aOptions.contains(FrameForPointOption::IgnoreRootScrollFrame) &&
-      (aX < 0 || aY < 0)) {
-    return;
-  }
+template <>
+Element* CastTo<Element>(nsIContent* aContent) {
+  return aContent->AsElement();
+}
 
-  nscoord x = nsPresContext::CSSPixelsToAppUnits(aX);
-  nscoord y = nsPresContext::CSSPixelsToAppUnits(aY);
-  nsPoint pt(x, y);
+template <>
+nsINode* CastTo<nsINode>(nsIContent* aContent) {
+  return aContent;
+}
+
+template <typename NodeOrElement>
+static void QueryNodesFromRect(DocumentOrShadowRoot& aRoot, const nsRect& aRect,
+                               EnumSet<FrameForPointOption> aOptions,
+                               FlushLayout aShouldFlushLayout,
+                               Multiple aMultiple,
+                               nsTArray<RefPtr<NodeOrElement>>& aNodes) {
+  static_assert(std::is_same<nsINode, NodeOrElement>::value ||
+                    std::is_same<Element, NodeOrElement>::value,
+                "Should returning nodes or elements");
+
+  constexpr bool returningElements =
+      std::is_same<Element, NodeOrElement>::value;
 
   nsCOMPtr<nsIDocument> doc = aRoot.AsNode().OwnerDoc();
 
@@ -242,61 +255,67 @@ static void ElementsFromPointHelper(
     return;  
   }
 
-  nsTArray<nsIFrame*> outFrames;
-
   aOptions += FrameForPointOption::IgnorePaintSuppression;
   aOptions += FrameForPointOption::IgnoreCrossDoc;
 
-  
-  
-  nsLayoutUtils::GetFramesForArea(rootFrame, nsRect(pt, nsSize(1, 1)),
-                                  outFrames, aOptions);
+  AutoTArray<nsIFrame*, 8> frames;
+  nsLayoutUtils::GetFramesForArea(rootFrame, aRect, frames, aOptions);
 
-  
-  
-  if (outFrames.IsEmpty()) {
-    return;
-  }
+  for (nsIFrame* frame : frames) {
+    nsIContent* content = doc->GetContentInThisDocument(frame);
+    if (!content) {
+      continue;
+    }
 
-  
-  nsIContent* lastAdded = nullptr;
-
-  for (uint32_t i = 0; i < outFrames.Length(); i++) {
-    nsIContent* node = doc->GetContentInThisDocument(outFrames[i]);
-
-    if (!node || !node->IsElement()) {
+    if (returningElements && !content->IsElement()) {
       
       
       
       
       
       
-      if (aRequestKind != FromPointRequestKind::Element &&
-          !nsSVGUtils::IsInSVGTextSubtree(outFrames[i])) {
+      if (aMultiple == Multiple::Yes &&
+          !nsSVGUtils::IsInSVGTextSubtree(frame)) {
         continue;
       }
 
-      node = node->GetParent();
-      if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(node)) {
-        node = shadow->Host();
+      content = content->GetParent();
+      if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(content)) {
+        content = shadow->Host();
       }
     }
 
     
     
     
-    node = aRoot.Retarget(node);
+    content = aRoot.Retarget(content);
 
-    if (node && node != lastAdded) {
-      aElements.AppendElement(node->AsElement());
-      lastAdded = node;
-      
-      
-      if (aRequestKind == FromPointRequestKind::Element) {
+    if (content && content != aNodes.SafeLastElement(nullptr)) {
+      aNodes.AppendElement(CastTo<NodeOrElement>(content));
+      if (aMultiple == Multiple::No) {
         return;
       }
     }
   }
+}
+
+template <typename NodeOrElement>
+static void QueryNodesFromPoint(DocumentOrShadowRoot& aRoot, float aX, float aY,
+                                EnumSet<FrameForPointOption> aOptions,
+                                FlushLayout aShouldFlushLayout,
+                                Multiple aMultiple,
+                                nsTArray<RefPtr<NodeOrElement>>& aNodes) {
+  
+  if (!aOptions.contains(FrameForPointOption::IgnoreRootScrollFrame) &&
+      (aX < 0 || aY < 0)) {
+    return;
+  }
+
+  nscoord x = nsPresContext::CSSPixelsToAppUnits(aX);
+  nscoord y = nsPresContext::CSSPixelsToAppUnits(aY);
+  nsPoint pt(x, y);
+  QueryNodesFromRect(aRoot, nsRect(pt, nsSize(1, 1)), aOptions,
+                     aShouldFlushLayout, aMultiple, aNodes);
 }
 
 }  
@@ -307,14 +326,12 @@ Element* DocumentOrShadowRoot::ElementFromPoint(float aX, float aY) {
 
 void DocumentOrShadowRoot::ElementsFromPoint(
     float aX, float aY, nsTArray<RefPtr<Element>>& aElements) {
-  ElementsFromPointHelper(*this, aX, aY, {}, FlushLayout::Yes,
-                          FromPointRequestKind::Elements, aElements);
+  QueryNodesFromPoint(*this, aX, aY, {}, FlushLayout::Yes, Multiple::Yes,
+                      aElements);
 }
 
 Element* DocumentOrShadowRoot::ElementFromPointHelper(
     float aX, float aY, bool aIgnoreRootScrollFrame, bool aFlushLayout) {
-  AutoTArray<RefPtr<Element>, 1> elementArray;
-
   EnumSet<FrameForPointOption> options;
   if (aIgnoreRootScrollFrame) {
     options += FrameForPointOption::IgnoreRootScrollFrame;
@@ -322,10 +339,9 @@ Element* DocumentOrShadowRoot::ElementFromPointHelper(
 
   auto flush = aFlushLayout ? FlushLayout::Yes : FlushLayout::No;
 
-  ElementsFromPointHelper(*this, aX, aY, options, flush,
-                          FromPointRequestKind::Element, elementArray);
-
-  return elementArray.SafeElementAt(0);
+  AutoTArray<RefPtr<Element>, 1> elements;
+  QueryNodesFromPoint(*this, aX, aY, options, flush, Multiple::No, elements);
+  return elements.SafeElementAt(0);
 }
 
 void DocumentOrShadowRoot::NodesFromRect(float aX, float aY, float aTopSize,
@@ -347,55 +363,13 @@ void DocumentOrShadowRoot::NodesFromRect(float aX, float aY, float aTopSize,
 
   nsRect rect(x, y, w, h);
 
-  nsIDocument* doc = AsNode().OwnerDoc();
-
-  
-  
-  if (aFlushLayout) {
-    doc->FlushPendingNotifications(FlushType::Layout);
-  }
-
-  nsIPresShell* ps = doc->GetShell();
-  if (!ps) {
-    return;
-  }
-
-  nsIFrame* rootFrame = ps->GetRootFrame();
-
-  
-  if (!rootFrame)
-    return;  
-             
-
-  EnumSet<FrameForPointOption> options = {
-      FrameForPointOption::IgnorePaintSuppression,
-      FrameForPointOption::IgnoreCrossDoc};
-
+  EnumSet<FrameForPointOption> options;
   if (aIgnoreRootScrollFrame) {
     options += FrameForPointOption::IgnoreRootScrollFrame;
   }
 
-  AutoTArray<nsIFrame*, 8> outFrames;
-  nsLayoutUtils::GetFramesForArea(rootFrame, rect, outFrames, options);
-
-  
-  nsIContent* lastAdded = nullptr;
-
-  for (uint32_t i = 0; i < outFrames.Length(); i++) {
-    nsIContent* node = doc->GetContentInThisDocument(outFrames[i]);
-
-    if (node && !node->IsElement() && !node->IsText()) {
-      
-      
-      
-      
-      node = node->GetParent();
-    }
-    if (node && node != lastAdded) {
-      aReturn.AppendElement(node);
-      lastAdded = node;
-    }
-  }
+  auto flush = aFlushLayout ? FlushLayout::Yes : FlushLayout::No;
+  QueryNodesFromRect(*this, rect, options, flush, Multiple::Yes, aReturn);
 }
 
 Element* DocumentOrShadowRoot::AddIDTargetObserver(nsAtom* aID,
