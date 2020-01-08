@@ -417,7 +417,8 @@ class StructMetaTypeDescr : public NativeObject
                                              HandleObject structTypePrototype,
                                              bool opaque,
                                              AutoIdVector& ids,
-                                             AutoValueVector& fieldTypeObjs);
+                                             AutoValueVector& fieldTypeObjs,
+                                             Vector<bool>& fieldMutabilities);
 
     
     
@@ -475,6 +476,9 @@ class StructTypeDescr : public ComplexTypeDescr
 
     
     size_t fieldOffset(size_t index) const;
+
+    
+    bool fieldIsMutable(size_t index) const;
 
     static bool call(JSContext* cx, unsigned argc, Value* vp);
 
