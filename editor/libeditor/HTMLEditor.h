@@ -174,7 +174,7 @@ public:
 
 
 
-  nsresult OnInputLineBreak();
+  nsresult InsertLineBreakAsAction();
 
   
 

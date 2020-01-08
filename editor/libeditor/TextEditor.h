@@ -190,7 +190,7 @@ public:
 
 
 
-  nsresult OnInputParagraphSeparator();
+  nsresult InsertParagraphSeparatorAsAction();
 
   
 
@@ -382,7 +382,7 @@ protected:
 
 
 
-  nsresult InsertParagraphSeparatorAsAction();
+  nsresult InsertParagraphSeparatorAsSubAction();
 
   nsresult InsertTextAt(const nsAString& aStringToInsert,
                         nsINode* aDestinationNode,
