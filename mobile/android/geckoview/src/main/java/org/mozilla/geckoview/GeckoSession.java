@@ -950,22 +950,6 @@ public class GeckoSession extends LayerSession
         loadUri(uri, null, LOAD_FLAGS_NONE);
     }
 
-    private void loadUri(@NonNull String uri, @Nullable String referrer,
-                         @Nullable String baseUri, int flags) {
-        final GeckoBundle msg = new GeckoBundle();
-        msg.putString("uri", uri);
-        msg.putInt("flags", flags);
-
-        if (baseUri != null) {
-            msg.putString("baseUri", baseUri);
-        }
-
-        if (referrer != null) {
-            msg.putString("referrer", referrer);
-        }
-        mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
-    }
-
     
 
 
@@ -983,8 +967,16 @@ public class GeckoSession extends LayerSession
 
 
 
-    public void loadUri(@NonNull String uri, @Nullable String referrer, @LoadFlags int flags) {
-        loadUri(uri, referrer, null, flags);
+    public void loadUri(@NonNull String uri, @Nullable String referrer,
+                        @LoadFlags int flags) {
+        final GeckoBundle msg = new GeckoBundle();
+        msg.putString("uri", uri);
+        msg.putInt("flags", flags);
+
+        if (referrer != null) {
+            msg.putString("referrer", referrer);
+        }
+        mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
     }
 
     
@@ -1010,7 +1002,8 @@ public class GeckoSession extends LayerSession
 
 
 
-    public void loadUri(@NonNull Uri uri, @Nullable Uri referrer, @LoadFlags int flags) {
+    public void loadUri(@NonNull Uri uri, @Nullable Uri referrer,
+                        @LoadFlags int flags) {
         loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags);
     }
 
@@ -1021,26 +1014,13 @@ public class GeckoSession extends LayerSession
 
 
 
+
     public void loadString(@NonNull final String data, @Nullable final String mimeType) {
-        loadString(data, mimeType, null);
-    }
-
-    
-
-
-
-
-
-
-
-
-    public void loadString(@NonNull final String data, @Nullable final String mimeType,
-                           @Nullable final String baseUri) {
         if (data == null) {
             throw new IllegalArgumentException("data cannot be null");
         }
 
-        loadUri(createDataUri(data, mimeType), null, baseUri, LOAD_FLAGS_NONE);
+        loadUri(createDataUri(data, mimeType), null, LOAD_FLAGS_NONE);
     }
 
     
@@ -1051,24 +1031,11 @@ public class GeckoSession extends LayerSession
 
 
     public void loadData(@NonNull final byte[] bytes, @Nullable final String mimeType) {
-        loadData(bytes, mimeType, null);
-    }
-
-    
-
-
-
-
-
-
-
-    public void loadData(@NonNull final byte[] bytes, @Nullable final String mimeType,
-                         @Nullable final String baseUri) {
         if (bytes == null) {
             throw new IllegalArgumentException("data cannot be null");
         }
 
-        loadUri(createDataUri(bytes, mimeType), null, baseUri, LOAD_FLAGS_NONE);
+        loadUri(createDataUri(bytes, mimeType), null, LOAD_FLAGS_NONE);
     }
 
     
