@@ -3,6 +3,7 @@
 
 
 #include "jsfriendapi.h"
+#include "js/SourceBufferHolder.h"
 #include "jsapi-tests/tests.h"
 #include "vm/ErrorReporting.h"
 

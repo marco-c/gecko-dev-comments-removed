@@ -5,6 +5,7 @@
 
 
 
+#include "js/SourceBufferHolder.h"
 #include "jsapi-tests/tests.h"
 
 struct ScriptObjectFixture : public JSAPITest {

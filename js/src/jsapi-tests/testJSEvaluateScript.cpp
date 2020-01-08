@@ -2,6 +2,7 @@
 
 
 
+#include "js/SourceBufferHolder.h"
 #include "jsapi-tests/tests.h"
 
 using mozilla::ArrayLength;
