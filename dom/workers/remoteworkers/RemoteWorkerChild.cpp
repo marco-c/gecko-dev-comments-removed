@@ -10,6 +10,7 @@
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "mozilla/dom/ServiceWorkerInterceptController.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/workerinternals/ScriptLoader.h"
 #include "mozilla/dom/WorkerError.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -87,15 +88,19 @@ public:
   NS_DECL_ISUPPORTS
 
   SharedWorkerInterfaceRequestor()
-    : mSWController(new ServiceWorkerInterceptController())
-  {}
+  {
+    
+    if (!ServiceWorkerParentInterceptEnabled() || XRE_IsParentProcess()) {
+      mSWController = new ServiceWorkerInterceptController();
+    }
+  }
 
   NS_IMETHOD
   GetInterface(const nsIID& aIID, void** aSink) override
   {
     MOZ_ASSERT(NS_IsMainThread());
 
-    if (aIID.Equals(NS_GET_IID(nsINetworkInterceptController))) {
+    if (mSWController && aIID.Equals(NS_GET_IID(nsINetworkInterceptController))) {
       
       
       RefPtr<ServiceWorkerInterceptController> swController = mSWController;

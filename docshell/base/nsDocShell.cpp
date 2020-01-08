@@ -480,6 +480,8 @@ nsDocShell::Create(BrowsingContext* aBrowsingContext)
   
   
   
+  
+  
   if (!ServiceWorkerParentInterceptEnabled() || XRE_IsParentProcess()) {
     ds->mInterceptController = new ServiceWorkerInterceptController();
   }
