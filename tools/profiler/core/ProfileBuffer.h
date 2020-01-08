@@ -32,7 +32,7 @@ public:
   
   
   
-  explicit ProfileBuffer(uint32_t aEntrySize);
+  explicit ProfileBuffer(uint32_t aCapacity);
 
   ~ProfileBuffer();
 
@@ -135,7 +135,7 @@ public:
   uint64_t mRangeEnd;
 
   
-  uint32_t mEntrySize;
+  uint32_t mCapacity;
 
   
   ProfilerMarkerLinkedList mStoredMarkers;

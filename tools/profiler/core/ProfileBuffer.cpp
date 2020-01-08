@@ -15,20 +15,20 @@
 
 using namespace mozilla;
 
-ProfileBuffer::ProfileBuffer(uint32_t aEntrySize)
+ProfileBuffer::ProfileBuffer(uint32_t aCapacity)
   : mEntryIndexMask(0)
   , mRangeStart(0)
   , mRangeEnd(0)
-  , mEntrySize(0)
+  , mCapacity(0)
 {
   
   
   const uint32_t UINT32_MAX_POWER_OF_TWO = 1 << 31;
-  MOZ_RELEASE_ASSERT(aEntrySize <= UINT32_MAX_POWER_OF_TWO,
-                     "aEntrySize is larger than what we support");
-  mEntrySize = RoundUpPow2(aEntrySize);
-  mEntryIndexMask = mEntrySize - 1;
-  mEntries = MakeUnique<ProfileBufferEntry[]>(mEntrySize);
+  MOZ_RELEASE_ASSERT(aCapacity <= UINT32_MAX_POWER_OF_TWO,
+                     "aCapacity is larger than what we support");
+  mCapacity = RoundUpPow2(aCapacity);
+  mEntryIndexMask = mCapacity - 1;
+  mEntries = MakeUnique<ProfileBufferEntry[]>(mCapacity);
 }
 
 ProfileBuffer::~ProfileBuffer()
@@ -46,7 +46,7 @@ ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry)
 
   
   
-  if (mRangeEnd - mRangeStart > mEntrySize) {
+  if (mRangeEnd - mRangeStart > mCapacity) {
     mRangeStart++;
   }
 }

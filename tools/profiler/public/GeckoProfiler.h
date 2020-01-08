@@ -264,7 +264,7 @@ void profiler_shutdown();
 
 
 
-void profiler_start(uint32_t aEntries, double aInterval, uint32_t aFeatures,
+void profiler_start(uint32_t aCapacity, double aInterval, uint32_t aFeatures,
                     const char** aFilters, uint32_t aFilterCount);
 
 
@@ -276,7 +276,7 @@ void profiler_stop();
 
 
 
-void profiler_ensure_started(uint32_t aEntries, double aInterval,
+void profiler_ensure_started(uint32_t aCapacity, double aInterval,
                              uint32_t aFeatures, const char** aFilters,
                              uint32_t aFilterCount);
 
@@ -823,7 +823,7 @@ public:
 
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  char mSetEntries[64];
+  char mSetCapacity[64];
   char mSetInterval[64];
   char mSetFeaturesBitfield[64];
   char mSetFilters[1024];
