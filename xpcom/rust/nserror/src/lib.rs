@@ -14,7 +14,7 @@ pub struct nsresult(pub u32);
 pub trait NsresultExt {
     fn failed(self) -> bool;
     fn succeeded(self) -> bool;
-    fn to_result(self) -> Result<nsresult, nsresult>;
+    fn to_result(self) -> Result<(), nsresult>;
 
     
     
@@ -30,11 +30,11 @@ impl NsresultExt for nsresult {
         !self.failed()
     }
 
-    fn to_result(self) -> Result<nsresult, nsresult> {
+    fn to_result(self) -> Result<(), nsresult> {
         if self.failed() {
             Err(self)
         } else {
-            Ok(self)
+            Ok(())
         }
     }
 
