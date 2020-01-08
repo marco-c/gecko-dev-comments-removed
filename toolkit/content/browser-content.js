@@ -26,12 +26,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "formFill",
 
 var global = this;
 
-
-addMessageListener("Finder:Initialize", function() {
-  let {RemoteFinderListener} = ChromeUtils.import("resource://gre/modules/RemoteFinder.jsm", {});
-  new RemoteFinderListener(global);
-});
-
 var AutoScrollListener = {
   handleEvent(event) {
     if (event.isTrusted &
