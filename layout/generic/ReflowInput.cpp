@@ -863,9 +863,6 @@ void ReflowInput::InitDynamicReflowRoot() {
     
     
     canBeDynamicReflowRoot = false;
-  } else {
-    MOZ_ASSERT(mFrame->IsAbsPosContainingBlock(),
-               "we need the frame to be both an abs-pos and fixed-pos cb");
   }
 
   
