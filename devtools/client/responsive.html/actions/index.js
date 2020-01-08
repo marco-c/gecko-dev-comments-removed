@@ -82,6 +82,9 @@ createEnum([
   "TAKE_SCREENSHOT_END",
 
   
+  "TOGGLE_LEFT_ALIGNMENT",
+
+  
   "UPDATE_DEVICE_DISPLAYED",
 
   

@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+const {
+  TOGGLE_LEFT_ALIGNMENT,
+} = require("./index");
+
+module.exports = {
+
+  toggleLeftAlignment(enabled) {
+    return {
+      type: TOGGLE_LEFT_ALIGNMENT,
+      enabled,
+    };
+  },
+
+};
