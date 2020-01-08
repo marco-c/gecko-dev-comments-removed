@@ -732,6 +732,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
   
   
+  
   class SourceCoords {
     
     
@@ -765,51 +766,69 @@ class TokenStreamAnyChars : public TokenStreamShared {
     
     
     
-    
     Vector<uint32_t, 128> lineStartOffsets_;
+
+    
     uint32_t initialLineNum_;
+
+    
     uint32_t initialColumn_;
 
     
-    
-    mutable uint32_t lastLineIndex_;
 
-    uint32_t lineIndexOf(uint32_t offset) const;
+
+
+
+
+
+
+
+    mutable uint32_t lastIndex_;
+
+    uint32_t indexFromOffset(uint32_t offset) const;
 
     static const uint32_t MAX_PTR = UINT32_MAX;
 
-    uint32_t lineIndexToNum(uint32_t lineIndex) const {
-      return lineIndex + initialLineNum_;
+    uint32_t lineNumberFromIndex(uint32_t index) const {
+      return index + initialLineNum_;
     }
-    uint32_t lineNumToIndex(uint32_t lineNum) const {
+
+    uint32_t indexFromLineNumber(uint32_t lineNum) const {
       return lineNum - initialLineNum_;
     }
-    uint32_t lineIndexAndOffsetToColumn(uint32_t lineIndex,
-                                        uint32_t offset) const {
-      uint32_t lineStartOffset = lineStartOffsets_[lineIndex];
+
+    uint32_t lineOffsetFromIndexAndOffset(uint32_t index,
+                                          uint32_t offset) const {
+      uint32_t lineStartOffset = lineStartOffsets_[index];
       MOZ_RELEASE_ASSERT(offset >= lineStartOffset);
-      uint32_t column = offset - lineStartOffset;
-      if (lineIndex == 0) {
-        return column + initialColumn_;
-      }
-      return column;
+      return offset - lineStartOffset;
+    }
+
+    
+    
+    
+    
+    
+    uint32_t columnFromIndexAndOffset(uint32_t index, uint32_t offset) const {
+      uint32_t lineOffset = lineOffsetFromIndexAndOffset(index, offset);
+      return (index == 0 ? initialColumn_ : 0) + lineOffset;
     }
 
    public:
-    SourceCoords(JSContext* cx, uint32_t ln, uint32_t col,
-                 uint32_t initialLineOffset);
+    SourceCoords(JSContext* cx, uint32_t initialLineNumber,
+                 uint32_t initialColumnNumber, uint32_t initialOffset);
 
     MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
     MOZ_MUST_USE bool fill(const SourceCoords& other);
 
     bool isOnThisLine(uint32_t offset, uint32_t lineNum,
                       bool* onThisLine) const {
-      uint32_t lineIndex = lineNumToIndex(lineNum);
-      if (lineIndex + 1 >= lineStartOffsets_.length()) {  
+      uint32_t index = indexFromLineNumber(lineNum);
+      if (index + 1 >= lineStartOffsets_.length()) {  
         return false;
       }
-      *onThisLine = lineStartOffsets_[lineIndex] <= offset &&
-                    offset < lineStartOffsets_[lineIndex + 1];
+      *onThisLine = lineStartOffsets_[index] <= offset &&
+                    offset < lineStartOffsets_[index + 1];
       return true;
     }
 
