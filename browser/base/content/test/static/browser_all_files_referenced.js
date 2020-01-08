@@ -342,13 +342,6 @@ function addCodeReference(url, fromURI) {
     if (ref === null)
       return;
   } else {
-    
-    
-    
-    if (/resource:\/\/app\/features\/[^/]+\/bootstrap\.js/.test(from)) {
-      gReferencesFromCode.set(url, null);
-      return;
-    }
     ref = new Set();
     gReferencesFromCode.set(url, ref);
   }
@@ -680,9 +673,6 @@ add_task(async function checkAllTheFiles() {
       if (refs === null)
         return false;
       for (let ref of refs) {
-        if (ref.endsWith("!/bootstrap.js"))
-          return false;
-
         if (isDevtools) {
           if (ref.startsWith("resource://app/components/") ||
               (file.startsWith("chrome://") && ref.startsWith("resource://")))
@@ -754,23 +744,6 @@ add_task(async function checkAllTheFiles() {
       return true;
     });
   }
-
-  unreferencedFiles = unreferencedFiles.filter(file => {
-    
-    
-    
-
-    if (/resource:\/\/app\/features\/[^/]+\/bootstrap\.js/.test(file)) {
-      info("not reporting feature boostrap file: " + file);
-      return false;
-    }
-    
-    if (/resource:\/\/app\/features\/[^/]+\/chrome\/skin\//.test(file)) {
-      info("not reporting feature skin file that may be for another platform: " + file);
-      return false;
-    }
-    return true;
-  });
 
   is(unreferencedFiles.length, 0, "there should be no unreferenced files");
   for (let file of unreferencedFiles) {
