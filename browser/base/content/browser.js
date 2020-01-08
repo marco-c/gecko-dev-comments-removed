@@ -521,7 +521,7 @@ const gSessionHistoryObserver = {
 const gStoragePressureObserver = {
   _lastNotificationTime: -1,
 
-  async observe(subject, topic, data) {
+  observe(subject, topic, data) {
     if (topic != "QuotaManager::StoragePressure") {
       return;
     }
@@ -546,17 +546,17 @@ const gStoragePressureObserver = {
     }
     this._lastNotificationTime = Date.now();
 
-    MozXULElement.insertFTLIfNeeded("branding/brand.ftl");
-    MozXULElement.insertFTLIfNeeded("browser/preferences/preferences.ftl");
-
     const BYTES_IN_GIGABYTE = 1073741824;
     const USAGE_THRESHOLD_BYTES = BYTES_IN_GIGABYTE *
       Services.prefs.getIntPref("browser.storageManager.pressureNotification.usageThresholdGB");
     let msg = "";
     let buttons = [];
     let usage = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+    let prefStrBundle = document.getElementById("bundle_preferences");
+    let brandShortName = document.getElementById("bundle_brand").getString("brandShortName");
     buttons.push({
-      "l10n-id": "space-alert-learn-more-button",
+      label: prefStrBundle.getString("spaceAlert.learnMoreButton.label"),
+      accessKey: prefStrBundle.getString("spaceAlert.learnMoreButton.accesskey"),
       callback(notificationBar, button) {
         let learnMoreURL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "storage-permissions";
         
@@ -568,17 +568,27 @@ const gStoragePressureObserver = {
       
       
       
-      [msg] = await document.l10n.formatValues([{id: "space-alert-under-5gb-message"}]);
+      msg = prefStrBundle.getFormattedString("spaceAlert.under5GB.message", [brandShortName]);
       buttons.push({
-        "l10n-id": "space-alert-under-5gb-ok-button",
+        label: prefStrBundle.getString("spaceAlert.under5GB.okButton.label"),
+        accessKey: prefStrBundle.getString("spaceAlert.under5GB.okButton.accesskey"),
         callback() {},
       });
     } else {
       
       
-      [msg] = await document.l10n.formatValues([{id: "space-alert-over-5gb-message"}]);
+      let descriptionStringID = "spaceAlert.over5GB.message1";
+      let prefButtonLabelStringID = "spaceAlert.over5GB.prefButton.label";
+      let prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButton.accesskey";
+      if (AppConstants.platform == "win") {
+        descriptionStringID = "spaceAlert.over5GB.messageWin1";
+        prefButtonLabelStringID = "spaceAlert.over5GB.prefButtonWin.label";
+        prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButtonWin.accesskey";
+      }
+      msg = prefStrBundle.getFormattedString(descriptionStringID, [brandShortName]);
       buttons.push({
-        "l10n-id": "space-alert-over-5gb-pref-button",
+        label: prefStrBundle.getString(prefButtonLabelStringID),
+        accessKey: prefStrBundle.getString(prefButtonAccesskeyStringID),
         callback(notificationBar, button) {
           
           
@@ -589,10 +599,6 @@ const gStoragePressureObserver = {
 
     notificationBox.appendNotification(
       msg, NOTIFICATION_VALUE, null, notificationBox.PRIORITY_WARNING_HIGH, buttons, null);
-
-    
-    
-    document.l10n.translateFragment(notificationBox);
   },
 };
 
