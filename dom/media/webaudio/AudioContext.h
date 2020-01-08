@@ -185,7 +185,7 @@ class AudioContext final : public DOMEventTargetHelper,
 
   
   
-  void NotifyScheduledSourceNodeStarted();
+  void StartBlockedAudioContextIfAllowed();
 
   
   
