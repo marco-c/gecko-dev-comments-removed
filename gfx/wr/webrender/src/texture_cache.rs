@@ -834,7 +834,7 @@ impl TextureCache {
     
     fn default_eviction(&self) -> EvictionThreshold {
         EvictionThresholdBuilder::new(self.now)
-            .max_frames(30)
+            .max_frames(200)
             .max_time_s(3)
             .scale_by_pressure()
             .build()
