@@ -139,55 +139,8 @@ impl<'a> DoubleEndedIterator for DeclarationImportanceIterator<'a> {
 }
 
 
-
-
-
-
-pub struct NormalDeclarationIterator<'a>(DeclarationImportanceIterator<'a>);
-
-impl<'a> NormalDeclarationIterator<'a> {
-    #[inline]
-    fn new(declarations: &'a [PropertyDeclaration], important: &'a SmallBitVec) -> Self {
-        NormalDeclarationIterator(
-            DeclarationImportanceIterator::new(declarations, important)
-        )
-    }
-}
-
-impl<'a> Iterator for NormalDeclarationIterator<'a> {
-    type Item = &'a PropertyDeclaration;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let (decl, importance) = self.0.iter.next()?;
-            if !importance {
-                return Some(decl);
-            }
-        }
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.0.iter.size_hint()
-    }
-}
-
-impl<'a> DoubleEndedIterator for NormalDeclarationIterator<'a> {
-    #[inline]
-    fn next_back(&mut self) -> Option<Self::Item> {
-        loop {
-            let (decl, importance) = self.0.iter.next_back()?;
-            if !importance {
-                return Some(decl);
-            }
-        }
-    }
-}
-
-
 pub struct AnimationValueIterator<'a, 'cx, 'cx_a:'cx> {
-    iter: NormalDeclarationIterator<'a>,
+    iter: DeclarationImportanceIterator<'a>,
     context: &'cx mut Context<'cx_a>,
     default_values: &'a ComputedValues,
     
@@ -202,7 +155,7 @@ impl<'a, 'cx, 'cx_a:'cx> AnimationValueIterator<'a, 'cx, 'cx_a> {
         extra_custom_properties: Option<&'a Arc<::custom_properties::CustomPropertiesMap>>,
     ) -> AnimationValueIterator<'a, 'cx, 'cx_a> {
         AnimationValueIterator {
-            iter: declarations.normal_declaration_iter(),
+            iter: declarations.declaration_importance_iter(),
             context,
             default_values,
             extra_custom_properties,
@@ -215,7 +168,11 @@ impl<'a, 'cx, 'cx_a:'cx> Iterator for AnimationValueIterator<'a, 'cx, 'cx_a> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let decl = self.iter.next()?;
+            let (decl, importance) = self.iter.next()?;
+
+            if importance.important() {
+                continue;
+            }
 
             let animation = AnimationValue::from_declaration(
                 decl,
@@ -287,8 +244,12 @@ impl PropertyDeclarationBlock {
 
     
     #[inline]
-    pub fn normal_declaration_iter(&self) -> NormalDeclarationIterator {
-        NormalDeclarationIterator::new(&self.declarations, &self.declarations_importance)
+    pub fn normal_declaration_iter<'a>(
+        &'a self,
+    ) -> impl DoubleEndedIterator<Item = &'a PropertyDeclaration> {
+        self.declaration_importance_iter()
+            .filter(|(_, importance)| !importance.important())
+            .map(|(declaration, _)| declaration)
     }
 
     
