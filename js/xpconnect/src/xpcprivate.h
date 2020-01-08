@@ -436,7 +436,7 @@ private:
 
     
     static uint32_t         sInstanceCount;
-    static mozilla::StaticRefPtr<WatchdogManager> sWatchdogInstance;
+    static mozilla::StaticAutoPtr<WatchdogManager> sWatchdogInstance;
     static WatchdogManager* GetWatchdogManager();
 
     
