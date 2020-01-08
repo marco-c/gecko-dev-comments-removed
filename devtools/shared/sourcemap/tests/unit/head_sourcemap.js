@@ -1,0 +1,14 @@
+
+
+
+"use strict";
+
+function doesNotThrow(f) {
+  try {
+    f();
+  } catch(e) {
+    ok(false, e + e.stack);
+  }
+}
+
+var assert = this;

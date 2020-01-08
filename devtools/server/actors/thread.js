@@ -67,6 +67,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._observingNetwork = false;
 
     this._options = {
+      useSourceMaps: false,
       autoBlackBox: false,
     };
 
@@ -1954,6 +1955,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
+    let sourceActor;
     if (this._debuggerSourcesSeen.has(source) && this.sources.hasSourceActor(source)) {
       
       
@@ -1964,31 +1966,72 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       if (!this.dbg.replaying) {
         return false;
       }
+      sourceActor = this.sources.getSourceActor(source);
     } else {
-      this.sources.createNonSourceMappedActor(source);
+      sourceActor = this.sources.createNonSourceMappedActor(source);
     }
 
     const bpActors = [...this.breakpointActorMap.findActors()];
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (const actor of bpActors) {
-      if (actor.isPending) {
-        actor.originalLocation.originalSourceActor._setBreakpoint(actor);
-      } else {
-        actor.originalLocation.originalSourceActor._setBreakpointAtGeneratedLocation(
-          actor, GeneratedLocation.fromOriginalLocation(actor.originalLocation)
-        );
+    if (this._options.useSourceMaps) {
+      const promises = [];
+
+      
+      
+      
+      const sourceActorsCreated = this.sources._createSourceMappedActors(source);
+
+      if (bpActors.length) {
+        
+        
+        
+        
+        
+        
+        this.unsafeSynchronize(sourceActorsCreated);
+      }
+
+      for (const actor of bpActors) {
+        if (actor.isPending) {
+          promises.push(actor.originalLocation.originalSourceActor._setBreakpoint(actor));
+        } else {
+          promises.push(
+            this.sources.getAllGeneratedLocations(actor.originalLocation).then(
+              (generatedLocations) => {
+                if (generatedLocations.length > 0 &&
+                    generatedLocations[0].generatedSourceActor
+                                         .actorID === sourceActor.actorID) {
+                  sourceActor._setBreakpointAtAllGeneratedLocations(
+                    actor, generatedLocations);
+                }
+              }));
+        }
+      }
+
+      if (promises.length > 0) {
+        this.unsafeSynchronize(Promise.all(promises));
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      for (const actor of bpActors) {
+        if (actor.isPending) {
+          actor.originalLocation.originalSourceActor._setBreakpoint(actor);
+        } else {
+          actor.originalLocation.originalSourceActor._setBreakpointAtGeneratedLocation(
+            actor, GeneratedLocation.fromOriginalLocation(actor.originalLocation)
+          );
+        }
       }
     }
 

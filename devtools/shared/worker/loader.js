@@ -579,6 +579,8 @@ this.worker = new WorkerDebuggerLoader({
     
     "promise": "resource://gre/modules/Promise-backend.js",
     
+    "source-map": "resource://devtools/shared/sourcemap/source-map.js",
+    
     "xpcshell-test": "resource://test",
     
   },

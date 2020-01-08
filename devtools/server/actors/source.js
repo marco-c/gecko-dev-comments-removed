@@ -281,118 +281,192 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     }
   },
 
-  _reportLoadSourceError: function(error) {
+  _reportLoadSourceError: function(error, map = null) {
     try {
       DevToolsUtils.reportException("SourceActor", error);
 
       JSON.stringify(this.form(), null, 4).split(/\n/g)
         .forEach(line => console.error("\t", line));
+
+      if (!map) {
+        return;
+      }
+
+      console.error("\t", "source map's sourceRoot =", map.sourceRoot);
+
+      console.error("\t", "source map's sources =");
+      map.sources.forEach(s => {
+        const hasSourceContent = map.sourceContentFor(s, true);
+        console.error("\t\t", s, "\t",
+                      hasSourceContent ? "has source content" : "no source content");
+      });
+
+      console.error("\t", "source map's sourcesContent =");
+      map.sourcesContent.forEach(c => {
+        if (c.length > 80) {
+          c = c.slice(0, 77) + "...";
+        }
+        c = c.replace(/\n/g, "\\n");
+        console.error("\t\t", c);
+      });
     } catch (e) {
       
     }
   },
 
-  _getSourceText: async function() {
+  _getSourceText: function() {
     const toResolvedContent = t => ({
       content: t,
       contentType: this._contentType,
     });
     const isWasm = this.source && this.source.introductionType === "wasm";
 
-    if (isWasm) {
-      const wasm = this.source.binary;
-      const buffer = wasm.buffer;
-      assert(
-        wasm.byteOffset === 0 && wasm.byteLength === buffer.byteLength,
-        "Typed array from wasm source binary must cover entire buffer"
-      );
-      return toResolvedContent(buffer);
-    }
-
-    
-    
-    
-    if (this.dbg.replaying) {
-      assert(!this._contentType);
-      return this.dbg.replayingContent(this.url);
-    }
-
-    
-    
-    
-    
-    
-    
-    if (this.source &&
-        this.source.text !== "[no source]" &&
-        this._contentType &&
-        (this._contentType.includes("javascript") ||
-          this._contentType === "text/wasm")) {
-      return toResolvedContent(this.source.text);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const loadFromCache = this.isInlineSource && this.isCacheEnabled;
-
-    
-    const win = this.threadActor._parent.window;
-    let principal, cacheKey;
-    
-    if (!isWorker && win instanceof Ci.nsIDOMWindow) {
-      const docShell = win.docShell;
-      const channel = docShell.currentDocumentChannel;
-      principal = channel.loadInfo.loadingPrincipal;
-
-      
-      
-      if (loadFromCache &&
-        docShell.currentDocumentChannel instanceof Ci.nsICacheInfoChannel) {
-        cacheKey = docShell.currentDocumentChannel.cacheKey;
+    const genSource = this.generatedSource || this.source;
+    return this.threadActor.sources.fetchSourceMap(genSource).then(map => {
+      if (map) {
+        try {
+          const sourceContent = map.sourceContentFor(this.url);
+          if (sourceContent) {
+            return toResolvedContent(sourceContent);
+          }
+        } catch (error) {
+          this._reportLoadSourceError(error, map);
+          throw error;
+        }
       }
-    }
 
-    const sourceFetched = fetch(this.url, {
-      principal,
-      cacheKey,
-      loadFromCache,
-    });
+      if (isWasm) {
+        const wasm = this.source.binary;
+        const buffer = wasm.buffer;
+        assert(
+          wasm.byteOffset === 0 && wasm.byteLength === buffer.byteLength,
+          "Typed array from wasm source binary must cover entire buffer"
+        );
+        return toResolvedContent(buffer);
+      }
 
-    
-    return sourceFetched
-      .then(result => {
-        this._contentType = result.contentType;
-        return result;
-      }, error => {
-        this._reportLoadSourceError(error);
-        throw error;
+      
+      
+      
+      if (this.dbg.replaying) {
+        assert(!this._contentType);
+        return this.dbg.replayingContent(this.url);
+      }
+
+      
+      
+      
+      
+      
+      
+      if (this.source &&
+          this.source.text !== "[no source]" &&
+          this._contentType &&
+          (this._contentType.includes("javascript") ||
+           this._contentType === "text/wasm")) {
+        return toResolvedContent(this.source.text);
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const loadFromCache = this.isInlineSource && this.isCacheEnabled;
+
+      
+      const win = this.threadActor._parent.window;
+      let principal, cacheKey;
+      
+      if (!isWorker && win instanceof Ci.nsIDOMWindow) {
+        const docShell = win.docShell;
+        const channel = docShell.currentDocumentChannel;
+        principal = channel.loadInfo.loadingPrincipal;
+
+        
+        
+        if (loadFromCache &&
+          docShell.currentDocumentChannel instanceof Ci.nsICacheInfoChannel) {
+          cacheKey = docShell.currentDocumentChannel.cacheKey;
+        }
+      }
+
+      const sourceFetched = fetch(this.url, {
+        principal,
+        cacheKey,
+        loadFromCache,
       });
+
+      
+      return sourceFetched
+        .then(result => {
+          this._contentType = result.contentType;
+          return result;
+        }, error => {
+          this._reportLoadSourceError(error, map);
+          throw error;
+        });
+    });
   },
 
   
 
 
 
-  getExecutableLines: async function() {
-    const offsetsLines = new Set();
-    for (const s of this.dbg.findScripts({ source: this.source })) {
+  getExecutableLines: function() {
+    function sortLines(lines) {
+      
+      lines = [...lines];
+      lines.sort((a, b) => {
+        return a - b;
+      });
+      return lines;
+    }
+
+    if (this.generatedSource) {
+      return this.threadActor.sources.getSourceMap(this.generatedSource).then(sm => {
+        const lines = new Set();
+
+        
+        const offsets = this.getExecutableOffsets(this.generatedSource, false);
+        for (const offset of offsets) {
+          const {line, source: sourceUrl} = sm.originalPositionFor({
+            line: offset.lineNumber,
+            column: offset.columnNumber,
+          });
+
+          if (sourceUrl === this.url) {
+            lines.add(line);
+          }
+        }
+
+        return sortLines(lines);
+      });
+    }
+
+    const lines = this.getExecutableOffsets(this.source, true);
+    return sortLines(lines);
+  },
+
+  
+
+
+
+
+
+  getExecutableOffsets: function(source, onlyLine) {
+    const offsets = new Set();
+    for (const s of this.dbg.findScripts({ source })) {
       for (const offset of s.getAllColumnOffsets()) {
-        offsetsLines.add(offset.lineNumber);
+        offsets.add(onlyLine ? offset.lineNumber : offset);
       }
     }
 
-    const lines = [...offsetsLines];
-    lines.sort((a, b) => {
-      return a - b;
-    });
-    return lines;
+    return offsets;
   },
 
   
