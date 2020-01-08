@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const { createEnum } = require("devtools/client/shared/enum");
+
+createEnum([
+
+  
+  "RESET_CHANGES",
+
+  
+  "TRACK_CHANGE",
+
+], module.exports);
