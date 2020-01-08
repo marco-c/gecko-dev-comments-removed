@@ -81,54 +81,6 @@ public:
   }
 
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetSystemLocales(nsTArray<nsCString>& aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal);
-
   static bool GetDateTimeConnectorPattern(const nsACString& aLocale,
                                           nsAString& aRetVal);
 

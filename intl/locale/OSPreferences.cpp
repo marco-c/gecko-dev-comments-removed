@@ -33,42 +33,6 @@ OSPreferences::GetInstance()
   return sInstance;
 }
 
-bool
-OSPreferences::GetSystemLocales(nsTArray<nsCString>& aRetVal)
-{
-  if (!mSystemLocales.IsEmpty()) {
-    aRetVal = mSystemLocales;
-    return true;
-  }
-
-  if (ReadSystemLocales(aRetVal)) {
-    mSystemLocales = aRetVal;
-    return true;
-  }
-
-  
-  
-  
-  aRetVal.AppendElement(NS_LITERAL_CSTRING("en-US"));
-  return false;
-}
-
-bool
-OSPreferences::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal)
-{
-  if (!mRegionalPrefsLocales.IsEmpty()) {
-    aRetVal = mRegionalPrefsLocales;
-    return true;
-  }
-
-  if (ReadRegionalPrefsLocales(aRetVal)) {
-    mRegionalPrefsLocales = aRetVal;
-    return true;
-  }
-
-  return false;
-}
-
 void
 OSPreferences::Refresh()
 {
@@ -298,27 +262,23 @@ OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
 
 
 NS_IMETHODIMP
-OSPreferences::GetSystemLocales(uint32_t* aCount, char*** aOutArray)
+OSPreferences::GetSystemLocales(nsTArray<nsCString>& aRetVal)
 {
-  AutoTArray<nsCString,10> tempLocales;
-  nsTArray<nsCString>* systemLocalesPtr;
-
   if (!mSystemLocales.IsEmpty()) {
-    
-    systemLocalesPtr = &mSystemLocales;
-  } else {
-    
-    GetSystemLocales(tempLocales);
-    systemLocalesPtr = &tempLocales;
-  }
-  *aCount = systemLocalesPtr->Length();
-  *aOutArray = static_cast<char**>(moz_xmalloc(*aCount * sizeof(char*)));
-
-  for (uint32_t i = 0; i < *aCount; i++) {
-    (*aOutArray)[i] = moz_xstrdup((*systemLocalesPtr)[i].get());
+    aRetVal = mSystemLocales;
+    return NS_OK;
   }
 
-  return NS_OK;
+  if (ReadSystemLocales(aRetVal)) {
+    mSystemLocales = aRetVal;
+    return NS_OK;
+  }
+
+  
+  
+  
+  aRetVal.AppendElement(NS_LITERAL_CSTRING("en-US"));
+  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
@@ -337,27 +297,19 @@ OSPreferences::GetSystemLocale(nsACString& aRetVal)
 }
 
 NS_IMETHODIMP
-OSPreferences::GetRegionalPrefsLocales(uint32_t* aCount, char*** aOutArray)
+OSPreferences::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal)
 {
-  AutoTArray<nsCString,10> tempLocales;
-  nsTArray<nsCString>* regionalPrefsLocalesPtr;
-
   if (!mRegionalPrefsLocales.IsEmpty()) {
-    
-    regionalPrefsLocalesPtr = &mRegionalPrefsLocales;
-  } else {
-    
-    GetRegionalPrefsLocales(tempLocales);
-    regionalPrefsLocalesPtr = &tempLocales;
-  }
-  *aCount = regionalPrefsLocalesPtr->Length();
-  *aOutArray = static_cast<char**>(moz_xmalloc(*aCount * sizeof(char*)));
-
-  for (uint32_t i = 0; i < *aCount; i++) {
-    (*aOutArray)[i] = moz_xstrdup((*regionalPrefsLocalesPtr)[i].get());
+    aRetVal = mRegionalPrefsLocales;
+    return NS_OK;
   }
 
-  return NS_OK;
+  if (ReadRegionalPrefsLocales(aRetVal)) {
+    mRegionalPrefsLocales = aRetVal;
+    return NS_OK;
+  }
+
+  return NS_ERROR_FAILURE;
 }
 
 static OSPreferences::DateTimeFormatStyle
