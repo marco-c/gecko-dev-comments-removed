@@ -12,11 +12,13 @@ var gPermPrincipal;
 var gUsageRequest;
 
 
-var gPermissions = SitePermissions.listPermissions().sort((a, b) => {
-  let firstLabel = SitePermissions.getPermissionLabel(a);
-  let secondLabel = SitePermissions.getPermissionLabel(b);
-  return firstLabel.localeCompare(secondLabel);
-});
+var gPermissions = SitePermissions.listPermissions()
+  .filter(p => SitePermissions.getPermissionLabel(p) != null)
+  .sort((a, b) => {
+    let firstLabel = SitePermissions.getPermissionLabel(a);
+    let secondLabel = SitePermissions.getPermissionLabel(b);
+    return firstLabel.localeCompare(secondLabel);
+  });
 
 var permissionObserver = {
   observe(aSubject, aTopic, aData) {

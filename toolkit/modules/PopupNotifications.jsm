@@ -462,6 +462,13 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
+
+
+
+
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -781,6 +788,13 @@ PopupNotifications.prototype = {
     text.start = array[0] || "";
     text.name = n.options.name || "";
     text.end = array[1] || "";
+    if (array.length == 3) {
+      text.secondName = n.options.secondName || "";
+      text.secondEnd = array[2] || "";
+    } else if (array.length > 3) {
+      Cu.reportError("Unexpected array length encountered in " +
+                     "_formatDescriptionMessage: " + array.length);
+    }
     return text;
   },
 
@@ -807,6 +821,11 @@ PopupNotifications.prototype = {
       popupnotification.setAttribute("label", desc.start);
       popupnotification.setAttribute("name", desc.name);
       popupnotification.setAttribute("endlabel", desc.end);
+      if (("secondName" in desc) &&
+          ("secondEnd" in desc)) {
+        popupnotification.setAttribute("secondname", desc.secondName);
+        popupnotification.setAttribute("secondendlabel", desc.secondEnd);
+      }
 
       popupnotification.setAttribute("id", popupnotificationID);
       popupnotification.setAttribute("popupid", n.id);

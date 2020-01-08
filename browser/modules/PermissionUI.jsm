@@ -260,6 +260,12 @@ var PermissionPromptPrototype = {
 
 
 
+  onShown() {},
+
+  
+
+
+
   onAfterShow() {},
 
   
@@ -424,6 +430,10 @@ var PermissionPromptPrototype = {
         return true;
       }
       
+      if (topic == "shown") {
+        this.onShown();
+      }
+      
       if (topic == "removed") {
         this.onAfterShow();
       }
@@ -472,8 +482,8 @@ var PermissionPromptForRequestPrototype = {
     this.request.cancel();
   },
 
-  allow() {
-    this.request.allow();
+  allow(choices) {
+    this.request.allow(choices);
   },
 };
 
@@ -905,3 +915,99 @@ AutoplayPermissionPrompt.prototype = {
 };
 
 PermissionUI.AutoplayPermissionPrompt = AutoplayPermissionPrompt;
+
+function StorageAccessPermissionPrompt(request) {
+  this.request = request;
+}
+
+StorageAccessPermissionPrompt.prototype = {
+  __proto__: PermissionPromptForRequestPrototype,
+
+  get usePermissionManager() {
+    return false;
+  },
+
+  get permissionKey() {
+    
+    return "storage-access-" + this.principal.origin;
+  },
+
+  get popupOptions() {
+    return {
+      displayURI: false,
+      name: this.principal.URI.hostPort,
+      secondName: this.topLevelPrincipal.URI.hostPort,
+    };
+  },
+
+  onShown() {
+    let document = this.browser.ownerDocument;
+    let label =
+      gBrowserBundle.formatStringFromName("storageAccess.description.label",
+                                          [this.request.principal.URI.hostPort, "<>"], 2);
+    let parts = label.split("<>");
+    if (parts.length == 1) {
+      parts.push("");
+    }
+    let map = {
+      "storage-access-perm-label": parts[0],
+      "storage-access-perm-learnmore":
+        gBrowserBundle.GetStringFromName("storageAccess.description.learnmore"),
+      "storage-access-perm-endlabel": parts[1],
+    };
+    for (let id in map) {
+      let str = map[id];
+      document.getElementById(id).textContent = str;
+    }
+    let learnMoreURL =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") + "third-party-cookies";
+    document.getElementById("storage-access-perm-learnmore")
+            .href = learnMoreURL;
+  },
+
+  get notificationID() {
+    return "storage-access";
+  },
+
+  get anchorID() {
+    return "storage-access-notification-icon";
+  },
+
+  get message() {
+    return gBrowserBundle.formatStringFromName("storageAccess.message", ["<>", "<>"], 2);
+  },
+
+  get promptActions() {
+    let self = this;
+    return [{
+        label: gBrowserBundle.GetStringFromName("storageAccess.DontAllow.label"),
+        accessKey: gBrowserBundle.GetStringFromName("storageAccess.DontAllow.accesskey"),
+        action: Ci.nsIPermissionManager.DENY_ACTION,
+        callback(state) {
+          self.cancel();
+        },
+      },
+      {
+        label: gBrowserBundle.GetStringFromName("storageAccess.Allow.label"),
+        accessKey: gBrowserBundle.GetStringFromName("storageAccess.Allow.accesskey"),
+        action: Ci.nsIPermissionManager.ALLOW_ACTION,
+        callback(state) {
+          self.allow({"storage-access": "allow"});
+        },
+      },
+      {
+        label: gBrowserBundle.GetStringFromName("storageAccess.AllowOnAnySite.label"),
+        accessKey: gBrowserBundle.GetStringFromName("storageAccess.AllowOnAnySite.accesskey"),
+        action: Ci.nsIPermissionManager.ALLOW_ACTION,
+        callback(state) {
+          self.allow({"storage-access": "allow-on-any-site"});
+        },
+    }];
+  },
+
+  get topLevelPrincipal() {
+    return this.request.topLevelPrincipal;
+  },
+};
+
+PermissionUI.StorageAccessPermissionPrompt = StorageAccessPermissionPrompt;

@@ -93,11 +93,14 @@ public:
   
   
   
-  typedef MozPromise<bool, bool, false> StorageAccessGrantPromise;
+  typedef MozPromise<bool, bool, true> StorageAccessFinalCheckPromise;
+  typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()> PerformFinalChecks;
+  typedef MozPromise<bool, bool, true> StorageAccessGrantPromise;
   static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise>
   AddFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal,
                                        nsPIDOMWindowInner* aParentWindow,
-                                       StorageAccessGrantedReason aReason);
+                                       StorageAccessGrantedReason aReason,
+                                       const PerformFinalChecks& aPerformFinalChecks = nullptr);
 
   
   
@@ -111,11 +114,13 @@ public:
   HasUserInteraction(nsIPrincipal* aPrincipal);
 
   
-  static void
+  typedef MozPromise<nsresult, bool, true> FirstPartyStorageAccessGrantPromise;
+  static RefPtr<FirstPartyStorageAccessGrantPromise>
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(nsIPrincipal* aPrincipal,
+                                                             nsIPrincipal* aTrackingPrinciapl,
                                                              const nsCString& aParentOrigin,
                                                              const nsCString& aGrantedOrigin,
-                                                             FirstPartyStorageAccessGrantedForOriginResolver&& aResolver);
+                                                             bool aAnySite);
 
   enum ContentBlockingAllowListPurpose {
     eStorageChecks,

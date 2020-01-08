@@ -656,6 +656,15 @@ var SitePermissions = {
 
 
   getPermissionLabel(permissionID) {
+    if (!(permissionID in gPermissionObject)) {
+      
+      return null;
+    }
+    if ("labelID" in gPermissionObject[permissionID] &&
+        gPermissionObject[permissionID].labelID === null) {
+      
+      return null;
+    }
     let labelID = gPermissionObject[permissionID].labelID || permissionID;
     return gStringBundle.GetStringFromName("permission." + labelID + ".label");
   },
@@ -851,6 +860,13 @@ var gPermissionObject = {
 
   "midi-sysex": {
     exactHostMatch: true,
+  },
+
+  "storage-access": {
+    labelID: null,
+    getDefault() {
+      return SitePermissions.UNKNOWN;
+    },
   },
 };
 
