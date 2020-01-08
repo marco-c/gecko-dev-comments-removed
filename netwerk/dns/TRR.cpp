@@ -140,7 +140,8 @@ TRR::DohEncode(nsCString &aBody, bool aDisableECS)
     aBody += 4;    
                    
     aBody += '\0'; 
-    aBody += AF_INET; 
+                   
+    aBody += 1;    
 
     aBody += '\0'; 
     aBody += '\0';
@@ -215,6 +216,7 @@ TRR::SendHTTPRequest()
     gTRRService->GetURI(uri);
     uri.Append(NS_LITERAL_CSTRING("?dns="));
     uri.Append(body);
+    LOG(("TRR::SendHTTPRequest GET dns=%s\n", body.get()));
     rv = NS_NewURI(getter_AddRefs(dnsURI), uri);
   } else {
     rv = DohEncode(body, disableECS);

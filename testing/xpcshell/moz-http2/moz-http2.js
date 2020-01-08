@@ -604,8 +604,8 @@ function handleRequest(req, res) {
     return;
 
   }
-  
-  else if (u.path === "/dns-ecs?dns=AAABAAABAAAAAAABA2VjcwdleGFtcGxlA2NvbQAAAQABAAApEAAAAAAAAAgACAAEAAIAAA") {
+    
+  else if (u.path === "/dns-ecs?dns=AAABAAABAAAAAAABA2VjcwdleGFtcGxlA2NvbQAAAQABAAApEAAAAAAAAAgACAAEAAEAAA") {
     
     
     var content= new Buffer("00000100000100010000000003656373076578616D706C6503636F6D0000010001C00C0001000100000037000405050505", "hex");
