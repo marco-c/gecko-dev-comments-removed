@@ -55,7 +55,12 @@ pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 pref("devtools.inspector.fonthighlighter.enabled", true);
 
+
+#if defined(NIGHTLY_BUILD)
+pref("devtools.inspector.changes.enabled", true);
+#else
 pref("devtools.inspector.changes.enabled", false);
+#endif
 
 
 
