@@ -24,12 +24,15 @@ graph_config_schema = Schema({
     
     
     Required('project-repo-param-prefix'): basestring,
+    
+    
+    Required('product-dir'): basestring,
     Required('treeherder'): {
         
         Required('group-names'): {basestring: basestring}
     },
     Required('index'): {
-        Required('products'): [basestring],
+        Required('products'): [basestring]
     },
     Required('try'): {
         
