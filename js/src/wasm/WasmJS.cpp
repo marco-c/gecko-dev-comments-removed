@@ -3001,31 +3001,42 @@ static bool RejectWithStreamErrorNumber(JSContext* cx, size_t errorCode,
 }
 
 class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
+  
+  
   enum StreamState { Env, Code, Tail, Closed };
-  typedef ExclusiveWaitableData<StreamState> ExclusiveStreamState;
+  ExclusiveWaitableData<StreamState> streamState_;
 
   
-  const MutableCompileArgs compileArgs_;  
   const bool instantiate_;
   const PersistentRootedObject importObj_;
 
   
-  ExclusiveStreamState streamState_;
-  Bytes envBytes_;            
-  SectionRange codeSection_;  
-  Bytes codeBytes_;           
+  
+  const MutableCompileArgs compileArgs_;
+
+  
+  Bytes envBytes_;
+  SectionRange codeSection_;
+
+  
+  
+  
+  Bytes codeBytes_;
   uint8_t* codeBytesEnd_;
   ExclusiveBytesPtr exclusiveCodeBytesEnd_;
-  Bytes tailBytes_;  
+
+  
+  Bytes tailBytes_;
   ExclusiveStreamEndData exclusiveStreamEnd_;
-  Maybe<size_t> streamError_;
-  Atomic<bool> streamFailed_;
-  Tier2Listener tier2Listener_;
 
   
   SharedModule module_;
+  Maybe<size_t> streamError_;
   UniqueChars compileError_;
   UniqueCharsVector warnings_;
+
+  
+  Atomic<bool> streamFailed_;
 
   
 
@@ -3178,14 +3189,16 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         return;
       }
       case Code:
-      case Tail: {
-        auto streamEnd = exclusiveStreamEnd_.lock();
-        MOZ_ASSERT(!streamEnd->reached);
-        streamEnd->reached = true;
-        streamEnd->tailBytes = &tailBytes_;
-        streamEnd->tier2Listener = tier2Listener;
-        streamEnd.notify_one();
-      }
+      case Tail:
+        
+        {
+          auto streamEnd = exclusiveStreamEnd_.lock();
+          MOZ_ASSERT(!streamEnd->reached);
+          streamEnd->reached = true;
+          streamEnd->tailBytes = &tailBytes_;
+          streamEnd->tier2Listener = tier2Listener;
+          streamEnd.notify_one();
+        }
         setClosedAndDestroyAfterHelperThreadStarted();
         return;
       case Closed:
@@ -3236,13 +3249,18 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
 
   bool resolve(JSContext* cx, Handle<PromiseObject*> promise) override {
     MOZ_ASSERT(streamState_.lock() == Closed);
-    MOZ_ASSERT_IF(module_, !streamFailed_ && !streamError_ && !compileError_);
-    return module_
-               ? Resolve(cx, *module_, promise, instantiate_, importObj_,
-                         warnings_)
-               : streamError_
-                     ? RejectWithStreamErrorNumber(cx, *streamError_, promise)
-                     : Reject(cx, *compileArgs_, promise, compileError_);
+
+    if (module_) {
+      MOZ_ASSERT(!streamFailed_ && !streamError_ && !compileError_);
+      return Resolve(cx, *module_, promise, instantiate_, importObj_,
+                     warnings_);
+    }
+
+    if (streamError_) {
+      return RejectWithStreamErrorNumber(cx, *streamError_, promise);
+    }
+
+    return Reject(cx, *compileArgs_, promise, compileError_);
   }
 
  public:
@@ -3250,10 +3268,10 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
                     CompileArgs& compileArgs, bool instantiate,
                     HandleObject importObj)
       : PromiseHelperTask(cx, promise),
-        compileArgs_(&compileArgs),
+        streamState_(mutexid::WasmStreamStatus, Env),
         instantiate_(instantiate),
         importObj_(cx, importObj),
-        streamState_(mutexid::WasmStreamStatus, Env),
+        compileArgs_(&compileArgs),
         codeSection_{},
         codeBytesEnd_(nullptr),
         exclusiveCodeBytesEnd_(mutexid::WasmCodeBytesEnd, nullptr),
