@@ -24,6 +24,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -167,14 +169,19 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
                     @Override
                     public void onTabRead(SessionTab tab) {
                         final String url = tab.getUrl();
-
                         
                         if (AboutPages.isAboutHome(url)) {
                             return;
                         }
 
+                        final JSONObject tabObject = tab.getTabObject();
+                        
+                        
+                        
+                        tabObject.remove("tabId");
+
                         try {
-                            parsedTabs.add(new ClosedTab(url, tab.getTitle(), tab.getTabObject().toString()));
+                            parsedTabs.add(new ClosedTab(url, tab.getTitle(), tabObject.toString()));
                         } catch (OutOfMemoryError oom) {
                             
                             
