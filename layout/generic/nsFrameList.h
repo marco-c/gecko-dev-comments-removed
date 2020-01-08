@@ -465,6 +465,19 @@ public:
 
     inline void Next();
 
+    
+
+
+
+
+
+
+
+
+
+    template<typename Predicate>
+    inline void Find(Predicate&& aPredicate);
+
     bool AtEnd() const { return Enumerator::AtEnd(); }
 
     nsIFrame* PrevFrame() const { return mPrev; }
