@@ -2543,7 +2543,10 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 #ifdef DEBUG
         simpleKind = TokenKind::Limit; 
 #endif
-        switch (static_cast<CharT>(unit)) {
+
+        
+        
+        switch (AssertedCast<uint8_t>(CodeUnitValue(toCharT(unit)))) {
           case '.':
             unit = getCodeUnit();
             if (IsAsciiDigit(unit)) {
@@ -2865,7 +2868,9 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                 continue;
             }
 
-            switch (static_cast<CharT>(unit)) {
+            
+            
+            switch (AssertedCast<uint8_t>(CodeUnitValue(toCharT(unit)))) {
               case 'b': unit = '\b'; break;
               case 'f': unit = '\f'; break;
               case 'n': unit = '\n'; break;
@@ -3062,7 +3067,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                 unit = char16_t(val);
                 break;
               } 
-            }
+            } 
 
             if (!this->charBuffer.append(unit))
                 return false;
