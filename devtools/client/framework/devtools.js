@@ -691,7 +691,7 @@ DevTools.prototype = {
 
 
   async inspectNode(tab, nodeSelectors, startTime) {
-    const target = TargetFactory.forTab(tab);
+    const target = await TargetFactory.forTab(tab);
 
     const toolbox = await gDevTools.showToolbox(target, "inspector", null, null,
                                                 startTime, "inspect_dom");
@@ -731,7 +731,7 @@ DevTools.prototype = {
 
 
   async inspectA11Y(tab, nodeSelectors, startTime) {
-    const target = TargetFactory.forTab(tab);
+    const target = await TargetFactory.forTab(tab);
 
     const toolbox = await gDevTools.showToolbox(
       target, "accessibility", null, null, startTime);
