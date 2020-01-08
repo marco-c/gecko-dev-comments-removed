@@ -33,6 +33,8 @@ Preferences.addAll([
   { id: "network.proxy.backup.ssl_port", type: "int" },
   { id: "network.proxy.backup.socks", type: "string" },
   { id: "network.proxy.backup.socks_port", type: "int" },
+  { id: "network.trr.mode", type: "int" },
+  { id: "network.trr.uri", type: "string" },
 ]);
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -277,5 +279,35 @@ var gConnectionsDialog = {
       handleControllingExtension(PREF_SETTING_TYPE, PROXY_KEY)
         .then(setInputsDisabledState);
     }
+  },
+
+  isDnsOverHttpsEnabled() {
+    
+    let trrPref = Preferences.get("network.trr.mode");
+    let enabled = trrPref.value > 0 && trrPref.value < 5;
+    return enabled;
+  },
+
+  readDnsOverHttpsMode() {
+    
+    let enabled = this.isDnsOverHttpsEnabled();
+    let uriPref = Preferences.get("network.trr.uri");
+    uriPref.disabled = !enabled;
+    return enabled;
+  },
+
+  writeDnsOverHttpsMode() {
+    
+    let trrModeCheckbox = document.getElementById("networkDnsOverHttps");
+    
+    return trrModeCheckbox.checked ? 2 : 0;
+  },
+
+  writeDnsOverHttpsUri() {
+    
+    let input = document.getElementById("networkDnsOverHttpsUrl");
+    let uriString = input.value.trim();
+    
+    return uriString.length ? uriString : undefined;
   }
 };
