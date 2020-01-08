@@ -47,8 +47,6 @@ loader.lazyRequireGetter(this, "flags",
   "devtools/shared/flags");
 loader.lazyRequireGetter(this, "createPerformanceFront",
   "devtools/shared/fronts/performance", true);
-loader.lazyRequireGetter(this, "getPreferenceFront",
-  "devtools/shared/fronts/preference", true);
 loader.lazyRequireGetter(this, "KeyShortcuts",
   "devtools/client/shared/key-shortcuts");
 loader.lazyRequireGetter(this, "ZoomKeys",
@@ -65,8 +63,6 @@ loader.lazyRequireGetter(this, "viewSource",
   "devtools/client/shared/view-source");
 loader.lazyRequireGetter(this, "buildHarLog",
   "devtools/client/netmonitor/src/har/har-builder-utils", true);
-loader.lazyRequireGetter(this, "getKnownDeviceFront",
-  "devtools/shared/fronts/device", true);
 loader.lazyRequireGetter(this, "NetMonitorAPI",
   "devtools/client/netmonitor/src/api", true);
 loader.lazyRequireGetter(this, "sortPanelDefinitions",
@@ -2217,16 +2213,7 @@ Toolbox.prototype = {
 
 
   get preferenceFront() {
-    if (this._preferenceFront) {
-      return Promise.resolve(this._preferenceFront);
-    }
-    return this.isOpen.then(() => {
-      return this.target.root.then(rootForm => {
-        const front = getPreferenceFront(this.target.client, rootForm);
-        this._preferenceFront = front;
-        return front;
-      });
-    });
+    return this.target.client.mainRoot.getFront("preference");
   },
 
   
@@ -2933,15 +2920,7 @@ Toolbox.prototype = {
     outstanding.push(this.destroyPerformance());
 
     
-    outstanding.push(this.destroyPreference());
-
-    
-    
-    
-    const deviceFront = getKnownDeviceFront(this.target.client);
-    if (deviceFront) {
-      deviceFront.destroy();
-    }
+    outstanding.push(this.resetPreference());
 
     
     detachThread(this._threadClient);
@@ -3128,7 +3107,7 @@ Toolbox.prototype = {
   
 
 
-  async destroyPreference() {
+  async resetPreference() {
     if (!this._preferenceFront) {
       return;
     }
@@ -3139,7 +3118,6 @@ Toolbox.prototype = {
       await this._preferenceFront.clearUserPref(DISABLE_AUTOHIDE_PREF);
     }
 
-    this._preferenceFront.destroy();
     this._preferenceFront = null;
   },
 

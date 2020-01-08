@@ -7,8 +7,6 @@
 
 
 
-const {getDeviceFront} = require("devtools/shared/fronts/device");
-
 add_task(async function() {
   const testFile = do_get_file("xpcshell_debugging_script.js");
 
@@ -23,8 +21,7 @@ add_task(async function() {
   await client.connect();
 
   
-  const rootForm = await client.mainRoot.getRoot();
-  const deviceFront = await getDeviceFront(client, rootForm);
+  const deviceFront = await client.mainRoot.getFront("device");
   const desc = await deviceFront.getDescription();
   equal(desc.geckobuildid, Services.appinfo.platformBuildID, "device actor works");
 

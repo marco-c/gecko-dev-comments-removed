@@ -36,29 +36,4 @@ const DeviceFront = protocol.FrontClassWithSpec(deviceSpec, {
   },
 });
 
-const _knownDeviceFronts = new WeakMap();
-
-
-
-
-exports.getKnownDeviceFront = function(client) {
-  return _knownDeviceFronts.get(client);
-};
-
-
-
-
-
-exports.getDeviceFront = function(client, form) {
-  if (!form.deviceActor) {
-    return null;
-  }
-
-  if (_knownDeviceFronts.has(client)) {
-    return _knownDeviceFronts.get(client);
-  }
-
-  const front = new DeviceFront(client, form);
-  _knownDeviceFronts.set(client, front);
-  return front;
-};
+exports.DeviceFront = DeviceFront;

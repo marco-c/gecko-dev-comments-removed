@@ -35,6 +35,9 @@ function RootClient(client, greeting) {
   this.traits = greeting.traits;
 
   
+  
+  
+  
   Object.defineProperty(this, "rootForm", {
     get() {
       delete this.rootForm;
@@ -275,6 +278,9 @@ RootClient.prototype = {
   },
 
   
+
+
+
 
 
 
