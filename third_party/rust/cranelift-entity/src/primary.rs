@@ -111,6 +111,16 @@ where
     pub fn last(&self) -> Option<&V> {
         self.elems.last()
     }
+
+    
+    pub fn reserve(&mut self, additional: usize) {
+        self.elems.reserve(additional)
+    }
+
+    
+    pub fn reserve_exact(&mut self, additional: usize) {
+        self.elems.reserve_exact(additional)
+    }
 }
 
 

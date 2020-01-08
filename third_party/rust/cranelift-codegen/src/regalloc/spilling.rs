@@ -134,11 +134,8 @@ impl<'a> Context<'a> {
         self.process_spills(tracker);
 
         while let Some(inst) = self.cur.next_inst() {
-            if let Some(constraints) = self
-                .encinfo
-                .operand_constraints(self.cur.func.encodings[inst])
-            {
-                self.visit_inst(inst, ebb, constraints, tracker);
+            if !self.cur.func.dfg[inst].opcode().is_ghost() {
+                self.visit_inst(inst, ebb, tracker);
             } else {
                 let (_throughs, kills) = tracker.process_ghost(inst);
                 self.free_regs(kills);
@@ -237,16 +234,14 @@ impl<'a> Context<'a> {
         self.free_dead_regs(params);
     }
 
-    fn visit_inst(
-        &mut self,
-        inst: Inst,
-        ebb: Ebb,
-        constraints: &RecipeConstraints,
-        tracker: &mut LiveValueTracker,
-    ) {
+    fn visit_inst(&mut self, inst: Inst, ebb: Ebb, tracker: &mut LiveValueTracker) {
         debug!("Inst {}, {}", self.cur.display_inst(inst), self.pressure);
         debug_assert_eq!(self.cur.current_inst(), Some(inst));
         debug_assert_eq!(self.cur.current_ebb(), Some(ebb));
+
+        let constraints = self
+            .encinfo
+            .operand_constraints(self.cur.func.encodings[inst]);
 
         
         debug_assert!(self.reg_uses.is_empty());
@@ -282,23 +277,25 @@ impl<'a> Context<'a> {
         
         
         
-        for op in constraints.outs {
-            if op.kind != ConstraintKind::Stack {
-                
-                while let Err(mask) = self.pressure.take_transient(op.regclass) {
-                    debug!("Need {} reg from {} throughs", op.regclass, throughs.len());
-                    match self.spill_candidate(mask, throughs) {
-                        Some(cand) => self.spill_reg(cand),
-                        None => panic!(
-                            "Ran out of {} registers for {}",
-                            op.regclass,
-                            self.cur.display_inst(inst)
-                        ),
+        if let Some(constraints) = constraints {
+            for op in constraints.outs {
+                if op.kind != ConstraintKind::Stack {
+                    
+                    while let Err(mask) = self.pressure.take_transient(op.regclass) {
+                        debug!("Need {} reg from {} throughs", op.regclass, throughs.len());
+                        match self.spill_candidate(mask, throughs) {
+                            Some(cand) => self.spill_reg(cand),
+                            None => panic!(
+                                "Ran out of {} registers for {}",
+                                op.regclass,
+                                self.cur.display_inst(inst)
+                            ),
+                        }
                     }
                 }
             }
+            self.pressure.reset_transient();
         }
-        self.pressure.reset_transient();
 
         
         
@@ -315,35 +312,42 @@ impl<'a> Context<'a> {
     
     
     
-    fn collect_reg_uses(&mut self, inst: Inst, ebb: Ebb, constraints: &RecipeConstraints) {
+    fn collect_reg_uses(&mut self, inst: Inst, ebb: Ebb, constraints: Option<&RecipeConstraints>) {
         let args = self.cur.func.dfg.inst_args(inst);
-        for (idx, (op, &arg)) in constraints.ins.iter().zip(args).enumerate() {
-            let mut reguse = RegUse::new(arg, idx, op.regclass.into());
-            let lr = &self.liveness[arg];
-            let ctx = self.liveness.context(&self.cur.func.layout);
-            match op.kind {
-                ConstraintKind::Stack => continue,
-                ConstraintKind::FixedReg(_) => reguse.fixed = true,
-                ConstraintKind::Tied(_) => {
-                    
-                    reguse.tied = !lr.killed_at(inst, ebb, ctx);
+        let num_fixed_ins = if let Some(constraints) = constraints {
+            for (idx, (op, &arg)) in constraints.ins.iter().zip(args).enumerate() {
+                let mut reguse = RegUse::new(arg, idx, op.regclass.into());
+                let lr = &self.liveness[arg];
+                let ctx = self.liveness.context(&self.cur.func.layout);
+                match op.kind {
+                    ConstraintKind::Stack => continue,
+                    ConstraintKind::FixedReg(_) => reguse.fixed = true,
+                    ConstraintKind::Tied(_) => {
+                        
+                        reguse.tied = !lr.killed_at(inst, ebb, ctx);
+                    }
+                    ConstraintKind::FixedTied(_) => {
+                        reguse.fixed = true;
+                        reguse.tied = !lr.killed_at(inst, ebb, ctx);
+                    }
+                    ConstraintKind::Reg => {}
                 }
-                ConstraintKind::FixedTied(_) => {
-                    reguse.fixed = true;
-                    reguse.tied = !lr.killed_at(inst, ebb, ctx);
+                if lr.affinity.is_stack() {
+                    reguse.spilled = true;
                 }
-                ConstraintKind::Reg => {}
-            }
-            if lr.affinity.is_stack() {
-                reguse.spilled = true;
-            }
 
-            
-            if reguse.fixed || reguse.tied || reguse.spilled {
-                debug!("  reguse: {}", reguse);
-                self.reg_uses.push(reguse);
+                
+                if reguse.fixed || reguse.tied || reguse.spilled {
+                    debug!("  reguse: {}", reguse);
+                    self.reg_uses.push(reguse);
+                }
             }
-        }
+            constraints.ins.len()
+        } else {
+            
+            
+            0
+        };
 
         
         
@@ -356,7 +360,7 @@ impl<'a> Context<'a> {
             for (ret_idx, (ret, &arg)) in
                 self.cur.func.signature.returns.iter().zip(args).enumerate()
             {
-                let idx = constraints.ins.len() + ret_idx;
+                let idx = num_fixed_ins + ret_idx;
                 let unit = match ret.location {
                     ArgumentLoc::Unassigned => {
                         panic!("function return signature should be legalized")
@@ -376,10 +380,10 @@ impl<'a> Context<'a> {
 
     
     fn collect_abi_reg_uses(&mut self, inst: Inst, sig: SigRef) {
-        let fixed_args = self.cur.func.dfg[inst]
+        let num_fixed_args = self.cur.func.dfg[inst]
             .opcode()
             .constraints()
-            .fixed_value_arguments();
+            .num_fixed_value_arguments();
         let args = self.cur.func.dfg.inst_variable_args(inst);
         for (idx, (abi, &arg)) in self.cur.func.dfg.signatures[sig]
             .params
@@ -396,7 +400,7 @@ impl<'a> Context<'a> {
                     ),
                     Affinity::Unassigned => panic!("Missing affinity for {}", arg),
                 };
-                let mut reguse = RegUse::new(arg, fixed_args + idx, rci);
+                let mut reguse = RegUse::new(arg, num_fixed_args + idx, rci);
                 reguse.fixed = true;
                 reguse.spilled = spilled;
                 self.reg_uses.push(reguse);

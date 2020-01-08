@@ -33,6 +33,10 @@ impl<'a> OperatorsReader<'a> {
         self.reader.eof()
     }
 
+    pub fn original_position(&self) -> usize {
+        self.reader.original_position()
+    }
+
     pub fn ensure_end(&self) -> Result<()> {
         if self.eof() {
             return Ok(());
@@ -48,6 +52,24 @@ impl<'a> OperatorsReader<'a> {
         'a: 'b,
     {
         self.reader.read_operator()
+    }
+
+    pub fn into_iter_with_offsets<'b>(self) -> OperatorsIteratorWithOffsets<'b>
+    where
+        'a: 'b,
+    {
+        OperatorsIteratorWithOffsets {
+            reader: self,
+            err: false,
+        }
+    }
+
+    pub fn read_with_offset<'b>(&mut self) -> Result<(Operator<'b>, usize)>
+    where
+        'a: 'b,
+    {
+        let pos = self.reader.original_position();
+        Ok((self.read()?, pos))
     }
 }
 
@@ -100,6 +122,48 @@ impl<'a> Iterator for OperatorsIterator<'a> {
             return None;
         }
         let result = self.reader.read();
+        self.err = result.is_err();
+        Some(result)
+    }
+}
+
+pub struct OperatorsIteratorWithOffsets<'a> {
+    reader: OperatorsReader<'a>,
+    err: bool,
+}
+
+impl<'a> Iterator for OperatorsIteratorWithOffsets<'a> {
+    type Item = Result<(Operator<'a>, usize)>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.err || self.reader.eof() {
+            return None;
+        }
+        let result = self.reader.read_with_offset();
         self.err = result.is_err();
         Some(result)
     }

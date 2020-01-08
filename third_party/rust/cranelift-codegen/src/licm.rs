@@ -1,11 +1,12 @@
 
 
-use cursor::{Cursor, FuncCursor};
+use cursor::{Cursor, EncCursor, FuncCursor};
 use dominator_tree::DominatorTree;
 use entity::{EntityList, ListPool};
 use flowgraph::{BasicBlock, ControlFlowGraph};
 use fx::FxHashSet;
 use ir::{DataFlowGraph, Ebb, Function, Inst, InstBuilder, Layout, Opcode, Type, Value};
+use isa::TargetIsa;
 use loop_analysis::{Loop, LoopAnalysis};
 use std::vec::Vec;
 use timing;
@@ -14,6 +15,7 @@ use timing;
 
 
 pub fn do_licm(
+    isa: &TargetIsa,
     func: &mut Function,
     cfg: &mut ControlFlowGraph,
     domtree: &mut DominatorTree,
@@ -36,7 +38,7 @@ pub fn do_licm(
             match has_pre_header(&func.layout, cfg, domtree, loop_analysis.loop_header(lp)) {
                 None => {
                     let pre_header =
-                        create_pre_header(loop_analysis.loop_header(lp), func, cfg, domtree);
+                        create_pre_header(isa, loop_analysis.loop_header(lp), func, cfg, domtree);
                     pos = FuncCursor::new(func).at_last_inst(pre_header);
                 }
                 
@@ -60,6 +62,7 @@ pub fn do_licm(
 
 
 fn create_pre_header(
+    isa: &TargetIsa,
     header: Ebb,
     func: &mut Function,
     cfg: &mut ControlFlowGraph,
@@ -87,7 +90,7 @@ fn create_pre_header(
         }
     }
     {
-        let mut pos = FuncCursor::new(func).at_top(header);
+        let mut pos = EncCursor::new(func, isa).at_top(header);
         
         pos.insert_ebb(pre_header);
         pos.next_inst();
@@ -108,21 +111,24 @@ fn has_pre_header(
     header: Ebb,
 ) -> Option<(Ebb, Inst)> {
     let mut result = None;
-    let mut found = false;
     for BasicBlock {
         ebb: pred_ebb,
-        inst: last_inst,
+        inst: branch_inst,
     } in cfg.pred_iter(header)
     {
         
-        if !domtree.dominates(header, last_inst, layout) {
-            if found {
+        if !domtree.dominates(header, branch_inst, layout) {
+            if result.is_some() {
                 
                 return None;
-            } else {
-                result = Some((pred_ebb, last_inst));
-                found = true;
             }
+            if branch_inst != layout.last_inst(pred_ebb).unwrap()
+                || cfg.succ_iter(pred_ebb).nth(1).is_some()
+            {
+                
+                return None;
+            }
+            result = Some((pred_ebb, branch_inst));
         }
     }
     result

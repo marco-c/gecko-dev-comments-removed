@@ -196,7 +196,7 @@ impl TargetFrontendConfig {
 
 
 
-pub trait TargetIsa: fmt::Display {
+pub trait TargetIsa: fmt::Display + Sync {
     
     fn name(&self) -> &'static str;
 

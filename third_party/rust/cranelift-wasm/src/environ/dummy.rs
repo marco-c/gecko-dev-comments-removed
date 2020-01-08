@@ -53,6 +53,15 @@ pub struct DummyModuleInfo {
     pub imported_funcs: Vec<(String, String)>,
 
     
+    pub imported_globals: Vec<(String, String)>,
+
+    
+    pub imported_tables: Vec<(String, String)>,
+
+    
+    pub imported_memories: Vec<(String, String)>,
+
+    
     pub functions: PrimaryMap<FuncIndex, Exportable<SignatureIndex>>,
 
     
@@ -78,6 +87,9 @@ impl DummyModuleInfo {
             config,
             signatures: PrimaryMap::new(),
             imported_funcs: Vec::new(),
+            imported_globals: Vec::new(),
+            imported_tables: Vec::new(),
+            imported_memories: Vec::new(),
             functions: PrimaryMap::new(),
             function_bodies: PrimaryMap::new(),
             tables: PrimaryMap::new(),
@@ -326,8 +338,8 @@ impl<'dummy_environment> FuncEnvironment for DummyFuncEnvironment<'dummy_environ
 }
 
 impl<'data> ModuleEnvironment<'data> for DummyEnvironment {
-    fn target_config(&self) -> &TargetFrontendConfig {
-        &self.info.config
+    fn target_config(&self) -> TargetFrontendConfig {
+        self.info.config
     }
 
     fn get_func_name(&self, func_index: FuncIndex) -> ir::ExternalName {
@@ -375,6 +387,13 @@ impl<'data> ModuleEnvironment<'data> for DummyEnvironment {
         self.info.globals.push(Exportable::new(global));
     }
 
+    fn declare_global_import(&mut self, global: Global, module: &'data str, field: &'data str) {
+        self.info.globals.push(Exportable::new(global));
+        self.info
+            .imported_globals
+            .push((String::from(module), String::from(field)));
+    }
+
     fn get_global(&self, global_index: GlobalIndex) -> &Global {
         &self.info.globals[global_index].entity
     }
@@ -382,6 +401,14 @@ impl<'data> ModuleEnvironment<'data> for DummyEnvironment {
     fn declare_table(&mut self, table: Table) {
         self.info.tables.push(Exportable::new(table));
     }
+
+    fn declare_table_import(&mut self, table: Table, module: &'data str, field: &'data str) {
+        self.info.tables.push(Exportable::new(table));
+        self.info
+            .imported_tables
+            .push((String::from(module), String::from(field)));
+    }
+
     fn declare_table_elements(
         &mut self,
         _table_index: TableIndex,
@@ -391,9 +418,18 @@ impl<'data> ModuleEnvironment<'data> for DummyEnvironment {
     ) {
         
     }
+
     fn declare_memory(&mut self, memory: Memory) {
         self.info.memories.push(Exportable::new(memory));
     }
+
+    fn declare_memory_import(&mut self, memory: Memory, module: &'data str, field: &'data str) {
+        self.info.memories.push(Exportable::new(memory));
+        self.info
+            .imported_memories
+            .push((String::from(module), String::from(field)));
+    }
+
     fn declare_data_initialization(
         &mut self,
         _memory_index: MemoryIndex,

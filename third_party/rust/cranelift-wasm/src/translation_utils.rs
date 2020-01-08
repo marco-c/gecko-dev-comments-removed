@@ -15,6 +15,21 @@ entity_impl!(DefinedFuncIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct DefinedTableIndex(u32);
+entity_impl!(DefinedTableIndex);
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct DefinedMemoryIndex(u32);
+entity_impl!(DefinedMemoryIndex);
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct DefinedGlobalIndex(u32);
+entity_impl!(DefinedGlobalIndex);
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub struct TableIndex(u32);
 entity_impl!(TableIndex);
 

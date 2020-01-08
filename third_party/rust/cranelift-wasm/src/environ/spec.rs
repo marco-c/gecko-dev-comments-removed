@@ -237,7 +237,7 @@ pub trait FuncEnvironment {
 
 pub trait ModuleEnvironment<'data> {
     
-    fn target_config(&self) -> &TargetFrontendConfig;
+    fn target_config(&self) -> TargetFrontendConfig;
 
     
     fn get_func_name(&self, func_index: FuncIndex) -> ir::ExternalName;
@@ -269,10 +269,17 @@ pub trait ModuleEnvironment<'data> {
     fn declare_global(&mut self, global: Global);
 
     
+    fn declare_global_import(&mut self, global: Global, module: &'data str, field: &'data str);
+
+    
     fn get_global(&self, global_index: GlobalIndex) -> &Global;
 
     
     fn declare_table(&mut self, table: Table);
+
+    
+    fn declare_table_import(&mut self, table: Table, module: &'data str, field: &'data str);
+
     
     fn declare_table_elements(
         &mut self,
@@ -283,6 +290,10 @@ pub trait ModuleEnvironment<'data> {
     );
     
     fn declare_memory(&mut self, memory: Memory);
+
+    
+    fn declare_memory_import(&mut self, memory: Memory, module: &'data str, field: &'data str);
+
     
     fn declare_data_initialization(
         &mut self,

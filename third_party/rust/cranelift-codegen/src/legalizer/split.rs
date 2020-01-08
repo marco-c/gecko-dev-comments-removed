@@ -133,14 +133,14 @@ fn split_any(
                 "Predecessor not a branch: {}",
                 pos.func.dfg.display_inst(inst, None)
             );
-            let fixed_args = branch_opc.constraints().fixed_value_arguments();
+            let num_fixed_args = branch_opc.constraints().num_fixed_value_arguments();
             let mut args = pos.func.dfg[inst]
                 .take_value_list()
                 .expect("Branches must have value lists.");
             let num_args = args.len(&pos.func.dfg.value_lists);
             
             let old_arg = args
-                .get(fixed_args + repair.num, &pos.func.dfg.value_lists)
+                .get(num_fixed_args + repair.num, &pos.func.dfg.value_lists)
                 .expect("Too few branch arguments");
 
             
@@ -155,21 +155,23 @@ fn split_any(
 
             
             *args
-                .get_mut(fixed_args + repair.num, &mut pos.func.dfg.value_lists)
+                .get_mut(num_fixed_args + repair.num, &mut pos.func.dfg.value_lists)
                 .unwrap() = lo;
 
             
             
-            if num_args > fixed_args + repair.hi_num {
+            if num_args > num_fixed_args + repair.hi_num {
                 *args
-                    .get_mut(fixed_args + repair.hi_num, &mut pos.func.dfg.value_lists)
-                    .unwrap() = hi;
+                    .get_mut(
+                        num_fixed_args + repair.hi_num,
+                        &mut pos.func.dfg.value_lists,
+                    ).unwrap() = hi;
             } else {
                 
                 
                 
                 args.extend(
-                    iter::repeat(hi).take(1 + fixed_args + repair.hi_num - num_args),
+                    iter::repeat(hi).take(1 + num_fixed_args + repair.hi_num - num_args),
                     &mut pos.func.dfg.value_lists,
                 );
             }

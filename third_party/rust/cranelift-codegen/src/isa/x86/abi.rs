@@ -270,7 +270,7 @@ pub fn prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenRes
     }
 }
 
-pub fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
     debug_assert!(
         !isa.flags().probestack_enabled(),
         "baldrdash does not expect cranelift to emit stack probes"
@@ -291,7 +291,7 @@ pub fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> 
 
 
 
-pub fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
     if isa.triple().pointer_width().unwrap() != PointerWidth::U64 {
         panic!("TODO: windows-fastcall: x86-32 not implemented yet");
     }
@@ -363,7 +363,7 @@ pub fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> C
 }
 
 
-pub fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
+fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &TargetIsa) -> CodegenResult<()> {
     
     
     let stack_align = 16;

@@ -48,7 +48,6 @@ class TargetISA(object):
         self.instruction_groups = instruction_groups
         self.cpumodes = list()  
         self.regbanks = list()  
-        self.regclasses = list()  
         self.legalize_codes = OrderedDict()  
         
         self._predicates = dict()  
@@ -74,7 +73,6 @@ class TargetISA(object):
         """
         self._collect_encoding_recipes()
         self._collect_predicates()
-        self._collect_regclasses()
         self._collect_legalize_codes()
         return self
 
@@ -121,49 +119,6 @@ class TargetISA(object):
                 
                 if enc.isap:
                     self.settings.number_predicate(enc.isap)
-
-    def _collect_regclasses(self):
-        
-        """
-        Collect and number register classes.
-
-        Every register class needs a unique index, and the classes need to be
-        topologically ordered.
-
-        We also want all the top-level register classes to be first.
-        """
-        
-        
-        for bank in self.regbanks:
-            bank.finish_regclasses()
-            
-            if bank.pressure_tracking:
-                self.regclasses.extend(bank.toprcs)
-
-        
-        
-        
-        assert len(self.regclasses) <= 4, "Too many top-level register classes"
-
-        
-        
-        for bank in self.regbanks:
-            if not bank.pressure_tracking:
-                self.regclasses.extend(bank.toprcs)
-
-        
-        
-        for bank in self.regbanks:
-            self.regclasses.extend(
-                    rc for rc in bank.classes if not rc.is_toprc())
-
-        for idx, rc in enumerate(self.regclasses):
-            rc.index = idx
-
-        
-        
-        
-        assert len(self.regclasses) <= 32, "Too many register classes"
 
     def _collect_legalize_codes(self):
         
