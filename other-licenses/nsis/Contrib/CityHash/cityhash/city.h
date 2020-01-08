@@ -43,13 +43,12 @@
 #ifndef CITY_HASH_H_
 #define CITY_HASH_H_
 
-#include "../CityHash.h" 
-
 #include <stdlib.h>  
+#include <stdint.h>
 
-typedef unsigned __int8 uint8;
-typedef unsigned __int32 uint32;
-typedef unsigned __int64 uint64;
+typedef uint8_t uint8;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
 
 
 

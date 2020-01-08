@@ -72,6 +72,11 @@ public:
   
 
 
+  nsresult GetInstallHash(nsAString & aPathHash);
+
+  
+
+
 
 
   nsresult GetUpdateRootDir(nsIFile* *aResult);

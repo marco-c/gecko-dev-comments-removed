@@ -43,9 +43,9 @@
 #include "mozilla/Telemetry.h"
 
 #include <stdlib.h>
+#include "city.h"
 
 #ifdef XP_WIN
-#include "city.h"
 #include <windows.h>
 #include <shlobj.h>
 #endif
@@ -1177,6 +1177,57 @@ GetCachedHash(HKEY rootKey, const nsAString &regPath, const nsAString &path,
 #endif
 
 nsresult
+nsXREDirProvider::GetInstallHash(nsAString & aPathHash)
+{
+  nsCOMPtr<nsIFile> updRoot;
+  nsCOMPtr<nsIFile> appFile;
+  bool per = false;
+  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = appFile->GetParent(getter_AddRefs(updRoot));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString appDirPath;
+  rv = updRoot->GetPath(appDirPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+#ifdef XP_WIN
+  
+  
+  
+  bool hasVendor = gAppData->vendor && strlen(gAppData->vendor) != 0;
+  wchar_t regPath[1024] = { L'\0' };
+  swprintf_s(regPath, mozilla::ArrayLength(regPath), L"SOFTWARE\\%S\\%S\\TaskBarIDs",
+              (hasVendor ? gAppData->vendor : "Mozilla"), MOZ_APP_BASENAME);
+
+  
+  if (GetCachedHash(HKEY_LOCAL_MACHINE, nsDependentString(regPath), appDirPath,
+                    aPathHash)) {
+    return NS_OK;
+  }
+
+  if (GetCachedHash(HKEY_CURRENT_USER, nsDependentString(regPath), appDirPath,
+                    aPathHash)) {
+    return NS_OK;
+  }
+#endif
+
+  
+  void* buffer = appDirPath.BeginWriting();
+  uint32_t length = appDirPath.Length() * sizeof(nsAutoString::char_type);
+  uint64_t hash = CityHash64(static_cast<const char*>(buffer), length);
+  aPathHash.AppendInt((int)(hash >> 32), 16);
+  aPathHash.AppendInt((int)hash, 16);
+  
+  
+  
+  
+  ToUpperCase(aPathHash);
+
+  return NS_OK;
+}
+
+nsresult
 nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
 {
   nsCOMPtr<nsIFile> updRoot;
@@ -1224,42 +1275,8 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
 
 #elif XP_WIN
   nsAutoString pathHash;
-  bool pathHashResult = false;
-  bool hasVendor = gAppData->vendor && strlen(gAppData->vendor) != 0;
-
-  nsAutoString appDirPath;
-  if (SUCCEEDED(updRoot->GetPath(appDirPath))) {
-
-    
-    
-    
-    wchar_t regPath[1024] = { L'\0' };
-    swprintf_s(regPath, mozilla::ArrayLength(regPath), L"SOFTWARE\\%S\\%S\\TaskBarIDs",
-               (hasVendor ? gAppData->vendor : "Mozilla"), MOZ_APP_BASENAME);
-
-    
-    pathHashResult = GetCachedHash(HKEY_LOCAL_MACHINE,
-                                   nsDependentString(regPath), appDirPath,
-                                   pathHash);
-    if (!pathHashResult) {
-      pathHashResult = GetCachedHash(HKEY_CURRENT_USER,
-                                     nsDependentString(regPath), appDirPath,
-                                     pathHash);
-    }
-  }
-
-  if (!pathHashResult) {
-    
-    uint64_t hash = CityHash64(static_cast<const char *>(appDirPath.get()),
-                               appDirPath.Length() * sizeof(nsAutoString::char_type));
-    pathHash.AppendInt((int)(hash >> 32), 16);
-    pathHash.AppendInt((int)hash, 16);
-    
-    
-    
-    
-    ToUpperCase(pathHash);
-  }
+  rv = GetInstallHash(pathHash);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -1267,6 +1284,7 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
   
   
   nsCOMPtr<nsIFile> localDir;
+  bool hasVendor = gAppData->vendor && strlen(gAppData->vendor) != 0;
   if ((hasVendor || gAppData->name) &&
       NS_SUCCEEDED(GetUserDataDirectoryHome(getter_AddRefs(localDir), true)) &&
       NS_SUCCEEDED(localDir->AppendNative(nsDependentCString(hasVendor ?
