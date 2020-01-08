@@ -1507,7 +1507,10 @@ protected:
   
 
 
-  virtual bool AreNodesSameType(nsIContent* aNode1, nsIContent* aNode2);
+
+
+
+  bool AreNodesSameType(nsIContent& aNode1, nsIContent& aNode2) const;
 
   static bool IsTextNode(nsINode* aNode)
   {

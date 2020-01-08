@@ -502,9 +502,6 @@ protected:
 
   nsresult CollapseAdjacentTextNodes(nsRange* aRange);
 
-  virtual bool AreNodesSameType(nsIContent* aNode1,
-                                nsIContent* aNode2) override;
-
   
 
 
@@ -1678,6 +1675,7 @@ protected:
 
   friend class AutoSelectionSetterAfterTableEdit;
   friend class CSSEditUtils;
+  friend class EditorBase;
   friend class EmptyEditableFunctor;
   friend class HTMLEditRules;
   friend class TextEditor;
