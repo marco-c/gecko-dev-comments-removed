@@ -1,5 +1,7 @@
 
 function run_test() {
+    setup({explicit_done: true});
+
     var subtle = self.crypto.subtle; 
 
     
