@@ -285,6 +285,10 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   static constexpr Scalar::Type ArrayTypeID() {
     return TypeIDOfType<NativeType>::id;
   }
+  static constexpr JSProtoKey protoKey() {
+    return TypeIDOfType<NativeType>::protoKey;
+  }
+
   static constexpr bool ArrayTypeIsUnsigned() {
     return TypeIsUnsigned<NativeType>();
   }
@@ -596,7 +600,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
       
       
       RootedObject proto(cx);
-      if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+      if (!GetPrototypeFromBuiltinConstructor(cx, args, protoKey(), &proto)) {
         return nullptr;
       }
 
@@ -608,7 +612,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     
     
     RootedObject proto(cx);
-    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+    if (!GetPrototypeFromBuiltinConstructor(cx, args, protoKey(), &proto)) {
       return nullptr;
     }
 
@@ -957,19 +961,8 @@ template <typename T>
   
   if (ctor != arrayBufferCtor) {
     
-    if (!GetPrototypeFromConstructor(cx, ctor, &proto)) {
+    if (!GetPrototypeFromConstructor(cx, ctor, JSProto_ArrayBuffer, &proto)) {
       return false;
-    }
-
-    JSObject* arrayBufferProto =
-        GlobalObject::getOrCreateArrayBufferPrototype(cx, cx->global());
-    if (!arrayBufferProto) {
-      return false;
-    }
-
-    
-    if (proto == arrayBufferProto) {
-      proto = nullptr;
     }
   }
 

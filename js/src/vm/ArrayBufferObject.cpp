@@ -419,7 +419,8 @@ bool ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
   
   
   RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_ArrayBuffer,
+                                          &proto)) {
     return false;
   }
 

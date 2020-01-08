@@ -389,8 +389,18 @@ bool Error(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
+  
+  
+  
+  JSExnType exnType =
+      JSExnType(args.callee().as<JSFunction>().getExtendedSlot(0).toInt32());
+
+  JSProtoKey protoKey =
+      JSCLASS_CACHED_PROTO_KEY(&ErrorObject::classes[exnType]);
+
+  
   RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, protoKey, &proto)) {
     return false;
   }
 
@@ -406,7 +416,6 @@ bool Error(JSContext* cx, unsigned argc, Value* vp) {
   
   NonBuiltinFrameIter iter(cx, cx->realm()->principals());
 
-  
   RootedString fileName(cx);
   if (args.length() > 1) {
     fileName = ToString<CanGC>(cx, args[1]);
@@ -422,7 +431,6 @@ bool Error(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
   uint32_t lineNumber, columnNumber = 0;
   if (args.length() > 2) {
     if (!ToUint32(cx, args[2], &lineNumber)) {
@@ -437,15 +445,6 @@ bool Error(JSContext* cx, unsigned argc, Value* vp) {
   if (!CaptureStack(cx, &stack)) {
     return false;
   }
-
-  
-
-
-
-
-
-  JSExnType exnType =
-      JSExnType(args.callee().as<JSFunction>().getExtendedSlot(0).toInt32());
 
   RootedObject obj(cx,
                    ErrorObject::create(cx, exnType, stack, fileName, lineNumber,

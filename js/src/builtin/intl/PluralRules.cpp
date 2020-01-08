@@ -77,7 +77,7 @@ static bool PluralRules(JSContext* cx, unsigned argc, Value* vp) {
 
   
   RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Null, &proto)) {
     return false;
   }
 

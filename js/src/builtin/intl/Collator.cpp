@@ -81,7 +81,7 @@ static bool Collator(JSContext* cx, const CallArgs& args) {
 
   
   RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Null, &proto)) {
     return false;
   }
 

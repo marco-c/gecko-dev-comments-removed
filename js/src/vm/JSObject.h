@@ -435,6 +435,7 @@ class JSObject : public js::gc::Cell {
     MOZ_ASSERT(!js::UninlinedIsCrossCompartmentWrapper(this));
     return group_->realm();
   }
+  bool hasSameRealmAs(JSContext* cx) const;
 
   
   
@@ -793,14 +794,35 @@ bool NewObjectWithTaggedProtoIsCachable(JSContext* cx,
 
 extern bool GetPrototypeFromConstructor(JSContext* cx,
                                         js::HandleObject newTarget,
+                                        JSProtoKey intrinsicDefaultProto,
                                         js::MutableHandleObject proto);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 MOZ_ALWAYS_INLINE bool GetPrototypeFromBuiltinConstructor(
-    JSContext* cx, const CallArgs& args, js::MutableHandleObject proto) {
+    JSContext* cx, const CallArgs& args, JSProtoKey intrinsicDefaultProto,
+    js::MutableHandleObject proto) {
+  
+  
+  
+  
   
   
   if (!args.isConstructing() ||
       &args.newTarget().toObject() == &args.callee()) {
+    MOZ_ASSERT(args.callee().hasSameRealmAs(cx));
     proto.set(nullptr);
     return true;
   }
@@ -808,7 +830,8 @@ MOZ_ALWAYS_INLINE bool GetPrototypeFromBuiltinConstructor(
   
   
   RootedObject newTarget(cx, &args.newTarget().toObject());
-  return GetPrototypeFromConstructor(cx, newTarget, proto);
+  return GetPrototypeFromConstructor(cx, newTarget, intrinsicDefaultProto,
+                                     proto);
 }
 
 
