@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 class SearchOneOffs {
   constructor(container) {
     this.container = container;
@@ -166,7 +170,11 @@ class SearchOneOffs {
   get buttonWidth() {
     return 49;
   }
+
   
+
+
+
 
 
 
@@ -208,6 +216,9 @@ class SearchOneOffs {
 
 
 
+
+
+
   set textbox(val) {
     if (this._textbox) {
       this._textbox.removeEventListener("input", this);
@@ -231,6 +242,9 @@ class SearchOneOffs {
 
 
 
+
+
+
   set query(val) {
     this._query = val;
     if (this.popup && this.popup.popupOpen) {
@@ -242,7 +256,11 @@ class SearchOneOffs {
   get query() {
     return this._query;
   }
+
   
+
+
+
 
 
 
@@ -276,7 +294,11 @@ class SearchOneOffs {
   get selectedButton() {
     return this._selectedButton;
   }
+
   
+
+
+
 
 
 
@@ -696,7 +718,7 @@ class SearchOneOffs {
         };
       }
     } else {
-      var newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
+      let newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
       if ((aEvent instanceof KeyboardEvent && aEvent.altKey) ^ newTabPref &&
           !gBrowser.selectedTab.isEmpty) {
         where = "tab";
@@ -714,8 +736,6 @@ class SearchOneOffs {
   }
 
   
-
-
 
 
 
@@ -1233,4 +1253,3 @@ class SearchOneOffs {
 }
 
 window.SearchOneOffs = SearchOneOffs;
-
