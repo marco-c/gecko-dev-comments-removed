@@ -103,7 +103,7 @@ class JSJitFrameIter {
  protected:
   uint8_t* current_;
   FrameType type_;
-  uint8_t* returnAddressToFp_;
+  uint8_t* resumePCinCurrentFrame_;
   size_t frameSize_;
 
  private:
@@ -123,8 +123,8 @@ class JSJitFrameIter {
 
   
   void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
-    if (returnAddressToFp_ == oldAddr) {
-      returnAddressToFp_ = newAddr;
+    if (resumePCinCurrentFrame_ == oldAddr) {
+      resumePCinCurrentFrame_ = newAddr;
     }
   }
 
@@ -185,7 +185,7 @@ class JSJitFrameIter {
 
   
   
-  uint8_t* returnAddressToFp() const { return returnAddressToFp_; }
+  uint8_t* resumePCinCurrentFrame() const { return resumePCinCurrentFrame_; }
 
   
   inline size_t prevFrameLocalSize() const;
@@ -270,7 +270,7 @@ class JitcodeGlobalTable;
 class JSJitProfilingFrameIterator {
   uint8_t* fp_;
   FrameType type_;
-  void* returnAddressToFp_;
+  void* resumePCinCurrentFrame_;
 
   inline JitFrameLayout* framePtr();
   inline JSScript* frameScript();
@@ -299,9 +299,9 @@ class JSJitProfilingFrameIterator {
     MOZ_ASSERT(!done());
     return type_;
   }
-  void* returnAddressToFp() const {
+  void* resumePCinCurrentFrame() const {
     MOZ_ASSERT(!done());
-    return returnAddressToFp_;
+    return resumePCinCurrentFrame_;
   }
 };
 

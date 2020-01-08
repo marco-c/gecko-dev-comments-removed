@@ -190,7 +190,7 @@ static bool CollectJitStackScripts(JSContext* cx,
           }
         } else {
           
-          uint8_t* retAddr = frame.returnAddressToFp();
+          uint8_t* retAddr = frame.resumePCinCurrentFrame();
           RetAddrEntry& retAddrEntry =
               script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
           if (!entries.append(DebugModeOSREntry(script, retAddrEntry))) {

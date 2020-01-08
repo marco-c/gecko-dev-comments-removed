@@ -1885,7 +1885,7 @@ class JitFrameIter {
 
   
   
-  uint8_t* returnAddressToFp() const;
+  uint8_t* resumePCinCurrentFrame() const;
 
   
   void skipNonScriptedJSFrames();
