@@ -1,0 +1,12 @@
+
+let source = null;
+
+function sendMessageToDocument(msg) {
+  source.postMessage(msg);
+}
+
+
+self.addEventListener('message', event => {
+  source = event.source;
+  sendMessageToDocument('ready');
+});

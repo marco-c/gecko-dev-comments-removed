@@ -19,9 +19,9 @@ async function getMessageFromServiceWorker() {
 
 
 
-async function registerAndActivateServiceWorker(test) {
-  const script = 'resources/sw.js';
-  const scope = 'resources/scope' + location.pathname;
+async function registerAndActivateServiceWorker(test, name) {
+  const script = `service_workers/${name}`;
+  const scope = 'service_workers/scope' + location.pathname;
 
   let serviceWorkerRegistration =
       await service_worker_unregister_and_register(test, script, scope);
@@ -35,10 +35,13 @@ async function registerAndActivateServiceWorker(test) {
 
 
 
-function backgroundFetchTest(func, description) {
+
+
+function backgroundFetchTest(func, description, workerName = 'sw.js') {
   promise_test(async t => {
-    const serviceWorkerRegistration = await registerAndActivateServiceWorker(t);
-    serviceWorkerRegistration.active.postMessage(null );
+    const serviceWorkerRegistration =
+        await registerAndActivateServiceWorker(t, workerName);
+    serviceWorkerRegistration.active.postMessage(null);
 
     assert_equals(await getMessageFromServiceWorker(), 'ready');
 
