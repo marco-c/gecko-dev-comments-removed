@@ -5841,3 +5841,9 @@ pref("general.document_open_conversion_depth_limit", 20);
 
 
 pref("dom.event.default_to_passive_touch_listeners", true);
+
+
+pref("dom.events.asyncClipboard", false);
+pref("dom.events.asyncClipboard.dataTransfer", false);
+
+pref("dom.events.testing.asyncClipboard", false);
