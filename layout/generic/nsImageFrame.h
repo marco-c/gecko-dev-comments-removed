@@ -149,8 +149,8 @@ public:
 
 
 
-  static bool ShouldCreateImageFrameFor(mozilla::dom::Element* aElement,
-                                        ComputedStyle* aComputedStyle);
+  static bool ShouldCreateImageFrameFor(const mozilla::dom::Element& aElement,
+                                        ComputedStyle& aStyle);
 
   ImgDrawResult DisplayAltFeedback(gfxContext& aRenderingContext,
                                 const nsRect& aDirtyRect,

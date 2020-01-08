@@ -2298,7 +2298,7 @@ nsIFrame::ComputeSelectionStyle() const
   }
   RefPtr<ComputedStyle> sc =
     PresContext()->StyleSet()->ProbePseudoElementStyle(
-      element, CSSPseudoElementType::selection, Style());
+      *element, CSSPseudoElementType::selection, Style());
   return sc.forget();
 }
 
@@ -9874,7 +9874,7 @@ nsFrame::DoGetParentComputedStyle(nsIFrame** aProviderFrame) const
           pseudo == nsCSSAnonBoxes::tableWrapper) {
         if (Servo_Element_IsDisplayContents(parentElement)) {
           RefPtr<ComputedStyle> style =
-            PresShell()->StyleSet()->ResolveServoStyle(parentElement);
+            PresShell()->StyleSet()->ResolveServoStyle(*parentElement);
           
           
           

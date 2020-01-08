@@ -775,7 +775,7 @@ public:
 
 
 
-  bool ElementWouldPropagateScrollbarStyles(mozilla::dom::Element* aElement);
+  bool ElementWouldPropagateScrollbarStyles(const mozilla::dom::Element&);
 
   
 

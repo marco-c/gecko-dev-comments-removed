@@ -145,6 +145,8 @@ public:
 
   void SetAuthorStyleDisabled(bool aStyleDisabled);
 
+  
+  
   already_AddRefed<ComputedStyle>
   ResolveStyleFor(dom::Element* aElement,
                   ComputedStyle* aParentContext,
@@ -253,9 +255,9 @@ public:
 
   
   already_AddRefed<ComputedStyle>
-  ProbePseudoElementStyle(dom::Element* aOriginatingElement,
+  ProbePseudoElementStyle(const dom::Element& aOriginatingElement,
                           CSSPseudoElementType aType,
-                          ComputedStyle* aParentContext);
+                          ComputedStyle* aParentStyle);
 
   
 
@@ -333,8 +335,7 @@ public:
 
 
 
-  inline already_AddRefed<ComputedStyle>
-    ResolveServoStyle(dom::Element* aElement);
+  inline already_AddRefed<ComputedStyle> ResolveServoStyle(const dom::Element&);
 
   bool GetKeyframesForName(const dom::Element&,
                            const ComputedStyle&,
@@ -345,7 +346,7 @@ public:
   nsTArray<ComputedKeyframeValues>
   GetComputedKeyframeValuesFor(const nsTArray<Keyframe>& aKeyframes,
                                dom::Element* aElement,
-                               const mozilla::ComputedStyle* aStyle);
+                               const ComputedStyle* aStyle);
 
   void
   GetAnimationValues(RawServoDeclarationBlock* aDeclarations,
@@ -428,8 +429,7 @@ public:
 
 
 
-  bool MightHaveAttributeDependency(const dom::Element& aElement,
-                                    nsAtom* aAttribute) const;
+  bool MightHaveAttributeDependency(const dom::Element&, nsAtom* aAttribute) const;
 
   
 
@@ -439,8 +439,7 @@ public:
 
 
 
-  bool HasStateDependency(const dom::Element& aElement,
-                          EventStates aState) const;
+  bool HasStateDependency(const dom::Element&, EventStates) const;
 
   
 

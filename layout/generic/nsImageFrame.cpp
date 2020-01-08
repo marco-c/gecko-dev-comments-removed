@@ -581,12 +581,11 @@ nsImageFrame::SourceRectToDest(const nsIntRect& aRect)
 
 
 bool
-nsImageFrame::ShouldCreateImageFrameFor(Element* aElement,
-                                        ComputedStyle* aComputedStyle)
+nsImageFrame::ShouldCreateImageFrameFor(const Element& aElement,
+                                        ComputedStyle& aStyle)
 {
-  EventStates state = aElement->State();
-  if (IMAGE_OK(state,
-               HaveSpecifiedSize(aComputedStyle->StylePosition()))) {
+  EventStates state = aElement.State();
+  if (IMAGE_OK(state, HaveSpecifiedSize(aStyle.StylePosition()))) {
     
     return true;
   }
@@ -604,28 +603,28 @@ nsImageFrame::ShouldCreateImageFrameFor(Element* aElement,
   
   bool useSizedBox;
 
-  if (aComputedStyle->StyleUIReset()->mForceBrokenImageIcon) {
+  if (aStyle.StyleUIReset()->mForceBrokenImageIcon) {
     useSizedBox = true;
   }
   else if (gIconLoad && gIconLoad->mPrefForceInlineAltText) {
     useSizedBox = false;
   }
-  else if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
-           !aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::alt) &&
-           !aElement->IsHTMLElement(nsGkAtoms::object) &&
-           !aElement->IsHTMLElement(nsGkAtoms::input)) {
+  else if (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
+           !aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::alt) &&
+           !aElement.IsHTMLElement(nsGkAtoms::object) &&
+           !aElement.IsHTMLElement(nsGkAtoms::input)) {
     
     
     
     useSizedBox = true;
   }
-  else if (aElement->OwnerDoc()->GetCompatibilityMode() !=
+  else if (aElement.OwnerDoc()->GetCompatibilityMode() !=
            eCompatibility_NavQuirks) {
     useSizedBox = false;
   }
   else {
     
-    useSizedBox = HaveSpecifiedSize(aComputedStyle->StylePosition());
+    useSizedBox = HaveSpecifiedSize(aStyle.StylePosition());
   }
 
   return useSizedBox;

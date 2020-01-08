@@ -67,7 +67,7 @@ public:
   }
 
   
-  static void GetAlternateTextFor(mozilla::dom::Element* aContent,
+  static void GetAlternateTextFor(Element* aContent,
                                   nsAtom* aTag,  
                                   nsAString& aAltText);
 
@@ -327,7 +327,7 @@ public:
 
 
 
-  bool DestroyFramesFor(mozilla::dom::Element* aElement);
+  bool DestroyFramesFor(Element* aElement);
 
   
   nsIFrame* CreateContinuingFrame(nsPresContext*    aPresContext,
@@ -433,7 +433,8 @@ private:
 
 
 
-  void CreateAttributeContent(mozilla::dom::Element* aParentContent,
+
+  void CreateAttributeContent(const Element& aParentContent,
                               nsIFrame* aParentFrame,
                               int32_t aAttrNamespace,
                               nsAtom* aAttrName,
@@ -460,16 +461,16 @@ private:
 
 
   already_AddRefed<nsIContent> CreateGeneratedContent(nsFrameConstructorState& aState,
-                                                      mozilla::dom::Element* aParentContent,
-                                                      ComputedStyle* aComputedStyle,
-                                                      uint32_t        aContentIndex);
+                                                      const Element& aOriginatingElement,
+                                                      ComputedStyle& aComputedStyle,
+                                                      uint32_t aContentIndex);
 
   
-  void CreateGeneratedContentItem(nsFrameConstructorState&   aState,
-                                  nsContainerFrame*          aFrame,
-                                  mozilla::dom::Element*     aContent,
-                                  ComputedStyle*             aComputedStyle,
-                                  CSSPseudoElementType       aPseudoElement,
+  void CreateGeneratedContentItem(nsFrameConstructorState& aState,
+                                  nsContainerFrame* aParentFrame,
+                                  Element& aOriginatingElement,
+                                  ComputedStyle&,
+                                  CSSPseudoElementType aPseudoElement,
                                   FrameConstructionItemList& aItems);
 
   
@@ -590,7 +591,7 @@ private:
 
   struct FrameConstructionData;
   typedef const FrameConstructionData*
-    (* FrameConstructionDataGetter)(Element*, ComputedStyle*);
+    (* FrameConstructionDataGetter)(const Element&, ComputedStyle&);
 
   
 
@@ -786,8 +787,9 @@ private:
 
 
   static const FrameConstructionData*
-    FindDataByInt(int32_t aInt, Element* aElement,
-                  ComputedStyle* aComputedStyle,
+    FindDataByInt(int32_t aInt,
+                  const Element&,
+                  ComputedStyle&,
                   const FrameConstructionDataByInt* aDataPtr,
                   uint32_t aDataLength);
 
@@ -801,8 +803,9 @@ private:
 
 
   static const FrameConstructionData*
-    FindDataByTag(nsAtom* aTag, Element* aElement,
-                  ComputedStyle* aComputedStyle,
+    FindDataByTag(nsAtom* aTag,
+                  const Element& aElement,
+                  ComputedStyle& aComputedStyle,
                   const FrameConstructionDataByTag* aDataPtr,
                   uint32_t aDataLength);
 
@@ -1444,20 +1447,16 @@ private:
   
   
   
-  static const FrameConstructionData* FindHTMLData(Element* aContent,
-                                                   nsAtom* aTag,
-                                                   int32_t aNameSpaceID,
+  static const FrameConstructionData* FindHTMLData(const Element&,
                                                    nsIFrame* aParentFrame,
-                                                   ComputedStyle* aComputedStyle);
+                                                   ComputedStyle&);
   
-  static const FrameConstructionData* FindImgData(Element*, ComputedStyle*);
-  static const FrameConstructionData* FindGeneratedImageData(Element*,
-                                                             ComputedStyle*);
-  static const FrameConstructionData* FindImgControlData(Element*,
-                                                         ComputedStyle*);
-  static const FrameConstructionData* FindInputData(Element*, ComputedStyle*);
-  static const FrameConstructionData* FindObjectData(Element*, ComputedStyle*);
-  static const FrameConstructionData* FindCanvasData(Element*, ComputedStyle*);
+  static const FrameConstructionData* FindImgData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindGeneratedImageData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindImgControlData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindInputData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindObjectData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindCanvasData(const Element&, ComputedStyle&);
 
   
 
@@ -1534,30 +1533,26 @@ private:
 
   
   
-  static const FrameConstructionData* FindMathMLData(Element* aElement,
-                                                     nsAtom* aTag,
-                                                     int32_t aNameSpaceID,
-                                                     ComputedStyle* aComputedStyle);
+  static const FrameConstructionData* FindMathMLData(const Element&, ComputedStyle&);
 
   
   
-  static const FrameConstructionData* FindXULTagData(Element* aElement,
+  
+  
+  
+  static const FrameConstructionData* FindXULTagData(const Element&,
                                                      nsAtom* aTag,
                                                      int32_t aNameSpaceID,
-                                                     ComputedStyle* aComputedStyle);
+                                                     ComputedStyle&);
   
 #ifdef MOZ_XUL
-  static const FrameConstructionData*
-    FindPopupGroupData(Element* aElement, ComputedStyle* aComputedStyle);
+  static const FrameConstructionData* FindPopupGroupData(const Element&, ComputedStyle&);
   
   static const FrameConstructionData sXULTextBoxData;
-  static const FrameConstructionData*
-    FindXULLabelData(Element* aElement, ComputedStyle* aComputedStyle);
-  static const FrameConstructionData*
-    FindXULDescriptionData(Element* aElement, ComputedStyle* aComputedStyle);
+  static const FrameConstructionData* FindXULLabelData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindXULDescriptionData(const Element&, ComputedStyle&);
 #ifdef XP_MACOSX
-  static const FrameConstructionData*
-    FindXULMenubarData(Element* aElement, ComputedStyle* aComputedStyle);
+  static const FrameConstructionData* FindXULMenubarData(const Element&, ComputedStyle&);
 #endif 
 #endif 
 
@@ -1566,10 +1561,8 @@ private:
   
   
   
-  static const FrameConstructionData*
-    FindXULDisplayData(const nsStyleDisplay* aDisplay,
-                       Element* aElement,
-                       ComputedStyle* aComputedStyle);
+  static const FrameConstructionData* FindXULDisplayData(const nsStyleDisplay&,
+                                                         const Element&);
 
   
 
@@ -1605,19 +1598,16 @@ private:
                             const nsStyleDisplay*    aDisplay,
                             nsFrameItems&            aFrameItems);
 
-  static const FrameConstructionData* FindSVGData(Element* aElement,
-                                                  nsAtom* aTag,
-                                                  int32_t aNameSpaceID,
+  static const FrameConstructionData* FindSVGData(const Element&,
                                                   nsIFrame* aParentFrame,
                                                   bool aIsWithinSVGText,
                                                   bool aAllowsTextPathChild,
-                                                  ComputedStyle* aComputedStyle);
+                                                  ComputedStyle&);
 
   
-
-  const FrameConstructionData*
-    FindDisplayData(const nsStyleDisplay* aDisplay, Element* aElement,
-                    ComputedStyle* aComputedStyle);
+  
+  const FrameConstructionData* FindDisplayData(const nsStyleDisplay&,
+                                               const Element&);
 
   
 
