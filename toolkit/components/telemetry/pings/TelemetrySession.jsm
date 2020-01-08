@@ -745,7 +745,6 @@ var Impl = {
     let elapsedTime = Date.now() - si.process;
     var ret = {
       totalTime: Math.round(elapsedTime / 1000), 
-      uptime: Math.round(elapsedTime / 60000), 
     };
 
     
