@@ -1557,8 +1557,7 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsINode* aNode,
   if (aWhere == kStart)
   {
     
-    nsCOMPtr<nsINode> t = aNode;
-    if (auto nodeAsText = t->GetAsText())
+    if (auto nodeAsText = aNode->GetAsText())
     {
       
       if (offset >  0)
@@ -1632,11 +1631,10 @@ nsHTMLCopyEncoder::GetPromotedPoint(Endpoint aWhere, nsINode* aNode,
   if (aWhere == kEnd)
   {
     
-    nsCOMPtr<nsINode> n = do_QueryInterface(aNode);
-    if (auto nodeAsText = n->GetAsText())
+    if (auto nodeAsText = aNode->GetAsText())
     {
       
-      uint32_t len = n->Length();
+      uint32_t len = aNode->Length();
       if (offset < (int32_t)len)
       {
         

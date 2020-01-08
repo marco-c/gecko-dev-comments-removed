@@ -334,16 +334,13 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
 
     
     
-    nsCOMPtr<nsIDocument> document = do_QueryInterface(doc);
-    if (document) {
-      document->FlushPendingNotifications(mozilla::FlushType::Frames);
-      if (mMakeWholeDocumentEditable) {
-        document->SetEditableFlag(true);
-        nsCOMPtr<nsIHTMLDocument> htmlDocument = do_QueryInterface(document);
-        if (htmlDocument) {
-          
-          htmlDocument->SetEditingState(nsIHTMLDocument::eDesignMode);
-        }
+    doc->FlushPendingNotifications(mozilla::FlushType::Frames);
+    if (mMakeWholeDocumentEditable) {
+      doc->SetEditableFlag(true);
+      nsCOMPtr<nsIHTMLDocument> htmlDocument = do_QueryInterface(doc);
+      if (htmlDocument) {
+        
+        htmlDocument->SetEditingState(nsIHTMLDocument::eDesignMode);
       }
     }
   }

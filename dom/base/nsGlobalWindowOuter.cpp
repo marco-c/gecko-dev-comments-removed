@@ -2117,7 +2117,7 @@ nsGlobalWindowOuter::SetDocShell(nsIDocShell* aDocShell)
   
   RefPtr<EventTarget> chromeEventHandler;
   mDocShell->GetChromeEventHandler(getter_AddRefs(chromeEventHandler));
-  mChromeEventHandler = do_QueryInterface(chromeEventHandler);
+  mChromeEventHandler = chromeEventHandler;
   if (!mChromeEventHandler) {
     
     

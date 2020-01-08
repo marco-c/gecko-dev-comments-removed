@@ -379,7 +379,7 @@ AudioChannelService::GetMediaConfig(nsPIDOMWindowOuter* aWindow) const
       break;
     }
 
-    window = do_QueryInterface(win);
+    window = win;
 
     
   } while (window && window != aWindow);

@@ -748,12 +748,12 @@ DragDataProducer::Produce(DataTransfer* aDataTransfer,
           linkNode = parentLink;
           nodeToSerialize = linkNode;
         } else {
-          nodeToSerialize = do_QueryInterface(draggedNode);
+          nodeToSerialize = draggedNode;
         }
         dragNode = nodeToSerialize;
       } else if (draggedNode && draggedNode->IsHTMLElement(nsGkAtoms::a)) {
         
-        linkNode = do_QueryInterface(draggedNode);    
+        linkNode = draggedNode;    
         GetNodeString(draggedNode, mTitleString);
       } else if (parentLink) {
         

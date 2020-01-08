@@ -428,8 +428,7 @@ HTMLEditor::SetFinalPosition(int32_t aX,
   
   AutoPlaceholderBatch batchIt(this);
 
-  nsCOMPtr<Element> absolutelyPositionedObject =
-    do_QueryInterface(mAbsolutelyPositionedObject);
+  nsCOMPtr<Element> absolutelyPositionedObject = mAbsolutelyPositionedObject;
   NS_ENSURE_STATE(absolutelyPositionedObject);
   mCSSEditUtils->SetCSSPropertyPixels(*absolutelyPositionedObject,
                                       *nsGkAtoms::top, newY);

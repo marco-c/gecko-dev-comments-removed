@@ -1014,7 +1014,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
   } else {
     
     
-    nsCOMPtr<EventTarget> t = do_QueryInterface(aEvent->mTarget);
+    nsCOMPtr<EventTarget> t = aEvent->mTarget;
     targetEtci->SetNewTarget(t);
     
     
