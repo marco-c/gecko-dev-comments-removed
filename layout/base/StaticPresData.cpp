@@ -259,7 +259,7 @@ StaticPresData::GetFontPrefsForLangHelper(nsAtom* aLanguage,
       if (!prefs->mNext) {
         break;
       }
-      prefs = prefs->mNext;
+      prefs = prefs->mNext.get();
     }
     if (aNeedsToCache) {
       *aNeedsToCache = true;
@@ -267,7 +267,8 @@ StaticPresData::GetFontPrefsForLangHelper(nsAtom* aLanguage,
     }
     AssertIsMainThreadOrServoFontMetricsLocked();
     
-    prefs = prefs->mNext = new LangGroupFontPrefs;
+    prefs->mNext = MakeUnique<LangGroupFontPrefs>();
+    prefs = prefs->mNext.get();
   }
 
   if (aNeedsToCache) {
