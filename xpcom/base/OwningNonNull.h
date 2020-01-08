@@ -114,6 +114,13 @@ public:
     mPtr.forget(aOther);
   }
 
+  T& ref() const
+  {
+    MOZ_ASSERT(mInited);
+    MOZ_ASSERT(mPtr);
+    return *mPtr;
+  }
+
   
   T* get() const
   {
