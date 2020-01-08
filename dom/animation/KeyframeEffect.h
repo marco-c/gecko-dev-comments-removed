@@ -208,6 +208,14 @@ public:
   const AnimationProperty* GetEffectiveAnimationOfProperty(
     nsCSSPropertyID aProperty) const;
 
+  
+  
+  
+  
+  
+  
+  nsCSSPropertyIDSet GetPropertiesForCompositor(const EffectSet& aEffects) const;
+
   const InfallibleTArray<AnimationProperty>& Properties() const
   {
     return mProperties;
