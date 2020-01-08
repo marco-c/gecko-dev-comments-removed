@@ -1010,6 +1010,20 @@ this.VideoControlsImplWidget = class {
         }
       },
       HIDE_CONTROLS_TIMEOUT_MS: 2000,
+
+      
+      
+      
+      isMouseOverVideo(event) {
+        
+        
+        let el = this.shadowRoot.elementFromPoint(event.clientX, event.clientY);
+
+        
+        
+        return !!el;
+      },
+
       isMouseOverControlBar(event) {
         
         
@@ -1022,6 +1036,7 @@ this.VideoControlsImplWidget = class {
         }
         return false;
       },
+
       onMouseMove(event) {
         
         if (!this.dynamicControls) {
@@ -1067,27 +1082,17 @@ this.VideoControlsImplWidget = class {
 
         this.window.clearTimeout(this._hideControlsTimeout);
 
-        
-        
-        
-        
-        
-        if (this.checkEventWithin(event, this.videocontrols)) {
-          return;
-        }
-
-        var isMouseOver = (event.type == "mouseover");
-        var isMouseInControls = this.isMouseOverControlBar(event);
+        let isMouseOverVideo = this.isMouseOverVideo(event);
 
         
         
         
-        if (!this.firstFrameShown && !isMouseOver &&
+        if (!this.firstFrameShown && !isMouseOverVideo &&
             !this.video.autoplay) {
           return;
         }
 
-        if (!isMouseOver && !isMouseInControls) {
+        if (!isMouseOverVideo && !this.isMouseOverControlBar(event)) {
           this.adjustControlSize();
 
           
@@ -1727,19 +1732,6 @@ this.VideoControlsImplWidget = class {
         }
 
         this.setClosedCaptionButtonState();
-      },
-
-      checkEventWithin(event, parent1, parent2) {
-        function isDescendant(node) {
-          while (node) {
-            if (node == parent1 || node == parent2) {
-              return true;
-            }
-            node = node.parentNode;
-          }
-          return false;
-        }
-        return isDescendant(event.target) && isDescendant(event.relatedTarget);
       },
 
       log(msg) {
