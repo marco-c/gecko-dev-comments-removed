@@ -1103,6 +1103,8 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
 
     RootedObject unwrapped(cx_, Wrapper::wrappedObject(obj));
     MOZ_ASSERT(unwrapped == UnwrapOneChecked(obj));
+    MOZ_ASSERT(!IsCrossCompartmentWrapper(unwrapped),
+               "CCWs must not wrap other CCWs");
 
     
     if (unwrapped->compartment()->zone() != cx_->compartment()->zone())
@@ -1111,7 +1113,7 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
     
     
     
-    RootedObject wrappedTargetGlobal(cx_, &unwrapped->deprecatedGlobal());
+    RootedObject wrappedTargetGlobal(cx_, &unwrapped->nonCCWGlobal());
     if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal))
         return false;
 

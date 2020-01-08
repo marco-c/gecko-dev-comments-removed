@@ -340,6 +340,11 @@ Wrapper::wrappedObject(JSObject* wrapper)
     
     
     if (target) {
+        
+        
+        
+        MOZ_ASSERT_IF(IsCrossCompartmentWrapper(wrapper),
+                      !IsCrossCompartmentWrapper(target));
         if (wrapper->isMarkedBlack())
             MOZ_ASSERT(JS::ObjectIsNotGray(target));
         if (!wrapper->isMarkedGray())
