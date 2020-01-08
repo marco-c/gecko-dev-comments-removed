@@ -18,6 +18,7 @@
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/HTMLBodyElement.h"
 
 #include "Layers.h"
 #include "LayerAnimationInfo.h" 
@@ -27,6 +28,7 @@
 #include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
+#include "nsIDocumentInlines.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsImageFrame.h"
@@ -1129,6 +1131,42 @@ SyncViewsAndInvalidateDescendants(nsIFrame* aFrame, nsChangeHint aChange)
   }
 }
 
+static bool
+IsPrimaryFrameOfRootOrBodyElement(nsIFrame* aFrame)
+{
+  nsIContent* content = aFrame->GetContent();
+  if (!content) {
+    return false;
+  }
+
+  nsIDocument* document = content->OwnerDoc();
+  Element* root = document->GetRootElement();
+  if (!root) {
+    return false;
+  }
+  nsIFrame* rootFrame = root->GetPrimaryFrame();
+  if (!rootFrame) {
+    return false;
+  }
+  if (aFrame == rootFrame) {
+    return true;
+  }
+
+  Element* body = document->GetBodyElement();
+  if (!body) {
+    return false;
+  }
+  nsIFrame* bodyFrame = body->GetPrimaryFrame();
+  if (!bodyFrame) {
+    return false;
+  }
+  if (aFrame == bodyFrame) {
+    return true;
+  }
+
+  return false;
+}
+
 static void
 ApplyRenderingChangeToTree(nsIPresShell* aPresShell,
                            nsIFrame* aFrame,
@@ -1158,15 +1196,13 @@ ApplyRenderingChangeToTree(nsIPresShell* aPresShell,
   if (aChange & nsChangeHint_RepaintFrame) {
     
     
-    ComputedStyle* bgSC;
-    nsIFrame* propagatedFrame = aFrame;
-    while (!nsCSSRendering::FindBackground(propagatedFrame, &bgSC)) {
-      propagatedFrame = propagatedFrame->GetParent();
-      NS_ASSERTION(aFrame, "root frame must paint");
-    }
-
-    if (propagatedFrame != aFrame) {
-      DoApplyRenderingChangeToTree(propagatedFrame, nsChangeHint_RepaintFrame);
+    
+    
+    if (IsPrimaryFrameOfRootOrBodyElement(aFrame)) {
+      nsIFrame* rootFrame = aFrame->
+        PresShell()->FrameConstructor()->GetRootFrame();
+      MOZ_ASSERT(rootFrame, "No root frame?");
+      DoApplyRenderingChangeToTree(rootFrame, nsChangeHint_RepaintFrame);
       aChange &= ~nsChangeHint_RepaintFrame;
       if (!aChange) {
         return;
