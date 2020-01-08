@@ -11,6 +11,8 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {actionTypes: at, actionUtils: au} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
 const {Prefs} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
 
+ChromeUtils.defineModuleGetter(this, "ASRouterPreferences",
+  "resource://activity-stream/lib/ASRouterPreferences.jsm");
 ChromeUtils.defineModuleGetter(this, "perfService",
   "resource://activity-stream/common/PerfService.jsm");
 ChromeUtils.defineModuleGetter(this, "PingCentre",
@@ -41,7 +43,6 @@ const USER_PREFS_ENCODING = {
 const PREF_IMPRESSION_ID = "impressionId";
 const TELEMETRY_PREF = "telemetry";
 const EVENTS_TELEMETRY_PREF = "telemetry.ut.events";
-const ROUTER_MESSAGE_PROVIDER_PREF = "asrouter.messageProviders";
 
 this.TelemetryFeed = class TelemetryFeed {
   constructor(options) {
@@ -55,8 +56,6 @@ this.TelemetryFeed = class TelemetryFeed {
     this._prefs.observe(TELEMETRY_PREF, this._onTelemetryPrefChange);
     this._onEventsTelemetryPrefChange = this._onEventsTelemetryPrefChange.bind(this);
     this._prefs.observe(EVENTS_TELEMETRY_PREF, this._onEventsTelemetryPrefChange);
-    this._onRouterMessageProviderChange = this._onRouterMessageProviderChange.bind(this);
-    this._prefs.observe(ROUTER_MESSAGE_PROVIDER_PREF, this._onRouterMessageProviderChange);
   }
 
   init() {
@@ -122,28 +121,6 @@ this.TelemetryFeed = class TelemetryFeed {
   
 
 
-
-
-  _parseCFRCohort(pref) {
-    try {
-      for (let provider of JSON.parse(pref)) {
-        if (provider.id === "cfr" && provider.enabled && provider.cohort) {
-          return true;
-        }
-      }
-    } catch (e) {
-      Cu.reportError("Problem parsing JSON message provider pref for ASRouter");
-    }
-    return false;
-  }
-
-  _onRouterMessageProviderChange(prefVal) {
-    this._isInCFRCohort = this._parseCFRCohort(prefVal);
-  }
-
-  
-
-
   get pingCentre() {
     Object.defineProperty(this, "pingCentre",
       {
@@ -193,11 +170,12 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
   get isInCFRCohort() {
-    if (this._isInCFRCohort === undefined) {
-      const pref = this._prefs.get(ROUTER_MESSAGE_PROVIDER_PREF);
-      this._isInCFRCohort = this._parseCFRCohort(pref);
+    for (let provider of ASRouterPreferences.providers) {
+      if (provider.id === "cfr" && provider.enabled && provider.cohort) {
+        return true;
+      }
     }
-    return this._isInCFRCohort;
+    return false;
   }
 
   
@@ -585,7 +563,6 @@ this.TelemetryFeed = class TelemetryFeed {
     try {
       this._prefs.ignore(TELEMETRY_PREF, this._onTelemetryPrefChange);
       this._prefs.ignore(EVENTS_TELEMETRY_PREF, this._onEventsTelemetryPrefChange);
-      this._prefs.ignore(ROUTER_MESSAGE_PROVIDER_PREF, this._onRouterMessageProviderChange);
     } catch (e) {
       Cu.reportError(e);
     }
@@ -599,5 +576,4 @@ const EXPORTED_SYMBOLS = [
   "PREF_IMPRESSION_ID",
   "TELEMETRY_PREF",
   "EVENTS_TELEMETRY_PREF",
-  "ROUTER_MESSAGE_PROVIDER_PREF",
 ];

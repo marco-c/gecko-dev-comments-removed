@@ -65,14 +65,14 @@ describe("#CachedTargetingGetter", () => {
     frecentStub.resolves();
     clock.tick(sixHours);
 
-    await topsitesCache.getTopFrecentSites; 
-    await topsitesCache.getTopFrecentSites; 
+    await topsitesCache.get();
+    await topsitesCache.get();
 
     assert.calledOnce(global.NewTabUtils.activityStreamProvider.getTopFrecentSites);
 
     clock.tick(sixHours);
 
-    await topsitesCache.getTopFrecentSites; 
+    await topsitesCache.get();
 
     assert.calledTwice(global.NewTabUtils.activityStreamProvider.getTopFrecentSites);
   });
@@ -83,7 +83,7 @@ describe("#CachedTargetingGetter", () => {
     
     
     try {
-      await topsitesCache.getTopFrecentSites; 
+      await topsitesCache.get();
       assert.isTrue(false);
     } catch (e) {
       assert.calledOnce(global.Cu.reportError);

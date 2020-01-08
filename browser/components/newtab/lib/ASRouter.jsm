@@ -20,6 +20,8 @@ ChromeUtils.defineModuleGetter(this, "ASRouterPreferences",
   "resource://activity-stream/lib/ASRouterPreferences.jsm");
 ChromeUtils.defineModuleGetter(this, "ASRouterTargeting",
   "resource://activity-stream/lib/ASRouterTargeting.jsm");
+ChromeUtils.defineModuleGetter(this, "QueryCache",
+  "resource://activity-stream/lib/ASRouterTargeting.jsm");
 ChromeUtils.defineModuleGetter(this, "ASRouterTriggerListeners",
   "resource://activity-stream/lib/ASRouterTriggerListeners.jsm");
 
@@ -249,6 +251,17 @@ this.MessageLoaderUtils = MessageLoaderUtils;
 
 
 
+function hasLegacyOnboardingConflict(provider) {
+  return provider.id === "snippets" && !Services.prefs.getBoolPref(ONBOARDING_FINISHED_PREF, false);
+}
+
+
+
+
+
+
+
+
 
 class _ASRouter {
   constructor(localProviders = LOCAL_MESSAGE_PROVIDERS) {
@@ -294,6 +307,14 @@ class _ASRouter {
   }
 
   
+  async observe(aSubject, aTopic, aPrefName) {
+    if (aPrefName === ONBOARDING_FINISHED_PREF) {
+      this._updateMessageProviders();
+      await this.loadMessagesFromAllProviders();
+    }
+  }
+
+  
   async onPrefChange() {
     this._updateMessageProviders();
     this.overrideOrEnableLegacyOnboarding();
@@ -315,10 +336,17 @@ class _ASRouter {
 
   
   _updateMessageProviders() {
+    const previousProviders =  this.state.providers;
     const providers = [
       
-      ...this.state.providers.filter(p => p.id === "preview"),
-      ...ASRouterPreferences.providers.filter(p => p.enabled),
+      ...previousProviders.filter(p => p.id === "preview"),
+      
+      ...ASRouterPreferences.providers.filter(p => (
+        p.enabled &&
+        ASRouterPreferences.getUserPreference(p.id) !== false) &&
+        
+        !hasLegacyOnboardingConflict(p)
+      ),
     ].map(_provider => {
       
       const provider = {..._provider};
@@ -339,6 +367,14 @@ class _ASRouter {
     });
 
     const providerIDs = providers.map(p => p.id);
+
+    
+    for (const prevProvider of previousProviders) {
+      if (!providerIDs.includes(prevProvider.id)) {
+        this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "CLEAR_PROVIDER", data: {id: prevProvider.id}});
+      }
+    }
+
     this.setState(prevState => ({
       providers,
       
@@ -436,6 +472,8 @@ class _ASRouter {
     this.dispatchToAS = dispatchToAS;
     this.dispatch = this.dispatch.bind(this);
 
+    
+    Services.prefs.addObserver(ONBOARDING_FINISHED_PREF, this);
     ASRouterPreferences.init();
     ASRouterPreferences.addListener(this.onPrefChange);
 
@@ -467,6 +505,8 @@ class _ASRouter {
 
     this.overrideOrEnableLegacyOnboarding();
 
+    
+    Services.prefs.removeObserver(ONBOARDING_FINISHED_PREF, this);
     ASRouterPreferences.removeListener(this.onPrefChange);
     ASRouterPreferences.uninit();
 
@@ -494,8 +534,13 @@ class _ASRouter {
 
   _onStateChanged(state) {
     if (ASRouterPreferences.devtoolsEnabled) {
-      this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: this.state});
+      this._updateAdminState();
     }
+  }
+
+  _updateAdminState(target) {
+    const channel = target || this.messageChannel;
+    channel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: this.state});
   }
 
   _handleTargetingError(type, error, message) {
@@ -907,8 +952,7 @@ class _ASRouter {
           await this.handleUserAction({data: action.data, target});
         }
         break;
-      case "CONNECT_UI_REQUEST":
-      case "GET_NEXT_MESSAGE":
+      case "SNIPPETS_REQUEST":
       case "TRIGGER":
         
         await this.waitForInitialized;
@@ -965,7 +1009,7 @@ class _ASRouter {
           this._addPreviewEndpoint(action.data.endpoint.url, target.portID);
           await this.loadMessagesFromAllProviders();
         } else {
-          target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: this.state});
+          this._updateAdminState(target);
         }
         break;
       case "IMPRESSION":
@@ -975,6 +1019,9 @@ class _ASRouter {
         if (this.dispatchToAS) {
           this.dispatchToAS(ac.ASRouterUserEvent(action.data));
         }
+        break;
+      case "EXPIRE_QUERY_CACHE":
+        QueryCache.expireAll();
         break;
     }
   }
