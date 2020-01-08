@@ -2302,6 +2302,13 @@ GlobalHelperThreadState::trace(JSTracer* trc)
         parseTask->trace(trc);
 }
 
+ void
+HelperThread::WakeupAll()
+{
+    AutoLockHelperThreadState lock;
+    HelperThreadState().notifyAll(GlobalHelperThreadState::PRODUCER, lock);
+}
+
 void
 JSContext::setHelperThread(HelperThread* thread)
 {
@@ -2395,6 +2402,19 @@ HelperThread::threadLoop()
 
         const TaskSpec* task = findHighestPriorityTask(lock);
         if (!task) {
+            if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+                
+                
+                
+                
+                
+                {
+                    AutoUnlockHelperThreadState unlock(lock);
+                    mozilla::recordreplay::MaybeWaitForCheckpointSave();
+                }
+                mozilla::recordreplay::NotifyUnrecordedWait(WakeupAll);
+            }
+
             HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
             continue;
         }
