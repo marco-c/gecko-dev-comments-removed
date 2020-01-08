@@ -61,6 +61,42 @@ async function openAboutDebugging(page, win) {
   return { tab, document, window };
 }
 
+
+
+
+
+async function waitForRequestsToSettle(store, delay = 500) {
+  let hasSettled = false;
+
+  
+  
+  while (!hasSettled) {
+    let timer;
+
+    
+    
+    
+    const timerPromise = new Promise(resolve => {
+      timer = setTimeout(() => {
+        hasSettled = true;
+        resolve();
+      }, delay);
+    });
+
+    
+    await Promise.race([
+      waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
+      waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
+      waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
+      timerPromise,
+    ]);
+
+    
+    
+    clearTimeout(timer);
+  }
+}
+
 function waitForDispatch(store, type) {
   return new Promise(resolve => {
     store.dispatch({
