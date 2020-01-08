@@ -175,9 +175,12 @@ finish: function()
 
 
 
-ok: function(condition, name, diag)
+ok: function(condition, name)
 {
-  return this._masterWindow.SimpleTest.ok(condition, name, diag);
+  
+  
+  return this._masterWindow.SimpleTest.ok.apply(this._masterWindow.SimpleTest,
+    arguments);
 },
 
 is: function(a, b, name)
