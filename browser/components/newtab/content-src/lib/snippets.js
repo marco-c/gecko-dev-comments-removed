@@ -7,6 +7,7 @@ const SNIPPETS_ENABLED_EVENT = "Snippets:Enabled";
 const SNIPPETS_DISABLED_EVENT = "Snippets:Disabled";
 
 import {actionCreators as ac, actionTypes as at} from "common/Actions.jsm";
+import {ASRouterContent} from "content-src/asrouter/asrouter-content";
 
 
 
@@ -376,16 +377,13 @@ export class SnippetsProvider {
 
 export function addSnippetsSubscriber(store) {
   const snippets = new SnippetsProvider(store.dispatch);
+  const asrouterContent = new ASRouterContent();
 
   let initializing = false;
 
   store.subscribe(async () => {
     const state = store.getState();
-    let snippetsEnabled = false;
-    try {
-      snippetsEnabled = JSON.parse(state.Prefs.values["asrouter.messageProviders"]).find(i => i.id === "snippets").enabled;
-    } catch (e) {}
-    const isASRouterEnabled = state.Prefs.values.asrouterExperimentEnabled && snippetsEnabled;
+    const isASRouterEnabled = state.Prefs.values.asrouterExperimentEnabled && state.Prefs.values.asrouterOnboardingCohort > 0;
     
     
     
@@ -409,8 +407,22 @@ export function addSnippetsSubscriber(store) {
     ) {
       snippets.uninit();
     }
+
+    
+    
+    if (
+      (state.Prefs.values.asrouterExperimentEnabled || state.Prefs.values.asrouterOnboardingCohort > 0) &&
+      state.Prefs.values["feeds.snippets"] &&
+      !asrouterContent.initialized) {
+      asrouterContent.init();
+    } else if (
+      ((!state.Prefs.values.asrouterExperimentEnabled && state.Prefs.values.asrouterOnboardingCohort === 0) || !state.Prefs.values["feeds.snippets"]) &&
+      asrouterContent.initialized
+    ) {
+      asrouterContent.uninit();
+    }
   });
 
   
-  return {snippets};
+  return {snippets, asrouterContent};
 }

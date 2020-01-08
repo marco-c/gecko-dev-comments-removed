@@ -5,16 +5,11 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+ChromeUtils.import("resource:///modules/UITour.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
-XPCOMUtils.defineLazyModuleGetters(this, {
-  AddonManager: "resource://gre/modules/AddonManager.jsm",
-  UITour: "resource:///modules/UITour.jsm"
-});
 const {ASRouterActions: ra, actionCreators: ac} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
-const {CFRMessageProvider} = ChromeUtils.import("resource://activity-stream/lib/CFRMessageProvider.jsm", {});
 const {OnboardingMessageProvider} = ChromeUtils.import("resource://activity-stream/lib/OnboardingMessageProvider.jsm", {});
-const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
-const {CFRPageActions} = ChromeUtils.import("resource://activity-stream/lib/CFRPageActions.jsm", {});
 
 ChromeUtils.defineModuleGetter(this, "ASRouterTargeting",
   "resource://activity-stream/lib/ASRouterTargeting.jsm");
@@ -24,7 +19,6 @@ ChromeUtils.defineModuleGetter(this, "ASRouterTriggerListeners",
 const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
 const OUTGOING_MESSAGE_NAME = "ASRouter:parent-to-child";
 const MESSAGE_PROVIDER_PREF = "browser.newtabpage.activity-stream.asrouter.messageProviders";
-const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 
 const DEFAULT_WHITELIST_HOSTS = {
@@ -33,9 +27,7 @@ const DEFAULT_WHITELIST_HOSTS = {
 };
 const SNIPPETS_ENDPOINT_WHITELIST = "browser.newtab.activity-stream.asrouter.whitelistHosts";
 
-const MAX_MESSAGE_LIFETIME_CAP = 100;
-
-const LOCAL_MESSAGE_PROVIDERS = {OnboardingMessageProvider, CFRMessageProvider};
+const LOCAL_MESSAGE_PROVIDERS = {OnboardingMessageProvider};
 const STARTPAGE_VERSION = "0.1.0";
 
 const MessageLoaderUtils = {
@@ -84,35 +76,10 @@ const MessageLoaderUtils = {
 
 
 
-
-  async _remoteSettingsLoader(provider) {
-    let messages = [];
-    if (provider.bucket) {
-      try {
-        messages = await MessageLoaderUtils._getRemoteSettingsMessages(provider.bucket);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }
-    return messages;
-  },
-
-  _getRemoteSettingsMessages(bucket) {
-    return RemoteSettings(bucket).get({filters: {locale: Services.locale.getAppLocaleAsLangTag()}});
-  },
-
-  
-
-
-
-
-
   _getMessageLoader(provider) {
     switch (provider.type) {
       case "remote":
         return this._remoteLoader;
-      case "remote-settings":
-        return this._remoteSettingsLoader;
       case "local":
       default:
         return this._localLoader;
@@ -177,10 +144,8 @@ class _ASRouter {
     this._state = {
       lastMessageId: null,
       providers: [],
-      messageBlockList: [],
-      providerBlockList: [],
-      messageImpressions: {},
-      providerImpressions: {},
+      blockList: [],
+      impressions: {},
       messages: []
     };
     this._triggerHandler = this._triggerHandler.bind(this);
@@ -206,11 +171,7 @@ class _ASRouter {
     const providers = existingPreviewProvider ? [existingPreviewProvider] : [];
     const providersJSON = Services.prefs.getStringPref(this._messageProviderPref, "");
     try {
-      JSON.parse(providersJSON).forEach(provider => {
-        if (provider.enabled) {
-          providers.push(provider);
-        }
-      });
+      JSON.parse(providersJSON).forEach(provider => providers.push(provider));
     } catch (e) {
       Cu.reportError("Problem parsing JSON message provider pref for ASRouter");
     }
@@ -322,13 +283,10 @@ class _ASRouter {
     this._storage = storage;
     this.WHITELIST_HOSTS = this._loadSnippetsWhitelistHosts();
     this.dispatchToAS = dispatchToAS;
-    this.dispatch = this.dispatch.bind(this);
 
-    const messageBlockList = await this._storage.get("messageBlockList") || [];
-    const providerBlockList = await this._storage.get("providerBlockList") || [];
-    const messageImpressions = await this._storage.get("messageImpressions") || {};
-    const providerImpressions = await this._storage.get("providerImpressions") || {};
-    await this.setState({messageBlockList, providerBlockList, messageImpressions, providerImpressions});
+    const blockList = await this._storage.get("blockList") || [];
+    const impressions = await this._storage.get("impressions") || {};
+    await this.setState({blockList, impressions});
     this._updateMessageProviders();
     await this.loadMessagesFromAllProviders();
 
@@ -378,55 +336,16 @@ class _ASRouter {
     }
   }
 
-  _findMessage(candidateMessages, trigger) {
-    const messages = candidateMessages.filter(m => this.isBelowFrequencyCaps(m));
+  _findMessage(messages, target, trigger) {
+    const {impressions} = this.state;
 
      
      
-    return ASRouterTargeting.findMatchingMessage({messages, trigger, onError: this._handleTargetingError});
+    return ASRouterTargeting.findMatchingMessage({messages, impressions, trigger, onError: this._handleTargetingError});
   }
 
   _orderBundle(bundle) {
     return bundle.sort((a, b) => a.order - b.order);
-  }
-
-  
-  isBelowFrequencyCaps(message) {
-    const {providers, messageImpressions, providerImpressions} = this.state;
-
-    const provider = providers.find(p => p.id === message.provider);
-    const impressionsForMessage = messageImpressions[message.id];
-    const impressionsForProvider = providerImpressions[message.provider];
-
-    return (this._isBelowItemFrequencyCap(message, impressionsForMessage, MAX_MESSAGE_LIFETIME_CAP) &&
-      this._isBelowItemFrequencyCap(provider, impressionsForProvider));
-  }
-
-  
-  
-  _isBelowItemFrequencyCap(item, impressions, maxLifetimeCap = Infinity) {
-    if (item && item.frequency && impressions && impressions.length) {
-      if (
-        item.frequency.lifetime &&
-        impressions.length >= Math.min(item.frequency.lifetime, maxLifetimeCap)
-      ) {
-        return false;
-      }
-      if (item.frequency.custom) {
-        const now = Date.now();
-        for (const setting of item.frequency.custom) {
-          let {period} = setting;
-          if (period === "daily") {
-            period = ONE_DAY_IN_MS;
-          }
-          const impressionsInPeriod = impressions.filter(t => (now - t) < period);
-          if (impressionsInPeriod.length >= setting.cap) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
   }
 
   async _getBundledMessages(originalMessage, target, trigger, force = false) {
@@ -448,7 +367,7 @@ class _ASRouter {
     } else {
       while (bundledMessagesOfSameTemplate.length) {
         
-        const message = await this._findMessage(bundledMessagesOfSameTemplate, trigger);
+        const message = await this._findMessage(bundledMessagesOfSameTemplate, target, trigger);
         if (!message) {
            
           break;
@@ -474,65 +393,40 @@ class _ASRouter {
 
   _getUnblockedMessages() {
     let {state} = this;
-    return state.messages.filter(item =>
-      !state.messageBlockList.includes(item.id) &&
-      !state.providerBlockList.includes(item.provider)
-    );
+    return state.messages.filter(item => !state.blockList.includes(item.id));
   }
 
   async _sendMessageToTarget(message, target, trigger, force = false) {
+    let bundledMessages;
     
-    if (!message) {
-      try {
-        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "CLEAR_ALL"});
-      } catch (e) {}
-
-    
-    } else if (message.bundled) {
-      const bundledMessages = await this._getBundledMessages(message, target, trigger, force);
-      const action = bundledMessages ? {type: "SET_BUNDLED_MESSAGES", data: bundledMessages} : {type: "CLEAR_ALL"};
-      target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
-
-    
-    } else if (message.template === "cfr_doorhanger") {
-      if (force) {
-        CFRPageActions.forceRecommendation(target, message, this.dispatch);
-      } else {
-        CFRPageActions.addRecommendation(target, trigger.param, message, this.dispatch);
-      }
-
-    
-    } else {
+    if (message && message.bundled) {
+      bundledMessages = await this._getBundledMessages(message, target, trigger, force);
+    }
+    if (message && !message.bundled) {
+      
       target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: message});
+    } else if (bundledMessages) {
+      
+      target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_BUNDLED_MESSAGES", data: bundledMessages});
+    } else {
+      target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "CLEAR_ALL"});
     }
   }
 
   async addImpression(message) {
-    const provider = this.state.providers.find(p => p.id === message.provider);
     
-    
-    if (message.frequency || (provider && provider.frequency)) {
-      const time = Date.now();
-      await this.setState(state => {
-        const messageImpressions = this._addImpressionForItem(state, message, "messageImpressions", time);
-        const providerImpressions = this._addImpressionForItem(state, provider, "providerImpressions", time);
-        return {messageImpressions, providerImpressions};
-      });
+    if (!message.frequency) {
+      return;
     }
-  }
-
-  
-  
-  _addImpressionForItem(state, item, impressionsString, time) {
-    
-    
-    const impressions = {...state[impressionsString]};
-    if (item.frequency) {
-      impressions[item.id] = impressions[item.id] ? [...impressions[item.id]] : [];
-      impressions[item.id].push(time);
-      this._storage.set(impressionsString, impressions);
-    }
-    return impressions;
+    await this.setState(state => {
+      
+      
+      const impressions = {...state.impressions};
+      impressions[message.id] = impressions[message.id] ? [...impressions[message.id]] : [];
+      impressions[message.id].push(Date.now());
+      this._storage.set("impressions", impressions);
+      return {impressions};
+    });
   }
 
   
@@ -559,43 +453,33 @@ class _ASRouter {
 
 
 
-
-
   async cleanupImpressions() {
     await this.setState(state => {
-      const messageImpressions = this._cleanupImpressionsForItems(state, state.messages, "messageImpressions");
-      const providerImpressions = this._cleanupImpressionsForItems(state, state.providers, "providerImpressions");
-      return {messageImpressions, providerImpressions};
+      const impressions = {...state.impressions};
+      let needsUpdate = false;
+      Object.keys(impressions).forEach(id => {
+        const [message] = state.messages.filter(msg => msg.id === id);
+        
+        if (!message || !message.frequency || !Array.isArray(impressions[id])) {
+          delete impressions[id];
+          needsUpdate = true;
+          return;
+        }
+        if (!impressions[id].length) {
+          return;
+        }
+        
+        if (message.frequency.custom && !message.frequency.lifetime) {
+          const now = Date.now();
+          impressions[id] = impressions[id].filter(t => (now - t) < this.getLongestPeriod(message));
+          needsUpdate = true;
+        }
+      });
+      if (needsUpdate) {
+        this._storage.set("impressions", impressions);
+      }
+      return {impressions};
     });
-  }
-
-  
-  
-  _cleanupImpressionsForItems(state, items, impressionsString) {
-    const impressions = {...state[impressionsString]};
-    let needsUpdate = false;
-    Object.keys(impressions).forEach(id => {
-      const [item] = items.filter(x => x.id === id);
-      
-      if (!item || !item.frequency || !Array.isArray(impressions[id])) {
-        delete impressions[id];
-        needsUpdate = true;
-        return;
-      }
-      if (!impressions[id].length) {
-        return;
-      }
-      
-      if (item.frequency.custom && !item.frequency.lifetime) {
-        const now = Date.now();
-        impressions[id] = impressions[id].filter(t => (now - t) < this.getLongestPeriod(item));
-        needsUpdate = true;
-      }
-    });
-    if (needsUpdate) {
-      this._storage.set(impressionsString, impressions);
-    }
-    return impressions;
   }
 
   async sendNextMessage(target, trigger) {
@@ -606,7 +490,7 @@ class _ASRouter {
     if (previewMsgs.length) {
       [message] = previewMsgs;
     } else {
-      message = await this._findMessage(msgs, trigger);
+      message = await this._findMessage(msgs, target, trigger);
     }
 
     if (previewMsgs.length) {
@@ -625,33 +509,33 @@ class _ASRouter {
     await this.setState({lastMessageId: id});
     const newMessage = this.getMessageById(id);
 
-    await this._sendMessageToTarget(newMessage, target, action.data, force);
+    await this._sendMessageToTarget(newMessage, target, force, action.data);
   }
 
-  async blockMessageById(idOrIds) {
+  async blockById(idOrIds) {
     const idsToBlock = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
 
     await this.setState(state => {
-      const messageBlockList = [...state.messageBlockList, ...idsToBlock];
+      const blockList = [...state.blockList, ...idsToBlock];
       
-      const messageImpressions = {...state.messageImpressions};
-      idsToBlock.forEach(id => delete messageImpressions[id]);
-      this._storage.set("messageBlockList", messageBlockList);
-      return {messageBlockList, messageImpressions};
+      const impressions = {...state.impressions};
+      idsToBlock.forEach(id => delete impressions[id]);
+      this._storage.set("blockList", blockList);
+      return {blockList, impressions};
     });
   }
 
-  async blockProviderById(idOrIds) {
-    const idsToBlock = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
-
-    await this.setState(state => {
-      const providerBlockList = [...state.providerBlockList, ...idsToBlock];
-      
-      const providerImpressions = {...state.providerImpressions};
-      idsToBlock.forEach(id => delete providerImpressions[id]);
-      this._storage.set("providerBlockList", providerBlockList);
-      return {providerBlockList, providerImpressions};
-    });
+  openLinkIn(url, target, {isPrivate = false, trusted = false, where = ""}) {
+    const win = target.browser.ownerGlobal;
+    const params = {
+      private: isPrivate,
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+    };
+    if (trusted) {
+      win.openTrustedLinkIn(url, where);
+    } else {
+      win.openLinkIn(url, where, params);
+    }
   }
 
   _validPreviewEndpoint(url) {
@@ -695,7 +579,7 @@ class _ASRouter {
 
   
   async _triggerHandler(target, trigger) {
-    await this.onMessage({target, data: {type: "TRIGGER", data: {trigger}}});
+    await this.onMessage({target, data: {type: "TRIGGER", trigger}});
   }
 
   _removePreviewEndpoint(state) {
@@ -718,13 +602,19 @@ class _ASRouter {
         target.browser.ownerGlobal.OpenBrowserWindow({private: true});
         break;
       case ra.OPEN_URL:
-        target.browser.ownerGlobal.openLinkIn(action.data.url, "tabshifted", {
-          private: false,
-          triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})
+        this.openLinkIn(action.data.url, target, {
+          isPrivate: false,
+          where: "tabshifted",
+          triggeringPrincipal: Services.scriptSecurityManager.getNullPrincipal({})
         });
         break;
       case ra.OPEN_ABOUT_PAGE:
-        target.browser.ownerGlobal.openTrustedLinkIn(`about:${action.data.page}`, "tab");
+        this.openLinkIn(`about:${action.data.page}`, target, {
+          isPrivate: false,
+          trusted: true,
+          where: "tab",
+          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+        });
         break;
       case ra.OPEN_APPLICATIONS_MENU:
         UITour.showMenu(target.browser.ownerGlobal, action.data.target);
@@ -733,10 +623,6 @@ class _ASRouter {
         await MessageLoaderUtils.installAddonFromURL(target.browser, action.data.url);
         break;
     }
-  }
-
-  dispatch(action, target) {
-    this.onMessage({data: action, target});
   }
 
   async onMessage({data: action, target}) {
@@ -759,41 +645,29 @@ class _ASRouter {
         await this.sendNextMessage(target, (action.data && action.data.trigger) || {});
         break;
       case "BLOCK_MESSAGE_BY_ID":
-        await this.blockMessageById(action.data.id);
+        await this.blockById(action.data.id);
         this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "CLEAR_MESSAGE", data: {id: action.data.id}});
         break;
-      case "BLOCK_PROVIDER_BY_ID":
-        await this.blockProviderById(action.data.id);
-        this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "CLEAR_PROVIDER", data: {id: action.data.id}});
-        break;
       case "BLOCK_BUNDLE":
-        await this.blockMessageById(action.data.bundle.map(b => b.id));
+        await this.blockById(action.data.bundle.map(b => b.id));
         this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "CLEAR_BUNDLE"});
         break;
       case "UNBLOCK_MESSAGE_BY_ID":
         await this.setState(state => {
-          const messageBlockList = [...state.messageBlockList];
-          messageBlockList.splice(messageBlockList.indexOf(action.data.id), 1);
-          this._storage.set("messageBlockList", messageBlockList);
-          return {messageBlockList};
-        });
-        break;
-      case "UNBLOCK_PROVIDER_BY_ID":
-        await this.setState(state => {
-          const providerBlockList = [...state.providerBlockList];
-          providerBlockList.splice(providerBlockList.indexOf(action.data.id), 1);
-          this._storage.set("providerBlockList", providerBlockList);
-          return {providerBlockList};
+          const blockList = [...state.blockList];
+          blockList.splice(blockList.indexOf(action.data.id), 1);
+          this._storage.set("blockList", blockList);
+          return {blockList};
         });
         break;
       case "UNBLOCK_BUNDLE":
         await this.setState(state => {
-          const messageBlockList = [...state.messageBlockList];
+          const blockList = [...state.blockList];
           for (let message of action.data.bundle) {
-            messageBlockList.splice(messageBlockList.indexOf(message.id), 1);
+            blockList.splice(blockList.indexOf(message.id), 1);
           }
-          this._storage.set("messageBlockList", messageBlockList);
-          return {messageBlockList};
+          this._storage.set("blockList", blockList);
+          return {blockList};
         });
         break;
       case "OVERRIDE_MESSAGE":
@@ -808,7 +682,7 @@ class _ASRouter {
         }
         break;
       case "IMPRESSION":
-        await this.addImpression(action.data);
+        this.addImpression(action.data);
         break;
     }
   }
