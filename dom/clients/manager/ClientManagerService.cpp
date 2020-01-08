@@ -581,17 +581,6 @@ class OpenWindowRunnable final : public Runnable {
 
     
     
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> principal =
-        PrincipalInfoToPrincipal(mArgs.principalInfo());
-    DebugOnly<nsresult> rv =
-        targetProcess->TransmitPermissionsForPrincipal(principal);
-    Unused << NS_WARN_IF(NS_FAILED(rv));
-
-    
-    
     Unused << targetProcess->SendPClientOpenWindowOpConstructor(actor, mArgs);
 
     return NS_OK;
