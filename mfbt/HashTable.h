@@ -1728,18 +1728,23 @@ private:
     return HashPolicy::match(HashPolicy::getKey(aEntry.get()), aLookup);
   }
 
+  enum LookupReason
+  {
+    ForNonAdd,
+    ForAdd
+  };
+
   
   
   
   
   
+  template<LookupReason Reason>
   MOZ_ALWAYS_INLINE Entry& lookup(const Lookup& aLookup,
-                                  HashNumber aKeyHash,
-                                  uint32_t aCollisionBit) const
+                                  HashNumber aKeyHash) const
   {
     MOZ_ASSERT(isLiveHash(aKeyHash));
     MOZ_ASSERT(!(aKeyHash & sCollisionBit));
-    MOZ_ASSERT(aCollisionBit == 0 || aCollisionBit == sCollisionBit);
     MOZ_ASSERT(mTable);
     METER(mStats.mSearches++);
 
@@ -1766,7 +1771,7 @@ private:
     Entry* firstRemoved = nullptr;
 
     while (true) {
-      if (aCollisionBit == sCollisionBit && !firstRemoved) {
+      if (Reason == ForAdd && !firstRemoved) {
         if (MOZ_UNLIKELY(entry->isRemoved())) {
           firstRemoved = entry;
         } else {
@@ -2128,7 +2133,7 @@ public:
       return Ptr();
     }
     HashNumber keyHash = prepareHash(aLookup);
-    return Ptr(lookup(aLookup, keyHash, 0), *this);
+    return Ptr(lookup<ForNonAdd>(aLookup, keyHash), *this);
   }
 
   MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const
@@ -2137,7 +2142,7 @@ public:
       return Ptr();
     }
     HashNumber keyHash = prepareHash(aLookup);
-    return Ptr(lookup(aLookup, keyHash, 0), *this);
+    return Ptr(lookup<ForNonAdd>(aLookup, keyHash), *this);
   }
 
   MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) const
@@ -2150,7 +2155,7 @@ public:
     
     
     
-    return AddPtr(lookup(aLookup, keyHash, sCollisionBit), *this, keyHash);
+    return AddPtr(lookup<ForAdd>(aLookup, keyHash), *this, keyHash);
   }
 
   template<typename... Args>
@@ -2252,7 +2257,7 @@ public:
       ReentrancyGuard g(*this);
       
       MOZ_ASSERT(prepareHash(aLookup) == aPtr.mKeyHash);
-      aPtr.mEntry = &lookup(aLookup, aPtr.mKeyHash, sCollisionBit);
+      aPtr.mEntry = &lookup<ForAdd>(aLookup, aPtr.mKeyHash);
     }
     return aPtr.found() || add(aPtr, std::forward<Args>(aArgs)...);
   }
