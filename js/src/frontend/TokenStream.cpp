@@ -1638,45 +1638,53 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::regexpLiteral(TokenStart start, Toke
             return badToken();
         }
 
-        if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
-            if (unit == '\\')  {
-                if (!this->charBuffer.append(unit))
-                    return badToken();
+        if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
+            if (!ProcessNonAsciiCodePoint(unit))
+                return badToken();
 
-                unit = getCodeUnit();
-                if (unit == EOF) {
-                    ReportUnterminatedRegExp(unit);
-                    return badToken();
-                }
+            continue;
+        }
 
-                
-                
-                if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
-                    if (!ProcessNonAsciiCodePoint(unit))
-                        return badToken();
+        if (unit == '\\')  {
+            if (!this->charBuffer.append(unit))
+                return badToken();
 
-                    continue;
-                }
-            } else if (unit == '[') {
-                inCharClass = true;
-            } else if (unit == ']') {
-                inCharClass = false;
-            } else if (unit == '/' && !inCharClass) {
-                
-                break;
-            }
-
-            if (unit == '\r' || unit == '\n') {
+            unit = getCodeUnit();
+            if (unit == EOF) {
                 ReportUnterminatedRegExp(unit);
                 return badToken();
             }
 
-            if (!this->charBuffer.append(unit))
-                return badToken();
-        } else {
-            if (!ProcessNonAsciiCodePoint(unit))
-                return badToken();
+            
+            
+            if (MOZ_UNLIKELY(!isAsciiCodePoint(unit))) {
+                if (!ProcessNonAsciiCodePoint(unit))
+                    return badToken();
+
+                continue;
+            }
+        } else if (unit == '[') {
+            inCharClass = true;
+        } else if (unit == ']') {
+            inCharClass = false;
+        } else if (unit == '/' && !inCharClass) {
+            
+            break;
         }
+
+        if (unit == '\r' || unit == '\n') {
+            ReportUnterminatedRegExp(unit);
+            return badToken();
+        }
+
+        
+        
+        
+        
+        MOZ_ASSERT(!SourceUnits::isRawEOLChar(unit));
+
+        if (!this->charBuffer.append(unit))
+            return badToken();
     } while (true);
 
     int32_t unit;
