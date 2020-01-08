@@ -11145,7 +11145,13 @@ bool
 nsIDocument::FullscreenElementReadyCheck(const FullscreenRequest& aRequest)
 {
   Element* elem = aRequest.Element();
+  
+  
+  
+  
+  
   if (elem == FullscreenStackTop()) {
+    aRequest.MayResolvePromise();
     return false;
   }
   if (!elem->IsInComposedDoc()) {
@@ -11190,6 +11196,7 @@ nsIDocument::FullscreenElementReadyCheck(const FullscreenRequest& aRequest)
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
     NS_WARNING("Failed to retrieve focus manager in fullscreen request.");
+    aRequest.MayRejectPromise();
     return false;
   }
   if (nsContentUtils::HasPluginWithUncontrolledEventDispatch(fm->GetFocusedElement())) {
@@ -11268,7 +11275,8 @@ public:
         if (!docShell) {
           
           
-          TakeAndNextInternal();
+          UniquePtr<FullscreenRequest> request = TakeAndNextInternal();
+          request->MayRejectPromise();
         } else {
           while (docShell && docShell != mRootShellForIteration) {
             docShell->GetParent(getter_AddRefs(docShell));
@@ -11346,6 +11354,7 @@ nsIDocument::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest)
 {
   nsCOMPtr<nsPIDOMWindowOuter> rootWin = GetRootWindow(this);
   if (!rootWin) {
+    aRequest->MayRejectPromise();
     return;
   }
 
@@ -11405,7 +11414,8 @@ ClearPendingFullscreenRequests(nsIDocument* aDoc)
   PendingFullscreenRequestList::Iterator iter(
     aDoc, PendingFullscreenRequestList::eInclusiveDescendants);
   while (!iter.AtEnd()) {
-    iter.TakeAndNext();
+    UniquePtr<FullscreenRequest> request = iter.TakeAndNext();
+    request->MayRejectPromise();
   }
 }
 
@@ -11505,6 +11515,7 @@ nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
   for (nsIDocument* d : Reversed(changed)) {
     DispatchFullscreenChange(d, d->FullscreenStackTop());
   }
+  aRequest->MayResolvePromise();
   return true;
 }
 
