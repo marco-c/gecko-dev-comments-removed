@@ -64,8 +64,7 @@ class UrlbarView {
 
   selectNextItem({reverse = false} = {}) {
     if (!this.isOpen) {
-      this.open();
-      return;
+      throw new Error("UrlbarView: Cannot select an item if the view isn't open.");
     }
 
     
@@ -88,24 +87,6 @@ class UrlbarView {
     if (result) {
       this.input.setValueFromResult(result);
     }
-  }
-
-  
-
-
-  open() {
-    this.panel.removeAttribute("hidden");
-
-    this._alignPanel();
-
-    
-    
-    this.oneOffSearchButtons;
-
-    this.panel.openPopup(this.input.textbox.closest("toolbar"), "after_end", 0, -1);
-
-    this._selected = this._rows.firstElementChild;
-    this._selected.toggleAttribute("selected", true);
   }
 
   
@@ -136,7 +117,7 @@ class UrlbarView {
     for (let resultIndex in queryContext.results) {
       this._addRow(resultIndex);
     }
-    this.open();
+    this._openPanel();
   }
 
   
@@ -147,6 +128,21 @@ class UrlbarView {
 
   _createElement(name) {
     return this.document.createElementNS("http://www.w3.org/1999/xhtml", name);
+  }
+
+  _openPanel() {
+    this.panel.removeAttribute("hidden");
+
+    this._alignPanel();
+
+    
+    
+    this.oneOffSearchButtons;
+
+    this.panel.openPopup(this.input.textbox.closest("toolbar"), "after_end", 0, -1);
+
+    this._selected = this._rows.firstElementChild;
+    this._selected.toggleAttribute("selected", true);
   }
 
   _alignPanel() {

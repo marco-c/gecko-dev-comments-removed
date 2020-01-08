@@ -224,18 +224,20 @@ class UrlbarController {
         this.input.handleCommand(event);
         return;
       case KeyEvent.DOM_VK_TAB:
-        this.view.selectNextItem({ reverse: event.shiftKey });
-        event.preventDefault();
-        break;
-      case KeyEvent.DOM_VK_DOWN:
-        if (!event.ctrlKey && !event.altKey) {
-          this.view.selectNextItem();
+        if (this.view.isOpen) {
+          this.view.selectNextItem({ reverse: event.shiftKey });
           event.preventDefault();
         }
         break;
+      case KeyEvent.DOM_VK_DOWN:
       case KeyEvent.DOM_VK_UP:
         if (!event.ctrlKey && !event.altKey) {
-          this.view.selectNextItem({ reverse: true });
+          if (this.view.isOpen) {
+            this.view.selectNextItem({
+              reverse: event.keyCode == KeyEvent.DOM_VK_UP });
+          } else {
+            this.input.startQuery();
+          }
           event.preventDefault();
         }
         break;

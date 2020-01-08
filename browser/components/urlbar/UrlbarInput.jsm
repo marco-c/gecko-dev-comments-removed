@@ -135,10 +135,6 @@ class UrlbarInput {
     this.view.close();
   }
 
-  openResults() {
-    this.view.open();
-  }
-
   
 
 
@@ -329,6 +325,26 @@ class UrlbarInput {
       val = this.window.losslessDecodeURI(uri);
     }
     this.value = val;
+  }
+
+  
+
+
+
+
+
+
+
+  startQuery({
+    searchString = "",
+    lastKey = null,
+  } = {}) {
+    this.controller.startQuery(new QueryContext({
+      searchString,
+      lastKey,
+      maxResults: UrlbarPrefs.get("maxRichResults"),
+      isPrivate: this.isPrivate,
+    }));
   }
 
   
@@ -653,12 +669,10 @@ class UrlbarInput {
     }
 
     
-    this.controller.startQuery(new QueryContext({
+    this.startQuery({
       searchString: value,
-      lastKey: "",
-      maxResults: UrlbarPrefs.get("maxRichResults"),
-      isPrivate: this.isPrivate,
-    }));
+      lastKey: null,
+    });
   }
 
   _on_select(event) {
