@@ -499,6 +499,11 @@ def build_docker_worker_payload(config, task, task_def):
         else:
             raise Exception("unknown docker image type")
 
+    
+    
+    
+    worker['env']['TASKCLUSTER_ROOT_URL'] = os.environ['TASKCLUSTER_ROOT_URL']
+
     features = {}
 
     if worker.get('relengapi-proxy'):
@@ -530,6 +535,11 @@ def build_docker_worker_payload(config, task, task_def):
         worker['env']['SCCACHE_IDLE_TIMEOUT'] = '0'
     else:
         worker['env']['SCCACHE_DISABLE'] = '1'
+
+    
+    
+    if features.get('taskclusterProxy'):
+        worker['env']['TASKCLUSTER_PROXY_URL'] = 'http://taskcluster'
 
     capabilities = {}
 
@@ -763,6 +773,11 @@ def build_generic_worker_payload(config, task, task_def):
 
     env = worker.get('env', {})
 
+    
+    
+    
+    env['TASKCLUSTER_ROOT_URL'] = os.environ['TASKCLUSTER_ROOT_URL']
+
     if task.get('needs-sccache'):
         env['USE_SCCACHE'] = '1'
         
@@ -817,7 +832,9 @@ def build_generic_worker_payload(config, task, task_def):
 
     if worker.get('taskcluster-proxy'):
         features['taskclusterProxy'] = True
-        worker['env']['TASKCLUSTER_PROXY_URL'] = 'http://taskcluster/'
+        
+        
+        worker['env']['TASKCLUSTER_PROXY_URL'] = 'http://taskcluster'
 
     if worker.get('run-as-administrator', False):
         features['runAsAdministrator'] = True
@@ -1315,6 +1332,11 @@ def build_always_optimized_payload(config, task, task_def):
 })
 def build_macosx_engine_payload(config, task, task_def):
     worker = task['worker']
+
+    
+    
+    worker.setdefault('env', {})['TASKCLUSTER_ROOT_URL'] = os.environ['TASKCLUSTER_ROOT_URL']
+
     artifacts = map(lambda artifact: {
         'name': artifact['name'],
         'path': artifact['path'],
