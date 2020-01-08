@@ -838,6 +838,8 @@ ReleaseAssertObjectHasNoWrappers(JSContext* cx, HandleObject target)
 
 
 
+
+
 JS_PUBLIC_API(JSObject*)
 JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
 {
