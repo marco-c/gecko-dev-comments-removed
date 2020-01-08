@@ -125,15 +125,11 @@ const ADB = {
 
 
 
-
-
-
-
-  async stop(sync) {
+  async stop() {
     if (!this.didRunInitially) {
       return; 
     }
-    await this.kill(sync);
+    await this.kill();
     
     
     
@@ -146,15 +142,7 @@ const ADB = {
 
 
 
-
-
-
-
-
-
-
-
-  async kill(sync) {
+  async kill() {
     const process = Cc["@mozilla.org/process/util;1"]
                     .createInstance(Ci.nsIProcess);
     const adbFile = await this.adbFilePromise;
@@ -164,35 +152,10 @@ const ADB = {
     process.noShell = true;
     const params = ["kill-server"];
 
-    if (sync) {
-      process.run(true, params, params.length);
-      dumpn("adb kill-server: " + process.exitValue);
-      this.ready = false;
-      this.didRunInitially = false;
-    } else {
-      const self = this;
-      process.runAsync(params, params.length, {
-        observe(subject, topic, data) {
-          switch (topic) {
-            case "process-finished":
-              dumpn("adb kill-server: " + process.exitValue);
-              Services.obs.notifyObservers(null, "adb-killed");
-              self.ready = false;
-              self.didRunInitially = false;
-              break;
-            case "process-failed":
-              dumpn("adb kill-server failure: " + process.exitValue);
-              
-              
-              
-              Services.obs.notifyObservers(null, "adb-killed");
-              self.ready = false;
-              self.didRunInitially = false;
-              break;
-          }
-        }
-      }, false);
-    }
+    process.run(true, params, params.length);
+    dumpn("adb kill-server: " + process.exitValue);
+    this.ready = false;
+    this.didRunInitially = false;
   },
 
   
