@@ -2,6 +2,8 @@
 
 
 
+
+
 function loadPrivilegedScriptTest() {
   
 
@@ -34,6 +36,7 @@ function loadPrivilegedScriptTest() {
       handlers[type].forEach(handler => handler.apply(null, args));
     };
     var handlers = {};
+    
     addMessageListener = function(message, handler) {
       if (handlers.hasOwnProperty(message)) {
         handlers[message].push(handler);
@@ -41,6 +44,7 @@ function loadPrivilegedScriptTest() {
         handlers[message] = [handler];
       }
     };
+    
     removeMessageListener = function(message, handler) {
       if (!handler || !handlers.hasOwnProperty(message)) {
         return;
@@ -55,6 +59,7 @@ function loadPrivilegedScriptTest() {
   const Cm = Components.manager;
 
   const mockedChannelDescription = {
+    
     QueryInterface(iid) {
       const interfaces = [Ci.nsIPresentationChannelDescription];
 
@@ -64,6 +69,7 @@ function loadPrivilegedScriptTest() {
       return this;
     },
     get type() {
+      
       if (Services.prefs.getBoolPref("dom.presentation.session_transport.data_channel.enable")) {
         return Ci.nsIPresentationChannelDescription.TYPE_DATACHANNEL;
       }
@@ -83,6 +89,7 @@ function loadPrivilegedScriptTest() {
   }
 
   const mockedSessionTransport = {
+    
     QueryInterface(iid) {
         const interfaces = [Ci.nsIPresentationSessionTransport,
                             Ci.nsIPresentationDataChannelSessionTransportBuilder,

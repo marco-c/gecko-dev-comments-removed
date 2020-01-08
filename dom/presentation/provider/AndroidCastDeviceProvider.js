@@ -3,15 +3,10 @@
 
 
 
-
-
 "use strict";
 
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 ChromeUtils.import("resource://gre/modules/Messaging.jsm");
 
 function log(str) {
@@ -328,9 +323,7 @@ ChromecastRemoteDisplayDevice.prototype = {
   },
 
   isRequestedUrlSupported: function CRDD_isRequestedUrlSupported(aUrl) {
-    let url = Cc["@mozilla.org/network/io-service;1"]
-                .getService(Ci.nsIIOService)
-                .newURI(aUrl);
+    let url = Services.io.newURI(aUrl);
     return url.scheme == "http" || url.scheme == "https";
   },
 

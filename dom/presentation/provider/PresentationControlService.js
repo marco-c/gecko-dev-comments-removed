@@ -1,24 +1,16 @@
 
 
 
-
-
 "use strict";
 
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
-
-ChromeUtils.defineModuleGetter(this, "ControllerStateMachine", 
+ChromeUtils.defineModuleGetter(this, "ControllerStateMachine",
                                "resource://gre/modules/presentation/ControllerStateMachine.jsm");
-
-ChromeUtils.defineModuleGetter(this, "ReceiverStateMachine", 
+ChromeUtils.defineModuleGetter(this, "ReceiverStateMachine",
                                "resource://gre/modules/presentation/ReceiverStateMachine.jsm");
 
 const kProtocolVersion = 1; 
@@ -859,7 +851,7 @@ TCPControlChannel.prototype = {
     DEBUG && log("TCPControlChannel - reconnect with role: " +
                  this._direction); 
     if (this._direction != "sender") {
-      return Cr.NS_ERROR_FAILURE;
+      throw Cr.NS_ERROR_FAILURE;
     }
 
     this._stateMachine.reconnect(aPresentationId, aUrl);
