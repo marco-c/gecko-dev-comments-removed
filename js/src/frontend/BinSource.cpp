@@ -222,6 +222,23 @@ BinASTParser<Tok>::buildFunction(const size_t start, const BinKind kind, ParseNo
     }
 
     
+    
+    HandlePropertyName arguments = cx_->names().arguments;
+    if (hasUsedName(arguments) || parseContext_->functionBox()->bindingsAccessedDynamically()) {
+        ParseContext::Scope& funScope = parseContext_->functionScope();
+        ParseContext::Scope::AddDeclaredNamePtr p = funScope.lookupDeclaredNameForAdd(arguments);
+        if (!p) {
+            BINJS_TRY(funScope.addDeclaredName(parseContext_, p, arguments, DeclarationKind::Var,
+                                               DeclaredNameInfo::npos));
+            funbox->declaredArguments = true;
+            funbox->usesArguments = true;
+
+            funbox->setArgumentsHasLocalBinding();
+            funbox->setDefinitelyNeedsArgsObj();
+        }
+    }
+
+    
     MOZ_TRY(checkFunctionClosedVars());
 
     BINJS_TRY_DECL(bindings,
@@ -467,6 +484,9 @@ BinASTParser<Tok>::appendDirectivesToBody(ListNode* body, ListNode* directives)
         }
         prefix->setKind(body->getKind());
         prefix->setOp(body->getOp());
+        if (body->hasTopLevelFunctionDeclarations()) {
+            prefix->setHasTopLevelFunctionDeclarations();
+        }
         result = prefix;
     }
 
