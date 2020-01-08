@@ -63,14 +63,8 @@ pref("devtools.inspector.changes.enabled", false);
 #endif
 
 
-
-#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 pref("devtools.inspector.flexboxHighlighter.enabled", true);
 pref("devtools.flexboxinspector.enabled", true);
-#else
-pref("devtools.inspector.flexboxHighlighter.enabled", false);
-pref("devtools.flexboxinspector.enabled", false);
-#endif
 
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
