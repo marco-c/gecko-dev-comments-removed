@@ -245,6 +245,7 @@ exports.CSS_PROPERTIES = {
       "menupopup",
       "menuradio",
       "menuseparator",
+      "meter",
       "meterbar",
       "meterchunk",
       "none",
@@ -1696,6 +1697,7 @@ exports.CSS_PROPERTIES = {
       "menupopup",
       "menuradio",
       "menuseparator",
+      "meter",
       "meterbar",
       "meterchunk",
       "none",
@@ -7578,7 +7580,6 @@ exports.CSS_PROPERTIES = {
     ],
     "supports": [],
     "values": [
-      "anywhere",
       "break-word",
       "inherit",
       "initial",
@@ -9205,7 +9206,6 @@ exports.CSS_PROPERTIES = {
     ],
     "supports": [],
     "values": [
-      "anywhere",
       "break-word",
       "inherit",
       "initial",

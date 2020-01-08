@@ -262,7 +262,7 @@ nsMeterFrame::ShouldUseNativeStyle() const
   
   
   
-  return StyleDisplay()->mAppearance == StyleAppearance::Meterbar &&
+  return StyleDisplay()->mAppearance == StyleAppearance::Meter &&
          !PresContext()->HasAuthorSpecifiedRules(this,
                                                  NS_AUTHOR_SPECIFIED_BORDER | NS_AUTHOR_SPECIFIED_BACKGROUND) &&
          barFrame &&

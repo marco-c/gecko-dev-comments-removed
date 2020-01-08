@@ -1032,8 +1032,10 @@ pub enum Appearance {
     #[parse(condition = "in_ua_or_chrome_sheet")]
     Menuimage,
     
-    Meterbar,
+    #[parse(aliases = "meterbar")]
+    Meter,
     
+    #[parse(condition = "in_ua_or_chrome_sheet")]
     Meterchunk,
     
     #[parse(condition = "in_ua_or_chrome_sheet")]
