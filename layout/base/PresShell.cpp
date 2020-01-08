@@ -3436,13 +3436,19 @@ ComputeWhereToScroll(int16_t aWhereToScroll,
 
 
 
+
+
+
+
+
+
 static void ScrollToShowRect(nsIScrollableFrame*      aFrameAsScrollable,
                              const nsRect&            aRect,
                              nsIPresShell::ScrollAxis aVertical,
                              nsIPresShell::ScrollAxis aHorizontal,
                              uint32_t                 aFlags)
 {
-  nsPoint scrollPt = aFrameAsScrollable->GetScrollPosition();
+  nsPoint scrollPt = aFrameAsScrollable->GetVisualViewportOffset();
   nsRect visibleRect(scrollPt,
                      aFrameAsScrollable->GetVisualViewportSize());
 
