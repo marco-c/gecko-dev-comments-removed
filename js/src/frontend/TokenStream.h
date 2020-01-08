@@ -494,7 +494,7 @@ struct TokenStreamFlags
     {}
 };
 
-template<typename CharT>
+template<typename Unit>
 class TokenStreamPosition;
 
 
@@ -510,7 +510,7 @@ class TokenStreamShared
 
     static constexpr unsigned ntokensMask = ntokens - 1;
 
-    template<typename CharT> friend class TokenStreamPosition;
+    template<typename Unit> friend class TokenStreamPosition;
 
   public:
     static constexpr unsigned maxLookahead = 2;
@@ -560,10 +560,10 @@ class TokenStreamShared
 static_assert(mozilla::IsEmpty<TokenStreamShared>::value,
               "TokenStreamShared shouldn't bloat classes that inherit from it");
 
-template<typename CharT, class AnyCharsAccess>
+template<typename Unit, class AnyCharsAccess>
 class TokenStreamSpecific;
 
-template<typename CharT>
+template<typename Unit>
 class MOZ_STACK_CLASS TokenStreamPosition final
 {
   public:
@@ -576,7 +576,7 @@ class MOZ_STACK_CLASS TokenStreamPosition final
     
     template<class AnyCharsAccess>
     inline TokenStreamPosition(AutoKeepAtoms& keepAtoms,
-                               TokenStreamSpecific<CharT, AnyCharsAccess>& tokenStream);
+                               TokenStreamSpecific<Unit, AnyCharsAccess>& tokenStream);
 
   private:
     TokenStreamPosition(const TokenStreamPosition&) = delete;
@@ -587,7 +587,7 @@ class MOZ_STACK_CLASS TokenStreamPosition final
     
     template<typename Char, class AnyCharsAccess> friend class TokenStreamSpecific;
 
-    const CharT* buf;
+    const Unit* buf;
     TokenStreamFlags flags;
     unsigned lineno;
     size_t linebase;
@@ -604,11 +604,11 @@ class TokenStreamAnyChars
     TokenStreamAnyChars(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
                         StrictModeGetter* smg);
 
-    template<typename CharT, class AnyCharsAccess> friend class GeneralTokenStreamChars;
-    template<typename CharT, class AnyCharsAccess> friend class TokenStreamChars;
-    template<typename CharT, class AnyCharsAccess> friend class TokenStreamSpecific;
+    template<typename Unit, class AnyCharsAccess> friend class GeneralTokenStreamChars;
+    template<typename Unit, class AnyCharsAccess> friend class TokenStreamChars;
+    template<typename Unit, class AnyCharsAccess> friend class TokenStreamSpecific;
 
-    template<typename CharT> friend class TokenStreamPosition;
+    template<typename Unit> friend class TokenStreamPosition;
 
     
     unsigned cursor() const { return cursor_; }
@@ -962,7 +962,7 @@ CodeUnitValue(mozilla::Utf8Unit unit)
     return unit.toUint8();
 }
 
-template<typename CharT>
+template<typename Unit>
 class TokenStreamCharsBase;
 
 template<typename T>
@@ -985,7 +985,7 @@ IsLineTerminator(char16_t unit)
     return IsLineTerminator(static_cast<char32_t>(unit));
 }
 
-template<typename CharT>
+template<typename Unit>
 struct SourceUnitTraits;
 
 template<>
@@ -1027,14 +1027,14 @@ struct SourceUnitTraits<mozilla::Utf8Unit>
 
 
 
-template<typename CharT>
+template<typename Unit>
 class PeekedCodePoint final
 {
     char32_t codePoint_ = 0;
     uint8_t lengthInUnits_ = 0;
 
   private:
-    using SourceUnitTraits = frontend::SourceUnitTraits<CharT>;
+    using SourceUnitTraits = frontend::SourceUnitTraits<Unit>;
 
     PeekedCodePoint() = default;
 
@@ -1151,15 +1151,15 @@ IsSingleUnitLineTerminator(mozilla::Utf8Unit unit)
 
 
 
-template<typename CharT>
+template<typename Unit>
 class SourceUnits
 {
   public:
-    SourceUnits(const CharT* buf, size_t length, size_t startOffset)
-      : base_(buf),
+    SourceUnits(const Unit* units, size_t length, size_t startOffset)
+      : base_(units),
         startOffset_(startOffset),
-        limit_(buf + length),
-        ptr(buf)
+        limit_(units + length),
+        ptr(units)
     { }
 
     bool atStart() const {
@@ -1185,31 +1185,31 @@ class SourceUnits
         return startOffset_ + mozilla::PointerRangeSize(base_, ptr);
     }
 
-    const CharT* codeUnitPtrAt(size_t offset) const {
+    const Unit* codeUnitPtrAt(size_t offset) const {
         MOZ_ASSERT(startOffset_ <= offset);
         MOZ_ASSERT(offset - startOffset_ <= mozilla::PointerRangeSize(base_, limit_));
         return base_ + (offset - startOffset_);
     }
 
-    const CharT* current() const {
+    const Unit* current() const {
         return ptr;
     }
 
-    const CharT* limit() const {
+    const Unit* limit() const {
         return limit_;
     }
 
-    CharT previousCodeUnit() {
+    Unit previousCodeUnit() {
         MOZ_ASSERT(ptr, "can't get previous code unit if poisoned");
         MOZ_ASSERT(!atStart(), "must have a previous code unit to get");
         return *(ptr - 1);
     }
 
-    CharT getCodeUnit() {
+    Unit getCodeUnit() {
         return *ptr++;      
     }
 
-    CharT peekCodeUnit() const {
+    Unit peekCodeUnit() const {
         return *ptr;        
     }
 
@@ -1225,13 +1225,13 @@ class SourceUnits
 
 
 
-    PeekedCodePoint<CharT> peekCodePoint() const {
+    PeekedCodePoint<Unit> peekCodePoint() const {
         return PeekCodePoint(ptr, limit_);
     }
 
   private:
 #ifdef DEBUG
-    void assertNextCodePoint(const PeekedCodePoint<CharT>& peeked);
+    void assertNextCodePoint(const PeekedCodePoint<Unit>& peeked);
 #endif
 
   public:
@@ -1243,7 +1243,7 @@ class SourceUnits
 
 
 
-    void consumeKnownCodePoint(const PeekedCodePoint<CharT>& peeked) {
+    void consumeKnownCodePoint(const PeekedCodePoint<Unit>& peeked) {
         MOZ_ASSERT(!peeked.isNone());
         MOZ_ASSERT(peeked.lengthInUnits() <= remaining());
 
@@ -1283,10 +1283,10 @@ class SourceUnits
             return false;
         }
 
-        const CharT* start = ptr;
-        const CharT* end = ptr + length;
+        const Unit* start = ptr;
+        const Unit* end = ptr + length;
         while (ptr < end) {
-            if (*ptr++ != CharT(*chars++)) {
+            if (*ptr++ != Unit(*chars++)) {
                 ptr = start;
                 return false;
             }
@@ -1310,9 +1310,9 @@ class SourceUnits
     }
 
   private:
-    friend class TokenStreamCharsBase<CharT>;
+    friend class TokenStreamCharsBase<Unit>;
 
-    bool internalMatchCodeUnit(CharT c) {
+    bool internalMatchCodeUnit(Unit c) {
         MOZ_ASSERT(ptr, "shouldn't use poisoned SourceUnits");
         if (MOZ_LIKELY(!atEnd()) && *ptr == c) {
             ptr++;
@@ -1322,7 +1322,7 @@ class SourceUnits
     }
 
   public:
-    void consumeKnownCodeUnit(CharT c) {
+    void consumeKnownCodeUnit(Unit c) {
         MOZ_ASSERT(ptr, "shouldn't use poisoned SourceUnits");
         MOZ_ASSERT(*ptr == c, "consuming the wrong code unit");
         ptr++;
@@ -1335,11 +1335,11 @@ class SourceUnits
 
     void ungetOptionalCRBeforeLF() {
         MOZ_ASSERT(ptr, "shouldn't unget a '\\r' from poisoned SourceUnits");
-        MOZ_ASSERT(*ptr == CharT('\n'),
+        MOZ_ASSERT(*ptr == Unit('\n'),
                    "function should only be called when a '\\n' was just "
                    "ungotten, and any '\\r' preceding it must also be "
                    "ungotten");
-        if (*(ptr - 1) == CharT('\r')) {
+        if (*(ptr - 1) == Unit('\r')) {
             ptr--;
         }
     }
@@ -1353,13 +1353,13 @@ class SourceUnits
         ptr--;
     }
 
-    const CharT* addressOfNextCodeUnit(bool allowPoisoned = false) const {
+    const Unit* addressOfNextCodeUnit(bool allowPoisoned = false) const {
         MOZ_ASSERT_IF(!allowPoisoned, ptr);     
         return ptr;
     }
 
     
-    void setAddressOfNextCodeUnit(const CharT* a, bool allowPoisoned = false) {
+    void setAddressOfNextCodeUnit(const Unit* a, bool allowPoisoned = false) {
         MOZ_ASSERT_IF(!allowPoisoned, a);
         ptr = a;
     }
@@ -1423,16 +1423,16 @@ class SourceUnits
 
   private:
     
-    const CharT* base_;
+    const Unit* base_;
 
     
     uint32_t startOffset_;
 
     
-    const CharT* limit_;
+    const Unit* limit_;
 
     
-    const CharT* ptr;
+    const Unit* ptr;
 };
 
 template<>
@@ -1526,18 +1526,18 @@ ToCharSpan(mozilla::Span<const mozilla::Utf8Unit> codeUnits)
                              codeUnits.size());
 }
 
-template<typename CharT>
+template<typename Unit>
 class TokenStreamCharsBase
   : public TokenStreamCharsShared
 {
   protected:
-    TokenStreamCharsBase(JSContext* cx, const CharT* chars, size_t length, size_t startOffset);
+    TokenStreamCharsBase(JSContext* cx, const Unit* units, size_t length, size_t startOffset);
 
     
 
 
 
-    inline CharT toCharT(int32_t codeUnitValue);
+    inline Unit toUnit(int32_t codeUnitValue);
 
     void ungetCodeUnit(int32_t c) {
         if (c == EOF) {
@@ -1548,9 +1548,9 @@ class TokenStreamCharsBase
     }
 
     static MOZ_ALWAYS_INLINE JSAtom*
-    atomizeSourceChars(JSContext* cx, mozilla::Span<const CharT> units);
+    atomizeSourceChars(JSContext* cx, mozilla::Span<const Unit> units);
 
-    using SourceUnits = frontend::SourceUnits<CharT>;
+    using SourceUnits = frontend::SourceUnits<Unit>;
 
     
 
@@ -1560,7 +1560,7 @@ class TokenStreamCharsBase
         MOZ_ASSERT(mozilla::IsAscii(expect));
         MOZ_ASSERT(expect != '\r');
         MOZ_ASSERT(expect != '\n');
-        return this->sourceUnits.internalMatchCodeUnit(CharT(expect));
+        return this->sourceUnits.internalMatchCodeUnit(Unit(expect));
     }
 
     
@@ -1569,7 +1569,7 @@ class TokenStreamCharsBase
 
     bool matchLineTerminator(char expect) {
         MOZ_ASSERT(expect == '\r' || expect == '\n');
-        return this->sourceUnits.internalMatchCodeUnit(CharT(expect));
+        return this->sourceUnits.internalMatchCodeUnit(Unit(expect));
     }
 
     template<typename T> bool matchCodeUnit(T) = delete;
@@ -1594,7 +1594,7 @@ class TokenStreamCharsBase
 
 
     MOZ_MUST_USE bool
-    fillCharBufferFromSourceNormalizingAsciiLineBreaks(const CharT* cur, const CharT* end);
+    fillCharBufferFromSourceNormalizingAsciiLineBreaks(const Unit* cur, const Unit* end);
 
     
 
@@ -1618,25 +1618,25 @@ class TokenStreamCharsBase
 
 template<>
 inline char16_t
-TokenStreamCharsBase<char16_t>::toCharT(int32_t codeUnitValue)
+TokenStreamCharsBase<char16_t>::toUnit(int32_t codeUnitValue)
 {
-    MOZ_ASSERT(codeUnitValue != EOF, "EOF is not a CharT");
+    MOZ_ASSERT(codeUnitValue != EOF, "EOF is not a Unit");
     return mozilla::AssertedCast<char16_t>(codeUnitValue);
 }
 
 template<>
 inline mozilla::Utf8Unit
-TokenStreamCharsBase<mozilla::Utf8Unit>::toCharT(int32_t value)
+TokenStreamCharsBase<mozilla::Utf8Unit>::toUnit(int32_t value)
 {
-    MOZ_ASSERT(value != EOF, "EOF is not a CharT");
-    return mozilla::Utf8Unit(static_cast<unsigned char>(value));
+    MOZ_ASSERT(value != EOF, "EOF is not a Unit");
+    return mozilla::Utf8Unit(mozilla::AssertedCast<unsigned char>(value));
 }
 
-template<typename CharT>
+template<typename Unit>
 inline void
-TokenStreamCharsBase<CharT>::consumeKnownCodeUnit(int32_t unit)
+TokenStreamCharsBase<Unit>::consumeKnownCodeUnit(int32_t unit)
 {
-    sourceUnits.consumeKnownCodeUnit(toCharT(unit));
+    sourceUnits.consumeKnownCodeUnit(toUnit(unit));
 }
 
 template<>
@@ -1656,7 +1656,7 @@ TokenStreamCharsBase<mozilla::Utf8Unit>::atomizeSourceChars(JSContext* cx,
     return AtomizeUTF8Chars(cx, chars.data(), chars.size());
 }
 
-template<typename CharT>
+template<typename Unit>
 class SpecializedTokenStreamCharsBase;
 
 template<>
@@ -1832,12 +1832,12 @@ class TokenStart
     uint32_t offset() const { return startOffset_; }
 };
 
-template<typename CharT, class AnyCharsAccess>
+template<typename Unit, class AnyCharsAccess>
 class GeneralTokenStreamChars
-  : public SpecializedTokenStreamCharsBase<CharT>
+  : public SpecializedTokenStreamCharsBase<Unit>
 {
-    using CharsBase = TokenStreamCharsBase<CharT>;
-    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
+    using CharsBase = TokenStreamCharsBase<Unit>;
+    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<Unit>;
 
   private:
     Token* newTokenInternal(TokenKind kind, TokenStart start, TokenKind* out);
@@ -1872,7 +1872,7 @@ class GeneralTokenStreamChars
     using TokenStreamCharsShared::isAsciiCodePoint;
     using CharsBase::matchLineTerminator;
     
-    using CharsBase::toCharT;
+    using CharsBase::toUnit;
 
     using typename CharsBase::SourceUnits;
 
@@ -1887,7 +1887,7 @@ class GeneralTokenStreamChars
         return AnyCharsAccess::anyChars(this);
     }
 
-    using TokenStreamSpecific = frontend::TokenStreamSpecific<CharT, AnyCharsAccess>;
+    using TokenStreamSpecific = frontend::TokenStreamSpecific<Unit, AnyCharsAccess>;
 
     TokenStreamSpecific* asSpecific() {
         static_assert(mozilla::IsBaseOf<GeneralTokenStreamChars, TokenStreamSpecific>::value,
@@ -1973,7 +1973,7 @@ class GeneralTokenStreamChars
     MOZ_MUST_USE bool getFullAsciiCodePoint(int32_t lead, int32_t* codePoint) {
         MOZ_ASSERT(isAsciiCodePoint(lead),
                    "non-ASCII code units must be handled separately");
-        MOZ_ASSERT(toCharT(lead) == this->sourceUnits.previousCodeUnit(),
+        MOZ_ASSERT(toUnit(lead) == this->sourceUnits.previousCodeUnit(),
                    "getFullAsciiCodePoint called incorrectly");
 
         if (MOZ_UNLIKELY(lead == '\r')) {
@@ -2027,8 +2027,8 @@ class GeneralTokenStreamChars
 
         MOZ_ASSERT(anyChars.currentToken().type == TokenKind::TemplateHead ||
                    anyChars.currentToken().type == TokenKind::NoSubsTemplate);
-        const CharT* cur = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.begin + 1);
-        const CharT* end;
+        const Unit* cur = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.begin + 1);
+        const Unit* end;
         if (anyChars.currentToken().type == TokenKind::TemplateHead) {
             
             end = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 2);
@@ -2048,7 +2048,7 @@ class GeneralTokenStreamChars
     }
 };
 
-template<typename CharT, class AnyCharsAccess> class TokenStreamChars;
+template<typename Unit, class AnyCharsAccess> class TokenStreamChars;
 
 template<class AnyCharsAccess>
 class TokenStreamChars<char16_t, AnyCharsAccess>
@@ -2283,19 +2283,19 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-template<typename CharT, class AnyCharsAccess>
+template<typename Unit, class AnyCharsAccess>
 class MOZ_STACK_CLASS TokenStreamSpecific
-  : public TokenStreamChars<CharT, AnyCharsAccess>,
+  : public TokenStreamChars<Unit, AnyCharsAccess>,
     public TokenStreamShared,
     public ErrorReporter
 {
   public:
-    using CharsBase = TokenStreamCharsBase<CharT>;
-    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
-    using GeneralCharsBase = GeneralTokenStreamChars<CharT, AnyCharsAccess>;
-    using SpecializedChars = TokenStreamChars<CharT, AnyCharsAccess>;
+    using CharsBase = TokenStreamCharsBase<Unit>;
+    using SpecializedCharsBase = SpecializedTokenStreamCharsBase<Unit>;
+    using GeneralCharsBase = GeneralTokenStreamChars<Unit, AnyCharsAccess>;
+    using SpecializedChars = TokenStreamChars<Unit, AnyCharsAccess>;
 
-    using Position = TokenStreamPosition<CharT>;
+    using Position = TokenStreamPosition<Unit>;
 
     
     
@@ -2340,7 +2340,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::newSimpleToken;
     using CharsBase::peekCodeUnit;
     
-    using CharsBase::toCharT;
+    using CharsBase::toUnit;
     using GeneralCharsBase::ungetCodeUnit;
     using GeneralCharsBase::updateLineInfoForEOL;
 
@@ -2348,7 +2348,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   public:
     TokenStreamSpecific(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-                        const CharT* base, size_t length);
+                        const Unit* units, size_t length);
 
     
 
@@ -2457,7 +2457,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
         }
     }
 
-    MOZ_MUST_USE bool putIdentInCharBuffer(const CharT* identStart);
+    MOZ_MUST_USE bool putIdentInCharBuffer(const Unit* identStart);
 
     
 
@@ -2497,7 +2497,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-    MOZ_MUST_USE bool decimalNumber(int32_t unit, TokenStart start, const CharT* numStart,
+    MOZ_MUST_USE bool decimalNumber(int32_t unit, TokenStart start, const Unit* numStart,
                                     Modifier modifier, TokenKind* out);
 
     
@@ -2660,15 +2660,15 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     void seek(const Position& pos);
     MOZ_MUST_USE bool seek(const Position& pos, const TokenStreamAnyChars& other);
 
-    const CharT* codeUnitPtrAt(size_t offset) const {
+    const Unit* codeUnitPtrAt(size_t offset) const {
         return this->sourceUnits.codeUnitPtrAt(offset);
     }
 
-    const CharT* rawLimit() const {
+    const Unit* rawLimit() const {
         return this->sourceUnits.limit();
     }
 
-    MOZ_MUST_USE bool identifierName(TokenStart start, const CharT* identStart,
+    MOZ_MUST_USE bool identifierName(TokenStart start, const Unit* identStart,
                                      IdentifierEscapes escaping, Modifier modifier,
                                      TokenKind* out);
 
@@ -2691,11 +2691,11 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-template<typename CharT>
+template<typename Unit>
 template<class AnyCharsAccess>
 inline
-TokenStreamPosition<CharT>::TokenStreamPosition(AutoKeepAtoms& keepAtoms,
-                                                TokenStreamSpecific<CharT, AnyCharsAccess>& tokenStream)
+TokenStreamPosition<Unit>::TokenStreamPosition(AutoKeepAtoms& keepAtoms,
+                                               TokenStreamSpecific<Unit, AnyCharsAccess>& tokenStream)
 {
     TokenStreamAnyChars& anyChars = tokenStream.anyCharsAccess();
 
@@ -2725,13 +2725,13 @@ class MOZ_STACK_CLASS TokenStream final
   : public TokenStreamAnyChars,
     public TokenStreamSpecific<char16_t, TokenStreamAnyCharsAccess>
 {
-    using CharT = char16_t;
+    using Unit = char16_t;
 
   public:
     TokenStream(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-                const CharT* base, size_t length, StrictModeGetter* smg)
+                const Unit* units, size_t length, StrictModeGetter* smg)
     : TokenStreamAnyChars(cx, options, smg),
-      TokenStreamSpecific<CharT, TokenStreamAnyCharsAccess>(cx, options, base, length)
+      TokenStreamSpecific<Unit, TokenStreamAnyCharsAccess>(cx, options, units, length)
     {}
 };
 

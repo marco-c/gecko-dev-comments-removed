@@ -190,14 +190,14 @@ namespace frontend {
 
 class ParserBase;
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class GeneralParser;
 
 class SourceParseContext: public ParseContext
 {
 public:
-    template<typename ParseHandler, typename CharT>
-    SourceParseContext(GeneralParser<ParseHandler, CharT>* prs, SharedContext* sc,
+    template<typename ParseHandler, typename Unit>
+    SourceParseContext(GeneralParser<ParseHandler, Unit>* prs, SharedContext* sc,
                        Directives* newDirectives)
       : ParseContext(prs->context, prs->pc, sc, prs->tokenStream, prs->usedNames, newDirectives,
                      mozilla::IsSame<ParseHandler, FullParseHandler>::value)
@@ -245,10 +245,10 @@ enum class PropertyType {
 
 enum AwaitHandling : uint8_t { AwaitIsName, AwaitIsKeyword, AwaitIsModuleKeyword };
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class AutoAwaitIsKeyword;
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class AutoInParametersOfAsyncFunction;
 
 class MOZ_STACK_CLASS ParserBase
@@ -495,10 +495,10 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
                      void* internalSyntaxParser);
 
   protected:
-    template<typename CharT>
+    template<typename Unit>
     PerHandlerParser(JSContext* cx, LifoAlloc& alloc, const JS::ReadOnlyCompileOptions& options,
                      bool foldConstants, UsedNameTracker& usedNames,
-                     GeneralParser<SyntaxParseHandler, CharT>* syntaxParser,
+                     GeneralParser<SyntaxParseHandler, Unit>* syntaxParser,
                      LazyScript* lazyOuterFunction, ScriptSourceObject* sourceObject,
                      ParseGoal parseGoal)
       : PerHandlerParser(cx, alloc, options, foldConstants, usedNames, lazyOuterFunction,
@@ -679,19 +679,19 @@ enum InHandling { InAllowed, InProhibited };
 enum DefaultHandling { NameRequired, AllowDefaultName };
 enum TripledotHandling { TripledotAllowed, TripledotProhibited };
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class Parser;
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class MOZ_STACK_CLASS GeneralParser
   : public PerHandlerParser<ParseHandler>
 {
   public:
-    using TokenStream = TokenStreamSpecific<CharT, ParserAnyCharsAccess<GeneralParser>>;
+    using TokenStream = TokenStreamSpecific<Unit, ParserAnyCharsAccess<GeneralParser>>;
 
   private:
     using Base = PerHandlerParser<ParseHandler>;
-    using FinalParser = Parser<ParseHandler, CharT>;
+    using FinalParser = Parser<ParseHandler, Unit>;
     using Node = typename ParseHandler::Node;
 
 #define DECLARE_TYPE(typeName, longTypeName, asMethodName) \
@@ -700,7 +700,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 #undef DECLARE_TYPE
 
     using typename Base::InvokedPrediction;
-    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
+    using SyntaxParser = Parser<SyntaxParseHandler, Unit>;
 
   protected:
     using Modifier = TokenStreamShared::Modifier;
@@ -837,7 +837,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
             unsigned errorNumber_;
         };
 
-        GeneralParser<ParseHandler, CharT>& parser_;
+        GeneralParser<ParseHandler, Unit>& parser_;
         Error exprError_;
         Error destructuringError_;
         Error destructuringWarning_;
@@ -867,7 +867,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
         void transferErrorTo(ErrorKind kind, PossibleError* other);
 
       public:
-        explicit PossibleError(GeneralParser<ParseHandler, CharT>& parser);
+        explicit PossibleError(GeneralParser<ParseHandler, Unit>& parser);
 
         
         bool hasPendingDestructuringError();
@@ -914,7 +914,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 
   public:
     GeneralParser(JSContext* cx, LifoAlloc& alloc, const JS::ReadOnlyCompileOptions& options,
-                  const CharT* chars, size_t length, bool foldConstants,
+                  const Unit* units, size_t length, bool foldConstants,
                   UsedNameTracker& usedNames, SyntaxParser* syntaxParser,
                   LazyScript* lazyOuterFunction,
                   ScriptSourceObject* sourceObject,
@@ -1307,11 +1307,11 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     inline bool asmJS(ListNodeType list);
 };
 
-template <typename CharT>
-class MOZ_STACK_CLASS Parser<SyntaxParseHandler, CharT> final
-  : public GeneralParser<SyntaxParseHandler, CharT>
+template <typename Unit>
+class MOZ_STACK_CLASS Parser<SyntaxParseHandler, Unit> final
+  : public GeneralParser<SyntaxParseHandler, Unit>
 {
-    using Base = GeneralParser<SyntaxParseHandler, CharT>;
+    using Base = GeneralParser<SyntaxParseHandler, Unit>;
     using Node = SyntaxParseHandler::Node;
 
 #define DECLARE_TYPE(typeName, longTypeName, asMethodName) \
@@ -1319,7 +1319,7 @@ class MOZ_STACK_CLASS Parser<SyntaxParseHandler, CharT> final
 FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 #undef DECLARE_TYPE
 
-    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
+    using SyntaxParser = Parser<SyntaxParseHandler, Unit>;
 
     
     
@@ -1327,7 +1327,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     
     
     
-    friend class GeneralParser<SyntaxParseHandler, CharT>;
+    friend class GeneralParser<SyntaxParseHandler, Unit>;
 
   public:
     using Base::Base;
@@ -1424,11 +1424,11 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     
 };
 
-template <typename CharT>
-class MOZ_STACK_CLASS Parser<FullParseHandler, CharT> final
-  : public GeneralParser<FullParseHandler, CharT>
+template <typename Unit>
+class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
+  : public GeneralParser<FullParseHandler, Unit>
 {
-    using Base = GeneralParser<FullParseHandler, CharT>;
+    using Base = GeneralParser<FullParseHandler, Unit>;
     using Node = FullParseHandler::Node;
 
 #define DECLARE_TYPE(typeName, longTypeName, asMethodName) \
@@ -1436,7 +1436,7 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, CharT> final
 FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 #undef DECLARE_TYPE
 
-    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
+    using SyntaxParser = Parser<SyntaxParseHandler, Unit>;
 
     
     
@@ -1444,7 +1444,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     
     
     
-    friend class GeneralParser<FullParseHandler, CharT>;
+    friend class GeneralParser<FullParseHandler, Unit>;
 
   public:
     using Base::Base;
@@ -1513,10 +1513,10 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 
     
 
-    friend class AutoAwaitIsKeyword<SyntaxParseHandler, CharT>;
+    friend class AutoAwaitIsKeyword<SyntaxParseHandler, Unit>;
     inline void setAwaitHandling(AwaitHandling awaitHandling);
 
-    friend class AutoInParametersOfAsyncFunction<SyntaxParseHandler, CharT>;
+    friend class AutoInParametersOfAsyncFunction<SyntaxParseHandler, Unit>;
     inline void setInParametersOfAsyncFunction(bool inParameters);
 
     RegExpLiteralType newRegExp();
@@ -1634,10 +1634,10 @@ ParserAnyCharsAccess<Parser>::anyChars(GeneralTokenStreamChars* ts)
     return const_cast<TokenStreamAnyChars&>(anyCharsConst);
 }
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class MOZ_STACK_CLASS AutoAwaitIsKeyword
 {
-    using GeneralParser = frontend::GeneralParser<ParseHandler, CharT>;
+    using GeneralParser = frontend::GeneralParser<ParseHandler, Unit>;
 
   private:
     GeneralParser* parser_;
@@ -1660,10 +1660,10 @@ class MOZ_STACK_CLASS AutoAwaitIsKeyword
     }
 };
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler, typename Unit>
 class MOZ_STACK_CLASS AutoInParametersOfAsyncFunction
 {
-    using GeneralParser = frontend::GeneralParser<ParseHandler, CharT>;
+    using GeneralParser = frontend::GeneralParser<ParseHandler, Unit>;
 
   private:
     GeneralParser* parser_;
