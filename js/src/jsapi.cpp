@@ -867,9 +867,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
         
         
         AutoRealmUnchecked ar(cx, origobj->nonCCWRealm());
-        if (!JSObject::swap(cx, origobj, target)) {
-            MOZ_CRASH();
-        }
+        JSObject::swap(cx, origobj, target);
         newIdentity = origobj;
     } else if (WrapperMap::Ptr p = destination->lookupWrapper(origv)) {
         
@@ -883,9 +881,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
         NukeCrossCompartmentWrapper(cx, newIdentity);
 
         AutoRealm ar(cx, newIdentity);
-        if (!JSObject::swap(cx, newIdentity, target)) {
-            MOZ_CRASH();
-        }
+        JSObject::swap(cx, newIdentity, target);
     } else {
         
         newIdentity = target;
@@ -908,9 +904,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
             MOZ_CRASH();
         }
         MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);
-        if (!JSObject::swap(cx, origobj, newIdentityWrapper)) {
-            MOZ_CRASH();
-        }
+        JSObject::swap(cx, origobj, newIdentityWrapper);
         if (!origobj->compartment()->putWrapper(cx, CrossCompartmentKey(newIdentity), origv)) {
             MOZ_CRASH();
         }

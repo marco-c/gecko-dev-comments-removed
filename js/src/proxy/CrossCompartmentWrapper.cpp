@@ -659,9 +659,7 @@ js::RemapWrapper(JSContext* cx, JSObject* wobjArg, JSObject* newTargetArg)
         
         
         
-        if (!JSObject::swap(cx, wobj, tobj)) {
-            MOZ_CRASH();
-        }
+        JSObject::swap(cx, wobj, tobj);
     }
 
     

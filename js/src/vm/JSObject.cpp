@@ -1799,7 +1799,7 @@ ProxyObject::initExternalValueArrayAfterSwap(JSContext* cx, const AutoValueVecto
 }
 
 
-bool
+void
 JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
 {
     
@@ -1976,7 +1976,6 @@ JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
     }
 
     NotifyGCPostSwap(a, b, r);
-    return true;
 }
 
 static void
