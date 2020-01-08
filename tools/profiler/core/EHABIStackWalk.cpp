@@ -630,13 +630,9 @@ void EHAddrSpace::Update() {
 
   for (size_t i = 0; i < info.GetSize(); ++i) {
     const SharedLibrary &lib = info.GetEntry(i);
-    if (lib.GetOffset() != 0)
-      
-      
-      
-      
-      
-      continue;
+    
+    
+    
     EHTable tab(reinterpret_cast<const void *>(lib.GetStart()),
               lib.GetEnd() - lib.GetStart(), lib.GetNativeDebugPath());
     if (tab.isValid())
