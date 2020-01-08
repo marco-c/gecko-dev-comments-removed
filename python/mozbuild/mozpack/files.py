@@ -21,7 +21,6 @@ from mozpack.executables import (
     strip,
     may_elfhack,
     elfhack,
-    xz_compress,
 )
 from mozpack.chrome.manifest import (
     ManifestEntry,
@@ -281,10 +280,6 @@ class ExecutableFile(File):
     File class for executable and library files on OS/2, OS/X and ELF systems.
     (see mozpack.executables.is_executable documentation).
     '''
-    def __init__(self, path, xz_compress=False):
-        File.__init__(self, path)
-        self.xz_compress = xz_compress
-
     def copy(self, dest, skip_if_older=True):
         real_dest = dest
         if not isinstance(dest, basestring):
@@ -303,8 +298,6 @@ class ExecutableFile(File):
                 strip(dest)
             if may_elfhack(dest):
                 elfhack(dest)
-            if self.xz_compress:
-                xz_compress(dest)
         except ErrorMessage:
             os.remove(dest)
             raise
