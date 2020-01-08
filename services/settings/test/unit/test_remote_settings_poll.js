@@ -501,7 +501,7 @@ add_task(async function test_syncs_clients_with_local_dump() {
     last_modified: 8000,
     host: "localhost",
     bucket: "main",
-    collection: "tippytop"
+    collection: "example"
   }]));
 
   let error;
@@ -516,6 +516,6 @@ add_task(async function test_syncs_clients_with_local_dump() {
   
   
   Assert.ok(/HTTP 404/.test(error.message), "server will return 404 on sync");
-  Assert.equal(error.details.collection, "tippytop");
+  Assert.equal(error.details.collection, "example");
 });
 add_task(clear_state);
