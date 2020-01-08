@@ -5529,10 +5529,6 @@ pref("layout.accessiblecaret.enabled_on_touch", true);
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", false);
 
 
-
-pref("layout.accessiblecaret.use_long_tap_injector", false);
-
-
 pref("layout.accessiblecaret.always_tilt", false);
 
 
