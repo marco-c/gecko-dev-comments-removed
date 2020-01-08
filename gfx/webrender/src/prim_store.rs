@@ -330,6 +330,8 @@ pub enum PrimitiveKeyKind {
         cache_key: Option<LineDecorationCacheKey>,
         color: ColorU,
     },
+    
+    Clear,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -375,6 +377,9 @@ impl PrimitiveKey {
                     }
                 }
             }
+            PrimitiveKeyKind::Clear => {
+                PrimitiveInstanceKind::Clear
+            }
             PrimitiveKeyKind::Unused => {
                 
                 
@@ -398,6 +403,7 @@ pub enum PrimitiveTemplateKind {
         offset: LayoutVector2DAu,
         glyphs: Vec<GlyphInstance>,
     },
+    Clear,
     Unused,
 }
 
@@ -414,6 +420,9 @@ impl From<PrimitiveKeyKind> for PrimitiveTemplateKind {
                     offset,
                     glyphs,
                 }
+            }
+            PrimitiveKeyKind::Clear => {
+                PrimitiveTemplateKind::Clear
             }
             PrimitiveKeyKind::LineDecoration { cache_key, color } => {
                 PrimitiveTemplateKind::LineDecoration {
@@ -461,6 +470,17 @@ impl PrimitiveTemplate {
         gpu_cache: &mut GpuCache,
     ) {
         match self.kind {
+            PrimitiveTemplateKind::Clear => {
+                if let Some(mut request) = gpu_cache.request(&mut self.gpu_cache_handle) {
+                    
+                    request.push(PremultipliedColorF::BLACK);
+
+                    request.write_segment(
+                        self.prim_rect,
+                        [0.0; 4],
+                    );
+                }
+            }
             PrimitiveTemplateKind::LineDecoration { ref cache_key, ref color } => {
                 if let Some(mut request) = gpu_cache.request(&mut self.gpu_cache_handle) {
                     
@@ -628,7 +648,6 @@ pub enum BrushKind {
         color: ColorF,
         opacity_binding: OpacityBinding,
     },
-    Clear,
     Image {
         request: ImageRequest,
         alpha_type: AlphaType,
@@ -692,8 +711,6 @@ impl BrushKind {
             BrushKind::RadialGradient { .. } |
             BrushKind::Border { .. } |
             BrushKind::LinearGradient { .. } => true,
-
-            BrushKind::Clear => false,
         }
     }
 
@@ -925,10 +942,6 @@ impl BrushPrimitive {
             
             BrushKind::Solid { ref color, .. } => {
                 request.push(color.premultiplied());
-            }
-            BrushKind::Clear => {
-                
-                request.push(PremultipliedColorF::BLACK);
             }
             BrushKind::LinearGradient { stretch_size, start_point, end_point, extend_mode, .. } => {
                 request.push([
@@ -1497,6 +1510,7 @@ pub enum PrimitiveContainer {
         glyphs: Vec<GlyphInstance>,
         shadow: bool,
     },
+    Clear,
     Brush(BrushPrimitive),
     LineDecoration {
         color: ColorF,
@@ -1524,7 +1538,6 @@ impl PrimitiveContainer {
                     BrushKind::Solid { ref color, .. } => {
                         color.a > 0.0
                     }
-                    BrushKind::Clear |
                     BrushKind::Image { .. } |
                     BrushKind::YuvImage { .. } |
                     BrushKind::RadialGradient { .. } |
@@ -1533,6 +1546,9 @@ impl PrimitiveContainer {
                         true
                     }
                 }
+            }
+            PrimitiveContainer::Clear => {
+                true
             }
             PrimitiveContainer::LineDecoration { ref color, .. } => {
                 color.a > 0.0
@@ -1556,6 +1572,9 @@ impl PrimitiveContainer {
                 };
 
                 (key, None)
+            }
+            PrimitiveContainer::Clear => {
+                (PrimitiveKeyKind::Clear, None)
             }
             PrimitiveContainer::LineDecoration { color, style, orientation, wavy_line_thickness } => {
                 
@@ -1692,13 +1711,15 @@ impl PrimitiveContainer {
                             None,
                         ))
                     }
-                    BrushKind::Clear |
                     BrushKind::YuvImage { .. } |
                     BrushKind::RadialGradient { .. } |
                     BrushKind::LinearGradient { .. } => {
                         panic!("bug: other brush kinds not expected here yet");
                     }
                 }
+            }
+            PrimitiveContainer::Clear => {
+                panic!("bug: clear rects are not supported in shadow contexts");
             }
         }
     }
@@ -1747,6 +1768,8 @@ pub enum PrimitiveInstanceKind {
         
         cache_handle: Option<RenderTaskCacheEntryHandle>,
     },
+    
+    Clear,
 }
 
 #[derive(Clone, Debug)]
@@ -1933,6 +1956,7 @@ impl PrimitiveStore {
         
         
         match prim_instance.kind {
+            PrimitiveInstanceKind::Clear |
             PrimitiveInstanceKind::TextRun { .. } |
             PrimitiveInstanceKind::LineDecoration { .. } => {
                 
@@ -1962,8 +1986,7 @@ impl PrimitiveStore {
                             BrushKind::Border { .. } |
                             BrushKind::YuvImage { .. } |
                             BrushKind::LinearGradient { .. } |
-                            BrushKind::RadialGradient { .. } |
-                            BrushKind::Clear => {}
+                            BrushKind::RadialGradient { .. } => {}
                         }
                     }
                 }
@@ -2005,7 +2028,6 @@ impl PrimitiveStore {
                             BrushKind::Image { ref mut opacity_binding, .. } => {
                                 opacity_binding.push(binding);
                             }
-                            BrushKind::Clear { .. } |
                             BrushKind::YuvImage { .. } |
                             BrushKind::Border { .. } |
                             BrushKind::LinearGradient { .. } |
@@ -2074,7 +2096,8 @@ impl PrimitiveStore {
                 }
                 PrimitiveInstanceKind::TextRun { .. } |
                 PrimitiveInstanceKind::LineDecoration { .. } |
-                PrimitiveInstanceKind::LegacyPrimitive { .. } => {
+                PrimitiveInstanceKind::LegacyPrimitive { .. } |
+                PrimitiveInstanceKind::Clear => {
                     None
                 }
             }
@@ -2127,6 +2150,7 @@ impl PrimitiveStore {
                 (pic.local_rect, LayoutRect::max_rect())
             }
             PrimitiveInstanceKind::TextRun { .. } |
+            PrimitiveInstanceKind::Clear |
             PrimitiveInstanceKind::LineDecoration { .. } => {
                 let prim_data = &frame_state
                     .resources
@@ -2298,6 +2322,7 @@ impl PrimitiveStore {
                 }
             }
             PrimitiveInstanceKind::TextRun { .. } |
+            PrimitiveInstanceKind::Clear |
             PrimitiveInstanceKind::LineDecoration { .. } => {
                 prim_instance.prepare_interned_prim_for_render(
                     prim_context,
@@ -2728,6 +2753,7 @@ impl PrimitiveInstance {
         let brush = match self.kind {
             PrimitiveInstanceKind::Picture { .. } |
             PrimitiveInstanceKind::TextRun { .. } |
+            PrimitiveInstanceKind::Clear |
             PrimitiveInstanceKind::LineDecoration { .. } => {
                 return false;
             }
@@ -2908,6 +2934,15 @@ impl PrimitiveInstance {
                     frame_state.render_tasks,
                     frame_state.special_render_passes,
                 );
+
+                PrimitiveOpacity::translucent()
+            }
+            (
+                PrimitiveInstanceKind::Clear,
+                PrimitiveTemplateKind::Clear
+            ) => {
+                
+                
 
                 PrimitiveOpacity::translucent()
             }
@@ -3348,7 +3383,6 @@ impl PrimitiveInstance {
                         opacity_binding.update(frame_context.scene_properties);
                         PrimitiveOpacity::from_alpha(opacity_binding.current * color.a)
                     }
-                    BrushKind::Clear => PrimitiveOpacity::translucent(),
                 }
             }
         };
