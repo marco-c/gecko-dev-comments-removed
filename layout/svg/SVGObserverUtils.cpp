@@ -372,10 +372,6 @@ public:
     , mValid(true)
   {}
 
-  bool ObservesReflow() override {
-    return false;
-  }
-
 protected:
   void OnRenderingChange() override;
 
@@ -466,7 +462,7 @@ SVGMarkerObserver::OnRenderingChange()
 }
 
 
-class nsSVGPaintingProperty final : public nsSVGRenderingObserverProperty
+class nsSVGPaintingProperty : public nsSVGRenderingObserverProperty
 {
 public:
   nsSVGPaintingProperty(URLAndReferrerInfo* aURI, nsIFrame* aFrame, bool aReferenceImage)
@@ -496,6 +492,24 @@ nsSVGPaintingProperty::OnRenderingChange()
     }
   }
 }
+
+
+class SVGMozElementObserver final : public nsSVGPaintingProperty
+{
+public:
+  SVGMozElementObserver(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
+                        bool aReferenceImage)
+    : nsSVGPaintingProperty(aURI, aFrame, aReferenceImage)
+  {}
+
+  
+  
+  
+  
+  bool ObservesReflow() override {
+    return true;
+  }
+};
 
 
 
@@ -1470,10 +1484,10 @@ SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
 
   
   
-  nsSVGPaintingProperty* observer =
-    static_cast<nsSVGPaintingProperty*>(hashtable->GetWeak(url));
+  SVGMozElementObserver* observer =
+    static_cast<SVGMozElementObserver*>(hashtable->GetWeak(url));
   if (!observer) {
-    observer = new nsSVGPaintingProperty(url, aFrame,  true);
+    observer = new SVGMozElementObserver(url, aFrame,  true);
     hashtable->Put(url, observer);
   }
   return observer->GetAndObserveReferencedElement();

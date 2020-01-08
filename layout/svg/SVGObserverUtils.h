@@ -145,7 +145,7 @@ public:
 
   Element* GetAndObserveReferencedElement();
 
-  virtual bool ObservesReflow() { return true; }
+  virtual bool ObservesReflow() { return false; }
 
 protected:
   void StartObserving();
@@ -402,6 +402,13 @@ public:
 
   static void
   RemoveTemplateObserver(nsIFrame* aFrame);
+
+  
+
+
+
+
+
 
   static Element*
   GetAndObserveBackgroundImage(nsIFrame* aFrame,
