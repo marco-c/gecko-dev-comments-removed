@@ -199,14 +199,37 @@ var CastingApps = {
         if (!this._bound) {
           this._bound = new WeakMap;
         }
-        this._bound.set(aEvent.target, true);
-        if (this._blocked && this._blocked.has(aEvent.target)) {
-          this._blocked.delete(aEvent.target);
-          aEvent.target.dispatchEvent(new aEvent.target.ownerGlobal.CustomEvent("MozNoControlsBlockedVideo"));
+
+        let video = this._findVideoFromEventTarget(aEvent.target);
+        if (!video) {
+          return;
+        }
+
+        this._bound.set(video, true);
+        if (this._blocked && this._blocked.has(video)) {
+          this._blocked.delete(video);
+          video.dispatchEvent(new video.ownerGlobal.CustomEvent("MozNoControlsBlockedVideo"));
         }
         break;
       }
     }
+  },
+
+
+  _findVideoFromEventTarget(aTarget) {
+    if (typeof ShadowRoot !== "undefined" &&
+        aTarget.parentNode instanceof ShadowRoot &&
+        aTarget.parentNode.host instanceof HTMLVideoElement) {
+      
+      return aTarget.parentNode.host;
+    }
+
+    if (aTarget instanceof HTMLVideoElement) {
+      
+      return aTarget;
+    }
+
+    return null;
   },
 
   _sendEventToVideo: function _sendEventToVideo(aElement, aData) {
@@ -218,8 +241,8 @@ var CastingApps = {
   handleVideoBindingAttached: function handleVideoBindingAttached(aTab, aEvent) {
     
     
-    let video = aEvent.target;
-    if (!(video instanceof HTMLVideoElement)) {
+    let video = this._findVideoFromEventTarget(aEvent.target);
+    if (!video) {
       return;
     }
 
@@ -237,8 +260,8 @@ var CastingApps = {
 
   handleVideoBindingCast: function handleVideoBindingCast(aTab, aEvent) {
     
-    let video = aEvent.target;
-    if (!(video instanceof HTMLVideoElement)) {
+    let video = this._findVideoFromEventTarget(aEvent.target);
+    if (!video) {
       return;
     }
 
