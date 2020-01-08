@@ -458,7 +458,13 @@ const browsingContextTargetPrototype = {
                "Actor should have an actorID.");
 
     const response = {
-      actor: this.actorID
+      actor: this.actorID,
+      traits: {
+        
+        
+        
+        isBrowsingContext: !!this.docShell,
+      },
     };
 
     
