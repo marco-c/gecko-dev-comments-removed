@@ -2943,14 +2943,8 @@ nsPrefBranch::GetChildList(const char* aStartingAt,
       
       const nsCString& element = prefArray[dwIndex];
       outArray[dwIndex] =
-        (char*)nsMemory::Clone(element.get() + mPrefRoot.Length(),
-                               element.Length() - mPrefRoot.Length() + 1);
-
-      if (!outArray[dwIndex]) {
-        
-        NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(dwIndex, outArray);
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
+        (char*) moz_xmemdup(element.get() + mPrefRoot.Length(),
+                            element.Length() - mPrefRoot.Length() + 1);
     }
     *aChildArray = outArray;
   }

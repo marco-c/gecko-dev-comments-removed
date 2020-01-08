@@ -122,6 +122,14 @@ moz_xstrndup(const char* str, size_t strsize)
 }
 #endif  
 
+void*
+moz_xmemdup(const void* ptr, size_t size)
+{
+  void* newPtr = moz_xmalloc(size);
+  memcpy(newPtr, ptr, size);
+  return newPtr;
+}
+
 #ifndef HAVE_MEMALIGN
 
 
