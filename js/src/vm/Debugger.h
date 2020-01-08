@@ -163,6 +163,7 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
 
     
 
+    using Base::lookup;
     using Base::lookupForAdd;
     using Base::remove;
     using Base::all;
@@ -1487,6 +1488,12 @@ class DebuggerFrame : public NativeObject
     OnStepHandler* onStepHandler() const;
     OnPopHandler* onPopHandler() const;
     void setOnPopHandler(OnPopHandler* handler);
+
+    
+
+
+
+    bool resume(const FrameIter& iter);
 
   private:
     static const ClassOps classOps_;
