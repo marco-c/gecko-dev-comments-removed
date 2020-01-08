@@ -7710,11 +7710,6 @@ var MousePosTracker = {
   _y: 0,
   _mostRecentEvent: null,
 
-  get _windowUtils() {
-    delete this._windowUtils;
-    return this._windowUtils = window.windowUtils;
-  },
-
   
 
 
@@ -7788,7 +7783,7 @@ var MousePosTracker = {
     let event = this._mostRecentEvent;
 
     if (event) {
-      let fullZoom = this._windowUtils.fullZoom;
+      let fullZoom = window.windowUtils.fullZoom;
       this._x = event.screenX / fullZoom - window.mozInnerScreenX;
       this._y = event.screenY / fullZoom - window.mozInnerScreenY;
 
