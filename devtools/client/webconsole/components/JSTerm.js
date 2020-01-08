@@ -682,10 +682,7 @@ class JSTerm extends Component {
 
 
 
-  setInputValue(newValue) {
-    newValue = newValue || "";
-    this.lastInputValue = newValue;
-
+  setInputValue(newValue = "") {
     if (this.props.codeMirrorEnabled) {
       if (this.editor) {
         
@@ -713,7 +710,9 @@ class JSTerm extends Component {
       this.completeNode.value = "";
     }
 
+    this.lastInputValue = newValue;
     this.resizeInput();
+
     this.emit("set-input-value");
   }
 

@@ -3,7 +3,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const { Component, createFactory } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
@@ -13,7 +12,6 @@ const actions = require("devtools/client/webconsole/actions/index");
 const ConsoleOutput = createFactory(require("devtools/client/webconsole/components/ConsoleOutput"));
 const FilterBar = createFactory(require("devtools/client/webconsole/components/FilterBar"));
 const SideBar = createFactory(require("devtools/client/webconsole/components/SideBar"));
-const ReverseSearchInput = createFactory(require("devtools/client/webconsole/components/ReverseSearchInput"));
 const JSTerm = createFactory(require("devtools/client/webconsole/components/JSTerm"));
 const NotificationBox = createFactory(require("devtools/client/shared/components/NotificationBox").NotificationBox);
 
@@ -29,8 +27,8 @@ const {
 } = require("devtools/client/shared/components/NotificationBox");
 
 const { getAllNotifications } = require("devtools/client/webconsole/selectors/notifications");
+
 const { div } = dom;
-const isMacOS = Services.appinfo.OS === "Darwin";
 
 
 
@@ -46,87 +44,13 @@ class App extends Component {
       serviceContainer: PropTypes.object.isRequired,
       closeSplitConsole: PropTypes.func.isRequired,
       jstermCodeMirror: PropTypes.bool,
-      jstermReverseSearch: PropTypes.bool,
-      currentReverseSearchEntry: PropTypes.string,
-      reverseSearchInputVisible: PropTypes.bool,
     };
   }
 
   constructor(props) {
     super(props);
 
-    this.onClick = this.onClick.bind(this);
     this.onPaste = this.onPaste.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-  }
-
-  onKeyDown(event) {
-    const {
-      dispatch,
-      jstermReverseSearch,
-    } = this.props;
-
-    if (
-      jstermReverseSearch && (
-        (!isMacOS && event.key === "F9") ||
-        (isMacOS && event.key === "r" && event.ctrlKey === true)
-      )
-    ) {
-      dispatch(actions.reverseSearchInputToggle());
-      event.stopPropagation();
-    }
-  }
-
-  onClick(event) {
-    const target = event.originalTarget || event.target;
-    const {
-      reverseSearchInputVisible,
-      dispatch,
-      hud,
-    } = this.props;
-
-    if (reverseSearchInputVisible === true && !target.closest(".reverse-search")) {
-      event.preventDefault();
-      event.stopPropagation();
-      dispatch(actions.reverseSearchInputToggle());
-      return;
-    }
-
-    
-    if (event.detail !== 1 || event.button !== 0) {
-      return;
-    }
-
-    
-    if (target.closest("a")) {
-      return;
-    }
-
-    
-    if (target.closest("input")) {
-      return;
-    }
-
-    
-    if (target.closest(".reverse-search")) {
-      return;
-    }
-
-    
-    
-    if (!target.closest(".webconsole-output-wrapper")) {
-      return;
-    }
-
-    
-    const selection = hud.document.defaultView.getSelection();
-    if (selection && !selection.isCollapsed) {
-      return;
-    }
-
-    if (hud && hud.jsterm) {
-      hud.jsterm.focus();
-    }
   }
 
   onPaste(event) {
@@ -199,7 +123,6 @@ class App extends Component {
       serviceContainer,
       closeSplitConsole,
       jstermCodeMirror,
-      jstermReverseSearch,
     } = this.props;
 
     const classNames = ["webconsole-output-wrapper"];
@@ -214,12 +137,9 @@ class App extends Component {
     
     
     
-    
     return (
       div({
         className: classNames.join(" "),
-        onKeyDown: this.onKeyDown,
-        onClick: this.onClick,
         ref: node => {
           this.node = node;
         }},
@@ -245,11 +165,6 @@ class App extends Component {
             onPaste: this.onPaste,
             codeMirrorEnabled: jstermCodeMirror,
           }),
-          jstermReverseSearch
-            ? ReverseSearchInput({
-              hud,
-            })
-            : null
         ),
         SideBar({
           serviceContainer,
@@ -261,7 +176,6 @@ class App extends Component {
 
 const mapStateToProps = state => ({
   notifications: getAllNotifications(state),
-  reverseSearchInputVisible: state.ui.reverseSearchInputVisible,
 });
 
 const mapDispatchToProps = dispatch => ({

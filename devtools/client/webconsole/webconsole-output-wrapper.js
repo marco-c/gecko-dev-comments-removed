@@ -52,7 +52,43 @@ WebConsoleOutputWrapper.prototype = {
       const attachRefToHud = (id, node) => {
         this.hud[id] = node;
       };
+      
+      this.parentNode.addEventListener("click", (event) => {
+        
+        if (event.detail !== 1 || event.button !== 0) {
+          return;
+        }
+
+        
+        const target = event.originalTarget || event.target;
+        if (target.closest("a")) {
+          return;
+        }
+
+        
+        if (target.closest("input")) {
+          return;
+        }
+
+        
+        
+        if (!target.closest(".webconsole-output-wrapper")) {
+          return;
+        }
+
+        
+        const selection = this.document.defaultView.getSelection();
+        if (selection && !selection.isCollapsed) {
+          return;
+        }
+
+        if (this.hud && this.hud.jsterm) {
+          this.hud.jsterm.focus();
+        }
+      });
+
       const { hud } = this;
+
       const serviceContainer = {
         attachRefToHud,
         emitNewMessage: (node, messageId, timeStamp) => {
@@ -210,16 +246,14 @@ WebConsoleOutputWrapper.prototype = {
         });
       }
 
-      const {prefs} = store.getState();
       const app = App({
         attachRefToHud,
         serviceContainer,
         hud,
         onFirstMeaningfulPaint: resolve,
         closeSplitConsole: this.closeSplitConsole.bind(this),
-        jstermCodeMirror: prefs.jstermCodeMirror
+        jstermCodeMirror: store.getState().prefs.jstermCodeMirror
           && !Services.appinfo.accessibilityEnabled,
-        jstermReverseSearch: prefs.jstermReverseSearch,
       });
 
       
