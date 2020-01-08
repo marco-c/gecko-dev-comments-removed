@@ -42,7 +42,7 @@ function getText() {
 
   const data = {};
   try {
-    xferable.getTransferData(flavor, data);
+    xferable.getTransferData(flavor, data, {});
   } catch (e) {
     
     return null;
