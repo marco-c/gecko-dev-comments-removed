@@ -223,9 +223,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   get displayType() {
     
     if (InspectorActorUtils.isNodeDead(this) ||
-        this.rawNode.nodeType !== Node.ELEMENT_NODE ||
-        isAfterPseudoElement(this.rawNode) ||
-        isBeforePseudoElement(this.rawNode)) {
+        this.rawNode.nodeType !== Node.ELEMENT_NODE) {
       return null;
     }
 
