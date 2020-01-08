@@ -11,17 +11,6 @@ const { ADB } = require("devtools/shared/adb/adb");
 
 
 add_task(async function() {
-  
-  registerCleanupFunction(async function() {
-    try {
-      await adbAddon.uninstall();
-    } catch (e) {
-      
-    }
-
-    await ADB.kill();
-  });
-
   await pushPref("devtools.remote.adb.extensionURL",
                  CHROME_URL_ROOT + "resources/test-adb-extension/adb-extension-#OS#.xpi");
 

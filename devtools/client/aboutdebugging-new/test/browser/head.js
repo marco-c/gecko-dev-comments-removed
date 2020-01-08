@@ -18,6 +18,18 @@ Services.scriptloader.loadSubScript(
   CHROME_URL_ROOT + "debug-target-pane_collapsibilities_head.js", this);
 
 
+registerCleanupFunction(async function() {
+  try {
+    const { adbAddon } = require("devtools/shared/adb/adb-addon");
+    await adbAddon.uninstall();
+  } catch (e) {
+    
+  }
+  const { ADB } = require("devtools/shared/adb/adb");
+  await ADB.kill();
+});
+
+
 
 
 async function enableNewAboutDebugging() {
@@ -40,6 +52,23 @@ async function openAboutDebugging(page, win) {
   await waitUntil(() => document.querySelector(".js-runtime-page"));
 
   return { tab, document, window };
+}
+
+
+
+
+async function selectConnectPage(doc) {
+  const sidebarItems = doc.querySelectorAll(".js-sidebar-item");
+  const connectSidebarItem = [...sidebarItems].find(element => {
+    return element.textContent === "Connect";
+  });
+  ok(connectSidebarItem, "Sidebar contains a Connect item");
+
+  info("Click on the Connect item in the sidebar");
+  connectSidebarItem.click();
+
+  info("Wait until Connect page is displayed");
+  await waitUntil(() => doc.querySelector(".js-connect-page"));
 }
 
 function findSidebarItemByText(text, document) {
