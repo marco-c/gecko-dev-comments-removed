@@ -16,6 +16,7 @@ var EXPORTED_SYMBOLS = [
 ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "DateTimePickerPanel", "resource://gre/modules/DateTimePickerPanel.jsm");
 
 
 
@@ -105,7 +106,7 @@ var DateTimePickerParent = {
   },
 
   
-  async showPicker(aBrowser, aData) {
+  showPicker(aBrowser, aData) {
     let rect = aData.rect;
     let type = aData.type;
     let detail = aData.detail;
@@ -129,22 +130,11 @@ var DateTimePickerParent = {
     }
 
     this.weakBrowser = Cu.getWeakReference(aBrowser);
-    this.picker = aBrowser.dateTimePicker;
-    if (!this.picker) {
+    if (!aBrowser.dateTimePicker) {
       debug("aBrowser.dateTimePicker not found, exiting now.");
       return;
     }
-    
-    
-    
-    if (!this.picker.openPicker) {
-      let bindingPromise = new Promise(resolve => {
-        this.picker.addEventListener("DateTimePickerBindingReady",
-                                     resolve, {once: true});
-      });
-      this.picker.setAttribute("active", true);
-      await bindingPromise;
-    }
+    this.picker = new DateTimePickerPanel(aBrowser.dateTimePicker);
     
     
     this.picker.openPicker(type, this._anchor, detail);
@@ -165,8 +155,8 @@ var DateTimePickerParent = {
     if (!this.picker) {
       return;
     }
-    this.picker.addEventListener("popuphidden", this);
-    this.picker.addEventListener("DateTimePickerValueChanged", this);
+    this.picker.element.addEventListener("popuphidden", this);
+    this.picker.element.addEventListener("DateTimePickerValueChanged", this);
   },
 
   
@@ -174,7 +164,7 @@ var DateTimePickerParent = {
     if (!this.picker) {
       return;
     }
-    this.picker.removeEventListener("popuphidden", this);
-    this.picker.removeEventListener("DateTimePickerValueChanged", this);
+    this.picker.element.removeEventListener("popuphidden", this);
+    this.picker.element.removeEventListener("DateTimePickerValueChanged", this);
   },
 };
