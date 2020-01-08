@@ -653,7 +653,7 @@ TEST_P(TlsConnectStream, TestResumptionOverrideCipher) {
 
   if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
     client_->ExpectSendAlert(kTlsAlertIllegalParameter);
-    server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+    server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
   } else {
     ExpectAlert(client_, kTlsAlertHandshakeFailure);
   }
@@ -662,7 +662,7 @@ TEST_P(TlsConnectStream, TestResumptionOverrideCipher) {
   if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
     
     
-    server_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+    server_->CheckErrorCode(SSL_ERROR_RX_UNEXPECTED_RECORD_TYPE);
   } else {
     server_->CheckErrorCode(SSL_ERROR_HANDSHAKE_FAILURE_ALERT);
   }
@@ -1046,10 +1046,10 @@ TEST_F(TlsConnectTest, TestTls13ResumptionForcedDowngrade) {
   
   
   client_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
-  server_->ExpectSendAlert(kTlsAlertBadRecordMac);  
+  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);  
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA);
-  server_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+  server_->CheckErrorCode(SSL_ERROR_RX_UNEXPECTED_RECORD_TYPE);
 }
 
 TEST_P(TlsConnectGenericResumption, ReConnectTicket) {

@@ -132,7 +132,7 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionEmptyWriterServer) {
   
   
   client_->ExpectSendAlert(kTlsAlertUnsupportedExtension);
-  server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
   ConnectExpectFail();
 }
 
@@ -350,7 +350,7 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionUnsolicitedServer) {
   auto capture = MakeTlsFilter<TlsExtensionCapture>(server_, extension_code);
 
   client_->ExpectSendAlert(kTlsAlertUnsupportedExtension);
-  server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
   ConnectExpectFail();
 
   EXPECT_TRUE(capture->captured());
@@ -401,7 +401,7 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionClientReject) {
   EXPECT_EQ(SECSuccess, rv);
 
   client_->ExpectSendAlert(kTlsAlertHandshakeFailure);
-  server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
   ConnectExpectFail();
 }
 
@@ -451,7 +451,7 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionClientRejectAlert) {
   EXPECT_EQ(SECSuccess, rv);
 
   client_->ExpectSendAlert(kCustomAlert);
-  server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+  server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
   ConnectExpectFail();
 }
 

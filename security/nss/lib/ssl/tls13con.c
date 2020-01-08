@@ -5018,16 +5018,6 @@ tls13_UnprotectRecord(sslSocket *ss,
 
     
 
-    if (cText->buf->len < cipher_def->tag_size) {
-        SSL_TRC(3,
-                ("%d: TLS13[%d]: record too short to contain valid AEAD data",
-                 SSL_GETPID(), ss->fd));
-        PORT_SetError(SSL_ERROR_BAD_MAC_READ);
-        return SECFailure;
-    }
-
-    
-
     if (!(cText->hdr[0] == ssl_ct_application_data ||
           (IS_DTLS(ss) &&
            ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 &&
@@ -5035,7 +5025,17 @@ tls13_UnprotectRecord(sslSocket *ss,
         SSL_TRC(3,
                 ("%d: TLS13[%d]: record has invalid exterior type=%2.2x",
                  SSL_GETPID(), ss->fd, cText->hdr[0]));
-        
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_RECORD_TYPE);
+        *alert = unexpected_message;
+        return SECFailure;
+    }
+
+    
+
+    if (cText->buf->len < cipher_def->tag_size) {
+        SSL_TRC(3,
+                ("%d: TLS13[%d]: record too short to contain valid AEAD data",
+                 SSL_GETPID(), ss->fd));
         PORT_SetError(SSL_ERROR_BAD_MAC_READ);
         return SECFailure;
     }

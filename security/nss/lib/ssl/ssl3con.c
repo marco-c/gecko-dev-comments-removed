@@ -9779,6 +9779,23 @@ ssl3_GenerateRSAPMS(sslSocket *ss, ssl3CipherSpec *spec,
     return pms;
 }
 
+static void
+ssl3_CSwapPK11SymKey(PK11SymKey **x, PK11SymKey **y, PRBool c)
+{
+    uintptr_t mask = (uintptr_t)c;
+    unsigned int i;
+    for (i = 1; i < sizeof(uintptr_t) * 8; i <<= 1) {
+        mask |= mask << i;
+    }
+    uintptr_t x_ptr = (uintptr_t)*x;
+    uintptr_t y_ptr = (uintptr_t)*y;
+    uintptr_t tmp = (x_ptr ^ y_ptr) & mask;
+    x_ptr = x_ptr ^ tmp;
+    y_ptr = y_ptr ^ tmp;
+    *x = (PK11SymKey *)x_ptr;
+    *y = (PK11SymKey *)y_ptr;
+}
+
 
 
 
@@ -9799,9 +9816,9 @@ ssl3_HandleRSAClientKeyExchange(sslSocket *ss,
 {
     SECStatus rv;
     SECItem enc_pms;
-    PK11SymKey *tmpPms[2] = { NULL, NULL };
-    PK11SlotInfo *slot;
-    int useFauxPms = 0;
+    PK11SymKey *pms = NULL;
+    PK11SymKey *fauxPms = NULL;
+    PK11SlotInfo *slot = NULL;
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
@@ -9821,11 +9838,6 @@ ssl3_HandleRSAClientKeyExchange(sslSocket *ss,
             enc_pms.len = kLen;
         }
     }
-
-#define currentPms tmpPms[!useFauxPms]
-#define unusedPms tmpPms[useFauxPms]
-#define realPms tmpPms[1]
-#define fauxPms tmpPms[0]
 
     
 
@@ -9881,39 +9893,32 @@ ssl3_HandleRSAClientKeyExchange(sslSocket *ss,
 
 
 
-    realPms = PK11_PubUnwrapSymKey(serverKeyPair->privKey, &enc_pms,
-                                   CKM_SSL3_MASTER_KEY_DERIVE, CKA_DERIVE, 0);
+    pms = PK11_PubUnwrapSymKey(serverKeyPair->privKey, &enc_pms,
+                               CKM_SSL3_MASTER_KEY_DERIVE, CKA_DERIVE, 0);
     
-    useFauxPms |= (realPms == NULL);
-
-    
-
-
-
-
-    rv = ssl3_ComputeMasterSecret(ss, currentPms, NULL);
+    ssl3_CSwapPK11SymKey(&pms, &fauxPms, pms == NULL);
 
     
 
-    useFauxPms |= (rv != SECSuccess);
 
-    if (unusedPms) {
-        PK11_FreeSymKey(unusedPms);
-    }
+
+
+    rv = ssl3_ComputeMasterSecret(ss, pms, NULL);
 
     
-    rv = ssl3_InitPendingCipherSpecs(ss, currentPms, PR_TRUE);
-    PK11_FreeSymKey(currentPms);
+    ssl3_CSwapPK11SymKey(&pms, &fauxPms, (rv != SECSuccess) & (fauxPms != NULL));
+
+    
+    rv = ssl3_InitPendingCipherSpecs(ss, pms, PR_TRUE);
+
+    
+    PK11_FreeSymKey(pms);
+    PK11_FreeSymKey(fauxPms);
 
     if (rv != SECSuccess) {
         (void)SSL3_SendAlert(ss, alert_fatal, handshake_failure);
         return SECFailure; 
     }
-
-#undef currentPms
-#undef unusedPms
-#undef realPms
-#undef fauxPms
 
     return SECSuccess;
 }
