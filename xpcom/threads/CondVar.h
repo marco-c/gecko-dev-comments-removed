@@ -23,7 +23,7 @@ namespace mozilla {
 
 
 
-class CondVar : BlockingResourceBase
+class OffTheBooksCondVar : BlockingResourceBase
 {
 public:
   
@@ -37,20 +37,18 @@ public:
 
 
 
-  CondVar(Mutex& aLock, const char* aName)
+  OffTheBooksCondVar(OffTheBooksMutex& aLock, const char* aName)
     : BlockingResourceBase(aName, eCondVar)
     , mLock(&aLock)
   {
-    MOZ_COUNT_CTOR(CondVar);
   }
 
   
 
 
 
-  ~CondVar()
+  ~OffTheBooksCondVar()
   {
-    MOZ_COUNT_DTOR(CondVar);
   }
 
   
@@ -125,12 +123,37 @@ public:
 #endif  
 
 private:
-  CondVar();
-  CondVar(const CondVar&) = delete;
-  CondVar& operator=(const CondVar&) = delete;
+  OffTheBooksCondVar();
+  OffTheBooksCondVar(const OffTheBooksCondVar&) = delete;
+  OffTheBooksCondVar& operator=(const OffTheBooksCondVar&) = delete;
 
-  Mutex* mLock;
+  OffTheBooksMutex* mLock;
   detail::ConditionVariableImpl mImpl;
+};
+
+
+
+
+
+
+class CondVar : public OffTheBooksCondVar
+{
+public:
+  CondVar(OffTheBooksMutex& aLock, const char* aName)
+    : OffTheBooksCondVar(aLock, aName)
+  {
+    MOZ_COUNT_CTOR(CondVar);
+  }
+
+  ~CondVar()
+  {
+    MOZ_COUNT_DTOR(CondVar);
+  }
+
+private:
+  CondVar();
+  CondVar(const CondVar&);
+  CondVar& operator=(const CondVar&);
 };
 
 } 
