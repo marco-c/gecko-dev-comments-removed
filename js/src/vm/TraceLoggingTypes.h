@@ -94,7 +94,7 @@ enum TraceLoggerTextId {
     TraceLogger_Internal,
 #define DEFINE_TEXT_ID(textId) TraceLogger_ ## textId,
     TRACELOGGER_TREE_ITEMS(DEFINE_TEXT_ID)
-    TraceLogger_LastTreeItem,
+    TraceLogger_TreeItemEnd,
     TRACELOGGER_LOG_ITEMS(DEFINE_TEXT_ID)
 #undef DEFINE_TEXT_ID
     TraceLogger_Last
@@ -131,7 +131,7 @@ TLTextIdIsTogglable(uint32_t id)
     if (id == TraceLogger_Stop)
         return false;
     
-    if (id == TraceLogger_LastTreeItem)
+    if (id == TraceLogger_TreeItemEnd)
         return false;
     if (id == TraceLogger_Last)
         return false;
@@ -147,7 +147,7 @@ TLTextIdIsTreeEvent(uint32_t id)
 {
     
     
-    return (id > TraceLogger_Error && id < TraceLogger_LastTreeItem) ||
+    return (id > TraceLogger_Error && id < TraceLogger_TreeItemEnd) ||
            id >= TraceLogger_Last;
 }
 
