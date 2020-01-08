@@ -519,6 +519,11 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool IsRootScrollFrameOfDocument() const { return mIsRoot; }
 
   
+  
+  void UpdateMinimumScaleSize(const nsRect& aScrollableOverflow,
+                              const nsSize& aICBSize);
+
+  
   nsCOMPtr<mozilla::dom::Element> mHScrollbarContent;
   nsCOMPtr<mozilla::dom::Element> mVScrollbarContent;
   nsCOMPtr<mozilla::dom::Element> mScrollCornerContent;
@@ -543,7 +548,11 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsAtom* mLastSmoothScrollOrigin;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   uint32_t mScrollGeneration;
+  
+  
   nsRect mScrollPort;
+  nsSize mMinimumScaleSize;
+
   
   
   
@@ -669,6 +678,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   
   bool mSuppressScrollbarRepaints : 1;
+
+  
+  bool mIsUsingMinimumScaleSize : 1;
 
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
