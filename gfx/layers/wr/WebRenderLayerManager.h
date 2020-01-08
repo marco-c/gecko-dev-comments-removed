@@ -134,7 +134,9 @@ public:
   
   
   void AddImageKeyForDiscard(wr::ImageKey);
+  void AddBlobImageKeyForDiscard(wr::BlobImageKey);
   void DiscardImages();
+  void DiscardImagesInTransaction(wr::IpcResourceUpdateQueue& aResourceUpdates);
   void DiscardLocalImages();
 
   wr::IpcResourceUpdateQueue& AsyncResourceUpdates();
@@ -189,6 +191,7 @@ private:
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
   nsTArray<wr::ImageKey> mImageKeysToDelete;
+  nsTArray<wr::BlobImageKey> mBlobImageKeysToDelete;
 
   
   

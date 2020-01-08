@@ -137,4 +137,15 @@ extern "C" {
 void record_telemetry_time(mozilla::wr::TelemetryProbe aProbe, uint64_t aTimeNs);
 }
 
+namespace mozilla {
+namespace wr {
+
+
+
+inline ImageKey AsImageKey(BlobImageKey aKey) { return aKey._0; }
+
+} 
+} 
+
+
 #endif 

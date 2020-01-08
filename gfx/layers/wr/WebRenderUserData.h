@@ -116,6 +116,8 @@ struct WebRenderUserDataKey {
 
 typedef nsRefPtrHashtable<nsGenericHashKey<mozilla::layers::WebRenderUserDataKey>, WebRenderUserData> WebRenderUserDataTable;
 
+
+
 class WebRenderImageData : public WebRenderUserData
 {
 public:
@@ -125,8 +127,8 @@ public:
   virtual WebRenderImageData* AsImageData() override { return this; }
   virtual UserDataType GetType() override { return UserDataType::eImage; }
   static UserDataType Type() { return UserDataType::eImage; }
-  Maybe<wr::ImageKey> GetKey() { return mKey; }
-  void SetKey(const wr::ImageKey& aKey);
+  virtual Maybe<wr::ImageKey> GetImageKey() { return mKey; }
+  void SetImageKey(const wr::ImageKey& aKey);
   already_AddRefed<ImageClient> GetImageClient();
 
   Maybe<wr::ImageKey> UpdateImageKey(ImageContainer* aContainer,
@@ -154,7 +156,7 @@ public:
   bool IsAsyncAnimatedImage() const;
 
 protected:
-  void ClearImageKey();
+  virtual void ClearImageKey();
 
   RefPtr<TextureClient> mTextureOfImage;
   Maybe<wr::ImageKey> mKey;
@@ -163,6 +165,14 @@ protected:
   RefPtr<ImageContainer> mContainer;
   bool mOwnsKey;
 };
+
+
+
+
+
+
+
+
 
 class WebRenderFallbackData : public WebRenderImageData
 {
@@ -182,10 +192,16 @@ public:
   gfx::Size GetScale() { return mScale; }
   bool IsInvalid() { return mInvalid; }
   void SetFonts(const std::vector<RefPtr<gfx::ScaledFont>>& aFonts) { mFonts = aFonts; }
+  Maybe<wr::BlobImageKey> GetBlobImageKey() { return mBlobKey; }
+  virtual Maybe<wr::ImageKey> GetImageKey() override;
+  void SetBlobImageKey(const wr::BlobImageKey& aKey);
 
   RefPtr<BasicLayerManager> mBasicLayerManager;
   std::vector<RefPtr<gfx::SourceSurface>> mExternalSurfaces;
 protected:
+  virtual void ClearImageKey() override;
+
+  Maybe<wr::BlobImageKey> mBlobKey;
   nsAutoPtr<nsDisplayItemGeometry> mGeometry;
   nsRect mBounds;
   bool mInvalid;
