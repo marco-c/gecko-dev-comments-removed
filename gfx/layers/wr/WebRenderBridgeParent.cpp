@@ -200,7 +200,6 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
   , mIdNamespace(aApi->GetNamespace())
   , mPaused(false)
   , mDestroyed(false)
-  , mForceRendering(false)
   , mReceivedDisplayList(false)
 {
   MOZ_ASSERT(mAsyncImageManager);
@@ -221,7 +220,6 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId)
   , mIdNamespace{0}
   , mPaused(false)
   , mDestroyed(true)
-  , mForceRendering(false)
   , mReceivedDisplayList(false)
 {
 }
@@ -1041,9 +1039,12 @@ WebRenderBridgeParent::FlushFrameGeneration()
 
   
   
-  mForceRendering = true;
-  mCompositorScheduler->FlushPendingComposite();
-  mForceRendering = false;
+  if (mCompositorScheduler->NeedsComposite()) {
+    mCompositorScheduler->CancelCurrentCompositeTask();
+    
+    mCompositorScheduler->UpdateLastComposeTime();
+    MaybeGenerateFrame( true);
+  }
 }
 
 void
@@ -1497,14 +1498,18 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
     return;
   }
 
-  if (!mForceRendering &&
-      wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
+  if (wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
     
     mCompositorScheduler->ScheduleComposition();
     mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
+  MaybeGenerateFrame( false);
+}
 
+void
+WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame)
+{
   TimeStamp start = TimeStamp::Now();
   mAsyncImageManager->SetCompositionTime(start);
 
@@ -1531,7 +1536,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
 
   if (!mAsyncImageManager->GetAndResetWillGenerateFrame() &&
       fastTxn.IsEmpty() &&
-      !mForceRendering) {
+      !aForceGenerateFrame) {
     
     mPreviousFrameTimeStamp = TimeStamp();
     return;

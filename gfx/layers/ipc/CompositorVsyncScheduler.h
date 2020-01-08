@@ -93,6 +93,12 @@ public:
 
   const TimeStamp& GetLastComposeTime() const;
 
+  
+
+
+
+  void UpdateLastComposeTime();
+
 private:
   virtual ~CompositorVsyncScheduler();
 
