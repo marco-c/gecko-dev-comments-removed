@@ -508,6 +508,13 @@ Http2Stream::ParseHttpRequestHeaders(const char *buf,
       
       mSession->ConnectPushedStream(this);
       mOpenGenerated = 1;
+
+      
+      RefPtr<nsHttpConnectionInfo> ci(Transaction()->ConnectionInfo());
+      if (ci && ci->GetTrrUsed()) {
+        mSession->IncrementTrrCounter();
+      }
+
       return NS_OK;
     }
   }
