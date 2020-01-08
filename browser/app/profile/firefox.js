@@ -1354,10 +1354,6 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 
 
-pref("plain_text.wrap_long_lines", true);
-
-
-
 pref("dom.debug.propagate_gesture_events_through_content", false);
 
 
