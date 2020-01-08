@@ -1037,7 +1037,7 @@ nsImageFrame::GetMinISize(gfxContext *aRenderingContext)
   
   
   DebugOnly<nscoord> result;
-  DISPLAY_MIN_WIDTH(this, result);
+  DISPLAY_MIN_INLINE_SIZE(this, result);
   EnsureIntrinsicSizeAndRatio();
   const nsStyleCoord& iSize = GetWritingMode().IsVertical() ?
                                 mIntrinsicSize.height : mIntrinsicSize.width;
@@ -1050,7 +1050,7 @@ nsImageFrame::GetPrefISize(gfxContext *aRenderingContext)
   
   
   DebugOnly<nscoord> result;
-  DISPLAY_PREF_WIDTH(this, result);
+  DISPLAY_PREF_INLINE_SIZE(this, result);
   EnsureIntrinsicSizeAndRatio();
   const nsStyleCoord& iSize = GetWritingMode().IsVertical() ?
                                 mIntrinsicSize.height : mIntrinsicSize.width;

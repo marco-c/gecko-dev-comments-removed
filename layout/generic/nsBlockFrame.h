@@ -951,6 +951,8 @@ protected:
   int32_t GetDepth() const;
 #endif
 
+  
+  
   nscoord mMinWidth, mPrefWidth;
 
   nsLineList mLines;

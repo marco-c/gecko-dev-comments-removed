@@ -542,7 +542,7 @@ nscoord
 nsTextControlFrame::GetPrefISize(gfxContext* aRenderingContext)
 {
   nscoord result = 0;
-  DISPLAY_PREF_WIDTH(this, result);
+  DISPLAY_PREF_INLINE_SIZE(this, result);
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   WritingMode wm = GetWritingMode();
   result = CalcIntrinsicSize(aRenderingContext, wm, inflation).ISize(wm);
@@ -554,7 +554,7 @@ nsTextControlFrame::GetMinISize(gfxContext* aRenderingContext)
 {
   
   nscoord result;
-  DISPLAY_MIN_WIDTH(this, result);
+  DISPLAY_MIN_INLINE_SIZE(this, result);
   result = GetPrefISize(aRenderingContext);
   return result;
 }
