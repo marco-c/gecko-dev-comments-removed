@@ -9,16 +9,24 @@
 
 #include "PlatformDecoderModule.h"
 
+struct FFmpegRDFTFuncs;
+
 namespace mozilla
 {
 
 class FFVPXRuntimeLinker
 {
 public:
+  
   static bool Init();
+  
   static already_AddRefed<PlatformDecoderModule> CreateDecoderModule();
 
+  
+  static void GetRDFTFuncs(FFmpegRDFTFuncs* aOutFuncs);
+
 private:
+  
   static enum LinkStatus {
     LinkStatus_INIT = 0,
     LinkStatus_FAILED,
