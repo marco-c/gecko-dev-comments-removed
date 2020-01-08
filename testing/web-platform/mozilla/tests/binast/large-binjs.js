@@ -1,7 +1,7 @@
 
 
 
-const words = [
+var words = [
     "A",
     "a",
     "aa",
