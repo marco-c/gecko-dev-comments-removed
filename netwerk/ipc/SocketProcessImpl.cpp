@@ -32,26 +32,11 @@ bool SocketProcessImpl::Init(int aArgc, char* aArgv[]) {
     sleep(30);
   }
 #endif
-  
-  Maybe<base::SharedMemoryHandle> prefsHandle;
-  Maybe<FileDescriptor> prefMapHandle;
-  Maybe<size_t> prefsLen;
-  Maybe<size_t> prefMapSize;
   char* parentBuildID = nullptr;
-
-  
-  auto parseUIntPtrArg = [](char*& aArg) {
-    
-    
-    
-    return uintptr_t(strtoull(aArg, &aArg, 10));
-  };
-
-#ifdef XP_WIN
-  auto parseHandleArg = [&](char*& aArg) {
-    return HANDLE(parseUIntPtrArg(aArg));
-  };
-#endif
+  char* prefsHandle = nullptr;
+  char* prefMapHandle = nullptr;
+  char* prefsLen = nullptr;
+  char* prefMapSize = nullptr;
 
   for (int i = 1; i < aArgc; i++) {
     if (!aArgv[i]) {
@@ -70,75 +55,31 @@ bool SocketProcessImpl::Init(int aArgc, char* aArgv[]) {
       if (++i == aArgc) {
         return false;
       }
-      char* str = aArgv[i];
-      prefsHandle = Some(parseHandleArg(str));
-      if (str[0] != '\0') {
-        return false;
-      }
-
+      prefsHandle = aArgv[i];
     } else if (strcmp(aArgv[i], "-prefMapHandle") == 0) {
       if (++i == aArgc) {
         return false;
       }
-      char* str = aArgv[i];
-      
-      
-      
-      FileDescriptor::UniquePlatformHandle handle(parseHandleArg(str));
-      prefMapHandle.emplace(handle.get());
-      if (str[0] != '\0') {
-        return false;
-      }
+      prefMapHandle = aArgv[i];
 #endif
     } else if (strcmp(aArgv[i], "-prefsLen") == 0) {
       if (++i == aArgc) {
         return false;
       }
-      char* str = aArgv[i];
-      prefsLen = Some(parseUIntPtrArg(str));
-      if (str[0] != '\0') {
-        return false;
-      }
-
+      prefsLen = aArgv[i];
     } else if (strcmp(aArgv[i], "-prefMapSize") == 0) {
       if (++i == aArgc) {
         return false;
       }
-      char* str = aArgv[i];
-      prefMapSize = Some(parseUIntPtrArg(str));
-      if (str[0] != '\0') {
-        return false;
-      }
+      prefMapSize = aArgv[i];
     }
   }
 
-#ifdef XP_UNIX
-  prefsHandle = Some(base::FileDescriptor(kPrefsFileDescriptor,
-                                           true));
-
-  
-  
-  
-  FileDescriptor::UniquePlatformHandle handle(kPrefMapFileDescriptor);
-  prefMapHandle.emplace(handle.get());
-#endif
-
-  
-  
-  Preferences::InitSnapshot(prefMapHandle.ref(), *prefMapSize);
-
-  
-  base::SharedMemory shm;
-  if (!shm.SetHandle(*prefsHandle,  true)) {
-    NS_ERROR("failed to open shared memory in the child");
+  SharedPreferenceDeserializer deserializer;
+  if (!deserializer.DeserializeFromSharedMemory(prefsHandle, prefMapHandle,
+                                                prefsLen, prefMapSize)) {
     return false;
   }
-  if (!shm.Map(*prefsLen)) {
-    NS_ERROR("failed to map shared memory in the child");
-    return false;
-  }
-  Preferences::DeserializePreferences(static_cast<char*>(shm.memory()),
-                                      *prefsLen);
 
   if (NS_FAILED(NS_InitXPCOM2(nullptr, nullptr, nullptr))) {
     return false;

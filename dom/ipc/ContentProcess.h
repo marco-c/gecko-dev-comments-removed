@@ -45,13 +45,6 @@ class ContentProcess : public mozilla::ipc::ProcessChild {
   DISALLOW_EVIL_CONSTRUCTORS(ContentProcess);
 };
 
-#ifdef ANDROID
-
-
-void SetPrefsFd(int aFd);
-void SetPrefMapFd(int aFd);
-#endif
-
 }  
 }  
 

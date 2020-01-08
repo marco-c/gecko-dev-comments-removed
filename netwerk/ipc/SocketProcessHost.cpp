@@ -3,8 +3,6 @@
 
 
 
-#include "base/shared_memory.h"
-
 #include "SocketProcessHost.h"
 #include "SocketProcessParent.h"
 #include "nsAppRunner.h"
@@ -32,30 +30,14 @@ bool SocketProcessHost::Launch() {
 
   std::vector<std::string> extraArgs;
 
-  
-  
-  
-  size_t prefMapSize;
-  auto prefMapHandle =
-      Preferences::EnsureSnapshot(&prefMapSize).ClonePlatformHandle();
+  nsAutoCString parentBuildID(mozilla::PlatformBuildID());
+  extraArgs.push_back("-parentBuildID");
+  extraArgs.push_back(parentBuildID.get());
 
-  
-  nsAutoCStringN<1024> prefs;
-  Preferences::SerializePreferences(prefs);
-
-  
-  base::SharedMemory shm;
-  if (!shm.Create(prefs.Length())) {
-    NS_ERROR("failed to create shared memory in the parent");
+  SharedPreferenceSerializer prefSerializer;
+  if (!prefSerializer.SerializeToSharedMemory()) {
     return false;
   }
-  if (!shm.Map(prefs.Length())) {
-    NS_ERROR("failed to map shared memory in the parent");
-    return false;
-  }
-
-  
-  memcpy(static_cast<char*>(shm.memory()), prefs.get(), prefs.Length());
 
   
   
@@ -66,13 +48,14 @@ bool SocketProcessHost::Launch() {
 #if defined(XP_WIN)
   
   
-  HANDLE prefsHandle = shm.handle();
+  HANDLE prefsHandle = prefSerializer.GetSharedMemoryHandle();
   AddHandleToShare(prefsHandle);
-  AddHandleToShare(prefMapHandle.get());
+  AddHandleToShare(prefSerializer.GetPrefMapHandle().get());
   extraArgs.push_back("-prefsHandle");
   extraArgs.push_back(formatPtrArg(prefsHandle).get());
   extraArgs.push_back("-prefMapHandle");
-  extraArgs.push_back(formatPtrArg(prefMapHandle.get()).get());
+  extraArgs.push_back(
+      formatPtrArg(prefSerializer.GetPrefMapHandle().get()).get());
 #else
   
   
@@ -81,20 +64,15 @@ bool SocketProcessHost::Launch() {
   
   
   
-  AddFdToRemap(shm.handle().fd, kPrefsFileDescriptor);
-  AddFdToRemap(prefMapHandle.get(), kPrefMapFileDescriptor);
+  AddFdToRemap(prefSerializer.GetSharedMemoryHandle().fd, kPrefsFileDescriptor);
+  AddFdToRemap(prefSerializer.GetPrefMapHandle().get(), kPrefMapFileDescriptor);
 #endif
 
   
   extraArgs.push_back("-prefsLen");
-  extraArgs.push_back(formatPtrArg(prefs.Length()).get());
-
+  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefLength()).get());
   extraArgs.push_back("-prefMapSize");
-  extraArgs.push_back(formatPtrArg(prefMapSize).get());
-
-  nsAutoCString parentBuildID(mozilla::PlatformBuildID());
-  extraArgs.push_back("-parentBuildID");
-  extraArgs.push_back(parentBuildID.get());
+  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefMapSize()).get());
 
   mLaunchPhase = LaunchPhase::Waiting;
   if (!GeckoChildProcessHost::LaunchAndWaitForProcessHandle(extraArgs)) {

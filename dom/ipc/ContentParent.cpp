@@ -10,6 +10,7 @@
 #include "base/shared_memory.h"
 
 #include "ContentParent.h"
+#include "ProcessUtils.h"
 #include "TabParent.h"
 
 #if defined(ANDROID) || defined(LINUX)
@@ -2111,31 +2112,12 @@ void ContentParent::LaunchSubprocessInternal(
   
   
 
-  size_t prefMapSize;
-  auto prefMapHandle =
-      Preferences::EnsureSnapshot(&prefMapSize).ClonePlatformHandle();
-
-  
-  nsAutoCStringN<1024> prefs;
-  Preferences::SerializePreferences(prefs);
-
-  
-  base::SharedMemory shm;
-  if (!shm.Create(prefs.Length())) {
-    NS_ERROR("failed to create shared memory in the parent");
+  SharedPreferenceSerializer prefSerializer;
+  if (!prefSerializer.SerializeToSharedMemory()) {
     MarkAsDead();
     earlyReject();
     return;
   }
-  if (!shm.Map(prefs.Length())) {
-    NS_ERROR("failed to map shared memory in the parent");
-    MarkAsDead();
-    earlyReject();
-    return;
-  }
-
-  
-  memcpy(static_cast<char*>(shm.memory()), prefs.get(), prefs.Length());
 
   
   
@@ -2152,13 +2134,14 @@ void ContentParent::LaunchSubprocessInternal(
 #if defined(XP_WIN)
   
   
-  HANDLE prefsHandle = shm.handle();
+  HANDLE prefsHandle = prefSerializer.GetSharedMemoryHandle();
   mSubprocess->AddHandleToShare(prefsHandle);
-  mSubprocess->AddHandleToShare(prefMapHandle.get());
+  mSubprocess->AddHandleToShare(prefSerializer.GetPrefMapHandle().get());
   extraArgs.push_back("-prefsHandle");
   extraArgs.push_back(formatPtrArg(prefsHandle).get());
   extraArgs.push_back("-prefMapHandle");
-  extraArgs.push_back(formatPtrArg(prefMapHandle.get()).get());
+  extraArgs.push_back(
+      formatPtrArg(prefSerializer.GetPrefMapHandle().get()).get());
 #else
   
   
@@ -2167,16 +2150,17 @@ void ContentParent::LaunchSubprocessInternal(
   
   
   
-  mSubprocess->AddFdToRemap(shm.handle().fd, kPrefsFileDescriptor);
-  mSubprocess->AddFdToRemap(prefMapHandle.get(), kPrefMapFileDescriptor);
+  mSubprocess->AddFdToRemap(prefSerializer.GetSharedMemoryHandle().fd,
+                            kPrefsFileDescriptor);
+  mSubprocess->AddFdToRemap(prefSerializer.GetPrefMapHandle().get(),
+                            kPrefMapFileDescriptor);
 #endif
 
   
   extraArgs.push_back("-prefsLen");
-  extraArgs.push_back(formatPtrArg(prefs.Length()).get());
-
+  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefLength()).get());
   extraArgs.push_back("-prefMapSize");
-  extraArgs.push_back(formatPtrArg(prefMapSize).get());
+  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefMapSize()).get());
 
   
   
@@ -2236,9 +2220,8 @@ void ContentParent::LaunchSubprocessInternal(
                   
                   
                   
-                  shm = std::move(shm),
-                  prefMapHandle =
-                      std::move(prefMapHandle)](base::ProcessHandle handle) {
+                  prefSerializer =
+                      std::move(prefSerializer)](base::ProcessHandle handle) {
     AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess::resolve", OTHER);
     const auto launchResumeTS = TimeStamp::Now();
 
