@@ -23,9 +23,6 @@ static size_t gNumChannels;
 
 static bool gChildrenAreDebugging;
 
-
-static bool gRestartEnabled;
-
  void
 ChildProcessInfo::SetIntroductionMessage(IntroductionMessage* aMessage)
 {
@@ -41,7 +38,6 @@ ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole,
   , mPausedMessage(nullptr)
   , mLastCheckpoint(CheckpointId::Invalid)
   , mNumRecoveredMessages(0)
-  , mNumRestarts(0)
   , mRole(std::move(aRole))
   , mPauseNeeded(false)
 {
@@ -51,7 +47,6 @@ ChildProcessInfo::ChildProcessInfo(UniquePtr<ChildRole> aRole,
   if (!gFirst) {
     gFirst = true;
     gChildrenAreDebugging = !!getenv("WAIT_AT_START");
-    gRestartEnabled = !getenv("NO_RESTARTS");
   }
 
   mRole->SetProcess(this);
@@ -206,7 +201,7 @@ ChildProcessInfo::OnIncomingMessage(size_t aChannelId, const Message& aMsg)
   
   if (aMsg.mType == MessageType::FatalError) {
     const FatalErrorMessage& nmsg = static_cast<const FatalErrorMessage&>(aMsg);
-    AttemptRestart(nmsg.Error());
+    OnCrash(nmsg.Error());
     return;
   }
 
@@ -523,68 +518,17 @@ ChildProcessInfo::LaunchSubprocess(const Maybe<RecordingProcessData>& aRecording
   SendMessage(*gIntroductionMessage);
 }
 
-
-
-
-
-
-static const size_t MaxRestarts = 5;
-
-bool
-ChildProcessInfo::CanRestart()
-{
-  return gRestartEnabled
-      && !IsRecording()
-      && !IsPaused()
-      && !IsRecovering()
-      && mNumRestarts < MaxRestarts;
-}
-
 void
-ChildProcessInfo::AttemptRestart(const char* aWhy)
+ChildProcessInfo::OnCrash(const char* aWhy)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  PrintSpew("Warning: Child process died [%d]: %s\n", (int) GetId(), aWhy);
-
-  if (!CanRestart()) {
-    CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplayError,
-                                       nsAutoCString(aWhy));
-    Shutdown();
-  }
-
-  mNumRestarts++;
-
-  dom::ContentChild::GetSingleton()->SendTerminateReplayingProcess(mChannel->GetId());
-
-  bool newPaused = mPaused;
-  Message* newPausedMessage = mPausedMessage;
-
-  mPaused = false;
-  mPausedMessage = nullptr;
-
-  size_t newLastCheckpoint = mLastCheckpoint;
-  mLastCheckpoint = CheckpointId::Invalid;
-
-  InfallibleVector<Message*> newMessages;
-  newMessages.append(mMessages.begin(), mMessages.length());
-  mMessages.clear();
-
-  InfallibleVector<size_t> newShouldSaveCheckpoints;
-  newShouldSaveCheckpoints.append(mShouldSaveCheckpoints.begin(), mShouldSaveCheckpoints.length());
-  mShouldSaveCheckpoints.clear();
-
-  LaunchSubprocess(Nothing());
-
   
-  SendMessage(SetAllowIntentionalCrashesMessage(false));
-
-  for (size_t checkpoint : newShouldSaveCheckpoints) {
-    SendMessage(SetSaveCheckpointMessage(checkpoint, true));
-  }
-
-  Recover(newPaused, newPausedMessage, newLastCheckpoint,
-          newMessages.begin(), newMessages.length());
+  
+  
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplayError,
+                                     nsAutoCString(aWhy));
+  Shutdown();
 }
 
 
@@ -666,7 +610,7 @@ ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback)
           } else {
             
             
-            AttemptRestart("Child process non-responsive");
+            OnCrash("Child process non-responsive");
           }
         }
         gMonitor->WaitUntil(deadline);
