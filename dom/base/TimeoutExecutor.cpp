@@ -56,21 +56,17 @@ TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
   nsresult rv = NS_OK;
 
   if (!mTimer) {
-    mTimer = NS_NewTimer();
+    mTimer = NS_NewTimer(mOwner->EventTarget());
     NS_ENSURE_TRUE(mTimer, NS_ERROR_OUT_OF_MEMORY);
 
     uint32_t earlyMicros = 0;
     MOZ_ALWAYS_SUCCEEDS(mTimer->GetAllowedEarlyFiringMicroseconds(&earlyMicros));
     mAllowedEarlyFiringTime = TimeDuration::FromMicroseconds(earlyMicros);
+  } else {
+    
+    rv = mTimer->Cancel();
+    NS_ENSURE_SUCCESS(rv, rv);
   }
-
-  
-  
-  rv = mTimer->Cancel();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mTimer->SetTarget(mOwner->EventTarget());
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
