@@ -132,7 +132,17 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     paymentRequest.pay(data);
   }
 
+  
+
+
+
   changeShippingAddress(shippingAddressGUID) {
+    
+    let request = Object.assign({}, this.requestStore.getState().request);
+    request.paymentDetails = Object.assign({}, request.paymentDetails);
+    request.paymentDetails.shippingAddressErrors = {};
+    this.requestStore.setState({request});
+
     paymentRequest.changeShippingAddress({
       shippingAddressGUID,
     });
