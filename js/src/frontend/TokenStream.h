@@ -1289,8 +1289,13 @@ class TokenStreamCharsBase
     
     template<typename T> inline void consumeKnownCodeUnit(T) = delete;
 
-    MOZ_MUST_USE inline bool
-    fillCharBufferWithTemplateStringContents(const CharT* cur, const CharT* end);
+    
+
+
+
+
+
+    MOZ_MUST_USE bool fillCharBufferWithTemplateStringContents(const CharT* cur, const CharT* end);
 
   protected:
     
@@ -1326,32 +1331,6 @@ TokenStreamCharsBase<char16_t>::atomizeSourceChars(JSContext* cx, const char16_t
                                                    size_t length)
 {
     return AtomizeChars(cx, chars, length);
-}
-
-template<>
-MOZ_MUST_USE inline bool
-TokenStreamCharsBase<char16_t>::fillCharBufferWithTemplateStringContents(const char16_t* cur,
-                                                                         const char16_t* end)
-{
-    MOZ_ASSERT(this->charBuffer.length() == 0);
-
-    while (cur < end) {
-        
-        
-        
-        
-        char16_t ch = *cur++;
-        if (ch == '\r') {
-            ch = '\n';
-            if (cur < end && *cur == '\n')
-                cur++;
-        }
-
-        if (!this->charBuffer.append(ch))
-            return false;
-    }
-
-    return true;
 }
 
 template<typename CharT>
@@ -1481,6 +1460,9 @@ class GeneralTokenStreamChars
     uint32_t matchExtendedUnicodeEscape(uint32_t* codePoint);
 
   protected:
+    using TokenStreamCharsShared::drainCharBufferIntoAtom;
+    using CharsBase::fillCharBufferWithTemplateStringContents;
+
     using typename CharsBase::SourceUnits;
 
   protected:
@@ -1572,6 +1554,28 @@ class GeneralTokenStreamChars
 
     uint32_t matchUnicodeEscapeIdStart(uint32_t* codePoint);
     bool matchUnicodeEscapeIdent(uint32_t* codePoint);
+
+  public:
+    JSAtom* getRawTemplateStringAtom() {
+        TokenStreamAnyChars& anyChars = anyCharsAccess();
+
+        MOZ_ASSERT(anyChars.currentToken().type == TokenKind::TemplateHead ||
+                   anyChars.currentToken().type == TokenKind::NoSubsTemplate);
+        const CharT* cur = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.begin + 1);
+        const CharT* end;
+        if (anyChars.currentToken().type == TokenKind::TemplateHead) {
+            
+            end = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 2);
+        } else {
+            
+            end = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 1);
+        }
+
+        if (!fillCharBufferWithTemplateStringContents(cur, end))
+            return nullptr;
+
+        return drainCharBufferIntoAtom(anyChars.cx);
+    }
 };
 
 template<typename CharT, class AnyCharsAccess> class TokenStreamChars;
@@ -1904,27 +1908,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
                                        bool strictMode, unsigned errorNumber, va_list* args);
     bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
                                          unsigned errorNumber, va_list* args);
-
-    JSAtom* getRawTemplateStringAtom() {
-        TokenStreamAnyChars& anyChars = anyCharsAccess();
-
-        MOZ_ASSERT(anyChars.currentToken().type == TokenKind::TemplateHead ||
-                   anyChars.currentToken().type == TokenKind::NoSubsTemplate);
-        const CharT* cur = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.begin + 1);
-        const CharT* end;
-        if (anyChars.currentToken().type == TokenKind::TemplateHead) {
-            
-            end = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 2);
-        } else {
-            
-            end = this->sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 1);
-        }
-
-        if (!fillCharBufferWithTemplateStringContents(cur, end))
-            return nullptr;
-
-        return drainCharBufferIntoAtom(anyChars.cx);
-    }
 
   private:
     
