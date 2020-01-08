@@ -83,11 +83,9 @@ public:
 
 
 
-  enum class LangNegStrategy {
-    Filtering,
-    Matching,
-    Lookup
-  };
+  static const int32_t kLangNegStrategyFiltering = 0;
+  static const int32_t kLangNegStrategyMatching = 1;
+  static const int32_t kLangNegStrategyLookup = 2;
 
   explicit LocaleService(bool aIsServer);
 
@@ -118,94 +116,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-  void GetAppLocalesAsLangTags(nsTArray<nsCString>& aRetVal);
-  void GetAppLocalesAsBCP47(nsTArray<nsCString>& aRetVal);
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal);
-
-  
-
-
-
-
-
-
-
-
   void AssignAppLocales(const nsTArray<nsCString>& aAppLocales);
   void AssignRequestedLocales(const nsTArray<nsCString>& aRequestedLocales);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetRequestedLocales(nsTArray<nsCString>& aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetAvailableLocales(nsTArray<nsCString>& aRetVal);
-
-  
-
-
-
-
-  void GetPackagedLocales(nsTArray<nsCString>& aRetVal);
 
   
 
@@ -226,32 +138,6 @@ public:
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void NegotiateLanguages(const nsTArray<nsCString>& aRequested,
-                          const nsTArray<nsCString>& aAvailable,
-                          const nsACString& aDefaultLocale,
-                          LangNegStrategy aLangNegStrategy,
-                          nsTArray<nsCString>& aRetVal);
-
-  
-
-
   bool IsAppLocaleRTL();
 
   static bool LanguagesMatch(const nsACString& aRequested,
@@ -262,7 +148,7 @@ public:
 private:
   void FilterMatches(const nsTArray<nsCString>& aRequested,
                      const nsTArray<nsCString>& aAvailable,
-                     LangNegStrategy aStrategy,
+                     int32_t aStrategy,
                      nsTArray<nsCString>& aRetVal);
 
   void NegotiateAppLocales(nsTArray<nsCString>& aRetVal);
