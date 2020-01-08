@@ -2,10 +2,12 @@
 
 
 
-
-
 #ifndef _KEY_H_
 #define _KEY_H_
+
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma message("key.h is deprecated. Please include keyhi.h instead.")
+#endif
 
 #include "keyhi.h"
 
