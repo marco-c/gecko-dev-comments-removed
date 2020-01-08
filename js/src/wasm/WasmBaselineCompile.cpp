@@ -9241,6 +9241,13 @@ BaseCompiler::emitInstanceCall(uint32_t lineOrBytecode, const MIRTypeVector& sig
 
     
     
+    
+    
+    
+    
+    
+    
+    
 
     pushReturnedIfNonVoid(baselineCall, retType);
 }
@@ -10080,14 +10087,7 @@ BaseCompiler::emitStructNarrow()
         return true;
     }
 
-    
-
-    Label done;
-    Label doTest;
     RegPtr rp = popRef();
-    masm.branchTestPtr(Assembler::NonZero, rp, rp, &doTest);
-    pushRef(NULLREF_VALUE);
-    masm.jump(&done);
 
     
 
@@ -10097,14 +10097,10 @@ BaseCompiler::emitStructNarrow()
 
     const StructType& outputStruct = env_.types[outputType.refTypeIndex()].structType();
 
-    masm.bind(&doTest);
-
     pushI32(mustUnboxAnyref);
     pushI32(outputStruct.moduleIndex_);
     pushRef(rp);
     emitInstanceCall(lineOrBytecode, SigPIIP_, ExprType::AnyRef, SymbolicAddress::StructNarrow);
-
-    masm.bind(&done);
 
     return true;
 }
