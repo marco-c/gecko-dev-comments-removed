@@ -1,12 +1,10 @@
 
 
 
-
-
 "use strict";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-addons-script.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-addons.js", this);
 
 
 

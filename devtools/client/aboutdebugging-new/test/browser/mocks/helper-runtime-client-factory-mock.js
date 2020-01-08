@@ -20,11 +20,13 @@ function enableRuntimeClientFactoryMock(mock) {
 
 
 
+
 function disableRuntimeClientFactoryMock() {
   const { removeMockedModule } = require("devtools/client/shared/browser-loader-mocks");
   removeMockedModule(
     "devtools/client/aboutdebugging-new/src/modules/runtime-client-factory");
 }
+
 
 
 
@@ -38,3 +40,4 @@ function createRuntimeClientFactoryMock() {
 
   return RuntimeClientFactoryMock;
 }
+

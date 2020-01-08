@@ -1,9 +1,9 @@
 
 
 
-
-
 "use strict";
+
+
 
 
 
@@ -28,6 +28,7 @@ async function enableServiceWorkerDebugging() {
 
 
 
+
 function onTabMessage(tab, message) {
   const mm = tab.linkedBrowser.messageManager;
   return new Promise(resolve => {
@@ -38,6 +39,7 @@ function onTabMessage(tab, message) {
   });
 }
 
+
 async function waitForServiceWorkerRunning(workerText, document) {
   await waitUntil(() => {
     const target = findDebugTargetByText(workerText, document);
@@ -47,6 +49,7 @@ async function waitForServiceWorkerRunning(workerText, document) {
 
   return findDebugTargetByText(workerText, document);
 }
+
 
 
 
@@ -74,6 +77,7 @@ function forwardServiceWorkerMessage(tab) {
 
 
 
+
 async function unregisterServiceWorker(tab) {
   return ContentTask.spawn(tab.linkedBrowser, {}, function() {
     const win = content.wrappedJSObject;
@@ -82,3 +86,4 @@ async function unregisterServiceWorker(tab) {
     win.getRegistration().unregister();
   });
 }
+

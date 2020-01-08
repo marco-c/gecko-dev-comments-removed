@@ -3,13 +3,13 @@
 
 "use strict";
 
+
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
+
 const NETWORK_RUNTIME_HOST = "localhost:6080";
 const NETWORK_RUNTIME_APP_NAME = "TestNetworkApp";
 const NETWORK_RUNTIME_CHANNEL = "SomeChannel";
 const NETWORK_RUNTIME_VERSION = "12.3";
-
-
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-mocks.js", this);
 
 
 add_task(async function() {

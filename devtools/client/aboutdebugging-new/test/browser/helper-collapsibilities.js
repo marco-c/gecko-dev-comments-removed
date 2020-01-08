@@ -3,7 +3,6 @@
 
 "use strict";
 
-
 const TARGET_PANES = [
   {
     title: "Temporary Extensions",
@@ -32,25 +31,6 @@ const TARGET_PANES = [
 ];
 
 
-function getDebugTargetPane(title, document) {
-  
-  const sanitizeTitle = (x) => {
-    return x.replace(/\s+\(\d+\)$/, "");
-  };
-
-  const targetTitle = sanitizeTitle(title);
-  for (const titleEl of document.querySelectorAll(".js-debug-target-pane-title")) {
-    if (sanitizeTitle(titleEl.textContent) !== targetTitle) {
-      continue;
-    }
-
-    return titleEl.closest(".js-debug-target-pane");
-  }
-
-  return null;
-}
-
-
 function prepareCollapsibilitiesTest() {
   
   for (const { pref } of TARGET_PANES) {
@@ -65,6 +45,7 @@ async function toggleCollapsibility(debugTargetPane) {
   const animations = debugTargetPane.ownerDocument.getAnimations();
   await Promise.all(animations.map(animation => animation.finished));
 }
+
 
 registerCleanupFunction(() => {
   for (const { pref } of TARGET_PANES) {

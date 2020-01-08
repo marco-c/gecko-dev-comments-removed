@@ -1,12 +1,10 @@
 
 
 
-
-
 "use strict";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-serviceworker.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-serviceworker.js", this);
 
 const SERVICE_WORKER = URL_ROOT + "resources/service-workers/push-sw.js";
 const TAB_URL = URL_ROOT + "resources/service-workers/push-sw.html";

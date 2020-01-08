@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -106,3 +105,5 @@ function createThisFirefoxClientMock() {
 
   return mockThisFirefoxClient;
 }
+
+

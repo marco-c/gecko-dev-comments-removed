@@ -5,10 +5,11 @@
 
 
 Services.scriptloader.loadSubScript(
-  CHROME_URL_ROOT + "mocks/head-client-wrapper-mock.js", this);
+  CHROME_URL_ROOT + "mocks/helper-client-wrapper-mock.js", this);
 
 Services.scriptloader.loadSubScript(
-  CHROME_URL_ROOT + "mocks/head-runtime-client-factory-mock.js", this);
+  CHROME_URL_ROOT + "mocks/helper-runtime-client-factory-mock.js", this);
+
 const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
 
 add_task(async function() {

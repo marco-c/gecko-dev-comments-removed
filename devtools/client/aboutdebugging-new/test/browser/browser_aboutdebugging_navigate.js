@@ -4,6 +4,9 @@
 "use strict";
 
 
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-collapsibilities.js", this);
+
+
 
 
 

@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -25,11 +24,13 @@ function enableUsbRuntimesMock(mock) {
 
 
 
+
 function disableUsbRuntimesMock() {
   const { removeMockedModule } = require("devtools/client/shared/browser-loader-mocks");
   removeMockedModule(
     "devtools/client/aboutdebugging-new/src/modules/usb-runtimes");
 }
+
 
 
 
@@ -73,6 +74,7 @@ function createUsbRuntimesMock() {
 
 
 
+
 function addObserverMock(usbRuntimesMock) {
   const EventEmitter = require("devtools/shared/event-emitter");
 
@@ -90,3 +92,4 @@ function addObserverMock(usbRuntimesMock) {
 
   return observerMock;
 }
+

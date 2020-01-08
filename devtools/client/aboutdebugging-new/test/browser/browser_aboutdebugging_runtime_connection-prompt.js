@@ -5,7 +5,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  CHROME_URL_ROOT + "head-mocks.js", this);
+  CHROME_URL_ROOT + "helper-mocks.js", this);
 
 
 

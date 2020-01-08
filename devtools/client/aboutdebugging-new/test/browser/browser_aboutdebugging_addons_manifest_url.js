@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { adbAddon } = require("devtools/shared/adb/adb-addon");
@@ -10,13 +8,14 @@ const { adbAddon } = require("devtools/shared/adb/adb-addon");
 const ABD_ADDON_NAME = "ADB binary provider";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-addons-script.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-adb.js", this);
 
 
 
 add_task(async function() {
   await pushPref("devtools.remote.adb.extensionURL",
                  CHROME_URL_ROOT + "resources/test-adb-extension/adb-extension-#OS#.xpi");
+  await checkAdbNotRunning();
 
   const { document, tab, window } = await openAboutDebugging();
   const usbStatusElement = document.querySelector(".js-sidebar-usb-status");

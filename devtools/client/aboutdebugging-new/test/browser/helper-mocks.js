@@ -3,17 +3,18 @@
 
 "use strict";
 
+
+
 const MOCKS_ROOT = CHROME_URL_ROOT + "mocks/";
 
-const { RUNTIMES } = require("devtools/client/aboutdebugging-new/src/constants");
+Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-client-wrapper-mock.js", this);
 
-
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-client-wrapper-mock.js", this);
-
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-runtime-client-factory-mock.js",
+Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-runtime-client-factory-mock.js",
   this);
 
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-usb-runtimes-mock.js", this);
+Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-usb-runtimes-mock.js", this);
+
+const { RUNTIMES } = require("devtools/client/aboutdebugging-new/src/constants");
 
 
 
@@ -160,3 +161,5 @@ class Mocks {
     }
   }
 }
+
+

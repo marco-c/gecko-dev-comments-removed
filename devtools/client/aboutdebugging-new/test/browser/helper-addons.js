@@ -1,20 +1,19 @@
 
 
 
-
-
 "use strict";
+
+
 
 const { Management } = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
 
-function getSupportsFile(path) {
+function _getSupportsFile(path) {
   const cr = Cc["@mozilla.org/chrome/chrome-registry;1"]
     .getService(Ci.nsIChromeRegistry);
   const uri = Services.io.newURI(CHROME_URL_ROOT + path);
   const fileurl = cr.convertChromeURL(uri);
   return fileurl.QueryInterface(Ci.nsIFileURL);
 }
-
 
 
 
@@ -42,6 +41,7 @@ async function installTemporaryExtension(path, name, document) {
   await onAddonInstalled;
 }
 
+
 async function removeTemporaryExtension(name, document) {
   info(`Remove the temporary extension with name: '${name}'`);
   const temporaryExtensionItem = findDebugTargetByText(name, document);
@@ -51,9 +51,11 @@ async function removeTemporaryExtension(name, document) {
   await waitUntil(() => !findDebugTargetByText(name, document));
 }
 
+
 function prepareMockFilePicker(path) {
   
   const MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init(window);
-  MockFilePicker.setFiles([getSupportsFile(path).file]);
+  MockFilePicker.setFiles([_getSupportsFile(path).file]);
 }
+

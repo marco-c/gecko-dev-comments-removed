@@ -3,12 +3,14 @@
 
 "use strict";
 
+
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-collapsibilities.js", this);
+
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
+
 const RUNTIME_ID = "test-runtime-id";
 const RUNTIME_DEVICE_NAME = "test device name";
 const RUNTIME_APP_NAME = "TestApp";
-
-
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-mocks.js", this);
 
 
 add_task(async function() {

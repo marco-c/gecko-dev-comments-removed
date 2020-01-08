@@ -10,7 +10,7 @@ const USB_DEVICE_NAME = "test device name";
 const USB_APP_NAME = "TestApp";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-mocks.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
 
 
 add_task(async function() {
