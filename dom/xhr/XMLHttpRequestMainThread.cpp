@@ -13,6 +13,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/dom/BlobBinding.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/File.h"
@@ -1186,10 +1187,12 @@ XMLHttpRequestMainThread::GetResponseHeader(const nsACString& header,
     
     
     
+    
+    
     nsresult status;
     if (!mChannel ||
         NS_FAILED(mChannel->GetStatus(&status)) ||
-        NS_FAILED(status)) {
+        (NS_FAILED(status) && status != NS_ERROR_FILE_ALREADY_EXISTS)) {
       return;
     }
 
@@ -1655,6 +1658,32 @@ XMLHttpRequestMainThread::StreamReaderFunc(nsIInputStream* in,
 
 namespace {
 
+void
+GetBlobURIFromChannel(nsIRequest* aRequest, nsIURI** aURI)
+{
+  MOZ_ASSERT(aRequest);
+  MOZ_ASSERT(aURI);
+
+  *aURI = nullptr;
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+  if (!channel) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = channel->GetURI(getter_AddRefs(uri));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (!dom::IsBlobURI(uri)) {
+    return;
+  }
+
+  uri.forget(aURI);
+}
+
 nsresult
 GetLocalFileFromChannel(nsIRequest* aRequest, nsIFile** aFile)
 {
@@ -1771,14 +1800,29 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest *request,
 
   nsresult rv;
 
-  nsCOMPtr<nsIFile> localFile;
   if (mResponseType == XMLHttpRequestResponseType::Blob) {
-    rv = GetLocalFileFromChannel(request, getter_AddRefs(localFile));
+    nsCOMPtr<nsIFile> localFile;
+    nsCOMPtr<nsIURI> blobURI;
+    GetBlobURIFromChannel(request, getter_AddRefs(blobURI));
+    if (blobURI) {
+      RefPtr<BlobImpl> blobImpl;
+      rv = NS_GetBlobForBlobURI(blobURI, getter_AddRefs(blobImpl));
+      if (NS_SUCCEEDED(rv)) {
+        if (blobImpl) {
+          mResponseBlob = Blob::Create(GetOwner(), blobImpl);
+        }
+        if (!mResponseBlob) {
+          rv = NS_ERROR_FILE_NOT_FOUND;
+        }
+      }
+    } else {
+      rv = GetLocalFileFromChannel(request, getter_AddRefs(localFile));
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    if (localFile) {
+    if (mResponseBlob || localFile) {
       mBlobStorage = nullptr;
       NS_ASSERTION(mResponseBody.IsEmpty(), "mResponseBody should be empty");
 
@@ -2141,12 +2185,18 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
     return NS_OK;
   }
 
+  
+  if (status == NS_ERROR_FILE_ALREADY_EXISTS && mResponseBlob) {
+    ChangeStateToDone();
+    return NS_OK;
+  }
+
   bool waitingForBlobCreation = false;
 
   
   
   
-  if (status == NS_ERROR_FILE_ALREADY_EXISTS &&
+  if (!mResponseBlob && status == NS_ERROR_FILE_ALREADY_EXISTS &&
       mResponseType == XMLHttpRequestResponseType::Blob) {
     nsCOMPtr<nsIFile> file;
     nsresult rv = GetLocalFileFromChannel(request, getter_AddRefs(file));

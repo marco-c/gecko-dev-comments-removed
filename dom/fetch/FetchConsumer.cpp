@@ -434,6 +434,7 @@ FetchBodyConsumer<Derived>::FetchBodyConsumer(nsIEventTarget* aMainThreadEventTa
 #endif
   , mBodyStream(aBodyStream)
   , mBlobStorageType(MutableBlobStorage::eOnlyInMemory)
+  , mBodyBlobURISpec(aBody ? aBody->BodyBlobURISpec() : VoidCString())
   , mBodyLocalPath(aBody ? aBody->BodyLocalPath() : VoidString())
   , mGlobal(aGlobalObject)
   , mConsumeType(aType)
@@ -597,11 +598,26 @@ FetchBodyConsumer<Derived>::BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWor
     return;
   }
 
-  
-  
   if (mConsumeType == CONSUME_BLOB) {
+    nsresult rv;
+
+    
+    
+    if (!mBodyBlobURISpec.IsEmpty()) {
+      RefPtr<BlobImpl> blobImpl;
+      rv = NS_GetBlobForBlobURISpec(mBodyBlobURISpec, getter_AddRefs(blobImpl));
+      if (NS_WARN_IF(NS_FAILED(rv)) || !blobImpl) {
+        return;
+      }
+      autoReject.DontFail();
+      ContinueConsumeBlobBody(blobImpl);
+      return;
+    }
+
+    
+    
     nsCOMPtr<nsIFile> file;
-    nsresult rv = GetBodyLocalFile(getter_AddRefs(file));
+    rv = GetBodyLocalFile(getter_AddRefs(file));
     if (!NS_WARN_IF(NS_FAILED(rv)) && file) {
       ChromeFilePropertyBag bag;
       bag.mType = NS_ConvertUTF8toUTF16(mBodyMimeType);
