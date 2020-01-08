@@ -459,7 +459,47 @@ void CodeGeneratorARM64::modICommon(MMod* mir, Register lhs, Register rhs,
   MOZ_CRASH("CodeGeneratorARM64::modICommon");
 }
 
-void CodeGenerator::visitModI(LModI* ins) { MOZ_CRASH("visitModI"); }
+void CodeGenerator::visitModI(LModI* ins) {
+  if (gen->compilingWasm()) {
+    MOZ_CRASH("visitModI while compilingWasm");
+  }
+
+  MMod* mir = ins->mir();
+  ARMRegister lhs = toWRegister(ins->lhs());
+  ARMRegister rhs = toWRegister(ins->rhs());
+  ARMRegister output = toWRegister(ins->output());
+  Label done;
+
+  if (mir->canBeDivideByZero() && !mir->isTruncated()) {
+    
+    masm.Cmp(rhs, Operand(0));
+    bailoutIf(Assembler::Equal, ins->snapshot());
+  } else if (mir->canBeDivideByZero()) {
+    
+    masm.Mov(output, rhs);
+    masm.Cbz(rhs, &done);
+  }
+
+  
+  masm.Sdiv(output, lhs, rhs);
+
+  
+  masm.Msub(output, output, rhs, lhs);
+
+  if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
+    
+    
+    
+    
+    
+    masm.Cbnz(output, &done);
+    bailoutCmp32(Assembler::LessThan, lhs, Imm32(0), ins->snapshot());
+  }
+
+  if (done.used()) {
+    masm.bind(&done);
+  }
+}
 
 void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   Register lhs = ToRegister(ins->getOperand(0));
@@ -502,7 +542,97 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
 }
 
 void CodeGenerator::visitModMaskI(LModMaskI* ins) {
-  MOZ_CRASH("CodeGenerator::visitModMaskI");
+  MMod* mir = ins->mir();
+  int32_t shift = ins->shift();
+
+  const Register src = ToRegister(ins->getOperand(0));
+  const Register dest = ToRegister(ins->getDef(0));
+  const Register hold = ToRegister(ins->getTemp(0));
+  const Register remain = ToRegister(ins->getTemp(1));
+
+  const ARMRegister src32 = ARMRegister(src, 32);
+  const ARMRegister dest32 = ARMRegister(dest, 32);
+  const ARMRegister remain32 = ARMRegister(remain, 32);
+
+  vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+  const ARMRegister scratch32 = temps.AcquireW();
+  const Register scratch = scratch32.asUnsized();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t mask = (1 << shift) - 1;
+  Label loop;
+
+  
+  
+  
+  
+  
+  
+  masm.Mov(remain32, src32);
+  
+  masm.Mov(dest32, wzr);
+  
+  {
+    Label negative;
+    masm.branch32(Assembler::Signed, remain, Imm32(0), &negative);
+    masm.move32(Imm32(1), hold);
+    masm.jump(&loop);
+
+    masm.bind(&negative);
+    masm.move32(Imm32(-1), hold);
+    masm.neg32(remain);
+  }
+
+  
+  masm.bind(&loop);
+  {
+    
+    masm.And(scratch32, remain32, Operand(mask));
+    
+    masm.Add(dest32, dest32, scratch32);
+    
+    masm.Subs(scratch32, dest32, Operand(mask));
+    
+    {
+      Label sumSigned;
+      masm.branch32(Assembler::Signed, scratch, scratch, &sumSigned);
+      masm.Mov(dest32, scratch32);
+      masm.bind(&sumSigned);
+    }
+    
+    masm.Lsr(remain32, remain32, shift);
+    
+    masm.branchTest32(Assembler::NonZero, remain, remain, &loop);
+  }
+
+  
+  {
+    Label done;
+
+    
+    masm.branchTest32(Assembler::NotSigned, hold, hold, &done);
+    if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
+      
+      bailoutTest32(Assembler::Zero, hold, hold, ins->snapshot());
+    }
+
+    masm.neg32(dest);
+    masm.bind(&done);
+  }
 }
 
 void CodeGenerator::visitBitNotI(LBitNotI* ins) {
@@ -1144,7 +1274,41 @@ void CodeGenerator::visitWasmStackArg(LWasmStackArg* ins) {
 
 void CodeGenerator::visitUDiv(LUDiv* ins) { MOZ_CRASH("visitUDiv"); }
 
-void CodeGenerator::visitUMod(LUMod* ins) { MOZ_CRASH("visitUMod"); }
+void CodeGenerator::visitUMod(LUMod* ins) {
+  MMod* mir = ins->mir();
+  ARMRegister lhs = toWRegister(ins->lhs());
+  ARMRegister rhs = toWRegister(ins->rhs());
+  ARMRegister output = toWRegister(ins->output());
+  Label done;
+
+  if (mir->canBeDivideByZero() && !mir->isTruncated()) {
+    
+    masm.Cmp(rhs, Operand(0));
+    bailoutIf(Assembler::Equal, ins->snapshot());
+  } else if (mir->canBeDivideByZero()) {
+    
+    masm.Mov(output, rhs);
+    masm.Cbz(rhs, &done);
+  }
+
+  
+  masm.Udiv(output, lhs, rhs);
+
+  
+  masm.Msub(output, output, rhs, lhs);
+
+  if (!mir->isTruncated()) {
+    
+    
+    
+    
+    bailoutCmp32(Assembler::LessThan, output, Imm32(0), ins->snapshot());
+  }
+
+  if (done.used()) {
+    masm.bind(&done);
+  }
+}
 
 void CodeGenerator::visitEffectiveAddress(LEffectiveAddress* ins) {
   const MEffectiveAddress* mir = ins->mir();
@@ -1241,10 +1405,6 @@ void CodeGenerator::visitBitOpI64(LBitOpI64*) { MOZ_CRASH("NYI"); }
 
 void CodeGenerator::visitShiftI64(LShiftI64*) { MOZ_CRASH("NYI"); }
 
-void CodeGenerator::visitSoftDivI(LSoftDivI*) { MOZ_CRASH("NYI"); }
-
-void CodeGenerator::visitSoftModI(LSoftModI*) { MOZ_CRASH("NYI"); }
-
 void CodeGenerator::visitWasmLoad(LWasmLoad*) { MOZ_CRASH("NYI"); }
 
 void CodeGenerator::visitCopySignD(LCopySignD*) { MOZ_CRASH("NYI"); }
@@ -1270,8 +1430,6 @@ void CodeGenerator::visitWasmLoadI64(LWasmLoadI64*) { MOZ_CRASH("NYI"); }
 void CodeGenerator::visitWasmStoreI64(LWasmStoreI64*) { MOZ_CRASH("NYI"); }
 
 void CodeGenerator::visitMemoryBarrier(LMemoryBarrier*) { MOZ_CRASH("NYI"); }
-
-void CodeGenerator::visitSoftUDivOrMod(LSoftUDivOrMod*) { MOZ_CRASH("NYI"); }
 
 void CodeGenerator::visitWasmAddOffset(LWasmAddOffset*) { MOZ_CRASH("NYI"); }
 
