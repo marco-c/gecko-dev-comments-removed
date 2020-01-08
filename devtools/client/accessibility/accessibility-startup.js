@@ -4,11 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
-
-
-const PROMOTE_COUNT_PREF = "devtools.promote.accessibility";
-
 
 
 
@@ -111,11 +106,6 @@ class AccessibilityStartup {
     } else if (!this._accessibility.enabled && isHighlighted) {
       this.toolbox.unhighlightTool("accessibility");
     }
-  }
-
-  
-  updatePanelPromoteCount() {
-    Services.prefs.setIntPref(PROMOTE_COUNT_PREF, 0);
   }
 
   async destroy() {
