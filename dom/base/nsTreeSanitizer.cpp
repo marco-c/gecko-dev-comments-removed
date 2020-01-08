@@ -1231,15 +1231,6 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
       }
       
     } else if (kNameSpaceID_XML == attrNs) {
-      if (nsGkAtoms::base == attrLocal) {
-        if (SanitizeURL(aElement, attrNs, attrLocal)) {
-          
-          
-          --ac;
-          i = ac;  
-        }
-        continue;
-      }
       if (nsGkAtoms::lang == attrLocal || nsGkAtoms::space == attrLocal) {
         continue;
       }
