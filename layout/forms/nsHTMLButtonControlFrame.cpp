@@ -96,26 +96,20 @@ void nsHTMLButtonControlFrame::BuildDisplayList(
 
   nsDisplayListCollection set(aBuilder);
 
-  
-  
-  if (!isForEventDelivery || mContent->IsHTMLElement(nsGkAtoms::button) ||
-      aBuilder->HitTestIsForVisibility()) {
-    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+  DisplayListClipState::AutoSaveRestore clipState(aBuilder);
 
-    if (ShouldClipPaintingToBorderBox()) {
-      nsMargin border = StyleBorder()->GetComputedBorder();
-      nsRect rect(aBuilder->ToReferenceFrame(this), GetSize());
-      rect.Deflate(border);
-      nscoord radii[8];
-      bool hasRadii = GetPaddingBoxBorderRadii(radii);
-      clipState.ClipContainingBlockDescendants(rect,
-                                               hasRadii ? radii : nullptr);
-    }
-
-    BuildDisplayListForChild(aBuilder, mFrames.FirstChild(), set,
-                             DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT);
-    
+  if (ShouldClipPaintingToBorderBox()) {
+    nsMargin border = StyleBorder()->GetComputedBorder();
+    nsRect rect(aBuilder->ToReferenceFrame(this), GetSize());
+    rect.Deflate(border);
+    nscoord radii[8];
+    bool hasRadii = GetPaddingBoxBorderRadii(radii);
+    clipState.ClipContainingBlockDescendants(rect,
+                                             hasRadii ? radii : nullptr);
   }
+
+  BuildDisplayListForChild(aBuilder, mFrames.FirstChild(), set,
+                           DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT);
 
   
   set.Content()->AppendToTop(&onTop);
