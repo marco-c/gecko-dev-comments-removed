@@ -19,7 +19,7 @@ Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-usb-runtimes-mock.js", th
 
 
 
-class UsbMocks {
+class Mocks {
   constructor() {
     
     this.usbRuntimesMock = createUsbRuntimesMock();
@@ -64,7 +64,7 @@ class UsbMocks {
     disableRuntimeClientFactoryMock();
   }
 
-  emitUpdate() {
+  emitUSBUpdate() {
     this._observerMock.emit("runtime-list-updated");
   }
 
@@ -82,7 +82,7 @@ class UsbMocks {
 
 
 
-  createRuntime(id, runtimeInfo = {}) {
+  createUSBRuntime(id, runtimeInfo = {}) {
     
     this._runtimes.push({
       id: id,
@@ -105,7 +105,7 @@ class UsbMocks {
     return mockUsbClient;
   }
 
-  removeRuntime(id) {
+  removeUSBRuntime(id) {
     this._runtimes = this._runtimes.filter(runtime => runtime.id !== id);
     delete this._clients[id];
   }
