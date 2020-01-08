@@ -24,14 +24,6 @@ add_task(async function() {
     await checkPageScrolling(container, "checkbox");
 
     
-    let listbox = doc.getElementById("listbox");
-    let listitem = doc.getElementById("listitem");
-    listbox.focus();
-    EventUtils.sendString(" ");
-    ok(listitem.selected, "Listitem is selected");
-    await checkPageScrolling(container, "listbox");
-
-    
     let radiogroup = doc.getElementById("radiogroup");
     radiogroup.focus();
     EventUtils.sendString(" ");

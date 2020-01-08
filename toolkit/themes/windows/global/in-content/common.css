@@ -54,8 +54,7 @@ html|input[type="checkbox"]:-moz-focusring + html|label:before {
 
 
 @media (-moz-windows-default-theme: 0) {
-  xul|treechildren::-moz-tree-row(selected),
-  xul|listbox xul|listitem[selected="true"] {
+  xul|treechildren::-moz-tree-row(selected) {
      border: 2px dotted Highlight;
   }
 }
