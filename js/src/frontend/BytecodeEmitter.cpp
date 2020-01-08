@@ -29,6 +29,7 @@
 #include "frontend/ForOfLoopControl.h"
 #include "frontend/IfEmitter.h"
 #include "frontend/Parser.h"
+#include "frontend/SwitchEmitter.h"
 #include "frontend/TDZCheckCache.h"
 #include "frontend/TryEmitter.h"
 #include "vm/BytecodeUtil.h"
@@ -2341,38 +2342,27 @@ BytecodeEmitter::emitNumberOp(double dval)
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitSwitch(ParseNode* pn)
 {
-    ParseNode* cases = pn->pn_right;
-    MOZ_ASSERT(cases->isKind(ParseNodeKind::LexicalScope) ||
-               cases->isKind(ParseNodeKind::StatementList));
+    ParseNode* lexical = pn->pn_right;
+    MOZ_ASSERT(lexical->isKind(ParseNodeKind::LexicalScope));
+    ParseNode* cases = lexical->scopeBody();
+    MOZ_ASSERT(cases->isKind(ParseNodeKind::StatementList));
 
-    
-    if (!updateSourceCoordNotes(pn->pn_pos.begin))
+    SwitchEmitter se(this);
+    if (!se.emitDiscriminant(Some(pn->pn_pos.begin)))
         return false;
-
-    
     if (!emitTree(pn->pn_left))
         return false;
 
     
     
-    Maybe<TDZCheckCache> tdzCache;
-    Maybe<EmitterScope> emitterScope;
-    if (cases->isKind(ParseNodeKind::LexicalScope)) {
-        if (!cases->isEmptyScope()) {
-            tdzCache.emplace(this);
-            emitterScope.emplace(this);
-            if (!emitterScope->enterLexical(this, ScopeKind::Lexical, cases->scopeBindings()))
-                return false;
-        }
-
-        
-        cases = cases->scopeBody();
+    if (!lexical->isEmptyScope()) {
+        if (!se.emitLexical(lexical->scopeBindings()))
+            return false;
 
         
         
         
         if (cases->pn_xflags & PNX_FUNCDEFS) {
-            MOZ_ASSERT(emitterScope);
             for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
                 if (caseNode->pn_right->pn_xflags & PNX_FUNCDEFS) {
                     if (!emitHoistedFunctionsInList(caseNode->pn_right))
@@ -2380,305 +2370,104 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
                 }
             }
         }
-    }
-
-    
-    BreakableControl controlInfo(this, StatementKind::Switch);
-
-    ptrdiff_t top = offset();
-
-    
-    uint32_t caseCount = cases->pn_count;
-    if (caseCount > JS_BIT(16)) {
-        reportError(pn, JSMSG_TOO_MANY_CASES);
-        return false;
-    }
-
-    
-    JSOp switchOp = JSOP_TABLESWITCH;
-    uint32_t tableLength = 0;
-    int32_t low, high;
-    bool hasDefault = false;
-    CaseClause* firstCase = cases->pn_head ? &cases->pn_head->as<CaseClause>() : nullptr;
-    if (caseCount == 0 ||
-        (caseCount == 1 && (hasDefault = firstCase->isDefault())))
-    {
-        low = 0;
-        high = -1;
     } else {
-        Vector<size_t, 128, SystemAllocPolicy> intmap;
-        int32_t intmapBitLength = 0;
+        MOZ_ASSERT(!(cases->pn_xflags & PNX_FUNCDEFS));
+    }
 
-        low  = JSVAL_INT_MAX;
-        high = JSVAL_INT_MIN;
-
+    SwitchEmitter::TableGenerator tableGen(this);
+    uint32_t caseCount = cases->pn_count;
+    CaseClause* firstCase = cases->pn_head ? &cases->pn_head->as<CaseClause>() : nullptr;
+    if (caseCount == 0) {
+        tableGen.finish(0);
+    } else if (caseCount == 1 && firstCase->isDefault()) {
+        caseCount = 0;
+        tableGen.finish(0);
+    } else {
         for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
             if (caseNode->isDefault()) {
-                hasDefault = true;
                 caseCount--;  
                 continue;
             }
 
-            if (switchOp == JSOP_CONDSWITCH)
+            if (tableGen.isInvalid())
                 continue;
-
-            MOZ_ASSERT(switchOp == JSOP_TABLESWITCH);
 
             ParseNode* caseValue = caseNode->caseExpression();
 
             if (caseValue->getKind() != ParseNodeKind::Number) {
-                switchOp = JSOP_CONDSWITCH;
+                tableGen.setInvalid();
                 continue;
             }
 
             int32_t i;
             if (!NumberEqualsInt32(caseValue->pn_dval, &i)) {
-                switchOp = JSOP_CONDSWITCH;
+                tableGen.setInvalid();
                 continue;
             }
 
-            if (unsigned(i + int(JS_BIT(15))) >= unsigned(JS_BIT(16))) {
-                switchOp = JSOP_CONDSWITCH;
-                continue;
-            }
-            if (i < low)
-                low = i;
-            if (i > high)
-                high = i;
-
-            
-            
-            
-            if (i < 0)
-                i += JS_BIT(16);
-            if (i >= intmapBitLength) {
-                size_t newLength = NumWordsForBitArrayOfLength(i + 1);
-                if (!intmap.resize(newLength)) {
-                    ReportOutOfMemory(cx);
-                    return false;
-                }
-                intmapBitLength = newLength * BitArrayElementBits;
-            }
-            if (IsBitArrayElementSet(intmap.begin(), intmap.length(), i)) {
-                switchOp = JSOP_CONDSWITCH;
-                continue;
-            }
-            SetBitArrayElement(intmap.begin(), intmap.length(), i);
+            if (!tableGen.addNumber(i))
+                return false;
         }
 
-        
-        
-        if (switchOp == JSOP_TABLESWITCH) {
-            tableLength = uint32_t(high - low + 1);
-            if (tableLength >= JS_BIT(16) || tableLength > 2 * caseCount)
-                switchOp = JSOP_CONDSWITCH;
-        }
+        tableGen.finish(caseCount);
     }
 
-    
-    
-    unsigned noteIndex;
-    size_t switchSize;
-    if (switchOp == JSOP_CONDSWITCH) {
-        
-        switchSize = 0;
-        if (!newSrcNote3(SRC_CONDSWITCH, 0, 0, &noteIndex))
-            return false;
-    } else {
-        MOZ_ASSERT(switchOp == JSOP_TABLESWITCH);
-
-        
-        switchSize = size_t(JUMP_OFFSET_LEN * (3 + tableLength));
-        if (!newSrcNote2(SRC_TABLESWITCH, 0, &noteIndex))
-            return false;
-    }
-
-    
-    MOZ_ASSERT(top == offset());
-    if (!emitN(switchOp, switchSize))
+    if (!se.validateCaseCount(caseCount))
         return false;
 
-    Vector<CaseClause*, 32, SystemAllocPolicy> table;
-
-    JumpList condSwitchDefaultOff;
-    if (switchOp == JSOP_CONDSWITCH) {
-        unsigned caseNoteIndex;
-        bool beforeCases = true;
-        ptrdiff_t lastCaseOffset = -1;
-
-        
-        
-        TDZCheckCache tdzCache(this);
+    bool isTableSwitch = tableGen.isValid();
+    if (isTableSwitch) {
+        if (!se.emitTable(tableGen))
+            return false;
+    } else {
+        if (!se.emitCond())
+            return false;
 
         
         for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
-            ParseNode* caseValue = caseNode->caseExpression();
-
-            
-            
-            if (caseValue) {
-                if (!emitTree(caseValue, ValueUsage::WantValue,
-                              caseValue->isLiteral() ? SUPPRESS_LINENOTE : EMIT_LINENOTE))
-                {
-                    return false;
-                }
-            }
-
-            if (!beforeCases) {
-                
-                if (!setSrcNoteOffset(caseNoteIndex, 0, offset() - lastCaseOffset))
-                    return false;
-            }
-            if (!caseValue) {
-                
+            if (caseNode->isDefault())
                 continue;
-            }
 
-            if (!newSrcNote2(SRC_NEXTCASE, 0, &caseNoteIndex))
-                return false;
-
+            ParseNode* caseValue = caseNode->caseExpression();
             
             
-            
-            JumpList caseJump;
-            if (!emitJump(JSOP_CASE, &caseJump))
-                return false;
-            caseNode->setOffset(caseJump.offset);
-            lastCaseOffset = caseJump.offset;
-
-            if (beforeCases) {
-                
-                unsigned noteCount = notes().length();
-                if (!setSrcNoteOffset(noteIndex, 1, lastCaseOffset - top))
-                    return false;
-                unsigned noteCountDelta = notes().length() - noteCount;
-                if (noteCountDelta != 0)
-                    caseNoteIndex += noteCountDelta;
-                beforeCases = false;
-            }
-        }
-
-        
-        
-        
-        
-        if (!hasDefault &&
-            !beforeCases &&
-            !setSrcNoteOffset(caseNoteIndex, 0, offset() - lastCaseOffset))
-        {
-            return false;
-        }
-
-        
-        if (!emitJump(JSOP_DEFAULT, &condSwitchDefaultOff))
-            return false;
-    } else {
-        MOZ_ASSERT(switchOp == JSOP_TABLESWITCH);
-
-        
-        jsbytecode* pc = code(top + JUMP_OFFSET_LEN);
-
-        
-        SET_JUMP_OFFSET(pc, low);
-        pc += JUMP_OFFSET_LEN;
-        SET_JUMP_OFFSET(pc, high);
-        pc += JUMP_OFFSET_LEN;
-
-        if (tableLength != 0) {
-            if (!table.growBy(tableLength)) {
-                ReportOutOfMemory(cx);
+            if (!emitTree(caseValue, ValueUsage::WantValue,
+                          caseValue->isLiteral() ? SUPPRESS_LINENOTE : EMIT_LINENOTE))
+            {
                 return false;
             }
 
-            for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
-                if (ParseNode* caseValue = caseNode->caseExpression()) {
-                    MOZ_ASSERT(caseValue->isKind(ParseNodeKind::Number));
-
-                    int32_t i = int32_t(caseValue->pn_dval);
-                    MOZ_ASSERT(double(i) == caseValue->pn_dval);
-
-                    i -= low;
-                    MOZ_ASSERT(uint32_t(i) < tableLength);
-                    MOZ_ASSERT(!table[i]);
-                    table[i] = caseNode;
-                }
-            }
+            if (!se.emitCaseJump())
+                return false;
         }
     }
 
-    JumpTarget defaultOffset{ -1 };
-
     
     for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
-        if (switchOp == JSOP_CONDSWITCH && !caseNode->isDefault()) {
-            
-            
-            JumpList caseCond;
-            caseCond.offset = caseNode->offset();
-            if (!emitJumpTargetAndPatch(caseCond))
+        if (caseNode->isDefault()) {
+            if (!se.emitDefaultBody())
                 return false;
+        } else {
+            if (isTableSwitch) {
+                ParseNode* caseValue = caseNode->caseExpression();
+                MOZ_ASSERT(caseValue->isKind(ParseNodeKind::Number));
+
+                int32_t i = int32_t(caseValue->pn_dval);
+                MOZ_ASSERT(double(i) == caseValue->pn_dval);
+
+                if (!se.emitCaseBody(i, tableGen))
+                    return false;
+            } else {
+                if (!se.emitCaseBody())
+                    return false;
+            }
         }
-
-        JumpTarget here;
-        if (!emitJumpTarget(&here))
-            return false;
-        if (caseNode->isDefault())
-            defaultOffset = here;
-
-        
-        
-        
-        
-        caseNode->setOffset(here.offset);
-
-        TDZCheckCache tdzCache(this);
 
         if (!emitTree(caseNode->statementList()))
             return false;
     }
 
-    if (!hasDefault) {
-        
-        if (!emitJumpTarget(&defaultOffset))
-            return false;
-    }
-    MOZ_ASSERT(defaultOffset.offset != -1);
-
-    
-    jsbytecode* pc;
-    if (switchOp == JSOP_CONDSWITCH) {
-        pc = nullptr;
-        patchJumpsToTarget(condSwitchDefaultOff, defaultOffset);
-    } else {
-        MOZ_ASSERT(switchOp == JSOP_TABLESWITCH);
-        pc = code(top);
-        SET_JUMP_OFFSET(pc, defaultOffset.offset - top);
-        pc += JUMP_OFFSET_LEN;
-    }
-
-    
-    if (!setSrcNoteOffset(noteIndex, 0, lastNonJumpTargetOffset() - top))
-        return false;
-
-    if (switchOp == JSOP_TABLESWITCH) {
-        
-        pc += 2 * JUMP_OFFSET_LEN;
-
-        
-        for (uint32_t i = 0; i < tableLength; i++) {
-            CaseClause* caseNode = table[i];
-            ptrdiff_t off = caseNode ? caseNode->offset() - top : 0;
-            SET_JUMP_OFFSET(pc, off);
-            pc += JUMP_OFFSET_LEN;
-        }
-    }
-
-    
-    
-    if (!controlInfo.patchBreaks(this))
-        return false;
-
-    if (emitterScope && !emitterScope->leave(this))
+    if (!se.emitEnd())
         return false;
 
     return true;

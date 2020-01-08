@@ -432,9 +432,6 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
-
-
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -558,7 +555,6 @@ class ParseNode
             union {
                 unsigned iflags;        
                 bool isStatic;          
-                uint32_t offset;        
             };
         } binary;
         struct {                        
@@ -1021,10 +1017,6 @@ class CaseClause : public BinaryNode
 
     
     CaseClause* next() const { return pn_next ? &pn_next->as<CaseClause>() : nullptr; }
-
-    
-    uint32_t offset() const { return pn_u.binary.offset; }
-    void setOffset(uint32_t u) { pn_u.binary.offset = u; }
 
     static bool test(const ParseNode& node) {
         bool match = node.isKind(ParseNodeKind::Case);
