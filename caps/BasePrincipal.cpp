@@ -185,7 +185,7 @@ BasePrincipal::SetCsp(nsIContentSecurityPolicy* aCsp) {
 }
 
 NS_IMETHODIMP
-BasePrincipal::EnsureCSP(dom::Document* aDocument,
+BasePrincipal::EnsureCSP(nsIDocument* aDocument,
                          nsIContentSecurityPolicy** aCSP) {
   if (mCSP) {
     
@@ -213,7 +213,7 @@ BasePrincipal::GetPreloadCsp(nsIContentSecurityPolicy** aPreloadCSP) {
 }
 
 NS_IMETHODIMP
-BasePrincipal::EnsurePreloadCSP(dom::Document* aDocument,
+BasePrincipal::EnsurePreloadCSP(nsIDocument* aDocument,
                                 nsIContentSecurityPolicy** aPreloadCSP) {
   if (mPreloadCSP) {
     
@@ -266,7 +266,7 @@ BasePrincipal::GetIsExpandedPrincipal(bool* aResult) {
 
 NS_IMETHODIMP
 BasePrincipal::GetIsSystemPrincipal(bool* aResult) {
-  *aResult = Kind() == eSystemPrincipal;
+  *aResult = IsSystemPrincipal();
   return NS_OK;
 }
 
