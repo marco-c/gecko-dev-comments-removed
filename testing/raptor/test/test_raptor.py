@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import os
+import sys
 import threading
 import time
 
@@ -9,6 +10,16 @@ import pytest
 
 from mozprofile import BaseProfile
 from mozrunner.errors import RunnerNotStartedError
+
+
+here = os.path.abspath(os.path.dirname(__file__))
+if os.environ.get('SCRIPTSPATH', None) is not None:
+    
+    mozharness_dir = os.environ['SCRIPTSPATH']
+else:
+    
+    mozharness_dir = os.path.join(here, '../../mozharness')
+sys.path.insert(0, mozharness_dir)
 
 from raptor.raptor import Raptor
 
