@@ -18,7 +18,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/StackWalk.h"
 #include "mozilla/VsyncDispatcher.h"
 
 #include "InfallibleVector.h"
@@ -331,46 +330,6 @@ MaybeCreateInitialCheckpoint()
   NewCheckpoint( false);
 }
 
-struct StackWalkData
-{
-  
-  
-  char* mBuf;
-  size_t mSize;
-
-  StackWalkData(char* aBuf, size_t aSize)
-    : mBuf(aBuf), mSize(aSize)
-  {}
-
-  void append(const char* aText) {
-    size_t len = strlen(aText);
-    if (len <= mSize) {
-      memcpy(mBuf, aText, len);
-      mBuf += len;
-      mSize -= len;
-    }
-  }
-};
-
-static void
-StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
-{
-  StackWalkData* data = (StackWalkData*) aClosure;
-
-  MozCodeAddressDetails details;
-  MozDescribeCodeAddress(aPC, &details);
-
-  data->append(" ### ");
-  data->append(details.function[0] ? details.function : "???");
-}
-
-static void
-SetCurrentStackString(const char* aAssertion, char* aBuf, size_t aSize)
-{
-  StackWalkData data(aBuf, aSize);
-  MozStackWalk(StackWalkCallback,  2,  32, &data);
-}
-
 void
 ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat, ...)
 {
@@ -392,13 +351,6 @@ ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat, ...)
   char buf[2048];
   VsprintfLiteral(buf, aFormat, ap);
   va_end(ap);
-
-  
-  
-  if (aMinidump.isNothing()) {
-    size_t len = strlen(buf);
-    SetCurrentStackString(buf, buf + len, sizeof(buf) - len);
-  }
 
   
   char msgBuf[4096];
