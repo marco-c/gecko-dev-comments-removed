@@ -1,7 +1,11 @@
 
 
 
-function promiseBrowserEvent(browserOrFrame, eventType, options) {
+function promiseBrowserEvent(browserOrFrame, eventType, options = {}) {
+  let listenerOptions = { capture: true };
+  if (options.mozSystemGroup) {
+    listenerOptions.mozSystemGroup = true;
+  }
   return new Promise((resolve) => {
     function handle(event) {
       
@@ -11,15 +15,15 @@ function promiseBrowserEvent(browserOrFrame, eventType, options) {
         return;
       }
       info("Received event " + eventType + " from browser");
-      browserOrFrame.removeEventListener(eventType, handle, true);
-      if (options && options.resolveAtNextTick) {
+      browserOrFrame.removeEventListener(eventType, handle, listenerOptions);
+      if (options.resolveAtNextTick) {
         Services.tm.dispatchToMainThread(() => resolve(event));
       } else {
         resolve(event);
       }
     }
 
-    browserOrFrame.addEventListener(eventType, handle, true);
+    browserOrFrame.addEventListener(eventType, handle, listenerOptions);
     info("Now waiting for " + eventType + " event from browser");
   });
 }
