@@ -1245,6 +1245,10 @@ CallMethodHelper::Call()
 CallMethodHelper::~CallMethodHelper()
 {
     for (nsXPTCVariant& param : mDispatchParams) {
+        
+        if (!param.DoesValNeedCleanup())
+            continue;
+
         uint32_t arraylen = 0;
         if (!GetArraySizeFromParam(param.type, UndefinedHandleValue, &arraylen))
             continue;
@@ -1258,7 +1262,7 @@ CallMethodHelper::GetArraySizeFromParam(const nsXPTType& type,
                                         HandleValue maybeArray,
                                         uint32_t* result)
 {
-    if (type.Tag() != nsXPTType::T_LEGACY_ARRAY &&
+    if (type.Tag() != nsXPTType::T_ARRAY &&
         type.Tag() != nsXPTType::T_PSTRING_SIZE_IS &&
         type.Tag() != nsXPTType::T_PWSTRING_SIZE_IS) {
         *result = 0;
@@ -1474,38 +1478,24 @@ CallMethodHelper::InitializeDispatchParams()
     mJSContextIndex = mMethodInfo->IndexOfJSContext();
 
     
-    if (!mDispatchParams.AppendElements(paramCount + wantsJSContext + wantsOptArgc)) {
-        Throw(NS_ERROR_OUT_OF_MEMORY, mCallContext);
-        return false;
+    for (uint8_t i = 0; i < paramCount + wantsJSContext + wantsOptArgc; i++) {
+        nsXPTCVariant* dp = mDispatchParams.AppendElement();
+        dp->ClearFlags();
+        dp->val.p = nullptr;
     }
 
     
-    for (uint8_t i = 0, paramIdx = 0; i < mDispatchParams.Length(); i++) {
-        nsXPTCVariant& dp = mDispatchParams[i];
+    if (wantsJSContext) {
+        nsXPTCVariant* dp = &mDispatchParams[mJSContextIndex];
+        dp->type = nsXPTType::T_VOID;
+        dp->val.p = mCallContext;
+    }
 
-        if (i == mJSContextIndex) {
-            
-            dp.type = nsXPTType::T_VOID;
-            dp.val.p = mCallContext;
-        } else if (i == mOptArgcIndex) {
-            
-            dp.type = nsXPTType::T_U8;
-            dp.val.u8 = std::min<uint32_t>(mArgc, paramCount) - requiredArgs;
-        } else {
-            
-            const nsXPTParamInfo& param = mMethodInfo->Param(paramIdx);
-            dp.type = param.Type();
-            xpc::InitializeValue(dp.type, &dp.val);
-
-            
-            
-            if (param.IsIndirect()) {
-                dp.SetIndirect();
-            }
-
-            
-            paramIdx++;
-        }
+    
+    if (wantsOptArgc) {
+        nsXPTCVariant* dp = &mDispatchParams[mOptArgcIndex];
+        dp->type = nsXPTType::T_U8;
+        dp->val.u8 = std::min<uint32_t>(mArgc, paramCount) - requiredArgs;
     }
 
     return true;
@@ -1532,8 +1522,40 @@ bool
 CallMethodHelper::ConvertIndependentParam(uint8_t i)
 {
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
-    const nsXPTType& type = paramInfo.Type();
+    const nsXPTType& type = paramInfo.GetType();
     nsXPTCVariant* dp = GetDispatchParam(i);
+    dp->type = type;
+    MOZ_ASSERT(!paramInfo.IsShared(), "[shared] implies [noscript]!");
+
+    
+    if (paramInfo.IsIndirect())
+        dp->SetIndirect();
+
+    
+    
+    
+    switch (type.Tag()) {
+        
+        case nsXPTType::T_JSVAL:
+            new (&dp->ext.jsval) JS::Value();
+            MOZ_ASSERT(dp->ext.jsval.isUndefined());
+            break;
+
+        
+        
+        case nsXPTType::T_ASTRING:
+        case nsXPTType::T_DOMSTRING:
+            new (&dp->ext.nsstr) nsString();
+            break;
+        case nsXPTType::T_CSTRING:
+        case nsXPTType::T_UTF8STRING:
+            new (&dp->ext.nscstr) nsCString();
+            break;
+    }
+
+    
+    if (!type.IsArithmetic())
+        dp->SetValNeedsCleanup();
 
     
     
@@ -1619,8 +1641,18 @@ bool
 CallMethodHelper::ConvertDependentParam(uint8_t i)
 {
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
-    const nsXPTType& type = paramInfo.Type();
+    const nsXPTType& type = paramInfo.GetType();
+
     nsXPTCVariant* dp = GetDispatchParam(i);
+    dp->type = type;
+
+    
+    if (paramInfo.IsIndirect())
+        dp->SetIndirect();
+
+    
+    
+    dp->SetValNeedsCleanup();
 
     
     
@@ -1680,18 +1712,14 @@ TraceParam(JSTracer* aTrc, void* aVal, const nsXPTType& aType,
     if (aType.Tag() == nsXPTType::T_JSVAL) {
         JS::UnsafeTraceRoot(aTrc, (JS::Value*)aVal,
                             "XPCWrappedNative::CallMethod param");
-    } else if (aType.Tag() == nsXPTType::T_ARRAY) {
-        auto* array = (xpt::detail::UntypedTArray*)aVal;
+    } else if (aType.Tag() == nsXPTType::T_ARRAY && *(void**)aVal) {
         const nsXPTType& elty = aType.ArrayElementType();
-
-        for (uint32_t i = 0; i < array->Length(); ++i) {
-            TraceParam(aTrc, elty.ElementPtr(array->Elements(), i), elty);
+        if (elty.Tag() != nsXPTType::T_JSVAL) {
+            return;
         }
-    } else if (aType.Tag() == nsXPTType::T_LEGACY_ARRAY && *(void**)aVal) {
-        const nsXPTType& elty = aType.ArrayElementType();
 
         for (uint32_t i = 0; i < aArrayLen; ++i) {
-            TraceParam(aTrc, elty.ElementPtr(*(void**)aVal, i), elty);
+            TraceParam(aTrc, elty.ElementPtr(aVal, i), elty);
         }
     }
 }
@@ -1701,8 +1729,9 @@ CallMethodHelper::trace(JSTracer* aTrc)
 {
     
     for (nsXPTCVariant& param : mDispatchParams) {
-        
-        if (param.type.InnermostType().Tag() != nsXPTType::T_JSVAL) {
+        if (!param.DoesValNeedCleanup()) {
+            MOZ_ASSERT(param.type.Tag() != nsXPTType::T_JSVAL,
+                       "JSVals are marked as needing cleanup (even though they don't)");
             continue;
         }
 

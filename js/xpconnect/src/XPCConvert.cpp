@@ -58,7 +58,7 @@ XPCConvert::IsMethodReflectable(const nsXPTMethodInfo& info)
 
         
         
-        if (type.Tag() == nsXPTType::T_VOID)
+        if (type.TagPart() == nsXPTType::T_VOID)
             return false;
     }
     return true;
@@ -108,7 +108,7 @@ XPCConvert::NativeData2JS(MutableHandleValue d, const void* s,
     if (pErr)
         *pErr = NS_ERROR_XPC_BAD_CONVERT_NATIVE;
 
-    switch (type.Tag()) {
+    switch (type.TagPart()) {
     case nsXPTType::T_I8    :
         d.setInt32(*static_cast<const int8_t*>(s));
         return true;
@@ -385,16 +385,9 @@ XPCConvert::NativeData2JS(MutableHandleValue d, const void* s,
         return true;
     }
 
-    case nsXPTType::T_LEGACY_ARRAY:
-        return NativeArray2JS(d, *static_cast<const void* const*>(s),
-                              type.ArrayElementType(), iid, arrlen, pErr);
-
     case nsXPTType::T_ARRAY:
-    {
-        auto* array = static_cast<const xpt::detail::UntypedTArray*>(s);
-        return NativeArray2JS(d, array->Elements(), type.ArrayElementType(),
-                              iid, array->Length(), pErr);
-    }
+        return NativeArray2JS(d, static_cast<const void* const*>(s),
+                              type.ArrayElementType(), iid, arrlen, pErr);
 
     default:
         NS_ERROR("bad type");
@@ -455,7 +448,7 @@ XPCConvert::JSData2Native(void* d, HandleValue s,
     bool sizeis = type.Tag() == TD_PSTRING_SIZE_IS ||
         type.Tag() == TD_PWSTRING_SIZE_IS;
 
-    switch (type.Tag()) {
+    switch (type.TagPart()) {
     case nsXPTType::T_I8     :
         return ConvertToPrimitive(cx, s, static_cast<int8_t*>(d));
     case nsXPTType::T_I16    :
@@ -841,70 +834,9 @@ XPCConvert::JSData2Native(void* d, HandleValue s,
         return ok;
     }
 
-    case nsXPTType::T_LEGACY_ARRAY:
-    {
-        void** dest = (void**)d;
-        const nsXPTType& elty = type.ArrayElementType();
-
-        *dest = nullptr;
-
-        
-        
-        
-        
-        
-        
-        if (arrlen == 0) {
-            return true;
-        }
-
-        bool ok = JSArray2Native(s, elty, iid, pErr, [&] (uint32_t* aLength) -> void* {
-            
-            if (*aLength < arrlen) {
-                if (pErr)
-                    *pErr = NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY;
-                return nullptr;
-            }
-            *aLength = arrlen;
-
-            
-            *dest = moz_xmalloc(*aLength * elty.Stride());
-            if (!*dest) {
-                if (pErr)
-                    *pErr = NS_ERROR_OUT_OF_MEMORY;
-                return nullptr;
-            }
-            return *dest;
-        });
-
-        if (!ok && *dest) {
-            
-            free(*dest);
-            *dest = nullptr;
-        }
-        return ok;
-    }
-
     case nsXPTType::T_ARRAY:
-    {
-        auto* dest = (xpt::detail::UntypedTArray*)d;
-        const nsXPTType& elty = type.ArrayElementType();
-
-        bool ok = JSArray2Native(s, elty, iid, pErr, [&] (uint32_t* aLength) -> void* {
-            if (!dest->SetLength(elty, *aLength)) {
-                if (pErr)
-                    *pErr = NS_ERROR_OUT_OF_MEMORY;
-                return nullptr;
-            }
-            return dest->Elements();
-        });
-
-        if (!ok) {
-            
-            dest->Clear();
-        }
-        return ok;
-    }
+        return JSArray2Native((void**)d, s, arrlen,
+                              type.ArrayElementType(), iid, pErr);
 
     default:
         NS_ERROR("bad type");
@@ -1400,15 +1332,38 @@ XPCConvert::JSValToXPCException(MutableHandleValue s,
 
 
 
+static bool
+ValidArrayType(const nsXPTType& type)
+{
+    switch (type.Tag()) {
+        
+        case nsXPTType::T_VOID:
+        case nsXPTType::T_DOMSTRING:
+        case nsXPTType::T_UTF8STRING:
+        case nsXPTType::T_CSTRING:
+        case nsXPTType::T_ASTRING:
+        case nsXPTType::T_PSTRING_SIZE_IS:
+        case nsXPTType::T_PWSTRING_SIZE_IS:
+        case nsXPTType::T_ARRAY:
+            return false;
+        default:
+            return true;
+    }
+}
+
 
 bool
-XPCConvert::NativeArray2JS(MutableHandleValue d, const void* buf,
+XPCConvert::NativeArray2JS(MutableHandleValue d, const void* const* s,
                            const nsXPTType& type, const nsID* iid,
                            uint32_t count, nsresult* pErr)
 {
-    MOZ_ASSERT(buf || count == 0, "Must have buf or 0 elements");
+    MOZ_ASSERT(s, "bad param");
 
     AutoJSContext cx;
+
+    
+
+    
 
     RootedObject array(cx, JS_NewArrayObject(cx, count));
     if (!array)
@@ -1417,9 +1372,12 @@ XPCConvert::NativeArray2JS(MutableHandleValue d, const void* buf,
     if (pErr)
         *pErr = NS_ERROR_XPC_BAD_CONVERT_NATIVE;
 
+    if (!ValidArrayType(type))
+        return false;
+
     RootedValue current(cx, JS::NullValue());
     for (uint32_t i = 0; i < count; ++i) {
-        if (!NativeData2JS(&current, type.ElementPtr(buf, i), type, iid, 0, pErr) ||
+        if (!NativeData2JS(&current, type.ElementPtr(*s, i), type, iid, 0, pErr) ||
             !JS_DefineElement(cx, array, i, current, JSPROP_ENUMERATE))
             return false;
     }
@@ -1431,122 +1389,222 @@ XPCConvert::NativeArray2JS(MutableHandleValue d, const void* buf,
 }
 
 
+
+
+
+
+
+
+
+
+
+
 bool
-XPCConvert::JSArray2Native(JS::HandleValue aJSVal,
-                           const nsXPTType& aEltType,
-                           const nsIID* aIID,
-                           nsresult* pErr,
-                           const ArrayAllocFixupLen& aAllocFixupLen)
+XPCConvert::JSTypedArray2Native(void** d,
+                                JSObject* jsArray,
+                                uint32_t count,
+                                const nsXPTType& type,
+                                nsresult* pErr)
 {
+    MOZ_ASSERT(jsArray, "bad param");
+    MOZ_ASSERT(d, "bad param");
+    MOZ_ASSERT(JS_IsTypedArrayObject(jsArray), "not a typed array");
+
     
     
-    auto allocFixupLen = [&] (uint32_t* aLength) -> void* {
-        if (*aLength > (UINT32_MAX / aEltType.Stride())) {
-            return nullptr; 
-        }
+    uint32_t len = JS_GetTypedArrayLength(jsArray);
+    if (len < count) {
+        if (pErr)
+            *pErr = NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY;
 
-        void* buf = aAllocFixupLen(aLength);
+        return false;
+    }
 
-        
-        
-        if (buf && !aEltType.IsArithmetic()) {
-            for (uint32_t i = 0; i < *aLength; ++i) {
-                InitializeValue(aEltType, aEltType.ElementPtr(buf, i));
-            }
-        }
-        return buf;
-    };
+    uint8_t expected;
+    switch (JS_GetArrayBufferViewType(jsArray)) {
+    case js::Scalar::Int8:
+        expected = nsXPTType::T_I8;
+        break;
+
+    case js::Scalar::Uint8:
+    case js::Scalar::Uint8Clamped:
+        expected = nsXPTType::T_U8;
+        break;
+
+    case js::Scalar::Int16:
+        expected = nsXPTType::T_I16;
+        break;
+
+    case js::Scalar::Uint16:
+        expected = nsXPTType::T_U16;
+        break;
+
+    case js::Scalar::Int32:
+        expected = nsXPTType::T_I32;
+        break;
+
+    case js::Scalar::Uint32:
+        expected = nsXPTType::T_U32;
+        break;
+
+    case js::Scalar::Float32:
+        expected = nsXPTType::T_FLOAT;
+        break;
+
+    case js::Scalar::Float64:
+        expected = nsXPTType::T_DOUBLE;
+        break;
+
+    
+    default:
+        if (pErr)
+            *pErr = NS_ERROR_XPC_BAD_CONVERT_JS;
+        return false;
+    }
+
+    
+    if (expected != type.Tag()) {
+        if (pErr)
+            *pErr = NS_ERROR_XPC_BAD_CONVERT_JS;
+        return false;
+    }
+
+    
+    if (count > (UINT32_MAX / type.Stride())) {
+        if (pErr)
+            *pErr = NS_ERROR_OUT_OF_MEMORY;
+        return false;
+    }
+
+    
+    JS::AutoCheckCannotGC nogc;
+    bool isShared;
+    void* buf = JS_GetArrayBufferViewData(jsArray, &isShared, nogc);
+
+    
+    if (isShared) {
+        if (pErr)
+            *pErr = NS_ERROR_XPC_BAD_CONVERT_JS;
+        return false;
+    }
+
+    
+    *d = moz_xmalloc(count * type.Stride());
+    if (!*d) {
+        if (pErr)
+            *pErr = NS_ERROR_OUT_OF_MEMORY;
+        return false;
+    }
+
+    memcpy(*d, buf, count * type.Stride());
+
+    if (pErr)
+        *pErr = NS_OK;
+
+    return true;
+}
+
+
+bool
+XPCConvert::JSArray2Native(void** d, HandleValue s,
+                           uint32_t count, const nsXPTType& type,
+                           const nsID* iid, nsresult* pErr)
+{
+    MOZ_ASSERT(d, "bad param");
 
     AutoJSContext cx;
 
     
-    if (!aJSVal.isObject()) {
-        if (pErr)
-            *pErr = NS_ERROR_XPC_CANT_CONVERT_PRIMITIVE_TO_ARRAY;
-        return false;
-    }
-    RootedObject jsarray(cx, &aJSVal.toObject());
-
-    if (pErr)
-        *pErr = NS_ERROR_XPC_BAD_CONVERT_JS;
-
-    if (JS_IsTypedArrayObject(jsarray)) {
-        
-        
-        
-        
-        
-        
-
-        nsXPTTypeTag tag;
-        switch (JS_GetArrayBufferViewType(jsarray)) {
-            case js::Scalar::Int8:         tag = TD_INT8;   break;
-            case js::Scalar::Uint8:        tag = TD_UINT8;  break;
-            case js::Scalar::Uint8Clamped: tag = TD_UINT8;  break;
-            case js::Scalar::Int16:        tag = TD_INT16;  break;
-            case js::Scalar::Uint16:       tag = TD_UINT16; break;
-            case js::Scalar::Int32:        tag = TD_INT32;  break;
-            case js::Scalar::Uint32:       tag = TD_UINT32; break;
-            case js::Scalar::Float32:      tag = TD_FLOAT;  break;
-            case js::Scalar::Float64:      tag = TD_DOUBLE; break;
-            default:                       return false;
-        }
-        if (aEltType.Tag() != tag) {
-            return false;
-        }
-
-        
-        JS::AutoCheckCannotGC nogc;
-        bool isShared = false;
-        const void* data = JS_GetArrayBufferViewData(jsarray, &isShared, nogc);
-
-        
-        if (isShared) {
-            return false;
-        }
-
-        uint32_t length = JS_GetTypedArrayLength(jsarray);
-        void* buf = allocFixupLen(&length);
-        if (!buf) {
-            return false;
-        }
-
-        
-        memcpy(buf, data, length * aEltType.Stride());
+    
+    
+    
+    
+    
+    if (count == 0) {
+        *d = nullptr;
         return true;
     }
 
     
-    uint32_t length = 0;
-    bool isArray = false;
-    if (!JS_IsArrayObject(cx, jsarray, &isArray) || !isArray ||
-        !JS_GetArrayLength(cx, jsarray, &length)) {
+
+    
+
+    if (pErr)
+        *pErr = NS_ERROR_XPC_BAD_CONVERT_JS;
+
+    if (!ValidArrayType(type))
+        return false;
+
+    if (s.isNullOrUndefined()) {
+        if (pErr)
+            *pErr = NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY;
+        return false;
+    }
+
+    if (!s.isObject()) {
+        if (pErr)
+            *pErr = NS_ERROR_XPC_CANT_CONVERT_PRIMITIVE_TO_ARRAY;
+        return false;
+    }
+
+    RootedObject jsarray(cx, &s.toObject());
+
+    
+    if (JS_IsTypedArrayObject(jsarray)) {
+        return JSTypedArray2Native(d, jsarray, count, type, pErr);
+    }
+
+    bool isArray;
+    if (!JS_IsArrayObject(cx, jsarray, &isArray) || !isArray) {
         if (pErr)
             *pErr = NS_ERROR_XPC_CANT_CONVERT_OBJECT_TO_ARRAY;
         return false;
     }
 
-    void* buf = allocFixupLen(&length);
-    if (!buf) {
+    uint32_t len;
+    if (!JS_GetArrayLength(cx, jsarray, &len) || len < count) {
+        if (pErr)
+            *pErr = NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY;
+        return false;
+    }
+
+    if (count > (UINT32_MAX / type.Stride())) {
+        if (pErr)
+            *pErr = NS_ERROR_OUT_OF_MEMORY;
         return false;
     }
 
     
-    RootedValue current(cx);
-    for (uint32_t i = 0; i < length; ++i) {
-        if (!JS_GetElement(cx, jsarray, i, &current) ||
-            !JSData2Native(aEltType.ElementPtr(buf, i), current,
-                           aEltType, aIID, 0, pErr)) {
-            
-            
-            for (uint32_t j = 0; j < i; ++j) {
-                CleanupValue(aEltType, aEltType.ElementPtr(buf, j));
-            }
-            return false;
-        }
+    *d = moz_xmalloc(count * type.Stride());
+    if (!*d) {
+        if (pErr)
+            *pErr = NS_ERROR_OUT_OF_MEMORY;
+        return false;
     }
 
-    return true;
+    RootedValue current(cx);
+    uint32_t initedCount;
+    for (initedCount = 0; initedCount < count; ++initedCount) {
+        if (!JS_GetElement(cx, jsarray, initedCount, &current) ||
+            !JSData2Native(type.ElementPtr(*d, initedCount),
+                           current, type, iid, 0, pErr))
+            break;
+    }
+
+    
+    if (initedCount == count) {
+        if (pErr)
+            *pErr = NS_OK;
+        return true;
+    }
+
+    
+    for (uint32_t i = 0; i < initedCount; ++i) {
+        CleanupValue(type, type.ElementPtr(*d, i));
+    }
+    free(*d);
+    *d = nullptr;
+    return false;
 }
 
 
@@ -1561,7 +1619,7 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
     MOZ_ASSERT(aArrayLen == 0 ||
                aType.Tag() == nsXPTType::T_PSTRING_SIZE_IS ||
                aType.Tag() == nsXPTType::T_PWSTRING_SIZE_IS ||
-               aType.Tag() == nsXPTType::T_LEGACY_ARRAY,
+               aType.Tag() == nsXPTType::T_ARRAY,
                "Array lengths may only appear for certain types!");
 
     switch (aType.Tag()) {
@@ -1599,7 +1657,7 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
             break;
 
         
-        case nsXPTType::T_LEGACY_ARRAY:
+        case nsXPTType::T_ARRAY:
         {
             const nsXPTType& elty = aType.ArrayElementType();
             void* elements = *(void**)aValue;
@@ -1610,69 +1668,10 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
             free(elements);
             break;
         }
-
-        
-        case nsXPTType::T_ARRAY:
-        {
-            const nsXPTType& elty = aType.ArrayElementType();
-            auto* array = (xpt::detail::UntypedTArray*)aValue;
-
-            for (uint32_t i = 0; i < array->Length(); ++i) {
-                CleanupValue(elty, elty.ElementPtr(array->Elements(), i));
-            }
-            array->Clear();
-            break;
-        }
-
-        
-        case nsXPTType::T_JSVAL:
-            ((JS::Value*)aValue)->setUndefined();
-            break;
-
-        
-        case nsXPTType::T_VOID:
-            break;
-
-        default:
-            MOZ_CRASH("Unknown Type!");
     }
 
     
-    if (!aType.IsComplex()) {
-        aType.ZeroValue(aValue);
-    }
-}
-
-
-
-
-
-void
-xpc::InitializeValue(const nsXPTType& aType, void* aValue)
-{
-    switch (aType.Tag()) {
-        
-        case nsXPTType::T_JSVAL:
-            new (aValue) JS::Value();
-            MOZ_ASSERT(reinterpret_cast<JS::Value*>(aValue)->isUndefined());
-            break;
-
-        case nsXPTType::T_ASTRING:
-        case nsXPTType::T_DOMSTRING:
-            new (aValue) nsString();
-            break;
-        case nsXPTType::T_CSTRING:
-        case nsXPTType::T_UTF8STRING:
-            new (aValue) nsCString();
-            break;
-
-        case nsXPTType::T_ARRAY:
-            new (aValue) xpt::detail::UntypedTArray();
-            break;
-
-        
-        default:
-            aType.ZeroValue(aValue);
-            break;
+    if (aType.HasPointerRepr()) {
+        *(void**)aValue = nullptr;
     }
 }

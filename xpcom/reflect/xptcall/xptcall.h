@@ -45,6 +45,8 @@ static_assert(offsetof(nsXPTCMiniVariant, val) == 0,
 
 struct nsXPTCVariant
 {
+
+
     union ExtendedVal
     {
     
@@ -58,7 +60,6 @@ struct nsXPTCVariant
         nsCString  nscstr;
         nsString   nsstr;
         JS::Value  jsval;
-        xpt::detail::UntypedTArray array;
 
         
         
@@ -78,12 +79,6 @@ struct nsXPTCVariant
     nsXPTType type;
     uint8_t   flags;
 
-    
-    nsXPTCVariant() {
-        memset(this, 0, sizeof(nsXPTCVariant));
-        type = nsXPTType::T_VOID;
-    }
-
     enum
     {
         
@@ -93,12 +88,22 @@ struct nsXPTCVariant
         
         
         IS_INDIRECT    = 0x1,
+
+        
+        
+        
+        
+        
+        
+        VAL_NEEDS_CLEANUP = 0x2
     };
 
     void ClearFlags()         {flags = 0;}
     void SetIndirect()        {flags |= IS_INDIRECT;}
+    void SetValNeedsCleanup() {flags |= VAL_NEEDS_CLEANUP;}
 
     bool IsIndirect()         const  {return 0 != (flags & IS_INDIRECT);}
+    bool DoesValNeedCleanup() const  {return 0 != (flags & VAL_NEEDS_CLEANUP);}
 
     
     operator nsXPTCMiniVariant&() {
@@ -110,6 +115,7 @@ struct nsXPTCVariant
 
     
     
+    nsXPTCVariant() { }
     ~nsXPTCVariant() { }
 };
 

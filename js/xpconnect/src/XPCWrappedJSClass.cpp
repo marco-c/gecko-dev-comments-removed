@@ -672,7 +672,7 @@ nsXPCWrappedJSClass::GetArraySizeFromParam(const nsXPTMethodInfo* method,
                                            nsXPTCMiniVariant* nativeParams,
                                            uint32_t* result) const
 {
-    if (type.Tag() != nsXPTType::T_LEGACY_ARRAY &&
+    if (type.Tag() != nsXPTType::T_ARRAY &&
         type.Tag() != nsXPTType::T_PSTRING_SIZE_IS &&
         type.Tag() != nsXPTType::T_PWSTRING_SIZE_IS) {
         *result = 0;
@@ -749,27 +749,25 @@ nsXPCWrappedJSClass::CleanupOutparams(const nsXPTMethodInfo* info,
         if (!param.IsOut())
             continue;
 
+        
+        uint32_t arrayLen = 0;
+        if (!GetArraySizeFromParam(info, param.Type(), nativeParams, &arrayLen))
+            continue;
+
         MOZ_ASSERT(param.IsIndirect(), "Outparams are always indirect");
 
         
         
         
-        
-        
-        
-        
-        if (param.Type().IsComplex() || param.IsIn() || !inOutOnly) {
-            uint32_t arrayLen = 0;
-            if (!GetArraySizeFromParam(info, param.Type(), nativeParams, &arrayLen))
-                continue;
-
+        if (!inOutOnly || param.IsIn()) {
             xpc::CleanupValue(param.Type(), nativeParams[i].val.p, arrayLen);
         }
 
         
         
-        if (!param.Type().IsComplex()) {
-            param.Type().ZeroValue(nativeParams[i].val.p);
+        
+        if (param.Type().HasPointerRepr()) {
+            *(void**)nativeParams[i].val.p = nullptr;
         }
     }
 }
