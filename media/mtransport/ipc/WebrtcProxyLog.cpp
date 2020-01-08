@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "WebrtcProxyLog.h"
+
+namespace mozilla {
+namespace net {
+LazyLogModule webrtcProxyLog("webrtcProxy");
+} 
+} 

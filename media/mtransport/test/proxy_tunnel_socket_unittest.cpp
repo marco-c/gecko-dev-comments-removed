@@ -6,20 +6,14 @@
 
 
 
-#include <iostream>
+#include <vector>
+#include <numeric>
 
-extern "C" {
-#include "nr_api.h"
-#include "nr_socket.h"
-#include "nr_proxy_tunnel.h"
-#include "transport_addr.h"
-#include "stun.h"
-}
+#include "mozilla/dom/PBrowserOrId.h"
 
-#include "dummysocket.h"
-
-#include "nr_socket_prsock.h"
-#include "nriceresolverfake.h"
+#include "nr_socket_proxy.h"
+#include "nr_socket_proxy_config.h"
+#include "WebrtcProxyChannelWrapper.h"
 
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"
@@ -27,313 +21,284 @@ extern "C" {
 
 using namespace mozilla;
 
-const std::string kRemoteAddr = "192.0.2.133";
-const uint16_t kRemotePort = 3333;
 
-const std::string kProxyHost = "example.com";
-const std::string kProxyAddr = "192.0.2.134";
-const uint16_t kProxyPort = 9999;
+const std::string kHelloMessage = "HELLO IS IT ME YOU'RE LOOKING FOR?";
 
-const std::string kHelloMessage = "HELLO";
-const std::string kGarbageMessage = "xxxxxxxxxx";
+typedef mozilla::dom::PBrowserOrId PBrowserOrId;
 
-std::string connect_message(const std::string &host, uint16_t port, const std::string &alpn, const std::string &tail) {
-  std::stringstream ss;
-  ss << "CONNECT " << host << ":" << port << " HTTP/1.0\r\n";
-  if (!alpn.empty()) {
-    ss << "ALPN: " << alpn << "\r\n";
-  }
-  ss << "\r\n" << tail;
-  return ss.str();
-}
-
-std::string connect_response(int code, const std::string &tail = "") {
-  std::stringstream ss;
-  ss << "HTTP/1.0 " << code << "\r\n\r\n" << tail;
-  return ss.str();
-}
-
-class DummyResolver {
+class NrSocketProxyTest : public MtransportTest {
  public:
-  DummyResolver() {
-    vtbl_ = new nr_resolver_vtbl;
-    vtbl_->destroy = &DummyResolver::destroy;
-    vtbl_->resolve = &DummyResolver::resolve;
-    vtbl_->cancel = &DummyResolver::cancel;
-    nr_resolver_create_int((void *)this, vtbl_, &resolver_);
-  }
-
-  ~DummyResolver() {
-    nr_resolver_destroy(&resolver_);
-    delete vtbl_;
-  }
-
-  static int destroy(void **objp) {
-    return 0;
-  }
-
-  static int resolve(void *obj,
-                     nr_resolver_resource *resource,
-                     int (*cb)(void *cb_arg, nr_transport_addr *addr),
-                     void *cb_arg,
-                     void **handle) {
-    nr_transport_addr addr;
-
-    nr_str_port_to_transport_addr(
-        (char *)kProxyAddr.c_str(), kProxyPort, IPPROTO_TCP, &addr);
-
-    cb(cb_arg, &addr);
-    return 0;
-  }
-
-  static int cancel(void *obj, void *handle) {
-    return 0;
-  }
-
-  nr_resolver *get_nr_resolver() {
-    return resolver_;
-  }
-
- private:
-  nr_resolver_vtbl *vtbl_;
-  nr_resolver *resolver_;
-};
-
-class ProxyTunnelSocketTest : public MtransportTest {
- public:
-  ProxyTunnelSocketTest()
-      : socket_impl_(nullptr),
-        nr_socket_(nullptr) {}
-
-  ~ProxyTunnelSocketTest() {
-    nr_socket_destroy(&nr_socket_);
-    nr_proxy_tunnel_config_destroy(&config_);
-  }
+  NrSocketProxyTest()
+    : mSProxy(nullptr)
+    , nr_socket_(nullptr)
+    , mEmptyArray(0)
+    , mReadChunkSize(0)
+    , mReadChunkSizeIncrement(1)
+    , mReadAllowance(-1)
+    , mConnected(false) {}
 
   void SetUp() override {
-    MtransportTest::SetUp();
-
-    nr_resolver_ = resolver_impl_.get_nr_resolver();
-
-    int r = nr_str_port_to_transport_addr(
-        (char *)kRemoteAddr.c_str(), kRemotePort, IPPROTO_TCP, &remote_addr_);
+    nsCString alpn = NS_LITERAL_CSTRING("webrtc");
+    std::shared_ptr<NrSocketProxyConfig> config;
+    config.reset(new NrSocketProxyConfig(PBrowserOrId(), alpn));
+    
+    mSProxy = new NrSocketProxy(config);
+    int r = nr_socket_create_int((void*)mSProxy.get(),
+                                 mSProxy->vtbl(),
+                                 &nr_socket_);
     ASSERT_EQ(0, r);
 
-    r = nr_str_port_to_transport_addr(
-        (char *)kProxyAddr.c_str(), kProxyPort, IPPROTO_TCP, &proxy_addr_);
-    ASSERT_EQ(0, r);
-
-    nr_proxy_tunnel_config_create(&config_);
-    nr_proxy_tunnel_config_set_resolver(config_, nr_resolver_);
-    nr_proxy_tunnel_config_set_proxy(config_, kProxyAddr.c_str(), kProxyPort);
-
-    Configure();
+    
+    mSProxy->AssignChannel_DoNotUse(new WebrtcProxyChannelWrapper(nullptr));
   }
 
-  
-  void Configure() {
-    if (nr_socket_) {
-      EXPECT_EQ(0, nr_socket_destroy(&nr_socket_));
-      EXPECT_EQ(nullptr, nr_socket_);
+  void TearDown() override {
+    mSProxy->close();
+  }
+
+  static void readable_cb(NR_SOCKET s, int how, void *cb_arg) {
+    NrSocketProxyTest* test = (NrSocketProxyTest*) cb_arg;
+    size_t capacity = std::min(test->mReadChunkSize, test->mReadAllowance);
+    nsTArray<uint8_t> array(capacity);
+    size_t read;
+
+    nr_socket_read(test->nr_socket_,
+                   (char*)array.Elements(),
+                   array.Capacity(),
+                   &read,
+                   0);
+
+    ASSERT_TRUE(read <= array.Capacity());
+    ASSERT_TRUE(test->mReadAllowance >= read);
+
+    array.SetLength(read);
+    test->mData.AppendElements(array);
+    test->mReadAllowance -= read;
+
+    
+    
+    test->mReadChunkSize += test->mReadChunkSizeIncrement;
+
+    if (test->mReadAllowance > 0) {
+      NR_ASYNC_WAIT(s, how, &NrSocketProxyTest::readable_cb, cb_arg);
     }
-
-    RefPtr<DummySocket> dummy(new DummySocket());
-    int r = nr_socket_proxy_tunnel_create(
-        config_,
-        dummy->get_nr_socket(),
-        &nr_socket_);
-    ASSERT_EQ(0, r);
-
-    socket_impl_ = dummy.forget();  
   }
 
-  void Connect(int expectedReturn = 0) {
-    int r = nr_socket_connect(nr_socket_, &remote_addr_);
-    EXPECT_EQ(expectedReturn, r);
-
-    size_t written = 0;
-    r = nr_socket_write(nr_socket_, kHelloMessage.c_str(), kHelloMessage.size(), &written, 0);
-    EXPECT_EQ(0, r);
-    EXPECT_EQ(kHelloMessage.size(), written);
+  static void writable_cb(NR_SOCKET s, int how, void *cb_arg) {
+    NrSocketProxyTest* test = (NrSocketProxyTest*) cb_arg;
+    test->mConnected = true;
   }
 
-  nr_socket *socket() { return nr_socket_; }
+  const std::string DataString() {
+    return std::string((char*)mData.Elements(), mData.Length());
+  }
 
  protected:
-  RefPtr<DummySocket> socket_impl_;
-  DummyResolver resolver_impl_;
+  RefPtr<NrSocketProxy> mSProxy;
   nr_socket *nr_socket_;
-  nr_resolver *nr_resolver_;
-  nr_proxy_tunnel_config *config_;
-  nr_transport_addr proxy_addr_;
-  nr_transport_addr remote_addr_;
+
+  nsTArray<uint8_t> mData;
+  nsTArray<uint8_t> mEmptyArray;
+
+  uint32_t mReadChunkSize;
+  uint32_t mReadChunkSizeIncrement;
+  uint32_t mReadAllowance;
+
+  bool mConnected;
 };
 
-
-TEST_F(ProxyTunnelSocketTest, TestCreate) {
+TEST_F(NrSocketProxyTest, TestCreate) {
 }
 
-TEST_F(ProxyTunnelSocketTest, TestConnectProxyAddress) {
-  int r = nr_socket_connect(nr_socket_, &remote_addr_);
-  ASSERT_EQ(0, r);
+TEST_F(NrSocketProxyTest, TestConnected) {
+  ASSERT_TRUE(!mConnected);
 
-  ASSERT_EQ(0, nr_transport_addr_cmp(socket_impl_->get_connect_addr(), &proxy_addr_,
-        NR_TRANSPORT_ADDR_CMP_MODE_ALL));
+  NR_ASYNC_WAIT(mSProxy,
+                NR_ASYNC_WAIT_WRITE,
+                &NrSocketProxyTest::writable_cb,
+                this);
+
+  
+  ASSERT_TRUE(!mConnected);
+
+  mSProxy->OnConnected();
+
+  ASSERT_TRUE(mConnected);
 }
 
+TEST_F(NrSocketProxyTest, TestRead) {
+  nsTArray<uint8_t> array;
+  array.AppendElements(kHelloMessage.c_str(), kHelloMessage.length());
 
-TEST_F(ProxyTunnelSocketTest, DISABLED_TestConnectProxyRequest) {
-  Connect();
+  NR_ASYNC_WAIT(mSProxy,
+                NR_ASYNC_WAIT_READ,
+                &NrSocketProxyTest::readable_cb,
+                this);
+  
+  mSProxy->OnRead(std::move(array));
 
-  std::string msg = connect_message(kRemoteAddr, kRemotePort, "", kHelloMessage);
-  socket_impl_->CheckWriteBuffer(reinterpret_cast<const uint8_t *>(msg.c_str()), msg.size());
+  ASSERT_EQ(kHelloMessage.length(), mSProxy->CountUnreadBytes());
+
+  
+  
+  mSProxy->OnRead(std::move(mEmptyArray));
+
+  ASSERT_EQ(kHelloMessage.length(), mData.Length());
+  ASSERT_EQ(kHelloMessage, DataString());
 }
 
+TEST_F(NrSocketProxyTest, TestReadConstantConsumeSize) {
+  std::string data;
 
-TEST_F(ProxyTunnelSocketTest, DISABLED_TestAlpnConnect) {
-  const std::string alpn = "this,is,alpn";
-  int r = nr_proxy_tunnel_config_set_alpn(config_, alpn.c_str());
-  EXPECT_EQ(0, r);
+  
+  const int kCount = 32;
 
-  Configure();
-  Connect();
+  
+  
+  for(int i = 0; i < kCount * (kCount + 1) / 2; ++i) {
+    data += kHelloMessage;
+  }
 
-  std::string msg = connect_message(kRemoteAddr, kRemotePort, alpn, kHelloMessage);
-  socket_impl_->CheckWriteBuffer(reinterpret_cast<const uint8_t *>(msg.c_str()), msg.size());
+  
+  for(int i = 0, start = 0; i < kCount; ++i) {
+    int length = (kCount - i) * kHelloMessage.length();
+
+    nsTArray<uint8_t> array;
+    array.AppendElements(data.c_str() + start, length);
+    start += length;
+
+    mSProxy->OnRead(std::move(array));
+  }
+
+  ASSERT_EQ(data.length(), mSProxy->CountUnreadBytes());
+
+  
+  mReadChunkSize = 128;
+  mReadChunkSizeIncrement = 0;
+  NR_ASYNC_WAIT(mSProxy,
+                NR_ASYNC_WAIT_READ,
+                &NrSocketProxyTest::readable_cb,
+                this);
+
+  ASSERT_EQ(data.length(), mSProxy->CountUnreadBytes());
+
+  
+  mSProxy->OnRead(std::move(mEmptyArray));
+
+  ASSERT_EQ(data.length(), mData.Length());
+  ASSERT_EQ(data, DataString());
 }
 
-
-TEST_F(ProxyTunnelSocketTest, DISABLED_TestNullAlpnConnect) {
-  int r = nr_proxy_tunnel_config_set_alpn(config_, nullptr);
-  EXPECT_EQ(0, r);
-
-  Configure();
-  Connect();
-
-  std::string msg = connect_message(kRemoteAddr, kRemotePort, "", kHelloMessage);
-  socket_impl_->CheckWriteBuffer(reinterpret_cast<const uint8_t *>(msg.c_str()), msg.size());
-}
-
-
-TEST_F(ProxyTunnelSocketTest, DISABLED_TestConnectProxyHostRequest) {
-  nr_proxy_tunnel_config_set_proxy(config_, kProxyHost.c_str(), kProxyPort);
-  Configure();
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Connect(R_WOULDBLOCK);
-
-  std::string msg = connect_message(kRemoteAddr, kRemotePort, "", kHelloMessage);
-  socket_impl_->CheckWriteBuffer(reinterpret_cast<const uint8_t *>(msg.c_str()), msg.size());
-}
-
-
-TEST_F(ProxyTunnelSocketTest, DISABLED_TestConnectProxyWrite) {
-  Connect();
-
-  socket_impl_->ClearWriteBuffer();
-
-  size_t written = 0;
-  int r = nr_socket_write(nr_socket_, kHelloMessage.c_str(), kHelloMessage.size(), &written, 0);
-  EXPECT_EQ(0, r);
-  EXPECT_EQ(kHelloMessage.size(), written);
-
-  socket_impl_->CheckWriteBuffer(reinterpret_cast<const uint8_t *>(kHelloMessage.c_str()),
-      kHelloMessage.size());
-}
-
-TEST_F(ProxyTunnelSocketTest, TestConnectProxySuccessResponse) {
-  int r = nr_socket_connect(nr_socket_, &remote_addr_);
-  ASSERT_EQ(0, r);
-
-  std::string resp = connect_response(200, kHelloMessage);
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(resp.c_str()), resp.size());
-
+TEST_F(NrSocketProxyTest, TestReadNone) {
   char buf[4096];
   size_t read = 0;
-  r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
-  ASSERT_EQ(0, r);
+  int r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
 
-  ASSERT_EQ(kHelloMessage.size(), read);
-  ASSERT_EQ(0, memcmp(buf, kHelloMessage.c_str(), kHelloMessage.size()));
-}
-
-TEST_F(ProxyTunnelSocketTest, TestConnectProxyRead) {
-  int r = nr_socket_connect(nr_socket_, &remote_addr_);
-  ASSERT_EQ(0, r);
-
-  std::string resp = connect_response(200, kHelloMessage);
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(resp.c_str()), resp.size());
-
-  char buf[4096];
-  size_t read = 0;
-  r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
-  ASSERT_EQ(0, r);
-
-  socket_impl_->ClearReadBuffer();
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(kHelloMessage.c_str()),
-      kHelloMessage.size());
-
-  r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
-  ASSERT_EQ(0, r);
-
-  ASSERT_EQ(kHelloMessage.size(), read);
-  ASSERT_EQ(0, memcmp(buf, kHelloMessage.c_str(), kHelloMessage.size()));
-}
-
-TEST_F(ProxyTunnelSocketTest, TestConnectProxyReadNone) {
-  int r = nr_socket_connect(nr_socket_, &remote_addr_);
-  ASSERT_EQ(0, r);
-
-  std::string resp = connect_response(200);
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(resp.c_str()), resp.size());
-
-  char buf[4096];
-  size_t read = 0;
-  r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
   ASSERT_EQ(R_WOULDBLOCK, r);
 
-  socket_impl_->ClearReadBuffer();
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(kHelloMessage.c_str()),
-      kHelloMessage.size());
+  nsTArray<uint8_t> array;
+  array.AppendElements(kHelloMessage.c_str(), kHelloMessage.length());
+  mSProxy->OnRead(std::move(array));
+
+  ASSERT_EQ(kHelloMessage.length(), mSProxy->CountUnreadBytes());
 
   r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
+
   ASSERT_EQ(0, r);
+  ASSERT_EQ(kHelloMessage.length(), read);
+  ASSERT_EQ(kHelloMessage, std::string(buf, read));
 }
 
-TEST_F(ProxyTunnelSocketTest, TestConnectProxyFailResponse) {
-  int r = nr_socket_connect(nr_socket_, &remote_addr_);
-  ASSERT_EQ(0, r);
+TEST_F(NrSocketProxyTest, TestReadMultipleSizes) {
+  using namespace std;
 
-  std::string resp = connect_response(500, kHelloMessage);
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(resp.c_str()), resp.size());
+  string data;
+  
+  const size_t kCount = 515;
+  
+  vector<int> varyingSizes = { 404, 622, 1463, 1597, 1676, 389, 389, 1272, 781,
+    81, 1030, 1450, 256, 812, 1571, 29, 1045, 911, 643, 1089 };
 
-  char buf[4096];
-  size_t read = 0;
-  r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
-  ASSERT_NE(0, r);
+  
+  ASSERT_EQ(kCount, 17510 / kHelloMessage.length());
+  ASSERT_EQ(17510, accumulate(varyingSizes.begin(), varyingSizes.end(), 0));
+
+  
+  for(size_t i = 0; i < kCount; ++i) {
+    data += kHelloMessage;
+  }
+
+  nsTArray<uint8_t> array;
+  array.AppendElements(data.c_str(), data.length());
+
+  for(int amountToRead : varyingSizes) {
+    nsTArray<uint8_t> buffer;
+    buffer.AppendElements(array.Elements(), amountToRead);
+    array.RemoveElementsAt(0, amountToRead);
+    mSProxy->OnRead(std::move(buffer));
+  }
+
+  ASSERT_EQ(data.length(), mSProxy->CountUnreadBytes());
+
+  
+  mReadChunkSize = 1;
+  NR_ASYNC_WAIT(mSProxy,
+                NR_ASYNC_WAIT_READ,
+                &NrSocketProxyTest::readable_cb,
+                this);
+  
+  mSProxy->OnRead(std::move(mEmptyArray));
+
+  ASSERT_EQ(data.length(), mData.Length());
+  ASSERT_EQ(data, DataString());
 }
 
-TEST_F(ProxyTunnelSocketTest, TestConnectProxyGarbageResponse) {
-  int r = nr_socket_connect(nr_socket_, &remote_addr_);
-  ASSERT_EQ(0, r);
+TEST_F(NrSocketProxyTest, TestReadConsumeReadDrain) {
+  std::string data;
+  
+  const int kCount = 512;
 
-  socket_impl_->SetReadBuffer(reinterpret_cast<const uint8_t *>(kGarbageMessage.c_str()),
-      kGarbageMessage.size());
+  
+  ASSERT_EQ(0, kCount % 2);
 
-  char buf[4096];
-  size_t read = 0;
-  r = nr_socket_read(nr_socket_, buf, sizeof(buf), &read, 0);
-  ASSERT_EQ(0ul, read);
+  for(int i = 0; i < kCount; ++i) {
+    data += kHelloMessage;
+    nsTArray<uint8_t> array;
+    array.AppendElements(kHelloMessage.c_str(), kHelloMessage.length());
+    mSProxy->OnRead(std::move(array));
+  }
+
+  
+  mReadAllowance = kCount / 2 * kHelloMessage.length();
+  
+  mReadChunkSize = 1;
+  NR_ASYNC_WAIT(mSProxy,
+                NR_ASYNC_WAIT_READ,
+                &NrSocketProxyTest::readable_cb,
+                this);
+  mSProxy->OnRead(std::move(mEmptyArray));
+
+  ASSERT_EQ(data.length() / 2, mSProxy->CountUnreadBytes());
+  ASSERT_EQ(data.length() / 2, mData.Length());
+
+  
+  for(int i = 0; i < kCount / 2; ++i) {
+    data += kHelloMessage;
+    nsTArray<uint8_t> array;
+    array.AppendElements(kHelloMessage.c_str(), kHelloMessage.length());
+    mSProxy->OnRead(std::move(array));
+  }
+
+  
+  mReadAllowance = -1;
+  
+  NR_ASYNC_WAIT(mSProxy,
+                NR_ASYNC_WAIT_READ,
+                &NrSocketProxyTest::readable_cb,
+                this);
+  
+  mSProxy->OnRead(std::move(mEmptyArray));
+
+  ASSERT_EQ(data.length(), mData.Length());
+  ASSERT_EQ(data, DataString());
 }

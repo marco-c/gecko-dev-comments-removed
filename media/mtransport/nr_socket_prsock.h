@@ -46,6 +46,7 @@
 #ifndef nr_socket_prsock__
 #define nr_socket_prsock__
 
+#include <memory>
 #include <queue>
 
 #include "nspr.h"
@@ -75,6 +76,7 @@ typedef struct nr_socket_ nr_socket;
 
 #if defined(MOZILLA_INTERNAL_API)
 namespace mozilla {
+class NrSocketProxyConfig;
 namespace dom {
 class TCPSocketChild;
 }
@@ -98,7 +100,9 @@ public:
 
   
   
-  static int CreateSocket(nr_transport_addr *addr, RefPtr<NrSocketBase> *sock);
+  static int CreateSocket(nr_transport_addr *addr,
+                          RefPtr<NrSocketBase> *sock,
+                          const std::shared_ptr<NrSocketProxyConfig>& config);
 
   
   virtual int create(nr_transport_addr *addr) = 0;

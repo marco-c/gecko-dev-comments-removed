@@ -126,6 +126,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
     return mTransceivers;
   }
 
+  nsPIDOMWindowInner* GetWindow() const;
+
   void AlpnNegotiated_s(const std::string& aAlpn);
   static void AlpnNegotiated_m(const std::string& aParentHandle,
                                const std::string& aAlpn);
@@ -248,8 +250,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   bool mProxyResolveCompleted;
 
   
-  std::string mProxyHost;
-  uint16_t mProxyPort;
+  std::unique_ptr<NrSocketProxyConfig> mProxyConfig;
 
   
   RefPtr<net::StunAddrsRequestChild> mStunAddrsRequest;

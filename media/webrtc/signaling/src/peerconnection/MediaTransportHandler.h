@@ -61,9 +61,7 @@ class MediaTransportHandler : public MediaTransportBase,
 
     
     
-    nsresult SetProxyServer(const std::string& aProxyHost,
-                            uint16_t aProxyPort,
-                            const std::string& aAlpnProtocols);
+    nsresult SetProxyServer(NrSocketProxyConfig&& aProxyConfig);
 
     void EnsureProvisionalTransport(const std::string& aTransportId,
                                     const std::string& aLocalUfrag,

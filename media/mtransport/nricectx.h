@@ -50,6 +50,7 @@
 #ifndef nricectx_h__
 #define nricectx_h__
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <map>
@@ -85,6 +86,8 @@ typedef struct nr_proxy_tunnel_config_ nr_proxy_tunnel_config;
 typedef void* NR_SOCKET;
 
 namespace mozilla {
+
+class NrSocketProxyConfig;
 
 
 
@@ -173,25 +176,6 @@ class NrIceTurnServer : public NrIceStunServer {
 
   std::string username_;
   std::vector<unsigned char> password_;
-};
-
-class NrIceProxyServer {
- public:
-  NrIceProxyServer(const std::string& host, uint16_t port,
-                   const std::string& alpn) :
-    host_(host), port_(port), alpn_(alpn) {
-  }
-
-  NrIceProxyServer() : NrIceProxyServer("", 0, "") {}
-
-  const std::string& host() const { return host_; }
-  uint16_t port() const { return port_; }
-  const std::string& alpn() const { return alpn_; }
-
- private:
-  std::string host_;
-  uint16_t port_;
-  std::string alpn_;
 };
 
 class TestNat;
@@ -331,7 +315,10 @@ class NrIceCtx {
 
   
   
-  nsresult SetProxyServer(const NrIceProxyServer& proxy_server);
+  nsresult SetProxyServer(NrSocketProxyConfig&& config);
+
+  const std::shared_ptr<NrSocketProxyConfig>& GetProxyConfig()
+    { return proxy_config_; }
 
   void SetCtxFlags(bool default_route_only, bool proxy_only);
 
@@ -415,6 +402,7 @@ private:
   nsCOMPtr<nsIEventTarget> sts_target_; 
   Policy policy_;
   RefPtr<TestNat> nat_;
+  std::shared_ptr<NrSocketProxyConfig> proxy_config_;
 };
 
 
