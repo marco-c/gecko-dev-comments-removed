@@ -117,10 +117,44 @@ VRDisplayExternal::StartPresentation()
   mBrowserState.layerState[0].type = VRLayerType::LayerType_Stereo_Immersive;
   PushState();
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+
+
+
+
+
+  PostVRTask();
+#endif
   
 
   
 }
+
+#if defined(MOZ_WIDGET_ANDROID)
+void
+VRDisplayExternal::PostVRTask() {
+  MessageLoop * vrLoop = VRListenerThreadHolder::Loop();
+  if (!vrLoop || !mBrowserState.presentationActive) {
+    return;
+  }
+  RefPtr<Runnable> task = NewRunnableMethod(
+    "VRDisplayExternal::RunVRTask",
+    this,
+    &VRDisplayExternal::RunVRTask);
+  VRListenerThreadHolder::Loop()->PostDelayedTask(task.forget(), 50);
+}
+
+void
+VRDisplayExternal::RunVRTask() {
+  if (mBrowserState.presentationActive) {
+    VRManager *vm = VRManager::Get();
+    vm->NotifyVsync(TimeStamp::Now());
+    PostVRTask();
+  }
+}
+
+#endif 
 
 void
 VRDisplayExternal::StopPresentation()
