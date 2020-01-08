@@ -1497,4 +1497,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "devtools.enabled",
+   devtools_enabled,
+  RelaxedAtomicBool, false
+)
+
+
+
+
+
 

@@ -1163,12 +1163,6 @@ public:
                      nsACString& aSourceSpecOut, uint32_t *aLineOut,
                      uint32_t *aColumnOut, nsString& aMessageOut);
 
-  
-
-
-
-  static bool DevToolsEnabled(JSContext* aCx);
-
   static nsresult CalculateBufferSizeForImage(const uint32_t& aStride,
                                             const mozilla::gfx::IntSize& aImageSize,
                                             const mozilla::gfx::SurfaceFormat& aFormat,
