@@ -36,17 +36,17 @@ FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy)
 
   RefPtr<FeaturePolicy> dest = this;
   RefPtr<FeaturePolicy> src = aParentPolicy;
-  nsCOMPtr<nsIPrincipal> origin = mDefaultOrigin;
-  FeaturePolicyUtils::ForEachFeature([dest, src, origin](const char* aFeatureName) {
+  FeaturePolicyUtils::ForEachFeature([dest, src](const char* aFeatureName) {
     nsString featureName;
     featureName.AppendASCII(aFeatureName);
 
     
     
     
-    if (dest->HasDeclaredFeature(featureName)) {
-      if (!dest->AllowsFeatureInternal(featureName, origin) ||
-          !src->AllowsFeatureInternal(featureName, origin)) {
+    if (dest->HasDeclaredFeature(featureName) &&
+        dest->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
+      if (!src->AllowsFeatureInternal(featureName, src->mDefaultOrigin) &&
+          !src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
         dest->SetInheritedDeniedFeature(featureName);
       }
       return;
@@ -54,7 +54,7 @@ FeaturePolicy::InheritPolicy(FeaturePolicy* aParentPolicy)
 
     
     
-    if (!src->AllowsFeatureInternal(featureName, origin)) {
+    if (!src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
       dest->SetInheritedDeniedFeature(featureName);
     }
   });
