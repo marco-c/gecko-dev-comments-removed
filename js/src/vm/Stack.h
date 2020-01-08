@@ -37,7 +37,7 @@ namespace dbg {
 #pragma GCC diagnostic ignored "-Wattributes"
 #endif 
 
-class JS_PUBLIC_API(AutoEntryMonitor);
+class JS_PUBLIC_API AutoEntryMonitor;
 
 #ifdef JS_BROKEN_GCC_ATTRIBUTE_WARNING
 #pragma GCC diagnostic pop

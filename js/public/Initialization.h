@@ -27,10 +27,10 @@ enum class InitState {
 
 
 
-extern JS_PUBLIC_DATA(InitState)
+extern JS_PUBLIC_DATA InitState
 libraryInitState;
 
-extern JS_PUBLIC_API(const char*)
+extern JS_PUBLIC_API const char*
 InitWithFailureDiagnostic(bool isDebugBuild);
 
 } 
@@ -48,7 +48,7 @@ typedef void (*JS_ICUFreeFn)(const void*, void* p);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn,
                          JS_ICUReallocFn reallocFn,
                          JS_ICUFreeFn freeFn);
@@ -65,7 +65,7 @@ using GMPFreeFn = void (*)(void* p, size_t size);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 SetGMPMemoryFunctions(GMPAllocFn allocFn,
                       GMPReallocFn reallocFn,
                       GMPFreeFn freeFn);
@@ -144,7 +144,7 @@ JS_IsInitialized(void)
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_ShutDown(void);
 
 #endif 

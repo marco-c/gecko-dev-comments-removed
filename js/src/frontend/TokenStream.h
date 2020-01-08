@@ -2788,7 +2788,7 @@ TokenKindToDesc(TokenKind tt);
 } 
 } 
 
-extern JS_FRIEND_API(int)
+extern JS_FRIEND_API int
 js_fgets(char* buf, int size, FILE* file);
 
 #ifdef DEBUG

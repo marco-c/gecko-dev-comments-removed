@@ -19,7 +19,7 @@ struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 
 namespace js {
-    struct JS_PUBLIC_API(PerformanceGroup);
+    struct JS_PUBLIC_API PerformanceGroup;
 } 
 
 struct JSPrincipals {
@@ -51,13 +51,13 @@ struct JSPrincipals {
 
 
 
-    JS_PUBLIC_API(void) dump();
+    JS_PUBLIC_API void dump();
 };
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_HoldPrincipals(JSPrincipals* principals);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_DropPrincipals(JSContext* cx, JSPrincipals* principals);
 
 
@@ -78,10 +78,10 @@ struct JSSecurityCallbacks {
     JSSubsumesOp               subsumes;
 };
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetSecurityCallbacks(JSContext* cx, const JSSecurityCallbacks* callbacks);
 
-extern JS_PUBLIC_API(const JSSecurityCallbacks*)
+extern JS_PUBLIC_API const JSSecurityCallbacks*
 JS_GetSecurityCallbacks(JSContext* cx);
 
 
@@ -96,7 +96,7 @@ JS_GetSecurityCallbacks(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetTrustedPrincipals(JSContext* cx, JSPrincipals* prin);
 
 typedef void
@@ -107,7 +107,7 @@ typedef void
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_InitDestroyPrincipalsCallback(JSContext* cx, JSDestroyPrincipalsOp destroyPrincipals);
 
 
@@ -128,7 +128,7 @@ using JSReadPrincipalsOp = bool (*)(JSContext* cx, JSStructuredCloneReader* read
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_InitReadPrincipalsCallback(JSContext* cx, JSReadPrincipalsOp read);
 
 

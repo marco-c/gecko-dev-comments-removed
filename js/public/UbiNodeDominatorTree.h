@@ -66,7 +66,7 @@ namespace ubi {
 
 
 
-class JS_PUBLIC_API(DominatorTree)
+class JS_PUBLIC_API DominatorTree
 {
   private:
     

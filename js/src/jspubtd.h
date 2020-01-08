@@ -31,7 +31,7 @@ using AutoObjectVector = AutoVector<JSObject*>;
 
 class CallArgs;
 
-class JS_PUBLIC_API(RealmOptions);
+class JS_PUBLIC_API RealmOptions;
 
 } 
 
@@ -70,7 +70,7 @@ struct JSSecurityCallbacks;
 struct JSStructuredCloneCallbacks;
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
-class JS_PUBLIC_API(JSTracer);
+class JS_PUBLIC_API JSTracer;
 
 class JSFlatString;
 
@@ -86,11 +86,11 @@ inline JS::Zone* GetContextZone(const JSContext* cx);
 
 
 
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 CurrentThreadCanAccessRuntime(const JSRuntime* rt);
 
 #ifdef DEBUG
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 CurrentThreadIsPerformingGC();
 #endif
 
@@ -98,7 +98,7 @@ CurrentThreadIsPerformingGC();
 
 namespace JS {
 
-struct JS_PUBLIC_API(PropertyDescriptor);
+struct JS_PUBLIC_API PropertyDescriptor;
 
 enum class HeapState {
     Idle,             
@@ -108,7 +108,7 @@ enum class HeapState {
     CycleCollecting   
 };
 
-JS_PUBLIC_API(HeapState)
+JS_PUBLIC_API HeapState
 RuntimeHeapState();
 
 static inline bool
@@ -155,7 +155,7 @@ RuntimeHeapIsCycleCollecting()
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API(AutoEnterCycleCollection)
+class MOZ_STACK_CLASS JS_PUBLIC_API AutoEnterCycleCollection
 {
 #ifdef DEBUG
     JSRuntime* runtime_;

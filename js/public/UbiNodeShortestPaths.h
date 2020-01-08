@@ -22,7 +22,7 @@ namespace ubi {
 
 
 
-struct JS_PUBLIC_API(BackEdge)
+struct JS_PUBLIC_API BackEdge
 {
   private:
     Node predecessor_;
@@ -76,7 +76,7 @@ using Path = JS::ubi::Vector<BackEdge*>;
 
 
 
-struct JS_PUBLIC_API(ShortestPaths)
+struct JS_PUBLIC_API ShortestPaths
 {
   private:
     
@@ -339,7 +339,7 @@ struct JS_PUBLIC_API(ShortestPaths)
 
 
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 dumpPaths(JSRuntime* rt, Node node, uint32_t maxNumPaths = 10);
 #endif
 

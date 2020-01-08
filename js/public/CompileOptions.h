@@ -82,7 +82,7 @@ enum class AsmJSOption : uint8_t
 
 
 
-class JS_PUBLIC_API(TransitiveCompileOptions)
+class JS_PUBLIC_API TransitiveCompileOptions
 {
   protected:
     
@@ -151,7 +151,7 @@ class JS_PUBLIC_API(TransitiveCompileOptions)
     void operator=(const TransitiveCompileOptions&) = delete;
 };
 
-class JS_PUBLIC_API(CompileOptions);
+class JS_PUBLIC_API CompileOptions;
 
 
 
@@ -161,7 +161,7 @@ class JS_PUBLIC_API(CompileOptions);
 
 
 
-class JS_PUBLIC_API(ReadOnlyCompileOptions)
+class JS_PUBLIC_API ReadOnlyCompileOptions
   : public TransitiveCompileOptions
 {
   public:
@@ -228,7 +228,7 @@ class JS_PUBLIC_API(ReadOnlyCompileOptions)
 
 
 
-class JS_PUBLIC_API(OwningCompileOptions) final
+class JS_PUBLIC_API OwningCompileOptions final
   : public ReadOnlyCompileOptions
 {
     PersistentRooted<JSObject*> elementRoot;
@@ -359,7 +359,7 @@ class JS_PUBLIC_API(OwningCompileOptions) final
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API(CompileOptions) final
+class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
   : public ReadOnlyCompileOptions
 {
   private:

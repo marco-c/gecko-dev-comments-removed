@@ -36,7 +36,7 @@ class Shape;
 
 
 
-extern JS_FRIEND_DATA(const js::Class* const) FunctionClassPtr;
+extern JS_FRIEND_DATA const js::Class* const FunctionClassPtr;
 
 } 
 
@@ -65,7 +65,7 @@ enum class IsArrayAnswer
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsArray(JSContext* cx, HandleObject obj, bool* isArray);
 
 
@@ -76,7 +76,7 @@ IsArray(JSContext* cx, HandleObject obj, bool* isArray);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsArray(JSContext* cx, HandleObject obj, IsArrayAnswer* answer);
 
 
@@ -192,20 +192,20 @@ class ObjectOpResult
         return true;
     }
 
-    JS_PUBLIC_API(bool) failCantRedefineProp();
-    JS_PUBLIC_API(bool) failReadOnly();
-    JS_PUBLIC_API(bool) failGetterOnly();
-    JS_PUBLIC_API(bool) failCantDelete();
+    JS_PUBLIC_API bool failCantRedefineProp();
+    JS_PUBLIC_API bool failReadOnly();
+    JS_PUBLIC_API bool failGetterOnly();
+    JS_PUBLIC_API bool failCantDelete();
 
-    JS_PUBLIC_API(bool) failCantSetInterposed();
-    JS_PUBLIC_API(bool) failCantDefineWindowElement();
-    JS_PUBLIC_API(bool) failCantDeleteWindowElement();
-    JS_PUBLIC_API(bool) failCantDeleteWindowNamedProperty();
-    JS_PUBLIC_API(bool) failCantPreventExtensions();
-    JS_PUBLIC_API(bool) failCantSetProto();
-    JS_PUBLIC_API(bool) failNoNamedSetter();
-    JS_PUBLIC_API(bool) failNoIndexedSetter();
-    JS_PUBLIC_API(bool) failNotDataDescriptor();
+    JS_PUBLIC_API bool failCantSetInterposed();
+    JS_PUBLIC_API bool failCantDefineWindowElement();
+    JS_PUBLIC_API bool failCantDeleteWindowElement();
+    JS_PUBLIC_API bool failCantDeleteWindowNamedProperty();
+    JS_PUBLIC_API bool failCantPreventExtensions();
+    JS_PUBLIC_API bool failCantSetProto();
+    JS_PUBLIC_API bool failNoNamedSetter();
+    JS_PUBLIC_API bool failNoIndexedSetter();
+    JS_PUBLIC_API bool failNotDataDescriptor();
 
     uint32_t failureCode() const {
         MOZ_ASSERT(!ok());
@@ -257,8 +257,8 @@ class ObjectOpResult
     }
 
     
-    JS_PUBLIC_API(bool) reportStrictErrorOrWarning(JSContext* cx, HandleObject obj, HandleId id, bool strict);
-    JS_PUBLIC_API(bool) reportStrictErrorOrWarning(JSContext* cx, HandleObject obj, bool strict);
+    JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj, HandleId id, bool strict);
+    JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj, bool strict);
 
     
 
@@ -558,7 +558,7 @@ typedef bool
 (* DeletePropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                      JS::ObjectOpResult& result);
 
-class JS_FRIEND_API(ElementAdder)
+class JS_FRIEND_API ElementAdder
 {
   public:
     enum GetBehavior {
@@ -1067,7 +1067,7 @@ bool
 Unbox(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp);
 
 #ifdef DEBUG
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 HasObjectMovedOp(JSObject* obj);
 #endif
 

@@ -26,51 +26,51 @@
 namespace js {
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToBooleanSlow(JS::HandleValue v);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToNumberSlow(JSContext* cx, JS::HandleValue v, double* dp);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToInt8Slow(JSContext *cx, JS::HandleValue v, int8_t *out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToUint8Slow(JSContext *cx, JS::HandleValue v, uint8_t *out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToInt16Slow(JSContext *cx, JS::HandleValue v, int16_t *out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToInt32Slow(JSContext* cx, JS::HandleValue v, int32_t* out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToUint32Slow(JSContext* cx, JS::HandleValue v, uint32_t* out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToUint16Slow(JSContext* cx, JS::HandleValue v, uint16_t* out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToInt64Slow(JSContext* cx, JS::HandleValue v, int64_t* out);
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToUint64Slow(JSContext* cx, JS::HandleValue v, uint64_t* out);
 
 
-extern JS_PUBLIC_API(JSString*)
+extern JS_PUBLIC_API JSString*
 ToStringSlow(JSContext* cx, JS::HandleValue v);
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 ToObjectSlow(JSContext* cx, JS::HandleValue v, bool reportScanStack);
 
 } 
@@ -85,7 +85,7 @@ namespace detail {
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 AssertArgumentsAreSane(JSContext* cx, HandleValue v);
 #else
 inline void AssertArgumentsAreSane(JSContext* cx, HandleValue v)
@@ -102,7 +102,7 @@ inline void AssertArgumentsAreSane(JSContext* cx, HandleValue v)
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 OrdinaryToPrimitive(JSContext* cx, HandleObject obj, JSType type, MutableHandleValue vp);
 
 

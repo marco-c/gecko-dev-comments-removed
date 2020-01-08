@@ -32,7 +32,7 @@ namespace JS { union Value; }
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_SetDefaultLocale(JSRuntime* rt, const char* locale);
 
 
@@ -43,11 +43,11 @@ JS_SetDefaultLocale(JSRuntime* rt, const char* locale);
 
 
 
-extern JS_PUBLIC_API(JS::UniqueChars)
+extern JS_PUBLIC_API JS::UniqueChars
 JS_GetDefaultLocale(JSContext* cx);
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_ResetDefaultLocale(JSRuntime* rt);
 
 using JSLocaleToUpperCase =
@@ -87,13 +87,13 @@ struct JSLocaleCallbacks
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetLocaleCallbacks(JSRuntime* rt, const JSLocaleCallbacks* callbacks);
 
 
 
 
-extern JS_PUBLIC_API(const JSLocaleCallbacks*)
+extern JS_PUBLIC_API const JSLocaleCallbacks*
 JS_GetLocaleCallbacks(JSRuntime* rt);
 
 #endif 

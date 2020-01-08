@@ -23,7 +23,7 @@ typedef bool (*NativeImpl)(JSContext* cx, const CallArgs& args);
 namespace detail {
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CallMethodIfWrapped(JSContext* cx, IsAcceptableThis test, NativeImpl impl, const CallArgs& args);
 
 } 

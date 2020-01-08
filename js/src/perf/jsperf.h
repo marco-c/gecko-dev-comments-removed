@@ -27,7 +27,7 @@ namespace JS {
 
 
 
-class JS_FRIEND_API(PerfMeasurement)
+class JS_FRIEND_API PerfMeasurement
 {
   protected:
     
@@ -117,7 +117,7 @@ class JS_FRIEND_API(PerfMeasurement)
 
 
 
-extern JS_FRIEND_API(JSObject*)
+extern JS_FRIEND_API JSObject*
     RegisterPerfMeasurement(JSContext* cx, JS::HandleObject global);
 
 
@@ -125,7 +125,7 @@ extern JS_FRIEND_API(JSObject*)
 
 
 
-extern JS_FRIEND_API(PerfMeasurement*)
+extern JS_FRIEND_API PerfMeasurement*
     ExtractPerfMeasurement(const Value& wrapper);
 
 } 

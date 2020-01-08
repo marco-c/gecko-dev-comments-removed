@@ -29,7 +29,7 @@ using JSONWriteCallback = bool (*)(const char16_t* buf, uint32_t len, void* data
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_Stringify(JSContext* cx, JS::MutableHandle<JS::Value> value, JS::Handle<JSObject*> replacer,
              JS::Handle<JS::Value> space, JSONWriteCallback callback, void* data);
 
@@ -52,7 +52,7 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ToJSONMaybeSafely(JSContext* cx, JS::Handle<JSObject*> input,
                   JSONWriteCallback callback, void* data);
 
@@ -61,13 +61,13 @@ ToJSONMaybeSafely(JSContext* cx, JS::Handle<JSObject*> input,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ParseJSON(JSContext* cx, const char16_t* chars, uint32_t len, JS::MutableHandle<JS::Value> vp);
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ParseJSON(JSContext* cx, JS::Handle<JSString*> str, JS::MutableHandle<JS::Value> vp);
 
 
@@ -75,7 +75,7 @@ JS_ParseJSON(JSContext* cx, JS::Handle<JSString*> str, JS::MutableHandle<JS::Val
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ParseJSONWithReviver(JSContext* cx, const char16_t* chars, uint32_t len,
                         JS::Handle<JS::Value> reviver, JS::MutableHandle<JS::Value> vp);
 
@@ -84,7 +84,7 @@ JS_ParseJSONWithReviver(JSContext* cx, const char16_t* chars, uint32_t len,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ParseJSONWithReviver(JSContext* cx, JS::Handle<JSString*> str, JS::Handle<JS::Value> reviver,
                         JS::MutableHandle<JS::Value> vp);
 

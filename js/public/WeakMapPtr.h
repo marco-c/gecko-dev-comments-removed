@@ -20,7 +20,7 @@ namespace JS {
 
 
 template <typename K, typename V>
-class JS_PUBLIC_API(WeakMapPtr)
+class JS_PUBLIC_API WeakMapPtr
 {
   public:
     WeakMapPtr() : ptr(nullptr) {}

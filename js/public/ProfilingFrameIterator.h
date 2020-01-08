@@ -39,7 +39,7 @@ struct ForEachTrackedOptimizationTypeInfoOp;
 
 
 
-class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
+class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator
 {
   public:
     enum class Kind : bool {
@@ -141,7 +141,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
     bool iteratorDone();
 } JS_HAZ_GC_INVALIDATED;
 
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 IsProfilingEnabledForContext(JSContext* cx);
 
 
@@ -152,7 +152,7 @@ IsProfilingEnabledForContext(JSContext* cx);
 
 
 
-JS_FRIEND_API(void)
+JS_FRIEND_API void
 SetJSContextProfilerSampleBufferRangeStart(JSContext* cx, uint64_t rangeStart);
 
 class ProfiledFrameRange;
@@ -182,12 +182,12 @@ public:
     bool hasTrackedOptimizations() const { return optsIndex_.isSome(); }
     void* canonicalAddress() const { return canonicalAddr_; }
 
-    JS_PUBLIC_API(ProfilingFrameIterator::FrameKind) frameKind() const;
-    JS_PUBLIC_API(void) forEachOptimizationAttempt(ForEachTrackedOptimizationAttemptOp& op,
-                                                    JSScript** scriptOut,
-                                                    jsbytecode** pcOut) const;
+    JS_PUBLIC_API ProfilingFrameIterator::FrameKind frameKind() const;
+    JS_PUBLIC_API void forEachOptimizationAttempt(ForEachTrackedOptimizationAttemptOp& op,
+                                                  JSScript** scriptOut,
+                                                  jsbytecode** pcOut) const;
 
-    JS_PUBLIC_API(void)
+    JS_PUBLIC_API void
     forEachOptimizationTypeInfo(ForEachTrackedOptimizationTypeInfoOp& op) const;
 };
 
@@ -202,7 +202,7 @@ public:
           , index_(index)
         {}
 
-        JS_PUBLIC_API(ProfiledFrameHandle) operator*() const;
+        JS_PUBLIC_API ProfiledFrameHandle operator*() const;
 
         
         
@@ -219,8 +219,8 @@ public:
     Iter end() const { return Iter(*this, depth_); }
 
 private:
-    friend JS_PUBLIC_API(ProfiledFrameRange) GetProfiledFrames(JSContext* cx,
-                                                               void* addr);
+    friend JS_PUBLIC_API ProfiledFrameRange GetProfiledFrames(JSContext* cx,
+                                                              void* addr);
 
     ProfiledFrameRange(JSRuntime* rt, void* addr, js::jit::JitcodeGlobalEntry* entry)
       : rt_(rt)
@@ -238,7 +238,7 @@ private:
 };
 
 
-JS_PUBLIC_API(ProfiledFrameRange)
+JS_PUBLIC_API ProfiledFrameRange
 GetProfiledFrames(JSContext* cx, void* addr);
 
 } 

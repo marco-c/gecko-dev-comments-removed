@@ -37,7 +37,7 @@ NewDateObjectMsec(JSContext* cx, JS::ClippedTime t, JS::HandleObject proto = nul
 
 
 
-extern JS_FRIEND_API(JSObject*)
+extern JS_FRIEND_API JSObject*
 NewDateObject(JSContext* cx, int year, int mon, int mday, int hour, int min, int sec);
 
 

@@ -30,21 +30,21 @@ typedef int pid_t;
 
 
 
-extern MOZ_MUST_USE JS_PUBLIC_API(bool)
+extern MOZ_MUST_USE JS_PUBLIC_API bool
 JS_StartProfiling(const char* profileName, pid_t pid);
 
 
 
 
 
-extern MOZ_MUST_USE JS_PUBLIC_API(bool)
+extern MOZ_MUST_USE JS_PUBLIC_API bool
 JS_StopProfiling(const char* profileName);
 
 
 
 
 
-extern MOZ_MUST_USE JS_PUBLIC_API(bool)
+extern MOZ_MUST_USE JS_PUBLIC_API bool
 JS_DumpProfile(const char* outfile, const char* profileName);
 
 
@@ -52,13 +52,13 @@ JS_DumpProfile(const char* outfile, const char* profileName);
 
 
 
-extern MOZ_MUST_USE JS_PUBLIC_API(bool)
+extern MOZ_MUST_USE JS_PUBLIC_API bool
 JS_PauseProfilers(const char* profileName);
 
 
 
 
-extern MOZ_MUST_USE JS_PUBLIC_API(bool)
+extern MOZ_MUST_USE JS_PUBLIC_API bool
 JS_ResumeProfilers(const char* profileName);
 
 
@@ -66,28 +66,28 @@ JS_ResumeProfilers(const char* profileName);
 
 
 
-JS_PUBLIC_API(const char*)
+JS_PUBLIC_API const char*
 JS_UnsafeGetLastProfilingError();
 
 #ifdef MOZ_CALLGRIND
 
-extern MOZ_MUST_USE JS_FRIEND_API(bool)
+extern MOZ_MUST_USE JS_FRIEND_API bool
 js_StopCallgrind();
 
-extern MOZ_MUST_USE JS_FRIEND_API(bool)
+extern MOZ_MUST_USE JS_FRIEND_API bool
 js_StartCallgrind();
 
-extern MOZ_MUST_USE JS_FRIEND_API(bool)
+extern MOZ_MUST_USE JS_FRIEND_API bool
 js_DumpCallgrind(const char* outfile);
 
 #endif 
 
 #ifdef __linux__
 
-extern MOZ_MUST_USE JS_FRIEND_API(bool)
+extern MOZ_MUST_USE JS_FRIEND_API bool
 js_StartPerf();
 
-extern MOZ_MUST_USE JS_FRIEND_API(bool)
+extern MOZ_MUST_USE JS_FRIEND_API bool
 js_StopPerf();
 
 #endif 

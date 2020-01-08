@@ -313,17 +313,17 @@ struct JSSrcNoteSpec {
     int8_t          arity;      
 };
 
-extern JS_FRIEND_DATA(const JSSrcNoteSpec) js_SrcNoteSpec[];
+extern JS_FRIEND_DATA const JSSrcNoteSpec js_SrcNoteSpec[];
 
 namespace js {
 
-extern JS_FRIEND_API(unsigned)
+extern JS_FRIEND_API unsigned
 SrcNoteLength(jssrcnote* sn);
 
 
 
 
-extern JS_FRIEND_API(ptrdiff_t)
+extern JS_FRIEND_API ptrdiff_t
 GetSrcNoteOffset(jssrcnote* sn, unsigned which);
 
 } 

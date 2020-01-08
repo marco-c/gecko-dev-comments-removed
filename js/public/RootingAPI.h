@@ -199,8 +199,8 @@ namespace JS {
 template <typename T> class Rooted;
 template <typename T> class PersistentRooted;
 
-JS_FRIEND_API(void) HeapObjectPostBarrier(JSObject** objp, JSObject* prev, JSObject* next);
-JS_FRIEND_API(void) HeapStringPostBarrier(JSString** objp, JSString* prev, JSString* next);
+JS_FRIEND_API void HeapObjectPostBarrier(JSObject** objp, JSObject* prev, JSObject* next);
+JS_FRIEND_API void HeapStringPostBarrier(JSString** objp, JSString* prev, JSString* next);
 
 
 
@@ -241,9 +241,9 @@ SafelyInitialized()
 
 
 
-extern JS_FRIEND_API(void)
+extern JS_FRIEND_API void
 AssertGCThingMustBeTenured(JSObject* obj);
-extern JS_FRIEND_API(void)
+extern JS_FRIEND_API void
 AssertGCThingIsNotNurseryAllocable(js::gc::Cell* cell);
 #else
 inline void
@@ -750,7 +750,7 @@ struct BarrierMethods<JSString*>
 
 
 template <typename T>
-struct JS_PUBLIC_API(MovableCellHasher)
+struct JS_PUBLIC_API MovableCellHasher
 {
     using Key = T;
     using Lookup = T;
@@ -763,7 +763,7 @@ struct JS_PUBLIC_API(MovableCellHasher)
 };
 
 template <typename T>
-struct JS_PUBLIC_API(MovableCellHasher<JS::Heap<T>>)
+struct JS_PUBLIC_API MovableCellHasher<JS::Heap<T>>
 {
     using Key = JS::Heap<T>;
     using Lookup = T;
@@ -840,7 +840,7 @@ class alignas(8) DispatchWrapper
 
 namespace JS {
 
-class JS_PUBLIC_API(AutoGCRooter);
+class JS_PUBLIC_API AutoGCRooter;
 
 
 
@@ -905,7 +905,7 @@ class RootingContext
     friend JS::Zone* js::GetContextZone(const JSContext* cx);
 };
 
-class JS_PUBLIC_API(AutoGCRooter)
+class JS_PUBLIC_API AutoGCRooter
 {
   protected:
     enum class Tag : uint8_t {
@@ -1219,10 +1219,10 @@ MutableHandle<T>::MutableHandle(PersistentRooted<T>* root)
     ptr = root->address();
 }
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 AddPersistentRoot(RootingContext* cx, RootKind kind, PersistentRooted<void*>* root);
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 AddPersistentRoot(JSRuntime* rt, RootKind kind, PersistentRooted<void*>* root);
 
 
@@ -1386,7 +1386,7 @@ class PersistentRooted : public js::RootedBase<T, PersistentRooted<T>>,
     detail::MaybeWrapped<T> ptr;
 } JS_HAZ_ROOTED;
 
-class JS_PUBLIC_API(ObjectPtr)
+class JS_PUBLIC_API ObjectPtr
 {
     Heap<JSObject*> value;
 

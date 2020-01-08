@@ -43,7 +43,7 @@ template<typename UnitT> class SourceText;
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_Utf8BufferIsCompilableUnit(JSContext* cx, JS::Handle<JSObject*> obj,
                               const char* utf8, size_t length);
 
@@ -67,10 +67,10 @@ JS_Utf8BufferIsCompilableUnit(JSContext* cx, JS::Handle<JSObject*> obj,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ExecuteScript(JSContext* cx, JS::Handle<JSScript*> script, JS::MutableHandle<JS::Value> rval);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ExecuteScript(JSContext* cx, JS::Handle<JSScript*> script);
 
 
@@ -78,11 +78,11 @@ JS_ExecuteScript(JSContext* cx, JS::Handle<JSScript*> script);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ExecuteScript(JSContext* cx, JS::AutoVector<JSObject*>& envChain,
                  JS::Handle<JSScript*> script, JS::MutableHandle<JS::Value> rval);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_ExecuteScript(JSContext* cx, JS::AutoVector<JSObject*>& envChain, JS::Handle<JSScript*> script);
 
 namespace JS {
@@ -91,21 +91,21 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CloneAndExecuteScript(JSContext* cx, Handle<JSScript*> script, MutableHandle<Value> rval);
 
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CloneAndExecuteScript(JSContext* cx, AutoVector<JSObject*>& envChain, Handle<JSScript*> script,
                       MutableHandle<Value> rval);
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
          SourceText<char16_t>& srcBuf, MutableHandle<Value> rval);
 
@@ -114,7 +114,7 @@ Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 Evaluate(JSContext* cx, AutoVector<JSObject*>& envChain, const ReadOnlyCompileOptions& options,
          SourceText<char16_t>& srcBuf, MutableHandle<Value> rval);
 
@@ -123,7 +123,7 @@ Evaluate(JSContext* cx, AutoVector<JSObject*>& envChain, const ReadOnlyCompileOp
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 EvaluateUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
              const char* bytes, size_t length, MutableHandle<Value> rval);
 
@@ -135,7 +135,7 @@ EvaluateUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 EvaluateLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
                const char* bytes, size_t length, MutableHandle<Value> rval);
 
@@ -145,14 +145,14 @@ EvaluateLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 EvaluateUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
                  const char* filename, MutableHandle<Value> rval);
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
         SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
 
@@ -162,7 +162,7 @@ Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
             const char* bytes, size_t length, MutableHandle<JSScript*> script);
 
@@ -176,7 +176,7 @@ CompileUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileUtf8DontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
                        const char* bytes, size_t length, MutableHandle<JSScript*> script);
 
@@ -189,7 +189,7 @@ CompileUtf8DontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
               const char* bytes, size_t length, MutableHandle<JSScript*> script);
 
@@ -199,7 +199,7 @@ CompileLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileUtf8File(JSContext* cx, const ReadOnlyCompileOptions& options,
                 FILE* file, MutableHandle<JSScript*> script);
 
@@ -213,7 +213,7 @@ CompileUtf8File(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileUtf8FileDontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
                            FILE* file, MutableHandle<JSScript*> script);
 
@@ -224,11 +224,11 @@ CompileUtf8FileDontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
                 const char* filename, MutableHandle<JSScript*> script);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
                             SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
 
@@ -239,7 +239,7 @@ CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileLatin1ForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
                                   const char* bytes, size_t length,
                                   MutableHandle<JSScript*> script);
@@ -251,7 +251,7 @@ CompileLatin1ForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& o
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileFunction(JSContext* cx, AutoVector<JSObject*>& envChain,
                 const ReadOnlyCompileOptions& options,
                 const char* name, unsigned nargs, const char* const* argnames,
@@ -260,7 +260,7 @@ CompileFunction(JSContext* cx, AutoVector<JSObject*>& envChain,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CompileFunctionUtf8(JSContext* cx, AutoVector<JSObject*>& envChain,
                     const ReadOnlyCompileOptions& options,
                     const char* name, unsigned nargs, const char* const* argnames,
@@ -271,7 +271,7 @@ CompileFunctionUtf8(JSContext* cx, AutoVector<JSObject*>& envChain,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 InitScriptSourceElement(JSContext* cx, Handle<JSScript*> script,
                         Handle<JSObject*> element, Handle<JSString*> elementAttrName = nullptr);
 
@@ -279,7 +279,7 @@ InitScriptSourceElement(JSContext* cx, Handle<JSScript*> script,
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 ExposeScriptToDebugger(JSContext* cx, Handle<JSScript*> script);
 
 } 

@@ -66,7 +66,7 @@ enum class SavedFrameSelfHosted {
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameSource(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
                     MutableHandle<JSString*> sourcep,
                     SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
@@ -74,7 +74,7 @@ GetSavedFrameSource(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> s
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameLine(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
                   uint32_t* linep,
                   SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
@@ -82,7 +82,7 @@ GetSavedFrameLine(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> sav
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameColumn(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
                     uint32_t* columnp,
                     SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
@@ -92,7 +92,7 @@ GetSavedFrameColumn(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> s
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameFunctionDisplayName(JSContext* cx, JSPrincipals* principals,
                                  Handle<JSObject*> savedFrame,
                                  MutableHandle<JSString*> namep,
@@ -101,7 +101,7 @@ GetSavedFrameFunctionDisplayName(JSContext* cx, JSPrincipals* principals,
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameAsyncCause(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
                         MutableHandle<JSString*> asyncCausep,
                         SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
@@ -111,7 +111,7 @@ GetSavedFrameAsyncCause(JSContext* cx, JSPrincipals* principals, Handle<JSObject
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameAsyncParent(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
                          MutableHandle<JSObject*> asyncParentp,
                          SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
@@ -121,7 +121,7 @@ GetSavedFrameAsyncParent(JSContext* cx, JSPrincipals* principals, Handle<JSObjec
 
 
 
-extern JS_PUBLIC_API(SavedFrameResult)
+extern JS_PUBLIC_API SavedFrameResult
 GetSavedFrameParent(JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
                     MutableHandle<JSObject*> parentp,
                     SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
@@ -136,7 +136,7 @@ namespace js {
 
 
 
-extern JS_FRIEND_API(JSObject*)
+extern JS_FRIEND_API JSObject*
 GetFirstSubsumedSavedFrame(JSContext* cx, JSPrincipals* principals,
                            JS::Handle<JSObject*> savedFrame, JS::SavedFrameSelfHosted selfHosted);
 

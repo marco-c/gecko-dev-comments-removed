@@ -129,7 +129,7 @@ class UTF8CharsZ : public mozilla::RangedPtr<unsigned char>
 
 
 
-class JS_PUBLIC_API(ConstUTF8CharsZ)
+class JS_PUBLIC_API ConstUTF8CharsZ
 {
     const char* data_;
 
@@ -242,7 +242,7 @@ template <typename CharT>
 extern UTF8CharsZ
 CharsToNewUTF8CharsZ(JSContext* maybeCx, const mozilla::Range<CharT> chars);
 
-JS_PUBLIC_API(uint32_t)
+JS_PUBLIC_API uint32_t
 Utf8ToOneUcs4Char(const uint8_t* utf8Buffer, int utf8Length);
 
 
@@ -251,13 +251,13 @@ Utf8ToOneUcs4Char(const uint8_t* utf8Buffer, int utf8Length);
 
 
 
-extern JS_PUBLIC_API(TwoByteCharsZ)
+extern JS_PUBLIC_API TwoByteCharsZ
 UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
 
 
-extern JS_PUBLIC_API(TwoByteCharsZ)
+extern JS_PUBLIC_API TwoByteCharsZ
 UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* outlen);
 
 
@@ -265,17 +265,17 @@ UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* 
 
 
 
-extern JS_PUBLIC_API(TwoByteCharsZ)
+extern JS_PUBLIC_API TwoByteCharsZ
 LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
-extern JS_PUBLIC_API(TwoByteCharsZ)
+extern JS_PUBLIC_API TwoByteCharsZ
 LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* outlen);
 
 
 
 
 
-JS_PUBLIC_API(size_t)
+JS_PUBLIC_API size_t
 GetDeflatedUTF8StringLength(JSFlatString* s);
 
 
@@ -290,7 +290,7 @@ GetDeflatedUTF8StringLength(JSFlatString* s);
 
 
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 DeflateStringToUTF8Buffer(JSFlatString* src, mozilla::RangedPtr<char> dst,
                           size_t* dstlenp = nullptr, size_t* numcharsp = nullptr);
 
@@ -309,7 +309,7 @@ enum class SmallestEncoding {
 
 
 
-JS_PUBLIC_API(SmallestEncoding)
+JS_PUBLIC_API SmallestEncoding
 FindSmallestEncoding(UTF8Chars utf8);
 
 
@@ -318,7 +318,7 @@ FindSmallestEncoding(UTF8Chars utf8);
 
 
 
-extern JS_PUBLIC_API(Latin1CharsZ)
+extern JS_PUBLIC_API Latin1CharsZ
 UTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
@@ -326,14 +326,14 @@ UTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
 
-extern JS_PUBLIC_API(Latin1CharsZ)
+extern JS_PUBLIC_API Latin1CharsZ
 LossyUTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 StringIsASCII(const char* s);
 
 } 
@@ -355,7 +355,7 @@ inline void JS_free(JS::UTF8CharsZ& ptr) { js_free((void*)ptr.get()); }
 
 
 
-extern JS_PUBLIC_API(JS::UniqueChars)
+extern JS_PUBLIC_API JS::UniqueChars
 JS_EncodeStringToLatin1(JSContext* cx, JSString* str);
 
 
@@ -375,7 +375,7 @@ JS_EncodeStringToLatin1(JSContext* cx, JSString* str);
 
 
 
-extern JS_PUBLIC_API(JS::UniqueChars)
+extern JS_PUBLIC_API JS::UniqueChars
 JS_EncodeStringToUTF8(JSContext* cx, JS::Handle<JSString*> str);
 
 
@@ -394,7 +394,7 @@ JS_EncodeStringToUTF8(JSContext* cx, JS::Handle<JSString*> str);
 
 
 
-extern JS_PUBLIC_API(JS::UniqueChars)
+extern JS_PUBLIC_API JS::UniqueChars
 JS_EncodeStringToASCII(JSContext* cx, JSString* str);
 
 #endif 

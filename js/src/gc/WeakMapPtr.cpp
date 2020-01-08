@@ -123,9 +123,9 @@ JS::WeakMapPtr<K, V>::removeValue(const K& key)
 
 
 
-template class JS_PUBLIC_API(JS::WeakMapPtr)<JSObject*, JSObject*>;
+template class JS_PUBLIC_API JS::WeakMapPtr<JSObject*, JSObject*>;
 
 #ifdef DEBUG
 
-template class JS_PUBLIC_API(JS::WeakMapPtr)<JSObject*, JS::Value>;
+template class JS_PUBLIC_API JS::WeakMapPtr<JSObject*, JS::Value>;
 #endif

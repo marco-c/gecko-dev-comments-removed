@@ -19,7 +19,7 @@ struct JSStringFinalizer;
 
 namespace js {
 
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 CurrentThreadCanAccessZone(JS::Zone* zone);
 
 namespace gc {
@@ -97,7 +97,7 @@ enum class ChunkLocation : uint32_t
 
 #ifdef JS_DEBUG
 
-extern JS_FRIEND_API(void)
+extern JS_FRIEND_API void
 AssertGCThingHasType(js::gc::Cell* cell, JS::TraceKind kind);
 #else
 inline void
@@ -257,7 +257,7 @@ struct Symbol {
 
 
 
-class JS_FRIEND_API(GCCellPtr)
+class JS_FRIEND_API GCCellPtr
 {
   public:
     
@@ -452,14 +452,14 @@ CellIsMarkedGray(const Cell* cell)
     return TenuredCellIsMarkedGray(cell);
 }
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CellIsMarkedGrayIfKnown(const Cell* cell);
 
 #ifdef DEBUG
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 CellIsNotGray(const Cell* cell);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ObjectIsMarkedBlack(const JSObject* obj);
 #endif
 
@@ -532,7 +532,7 @@ GetTenuredGCThingZone(GCCellPtr thing)
     return js::gc::detail::GetGCThingZone(thing.unsafeAsUIntPtr());
 }
 
-extern JS_PUBLIC_API(Zone*)
+extern JS_PUBLIC_API Zone*
 GetNurseryStringZone(JSString* str);
 
 static MOZ_ALWAYS_INLINE Zone*
@@ -544,7 +544,7 @@ GetStringZone(JSString* str)
     return GetNurseryStringZone(str);
 }
 
-extern JS_PUBLIC_API(Zone*)
+extern JS_PUBLIC_API Zone*
 GetObjectZone(JSObject* obj);
 
 static MOZ_ALWAYS_INLINE bool
@@ -556,13 +556,13 @@ GCThingIsMarkedGray(GCCellPtr thing)
     return js::gc::detail::CellIsMarkedGrayIfKnown(thing.asCell());
 }
 
-extern JS_PUBLIC_API(JS::TraceKind)
+extern JS_PUBLIC_API JS::TraceKind
 GCThingTraceKind(void* thing);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 EnableNurseryStrings(JSContext* cx);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 DisableNurseryStrings(JSContext* cx);
 
 
@@ -571,21 +571,21 @@ DisableNurseryStrings(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsIncrementalBarrierNeeded(JSContext* cx);
 
 
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 IncrementalPreWriteBarrier(JSObject* obj);
 
 
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 IncrementalReadBarrier(GCCellPtr thing);
 
 
@@ -593,7 +593,7 @@ IncrementalReadBarrier(GCCellPtr thing);
 
 
 
-extern JS_FRIEND_API(bool)
+extern JS_FRIEND_API bool
 UnmarkGrayGCThingRecursively(GCCellPtr thing);
 
 } 
@@ -642,7 +642,7 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
 }
 
 template <typename T>
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 EdgeNeedsSweepUnbarrieredSlow(T* thingp);
 
 static MOZ_ALWAYS_INLINE bool

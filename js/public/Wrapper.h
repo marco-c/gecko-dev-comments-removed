@@ -44,7 +44,7 @@ class MOZ_STACK_CLASS WrapperOptions : public ProxyOptions {
 
 
 
-class JS_FRIEND_API(ForwardingProxyHandler) : public BaseProxyHandler
+class JS_FRIEND_API ForwardingProxyHandler : public BaseProxyHandler
 {
   public:
     using BaseProxyHandler::BaseProxyHandler;
@@ -117,7 +117,7 @@ class JS_FRIEND_API(ForwardingProxyHandler) : public BaseProxyHandler
 
 
 
-class JS_FRIEND_API(Wrapper) : public ForwardingProxyHandler
+class JS_FRIEND_API Wrapper : public ForwardingProxyHandler
 {
     unsigned mFlags;
 
@@ -165,7 +165,7 @@ WrapperOptions::proto() const
 }
 
 
-class JS_FRIEND_API(CrossCompartmentWrapper) : public Wrapper
+class JS_FRIEND_API CrossCompartmentWrapper : public Wrapper
 {
   public:
     explicit constexpr CrossCompartmentWrapper(unsigned aFlags, bool aHasPrototype = false,
@@ -227,7 +227,7 @@ class JS_FRIEND_API(CrossCompartmentWrapper) : public Wrapper
     static const CrossCompartmentWrapper singletonWithPrototype;
 };
 
-class JS_FRIEND_API(OpaqueCrossCompartmentWrapper) : public CrossCompartmentWrapper
+class JS_FRIEND_API OpaqueCrossCompartmentWrapper : public CrossCompartmentWrapper
 {
   public:
     explicit constexpr OpaqueCrossCompartmentWrapper() : CrossCompartmentWrapper(0)
@@ -291,7 +291,7 @@ class JS_FRIEND_API(OpaqueCrossCompartmentWrapper) : public CrossCompartmentWrap
 
 
 template <class Base>
-class JS_FRIEND_API(SecurityWrapper) : public Base
+class JS_FRIEND_API SecurityWrapper : public Base
 {
   public:
     explicit constexpr SecurityWrapper(unsigned flags, bool hasPrototype = false)
@@ -362,7 +362,7 @@ Wrapper::wrapperHandler(const JSObject* wrapper)
 
 
 
-JS_FRIEND_API(JSObject*)
+JS_FRIEND_API JSObject*
 UncheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true, unsigned* flagsp = nullptr);
 
 
@@ -373,12 +373,12 @@ UncheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true, unsigned* flagsp =
 
 
 
-JS_FRIEND_API(JSObject*)
+JS_FRIEND_API JSObject*
 CheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true);
 
 
 
-JS_FRIEND_API(JSObject*)
+JS_FRIEND_API JSObject*
 UnwrapOneChecked(JSObject* obj, bool stopAtWindowProxy = true);
 
 
@@ -386,25 +386,25 @@ UnwrapOneChecked(JSObject* obj, bool stopAtWindowProxy = true);
 
 
 
-JS_FRIEND_API(JSObject*)
+JS_FRIEND_API JSObject*
 UncheckedUnwrapWithoutExpose(JSObject* obj);
 
 void
 ReportAccessDenied(JSContext* cx);
 
-JS_FRIEND_API(void)
+JS_FRIEND_API void
 NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper);
 
 void
 RemapWrapper(JSContext* cx, JSObject* wobj, JSObject* newTarget);
 
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 RemapAllWrappersForObject(JSContext* cx, JSObject* oldTarget,
                           JSObject* newTarget);
 
 
 
-JS_FRIEND_API(bool)
+JS_FRIEND_API bool
 RecomputeWrappers(JSContext* cx, const CompartmentFilter& sourceFilter,
                   const CompartmentFilter& targetFilter);
 

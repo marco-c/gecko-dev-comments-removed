@@ -848,12 +848,12 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
-    JS_FRIEND_API(void*) onOutOfMemory(js::AllocFunction allocator, size_t nbytes,
-                                       void* reallocPtr = nullptr, JSContext* maybecx = nullptr);
+    JS_FRIEND_API void* onOutOfMemory(js::AllocFunction allocator, size_t nbytes,
+                                      void* reallocPtr = nullptr, JSContext* maybecx = nullptr);
 
     
-    JS_FRIEND_API(void*) onOutOfMemoryCanGC(js::AllocFunction allocator, size_t nbytes,
-                                            void* reallocPtr = nullptr);
+    JS_FRIEND_API void* onOutOfMemoryCanGC(js::AllocFunction allocator, size_t nbytes,
+                                           void* reallocPtr = nullptr);
 
     static const unsigned LARGE_ALLOCATION = 25 * 1024 * 1024;
 

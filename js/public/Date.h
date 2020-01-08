@@ -50,7 +50,7 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 ResetTimeZone();
 
 class ClippedTime;
@@ -122,7 +122,7 @@ TimeValue(ClippedTime time)
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 NewDateObject(JSContext* cx, ClippedTime time);
 
 
@@ -130,7 +130,7 @@ NewDateObject(JSContext* cx, ClippedTime time);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 MakeDate(double year, unsigned month, unsigned day);
 
 
@@ -138,22 +138,22 @@ MakeDate(double year, unsigned month, unsigned day);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 MakeDate(double year, unsigned month, unsigned day, double time);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 YearFromTime(double time);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 MonthFromTime(double time);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 DayFromTime(double time);
 
 
@@ -162,14 +162,14 @@ DayFromTime(double time);
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 DayFromYear(double year);
 
 
 
 
 
-JS_PUBLIC_API(double)
+JS_PUBLIC_API double
 DayWithinYear(double time, double year);
 
 
@@ -179,13 +179,13 @@ using ReduceMicrosecondTimePrecisionCallback = double(*)(double);
 
 
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 SetReduceMicrosecondTimePrecisionCallback(ReduceMicrosecondTimePrecisionCallback callback);
 
 
 
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 SetTimeResolutionUsec(uint32_t resolution, bool jitter);
 
 } 

@@ -262,12 +262,12 @@ class BuilderOrigin : public Builder {
 
 
 
-JS_PUBLIC_API(void)
+JS_PUBLIC_API void
 SetDebuggerMallocSizeOf(JSContext* cx, mozilla::MallocSizeOf mallocSizeOf);
 
 
 
-JS_PUBLIC_API(mozilla::MallocSizeOf)
+JS_PUBLIC_API mozilla::MallocSizeOf
 GetDebuggerMallocSizeOf(JSContext* cx);
 
 
@@ -285,22 +285,22 @@ GetDebuggerMallocSizeOf(JSContext* cx);
 
 
 
-JS_PUBLIC_API(bool)
+JS_PUBLIC_API bool
 FireOnGarbageCollectionHookRequired(JSContext* cx);
 
 
 
-JS_PUBLIC_API(bool)
+JS_PUBLIC_API bool
 FireOnGarbageCollectionHook(JSContext* cx, GarbageCollectionEvent::Ptr&& data);
 
 
 
-JS_PUBLIC_API(bool)
+JS_PUBLIC_API bool
 IsDebugger(JSObject& obj);
 
 
 
-JS_PUBLIC_API(bool)
+JS_PUBLIC_API bool
 GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj, AutoObjectVector& vector);
 
 
@@ -317,7 +317,7 @@ GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj, AutoObjectVector& vector);
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API(AutoEntryMonitor) {
+class MOZ_STACK_CLASS JS_PUBLIC_API AutoEntryMonitor {
     JSContext* cx_;
     AutoEntryMonitor* savedMonitor_;
 

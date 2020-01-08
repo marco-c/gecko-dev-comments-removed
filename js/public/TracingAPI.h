@@ -12,15 +12,15 @@
 #include "js/HeapAPI.h"
 #include "js/TraceKind.h"
 
-class JS_PUBLIC_API(JSTracer);
+class JS_PUBLIC_API JSTracer;
 
 namespace JS {
-class JS_PUBLIC_API(CallbackTracer);
+class JS_PUBLIC_API CallbackTracer;
 template <typename T> class Heap;
 template <typename T> class TenuredHeap;
 
 
-JS_FRIEND_API(const char*)
+JS_FRIEND_API const char*
 GCTraceKindToAscii(JS::TraceKind kind);
 
 } 
@@ -51,7 +51,7 @@ enum WeakMapTraceKind {
     TraceWeakMapKeysValues
 };
 
-class JS_PUBLIC_API(JSTracer)
+class JS_PUBLIC_API JSTracer
 {
   public:
     
@@ -134,7 +134,7 @@ class AutoTracingName;
 class AutoTracingIndex;
 class AutoTracingCallback;
 
-class JS_PUBLIC_API(CallbackTracer) : public JSTracer
+class JS_PUBLIC_API CallbackTracer : public JSTracer
 {
   public:
     CallbackTracer(JSRuntime* rt, WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
@@ -359,7 +359,7 @@ JSTracer::asCallbackTracer()
 namespace js {
 namespace gc {
 template <typename T>
-JS_PUBLIC_API(void) TraceExternalEdge(JSTracer* trc, T* thingp, const char* name);
+JS_PUBLIC_API void TraceExternalEdge(JSTracer* trc, T* thingp, const char* name);
 } 
 } 
 
@@ -408,10 +408,10 @@ TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp, const char* name)
 
 
 template <typename T>
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 UnsafeTraceRoot(JSTracer* trc, T* edgep, const char* name);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 TraceChildren(JSTracer* trc, GCCellPtr thing);
 
 using ZoneSet = js::HashSet<Zone*, js::DefaultHasher<Zone*>, js::SystemAllocPolicy>;
@@ -423,12 +423,12 @@ using CompartmentSet = js::HashSet<JS::Compartment*, js::DefaultHasher<JS::Compa
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments);
 
 } 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc,
                      void* thing, JS::TraceKind kind, bool includeDetails);
 
@@ -440,14 +440,14 @@ namespace js {
 
 
 template <typename T>
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 UnsafeTraceManuallyBarrieredEdge(JSTracer* trc, T* edgep, const char* name);
 
 namespace gc {
 
 
 template <typename T>
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 EdgeNeedsSweep(JS::Heap<T>* edgep);
 
 

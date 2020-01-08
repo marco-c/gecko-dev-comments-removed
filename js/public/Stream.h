@@ -152,7 +152,7 @@ typedef void
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 SetReadableStreamCallbacks(JSContext* cx,
                            RequestReadableStreamDataCallback dataRequestCallback,
                            WriteIntoReadRequestBufferCallback writeIntoReadRequestCallback,
@@ -161,7 +161,7 @@ SetReadableStreamCallbacks(JSContext* cx,
                            ReadableStreamErroredCallback erroredCallback,
                            ReadableStreamFinalizeCallback finalizeCallback);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 HasReadableStreamCallbacks(JSContext* cx);
 
 
@@ -170,7 +170,7 @@ HasReadableStreamCallbacks(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 NewReadableDefaultStreamObject(JSContext* cx, HandleObject underlyingSource = nullptr,
                                HandleFunction size = nullptr, double highWaterMark = 1,
                                HandleObject proto = nullptr);
@@ -197,7 +197,7 @@ NewReadableDefaultStreamObject(JSContext* cx, HandleObject underlyingSource = nu
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
                                       uint8_t flags = 0, HandleObject proto = nullptr);
 
@@ -210,7 +210,7 @@ NewReadableExternalSourceStreamObject(JSContext* cx, void* underlyingSource,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamGetEmbeddingFlags(JSContext* cx, HandleObject stream, uint8_t* flags);
 
 
@@ -237,7 +237,7 @@ ReadableStreamGetEmbeddingFlags(JSContext* cx, HandleObject stream, uint8_t* fla
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamGetExternalUnderlyingSource(JSContext* cx, HandleObject stream, void** source);
 
 
@@ -252,7 +252,7 @@ ReadableStreamGetExternalUnderlyingSource(JSContext* cx, HandleObject stream, vo
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamReleaseExternalUnderlyingSource(JSContext* cx, HandleObject stream);
 
 
@@ -266,7 +266,7 @@ ReadableStreamReleaseExternalUnderlyingSource(JSContext* cx, HandleObject stream
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, HandleObject stream,
                                             uint32_t availableData);
 
@@ -274,7 +274,7 @@ ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, HandleObject stream,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsReadableStream(JSObject* obj);
 
 
@@ -282,14 +282,14 @@ IsReadableStream(JSObject* obj);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsReadableStreamReader(JSObject* obj);
 
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsReadableStreamDefaultReader(JSObject* obj);
 
 enum class ReadableStreamMode {
@@ -306,7 +306,7 @@ enum class ReadableStreamMode {
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamGetMode(JSContext* cx, HandleObject stream, ReadableStreamMode* mode);
 
 enum class ReadableStreamReaderMode {
@@ -319,7 +319,7 @@ enum class ReadableStreamReaderMode {
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamIsReadable(JSContext* cx, HandleObject stream, bool* result);
 
 
@@ -328,7 +328,7 @@ ReadableStreamIsReadable(JSContext* cx, HandleObject stream, bool* result);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamIsLocked(JSContext* cx, HandleObject stream, bool* result);
 
 
@@ -337,7 +337,7 @@ ReadableStreamIsLocked(JSContext* cx, HandleObject stream, bool* result);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamIsDisturbed(JSContext* cx, HandleObject stream, bool* result);
 
 
@@ -347,7 +347,7 @@ ReadableStreamIsDisturbed(JSContext* cx, HandleObject stream, bool* result);
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 ReadableStreamCancel(JSContext* cx, HandleObject stream, HandleValue reason);
 
 
@@ -358,7 +358,7 @@ ReadableStreamCancel(JSContext* cx, HandleObject stream, HandleValue reason);
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 ReadableStreamGetReader(JSContext* cx, HandleObject stream, ReadableStreamReaderMode mode);
 
 
@@ -369,7 +369,7 @@ ReadableStreamGetReader(JSContext* cx, HandleObject stream, ReadableStreamReader
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamTee(JSContext* cx, HandleObject stream,
                   MutableHandleObject branch1Stream, MutableHandleObject branch2Stream);
 
@@ -388,7 +388,7 @@ ReadableStreamTee(JSContext* cx, HandleObject stream,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamGetDesiredSize(JSContext* cx, JSObject* stream, bool* hasValue, double* value);
 
 
@@ -403,7 +403,7 @@ ReadableStreamGetDesiredSize(JSContext* cx, JSObject* stream, bool* hasValue, do
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamClose(JSContext* cx, HandleObject stream);
 
 
@@ -412,7 +412,7 @@ ReadableStreamClose(JSContext* cx, HandleObject stream);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamReaderIsClosed(JSContext* cx, HandleObject reader, bool* result);
 
 
@@ -431,7 +431,7 @@ ReadableStreamReaderIsClosed(JSContext* cx, HandleObject reader, bool* result);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamEnqueue(JSContext* cx, HandleObject stream, HandleValue chunk);
 
 
@@ -447,7 +447,7 @@ ReadableStreamEnqueue(JSContext* cx, HandleObject stream, HandleValue chunk);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamError(JSContext* cx, HandleObject stream, HandleValue error);
 
 
@@ -458,7 +458,7 @@ ReadableStreamError(JSContext* cx, HandleObject stream, HandleValue error);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamReaderCancel(JSContext* cx, HandleObject reader, HandleValue reason);
 
 
@@ -470,7 +470,7 @@ ReadableStreamReaderCancel(JSContext* cx, HandleObject reader, HandleValue reaso
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 ReadableStreamReaderReleaseLock(JSContext* cx, HandleObject reader);
 
 
@@ -483,7 +483,7 @@ ReadableStreamReaderReleaseLock(JSContext* cx, HandleObject reader);
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 ReadableStreamDefaultReaderRead(JSContext* cx, HandleObject reader);
 
 } 

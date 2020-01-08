@@ -17,17 +17,17 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 StartTraceLogger(JSContext *cx, mozilla::TimeStamp profilerStart);
 
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 StopTraceLogger(JSContext *cx);
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 ResetTraceLogger(void);
 
 #else

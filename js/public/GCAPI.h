@@ -26,7 +26,7 @@ struct JSFreeOp;
 #pragma GCC diagnostic ignored "-Wattributes"
 #endif 
 
-class JS_PUBLIC_API(JSTracer);
+class JS_PUBLIC_API JSTracer;
 
 #ifdef JS_BROKEN_GCC_ATTRIBUTE_WARNING
 #pragma GCC diagnostic pop
@@ -416,7 +416,7 @@ enum Reason {
 
 
 
-extern JS_PUBLIC_API(const char*)
+extern JS_PUBLIC_API const char*
 ExplainReason(JS::gcreason::Reason reason);
 
 } 
@@ -438,13 +438,13 @@ ExplainReason(JS::gcreason::Reason reason);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 PrepareZoneForGC(Zone* zone);
 
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 PrepareForFullGC(JSContext* cx);
 
 
@@ -452,21 +452,21 @@ PrepareForFullGC(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 PrepareForIncrementalGC(JSContext* cx);
 
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsGCScheduled(JSContext* cx);
 
 
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 SkipZoneForGC(Zone* zone);
 
 
@@ -484,7 +484,7 @@ SkipZoneForGC(Zone* zone);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 NonIncrementalGC(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason);
 
 
@@ -516,7 +516,7 @@ NonIncrementalGC(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reas
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 StartIncrementalGC(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason,
                    int64_t millis = 0);
 
@@ -528,7 +528,7 @@ StartIncrementalGC(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason re
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 IncrementalGCSlice(JSContext* cx, gcreason::Reason reason, int64_t millis = 0);
 
 
@@ -537,7 +537,7 @@ IncrementalGCSlice(JSContext* cx, gcreason::Reason reason, int64_t millis = 0);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 FinishIncrementalGC(JSContext* cx, gcreason::Reason reason);
 
 
@@ -546,7 +546,7 @@ FinishIncrementalGC(JSContext* cx, gcreason::Reason reason);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 AbortIncrementalGC(JSContext* cx);
 
 namespace dbg {
@@ -612,7 +612,7 @@ enum GCProgress {
     GC_CYCLE_END
 };
 
-struct JS_PUBLIC_API(GCDescription) {
+struct JS_PUBLIC_API GCDescription {
     bool isZone_;
     bool isComplete_;
     JSGCInvocationKind invocationKind_;
@@ -636,7 +636,7 @@ struct JS_PUBLIC_API(GCDescription) {
     JS::dbg::GarbageCollectionEvent::Ptr toGCEvent(JSContext* cx) const;
 };
 
-extern JS_PUBLIC_API(UniqueChars)
+extern JS_PUBLIC_API UniqueChars
 MinorGcToJSON(JSContext* cx);
 
 typedef void
@@ -647,7 +647,7 @@ typedef void
 
 
 
-extern JS_PUBLIC_API(GCSliceCallback)
+extern JS_PUBLIC_API GCSliceCallback
 SetGCSliceCallback(JSContext* cx, GCSliceCallback callback);
 
 
@@ -675,7 +675,7 @@ using GCNurseryCollectionCallback = void(*)(JSContext* cx, GCNurseryProgress pro
 
 
 
-extern JS_PUBLIC_API(GCNurseryCollectionCallback)
+extern JS_PUBLIC_API GCNurseryCollectionCallback
 SetGCNurseryCollectionCallback(JSContext* cx, GCNurseryCollectionCallback callback);
 
 typedef void
@@ -685,7 +685,7 @@ typedef void
 
 
 
-extern JS_PUBLIC_API(DoCycleCollectionCallback)
+extern JS_PUBLIC_API DoCycleCollectionCallback
 SetDoCycleCollectionCallback(JSContext* cx, DoCycleCollectionCallback callback);
 
 
@@ -694,7 +694,7 @@ SetDoCycleCollectionCallback(JSContext* cx, DoCycleCollectionCallback callback);
 
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 DisableIncrementalGC(JSContext* cx);
 
 
@@ -705,27 +705,27 @@ DisableIncrementalGC(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsIncrementalGCEnabled(JSContext* cx);
 
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsIncrementalGCInProgress(JSContext* cx);
 
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsIncrementalGCInProgress(JSRuntime* rt);
 
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 WasIncrementalGC(JSRuntime* rt);
 
 
@@ -737,7 +737,7 @@ WasIncrementalGC(JSRuntime* rt);
 
 
 
-class JS_PUBLIC_API(AutoDisableGenerationalGC)
+class JS_PUBLIC_API AutoDisableGenerationalGC
 {
     JSContext* cx;
 
@@ -750,7 +750,7 @@ class JS_PUBLIC_API(AutoDisableGenerationalGC)
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsGenerationalGCEnabled(JSRuntime* rt);
 
 
@@ -758,7 +758,7 @@ IsGenerationalGCEnabled(JSRuntime* rt);
 
 
 
-class JS_PUBLIC_API(AutoRequireNoGC)
+class JS_PUBLIC_API AutoRequireNoGC
 {
   protected:
     AutoRequireNoGC() {}
@@ -773,7 +773,7 @@ class JS_PUBLIC_API(AutoRequireNoGC)
 
 
 
-class JS_PUBLIC_API(AutoAssertNoGC) : public AutoRequireNoGC
+class JS_PUBLIC_API AutoAssertNoGC : public AutoRequireNoGC
 {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     JSContext* cx_;
@@ -805,13 +805,13 @@ class JS_PUBLIC_API(AutoAssertNoGC) : public AutoRequireNoGC
 
 
 #ifdef DEBUG
-class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoAssertNoGC
+class JS_PUBLIC_API AutoSuppressGCAnalysis : public AutoAssertNoGC
 {
   public:
     explicit AutoSuppressGCAnalysis(JSContext* cx = nullptr) : AutoAssertNoGC(cx) {}
 } JS_HAZ_GC_SUPPRESSED;
 #else
-class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoRequireNoGC
+class JS_PUBLIC_API AutoSuppressGCAnalysis : public AutoRequireNoGC
 {
   public:
     explicit AutoSuppressGCAnalysis(JSContext* cx = nullptr) {}
@@ -826,7 +826,7 @@ class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoRequireNoGC
 
 
 
-class JS_PUBLIC_API(AutoAssertGCCallback) : public AutoSuppressGCAnalysis
+class JS_PUBLIC_API AutoAssertGCCallback : public AutoSuppressGCAnalysis
 {
   public:
 #ifdef DEBUG
@@ -849,13 +849,13 @@ class JS_PUBLIC_API(AutoAssertGCCallback) : public AutoSuppressGCAnalysis
 
 
 #ifdef DEBUG
-class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoAssertNoGC
+class JS_PUBLIC_API AutoCheckCannotGC : public AutoAssertNoGC
 {
   public:
     explicit AutoCheckCannotGC(JSContext* cx = nullptr) : AutoAssertNoGC(cx) {}
 } JS_HAZ_GC_INVALIDATED;
 #else
-class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoRequireNoGC
+class JS_PUBLIC_API AutoCheckCannotGC : public AutoRequireNoGC
 {
   public:
     explicit AutoCheckCannotGC(JSContext* cx = nullptr) {}
@@ -865,7 +865,7 @@ class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoRequireNoGC
 
 
 
-extern JS_FRIEND_API(void)
+extern JS_FRIEND_API void
 NotifyGCRootsRemoved(JSContext* cx);
 
 } 
@@ -877,30 +877,30 @@ NotifyGCRootsRemoved(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_AddExtraGCRootsTracer(JSContext* cx, JSTraceDataOp traceOp, void* data);
 
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_RemoveExtraGCRootsTracer(JSContext* cx, JSTraceDataOp traceOp, void* data);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_GC(JSContext* cx);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_MaybeGC(JSContext* cx);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetGCCallback(JSContext* cx, JSGCCallback cb, void* data);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetObjectsTenuredCallback(JSContext* cx, JSObjectsTenuredCallback cb,
                              void* data);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_AddFinalizeCallback(JSContext* cx, JSFinalizeCallback cb, void* data);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_RemoveFinalizeCallback(JSContext* cx, JSFinalizeCallback cb);
 
 
@@ -937,46 +937,46 @@ JS_RemoveFinalizeCallback(JSContext* cx, JSFinalizeCallback cb);
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_AddWeakPointerZonesCallback(JSContext* cx, JSWeakPointerZonesCallback cb, void* data);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_RemoveWeakPointerZonesCallback(JSContext* cx, JSWeakPointerZonesCallback cb);
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_AddWeakPointerCompartmentCallback(JSContext* cx, JSWeakPointerCompartmentCallback cb,
                                      void* data);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_RemoveWeakPointerCompartmentCallback(JSContext* cx, JSWeakPointerCompartmentCallback cb);
 
 namespace JS {
 template <typename T> class Heap;
 }
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_UpdateWeakPointerAfterGC(JS::Heap<JSObject*>* objp);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_UpdateWeakPointerAfterGCUnbarriered(JSObject** objp);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetGCParameter(JSContext* cx, JSGCParamKey key, uint32_t value);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_ResetGCParameter(JSContext* cx, JSGCParamKey key);
 
-extern JS_PUBLIC_API(uint32_t)
+extern JS_PUBLIC_API uint32_t
 JS_GetGCParameter(JSContext* cx, JSGCParamKey key);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 JS_SetGCParametersBasedOnAvailableMemory(JSContext* cx, uint32_t availMem);
 
 
 
 
 
-extern JS_PUBLIC_API(JSString*)
+extern JS_PUBLIC_API JSString*
 JS_NewExternalString(JSContext* cx, const char16_t* chars, size_t length,
                      const JSStringFinalizer* fin);
 
@@ -987,7 +987,7 @@ JS_NewExternalString(JSContext* cx, const char16_t* chars, size_t length,
 
 
 
-extern JS_PUBLIC_API(JSString*)
+extern JS_PUBLIC_API JSString*
 JS_NewMaybeExternalString(JSContext* cx, const char16_t* chars, size_t length,
                           const JSStringFinalizer* fin, bool* allocatedExternal);
 
@@ -995,21 +995,21 @@ JS_NewMaybeExternalString(JSContext* cx, const char16_t* chars, size_t length,
 
 
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 JS_IsExternalString(JSString* str);
 
 
 
 
-extern JS_PUBLIC_API(const JSStringFinalizer*)
+extern JS_PUBLIC_API const JSStringFinalizer*
 JS_GetExternalStringFinalizer(JSString* str);
 
 namespace JS {
 
-extern JS_PUBLIC_API(bool)
+extern JS_PUBLIC_API bool
 IsIdleGCTaskNeeded(JSRuntime* rt);
 
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API void
 RunIdleTimeGCTask(JSRuntime* rt);
 
 } 
@@ -1022,7 +1022,7 @@ namespace gc {
 
 
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API JSObject*
 NewMemoryInfoObject(JSContext* cx);
 
 } 
