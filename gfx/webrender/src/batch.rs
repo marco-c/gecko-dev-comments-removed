@@ -507,7 +507,7 @@ impl AlphaBatchBuilder {
         for poly in splitter.sort(vec3(0.0, 0.0, 1.0)) {
             let prim_instance = &pic.prim_instances[poly.anchor];
             let prim_index = prim_instance.prim_index;
-            let pic_metadata = &ctx.prim_store.primitives[prim_index.0].metadata;
+            let prim = &ctx.prim_store.primitives[prim_index.0];
             if cfg!(debug_assertions) && ctx.prim_store.chase_id == Some(prim_index) {
                 println!("\t\tsplit polygon {:?}", poly.points);
             }
@@ -523,7 +523,7 @@ impl AlphaBatchBuilder {
                 .map_or(OPAQUE_TASK_ADDRESS, |id| render_tasks.get_task_address(id));
 
             let prim_header = PrimitiveHeader {
-                local_rect: pic_metadata.local_rect,
+                local_rect: prim.local_rect,
                 local_clip_rect: prim_instance.combined_local_clip_rect,
                 task_address,
                 specific_prim_address: GpuCacheAddress::invalid(),
@@ -531,7 +531,18 @@ impl AlphaBatchBuilder {
                 transform_id,
             };
 
-            let pic = ctx.prim_store.get_pic(prim_index);
+            let pic_index = match prim.details {
+                PrimitiveDetails::Brush(ref brush) => {
+                    match brush.kind {
+                        BrushKind::Picture { pic_index, .. } => pic_index,
+                        _ => unreachable!(),
+                    }
+                }
+                PrimitiveDetails::TextRun(..) => {
+                    unreachable!();
+                }
+            };
+            let pic = &ctx.prim_store.pictures[pic_index.0];
 
             let (uv_rect_address, _) = pic
                 .raster_config
@@ -607,7 +618,6 @@ impl AlphaBatchBuilder {
         plane_split_anchor: usize,
     ) {
         let prim = &ctx.prim_store.primitives[prim_instance.prim_index.0];
-        let prim_metadata = &prim.metadata;
 
         if prim_instance.clipped_world_rect.is_none() {
             return;
@@ -631,7 +641,6 @@ impl AlphaBatchBuilder {
                                          .as_ref()
                                          .expect("bug");
 
-        
         
         
         let is_multiple_primitives = match prim.details {
@@ -667,7 +676,7 @@ impl AlphaBatchBuilder {
         };
 
         let prim_header = PrimitiveHeader {
-            local_rect: prim_metadata.local_rect,
+            local_rect: prim.local_rect,
             local_clip_rect: prim_instance.combined_local_clip_rect,
             task_address,
             specific_prim_address: prim_cache_address,
@@ -683,7 +692,9 @@ impl AlphaBatchBuilder {
         match prim.details {
             PrimitiveDetails::Brush(ref brush) => {
                 match brush.kind {
-                    BrushKind::Picture(ref picture) => {
+                    BrushKind::Picture { pic_index, .. } => {
+                        let picture = &ctx.prim_store.pictures[pic_index.0];
+
                         
                         
                         
@@ -698,8 +709,9 @@ impl AlphaBatchBuilder {
                             
                             
                             
-                            let local_rect = prim_metadata.local_rect
-                                                          .intersection(&prim_instance.combined_local_clip_rect);
+                            let local_rect = prim
+                                .local_rect
+                                .intersection(&prim_instance.combined_local_clip_rect);
 
                             if let Some(local_rect) = local_rect {
                                 match transform.transform_kind() {
@@ -828,8 +840,8 @@ impl AlphaBatchBuilder {
                                                     0,
                                                 ]);
 
-                                                let shadow_rect = prim_metadata.local_rect.translate(&offset);
-                                                let shadow_clip_rect = prim_metadata.local_clip_rect.translate(&offset);
+                                                let shadow_rect = prim.local_rect.translate(&offset);
+                                                let shadow_clip_rect = prim.local_clip_rect.translate(&offset);
 
                                                 let shadow_prim_header = PrimitiveHeader {
                                                     local_rect: shadow_rect,
