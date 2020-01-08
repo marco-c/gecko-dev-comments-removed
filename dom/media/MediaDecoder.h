@@ -603,6 +603,9 @@ protected:
   double mPlaybackRate;
 
   
+  Watchable<bool> mLogicallySeeking;
+
+  
   Mirror<media::TimeIntervals> mBuffered;
 
   
@@ -635,9 +638,6 @@ protected:
   PlayState mNextState = PLAY_STATE_PAUSED;
 
   
-  Canonical<bool> mLogicallySeeking;
-
-  
   
   Canonical<bool> mSameOriginMedia;
 
@@ -665,10 +665,6 @@ public:
     return &mLooping;
   }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
-  AbstractCanonical<bool>* CanonicalLogicallySeeking()
-  {
-    return &mLogicallySeeking;
-  }
   AbstractCanonical<bool>* CanonicalSameOriginMedia()
   {
     return &mSameOriginMedia;
