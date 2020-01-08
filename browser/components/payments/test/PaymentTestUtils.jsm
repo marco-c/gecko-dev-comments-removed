@@ -154,6 +154,12 @@ var PaymentTestUtils = {
         doc.querySelector("address-picker[selected-state-key='selectedShippingAddress']");
       let select = Cu.waiveXrays(addressPicker).dropdown.popupBox;
       let option = select.querySelector(`[country="${country}"]`);
+      if (Cu.waiveXrays(doc.activeElement) == select) {
+        
+        
+        
+        select.blur();
+      }
       select.focus();
       
       EventUtils.synthesizeKey(option.label, {}, content.window);
@@ -165,6 +171,12 @@ var PaymentTestUtils = {
         doc.querySelector("address-picker[selected-state-key='selectedShippingAddress']");
       let select = Cu.waiveXrays(addressPicker).dropdown.popupBox;
       let option = select.querySelector(`[guid="${guid}"]`);
+      if (Cu.waiveXrays(doc.activeElement) == select) {
+        
+        
+        
+        select.blur();
+      }
       select.focus();
       
       EventUtils.synthesizeKey(option.label, {}, content.window);
@@ -176,6 +188,12 @@ var PaymentTestUtils = {
         doc.querySelector("shipping-option-picker");
       let select = Cu.waiveXrays(optionPicker).dropdown.popupBox;
       let option = select.querySelector(`[value="${value}"]`);
+      if (Cu.waiveXrays(doc.activeElement) == select) {
+        
+        
+        
+        select.blur();
+      }
       select.focus();
       
       EventUtils.synthesizeKey(option.textContent, {}, content.window);
@@ -185,7 +203,13 @@ var PaymentTestUtils = {
       let doc = content.document;
       let methodPicker = doc.querySelector("payment-method-picker");
       let select = Cu.waiveXrays(methodPicker).dropdown.popupBox;
-      let option = select.querySelector(`[guid="${guid}"]`);
+      let option = select.querySelector(`[value="${guid}"]`);
+      if (Cu.waiveXrays(doc.activeElement) == select) {
+        
+        
+        
+        select.blur();
+      }
       select.focus();
       
       
