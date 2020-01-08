@@ -2352,14 +2352,6 @@ public:
   
 
 
-  static bool AnimationsAPIElementAnimateEnabled()
-  {
-    return sAnimationsAPIElementAnimateEnabled;
-  }
-
-  
-
-
   static bool GetBoxQuadsEnabled()
   {
     return sGetBoxQuadsEnabled;
@@ -3415,7 +3407,6 @@ private:
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
-  static bool sAnimationsAPIElementAnimateEnabled;
   static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;

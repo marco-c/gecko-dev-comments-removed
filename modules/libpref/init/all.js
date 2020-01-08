@@ -3078,12 +3078,6 @@ pref("dom.animations-api.core.enabled", true);
 #endif
 
 
-
-
-
-pref("dom.animations-api.element-animate.enabled", true);
-
-
 pref("dom.animations.offscreen-throttling", true);
 
 
