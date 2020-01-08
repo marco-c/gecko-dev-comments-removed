@@ -265,10 +265,7 @@ Object.defineProperty(this, "gURLBar", {
 
     let element = document.getElementById("urlbar");
 
-    
-    
-    if (BrowserWindowTracker.windowCount <= 1 ||
-        !Services.prefs.getBoolPref("browser.urlbar.quantumbar", false)) {
+    if (!Services.prefs.getBoolPref("browser.urlbar.quantumbar", false)) {
       return this.gURLBar = element;
     }
 
