@@ -177,8 +177,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     
     void initSlot(uint32_t slot, MDefinition* ins) {
         slots_[slot] = ins;
-        if (entryResumePoint())
+        if (entryResumePoint()) {
             entryResumePoint()->initOperand(slot, ins);
+        }
     }
 
     
@@ -414,8 +415,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
         MOZ_ASSERT(!block->successorWithPhis());
 
         for (size_t i = 0; i < predecessors_.length(); i++) {
-            if (predecessors_[i] == block)
+            if (predecessors_[i] == block) {
                 return i;
+            }
         }
         MOZ_CRASH();
     }
@@ -480,10 +482,12 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     bool hasUniqueBackedge() const {
         MOZ_ASSERT(isLoopHeader());
         MOZ_ASSERT(numPredecessors() >= 2);
-        if (numPredecessors() == 2)
+        if (numPredecessors() == 2) {
             return true;
-        if (numPredecessors() == 3) 
+        }
+        if (numPredecessors() == 3) { 
             return getPredecessor(1)->numPredecessors() == 0;
+        }
         return false;
     }
     MBasicBlock* backedge() const {
@@ -499,8 +503,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
         return getPredecessor(0);
     }
     bool isLoopBackedge() const {
-        if (!numSuccessors())
+        if (!numSuccessors()) {
             return false;
+        }
         MBasicBlock* lastSuccessor = getSuccessor(numSuccessors() - 1);
         return lastSuccessor->isLoopHeader() &&
                lastSuccessor->hasUniqueBackedge() &&
@@ -861,8 +866,9 @@ class MIRGraph
     }
 
     MOZ_MUST_USE bool addReturn(MBasicBlock* returnBlock) {
-        if (!returnAccumulator_)
+        if (!returnAccumulator_) {
             return true;
+        }
 
         return returnAccumulator_->append(returnBlock);
     }
@@ -983,8 +989,9 @@ class MDefinitionIterator
     }
 
     MDefinition* getIns() {
-        if (atPhi())
+        if (atPhi()) {
             return *phiIter_;
+        }
         return *iter_;
     }
 
@@ -1001,10 +1008,11 @@ class MDefinitionIterator
 
     MDefinitionIterator operator ++() {
         MOZ_ASSERT(more());
-        if (atPhi())
+        if (atPhi()) {
             ++phiIter_;
-        else
+        } else {
             ++iter_;
+        }
         return *this;
     }
 
@@ -1052,15 +1060,17 @@ class MNodeIterator
     }
 
     MNode* getNode() {
-        if (!atResumePoint())
+        if (!atResumePoint()) {
             return *defIter_;
+        }
 
         
         
         
         
-        if (last_ != block()->lastIns())
+        if (last_ != block()->lastIns()) {
             return last_->resumePoint();
+        }
         return block()->entryResumePoint();
     }
 
@@ -1097,8 +1107,9 @@ class MNodeIterator
 
     MNodeIterator operator ++(int) {
         MNodeIterator old(*this);
-        if (more())
+        if (more()) {
             next();
+        }
         return old;
     }
 
