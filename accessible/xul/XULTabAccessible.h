@@ -54,6 +54,12 @@ public:
   
   virtual uint8_t ActionCount() const override;
 
+  
+  virtual void SelectedItems(nsTArray<Accessible*>* aItems) override;
+  virtual uint32_t SelectedItemCount() override;
+  virtual Accessible* GetSelectedItem(uint32_t aIndex) override;
+  virtual bool IsItemSelected(uint32_t aIndex) override;
+
 protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;

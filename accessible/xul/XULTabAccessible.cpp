@@ -186,6 +186,56 @@ XULTabsAccessible::ApplyARIAState(uint64_t* aState) const
 
 
 
+
+
+
+
+
+void
+XULTabsAccessible::SelectedItems(nsTArray<Accessible*>* aItems)
+{
+  if (nsAccUtils::IsARIAMultiSelectable(this)) {
+    AccessibleWrap::SelectedItems(aItems);
+  } else {
+    XULSelectControlAccessible::SelectedItems(aItems);
+  }
+}
+
+Accessible*
+XULTabsAccessible::GetSelectedItem(uint32_t aIndex)
+{
+  if (nsAccUtils::IsARIAMultiSelectable(this)) {
+    return AccessibleWrap::GetSelectedItem(aIndex);
+  }
+
+  return XULSelectControlAccessible::GetSelectedItem(aIndex);
+}
+
+uint32_t
+XULTabsAccessible::SelectedItemCount()
+{
+  if (nsAccUtils::IsARIAMultiSelectable(this)) {
+    return AccessibleWrap::SelectedItemCount();
+  }
+
+  return XULSelectControlAccessible::SelectedItemCount();
+}
+
+bool
+XULTabsAccessible::IsItemSelected(uint32_t aIndex)
+{
+  if (nsAccUtils::IsARIAMultiSelectable(this)) {
+    return AccessibleWrap::IsItemSelected(aIndex);
+  }
+
+  return XULSelectControlAccessible::IsItemSelected(aIndex);
+}
+
+
+
+
+
+
 role
 XULTabpanelsAccessible::NativeRole() const
 {
