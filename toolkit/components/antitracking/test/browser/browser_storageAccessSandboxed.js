@@ -5,38 +5,62 @@ let counter = 0;
 AntiTracking.runTest("Storage Access API called in a sandboxed iframe",
   
   async _ => {
-    let [threw, rejected] = await callRequestStorageAccess();
+    let dwu = SpecialPowers.getDOMWindowUtils(window);
+    let helper = dwu.setHandlingUserInput(true);
+
+    let p;
+    let threw = false;
+    try {
+      p = document.requestStorageAccess();
+    } catch (e) {
+      threw = true;
+    } finally {
+      helper.destruct();
+    }
     ok(!threw, "requestStorageAccess should not throw");
-    ok(rejected, "requestStorageAccess shouldn't be available");
+    threw = false;
+    try {
+      await p;
+    } catch (e) {
+      threw = true;
+    }
+    ok(threw, "requestStorageAccess shouldn't be available");
   },
 
   null, 
-  
-  async _ => {
-    
-    
-    await new Promise(resolve => {
-      Services.clearData.deleteDataFromHost(Services.io.newURI(TEST_3RD_PARTY_DOMAIN).host,
-                                            true,
-                                            Ci.nsIClearDataService.CLEAR_PERMISSIONS,
-                                            value => resolve());
-    });
-  },
+  null, 
   [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   false, 
   false, 
-  "allow-scripts allow-same-origin allow-popups"
+  "allow-scripts allow-same-origin"
 );
 
 AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
                      " allow-storage-access-by-user-activation",
   
   async _ => {
-    let [threw, rejected] = await callRequestStorageAccess();
+    let dwu = SpecialPowers.getDOMWindowUtils(window);
+    let helper = dwu.setHandlingUserInput(true);
+
+    let p;
+    let threw = false;
+    try {
+      p = document.requestStorageAccess();
+    } catch (e) {
+      threw = true;
+    } finally {
+      helper.destruct();
+    }
     ok(!threw, "requestStorageAccess should not throw");
-    ok(!rejected, "requestStorageAccess should be available");
+    threw = false;
+    try {
+      await p;
+    } catch (e) {
+      threw = true;
+    }
+    ok(!threw, "requestStorageAccess should be available");
   },
 
   null, 
@@ -60,13 +84,14 @@ AntiTracking.runTest("Storage Access API called in a sandboxed iframe with" +
   false, 
   true, 
   false, 
-  "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
+  "allow-scripts allow-same-origin allow-storage-access-by-user-activation"
 );
 
 AntiTracking.runTest("Verify that sandboxed contexts don't get the saved permission",
   
   async _ => {
-    await noStorageAccessInitially();
+    let hasAccess = await document.hasStorageAccess();
+    ok(!hasAccess, "Doesn't yet have storage access");
 
     try {
       localStorage.foo = 42;
@@ -84,7 +109,7 @@ AntiTracking.runTest("Verify that sandboxed contexts don't get the saved permiss
   false, 
   false, 
   false, 
-  "allow-scripts allow-same-origin allow-popups"
+  "allow-scripts allow-same-origin"
 );
 
 AntiTracking.runTest("Verify that sandboxed contexts with" +
@@ -92,7 +117,8 @@ AntiTracking.runTest("Verify that sandboxed contexts with" +
                      " saved permission",
   
   async _ => {
-    await hasStorageAccessInitially();
+    let hasAccess = await document.hasStorageAccess();
+    ok(hasAccess, "Has storage access");
 
     localStorage.foo = 42;
     ok(true, "LocalStorage can be used!");
@@ -105,13 +131,14 @@ AntiTracking.runTest("Verify that sandboxed contexts with" +
   false, 
   false, 
   false, 
-  "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
+  "allow-scripts allow-same-origin allow-storage-access-by-user-activation"
 );
 
 AntiTracking.runTest("Verify that private browsing contexts don't get the saved permission",
   
   async _ => {
-    await noStorageAccessInitially();
+    let hasAccess = await document.hasStorageAccess();
+    ok(!hasAccess, "Doesn't yet have storage access");
 
     try {
       localStorage.foo = 42;
@@ -136,7 +163,8 @@ AntiTracking.runTest("Verify that non-sandboxed contexts get the" +
                      " saved permission",
   
   async _ => {
-    await hasStorageAccessInitially();
+    let hasAccess = await document.hasStorageAccess();
+    ok(hasAccess, "Has storage access");
 
     localStorage.foo = 42;
     ok(true, "LocalStorage can be used!");
