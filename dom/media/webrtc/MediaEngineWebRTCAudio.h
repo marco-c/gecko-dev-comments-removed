@@ -279,8 +279,6 @@ private:
   
   
   uint32_t mRequestedInputChannelCount;
-  uint64_t mTotalFrames;
-  uint64_t mLastLogFrames;
 
   
   

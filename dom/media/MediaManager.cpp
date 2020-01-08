@@ -7,7 +7,6 @@
 #include "MediaManager.h"
 
 #include "AllocationHandle.h"
-#include "AudioDeviceInfo.h"
 #include "MediaStreamGraph.h"
 #include "MediaTimer.h"
 #include "mozilla/dom/MediaStreamTrack.h"
@@ -59,7 +58,6 @@
 #include "MediaTrackConstraints.h"
 #include "VideoUtils.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-#include "Latency.h"
 #include "nsProxyRelease.h"
 #include "nsVariant.h"
 
@@ -917,12 +915,11 @@ private:
 
 NS_IMPL_ISUPPORTS(MediaDevice, nsIMediaDevice)
 
-MediaDevice::MediaDevice(const RefPtr<MediaEngineSource>& aSource,
+MediaDevice::MediaDevice(MediaEngineSource* aSource,
                          const nsString& aName,
                          const nsString& aID,
                          const nsString& aRawID)
   : mSource(aSource)
-  , mSinkInfo(nullptr)
   , mKind((mSource && MediaEngineSource::IsVideo(mSource->GetMediaSource())) ?
           dom::MediaDeviceKind::Videoinput : dom::MediaDeviceKind::Audioinput)
   , mScary(mSource->GetScary())
@@ -934,16 +931,15 @@ MediaDevice::MediaDevice(const RefPtr<MediaEngineSource>& aSource,
   MOZ_ASSERT(mSource);
 }
 
-MediaDevice::MediaDevice(const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
+MediaDevice::MediaDevice(const nsString& aName,
+                         const dom::MediaDeviceKind aKind,
                          const nsString& aID,
                          const nsString& aRawID)
   : mSource(nullptr)
-  , mSinkInfo(aAudioDeviceInfo)
-  , mKind(mSinkInfo->Type() == AudioDeviceInfo::TYPE_INPUT ? dom::MediaDeviceKind::Audioinput
-                                                           : dom::MediaDeviceKind::Audiooutput)
+  , mKind(aKind)
   , mScary(false)
   , mType(NS_ConvertUTF8toUTF16(dom::MediaDeviceKindValues::strings[uint32_t(mKind)].value))
-  , mName(mSinkInfo->Name())
+  , mName(aName)
   , mID(aID)
   , mRawID(aRawID)
 {
@@ -952,14 +948,12 @@ MediaDevice::MediaDevice(const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
   
   
   MOZ_ASSERT(mKind == dom::MediaDeviceKind::Audiooutput);
-  MOZ_ASSERT(mSinkInfo);
 }
 
-MediaDevice::MediaDevice(const RefPtr<MediaDevice>& aOther,
+MediaDevice::MediaDevice(const MediaDevice* aOther,
                          const nsString& aID,
                          const nsString& aRawID)
   : mSource(aOther->mSource)
-  , mSinkInfo(aOther->mSinkInfo)
   , mKind(aOther->mKind)
   , mScary(aOther->mScary)
   , mType(aOther->mType)
@@ -3413,61 +3407,6 @@ MediaManager::EnumerateDevices(nsPIDOMWindowInner* aWindow,
     onFailure->OnError(reason);
   });
   return NS_OK;
-}
-
-RefPtr<SinkInfoPromise>
-MediaManager::GetSinkDevice(nsPIDOMWindowInner* aWindow,
-                            const nsString& aDeviceId)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aWindow);
-
-  
-  
-  uint64_t windowId = aWindow->WindowID();
-  nsIPrincipal* principal = aWindow->GetExtantDoc()->NodePrincipal();
-  RefPtr<GetUserMediaWindowListener> windowListener = GetWindowListener(windowId);
-  if (windowListener) {
-    PrincipalHandle existingPrincipalHandle =
-      windowListener->GetPrincipalHandle();
-    MOZ_ASSERT(PrincipalHandleMatches(existingPrincipalHandle, principal));
-  } else {
-    windowListener = new GetUserMediaWindowListener(mMediaThread, windowId,
-                                                    MakePrincipalHandle(principal));
-    AddWindowID(windowId, windowListener);
-  }
-  
-  
-  RefPtr<SourceListener> sourceListener = new SourceListener();
-  windowListener->Register(sourceListener);
-
-  bool isSecure = aWindow->IsSecureContext();
-
-  return EnumerateDevicesImpl(aWindow->WindowID(),
-                              MediaSourceEnum::Other,
-                              MediaSourceEnum::Other,
-                              MediaSinkEnum::Speaker,
-                              DeviceEnumerationType::Normal,
-                              DeviceEnumerationType::Normal)
-  ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-         [aDeviceId, isSecure](RefPtr<MediaDeviceSetRefCnt>&& aDevices) {
-    for (RefPtr<MediaDevice>& device : **aDevices) {
-      if (aDeviceId.IsEmpty() && device->mSinkInfo->Preferred()) {
-        return SinkInfoPromise::CreateAndResolve(device->mSinkInfo, __func__);
-      }
-      if (device->mID.Equals(aDeviceId)) {
-        
-        
-        if (isSecure || device->mSinkInfo->Preferred()) {
-          return SinkInfoPromise::CreateAndResolve(device->mSinkInfo, __func__);
-        }
-        return SinkInfoPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR, __func__);
-      }
-    }
-    return SinkInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
-  }, [](RefPtr<MediaStreamError>&& reason) {
-    return SinkInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
-  });
 }
 
 

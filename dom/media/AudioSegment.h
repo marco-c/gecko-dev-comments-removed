@@ -290,9 +290,6 @@ struct AudioChunk {
   float mVolume = 1.0f; 
   
   SampleFormat mBufferFormat = AUDIO_FORMAT_SILENCE;
-#ifdef MOZILLA_INTERNAL_API
-  mozilla::TimeStamp mTimeStamp;           
-#endif
   
   
   PrincipalHandle mPrincipalHandle = PRINCIPAL_HANDLE_NONE;
@@ -384,9 +381,6 @@ public:
       chunk->mChannelData.AppendElement(aChannelData[channel]);
     }
     chunk->mBufferFormat = AUDIO_FORMAT_FLOAT32;
-#ifdef MOZILLA_INTERNAL_API
-    chunk->mTimeStamp = TimeStamp::Now();
-#endif
     chunk->mPrincipalHandle = aPrincipalHandle;
   }
   void AppendFrames(already_AddRefed<ThreadSharedObject> aBuffer,
@@ -402,9 +396,6 @@ public:
       chunk->mChannelData.AppendElement(aChannelData[channel]);
     }
     chunk->mBufferFormat = AUDIO_FORMAT_S16;
-#ifdef MOZILLA_INTERNAL_API
-    chunk->mTimeStamp = TimeStamp::Now();
-#endif
     chunk->mPrincipalHandle = aPrincipalHandle;
 
   }
@@ -420,9 +411,6 @@ public:
 
     chunk->mVolume = aChunk->mVolume;
     chunk->mBufferFormat = aChunk->mBufferFormat;
-#ifdef MOZILLA_INTERNAL_API
-    chunk->mTimeStamp = TimeStamp::Now();
-#endif
     chunk->mPrincipalHandle = aChunk->mPrincipalHandle;
     return chunk;
   }
@@ -430,7 +418,7 @@ public:
   
   
   
-  void WriteTo(uint64_t aID, AudioMixer& aMixer, uint32_t aChannelCount,
+  void WriteTo(AudioMixer& aMixer, uint32_t aChannelCount,
                uint32_t aSampleRate);
   
   
