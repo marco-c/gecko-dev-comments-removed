@@ -405,6 +405,13 @@ nsThread::ThreadList()
   return sList;
 }
 
+ void
+nsThread::ClearThreadList()
+{
+  OffTheBooksMutexAutoLock mal(ThreadListMutex());
+  while (ThreadList().popFirst()) {}
+}
+
  nsThreadEnumerator
 nsThread::Enumerate()
 {
@@ -871,6 +878,13 @@ nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext)
 {
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(aContext->mTerminatingThread == this);
+
+  {
+    OffTheBooksMutexAutoLock mal(ThreadListMutex());
+    if (isInList()) {
+      removeFrom(ThreadList());
+    }
+  }
 
   if (aContext->mAwaitingShutdownAck) {
     
