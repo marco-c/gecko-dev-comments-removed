@@ -176,16 +176,6 @@ public:
 
 
 
-
-
-
-
-  nsresult invalidateFrecencies(const nsCString& aPlaceIdsQueryString);
-
-  
-
-
-
   nsIStringBundle* GetBundle();
   nsICollation* GetCollation();
   void GetStringFromName(const char* aName, nsACString& aResult);

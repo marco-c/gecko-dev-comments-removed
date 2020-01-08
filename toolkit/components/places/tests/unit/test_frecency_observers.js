@@ -29,8 +29,8 @@ add_task(async function test_nsNavHistory_UpdateFrecency() {
 });
 
 
-add_task(async function test_nsNavHistory_invalidateFrecencies_somePages() {
-  let url = Services.io.newURI("http://test-nsNavHistory-invalidateFrecencies-somePages.com/");
+add_task(async function test_invalidateFrecencies() {
+  let url = Services.io.newURI("http://test-invalidateFrecencies.com/");
   
   
   
@@ -45,7 +45,7 @@ add_task(async function test_nsNavHistory_invalidateFrecencies_somePages() {
 });
 
 
-add_task(async function test_nsNavHistory_invalidateFrecencies_allPages() {
+add_task(async function test_clear() {
   await Promise.all([onManyFrecenciesChanged(), PlacesUtils.history.clear()]);
 });
 
