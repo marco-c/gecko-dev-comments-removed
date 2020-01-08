@@ -20,12 +20,17 @@ namespace mozilla {
 
 
 
-class ContentIterator : public nsIContentIterator {
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ContentIterator)
 
-  explicit ContentIterator(bool aPre);
+
+
+class ContentIteratorBase : public nsIContentIterator {
+ public:
+  ContentIteratorBase() = delete;
+  ContentIteratorBase(const ContentIteratorBase&) = delete;
+  ContentIteratorBase& operator=(const ContentIteratorBase&) = delete;
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(ContentIteratorBase)
 
   virtual nsresult Init(nsINode* aRoot) override;
   virtual nsresult Init(nsRange* aRange) override;
@@ -46,7 +51,8 @@ class ContentIterator : public nsIContentIterator {
   virtual nsresult PositionAt(nsINode* aCurNode) override;
 
  protected:
-  virtual ~ContentIterator() = default;
+  explicit ContentIteratorBase(bool aPre);
+  virtual ~ContentIteratorBase() = default;
 
   
 
@@ -84,22 +90,54 @@ class ContentIterator : public nsIContentIterator {
 
   bool mIsDone;
   bool mPre;
-
- private:
-  ContentIterator(const ContentIterator&) = delete;
-  ContentIterator& operator=(const ContentIterator&) = delete;
 };
 
 
 
 
-class ContentSubtreeIterator final : public ContentIterator {
+class PostContentIterator final : public ContentIteratorBase {
  public:
-  ContentSubtreeIterator() : ContentIterator(false) {}
+  PostContentIterator() : ContentIteratorBase(false) {}
+  PostContentIterator(const PostContentIterator&) = delete;
+  PostContentIterator& operator=(const PostContentIterator&) = delete;
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(PostContentIterator,
+                                           ContentIteratorBase)
+
+ protected:
+  virtual ~PostContentIterator() = default;
+};
+
+
+
+
+class PreContentIterator final : public ContentIteratorBase {
+ public:
+  PreContentIterator() : ContentIteratorBase(true) {}
+  PreContentIterator(const PreContentIterator&) = delete;
+  PreContentIterator& operator=(const PreContentIterator&) = delete;
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(PreContentIterator,
+                                           ContentIteratorBase)
+
+ protected:
+  virtual ~PreContentIterator() = default;
+};
+
+
+
+
+class ContentSubtreeIterator final : public ContentIteratorBase {
+ public:
+  ContentSubtreeIterator() : ContentIteratorBase(true) {}
+  ContentSubtreeIterator(const ContentSubtreeIterator&) = delete;
+  ContentSubtreeIterator& operator=(const ContentSubtreeIterator&) = delete;
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ContentSubtreeIterator,
-                                           ContentIterator)
+                                           ContentIteratorBase)
 
   virtual nsresult Init(nsINode* aRoot) override;
   virtual nsresult Init(nsRange* aRange) override;
@@ -131,10 +169,6 @@ class ContentSubtreeIterator final : public ContentIterator {
   
   
   nsIContent* GetTopAncestorInRange(nsINode* aNode);
-
-  
-  ContentSubtreeIterator(const ContentSubtreeIterator&) = delete;
-  ContentSubtreeIterator& operator=(const ContentSubtreeIterator&) = delete;
 
   virtual void LastRelease() override;
 
