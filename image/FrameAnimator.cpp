@@ -562,19 +562,23 @@ DoCollectSizeOfCompositingSurfaces(const RawAccessFrameRef& aSurface,
                                     PlaybackType::eStatic);
 
   
-  SurfaceMemoryCounter counter(key,  true,
-                                false,
-                                false, aType);
+  aSurface->AddSizeOfExcludingThis(aMallocSizeOf,
+    [&](imgFrame::AddSizeOfCbData& aMetadata) {
+      
+      SurfaceMemoryCounter counter(key,  true,
+                                    false,
+                                    false, aType);
 
-  
-  size_t heap = 0, nonHeap = 0, handles = 0;
-  aSurface->AddSizeOfExcludingThis(aMallocSizeOf, heap, nonHeap, handles);
-  counter.Values().SetDecodedHeap(heap);
-  counter.Values().SetDecodedNonHeap(nonHeap);
-  counter.Values().SetExternalHandles(handles);
+      
+      counter.Values().SetDecodedHeap(aMetadata.heap);
+      counter.Values().SetDecodedNonHeap(aMetadata.nonHeap);
+      counter.Values().SetExternalHandles(aMetadata.handles);
+      counter.Values().SetFrameIndex(aMetadata.index);
+      counter.Values().SetExternalId(aMetadata.externalId);
 
-  
-  aCounters.AppendElement(counter);
+      aCounters.AppendElement(counter);
+    }
+  );
 }
 
 void
