@@ -338,9 +338,9 @@ LauncherResult<bool> LauncherRegistryInfo::ClearStartTimestamp(
 }
 
 LauncherVoidResult LauncherRegistryInfo::ClearStartTimestamps() {
-  LauncherResult<uint64_t> lastBrowserTimestamp =
-      GetStartTimestamp(ProcessType::Browser);
-  if (lastBrowserTimestamp.isOk() && lastBrowserTimestamp.unwrap() == 0ULL) {
+  LauncherResult<EnabledState> enabled = IsEnabled();
+  if (enabled.isOk() && enabled.unwrap() == EnabledState::ForceDisabled) {
+    
     
     return Ok();
   }
