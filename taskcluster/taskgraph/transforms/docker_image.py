@@ -179,6 +179,8 @@ def fill_template(config, tasks):
                 'docker-in-docker': True,
                 'taskcluster-proxy': True,
                 'max-run-time': 7200,
+                
+                'retry-exit-status': [100],
             },
         }
         
