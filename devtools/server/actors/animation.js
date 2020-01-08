@@ -930,13 +930,6 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
   pauseSync(player) {
-    
-    
-    
-    
-    
-    
-    this.playSync(player);
     player.startTime = null;
   },
 
