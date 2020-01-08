@@ -597,7 +597,8 @@ protected:
     
     RefPtr<gfxFontFamily> mReplacementCharFallbackFamily;
 
-    nsTHashtable<nsCStringHashKey> mBadUnderlineFamilyNames;
+    
+    nsTArray<nsCString> mBadUnderlineFamilyNames;
 
     
     
