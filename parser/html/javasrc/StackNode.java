@@ -97,7 +97,14 @@ final class StackNode<T> {
 
     StackNode(int idxInTreeBuilder) {
         this.idxInTreeBuilder = idxInTreeBuilder;
+        this.flags = 0;
+        this.name = null;
+        this.popName = null;
+        
+        this.node = null;
+        this.attributes = null;
         this.refcount = 0;
+        
     }
 
     
