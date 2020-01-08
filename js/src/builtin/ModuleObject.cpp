@@ -17,6 +17,7 @@
 #include "gc/Tracer.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
+#include "vm/EqualityOperations.h"  
 #include "vm/SelfHosting.h"
 
 #include "vm/JSObject-inl.h"
