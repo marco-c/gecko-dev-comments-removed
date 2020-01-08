@@ -347,6 +347,13 @@ let ACTORS = {
     docElt.setAttribute("sizemode", sizemode);
 
     
+    
+    
+    let xulWin = win.docShell.treeOwner
+                    .QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIXULWindow);
+    height -= xulWin.outerToInnerHeightDifferenceInCSSPixels;
+    width -= xulWin.outerToInnerWidthDifferenceInCSSPixels;
     docElt.setAttribute("height", height);
     docElt.setAttribute("width", width);
   } else {
