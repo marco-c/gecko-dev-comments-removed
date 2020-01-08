@@ -343,8 +343,9 @@ public:
     
     nsAutoCString preferredAltDataType(EmptyCString());
     nsCOMPtr<nsICacheInfoChannel> outerChannel = do_QueryInterface(underlyingChannel);
-    if (outerChannel) {
-      outerChannel->GetPreferredAlternativeDataType(preferredAltDataType);
+    if (outerChannel && !outerChannel->PreferredAlternativeDataTypes().IsEmpty()) {
+      
+      preferredAltDataType.Assign(mozilla::Get<0>(outerChannel->PreferredAlternativeDataTypes()[0]));
     }
 
     

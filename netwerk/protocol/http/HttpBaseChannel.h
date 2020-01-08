@@ -46,6 +46,7 @@
 #include "nsCOMArray.h"
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/Move.h"
+#include "mozilla/Tuple.h"
 #include "nsIThrottledInputChannel.h"
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
@@ -70,6 +71,8 @@ class LogCollector;
 
 namespace net {
 extern mozilla::LazyLogModule gHttpLog;
+
+typedef nsTArray<Tuple<nsCString, nsCString>> ArrayOfStringPairs;
 
 
 
@@ -554,7 +557,7 @@ protected:
   
   nsString mInitiatorType;
   
-  nsCString mPreferredCachedAltDataType;
+  ArrayOfStringPairs mPreferredCachedAltDataTypes;
   
   nsCString mAvailableCachedAltDataType;
   nsString mIntegrityMetadata;
