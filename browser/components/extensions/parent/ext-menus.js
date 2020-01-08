@@ -353,14 +353,13 @@ var gMenuBuilder = {
       return;
     }
 
-    if (!gShownMenuItems.has(extension)) {
-      
-      
-      
-      return;
-    }
-
     if (contextData.onBrowserAction || contextData.onPageAction) {
+      if (contextData.extension.id !== extension.id) {
+        
+        
+        
+        return;
+      }
       
       
       for (let item of this.itemsToCleanUp) {
