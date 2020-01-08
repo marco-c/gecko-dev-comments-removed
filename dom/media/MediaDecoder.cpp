@@ -967,14 +967,6 @@ void MediaDecoder::UpdateVideoDecodeMode() {
   }
 
   
-  
-  if (mIsElementInTree && mElementVisibility == Visibility::UNTRACKED) {
-    LOG("UpdateVideoDecodeMode(), early return because we have incomplete "
-        "visibility states.");
-    return;
-  }
-
-  
   if (!mMediaSeekable) {
     LOG("UpdateVideoDecodeMode(), set Normal because the media is not "
         "seekable");
@@ -1011,6 +1003,16 @@ void MediaDecoder::UpdateVideoDecodeMode() {
     LOG("UpdateVideoDecodeMode(), set Normal because the tab is in background "
         "and hovered.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
+    return;
+  }
+
+  
+  
+  
+  if (mIsElementInTree && mElementVisibility == Visibility::UNTRACKED) {
+    LOG("UpdateVideoDecodeMode(), set Suspend because element hasn't be "
+        "updated visibility state.");
+    mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Suspend);
     return;
   }
 
