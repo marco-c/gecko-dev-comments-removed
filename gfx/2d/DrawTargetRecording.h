@@ -303,7 +303,9 @@ public:
   virtual already_AddRefed<DrawTarget>
     CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFormat) const override;
 
-   
+  bool CanCreateSimilarDrawTarget(const IntSize& aSize,
+                                  SurfaceFormat aFormat) const override;
+  
 
 
 

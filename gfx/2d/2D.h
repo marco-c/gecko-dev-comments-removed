@@ -1381,6 +1381,18 @@ public:
 
 
 
+  virtual bool
+    CanCreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFormat) const
+  {
+    return true;
+  }
+
+  
+
+
+
+
+
 
 
   virtual already_AddRefed<DrawTarget>
