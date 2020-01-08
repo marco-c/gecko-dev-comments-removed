@@ -31,6 +31,14 @@ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WindowGlobalChild)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WindowGlobalChild)
 
+  static already_AddRefed<WindowGlobalChild>
+  GetByInnerWindowId(uint64_t aInnerWindowId);
+
+  static already_AddRefed<WindowGlobalChild>
+  GetByInnerWindowId(const GlobalObject& aGlobal, uint64_t aInnerWindowId) {
+    return GetByInnerWindowId(aInnerWindowId);
+  }
+
   dom::BrowsingContext* BrowsingContext() { return mBrowsingContext; }
   nsGlobalWindowInner* WindowGlobal() { return mWindowGlobal; }
 
@@ -40,6 +48,10 @@ public:
   
   
   bool IsInProcess() { return XRE_IsParentProcess(); }
+
+  
+  uint64_t InnerWindowId() { return mInnerWindowId; }
+  uint64_t OuterWindowId() { return mOuterWindowId; }
 
   
   
@@ -62,6 +74,8 @@ private:
 
   RefPtr<nsGlobalWindowInner> mWindowGlobal;
   RefPtr<dom::BrowsingContext> mBrowsingContext;
+  uint64_t mInnerWindowId;
+  uint64_t mOuterWindowId;
   bool mIPCClosed;
 };
 
