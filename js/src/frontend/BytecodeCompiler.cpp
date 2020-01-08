@@ -343,6 +343,7 @@ BytecodeCompiler::compileScript(HandleObject environment, SharedContext* sc)
         }
 
         
+        AutoGeckoProfilerEntry pseudoFrame(cx, "script emit");
         if (pn) {
             if (sc->isEvalContext() && sc->hasDebuggerStatement() && !cx->helperThread()) {
                 
