@@ -1540,7 +1540,6 @@ CacheCreator::CreateCacheStorage(nsIPrincipal* aPrincipal)
     CacheStorage::CreateOnMainThread(mozilla::dom::cache::CHROME_ONLY_NAMESPACE,
                                      mSandboxGlobalObject,
                                      aPrincipal,
-                                     false, 
                                      true ,
                                      error);
   if (NS_WARN_IF(error.Failed())) {
