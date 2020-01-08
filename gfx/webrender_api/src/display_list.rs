@@ -9,8 +9,9 @@ use serde::de::Deserializer;
 #[cfg(feature = "serialize")]
 use serde::ser::{Serializer, SerializeSeq};
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Write};
+use std::io::{Read, stdout, Write};
 use std::marker::PhantomData;
+use std::ops::Range;
 use std::{io, mem, ptr, slice};
 use time::precise_time_ns;
 use {AlphaType, BorderDetails, BorderDisplayItem, BorderRadius, BoxShadowClipMode};
@@ -925,6 +926,10 @@ impl DisplayListBuilder {
     }
 
     
+    pub fn print_display_list(&mut self) {
+        self.emit_display_list(0, Range { start: None, end: None }, stdout());
+    }
+
     
     
     
@@ -932,12 +937,19 @@ impl DisplayListBuilder {
     
     
     
-    pub fn print_display_list(
+    
+    
+    
+    
+    pub fn emit_display_list<W>(
         &mut self,
         indent: usize,
-        start: Option<usize>,
-        end: Option<usize>,
-    ) -> usize {
+        range: Range<Option<usize>>,
+        mut sink: W,
+    ) -> usize
+    where
+        W: Write
+    {
         let mut temp = BuiltDisplayList::default();
         mem::swap(&mut temp.data, &mut self.data);
 
@@ -945,8 +957,8 @@ impl DisplayListBuilder {
         {
             let mut iter = BuiltDisplayListIter::new(&temp);
             while let Some(item) = iter.next_raw() {
-                if index >= start.unwrap_or(0) && end.map_or(true, |e| index < e) {
-                    eprintln!("{}{:?}", "  ".repeat(indent), item.display_item());
+                if index >= range.start.unwrap_or(0) && range.end.map_or(true, |e| index < e) {
+                    writeln!(sink, "{}{:?}", "  ".repeat(indent), item.display_item());
                 }
                 index += 1;
             }
