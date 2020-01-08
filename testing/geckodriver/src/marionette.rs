@@ -210,10 +210,7 @@ impl MarionetteHandler {
         prefs.insert_slice(&extra_prefs[..]);
 
         if self.settings.jsdebugger {
-            prefs.insert(
-                "devtools.browsertoolbox.panel",
-                Pref::new("jsdebugger".to_owned()),
-            );
+            prefs.insert("devtools.browsertoolbox.panel", Pref::new("jsdebugger"));
             prefs.insert("devtools.debugger.remote-enabled", Pref::new(true));
             prefs.insert("devtools.chrome.enabled", Pref::new(true));
             prefs.insert("devtools.debugger.prompt-connection", Pref::new(false));
@@ -1406,6 +1403,7 @@ impl ToMarionette for JavascriptCommandParameters {
         let mut data = serde_json::to_value(self)?.as_object().unwrap().clone();
         data.insert("newSandbox".to_string(), Value::Bool(false));
         data.insert("specialPowers".to_string(), Value::Bool(false));
+        data.insert("scriptTimeout".to_string(), Value::Null);
         Ok(data)
     }
 }
