@@ -70,18 +70,9 @@ class WorkletImpl
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkletImpl);
 
-  enum WorkletType {
-    eAudioWorklet,
-    ePaintWorklet,
-  };
-
   
 
-  static already_AddRefed<dom::Worklet>
-  CreateWorklet(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
-                WorkletType aWorkletType);
-
-  JSObject*
+  virtual JSObject*
   WrapWorklet(JSContext* aCx, dom::Worklet* aWorklet,
               JS::Handle<JSObject*> aGivenProto);
 
@@ -98,15 +89,15 @@ public:
   
   nsresult DispatchRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
-private:
-  WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
-              WorkletType aWorkletType);
-  ~WorkletImpl();
+protected:
+  WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
+  virtual ~WorkletImpl();
+
+  virtual already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope() = 0;
 
   
   
   WorkletLoadInfo mWorkletLoadInfo;
-  const WorkletType mWorkletType;
 
   
   RefPtr<dom::WorkletThread> mWorkletThread;
