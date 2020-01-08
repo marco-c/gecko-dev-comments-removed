@@ -3160,6 +3160,12 @@ extern JS_PUBLIC_API JS::Value GetScriptPrivate(JSScript* script);
 
 
 
+extern JS_PUBLIC_API JS::Value GetScriptedCallerPrivate(JSContext* cx);
+
+
+
+
+
 
 
 using ScriptPrivateFinalizeHook = void (*)(JSFreeOp*, const JS::Value&);
