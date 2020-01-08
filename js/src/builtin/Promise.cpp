@@ -1167,7 +1167,7 @@ RejectMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj, HandleValue re
             
             RootedObject realReason(cx, UncheckedUnwrap(&reason.toObject()));
             RootedValue realReasonVal(cx, ObjectValue(*realReason));
-            RootedObject realGlobal(cx, &realReason->nonCCWGlobal());
+            Rooted<GlobalObject*> realGlobal(cx, &realReason->nonCCWGlobal());
             ReportErrorToGlobal(cx, realGlobal, realReasonVal);
 
             
