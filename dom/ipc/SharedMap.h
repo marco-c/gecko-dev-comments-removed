@@ -22,6 +22,9 @@ class nsIGlobalObject;
 
 namespace mozilla {
 namespace dom {
+
+class ContentParent;
+
 namespace ipc {
 
 
@@ -58,7 +61,8 @@ public:
 
   SharedMap();
 
-  SharedMap(nsIGlobalObject* aGlobal, const FileDescriptor&, size_t);
+  SharedMap(nsIGlobalObject* aGlobal, const FileDescriptor&, size_t,
+            nsTArray<RefPtr<BlobImpl>>&& aBlobs);
 
   
   bool Has(const nsACString& name);
@@ -105,7 +109,7 @@ public:
 
 
 
-  FileDescriptor CloneMapFile();
+  FileDescriptor CloneMapFile() const;
 
   
 
@@ -344,6 +348,10 @@ public:
   
   
   void Flush();
+
+
+  
+  void SendTo(ContentParent* aContentParent) const;
 
 
   
