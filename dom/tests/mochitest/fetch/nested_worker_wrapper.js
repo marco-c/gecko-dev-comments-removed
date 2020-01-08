@@ -1,10 +1,14 @@
+function getScriptUrl() {
+  return new URL(location.href).searchParams.get('script');
+}
+
 
 var worker;
 
 addEventListener('message', function nestedWorkerWrapperOnMessage(evt) {
   removeEventListener('message', nestedWorkerWrapperOnMessage);
 
-  worker = new Worker('worker_wrapper.js');
+  worker = new Worker('worker_wrapper.js?script=' + getScriptUrl());
 
   worker.addEventListener('message', function(evt) {
     self.postMessage({
