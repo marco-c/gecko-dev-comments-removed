@@ -3079,6 +3079,17 @@ void InnerCleanupValue(const nsXPTType& aType,
 
 void InitializeValue(const nsXPTType& aType, void* aValue);
 
+
+
+
+
+
+
+
+
+void DestructValue(const nsXPTType& aType, void* aValue,
+                   uint32_t aArrayLen = 0);
+
 } 
 
 namespace mozilla {

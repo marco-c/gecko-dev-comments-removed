@@ -1539,7 +1539,7 @@ XPCConvert::JSArray2Native(JS::HandleValue aJSVal,
             
             
             for (uint32_t j = 0; j < i; ++j) {
-                CleanupValue(aEltType, aEltType.ElementPtr(buf, j));
+                DestructValue(aEltType, aEltType.ElementPtr(buf, j));
             }
             return false;
         }
@@ -1604,7 +1604,7 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
             void* elements = *(void**)aValue;
 
             for (uint32_t i = 0; i < aArrayLen; ++i) {
-                CleanupValue(elty, elty.ElementPtr(elements, i));
+                DestructValue(elty, elty.ElementPtr(elements, i));
             }
             free(elements);
             break;
@@ -1617,7 +1617,7 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
             auto* array = (xpt::detail::UntypedTArray*)aValue;
 
             for (uint32_t i = 0; i < array->Length(); ++i) {
-                CleanupValue(elty, elty.ElementPtr(array->Elements(), i));
+                DestructValue(elty, elty.ElementPtr(array->Elements(), i));
             }
             array->Clear();
             break;
@@ -1660,5 +1660,34 @@ XPT_FOR_EACH_COMPLEX_TYPE(XPT_INIT_TYPE)
         default:
             aType.ZeroValue(aValue);
             break;
+    }
+}
+
+
+
+
+
+template<typename T>
+static void
+_DestructValueHelper(void* aValue)
+{
+    static_cast<T*>(aValue)->~T();
+}
+
+void
+xpc::DestructValue(const nsXPTType& aType,
+                   void* aValue,
+                   uint32_t aArrayLen)
+{
+    
+    xpc::CleanupValue(aType, aValue, aArrayLen);
+
+    
+    switch (aType.Tag()) {
+#define XPT_RUN_DESTRUCTOR(tag, type) \
+    case tag: _DestructValueHelper<type>(aValue); break;
+XPT_FOR_EACH_COMPLEX_TYPE(XPT_RUN_DESTRUCTOR)
+#undef XPT_RUN_DESTRUCTOR
+        default: break; 
     }
 }
