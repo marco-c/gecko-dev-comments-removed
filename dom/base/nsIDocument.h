@@ -283,6 +283,8 @@ public:
 
 
   nsIDocument* RequestResource(nsIURI* aURI,
+                               nsIURI* aReferrer,
+                               uint32_t aReferrerPolicy,
                                nsINode* aRequestingNode,
                                nsIDocument* aDisplayDocument,
                                ExternalResourceLoad** aPendingLoad);
@@ -348,8 +350,10 @@ protected:
 
 
 
-    nsresult StartLoad(nsIURI* aURI, nsINode* aRequestingNode);
-
+    nsresult StartLoad(nsIURI* aURI,
+                       nsIURI* aReferrer,
+                       uint32_t aReferrerPolicy,
+                       nsINode* aRequestingNode);
     
 
 
@@ -2544,7 +2548,11 @@ public:
 
 
 
+
+
   nsIDocument* RequestExternalResource(nsIURI* aURI,
+                                       nsIURI* aReferrer,
+                                       uint32_t aReferrerPolicy,
                                        nsINode* aRequestingNode,
                                        ExternalResourceLoad** aPendingLoad);
 

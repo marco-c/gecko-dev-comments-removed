@@ -64,9 +64,10 @@ public:
 
 
 
-  void Reset(nsIContent* aFrom,
-             nsIURI* aURI,
-             bool aWatch = true,
+
+
+  void Reset(nsIContent* aFrom, nsIURI* aURI, nsIURI* aReferrer,
+             uint32_t aReferrerPolicy, bool aWatch = true,
              bool aReferenceImage = false);
 
   

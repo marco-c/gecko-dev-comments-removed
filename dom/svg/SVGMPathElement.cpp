@@ -239,7 +239,10 @@ SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
     
     
     
-    mPathTracker.Reset(aParent, targetURI);
+    
+    mPathTracker.Reset(aParent, targetURI,
+                       OwnerDoc()->GetDocumentURI(),
+                       OwnerDoc()->GetReferrerPolicy());
   } else {
     
     
