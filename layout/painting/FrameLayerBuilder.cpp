@@ -4062,16 +4062,16 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
     mHitRegion.OrWith(area);
   }
 
-  if (aItem->HitTestInfo().contains(CompositorHitTestFlags::eDispatchToContent)) {
+  if (aItem->HitTestInfo() & CompositorHitTestInfo::eDispatchToContent) {
     mDispatchToContentHitRegion.OrWith(area);
 
-    if (aItem->HitTestInfo().contains(CompositorHitTestFlags::eRequiresTargetConfirmation)) {
+    if (aItem->HitTestInfo() & CompositorHitTestInfo::eRequiresTargetConfirmation) {
       mDTCRequiresTargetConfirmation = true;
     }
   }
 
-  const auto touchFlags = hitTestInfo & CompositorHitTestTouchActionMask;
-  if (!touchFlags.isEmpty()) {
+  auto touchFlags = hitTestInfo & CompositorHitTestInfo::eTouchActionMask;
+  if (touchFlags) {
     
     
     
@@ -4080,7 +4080,7 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
     
     if (mCollapsedTouchActions) {
       mDispatchToContentHitRegion.OrWith(area);
-    } else if (touchFlags == CompositorHitTestTouchActionMask) {
+    } else if (touchFlags == CompositorHitTestInfo::eTouchActionMask) {
       
       mNoActionRegion.OrWith(area);
     } else {
@@ -4099,12 +4099,12 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
       
       
       
-      if (touchFlags != CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled) {
-        if (!hitTestInfo.contains(CompositorHitTestFlags::eTouchActionPanXDisabled)) {
+      if (touchFlags != CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled) {
+        if (!(hitTestInfo & CompositorHitTestInfo::eTouchActionPanXDisabled)) {
           
           mHorizontalPanRegion.OrWith(area);
         }
-        if (!hitTestInfo.contains(CompositorHitTestFlags::eTouchActionPanYDisabled)) {
+        if (!(hitTestInfo & CompositorHitTestInfo::eTouchActionPanYDisabled)) {
           
           mVerticalPanRegion.OrWith(area);
         }

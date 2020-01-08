@@ -28,7 +28,6 @@ class EnumSet
 {
 public:
   typedef uint32_t serializedType;
-  typedef T valueType;
 
   EnumSet()
     : mBitField(0)
@@ -68,12 +67,6 @@ public:
     }
   }
 
-  void operator=(T aEnum)
-  {
-    incVersion();
-    mBitField = bitFor(aEnum);
-  }
-
   EnumSet(const EnumSet& aEnumSet)
     : mBitField(aEnumSet.mBitField)
   {
@@ -101,7 +94,7 @@ public:
   
 
 
-  void operator+=(const EnumSet<T>& aEnumSet)
+  void operator+=(const EnumSet<T> aEnumSet)
   {
     incVersion();
     mBitField |= aEnumSet.mBitField;
@@ -110,7 +103,7 @@ public:
   
 
 
-  EnumSet<T> operator+(const EnumSet<T>& aEnumSet) const
+  EnumSet<T> operator+(const EnumSet<T> aEnumSet) const
   {
     EnumSet<T> result(*this);
     result += aEnumSet;
@@ -139,7 +132,7 @@ public:
   
 
 
-  void operator-=(const EnumSet<T>& aEnumSet)
+  void operator-=(const EnumSet<T> aEnumSet)
   {
     incVersion();
     mBitField &= ~(aEnumSet.mBitField);
@@ -148,7 +141,7 @@ public:
   
 
 
-  EnumSet<T> operator-(const EnumSet<T>& aEnumSet) const
+  EnumSet<T> operator-(const EnumSet<T> aEnumSet) const
   {
     EnumSet<T> result(*this);
     result -= aEnumSet;
@@ -167,7 +160,7 @@ public:
   
 
 
-  void operator&=(const EnumSet<T>& aEnumSet)
+  void operator&=(const EnumSet<T> aEnumSet)
   {
     incVersion();
     mBitField &= aEnumSet.mBitField;
@@ -176,7 +169,7 @@ public:
   
 
 
-  EnumSet<T> operator&(const EnumSet<T>& aEnumSet) const
+  EnumSet<T> operator&(const EnumSet<T> aEnumSet) const
   {
     EnumSet<T> result(*this);
     result &= aEnumSet;
@@ -186,33 +179,9 @@ public:
   
 
 
-  bool operator==(const EnumSet<T>& aEnumSet) const
+  bool operator==(const EnumSet<T> aEnumSet) const
   {
     return mBitField == aEnumSet.mBitField;
-  }
-
-  
-
-
-  bool operator==(T aEnum) const
-  {
-    return mBitField == bitFor(aEnum);
-  }
-
-  
-
-
-  bool operator!=(const EnumSet<T>& aEnumSet) const
-  {
-    return !operator==(aEnumSet);
-  }
-
-  
-
-
-  bool operator!=(T aEnum) const
-  {
-    return !operator==(aEnum);
   }
 
   
@@ -221,14 +190,6 @@ public:
   bool contains(T aEnum) const
   {
     return mBitField & bitFor(aEnum);
-  }
-
-  
-
-
-  bool contains(const EnumSet<T>& aEnumSet) const
-  {
-    return (mBitField & aEnumSet.mBitField) == aEnumSet.mBitField;
   }
 
   

@@ -701,8 +701,8 @@ struct DIGroup
     bool backfaceHidden = false;
 
     
-    CompositorHitTestInfo hitInfo(CompositorHitTestFlags::eVisibleToHitTest,
-                                  CompositorHitTestFlags::eDispatchToContent);
+    auto hitInfo = CompositorHitTestInfo::eVisibleToHitTest |
+                   CompositorHitTestInfo::eDispatchToContent;
 
     
     
