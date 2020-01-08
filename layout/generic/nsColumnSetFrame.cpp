@@ -494,11 +494,7 @@ nsColumnSetFrame::GetMinISize(gfxContext *aRenderingContext)
 {
   nscoord iSize = 0;
   DISPLAY_MIN_WIDTH(this, iSize);
-
-  if (mFrames.FirstChild() && !StyleDisplay()->IsContainSize()) {
-    
-    
-    
+  if (mFrames.FirstChild()) {
     iSize = mFrames.FirstChild()->GetMinISize(aRenderingContext);
   }
   const nsStyleColumn* colStyle = StyleColumn();
@@ -543,10 +539,7 @@ nsColumnSetFrame::GetPrefISize(gfxContext *aRenderingContext)
   nscoord colISize;
   if (colStyle->mColumnWidth.GetUnit() == eStyleUnit_Coord) {
     colISize = colStyle->mColumnWidth.GetCoordValue();
-  } else if (mFrames.FirstChild() && !StyleDisplay()->IsContainSize()) {
-    
-    
-    
+  } else if (mFrames.FirstChild()) {
     colISize = mFrames.FirstChild()->GetPrefISize(aRenderingContext);
   } else {
     colISize = 0;
@@ -915,11 +908,6 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
     } else {
       contentSize.BSize(wm) = aConfig.mComputedBSize;
     }
-  } else if (aReflowInput.mStyleDisplay->IsContainSize()) {
-    
-    
-    
-    contentSize.BSize(wm) = aReflowInput.ApplyMinMaxBSize(0);
   } else {
     
     
