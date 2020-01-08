@@ -21,7 +21,6 @@
 
 #include "unicode/utypes.h"
 #include "unicode/utf16.h"
-#include "udataswp.h"
 
 U_CDECL_BEGIN
 
@@ -736,12 +735,8 @@ utrie_serialize(UNewTrie *trie, void *data, int32_t capacity,
 
 
 
-U_CAPI int32_t U_EXPORT2
-utrie_swap(const UDataSwapper *ds,
-           const void *inData, int32_t length, void *outData,
-           UErrorCode *pErrorCode);
-
-
+#define UTRIE_SIG       0x54726965
+#define UTRIE_OE_SIG    0x65697254
 
 
 

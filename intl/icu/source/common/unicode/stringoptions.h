@@ -39,8 +39,6 @@
 
 #define U_FOLD_CASE_EXCLUDE_SPECIAL_I 1
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -66,8 +64,6 @@
 
 
 #define U_TITLECASE_SENTENCES 0x40
-
-#endif  
 
 
 
@@ -112,8 +108,6 @@
 
 #define U_TITLECASE_NO_BREAK_ADJUSTMENT 0x200
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -156,8 +150,6 @@
 
 
 #define U_OMIT_UNCHANGED_TEXT 0x4000
-
-#endif  
 
 
 

@@ -367,7 +367,12 @@ static UResourceDataEntry *init_entry(const char *localeID, const char *path, UE
         
         res_load(&(r->fData), r->fPath, r->fName, status);
 
-        if (U_FAILURE(*status)) { 
+        if (U_FAILURE(*status)) {
+            
+            if (*status == U_MEMORY_ALLOCATION_ERROR) {
+                uprv_free(r);
+                return NULL;
+            }
             
             *status = U_USING_FALLBACK_WARNING;
             r->fBogus = U_USING_FALLBACK_WARNING;
@@ -537,6 +542,11 @@ loadParentsExceptRoot(UResourceDataEntry *&t1,
         UErrorCode usrStatus = U_ZERO_ERROR;
         if (usingUSRData) {  
             u2 = init_entry(name, usrDataPath, &usrStatus);
+            
+            if (usrStatus == U_MEMORY_ALLOCATION_ERROR) {
+                *status = usrStatus;
+                return FALSE;
+            }
         }
 
         if (usingUSRData && U_SUCCESS(usrStatus) && u2->fBogus == U_ZERO_ERROR) {
@@ -642,21 +652,32 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
         
         r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
 
+        
+        if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+            *status = intStatus;
+            goto finishUnlock;
+        }
+
         if(r != NULL) { 
             t1 = r;
             hasRealData = TRUE;
             if ( usingUSRData ) {  
                 UErrorCode usrStatus = U_ZERO_ERROR;
                 UResourceDataEntry *u1 = init_entry(t1->fName, usrDataPath, &usrStatus);
-               if ( u1 != NULL ) {
-                 if(u1->fBogus == U_ZERO_ERROR) {
-                   u1->fParent = t1;
-                   r = u1;
-                 } else {
-                   
-                   u1->fCountExisting = 0;
-                 }
-               }
+                
+                if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+                    *status = intStatus;
+                    goto finishUnlock;
+                }
+                if ( u1 != NULL ) {
+                    if(u1->fBogus == U_ZERO_ERROR) {
+                        u1->fParent = t1;
+                        r = u1;
+                    } else {
+                        
+                        u1->fCountExisting = 0;
+                    }
+                }
             }
             if (hasChopped && !isRoot) {
                 if (!loadParentsExceptRoot(t1, name, UPRV_LENGTHOF(name), usingUSRData, usrDataPath, status)) {
@@ -671,6 +692,11 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
             
             uprv_strcpy(name, uloc_getDefault());
             r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
+            
+            if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+                *status = intStatus;
+                goto finishUnlock;
+            }
             intStatus = U_USING_DEFAULT_WARNING;
             if(r != NULL) { 
                 t1 = r;
@@ -690,6 +716,11 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
         if(r == NULL) {
             uprv_strcpy(name, kRootLocaleName);
             r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
+            
+            if (intStatus == U_MEMORY_ALLOCATION_ERROR) {
+                *status = intStatus;
+                goto finishUnlock;
+            }
             if(r != NULL) {
                 t1 = r;
                 intStatus = U_USING_DEFAULT_WARNING;
@@ -2421,7 +2452,7 @@ ures_loc_nextLocale(UEnumeration* en,
     UResourceBundle *k = NULL;
     const char *result = NULL;
     int32_t len = 0;
-    if(ures_hasNext(res) && (k = ures_getNextResource(res, &ctx->curr, status))) {
+    if(ures_hasNext(res) && (k = ures_getNextResource(res, &ctx->curr, status)) != 0) {
         result = ures_getKey(k);
         len = (int32_t)uprv_strlen(result);
     }
@@ -2843,7 +2874,7 @@ ures_getKeywordValues(const char *path, const char *keyword, UErrorCode *status)
     valuesBuf[0]=0;
     valuesBuf[1]=0;
     
-    while((locale = uenum_next(locs, &locLen, status))) {
+    while((locale = uenum_next(locs, &locLen, status)) != 0) {
         UResourceBundle   *bund = NULL;
         UResourceBundle   *subPtr = NULL;
         UErrorCode subStatus = U_ZERO_ERROR; 
@@ -2868,7 +2899,7 @@ ures_getKeywordValues(const char *path, const char *keyword, UErrorCode *status)
             continue;
         }
         
-        while((subPtr = ures_getNextResource(&item,&subItem,&subStatus))
+        while((subPtr = ures_getNextResource(&item,&subItem,&subStatus)) != 0
             && U_SUCCESS(subStatus)) {
             const char *k;
             int32_t i;

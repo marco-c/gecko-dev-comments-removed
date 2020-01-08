@@ -348,11 +348,14 @@ IndianCalendar::inDaylightTime(UErrorCode& status) const
 }
 
 
-const UDate     IndianCalendar::fgSystemDefaultCentury          = DBL_MIN;
-const int32_t   IndianCalendar::fgSystemDefaultCenturyYear      = -1;
 
-UDate           IndianCalendar::fgSystemDefaultCenturyStart     = DBL_MIN;
-int32_t         IndianCalendar::fgSystemDefaultCenturyStartYear = -1;
+
+
+
+
+static UDate           gSystemDefaultCenturyStart       = DBL_MIN;
+static int32_t         gSystemDefaultCenturyStartYear   = -1;
+static icu::UInitOnce  gSystemDefaultCenturyInit        = U_INITONCE_INITIALIZER;
 
 
 UBool IndianCalendar::haveDefaultCentury() const
@@ -360,87 +363,45 @@ UBool IndianCalendar::haveDefaultCentury() const
     return TRUE;
 }
 
-UDate IndianCalendar::defaultCenturyStart() const
+static void U_CALLCONV
+initializeSystemDefaultCentury()
 {
-    return internalGetDefaultCenturyStart();
+    
+    
+    
+    UErrorCode status = U_ZERO_ERROR;
+
+    IndianCalendar calendar ( Locale ( "@calendar=Indian" ), status);
+    if ( U_SUCCESS ( status ) ) {
+        calendar.setTime ( Calendar::getNow(), status );
+        calendar.add ( UCAL_YEAR, -80, status );
+
+        UDate    newStart = calendar.getTime ( status );
+        int32_t  newYear  = calendar.get ( UCAL_YEAR, status );
+
+        gSystemDefaultCenturyStart = newStart;
+        gSystemDefaultCenturyStartYear = newYear;
+    }
+    
 }
 
-int32_t IndianCalendar::defaultCenturyStartYear() const
-{
-    return internalGetDefaultCenturyStartYear();
-}
 
 UDate
-IndianCalendar::internalGetDefaultCenturyStart() const
+IndianCalendar::defaultCenturyStart() const
 {
     
-    UBool needsUpdate;
-    { 
-        Mutex m;
-        needsUpdate = (fgSystemDefaultCenturyStart == fgSystemDefaultCentury);
-    }
-
-    if (needsUpdate) {
-        initializeSystemDefaultCentury();
-    }
-
-    
-    
-
-    return fgSystemDefaultCenturyStart;
+    umtx_initOnce(gSystemDefaultCenturyInit, &initializeSystemDefaultCentury);
+    return gSystemDefaultCenturyStart;
 }
 
 int32_t
-IndianCalendar::internalGetDefaultCenturyStartYear() const
+IndianCalendar::defaultCenturyStartYear() const
 {
     
-    UBool needsUpdate;
-    { 
-        Mutex m;
-
-        needsUpdate = (fgSystemDefaultCenturyStart == fgSystemDefaultCentury);
-    }
-
-    if (needsUpdate) {
-        initializeSystemDefaultCentury();
-    }
-
-    
-    
-
-    return    fgSystemDefaultCenturyStartYear;
+    umtx_initOnce(gSystemDefaultCenturyInit, &initializeSystemDefaultCentury);
+    return    gSystemDefaultCenturyStartYear;
 }
 
-void
-IndianCalendar::initializeSystemDefaultCentury()
-{
-    
-    
-    
-    
-    if (fgSystemDefaultCenturyStart == fgSystemDefaultCentury) {
-        UErrorCode status = U_ZERO_ERROR;
-
-        IndianCalendar calendar(Locale("@calendar=Indian"),status);
-        if (U_SUCCESS(status)) {
-            calendar.setTime(Calendar::getNow(), status);
-            calendar.add(UCAL_YEAR, -80, status);
-
-            UDate    newStart = calendar.getTime(status);
-            int32_t  newYear  = calendar.get(UCAL_YEAR, status);
-
-            {
-                Mutex m;
-
-                fgSystemDefaultCenturyStart = newStart;
-                fgSystemDefaultCenturyStartYear = newYear;
-            }
-        }
-
-        
-        
-    }
-}
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(IndianCalendar)
 

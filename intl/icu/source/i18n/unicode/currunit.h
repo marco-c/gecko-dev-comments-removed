@@ -59,7 +59,6 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
     CurrencyUnit(const CurrencyUnit& other);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -69,7 +68,6 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
     CurrencyUnit(const MeasureUnit& measureUnit, UErrorCode &ec);
-#endif  
 
     
 

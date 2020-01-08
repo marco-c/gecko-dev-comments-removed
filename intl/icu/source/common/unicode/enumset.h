@@ -29,6 +29,7 @@ U_NAMESPACE_BEGIN
 
 
 
+
 template<typename T, uint32_t minValue, uint32_t limitValue>
 class EnumSet {
 public:
@@ -59,6 +60,8 @@ private:
 private:
     uint32_t fBools;
 };
+
+
 
 U_NAMESPACE_END
 

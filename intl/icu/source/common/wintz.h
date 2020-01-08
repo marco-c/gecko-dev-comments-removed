@@ -16,9 +16,7 @@
 
 #include "unicode/utypes.h"
 
-
-
-#if U_PLATFORM_USES_ONLY_WIN32_API && (U_PLATFORM_HAS_WINUWP_API == 0)
+#if U_PLATFORM_USES_ONLY_WIN32_API
 
 
 

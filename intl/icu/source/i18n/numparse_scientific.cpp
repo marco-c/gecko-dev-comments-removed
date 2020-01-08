@@ -57,6 +57,11 @@ bool ScientificMatcher::match(StringSegment& segment, ParsedNumber& result, UErr
     }
 
     
+    if (0 != (result.flags & FLAG_HAS_EXPONENT)) {
+        return false;
+    }
+
+    
     
     int overlap1 = segment.getCommonPrefixLength(fExponentSeparatorString);
     if (overlap1 == fExponentSeparatorString.length()) {

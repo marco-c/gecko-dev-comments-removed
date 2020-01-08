@@ -65,11 +65,16 @@ class NumberParserImpl;
 
 
 
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+
+
+
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN && !defined(U_IN_DOXYGEN)
 template class U_I18N_API    EnumSet<UNumberFormatAttribute,
             UNUM_MAX_NONBOOLEAN_ATTRIBUTE+1,
             UNUM_LIMIT_BOOLEAN_ATTRIBUTE>;
 #endif
+
+
 
 
 
@@ -989,6 +994,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
+
     UnicodeString& format(int32_t number, UnicodeString& appendTo, FieldPosition& pos,
                           UErrorCode& status) const U_OVERRIDE;
 #endif  
@@ -1024,6 +1030,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 #ifndef U_HIDE_INTERNAL_API
     
+
 
 
 
@@ -2023,6 +2030,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
+
     void setCurrencyUsage(UCurrencyUsage newUsage, UErrorCode* ec);
 
     
@@ -2050,11 +2058,10 @@ class U_I18N_API DecimalFormat : public NumberFormat {
     void formatToDecimalQuantity(const Formattable& number, number::impl::DecimalQuantity& output,
                                  UErrorCode& status) const;
 
-#endif
+#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
-
 
 
 

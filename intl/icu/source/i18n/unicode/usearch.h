@@ -263,7 +263,6 @@ typedef enum {
 
 
 
-
     USEARCH_ANY_BASE_WEIGHT_IS_WILDCARD,
 
 #ifndef U_HIDE_DEPRECATED_API

@@ -325,9 +325,9 @@ foundBest:
                         
                         
                         
-                        int32_t candidates = words[(wordsFound + 1) % THAI_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
+                        int32_t num_candidates = words[(wordsFound + 1) % THAI_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
                         utext_setNativeIndex(text, current + cuWordLength + chars);
-                        if (candidates > 0) {
+                        if (num_candidates > 0) {
                             break;
                         }
                     }
@@ -555,9 +555,9 @@ foundBest:
                     if (fEndWordSet.contains(pc) && fBeginWordSet.contains(uc)) {
                         
                         
-                        int32_t candidates = words[(wordsFound + 1) % LAO_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
+                        int32_t num_candidates = words[(wordsFound + 1) % LAO_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
                         utext_setNativeIndex(text, current + cuWordLength + chars);
-                        if (candidates > 0) {
+                        if (num_candidates > 0) {
                             break;
                         }
                     }
@@ -748,9 +748,9 @@ foundBest:
                     if (fEndWordSet.contains(pc) && fBeginWordSet.contains(uc)) {
                         
                         
-                        int32_t candidates = words[(wordsFound + 1) % BURMESE_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
+                        int32_t num_candidates = words[(wordsFound + 1) % BURMESE_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
                         utext_setNativeIndex(text, current + cuWordLength + chars);
-                        if (candidates > 0) {
+                        if (num_candidates > 0) {
                             break;
                         }
                     }
@@ -953,9 +953,9 @@ foundBest:
                     uc = utext_current32(text);
                     if (fEndWordSet.contains(pc) && fBeginWordSet.contains(uc)) {
                         
-                        int32_t candidates = words[(wordsFound + 1) % KHMER_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
+                        int32_t num_candidates = words[(wordsFound + 1) % KHMER_LOOKAHEAD].candidates(text, fDictionary, rangeEnd);
                         utext_setNativeIndex(text, current+cuWordLength+chars);
-                        if (candidates > 0) {
+                        if (num_candidates > 0) {
                             break;
                         }
                     }

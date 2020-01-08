@@ -1057,12 +1057,19 @@ UBool DecimalFormat::areSignificantDigitsUsed() const {
 
 void DecimalFormat::setSignificantDigitsUsed(UBool useSignificantDigits) {
     
+    if (useSignificantDigits) {
+        if (fields->properties->minimumSignificantDigits != -1 ||
+            fields->properties->maximumSignificantDigits != -1) {
+            return;
+        }
+    } else {
+        if (fields->properties->minimumSignificantDigits == -1 &&
+            fields->properties->maximumSignificantDigits == -1) {
+            return;
+        }
+    }
     int32_t minSig = useSignificantDigits ? 1 : -1;
     int32_t maxSig = useSignificantDigits ? 6 : -1;
-    if (fields->properties->minimumSignificantDigits == minSig &&
-        fields->properties->maximumSignificantDigits == maxSig) {
-        return;
-    }
     fields->properties->minimumSignificantDigits = minSig;
     fields->properties->maximumSignificantDigits = maxSig;
     touchNoError();
@@ -1175,7 +1182,12 @@ void DecimalFormat::setPropertiesFromPattern(const UnicodeString& pattern, int32
 }
 
 const numparse::impl::NumberParserImpl* DecimalFormat::getParser(UErrorCode& status) const {
-    if (U_FAILURE(status)) { return nullptr; }
+    
+    
+
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
 
     
     auto* ptr = fields->atomicParser.load();
@@ -1185,11 +1197,15 @@ const numparse::impl::NumberParserImpl* DecimalFormat::getParser(UErrorCode& sta
 
     
     auto* temp = NumberParserImpl::createParserFromProperties(*fields->properties, *fields->symbols, false, status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
     if (temp == nullptr) {
         status = U_MEMORY_ALLOCATION_ERROR;
-        
+        return nullptr;
     }
 
+    
     
     
     auto* nonConstThis = const_cast<DecimalFormat*>(this);

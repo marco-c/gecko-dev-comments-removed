@@ -201,8 +201,6 @@ uenum_openUCharStringsEnumeration(const UChar* const strings[], int32_t count,
 
 
 
-
-
 U_STABLE UEnumeration* U_EXPORT2
 uenum_openCharStringsEnumeration(const char* const strings[], int32_t count,
                                  UErrorCode* ec);

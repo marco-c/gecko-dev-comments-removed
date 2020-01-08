@@ -165,12 +165,20 @@ typedef enum UDateAbsoluteUnit {
 
     UDAT_ABSOLUTE_NOW,
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+    UDAT_ABSOLUTE_QUARTER,
+#endif 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UDAT_ABSOLUTE_UNIT_COUNT
+    UDAT_ABSOLUTE_UNIT_COUNT = UDAT_ABSOLUTE_NOW + 2
 #endif  
 } UDateAbsoluteUnit;
 

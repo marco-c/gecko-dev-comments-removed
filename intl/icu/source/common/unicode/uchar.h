@@ -27,6 +27,24 @@
 
 #include "unicode/utypes.h"
 #include "unicode/stringoptions.h"
+#include "unicode/ucpmap.h"
+
+#if !defined(USET_DEFINED) && !defined(U_IN_DOXYGEN)
+
+#define USET_DEFINED
+
+
+
+
+
+
+
+
+
+typedef struct USet USet;
+
+#endif
+
 
 U_CDECL_BEGIN
 
@@ -43,6 +61,18 @@ U_CDECL_BEGIN
 
 
 #define U_UNICODE_VERSION "11.0"
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -546,12 +576,34 @@ typedef enum UProperty {
 
 
     UCHAR_BIDI_PAIRED_BRACKET_TYPE=0x1015,
+    
+
+
+
+
+
+
+    UCHAR_INDIC_POSITIONAL_CATEGORY=0x1016,
+    
+
+
+
+
+
+    UCHAR_INDIC_SYLLABIC_CATEGORY=0x1017,
+    
+
+
+
+
+
+    UCHAR_VERTICAL_ORIENTATION=0x1018,
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_INT_LIMIT=0x1016,
+    UCHAR_INT_LIMIT=0x1019,
 #endif  
 
     
@@ -2326,6 +2378,162 @@ typedef enum UHangulSyllableType {
 
 
 
+typedef enum UIndicPositionalCategory {
+    
+
+
+
+
+
+    
+    U_INPC_NA,
+    
+    U_INPC_BOTTOM,
+    
+    U_INPC_BOTTOM_AND_LEFT,
+    
+    U_INPC_BOTTOM_AND_RIGHT,
+    
+    U_INPC_LEFT,
+    
+    U_INPC_LEFT_AND_RIGHT,
+    
+    U_INPC_OVERSTRUCK,
+    
+    U_INPC_RIGHT,
+    
+    U_INPC_TOP,
+    
+    U_INPC_TOP_AND_BOTTOM,
+    
+    U_INPC_TOP_AND_BOTTOM_AND_RIGHT,
+    
+    U_INPC_TOP_AND_LEFT,
+    
+    U_INPC_TOP_AND_LEFT_AND_RIGHT,
+    
+    U_INPC_TOP_AND_RIGHT,
+    
+    U_INPC_VISUAL_ORDER_LEFT,
+} UIndicPositionalCategory;
+
+
+
+
+
+
+
+typedef enum UIndicSyllabicCategory {
+    
+
+
+
+
+
+    
+    U_INSC_OTHER,
+    
+    U_INSC_AVAGRAHA,
+    
+    U_INSC_BINDU,
+    
+    U_INSC_BRAHMI_JOINING_NUMBER,
+    
+    U_INSC_CANTILLATION_MARK,
+    
+    U_INSC_CONSONANT,
+    
+    U_INSC_CONSONANT_DEAD,
+    
+    U_INSC_CONSONANT_FINAL,
+    
+    U_INSC_CONSONANT_HEAD_LETTER,
+    
+    U_INSC_CONSONANT_INITIAL_POSTFIXED,
+    
+    U_INSC_CONSONANT_KILLER,
+    
+    U_INSC_CONSONANT_MEDIAL,
+    
+    U_INSC_CONSONANT_PLACEHOLDER,
+    
+    U_INSC_CONSONANT_PRECEDING_REPHA,
+    
+    U_INSC_CONSONANT_PREFIXED,
+    
+    U_INSC_CONSONANT_SUBJOINED,
+    
+    U_INSC_CONSONANT_SUCCEEDING_REPHA,
+    
+    U_INSC_CONSONANT_WITH_STACKER,
+    
+    U_INSC_GEMINATION_MARK,
+    
+    U_INSC_INVISIBLE_STACKER,
+    
+    U_INSC_JOINER,
+    
+    U_INSC_MODIFYING_LETTER,
+    
+    U_INSC_NON_JOINER,
+    
+    U_INSC_NUKTA,
+    
+    U_INSC_NUMBER,
+    
+    U_INSC_NUMBER_JOINER,
+    
+    U_INSC_PURE_KILLER,
+    
+    U_INSC_REGISTER_SHIFTER,
+    
+    U_INSC_SYLLABLE_MODIFIER,
+    
+    U_INSC_TONE_LETTER,
+    
+    U_INSC_TONE_MARK,
+    
+    U_INSC_VIRAMA,
+    
+    U_INSC_VISARGA,
+    
+    U_INSC_VOWEL,
+    
+    U_INSC_VOWEL_DEPENDENT,
+    
+    U_INSC_VOWEL_INDEPENDENT,
+} UIndicSyllabicCategory;
+
+
+
+
+
+
+
+typedef enum UVerticalOrientation {
+    
+
+
+
+
+
+    
+    U_VO_ROTATED,
+    
+    U_VO_TRANSFORMED_ROTATED,
+    
+    U_VO_TRANSFORMED_UPRIGHT,
+    
+    U_VO_UPRIGHT,
+} UVerticalOrientation;
+
+
+
+
+
+
+
+
 
 
 
@@ -2348,6 +2556,28 @@ typedef enum UHangulSyllableType {
 
 U_STABLE UBool U_EXPORT2
 u_hasBinaryProperty(UChar32 c, UProperty which);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI const USet * U_EXPORT2
+u_getBinaryPropertySet(UProperty property, UErrorCode *pErrorCode);
+
+#endif  
 
 
 
@@ -2452,6 +2682,7 @@ u_isUWhiteSpace(UChar32 c);
 
 
 
+
 U_STABLE int32_t U_EXPORT2
 u_getIntPropertyValue(UChar32 c, UProperty which);
 
@@ -2504,6 +2735,28 @@ u_getIntPropertyMinValue(UProperty which);
 
 U_STABLE int32_t U_EXPORT2
 u_getIntPropertyMaxValue(UProperty which);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI const UCPMap * U_EXPORT2
+u_getIntPropertyMap(UProperty property, UErrorCode *pErrorCode);
+
+#endif  
 
 
 

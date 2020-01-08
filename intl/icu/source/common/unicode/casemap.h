@@ -194,7 +194,6 @@ public:
             char16_t *dest, int32_t destCapacity, Edits *edits,
             UErrorCode &errorCode);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -317,7 +316,6 @@ public:
             uint32_t options,
             StringPiece src, ByteSink &sink, Edits *edits,
             UErrorCode &errorCode);
-#endif  
 
     
 

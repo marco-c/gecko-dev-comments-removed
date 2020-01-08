@@ -159,10 +159,10 @@ NumberParserImpl::createParserFromProperties(const number::impl::DecimalFormatPr
 
     
     
-    if (affixProvider->containsSymbolType(AffixPatternType::TYPE_PERCENT, status)) {
+    if (!isStrict && affixProvider->containsSymbolType(AffixPatternType::TYPE_PERCENT, status)) {
         parser->addMatcher(parser->fLocalMatchers.percent = {symbols});
     }
-    if (affixProvider->containsSymbolType(AffixPatternType::TYPE_PERMILLE, status)) {
+    if (!isStrict && affixProvider->containsSymbolType(AffixPatternType::TYPE_PERMILLE, status)) {
         parser->addMatcher(parser->fLocalMatchers.permille = {symbols});
     }
 

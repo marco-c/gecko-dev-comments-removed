@@ -54,6 +54,21 @@ U_NAMESPACE_END
 
 #include <atomic>
 
+
+
+
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN && !defined(U_IN_DOXYGEN)
+  #if defined(__clang__)
+  
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Winstantiation-after-specialization"
+  #endif
+template struct U_COMMON_API std::atomic<int32_t>;
+  #if defined(__clang__)
+  #pragma clang diagnostic pop
+  #endif
+#endif
+
 U_NAMESPACE_BEGIN
 
 typedef std::atomic<int32_t> u_atomic_int32_t;

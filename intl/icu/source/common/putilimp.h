@@ -94,7 +94,7 @@ typedef size_t uintptr_t;
 #   define U_NL_LANGINFO_CODESET CODESET
 #endif
 
-#ifdef U_TZSET
+#if defined(U_TZSET) || defined(U_HAVE_TZSET)
     
 #elif U_PLATFORM_USES_ONLY_WIN32_API
     
@@ -132,7 +132,7 @@ typedef size_t uintptr_t;
 #   define U_TIMEZONE timezone
 #endif
 
-#ifdef U_TZNAME
+#if defined(U_TZNAME) || defined(U_HAVE_TZNAME)
     
 #elif U_PLATFORM_USES_ONLY_WIN32_API
     
@@ -209,24 +209,12 @@ typedef size_t uintptr_t;
 
 
 
+
 #ifdef U_HAVE_STD_ATOMICS
     
-#elif U_CPLUSPLUS_VERSION < 11
-    
-#   define U_HAVE_STD_ATOMICS 0
-#elif __clang__ && __clang_major__==3 && __clang_minor__<=1
-    
-#   define U_HAVE_STD_ATOMICS 0
-#else 
-    
-    
-#   if defined(U_HAVE_ATOMIC) &&  U_HAVE_ATOMIC 
-#      define U_HAVE_STD_ATOMICS 1
-#   else
-#      define U_HAVE_STD_ATOMICS 0
-#   endif
+#else
+#    define U_HAVE_STD_ATOMICS 1
 #endif
-
 
 
 
@@ -585,6 +573,49 @@ U_INTERNAL void * U_EXPORT2 uprv_maximumPtr(void *base);
         : (uintptr_t)-1))
 #  endif
 #endif
+
+
+#ifdef __cplusplus
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+inline int32_t pinCapacity(T *dest, int32_t capacity) {
+    if (capacity <= 0) { return capacity; }
+
+    uintptr_t destInt = (uintptr_t)dest;
+    uintptr_t maxInt;
+
+#  if U_PLATFORM == U_PF_OS390 && !defined(_LP64)
+    
+    maxInt = 0x7fffffff;
+#  elif U_PLATFORM == U_PF_OS400
+    maxInt = (uintptr_t)uprv_maximumPtr((void *)dest);
+#  else
+    maxInt = destInt + 0x7fffffffu;
+    if (maxInt < destInt) {
+        
+        
+        maxInt = (uintptr_t)-1;
+    }
+#  endif
+
+    uintptr_t maxBytes = maxInt - destInt;  
+    int32_t maxCapacity = (int32_t)(maxBytes / sizeof(T));
+    return capacity <= maxCapacity ? capacity : maxCapacity;
+}
+#endif   
 
 
 

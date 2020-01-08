@@ -1078,7 +1078,7 @@ void MessageFormat::format(int32_t msgStart, const void *plNumber,
                 
                 appendTo.formatAndAppend(pluralNumber.formatter, *arg, success);
             }
-        } else if ((formatter = getCachedFormatter(i -2))) {
+        } else if ((formatter = getCachedFormatter(i -2)) != 0) {
             
             if (dynamic_cast<const ChoiceFormat*>(formatter) ||
                 dynamic_cast<const PluralFormat*>(formatter) ||

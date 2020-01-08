@@ -237,7 +237,6 @@ class StringByteSink : public ByteSink {
 
 
   StringByteSink(StringClass* dest) : dest_(dest) { }
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -251,7 +250,6 @@ class StringByteSink : public ByteSink {
       dest->reserve(dest->length() + initialAppendCapacity);
     }
   }
-#endif  
   
 
 

@@ -13,6 +13,7 @@
 #ifndef UNICODESET_H
 #define UNICODESET_H
 
+#include "unicode/ucpmap.h"
 #include "unicode/unifilt.h"
 #include "unicode/unistr.h"
 #include "unicode/uset.h"
@@ -25,9 +26,8 @@
 U_NAMESPACE_BEGIN
 
 
-void U_CALLCONV UnicodeSet_initInclusion(int32_t src, UErrorCode &status); 
-
 class BMPSet;
+class CharacterProperties;
 class ParsePosition;
 class RBBIRuleScanner;
 class SymbolTable;
@@ -584,7 +584,6 @@ public:
     
 
     
-
 
 
 
@@ -1506,6 +1505,7 @@ private:
     
 
     UnicodeSet(const UnicodeSet& o, UBool );
+    UnicodeSet& copyFrom(const UnicodeSet& o, UBool asThawed);
 
     
     
@@ -1614,7 +1614,7 @@ private:
                               UnicodeString& rebuiltPat,
                               UErrorCode& ec);
 
-    friend void U_CALLCONV UnicodeSet_initInclusion(int32_t src, UErrorCode &status);
+    friend class CharacterProperties;
     static const UnicodeSet* getInclusions(int32_t src, UErrorCode &status);
 
     
@@ -1634,8 +1634,14 @@ private:
 
     void applyFilter(Filter filter,
                      void* context,
-                     int32_t src,
+                     const UnicodeSet* inclusions,
                      UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API   
+    void applyIntPropertyValue(const UCPMap *map,
+                               UCPMapValueFilter *filter, const void *context,
+                               UErrorCode &errorCode);
+#endif  
 
     
 

@@ -26,8 +26,10 @@
 
 
 
+
 struct UHashtable;
 typedef struct UHashtable UHashtable;
+
 
 
 
@@ -64,7 +66,7 @@ class U_COMMON_API StringTrieBuilder : public UObject {
 public:
 #ifndef U_HIDE_INTERNAL_API
     
-    static UBool hashNode(const void *node);
+    static int32_t hashNode(const void *node);
     
     static UBool equalNodes(const void *left, const void *right);
 #endif  
@@ -189,6 +191,9 @@ protected:
     
     
     
+
+
+
     class Node : public UObject {
     public:
         Node(int32_t initialHash) : hash(initialHash), offset(0) {}
@@ -391,7 +396,9 @@ protected:
         int32_t length;
         Node *next;  
     };
+
 #endif  
+    
 
     
     virtual Node *createLinearMatchNode(int32_t i, int32_t unitIndex, int32_t length,

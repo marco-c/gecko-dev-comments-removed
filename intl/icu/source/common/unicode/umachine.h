@@ -125,32 +125,21 @@
 
 
 
-
-
-
-
-
-
-
-
-
-#if U_CPLUSPLUS_VERSION >= 11
-
 #ifndef U_OVERRIDE
 #define U_OVERRIDE override
 #endif
-#ifndef U_FINAL
+
+
+
+
+
+
+
+
+#if !defined(U_FINAL) || defined(U_IN_DOXYGEN)
 #define U_FINAL final
 #endif
-#else
 
-#ifndef U_OVERRIDE
-#define U_OVERRIDE
-#endif
-#ifndef U_FINAL
-#define U_FINAL
-#endif
-#endif
 
 
 

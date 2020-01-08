@@ -123,7 +123,7 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
             
             if (us != uBuffer) {
                 
-                int32_t uBuffSize = us-uBuffer;
+                int32_t uBuffSize = static_cast<int32_t>(us-uBuffer);
                 int32_t uBuffIdx = 0;
                 while (uBuffIdx < uBuffSize) {
                     U16_NEXT(uBuffer, uBuffIdx, uBuffSize, ch32);

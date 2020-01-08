@@ -213,8 +213,6 @@
     } \
 }
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -257,8 +255,6 @@
         } \
     } \
 }
-
-#endif  
 
 
 
@@ -320,8 +316,6 @@
     } \
 }
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -355,8 +349,6 @@
         } \
     } \
 }
-
-#endif  
 
 
 
@@ -585,8 +577,6 @@
     } \
 }
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -619,8 +609,6 @@
         } \
     } \
 }
-
-#endif  
 
 
 

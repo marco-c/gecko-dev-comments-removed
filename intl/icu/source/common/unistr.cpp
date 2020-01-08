@@ -1447,10 +1447,15 @@ UnicodeString::doReplace(int32_t start,
   }
 
   if(srcChars == 0) {
-    srcStart = srcLength = 0;
-  } else if(srcLength < 0) {
+    srcLength = 0;
+  } else {
     
-    srcLength = u_strlen(srcChars + srcStart);
+    
+    srcChars += srcStart;
+    if (srcLength < 0) {
+      
+      srcLength = u_strlen(srcChars);
+    }
   }
 
   
@@ -1466,16 +1471,27 @@ UnicodeString::doReplace(int32_t start,
   newLength += srcLength;
 
   
+  const UChar *oldArray = getArrayStart();
+  if (isBufferWritable() &&
+      oldArray < srcChars + srcLength &&
+      srcChars < oldArray + oldLength) {
+    
+    UnicodeString copy(srcChars, srcLength);
+    if (copy.isBogus()) {
+      setToBogus();
+      return *this;
+    }
+    return doReplace(start, length, copy.getArrayStart(), 0, srcLength);
+  }
+
+  
   
   UChar oldStackBuffer[US_STACKBUF_SIZE];
-  UChar *oldArray;
   if((fUnion.fFields.fLengthAndFlags&kUsingStackBuffer) && (newLength > US_STACKBUF_SIZE)) {
     
     
-    u_memcpy(oldStackBuffer, fUnion.fStackFields.fBuffer, oldLength);
+    u_memcpy(oldStackBuffer, oldArray, oldLength);
     oldArray = oldStackBuffer;
-  } else {
-    oldArray = getArrayStart();
   }
 
   
@@ -1503,7 +1519,7 @@ UnicodeString::doReplace(int32_t start,
   }
 
   
-  us_arrayCopy(srcChars, srcStart, newArray, start, srcLength);
+  us_arrayCopy(srcChars, 0, newArray, start, srcLength);
 
   setLength(newLength);
 
@@ -1536,15 +1552,34 @@ UnicodeString::doAppend(const UChar *srcChars, int32_t srcStart, int32_t srcLeng
     return *this;
   }
 
+  
+  
+  srcChars += srcStart;
+
   if(srcLength < 0) {
     
-    if((srcLength = u_strlen(srcChars + srcStart)) == 0) {
+    if((srcLength = u_strlen(srcChars)) == 0) {
       return *this;
     }
   }
 
   int32_t oldLength = length();
   int32_t newLength = oldLength + srcLength;
+
+  
+  const UChar* oldArray = getArrayStart();
+  if (isBufferWritable() &&
+      oldArray < srcChars + srcLength &&
+      srcChars < oldArray + oldLength) {
+    
+    UnicodeString copy(srcChars, srcLength);
+    if (copy.isBogus()) {
+      setToBogus();
+      return *this;
+    }
+    return doAppend(copy.getArrayStart(), 0, srcLength);
+  }
+
   
   if((newLength <= getCapacity() && isBufferWritable()) ||
       cloneArrayIfNeeded(newLength, getGrowCapacity(newLength))) {
@@ -1556,8 +1591,8 @@ UnicodeString::doAppend(const UChar *srcChars, int32_t srcStart, int32_t srcLeng
     
     
     
-    if(srcChars + srcStart != newArray + oldLength) {
-      us_arrayCopy(srcChars, srcStart, newArray, oldLength, srcLength);
+    if(srcChars != newArray + oldLength) {
+      us_arrayCopy(srcChars, 0, newArray, oldLength, srcLength);
     }
     setLength(newLength);
   }

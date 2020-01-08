@@ -49,11 +49,11 @@ enum UGender {
 
 typedef enum UGender UGender;
 
-
-
-
-
 struct UGenderInfo;
+
+
+
+
 typedef struct UGenderInfo UGenderInfo;
 
 
@@ -77,7 +77,7 @@ ugender_getInstance(const char *locale, UErrorCode *status);
 
 
 U_STABLE UGender U_EXPORT2
-ugender_getListGender(const UGenderInfo* genderinfo, const UGender *genders, int32_t size, UErrorCode *status);
+ugender_getListGender(const UGenderInfo* genderInfo, const UGender *genders, int32_t size, UErrorCode *status);
 
 #endif 
 

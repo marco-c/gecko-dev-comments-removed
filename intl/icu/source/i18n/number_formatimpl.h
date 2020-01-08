@@ -29,14 +29,14 @@ class NumberFormatterImpl : public UMemory {
 
 
 
-    static NumberFormatterImpl *fromMacros(const MacroProps &macros, UErrorCode &status);
+    NumberFormatterImpl(const MacroProps &macros, UErrorCode &status);
 
     
 
 
-    static void
-    applyStatic(const MacroProps &macros, DecimalQuantity &inValue, NumberStringBuilder &outString,
-                UErrorCode &status);
+    static int32_t
+    formatStatic(const MacroProps &macros, DecimalQuantity &inValue, NumberStringBuilder &outString,
+                 UErrorCode &status);
 
     
 
@@ -51,13 +51,31 @@ class NumberFormatterImpl : public UMemory {
     
 
 
-    void apply(DecimalQuantity& inValue, NumberStringBuilder& outString, UErrorCode& status) const;
+    int32_t format(DecimalQuantity& inValue, NumberStringBuilder& outString, UErrorCode& status) const;
+
+    
+
+
+    void preProcess(DecimalQuantity& inValue, MicroProps& microsOut, UErrorCode& status) const;
 
     
 
 
     int32_t getPrefixSuffix(int8_t signum, StandardPlural::Form plural, NumberStringBuilder& outString,
                             UErrorCode& status) const;
+
+    
+
+
+
+    static int32_t writeNumber(const MicroProps& micros, DecimalQuantity& quantity,
+                               NumberStringBuilder& string, int32_t index, UErrorCode& status);
+
+    
+
+
+    static int32_t writeAffixes(const MicroProps& micros, NumberStringBuilder& string, int32_t start,
+                                int32_t end, UErrorCode& status);
 
   private:
     
@@ -85,7 +103,7 @@ class NumberFormatterImpl : public UMemory {
 
     NumberFormatterImpl(const MacroProps &macros, bool safe, UErrorCode &status);
 
-    void applyUnsafe(DecimalQuantity &inValue, NumberStringBuilder &outString, UErrorCode &status);
+    MicroProps& preProcessUnsafe(DecimalQuantity &inValue, UErrorCode &status);
 
     int32_t getPrefixSuffixUnsafe(int8_t signum, StandardPlural::Form plural,
                                   NumberStringBuilder& outString, UErrorCode& status);
@@ -113,31 +131,13 @@ class NumberFormatterImpl : public UMemory {
     const MicroPropsGenerator *
     macrosToMicroGenerator(const MacroProps &macros, bool safe, UErrorCode &status);
 
-    
-
-
-
-
-
-
-
-
-
-    static int32_t
-    microsToString(const MicroProps &micros, DecimalQuantity &quantity, NumberStringBuilder &string,
-                   UErrorCode &status);
-
-    static int32_t
-    writeNumber(const MicroProps &micros, DecimalQuantity &quantity, NumberStringBuilder &string,
-                UErrorCode &status);
-
     static int32_t
     writeIntegerDigits(const MicroProps &micros, DecimalQuantity &quantity, NumberStringBuilder &string,
-                       UErrorCode &status);
+                       int32_t index, UErrorCode &status);
 
     static int32_t
     writeFractionDigits(const MicroProps &micros, DecimalQuantity &quantity, NumberStringBuilder &string,
-                        UErrorCode &status);
+                        int32_t index, UErrorCode &status);
 };
 
 }  

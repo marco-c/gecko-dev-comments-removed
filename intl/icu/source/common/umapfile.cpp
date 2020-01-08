@@ -22,6 +22,7 @@
 #include "uposixdefs.h"
 
 #include "unicode/putil.h"
+#include "unicode/ustring.h"
 #include "udatamem.h"
 #include "umapfile.h"
 
@@ -84,7 +85,10 @@
 
 #if MAP_IMPLEMENTATION==MAP_NONE
     U_CFUNC UBool
-    uprv_mapFile(UDataMemory *pData, const char *path) {
+    uprv_mapFile(UDataMemory *pData, const char *path, UErrorCode *status) {
+        if (U_FAILURE(*status)) {
+            return FALSE;
+        }
         UDataMemory_init(pData); 
         return FALSE;            
     }
@@ -97,12 +101,17 @@
     uprv_mapFile(
          UDataMemory *pData,    
                                 
-         const char *path       
+         const char *path,      
+         UErrorCode *status     
          )
     {
         HANDLE map;
         HANDLE file;
-        
+
+        if (U_FAILURE(*status)) {
+            return FALSE;
+        }
+
         UDataMemory_init(pData); 
 
         
@@ -112,27 +121,28 @@
             FILE_ATTRIBUTE_NORMAL|FILE_FLAG_RANDOM_ACCESS, NULL);
 #else
         
-        
-        WCHAR utf16Path[MAX_PATH];
-        int32_t i;
-        for (i = 0; i < UPRV_LENGTHOF(utf16Path); i++)
-        {
-            utf16Path[i] = path[i];
-            if (path[i] == '\0')
-            {
-                break;
-            }
+        wchar_t utf16Path[MAX_PATH];
+        int32_t pathUtf16Len = 0;
+        u_strFromUTF8(reinterpret_cast<UChar*>(utf16Path), static_cast<int32_t>(UPRV_LENGTHOF(utf16Path)), &pathUtf16Len, path, -1, status);
+
+        if (U_FAILURE(*status)) {
+            return FALSE;
         }
-        if (i >= UPRV_LENGTHOF(utf16Path))
-        {
+        if (*status == U_STRING_NOT_TERMINATED_WARNING) {
             
-            utf16Path[UPRV_LENGTHOF(utf16Path) - 1] = '\0';
+            *status = U_BUFFER_OVERFLOW_ERROR;
+            return FALSE;
         }
 
         
         file = CreateFile2(utf16Path, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
 #endif
-        if(file==INVALID_HANDLE_VALUE) {
+        if (file == INVALID_HANDLE_VALUE) {
+            
+            
+            if (HRESULT_FROM_WIN32(GetLastError()) == E_OUTOFMEMORY) {
+                *status = U_MEMORY_ALLOCATION_ERROR;
+            }
             return FALSE;
         }
 
@@ -165,7 +175,12 @@
         map = CreateFileMappingFromApp(file, NULL, PAGE_READONLY, 0, NULL);
 #endif
         CloseHandle(file);
-        if(map==NULL) {
+        if (map == NULL) {
+            
+            
+            if (HRESULT_FROM_WIN32(GetLastError()) == E_OUTOFMEMORY) {
+                *status = U_MEMORY_ALLOCATION_ERROR;
+            }
             return FALSE;
         }
 
@@ -193,11 +208,15 @@
 
 #elif MAP_IMPLEMENTATION==MAP_POSIX
     U_CFUNC UBool
-    uprv_mapFile(UDataMemory *pData, const char *path) {
+    uprv_mapFile(UDataMemory *pData, const char *path, UErrorCode *status) {
         int fd;
         int length;
         struct stat mystat;
         void *data;
+
+        if (U_FAILURE(*status)) {
+            return FALSE;
+        }
 
         UDataMemory_init(pData); 
 
@@ -221,6 +240,7 @@
 #endif
         close(fd); 
         if(data==MAP_FAILED) {
+            
             return FALSE;
         }
 
@@ -263,10 +283,14 @@
     }
 
     U_CFUNC UBool
-    uprv_mapFile(UDataMemory *pData, const char *path) {
+    uprv_mapFile(UDataMemory *pData, const char *path, UErrorCode *status) {
         FILE *file;
         int32_t fileLength;
         void *p;
+
+        if (U_FAILURE(*status)) {
+            return FALSE;
+        }
 
         UDataMemory_init(pData); 
         
@@ -286,6 +310,7 @@
         p=uprv_malloc(fileLength);
         if(p==NULL) {
             fclose(file);
+            *status = U_MEMORY_ALLOCATION_ERROR;
             return FALSE;
         }
 
@@ -391,13 +416,17 @@
 
 #   define DATA_TYPE "dat"
 
-    U_CFUNC UBool uprv_mapFile(UDataMemory *pData, const char *path) {
+    U_CFUNC UBool uprv_mapFile(UDataMemory *pData, const char *path, UErrorCode *status) {
         const char *inBasename;
         char *basename;
         char pathBuffer[1024];
         const DataHeader *pHeader;
         dllhandle *handle;
         void *val=0;
+
+        if (U_FAILURE(*status)) {
+            return FALSE;
+        }
 
         inBasename=uprv_strrchr(path, U_FILE_SEP_CHAR);
         if(inBasename==NULL) {
@@ -430,6 +459,7 @@
             data=mmap(0, length, PROT_READ, MAP_PRIVATE, fd, 0);
             close(fd); 
             if(data==MAP_FAILED) {
+                
                 return FALSE;
             }
             pData->map = (char *)data + length;

@@ -33,8 +33,12 @@
 #include "unicode/uchar.h"
 #include "unicode/localpointer.h"
 
-#ifndef UCNV_H
-struct USet;
+#ifndef USET_DEFINED
+
+#ifndef U_IN_DOXYGEN
+#define USET_DEFINED
+#endif
+
 
 
 

@@ -624,7 +624,7 @@ getDirProps(UBiDi *pBiDi) {
         pBiDi->paras[pBiDi->paraCount-1].level=1;
     }
     if(isDefaultLevel) {
-        pBiDi->paraLevel=pBiDi->paras[0].level;
+        pBiDi->paraLevel=static_cast<UBiDiLevel>(pBiDi->paras[0].level);
     }
     
 
@@ -825,28 +825,28 @@ bracketProcessClosing(BracketData *bd, int32_t openIdx, int32_t position) {
 
 
     if((direction==0 && pOpening->flags&FOUND_L) ||
-       (direction==1 && pOpening->flags&FOUND_R)) { 
-        newProp=direction;
+       (direction==1 && pOpening->flags&FOUND_R)) {                         
+        newProp=static_cast<DirProp>(direction);
     }
-    else if(pOpening->flags&(FOUND_L|FOUND_R)) {    
+    else if(pOpening->flags&(FOUND_L|FOUND_R)) {                            
         
 
         stable=(openIdx==pLastIsoRun->start);
         if(direction!=pOpening->contextDir)
-            newProp=pOpening->contextDir;           
+            newProp= static_cast<DirProp>(pOpening->contextDir);           
         else
-            newProp=direction;                      
+            newProp= static_cast<DirProp>(direction);                      
     } else {
         
-        pLastIsoRun->limit=openIdx;
-        return ON;                                  
+        pLastIsoRun->limit= static_cast<uint16_t>(openIdx);
+        return ON;                                                          
     }
     bd->pBiDi->dirProps[pOpening->position]=newProp;
     bd->pBiDi->dirProps[position]=newProp;
     
     fixN0c(bd, openIdx, pOpening->position, newProp);
     if(stable) {
-        pLastIsoRun->limit=openIdx; 
+        pLastIsoRun->limit= static_cast<uint16_t>(openIdx); 
         
         while(pLastIsoRun->limit>pLastIsoRun->start &&
               bd->openings[pLastIsoRun->limit-1].position==pOpening->position)
@@ -918,7 +918,7 @@ bracketProcessChar(BracketData *bd, int32_t position) {
 
         
         if(c)
-            match=u_getBidiPairedBracket(c);    
+            match= static_cast<UChar>(u_getBidiPairedBracket(c));    
         else
             match=0;
         if(match!=c &&                  
@@ -948,7 +948,7 @@ bracketProcessChar(BracketData *bd, int32_t position) {
         pLastIsoRun->contextPos=position;
     }
     else if(dirProp<=R || dirProp==AL) {
-        newProp=DIR_FROM_STRONG(dirProp);
+        newProp= static_cast<DirProp>(DIR_FROM_STRONG(dirProp));
         pLastIsoRun->lastBase=dirProp;
         pLastIsoRun->lastStrong=dirProp;
         pLastIsoRun->contextDir=(UBiDiDirection)newProp;
@@ -1101,7 +1101,7 @@ resolveExplicitLevels(UBiDi *pBiDi, UErrorCode *pErrorCode) {
             else
                 start=pBiDi->paras[paraIndex-1].limit;
             limit=pBiDi->paras[paraIndex].limit;
-            level=pBiDi->paras[paraIndex].level;
+            level= static_cast<UBiDiLevel>(pBiDi->paras[paraIndex].level);
             for(i=start; i<limit; i++)
                 levels[i]=level;
         }
@@ -1119,7 +1119,7 @@ resolveExplicitLevels(UBiDi *pBiDi, UErrorCode *pErrorCode) {
             else
                 start=pBiDi->paras[paraIndex-1].limit;
             limit=pBiDi->paras[paraIndex].limit;
-            level=pBiDi->paras[paraIndex].level;
+            level= static_cast<UBiDiLevel>(pBiDi->paras[paraIndex].level);
             for(i=start; i<limit; i++) {
                 levels[i]=level;
                 dirProp=dirProps[i];
@@ -2827,7 +2827,7 @@ ubidi_setPara(UBiDi *pBiDi, const UChar *text, int32_t length,
         DirProp dirProp;
         for(i=0; i<pBiDi->paraCount; i++) {
             last=(pBiDi->paras[i].limit)-1;
-            level=pBiDi->paras[i].level;
+            level= static_cast<UBiDiLevel>(pBiDi->paras[i].level);
             if(level==0)
                 continue;           
             start= i==0 ? 0 : pBiDi->paras[i-1].limit;

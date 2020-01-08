@@ -170,7 +170,6 @@ class StringEnumeration;
 
 
 
-
 class U_I18N_API NumberFormat : public Format {
 public:
     

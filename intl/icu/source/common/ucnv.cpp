@@ -1743,12 +1743,8 @@ ucnv_fromUChars(UConverter *cnv,
     }
     if(srcLength>0) {
         srcLimit=src+srcLength;
+        destCapacity=pinCapacity(dest, destCapacity);
         destLimit=dest+destCapacity;
-
-        
-        if(destLimit<dest || (destLimit==NULL && dest!=NULL)) {
-            destLimit=(char *)U_MAX_PTR(dest);
-        }
 
         
         ucnv_fromUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, TRUE, pErrorCode);
@@ -1803,12 +1799,8 @@ ucnv_toUChars(UConverter *cnv,
     }
     if(srcLength>0) {
         srcLimit=src+srcLength;
+        destCapacity=pinCapacity(dest, destCapacity);
         destLimit=dest+destCapacity;
-
-        
-        if(destLimit<dest || (destLimit==NULL && dest!=NULL)) {
-            destLimit=(UChar *)U_MAX_PTR(dest);
-        }
 
         
         ucnv_toUnicode(cnv, &dest, destLimit, &src, srcLimit, 0, TRUE, pErrorCode);

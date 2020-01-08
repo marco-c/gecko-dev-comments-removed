@@ -36,8 +36,6 @@
 #include "uprops.h"
 #include "propname.h"
 #include "normalizer2impl.h"
-#include "ucase.h"
-#include "ubidi_props.h"
 #include "uinvchar.h"
 #include "uprops.h"
 #include "charstr.h"
@@ -98,47 +96,13 @@ static const char ASSIGNED[] = "Assigned";
 U_CDECL_BEGIN
 static UBool U_CALLCONV uset_cleanup();
 
-struct Inclusion {
-    UnicodeSet  *fSet;
-    UInitOnce    fInitOnce;
-};
-static Inclusion gInclusions[UPROPS_SRC_COUNT]; 
-
 static UnicodeSet *uni32Singleton;
 static icu::UInitOnce uni32InitOnce = U_INITONCE_INITIALIZER;
 
 
 
 
-
-
-
-static void U_CALLCONV
-_set_add(USet *set, UChar32 c) {
-    ((UnicodeSet *)set)->add(c);
-}
-
-static void U_CALLCONV
-_set_addRange(USet *set, UChar32 start, UChar32 end) {
-    ((UnicodeSet *)set)->add(start, end);
-}
-
-static void U_CALLCONV
-_set_addString(USet *set, const UChar *str, int32_t length) {
-    ((UnicodeSet *)set)->add(UnicodeString((UBool)(length<0), str, length));
-}
-
-
-
-
 static UBool U_CALLCONV uset_cleanup(void) {
-    for(int32_t i = UPROPS_SRC_NONE; i < UPROPS_SRC_COUNT; ++i) {
-        Inclusion &in = gInclusions[i];
-        delete in.fSet;
-        in.fSet = NULL;
-        in.fInitOnce.reset();
-    }
-
     delete uni32Singleton;
     uni32Singleton = NULL;
     uni32InitOnce.reset();
@@ -148,114 +112,6 @@ static UBool U_CALLCONV uset_cleanup(void) {
 U_CDECL_END
 
 U_NAMESPACE_BEGIN
-
-
-
-
-
-#define DEFAULT_INCLUSION_CAPACITY 3072
-
-void U_CALLCONV UnicodeSet_initInclusion(int32_t src, UErrorCode &status) {
-    
-    
-
-    U_ASSERT(src >=0 && src<UPROPS_SRC_COUNT);
-    UnicodeSet * &incl = gInclusions[src].fSet;
-    U_ASSERT(incl == NULL);
-
-    incl = new UnicodeSet();
-    if (incl == NULL) {
-        status = U_MEMORY_ALLOCATION_ERROR;
-        return;
-    }
-    USetAdder sa = {
-        (USet *)incl,
-        _set_add,
-        _set_addRange,
-        _set_addString,
-        NULL, 
-        NULL 
-    };
-
-    incl->ensureCapacity(DEFAULT_INCLUSION_CAPACITY, status);
-    switch(src) {
-    case UPROPS_SRC_CHAR:
-        uchar_addPropertyStarts(&sa, &status);
-        break;
-    case UPROPS_SRC_PROPSVEC:
-        upropsvec_addPropertyStarts(&sa, &status);
-        break;
-    case UPROPS_SRC_CHAR_AND_PROPSVEC:
-        uchar_addPropertyStarts(&sa, &status);
-        upropsvec_addPropertyStarts(&sa, &status);
-        break;
-#if !UCONFIG_NO_NORMALIZATION
-    case UPROPS_SRC_CASE_AND_NORM: {
-        const Normalizer2Impl *impl=Normalizer2Factory::getNFCImpl(status);
-        if(U_SUCCESS(status)) {
-            impl->addPropertyStarts(&sa, status);
-        }
-        ucase_addPropertyStarts(&sa, &status);
-        break;
-    }
-    case UPROPS_SRC_NFC: {
-        const Normalizer2Impl *impl=Normalizer2Factory::getNFCImpl(status);
-        if(U_SUCCESS(status)) {
-            impl->addPropertyStarts(&sa, status);
-        }
-        break;
-    }
-    case UPROPS_SRC_NFKC: {
-        const Normalizer2Impl *impl=Normalizer2Factory::getNFKCImpl(status);
-        if(U_SUCCESS(status)) {
-            impl->addPropertyStarts(&sa, status);
-        }
-        break;
-    }
-    case UPROPS_SRC_NFKC_CF: {
-        const Normalizer2Impl *impl=Normalizer2Factory::getNFKC_CFImpl(status);
-        if(U_SUCCESS(status)) {
-            impl->addPropertyStarts(&sa, status);
-        }
-        break;
-    }
-    case UPROPS_SRC_NFC_CANON_ITER: {
-        const Normalizer2Impl *impl=Normalizer2Factory::getNFCImpl(status);
-        if(U_SUCCESS(status)) {
-            impl->addCanonIterPropertyStarts(&sa, status);
-        }
-        break;
-    }
-#endif
-    case UPROPS_SRC_CASE:
-        ucase_addPropertyStarts(&sa, &status);
-        break;
-    case UPROPS_SRC_BIDI:
-        ubidi_addPropertyStarts(&sa, &status);
-        break;
-    default:
-        status = U_INTERNAL_PROGRAM_ERROR;
-        break;
-    }
-
-    if (U_FAILURE(status)) {
-        delete incl;
-        incl = NULL;
-        return;
-    }
-    
-    incl->compact();
-    ucln_common_registerCleanup(UCLN_COMMON_USET, uset_cleanup);
-}
-
-
-
-const UnicodeSet* UnicodeSet::getInclusions(int32_t src, UErrorCode &status) {
-    U_ASSERT(src >=0 && src<UPROPS_SRC_COUNT);
-    Inclusion &i = gInclusions[src];
-    umtx_initOnce(i.fInitOnce, &UnicodeSet_initInclusion, src, status);
-    return i.fSet;
-}
 
 namespace {
 
@@ -857,27 +713,12 @@ static UBool numericValueFilter(UChar32 ch, void* context) {
     return u_getNumericValue(ch) == *(double*)context;
 }
 
-static UBool generalCategoryMaskFilter(UChar32 ch, void* context) {
-    int32_t value = *(int32_t*)context;
-    return (U_GET_GC_MASK((UChar32) ch) & value) != 0;
-}
-
 static UBool versionFilter(UChar32 ch, void* context) {
     static const UVersionInfo none = { 0, 0, 0, 0 };
     UVersionInfo v;
     u_charAge(ch, v);
     UVersionInfo* version = (UVersionInfo*)context;
     return uprv_memcmp(&v, &none, sizeof(v)) > 0 && uprv_memcmp(&v, version, sizeof(v)) <= 0;
-}
-
-typedef struct {
-    UProperty prop;
-    int32_t value;
-} IntPropertyContext;
-
-static UBool intPropertyFilter(UChar32 ch, void* context) {
-    IntPropertyContext* c = (IntPropertyContext*)context;
-    return u_getIntPropertyValue((UChar32) ch, c->prop) == c->value;
 }
 
 static UBool scriptExtensionsFilter(UChar32 ch, void* context) {
@@ -891,7 +732,7 @@ static UBool scriptExtensionsFilter(UChar32 ch, void* context) {
 
 void UnicodeSet::applyFilter(UnicodeSet::Filter filter,
                              void* context,
-                             int32_t src,
+                             const UnicodeSet* inclusions,
                              UErrorCode &status) {
     if (U_FAILURE(status)) return;
 
@@ -904,10 +745,6 @@ void UnicodeSet::applyFilter(UnicodeSet::Filter filter,
     
     
     
-    const UnicodeSet* inclusions = getInclusions(src, status);
-    if (U_FAILURE(status)) {
-        return;
-    }
 
     clear();
 
@@ -944,6 +781,43 @@ void UnicodeSet::applyFilter(UnicodeSet::Filter filter,
 
 namespace {
 
+
+uint32_t U_CALLCONV generalCategoryMaskFilter(const void *context, uint32_t value) {
+    uint32_t mask = *(const uint32_t *)context;
+    value = U_MASK(value) & mask;
+    if (value != 0) { value = 1; }
+    return value;
+}
+
+
+uint32_t U_CALLCONV intValueFilter(const void *context, uint32_t value) {
+    uint32_t v = *(const uint32_t *)context;
+    return value == v ? 1 : 0;
+}
+
+}  
+
+void UnicodeSet::applyIntPropertyValue(const UCPMap *map,
+                                       UCPMapValueFilter *filter, const void *context,
+                                       UErrorCode &errorCode) {
+    if (U_FAILURE(errorCode)) { return; }
+    clear();
+    UChar32 start = 0, end;
+    uint32_t value;
+    while ((end = ucpmap_getRange(map, start, UCPMAP_RANGE_NORMAL, 0,
+                                  filter, context, &value)) >= 0) {
+        if (value != 0) {
+            add(start, end);
+        }
+        start = end + 1;
+    }
+    if (isBogus()) {
+        errorCode = U_MEMORY_ALLOCATION_ERROR;
+    }
+}
+
+namespace {
+
 static UBool mungeCharName(char* dst, const char* src, int32_t dstCapacity) {
     
     int32_t j = 0;
@@ -971,16 +845,35 @@ static UBool mungeCharName(char* dst, const char* src, int32_t dstCapacity) {
 
 UnicodeSet&
 UnicodeSet::applyIntPropertyValue(UProperty prop, int32_t value, UErrorCode& ec) {
-    if (U_FAILURE(ec) || isFrozen()) return *this;
-
+    if (U_FAILURE(ec)) { return *this; }
+    
     if (prop == UCHAR_GENERAL_CATEGORY_MASK) {
-        applyFilter(generalCategoryMaskFilter, &value, UPROPS_SRC_CHAR, ec);
+        const UCPMap *map = u_getIntPropertyMap(UCHAR_GENERAL_CATEGORY, &ec);
+        applyIntPropertyValue(map, generalCategoryMaskFilter, &value, ec);
     } else if (prop == UCHAR_SCRIPT_EXTENSIONS) {
+        const UnicodeSet* inclusions = CharacterProperties::getInclusionsForProperty(prop, ec);
         UScriptCode script = (UScriptCode)value;
-        applyFilter(scriptExtensionsFilter, &script, UPROPS_SRC_PROPSVEC, ec);
+        applyFilter(scriptExtensionsFilter, &script, inclusions, ec);
+    } else if (0 <= prop && prop < UCHAR_BINARY_LIMIT) {
+        if (value == 0 || value == 1) {
+            const USet *set = u_getBinaryPropertySet(prop, &ec);
+            if (U_FAILURE(ec)) { return *this; }
+            copyFrom(*UnicodeSet::fromUSet(set), TRUE);
+            if (value == 0) {
+                complement();
+            }
+        } else {
+            clear();
+        }
+    } else if (UCHAR_INT_START <= prop && prop < UCHAR_INT_LIMIT) {
+        const UCPMap *map = u_getIntPropertyMap(prop, &ec);
+        applyIntPropertyValue(map, intValueFilter, &value, ec);
     } else {
-        IntPropertyContext c = {prop, value};
-        applyFilter(intPropertyFilter, &c, uprops_getSource(prop), ec);
+        
+        
+        ec = U_ILLEGAL_ARGUMENT_ERROR;
+        
+        
     }
     return *this;
 }
@@ -1030,13 +923,13 @@ UnicodeSet::applyPropertyAlias(const UnicodeString& prop,
                     p == UCHAR_TRAIL_CANONICAL_COMBINING_CLASS ||
                     p == UCHAR_LEAD_CANONICAL_COMBINING_CLASS) {
                     char* end;
-                    double value = uprv_strtod(vname.data(), &end);
+                    double val = uprv_strtod(vname.data(), &end);
                     
                     
                     
                     
-                    if (*end != 0 || !(0 <= value && value <= 255) ||
-                            (v = (int32_t)value) != value) {
+                    if (*end != 0 || !(0 <= val && val <= 255) ||
+                            (v = (int32_t)val) != val) {
                         
                         FAIL(ec);
                     }
@@ -1052,11 +945,12 @@ UnicodeSet::applyPropertyAlias(const UnicodeString& prop,
             case UCHAR_NUMERIC_VALUE:
                 {
                     char* end;
-                    double value = uprv_strtod(vname.data(), &end);
+                    double val = uprv_strtod(vname.data(), &end);
                     if (*end != 0) {
                         FAIL(ec);
                     }
-                    applyFilter(numericValueFilter, &value, UPROPS_SRC_CHAR, ec);
+                    applyFilter(numericValueFilter, &val,
+                                CharacterProperties::getInclusionsForProperty(p, ec), ec);
                     return *this;
                 }
             case UCHAR_NAME:
@@ -1085,7 +979,8 @@ UnicodeSet::applyPropertyAlias(const UnicodeString& prop,
                     if (!mungeCharName(buf, vname.data(), sizeof(buf))) FAIL(ec);
                     UVersionInfo version;
                     u_versionFromString(version, buf);
-                    applyFilter(versionFilter, &version, UPROPS_SRC_PROPSVEC, ec);
+                    applyFilter(versionFilter, &version,
+                                CharacterProperties::getInclusionsForProperty(p, ec), ec);
                     return *this;
                 }
             case UCHAR_SCRIPT_EXTENSIONS:

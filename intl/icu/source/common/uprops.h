@@ -398,6 +398,10 @@ enum UPropertySource {
     
     UPROPS_SRC_NFC_CANON_ITER,
     
+    UPROPS_SRC_INPC,
+    UPROPS_SRC_INSC,
+    UPROPS_SRC_VO,
+    
     UPROPS_SRC_COUNT
 };
 typedef enum UPropertySource UPropertySource;
@@ -425,6 +429,9 @@ uchar_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode);
 U_CFUNC void U_EXPORT2
 upropsvec_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode);
 
+U_CFUNC void U_EXPORT2
+uprops_addPropertyStarts(UPropertySource src, const USetAdder *sa, UErrorCode *pErrorCode);
+
 
 
 
@@ -451,6 +458,13 @@ uchar_swapNames(const UDataSwapper *ds,
 U_NAMESPACE_BEGIN
 
 class UnicodeSet;
+
+class CharacterProperties {
+public:
+    CharacterProperties() = delete;
+    static void U_CALLCONV initInclusion(UPropertySource src, UErrorCode &errorCode);
+    static const UnicodeSet *getInclusionsForProperty(UProperty prop, UErrorCode &errorCode);
+};
 
 
 U_CFUNC UnicodeSet *

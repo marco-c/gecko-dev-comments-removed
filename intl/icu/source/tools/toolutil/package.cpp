@@ -610,7 +610,7 @@ Package::readPackage(const char *filename) {
             memcpy(prefix, s, ++prefixLength);  
         } else {
             
-            int32_t inPkgNameLength=strlen(inPkgName);
+            int32_t inPkgNameLength= static_cast<int32_t>(strlen(inPkgName));
             memcpy(prefix, inPkgName, inPkgNameLength);
             prefixLength=inPkgNameLength;
 
@@ -1043,7 +1043,7 @@ Package::addItem(const char *name, uint8_t *data, int32_t length, UBool isDataOw
         memset(items+idx, 0, sizeof(Item));
 
         
-        items[idx].name=allocString(TRUE, strlen(name));
+        items[idx].name=allocString(TRUE, static_cast<int32_t>(strlen(name)));
         strcpy(items[idx].name, name);
         pathToTree(items[idx].name);
     } else {

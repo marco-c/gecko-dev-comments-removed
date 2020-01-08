@@ -27,6 +27,7 @@ UnicodeSet* gUnicodeSets[COUNT] = {};
 
 
 
+alignas(UnicodeSet)
 char gEmptyUnicodeSet[sizeof(UnicodeSet)];
 
 

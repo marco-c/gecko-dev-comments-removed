@@ -16,6 +16,7 @@
 #include "uassert.h"
 #include "unicode/platform.h"
 #include "unicode/uniset.h"
+#include "standardplural.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
@@ -45,6 +46,7 @@ class Modifier;
 class MutablePatternModifier;
 class DecimalQuantity;
 class NumberStringBuilder;
+class ModifierStore;
 struct MicroProps;
 
 
@@ -137,6 +139,7 @@ class U_I18N_API AffixPatternProvider {
 
 
 
+
 class U_I18N_API Modifier {
   public:
     virtual ~Modifier();
@@ -162,12 +165,12 @@ class U_I18N_API Modifier {
 
 
 
-    virtual int32_t getPrefixLength(UErrorCode& status) const = 0;
+    virtual int32_t getPrefixLength() const = 0;
 
     
 
 
-    virtual int32_t getCodePointCount(UErrorCode& status) const = 0;
+    virtual int32_t getCodePointCount() const = 0;
 
     
 
@@ -177,7 +180,56 @@ class U_I18N_API Modifier {
 
 
     virtual bool isStrong() const = 0;
+
+    
+
+
+    virtual bool containsField(UNumberFormatFields field) const = 0;
+
+    
+
+
+
+    struct U_I18N_API Parameters {
+        const ModifierStore* obj = nullptr;
+        int8_t signum;
+        StandardPlural::Form plural;
+
+        Parameters();
+        Parameters(const ModifierStore* _obj, int8_t _signum, StandardPlural::Form _plural);
+    };
+
+    
+
+
+
+
+    virtual void getParameters(Parameters& output) const = 0;
+
+    
+
+
+
+    virtual bool semanticallyEquivalent(const Modifier& other) const = 0;
 };
+
+
+
+
+
+
+
+
+class U_I18N_API ModifierStore {
+  public:
+    virtual ~ModifierStore();
+
+    
+
+
+    virtual const Modifier* getModifier(int8_t signum, StandardPlural::Form plural) const = 0;
+};
+
 
 
 

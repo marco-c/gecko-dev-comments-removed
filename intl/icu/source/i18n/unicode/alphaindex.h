@@ -269,6 +269,8 @@ public:
 
 
 
+
+
         int32_t getBucketIndex(const UnicodeString &name, UErrorCode &errorCode) const;
 
         
@@ -377,6 +379,7 @@ public:
 
 
    
+
 
 
 
@@ -702,12 +705,14 @@ public:
 
 
 
+
     struct Record: public UMemory {
         const UnicodeString  name_;
         const void           *data_;
         Record(const UnicodeString &name, const void *data);
         ~Record();
     };
+    
 #endif  
 
 private:

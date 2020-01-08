@@ -68,7 +68,7 @@ U_NAMESPACE_BEGIN
 
 
 
-class IndianCalendar : public Calendar {
+class U_I18N_API IndianCalendar : public Calendar {
 public:
   
 
@@ -274,7 +274,7 @@ public:
 
 
 
-  U_I18N_API static UClassID U_EXPORT2 getStaticClassID(void);
+  static UClassID U_EXPORT2 getStaticClassID(void);
 
   
 
@@ -320,49 +320,6 @@ protected:
 
 
   virtual int32_t defaultCenturyStartYear() const;
-
- private: 
-  
-
-
-
-
-
-  static UDate         fgSystemDefaultCenturyStart;
-
-  
-
-
-  static int32_t          fgSystemDefaultCenturyStartYear;
-
-  
-
-
-  static const int32_t    fgSystemDefaultCenturyYear;
-
-  
-
-
-  static const UDate        fgSystemDefaultCentury;
-
-  
-
-
-
-  UDate         internalGetDefaultCenturyStart(void) const;
-
-  
-
-
-
-  int32_t          internalGetDefaultCenturyStartYear(void) const;
-
-  
-
-
-
-
-  static void  initializeSystemDefaultCentury(void);
 };
 
 U_NAMESPACE_END

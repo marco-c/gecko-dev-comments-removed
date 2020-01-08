@@ -31,6 +31,10 @@
 #ifndef LOCID_H
 #define LOCID_H
 
+#include "unicode/bytestream.h"
+#include "unicode/localpointer.h"
+#include "unicode/strenum.h"
+#include "unicode/stringpiece.h"
 #include "unicode/utypes.h"
 #include "unicode/uobject.h"
 #include "unicode/putil.h"
@@ -280,6 +284,16 @@ public:
 
     Locale(const    Locale& other);
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    Locale(Locale&& other) U_NOEXCEPT;
+#endif  
 
     
 
@@ -295,6 +309,19 @@ public:
 
 
     Locale& operator=(const Locale& other);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+    Locale& operator=(Locale&& other) U_NOEXCEPT;
+#endif  
 
     
 
@@ -360,6 +387,55 @@ public:
 
     static void U_EXPORT2 setDefault(const Locale& newLocale,
                                      UErrorCode&   success);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static Locale U_EXPORT2 forLanguageTag(StringPiece tag, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void toLanguageTag(ByteSink& sink, UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+    template<typename StringClass>
+    inline StringClass toLanguageTag(UErrorCode& status) const;
 #endif  
 
     
@@ -432,8 +508,72 @@ public:
 
     const char * getBaseName() const;
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void addLikelySubtags(UErrorCode& status);
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void minimizeSubtags(UErrorCode& status);
+#endif  
+
+    
+
 
 
 
@@ -443,7 +583,55 @@ public:
 
     StringEnumeration * createKeywords(UErrorCode &status) const;
 
+#ifndef U_HIDE_DRAFT_API
+
     
+
+
+
+
+
+
+
+
+    StringEnumeration * createUnicodeKeywords(UErrorCode &status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    template<typename StringClass, typename OutputIterator>
+    inline void getKeywords(OutputIterator iterator, UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    template<typename StringClass, typename OutputIterator>
+    inline void getUnicodeKeywords(OutputIterator iterator, UErrorCode& status) const;
+
+#endif  
+
+    
+
+
+
+
+
 
 
 
@@ -456,7 +644,76 @@ public:
 
     int32_t getKeywordValue(const char* keywordName, char *buffer, int32_t bufferCapacity, UErrorCode &status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+
+
+
+
+
+
+
+
+    void getKeywordValue(StringPiece keywordName, ByteSink& sink, UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    template<typename StringClass>
+    inline StringClass getKeywordValue(StringPiece keywordName, UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void getUnicodeKeywordValue(StringPiece keywordName, ByteSink& sink, UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    template<typename StringClass>
+    inline StringClass getUnicodeKeywordValue(StringPiece keywordName, UErrorCode& status) const;
+#endif  
+
+    
+
+
+
+
+
 
 
 
@@ -471,6 +728,48 @@ public:
 
 
     void setKeywordValue(const char* keywordName, const char* keywordValue, UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void setKeywordValue(StringPiece keywordName, StringPiece keywordValue, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void setUnicodeKeywordValue(StringPiece keywordName, StringPiece keywordValue, UErrorCode& status);
+#endif  
 
     
 
@@ -775,6 +1074,17 @@ Locale::operator!=(const    Locale&     other) const
     return !operator==(other);
 }
 
+#ifndef U_HIDE_DRAFT_API
+template<typename StringClass> inline StringClass
+Locale::toLanguageTag(UErrorCode& status) const
+{
+    StringClass result;
+    StringByteSink<StringClass> sink(&result);
+    toLanguageTag(sink, status);
+    return result;
+}
+#endif  
+
 inline const char *
 Locale::getCountry() const
 {
@@ -804,6 +1114,62 @@ Locale::getName() const
 {
     return fullName;
 }
+
+#ifndef U_HIDE_DRAFT_API
+
+template<typename StringClass, typename OutputIterator> inline void
+Locale::getKeywords(OutputIterator iterator, UErrorCode& status) const
+{
+    LocalPointer<StringEnumeration> keys(createKeywords(status));
+    if (U_FAILURE(status)) {
+        return;
+    }
+    for (;;) {
+        int32_t resultLength;
+        const char* buffer = keys->next(&resultLength, status);
+        if (U_FAILURE(status) || buffer == nullptr) {
+            return;
+        }
+        *iterator++ = StringClass(buffer, resultLength);
+    }
+}
+
+template<typename StringClass, typename OutputIterator> inline void
+Locale::getUnicodeKeywords(OutputIterator iterator, UErrorCode& status) const
+{
+    LocalPointer<StringEnumeration> keys(createUnicodeKeywords(status));
+    if (U_FAILURE(status)) {
+        return;
+    }
+    for (;;) {
+        int32_t resultLength;
+        const char* buffer = keys->next(&resultLength, status);
+        if (U_FAILURE(status) || buffer == nullptr) {
+            return;
+        }
+        *iterator++ = StringClass(buffer, resultLength);
+    }
+}
+
+template<typename StringClass> inline StringClass
+Locale::getKeywordValue(StringPiece keywordName, UErrorCode& status) const
+{
+    StringClass result;
+    StringByteSink<StringClass> sink(&result);
+    getKeywordValue(keywordName, sink, status);
+    return result;
+}
+
+template<typename StringClass> inline StringClass
+Locale::getUnicodeKeywordValue(StringPiece keywordName, UErrorCode& status) const
+{
+    StringClass result;
+    StringByteSink<StringClass> sink(&result);
+    getUnicodeKeywordValue(keywordName, sink, status);
+    return result;
+}
+
+#endif  
 
 inline UBool
 Locale::isBogus(void) const {

@@ -927,9 +927,6 @@ u_memrchr32(const UChar *s, UChar32 c, int32_t count);
 
 
 
-
-
-
 #if defined(U_DECLARE_UTF16)
 #   define U_STRING_DECL(var, cs, length) static const UChar *var=(const UChar *)U_DECLARE_UTF16(cs)
     

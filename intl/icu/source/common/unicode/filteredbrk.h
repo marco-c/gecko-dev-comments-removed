@@ -67,7 +67,6 @@ class U_COMMON_API FilteredBreakIteratorBuilder : public UObject {
   static FilteredBreakIteratorBuilder *createInstance(UErrorCode &status);
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -76,7 +75,6 @@ class U_COMMON_API FilteredBreakIteratorBuilder : public UObject {
 
 
   static FilteredBreakIteratorBuilder *createEmptyInstance(UErrorCode &status);
-#endif  
 
   
 
@@ -114,7 +112,6 @@ class U_COMMON_API FilteredBreakIteratorBuilder : public UObject {
 
   virtual BreakIterator *build(BreakIterator* adoptBreakIterator, UErrorCode& status) = 0;
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -131,7 +128,6 @@ class U_COMMON_API FilteredBreakIteratorBuilder : public UObject {
   inline BreakIterator *wrapIteratorWithFilter(BreakIterator* adoptBreakIterator, UErrorCode& status) {
     return build(adoptBreakIterator, status);
   }
-#endif  
 
  protected:
   

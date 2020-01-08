@@ -276,7 +276,7 @@ Edits &Edits::mergeAndAppend(const Edits &ab, const Edits &bc, UErrorCode &error
         
         
         if (bc_bLength == 0) {
-            if (bcHasNext && (bcHasNext = bcIter.next(errorCode))) {
+            if (bcHasNext && (bcHasNext = bcIter.next(errorCode)) != 0) {
                 bc_bLength = bcIter.oldLength();
                 cLength = bcIter.newLength();
                 if (bc_bLength == 0) {
@@ -293,7 +293,7 @@ Edits &Edits::mergeAndAppend(const Edits &ab, const Edits &bc, UErrorCode &error
             
         }
         if (ab_bLength == 0) {
-            if (abHasNext && (abHasNext = abIter.next(errorCode))) {
+            if (abHasNext && (abHasNext = abIter.next(errorCode)) != 0) {
                 aLength = abIter.oldLength();
                 ab_bLength = abIter.newLength();
                 if (ab_bLength == 0) {

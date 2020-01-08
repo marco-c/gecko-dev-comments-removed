@@ -83,6 +83,7 @@ typedef unsigned char uint8_t;
 
 #else 
 
+
 #if ! U_HAVE_INT8_T
 typedef signed char int8_t;
 #endif
@@ -122,6 +123,7 @@ typedef unsigned int uint32_t;
     typedef unsigned long long uint64_t;
 #endif
 #endif
+
 
 #endif 
 

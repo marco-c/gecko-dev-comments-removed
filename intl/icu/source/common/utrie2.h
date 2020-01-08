@@ -22,7 +22,6 @@
 #include "unicode/utypes.h"
 #include "unicode/utf8.h"
 #include "putilimp.h"
-#include "udataswp.h"
 
 U_CDECL_BEGIN
 
@@ -329,40 +328,6 @@ utrie2_serialize(const UTrie2 *trie,
                  UErrorCode *pErrorCode);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2
-utrie2_getVersion(const void *data, int32_t length, UBool anyEndianOk);
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2
-utrie2_swap(const UDataSwapper *ds,
-            const void *inData, int32_t length, void *outData,
-            UErrorCode *pErrorCode);
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2
-utrie2_swapAnyVersion(const UDataSwapper *ds,
-                      const void *inData, int32_t length, void *outData,
-                      UErrorCode *pErrorCode);
 
 
 
@@ -709,6 +674,10 @@ struct UTrie2 {
     UBool padding1;
     int16_t padding2;
     UNewTrie2 *newTrie;     
+
+#ifdef UTRIE2_DEBUG
+    const char *name;
+#endif
 };
 
 

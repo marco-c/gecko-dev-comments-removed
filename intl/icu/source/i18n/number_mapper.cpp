@@ -226,7 +226,7 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
         if (macros.precision.fType == Precision::PrecisionType::RND_FRACTION) {
             
             
-            
+            int maxInt_ = properties.maximumIntegerDigits;
             int minInt_ = properties.minimumIntegerDigits;
             int minFrac_ = properties.minimumFractionDigits;
             int maxFrac_ = properties.maximumFractionDigits;
@@ -237,9 +237,15 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
                 
                 macros.precision = Precision::constructSignificant(1, maxFrac_ + 1).withMode(roundingMode);
             } else {
+                int maxSig_ = minInt_ + maxFrac_;
                 
-                macros.precision = Precision::constructSignificant(
-                        minInt_ + minFrac_, minInt_ + maxFrac_).withMode(roundingMode);
+                if (maxInt_ > minInt_ && minInt_ > 1) {
+                    minInt_ = 1;
+                }
+                int minSig_ = minInt_ + minFrac_;
+                
+                
+                macros.precision = Precision::constructSignificant(minSig_, maxSig_).withMode(roundingMode);
             }
         }
     }

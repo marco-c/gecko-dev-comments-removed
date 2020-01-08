@@ -60,6 +60,7 @@ enum UCurrencyUsage {
     UCURR_USAGE_COUNT=2
 #endif  
 };
+
 typedef enum UCurrencyUsage UCurrencyUsage; 
 
 

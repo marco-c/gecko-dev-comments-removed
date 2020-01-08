@@ -290,6 +290,11 @@ typedef double UDate;
 
 
 
+#ifdef U_IN_DOXYGEN
+
+#define U_COMBINED_IMPLEMENTATION 1
+#endif
+
 #if defined(U_COMBINED_IMPLEMENTATION)
 #define U_DATA_API     U_EXPORT
 #define U_COMMON_API   U_EXPORT

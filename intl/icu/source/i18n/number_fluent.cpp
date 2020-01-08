@@ -363,6 +363,7 @@ UnlocalizedNumberFormatter::UnlocalizedNumberFormatter(const NFS<UNF>& other)
     
 }
 
+
 UnlocalizedNumberFormatter::UnlocalizedNumberFormatter(UNF&& src) U_NOEXCEPT
         : UNF(static_cast<NFS<UNF>&&>(src)) {}
 
@@ -382,6 +383,7 @@ UnlocalizedNumberFormatter& UnlocalizedNumberFormatter::operator=(UNF&& src) U_N
     
     return *this;
 }
+
 
 LocalizedNumberFormatter::LocalizedNumberFormatter(const LNF& other)
         : LNF(static_cast<const NFS<LNF>&>(other)) {}
@@ -406,6 +408,7 @@ LocalizedNumberFormatter::LocalizedNumberFormatter(NFS<LNF>&& src) U_NOEXCEPT
 LocalizedNumberFormatter& LocalizedNumberFormatter::operator=(const LNF& other) {
     NFS<LNF>::operator=(static_cast<const NFS<LNF>&>(other));
     
+    clear();
     return *this;
 }
 
@@ -417,12 +420,17 @@ LocalizedNumberFormatter& LocalizedNumberFormatter::operator=(LNF&& src) U_NOEXC
         
         lnfMoveHelper(static_cast<LNF&&>(src));
     } else {
-        
-        auto* callCount = reinterpret_cast<u_atomic_int32_t*>(fUnsafeCallCount);
-        umtx_storeRelease(*callCount, 0);
-        fCompiled = nullptr;
+        clear();
     }
     return *this;
+}
+
+void LocalizedNumberFormatter::clear() {
+    
+    auto* callCount = reinterpret_cast<u_atomic_int32_t*>(fUnsafeCallCount);
+    umtx_storeRelease(*callCount, 0);
+    delete fCompiled;
+    fCompiled = nullptr;
 }
 
 void LocalizedNumberFormatter::lnfMoveHelper(LNF&& src) {
@@ -431,6 +439,7 @@ void LocalizedNumberFormatter::lnfMoveHelper(LNF&& src) {
     
     auto* callCount = reinterpret_cast<u_atomic_int32_t*>(fUnsafeCallCount);
     umtx_storeRelease(*callCount, INT32_MIN);
+    delete fCompiled;
     fCompiled = src.fCompiled;
     
     auto* srcCallCount = reinterpret_cast<u_atomic_int32_t*>(src.fUnsafeCallCount);
@@ -657,9 +666,9 @@ LocalizedNumberFormatter::formatDecimalQuantity(const DecimalQuantity& dq, UErro
 
 void LocalizedNumberFormatter::formatImpl(impl::UFormattedNumberData* results, UErrorCode& status) const {
     if (computeCompiled(status)) {
-        fCompiled->apply(results->quantity, results->string, status);
+        fCompiled->format(results->quantity, results->string, status);
     } else {
-        NumberFormatterImpl::applyStatic(fMacros, results->quantity, results->string, status);
+        NumberFormatterImpl::formatStatic(fMacros, results->quantity, results->string, status);
     }
 }
 
@@ -706,7 +715,11 @@ bool LocalizedNumberFormatter::computeCompiled(UErrorCode& status) const {
 
     if (currentCount == fMacros.threshold && fMacros.threshold > 0) {
         
-        const NumberFormatterImpl* compiled = NumberFormatterImpl::fromMacros(fMacros, status);
+        const NumberFormatterImpl* compiled = new NumberFormatterImpl(fMacros, status);
+        if (compiled == nullptr) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+            return false;
+        }
         U_ASSERT(fCompiled == nullptr);
         const_cast<LocalizedNumberFormatter*>(this)->fCompiled = compiled;
         umtx_storeRelease(*callCount, INT32_MIN);
@@ -776,7 +789,7 @@ Appendable& FormattedNumber::appendTo(Appendable& appendable) {
     return appendTo(appendable, localStatus);
 }
 
-Appendable& FormattedNumber::appendTo(Appendable& appendable, UErrorCode& status) {
+Appendable& FormattedNumber::appendTo(Appendable& appendable, UErrorCode& status) const {
     if (U_FAILURE(status)) {
         return appendable;
     }

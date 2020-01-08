@@ -192,8 +192,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-
-typedef enum UGroupingStrategy {
+typedef enum UNumberGroupingStrategy {
     
 
 
@@ -254,16 +253,28 @@ typedef enum UGroupingStrategy {
 
 
 
-            UNUM_GROUPING_THOUSANDS,
+            UNUM_GROUPING_THOUSANDS
 
+#ifndef U_HIDE_INTERNAL_API
+    ,
     
 
 
 
 
             UNUM_GROUPING_COUNT
+#endif  
 
-} UGroupingStrategy;
+} UNumberGroupingStrategy;
+
+#ifndef U_HIDE_DEPRECATED_API
+
+
+
+
+typedef UNumberGroupingStrategy UGroupingStrategy;
+#endif  
+
 #endif  
 
 #ifndef U_HIDE_DRAFT_API
@@ -399,24 +410,24 @@ typedef enum UNumberDecimalSeparatorDisplay {
 
 #ifndef U_HIDE_DRAFT_API
 
-
-
-
-
-
-
 struct UNumberFormatter;
+
+
+
+
+
+
+
 typedef struct UNumberFormatter UNumberFormatter;
 
-
-
-
-
-
-
-
-
 struct UFormattedNumber;
+
+
+
+
+
+
+
 typedef struct UFormattedNumber UFormattedNumber;
 
 
@@ -537,6 +548,7 @@ unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32
 U_DRAFT int32_t U_EXPORT2
 unumf_resultToString(const UFormattedNumber* uresult, UChar* buffer, int32_t bufferCapacity,
                      UErrorCode* ec);
+
 
 
 

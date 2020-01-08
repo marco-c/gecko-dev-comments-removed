@@ -247,11 +247,20 @@ private:
 
     
     Locale* fLocale;
+
+private:
+    
+
+
+
+    UErrorCode fInternalStatus;
 };
 
 
 inline UBool
-CurrencyPluralInfo::operator!=(const CurrencyPluralInfo& info) const {              return !operator==(info);                                                   }  
+CurrencyPluralInfo::operator!=(const CurrencyPluralInfo& info) const {
+    return !operator==(info);
+}  
 
 U_NAMESPACE_END
 

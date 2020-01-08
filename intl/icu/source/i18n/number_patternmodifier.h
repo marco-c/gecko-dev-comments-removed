@@ -23,8 +23,8 @@ U_NAMESPACE_BEGIN
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
 
 #pragma warning(suppress: 4661)
-template class U_I18N_API LocalPointerBase<number::impl::ParameterizedModifier>;
-template class U_I18N_API LocalPointer<number::impl::ParameterizedModifier>;
+template class U_I18N_API LocalPointerBase<number::impl::AdoptingModifierStore>;
+template class U_I18N_API LocalPointer<number::impl::AdoptingModifierStore>;
 #endif
 
 namespace number {
@@ -45,10 +45,10 @@ class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public U
     const Modifier* getModifier(int8_t signum, StandardPlural::Form plural) const;
 
   private:
-    ImmutablePatternModifier(ParameterizedModifier* pm, const PluralRules* rules,
+    ImmutablePatternModifier(AdoptingModifierStore* pm, const PluralRules* rules,
                              const MicroPropsGenerator* parent);
 
-    const LocalPointer<ParameterizedModifier> pm;
+    const LocalPointer<AdoptingModifierStore> pm;
     const PluralRules* rules;
     const MicroPropsGenerator* parent;
 
@@ -178,11 +178,17 @@ class U_I18N_API MutablePatternModifier
     int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
-    int32_t getPrefixLength(UErrorCode &status) const U_OVERRIDE;
+    int32_t getPrefixLength() const U_OVERRIDE;
 
-    int32_t getCodePointCount(UErrorCode &status) const U_OVERRIDE;
+    int32_t getCodePointCount() const U_OVERRIDE;
 
     bool isStrong() const U_OVERRIDE;
+
+    bool containsField(UNumberFormatFields field) const U_OVERRIDE;
+
+    void getParameters(Parameters& output) const U_OVERRIDE;
+
+    bool semanticallyEquivalent(const Modifier& other) const U_OVERRIDE;
 
     
 
@@ -196,22 +202,22 @@ class U_I18N_API MutablePatternModifier
     const bool fStrong;
 
     
-    const AffixPatternProvider *patternInfo;
-    UNumberSignDisplay signDisplay;
+    const AffixPatternProvider *fPatternInfo;
+    UNumberSignDisplay fSignDisplay;
     bool perMilleReplacesPercent;
 
     
-    const DecimalFormatSymbols *symbols;
-    UNumberUnitWidth unitWidth;
-    const CurrencySymbols *currencySymbols;
-    const PluralRules *rules;
+    const DecimalFormatSymbols *fSymbols;
+    UNumberUnitWidth fUnitWidth;
+    const CurrencySymbols *fCurrencySymbols;
+    const PluralRules *fRules;
 
     
-    int8_t signum;
-    StandardPlural::Form plural;
+    int8_t fSignum;
+    StandardPlural::Form fPlural;
 
     
-    const MicroPropsGenerator *parent;
+    const MicroPropsGenerator *fParent;
 
     
     UnicodeString currentAffix;

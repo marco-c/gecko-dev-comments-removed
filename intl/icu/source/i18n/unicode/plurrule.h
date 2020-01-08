@@ -191,8 +191,6 @@ class SharedPluralRules;
 
 
 
-
-
 class U_I18N_API PluralRules : public UObject {
 public:
 
@@ -498,6 +496,12 @@ private:
     int32_t         getNumberValue(const UnicodeString& token) const;
     UnicodeString   getRuleFromResource(const Locale& locale, UPluralType type, UErrorCode& status);
     RuleChain      *rulesForKeyword(const UnicodeString &keyword) const;
+
+    
+
+
+
+    UErrorCode mInternalStatus;
 
     friend class PluralRuleParser;
 };

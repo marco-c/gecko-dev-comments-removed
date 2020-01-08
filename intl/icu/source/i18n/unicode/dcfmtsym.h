@@ -181,7 +181,6 @@ public:
 
     DecimalFormatSymbols(const Locale& locale, UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -199,7 +198,6 @@ public:
 
 
     DecimalFormatSymbols(const Locale& locale, const NumberingSystem& ns, UErrorCode& status);
-#endif  
 
     
 
@@ -531,7 +529,7 @@ inline const UnicodeString& DecimalFormatSymbols::getConstDigitSymbol(int32_t di
     ENumberFormatSymbol key = static_cast<ENumberFormatSymbol>(kOneDigitSymbol + digit - 1);
     return fSymbols[key];
 }
-#endif
+#endif 
 
 
 

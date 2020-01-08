@@ -520,15 +520,7 @@ public:
 
      virtual UClassID getDynamicClassID() const;
 
-#if (defined(__xlC__) && (__xlC__ < 0x0C00)) || (U_PLATFORM == U_PF_OS390) || (U_PLATFORM ==U_PF_OS400)
-
-
-
-
-public:
-#else
 private:
-#endif
      
 
 
@@ -564,10 +556,6 @@ private:
         PluralRules* pluralRules;
     };
 
-#if defined(__xlC__)
-
-private:
-#endif
     Locale  locale;
     MessagePattern msgPattern;
     NumberFormat*  numberFormat;

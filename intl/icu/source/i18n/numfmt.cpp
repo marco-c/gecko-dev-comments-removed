@@ -1326,13 +1326,13 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
 
         
         if (U_SUCCESS(status) && count > 0 && uprv_strcmp(buffer, "host") == 0) {
-            Win32NumberFormat *f = NULL;
             UBool curr = TRUE;
 
             switch (style) {
             case UNUM_DECIMAL:
                 curr = FALSE;
                 
+                U_FALLTHROUGH;
 
             case UNUM_CURRENCY:
             case UNUM_CURRENCY_ISO: 
@@ -1340,14 +1340,13 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
             case UNUM_CURRENCY_ACCOUNTING:
             case UNUM_CASH_CURRENCY:
             case UNUM_CURRENCY_STANDARD:
-                f = new Win32NumberFormat(desiredLocale, curr, status);
-
+            {
+                LocalPointer<Win32NumberFormat> f(new Win32NumberFormat(desiredLocale, curr, status), status);
                 if (U_SUCCESS(status)) {
-                    return f;
+                    return f.orphan();
                 }
-
-                delete f;
-                break;
+            }
+            break;
             default:
                 break;
             }
@@ -1417,8 +1416,7 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
         }
     }
 
-
-    NumberFormat *f;
+    LocalPointer<NumberFormat> f;
     if (ns->isAlgorithmic()) {
         UnicodeString nsDesc;
         UnicodeString nsRuleSetGroup;
@@ -1453,7 +1451,7 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
             return NULL;
         }
         r->setDefaultRuleSet(nsRuleSetName,status);
-        f = r;
+        f.adoptInstead(r);
     } else {
         
         
@@ -1463,8 +1461,21 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
         }
 
         
-        DecimalFormatSymbols *syms = symbolsToAdopt.orphan();
-        DecimalFormat* df = new DecimalFormat(pattern, syms, style, status);
+        
+        DecimalFormatSymbols *syms = symbolsToAdopt.getAlias();
+        LocalPointer<DecimalFormat> df(new DecimalFormat(pattern, syms, style, status));
+
+        if (df.isValid()) {
+            
+            symbolsToAdopt.orphan();
+        }
+        else {
+            status = U_MEMORY_ALLOCATION_ERROR;
+        }
+
+        if (U_FAILURE(status)) {
+            return nullptr;
+        }
 
         
         if (style == UNUM_CASH_CURRENCY){
@@ -1472,25 +1483,18 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
         }
 
         if (U_FAILURE(status)) {
-            delete df;
-            return NULL;
+            return nullptr;
         }
 
-        f = df;
-        if (f == NULL) {
-            delete syms;
-            status = U_MEMORY_ALLOCATION_ERROR;
-            return NULL;
-        }
+        f.adoptInstead(df.orphan());
     }
 
     f->setLocaleIDs(ures_getLocaleByType(ownedResource.getAlias(), ULOC_VALID_LOCALE, &status),
                     ures_getLocaleByType(ownedResource.getAlias(), ULOC_ACTUAL_LOCALE, &status));
     if (U_FAILURE(status)) {
-        delete f;
         return NULL;
     }
-    return f;
+    return f.orphan();
 }
 
 

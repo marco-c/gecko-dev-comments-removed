@@ -144,11 +144,31 @@ class MultiplierFormatHandler;
 class CurrencySymbols;
 class GeneratorHelpers;
 class DecNum;
+class NumberRangeFormatterImpl;
+struct RangeMacroProps;
+
+
+
+
+
+
+
+void touchRangeLocales(impl::RangeMacroProps& macros);
 
 } 
 
 
+
+
+
+
 typedef Notation CompactNotation;
+
+
+
+
+
+
 typedef Notation SimpleNotation;
 
 
@@ -308,10 +328,15 @@ class U_I18N_API Notation : public UMemory {
 
     union NotationUnion {
         
+        
         struct ScientificSettings {
+            
             int8_t fEngineeringInterval;
+            
             bool fRequireMinInt;
+            
             impl::digits_t fMinExponentDigits;
+            
             UNumberSignDisplay fExponentSignDisplay;
         } scientific;
 
@@ -408,14 +433,38 @@ class U_I18N_API ScientificNotation : public Notation {
 };
 
 
+
+
+
+
 typedef Precision SignificantDigitsPrecision;
 
 
 
 
+
+
+
+
+
 typedef Precision Rounder;
+
+
+
+
+
 typedef FractionPrecision FractionRounder;
+
+
+
+
+
 typedef IncrementPrecision IncrementRounder;
+
+
+
+
+
 typedef CurrencyPrecision CurrencyRounder;
 
 
@@ -672,16 +721,25 @@ class U_I18N_API Precision : public UMemory {
     } fType;
 
     union PrecisionUnion {
+        
         struct FractionSignificantSettings {
             
+            
             impl::digits_t fMinFrac;
+            
             impl::digits_t fMaxFrac;
+            
             impl::digits_t fMinSig;
+            
             impl::digits_t fMaxSig;
         } fracSig;
+        
         struct IncrementSettings {
+            
             double fIncrement;
+            
             impl::digits_t fMinFrac;
+            
             impl::digits_t fMaxFrac;
         } increment; 
         UCurrencyUsage currencyUsage; 
@@ -1205,7 +1263,7 @@ class U_I18N_API Grouper : public UMemory {
   public:
 #ifndef U_HIDE_INTERNAL_API
     
-    static Grouper forStrategy(UGroupingStrategy grouping);
+    static Grouper forStrategy(UNumberGroupingStrategy grouping);
 
     
 
@@ -1216,7 +1274,7 @@ class U_I18N_API Grouper : public UMemory {
     
 
     
-    Grouper(int16_t grouping1, int16_t grouping2, int16_t minGrouping, UGroupingStrategy strategy)
+    Grouper(int16_t grouping1, int16_t grouping2, int16_t minGrouping, UNumberGroupingStrategy strategy)
             : fGrouping1(grouping1),
               fGrouping2(grouping2),
               fMinGrouping(minGrouping),
@@ -1254,7 +1312,7 @@ class U_I18N_API Grouper : public UMemory {
 
 
 
-    UGroupingStrategy fStrategy;
+    UNumberGroupingStrategy fStrategy;
 
     Grouper() : fGrouping1(-3) {};
 
@@ -1420,6 +1478,7 @@ struct U_I18N_API MacroProps : public UMemory {
 };
 
 } 
+
 
 
 
@@ -1724,7 +1783,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-    Derived grouping(UGroupingStrategy strategy) const &;
+    Derived grouping(UNumberGroupingStrategy strategy) const &;
 
     
 
@@ -1735,8 +1794,7 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
-    Derived grouping(UGroupingStrategy strategy) &&;
+    Derived grouping(UNumberGroupingStrategy strategy) &&;
 
     
 
@@ -2099,15 +2157,18 @@ class U_I18N_API NumberFormatterSettings {
 
     
 
-  protected:
+  private:
     impl::MacroProps fMacros;
 
-  private:
     
     NumberFormatterSettings() = default;
 
     friend class LocalizedNumberFormatter;
     friend class UnlocalizedNumberFormatter;
+
+    
+    friend void impl::touchRangeLocales(impl::RangeMacroProps& macros);
+    friend class impl::NumberRangeFormatterImpl;
 };
 
 
@@ -2121,13 +2182,6 @@ class U_I18N_API UnlocalizedNumberFormatter
 
   public:
     
-
-
-
-
-
-
-
 
 
 
@@ -2156,7 +2210,6 @@ class U_I18N_API UnlocalizedNumberFormatter
 
     UnlocalizedNumberFormatter() = default;
 
-    
     
 
 
@@ -2271,7 +2324,7 @@ class U_I18N_API LocalizedNumberFormatter
 
     int32_t getCallCount() const;
 
-#endif
+#endif  
 
     
 
@@ -2295,7 +2348,6 @@ class U_I18N_API LocalizedNumberFormatter
 
     LocalizedNumberFormatter() = default;
 
-    
     
 
 
@@ -2335,9 +2387,10 @@ class U_I18N_API LocalizedNumberFormatter
 
 
 
+
     void formatImpl(impl::UFormattedNumberData *results, UErrorCode &status) const;
 
-#endif
+#endif  
 
     
 
@@ -2358,6 +2411,8 @@ class U_I18N_API LocalizedNumberFormatter
     LocalizedNumberFormatter(const impl::MacroProps &macros, const Locale &locale);
 
     LocalizedNumberFormatter(impl::MacroProps &&macros, const Locale &locale);
+
+    void clear();
 
     void lnfMoveHelper(LocalizedNumberFormatter&& src);
 
@@ -2430,7 +2485,7 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
 
-    Appendable &appendTo(Appendable &appendable, UErrorCode& status);
+    Appendable &appendTo(Appendable &appendable, UErrorCode& status) const;
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -2537,7 +2592,7 @@ class U_I18N_API FormattedNumber : public UMemory {
 
     void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
 
-#endif
+#endif  
 
     
 

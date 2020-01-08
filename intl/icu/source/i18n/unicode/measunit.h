@@ -368,6 +368,26 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPartPerMillion(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createPercent(UErrorCode &status);
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createPermille(UErrorCode &status);
+#endif 
+
     
 
 
@@ -463,6 +483,16 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMegabyte(UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createPetabyte(UErrorCode &status);
+#endif 
 
     
 
@@ -983,6 +1013,16 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createWatt(UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createAtmosphere(UErrorCode &status);
+#endif 
 
     
 

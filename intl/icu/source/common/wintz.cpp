@@ -13,9 +13,7 @@
 
 #include "unicode/utypes.h"
 
-
-
-#if U_PLATFORM_USES_ONLY_WIN32_API && (U_PLATFORM_HAS_WINUWP_API == 0)
+#if U_PLATFORM_USES_ONLY_WIN32_API
 
 #include "wintz.h"
 #include "cmemory.h"
@@ -23,6 +21,7 @@
 
 #include "unicode/ures.h"
 #include "unicode/ustring.h"
+#include "uresimp.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN
@@ -34,175 +33,10 @@
 #   define NOMCX
 #include <windows.h>
 
-#define MAX_LENGTH_ID 40
+U_NAMESPACE_BEGIN
 
 
-typedef struct
-{
-    int32_t bias;
-    int32_t standardBias;
-    int32_t daylightBias;
-    SYSTEMTIME standardDate;
-    SYSTEMTIME daylightDate;
-} TZI;
-
-
-
-
-static const wchar_t CURRENT_ZONE_REGKEY[] = L"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation\\";
-static const char STANDARD_TIME_REGKEY[] = " Standard Time";
-static const char TZI_REGKEY[] = "TZI";
-static const char STD_REGKEY[] = "Std";
-
-
-
-
-static const char TZ_REGKEY[] = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones\\";
-
-static LONG openTZRegKey(HKEY *hkey, const char *winid)
-{
-    char subKeyName[110]; 
-    char *name;
-    LONG result;
-
-    uprv_strcpy(subKeyName, TZ_REGKEY);
-    name = &subKeyName[strlen(subKeyName)];
-    uprv_strcat(subKeyName, winid);
-
-    result = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
-                            subKeyName,
-                            0,
-                            KEY_QUERY_VALUE,
-                            hkey);
-    return result;
-}
-
-static LONG getTZI(const char *winid, TZI *tzi)
-{
-    DWORD cbData = sizeof(TZI);
-    LONG result;
-    HKEY hkey;
-
-    result = openTZRegKey(&hkey, winid);
-
-    if (result == ERROR_SUCCESS)
-    {
-        result = RegQueryValueExA(hkey,
-                                    TZI_REGKEY,
-                                    NULL,
-                                    NULL,
-                                    (LPBYTE)tzi,
-                                    &cbData);
-        RegCloseKey(hkey);
-    }
-
-    return result;
-}
-
-static LONG getSTDName(const char *winid, char *regStdName, int32_t length)
-{
-    DWORD cbData = length;
-    LONG result;
-    HKEY hkey;
-
-    result = openTZRegKey(&hkey, winid);
-
-    if (result == ERROR_SUCCESS) 
-    {
-        result = RegQueryValueExA(hkey,
-                                    STD_REGKEY,
-                                    NULL,
-                                    NULL,
-                                    (LPBYTE)regStdName,
-                                    &cbData);
-        RegCloseKey(hkey);
-    }
-
-    return result;
-}
-
-static LONG getTZKeyName(char* tzKeyName, int32_t tzKeyNamelength)
-{
-    HKEY hkey;
-    LONG result = FALSE;
-    WCHAR timeZoneKeyNameData[128];
-    DWORD timeZoneKeyNameLength = static_cast<DWORD>(sizeof(timeZoneKeyNameData));
-
-    if(ERROR_SUCCESS == RegOpenKeyExW(
-        HKEY_LOCAL_MACHINE,
-        CURRENT_ZONE_REGKEY,
-        0, 
-        KEY_QUERY_VALUE,
-        &hkey))
-    {
-        if (ERROR_SUCCESS == RegQueryValueExW(
-             hkey,
-             L"TimeZoneKeyName",
-             NULL,
-             NULL,
-             (LPBYTE)timeZoneKeyNameData,
-             &timeZoneKeyNameLength))
-        {
-            
-            timeZoneKeyNameData[UPRV_LENGTHOF(timeZoneKeyNameData) - 1] = L'\0';
-
-            
-            UErrorCode status = U_ZERO_ERROR;
-            u_strToUTF8(tzKeyName, tzKeyNamelength, NULL, reinterpret_cast<const UChar *>(timeZoneKeyNameData), -1, &status);
-            if (U_ZERO_ERROR == status)
-            {
-                result = ERROR_SUCCESS;
-            }
-        }
-        RegCloseKey(hkey);
-    }
-
-    return result;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define MAX_TIMEZONE_ID_LENGTH 128
 
 
 
@@ -211,186 +45,82 @@ static LONG getTZKeyName(char* tzKeyName, int32_t tzKeyNamelength)
 
 
 U_CFUNC const char* U_EXPORT2
-uprv_detectWindowsTimeZone() 
+uprv_detectWindowsTimeZone()
 {
     UErrorCode status = U_ZERO_ERROR;
-    UResourceBundle* bundle = NULL;
-    char* icuid = NULL;
-    char apiStdName[MAX_LENGTH_ID];
-    char regStdName[MAX_LENGTH_ID];
-    char tmpid[MAX_LENGTH_ID];
+    char* icuid = nullptr;
+    char dynamicTZKeyName[MAX_TIMEZONE_ID_LENGTH];
+    char tmpid[MAX_TIMEZONE_ID_LENGTH];
     int32_t len;
-    int id;
+    int id = GEOID_NOT_AVAILABLE;
     int errorCode;
-    wchar_t ISOcodeW[3]; 
-    char  ISOcodeA[3]; 
+    wchar_t ISOcodeW[3] = {}; 
+    char ISOcode[3] = {}; 
 
-    LONG result;
-    TZI tziKey;
-    TZI tziReg;
-    TIME_ZONE_INFORMATION apiTZI;
-
-    BOOL tryPreVistaFallback;
-    OSVERSIONINFO osVerInfo;
+    DYNAMIC_TIME_ZONE_INFORMATION dynamicTZI;
+    uprv_memset(&dynamicTZI, 0, sizeof(dynamicTZI));
+    uprv_memset(dynamicTZKeyName, 0, sizeof(dynamicTZKeyName));
+    uprv_memset(tmpid, 0, sizeof(tmpid));
 
     
-
-
-    uprv_memset(&apiTZI, 0, sizeof(apiTZI));
-    uprv_memset(&tziKey, 0, sizeof(tziKey));
-    uprv_memset(&tziReg, 0, sizeof(tziReg));
-    GetTimeZoneInformation(&apiTZI);
-    tziKey.bias = apiTZI.Bias;
-    uprv_memcpy((char *)&tziKey.standardDate, (char*)&apiTZI.StandardDate,
-           sizeof(apiTZI.StandardDate));
-    uprv_memcpy((char *)&tziKey.daylightDate, (char*)&apiTZI.DaylightDate,
-           sizeof(apiTZI.DaylightDate));
-
-    
-    uprv_memset(apiStdName, 0, sizeof(apiStdName));
-    wcstombs(apiStdName, apiTZI.StandardName, MAX_LENGTH_ID);
-
-    tmpid[0] = 0;
+    if (TIME_ZONE_ID_INVALID == GetDynamicTimeZoneInformation(&dynamicTZI)) {
+        return nullptr;
+    }
 
     id = GetUserGeoID(GEOCLASS_NATION);
     errorCode = GetGeoInfoW(id, GEO_ISO2, ISOcodeW, 3, 0);
-    u_strToUTF8(ISOcodeA, 3, NULL, (const UChar *)ISOcodeW, 3, &status);
-
-    bundle = ures_openDirect(NULL, "windowsZones", &status);
-    ures_getByKey(bundle, "mapTimezones", bundle, &status);
 
     
+    u_strToUTF8(ISOcode, UPRV_LENGTHOF(ISOcode), nullptr,
+        reinterpret_cast<const UChar*>(ISOcodeW), UPRV_LENGTHOF(ISOcodeW), &status);
 
+    LocalUResourceBundlePointer bundle(ures_openDirect(nullptr, "windowsZones", &status));
+    ures_getByKey(bundle.getAlias(), "mapTimezones", bundle.getAlias(), &status);
 
+    
+    u_strToUTF8(dynamicTZKeyName, UPRV_LENGTHOF(dynamicTZKeyName), nullptr,
+        reinterpret_cast<const UChar*>(dynamicTZI.TimeZoneKeyName), UPRV_LENGTHOF(dynamicTZI.TimeZoneKeyName), &status);
 
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
 
-    uprv_memset(&osVerInfo, 0, sizeof(osVerInfo));
-    osVerInfo.dwOSVersionInfoSize = sizeof(osVerInfo);
-    tryPreVistaFallback = TRUE;
-    result = getTZKeyName(regStdName, sizeof(regStdName));
-    if(ERROR_SUCCESS == result) 
-    {
-        UResourceBundle* winTZ = ures_getByKey(bundle, regStdName, NULL, &status);
-        if(U_SUCCESS(status)) 
-        {
-            const UChar* icuTZ = NULL;
-            if (errorCode != 0) 
-            {
-                icuTZ = ures_getStringByKey(winTZ, ISOcodeA, &len, &status);
+    if (dynamicTZI.TimeZoneKeyName[0] != 0) {
+        UResourceBundle winTZ;
+        ures_initStackObject(&winTZ);
+        ures_getByKey(bundle.getAlias(), dynamicTZKeyName, &winTZ, &status);
+        
+        if (U_SUCCESS(status)) {
+            const UChar* icuTZ = nullptr;
+            if (errorCode != 0) {
+                icuTZ = ures_getStringByKey(&winTZ, ISOcode, &len, &status);
             }
-            if (errorCode==0 || icuTZ==NULL) 
-            {
+            if (errorCode == 0 || icuTZ == nullptr) {
                 
                 status = U_ZERO_ERROR;
-                icuTZ = ures_getStringByKey(winTZ, "001", &len, &status);
+                icuTZ = ures_getStringByKey(&winTZ, "001", &len, &status);
             }
 
-            if(U_SUCCESS(status)) 
-            {
-                int index=0;
-                while (! (*icuTZ == '\0' || *icuTZ ==' ')) 
-                {
-                    tmpid[index++]=(char)(*icuTZ++);  
+            if (U_SUCCESS(status)) {
+                int index = 0;
+
+                while (!(*icuTZ == '\0' || *icuTZ == ' ')) {
+                    
+                    tmpid[index++] = (char)(*icuTZ++);
                 }
-                tmpid[index]='\0';
-                tryPreVistaFallback = FALSE;
+                tmpid[index] = '\0';
             }
         }
-        ures_close(winTZ);
-    }
-
-    if(tryPreVistaFallback)
-    {
-        
-        while (U_SUCCESS(status) && ures_hasNext(bundle))
-        {
-            UBool idFound = FALSE;
-            const char* winid;
-            UResourceBundle* winTZ = ures_getNextResource(bundle, NULL, &status);
-            if (U_FAILURE(status)) 
-            {
-                break;
-            }
-            winid = ures_getKey(winTZ);
-            result = getTZI(winid, &tziReg);
-
-            if (result == ERROR_SUCCESS)
-            {
-                
-
-
-                tziKey.standardBias = tziReg.standardBias;
-                tziKey.daylightBias = tziReg.daylightBias;
-
-                if (uprv_memcmp((char *)&tziKey, (char*)&tziReg, sizeof(tziKey)) == 0)
-                {
-                    const UChar* icuTZ = NULL;
-                    if (errorCode != 0)
-                    {
-                        icuTZ = ures_getStringByKey(winTZ, ISOcodeA, &len, &status);
-                    }
-                    if (errorCode==0 || icuTZ==NULL) 
-                    {
-                        
-                        status = U_ZERO_ERROR;
-                        icuTZ = ures_getStringByKey(winTZ, "001", &len, &status);
-                    }
-
-                    if (U_SUCCESS(status)) 
-                    {
-                        
-
-                        uprv_memset(regStdName, 0, sizeof(regStdName));
-                        result = getSTDName(winid, regStdName, sizeof(regStdName));
-                        if (result == ERROR_SUCCESS) 
-                        {
-                            if (uprv_strcmp(apiStdName, regStdName) == 0) 
-                            {
-                                idFound = TRUE;
-                            }
-                        }
-
-                        
-
-
-
-                        if (idFound || tmpid[0] == 0) 
-                        {
-                            
-                            int index=0;
-                            while (! (*icuTZ == '\0' || *icuTZ ==' ')) 
-                            {
-                                tmpid[index++]=(char)(*icuTZ++);  
-                            }
-                            tmpid[index]='\0';
-                        }
-                    }
-                }
-            }
-            ures_close(winTZ);
-            if (idFound) 
-            {
-                break;
-            }
-        }
+        ures_close(&winTZ);
     }
 
     
-
-
-    if (tmpid[0] != 0) 
-    {
-        len = uprv_strlen(tmpid);
-        icuid = (char*)uprv_calloc(len + 1, sizeof(char));
-        if (icuid != NULL) 
-        {
-            uprv_strcpy(icuid, tmpid);
-        }
+    if (tmpid[0] != 0) {
+        icuid = uprv_strdup(tmpid);
     }
 
-    ures_close(bundle);
-    
     return icuid;
 }
 
+U_NAMESPACE_END
 #endif 

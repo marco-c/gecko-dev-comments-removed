@@ -24,12 +24,20 @@
 #if !UCONFIG_NO_NORMALIZATION
 
 #include "unicode/normalizer2.h"
+#include "unicode/ucptrie.h"
 #include "unicode/unistr.h"
 #include "unicode/unorm.h"
+#include "unicode/utf.h"
 #include "unicode/utf16.h"
 #include "mutex.h"
+#include "udataswp.h"
 #include "uset_imp.h"
-#include "utrie2.h"
+
+
+
+
+
+#define NORM2_HARDCODE_NFC_DATA 1
 
 U_NAMESPACE_BEGIN
 
@@ -118,7 +126,7 @@ public:
             buffer[0]=(UChar)(JAMO_L_BASE+c/JAMO_V_COUNT);
             buffer[1]=(UChar)(JAMO_V_BASE+c%JAMO_V_COUNT);
         } else {
-            buffer[0]=orig-c2;  
+            buffer[0]=(UChar)(orig-c2);  
             buffer[1]=(UChar)(JAMO_T_BASE+c2);
         }
     }
@@ -158,8 +166,7 @@ public:
             appendBMP((UChar)c, cc, errorCode) :
             appendSupplementary(c, cc, errorCode);
     }
-    
-    UBool append(const UChar *s, int32_t length,
+    UBool append(const UChar *s, int32_t length, UBool isNFD,
                  uint8_t leadCC, uint8_t trailCC,
                  UErrorCode &errorCode);
     UBool appendBMP(UChar c, uint8_t cc, UErrorCode &errorCode) {
@@ -243,7 +250,7 @@ public:
     }
     virtual ~Normalizer2Impl();
 
-    void init(const int32_t *inIndexes, const UTrie2 *inTrie,
+    void init(const int32_t *inIndexes, const UCPTrie *inTrie,
               const uint16_t *inExtraData, const uint8_t *inSmallFCD);
 
     void addLcccChars(UnicodeSet &set) const;
@@ -254,7 +261,12 @@ public:
 
     UBool ensureCanonIterData(UErrorCode &errorCode) const;
 
-    uint16_t getNorm16(UChar32 c) const { return UTRIE2_GET16(normTrie, c); }
+    
+    
+    uint16_t getNorm16(UChar32 c) const {
+        return U_IS_LEAD(c) ? INERT : UCPTRIE_FAST_GET(normTrie, UCPTRIE_16, c);
+    }
+    uint16_t getRawNorm16(UChar32 c) const { return UCPTRIE_FAST_GET(normTrie, UCPTRIE_16, c); }
 
     UNormalizationCheckResult getCompQuickCheck(uint16_t norm16) const {
         if(norm16<minNoNo || MIN_YES_YES_WITH_CC<=norm16) {
@@ -704,7 +716,7 @@ private:
     uint16_t centerNoNoDelta;
     uint16_t minMaybeYes;
 
-    const UTrie2 *normTrie;
+    const UCPTrie *normTrie;
     const uint16_t *maybeYesCompositions;
     const uint16_t *extraData;  
     const uint8_t *smallFCD;  
@@ -761,6 +773,20 @@ unorm_getQuickCheck(UChar32 c, UNormalizationMode mode);
 
 U_CFUNC uint16_t
 unorm_getFCD16(UChar32 c);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

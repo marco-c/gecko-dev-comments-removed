@@ -322,6 +322,9 @@ class NumberFormat;
 
 
 
+
+
+
 class U_I18N_API MessageFormat : public Format {
 public:
 #ifndef U_HIDE_OBSOLETE_API

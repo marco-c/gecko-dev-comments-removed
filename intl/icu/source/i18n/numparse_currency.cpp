@@ -111,7 +111,9 @@ bool CombinedCurrencyMatcher::matchCurrency(StringSegment& segment, ParsedNumber
 
     int32_t overlap2;
     if (!fCurrency2.isEmpty()) {
-        overlap2 = segment.getCaseSensitivePrefixLength(fCurrency2);
+        
+        
+        overlap2 = segment.getCommonPrefixLength(fCurrency2);
     } else {
         overlap2 = -1;
     }

@@ -182,23 +182,6 @@ class BasicTimeZone;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class U_I18N_API Calendar : public UObject {
 public:
 
@@ -1716,8 +1699,6 @@ protected:
     virtual int32_t handleGetExtendedYearFromWeekFields(int32_t yearWoy, int32_t woy);
 
     
-
-
 
 
 

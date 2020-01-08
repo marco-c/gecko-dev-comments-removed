@@ -76,22 +76,42 @@ int32_t ScientificModifier::apply(NumberStringBuilder &output, int32_t , int32_t
     return i - rightIndex;
 }
 
-int32_t ScientificModifier::getPrefixLength(UErrorCode &status) const {
-    (void)status;
+int32_t ScientificModifier::getPrefixLength() const {
     
     return 0;
 }
 
-int32_t ScientificModifier::getCodePointCount(UErrorCode &status) const {
-    (void)status;
+int32_t ScientificModifier::getCodePointCount() const {
     
-    U_ASSERT(false);
-    return 0;
+    
+    
+    return 999;
 }
 
 bool ScientificModifier::isStrong() const {
     
     return true;
+}
+
+bool ScientificModifier::containsField(UNumberFormatFields field) const {
+    (void)field;
+    
+    U_ASSERT(false);
+    return false;
+}
+
+void ScientificModifier::getParameters(Parameters& output) const {
+    
+    output.obj = nullptr;
+}
+
+bool ScientificModifier::semanticallyEquivalent(const Modifier& other) const {
+    auto* _other = dynamic_cast<const ScientificModifier*>(&other);
+    if (_other == nullptr) {
+        return false;
+    }
+    
+    return fExponent == _other->fExponent;
 }
 
 

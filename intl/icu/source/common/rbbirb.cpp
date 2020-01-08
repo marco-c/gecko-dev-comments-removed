@@ -303,17 +303,24 @@ RBBIDataHeader *RBBIRuleBuilder::build(UErrorCode &status) {
 }
 
 void RBBIRuleBuilder::optimizeTables() {
+    bool didSomething;
+    do {
+        didSomething = false;
 
-    
-    
-    
-    IntPair duplPair = {3, 0};
+        
+        
+        
+        IntPair duplPair = {3, 0};
+        while (fForwardTable->findDuplCharClassFrom(&duplPair)) {
+            fSetBuilder->mergeCategories(duplPair);
+            fForwardTable->removeColumn(duplPair.second);
+            didSomething = true;
+        }
 
-    while (fForwardTable->findDuplCharClassFrom(&duplPair)) {
-        fSetBuilder->mergeCategories(duplPair);
-        fForwardTable->removeColumn(duplPair.second);
-    }
-    fForwardTable->removeDuplicateStates();
+        while (fForwardTable->removeDuplicateStates() > 0) {
+            didSomething = true;
+        }
+    } while (didSomething);
 }
 
 U_NAMESPACE_END

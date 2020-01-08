@@ -22,6 +22,9 @@
 #ifndef __UTRIE2_IMPL_H__
 #define __UTRIE2_IMPL_H__
 
+#ifdef UCPTRIE_DEBUG
+#include "unicode/umutablecptrie.h"
+#endif
 #include "utrie2.h"
 
 
@@ -32,11 +35,6 @@
 
 
 
-
-
-
-#define UTRIE_SIG       0x54726965
-#define UTRIE_OE_SIG    0x65697254
 
 #define UTRIE2_SIG      0x54726932
 #define UTRIE2_OE_SIG   0x32697254
@@ -145,6 +143,9 @@ struct UNewTrie2 {
     int32_t index1[UNEWTRIE2_INDEX_1_LENGTH];
     int32_t index2[UNEWTRIE2_MAX_INDEX_2_LENGTH];
     uint32_t *data;
+#ifdef UCPTRIE_DEBUG
+    UMutableCPTrie *t3;
+#endif
 
     uint32_t initialValue, errorValue;
     int32_t index2Length, dataCapacity, dataLength;

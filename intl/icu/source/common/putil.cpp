@@ -102,9 +102,8 @@
 #   define NOMCX
 #   include <windows.h>
 #   include "unicode/uloc.h"
-#if U_PLATFORM_HAS_WINUWP_API == 0
 #   include "wintz.h"
-#else 
+#if U_PLATFORM_HAS_WINUWP_API
 typedef PVOID LPMSG; 
 #include <Windows.Globalization.h>
 #include <windows.system.userprofile.h>
@@ -1062,53 +1061,13 @@ uprv_tzname_clear_cache()
 #endif
 }
 
-
-#if U_PLATFORM_HAS_WINUWP_API
-U_CAPI const char* U_EXPORT2
-uprv_getWindowsTimeZone()
-{
-    
-    ComPtr<IInspectable> calendar;
-    HRESULT hr = RoActivateInstance(
-        HStringReference(RuntimeClass_Windows_Globalization_Calendar).Get(),
-        &calendar);
-    if (SUCCEEDED(hr))
-    {
-        ComPtr<ABI::Windows::Globalization::ITimeZoneOnCalendar> timezone;
-        hr = calendar.As(&timezone);
-        if (SUCCEEDED(hr))
-        {
-            HString timezoneString;
-            hr = timezone->GetTimeZone(timezoneString.GetAddressOf());
-            if (SUCCEEDED(hr))
-            {
-                int32_t length = static_cast<int32_t>(wcslen(timezoneString.GetRawBuffer(NULL)));
-                char* asciiId = (char*)uprv_calloc(length + 1, sizeof(char));
-                if (asciiId != nullptr)
-                {
-                    u_UCharsToChars((UChar*)timezoneString.GetRawBuffer(NULL), asciiId, length);
-                    return asciiId;
-                }
-            }
-        }
-    }
-
-    
-    return nullptr;
-}
-#endif
-
 U_CAPI const char* U_EXPORT2
 uprv_tzname(int n)
 {
     (void)n; 
     const char *tzid = NULL;
 #if U_PLATFORM_USES_ONLY_WIN32_API
-#if U_PLATFORM_HAS_WINUWP_API > 0
-    tzid = uprv_getWindowsTimeZone();
-#else
     tzid = uprv_detectWindowsTimeZone();
-#endif
 
     if (tzid != NULL) {
         return tzid;
@@ -1366,6 +1325,43 @@ uprv_pathIsAbsolute(const char *path)
 # endif
 #endif
 
+#if U_PLATFORM_HAS_WINUWP_API != 0
+
+static BOOL U_CALLCONV getIcuDataDirectoryUnderWindowsDirectory(char* directoryBuffer, UINT bufferLength)
+{
+#if defined(ICU_DATA_DIR_WINDOWS)
+    wchar_t windowsPath[MAX_PATH];
+    char windowsPathUtf8[MAX_PATH];
+
+    UINT length = GetSystemWindowsDirectoryW(windowsPath, UPRV_LENGTHOF(windowsPath));
+    if ((length > 0) && (length < (UPRV_LENGTHOF(windowsPath) - 1))) {
+        
+        UErrorCode status = U_ZERO_ERROR;
+        int32_t windowsPathUtf8Len = 0;
+        u_strToUTF8(windowsPathUtf8, static_cast<int32_t>(UPRV_LENGTHOF(windowsPathUtf8)),
+            &windowsPathUtf8Len, reinterpret_cast<const UChar*>(windowsPath), -1, &status);
+
+        if (U_SUCCESS(status) && (status != U_STRING_NOT_TERMINATED_WARNING) &&
+            (windowsPathUtf8Len < (UPRV_LENGTHOF(windowsPathUtf8) - 1))) {
+            
+            if (windowsPathUtf8[windowsPathUtf8Len - 1] != U_FILE_SEP_CHAR) {
+                windowsPathUtf8[windowsPathUtf8Len++] = U_FILE_SEP_CHAR;
+                windowsPathUtf8[windowsPathUtf8Len] = '\0';
+            }
+            
+            if ((windowsPathUtf8Len + UPRV_LENGTHOF(ICU_DATA_DIR_WINDOWS)) < bufferLength) {
+                uprv_strcpy(directoryBuffer, windowsPathUtf8);
+                uprv_strcat(directoryBuffer, ICU_DATA_DIR_WINDOWS);
+                return TRUE;
+            }
+        }
+    }
+#endif
+
+    return FALSE;
+}
+#endif
+
 static void U_CALLCONV dataDirectoryInitFn() {
     
 
@@ -1425,24 +1421,10 @@ static void U_CALLCONV dataDirectoryInitFn() {
     }
 #endif
 
-#if defined(ICU_DATA_DIR_WINDOWS) && U_PLATFORM_HAS_WINUWP_API != 0
-    
-    
+#if U_PLATFORM_HAS_WINUWP_API != 0  && defined(ICU_DATA_DIR_WINDOWS)
     char datadir_path_buffer[MAX_PATH];
-    UINT length = GetWindowsDirectoryA(datadir_path_buffer, UPRV_LENGTHOF(datadir_path_buffer));
-    if (length > 0 && length < (UPRV_LENGTHOF(datadir_path_buffer) - sizeof(ICU_DATA_DIR_WINDOWS) - 1))
-    {
-        if (datadir_path_buffer[length - 1] != '\\')
-        {
-            datadir_path_buffer[length++] = '\\';
-            datadir_path_buffer[length] = '\0';
-        }
-
-        if ((length + 1 + sizeof(ICU_DATA_DIR_WINDOWS)) < UPRV_LENGTHOF(datadir_path_buffer))
-        {
-            uprv_strcat(datadir_path_buffer, ICU_DATA_DIR_WINDOWS);
-            path = datadir_path_buffer;
-        }
+    if (getIcuDataDirectoryUnderWindowsDirectory(datadir_path_buffer, UPRV_LENGTHOF(datadir_path_buffer))) {
+        path = datadir_path_buffer;
     }
 #endif
 
@@ -1491,20 +1473,30 @@ static void U_CALLCONV TimeZoneDataDirInitFn(UErrorCode &status) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
     }
-#if U_PLATFORM_HAS_WINUWP_API == 0
-    const char *dir = getenv("ICU_TIMEZONE_FILES_DIR");
-#else
-    
+
     const char *dir = "";
+
+#if U_PLATFORM_HAS_WINUWP_API != 0
+    
+    char datadir_path_buffer[MAX_PATH];
+    if (getIcuDataDirectoryUnderWindowsDirectory(datadir_path_buffer, UPRV_LENGTHOF(datadir_path_buffer))) {
+        dir = datadir_path_buffer;
+    }
+#else
+    dir = getenv("ICU_TIMEZONE_FILES_DIR");
 #endif 
+
 #if defined(U_TIMEZONE_FILES_DIR)
     if (dir == NULL) {
+        
         dir = TO_STRING(U_TIMEZONE_FILES_DIR);
     }
 #endif
+
     if (dir == NULL) {
         dir = "";
     }
+
     setTimeZoneFilesDir(dir, status);
 }
 
@@ -1676,7 +1668,8 @@ uprv_getDefaultLocaleID()
     
     if ((p = uprv_strrchr(posixID, '@')) != NULL) {
         if (correctedPOSIXLocale == NULL) {
-            correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID)+1));
+            
+            correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID)+2));
             
             if (correctedPOSIXLocale == NULL) {
                 return NULL;
@@ -1747,70 +1740,22 @@ uprv_getDefaultLocaleID()
 #elif U_PLATFORM_USES_ONLY_WIN32_API
 #define POSIX_LOCALE_CAPACITY 64
     UErrorCode status = U_ZERO_ERROR;
-    char *correctedPOSIXLocale = 0;
+    char *correctedPOSIXLocale = nullptr;
 
     
-    if (gCorrectedPOSIXLocale != NULL) {
+    if (gCorrectedPOSIXLocale != nullptr) {
         return gCorrectedPOSIXLocale;
     }
 
     
-    static WCHAR windowsLocale[LOCALE_NAME_MAX_LENGTH];
-#if U_PLATFORM_HAS_WINUWP_API == 0 
-    
-    
-    int length = GetUserDefaultLocaleName(windowsLocale, UPRV_LENGTHOF(windowsLocale));
-#else
-    
-    ComPtr<ABI::Windows::Foundation::Collections::IVectorView<HSTRING>> languageList;
+    static WCHAR windowsLocale[LOCALE_NAME_MAX_LENGTH] = {};
+    int length = GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SNAME, windowsLocale, LOCALE_NAME_MAX_LENGTH);
 
-    ComPtr<ABI::Windows::Globalization::IApplicationLanguagesStatics> applicationLanguagesStatics;
-    HRESULT hr = GetActivationFactory(
-        HStringReference(RuntimeClass_Windows_Globalization_ApplicationLanguages).Get(),
-        &applicationLanguagesStatics);
-    if (SUCCEEDED(hr))
-    {
-        hr = applicationLanguagesStatics->get_Languages(&languageList);
-    }
-
-    if (FAILED(hr))
+    
+    if (length > 0) 
     {
         
-        ComPtr<ABI::Windows::System::UserProfile::IGlobalizationPreferencesStatics> globalizationPreferencesStatics;
-        hr = GetActivationFactory(
-            HStringReference(RuntimeClass_Windows_System_UserProfile_GlobalizationPreferences).Get(),
-            &globalizationPreferencesStatics);
-        if (SUCCEEDED(hr))
-        {
-            hr = globalizationPreferencesStatics->get_Languages(&languageList);
-        }
-    }
-
-    
-    HString topLanguage;
-    if (SUCCEEDED(hr))
-    {
-        hr = languageList->GetAt(0, topLanguage.GetAddressOf());
-    }
-
-    if (FAILED(hr))
-    {
-        
-        if (gCorrectedPOSIXLocale == NULL) {
-            gCorrectedPOSIXLocale = "en_US";
-        }
-
-        return gCorrectedPOSIXLocale;
-    }
-
-    
-    int length = ResolveLocaleName(topLanguage.GetRawBuffer(NULL), windowsLocale, UPRV_LENGTHOF(windowsLocale));
-#endif
-    
-    if (length > 0)
-    {
-        
-        char modifiedWindowsLocale[LOCALE_NAME_MAX_LENGTH];
+        char modifiedWindowsLocale[LOCALE_NAME_MAX_LENGTH] = {};
 
         int32_t i;
         for (i = 0; i < UPRV_LENGTHOF(modifiedWindowsLocale); i++)
@@ -1858,7 +1803,7 @@ uprv_getDefaultLocaleID()
     }
 
     
-    if (gCorrectedPOSIXLocale == NULL) {
+    if (gCorrectedPOSIXLocale == nullptr) {
         gCorrectedPOSIXLocale = "en_US";
     }
     return gCorrectedPOSIXLocale;

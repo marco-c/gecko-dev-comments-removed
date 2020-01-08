@@ -348,7 +348,7 @@ class U_I18N_API MeasureFormat : public Format {
     const MeasureFormatCacheData *cache;
     const SharedNumberFormat *numberFormat;
     const SharedPluralRules *pluralRules;
-    UMeasureFormatWidth width;    
+    UMeasureFormatWidth fWidth;    
 
     
     

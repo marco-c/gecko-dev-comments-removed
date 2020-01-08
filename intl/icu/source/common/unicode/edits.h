@@ -173,13 +173,11 @@ public:
 
     UBool hasChanges() const { return numChanges != 0; }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
     int32_t numberOfChanges() const { return numChanges; }
-#endif  
 
     
 
@@ -253,7 +251,6 @@ public:
             return findIndex(i, TRUE, errorCode) == 0;
         }
 
-#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -324,7 +321,6 @@ public:
 
 
         int32_t sourceIndexFromDestinationIndex(int32_t i, UErrorCode &errorCode);
-#endif  
 
         
 
@@ -475,7 +471,6 @@ public:
         return Iterator(array, length, FALSE, FALSE);
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -504,7 +499,6 @@ public:
 
 
     Edits &mergeAndAppend(const Edits &ab, const Edits &bc, UErrorCode &errorCode);
-#endif  
 
 private:
     void releaseArray() U_NOEXCEPT;

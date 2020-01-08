@@ -418,7 +418,8 @@ private:
     const char *path;                              
     const char *nextPath;                          
     const char *basename;                          
-    const char *suffix;                            
+
+    StringPiece suffix;                            
 
     uint32_t    basenameLen;                       
 
@@ -430,6 +431,8 @@ private:
 
 
 };
+
+
 
 
 
@@ -566,7 +569,7 @@ const char *UDataPathIterator::next(UErrorCode *pErrorCode)
 
         if(checkLastFour == TRUE && 
            (pathLen>=4) &&
-           uprv_strncmp(pathBuffer.data() +(pathLen-4), suffix, 4)==0 && 
+           uprv_strncmp(pathBuffer.data() +(pathLen-4), suffix.data(), 4)==0 && 
            uprv_strncmp(findBasename(pathBuffer.data()), basename, basenameLen)==0  && 
            uprv_strlen(pathBasename)==(basenameLen+4)) { 
 
@@ -602,8 +605,13 @@ const char *UDataPathIterator::next(UErrorCode *pErrorCode)
             
             pathBuffer.append(packageStub.data()+1, packageStub.length()-1, *pErrorCode);
 
-            if(*suffix)  
+            if (!suffix.empty())  
             {
+                if (suffix.length() > 4) {
+                    
+                    
+                    pathBuffer.ensureEndsWithFileSeparator(*pErrorCode);
+                }
                 pathBuffer.append(suffix, *pErrorCode);
             }
         }
@@ -751,15 +759,18 @@ openCommonData(const char *path,
 
     UDataPathIterator iter(u_getDataDirectory(), inBasename, path, ".dat", TRUE, pErrorCode);
 
-    while((UDataMemory_isLoaded(&tData)==FALSE) && (pathBuffer = iter.next(pErrorCode)) != NULL)
+    while ((UDataMemory_isLoaded(&tData)==FALSE) && (pathBuffer = iter.next(pErrorCode)) != NULL)
     {
 #ifdef UDATA_DEBUG
         fprintf(stderr, "ocd: trying path %s - ", pathBuffer);
 #endif
-        uprv_mapFile(&tData, pathBuffer);
+        uprv_mapFile(&tData, pathBuffer, pErrorCode);
 #ifdef UDATA_DEBUG
         fprintf(stderr, "%s\n", UDataMemory_isLoaded(&tData)?"LOADED":"not loaded");
 #endif
+    }
+    if (U_FAILURE(*pErrorCode)) {
+        return NULL;
     }
 
 #if defined(OS390_STUBDATA) && defined(OS390BATCH)
@@ -769,7 +780,7 @@ openCommonData(const char *path,
         uprv_strncpy(ourPathBuffer, path, 1019);
         ourPathBuffer[1019]=0;
         uprv_strcat(ourPathBuffer, ".dat");
-        uprv_mapFile(&tData, ourPathBuffer);
+        uprv_mapFile(&tData, ourPathBuffer, pErrorCode);
     }
 #endif
 
@@ -986,12 +997,12 @@ static UDataMemory *doLoadFromIndividualFiles(const char *pkgName,
     
     UDataPathIterator iter(dataPath, pkgName, path, tocEntryPathSuffix, FALSE, pErrorCode);
 
-    while((pathBuffer = iter.next(pErrorCode)) != NULL)
+    while ((pathBuffer = iter.next(pErrorCode)) != NULL)
     {
 #ifdef UDATA_DEBUG
         fprintf(stderr, "UDATA: trying individual file %s\n", pathBuffer);
 #endif
-        if(uprv_mapFile(&dataMemory, pathBuffer))
+        if (uprv_mapFile(&dataMemory, pathBuffer, pErrorCode))
         {
             pEntryData = checkDataItem(dataMemory.pHeader, isAcceptable, context, type, name, subErrorCode, pErrorCode);
             if (pEntryData != NULL) {
@@ -1075,6 +1086,11 @@ static UDataMemory *doLoadFromCommonData(UBool isICUData, const char * ,
                     return pEntryData;
                 }
             }
+        }
+        
+        if (*subErrorCode == U_MEMORY_ALLOCATION_ERROR) {
+            *pErrorCode = *subErrorCode;
+            return NULL;
         }
         
 
@@ -1252,7 +1268,8 @@ doOpenChoice(const char *path, const char *type, const char *name,
         tocEntryName.append(".", *pErrorCode).append(type, *pErrorCode);
         tocEntryPath.append(".", *pErrorCode).append(type, *pErrorCode);
     }
-    tocEntryPathSuffix = tocEntryPath.data()+tocEntrySuffixIndex; 
+    
+    tocEntryPathSuffix = tocEntryPath.data() + tocEntrySuffixIndex + 1; 
 
 #ifdef UDATA_DEBUG
     fprintf(stderr, " tocEntryName = %s\n", tocEntryName.data());

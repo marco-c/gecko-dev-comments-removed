@@ -53,7 +53,9 @@
 #include "unicode/uenum.h"
 #include "unicode/localpointer.h"
 
-#ifndef __USET_H__
+#if !defined(USET_DEFINED) && !defined(U_IN_DOXYGEN)
+
+#define USET_DEFINED
 
 
 
@@ -62,9 +64,6 @@
 
 
 
-
-
-struct USet;
 
 typedef struct USet USet;
 

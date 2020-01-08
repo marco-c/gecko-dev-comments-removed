@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include "unicode/utypes.h"
+#include "unicode/ucptrie.h"
 #include "utrie2.h"
 
 
@@ -30,7 +31,7 @@
 
 
 U_CAPI FILE * U_EXPORT2
-usrc_create(const char *path, const char *filename, const char *generator);
+usrc_create(const char *path, const char *filename, int32_t copyrightYear, const char *generator);
 
 
 
@@ -74,6 +75,33 @@ usrc_writeUTrie2Struct(FILE *f,
                        const UTrie2 *pTrie,
                        const char *indexName, const char *dataName,
                        const char *postfix);
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeUCPTrieArrays(FILE *f,
+                        const char *indexPrefix, const char *dataPrefix,
+                        const UCPTrie *pTrie,
+                        const char *postfix);
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeUCPTrieStruct(FILE *f,
+                        const char *prefix,
+                        const UCPTrie *pTrie,
+                        const char *indexName, const char *dataName,
+                        const char *postfix);
+
+
+
+
+U_CAPI void U_EXPORT2
+usrc_writeUCPTrie(FILE *f, const char *name, const UCPTrie *pTrie);
 
 
 

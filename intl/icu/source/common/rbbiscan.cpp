@@ -380,7 +380,7 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
             
             
             
-            RBBINode  *thisRule    = fNodeStack[fNodeStackPtr];
+                       thisRule    = fNodeStack[fNodeStackPtr];
             RBBINode  *prevRules   = *destRules;
             RBBINode  *orNode      = pushNewNode(RBBINode::opOr);
             if (U_FAILURE(*fRB->fStatus)) {

@@ -353,20 +353,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct USpoofChecker;
 
 
@@ -1226,7 +1212,14 @@ U_NAMESPACE_BEGIN
 
 
 
+
+
+
+
+
+
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUSpoofCheckResultPointer, USpoofCheckResult, uspoof_closeCheckResult);
+
 
 U_NAMESPACE_END
 

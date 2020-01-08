@@ -15,6 +15,9 @@
 #define RBBITBLB_H
 
 #include "unicode/utypes.h"
+
+#if !UCONFIG_NO_BREAK_ITERATION
+
 #include "unicode/uobject.h"
 #include "unicode/rbbi.h"
 #include "rbbirb.h"
@@ -67,7 +70,10 @@ public:
     void     removeColumn(int32_t column);
 
     
-    void     removeDuplicateStates();
+
+
+
+    int32_t  removeDuplicateStates();
 
     
     void     buildSafeReverseTable(UErrorCode &status);
@@ -204,4 +210,7 @@ private:
 
 
 U_NAMESPACE_END
+
+#endif 
+
 #endif
