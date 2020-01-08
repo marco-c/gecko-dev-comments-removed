@@ -541,11 +541,14 @@ AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel
   }
 
   bool thirdParty = false;
-  Unused << thirdPartyUtil->IsThirdPartyChannel(aChannel,
-                                                nullptr,
-                                                &thirdParty);
+  rv = thirdPartyUtil->IsThirdPartyChannel(aChannel,
+                                           nullptr,
+                                           &thirdParty);
   
-  if (!thirdParty) {
+  
+  
+  
+  if (NS_SUCCEEDED(rv) && !thirdParty) {
     LOG(("Our channel isn't a third-party channel"));
     return true;
   }
