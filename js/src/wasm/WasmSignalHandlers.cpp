@@ -744,7 +744,6 @@ HandleOutOfBounds(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
         
         
         
-        
         activation->startWasmTrap(Trap::OutOfBounds, 0, ToRegisterState(context));
         *ppc = segment->outOfBoundsCode();
         return true;
@@ -868,7 +867,6 @@ HandleOutOfBounds(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
         switch (access.kind()) {
           case Disassembler::HeapAccess::Load:
           case Disassembler::HeapAccess::LoadSext32:
-            
             
             
             
