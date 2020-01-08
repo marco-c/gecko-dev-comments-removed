@@ -31,6 +31,7 @@ Services.prefs.setBoolPref("devtools.debugger.log", true);
 Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const { ActorRegistry } = require("devtools/server/actor-registry");
 const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerServer: WorkerDebuggerServer } = worker.require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/debugger-client");
@@ -76,7 +77,7 @@ function makeMemoryActorTest(testGeneratorFunction) {
   return function run_test() {
     do_test_pending();
     startTestDebuggerServer(TEST_GLOBAL_NAME).then(client => {
-      DebuggerServer.registerModule("devtools/server/actors/heap-snapshot-file", {
+      ActorRegistry.registerModule("devtools/server/actors/heap-snapshot-file", {
         prefix: "heapSnapshotFile",
         constructor: "HeapSnapshotFileActor",
         type: { global: true }
@@ -114,7 +115,7 @@ function makeFullRuntimeMemoryActorTest(testGeneratorFunction) {
   return function run_test() {
     do_test_pending();
     startTestDebuggerServer("test_MemoryActor").then(client => {
-      DebuggerServer.registerModule("devtools/server/actors/heap-snapshot-file", {
+      ActorRegistry.registerModule("devtools/server/actors/heap-snapshot-file", {
         prefix: "heapSnapshotFile",
         constructor: "HeapSnapshotFileActor",
         type: { global: true }
@@ -177,9 +178,9 @@ function findTab(tabs, title) {
   return null;
 }
 
-function attachTarget(client, tab) {
+function attachTab(client, tab) {
   dump("Attaching to tab with title '" + tab.title + "'.\n");
-  return client.attachTarget(tab.actor);
+  return client.attachTab(tab.actor);
 }
 
 function waitForNewSource(threadClient, url) {
@@ -357,7 +358,7 @@ function getTestTab(client, title, callback) {
 
 function attachTestTab(client, title, callback) {
   getTestTab(client, title, function(tab) {
-    client.attachTarget(tab.actor).then(([response, tabClient]) => {
+    client.attachTab(tab.actor).then(([response, tabClient]) => {
       callback(response, tabClient);
     });
   });

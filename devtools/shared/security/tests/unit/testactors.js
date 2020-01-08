@@ -1,12 +1,12 @@
 
 
-
 "use strict";
 
 const { LazyPool, createExtraActors } = require("devtools/shared/protocol/lazy-pool");
 const { RootActor } = require("devtools/server/actors/root");
 const { ThreadActor } = require("devtools/server/actors/thread");
 const { DebuggerServer } = require("devtools/server/main");
+const { ActorRegistry } = require("devtools/server/actor-registry");
 const promise = require("promise");
 
 var gTestGlobals = [];
@@ -52,7 +52,7 @@ TestTabList.prototype = {
 exports.createRootActor = function createRootActor(connection) {
   const root = new RootActor(connection, {
     tabList: new TestTabList(connection),
-    globalActorFactories: DebuggerServer.globalActorFactories
+    globalActorFactories: ActorRegistry.globalActorFactories
   });
   root.applicationType = "xpcshell-tests";
   return root;
@@ -85,7 +85,7 @@ TestTargetActor.prototype = {
     
     const actorPool = new LazyPool(this.conn);
     const actors = createExtraActors(
-      DebuggerServer.targetScopedActorFactories,
+      ActorRegistry.targetScopedActorFactories,
       actorPool,
       this
     );
