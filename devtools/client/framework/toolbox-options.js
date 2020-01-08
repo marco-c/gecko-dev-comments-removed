@@ -368,11 +368,6 @@ OptionsPanel.prototype = {
     
     
     const prefDefinitions = [{
-      pref: "devtools.debugger.new-debugger-frontend",
-      label: L10N.getStr("toolbox.options.enableNewDebugger.label"),
-      id: "devtools-new-debugger",
-      parentId: "debugger-options"
-    }, {
       pref: "devtools.performance.new-panel-enabled",
       label: "Enable new performance recorder (then re-open DevTools)",
       id: "devtools-new-performance",
