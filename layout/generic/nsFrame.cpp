@@ -3471,7 +3471,7 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
       isPaintingToWindow &&
       (child->GetStateBits() & NS_FRAME_SIMPLE_DISPLAYLIST) &&
       
-      !(child->GetContent() && child->GetContent()->MayHaveAnimations());
+      !(child->MayHaveTransformAnimation() || child->MayHaveOpacityAnimation());
 
   
   NS_ASSERTION(aBuilder->GetCurrentFrame() == this, "Wrong coord space!");
