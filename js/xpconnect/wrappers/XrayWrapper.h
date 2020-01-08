@@ -268,9 +268,11 @@ public:
                                                 JS::MutableHandle<JS::PropertyDescriptor> desc);
 
     
+    
     static bool getOwnPropertyFromTargetIfSafe(JSContext* cx,
                                                JS::HandleObject target,
                                                JS::HandleObject wrapper,
+                                               JS::HandleObject wrapperGlobal,
                                                JS::HandleId id,
                                                JS::MutableHandle<JS::PropertyDescriptor> desc);
 
