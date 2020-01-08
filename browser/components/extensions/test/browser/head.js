@@ -30,7 +30,6 @@
 
 
 
-
 const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -286,16 +285,6 @@ function closeBrowserAction(extension, win = window) {
   CustomizableUI.hidePanelForNode(node);
 
   return Promise.resolve();
-}
-
-async function toggleBookmarksToolbar(visible = true) {
-  let bookmarksToolbar = document.getElementById("PersonalToolbar");
-  let transitionPromise =
-    BrowserTestUtils.waitForEvent(bookmarksToolbar, "transitionend",
-                                  e => e.propertyName == "max-height");
-
-  setToolbarVisibility(bookmarksToolbar, visible);
-  await transitionPromise;
 }
 
 async function openContextMenuInPopup(extension, selector = "body") {
