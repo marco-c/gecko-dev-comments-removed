@@ -10,20 +10,15 @@ namespace mozilla {
 
 namespace layers {
 class Image;
-} 
+}  
 
 
 
 
-nsresult ConvertToI420(
-  layers::Image* aImage,
-  uint8_t* aDestY,
-  int aDestStrideY,
-  uint8_t* aDestU,
-  int aDestStrideU,
-  uint8_t* aDestV,
-  int aDestStrideV);
+nsresult ConvertToI420(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
+                       uint8_t* aDestU, int aDestStrideU, uint8_t* aDestV,
+                       int aDestStrideV);
 
-} 
+}  
 
 #endif 

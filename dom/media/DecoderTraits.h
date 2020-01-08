@@ -19,17 +19,14 @@ struct MediaFormatReaderInit;
 class MediaFormatReader;
 class TrackInfo;
 
-enum CanPlayStatus {
-  CANPLAY_NO,
-  CANPLAY_MAYBE,
-  CANPLAY_YES
-};
+enum CanPlayStatus { CANPLAY_NO, CANPLAY_MAYBE, CANPLAY_YES };
 
 class DecoderTraits {
-public:
+ public:
   
-  static CanPlayStatus CanHandleContainerType(const MediaContainerType& aContainerType,
-                                              DecoderDoctorDiagnostics* aDiagnostics);
+  static CanPlayStatus CanHandleContainerType(
+      const MediaContainerType& aContainerType,
+      DecoderDoctorDiagnostics* aDiagnostics);
 
   
   
@@ -63,10 +60,9 @@ public:
 
   
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
-    const MediaContainerType& aType);
+      const MediaContainerType& aType);
 };
 
-} 
+}  
 
 #endif
-

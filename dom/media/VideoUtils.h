@@ -11,7 +11,7 @@
 #include "MediaInfo.h"
 #include "TimeUnits.h"
 #include "VideoLimits.h"
-#include "mozilla/gfx/Point.h" 
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
@@ -29,11 +29,10 @@
 #include "nsThreadUtils.h"
 #include "prtime.h"
 
-using mozilla::CheckedInt64;
-using mozilla::CheckedUint64;
 using mozilla::CheckedInt32;
+using mozilla::CheckedInt64;
 using mozilla::CheckedUint32;
-
+using mozilla::CheckedUint64;
 
 
 
@@ -56,13 +55,11 @@ extern const nsLiteralCString kEMEKeySystemWidevine;
 
 
 
-class MOZ_STACK_CLASS ReentrantMonitorConditionallyEnter
-{
-public:
+class MOZ_STACK_CLASS ReentrantMonitorConditionallyEnter {
+ public:
   ReentrantMonitorConditionallyEnter(bool aEnter,
-                                     ReentrantMonitor &aReentrantMonitor) :
-    mReentrantMonitor(nullptr)
-  {
+                                     ReentrantMonitor& aReentrantMonitor)
+      : mReentrantMonitor(nullptr) {
     MOZ_COUNT_CTOR(ReentrantMonitorConditionallyEnter);
     if (aEnter) {
       mReentrantMonitor = &aReentrantMonitor;
@@ -70,18 +67,19 @@ public:
       mReentrantMonitor->Enter();
     }
   }
-  ~ReentrantMonitorConditionallyEnter(void)
-  {
+  ~ReentrantMonitorConditionallyEnter(void) {
     if (mReentrantMonitor) {
       mReentrantMonitor->Exit();
     }
     MOZ_COUNT_DTOR(ReentrantMonitorConditionallyEnter);
   }
-private:
+
+ private:
   
   ReentrantMonitorConditionallyEnter();
   ReentrantMonitorConditionallyEnter(const ReentrantMonitorConditionallyEnter&);
-  ReentrantMonitorConditionallyEnter& operator =(const ReentrantMonitorConditionallyEnter&);
+  ReentrantMonitorConditionallyEnter& operator=(
+      const ReentrantMonitorConditionallyEnter&);
   static void* operator new(size_t) CPP_THROW_NEW;
   static void operator delete(void*);
 
@@ -89,21 +87,18 @@ private:
 };
 
 
-class ShutdownThreadEvent : public Runnable
-{
-public:
+class ShutdownThreadEvent : public Runnable {
+ public:
   explicit ShutdownThreadEvent(nsIThread* aThread)
-    : Runnable("ShutdownThreadEvent")
-    , mThread(aThread)
-  {
-  }
+      : Runnable("ShutdownThreadEvent"), mThread(aThread) {}
   ~ShutdownThreadEvent() {}
   NS_IMETHOD Run() override {
     mThread->Shutdown();
     mThread = nullptr;
     return NS_OK;
   }
-private:
+
+ private:
   nsCOMPtr<nsIThread> mThread;
 };
 
@@ -115,8 +110,8 @@ class MediaResource;
 
 
 
-media::TimeIntervals GetEstimatedBufferedTimeRanges(mozilla::MediaResource* aStream,
-                                                    int64_t aDurationUsecs);
+media::TimeIntervals GetEstimatedBufferedTimeRanges(
+    mozilla::MediaResource* aStream, int64_t aDurationUsecs);
 
 
 
@@ -150,13 +145,11 @@ nsresult SecondsToUsecs(double aSeconds, int64_t& aOutUsecs);
 
 
 
-void
-ScaleDisplayByAspectRatio(gfx::IntSize& aDisplay, float aAspectRatio);
+void ScaleDisplayByAspectRatio(gfx::IntSize& aDisplay, float aAspectRatio);
 
 
 
-void DownmixStereoToMono(mozilla::AudioDataValue* aBuffer,
-                         uint32_t aFrames);
+void DownmixStereoToMono(mozilla::AudioDataValue* aBuffer, uint32_t aFrames);
 
 
 
@@ -170,31 +163,26 @@ bool IsVideoContentType(const nsCString& aContentType);
 
 
 
-bool
-IsValidVideoRegion(const gfx::IntSize& aFrame,
-                   const gfx::IntRect& aPicture,
-                   const gfx::IntSize& aDisplay);
+bool IsValidVideoRegion(const gfx::IntSize& aFrame,
+                        const gfx::IntRect& aPicture,
+                        const gfx::IntSize& aDisplay);
 
 
 
-template<typename T>
+template <typename T>
 class AutoSetOnScopeExit {
-public:
-  AutoSetOnScopeExit(T& aVar, T aValue)
-    : mVar(aVar)
-    , mValue(aValue)
-  {}
-  ~AutoSetOnScopeExit() {
-    mVar = mValue;
-  }
-private:
+ public:
+  AutoSetOnScopeExit(T& aVar, T aValue) : mVar(aVar), mValue(aValue) {}
+  ~AutoSetOnScopeExit() { mVar = mValue; }
+
+ private:
   T& mVar;
   const T mValue;
 };
 
 enum class MediaThreadType {
-  PLAYBACK, 
-  PLATFORM_DECODER, 
+  PLAYBACK,          
+  PLATFORM_DECODER,  
   MSG_CONTROL,
   WEBRTC_DECODER
 };
@@ -203,31 +191,31 @@ enum class MediaThreadType {
 already_AddRefed<SharedThreadPool> GetMediaThreadPool(MediaThreadType aType);
 
 enum H264_PROFILE {
-  H264_PROFILE_UNKNOWN                     = 0,
-  H264_PROFILE_BASE                        = 0x42,
-  H264_PROFILE_MAIN                        = 0x4D,
-  H264_PROFILE_EXTENDED                    = 0x58,
-  H264_PROFILE_HIGH                        = 0x64,
+  H264_PROFILE_UNKNOWN = 0,
+  H264_PROFILE_BASE = 0x42,
+  H264_PROFILE_MAIN = 0x4D,
+  H264_PROFILE_EXTENDED = 0x58,
+  H264_PROFILE_HIGH = 0x64,
 };
 
 enum H264_LEVEL {
-    H264_LEVEL_1         = 10,
-    H264_LEVEL_1_b       = 11,
-    H264_LEVEL_1_1       = 11,
-    H264_LEVEL_1_2       = 12,
-    H264_LEVEL_1_3       = 13,
-    H264_LEVEL_2         = 20,
-    H264_LEVEL_2_1       = 21,
-    H264_LEVEL_2_2       = 22,
-    H264_LEVEL_3         = 30,
-    H264_LEVEL_3_1       = 31,
-    H264_LEVEL_3_2       = 32,
-    H264_LEVEL_4         = 40,
-    H264_LEVEL_4_1       = 41,
-    H264_LEVEL_4_2       = 42,
-    H264_LEVEL_5         = 50,
-    H264_LEVEL_5_1       = 51,
-    H264_LEVEL_5_2       = 52
+  H264_LEVEL_1 = 10,
+  H264_LEVEL_1_b = 11,
+  H264_LEVEL_1_1 = 11,
+  H264_LEVEL_1_2 = 12,
+  H264_LEVEL_1_3 = 13,
+  H264_LEVEL_2 = 20,
+  H264_LEVEL_2_1 = 21,
+  H264_LEVEL_2_2 = 22,
+  H264_LEVEL_3 = 30,
+  H264_LEVEL_3_1 = 31,
+  H264_LEVEL_3_2 = 32,
+  H264_LEVEL_4 = 40,
+  H264_LEVEL_4_1 = 41,
+  H264_LEVEL_4_2 = 42,
+  H264_LEVEL_5 = 50,
+  H264_LEVEL_5_1 = 51,
+  H264_LEVEL_5_2 = 52
 };
 
 
@@ -236,20 +224,18 @@ enum H264_LEVEL {
 
 
 
-bool
-ExtractH264CodecDetails(const nsAString& aCodecs,
-                        uint8_t& aProfile,
-                        uint8_t& aConstraint,
-                        uint8_t& aLevel);
 
-struct VideoColorSpace
-{
+bool ExtractH264CodecDetails(const nsAString& aCodecs, uint8_t& aProfile,
+                             uint8_t& aConstraint, uint8_t& aLevel);
+
+struct VideoColorSpace {
   
   
   
-  uint8_t mPrimaryId = 1; 
-  uint8_t mTransferId = 1; 
-  uint8_t mMatrixId = 1; 
+  
+  uint8_t mPrimaryId = 1;   
+  uint8_t mTransferId = 1;  
+  uint8_t mMatrixId = 1;    
   uint8_t mRangeId = 0;
 };
 
@@ -257,35 +243,26 @@ struct VideoColorSpace
 
 
 
-bool
-ExtractVPXCodecDetails(const nsAString& aCodec,
-                       uint8_t& aProfile,
-                       uint8_t& aLevel,
-                       uint8_t& aBitDepth);
-bool
-ExtractVPXCodecDetails(const nsAString& aCodec,
-                       uint8_t& aProfile,
-                       uint8_t& aLevel,
-                       uint8_t& aBitDepth,
-                       uint8_t& aChromaSubsampling,
-                       VideoColorSpace& aColorSpace);
+bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
+                            uint8_t& aLevel, uint8_t& aBitDepth);
+bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
+                            uint8_t& aLevel, uint8_t& aBitDepth,
+                            uint8_t& aChromaSubsampling,
+                            VideoColorSpace& aColorSpace);
 
 
 
-nsresult
-GenerateRandomName(nsCString& aOutSalt, uint32_t aLength);
+nsresult GenerateRandomName(nsCString& aOutSalt, uint32_t aLength);
 
 
 
-nsresult
-GenerateRandomPathName(nsCString& aOutSalt, uint32_t aLength);
+nsresult GenerateRandomPathName(nsCString& aOutSalt, uint32_t aLength);
 
-already_AddRefed<TaskQueue>
-CreateMediaDecodeTaskQueue(const char* aName);
+already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(const char* aName);
 
 
 
-template<class Work, class Condition>
+template <class Work, class Condition>
 RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
   RefPtr<GenericPromise::Private> p = new GenericPromise::Private(__func__);
 
@@ -294,17 +271,18 @@ RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
   }
 
   struct Helper {
-    static void Iteration(const RefPtr<GenericPromise::Private>& aPromise, Work aLocalWork, Condition aLocalCondition) {
+    static void Iteration(const RefPtr<GenericPromise::Private>& aPromise,
+                          Work aLocalWork, Condition aLocalCondition) {
       if (!aLocalWork()) {
         aPromise->Reject(NS_ERROR_FAILURE, __func__);
       } else if (aLocalCondition()) {
         aPromise->Resolve(true, __func__);
       } else {
         nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-          "InvokeUntil::Helper::Iteration",
-          [aPromise, aLocalWork, aLocalCondition]() {
-            Iteration(aPromise, aLocalWork, aLocalCondition);
-          });
+            "InvokeUntil::Helper::Iteration",
+            [aPromise, aLocalWork, aLocalCondition]() {
+              Iteration(aPromise, aLocalWork, aLocalCondition);
+            });
         AbstractThread::GetCurrent()->Dispatch(r.forget());
       }
     }
@@ -315,112 +293,93 @@ RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
 }
 
 
-class SimpleTimer : public nsITimerCallback, public nsINamed
-{
-public:
+class SimpleTimer : public nsITimerCallback, public nsINamed {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSINAMED
 
   
   
-  static already_AddRefed<SimpleTimer> Create(nsIRunnable* aTask,
-                                              uint32_t aTimeoutMs,
-                                              nsIEventTarget* aTarget = nullptr);
+  static already_AddRefed<SimpleTimer> Create(
+      nsIRunnable* aTask, uint32_t aTimeoutMs,
+      nsIEventTarget* aTarget = nullptr);
   void Cancel();
 
-  NS_IMETHOD Notify(nsITimer *timer) override;
+  NS_IMETHOD Notify(nsITimer* timer) override;
 
-private:
+ private:
   virtual ~SimpleTimer() {}
-  nsresult Init(nsIRunnable* aTask, uint32_t aTimeoutMs, nsIEventTarget* aTarget);
+  nsresult Init(nsIRunnable* aTask, uint32_t aTimeoutMs,
+                nsIEventTarget* aTarget);
 
   RefPtr<nsIRunnable> mTask;
   nsCOMPtr<nsITimer> mTimer;
 };
 
-void
-LogToBrowserConsole(const nsAString& aMsg);
+void LogToBrowserConsole(const nsAString& aMsg);
 
-bool
-ParseMIMETypeString(const nsAString& aMIMEType,
-                    nsString& aOutContainerType,
-                    nsTArray<nsString>& aOutCodecs);
+bool ParseMIMETypeString(const nsAString& aMIMEType,
+                         nsString& aOutContainerType,
+                         nsTArray<nsString>& aOutCodecs);
 
-bool
-ParseCodecsString(const nsAString& aCodecs, nsTArray<nsString>& aOutCodecs);
+bool ParseCodecsString(const nsAString& aCodecs,
+                       nsTArray<nsString>& aOutCodecs);
 
-bool
-IsH264CodecString(const nsAString& aCodec);
+bool IsH264CodecString(const nsAString& aCodec);
 
-bool
-IsAACCodecString(const nsAString& aCodec);
+bool IsAACCodecString(const nsAString& aCodec);
 
-bool
-IsVP8CodecString(const nsAString& aCodec);
+bool IsVP8CodecString(const nsAString& aCodec);
 
-bool
-IsVP9CodecString(const nsAString& aCodec);
+bool IsVP9CodecString(const nsAString& aCodec);
 
-bool
-IsAV1CodecString(const nsAString& aCodec);
+bool IsAV1CodecString(const nsAString& aCodec);
 
 
-UniquePtr<TrackInfo>
-CreateTrackInfoWithMIMEType(const nsACString& aCodecMIMEType);
+UniquePtr<TrackInfo> CreateTrackInfoWithMIMEType(
+    const nsACString& aCodecMIMEType);
 
 
 
-UniquePtr<TrackInfo>
-CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-  const nsACString& aCodecMIMEType,
-  const MediaContainerType& aContainerType);
+UniquePtr<TrackInfo> CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+    const nsACString& aCodecMIMEType, const MediaContainerType& aContainerType);
 
 namespace detail {
 
 
-constexpr bool
-StartsWithMIMETypeMajor(const char* aString,
-                        const char* aMajor, size_t aMajorRemaining)
-{
+constexpr bool StartsWithMIMETypeMajor(const char* aString, const char* aMajor,
+                                       size_t aMajorRemaining) {
   return (aMajorRemaining == 0 && *aString == '/') ||
-         (*aString == *aMajor && StartsWithMIMETypeMajor(aString + 1,
-                                                         aMajor + 1,
-                                                         aMajorRemaining - 1));
+         (*aString == *aMajor &&
+          StartsWithMIMETypeMajor(aString + 1, aMajor + 1,
+                                  aMajorRemaining - 1));
 }
 
 
-constexpr bool
-EndsWithMIMESubtype(const char* aString, size_t aRemaining)
-{
-  return aRemaining == 0 ||
-         (((*aString >= 'a' && *aString <= 'z') ||
-           (*aString >= '0' && *aString <= '9') ||
-           *aString == '-' ||
-           *aString == '.') &&
-          EndsWithMIMESubtype(aString + 1, aRemaining - 1));
+constexpr bool EndsWithMIMESubtype(const char* aString, size_t aRemaining) {
+  return aRemaining == 0 || (((*aString >= 'a' && *aString <= 'z') ||
+                              (*aString >= '0' && *aString <= '9') ||
+                              *aString == '-' || *aString == '.') &&
+                             EndsWithMIMESubtype(aString + 1, aRemaining - 1));
 }
 
 
 
 template <size_t MajorLengthPlus1>
-constexpr bool
-IsMIMETypeWithMajor(const char* aString, size_t aLength,
-                    const char (&aMajor)[MajorLengthPlus1])
-{
-  return aLength > MajorLengthPlus1 && 
+constexpr bool IsMIMETypeWithMajor(const char* aString, size_t aLength,
+                                   const char (&aMajor)[MajorLengthPlus1]) {
+  return aLength > MajorLengthPlus1 &&  
          StartsWithMIMETypeMajor(aString, aMajor, MajorLengthPlus1 - 1) &&
          EndsWithMIMESubtype(aString + MajorLengthPlus1,
                              aLength - MajorLengthPlus1);
 }
 
-} 
+}  
 
 
 
 
-constexpr bool
-IsMediaMIMEType(const char* aString, size_t aLength)
-{
+constexpr bool IsMediaMIMEType(const char* aString, size_t aLength) {
   return detail::IsMIMETypeWithMajor(aString, aLength, "application") ||
          detail::IsMIMETypeWithMajor(aString, aLength, "audio") ||
          detail::IsMIMETypeWithMajor(aString, aLength, "video");
@@ -430,23 +389,18 @@ IsMediaMIMEType(const char* aString, size_t aLength)
 
 
 template <size_t LengthPlus1>
-constexpr bool
-IsMediaMIMEType(const char (&aString)[LengthPlus1])
-{
+constexpr bool IsMediaMIMEType(const char (&aString)[LengthPlus1]) {
   return IsMediaMIMEType(aString, LengthPlus1 - 1);
 }
 
 
 
 
-inline bool
-IsMediaMIMEType(const nsACString& aString)
-{
+inline bool IsMediaMIMEType(const nsACString& aString) {
   return IsMediaMIMEType(aString.Data(), aString.Length());
 }
 
-enum class StringListRangeEmptyItems
-{
+enum class StringListRangeEmptyItems {
   
   
   Skip,
@@ -460,51 +414,43 @@ enum class StringListRangeEmptyItems
 
 template <typename String,
           StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip>
-class StringListRange
-{
+class StringListRange {
   typedef typename String::char_type CharType;
   typedef const CharType* Pointer;
 
-public:
+ public:
   
-  class Iterator
-  {
-  public:
-    bool operator!=(const Iterator& a) const
-    {
+  class Iterator {
+   public:
+    bool operator!=(const Iterator& a) const {
       return mStart != a.mStart || mEnd != a.mEnd;
     }
-    Iterator& operator++()
-    {
+    Iterator& operator++() {
       SearchItemAt(mComma + 1);
       return *this;
     }
     
     
     typedef decltype(Substring(Pointer(), Pointer())) DereferencedType;
-    DereferencedType operator*()
-    {
-      return Substring(mStart, mEnd);
-    }
-  private:
+    DereferencedType operator*() { return Substring(mStart, mEnd); }
+
+   private:
     friend class StringListRange;
     Iterator(const CharType* aRangeStart, uint32_t aLength)
-      : mRangeEnd(aRangeStart + aLength)
-      , mStart(nullptr)
-      , mEnd(nullptr)
-      , mComma(nullptr)
-    {
+        : mRangeEnd(aRangeStart + aLength),
+          mStart(nullptr),
+          mEnd(nullptr),
+          mComma(nullptr) {
       SearchItemAt(aRangeStart);
     }
-    void SearchItemAt(Pointer start)
-    {
+    void SearchItemAt(Pointer start) {
       
-      for (Pointer p = start; ; ++p) {
+      for (Pointer p = start;; ++p) {
         if (p >= mRangeEnd) {
-          if (p > mRangeEnd
-                  + (empties != StringListRangeEmptyItems::Skip ? 1 : 0)) {
-            p = mRangeEnd
-                + (empties != StringListRangeEmptyItems::Skip ? 1 : 0);
+          if (p > mRangeEnd +
+                      (empties != StringListRangeEmptyItems::Skip ? 1 : 0)) {
+            p = mRangeEnd +
+                (empties != StringListRangeEmptyItems::Skip ? 1 : 0);
           }
           mStart = mEnd = mComma = p;
           return;
@@ -523,7 +469,7 @@ public:
       }
       
       Pointer trailingWhitespace = nullptr;
-      for (Pointer p = mStart + 1; ; ++p) {
+      for (Pointer p = mStart + 1;; ++p) {
         if (p >= mRangeEnd) {
           mEnd = trailingWhitespace ? trailingWhitespace : p;
           mComma = p;
@@ -555,39 +501,35 @@ public:
   };
 
   explicit StringListRange(const String& aList) : mList(aList) {}
-  Iterator begin() const
-  {
+  Iterator begin() const {
     return Iterator(
-      mList.Data()
-      + ((empties == StringListRangeEmptyItems::ProcessEmptyItems &&
-          mList.Length() == 0)
-          ? 1
-          : 0),
-      mList.Length());
+        mList.Data() +
+            ((empties == StringListRangeEmptyItems::ProcessEmptyItems &&
+              mList.Length() == 0)
+                 ? 1
+                 : 0),
+        mList.Length());
   }
-  Iterator end() const
-  {
-    return Iterator(mList.Data() + mList.Length()
-                    + (empties != StringListRangeEmptyItems::Skip ? 1 : 0),
+  Iterator end() const {
+    return Iterator(mList.Data() + mList.Length() +
+                        (empties != StringListRangeEmptyItems::Skip ? 1 : 0),
                     0);
   }
-private:
+
+ private:
   const String& mList;
 };
 
 template <StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip,
           typename String>
-StringListRange<String, empties>
-MakeStringListRange(const String& aList)
-{
+StringListRange<String, empties> MakeStringListRange(const String& aList) {
   return StringListRange<String, empties>(aList);
 }
 
 template <StringListRangeEmptyItems empties = StringListRangeEmptyItems::Skip,
           typename ListString, typename ItemString>
-static bool
-StringListContains(const ListString& aList, const ItemString& aItem)
-{
+static bool StringListContains(const ListString& aList,
+                               const ItemString& aItem) {
   for (const auto& listItem : MakeStringListRange<empties>(aList)) {
     if (listItem.Equals(aItem)) {
       return true;
@@ -596,15 +538,13 @@ StringListContains(const ListString& aList, const ItemString& aItem)
   return false;
 }
 
-inline void
-AppendStringIfNotEmpty(nsACString& aDest, nsACString&& aSrc)
-{
+inline void AppendStringIfNotEmpty(nsACString& aDest, nsACString&& aSrc) {
   if (!aSrc.IsEmpty()) {
     aDest.Append(NS_LITERAL_CSTRING("\n"));
     aDest.Append(aSrc);
   }
 }
 
-} 
+}  
 
 #endif

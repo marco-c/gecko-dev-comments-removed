@@ -11,12 +11,12 @@
 namespace mozilla {
 
 
-class TrackMetadataBase
-{
-public:
+
+class TrackMetadataBase {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackMetadataBase)
   enum MetadataKind {
-    METADATA_OPUS,    
+    METADATA_OPUS,  
     METADATA_VP8,
     METADATA_VORBIS,
     METADATA_AVC,
@@ -28,14 +28,14 @@ public:
   
   virtual MetadataKind GetKind() const = 0;
 
-protected:
+ protected:
   
   virtual ~TrackMetadataBase() {}
 };
 
 
 class AudioTrackMetadata : public TrackMetadataBase {
-public:
+ public:
   
   
   virtual uint32_t GetAudioFrameDuration() = 0;
@@ -52,7 +52,7 @@ public:
 
 
 class VideoTrackMetadata : public TrackMetadataBase {
-public:
+ public:
   
   virtual uint32_t GetVideoHeight() = 0;
   virtual uint32_t GetVideoWidth() = 0;
@@ -71,6 +71,6 @@ public:
   virtual uint32_t GetVideoFrameRate() = 0;
 };
 
-} 
+}  
 
 #endif

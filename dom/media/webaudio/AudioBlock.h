@@ -18,9 +18,8 @@ namespace mozilla {
 
 
 
-class AudioBlock : private AudioChunk
-{
-public:
+class AudioBlock : private AudioChunk {
+ public:
   AudioBlock() {
     mDuration = WEBAUDIO_BLOCK_SIZE;
     mBufferFormat = AUDIO_FORMAT_SILENCE;
@@ -31,25 +30,23 @@ public:
   
   
   AudioBlock(const AudioBlock& aBlock) : AudioChunk(aBlock.AsAudioChunk()) {}
-  explicit AudioBlock(const AudioChunk& aChunk)
-    : AudioChunk(aChunk)
-  {
+  explicit AudioBlock(const AudioChunk& aChunk) : AudioChunk(aChunk) {
     MOZ_ASSERT(aChunk.mDuration == WEBAUDIO_BLOCK_SIZE);
   }
   ~AudioBlock();
 
-  using AudioChunk::GetDuration;
-  using AudioChunk::IsNull;
-  using AudioChunk::IsAudible;
   using AudioChunk::ChannelCount;
   using AudioChunk::ChannelData;
-  using AudioChunk::SizeOfExcludingThisIfUnshared;
+  using AudioChunk::GetDuration;
+  using AudioChunk::IsAudible;
+  using AudioChunk::IsNull;
   using AudioChunk::SizeOfExcludingThis;
+  using AudioChunk::SizeOfExcludingThisIfUnshared;
   
   
+  using AudioChunk::mBufferFormat;
   using AudioChunk::mChannelData;
   using AudioChunk::mVolume;
-  using AudioChunk::mBufferFormat;
 
   const AudioChunk& AsAudioChunk() const { return *this; }
   AudioChunk* AsMutableChunk() {
@@ -67,8 +64,7 @@ public:
 
 
 
-  float* ChannelFloatsForWrite(size_t aChannel)
-  {
+  float* ChannelFloatsForWrite(size_t aChannel) {
     MOZ_ASSERT(mBufferFormat == AUDIO_FORMAT_FLOAT32);
     MOZ_ASSERT(CanWrite());
     return static_cast<float*>(const_cast<void*>(mChannelData[aChannel]));
@@ -101,8 +97,7 @@ public:
 
   bool IsMuted() const { return mVolume == 0.0f; }
 
-  bool IsSilentOrSubnormal() const
-  {
+  bool IsSilentOrSubnormal() const {
     if (!mBuffer) {
       return true;
     }
@@ -119,7 +114,7 @@ public:
     return true;
   }
 
-private:
+ private:
   void ClearDownstreamMark();
   bool CanWrite();
 
@@ -133,8 +128,8 @@ private:
   bool mBufferIsDownstreamRef = false;
 };
 
-} 
+}  
 
 DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioBlock)
 
-#endif 
+#endif  

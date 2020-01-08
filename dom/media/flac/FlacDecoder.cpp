@@ -10,9 +10,7 @@
 
 namespace mozilla {
 
- bool
-FlacDecoder::IsEnabled()
-{
+ bool FlacDecoder::IsEnabled() {
 #ifdef MOZ_FFVPX
   return StaticPrefs::MediaFlacEnabled();
 #else
@@ -21,28 +19,26 @@ FlacDecoder::IsEnabled()
 #endif
 }
 
- bool
-FlacDecoder::IsSupportedType(const MediaContainerType& aContainerType)
-{
+ bool FlacDecoder::IsSupportedType(
+    const MediaContainerType& aContainerType) {
   return IsEnabled() &&
          (aContainerType.Type() == MEDIAMIMETYPE("audio/flac") ||
           aContainerType.Type() == MEDIAMIMETYPE("audio/x-flac") ||
           aContainerType.Type() == MEDIAMIMETYPE("application/x-flac"));
 }
 
- nsTArray<UniquePtr<TrackInfo>>
-FlacDecoder::GetTracksInfo(const MediaContainerType& aType)
-{
+ nsTArray<UniquePtr<TrackInfo>> FlacDecoder::GetTracksInfo(
+    const MediaContainerType& aType) {
   nsTArray<UniquePtr<TrackInfo>> tracks;
   if (!IsSupportedType(aType)) {
     return tracks;
   }
 
   tracks.AppendElement(
-    CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-      NS_LITERAL_CSTRING("audio/flac"), aType));
+      CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("audio/flac"), aType));
 
   return tracks;
 }
 
-} 
+}  

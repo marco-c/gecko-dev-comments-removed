@@ -16,27 +16,26 @@ class BitReader;
 
 
 enum NAL_TYPES {
-    H264_NAL_SLICE           = 1,
-    H264_NAL_DPA             = 2,
-    H264_NAL_DPB             = 3,
-    H264_NAL_DPC             = 4,
-    H264_NAL_IDR_SLICE       = 5,
-    H264_NAL_SEI             = 6,
-    H264_NAL_SPS             = 7,
-    H264_NAL_PPS             = 8,
-    H264_NAL_AUD             = 9,
-    H264_NAL_END_SEQUENCE    = 10,
-    H264_NAL_END_STREAM      = 11,
-    H264_NAL_FILLER_DATA     = 12,
-    H264_NAL_SPS_EXT         = 13,
-    H264_NAL_PREFIX          = 14,
-    H264_NAL_AUXILIARY_SLICE = 19,
-    H264_NAL_SLICE_EXT       = 20,
-    H264_NAL_SLICE_EXT_DVC   = 21,
+  H264_NAL_SLICE = 1,
+  H264_NAL_DPA = 2,
+  H264_NAL_DPB = 3,
+  H264_NAL_DPC = 4,
+  H264_NAL_IDR_SLICE = 5,
+  H264_NAL_SEI = 6,
+  H264_NAL_SPS = 7,
+  H264_NAL_PPS = 8,
+  H264_NAL_AUD = 9,
+  H264_NAL_END_SEQUENCE = 10,
+  H264_NAL_END_STREAM = 11,
+  H264_NAL_FILLER_DATA = 12,
+  H264_NAL_SPS_EXT = 13,
+  H264_NAL_PREFIX = 14,
+  H264_NAL_AUXILIARY_SLICE = 19,
+  H264_NAL_SLICE_EXT = 20,
+  H264_NAL_SLICE_EXT_DVC = 21,
 };
 
-struct SPSData
-{
+struct SPSData {
   bool operator==(const SPSData& aOther) const;
   bool operator!=(const SPSData& aOther) const;
 
@@ -50,6 +49,7 @@ struct SPSData
 
   uint32_t pic_width;
   
+
 
 
 
@@ -130,6 +130,7 @@ struct SPSData
 
 
 
+
   uint8_t bit_depth_chroma_minus8;
 
   
@@ -145,7 +146,7 @@ struct SPSData
 
   bool separate_colour_plane_flag;
 
-
+  
 
 
 
@@ -403,8 +404,7 @@ struct SPSData
   SPSData();
 };
 
-struct SEIRecoveryData
-{
+struct SEIRecoveryData {
   
 
 
@@ -438,15 +438,14 @@ struct SEIRecoveryData
   uint8_t changing_slice_group_idc = 0;
 };
 
-class H264
-{
-public:
+class H264 {
+ public:
   
   static bool HasSPS(const mozilla::MediaByteBuffer* aExtraData);
   
   
   static already_AddRefed<mozilla::MediaByteBuffer> ExtractExtraData(
-    const mozilla::MediaRawData* aSample);
+      const mozilla::MediaRawData* aSample);
   
   static bool CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
                                const mozilla::MediaByteBuffer* aExtraData2);
@@ -461,10 +460,9 @@ public:
   
   
   static uint32_t ComputeMaxRefFrames(
-    const mozilla::MediaByteBuffer* aExtraData);
+      const mozilla::MediaByteBuffer* aExtraData);
 
-  enum class FrameType
-  {
+  enum class FrameType {
     I_FRAME,
     OTHER,
     INVALID,
@@ -476,21 +474,19 @@ public:
   
   
   static already_AddRefed<mozilla::MediaByteBuffer> CreateExtraData(
-    uint8_t aProfile,
-    uint8_t aConstraints,
-    uint8_t aLevel,
-    const gfx::IntSize& aSize);
+      uint8_t aProfile, uint8_t aConstraints, uint8_t aLevel,
+      const gfx::IntSize& aSize);
 
-private:
+ private:
   friend class SPSNAL;
   
 
 
 
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
-    const uint8_t* aNAL, size_t aLength);
+      const uint8_t* aNAL, size_t aLength);
   static already_AddRefed<mozilla::MediaByteBuffer> EncodeNALUnit(
-    const uint8_t* aNAL, size_t aLength);
+      const uint8_t* aNAL, size_t aLength);
   
   static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
   static bool vui_parameters(mozilla::BitReader& aBr, SPSData& aDest);
@@ -503,6 +499,6 @@ private:
                                 SEIRecoveryData& aDest);
 };
 
-} 
+}  
 
-#endif 
+#endif  

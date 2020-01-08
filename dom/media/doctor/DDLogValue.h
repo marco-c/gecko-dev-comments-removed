@@ -15,51 +15,29 @@
 namespace mozilla {
 
 
-struct DDNoValue
-{
-};
+struct DDNoValue {};
 
 
 
-struct DDRange
-{
+struct DDRange {
   const int64_t mOffset;
   const int64_t mBytes;
-  DDRange(int64_t aOffset, int64_t aBytes)
-    : mOffset(aOffset)
-    , mBytes(aBytes)
-  {
-  }
+  DDRange(int64_t aOffset, int64_t aBytes) : mOffset(aOffset), mBytes(aBytes) {}
 };
 
 
-using DDLogValue = Variant<DDNoValue,
-                           DDLogObject,
-                           const char*, 
-                           const nsCString,
-                           bool,
-                           int8_t,
-                           uint8_t,
-                           int16_t,
-                           uint16_t,
-                           int32_t,
-                           uint32_t,
-                           int64_t,
-                           uint64_t,
-                           double,
-                           DDRange,
-                           nsresult,
-                           MediaResult>;
+using DDLogValue = Variant<DDNoValue, DDLogObject,
+                           const char*,  
+                           const nsCString, bool, int8_t, uint8_t, int16_t,
+                           uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+                           double, DDRange, nsresult, MediaResult>;
 
-void
-AppendToString(const DDLogValue& aValue, nsCString& aString);
+void AppendToString(const DDLogValue& aValue, nsCString& aString);
 
 class JSONWriter;
-void
-ToJSON(const DDLogValue& aValue,
-       JSONWriter& aJSONWriter,
-       const char* aPropertyName);
+void ToJSON(const DDLogValue& aValue, JSONWriter& aJSONWriter,
+            const char* aPropertyName);
 
-} 
+}  
 
-#endif 
+#endif  

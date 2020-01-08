@@ -18,7 +18,7 @@ namespace mozilla {
 
 namespace dom {
 class Blob;
-} 
+}  
 
 class AllocationHandle;
 class MediaEngineSource;
@@ -28,29 +28,20 @@ enum MediaSinkEnum {
   Other,
 };
 
-enum {
-  kVideoTrack = 1,
-  kAudioTrack = 2,
-  kTrackCount
-};
+enum { kVideoTrack = 1, kAudioTrack = 2, kTrackCount };
 
-class MediaEngine : public DeviceChangeCallback
-{
-public:
+class MediaEngine : public DeviceChangeCallback {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEngine)
   NS_DECL_OWNINGTHREAD
 
-  void AssertIsOnOwningThread() const
-  {
-    NS_ASSERT_OWNINGTHREAD(MediaEngine);
-  }
+  void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(MediaEngine); }
 
   
 
 
 
-  virtual void EnumerateDevices(uint64_t aWindowId,
-                                dom::MediaSourceEnum,
+  virtual void EnumerateDevices(uint64_t aWindowId, dom::MediaSourceEnum,
                                 MediaSinkEnum,
                                 nsTArray<RefPtr<MediaDevice>>*) = 0;
 
@@ -59,10 +50,10 @@ public:
 
   virtual void SetFakeDeviceChangeEvents() {}
 
-protected:
+ protected:
   virtual ~MediaEngine() {}
 };
 
-} 
+}  
 
 #endif 

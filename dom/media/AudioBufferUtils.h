@@ -29,29 +29,24 @@ static inline uint32_t SamplesToFrames(uint32_t aChannels, uint32_t aSamples) {
 
 
 
-template<typename T>
-class AudioCallbackBufferWrapper
-{
-public:
+template <typename T>
+class AudioCallbackBufferWrapper {
+ public:
   AudioCallbackBufferWrapper()
-    : mBuffer(nullptr)
-    , mSamples(0)
-    , mSampleWriteOffset(1)
-    , mChannels(0)
-  {}
+      : mBuffer(nullptr), mSamples(0), mSampleWriteOffset(1), mChannels(0) {}
 
   explicit AudioCallbackBufferWrapper(uint32_t aChannels)
-    : mBuffer(nullptr)
-    , mSamples(0)
-    , mSampleWriteOffset(1)
-    , mChannels(aChannels)
+      : mBuffer(nullptr),
+        mSamples(0),
+        mSampleWriteOffset(1),
+        mChannels(aChannels)
 
   {
     MOZ_ASSERT(aChannels);
   }
 
-  AudioCallbackBufferWrapper& operator=(const AudioCallbackBufferWrapper& aOther)
-  {
+  AudioCallbackBufferWrapper& operator=(
+      const AudioCallbackBufferWrapper& aOther) {
     MOZ_ASSERT(!aOther.mBuffer,
                "Don't use this ctor after AudioCallbackDriver::Init");
     MOZ_ASSERT(aOther.mSamples == 0,
@@ -73,8 +68,7 @@ public:
 
 
   void SetBuffer(T* aBuffer, uint32_t aFrames) {
-    MOZ_ASSERT(!mBuffer && !mSamples,
-        "SetBuffer called twice.");
+    MOZ_ASSERT(!mBuffer && !mSamples, "SetBuffer called twice.");
     mBuffer = aBuffer;
     mSamples = FramesToSamples(mChannels, aFrames);
     mSampleWriteOffset = 0;
@@ -86,10 +80,10 @@ public:
 
   void WriteFrames(T* aBuffer, uint32_t aFrames) {
     MOZ_ASSERT(aFrames <= Available(),
-        "Writing more that we can in the audio buffer.");
+               "Writing more that we can in the audio buffer.");
 
-    PodCopy(mBuffer + mSampleWriteOffset, aBuffer, FramesToSamples(mChannels,
-                                                                   aFrames));
+    PodCopy(mBuffer + mSampleWriteOffset, aBuffer,
+            FramesToSamples(mChannels, aFrames));
     mSampleWriteOffset += FramesToSamples(mChannels, aFrames);
   }
 
@@ -114,11 +108,12 @@ public:
     
     
     NS_WARNING_ASSERTION(
-      Available() == 0 || mSampleWriteOffset == 0,
-      "Audio Buffer is not full by the end of the callback.");
+        Available() == 0 || mSampleWriteOffset == 0,
+        "Audio Buffer is not full by the end of the callback.");
     
     if (Available()) {
-      PodZero(mBuffer + mSampleWriteOffset, FramesToSamples(mChannels, Available()));
+      PodZero(mBuffer + mSampleWriteOffset,
+              FramesToSamples(mChannels, Available()));
     }
     MOZ_ASSERT(mSamples, "Buffer not set.");
     mSamples = 0;
@@ -126,7 +121,7 @@ public:
     mBuffer = nullptr;
   }
 
-private:
+ private:
   
 
   T* mBuffer;
@@ -144,29 +139,21 @@ private:
 
 
 
-template<typename T, uint32_t BLOCK_SIZE>
-class SpillBuffer
-{
-public:
-  SpillBuffer()
-    : mBuffer(nullptr)
-    , mPosition(0)
-    , mChannels(0)
-  {}
+template <typename T, uint32_t BLOCK_SIZE>
+class SpillBuffer {
+ public:
+  SpillBuffer() : mBuffer(nullptr), mPosition(0), mChannels(0) {}
 
   explicit SpillBuffer(uint32_t aChannels)
-  : mPosition(0)
-  , mChannels(aChannels)
-  {
+      : mPosition(0), mChannels(aChannels) {
     MOZ_ASSERT(aChannels);
     mBuffer = MakeUnique<T[]>(BLOCK_SIZE * mChannels);
     PodZero(mBuffer.get(), BLOCK_SIZE * mChannels);
   }
 
-  SpillBuffer& operator=(SpillBuffer& aOther)
-  {
+  SpillBuffer& operator=(SpillBuffer& aOther) {
     MOZ_ASSERT(aOther.mPosition == 0,
-        "Don't use this ctor after AudioCallbackDriver::Init");
+               "Don't use this ctor after AudioCallbackDriver::Init");
     MOZ_ASSERT(aOther.mChannels != 0);
     MOZ_ASSERT(aOther.mBuffer);
 
@@ -177,24 +164,26 @@ public:
     return *this;
   }
 
-  SpillBuffer& operator=(SpillBuffer&& aOther)
-  {
+  SpillBuffer& operator=(SpillBuffer&& aOther) {
     return this->operator=(aOther);
   }
 
   
 
   uint32_t Empty(AudioCallbackBufferWrapper<T>& aBuffer) {
-    uint32_t framesToWrite = std::min(aBuffer.Available(),
-                                      SamplesToFrames(mChannels, mPosition));
+    uint32_t framesToWrite =
+        std::min(aBuffer.Available(), SamplesToFrames(mChannels, mPosition));
 
     aBuffer.WriteFrames(mBuffer.get(), framesToWrite);
 
     mPosition -= FramesToSamples(mChannels, framesToWrite);
     
+    
     if (mPosition > 0) {
-      MOZ_ASSERT(FramesToSamples(mChannels, framesToWrite) + mPosition <= BLOCK_SIZE * mChannels);
-      PodMove(mBuffer.get(), mBuffer.get() + FramesToSamples(mChannels, framesToWrite),
+      MOZ_ASSERT(FramesToSamples(mChannels, framesToWrite) + mPosition <=
+                 BLOCK_SIZE * mChannels);
+      PodMove(mBuffer.get(),
+              mBuffer.get() + FramesToSamples(mChannels, framesToWrite),
               mPosition);
     }
 
@@ -203,19 +192,20 @@ public:
   
 
   uint32_t Fill(T* aInput, uint32_t aFrames) {
-    uint32_t framesToWrite = std::min(aFrames,
-                                      BLOCK_SIZE - SamplesToFrames(mChannels,
-                                                                   mPosition));
+    uint32_t framesToWrite =
+        std::min(aFrames, BLOCK_SIZE - SamplesToFrames(mChannels, mPosition));
 
-    MOZ_ASSERT(FramesToSamples(mChannels, framesToWrite) + mPosition <= BLOCK_SIZE * mChannels);
-    PodCopy(mBuffer.get() + mPosition, aInput, FramesToSamples(mChannels,
-                                                         framesToWrite));
+    MOZ_ASSERT(FramesToSamples(mChannels, framesToWrite) + mPosition <=
+               BLOCK_SIZE * mChannels);
+    PodCopy(mBuffer.get() + mPosition, aInput,
+            FramesToSamples(mChannels, framesToWrite));
 
     mPosition += FramesToSamples(mChannels, framesToWrite);
 
     return framesToWrite;
   }
-private:
+
+ private:
   
   UniquePtr<T[]> mBuffer;
   
@@ -224,6 +214,6 @@ private:
   uint32_t mChannels;
 };
 
-} 
+}  
 
-#endif 
+#endif  

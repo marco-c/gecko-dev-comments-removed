@@ -11,8 +11,7 @@
 
 namespace mozilla {
 
-struct FrameStatisticsData
-{
+struct FrameStatisticsData {
   
   
   uint64_t mParsedFrames = 0;
@@ -21,6 +20,7 @@ struct FrameStatisticsData
   
   uint64_t mDecodedFrames = 0;
 
+  
   
   
   uint64_t mPresentedFrames = 0;
@@ -39,20 +39,14 @@ struct FrameStatisticsData
   uint64_t mInterKeyFrameMax_us = 0;
 
   FrameStatisticsData() = default;
-  FrameStatisticsData(uint64_t aParsed,
-                      uint64_t aDecoded,
-                      uint64_t aDropped,
+  FrameStatisticsData(uint64_t aParsed, uint64_t aDecoded, uint64_t aDropped,
                       uint64_t aPresented)
-    : mParsedFrames(aParsed)
-    , mDecodedFrames(aDecoded)
-    , mPresentedFrames(aPresented)
-    , mDroppedFrames(aDropped)
-  {
-  }
+      : mParsedFrames(aParsed),
+        mDecodedFrames(aDecoded),
+        mPresentedFrames(aPresented),
+        mDroppedFrames(aDropped) {}
 
-  void
-  Accumulate(const FrameStatisticsData& aStats)
-  {
+  void Accumulate(const FrameStatisticsData& aStats) {
     mParsedFrames += aStats.mParsedFrames;
     mDecodedFrames += aStats.mDecodedFrames;
     mPresentedFrames += aStats.mPresentedFrames;
@@ -68,35 +62,29 @@ struct FrameStatisticsData
 
 
 
-class FrameStatistics
-{
-public:
+class FrameStatistics {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FrameStatistics);
 
-  FrameStatistics()
-    : mReentrantMonitor("FrameStats")
-  {}
+  FrameStatistics() : mReentrantMonitor("FrameStats") {}
 
   
   
-  FrameStatisticsData GetFrameStatisticsData() const
-  {
+  FrameStatisticsData GetFrameStatisticsData() const {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData;
   }
 
   
   
-  uint64_t GetParsedFrames() const
-  {
+  uint64_t GetParsedFrames() const {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mParsedFrames;
   }
 
   
   
-  uint64_t GetDecodedFrames() const
-  {
+  uint64_t GetDecodedFrames() const {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mDecodedFrames;
   }
@@ -104,32 +92,28 @@ public:
   
   
   
-  uint64_t GetPresentedFrames() const
-  {
+  uint64_t GetPresentedFrames() const {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mPresentedFrames;
   }
 
   
   
-  uint64_t GetDroppedFrames() const
-  {
+  uint64_t GetDroppedFrames() const {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     return mFrameStatisticsData.mDroppedFrames;
   }
 
   
   
-  void Accumulate(const FrameStatisticsData& aStats)
-  {
+  void Accumulate(const FrameStatisticsData& aStats) {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     mFrameStatisticsData.Accumulate(aStats);
   }
 
   
   
-  void NotifyPresentedFrame()
-  {
+  void NotifyPresentedFrame() {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     ++mFrameStatisticsData.mPresentedFrames;
   }
@@ -137,15 +121,11 @@ public:
   
   
   
-  class AutoNotifyDecoded
-  {
-  public:
+  class AutoNotifyDecoded {
+   public:
     explicit AutoNotifyDecoded(FrameStatistics* aFrameStats)
-      : mFrameStats(aFrameStats)
-    {
-    }
-    ~AutoNotifyDecoded()
-    {
+        : mFrameStats(aFrameStats) {}
+    ~AutoNotifyDecoded() {
       if (mFrameStats) {
         mFrameStats->Accumulate(mStats);
       }
@@ -153,11 +133,11 @@ public:
 
     FrameStatisticsData mStats;
 
-  private:
+   private:
     FrameStatistics* mFrameStats;
   };
 
-private:
+ private:
   ~FrameStatistics() {}
 
   
@@ -166,6 +146,6 @@ private:
   FrameStatisticsData mFrameStatisticsData;
 };
 
-} 
+}  
 
-#endif 
+#endif  

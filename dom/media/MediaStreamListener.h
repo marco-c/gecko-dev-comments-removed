@@ -39,13 +39,13 @@ class VideoSegment;
 
 
 
-class MediaStreamListener
-{
-protected:
+
+class MediaStreamListener {
+ protected:
   
   virtual ~MediaStreamListener() {}
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamListener)
 
   
@@ -62,15 +62,13 @@ public:
 
   virtual void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) {}
 
-  enum Blocking {
-    BLOCKED,
-    UNBLOCKED
-  };
+  enum Blocking { BLOCKED, UNBLOCKED };
   
 
 
 
-  virtual void NotifyBlockingChanged(MediaStreamGraph* aGraph, Blocking aBlocked) {}
+  virtual void NotifyBlockingChanged(MediaStreamGraph* aGraph,
+                                     Blocking aBlocked) {}
 
   
 
@@ -90,7 +88,8 @@ public:
   
 
 
-  virtual void NotifyEvent(MediaStreamGraph* aGraph, MediaStreamGraphEvent aEvent) {}
+  virtual void NotifyEvent(MediaStreamGraph* aGraph,
+                           MediaStreamGraphEvent aEvent) {}
 
   
 
@@ -106,7 +105,8 @@ public:
                                         TrackEventCommand aTrackEvents,
                                         const MediaSegment& aQueuedMedia,
                                         MediaStream* aInputStream = nullptr,
-                                        TrackID aInputTrackID = TRACK_INVALID) {}
+                                        TrackID aInputTrackID = TRACK_INVALID) {
+  }
 
   
 
@@ -143,23 +143,22 @@ public:
 
 
 
-class MediaStreamTrackListener
-{
+class MediaStreamTrackListener {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamTrackListener)
 
-public:
+ public:
   virtual void NotifyQueuedChanges(MediaStreamGraph* aGraph,
                                    StreamTime aTrackOffset,
                                    const MediaSegment& aQueuedMedia) {}
 
-  virtual void NotifyPrincipalHandleChanged(MediaStreamGraph* aGraph,
-                                            const PrincipalHandle& aNewPrincipalHandle) {}
+  virtual void NotifyPrincipalHandleChanged(
+      MediaStreamGraph* aGraph, const PrincipalHandle& aNewPrincipalHandle) {}
 
   virtual void NotifyEnded() {}
 
   virtual void NotifyRemoved() {}
 
-protected:
+ protected:
   virtual ~MediaStreamTrackListener() {}
 };
 
@@ -179,12 +178,11 @@ protected:
 
 
 
-class DirectMediaStreamTrackListener : public MediaStreamTrackListener
-{
+class DirectMediaStreamTrackListener : public MediaStreamTrackListener {
   friend class SourceMediaStream;
   friend class TrackUnionStream;
 
-public:
+ public:
   
 
 
@@ -229,12 +227,11 @@ public:
 
   virtual MediaStreamVideoSink* AsMediaStreamVideoSink() { return nullptr; }
 
-protected:
+ protected:
   virtual ~DirectMediaStreamTrackListener() {}
 
   void MirrorAndDisableSegment(AudioSegment& aFrom, AudioSegment& aTo);
-  void MirrorAndDisableSegment(VideoSegment& aFrom,
-                               VideoSegment& aTo,
+  void MirrorAndDisableSegment(VideoSegment& aFrom, VideoSegment& aTo,
                                DisabledTrackMode aMode);
   void NotifyRealtimeTrackDataAndApplyTrackDisabling(MediaStreamGraph* aGraph,
                                                      StreamTime aTrackOffset,
@@ -252,6 +249,6 @@ protected:
   nsAutoPtr<MediaSegment> mMedia;
 };
 
-} 
+}  
 
-#endif 
+#endif  

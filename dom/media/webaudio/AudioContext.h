@@ -29,8 +29,8 @@
 #endif
 
 namespace WebCore {
-  class PeriodicWave;
-} 
+class PeriodicWave;
+}  
 
 class nsPIDOMWindowInner;
 
@@ -79,13 +79,13 @@ enum class OscillatorType : uint8_t;
 
 
 
-class BasicWaveFormCache
-{
-public:
+class BasicWaveFormCache {
+ public:
   explicit BasicWaveFormCache(uint32_t aSampleRate);
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BasicWaveFormCache)
   WebCore::PeriodicWave* GetBasicWaveForm(OscillatorType aType);
-private:
+
+ private:
   ~BasicWaveFormCache();
   RefPtr<WebCore::PeriodicWave> mSawtooth;
   RefPtr<WebCore::PeriodicWave> mSquare;
@@ -95,21 +95,21 @@ private:
 
 
 
-
-class StateChangeTask final : public Runnable
-{
-public:
+class StateChangeTask final : public Runnable {
+ public:
   
 
-  StateChangeTask(AudioContext* aAudioContext, void* aPromise, AudioContextState aNewState);
+  StateChangeTask(AudioContext* aAudioContext, void* aPromise,
+                  AudioContextState aNewState);
 
   
 
-  StateChangeTask(AudioNodeStream* aStream, void* aPromise, AudioContextState aNewState);
+  StateChangeTask(AudioNodeStream* aStream, void* aPromise,
+                  AudioContextState aNewState);
 
   NS_IMETHOD Run() override;
 
-private:
+ private:
   RefPtr<AudioContext> mAudioContext;
   void* mPromise;
   RefPtr<AudioNodeStream> mAudioNodeStream;
@@ -121,70 +121,55 @@ struct AudioContextOptions;
 
 class AudioContext final : public DOMEventTargetHelper,
                            public nsIMemoryReporter,
-                           public RelativeTimeline
-{
-  AudioContext(nsPIDOMWindowInner* aParentWindow,
-               bool aIsOffline,
-               uint32_t aNumberOfChannels = 0,
-               uint32_t aLength = 0,
+                           public RelativeTimeline {
+  AudioContext(nsPIDOMWindowInner* aParentWindow, bool aIsOffline,
+               uint32_t aNumberOfChannels = 0, uint32_t aLength = 0,
                float aSampleRate = 0.0f);
   ~AudioContext();
 
   nsresult Init();
 
-public:
+ public:
   typedef uint64_t AudioContextId;
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AudioContext,
-                                           DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AudioContext, DOMEventTargetHelper)
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
-  nsPIDOMWindowInner* GetParentObject() const
-  {
-    return GetOwner();
-  }
+  nsPIDOMWindowInner* GetParentObject() const { return GetOwner(); }
 
   virtual void DisconnectFromOwner() override;
   virtual void BindToOwner(nsIGlobalObject* aNew) override;
 
-  void Shutdown(); 
+  void Shutdown();  
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   using DOMEventTargetHelper::DispatchTrustedEvent;
 
   
-  static already_AddRefed<AudioContext>
-  Constructor(const GlobalObject& aGlobal,
-              const AudioContextOptions& aOptions,
-              ErrorResult& aRv);
+  static already_AddRefed<AudioContext> Constructor(
+      const GlobalObject& aGlobal, const AudioContextOptions& aOptions,
+      ErrorResult& aRv);
 
   
-  static already_AddRefed<AudioContext>
-  Constructor(const GlobalObject& aGlobal,
-              const OfflineAudioContextOptions& aOptions,
-              ErrorResult& aRv);
+  static already_AddRefed<AudioContext> Constructor(
+      const GlobalObject& aGlobal, const OfflineAudioContextOptions& aOptions,
+      ErrorResult& aRv);
 
   
-  static already_AddRefed<AudioContext>
-  Constructor(const GlobalObject& aGlobal,
-              uint32_t aNumberOfChannels,
-              uint32_t aLength,
-              float aSampleRate,
-              ErrorResult& aRv);
+  static already_AddRefed<AudioContext> Constructor(const GlobalObject& aGlobal,
+                                                    uint32_t aNumberOfChannels,
+                                                    uint32_t aLength,
+                                                    float aSampleRate,
+                                                    ErrorResult& aRv);
 
   
 
-  AudioDestinationNode* Destination() const
-  {
-    return mDestination;
-  }
+  AudioDestinationNode* Destination() const { return mDestination; }
 
-  float SampleRate() const
-  {
-    return mSampleRate;
-  }
+  float SampleRate() const { return mSampleRate; }
 
   bool ShouldSuspendNewStream() const { return mSuspendCalled; }
 
@@ -216,75 +201,64 @@ public:
 
   already_AddRefed<ConstantSourceNode> CreateConstantSource(ErrorResult& aRv);
 
-  already_AddRefed<AudioBuffer>
-  CreateBuffer(uint32_t aNumberOfChannels, uint32_t aLength, float aSampleRate,
-               ErrorResult& aRv);
+  already_AddRefed<AudioBuffer> CreateBuffer(uint32_t aNumberOfChannels,
+                                             uint32_t aLength,
+                                             float aSampleRate,
+                                             ErrorResult& aRv);
 
   already_AddRefed<MediaStreamAudioDestinationNode>
   CreateMediaStreamDestination(ErrorResult& aRv);
 
-  already_AddRefed<ScriptProcessorNode>
-  CreateScriptProcessor(uint32_t aBufferSize,
-                        uint32_t aNumberOfInputChannels,
-                        uint32_t aNumberOfOutputChannels,
-                        ErrorResult& aRv);
+  already_AddRefed<ScriptProcessorNode> CreateScriptProcessor(
+      uint32_t aBufferSize, uint32_t aNumberOfInputChannels,
+      uint32_t aNumberOfOutputChannels, ErrorResult& aRv);
 
-  already_AddRefed<StereoPannerNode>
-  CreateStereoPanner(ErrorResult& aRv);
+  already_AddRefed<StereoPannerNode> CreateStereoPanner(ErrorResult& aRv);
 
-  already_AddRefed<AnalyserNode>
-  CreateAnalyser(ErrorResult& aRv);
+  already_AddRefed<AnalyserNode> CreateAnalyser(ErrorResult& aRv);
 
-  already_AddRefed<GainNode>
-  CreateGain(ErrorResult& aRv);
+  already_AddRefed<GainNode> CreateGain(ErrorResult& aRv);
 
-  already_AddRefed<WaveShaperNode>
-  CreateWaveShaper(ErrorResult& aRv);
+  already_AddRefed<WaveShaperNode> CreateWaveShaper(ErrorResult& aRv);
 
-  already_AddRefed<MediaElementAudioSourceNode>
-  CreateMediaElementSource(HTMLMediaElement& aMediaElement, ErrorResult& aRv);
-  already_AddRefed<MediaStreamAudioSourceNode>
-  CreateMediaStreamSource(DOMMediaStream& aMediaStream, ErrorResult& aRv);
+  already_AddRefed<MediaElementAudioSourceNode> CreateMediaElementSource(
+      HTMLMediaElement& aMediaElement, ErrorResult& aRv);
+  already_AddRefed<MediaStreamAudioSourceNode> CreateMediaStreamSource(
+      DOMMediaStream& aMediaStream, ErrorResult& aRv);
 
-  already_AddRefed<DelayNode>
-  CreateDelay(double aMaxDelayTime, ErrorResult& aRv);
+  already_AddRefed<DelayNode> CreateDelay(double aMaxDelayTime,
+                                          ErrorResult& aRv);
 
-  already_AddRefed<PannerNode>
-  CreatePanner(ErrorResult& aRv);
+  already_AddRefed<PannerNode> CreatePanner(ErrorResult& aRv);
 
-  already_AddRefed<ConvolverNode>
-  CreateConvolver(ErrorResult& aRv);
+  already_AddRefed<ConvolverNode> CreateConvolver(ErrorResult& aRv);
 
-  already_AddRefed<ChannelSplitterNode>
-  CreateChannelSplitter(uint32_t aNumberOfOutputs, ErrorResult& aRv);
+  already_AddRefed<ChannelSplitterNode> CreateChannelSplitter(
+      uint32_t aNumberOfOutputs, ErrorResult& aRv);
 
-  already_AddRefed<ChannelMergerNode>
-  CreateChannelMerger(uint32_t aNumberOfInputs, ErrorResult& aRv);
+  already_AddRefed<ChannelMergerNode> CreateChannelMerger(
+      uint32_t aNumberOfInputs, ErrorResult& aRv);
 
-  already_AddRefed<DynamicsCompressorNode>
-  CreateDynamicsCompressor(ErrorResult& aRv);
+  already_AddRefed<DynamicsCompressorNode> CreateDynamicsCompressor(
+      ErrorResult& aRv);
 
-  already_AddRefed<BiquadFilterNode>
-  CreateBiquadFilter(ErrorResult& aRv);
+  already_AddRefed<BiquadFilterNode> CreateBiquadFilter(ErrorResult& aRv);
 
-  already_AddRefed<IIRFilterNode>
-  CreateIIRFilter(const Sequence<double>& aFeedforward,
-                  const Sequence<double>& aFeedback,
-                  mozilla::ErrorResult& aRv);
+  already_AddRefed<IIRFilterNode> CreateIIRFilter(
+      const Sequence<double>& aFeedforward, const Sequence<double>& aFeedback,
+      mozilla::ErrorResult& aRv);
 
-  already_AddRefed<OscillatorNode>
-  CreateOscillator(ErrorResult& aRv);
+  already_AddRefed<OscillatorNode> CreateOscillator(ErrorResult& aRv);
 
-  already_AddRefed<PeriodicWave>
-  CreatePeriodicWave(const Float32Array& aRealData, const Float32Array& aImagData,
-                     const PeriodicWaveConstraints& aConstraints,
-                     ErrorResult& aRv);
+  already_AddRefed<PeriodicWave> CreatePeriodicWave(
+      const Float32Array& aRealData, const Float32Array& aImagData,
+      const PeriodicWaveConstraints& aConstraints, ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  DecodeAudioData(const ArrayBuffer& aBuffer,
-                  const Optional<OwningNonNull<DecodeSuccessCallback> >& aSuccessCallback,
-                  const Optional<OwningNonNull<DecodeErrorCallback> >& aFailureCallback,
-                  ErrorResult& aRv);
+  already_AddRefed<Promise> DecodeAudioData(
+      const ArrayBuffer& aBuffer,
+      const Optional<OwningNonNull<DecodeSuccessCallback>>& aSuccessCallback,
+      const Optional<OwningNonNull<DecodeErrorCallback>>& aFailureCallback,
+      ErrorResult& aRv);
 
   
   already_AddRefed<Promise> StartRendering(ErrorResult& aRv);
@@ -329,7 +303,7 @@ public:
 
   void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
 
-private:
+ private:
   void DisconnectFromWindow();
   void RemoveFromDecodeQueue(WebAudioDecodeJob* aDecodeJob);
   void ShutdownDecoder();
@@ -350,7 +324,7 @@ private:
   
   void DispatchBlockedEvent();
 
-private:
+ private:
   
   
   
@@ -362,7 +336,7 @@ private:
   RefPtr<AudioDestinationNode> mDestination;
   RefPtr<AudioListener> mListener;
   RefPtr<Worklet> mWorklet;
-  nsTArray<UniquePtr<WebAudioDecodeJob> > mDecodeJobs;
+  nsTArray<UniquePtr<WebAudioDecodeJob>> mDecodeJobs;
   
   
   nsTArray<RefPtr<Promise>> mPromiseGripArray;
@@ -373,9 +347,9 @@ private:
   nsTArray<RefPtr<Promise>> mPendingResumePromises;
   
   
-  nsTHashtable<nsRefPtrHashKey<AudioNode> > mActiveNodes;
+  nsTHashtable<nsRefPtrHashKey<AudioNode>> mActiveNodes;
   
-  nsTHashtable<nsPtrHashKey<AudioNode> > mAllNodes;
+  nsTHashtable<nsPtrHashKey<AudioNode>> mAllNodes;
   
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
@@ -392,8 +366,7 @@ private:
 
 static const dom::AudioContext::AudioContextId NO_AUDIO_CONTEXT = 0;
 
-} 
-} 
+}  
+}  
 
 #endif
-

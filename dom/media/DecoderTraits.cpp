@@ -39,35 +39,30 @@
 
 #include "nsPluginHost.h"
 
-namespace mozilla
-{
+namespace mozilla {
 
- bool
-DecoderTraits::IsHttpLiveStreamingType(const MediaContainerType& aType)
-{
+ bool DecoderTraits::IsHttpLiveStreamingType(
+    const MediaContainerType& aType) {
   const auto& mimeType = aType.Type();
-  return 
-         
-    mimeType == MEDIAMIMETYPE("application/vnd.apple.mpegurl") ||
-    
-    mimeType == MEDIAMIMETYPE("application/x-mpegurl") ||
-    mimeType == MEDIAMIMETYPE("audio/mpegurl") ||
-    mimeType == MEDIAMIMETYPE("audio/x-mpegurl");
+  return  
+          
+      mimeType == MEDIAMIMETYPE("application/vnd.apple.mpegurl") ||
+      
+      mimeType == MEDIAMIMETYPE("application/x-mpegurl") ||
+      mimeType == MEDIAMIMETYPE("audio/mpegurl") ||
+      mimeType == MEDIAMIMETYPE("audio/x-mpegurl");
 }
 
- bool
-DecoderTraits::IsMatroskaType(const MediaContainerType& aType)
-{
+ bool DecoderTraits::IsMatroskaType(
+    const MediaContainerType& aType) {
   const auto& mimeType = aType.Type();
   
   return mimeType == MEDIAMIMETYPE("audio/x-matroska") ||
          mimeType == MEDIAMIMETYPE("video/x-matroska");
 }
 
- bool
-DecoderTraits::IsMP4SupportedType(const MediaContainerType& aType,
-                                  DecoderDoctorDiagnostics* aDiagnostics)
-{
+ bool DecoderTraits::IsMP4SupportedType(
+    const MediaContainerType& aType, DecoderDoctorDiagnostics* aDiagnostics) {
 #ifdef MOZ_FMP4
   return MP4Decoder::IsSupportedType(aType, aDiagnostics);
 #else
@@ -75,11 +70,8 @@ DecoderTraits::IsMP4SupportedType(const MediaContainerType& aType,
 #endif
 }
 
-static
-CanPlayStatus
-CanHandleCodecsType(const MediaContainerType& aType,
-                    DecoderDoctorDiagnostics* aDiagnostics)
-{
+static CanPlayStatus CanHandleCodecsType(
+    const MediaContainerType& aType, DecoderDoctorDiagnostics* aDiagnostics) {
   
   MOZ_ASSERT(aType.ExtendedType().HaveCodecs());
 
@@ -149,11 +141,8 @@ CanHandleCodecsType(const MediaContainerType& aType,
   return CANPLAY_MAYBE;
 }
 
-static
-CanPlayStatus
-CanHandleMediaType(const MediaContainerType& aType,
-                   DecoderDoctorDiagnostics* aDiagnostics)
-{
+static CanPlayStatus CanHandleMediaType(
+    const MediaContainerType& aType, DecoderDoctorDiagnostics* aDiagnostics) {
 #ifdef MOZ_ANDROID_HLS_SUPPORT
   if (HLSDecoder::IsSupportedType(aType)) {
     return CANPLAY_MAYBE;
@@ -203,17 +192,15 @@ CanHandleMediaType(const MediaContainerType& aType,
 }
 
 
-CanPlayStatus
-DecoderTraits::CanHandleContainerType(const MediaContainerType& aContainerType,
-                                      DecoderDoctorDiagnostics* aDiagnostics)
-{
+CanPlayStatus DecoderTraits::CanHandleContainerType(
+    const MediaContainerType& aContainerType,
+    DecoderDoctorDiagnostics* aDiagnostics) {
   return CanHandleMediaType(aContainerType, aDiagnostics);
 }
 
 
-bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
-                                          DecoderDoctorDiagnostics* aDiagnostics)
-{
+bool DecoderTraits::ShouldHandleMediaType(
+    const char* aMIMEType, DecoderDoctorDiagnostics* aDiagnostics) {
   Maybe<MediaContainerType> containerType = MakeMediaContainerType(aMIMEType);
   if (!containerType) {
     return false;
@@ -243,10 +230,8 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
 }
 
 
-MediaFormatReader*
-DecoderTraits::CreateReader(const MediaContainerType& aType,
-                            MediaFormatReaderInit& aInit)
-{
+MediaFormatReader* DecoderTraits::CreateReader(const MediaContainerType& aType,
+                                               MediaFormatReaderInit& aInit) {
   MOZ_ASSERT(NS_IsMainThread());
   MediaFormatReader* decoderReader = nullptr;
   MediaResource* resource = aInit.mResource;
@@ -257,25 +242,20 @@ DecoderTraits::CreateReader(const MediaContainerType& aType,
     decoderReader = new MediaFormatReader(aInit, new MP4Demuxer(resource));
   } else
 #endif
-  if (MP3Decoder::IsSupportedType(aType)) {
+      if (MP3Decoder::IsSupportedType(aType)) {
     decoderReader = new MediaFormatReader(aInit, new MP3Demuxer(resource));
-  } else
-  if (ADTSDecoder::IsSupportedType(aType)) {
+  } else if (ADTSDecoder::IsSupportedType(aType)) {
     decoderReader = new MediaFormatReader(aInit, new ADTSDemuxer(resource));
-  } else
-  if (WaveDecoder::IsSupportedType(aType)) {
+  } else if (WaveDecoder::IsSupportedType(aType)) {
     decoderReader = new MediaFormatReader(aInit, new WAVDemuxer(resource));
-  } else
-  if (FlacDecoder::IsSupportedType(aType)) {
+  } else if (FlacDecoder::IsSupportedType(aType)) {
     decoderReader = new MediaFormatReader(aInit, new FlacDemuxer(resource));
-  } else
-  if (OggDecoder::IsSupportedType(aType)) {
+  } else if (OggDecoder::IsSupportedType(aType)) {
     RefPtr<OggDemuxer> demuxer = new OggDemuxer(resource);
     decoderReader = new MediaFormatReader(aInit, demuxer);
     demuxer->SetChainingEvents(&decoderReader->TimedMetadataProducer(),
                                &decoderReader->MediaNotSeekableProducer());
-  } else
-  if (WebMDecoder::IsSupportedType(aType)) {
+  } else if (WebMDecoder::IsSupportedType(aType)) {
     decoderReader = new MediaFormatReader(aInit, new WebMDemuxer(resource));
   }
 
@@ -283,20 +263,18 @@ DecoderTraits::CreateReader(const MediaContainerType& aType,
 }
 
 
-bool
-DecoderTraits::IsSupportedType(const MediaContainerType& aType)
-{
+bool DecoderTraits::IsSupportedType(const MediaContainerType& aType) {
   typedef bool (*IsSupportedFunction)(const MediaContainerType& aType);
   static const IsSupportedFunction funcs[] = {
-    &ADTSDecoder::IsSupportedType,
-    &FlacDecoder::IsSupportedType,
-    &MP3Decoder::IsSupportedType,
+      &ADTSDecoder::IsSupportedType,
+      &FlacDecoder::IsSupportedType,
+      &MP3Decoder::IsSupportedType,
 #ifdef MOZ_FMP4
-    &MP4Decoder::IsSupportedTypeWithoutDiagnostics,
+      &MP4Decoder::IsSupportedTypeWithoutDiagnostics,
 #endif
-    &OggDecoder::IsSupportedType,
-    &WaveDecoder::IsSupportedType,
-    &WebMDecoder::IsSupportedType,
+      &OggDecoder::IsSupportedType,
+      &WaveDecoder::IsSupportedType,
+      &WebMDecoder::IsSupportedType,
   };
   for (IsSupportedFunction func : funcs) {
     if (func(aType)) {
@@ -307,8 +285,7 @@ DecoderTraits::IsSupportedType(const MediaContainerType& aType)
 }
 
 
-bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType)
-{
+bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType) {
   
   
   
@@ -322,24 +299,23 @@ bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType)
     return false;
   }
 
-  return
-    OggDecoder::IsSupportedType(*type) ||
-    WebMDecoder::IsSupportedType(*type) ||
+  return OggDecoder::IsSupportedType(*type) ||
+         WebMDecoder::IsSupportedType(*type) ||
 #ifdef MOZ_FMP4
-    MP4Decoder::IsSupportedType(*type,  nullptr) ||
+         MP4Decoder::IsSupportedType(*type,
+                                      nullptr) ||
 #endif
-    MP3Decoder::IsSupportedType(*type) ||
-    ADTSDecoder::IsSupportedType(*type) ||
-    FlacDecoder::IsSupportedType(*type) ||
+         MP3Decoder::IsSupportedType(*type) ||
+         ADTSDecoder::IsSupportedType(*type) ||
+         FlacDecoder::IsSupportedType(*type) ||
 #ifdef MOZ_ANDROID_HLS_SUPPORT
-    HLSDecoder::IsSupportedType(*type) ||
+         HLSDecoder::IsSupportedType(*type) ||
 #endif
-    false;
+         false;
 }
 
- nsTArray<UniquePtr<TrackInfo>>
-DecoderTraits::GetTracksInfo(const MediaContainerType& aType)
-{
+ nsTArray<UniquePtr<TrackInfo>> DecoderTraits::GetTracksInfo(
+    const MediaContainerType& aType) {
   
   const MediaContainerType mimeType(aType.Type());
 
@@ -369,4 +345,4 @@ DecoderTraits::GetTracksInfo(const MediaContainerType& aType)
   return nsTArray<UniquePtr<TrackInfo>>();
 }
 
-} 
+}  

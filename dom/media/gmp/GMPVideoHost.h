@@ -19,9 +19,8 @@ class GMPSharedMemManager;
 class GMPPlaneImpl;
 class GMPVideoEncodedFrameImpl;
 
-class GMPVideoHostImpl : public GMPVideoHost
-{
-public:
+class GMPVideoHostImpl : public GMPVideoHost {
+ public:
   explicit GMPVideoHostImpl(GMPSharedMemManager* aSharedMemMgr);
   virtual ~GMPVideoHostImpl();
 
@@ -35,10 +34,11 @@ public:
   void EncodedFrameDestroyed(GMPVideoEncodedFrameImpl* aFrame);
 
   
-  GMPErr CreateFrame(GMPVideoFrameFormat aFormat, GMPVideoFrame** aFrame) override;
+  GMPErr CreateFrame(GMPVideoFrameFormat aFormat,
+                     GMPVideoFrame** aFrame) override;
   GMPErr CreatePlane(GMPPlane** aPlane) override;
 
-private:
+ private:
   
   
   
@@ -51,7 +51,7 @@ private:
   nsTArray<GMPVideoEncodedFrameImpl*> mEncodedFrames;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -29,28 +29,72 @@ namespace dom {
 struct AudioTimelineEvent;
 
 namespace WebAudioUtils {
-  
-  
-  
-  const size_t MaxChannelCount = 32;
-  
-  
-  const uint32_t MinSampleRate = 8000;
-  const uint32_t MaxSampleRate = 192000;
 
-  inline bool FuzzyEqual(float v1, float v2)
-  {
-    using namespace std;
-    return fabsf(v1 - v2) < 1e-7f;
+
+
+const size_t MaxChannelCount = 32;
+
+
+const uint32_t MinSampleRate = 8000;
+const uint32_t MaxSampleRate = 192000;
+
+inline bool FuzzyEqual(float v1, float v2) {
+  using namespace std;
+  return fabsf(v1 - v2) < 1e-7f;
+}
+inline bool FuzzyEqual(double v1, double v2) {
+  using namespace std;
+  return fabs(v1 - v2) < 1e-7;
+}
+
+
+
+
+
+
+
+
+
+
+void ConvertAudioTimelineEventToTicks(AudioTimelineEvent& aEvent,
+                                      AudioNodeStream* aDest);
+
+
+
+
+
+inline float ConvertLinearToDecibels(float aLinearValue, float aMinDecibels) {
+  return aLinearValue ? 20.0f * std::log10(aLinearValue) : aMinDecibels;
+}
+
+
+
+
+inline float ConvertDecibelsToLinear(float aDecibels) {
+  return std::pow(10.0f, 0.05f * aDecibels);
+}
+
+
+
+
+inline float ConvertDecibelToLinear(float aDecibel) {
+  return std::pow(10.0f, 0.05f * aDecibel);
+}
+
+inline void FixNaN(double& aDouble) {
+  if (IsNaN(aDouble) || IsInfinite(aDouble)) {
+    aDouble = 0.0;
   }
-  inline bool FuzzyEqual(double v1, double v2)
-  {
-    using namespace std;
-    return fabs(v1 - v2) < 1e-7;
-  }
+}
 
-  
+inline double DiscreteTimeConstantForSampleRate(double timeConstant,
+                                                double sampleRate) {
+  return 1.0 - std::exp(-1.0 / (sampleRate * timeConstant));
+}
 
+inline bool IsTimeValid(double aTime) {
+  return aTime >= 0 && aTime <= (MEDIA_TIME_MAX >> TRACK_RATE_MAX_BITS);
+}
 
 
 
@@ -58,52 +102,20 @@ namespace WebAudioUtils {
 
 
 
-  void ConvertAudioTimelineEventToTicks(AudioTimelineEvent& aEvent,
-                                        AudioNodeStream* aDest);
 
-  
 
 
 
-  inline float ConvertLinearToDecibels(float aLinearValue, float aMinDecibels)
-  {
-    return aLinearValue ? 20.0f * std::log10(aLinearValue) : aMinDecibels;
-  }
 
-  
 
 
-  inline float ConvertDecibelsToLinear(float aDecibels)
-  {
-    return std::pow(10.0f, 0.05f * aDecibels);
-  }
 
-  
 
 
-  inline float ConvertDecibelToLinear(float aDecibel)
-  {
-    return std::pow(10.0f, 0.05f * aDecibel);
-  }
 
-  inline void FixNaN(double& aDouble)
-  {
-    if (IsNaN(aDouble) || IsInfinite(aDouble)) {
-      aDouble = 0.0;
-    }
-  }
 
-  inline double DiscreteTimeConstantForSampleRate(double timeConstant, double sampleRate)
-  {
-    return 1.0 - std::exp(-1.0 / (sampleRate * timeConstant));
-  }
 
-  inline bool IsTimeValid(double aTime)
-  {
-    return aTime >= 0 && aTime <= (MEDIA_TIME_MAX >> TRACK_RATE_MAX_BITS);
-  }
 
-  
 
 
 
@@ -146,86 +158,58 @@ namespace WebAudioUtils {
 
 
 
+template <typename IntType, typename FloatType>
+IntType TruncateFloatToInt(FloatType f) {
+  using namespace std;
 
+  static_assert(mozilla::IsIntegral<IntType>::value == true,
+                "IntType must be an integral type");
+  static_assert(mozilla::IsFloatingPoint<FloatType>::value == true,
+                "FloatType must be a floating point type");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename IntType, typename FloatType>
-  IntType TruncateFloatToInt(FloatType f)
-  {
-    using namespace std;
-
-    static_assert(mozilla::IsIntegral<IntType>::value == true,
-                  "IntType must be an integral type");
-    static_assert(mozilla::IsFloatingPoint<FloatType>::value == true,
-                  "FloatType must be a floating point type");
-
-    if (mozilla::IsNaN(f)) {
-      
-      
-      MOZ_CRASH("We should never see a NaN here");
-    }
-
+  if (mozilla::IsNaN(f)) {
     
     
-    
-    
-    if (f >= FloatType(numeric_limits<IntType>::max())) {
-      return numeric_limits<IntType>::max();
-    }
-
-    if (f <= FloatType(numeric_limits<IntType>::min())) {
-      
-      
-      return numeric_limits<IntType>::min();
-    }
-
-    
-    return IntType(f);
+    MOZ_CRASH("We should never see a NaN here");
   }
 
-  void Shutdown();
+  
+  
+  
+  
+  if (f >= FloatType(numeric_limits<IntType>::max())) {
+    return numeric_limits<IntType>::max();
+  }
 
-  int
-  SpeexResamplerProcess(SpeexResamplerState* aResampler,
-                        uint32_t aChannel,
-                        const float* aIn, uint32_t* aInLen,
-                        float* aOut, uint32_t* aOutLen);
+  if (f <= FloatType(numeric_limits<IntType>::min())) {
+    
+    
+    return numeric_limits<IntType>::min();
+  }
 
-  int
-  SpeexResamplerProcess(SpeexResamplerState* aResampler,
-                        uint32_t aChannel,
-                        const int16_t* aIn, uint32_t* aInLen,
-                        float* aOut, uint32_t* aOutLen);
+  
+  return IntType(f);
+}
 
-  int
-  SpeexResamplerProcess(SpeexResamplerState* aResampler,
-                        uint32_t aChannel,
-                        const int16_t* aIn, uint32_t* aInLen,
-                        int16_t* aOut, uint32_t* aOutLen);
+void Shutdown();
 
-  void
-  LogToDeveloperConsole(uint64_t aWindowID, const char* aKey);
+int SpeexResamplerProcess(SpeexResamplerState* aResampler, uint32_t aChannel,
+                          const float* aIn, uint32_t* aInLen, float* aOut,
+                          uint32_t* aOutLen);
 
-  } 
+int SpeexResamplerProcess(SpeexResamplerState* aResampler, uint32_t aChannel,
+                          const int16_t* aIn, uint32_t* aInLen, float* aOut,
+                          uint32_t* aOutLen);
 
-} 
-} 
+int SpeexResamplerProcess(SpeexResamplerState* aResampler, uint32_t aChannel,
+                          const int16_t* aIn, uint32_t* aInLen, int16_t* aOut,
+                          uint32_t* aOutLen);
+
+void LogToDeveloperConsole(uint64_t aWindowID, const char* aKey);
+
+}  
+
+}  
+}  
 
 #endif
-

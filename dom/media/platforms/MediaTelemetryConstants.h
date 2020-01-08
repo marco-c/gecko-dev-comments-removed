@@ -9,14 +9,13 @@
 namespace mozilla {
 namespace media {
 
-enum class MediaDecoderBackend : uint32_t
-{
+enum class MediaDecoderBackend : uint32_t {
   WMFSoftware = 0,
   WMFDXVA2D3D9 = 1,
   WMFDXVA2D3D11 = 2
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

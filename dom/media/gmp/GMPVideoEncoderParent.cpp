@@ -47,29 +47,22 @@ namespace gmp {
 
 
 
-GMPVideoEncoderParent::GMPVideoEncoderParent(GMPContentParent *aPlugin)
-: GMPSharedMemManager(aPlugin),
-  mIsOpen(false),
-  mShuttingDown(false),
-  mActorDestroyed(false),
-  mPlugin(aPlugin),
-  mCallback(nullptr),
-  mVideoHost(this),
-  mPluginId(aPlugin->GetPluginId())
-{
+GMPVideoEncoderParent::GMPVideoEncoderParent(GMPContentParent* aPlugin)
+    : GMPSharedMemManager(aPlugin),
+      mIsOpen(false),
+      mShuttingDown(false),
+      mActorDestroyed(false),
+      mPlugin(aPlugin),
+      mCallback(nullptr),
+      mVideoHost(this),
+      mPluginId(aPlugin->GetPluginId()) {
   MOZ_ASSERT(mPlugin);
 }
 
-GMPVideoHostImpl&
-GMPVideoEncoderParent::Host()
-{
-  return mVideoHost;
-}
+GMPVideoHostImpl& GMPVideoEncoderParent::Host() { return mVideoHost; }
 
 
-void
-GMPVideoEncoderParent::Close()
-{
+void GMPVideoEncoderParent::Close() {
   LOGD(("%s::%s: %p", __CLASS__, __FUNCTION__, this));
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
   
@@ -84,17 +77,16 @@ GMPVideoEncoderParent::Close()
   Shutdown();
 }
 
-GMPErr
-GMPVideoEncoderParent::InitEncode(const GMPVideoCodec& aCodecSettings,
-                                  const nsTArray<uint8_t>& aCodecSpecific,
-                                  GMPVideoEncoderCallbackProxy* aCallback,
-                                  int32_t aNumberOfCores,
-                                  uint32_t aMaxPayloadSize)
-{
+GMPErr GMPVideoEncoderParent::InitEncode(
+    const GMPVideoCodec& aCodecSettings,
+    const nsTArray<uint8_t>& aCodecSpecific,
+    GMPVideoEncoderCallbackProxy* aCallback, int32_t aNumberOfCores,
+    uint32_t aMaxPayloadSize) {
   LOGD(("%s::%s: %p", __CLASS__, __FUNCTION__, this));
   if (mIsOpen) {
     NS_WARNING("Trying to re-init an in-use GMP video encoder!");
-    return GMPGenericErr;;
+    return GMPGenericErr;
+    ;
   }
 
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
@@ -105,7 +97,8 @@ GMPVideoEncoderParent::InitEncode(const GMPVideoCodec& aCodecSettings,
   }
   mCallback = aCallback;
 
-  if (!SendInitEncode(aCodecSettings, aCodecSpecific, aNumberOfCores, aMaxPayloadSize)) {
+  if (!SendInitEncode(aCodecSettings, aCodecSpecific, aNumberOfCores,
+                      aMaxPayloadSize)) {
     return GMPGenericErr;
   }
   mIsOpen = true;
@@ -114,11 +107,10 @@ GMPVideoEncoderParent::InitEncode(const GMPVideoCodec& aCodecSettings,
   return GMPNoErr;
 }
 
-GMPErr
-GMPVideoEncoderParent::Encode(GMPUniquePtr<GMPVideoi420Frame> aInputFrame,
-                              const nsTArray<uint8_t>& aCodecSpecificInfo,
-                              const nsTArray<GMPVideoFrameType>& aFrameTypes)
-{
+GMPErr GMPVideoEncoderParent::Encode(
+    GMPUniquePtr<GMPVideoi420Frame> aInputFrame,
+    const nsTArray<uint8_t>& aCodecSpecificInfo,
+    const nsTArray<GMPVideoFrameType>& aFrameTypes) {
   if (!mIsOpen) {
     NS_WARNING("Trying to use an dead GMP video encoder");
     return GMPGenericErr;
@@ -127,12 +119,13 @@ GMPVideoEncoderParent::Encode(GMPUniquePtr<GMPVideoi420Frame> aInputFrame,
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
 
   GMPUniquePtr<GMPVideoi420FrameImpl> inputFrameImpl(
-    static_cast<GMPVideoi420FrameImpl*>(aInputFrame.release()));
+      static_cast<GMPVideoi420FrameImpl*>(aInputFrame.release()));
 
   
   
   
-  if ((NumInUse(GMPSharedMem::kGMPFrameData) > 3*GMPSharedMem::kGMPBufLimit) ||
+  if ((NumInUse(GMPSharedMem::kGMPFrameData) >
+       3 * GMPSharedMem::kGMPBufLimit) ||
       (NumInUse(GMPSharedMem::kGMPEncodedData) > GMPSharedMem::kGMPBufLimit)) {
     return GMPGenericErr;
   }
@@ -140,9 +133,7 @@ GMPVideoEncoderParent::Encode(GMPUniquePtr<GMPVideoi420Frame> aInputFrame,
   GMPVideoi420FrameData frameData;
   inputFrameImpl->InitFrameData(frameData);
 
-  if (!SendEncode(frameData,
-                  aCodecSpecificInfo,
-                  aFrameTypes)) {
+  if (!SendEncode(frameData, aCodecSpecificInfo, aFrameTypes)) {
     return GMPGenericErr;
   }
 
@@ -150,9 +141,8 @@ GMPVideoEncoderParent::Encode(GMPUniquePtr<GMPVideoi420Frame> aInputFrame,
   return GMPNoErr;
 }
 
-GMPErr
-GMPVideoEncoderParent::SetChannelParameters(uint32_t aPacketLoss, uint32_t aRTT)
-{
+GMPErr GMPVideoEncoderParent::SetChannelParameters(uint32_t aPacketLoss,
+                                                   uint32_t aRTT) {
   if (!mIsOpen) {
     NS_WARNING("Trying to use an invalid GMP video encoder!");
     return GMPGenericErr;
@@ -168,9 +158,8 @@ GMPVideoEncoderParent::SetChannelParameters(uint32_t aPacketLoss, uint32_t aRTT)
   return GMPNoErr;
 }
 
-GMPErr
-GMPVideoEncoderParent::SetRates(uint32_t aNewBitRate, uint32_t aFrameRate)
-{
+GMPErr GMPVideoEncoderParent::SetRates(uint32_t aNewBitRate,
+                                       uint32_t aFrameRate) {
   if (!mIsOpen) {
     NS_WARNING("Trying to use an dead GMP video decoder");
     return GMPGenericErr;
@@ -186,9 +175,7 @@ GMPVideoEncoderParent::SetRates(uint32_t aNewBitRate, uint32_t aFrameRate)
   return GMPNoErr;
 }
 
-GMPErr
-GMPVideoEncoderParent::SetPeriodicKeyFrames(bool aEnable)
-{
+GMPErr GMPVideoEncoderParent::SetPeriodicKeyFrames(bool aEnable) {
   if (!mIsOpen) {
     NS_WARNING("Trying to use an invalid GMP video encoder!");
     return GMPGenericErr;
@@ -205,9 +192,7 @@ GMPVideoEncoderParent::SetPeriodicKeyFrames(bool aEnable)
 }
 
 
-void
-GMPVideoEncoderParent::Shutdown()
-{
+void GMPVideoEncoderParent::Shutdown() {
   LOGD(("%s::%s: %p", __CLASS__, __FUNCTION__, this));
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
 
@@ -229,10 +214,8 @@ GMPVideoEncoderParent::Shutdown()
 }
 
 
-void
-GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy)
-{
-  LOGD(("%s::%s: %p (%d)", __CLASS__, __FUNCTION__, this, (int) aWhy));
+void GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy) {
+  LOGD(("%s::%s: %p (%d)", __CLASS__, __FUNCTION__, this, (int)aWhy));
   mIsOpen = false;
   mActorDestroyed = true;
   if (mCallback) {
@@ -242,17 +225,17 @@ GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy)
   }
   if (mPlugin) {
     
+    
     mPlugin->VideoEncoderDestroyed(this);
     mPlugin = nullptr;
   }
-  mVideoHost.ActorDestroyed(); 
+  mVideoHost.ActorDestroyed();  
   MaybeDisconnect(aWhy == AbnormalShutdown);
 }
 
-mozilla::ipc::IPCResult
-GMPVideoEncoderParent::RecvEncoded(const GMPVideoEncodedFrameData& aEncodedFrame,
-                                   InfallibleTArray<uint8_t>&& aCodecSpecificInfo)
-{
+mozilla::ipc::IPCResult GMPVideoEncoderParent::RecvEncoded(
+    const GMPVideoEncodedFrameData& aEncodedFrame,
+    InfallibleTArray<uint8_t>&& aCodecSpecificInfo) {
   if (!mCallback) {
     return IPC_FAIL_NO_REASON(this);
   }
@@ -265,29 +248,25 @@ GMPVideoEncoderParent::RecvEncoded(const GMPVideoEncodedFrameData& aEncodedFrame
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-GMPVideoEncoderParent::RecvError(const GMPErr& aError)
-{
+mozilla::ipc::IPCResult GMPVideoEncoderParent::RecvError(const GMPErr& aError) {
   if (!mCallback) {
     return IPC_FAIL_NO_REASON(this);
   }
 
+  
   
   mCallback->Error(aError);
 
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-GMPVideoEncoderParent::RecvShutdown()
-{
+mozilla::ipc::IPCResult GMPVideoEncoderParent::RecvShutdown() {
   Shutdown();
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-GMPVideoEncoderParent::RecvParentShmemForPool(Shmem&& aFrameBuffer)
-{
+mozilla::ipc::IPCResult GMPVideoEncoderParent::RecvParentShmemForPool(
+    Shmem&& aFrameBuffer) {
   if (aFrameBuffer.IsWritable()) {
     
     
@@ -295,28 +274,27 @@ GMPVideoEncoderParent::RecvParentShmemForPool(Shmem&& aFrameBuffer)
       mVideoHost.SharedMemMgr()->MgrDeallocShmem(GMPSharedMem::kGMPFrameData,
                                                  aFrameBuffer);
     } else {
-      LOGD(("%s::%s: %p Called in shutdown, ignoring and freeing directly", __CLASS__, __FUNCTION__, this));
+      LOGD(("%s::%s: %p Called in shutdown, ignoring and freeing directly",
+            __CLASS__, __FUNCTION__, this));
       DeallocShmem(aFrameBuffer);
     }
   }
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-GMPVideoEncoderParent::AnswerNeedShmem(const uint32_t& aEncodedBufferSize,
-                                       Shmem* aMem)
-{
+mozilla::ipc::IPCResult GMPVideoEncoderParent::AnswerNeedShmem(
+    const uint32_t& aEncodedBufferSize, Shmem* aMem) {
   ipc::Shmem mem;
 
   
   
   if (!mVideoHost.SharedMemMgr() ||
-      !mVideoHost.SharedMemMgr()->MgrAllocShmem(GMPSharedMem::kGMPEncodedData,
-                                                aEncodedBufferSize,
-                                                ipc::SharedMemory::TYPE_BASIC, &mem))
-  {
-    LOG(LogLevel::Error, ("%s::%s: Failed to get a shared mem buffer for Child! size %u",
-                       __CLASS__, __FUNCTION__, aEncodedBufferSize));
+      !mVideoHost.SharedMemMgr()->MgrAllocShmem(
+          GMPSharedMem::kGMPEncodedData, aEncodedBufferSize,
+          ipc::SharedMemory::TYPE_BASIC, &mem)) {
+    LOG(LogLevel::Error,
+        ("%s::%s: Failed to get a shared mem buffer for Child! size %u",
+         __CLASS__, __FUNCTION__, aEncodedBufferSize));
     return IPC_FAIL_NO_REASON(this);
   }
   *aMem = mem;
@@ -324,10 +302,9 @@ GMPVideoEncoderParent::AnswerNeedShmem(const uint32_t& aEncodedBufferSize,
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-GMPVideoEncoderParent::Recv__delete__()
-{
+mozilla::ipc::IPCResult GMPVideoEncoderParent::Recv__delete__() {
   if (mPlugin) {
+    
     
     mPlugin->VideoEncoderDestroyed(this);
     mPlugin = nullptr;
@@ -336,5 +313,5 @@ GMPVideoEncoderParent::Recv__delete__()
   return IPC_OK();
 }
 
-} 
-} 
+}  
+}  

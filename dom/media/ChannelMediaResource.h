@@ -20,13 +20,10 @@ namespace mozilla {
 
 
 
-class ChannelSuspendAgent
-{
-public:
+class ChannelSuspendAgent {
+ public:
   explicit ChannelSuspendAgent(MediaCacheStream& aCacheStream)
-    : mCacheStream(aCacheStream)
-  {
-  }
+      : mCacheStream(aCacheStream) {}
 
   
   bool IsSuspended();
@@ -43,7 +40,7 @@ public:
   
   void Revoke();
 
-private:
+ private:
   
   void SuspendInternal();
 
@@ -64,26 +61,22 @@ DDLoggedTypeDeclNameAndBase(ChannelMediaResource, BaseMediaResource);
 
 
 class ChannelMediaResource
-  : public BaseMediaResource
-  , public DecoderDoctorLifeLogger<ChannelMediaResource>
-{
+    : public BaseMediaResource,
+      public DecoderDoctorLifeLogger<ChannelMediaResource> {
   
-  struct SharedInfo
-  {
+  struct SharedInfo {
     NS_INLINE_DECL_REFCOUNTING(SharedInfo);
     nsCOMPtr<nsIPrincipal> mPrincipal;
     nsTArray<ChannelMediaResource*> mResources;
 
-  private:
+   private:
     ~SharedInfo() = default;
   };
   RefPtr<SharedInfo> mSharedInfo;
 
-public:
-  ChannelMediaResource(MediaResourceCallback* aDecoder,
-                       nsIChannel* aChannel,
-                       nsIURI* aURI,
-                       bool aIsPrivateBrowsing = false);
+ public:
+  ChannelMediaResource(MediaResourceCallback* aDecoder, nsIChannel* aChannel,
+                       nsIURI* aURI, bool aIsPrivateBrowsing = false);
   ~ChannelMediaResource();
 
   
@@ -120,32 +113,33 @@ public:
   
   nsresult Open(nsIStreamListener** aStreamListener) override;
   nsresult Close() override;
-  void     Suspend(bool aCloseImmediately) override;
-  void     Resume() override;
+  void Suspend(bool aCloseImmediately) override;
+  void Resume() override;
   already_AddRefed<nsIPrincipal> GetCurrentPrincipal() override;
-  bool     CanClone() override;
+  bool CanClone() override;
   already_AddRefed<BaseMediaResource> CloneData(
-    MediaResourceCallback* aDecoder) override;
-  nsresult ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount) override;
+      MediaResourceCallback* aDecoder) override;
+  nsresult ReadFromCache(char* aBuffer, int64_t aOffset,
+                         uint32_t aCount) override;
 
   
-  void     SetReadMode(MediaCacheStream::ReadMode aMode) override;
-  void     SetPlaybackRate(uint32_t aBytesPerSecond) override;
-  nsresult ReadAt(int64_t offset, char* aBuffer,
-                  uint32_t aCount, uint32_t* aBytes) override;
+  void SetReadMode(MediaCacheStream::ReadMode aMode) override;
+  void SetPlaybackRate(uint32_t aBytesPerSecond) override;
+  nsresult ReadAt(int64_t offset, char* aBuffer, uint32_t aCount,
+                  uint32_t* aBytes) override;
   
   bool ShouldCacheReads() override { return true; }
 
   
-  void    Pin() override;
-  void    Unpin() override;
-  double  GetDownloadRate(bool* aIsReliable) override;
+  void Pin() override;
+  void Unpin() override;
+  double GetDownloadRate(bool* aIsReliable) override;
   int64_t GetLength() override;
   int64_t GetNextCachedData(int64_t aOffset) override;
   int64_t GetCachedDataEnd(int64_t aOffset) override;
-  bool    IsDataCachedToEndOfResource(int64_t aOffset) override;
-  bool    IsTransportSeekable() override;
-  bool    IsLiveStream() const override { return mIsLiveStream; }
+  bool IsDataCachedToEndOfResource(int64_t aOffset) override;
+  bool IsTransportSeekable() override;
+  bool IsLiveStream() const override { return mIsLiveStream; }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
     
@@ -162,20 +156,18 @@ public:
 
   nsCString GetDebugInfo() override;
 
-  class Listener final
-    : public nsIStreamListener
-    , public nsIInterfaceRequestor
-    , public nsIChannelEventSink
-    , public nsIThreadRetargetableStreamListener
-  {
+  class Listener final : public nsIStreamListener,
+                         public nsIInterfaceRequestor,
+                         public nsIChannelEventSink,
+                         public nsIThreadRetargetableStreamListener {
     ~Listener() {}
-  public:
+
+   public:
     Listener(ChannelMediaResource* aResource, int64_t aOffset, uint32_t aLoadID)
-      : mMutex("Listener.mMutex")
-      , mResource(aResource)
-      , mOffset(aOffset)
-      , mLoadID(aLoadID)
-    {}
+        : mMutex("Listener.mMutex"),
+          mResource(aResource),
+          mOffset(aOffset),
+          mLoadID(aLoadID) {}
 
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSIREQUESTOBSERVER
@@ -186,7 +178,7 @@ public:
 
     void Revoke();
 
-  private:
+   private:
     Mutex mMutex;
     
     
@@ -200,19 +192,16 @@ public:
 
   nsresult GetCachedRanges(MediaByteRangeSet& aRanges) override;
 
-protected:
+ protected:
   nsresult Seek(int64_t aOffset, bool aResume);
 
   
   nsresult OnStartRequest(nsIRequest* aRequest, int64_t aRequestOffset);
   nsresult OnStopRequest(nsIRequest* aRequest, nsresult aStatus);
-  nsresult OnDataAvailable(uint32_t aLoadID,
-                           nsIInputStream* aStream,
+  nsresult OnDataAvailable(uint32_t aLoadID, nsIInputStream* aStream,
                            uint32_t aCount);
-  nsresult OnChannelRedirect(nsIChannel* aOld,
-                             nsIChannel* aNew,
-                             uint32_t aFlags,
-                             int64_t aOffset);
+  nsresult OnChannelRedirect(nsIChannel* aOld, nsIChannel* aNew,
+                             uint32_t aFlags, int64_t aOffset);
 
   
   
@@ -228,26 +217,22 @@ protected:
   
   
   
-  nsresult ParseContentRangeHeader(nsIHttpChannel * aHttpChan,
-                                   int64_t& aRangeStart,
-                                   int64_t& aRangeEnd,
+  nsresult ParseContentRangeHeader(nsIHttpChannel* aHttpChan,
+                                   int64_t& aRangeStart, int64_t& aRangeEnd,
                                    int64_t& aRangeTotal) const;
 
   
   
   int64_t CalculateStreamLength() const;
 
-  struct Closure
-  {
+  struct Closure {
     uint32_t mLoadID;
     ChannelMediaResource* mResource;
   };
 
-  static nsresult CopySegmentToCache(nsIInputStream* aInStream,
-                                     void* aClosure,
+  static nsresult CopySegmentToCache(nsIInputStream* aInStream, void* aClosure,
                                      const char* aFromSegment,
-                                     uint32_t aToOffset,
-                                     uint32_t aCount,
+                                     uint32_t aToOffset, uint32_t aCount,
                                      uint32_t* aWriteCount);
 
   
@@ -268,7 +253,6 @@ protected:
   ChannelSuspendAgent mSuspendAgent;
 };
 
+}  
 
-} 
-
-#endif 
+#endif  

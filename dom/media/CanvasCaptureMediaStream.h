@@ -19,7 +19,7 @@ class SourceMediaStream;
 
 namespace layers {
 class Image;
-} 
+}  
 
 namespace dom {
 class CanvasCaptureMediaStream;
@@ -66,11 +66,9 @@ class OutputStreamFrameListener;
 
 
 
-class OutputStreamDriver : public FrameCaptureListener
-{
-public:
-  OutputStreamDriver(SourceMediaStream* aSourceStream,
-                     const TrackID& aTrackId,
+class OutputStreamDriver : public FrameCaptureListener {
+ public:
+  OutputStreamDriver(SourceMediaStream* aSourceStream, const TrackID& aTrackId,
                      const PrincipalHandle& aPrincipalHandle);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamDriver);
@@ -87,27 +85,29 @@ public:
 
   virtual void Forget() {}
 
-protected:
+ protected:
   virtual ~OutputStreamDriver();
   class StreamListener;
 
-private:
+ private:
   RefPtr<SourceMediaStream> mSourceStream;
   RefPtr<StreamListener> mStreamListener;
 };
 
-class CanvasCaptureMediaStream : public DOMMediaStream
-{
-public:
-  CanvasCaptureMediaStream(nsPIDOMWindowInner* aWindow, HTMLCanvasElement* aCanvas);
+class CanvasCaptureMediaStream : public DOMMediaStream {
+ public:
+  CanvasCaptureMediaStream(nsPIDOMWindowInner* aWindow,
+                           HTMLCanvasElement* aCanvas);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CanvasCaptureMediaStream, DOMMediaStream)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CanvasCaptureMediaStream,
+                                           DOMMediaStream)
 
   nsresult Init(const dom::Optional<double>& aFPS, const TrackID& aTrackId,
                 nsIPrincipal* aPrincipal);
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
   HTMLCanvasElement* Canvas() const { return mCanvas; }
@@ -123,19 +123,19 @@ public:
   
 
 
-  static already_AddRefed<CanvasCaptureMediaStream>
-  CreateSourceStream(nsPIDOMWindowInner* aWindow,
-                     HTMLCanvasElement* aCanvas);
 
-protected:
+  static already_AddRefed<CanvasCaptureMediaStream> CreateSourceStream(
+      nsPIDOMWindowInner* aWindow, HTMLCanvasElement* aCanvas);
+
+ protected:
   ~CanvasCaptureMediaStream();
 
-private:
+ private:
   RefPtr<HTMLCanvasElement> mCanvas;
   RefPtr<OutputStreamDriver> mOutputStreamDriver;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -7,7 +7,7 @@
 #ifndef MOZILLA_MEDIASTREAMTYPES_h_
 #define MOZILLA_MEDIASTREAMTYPES_h_
 
-#include "StreamTracks.h" 
+#include "StreamTracks.h"  
 
 namespace mozilla {
 
@@ -31,17 +31,15 @@ enum TrackEventCommand : uint32_t {
 
 
 
-enum class DisabledTrackMode
-{
-  ENABLED, SILENCE_BLACK, SILENCE_FREEZE
-};
+
+enum class DisabledTrackMode { ENABLED, SILENCE_BLACK, SILENCE_FREEZE };
 struct DisabledTrack {
   DisabledTrack(TrackID aTrackID, DisabledTrackMode aMode)
-    : mTrackID(aTrackID), mMode(aMode) {}
+      : mTrackID(aTrackID), mMode(aMode) {}
   TrackID mTrackID;
   DisabledTrackMode mMode;
 };
 
-} 
+}  
 
-#endif 
+#endif  

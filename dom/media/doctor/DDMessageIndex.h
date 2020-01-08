@@ -21,6 +21,6 @@ using DDMessageIndex = RollingNumber<uint32_t>;
 
 #define PRImi PRIu32
 
-} 
+}  
 
-#endif 
+#endif  

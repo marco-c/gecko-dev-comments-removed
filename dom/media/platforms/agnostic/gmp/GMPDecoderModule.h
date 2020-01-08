@@ -25,30 +25,28 @@
 
 namespace mozilla {
 
-class GMPDecoderModule : public PlatformDecoderModule
-{
-public:
+class GMPDecoderModule : public PlatformDecoderModule {
+ public:
   GMPDecoderModule();
 
   
-  already_AddRefed<MediaDataDecoder>
-  CreateVideoDecoder(const CreateDecoderParams& aParams) override;
+  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+      const CreateDecoderParams& aParams) override;
 
   
-  already_AddRefed<MediaDataDecoder>
-  CreateAudioDecoder(const CreateDecoderParams& aParams) override;
+  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+      const CreateDecoderParams& aParams) override;
 
-  bool
-  SupportsMimeType(const nsACString& aMimeType,
-                   DecoderDoctorDiagnostics* aDiagnostics) const override;
+  bool SupportsMimeType(const nsACString& aMimeType,
+                        DecoderDoctorDiagnostics* aDiagnostics) const override;
 
   static bool SupportsMimeType(const nsACString& aMimeType,
                                const Maybe<nsCString>& aGMP);
 
-private:
+ private:
   virtual ~GMPDecoderModule();
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -10,20 +10,19 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsAutoPtr.h"
-#include "MediaDecoder.h" 
+#include "MediaDecoder.h"  
 #include "MediaInfo.h"
 #include "MediaResource.h"
 
-namespace mozilla
-{
+namespace mozilla {
 
-#define FLAC_MAX_CHANNELS           8
-#define FLAC_MIN_BLOCKSIZE         16
-#define FLAC_MAX_BLOCKSIZE      65535
-#define FLAC_MIN_FRAME_SIZE        11
+#define FLAC_MAX_CHANNELS 8
+#define FLAC_MIN_BLOCKSIZE 16
+#define FLAC_MAX_BLOCKSIZE 65535
+#define FLAC_MIN_FRAME_SIZE 11
 #define FLAC_MAX_FRAME_HEADER_SIZE 16
-#define FLAC_MAX_FRAME_SIZE (FLAC_MAX_FRAME_HEADER_SIZE \
-                             +FLAC_MAX_BLOCKSIZE*FLAC_MAX_CHANNELS*3)
+#define FLAC_MAX_FRAME_SIZE \
+  (FLAC_MAX_FRAME_HEADER_SIZE + FLAC_MAX_BLOCKSIZE * FLAC_MAX_CHANNELS * 3)
 
 class OpusParser;
 
@@ -31,18 +30,19 @@ class OpusParser;
 
 
 
-class FlacFrameParser
-{
-public:
+class FlacFrameParser {
+ public:
   FlacFrameParser();
   ~FlacFrameParser();
 
-  Result<bool, nsresult> IsHeaderBlock(const uint8_t* aPacket, size_t aLength) const;
+  Result<bool, nsresult> IsHeaderBlock(const uint8_t* aPacket,
+                                       size_t aLength) const;
   
   
   
   uint32_t HeaderBlockLength(const uint8_t* aPacket) const;
-  Result<Ok, nsresult> DecodeHeaderBlock(const uint8_t* aPacket, size_t aLength);
+  Result<Ok, nsresult> DecodeHeaderBlock(const uint8_t* aPacket,
+                                         size_t aLength);
   bool HasFullMetadata() const { return mFullMetadata; }
   
   
@@ -53,7 +53,7 @@ public:
 
   AudioInfo mInfo;
 
-private:
+ private:
   bool ReconstructFlacGranulepos(void);
   Maybe<uint32_t> mNumHeaders;
   uint32_t mMinBlockSize;
@@ -68,6 +68,6 @@ private:
   nsAutoPtr<OpusParser> mParser;
 };
 
-}
+}  
 
-#endif 
+#endif  

@@ -25,19 +25,19 @@ class AudioNode;
 class AudioStreamTrack;
 class MediaStreamTrack;
 class VideoStreamTrack;
-}
+}  
 
 class MediaEncoder;
 
-class MediaEncoderListener
-{
-public:
+class MediaEncoderListener {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEncoderListener)
   virtual void Initialized() = 0;
   virtual void DataAvailable() = 0;
   virtual void Error() = 0;
   virtual void Shutdown() = 0;
-protected:
+
+ protected:
   virtual ~MediaEncoderListener() {}
 };
 
@@ -98,21 +98,18 @@ protected:
 
 
 
-class MediaEncoder
-{
-private:
+class MediaEncoder {
+ private:
   class AudioTrackListener;
   class VideoTrackListener;
   class EncoderListener;
 
-public :
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEncoder)
 
-  MediaEncoder(TaskQueue* aEncoderThread,
-               UniquePtr<ContainerWriter> aWriter,
+  MediaEncoder(TaskQueue* aEncoderThread, UniquePtr<ContainerWriter> aWriter,
                AudioTrackEncoder* aAudioEncoder,
-               VideoTrackEncoder* aVideoEncoder,
-               const nsAString& aMIMEType);
+               VideoTrackEncoder* aVideoEncoder, const nsAString& aMIMEType);
 
   
   void Suspend(TimeStamp aTime);
@@ -147,13 +144,10 @@ public :
 
 
 
-  static already_AddRefed<MediaEncoder>
-  CreateEncoder(TaskQueue* aEncoderThread,
-                const nsAString& aMIMEType,
-                uint32_t aAudioBitrate,
-                uint32_t aVideoBitrate,
-                uint8_t aTrackTypes,
-                TrackRate aTrackRate);
+  static already_AddRefed<MediaEncoder> CreateEncoder(
+      TaskQueue* aEncoderThread, const nsAString& aMIMEType,
+      uint32_t aAudioBitrate, uint32_t aVideoBitrate, uint8_t aTrackTypes,
+      TrackRate aTrackRate);
 
   
 
@@ -164,7 +158,7 @@ public :
 
 
 
-  nsresult GetEncodedMetadata(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
+  nsresult GetEncodedMetadata(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
                               nsAString& aMIMEType);
   
 
@@ -174,7 +168,7 @@ public :
 
 
 
-  nsresult GetEncodedData(nsTArray<nsTArray<uint8_t> >* aOutputBufs);
+  nsresult GetEncodedData(nsTArray<nsTArray<uint8_t>>* aOutputBufs);
 
   
 
@@ -229,10 +223,10 @@ public :
 
   void SetVideoKeyFrameInterval(int32_t aVideoKeyFrameInterval);
 
-protected:
+ protected:
   ~MediaEncoder();
 
-private:
+ private:
   
 
 
@@ -246,7 +240,7 @@ private:
   void SetError();
 
   
-  nsresult WriteEncodedDataToMuxer(TrackEncoder *aTrackEncoder);
+  nsresult WriteEncodedDataToMuxer(TrackEncoder* aTrackEncoder);
   
   nsresult CopyMetadataToMuxer(TrackEncoder* aTrackEncoder);
 
@@ -284,14 +278,13 @@ private:
   bool mCanceled;
   bool mShutdown;
   
-  double GetEncodeTimeStamp()
-  {
+  double GetEncodeTimeStamp() {
     TimeDuration decodeTime;
     decodeTime = TimeStamp::Now() - mStartTime;
     return decodeTime.ToMilliseconds();
   }
 };
 
-} 
+}  
 
 #endif

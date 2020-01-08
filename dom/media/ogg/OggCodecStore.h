@@ -16,23 +16,22 @@ namespace mozilla {
 
 
 
-class OggCodecStore
-{
-  public:
-    OggCodecStore();
-    void Add(uint32_t serial, OggCodecState* codecState);
-    bool Contains(uint32_t serial);
-    OggCodecState* Get(uint32_t serial);
-    bool IsKnownStream(uint32_t aSerial);
+class OggCodecStore {
+ public:
+  OggCodecStore();
+  void Add(uint32_t serial, OggCodecState* codecState);
+  bool Contains(uint32_t serial);
+  OggCodecState* Get(uint32_t serial);
+  bool IsKnownStream(uint32_t aSerial);
 
-  private:
-    
-    nsClassHashtable<nsUint32HashKey, OggCodecState> mCodecStates;
+ private:
+  
+  nsClassHashtable<nsUint32HashKey, OggCodecState> mCodecStates;
 
-    
-    Monitor mMonitor;
+  
+  Monitor mMonitor;
 };
 
-} 
+}  
 
 #endif

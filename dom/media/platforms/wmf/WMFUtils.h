@@ -21,20 +21,12 @@ namespace mozilla {
 
 
 
-inline int64_t
-UsecsToHNs(int64_t aUsecs)
-{
-  return aUsecs * 10;
-}
+inline int64_t UsecsToHNs(int64_t aUsecs) { return aUsecs * 10; }
 
 
 
 
-inline int64_t
-HNsToUsecs(int64_t hNanoSecs)
-{
-  return hNanoSecs / 10;
-}
+inline int64_t HNsToUsecs(int64_t hNanoSecs) { return hNanoSecs / 10; }
 
 HRESULT HNsToFrames(int64_t aHNs, uint32_t aRate, int64_t* aOutFrames);
 
@@ -44,6 +36,7 @@ GetDefaultStride(IMFMediaType* aType, uint32_t aWidth, uint32_t* aOutStride);
 YUVColorSpace GetYUVColorSpace(IMFMediaType* aType);
 
 int32_t MFOffsetToInt32(const MFOffset& aOffset);
+
 
 
 
@@ -58,15 +51,13 @@ media::TimeUnit GetSampleDuration(IMFSample* aSample);
 
 media::TimeUnit GetSampleTime(IMFSample* aSample);
 
-inline bool
-IsFlagSet(DWORD flags, DWORD pattern)
-{
+inline bool IsFlagSet(DWORD flags, DWORD pattern) {
   return (flags & pattern) == pattern;
 }
 
 
 
 nsString GetProgramW6432Path();
-} 
+}  
 
 #endif

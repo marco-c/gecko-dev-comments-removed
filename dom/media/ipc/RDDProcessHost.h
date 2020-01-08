@@ -26,21 +26,18 @@ class RDDChild;
 
 
 
-class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost
-{
+class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   friend class RDDChild;
 
-public:
+ public:
   class Listener {
-  public:
-    virtual void OnProcessLaunchComplete(RDDProcessHost* aHost)
-    {}
+   public:
+    virtual void OnProcessLaunchComplete(RDDProcessHost* aHost) {}
 
     
     
     
-    virtual void OnProcessUnexpectedShutdown(RDDProcessHost* aHost)
-    {}
+    virtual void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) {}
   };
 
   explicit RDDProcessHost(Listener* listener);
@@ -71,25 +68,19 @@ public:
 
   
   
-  RDDChild* GetActor() const {
-    return mRDDChild.get();
-  }
+  RDDChild* GetActor() const { return mRDDChild.get(); }
 
   
   
   uint64_t GetProcessToken() const;
 
-  bool IsConnected() const {
-    return !!mRDDChild;
-  }
+  bool IsConnected() const { return !!mRDDChild; }
 
   
   
   
   
-  TimeStamp GetLaunchTime() const {
-    return mLaunchTime;
-  }
+  TimeStamp GetLaunchTime() const { return mLaunchTime; }
 
   
   void OnChannelConnected(int32_t peer_pid) override;
@@ -100,7 +91,7 @@ public:
   
   void KillProcess();
 
-private:
+ private:
   
   void OnChannelConnectedTask();
   void OnChannelErrorTask();
@@ -116,17 +107,13 @@ private:
 
   void DestroyProcess();
 
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(RDDProcessHost);
 
   Listener* mListener;
   mozilla::ipc::TaskFactory<RDDProcessHost> mTaskFactory;
 
-  enum class LaunchPhase {
-    Unlaunched,
-    Waiting,
-    Complete
-  };
+  enum class LaunchPhase { Unlaunched, Waiting, Complete };
   LaunchPhase mLaunchPhase;
 
   UniquePtr<RDDChild> mRDDChild;
@@ -138,6 +125,6 @@ private:
   TimeStamp mLaunchTime;
 };
 
-} 
+}  
 
-#endif 
+#endif  

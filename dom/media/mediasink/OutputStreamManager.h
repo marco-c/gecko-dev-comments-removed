@@ -20,15 +20,15 @@ class OutputStreamManager;
 class ProcessedMediaStream;
 
 class OutputStreamData {
-public:
+ public:
   ~OutputStreamData();
-  void Init(OutputStreamManager* aOwner,
-            ProcessedMediaStream* aStream,
+  void Init(OutputStreamManager* aOwner, ProcessedMediaStream* aStream,
             TrackID aNextAvailableTrackID);
 
   
   
-  bool Connect(MediaStream* aStream, TrackID aAudioTrackID, TrackID aVideoTrackID);
+  bool Connect(MediaStream* aStream, TrackID aAudioTrackID,
+               TrackID aVideoTrackID);
   
   
   bool Disconnect();
@@ -40,7 +40,7 @@ public:
   
   TrackID NextAvailableTrackID() const;
 
-private:
+ private:
   OutputStreamManager* mOwner;
   RefPtr<ProcessedMediaStream> mStream;
   
@@ -52,10 +52,9 @@ private:
 class OutputStreamManager {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamManager);
 
-public:
+ public:
   
-  void Add(ProcessedMediaStream* aStream,
-           TrackID aNextAvailableTrackID,
+  void Add(ProcessedMediaStream* aStream, TrackID aNextAvailableTrackID,
            bool aFinishWhenEnded);
   
   void Remove(MediaStream* aStream);
@@ -64,25 +63,22 @@ public:
   
   TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
   
-  bool IsEmpty() const
-  {
+  bool IsEmpty() const {
     MOZ_ASSERT(NS_IsMainThread());
     return mStreams.IsEmpty();
   }
   
-  void Connect(MediaStream* aStream,
-               TrackID aAudioTrackID,
+  void Connect(MediaStream* aStream, TrackID aAudioTrackID,
                TrackID aVideoTrackID);
   
   void Disconnect();
   
-  MediaStreamGraph* Graph() const
-  {
+  MediaStreamGraph* Graph() const {
     MOZ_ASSERT(NS_IsMainThread());
     return !IsEmpty() ? mStreams[0].Graph() : nullptr;
   }
 
-private:
+ private:
   ~OutputStreamManager() {}
   
   
@@ -92,6 +88,6 @@ private:
   nsTArray<OutputStreamData> mStreams;
 };
 
-} 
+}  
 
-#endif 
+#endif  

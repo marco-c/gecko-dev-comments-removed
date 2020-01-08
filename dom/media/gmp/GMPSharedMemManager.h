@@ -14,9 +14,8 @@ namespace gmp {
 
 class GMPSharedMemManager;
 
-class GMPSharedMem
-{
-public:
+class GMPSharedMem {
+ public:
   typedef enum {
     kGMPFrameData = 0,
     kGMPEncodedData,
@@ -30,9 +29,9 @@ public:
   
   static const uint32_t kGMPBufLimit = 20;
 
-  GMPSharedMem()
-  {
-    for (size_t i = 0; i < sizeof(mGmpAllocated)/sizeof(mGmpAllocated[0]); i++) {
+  GMPSharedMem() {
+    for (size_t i = 0; i < sizeof(mGmpAllocated) / sizeof(mGmpAllocated[0]);
+         i++) {
       mGmpAllocated[i] = 0;
     }
   }
@@ -41,42 +40,45 @@ public:
   
   virtual void CheckThread() = 0;
 
-protected:
+ protected:
   friend class GMPSharedMemManager;
 
   nsTArray<ipc::Shmem> mGmpFreelist[GMPSharedMem::kGMPNumTypes];
   uint32_t mGmpAllocated[GMPSharedMem::kGMPNumTypes];
 };
 
-class GMPSharedMemManager
-{
-public:
-  explicit GMPSharedMemManager(GMPSharedMem *aData) : mData(aData) {}
+class GMPSharedMemManager {
+ public:
+  explicit GMPSharedMemManager(GMPSharedMem* aData) : mData(aData) {}
   virtual ~GMPSharedMemManager() {}
 
-  virtual bool MgrAllocShmem(GMPSharedMem::GMPMemoryClasses aClass, size_t aSize,
+  virtual bool MgrAllocShmem(GMPSharedMem::GMPMemoryClasses aClass,
+                             size_t aSize,
                              ipc::Shmem::SharedMemory::SharedMemoryType aType,
                              ipc::Shmem* aMem);
-  virtual bool MgrDeallocShmem(GMPSharedMem::GMPMemoryClasses aClass, ipc::Shmem& aMem);
+  virtual bool MgrDeallocShmem(GMPSharedMem::GMPMemoryClasses aClass,
+                               ipc::Shmem& aMem);
 
+  
   
   virtual uint32_t NumInUse(GMPSharedMem::GMPMemoryClasses aClass);
 
   
   
-  virtual bool Alloc(size_t aSize, ipc::Shmem::SharedMemory::SharedMemoryType aType, ipc::Shmem* aMem) = 0;
+  virtual bool Alloc(size_t aSize,
+                     ipc::Shmem::SharedMemory::SharedMemoryType aType,
+                     ipc::Shmem* aMem) = 0;
   virtual void Dealloc(ipc::Shmem& aMem) = 0;
 
-private:
-  nsTArray<ipc::Shmem>& GetGmpFreelist(GMPSharedMem::GMPMemoryClasses aTypes)
-  {
+ private:
+  nsTArray<ipc::Shmem>& GetGmpFreelist(GMPSharedMem::GMPMemoryClasses aTypes) {
     return mData->mGmpFreelist[aTypes];
   }
 
-  GMPSharedMem *mData;
+  GMPSharedMem* mData;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

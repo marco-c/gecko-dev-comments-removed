@@ -15,10 +15,9 @@ class SourceSurface;
 }
 namespace dom {
 
-class VideoDecoderManagerChild final : public PVideoDecoderManagerChild
-                                     , public mozilla::ipc::IShmemAllocator
-{
-public:
+class VideoDecoderManagerChild final : public PVideoDecoderManagerChild,
+                                       public mozilla::ipc::IShmemAllocator {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoDecoderManagerChild)
 
   
@@ -30,19 +29,19 @@ public:
 
   
   
-  already_AddRefed<gfx::SourceSurface> Readback(const SurfaceDescriptorGPUVideo& aSD);
-  void DeallocateSurfaceDescriptorGPUVideo(const SurfaceDescriptorGPUVideo& aSD);
+  already_AddRefed<gfx::SourceSurface> Readback(
+      const SurfaceDescriptorGPUVideo& aSD);
+  void DeallocateSurfaceDescriptorGPUVideo(
+      const SurfaceDescriptorGPUVideo& aSD);
 
   bool AllocShmem(size_t aSize,
                   mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
-                  mozilla::ipc::Shmem* aShmem) override
-  {
+                  mozilla::ipc::Shmem* aShmem) override {
     return PVideoDecoderManagerChild::AllocShmem(aSize, aShmType, aShmem);
   }
   bool AllocUnsafeShmem(size_t aSize,
                         mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
-                        mozilla::ipc::Shmem* aShmem) override
-  {
+                        mozilla::ipc::Shmem* aShmem) override {
     return PVideoDecoderManagerChild::AllocUnsafeShmem(aSize, aShmType, aShmem);
   }
 
@@ -51,7 +50,8 @@ public:
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
-  static void InitForContent(Endpoint<PVideoDecoderManagerChild>&& aVideoManager);
+  static void InitForContent(
+      Endpoint<PVideoDecoderManagerChild>&& aVideoManager);
   static void Shutdown();
 
   
@@ -62,7 +62,7 @@ public:
 
   bool CanSend();
 
-protected:
+ protected:
   void InitIPDL();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -71,23 +71,18 @@ protected:
   void HandleFatalError(const char* aMsg) const override;
 
   PVideoDecoderChild* AllocPVideoDecoderChild(
-    const VideoInfo& aVideoInfo,
-    const float& aFramerate,
-    const CreateDecoderParams::OptionSet& aOptions,
-    const layers::TextureFactoryIdentifier& aIdentifier,
-    bool* aSuccess,
-    nsCString* aBlacklistedD3D11Driver,
-    nsCString* aBlacklistedD3D9Driver,
-    nsCString* aErrorDescription) override;
+      const VideoInfo& aVideoInfo, const float& aFramerate,
+      const CreateDecoderParams::OptionSet& aOptions,
+      const layers::TextureFactoryIdentifier& aIdentifier, bool* aSuccess,
+      nsCString* aBlacklistedD3D11Driver, nsCString* aBlacklistedD3D9Driver,
+      nsCString* aErrorDescription) override;
   bool DeallocPVideoDecoderChild(PVideoDecoderChild* actor) override;
 
-private:
+ private:
   
   static void InitializeThread();
 
-  VideoDecoderManagerChild()
-    : mCanSend(false)
-  {}
+  VideoDecoderManagerChild() : mCanSend(false) {}
   ~VideoDecoderManagerChild() {}
 
   static void Open(Endpoint<PVideoDecoderManagerChild>&& aEndpoint);
@@ -98,7 +93,7 @@ private:
   bool mCanSend;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

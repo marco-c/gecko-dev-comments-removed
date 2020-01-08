@@ -7,25 +7,24 @@
 #ifndef MOZILLA_AUDIONOTIFICATIONSENDER_H_
 #define MOZILLA_AUDIONOTIFICATIONSENDER_H_
 
-#include "nsError.h" 
+#include "nsError.h"  
 
 namespace mozilla {
 namespace audio {
 
 
-class AudioNotificationSender final
-{
-public:
+class AudioNotificationSender final {
+ public:
   
   static nsresult Init();
 
-private:
+ private:
   
   
   static void NotifyDefaultDeviceChanged();
-}; 
+};  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

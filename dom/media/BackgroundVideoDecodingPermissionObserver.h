@@ -17,32 +17,31 @@ namespace mozilla {
 
 class MediaDecoder;
 
-class BackgroundVideoDecodingPermissionObserver final
-  : public nsIObserver
-{
-  public:
-    NS_DECL_ISUPPORTS
+class BackgroundVideoDecodingPermissionObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
 
-    explicit BackgroundVideoDecodingPermissionObserver(MediaDecoder* aDecoder);
+  explicit BackgroundVideoDecodingPermissionObserver(MediaDecoder* aDecoder);
 
-    NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
-                       const char16_t* aData) override;
-    void RegisterEvent();
-    void UnregisterEvent();
-  private:
-    ~BackgroundVideoDecodingPermissionObserver();
-    void EnableEvent() const;
-    void DisableEvent() const;
-    already_AddRefed<nsPIDOMWindowOuter> GetOwnerWindow() const;
-    nsIDocument* GetOwnerDoc() const;
-    bool IsValidEventSender(nsISupports* aSubject) const;
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override;
+  void RegisterEvent();
+  void UnregisterEvent();
 
-    
-    
-    MediaDecoder* mDecoder;
-    bool mIsRegisteredForEvent;
+ private:
+  ~BackgroundVideoDecodingPermissionObserver();
+  void EnableEvent() const;
+  void DisableEvent() const;
+  already_AddRefed<nsPIDOMWindowOuter> GetOwnerWindow() const;
+  nsIDocument* GetOwnerDoc() const;
+  bool IsValidEventSender(nsISupports* aSubject) const;
+
+  
+  
+  MediaDecoder* mDecoder;
+  bool mIsRegisteredForEvent;
 };
 
-} 
+}  
 
-#endif 
+#endif  

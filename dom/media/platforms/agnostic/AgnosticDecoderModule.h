@@ -5,25 +5,24 @@
 
 namespace mozilla {
 
-class AgnosticDecoderModule : public PlatformDecoderModule
-{
-public:
+class AgnosticDecoderModule : public PlatformDecoderModule {
+ public:
   AgnosticDecoderModule() = default;
 
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const override;
 
-protected:
+ protected:
   virtual ~AgnosticDecoderModule() = default;
   
-  already_AddRefed<MediaDataDecoder>
-  CreateVideoDecoder(const CreateDecoderParams& aParams) override;
+  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+      const CreateDecoderParams& aParams) override;
 
   
-  already_AddRefed<MediaDataDecoder>
-  CreateAudioDecoder(const CreateDecoderParams& aParams) override;
+  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+      const CreateDecoderParams& aParams) override;
 };
 
-} 
+}  
 
 #endif 

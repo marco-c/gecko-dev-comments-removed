@@ -10,9 +10,8 @@ namespace mozilla {
 namespace gmp {
 
 class GMPMemoryStorage : public GMPStorage {
-public:
-  GMPErr Open(const nsCString& aRecordName) override
-  {
+ public:
+  GMPErr Open(const nsCString& aRecordName) override {
     MOZ_ASSERT(!IsOpen(aRecordName));
 
     Record* record = nullptr;
@@ -33,8 +32,7 @@ public:
   }
 
   GMPErr Read(const nsCString& aRecordName,
-              nsTArray<uint8_t>& aOutBytes) override
-  {
+              nsTArray<uint8_t>& aOutBytes) override {
     const Record* record = mRecords.Get(aRecordName);
     if (!record) {
       return GMPGenericErr;
@@ -44,8 +42,7 @@ public:
   }
 
   GMPErr Write(const nsCString& aRecordName,
-               const nsTArray<uint8_t>& aBytes) override
-  {
+               const nsTArray<uint8_t>& aBytes) override {
     Record* record = nullptr;
     if (!mRecords.Get(aRecordName, &record)) {
       return GMPClosedErr;
@@ -54,8 +51,7 @@ public:
     return GMPNoErr;
   }
 
-  void Close(const nsCString& aRecordName) override
-  {
+  void Close(const nsCString& aRecordName) override {
     Record* record = nullptr;
     if (!mRecords.Get(aRecordName, &record)) {
       return;
@@ -68,8 +64,7 @@ public:
     }
   }
 
-private:
-
+ private:
   struct Record {
     nsTArray<uint8_t> mData;
     bool mIsOpen = false;
@@ -78,10 +73,9 @@ private:
   nsClassHashtable<nsCStringHashKey, Record> mRecords;
 };
 
-already_AddRefed<GMPStorage> CreateGMPMemoryStorage()
-{
+already_AddRefed<GMPStorage> CreateGMPMemoryStorage() {
   return RefPtr<GMPStorage>(new GMPMemoryStorage()).forget();
 }
 
-} 
-} 
+}  
+}  

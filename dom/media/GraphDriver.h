@@ -24,9 +24,8 @@
 struct cubeb_stream;
 
 template <>
-class nsAutoRefTraits<cubeb_stream> : public nsPointerRefTraits<cubeb_stream>
-{
-public:
+class nsAutoRefTraits<cubeb_stream> : public nsPointerRefTraits<cubeb_stream> {
+ public:
   static void Release(cubeb_stream* aStream) { cubeb_stream_destroy(aStream); }
 };
 
@@ -53,8 +52,8 @@ static const int SCHEDULE_SAFETY_MARGIN_MS = 10;
 
 
 
-static const int AUDIO_TARGET_MS = 2*MEDIA_GRAPH_TARGET_PERIOD_MS +
-    SCHEDULE_SAFETY_MARGIN_MS;
+static const int AUDIO_TARGET_MS =
+    2 * MEDIA_GRAPH_TARGET_PERIOD_MS + SCHEDULE_SAFETY_MARGIN_MS;
 
 class MediaStreamGraphImpl;
 
@@ -110,9 +109,8 @@ class SystemClockDriver;
 
 
 
-class GraphDriver
-{
-public:
+class GraphDriver {
+ public:
   explicit GraphDriver(MediaStreamGraphImpl* aGraphImpl);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GraphDriver);
@@ -152,25 +150,15 @@ public:
 
 
 
-  virtual TimeStamp GetCurrentTimeStamp() {
-    return mCurrentTimeStamp;
-  }
+  virtual TimeStamp GetCurrentTimeStamp() { return mCurrentTimeStamp; }
 
-  GraphTime IterationEnd() {
-    return mIterationEnd;
-  }
+  GraphTime IterationEnd() { return mIterationEnd; }
 
-  virtual AudioCallbackDriver* AsAudioCallbackDriver() {
-    return nullptr;
-  }
+  virtual AudioCallbackDriver* AsAudioCallbackDriver() { return nullptr; }
 
-  virtual OfflineClockDriver* AsOfflineClockDriver() {
-    return nullptr;
-  }
+  virtual OfflineClockDriver* AsOfflineClockDriver() { return nullptr; }
 
-  virtual SystemClockDriver* AsSystemClockDriver() {
-    return nullptr;
-  }
+  virtual SystemClockDriver* AsSystemClockDriver() { return nullptr; }
 
   
 
@@ -197,9 +185,7 @@ public:
 
   void EnsureNextIterationLocked();
 
-  MediaStreamGraphImpl* GraphImpl() const {
-    return mGraphImpl;
-  }
+  MediaStreamGraphImpl* GraphImpl() const { return mGraphImpl; }
 
   
   
@@ -208,7 +194,7 @@ public:
   
   virtual bool ThreadRunning() = 0;
 
-protected:
+ protected:
   GraphTime StateComputedTime() const;
   
   void SetNextDriver(GraphDriver* aNextDriver);
@@ -240,8 +226,7 @@ protected:
   
   
   RefPtr<GraphDriver> mNextDriver;
-  virtual ~GraphDriver()
-  { }
+  virtual ~GraphDriver() {}
 };
 
 class MediaStreamGraphInitThreadRunnable;
@@ -249,9 +234,8 @@ class MediaStreamGraphInitThreadRunnable;
 
 
 
-class ThreadedDriver : public GraphDriver
-{
-public:
+class ThreadedDriver : public GraphDriver {
+ public:
   explicit ThreadedDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~ThreadedDriver();
   void WaitForNextIteration() override;
@@ -265,19 +249,13 @@ public:
 
   void RunThread();
   friend class MediaStreamGraphInitThreadRunnable;
-  uint32_t IterationDuration() override {
-    return MEDIA_GRAPH_TARGET_PERIOD_MS;
-  }
+  uint32_t IterationDuration() override { return MEDIA_GRAPH_TARGET_PERIOD_MS; }
 
-  bool OnThread() override
-  {
+  bool OnThread() override {
     return !mThread || mThread->EventTarget()->IsOnCurrentThread();
   }
 
-  bool ThreadRunning() override
-  {
-    return mThreadRunning;
-  }
+  bool ThreadRunning() override { return mThreadRunning; }
   
 
 
@@ -287,9 +265,11 @@ public:
 
 
   virtual MediaTime GetIntervalForIteration() = 0;
-protected:
+
+ protected:
   nsCOMPtr<nsIThread> mThread;
-private:
+
+ private:
   
   
   Atomic<bool> mThreadRunning;
@@ -299,20 +279,17 @@ private:
 
 
 
-class SystemClockDriver : public ThreadedDriver
-{
-public:
+class SystemClockDriver : public ThreadedDriver {
+ public:
   explicit SystemClockDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~SystemClockDriver();
   TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
   void MarkAsFallback();
   bool IsFallback();
-  SystemClockDriver* AsSystemClockDriver() override {
-    return this;
-  }
+  SystemClockDriver* AsSystemClockDriver() override { return this; }
 
-private:
+ private:
   
   
   TimeStamp mInitialTimeStamp;
@@ -327,37 +304,29 @@ private:
 
 
 
-class OfflineClockDriver : public ThreadedDriver
-{
-public:
+class OfflineClockDriver : public ThreadedDriver {
+ public:
   OfflineClockDriver(MediaStreamGraphImpl* aGraphImpl, GraphTime aSlice);
   virtual ~OfflineClockDriver();
   TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
   TimeStamp GetCurrentTimeStamp() override;
-  OfflineClockDriver* AsOfflineClockDriver() override {
-    return this;
-  }
+  OfflineClockDriver* AsOfflineClockDriver() override { return this; }
 
-private:
+ private:
   
   GraphTime mSlice;
 };
 
-struct StreamAndPromiseForOperation
-{
-  StreamAndPromiseForOperation(MediaStream* aStream,
-                               void* aPromise,
+struct StreamAndPromiseForOperation {
+  StreamAndPromiseForOperation(MediaStream* aStream, void* aPromise,
                                dom::AudioContextOperation aOperation);
   RefPtr<MediaStream> mStream;
   void* mPromise;
   dom::AudioContextOperation mOperation;
 };
 
-enum AsyncCubebOperation {
-  INIT,
-  SHUTDOWN
-};
+enum AsyncCubebOperation { INIT, SHUTDOWN };
 
 
 
@@ -382,12 +351,14 @@ enum AsyncCubebOperation {
 class AudioCallbackDriver : public GraphDriver,
                             public MixerCallbackReceiver
 #if defined(XP_WIN)
-                            , public audio::DeviceChangeListener
+    ,
+                            public audio::DeviceChangeListener
 #endif
 {
-public:
+ public:
   
-  AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl, uint32_t aInputChannelCount);
+  AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl,
+                      uint32_t aInputChannelCount);
   virtual ~AudioCallbackDriver();
 
   void Start() override;
@@ -400,21 +371,19 @@ public:
 #endif
 
   
-  static long DataCallback_s(cubeb_stream * aStream,
-                             void * aUser,
-                             const void * aInputBuffer,
-                             void * aOutputBuffer,
+  static long DataCallback_s(cubeb_stream* aStream, void* aUser,
+                             const void* aInputBuffer, void* aOutputBuffer,
                              long aFrames);
-  static void StateCallback_s(cubeb_stream* aStream, void * aUser, cubeb_state aState);
-  static void DeviceChangedCallback_s(void * aUser);
+  static void StateCallback_s(cubeb_stream* aStream, void* aUser,
+                              cubeb_state aState);
+  static void DeviceChangedCallback_s(void* aUser);
   
 
 
 
 
   long DataCallback(const AudioDataValue* aInputBuffer,
-                    AudioDataValue* aOutputBuffer,
-                    long aFrames);
+                    AudioDataValue* aOutputBuffer, long aFrames);
   
 
   void StateCallback(cubeb_state aState);
@@ -424,42 +393,30 @@ public:
 
   
 
-  void MixerCallback(AudioDataValue* aMixedBuffer,
-                     AudioSampleFormat aFormat,
-                     uint32_t aChannels,
-                     uint32_t aFrames,
+  void MixerCallback(AudioDataValue* aMixedBuffer, AudioSampleFormat aFormat,
+                     uint32_t aChannels, uint32_t aFrames,
                      uint32_t aSampleRate) override;
 
-  AudioCallbackDriver* AsAudioCallbackDriver() override {
-    return this;
-  }
+  AudioCallbackDriver* AsAudioCallbackDriver() override { return this; }
 
-  uint32_t OutputChannelCount()
-  {
+  uint32_t OutputChannelCount() {
     MOZ_ASSERT(mOutputChannels != 0 && mOutputChannels <= 8);
     return mOutputChannels;
   }
 
-  uint32_t InputChannelCount()
-  {
-    return mInputChannelCount;
-  }
+  uint32_t InputChannelCount() { return mInputChannelCount; }
 
   
 
-  void EnqueueStreamAndPromiseForOperation(MediaStream* aStream,
-                                         void* aPromise,
-                                         dom::AudioContextOperation aOperation);
+  void EnqueueStreamAndPromiseForOperation(
+      MediaStream* aStream, void* aPromise,
+      dom::AudioContextOperation aOperation);
 
-  bool OnThread() override
-  {
+  bool OnThread() override {
     return mAudioThreadId.load() == std::this_thread::get_id();
   }
 
-  bool ThreadRunning() override
-  {
-    return mAudioThreadRunning;
-  }
+  bool ThreadRunning() override { return mAudioThreadRunning; }
 
   
 
@@ -467,7 +424,7 @@ public:
 
   void CompleteAudioContextOperations(AsyncCubebOperation aOperation);
 
-private:
+ private:
   
   void RemoveMixerCallback();
   
@@ -491,8 +448,7 @@ private:
   void FallbackToSystemClockDriver();
 
   
-  bool OnCubebOperationThread()
-  {
+  bool OnCubebOperationThread() {
     return mInitShutdownThread->IsOnCurrentThreadInfallible();
   }
 
@@ -537,8 +493,7 @@ private:
 
   Atomic<bool> mStarted;
 
-  struct AutoInCallback
-  {
+  struct AutoInCallback {
     explicit AutoInCallback(AudioCallbackDriver* aDriver);
     ~AutoInCallback();
     AudioCallbackDriver* mDriver;
@@ -574,21 +529,18 @@ private:
   bool mFromFallback;
 };
 
-class AsyncCubebTask : public Runnable
-{
-public:
-
+class AsyncCubebTask : public Runnable {
+ public:
   AsyncCubebTask(AudioCallbackDriver* aDriver, AsyncCubebOperation aOperation);
 
-  nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL)
-  {
+  nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL) {
     return mDriver->mInitShutdownThread->Dispatch(this, aFlags);
   }
 
-protected:
+ protected:
   virtual ~AsyncCubebTask();
 
-private:
+ private:
   NS_IMETHOD Run() final;
 
   RefPtr<AudioCallbackDriver> mDriver;
@@ -596,6 +548,6 @@ private:
   RefPtr<MediaStreamGraphImpl> mShutdownGrip;
 };
 
-} 
+}  
 
-#endif 
+#endif  

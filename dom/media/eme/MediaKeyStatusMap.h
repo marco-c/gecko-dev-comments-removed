@@ -26,28 +26,25 @@ class ArrayBufferViewOrArrayBuffer;
 
 
 
-class MediaKeyStatusMap final : public nsISupports,
-                                public nsWrapperCache
-{
-public:
+class MediaKeyStatusMap final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaKeyStatusMap)
 
-public:
+ public:
   explicit MediaKeyStatusMap(nsPIDOMWindowInner* aParent);
 
-protected:
+ protected:
   ~MediaKeyStatusMap();
 
-public:
+ public:
   nsPIDOMWindowInner* GetParentObject() const;
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
-  void Get(JSContext* aCx,
-           const ArrayBufferViewOrArrayBuffer& aKey,
-           JS::MutableHandle<JS::Value> aOutValue,
-           ErrorResult& aOutRv) const;
+  void Get(JSContext* aCx, const ArrayBufferViewOrArrayBuffer& aKey,
+           JS::MutableHandle<JS::Value> aOutValue, ErrorResult& aOutRv) const;
   bool Has(const ArrayBufferViewOrArrayBuffer& aKey) const;
   uint32_t Size() const;
 
@@ -58,18 +55,13 @@ public:
 
   void Update(const nsTArray<CDMCaps::KeyStatus>& keys);
 
-private:
-
+ private:
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 
   struct KeyStatus {
-    KeyStatus(const nsTArray<uint8_t>& aKeyId,
-              MediaKeyStatus aStatus)
-      : mKeyId(aKeyId)
-      , mStatus(aStatus)
-    {
-    }
-    bool operator== (const KeyStatus& aOther) const {
+    KeyStatus(const nsTArray<uint8_t>& aKeyId, MediaKeyStatus aStatus)
+        : mKeyId(aKeyId), mStatus(aStatus) {}
+    bool operator==(const KeyStatus& aOther) const {
       return aOther.mKeyId == mKeyId;
     }
     bool operator<(const KeyStatus& aOther) const {
@@ -92,7 +84,7 @@ private:
   nsTArray<KeyStatus> mStatuses;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

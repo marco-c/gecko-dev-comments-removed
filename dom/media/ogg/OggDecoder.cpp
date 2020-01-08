@@ -13,9 +13,7 @@
 namespace mozilla {
 
 
-bool
-OggDecoder::IsSupportedType(const MediaContainerType& aContainerType)
-{
+bool OggDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
   if (!StaticPrefs::MediaOggEnabled()) {
     return false;
   }
@@ -37,8 +35,7 @@ OggDecoder::IsSupportedType(const MediaContainerType& aContainerType)
   
   for (const auto& codec : codecs.Range()) {
     if ((MediaDecoder::IsOpusEnabled() && codec.EqualsLiteral("opus")) ||
-        codec.EqualsLiteral("vorbis") ||
-        codec.EqualsLiteral("flac")) {
+        codec.EqualsLiteral("vorbis") || codec.EqualsLiteral("flac")) {
       continue;
     }
     
@@ -52,9 +49,8 @@ OggDecoder::IsSupportedType(const MediaContainerType& aContainerType)
   return true;
 }
 
- nsTArray<UniquePtr<TrackInfo>>
-OggDecoder::GetTracksInfo(const MediaContainerType& aType)
-{
+ nsTArray<UniquePtr<TrackInfo>> OggDecoder::GetTracksInfo(
+    const MediaContainerType& aType) {
   nsTArray<UniquePtr<TrackInfo>> tracks;
   if (!IsSupportedType(aType)) {
     return tracks;
@@ -70,16 +66,18 @@ OggDecoder::GetTracksInfo(const MediaContainerType& aType)
     if (codec.EqualsLiteral("opus") || codec.EqualsLiteral("vorbis") ||
         codec.EqualsLiteral("flac")) {
       tracks.AppendElement(
-        CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-          NS_LITERAL_CSTRING("audio/") + NS_ConvertUTF16toUTF8(codec), aType));
+          CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+              NS_LITERAL_CSTRING("audio/") + NS_ConvertUTF16toUTF8(codec),
+              aType));
     } else {
       MOZ_ASSERT(codec.EqualsLiteral("theora"));
       tracks.AppendElement(
-        CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-          NS_LITERAL_CSTRING("video/") + NS_ConvertUTF16toUTF8(codec), aType));
+          CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+              NS_LITERAL_CSTRING("video/") + NS_ConvertUTF16toUTF8(codec),
+              aType));
     }
   }
   return tracks;
 }
 
-} 
+}  

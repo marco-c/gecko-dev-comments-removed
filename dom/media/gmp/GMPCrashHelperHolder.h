@@ -46,20 +46,18 @@ namespace mozilla {
 
 
 
-class GMPCrashHelperHolder
-{
-public:
-
+class GMPCrashHelperHolder {
+ public:
   void SetCrashHelper(GMPCrashHelper* aHelper);
 
   GMPCrashHelper* GetCrashHelper();
 
   void MaybeDisconnect(bool aAbnormalShutdown);
 
-private:
+ private:
   RefPtr<GMPCrashHelper> mCrashHelper;
 };
 
-}
+}  
 
-#endif 
+#endif  

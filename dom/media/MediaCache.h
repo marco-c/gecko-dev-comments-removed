@@ -190,18 +190,14 @@ DDLoggedTypeDeclName(MediaCacheStream);
 
 
 
-class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream>
-{
+class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream> {
   using AutoLock = MonitorAutoLock;
 
-public:
+ public:
   
   static const int64_t BLOCK_SIZE = 32768;
 
-  enum ReadMode {
-    MODE_METADATA,
-    MODE_PLAYBACK
-  };
+  enum ReadMode { MODE_METADATA, MODE_PLAYBACK };
 
   
   
@@ -261,17 +257,14 @@ public:
   
   
   
-  void NotifyDataStarted(uint32_t aLoadID,
-                         int64_t aOffset,
-                         bool aSeekable,
+  void NotifyDataStarted(uint32_t aLoadID, int64_t aOffset, bool aSeekable,
                          int64_t aLength);
   
   
   
   
   
-  void NotifyDataReceived(uint32_t aLoadID,
-                          uint32_t aCount,
+  void NotifyDataReceived(uint32_t aLoadID, uint32_t aCount,
                           const uint8_t* aData);
 
   
@@ -304,8 +297,7 @@ public:
   
   
   
-  struct LengthAndOffset
-  {
+  struct LengthAndOffset {
     int64_t mLength;
     int64_t mOffset;
   };
@@ -360,8 +352,8 @@ public:
   nsresult Read(AutoLock&, char* aBuffer, uint32_t aCount, uint32_t* aBytes);
   
   
-  nsresult ReadAt(int64_t aOffset, char* aBuffer,
-                  uint32_t aCount, uint32_t* aBytes);
+  nsresult ReadAt(int64_t aOffset, char* aBuffer, uint32_t aCount,
+                  uint32_t* aBytes);
 
   void ThrottleReadahead(bool bThrottle);
 
@@ -369,7 +361,7 @@ public:
 
   nsCString GetDebugInfo();
 
-private:
+ private:
   friend class MediaCache;
 
   
@@ -382,7 +374,7 @@ private:
 
 
   class BlockList {
-  public:
+   public:
     BlockList() : mFirstBlock(-1), mCount(0) {}
     ~BlockList() {
       NS_ASSERTION(mFirstBlock == -1 && mCount == 0,
@@ -414,16 +406,14 @@ private:
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  private:
+   private:
     struct Entry : public nsUint32HashKey {
       explicit Entry(KeyTypePointer aKey)
-        : nsUint32HashKey(aKey)
-        , mNextBlock(0)
-        , mPrevBlock(0)
-      {
-      }
-      Entry(const Entry& toCopy) : nsUint32HashKey(&toCopy.GetKey()),
-        mNextBlock(toCopy.mNextBlock), mPrevBlock(toCopy.mPrevBlock) {}
+          : nsUint32HashKey(aKey), mNextBlock(0), mPrevBlock(0) {}
+      Entry(const Entry& toCopy)
+          : nsUint32HashKey(&toCopy.GetKey()),
+            mNextBlock(toCopy.mNextBlock),
+            mPrevBlock(toCopy.mPrevBlock) {}
 
       int32_t mNextBlock;
       int32_t mPrevBlock;
@@ -443,8 +433,7 @@ private:
 
   
   
-  Result<uint32_t, nsresult> ReadBlockFromCache(AutoLock&,
-                                                int64_t aOffset,
+  Result<uint32_t, nsresult> ReadBlockFromCache(AutoLock&, int64_t aOffset,
                                                 Span<char> aBuffer,
                                                 bool aNoteBlockUsage = false);
 
@@ -466,10 +455,8 @@ private:
   
   void FlushPartialBlockInternal(AutoLock&, bool aNotify);
 
-  void NotifyDataStartedInternal(uint32_t aLoadID,
-                                 int64_t aOffset,
-                                 bool aSeekable,
-                                 int64_t aLength);
+  void NotifyDataStartedInternal(uint32_t aLoadID, int64_t aOffset,
+                                 bool aSeekable, int64_t aLength);
 
   void NotifyDataEndedInternal(uint32_t aLoadID, nsresult aStatus);
 
@@ -513,32 +500,32 @@ private:
   
   int64_t mChannelOffset = 0;
   
-  int64_t           mStreamOffset;
+  int64_t mStreamOffset;
   
   
   nsTArray<int32_t> mBlocks;
   
   
   
-  BlockList         mReadaheadBlocks;
+  BlockList mReadaheadBlocks;
   
-  BlockList         mMetadataBlocks;
+  BlockList mMetadataBlocks;
   
-  BlockList         mPlayedBlocks;
+  BlockList mPlayedBlocks;
   
-  uint32_t          mPlaybackBytesPerSecond;
-  
-  
-  uint32_t          mPinCount;
-  
-  bool              mDidNotifyDataEnded = false;
+  uint32_t mPlaybackBytesPerSecond;
   
   
-  nsresult          mNotifyDataEndedStatus;
+  uint32_t mPinCount;
+  
+  bool mDidNotifyDataEnded = false;
+  
+  
+  nsresult mNotifyDataEndedStatus;
   
   ReadMode mCurrentMode = MODE_METADATA;
   
-  bool              mMetadataInPartialBlockBuffer;
+  bool mMetadataInPartialBlockBuffer;
   
   
   uint32_t mLoadID = 0;
@@ -555,7 +542,7 @@ private:
   
   
   const UniquePtr<uint8_t[]> mPartialBlockBuffer =
-    MakeUnique<uint8_t[]>(BLOCK_SIZE);
+      MakeUnique<uint8_t[]>(BLOCK_SIZE);
 
   
   const bool mIsPrivateBrowsing;
@@ -566,6 +553,6 @@ private:
   MediaChannelStatistics mDownloadStatistics;
 };
 
-} 
+}  
 
 #endif

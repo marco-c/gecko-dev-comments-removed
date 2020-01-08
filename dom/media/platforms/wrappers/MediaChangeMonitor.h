@@ -26,13 +26,11 @@ DDLoggedTypeDeclNameAndBase(MediaChangeMonitor, MediaDataDecoder);
 
 
 
-class MediaChangeMonitor
-  : public MediaDataDecoder
-  , public DecoderDoctorLifeLogger<MediaChangeMonitor>
-{
-public:
+class MediaChangeMonitor : public MediaDataDecoder,
+                           public DecoderDoctorLifeLogger<MediaChangeMonitor> {
+ public:
   MediaChangeMonitor(PlatformDecoderModule* aPDM,
-                const CreateDecoderParams& aParams);
+                     const CreateDecoderParams& aParams);
   virtual ~MediaChangeMonitor();
 
   RefPtr<InitPromise> Init() override;
@@ -41,24 +39,21 @@ public:
   RefPtr<FlushPromise> Flush() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
-  nsCString GetDescriptionName() const override
-  {
+  nsCString GetDescriptionName() const override {
     if (mDecoder) {
       return mDecoder->GetDescriptionName();
     }
     return NS_LITERAL_CSTRING("MediaChangeMonitor decoder (pending)");
   }
   void SetSeekThreshold(const media::TimeUnit& aTime) override;
-  bool SupportDecoderRecycling() const override
-  {
+  bool SupportDecoderRecycling() const override {
     if (mDecoder) {
       return mDecoder->SupportDecoderRecycling();
     }
     return false;
   }
 
-  ConversionRequired NeedsConversion() const override
-  {
+  ConversionRequired NeedsConversion() const override {
     if (mDecoder) {
       return mDecoder->NeedsConversion();
     }
@@ -67,24 +62,21 @@ public:
   }
   MediaResult GetLastError() const { return mLastError; }
 
-  class CodecChangeMonitor
-  {
-  public:
+  class CodecChangeMonitor {
+   public:
     virtual bool CanBeInstantiated() const = 0;
     virtual MediaResult CheckForChange(MediaRawData* aSample) = 0;
     virtual const TrackInfo& Config() const = 0;
     virtual MediaResult PrepareSample(
-      MediaDataDecoder::ConversionRequired aConversion,
-      MediaRawData* aSample,
-      bool aNeedKeyFrame) = 0;
+        MediaDataDecoder::ConversionRequired aConversion, MediaRawData* aSample,
+        bool aNeedKeyFrame) = 0;
     virtual ~CodecChangeMonitor() = default;
   };
 
-private:
+ private:
   UniquePtr<CodecChangeMonitor> mChangeMonitor;
 
-  void AssertOnTaskQueue() const
-  {
+  void AssertOnTaskQueue() const {
     MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
   }
 
@@ -132,6 +124,6 @@ private:
   Atomic<bool> mInConstructor;
 };
 
-} 
+}  
 
-#endif 
+#endif  

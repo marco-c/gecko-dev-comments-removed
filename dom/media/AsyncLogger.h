@@ -18,162 +18,152 @@ namespace mozilla {
 
 namespace detail {
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-template<size_t MESSAGE_LENGTH>
-class MPSCQueue
-{
-public:
-    struct Message {
-        Message()
-        {
-           mNext.store(nullptr, std::memory_order_relaxed);
-        }
-        Message(const Message& aMessage) = delete;
-        void operator=(const Message& aMessage) = delete;
 
-        char data[MESSAGE_LENGTH];
-        std::atomic<Message*> mNext;
-    };
-    
-    
-    MPSCQueue()
-    
-    
-    
-    : mHead(new Message())
-    , mTail(mHead.load(std::memory_order_relaxed))
-    { }
 
-    ~MPSCQueue()
-    {
-        Message dummy;
-        while (this->Pop(dummy.data)) {}
-        Message* front = mHead.load(std::memory_order_relaxed);
-        delete front;
+
+
+
+
+
+
+
+
+
+
+
+
+template <size_t MESSAGE_LENGTH>
+class MPSCQueue {
+ public:
+  struct Message {
+    Message() { mNext.store(nullptr, std::memory_order_relaxed); }
+    Message(const Message& aMessage) = delete;
+    void operator=(const Message& aMessage) = delete;
+
+    char data[MESSAGE_LENGTH];
+    std::atomic<Message*> mNext;
+  };
+  
+  
+  MPSCQueue()
+      
+      
+      
+      : mHead(new Message()), mTail(mHead.load(std::memory_order_relaxed)) {}
+
+  ~MPSCQueue() {
+    Message dummy;
+    while (this->Pop(dummy.data)) {
+    }
+    Message* front = mHead.load(std::memory_order_relaxed);
+    delete front;
+  }
+
+  void Push(MPSCQueue<MESSAGE_LENGTH>::Message* aMessage) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Message* prev = mHead.exchange(aMessage, std::memory_order_acq_rel);
+    prev->mNext.store(aMessage, std::memory_order_release);
+  }
+
+  
+  
+  void Push(const char aInput[MESSAGE_LENGTH]) {
+    
+    
+    
+    Message* msg = new Message();
+    strncpy(msg->data, aInput, MESSAGE_LENGTH);
+
+    Push(msg);
+  }
+
+  
+  
+  
+  
+  bool Pop(char aOutput[MESSAGE_LENGTH]) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Message* tail = mTail.load(std::memory_order_relaxed);
+    Message* next = tail->mNext.load(std::memory_order_acquire);
+
+    if (next == nullptr) {
+      return false;
     }
 
-    void
-    Push(MPSCQueue<MESSAGE_LENGTH>::Message* aMessage)
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Message* prev = mHead.exchange(aMessage, std::memory_order_acq_rel);
-        prev->mNext.store(aMessage, std::memory_order_release);
-    }
-
-    
-    
-    void
-    Push(const char aInput[MESSAGE_LENGTH])
-    {
-        
-        
-        
-        Message* msg = new Message();
-        strncpy(msg->data, aInput, MESSAGE_LENGTH);
-
-        Push(msg);
-    }
+    strncpy(aOutput, next->data, MESSAGE_LENGTH);
 
     
     
     
     
-    bool
-    Pop(char aOutput[MESSAGE_LENGTH])
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Message* tail = mTail.load(std::memory_order_relaxed);
-        Message* next = tail->mNext.load(std::memory_order_acquire);
+    
+    mTail.store(next, std::memory_order_release);
 
-        if (next == nullptr) {
-            return false;
-        }
+    
+    
+    delete tail;
 
-        strncpy(aOutput, next->data, MESSAGE_LENGTH);
+    return true;
+  }
 
-        
-        
-        
-        
-        
-        mTail.store(next, std::memory_order_release);
+ private:
+  
+  std::atomic<Message*> mHead;
+  
+  
+  std::atomic<Message*> mTail;
 
-        
-        
-        delete tail;
+  MPSCQueue(const MPSCQueue&) = delete;
+  void operator=(const MPSCQueue&) = delete;
 
-        return true;
-    }
+ public:
+  
+  
+  
+  
+  
+  static const size_t MESSAGE_PADDING = sizeof(Message::mNext);
 
-private:
-    
-    std::atomic<Message*> mHead;
-    
-    
-    std::atomic<Message*> mTail;
-
-    MPSCQueue(const MPSCQueue&) = delete;
-    void operator=(const MPSCQueue&) = delete;
-public:
-    
-    
-    
-    
-    
-    static const size_t MESSAGE_PADDING = sizeof(Message::mNext);
-private:
-    static_assert(IsPowerOfTwo(MESSAGE_LENGTH + MESSAGE_PADDING),
-                  "MPSCQueue internal allocations must have a size that is a"
-                  "power of two ");
+ private:
+  static_assert(IsPowerOfTwo(MESSAGE_LENGTH + MESSAGE_PADDING),
+                "MPSCQueue internal allocations must have a size that is a"
+                "power of two ");
 };
-} 
+}  
 
 
 
@@ -184,27 +174,22 @@ private:
 
 
 
-class AsyncLogger
-{
-public:
-  static const uint32_t MAX_MESSAGE_LENGTH = 512 - detail::MPSCQueue<sizeof(void*)>::MESSAGE_PADDING;
+class AsyncLogger {
+ public:
+  static const uint32_t MAX_MESSAGE_LENGTH =
+      512 - detail::MPSCQueue<sizeof(void*)>::MESSAGE_PADDING;
 
   
   explicit AsyncLogger(const char* aLogModuleName)
-  : mThread(nullptr)
-  , mLogModule(aLogModuleName)
-  , mRunning(false)
-  { }
+      : mThread(nullptr), mLogModule(aLogModuleName), mRunning(false) {}
 
-  ~AsyncLogger()
-  {
+  ~AsyncLogger() {
     if (Enabled()) {
       Stop();
     }
   }
 
-  void Start()
-  {
+  void Start() {
     MOZ_ASSERT(!mRunning, "Double calls to AsyncLogger::Start");
     if (Enabled()) {
       mRunning = true;
@@ -212,8 +197,7 @@ public:
     }
   }
 
-  void Stop()
-  {
+  void Stop() {
     if (Enabled()) {
       if (mRunning) {
         mRunning = false;
@@ -224,8 +208,7 @@ public:
     }
   }
 
-  void Log(const char* format, ...) MOZ_FORMAT_PRINTF(2,3)
-  {
+  void Log(const char* format, ...) MOZ_FORMAT_PRINTF(2, 3) {
     if (Enabled()) {
       auto* msg = new detail::MPSCQueue<MAX_MESSAGE_LENGTH>::Message();
       va_list args;
@@ -236,14 +219,12 @@ public:
     }
   }
 
-  bool Enabled()
-  {
+  bool Enabled() {
     return MOZ_LOG_TEST(mLogModule, mozilla::LogLevel::Verbose);
   }
 
-private:
-  void Run()
-  {
+ private:
+  void Run() {
     MOZ_ASSERT(Enabled());
     mThread.reset(new std::thread([this]() {
       while (mRunning) {
@@ -264,6 +245,6 @@ private:
   std::atomic<bool> mRunning;
 };
 
-} 
+}  
 
-#endif 
+#endif  

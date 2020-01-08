@@ -31,8 +31,7 @@ struct MediaStatistics {
   
   bool mPlaybackRateReliable;
 
-  bool CanPlayThrough()
-  {
+  bool CanPlayThrough() {
     
     
     
@@ -69,11 +68,11 @@ struct MediaStatistics {
     
     
     int64_t readAheadMargin =
-      static_cast<int64_t>(mPlaybackRate * CAN_PLAY_THROUGH_MARGIN);
+        static_cast<int64_t>(mPlaybackRate * CAN_PLAY_THROUGH_MARGIN);
     return mDownloadPosition > mPlaybackPosition + readAheadMargin;
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  

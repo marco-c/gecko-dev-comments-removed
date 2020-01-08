@@ -18,9 +18,8 @@ namespace mozilla {
 class AbstractThread;
 class TrackEncoder;
 
-class TrackEncoderListener
-{
-public:
+class TrackEncoderListener {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackEncoderListener)
 
   
@@ -40,7 +39,8 @@ public:
 
 
   virtual void Error(TrackEncoder* aEncoder) = 0;
-protected:
+
+ protected:
   virtual ~TrackEncoderListener() {}
 };
 
@@ -54,11 +54,10 @@ protected:
 
 
 
-class TrackEncoder
-{
+class TrackEncoder {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackEncoder);
 
-public:
+ public:
   explicit TrackEncoder(TrackRate aTrackRate);
 
   virtual void Suspend(TimeStamp aTime) = 0;
@@ -159,11 +158,8 @@ public:
 
   virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) = 0;
 
-protected:
-  virtual ~TrackEncoder()
-  {
-    MOZ_ASSERT(mListeners.IsEmpty());
-  }
+ protected:
+  virtual ~TrackEncoder() { MOZ_ASSERT(mListeners.IsEmpty()); }
 
   
 
@@ -215,16 +211,14 @@ protected:
   nsTArray<RefPtr<TrackEncoderListener>> mListeners;
 };
 
-class AudioTrackEncoder : public TrackEncoder
-{
-public:
+class AudioTrackEncoder : public TrackEncoder {
+ public:
   explicit AudioTrackEncoder(TrackRate aTrackRate)
-    : TrackEncoder(aTrackRate)
-    , mChannels(0)
-    , mSamplingRate(0)
-    , mAudioBitrate(0)
-    , mDirectConnected(false)
-  {}
+      : TrackEncoder(aTrackRate),
+        mChannels(0),
+        mSamplingRate(0),
+        mAudioBitrate(0),
+        mDirectConnected(false) {}
 
   
 
@@ -248,22 +242,19 @@ public:
 
   void TakeTrackData(AudioSegment& aSegment);
 
-  template<typename T>
-  static
-  void InterleaveTrackData(nsTArray<const T*>& aInput,
-                           int32_t aDuration,
-                           uint32_t aOutputChannels,
-                           AudioDataValue* aOutput,
-                           float aVolume)
-  {
+  template <typename T>
+  static void InterleaveTrackData(nsTArray<const T*>& aInput, int32_t aDuration,
+                                  uint32_t aOutputChannels,
+                                  AudioDataValue* aOutput, float aVolume) {
     if (aInput.Length() < aOutputChannels) {
       
-      AudioChannelsUpMix(&aInput, aOutputChannels, SilentChannel::ZeroChannel<T>());
+      AudioChannelsUpMix(&aInput, aOutputChannels,
+                         SilentChannel::ZeroChannel<T>());
     }
 
     if (aInput.Length() > aOutputChannels) {
-      DownmixAndInterleave(aInput, aDuration,
-                           aVolume, aOutputChannels, aOutput);
+      DownmixAndInterleave(aInput, aDuration, aVolume, aOutputChannels,
+                           aOutput);
     } else {
       InterleaveAndConvertBuffer(aInput.Elements(), aDuration, aVolume,
                                  aOutputChannels, aOutput);
@@ -292,12 +283,13 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) override;
 
-  void SetBitrate(const uint32_t aBitrate) override
-  {
+  void SetBitrate(const uint32_t aBitrate) override {
     mAudioBitrate = aBitrate;
   }
 
   
+
+
 
 
 
@@ -336,7 +328,8 @@ public:
 
 
   void AdvanceCurrentTime(StreamTime aDuration) override;
-protected:
+
+ protected:
   
 
 
@@ -387,14 +380,14 @@ protected:
 };
 
 enum class FrameDroppingMode {
-  ALLOW, 
-  DISALLOW, 
+  ALLOW,     
+  DISALLOW,  
 };
 
-class VideoTrackEncoder : public TrackEncoder
-{
-public:
-  explicit VideoTrackEncoder(TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode);
+class VideoTrackEncoder : public TrackEncoder {
+ public:
+  explicit VideoTrackEncoder(TrackRate aTrackRate,
+                             FrameDroppingMode aFrameDroppingMode);
 
   
 
@@ -425,8 +418,7 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) override;
 
-  void SetBitrate(const uint32_t aBitrate) override
-  {
+  void SetBitrate(const uint32_t aBitrate) override {
     mVideoBitrate = aBitrate;
   }
 
@@ -441,9 +433,8 @@ public:
 
   void Init(const VideoSegment& aSegment, StreamTime aDuration);
 
-  StreamTime SecondsToMediaTime(double aS) const
-  {
-    NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX/TRACK_RATE_MAX,
+  StreamTime SecondsToMediaTime(double aS) const {
+    NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX / TRACK_RATE_MAX,
                  "Bad seconds");
     return mTrackRate * aS;
   }
@@ -480,7 +471,7 @@ public:
 
   void SetKeyFrameInterval(int32_t aKeyFrameInterval);
 
-protected:
+ protected:
   
 
 
@@ -511,6 +502,7 @@ protected:
   int mDisplayHeight;
 
   
+
 
 
 
@@ -565,6 +557,6 @@ protected:
   int32_t mKeyFrameInterval;
 };
 
-} 
+}  
 
 #endif

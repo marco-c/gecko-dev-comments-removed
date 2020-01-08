@@ -50,15 +50,13 @@ enum class CallerType : uint32_t;
 
 
 
-class MediaStreamTrackSource : public nsISupports
-{
+class MediaStreamTrackSource : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackSource)
 
-public:
-  class Sink : public SupportsWeakPtr<Sink>
-  {
-  public:
+ public:
+  class Sink : public SupportsWeakPtr<Sink> {
+   public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackSource::Sink)
 
     
@@ -92,13 +90,8 @@ public:
     virtual void MutedChanged(bool aNewState) = 0;
   };
 
-  MediaStreamTrackSource(nsIPrincipal* aPrincipal,
-                         const nsString& aLabel)
-    : mPrincipal(aPrincipal),
-      mLabel(aLabel),
-      mStopped(false)
-  {
-  }
+  MediaStreamTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel)
+      : mPrincipal(aPrincipal), mLabel(aLabel), mStopped(false) {}
 
   
 
@@ -145,7 +138,9 @@ public:
 
 
 
-  virtual nsresult TakePhoto(MediaEnginePhotoCallback*) const { return NS_ERROR_NOT_IMPLEMENTED; }
+  virtual nsresult TakePhoto(MediaEnginePhotoCallback*) const {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
   typedef media::Pledge<bool, dom::MediaStreamError*> PledgeVoid;
 
@@ -153,16 +148,14 @@ public:
 
 
 
-  virtual already_AddRefed<PledgeVoid>
-  ApplyConstraints(nsPIDOMWindowInner* aWindow,
-                   const dom::MediaTrackConstraints& aConstraints,
-                   CallerType aCallerType);
+  virtual already_AddRefed<PledgeVoid> ApplyConstraints(
+      nsPIDOMWindowInner* aWindow,
+      const dom::MediaTrackConstraints& aConstraints, CallerType aCallerType);
 
   
 
 
-  virtual void
-  GetSettings(dom::MediaTrackSettings& aResult) {};
+  virtual void GetSettings(dom::MediaTrackSettings& aResult){};
 
   
 
@@ -188,8 +181,7 @@ public:
 
 
 
-  void SinkEnabledStateChanged()
-  {
+  void SinkEnabledStateChanged() {
     if (IsEnabled()) {
       Enable();
     } else {
@@ -200,14 +192,13 @@ public:
   
 
 
-  void RegisterSink(Sink* aSink)
-  {
+  void RegisterSink(Sink* aSink) {
     MOZ_ASSERT(NS_IsMainThread());
     if (mStopped) {
       return;
     }
     mSinks.AppendElement(aSink);
-    while(mSinks.RemoveElement(nullptr)) {
+    while (mSinks.RemoveElement(nullptr)) {
       MOZ_ASSERT_UNREACHABLE("Sink was not explicitly removed");
     }
   }
@@ -216,10 +207,9 @@ public:
 
 
 
-  void UnregisterSink(Sink* aSink)
-  {
+  void UnregisterSink(Sink* aSink) {
     MOZ_ASSERT(NS_IsMainThread());
-    while(mSinks.RemoveElement(nullptr)) {
+    while (mSinks.RemoveElement(nullptr)) {
       MOZ_ASSERT_UNREACHABLE("Sink was not explicitly removed");
     }
     if (mSinks.RemoveElement(aSink) && !IsActive()) {
@@ -234,13 +224,10 @@ public:
     }
   }
 
-protected:
-  virtual ~MediaStreamTrackSource()
-  {
-  }
+ protected:
+  virtual ~MediaStreamTrackSource() {}
 
-  bool IsActive()
-  {
+  bool IsActive() {
     for (const WeakPtr<Sink>& sink : mSinks) {
       if (sink && sink->KeepsSourceAlive()) {
         return true;
@@ -249,8 +236,7 @@ protected:
     return false;
   }
 
-  bool IsEnabled()
-  {
+  bool IsEnabled() {
     for (const WeakPtr<Sink>& sink : mSinks) {
       if (sink && sink->KeepsSourceAlive() && sink->Enabled()) {
         return true;
@@ -263,8 +249,7 @@ protected:
 
 
 
-  void PrincipalChanged()
-  {
+  void PrincipalChanged() {
     MOZ_ASSERT(NS_IsMainThread());
     nsTArray<WeakPtr<Sink>> sinks(mSinks);
     for (auto& sink : sinks) {
@@ -282,8 +267,7 @@ protected:
 
 
 
-  void MutedChanged(bool aNewState)
-  {
+  void MutedChanged(bool aNewState) {
     MOZ_ASSERT(NS_IsMainThread());
     nsTArray<WeakPtr<Sink>> sinks(mSinks);
     for (auto& sink : sinks) {
@@ -313,15 +297,13 @@ protected:
 
 
 
-class BasicTrackSource : public MediaStreamTrackSource
-{
-public:
-  explicit BasicTrackSource(nsIPrincipal* aPrincipal,
-                            const MediaSourceEnum aMediaSource =
-                            MediaSourceEnum::Other)
-    : MediaStreamTrackSource(aPrincipal, nsString())
-    , mMediaSource(aMediaSource)
-  {}
+class BasicTrackSource : public MediaStreamTrackSource {
+ public:
+  explicit BasicTrackSource(
+      nsIPrincipal* aPrincipal,
+      const MediaSourceEnum aMediaSource = MediaSourceEnum::Other)
+      : MediaStreamTrackSource(aPrincipal, nsString()),
+        mMediaSource(aMediaSource) {}
 
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
 
@@ -329,7 +311,7 @@ public:
   void Disable() override {}
   void Enable() override {}
 
-protected:
+ protected:
   ~BasicTrackSource() {}
 
   const MediaSourceEnum mMediaSource;
@@ -340,9 +322,8 @@ protected:
 
 
 class MediaStreamTrackConsumer
-  : public SupportsWeakPtr<MediaStreamTrackConsumer>
-{
-public:
+    : public SupportsWeakPtr<MediaStreamTrackConsumer> {
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackConsumer)
 
   
@@ -350,15 +331,14 @@ public:
 
 
 
-  virtual void NotifyEnded(MediaStreamTrack* aTrack) {};
+  virtual void NotifyEnded(MediaStreamTrack* aTrack){};
 };
 
 
 
 
 class MediaStreamTrack : public DOMEventTargetHelper,
-                         public MediaStreamTrackSource::Sink
-{
+                         public MediaStreamTrackSource::Sink {
   
   
   friend class mozilla::DOMMediaStream;
@@ -371,13 +351,13 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
   class PrincipalHandleListener;
 
-public:
+ public:
   
 
 
 
-  MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
-      TrackID aInputTrackID,
+  MediaStreamTrack(
+      DOMMediaStream* aStream, TrackID aTrackID, TrackID aInputTrackID,
       MediaStreamTrackSource* aSource,
       const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
 
@@ -386,7 +366,8 @@ public:
                                            DOMEventTargetHelper)
 
   nsPIDOMWindowInner* GetParentObject() const;
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   virtual AudioStreamTrack* AsAudioStreamTrack() { return nullptr; }
   virtual VideoStreamTrack* AsVideoStreamTrack() { return nullptr; }
@@ -397,7 +378,9 @@ public:
   
   virtual void GetKind(nsAString& aKind) = 0;
   void GetId(nsAString& aID) const;
-  virtual void GetLabel(nsAString& aLabel, CallerType ) { GetSource().GetLabel(aLabel); }
+  virtual void GetLabel(nsAString& aLabel, CallerType ) {
+    GetSource().GetLabel(aLabel);
+  }
   bool Enabled() const override { return mEnabled; }
   void SetEnabled(bool aEnabled);
   bool Muted() { return mMuted; }
@@ -405,9 +388,9 @@ public:
   void GetConstraints(dom::MediaTrackConstraints& aResult);
   void GetSettings(dom::MediaTrackSettings& aResult, CallerType aCallerType);
 
-  already_AddRefed<Promise>
-  ApplyConstraints(const dom::MediaTrackConstraints& aConstraints,
-                   CallerType aCallerType, ErrorResult &aRv);
+  already_AddRefed<Promise> ApplyConstraints(
+      const dom::MediaTrackConstraints& aConstraints, CallerType aCallerType,
+      ErrorResult& aRv);
   already_AddRefed<MediaStreamTrack> Clone();
   MediaStreamTrackState ReadyState() { return mReadyState; }
 
@@ -445,6 +428,7 @@ public:
 
 
 
+
   void NotifyPrincipalHandleChanged(const PrincipalHandle& aPrincipalHandle);
 
   
@@ -461,14 +445,16 @@ public:
   
 
 
-  const PeerIdentity* GetPeerIdentity() const { return GetSource().GetPeerIdentity(); }
+  const PeerIdentity* GetPeerIdentity() const {
+    return GetSource().GetPeerIdentity();
+  }
 
   MediaStreamGraph* Graph();
   MediaStreamGraphImpl* GraphImpl();
 
-  MediaStreamTrackSource& GetSource() const
-  {
-    MOZ_RELEASE_ASSERT(mSource, "The track source is only removed on destruction");
+  MediaStreamTrackSource& GetSource() const {
+    MOZ_RELEASE_ASSERT(mSource,
+                       "The track source is only removed on destruction");
     return *mSource;
   }
 
@@ -482,10 +468,7 @@ public:
 
 
 
-  bool KeepsSourceAlive() const override
-  {
-    return true;
-  }
+  bool KeepsSourceAlive() const override { return true; }
 
   void PrincipalChanged() override;
 
@@ -508,14 +491,16 @@ public:
 
 
 
-  bool AddPrincipalChangeObserver(PrincipalChangeObserver<MediaStreamTrack>* aObserver);
+  bool AddPrincipalChangeObserver(
+      PrincipalChangeObserver<MediaStreamTrack>* aObserver);
 
   
 
 
 
 
-  bool RemovePrincipalChangeObserver(PrincipalChangeObserver<MediaStreamTrack>* aObserver);
+  bool RemovePrincipalChangeObserver(
+      PrincipalChangeObserver<MediaStreamTrack>* aObserver);
 
   
 
@@ -547,15 +532,15 @@ public:
 
 
 
-  virtual void AddDirectListener(DirectMediaStreamTrackListener *aListener);
-  void RemoveDirectListener(DirectMediaStreamTrackListener  *aListener);
+  virtual void AddDirectListener(DirectMediaStreamTrackListener* aListener);
+  void RemoveDirectListener(DirectMediaStreamTrackListener* aListener);
 
   
 
 
 
-  already_AddRefed<MediaInputPort> ForwardTrackContentsTo(ProcessedMediaStream* aStream,
-                                                          TrackID aDestinationTrackID = TRACK_ANY);
+  already_AddRefed<MediaInputPort> ForwardTrackContentsTo(
+      ProcessedMediaStream* aStream, TrackID aDestinationTrackID = TRACK_ANY);
 
   
 
@@ -568,12 +553,9 @@ public:
   
   MediaStream* GetInputStream();
 
-  TrackID GetInputTrackId() const
-  {
-    return mInputTrackID;
-  }
+  TrackID GetInputTrackId() const { return mInputTrackID; }
 
-protected:
+ protected:
   virtual ~MediaStreamTrack();
 
   
@@ -600,10 +582,11 @@ protected:
 
 
 
-  virtual already_AddRefed<MediaStreamTrack> CloneInternal(DOMMediaStream* aOwningStream,
-                                                           TrackID aTrackID) = 0;
+  virtual already_AddRefed<MediaStreamTrack> CloneInternal(
+      DOMMediaStream* aOwningStream, TrackID aTrackID) = 0;
 
-  nsTArray<PrincipalChangeObserver<MediaStreamTrack>*> mPrincipalChangeObservers;
+  nsTArray<PrincipalChangeObserver<MediaStreamTrack>*>
+      mPrincipalChangeObservers;
 
   nsTArray<WeakPtr<MediaStreamTrackConsumer>> mConsumers;
 
@@ -626,7 +609,7 @@ protected:
   dom::MediaTrackConstraints mConstraints;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

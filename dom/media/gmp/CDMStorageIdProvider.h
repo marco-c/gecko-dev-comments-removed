@@ -11,18 +11,17 @@
 
 
 
+
 #include <string>
 
 #include "nsString.h"
 
 namespace mozilla {
 
-class CDMStorageIdProvider
-{
-  static constexpr const char* kBrowserIdentifier =
-    "mozilla_firefox_gecko";
+class CDMStorageIdProvider {
+  static constexpr const char* kBrowserIdentifier = "mozilla_firefox_gecko";
 
-public:
+ public:
   
   static constexpr int kCurrentVersion = 1;
   static constexpr int kCDMRequestLatestVersion = 0;
@@ -35,9 +34,8 @@ public:
   
   
   static nsCString ComputeStorageId(const nsCString& aOriginSalt);
-
 };
 
-} 
+}  
 
-#endif 
+#endif  

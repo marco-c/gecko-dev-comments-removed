@@ -34,78 +34,67 @@ struct AudioBufferOptions;
 
 
 
-class AudioBuffer final : public nsWrapperCache
-{
-public:
+class AudioBuffer final : public nsWrapperCache {
+ public:
   
   
-  static already_AddRefed<AudioBuffer>
-  Create(nsPIDOMWindowInner* aWindow, uint32_t aNumberOfChannels,
-         uint32_t aLength, float aSampleRate,
-         already_AddRefed<ThreadSharedFloatArrayBufferList> aInitialContents,
-         ErrorResult& aRv);
+  static already_AddRefed<AudioBuffer> Create(
+      nsPIDOMWindowInner* aWindow, uint32_t aNumberOfChannels, uint32_t aLength,
+      float aSampleRate,
+      already_AddRefed<ThreadSharedFloatArrayBufferList> aInitialContents,
+      ErrorResult& aRv);
 
-  static already_AddRefed<AudioBuffer>
-  Create(nsPIDOMWindowInner* aWindow, uint32_t aNumberOfChannels,
-         uint32_t aLength, float aSampleRate,
-         ErrorResult& aRv)
-  {
-    return Create(aWindow, aNumberOfChannels, aLength, aSampleRate,
-                  nullptr, aRv);
+  static already_AddRefed<AudioBuffer> Create(nsPIDOMWindowInner* aWindow,
+                                              uint32_t aNumberOfChannels,
+                                              uint32_t aLength,
+                                              float aSampleRate,
+                                              ErrorResult& aRv) {
+    return Create(aWindow, aNumberOfChannels, aLength, aSampleRate, nullptr,
+                  aRv);
   }
 
   
-  static already_AddRefed<AudioBuffer>
-  Create(nsPIDOMWindowInner* aWindow, float aSampleRate,
-         AudioChunk&& aInitialContents);
+  static already_AddRefed<AudioBuffer> Create(nsPIDOMWindowInner* aWindow,
+                                              float aSampleRate,
+                                              AudioChunk&& aInitialContents);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(AudioBuffer)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(AudioBuffer)
 
-  static already_AddRefed<AudioBuffer>
-  Constructor(const GlobalObject& aGlobal,
-              const AudioBufferOptions& aOptions, ErrorResult& aRv);
+  static already_AddRefed<AudioBuffer> Constructor(
+      const GlobalObject& aGlobal, const AudioBufferOptions& aOptions,
+      ErrorResult& aRv);
 
-  nsPIDOMWindowInner* GetParentObject() const
-  {
+  nsPIDOMWindowInner* GetParentObject() const {
     nsCOMPtr<nsPIDOMWindowInner> parentObject = do_QueryReferent(mOwnerWindow);
     return parentObject;
   }
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
-  float SampleRate() const
-  {
-    return mSampleRate;
+  float SampleRate() const { return mSampleRate; }
+
+  uint32_t Length() const { return mSharedChannels.mDuration; }
+
+  double Duration() const {
+    return Length() / static_cast<double>(mSampleRate);
   }
 
-  uint32_t Length() const
-  {
-    return mSharedChannels.mDuration;
-  }
-
-  double Duration() const
-  {
-    return Length() / static_cast<double> (mSampleRate);
-  }
-
-  uint32_t NumberOfChannels() const
-  {
-    return mJSChannels.Length();
-  }
+  uint32_t NumberOfChannels() const { return mJSChannels.Length(); }
 
   
 
 
 
   void GetChannelData(JSContext* aJSContext, uint32_t aChannel,
-                      JS::MutableHandle<JSObject*> aRetval,
-                      ErrorResult& aRv);
+                      JS::MutableHandle<JSObject*> aRetval, ErrorResult& aRv);
 
-  void CopyFromChannel(const Float32Array& aDestination, uint32_t aChannelNumber,
-                       uint32_t aStartInChannel, ErrorResult& aRv);
+  void CopyFromChannel(const Float32Array& aDestination,
+                       uint32_t aChannelNumber, uint32_t aStartInChannel,
+                       ErrorResult& aRv);
   void CopyToChannel(JSContext* aJSContext, const Float32Array& aSource,
                      uint32_t aChannelNumber, uint32_t aStartInChannel,
                      ErrorResult& aRv);
@@ -116,13 +105,13 @@ public:
 
   const AudioChunk& GetThreadSharedChannelsForRate(JSContext* aContext);
 
-protected:
+ protected:
   AudioBuffer(nsPIDOMWindowInner* aWindow, uint32_t aNumberOfChannels,
               uint32_t aLength, float aSampleRate, ErrorResult& aRv);
   ~AudioBuffer();
 
-  void
-  SetSharedChannels(already_AddRefed<ThreadSharedFloatArrayBufferList> aBuffer);
+  void SetSharedChannels(
+      already_AddRefed<ThreadSharedFloatArrayBufferList> aBuffer);
 
   bool RestoreJSChannelData(JSContext* aJSContext);
 
@@ -143,7 +132,7 @@ protected:
   float mSampleRate;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -16,7 +16,7 @@ namespace mozilla {
 
 
 class TrackUnionStream : public ProcessedMediaStream {
-public:
+ public:
   explicit TrackUnionStream();
 
   virtual TrackUnionStream* AsTrackUnionStream() override { return this; }
@@ -32,7 +32,7 @@ public:
 
   friend class MediaStreamGraphImpl;
 
-protected:
+ protected:
   
   struct TrackMapEntry {
     
@@ -66,12 +66,13 @@ protected:
   uint32_t AddTrack(MediaInputPort* aPort, StreamTracks::Track* aTrack,
                     GraphTime aFrom);
   void EndTrack(uint32_t aIndex);
-  void CopyTrackData(StreamTracks::Track* aInputTrack,
-                     uint32_t aMapIndex, GraphTime aFrom, GraphTime aTo,
+  void CopyTrackData(StreamTracks::Track* aInputTrack, uint32_t aMapIndex,
+                     GraphTime aFrom, GraphTime aTo,
                      bool* aOutputTrackFinished);
 
-  void AddDirectTrackListenerImpl(already_AddRefed<DirectMediaStreamTrackListener> aListener,
-                                  TrackID aTrackID) override;
+  void AddDirectTrackListenerImpl(
+      already_AddRefed<DirectMediaStreamTrackListener> aListener,
+      TrackID aTrackID) override;
   void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
                                      TrackID aTrackID) override;
   void RemoveAllDirectListenersImpl() override;
@@ -87,9 +88,10 @@ protected:
 
   
   
-  nsTArray<TrackBound<DirectMediaStreamTrackListener>> mPendingDirectTrackListeners;
+  nsTArray<TrackBound<DirectMediaStreamTrackListener>>
+      mPendingDirectTrackListeners;
 };
 
-} 
+}  
 
 #endif 

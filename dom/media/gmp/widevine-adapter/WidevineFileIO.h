@@ -13,14 +13,10 @@
 
 namespace mozilla {
 
-class WidevineFileIO : public cdm::FileIO
-                     , public GMPRecordClient
-{
-public:
+class WidevineFileIO : public cdm::FileIO, public GMPRecordClient {
+ public:
   explicit WidevineFileIO(cdm::FileIOClient* aClient)
-    : mClient(aClient)
-    , mRecord(nullptr)
-  {}
+      : mClient(aClient), mRecord(nullptr) {}
 
   
   void Open(const char* aFilename, uint32_t aFilenameLength) override;
@@ -30,17 +26,16 @@ public:
 
   
   void OpenComplete(GMPErr aStatus) override;
-  void ReadComplete(GMPErr aStatus,
-                    const uint8_t* aData,
+  void ReadComplete(GMPErr aStatus, const uint8_t* aData,
                     uint32_t aDataSize) override;
   void WriteComplete(GMPErr aStatus) override;
 
-private:
+ private:
   cdm::FileIOClient* mClient;
   GMPRecord* mRecord;
   std::string mName;
 };
 
-} 
+}  
 
-#endif 
+#endif  

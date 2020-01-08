@@ -54,29 +54,29 @@
 
 
 struct attribute_deprecated vaapi_context {
-    
+  
 
 
 
 
 
-    void *display;
+  void *display;
 
-    
-
-
-
-
-
-    uint32_t config_id;
-
-    
+  
 
 
 
 
 
-    uint32_t context_id;
+  uint32_t config_id;
+
+  
+
+
+
+
+
+  uint32_t context_id;
 };
 
 

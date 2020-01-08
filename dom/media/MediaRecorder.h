@@ -40,10 +40,13 @@ class DOMException;
 
 
 
+
+
+
+
 class MediaRecorder final : public DOMEventTargetHelper,
-                            public nsIDocumentActivity
-{
-public:
+                            public nsIDocumentActivity {
+ public:
   class Session;
 
   MediaRecorder(DOMMediaStream& aSourceMediaStream,
@@ -54,19 +57,21 @@ public:
   static nsTArray<RefPtr<Session>> GetSessions();
 
   
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   nsPIDOMWindowInner* GetParentObject() { return GetOwner(); }
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaRecorder,
-                                           DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaRecorder, DOMEventTargetHelper)
 
   
   
   
   
-  void Start(const Optional<int32_t>& timeSlice, ErrorResult & aResult);
+  
+  void Start(const Optional<int32_t>& timeSlice, ErrorResult& aResult);
+  
   
   void Stop(ErrorResult& aResult);
   
@@ -78,7 +83,7 @@ public:
   
   DOMMediaStream* Stream() const { return mDOMStream; }
   
-  void GetMimeType(nsString &aMimeType);
+  void GetMimeType(nsString& aMimeType);
   
   RecordingState State() const { return mState; }
 
@@ -86,25 +91,22 @@ public:
   static bool IsTypeSupported(const nsAString& aType);
 
   
-  static already_AddRefed<MediaRecorder>
-  Constructor(const GlobalObject& aGlobal,
-              DOMMediaStream& aStream,
-              const MediaRecorderOptions& aInitDict,
-              ErrorResult& aRv);
+  static already_AddRefed<MediaRecorder> Constructor(
+      const GlobalObject& aGlobal, DOMMediaStream& aStream,
+      const MediaRecorderOptions& aInitDict, ErrorResult& aRv);
   
-  static already_AddRefed<MediaRecorder>
-  Constructor(const GlobalObject& aGlobal,
-              AudioNode& aSrcAudioNode,
-              uint32_t aSrcOutput,
-              const MediaRecorderOptions& aInitDict,
-              ErrorResult& aRv);
+  static already_AddRefed<MediaRecorder> Constructor(
+      const GlobalObject& aGlobal, AudioNode& aSrcAudioNode,
+      uint32_t aSrcOutput, const MediaRecorderOptions& aInitDict,
+      ErrorResult& aRv);
 
   
 
 
 
   typedef MozPromise<size_t, size_t, true> SizeOfPromise;
-  RefPtr<SizeOfPromise> SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+  RefPtr<SizeOfPromise> SizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf);
   
   IMPL_EVENT_HANDLER(start)
   IMPL_EVENT_HANDLER(stop)
@@ -119,21 +121,22 @@ public:
   uint32_t GetAudioBitrate() { return mAudioBitsPerSecond; }
   uint32_t GetVideoBitrate() { return mVideoBitsPerSecond; }
   uint32_t GetBitrate() { return mBitsPerSecond; }
-protected:
+
+ protected:
   virtual ~MediaRecorder();
 
-  MediaRecorder& operator = (const MediaRecorder& x) = delete;
+  MediaRecorder& operator=(const MediaRecorder& x) = delete;
   
   nsresult CreateAndDispatchBlobEvent(Blob* aBlob);
   
-  void DispatchSimpleEvent(const nsAString & aStr);
+  void DispatchSimpleEvent(const nsAString& aStr);
   
   void NotifyError(nsresult aRv);
   
-  void SetMimeType(const nsString &aMimeType);
+  void SetMimeType(const nsString& aMimeType);
   void SetOptions(const MediaRecorderOptions& aInitDict);
 
-  MediaRecorder(const MediaRecorder& x) = delete; 
+  MediaRecorder(const MediaRecorder& x) = delete;  
   
   void RemoveSession(Session* aSession);
   
@@ -154,16 +157,18 @@ protected:
   
   RefPtr<AudioNode> mAudioNode;
   
+  
   const uint32_t mAudioNodeOutput;
 
   
   RecordingState mState;
   
   
-  nsTArray<RefPtr<Session> > mSessions;
+  nsTArray<RefPtr<Session>> mSessions;
 
   nsCOMPtr<nsIDocument> mDocument;
 
+  
   
   nsString mMimeType;
 
@@ -179,15 +184,15 @@ protected:
   RefPtr<DOMException> mSecurityDomException;
   RefPtr<DOMException> mUnknownDomException;
 
-private:
+ private:
   
   void RegisterActivityObserver();
   void UnRegisterActivityObserver();
 
-  bool CheckPermission(const nsString &aType);
+  bool CheckPermission(const nsString& aType);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

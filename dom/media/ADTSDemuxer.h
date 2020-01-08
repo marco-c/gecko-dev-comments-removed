@@ -17,29 +17,27 @@ namespace mozilla {
 namespace adts {
 class Frame;
 class FrameParser;
-}
+}  
 
 class ADTSTrackDemuxer;
 
 DDLoggedTypeDeclNameAndBase(ADTSDemuxer, MediaDataDemuxer);
 
-class ADTSDemuxer
-  : public MediaDataDemuxer
-  , public DecoderDoctorLifeLogger<ADTSDemuxer>
-{
-public:
+class ADTSDemuxer : public MediaDataDemuxer,
+                    public DecoderDoctorLifeLogger<ADTSDemuxer> {
+ public:
   
   explicit ADTSDemuxer(MediaResource* aSource);
   RefPtr<InitPromise> Init() override;
   uint32_t GetNumberTracks(TrackInfo::TrackType aType) const override;
-  already_AddRefed<MediaTrackDemuxer>
-  GetTrackDemuxer(TrackInfo::TrackType aType, uint32_t aTrackNumber) override;
+  already_AddRefed<MediaTrackDemuxer> GetTrackDemuxer(
+      TrackInfo::TrackType aType, uint32_t aTrackNumber) override;
   bool IsSeekable() const override;
 
   
   static bool ADTSSniffer(const uint8_t* aData, const uint32_t aLength);
 
-private:
+ private:
   bool InitInternal();
 
   RefPtr<MediaResource> mSource;
@@ -48,11 +46,9 @@ private:
 
 DDLoggedTypeNameAndBase(ADTSTrackDemuxer, MediaTrackDemuxer);
 
-class ADTSTrackDemuxer
-  : public MediaTrackDemuxer
-  , public DecoderDoctorLifeLogger<ADTSTrackDemuxer>
-{
-public:
+class ADTSTrackDemuxer : public MediaTrackDemuxer,
+                         public DecoderDoctorLifeLogger<ADTSTrackDemuxer> {
+ public:
   explicit ADTSTrackDemuxer(MediaResource* aSource);
 
   
@@ -75,17 +71,18 @@ public:
   RefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) override;
   void Reset() override;
   RefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(
-    const media::TimeUnit& aTimeThreshold) override;
+      const media::TimeUnit& aTimeThreshold) override;
   int64_t GetResourceOffset() const override;
   media::TimeIntervals GetBuffered() override;
 
-private:
+ private:
   
   ~ADTSTrackDemuxer();
 
   
   media::TimeUnit FastSeek(const media::TimeUnit& aTime);
 
+  
   
   media::TimeUnit ScanUntil(const media::TimeUnit& aTime);
 
@@ -136,6 +133,7 @@ private:
   uint32_t mSamplesPerFrame;
 
   
+  
   uint32_t mSamplesPerSecond;
 
   
@@ -145,6 +143,6 @@ private:
   UniquePtr<AudioInfo> mInfo;
 };
 
-} 
+}  
 
-#endif 
+#endif  

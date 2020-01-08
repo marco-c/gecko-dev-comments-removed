@@ -8,39 +8,41 @@
 #include "mozilla/Result.h"
 #include "ErrorList.h"
 
-template <class T> struct already_AddRefed;
+template <class T>
+struct already_AddRefed;
 
 namespace mozilla {
 class BufferReader;
 class MediaRawData;
 class MediaByteBuffer;
 
-class AnnexB
-{
-public:
+class AnnexB {
+ public:
   
   
-  static mozilla::Result<mozilla::Ok, nsresult>
-    ConvertSampleToAnnexB(mozilla::MediaRawData* aSample, bool aAddSPS = true);
+  static mozilla::Result<mozilla::Ok, nsresult> ConvertSampleToAnnexB(
+      mozilla::MediaRawData* aSample, bool aAddSPS = true);
   
   
   static bool ConvertSampleToAVCC(mozilla::MediaRawData* aSample);
-  static mozilla::Result<mozilla::Ok, nsresult> ConvertSampleTo4BytesAVCC(mozilla::MediaRawData* aSample);
+  static mozilla::Result<mozilla::Ok, nsresult> ConvertSampleTo4BytesAVCC(
+      mozilla::MediaRawData* aSample);
 
   
   static already_AddRefed<mozilla::MediaByteBuffer> ConvertExtraDataToAnnexB(
-    const mozilla::MediaByteBuffer* aExtraData);
+      const mozilla::MediaByteBuffer* aExtraData);
   
   static bool IsAVCC(const mozilla::MediaRawData* aSample);
   
   static bool IsAnnexB(const mozilla::MediaRawData* aSample);
 
-private:
+ private:
   
-  static mozilla::Result<mozilla::Ok, nsresult>
-    ConvertSPSOrPPS(mozilla::BufferReader& aReader, uint8_t aCount, mozilla::MediaByteBuffer* aAnnexB);
+  static mozilla::Result<mozilla::Ok, nsresult> ConvertSPSOrPPS(
+      mozilla::BufferReader& aReader, uint8_t aCount,
+      mozilla::MediaByteBuffer* aAnnexB);
 };
 
-} 
+}  
 
-#endif 
+#endif  

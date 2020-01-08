@@ -19,25 +19,21 @@ namespace mozilla {
 
 
 
-class MultiWriterQueueReaderLocking_Mutex
-{
-public:
+class MultiWriterQueueReaderLocking_Mutex {
+ public:
   MultiWriterQueueReaderLocking_Mutex()
-    : mMutex("MultiWriterQueueReaderLocking_Mutex")
-  {
-  }
+      : mMutex("MultiWriterQueueReaderLocking_Mutex") {}
   void Lock() { mMutex.Lock(); };
   void Unlock() { mMutex.Unlock(); };
 
-private:
+ private:
   Mutex mMutex;
 };
 
 
 
-class MultiWriterQueueReaderLocking_None
-{
-public:
+class MultiWriterQueueReaderLocking_None {
+ public:
 #ifndef DEBUG
   void Lock(){};
   void Unlock(){};
@@ -46,8 +42,8 @@ public:
   void Lock() { MOZ_ASSERT(mLocked.compareExchange(false, true)); };
   void Unlock() { MOZ_ASSERT(mLocked.compareExchange(true, false)); };
 
-private:
-  Atomic<bool> mLocked{ false };
+ private:
+  Atomic<bool> mLocked{false};
 #endif
 };
 
@@ -67,14 +63,12 @@ static constexpr uint32_t MultiWriterQueueDefaultBufferSize = 8192;
 
 
 
-template<typename T,
-         uint32_t BufferSize = MultiWriterQueueDefaultBufferSize,
-         typename ReaderLocking = MultiWriterQueueReaderLocking_Mutex>
-class MultiWriterQueue
-{
+template <typename T, uint32_t BufferSize = MultiWriterQueueDefaultBufferSize,
+          typename ReaderLocking = MultiWriterQueueReaderLocking_Mutex>
+class MultiWriterQueue {
   static_assert(BufferSize > 0, "0-sized MultiWriterQueue buffer");
 
-public:
+ public:
   
   
   
@@ -82,20 +76,16 @@ public:
   
   
   MultiWriterQueue()
-    : mBuffersCoverAtLeastUpTo(BufferSize - 1)
-    , mMostRecentBuffer(new Buffer{})
-    , mReusableBuffers(new Buffer{})
-    , mOldestBuffer(static_cast<Buffer*>(mMostRecentBuffer))
-    , mLiveBuffersStats(1)
-    , mReusableBuffersStats(1)
-    , mAllocatedBuffersStats(2)
-  {
-  }
+      : mBuffersCoverAtLeastUpTo(BufferSize - 1),
+        mMostRecentBuffer(new Buffer{}),
+        mReusableBuffers(new Buffer{}),
+        mOldestBuffer(static_cast<Buffer*>(mMostRecentBuffer)),
+        mLiveBuffersStats(1),
+        mReusableBuffersStats(1),
+        mAllocatedBuffersStats(2) {}
 
-  ~MultiWriterQueue()
-  {
-    auto DestroyList = [](Buffer* aBuffer)
-    {
+  ~MultiWriterQueue() {
+    auto DestroyList = [](Buffer* aBuffer) {
       while (aBuffer) {
         Buffer* older = aBuffer->Older();
         delete aBuffer;
@@ -122,14 +112,13 @@ public:
   
   
   
-  template<typename F>
-  DidReachEndOfBuffer PushF(F&& aF)
-  {
+  template <typename F>
+  DidReachEndOfBuffer PushF(F&& aF) {
     
-    const Index index{ mNextElementToWrite++ };
+    const Index index{mNextElementToWrite++};
     
     for (;;) {
-      Index lastIndex{ mBuffersCoverAtLeastUpTo };
+      Index lastIndex{mBuffersCoverAtLeastUpTo};
 
       if (MOZ_UNLIKELY(index == lastIndex)) {
         
@@ -161,7 +150,7 @@ public:
         
         
         while (Index(mBuffersCoverAtLeastUpTo) < index) {
-          PR_Sleep(PR_INTERVAL_NO_WAIT); 
+          PR_Sleep(PR_INTERVAL_NO_WAIT);  
         }
         
         continue;
@@ -196,8 +185,7 @@ public:
   
   
   
-  DidReachEndOfBuffer Push(const T& aT)
-  {
+  DidReachEndOfBuffer Push(const T& aT) {
     return PushF([&aT](T& aElement, Index) { aElement = aT; });
   }
 
@@ -206,8 +194,7 @@ public:
   
   
   
-  DidReachEndOfBuffer Push(T&& aT)
-  {
+  DidReachEndOfBuffer Push(T&& aT) {
     return PushF([&aT](T& aElement, Index) { aElement = std::move(aT); });
   }
 
@@ -219,9 +206,8 @@ public:
   
   
   
-  template<typename F>
-  void PopAll(F&& aF)
-  {
+  template <typename F>
+  void PopAll(F&& aF) {
     mReaderLocking.Lock();
     
     
@@ -255,36 +241,30 @@ public:
   }
 
   
-  size_t ShallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t ShallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return mAllocatedBuffersStats.Count() * sizeof(Buffer);
   }
 
-  struct CountAndWatermark
-  {
+  struct CountAndWatermark {
     int mCount;
     int mWatermark;
   };
 
   CountAndWatermark LiveBuffersStats() const { return mLiveBuffersStats.Get(); }
-  CountAndWatermark ReusableBuffersStats() const
-  {
+  CountAndWatermark ReusableBuffersStats() const {
     return mReusableBuffersStats.Get();
   }
-  CountAndWatermark AllocatedBuffersStats() const
-  {
+  CountAndWatermark AllocatedBuffersStats() const {
     return mAllocatedBuffersStats.Get();
   }
 
-private:
+ private:
   
-  class BufferedElement
-  {
-  public:
+  class BufferedElement {
+   public:
     
-    template<typename F>
-    void SetAndValidate(F&& aF, Index aIndex)
-    {
+    template <typename F>
+    void SetAndValidate(F&& aF, Index aIndex) {
       MOZ_ASSERT(!mValid);
       aF(mT, aIndex);
       mValid = true;
@@ -292,9 +272,8 @@ private:
 
     
     
-    template<typename F>
-    bool ReadAndInvalidate(F&& aF)
-    {
+    template <typename F>
+    bool ReadAndInvalidate(F&& aF) {
       if (!mValid) {
         return false;
       }
@@ -303,35 +282,26 @@ private:
       return true;
     }
 
-  private:
+   private:
     T mT;
     
     
     
     
     
-    Atomic<bool, ReleaseAcquire> mValid{ false };
+    Atomic<bool, ReleaseAcquire> mValid{false};
   };
 
   
   
-  class Buffer
-  {
-  public:
+  class Buffer {
+   public:
     
-    Buffer()
-      : mOlder(nullptr)
-      , mNewer(nullptr)
-      , mOrigin(0)
-    {
-    }
+    Buffer() : mOlder(nullptr), mNewer(nullptr), mOrigin(0) {}
 
     
     Buffer(Buffer* aOlder, Index aOrigin)
-      : mOlder(aOlder)
-      , mNewer(nullptr)
-      , mOrigin(aOrigin)
-    {
+        : mOlder(aOlder), mNewer(nullptr), mOrigin(aOrigin) {
       MOZ_ASSERT(aOlder);
       aOlder->mNewer = this;
     }
@@ -348,9 +318,8 @@ private:
     
     
     
-    template<typename F>
-    void SetAndValidateElement(F&& aF, Index aIndex)
-    {
+    template <typename F>
+    void SetAndValidateElement(F&& aF, Index aIndex) {
       MOZ_ASSERT(aIndex >= Origin());
       MOZ_ASSERT(aIndex < Origin() + BufferSize);
       mElements[aIndex - Origin()].SetAndValidate(aF, aIndex);
@@ -364,9 +333,8 @@ private:
     
     
     
-    template<typename F>
-    DidReadLastElement ReadAndInvalidateAll(F&& aF, Index& aIndex)
-    {
+    template <typename F>
+    DidReadLastElement ReadAndInvalidateAll(F&& aF, Index& aIndex) {
       MOZ_ASSERT(aIndex >= Origin());
       MOZ_ASSERT(aIndex < Origin() + BufferSize);
       for (; aIndex < Origin() + BufferSize; ++aIndex) {
@@ -379,7 +347,7 @@ private:
       return true;
     }
 
-  private:
+   private:
     Buffer* mOlder;
     Buffer* mNewer;
     Index mOrigin;
@@ -388,8 +356,7 @@ private:
 
   
   
-  Buffer* NewBuffer(Buffer* aOlder, Index aOrigin)
-  {
+  Buffer* NewBuffer(Buffer* aOlder, Index aOrigin) {
     MOZ_ASSERT(aOlder);
     for (;;) {
       Buffer* head = mReusableBuffers;
@@ -421,8 +388,7 @@ private:
   
   
   
-  void StopUsing(Buffer* aBuffer, bool aDestroy)
-  {
+  void StopUsing(Buffer* aBuffer, bool aDestroy) {
     --mLiveBuffersStats;
 
     
@@ -461,7 +427,7 @@ private:
   
   
   
-  Atomic<Index::ValueType, Relaxed> mNextElementToWrite{ 0 };
+  Atomic<Index::ValueType, Relaxed> mNextElementToWrite{0};
 
   
   
@@ -495,27 +461,21 @@ private:
   Buffer* mOldestBuffer;
 
   
-  Index mNextElementToPop{ 0 };
+  Index mNextElementToPop{0};
 
   
-  class AtomicCountAndWatermark
-  {
-  public:
+  class AtomicCountAndWatermark {
+   public:
     explicit AtomicCountAndWatermark(int aCount)
-      : mCount(aCount)
-      , mWatermark(aCount)
-    {
-    }
+        : mCount(aCount), mWatermark(aCount) {}
 
     int Count() const { return int(mCount); }
 
-    CountAndWatermark Get() const
-    {
-      return CountAndWatermark{ int(mCount), int(mWatermark) };
+    CountAndWatermark Get() const {
+      return CountAndWatermark{int(mCount), int(mWatermark)};
     }
 
-    int operator++()
-    {
+    int operator++() {
       int count = int(++mCount);
       
       for (;;) {
@@ -526,20 +486,20 @@ private:
         }
         if (mWatermark.compareExchange(watermark, count)) {
           
+          
           break;
         }
       }
       return count;
     }
 
-    int operator--()
-    {
+    int operator--() {
       int count = int(--mCount);
       
       return count;
     }
 
-  private:
+   private:
     
     
     Atomic<int, Relaxed> mCount;
@@ -553,6 +513,6 @@ private:
   AtomicCountAndWatermark mAllocatedBuffersStats;
 };
 
-} 
+}  
 
-#endif 
+#endif  

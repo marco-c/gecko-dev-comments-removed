@@ -21,11 +21,11 @@ namespace mozilla {
 namespace dom {
 class Blob;
 struct MediaTrackSettings;
-} 
+}  
 
 namespace ipc {
 class PrincipalInfo;
-} 
+}  
 
 class AllocationHandle;
 class MediaEnginePhotoCallback;
@@ -37,7 +37,7 @@ class SourceMediaStream;
 
 
 class MediaEnginePhotoCallback {
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEnginePhotoCallback)
 
   
@@ -47,7 +47,7 @@ public:
   
   virtual nsresult PhotoError(nsresult aRv) = 0;
 
-protected:
+ protected:
   virtual ~MediaEnginePhotoCallback() {}
 };
 
@@ -55,10 +55,10 @@ protected:
 
 
 enum MediaEngineSourceState {
-  kAllocated, 
-  kStarted, 
-  kStopped, 
-  kReleased 
+  kAllocated,  
+  kStarted,    
+  kStopped,    
+  kReleased    
 };
 
 
@@ -67,7 +67,7 @@ enum MediaEngineSourceState {
 
 
 class MediaEngineSourceInterface {
-public:
+ public:
   
 
 
@@ -124,8 +124,8 @@ public:
 
 
 
-  virtual nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
-                            const MediaEnginePrefs &aPrefs,
+  virtual nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
+                            const MediaEnginePrefs& aPrefs,
                             const nsString& aDeviceId,
                             const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
                             AllocationHandle** aOutHandle,
@@ -162,7 +162,8 @@ public:
 
 
 
-  virtual nsresult FocusOnSelectedSource(const RefPtr<const AllocationHandle>& aHandle) = 0;
+  virtual nsresult FocusOnSelectedSource(
+      const RefPtr<const AllocationHandle>& aHandle) = 0;
 
   
 
@@ -204,7 +205,8 @@ public:
 
 
 
-  virtual nsresult Deallocate(const RefPtr<const AllocationHandle>& aHandle) = 0;
+  virtual nsresult Deallocate(
+      const RefPtr<const AllocationHandle>& aHandle) = 0;
 
   
 
@@ -213,6 +215,7 @@ public:
   virtual void Shutdown() = 0;
 
   
+
 
 
 
@@ -248,8 +251,7 @@ public:
 
 
   virtual void Pull(const RefPtr<const AllocationHandle>& aHandle,
-                    const RefPtr<SourceMediaStream>& aStream,
-                    TrackID aTrackID,
+                    const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
                     StreamTime aDesiredTime,
                     const PrincipalHandle& aPrincipalHandle) = 0;
 };
@@ -262,8 +264,7 @@ public:
 
 
 class MediaEngineSource : public MediaEngineSourceInterface {
-public:
-
+ public:
   
   
   static const unsigned int kMaxDeviceNameLength = 128;
@@ -278,8 +279,7 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEngineSource)
   NS_DECL_OWNINGTHREAD
 
-  void AssertIsOnOwningThread() const
-  {
+  void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(MediaEngineSource);
   }
 
@@ -293,7 +293,8 @@ public:
   bool GetScary() const override;
 
   
-  nsresult FocusOnSelectedSource(const RefPtr<const AllocationHandle>& aHandle) override;
+  nsresult FocusOnSelectedSource(
+      const RefPtr<const AllocationHandle>& aHandle) override;
 
   
   void Shutdown() override;
@@ -305,10 +306,10 @@ public:
   
   void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
 
-protected:
+ protected:
   virtual ~MediaEngineSource();
 };
 
-} 
+}  
 
 #endif 

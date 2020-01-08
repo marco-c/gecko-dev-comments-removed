@@ -20,7 +20,7 @@ class VideoFrameContainer;
 
 
 class MediaStreamVideoSink : public DirectMediaStreamTrackListener {
-public:
+ public:
   
   void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
                                StreamTime aTrackOffset,
@@ -33,12 +33,14 @@ public:
   virtual VideoFrameContainer* AsVideoFrameContainer() { return nullptr; }
   virtual void Invalidate() {}
 
-  virtual MediaStreamVideoSink* AsMediaStreamVideoSink() override { return this; }
+  virtual MediaStreamVideoSink* AsMediaStreamVideoSink() override {
+    return this;
+  }
 
-protected:
-  virtual ~MediaStreamVideoSink() {};
+ protected:
+  virtual ~MediaStreamVideoSink(){};
 };
 
-} 
+}  
 
 #endif 

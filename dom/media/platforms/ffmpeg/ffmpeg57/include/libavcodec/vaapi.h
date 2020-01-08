@@ -50,137 +50,125 @@
 
 
 struct vaapi_context {
-    
+  
 
 
 
 
 
-    void *display;
+  void *display;
 
-    
-
-
-
-
-
-    uint32_t config_id;
-
-    
+  
 
 
 
 
 
-    uint32_t context_id;
+  uint32_t config_id;
+
+  
+
+
+
+
+
+  uint32_t context_id;
 
 #if FF_API_VAAPI_CONTEXT
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    uint32_t pic_param_buf_id;
+  attribute_deprecated uint32_t pic_param_buf_id;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    uint32_t iq_matrix_buf_id;
+  attribute_deprecated uint32_t iq_matrix_buf_id;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    uint32_t bitplane_buf_id;
+  attribute_deprecated uint32_t bitplane_buf_id;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    uint32_t *slice_buf_ids;
+  attribute_deprecated uint32_t *slice_buf_ids;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    unsigned int n_slice_buf_ids;
+  attribute_deprecated unsigned int n_slice_buf_ids;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    unsigned int slice_buf_ids_alloc;
+  attribute_deprecated unsigned int slice_buf_ids_alloc;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    void *slice_params;
+  attribute_deprecated void *slice_params;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    unsigned int slice_param_size;
+  attribute_deprecated unsigned int slice_param_size;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    unsigned int slice_params_alloc;
+  attribute_deprecated unsigned int slice_params_alloc;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    unsigned int slice_count;
+  attribute_deprecated unsigned int slice_count;
 
-    
+  
 
 
 
 
-    attribute_deprecated
-    const uint8_t *slice_data;
+  attribute_deprecated const uint8_t *slice_data;
 
-    
+  
 
 
 
 
 
-    attribute_deprecated
-    uint32_t slice_data_size;
+  attribute_deprecated uint32_t slice_data_size;
 #endif
 };
 

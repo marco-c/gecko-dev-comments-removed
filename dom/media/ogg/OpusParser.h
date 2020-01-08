@@ -11,9 +11,8 @@
 
 namespace mozilla {
 
-class OpusParser
-{
-public:
+class OpusParser {
+ public:
   OpusParser();
 
   bool DecodeHeader(unsigned char* aData, size_t aLength);
@@ -21,29 +20,29 @@ public:
   static bool IsValidMapping2ChannelsCount(uint8_t aChannels);
 
   
-  int mRate;        
-  uint32_t mNominalRate; 
-  int mChannels;    
-  uint16_t mPreSkip; 
+  int mRate;              
+  uint32_t mNominalRate;  
+  int mChannels;          
+  uint16_t mPreSkip;      
 #ifdef MOZ_SAMPLE_TYPE_FLOAT32
-  float mGain;      
+  float mGain;  
 #else
-  int32_t mGain_Q16; 
+  int32_t mGain_Q16;  
 #endif
-  int mChannelMapping; 
-  int mStreams;     
-  int mCoupledStreams; 
-  unsigned char mMappingTable[255]; 
+  int mChannelMapping;  
+  int mStreams;         
+  int mCoupledStreams;  
+  unsigned char mMappingTable[255];  
 
   
   
   int64_t mPrevPacketGranulepos;
 
-  nsTArray<nsCString> mTags; 
+  nsTArray<nsCString> mTags;  
 
-  nsCString mVendorString;   
+  nsCString mVendorString;  
 };
 
-} 
+}  
 
 #endif

@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -9,7 +9,8 @@
 
 #include "nsString.h"
 
-template <class T> class nsCOMPtr;
+template <class T>
+class nsCOMPtr;
 class nsIIDNService;
 
 namespace mozilla {
@@ -23,20 +24,20 @@ namespace mozilla {
 
 
 
-class PeerIdentity final : public RefCounted<PeerIdentity>
-{
-public:
+
+class PeerIdentity final : public RefCounted<PeerIdentity> {
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(PeerIdentity)
 
   explicit PeerIdentity(const nsAString& aPeerIdentity)
-    : mPeerIdentity(aPeerIdentity) {}
+      : mPeerIdentity(aPeerIdentity) {}
   ~PeerIdentity() {}
 
   bool Equals(const PeerIdentity& aOther) const;
   bool Equals(const nsAString& aOtherString) const;
   const nsString& ToString() const { return mPeerIdentity; }
 
-private:
+ private:
   static void GetUser(const nsAString& aPeerIdentity, nsAString& aUser);
   static void GetHost(const nsAString& aPeerIdentity, nsAString& aHost);
 
@@ -47,30 +48,21 @@ private:
   nsString mPeerIdentity;
 };
 
-inline bool
-operator==(const PeerIdentity& aOne, const PeerIdentity& aTwo)
-{
+inline bool operator==(const PeerIdentity& aOne, const PeerIdentity& aTwo) {
   return aOne.Equals(aTwo);
 }
 
-inline bool
-operator==(const PeerIdentity& aOne, const nsAString& aString)
-{
+inline bool operator==(const PeerIdentity& aOne, const nsAString& aString) {
   return aOne.Equals(aString);
 }
 
-inline bool
-operator!=(const PeerIdentity& aOne, const PeerIdentity& aTwo)
-{
+inline bool operator!=(const PeerIdentity& aOne, const PeerIdentity& aTwo) {
   return !aOne.Equals(aTwo);
 }
 
-inline bool
-operator!=(const PeerIdentity& aOne, const nsAString& aString)
-{
+inline bool operator!=(const PeerIdentity& aOne, const nsAString& aString) {
   return !aOne.Equals(aString);
 }
-
 
 } 
 

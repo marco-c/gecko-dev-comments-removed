@@ -14,17 +14,16 @@ namespace mozilla {
 class MediaContainerType;
 class TrackInfo;
 
-class MP3Decoder
-{
-public:
+class MP3Decoder {
+ public:
   
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
-    const MediaContainerType& aType);
+      const MediaContainerType& aType);
 };
 
-} 
+}  
 
 #endif

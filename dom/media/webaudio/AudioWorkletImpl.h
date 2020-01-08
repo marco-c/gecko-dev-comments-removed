@@ -12,30 +12,28 @@
 namespace mozilla {
 
 namespace dom {
-  class AudioContext;
+class AudioContext;
 }
 
-class AudioWorkletImpl final : public WorkletImpl
-{
-public:
+class AudioWorkletImpl final : public WorkletImpl {
+ public:
   
 
-  static already_AddRefed<dom::Worklet>
-  CreateWorklet(dom::AudioContext* aContext, ErrorResult& aRv);
+  static already_AddRefed<dom::Worklet> CreateWorklet(
+      dom::AudioContext* aContext, ErrorResult& aRv);
 
-  JSObject*
-  WrapWorklet(JSContext* aCx, dom::Worklet* aWorklet,
-              JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapWorklet(JSContext* aCx, dom::Worklet* aWorklet,
+                        JS::Handle<JSObject*> aGivenProto) override;
 
-protected:
+ protected:
   
   already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope() override;
 
-private:
+ private:
   AudioWorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
   ~AudioWorkletImpl();
 };
 
-} 
+}  
 
-#endif 
+#endif  

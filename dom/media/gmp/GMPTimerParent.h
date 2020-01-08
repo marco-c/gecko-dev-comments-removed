@@ -18,32 +18,28 @@ namespace mozilla {
 namespace gmp {
 
 class GMPTimerParent : public PGMPTimerParent {
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(GMPTimerParent)
   explicit GMPTimerParent(nsISerialEventTarget* aGMPEventTarget);
 
   void Shutdown();
 
-protected:
+ protected:
   mozilla::ipc::IPCResult RecvSetTimer(const uint32_t& aTimerId,
                                        const uint32_t& aTimeoutMs) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
+ private:
   ~GMPTimerParent() {}
 
-  static void GMPTimerExpired(nsITimer *aTimer, void *aClosure);
+  static void GMPTimerExpired(nsITimer* aTimer, void* aClosure);
 
   struct Context {
-    Context()
-      : mId(0) {
-      MOZ_COUNT_CTOR(Context);
-    }
-    ~Context() {
-      MOZ_COUNT_DTOR(Context);
-    }
+    Context() : mId(0) { MOZ_COUNT_CTOR(Context); }
+    ~Context() { MOZ_COUNT_DTOR(Context); }
     nsCOMPtr<nsITimer> mTimer;
-    RefPtr<GMPTimerParent> mParent; 
+    RefPtr<GMPTimerParent>
+        mParent;  
     uint32_t mId;
   };
 
@@ -56,7 +52,7 @@ private:
   bool mIsOpen;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

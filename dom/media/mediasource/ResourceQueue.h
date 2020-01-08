@@ -32,7 +32,7 @@ struct ResourceItem {
 };
 
 class ResourceQueue : private nsDeque {
-public:
+ public:
   ResourceQueue();
 
   
@@ -49,8 +49,7 @@ public:
 
   
   
-  uint32_t Evict(uint64_t aOffset, uint32_t aSizeToEvict,
-                 ErrorResult& aRv);
+  uint32_t Evict(uint64_t aOffset, uint32_t aSizeToEvict, ErrorResult& aRv);
 
   uint32_t EvictBefore(uint64_t aOffset, ErrorResult& aRv);
 
@@ -62,7 +61,7 @@ public:
   void Dump(const char* aPath);
 #endif
 
-private:
+ private:
   ResourceItem* ResourceAt(uint32_t aIndex) const;
 
   
@@ -70,7 +69,7 @@ private:
   
   
   
-  uint32_t GetAtOffset(uint64_t aOffset, uint32_t *aResourceOffset);
+  uint32_t GetAtOffset(uint64_t aOffset, uint32_t* aResourceOffset);
 
   ResourceItem* PopFront();
 
@@ -81,6 +80,6 @@ private:
   uint64_t mOffset;
 };
 
-} 
+}  
 
 #endif 

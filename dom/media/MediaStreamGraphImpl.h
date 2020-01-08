@@ -37,8 +37,7 @@ class LinkedList;
 
 
 
-struct StreamUpdate
-{
+struct StreamUpdate {
   RefPtr<MediaStream> mStream;
   StreamTime mNextMainThreadCurrentTime;
   bool mNextMainThreadFinished;
@@ -51,18 +50,13 @@ struct StreamUpdate
 
 
 
-class ControlMessage
-{
-public:
-  explicit ControlMessage(MediaStream* aStream) : mStream(aStream)
-  {
+class ControlMessage {
+ public:
+  explicit ControlMessage(MediaStream* aStream) : mStream(aStream) {
     MOZ_COUNT_CTOR(ControlMessage);
   }
   
-  virtual ~ControlMessage()
-  {
-    MOZ_COUNT_DTOR(ControlMessage);
-  }
+  virtual ~ControlMessage() { MOZ_COUNT_DTOR(ControlMessage); }
   
   
   
@@ -76,16 +70,15 @@ public:
   virtual void RunDuringShutdown() {}
   MediaStream* GetStream() { return mStream; }
 
-protected:
+ protected:
   
   
   
   MediaStream* mStream;
 };
 
-class MessageBlock
-{
-public:
+class MessageBlock {
+ public:
   nsTArray<UniquePtr<ControlMessage>> mMessages;
 };
 
@@ -101,9 +94,8 @@ public:
 class MediaStreamGraphImpl : public MediaStreamGraph,
                              public nsIMemoryReporter,
                              public nsITimerCallback,
-                             public nsINamed
-{
-public:
+                             public nsINamed {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
   NS_DECL_NSITIMERCALLBACK
@@ -118,8 +110,7 @@ public:
 
 
   explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
-                                TrackRate aSampleRate,
-                                AbstractThread* aWindow);
+                                TrackRate aSampleRate, AbstractThread* aWindow);
 
   
 
@@ -174,16 +165,15 @@ public:
   
 
 
-  static void
-  FinishCollectReports(nsIHandleReportCallback* aHandleReport,
-                       nsISupports* aData,
-                       const nsTArray<AudioNodeSizes>& aAudioStreamSizes);
+  static void FinishCollectReports(
+      nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+      const nsTArray<AudioNodeSizes>& aAudioStreamSizes);
 
   
   
   void CollectSizesForMemoryReport(
-         already_AddRefed<nsIHandleReportCallback> aHandleReport,
-         already_AddRefed<nsISupports> aHandlerData);
+      already_AddRefed<nsIHandleReportCallback> aHandleReport,
+      already_AddRefed<nsISupports> aHandlerData);
 
   
 
@@ -238,11 +228,9 @@ public:
 
 
 
-  template<typename C, typename Chunk>
-  void ProcessChunkMetadataForInterval(MediaStream* aStream,
-                                       TrackID aTrackID,
-                                       C& aSegment,
-                                       StreamTime aStart,
+  template <typename C, typename Chunk>
+  void ProcessChunkMetadataForInterval(MediaStream* aStream, TrackID aTrackID,
+                                       C& aSegment, StreamTime aStart,
                                        StreamTime aEnd);
   
 
@@ -254,8 +242,7 @@ public:
 
   void UpdateGraph(GraphTime aEndBlockingDecisions);
 
-  void SwapMessageQueues()
-  {
+  void SwapMessageQueues() {
     MOZ_ASSERT(CurrentDriver()->OnThread());
     MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mMonitor.AssertCurrentThreadOwns();
@@ -279,8 +266,7 @@ public:
 
 
 
-  void AudioContextOperationCompleted(MediaStream* aStream,
-                                      void* aPromise,
+  void AudioContextOperationCompleted(MediaStream* aStream, void* aPromise,
                                       dom::AudioContextOperation aOperation);
 
   
@@ -351,7 +337,8 @@ public:
 
 
 
-  StreamTime GraphTimeToStreamTimeWithBlocking(const MediaStream* aStream, GraphTime aTime) const;
+  StreamTime GraphTimeToStreamTimeWithBlocking(const MediaStream* aStream,
+                                               GraphTime aTime) const;
 
   
 
@@ -413,11 +400,11 @@ public:
   
 
 
-  bool IsEmpty() const
-  {
-    MOZ_ASSERT(OnGraphThreadOrNotRunning() ||
-               (NS_IsMainThread() &&
-                LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP));
+  bool IsEmpty() const {
+    MOZ_ASSERT(
+        OnGraphThreadOrNotRunning() ||
+        (NS_IsMainThread() &&
+         LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP));
     return mStreams.IsEmpty() && mSuspendedStreams.IsEmpty() && mPortCount == 0;
   }
 
@@ -437,24 +424,19 @@ public:
   
 
 
-  void SetStreamOrderDirty()
-  {
+  void SetStreamOrderDirty() {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
     mStreamOrderDirty = true;
   }
 
-  uint32_t AudioOutputChannelCount() const
-  {
-    return mOutputChannels;
-  }
+  uint32_t AudioOutputChannelCount() const { return mOutputChannels; }
 
   
 
 
 
 
-  uint32_t AudioInputChannelCount()
-  {
+  uint32_t AudioInputChannelCount() {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
 
 #ifdef ANDROID
@@ -464,8 +446,8 @@ public:
 #else
     if (!mInputDeviceID) {
       MOZ_ASSERT(mInputDeviceUsers.Count() == 0,
-        "If running on a platform other than android,"
-        "an explicit device id should be present");
+                 "If running on a platform other than android,"
+                 "an explicit device id should be present");
       return 0;
     }
 #endif
@@ -473,36 +455,30 @@ public:
     
     
     nsTArray<RefPtr<AudioDataListener>>* listeners =
-      mInputDeviceUsers.GetValue(mInputDeviceID);
+        mInputDeviceUsers.GetValue(mInputDeviceID);
     MOZ_ASSERT(listeners);
     for (const auto& listener : *listeners) {
-      maxInputChannels =
-        std::max(maxInputChannels, listener->RequestedInputChannelCount(this));
+      maxInputChannels = std::max(maxInputChannels,
+                                  listener->RequestedInputChannelCount(this));
     }
     return maxInputChannels;
   }
 
-  CubebUtils::AudioDeviceID InputDeviceID()
-  {
-    return mInputDeviceID;
-  }
+  CubebUtils::AudioDeviceID InputDeviceID() { return mInputDeviceID; }
 
-  double MediaTimeToSeconds(GraphTime aTime) const
-  {
+  double MediaTimeToSeconds(GraphTime aTime) const {
     NS_ASSERTION(aTime > -STREAM_TIME_MAX && aTime <= STREAM_TIME_MAX,
                  "Bad time");
-    return static_cast<double>(aTime)/GraphRate();
+    return static_cast<double>(aTime) / GraphRate();
   }
 
-  GraphTime SecondsToMediaTime(double aS) const
-  {
-    NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX/TRACK_RATE_MAX,
+  GraphTime SecondsToMediaTime(double aS) const {
+    NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX / TRACK_RATE_MAX,
                  "Bad seconds");
     return GraphRate() * aS;
   }
 
-  GraphTime MillisecondsToMediaTime(int32_t aMS) const
-  {
+  GraphTime MillisecondsToMediaTime(int32_t aMS) const {
     return RateConvertTicksRoundDown(GraphRate(), 1000, aMS);
   }
 
@@ -516,8 +492,7 @@ public:
   
 
 
-  GraphDriver* CurrentDriver() const
-  {
+  GraphDriver* CurrentDriver() const {
 #ifdef DEBUG
     if (!OnGraphThreadOrNotRunning()) {
       mMonitor.AssertCurrentThreadOwns();
@@ -533,8 +508,7 @@ public:
 
 
 
-  void SetCurrentDriver(GraphDriver* aDriver)
-  {
+  void SetCurrentDriver(GraphDriver* aDriver) {
     MOZ_ASSERT(mDriver->OnThread() || !mDriver->ThreadRunning());
 #ifdef DEBUG
     mMonitor.AssertCurrentThreadOwns();
@@ -542,27 +516,25 @@ public:
     mDriver = aDriver;
   }
 
-  Monitor& GetMonitor()
-  {
-    return mMonitor;
-  }
+  Monitor& GetMonitor() { return mMonitor; }
 
-  void EnsureNextIteration()
-  {
-    mNeedAnotherIteration = true; 
+  void EnsureNextIteration() {
+    mNeedAnotherIteration = true;  
     
     
-    if (mGraphDriverAsleep) { 
+    
+    if (mGraphDriverAsleep) {  
       MonitorAutoLock mon(mMonitor);
-      CurrentDriver()->WakeUp(); 
+      CurrentDriver()
+          ->WakeUp();  
     }
   }
 
-  void EnsureNextIterationLocked()
-  {
-    mNeedAnotherIteration = true; 
-    if (mGraphDriverAsleep) { 
-      CurrentDriver()->WakeUp(); 
+  void EnsureNextIterationLocked() {
+    mNeedAnotherIteration = true;  
+    if (mGraphDriverAsleep) {      
+      CurrentDriver()
+          ->WakeUp();  
     }
   }
 
@@ -570,44 +542,38 @@ public:
   void RegisterCaptureStreamForWindow(uint64_t aWindowId,
                                       ProcessedMediaStream* aCaptureStream);
   void UnregisterCaptureStreamForWindow(uint64_t aWindowId);
-  already_AddRefed<MediaInputPort>
-  ConnectToCaptureStream(uint64_t aWindowId, MediaStream* aMediaStream);
+  already_AddRefed<MediaInputPort> ConnectToCaptureStream(
+      uint64_t aWindowId, MediaStream* aMediaStream);
 
   class StreamSet {
-  public:
+   public:
     class iterator {
-    public:
+     public:
       explicit iterator(MediaStreamGraphImpl& aGraph)
-        : mGraph(&aGraph), mArrayNum(-1), mArrayIndex(0)
-      {
+          : mGraph(&aGraph), mArrayNum(-1), mArrayIndex(0) {
         ++(*this);
       }
       iterator() : mGraph(nullptr), mArrayNum(2), mArrayIndex(0) {}
-      MediaStream* operator*()
-      {
-        return Array()->ElementAt(mArrayIndex);
-      }
-      iterator operator++()
-      {
+      MediaStream* operator*() { return Array()->ElementAt(mArrayIndex); }
+      iterator operator++() {
         ++mArrayIndex;
         while (mArrayNum < 2 &&
-          (mArrayNum < 0 || mArrayIndex >= Array()->Length())) {
+               (mArrayNum < 0 || mArrayIndex >= Array()->Length())) {
           ++mArrayNum;
           mArrayIndex = 0;
         }
         return *this;
       }
-      bool operator==(const iterator& aOther) const
-      {
-        return mArrayNum == aOther.mArrayNum && mArrayIndex == aOther.mArrayIndex;
+      bool operator==(const iterator& aOther) const {
+        return mArrayNum == aOther.mArrayNum &&
+               mArrayIndex == aOther.mArrayIndex;
       }
-      bool operator!=(const iterator& aOther) const
-      {
+      bool operator!=(const iterator& aOther) const {
         return !(*this == aOther);
       }
-    private:
-      nsTArray<MediaStream*>* Array()
-      {
+
+     private:
+      nsTArray<MediaStream*>* Array() {
         return mArrayNum == 0 ? &mGraph->mStreams : &mGraph->mSuspendedStreams;
       }
       MediaStreamGraphImpl* mGraph;
@@ -618,7 +584,8 @@ public:
     explicit StreamSet(MediaStreamGraphImpl& aGraph) : mGraph(aGraph) {}
     iterator begin() { return iterator(mGraph); }
     iterator end() { return iterator(); }
-  private:
+
+   private:
     MediaStreamGraphImpl& mGraph;
   };
   StreamSet AllStreams() { return StreamSet(*this); }
@@ -699,8 +666,8 @@ public:
   
   
   
-  nsDataHashtable<nsVoidPtrHashKey,
-                  nsTArray<RefPtr<AudioDataListener>>> mInputDeviceUsers;
+  nsDataHashtable<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
+      mInputDeviceUsers;
 
   
   Atomic<bool> mNeedAnotherIteration;
@@ -724,7 +691,7 @@ public:
   
 
 
-  nsTArray<nsCOMPtr<nsIRunnable> > mUpdateRunnables;
+  nsTArray<nsCOMPtr<nsIRunnable>> mUpdateRunnables;
   
 
 
@@ -741,8 +708,7 @@ public:
   nsTArray<MessageBlock> mBackMessageQueue;
 
   
-  bool MessagesQueued() const
-  {
+  bool MessagesQueued() const {
     mMonitor.AssertCurrentThreadOwns();
     return !mBackMessageQueue.IsEmpty();
   }
@@ -769,8 +735,7 @@ public:
 
 
 
-  enum LifecycleState
-  {
+  enum LifecycleState {
     
     LIFECYCLE_THREAD_NOT_STARTED,
     
@@ -798,8 +763,7 @@ public:
 
 
   LifecycleState mLifecycleState;
-  LifecycleState& LifecycleStateRef()
-  {
+  LifecycleState& LifecycleStateRef() {
 #if DEBUG
     if (!mDetectedNotRunning) {
       mMonitor.AssertCurrentThreadOwns();
@@ -807,8 +771,7 @@ public:
 #endif
     return mLifecycleState;
   }
-  const LifecycleState& LifecycleStateRef() const
-  {
+  const LifecycleState& LifecycleStateRef() const {
 #if DEBUG
     if (!mDetectedNotRunning) {
       mMonitor.AssertCurrentThreadOwns();
@@ -876,7 +839,7 @@ public:
   
   nsCOMPtr<nsITimer> mShutdownTimer;
 
-private:
+ private:
   virtual ~MediaStreamGraphImpl();
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
@@ -890,8 +853,7 @@ private:
 
   RefPtr<MediaStreamGraphImpl> mSelfRef;
 
-  struct WindowAndStream
-  {
+  struct WindowAndStream {
     uint64_t mWindowId;
     RefPtr<ProcessedMediaStream> mCaptureStreamSink;
   };
@@ -919,6 +881,6 @@ private:
 #endif
 };
 
-} 
+}  
 
 #endif 

@@ -28,17 +28,16 @@ namespace media {
 class AudioSink : private AudioStream::DataSource {
   using PlaybackParams = MediaSink::PlaybackParams;
 
-public:
-  AudioSink(AbstractThread* aThread,
-            MediaQueue<AudioData>& aAudioQueue,
-            const TimeUnit& aStartTime,
-            const AudioInfo& aInfo);
+ public:
+  AudioSink(AbstractThread* aThread, MediaQueue<AudioData>& aAudioQueue,
+            const TimeUnit& aStartTime, const AudioInfo& aInfo);
 
   ~AudioSink();
 
   
   
-  nsresult Init(const PlaybackParams& aParams, RefPtr<GenericPromise>& aEndPromise);
+  nsresult Init(const PlaybackParams& aParams,
+                RefPtr<GenericPromise>& aEndPromise);
 
   
 
@@ -59,13 +58,11 @@ public:
   void SetPreservesPitch(bool aPreservesPitch);
   void SetPlaying(bool aPlaying);
 
-  MediaEventSource<bool>& AudibleEvent() {
-    return mAudibleEvent;
-  }
+  MediaEventSource<bool>& AudibleEvent() { return mAudibleEvent; }
 
   nsCString GetDebugInfo();
 
-private:
+ private:
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams);
 
@@ -130,8 +127,8 @@ private:
   
   
   uint32_t DrainConverter(uint32_t aMaxFrames = UINT32_MAX);
-  already_AddRefed<AudioData> CreateAudioFromBuffer(AlignedAudioBuffer&& aBuffer,
-                                                    AudioData* aReference);
+  already_AddRefed<AudioData> CreateAudioFromBuffer(
+      AlignedAudioBuffer&& aBuffer, AudioData* aReference);
   
   
   uint32_t PushProcessedAudio(AudioData* aData);
@@ -160,7 +157,7 @@ private:
   MediaQueue<AudioData>& mAudioQueue;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

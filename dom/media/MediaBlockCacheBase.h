@@ -33,21 +33,20 @@ namespace mozilla {
 
 
 
-class MediaBlockCacheBase
-{
-public:
+class MediaBlockCacheBase {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaBlockCacheBase)
 
-  static_assert(
-    MediaCacheStream::BLOCK_SIZE <
-      static_cast<std::remove_const<decltype(MediaCacheStream::BLOCK_SIZE)>::type>(INT32_MAX),
-    "MediaCacheStream::BLOCK_SIZE should fit in 31 bits");
+  static_assert(MediaCacheStream::BLOCK_SIZE <
+                    static_cast<std::remove_const<decltype(
+                        MediaCacheStream::BLOCK_SIZE)>::type>(INT32_MAX),
+                "MediaCacheStream::BLOCK_SIZE should fit in 31 bits");
   static const int32_t BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE;
 
-protected:
+ protected:
   virtual ~MediaBlockCacheBase() {}
 
-public:
+ public:
   
   virtual nsresult Init() = 0;
 
@@ -60,16 +59,13 @@ public:
   virtual int32_t GetMaxBlocks() const = 0;
 
   
-  virtual nsresult WriteBlock(uint32_t aBlockIndex,
-                              Span<const uint8_t> aData1,
+  virtual nsresult WriteBlock(uint32_t aBlockIndex, Span<const uint8_t> aData1,
                               Span<const uint8_t> aData2) = 0;
 
   
   
   
-  virtual nsresult Read(int64_t aOffset,
-                        uint8_t* aData,
-                        int32_t aLength,
+  virtual nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
                         int32_t* aBytes) = 0;
 
   
@@ -78,6 +74,6 @@ public:
                              int32_t aDestBlockIndex) = 0;
 };
 
-} 
+}  
 
 #endif 

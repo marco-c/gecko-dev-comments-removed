@@ -18,9 +18,8 @@ class RDDChild;
 
 
 
-class RDDProcessManager final : public RDDProcessHost::Listener
-{
-public:
+class RDDProcessManager final : public RDDProcessHost::Listener {
+ public:
   static void Initialize();
   static void Shutdown();
   static RDDProcessManager* Get();
@@ -35,10 +34,9 @@ public:
   
   bool EnsureRDDReady();
 
-  bool CreateContentBridge(
-    base::ProcessId aOtherProcess,
-    mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>* 
-                                                     aOutRemoteDecoderManager);
+  bool CreateContentBridge(base::ProcessId aOtherProcess,
+                           mozilla::ipc::Endpoint<PRemoteDecoderManagerChild>*
+                               aOutRemoteDecoderManager);
 
   void OnProcessLaunchComplete(RDDProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(RDDProcessHost* aHost) override;
@@ -58,16 +56,12 @@ public:
   RefPtr<MemoryReportingProcess> GetProcessMemoryReporter();
 
   
-  RDDChild* GetRDDChild() {
-    return mRDDChild;
-  }
+  RDDChild* GetRDDChild() { return mRDDChild; }
 
   
-  bool AttemptedRDDProcess() const {
-    return mNumProcessAttempts > 0;
-  }
+  bool AttemptedRDDProcess() const { return mNumProcessAttempts > 0; }
 
-private:
+ private:
   
   void OnXPCOMShutdown();
 
@@ -80,19 +74,19 @@ private:
   DISALLOW_COPY_AND_ASSIGN(RDDProcessManager);
 
   class Observer final : public nsIObserver {
-  public:
+   public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSIOBSERVER
     explicit Observer(RDDProcessManager* aManager);
 
-  protected:
+   protected:
     ~Observer() {}
 
     RDDProcessManager* mManager;
   };
   friend class Observer;
 
-private:
+ private:
   RefPtr<Observer> mObserver;
   mozilla::ipc::TaskFactory<RDDProcessManager> mTaskFactory;
   uint32_t mNumProcessAttempts;
@@ -103,6 +97,6 @@ private:
   RDDChild* mRDDChild;
 };
 
-} 
+}  
 
-#endif 
+#endif  

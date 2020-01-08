@@ -12,8 +12,8 @@
 namespace mozilla {
 
 using SetCDMPromise =
-  MozPromise<bool , MediaResult,  true>;
+    MozPromise<bool , MediaResult,  true>;
 
-} 
+}  
 
 #endif

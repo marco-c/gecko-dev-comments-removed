@@ -14,20 +14,19 @@ namespace mozilla {
 
 
 class EbmlComposer {
-public:
+ public:
   EbmlComposer();
   
 
 
-  void SetVideoConfig(uint32_t aWidth, uint32_t aHeight,
-                      uint32_t aDisplayWidth, uint32_t aDisplayHeight);
+  void SetVideoConfig(uint32_t aWidth, uint32_t aHeight, uint32_t aDisplayWidth,
+                      uint32_t aDisplayHeight);
 
   void SetAudioConfig(uint32_t aSampleFreq, uint32_t aChannels);
   
 
 
-  void SetAudioCodecPrivateData(nsTArray<uint8_t>& aBufs)
-  {
+  void SetAudioCodecPrivateData(nsTArray<uint8_t>& aBufs) {
     mCodecPrivateData.AppendElements(aBufs);
   }
   
@@ -38,13 +37,15 @@ public:
 
 
 
+
   void WriteSimpleBlock(EncodedFrame* aFrame);
   
 
 
   void ExtractBuffer(nsTArray<nsTArray<uint8_t> >* aDestBufs,
                      uint32_t aFlag = 0);
-private:
+
+ private:
   
   void FinishMetadata();
   
@@ -55,11 +56,7 @@ private:
   nsTArray<nsTArray<uint8_t> > mClusterCanFlushBuffs;
 
   
-  enum {
-    FLUSH_NONE = 0,
-    FLUSH_METADATA = 1 << 0,
-    FLUSH_CLUSTER = 1 << 1
-  };
+  enum { FLUSH_NONE = 0, FLUSH_METADATA = 1 << 0, FLUSH_CLUSTER = 1 << 1 };
   uint32_t mFlushState;
   
   uint32_t mClusterHeaderIndex;
@@ -83,6 +80,6 @@ private:
   int mChannels;
 };
 
-} 
+}  
 
 #endif

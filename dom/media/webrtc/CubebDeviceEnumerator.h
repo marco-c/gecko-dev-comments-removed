@@ -14,9 +14,8 @@
 namespace mozilla {
 
 
-class CubebDeviceEnumerator final
-{
-public:
+class CubebDeviceEnumerator final {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CubebDeviceEnumerator)
 
   static already_AddRefed<CubebDeviceEnumerator> GetInstance();
@@ -24,16 +23,18 @@ public:
   
   
   
-  void EnumerateAudioInputDevices(nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
+  void EnumerateAudioInputDevices(
+      nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
   
-  void EnumerateAudioOutputDevices(nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
+  void EnumerateAudioOutputDevices(
+      nsTArray<RefPtr<AudioDeviceInfo>>& aOutDevices);
   
   
   
-  already_AddRefed<AudioDeviceInfo>
-  DeviceInfoFromID(CubebUtils::AudioDeviceID aID);
+  already_AddRefed<AudioDeviceInfo> DeviceInfoFromID(
+      CubebUtils::AudioDeviceID aID);
 
-private:
+ private:
   CubebDeviceEnumerator();
   ~CubebDeviceEnumerator();
   
@@ -62,6 +63,6 @@ private:
   static StaticRefPtr<CubebDeviceEnumerator> sInstance;
 };
 
-}
+}  
 
-#endif 
+#endif  

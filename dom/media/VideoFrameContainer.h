@@ -32,7 +32,7 @@ class MediaDecoderOwner;
 class VideoFrameContainer : public MediaStreamVideoSink {
   virtual ~VideoFrameContainer();
 
-public:
+ public:
   typedef layers::ImageContainer ImageContainer;
   typedef layers::Image Image;
 
@@ -50,15 +50,18 @@ public:
   
   
   
+  
   void UpdatePrincipalHandleForFrameID(const PrincipalHandle& aPrincipalHandle,
                                        const ImageContainer::FrameID& aFrameID);
-  void UpdatePrincipalHandleForFrameIDLocked(const PrincipalHandle& aPrincipalHandle,
-                                             const ImageContainer::FrameID& aFrameID);
-  void SetCurrentFrames(const gfx::IntSize& aIntrinsicSize,
-                        const nsTArray<ImageContainer::NonOwningImage>& aImages);
-  void ClearCurrentFrame(const gfx::IntSize& aIntrinsicSize)
-  {
-    SetCurrentFrames(aIntrinsicSize, nsTArray<ImageContainer::NonOwningImage>());
+  void UpdatePrincipalHandleForFrameIDLocked(
+      const PrincipalHandle& aPrincipalHandle,
+      const ImageContainer::FrameID& aFrameID);
+  void SetCurrentFrames(
+      const gfx::IntSize& aIntrinsicSize,
+      const nsTArray<ImageContainer::NonOwningImage>& aImages);
+  void ClearCurrentFrame(const gfx::IntSize& aIntrinsicSize) {
+    SetCurrentFrames(aIntrinsicSize,
+                     nsTArray<ImageContainer::NonOwningImage>());
   }
   VideoFrameContainer* AsVideoFrameContainer() override { return this; }
 
@@ -77,34 +80,30 @@ public:
   
   
   
-  ImageContainer::FrameID NewFrameID()
-  {
-    return ++mFrameID;
-  }
+  ImageContainer::FrameID NewFrameID() { return ++mFrameID; }
 
   
-  enum {
-    INVALIDATE_DEFAULT,
-    INVALIDATE_FORCE
-  };
+  enum { INVALIDATE_DEFAULT, INVALIDATE_FORCE };
   void Invalidate() override { InvalidateWithFlags(INVALIDATE_DEFAULT); }
   void InvalidateWithFlags(uint32_t aFlags);
   ImageContainer* GetImageContainer();
   void ForgetElement() { mOwner = nullptr; }
 
-  uint32_t GetDroppedImageCount() { return mImageContainer->GetDroppedImageCount(); }
+  uint32_t GetDroppedImageCount() {
+    return mImageContainer->GetDroppedImageCount();
+  }
 
-protected:
-  void SetCurrentFramesLocked(const gfx::IntSize& aIntrinsicSize,
-                              const nsTArray<ImageContainer::NonOwningImage>& aImages);
+ protected:
+  void SetCurrentFramesLocked(
+      const gfx::IntSize& aIntrinsicSize,
+      const nsTArray<ImageContainer::NonOwningImage>& aImages);
 
   
   
   MediaDecoderOwner* mOwner;
   RefPtr<ImageContainer> mImageContainer;
 
-  struct
-  {
+  struct {
     
     
     
@@ -148,6 +147,6 @@ protected:
   const RefPtr<AbstractThread> mMainThread;
 };
 
-} 
+}  
 
 #endif 

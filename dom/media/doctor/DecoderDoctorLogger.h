@@ -35,17 +35,15 @@ namespace mozilla {
 
 
 
-class DecoderDoctorLogger
-{
-public:
+class DecoderDoctorLogger {
+ public:
   
   
   static void Init();
 
   
   
-  static inline bool IsDDLoggingEnabled()
-  {
+  static inline bool IsDDLoggingEnabled() {
     return MOZ_UNLIKELY(static_cast<LogState>(sLogState) == scEnabled);
   }
 
@@ -54,8 +52,7 @@ public:
   static void ShutdownLogging() { sLogState = scShutdown; }
 
   
-  static void Panic(const char* aReason)
-  {
+  static void Panic(const char* aReason) {
     PanicInternal(aReason,  false);
   }
 
@@ -75,338 +72,225 @@ public:
   
   
   
+  
 
-  template<typename Value>
+  template <typename Value>
   static void EagerLogValue(const char* aSubjectTypeName,
                             const void* aSubjectPointer,
-                            DDLogCategory aCategory,
-                            const char* aLabel,
-                            Value&& aValue)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        aCategory,
-        aLabel,
-        DDLogValue{ std::forward<Value>(aValue) });
+                            DDLogCategory aCategory, const char* aLabel,
+                            Value&& aValue) {
+    Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,
+        DDLogValue{std::forward<Value>(aValue)});
   }
 
-  template<typename Subject, typename Value>
-  static void EagerLogValue(const Subject* aSubject,
-                            DDLogCategory aCategory,
-                            const char* aLabel,
-                            Value&& aValue)
-  {
-    EagerLogValue(DDLoggedTypeTraits<Subject>::Name(),
-                  aSubject,
-                  aCategory,
-                  aLabel,
-                  std::forward<Value>(aValue));
+  template <typename Subject, typename Value>
+  static void EagerLogValue(const Subject* aSubject, DDLogCategory aCategory,
+                            const char* aLabel, Value&& aValue) {
+    EagerLogValue(DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory,
+                  aLabel, std::forward<Value>(aValue));
   }
 
   
   
   static void EagerLogValue(const char* aSubjectTypeName,
                             const void* aSubjectPointer,
-                            DDLogCategory aCategory,
-                            const char* aLabel,
-                            const char* aValue)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        aCategory,
-        aLabel,
-        DDLogValue{ aValue });
+                            DDLogCategory aCategory, const char* aLabel,
+                            const char* aValue) {
+    Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,
+        DDLogValue{aValue});
   }
 
-  template<typename Subject>
-  static void EagerLogValue(const Subject* aSubject,
-                            DDLogCategory aCategory,
-                            const char* aLabel,
-                            const char* aValue)
-  {
-    EagerLogValue(
-      DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory, aLabel, aValue);
+  template <typename Subject>
+  static void EagerLogValue(const Subject* aSubject, DDLogCategory aCategory,
+                            const char* aLabel, const char* aValue) {
+    EagerLogValue(DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory,
+                  aLabel, aValue);
   }
 
   static void EagerLogPrintf(const char* aSubjectTypeName,
                              const void* aSubjectPointer,
-                             DDLogCategory aCategory,
-                             const char* aLabel,
-                             const char* aString)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        aCategory,
-        aLabel,
-        DDLogValue{ nsCString{ aString } });
+                             DDLogCategory aCategory, const char* aLabel,
+                             const char* aString) {
+    Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,
+        DDLogValue{nsCString{aString}});
   }
 
-  template<typename... Args>
+  template <typename... Args>
   static void EagerLogPrintf(const char* aSubjectTypeName,
                              const void* aSubjectPointer,
-                             DDLogCategory aCategory,
-                             const char* aLabel,
-                             const char* aFormat,
-                             Args&&... aArgs)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        aCategory,
-        aLabel,
+                             DDLogCategory aCategory, const char* aLabel,
+                             const char* aFormat, Args&&... aArgs) {
+    Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,
         DDLogValue{
-          nsCString{ nsPrintfCString(aFormat, std::forward<Args>(aArgs)...) } });
+            nsCString{nsPrintfCString(aFormat, std::forward<Args>(aArgs)...)}});
   }
 
-  template<typename Subject>
-  static void EagerLogPrintf(const Subject* aSubject,
-                             DDLogCategory aCategory,
-                             const char* aLabel,
-                             const char* aString)
-  {
-    EagerLogPrintf(DDLoggedTypeTraits<Subject>::Name(),
-                   aSubject,
-                   aCategory,
-                   aLabel,
-                   aString);
+  template <typename Subject>
+  static void EagerLogPrintf(const Subject* aSubject, DDLogCategory aCategory,
+                             const char* aLabel, const char* aString) {
+    EagerLogPrintf(DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory,
+                   aLabel, aString);
   }
 
-  template<typename Subject, typename... Args>
-  static void EagerLogPrintf(const Subject* aSubject,
-                             DDLogCategory aCategory,
-                             const char* aLabel,
-                             const char* aFormat,
-                             Args&&... aArgs)
-  {
-    EagerLogPrintf(DDLoggedTypeTraits<Subject>::Name(),
-                   aSubject,
-                   aCategory,
-                   aLabel,
-                   aFormat,
-                   std::forward<Args>(aArgs)...);
+  template <typename Subject, typename... Args>
+  static void EagerLogPrintf(const Subject* aSubject, DDLogCategory aCategory,
+                             const char* aLabel, const char* aFormat,
+                             Args&&... aArgs) {
+    EagerLogPrintf(DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory,
+                   aLabel, aFormat, std::forward<Args>(aArgs)...);
   }
 
   static void MozLogPrintf(const char* aSubjectTypeName,
                            const void* aSubjectPointer,
-                           const LogModule* aLogModule,
-                           LogLevel aLogLevel,
-                           const char* aString)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        CategoryForMozLogLevel(aLogLevel),
-        aLogModule->Name(), 
-        DDLogValue{ nsCString{ aString } });
-    MOZ_LOG(aLogModule,
-            aLogLevel,
+                           const LogModule* aLogModule, LogLevel aLogLevel,
+                           const char* aString) {
+    Log(aSubjectTypeName, aSubjectPointer, CategoryForMozLogLevel(aLogLevel),
+        aLogModule->Name(),  
+        DDLogValue{nsCString{aString}});
+    MOZ_LOG(aLogModule, aLogLevel,
             ("%s[%p] %s", aSubjectTypeName, aSubjectPointer, aString));
   }
 
-  template<typename... Args>
+  template <typename... Args>
   static void MozLogPrintf(const char* aSubjectTypeName,
                            const void* aSubjectPointer,
-                           const LogModule* aLogModule,
-                           LogLevel aLogLevel,
-                           const char* aFormat,
-                           Args&&... aArgs)
-  {
+                           const LogModule* aLogModule, LogLevel aLogLevel,
+                           const char* aFormat, Args&&... aArgs) {
     nsCString printed = nsPrintfCString(aFormat, std::forward<Args>(aArgs)...);
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        CategoryForMozLogLevel(aLogLevel),
-        aLogModule->Name(), 
-        DDLogValue{ printed });
-    MOZ_LOG(aLogModule,
-            aLogLevel,
+    Log(aSubjectTypeName, aSubjectPointer, CategoryForMozLogLevel(aLogLevel),
+        aLogModule->Name(),  
+        DDLogValue{printed});
+    MOZ_LOG(aLogModule, aLogLevel,
             ("%s[%p] %s", aSubjectTypeName, aSubjectPointer, printed.get()));
   }
 
-  template<typename Subject>
-  static void MozLogPrintf(const Subject* aSubject,
-                           const LogModule* aLogModule,
-                           LogLevel aLogLevel,
-                           const char* aString)
-  {
-    MozLogPrintf(DDLoggedTypeTraits<Subject>::Name(),
-                 aSubject,
-                 aLogModule,
-                 aLogLevel,
-                 aString);
+  template <typename Subject>
+  static void MozLogPrintf(const Subject* aSubject, const LogModule* aLogModule,
+                           LogLevel aLogLevel, const char* aString) {
+    MozLogPrintf(DDLoggedTypeTraits<Subject>::Name(), aSubject, aLogModule,
+                 aLogLevel, aString);
   }
 
-  template<typename Subject, typename... Args>
-  static void MozLogPrintf(const Subject* aSubject,
-                           const LogModule* aLogModule,
-                           LogLevel aLogLevel,
-                           const char* aFormat,
-                           Args&&... aArgs)
-  {
-    MozLogPrintf(DDLoggedTypeTraits<Subject>::Name(),
-                 aSubject,
-                 aLogModule,
-                 aLogLevel,
-                 aFormat,
-                 std::forward<Args>(aArgs)...);
+  template <typename Subject, typename... Args>
+  static void MozLogPrintf(const Subject* aSubject, const LogModule* aLogModule,
+                           LogLevel aLogLevel, const char* aFormat,
+                           Args&&... aArgs) {
+    MozLogPrintf(DDLoggedTypeTraits<Subject>::Name(), aSubject, aLogModule,
+                 aLogLevel, aFormat, std::forward<Args>(aArgs)...);
   }
 
   
   
 
   static void LogConstruction(const char* aSubjectTypeName,
-                              const void* aSubjectPointer)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        DDLogCategory::_Construction,
-        "",
-        DDLogValue{ DDNoValue{} });
+                              const void* aSubjectPointer) {
+    Log(aSubjectTypeName, aSubjectPointer, DDLogCategory::_Construction, "",
+        DDLogValue{DDNoValue{}});
   }
 
   static void LogConstructionAndBase(const char* aSubjectTypeName,
                                      const void* aSubjectPointer,
                                      const char* aBaseTypeName,
-                                     const void* aBasePointer)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        DDLogCategory::_DerivedConstruction,
-        "",
-        DDLogValue{ DDLogObject{ aBaseTypeName, aBasePointer } });
+                                     const void* aBasePointer) {
+    Log(aSubjectTypeName, aSubjectPointer, DDLogCategory::_DerivedConstruction,
+        "", DDLogValue{DDLogObject{aBaseTypeName, aBasePointer}});
   }
 
-  template<typename B>
+  template <typename B>
   static void LogConstructionAndBase(const char* aSubjectTypeName,
                                      const void* aSubjectPointer,
-                                     const B* aBase)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        DDLogCategory::_DerivedConstruction,
-        "",
-        DDLogValue{ DDLogObject{ DDLoggedTypeTraits<B>::Name(), aBase } });
+                                     const B* aBase) {
+    Log(aSubjectTypeName, aSubjectPointer, DDLogCategory::_DerivedConstruction,
+        "", DDLogValue{DDLogObject{DDLoggedTypeTraits<B>::Name(), aBase}});
   }
 
-  template<typename Subject>
-  static void LogConstruction(NonDereferenceable<const Subject> aSubject)
-  {
+  template <typename Subject>
+  static void LogConstruction(NonDereferenceable<const Subject> aSubject) {
     using Traits = DDLoggedTypeTraits<Subject>;
     if (!Traits::HasBase::value) {
       Log(DDLoggedTypeTraits<Subject>::Name(),
           reinterpret_cast<const void*>(aSubject.value()),
-          DDLogCategory::_Construction,
-          "",
-          DDLogValue{ DDNoValue{} });
+          DDLogCategory::_Construction, "", DDLogValue{DDNoValue{}});
     } else {
       Log(DDLoggedTypeTraits<Subject>::Name(),
           reinterpret_cast<const void*>(aSubject.value()),
-          DDLogCategory::_DerivedConstruction,
-          "",
-          DDLogValue{ DDLogObject{
-            DDLoggedTypeTraits<typename Traits::BaseType>::Name(),
-            reinterpret_cast<const void*>(
-              NonDereferenceable<const typename Traits::BaseType>(aSubject)
-                .value()) } });
+          DDLogCategory::_DerivedConstruction, "",
+          DDLogValue{DDLogObject{
+              DDLoggedTypeTraits<typename Traits::BaseType>::Name(),
+              reinterpret_cast<const void*>(
+                  NonDereferenceable<const typename Traits::BaseType>(aSubject)
+                      .value())}});
     }
   }
 
-  template<typename Subject>
-  static void LogConstruction(const Subject* aSubject)
-  {
+  template <typename Subject>
+  static void LogConstruction(const Subject* aSubject) {
     LogConstruction(NonDereferenceable<const Subject>(aSubject));
   }
 
   static void LogDestruction(const char* aSubjectTypeName,
-                             const void* aSubjectPointer)
-  {
-    Log(aSubjectTypeName,
-        aSubjectPointer,
-        DDLogCategory::_Destruction,
-        "",
-        DDLogValue{ DDNoValue{} });
+                             const void* aSubjectPointer) {
+    Log(aSubjectTypeName, aSubjectPointer, DDLogCategory::_Destruction, "",
+        DDLogValue{DDNoValue{}});
   }
 
-  template<typename Subject>
-  static void LogDestruction(NonDereferenceable<const Subject> aSubject)
-  {
+  template <typename Subject>
+  static void LogDestruction(NonDereferenceable<const Subject> aSubject) {
     Log(DDLoggedTypeTraits<Subject>::Name(),
         reinterpret_cast<const void*>(aSubject.value()),
-        DDLogCategory::_Destruction,
-        "",
-        DDLogValue{ DDNoValue{} });
+        DDLogCategory::_Destruction, "", DDLogValue{DDNoValue{}});
   }
 
-  template<typename Subject>
-  static void LogDestruction(const Subject* aSubject)
-  {
+  template <typename Subject>
+  static void LogDestruction(const Subject* aSubject) {
     LogDestruction(NonDereferenceable<const Subject>(aSubject));
   }
 
-  template<typename P, typename C>
-  static void LinkParentAndChild(const P* aParent,
-                                 const char* aLinkName,
-                                 const C* aChild)
-  {
+  template <typename P, typename C>
+  static void LinkParentAndChild(const P* aParent, const char* aLinkName,
+                                 const C* aChild) {
     if (aChild) {
-      Log(DDLoggedTypeTraits<P>::Name(),
-          aParent,
-          DDLogCategory::_Link,
+      Log(DDLoggedTypeTraits<P>::Name(), aParent, DDLogCategory::_Link,
           aLinkName,
-          DDLogValue{ DDLogObject{ DDLoggedTypeTraits<C>::Name(), aChild } });
+          DDLogValue{DDLogObject{DDLoggedTypeTraits<C>::Name(), aChild}});
     }
   }
 
-  template<typename C>
+  template <typename C>
   static void LinkParentAndChild(const char* aParentTypeName,
                                  const void* aParentPointer,
-                                 const char* aLinkName,
-                                 const C* aChild)
-  {
+                                 const char* aLinkName, const C* aChild) {
     if (aChild) {
-      Log(aParentTypeName,
-          aParentPointer,
-          DDLogCategory::_Link,
-          aLinkName,
-          DDLogValue{ DDLogObject{ DDLoggedTypeTraits<C>::Name(), aChild } });
+      Log(aParentTypeName, aParentPointer, DDLogCategory::_Link, aLinkName,
+          DDLogValue{DDLogObject{DDLoggedTypeTraits<C>::Name(), aChild}});
     }
   }
 
-  template<typename P>
-  static void LinkParentAndChild(const P* aParent,
-                                 const char* aLinkName,
+  template <typename P>
+  static void LinkParentAndChild(const P* aParent, const char* aLinkName,
                                  const char* aChildTypeName,
-                                 const void* aChildPointer)
-  {
+                                 const void* aChildPointer) {
     if (aChildPointer) {
-      Log(DDLoggedTypeTraits<P>::Name(),
-          aParent,
-          DDLogCategory::_Link,
-          aLinkName,
-          DDLogValue{ DDLogObject{ aChildTypeName, aChildPointer } });
+      Log(DDLoggedTypeTraits<P>::Name(), aParent, DDLogCategory::_Link,
+          aLinkName, DDLogValue{DDLogObject{aChildTypeName, aChildPointer}});
     }
   }
 
-  template<typename C>
+  template <typename C>
   static void UnlinkParentAndChild(const char* aParentTypeName,
                                    const void* aParentPointer,
-                                   const C* aChild)
-  {
+                                   const C* aChild) {
     if (aChild) {
-      Log(aParentTypeName,
-          aParentPointer,
-          DDLogCategory::_Unlink,
-          "",
-          DDLogValue{ DDLogObject{ DDLoggedTypeTraits<C>::Name(), aChild } });
+      Log(aParentTypeName, aParentPointer, DDLogCategory::_Unlink, "",
+          DDLogValue{DDLogObject{DDLoggedTypeTraits<C>::Name(), aChild}});
     }
   }
 
-  template<typename P, typename C>
-  static void UnlinkParentAndChild(const P* aParent, const C* aChild)
-  {
+  template <typename P, typename C>
+  static void UnlinkParentAndChild(const P* aParent, const C* aChild) {
     if (aChild) {
-      Log(DDLoggedTypeTraits<P>::Name(),
-          aParent,
-          DDLogCategory::_Unlink,
-          "",
-          DDLogValue{ DDLogObject{ DDLoggedTypeTraits<C>::Name(), aChild } });
+      Log(DDLoggedTypeTraits<P>::Name(), aParent, DDLogCategory::_Unlink, "",
+          DDLogValue{DDLogObject{DDLoggedTypeTraits<C>::Name(), aChild}});
     }
   }
 
@@ -416,7 +300,7 @@ public:
   static void EnableLogging();
 
   using LogMessagesPromise =
-    MozPromise<nsCString, nsresult,  true>;
+      MozPromise<nsCString, nsresult,  true>;
 
   
   
@@ -424,9 +308,9 @@ public:
   
   
   static RefPtr<LogMessagesPromise> RetrieveMessages(
-    const dom::HTMLMediaElement* aMediaElement);
+      const dom::HTMLMediaElement* aMediaElement);
 
-private:
+ private:
   
   
   
@@ -437,20 +321,15 @@ private:
   
   static void PanicInternal(const char* aReason, bool aDontBlock);
 
-  static void Log(const char* aSubjectTypeName,
-                  const void* aSubjectPointer,
-                  DDLogCategory aCategory,
-                  const char* aLabel,
+  static void Log(const char* aSubjectTypeName, const void* aSubjectPointer,
+                  DDLogCategory aCategory, const char* aLabel,
                   DDLogValue&& aValue);
 
-  static void Log(const char* aSubjectTypeName,
-                  const void* aSubjectPointer,
-                  const LogModule* aLogModule,
-                  LogLevel aLogLevel,
+  static void Log(const char* aSubjectTypeName, const void* aSubjectPointer,
+                  const LogModule* aLogModule, LogLevel aLogLevel,
                   DDLogValue&& aValue);
 
-  static DDLogCategory CategoryForMozLogLevel(LogLevel aLevel)
-  {
+  static DDLogCategory CategoryForMozLogLevel(LogLevel aLevel) {
     switch (aLevel) {
       default:
       case LogLevel::Error:
@@ -489,16 +368,13 @@ private:
 
 
 
-template<typename T>
-class DecoderDoctorLifeLogger
-{
-public:
-  DecoderDoctorLifeLogger()
-  {
+template <typename T>
+class DecoderDoctorLifeLogger {
+ public:
+  DecoderDoctorLifeLogger() {
     DecoderDoctorLogger::LogConstruction(NonDereferenceable<const T>(this));
   }
-  ~DecoderDoctorLifeLogger()
-  {
+  ~DecoderDoctorLifeLogger() {
     DecoderDoctorLogger::LogDestruction(NonDereferenceable<const T>(this));
   }
 };
@@ -507,26 +383,26 @@ public:
 
 
 
-#define DDLOG(_category, _label, _arg)                                         \
-  do {                                                                         \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
-      DecoderDoctorLogger::EagerLogValue(this, _category, _label, _arg);       \
-    }                                                                          \
+#define DDLOG(_category, _label, _arg)                                   \
+  do {                                                                   \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                     \
+      DecoderDoctorLogger::EagerLogValue(this, _category, _label, _arg); \
+    }                                                                    \
   } while (0)
 
-#define DDLOGEX(_this, _category, _label, _arg)                                \
-  do {                                                                         \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
-      DecoderDoctorLogger::EagerLogValue(_this, _category, _label, _arg);      \
-    }                                                                          \
+#define DDLOGEX(_this, _category, _label, _arg)                           \
+  do {                                                                    \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                      \
+      DecoderDoctorLogger::EagerLogValue(_this, _category, _label, _arg); \
+    }                                                                     \
   } while (0)
 
-#define DDLOGEX2(_typename, _this, _category, _label, _arg)                    \
-  do {                                                                         \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
-      DecoderDoctorLogger::EagerLogValue(                                      \
-        _typename, _this, _category, _label, _arg);                            \
-    }                                                                          \
+#define DDLOGEX2(_typename, _this, _category, _label, _arg)                   \
+  do {                                                                        \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                          \
+      DecoderDoctorLogger::EagerLogValue(_typename, _this, _category, _label, \
+                                         _arg);                               \
+    }                                                                         \
   } while (0)
 
 #ifdef DEBUG
@@ -539,29 +415,29 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
 #endif
 
 
-#define DDLOGPR(_category, _label, _format, ...)                               \
-  do {                                                                         \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
-      DDLOGPR_CHECK(_format, ##__VA_ARGS__);                                   \
-      DecoderDoctorLogger::EagerLogPrintf(                                     \
-        this, _category, _label, _format, ##__VA_ARGS__);                      \
-    }                                                                          \
+#define DDLOGPR(_category, _label, _format, ...)                            \
+  do {                                                                      \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                        \
+      DDLOGPR_CHECK(_format, ##__VA_ARGS__);                                \
+      DecoderDoctorLogger::EagerLogPrintf(this, _category, _label, _format, \
+                                          ##__VA_ARGS__);                   \
+    }                                                                       \
   } while (0)
 
 
-#define DDLINKCHILD(...)                                                       \
-  do {                                                                         \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
-      DecoderDoctorLogger::LinkParentAndChild(this, __VA_ARGS__);              \
-    }                                                                          \
+#define DDLINKCHILD(...)                                          \
+  do {                                                            \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {              \
+      DecoderDoctorLogger::LinkParentAndChild(this, __VA_ARGS__); \
+    }                                                             \
   } while (0)
 
 
-#define DDUNLINKCHILD(...)                                                     \
-  do {                                                                         \
-    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
-      DecoderDoctorLogger::UnlinkParentAndChild(this, __VA_ARGS__);            \
-    }                                                                          \
+#define DDUNLINKCHILD(...)                                          \
+  do {                                                              \
+    if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                \
+      DecoderDoctorLogger::UnlinkParentAndChild(this, __VA_ARGS__); \
+    }                                                               \
   } while (0)
 
 
@@ -572,8 +448,8 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
     if (DecoderDoctorLogger::IsDDLoggingEnabled() ||                           \
         MOZ_LOG_TEST(_logModule, _logLevel)) {                                 \
       DDLOGPR_CHECK(_format, ##__VA_ARGS__);                                   \
-      DecoderDoctorLogger::MozLogPrintf(                                       \
-        _this, _logModule, _logLevel, _format, ##__VA_ARGS__);                 \
+      DecoderDoctorLogger::MozLogPrintf(_this, _logModule, _logLevel, _format, \
+                                        ##__VA_ARGS__);                        \
     }                                                                          \
   } while (0)
 #else
@@ -581,16 +457,16 @@ static void inline MOZ_FORMAT_PRINTF(1, 2) DDLOGPRCheck(const char*, ...) {}
   do {                                                                         \
     if (DecoderDoctorLogger::IsDDLoggingEnabled()) {                           \
       DDLOGPR_CHECK(_format, ##__VA_ARGS__);                                   \
-      DecoderDoctorLogger::MozLogPrintf(                                       \
-        _this, _logModule, _logLevel, _format, ##__VA_ARGS__);                 \
+      DecoderDoctorLogger::MozLogPrintf(_this, _logModule, _logLevel, _format, \
+                                        ##__VA_ARGS__);                        \
     }                                                                          \
   } while (0)
 #endif
 
 
-#define DDMOZ_LOG(_logModule, _logLevel, _format, ...)                         \
+#define DDMOZ_LOG(_logModule, _logLevel, _format, ...) \
   DDMOZ_LOGEX(this, _logModule, _logLevel, _format, ##__VA_ARGS__)
 
-} 
+}  
 
-#endif 
+#endif  

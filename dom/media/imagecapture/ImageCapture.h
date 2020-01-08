@@ -38,9 +38,8 @@ class VideoStreamTrack;
 
 
 
-class ImageCapture final : public DOMEventTargetHelper
-{
-public:
+class ImageCapture final : public DOMEventTargetHelper {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ImageCapture, DOMEventTargetHelper)
 
@@ -54,8 +53,8 @@ public:
   MediaStreamTrack* GetVideoStreamTrack() const;
 
   
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override
-  {
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
     return ImageCapture_Binding::Wrap(aCx, this, aGivenProto);
   }
 
@@ -66,8 +65,7 @@ public:
                                                     MediaStreamTrack& aTrack,
                                                     ErrorResult& aRv);
 
-  ImageCapture(VideoStreamTrack* aTrack,
-               nsPIDOMWindowInner* aOwnerWindow);
+  ImageCapture(VideoStreamTrack* aTrack, nsPIDOMWindowInner* aOwnerWindow);
 
   
   nsresult PostBlobEvent(Blob* aBlob);
@@ -75,11 +73,12 @@ public:
   
   
   
+  
   nsresult PostErrorEvent(uint16_t aErrorCode, nsresult aReason = NS_OK);
 
   bool CheckPrincipal();
 
-protected:
+ protected:
   virtual ~ImageCapture();
 
   
@@ -89,7 +88,7 @@ protected:
   RefPtr<VideoStreamTrack> mTrack;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -37,39 +37,29 @@ struct DecoderDoctorEvent {
 
 
 
-class DecoderDoctorDiagnostics
-{
-public:
+class DecoderDoctorDiagnostics {
+ public:
   
   
   
   
-  void StoreFormatDiagnostics(nsIDocument* aDocument,
-                              const nsAString& aFormat,
-                              bool aCanPlay,
-                              const char* aCallSite);
+  void StoreFormatDiagnostics(nsIDocument* aDocument, const nsAString& aFormat,
+                              bool aCanPlay, const char* aCallSite);
 
   void StoreMediaKeySystemAccess(nsIDocument* aDocument,
-                                 const nsAString& aKeySystem,
-                                 bool aIsSupported,
+                                 const nsAString& aKeySystem, bool aIsSupported,
                                  const char* aCallSite);
 
-  void StoreEvent(nsIDocument* aDocument,
-                  const DecoderDoctorEvent& aEvent,
+  void StoreEvent(nsIDocument* aDocument, const DecoderDoctorEvent& aEvent,
                   const char* aCallSite);
 
-  void StoreDecodeError(nsIDocument* aDocument,
-                        const MediaResult& aError,
-                        const nsString& aMediaSrc,
-                        const char* aCallSite);
+  void StoreDecodeError(nsIDocument* aDocument, const MediaResult& aError,
+                        const nsString& aMediaSrc, const char* aCallSite);
 
-  void StoreDecodeWarning(nsIDocument* aDocument,
-                          const MediaResult& aWarning,
-                          const nsString& aMediaSrc,
-                          const char* aCallSite);
+  void StoreDecodeWarning(nsIDocument* aDocument, const MediaResult& aWarning,
+                          const nsString& aMediaSrc, const char* aCallSite);
 
-  enum DiagnosticsType
-  {
+  enum DiagnosticsType {
     eUnsaved,
     eFormatSupportCheck,
     eMediaKeySystemAccessRequest,
@@ -104,31 +94,18 @@ public:
 
   const nsAString& KeySystem() const { return mKeySystem; }
   bool IsKeySystemSupported() const { return mIsKeySystemSupported; }
-  enum KeySystemIssue {
-    eUnset,
-    eWidevineWithNoWMF
-  };
-  void SetKeySystemIssue(KeySystemIssue aKeySystemIssue)
-  {
+  enum KeySystemIssue { eUnset, eWidevineWithNoWMF };
+  void SetKeySystemIssue(KeySystemIssue aKeySystemIssue) {
     mKeySystemIssue = aKeySystemIssue;
   }
-  KeySystemIssue GetKeySystemIssue() const
-  {
-    return mKeySystemIssue;
-  }
+  KeySystemIssue GetKeySystemIssue() const { return mKeySystemIssue; }
 
-  DecoderDoctorEvent event() const
-  {
-    return mEvent;
-  }
+  DecoderDoctorEvent event() const { return mEvent; }
 
   const MediaResult& DecodeIssue() const { return mDecodeIssue; }
-  const nsString& DecodeIssueMediaSrc() const
-  {
-    return mDecodeIssueMediaSrc;
-  }
+  const nsString& DecodeIssueMediaSrc() const { return mDecodeIssueMediaSrc; }
 
-private:
+ private:
   
   
   
@@ -155,6 +132,6 @@ private:
   nsString mDecodeIssueMediaSrc;
 };
 
-} 
+}  
 
 #endif

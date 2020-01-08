@@ -17,25 +17,22 @@ namespace dom {
 class DetailedPromise;
 class TestGMPVideoDecoder;
 
-class MediaKeySystemAccessManager final : public nsIObserver
-{
-public:
-
+class MediaKeySystemAccessManager final : public nsIObserver {
+ public:
   explicit MediaKeySystemAccessManager(nsPIDOMWindowInner* aWindow);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(MediaKeySystemAccessManager, nsIObserver)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(MediaKeySystemAccessManager,
+                                           nsIObserver)
   NS_DECL_NSIOBSERVER
 
-  void Request(DetailedPromise* aPromise,
-               const nsAString& aKeySystem,
+  void Request(DetailedPromise* aPromise, const nsAString& aKeySystem,
                const Sequence<MediaKeySystemConfiguration>& aConfig);
 
   void Shutdown();
 
   struct PendingRequest {
-    PendingRequest(DetailedPromise* aPromise,
-                   const nsAString& aKeySystem,
+    PendingRequest(DetailedPromise* aPromise, const nsAString& aKeySystem,
                    const Sequence<MediaKeySystemConfiguration>& aConfig,
                    nsITimer* aTimer);
     PendingRequest(const PendingRequest& aOther);
@@ -49,15 +46,10 @@ public:
     nsCOMPtr<nsITimer> mTimer;
   };
 
-private:
+ private:
+  enum RequestType { Initial, Subsequent };
 
-  enum RequestType {
-    Initial,
-    Subsequent
-  };
-
-  void Request(DetailedPromise* aPromise,
-               const nsAString& aKeySystem,
+  void Request(DetailedPromise* aPromise, const nsAString& aKeySystem,
                const Sequence<MediaKeySystemConfiguration>& aConfig,
                RequestType aType);
 
@@ -65,8 +57,7 @@ private:
 
   bool EnsureObserversAdded();
 
-  bool AwaitInstall(DetailedPromise* aPromise,
-                    const nsAString& aKeySystem,
+  bool AwaitInstall(DetailedPromise* aPromise, const nsAString& aKeySystem,
                     const Sequence<MediaKeySystemConfiguration>& aConfig);
 
   void RetryRequest(PendingRequest& aRequest);
@@ -77,7 +68,7 @@ private:
   bool mAddedObservers;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

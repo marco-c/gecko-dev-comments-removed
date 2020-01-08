@@ -3,25 +3,24 @@
 
 
 
- #ifndef MOZILLA_TRACK_ID_H_
- #define MOZILLA_TRACK_ID_H_
+#ifndef MOZILLA_TRACK_ID_H_
+#define MOZILLA_TRACK_ID_H_
 
- namespace mozilla {
-
- 
+namespace mozilla {
 
 
 
 
- typedef int32_t TrackID;
- const TrackID TRACK_NONE = 0;
- const TrackID TRACK_INVALID = -1;
- const TrackID TRACK_ANY = -2;
 
- inline bool IsTrackIDExplicit(const TrackID& aId) {
-   return aId > TRACK_NONE;
- }
 
-} 
 
-#endif 
+typedef int32_t TrackID;
+const TrackID TRACK_NONE = 0;
+const TrackID TRACK_INVALID = -1;
+const TrackID TRACK_ANY = -2;
+
+inline bool IsTrackIDExplicit(const TrackID& aId) { return aId > TRACK_NONE; }
+
+}  
+
+#endif  

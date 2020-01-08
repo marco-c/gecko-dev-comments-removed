@@ -17,9 +17,8 @@ class DecoderDoctorDiagnostics;
 class TrackInfo;
 
 
-class MP4Decoder
-{
-public:
+class MP4Decoder {
+ public:
   
   
   
@@ -27,7 +26,7 @@ public:
                               DecoderDoctorDiagnostics* aDiagnostics);
 
   static bool IsSupportedTypeWithoutDiagnostics(
-    const MediaContainerType& aContainerType);
+      const MediaContainerType& aContainerType);
 
   
   
@@ -43,14 +42,13 @@ public:
   static bool IsEnabled();
 
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
-    const MediaContainerType& aType);
+      const MediaContainerType& aType);
 
-private:
+ private:
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
-    const MediaContainerType& aType,
-    MediaResult& aError);
+      const MediaContainerType& aType, MediaResult& aError);
 };
 
-} 
+}  
 
 #endif

@@ -79,18 +79,18 @@ typedef struct AVBuffer AVBuffer;
 
 
 typedef struct AVBufferRef {
-    AVBuffer *buffer;
+  AVBuffer *buffer;
 
-    
-
-
+  
 
 
-    uint8_t *data;
-    
 
 
-    int      size;
+  uint8_t *data;
+  
+
+
+  int size;
 } AVBufferRef;
 
 
@@ -246,7 +246,7 @@ typedef struct AVBufferPool AVBufferPool;
 
 
 
-AVBufferPool *av_buffer_pool_init(int size, AVBufferRef* (*alloc)(int size));
+AVBufferPool *av_buffer_pool_init(int size, AVBufferRef *(*alloc)(int size));
 
 
 
@@ -263,7 +263,8 @@ AVBufferPool *av_buffer_pool_init(int size, AVBufferRef* (*alloc)(int size));
 
 
 AVBufferPool *av_buffer_pool_init2(int size, void *opaque,
-                                   AVBufferRef* (*alloc)(void *opaque, int size),
+                                   AVBufferRef *(*alloc)(void *opaque,
+                                                         int size),
                                    void (*pool_free)(void *opaque));
 
 

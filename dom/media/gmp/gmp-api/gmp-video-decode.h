@@ -41,9 +41,8 @@
 #include <stdint.h>
 
 
-class GMPVideoDecoderCallback
-{
-public:
+class GMPVideoDecoderCallback {
+ public:
   virtual ~GMPVideoDecoderCallback() {}
 
   virtual void Decoded(GMPVideoi420Frame* aDecodedFrame) = 0;
@@ -72,11 +71,11 @@ public:
 
 
 
-class GMPVideoDecoder
-{
-public:
+class GMPVideoDecoder {
+ public:
   virtual ~GMPVideoDecoder() {}
 
+  
   
   
   
@@ -102,8 +101,7 @@ public:
   
   
   
-  virtual void Decode(GMPVideoEncodedFrame* aInputFrame,
-                      bool aMissingFrames,
+  virtual void Decode(GMPVideoEncodedFrame* aInputFrame, bool aMissingFrames,
                       const uint8_t* aCodecSpecificInfo,
                       uint32_t aCodecSpecificInfoLength,
                       int64_t aRenderTimeMs = -1) = 0;
@@ -124,4 +122,4 @@ public:
   virtual void DecodingComplete() = 0;
 };
 
-#endif 
+#endif  

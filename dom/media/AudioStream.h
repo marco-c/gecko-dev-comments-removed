@@ -24,8 +24,7 @@
 
 namespace mozilla {
 
-struct CubebDestroyPolicy
-{
+struct CubebDestroyPolicy {
   void operator()(cubeb_stream* aStream) const {
     cubeb_stream_destroy(aStream);
   }
@@ -36,9 +35,8 @@ class FrameHistory;
 class AudioConfig;
 class AudioConverter;
 
-class AudioClock
-{
-public:
+class AudioClock {
+ public:
   AudioClock();
 
   
@@ -79,7 +77,7 @@ public:
   uint32_t GetInputRate() const { return mInRate; }
   uint32_t GetOutputRate() const { return mOutRate; }
 
-private:
+ private:
   
   uint32_t mOutRate;
   
@@ -94,9 +92,9 @@ private:
 
 
 class AudioBufferCursor {
-public:
+ public:
   AudioBufferCursor(AudioDataValue* aPtr, uint32_t aChannels, uint32_t aFrames)
-    : mPtr(aPtr), mChannels(aChannels), mFrames(aFrames) {}
+      : mPtr(aPtr), mChannels(aChannels), mFrames(aFrames) {}
 
   
   uint32_t Advance(uint32_t aFrames) {
@@ -112,7 +110,7 @@ public:
   
   AudioDataValue* Ptr() const { return mPtr; }
 
-protected:
+ protected:
   AudioDataValue* mPtr;
   const uint32_t mChannels;
   uint32_t mFrames;
@@ -123,9 +121,9 @@ protected:
 
 
 class AudioBufferWriter : private AudioBufferCursor {
-public:
+ public:
   AudioBufferWriter(AudioDataValue* aPtr, uint32_t aChannels, uint32_t aFrames)
-    : AudioBufferCursor(aPtr, aChannels, aFrames) {}
+      : AudioBufferCursor(aPtr, aChannels, aFrames) {}
 
   uint32_t WriteZeros(uint32_t aFrames) {
     memset(mPtr, 0, sizeof(AudioDataValue) * mChannels * aFrames);
@@ -156,16 +154,16 @@ public:
 
 class AudioStream final
 #if defined(XP_WIN)
-  : public audio::DeviceChangeListener
+    : public audio::DeviceChangeListener
 #endif
 {
   virtual ~AudioStream();
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioStream)
 
   class Chunk {
-  public:
+   public:
     
     virtual const AudioDataValue* Data() const = 0;
     
@@ -180,7 +178,7 @@ public:
   };
 
   class DataSource {
-  public:
+   public:
     
     
     virtual UniquePtr<Chunk> PopFrames(uint32_t aFrames) = 0;
@@ -188,7 +186,8 @@ public:
     virtual bool Ended() const = 0;
     
     virtual void Drained() = 0;
-  protected:
+
+   protected:
     virtual ~DataSource() {}
   };
 
@@ -200,8 +199,7 @@ public:
   
   nsresult Init(uint32_t aNumChannels,
                 AudioConfig::ChannelLayout::ChannelMap aChannelMap,
-                uint32_t aRate,
-                AudioDeviceInfo* aSinkInfo);
+                uint32_t aRate, AudioDeviceInfo* aSinkInfo);
 
   
   void Shutdown();
@@ -234,8 +232,7 @@ public:
   
   int64_t GetPositionInFrames();
 
-  static uint32_t GetPreferredRate()
-  {
+  static uint32_t GetPreferredRate() {
     return CubebUtils::PreferredSampleRate();
   }
 
@@ -245,11 +242,12 @@ public:
   
   nsresult SetPlaybackRate(double aPlaybackRate);
   
+  
   nsresult SetPreservesPitch(bool aPreservesPitch);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-protected:
+ protected:
   friend class AudioClock;
 
   
@@ -258,22 +256,20 @@ protected:
   
   int64_t GetPositionInFramesUnlocked();
 
-private:
+ private:
   nsresult OpenCubeb(cubeb* aContext, cubeb_stream_params& aParams,
                      TimeStamp aStartTime, bool aIsFirst);
 
   static long DataCallback_S(cubeb_stream*, void* aThis,
-                             const void* , void* aOutputBuffer,
-                             long aFrames)
-  {
-    return static_cast<AudioStream*>(aThis)->DataCallback(aOutputBuffer, aFrames);
+                             const void* ,
+                             void* aOutputBuffer, long aFrames) {
+    return static_cast<AudioStream*>(aThis)->DataCallback(aOutputBuffer,
+                                                          aFrames);
   }
 
-  static void StateCallback_S(cubeb_stream*, void* aThis, cubeb_state aState)
-  {
+  static void StateCallback_S(cubeb_stream*, void* aThis, cubeb_state aState) {
     static_cast<AudioStream*>(aThis)->StateCallback(aState);
   }
-
 
   long DataCallback(void* aBuffer, long aFrames);
   void StateCallback(cubeb_state aState);
@@ -305,12 +301,12 @@ private:
   UniquePtr<cubeb_stream, CubebDestroyPolicy> mCubebStream;
 
   enum StreamState {
-    INITIALIZED, 
-    STARTED,     
-    STOPPED,     
-    DRAINED,     
-    ERRORED,     
-    SHUTDOWN     
+    INITIALIZED,  
+    STARTED,      
+    STOPPED,      
+    DRAINED,      
+    ERRORED,      
+    SHUTDOWN      
   };
 
   StreamState mState;
@@ -325,6 +321,6 @@ private:
   RefPtr<AudioDeviceInfo> mSinkInfo;
 };
 
-} 
+}  
 
 #endif

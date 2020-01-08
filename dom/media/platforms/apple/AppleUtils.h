@@ -14,31 +14,20 @@ namespace mozilla {
 
 
 template <class T>
-class AutoCFRelease
-{
-public:
-  MOZ_IMPLICIT AutoCFRelease(T aRef)
-    : mRef(aRef)
-  {
-  }
-  ~AutoCFRelease()
-  {
+class AutoCFRelease {
+ public:
+  MOZ_IMPLICIT AutoCFRelease(T aRef) : mRef(aRef) {}
+  ~AutoCFRelease() {
     if (mRef) {
       CFRelease(mRef);
     }
   }
   
-  operator T()
-  {
-    return mRef;
-  }
+  operator T() { return mRef; }
   
-  T* receive()
-  {
-    return &mRef;
-  }
+  T* receive() { return &mRef; }
 
-private:
+ private:
   
   AutoCFRelease<T>& operator=(const AutoCFRelease<T>&);
   T mRef;
@@ -46,27 +35,21 @@ private:
 
 
 template <class T>
-class CFRefPtr
-{
-public:
-  explicit CFRefPtr(T aRef)
-    : mRef(aRef)
-  {
+class CFRefPtr {
+ public:
+  explicit CFRefPtr(T aRef) : mRef(aRef) {
     if (mRef) {
       CFRetain(mRef);
     }
   }
   
-  CFRefPtr(const CFRefPtr<T>& aCFRefPtr)
-    : mRef(aCFRefPtr.mRef)
-  {
+  CFRefPtr(const CFRefPtr<T>& aCFRefPtr) : mRef(aCFRefPtr.mRef) {
     if (mRef) {
       CFRetain(mRef);
     }
   }
   
-  CFRefPtr<T>& operator=(const CFRefPtr<T>& aCFRefPtr)
-  {
+  CFRefPtr<T>& operator=(const CFRefPtr<T>& aCFRefPtr) {
     if (mRef == aCFRefPtr.mRef) {
       return;
     }
@@ -79,22 +62,18 @@ public:
     }
     return *this;
   }
-  ~CFRefPtr()
-  {
+  ~CFRefPtr() {
     if (mRef) {
       CFRelease(mRef);
     }
   }
   
-  operator T()
-  {
-    return mRef;
-  }
+  operator T() { return mRef; }
 
-private:
+ private:
   T mRef;
 };
 
-} 
+}  
 
-#endif 
+#endif  

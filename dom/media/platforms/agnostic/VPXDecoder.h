@@ -19,11 +19,9 @@ namespace mozilla {
 
 DDLoggedTypeDeclNameAndBase(VPXDecoder, MediaDataDecoder);
 
-class VPXDecoder
-  : public MediaDataDecoder
-  , public DecoderDoctorLifeLogger<VPXDecoder>
-{
-public:
+class VPXDecoder : public MediaDataDecoder,
+                   public DecoderDoctorLifeLogger<VPXDecoder> {
+ public:
   explicit VPXDecoder(const CreateDecoderParams& aParams);
 
   RefPtr<InitPromise> Init() override;
@@ -31,13 +29,11 @@ public:
   RefPtr<DecodePromise> Drain() override;
   RefPtr<FlushPromise> Flush() override;
   RefPtr<ShutdownPromise> Shutdown() override;
-  nsCString GetDescriptionName() const override
-  {
+  nsCString GetDescriptionName() const override {
     return NS_LITERAL_CSTRING("libvpx video decoder");
   }
 
-  enum Codec: uint8_t
-  {
+  enum Codec : uint8_t {
     VP8 = 1 << 0,
     VP9 = 1 << 1,
     Unknown = 1 << 7,
@@ -46,7 +42,8 @@ public:
   
   
   
-  static bool IsVPX(const nsACString& aMimeType, uint8_t aCodecMask=VP8|VP9);
+  static bool IsVPX(const nsACString& aMimeType,
+                    uint8_t aCodecMask = VP8 | VP9);
   static bool IsVP8(const nsACString& aMimeType);
   static bool IsVP9(const nsACString& aMimeType);
 
@@ -62,8 +59,7 @@ public:
   
   static int GetVP9Profile(Span<const uint8_t> aBuffer);
 
-  struct VPXStreamInfo
-  {
+  struct VPXStreamInfo {
     gfx::IntSize mImage;
     gfx::IntSize mDisplay;
     bool mKeyFrame = false;
@@ -81,7 +77,7 @@ public:
 
 
 
-    int mColorSpace = 1; 
+    int mColorSpace = 1;  
 
     
 
@@ -110,19 +106,17 @@ public:
     bool mSubSampling_x = true;
     bool mSubSampling_y = true;
 
-    bool IsCompatible(const VPXStreamInfo& aOther) const
-    {
+    bool IsCompatible(const VPXStreamInfo& aOther) const {
       return mImage == aOther.mImage && mProfile == aOther.mProfile &&
              mBitDepth == aOther.mBitDepth && mSubSampling_x &&
              aOther.mSubSampling_x && mSubSampling_y == aOther.mSubSampling_y;
     }
   };
 
-  static bool GetStreamInfo(Span<const uint8_t> aBuffer,
-                            VPXStreamInfo& aInfo,
+  static bool GetStreamInfo(Span<const uint8_t> aBuffer, VPXStreamInfo& aInfo,
                             Codec aCodec);
 
-private:
+ private:
   ~VPXDecoder();
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
   MediaResult DecodeAlpha(vpx_image_t** aImgAlpha, const MediaRawData* aSample);
@@ -143,6 +137,6 @@ private:
   const bool mLowLatency;
 };
 
-} 
+}  
 
 #endif

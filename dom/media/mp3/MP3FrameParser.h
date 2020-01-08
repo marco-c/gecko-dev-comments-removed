@@ -17,13 +17,11 @@ namespace mozilla {
 
 
 
-class ID3Parser
-{
-public:
+class ID3Parser {
+ public:
   
-  class ID3Header
-  {
-  public:
+  class ID3Header {
+   public:
     
     static const int SIZE = 10;
 
@@ -61,7 +59,7 @@ public:
     
     bool ParseNext(uint8_t c);
 
-  private:
+   private:
     
     
     bool Update(uint8_t c);
@@ -89,7 +87,7 @@ public:
   
   void Reset();
 
-private:
+ private:
   
   ID3Header mHeader;
 };
@@ -111,13 +109,11 @@ private:
 
 
 
-class FrameParser
-{
-public:
+class FrameParser {
+ public:
   
-  class FrameHeader
-  {
-  public:
+  class FrameHeader {
+   public:
     
     static const int SIZE = 4;
 
@@ -168,7 +164,7 @@ public:
     
     bool ParseNext(const uint8_t c);
 
-  private:
+   private:
     
     
     bool Update(const uint8_t c);
@@ -183,16 +179,10 @@ public:
 
   
   
-  class VBRHeader
-  {
-  public:
+  class VBRHeader {
+   public:
     
-    enum VBRHeaderType
-    {
-      NONE = 0,
-      XING,
-      VBRI
-    };
+    enum VBRHeaderType { NONE = 0, XING, VBRI };
 
     
     VBRHeader();
@@ -230,7 +220,7 @@ public:
     
     bool Parse(BufferReader* aReader);
 
-  private:
+   private:
     
     
     
@@ -260,9 +250,8 @@ public:
   };
 
   
-  class Frame
-  {
-  public:
+  class Frame {
+   public:
     
     int32_t Length() const;
 
@@ -276,7 +265,7 @@ public:
     
     bool ParseNext(uint8_t c);
 
-  private:
+   private:
     
     FrameHeader mHeader;
   };
@@ -324,7 +313,7 @@ public:
   
   bool ParseVBRHeader(BufferReader* aReader);
 
-private:
+ private:
   
   ID3Parser mID3Parser;
 
@@ -338,6 +327,6 @@ private:
   Frame mPrevFrame;
 };
 
-} 
+}  
 
 #endif

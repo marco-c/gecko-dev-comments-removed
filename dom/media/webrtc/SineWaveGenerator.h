@@ -10,15 +10,14 @@
 namespace mozilla {
 
 
-class SineWaveGenerator
-{
-public:
+class SineWaveGenerator {
+ public:
   static const int bytesPerSample = 2;
   static const int millisecondsPerSecond = PR_MSEC_PER_SEC;
 
-  explicit SineWaveGenerator(uint32_t aSampleRate, uint32_t aFrequency) :
-    mTotalLength(aSampleRate / aFrequency),
-    mReadLength(0) {
+  explicit SineWaveGenerator(uint32_t aSampleRate, uint32_t aFrequency)
+      : mTotalLength(aSampleRate / aFrequency), mReadLength(0) {
+    
     
     
     
@@ -41,7 +40,8 @@ public:
       } else {
         processSamples = mTotalLength - mReadLength;
       }
-      memcpy(aBuffer, &mAudioBuffer[mReadLength], processSamples * bytesPerSample);
+      memcpy(aBuffer, &mAudioBuffer[mReadLength],
+             processSamples * bytesPerSample);
       aBuffer += processSamples;
       mReadLength += processSamples;
       remaining -= processSamples;
@@ -51,12 +51,12 @@ public:
     }
   }
 
-private:
+ private:
   UniquePtr<int16_t[]> mAudioBuffer;
   TrackTicks mTotalLength;
   TrackTicks mReadLength;
 };
 
-} 
+}  
 
 #endif 

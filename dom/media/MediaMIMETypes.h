@@ -16,70 +16,60 @@ namespace mozilla {
 namespace dom {
 struct AudioConfiguration;
 struct VideoConfiguration;
-}
+}  
 
 
 
 
 
-class DependentMediaMIMEType
-{
-public:
+class DependentMediaMIMEType {
+ public:
   
   
   template <size_t N>
   explicit DependentMediaMIMEType(const char (&aType)[N])
-    : mMIMEType(aType, N - 1)
-  {
+      : mMIMEType(aType, N - 1) {
     MOZ_ASSERT(IsMediaMIMEType(aType, N - 1), "Invalid media MIME type");
   }
 
   
   const nsDependentCString& AsDependentString() const { return mMIMEType; }
 
-private:
+ private:
   nsDependentCString mMIMEType;
 };
 
 
-#define MEDIAMIMETYPE(LIT)                                            \
-  static_cast<const DependentMediaMIMEType&>(                         \
-    []() {                                                            \
-      static_assert(IsMediaMIMEType(LIT), "Invalid media MIME type"); \
-      return DependentMediaMIMEType(LIT);                             \
-    }())
+#define MEDIAMIMETYPE(LIT)                                          \
+  static_cast<const DependentMediaMIMEType&>([]() {                 \
+    static_assert(IsMediaMIMEType(LIT), "Invalid media MIME type"); \
+    return DependentMediaMIMEType(LIT);                             \
+  }())
 
 
-class MediaMIMEType
-{
-public:
+class MediaMIMEType {
+ public:
   
   
   MOZ_IMPLICIT MediaMIMEType(const DependentMediaMIMEType& aType)
-    : mMIMEType(aType.AsDependentString())
-  {
-  }
+      : mMIMEType(aType.AsDependentString()) {}
 
   
   const nsCString& AsString() const { return mMIMEType; }
 
   
   
-  bool operator==(const DependentMediaMIMEType& aOther) const
-  {
+  bool operator==(const DependentMediaMIMEType& aOther) const {
     return mMIMEType.Equals(aOther.AsDependentString());
   }
-  bool operator!=(const DependentMediaMIMEType& aOther) const
-  {
+  bool operator!=(const DependentMediaMIMEType& aOther) const {
     return !mMIMEType.Equals(aOther.AsDependentString());
   }
 
-  bool operator==(const MediaMIMEType& aOther) const
-  {
+  bool operator==(const MediaMIMEType& aOther) const {
     return mMIMEType.Equals(aOther.mMIMEType);
   }
-  bool operator!=(const MediaMIMEType& aOther) const
-  {
+  bool operator!=(const MediaMIMEType& aOther) const {
     return !mMIMEType.Equals(aOther.mMIMEType);
   }
 
@@ -95,12 +85,12 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   friend Maybe<MediaMIMEType> MakeMediaMIMEType(const nsAString& aType);
   friend class MediaExtendedMIMEType;
   explicit MediaMIMEType(const nsACString& aType);
 
-  nsCString mMIMEType; 
+  nsCString mMIMEType;  
 };
 
 Maybe<MediaMIMEType> MakeMediaMIMEType(const nsAString& aType);
@@ -108,34 +98,28 @@ Maybe<MediaMIMEType> MakeMediaMIMEType(const nsACString& aType);
 Maybe<MediaMIMEType> MakeMediaMIMEType(const char* aType);
 
 
-
-class MediaCodecs
-{
-public:
-  MediaCodecs() { }
+class MediaCodecs {
+ public:
+  MediaCodecs() {}
   
-  explicit MediaCodecs(const nsAString& aCodecs) : mCodecs(aCodecs) { }
+  explicit MediaCodecs(const nsAString& aCodecs) : mCodecs(aCodecs) {}
   
   template <size_t N>
   explicit MediaCodecs(const char (&aCodecs)[N])
-    : mCodecs(NS_ConvertUTF8toUTF16(aCodecs, N - 1))
-  {
-  }
+      : mCodecs(NS_ConvertUTF8toUTF16(aCodecs, N - 1)) {}
 
   bool IsEmpty() const { return mCodecs.IsEmpty(); }
   const nsString& AsString() const { return mCodecs; }
 
   using RangeType =
-    const StringListRange<nsString, StringListRangeEmptyItems::ProcessEmptyItems>;
+      const StringListRange<nsString,
+                            StringListRangeEmptyItems::ProcessEmptyItems>;
 
   
   
   
   
-  RangeType Range() const
-  {
-    return RangeType(mCodecs);
-  };
+  RangeType Range() const { return RangeType(mCodecs); };
 
   
   bool Contains(const nsAString& aCodec) const;
@@ -146,14 +130,13 @@ public:
   bool ContainsPrefix(const nsAString& aCodecPrefix) const;
 
   template <size_t N>
-  bool operator==(const char (&aType)[N]) const
-  {
+  bool operator==(const char (&aType)[N]) const {
     return mCodecs.EqualsASCII(aType, N - 1);
   }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   
   
   
@@ -162,10 +145,8 @@ private:
 
 
 
-
-class MediaExtendedMIMEType
-{
-public:
+class MediaExtendedMIMEType {
+ public:
   explicit MediaExtendedMIMEType(const MediaMIMEType& aType);
   explicit MediaExtendedMIMEType(MediaMIMEType&& aType);
 
@@ -195,53 +176,51 @@ public:
   
   static Maybe<double> ComputeFractionalString(const nsAString& aFrac);
 
-private:
-  friend Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(const nsAString& aType);
+ private:
   friend Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(
-    const dom::VideoConfiguration& aConfig);
+      const nsAString& aType);
   friend Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(
-    const dom::AudioConfiguration& aConfig);
+      const dom::VideoConfiguration& aConfig);
+  friend Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(
+      const dom::AudioConfiguration& aConfig);
 
   MediaExtendedMIMEType(const nsACString& aOriginalString,
-                        const nsACString& aMIMEType,
-                        bool aHaveCodecs, const nsAString& aCodecs,
-                        int32_t aWidth, int32_t aHeight,
-                        double aFramerate, int32_t aBitrate);
+                        const nsACString& aMIMEType, bool aHaveCodecs,
+                        const nsAString& aCodecs, int32_t aWidth,
+                        int32_t aHeight, double aFramerate, int32_t aBitrate);
   MediaExtendedMIMEType(const nsACString& aOriginalString,
-                        const nsACString& aMIMEType,
-                        bool aHaveCodecs, const nsAString& aCodecs,
-                        int32_t aChannels, int32_t aSamplerate,
-                        int32_t aBitrate);
+                        const nsACString& aMIMEType, bool aHaveCodecs,
+                        const nsAString& aCodecs, int32_t aChannels,
+                        int32_t aSamplerate, int32_t aBitrate);
 
   template <typename T>
-  Maybe<T> GetMaybeNumber(T aNumber) const
-  {
+  Maybe<T> GetMaybeNumber(T aNumber) const {
     return (aNumber < 0) ? Maybe<T>(Nothing()) : Some(T(aNumber));
   }
 
-  nsCString mOriginalString; 
-  MediaMIMEType mMIMEType; 
-  bool mHaveCodecs = false; 
+  nsCString mOriginalString;  
+  MediaMIMEType mMIMEType;    
+  bool mHaveCodecs = false;   
   MediaCodecs mCodecs;
   
-  int32_t mWidth = -1; 
-  int32_t mHeight = -1; 
-  double mFramerate = -1; 
+  int32_t mWidth = -1;     
+  int32_t mHeight = -1;    
+  double mFramerate = -1;  
   
-  int32_t mChannels = -1; 
-  int32_t mSamplerate = -1; 
+  int32_t mChannels = -1;    
+  int32_t mSamplerate = -1;  
   
-  int32_t mBitrate = -1; 
+  int32_t mBitrate = -1;  
 };
 
 Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(const nsAString& aType);
 Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(const nsACString& aType);
 Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(const char* aType);
-Maybe<MediaExtendedMIMEType>
-MakeMediaExtendedMIMEType(const dom::VideoConfiguration& aConfig);
-Maybe<MediaExtendedMIMEType>
-MakeMediaExtendedMIMEType(const dom::AudioConfiguration& aConfig);
+Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(
+    const dom::VideoConfiguration& aConfig);
+Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(
+    const dom::AudioConfiguration& aConfig);
 
-} 
+}  
 
-#endif 
+#endif  

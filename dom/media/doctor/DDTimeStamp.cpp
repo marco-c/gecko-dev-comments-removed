@@ -8,9 +8,7 @@
 
 namespace mozilla {
 
-double
-ToSeconds(const DDTimeStamp& aTimeStamp)
-{
+double ToSeconds(const DDTimeStamp& aTimeStamp) {
   
   
   
@@ -19,4 +17,4 @@ ToSeconds(const DDTimeStamp& aTimeStamp)
   return (aTimeStamp - sInitialTimeStamp).ToSeconds();
 }
 
-} 
+}  

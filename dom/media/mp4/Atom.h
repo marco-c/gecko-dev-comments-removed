@@ -7,21 +7,15 @@
 
 namespace mozilla {
 
-class Atom
-{
-public:
-  Atom()
-    : mValid(false)
-  {
-  }
-  virtual bool IsValid()
-  {
-    return mValid;
-  }
-protected:
+class Atom {
+ public:
+  Atom() : mValid(false) {}
+  virtual bool IsValid() { return mValid; }
+
+ protected:
   bool mValid;
 };
 
-}
+}  
 
-#endif 
+#endif  

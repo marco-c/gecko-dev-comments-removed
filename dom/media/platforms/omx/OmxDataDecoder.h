@@ -58,16 +58,13 @@ DDLoggedTypeDeclNameAndBase(OmxDataDecoder, MediaDataDecoder);
 
 
 
-class OmxDataDecoder
-  : public MediaDataDecoder
-  , public DecoderDoctorLifeLogger<OmxDataDecoder>
-{
-protected:
+class OmxDataDecoder : public MediaDataDecoder,
+                       public DecoderDoctorLifeLogger<OmxDataDecoder> {
+ protected:
   virtual ~OmxDataDecoder();
 
-public:
-  OmxDataDecoder(const TrackInfo& aTrackInfo,
-                 TaskQueue* aTaskQueue,
+ public:
+  OmxDataDecoder(const TrackInfo& aTrackInfo, TaskQueue* aTaskQueue,
                  layers::ImageContainer* aImageContainer);
 
   RefPtr<InitPromise> Init() override;
@@ -76,20 +73,18 @@ public:
   RefPtr<FlushPromise> Flush() override;
   RefPtr<ShutdownPromise> Shutdown() override;
 
-  nsCString GetDescriptionName() const override
-  {
+  nsCString GetDescriptionName() const override {
     return NS_LITERAL_CSTRING("omx decoder");
   }
 
-  ConversionRequired NeedsConversion() const override
-  {
+  ConversionRequired NeedsConversion() const override {
     return ConversionRequired::kNeedAnnexB;
   }
 
   
   bool Event(OMX_EVENTTYPE aEvent, OMX_U32 aData1, OMX_U32 aData2);
 
-protected:
+ protected:
   void InitializationTask();
 
   void ResolveInitPromise(const char* aMethodName);
@@ -108,9 +103,9 @@ protected:
 
   void EmptyBufferFailure(OmxBufferFailureHolder aFailureHolder);
 
-  void NotifyError(OMX_ERRORTYPE aOmxError,
-                   const char* aLine,
-                   const MediaResult& aError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR));
+  void NotifyError(
+      OMX_ERRORTYPE aOmxError, const char* aLine,
+      const MediaResult& aError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR));
 
   
   
@@ -212,14 +207,13 @@ protected:
   RefPtr<MediaDataHelper> mMediaDataHelper;
 };
 
-template<class T>
-void InitOmxParameter(T* aParam)
-{
+template <class T>
+void InitOmxParameter(T* aParam) {
   PodZero(aParam);
   aParam->nSize = sizeof(T);
   aParam->nVersion.s.nVersionMajor = 1;
 }
 
-}
+}  
 
 #endif 

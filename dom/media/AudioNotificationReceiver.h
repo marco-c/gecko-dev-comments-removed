@@ -60,26 +60,24 @@
 
 
 
-
 namespace mozilla {
 namespace audio {
 
 
 
 
-class DeviceChangeListener
-{
-protected:
-  virtual ~DeviceChangeListener() {};
-public:
+class DeviceChangeListener {
+ protected:
+  virtual ~DeviceChangeListener(){};
+
+ public:
   
   
   virtual void ResetDefaultDevice() = 0;
 };
 
-class AudioNotificationReceiver final
-{
-public:
+class AudioNotificationReceiver final {
+ public:
   
   static void Register(DeviceChangeListener* aDeviceChangeListener);
 
@@ -88,9 +86,9 @@ public:
 
   
   static void NotifyDefaultDeviceChanged();
-}; 
+};  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -23,11 +23,10 @@ class MediaResult;
 
 namespace dom {
 class HTMLMediaElement;
-} 
+}  
 
-class MediaDecoderOwner
-{
-public:
+class MediaDecoderOwner {
+ public:
   
   virtual void DownloadProgressed() = 0;
 
@@ -105,6 +104,7 @@ public:
   virtual void NotifySuspendedByCache(bool aSuspendedByCache) = 0;
 
   
+  
   virtual void NotifyDecoderPrincipalChanged() = 0;
 
   
@@ -173,8 +173,7 @@ public:
   virtual nsIDocument* GetDocument() const { return nullptr; }
 
   
-  virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper()
-  {
+  virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() {
     return nullptr;
   }
 
@@ -188,8 +187,8 @@ public:
   
   
   virtual void PrincipalHandleChangedForVideoFrameContainer(
-    VideoFrameContainer* aContainer,
-    const PrincipalHandle& aNewPrincipalHandle) {}
+      VideoFrameContainer* aContainer,
+      const PrincipalHandle& aNewPrincipalHandle) {}
 
   
 
@@ -197,7 +196,6 @@ public:
 
 };
 
-} 
+}  
 
 #endif
-

@@ -9,9 +9,8 @@
 
 namespace mozilla {
 
-class RemoteDecoderManagerChild final : public PRemoteDecoderManagerChild
-{
-public:
+class RemoteDecoderManagerChild final : public PRemoteDecoderManagerChild {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderManagerChild)
 
   
@@ -23,27 +22,25 @@ public:
 
   
   static void InitForContent(
-                  Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
+      Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
   static void Shutdown();
 
   bool CanSend();
 
-protected:
+ protected:
   void InitIPDL();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
   void DeallocPRemoteDecoderManagerChild() override;
 
   PRemoteVideoDecoderChild* AllocPRemoteVideoDecoderChild(
-                                const VideoInfo& aVideoInfo,
-                                const float& aFramerate,
-                                const CreateDecoderParams::OptionSet& aOptions,
-                                bool* aSuccess,
-                                nsCString* aErrorDescription) override;
+      const VideoInfo& aVideoInfo, const float& aFramerate,
+      const CreateDecoderParams::OptionSet& aOptions, bool* aSuccess,
+      nsCString* aErrorDescription) override;
   bool DeallocPRemoteVideoDecoderChild(
-           PRemoteVideoDecoderChild* actor) override;
+      PRemoteVideoDecoderChild* actor) override;
 
-private:
+ private:
   
   static void InitializeThread();
 
@@ -58,6 +55,6 @@ private:
   bool mCanSend = false;
 };
 
-} 
+}  
 
-#endif 
+#endif  

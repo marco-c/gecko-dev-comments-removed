@@ -16,8 +16,7 @@ class IRemoteDecoderChild;
 class RemoteDecoderModule;
 class RemoteMediaDataDecoder;
 
-DDLoggedTypeCustomNameAndBase(RemoteMediaDataDecoder,
-                              RemoteMediaDataDecoder,
+DDLoggedTypeCustomNameAndBase(RemoteMediaDataDecoder, RemoteMediaDataDecoder,
                               MediaDataDecoder);
 
 
@@ -25,10 +24,9 @@ DDLoggedTypeCustomNameAndBase(RemoteMediaDataDecoder,
 
 
 class RemoteMediaDataDecoder
-  : public MediaDataDecoder
-  , public DecoderDoctorLifeLogger<RemoteMediaDataDecoder>
-{
-public:
+    : public MediaDataDecoder,
+      public DecoderDoctorLifeLogger<RemoteMediaDataDecoder> {
+ public:
   friend class GpuDecoderModule;
   friend class RemoteDecoderModule;
 
@@ -43,9 +41,8 @@ public:
   nsCString GetDescriptionName() const override;
   ConversionRequired NeedsConversion() const override;
 
-private:
-  RemoteMediaDataDecoder(IRemoteDecoderChild* aChild,
-                         nsIThread* aManagerThread,
+ private:
+  RemoteMediaDataDecoder(IRemoteDecoderChild* aChild, nsIThread* aManagerThread,
                          AbstractThread* aAbstractManagerThread);
   ~RemoteMediaDataDecoder();
 
@@ -63,6 +60,6 @@ private:
   ConversionRequired mConversion = ConversionRequired::kNeedNone;
 };
 
-} 
+}  
 
-#endif 
+#endif  

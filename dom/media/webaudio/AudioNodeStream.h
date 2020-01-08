@@ -19,13 +19,14 @@ namespace dom {
 struct ThreeDPoint;
 struct AudioTimelineEvent;
 class AudioContext;
-} 
+}  
 
 class AbstractThread;
 class ThreadSharedFloatArrayBufferList;
 class AudioNodeEngine;
 
-typedef AlignedAutoTArray<float, GUESS_AUDIO_CHANNELS*WEBAUDIO_BLOCK_SIZE, 16> DownmixBufferType;
+typedef AlignedAutoTArray<float, GUESS_AUDIO_CHANNELS * WEBAUDIO_BLOCK_SIZE, 16>
+    DownmixBufferType;
 
 
 
@@ -37,12 +38,11 @@ typedef AlignedAutoTArray<float, GUESS_AUDIO_CHANNELS*WEBAUDIO_BLOCK_SIZE, 16> D
 
 
 
-class AudioNodeStream : public ProcessedMediaStream
-{
+class AudioNodeStream : public ProcessedMediaStream {
   typedef dom::ChannelCountMode ChannelCountMode;
   typedef dom::ChannelInterpretation ChannelInterpretation;
 
-public:
+ public:
   typedef mozilla::dom::AudioContext AudioContext;
 
   enum { AUDIO_TRACK = 1 };
@@ -66,21 +66,21 @@ public:
 
 
 
-  static already_AddRefed<AudioNodeStream>
-  Create(AudioContext* aCtx, AudioNodeEngine* aEngine, Flags aKind,
-         MediaStreamGraph* aGraph);
+  static already_AddRefed<AudioNodeStream> Create(AudioContext* aCtx,
+                                                  AudioNodeEngine* aEngine,
+                                                  Flags aKind,
+                                                  MediaStreamGraph* aGraph);
 
-protected:
+ protected:
   
 
 
-  AudioNodeStream(AudioNodeEngine* aEngine,
-                  Flags aFlags,
+  AudioNodeStream(AudioNodeEngine* aEngine, Flags aFlags,
                   TrackRate aSampleRate);
 
   ~AudioNodeStream();
 
-public:
+ public:
   
   
 
@@ -93,20 +93,20 @@ public:
   void SetThreeDPointParameter(uint32_t aIndex, const dom::ThreeDPoint& aValue);
   void SetBuffer(AudioChunk&& aBuffer);
   
-  void SendTimelineEvent(uint32_t aIndex, const dom::AudioTimelineEvent& aEvent);
+  void SendTimelineEvent(uint32_t aIndex,
+                         const dom::AudioTimelineEvent& aEvent);
+  
   
   void SetRawArrayData(nsTArray<float>& aData);
   void SetChannelMixingParameters(uint32_t aNumberOfChannels,
                                   ChannelCountMode aChannelCountMoe,
                                   ChannelInterpretation aChannelInterpretation);
   void SetPassThrough(bool aPassThrough);
-  ChannelInterpretation GetChannelInterpretation()
-  {
+  ChannelInterpretation GetChannelInterpretation() {
     return mChannelInterpretation;
   }
 
-  void SetAudioParamHelperStream()
-  {
+  void SetAudioParamHelperStream() {
     MOZ_ASSERT(!mAudioParamStream, "Can only do this once");
     mAudioParamStream = true;
   }
@@ -124,11 +124,12 @@ public:
   void RemoveInput(MediaInputPort* aPort) override;
 
   
-  void SetStreamTimeParameterImpl(uint32_t aIndex, MediaStream* aRelativeToStream,
+  void SetStreamTimeParameterImpl(uint32_t aIndex,
+                                  MediaStream* aRelativeToStream,
                                   double aStreamTime);
-  void SetChannelMixingParametersImpl(uint32_t aNumberOfChannels,
-                                      ChannelCountMode aChannelCountMoe,
-                                      ChannelInterpretation aChannelInterpretation);
+  void SetChannelMixingParametersImpl(
+      uint32_t aNumberOfChannels, ChannelCountMode aChannelCountMoe,
+      ChannelInterpretation aChannelInterpretation);
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
   
 
@@ -136,19 +137,12 @@ public:
 
 
   void ProduceOutputBeforeInput(GraphTime aFrom);
-  bool IsAudioParamStream() const
-  {
-    return mAudioParamStream;
-  }
+  bool IsAudioParamStream() const { return mAudioParamStream; }
 
-  const OutputChunks& LastChunks() const
-  {
-    return mLastChunks;
-  }
-  bool MainThreadNeedsUpdates() const override
-  {
+  const OutputChunks& LastChunks() const { return mLastChunks; }
+  bool MainThreadNeedsUpdates() const override {
     return ((mFlags & NEED_MAIN_THREAD_FINISHED) && mFinished) ||
-      (mFlags & NEED_MAIN_THREAD_CURRENT_TIME);
+           (mFlags & NEED_MAIN_THREAD_CURRENT_TIME);
   }
 
   
@@ -176,7 +170,7 @@ public:
 
   void ScheduleCheckForInactive();
 
-protected:
+ protected:
   class AdvanceAndResumeMessage;
   class CheckForInactiveMessage;
 
@@ -235,6 +229,6 @@ protected:
   bool mPassThrough;
 };
 
-} 
+}  
 
 #endif 

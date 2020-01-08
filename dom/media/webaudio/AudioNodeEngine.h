@@ -18,7 +18,7 @@ struct ThreeDPoint;
 class AudioParamTimeline;
 class DelayNodeEngine;
 struct AudioTimelineEvent;
-} 
+}  
 
 class AbstractThread;
 class AudioBlock;
@@ -30,14 +30,12 @@ class AudioNodeStream;
 
 
 
-class ThreadSharedFloatArrayBufferList final : public ThreadSharedObject
-{
-public:
+class ThreadSharedFloatArrayBufferList final : public ThreadSharedObject {
+ public:
   
 
 
-  explicit ThreadSharedFloatArrayBufferList(uint32_t aCount)
-  {
+  explicit ThreadSharedFloatArrayBufferList(uint32_t aCount) {
     mContents.SetLength(aCount);
   }
   
@@ -45,29 +43,24 @@ public:
 
 
 
-  static already_AddRefed<ThreadSharedFloatArrayBufferList>
-  Create(uint32_t aChannelCount, size_t aLength, const mozilla::fallible_t&);
+  static already_AddRefed<ThreadSharedFloatArrayBufferList> Create(
+      uint32_t aChannelCount, size_t aLength, const mozilla::fallible_t&);
 
-  ThreadSharedFloatArrayBufferList*
-  AsThreadSharedFloatArrayBufferList() override
-  {
+  ThreadSharedFloatArrayBufferList* AsThreadSharedFloatArrayBufferList()
+      override {
     return this;
   };
 
-  struct Storage final
-  {
-    Storage() :
-      mDataToFree(nullptr),
-      mFree(nullptr),
-      mSampleData(nullptr)
-    {}
+  struct Storage final {
+    Storage() : mDataToFree(nullptr), mFree(nullptr), mSampleData(nullptr) {}
     ~Storage() {
       if (mFree) {
         mFree(mDataToFree);
-      } else { MOZ_ASSERT(!mDataToFree); }
+      } else {
+        MOZ_ASSERT(!mDataToFree);
+      }
     }
-    size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-    {
+    size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
       
       
       return aMallocSizeOf(mDataToFree);
@@ -84,13 +77,14 @@ public:
   
 
 
-  const float* GetData(uint32_t aIndex) const { return mContents[aIndex].mSampleData; }
+  const float* GetData(uint32_t aIndex) const {
+    return mContents[aIndex].mSampleData;
+  }
   
 
 
 
-  float* GetDataForWrite(uint32_t aIndex)
-  {
+  float* GetDataForWrite(uint32_t aIndex) {
     MOZ_ASSERT(!IsShared());
     return mContents[aIndex].mSampleData;
   }
@@ -99,8 +93,8 @@ public:
 
 
 
-  void SetData(uint32_t aIndex, void* aDataToFree, void (*aFreeFunc)(void*), float* aData)
-  {
+  void SetData(uint32_t aIndex, void* aDataToFree, void (*aFreeFunc)(void*),
+               float* aData) {
     Storage* s = &mContents[aIndex];
     if (s->mFree) {
       s->mFree(s->mDataToFree);
@@ -118,8 +112,8 @@ public:
 
   void Clear() { mContents.Clear(); }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override
-  {
+  size_t SizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override {
     size_t amount = ThreadSharedObject::SizeOfExcludingThis(aMallocSizeOf);
     amount += mContents.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (size_t i = 0; i < mContents.Length(); i++) {
@@ -129,12 +123,11 @@ public:
     return amount;
   }
 
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
-  {
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-private:
+ private:
   AutoTArray<Storage, 2> mContents;
 };
 
@@ -147,17 +140,13 @@ void WriteZeroesToAudioBlock(AudioBlock* aChunk, uint32_t aStart,
 
 
 
-void AudioBufferCopyWithScale(const float* aInput,
-                              float aScale,
-                              float* aOutput,
+void AudioBufferCopyWithScale(const float* aInput, float aScale, float* aOutput,
                               uint32_t aSize);
 
 
 
 
-void AudioBufferAddWithScale(const float* aInput,
-                             float aScale,
-                             float* aOutput,
+void AudioBufferAddWithScale(const float* aInput, float aScale, float* aOutput,
                              uint32_t aSize);
 
 
@@ -172,8 +161,7 @@ void AudioBlockAddChannelWithScale(const float aInput[WEBAUDIO_BLOCK_SIZE],
 
 
 
-void AudioBlockCopyChannelWithScale(const float* aInput,
-                                    float aScale,
+void AudioBlockCopyChannelWithScale(const float* aInput, float aScale,
                                     float* aOutput);
 
 
@@ -186,10 +174,8 @@ void AudioBlockCopyChannelWithScale(const float aInput[WEBAUDIO_BLOCK_SIZE],
 
 
 
-void BufferComplexMultiply(const float* aInput,
-                           const float* aScale,
-                           float* aOutput,
-                           uint32_t aSize);
+void BufferComplexMultiply(const float* aInput, const float* aScale,
+                           float* aOutput, uint32_t aSize);
 
 
 
@@ -199,15 +185,12 @@ float AudioBufferPeakValue(const float* aInput, uint32_t aSize);
 
 
 
-void AudioBlockInPlaceScale(float aBlock[WEBAUDIO_BLOCK_SIZE],
-                            float aScale);
+void AudioBlockInPlaceScale(float aBlock[WEBAUDIO_BLOCK_SIZE], float aScale);
 
 
 
 
-void AudioBufferInPlaceScale(float* aBlock,
-                             float aScale,
-                             uint32_t aSize);
+void AudioBufferInPlaceScale(float* aBlock, float aScale, uint32_t aSize);
 
 
 
@@ -217,102 +200,87 @@ void AudioBlockInPlaceScale(float aBlock[WEBAUDIO_BLOCK_SIZE],
 
 
 
-void AudioBufferInPlaceScale(float* aBlock,
-                             float* aScale,
-                             uint32_t aSize);
+void AudioBufferInPlaceScale(float* aBlock, float* aScale, uint32_t aSize);
 
 
 
 
 
 
-void
-AudioBlockPanMonoToStereo(const float aInput[WEBAUDIO_BLOCK_SIZE],
-                          float aGainL, float aGainR,
-                          float aOutputL[WEBAUDIO_BLOCK_SIZE],
-                          float aOutputR[WEBAUDIO_BLOCK_SIZE]);
+void AudioBlockPanMonoToStereo(const float aInput[WEBAUDIO_BLOCK_SIZE],
+                               float aGainL, float aGainR,
+                               float aOutputL[WEBAUDIO_BLOCK_SIZE],
+                               float aOutputR[WEBAUDIO_BLOCK_SIZE]);
 
-void
-AudioBlockPanMonoToStereo(const float aInput[WEBAUDIO_BLOCK_SIZE],
-                          float aGainL[WEBAUDIO_BLOCK_SIZE],
-                          float aGainR[WEBAUDIO_BLOCK_SIZE],
-                          float aOutputL[WEBAUDIO_BLOCK_SIZE],
-                          float aOutputR[WEBAUDIO_BLOCK_SIZE]);
+void AudioBlockPanMonoToStereo(const float aInput[WEBAUDIO_BLOCK_SIZE],
+                               float aGainL[WEBAUDIO_BLOCK_SIZE],
+                               float aGainR[WEBAUDIO_BLOCK_SIZE],
+                               float aOutputL[WEBAUDIO_BLOCK_SIZE],
+                               float aOutputR[WEBAUDIO_BLOCK_SIZE]);
 
 
 
 
 
-void
-AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
-                            const float aInputR[WEBAUDIO_BLOCK_SIZE],
-                            float aGainL, float aGainR, bool aIsOnTheLeft,
-                            float aOutputL[WEBAUDIO_BLOCK_SIZE],
-                            float aOutputR[WEBAUDIO_BLOCK_SIZE]);
-void
-AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
-                            const float aInputR[WEBAUDIO_BLOCK_SIZE],
-                            float aGainL[WEBAUDIO_BLOCK_SIZE],
-                            float aGainR[WEBAUDIO_BLOCK_SIZE],
-                            bool  aIsOnTheLeft[WEBAUDIO_BLOCK_SIZE],
-                            float aOutputL[WEBAUDIO_BLOCK_SIZE],
-                            float aOutputR[WEBAUDIO_BLOCK_SIZE]);
+void AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
+                                 const float aInputR[WEBAUDIO_BLOCK_SIZE],
+                                 float aGainL, float aGainR, bool aIsOnTheLeft,
+                                 float aOutputL[WEBAUDIO_BLOCK_SIZE],
+                                 float aOutputR[WEBAUDIO_BLOCK_SIZE]);
+void AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
+                                 const float aInputR[WEBAUDIO_BLOCK_SIZE],
+                                 float aGainL[WEBAUDIO_BLOCK_SIZE],
+                                 float aGainR[WEBAUDIO_BLOCK_SIZE],
+                                 bool aIsOnTheLeft[WEBAUDIO_BLOCK_SIZE],
+                                 float aOutputL[WEBAUDIO_BLOCK_SIZE],
+                                 float aOutputR[WEBAUDIO_BLOCK_SIZE]);
 
 
 
 
-float
-AudioBufferSumOfSquares(const float* aInput, uint32_t aLength);
+float AudioBufferSumOfSquares(const float* aInput, uint32_t aLength);
 
 
 
 
 
-class AudioNodeEngine
-{
-public:
+class AudioNodeEngine {
+ public:
   
   typedef AutoTArray<AudioBlock, 1> OutputChunks;
 
   explicit AudioNodeEngine(dom::AudioNode* aNode);
 
-  virtual ~AudioNodeEngine()
-  {
+  virtual ~AudioNodeEngine() {
     MOZ_ASSERT(!mNode, "The node reference must be already cleared");
     MOZ_COUNT_DTOR(AudioNodeEngine);
   }
 
   virtual dom::DelayNodeEngine* AsDelayNodeEngine() { return nullptr; }
 
-  virtual void SetStreamTimeParameter(uint32_t aIndex, StreamTime aParam)
-  {
+  virtual void SetStreamTimeParameter(uint32_t aIndex, StreamTime aParam) {
     NS_ERROR("Invalid SetStreamTimeParameter index");
   }
-  virtual void SetDoubleParameter(uint32_t aIndex, double aParam)
-  {
+  virtual void SetDoubleParameter(uint32_t aIndex, double aParam) {
     NS_ERROR("Invalid SetDoubleParameter index");
   }
-  virtual void SetInt32Parameter(uint32_t aIndex, int32_t aParam)
-  {
+  virtual void SetInt32Parameter(uint32_t aIndex, int32_t aParam) {
     NS_ERROR("Invalid SetInt32Parameter index");
   }
   virtual void RecvTimelineEvent(uint32_t aIndex,
-                                 dom::AudioTimelineEvent& aValue)
-  {
+                                 dom::AudioTimelineEvent& aValue) {
     NS_ERROR("Invalid RecvTimelineEvent index");
   }
   virtual void SetThreeDPointParameter(uint32_t aIndex,
-                                       const dom::ThreeDPoint& aValue)
-  {
+                                       const dom::ThreeDPoint& aValue) {
     NS_ERROR("Invalid SetThreeDPointParameter index");
   }
-  virtual void SetBuffer(AudioChunk&& aBuffer)
-  {
+  virtual void SetBuffer(AudioChunk&& aBuffer) {
     NS_ERROR("SetBuffer called on engine that doesn't support it");
   }
   
-  virtual void SetRawArrayData(nsTArray<float>& aData)
-  {
+  
+  virtual void SetRawArrayData(nsTArray<float>& aData) {
     NS_ERROR("SetRawArrayData called on an engine that doesn't support it");
   }
 
@@ -327,10 +295,8 @@ public:
 
 
 
-  virtual void ProcessBlock(AudioNodeStream* aStream,
-                            GraphTime aFrom,
-                            const AudioBlock& aInput,
-                            AudioBlock* aOutput,
+  virtual void ProcessBlock(AudioNodeStream* aStream, GraphTime aFrom,
+                            const AudioBlock& aInput, AudioBlock* aOutput,
                             bool* aFinished);
   
 
@@ -338,9 +304,7 @@ public:
 
 
   virtual void ProduceBlockBeforeInput(AudioNodeStream* aStream,
-                                       GraphTime aFrom,
-                                       AudioBlock* aOutput)
-  {
+                                       GraphTime aFrom, AudioBlock* aOutput) {
     MOZ_ASSERT_UNREACHABLE("ProduceBlockBeforeInput called on wrong engine");
   }
 
@@ -361,8 +325,7 @@ public:
 
   virtual void ProcessBlocksOnPorts(AudioNodeStream* aStream,
                                     const OutputChunks& aInput,
-                                    OutputChunks& aOutput,
-                                    bool* aFinished);
+                                    OutputChunks& aOutput, bool* aFinished);
 
   
   
@@ -370,20 +333,17 @@ public:
   
   virtual bool IsActive() const { return false; }
 
-  bool HasNode() const
-  {
+  bool HasNode() const {
     MOZ_ASSERT(NS_IsMainThread());
     return !!mNode;
   }
 
-  dom::AudioNode* NodeMainThread() const
-  {
+  dom::AudioNode* NodeMainThread() const {
     MOZ_ASSERT(NS_IsMainThread());
     return mNode;
   }
 
-  void ClearNode()
-  {
+  void ClearNode() {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(mNode != nullptr);
     mNode = nullptr;
@@ -392,35 +352,32 @@ public:
   uint16_t InputCount() const { return mInputCount; }
   uint16_t OutputCount() const { return mOutputCount; }
 
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     
     return 0;
   }
 
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
   void SizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
-                           AudioNodeSizes& aUsage) const
-  {
+                           AudioNodeSizes& aUsage) const {
     aUsage.mEngine = SizeOfIncludingThis(aMallocSizeOf);
     aUsage.mNodeType = mNodeType;
   }
 
-private:
+ private:
   
-  dom::AudioNode* MOZ_NON_OWNING_REF mNode; 
+  dom::AudioNode* MOZ_NON_OWNING_REF mNode;  
   const char* const mNodeType;
   const uint16_t mInputCount;
   const uint16_t mOutputCount;
 
-protected:
+ protected:
   const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
-} 
+}  
 
 #endif 

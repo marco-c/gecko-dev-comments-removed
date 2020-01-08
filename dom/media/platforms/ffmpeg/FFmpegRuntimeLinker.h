@@ -11,35 +11,35 @@
 
 namespace mozilla {
 
-class FFmpegRuntimeLinker
-{
-public:
+class FFmpegRuntimeLinker {
+ public:
   static bool Init();
   static already_AddRefed<PlatformDecoderModule> CreateDecoderModule();
-  enum LinkStatus
-  {
-    LinkStatus_INIT = 0,  
-    LinkStatus_SUCCEEDED, 
+  enum LinkStatus {
+    LinkStatus_INIT = 0,   
+    LinkStatus_SUCCEEDED,  
     
     
-    LinkStatus_INVALID_FFMPEG_CANDIDATE, 
-    LinkStatus_UNUSABLE_LIBAV57, 
-    LinkStatus_INVALID_LIBAV_CANDIDATE, 
+    LinkStatus_INVALID_FFMPEG_CANDIDATE,  
+                                          
+    LinkStatus_UNUSABLE_LIBAV57,         
+    LinkStatus_INVALID_LIBAV_CANDIDATE,  
+                                         
     LinkStatus_OBSOLETE_FFMPEG,
     LinkStatus_OBSOLETE_LIBAV,
-    LinkStatus_INVALID_CANDIDATE, 
-    LinkStatus_NOT_FOUND, 
+    LinkStatus_INVALID_CANDIDATE,  
+    LinkStatus_NOT_FOUND,  
   };
   static LinkStatus LinkStatusCode() { return sLinkStatus; }
   static const char* LinkStatusString();
   
   static const char* LinkStatusLibraryName() { return sLinkStatusLibraryName; }
 
-private:
+ private:
   static LinkStatus sLinkStatus;
   static const char* sLinkStatusLibraryName;
 };
 
-}
+}  
 
-#endif 
+#endif  

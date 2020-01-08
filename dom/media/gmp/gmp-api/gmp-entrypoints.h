@@ -44,6 +44,8 @@
 
 
 
+
+
 typedef GMPErr (*GMPInitFunc)(const GMPPlatformAPI* aPlatformAPI);
 
 
@@ -59,11 +61,13 @@ typedef GMPErr (*GMPInitFunc)(const GMPPlatformAPI* aPlatformAPI);
 
 
 
-typedef GMPErr (*GMPGetAPIFunc)(const char* aAPIName, void* aHostAPI, void** aPluginAPI);
+
+typedef GMPErr (*GMPGetAPIFunc)(const char* aAPIName, void* aHostAPI,
+                                void** aPluginAPI);
 
 
 
 
-typedef void   (*GMPShutdownFunc)(void);
+typedef void (*GMPShutdownFunc)(void);
 
-#endif 
+#endif  

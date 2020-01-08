@@ -17,14 +17,13 @@ namespace dom {
 
 
 
-template<typename T>
-class PrincipalChangeObserver
-{
-public:
+template <typename T>
+class PrincipalChangeObserver {
+ public:
   virtual void PrincipalChanged(T* aArg) = 0;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

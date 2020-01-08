@@ -14,16 +14,11 @@ namespace mozilla {
 
 using DDTimeStamp = TimeStamp;
 
-inline DDTimeStamp
-DDNow()
-{
-  return TimeStamp::Now();
-}
+inline DDTimeStamp DDNow() { return TimeStamp::Now(); }
 
 
-double
-ToSeconds(const DDTimeStamp& aTimeStamp);
+double ToSeconds(const DDTimeStamp& aTimeStamp);
 
-} 
+}  
 
-#endif 
+#endif  

@@ -48,9 +48,8 @@ DDLoggedTypeDeclName(MediaResource);
 
 
 
-class MediaResource : public DecoderDoctorLifeLogger<MediaResource>
-{
-public:
+class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
+ public:
   
   
   
@@ -69,8 +68,8 @@ public:
   
   
   
-  virtual nsresult ReadAt(int64_t aOffset, char* aBuffer,
-                          uint32_t aCount, uint32_t* aBytes) = 0;
+  virtual nsresult ReadAt(int64_t aOffset, char* aBuffer, uint32_t aCount,
+                          uint32_t* aBytes) = 0;
   
   
   
@@ -103,8 +102,7 @@ public:
   
   
   
-  virtual nsresult ReadFromCache(char* aBuffer,
-                                 int64_t aOffset,
+  virtual nsresult ReadFromCache(char* aBuffer, int64_t aOffset,
                                  uint32_t aCount) = 0;
 
   
@@ -114,10 +112,10 @@ public:
 
   virtual nsresult GetCachedRanges(MediaByteRangeSet& aRanges) = 0;
 
-protected:
-  virtual ~MediaResource() {};
+ protected:
+  virtual ~MediaResource(){};
 
-private:
+ private:
   void Destroy();
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
@@ -129,23 +127,22 @@ private:
 
 
 
-template<class T>
+template <class T>
 class MOZ_RAII AutoPinned {
  public:
-  explicit AutoPinned(T* aResource MOZ_GUARD_OBJECT_NOTIFIER_PARAM) : mResource(aResource) {
+  explicit AutoPinned(T* aResource MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mResource(aResource) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(mResource);
     mResource->Pin();
   }
 
-  ~AutoPinned() {
-    mResource->Unpin();
-  }
+  ~AutoPinned() { mResource->Unpin(); }
 
   operator T*() const { return mResource; }
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return mResource; }
 
-private:
+ private:
   T* mResource;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
@@ -159,9 +156,8 @@ DDLoggedTypeDeclName(MediaResourceIndex);
 
 
 
-class MediaResourceIndex : public DecoderDoctorLifeLogger<MediaResourceIndex>
-{
-public:
+class MediaResourceIndex : public DecoderDoctorLifeLogger<MediaResourceIndex> {
+ public:
   explicit MediaResourceIndex(MediaResource* aResource);
 
   
@@ -215,16 +211,12 @@ public:
   
   
   
-  nsresult ReadAt(int64_t aOffset,
-                  char* aBuffer,
-                  uint32_t aCount,
+  nsresult ReadAt(int64_t aOffset, char* aBuffer, uint32_t aCount,
                   uint32_t* aBytes);
 
   
   
-  nsresult UncachedReadAt(int64_t aOffset,
-                          char* aBuffer,
-                          uint32_t aCount,
+  nsresult UncachedReadAt(int64_t aOffset, char* aBuffer, uint32_t aCount,
                           uint32_t* aBytes) const;
 
   
@@ -233,10 +225,8 @@ public:
   
   
   
-  nsresult UncachedRangedReadAt(int64_t aOffset,
-                                char* aBuffer,
-                                uint32_t aRequestedCount,
-                                uint32_t aExtraCount,
+  nsresult UncachedRangedReadAt(int64_t aOffset, char* aBuffer,
+                                uint32_t aRequestedCount, uint32_t aExtraCount,
                                 uint32_t* aBytes) const;
 
   
@@ -258,15 +248,13 @@ public:
   
   int64_t GetLength() const;
 
-private:
+ private:
   
   
   
   
   
-  nsresult CacheOrReadAt(int64_t aOffset,
-                         char* aBuffer,
-                         uint32_t aCount,
+  nsresult CacheOrReadAt(int64_t aOffset, char* aBuffer, uint32_t aCount,
                          uint32_t* aBytes);
 
   
@@ -296,6 +284,6 @@ private:
   UniquePtr<char[]> mCachedBlock;
 };
 
-} 
+}  
 
 #endif

@@ -29,48 +29,41 @@
 
 static mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
 
-#define LOG(msg, ...)                                                          \
+#define LOG(msg, ...) \
   DDMOZ_LOG(sMediaCapabilitiesLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 namespace mozilla {
 namespace dom {
 
-static nsCString
-VideoConfigurationToStr(const VideoConfiguration* aConfig)
-{
+static nsCString VideoConfigurationToStr(const VideoConfiguration* aConfig) {
   if (!aConfig) {
     return nsCString();
   }
   auto str = nsPrintfCString(
-    "[contentType:%s width:%d height:%d bitrate:%" PRIu64 " framerate:%s]",
-    NS_ConvertUTF16toUTF8(aConfig->mContentType).get(),
-    aConfig->mWidth,
-    aConfig->mHeight,
-    aConfig->mBitrate,
-    NS_ConvertUTF16toUTF8(aConfig->mFramerate).get());
+      "[contentType:%s width:%d height:%d bitrate:%" PRIu64 " framerate:%s]",
+      NS_ConvertUTF16toUTF8(aConfig->mContentType).get(), aConfig->mWidth,
+      aConfig->mHeight, aConfig->mBitrate,
+      NS_ConvertUTF16toUTF8(aConfig->mFramerate).get());
   return std::move(str);
 }
 
-static nsCString
-AudioConfigurationToStr(const AudioConfiguration* aConfig)
-{
+static nsCString AudioConfigurationToStr(const AudioConfiguration* aConfig) {
   if (!aConfig) {
     return nsCString();
   }
   auto str = nsPrintfCString(
-    "[contentType:%s channels:%s bitrate:%" PRIu64 " samplerate:%d]",
-    NS_ConvertUTF16toUTF8(aConfig->mContentType).get(),
-    aConfig->mChannels.WasPassed()
-      ? NS_ConvertUTF16toUTF8(aConfig->mChannels.Value()).get()
-      : "?",
-    aConfig->mBitrate.WasPassed() ? aConfig->mBitrate.Value() : 0,
-    aConfig->mSamplerate.WasPassed() ? aConfig->mSamplerate.Value() : 0);
+      "[contentType:%s channels:%s bitrate:%" PRIu64 " samplerate:%d]",
+      NS_ConvertUTF16toUTF8(aConfig->mContentType).get(),
+      aConfig->mChannels.WasPassed()
+          ? NS_ConvertUTF16toUTF8(aConfig->mChannels.Value()).get()
+          : "?",
+      aConfig->mBitrate.WasPassed() ? aConfig->mBitrate.Value() : 0,
+      aConfig->mSamplerate.WasPassed() ? aConfig->mSamplerate.Value() : 0);
   return std::move(str);
 }
 
-static nsCString
-MediaCapabilitiesInfoToStr(const MediaCapabilitiesInfo* aInfo)
-{
+static nsCString MediaCapabilitiesInfoToStr(
+    const MediaCapabilitiesInfo* aInfo) {
   if (!aInfo) {
     return nsCString();
   }
@@ -81,36 +74,30 @@ MediaCapabilitiesInfoToStr(const MediaCapabilitiesInfo* aInfo)
   return std::move(str);
 }
 
-static nsCString
-MediaDecodingConfigurationToStr(const MediaDecodingConfiguration& aConfig)
-{
+static nsCString MediaDecodingConfigurationToStr(
+    const MediaDecodingConfiguration& aConfig) {
   nsCString str;
   str += NS_LITERAL_CSTRING("[");
   if (aConfig.mVideo.WasPassed()) {
-    str +=
-      NS_LITERAL_CSTRING("video:") + VideoConfigurationToStr(&aConfig.mVideo.Value());
+    str += NS_LITERAL_CSTRING("video:") +
+           VideoConfigurationToStr(&aConfig.mVideo.Value());
     if (aConfig.mAudio.WasPassed()) {
       str += NS_LITERAL_CSTRING(" ");
     }
   }
   if (aConfig.mAudio.WasPassed()) {
-    str +=
-      NS_LITERAL_CSTRING("audio:") + AudioConfigurationToStr(&aConfig.mAudio.Value());
+    str += NS_LITERAL_CSTRING("audio:") +
+           AudioConfigurationToStr(&aConfig.mAudio.Value());
   }
   str += NS_LITERAL_CSTRING("]");
   return str;
 }
 
 MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
-  : mParent(aParent)
-{
-}
+    : mParent(aParent) {}
 
-already_AddRefed<Promise>
-MediaCapabilities::DecodingInfo(
-  const MediaDecodingConfiguration& aConfiguration,
-  ErrorResult& aRv)
-{
+already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
+    const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv) {
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -121,7 +108,7 @@ MediaCapabilities::DecodingInfo(
   if (!aConfiguration.mVideo.WasPassed() &&
       !aConfiguration.mAudio.WasPassed()) {
     aRv.ThrowTypeError<MSG_MISSING_REQUIRED_DICTIONARY_MEMBER>(
-      NS_LITERAL_STRING("'audio' or 'video'"));
+        NS_LITERAL_STRING("'audio' or 'video'"));
     return nullptr;
   }
 
@@ -142,9 +129,10 @@ MediaCapabilities::DecodingInfo(
 
     
     supported &=
-      aConfiguration.mType == MediaDecodingType::File
-        ? CheckTypeForFile(aConfiguration.mVideo.Value().mContentType)
-        : CheckTypeForMediaSource(aConfiguration.mVideo.Value().mContentType);
+        aConfiguration.mType == MediaDecodingType::File
+            ? CheckTypeForFile(aConfiguration.mVideo.Value().mContentType)
+            : CheckTypeForMediaSource(
+                  aConfiguration.mVideo.Value().mContentType);
   }
   if (aConfiguration.mAudio.WasPassed()) {
     audioContainer = CheckAudioConfiguration(aConfiguration.mAudio.Value());
@@ -154,16 +142,16 @@ MediaCapabilities::DecodingInfo(
     }
     
     supported &=
-      aConfiguration.mType == MediaDecodingType::File
-        ? CheckTypeForFile(aConfiguration.mAudio.Value().mContentType)
-        : CheckTypeForMediaSource(aConfiguration.mAudio.Value().mContentType);
+        aConfiguration.mType == MediaDecodingType::File
+            ? CheckTypeForFile(aConfiguration.mAudio.Value().mContentType)
+            : CheckTypeForMediaSource(
+                  aConfiguration.mAudio.Value().mContentType);
   }
 
   if (!supported) {
     auto info = MakeUnique<MediaCapabilitiesInfo>(
-      false , false , false );
-    LOG("%s -> %s",
-        MediaDecodingConfigurationToStr(aConfiguration).get(),
+        false , false , false );
+    LOG("%s -> %s", MediaDecodingConfigurationToStr(aConfiguration).get(),
         MediaCapabilitiesInfoToStr(info.get()).get());
     promise->MaybeResolve(std::move(info));
     return promise.forget();
@@ -201,21 +189,20 @@ MediaCapabilities::DecodingInfo(
     tracks.AppendElements(std::move(audioTracks));
   }
 
-  typedef MozPromise<MediaCapabilitiesInfo,
-                     MediaResult,
+  typedef MozPromise<MediaCapabilitiesInfo, MediaResult,
                       true>
-    CapabilitiesPromise;
+      CapabilitiesPromise;
   nsTArray<RefPtr<CapabilitiesPromise>> promises;
 
   RefPtr<TaskQueue> taskQueue =
-    new TaskQueue(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
-                  "MediaCapabilities::TaskQueue");
+      new TaskQueue(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+                    "MediaCapabilities::TaskQueue");
   for (auto&& config : tracks) {
     TrackInfo::TrackType type =
-      config->IsVideo() ? TrackInfo::kVideoTrack : TrackInfo::kAudioTrack;
+        config->IsVideo() ? TrackInfo::kVideoTrack : TrackInfo::kAudioTrack;
 
     MOZ_ASSERT(type == TrackInfo::kAudioTrack ||
-                 videoContainer->ExtendedType().GetFramerate().isSome(),
+                   videoContainer->ExtendedType().GetFramerate().isSome(),
                "framerate is a required member of VideoConfiguration");
 
     if (type == TrackInfo::kAudioTrack) {
@@ -223,12 +210,10 @@ MediaCapabilities::DecodingInfo(
       
       RefPtr<PDMFactory> pdm = new PDMFactory();
       if (!pdm->Supports(*config, nullptr )) {
-        auto info =
-          MakeUnique<MediaCapabilitiesInfo>(false ,
-                                            false ,
-                                            false );
-        LOG("%s -> %s",
-            MediaDecodingConfigurationToStr(aConfiguration).get(),
+        auto info = MakeUnique<MediaCapabilitiesInfo>(
+            false , false ,
+            false );
+        LOG("%s -> %s", MediaDecodingConfigurationToStr(aConfiguration).get(),
             MediaCapabilitiesInfoToStr(info.get()).get());
         promise->MaybeResolve(std::move(info));
         return promise.forget();
@@ -236,9 +221,9 @@ MediaCapabilities::DecodingInfo(
       
       
       promises.AppendElement(CapabilitiesPromise::CreateAndResolve(
-        MediaCapabilitiesInfo(
-          true , true , true ),
-        __func__));
+          MediaCapabilitiesInfo(true , true ,
+                                true ),
+          __func__));
       continue;
     }
 
@@ -249,97 +234,95 @@ MediaCapabilities::DecodingInfo(
     RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
     double frameRate = videoContainer->ExtendedType().GetFramerate().ref();
     promises.AppendElement(InvokeAsync(
-      taskQueue,
-      __func__,
-      [ taskQueue,
-        frameRate,
-        compositor,
-        config = std::move(config) ]() mutable -> RefPtr<CapabilitiesPromise> {
-        
-        
-        CreateDecoderParams params{ *config,
-                                    taskQueue,
-                                    compositor,
-                                    CreateDecoderParams::VideoFrameRate(
-                                      frameRate),
-                                    TrackInfo::kVideoTrack };
-        return AllocationWrapper::CreateDecoder(params)->Then(
-          taskQueue,
-          __func__,
-          [ taskQueue, frameRate, config = std::move(config) ](
-            AllocationWrapper::AllocateDecoderPromise::ResolveOrRejectValue&&
-            aValue) mutable {
-            if (aValue.IsReject()) {
-              return CapabilitiesPromise::CreateAndReject(
-                std::move(aValue.RejectValue()), __func__);
-            }
-            RefPtr<MediaDataDecoder> decoder = std::move(aValue.ResolveValue());
-            
-            RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
-              taskQueue,
-              __func__,
-              [ taskQueue, decoder, frameRate, config = std::move(config) ](
-                MediaDataDecoder::InitPromise::ResolveOrRejectValue&&
-                aValue) mutable {
-                RefPtr<CapabilitiesPromise> p;
+        taskQueue, __func__,
+        [taskQueue, frameRate, compositor,
+         config = std::move(config)]() mutable -> RefPtr<CapabilitiesPromise> {
+          
+          
+          CreateDecoderParams params{
+              *config, taskQueue, compositor,
+              CreateDecoderParams::VideoFrameRate(frameRate),
+              TrackInfo::kVideoTrack};
+          return AllocationWrapper::CreateDecoder(params)->Then(
+              taskQueue, __func__,
+              [taskQueue, frameRate, config = std::move(config)](
+                  AllocationWrapper::AllocateDecoderPromise::
+                      ResolveOrRejectValue&& aValue) mutable {
                 if (aValue.IsReject()) {
-                  p = CapabilitiesPromise::CreateAndReject(
-                    std::move(aValue.RejectValue()), __func__);
-                } else {
-                  MOZ_ASSERT(config->IsVideo());
-                  nsAutoCString reason;
-                  bool powerEfficient = true;
-                  bool smooth = true;
-                  if (config->GetAsVideoInfo()->mImage.height > 480) {
-                    
-                    
-                    
-                    
-                    
-                    powerEfficient = decoder->IsHardwareAccelerated(reason);
-                    if (!powerEfficient &&
-                        VPXDecoder::IsVP9(config->mMimeType)) {
-                      smooth =
-                        VP9Benchmark::IsVP9DecodeFast(true );
-                      uint32_t fps = VP9Benchmark::MediaBenchmarkVp9Fps();
-                      if (!smooth && fps > 0) {
-                        
-                        
-                        
-                        
-                        const auto& videoConfig = *config->GetAsVideoInfo();
-                        double needed = ((1280.0 * 720.0) /
-                                         (videoConfig.mImage.width *
-                                          videoConfig.mImage.height) *
-                                         fps) /
-                                        frameRate;
-                        smooth = needed > 2;
-                      }
-                    }
-                  }
-                  p = CapabilitiesPromise::CreateAndResolve(
-                    MediaCapabilitiesInfo(
-                      true , smooth, powerEfficient),
-                    __func__);
+                  return CapabilitiesPromise::CreateAndReject(
+                      std::move(aValue.RejectValue()), __func__);
                 }
-                MOZ_ASSERT(p.get(), "the promise has been created");
+                RefPtr<MediaDataDecoder> decoder =
+                    std::move(aValue.ResolveValue());
                 
                 
-                decoder->Shutdown()->Then(
-                  taskQueue,
-                  __func__,
-                  [taskQueue, decoder, config = std::move(config)](
-                    const ShutdownPromise::ResolveOrRejectValue& aValue) {});
+                RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
+                    taskQueue, __func__,
+                    [taskQueue, decoder, frameRate, config = std::move(config)](
+                        MediaDataDecoder::InitPromise::ResolveOrRejectValue&&
+                            aValue) mutable {
+                      RefPtr<CapabilitiesPromise> p;
+                      if (aValue.IsReject()) {
+                        p = CapabilitiesPromise::CreateAndReject(
+                            std::move(aValue.RejectValue()), __func__);
+                      } else {
+                        MOZ_ASSERT(config->IsVideo());
+                        nsAutoCString reason;
+                        bool powerEfficient = true;
+                        bool smooth = true;
+                        if (config->GetAsVideoInfo()->mImage.height > 480) {
+                          
+                          
+                          
+                          
+                          
+                          
+                          powerEfficient =
+                              decoder->IsHardwareAccelerated(reason);
+                          if (!powerEfficient &&
+                              VPXDecoder::IsVP9(config->mMimeType)) {
+                            smooth = VP9Benchmark::IsVP9DecodeFast(
+                                true );
+                            uint32_t fps = VP9Benchmark::MediaBenchmarkVp9Fps();
+                            if (!smooth && fps > 0) {
+                              
+                              
+                              
+                              
+                              
+                              const auto& videoConfig =
+                                  *config->GetAsVideoInfo();
+                              double needed = ((1280.0 * 720.0) /
+                                               (videoConfig.mImage.width *
+                                                videoConfig.mImage.height) *
+                                               fps) /
+                                              frameRate;
+                              smooth = needed > 2;
+                            }
+                          }
+                        }
+                        p = CapabilitiesPromise::CreateAndResolve(
+                            MediaCapabilitiesInfo(true , smooth,
+                                                  powerEfficient),
+                            __func__);
+                      }
+                      MOZ_ASSERT(p.get(), "the promise has been created");
+                      
+                      
+                      decoder->Shutdown()->Then(
+                          taskQueue, __func__,
+                          [taskQueue, decoder, config = std::move(config)](
+                              const ShutdownPromise::ResolveOrRejectValue&
+                                  aValue) {});
+                      return p;
+                    });
                 return p;
               });
-            return p;
-          });
-      }));
+        }));
   }
 
-  auto holder =
-    MakeRefPtr<DOMMozPromiseRequestHolder<CapabilitiesPromise::AllPromiseType>>(
-      mParent);
+  auto holder = MakeRefPtr<
+      DOMMozPromiseRequestHolder<CapabilitiesPromise::AllPromiseType>>(mParent);
   RefPtr<nsISerialEventTarget> targetThread;
   RefPtr<StrongWorkerRef> workerRef;
 
@@ -350,10 +333,10 @@ MediaCapabilities::DecodingInfo(
     MOZ_ASSERT(wp, "Must be called from a worker thread");
     targetThread = wp->HybridEventTarget();
     workerRef = StrongWorkerRef::Create(
-      wp, "MediaCapabilities", [holder, targetThread]() {
-        MOZ_ASSERT(targetThread->IsOnCurrentThread());
-        holder->DisconnectIfExists();
-      });
+        wp, "MediaCapabilities", [holder, targetThread]() {
+          MOZ_ASSERT(targetThread->IsOnCurrentThread());
+          holder->DisconnectIfExists();
+        });
     if (NS_WARN_IF(!workerRef)) {
       
       aRv.Throw(NS_ERROR_FAILURE);
@@ -367,53 +350,42 @@ MediaCapabilities::DecodingInfo(
   RefPtr<MediaCapabilities> self = this;
 
   CapabilitiesPromise::All(targetThread, promises)
-    ->Then(
-      targetThread,
-      __func__,
-      [
-        promise,
-        tracks = std::move(tracks),
-        workerRef,
-        holder,
-        aConfiguration,
-        self,
-        this
-      ](CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&& aValue) {
-        holder->Complete();
-        if (aValue.IsReject()) {
-          auto info =
-            MakeUnique<MediaCapabilitiesInfo>(false ,
-                                              false ,
-                                              false );
-          LOG("%s -> %s",
-              MediaDecodingConfigurationToStr(aConfiguration).get(),
-              MediaCapabilitiesInfoToStr(info.get()).get());
-          promise->MaybeResolve(std::move(info));
-          return;
-        }
-        bool powerEfficient = true;
-        bool smooth = true;
-        for (auto&& capability : aValue.ResolveValue()) {
-          smooth &= capability.Smooth();
-          powerEfficient &= capability.PowerEfficient();
-        }
-        auto info = MakeUnique<MediaCapabilitiesInfo>(
-          true , smooth, powerEfficient);
-        LOG("%s -> %s",
-            MediaDecodingConfigurationToStr(aConfiguration).get(),
-            MediaCapabilitiesInfoToStr(info.get()).get());
-        promise->MaybeResolve(std::move(info));
-      })
-    ->Track(*holder);
+      ->Then(targetThread, __func__,
+             [promise, tracks = std::move(tracks), workerRef, holder,
+              aConfiguration, self,
+              this](CapabilitiesPromise::AllPromiseType::ResolveOrRejectValue&&
+                        aValue) {
+               holder->Complete();
+               if (aValue.IsReject()) {
+                 auto info = MakeUnique<MediaCapabilitiesInfo>(
+                     false , false ,
+                     false );
+                 LOG("%s -> %s",
+                     MediaDecodingConfigurationToStr(aConfiguration).get(),
+                     MediaCapabilitiesInfoToStr(info.get()).get());
+                 promise->MaybeResolve(std::move(info));
+                 return;
+               }
+               bool powerEfficient = true;
+               bool smooth = true;
+               for (auto&& capability : aValue.ResolveValue()) {
+                 smooth &= capability.Smooth();
+                 powerEfficient &= capability.PowerEfficient();
+               }
+               auto info = MakeUnique<MediaCapabilitiesInfo>(
+                   true , smooth, powerEfficient);
+               LOG("%s -> %s",
+                   MediaDecodingConfigurationToStr(aConfiguration).get(),
+                   MediaCapabilitiesInfoToStr(info.get()).get());
+               promise->MaybeResolve(std::move(info));
+             })
+      ->Track(*holder);
 
   return promise.forget();
 }
 
-already_AddRefed<Promise>
-MediaCapabilities::EncodingInfo(
-  const MediaEncodingConfiguration& aConfiguration,
-  ErrorResult& aRv)
-{
+already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
+    const MediaEncodingConfiguration& aConfiguration, ErrorResult& aRv) {
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -424,7 +396,7 @@ MediaCapabilities::EncodingInfo(
   if (!aConfiguration.mVideo.WasPassed() &&
       !aConfiguration.mAudio.WasPassed()) {
     aRv.ThrowTypeError<MSG_MISSING_REQUIRED_DICTIONARY_MEMBER>(
-      NS_LITERAL_STRING("'audio' or 'video'"));
+        NS_LITERAL_STRING("'audio' or 'video'"));
     return nullptr;
   }
 
@@ -439,7 +411,7 @@ MediaCapabilities::EncodingInfo(
     }
     
     supported &=
-      CheckTypeForEncoder(aConfiguration.mVideo.Value().mContentType);
+        CheckTypeForEncoder(aConfiguration.mVideo.Value().mContentType);
   }
   if (aConfiguration.mAudio.WasPassed()) {
     if (!CheckAudioConfiguration(aConfiguration.mAudio.Value())) {
@@ -448,7 +420,7 @@ MediaCapabilities::EncodingInfo(
     }
     
     supported &=
-      CheckTypeForEncoder(aConfiguration.mAudio.Value().mContentType);
+        CheckTypeForEncoder(aConfiguration.mAudio.Value().mContentType);
   }
 
   auto info = MakeUnique<MediaCapabilitiesInfo>(supported, supported, false);
@@ -457,10 +429,8 @@ MediaCapabilities::EncodingInfo(
   return promise.forget();
 }
 
-Maybe<MediaContainerType>
-MediaCapabilities::CheckVideoConfiguration(
-  const VideoConfiguration& aConfig) const
-{
+Maybe<MediaContainerType> MediaCapabilities::CheckVideoConfiguration(
+    const VideoConfiguration& aConfig) const {
   Maybe<MediaExtendedMIMEType> container = MakeMediaExtendedMIMEType(aConfig);
   if (!container) {
     return Nothing();
@@ -481,10 +451,8 @@ MediaCapabilities::CheckVideoConfiguration(
   return Some(MediaContainerType(std::move(*container)));
 }
 
-Maybe<MediaContainerType>
-MediaCapabilities::CheckAudioConfiguration(
-  const AudioConfiguration& aConfig) const
-{
+Maybe<MediaContainerType> MediaCapabilities::CheckAudioConfiguration(
+    const AudioConfiguration& aConfig) const {
   Maybe<MediaExtendedMIMEType> container = MakeMediaExtendedMIMEType(aConfig);
   if (!container) {
     return Nothing();
@@ -505,35 +473,27 @@ MediaCapabilities::CheckAudioConfiguration(
   return Some(MediaContainerType(std::move(*container)));
 }
 
-bool
-MediaCapabilities::CheckTypeForMediaSource(const nsAString& aType)
-{
+bool MediaCapabilities::CheckTypeForMediaSource(const nsAString& aType) {
   return NS_SUCCEEDED(MediaSource::IsTypeSupported(
-    aType, nullptr ));
+      aType, nullptr ));
 }
 
-bool
-MediaCapabilities::CheckTypeForFile(const nsAString& aType)
-{
+bool MediaCapabilities::CheckTypeForFile(const nsAString& aType) {
   Maybe<MediaContainerType> containerType = MakeMediaContainerType(aType);
   if (!containerType) {
     return false;
   }
 
   return DecoderTraits::CanHandleContainerType(
-           *containerType, nullptr ) !=
+             *containerType, nullptr ) !=
          CANPLAY_NO;
 }
 
-bool
-MediaCapabilities::CheckTypeForEncoder(const nsAString& aType)
-{
+bool MediaCapabilities::CheckTypeForEncoder(const nsAString& aType) {
   return MediaRecorder::IsTypeSupported(aType);
 }
 
-already_AddRefed<layers::KnowsCompositor>
-MediaCapabilities::GetCompositor()
-{
+already_AddRefed<layers::KnowsCompositor> MediaCapabilities::GetCompositor() {
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetParentObject());
   if (NS_WARN_IF(!window)) {
     return nullptr;
@@ -544,7 +504,7 @@ MediaCapabilities::GetCompositor()
     return nullptr;
   }
   RefPtr<layers::LayerManager> layerManager =
-    nsContentUtils::LayerManagerForDocument(doc);
+      nsContentUtils::LayerManagerForDocument(doc);
   if (NS_WARN_IF(!layerManager)) {
     return nullptr;
   }
@@ -555,15 +515,12 @@ MediaCapabilities::GetCompositor()
   return knows->GetForMedia().forget();
 }
 
-bool
-MediaCapabilities::Enabled(JSContext* aCx, JSObject* aGlobal)
-{
+bool MediaCapabilities::Enabled(JSContext* aCx, JSObject* aGlobal) {
   return StaticPrefs::MediaCapabilitiesEnabled();
 }
 
-JSObject*
-MediaCapabilities::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* MediaCapabilities::WrapObject(JSContext* aCx,
+                                        JS::Handle<JSObject*> aGivenProto) {
   return MediaCapabilities_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -578,14 +535,12 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MediaCapabilities)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(MediaCapabilities, mParent)
 
 
-bool
-MediaCapabilitiesInfo::WrapObject(JSContext* aCx,
-                                  JS::Handle<JSObject*> aGivenProto,
-                                  JS::MutableHandle<JSObject*> aReflector)
-{
-  return MediaCapabilitiesInfo_Binding::Wrap(
-    aCx, this, aGivenProto, aReflector);
+bool MediaCapabilitiesInfo::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
+    JS::MutableHandle<JSObject*> aReflector) {
+  return MediaCapabilitiesInfo_Binding::Wrap(aCx, this, aGivenProto,
+                                             aReflector);
 }
 
-} 
-} 
+}  
+}  

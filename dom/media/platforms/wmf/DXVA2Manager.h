@@ -19,21 +19,17 @@ namespace layers {
 class Image;
 class ImageContainer;
 class KnowsCompositor;
-}
+}  
 
-class DXVA2Manager
-{
-public:
-
+class DXVA2Manager {
+ public:
   
   
-  static DXVA2Manager* CreateD3D9DXVA(
-    layers::KnowsCompositor* aKnowsCompositor,
-    nsACString& aFailureReason);
+  static DXVA2Manager* CreateD3D9DXVA(layers::KnowsCompositor* aKnowsCompositor,
+                                      nsACString& aFailureReason);
   static DXVA2Manager* CreateD3D11DXVA(
-    layers::KnowsCompositor* aKnowsCompositor,
-    nsACString& aFailureReason,
-    ID3D11Device* aDevice = nullptr);
+      layers::KnowsCompositor* aKnowsCompositor, nsACString& aFailureReason,
+      ID3D11Device* aDevice = nullptr);
 
   
   
@@ -48,17 +44,14 @@ public:
 
   virtual HRESULT CopyToBGRATexture(ID3D11Texture2D* aInTexture,
                                     const GUID& aSubType,
-                                    ID3D11Texture2D** aOutTexture)
-  {
+                                    ID3D11Texture2D** aOutTexture) {
     
     MOZ_CRASH("CopyToBGRATexture not implemented on this manager.");
     return E_FAIL;
   }
 
-  virtual HRESULT ConfigureForSize(IMFMediaType* aInputType,
-                                   uint32_t aWidth,
-                                   uint32_t aHeight)
-  {
+  virtual HRESULT ConfigureForSize(IMFMediaType* aInputType, uint32_t aWidth,
+                                   uint32_t aHeight) {
     return S_OK;
   }
 
@@ -68,21 +61,19 @@ public:
 
   virtual bool SupportsConfig(IMFMediaType* aType, float aFramerate) = 0;
 
-  static bool IsNV12Supported(uint32_t aVendorID,
-                              uint32_t aDeviceID,
+  static bool IsNV12Supported(uint32_t aVendorID, uint32_t aDeviceID,
                               const nsAString& aDriverVersionString);
 
-protected:
+ protected:
   Mutex mLock;
   DXVA2Manager();
 
-  bool IsUnsupportedResolution(const uint32_t& aWidth,
-                               const uint32_t& aHeight,
+  bool IsUnsupportedResolution(const uint32_t& aWidth, const uint32_t& aHeight,
                                const float& aFramerate) const;
 
   bool mIsAMDPreUVD4 = false;
 };
 
-} 
+}  
 
-#endif 
+#endif  

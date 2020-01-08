@@ -20,21 +20,19 @@ class AbstractThread;
 
 
 
-class AudioNodeExternalInputStream final : public AudioNodeStream
-{
-public:
+class AudioNodeExternalInputStream final : public AudioNodeStream {
+ public:
   static already_AddRefed<AudioNodeExternalInputStream> Create(
-    MediaStreamGraph* aGraph,
-    AudioNodeEngine* aEngine);
+      MediaStreamGraph* aGraph, AudioNodeEngine* aEngine);
 
-protected:
+ protected:
   AudioNodeExternalInputStream(AudioNodeEngine* aEngine, TrackRate aSampleRate);
   ~AudioNodeExternalInputStream();
 
-public:
+ public:
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
-private:
+ private:
   
 
 
@@ -43,6 +41,6 @@ private:
   bool IsEnabled();
 };
 
-} 
+}  
 
 #endif 

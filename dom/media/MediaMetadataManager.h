@@ -24,20 +24,19 @@ typedef MediaEventSourceExc<TimedMetadata> TimedMetadataEventSource;
 
 
 class TimedMetadata : public LinkedListElement<TimedMetadata> {
-public:
+ public:
   TimedMetadata(const media::TimeUnit& aPublishTime,
-                nsAutoPtr<MetadataTags>&& aTags,
-                nsAutoPtr<MediaInfo>&& aInfo)
-    : mPublishTime(aPublishTime)
-    , mTags(std::move(aTags))
-    , mInfo(std::move(aInfo)) {}
+                nsAutoPtr<MetadataTags>&& aTags, nsAutoPtr<MediaInfo>&& aInfo)
+      : mPublishTime(aPublishTime),
+        mTags(std::move(aTags)),
+        mInfo(std::move(aInfo)) {}
 
   
   
   TimedMetadata(TimedMetadata&& aOther)
-    : mPublishTime(aOther.mPublishTime)
-    , mTags(std::move(aOther.mTags))
-    , mInfo(std::move(aOther.mInfo)) {}
+      : mPublishTime(aOther.mPublishTime),
+        mTags(std::move(aOther.mTags)),
+        mInfo(std::move(aOther.mInfo)) {}
 
   
   media::TimeUnit mPublishTime;
@@ -53,30 +52,26 @@ public:
 
 
 class MediaMetadataManager {
-public:
+ public:
   ~MediaMetadataManager() {
     TimedMetadata* element;
-    while((element = mMetadataQueue.popFirst()) != nullptr) {
+    while ((element = mMetadataQueue.popFirst()) != nullptr) {
       delete element;
     }
   }
 
   
   void Connect(TimedMetadataEventSource& aEvent, AbstractThread* aThread) {
-    mListener = aEvent.Connect(
-      aThread, this, &MediaMetadataManager::OnMetadataQueued);
+    mListener =
+        aEvent.Connect(aThread, this, &MediaMetadataManager::OnMetadataQueued);
   }
 
   
-  void Disconnect() {
-    mListener.Disconnect();
-  }
+  void Disconnect() { mListener.Disconnect(); }
 
   
   
-  TimedMetadataEventSource& TimedMetadataEvent() {
-    return mTimedMetadataEvent;
-  }
+  TimedMetadataEventSource& TimedMetadataEvent() { return mTimedMetadataEvent; }
 
   void DispatchMetadataIfNeeded(const media::TimeUnit& aCurrentTime) {
     TimedMetadata* metadata = mMetadataQueue.getFirst();
@@ -88,7 +83,7 @@ public:
     }
   }
 
-protected:
+ protected:
   void OnMetadataQueued(TimedMetadata&& aMetadata) {
     mMetadataQueue.insertBack(new TimedMetadata(std::move(aMetadata)));
   }
@@ -98,6 +93,6 @@ protected:
   TimedMetadataEventProducer mTimedMetadataEvent;
 };
 
-} 
+}  
 
 #endif

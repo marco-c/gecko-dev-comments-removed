@@ -23,16 +23,16 @@ enum CaptureEngine : int {
   MaxEngine
 };
 
-} 
-} 
+}  
+}  
 
 namespace IPC {
-template<>
-struct ParamTraits<mozilla::camera::CaptureEngine> :
-    public ContiguousEnumSerializer<mozilla::camera::CaptureEngine,
-                                    mozilla::camera::CaptureEngine::InvalidEngine,
-                                    mozilla::camera::CaptureEngine::MaxEngine>
-{ };
-}
+template <>
+struct ParamTraits<mozilla::camera::CaptureEngine>
+    : public ContiguousEnumSerializer<
+          mozilla::camera::CaptureEngine,
+          mozilla::camera::CaptureEngine::InvalidEngine,
+          mozilla::camera::CaptureEngine::MaxEngine> {};
+}  
 
 #endif  

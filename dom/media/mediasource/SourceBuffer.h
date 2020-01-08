@@ -35,7 +35,8 @@ namespace mozilla {
 class AbstractThread;
 class ErrorResult;
 class MediaByteBuffer;
-template <typename T> class AsyncEventRunner;
+template <typename T>
+class AsyncEventRunner;
 
 DDLoggedTypeName(dom::SourceBuffer);
 
@@ -43,43 +44,34 @@ namespace dom {
 
 class TimeRanges;
 
-class SourceBuffer final
-  : public DOMEventTargetHelper
-  , public DecoderDoctorLifeLogger<SourceBuffer>
-{
-public:
+class SourceBuffer final : public DOMEventTargetHelper,
+                           public DecoderDoctorLifeLogger<SourceBuffer> {
+ public:
   
-  SourceBufferAppendMode Mode() const
-  {
+  SourceBufferAppendMode Mode() const {
     return mCurrentAttributes.GetAppendMode();
   }
 
   void SetMode(SourceBufferAppendMode aMode, ErrorResult& aRv);
 
-  bool Updating() const
-  {
-    return mUpdating;
-  }
+  bool Updating() const { return mUpdating; }
 
   TimeRanges* GetBuffered(ErrorResult& aRv);
   media::TimeIntervals GetTimeIntervals();
 
-  double TimestampOffset() const
-  {
+  double TimestampOffset() const {
     return mCurrentAttributes.GetApparentTimestampOffset();
   }
 
   void SetTimestampOffset(double aTimestampOffset, ErrorResult& aRv);
 
-  double AppendWindowStart() const
-  {
+  double AppendWindowStart() const {
     return mCurrentAttributes.GetAppendWindowStart();
   }
 
   void SetAppendWindowStart(double aAppendWindowStart, ErrorResult& aRv);
 
-  double AppendWindowEnd() const
-  {
+  double AppendWindowEnd() const {
     return mCurrentAttributes.GetAppendWindowEnd();
   }
 
@@ -98,8 +90,7 @@ public:
 
   void Remove(double aStart, double aEnd, ErrorResult& aRv);
 
-  already_AddRefed<Promise> RemoveAsync(double aStart,
-                                        double aEnd,
+  already_AddRefed<Promise> RemoveAsync(double aStart, double aEnd,
                                         ErrorResult& aRv);
 
   void ChangeType(const nsAString& aType, ErrorResult& aRv);
@@ -119,15 +110,13 @@ public:
 
   MediaSource* GetParentObject() const;
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
   
   void Detach();
-  bool IsAttached() const
-  {
-    return mMediaSource != nullptr;
-  }
+  bool IsAttached() const { return mMediaSource != nullptr; }
 
   void Ended();
 
@@ -139,12 +128,9 @@ public:
   
   void RangeRemoval(double aStart, double aEnd);
 
-  bool IsActive() const
-  {
-    return mActive;
-  }
+  bool IsActive() const { return mActive; }
 
-private:
+ private:
   ~SourceBuffer();
 
   friend class AsyncEventRunner<SourceBuffer>;
@@ -167,7 +153,8 @@ private:
   
   void AppendData(const uint8_t* aData, uint32_t aLength, ErrorResult& aRv);
   
-  already_AddRefed<Promise> AppendDataAsync(const uint8_t* aData, uint32_t aLength, ErrorResult& aRv);
+  already_AddRefed<Promise> AppendDataAsync(const uint8_t* aData,
+                                            uint32_t aLength, ErrorResult& aRv);
 
   void PrepareRemove(double aStart, double aEnd, ErrorResult& aRv);
 
@@ -183,7 +170,8 @@ private:
                                                   uint32_t aLength,
                                                   ErrorResult& aRv);
 
-  void AppendDataCompletedWithSuccess(const SourceBufferTask::AppendBufferResult& aResult);
+  void AppendDataCompletedWithSuccess(
+      const SourceBufferTask::AppendBufferResult& aResult);
   void AppendDataErrored(const MediaResult& aError);
 
   RefPtr<MediaSource> mMediaSource;
@@ -197,12 +185,14 @@ private:
   mozilla::Atomic<bool> mActive;
 
   MozPromiseRequestHolder<SourceBufferTask::AppendPromise> mPendingAppend;
-  MozPromiseRequestHolder<SourceBufferTask::RangeRemovalPromise> mPendingRemoval;
+  MozPromiseRequestHolder<SourceBufferTask::RangeRemovalPromise>
+      mPendingRemoval;
   MediaContainerType mType;
 
   RefPtr<TimeRanges> mBuffered;
 
-  MozPromiseRequestHolder<MediaSource::ActiveCompletionPromise> mCompletionPromise;
+  MozPromiseRequestHolder<MediaSource::ActiveCompletionPromise>
+      mCompletionPromise;
 
   
   
@@ -210,8 +200,8 @@ private:
   RefPtr<Promise> mDOMPromise;
 };
 
-} 
+}  
 
-} 
+}  
 
 #endif 

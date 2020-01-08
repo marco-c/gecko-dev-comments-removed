@@ -33,32 +33,26 @@ using eme::DecryptStatus;
 
 struct DecryptResult {
   DecryptResult(DecryptStatus aStatus, MediaRawData* aSample)
-    : mStatus(aStatus)
-    , mSample(aSample)
-  {}
+      : mStatus(aStatus), mSample(aSample) {}
   DecryptStatus mStatus;
   RefPtr<MediaRawData> mSample;
 };
 
-typedef MozPromise<DecryptResult, DecryptResult,  true> DecryptPromise;
+typedef MozPromise<DecryptResult, DecryptResult,  true>
+    DecryptPromise;
 
 class CDMKeyInfo {
-public:
+ public:
   explicit CDMKeyInfo(const nsTArray<uint8_t>& aKeyId)
-    : mKeyId(aKeyId)
-    , mStatus()
-  {}
+      : mKeyId(aKeyId), mStatus() {}
 
   CDMKeyInfo(const nsTArray<uint8_t>& aKeyId,
              const dom::Optional<dom::MediaKeyStatus>& aStatus)
-    : mKeyId(aKeyId)
-    , mStatus(aStatus.Value())
-  {}
+      : mKeyId(aKeyId), mStatus(aStatus.Value()) {}
 
   
   
-  CDMKeyInfo(const CDMKeyInfo& aKeyInfo)
-  {
+  CDMKeyInfo(const CDMKeyInfo& aKeyInfo) {
     mKeyId = aKeyInfo.mKeyId;
     if (aKeyInfo.mStatus.WasPassed()) {
       mStatus.Construct(aKeyInfo.mStatus.Value());
@@ -78,32 +72,28 @@ typedef int64_t UnixTime;
 
 
 class CDMProxy {
-protected:
+ protected:
   typedef dom::PromiseId PromiseId;
   typedef dom::MediaKeySessionType MediaKeySessionType;
-public:
 
+ public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   
-  CDMProxy(dom::MediaKeys* aKeys,
-           const nsAString& aKeySystem,
-           bool aDistinctiveIdentifierRequired,
-           bool aPersistentStateRequired,
+  CDMProxy(dom::MediaKeys* aKeys, const nsAString& aKeySystem,
+           bool aDistinctiveIdentifierRequired, bool aPersistentStateRequired,
            nsIEventTarget* aMainThread)
-    : mKeys(aKeys)
-    , mKeySystem(aKeySystem)
-    , mCapabilites("CDMProxy::mCDMCaps")
-    , mDistinctiveIdentifierRequired(aDistinctiveIdentifierRequired)
-    , mPersistentStateRequired(aPersistentStateRequired)
-    , mMainThread(aMainThread)
-  {}
+      : mKeys(aKeys),
+        mKeySystem(aKeySystem),
+        mCapabilites("CDMProxy::mCDMCaps"),
+        mDistinctiveIdentifierRequired(aDistinctiveIdentifierRequired),
+        mPersistentStateRequired(aPersistentStateRequired),
+        mMainThread(aMainThread) {}
 
   
   
   
-  virtual void Init(PromiseId aPromiseId,
-                    const nsAString& aOrigin,
+  virtual void Init(PromiseId aPromiseId, const nsAString& aOrigin,
                     const nsAString& aTopLevelOrigin,
                     const nsAString& aName) = 0;
 
@@ -139,8 +129,7 @@ public:
   
   
   
-  virtual void UpdateSession(const nsAString& aSessionId,
-                             PromiseId aPromiseId,
+  virtual void UpdateSession(const nsAString& aSessionId, PromiseId aPromiseId,
                              nsTArray<uint8_t>& aResponse) = 0;
 
   
@@ -189,27 +178,22 @@ public:
   virtual void OnSessionClosed(const nsAString& aSessionId) = 0;
 
   
-  virtual void OnSessionError(const nsAString& aSessionId,
-                              nsresult aException,
-                              uint32_t aSystemCode,
-                              const nsAString& aMsg) = 0;
+  virtual void OnSessionError(const nsAString& aSessionId, nsresult aException,
+                              uint32_t aSystemCode, const nsAString& aMsg) = 0;
 
   
-  virtual void OnRejectPromise(uint32_t aPromiseId,
-                               nsresult aDOMException,
+  virtual void OnRejectPromise(uint32_t aPromiseId, nsresult aDOMException,
                                const nsCString& aMsg) = 0;
 
   virtual RefPtr<DecryptPromise> Decrypt(MediaRawData* aSample) = 0;
 
   
-  virtual void OnDecrypted(uint32_t aId,
-                           DecryptStatus aResult,
+  virtual void OnDecrypted(uint32_t aId, DecryptStatus aResult,
                            const nsTArray<uint8_t>& aDecryptedData) = 0;
 
   
   
-  virtual void RejectPromise(PromiseId aId,
-                             nsresult aExceptionCode,
+  virtual void RejectPromise(PromiseId aId, nsresult aExceptionCode,
                              const nsCString& aReason) = 0;
 
   
@@ -238,16 +222,14 @@ public:
 
   virtual ChromiumCDMProxy* AsChromiumCDMProxy() { return nullptr; }
 
-protected:
+ protected:
   virtual ~CDMProxy() {}
 
   
-  template<class Type>
+  template <class Type>
   class MainThreadOnlyRawPtr {
-  public:
-    explicit MainThreadOnlyRawPtr(Type* aPtr)
-      : mPtr(aPtr)
-    {
+   public:
+    explicit MainThreadOnlyRawPtr(Type* aPtr) : mPtr(aPtr) {
       MOZ_ASSERT(NS_IsMainThread());
     }
 
@@ -265,7 +247,8 @@ protected:
       MOZ_ASSERT(NS_IsMainThread());
       return mPtr;
     }
-  private:
+
+   private:
     Type* mPtr;
   };
 
@@ -276,6 +259,7 @@ protected:
 
   const nsString mKeySystem;
 
+  
   
   
   RefPtr<nsIThread> mOwnerThread;
@@ -291,7 +275,6 @@ protected:
   const nsCOMPtr<nsIEventTarget> mMainThread;
 };
 
+}  
 
-} 
-
-#endif 
+#endif  

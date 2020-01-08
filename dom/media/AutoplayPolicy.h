@@ -32,9 +32,8 @@ class AudioContext;
 
 
 
-class AutoplayPolicy
-{
-public:
+class AutoplayPolicy {
+ public:
   
   static bool IsAllowedToPlay(const HTMLMediaElement& aElement);
 
@@ -46,15 +45,16 @@ public:
   
   
   
-  static bool WouldBeAllowedToPlayIfAutoplayDisabled(const HTMLMediaElement& aElement);
+  static bool WouldBeAllowedToPlayIfAutoplayDisabled(
+      const HTMLMediaElement& aElement);
 
   
   
   static already_AddRefed<AutoplayPermissionManager> RequestFor(
-    const nsIDocument& aDocument);
+      const nsIDocument& aDocument);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

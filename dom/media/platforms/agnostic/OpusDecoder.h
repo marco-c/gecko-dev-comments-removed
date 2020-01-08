@@ -20,11 +20,9 @@ class OpusParser;
 
 DDLoggedTypeDeclNameAndBase(OpusDataDecoder, MediaDataDecoder);
 
-class OpusDataDecoder
-  : public MediaDataDecoder
-  , public DecoderDoctorLifeLogger<OpusDataDecoder>
-{
-public:
+class OpusDataDecoder : public MediaDataDecoder,
+                        public DecoderDoctorLifeLogger<OpusDataDecoder> {
+ public:
   explicit OpusDataDecoder(const CreateDecoderParams& aParams);
   ~OpusDataDecoder();
 
@@ -33,8 +31,7 @@ public:
   RefPtr<DecodePromise> Drain() override;
   RefPtr<FlushPromise> Flush() override;
   RefPtr<ShutdownPromise> Shutdown() override;
-  nsCString GetDescriptionName() const override
-  {
+  nsCString GetDescriptionName() const override {
     return NS_LITERAL_CSTRING("opus audio decoder");
   }
 
@@ -48,7 +45,7 @@ public:
   
   static void AppendCodecDelay(MediaByteBuffer* config, uint64_t codecDelayUS);
 
-private:
+ private:
   nsresult DecodeHeader(const unsigned char* aData, size_t aLength);
 
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
@@ -60,7 +57,7 @@ private:
   nsAutoPtr<OpusParser> mOpusParser;
   OpusMSDecoder* mOpusDecoder;
 
-  uint16_t mSkip;        
+  uint16_t mSkip;  
   bool mDecodedHeader;
 
   
@@ -73,5 +70,5 @@ private:
   AudioConfig::ChannelLayout::ChannelMap mChannelMap;
 };
 
-} 
+}  
 #endif

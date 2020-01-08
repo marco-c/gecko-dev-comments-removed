@@ -19,10 +19,9 @@ bool XiphHeadersToExtradata(MediaByteBuffer* aCodecSpecificConfig,
 
 
 bool XiphExtradataToHeaders(nsTArray<unsigned char*>& aHeaders,
-                            nsTArray<size_t>& aHeaderLens,
-                            unsigned char* aData,
+                            nsTArray<size_t>& aHeaderLens, unsigned char* aData,
                             size_t aAvailable);
 
-} 
+}  
 
-#endif 
+#endif  

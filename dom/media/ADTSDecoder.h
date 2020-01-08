@@ -15,17 +15,16 @@ namespace mozilla {
 class MediaContainerType;
 class TrackInfo;
 
-class ADTSDecoder
-{
-public:
+class ADTSDecoder {
+ public:
   
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
-    const MediaContainerType& aType);
+      const MediaContainerType& aType);
 };
 
-} 
+}  
 
-#endif 
+#endif  

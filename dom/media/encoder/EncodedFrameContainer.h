@@ -17,58 +17,50 @@ class EncodedFrame;
 
 
 
-class EncodedFrameContainer
-{
-public:
+class EncodedFrameContainer {
+ public:
   
-  void AppendEncodedFrame(EncodedFrame* aEncodedFrame)
-  {
+  void AppendEncodedFrame(EncodedFrame* aEncodedFrame) {
     mEncodedFrames.AppendElement(aEncodedFrame);
   }
   
-  const nsTArray<RefPtr<EncodedFrame> >& GetEncodedFrames() const
-  {
+  const nsTArray<RefPtr<EncodedFrame> >& GetEncodedFrames() const {
     return mEncodedFrames;
   }
-private:
+
+ private:
+  
   
   
   nsTArray<RefPtr<EncodedFrame> > mEncodedFrames;
 };
 
 
-class EncodedFrame final
-{
+class EncodedFrame final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(EncodedFrame)
-public:
-  EncodedFrame() :
-    mTimeStamp(0),
-    mDuration(0),
-    mFrameType(UNKNOWN)
-  {}
+ public:
+  EncodedFrame() : mTimeStamp(0), mDuration(0), mFrameType(UNKNOWN) {}
   enum FrameType {
-    VP8_I_FRAME,      
-    VP8_P_FRAME,      
-    OPUS_AUDIO_FRAME, 
+    VP8_I_FRAME,       
+    VP8_P_FRAME,       
+    OPUS_AUDIO_FRAME,  
     VORBIS_AUDIO_FRAME,
     AVC_I_FRAME,
     AVC_P_FRAME,
     AVC_B_FRAME,
-    AVC_CSD,          
+    AVC_CSD,  
     AAC_AUDIO_FRAME,
-    AAC_CSD,          
+    AAC_CSD,  
     AMR_AUDIO_CSD,
     AMR_AUDIO_FRAME,
     EVRC_AUDIO_CSD,
     EVRC_AUDIO_FRAME,
-    UNKNOWN           
+    UNKNOWN  
   };
-  void SwapInFrameData(nsTArray<uint8_t>& aData)
-  {
+  void SwapInFrameData(nsTArray<uint8_t>& aData) {
     mFrameData.SwapElements(aData);
   }
-  nsresult SwapOutFrameData(nsTArray<uint8_t>& aData)
-  {
+  nsresult SwapOutFrameData(nsTArray<uint8_t>& aData) {
     if (mFrameType != UNKNOWN) {
       
       mFrameData.SwapElements(aData);
@@ -77,10 +69,7 @@ public:
     }
     return NS_ERROR_FAILURE;
   }
-  const nsTArray<uint8_t>& GetFrameData() const
-  {
-    return mFrameData;
-  }
+  const nsTArray<uint8_t>& GetFrameData() const { return mFrameData; }
   uint64_t GetTimeStamp() const { return mTimeStamp; }
   void SetTimeStamp(uint64_t aTimeStamp) { mTimeStamp = aTimeStamp; }
 
@@ -89,11 +78,10 @@ public:
 
   FrameType GetFrameType() const { return mFrameType; }
   void SetFrameType(FrameType aFrameType) { mFrameType = aFrameType; }
-private:
+
+ private:
   
-  ~EncodedFrame()
-  {
-  }
+  ~EncodedFrame() {}
 
   
   nsTArray<uint8_t> mFrameData;
@@ -104,6 +92,6 @@ private:
   FrameType mFrameType;
 };
 
-} 
+}  
 
 #endif

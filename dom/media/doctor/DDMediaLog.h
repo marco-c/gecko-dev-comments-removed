@@ -14,14 +14,13 @@ namespace mozilla {
 
 namespace dom {
 class HTMLMediaElement;
-} 
+}  
 
 class DDLifetimes;
 
 
 
-struct DDMediaLog
-{
+struct DDMediaLog {
   
   
   
@@ -38,6 +37,6 @@ struct DDMediaLog
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -15,12 +15,10 @@
 namespace mozilla {
 
 
-struct DDMediaLogs
-{
-public:
+struct DDMediaLogs {
+ public:
   
-  struct ConstructionResult
-  {
+  struct ConstructionResult {
     nsresult mRv;
     DDMediaLogs* mMediaLogs;
   };
@@ -34,21 +32,18 @@ public:
   
   void Panic();
 
-  inline void Log(const char* aSubjectTypeName,
-                  const void* aSubjectPointer,
-                  DDLogCategory aCategory,
-                  const char* aLabel,
-                  DDLogValue&& aValue)
-  {
+  inline void Log(const char* aSubjectTypeName, const void* aSubjectPointer,
+                  DDLogCategory aCategory, const char* aLabel,
+                  DDLogValue&& aValue) {
     if (mMessagesQueue.PushF(
-          [&](DDLogMessage& aMessage, MessagesQueue::Index i) {
-            aMessage.mIndex = i;
-            aMessage.mTimeStamp = DDNow();
-            aMessage.mObject.Set(aSubjectTypeName, aSubjectPointer);
-            aMessage.mCategory = aCategory;
-            aMessage.mLabel = aLabel;
-            aMessage.mValue = std::move(aValue);
-          })) {
+            [&](DDLogMessage& aMessage, MessagesQueue::Index i) {
+              aMessage.mIndex = i;
+              aMessage.mTimeStamp = DDNow();
+              aMessage.mObject.Set(aSubjectTypeName, aSubjectPointer);
+              aMessage.mCategory = aCategory;
+              aMessage.mLabel = aLabel;
+              aMessage.mValue = std::move(aValue);
+            })) {
       
       DispatchProcessLog();
     }
@@ -62,18 +57,18 @@ public:
   void ProcessLog();
 
   using LogMessagesPromise =
-    MozPromise<nsCString, nsresult,  true>;
+      MozPromise<nsCString, nsresult,  true>;
 
   
   
   
   
   RefPtr<LogMessagesPromise> RetrieveMessages(
-    const dom::HTMLMediaElement* aMediaElement);
+      const dom::HTMLMediaElement* aMediaElement);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   
   explicit DDMediaLogs(nsCOMPtr<nsIThread>&& aThread);
 
@@ -113,10 +108,8 @@ private:
   
   
   
-  void LinkLifetimes(DDLifetime& aParentLifetime,
-                     const char* aLinkName,
-                     DDLifetime& aChildLifetime,
-                     DDMessageIndex aIndex);
+  void LinkLifetimes(DDLifetime& aParentLifetime, const char* aLinkName,
+                     DDLifetime& aChildLifetime, DDMessageIndex aIndex);
 
   
   
@@ -124,8 +117,7 @@ private:
 
   
   
-  void UnlinkLifetimes(DDLifetime& aParentLifetime,
-                       DDLifetime& aChildLifetime,
+  void UnlinkLifetimes(DDLifetime& aParentLifetime, DDLifetime& aChildLifetime,
                        DDMessageIndex aIndex);
 
   
@@ -153,9 +145,9 @@ private:
   
   nsresult DispatchProcessLog(const MutexAutoLock& aProofOfLock);
 
-  using MessagesQueue = MultiWriterQueue<DDLogMessage,
-                                         MultiWriterQueueDefaultBufferSize,
-                                         MultiWriterQueueReaderLocking_None>;
+  using MessagesQueue =
+      MultiWriterQueue<DDLogMessage, MultiWriterQueueDefaultBufferSize,
+                       MultiWriterQueueReaderLocking_None>;
   MessagesQueue mMessagesQueue;
 
   DDLifetimes mLifetimes;
@@ -164,25 +156,20 @@ private:
   
   nsTArray<DDMediaLog> mMediaLogs;
 
-  struct DDObjectLink
-  {
+  struct DDObjectLink {
     const DDLogObject mParent;
     const DDLogObject mChild;
     const char* const mLinkName;
     const DDMessageIndex mLinkingIndex;
     Maybe<DDMessageIndex> mUnlinkingIndex;
 
-    DDObjectLink(DDLogObject aParent,
-                 DDLogObject aChild,
-                 const char* aLinkName,
+    DDObjectLink(DDLogObject aParent, DDLogObject aChild, const char* aLinkName,
                  DDMessageIndex aLinkingIndex)
-      : mParent(aParent)
-      , mChild(aChild)
-      , mLinkName(aLinkName)
-      , mLinkingIndex(aLinkingIndex)
-      , mUnlinkingIndex(Nothing{})
-    {
-    }
+        : mParent(aParent),
+          mChild(aChild),
+          mLinkName(aLinkName),
+          mLinkingIndex(aLinkingIndex),
+          mUnlinkingIndex(Nothing{}) {}
   };
   
   nsTArray<DDObjectLink> mObjectLinks;
@@ -193,8 +180,7 @@ private:
   
   nsCOMPtr<nsIThread> mThread;
 
-  struct PendingPromise
-  {
+  struct PendingPromise {
     MozPromiseHolder<LogMessagesPromise> mPromiseHolder;
     const dom::HTMLMediaElement* mMediaElement;
   };
@@ -202,6 +188,6 @@ private:
   AutoTArray<PendingPromise, 2> mPendingPromises;
 };
 
-} 
+}  
 
-#endif 
+#endif  

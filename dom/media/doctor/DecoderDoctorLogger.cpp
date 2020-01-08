@@ -15,15 +15,13 @@
 namespace mozilla {
 
  Atomic<DecoderDoctorLogger::LogState, ReleaseAcquire>
-  DecoderDoctorLogger::sLogState{ DecoderDoctorLogger::scDisabled };
+    DecoderDoctorLogger::sLogState{DecoderDoctorLogger::scDisabled};
 
  const char* DecoderDoctorLogger::sShutdownReason = nullptr;
 
 static DDMediaLogs* sMediaLogs;
 
- void
-DecoderDoctorLogger::Init()
-{
+ void DecoderDoctorLogger::Init() {
   MOZ_ASSERT(static_cast<LogState>(sLogState) == scDisabled);
   if (MOZ_LOG_TEST(sDecoderDoctorLoggerLog, LogLevel::Error) ||
       MOZ_LOG_TEST(sDecoderDoctorLoggerEndLog, LogLevel::Error)) {
@@ -33,10 +31,8 @@ DecoderDoctorLogger::Init()
 
 
 
-struct DDLogShutdowner
-{
-  ~DDLogShutdowner()
-  {
+struct DDLogShutdowner {
+  ~DDLogShutdowner() {
     DDL_INFO("Shutting down");
     
     
@@ -46,10 +42,8 @@ struct DDLogShutdowner
 static UniquePtr<DDLogShutdowner> sDDLogShutdowner;
 
 
-struct DDLogDeleter
-{
-  ~DDLogDeleter()
-  {
+struct DDLogDeleter {
+  ~DDLogDeleter() {
     if (sMediaLogs) {
       DDL_INFO("Final processing of collected logs");
       delete sMediaLogs;
@@ -59,9 +53,8 @@ struct DDLogDeleter
 };
 static UniquePtr<DDLogDeleter> sDDLogDeleter;
 
- void
-DecoderDoctorLogger::PanicInternal(const char* aReason, bool aDontBlock)
-{
+ void DecoderDoctorLogger::PanicInternal(const char* aReason,
+                                                     bool aDontBlock) {
   for (;;) {
     const LogState state = static_cast<LogState>(sLogState);
     if (state == scEnabling && !aDontBlock) {
@@ -93,9 +86,7 @@ DecoderDoctorLogger::PanicInternal(const char* aReason, bool aDontBlock)
   }
 }
 
- bool
-DecoderDoctorLogger::EnsureLogIsEnabled()
-{
+ bool DecoderDoctorLogger::EnsureLogIsEnabled() {
   for (;;) {
     LogState state = static_cast<LogState>(sLogState);
     switch (state) {
@@ -106,7 +97,7 @@ DecoderDoctorLogger::EnsureLogIsEnabled()
           
           
           DDMediaLogs::ConstructionResult mediaLogsConstruction =
-            DDMediaLogs::New();
+              DDMediaLogs::New();
           if (NS_FAILED(mediaLogsConstruction.mRv)) {
             PanicInternal("Failed to enable logging",  true);
             return false;
@@ -115,13 +106,13 @@ DecoderDoctorLogger::EnsureLogIsEnabled()
           sMediaLogs = mediaLogsConstruction.mMediaLogs;
           
           MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(
-            TaskCategory::Other,
-            NS_NewRunnableFunction("DDLogger shutdown setup", [] {
-              sDDLogShutdowner = MakeUnique<DDLogShutdowner>();
-              ClearOnShutdown(&sDDLogShutdowner, ShutdownPhase::Shutdown);
-              sDDLogDeleter = MakeUnique<DDLogDeleter>();
-              ClearOnShutdown(&sDDLogDeleter, ShutdownPhase::ShutdownThreads);
-            })));
+              TaskCategory::Other,
+              NS_NewRunnableFunction("DDLogger shutdown setup", [] {
+                sDDLogShutdowner = MakeUnique<DDLogShutdowner>();
+                ClearOnShutdown(&sDDLogShutdowner, ShutdownPhase::Shutdown);
+                sDDLogDeleter = MakeUnique<DDLogDeleter>();
+                ClearOnShutdown(&sDDLogDeleter, ShutdownPhase::ShutdownThreads);
+              })));
 
           
           MOZ_ASSERT(sLogState == scEnabling);
@@ -146,36 +137,31 @@ DecoderDoctorLogger::EnsureLogIsEnabled()
   }
 }
 
- void
-DecoderDoctorLogger::EnableLogging()
-{
+ void DecoderDoctorLogger::EnableLogging() {
   Unused << EnsureLogIsEnabled();
 }
 
  RefPtr<DecoderDoctorLogger::LogMessagesPromise>
 DecoderDoctorLogger::RetrieveMessages(
-  const dom::HTMLMediaElement* aMediaElement)
-{
+    const dom::HTMLMediaElement* aMediaElement) {
   if (MOZ_UNLIKELY(!EnsureLogIsEnabled())) {
     DDL_WARN("Request (for %p) but there are no logs", aMediaElement);
     return DecoderDoctorLogger::LogMessagesPromise::CreateAndReject(
-      NS_ERROR_DOM_MEDIA_ABORT_ERR, __func__);
+        NS_ERROR_DOM_MEDIA_ABORT_ERR, __func__);
   }
   return sMediaLogs->RetrieveMessages(aMediaElement);
 }
 
- void
-DecoderDoctorLogger::Log(const char* aSubjectTypeName,
-                         const void* aSubjectPointer,
-                         DDLogCategory aCategory,
-                         const char* aLabel,
-                         DDLogValue&& aValue)
-{
+ void DecoderDoctorLogger::Log(const char* aSubjectTypeName,
+                                           const void* aSubjectPointer,
+                                           DDLogCategory aCategory,
+                                           const char* aLabel,
+                                           DDLogValue&& aValue) {
   if (IsDDLoggingEnabled()) {
     MOZ_ASSERT(sMediaLogs);
-    sMediaLogs->Log(
-      aSubjectTypeName, aSubjectPointer, aCategory, aLabel, std::move(aValue));
+    sMediaLogs->Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,
+                    std::move(aValue));
   }
 }
 
-} 
+}  

@@ -22,20 +22,20 @@ namespace camera {
 
 
 
-class VideoEngine
-{
-private:
-  virtual ~VideoEngine (){};
+class VideoEngine {
+ private:
+  virtual ~VideoEngine(){};
   
   
   
   static const int64_t kCacheExpiryPeriodMs = 2000;
 
-public:
-  VideoEngine() : mId(0) {};
+ public:
+  VideoEngine() : mId(0){};
   NS_INLINE_DECL_REFCOUNTING(VideoEngine)
 
-  static already_AddRefed<VideoEngine> Create(UniquePtr<const webrtc::Config>&& aConfig);
+  static already_AddRefed<VideoEngine> Create(
+      UniquePtr<const webrtc::Config>&& aConfig);
 #if defined(ANDROID)
   static int SetAndroidObjects();
 #endif
@@ -44,7 +44,7 @@ public:
   int ReleaseVideoCapture(const int32_t id);
 
   
-  static void Delete(VideoEngine * engine) { }
+  static void Delete(VideoEngine* engine) {}
 
   
 
@@ -55,26 +55,29 @@ public:
 
 
 
-  std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> GetOrCreateVideoCaptureDeviceInfo();
+  std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
+  GetOrCreateVideoCaptureDeviceInfo();
 
   const UniquePtr<const webrtc::Config>& GetConfiguration();
 
   class CaptureEntry {
-  public:
+   public:
     CaptureEntry(int32_t aCapnum,
                  rtc::scoped_refptr<webrtc::VideoCaptureModule> aCapture);
     int32_t Capnum() const;
     rtc::scoped_refptr<webrtc::VideoCaptureModule> VideoCapture();
-  private:
+
+   private:
     int32_t mCapnum;
     rtc::scoped_refptr<webrtc::VideoCaptureModule> mVideoCaptureModule;
     friend class VideoEngine;
   };
 
   
-  bool WithEntry(const int32_t entryCapnum, const std::function<void(CaptureEntry &entry)>&& fn);
+  bool WithEntry(const int32_t entryCapnum,
+                 const std::function<void(CaptureEntry& entry)>&& fn);
 
-private:
+ private:
   explicit VideoEngine(UniquePtr<const webrtc::Config>&& aConfig);
   int32_t mId;
   webrtc::CaptureDeviceInfo mCaptureDevInfo;
@@ -87,6 +90,6 @@ private:
   int32_t GenerateId();
   static int32_t sId;
 };
-}
-}
+}  
+}  
 #endif

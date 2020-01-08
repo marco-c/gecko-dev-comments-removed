@@ -14,18 +14,17 @@ namespace mozilla {
 
 namespace ipc {
 class CrashReporterHost;
-} 
+}  
 namespace dom {
 class MemoryReportRequestHost;
-} 
+}  
 
 class RDDProcessHost;
 
-class RDDChild final : public PRDDChild
-{
+class RDDChild final : public PRDDChild {
   typedef mozilla::dom::MemoryReportRequestHost MemoryReportRequestHost;
 
-public:
+ public:
   explicit RDDChild(RDDProcessHost* aHost);
   ~RDDChild();
 
@@ -36,15 +35,14 @@ public:
   
   mozilla::ipc::IPCResult RecvInitComplete() override;
   mozilla::ipc::IPCResult RecvInitCrashReporter(
-                              Shmem&& shmem,
-                              const NativeThreadId& aThreadId) override;
+      Shmem&& shmem, const NativeThreadId& aThreadId) override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvAddMemoryReport(
-                              const MemoryReport& aReport) override;
+      const MemoryReport& aReport) override;
   mozilla::ipc::IPCResult RecvFinishMemoryReport(
-                              const uint32_t& aGeneration) override;
+      const uint32_t& aGeneration) override;
 
   bool SendRequestMemoryReport(const uint32_t& aGeneration,
                                const bool& aAnonymize,
@@ -53,13 +51,13 @@ public:
 
   static void Destroy(UniquePtr<RDDChild>&& aChild);
 
-private:
+ private:
   RDDProcessHost* mHost;
   UniquePtr<ipc::CrashReporterHost> mCrashReporter;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
   bool mRDDReady;
 };
 
-} 
+}  
 
-#endif 
+#endif  

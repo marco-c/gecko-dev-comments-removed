@@ -21,25 +21,23 @@ class BaseMediaResource;
 DDLoggedTypeDeclNameAndBase(ChannelMediaDecoder, MediaDecoder);
 
 class ChannelMediaDecoder
-  : public MediaDecoder
-  , public DecoderDoctorLifeLogger<ChannelMediaDecoder>
-{
+    : public MediaDecoder,
+      public DecoderDoctorLifeLogger<ChannelMediaDecoder> {
   
   
-  class ResourceCallback : public MediaResourceCallback
-  {
+  class ResourceCallback : public MediaResourceCallback {
     
     
     static const uint32_t sDelay = 500;
 
-  public:
+   public:
     explicit ResourceCallback(AbstractThread* aMainThread);
     
     void Connect(ChannelMediaDecoder* aDecoder);
     
     void Disconnect();
 
-  private:
+   private:
     ~ResourceCallback();
 
     
@@ -60,11 +58,10 @@ class ChannelMediaDecoder
     const RefPtr<AbstractThread> mAbstractMainThread;
   };
 
-protected:
+ protected:
   void OnPlaybackEvent(MediaPlaybackEvent&& aEvent) override;
   void DurationChanged() override;
-  void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
-                      UniquePtr<MetadataTags> aTags,
+  void MetadataLoaded(UniquePtr<MediaInfo> aInfo, UniquePtr<MetadataTags> aTags,
                       MediaDecoderEventVisibility aEventVisibility) override;
   void NotifyPrincipalChanged() override;
 
@@ -75,14 +72,12 @@ protected:
 
   nsCString GetDebugInfo() override;
 
-public:
-
+ public:
   
   
   
   static already_AddRefed<ChannelMediaDecoder> Create(
-    MediaDecoderInit& aInit,
-    DecoderDoctorDiagnostics* aDiagnostics);
+      MediaDecoderInit& aInit, DecoderDoctorDiagnostics* aDiagnostics);
 
   void Shutdown() override;
 
@@ -91,8 +86,7 @@ public:
   
   already_AddRefed<ChannelMediaDecoder> Clone(MediaDecoderInit& aInit);
 
-  nsresult Load(nsIChannel* aChannel,
-                bool aIsPrivateBrowsing,
+  nsresult Load(nsIChannel* aChannel, bool aIsPrivateBrowsing,
                 nsIStreamListener** aStreamListener);
 
   void AddSizeOfResources(ResourceSizes* aSizes) override;
@@ -102,7 +96,7 @@ public:
   void Suspend() override;
   void Resume() override;
 
-private:
+ private:
   void DownloadProgressed();
 
   
@@ -121,16 +115,14 @@ private:
 
   bool CanPlayThroughImpl() final;
 
-  struct PlaybackRateInfo
-  {
-    uint32_t mRate; 
-    bool mReliable; 
+  struct PlaybackRateInfo {
+    uint32_t mRate;  
+    bool mReliable;  
   };
   
   static PlaybackRateInfo ComputePlaybackRate(
-    const MediaChannelStatistics& aStats,
-    BaseMediaResource* aResource,
-    double aDuration);
+      const MediaChannelStatistics& aStats, BaseMediaResource* aResource,
+      double aDuration);
 
   
   
@@ -165,6 +157,6 @@ private:
   bool mInitialChannelPrincipalKnown = false;
 };
 
-} 
+}  
 
-#endif 
+#endif  

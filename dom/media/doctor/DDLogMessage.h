@@ -21,15 +21,15 @@ class DDLifetimes;
 
 
 
-struct DDLogMessage
-{
+struct DDLogMessage {
   DDMessageIndex mIndex;
   DDTimeStamp mTimeStamp;
   DDLogObject mObject;
   DDLogCategory mCategory;
   const char* mLabel;
-  DDLogValue mValue = DDLogValue{ DDNoValue{} };
+  DDLogValue mValue = DDLogValue{DDNoValue{}};
 
+  
   
   
   
@@ -38,9 +38,11 @@ struct DDLogMessage
   
   
   
+  
+  
   nsCString Print(const DDLifetimes& aLifetimes) const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

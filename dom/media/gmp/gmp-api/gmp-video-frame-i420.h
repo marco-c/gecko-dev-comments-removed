@@ -57,14 +57,15 @@ enum GMPPlaneType {
 
 
 class GMPVideoi420Frame : public GMPVideoFrame {
-public:
+ public:
   
   
   
   
   
   virtual GMPErr CreateEmptyFrame(int32_t aWidth, int32_t aHeight,
-                                  int32_t aStride_y, int32_t aStride_u, int32_t aStride_v) = 0;
+                                  int32_t aStride_y, int32_t aStride_u,
+                                  int32_t aStride_v) = 0;
 
   
   
@@ -72,8 +73,8 @@ public:
   virtual GMPErr CreateFrame(int32_t aSize_y, const uint8_t* aBuffer_y,
                              int32_t aSize_u, const uint8_t* aBuffer_u,
                              int32_t aSize_v, const uint8_t* aBuffer_v,
-                             int32_t aWidth, int32_t aHeight,
-                             int32_t aStride_y, int32_t aStride_u, int32_t aStride_v) = 0;
+                             int32_t aWidth, int32_t aHeight, int32_t aStride_y,
+                             int32_t aStride_u, int32_t aStride_v) = 0;
 
   
   
@@ -126,7 +127,8 @@ public:
   virtual bool IsZeroSize() const = 0;
 
   
+  
   virtual void ResetSize() = 0;
 };
 
-#endif 
+#endif  

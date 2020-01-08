@@ -21,20 +21,18 @@
 
 namespace mozilla {
 
-template <int V> class FFmpegDecoderModule
-{
-public:
+template <int V>
+class FFmpegDecoderModule {
+ public:
   static already_AddRefed<PlatformDecoderModule> Create(FFmpegLibWrapper*);
 };
 
 static FFmpegLibWrapper sFFVPXLib;
 
 FFVPXRuntimeLinker::LinkStatus FFVPXRuntimeLinker::sLinkStatus =
-  LinkStatus_INIT;
+    LinkStatus_INIT;
 
-static PRLibrary*
-MozAVLink(nsIFile* aFile)
-{
+static PRLibrary* MozAVLink(nsIFile* aFile) {
   PRLibSpec lspec;
   PathString path = aFile->NativePath();
 #ifdef XP_WIN
@@ -55,9 +53,7 @@ MozAVLink(nsIFile* aFile)
   return lib;
 }
 
- bool
-FFVPXRuntimeLinker::Init()
-{
+ bool FFVPXRuntimeLinker::Init() {
   if (sLinkStatus) {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
@@ -71,9 +67,8 @@ FFVPXRuntimeLinker::Init()
   if (lgpllibsname.IsEmpty()) {
     return false;
   }
-  PathString path =
-    GetLibraryFilePathname(lgpllibsname.get(),
-                           (PRFuncPtr)&soundtouch::SoundTouch::getVersionId);
+  PathString path = GetLibraryFilePathname(
+      lgpllibsname.get(), (PRFuncPtr)&soundtouch::SoundTouch::getVersionId);
   if (path.IsEmpty()) {
     return false;
   }
@@ -113,28 +108,24 @@ FFVPXRuntimeLinker::Init()
 }
 
  already_AddRefed<PlatformDecoderModule>
-FFVPXRuntimeLinker::CreateDecoderModule()
-{
+FFVPXRuntimeLinker::CreateDecoderModule() {
   if (!Init()) {
     return nullptr;
   }
   return FFmpegDecoderModule<FFVPX_VERSION>::Create(&sFFVPXLib);
 }
 
- void
-FFVPXRuntimeLinker::GetRDFTFuncs(FFmpegRDFTFuncs* aOutFuncs)
-{
+ void FFVPXRuntimeLinker::GetRDFTFuncs(FFmpegRDFTFuncs* aOutFuncs) {
   MOZ_ASSERT(sLinkStatus != LinkStatus_INIT);
-  if (sFFVPXLib.av_rdft_init &&
-      sFFVPXLib.av_rdft_calc &&
+  if (sFFVPXLib.av_rdft_init && sFFVPXLib.av_rdft_calc &&
       sFFVPXLib.av_rdft_end) {
     aOutFuncs->init = sFFVPXLib.av_rdft_init;
     aOutFuncs->calc = sFFVPXLib.av_rdft_calc;
     aOutFuncs->end = sFFVPXLib.av_rdft_end;
   } else {
     NS_WARNING("RDFT functions expected but not found");
-    *aOutFuncs = FFmpegRDFTFuncs(); 
+    *aOutFuncs = FFmpegRDFTFuncs();  
   }
 }
 
-} 
+}  

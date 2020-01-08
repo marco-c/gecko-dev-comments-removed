@@ -15,28 +15,20 @@ namespace mozilla {
 
 
 
-class DDLogObject
-{
-public:
+class DDLogObject {
+ public:
   
-  DDLogObject()
-    : mTypeName("<unset>")
-    , mPointer(nullptr)
-  {
-  }
+  DDLogObject() : mTypeName("<unset>"), mPointer(nullptr) {}
 
   
   DDLogObject(const char* aTypeName, const void* aPointer)
-    : mTypeName(aTypeName)
-    , mPointer(aPointer)
-  {
+      : mTypeName(aTypeName), mPointer(aPointer) {
     MOZ_ASSERT(aTypeName);
     MOZ_ASSERT(aPointer);
   }
 
   
-  void Set(const char* aTypeName, const void* aPointer)
-  {
+  void Set(const char* aTypeName, const void* aPointer) {
     MOZ_ASSERT(aTypeName);
     MOZ_ASSERT(aPointer);
     mTypeName = aTypeName;
@@ -47,14 +39,12 @@ public:
   const void* Pointer() const { return mPointer; }
 
   
-  const char* TypeName() const
-  {
+  const char* TypeName() const {
     MOZ_ASSERT(mPointer);
     return mTypeName;
   }
 
-  bool operator==(const DDLogObject& a) const
-  {
+  bool operator==(const DDLogObject& a) const {
     return mPointer == a.mPointer && (!mPointer || mTypeName == a.mTypeName);
   }
 
@@ -62,11 +52,11 @@ public:
   void AppendPrintf(nsCString& mString) const;
   nsCString Printf() const;
 
-private:
+ private:
   const char* mTypeName;
   const void* mPointer;
 };
 
-} 
+}  
 
-#endif 
+#endif  

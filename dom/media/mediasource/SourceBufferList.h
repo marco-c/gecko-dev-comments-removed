@@ -22,15 +22,15 @@ class JSObject;
 
 namespace mozilla {
 
-template <typename T> class AsyncEventRunner;
+template <typename T>
+class AsyncEventRunner;
 
 namespace dom {
 
 class MediaSource;
 
-class SourceBufferList final : public DOMEventTargetHelper
-{
-public:
+class SourceBufferList final : public DOMEventTargetHelper {
+ public:
   
   SourceBuffer* IndexedGetter(uint32_t aIndex, bool& aFound);
 
@@ -49,7 +49,8 @@ public:
 
   MediaSource* GetParentObject() const;
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
   void Append(SourceBuffer* aSourceBuffer);
@@ -61,6 +62,7 @@ public:
   bool Contains(SourceBuffer* aSourceBuffer);
 
   
+  
   void Clear();
 
   
@@ -69,6 +71,7 @@ public:
   
   bool AnyUpdating();
 
+  
   
   void RangeRemoval(double aStart, double aEnd);
 
@@ -88,7 +91,7 @@ public:
   double HighestStartTime();
   double HighestEndTime();
 
-private:
+ private:
   ~SourceBufferList();
 
   friend class AsyncEventRunner<SourceBufferList>;
@@ -100,8 +103,8 @@ private:
   const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
-} 
+}  
 
-} 
+}  
 
 #endif 

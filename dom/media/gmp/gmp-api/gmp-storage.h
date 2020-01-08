@@ -40,8 +40,7 @@
 
 
 class GMPRecord {
-public:
-
+ public:
   
   
   
@@ -72,7 +71,6 @@ public:
 
 class GMPRecordClient {
  public:
-
   
   
   
@@ -94,8 +92,7 @@ class GMPRecordClient {
   
   
   
-  virtual void ReadComplete(GMPErr aStatus,
-                            const uint8_t* aData,
+  virtual void ReadComplete(GMPErr aStatus, const uint8_t* aData,
                             uint32_t aDataSize) = 0;
 
   
@@ -110,4 +107,4 @@ class GMPRecordClient {
   virtual ~GMPRecordClient() {}
 };
 
-#endif 
+#endif  

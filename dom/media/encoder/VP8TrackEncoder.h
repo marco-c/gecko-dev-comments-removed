@@ -20,15 +20,14 @@ typedef struct vpx_image vpx_image_t;
 
 
 
-class VP8TrackEncoder : public VideoTrackEncoder
-{
+class VP8TrackEncoder : public VideoTrackEncoder {
   enum EncodeOperation {
-    ENCODE_NORMAL_FRAME, 
-    ENCODE_I_FRAME, 
-    SKIP_FRAME, 
+    ENCODE_NORMAL_FRAME,  
+    ENCODE_I_FRAME,       
+    SKIP_FRAME,           
   };
 
-public:
+ public:
   VP8TrackEncoder(TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode);
   virtual ~VP8TrackEncoder();
 
@@ -36,11 +35,11 @@ public:
 
   nsresult GetEncodedTrack(EncodedFrameContainer& aData) final;
 
-protected:
-  nsresult Init(int32_t aWidth, int32_t aHeight,
-                int32_t aDisplayWidth, int32_t aDisplayHeight) final;
+ protected:
+  nsresult Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
+                int32_t aDisplayHeight) final;
 
-private:
+ private:
   
   EncodeOperation GetNextEncodeOperation(TimeDuration aTimeElapsed,
                                          StreamTime aProcessedDuration);
@@ -51,18 +50,19 @@ private:
   nsresult GetEncodedPartitions(EncodedFrameContainer& aData);
 
   
-  nsresult PrepareRawFrame(VideoChunk &aChunk);
+  nsresult PrepareRawFrame(VideoChunk& aChunk);
 
   
-  nsresult Reconfigure(int32_t aWidth, int32_t aHeight,
-                       int32_t aDisplayWidth, int32_t aDisplayHeight);
+  nsresult Reconfigure(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
+                       int32_t aDisplayHeight);
 
   
   void Destroy();
 
   
-  nsresult SetConfigurationValues(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
-                                  int32_t aDisplayHeight, vpx_codec_enc_cfg_t& config);
+  nsresult SetConfigurationValues(int32_t aWidth, int32_t aHeight,
+                                  int32_t aDisplayWidth, int32_t aDisplayHeight,
+                                  vpx_codec_enc_cfg_t& config);
 
   
   StreamTime mEncodedTimestamp = 0;
@@ -98,6 +98,6 @@ private:
   nsAutoPtr<vpx_image_t> mVPXImageWrapper;
 };
 
-} 
+}  
 
 #endif

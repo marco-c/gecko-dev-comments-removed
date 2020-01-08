@@ -49,10 +49,11 @@ typedef enum {
   GMPInvalidArgErr = 12,
   GMPAbortedErr = 13,
   GMPRecordCorrupted = 14,
-  GMPLastErr 
+  GMPLastErr  
+              
 } GMPErr;
 
 #define GMP_SUCCEEDED(x) ((x) == GMPNoErr)
 #define GMP_FAILED(x) ((x) != GMPNoErr)
 
-#endif 
+#endif  

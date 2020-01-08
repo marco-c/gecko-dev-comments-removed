@@ -40,14 +40,14 @@
 #include "gmp-video-codec.h"
 
 
-class GMPVideoHost
-{
-public:
+class GMPVideoHost {
+ public:
   
   
   
-  virtual GMPErr CreateFrame(GMPVideoFrameFormat aFormat, GMPVideoFrame** aFrame) = 0;
+  virtual GMPErr CreateFrame(GMPVideoFrameFormat aFormat,
+                             GMPVideoFrame** aFrame) = 0;
   virtual GMPErr CreatePlane(GMPPlane** aPlane) = 0;
 };
 
-#endif 
+#endif  

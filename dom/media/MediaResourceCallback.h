@@ -30,9 +30,8 @@ DDLoggedTypeDeclName(MediaResourceCallback);
 
 
 class MediaResourceCallback
-  : public DecoderDoctorLifeLogger<MediaResourceCallback>
-{
-public:
+    : public DecoderDoctorLifeLogger<MediaResourceCallback> {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaResourceCallback);
 
   
@@ -58,10 +57,10 @@ public:
   
   virtual void NotifySuspendedStatusChanged(bool aSuspendedByCache) {}
 
-protected:
+ protected:
   virtual ~MediaResourceCallback() {}
 };
 
-} 
+}  
 
-#endif 
+#endif  

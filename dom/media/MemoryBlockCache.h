@@ -29,15 +29,14 @@ namespace mozilla {
 
 
 
-class MemoryBlockCache : public MediaBlockCacheBase
-{
-public:
+class MemoryBlockCache : public MediaBlockCacheBase {
+ public:
   explicit MemoryBlockCache(int64_t aContentLength);
 
-protected:
+ protected:
   virtual ~MemoryBlockCache();
 
-public:
+ public:
   
   
   virtual nsresult Init() override;
@@ -49,23 +48,19 @@ public:
   int32_t GetMaxBlocks() const override { return mMaxBlocks; }
 
   
-  virtual nsresult WriteBlock(uint32_t aBlockIndex,
-                              Span<const uint8_t> aData1,
+  virtual nsresult WriteBlock(uint32_t aBlockIndex, Span<const uint8_t> aData1,
                               Span<const uint8_t> aData2) override;
 
   
-  virtual nsresult Read(int64_t aOffset,
-                        uint8_t* aData,
-                        int32_t aLength,
+  virtual nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
                         int32_t* aBytes) override;
 
   
   virtual nsresult MoveBlock(int32_t aSourceBlockIndex,
                              int32_t aDestBlockIndex) override;
 
-private:
-  static size_t BlockIndexToOffset(uint32_t aBlockIndex)
-  {
+ private:
+  static size_t BlockIndexToOffset(uint32_t aBlockIndex) {
     return static_cast<size_t>(aBlockIndex) * BLOCK_SIZE;
   }
 
@@ -87,6 +82,6 @@ private:
   bool mHasGrown = false;
 };
 
-} 
+}  
 
 #endif 

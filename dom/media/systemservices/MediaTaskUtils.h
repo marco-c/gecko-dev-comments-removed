@@ -20,36 +20,29 @@ namespace media {
 
 
 
-template<typename OnRunType>
-class LambdaTask : public Runnable
-{
-public:
+template <typename OnRunType>
+class LambdaTask : public Runnable {
+ public:
   explicit LambdaTask(OnRunType&& aOnRun)
-    : Runnable("media::LambdaTask")
-    , mOnRun(std::move(aOnRun))
-  {
-  }
+      : Runnable("media::LambdaTask"), mOnRun(std::move(aOnRun)) {}
 
-private:
+ private:
   NS_IMETHOD
-  Run() override
-  {
+  Run() override {
     mOnRun();
     return NS_OK;
   }
   OnRunType mOnRun;
 };
 
-template<typename OnRunType>
-already_AddRefed<LambdaTask<OnRunType>>
-NewTaskFrom(OnRunType&& aOnRun)
-{
+template <typename OnRunType>
+already_AddRefed<LambdaTask<OnRunType>> NewTaskFrom(OnRunType&& aOnRun) {
   typedef LambdaTask<OnRunType> LambdaType;
   RefPtr<LambdaType> lambda = new LambdaType(std::forward<OnRunType>(aOnRun));
   return lambda.forget();
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

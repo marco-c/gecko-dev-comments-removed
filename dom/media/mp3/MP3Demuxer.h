@@ -16,11 +16,9 @@ class MP3TrackDemuxer;
 DDLoggedTypeDeclNameAndBase(MP3Demuxer, MediaDataDemuxer);
 DDLoggedTypeNameAndBase(MP3TrackDemuxer, MediaTrackDemuxer);
 
-class MP3Demuxer
-  : public MediaDataDemuxer
-  , public DecoderDoctorLifeLogger<MP3Demuxer>
-{
-public:
+class MP3Demuxer : public MediaDataDemuxer,
+                   public DecoderDoctorLifeLogger<MP3Demuxer> {
+ public:
   
   explicit MP3Demuxer(MediaResource* aSource);
   RefPtr<InitPromise> Init() override;
@@ -31,7 +29,7 @@ public:
   void NotifyDataArrived() override;
   void NotifyDataRemoved() override;
 
-private:
+ private:
   
   bool InitInternal();
 
@@ -41,11 +39,9 @@ private:
 
 
 
-class MP3TrackDemuxer
-  : public MediaTrackDemuxer
-  , public DecoderDoctorLifeLogger<MP3TrackDemuxer>
-{
-public:
+class MP3TrackDemuxer : public MediaTrackDemuxer,
+                        public DecoderDoctorLifeLogger<MP3TrackDemuxer> {
+ public:
   
   explicit MP3TrackDemuxer(MediaResource* aSource);
 
@@ -78,17 +74,18 @@ public:
   RefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) override;
   void Reset() override;
   RefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(
-    const media::TimeUnit& aTimeThreshold) override;
+      const media::TimeUnit& aTimeThreshold) override;
   int64_t GetResourceOffset() const override;
   media::TimeIntervals GetBuffered() override;
 
-private:
+ private:
   
   ~MP3TrackDemuxer() {}
 
   
   media::TimeUnit FastSeek(const media::TimeUnit& aTime);
 
+  
   
   media::TimeUnit ScanUntil(const media::TimeUnit& aTime);
 
@@ -153,6 +150,7 @@ private:
   int32_t mSamplesPerFrame;
 
   
+  
   int32_t mSamplesPerSecond;
 
   
@@ -162,6 +160,6 @@ private:
   UniquePtr<AudioInfo> mInfo;
 };
 
-} 
+}  
 
 #endif

@@ -35,13 +35,13 @@ namespace media {
 
 
 class MediaSink {
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaSink);
   typedef mozilla::TrackInfo::TrackType TrackType;
 
   struct PlaybackParams {
     PlaybackParams()
-      : mVolume(1.0) , mPlaybackRate(1.0) , mPreservesPitch(true) {}
+        : mVolume(1.0), mPlaybackRate(1.0), mPreservesPitch(true) {}
     double mVolume;
     double mPlaybackRate;
     bool mPreservesPitch;
@@ -98,11 +98,12 @@ public:
   
   
   
-  virtual void Redraw(const VideoInfo& aInfo) {};
+  virtual void Redraw(const VideoInfo& aInfo){};
 
   
   
-  virtual nsresult Start(const TimeUnit& aStartTime, const MediaInfo& aInfo) = 0;
+  virtual nsresult Start(const TimeUnit& aStartTime,
+                         const MediaInfo& aInfo) = 0;
 
   
   
@@ -125,11 +126,11 @@ public:
   
   virtual nsCString GetDebugInfo() { return nsCString(); }
 
-protected:
+ protected:
   virtual ~MediaSink() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -10,22 +10,22 @@
 #include "nsTArray.h"
 #include "AudioBlock.h"
 #include "AudioSegment.h"
-#include "mozilla/dom/AudioNodeBinding.h" 
+#include "mozilla/dom/AudioNodeBinding.h"  
 
 namespace mozilla {
 
-class DelayBuffer final
-{
+class DelayBuffer final {
   typedef dom::ChannelInterpretation ChannelInterpretation;
 
-public:
+ public:
   explicit DelayBuffer(float aMaxDelayTicks)
-    
-    : mMaxDelayTicks(std::ceil(aMaxDelayTicks))
-    , mCurrentChunk(0)
-    
+      
+      : mMaxDelayTicks(std::ceil(aMaxDelayTicks)),
+        mCurrentChunk(0)
+  
 #ifdef DEBUG
-    , mHaveWrittenBlock(false)
+        ,
+        mHaveWrittenBlock(false)
 #endif
   {
     
@@ -57,8 +57,7 @@ public:
                    ChannelInterpretation aChannelInterpretation);
 
   
-  void NextBlock()
-  {
+  void NextBlock() {
     mCurrentChunk = (mCurrentChunk + 1) % mChunks.Length();
 #ifdef DEBUG
     MOZ_ASSERT(mHaveWrittenBlock);
@@ -66,18 +65,16 @@ public:
 #endif
   }
 
-  void Reset() {
-    mChunks.Clear();
-  };
+  void Reset() { mChunks.Clear(); };
 
   int MaxDelayTicks() const { return mMaxDelayTicks; }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   void ReadChannels(const float aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
-                    AudioBlock* aOutputChunk,
-                    uint32_t aFirstChannel, uint32_t aNumChannelsToRead,
+                    AudioBlock* aOutputChunk, uint32_t aFirstChannel,
+                    uint32_t aNumChannelsToRead,
                     ChannelInterpretation aChannelInterpretation);
   bool EnsureBuffer();
   int PositionForDelay(int aDelay);
@@ -90,7 +87,7 @@ private:
   
   FallibleTArray<AudioChunk> mChunks;
   
-  AutoTArray<const float*,GUESS_AUDIO_CHANNELS> mUpmixChannels;
+  AutoTArray<const float*, GUESS_AUDIO_CHANNELS> mUpmixChannels;
   
   int mMaxDelayTicks;
   
@@ -103,6 +100,6 @@ private:
 #endif
 };
 
-} 
+}  
 
-#endif 
+#endif  

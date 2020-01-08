@@ -47,13 +47,12 @@
 
 
 class GMPPlane {
-public:
+ public:
   
   
   
   
-  virtual GMPErr CreateEmptyPlane(int32_t aAllocatedSize,
-                                  int32_t aStride,
+  virtual GMPErr CreateEmptyPlane(int32_t aAllocatedSize, int32_t aStride,
                                   int32_t aPlaneSize) = 0;
 
   
@@ -63,7 +62,8 @@ public:
   
   
   
-  virtual GMPErr Copy(int32_t aSize, int32_t aStride, const uint8_t* aBuffer) = 0;
+  virtual GMPErr Copy(int32_t aSize, int32_t aStride,
+                      const uint8_t* aBuffer) = 0;
 
   
   virtual void Swap(GMPPlane& aPlane) = 0;
@@ -91,4 +91,4 @@ public:
   virtual void Destroy() = 0;
 };
 
-#endif 
+#endif  

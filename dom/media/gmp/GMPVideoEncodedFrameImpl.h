@@ -45,12 +45,13 @@ namespace gmp {
 class GMPVideoHostImpl;
 class GMPVideoEncodedFrameData;
 
-class GMPVideoEncodedFrameImpl: public GMPVideoEncodedFrame
-{
+class GMPVideoEncodedFrameImpl : public GMPVideoEncodedFrame {
   friend struct IPC::ParamTraits<mozilla::gmp::GMPVideoEncodedFrameImpl>;
-public:
+
+ public:
   explicit GMPVideoEncodedFrameImpl(GMPVideoHostImpl* aHost);
-  GMPVideoEncodedFrameImpl(const GMPVideoEncodedFrameData& aFrameData, GMPVideoHostImpl* aHost);
+  GMPVideoEncodedFrameImpl(const GMPVideoEncodedFrameData& aFrameData,
+                           GMPVideoHostImpl* aHost);
   virtual ~GMPVideoEncodedFrameImpl();
 
   
@@ -66,35 +67,35 @@ public:
   void Destroy() override;
 
   
-  GMPErr   CreateEmptyFrame(uint32_t aSize) override;
-  GMPErr   CopyFrame(const GMPVideoEncodedFrame& aFrame) override;
-  void     SetEncodedWidth(uint32_t aEncodedWidth) override;
+  GMPErr CreateEmptyFrame(uint32_t aSize) override;
+  GMPErr CopyFrame(const GMPVideoEncodedFrame& aFrame) override;
+  void SetEncodedWidth(uint32_t aEncodedWidth) override;
   uint32_t EncodedWidth() override;
-  void     SetEncodedHeight(uint32_t aEncodedHeight) override;
+  void SetEncodedHeight(uint32_t aEncodedHeight) override;
   uint32_t EncodedHeight() override;
   
-  void     SetTimeStamp(uint64_t aTimeStamp) override;
+  void SetTimeStamp(uint64_t aTimeStamp) override;
   uint64_t TimeStamp() override;
   
   
   
   
-  void     SetDuration(uint64_t aDuration) override;
+  void SetDuration(uint64_t aDuration) override;
   uint64_t Duration() const override;
-  void     SetFrameType(GMPVideoFrameType aFrameType) override;
+  void SetFrameType(GMPVideoFrameType aFrameType) override;
   GMPVideoFrameType FrameType() override;
-  void     SetAllocatedSize(uint32_t aNewSize) override;
+  void SetAllocatedSize(uint32_t aNewSize) override;
   uint32_t AllocatedSize() override;
-  void     SetSize(uint32_t aSize) override;
+  void SetSize(uint32_t aSize) override;
   uint32_t Size() override;
-  void     SetCompleteFrame(bool aCompleteFrame) override;
-  bool     CompleteFrame() override;
+  void SetCompleteFrame(bool aCompleteFrame) override;
+  bool CompleteFrame() override;
   const uint8_t* Buffer() const override;
   uint8_t* Buffer() override;
   GMPBufferType BufferType() const override;
-  void     SetBufferType(GMPBufferType aBufferType) override;
+  void SetBufferType(GMPBufferType aBufferType) override;
 
-private:
+ private:
   void DestroyBuffer();
 
   uint32_t mEncodedWidth;
@@ -103,14 +104,14 @@ private:
   uint64_t mDuration;
   GMPVideoFrameType mFrameType;
   uint32_t mSize;
-  bool     mCompleteFrame;
+  bool mCompleteFrame;
   GMPVideoHostImpl* mHost;
   ipc::Shmem mBuffer;
   GMPBufferType mBufferType;
 };
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

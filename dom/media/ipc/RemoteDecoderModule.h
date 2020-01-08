@@ -13,9 +13,8 @@ namespace mozilla {
 
 
 
-class RemoteDecoderModule : public PlatformDecoderModule
-{
-public:
+class RemoteDecoderModule : public PlatformDecoderModule {
+ public:
   RemoteDecoderModule() = default;
 
   nsresult Startup() override;
@@ -24,15 +23,14 @@ public:
                         DecoderDoctorDiagnostics* aDiagnostics) const override;
 
   already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-    const CreateDecoderParams& aParams) override;
+      const CreateDecoderParams& aParams) override;
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-    const CreateDecoderParams& aParams) override
-  {
+      const CreateDecoderParams& aParams) override {
     return nullptr;
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  

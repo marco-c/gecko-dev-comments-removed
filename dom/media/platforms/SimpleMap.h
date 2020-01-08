@@ -10,25 +10,22 @@
 
 namespace mozilla {
 
-template<typename T>
-class SimpleMap
-{
-public:
+template <typename T>
+class SimpleMap {
+ public:
   typedef Pair<int64_t, T> Element;
 
-  SimpleMap() : mMutex("SimpleMap") { }
+  SimpleMap() : mMutex("SimpleMap") {}
 
   
-  void Insert(int64_t aKey, const T& aValue)
-  {
+  void Insert(int64_t aKey, const T& aValue) {
     MutexAutoLock lock(mMutex);
     mMap.AppendElement(MakePair(aKey, aValue));
   }
   
   
   
-  bool Find(int64_t aKey, T& aValue)
-  {
+  bool Find(int64_t aKey, T& aValue) {
     MutexAutoLock lock(mMutex);
     for (uint32_t i = 0; i < mMap.Length(); i++) {
       Element& element = mMap[i];
@@ -41,17 +38,16 @@ public:
     return false;
   }
   
-  void Clear()
-  {
+  void Clear() {
     MutexAutoLock lock(mMutex);
     mMap.Clear();
   }
 
-private:
-  Mutex mMutex; 
+ private:
+  Mutex mMutex;  
   AutoTArray<Element, 16> mMap;
 };
 
-} 
+}  
 
-#endif 
+#endif  

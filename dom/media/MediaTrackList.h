@@ -30,9 +30,8 @@ class VideoStreamTrack;
 
 
 
-class MediaTrackList : public DOMEventTargetHelper
-{
-public:
+class MediaTrackList : public DOMEventTargetHelper {
+ public:
   MediaTrackList(nsIGlobalObject* aOwnerObject,
                  HTMLMediaElement* aMediaElement);
 
@@ -54,23 +53,17 @@ public:
 
   void RemoveTracks();
 
-  static already_AddRefed<AudioTrack>
-  CreateAudioTrack(nsIGlobalObject* aOwnerGlobal,
-                   const nsAString& aId,
-                   const nsAString& aKind,
-                   const nsAString& aLabel,
-                   const nsAString& aLanguage,
-                   bool aEnabled);
+  static already_AddRefed<AudioTrack> CreateAudioTrack(
+      nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+      const nsAString& aKind, const nsAString& aLabel,
+      const nsAString& aLanguage, bool aEnabled);
 
   
   
-  static already_AddRefed<VideoTrack>
-  CreateVideoTrack(nsIGlobalObject* aOwnerGlobal,
-                   const nsAString& aId,
-                   const nsAString& aKind,
-                   const nsAString& aLabel,
-                   const nsAString& aLanguage,
-                   VideoStreamTrack* aVideoTrack = nullptr);
+  static already_AddRefed<VideoTrack> CreateVideoTrack(
+      nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+      const nsAString& aKind, const nsAString& aLabel,
+      const nsAString& aLanguage, VideoStreamTrack* aVideoTrack = nullptr);
 
   virtual void EmptyTracks();
 
@@ -81,15 +74,9 @@ public:
 
   MediaTrack* GetTrackById(const nsAString& aId);
 
-  bool IsEmpty() const
-  {
-    return mTracks.IsEmpty();
-  }
+  bool IsEmpty() const { return mTracks.IsEmpty(); }
 
-  uint32_t Length() const
-  {
-    return mTracks.Length();
-  }
+  uint32_t Length() const { return mTracks.Length(); }
 
   IMPL_EVENT_HANDLER(change)
   IMPL_EVENT_HANDLER(addtrack)
@@ -98,7 +85,7 @@ public:
   friend class AudioTrack;
   friend class VideoTrack;
 
-protected:
+ protected:
   virtual ~MediaTrackList();
 
   void CreateAndDispatchTrackEventRunner(MediaTrack* aTrack,
@@ -114,7 +101,7 @@ protected:
   RefPtr<HTMLMediaElement> mMediaElement;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

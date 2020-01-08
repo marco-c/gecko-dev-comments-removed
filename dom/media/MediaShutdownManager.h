@@ -50,7 +50,7 @@ class MediaDecoder;
 
 
 class MediaShutdownManager : public nsIAsyncShutdownBlocker {
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
@@ -69,9 +69,8 @@ public:
   
   void Unregister(MediaDecoder* aDecoder);
 
-private:
-  enum InitPhase
-  {
+ private:
+  enum InitPhase {
     NotInited,
     InitSucceeded,
     InitFailed,
@@ -93,6 +92,6 @@ private:
   nsTHashtable<nsRefPtrHashKey<MediaDecoder>> mDecoders;
 };
 
-} 
+}  
 
 #endif

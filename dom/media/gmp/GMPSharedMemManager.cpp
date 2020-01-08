@@ -19,11 +19,9 @@ namespace gmp {
 
 
 
-bool
-GMPSharedMemManager::MgrAllocShmem(GMPSharedMem::GMPMemoryClasses aClass, size_t aSize,
-                                   ipc::Shmem::SharedMemory::SharedMemoryType aType,
-                                   ipc::Shmem* aMem)
-{
+bool GMPSharedMemManager::MgrAllocShmem(
+    GMPSharedMem::GMPMemoryClasses aClass, size_t aSize,
+    ipc::Shmem::SharedMemory::SharedMemoryType aType, ipc::Shmem* aMem) {
   mData->CheckThread();
 
   
@@ -38,9 +36,10 @@ GMPSharedMemManager::MgrAllocShmem(GMPSharedMem::GMPMemoryClasses aClass, size_t
 
   
   size_t pagesize = ipc::SharedMemory::SystemPageSize();
-  aSize = (aSize + (pagesize-1)) & ~(pagesize-1); 
+  aSize = (aSize + (pagesize - 1)) & ~(pagesize - 1);  
   bool retval = Alloc(aSize, aType, aMem);
   if (retval) {
+    
     
     MOZ_ASSERT(aMem->Size<uint8_t>() >= aSize);
     mData->mGmpAllocated[aClass]++;
@@ -48,9 +47,8 @@ GMPSharedMemManager::MgrAllocShmem(GMPSharedMem::GMPMemoryClasses aClass, size_t
   return retval;
 }
 
-bool
-GMPSharedMemManager::MgrDeallocShmem(GMPSharedMem::GMPMemoryClasses aClass, ipc::Shmem& aMem)
-{
+bool GMPSharedMemManager::MgrDeallocShmem(GMPSharedMem::GMPMemoryClasses aClass,
+                                          ipc::Shmem& aMem) {
   mData->CheckThread();
 
   size_t size = aMem.Size<uint8_t>();
@@ -88,11 +86,9 @@ GMPSharedMemManager::MgrDeallocShmem(GMPSharedMem::GMPMemoryClasses aClass, ipc:
   return true;
 }
 
-uint32_t
-GMPSharedMemManager::NumInUse(GMPSharedMem::GMPMemoryClasses aClass)
-{
+uint32_t GMPSharedMemManager::NumInUse(GMPSharedMem::GMPMemoryClasses aClass) {
   return mData->mGmpAllocated[aClass] - GetGmpFreelist(aClass).Length();
 }
 
-} 
-} 
+}  
+}  

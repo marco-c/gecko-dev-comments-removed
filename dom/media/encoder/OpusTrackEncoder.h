@@ -15,9 +15,8 @@ struct OpusEncoder;
 namespace mozilla {
 
 
-class OpusMetadata : public TrackMetadataBase
-{
-public:
+class OpusMetadata : public TrackMetadataBase {
+ public:
   
   nsTArray<uint8_t> mIdHeader;
   
@@ -27,9 +26,8 @@ public:
   MetadataKind GetKind() const override { return METADATA_OPUS; }
 };
 
-class OpusTrackEncoder : public AudioTrackEncoder
-{
-public:
+class OpusTrackEncoder : public AudioTrackEncoder {
+ public:
   explicit OpusTrackEncoder(TrackRate aTrackRate);
   virtual ~OpusTrackEncoder();
 
@@ -37,7 +35,7 @@ public:
 
   nsresult GetEncodedTrack(EncodedFrameContainer& aData) override;
 
-protected:
+ protected:
   int GetPacketDuration() override;
 
   nsresult Init(int aChannels, int aSamplingRate) override;
@@ -48,7 +46,7 @@ protected:
 
   int GetOutputSampleRate();
 
-private:
+ private:
   
 
 
@@ -86,6 +84,6 @@ private:
   uint64_t mOutputTimeStamp;
 };
 
-} 
+}  
 
 #endif

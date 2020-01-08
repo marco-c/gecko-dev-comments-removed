@@ -23,9 +23,8 @@ class MediaSystemResourceManager;
 
 
 
-
 class MediaSystemResourceReservationListener {
-public:
+ public:
   virtual void ResourceReserved() = 0;
   virtual void ResourceReserveFailed() = 0;
 };
@@ -35,10 +34,8 @@ public:
 
 
 
-class MediaSystemResourceClient
-{
-public:
-
+class MediaSystemResourceClient {
+ public:
   
   enum ResourceState {
     RESOURCE_STATE_START,
@@ -64,18 +61,18 @@ public:
   
   
   
-  
   bool AcquireSyncNoWait();
 
   void ReleaseResource();
 
-private:
+ private:
   ~MediaSystemResourceClient();
 
   RefPtr<MediaSystemResourceManager> mManager;
   const MediaSystemResourceType mResourceType;
   const uint32_t mId;
 
+  
   
   
   MediaSystemResourceReservationListener* mListener;
@@ -89,6 +86,6 @@ private:
   friend class MediaSystemResourceManager;
 };
 
-} 
+}  
 
 #endif

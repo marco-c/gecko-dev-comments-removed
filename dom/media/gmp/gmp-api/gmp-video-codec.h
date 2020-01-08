@@ -37,33 +37,31 @@
 #include <stdint.h>
 #include <stddef.h>
 
-enum { kGMPPayloadNameSize = 32};
-enum { kGMPMaxSimulcastStreams = 4};
+enum { kGMPPayloadNameSize = 32 };
+enum { kGMPMaxSimulcastStreams = 4 };
 
-enum GMPVideoCodecComplexity
-{
+enum GMPVideoCodecComplexity {
   kGMPComplexityNormal = 0,
   kGMPComplexityHigh = 1,
   kGMPComplexityHigher = 2,
   kGMPComplexityMax = 3,
-  kGMPComplexityInvalid 
+  kGMPComplexityInvalid  
 };
 
 enum GMPVP8ResilienceMode {
-  kResilienceOff,    
-                     
-                     
-  kResilientStream,  
-                     
-                     
-  kResilientFrames,  
-                     
-  kResilienceInvalid 
+  kResilienceOff,     
+                      
+                      
+  kResilientStream,   
+                      
+                      
+  kResilientFrames,   
+                      
+  kResilienceInvalid  
 };
 
 
-struct GMPVideoCodecVP8
-{
+struct GMPVideoCodecVP8 {
   bool mPictureLossIndicationOn;
   bool mFeedbackModeOn;
   GMPVideoCodecComplexity mComplexity;
@@ -78,19 +76,20 @@ struct GMPVideoCodecVP8
 
 
 
-struct GMPVideoCodecH264AVCC
-{
-  uint8_t        mVersion; 
-  uint8_t        mProfile; 
-  uint8_t        mConstraints;
-  uint8_t        mLevel;
-  uint8_t        mLengthSizeMinusOne; 
+struct GMPVideoCodecH264AVCC {
+  uint8_t mVersion;  
+  uint8_t mProfile;  
+  uint8_t mConstraints;
+  uint8_t mLevel;
+  uint8_t mLengthSizeMinusOne;  
+                                
 
   
   
-  uint8_t        mNumSPS; 
+  uint8_t mNumSPS;  
 
   
+
   
   
   
@@ -99,14 +98,13 @@ struct GMPVideoCodecH264AVCC
 
 
 
-struct GMPVideoCodecH264
-{
-  uint8_t        mPacketizationMode; 
-  struct GMPVideoCodecH264AVCC mAVCC; 
+struct GMPVideoCodecH264 {
+  uint8_t mPacketizationMode;  
+  struct GMPVideoCodecH264AVCC
+      mAVCC;  
 };
 
-enum GMPVideoCodecType
-{
+enum GMPVideoCodecType {
   kGMPVideoCodecVP8,
 
   
@@ -114,48 +112,47 @@ enum GMPVideoCodecType
   
   kGMPVideoCodecH264,
   kGMPVideoCodecVP9,
-  kGMPVideoCodecInvalid 
+  kGMPVideoCodecInvalid  
 };
 
 
 
-struct GMPSimulcastStream
-{
+struct GMPSimulcastStream {
   uint32_t mWidth;
   uint32_t mHeight;
   uint32_t mNumberOfTemporalLayers;
-  uint32_t mMaxBitrate; 
-  uint32_t mTargetBitrate; 
-  uint32_t mMinBitrate; 
-  uint32_t mQPMax; 
+  uint32_t mMaxBitrate;     
+  uint32_t mTargetBitrate;  
+  uint32_t mMinBitrate;     
+  uint32_t mQPMax;          
 };
 
 enum GMPVideoCodecMode {
   kGMPRealtimeVideo,
   kGMPScreensharing,
   kGMPStreamingVideo,
-  kGMPCodecModeInvalid 
+  kGMPCodecModeInvalid  
 };
 
 enum GMPApiVersion {
-  kGMPVersion32 = 1, 
+  kGMPVersion32 =
+      1,  
   kGMPVersion33 = 33,
 };
 
-struct GMPVideoCodec
-{
+struct GMPVideoCodec {
   uint32_t mGMPApiVersion;
 
   GMPVideoCodecType mCodecType;
-  char mPLName[kGMPPayloadNameSize]; 
+  char mPLName[kGMPPayloadNameSize];  
   uint32_t mPLType;
 
   uint32_t mWidth;
   uint32_t mHeight;
 
-  uint32_t mStartBitrate; 
-  uint32_t mMaxBitrate; 
-  uint32_t mMinBitrate; 
+  uint32_t mStartBitrate;  
+  uint32_t mMaxBitrate;    
+  uint32_t mMinBitrate;    
   uint32_t mMaxFramerate;
 
   bool mFrameDroppingOn;
@@ -191,23 +188,21 @@ struct GMPCodecSpecificInfoH264 {
 
 
 
-struct GMPCodecSpecificInfoVP8
-{
+struct GMPCodecSpecificInfoVP8 {
   bool mHasReceivedSLI;
   uint8_t mPictureIdSLI;
   bool mHasReceivedRPSI;
   uint64_t mPictureIdRPSI;
-  int16_t mPictureId; 
+  int16_t mPictureId;  
   bool mNonReference;
   uint8_t mSimulcastIdx;
   uint8_t mTemporalIdx;
   bool mLayerSync;
-  int32_t mTL0PicIdx; 
-  int8_t mKeyIdx; 
+  int32_t mTL0PicIdx;  
+  int8_t mKeyIdx;      
 };
 
-union GMPCodecSpecificInfoUnion
-{
+union GMPCodecSpecificInfoUnion {
   GMPCodecSpecificInfoGeneric mGeneric;
   GMPCodecSpecificInfoVP8 mVP8;
   GMPCodecSpecificInfoH264 mH264;
@@ -216,8 +211,7 @@ union GMPCodecSpecificInfoUnion
 
 
 
-struct GMPCodecSpecificInfo
-{
+struct GMPCodecSpecificInfo {
   GMPVideoCodecType mCodecType;
   GMPBufferType mBufferType;
   GMPCodecSpecificInfoUnion mCodecSpecific;
@@ -225,12 +219,11 @@ struct GMPCodecSpecificInfo
 
 
 
-enum class GMPEncryptionScheme : uint8_t
-{
+enum class GMPEncryptionScheme : uint8_t {
   kGMPEncryptionNone = 0,
   kGMPEncryptionCenc = 1,
   kGMPEncryptionCbcs = 2,
   kGMPEncryptionInvalid = 3,
 };
 
-#endif 
+#endif  

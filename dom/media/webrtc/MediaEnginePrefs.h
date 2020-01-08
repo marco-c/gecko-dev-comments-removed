@@ -13,7 +13,7 @@ namespace mozilla {
 
 
 class MediaEnginePrefs {
-public:
+ public:
   static const int DEFAULT_VIDEO_FPS = 30;
   static const int DEFAULT_43_VIDEO_WIDTH = 640;
   static const int DEFAULT_43_VIDEO_HEIGHT = 480;
@@ -21,28 +21,27 @@ public:
   static const int DEFAULT_169_VIDEO_HEIGHT = 720;
 
   MediaEnginePrefs()
-    : mWidth(0)
-    , mHeight(0)
-    , mFPS(0)
-    , mFreq(0)
-    , mAecOn(false)
-    , mUseAecMobile(false)
-    , mAgcOn(false)
-    , mNoiseOn(false)
-    , mAec(0)
-    , mAgc(0)
-    , mNoise(0)
-    , mFullDuplex(false)
-    , mExtendedFilter(false)
-    , mDelayAgnostic(false)
-    , mFakeDeviceChangeEventOn(false)
-    , mChannels(0)
-  {}
+      : mWidth(0),
+        mHeight(0),
+        mFPS(0),
+        mFreq(0),
+        mAecOn(false),
+        mUseAecMobile(false),
+        mAgcOn(false),
+        mNoiseOn(false),
+        mAec(0),
+        mAgc(0),
+        mNoise(0),
+        mFullDuplex(false),
+        mExtendedFilter(false),
+        mDelayAgnostic(false),
+        mFakeDeviceChangeEventOn(false),
+        mChannels(0) {}
 
   int32_t mWidth;
   int32_t mHeight;
   int32_t mFPS;
-  int32_t mFreq; 
+  int32_t mFreq;  
   bool mAecOn;
   bool mUseAecMobile;
   bool mAgcOn;
@@ -56,26 +55,25 @@ public:
   bool mFakeDeviceChangeEventOn;
   int32_t mChannels;
 
-  bool operator ==(const MediaEnginePrefs& aRhs)
-  {
+  bool operator==(const MediaEnginePrefs& aRhs) {
     return memcmp(this, &aRhs, sizeof(MediaEnginePrefs)) == 0;
   };
 
   
 
   int32_t GetWidth(bool aHD = false) const {
-    return mWidth? mWidth : (mHeight?
-                             (mHeight * GetDefWidth(aHD)) / GetDefHeight(aHD) :
-                             GetDefWidth(aHD));
+    return mWidth ? mWidth
+                  : (mHeight ? (mHeight * GetDefWidth(aHD)) / GetDefHeight(aHD)
+                             : GetDefWidth(aHD));
   }
 
   int32_t GetHeight(bool aHD = false) const {
-    return mHeight? mHeight : (mWidth?
-                               (mWidth * GetDefHeight(aHD)) / GetDefWidth(aHD) :
-                               GetDefHeight(aHD));
+    return mHeight ? mHeight
+                   : (mWidth ? (mWidth * GetDefHeight(aHD)) / GetDefWidth(aHD)
+                             : GetDefHeight(aHD));
   }
 
-private:
+ private:
   static int32_t GetDefWidth(bool aHD = false) {
     
     
@@ -97,6 +95,6 @@ private:
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  

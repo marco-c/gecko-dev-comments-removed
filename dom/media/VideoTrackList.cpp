@@ -10,22 +10,17 @@
 namespace mozilla {
 namespace dom {
 
-JSObject*
-VideoTrackList::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* VideoTrackList::WrapObject(JSContext* aCx,
+                                     JS::Handle<JSObject*> aGivenProto) {
   return VideoTrackList_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-VideoTrack*
-VideoTrackList::operator[](uint32_t aIndex)
-{
+VideoTrack* VideoTrackList::operator[](uint32_t aIndex) {
   MediaTrack* track = MediaTrackList::operator[](aIndex);
   return track->AsVideoTrack();
 }
 
-void
-VideoTrackList::RemoveTrack(const RefPtr<MediaTrack>& aTrack)
-{
+void VideoTrackList::RemoveTrack(const RefPtr<MediaTrack>& aTrack) {
   
   
   
@@ -38,7 +33,8 @@ VideoTrackList::RemoveTrack(const RefPtr<MediaTrack>& aTrack)
     return;
   }
   MOZ_ASSERT(found, "When mSelectedIndex is set it should point to a track");
-  MOZ_ASSERT(selectedVideoTrack, "The mSelectedIndex should be set to video track only");
+  MOZ_ASSERT(selectedVideoTrack,
+             "The mSelectedIndex should be set to video track only");
 
   
   
@@ -58,35 +54,29 @@ VideoTrackList::RemoveTrack(const RefPtr<MediaTrack>& aTrack)
   }
 }
 
-void
-VideoTrackList::EmptyTracks()
-{
+void VideoTrackList::EmptyTracks() {
   mSelectedIndex = -1;
   MediaTrackList::EmptyTracks();
 }
 
-VideoTrack* VideoTrackList::GetSelectedTrack()
-{
-  if (mSelectedIndex < 0 || static_cast<size_t>(mSelectedIndex) >= mTracks.Length()) {
+VideoTrack* VideoTrackList::GetSelectedTrack() {
+  if (mSelectedIndex < 0 ||
+      static_cast<size_t>(mSelectedIndex) >= mTracks.Length()) {
     return nullptr;
   }
 
   return operator[](mSelectedIndex);
 }
 
-VideoTrack*
-VideoTrackList::IndexedGetter(uint32_t aIndex, bool& aFound)
-{
+VideoTrack* VideoTrackList::IndexedGetter(uint32_t aIndex, bool& aFound) {
   MediaTrack* track = MediaTrackList::IndexedGetter(aIndex, aFound);
   return track ? track->AsVideoTrack() : nullptr;
 }
 
-VideoTrack*
-VideoTrackList::GetTrackById(const nsAString& aId)
-{
+VideoTrack* VideoTrackList::GetTrackById(const nsAString& aId) {
   MediaTrack* track = MediaTrackList::GetTrackById(aId);
   return track ? track->AsVideoTrack() : nullptr;
 }
 
-} 
-} 
+}  
+}  

@@ -18,9 +18,7 @@ StaticRefPtr<AbstractThread> sRemoteDecoderManagerChildAbstractThread;
 
 static StaticRefPtr<RemoteDecoderManagerChild> sRemoteDecoderManagerChild;
 
- void
-RemoteDecoderManagerChild::InitializeThread()
-{
+ void RemoteDecoderManagerChild::InitializeThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sRemoteDecoderManagerChildThread) {
@@ -30,25 +28,20 @@ RemoteDecoderManagerChild::InitializeThread()
     sRemoteDecoderManagerChildThread = childThread;
 
     sRemoteDecoderManagerChildAbstractThread =
-      AbstractThread::CreateXPCOMThreadWrapper(childThread, false);
+        AbstractThread::CreateXPCOMThreadWrapper(childThread, false);
   }
 }
 
- void
-RemoteDecoderManagerChild::InitForContent(
-    Endpoint<PRemoteDecoderManagerChild>&& aVideoManager)
-{
+ void RemoteDecoderManagerChild::InitForContent(
+    Endpoint<PRemoteDecoderManagerChild>&& aVideoManager) {
   InitializeThread();
   sRemoteDecoderManagerChildThread->Dispatch(
-      NewRunnableFunction("InitForContentRunnable",
-                          &Open,
+      NewRunnableFunction("InitForContentRunnable", &Open,
                           std::move(aVideoManager)),
       NS_DISPATCH_NORMAL);
 }
 
- void
-RemoteDecoderManagerChild::Shutdown()
-{
+ void RemoteDecoderManagerChild::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (sRemoteDecoderManagerChildThread) {
@@ -70,48 +63,37 @@ RemoteDecoderManagerChild::Shutdown()
 }
 
  RemoteDecoderManagerChild*
-RemoteDecoderManagerChild::GetSingleton()
-{
+RemoteDecoderManagerChild::GetSingleton() {
   MOZ_ASSERT(NS_GetCurrentThread() == GetManagerThread());
   return sRemoteDecoderManagerChild;
 }
 
- nsIThread*
-RemoteDecoderManagerChild::GetManagerThread()
-{
+ nsIThread* RemoteDecoderManagerChild::GetManagerThread() {
   return sRemoteDecoderManagerChildThread;
 }
 
  AbstractThread*
-RemoteDecoderManagerChild::GetManagerAbstractThread()
-{
+RemoteDecoderManagerChild::GetManagerAbstractThread() {
   return sRemoteDecoderManagerChildAbstractThread;
 }
 
 PRemoteVideoDecoderChild*
 RemoteDecoderManagerChild::AllocPRemoteVideoDecoderChild(
-    const VideoInfo& ,
-    const float& ,
-    const CreateDecoderParams::OptionSet& ,
-    bool* ,
-    nsCString* )
-{
+    const VideoInfo& , const float& ,
+    const CreateDecoderParams::OptionSet& , bool* ,
+    nsCString* ) {
   return new RemoteVideoDecoderChild();
 }
 
-bool
-RemoteDecoderManagerChild::DeallocPRemoteVideoDecoderChild(
-    PRemoteVideoDecoderChild* actor)
-{
+bool RemoteDecoderManagerChild::DeallocPRemoteVideoDecoderChild(
+    PRemoteVideoDecoderChild* actor) {
   RemoteVideoDecoderChild* child = static_cast<RemoteVideoDecoderChild*>(actor);
   child->IPDLActorDestroyed();
   return true;
 }
 
-void
-RemoteDecoderManagerChild::Open(
-    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint)
-{
+void RemoteDecoderManagerChild::Open(
+    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
   sRemoteDecoderManagerChild = nullptr;
   if (aEndpoint.IsValid()) {
     RefPtr<RemoteDecoderManagerChild> manager = new RemoteDecoderManagerChild();
@@ -122,30 +104,22 @@ RemoteDecoderManagerChild::Open(
   }
 }
 
-void
-RemoteDecoderManagerChild::InitIPDL()
-{
+void RemoteDecoderManagerChild::InitIPDL() {
   mCanSend = true;
   mIPDLSelfRef = this;
 }
 
-void
-RemoteDecoderManagerChild::ActorDestroy(ActorDestroyReason aWhy)
-{
+void RemoteDecoderManagerChild::ActorDestroy(ActorDestroyReason aWhy) {
   mCanSend = false;
 }
 
-void
-RemoteDecoderManagerChild::DeallocPRemoteDecoderManagerChild()
-{
+void RemoteDecoderManagerChild::DeallocPRemoteDecoderManagerChild() {
   mIPDLSelfRef = nullptr;
 }
 
-bool
-RemoteDecoderManagerChild::CanSend()
-{
+bool RemoteDecoderManagerChild::CanSend() {
   MOZ_ASSERT(NS_GetCurrentThread() == GetManagerThread());
   return mCanSend;
 }
 
-} 
+}  

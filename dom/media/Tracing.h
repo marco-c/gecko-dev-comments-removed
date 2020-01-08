@@ -25,14 +25,13 @@
 
 #if defined(_MSC_VER)
 
-#define FUNCTION_SIGNATURE  __FUNCSIG__
+#define FUNCTION_SIGNATURE __FUNCSIG__
 #elif defined(__GNUC__)
 
 #define FUNCTION_SIGNATURE __PRETTY_FUNCTION__
 #endif
 
 #ifdef TRACING
-  
 
 
 
@@ -42,112 +41,81 @@
 
 
 
-  #define TRACE_AUDIO_CALLBACK()                                               \
-    AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(), 0);
-  #define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)                    \
-    AutoTracer budget(gMSGTraceLogger, "Real-time budget", getpid(), 1,        \
-                      AutoTracer::EventType::BUDGET, aFrames, aSampleRate);
-  #define TRACE_AUDIO_CALLBACK_COMMENT(aFmt, ...)                              \
-    AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(), 0,         \
-                     AutoTracer::EventType::DURATION,                          \
-                     aFmt, ##__VA_ARGS__);
-  #define TRACE()                                                              \
-    AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(),            \
-                     std::hash<std::thread::id>{}(std::this_thread::get_id()));
-  #define TRACE_COMMENT(aFmt, ...)                                             \
-    AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(),            \
-                     std::hash<std::thread::id>{}(std::this_thread::get_id()), \
-                     AutoTracer::EventType::DURATION,                          \
-                     aFmt, ##__VA_ARGS__);
+
+#define TRACE_AUDIO_CALLBACK() \
+  AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(), 0);
+#define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)             \
+  AutoTracer budget(gMSGTraceLogger, "Real-time budget", getpid(), 1, \
+                    AutoTracer::EventType::BUDGET, aFrames, aSampleRate);
+#define TRACE_AUDIO_CALLBACK_COMMENT(aFmt, ...)                      \
+  AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(), 0, \
+                   AutoTracer::EventType::DURATION, aFmt, ##__VA_ARGS__);
+#define TRACE()                                                   \
+  AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(), \
+                   std::hash<std::thread::id>{}(std::this_thread::get_id()));
+#define TRACE_COMMENT(aFmt, ...)                                             \
+  AutoTracer trace(gMSGTraceLogger, FUNCTION_SIGNATURE, getpid(),            \
+                   std::hash<std::thread::id>{}(std::this_thread::get_id()), \
+                   AutoTracer::EventType::DURATION, aFmt, ##__VA_ARGS__);
 #else
-  #define TRACE_AUDIO_CALLBACK()
-  #define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)
-  #define TRACE_AUDIO_CALLBACK_COMMENT(aFmt, ...)
-  #define TRACE()
-  #define TRACE_COMMENT(aFmt, ...)
+#define TRACE_AUDIO_CALLBACK()
+#define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)
+#define TRACE_AUDIO_CALLBACK_COMMENT(aFmt, ...)
+#define TRACE()
+#define TRACE_COMMENT(aFmt, ...)
 #endif
 
-class MOZ_RAII AutoTracer
-{
-public:
-  static const int32_t BUFFER_SIZE = mozilla::AsyncLogger::MAX_MESSAGE_LENGTH / 2;
+class MOZ_RAII AutoTracer {
+ public:
+  static const int32_t BUFFER_SIZE =
+      mozilla::AsyncLogger::MAX_MESSAGE_LENGTH / 2;
 
-  enum class EventType
-  {
-    DURATION,
-    BUDGET
-  };
+  enum class EventType { DURATION, BUDGET };
 
-  AutoTracer(mozilla::AsyncLogger& aLogger,
-             const char* aLocation,
-             uint64_t aPID,
-             uint64_t aTID,
+  AutoTracer(mozilla::AsyncLogger& aLogger, const char* aLocation,
+             uint64_t aPID, uint64_t aTID,
              EventType aEventType = EventType::DURATION,
              const char* aComment = nullptr);
 
-  template<typename... Args>
-  AutoTracer(mozilla::AsyncLogger& aLogger,
-             const char* aLocation,
-             uint64_t aPID,
-             uint64_t aTID,
-             EventType aEventType,
-             const char* aFormat,
-             Args... aArgs)
-    : mLogger(aLogger)
-    , mLocation(aLocation)
-    , mComment(mBuffer)
-    , mEventType(aEventType)
-    , mPID(aPID)
-    , mTID(aTID)
-  {
+  template <typename... Args>
+  AutoTracer(mozilla::AsyncLogger& aLogger, const char* aLocation,
+             uint64_t aPID, uint64_t aTID, EventType aEventType,
+             const char* aFormat, Args... aArgs)
+      : mLogger(aLogger),
+        mLocation(aLocation),
+        mComment(mBuffer),
+        mEventType(aEventType),
+        mPID(aPID),
+        mTID(aTID) {
     MOZ_ASSERT(aEventType == EventType::DURATION);
     if (aLogger.Enabled()) {
       int32_t size = snprintf(mBuffer, BUFFER_SIZE, aFormat, aArgs...);
       size = std::min(size, BUFFER_SIZE - 1);
       mBuffer[size] = 0;
-      PrintEvent(aLocation, "perf", mComment, TracingPhase::BEGIN, NowInUs(), aPID, aTID);
+      PrintEvent(aLocation, "perf", mComment, TracingPhase::BEGIN, NowInUs(),
+                 aPID, aTID);
     }
   }
 
-  AutoTracer(mozilla::AsyncLogger& aLogger,
-             const char* aLocation,
-             uint64_t aPID,
-             uint64_t aTID,
-             EventType aEventType,
-             uint64_t aFrames,
-             uint64_t aSampleRate);
+  AutoTracer(mozilla::AsyncLogger& aLogger, const char* aLocation,
+             uint64_t aPID, uint64_t aTID, EventType aEventType,
+             uint64_t aFrames, uint64_t aSampleRate);
 
   ~AutoTracer();
-private:
+
+ private:
   uint64_t NowInUs();
 
-  enum class TracingPhase
-  {
-    BEGIN,
-    END,
-    COMPLETE
-  };
+  enum class TracingPhase { BEGIN, END, COMPLETE };
 
-  const char TRACING_PHASE_STRINGS[3] = {
-    'B',
-    'E',
-    'X'
-  };
+  const char TRACING_PHASE_STRINGS[3] = {'B', 'E', 'X'};
 
-  void PrintEvent(const char* aName,
-                  const char* aCategory,
-                  const char* aComment,
-                  TracingPhase aPhase,
-                  uint64_t aTime,
-                  uint64_t aPID,
-                  uint64_t aThread);
+  void PrintEvent(const char* aName, const char* aCategory,
+                  const char* aComment, TracingPhase aPhase, uint64_t aTime,
+                  uint64_t aPID, uint64_t aThread);
 
-  void PrintBudget(const char* aName,
-                   const char* aCategory,
-                   uint64_t aDuration,
-                   uint64_t aPID,
-                   uint64_t aThread,
-                   uint64_t aFrames,
+  void PrintBudget(const char* aName, const char* aCategory, uint64_t aDuration,
+                   uint64_t aPID, uint64_t aThread, uint64_t aFrames,
                    uint64_t aSampleRate);
 
   

@@ -17,12 +17,12 @@ namespace mozilla {
 
 class MSCOMInitThreadPoolListener final : public nsIThreadPoolListener {
   ~MSCOMInitThreadPoolListener() {}
-  public:
+
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITHREADPOOLLISTENER
 };
 
-} 
+}  
 
-
-#endif 
+#endif  

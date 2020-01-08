@@ -52,15 +52,14 @@ namespace mozilla {
 
 
 
-class FileBlockCache : public MediaBlockCacheBase
-{
-public:
+class FileBlockCache : public MediaBlockCacheBase {
+ public:
   FileBlockCache();
 
-protected:
+ protected:
   virtual ~FileBlockCache();
 
-public:
+ public:
   
   nsresult Init() override;
 
@@ -72,16 +71,13 @@ public:
   int32_t GetMaxBlocks() const override;
 
   
-  nsresult WriteBlock(uint32_t aBlockIndex,
-                      Span<const uint8_t> aData1,
+  nsresult WriteBlock(uint32_t aBlockIndex, Span<const uint8_t> aData1,
                       Span<const uint8_t> aData2) override;
 
   
   
   
-  nsresult Read(int64_t aOffset,
-                uint8_t* aData,
-                int32_t aLength,
+  nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
                 int32_t* aBytes) override;
 
   
@@ -93,21 +89,17 @@ public:
   
   
   struct BlockChange final {
-
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BlockChange)
 
     
     
-    explicit BlockChange(const uint8_t* aData)
-      : mSourceBlockIndex(-1)
-    {
+    explicit BlockChange(const uint8_t* aData) : mSourceBlockIndex(-1) {
       mData = MakeUnique<uint8_t[]>(BLOCK_SIZE);
       memcpy(mData.get(), aData, BLOCK_SIZE);
     }
 
     BlockChange(Span<const uint8_t> aData1, Span<const uint8_t> aData2)
-      : mSourceBlockIndex(-1)
-    {
+        : mSourceBlockIndex(-1) {
       MOZ_ASSERT(aData1.Length() + aData2.Length() == BLOCK_SIZE);
       mData = MakeUnique<uint8_t[]>(BLOCK_SIZE);
       memcpy(mData.get(), aData1.Elements(), aData1.Length());
@@ -117,27 +109,22 @@ public:
     
     
     explicit BlockChange(int32_t aSourceBlockIndex)
-      : mSourceBlockIndex(aSourceBlockIndex) {}
+        : mSourceBlockIndex(aSourceBlockIndex) {}
 
     UniquePtr<uint8_t[]> mData;
     const int32_t mSourceBlockIndex;
 
-    bool IsMove() const {
-      return mSourceBlockIndex != -1;
-    }
+    bool IsMove() const { return mSourceBlockIndex != -1; }
     bool IsWrite() const {
-      return mSourceBlockIndex == -1 &&
-             mData.get() != nullptr;
+      return mSourceBlockIndex == -1 && mData.get() != nullptr;
     }
 
-  private:
+   private:
     
-    ~BlockChange()
-    {
-    }
+    ~BlockChange() {}
   };
 
-private:
+ private:
   int64_t BlockIndexToOffset(int32_t aBlockIndex) {
     return static_cast<int64_t>(aBlockIndex) * BLOCK_SIZE;
   }
@@ -155,14 +142,11 @@ private:
   
   Mutex mFileMutex;
   
-  nsresult MoveBlockInFile(int32_t aSourceBlockIndex,
-                           int32_t aDestBlockIndex);
+  nsresult MoveBlockInFile(int32_t aSourceBlockIndex, int32_t aDestBlockIndex);
   
   nsresult Seek(int64_t aOffset);
   
-  nsresult ReadFromFile(int64_t aOffset,
-                        uint8_t* aDest,
-                        int32_t aBytesToRead,
+  nsresult ReadFromFile(int64_t aOffset, uint8_t* aDest, int32_t aBytesToRead,
                         int32_t& aBytesRead);
   nsresult WriteBlockToFile(int32_t aBlockIndex, const uint8_t* aBlockData);
   
@@ -186,7 +170,7 @@ private:
   
   
   
-  nsTArray< RefPtr<BlockChange> > mBlockChanges;
+  nsTArray<RefPtr<BlockChange> > mBlockChanges;
   
   
   
@@ -205,6 +189,6 @@ private:
   bool mInitialized = false;
 };
 
-} 
+}  
 
 #endif 

@@ -20,7 +20,7 @@ namespace mozilla {
 namespace gmp {
 
 class SandboxStarter {
-public:
+ public:
   virtual ~SandboxStarter() {}
   virtual bool Start(const char* aLibPath) = 0;
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
@@ -33,7 +33,7 @@ public:
 
 
 class GMPAdapter {
-public:
+ public:
   virtual ~GMPAdapter() {}
   
   
@@ -42,10 +42,8 @@ public:
 
   
   virtual GMPErr GMPInit(const GMPPlatformAPI* aPlatformAPI) = 0;
-  virtual GMPErr GMPGetAPI(const char* aAPIName,
-                           void* aHostAPI,
-                           void** aPluginAPI,
-                           uint32_t aDecryptorId) = 0;
+  virtual GMPErr GMPGetAPI(const char* aAPIName, void* aHostAPI,
+                           void** aPluginAPI, uint32_t aDecryptorId) = 0;
   virtual void GMPShutdown() = 0;
 };
 
@@ -53,22 +51,18 @@ public:
 
 
 class GMPLoader {
-public:
+ public:
   GMPLoader();
 
   
   
   
   
-  bool Load(const char* aUTF8LibPath,
-            uint32_t aLibPathLen,
-            const GMPPlatformAPI* aPlatformAPI,
-            GMPAdapter* aAdapter = nullptr);
+  bool Load(const char* aUTF8LibPath, uint32_t aLibPathLen,
+            const GMPPlatformAPI* aPlatformAPI, GMPAdapter* aAdapter = nullptr);
 
   
-  GMPErr GetAPI(const char* aAPIName,
-                void* aHostAPI,
-                void** aPluginAPI,
+  GMPErr GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI,
                 uint32_t aDecryptorId);
 
   
@@ -84,12 +78,12 @@ public:
 
   bool CanSandbox() const;
 
-private:
+ private:
   UniquePtr<SandboxStarter> mSandboxStarter;
   UniquePtr<GMPAdapter> mAdapter;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

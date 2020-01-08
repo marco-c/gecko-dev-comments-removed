@@ -10,40 +10,37 @@
 #include "mozilla/camera/PCameras.h"
 
 namespace webrtc {
-  class VideoFrame;
+class VideoFrame;
 }
 
-namespace mozilla
-{
-  class ShmemBuffer;
+namespace mozilla {
+class ShmemBuffer;
 
 
 
 
 
 class VideoFrameUtils {
-public:
+ public:
+  
+  
+  static size_t TotalRequiredBufferSize(const webrtc::VideoFrame& frame);
+
+  
+  static void InitFrameBufferProperties(
+      const webrtc::VideoFrame& aVideoFrame,
+      camera::VideoFrameProperties& aDestProperties);
 
   
   
-  static size_t TotalRequiredBufferSize(const webrtc::VideoFrame & frame);
-
-  
-  static void InitFrameBufferProperties(const webrtc::VideoFrame& aVideoFrame,
-                camera::VideoFrameProperties & aDestProperties);
-
-  
-  
-  static void CopyVideoFrameBuffers(uint8_t * aDestBuffer,
-                         const size_t aDestBufferSize,
-                         const webrtc::VideoFrame & aVideoFrame);
+  static void CopyVideoFrameBuffers(uint8_t* aDestBuffer,
+                                    const size_t aDestBufferSize,
+                                    const webrtc::VideoFrame& aVideoFrame);
 
   
   
-  static void CopyVideoFrameBuffers(ShmemBuffer & aDestShmem,
-                         const webrtc::VideoFrame & aVideoFrame);
-
-
+  static void CopyVideoFrameBuffers(ShmemBuffer& aDestShmem,
+                                    const webrtc::VideoFrame& aVideoFrame);
 };
 
 } 

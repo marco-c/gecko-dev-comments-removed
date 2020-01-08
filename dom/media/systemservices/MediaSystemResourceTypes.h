@@ -14,10 +14,10 @@ enum class MediaSystemResourceType : uint32_t {
   AUDIO_DECODER,  
   VIDEO_ENCODER,
   AUDIO_ENCODER,  
-  CAMERA,          
+  CAMERA,         
   INVALID_RESOURCE,
 };
 
-} 
+}  
 
 #endif

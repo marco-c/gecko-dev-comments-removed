@@ -15,14 +15,13 @@ namespace mozilla {
 
 namespace dom {
 class HTMLMediaElement;
-} 
+}  
 
 
 
 
 
-struct DDLifetime
-{
+struct DDLifetime {
   const DDLogObject mObject;
   const DDMessageIndex mConstructionIndex;
   const DDTimeStamp mConstructionTimeStamp;
@@ -45,24 +44,19 @@ struct DDLifetime
   
   int32_t mTag;
 
-  DDLifetime(DDLogObject aObject,
-             DDMessageIndex aConstructionIndex,
-             DDTimeStamp aConstructionTimeStamp,
-             int32_t aTag)
-    : mObject(aObject)
-    , mConstructionIndex(aConstructionIndex)
-    , mConstructionTimeStamp(aConstructionTimeStamp)
-    , mDestructionIndex(0)
-    , mMediaElement(nullptr)
-    , mDerivedObjectLinkingIndex(0)
-    , mTag(aTag)
-  {
-  }
+  DDLifetime(DDLogObject aObject, DDMessageIndex aConstructionIndex,
+             DDTimeStamp aConstructionTimeStamp, int32_t aTag)
+      : mObject(aObject),
+        mConstructionIndex(aConstructionIndex),
+        mConstructionTimeStamp(aConstructionTimeStamp),
+        mDestructionIndex(0),
+        mMediaElement(nullptr),
+        mDerivedObjectLinkingIndex(0),
+        mTag(aTag) {}
 
   
   
-  bool IsAliveAt(DDMessageIndex aIndex) const
-  {
+  bool IsAliveAt(DDMessageIndex aIndex) const {
     return aIndex >= mConstructionIndex &&
            (!mDestructionTimeStamp || aIndex <= mDestructionIndex);
   }
@@ -73,6 +67,6 @@ struct DDLifetime
   nsCString Printf() const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

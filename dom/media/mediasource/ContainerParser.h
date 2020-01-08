@@ -19,9 +19,8 @@ class SourceBufferResource;
 
 DDLoggedTypeDeclName(ContainerParser);
 
-class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser>
-{
-public:
+class ContainerParser : public DecoderDoctorLifeLogger<ContainerParser> {
+ public:
   explicit ContainerParser(const MediaContainerType& aType);
   virtual ~ContainerParser();
 
@@ -46,7 +45,8 @@ public:
   
   
   virtual MediaResult ParseStartAndEndTimestamps(MediaByteBuffer* aData,
-                                                 int64_t& aStart, int64_t& aEnd);
+                                                 int64_t& aStart,
+                                                 int64_t& aEnd);
 
   
   
@@ -57,10 +57,7 @@ public:
 
   MediaByteBuffer* InitData();
 
-  bool HasInitData()
-  {
-    return mHasInitData;
-  }
+  bool HasInitData() { return mHasInitData; }
 
   
   
@@ -80,7 +77,7 @@ public:
 
   const MediaContainerType& ContainerType() const { return mType; }
 
-protected:
+ protected:
   RefPtr<MediaByteBuffer> mInitData;
   RefPtr<SourceBufferResource> mResource;
   bool mHasInitData;
@@ -92,6 +89,6 @@ protected:
   const MediaContainerType mType;
 };
 
-} 
+}  
 
 #endif 

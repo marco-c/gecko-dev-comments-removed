@@ -15,9 +15,8 @@
 namespace mozilla {
 
 
-class DDLifetimes
-{
-public:
+class DDLifetimes {
+ public:
   
   
   DDLifetime* FindLifetime(const DDLogObject& aObject,
@@ -29,8 +28,7 @@ public:
                                  const DDMessageIndex& aIndex) const;
 
   
-  DDLifetime& CreateLifetime(const DDLogObject& aObject,
-                             DDMessageIndex aIndex,
+  DDLifetime& CreateLifetime(const DDLogObject& aObject, DDMessageIndex aIndex,
                              const DDTimeStamp& aConstructionTimeStamp);
 
   
@@ -46,18 +44,16 @@ public:
   
   
   
-  template<typename F>
-  void Visit(const dom::HTMLMediaElement* aMediaElement,
-             F&& aF,
-             bool aOnlyHTMLMediaElement = false) const
-  {
+  template <typename F>
+  void Visit(const dom::HTMLMediaElement* aMediaElement, F&& aF,
+             bool aOnlyHTMLMediaElement = false) const {
     for (auto iter = mLifetimes.ConstIter(); !iter.Done(); iter.Next()) {
       for (const DDLifetime& lifetime : *iter.UserData()) {
         if (lifetime.mMediaElement == aMediaElement) {
           if (aOnlyHTMLMediaElement) {
             if (lifetime.mObject.Pointer() == aMediaElement &&
                 lifetime.mObject.TypeName() ==
-                  DDLoggedTypeTraits<dom::HTMLMediaElement>::Name()) {
+                    DDLoggedTypeTraits<dom::HTMLMediaElement>::Name()) {
               aF(lifetime);
               break;
             }
@@ -75,9 +71,9 @@ public:
   
   
   
-  template<typename F>
-  bool VisitBreakable(const dom::HTMLMediaElement* aMediaElement, F&& aF) const
-  {
+  template <typename F>
+  bool VisitBreakable(const dom::HTMLMediaElement* aMediaElement,
+                      F&& aF) const {
     for (auto iter = mLifetimes.ConstIter(); !iter.Done(); iter.Next()) {
       for (const DDLifetime& lifetime : *iter.UserData()) {
         if (lifetime.mMediaElement == aMediaElement) {
@@ -93,38 +89,28 @@ public:
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   
-  class DDLogObjectHashKey : public PLDHashEntryHdr
-  {
-  public:
+  class DDLogObjectHashKey : public PLDHashEntryHdr {
+   public:
     typedef const DDLogObject& KeyType;
     typedef const DDLogObject* KeyTypePointer;
 
-    explicit DDLogObjectHashKey(KeyTypePointer aKey)
-      : mValue(*aKey)
-    {
-    }
+    explicit DDLogObjectHashKey(KeyTypePointer aKey) : mValue(*aKey) {}
     DDLogObjectHashKey(const DDLogObjectHashKey& aToCopy)
-      : mValue(aToCopy.mValue)
-    {
-    }
+        : mValue(aToCopy.mValue) {}
     ~DDLogObjectHashKey() {}
 
     KeyType GetKey() const { return mValue; }
     bool KeyEquals(KeyTypePointer aKey) const { return *aKey == mValue; }
 
     static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-    static PLDHashNumber HashKey(KeyTypePointer aKey)
-    {
+    static PLDHashNumber HashKey(KeyTypePointer aKey) {
       return HashBytes(aKey, sizeof(DDLogObject));
     }
-    enum
-    {
-      ALLOW_MEMMOVE = true
-    };
+    enum { ALLOW_MEMMOVE = true };
 
-  private:
+   private:
     const DDLogObject mValue;
   };
 
@@ -137,6 +123,6 @@ private:
   nsClassHashtable<DDLogObjectHashKey, LifetimesForObject> mLifetimes;
 };
 
-} 
+}  
 
-#endif 
+#endif  

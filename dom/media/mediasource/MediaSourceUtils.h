@@ -14,6 +14,6 @@ namespace mozilla {
 
 nsCString DumpTimeRanges(const media::TimeIntervals& aRanges);
 
-} 
+}  
 
 #endif 

@@ -15,25 +15,20 @@ namespace dom {
 class VideoTrackList;
 class VideoStreamTrack;
 
-class VideoTrack : public MediaTrack
-{
-public:
-  VideoTrack(nsIGlobalObject* aOwnerGlobal,
-             const nsAString& aId,
-             const nsAString& aKind,
-             const nsAString& aLabel,
+class VideoTrack : public MediaTrack {
+ public:
+  VideoTrack(nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+             const nsAString& aKind, const nsAString& aLabel,
              const nsAString& aLanguage,
              VideoStreamTrack* aStreamTarck = nullptr);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(VideoTrack, MediaTrack)
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
-  VideoTrack* AsVideoTrack() override
-  {
-    return this;
-  }
+  VideoTrack* AsVideoTrack() override { return this; }
 
   
   
@@ -48,24 +43,21 @@ public:
   VideoStreamTrack* GetVideoStreamTrack() { return mVideoStreamTrack; }
 
   
-  bool Selected() const
-  {
-    return mSelected;
-  }
+  bool Selected() const { return mSelected; }
 
   
   
   
   void SetSelected(bool aSelected);
 
-private:
+ private:
   virtual ~VideoTrack();
 
   bool mSelected;
   RefPtr<VideoStreamTrack> mVideoStreamTrack;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

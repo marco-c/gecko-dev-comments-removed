@@ -21,20 +21,18 @@ namespace mozilla {
 
 
 class AudioBlockBuffer final : public ThreadSharedObject {
-public:
-
+ public:
   virtual AudioBlockBuffer* AsAudioBlockBuffer() override { return this; };
 
   uint32_t ChannelsAllocated() const { return mChannelsAllocated; }
-  float* ChannelData(uint32_t aChannel) const
-  {
-    float* base = reinterpret_cast<float*>(((uintptr_t)(this + 1) + 15) & ~0x0F);
+  float* ChannelData(uint32_t aChannel) const {
+    float* base =
+        reinterpret_cast<float*>(((uintptr_t)(this + 1) + 15) & ~0x0F);
     ASSERT_ALIGNED16(base);
     return base + aChannel * WEBAUDIO_BLOCK_SIZE;
   }
 
-  static already_AddRefed<AudioBlockBuffer> Create(uint32_t aChannelCount)
-  {
+  static already_AddRefed<AudioBlockBuffer> Create(uint32_t aChannelCount) {
     CheckedInt<size_t> size = WEBAUDIO_BLOCK_SIZE;
     size *= aChannelCount;
     size *= sizeof(float);
@@ -46,7 +44,10 @@ public:
 
     void* m = operator new(size.value());
     RefPtr<AudioBlockBuffer> p = new (m) AudioBlockBuffer(aChannelCount);
-    NS_ASSERTION((reinterpret_cast<char*>(p.get() + 1) - reinterpret_cast<char*>(p.get())) % 4 == 0,
+    NS_ASSERTION((reinterpret_cast<char*>(p.get() + 1) -
+                  reinterpret_cast<char*>(p.get())) %
+                         4 ==
+                     0,
                  "AudioBlockBuffers should be at least 4-byte aligned");
     return p.forget();
   }
@@ -60,8 +61,7 @@ public:
   
   
   
-  bool HasLastingShares() const
-  {
+  bool HasLastingShares() const {
     
     
     
@@ -81,28 +81,23 @@ public:
     return count != mDownstreamRefCount + 1;
   }
 
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
-  {
+  virtual size_t SizeOfIncludingThis(
+      MallocSizeOf aMallocSizeOf) const override {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-private:
+ private:
   explicit AudioBlockBuffer(uint32_t aChannelsAllocated)
-    : mChannelsAllocated(aChannelsAllocated) {}
+      : mChannelsAllocated(aChannelsAllocated) {}
   ~AudioBlockBuffer() override { MOZ_ASSERT(mDownstreamRefCount == 0); }
 
   nsAutoRefCnt mDownstreamRefCount;
   const uint32_t mChannelsAllocated;
 };
 
-AudioBlock::~AudioBlock()
-{
-  ClearDownstreamMark();
-}
+AudioBlock::~AudioBlock() { ClearDownstreamMark(); }
 
-void
-AudioBlock::SetBuffer(ThreadSharedObject* aNewBuffer)
-{
+void AudioBlock::SetBuffer(ThreadSharedObject* aNewBuffer) {
   if (aNewBuffer == mBuffer) {
     return;
   }
@@ -122,25 +117,21 @@ AudioBlock::SetBuffer(ThreadSharedObject* aNewBuffer)
   }
 }
 
-void
-AudioBlock::ClearDownstreamMark() {
+void AudioBlock::ClearDownstreamMark() {
   if (mBufferIsDownstreamRef) {
     mBuffer->AsAudioBlockBuffer()->DownstreamRefRemoved();
     mBufferIsDownstreamRef = false;
   }
 }
 
-bool
-AudioBlock::CanWrite() {
+bool AudioBlock::CanWrite() {
   
   
   return !mBufferIsDownstreamRef &&
-    !mBuffer->AsAudioBlockBuffer()->HasLastingShares();
+         !mBuffer->AsAudioBlockBuffer()->HasLastingShares();
 }
 
-void
-AudioBlock::AllocateChannels(uint32_t aChannelCount)
-{
+void AudioBlock::AllocateChannels(uint32_t aChannelCount) {
   MOZ_ASSERT(mDuration == WEBAUDIO_BLOCK_SIZE);
 
   if (mBufferIsDownstreamRef) {
@@ -172,4 +163,4 @@ AudioBlock::AllocateChannels(uint32_t aChannelCount)
   mBufferFormat = AUDIO_FORMAT_FLOAT32;
 }
 
-} 
+}  

@@ -14,9 +14,8 @@ namespace mozilla {
 class EbmlComposer;
 
 
-class VorbisMetadata : public TrackMetadataBase
-{
-public:
+class VorbisMetadata : public TrackMetadataBase {
+ public:
   nsTArray<uint8_t> mData;
   int32_t mChannels;
   float mSamplingFrequency;
@@ -24,9 +23,8 @@ public:
 };
 
 
-class VP8Metadata : public TrackMetadataBase
-{
-public:
+class VP8Metadata : public TrackMetadataBase {
+ public:
   int32_t mWidth;
   int32_t mHeight;
   int32_t mDisplayWidth;
@@ -40,16 +38,16 @@ public:
 
 
 
-class WebMWriter : public ContainerWriter
-{
-public:
+
+class WebMWriter : public ContainerWriter {
+ public:
   
   
   explicit WebMWriter(uint32_t aTrackTypes);
   virtual ~WebMWriter();
 
   
-  nsresult WriteEncodedTrack(const EncodedFrameContainer &aData,
+  nsresult WriteEncodedTrack(const EncodedFrameContainer& aData,
                              uint32_t aFlags = 0) override;
 
   
@@ -61,7 +59,7 @@ public:
   
   nsresult SetMetadata(TrackMetadataBase* aMetadata) override;
 
-private:
+ private:
   nsAutoPtr<EbmlComposer> mEbmlComposer;
 
   
@@ -69,6 +67,6 @@ private:
   uint8_t mMetadataRequiredFlag;
 };
 
-} 
+}  
 
 #endif

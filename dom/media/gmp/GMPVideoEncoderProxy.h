@@ -15,7 +15,7 @@
 #include "GMPUtils.h"
 
 class GMPVideoEncoderCallbackProxy : public GMPCallbackBase {
-public:
+ public:
   virtual ~GMPVideoEncoderCallbackProxy() {}
   virtual void Encoded(GMPVideoEncodedFrame* aEncodedFrame,
                        const nsTArray<uint8_t>& aCodecSpecificInfo) = 0;
@@ -34,7 +34,7 @@ public:
 
 
 class GMPVideoEncoderProxy {
-public:
+ public:
   virtual GMPErr InitEncode(const GMPVideoCodec& aCodecSettings,
                             const nsTArray<uint8_t>& aCodecSpecific,
                             GMPVideoEncoderCallbackProxy* aCallback,
@@ -53,4 +53,4 @@ public:
   virtual void Close() = 0;
 };
 
-#endif 
+#endif  

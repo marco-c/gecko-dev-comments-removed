@@ -15,11 +15,10 @@ extern "C" {
 
 
 
-void MOZ_EXPORT
-mozilla_set_coreaudio_notification_runloop_if_needed();
+void MOZ_EXPORT mozilla_set_coreaudio_notification_runloop_if_needed();
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif 
+#endif  

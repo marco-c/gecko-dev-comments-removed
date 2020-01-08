@@ -39,7 +39,9 @@ namespace mozilla {
 LazyLogModule gMediaCacheLog("MediaCache");
 #define LOG(...) MOZ_LOG(gMediaCacheLog, LogLevel::Debug, (__VA_ARGS__))
 #define LOGI(...) MOZ_LOG(gMediaCacheLog, LogLevel::Info, (__VA_ARGS__))
-#define LOGE(...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(__VA_ARGS__).get(), nullptr, __FILE__, __LINE__)
+#define LOGE(...)                                                              \
+  NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(__VA_ARGS__).get(), nullptr, \
+                __FILE__, __LINE__)
 
 
 
@@ -81,16 +83,15 @@ static const uint32_t FREE_BLOCK_SCAN_LIMIT = 16;
 #endif
 
 class MediaCacheFlusher final : public nsIObserver,
-                                public nsSupportsWeakReference
-{
-public:
+                                public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
   static void RegisterMediaCache(MediaCache* aMediaCache);
   static void UnregisterMediaCache(MediaCache* aMediaCache);
 
-private:
+ private:
   MediaCacheFlusher() {}
   ~MediaCacheFlusher() {}
 
@@ -103,34 +104,32 @@ private:
 };
 
  StaticRefPtr<MediaCacheFlusher>
-  MediaCacheFlusher::gMediaCacheFlusher;
+    MediaCacheFlusher::gMediaCacheFlusher;
 
 NS_IMPL_ISUPPORTS(MediaCacheFlusher, nsIObserver, nsISupportsWeakReference)
 
- void
-MediaCacheFlusher::RegisterMediaCache(MediaCache* aMediaCache)
-{
+ void MediaCacheFlusher::RegisterMediaCache(
+    MediaCache* aMediaCache) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   if (!gMediaCacheFlusher) {
     gMediaCacheFlusher = new MediaCacheFlusher();
 
     nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
+        mozilla::services::GetObserverService();
     if (observerService) {
-      observerService->AddObserver(
-        gMediaCacheFlusher, "last-pb-context-exited", true);
-      observerService->AddObserver(
-        gMediaCacheFlusher, "cacheservice:empty-cache", true);
+      observerService->AddObserver(gMediaCacheFlusher, "last-pb-context-exited",
+                                   true);
+      observerService->AddObserver(gMediaCacheFlusher,
+                                   "cacheservice:empty-cache", true);
     }
   }
 
   gMediaCacheFlusher->mMediaCaches.AppendElement(aMediaCache);
 }
 
- void
-MediaCacheFlusher::UnregisterMediaCache(MediaCache* aMediaCache)
-{
+ void MediaCacheFlusher::UnregisterMediaCache(
+    MediaCache* aMediaCache) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   gMediaCacheFlusher->mMediaCaches.RemoveElement(aMediaCache);
@@ -140,11 +139,10 @@ MediaCacheFlusher::UnregisterMediaCache(MediaCache* aMediaCache)
   }
 }
 
-class MediaCache
-{
+class MediaCache {
   using AutoLock = MonitorAutoLock;
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaCache)
 
   friend class MediaCacheStream::BlockList;
@@ -173,11 +171,8 @@ public:
   
   
   
-  nsresult ReadCacheFile(AutoLock&,
-                         int64_t aOffset,
-                         void* aData,
-                         int32_t aLength,
-                         int32_t* aBytes);
+  nsresult ReadCacheFile(AutoLock&, int64_t aOffset, void* aData,
+                         int32_t aLength, int32_t* aBytes);
 
   
   int64_t AllocateResourceID(AutoLock&) { return ++mNextResourceID; }
@@ -193,12 +188,9 @@ public:
   void ReleaseStreamBlocks(AutoLock&, MediaCacheStream* aStream);
   
   void AllocateAndWriteBlock(
-    AutoLock&,
-    MediaCacheStream* aStream,
-    int32_t aStreamBlockIndex,
-    MediaCacheStream::ReadMode aMode,
-    Span<const uint8_t> aData1,
-    Span<const uint8_t> aData2 = Span<const uint8_t>());
+      AutoLock&, MediaCacheStream* aStream, int32_t aStreamBlockIndex,
+      MediaCacheStream::ReadMode aMode, Span<const uint8_t> aData1,
+      Span<const uint8_t> aData2 = Span<const uint8_t>());
 
   
   
@@ -212,15 +204,11 @@ public:
   
   
   
-  void NoteBlockUsage(AutoLock&,
-                      MediaCacheStream* aStream,
-                      int32_t aBlockIndex,
-                      int64_t aStreamOffset,
-                      MediaCacheStream::ReadMode aMode,
+  void NoteBlockUsage(AutoLock&, MediaCacheStream* aStream, int32_t aBlockIndex,
+                      int64_t aStreamOffset, MediaCacheStream::ReadMode aMode,
                       TimeStamp aNow);
   
-  void AddBlockOwnerAsReadahead(AutoLock&,
-                                int32_t aBlockIndex,
+  void AddBlockOwnerAsReadahead(AutoLock&, int32_t aBlockIndex,
                                 MediaCacheStream* aStream,
                                 int32_t aStreamBlockIndex);
 
@@ -247,8 +235,7 @@ public:
   void Verify(AutoLock&) {}
 #endif
 
-  mozilla::Monitor& Monitor()
-  {
+  mozilla::Monitor& Monitor() {
     
     
     
@@ -260,18 +247,13 @@ public:
 
 
 
-  class ResourceStreamIterator
-  {
-  public:
+  class ResourceStreamIterator {
+   public:
     ResourceStreamIterator(MediaCache* aMediaCache, int64_t aResourceID)
-      : mMediaCache(aMediaCache)
-      , mResourceID(aResourceID)
-      , mNext(0)
-    {
+        : mMediaCache(aMediaCache), mResourceID(aResourceID), mNext(0) {
       aMediaCache->mMonitor.AssertCurrentThreadOwns();
     }
-    MediaCacheStream* Next(AutoLock& aLock)
-    {
+    MediaCacheStream* Next(AutoLock& aLock) {
       while (mNext < mMediaCache->mStreams.Length()) {
         MediaCacheStream* stream = mMediaCache->mStreams[mNext];
         ++mNext;
@@ -280,19 +262,21 @@ public:
       }
       return nullptr;
     }
-  private:
+
+   private:
     MediaCache* mMediaCache;
-    int64_t  mResourceID;
+    int64_t mResourceID;
     uint32_t mNext;
   };
 
-protected:
+ protected:
   explicit MediaCache(MediaBlockCacheBase* aCache)
-    : mMonitor("MediaCache.mMonitor")
-    , mBlockCache(aCache)
-    , mUpdateQueued(false)
+      : mMonitor("MediaCache.mMonitor"),
+        mBlockCache(aCache),
+        mUpdateQueued(false)
 #ifdef DEBUG
-    , mInUpdate(false)
+        ,
+        mInUpdate(false)
 #endif
   {
     NS_ASSERTION(NS_IsMainThread(), "Only construct MediaCache on main thread");
@@ -300,27 +284,24 @@ protected:
     MediaCacheFlusher::RegisterMediaCache(this);
   }
 
-  ~MediaCache()
-  {
+  ~MediaCache() {
     NS_ASSERTION(NS_IsMainThread(), "Only destroy MediaCache on main thread");
     if (this == gMediaCache) {
       LOG("~MediaCache(Global file-backed MediaCache)");
       
       gMediaCache = nullptr;
       
-      LOG("MediaCache::~MediaCache(this=%p) MEDIACACHE_WATERMARK_KB=%u",
-          this,
+      LOG("MediaCache::~MediaCache(this=%p) MEDIACACHE_WATERMARK_KB=%u", this,
           unsigned(mIndexWatermark * MediaCache::BLOCK_SIZE / 1024));
       Telemetry::Accumulate(
-        Telemetry::HistogramID::MEDIACACHE_WATERMARK_KB,
-        uint32_t(mIndexWatermark * MediaCache::BLOCK_SIZE / 1024));
-      LOG(
-        "MediaCache::~MediaCache(this=%p) MEDIACACHE_BLOCKOWNERS_WATERMARK=%u",
-        this,
-        unsigned(mBlockOwnersWatermark));
+          Telemetry::HistogramID::MEDIACACHE_WATERMARK_KB,
+          uint32_t(mIndexWatermark * MediaCache::BLOCK_SIZE / 1024));
+      LOG("MediaCache::~MediaCache(this=%p) "
+          "MEDIACACHE_BLOCKOWNERS_WATERMARK=%u",
+          this, unsigned(mBlockOwnersWatermark));
       Telemetry::Accumulate(
-        Telemetry::HistogramID::MEDIACACHE_BLOCKOWNERS_WATERMARK,
-        mBlockOwnersWatermark);
+          Telemetry::HistogramID::MEDIACACHE_BLOCKOWNERS_WATERMARK,
+          mBlockOwnersWatermark);
     } else {
       LOG("~MediaCache(Memory-backed MediaCache %p)", this);
     }
@@ -335,8 +316,7 @@ protected:
   
   
   
-  int32_t FindBlockForIncomingData(AutoLock&,
-                                   TimeStamp aNow,
+  int32_t FindBlockForIncomingData(AutoLock&, TimeStamp aNow,
                                    MediaCacheStream* aStream,
                                    int32_t aStreamBlockIndex);
   
@@ -346,8 +326,7 @@ protected:
   
   
   
-  int32_t FindReusableBlock(AutoLock&,
-                            TimeStamp aNow,
+  int32_t FindReusableBlock(AutoLock&, TimeStamp aNow,
                             MediaCacheStream* aForStream,
                             int32_t aForStreamBlock,
                             int32_t aMaxSearchBlockIndex);
@@ -356,8 +335,7 @@ protected:
   
   
   
-  void AppendMostReusableBlock(AutoLock&,
-                               BlockList* aBlockList,
+  void AppendMostReusableBlock(AutoLock&, BlockList* aBlockList,
                                nsTArray<uint32_t>* aResult,
                                int32_t aBlockIndexLimit);
 
@@ -383,11 +361,11 @@ protected:
     MediaCacheStream* mStream = nullptr;
     
     
-    uint32_t          mStreamBlock = UINT32_MAX;
+    uint32_t mStreamBlock = UINT32_MAX;
     
     
-    TimeStamp         mLastUseTime;
-    BlockClass        mClass = READAHEAD_BLOCK;
+    TimeStamp mLastUseTime;
+    BlockClass mClass = READAHEAD_BLOCK;
   };
 
   struct Block {
@@ -400,27 +378,25 @@ protected:
   BlockList* GetListForBlock(AutoLock&, BlockOwner* aBlock);
   
   
-  BlockOwner* GetBlockOwner(AutoLock&,
-                            int32_t aBlockIndex,
+  BlockOwner* GetBlockOwner(AutoLock&, int32_t aBlockIndex,
                             MediaCacheStream* aStream);
   
-  bool IsBlockFree(int32_t aBlockIndex)
-  { return mIndex[aBlockIndex].mOwners.IsEmpty(); }
+  bool IsBlockFree(int32_t aBlockIndex) {
+    return mIndex[aBlockIndex].mOwners.IsEmpty();
+  }
   
   
   void FreeBlock(AutoLock&, int32_t aBlock);
   
   
-  void RemoveBlockOwner(AutoLock&,
-                        int32_t aBlockIndex,
+  void RemoveBlockOwner(AutoLock&, int32_t aBlockIndex,
                         MediaCacheStream* aStream);
   
   
   void SwapBlocks(AutoLock&, int32_t aBlockIndex1, int32_t aBlockIndex2);
   
   
-  void InsertReadaheadBlock(AutoLock&,
-                            BlockOwner* aBlockOwner,
+  void InsertReadaheadBlock(AutoLock&, BlockOwner* aBlockOwner,
                             int32_t aBlockIndex);
 
   
@@ -460,11 +436,11 @@ protected:
   
   RefPtr<MediaBlockCacheBase> mBlockCache;
   
-  BlockList       mFreeBlocks;
+  BlockList mFreeBlocks;
   
-  bool            mUpdateQueued;
+  bool mUpdateQueued;
 #ifdef DEBUG
-  bool            mInUpdate;
+  bool mInUpdate;
 #endif
   
   nsTArray<int64_t> mSuspendedStatusToNotify;
@@ -475,12 +451,11 @@ protected:
   
   static bool sThreadInit;
 
-private:
+ private:
   
   
   friend nsCString MediaCacheStream::GetDebugInfo();
-  mozilla::Monitor& GetMonitorOnTheMainThread()
-  {
+  mozilla::Monitor& GetMonitorOnTheMainThread() {
     MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
     return mMonitor;
   }
@@ -493,8 +468,8 @@ private:
  bool MediaCache::sThreadInit = false;
 
 NS_IMETHODIMP
-MediaCacheFlusher::Observe(nsISupports *aSubject, char const *aTopic, char16_t const *aData)
-{
+MediaCacheFlusher::Observe(nsISupports* aSubject, char const* aTopic,
+                           char16_t const* aData) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   if (strcmp(aTopic, "last-pb-context-exited") == 0) {
@@ -514,23 +489,19 @@ MediaCacheFlusher::Observe(nsISupports *aSubject, char const *aTopic, char16_t c
 
 MediaCacheStream::MediaCacheStream(ChannelMediaResource* aClient,
                                    bool aIsPrivateBrowsing)
-  : mMediaCache(nullptr)
-  , mClient(aClient)
-  , mIsTransportSeekable(false)
-  , mCacheSuspended(false)
-  , mChannelEnded(false)
-  , mStreamOffset(0)
-  , mPlaybackBytesPerSecond(10000)
-  , mPinCount(0)
-  , mNotifyDataEndedStatus(NS_ERROR_NOT_INITIALIZED)
-  , mMetadataInPartialBlockBuffer(false)
-  , mIsPrivateBrowsing(aIsPrivateBrowsing)
-{
-}
+    : mMediaCache(nullptr),
+      mClient(aClient),
+      mIsTransportSeekable(false),
+      mCacheSuspended(false),
+      mChannelEnded(false),
+      mStreamOffset(0),
+      mPlaybackBytesPerSecond(10000),
+      mPinCount(0),
+      mNotifyDataEndedStatus(NS_ERROR_NOT_INITIALIZED),
+      mMetadataInPartialBlockBuffer(false),
+      mIsPrivateBrowsing(aIsPrivateBrowsing) {}
 
-size_t MediaCacheStream::SizeOfExcludingThis(
-                                MallocSizeOf aMallocSizeOf) const
-{
+size_t MediaCacheStream::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
   
   
   size_t size = mBlocks.ShallowSizeOfExcludingThis(aMallocSizeOf);
@@ -543,13 +514,11 @@ size_t MediaCacheStream::SizeOfExcludingThis(
 }
 
 size_t MediaCacheStream::BlockList::SizeOfExcludingThis(
-                                MallocSizeOf aMallocSizeOf) const
-{
+    MallocSizeOf aMallocSizeOf) const {
   return mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
 }
 
-void MediaCacheStream::BlockList::AddFirstBlock(int32_t aBlock)
-{
+void MediaCacheStream::BlockList::AddFirstBlock(int32_t aBlock) {
   NS_ASSERTION(!mEntries.GetEntry(aBlock), "Block already in list");
   Entry* entry = mEntries.PutEntry(aBlock);
 
@@ -565,8 +534,7 @@ void MediaCacheStream::BlockList::AddFirstBlock(int32_t aBlock)
   ++mCount;
 }
 
-void MediaCacheStream::BlockList::AddAfter(int32_t aBlock, int32_t aBefore)
-{
+void MediaCacheStream::BlockList::AddAfter(int32_t aBlock, int32_t aBefore) {
   NS_ASSERTION(!mEntries.GetEntry(aBlock), "Block already in list");
   Entry* entry = mEntries.PutEntry(aBlock);
 
@@ -580,13 +548,13 @@ void MediaCacheStream::BlockList::AddAfter(int32_t aBlock, int32_t aBefore)
   ++mCount;
 }
 
-void MediaCacheStream::BlockList::RemoveBlock(int32_t aBlock)
-{
+void MediaCacheStream::BlockList::RemoveBlock(int32_t aBlock) {
   Entry* entry = mEntries.GetEntry(aBlock);
   MOZ_DIAGNOSTIC_ASSERT(entry, "Block not in list");
 
   if (entry->mNextBlock == aBlock) {
-    MOZ_DIAGNOSTIC_ASSERT(entry->mPrevBlock == aBlock, "Linked list inconsistency");
+    MOZ_DIAGNOSTIC_ASSERT(entry->mPrevBlock == aBlock,
+                          "Linked list inconsistency");
     MOZ_DIAGNOSTIC_ASSERT(mFirstBlock == aBlock, "Linked list inconsistency");
     mFirstBlock = -1;
   } else {
@@ -600,31 +568,24 @@ void MediaCacheStream::BlockList::RemoveBlock(int32_t aBlock)
   --mCount;
 }
 
-int32_t MediaCacheStream::BlockList::GetLastBlock() const
-{
-  if (mFirstBlock < 0)
-    return -1;
+int32_t MediaCacheStream::BlockList::GetLastBlock() const {
+  if (mFirstBlock < 0) return -1;
   return mEntries.GetEntry(mFirstBlock)->mPrevBlock;
 }
 
-int32_t MediaCacheStream::BlockList::GetNextBlock(int32_t aBlock) const
-{
+int32_t MediaCacheStream::BlockList::GetNextBlock(int32_t aBlock) const {
   int32_t block = mEntries.GetEntry(aBlock)->mNextBlock;
-  if (block == mFirstBlock)
-    return -1;
+  if (block == mFirstBlock) return -1;
   return block;
 }
 
-int32_t MediaCacheStream::BlockList::GetPrevBlock(int32_t aBlock) const
-{
-  if (aBlock == mFirstBlock)
-    return -1;
+int32_t MediaCacheStream::BlockList::GetPrevBlock(int32_t aBlock) const {
+  if (aBlock == mFirstBlock) return -1;
   return mEntries.GetEntry(aBlock)->mPrevBlock;
 }
 
 #ifdef DEBUG
-void MediaCacheStream::BlockList::Verify()
-{
+void MediaCacheStream::BlockList::Verify() {
   int32_t count = 0;
   if (mFirstBlock >= 0) {
     int32_t block = mFirstBlock;
@@ -642,9 +603,8 @@ void MediaCacheStream::BlockList::Verify()
 }
 #endif
 
-static void UpdateSwappedBlockIndex(int32_t* aBlockIndex,
-    int32_t aBlock1Index, int32_t aBlock2Index)
-{
+static void UpdateSwappedBlockIndex(int32_t* aBlockIndex, int32_t aBlock1Index,
+                                    int32_t aBlock2Index) {
   int32_t index = *aBlockIndex;
   if (index == aBlock1Index) {
     *aBlockIndex = aBlock2Index;
@@ -653,10 +613,8 @@ static void UpdateSwappedBlockIndex(int32_t* aBlockIndex,
   }
 }
 
-void
-MediaCacheStream::BlockList::NotifyBlockSwapped(int32_t aBlockIndex1,
-                                                  int32_t aBlockIndex2)
-{
+void MediaCacheStream::BlockList::NotifyBlockSwapped(int32_t aBlockIndex1,
+                                                     int32_t aBlockIndex2) {
   Entry* e1 = mEntries.GetEntry(aBlockIndex1);
   Entry* e2 = mEntries.GetEntry(aBlockIndex2);
   int32_t e1Prev = -1, e1Next = -1, e2Prev = -1, e2Next = -1;
@@ -710,9 +668,7 @@ MediaCacheStream::BlockList::NotifyBlockSwapped(int32_t aBlockIndex1,
   }
 }
 
-void
-MediaCache::FlushInternal(AutoLock& aLock)
-{
+void MediaCache::FlushInternal(AutoLock& aLock) {
   for (uint32_t blockIndex = 0; blockIndex < mIndex.Length(); ++blockIndex) {
     FreeBlock(aLock, blockIndex);
   }
@@ -724,39 +680,34 @@ MediaCache::FlushInternal(AutoLock& aLock)
   mBlockCache->Flush();
 }
 
-void
-MediaCache::Flush()
-{
+void MediaCache::Flush() {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCache::Flush", [self = RefPtr<MediaCache>(this)]() {
-      AutoLock lock(self->mMonitor);
-      self->FlushInternal(lock);
-    });
+      "MediaCache::Flush", [self = RefPtr<MediaCache>(this)]() {
+        AutoLock lock(self->mMonitor);
+        self->FlushInternal(lock);
+      });
   sThread->Dispatch(r.forget());
 }
 
-void
-MediaCache::CloseStreamsForPrivateBrowsing()
-{
+void MediaCache::CloseStreamsForPrivateBrowsing() {
   MOZ_ASSERT(NS_IsMainThread());
   sThread->Dispatch(NS_NewRunnableFunction(
-    "MediaCache::CloseStreamsForPrivateBrowsing",
-    [self = RefPtr<MediaCache>(this)]() {
-      AutoLock lock(self->mMonitor);
-      
-      nsTArray<MediaCacheStream*> streams(self->mStreams);
-      for (MediaCacheStream* s : streams) {
-        if (s->mIsPrivateBrowsing) {
-          s->CloseInternal(lock);
+      "MediaCache::CloseStreamsForPrivateBrowsing",
+      [self = RefPtr<MediaCache>(this)]() {
+        AutoLock lock(self->mMonitor);
+        
+        nsTArray<MediaCacheStream*> streams(self->mStreams);
+        for (MediaCacheStream* s : streams) {
+          if (s->mIsPrivateBrowsing) {
+            s->CloseInternal(lock);
+          }
         }
-      }
-    }));
+      }));
 }
 
- RefPtr<MediaCache>
-MediaCache::GetMediaCache(int64_t aContentLength)
-{
+ RefPtr<MediaCache> MediaCache::GetMediaCache(
+    int64_t aContentLength) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
   if (!sThreadInit) {
@@ -769,11 +720,9 @@ MediaCache::GetMediaCache(int64_t aContentLength)
     }
     sThread = thread.forget();
 
-    static struct ClearThread
-    {
+    static struct ClearThread {
       
-      void operator=(std::nullptr_t)
-      {
+      void operator=(std::nullptr_t) {
         nsCOMPtr<nsIThread> thread = sThread.forget();
         MOZ_ASSERT(thread);
         thread->Shutdown();
@@ -787,14 +736,14 @@ MediaCache::GetMediaCache(int64_t aContentLength)
   }
 
   if (aContentLength > 0 &&
-      aContentLength <= int64_t(StaticPrefs::MediaMemoryCacheMaxSize()) * 1024) {
+      aContentLength <=
+          int64_t(StaticPrefs::MediaMemoryCacheMaxSize()) * 1024) {
     
     RefPtr<MediaBlockCacheBase> bc = new MemoryBlockCache(aContentLength);
     nsresult rv = bc->Init();
     if (NS_SUCCEEDED(rv)) {
       RefPtr<MediaCache> mc = new MediaCache(bc);
-      LOG("GetMediaCache(%" PRIi64 ") -> Memory MediaCache %p",
-          aContentLength,
+      LOG("GetMediaCache(%" PRIi64 ") -> Memory MediaCache %p", aContentLength,
           mc.get());
       return mc;
     }
@@ -822,32 +771,24 @@ MediaCache::GetMediaCache(int64_t aContentLength)
   return gMediaCache;
 }
 
-nsresult
-MediaCache::ReadCacheFile(AutoLock&,
-                          int64_t aOffset,
-                          void* aData,
-                          int32_t aLength,
-                          int32_t* aBytes)
-{
+nsresult MediaCache::ReadCacheFile(AutoLock&, int64_t aOffset, void* aData,
+                                   int32_t aLength, int32_t* aBytes) {
   if (!mBlockCache) {
     return NS_ERROR_FAILURE;
   }
-  return mBlockCache->Read(aOffset, reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
+  return mBlockCache->Read(aOffset, reinterpret_cast<uint8_t*>(aData), aLength,
+                           aBytes);
 }
 
 
-static bool
-IsOffsetAllowed(int64_t aOffset)
-{
+static bool IsOffsetAllowed(int64_t aOffset) {
   return aOffset < (int64_t(INT32_MAX) + 1) * MediaCache::BLOCK_SIZE &&
          aOffset >= 0;
 }
 
 
 
-static int32_t
-OffsetToBlockIndexUnchecked(int64_t aOffset)
-{
+static int32_t OffsetToBlockIndexUnchecked(int64_t aOffset) {
   
   
   MOZ_ASSERT(IsOffsetAllowed(aOffset));
@@ -855,34 +796,27 @@ OffsetToBlockIndexUnchecked(int64_t aOffset)
 }
 
 
-static int32_t
-OffsetToBlockIndex(int64_t aOffset)
-{
+static int32_t OffsetToBlockIndex(int64_t aOffset) {
   return IsOffsetAllowed(aOffset) ? OffsetToBlockIndexUnchecked(aOffset) : -1;
 }
 
 
 
 
-static int32_t
-OffsetInBlock(int64_t aOffset)
-{
+static int32_t OffsetInBlock(int64_t aOffset) {
   
   
   MOZ_ASSERT(IsOffsetAllowed(aOffset));
   return int32_t(aOffset % MediaCache::BLOCK_SIZE);
 }
 
-int32_t
-MediaCache::FindBlockForIncomingData(AutoLock& aLock,
-                                     TimeStamp aNow,
-                                     MediaCacheStream* aStream,
-                                     int32_t aStreamBlockIndex)
-{
+int32_t MediaCache::FindBlockForIncomingData(AutoLock& aLock, TimeStamp aNow,
+                                             MediaCacheStream* aStream,
+                                             int32_t aStreamBlockIndex) {
   MOZ_ASSERT(sThread->IsOnCurrentThread());
 
   int32_t blockIndex =
-    FindReusableBlock(aLock, aNow, aStream, aStreamBlockIndex, INT32_MAX);
+      FindReusableBlock(aLock, aNow, aStream, aStreamBlockIndex, INT32_MAX);
 
   if (blockIndex < 0 || !IsBlockFree(blockIndex)) {
     
@@ -893,10 +827,9 @@ MediaCache::FindBlockForIncomingData(AutoLock& aLock,
     if ((mIndex.Length() < uint32_t(mBlockCache->GetMaxBlocks()) ||
          blockIndex < 0 ||
          PredictNextUseForIncomingData(aLock, aStream) >=
-           PredictNextUse(aLock, aNow, blockIndex))) {
+             PredictNextUse(aLock, aNow, blockIndex))) {
       blockIndex = mIndex.Length();
-      if (!mIndex.AppendElement())
-        return -1;
+      if (!mIndex.AppendElement()) return -1;
       mIndexWatermark = std::max(mIndexWatermark, blockIndex + 1);
       mFreeBlocks.AddFirstBlock(blockIndex);
       return blockIndex;
@@ -906,30 +839,24 @@ MediaCache::FindBlockForIncomingData(AutoLock& aLock,
   return blockIndex;
 }
 
-bool
-MediaCache::BlockIsReusable(AutoLock&, int32_t aBlockIndex)
-{
+bool MediaCache::BlockIsReusable(AutoLock&, int32_t aBlockIndex) {
   Block* block = &mIndex[aBlockIndex];
   for (uint32_t i = 0; i < block->mOwners.Length(); ++i) {
     MediaCacheStream* stream = block->mOwners[i].mStream;
     if (stream->mPinCount > 0 ||
         uint32_t(OffsetToBlockIndex(stream->mStreamOffset)) ==
-          block->mOwners[i].mStreamBlock) {
+            block->mOwners[i].mStreamBlock) {
       return false;
     }
   }
   return true;
 }
 
-void
-MediaCache::AppendMostReusableBlock(AutoLock& aLock,
-                                    BlockList* aBlockList,
-                                    nsTArray<uint32_t>* aResult,
-                                    int32_t aBlockIndexLimit)
-{
+void MediaCache::AppendMostReusableBlock(AutoLock& aLock, BlockList* aBlockList,
+                                         nsTArray<uint32_t>* aResult,
+                                         int32_t aBlockIndexLimit) {
   int32_t blockIndex = aBlockList->GetLastBlock();
-  if (blockIndex < 0)
-    return;
+  if (blockIndex < 0) return;
   do {
     
     
@@ -943,26 +870,23 @@ MediaCache::AppendMostReusableBlock(AutoLock& aLock,
   } while (blockIndex >= 0);
 }
 
-int32_t
-MediaCache::FindReusableBlock(AutoLock& aLock,
-                              TimeStamp aNow,
-                              MediaCacheStream* aForStream,
-                              int32_t aForStreamBlock,
-                              int32_t aMaxSearchBlockIndex)
-{
+int32_t MediaCache::FindReusableBlock(AutoLock& aLock, TimeStamp aNow,
+                                      MediaCacheStream* aForStream,
+                                      int32_t aForStreamBlock,
+                                      int32_t aMaxSearchBlockIndex) {
   MOZ_ASSERT(sThread->IsOnCurrentThread());
 
-  uint32_t length = std::min(uint32_t(aMaxSearchBlockIndex), uint32_t(mIndex.Length()));
+  uint32_t length =
+      std::min(uint32_t(aMaxSearchBlockIndex), uint32_t(mIndex.Length()));
 
   if (aForStream && aForStreamBlock > 0 &&
       uint32_t(aForStreamBlock) <= aForStream->mBlocks.Length()) {
     int32_t prevCacheBlock = aForStream->mBlocks[aForStreamBlock - 1];
     if (prevCacheBlock >= 0) {
       uint32_t freeBlockScanEnd =
-        std::min(length, prevCacheBlock + FREE_BLOCK_SCAN_LIMIT);
+          std::min(length, prevCacheBlock + FREE_BLOCK_SCAN_LIMIT);
       for (uint32_t i = prevCacheBlock; i < freeBlockScanEnd; ++i) {
-        if (IsBlockFree(i))
-          return i;
+        if (IsBlockFree(i)) return i;
       }
     }
   }
@@ -970,8 +894,7 @@ MediaCache::FindReusableBlock(AutoLock& aLock,
   if (!mFreeBlocks.IsEmpty()) {
     int32_t blockIndex = mFreeBlocks.GetFirstBlock();
     do {
-      if (blockIndex < aMaxSearchBlockIndex)
-        return blockIndex;
+      if (blockIndex < aMaxSearchBlockIndex) return blockIndex;
       blockIndex = mFreeBlocks.GetNextBlock(blockIndex);
     } while (blockIndex >= 0);
   }
@@ -980,7 +903,7 @@ MediaCache::FindReusableBlock(AutoLock& aLock,
   
   
   
-  AutoTArray<uint32_t,8> candidates;
+  AutoTArray<uint32_t, 8> candidates;
   for (uint32_t i = 0; i < mStreams.Length(); ++i) {
     MediaCacheStream* stream = mStreams[i];
     if (stream->mPinCount > 0) {
@@ -988,15 +911,15 @@ MediaCache::FindReusableBlock(AutoLock& aLock,
       continue;
     }
 
-    AppendMostReusableBlock(
-      aLock, &stream->mMetadataBlocks, &candidates, length);
+    AppendMostReusableBlock(aLock, &stream->mMetadataBlocks, &candidates,
+                            length);
     AppendMostReusableBlock(aLock, &stream->mPlayedBlocks, &candidates, length);
 
     
     
     if (stream->mIsTransportSeekable) {
-      AppendMostReusableBlock(
-        aLock, &stream->mReadaheadBlocks, &candidates, length);
+      AppendMostReusableBlock(aLock, &stream->mReadaheadBlocks, &candidates,
+                              length);
     }
   }
 
@@ -1013,43 +936,36 @@ MediaCache::FindReusableBlock(AutoLock& aLock,
   return latestUseBlock;
 }
 
-MediaCache::BlockList*
-MediaCache::GetListForBlock(AutoLock&, BlockOwner* aBlock)
-{
+MediaCache::BlockList* MediaCache::GetListForBlock(AutoLock&,
+                                                   BlockOwner* aBlock) {
   switch (aBlock->mClass) {
-  case METADATA_BLOCK:
-    NS_ASSERTION(aBlock->mStream, "Metadata block has no stream?");
-    return &aBlock->mStream->mMetadataBlocks;
-  case PLAYED_BLOCK:
-    NS_ASSERTION(aBlock->mStream, "Metadata block has no stream?");
-    return &aBlock->mStream->mPlayedBlocks;
-  case READAHEAD_BLOCK:
-    NS_ASSERTION(aBlock->mStream, "Readahead block has no stream?");
-    return &aBlock->mStream->mReadaheadBlocks;
-  default:
-    NS_ERROR("Invalid block class");
-    return nullptr;
+    case METADATA_BLOCK:
+      NS_ASSERTION(aBlock->mStream, "Metadata block has no stream?");
+      return &aBlock->mStream->mMetadataBlocks;
+    case PLAYED_BLOCK:
+      NS_ASSERTION(aBlock->mStream, "Metadata block has no stream?");
+      return &aBlock->mStream->mPlayedBlocks;
+    case READAHEAD_BLOCK:
+      NS_ASSERTION(aBlock->mStream, "Readahead block has no stream?");
+      return &aBlock->mStream->mReadaheadBlocks;
+    default:
+      NS_ERROR("Invalid block class");
+      return nullptr;
   }
 }
 
-MediaCache::BlockOwner*
-MediaCache::GetBlockOwner(AutoLock&,
-                          int32_t aBlockIndex,
-                          MediaCacheStream* aStream)
-{
+MediaCache::BlockOwner* MediaCache::GetBlockOwner(AutoLock&,
+                                                  int32_t aBlockIndex,
+                                                  MediaCacheStream* aStream) {
   Block* block = &mIndex[aBlockIndex];
   for (uint32_t i = 0; i < block->mOwners.Length(); ++i) {
-    if (block->mOwners[i].mStream == aStream)
-      return &block->mOwners[i];
+    if (block->mOwners[i].mStream == aStream) return &block->mOwners[i];
   }
   return nullptr;
 }
 
-void
-MediaCache::SwapBlocks(AutoLock& aLock,
-                       int32_t aBlockIndex1,
-                       int32_t aBlockIndex2)
-{
+void MediaCache::SwapBlocks(AutoLock& aLock, int32_t aBlockIndex1,
+                            int32_t aBlockIndex2) {
   Block* block1 = &mIndex[aBlockIndex1];
   Block* block2 = &mIndex[aBlockIndex2];
 
@@ -1058,8 +974,8 @@ MediaCache::SwapBlocks(AutoLock& aLock,
   
   
   
-  const Block* blocks[] = { block1, block2 };
-  int32_t blockIndices[] = { aBlockIndex1, aBlockIndex2 };
+  const Block* blocks[] = {block1, block2};
+  int32_t blockIndices[] = {aBlockIndex1, aBlockIndex2};
   for (int32_t i = 0; i < 2; ++i) {
     for (uint32_t j = 0; j < blocks[i]->mOwners.Length(); ++j) {
       const BlockOwner* b = &blocks[i]->mOwners[j];
@@ -1077,8 +993,7 @@ MediaCache::SwapBlocks(AutoLock& aLock,
       MediaCacheStream* stream = blocks[i]->mOwners[j].mStream;
       
       
-      if (visitedStreams.GetEntry(stream))
-        continue;
+      if (visitedStreams.GetEntry(stream)) continue;
       visitedStreams.PutEntry(stream);
       stream->mReadaheadBlocks.NotifyBlockSwapped(aBlockIndex1, aBlockIndex2);
       stream->mPlayedBlocks.NotifyBlockSwapped(aBlockIndex1, aBlockIndex2);
@@ -1089,11 +1004,8 @@ MediaCache::SwapBlocks(AutoLock& aLock,
   Verify(aLock);
 }
 
-void
-MediaCache::RemoveBlockOwner(AutoLock& aLock,
-                             int32_t aBlockIndex,
-                             MediaCacheStream* aStream)
-{
+void MediaCache::RemoveBlockOwner(AutoLock& aLock, int32_t aBlockIndex,
+                                  MediaCacheStream* aStream) {
   Block* block = &mIndex[aBlockIndex];
   for (uint32_t i = 0; i < block->mOwners.Length(); ++i) {
     BlockOwner* bo = &block->mOwners[i];
@@ -1109,19 +1021,16 @@ MediaCache::RemoveBlockOwner(AutoLock& aLock,
   }
 }
 
-void
-MediaCache::AddBlockOwnerAsReadahead(AutoLock& aLock,
-                                     int32_t aBlockIndex,
-                                     MediaCacheStream* aStream,
-                                     int32_t aStreamBlockIndex)
-{
+void MediaCache::AddBlockOwnerAsReadahead(AutoLock& aLock, int32_t aBlockIndex,
+                                          MediaCacheStream* aStream,
+                                          int32_t aStreamBlockIndex) {
   Block* block = &mIndex[aBlockIndex];
   if (block->mOwners.IsEmpty()) {
     mFreeBlocks.RemoveBlock(aBlockIndex);
   }
   BlockOwner* bo = block->mOwners.AppendElement();
   mBlockOwnersWatermark =
-    std::max(mBlockOwnersWatermark, uint32_t(block->mOwners.Length()));
+      std::max(mBlockOwnersWatermark, uint32_t(block->mOwners.Length()));
   bo->mStream = aStream;
   bo->mStreamBlock = aStreamBlockIndex;
   aStream->mBlocks[aStreamBlockIndex] = aBlockIndex;
@@ -1129,9 +1038,7 @@ MediaCache::AddBlockOwnerAsReadahead(AutoLock& aLock,
   InsertReadaheadBlock(aLock, bo, aBlockIndex);
 }
 
-void
-MediaCache::FreeBlock(AutoLock& aLock, int32_t aBlock)
-{
+void MediaCache::FreeBlock(AutoLock& aLock, int32_t aBlock) {
   Block* block = &mIndex[aBlock];
   if (block->mOwners.IsEmpty()) {
     
@@ -1150,9 +1057,8 @@ MediaCache::FreeBlock(AutoLock& aLock, int32_t aBlock)
   Verify(aLock);
 }
 
-TimeDuration
-MediaCache::PredictNextUse(AutoLock&, TimeStamp aNow, int32_t aBlock)
-{
+TimeDuration MediaCache::PredictNextUse(AutoLock&, TimeStamp aNow,
+                                        int32_t aBlock) {
   MOZ_ASSERT(sThread->IsOnCurrentThread());
   NS_ASSERTION(!IsBlockFree(aBlock), "aBlock is free");
 
@@ -1164,39 +1070,41 @@ MediaCache::PredictNextUse(AutoLock&, TimeStamp aNow, int32_t aBlock)
     BlockOwner* bo = &block->mOwners[i];
     TimeDuration prediction;
     switch (bo->mClass) {
-    case METADATA_BLOCK:
-      
-      
-      prediction = aNow - bo->mLastUseTime;
-      break;
-    case PLAYED_BLOCK: {
-      
-      
-      NS_ASSERTION(static_cast<int64_t>(bo->mStreamBlock)*BLOCK_SIZE <
-                   bo->mStream->mStreamOffset,
-                   "Played block after the current stream position?");
-      int64_t bytesBehind =
-        bo->mStream->mStreamOffset - static_cast<int64_t>(bo->mStreamBlock)*BLOCK_SIZE;
-      int64_t millisecondsBehind =
-        bytesBehind*1000/bo->mStream->mPlaybackBytesPerSecond;
-      prediction = TimeDuration::FromMilliseconds(
-          std::min<int64_t>(millisecondsBehind*REPLAY_PENALTY_FACTOR, INT32_MAX));
-      break;
-    }
-    case READAHEAD_BLOCK: {
-      int64_t bytesAhead =
-        static_cast<int64_t>(bo->mStreamBlock)*BLOCK_SIZE - bo->mStream->mStreamOffset;
-      NS_ASSERTION(bytesAhead >= 0,
-                   "Readahead block before the current stream position?");
-      int64_t millisecondsAhead =
-        bytesAhead*1000/bo->mStream->mPlaybackBytesPerSecond;
-      prediction = TimeDuration::FromMilliseconds(
-          std::min<int64_t>(millisecondsAhead, INT32_MAX));
-      break;
-    }
-    default:
-      NS_ERROR("Invalid class for predicting next use");
-      return TimeDuration(0);
+      case METADATA_BLOCK:
+        
+        
+        prediction = aNow - bo->mLastUseTime;
+        break;
+      case PLAYED_BLOCK: {
+        
+        
+        NS_ASSERTION(static_cast<int64_t>(bo->mStreamBlock) * BLOCK_SIZE <
+                         bo->mStream->mStreamOffset,
+                     "Played block after the current stream position?");
+        int64_t bytesBehind =
+            bo->mStream->mStreamOffset -
+            static_cast<int64_t>(bo->mStreamBlock) * BLOCK_SIZE;
+        int64_t millisecondsBehind =
+            bytesBehind * 1000 / bo->mStream->mPlaybackBytesPerSecond;
+        prediction = TimeDuration::FromMilliseconds(std::min<int64_t>(
+            millisecondsBehind * REPLAY_PENALTY_FACTOR, INT32_MAX));
+        break;
+      }
+      case READAHEAD_BLOCK: {
+        int64_t bytesAhead =
+            static_cast<int64_t>(bo->mStreamBlock) * BLOCK_SIZE -
+            bo->mStream->mStreamOffset;
+        NS_ASSERTION(bytesAhead >= 0,
+                     "Readahead block before the current stream position?");
+        int64_t millisecondsAhead =
+            bytesAhead * 1000 / bo->mStream->mPlaybackBytesPerSecond;
+        prediction = TimeDuration::FromMilliseconds(
+            std::min<int64_t>(millisecondsAhead, INT32_MAX));
+        break;
+      }
+      default:
+        NS_ERROR("Invalid class for predicting next use");
+        return TimeDuration(0);
     }
     if (i == 0 || prediction < result) {
       result = prediction;
@@ -1205,39 +1113,29 @@ MediaCache::PredictNextUse(AutoLock&, TimeStamp aNow, int32_t aBlock)
   return result;
 }
 
-TimeDuration
-MediaCache::PredictNextUseForIncomingData(AutoLock&, MediaCacheStream* aStream)
-{
+TimeDuration MediaCache::PredictNextUseForIncomingData(
+    AutoLock&, MediaCacheStream* aStream) {
   MOZ_ASSERT(sThread->IsOnCurrentThread());
 
   int64_t bytesAhead = aStream->mChannelOffset - aStream->mStreamOffset;
   if (bytesAhead <= -BLOCK_SIZE) {
     
-    return TimeDuration::FromSeconds(24*60*60);
+    return TimeDuration::FromSeconds(24 * 60 * 60);
   }
-  if (bytesAhead <= 0)
-    return TimeDuration(0);
-  int64_t millisecondsAhead = bytesAhead*1000/aStream->mPlaybackBytesPerSecond;
+  if (bytesAhead <= 0) return TimeDuration(0);
+  int64_t millisecondsAhead =
+      bytesAhead * 1000 / aStream->mPlaybackBytesPerSecond;
   return TimeDuration::FromMilliseconds(
       std::min<int64_t>(millisecondsAhead, INT32_MAX));
 }
 
-void
-MediaCache::Update()
-{
+void MediaCache::Update() {
   MOZ_ASSERT(sThread->IsOnCurrentThread());
 
   AutoLock lock(mMonitor);
 
-  struct StreamAction
-  {
-    enum
-    {
-      NONE,
-      SEEK,
-      RESUME,
-      SUSPEND
-    } mTag = NONE;
+  struct StreamAction {
+    enum { NONE, SEEK, RESUME, SUSPEND } mTag = NONE;
     
     bool mResume = false;
     int64_t mSeekTarget = -1;
@@ -1247,7 +1145,7 @@ MediaCache::Update()
   
   
   
-  AutoTArray<StreamAction,10> actions;
+  AutoTArray<StreamAction, 10> actions;
 
   mUpdateQueued = false;
 #ifdef DEBUG
@@ -1282,7 +1180,8 @@ MediaCache::Update()
         continue;
       }
       TimeDuration predictedUse = PredictNextUse(lock, now, blockIndex);
-      latestPredictedUseForOverflow = std::max(latestPredictedUseForOverflow, predictedUse);
+      latestPredictedUseForOverflow =
+          std::max(latestPredictedUseForOverflow, predictedUse);
     }
   } else {
     freeBlockCount += maxBlocks - mIndex.Length();
@@ -1291,19 +1190,15 @@ MediaCache::Update()
   
   for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
        --blockIndex) {
-    if (IsBlockFree(blockIndex))
-      continue;
+    if (IsBlockFree(blockIndex)) continue;
 
     Block* block = &mIndex[blockIndex];
     
     
     
     int32_t destinationBlockIndex =
-      FindReusableBlock(lock,
-                        now,
-                        block->mOwners[0].mStream,
-                        block->mOwners[0].mStreamBlock,
-                        maxBlocks);
+        FindReusableBlock(lock, now, block->mOwners[0].mStream,
+                          block->mOwners[0].mStreamBlock, maxBlocks);
     if (destinationBlockIndex < 0) {
       
       
@@ -1316,7 +1211,7 @@ MediaCache::Update()
     for (BlockOwner& owner : mIndex[destinationBlockIndex].mOwners) {
       MediaCacheStream* stream = owner.mStream;
       int64_t end = OffsetToBlockIndexUnchecked(
-        stream->GetCachedDataEndInternal(lock, stream->mStreamOffset));
+          stream->GetCachedDataEndInternal(lock, stream->mStreamOffset));
       int64_t cur = OffsetToBlockIndexUnchecked(stream->mStreamOffset);
       if (cur <= owner.mStreamBlock && owner.mStreamBlock < end) {
         inCurrentCachedRange = true;
@@ -1329,7 +1224,7 @@ MediaCache::Update()
 
     if (IsBlockFree(destinationBlockIndex) ||
         PredictNextUse(lock, now, destinationBlockIndex) >
-          latestPredictedUseForOverflow) {
+            latestPredictedUseForOverflow) {
       
       
 
@@ -1337,8 +1232,8 @@ MediaCache::Update()
 
       if (NS_SUCCEEDED(rv)) {
         
-        LOG("Swapping blocks %d and %d (trimming cache)",
-            blockIndex, destinationBlockIndex);
+        LOG("Swapping blocks %d and %d (trimming cache)", blockIndex,
+            destinationBlockIndex);
         
         
         SwapBlocks(lock, blockIndex, destinationBlockIndex);
@@ -1349,8 +1244,7 @@ MediaCache::Update()
     } else {
       LOG("Could not trim cache block %d (destination %d, "
           "predicted next use %f, latest predicted use for overflow %f",
-          blockIndex,
-          destinationBlockIndex,
+          blockIndex, destinationBlockIndex,
           PredictNextUse(lock, now, destinationBlockIndex).ToSeconds(),
           latestPredictedUseForOverflow.ToSeconds());
     }
@@ -1394,13 +1288,13 @@ MediaCache::Update()
     
     
     
-    int64_t channelOffset =
-      stream->mSeekTarget != -1 ? stream->mSeekTarget : stream->mChannelOffset;
+    int64_t channelOffset = stream->mSeekTarget != -1 ? stream->mSeekTarget
+                                                      : stream->mChannelOffset;
 
     
     
     int64_t dataOffset =
-      stream->GetCachedDataEndInternal(lock, stream->mStreamOffset);
+        stream->GetCachedDataEndInternal(lock, stream->mStreamOffset);
     MOZ_ASSERT(dataOffset >= 0);
 
     
@@ -1447,7 +1341,7 @@ MediaCache::Update()
       
       LOG("Stream %p at end of stream", stream);
       enableReading =
-        !stream->mCacheSuspended && stream->mStreamLength == channelOffset;
+          !stream->mCacheSuspended && stream->mStreamLength == channelOffset;
     } else if (desiredOffset < stream->mStreamOffset) {
       
       
@@ -1458,7 +1352,8 @@ MediaCache::Update()
       LOG("Stream %p feeding reader", stream);
       enableReading = true;
     } else if (!stream->mIsTransportSeekable &&
-               nonSeekableReadaheadBlockCount >= maxBlocks*NONSEEKABLE_READAHEAD_MAX) {
+               nonSeekableReadaheadBlockCount >=
+                   maxBlocks * NONSEEKABLE_READAHEAD_MAX) {
       
       
       
@@ -1471,10 +1366,9 @@ MediaCache::Update()
       enableReading = false;
     } else {
       TimeDuration predictedNewDataUse =
-        PredictNextUseForIncomingData(lock, stream);
+          PredictNextUseForIncomingData(lock, stream);
 
-      if (stream->mThrottleReadahead &&
-          stream->mCacheSuspended &&
+      if (stream->mThrottleReadahead && stream->mCacheSuspended &&
           predictedNewDataUse.ToSeconds() > resumeThreshold) {
         
         LOG("Stream %p avoiding wakeup since more data is not needed", stream);
@@ -1507,16 +1401,14 @@ MediaCache::Update()
         if (other->mResourceID == stream->mResourceID && !other->mClosed &&
             !other->mClientSuspended && !other->mChannelEnded &&
             OffsetToBlockIndexUnchecked(other->mSeekTarget != -1
-                                          ? other->mSeekTarget
-                                          : other->mChannelOffset) ==
-              OffsetToBlockIndexUnchecked(desiredOffset)) {
+                                            ? other->mSeekTarget
+                                            : other->mChannelOffset) ==
+                OffsetToBlockIndexUnchecked(desiredOffset)) {
           
           
           enableReading = false;
           LOG("Stream %p waiting on same block (%" PRId32 ") from stream %p",
-              stream,
-              OffsetToBlockIndexUnchecked(desiredOffset),
-              other);
+              stream, OffsetToBlockIndexUnchecked(desiredOffset), other);
           break;
         }
       }
@@ -1530,7 +1422,7 @@ MediaCache::Update()
       
       
       stream->mSeekTarget =
-        OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
+          OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
       actions[i].mTag = StreamAction::SEEK;
       actions[i].mResume = stream->mCacheSuspended;
       actions[i].mSeekTarget = stream->mSeekTarget;
@@ -1569,10 +1461,8 @@ MediaCache::Update()
     MediaCacheStream* stream = mStreams[i];
     switch (actions[i].mTag) {
       case StreamAction::SEEK:
-        LOG("Stream %p CacheSeek to %" PRId64 " (resume=%d)",
-            stream,
-            actions[i].mSeekTarget,
-            actions[i].mResume);
+        LOG("Stream %p CacheSeek to %" PRId64 " (resume=%d)", stream,
+            actions[i].mSeekTarget, actions[i].mResume);
         stream->mClient->CacheClientSeek(actions[i].mSeekTarget,
                                          actions[i].mResume);
         break;
@@ -1596,23 +1486,18 @@ MediaCache::Update()
     MediaCache::ResourceStreamIterator iter(this, mSuspendedStatusToNotify[i]);
     while (MediaCacheStream* stream = iter.Next(lock)) {
       stream->mClient->CacheClientNotifySuspendedStatusChanged(
-        stream->AreAllStreamsForResourceSuspended(lock));
+          stream->AreAllStreamsForResourceSuspended(lock));
     }
   }
   mSuspendedStatusToNotify.Clear();
 }
 
-class UpdateEvent : public Runnable
-{
-public:
+class UpdateEvent : public Runnable {
+ public:
   explicit UpdateEvent(MediaCache* aMediaCache)
-    : Runnable("MediaCache::UpdateEvent")
-    , mMediaCache(aMediaCache)
-  {
-  }
+      : Runnable("MediaCache::UpdateEvent"), mMediaCache(aMediaCache) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     mMediaCache->Update();
     
     NS_ProxyRelease("UpdateEvent::mMediaCache",
@@ -1621,19 +1506,15 @@ public:
     return NS_OK;
   }
 
-private:
+ private:
   RefPtr<MediaCache> mMediaCache;
 };
 
-void
-MediaCache::QueueUpdate(AutoLock&)
-{
+void MediaCache::QueueUpdate(AutoLock&) {
   
   
-  NS_ASSERTION(!mInUpdate,
-               "Queuing an update while we're in an update");
-  if (mUpdateQueued)
-    return;
+  NS_ASSERTION(!mInUpdate, "Queuing an update while we're in an update");
+  if (mUpdateQueued) return;
   mUpdateQueued = true;
   
   
@@ -1642,18 +1523,14 @@ MediaCache::QueueUpdate(AutoLock&)
   sThread->Dispatch(event.forget());
 }
 
-void
-MediaCache::QueueSuspendedStatusUpdate(AutoLock&, int64_t aResourceID)
-{
+void MediaCache::QueueSuspendedStatusUpdate(AutoLock&, int64_t aResourceID) {
   if (!mSuspendedStatusToNotify.Contains(aResourceID)) {
     mSuspendedStatusToNotify.AppendElement(aResourceID);
   }
 }
 
 #ifdef DEBUG_VERIFY_CACHE
-void
-MediaCache::Verify(AutoLock&)
-{
+void MediaCache::Verify(AutoLock&) {
   mFreeBlocks.Verify();
   for (uint32_t i = 0; i < mStreams.Length(); ++i) {
     MediaCacheStream* stream = mStreams[i];
@@ -1669,8 +1546,7 @@ MediaCache::Verify(AutoLock&)
       while (mIndex[block].mOwners[j].mStream != stream) {
         ++j;
       }
-      int32_t nextStreamBlock =
-        int32_t(mIndex[block].mOwners[j].mStreamBlock);
+      int32_t nextStreamBlock = int32_t(mIndex[block].mOwners[j].mStreamBlock);
       NS_ASSERTION(lastStreamBlock < nextStreamBlock,
                    "Blocks not increasing in readahead stream");
       lastStreamBlock = nextStreamBlock;
@@ -1680,11 +1556,8 @@ MediaCache::Verify(AutoLock&)
 }
 #endif
 
-void
-MediaCache::InsertReadaheadBlock(AutoLock& aLock,
-                                 BlockOwner* aBlockOwner,
-                                 int32_t aBlockIndex)
-{
+void MediaCache::InsertReadaheadBlock(AutoLock& aLock, BlockOwner* aBlockOwner,
+                                      int32_t aBlockIndex) {
   
   
   MediaCacheStream* stream = aBlockOwner->mStream;
@@ -1705,14 +1578,12 @@ MediaCache::InsertReadaheadBlock(AutoLock& aLock,
   Verify(aLock);
 }
 
-void
-MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
-                                  MediaCacheStream* aStream,
-                                  int32_t aStreamBlockIndex,
-                                  MediaCacheStream::ReadMode aMode,
-                                  Span<const uint8_t> aData1,
-                                  Span<const uint8_t> aData2)
-{
+void MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
+                                       MediaCacheStream* aStream,
+                                       int32_t aStreamBlockIndex,
+                                       MediaCacheStream::ReadMode aMode,
+                                       Span<const uint8_t> aData1,
+                                       Span<const uint8_t> aData2) {
   MOZ_ASSERT(sThread->IsOnCurrentThread());
 
   
@@ -1725,9 +1596,7 @@ MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
       
       int32_t globalBlockIndex = stream->mBlocks[aStreamBlockIndex];
       LOG("Released block %d from stream %p block %d(%" PRId64 ")",
-          globalBlockIndex,
-          stream,
-          aStreamBlockIndex,
+          globalBlockIndex, stream, aStreamBlockIndex,
           aStreamBlockIndex * BLOCK_SIZE);
       RemoveBlockOwner(aLock, globalBlockIndex, stream);
     }
@@ -1737,16 +1606,13 @@ MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
 
   TimeStamp now = TimeStamp::Now();
   int32_t blockIndex =
-    FindBlockForIncomingData(aLock, now, aStream, aStreamBlockIndex);
+      FindBlockForIncomingData(aLock, now, aStream, aStreamBlockIndex);
   if (blockIndex >= 0) {
     FreeBlock(aLock, blockIndex);
 
     Block* block = &mIndex[blockIndex];
-    LOG("Allocated block %d to stream %p block %d(%" PRId64 ")",
-        blockIndex,
-        aStream,
-        aStreamBlockIndex,
-        aStreamBlockIndex * BLOCK_SIZE);
+    LOG("Allocated block %d to stream %p block %d(%" PRId64 ")", blockIndex,
+        aStream, aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
 
     ResourceStreamIterator iter(this, aStream->mResourceID);
     while (MediaCacheStream* stream = iter.Next(aLock)) {
@@ -1757,7 +1623,7 @@ MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
         return;
       }
       mBlockOwnersWatermark =
-        std::max(mBlockOwnersWatermark, uint32_t(block->mOwners.Length()));
+          std::max(mBlockOwnersWatermark, uint32_t(block->mOwners.Length()));
       bo->mStream = stream;
     }
 
@@ -1796,11 +1662,8 @@ MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
 
     nsresult rv = mBlockCache->WriteBlock(blockIndex, aData1, aData2);
     if (NS_FAILED(rv)) {
-      LOG("Released block %d from stream %p block %d(%" PRId64 ")",
-          blockIndex,
-          aStream,
-          aStreamBlockIndex,
-          aStreamBlockIndex * BLOCK_SIZE);
+      LOG("Released block %d from stream %p block %d(%" PRId64 ")", blockIndex,
+          aStream, aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
       FreeBlock(aLock, blockIndex);
     }
   }
@@ -1810,11 +1673,8 @@ MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
   QueueUpdate(aLock);
 }
 
-void
-MediaCache::OpenStream(AutoLock& aLock,
-                       MediaCacheStream* aStream,
-                       bool aIsClone)
-{
+void MediaCache::OpenStream(AutoLock& aLock, MediaCacheStream* aStream,
+                            bool aIsClone) {
   LOG("Stream %p opened", aStream);
   mStreams.AppendElement(aStream);
 
@@ -1831,18 +1691,15 @@ MediaCache::OpenStream(AutoLock& aLock,
   QueueUpdate(aLock);
 }
 
-void
-MediaCache::ReleaseStream(AutoLock&, MediaCacheStream* aStream)
-{
+void MediaCache::ReleaseStream(AutoLock&, MediaCacheStream* aStream) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   LOG("Stream %p closed", aStream);
   mStreams.RemoveElement(aStream);
   
 }
 
-void
-MediaCache::ReleaseStreamBlocks(AutoLock& aLock, MediaCacheStream* aStream)
-{
+void MediaCache::ReleaseStreamBlocks(AutoLock& aLock,
+                                     MediaCacheStream* aStream) {
   
   
   
@@ -1850,20 +1707,17 @@ MediaCache::ReleaseStreamBlocks(AutoLock& aLock, MediaCacheStream* aStream)
   for (uint32_t i = 0; i < length; ++i) {
     int32_t blockIndex = aStream->mBlocks[i];
     if (blockIndex >= 0) {
-      LOG("Released block %d from stream %p block %d(%" PRId64 ")",
-          blockIndex, aStream, i, i*BLOCK_SIZE);
+      LOG("Released block %d from stream %p block %d(%" PRId64 ")", blockIndex,
+          aStream, i, i * BLOCK_SIZE);
       RemoveBlockOwner(aLock, blockIndex, aStream);
     }
   }
 }
 
-void
-MediaCache::Truncate()
-{
+void MediaCache::Truncate() {
   uint32_t end;
   for (end = mIndex.Length(); end > 0; --end) {
-    if (!IsBlockFree(end - 1))
-      break;
+    if (!IsBlockFree(end - 1)) break;
     mFreeBlocks.RemoveBlock(end - 1);
   }
 
@@ -1876,14 +1730,10 @@ MediaCache::Truncate()
   }
 }
 
-void
-MediaCache::NoteBlockUsage(AutoLock& aLock,
-                           MediaCacheStream* aStream,
-                           int32_t aBlockIndex,
-                           int64_t aStreamOffset,
-                           MediaCacheStream::ReadMode aMode,
-                           TimeStamp aNow)
-{
+void MediaCache::NoteBlockUsage(AutoLock& aLock, MediaCacheStream* aStream,
+                                int32_t aBlockIndex, int64_t aStreamOffset,
+                                MediaCacheStream::ReadMode aMode,
+                                TimeStamp aNow) {
   if (aBlockIndex < 0) {
     
     return;
@@ -1897,14 +1747,14 @@ MediaCache::NoteBlockUsage(AutoLock& aLock,
 
   
   
-  NS_ASSERTION(bo->mStreamBlock*BLOCK_SIZE <= aStreamOffset,
+  NS_ASSERTION(bo->mStreamBlock * BLOCK_SIZE <= aStreamOffset,
                "Using a block that's behind the read position?");
 
   GetListForBlock(aLock, bo)->RemoveBlock(aBlockIndex);
   bo->mClass =
-    (aMode == MediaCacheStream::MODE_METADATA || bo->mClass == METADATA_BLOCK)
-    ? METADATA_BLOCK
-    : PLAYED_BLOCK;
+      (aMode == MediaCacheStream::MODE_METADATA || bo->mClass == METADATA_BLOCK)
+          ? METADATA_BLOCK
+          : PLAYED_BLOCK;
   
   
   GetListForBlock(aLock, bo)->AddFirstBlock(aBlockIndex);
@@ -1912,11 +1762,8 @@ MediaCache::NoteBlockUsage(AutoLock& aLock,
   Verify(aLock);
 }
 
-void
-MediaCache::NoteSeek(AutoLock& aLock,
-                     MediaCacheStream* aStream,
-                     int64_t aOldOffset)
-{
+void MediaCache::NoteSeek(AutoLock& aLock, MediaCacheStream* aStream,
+                          int64_t aOldOffset) {
   if (aOldOffset < aStream->mStreamOffset) {
     
     
@@ -1926,8 +1773,8 @@ MediaCache::NoteSeek(AutoLock& aLock,
       return;
     }
     int32_t endIndex =
-      std::min(OffsetToBlockIndex(aStream->mStreamOffset + (BLOCK_SIZE - 1)),
-               int32_t(aStream->mBlocks.Length()));
+        std::min(OffsetToBlockIndex(aStream->mStreamOffset + (BLOCK_SIZE - 1)),
+                 int32_t(aStream->mBlocks.Length()));
     if (endIndex < 0) {
       return;
     }
@@ -1937,12 +1784,8 @@ MediaCache::NoteSeek(AutoLock& aLock,
       if (cacheBlockIndex >= 0) {
         
         
-        NoteBlockUsage(aLock,
-                       aStream,
-                       cacheBlockIndex,
-                       aStream->mStreamOffset,
-                       MediaCacheStream::MODE_PLAYBACK,
-                       now);
+        NoteBlockUsage(aLock, aStream, cacheBlockIndex, aStream->mStreamOffset,
+                       MediaCacheStream::MODE_PLAYBACK, now);
       }
       ++blockIndex;
     }
@@ -1951,13 +1794,13 @@ MediaCache::NoteSeek(AutoLock& aLock,
     
     
     int32_t blockIndex =
-      OffsetToBlockIndex(aStream->mStreamOffset + (BLOCK_SIZE - 1));
+        OffsetToBlockIndex(aStream->mStreamOffset + (BLOCK_SIZE - 1));
     if (blockIndex < 0) {
       return;
     }
     int32_t endIndex =
-      std::min(OffsetToBlockIndex(aOldOffset + (BLOCK_SIZE - 1)),
-               int32_t(aStream->mBlocks.Length()));
+        std::min(OffsetToBlockIndex(aOldOffset + (BLOCK_SIZE - 1)),
+                 int32_t(aStream->mBlocks.Length()));
     if (endIndex < 0) {
       return;
     }
@@ -1983,33 +1826,26 @@ MediaCache::NoteSeek(AutoLock& aLock,
   }
 }
 
-void
-MediaCacheStream::NotifyLoadID(uint32_t aLoadID)
-{
+void MediaCacheStream::NotifyLoadID(uint32_t aLoadID) {
   MOZ_ASSERT(aLoadID > 0);
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::NotifyLoadID",
-    [ client = RefPtr<ChannelMediaResource>(mClient), this, aLoadID ]() {
-      AutoLock lock(mMediaCache->Monitor());
-      mLoadID = aLoadID;
-    });
+      "MediaCacheStream::NotifyLoadID",
+      [client = RefPtr<ChannelMediaResource>(mClient), this, aLoadID]() {
+        AutoLock lock(mMediaCache->Monitor());
+        mLoadID = aLoadID;
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-void
-MediaCacheStream::NotifyDataStartedInternal(uint32_t aLoadID,
-                                            int64_t aOffset,
-                                            bool aSeekable,
-                                            int64_t aLength)
-{
+void MediaCacheStream::NotifyDataStartedInternal(uint32_t aLoadID,
+                                                 int64_t aOffset,
+                                                 bool aSeekable,
+                                                 int64_t aLength) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   MOZ_ASSERT(aLoadID > 0);
-  LOG("Stream %p DataStarted: %" PRId64 " aLoadID=%u aLength=%" PRId64,
-      this,
-      aOffset,
-      aLoadID,
-      aLength);
+  LOG("Stream %p DataStarted: %" PRId64 " aLoadID=%u aLength=%" PRId64, this,
+      aOffset, aLoadID, aLength);
 
   AutoLock lock(mMediaCache->Monitor());
   NS_WARNING_ASSERTION(aOffset == mSeekTarget || aOffset == mChannelOffset,
@@ -2044,28 +1880,21 @@ MediaCacheStream::NotifyDataStartedInternal(uint32_t aLoadID,
   UpdateDownloadStatistics(lock);
 }
 
-void
-MediaCacheStream::NotifyDataStarted(uint32_t aLoadID,
-                                    int64_t aOffset,
-                                    bool aSeekable,
-                                    int64_t aLength)
-{
+void MediaCacheStream::NotifyDataStarted(uint32_t aLoadID, int64_t aOffset,
+                                         bool aSeekable, int64_t aLength) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aLoadID > 0);
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::NotifyDataStarted",
-    [ =, client = RefPtr<ChannelMediaResource>(mClient) ]() {
-      NotifyDataStartedInternal(aLoadID, aOffset, aSeekable, aLength);
-    });
+      "MediaCacheStream::NotifyDataStarted",
+      [=, client = RefPtr<ChannelMediaResource>(mClient)]() {
+        NotifyDataStartedInternal(aLoadID, aOffset, aSeekable, aLength);
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-void
-MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
-                                     uint32_t aCount,
-                                     const uint8_t* aData)
-{
+void MediaCacheStream::NotifyDataReceived(uint32_t aLoadID, uint32_t aCount,
+                                          const uint8_t* aData) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   MOZ_ASSERT(aLoadID > 0);
 
@@ -2075,11 +1904,8 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     return;
   }
 
-  LOG("Stream %p DataReceived at %" PRId64 " count=%u aLoadID=%u",
-      this,
-      mChannelOffset,
-      aCount,
-      aLoadID);
+  LOG("Stream %p DataReceived at %" PRId64 " count=%u aLoadID=%u", this,
+      mChannelOffset, aCount, aLoadID);
 
   if (mLoadID != aLoadID) {
     
@@ -2113,12 +1939,9 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     if (source.Length() >= remaining) {
       
       mMediaCache->AllocateAndWriteBlock(
-        lock,
-        this,
-        OffsetToBlockIndexUnchecked(mChannelOffset),
-        mMetadataInPartialBlockBuffer ? MODE_METADATA : MODE_PLAYBACK,
-        partial,
-        source.First(remaining));
+          lock, this, OffsetToBlockIndexUnchecked(mChannelOffset),
+          mMetadataInPartialBlockBuffer ? MODE_METADATA : MODE_PLAYBACK,
+          partial, source.First(remaining));
       source = source.From(remaining);
       mChannelOffset += remaining;
       cacheUpdated = true;
@@ -2149,29 +1972,26 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
   }
 }
 
-void
-MediaCacheStream::FlushPartialBlockInternal(AutoLock& aLock, bool aNotifyAll)
-{
+void MediaCacheStream::FlushPartialBlockInternal(AutoLock& aLock,
+                                                 bool aNotifyAll) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
 
   int32_t blockIndex = OffsetToBlockIndexUnchecked(mChannelOffset);
   int32_t blockOffset = OffsetInBlock(mChannelOffset);
   if (blockOffset > 0) {
     LOG("Stream %p writing partial block: [%d] bytes; "
-        "mStreamOffset [%" PRId64 "] mChannelOffset[%"
-        PRId64 "] mStreamLength [%" PRId64 "] notifying: [%s]",
+        "mStreamOffset [%" PRId64 "] mChannelOffset[%" PRId64
+        "] mStreamLength [%" PRId64 "] notifying: [%s]",
         this, blockOffset, mStreamOffset, mChannelOffset, mStreamLength,
         aNotifyAll ? "yes" : "no");
 
     
-    memset(mPartialBlockBuffer.get() + blockOffset, 0, BLOCK_SIZE - blockOffset);
+    memset(mPartialBlockBuffer.get() + blockOffset, 0,
+           BLOCK_SIZE - blockOffset);
     auto data = MakeSpan<const uint8_t>(mPartialBlockBuffer.get(), BLOCK_SIZE);
     mMediaCache->AllocateAndWriteBlock(
-      aLock,
-      this,
-      blockIndex,
-      mMetadataInPartialBlockBuffer ? MODE_METADATA : MODE_PLAYBACK,
-      data);
+        aLock, this, blockIndex,
+        mMetadataInPartialBlockBuffer ? MODE_METADATA : MODE_PLAYBACK, data);
   }
 
   
@@ -2183,9 +2003,7 @@ MediaCacheStream::FlushPartialBlockInternal(AutoLock& aLock, bool aNotifyAll)
   }
 }
 
-void
-MediaCacheStream::UpdateDownloadStatistics(AutoLock&)
-{
+void MediaCacheStream::UpdateDownloadStatistics(AutoLock&) {
   if (mChannelEnded || mClientSuspended) {
     mDownloadStatistics.Stop();
   } else {
@@ -2193,9 +2011,8 @@ MediaCacheStream::UpdateDownloadStatistics(AutoLock&)
   }
 }
 
-void
-MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID, nsresult aStatus)
-{
+void MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
+                                               nsresult aStatus) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   AutoLock lock(mMediaCache->Monitor());
 
@@ -2237,88 +2054,78 @@ MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID, nsresult aStatus)
   }
 }
 
-void
-MediaCacheStream::NotifyDataEnded(uint32_t aLoadID, nsresult aStatus)
-{
+void MediaCacheStream::NotifyDataEnded(uint32_t aLoadID, nsresult aStatus) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aLoadID > 0);
 
   RefPtr<ChannelMediaResource> client = mClient;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::NotifyDataEnded", [client, this, aLoadID, aStatus]() {
-      NotifyDataEndedInternal(aLoadID, aStatus);
-    });
+      "MediaCacheStream::NotifyDataEnded", [client, this, aLoadID, aStatus]() {
+        NotifyDataEndedInternal(aLoadID, aStatus);
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-void
-MediaCacheStream::NotifyClientSuspended(bool aSuspended)
-{
+void MediaCacheStream::NotifyClientSuspended(bool aSuspended) {
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<ChannelMediaResource> client = mClient;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::NotifyClientSuspended", [client, this, aSuspended]() {
-      AutoLock lock(mMediaCache->Monitor());
-      if (!mClosed && mClientSuspended != aSuspended) {
-        mClientSuspended = aSuspended;
-        
-        mMediaCache->QueueUpdate(lock);
-        UpdateDownloadStatistics(lock);
-        if (mClientSuspended) {
+      "MediaCacheStream::NotifyClientSuspended", [client, this, aSuspended]() {
+        AutoLock lock(mMediaCache->Monitor());
+        if (!mClosed && mClientSuspended != aSuspended) {
+          mClientSuspended = aSuspended;
           
-          
-          lock.NotifyAll();
+          mMediaCache->QueueUpdate(lock);
+          UpdateDownloadStatistics(lock);
+          if (mClientSuspended) {
+            
+            
+            lock.NotifyAll();
+          }
         }
-      }
-    });
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-void
-MediaCacheStream::NotifyResume()
-{
+void MediaCacheStream::NotifyResume() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::NotifyResume",
-    [ this, client = RefPtr<ChannelMediaResource>(mClient) ]() {
-      AutoLock lock(mMediaCache->Monitor());
-      if (mClosed) {
-        return;
-      }
-      
-      
-      int64_t offset = mSeekTarget != -1 ? mSeekTarget : mChannelOffset;
-      if (mStreamLength < 0 || offset < mStreamLength) {
-        mClient->CacheClientSeek(offset, false);
+      "MediaCacheStream::NotifyResume",
+      [this, client = RefPtr<ChannelMediaResource>(mClient)]() {
+        AutoLock lock(mMediaCache->Monitor());
+        if (mClosed) {
+          return;
+        }
         
-      }
-      
-      
-    });
+        
+        int64_t offset = mSeekTarget != -1 ? mSeekTarget : mChannelOffset;
+        if (mStreamLength < 0 || offset < mStreamLength) {
+          mClient->CacheClientSeek(offset, false);
+          
+        }
+        
+        
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-MediaCacheStream::~MediaCacheStream()
-{
+MediaCacheStream::~MediaCacheStream() {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
   MOZ_ASSERT(!mPinCount, "Unbalanced Pin");
   MOZ_ASSERT(!mMediaCache || mClosed);
 
-  uint32_t lengthKb = uint32_t(
-    std::min(std::max(mStreamLength, int64_t(0)) / 1024, int64_t(UINT32_MAX)));
+  uint32_t lengthKb = uint32_t(std::min(
+      std::max(mStreamLength, int64_t(0)) / 1024, int64_t(UINT32_MAX)));
   LOG("MediaCacheStream::~MediaCacheStream(this=%p) "
       "MEDIACACHESTREAM_LENGTH_KB=%" PRIu32,
-      this,
-      lengthKb);
+      this, lengthKb);
   Telemetry::Accumulate(Telemetry::HistogramID::MEDIACACHESTREAM_LENGTH_KB,
                         lengthKb);
 }
 
-bool
-MediaCacheStream::AreAllStreamsForResourceSuspended(AutoLock& aLock)
-{
+bool MediaCacheStream::AreAllStreamsForResourceSuspended(AutoLock& aLock) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
@@ -2341,24 +2148,20 @@ MediaCacheStream::AreAllStreamsForResourceSuspended(AutoLock& aLock)
   return true;
 }
 
-void
-MediaCacheStream::Close()
-{
+void MediaCacheStream::Close() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mMediaCache) {
     return;
   }
   OwnerThread()->Dispatch(NS_NewRunnableFunction(
-    "MediaCacheStream::Close",
-    [ this, client = RefPtr<ChannelMediaResource>(mClient) ]() {
-      AutoLock lock(mMediaCache->Monitor());
-      CloseInternal(lock);
-    }));
+      "MediaCacheStream::Close",
+      [this, client = RefPtr<ChannelMediaResource>(mClient)]() {
+        AutoLock lock(mMediaCache->Monitor());
+        CloseInternal(lock);
+      }));
 }
 
-void
-MediaCacheStream::CloseInternal(AutoLock& aLock)
-{
+void MediaCacheStream::CloseInternal(AutoLock& aLock) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
 
   if (mClosed) {
@@ -2380,9 +2183,7 @@ MediaCacheStream::CloseInternal(AutoLock& aLock)
   mMediaCache->QueueUpdate(aLock);
 }
 
-void
-MediaCacheStream::Pin()
-{
+void MediaCacheStream::Pin() {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   ++mPinCount;
@@ -2391,9 +2192,7 @@ MediaCacheStream::Pin()
   mMediaCache->QueueUpdate(lock);
 }
 
-void
-MediaCacheStream::Unpin()
-{
+void MediaCacheStream::Unpin() {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   NS_ASSERTION(mPinCount > 0, "Unbalanced Unpin");
@@ -2403,51 +2202,38 @@ MediaCacheStream::Unpin()
   mMediaCache->QueueUpdate(lock);
 }
 
-int64_t
-MediaCacheStream::GetLength() const
-{
+int64_t MediaCacheStream::GetLength() const {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   return mStreamLength;
 }
 
-MediaCacheStream::LengthAndOffset
-MediaCacheStream::GetLengthAndOffset() const
-{
+MediaCacheStream::LengthAndOffset MediaCacheStream::GetLengthAndOffset() const {
   MOZ_ASSERT(NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
-  return { mStreamLength, mChannelOffset };
+  return {mStreamLength, mChannelOffset};
 }
 
-int64_t
-MediaCacheStream::GetNextCachedData(int64_t aOffset)
-{
+int64_t MediaCacheStream::GetNextCachedData(int64_t aOffset) {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   return GetNextCachedDataInternal(lock, aOffset);
 }
 
-int64_t
-MediaCacheStream::GetCachedDataEnd(int64_t aOffset)
-{
+int64_t MediaCacheStream::GetCachedDataEnd(int64_t aOffset) {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   return GetCachedDataEndInternal(lock, aOffset);
 }
 
-bool
-MediaCacheStream::IsDataCachedToEndOfStream(int64_t aOffset)
-{
+bool MediaCacheStream::IsDataCachedToEndOfStream(int64_t aOffset) {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
-  if (mStreamLength < 0)
-    return false;
+  if (mStreamLength < 0) return false;
   return GetCachedDataEndInternal(lock, aOffset) >= mStreamLength;
 }
 
-int64_t
-MediaCacheStream::GetCachedDataEndInternal(AutoLock&, int64_t aOffset)
-{
+int64_t MediaCacheStream::GetCachedDataEndInternal(AutoLock&, int64_t aOffset) {
   int32_t blockIndex = OffsetToBlockIndex(aOffset);
   if (blockIndex < 0) {
     return aOffset;
@@ -2455,7 +2241,7 @@ MediaCacheStream::GetCachedDataEndInternal(AutoLock&, int64_t aOffset)
   while (size_t(blockIndex) < mBlocks.Length() && mBlocks[blockIndex] != -1) {
     ++blockIndex;
   }
-  int64_t result = blockIndex*BLOCK_SIZE;
+  int64_t result = blockIndex * BLOCK_SIZE;
   if (blockIndex == OffsetToBlockIndexUnchecked(mChannelOffset)) {
     
     
@@ -2469,11 +2255,9 @@ MediaCacheStream::GetCachedDataEndInternal(AutoLock&, int64_t aOffset)
   return std::max(result, aOffset);
 }
 
-int64_t
-MediaCacheStream::GetNextCachedDataInternal(AutoLock&, int64_t aOffset)
-{
-  if (aOffset == mStreamLength)
-    return -1;
+int64_t MediaCacheStream::GetNextCachedDataInternal(AutoLock&,
+                                                    int64_t aOffset) {
+  if (aOffset == mStreamLength) return -1;
 
   int32_t startBlockIndex = OffsetToBlockIndex(aOffset);
   if (startBlockIndex < 0) {
@@ -2481,20 +2265,17 @@ MediaCacheStream::GetNextCachedDataInternal(AutoLock&, int64_t aOffset)
   }
   int32_t channelBlockIndex = OffsetToBlockIndexUnchecked(mChannelOffset);
 
-  if (startBlockIndex == channelBlockIndex &&
-      aOffset < mChannelOffset) {
+  if (startBlockIndex == channelBlockIndex && aOffset < mChannelOffset) {
     
     
     
     return aOffset;
   }
 
-  if (size_t(startBlockIndex) >= mBlocks.Length())
-    return -1;
+  if (size_t(startBlockIndex) >= mBlocks.Length()) return -1;
 
   
-  if (mBlocks[startBlockIndex] != -1)
-    return aOffset;
+  if (mBlocks[startBlockIndex] != -1) return aOffset;
 
   
   bool hasPartialBlock = OffsetInBlock(mChannelOffset) != 0;
@@ -2508,8 +2289,7 @@ MediaCacheStream::GetNextCachedDataInternal(AutoLock&, int64_t aOffset)
     }
 
     
-    if (size_t(blockIndex) >= mBlocks.Length())
-      return -1;
+    if (size_t(blockIndex) >= mBlocks.Length()) return -1;
 
     ++blockIndex;
   }
@@ -2518,24 +2298,20 @@ MediaCacheStream::GetNextCachedDataInternal(AutoLock&, int64_t aOffset)
   return -1;
 }
 
-void
-MediaCacheStream::SetReadMode(ReadMode aMode)
-{
+void MediaCacheStream::SetReadMode(ReadMode aMode) {
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::SetReadMode",
-    [ this, client = RefPtr<ChannelMediaResource>(mClient), aMode ]() {
-      AutoLock lock(mMediaCache->Monitor());
-      if (!mClosed && mCurrentMode != aMode) {
-        mCurrentMode = aMode;
-        mMediaCache->QueueUpdate(lock);
-      }
-    });
+      "MediaCacheStream::SetReadMode",
+      [this, client = RefPtr<ChannelMediaResource>(mClient), aMode]() {
+        AutoLock lock(mMediaCache->Monitor());
+        if (!mClosed && mCurrentMode != aMode) {
+          mCurrentMode = aMode;
+          mMediaCache->QueueUpdate(lock);
+        }
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-void
-MediaCacheStream::SetPlaybackRate(uint32_t aBytesPerSecond)
-{
+void MediaCacheStream::SetPlaybackRate(uint32_t aBytesPerSecond) {
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_ASSERT(aBytesPerSecond > 0, "Zero playback rate not allowed");
 
@@ -2546,9 +2322,7 @@ MediaCacheStream::SetPlaybackRate(uint32_t aBytesPerSecond)
   }
 }
 
-nsresult
-MediaCacheStream::Seek(AutoLock& aLock, int64_t aOffset)
-{
+nsresult MediaCacheStream::Seek(AutoLock& aLock, int64_t aOffset) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   if (!IsOffsetAllowed(aOffset)) {
@@ -2566,41 +2340,36 @@ MediaCacheStream::Seek(AutoLock& aLock, int64_t aOffset)
   return NS_OK;
 }
 
-void
-MediaCacheStream::ThrottleReadahead(bool bThrottle)
-{
+void MediaCacheStream::ThrottleReadahead(bool bThrottle) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaCacheStream::ThrottleReadahead",
-    [ client = RefPtr<ChannelMediaResource>(mClient), this, bThrottle ]() {
-      AutoLock lock(mMediaCache->Monitor());
-      if (!mClosed && mThrottleReadahead != bThrottle) {
-        LOGI("Stream %p ThrottleReadahead %d", this, bThrottle);
-        mThrottleReadahead = bThrottle;
-        mMediaCache->QueueUpdate(lock);
-      }
-    });
+      "MediaCacheStream::ThrottleReadahead",
+      [client = RefPtr<ChannelMediaResource>(mClient), this, bThrottle]() {
+        AutoLock lock(mMediaCache->Monitor());
+        if (!mClosed && mThrottleReadahead != bThrottle) {
+          LOGI("Stream %p ThrottleReadahead %d", this, bThrottle);
+          mThrottleReadahead = bThrottle;
+          mMediaCache->QueueUpdate(lock);
+        }
+      });
   OwnerThread()->Dispatch(r.forget());
 }
 
-uint32_t
-MediaCacheStream::ReadPartialBlock(AutoLock&,
-                                   int64_t aOffset,
-                                   Span<char> aBuffer)
-{
+uint32_t MediaCacheStream::ReadPartialBlock(AutoLock&, int64_t aOffset,
+                                            Span<char> aBuffer) {
   MOZ_ASSERT(IsOffsetAllowed(aOffset));
 
   if (OffsetToBlockIndexUnchecked(mChannelOffset) !=
-        OffsetToBlockIndexUnchecked(aOffset) ||
+          OffsetToBlockIndexUnchecked(aOffset) ||
       aOffset >= mChannelOffset) {
     
     return 0;
   }
 
   auto source = MakeSpan<const uint8_t>(
-    mPartialBlockBuffer.get() + OffsetInBlock(aOffset),
-    OffsetInBlock(mChannelOffset) - OffsetInBlock(aOffset));
+      mPartialBlockBuffer.get() + OffsetInBlock(aOffset),
+      OffsetInBlock(mChannelOffset) - OffsetInBlock(aOffset));
   
   
   uint32_t bytesToRead = std::min(aBuffer.Length(), source.Length());
@@ -2608,19 +2377,15 @@ MediaCacheStream::ReadPartialBlock(AutoLock&,
   return bytesToRead;
 }
 
-Result<uint32_t, nsresult>
-MediaCacheStream::ReadBlockFromCache(AutoLock& aLock,
-                                     int64_t aOffset,
-                                     Span<char> aBuffer,
-                                     bool aNoteBlockUsage)
-{
+Result<uint32_t, nsresult> MediaCacheStream::ReadBlockFromCache(
+    AutoLock& aLock, int64_t aOffset, Span<char> aBuffer,
+    bool aNoteBlockUsage) {
   MOZ_ASSERT(IsOffsetAllowed(aOffset));
 
   
   uint32_t index = OffsetToBlockIndexUnchecked(aOffset);
   int32_t cacheBlock = index < mBlocks.Length() ? mBlocks[index] : -1;
-  if (cacheBlock < 0 ||
-      (mStreamLength >= 0 && aOffset >= mStreamLength)) {
+  if (cacheBlock < 0 || (mStreamLength >= 0 && aOffset >= mStreamLength)) {
     
     return 0;
   }
@@ -2639,14 +2404,11 @@ MediaCacheStream::ReadBlockFromCache(AutoLock& aLock,
 
   
   int32_t bytesToRead =
-    std::min<int32_t>(BLOCK_SIZE - OffsetInBlock(aOffset), aBuffer.Length());
+      std::min<int32_t>(BLOCK_SIZE - OffsetInBlock(aOffset), aBuffer.Length());
   int32_t bytesRead = 0;
-  nsresult rv =
-    mMediaCache->ReadCacheFile(aLock,
-                               cacheBlock * BLOCK_SIZE + OffsetInBlock(aOffset),
-                               aBuffer.Elements(),
-                               bytesToRead,
-                               &bytesRead);
+  nsresult rv = mMediaCache->ReadCacheFile(
+      aLock, cacheBlock * BLOCK_SIZE + OffsetInBlock(aOffset),
+      aBuffer.Elements(), bytesToRead, &bytesRead);
 
   
   static_assert(INT64_MAX >= BLOCK_SIZE * (uint32_t(INT32_MAX) + 1),
@@ -2660,16 +2422,15 @@ MediaCacheStream::ReadBlockFromCache(AutoLock& aLock,
   }
 
   if (aNoteBlockUsage) {
-    mMediaCache->NoteBlockUsage(
-      aLock, this, cacheBlock, aOffset, mCurrentMode, TimeStamp::Now());
+    mMediaCache->NoteBlockUsage(aLock, this, cacheBlock, aOffset, mCurrentMode,
+                                TimeStamp::Now());
   }
 
   return bytesRead;
 }
 
-nsresult
-MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount, uint32_t* aBytes)
-{
+nsresult MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount,
+                                uint32_t* aBytes) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   
@@ -2696,7 +2457,7 @@ MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount, uint32_t
     }
 
     Result<uint32_t, nsresult> rv = ReadBlockFromCache(
-      aLock, streamOffset, buffer, true );
+        aLock, streamOffset, buffer, true );
     if (rv.isErr()) {
       return rv.unwrapErr();
     }
@@ -2716,7 +2477,7 @@ MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount, uint32_t
     MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
     while (MediaCacheStream* stream = iter.Next(aLock)) {
       if (OffsetToBlockIndexUnchecked(stream->mChannelOffset) ==
-            OffsetToBlockIndexUnchecked(streamOffset) &&
+              OffsetToBlockIndexUnchecked(streamOffset) &&
           stream->mChannelOffset == stream->mStreamLength) {
         uint32_t bytes = stream->ReadPartialBlock(aLock, streamOffset, buffer);
         streamOffset += bytes;
@@ -2762,15 +2523,14 @@ MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount, uint32_t
   
   mMediaCache->QueueUpdate(aLock);
 
-  LOG("Stream %p Read at %" PRId64 " count=%d", this, streamOffset-count, count);
+  LOG("Stream %p Read at %" PRId64 " count=%d", this, streamOffset - count,
+      count);
   mStreamOffset = streamOffset;
   return NS_OK;
 }
 
-nsresult
-MediaCacheStream::ReadAt(int64_t aOffset, char* aBuffer,
-                         uint32_t aCount, uint32_t* aBytes)
-{
+nsresult MediaCacheStream::ReadAt(int64_t aOffset, char* aBuffer,
+                                  uint32_t aCount, uint32_t* aBytes) {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   nsresult rv = Seek(lock, aOffset);
@@ -2778,9 +2538,8 @@ MediaCacheStream::ReadAt(int64_t aOffset, char* aBuffer,
   return Read(lock, aBuffer, aCount, aBytes);
 }
 
-nsresult
-MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount)
-{
+nsresult MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset,
+                                         uint32_t aCount) {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
 
@@ -2802,7 +2561,7 @@ MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount)
     }
 
     Result<uint32_t, nsresult> rv =
-      ReadBlockFromCache(lock, streamOffset, buffer);
+        ReadBlockFromCache(lock, streamOffset, buffer);
     if (rv.isErr()) {
       return rv.unwrapErr();
     }
@@ -2829,9 +2588,7 @@ MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount)
   return NS_OK;
 }
 
-nsresult
-MediaCacheStream::Init(int64_t aContentLength)
-{
+nsresult MediaCacheStream::Init(int64_t aContentLength) {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
   MOZ_ASSERT(!mMediaCache, "Has been initialized.");
 
@@ -2839,10 +2596,9 @@ MediaCacheStream::Init(int64_t aContentLength)
     uint32_t length = uint32_t(std::min(aContentLength, int64_t(UINT32_MAX)));
     LOG("MediaCacheStream::Init(this=%p) "
         "MEDIACACHESTREAM_NOTIFIED_LENGTH=%" PRIu32,
-        this,
-        length);
+        this, length);
     Telemetry::Accumulate(
-      Telemetry::HistogramID::MEDIACACHESTREAM_NOTIFIED_LENGTH, length);
+        Telemetry::HistogramID::MEDIACACHESTREAM_NOTIFIED_LENGTH, length);
 
     mStreamLength = aContentLength;
   }
@@ -2853,35 +2609,30 @@ MediaCacheStream::Init(int64_t aContentLength)
   }
 
   OwnerThread()->Dispatch(NS_NewRunnableFunction(
-    "MediaCacheStream::Init",
-    [ this, res = RefPtr<ChannelMediaResource>(mClient) ]() {
-      AutoLock lock(mMediaCache->Monitor());
-      mMediaCache->OpenStream(lock, this);
-    }));
+      "MediaCacheStream::Init",
+      [this, res = RefPtr<ChannelMediaResource>(mClient)]() {
+        AutoLock lock(mMediaCache->Monitor());
+        mMediaCache->OpenStream(lock, this);
+      }));
 
   return NS_OK;
 }
 
-void
-MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
-{
+void MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal) {
   MOZ_ASSERT(!mMediaCache, "Has been initialized.");
   MOZ_ASSERT(aOriginal->mMediaCache, "Don't clone an uninitialized stream.");
 
   
   mMediaCache = aOriginal->mMediaCache;
-  OwnerThread()->Dispatch(
-    NS_NewRunnableFunction("MediaCacheStream::InitAsClone", [
-      this,
-      aOriginal,
-      r1 = RefPtr<ChannelMediaResource>(mClient),
-      r2 = RefPtr<ChannelMediaResource>(aOriginal->mClient)
-    ]() { InitAsCloneInternal(aOriginal); }));
+  OwnerThread()->Dispatch(NS_NewRunnableFunction(
+      "MediaCacheStream::InitAsClone",
+      [this, aOriginal, r1 = RefPtr<ChannelMediaResource>(mClient),
+       r2 = RefPtr<ChannelMediaResource>(aOriginal->mClient)]() {
+        InitAsCloneInternal(aOriginal);
+      }));
 }
 
-void
-MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
-{
+void MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   AutoLock lock(mMediaCache->Monitor());
 
@@ -2898,8 +2649,7 @@ MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
   
   for (uint32_t i = 0; i < aOriginal->mBlocks.Length(); ++i) {
     int32_t cacheBlockIndex = aOriginal->mBlocks[i];
-    if (cacheBlockIndex < 0)
-      continue;
+    if (cacheBlockIndex < 0) continue;
 
     while (i >= mBlocks.Length()) {
       mBlocks.AppendElement(-1);
@@ -2911,8 +2661,7 @@ MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
 
   
   mChannelOffset = aOriginal->mChannelOffset;
-  memcpy(mPartialBlockBuffer.get(),
-         aOriginal->mPartialBlockBuffer.get(),
+  memcpy(mPartialBlockBuffer.get(), aOriginal->mPartialBlockBuffer.get(),
          BLOCK_SIZE);
 
   
@@ -2939,14 +2688,11 @@ MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
   lock.NotifyAll();
 }
 
-nsIEventTarget*
-MediaCacheStream::OwnerThread() const
-{
+nsIEventTarget* MediaCacheStream::OwnerThread() const {
   return mMediaCache->OwnerThread();
 }
 
-nsresult MediaCacheStream::GetCachedRanges(MediaByteRangeSet& aRanges)
-{
+nsresult MediaCacheStream::GetCachedRanges(MediaByteRangeSet& aRanges) {
   MOZ_ASSERT(!NS_IsMainThread());
   
   
@@ -2959,38 +2705,33 @@ nsresult MediaCacheStream::GetCachedRanges(MediaByteRangeSet& aRanges)
   int64_t startOffset = GetNextCachedDataInternal(lock, 0);
   while (startOffset >= 0) {
     int64_t endOffset = GetCachedDataEndInternal(lock, startOffset);
-    NS_ASSERTION(startOffset < endOffset, "Buffered range must end after its start");
+    NS_ASSERTION(startOffset < endOffset,
+                 "Buffered range must end after its start");
     
     aRanges += MediaByteRange(startOffset, endOffset);
     startOffset = GetNextCachedDataInternal(lock, endOffset);
-    NS_ASSERTION(startOffset == -1 || startOffset > endOffset,
-      "Must have advanced to start of next range, or hit end of stream");
+    NS_ASSERTION(
+        startOffset == -1 || startOffset > endOffset,
+        "Must have advanced to start of next range, or hit end of stream");
   }
   return NS_OK;
 }
 
-double
-MediaCacheStream::GetDownloadRate(bool* aIsReliable)
-{
+double MediaCacheStream::GetDownloadRate(bool* aIsReliable) {
   MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   return mDownloadStatistics.GetRate(aIsReliable);
 }
 
-nsCString
-MediaCacheStream::GetDebugInfo()
-{
+nsCString MediaCacheStream::GetDebugInfo() {
   AutoLock lock(mMediaCache->GetMonitorOnTheMainThread());
   return nsPrintfCString("mStreamLength=%" PRId64 " mChannelOffset=%" PRId64
                          " mCacheSuspended=%d mChannelEnded=%d mLoadID=%u",
-                         mStreamLength,
-                         mChannelOffset,
-                         mCacheSuspended,
-                         mChannelEnded,
-                         mLoadID);
+                         mStreamLength, mChannelOffset, mCacheSuspended,
+                         mChannelEnded, mLoadID);
 }
 
-} 
+}  
 
 
 #undef LOG

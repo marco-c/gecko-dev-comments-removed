@@ -14,11 +14,9 @@ class MediaByteBuffer;
 
 DDLoggedTypeDeclNameAndBase(BufferStream, ByteStream);
 
-class BufferStream
-  : public ByteStream
-  , public mozilla::DecoderDoctorLifeLogger<BufferStream>
-{
-public:
+class BufferStream : public ByteStream,
+                     public mozilla::DecoderDoctorLifeLogger<BufferStream> {
+ public:
   
 
 
@@ -37,11 +35,11 @@ public:
 
   mozilla::MediaByteRange GetByteRange();
 
-private:
+ private:
   ~BufferStream();
   int64_t mStartOffset;
   RefPtr<mozilla::MediaByteBuffer> mData;
 };
-}
+}  
 
 #endif

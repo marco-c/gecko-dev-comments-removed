@@ -48,7 +48,6 @@
 
 
 
-
 #include <vdpau/vdpau.h>
 
 #include "libavutil/avconfig.h"
@@ -79,21 +78,21 @@ typedef int (*AVVDPAU_Render2)(struct AVCodecContext *, struct AVFrame *,
 
 
 typedef struct AVVDPAUContext {
-    
+  
 
 
 
 
-    VdpDecoder decoder;
+  VdpDecoder decoder;
 
-    
-
-
+  
 
 
-    VdpDecoderRender *render;
 
-    AVVDPAU_Render2 render2;
+
+  VdpDecoderRender *render;
+
+  AVVDPAU_Render2 render2;
 } AVVDPAUContext;
 
 
@@ -167,8 +166,8 @@ AVVDPAUContext *av_vdpau_alloc_context(void);
 
 
 
-attribute_deprecated
-int av_vdpau_get_profile(AVCodecContext *avctx, VdpDecoderProfile *profile);
+attribute_deprecated int av_vdpau_get_profile(AVCodecContext *avctx,
+                                              VdpDecoderProfile *profile);
 #endif
 
 

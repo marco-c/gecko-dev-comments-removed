@@ -40,27 +40,27 @@
 
 
 class GMPTask {
-public:
-  virtual void Destroy() = 0; 
+ public:
+  virtual void Destroy() = 0;  
   virtual ~GMPTask() {}
   virtual void Run() = 0;
 };
 
 class GMPThread {
-public:
+ public:
   virtual ~GMPThread() {}
   virtual void Post(GMPTask* aTask) = 0;
-  virtual void Join() = 0; 
+  virtual void Join() = 0;  
 };
 
 
 
 class GMPMutex {
-public:
+ public:
   virtual ~GMPMutex() {}
   virtual void Acquire() = 0;
   virtual void Release() = 0;
-  virtual void Destroy() = 0; 
+  virtual void Destroy() = 0;  
 };
 
 
@@ -79,7 +79,8 @@ typedef GMPErr (*GMPCreateRecordPtr)(const char* aRecordName,
                                      GMPRecordClient* aClient);
 
 
-typedef GMPErr (*GMPSetTimerOnMainThreadPtr)(GMPTask* aTask, int64_t aTimeoutMS);
+typedef GMPErr (*GMPSetTimerOnMainThreadPtr)(GMPTask* aTask,
+                                             int64_t aTimeoutMS);
 typedef GMPErr (*GMPGetCurrentTimePtr)(GMPTimestamp* aOutTime);
 
 struct GMPPlatformAPI {
@@ -87,7 +88,7 @@ struct GMPPlatformAPI {
   
   
   
-  uint16_t version; 
+  uint16_t version;  
 
   GMPCreateThreadPtr createthread;
   GMPRunOnMainThreadPtr runonmainthread;
@@ -98,4 +99,4 @@ struct GMPPlatformAPI {
   GMPGetCurrentTimePtr getcurrenttime;
 };
 
-#endif 
+#endif  

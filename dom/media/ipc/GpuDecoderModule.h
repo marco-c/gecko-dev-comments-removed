@@ -18,12 +18,10 @@ namespace mozilla {
 
 
 
-class GpuDecoderModule : public PlatformDecoderModule
-{
-public:
+class GpuDecoderModule : public PlatformDecoderModule {
+ public:
   explicit GpuDecoderModule(PlatformDecoderModule* aWrapped)
-    : mWrapped(aWrapped)
-  {}
+      : mWrapped(aWrapped) {}
 
   nsresult Startup() override;
 
@@ -33,18 +31,17 @@ public:
                 DecoderDoctorDiagnostics* aDiagnostics) const override;
 
   already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-    const CreateDecoderParams& aParams) override;
+      const CreateDecoderParams& aParams) override;
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-    const CreateDecoderParams& aParams) override
-  {
+      const CreateDecoderParams& aParams) override {
     return nullptr;
   }
 
-private:
+ private:
   RefPtr<PlatformDecoderModule> mWrapped;
 };
 
-} 
+}  
 
-#endif 
+#endif  

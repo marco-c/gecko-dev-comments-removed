@@ -26,9 +26,8 @@ class TrackInfo;
 
 
 
-class OmxPlatformLayer
-{
-public:
+class OmxPlatformLayer {
+ public:
   typedef OmxPromiseLayer::BUFFERLIST BUFFERLIST;
   typedef OmxPromiseLayer::BufferData BufferData;
 
@@ -40,16 +39,17 @@ public:
 
   virtual OMX_ERRORTYPE FillThisBuffer(BufferData* aData) = 0;
 
-  virtual OMX_ERRORTYPE SendCommand(OMX_COMMANDTYPE aCmd,
-                                    OMX_U32 aParam1,
+  virtual OMX_ERRORTYPE SendCommand(OMX_COMMANDTYPE aCmd, OMX_U32 aParam1,
                                     OMX_PTR aCmdData) = 0;
 
   
   
   
-  virtual nsresult AllocateOmxBuffer(OMX_DIRTYPE aType, BUFFERLIST* aBufferList) = 0;
+  virtual nsresult AllocateOmxBuffer(OMX_DIRTYPE aType,
+                                     BUFFERLIST* aBufferList) = 0;
 
-  virtual nsresult ReleaseOmxBuffer(OMX_DIRTYPE aType, BUFFERLIST* aBufferList) = 0;
+  virtual nsresult ReleaseOmxBuffer(OMX_DIRTYPE aType,
+                                    BUFFERLIST* aBufferList) = 0;
 
   virtual OMX_ERRORTYPE GetState(OMX_STATETYPE* aType) = 0;
 
@@ -82,19 +82,21 @@ public:
   static bool SupportsMimeType(const nsACString& aMimeType);
 
   
+  
   static OmxPlatformLayer* Create(OmxDataDecoder* aDataDecoder,
                                   OmxPromiseLayer* aPromiseLayer,
                                   TaskQueue* aTaskQueue,
                                   layers::ImageContainer* aImageContainer);
 
-protected:
+ protected:
   OmxPlatformLayer() : mInfo(nullptr), mStartPortNumber(0) {}
 
+  
   
   const TrackInfo* mInfo;
   OMX_U32 mStartPortNumber;
 };
 
-}
+}  
 
-#endif 
+#endif  

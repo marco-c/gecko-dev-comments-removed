@@ -24,7 +24,7 @@
 
 
 #define VALIDATE_VORBIS_SAMPLE_CALCULATION
-#ifdef  VALIDATE_VORBIS_SAMPLE_CALCULATION
+#ifdef VALIDATE_VORBIS_SAMPLE_CALCULATION
 #include <map>
 #endif
 
@@ -34,11 +34,9 @@ namespace mozilla {
 
 class OpusParser;
 
-struct OggPacketDeletePolicy
-{
-  void operator()(ogg_packet* aPacket) const
-  {
-    delete [] aPacket->packet;
+struct OggPacketDeletePolicy {
+  void operator()(ogg_packet* aPacket) const {
+    delete[] aPacket->packet;
     delete aPacket;
   }
 };
@@ -46,10 +44,8 @@ struct OggPacketDeletePolicy
 using OggPacketPtr = UniquePtr<ogg_packet, OggPacketDeletePolicy>;
 
 
-class OggPacketDeallocator : public nsDequeFunctor
-{
-  virtual void operator()(void* aPacket) override
-  {
+class OggPacketDeallocator : public nsDequeFunctor {
+  virtual void operator()(void* aPacket) override {
     OggPacketDeletePolicy()(static_cast<ogg_packet*>(aPacket));
   }
 };
@@ -64,32 +60,26 @@ class OggPacketDeallocator : public nsDequeFunctor
 
 
 
-class OggPacketQueue : private nsDeque
-{
-public:
-  OggPacketQueue() : nsDeque(new OggPacketDeallocator()) { }
+class OggPacketQueue : private nsDeque {
+ public:
+  OggPacketQueue() : nsDeque(new OggPacketDeallocator()) {}
   ~OggPacketQueue() { Erase(); }
   bool IsEmpty() { return nsDeque::GetSize() == 0; }
   void Append(OggPacketPtr aPacket);
-  OggPacketPtr PopFront()
-  {
+  OggPacketPtr PopFront() {
     return OggPacketPtr(static_cast<ogg_packet*>(nsDeque::PopFront()));
   }
-  ogg_packet* PeekFront()
-  {
+  ogg_packet* PeekFront() {
     return static_cast<ogg_packet*>(nsDeque::PeekFront());
   }
-  OggPacketPtr Pop()
-  {
+  OggPacketPtr Pop() {
     return OggPacketPtr(static_cast<ogg_packet*>(nsDeque::Pop()));
   }
-  ogg_packet* operator[](size_t aIndex) const
-  {
+  ogg_packet* operator[](size_t aIndex) const {
     return static_cast<ogg_packet*>(nsDeque::ObjectAt(aIndex));
   }
   size_t Length() const { return nsDeque::GetSize(); }
-  void PushFront(OggPacketPtr aPacket)
-  {
+  void PushFront(OggPacketPtr aPacket) {
     nsDeque::PushFront(aPacket.release());
   }
   void Erase() { nsDeque::Erase(); }
@@ -97,14 +87,12 @@ public:
 
 
 
-class OggCodecState
-{
-public:
+class OggCodecState {
+ public:
   typedef mozilla::MetadataTags MetadataTags;
   
-  enum CodecType
-  {
-    TYPE_VORBIS=0,
+  enum CodecType {
+    TYPE_VORBIS = 0,
     TYPE_THEORA,
     TYPE_OPUS,
     TYPE_SKELETON,
@@ -125,16 +113,12 @@ public:
   
   
   
-  virtual bool DecodeHeader(OggPacketPtr aPacket)
-  {
+  virtual bool DecodeHeader(OggPacketPtr aPacket) {
     return (mDoneReadingHeaders = true);
   }
 
   
-  virtual MetadataTags* GetTags()
-  {
-    return nullptr;
-  }
+  virtual MetadataTags* GetTags() { return nullptr; }
 
   
   virtual int64_t Time(int64_t granulepos) { return -1; }
@@ -146,8 +130,7 @@ public:
   virtual int64_t PacketDuration(ogg_packet* aPacket) { return -1; }
 
   
-  virtual int64_t PacketStartTime(ogg_packet* aPacket)
-  {
+  virtual int64_t PacketStartTime(ogg_packet* aPacket) {
     if (aPacket->granulepos < 0) {
       return -1;
     }
@@ -170,8 +153,7 @@ public:
 
   
   
-  void Deactivate()
-  {
+  void Deactivate() {
     mActive = false;
     mDoneReadingHeaders = true;
     Reset();
@@ -248,8 +230,7 @@ public:
   
   bool mDoneReadingHeaders;
 
-  virtual const TrackInfo* GetInfo() const
-  {
+  virtual const TrackInfo* GetInfo() const {
     MOZ_RELEASE_ASSERT(false, "Can't be called directly");
     return nullptr;
   }
@@ -260,11 +241,10 @@ public:
   
   
   
-  static bool AddVorbisComment(MetadataTags* aTags,
-                        const char* aComment,
-                        uint32_t aLength);
+  static bool AddVorbisComment(MetadataTags* aTags, const char* aComment,
+                               uint32_t aLength);
 
-protected:
+ protected:
   
   
   
@@ -289,13 +269,12 @@ protected:
   bool SetCodecSpecificConfig(MediaByteBuffer* aBuffer,
                               OggPacketQueue& aHeaders);
 
-private:
+ private:
   bool InternalInit();
 };
 
-class VorbisState : public OggCodecState
-{
-public:
+class VorbisState : public OggCodecState {
+ public:
   explicit VorbisState(ogg_page* aBosPage);
   virtual ~VorbisState();
 
@@ -312,7 +291,7 @@ public:
   
   MetadataTags* GetTags() override;
 
-private:
+ private:
   AudioInfo mInfo;
   vorbis_info mVorbisInfo;
   vorbis_comment mComment;
@@ -355,24 +334,20 @@ private:
   
   void AssertHasRecordedPacketSamples(ogg_packet* aPacket);
 
-public:
+ public:
   
   
   
   void ValidateVorbisPacketSamples(ogg_packet* aPacket, long aSamples);
-
 };
 
 
 
-int TheoraVersion(th_info* info,
-                  unsigned char maj,
-                  unsigned char min,
+int TheoraVersion(th_info* info, unsigned char maj, unsigned char min,
                   unsigned char sub);
 
-class TheoraState : public OggCodecState
-{
-public:
+class TheoraState : public OggCodecState {
+ public:
   explicit TheoraState(ogg_page* aBosPage);
   virtual ~TheoraState();
 
@@ -388,12 +363,11 @@ public:
   nsresult PageIn(ogg_page* aPage) override;
   const TrackInfo* GetInfo() const override { return &mInfo; }
   int64_t MaxKeyframeOffset() override;
-  int32_t KeyFrameGranuleJobs() override
-  {
+  int32_t KeyFrameGranuleJobs() override {
     return mTheoraInfo.keyframe_granule_shift;
   }
 
-private:
+ private:
   
   static int64_t Time(th_info* aInfo, int64_t aGranulePos);
 
@@ -413,9 +387,8 @@ private:
   void ReconstructTheoraGranulepos();
 };
 
-class OpusState : public OggCodecState
-{
-public:
+class OpusState : public OggCodecState {
+ public:
   explicit OpusState(ogg_page* aBosPage);
   virtual ~OpusState();
 
@@ -437,7 +410,7 @@ public:
   
   MetadataTags* GetTags() override;
 
-private:
+ private:
   nsAutoPtr<OpusParser> mParser;
   OpusMSDecoder* mDecoder;
 
@@ -462,10 +435,9 @@ private:
 
 
 
-#define SKELETON_VERSION(major, minor) (((major)<<16)|(minor))
+#define SKELETON_VERSION(major, minor) (((major) << 16) | (minor))
 
-enum EMsgHeaderType
-{
+enum EMsgHeaderType {
   eContentType,
   eRole,
   eName,
@@ -477,21 +449,18 @@ enum EMsgHeaderType
   eTrackDependencies
 };
 
-typedef struct
-{
+typedef struct {
   const char* mPatternToRecognize;
   EMsgHeaderType mMsgHeaderType;
 } FieldPatternType;
 
 
-typedef struct
-{
+typedef struct {
   nsClassHashtable<nsUint32HashKey, nsCString> mValuesStore;
 } MessageField;
 
-class SkeletonState : public OggCodecState
-{
-public:
+class SkeletonState : public OggCodecState {
+ public:
   explicit SkeletonState(ogg_page* aBosPage);
   ~SkeletonState();
 
@@ -508,16 +477,12 @@ public:
 
   
   
-  class nsKeyPoint
-  {
-  public:
-    nsKeyPoint()
-      : mOffset(INT64_MAX)
-      , mTime(INT64_MAX) {}
+  class nsKeyPoint {
+   public:
+    nsKeyPoint() : mOffset(INT64_MAX), mTime(INT64_MAX) {}
 
     nsKeyPoint(int64_t aOffset, int64_t aTime)
-      : mOffset(aOffset)
-      ,mTime(aTime) {}
+        : mOffset(aOffset), mTime(aTime) {}
 
     
     int64_t mOffset;
@@ -525,37 +490,26 @@ public:
     
     int64_t mTime;
 
-    bool IsNull()
-    {
-      return mOffset == INT64_MAX && mTime == INT64_MAX;
-    }
+    bool IsNull() { return mOffset == INT64_MAX && mTime == INT64_MAX; }
   };
 
   
   
-  class nsSeekTarget
-  {
-  public:
-    nsSeekTarget() : mSerial(0) { }
+  class nsSeekTarget {
+   public:
+    nsSeekTarget() : mSerial(0) {}
     nsKeyPoint mKeyPoint;
     uint32_t mSerial;
-    bool IsNull()
-    {
-      return mKeyPoint.IsNull() && mSerial == 0;
-    }
+    bool IsNull() { return mKeyPoint.IsNull() && mSerial == 0; }
   };
 
   
   
   
-  nsresult IndexedSeekTarget(int64_t aTarget,
-                             nsTArray<uint32_t>& aTracks,
+  nsresult IndexedSeekTarget(int64_t aTarget, nsTArray<uint32_t>& aTracks,
                              nsSeekTarget& aResult);
 
-  bool HasIndex() const
-  {
-    return mIndex.Count() > 0;
-  }
+  bool HasIndex() const { return mIndex.Count() > 0; }
 
   
   
@@ -563,8 +517,7 @@ public:
   
   nsresult GetDuration(const nsTArray<uint32_t>& aTracks, int64_t& aDuration);
 
-private:
-
+ private:
   
   bool DecodeIndex(ogg_packet* aPacket);
   
@@ -572,8 +525,7 @@ private:
 
   
   
-  nsresult IndexedSeekTargetForTrack(uint32_t aSerialno,
-                                     int64_t aTarget,
+  nsresult IndexedSeekTargetForTrack(uint32_t aSerialno, int64_t aTarget,
                                      nsKeyPoint& aResult);
 
   
@@ -587,36 +539,22 @@ private:
 
   
   
-  class nsKeyFrameIndex
-  {
-  public:
-
+  class nsKeyFrameIndex {
+   public:
     nsKeyFrameIndex(int64_t aStartTime, int64_t aEndTime)
-      : mStartTime(aStartTime)
-      , mEndTime(aEndTime)
-    {
+        : mStartTime(aStartTime), mEndTime(aEndTime) {
       MOZ_COUNT_CTOR(nsKeyFrameIndex);
     }
 
-    ~nsKeyFrameIndex()
-    {
-      MOZ_COUNT_DTOR(nsKeyFrameIndex);
-    }
+    ~nsKeyFrameIndex() { MOZ_COUNT_DTOR(nsKeyFrameIndex); }
 
-    void Add(int64_t aOffset, int64_t aTimeMs)
-    {
+    void Add(int64_t aOffset, int64_t aTimeMs) {
       mKeyPoints.AppendElement(nsKeyPoint(aOffset, aTimeMs));
     }
 
-    const nsKeyPoint& Get(uint32_t aIndex) const
-    {
-      return mKeyPoints[aIndex];
-    }
+    const nsKeyPoint& Get(uint32_t aIndex) const { return mKeyPoints[aIndex]; }
 
-    uint32_t Length() const
-    {
-      return mKeyPoints.Length();
-    }
+    uint32_t Length() const { return mKeyPoints.Length(); }
 
     
     const int64_t mStartTime;
@@ -624,7 +562,7 @@ private:
     
     const int64_t mEndTime;
 
-  private:
+   private:
     nsTArray<nsKeyPoint> mKeyPoints;
   };
 
@@ -632,9 +570,8 @@ private:
   nsClassHashtable<nsUint32HashKey, nsKeyFrameIndex> mIndex;
 };
 
-class FlacState : public OggCodecState
-{
-public:
+class FlacState : public OggCodecState {
+ public:
   explicit FlacState(ogg_page* aBosPage);
 
   CodecType GetType() override { return TYPE_FLAC; }
@@ -649,12 +586,12 @@ public:
 
   const TrackInfo* GetInfo() const override;
 
-private:
+ private:
   bool ReconstructFlacGranulepos(void);
 
   FlacFrameParser mParser;
 };
 
-} 
+}  
 
 #endif

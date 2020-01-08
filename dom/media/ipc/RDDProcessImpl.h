@@ -8,7 +8,7 @@
 #include "mozilla/ipc/ProcessChild.h"
 
 #if defined(XP_WIN)
-# include "mozilla/mscom/MainThreadRuntime.h"
+#include "mozilla/mscom/MainThreadRuntime.h"
 #endif
 
 #include "RDDParent.h"
@@ -17,16 +17,15 @@ namespace mozilla {
 
 
 
-class RDDProcessImpl final : public ipc::ProcessChild
-{
-public:
+class RDDProcessImpl final : public ipc::ProcessChild {
+ public:
   explicit RDDProcessImpl(ProcessId aParentPid);
   ~RDDProcessImpl();
 
   bool Init(int aArgc, char* aArgv[]) override;
   void CleanUp() override;
 
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(RDDProcessImpl);
 
   RDDParent mRDD;
@@ -37,6 +36,6 @@ private:
 #endif
 };
 
-} 
+}  
 
-#endif 
+#endif  

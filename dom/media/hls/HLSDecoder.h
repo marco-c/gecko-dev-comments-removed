@@ -14,9 +14,8 @@ namespace mozilla {
 
 class HLSResourceCallbacksSupport;
 
-class HLSDecoder final : public MediaDecoder
-{
-public:
+class HLSDecoder final : public MediaDecoder {
+ public:
   
   explicit HLSDecoder(MediaDecoderInit& aInit);
 
@@ -44,13 +43,12 @@ public:
   
   void NotifyDataArrived();
 
-private:
+ private:
   friend class HLSResourceCallbacksSupport;
 
   MediaDecoderStateMachine* CreateStateMachine();
 
-  bool CanPlayThroughImpl() final
-  {
+  bool CanPlayThroughImpl() final {
     
     
     return true;
@@ -63,6 +61,6 @@ private:
   RefPtr<HLSResourceCallbacksSupport> mCallbackSupport;
 };
 
-} 
+}  
 
 #endif 

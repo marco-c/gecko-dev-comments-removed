@@ -43,9 +43,8 @@
 #include "gmp-video-codec.h"
 
 
-class GMPVideoEncoderCallback
-{
-public:
+class GMPVideoEncoderCallback {
+ public:
   virtual ~GMPVideoEncoderCallback() {}
 
   virtual void Encoded(GMPVideoEncodedFrame* aEncodedFrame,
@@ -66,11 +65,11 @@ public:
 
 
 
-class GMPVideoEncoder
-{
-public:
+class GMPVideoEncoder {
+ public:
   virtual ~GMPVideoEncoder() {}
 
+  
   
   
   
@@ -88,8 +87,7 @@ public:
                           const uint8_t* aCodecSpecific,
                           uint32_t aCodecSpecificLength,
                           GMPVideoEncoderCallback* aCallback,
-                          int32_t aNumberOfCores,
-                          uint32_t aMaxPayloadSize) = 0;
+                          int32_t aNumberOfCores, uint32_t aMaxPayloadSize) = 0;
 
   
   
@@ -132,4 +130,4 @@ public:
   virtual void EncodingComplete() = 0;
 };
 
-#endif 
+#endif  

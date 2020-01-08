@@ -11,20 +11,17 @@ namespace mozilla {
 
 class RemoteDecoderManagerParent;
 
-class RemoteVideoDecoderParent final : public PRemoteVideoDecoderParent
-{
-public:
+class RemoteVideoDecoderParent final : public PRemoteVideoDecoderParent {
+ public:
   
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteVideoDecoderParent)
 
   RemoteVideoDecoderParent(RemoteDecoderManagerParent* aParent,
-                           const VideoInfo& aVideoInfo,
-                           float aFramerate,
+                           const VideoInfo& aVideoInfo, float aFramerate,
                            const CreateDecoderParams::OptionSet& aOptions,
                            TaskQueue* aManagerTaskQueue,
-                           TaskQueue* aDecodeTaskQueue,
-                           bool* aSuccess,
+                           TaskQueue* aDecodeTaskQueue, bool* aSuccess,
                            nsCString* aErrorDescription);
 
   void Destroy();
@@ -39,7 +36,7 @@ public:
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
+ private:
   bool OnManagerThread();
   void Error(const MediaResult& aError);
 
@@ -57,6 +54,6 @@ private:
   VideoInfo mVideoInfo;
 };
 
-} 
+}  
 
-#endif 
+#endif  

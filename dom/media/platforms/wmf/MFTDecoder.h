@@ -14,11 +14,10 @@
 
 namespace mozilla {
 
-class MFTDecoder final
-{
+class MFTDecoder final {
   ~MFTDecoder();
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFTDecoder)
 
   MFTDecoder();
@@ -38,10 +37,9 @@ public:
   
   
   
-  HRESULT SetMediaTypes(IMFMediaType* aInputType,
-                        IMFMediaType* aOutputType,
+  HRESULT SetMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType,
                         std::function<HRESULT(IMFMediaType*)>&& aCallback =
-                          [](IMFMediaType* aOutput) { return S_OK; });
+                            [](IMFMediaType* aOutput) { return S_OK; });
 
   
   already_AddRefed<IMFAttributes> GetAttributes();
@@ -56,13 +54,11 @@ public:
   
   
   
-  HRESULT Input(const uint8_t* aData,
-                uint32_t aDataSize,
+  HRESULT Input(const uint8_t* aData, uint32_t aDataSize,
                 int64_t aTimestampUsecs);
   HRESULT Input(IMFSample* aSample);
 
-  HRESULT CreateInputSample(const uint8_t* aData,
-                            uint32_t aDataSize,
+  HRESULT CreateInputSample(const uint8_t* aData, uint32_t aDataSize,
                             int64_t aTimestampUsecs,
                             RefPtr<IMFSample>* aOutSample);
 
@@ -89,13 +85,13 @@ public:
 
   HRESULT FindDecoderOutputTypeWithSubtype(const GUID& aSubType);
   HRESULT FindDecoderOutputType();
-private:
+
+ private:
   
   
   HRESULT SetDecoderOutputType(
-    const GUID& aSubType,
-    IMFMediaType* aTypeToUse,
-    std::function<HRESULT(IMFMediaType*)>&& aCallback);
+      const GUID& aSubType, IMFMediaType* aTypeToUse,
+      std::function<HRESULT(IMFMediaType*)>&& aCallback);
   HRESULT CreateOutputSample(RefPtr<IMFSample>* aOutSample);
 
   MFT_INPUT_STREAM_INFO mInputStreamInfo;
@@ -113,6 +109,6 @@ private:
   bool mDiscontinuity = true;
 };
 
-} 
+}  
 
 #endif

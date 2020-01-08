@@ -19,22 +19,18 @@ namespace dom {
 
 class KnowsCompositorVideo;
 
-class VideoDecoderParent final : public PVideoDecoderParent
-{
-public:
+class VideoDecoderParent final : public PVideoDecoderParent {
+ public:
   
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoDecoderParent)
 
   VideoDecoderParent(VideoDecoderManagerParent* aParent,
-                     const VideoInfo& aVideoInfo,
-                     float aFramerate,
+                     const VideoInfo& aVideoInfo, float aFramerate,
                      const CreateDecoderParams::OptionSet& aOptions,
                      const layers::TextureFactoryIdentifier& aIdentifier,
-                     TaskQueue* aManagerTaskQueue,
-                     TaskQueue* aDecodeTaskQueue,
-                     bool* aSuccess,
-                     nsCString* aErrorDescription);
+                     TaskQueue* aManagerTaskQueue, TaskQueue* aDecodeTaskQueue,
+                     bool* aSuccess, nsCString* aErrorDescription);
 
   void Destroy();
 
@@ -48,7 +44,7 @@ public:
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
+ private:
   bool OnManagerThread();
   void Error(const MediaResult& aError);
 
@@ -66,7 +62,7 @@ private:
   bool mDestroyed;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

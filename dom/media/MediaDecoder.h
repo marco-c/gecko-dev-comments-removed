@@ -46,12 +46,12 @@ enum class Visibility : uint8_t;
 
 
 
+
 #ifdef GetCurrentTime
 #undef GetCurrentTime
 #endif
 
-struct MOZ_STACK_CLASS MediaDecoderInit
-{
+struct MOZ_STACK_CLASS MediaDecoderInit {
   MediaDecoderOwner* const mOwner;
   const double mVolume;
   const bool mPreservesPitch;
@@ -61,40 +61,32 @@ struct MOZ_STACK_CLASS MediaDecoderInit
   const bool mLooping;
   const MediaContainerType mContainerType;
 
-  MediaDecoderInit(MediaDecoderOwner* aOwner,
-                   double aVolume,
-                   bool aPreservesPitch,
-                   double aPlaybackRate,
-                   bool aMinimizePreroll,
-                   bool aHasSuspendTaint,
-                   bool aLooping,
+  MediaDecoderInit(MediaDecoderOwner* aOwner, double aVolume,
+                   bool aPreservesPitch, double aPlaybackRate,
+                   bool aMinimizePreroll, bool aHasSuspendTaint, bool aLooping,
                    const MediaContainerType& aContainerType)
-    : mOwner(aOwner)
-    , mVolume(aVolume)
-    , mPreservesPitch(aPreservesPitch)
-    , mPlaybackRate(aPlaybackRate)
-    , mMinimizePreroll(aMinimizePreroll)
-    , mHasSuspendTaint(aHasSuspendTaint)
-    , mLooping(aLooping)
-    , mContainerType(aContainerType)
-  {
-  }
+      : mOwner(aOwner),
+        mVolume(aVolume),
+        mPreservesPitch(aPreservesPitch),
+        mPlaybackRate(aPlaybackRate),
+        mMinimizePreroll(aMinimizePreroll),
+        mHasSuspendTaint(aHasSuspendTaint),
+        mLooping(aLooping),
+        mContainerType(aContainerType) {}
 };
 
 DDLoggedTypeDeclName(MediaDecoder);
 
-class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder>
-{
-public:
+class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
+ public:
   typedef MozPromise<bool , bool ,
                       true>
-    SeekPromise;
+      SeekPromise;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDecoder)
 
   
-  enum PlayState
-  {
+  enum PlayState {
     PLAY_STATE_START,
     PLAY_STATE_LOADING,
     PLAY_STATE_PAUSED,
@@ -253,40 +245,26 @@ public:
   
   
   
-  struct ResourceSizes
-  {
+  struct ResourceSizes {
     typedef MozPromise<size_t, size_t, true> SizeOfPromise;
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ResourceSizes)
     explicit ResourceSizes(MallocSizeOf aMallocSizeOf)
-      : mMallocSizeOf(aMallocSizeOf)
-      , mByteSize(0)
-      , mCallback()
-    {
-    }
+        : mMallocSizeOf(aMallocSizeOf), mByteSize(0), mCallback() {}
 
     mozilla::MallocSizeOf mMallocSizeOf;
     mozilla::Atomic<size_t> mByteSize;
 
-    RefPtr<SizeOfPromise> Promise()
-    {
-      return mCallback.Ensure(__func__);
-    }
+    RefPtr<SizeOfPromise> Promise() { return mCallback.Ensure(__func__); }
 
-private:
-    ~ResourceSizes()
-    {
-      mCallback.ResolveIfExists(mByteSize, __func__);
-    }
+   private:
+    ~ResourceSizes() { mCallback.ResolveIfExists(mByteSize, __func__); }
 
     MozPromiseHolder<SizeOfPromise> mCallback;
   };
 
   virtual void AddSizeOfResources(ResourceSizes* aSizes) = 0;
 
-  VideoFrameContainer* GetVideoFrameContainer()
-  {
-    return mVideoFrameContainer;
-  }
+  VideoFrameContainer* GetVideoFrameContainer() { return mVideoFrameContainer; }
 
   layers::ImageContainer* GetImageContainer();
 
@@ -303,6 +281,7 @@ private:
                                     Visibility aElementVisibility,
                                     bool aIsElementInTree);
 
+  
   
   
   void SetForcedHidden(bool aForcedHidden);
@@ -338,8 +317,7 @@ private:
   void SeekingStarted();
 
   void UpdateLogicalPositionInternal();
-  void UpdateLogicalPosition()
-  {
+  void UpdateLogicalPosition() {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
     
@@ -361,10 +339,7 @@ private:
 
   MediaDecoderOwner* GetOwner() const;
 
-  AbstractThread* AbstractMainThread() const
-  {
-    return mAbstractMainThread;
-  }
+  AbstractThread* AbstractMainThread() const { return mAbstractMainThread; }
 
   RefPtr<SetCDMPromise> SetCDMProxy(CDMProxy* aProxy);
 
@@ -382,15 +357,13 @@ private:
   
   FrameStatistics& GetFrameStatistics() { return *mFrameStats; }
 
-  void UpdateReadyState()
-  {
+  void UpdateReadyState() {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
     GetOwner()->UpdateReadyState();
   }
 
-  MediaDecoderOwner::NextFrameStatus NextFrameStatus() const
-  {
+  MediaDecoderOwner::NextFrameStatus NextFrameStatus() const {
     return mNextFrameStatus;
   }
 
@@ -405,7 +378,7 @@ private:
   using DebugInfoPromise = MozPromise<nsCString, bool, true>;
   RefPtr<DebugInfoPromise> RequestDebugInfo();
 
-protected:
+ protected:
   virtual ~MediaDecoder();
 
   
@@ -425,11 +398,11 @@ protected:
 
   double ExplicitDuration() { return mExplicitDuration.ref(); }
 
-  void SetExplicitDuration(double aValue)
-  {
+  void SetExplicitDuration(double aValue) {
     MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
     mExplicitDuration = Some(aValue);
 
+    
     
     
     DurationChanged();
@@ -458,10 +431,7 @@ protected:
   
   
   
-  virtual media::TimeUnit CurrentPosition()
-  {
-    return mCurrentPosition.Ref();
-  }
+  virtual media::TimeUnit CurrentPosition() { return mCurrentPosition.Ref(); }
 
   already_AddRefed<layers::KnowsCompositor> GetCompositor();
 
@@ -478,11 +448,11 @@ protected:
   
   
   static constexpr auto DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED =
-    media::TimeUnit::FromMicroseconds(250000);
+      media::TimeUnit::FromMicroseconds(250000);
 
   virtual nsCString GetDebugInfo();
 
-private:
+ private:
   
   void NotifyCompositor();
 
@@ -490,10 +460,7 @@ private:
 
   void OnDecoderDoctorEvent(DecoderDoctorEvent aEvent);
 
-  void OnMediaNotSeekable()
-  {
-    mMediaSeekable = false;
-  }
+  void OnMediaNotSeekable() { mMediaSeekable = false; }
 
   void OnNextFrameStatus(MediaDecoderOwner::NextFrameStatus);
 
@@ -513,7 +480,7 @@ private:
   
   RefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
 
-protected:
+ protected:
   void NotifyReaderDataArrived();
   void DiscardOngoingSeekIfExists();
   virtual void CallSeek(const SeekTarget& aTarget);
@@ -578,7 +545,7 @@ protected:
   bool mHasSuspendTaint;
 
   MediaDecoderOwner::NextFrameStatus mNextFrameStatus =
-    MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
+      MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
 
   
   MediaEventListener mTimedMetadataListener;
@@ -595,7 +562,7 @@ protected:
   MediaEventListener mOnDecodeWarning;
   MediaEventListener mOnNextFrameStatus;
 
-protected:
+ protected:
   
   double mPlaybackRate;
 
@@ -651,31 +618,24 @@ protected:
   
   bool mIsBackgroundVideoDecodingAllowed;
 
-public:
+ public:
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
-  AbstractCanonical<bool>* CanonicalPreservesPitch()
-  {
+  AbstractCanonical<bool>* CanonicalPreservesPitch() {
     return &mPreservesPitch;
   }
-  AbstractCanonical<bool>* CanonicalLooping()
-  {
-    return &mLooping;
-  }
+  AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
-  AbstractCanonical<bool>* CanonicalLogicallySeeking()
-  {
+  AbstractCanonical<bool>* CanonicalLogicallySeeking() {
     return &mLogicallySeeking;
   }
-  AbstractCanonical<bool>* CanonicalSameOriginMedia()
-  {
+  AbstractCanonical<bool>* CanonicalSameOriginMedia() {
     return &mSameOriginMedia;
   }
-  AbstractCanonical<PrincipalHandle>* CanonicalMediaPrincipalHandle()
-  {
+  AbstractCanonical<PrincipalHandle>* CanonicalMediaPrincipalHandle() {
     return &mMediaPrincipalHandle;
   }
 
-private:
+ private:
   
   void NotifyAudibleStateChanged();
 
@@ -684,6 +644,6 @@ private:
   bool mCanPlayThrough = false;
 };
 
-} 
+}  
 
 #endif

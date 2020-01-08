@@ -18,7 +18,7 @@ namespace dom {
 class Blob;
 class ImageCapture;
 class MediaStreamTrack;
-} 
+}  
 
 
 
@@ -31,9 +31,8 @@ class MediaStreamTrack;
 
 
 class CaptureTask : public MediaStreamVideoSink,
-                    public dom::PrincipalChangeObserver<dom::MediaStreamTrack>
-{
-public:
+                    public dom::PrincipalChangeObserver<dom::MediaStreamTrack> {
+ public:
   class MediaStreamEventListener;
 
   
@@ -63,7 +62,7 @@ public:
   
   explicit CaptureTask(dom::ImageCapture* aImageCapture);
 
-protected:
+ protected:
   virtual ~CaptureTask() {}
 
   
@@ -86,6 +85,6 @@ protected:
   bool mPrincipalChanged;
 };
 
-} 
+}  
 
-#endif 
+#endif  
