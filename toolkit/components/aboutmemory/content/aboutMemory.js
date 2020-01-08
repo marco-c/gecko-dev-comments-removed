@@ -1679,33 +1679,40 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
 }
 
 
-const kMBStyle = {
+
+const kStyleLocale = "en-US";
+
+
+const kMBFormat = new Intl.NumberFormat(kStyleLocale, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
-};
+});
 
 
-const kPercStyle = {
+const kPercFormatter = new Intl.NumberFormat(kStyleLocale, {
   style: "percent",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
-};
+});
 
 
-const kFracStyle = {
+const kFracFormatter = new Intl.NumberFormat(kStyleLocale, {
   style: "percent",
   minimumIntegerDigits: 2,
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
-};
+});
 
 
-const kFrac1Style = {
+const kFrac1Formatter = new Intl.NumberFormat(kStyleLocale, {
   style: "percent",
   minimumIntegerDigits: 3,
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
-};
+});
+
+
+const kDefaultNumFormatter = new Intl.NumberFormat(kStyleLocale);
 
 
 
@@ -1716,86 +1723,8 @@ const kFrac1Style = {
 
 
 
-function formatNum(aN, aOptions = {}) {
-  
-  
-  
-  
-  
-  
-
-  if (Number.isNaN(aN)) {
-    return "NaN";
-  }
-
-  if (aN == Infinity) {
-    return "∞";
-  }
-
-  if (aN == -Infinity) {
-    return "-∞";
-  }
-
-  
-  let style = aOptions.style || "decimal";
-  let percent = style == "percent";
-  let minIntegerDigits = aOptions.minimumIntegerDigits || 1;
-  let minFractionDigits = aOptions.minimumFractionDigits || 0;
-  let maxFractionDigits = aOptions.maximumFractionDigits || (percent ? 1 : 3);
-  assert(style == "decimal" || style == "percent", "unsupported style value");
-
-  
-  let formattedNum = aN < 0 ? "-" : "";
-
-  
-  
-  let fixedNum = Math.abs(aN * (percent ? 100 : 1)).toFixed(maxFractionDigits);
-
-  
-  let decimalPointIndex = fixedNum.indexOf(".");
-  let integerPart;
-  let fractionalPart;
-  if (decimalPointIndex == -1) {
-    integerPart = fixedNum;
-    fractionalPart = "";
-  } else {
-    integerPart = fixedNum.substring(0, decimalPointIndex);
-    fractionalPart = fixedNum.substring(decimalPointIndex + 1);
-  }
-
-  
-  integerPart = integerPart.padStart(minIntegerDigits, "0");
-  fractionalPart = fractionalPart.padEnd(minFractionDigits, "0");
-
-  let zeroIndex = fractionalPart.length;
-  while (zeroIndex > minFractionDigits &&
-         fractionalPart[zeroIndex - 1] == "0") {
-    --zeroIndex;
-  }
-  fractionalPart = fractionalPart.substring(0, zeroIndex);
-
-  
-  let i = (integerPart.length % 3) || 3;
-  let groupedIntegerPart = integerPart.substring(0, i);
-  while (i < integerPart.length) {
-    groupedIntegerPart += ",";
-    groupedIntegerPart += integerPart.substring(i, i + 3);
-    i += 3;
-  }
-
-  
-  formattedNum += groupedIntegerPart;
-  if (fractionalPart != "") {
-    formattedNum += ".";
-    formattedNum += fractionalPart;
-  }
-
-  
-  if (percent) {
-    formattedNum += "%";
-  }
-
-  return formattedNum;
+function formatNum(aN, aFormatter) {
+  return (aFormatter || kDefaultNumFormatter).format(aN);
 }
 
 
@@ -1808,7 +1737,7 @@ function formatNum(aN, aOptions = {}) {
 function formatBytes(aBytes) {
   return gVerbose.checked
        ? `${formatNum(aBytes)} B`
-       : `${formatNum(aBytes / (1024 * 1024), kMBStyle)} MB`;
+       : `${formatNum(aBytes / (1024 * 1024), kMBFormat)} MB`;
 }
 
 
@@ -1821,7 +1750,7 @@ function formatBytes(aBytes) {
 function formatPercentage(aPerc100x) {
   
   
-  return formatNum(aPerc100x / 10000, kPercStyle);
+  return formatNum(aPerc100x / 10000, kPercFormatter);
 }
 
 
@@ -1841,8 +1770,8 @@ function formatTreeFrac(aNum, aDenom) {
   
   let num = aDenom === 0 ? 1 : (aNum / aDenom);
   return (0.99995 <= num && num <= 1)
-         ? formatNum(1, kFrac1Style)
-         : formatNum(num, kFracStyle);
+         ? formatNum(1, kFrac1Formatter)
+         : formatNum(num, kFracFormatter);
 }
 
 const kNoKidsSep   = " ── ",
