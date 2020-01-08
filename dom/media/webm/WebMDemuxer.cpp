@@ -760,7 +760,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
             encrypted = !encrypted;
             lastOffset = partition;
 
-            assert(lastOffset <= length);
+            MOZ_ASSERT(lastOffset <= length);
           }
 
           
@@ -787,7 +787,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
 
           
           
-          assert(
+          MOZ_ASSERT(
               ((size_t)(std::accumulate(writer->mCrypto.mPlainSizes.begin(),
                                         writer->mCrypto.mPlainSizes.end(), 0) +
                         std::accumulate(writer->mCrypto.mEncryptedSizes.begin(),
