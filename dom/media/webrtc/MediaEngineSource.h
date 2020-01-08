@@ -118,6 +118,14 @@ class MediaEngineSourceInterface {
 
 
 
+  virtual RefPtr<GenericNonExclusivePromise> GetFirstFramePromise() const {
+    return nullptr;
+  }
+
+  
+
+
+
 
 
 

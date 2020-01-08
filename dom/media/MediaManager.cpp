@@ -1093,7 +1093,8 @@ class GetUserMediaStreamRunnable : public Runnable {
         MediaManager* aManager,
         MozPromiseHolder<MediaManager::StreamPromise>&& aHolder,
         GetUserMediaWindowListener* aWindowListener, uint64_t aWindowID,
-        DOMMediaStream* aStream, MediaStreamTrack* aTrack)
+        DOMMediaStream* aStream, MediaStreamTrack* aTrack,
+        RefPtr<GenericNonExclusivePromise>&& aFirstFramePromise)
         : mWindowListener(aWindowListener),
           mHolder(std::move(aHolder)),
           mManager(aManager),
@@ -1102,7 +1103,8 @@ class GetUserMediaStreamRunnable : public Runnable {
           mStream(new nsMainThreadPtrHolder<DOMMediaStream>(
               "TracksCreatedListener::mStream", aStream)),
           mTrack(new nsMainThreadPtrHolder<MediaStreamTrack>(
-              "TracksCreatedListener::mTrack", aTrack)) {}
+              "TracksCreatedListener::mTrack", aTrack)),
+          mFirstFramePromise(aFirstFramePromise) {}
 
     ~TracksCreatedListener() {
       RejectIfExists(MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
@@ -1135,8 +1137,26 @@ class GetUserMediaStreamRunnable : public Runnable {
 
             
             
-            LOG("Returning success for getUserMedia()");
-            mHolder.Resolve(RefPtr<DOMMediaStream>(mStream), __func__);
+            if (!mFirstFramePromise) {
+              LOG("Returning success for getUserMedia()");
+              mHolder.Resolve(RefPtr<DOMMediaStream>(mStream), __func__);
+              return;
+            }
+            LOG("Deferring getUserMedia success to arrival of 1st frame");
+            mFirstFramePromise->Then(
+                GetMainThreadSerialEventTarget(), __func__,
+                [holder = std::move(mHolder), stream = mStream](
+                    const GenericNonExclusivePromise::ResolveOrRejectValue&
+                        aValue) mutable {
+                  if (aValue.IsReject()) {
+                    holder.Reject(MakeRefPtr<MediaMgrError>(
+                                      MediaMgrError::Name::AbortError),
+                                  __func__);
+                  } else {
+                    LOG("Returning success for getUserMedia()!");
+                    holder.Resolve(RefPtr<DOMMediaStream>(stream), __func__);
+                  }
+                });
           });
       
       
@@ -1167,6 +1187,7 @@ class GetUserMediaStreamRunnable : public Runnable {
     
     nsMainThreadPtrHandle<DOMMediaStream> mStream;
     nsMainThreadPtrHandle<MediaStreamTrack> mTrack;
+    RefPtr<GenericNonExclusivePromise> mFirstFramePromise;
     
     bool mDispatchedTracksCreated = false;
   };
@@ -1195,6 +1216,7 @@ class GetUserMediaStreamRunnable : public Runnable {
 
     RefPtr<DOMMediaStream> domStream;
     RefPtr<SourceMediaStream> stream;
+    RefPtr<GenericNonExclusivePromise> firstFramePromise;
     
     
     
@@ -1327,6 +1349,18 @@ class GetUserMediaStreamRunnable : public Runnable {
             kVideoTrack, MediaSegment::VIDEO, videoSource,
             GetInvariant(mConstraints.mVideo));
         domStream->AddTrackInternal(track);
+        switch (source) {
+          case MediaSourceEnum::Browser:
+          case MediaSourceEnum::Screen:
+          case MediaSourceEnum::Application:
+          case MediaSourceEnum::Window:
+            
+            
+            firstFramePromise = mVideoDevice->mSource->GetFirstFramePromise();
+            break;
+          default:
+            break;
+        }
       }
     }
 
@@ -1352,7 +1386,7 @@ class GetUserMediaStreamRunnable : public Runnable {
     RefPtr<MediaStreamTrack> track = tracks[0];
     auto tracksCreatedListener = MakeRefPtr<TracksCreatedListener>(
         mManager, std::move(mHolder), mWindowListener, mWindowID, domStream,
-        track);
+        track, std::move(firstFramePromise));
 
     
     

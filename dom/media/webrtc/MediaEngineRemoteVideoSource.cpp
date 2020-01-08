@@ -41,11 +41,16 @@ MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(
       mRescalingBufferPool( false,
                             1),
       mSettingsUpdatedByFrame(MakeAndAddRef<media::Refcountable<AtomicBool>>()),
-      mSettings(MakeAndAddRef<media::Refcountable<MediaTrackSettings>>()) {
+      mSettings(MakeAndAddRef<media::Refcountable<MediaTrackSettings>>()),
+      mFirstFramePromise(mFirstFramePromiseHolder.Ensure(__func__)) {
   mSettings->mWidth.Construct(0);
   mSettings->mHeight.Construct(0);
   mSettings->mFrameRate.Construct(0);
   Init();
+}
+
+MediaEngineRemoteVideoSource::~MediaEngineRemoteVideoSource() {
+  mFirstFramePromiseHolder.RejectIfExists(NS_ERROR_ABORT, __func__);
 }
 
 dom::MediaSourceEnum MediaEngineRemoteVideoSource::GetMediaSource() const {
@@ -637,11 +642,17 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
   if (mImageSize.width != dst_width || mImageSize.height != dst_height) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "MediaEngineRemoteVideoSource::FrameSizeChange",
-        [settings = mSettings, updated = mSettingsUpdatedByFrame, dst_width,
+        [settings = mSettings, updated = mSettingsUpdatedByFrame,
+         holder = std::move(mFirstFramePromiseHolder), dst_width,
          dst_height]() mutable {
           settings->mWidth.Value() = dst_width;
           settings->mHeight.Value() = dst_height;
           updated->mValue = true;
+          
+          
+          
+          
+          holder.ResolveIfExists(true, __func__);
         }));
   }
 
