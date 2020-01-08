@@ -2289,16 +2289,20 @@ nsDocumentViewer::RequestWindowClose(bool* aCanClose) {
 
 UniquePtr<ServoStyleSet> nsDocumentViewer::CreateStyleSet(Document* aDocument) {
   
-
   
-  
-
-  UniquePtr<ServoStyleSet> styleSet = MakeUnique<ServoStyleSet>();
 
   
   auto cache = nsLayoutStylesheetCache::Singleton();
+  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
+
+  auto styleSet = MakeUnique<ServoStyleSet>();
 
   
+
+  for (StyleSheet* sheet : *sheetService->UserStyleSheets()) {
+    styleSet->AppendStyleSheet(SheetType::User, sheet);
+  }
+
   StyleSheet* sheet = nsContentUtils::IsInChromeDocshell(aDocument)
                           ? cache->GetUserChromeSheet()
                           : cache->GetUserContentSheet();
@@ -2308,50 +2312,47 @@ UniquePtr<ServoStyleSet> nsDocumentViewer::CreateStyleSet(Document* aDocument) {
   }
 
   
-  styleSet->PrependStyleSheet(SheetType::Agent, cache->ScrollbarsSheet());
-  styleSet->PrependStyleSheet(SheetType::Agent, cache->FormsSheet());
+
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->UASheet());
+
+  if (MOZ_LIKELY(mDocument->NodeInfoManager()->MathMLEnabled())) {
+    styleSet->AppendStyleSheet(SheetType::Agent, cache->MathMLSheet());
+  }
+
+  if (MOZ_LIKELY(mDocument->NodeInfoManager()->SVGEnabled())) {
+    styleSet->AppendStyleSheet(SheetType::Agent, cache->SVGSheet());
+  }
+
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->HTMLSheet());
+
+  
+  
+
+  if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
+    styleSet->AppendStyleSheet(SheetType::Agent, cache->NoFramesSheet());
+  }
+
+  if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
+    styleSet->AppendStyleSheet(SheetType::Agent, cache->NoScriptSheet());
+  }
+
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->CounterStylesSheet());
+
+  
+  
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->MinimalXULSheet());
 
   
   if (aDocument->LoadsFullXULStyleSheetUpFront()) {
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->XULSheet());
+    styleSet->AppendStyleSheet(SheetType::Agent, cache->XULSheet());
   }
 
   
-  
-  styleSet->PrependStyleSheet(SheetType::Agent, cache->MinimalXULSheet());
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->FormsSheet());
+  styleSet->AppendStyleSheet(SheetType::Agent, cache->ScrollbarsSheet());
 
-  styleSet->PrependStyleSheet(SheetType::Agent, cache->CounterStylesSheet());
-
-  if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->NoScriptSheet());
-  }
-
-  if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->NoFramesSheet());
-  }
-
-  
-  
-
-  styleSet->PrependStyleSheet(SheetType::Agent, cache->HTMLSheet());
-
-  if (MOZ_LIKELY(mDocument->NodeInfoManager()->SVGEnabled())) {
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->SVGSheet());
-  }
-
-  if (MOZ_LIKELY(mDocument->NodeInfoManager()->MathMLEnabled())) {
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->MathMLSheet());
-  }
-
-  styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
-
-  if (nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance()) {
-    for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
-      styleSet->AppendStyleSheet(SheetType::Agent, sheet);
-    }
-    for (StyleSheet* sheet : Reversed(*sheetService->UserStyleSheets())) {
-      styleSet->PrependStyleSheet(SheetType::User, sheet);
-    }
+  for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
+    styleSet->AppendStyleSheet(SheetType::Agent, sheet);
   }
 
   return styleSet;
