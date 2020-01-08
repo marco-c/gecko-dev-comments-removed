@@ -124,6 +124,15 @@ ForOfLoopControl::emitIteratorCloseInScope(BytecodeEmitter* bce,
     return bce->tryNoteList.append(JSTRY_FOR_OF_ITERCLOSE, 0, start, end);
 }
 
+
+
+
+
+
+
+
+
+
 bool
 ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(BytecodeEmitter* bce,
                                                       EmitterScope& currentScope,
