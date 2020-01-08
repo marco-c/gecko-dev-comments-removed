@@ -12,6 +12,8 @@ var {
   IconDetails,
 } = ExtensionParent;
 
+var XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
 
 let sidebarActionMap = new WeakMap();
 
@@ -122,6 +124,7 @@ this.sidebarAction = class extends ExtensionAPI {
       }
       let header = document.getElementById("sidebar-switcher-target");
       header.removeEventListener("SidebarShown", this.updateHeader);
+      SidebarUI.sidebars.delete(this.id);
     }
     windowTracker.removeOpenListener(this.windowOpenListener);
     windowTracker.removeCloseListener(this.windowCloseListener);
@@ -145,15 +148,17 @@ this.sidebarAction = class extends ExtensionAPI {
   createMenuItem(window, details) {
     let {document, SidebarUI} = window;
 
+    SidebarUI.sidebars.set(this.id, {
+      title: details.title,
+      url: sidebarURL,
+    });
+
     
     
-    let broadcaster = document.createXULElement("broadcaster");
+    let broadcaster = document.createElementNS(XUL_NS, "broadcaster");
     broadcaster.setAttribute("id", this.id);
-    broadcaster.setAttribute("autoCheck", "false");
     broadcaster.setAttribute("type", "checkbox");
     broadcaster.setAttribute("group", "sidebar");
-    broadcaster.setAttribute("label", details.title);
-    broadcaster.setAttribute("sidebarurl", sidebarURL);
     broadcaster.setAttribute("panel", details.panel);
     if (this.browserStyle) {
       broadcaster.setAttribute("browserStyle", "true");
@@ -170,15 +175,17 @@ this.sidebarAction = class extends ExtensionAPI {
     header.addEventListener("SidebarShown", this.updateHeader);
 
     
-    let menuitem = document.createXULElement("menuitem");
+    let menuitem = document.createElementNS(XUL_NS, "menuitem");
     menuitem.setAttribute("id", this.menuId);
+    menuitem.setAttribute("label", details.title);
     menuitem.setAttribute("observes", this.id);
     menuitem.setAttribute("class", "menuitem-iconic webextension-menuitem");
     this.setMenuIcon(menuitem, details);
 
     
-    let toolbarbutton = document.createXULElement("toolbarbutton");
+    let toolbarbutton = document.createElementNS(XUL_NS, "toolbarbutton");
     toolbarbutton.setAttribute("id", this.buttonId);
+    toolbarbutton.setAttribute("label", details.title);
     toolbarbutton.setAttribute("observes", this.id);
     toolbarbutton.setAttribute("class", "subviewbutton subviewbutton-iconic webextension-menuitem");
     this.setMenuIcon(toolbarbutton, details);
@@ -219,19 +226,17 @@ this.sidebarAction = class extends ExtensionAPI {
       menu = this.createMenuItem(window, tabData);
     }
 
-    
     let broadcaster = document.getElementById(this.id);
-    broadcaster.setAttribute("tooltiptext", title);
-    broadcaster.setAttribute("label", title);
-
     let urlChanged = tabData.panel !== broadcaster.getAttribute("panel");
     if (urlChanged) {
       broadcaster.setAttribute("panel", tabData.panel);
     }
 
+    menu.setAttribute("label", title);
     this.setMenuIcon(menu, tabData);
 
     let button = document.getElementById(this.buttonId);
+    button.setAttribute("label", title);
     this.setMenuIcon(button, tabData);
 
     

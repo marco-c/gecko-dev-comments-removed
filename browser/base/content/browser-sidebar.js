@@ -5,21 +5,30 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var SidebarUI = {
+  get sidebars() {
+    if (this._sidebars) {
+      return this._sidebars;
+    }
+    return this._sidebars = new Map([
+      ["viewBookmarksSidebar", {
+        title: document.getElementById("sidebar-switcher-bookmarks")
+                       .getAttribute("label"),
+        url: "chrome://browser/content/places/bookmarksSidebar.xul",
+      }],
+      ["viewHistorySidebar", {
+        title: document.getElementById("sidebar-switcher-history")
+                       .getAttribute("label"),
+        url: "chrome://browser/content/places/historySidebar.xul",
+      }],
+      ["viewTabsSidebar", {
+        title: document.getElementById("sidebar-switcher-tabs")
+                       .getAttribute("label"),
+        url: "chrome://browser/content/syncedtabs/sidebar.xhtml",
+      }],
+    ]);
+  },
+
   
   
   get browser() {
@@ -441,17 +450,8 @@ var SidebarUI = {
       this._box.setAttribute("sidebarcommand", sidebarBroadcaster.id);
       this.lastOpenedId = sidebarBroadcaster.id;
 
-      let title = sidebarBroadcaster.getAttribute("sidebartitle") ||
-                  sidebarBroadcaster.getAttribute("label");
-
-      
-      
-      
-      if (title) {
-        this.title = title;
-      }
-
-      let url = sidebarBroadcaster.getAttribute("sidebarurl");
+      let {url, title} = this.sidebars.get(commandID);
+      this.title = title;
       this.browser.setAttribute("src", url); 
 
       if (this.browser.contentDocument.location.href != url) {
