@@ -4675,6 +4675,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
             }
 
             let mut maybe_append_animation_value = |property: LonghandId, value: Option<AnimationValue>| {
+                debug_assert!(!property.is_logical());
                 if seen.contains(property) {
                     return;
                 }
@@ -4881,6 +4882,7 @@ fn fill_in_missing_keyframe_values(
 pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     raw_data: RawServoStyleSetBorrowed,
     element: RawGeckoElementBorrowed,
+    style: ComputedStyleBorrowed,
     name: *mut nsAtom,
     inherited_timing_function: nsTimingFunctionBorrowed,
     keyframes: RawGeckoKeyframeListBorrowedMut,
@@ -4905,6 +4907,8 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let mut has_complete_initial_keyframe = false;
     let mut has_complete_final_keyframe = false;
     let mut current_offset = -1.;
+
+    let writing_mode = style.writing_mode;
 
     
     
@@ -4937,7 +4941,14 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                 
                 
                 
+                let mut seen = LonghandIdSet::new();
                 for property in animation.properties_changed.iter() {
+                    let property = property.to_physical(writing_mode);
+                    if seen.contains(property) {
+                        continue;
+                    }
+                    seen.insert(property);
+
                     Gecko_AppendPropertyValuePair(
                         &mut (*keyframe).mPropertyValues,
                         property.to_nscsspropertyid(),
@@ -4956,7 +4967,10 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
 
                 
                 
-                for declaration in guard.normal_declaration_iter() {
+                
+                
+                
+                for declaration in guard.normal_declaration_iter().rev() {
                     let id = declaration.id();
 
                     let id = match id {
@@ -4972,7 +4986,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                                 continue;
                             }
 
-                            id
+                            id.to_physical(writing_mode)
                         }
                         PropertyDeclarationId::Custom(..) => {
                             custom_properties.push(
@@ -4996,7 +5010,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                     (*pair).mServoDeclarationBlock.set_arc_leaky(
                         Arc::new(global_style_data.shared_lock.wrap(
                             PropertyDeclarationBlock::with_one(
-                                declaration.clone(),
+                                declaration.to_physical(writing_mode),
                                 Importance::Normal,
                             )
                         ))
@@ -5024,10 +5038,15 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         }
     }
 
+    let mut properties_changed = LonghandIdSet::new();
+    for property in animation.properties_changed.iter() {
+        properties_changed.insert(property.to_physical(writing_mode));
+    }
+
     
     if !has_complete_initial_keyframe {
         fill_in_missing_keyframe_values(
-            &animation.properties_changed,
+            &properties_changed,
             inherited_timing_function,
             &properties_set_at_start,
             Offset::Zero,
@@ -5036,7 +5055,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     }
     if !has_complete_final_keyframe {
         fill_in_missing_keyframe_values(
-            &animation.properties_changed,
+            &properties_changed,
             inherited_timing_function,
             &properties_set_at_end,
             Offset::One,
