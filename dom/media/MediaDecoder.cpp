@@ -349,16 +349,15 @@ void
 MediaDecoder::NotifyXPCOMShutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<MediaDecoder> kungFuDeathGrip = this;
   if (auto owner = GetOwner()) {
     owner->NotifyXPCOMShutdown();
-  }
-  MOZ_DIAGNOSTIC_ASSERT(IsShutdown());
-
-  
-  
-  if (!IsShutdown()) {
+  } else if (!IsShutdown()) {
     Shutdown();
   }
+  MOZ_DIAGNOSTIC_ASSERT(IsShutdown());
 }
 
 MediaDecoder::~MediaDecoder()
