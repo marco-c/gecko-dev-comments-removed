@@ -1705,7 +1705,13 @@ Inspector.prototype = {
       click: () => this.showAccessibilityProperties(),
       disabled: true
     });
-    this._updateA11YMenuItem(showA11YPropsItem);
+    
+    
+    const accessibilityFront = this.target.getFront("accessibility");
+    if (accessibilityFront.enabled) {
+      this._updateA11YMenuItem(showA11YPropsItem);
+    }
+
     menu.append(showA11YPropsItem);
   },
 

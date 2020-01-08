@@ -5,7 +5,6 @@
 "use strict";
 
 const Services = require("Services");
-const { AccessibilityFront } = require("devtools/shared/fronts/accessibility");
 
 
 const PROMOTE_COUNT_PREF = "devtools.promote.accessibility";
@@ -18,7 +17,7 @@ class AccessibilityStartup {
   constructor(toolbox) {
     this.toolbox = toolbox;
 
-    this._updateAccessibilityState = this._updateAccessibilityState.bind(this);
+    this._updateToolHighlight = this._updateToolHighlight.bind(this);
 
     
     this.initAccessibility();
@@ -45,12 +44,10 @@ class AccessibilityStartup {
 
 
 
-
   initAccessibility() {
     if (!this._initAccessibility) {
       this._initAccessibility = (async function() {
-        this._accessibility = new AccessibilityFront(this.target.client,
-                                                     this.target.form);
+        this._accessibility = this.target.getFront("accessibility");
         
         
         
@@ -63,9 +60,10 @@ class AccessibilityStartup {
           await this._accessibility.bootstrap();
         }
 
-        this._updateAccessibilityState();
-        this._accessibility.on("init", this._updateAccessibilityState);
-        this._accessibility.on("shutdown", this._updateAccessibilityState);
+        this._updateToolHighlight();
+
+        this._accessibility.on("init", this._updateToolHighlight);
+        this._accessibility.on("shutdown", this._updateToolHighlight);
       }.bind(this))();
     }
 
@@ -92,11 +90,10 @@ class AccessibilityStartup {
       
       await this._initAccessibility;
 
-      this._accessibility.off("init", this._updateAccessibilityState);
-      this._accessibility.off("shutdown", this._updateAccessibilityState);
+      this._accessibility.off("init", this._updateToolHighlight);
+      this._accessibility.off("shutdown", this._updateToolHighlight);
 
       await this._walker.destroy();
-      await this._accessibility.destroy();
       this._accessibility = null;
       this._walker = null;
     }.bind(this))();
@@ -107,28 +104,11 @@ class AccessibilityStartup {
 
 
 
-  _updateAccessibilityState() {
-    this._updateAccessibilityToolHighlight();
-    this._updatePickerButton();
-  }
-
-  
-
-
-  _updatePickerButton() {
-    this.toolbox.updatePickerButton();
-    
-    this.toolbox.component.setToolboxButtons(this.toolbox.toolbarButtons);
-  }
-
-  
-
-
-
-  _updateAccessibilityToolHighlight() {
-    if (this._accessibility.enabled) {
+  async _updateToolHighlight() {
+    const isHighlighted = await this.toolbox.isToolHighlighted("accessibility");
+    if (this._accessibility.enabled && !isHighlighted) {
       this.toolbox.highlightTool("accessibility");
-    } else {
+    } else if (!this._accessibility.enabled && isHighlighted) {
       this.toolbox.unhighlightTool("accessibility");
     }
   }
