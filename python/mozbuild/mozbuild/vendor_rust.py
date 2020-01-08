@@ -15,6 +15,7 @@ import mozfile
 import mozpack.path as mozpath
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -323,6 +324,31 @@ license file's hash.
             self.log(logging.ERROR, 'license_check_failed', {},
                      '''The changes from `mach vendor rust` will NOT be added to version control.''')
             sys.exit(1)
+
+        
+        
+        
+        
+        
+        
+        winapi_dir = mozpath.join(vendor_dir, 'winapi')
+        i686_dir = mozpath.join(vendor_dir, 'winapi-i686-pc-windows-gnu')
+        x64_dir = mozpath.join(vendor_dir, 'winapi-x86_64-pc-windows-gnu')
+
+        
+        
+        winapi_delete_dirs = ['i686', 'x86_64', 'tests']
+        for d in winapi_delete_dirs:
+            x = mozpath.join(winapi_dir, d)
+            if os.path.isdir(x):
+                shutil.rmtree(x)
+
+        
+        
+        for d in [i686_dir, x64_dir]:
+            x = mozpath.join(d, 'def')
+            if os.path.isdir(x):
+                shutil.rmtree(x)
 
         self.repository.add_remove_files(vendor_dir)
 
