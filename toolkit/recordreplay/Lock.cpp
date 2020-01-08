@@ -135,10 +135,21 @@ Lock::Find(void* aNativeLock)
       
       
       
-      if (AreThreadEventsPassedThrough() || HasDivergedFromRecording()) {
+      Lock* lock = iter->second;
+      if (AreThreadEventsPassedThrough()) {
         return nullptr;
       }
-      return iter->second;
+      if (HasDivergedFromRecording()) {
+        
+        
+        
+        if (lock->mOwner && Thread::GetById(lock->mOwner)->IsIdle()) {
+          EnsureNotDivergedFromRecording();
+          Unreachable();
+        }
+        return nullptr;
+      }
+      return lock;
     }
   }
 
@@ -171,6 +182,9 @@ Lock::Enter()
     while (thread->Id() != acquires->mNextOwner && !thread->MaybeDivergeFromRecording()) {
       Thread::Wait();
     }
+    if (!thread->HasDivergedFromRecording()) {
+      mOwner = thread->Id();
+    }
   }
 }
 
@@ -179,6 +193,8 @@ Lock::Exit()
 {
   Thread* thread = Thread::Current();
   if (IsReplaying() && !thread->HasDivergedFromRecording()) {
+    mOwner = 0;
+
     
     LockAcquires* acquires = gLockAcquires.Get(mId);
     acquires->ReadAndNotifyNextOwner(thread);

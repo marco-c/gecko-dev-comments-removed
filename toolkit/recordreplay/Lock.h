@@ -30,9 +30,12 @@ class Lock
   
   size_t mId;
 
+  
+  Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> mOwner;
+
 public:
   explicit Lock(size_t aId)
-    : mId(aId)
+    : mId(aId), mOwner(0)
   {
     MOZ_ASSERT(aId);
   }
