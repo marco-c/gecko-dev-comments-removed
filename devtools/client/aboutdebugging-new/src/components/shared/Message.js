@@ -1,0 +1,51 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const { MESSAGE_LEVEL } = require("../../constants");
+
+const ICONS = {
+  
+  [MESSAGE_LEVEL.ERROR]: "chrome://global/skin/icons/warning.svg",
+  [MESSAGE_LEVEL.WARNING]: "chrome://global/skin/icons/warning.svg",
+};
+
+
+
+
+
+
+class Message extends PureComponent {
+  static get propTypes() {
+    return {
+      children: PropTypes.node.isRequired,
+      level: PropTypes.oneOf(Object.values(MESSAGE_LEVEL)).isRequired,
+    };
+  }
+
+  render() {
+    const { level } = this.props;
+    const iconSrc = ICONS[level];
+
+    return dom.aside(
+      {
+        className: `message message--level-${level} js-message`,
+      },
+      dom.img(
+        {
+          className: "message__icon",
+          src: iconSrc,
+        }
+      ),
+      this.props.children
+    );
+  }
+}
+
+module.exports = Message;
