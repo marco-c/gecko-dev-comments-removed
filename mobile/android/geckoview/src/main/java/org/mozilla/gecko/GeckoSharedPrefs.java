@@ -173,6 +173,10 @@ public final class GeckoSharedPrefs {
 
 
     private static synchronized void migrateIfNecessary(final Context context) {
+        if (!GeckoAppShell.isFennec()) {
+            return;
+        }
+
         if (migrationDone) {
             return;
         }
@@ -255,7 +259,7 @@ public final class GeckoSharedPrefs {
 
 
 
-    public static Editor migrateFromPreferenceManager(Context context, Editor appEditor,
+    private static Editor migrateFromPreferenceManager(Context context, Editor appEditor,
             Editor profileEditor, List<String> profileKeys) {
         Log.d(LOGTAG, "Migrating from PreferenceManager");
 
@@ -284,7 +288,7 @@ public final class GeckoSharedPrefs {
 
 
 
-    public static void migrateCrashReporterSettings(SharedPreferences appPrefs, Editor appEditor,
+    private static void migrateCrashReporterSettings(SharedPreferences appPrefs, Editor appEditor,
                                                     Editor crashEditor, List<String> profileKeys) {
         Log.d(LOGTAG, "Migrating crash reporter settings");
 
