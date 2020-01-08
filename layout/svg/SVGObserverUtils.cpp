@@ -171,9 +171,9 @@ SVGRenderingObserver::ContentRemoved(nsIContent* aChild,
 
 
 
-nsSVGIDRenderingObserver::nsSVGIDRenderingObserver(nsIURI* aURI,
-                                                   nsIContent* aObservingContent,
-                                                   bool aReferenceImage)
+SVGIDRenderingObserver::SVGIDRenderingObserver(nsIURI* aURI,
+                                               nsIContent* aObservingContent,
+                                               bool aReferenceImage)
   : mObservedElementTracker(this)
 {
   
@@ -181,13 +181,13 @@ nsSVGIDRenderingObserver::nsSVGIDRenderingObserver(nsIURI* aURI,
   StartObserving();
 }
 
-nsSVGIDRenderingObserver::~nsSVGIDRenderingObserver()
+SVGIDRenderingObserver::~SVGIDRenderingObserver()
 {
   StopObserving();
 }
 
 void
-nsSVGIDRenderingObserver::OnRenderingChange()
+SVGIDRenderingObserver::OnRenderingChange()
 {
   if (mObservedElementTracker.get() && mInObserverList) {
     SVGObserverUtils::RemoveRenderingObserver(mObservedElementTracker.get(), this);
@@ -217,7 +217,7 @@ NS_IMPL_ISUPPORTS(nsSVGRenderingObserverProperty, nsIMutationObserver)
 void
 nsSVGRenderingObserverProperty::OnRenderingChange()
 {
-  nsSVGIDRenderingObserver::OnRenderingChange();
+  SVGIDRenderingObserver::OnRenderingChange();
 
   nsIFrame* frame = mFrameReference.Get();
 
@@ -245,7 +245,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsSVGFilterReference)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsSVGFilterReference)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsSVGIDRenderingObserver)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, SVGIDRenderingObserver)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
   NS_INTERFACE_MAP_ENTRY(nsISVGFilterReference)
 NS_INTERFACE_MAP_END
@@ -260,7 +260,7 @@ nsSVGFilterReference::GetFilterFrame()
 void
 nsSVGFilterReference::OnRenderingChange()
 {
-  nsSVGIDRenderingObserver::OnRenderingChange();
+  SVGIDRenderingObserver::OnRenderingChange();
 
   if (mFilterChainObserver) {
     mFilterChainObserver->Invalidate();
