@@ -11,6 +11,10 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/StaticMutex.h"
 
+#ifdef FOO
+#error FOO is already defined! We use FOO() macros to keep things succinct in this file.
+#endif
+
 namespace mozilla {
 namespace webgl {
 
@@ -99,16 +103,9 @@ InitCompressedFormatInfo()
     AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2,  64, 4, 4, CompressionFamily::ES3);
 
     
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGBA_BPTC_UNORM        , 16*8, 4, 4, CompressionFamily::BPTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SRGB_ALPHA_BPTC_UNORM  , 16*8, 4, 4, CompressionFamily::BPTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_BPTC_SIGNED_FLOAT  , 16*8, 4, 4, CompressionFamily::BPTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, 16*8, 4, 4, CompressionFamily::BPTC);
-
-    
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RED_RGTC1       ,  8*8, 4, 4, CompressionFamily::RGTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SIGNED_RED_RGTC1,  8*8, 4, 4, CompressionFamily::RGTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RG_RGTC2        , 16*8, 4, 4, CompressionFamily::RGTC);
-    AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_SIGNED_RG_RGTC2 , 16*8, 4, 4, CompressionFamily::RGTC);
+    AddCompressedFormatInfo(EffectiveFormat::ATC_RGB_AMD                    ,  64, 4, 4, CompressionFamily::ATC);
+    AddCompressedFormatInfo(EffectiveFormat::ATC_RGBA_EXPLICIT_ALPHA_AMD    , 128, 4, 4, CompressionFamily::ATC);
+    AddCompressedFormatInfo(EffectiveFormat::ATC_RGBA_INTERPOLATED_ALPHA_AMD, 128, 4, 4, CompressionFamily::ATC);
 
     
     AddCompressedFormatInfo(EffectiveFormat::COMPRESSED_RGB_S3TC_DXT1_EXT ,  64, 4, 4, CompressionFamily::S3TC);
@@ -322,16 +319,9 @@ InitFormatInfo()
     AddFormatInfo(FOO(COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2), 0, 1,1,1,1, 0,0, UnsizedFormat::RGBA, true , ComponentType::NormUInt);
 
     
-    AddFormatInfo(FOO(COMPRESSED_RGBA_BPTC_UNORM        ), 0, 1,1,1,1, 0,0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SRGB_ALPHA_BPTC_UNORM  ), 0, 1,1,1,1, 0,0, UnsizedFormat::RGBA, true , ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_RGB_BPTC_SIGNED_FLOAT  ), 0, 1,1,1,0, 0,0, UnsizedFormat::RGB , false, ComponentType::Float   );
-    AddFormatInfo(FOO(COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT), 0, 1,1,1,0, 0,0, UnsizedFormat::RGB , false, ComponentType::Float   );
-
-    
-    AddFormatInfo(FOO(COMPRESSED_RED_RGTC1       ), 0, 1,0,0,0, 0,0, UnsizedFormat::R , false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SIGNED_RED_RGTC1), 0, 1,0,0,0, 0,0, UnsizedFormat::R , false, ComponentType::NormInt );
-    AddFormatInfo(FOO(COMPRESSED_RG_RGTC2        ), 0, 1,1,0,0, 0,0, UnsizedFormat::RG, false, ComponentType::NormUInt);
-    AddFormatInfo(FOO(COMPRESSED_SIGNED_RG_RGTC2 ), 0, 1,1,0,0, 0,0, UnsizedFormat::RG, false, ComponentType::NormInt );
+    AddFormatInfo(FOO(ATC_RGB_AMD                    ), 0, 1,1,1,0, 0,0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
+    AddFormatInfo(FOO(ATC_RGBA_EXPLICIT_ALPHA_AMD    ), 0, 1,1,1,1, 0,0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
+    AddFormatInfo(FOO(ATC_RGBA_INTERPOLATED_ALPHA_AMD), 0, 1,1,1,1, 0,0, UnsizedFormat::RGBA, false, ComponentType::NormUInt);
 
     
     AddFormatInfo(FOO(COMPRESSED_RGB_S3TC_DXT1_EXT ), 0, 1,1,1,0, 0,0, UnsizedFormat::RGB , false, ComponentType::NormUInt);
