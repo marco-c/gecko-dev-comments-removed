@@ -1,5 +1,6 @@
 package org.mozilla.geckoview;
 
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.os.Handler;
@@ -180,6 +181,7 @@ public class GeckoResult<T> {
 
 
 
+    @WrapForJNI
     public GeckoResult() {
         if (ThreadUtils.isOnUiThread()) {
             mHandler = ThreadUtils.getUiHandler();
@@ -218,6 +220,7 @@ public class GeckoResult<T> {
 
 
 
+    @WrapForJNI
     public static @NonNull <U> GeckoResult<U> fromValue(@Nullable final U value) {
         final GeckoResult<U> result = new GeckoResult<>();
         result.complete(value);
@@ -232,6 +235,7 @@ public class GeckoResult<T> {
 
 
 
+    @WrapForJNI
     public static @NonNull <T> GeckoResult<T> fromException(@NonNull final Throwable error) {
         final GeckoResult<T> result = new GeckoResult<>();
         result.completeExceptionally(error);
@@ -501,6 +505,7 @@ public class GeckoResult<T> {
 
 
 
+    @WrapForJNI
     public synchronized void complete(final T value) {
         if (mComplete) {
             throw new IllegalStateException("result is already complete");
@@ -520,6 +525,7 @@ public class GeckoResult<T> {
 
 
 
+    @WrapForJNI
     public synchronized void completeExceptionally(@NonNull final Throwable exception) {
         if (mComplete) {
             throw new IllegalStateException("result is already complete");
