@@ -2,13 +2,14 @@
 
 
 
-use api::{DevicePoint, DeviceSize, DeviceRect, LayoutRect, LayoutToWorldTransform};
-use api::{PremultipliedColorF, WorldToLayoutTransform};
-use clip_scroll_tree::SpatialNodeIndex;
+use api::{DevicePoint, DeviceSize, DeviceRect, LayoutRect, LayoutToWorldTransform, LayoutTransform};
+use api::{PremultipliedColorF, LayoutToPictureTransform, PictureToLayoutTransform, PicturePixel, WorldPixel};
+use clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
-use prim_store::{EdgeAaSegmentMask, Transform};
+use internal_types::FastHashMap;
+use prim_store::EdgeAaSegmentMask;
 use render_task::RenderTaskAddress;
-use util::{LayoutToWorldFastTransform, TransformedRectKind};
+use util::{TransformedRectKind, MatrixHelpers};
 
 
 
@@ -115,7 +116,8 @@ pub struct BorderInstance {
 #[repr(C)]
 pub struct ClipMaskInstance {
     pub render_task_address: RenderTaskAddress,
-    pub transform_id: TransformPaletteId,
+    pub clip_transform_id: TransformPaletteId,
+    pub prim_transform_id: TransformPaletteId,
     pub segment: i32,
     pub clip_data_address: GpuCacheAddress,
     pub resource_address: GpuCacheAddress,
@@ -259,22 +261,19 @@ impl GlyphInstance {
 }
 
 pub struct SplitCompositeInstance {
-    pub task_address: RenderTaskAddress,
-    pub src_task_address: RenderTaskAddress,
+    pub prim_header_index: PrimitiveHeaderIndex,
     pub polygons_address: GpuCacheAddress,
     pub z: ZBufferId,
 }
 
 impl SplitCompositeInstance {
     pub fn new(
-        task_address: RenderTaskAddress,
-        src_task_address: RenderTaskAddress,
+        prim_header_index: PrimitiveHeaderIndex,
         polygons_address: GpuCacheAddress,
         z: ZBufferId,
     ) -> Self {
         SplitCompositeInstance {
-            task_address,
-            src_task_address,
+            prim_header_index,
             polygons_address,
             z,
         }
@@ -285,10 +284,10 @@ impl From<SplitCompositeInstance> for PrimitiveInstance {
     fn from(instance: SplitCompositeInstance) -> Self {
         PrimitiveInstance {
             data: [
-                instance.task_address.0 as i32,
-                instance.src_task_address.0 as i32,
+                instance.prim_header_index.0,
                 instance.polygons_address.as_int(),
                 instance.z.0,
+                0,
             ],
         }
     }
@@ -354,11 +353,6 @@ impl TransformPaletteId {
     pub const IDENTITY: Self = TransformPaletteId(0);
 
     
-    pub fn spatial_node_index(&self) -> SpatialNodeIndex {
-        SpatialNodeIndex(self.0 as usize & 0xFFFFFF)
-    }
-
-    
     pub fn transform_kind(&self) -> TransformedRectKind {
         if (self.0 >> 24) == 0 {
             TransformedRectKind::AxisAligned
@@ -369,27 +363,42 @@ impl TransformPaletteId {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
 pub struct TransformData {
-    transform: LayoutToWorldTransform,
-    inv_transform: WorldToLayoutTransform,
+    transform: LayoutToPictureTransform,
+    inv_transform: PictureToLayoutTransform,
 }
 
 impl TransformData {
     fn invalid() -> Self {
         TransformData {
-            transform: LayoutToWorldTransform::identity(),
-            inv_transform: WorldToLayoutTransform::identity(),
+            transform: LayoutToPictureTransform::identity(),
+            inv_transform: PictureToLayoutTransform::identity(),
         }
     }
 }
 
 
+#[derive(Clone)]
 pub struct TransformMetadata {
     transform_kind: TransformedRectKind,
+}
+
+impl TransformMetadata {
+    pub fn invalid() -> Self {
+        TransformMetadata {
+            transform_kind: TransformedRectKind::AxisAligned,
+        }
+    }
+}
+
+#[derive(Debug, Hash, Eq, PartialEq)]
+struct RelativeTransformKey {
+    from_index: SpatialNodeIndex,
+    to_index: SpatialNodeIndex,
 }
 
 
@@ -402,89 +411,80 @@ pub struct TransformMetadata {
 pub struct TransformPalette {
     pub transforms: Vec<TransformData>,
     metadata: Vec<TransformMetadata>,
+    map: FastHashMap<RelativeTransformKey, usize>,
 }
 
 impl TransformPalette {
     pub fn new(spatial_node_count: usize) -> Self {
         TransformPalette {
-            transforms: Vec::with_capacity(spatial_node_count),
-            metadata: Vec::with_capacity(spatial_node_count),
+            transforms: vec![TransformData::invalid(); spatial_node_count],
+            metadata: vec![TransformMetadata::invalid(); spatial_node_count],
+            map: FastHashMap::default(),
         }
     }
 
-    #[inline]
-    fn grow(&mut self, index: SpatialNodeIndex) {
-        
-        
-        
-        
-        while self.transforms.len() <= index.0 as usize {
-            self.transforms.push(TransformData::invalid());
-            self.metadata.push(TransformMetadata {
-                transform_kind: TransformedRectKind::AxisAligned,
-            });
+    pub fn set_world_transform(
+        &mut self,
+        index: SpatialNodeIndex,
+        transform: LayoutToWorldTransform,
+    ) {
+        register_transform(
+            &mut self.metadata,
+            &mut self.transforms,
+            index,
+            ROOT_SPATIAL_NODE_INDEX,
+            
+            transform.with_destination::<PicturePixel>(),
+        );
+    }
+
+    fn get_index(
+        &mut self,
+        from_index: SpatialNodeIndex,
+        to_index: SpatialNodeIndex,
+        clip_scroll_tree: &ClipScrollTree,
+    ) -> usize {
+        if to_index == ROOT_SPATIAL_NODE_INDEX {
+            from_index.0
+        } else if from_index == to_index {
+            0
+        } else {
+            let key = RelativeTransformKey {
+                from_index,
+                to_index,
+            };
+
+            let metadata = &mut self.metadata;
+            let transforms = &mut self.transforms;
+
+            *self.map
+                .entry(key)
+                .or_insert_with(|| {
+                    let transform = clip_scroll_tree.get_relative_transform(
+                        from_index,
+                        to_index,
+                    )
+                    .unwrap_or(LayoutTransform::identity())
+                    .with_destination::<PicturePixel>();
+
+                    register_transform(
+                        metadata,
+                        transforms,
+                        from_index,
+                        to_index,
+                        transform,
+                    )
+                })
         }
     }
 
-    pub fn invalidate(&mut self, index: SpatialNodeIndex) {
-        self.grow(index);
-        self.metadata[index.0 as usize] = TransformMetadata {
-            transform_kind: TransformedRectKind::AxisAligned,
-        };
-        self.transforms[index.0 as usize] = TransformData::invalid();
-    }
-
-    
-    
-    pub fn set(
-        &mut self, index: SpatialNodeIndex, fast_transform: &LayoutToWorldFastTransform,
-    ) -> bool {
-        self.grow(index);
-
-        match fast_transform.inverse() {
-            Some(inverted) => {
-                
-                self.metadata[index.0 as usize] = TransformMetadata {
-                    transform_kind: fast_transform.kind()
-                };
-                
-                self.transforms[index.0 as usize] = TransformData {
-                    transform: fast_transform.to_transform().into_owned(),
-                    inv_transform: inverted.to_transform().into_owned(),
-                };
-                true
-            }
-            None => {
-                self.invalidate(index);
-                false
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn get_transform(
+    pub fn get_world_transform(
         &self,
         index: SpatialNodeIndex,
-    ) -> Transform {
-        let data = &self.transforms[index.0 as usize];
-        let metadata = &self.metadata[index.0 as usize];
-
-        Transform {
-            m: data.transform,
-            transform_kind: metadata.transform_kind,
-            backface_is_visible: data.transform.is_backface_visible(),
-        }
-    }
-
-    pub fn get_transform_by_id(
-        &self,
-        id: TransformPaletteId,
-    ) -> Transform {
-        self.get_transform(id.spatial_node_index())
+    ) -> LayoutToWorldTransform {
+        self.transforms[index.0]
+            .transform
+            .with_destination::<WorldPixel>()
     }
 
     
@@ -492,12 +492,19 @@ impl TransformPalette {
     
     
     pub fn get_id(
-        &self,
-        index: SpatialNodeIndex,
+        &mut self,
+        from_index: SpatialNodeIndex,
+        to_index: SpatialNodeIndex,
+        clip_scroll_tree: &ClipScrollTree,
     ) -> TransformPaletteId {
-        let transform_kind = self.metadata[index.0 as usize].transform_kind as u32;
+        let index = self.get_index(
+            from_index,
+            to_index,
+            clip_scroll_tree,
+        );
+        let transform_kind = self.metadata[index].transform_kind as u32;
         TransformPaletteId(
-            (index.0 as u32) |
+            (index as u32) |
             (transform_kind << 24)
         )
     }
@@ -568,5 +575,46 @@ impl ImageSource {
                 bottom_right.y,
             ]);
         }
+    }
+}
+
+
+
+fn register_transform(
+    metadatas: &mut Vec<TransformMetadata>,
+    transforms: &mut Vec<TransformData>,
+    from_index: SpatialNodeIndex,
+    to_index: SpatialNodeIndex,
+    transform: LayoutToPictureTransform,
+) -> usize {
+    
+    
+    
+    let inv_transform = match transform.inverse() {
+        Some(inv_transform) => inv_transform,
+        None => {
+            error!("Unable to get inverse transform");
+            PictureToLayoutTransform::identity()
+        }
+    };
+
+    let metadata = TransformMetadata {
+        transform_kind: transform.transform_kind()
+    };
+    let data = TransformData {
+        transform,
+        inv_transform,
+    };
+
+    if to_index == ROOT_SPATIAL_NODE_INDEX {
+        let index = from_index.0 as usize;
+        metadatas[index] = metadata;
+        transforms[index] = data;
+        index
+    } else {
+        let index = transforms.len();
+        metadatas.push(metadata);
+        transforms.push(data);
+        index
     }
 }
