@@ -3917,14 +3917,15 @@ CompileModule(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
+
 extern JS_PUBLIC_API(void)
-SetTopLevelScriptPrivate(JSScript* script, void* value);
+SetModuleHostDefinedField(JSScript* module, const JS::Value& value);
 
 
 
 
-extern JS_PUBLIC_API(void*)
-GetTopLevelScriptPrivate(JSScript* script);
+extern JS_PUBLIC_API(JS::Value)
+GetModuleHostDefinedField(JSScript* script);
 
 
 
