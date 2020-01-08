@@ -113,14 +113,14 @@ function getFormattedHelpData() {
 
 
 
-function saveScreenshot(window, args = {}, value) {
+function processScreenshot(window, args = {}, value) {
   if (args.help) {
     const message = getFormattedHelpData();
     
     return [message];
   }
-  simulateCameraShutter(window);
-  return save(args, value);
+  simulateCameraShutter(window.document);
+  return saveScreenshot(window, args, value);
 }
 
 
@@ -129,7 +129,8 @@ function saveScreenshot(window, args = {}, value) {
 
 
 
-function simulateCameraShutter(window) {
+function simulateCameraShutter(document) {
+  const window = document.defaultView;
   if (Services.prefs.getBoolPref("devtools.screenshot.audio.enabled")) {
     const audioCamera = new window.Audio("resource://devtools/client/themes/audio/shutter.wav");
     audioCamera.play();
@@ -148,18 +149,21 @@ function simulateCameraShutter(window) {
 
 
 
-async function save(args, image) {
+
+
+
+async function saveScreenshot(window, args, image) {
   const fileNeeded = args.filename ||
     !args.clipboard || args.file;
   const results = [];
 
   if (args.clipboard) {
-    const result = saveToClipboard(image.data);
+    const result = saveToClipboard(window, image.data);
     results.push(result);
   }
 
   if (fileNeeded) {
-    const result = await saveToFile(image);
+    const result = await saveToFile(window, image);
     results.push(result);
   }
   return results;
@@ -175,7 +179,10 @@ async function save(args, image) {
 
 
 
-function saveToClipboard(base64URI) {
+
+
+
+function saveToClipboard(window, base64URI) {
   try {
     const imageTools = Cc["@mozilla.org/image/tools;1"]
                        .getService(Ci.imgITools);
@@ -211,7 +218,10 @@ function saveToClipboard(base64URI) {
 
 
 
-async function saveToFile(image) {
+
+
+
+async function saveToFile(window, image) {
   let filename = image.filename;
 
   
@@ -248,4 +258,4 @@ async function saveToFile(image) {
   }
 }
 
-module.exports = saveScreenshot;
+module.exports = processScreenshot;
