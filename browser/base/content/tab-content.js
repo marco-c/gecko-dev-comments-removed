@@ -28,18 +28,6 @@ ActorManagerChild.attach(this, "browsers");
 
 var global = this;
 
-
-addEventListener("MozDOMPointerLock:Entered", function(aEvent) {
-  sendAsyncMessage("PointerLock:Entered", {
-    originNoSuffix: aEvent.target.nodePrincipal.originNoSuffix
-  });
-});
-
-addEventListener("MozDOMPointerLock:Exited", function(aEvent) {
-  sendAsyncMessage("PointerLock:Exited");
-});
-
-
 addMessageListener("Browser:HideSessionRestoreButton", function(message) {
   
   let doc = content.document;
@@ -48,43 +36,6 @@ addMessageListener("Browser:HideSessionRestoreButton", function(message) {
       (container = doc.getElementById("sessionRestoreContainer"))) {
     container.hidden = true;
   }
-});
-
-if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-  addMessageListener("Browser:HasSiblings", function(message) {
-    let tabChild = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsITabChild);
-    let hasSiblings = message.data;
-    tabChild.hasSiblings = hasSiblings;
-  });
-}
-
-
-addMessageListener("Browser:Reload", function(message) {
-  
-
-
-
-
-
-  let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
-  try {
-    if (webNav.sessionHistory) {
-      webNav = webNav.sessionHistory;
-    }
-  } catch (e) {
-  }
-
-  let reloadFlags = message.data.flags;
-  try {
-    E10SUtils.wrapHandlingUserInput(content, message.data.handlingUserInput,
-                                    () => webNav.reload(reloadFlags));
-  } catch (e) {
-  }
-});
-
-addMessageListener("MixedContent:ReenableProtection", function() {
-  docShell.mixedContentChannel = null;
 });
 
 XPCOMUtils.defineLazyProxy(this, "LightweightThemeChildHelper",
@@ -353,12 +304,6 @@ addEventListener("unload", () => {
   Services.obs.removeObserver(gKeywordURIFixup, "keyword-uri-fixup");
 }, false);
 
-addMessageListener("Browser:AppTab", function(message) {
-  if (docShell) {
-    docShell.isAppTab = message.data.isAppTab;
-  }
-});
-
 var WebBrowserChrome = {
   onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
     return BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab);
@@ -477,44 +422,7 @@ var DOMFullscreenHandler = {
 };
 DOMFullscreenHandler.init();
 
-var UserContextIdNotifier = {
-  init() {
-    addEventListener("DOMWindowCreated", this);
-    this.init = null;
-  },
-
-  uninit() {
-    removeEventListener("DOMWindowCreated", this);
-  },
-
-  handleEvent(aEvent) {
-    
-    
-    
-    
-    this.uninit();
-
-    
-    
-    let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
-    let userContextId = loadContext.originAttributes.userContextId;
-
-    sendAsyncMessage("Browser:WindowCreated", { userContextId });
-  }
-};
-
-UserContextIdNotifier.init();
-
 Services.obs.notifyObservers(this, "tab-content-frameloader-created");
-
-addMessageListener("AllowScriptsToClose", () => {
-  content.windowUtils.allowScriptsToClose();
-});
-
-addEventListener("MozAfterPaint", function onFirstPaint() {
-  removeEventListener("MozAfterPaint", onFirstPaint);
-  sendAsyncMessage("Browser:FirstPaint");
-});
 
 
 addEventListener("MozAfterPaint", function onFirstNonBlankPaint() {
