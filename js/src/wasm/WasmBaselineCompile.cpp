@@ -2043,6 +2043,13 @@ class MachineStackTracker {
     MOZ_ASSERT(numPtrs_ <= length());
     return numPtrs_;
   }
+
+  
+  
+  void clear() {
+    vec_.clear();
+    numPtrs_ = 0;
+  }
 };
 
 
@@ -2096,6 +2103,11 @@ struct StackMapGenerator {
   
   
   size_t memRefsOnStk_;
+
+  
+  
+  
+  MachineStackTracker augmentedMst_;
 
   StackMapGenerator(StackMaps* stackMaps, const MachineState& trapExitLayout,
                     const size_t trapExitLayoutNumWords,
@@ -2184,8 +2196,9 @@ struct StackMapGenerator {
 
     
     
-    MachineStackTracker augmentedMst;
-    if (!mst_.cloneTo(&augmentedMst)) {
+    
+    augmentedMst_.clear();
+    if (!mst_.cloneTo(&augmentedMst_)) {
       return false;
     }
 
@@ -2227,7 +2240,7 @@ struct StackMapGenerator {
       uint32_t bodyPushedBytes =
           framePushedExcludingArgs.value() - framePushedAtEntryToBody_.value();
       MOZ_ASSERT(0 == bodyPushedBytes % sizeof(void*));
-      if (!augmentedMst.pushNonGCPointers(bodyPushedBytes / sizeof(void*))) {
+      if (!augmentedMst_.pushNonGCPointers(bodyPushedBytes / sizeof(void*))) {
         return false;
       }
     }
@@ -2304,13 +2317,13 @@ struct StackMapGenerator {
       MOZ_ASSERT(v.offs() <= framePushedExcludingArgs.value());
       uint32_t offsFromMapLowest = framePushedExcludingArgs.value() - v.offs();
       MOZ_ASSERT(0 == offsFromMapLowest % sizeof(void*));
-      augmentedMst.setGCPointer(offsFromMapLowest / sizeof(void*));
+      augmentedMst_.setGCPointer(offsFromMapLowest / sizeof(void*));
     }
 
     
     
     const uint32_t extraWords = extras.length();
-    const uint32_t augmentedMstWords = augmentedMst.length();
+    const uint32_t augmentedMstWords = augmentedMst_.length();
     const uint32_t numMappedWords = extraWords + augmentedMstWords;
     StackMap* stackMap = StackMap::create(numMappedWords);
     if (!stackMap) {
@@ -2329,7 +2342,7 @@ struct StackMapGenerator {
     }
     
     for (uint32_t i = 0; i < augmentedMstWords; i++) {
-      if (augmentedMst.isGCPointer(i)) {
+      if (augmentedMst_.isGCPointer(i)) {
         stackMap->setBit(numMappedWords - 1 - i);
       }
     }
