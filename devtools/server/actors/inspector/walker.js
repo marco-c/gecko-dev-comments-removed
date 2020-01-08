@@ -513,14 +513,24 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     if (isBeforePseudoElement(node.rawNode) ||
         isAfterPseudoElement(node.rawNode) ||
+        isShadowHost(node.rawNode) ||
         node.rawNode.nodeType != Node.ELEMENT_NODE ||
         node.rawNode.children.length > 0) {
       return undefined;
     }
 
-    const walker = isDirectShadowHostChild(node.rawNode)
-      ? this.getNonAnonymousWalker(node.rawNode)
-      : this.getDocumentWalker(node.rawNode);
+    let walker;
+    try {
+      
+      
+      
+      walker = this.getDocumentWalker(node.rawNode);
+    } catch (e) {
+      
+      
+      walker = this.getNonAnonymousWalker(node.rawNode);
+    }
+
     const firstChild = walker.firstChild();
 
     
