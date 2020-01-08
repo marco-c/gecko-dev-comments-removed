@@ -12,6 +12,7 @@
 #include "base/histogram.h"
 #include "base/win_util.h"
 #include "WinUtils.h"
+#include "GeckoProfiler.h"
 
 using base::Time;
 
@@ -252,6 +253,8 @@ void MessagePumpForUI::InitMessageWnd() {
 }
 
 void MessagePumpForUI::WaitForWork() {
+  AUTO_PROFILER_LABEL("MessagePumpForUI::WaitForWork", IDLE);
+
   
   
   int delay = GetCurrentDelay();
