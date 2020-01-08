@@ -4156,9 +4156,7 @@ const BrowserSearch = {
 
 
 
-
-
-  recordOneoffSearchInTelemetry(engine, source, type, where) {
+  recordOneoffSearchInTelemetry(engine, source, type) {
     try {
       const details = {type, isOneOff: true};
       BrowserUsageTelemetry.recordSearch(gBrowser, engine, source, details);

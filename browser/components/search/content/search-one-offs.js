@@ -989,11 +989,7 @@ class SearchOneOffs {
 
 
 
-
-
-
-
-  maybeRecordTelemetry(aEvent, aOpenUILinkWhere, aOpenUILinkParams) {
+  maybeRecordTelemetry(aEvent) {
     if (!aEvent) {
       return false;
     }
@@ -1029,11 +1025,7 @@ class SearchOneOffs {
       source += "-" + this.telemetryOrigin;
     }
 
-    let tabBackground = aOpenUILinkWhere == "tab" &&
-      aOpenUILinkParams &&
-      aOpenUILinkParams.inBackground;
-    let where = tabBackground ? "tab-background" : aOpenUILinkWhere;
-    BrowserSearch.recordOneoffSearchInTelemetry(engine, source, type, where);
+    BrowserSearch.recordOneoffSearchInTelemetry(engine, source, type);
     return true;
   }
 
