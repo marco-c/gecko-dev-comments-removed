@@ -166,9 +166,9 @@ protected:
   
   
   nsresult GetURI(nsIURI** aURL, bool aGetInnermostURI = false);
-  nsresult SetURI(nsIURI* aURL, bool aReplace = false);
-  nsresult SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
-                           bool aReplace);
+  void SetURI(nsIURI* aURL, ErrorResult& aRv, bool aReplace = false);
+  void SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
+                       bool aReplace, ErrorResult& aRv);
 
   
   void DoSetHref(const nsAString& aHref, bool aReplace, ErrorResult& aRv);
