@@ -11,7 +11,6 @@
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 #include "mozilla/RefPtr.h"
-#include "VsyncSource.h"
 
 namespace mozilla {
 
@@ -24,7 +23,7 @@ class VsyncObserver {
   
   
   
-  virtual bool NotifyVsync(const VsyncEvent& aVsync) = 0;
+  virtual bool NotifyVsync(TimeStamp aVsyncTimestamp) = 0;
 
  protected:
   VsyncObserver() {}
@@ -50,7 +49,7 @@ class CompositorVsyncDispatcher final {
   CompositorVsyncDispatcher();
 
   
-  void NotifyVsync(const VsyncEvent& aVsync);
+  void NotifyVsync(TimeStamp aVsyncTimestamp);
 
   
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
@@ -73,7 +72,7 @@ class RefreshTimerVsyncDispatcher final {
   RefreshTimerVsyncDispatcher();
 
   
-  void NotifyVsync(const VsyncEvent& aVsync);
+  void NotifyVsync(TimeStamp aVsyncTimestamp);
 
   
   

@@ -48,7 +48,7 @@ class CompositorVsyncScheduler {
 
 
 
-  bool NotifyVsync(const VsyncEvent& aVsync);
+  bool NotifyVsync(TimeStamp aVsyncTimestamp);
 
   
 
@@ -108,7 +108,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void PostCompositeTask(VsyncId aId, TimeStamp aCompositeTimestamp);
+  void PostCompositeTask(TimeStamp aCompositeTimestamp);
 
   
   
@@ -116,7 +116,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void Composite(VsyncId aId, TimeStamp aVsyncTimestamp);
+  void Composite(TimeStamp aVsyncTimestamp);
 
   void ObserveVsync();
   void UnobserveVsync();
@@ -126,7 +126,7 @@ class CompositorVsyncScheduler {
   class Observer final : public VsyncObserver {
    public:
     explicit Observer(CompositorVsyncScheduler* aOwner);
-    virtual bool NotifyVsync(const VsyncEvent& aVsync) override;
+    virtual bool NotifyVsync(TimeStamp aVsyncTimestamp) override;
     void Destroy();
 
    private:
