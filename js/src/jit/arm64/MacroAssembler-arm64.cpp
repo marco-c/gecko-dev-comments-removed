@@ -493,9 +493,9 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
     } else {
       MOZ_CRASH("Unknown register type.");
     }
-
   }
   MOZ_ASSERT(numFpu == 0);
+  
   
   diffF -= diffF % sizeof(uintptr_t);
   MOZ_ASSERT(diffF == 0);
