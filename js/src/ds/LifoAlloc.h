@@ -379,7 +379,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
         uint8_t* bump_;
 
         friend class BumpChunk;
-        explicit Mark(BumpChunk* chunk, uint8_t* bump)
+        Mark(BumpChunk* chunk, uint8_t* bump)
           : chunk_(chunk), bump_(bump)
         {}
 
@@ -534,10 +534,19 @@ class LifoAlloc
     BumpChunkList chunks_;
 
     
+    
+    
+    
+    
+    
+    BumpChunkList oversize_;
+
+    
     BumpChunkList unused_;
 
     size_t      markCount;
     size_t      defaultChunkSize_;
+    size_t      oversizeThreshold_;
     size_t      curSize_;
     size_t      peakSize_;
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
@@ -548,11 +557,11 @@ class LifoAlloc
     LifoAlloc(const LifoAlloc&) = delete;
 
     
-    UniqueBumpChunk newChunkWithCapacity(size_t n);
+    UniqueBumpChunk newChunkWithCapacity(size_t n, bool oversize);
 
     
     
-    MOZ_MUST_USE bool getOrCreateChunk(size_t n);
+    UniqueBumpChunk getOrCreateChunk(size_t n);
 
     void reset(size_t defaultChunkSize);
 
@@ -585,11 +594,17 @@ class LifoAlloc
     }
 
     void* allocImplColdPath(size_t n);
+    void* allocImplOversize(size_t n);
 
     MOZ_ALWAYS_INLINE
     void* allocImpl(size_t n) {
         void* result;
-        if (!chunks_.empty() && (result = chunks_.last()->tryAlloc(n))) {
+        
+        
+        if (MOZ_UNLIKELY(n > oversizeThreshold_)) {
+            return allocImplOversize(n);
+        }
+        if (MOZ_LIKELY(!chunks_.empty() && (result = chunks_.last()->tryAlloc(n)))) {
             return result;
         }
         return allocImplColdPath(n);
@@ -606,6 +621,16 @@ class LifoAlloc
 #endif
     {
         reset(defaultChunkSize);
+    }
+
+    
+    
+    void disableOversize() {
+        oversizeThreshold_ = SIZE_MAX;
+    }
+    void setOversizeThreshold(size_t oversizeThreshold) {
+        MOZ_ASSERT(oversizeThreshold <= defaultChunkSize_);
+        oversizeThreshold_ = oversizeThreshold;
     }
 
     
@@ -734,7 +759,11 @@ class LifoAlloc
         return static_cast<T*>(alloc(bytes));
     }
 
-    using Mark = detail::BumpChunk::Mark;
+    class Mark {
+        friend class LifoAlloc;
+        detail::BumpChunk::Mark chunk;
+        detail::BumpChunk::Mark oversize;
+    };
     Mark mark();
     void release(Mark mark);
 
@@ -744,6 +773,12 @@ class LifoAlloc
             bc.release();
         }
         unused_.appendAll(std::move(chunks_));
+        
+        
+        while (!oversize_.empty()) {
+            UniqueBumpChunk bc = oversize_.popFirst();
+            decrementCurSize(bc->computedSizeOfIncludingThis());
+        }
     }
 
     
@@ -766,8 +801,10 @@ class LifoAlloc
 
     
     bool isEmpty() const {
-        return chunks_.empty() ||
-               (chunks_.begin() == chunks_.last() && chunks_.last()->empty());
+        bool empty = chunks_.empty() ||
+            (chunks_.begin() == chunks_.last() && chunks_.last()->empty());
+        MOZ_ASSERT_IF(!oversize_.empty(), !oversize_.last()->empty());
+        return empty && oversize_.empty();
     }
 
     
@@ -785,6 +822,9 @@ class LifoAlloc
         for (const detail::BumpChunk& chunk : chunks_) {
             n += chunk.sizeOfIncludingThis(mallocSizeOf);
         }
+        for (const detail::BumpChunk& chunk : oversize_) {
+            n += chunk.sizeOfIncludingThis(mallocSizeOf);
+        }
         for (const detail::BumpChunk& chunk : unused_) {
             n += chunk.sizeOfIncludingThis(mallocSizeOf);
         }
@@ -795,6 +835,9 @@ class LifoAlloc
     size_t computedSizeOfExcludingThis() const {
         size_t n = 0;
         for (const detail::BumpChunk& chunk : chunks_) {
+            n += chunk.computedSizeOfIncludingThis();
+        }
+        for (const detail::BumpChunk& chunk : oversize_) {
             n += chunk.computedSizeOfIncludingThis();
         }
         for (const detail::BumpChunk& chunk : unused_) {
@@ -825,6 +868,11 @@ class LifoAlloc
 #ifdef DEBUG
     bool contains(void* ptr) const {
         for (const detail::BumpChunk& chunk : chunks_) {
+            if (chunk.contains(ptr)) {
+                return true;
+            }
+        }
+        for (const detail::BumpChunk& chunk : oversize_) {
             if (chunk.contains(ptr)) {
                 return true;
             }
@@ -869,6 +917,7 @@ class LifoAlloc
             chunkEnd_(alloc.chunks_.end()),
             head_(nullptr)
         {
+            MOZ_RELEASE_ASSERT(alloc.oversize_.empty());
             if (chunkIt_ != chunkEnd_) {
                 head_ = chunkIt_->begin();
             }
