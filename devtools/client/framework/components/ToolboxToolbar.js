@@ -107,10 +107,221 @@ class ToolboxToolbar extends Component {
 
 
 
+  renderToolboxButtonsStart() {
+    return this.renderToolboxButtons(true);
+  }
+
+  
+
+
+
+  renderToolboxButtonsEnd() {
+    return this.renderToolboxButtons(false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  renderToolboxButtons(isStart) {
+    const {
+      focusedButton,
+      toolboxButtons,
+      focusButton
+    } = this.props;
+    const visibleButtons = toolboxButtons.filter(command => {
+      const {isVisible, isInStartContainer} = command;
+      return isVisible && (isStart ? isInStartContainer : !isInStartContainer);
+    });
+
+    if (visibleButtons.length === 0) {
+      return null;
+    }
+
+    
+    const rdmIndex = visibleButtons.findIndex(
+      button => button.id === "command-button-responsive"
+    );
+    if (rdmIndex !== -1 && rdmIndex !== visibleButtons.length - 1) {
+      const rdm = visibleButtons.splice(rdmIndex, 1)[0];
+      visibleButtons.push(rdm);
+    }
+
+    const renderedButtons =
+      visibleButtons.map(command => {
+        const {
+          id,
+          description,
+          disabled,
+          onClick,
+          isChecked,
+          className: buttonClass,
+          onKeyDown
+        } = command;
+        return button({
+          id,
+          title: description,
+          disabled,
+          className: (
+            "command-button devtools-button "
+            + buttonClass + (isChecked ? " checked" : "")
+          ),
+          onClick: (event) => {
+            onClick(event);
+            focusButton(id);
+          },
+          onFocus: () => focusButton(id),
+          tabIndex: id === focusedButton ? "0" : "-1",
+          onKeyDown: (event) => {
+            onKeyDown(event);
+          }
+        });
+      });
+
+    
+    const children = renderedButtons;
+    if (renderedButtons.length) {
+      if (isStart) {
+        children.push(this.renderSeparator());
+        
+        
+      } else if (rdmIndex !== -1 && visibleButtons.length > 1) {
+        children.splice(
+          children.length - 1,
+          0,
+          this.renderSeparator()
+        );
+      }
+    }
+
+    return div({id: `toolbox-buttons-${isStart ? "start" : "end"}`}, ...children);
+  }
+
+  
+
+
+  renderSeparator() {
+    return div({className: "devtools-separator"});
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  renderToolboxControls() {
+    const {
+      focusedButton,
+      canCloseToolbox,
+      closeToolbox,
+      focusButton,
+      L10N,
+      toolbox,
+    } = this.props;
+
+    const meatballMenuButtonId = "toolbox-meatball-menu-button";
+
+    const meatballMenuButton = MenuButton(
+      {
+        id: meatballMenuButtonId,
+        menuId: meatballMenuButtonId + "-panel",
+        doc: toolbox.doc,
+        onFocus: () => focusButton(meatballMenuButtonId),
+        className: "devtools-button",
+        title: L10N.getStr("toolbox.meatballMenu.button.tooltip"),
+        tabIndex: focusedButton === meatballMenuButtonId ? "0" : "-1",
+        ref: "meatballMenuButton",
+      },
+      MeatballMenu({
+        ...this.props,
+        hostTypes: this.props.areDockOptionsEnabled ? this.props.hostTypes : [],
+        onResize: () => {
+          this.refs.meatballMenuButton.resizeContent();
+        },
+      })
+    );
+
+    const closeButtonId = "toolbox-close";
+
+    const closeButton = canCloseToolbox
+      ? button({
+        id: closeButtonId,
+        onFocus: () => focusButton(closeButtonId),
+        className: "devtools-button",
+        title: L10N.getStr("toolbox.closebutton.tooltip"),
+        onClick: () => {
+          closeToolbox();
+        },
+        tabIndex: focusedButton === "toolbox-close" ? "0" : "-1",
+      })
+      : null;
+
+    return div({id: "toolbox-controls"},
+      meatballMenuButton,
+      closeButton
+    );
+  }
+
+  
+
+
+
   render() {
     const classnames = ["devtools-tabbar"];
-    const startButtons = renderToolboxButtonsStart(this.props);
-    const endButtons = renderToolboxButtonsEnd(this.props);
+    const startButtons = this.renderToolboxButtonsStart();
+    const endButtons = this.renderToolboxButtonsEnd();
 
     if (!startButtons) {
       classnames.push("devtools-tabbar-has-start");
@@ -128,7 +339,7 @@ class ToolboxToolbar extends Component {
           startButtons,
           ToolboxTabs(this.props),
           endButtons,
-          renderToolboxControls(this.props, this.refs)
+          this.renderToolboxControls()
         )
       )
       : div({ className: classnames.join(" ") });
@@ -136,209 +347,3 @@ class ToolboxToolbar extends Component {
 }
 
 module.exports = ToolboxToolbar;
-
-
-
-
-
-function renderToolboxButtonsStart(props) {
-  return renderToolboxButtons(props, true);
-}
-
-
-
-
-
-function renderToolboxButtonsEnd(props) {
-  return renderToolboxButtons(props, false);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function renderToolboxButtons({focusedButton, toolboxButtons, focusButton}, isStart) {
-  const visibleButtons = toolboxButtons.filter(command => {
-    const {isVisible, isInStartContainer} = command;
-    return isVisible && (isStart ? isInStartContainer : !isInStartContainer);
-  });
-
-  if (visibleButtons.length === 0) {
-    return null;
-  }
-
-  
-  const rdmIndex = visibleButtons.findIndex(
-    button => button.id === "command-button-responsive"
-  );
-  if (rdmIndex !== -1 && rdmIndex !== visibleButtons.length - 1) {
-    const rdm = visibleButtons.splice(rdmIndex, 1)[0];
-    visibleButtons.push(rdm);
-  }
-
-  const renderedButtons =
-    visibleButtons.map(command => {
-      const {
-        id,
-        description,
-        disabled,
-        isChecked,
-        onClick,
-        className: buttonClass,
-        onKeyDown
-      } = command;
-      return button({
-        id,
-        title: description,
-        disabled,
-        className: (
-          "command-button devtools-button "
-          + buttonClass + (isChecked ? " checked" : "")
-        ),
-        onClick: (event) => {
-          onClick(event);
-          focusButton(id);
-        },
-        onFocus: () => focusButton(id),
-        tabIndex: id === focusedButton ? "0" : "-1",
-        onKeyDown: (event) => {
-          onKeyDown(event);
-        }
-      });
-    });
-
-  
-  const children = renderedButtons;
-  if (renderedButtons.length) {
-    if (isStart) {
-      children.push(renderSeparator());
-    
-    
-    } else if (rdmIndex !== -1 && visibleButtons.length > 1) {
-      children.splice(
-        children.length - 1,
-        0,
-        renderSeparator()
-      );
-    }
-  }
-
-  return div({id: `toolbox-buttons-${isStart ? "start" : "end"}`}, ...children);
-}
-
-
-
-
-function renderSeparator() {
-  return div({className: "devtools-separator"});
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function renderToolboxControls(props, refs) {
-  const {
-    focusedButton,
-    canCloseToolbox,
-    closeToolbox,
-    focusButton,
-    L10N,
-    toolbox,
-  } = props;
-
-  const meatballMenuButtonId = "toolbox-meatball-menu-button";
-
-  const meatballMenuButton = MenuButton(
-    {
-      id: meatballMenuButtonId,
-      menuId: meatballMenuButtonId + "-panel",
-      doc: toolbox.doc,
-      onFocus: () => focusButton(meatballMenuButtonId),
-      className: "devtools-button",
-      title: L10N.getStr("toolbox.meatballMenu.button.tooltip"),
-      tabIndex: focusedButton === meatballMenuButtonId ? "0" : "-1",
-      ref: "meatballMenuButton",
-    },
-    MeatballMenu({
-      ...props,
-      hostTypes: props.areDockOptionsEnabled ? props.hostTypes : [],
-      onResize: () => {
-        refs.meatballMenuButton.resizeContent();
-      },
-    })
-  );
-
-  const closeButtonId = "toolbox-close";
-
-  const closeButton = canCloseToolbox
-    ? button({
-      id: closeButtonId,
-      onFocus: () => focusButton(closeButtonId),
-      className: "devtools-button",
-      title: L10N.getStr("toolbox.closebutton.tooltip"),
-      onClick: () => {
-        closeToolbox();
-      },
-      tabIndex: focusedButton === "toolbox-close" ? "0" : "-1",
-    })
-    : null;
-
-  return div({id: "toolbox-controls"},
-    meatballMenuButton,
-    closeButton
-  );
-}
