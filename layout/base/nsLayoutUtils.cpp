@@ -6361,8 +6361,6 @@ static SnappedImageDrawingParameters ComputeSnappedImageDrawingParameters(
   
   
   
-  
-  
   if (!currentMatrix.HasNonAxisAlignedTransform() && currentMatrix._11 > 0.0 &&
       currentMatrix._22 > 0.0 && aCtx->UserToDevicePixelSnapped(fill, true) &&
       aCtx->UserToDevicePixelSnapped(dest, true)) {
@@ -6754,44 +6752,15 @@ static ImgDrawResult DrawImageInternal(
 
   
   
-  bool snapped = false;
-  gfxSize gfxLayerSize;
-  const gfx::Matrix& itm = aSc.GetInheritedTransform();
-  if (!itm.HasNonAxisAlignedTransform() && itm._11 > 0.0 && itm._22 > 0.0) {
-    gfxRect rect(gfxPoint(aDestRect.X(), aDestRect.Y()),
-                 gfxSize(aDestRect.Width(), aDestRect.Height()));
+  
+  const LayerIntSize layerSize =
+      RoundedToInt(LayerSize(aDestRect.Width() * scaleFactors.width,
+                             aDestRect.Height() * scaleFactors.height));
 
-    gfxPoint p1 = ThebesPoint(itm.TransformPoint(ToPoint(rect.TopLeft())));
-    gfxPoint p2 = ThebesPoint(itm.TransformPoint(ToPoint(rect.TopRight())));
-    gfxPoint p3 = ThebesPoint(itm.TransformPoint(ToPoint(rect.BottomRight())));
-
-    if (p2 == gfxPoint(p1.x, p3.y) || p2 == gfxPoint(p3.x, p1.y)) {
-      p1.Round();
-      p3.Round();
-
-      rect.MoveTo(gfxPoint(std::min(p1.x, p3.x), std::min(p1.y, p3.y)));
-      rect.SizeTo(gfxSize(std::max(p1.x, p3.x) - rect.X(),
-                          std::max(p1.y, p3.y) - rect.Y()));
-
-      
-      
-      gfxLayerSize =
-          gfxSize(std::max(rect.Width(), 1.0), std::max(rect.Height(), 1.0));
-      snapped = true;
-    }
-  }
-
-  if (!snapped) {
-    
-    const LayerIntSize layerSize =
-        RoundedToInt(LayerSize(aDestRect.Width() * scaleFactors.width,
-                               aDestRect.Height() * scaleFactors.height));
-
-    
-    
-    gfxLayerSize =
-        gfxSize(std::max(layerSize.width, 1), std::max(layerSize.height, 1));
-  }
+  
+  
+  gfxSize gfxLayerSize =
+      gfxSize(std::max(layerSize.width, 1), std::max(layerSize.height, 1));
 
   return aImage->OptimalImageSizeForDest(
       gfxLayerSize, imgIContainer::FRAME_CURRENT, samplingFilter, aFlags);
