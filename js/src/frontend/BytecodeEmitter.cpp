@@ -9349,29 +9349,6 @@ bool BytecodeEmitter::newSrcNote3(SrcNoteType type, ptrdiff_t offset1,
   return true;
 }
 
-bool BytecodeEmitter::addToSrcNoteDelta(jssrcnote* sn, ptrdiff_t delta) {
-  
-
-
-
-  MOZ_ASSERT(current == &main);
-  MOZ_ASSERT((unsigned)delta < (unsigned)SN_XDELTA_LIMIT);
-
-  ptrdiff_t base = SN_DELTA(sn);
-  ptrdiff_t limit = SN_IS_XDELTA(sn) ? SN_XDELTA_LIMIT : SN_DELTA_LIMIT;
-  ptrdiff_t newdelta = base + delta;
-  if (newdelta < limit) {
-    SN_SET_DELTA(sn, newdelta);
-  } else {
-    jssrcnote xdelta;
-    SN_MAKE_XDELTA(&xdelta, delta);
-    if (!main.notes.insert(sn, xdelta)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool BytecodeEmitter::setSrcNoteOffset(unsigned index, unsigned which,
                                        ptrdiff_t offset) {
   if (!SN_REPRESENTABLE_OFFSET(offset)) {
@@ -9430,37 +9407,38 @@ bool BytecodeEmitter::finishTakingSrcNotes(uint32_t* out) {
   if (offset > 0 && main.notes.length() != 0) {
     
     jssrcnote* sn = main.notes.begin();
-    ptrdiff_t delta = SN_IS_XDELTA(sn) ? SN_XDELTA_MASK - (*sn & SN_XDELTA_MASK)
-                                       : SN_DELTA_MASK - (*sn & SN_DELTA_MASK);
-    if (offset < delta) {
-      delta = offset;
-    }
-    for (;;) {
-      if (!addToSrcNoteDelta(sn, delta)) {
-        return false;
+    ptrdiff_t newDelta = SN_DELTA(sn) + offset;
+    ptrdiff_t deltaLimit = SN_IS_XDELTA(sn) ? SN_XDELTA_LIMIT : SN_DELTA_LIMIT;
+    if (newDelta < deltaLimit) {
+      SN_SET_DELTA(sn, newDelta);
+    } else {
+      
+      while (offset > 0) {
+        jssrcnote xdelta;
+        ptrdiff_t xdelta_size = Min(offset, SN_XDELTA_MASK);
+        SN_MAKE_XDELTA(&xdelta, xdelta_size);
+        if (!prologue.notes.append(xdelta)) {
+          return false;
+        }
+        offset -= xdelta_size;
       }
-      offset -= delta;
-      if (offset == 0) {
-        break;
-      }
-      delta = Min(offset, SN_XDELTA_MASK);
-      sn = main.notes.begin();
     }
   }
 
   
   
-  *out = main.notes.length() + 1;
+  *out = prologue.notes.length() + main.notes.length() + 1;
   return true;
 }
 
 void BytecodeEmitter::copySrcNotes(jssrcnote* destination, uint32_t nsrcnotes) {
-  MOZ_ASSERT(prologue.notes.length() == 0);
+  unsigned prologueCount = prologue.notes.length();
   unsigned mainCount = main.notes.length();
   
-  MOZ_ASSERT(mainCount == nsrcnotes - 1);
-  PodCopy(destination, main.notes.begin(), mainCount);
-  SN_MAKE_TERMINATOR(&destination[mainCount]);
+  MOZ_ASSERT(nsrcnotes == prologueCount + mainCount + 1);
+  PodCopy(destination, prologue.notes.begin(), prologueCount);
+  PodCopy(destination + prologueCount, main.notes.begin(), mainCount);
+  SN_MAKE_TERMINATOR(&destination[prologueCount + mainCount]);
 }
 
 void CGNumberList::finish(mozilla::Span<GCPtrValue> array) {
