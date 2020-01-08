@@ -61,6 +61,10 @@ DecoderFactory::GetDecoderType(const char* aMimeType)
     type = DecoderType::BMP;
 
   
+  } else if (!strcmp(aMimeType, IMAGE_BMP_MS_CLIPBOARD)) {
+    type = DecoderType::BMP_CLIPBOARD;
+
+  
   } else if (!strcmp(aMimeType, IMAGE_ICO)) {
     type = DecoderType::ICO;
   } else if (!strcmp(aMimeType, IMAGE_ICO_MS)) {
@@ -102,6 +106,9 @@ DecoderFactory::GetDecoder(DecoderType aType,
       break;
     case DecoderType::BMP:
       decoder = new nsBMPDecoder(aImage);
+      break;
+    case DecoderType::BMP_CLIPBOARD:
+      decoder = new nsBMPDecoder(aImage,  true);
       break;
     case DecoderType::ICO:
       decoder = new nsICODecoder(aImage);

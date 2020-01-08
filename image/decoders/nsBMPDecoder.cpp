@@ -186,8 +186,10 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength)
 }
 
 
-nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
-  : nsBMPDecoder(aImage, State::FILE_HEADER, FILE_HEADER_LENGTH)
+nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, bool aForClipboard)
+  : nsBMPDecoder(aImage,
+                 aForClipboard ? State::CLIPBOARD_HEADER : State::FILE_HEADER,
+                 aForClipboard ? BIHSIZE_FIELD_LENGTH : FILE_HEADER_LENGTH)
 {
 }
 
@@ -455,6 +457,7 @@ nsBMPDecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
                     [=](State aState, const char* aData, size_t aLength) {
     switch (aState) {
       case State::FILE_HEADER:      return ReadFileHeader(aData, aLength);
+      case State::CLIPBOARD_HEADER: return ReadClipboardHeader(aData, aLength);
       case State::INFO_HEADER_SIZE: return ReadInfoHeaderSize(aData, aLength);
       case State::INFO_HEADER_REST: return ReadInfoHeaderRest(aData, aLength);
       case State::BITFIELDS:        return ReadBitfields(aData, aLength);
@@ -486,6 +489,14 @@ nsBMPDecoder::ReadFileHeader(const char* aData, size_t aLength)
   mH.mDataOffset = LittleEndian::readUint32(aData + 10);
 
   return Transition::To(State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH);
+}
+
+LexerTransition<nsBMPDecoder::State>
+nsBMPDecoder::ReadClipboardHeader(const char* aData, size_t aLength)
+{
+  
+  mH.mDataOffset = LittleEndian::readUint32(aData);
+  return ReadInfoHeaderSize(aData, aLength);
 }
 
 

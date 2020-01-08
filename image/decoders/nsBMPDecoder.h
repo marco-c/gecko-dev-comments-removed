@@ -157,6 +157,7 @@ private:
 
   enum class State {
     FILE_HEADER,
+    CLIPBOARD_HEADER,
     INFO_HEADER_SIZE,
     INFO_HEADER_REST,
     BITFIELDS,
@@ -170,7 +171,7 @@ private:
   };
 
   
-  explicit nsBMPDecoder(RasterImage* aImage);
+  explicit nsBMPDecoder(RasterImage* aImage, bool aForClipboard = false);
 
   
   nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset);
@@ -185,6 +186,7 @@ private:
   void FinishRow();
 
   LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
+  LexerTransition<State> ReadClipboardHeader(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderRest(const char* aData, size_t aLength);
   LexerTransition<State> ReadBitfields(const char* aData, size_t aLength);
