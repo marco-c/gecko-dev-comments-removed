@@ -51,9 +51,7 @@ function updateWindow(window, buffer, width, height) {
 function Update(buffer, width, height) {
   try {
     
-    const windowEnumerator = Services.ww.getWindowEnumerator();
-    while (windowEnumerator.hasMoreElements()) {
-      const window = windowEnumerator.getNext().QueryInterface(Ci.nsIDOMWindow);
+    for (const window of Services.ww.getWindowEnumerator()) {
       updateWindow(window, buffer, width, height);
     }
   } catch (e) {

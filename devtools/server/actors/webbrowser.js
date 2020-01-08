@@ -27,20 +27,6 @@ loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.j
 
 
 
-
-
-function* allAppShellDOMWindows(windowType) {
-  const e = Services.wm.getEnumerator(windowType);
-  while (e.hasMoreElements()) {
-    yield e.getNext();
-  }
-}
-
-exports.allAppShellDOMWindows = allAppShellDOMWindows;
-
-
-
-
 function appShellDOMWindowType(window) {
   
   return window.document.documentElement.getAttribute("windowtype");
@@ -50,7 +36,7 @@ function appShellDOMWindowType(window) {
 
 
 function sendShutdownEvent() {
-  for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+  for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
     const evt = win.document.createEvent("Event");
     evt.initEvent("Debugger:Shutdown", true, false);
     win.document.documentElement.dispatchEvent(evt);
@@ -228,7 +214,7 @@ BrowserTabList.prototype._getSelectedBrowser = function(window) {
 
 BrowserTabList.prototype._getBrowsers = function* () {
   
-  for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+  for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
     
     
     for (const browser of this._getChildren(win)) {
@@ -488,7 +474,7 @@ BrowserTabList.prototype._listenForEventsIf =
   function(shouldListen, guard, eventNames) {
     if (!shouldListen !== !this[guard]) {
       const op = shouldListen ? "addEventListener" : "removeEventListener";
-      for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+      for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
         for (const name of eventNames) {
           win[op](name, this, false);
         }
@@ -512,7 +498,7 @@ BrowserTabList.prototype._listenForMessagesIf =
   function(shouldListen, guard, messageNames) {
     if (!shouldListen !== !this[guard]) {
       const op = shouldListen ? "addMessageListener" : "removeMessageListener";
-      for (const win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+      for (const win of Services.wm.getEnumerator(DebuggerServer.chromeWindowType)) {
         for (const name of messageNames) {
           win.messageManager[op](name, this);
         }
