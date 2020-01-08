@@ -36,6 +36,15 @@ Object.defineProperty(details, "blockList", {
   },
 });
 
+Object.defineProperty(details, "hasTouchScreen", {
+  enumerable: true,
+  get() {
+    
+    let gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
+    return gfxInfo.getInfo().ApzTouchInput == 1;
+  },
+});
+
 if (AppConstants.platform == "linux") {
   XPCOMUtils.defineLazyPreferenceGetter(details, "layers.acceleration.force-enabled", "layers.acceleration.force-enabled", false);
 }
