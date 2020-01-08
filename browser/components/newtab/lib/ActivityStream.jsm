@@ -178,9 +178,9 @@ const PREFS_CONFIG = new Map([
       } else {
         searchShortcuts.push("google");
       }
-      
-      
-      searchShortcuts.push("amazon");
+      if (["DE", "FR", "GB", "IT", "JP", "US"].includes(geo)) {
+        searchShortcuts.push("amazon");
+      }
       return searchShortcuts.join(",");
     }
   }],

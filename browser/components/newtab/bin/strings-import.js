@@ -35,6 +35,22 @@ async function getLocales() {
 }
 
 
+const transvision = {};
+async function cherryPickString(locale) {
+  const getTransvision = async string => {
+    if (!transvision[string]) {
+      const response = await fetch(`https://transvision.mozfr.org/api/v1/entity/gecko_strings/?id=${string}`);
+      transvision[string] = response.ok ? await response.json() : {};
+    }
+    return transvision[string];
+  };
+  const expectedKey = "section_menu_action_add_search_engine";
+  const expected = await getTransvision(`browser/chrome/browser/activity-stream/newtab.properties:${expectedKey}`);
+  const target = await getTransvision("browser/chrome/browser/search.properties:searchAddFoundEngine2");
+  return !expected[locale] && target[locale] ? `${expectedKey}=${target[locale]}\n` : "";
+}
+
+
 async function saveProperties(locale) {
   
   const url = `${L10N_CENTRAL}/${locale}/${PROPERTIES_PATH}`;
@@ -48,7 +64,8 @@ async function saveProperties(locale) {
   const text = await response.text();
   mkdir(locale);
   cd(locale);
-  ShellString(text).to(STRINGS_FILE);
+  
+  ShellString(text + await cherryPickString(locale)).to(STRINGS_FILE);
   cd("..");
 
   
