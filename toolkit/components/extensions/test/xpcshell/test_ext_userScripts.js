@@ -348,6 +348,9 @@ add_task(async function test_userScripts_exported_APIs() {
       ],
       user_scripts: {
         api_script: "api-script.js",
+        
+        
+        unexpected_manifest_key: "test-unexpected-key",
       },
     },
     background,
