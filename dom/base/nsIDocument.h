@@ -85,6 +85,7 @@ class nsDOMNavigationTiming;
 class nsDOMStyleSheetSetList;
 class nsFrameLoader;
 class nsGlobalWindowInner;
+class nsHtml5TreeOpExecutor;
 class nsHTMLCSSStyleSheet;
 class nsHTMLDocument;
 class nsHTMLStyleSheet;
@@ -573,13 +574,16 @@ class nsIDocument : public nsINode,
 
 
 
+
+
+
   virtual nsresult StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
                                      nsILoadGroup* aLoadGroup,
                                      nsISupports* aContainer,
                                      nsIStreamListener** aDocListener,
                                      bool aReset,
                                      nsIContentSink* aSink = nullptr) = 0;
-  virtual void StopDocumentLoad() = 0;
+  virtual void StopDocumentLoad();
 
   virtual void SetSuppressParserErrorElement(bool aSuppress) {}
   virtual bool SuppressParserErrorElement() { return false; }
@@ -1385,6 +1389,12 @@ class nsIDocument : public nsINode,
 
   void MaybeEndOutermostXBLUpdate();
 
+  void RetrieveRelevantHeaders(nsIChannel* aChannel);
+
+  void TryChannelCharset(nsIChannel* aChannel, int32_t& aCharsetSource,
+                         NotNull<const Encoding*>& aEncoding,
+                         nsHtml5TreeOpExecutor* aExecutor);
+
   void DispatchContentLoadedEvents();
 
   void DispatchPageTransition(mozilla::dom::EventTarget* aDispatchTarget,
@@ -1849,11 +1859,11 @@ class nsIDocument : public nsINode,
   
   
   void BeginUpdate();
-  virtual void EndUpdate() = 0;
+  virtual void EndUpdate();
   uint32_t UpdateNestingLevel() { return mUpdateNestLevel; }
 
-  virtual void BeginLoad() = 0;
-  virtual void EndLoad() = 0;
+  virtual void BeginLoad();
+  virtual void EndLoad();
 
   enum ReadyState {
     READYSTATE_UNINITIALIZED = 0,
