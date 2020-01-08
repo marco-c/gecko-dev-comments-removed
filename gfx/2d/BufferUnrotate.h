@@ -4,12 +4,18 @@
 
 
 
-#ifndef GFX_BUFFERUNROTATE_H
-#define GFX_BUFFERUNROTATE_H
+#ifndef MOZILLA_GFX_BUFFER_UNROTATE_H
+#define MOZILLA_GFX_BUFFER_UNROTATE_H
 
 #include "mozilla/Types.h"
 
+namespace mozilla {
+namespace gfx {
+
 void BufferUnrotate(uint8_t* aBuffer, int aByteWidth, int aHeight,
                     int aByteStride, int aXByteBoundary, int aYBoundary);
+
+} 
+} 
 
 #endif 
