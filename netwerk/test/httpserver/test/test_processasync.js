@@ -8,6 +8,7 @@
 
 
 
+
 XPCOMUtils.defineLazyGetter(this, "PREPATH", function() {
   return "http://localhost:" + srv.identity.primaryPort;
 });
@@ -122,8 +123,8 @@ function handleAsync2(request, response) {
   response.setHeader("X-Custom-Header", "value", false);
 
   callLater(startToHeaderDelay, function() {
-    var body = "BO";
-    response.bodyOutputStream.write(body, body.length);
+    var preBody = "BO";
+    response.bodyOutputStream.write(preBody, preBody.length);
 
     try {
       response.setStatusLine(request.httpVersion, 500, "after body write");
@@ -139,8 +140,8 @@ function handleAsync2(request, response) {
     }
 
     callLater(startToFinishedDelay - startToHeaderDelay, function() {
-      var body = "DY";
-      response.bodyOutputStream.write(body, body.length);
+      var postBody = "DY";
+      response.bodyOutputStream.write(postBody, postBody.length);
 
       response.finish();
       response.finish(); 

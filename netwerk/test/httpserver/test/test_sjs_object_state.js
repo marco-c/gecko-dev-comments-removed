@@ -173,6 +173,7 @@ function checkForFinish() {
     try {
       do_throw("uh-oh, how are we being finished twice?!?!");
     } finally {
+      
       quit(1);
     }
   }

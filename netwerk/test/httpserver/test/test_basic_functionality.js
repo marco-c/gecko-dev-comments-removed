@@ -8,6 +8,8 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 XPCOMUtils.defineLazyGetter(this, "port", function() {
   return srv.identity.primaryPort;
 });
@@ -32,9 +34,7 @@ function run_test() {
 
   
   
-  var dirServ = Cc["@mozilla.org/file/directory_service;1"]
-                  .getService(Ci.nsIProperties);
-  var path = dirServ.get("CurWorkD", Ci.nsIFile);
+  var path = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
   srv.registerDirectory("/", path);
 
   

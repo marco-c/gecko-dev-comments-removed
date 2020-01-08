@@ -10,6 +10,7 @@
 
 
 
+
 XPCOMUtils.defineLazyGetter(this, "tests", function() {
   return [
     new Test("http://localhost:" + srv.identity.primaryPort + "/test",
@@ -24,9 +25,8 @@ var srv;
 function run_test() {
   srv = createServer();
 
-  var qi;
   try {
-    qi = srv.identity.QueryInterface(Ci.nsIHttpServerIdentity);
+    srv.identity.QueryInterface(Ci.nsIHttpServerIdentity);
   } catch (e) {
     var exstr = ("" + e).split(/[\x09\x20-\x7f\x81-\xff]+/)[0];
     do_throw("server identity didn't QI: " + exstr);

@@ -16,6 +16,7 @@
 
 
 
+
 gThreadManager = Cc["@mozilla.org/thread-manager;1"].createInstance();
 
 function run_test() {
@@ -323,10 +324,10 @@ function sinkAndSourceClosedWithPendingData(next) {
 
 
 function sum(arr) {
-  var sum = 0;
+  var s = 0;
   for (var i = 0, sz = arr.length; i < sz; i++)
-    sum += arr[i];
-  return sum;
+    s += arr[i];
+  return s;
 }
 
 
@@ -1447,7 +1448,6 @@ CopyTest.prototype =
     }
 
     var task = this._tasks[this._currentTask++];
-    var self = this;
     var event =
       {
         run: function run() {
