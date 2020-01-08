@@ -72,6 +72,11 @@ public:
   
 
 
+  static uint32_t TotalItemCount(Accessible* aContainer, bool* aIsHierarchical);
+
+  
+
+
   static Accessible* NextItemTo(Accessible* aItem);
 
 protected:

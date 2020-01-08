@@ -28,6 +28,26 @@ function testAbsentAttrs(aAccOrElmOrID, aAbsentAttrs) {
 
 
 
+
+
+
+
+function todoAttr(aAccOrElmOrID, aKey, aExpectedValue) {
+  var accessible = getAccessible(aAccOrElmOrID);
+  if (!accessible)
+    return;
+
+  var attrs = null;
+  try {
+    attrs = accessible.attributes;
+  } catch (e) { }
+
+  todo_is(attrs.getStringProperty(aKey), aExpectedValue, "attributes match");
+}
+
+
+
+
 function testCSSAttrs(aID) {
   var node = document.getElementById(aID);
   var computedStyle = document.defaultView.getComputedStyle(node);
@@ -93,6 +113,16 @@ function testGroupAttrs(aAccOrElmOrID, aPosInSet, aSetSize, aLevel) {
 
     let attrs = { "level": String(aLevel) };
     testAttrs(aAccOrElmOrID, attrs, true);
+  }
+}
+
+function testGroupParentAttrs(aAccOrElmOrID, aChildItemCount, aIsHierarchical) {
+  testAttrs(aAccOrElmOrID, { "child-item-count": String(aChildItemCount) }, true);
+
+  if (aIsHierarchical) {
+    testAttrs(aAccOrElmOrID, { "hierarchical": "true" }, true);
+  } else {
+    testAbsentAttrs(aAccOrElmOrID, { "hierarchical": "true" });
   }
 }
 
