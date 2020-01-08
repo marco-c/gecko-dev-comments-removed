@@ -104,51 +104,6 @@ class FlexboxInspector {
     this.walker = null;
   }
 
-  
-
-
-
-
-
-
-
-
-  async getAsFlexItem(containerNodeFront) {
-    
-    
-    if (containerNodeFront !== this.selection.nodeFront) {
-      return null;
-    }
-
-    const flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-      this.selection.nodeFront, true);
-
-    if (!flexboxFront) {
-      return null;
-    }
-
-    containerNodeFront = flexboxFront.containerNodeFront;
-    if (!containerNodeFront) {
-      containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
-        ["containerEl"]);
-    }
-
-    let flexItemContainer = null;
-    if (flexboxFront) {
-      const flexItems = await this.getFlexItems(flexboxFront);
-      flexItemContainer = {
-        actorID: flexboxFront.actorID,
-        flexItems,
-        flexItemShown: this.selection.nodeFront.actorID,
-        isFlexItemContainer: true,
-        nodeFront: containerNodeFront,
-        properties: flexboxFront.properties,
-      };
-    }
-
-    return flexItemContainer;
-  }
-
   getComponentProps() {
     return {
       onSetFlexboxOverlayColor: this.onSetFlexboxOverlayColor,
@@ -170,6 +125,58 @@ class FlexboxInspector {
     this._customHostColors = await asyncStorage.getItem("flexboxInspectorHostColors")
       || {};
     return this._customHostColors;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async getFlexContainerProps(nodeFront, onlyLookAtParents = false) {
+    const flexboxFront = await this.layoutInspector.getCurrentFlexbox(nodeFront,
+      onlyLookAtParents);
+
+    if (!flexboxFront) {
+      return null;
+    }
+
+    
+    
+    
+    let containerNodeFront = flexboxFront.containerNodeFront;
+    if (!containerNodeFront) {
+      containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
+        ["containerEl"]);
+    }
+
+    const flexItems = await this.getFlexItems(flexboxFront);
+
+    
+    
+    let flexItemShown = null;
+    if (onlyLookAtParents) {
+      flexItemShown = this.selection.nodeFront.actorID;
+    } else {
+      const selectedFlexItem = flexItems.find(item =>
+        item.nodeFront === this.selection.nodeFront);
+      if (selectedFlexItem) {
+        flexItemShown = selectedFlexItem.nodeFront.actorID;
+      }
+    }
+
+    return {
+      actorID: flexboxFront.actorID,
+      flexItems,
+      flexItemShown,
+      isFlexItemContainer: onlyLookAtParents,
+      nodeFront: containerNodeFront,
+      properties: flexboxFront.properties,
+    };
   }
 
   
@@ -303,12 +310,11 @@ class FlexboxInspector {
     }
 
     try {
-      const flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-        this.selection.nodeFront);
+      const flexContainer = await this.getFlexContainerProps(this.selection.nodeFront);
 
       
       
-      if (!flexboxFront) {
+      if (!flexContainer) {
         this.store.dispatch(clearFlexbox());
         return;
       }
@@ -316,12 +322,24 @@ class FlexboxInspector {
       const { flexbox } = this.store.getState();
 
       
-      if (flexbox.actorID == flexboxFront.actorID) {
+      
+      if (hasFlexContainerChanged(flexbox.flexContainer, flexContainer)) {
+        this.update(flexContainer);
         return;
       }
 
+      let flexItemContainer = null;
       
-      this.update(flexboxFront);
+      
+      if (flexContainer.nodeFront === this.selection.nodeFront) {
+        flexItemContainer = await this.getFlexContainerProps(this.selection.nodeFront,
+          true);
+      }
+
+      
+      if (hasFlexContainerChanged(flexbox.flexItemContainer, flexItemContainer)) {
+        this.update(flexContainer, flexItemContainer);
+      }
     } catch (e) {
       
       
@@ -430,7 +448,11 @@ class FlexboxInspector {
 
 
 
-  async update(flexboxFront) {
+
+
+
+
+  async update(flexContainer, flexItemContainer) {
     
     
     if (!this.inspector ||
@@ -442,59 +464,94 @@ class FlexboxInspector {
 
     try {
       
-      if (!flexboxFront) {
-        flexboxFront = await this.layoutInspector.getCurrentFlexbox(
-          this.selection.nodeFront);
+      if (!flexContainer) {
+        flexContainer = await this.getFlexContainerProps(this.selection.nodeFront);
       }
 
       
       
-      if (!flexboxFront) {
+      if (!flexContainer) {
         this.store.dispatch(clearFlexbox());
         return;
       }
 
-      
-      
-      
-      let containerNodeFront = flexboxFront.containerNodeFront;
-      if (!containerNodeFront) {
-        containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
-          ["containerEl"]);
+      if (!flexItemContainer && flexContainer.nodeFront === this.selection.nodeFront) {
+        flexItemContainer = await this.getFlexContainerProps(this.selection.nodeFront,
+          true);
       }
 
-      const flexItemContainer = await this.getAsFlexItem(containerNodeFront);
-      const flexItems = await this.getFlexItems(flexboxFront);
-      
-      
-      const flexItemShown = flexItems.find(item =>
-        item.nodeFront === this.selection.nodeFront);
       const highlighted = this._highlighters &&
-        containerNodeFront == this.highlighters.flexboxHighlighterShown;
+        flexContainer.nodeFront === this.highlighters.flexboxHighlighterShown;
       const color = await this.getOverlayColor();
 
       this.store.dispatch(updateFlexbox({
         color,
-        flexContainer: {
-          actorID: flexboxFront.actorID,
-          flexItems,
-          flexItemShown: flexItemShown ? flexItemShown.nodeFront.actorID : null,
-          isFlexItemContainer: false,
-          nodeFront: containerNodeFront,
-          properties: flexboxFront.properties,
-        },
+        flexContainer,
         flexItemContainer,
         highlighted,
       }));
 
-      const isContainerInfoShown = !flexItemShown || !!flexItemContainer;
-      const isItemInfoShown = !!flexItemShown || !!flexItemContainer;
+      const isContainerInfoShown = !flexContainer.flexItemShown || !!flexItemContainer;
+      const isItemInfoShown = !!flexContainer.flexItemShown || !!flexItemContainer;
       this.sendTelemetryProbes(isContainerInfoShown, isItemInfoShown);
     } catch (e) {
       
       
     }
   }
+}
+
+
+
+
+
+
+
+
+
+function getComparableFlexContainerProperties(flexContainer) {
+  if (!flexContainer) {
+    return null;
+  }
+
+  return {
+    flexItems: getComparableFlexItemsProperties(flexContainer.flexItems),
+    nodeFront: flexContainer.nodeFront.actorID,
+    properties: flexContainer.properties,
+  };
+}
+
+
+
+
+
+
+
+
+
+function getComparableFlexItemsProperties(flexItems) {
+  return flexItems.map(item => {
+    return {
+      computedStyle: item.computedStyle,
+      flexItemSizing: item.flexItemSizing,
+      nodeFront: item.nodeFront.actorID,
+      properties: item.properties,
+    };
+  });
+}
+
+
+
+
+
+
+
+
+
+
+function hasFlexContainerChanged(oldFlexContainer, newFlexContainer) {
+  return JSON.stringify(getComparableFlexContainerProperties(oldFlexContainer)) !==
+    JSON.stringify(getComparableFlexContainerProperties(newFlexContainer));
 }
 
 module.exports = FlexboxInspector;
