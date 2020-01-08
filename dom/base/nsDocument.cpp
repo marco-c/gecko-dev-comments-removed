@@ -8073,7 +8073,7 @@ void nsIDocument::RefreshLinkHrefs() {
   }
 }
 
-nsresult nsDocument::CloneDocHelper(nsDocument* clone) const {
+nsresult nsIDocument::CloneDocHelper(nsIDocument* clone) const {
   clone->mIsStaticDocument = mCreatingStaticClone;
 
   
@@ -8110,7 +8110,7 @@ nsresult nsDocument::CloneDocHelper(nsDocument* clone) const {
   
   
   
-  clone->nsDocument::SetDocumentURI(nsIDocument::GetDocumentURI());
+  clone->SetDocumentURI(nsIDocument::GetDocumentURI());
   clone->SetChromeXHRDocURI(mChromeXHRDocURI);
   clone->SetPrincipal(NodePrincipal());
   clone->mDocumentBaseURI = mDocumentBaseURI;
@@ -10964,8 +10964,8 @@ void nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const {
     mNodeInfoManager->AddSizeOfIncludingThis(aWindowSizes);
   }
 
-  aWindowSizes.mDOMMediaQueryLists +=
-      mDOMMediaQueryLists.sizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
+  aWindowSizes.mDOMMediaQueryLists += mDOMMediaQueryLists.sizeOfExcludingThis(
+      aWindowSizes.mState.mMallocSizeOf);
 
   for (const MediaQueryList* mql : mDOMMediaQueryLists) {
     aWindowSizes.mDOMMediaQueryLists +=
