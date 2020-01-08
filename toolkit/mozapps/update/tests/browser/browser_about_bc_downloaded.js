@@ -1,0 +1,17 @@
+
+
+
+"use strict";
+
+
+
+add_task(async function aboutDialog_backgroundCheck_downloaded() {
+  let updateParams = "";
+  await runAboutDialogUpdateTest(updateParams, true, [
+    {
+      panelId: "apply",
+      checkActiveUpdate: {state: STATE_PENDING},
+      continueFile: null,
+    },
+  ]);
+});

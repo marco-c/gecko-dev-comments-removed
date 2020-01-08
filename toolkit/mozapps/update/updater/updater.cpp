@@ -2459,6 +2459,33 @@ static void UpdateThreadFunc(void *param) {
       
       if (EnvHasValue("MOZ_TEST_SKIP_UPDATE_STAGE")) {
         rv = OK;
+      } else if (EnvHasValue("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE")) {
+        
+        
+        NS_tchar continueFilePath[MAXPATHLEN] = {NS_T('\0')};
+        NS_tsnprintf(continueFilePath,
+                     sizeof(continueFilePath) / sizeof(continueFilePath[0]),
+                     NS_T("%s/continueStaging"), gPatchDirPath);
+        
+        
+        
+        
+        const int max_retries = 100;
+        int retries = 1;
+        while (retries++ < max_retries) {
+#ifdef XP_WIN
+          Sleep(100);
+#else
+          usleep(100000);
+#endif
+          
+          
+          if (!NS_taccess(continueFilePath, F_OK) &&
+              !NS_tremove(continueFilePath)) {
+            break;
+          }
+        }
+        rv = OK;
       } else {
         rv = CopyInstallDirToDestDir();
       }
