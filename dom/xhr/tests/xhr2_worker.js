@@ -84,7 +84,7 @@ onmessage = function(event) {
   
   xhr = new XMLHttpRequest();
 
-  if (xhr.responseType != "text") {
+  if (xhr.responseType != "") {
     throw new Error("Default value for responseType is wrong!");
   }
 
