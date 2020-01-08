@@ -598,8 +598,12 @@ class ADBDevice(ADBCommand):
             self._logger.debug("Check for su -c failed")
 
         
+        
+        
+        
         try:
-            if self.shell_output("su 0 id", timeout=timeout).find(uid) != -1:
+            if (not self._have_su and
+                self.shell_output("su 0 id", timeout=timeout).find(uid) != -1):
                 self._have_android_su = True
                 self._logger.info("su 0 supported")
         except ADBError:
