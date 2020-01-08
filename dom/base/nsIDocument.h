@@ -2118,20 +2118,22 @@ class nsIDocument : public nsINode,
 
   virtual bool CanSavePresentation(nsIRequest* aNewRequest);
 
-  
-
-
-
-
-  virtual void Destroy() = 0;
+  virtual nsresult Init();
 
   
 
 
 
 
+  virtual void Destroy();
 
-  virtual void RemovedFromDocShell() = 0;
+  
+
+
+
+
+
+  virtual void RemovedFromDocShell();
 
   
 
