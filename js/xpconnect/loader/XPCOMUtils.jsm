@@ -63,6 +63,17 @@ const nsIFactoryQI = ChromeUtils.generateQI([Ci.nsIFactory]);
 
 
 
+const EXTRA_GLOBAL_NAME_TO_IMPORT_NAME = {
+  Headers: "fetch",
+  MessagePort: "MessageChannel",
+  Request: "fetch",
+  Response: "fetch",
+};
+
+
+
+
+
 
 function redefine(object, prop, value) {
   Object.defineProperty(object, prop, {
@@ -174,7 +185,8 @@ var XPCOMUtils = {
     for (let name of aNames) {
       this.defineLazyGetter(aObject, name, () => {
         if (!(name in global)) {
-          Cu.importGlobalProperties([name]);
+          let importName = EXTRA_GLOBAL_NAME_TO_IMPORT_NAME[name] || name;
+          Cu.importGlobalProperties([importName]);
         }
         return global[name];
       });
