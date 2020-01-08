@@ -29,6 +29,50 @@ add_task(async function setup_optional_permission_observer() {
 
 
 
+add_task(async function test_userScripts_manifest_property_required() {
+  function background() {
+    browser.test.assertEq(undefined, browser.userScripts,
+                          "userScripts API namespace should be undefined in the extension page");
+    browser.test.sendMessage("background-page:done");
+  }
+
+  async function contentScript() {
+    browser.test.assertEq(undefined, browser.userScripts,
+                          "userScripts API namespace should be undefined in the content script");
+    browser.test.sendMessage("content-script:done");
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    background,
+    manifest: {
+      permissions: ["http://*/*/file_sample.html"],
+      content_scripts: [
+        {
+          matches:  ["http://*/*/file_sample.html"],
+          js: ["content_script.js"],
+          run_at: "document_start",
+        },
+      ],
+    },
+    files: {
+      "content_script.js": contentScript,
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("background-page:done");
+
+  let url = `${BASE_URL}/file_sample.html`;
+  let contentPage = await ExtensionTestUtils.loadContentPage(url);
+
+  await extension.awaitMessage("content-script:done");
+
+  await extension.unload();
+  await contentPage.close();
+});
+
+
+
 add_task(async function test_userScripts_matches_denied() {
   async function background() {
     async function registerUserScriptWithMatches(matches) {
@@ -66,6 +110,8 @@ add_task(async function test_userScripts_matches_denied() {
             browser.test.fail(`Unexpected rejection ${err} on matching ${JSON.stringify(testMatch)}`);
           }
         }
+      } else {
+        browser.test.fail(`Received an unexpected ${msg} test message`);
       }
 
       browser.test.sendMessage(`${msg}:done`);
@@ -78,6 +124,7 @@ add_task(async function test_userScripts_matches_denied() {
     manifest: {
       permissions: ["http://localhost/*"],
       optional_permissions: ["<all_urls>"],
+      user_scripts: {},
     },
     background,
   });
@@ -185,6 +232,7 @@ add_task(async function test_userScripts_no_webext_apis() {
       permissions: [
         "http://localhost/*/file_sample.html",
       ],
+      user_scripts: {},
     },
     background,
   };
