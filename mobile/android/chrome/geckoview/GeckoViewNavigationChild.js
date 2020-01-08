@@ -7,6 +7,8 @@ ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   ErrorPageEventHandler: "chrome://geckoview/content/ErrorPageEventHandler.js",
   LoadURIDelegate: "resource://gre/modules/LoadURIDelegate.jsm",
 });
@@ -15,6 +17,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 class GeckoViewNavigationChild extends GeckoViewChildModule {
   onInit() {
     docShell.loadURIDelegate = this;
+
+    if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
+      let tabchild = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsITabChild);
+      tabchild.webBrowserChrome = this;
+    }
   }
 
   
@@ -50,6 +58,45 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
 
     return LoadURIDelegate.handleLoadError(content, this.eventDispatcher,
                                            aUri, aError, aErrorModule);
+  }
+
+  
+  onBeforeLinkTraversal(aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab) {
+    debug `onBeforeLinkTraversal ${aLinkURI.displaySpec}`;
+    return BrowserUtils.onBeforeLinkTraversal(aOriginalTarget, aLinkURI, aLinkNode, aIsAppTab);
+  }
+
+  
+  shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData, aTriggeringPrincipal) {
+    debug `shouldLoadURI ${aURI.displaySpec}`;
+
+    
+    
+    
+    
+    
+    
+    
+
+    if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData)) {
+      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false);
+      return false;
+    }
+
+    return true;
+  }
+
+  
+  shouldLoadURIInThisProcess(aURI) {
+    debug `shouldLoadURIInThisProcess ${aURI.displaySpec}`;
+    return E10SUtils.shouldLoadURIInThisProcess(aURI);
+  }
+
+  
+  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aLoadFlags) {
+    debug `reloadInFreshProcess ${aURI.displaySpec}`;
+    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true, aLoadFlags);
+    return true;
   }
 }
 
