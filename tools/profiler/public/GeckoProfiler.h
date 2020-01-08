@@ -93,6 +93,7 @@ class SpliceableJSONWriter;
 namespace mozilla {
 namespace net {
 struct TimingStruct;
+enum CacheDisposition : uint8_t;
 }
 }
 class nsIURI;
@@ -607,8 +608,8 @@ enum class NetworkLoadType {
   LOAD_REDIRECT
 };
 
-#define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end, count, timings, redirect) \
-  profiler_add_network_marker(uri, pri, channel, type, start, end, count, timings, redirect)
+#define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end, count, cache, timings, redirect) \
+  profiler_add_network_marker(uri, pri, channel, type, start, end, count, cache, timings, redirect)
 
 void profiler_add_network_marker(nsIURI* aURI,
                                  int32_t aPriority,
@@ -617,6 +618,7 @@ void profiler_add_network_marker(nsIURI* aURI,
                                  mozilla::TimeStamp aStart,
                                  mozilla::TimeStamp aEnd,
                                  int64_t aCount,
+                                 mozilla::net::CacheDisposition aCacheDisposition,
                                  const mozilla::net::TimingStruct* aTimings = nullptr,
                                  nsIURI* aRedirectURI = nullptr);
 
@@ -797,14 +799,13 @@ class MOZ_RAII AutoProfilerLabel
 public:
   
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    js::ProfilingStackFrame::Category aCategory,
-                    uint32_t aFlags = 0
+                    js::ProfilingStackFrame::Category aCategory
                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
-    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory, aFlags);
+    Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory);
   }
 
   
