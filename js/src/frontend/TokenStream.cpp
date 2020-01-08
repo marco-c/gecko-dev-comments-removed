@@ -1707,13 +1707,10 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int32_t unit, TokenSta
                 return false;
             }
         } else {
-            int32_t codePoint;
-            if (!getCodePoint(&codePoint))
-                return false;
-
-            ungetNonAsciiNormalizedCodePoint(codePoint);
-
-            if (unicode::IsIdentifierStart(uint32_t(codePoint))) {
+            
+            
+            PeekedCodePoint<CharT> peeked = this->sourceUnits.peekCodePoint();
+            if (!peeked.isNone() && unicode::IsIdentifierStart(peeked.codePoint())) {
                 error(JSMSG_IDSTART_AFTER_NUMBER);
                 return false;
             }
