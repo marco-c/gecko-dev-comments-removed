@@ -1778,21 +1778,16 @@ PeerConnectionWrapper.prototype = {
 
 
   checkStats : function(stats, twoMachines) {
-    const isWinXP = navigator.userAgent.includes("Windows NT 5.1");
-
     
     var counters = {};
     for (let [key, res] of stats) {
       info("Checking stats for " + key + " : " + res);
       
       ok(res.id == key, "Coherent stats id");
-      var nowish = Date.now() + 1000;        
-      var minimum = this.whenCreated - 1000; 
-      if (isWinXP) {
-        todo(false, "Can't reliably test rtcp timestamps on WinXP (Bug 979649)");
-
-      } else if (false) { 
-	
+      var nowish = Date.now();
+      var minimum = this.whenCreated;
+      if (false) { 
+      
         
         
         if (res.timestamp != 2085978496000) {
