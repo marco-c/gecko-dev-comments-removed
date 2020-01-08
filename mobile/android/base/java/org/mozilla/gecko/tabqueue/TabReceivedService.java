@@ -4,13 +4,6 @@
 
 package org.mozilla.gecko.tabqueue;
 
-import org.mozilla.gecko.AppConstants;
-import org.mozilla.gecko.BrowserLocaleManager;
-import org.mozilla.gecko.GeckoSharedPrefs;
-import org.mozilla.gecko.R;
-import org.mozilla.gecko.db.BrowserContract;
-
-import android.app.IntentService;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,12 +11,19 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
+import android.support.v4.app.JobIntentService;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
+import org.mozilla.gecko.AppConstants;
+import org.mozilla.gecko.BrowserLocaleManager;
+import org.mozilla.gecko.GeckoSharedPrefs;
+import org.mozilla.gecko.R;
+import org.mozilla.gecko.db.BrowserContract;
 
 
 
@@ -31,20 +31,16 @@ import android.util.Log;
 
 
 
-public class TabReceivedService extends IntentService {
+
+public class TabReceivedService extends JobIntentService {
     private static final String LOGTAG = "Gecko" + TabReceivedService.class.getSimpleName();
 
     private static final String PREF_NOTIFICATION_ID = "tab_received_notification_id";
 
     private static final int MAX_NOTIFICATION_COUNT = 1000;
 
-    public TabReceivedService() {
-        super(LOGTAG);
-        setIntentRedelivery(true);
-    }
-
     @Override
-    protected void onHandleIntent(final Intent intent) {
+    protected void onHandleWork(@NonNull Intent intent) {
         
         
         final Resources res = getResources();
@@ -86,6 +82,12 @@ public class TabReceivedService extends IntentService {
         
         
         prefs.edit().putInt(PREF_NOTIFICATION_ID, notificationId).apply();
+    }
+
+    @Override
+    public boolean onStopCurrentWork() {
+        
+        return true;
     }
 
     
