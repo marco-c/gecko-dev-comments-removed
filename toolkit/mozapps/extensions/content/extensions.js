@@ -291,8 +291,14 @@ function setSearchLabel(type) {
 }
 
 function setThemeScreenshot(addon, node) {
-  let screenshot = node.querySelector(".theme-screenshot")
+  let findElement = () => node.querySelector(".theme-screenshot")
     || document.getAnonymousElementByAttribute(node, "anonid", "theme-screenshot");
+  let screenshot = findElement();
+  if (!screenshot) {
+    
+    node.clientTop;
+    screenshot = findElement();
+  }
   
   if (!screenshot)
     return;
