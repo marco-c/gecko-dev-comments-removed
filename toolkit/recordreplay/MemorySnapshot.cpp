@@ -783,7 +783,7 @@ MarkThreadStacksAsUntracked()
     
 
     
-    uint8_t* base = thread->StackBase();
+    uint8_t* base = thread->StackBase() + thread->StackSize() - 1;
     size_t size;
     if (!QueryRegion(&base, &size)) {
       MOZ_CRASH("Could not find memory region information for thread stack");
@@ -791,7 +791,6 @@ MarkThreadStacksAsUntracked()
 
     
     
-    MOZ_RELEASE_ASSERT(base <= thread->StackBase());
     MOZ_RELEASE_ASSERT(base + size >= thread->StackBase() + thread->StackSize());
 
     uint8_t* trailing = base + size;
