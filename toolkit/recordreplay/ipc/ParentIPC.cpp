@@ -611,6 +611,12 @@ SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
     oldActiveChild->RecoverToCheckpoint(oldActiveChild->MostRecentSavedCheckpoint());
     oldActiveChild->SetRole(MakeUnique<ChildRoleStandby>());
   }
+
+  
+  
+  if (aChild->IsRecording() != oldActiveChild->IsRecording()) {
+    UpdateGraphicsOverlay();
+  }
 }
 
 
@@ -1180,6 +1186,10 @@ RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
 {
   UpdateCheckpointTimes(aMsg);
   MaybeUpdateGraphicsAtCheckpoint(aMsg.mCheckpointId);
+
+  if (!gActiveChild->IsRecording()) {
+    UpdateGraphicsOverlay();
+  }
 
   
   
