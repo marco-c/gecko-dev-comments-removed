@@ -481,6 +481,9 @@ impl SpatialNode {
                 
                 
                 state.parent_accumulated_scroll_offset += info.current_offset;
+                
+                
+                state.nearest_scrolling_ancestor_offset += info.current_offset;
             }
             SpatialNodeType::ScrollFrame(ref scrolling) => {
                 state.parent_accumulated_scroll_offset += scrolling.offset;
