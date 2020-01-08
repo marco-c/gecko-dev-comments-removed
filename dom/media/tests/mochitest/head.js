@@ -1140,21 +1140,6 @@ class VideoStreamHelper {
   }
 }
 
-
-function IsMacOSX10_6orOlder() {
-  if (navigator.platform.indexOf("Mac") !== 0) {
-    return false;
-  }
-
-  var version = Cc["@mozilla.org/system-info;1"]
-      .getService(Ci.nsIPropertyBag2)
-      .getProperty("version");
-  
-  
-  
-  return (parseFloat(version) < 11.0);
-}
-
 (function(){
   var el = document.createElement("link");
   el.rel = "stylesheet";
