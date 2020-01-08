@@ -19,6 +19,7 @@
 #include "nsITimer.h"
 #include "nsThreadUtils.h"
 
+using mozilla::Preferences;
 using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
 using mozilla::StaticAutoPtr;
@@ -39,7 +40,8 @@ namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
 
 
-const uint32_t kBatchTimeoutMs = 2000;
+const uint32_t kDefaultBatchTimeoutMs = 2000;
+static uint32_t sBatchTimeoutMs = kDefaultBatchTimeoutMs;
 
 
 
@@ -90,8 +92,17 @@ DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock)
     gIPCTimer = NS_NewTimer(SystemGroup::EventTargetFor(TaskCategory::Other)).take();
   }
   if (gIPCTimer) {
+
+    static bool sTimeoutInitialized = false;
+    if (!sTimeoutInitialized && Preferences::IsServiceAvailable()) {
+      Preferences::AddUintVarCache(&sBatchTimeoutMs,
+                                   "toolkit.telemetry.ipcBatchTimeout",
+                                   kDefaultBatchTimeoutMs);
+      sTimeoutInitialized = true;
+    }
+
     gIPCTimer->InitWithNamedFuncCallback(TelemetryIPCAccumulator::IPCTimerFired,
-                                         nullptr, kBatchTimeoutMs,
+                                         nullptr, sBatchTimeoutMs,
                                          nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
                                          "TelemetryIPCAccumulator::IPCTimerFired");
     gIPCTimerArmed = true;

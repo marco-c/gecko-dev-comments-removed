@@ -368,6 +368,9 @@ if (runningInParent) {
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.HealthPingEnabled, false);
 
   
+  Services.prefs.setIntPref(TelemetryUtils.Preferences.IPCBatchTimeout, 10);
+
+  
   Services.prefs.setBoolPref("toolkit.telemetry.isGeckoViewMode", false);
 
   
