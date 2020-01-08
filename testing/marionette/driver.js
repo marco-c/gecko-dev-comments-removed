@@ -104,24 +104,6 @@ const globalMessageManager = Services.mm;
 
 
 
-function* enumeratorIterator(enumerator) {
-  while (enumerator.hasMoreElements()) {
-    yield enumerator.getNext();
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -243,7 +225,7 @@ Object.defineProperty(GeckoDriver.prototype, "timeouts", {
 
 Object.defineProperty(GeckoDriver.prototype, "windows", {
   get() {
-    return enumeratorIterator(Services.wm.getEnumerator(null));
+    return Services.wm.getEnumerator(null);
   },
 });
 

@@ -160,13 +160,9 @@ var Utils = {
     let attributes = {};
 
     if (aAccessible && aAccessible.attributes) {
-      let attributesEnum = aAccessible.attributes.enumerate();
-
       
       
-      while (attributesEnum.hasMoreElements()) {
-        let attribute = attributesEnum.getNext().QueryInterface(
-          Ci.nsIPropertyElement);
+      for (let attribute of aAccessible.attributes.enumerate()) {
         attributes[attribute.key] = attribute.value;
       }
     }
@@ -757,9 +753,8 @@ PivotContext.prototype = {
       }
     };
     let getHeaders = function* getHeaders(aHeaderCells) {
-      let enumerator = aHeaderCells.enumerate();
-      while (enumerator.hasMoreElements()) {
-        yield enumerator.getNext().QueryInterface(Ci.nsIAccessible).name;
+      for (let {name} of aHeaderCells.enumerate(Ci.nsIAccessible)) {
+        yield name;
       }
     };
 

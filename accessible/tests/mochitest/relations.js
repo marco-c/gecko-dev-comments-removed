@@ -76,9 +76,7 @@ function testRelation(aIdentifier, aRelType, aRelatedIdentifiers) {
   
   for (let idx = 0; idx < targets.length; idx++) {
     var isFound = false;
-    let enumerate = actualTargets.enumerate();
-    while (enumerate.hasMoreElements()) {
-      let relatedAcc = enumerate.getNext().QueryInterface(nsIAccessible);
+    for (let relatedAcc of actualTargets.enumerate(Ci.nsIAccessible)) {
       if (targets[idx] == relatedAcc) {
         isFound = true;
         break;
@@ -89,9 +87,7 @@ function testRelation(aIdentifier, aRelType, aRelatedIdentifiers) {
   }
 
   
-  let enumerate = actualTargets.enumerate();
-  while (enumerate.hasMoreElements()) {
-    let relatedAcc = enumerate.getNext().QueryInterface(nsIAccessible);
+  for (let relatedAcc of actualTargets.enumerate(Ci.nsIAccessible)) {
     let idx;
     for (idx = 0; idx < targets.length && relatedAcc != targets[idx]; idx++);
 
@@ -140,9 +136,7 @@ function testAbsentRelation(aIdentifier, aRelType, aUnrelatedIdentifiers) {
   
   for (let idx = 0; idx < targets.length; idx++) {
     var notFound = true;
-    var enumerate = actualTargets.enumerate();
-    while (enumerate.hasMoreElements()) {
-      var relatedAcc = enumerate.getNext().QueryInterface(nsIAccessible);
+    for (let relatedAcc of actualTargets.enumerate(Ci.nsIAccessible)) {
       if (targets[idx] == relatedAcc) {
         notFound = false;
         break;

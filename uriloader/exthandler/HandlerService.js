@@ -252,9 +252,7 @@ HandlerService.prototype = {
     if (handlerInfo.preferredApplicationHandler) {
       handlers.push(handlerInfo.preferredApplicationHandler);
     }
-    let enumerator = handlerInfo.possibleApplicationHandlers.enumerate();
-    while (enumerator.hasMoreElements()) {
-      let handler = enumerator.getNext().QueryInterface(Ci.nsIHandlerApp);
+    for (let handler of handlerInfo.possibleApplicationHandlers.enumerate(Ci.nsIHandlerApp)) {
       
       if (!handlers.some(h => h.equals(handler))) {
         handlers.push(handler);

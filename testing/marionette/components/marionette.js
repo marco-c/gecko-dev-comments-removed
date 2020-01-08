@@ -383,9 +383,7 @@ class MarionetteParentProcess {
         
         
         
-        let winEn = Services.wm.getEnumerator(null);
-        while (winEn.hasMoreElements()) {
-          let win = winEn.getNext();
+        for (let win of Services.wm.getEnumerator(null)) {
           if (win.document.documentURI == "chrome://gfxsanity/content/sanityparent.html") {
             this.gfxWindow = win;
             break;

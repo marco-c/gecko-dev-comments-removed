@@ -62,10 +62,7 @@ modal.addHandler = function(handler) {
 modal.findModalDialogs = function(context) {
   
   
-  let winEn = Services.wm.getEnumerator(null);
-  while (winEn.hasMoreElements()) {
-    let win = winEn.getNext();
-
+  for (let win of Services.wm.getEnumerator(null)) {
     
     
     
