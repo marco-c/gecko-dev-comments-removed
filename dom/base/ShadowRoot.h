@@ -89,6 +89,14 @@ public:
   void CloneInternalDataFrom(ShadowRoot* aOther);
   void InsertSheetAt(size_t aIndex, StyleSheet&);
 
+  
+  
+  void Unbind();
+
+  
+  
+  nsresult Bind();
+
 private:
   void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&);
 
@@ -185,13 +193,6 @@ public:
                                          const nsAString& aTagName,
                                          mozilla::ErrorResult& rv);
 
-  bool IsComposedDocParticipant() const
-  {
-    return mIsComposedDocParticipant;
-  }
-
-  void SetIsComposedDocParticipant(bool aIsComposedDocParticipant);
-
   bool IsUAWidget() const
   {
     return mIsUAWidget;
@@ -221,12 +222,6 @@ protected:
   
   
   nsClassHashtable<nsStringHashKey, SlotArray> mSlotMap;
-
-  
-  
-  
-  
-  bool mIsComposedDocParticipant;
 
   bool mIsUAWidget;
 
