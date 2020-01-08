@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: Lock held until callback result resolves</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/helpers.js"></script>
-<script>
+
+
+
 'use strict';
 
-// For uncaught rejections.
+
 setup({allow_uncaught_exception: true});
 
 function snooze(t, ms) { return new Promise(r => t.step_timeout(r, ms)); }
@@ -22,11 +17,11 @@ promise_test(async t => {
 
 promise_test(async t => {
   const res = uniqueName(t);
-  // Resolved when the lock is granted.
+  
   let granted;
   const lock_granted_promise = new Promise(r => { granted = r; });
 
-  // Lock is held until this is resolved.
+  
   let resolve;
   const lock_release_promise = new Promise(r => { resolve = r; });
 
@@ -53,11 +48,11 @@ promise_test(async t => {
 
 promise_test(async t => {
   const res = uniqueName(t);
-  // Resolved when the lock is granted.
+  
   let granted;
   const lock_granted_promise = new Promise(r => { granted = r; });
 
-  // Lock is held until this is rejected.
+  
   let reject;
   const lock_release_promise = new Promise((_, r) => { reject = r; });
 
@@ -93,5 +88,3 @@ promise_test(async t => {
   });
   assert_true(callback_called, 'callback should have executed');
 }, 'held lock prevents the same client from acquiring it');
-
-</script>

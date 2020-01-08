@@ -1,10 +1,5 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: Resources DOMString edge cases</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
+
 'use strict';
 
 function code_points(s) {
@@ -14,12 +9,12 @@ function code_points(s) {
 }
 
 [
-  '', // Empty strings
-  'abc\x00def', // Embedded NUL
-  '\uD800', // Unpaired low surrogage
-  '\uDC00', // Unpaired high surrogage
-  '\uDC00\uD800', // Swapped surrogate pair
-  '\uFFFF' // Non-character
+  '', 
+  'abc\x00def', 
+  '\uD800', 
+  '\uDC00', 
+  '\uDC00\uD800', 
+  '\uFFFF' 
 ].forEach(string => {
   promise_test(async t => {
     await navigator.locks.request(string, lock => {
@@ -30,18 +25,18 @@ function code_points(s) {
 });
 
 promise_test(async t => {
-  // '\uD800' treated as a USVString would become '\uFFFD'.
+  
   await navigator.locks.request('\uD800', async lock => {
     assert_equals(lock.name, '\uD800');
 
-    // |lock| is held for the duration of this name. It
-    // Should not block acquiring |lock2| with a distinct
-    // DOMString.
+    
+    
+    
     await navigator.locks.request('\uFFFD', lock2 => {
       assert_equals(lock2.name, '\uFFFD');
     });
 
-    // If we did not time out, this passed.
+    
   });
 }, 'Resource names that are not valid UTF-16 are not mangled');
 
@@ -58,5 +53,3 @@ promise_test(async t => {
   });
   assert_true(got_lock, 'Names with embedded "-" should be accepted');
 }, 'Names cannot start with "-"');
-
-</script>

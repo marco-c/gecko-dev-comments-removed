@@ -1,10 +1,5 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: Mixed Modes</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
+
 'use strict';
 
 promise_test(async t => {
@@ -13,7 +8,7 @@ promise_test(async t => {
 
   const granted = [];
 
-  // These should be granted immediately, and held until unblocked.
+  
   navigator.locks.request('a', {mode: 'shared'}, async lock => {
     granted.push('a-shared-1'); await blocked; });
   navigator.locks.request('a', {mode: 'shared'}, async lock => {
@@ -21,24 +16,24 @@ promise_test(async t => {
   navigator.locks.request('a', {mode: 'shared'}, async lock => {
     granted.push('a-shared-3'); await blocked; });
 
-  // This should be blocked.
+  
   let exclusive_lock;
   const exclusive_request = navigator.locks.request('a', async lock => {
     granted.push('a-exclusive');
     exclusive_lock = lock;
   });
 
-  // This should be granted immediately (different name).
+  
   await navigator.locks.request('b', {mode: 'exclusive'}, lock => {
     granted.push('b-exclusive'); });
 
   assert_array_equals(
     granted, ['a-shared-1', 'a-shared-2', 'a-shared-3', 'b-exclusive']);
 
-  // Release the shared locks granted above.
+  
   unblock();
 
-  // Now the blocked request can be granted.
+  
   await exclusive_request;
   assert_equals(exclusive_lock.mode, 'exclusive');
 
@@ -47,5 +42,3 @@ promise_test(async t => {
     ['a-shared-1', 'a-shared-2', 'a-shared-3', 'b-exclusive', 'a-exclusive']);
 
 }, 'Lock requests are granted in order');
-
-</script>

@@ -1,18 +1,13 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: navigator.locks.query method</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/helpers.js"></script>
-<script>
+
+
+
 'use strict';
 
-// Returns an array of the modes for the locks with matching name.
+
 function modes(list, name) {
   return list.filter(item => item.name === name).map(item => item.mode);
 }
-// Returns an array of the clientIds for the locks with matching name.
+
 function clients(list, name) {
   return list.filter(item => item.name === name).map(item => item.clientId);
 }
@@ -21,11 +16,11 @@ promise_test(async t => {
   const res = uniqueName(t);
 
   await navigator.locks.request(res, async lock1 => {
-    // Attempt to request this again - should be blocked.
+    
     let lock2_acquired = false;
     navigator.locks.request(res, lock2 => { lock2_acquired = true; });
 
-    // Verify that it was blocked.
+    
     await navigator.locks.request(res, {ifAvailable: true}, async lock3 => {
       assert_false(lock2_acquired, 'second request should be blocked');
       assert_equals(lock3, null, 'third request should have failed');
@@ -94,11 +89,11 @@ promise_test(async t => {
   const res = uniqueName(t);
 
   await navigator.locks.request(res, async lock1 => {
-    // Attempt to request this again - should be blocked.
+    
     let lock2_acquired = false;
     navigator.locks.request(res, lock2 => { lock2_acquired = true; });
 
-    // Verify that it was blocked.
+    
     await navigator.locks.request(res, {ifAvailable: true}, async lock3 => {
       assert_false(lock2_acquired, 'second request should be blocked');
       assert_equals(lock3, null, 'third request should have failed');
@@ -194,28 +189,28 @@ promise_test(async t => {
   const worker = new Worker('resources/worker.js');
   t.add_cleanup(() => { worker.terminate(); });
 
-  // Acquire 1 in the worker.
+  
   await postToWorkerAndWait(worker, {op: 'request', name: res1})
 
-  // Acquire 2 here.
+  
   await new Promise(resolve => {
     navigator.locks.request(res2, lock => {
       resolve();
-      return new Promise(() => {}); // Never released.
+      return new Promise(() => {}); 
     });
   });
 
-  // Request 2 in the worker.
+  
   postToWorkerAndWait(worker, {op: 'request', name: res2});
   assert_true((await postToWorkerAndWait(worker, {
     op: 'request', name: res2, ifAvailable: true
   })).failed, 'Lock request should have failed');
 
-  // Request 1 here.
+  
   navigator.locks.request(
     res1, t.unreached_func('Lock should not be acquired'));
 
-  // Verify that we're seeing a deadlock.
+  
   const state = await navigator.locks.query();
   const res1_held_clients = clients(state.held, res1);
   const res2_held_clients = clients(state.held, res2);
@@ -230,5 +225,3 @@ promise_test(async t => {
   assert_equals(res1_held_clients[0], res2_pending_clients[0]);
   assert_equals(res2_held_clients[0], res1_pending_clients[0]);
 }, 'query() can observe a deadlock');
-
-</script>

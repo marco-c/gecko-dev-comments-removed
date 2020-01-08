@@ -1,11 +1,6 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: ifAvailable option</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/helpers.js"></script>
-<script>
+
+
+
 'use strict';
 
 promise_test(async t => {
@@ -22,7 +17,7 @@ promise_test(async t => {
   const res = self.uniqueName(t);
   let callback_called = false;
   await navigator.locks.request(res, async lock => {
-    // Request would time out if |ifAvailable| was not specified.
+    
     const result = await navigator.locks.request(
       res, {ifAvailable: true}, async lock => {
         callback_called = true;
@@ -39,7 +34,7 @@ promise_test(async t => {
   let callback_called = false;
   await navigator.locks.request(res, async lock => {
     try {
-      // Request would time out if |ifAvailable| was not specified.
+      
       await navigator.locks.request(res, {ifAvailable: true}, async lock => {
         callback_called = true;
         assert_equals(lock, null, 'lock should not be granted');
@@ -57,7 +52,7 @@ promise_test(async t => {
   const res = self.uniqueName(t);
   let callback_called = false;
   await navigator.locks.request(res, async lock => {
-    // Request with a different name - should be grantable.
+    
     await navigator.locks.request('different', {ifAvailable: true}, async lock => {
       callback_called = true;
       assert_not_equals(lock, null, 'lock should be granted');
@@ -83,7 +78,7 @@ promise_test(async t => {
   const res = self.uniqueName(t);
   let callback_called = false;
   await navigator.locks.request(res, {mode: 'shared'}, async lock => {
-    // Request would time out if |ifAvailable| was not specified.
+    
     await navigator.locks.request(res, {ifAvailable: true}, async lock => {
       callback_called = true;
       assert_equals(lock, null, 'lock should not be granted');
@@ -96,7 +91,7 @@ promise_test(async t => {
   const res = self.uniqueName(t);
   let callback_called = false;
   await navigator.locks.request(res, async lock => {
-    // Request would time out if |ifAvailable| was not specified.
+    
     await navigator.locks.request(
       res, {mode: 'shared', ifAvailable: true}, async lock => {
         callback_called = true;
@@ -140,7 +135,7 @@ promise_test(async t => {
   assert_true(callback_called, 'callback should be called');
 }, 'Returned Promise rejects if async callback yields rejected promise');
 
-// Regression test for: https://crbug.com/840994
+
 promise_test(async t => {
   const res1 = self.uniqueName(t);
   const res2 = self.uniqueName(t);
@@ -156,14 +151,12 @@ promise_test(async t => {
     let callback3_called = false;
     await navigator.locks.request(res2, {ifAvailable: true}, async lock => {
       callback3_called = true;
-      // This request would fail if the "is this grantable?" test
-      // failed, e.g. due to the release without a pending request
-      // skipping steps.
+      
+      
+      
       assert_not_equals(lock, null, 'Lock should be available');
     });
     assert_true(callback3_called, 'callback2 should be called');
   });
   assert_true(callback1_called, 'callback1 should be called');
 }, 'Locks are available once previous release is processed');
-
-</script>

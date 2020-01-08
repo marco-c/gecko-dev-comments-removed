@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: steal option</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/helpers.js"></script>
-<script>
+
+
+
 'use strict';
 
-const never_settled = new Promise(resolve => { /* never */ });
+const never_settled = new Promise(resolve => {  });
 
 promise_test(async t => {
   const res = uniqueName(t);
@@ -24,10 +19,10 @@ promise_test(async t => {
   const res = uniqueName(t);
   let callback_called = false;
 
-  // Grab and hold the lock.
+  
   navigator.locks.request(res, lock => never_settled).catch(_ => {});
 
-  // Steal it.
+  
   await navigator.locks.request(res, {steal: true}, lock => {
     callback_called = true;
     assert_not_equals(lock, null, 'Lock should be granted');
@@ -39,12 +34,12 @@ promise_test(async t => {
 promise_test(async t => {
   const res = uniqueName(t);
 
-  // Grab and hold the lock.
+  
   const promise = navigator.locks.request(res, lock => never_settled);
   const assertion = promise_rejects(
     t, 'AbortError', promise, `Initial request's promise should reject`);
 
-  // Steal it.
+  
   await navigator.locks.request(res, {steal: true}, lock => {});
 
   await assertion;
@@ -54,16 +49,16 @@ promise_test(async t => {
 promise_test(async t => {
   const res = uniqueName(t);
 
-  // Grab and hold the lock.
+  
   navigator.locks.request(res, lock => never_settled).catch(_ => {});
 
-  // Make a request for it.
+  
   let request_granted = false;
   const promise = navigator.locks.request(res, lock => {
     request_granted = true;
   });
 
-  // Steal it.
+  
   await navigator.locks.request(res, {steal: true}, lock => {
     assert_false(request_granted, 'Steal should override request');
   });
@@ -76,22 +71,20 @@ promise_test(async t => {
 promise_test(async t => {
   const res = uniqueName(t);
 
-  // Grab and hold the lock.
+  
   navigator.locks.request(res, lock => never_settled).catch(_ => {});
 
-  // Steal it.
+  
   let saw_abort = false;
   const first_steal = navigator.locks.request(
     res, {steal: true}, lock => never_settled).catch(error => {
       saw_abort = true;
     });
 
-  // Steal it again.
+  
   await navigator.locks.request(res, {steal: true}, lock => {});
 
   await first_steal;
   assert_true(saw_abort, 'First steal should have aborted');
 
 }, 'Last caller wins');
-
-</script>

@@ -1,11 +1,6 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: AbortSignal integration</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="resources/helpers.js"></script>
-<script>
+
+
+
 'use strict';
 
 function makePromiseAndResolveFunc() {
@@ -17,7 +12,7 @@ function makePromiseAndResolveFunc() {
 promise_test(async t => {
   const res = uniqueName(t);
 
-  // These cases should not work:
+  
   for (const signal of ['string', 12.34, false, {}, Symbol(), () => {}, self]) {
     await promise_rejects(
       t, new TypeError(),
@@ -42,8 +37,8 @@ promise_test(async t => {
 promise_test(async t => {
   const res = uniqueName(t);
 
-  // Grab a lock and hold it forever.
-  const never_settled = new Promise(resolve => { /* never */ });
+  
+  const never_settled = new Promise(resolve => {  });
   navigator.locks.request(res, lock => never_settled);
 
   const controller = new AbortController();
@@ -52,7 +47,7 @@ promise_test(async t => {
     navigator.locks.request(res, {signal: controller.signal},
                             t.unreached_func('callback should not run'));
 
-  // Verify the request is enqueued:
+  
   const state = await navigator.locks.query();
   assert_equals(state.held.filter(lock => lock.name === res).length, 1);
   assert_equals(state.pending.filter(lock => lock.name === res).length, 1);
@@ -69,8 +64,8 @@ promise_test(async t => {
 promise_test(async t => {
   const res = uniqueName(t);
 
-  // Grab a lock and hold it forever.
-  const never_settled = new Promise(resolve => { /* never */ });
+  
+  const never_settled = new Promise(resolve => {  });
   navigator.locks.request(res, lock => never_settled);
 
   const controller = new AbortController();
@@ -78,7 +73,7 @@ promise_test(async t => {
   const promise =
     navigator.locks.request(res, {signal: controller.signal}, lock => {});
 
-  // Verify the request is enqueued:
+  
   const state = await navigator.locks.query();
   assert_equals(state.held.filter(lock => lock.name === res).length, 1);
   assert_equals(state.pending.filter(lock => lock.name === res).length, 1);
@@ -119,7 +114,7 @@ promise_test(async t => {
   const p = navigator.locks.request(
     res, {signal: controller.signal}, lock => { got_lock = true; });
 
-  // Even though lock is grantable, this abort should be processed synchronously.
+  
   controller.abort();
 
   await promise_rejects(t, 'AbortError', p, 'Request should abort');
@@ -136,28 +131,28 @@ promise_test(async t => {
 
   const controller = new AbortController();
 
-  // Make a promise that resolves when the lock is acquired.
+  
   const [acquired_promise, acquired_func] = makePromiseAndResolveFunc();
 
-  // Request the lock.
+  
   let release_func;
   const released_promise = navigator.locks.request(
     res, {signal: controller.signal}, lock => {
       acquired_func();
 
-      // Hold lock until release_func is called.
+      
       const [waiting_promise, waiting_func] = makePromiseAndResolveFunc();
       release_func = waiting_func;
       return waiting_promise;
     });
 
-  // Wait for the lock to be acquired.
+  
   await acquired_promise;
 
-  // Signal an abort.
+  
   controller.abort();
 
-  // Release the lock.
+  
   release_func('resolved ok');
 
   assert_equals(await released_promise, 'resolved ok',
@@ -170,33 +165,31 @@ promise_test(async t => {
 
   const controller = new AbortController();
 
-  // Make a promise that resolves when the lock is acquired.
+  
   const [acquired_promise, acquired_func] = makePromiseAndResolveFunc();
 
-  // Request the lock.
+  
   let release_func;
   const released_promise = navigator.locks.request(
     res, {signal: controller.signal}, lock => {
       acquired_func();
 
-      // Hold lock until release_func is called.
+      
       const [waiting_promise, waiting_func] = makePromiseAndResolveFunc();
       release_func = waiting_func;
       return waiting_promise;
     });
 
-  // Wait for the lock to be acquired.
+  
   await acquired_promise;
 
-  // Release the lock.
+  
   release_func('resolved ok');
 
-  // Signal an abort.
+  
   controller.abort();
 
   assert_equals(await released_promise, 'resolved ok',
                 'Lock released promise should not reject');
 
 }, 'Abort signaled after lock released');
-
-</script>

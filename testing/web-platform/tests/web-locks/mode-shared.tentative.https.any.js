@@ -1,10 +1,5 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Web Locks API: Shared Mode</title>
-<link rel=help href="https://wicg.github.io/web-locks/">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
+
 'use strict';
 
 promise_test(async t => {
@@ -29,8 +24,8 @@ promise_test(async t => {
   await navigator.locks.request('a', {mode: 'shared'}, async lock => {
     a_acquired = true;
 
-    // Since lock is held, this request would be blocked if the
-    // lock was not 'shared', causing this test to time out.
+    
+    
 
     await navigator.locks.request('a', {mode: 'shared'}, lock => {
       a_acquired_again = true;
@@ -40,5 +35,3 @@ promise_test(async t => {
   assert_true(a_acquired, 'first lock acquired');
   assert_true(a_acquired_again, 'second lock acquired');
 }, 'Shared locks are not exclusive');
-
-</script>
