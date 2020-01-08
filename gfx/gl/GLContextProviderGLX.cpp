@@ -962,9 +962,7 @@ GLContextGLX::FindFBConfigForWindow(Display* display, int screen, Window window,
         if (!visid) {
             continue;
         }
-        if (sGLXLibrary.IsATI()) {
-            
-            
+        if (aWebRender || sGLXLibrary.IsATI()) {
             int depth;
             Visual* visual;
             FindVisualAndDepth(display, visid, &visual, &depth);
@@ -975,8 +973,6 @@ GLContextGLX::FindFBConfigForWindow(Display* display, int screen, Window window,
                 return true;
             }
         } else {
-            
-            
             if (windowVisualID == static_cast<VisualID>(visid)) {
                 *out_config = cfgs[i];
                 *out_visid = visid;
