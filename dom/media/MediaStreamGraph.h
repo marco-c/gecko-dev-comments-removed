@@ -12,6 +12,7 @@
 #include "StreamTracks.h"
 #include "VideoSegment.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TaskQueue.h"
 #include "nsAutoPtr.h"
@@ -708,10 +709,11 @@ public:
   
   
   
-  nsresult OpenAudioInput(int aID,
-                          AudioDataListener *aListener);
+  nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+                          AudioDataListener* aListener);
   
-  void CloseAudioInput();
+  void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
+                       AudioDataListener* aListener);
 
   
   void DestroyImpl() override;
@@ -837,8 +839,6 @@ public:
     MutexAutoLock lock(mMutex);
     return mStreamTracksStartTimeStamp;
   }
-
-  bool OpenNewAudioCallbackDriver(AudioDataListener *aListener);
 
   
 
@@ -1324,13 +1324,10 @@ public:
   
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
 
-  virtual nsresult OpenAudioInput(int aID,
-                                  AudioDataListener *aListener)
-  {
-    return NS_ERROR_FAILURE;
-  }
-  virtual void CloseAudioInput(AudioDataListener *aListener) {}
-
+  virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+                                  AudioDataListener* aListener) = 0;
+  virtual void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
+                               AudioDataListener* aListener) = 0;
   
   
 
@@ -1408,13 +1405,6 @@ public:
   already_AddRefed<MediaInputPort> ConnectToCaptureStream(
     uint64_t aWindowId, MediaStream* aMediaStream);
 
-  
-
-
-
-  void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                        TrackRate aRate, uint32_t aChannels);
-
   void AssertOnGraphThreadOrNotRunning() const
   {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
@@ -1445,11 +1435,6 @@ protected:
 
 
   TrackRate mSampleRate;
-
-  
-
-
-  nsTArray<RefPtr<AudioDataListener>> mAudioInputs;
 };
 
 } 

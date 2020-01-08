@@ -17,7 +17,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "nsDataHashtable.h"
+#include "nsClassHashtable.h"
 #include "nsIMemoryReporter.h"
 #include "nsINamed.h"
 #include "nsIRunnable.h"
@@ -381,14 +381,38 @@ public:
   
 
 
+  void OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
+                          AudioDataListener* aListener);
+  
+
+  virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+                                  AudioDataListener* aListener) override;
+  
 
 
-  void OpenAudioInputImpl(int aID,
-                          AudioDataListener *aListener);
-  virtual nsresult OpenAudioInput(int aID,
-                                  AudioDataListener *aListener) override;
-  void CloseAudioInputImpl(AudioDataListener *aListener);
-  virtual void CloseAudioInput(AudioDataListener *aListener) override;
+  void CloseAudioInputImpl(Maybe<CubebUtils::AudioDeviceID>& aID,
+                           AudioDataListener* aListener);
+  
+
+
+  virtual void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
+                               AudioDataListener* aListener) override;
+  
+
+
+  void ReevaluateInputDevice();
+  
+
+  void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
+                        TrackRate aRate, uint32_t aChannels);
+  
+
+  void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
+                       TrackRate aRate, uint32_t aChannels);
+  
+
+
+  void DeviceChanged();
 
   
 
@@ -427,9 +451,44 @@ public:
     mStreamOrderDirty = true;
   }
 
-  uint32_t AudioChannelCount() const
+  uint32_t AudioOutputChannelCount() const
   {
     return mOutputChannels;
+  }
+
+  
+
+
+
+
+  uint32_t AudioInputChannelCount()
+  {
+    MOZ_ASSERT(OnGraphThreadOrNotRunning());
+
+    if (!mInputDeviceID) {
+#ifndef ANDROID
+      MOZ_ASSERT(mInputDeviceUsers.Count() == 0,
+        "If running on a platform other than android,"
+        "an explicit device id should be present");
+#endif
+      return 0;
+    }
+    uint32_t maxInputChannels = 0;
+    
+    
+    nsTArray<RefPtr<AudioDataListener>>* listeners =
+      mInputDeviceUsers.GetValue(mInputDeviceID);
+    MOZ_ASSERT(listeners);
+    for (const auto& listener : *listeners) {
+      maxInputChannels =
+        std::max(maxInputChannels, listener->InputChannelCount());
+    }
+    return maxInputChannels;
+  }
+
+  CubebUtils::AudioDeviceID InputDeviceID()
+  {
+    return mInputDeviceID;
   }
 
   double MediaTimeToSeconds(GraphTime aTime) const
@@ -629,13 +688,19 @@ public:
 
 
 
-  bool mInputWanted;
-  int mInputDeviceID;
-  bool mOutputWanted;
-  int mOutputDeviceID;
+
+
+
+
+
+  CubebUtils::AudioDeviceID mInputDeviceID;
+  CubebUtils::AudioDeviceID mOutputDeviceID;
   
   
-  nsDataHashtable<nsPtrHashKey<AudioDataListener>, uint32_t> mInputDeviceUsers;
+  
+  
+  nsDataHashtable<nsVoidPtrHashKey,
+                  nsTArray<RefPtr<AudioDataListener>>> mInputDeviceUsers;
 
   
   Atomic<bool> mNeedAnotherIteration;
