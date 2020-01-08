@@ -848,6 +848,15 @@ class SourceCompressionTask
 
     void work();
     void complete();
+
+  private:
+    struct PerformTaskWork;
+    friend struct PerformTaskWork;
+
+    
+    
+    
+    template<typename CharT> void workEncodingSpecific();
 };
 
 

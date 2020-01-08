@@ -13,6 +13,7 @@
 #include "mozilla/GuardObjects.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/Types.h"
+#include "mozilla/Utf8.h"
 
 #include <functional>
 #include <stdarg.h>
@@ -354,20 +355,35 @@ MFBT_API void BeginContentParse(const void* aToken,
                                 const char* aURL, const char* aContentType);
 
 
-MFBT_API void AddContentParseData(const void* aToken,
-                                  const char16_t* aBuffer, size_t aLength);
+MFBT_API void AddContentParseData8(const void* aToken,
+                                   const Utf8Unit* aUtf8Buffer, size_t aLength);
+
+
+MFBT_API void AddContentParseData16(const void* aToken,
+                                    const char16_t* aBuffer, size_t aLength);
 
 
 MFBT_API void EndContentParse(const void* aToken);
 
 
 static inline void
-NoteContentParse(const void* aToken,
-                 const char* aURL, const char* aContentType,
-                 const char16_t* aBuffer, size_t aLength)
+NoteContentParse8(const void* aToken,
+                  const char* aURL, const char* aContentType,
+                  const mozilla::Utf8Unit* aUtf8Buffer, size_t aLength)
 {
   BeginContentParse(aToken, aURL, aContentType);
-  AddContentParseData(aToken, aBuffer, aLength);
+  AddContentParseData8(aToken, aUtf8Buffer, aLength);
+  EndContentParse(aToken);
+}
+
+
+static inline void
+NoteContentParse16(const void* aToken,
+                   const char* aURL, const char* aContentType,
+                   const char16_t* aBuffer, size_t aLength)
+{
+  BeginContentParse(aToken, aURL, aContentType);
+  AddContentParseData16(aToken, aBuffer, aLength);
   EndContentParse(aToken);
 }
 
