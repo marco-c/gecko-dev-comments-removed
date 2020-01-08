@@ -147,7 +147,7 @@ _ContextualIdentityService.prototype = {
   },
 
   load() {
-    OS.File.read(this._path).then(bytes => {
+    return OS.File.read(this._path).then(bytes => {
       
       if (this._dataReady) {
         return;
