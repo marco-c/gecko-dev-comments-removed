@@ -199,6 +199,9 @@ const gCachedGridPattern = new Map();
 
 
 
+
+
+
 class CssGridHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);

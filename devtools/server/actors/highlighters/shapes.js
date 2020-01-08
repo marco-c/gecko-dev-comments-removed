@@ -67,6 +67,12 @@ const _dragging = Symbol("shapes/dragging");
 
 
 
+
+
+
+
+
+
 class ShapesHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);

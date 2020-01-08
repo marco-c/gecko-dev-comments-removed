@@ -59,7 +59,6 @@ loader.lazyRequireGetter(this, "Infobar", "devtools/server/actors/highlighters/u
 
 
 
-
 class AccessibleHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);

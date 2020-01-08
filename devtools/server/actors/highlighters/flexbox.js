@@ -78,10 +78,6 @@ const JUSTIFY_CONTENT = "justify-content";
 
 
 
-
-
-
-
 class FlexboxHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);

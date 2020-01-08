@@ -93,8 +93,6 @@ const PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];
 
 
 
-
-
 class BoxModelHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
