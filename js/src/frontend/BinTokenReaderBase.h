@@ -8,7 +8,6 @@
 #define frontend_BinTokenReaderBase_h
 
 #include "frontend/BinToken.h"
-#include "frontend/ErrorReporter.h"
 #include "frontend/TokenStream.h"
 
 #include "js/Result.h"
@@ -28,16 +27,16 @@ class MOZ_STACK_CLASS BinTokenReaderBase
     
     class SkippableSubTree {
       public:
-        SkippableSubTree(const size_t startOffset, const size_t length)
-          : startOffset_(startOffset)
+        SkippableSubTree(const uint8_t* start, const size_t length)
+          : start_(start)
           , length_(length)
         { }
 
         
         
         
-        size_t startOffset() const {
-            return startOffset_;
+        const uint8_t* start() const {
+            return start_;
         }
 
         
@@ -45,7 +44,7 @@ class MOZ_STACK_CLASS BinTokenReaderBase
             return length_;
         }
       private:
-        const size_t startOffset_;
+        const uint8_t* start_;
         const size_t length_;
     };
 
@@ -55,9 +54,6 @@ class MOZ_STACK_CLASS BinTokenReaderBase
     TokenPos pos();
     TokenPos pos(size_t startOffset);
     size_t offset() const;
-
-    
-    void seek(size_t offset);
 
      
 
@@ -77,9 +73,8 @@ class MOZ_STACK_CLASS BinTokenReaderBase
         const BinField field);
 
   protected:
-    BinTokenReaderBase(JSContext* cx, ErrorReporter* er, const uint8_t* start, const size_t length)
+    BinTokenReaderBase(JSContext* cx, const uint8_t* start, const size_t length)
         : cx_(cx)
-        , errorReporter_(er)
         , poisoned_(false)
         , start_(start)
         , current_(start)
@@ -156,8 +151,6 @@ class MOZ_STACK_CLASS BinTokenReaderBase
 #endif
 
     JSContext* cx_;
-
-    ErrorReporter* errorReporter_;
 
     
     

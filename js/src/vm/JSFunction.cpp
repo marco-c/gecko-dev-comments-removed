@@ -1051,7 +1051,7 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource)
     
     bool addParentheses = haveSource && isToSource && (fun->isLambda() && !fun->isArrow());
 
-    if (haveSource && !script->scriptSource()->hasSourceText() &&
+    if (haveSource && !script->scriptSource()->hasSourceData() &&
         !JSScript::loadSource(cx, script->scriptSource(), &haveSource))
     {
         return nullptr;
@@ -1750,7 +1750,6 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
         
         
         
-        bool isBinAST = lazy->scriptSource()->hasBinASTSource();
         bool canRelazify = !lazy->numInnerFunctions() && !lazy->hasDirectEval();
 
         if (script) {
@@ -1784,38 +1783,24 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
 
         
 
+        MOZ_ASSERT(lazy->scriptSource()->hasSourceData());
+
+        
         size_t lazyLength = lazy->sourceEnd() - lazy->sourceStart();
-        if (isBinAST) {
-#if defined(JS_BUILD_BINAST)
-            if (!frontend::CompileLazyBinASTFunction(cx, lazy,
-                    lazy->scriptSource()->binASTSource() + lazy->sourceStart(), lazyLength))
-            {
-                MOZ_ASSERT(fun->isInterpretedLazy());
-                MOZ_ASSERT(fun->lazyScript() == lazy);
-                MOZ_ASSERT(!lazy->hasScript());
-                return false;
-            }
-#else
-            MOZ_CRASH("Trying to delazify BinAST function in non-BinAST build");
-#endif 
-        } else {
-            MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
+        UncompressedSourceCache::AutoHoldEntry holder;
+        ScriptSource::PinnedChars chars(cx, lazy->scriptSource(), holder,
+                                        lazy->sourceStart(), lazyLength);
+        if (!chars.get()) {
+            return false;
+        }
 
+        if (!frontend::CompileLazyFunction(cx, lazy, chars.get(), lazyLength)) {
             
-            UncompressedSourceCache::AutoHoldEntry holder;
-            ScriptSource::PinnedChars chars(cx, lazy->scriptSource(), holder,
-                                            lazy->sourceStart(), lazyLength);
-            if (!chars.get())
-                return false;
-
-            if (!frontend::CompileLazyFunction(cx, lazy, chars.get(), lazyLength)) {
-		
-		
-                MOZ_ASSERT(fun->isInterpretedLazy());
-                MOZ_ASSERT(fun->lazyScript() == lazy);
-                MOZ_ASSERT(!lazy->hasScript());
-                return false;
-            }
+            
+            MOZ_ASSERT(fun->isInterpretedLazy());
+            MOZ_ASSERT(fun->lazyScript() == lazy);
+            MOZ_ASSERT(!lazy->hasScript());
+            return false;
         }
 
         script = fun->nonLazyScript();

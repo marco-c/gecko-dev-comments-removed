@@ -45,7 +45,15 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart: public BinTokenReaderBase
       public:
         explicit BinFields(JSContext*) {}
     };
-    using Chars = CharSlice;
+    struct Chars: public CharSlice {
+        explicit Chars(JSContext*)
+          : CharSlice(nullptr, 0)
+        { }
+        Chars(const char* start, const uint32_t byteLen)
+          : CharSlice(start, byteLen)
+        { }
+        Chars(const Chars& other) = default;
+    };
 
   public:
     
@@ -53,16 +61,14 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart: public BinTokenReaderBase
 
 
 
-    BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er, const uint8_t* start, const size_t length);
+    BinTokenReaderMultipart(JSContext* cx, const uint8_t* start, const size_t length);
 
     
 
 
 
 
-    BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er, const Vector<uint8_t>& chars);
-
-    ~BinTokenReaderMultipart();
+    BinTokenReaderMultipart(JSContext* cx, const Vector<uint8_t>& chars);
 
     
 
@@ -188,25 +194,26 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart: public BinTokenReaderBase
   private:
     
     
+    Vector<BinKind> grammarTable_;
+
+    
+    
     js::HashMap<uint32_t, BinVariant, DefaultHasher<uint32_t>, SystemAllocPolicy> variantsTable_;
 
-    enum class MetadataOwnership {
-        Owned,
-        Unowned
-    };
-    MetadataOwnership metadataOwned_;
-    BinASTSourceMetadata* metadata_;
+    
+    
+    using AtomVector = GCVector<JSAtom*>;
+    JS::Rooted<AtomVector> atomsTable_;
+
+    
+    
+    Vector<Chars> slicesTable_;
 
     const uint8_t* posBeforeTree_;
 
     BinTokenReaderMultipart(const BinTokenReaderMultipart&) = delete;
     BinTokenReaderMultipart(BinTokenReaderMultipart&&) = delete;
     BinTokenReaderMultipart& operator=(BinTokenReaderMultipart&) = delete;
-
-  public:
-    void traceMetadata(JSTracer* trc);
-    BinASTSourceMetadata* takeMetadata();
-    MOZ_MUST_USE JS::Result<Ok> initFromScriptSource(ScriptSource* scriptSource);
 
   public:
     

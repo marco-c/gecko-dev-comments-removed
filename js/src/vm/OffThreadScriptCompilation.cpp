@@ -38,6 +38,11 @@ CanDoOffThread(JSContext* cx, const ReadOnlyCompileOptions& options, size_t leng
     static const size_t HUGE_BINAST_LENGTH = 70 * 1000;
 
     
+    if (what == OffThread::DecodeBinAST) {
+        return false;
+    }
+
+    
     
     if (!options.forceAsync) {
         
