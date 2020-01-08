@@ -1819,7 +1819,10 @@ void OpenVRSession::ProcessEvents(mozilla::gfx::VRSystemState& aSystemState) {
         break;
       case ::vr::EVREventType::VREvent_DriverRequestedQuit:
       case ::vr::EVREventType::VREvent_Quit:
-      case ::vr::EVREventType::VREvent_ProcessQuit:
+      
+      
+      
+      
       case ::vr::EVREventType::VREvent_QuitAcknowledged:
       case ::vr::EVREventType::VREvent_QuitAborted_UserPrompt:
         mShouldQuit = true;
