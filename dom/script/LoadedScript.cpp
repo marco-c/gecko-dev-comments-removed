@@ -4,7 +4,7 @@
 
 
 
-#include "ModuleScript.h"
+#include "LoadedScript.h"
 
 #include "mozilla/HoldDropJSObjects.h"
 
