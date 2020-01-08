@@ -22,7 +22,7 @@
 #include "mozilla/SyncRunnable.h"
 #include "nsIPropertyBag2.h"
 #include "nsServiceManagerUtils.h"
-#include "nsSystemInfo.h"
+#include "prsystem.h"
 
 
 
@@ -156,15 +156,7 @@ PaintThread::AddRef()
  int32_t
 PaintThread::CalculatePaintWorkerCount()
 {
-  int32_t cpuCores = 1;
-  nsCOMPtr<nsIPropertyBag2> systemInfo = do_GetService(NS_SYSTEMINFO_CONTRACTID);
-  if (systemInfo) {
-    nsresult rv = systemInfo->GetPropertyAsInt32(NS_LITERAL_STRING("cpucores"), &cpuCores);
-    if (NS_FAILED(rv)) {
-      cpuCores = 1;
-    }
-  }
-
+  int32_t cpuCores = PR_GetNumberOfProcessors();
   int32_t workerCount = gfxPrefs::LayersOMTPPaintWorkers();
 
   
