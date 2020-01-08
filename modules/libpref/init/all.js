@@ -5913,11 +5913,7 @@ pref("dom.event.default_to_passive_touch_listeners", true);
 pref("browser.fastblock.timeout", 5000);
 
 
-#ifdef NIGHTLY_BUILD
 pref("browser.fastblock.limit", 20000);
-#else
-pref("browser.fastblock.limit", 0);
-#endif
 
 
 pref("dom.events.asyncClipboard", true);
