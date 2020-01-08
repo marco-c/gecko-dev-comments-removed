@@ -32,12 +32,11 @@ public:
   NS_DECL_QUERYFRAME_TARGET(nsIAnonymousContentCreator)
 
   struct ContentInfo {
-    explicit ContentInfo(nsIContent* aContent) :
-      mContent(aContent)
+    explicit ContentInfo(nsIContent* aContent)
+      : mContent(aContent)
     {}
 
     nsIContent* mContent;
-    nsTArray<ContentInfo> mChildren;
   };
 
   
@@ -53,11 +52,7 @@ public:
 
 
 
-
-
-
-
-  virtual nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements)=0;
+  virtual nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) = 0;
 
   
 
