@@ -844,6 +844,7 @@ MOZ_MUST_USE ReadableStream* CreateReadableStream(
 
   
   
+  
   Rooted<ReadableStream*> stream(cx, ReadableStream::create(cx, proto));
   if (!stream) {
     return nullptr;
@@ -854,7 +855,6 @@ MOZ_MUST_USE ReadableStream* CreateReadableStream(
   
   
   
-
   if (!SetUpReadableStreamDefaultController(
           cx, stream, sourceAlgorithms, underlyingSource, pullMethod,
           cancelMethod, highWaterMark, sizeAlgorithm)) {
@@ -1324,8 +1324,11 @@ inline static MOZ_MUST_USE bool AppendToListAtSlot(
 
 
 
+
+
 static MOZ_MUST_USE JSObject* ReadableStreamAddReadOrReadIntoRequest(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream) {
+  
   
   
   Rooted<ReadableStreamReader*> unwrappedReader(
@@ -1493,7 +1496,6 @@ MOZ_MUST_USE bool ReadableStreamCloseInternal(
   }
 
   
-  
   RootedObject closedPromise(cx, unwrappedReader->closedPromise());
   if (!cx->compartment()->wrap(cx, &closedPromise)) {
     return false;
@@ -1617,7 +1619,6 @@ MOZ_MUST_USE bool ReadableStreamErrorInternal(
   
   
   
-  
   RootedObject closedPromise(cx, unwrappedReader->closedPromise());
   if (!cx->compartment()->wrap(cx, &closedPromise)) {
     return false;
@@ -1724,15 +1725,14 @@ static MOZ_MUST_USE bool ReadableStreamHasDefaultReader(
     *result = false;
     return true;
   }
-
-  
-  
   Rooted<ReadableStreamReader*> unwrappedReader(
       cx, UnwrapReaderFromStream(cx, unwrappedStream));
   if (!unwrappedReader) {
     return false;
   }
 
+  
+  
   *result = unwrappedReader->is<ReadableStreamDefaultReader>();
   return true;
 }
@@ -2224,6 +2224,7 @@ inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
 
 
 
+
 static bool ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<ReadableStreamController*> controller(
@@ -2241,8 +2242,6 @@ static bool ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  
-  
   if (!ReadableStreamControllerCallPullIfNeeded(cx, controller)) {
     return false;
   }
@@ -2255,13 +2254,13 @@ static bool ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
 static bool ControllerStartFailedHandler(JSContext* cx, unsigned argc,
                                          Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<ReadableStreamController*> controller(
       cx, TargetFromHandler<ReadableStreamController>(args));
 
-  
   
   
   
@@ -2289,8 +2288,6 @@ bool ReadableStreamDefaultController::constructor(JSContext* cx, unsigned argc,
 
 static MOZ_MUST_USE double ReadableStreamControllerGetDesiredSizeUnchecked(
     ReadableStreamController* controller);
-
-
 
 
 
@@ -2334,6 +2331,7 @@ static bool ReadableStreamDefaultController_desiredSize(JSContext* cx,
 static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
     JSContext* cx,
     Handle<ReadableStreamDefaultController*> unwrappedController);
+
 
 
 
@@ -2384,6 +2382,7 @@ static bool ReadableStreamDefaultController_close(JSContext* cx, unsigned argc,
   if (!ReadableStreamDefaultControllerClose(cx, unwrappedController)) {
     return false;
   }
+
   args.rval().setUndefined();
   return true;
 }
@@ -2583,6 +2582,7 @@ static MOZ_MUST_USE JSObject* ReadableStreamControllerCancelSteps(
     }
   }
 
+  
   
   
   ReadableStreamControllerClearAlgorithms(unwrappedController);
@@ -2842,22 +2842,20 @@ inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
     return false;
   }
 
+  
+  
   RootedObject onPullFulfilled(
       cx, NewHandler(cx, ControllerPullHandler, wrappedController));
   if (!onPullFulfilled) {
     return false;
   }
-
   RootedObject onPullRejected(
       cx, NewHandler(cx, ControllerPullFailedHandler, wrappedController));
   if (!onPullRejected) {
     return false;
   }
-
   return JS::AddPromiseReactions(cx, pullPromise, onPullFulfilled,
                                  onPullRejected);
-
-  
 }
 
 
@@ -2869,11 +2867,14 @@ inline static MOZ_MUST_USE bool ReadableStreamControllerCallPullIfNeeded(
 static bool ReadableStreamControllerShouldCallPull(
     ReadableStreamController* unwrappedController) {
   
+  
   ReadableStream* unwrappedStream = unwrappedController->stream();
 
   
   
   
+  
+
   
   if (!unwrappedStream->readable()) {
     return false;
@@ -2885,10 +2886,19 @@ static bool ReadableStreamControllerShouldCallPull(
   }
 
   
+  
   if (!unwrappedController->started()) {
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -2897,6 +2907,8 @@ static bool ReadableStreamControllerShouldCallPull(
     return true;
   }
 
+  
+  
   
   
   double desiredSize =
@@ -2940,9 +2952,9 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
 
   
-  MOZ_ASSERT(!unwrappedController->closeRequested());
-
   
+  
+  MOZ_ASSERT(!unwrappedController->closeRequested());
   MOZ_ASSERT(unwrappedStream->readable());
 
   
@@ -3008,10 +3020,10 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
       success = EnqueueValueWithSize(cx, unwrappedController, chunk, chunkSize);
     }
 
+    
+    
+    
     if (!success) {
-      
-      
-      
       RootedValue exn(cx);
       if (!cx->isExceptionPending() || !GetAndClearException(cx, &exn)) {
         
@@ -3037,7 +3049,6 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
 
   
   
-  
   return ReadableStreamControllerCallPullIfNeeded(cx, unwrappedController);
 }
 
@@ -3054,6 +3065,7 @@ static MOZ_MUST_USE bool ReadableStreamControllerError(
   MOZ_ASSERT(!cx->isExceptionPending());
   AssertSameCompartment(cx, e);
 
+  
   
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
 
@@ -3214,13 +3226,11 @@ static MOZ_MUST_USE bool SetUpReadableStreamDefaultController(
   if (!onStartFulfilled) {
     return false;
   }
-
   RootedObject onStartRejected(
       cx, NewHandler(cx, ControllerStartFailedHandler, controller));
   if (!onStartRejected) {
     return false;
   }
-
   if (!JS::AddPromiseReactions(cx, startPromise, onStartFulfilled,
                                onStartRejected)) {
     return false;
@@ -3278,7 +3288,6 @@ SetUpReadableStreamDefaultControllerFromUnderlyingSource(
   
   
   
-
   return SetUpReadableStreamDefaultController(
       cx, stream, sourceAlgorithms, underlyingSource, pullMethod, cancelMethod,
       highWaterMark, sizeAlgorithm);
@@ -3703,6 +3712,7 @@ static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
     
     
     
+    
     RootedObject pullIntoDescriptor(
         cx, PullIntoDescriptor::create(cx, buffer, 0, autoAllocateChunkSize, 0,
                                        1, nullptr, ReaderType_Default));
@@ -4094,19 +4104,17 @@ inline static MOZ_MUST_USE bool DequeueValue(
   
   
   double totalSize = unwrappedContainer->queueTotalSize();
-
   totalSize -= unwrappedPair->size();
   if (totalSize < 0) {
     totalSize = 0;
   }
   unwrappedContainer->setQueueTotalSize(totalSize);
 
+  
   RootedValue val(cx, unwrappedPair->value());
   if (!cx->compartment()->wrap(cx, &val)) {
     return false;
   }
-
-  
   chunk.set(val);
   return true;
 }
@@ -4162,9 +4170,6 @@ static MOZ_MUST_USE bool EnqueueValueWithSize(
 
   return true;
 }
-
-
-
 
 
 
@@ -4260,6 +4265,7 @@ static MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
   
   return true;
 }
+
 
 
 
@@ -4684,6 +4690,10 @@ JS_PUBLIC_API bool JS::ReadableStreamUpdateDataAvailableFromSource(
   } else {
     
     
+    
+
+    
+    
     MOZ_ASSERT(!unwrappedStream->locked());
 
     
@@ -4715,7 +4725,6 @@ JS_PUBLIC_API bool JS::ReadableStreamTee(JSContext* cx, HandleObject streamObj,
 
   branch1Obj.set(branch1Stream);
   branch2Obj.set(branch2Stream);
-
   return true;
 }
 
