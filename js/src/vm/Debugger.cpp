@@ -902,6 +902,47 @@ DebuggerFrame_maybeDecrementFrameScriptStepModeCount(FreeOp* fop, AbstractFrameP
 
 
 
+
+
+
+
+class MOZ_RAII AutoSetGeneratorRunning
+{
+    int32_t yieldAwaitIndex_;
+    Rooted<GeneratorObject*> genObj_;
+
+  public:
+    AutoSetGeneratorRunning(JSContext* cx, Handle<GeneratorObject*> genObj)
+      : yieldAwaitIndex_(0),
+        genObj_(cx, genObj)
+    {
+        if (genObj) {
+            if (!genObj->isBeforeInitialYield() && !genObj->isClosed() && genObj->isSuspended()) {
+                yieldAwaitIndex_ =
+                    genObj->getFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT).toInt32();
+                genObj->setRunning();
+            } else {
+                
+                
+                genObj_ = nullptr;
+            }
+        }
+    }
+
+    ~AutoSetGeneratorRunning() {
+        if (genObj_) {
+            MOZ_ASSERT(genObj_->isRunning());
+            genObj_->setFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT,
+                                  Int32Value(yieldAwaitIndex_));
+        }
+    }
+};
+
+
+
+
+
+
  bool
 Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc, bool frameOk)
 {
@@ -928,30 +969,9 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
 
     
     
-    
-    
-    int32_t yieldAwaitIndex = 0;
     Rooted<GeneratorObject*> genObj(cx);
-    if (frame.isFunctionFrame() && (frame.callee()->isGenerator() || frame.callee()->isAsync())) {
+    if (frame.isFunctionFrame() && (frame.callee()->isGenerator() || frame.callee()->isAsync()))
         genObj = GetGeneratorObjectForFrame(cx, frame);
-        if (genObj) {
-            if (!genObj->isBeforeInitialYield() && !genObj->isClosed() && genObj->isSuspended()) {
-                yieldAwaitIndex =
-                    genObj->getFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT).toInt32();
-                genObj->setRunning();
-            } else {
-                
-                
-                genObj = nullptr;
-            }
-        }
-    }
-    auto restoreGenSuspended = MakeScopeExit([&] {
-        if (genObj) {
-            genObj->setFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT,
-                                 Int32Value(yieldAwaitIndex));
-        }
-    });
 
     
     
@@ -982,7 +1002,11 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
                 
                 ResumeMode nextResumeMode = resumeMode;
                 RootedValue nextValue(cx, wrappedValue);
-                bool success = handler->onPop(cx, frameobj, nextResumeMode, &nextValue);
+                bool success;
+                {
+                    AutoSetGeneratorRunning asgr(cx, genObj);
+                    success = handler->onPop(cx, frameobj, nextResumeMode, &nextValue);
+                }
                 nextResumeMode = dbg->processParsedHandlerResult(ar, frame, pc, success,
                                                                  nextResumeMode, &nextValue);
 
@@ -1476,7 +1500,7 @@ AdjustGeneratorResumptionValue(JSContext* cx, AbstractFramePtr frame,
             vp.setObject(*pair);
 
             
-            GeneratorObject::finalSuspend(genObj);
+            genObj->setClosed();
         } else {
             
             
