@@ -54,6 +54,10 @@ WindowId GetWindowId(CFDictionaryRef window);
 
 
 
+int GetWindowPID(CFDictionaryRef window);
+
+
+
 
 
 float GetScaleFactorAtPosition(const MacDesktopConfiguration& desktop_config,
