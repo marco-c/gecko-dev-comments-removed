@@ -104,6 +104,24 @@ function createRule(ruleData, rules) {
     .pop();
 }
 
+function removeRule(ruleId, rules) {
+  const rule = rules[ruleId];
+
+  
+  if (rule.parent && rules[rule.parent]) {
+    rules[rule.parent].children = rules[rule.parent].children.filter(childRuleId => {
+      return childRuleId !== ruleId;
+    });
+
+    
+    if (!rules[rule.parent].children.length) {
+      removeRule(rule.parent, rules);
+    }
+  }
+
+  delete rules[ruleId];
+}
+
 
 
 
@@ -166,19 +184,47 @@ const reducers = {
     
     const remove = Object.assign({}, rule.remove);
 
-    
-    
-    
-    if (change.remove && change.remove.property && !add[change.remove.property]) {
-      remove[change.remove.property] = change.remove.value;
+    if (change.remove && change.remove.property) {
+      
+      
+      
+      if (!add[change.remove.property]) {
+        remove[change.remove.property] = change.remove.value;
+      }
+
+      
+      if (add[change.remove.property] === change.remove.value) {
+        delete add[change.remove.property];
+      }
     }
 
     if (change.add && change.add.property) {
       add[change.add.property] = change.add.value;
     }
 
-    source.rules = { ...rules, [ruleId]: { ...rule, add, remove } };
-    state[sourceId] = source;
+    const property = change.add && change.add.property ||
+                     change.remove && change.remove.property;
+
+    
+    if (add[property] === remove[property]) {
+      delete add[property];
+      delete remove[property];
+    }
+
+    
+    if (!Object.keys(add).length && !Object.keys(remove).length) {
+      removeRule(ruleId, rules);
+      source.rules = { ...rules };
+    } else {
+      source.rules = { ...rules, [ruleId]: { ...rule, add, remove } };
+    }
+
+    
+    if (!Object.keys(source.rules).length) {
+      delete state[sourceId];
+    } else {
+      state[sourceId] = source;
+    }
 
     return state;
   },
