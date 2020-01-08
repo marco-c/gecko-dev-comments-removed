@@ -805,6 +805,11 @@ static inline bool IsIntrinsicKeyword(const nsStyleCoord& aCoord) {
   return aCoord.GetIntValue() != NS_STYLE_WIDTH_AVAILABLE;
 }
 
+static bool AreDynamicReflowRootsEnabled() {
+  
+  return true;
+}
+
 void ReflowInput::InitDynamicReflowRoot() {
   auto display = mStyleDisplay->mDisplay;
   if (mFrame->IsFrameOfType(nsIFrame::eLineParticipant) ||
@@ -820,7 +825,7 @@ void ReflowInput::InitDynamicReflowRoot() {
     return;
   }
 
-  bool canBeDynamicReflowRoot = true;
+  bool canBeDynamicReflowRoot = AreDynamicReflowRootsEnabled();
 
   
   
@@ -829,19 +834,20 @@ void ReflowInput::InitDynamicReflowRoot() {
   
   const nsStyleCoord& width = mStylePosition->mWidth;
   const nsStyleCoord& height = mStylePosition->mHeight;
-  if (!width.IsCoordPercentCalcUnit() || width.HasPercent() ||
-      !height.IsCoordPercentCalcUnit() || height.HasPercent() ||
-      IsIntrinsicKeyword(mStylePosition->mMinWidth) ||
-      IsIntrinsicKeyword(mStylePosition->mMaxWidth) ||
-      IsIntrinsicKeyword(mStylePosition->mMinHeight) ||
-      IsIntrinsicKeyword(mStylePosition->mMaxHeight) ||
-      ((mStylePosition->mMinWidth.GetUnit() == eStyleUnit_Auto ||
-        mStylePosition->mMinHeight.GetUnit() == eStyleUnit_Auto) &&
-       mFrame->IsFlexOrGridItem())) {
+  if (canBeDynamicReflowRoot &&
+      (!width.IsCoordPercentCalcUnit() || width.HasPercent() ||
+       !height.IsCoordPercentCalcUnit() || height.HasPercent() ||
+       IsIntrinsicKeyword(mStylePosition->mMinWidth) ||
+       IsIntrinsicKeyword(mStylePosition->mMaxWidth) ||
+       IsIntrinsicKeyword(mStylePosition->mMinHeight) ||
+       IsIntrinsicKeyword(mStylePosition->mMaxHeight) ||
+       ((mStylePosition->mMinWidth.GetUnit() == eStyleUnit_Auto ||
+         mStylePosition->mMinHeight.GetUnit() == eStyleUnit_Auto) &&
+        mFrame->IsFlexOrGridItem()))) {
     canBeDynamicReflowRoot = false;
   }
 
-  if (mFrame->IsFlexItem()) {
+  if (canBeDynamicReflowRoot && mFrame->IsFlexItem()) {
     
     
     
@@ -853,7 +859,7 @@ void ReflowInput::InitDynamicReflowRoot() {
     }
   }
 
-  if (!mFrame->IsFixedPosContainingBlock()) {
+  if (canBeDynamicReflowRoot && !mFrame->IsFixedPosContainingBlock()) {
     
     
     
