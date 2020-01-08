@@ -658,9 +658,10 @@ ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback)
             
             
             
+            
             CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplayHang,
                                                true);
-            SendMessage(TerminateMessage());
+            SendMessageRaw(TerminateMessage());
             sentTerminateMessage = true;
           } else {
             
