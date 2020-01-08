@@ -421,9 +421,6 @@ protected:
                            int16_t* aOrient,
                            int16_t* aScrollLines);
 
-  
-  void MarkDirtyIfSelect();
-
   void InvalidateDropFeedback(int32_t aRow, int16_t aOrientation) {
     InvalidateRow(aRow);
     if (aOrientation != nsITreeView::DROP_ON)
