@@ -1003,113 +1003,6 @@ XULDocument::Persist(Element* aElement, int32_t aNameSpaceID,
     mLocalStore->SetValue(uri, id, attrstr, valuestr);
 }
 
-static JSObject*
-GetScopeObjectOfNode(nsINode* node)
-{
-    MOZ_ASSERT(node, "Must not be called with null.");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    nsIDocument* doc = node->OwnerDoc();
-    MOZ_ASSERT(doc, "This should never happen.");
-
-    nsIGlobalObject* global = doc->GetScopeObject();
-    return global ? global->GetGlobalJSObject() : nullptr;
-}
-
-already_AddRefed<nsINode>
-XULDocument::GetPopupNode()
-{
-    nsCOMPtr<nsINode> node;
-    nsCOMPtr<nsPIWindowRoot> rootWin = GetWindowRoot();
-    if (rootWin) {
-        node = rootWin->GetPopupNode(); 
-    }
-
-    if (!node) {
-        nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-        if (pm) {
-            node = pm->GetLastTriggerPopupNode(this);
-        }
-    }
-
-    if (node && nsContentUtils::CanCallerAccess(node)
-        && GetScopeObjectOfNode(node)) {
-        return node.forget();
-    }
-
-    return nullptr;
-}
-
-void
-XULDocument::SetPopupNode(nsINode* aNode)
-{
-    nsCOMPtr<nsPIWindowRoot> rootWin = GetWindowRoot();
-    if (rootWin) {
-        rootWin->SetPopupNode(aNode);
-    }
-}
-
-
-
-nsINode*
-XULDocument::GetPopupRangeParent(ErrorResult& aRv)
-{
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (!pm) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return nullptr;
-    }
-
-    nsINode* rangeParent = pm->GetMouseLocationParent();
-    if (rangeParent && !nsContentUtils::CanCallerAccess(rangeParent)) {
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-        return nullptr;
-    }
-
-    return rangeParent;
-}
-
-
-
-int32_t
-XULDocument::GetPopupRangeOffset(ErrorResult& aRv)
-{
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (!pm) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return 0;
-    }
-
-    nsINode* rangeParent = pm->GetMouseLocationParent();
-    if (rangeParent && !nsContentUtils::CanCallerAccess(rangeParent)) {
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-        return 0;
-    }
-
-    return pm->MouseLocationOffset();
-}
-
-already_AddRefed<nsINode>
-XULDocument::GetTooltipNode()
-{
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
-        nsCOMPtr<nsINode> node = pm->GetLastTriggerTooltipNode(this);
-        if (node && nsContentUtils::CanCallerAccess(node)) {
-            return node.forget();
-        }
-    }
-
-    return nullptr;
-}
-
 nsresult
 XULDocument::AddElementToDocumentPre(Element* aElement)
 {
@@ -2715,17 +2608,6 @@ XULDocument::CachedChromeStreamListener::OnDataAvailable(nsIRequest *request,
 {
     MOZ_ASSERT_UNREACHABLE("CachedChromeStream doesn't receive data");
     return NS_ERROR_UNEXPECTED;
-}
-
-already_AddRefed<nsPIWindowRoot>
-XULDocument::GetWindowRoot()
-{
-  if (!mDocumentContainer) {
-    return nullptr;
-  }
-
-    nsCOMPtr<nsPIDOMWindowOuter> piWin = mDocumentContainer->GetWindow();
-    return piWin ? piWin->GetTopWindowRoot() : nullptr;
 }
 
 bool
