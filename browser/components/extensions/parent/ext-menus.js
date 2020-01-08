@@ -387,7 +387,11 @@ var gMenuBuilder = {
     }, {once: true});
 
     element.addEventListener("click", event => { 
-      if (event.target !== event.currentTarget) {
+      if (event.target !== event.currentTarget ||
+          
+          
+          element.localName !== "menuitem" ||
+          element.disabled) {
         return;
       }
 
