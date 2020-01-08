@@ -647,6 +647,11 @@ nsAtomTable::RegisterStaticAtoms(const nsStaticAtom* aAtoms, size_t aAtomsLen)
     MOZ_ASSERT(nsCRT::IsAscii(atom->String()));
     MOZ_ASSERT(NS_strlen(atom->String()) == atom->GetLength());
 
+    
+    
+    
+    MOZ_ASSERT(HashString(atom->String()) == atom->hash());
+
     AtomTableKey key(atom);
     nsAtomSubTable& table = SelectSubTable(key);
     MutexAutoLock lock(table.mLock);

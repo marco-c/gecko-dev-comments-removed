@@ -9,7 +9,6 @@
 
 #include "nsISupportsImpl.h"
 #include "nsString.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
@@ -104,10 +103,10 @@ public:
 
 protected:
   
-  constexpr nsAtom(const char16_t* aStr, uint32_t aLength)
+  constexpr nsAtom(const char16_t* aStr, uint32_t aLength, uint32_t aHash)
     : mLength(aLength)
     , mKind(static_cast<uint32_t>(nsAtom::AtomKind::Static))
-    , mHash(mozilla::HashString(aStr))
+    , mHash(aHash)
   {}
 
   
@@ -138,9 +137,14 @@ public:
   MozExternalRefCountType AddRef() = delete;
   MozExternalRefCountType Release() = delete;
 
+  
+  
+  
+  
+  
   constexpr nsStaticAtom(const char16_t* aStr, uint32_t aLength,
-                         uint32_t aStringOffset)
-    : nsAtom(aStr, aLength)
+                         uint32_t aHash, uint32_t aStringOffset)
+    : nsAtom(aStr, aLength, aHash)
     , mStringOffset(aStringOffset)
   {}
 
