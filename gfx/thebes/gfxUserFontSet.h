@@ -589,6 +589,13 @@ public:
     
     UserFontLoadState LoadState() const { return mUserFontLoadState; }
 
+    void LoadCanceled()
+    {
+      mUserFontLoadState = STATUS_NOT_LOADED;
+      mFontDataLoadingState = NOT_LOADING;
+      mLoader = nullptr;
+    }
+
     
     bool WaitForUserFont() const {
         return (mUserFontLoadState == STATUS_LOAD_PENDING ||
