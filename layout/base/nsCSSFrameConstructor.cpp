@@ -10690,6 +10690,18 @@ FindFirstLetterFrame(nsIFrame* aFrame, nsIFrame::ChildListID aListID)
   return nullptr;
 }
 
+static void ClearHasFirstLetterChildFrom(nsContainerFrame* aParentFrame)
+{
+  MOZ_ASSERT(aParentFrame);
+  auto* parent =
+    static_cast<nsContainerFrame*>(aParentFrame->FirstContinuation());
+  if (MOZ_UNLIKELY(parent->IsLineFrame())) {
+    parent = parent->GetParent();
+  }
+  MOZ_ASSERT(parent->HasFirstLetterChild());
+  parent->ClearHasFirstLetterChild();
+}
+
 void
 nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
   nsIPresShell* aPresShell,
@@ -10724,8 +10736,8 @@ nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
     
     return;
   }
-  static_cast<nsContainerFrame*>(parentFrame->FirstContinuation())->
-    ClearHasFirstLetterChild();
+
+  ClearHasFirstLetterChildFrom(parentFrame);
 
   
   
@@ -10790,9 +10802,7 @@ nsCSSFrameConstructor::RemoveFirstLetterFrames(nsIPresShell* aPresShell,
 
   while (kid) {
     if (kid->IsLetterFrame()) {
-      
-      static_cast<nsContainerFrame*>(aFrame->FirstContinuation())->
-        ClearHasFirstLetterChild();
+      ClearHasFirstLetterChildFrom(aFrame);
       nsIFrame* textFrame = kid->PrincipalChildList().FirstChild();
       if (!textFrame) {
         break;
