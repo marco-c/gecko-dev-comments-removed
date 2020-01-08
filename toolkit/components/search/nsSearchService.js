@@ -784,18 +784,6 @@ function getLocalizedPref(aPrefName, aDefault) {
 
 
 
-
-function getBoolPref(aName, aDefault) {
-  if (Services.prefs.getPrefType(aName) != Ci.nsIPrefBranch.PREF_BOOL)
-    return aDefault;
-  return Services.prefs.getBoolPref(aName);
-}
-
-
-
-
-
-
 function sanitizeName(aName) {
   const maxLength = 60;
   const minLength = 1;
@@ -1415,7 +1403,7 @@ Engine.prototype = {
         stringBundle.formatStringFromName("addEngineConfirmation",
                                           [this._name, this._uri.host], 2);
     var checkboxMessage = null;
-    if (!getBoolPref(BROWSER_SEARCH_PREF + "noCurrentEngine", false))
+    if (!Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "noCurrentEngine", false))
       checkboxMessage = stringBundle.GetStringFromName("addEngineAsCurrentText");
 
     var addButtonLabel =
@@ -3542,7 +3530,7 @@ SearchService.prototype = {
 
     
     
-    if (getBoolPref(BROWSER_SEARCH_PREF + "useDBForOrder", false)) {
+    if (Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "useDBForOrder", false)) {
       LOG("_buildSortedEngineList: using db for order");
 
       
@@ -4468,7 +4456,7 @@ SearchService.prototype = {
   notify: function SRCH_SVC_notify(aTimer) {
     LOG("_notify: checking for updates");
 
-    if (!getBoolPref(BROWSER_SEARCH_PREF + "update", true))
+    if (!Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "update", true))
       return;
 
     
@@ -4573,7 +4561,7 @@ const SEARCH_UPDATE_LOG_PREFIX = "*** Search update: ";
 
 
 function ULOG(aText) {
-  if (getBoolPref(BROWSER_SEARCH_PREF + "update.log", false)) {
+  if (Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "update.log", false)) {
     dump(SEARCH_UPDATE_LOG_PREFIX + aText + "\n");
     Services.console.logStringMessage(aText);
   }
@@ -4589,7 +4577,8 @@ var engineUpdateService = {
   update: function eus_Update(aEngine) {
     let engine = aEngine.wrappedJSObject;
     ULOG("update called for " + aEngine._name);
-    if (!getBoolPref(BROWSER_SEARCH_PREF + "update", true) || !engine._hasUpdates)
+    if (!Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "update", true) ||
+        !engine._hasUpdates)
       return;
 
     let testEngine = null;
