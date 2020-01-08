@@ -1985,8 +1985,13 @@ private:
 
   MOZ_CAN_RUN_SCRIPT nsRect GetClientAreaRect();
 
+  
+
+
+
+
   MOZ_CAN_RUN_SCRIPT
-  nsIScrollableFrame* GetScrollFrame(nsIFrame **aStyledFrame = nullptr,
+  nsIScrollableFrame* GetScrollFrame(nsIFrame **aFrame = nullptr,
                                      FlushType aFlushType = FlushType::Layout);
 
   

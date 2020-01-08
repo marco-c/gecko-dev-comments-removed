@@ -666,24 +666,19 @@ Element::GetStyledFrame()
 }
 
 nsIScrollableFrame*
-Element::GetScrollFrame(nsIFrame **aStyledFrame, FlushType aFlushType)
+Element::GetScrollFrame(nsIFrame **aFrame, FlushType aFlushType)
 {
   
   if (IsSVGElement()) {
-    if (aStyledFrame) {
-      *aStyledFrame = nullptr;
+    if (aFrame) {
+      *aFrame = nullptr;
     }
     return nullptr;
   }
 
-  
   nsIFrame* frame = GetPrimaryFrame(aFlushType);
-  if (frame) {
-    frame = nsLayoutUtils::GetStyleFrame(frame);
-  }
-
-  if (aStyledFrame) {
-    *aStyledFrame = frame;
+  if (aFrame) {
+    *aFrame = frame;
   }
   if (frame) {
     
@@ -707,13 +702,8 @@ Element::GetScrollFrame(nsIFrame **aStyledFrame, FlushType aFlushType)
   bool isScrollingElement = OwnerDoc()->IsScrollingElement(this);
   
   
-  if (aStyledFrame) {
-    nsIFrame* frame = GetPrimaryFrame(FlushType::None);
-    if (frame) {
-      *aStyledFrame = nsLayoutUtils::GetStyleFrame(frame);
-    } else {
-      *aStyledFrame = nullptr;
-    }
+  if (aFrame) {
+    *aFrame = GetPrimaryFrame(FlushType::None);
   }
 
   if (isScrollingElement) {
@@ -1045,19 +1035,22 @@ Element::ScrollWidth()
 nsRect
 Element::GetClientAreaRect()
 {
-  nsIFrame* styledFrame;
-  nsIScrollableFrame* sf = GetScrollFrame(&styledFrame);
+  nsIFrame* frame;
+  nsIScrollableFrame* sf = GetScrollFrame(&frame);
 
   if (sf) {
     return sf->GetScrollPortRect();
   }
 
-  if (styledFrame &&
-      (styledFrame->StyleDisplay()->mDisplay != StyleDisplay::Inline ||
-       styledFrame->IsFrameOfType(nsIFrame::eReplaced))) {
+  if (frame &&
+      
+      
+      
+      (frame->StyleDisplay()->mDisplay != StyleDisplay::Inline ||
+       frame->IsFrameOfType(nsIFrame::eReplaced))) {
     
     
-    return styledFrame->GetPaddingRect() - styledFrame->GetPositionIgnoringScrolling();
+    return frame->GetPaddingRect() - frame->GetPositionIgnoringScrolling();
   }
 
   
