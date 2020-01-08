@@ -1510,7 +1510,8 @@ nsIDocument::nsIDocument()
     mIgnoreOpensDuringUnloadCounter(0),
     mNumTrackersFound(0),
     mNumTrackersBlocked(0),
-    mDocLWTheme(Doc_Theme_Uninitialized)
+    mDocLWTheme(Doc_Theme_Uninitialized),
+    mSavedResolution(1.0f)
 {
   SetIsInDocument();
   SetIsConnected(true);
@@ -11186,6 +11187,16 @@ nsIDocument::CleanupFullscreenState()
   }
   mFullscreenStack.Clear();
   mFullscreenRoot = nullptr;
+
+  
+  if (nsIPresShell* shell = GetShell()) {
+    if (nsPresContext* context = shell->GetPresContext()) {
+      if (context->IsRootContentDocument()) {
+        shell->SetResolutionAndScaleTo(mSavedResolution);
+      }
+    }
+  }
+
   UpdateViewportScrollbarOverrideForFullscreen(this);
 }
 
@@ -11589,6 +11600,23 @@ nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
   nsIDocument* child = this;
   while (true) {
     child->SetFullscreenRoot(fullScreenRootDoc);
+
+    
+    
+    
+    
+    
+    
+    if (nsIPresShell* shell = child->GetShell()) {
+      if (nsPresContext* context = shell->GetPresContext()) {
+        if (context->IsRootContentDocument()) {
+          
+          child->mSavedResolution = shell->GetResolution();
+          shell->SetResolutionAndScaleTo(1.0f);
+        }
+      }
+    }
+
     NS_ASSERTION(child->GetFullscreenRoot() == fullScreenRootDoc,
         "Fullscreen root should be set!");
     if (child == fullScreenRootDoc) {

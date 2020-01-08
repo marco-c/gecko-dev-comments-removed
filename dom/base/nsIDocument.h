@@ -4771,6 +4771,9 @@ protected:
   
   
   DocumentTheme                         mDocLWTheme;
+
+  
+  float mSavedResolution;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
