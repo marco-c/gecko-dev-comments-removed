@@ -147,6 +147,9 @@ ChromeUtils.defineModuleGetter(this, "OSKeyStore",
 ChromeUtils.defineModuleGetter(this, "PhoneNumber",
                                "resource://formautofill/phonenumberutils/PhoneNumber.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "cryptoSDR",
+                                   "@mozilla.org/login-manager/crypto/SDR;1",
+                                   Ci.nsILoginManagerCrypto);
 XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
@@ -158,7 +161,7 @@ const PROFILE_JSON_FILE_NAME = "autofill-profiles.json";
 
 const STORAGE_SCHEMA_VERSION = 1;
 const ADDRESS_SCHEMA_VERSION = 1;
-const CREDIT_CARD_SCHEMA_VERSION = 1;
+const CREDIT_CARD_SCHEMA_VERSION = 2;
 
 const VALID_ADDRESS_FIELDS = [
   "given-name",
@@ -264,13 +267,14 @@ class AutofillRecords {
     this._collectionName = collectionName;
     this._schemaVersion = schemaVersion;
 
-    Promise.all(this._data.map(record => this._migrateRecord(record)))
-      .then(hasChangesArr => {
-        let dataHasChanges = hasChangesArr.find(hasChanges => hasChanges);
-        if (dataHasChanges) {
-          this._store.saveSoon();
-        }
-      });
+    this._initializePromise =
+      Promise.all(this._data.map(async (record, index) => this._migrateRecord(record, index)))
+        .then(hasChangesArr => {
+          let dataHasChanges = hasChangesArr.includes(true);
+          if (dataHasChanges) {
+            this._store.saveSoon();
+          }
+        });
   }
 
   
@@ -301,6 +305,14 @@ class AutofillRecords {
       throw new Error(`Got unknown record version ${
         record.version}; want ${this.version}`);
     }
+  }
+
+  
+
+
+
+  initialize() {
+    return this._initializePromise;
   }
 
   
@@ -1176,7 +1188,7 @@ class AutofillRecords {
     });
   }
 
-  async _migrateRecord(record) {
+  async _migrateRecord(record, index) {
     let hasChanges = false;
 
     if (record.deleted) {
@@ -1192,10 +1204,21 @@ class AutofillRecords {
 
     if (record.version < this.version) {
       hasChanges = true;
-      record.version = this.version;
+
+      record = await this._computeMigratedRecord(record);
+
+      if (record.deleted) {
+        
+        
+        this._data[index] = record;
+        return hasChanges;
+      }
 
       
-      await this._stripComputedFields(record);
+      await this.computeFields(record);
+      this._data[index] = record;
+
+      return hasChanges;
     }
 
     hasChanges |= await this.computeFields(record);
@@ -1254,6 +1277,24 @@ class AutofillRecords {
       sourceSync,
       collectionName: this._collectionName,
     }}, "formautofill-storage-changed", "removeAll");
+  }
+
+  
+
+
+
+
+
+
+
+
+  async _computeMigratedRecord(record) {
+    if (!record.deleted) {
+      record = this._clone(record);
+      await this._stripComputedFields(record);
+      record.version = this.version;
+    }
+    return record;
   }
 
   async _stripComputedFields(record) {
@@ -1613,6 +1654,51 @@ class CreditCards extends AutofillRecords {
     return hasNewComputedFields;
   }
 
+  async _computeMigratedRecord(creditCard) {
+    if (creditCard["cc-number-encrypted"]) {
+      switch (creditCard.version) {
+        case 1: {
+          if (!cryptoSDR.isLoggedIn) {
+            
+            
+            if (creditCard.deleted) {
+              break;
+            }
+
+            this.log.warn("Removing version 1 credit card record to migrate to new encryption:", creditCard.guid);
+
+            
+            
+            let existingSync = this._getSyncMetaData(creditCard);
+            creditCard = {
+              guid: creditCard.guid,
+              timeLastModified: Date.now(),
+              deleted: true,
+            };
+
+            if (existingSync) {
+              creditCard._sync = existingSync;
+              existingSync.changeCounter++;
+            }
+            break;
+          }
+
+          creditCard = this._clone(creditCard);
+
+          
+          let ccNumber = cryptoSDR.decrypt(creditCard["cc-number-encrypted"]);
+          
+          creditCard["cc-number-encrypted"] = await OSKeyStore.encrypt(ccNumber);
+          break;
+        }
+
+        default:
+          throw new Error("Unknown credit card version to migrate: " + creditCard.version);
+      }
+    }
+    return super._computeMigratedRecord(creditCard);
+  }
+
   async _stripComputedFields(creditCard) {
     if (creditCard["cc-number-encrypted"]) {
       creditCard["cc-number"] = await OSKeyStore.decrypt(creditCard["cc-number-encrypted"]);
@@ -1674,6 +1760,33 @@ class CreditCards extends AutofillRecords {
     if (!creditCard["cc-number"]) {
       throw new Error("Missing/invalid cc-number");
     }
+  }
+
+  _ensureMatchingVersion(record) {
+    if (!record.version || isNaN(record.version) || record.version < 1) {
+      throw new Error(`Got invalid record version ${
+        record.version}; want ${this.version}`);
+    }
+
+    if (record.version < this.version) {
+      switch (record.version) {
+        case 1:
+          
+          
+          
+          
+          if (!record["cc-number-encrypted"]) {
+            record.version = this.version;
+          } else {
+            throw new Error("Unexpected record migration path.");
+          }
+          break;
+        default:
+          throw new Error("Unknown credit card version to match: " + record.version);
+      }
+    }
+
+    return super._ensureMatchingVersion(record);
   }
 
   
@@ -1802,7 +1915,10 @@ FormAutofillStorage.prototype = {
         path: this._path,
         dataPostProcessor: this._dataPostProcessor.bind(this),
       });
-      this._initializePromise = this._store.load();
+      this._initializePromise = this._store.load()
+        .then(() => Promise.all([
+          this.addresses.initialize(),
+          this.creditCards.initialize()]));
     }
     return this._initializePromise;
   },
