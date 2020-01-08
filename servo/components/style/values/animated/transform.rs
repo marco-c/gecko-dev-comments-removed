@@ -851,6 +851,10 @@ impl Animate for ComputedTransform {
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
         use std::borrow::Cow;
 
+        
+        
+        
+        
         if procedure == Procedure::Add {
             let result = self.0.iter().chain(&other.0).cloned().collect::<Vec<_>>();
             return Ok(Transform(result));
@@ -1586,6 +1590,8 @@ impl Animate for ComputedScale {
                 let (from, to) = (self.resolve(), other.resolve());
                 
                 
+                
+                
                 if procedure == Procedure::Add {
                     
                     return Ok(Scale::Scale3D(from.0 * to.0, from.1 * to.1, from.2 * to.2));
@@ -1598,7 +1604,6 @@ impl Animate for ComputedScale {
             },
             (&Scale::Scale(_, ..), _) | (_, &Scale::Scale(_, ..)) => {
                 let (from, to) = (self.resolve(), other.resolve());
-                
                 
                 if procedure == Procedure::Add {
                     
