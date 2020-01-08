@@ -267,7 +267,14 @@ public:
                                           bool* aAll,
                                           nsAString& outValue);
   nsresult RemoveInlineProperty(nsAtom* aProperty,
-                                nsAtom* aAttribute);
+                                nsAtom* aAttribute)
+  {
+    nsresult rv = RemoveInlinePropertyInternal(aProperty, aAttribute);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
+  }
 
   
 
@@ -820,6 +827,8 @@ protected:
   nsresult SetInlinePropertyInternal(nsAtom& aProperty,
                                      nsAtom* aAttribute,
                                      const nsAString& aValue);
+  nsresult RemoveInlinePropertyInternal(nsAtom* aProperty,
+                                        nsAtom* aAttribute);
 
   
 
