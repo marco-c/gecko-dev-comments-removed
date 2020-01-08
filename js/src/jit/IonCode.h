@@ -271,9 +271,6 @@ struct IonScript
     uint32_t osrPcMismatchCounter_;
 
     
-    FallbackICStubSpace fallbackStubSpace_;
-
-    
     TraceLoggerEventVector traceLoggerEvents_;
 
   private:
@@ -317,12 +314,6 @@ struct IonScript
   public:
     
     explicit IonScript(IonCompilationId compilationId);
-
-    ~IonScript() {
-        
-        
-        MOZ_ASSERT(fallbackStubSpace_.isEmpty());
-    }
 
     static IonScript* New(JSContext* cx, IonCompilationId compilationId,
                           uint32_t frameSlots, uint32_t argumentSlots, uint32_t frameSize,
@@ -543,11 +534,6 @@ struct IonScript
     void clearRecompiling() {
         recompiling_ = false;
     }
-
-    FallbackICStubSpace* fallbackStubSpace() {
-        return &fallbackStubSpace_;
-    }
-    void adoptFallbackStubs(FallbackICStubSpace* stubSpace);
 
     enum ShouldIncreaseAge {
         IncreaseAge = true,
