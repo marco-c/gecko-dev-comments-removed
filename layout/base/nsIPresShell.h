@@ -454,6 +454,9 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   virtual nsCanvasFrame* GetCanvasFrame() const = 0;
 
+  virtual void PostDirtyScrollAnchorContainer(nsIScrollableFrame* aFrame) = 0;
+  virtual void FlushDirtyScrollAnchorContainers() = 0;
+
   
 
 
@@ -1654,20 +1657,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
 
-  
-  
-  
-  
-  
-  
-  void SetPendingVisualViewportOffset(
-      const mozilla::Maybe<nsPoint>& aPendingVisualViewportOffset) {
-    mPendingVisualViewportOffset = aPendingVisualViewportOffset;
-  }
-  const mozilla::Maybe<nsPoint>& GetPendingVisualViewportOffset() const {
-    return mPendingVisualViewportOffset;
-  }
-
   nsPoint GetLayoutViewportOffset() const;
 
   virtual void WindowSizeMoveDone() = 0;
@@ -1748,11 +1737,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   nsSize mVisualViewportSize;
 
   nsPoint mVisualViewportOffset;
-
-  
-  
-  
-  mozilla::Maybe<nsPoint> mPendingVisualViewportOffset;
 
   
   
