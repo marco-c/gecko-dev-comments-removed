@@ -158,14 +158,14 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
 
 
-  changePaymentMethod(selectedPaymentCardBillingAddressGUID) {
+  changePaymentMethod(selectedPaymentCardGUID) {
     
     let request = Object.assign({}, this.requestStore.getState().request);
     request.paymentDetails = Object.assign({}, request.paymentDetails);
     request.paymentDetails.paymentMethodErrors = null;
     this.requestStore.setState({request});
 
-    paymentRequest.changePaymentMethod({selectedPaymentCardBillingAddressGUID});
+    
   }
 
   
@@ -305,9 +305,11 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     }
 
     
-    if (selectedPaymentCard && !basicCards[selectedPaymentCard]) {
+    
+    if (!basicCards[selectedPaymentCard]) {
+      
       this.requestStore.setState({
-        selectedPaymentCard: null,
+        selectedPaymentCard: Object.keys(basicCards)[0] || null,
         selectedPaymentCardSecurityCode: null,
       });
     }
@@ -430,14 +432,8 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       }
     }
 
-    let selectedPaymentCard = state.selectedPaymentCard;
-    let basicCards = paymentRequest.getBasicCards(state);
-    let billingAddressGUID = (basicCards[selectedPaymentCard] || {}).billingAddressGUID;
-    if (selectedPaymentCard != this._cachedState.selectedPaymentCard &&
-        billingAddressGUID) {
-      
-      this._cachedState.selectedPaymentCard = state.selectedPaymentCard;
-      this.changePaymentMethod(billingAddressGUID);
+    if (state.selectedPaymentCard != this._cachedState.selectedPaymentCard) {
+      this.changePaymentMethod(state.selectedPaymentCard);
     }
 
     if (this._isPayerRequested(state.request.paymentOptions)) {
@@ -448,6 +444,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
     this._cachedState.selectedShippingAddress = state.selectedShippingAddress;
     this._cachedState.selectedShippingOption = state.selectedShippingOption;
+    this._cachedState.selectedPaymentCard = state.selectedPaymentCard;
     this._cachedState.selectedPayerAddress = state.selectedPayerAddress;
   }
 

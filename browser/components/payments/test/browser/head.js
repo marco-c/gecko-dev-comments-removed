@@ -666,14 +666,9 @@ async function fillInCardForm(frame, aCard, aOptions = {}) {
       
       await ContentTaskUtils.waitForCondition(() => field == content.document.activeElement,
                                               `Waiting for field #${key} to get focus`);
-      if (key == "billingAddressGUID") {
-        
-        content.fillField(field, val);
-      } else {
-        
-        let fillValue = val.toString().padStart(2, "0");
-        EventUtils.synthesizeKey(fillValue, {}, Cu.waiveXrays(content.window));
-      }
+      
+      let fillValue = val.toString().padStart(2, "0");
+      EventUtils.synthesizeKey(fillValue, {}, Cu.waiveXrays(content.window));
       
       is(field.value, val.toString(), `${key} value is correct after sendString`);
     }
