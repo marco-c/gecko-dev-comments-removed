@@ -162,7 +162,7 @@ function get_test_function_for_localhost_with_hostname(hostName, isPrivate) {
     browser.removeTab(tab);
 
     
-    tab = browser.selectedTab = browser.addTab("about:blank");
+    tab = browser.selectedTab = BrowserTestUtils.addTab(browser, "about:blank");
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     
     await runURLBarSearchTest({
