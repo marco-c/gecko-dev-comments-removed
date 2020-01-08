@@ -5090,18 +5090,7 @@ pref("alerts.showFavicons", false);
 
 
 
-
-
-
-#if defined(XP_WIN)
-#if defined(NIGHTLY_BUILD)
 pref("alerts.useSystemBackend", true);
-#else
-pref("alerts.useSystemBackend", false);
-#endif
-#else
-pref("alerts.useSystemBackend", true);
-#endif
 
 
 pref("full-screen-api.enabled", false);
