@@ -25,12 +25,12 @@ function setupTest(uri, cookies, loads) {
   gExpectedCookies = cookies;
   gExpectedLoads = loads;
 
-  
+  // Listen for MessageEvents.
   window.addEventListener("message", messageReceiver);
 
   prefSet.then(() => {
-    
-    
+    // load a window which contains an iframe; each will attempt to set
+    // cookies from their respective domains.
     gPopup = window.open(uri, 'hai', 'width=100,height=100');
   });
 }
@@ -40,8 +40,8 @@ function finishTest() {
   SimpleTest.finish();
 }
 
-
-
+/** Receives MessageEvents to this window. */
+// Count and check loads.
 function messageReceiver(evt) {
   is(evt.data, "message", "message data received from popup");
   if (evt.data != "message") {
@@ -52,7 +52,7 @@ function messageReceiver(evt) {
     return;
   }
 
-  
+  // only run the test when all our children are done loading & setting cookies
   if (++gLoads == gExpectedLoads) {
     gPopup.close();
     window.removeEventListener("message", messageReceiver);
@@ -61,10 +61,10 @@ function messageReceiver(evt) {
   }
 }
 
-
-
+// runTest() is run by messageReceiver().
+// Count and check cookies.
 function runTest() {
-  
+  // set a cookie from a domain of "localhost"
   document.cookie = "oh=hai";
 
   gScript.addMessageListener("getCookieCountAndClear:return", ({ count }) => {

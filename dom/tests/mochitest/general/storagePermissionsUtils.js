@@ -5,7 +5,7 @@ const BEHAVIOR_LIMIT_FOREIGN = 3;
 
 const kPrefName = "network.cookie.cookieBehavior";
 
-
+// Check if we are in frame, and declare ok and finishTest appropriately
 const inFrame = ("" + location).match(/frame/);
 if (inFrame) {
   ok = function(a, message) {
@@ -67,7 +67,7 @@ function runWorker(url) {
 
 function chromePower(allowed, blockSessionStorage) {
 
-  
+  // localStorage is affected by storage policy.
   try {
     SpecialPowers.wrap(window).localStorage.getItem("X");
     ok(allowed, "getting localStorage from chrome didn't throw");
@@ -76,7 +76,7 @@ function chromePower(allowed, blockSessionStorage) {
   }
 
 
-  
+  // sessionStorage is not. See bug 1183968.
   try {
     SpecialPowers.wrap(window).sessionStorage.getItem("X");
     ok(!blockSessionStorage, "getting sessionStorage from chrome didn't throw");
@@ -84,7 +84,7 @@ function chromePower(allowed, blockSessionStorage) {
     ok(blockSessionStorage, "getting sessionStorage from chrome threw");
   }
 
-  
+  // indexedDB is affected by storage policy.
   try {
     SpecialPowers.wrap(window).indexedDB;
     ok(allowed, "getting indexedDB from chrome didn't throw");
@@ -92,7 +92,7 @@ function chromePower(allowed, blockSessionStorage) {
     ok(!allowed, "getting indexedDB from chrome threw");
   }
 
-  
+  // Same with caches, along with the additional https-only requirement.
   try {
     var shouldResolve = allowed && location.protocol == "https:";
     var promise = SpecialPowers.wrap(window).caches.keys();
@@ -161,9 +161,9 @@ function storagePrevented() {
   }
 
   if (location.hash == "#thirdparty") {
-    
-    
-    
+    // No matter what the user's preferences are, we don't block
+    // sessionStorage in 3rd-party iframes. We do block them everywhere
+    // else however.
     try {
       sessionStorage.getItem("X");
       ok(true, "getting sessionStorage didn't throw");
