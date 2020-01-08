@@ -15,6 +15,7 @@ const {DebuggerServer} = require("devtools/server/main");
 const {DebuggerClient} = require("devtools/shared/client/debugger-client");
 const ObjectClient = require("devtools/shared/client/object-client");
 const Services = require("Services");
+const {TargetFactory} = require("devtools/client/framework/target");
 
 function initCommon() {
   
@@ -64,41 +65,49 @@ var _attachConsole = async function(
 
     
     
-    let consoleActor, worker;
+    let target, worker;
     if (!attachToTab) {
       const front = await client.mainRoot.getMainProcess();
-      await front.attach();
-      consoleActor = front.targetForm.consoleActor;
+      target = await TargetFactory.forRemoteTab({
+        client,
+        activeTab: front,
+        chrome: true,
+      });
     } else {
       const targetFront = await client.mainRoot.getTab();
-      await targetFront.attach();
+      target = await TargetFactory.forRemoteTab({
+        client,
+        activeTab: targetFront,
+      });
       if (attachToWorker) {
         const workerName = "console-test-worker.js#" + new Date().getTime();
         worker = new Worker(workerName);
         await waitForMessage(worker);
 
-        const { workers } = await targetFront.listWorkers();
+        const { workers } = await target.activeTab.listWorkers();
         const workerTargetFront = workers.filter(w => w.url == workerName)[0];
         if (!workerTargetFront) {
           console.error("listWorkers failed. Unable to find the worker actor\n");
           return null;
         }
-        await workerTargetFront.attach();
-        await workerTargetFront.attachThread({});
-        consoleActor = workerTargetFront.targetForm.consoleActor;
-      } else {
-        consoleActor = targetFront.targetForm.consoleActor;
+        target = await TargetFactory.forRemoteTab({
+          client,
+          activeTab: workerTargetFront,
+        });
       }
     }
 
     
-    const [ response, webConsoleClient ] = await client.attachConsole(consoleActor,
-      listeners);
+    await target.attach();
+    const webConsoleClient = target.activeConsole;
+    
+    
+    const response = await webConsoleClient.startListeners(listeners);
     return {
       state: {
         dbgClient: client,
         client: webConsoleClient,
-        actor: consoleActor,
+        actor: webConsoleClient.actor,
         
         
         

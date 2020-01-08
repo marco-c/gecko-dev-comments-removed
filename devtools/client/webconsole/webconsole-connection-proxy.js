@@ -25,6 +25,7 @@ const PREF_CONNECTION_TIMEOUT = "devtools.debugger.remote-timeout";
 function WebConsoleConnectionProxy(webConsoleFrame, target) {
   this.webConsoleFrame = webConsoleFrame;
   this.target = target;
+  this.webConsoleClient = target.activeConsole;
 
   this._onPageError = this._onPageError.bind(this);
   this._onLogMessage = this._onLogMessage.bind(this);
@@ -101,14 +102,6 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _hasNativeConsoleAPI: false,
-
-  
-
-
-
-
-
 
   connect: function() {
     if (this._connectDefer) {
@@ -174,13 +167,10 @@ WebConsoleConnectionProxy.prototype = {
     if (this.target.chrome && !this.target.isAddon) {
       listeners.push("ContentProcessMessages");
     }
-    this.client.attachConsole(this._consoleActor, listeners)
-      .then(this._onAttachConsole, response => {
-        if (response.error) {
-          console.error("attachConsole failed: " + response.error + " " +
-                        response.message);
-          this._connectDefer.reject(response);
-        }
+    this.webConsoleClient.startListeners(listeners)
+      .then(this._onAttachConsole, error => {
+        console.error("attachConsole failed: " + error);
+        this._connectDefer.reject(error);
       });
   },
 
@@ -194,10 +184,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onAttachConsole: function([response, webConsoleClient]) {
-    this.webConsoleClient = webConsoleClient;
-    this._hasNativeConsoleAPI = response.nativeConsoleAPI;
-
+  _onAttachConsole: function(response) {
     let saveBodies = Services.prefs.getBoolPref(
       "devtools.netmonitor.saveRequestAndResponseBodies");
 
@@ -269,7 +256,7 @@ WebConsoleConnectionProxy.prototype = {
     messages.sort((a, b) => a.timeStamp - b.timeStamp);
 
     this.dispatchMessagesAdd(messages);
-    if (!this._hasNativeConsoleAPI) {
+    if (!this.webConsoleClient.hasNativeConsoleAPI) {
       this.webConsoleFrame.logWarningAboutReplacedAPI();
     }
 

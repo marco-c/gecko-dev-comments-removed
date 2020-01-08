@@ -25,6 +25,15 @@ function WebConsoleClient(debuggerClient, response) {
   this._client = debuggerClient;
   this._longStrings = {};
   this.traits = response.traits || {};
+
+  
+
+
+
+
+
+  this.hasNativeConsoleAPI = response.nativeConsoleAPI;
+
   this.events = [];
   this._networkRequests = new Map();
 
