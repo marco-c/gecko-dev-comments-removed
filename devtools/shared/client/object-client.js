@@ -206,6 +206,18 @@ ObjectClient.prototype = {
 
 
 
+
+  apply: DebuggerClient.requester({
+    type: "apply",
+    this: arg(0),
+    arguments: arg(1),
+  }),
+
+  
+
+
+
+
   getDisplayString: DebuggerClient.requester({
     type: "displayString"
   }),
