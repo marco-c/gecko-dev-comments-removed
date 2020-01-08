@@ -18,7 +18,7 @@ struct MIDIOptions;
 
 
 class MIDIPermissionRequest final
-  : public nsIContentPermissionRequest,
+  : public ContentPermissionRequestBase,
     public nsIRunnable
 {
 public:
@@ -26,25 +26,22 @@ public:
                         Promise* aPromise,
                         const MIDIOptions& aOptions);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_NSICONTENTPERMISSIONREQUEST
+  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(MIDIPermissionRequest,
-                                           nsIContentPermissionRequest)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MIDIPermissionRequest,
+                                           ContentPermissionRequestBase)
+  
+  NS_IMETHOD Cancel(void) override;
+  NS_IMETHOD Allow(JS::HandleValue choices) override;
+  NS_IMETHOD GetTypes(nsIArray** aTypes) override;
 
 private:
-  ~MIDIPermissionRequest();
+  ~MIDIPermissionRequest() = default;
 
-  
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  
-  nsCOMPtr<nsIPrincipal> mPrincipal;
   
   RefPtr<Promise> mPromise;
   
   bool mNeedsSysex;
-  
-  nsCOMPtr<nsIContentPermissionRequester> mRequester;
 };
 
 } 
