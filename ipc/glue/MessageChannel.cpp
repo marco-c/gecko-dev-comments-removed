@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Move.h"
@@ -2524,7 +2525,16 @@ void MessageChannel::OnChannelErrorFromLink() {
 
   if (ChannelClosing != mChannelState) {
     if (mAbortOnError) {
-      MOZ_CRASH("Aborting on channel error.");
+      
+      
+      
+      
+      
+      
+      
+      
+      printf_stderr("Exiting due to channel error.\n");
+      ProcessChild::QuickExit();
     }
     mChannelState = ChannelError;
     mMonitor->Notify();
