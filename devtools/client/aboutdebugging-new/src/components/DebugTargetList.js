@@ -1,0 +1,41 @@
+
+
+
+
+"use strict";
+
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const DebugTargetItem = createFactory(require("./DebugTargetItem"));
+
+
+
+
+class DebugTargetList extends PureComponent {
+  static get propTypes() {
+    return {
+      targets: PropTypes.arrayOf(PropTypes.Object).isRequired,
+    };
+  }
+
+  render() {
+    const { targets } = this.props;
+
+    return dom.ul(
+      {
+        className: "debug-target-list",
+      },
+      targets.map(target =>
+        DebugTargetItem({
+          icon: target.icon,
+          name: target.name,
+          url: target.url,
+        })
+      ),
+    );
+  }
+}
+
+module.exports = DebugTargetList;
