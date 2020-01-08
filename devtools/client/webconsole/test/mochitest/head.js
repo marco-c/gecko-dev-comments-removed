@@ -110,7 +110,9 @@ function logAllStoreChanges(hud) {
 
 
 
-function waitForMessages({ hud, messages }) {
+
+
+function waitForMessages({ hud, messages, selector = ".message" }) {
   return new Promise(resolve => {
     const matchedMessages = [];
     hud.ui.on("new-messages",
@@ -121,8 +123,13 @@ function waitForMessages({ hud, messages }) {
           }
 
           for (const newMessage of newMessages) {
-            const messageBody = newMessage.node.querySelector(".message-body");
-            if (messageBody.textContent.includes(message.text)) {
+            const messageBody =
+              newMessage.node.querySelector(`.message-body`);
+            if (
+              messageBody &&
+              newMessage.node.matches(selector) &&
+              messageBody.textContent.includes(message.text)
+            ) {
               matchedMessages.push(newMessage);
               message.matched = true;
               const messagesLeft = messages.length - matchedMessages.length;
@@ -175,9 +182,29 @@ function waitForRepeatedMessage(hud, text, repeat) {
 
 
 
-async function waitForMessage(hud, text) {
-  const messages = await waitForMessages({hud, messages: [{text}]});
+
+async function waitForMessage(hud, text, selector) {
+  const messages = await waitForMessages({
+    hud,
+    messages: [{text}],
+    selector,
+  });
   return messages[0];
+}
+
+
+
+
+
+
+
+
+
+
+function executeAndWaitForMessage(hud, input, matchingText, selector = ".message") {
+  const onMessage = waitForMessage(hud, matchingText, selector);
+  hud.jsterm.execute(input);
+  return onMessage;
 }
 
 
