@@ -126,6 +126,8 @@ public:
                                  GtkSelectionData *selection_data,
                                  guint32           aTime);
 
+    void SourceBeginDrag(GdkDragContext *aContext);
+
     
     void SetDragIcon(GdkDragContext* aContext);
 
