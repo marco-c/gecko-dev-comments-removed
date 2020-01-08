@@ -536,11 +536,18 @@ nsOuterWindowProxy::getOwnPropertyDescriptor(JSContext* cx,
   }
   
 
+  bool ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
+  if (!ok) {
+    return false;
+  }
 
-  
-  
-  
-  return js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
+#ifndef RELEASE_OR_BETA 
+  if (!IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
+    desc.setConfigurable(true);
+  }
+#endif
+
+  return true;
 }
 
 bool
