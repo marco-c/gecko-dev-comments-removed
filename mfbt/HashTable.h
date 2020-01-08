@@ -947,6 +947,19 @@ class HashTableEntry {
  private:
   using NonConstT = typename RemoveConst<T>::Type;
 
+#ifdef HAVE_64BIT_BUILD
+  static_assert(alignof(NonConstT) <= alignof(void*),
+                "cannot use over-aligned entries in mozilla::HashTable");
+#else
+  
+  
+  
+  
+  
+  static_assert(alignof(NonConstT) <= 2 * alignof(void*),
+                "cannot use over-aligned entries in mozilla::HashTable");
+#endif
+
   static const HashNumber sFreeKey = 0;
   static const HashNumber sRemovedKey = 1;
   static const HashNumber sCollisionBit = 1;
