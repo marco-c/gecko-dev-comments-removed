@@ -330,6 +330,12 @@ public:
 
 
 
+    gfxFloat GetMinAdvanceWidth(Range aRange);
+
+    
+
+
+
 
 
 
