@@ -92,8 +92,7 @@ private:
   
   
   
-  MediaResult CreateDecoder(const VideoInfo& aConfig,
-                         DecoderDoctorDiagnostics* aDiagnostics);
+  MediaResult CreateDecoder(DecoderDoctorDiagnostics* aDiagnostics);
   MediaResult CreateDecoderAndInit(MediaRawData* aSample);
   MediaResult CheckForChange(MediaRawData* aSample);
 
@@ -103,7 +102,6 @@ private:
   RefPtr<ShutdownPromise> ShutdownDecoder();
 
   RefPtr<PlatformDecoderModule> mPDM;
-  const VideoInfo mOriginalConfig;
   VideoInfo mCurrentConfig;
   RefPtr<layers::KnowsCompositor> mKnowsCompositor;
   RefPtr<layers::ImageContainer> mImageContainer;
