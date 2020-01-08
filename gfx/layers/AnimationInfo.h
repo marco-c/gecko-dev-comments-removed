@@ -44,8 +44,11 @@ public:
   
   Animation* AddAnimationForNextTransaction();
 
-  void SetAnimationGeneration(uint64_t aCount) { mAnimationGeneration = aCount; }
-  uint64_t GetAnimationGeneration() { return mAnimationGeneration; }
+  void SetAnimationGeneration(uint64_t aCount)
+  {
+    mAnimationGeneration = Some(aCount);
+  }
+  Maybe<uint64_t> GetAnimationGeneration() { return mAnimationGeneration; }
 
   
   void ClearAnimations();
@@ -76,7 +79,7 @@ protected:
   InfallibleTArray<AnimData> mAnimationData;
   
   
-  uint64_t mAnimationGeneration;
+  Maybe<uint64_t> mAnimationGeneration;
   RefPtr<RawServoAnimationValue> mBaseAnimationStyle;
   bool mMutated;
 };
