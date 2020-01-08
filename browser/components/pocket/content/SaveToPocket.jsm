@@ -207,10 +207,22 @@ var SaveToPocket = {
     if (this.prefEnabled) {
       PocketOverlay.startup();
     } else {
+      
+      
       this.updateElements(false);
+      Services.obs.addObserver(this, "browser-delayed-startup-finished");
     }
     Services.mm.addMessageListener("Reader:OnSetup", this);
     Services.mm.addMessageListener("Reader:Clicked-pocket-button", this);
+  },
+
+  observe(subject, topic, data) {
+    if (topic == "browser-delayed-startup-finished") {
+      subject.QueryInterface(Ci.nsIDOMWindow);
+      
+      
+      this.updateElementsInWindow(subject, false);
+    }
   },
 
   _readerButtonData: {
@@ -224,7 +236,9 @@ var SaveToPocket = {
     if (!newValue) {
       Services.mm.broadcastAsyncMessage("Reader:RemoveButton", { id: "pocket-button" });
       PocketOverlay.shutdown();
+      Services.obs.addObserver(this, "browser-delayed-startup-finished");
     } else {
+      Services.obs.removeObserver(this, "browser-delayed-startup-finished");
       PocketOverlay.startup();
       
       
@@ -238,15 +252,19 @@ var SaveToPocket = {
 
   updateElements(enabled) {
     
+    for (let win of browserWindows()) {
+      this.updateElementsInWindow(win, enabled);
+    }
+  },
+
+  updateElementsInWindow(win, enabled) {
     let elementIds = [
       "context-pocket", "context-savelinktopocket",
       "appMenu-library-pocket-button",
     ];
-    for (let win of browserWindows()) {
-      let document = win.document;
-      for (let id of elementIds) {
-        document.getElementById(id).hidden = !enabled;
-      }
+    let document = win.document;
+    for (let id of elementIds) {
+      document.getElementById(id).hidden = !enabled;
     }
   },
 
