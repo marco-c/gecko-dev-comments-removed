@@ -13,6 +13,7 @@
 #include "nsWeakReference.h"
 
 #include "unicode/uidna.h"
+#include "mozilla/net/IDNBlocklistUtils.h"
 
 #include "nsString.h"
 
@@ -95,8 +96,6 @@ private:
   nsresult ACEtoUTF8(const nsACString& input, nsACString& _retval,
                      stringPrepFlag flag);
 
-  void InitializeBlocklist();
-
   bool isInWhitelist(const nsACString &host);
   void prefsChanged(const char *pref);
 
@@ -175,7 +174,7 @@ private:
   mozilla::Mutex mLock;
 
   
-  nsTArray<char16_t> mIDNBlocklist;
+  nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;
 
   
 

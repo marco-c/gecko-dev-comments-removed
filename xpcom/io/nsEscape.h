@@ -12,6 +12,7 @@
 #include "nscore.h"
 #include "nsError.h"
 #include "nsString.h"
+#include <functional>
 
 
 
@@ -216,9 +217,9 @@ NS_EscapeURL(const nsAString& aStr, uint32_t aFlags, nsAString& aResult);
 
 
 
-
 const nsAString&
-NS_EscapeURL(const nsString& aStr, const nsTArray<char16_t>& aForbidden,
+NS_EscapeURL(const nsString& aStr,
+             const std::function<bool(char16_t)>& aFunction,
              nsAString& aResult);
 
 
