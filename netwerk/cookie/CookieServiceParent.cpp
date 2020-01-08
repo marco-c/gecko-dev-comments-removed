@@ -234,30 +234,6 @@ CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy)
 }
 
 mozilla::ipc::IPCResult
-CookieServiceParent::RecvGetCookieString(const URIParams& aHost,
-                                         const bool& aIsForeign,
-                                         const bool& aIsTrackingResource,
-                                         const bool& aFirstPartyStorageAccessGranted,
-                                         const bool& aIsSafeTopLevelNav,
-                                         const bool& aIsSameSiteForeign,
-                                         const OriginAttributes& aAttrs,
-                                         nsCString* aResult)
-{
-  if (!mCookieService)
-    return IPC_OK();
-
-  
-  
-  nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
-  if (!hostURI)
-    return IPC_FAIL_NO_REASON(this);
-  mCookieService->GetCookieStringInternal(hostURI, aIsForeign, aIsTrackingResource,
-                                          aFirstPartyStorageAccessGranted, aIsSafeTopLevelNav,
-                                          aIsSameSiteForeign, false, aAttrs, *aResult);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
                                          const OptionalURIParams& aChannelURI,
                                          const bool& aIsForeign,
