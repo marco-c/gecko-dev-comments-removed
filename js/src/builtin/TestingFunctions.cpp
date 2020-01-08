@@ -2012,11 +2012,6 @@ ParseIterativeFailureTestParams(JSContext* cx, const CallArgs& args,
     }
     params->testFunction = &args[0].toObject().as<JSFunction>();
 
-    
-    
-    if (fuzzingSafe)
-        params->expectExceptionOnFailure = false;
-
     if (args.length() == 2) {
         if (args[1].isBoolean()) {
             params->expectExceptionOnFailure = args[1].toBoolean();
@@ -2041,6 +2036,12 @@ ParseIterativeFailureTestParams(JSContext* cx, const CallArgs& args,
             JS_ReportErrorASCII(cx, "The optional second argument must be an object or a boolean.");
             return false;
         }
+    }
+
+    
+    
+    if (fuzzingSafe) {
+        params->expectExceptionOnFailure = false;
     }
 
     
