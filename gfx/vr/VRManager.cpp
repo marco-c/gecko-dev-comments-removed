@@ -522,35 +522,6 @@ VRManager::EnumerateVRDisplays()
 
 
 
-
-
-#if !defined(MOZ_WIDGET_ANDROID)
-    
-    if (gfxPrefs::VRProcessEnabled() && !mVRServiceStarted) {
-      RefPtr<Runnable> task = NS_NewRunnableFunction(
-        "VRGPUChild::SendStartVRService",
-        [] () -> void {
-          VRGPUChild* vrGPUChild = VRGPUChild::Get();
-          vrGPUChild->SendStartVRService();
-      });
-
-      NS_DispatchToMainThread(task.forget());
-      mVRServiceStarted = true;
-    } else if (!gfxPrefs::VRProcessEnabled()){
-      if (mVRService) {
-        mVRService->Start();
-        mVRServiceStarted = true;
-      }
-    }
-#endif
-
-  
-
-
-
-
-
-
   for (const auto& manager : mManagers) {
     manager->Enumerate();
     
@@ -575,13 +546,27 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
 
 
   if (mVRDisplaysRequested || aMustDispatch) {
+#if !defined(MOZ_WIDGET_ANDROID)
+    
+    if (gfxPrefs::VRProcessEnabled() && !mVRServiceStarted) {
+      RefPtr<Runnable> task = NS_NewRunnableFunction(
+        "VRGPUChild::SendStartVRService",
+        [] () -> void {
+          VRGPUChild* vrGPUChild = VRGPUChild::Get();
+          vrGPUChild->SendStartVRService();
+      });
+
+      NS_DispatchToMainThread(task.forget());
+      mVRServiceStarted = true;
+    } else if (!gfxPrefs::VRProcessEnabled()){
+      if (mVRService) {
+        mVRService->Start();
+        mVRServiceStarted = true;
+      }
+    }
+#endif
     EnumerateVRDisplays();
   }
-#if !defined(MOZ_WIDGET_ANDROID)
-  if (mVRService) {
-    mVRService->Refresh();
-  }
-#endif
 
   
 

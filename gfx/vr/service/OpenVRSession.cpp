@@ -79,6 +79,24 @@ UpdateButton(VRControllerState& aState, const ::vr::VRControllerState_t& aContro
   }
 }
 
+void
+UpdateTrigger(VRControllerState& aState, uint32_t aButtonIndex, float aValue, float aThreshold)
+{
+  
+  
+  
+  
+  uint64_t mask = (1ULL << aButtonIndex);
+  aState.triggerValue[aButtonIndex] = aValue;
+  if (aValue > aThreshold) {
+    aState.buttonPressed |= mask;
+    aState.buttonTouched |= mask;
+  } else {
+    aState.buttonPressed &= ~mask;
+    aState.buttonTouched &= ~mask;
+  }
+}
+
 }; 
 
 OpenVRSession::OpenVRSession()
@@ -89,6 +107,7 @@ OpenVRSession::OpenVRSession()
   , mControllerDeviceIndex{}
   , mHapticPulseRemaining{}
   , mHapticPulseIntensity{}
+  , mShouldQuit(false)
   , mIsWindowsMR(false)
   , mControllerHapticStateMutex("OpenVRSession::mControllerHapticStateMutex")
 {
@@ -765,6 +784,12 @@ OpenVRSession::StartFrame(mozilla::gfx::VRSystemState& aSystemState)
   UpdateTelemetry(aSystemState);
 }
 
+bool
+OpenVRSession::ShouldQuit() const
+{
+  return mShouldQuit;
+}
+
 void
 OpenVRSession::ProcessEvents(mozilla::gfx::VRSystemState& aSystemState)
 {
@@ -810,26 +835,64 @@ OpenVRSession::ProcessEvents(mozilla::gfx::VRSystemState& aSystemState)
   }
 }
 
-#if defined(XP_WIN)
 bool
-OpenVRSession::SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer,
-                           ID3D11Texture2D* aTexture)
+OpenVRSession::SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer)
 {
-  return SubmitFrame((void *)aTexture,
+#if defined(XP_WIN)
+
+  if (aLayer.mTextureType == VRLayerTextureType::LayerTextureType_D3D10SurfaceDescriptor) {
+      RefPtr<ID3D11Texture2D> dxTexture;
+      HRESULT hr = mDevice->OpenSharedResource((HANDLE)aLayer.mTextureHandle,
+        __uuidof(ID3D11Texture2D),
+        (void**)(ID3D11Texture2D**)getter_AddRefs(dxTexture));
+      if (FAILED(hr) || !dxTexture) {
+        NS_WARNING("Failed to open shared texture");
+        return false;
+      }
+
+      
+      RefPtr<IDXGIKeyedMutex> mutex;
+      dxTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mutex));
+      if (mutex) {
+        HRESULT hr = mutex->AcquireSync(0, 1000);
+        if (hr == WAIT_TIMEOUT) {
+          gfxDevCrash(LogReason::D3DLockTimeout) << "D3D lock mutex timeout";
+        }
+        else if (hr == WAIT_ABANDONED) {
+          gfxCriticalNote << "GFX: D3D11 lock mutex abandoned";
+        }
+        if (FAILED(hr)) {
+          NS_WARNING("Failed to lock the texture");
+          return false;
+        }
+      }
+      bool success = SubmitFrame((void *)dxTexture,
                      ::vr::ETextureType::TextureType_DirectX,
                      aLayer.mLeftEyeRect, aLayer.mRightEyeRect);
-}
+      if (mutex) {
+        HRESULT hr = mutex->ReleaseSync(0);
+        if (FAILED(hr)) {
+          NS_WARNING("Failed to unlock the texture");
+        }
+      }
+      if (!success) {
+        return false;
+      }
+      return true;
+  }
 
 #elif defined(XP_MACOSX)
-bool
-OpenVRSession::SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer,
-                           MacIOSurface* aTexture)
-{
-  return SubmitFrame((void *)aTexture,
-                     ::vr::ETextureType::TextureType_IOSurface,
-                     aLayer.mLeftEyeRect, aLayer.mRightEyeRect);
-}
+
+  if (aLayer.mTextureType == VRLayerTextureType::LayerTextureType_MacIOSurface) {
+    return SubmitFrame(aLayer.mTextureHandle,
+                       ::vr::ETextureType::TextureType_IOSurface,
+                       aLayer.mLeftEyeRect, aLayer.mRightEyeRect);
+  }
+
 #endif
+
+  return false;
+}
 
 bool
 OpenVRSession::SubmitFrame(void* aTextureHandle,
@@ -875,6 +938,11 @@ OpenVRSession::StopPresentation()
 
   ::vr::Compositor_CumulativeStats stats;
   mVRCompositor->GetCumulativeStats(&stats, sizeof(::vr::Compositor_CumulativeStats));
+  
+  
+  
+  
+  
 }
 
 bool
