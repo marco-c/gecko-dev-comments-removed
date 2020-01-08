@@ -125,12 +125,6 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
 
         from tools.wpt import run
 
-        
-        
-        kwargs["channel"] = None
-        kwargs["prompt"] = True
-        kwargs["install_browser"] = False
-
         try:
             kwargs = run.setup_wptrunner(run.virtualenv.Virtualenv(self.virtualenv_manager.virtualenv_root),
                                          **kwargs)
