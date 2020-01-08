@@ -5,10 +5,11 @@
 
 
 #include "KeyedStackCapturer.h"
-#include "nsPrintfCString.h"
-#include "mozilla/StackWalk.h"
-#include "ProcessedStack.h"
+
 #include "jsapi.h"
+#include "mozilla/StackWalk.h"
+#include "nsPrintfCString.h"
+#include "ProcessedStack.h"
 
 namespace {
 

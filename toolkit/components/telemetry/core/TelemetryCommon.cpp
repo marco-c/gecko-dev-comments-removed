@@ -4,17 +4,16 @@
 
 
 
-#include "nsITelemetry.h"
-#include "nsVersionComparator.h"
+#include "TelemetryCommon.h"
+
+#include <cstring>
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Preferences.h"
 #include "nsIConsoleService.h"
+#include "nsITelemetry.h"
 #include "nsThreadUtils.h"
-
-#include "TelemetryCommon.h"
+#include "nsVersionComparator.h"
 #include "TelemetryProcessData.h"
-
-#include <cstring>
 
 namespace mozilla {
 namespace Telemetry {

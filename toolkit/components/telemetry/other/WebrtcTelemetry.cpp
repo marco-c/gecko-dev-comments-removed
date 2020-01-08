@@ -4,13 +4,12 @@
 
 
 
-
-#include "mozilla/Telemetry.h"
 #include "WebrtcTelemetry.h"
+
 #include "jsapi.h"
+#include "mozilla/Telemetry.h"
 #include "nsPrintfCString.h"
 #include "nsTHashtable.h"
-
 void
 WebrtcTelemetry::RecordIceCandidateMask(const uint32_t iceCandidateBitmask,
                                         const bool success)

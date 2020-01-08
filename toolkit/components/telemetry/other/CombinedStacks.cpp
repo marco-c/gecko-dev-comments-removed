@@ -5,8 +5,9 @@
 
 
 #include "CombinedStacks.h"
-#include "mozilla/HangAnnotations.h"
+
 #include "jsapi.h"
+#include "mozilla/HangAnnotations.h"
 
 namespace mozilla {
 namespace Telemetry {

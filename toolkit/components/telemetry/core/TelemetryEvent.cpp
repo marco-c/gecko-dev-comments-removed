@@ -4,33 +4,32 @@
 
 
 
+#include "Telemetry.h"
+#include "TelemetryEvent.h"
 #include <prtime.h>
 #include <limits>
+#include "ipc/TelemetryIPCAccumulator.h"
+#include "jsapi.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Pair.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/Unused.h"
+#include "nsClassHashtable.h"
+#include "nsDataHashtable.h"
+#include "nsHashKeys.h"
 #include "nsIObserverService.h"
 #include "nsITelemetry.h"
-#include "nsHashKeys.h"
-#include "nsDataHashtable.h"
-#include "nsClassHashtable.h"
-#include "nsTArray.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/Unused.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Services.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/Pair.h"
-#include "jsapi.h"
 #include "nsJSUtils.h"
-#include "nsXULAppAPI.h"
-#include "nsUTF8Utils.h"
 #include "nsPrintfCString.h"
-
-#include "Telemetry.h"
+#include "nsTArray.h"
+#include "nsUTF8Utils.h"
+#include "nsXULAppAPI.h"
 #include "TelemetryCommon.h"
-#include "TelemetryEvent.h"
 #include "TelemetryEventData.h"
 #include "TelemetryScalar.h"
-#include "ipc/TelemetryIPCAccumulator.h"
 
 using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
