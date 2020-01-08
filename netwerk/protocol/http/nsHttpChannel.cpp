@@ -6963,6 +6963,21 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
                 mozilla::MutexAutoLock lock(mRCWNLock);
                 mFirstResponseSource = RESPONSE_FROM_NETWORK;
                 mOnStartRequestTimestamp = TimeStamp::Now();
+
+                
+                
+                
+                
+                if (mDidReval) {
+                    LOG(("  Removing conditional request headers"));
+                    UntieValidationRequest();
+                    mDidReval = false;
+                }
+                if (mCachedContentIsPartial) {
+                    LOG(("  Removing byte range request headers"));
+                    UntieByteRangeRequest();
+                    mCachedContentIsPartial = false;
+                }
             }
             mAvailableCachedAltDataType.Truncate();
         } else if (WRONG_RACING_RESPONSE_SOURCE(request)) {
