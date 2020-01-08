@@ -75,7 +75,7 @@ UiCompositorControllerParent::RecvResumeAndResize(const int32_t& aWidth,
   CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
   if (parent) {
     
-    parent->RecvForceIsFirstPaint();
+    parent->ForceIsFirstPaint();
     parent->ResumeCompositionAndResize(aWidth, aHeight);
   }
   return IPC_OK();

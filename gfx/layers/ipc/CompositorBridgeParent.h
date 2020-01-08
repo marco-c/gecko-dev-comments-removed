@@ -292,7 +292,7 @@ public:
 
 
 
-  mozilla::ipc::IPCResult RecvForceIsFirstPaint() override;
+  void ForceIsFirstPaint();
 
   static void SetShadowProperties(Layer* aLayer);
 
