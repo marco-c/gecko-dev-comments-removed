@@ -2,6 +2,7 @@
 
 
 
+
 if (typeof Mozilla == "undefined") {
   var Mozilla = {};
 }
@@ -34,7 +35,7 @@ if (typeof Mozilla == "undefined") {
     var event = new CustomEvent("mozTelemetry", {
       bubbles: true,
       detail: {
-        name,
+        name: name,
         data: data || {}
       }
     });
@@ -49,7 +50,7 @@ if (typeof Mozilla == "undefined") {
 
   function _registerInternalPolicyHandler() {
     
-    _initPromise = new Promise(resolveInit => {
+    _initPromise = new Promise(function(resolveInit) {
       
       function policyChangeHandler(updatedPref) {
         if (!("detail" in updatedPref) ||
@@ -78,11 +79,20 @@ if (typeof Mozilla == "undefined") {
   };
 
   Mozilla.ContentTelemetry.registerEvents = function(category, eventData) {
-    _sendMessageToChrome("registerEvents", { category, eventData });
+    _sendMessageToChrome("registerEvents", {
+      category: category,
+      eventData: eventData
+    });
   };
 
   Mozilla.ContentTelemetry.recordEvent = function(category, method, object, value, extra) {
-    _sendMessageToChrome("recordEvent", { category, method, object, value, extra });
+    _sendMessageToChrome("recordEvent", {
+      category: category,
+      method: method,
+      object: object,
+      value: value,
+      extra: extra
+    });
   };
 
   
