@@ -50,6 +50,7 @@ add_task(async function() {
     ["browser.contentblocking.allowlist.annotations.enabled", true],
     ["browser.contentblocking.allowlist.storage.enabled", true],
     ["browser.contentblocking.enabled", true],
+    ["browser.contentblocking.ui.enabled", true],
     ["browser.fastblock.enabled", false],
     ["privacy.trackingprotection.enabled", true],
     

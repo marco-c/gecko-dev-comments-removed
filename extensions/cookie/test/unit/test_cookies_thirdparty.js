@@ -8,6 +8,7 @@
 function run_test() {
   
   Services.prefs.setBoolPref("browser.contentblocking.enabled", true);
+  Services.prefs.setBoolPref("browser.contentblocking.ui.enabled", true);
 
   
   

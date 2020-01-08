@@ -1638,6 +1638,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "browser.contentblocking.ui.enabled",
+   browser_contentblocking_ui_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
   "browser.contentblocking.allowlist.storage.enabled",
    browser_contentblocking_allowlist_storage_enabled,
   bool, false

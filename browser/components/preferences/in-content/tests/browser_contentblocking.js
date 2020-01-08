@@ -1,6 +1,7 @@
 
 
 const CB_PREF = "browser.contentblocking.enabled";
+const CB_UI_PREF = "browser.contentblocking.ui.enabled";
 const CB_FB_UI_PREF = "browser.contentblocking.fastblock.ui.enabled";
 const CB_TP_UI_PREF = "browser.contentblocking.trackingprotection.ui.enabled";
 const CB_RT_UI_PREF = "browser.contentblocking.rejecttrackers.ui.enabled";
@@ -16,6 +17,7 @@ requestLongerTimeout(2);
 
 add_task(async function testContentBlockingToggle() {
   SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
     [TOGGLE_PREF, true],
   ]});
 
@@ -58,6 +60,10 @@ add_task(async function testContentBlockingToggle() {
 
 
 add_task(async function testContentBlockingMainCategory() {
+  SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
+  ]});
+
   let prefs = [
     [CB_PREF, true],
     [FB_PREF, true],
@@ -155,6 +161,10 @@ add_task(async function testContentBlockingMainCategory() {
 
 
 add_task(async function testContentBlockingRestoreDefaults() {
+  SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
+  ]});
+
   let prefs = {
     CB_PREF: null,
     FB_PREF: null,
@@ -217,6 +227,10 @@ add_task(async function testContentBlockingRestoreDefaults() {
 
 
 add_task(async function testContentBlockingRestoreDefaultsSkipExtensionControlled() {
+  SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
+  ]});
+
   function background() {
     browser.privacy.websites.trackingProtectionMode.set({value: "always"});
   }
@@ -376,6 +390,7 @@ add_task(async function testContentBlockingDependentControls() {
   
   
   SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
     [CB_FB_UI_PREF, true],
     [CB_TP_UI_PREF, true],
     [CB_RT_UI_PREF, true],
@@ -402,6 +417,7 @@ add_task(async function testContentBlockingDependentControls() {
   
   
   SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
     [CB_FB_UI_PREF, true],
     [CB_TP_UI_PREF, true],
     [CB_RT_UI_PREF, true],
@@ -427,6 +443,7 @@ add_task(async function testContentBlockingDependentControls() {
 
 add_task(async function testContentBlockingDependentTPControls() {
   SpecialPowers.pushPrefEnv({set: [
+    [CB_UI_PREF, true],
     [CB_FB_UI_PREF, true],
     [CB_TP_UI_PREF, true],
     [CB_RT_UI_PREF, true],
@@ -464,6 +481,7 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
   ];
   for (let value of prefValuesToTest) {
     await SpecialPowers.pushPrefEnv({set: [
+      [CB_UI_PREF, true],
       [CB_FB_UI_PREF, true],
       [CB_TP_UI_PREF, true],
       [CB_RT_UI_PREF, true],
@@ -507,6 +525,7 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
   ];
   for (let value of prefValuesToTest) {
     await SpecialPowers.pushPrefEnv({set: [
+      [CB_UI_PREF, true],
       [CB_FB_UI_PREF, true],
       [CB_TP_UI_PREF, true],
       [CB_RT_UI_PREF, true],
@@ -548,6 +567,7 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
   ];
   for (let value of prefValuesToTest) {
     await SpecialPowers.pushPrefEnv({set: [
+      [CB_UI_PREF, true],
       [CB_FB_UI_PREF, true],
       [CB_TP_UI_PREF, true],
       [CB_RT_UI_PREF, true],
@@ -584,6 +604,7 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
   ];
   for (let value of prefValuesToTest) {
     await SpecialPowers.pushPrefEnv({set: [
+      [CB_UI_PREF, true],
       [CB_FB_UI_PREF, true],
       [CB_TP_UI_PREF, true],
       [CB_RT_UI_PREF, true],
@@ -617,6 +638,7 @@ add_task(async function testContentBlockingDependentControlsOnSiteDataUI() {
 add_task(async function testContentBlockingThirdPartyCookiesWarning() {
   await SpecialPowers.pushPrefEnv({set: [
     [CB_PREF, true],
+    [CB_UI_PREF, true],
     [CB_FB_UI_PREF, true],
     [CB_TP_UI_PREF, true],
     [CB_RT_UI_PREF, true],

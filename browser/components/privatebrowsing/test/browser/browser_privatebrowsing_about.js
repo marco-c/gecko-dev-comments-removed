@@ -4,6 +4,7 @@
 
 const TP_PB_ENABLED_PREF = "privacy.trackingprotection.pbmode.enabled";
 const CB_ENABLED_PREF = "browser.contentblocking.enabled";
+const CB_UI_ENABLED_PREF = "browser.contentblocking.ui.enabled";
 
 
 
@@ -53,7 +54,36 @@ add_task(async function test_links() {
   Services.prefs.setCharPref("app.support.baseURL", "https://example.com/");
   Services.prefs.setCharPref("privacy.trackingprotection.introURL",
                              "https://example.com/tour");
+  Services.prefs.setBoolPref(CB_UI_ENABLED_PREF, false);
   registerCleanupFunction(function() {
+    Services.prefs.clearUserPref(CB_UI_ENABLED_PREF);
+    Services.prefs.clearUserPref("privacy.trackingprotection.introURL");
+    Services.prefs.clearUserPref("app.support.baseURL");
+  });
+
+  let { win, tab } = await openAboutPrivateBrowsing();
+
+  await testLinkOpensTab({ win, tab,
+    elementId: "learnMore",
+    expectedUrl: "https://example.com/private-browsing",
+  });
+
+  await testLinkOpensUrl({ win, tab,
+    elementId: "startTour",
+    expectedUrl: "https://example.com/tour?variation=0",
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_links_CB() {
+  
+  Services.prefs.setCharPref("app.support.baseURL", "https://example.com/");
+  Services.prefs.setCharPref("privacy.trackingprotection.introURL",
+                             "https://example.com/tour");
+  Services.prefs.setBoolPref(CB_UI_ENABLED_PREF, true);
+  registerCleanupFunction(function() {
+    Services.prefs.clearUserPref(CB_UI_ENABLED_PREF);
     Services.prefs.clearUserPref("privacy.trackingprotection.introURL");
     Services.prefs.clearUserPref("app.support.baseURL");
   });
@@ -90,13 +120,55 @@ function waitForPrefChanged(pref) {
 
 
 
-add_task(async function test_toggleTrackingProtectionContentBlocking() {
+add_task(async function test_toggleTrackingProtection() {
+  
   Services.prefs.setBoolPref(TP_PB_ENABLED_PREF, true);
+  
+  
   Services.prefs.setBoolPref(CB_ENABLED_PREF, false);
+  Services.prefs.setBoolPref(CB_UI_ENABLED_PREF, false);
 
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref(TP_PB_ENABLED_PREF);
     Services.prefs.clearUserPref(CB_ENABLED_PREF);
+    Services.prefs.clearUserPref(CB_UI_ENABLED_PREF);
+  });
+
+  let { win, tab } = await openAboutPrivateBrowsing();
+
+  
+  let promisePrefChanged = waitForPrefChanged(TP_PB_ENABLED_PREF);
+  await ContentTask.spawn(tab, {}, async function() {
+    is(content.document.getElementById("tpToggle").checked, true, "toggle is active");
+    content.document.getElementById("tpButton").click();
+  });
+  await promisePrefChanged;
+  ok(!Services.prefs.getBoolPref(TP_PB_ENABLED_PREF), "Tracking Protection is disabled.");
+
+  promisePrefChanged = waitForPrefChanged(TP_PB_ENABLED_PREF);
+  await ContentTask.spawn(tab, {}, async function() {
+    is(content.document.getElementById("tpToggle").checked, false, "toggle is not active");
+    content.document.getElementById("tpButton").click();
+  });
+  await promisePrefChanged;
+  ok(Services.prefs.getBoolPref(TP_PB_ENABLED_PREF), "Tracking Protection is enabled.");
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+
+
+
+
+add_task(async function test_toggleTrackingProtectionContentBlocking() {
+  Services.prefs.setBoolPref(TP_PB_ENABLED_PREF, true);
+  Services.prefs.setBoolPref(CB_ENABLED_PREF, false);
+  Services.prefs.setBoolPref(CB_UI_ENABLED_PREF, true);
+
+  registerCleanupFunction(function() {
+    Services.prefs.clearUserPref(TP_PB_ENABLED_PREF);
+    Services.prefs.clearUserPref(CB_ENABLED_PREF);
+    Services.prefs.clearUserPref(CB_UI_ENABLED_PREF);
   });
 
   let { win, tab } = await openAboutPrivateBrowsing();

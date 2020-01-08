@@ -1550,8 +1550,11 @@ pref("browser.contentblocking.rejecttrackers.reportBreakage.enabled", true);
 
 pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-issues.herokuapp.com/new");
 
+
+
 pref("browser.contentblocking.introCount", 0);
 
+pref("privacy.trackingprotection.introCount", 0);
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tracking-protection/start/");
 
 
