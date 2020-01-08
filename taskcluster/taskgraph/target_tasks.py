@@ -60,9 +60,6 @@ def filter_release_tasks(task, parameters):
             
             'linux-pgo', 'linux64-pgo',
             'win32-pgo', 'win64-pgo',
-            
-            'linux64-asan-reporter-nightly',
-            'win64-asan-reporter-nightly',
             ):
         return False
 
