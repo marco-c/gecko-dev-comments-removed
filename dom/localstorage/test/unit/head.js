@@ -3,6 +3,9 @@
 
 
 
+
+
+
 const NS_ERROR_DOM_QUOTA_EXCEEDED_ERR = 22;
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -130,10 +133,7 @@ function resetOrigin(principal) {
 }
 
 function installPackage(packageName) {
-  let directoryService = Cc["@mozilla.org/file/directory_service;1"]
-                         .getService(Ci.nsIProperties);
-
-  let currentDir = directoryService.get("CurWorkD", Ci.nsIFile);
+  let currentDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
 
   let packageFile = currentDir.clone();
   packageFile.append(packageName + ".zip");
@@ -179,10 +179,7 @@ function installPackage(packageName) {
 }
 
 function getProfileDir() {
-  let directoryService =
-    Cc["@mozilla.org/file/directory_service;1"].getService(Ci.nsIProperties);
-
-  return directoryService.get("ProfD", Ci.nsIFile);
+  return Services.dirsvc.get("ProfD", Ci.nsIFile);
 }
 
 
@@ -240,11 +237,11 @@ function getLocalStorage(principal) {
 
 function requestFinished(request) {
   return new Promise(function(resolve, reject) {
-    request.callback = function(request) {
-      if (request.resultCode == Cr.NS_OK) {
-        resolve(request.result);
+    request.callback = function(requestInner) {
+      if (requestInner.resultCode == Cr.NS_OK) {
+        resolve(requestInner.result);
       } else {
-        reject(request.resultCode);
+        reject(requestInner.resultCode);
       }
     };
   });
