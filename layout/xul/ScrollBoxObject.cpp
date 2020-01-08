@@ -1,0 +1,300 @@
+
+
+
+
+
+
+#include "mozilla/dom/ScrollBoxObject.h"
+#include "mozilla/dom/ScrollBoxObjectBinding.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ToJSValue.h"
+#include "nsCOMPtr.h"
+#include "nsIPresShell.h"
+#include "nsIContent.h"
+#include "nsPresContext.h"
+#include "nsBox.h"
+#include "nsIScrollableFrame.h"
+
+namespace mozilla {
+namespace dom {
+
+ScrollBoxObject::ScrollBoxObject()
+{
+}
+
+ScrollBoxObject::~ScrollBoxObject()
+{
+}
+
+JSObject* ScrollBoxObject::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
+{
+  return ScrollBoxObject_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+nsIScrollableFrame* ScrollBoxObject::GetScrollFrame()
+{
+  return do_QueryFrame(GetFrame(false));
+}
+
+void ScrollBoxObject::ScrollTo(int32_t x, int32_t y, ErrorResult& aRv)
+{
+  nsIScrollableFrame* sf = GetScrollFrame();
+  if (!sf) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  sf->ScrollToCSSPixels(CSSIntPoint(x, y));
+}
+
+void ScrollBoxObject::ScrollBy(int32_t dx, int32_t dy, ErrorResult& aRv)
+{
+  CSSIntPoint pt;
+  GetPosition(pt, aRv);
+
+  if (aRv.Failed()) {
+    return;
+  }
+
+  ScrollTo(pt.x + dx, pt.y + dy, aRv);
+}
+
+
+
+
+
+
+
+static nsIFrame* GetScrolledBox(BoxObject* aScrollBox) {
+  nsIFrame* frame = aScrollBox->GetFrame(false);
+  if (!frame) {
+    return nullptr;
+  }
+
+  nsIScrollableFrame* scrollFrame = do_QueryFrame(frame);
+  if (!scrollFrame) {
+    NS_WARNING("ScrollBoxObject attached to something that's not a scroll frame!");
+    return nullptr;
+  }
+
+  nsIFrame* scrolledFrame = scrollFrame->GetScrolledFrame();
+  if (!scrolledFrame)
+    return nullptr;
+  return nsBox::GetChildXULBox(scrolledFrame);
+}
+
+void ScrollBoxObject::ScrollByIndex(int32_t dindexes, ErrorResult& aRv)
+{
+    nsIScrollableFrame* sf = GetScrollFrame();
+    if (!sf) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+
+    nsIFrame* scrolledBox = GetScrolledBox(this);
+    if (!scrolledBox) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+
+    nsRect rect;
+
+    
+    nsIFrame* child = nsBox::GetChildXULBox(scrolledBox);
+
+    bool horiz = scrolledBox->IsXULHorizontal();
+    nsPoint cp = sf->GetScrollPosition();
+    nscoord diff = 0;
+    int32_t curIndex = 0;
+    bool isLTR = scrolledBox->IsXULNormalDirection();
+
+    int32_t frameWidth = 0;
+    if (!isLTR && horiz) {
+      GetWidth(&frameWidth);
+      nsCOMPtr<nsIPresShell> shell = GetPresShell(false);
+      if (!shell) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return;
+      }
+      frameWidth = nsPresContext::CSSPixelsToAppUnits(frameWidth);
+    }
+
+    
+    while(child) {
+      rect = child->GetRect();
+      if (horiz) {
+        
+        
+        
+        
+        
+        
+        diff = rect.x + rect.width/2; 
+        if ((isLTR && diff > cp.x) ||
+            (!isLTR && diff < cp.x + frameWidth)) {
+          break;
+        }
+      } else {
+        diff = rect.y + rect.height/2;
+        if (diff > cp.y) {
+          break;
+        }
+      }
+      child = nsBox::GetNextXULBox(child);
+      curIndex++;
+    }
+
+    int32_t count = 0;
+
+    if (dindexes == 0)
+      return;
+
+    if (dindexes > 0) {
+      while(child) {
+        child = nsBox::GetNextXULBox(child);
+        if (child) {
+          rect = child->GetRect();
+        }
+        count++;
+        if (count >= dindexes) {
+          break;
+        }
+      }
+
+   } else if (dindexes < 0) {
+      child = nsBox::GetChildXULBox(scrolledBox);
+      while(child) {
+        rect = child->GetRect();
+        if (count >= curIndex + dindexes) {
+          break;
+        }
+
+        count++;
+        child = nsBox::GetNextXULBox(child);
+
+      }
+   }
+
+   nscoord csspixel = nsPresContext::CSSPixelsToAppUnits(1);
+   if (horiz) {
+       
+       
+       
+       
+
+       nsPoint pt(isLTR ? rect.x : rect.x + rect.width - frameWidth,
+                  cp.y);
+
+       
+       
+       
+       nsRect range(pt.x, pt.y, csspixel, 0);
+       if (isLTR) {
+         range.x -= csspixel;
+       }
+       sf->ScrollTo(pt, nsIScrollableFrame::INSTANT, &range);
+   } else {
+       
+       nsRect range(cp.x, rect.y - csspixel, 0, csspixel);
+       sf->ScrollTo(nsPoint(cp.x, rect.y), nsIScrollableFrame::INSTANT, &range);
+   }
+}
+
+void ScrollBoxObject::ScrollToElement(Element& child, ErrorResult& aRv)
+{
+  nsCOMPtr<nsIPresShell> shell = GetPresShell(false);
+  if (!shell) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  shell->ScrollContentIntoView(&child,
+                               nsIPresShell::ScrollAxis(
+                                 nsIPresShell::SCROLL_TOP,
+                                 nsIPresShell::SCROLL_ALWAYS),
+                               nsIPresShell::ScrollAxis(
+                                 nsIPresShell::SCROLL_LEFT,
+                                 nsIPresShell::SCROLL_ALWAYS),
+                               nsIPresShell::SCROLL_FIRST_ANCESTOR_ONLY |
+                               nsIPresShell::SCROLL_OVERFLOW_HIDDEN);
+}
+
+int32_t ScrollBoxObject::GetPositionX(ErrorResult& aRv)
+{
+  CSSIntPoint pt;
+  GetPosition(pt, aRv);
+  return pt.x;
+}
+
+int32_t ScrollBoxObject::GetPositionY(ErrorResult& aRv)
+{
+  CSSIntPoint pt;
+  GetPosition(pt, aRv);
+  return pt.y;
+}
+
+int32_t ScrollBoxObject::GetScrolledWidth(ErrorResult& aRv)
+{
+  nsRect scrollRect;
+  GetScrolledSize(scrollRect, aRv);
+  return scrollRect.width;
+}
+
+int32_t ScrollBoxObject::GetScrolledHeight(ErrorResult& aRv)
+{
+  nsRect scrollRect;
+  GetScrolledSize(scrollRect, aRv);
+  return scrollRect.height;
+}
+
+
+void ScrollBoxObject::GetPosition(CSSIntPoint& aPos, ErrorResult& aRv)
+{
+  nsIScrollableFrame* sf = GetScrollFrame();
+  if (!sf) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  aPos = sf->GetScrollPositionCSSPixels();
+}
+
+
+void ScrollBoxObject::GetScrolledSize(nsRect& aRect, ErrorResult& aRv)
+{
+    nsIFrame* scrolledBox = GetScrolledBox(this);
+    if (!scrolledBox) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+
+    aRect = scrolledBox->GetRect();
+    aRect.width  = nsPresContext::AppUnitsToIntCSSPixels(aRect.width);
+    aRect.height = nsPresContext::AppUnitsToIntCSSPixels(aRect.height);
+}
+
+void ScrollBoxObject::EnsureElementIsVisible(Element& child, ErrorResult& aRv)
+{
+    nsCOMPtr<nsIPresShell> shell = GetPresShell(false);
+    if (!shell) {
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+    }
+
+    shell->ScrollContentIntoView(&child,
+                                 nsIPresShell::ScrollAxis(),
+                                 nsIPresShell::ScrollAxis(),
+                                 nsIPresShell::SCROLL_FIRST_ANCESTOR_ONLY |
+                                 nsIPresShell::SCROLL_OVERFLOW_HIDDEN);
+}
+} 
+} 
+
+using namespace mozilla::dom;
+
+nsresult
+NS_NewScrollBoxObject(nsIBoxObject** aResult)
+{
+    NS_ADDREF(*aResult = new ScrollBoxObject());
+    return NS_OK;
+}

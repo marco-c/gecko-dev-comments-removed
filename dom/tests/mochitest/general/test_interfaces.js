@@ -1257,8 +1257,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULPopupElement", insecureContext: true, xbl: true},
 
-    {name: "XULScrollElement", insecureContext: true, xbl: true},
-
   ];
 
 
