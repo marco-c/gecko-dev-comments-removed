@@ -66,6 +66,7 @@ def write_test_settings_json(test_details, oskey):
     
     
     test_url = transform_platform(test_details['test_url'], oskey)
+
     test_settings = {
         "raptor-options": {
             "type": test_details['type'],
@@ -170,6 +171,18 @@ def get_raptor_test_list(args, oskey):
             if tail == _ini:
                 
                 tests_to_run.append(next_test)
+
+    
+    
+    if args.page_cycles is not None:
+        LOG.info("setting page-cycles to %d as specified on the command line" % args.page_cycles)
+        next_test['page_cycles'] = args.page_cycles
+
+    
+    
+    if args.page_timeout is not None:
+        LOG.info("setting page-timeout to %d as specified on the command line" % args.page_timeout)
+        next_test['page_timeout'] = args.page_timeout
 
     
     if args.gecko_profile is True:
