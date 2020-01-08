@@ -458,6 +458,10 @@ class TabTracker extends TabTrackerBase {
           
           
           Promise.resolve().then(() => {
+            if (!event.originalTarget.parentNode) {
+              
+              return;
+            }
             this.emitCreated(event.originalTarget, currentTabSize);
           });
         }
@@ -480,6 +484,10 @@ class TabTracker extends TabTrackerBase {
         
         
         Promise.resolve().then(() => {
+          if (!nativeTab.parentNode) {
+            
+            return;
+          }
           this.emitActivated(nativeTab);
         });
         break;
