@@ -149,7 +149,15 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
                 
                 GeckoProfile.get(context).waitForOldSessionDataProcessing();
 
-                final String jsonString = GeckoProfile.get(context).readPreviousSessionFile();
+                final String jsonString;
+                try {
+                    jsonString = GeckoProfile.get(context).readPreviousSessionFile();
+                } catch (OutOfMemoryError oom) {
+                    
+                    
+                    
+                    return;
+                }
                 if (jsonString == null) {
                     
                     return;
@@ -167,7 +175,13 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
                             return;
                         }
 
-                        parsedTabs.add(new ClosedTab(url, tab.getTitle(), tab.getTabObject().toString()));
+                        try {
+                            parsedTabs.add(new ClosedTab(url, tab.getTitle(), tab.getTabObject().toString()));
+                        } catch (OutOfMemoryError oom) {
+                            
+                            
+                            
+                        }
                     }
                 }.parse(jsonString);
 
