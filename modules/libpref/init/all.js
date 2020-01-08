@@ -653,7 +653,6 @@ pref("layers.geometry.d3d11.enabled", true);
 
 
 pref("apz.allow_checkerboarding", true);
-pref("apz.allow_double_tap_zooming", true);
 pref("apz.allow_immediate_handoff", true);
 pref("apz.allow_zooming", false);
 pref("apz.android.chrome_fling_physics.enabled", true);
@@ -4852,7 +4851,7 @@ pref("layers.max-active", -1);
 
 pref("layers.offmainthreadcomposition.frame-rate", -1);
 
-#if defined(XP_MACOSX)
+#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
 pref("layers.enable-tiles", true);
 #else
 pref("layers.enable-tiles", false);
@@ -5812,6 +5811,8 @@ pref("dom.timeout.max_consecutive_callbacks_ms", 4);
 
 pref("dom.payments.request.enabled", false);
 pref("dom.payments.loglevel", "Warn");
+pref("dom.payments.defaults.saveCreditCard", false);
+pref("dom.payments.defaults.saveAddress", true);
 
 #ifdef FUZZING
 pref("fuzzing.enabled", false);

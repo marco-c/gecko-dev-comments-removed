@@ -143,9 +143,11 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
       
       this.persistCheckbox.hidden = true;
     } else {
+      let defaults = PaymentDialogUtils.getDefaultPreferences();
       
       this.persistCheckbox.hidden = false;
-      this.persistCheckbox.checked = !state.isPrivate;
+      this.persistCheckbox.checked = state.isPrivate ? false :
+                                                       defaults.saveAddressDefaultChecked;
     }
 
     this.formHandler.loadRecord(record);
