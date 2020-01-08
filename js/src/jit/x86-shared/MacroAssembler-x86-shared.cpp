@@ -865,13 +865,14 @@ MacroAssembler::oolWasmTruncateCheckF64ToI32(FloatRegister input, Register outpu
         if (isUnsigned) {
             
             
+            
             Label nonNegative;
             loadConstantDouble(0.0, ScratchDoubleReg);
             branchDouble(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
             move32(Imm32(0), output);
             jump(rejoin);
-            bind(&nonNegative);
 
+            bind(&nonNegative);
             move32(Imm32(UINT32_MAX), output);
         } else {
             
@@ -880,8 +881,8 @@ MacroAssembler::oolWasmTruncateCheckF64ToI32(FloatRegister input, Register outpu
             branchDouble(Assembler::DoubleOrdered, input, input, &notNaN);
             move32(Imm32(0), output);
             jump(rejoin);
-            bind(&notNaN);
 
+            bind(&notNaN);
             loadConstantDouble(0.0, ScratchDoubleReg);
             branchDouble(Assembler::DoubleLessThan, input, ScratchDoubleReg, rejoin);
             sub32(Imm32(1), output);
@@ -924,13 +925,14 @@ MacroAssembler::oolWasmTruncateCheckF32ToI32(FloatRegister input, Register outpu
         if (isUnsigned) {
             
             
+            
             Label nonNegative;
             loadConstantFloat32(0.0f, ScratchDoubleReg);
             branchFloat(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
             move32(Imm32(0), output);
             jump(rejoin);
-            bind(&nonNegative);
 
+            bind(&nonNegative);
             move32(Imm32(UINT32_MAX), output);
         } else {
             
@@ -939,8 +941,8 @@ MacroAssembler::oolWasmTruncateCheckF32ToI32(FloatRegister input, Register outpu
             branchFloat(Assembler::DoubleOrdered, input, input, &notNaN);
             move32(Imm32(0), output);
             jump(rejoin);
-            bind(&notNaN);
 
+            bind(&notNaN);
             loadConstantFloat32(0.0f, ScratchFloat32Reg);
             branchFloat(Assembler::DoubleLessThan, input, ScratchFloat32Reg, rejoin);
             sub32(Imm32(1), output);
@@ -981,13 +983,14 @@ MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, Register64 out
         if (isUnsigned) {
             
             
-            Label nonNegative;
+            
+            Label positive;
             loadConstantDouble(0.0, ScratchDoubleReg);
-            branchDouble(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
+            branchDouble(Assembler::DoubleGreaterThan, input, ScratchDoubleReg, &positive);
             move64(Imm64(0), output);
             jump(rejoin);
-            bind(&nonNegative);
 
+            bind(&positive);
             move64(Imm64(UINT64_MAX), output);
         } else {
             
@@ -996,8 +999,8 @@ MacroAssembler::oolWasmTruncateCheckF64ToI64(FloatRegister input, Register64 out
             branchDouble(Assembler::DoubleOrdered, input, input, &notNaN);
             move64(Imm64(0), output);
             jump(rejoin);
-            bind(&notNaN);
 
+            bind(&notNaN);
             loadConstantDouble(0.0, ScratchDoubleReg);
             branchDouble(Assembler::DoubleLessThan, input, ScratchDoubleReg, rejoin);
             sub64(Imm64(1), output);
@@ -1041,13 +1044,14 @@ MacroAssembler::oolWasmTruncateCheckF32ToI64(FloatRegister input, Register64 out
         if (isUnsigned) {
             
             
-            Label nonNegative;
-            loadConstantFloat32(0.0f, ScratchDoubleReg);
-            branchFloat(Assembler::DoubleGreaterThanOrEqual, input, ScratchDoubleReg, &nonNegative);
+            
+            Label positive;
+            loadConstantFloat32(0.0f, ScratchFloat32Reg);
+            branchFloat(Assembler::DoubleGreaterThan, input, ScratchFloat32Reg, &positive);
             move64(Imm64(0), output);
             jump(rejoin);
-            bind(&nonNegative);
 
+            bind(&positive);
             move64(Imm64(UINT64_MAX), output);
         } else {
             
@@ -1056,8 +1060,8 @@ MacroAssembler::oolWasmTruncateCheckF32ToI64(FloatRegister input, Register64 out
             branchFloat(Assembler::DoubleOrdered, input, input, &notNaN);
             move64(Imm64(0), output);
             jump(rejoin);
-            bind(&notNaN);
 
+            bind(&notNaN);
             loadConstantFloat32(0.0f, ScratchFloat32Reg);
             branchFloat(Assembler::DoubleLessThan, input, ScratchFloat32Reg, rejoin);
             sub64(Imm64(1), output);

@@ -462,7 +462,7 @@ SaturatingTruncateDoubleToUint64(double input)
         return UINT64_MAX;
     }
     
-    if (input >= -1.0) {
+    if (input > -1.0) {
         return uint64_t(input);
     }
     

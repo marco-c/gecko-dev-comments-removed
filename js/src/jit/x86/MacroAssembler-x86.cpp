@@ -1046,15 +1046,21 @@ MacroAssembler::wasmTruncateDoubleToUInt64(FloatRegister input, Register64 outpu
     reserveStack(2 * sizeof(int32_t));
     storeDouble(input, Operand(esp, 0));
     branchDoubleNotInUInt64Range(Address(esp, 0), temp, &fail);
+    size_t stackBeforeBranch = framePushed();
     jump(&convert);
 
-    
     bind(&fail);
     freeStack(2 * sizeof(int32_t));
     jump(oolEntry);
-    bind(oolRejoin);
-    reserveStack(2 * sizeof(int32_t));
-    storeDouble(input, Operand(esp, 0));
+    if (isSaturating) {
+        
+        setFramePushed(stackBeforeBranch);
+    } else {
+        
+        bind(oolRejoin);
+        reserveStack(2 * sizeof(int32_t));
+        storeDouble(input, Operand(esp, 0));
+    }
 
     
     bind(&convert);
@@ -1063,6 +1069,10 @@ MacroAssembler::wasmTruncateDoubleToUInt64(FloatRegister input, Register64 outpu
     
     load64(Address(esp, 0), output);
     freeStack(2 * sizeof(int32_t));
+
+    if (isSaturating) {
+        bind(oolRejoin);
+    }
 }
 
 void
@@ -1077,15 +1087,21 @@ MacroAssembler::wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 outp
     reserveStack(2 * sizeof(int32_t));
     storeFloat32(input, Operand(esp, 0));
     branchFloat32NotInUInt64Range(Address(esp, 0), temp, &fail);
+    size_t stackBeforeBranch = framePushed();
     jump(&convert);
 
-    
     bind(&fail);
     freeStack(2 * sizeof(int32_t));
     jump(oolEntry);
-    bind(oolRejoin);
-    reserveStack(2 * sizeof(int32_t));
-    storeFloat32(input, Operand(esp, 0));
+    if (isSaturating) {
+        
+        setFramePushed(stackBeforeBranch);
+    } else {
+        
+        bind(oolRejoin);
+        reserveStack(2 * sizeof(int32_t));
+        storeFloat32(input, Operand(esp, 0));
+    }
 
     
     bind(&convert);
@@ -1094,8 +1110,11 @@ MacroAssembler::wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 outp
     
     load64(Address(esp, 0), output);
     freeStack(2 * sizeof(int32_t));
-}
 
+    if (isSaturating) {
+        bind(oolRejoin);
+    }
+}
 
 
 

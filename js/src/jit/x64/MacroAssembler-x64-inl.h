@@ -917,6 +917,7 @@ MacroAssembler::truncateFloat32ToUInt64(Address src, Address dest, Register temp
     truncateFloat32ToInt64(src, dest, temp);
 
     
+    
     loadPtr(dest, temp);
     branchPtr(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
 
