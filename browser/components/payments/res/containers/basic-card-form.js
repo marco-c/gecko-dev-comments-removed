@@ -4,6 +4,7 @@
 
 
 import LabelledCheckbox from "../components/labelled-checkbox.js";
+import PaymentRequestPage from "../components/payment-request-page.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
 
@@ -16,16 +17,11 @@ import paymentRequest from "../paymentRequest.js";
 
 
 
-export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLElement) {
+export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRequestPage) {
   constructor() {
     super();
 
-    this.pageTitle = document.createElement("h2");
     this.genericErrorText = document.createElement("div");
-
-    this.cancelButton = document.createElement("button");
-    this.cancelButton.className = "cancel-button";
-    this.cancelButton.addEventListener("click", this);
 
     this.addressAddLink = document.createElement("a");
     this.addressAddLink.className = "add-link";
@@ -36,6 +32,14 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
     this.addressEditLink.href = "javascript:void(0)";
     this.addressEditLink.addEventListener("click", this);
 
+    this.persistCheckbox = new LabelledCheckbox();
+    this.persistCheckbox.className = "persist-checkbox";
+
+    
+    this.cancelButton = document.createElement("button");
+    this.cancelButton.className = "cancel-button";
+    this.cancelButton.addEventListener("click", this);
+
     this.backButton = document.createElement("button");
     this.backButton.className = "back-button";
     this.backButton.addEventListener("click", this);
@@ -44,8 +48,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
     this.saveButton.className = "save-button primary";
     this.saveButton.addEventListener("click", this);
 
-    this.persistCheckbox = new LabelledCheckbox();
-    this.persistCheckbox.className = "persist-checkbox";
+    this.footer.append(this.cancelButton, this.backButton, this.saveButton);
 
     
     let url = "formautofill/editCreditCard.xhtml";
@@ -70,8 +73,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
 
   connectedCallback() {
     this.promiseReady.then(form => {
-      this.appendChild(this.pageTitle);
-      this.appendChild(form);
+      this.body.appendChild(form);
 
       let record = {};
       let addresses = [];
@@ -89,11 +91,8 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
       let billingAddressRow = this.form.querySelector(".billingAddressRow");
       billingAddressRow.appendChild(fragment);
 
-      this.appendChild(this.persistCheckbox);
-      this.appendChild(this.genericErrorText);
-      this.appendChild(this.cancelButton);
-      this.appendChild(this.backButton);
-      this.appendChild(this.saveButton);
+      this.body.appendChild(this.persistCheckbox);
+      this.body.appendChild(this.genericErrorText);
       
       
       super.connectedCallback();
@@ -135,7 +134,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
 
     
     if (editing) {
-      this.pageTitle.textContent = this.dataset.editBasicCardTitle;
+      this.pageTitleHeading.textContent = this.dataset.editBasicCardTitle;
       record = basicCards[basicCardPage.guid];
       if (!record) {
         throw new Error("Trying to edit a non-existing card: " + basicCardPage.guid);
@@ -143,7 +142,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
       
       this.persistCheckbox.hidden = true;
     } else {
-      this.pageTitle.textContent = this.dataset.addBasicCardTitle;
+      this.pageTitleHeading.textContent = this.dataset.addBasicCardTitle;
       
       record.billingAddressGUID = basicCardPage.billingAddressGUID;
       if (!record.billingAddressGUID && selectedShippingAddress) {
