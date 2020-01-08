@@ -52,7 +52,7 @@ fn parse_counters<'i, 't>(
     default_value: i32,
 ) -> Result<Vec<CounterPair<Integer>>, ParseError<'i>> {
     if input
-        .r#try(|input| input.expect_ident_matching("none"))
+        .try(|input| input.expect_ident_matching("none"))
         .is_ok()
     {
         return Ok(vec![]);
@@ -68,7 +68,7 @@ fn parse_counters<'i, 't>(
         };
 
         let value = input
-            .r#try(|input| Integer::parse(context, input))
+            .try(|input| Integer::parse(context, input))
             .unwrap_or(Integer::new(default_value));
         counters.push(CounterPair { name, value });
     }
@@ -80,17 +80,17 @@ fn parse_counters<'i, 't>(
     }
 }
 
-/// The specified value for the `content` property.
+
 pub type Content = generics::Content<SpecifiedImageUrl>;
 
-/// The specified value for a content item in the `content` property.
+
 pub type ContentItem = generics::ContentItem<SpecifiedImageUrl>;
 
 impl Content {
     #[cfg(feature = "servo")]
     fn parse_counter_style(_: &ParserContext, input: &mut Parser) -> ListStyleType {
         input
-            .r#try(|input| {
+            .try(|input| {
                 input.expect_comma()?;
                 ListStyleType::parse(input)
             })
@@ -100,7 +100,7 @@ impl Content {
     #[cfg(feature = "gecko")]
     fn parse_counter_style(context: &ParserContext, input: &mut Parser) -> CounterStyleOrNone {
         input
-            .r#try(|input| {
+            .try(|input| {
                 input.expect_comma()?;
                 CounterStyleOrNone::parse(context, input)
             })
@@ -109,21 +109,21 @@ impl Content {
 }
 
 impl Parse for Content {
-    // normal | none | [ <string> | <counter> | open-quote | close-quote | no-open-quote |
-    // no-close-quote ]+
-    // TODO: <uri>, attr(<identifier>)
+    
+    
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if input
-            .r#try(|input| input.expect_ident_matching("normal"))
+            .try(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
             return Ok(generics::Content::Normal);
         }
         if input
-            .r#try(|input| input.expect_ident_matching("none"))
+            .try(|input| input.expect_ident_matching("none"))
             .is_ok()
         {
             return Ok(generics::Content::None);
@@ -131,7 +131,7 @@ impl Parse for Content {
         #[cfg(feature = "gecko")]
         {
             if input
-                .r#try(|input| input.expect_ident_matching("-moz-alt-content"))
+                .try(|input| input.expect_ident_matching("-moz-alt-content"))
                 .is_ok()
             {
                 return Ok(generics::Content::MozAltContent);
@@ -142,12 +142,12 @@ impl Parse for Content {
         loop {
             #[cfg(feature = "gecko")]
             {
-                if let Ok(url) = input.r#try(|i| SpecifiedImageUrl::parse(context, i)) {
+                if let Ok(url) = input.try(|i| SpecifiedImageUrl::parse(context, i)) {
                     content.push(generics::ContentItem::Url(url));
                     continue;
                 }
             }
-            // FIXME: remove clone() when lifetimes are non-lexical
+            
             match input.next().map(|t| t.clone()) {
                 Ok(Token::QuotedString(ref value)) => {
                     content.push(generics::ContentItem::String(

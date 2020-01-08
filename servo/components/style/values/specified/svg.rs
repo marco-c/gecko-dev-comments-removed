@@ -63,7 +63,7 @@ impl Parse for SVGLength {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         input
-            .r#try(|i| SvgLengthOrPercentageOrNumber::parse(context, i))
+            .try(|i| SvgLengthOrPercentageOrNumber::parse(context, i))
             .map(Into::into)
             .or_else(|_| parse_context_value(input, generic::SVGLength::ContextValue))
     }
@@ -75,12 +75,12 @@ impl From<SvgLengthOrPercentageOrNumber> for SVGLength {
     }
 }
 
-/// A value of <length> | <percentage> | <number> for stroke-width/stroke-dasharray.
-/// <https://www.w3.org/TR/SVG11/painting.html#StrokeProperties>
+
+
 pub type NonNegativeSvgLengthOrPercentageOrNumber =
     generic::SvgLengthOrPercentageOrNumber<NonNegativeLengthOrPercentage, NonNegativeNumber>;
 
-/// A non-negative version of SVGLength.
+
 pub type SVGWidth = generic::SVGLength<NonNegativeSvgLengthOrPercentageOrNumber>;
 
 impl Parse for SVGWidth {
@@ -89,7 +89,7 @@ impl Parse for SVGWidth {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         input
-            .r#try(|i| NonNegativeSvgLengthOrPercentageOrNumber::parse(context, i))
+            .try(|i| NonNegativeSvgLengthOrPercentageOrNumber::parse(context, i))
             .map(Into::into)
             .or_else(|_| parse_context_value(input, generic::SVGLength::ContextValue))
     }
@@ -101,7 +101,7 @@ impl From<NonNegativeSvgLengthOrPercentageOrNumber> for SVGWidth {
     }
 }
 
-/// [ <length> | <percentage> | <number> ]# | context-value
+
 pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeSvgLengthOrPercentageOrNumber>;
 
 impl Parse for SVGStrokeDashArray {
@@ -109,13 +109,13 @@ impl Parse for SVGStrokeDashArray {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(values) = input.r#try(|i| {
+        if let Ok(values) = input.try(|i| {
             CommaWithSpace::parse(i, |i| {
                 NonNegativeSvgLengthOrPercentageOrNumber::parse(context, i)
             })
         }) {
             Ok(generic::SVGStrokeDashArray::Values(values))
-        } else if let Ok(_) = input.r#try(|i| i.expect_ident_matching("none")) {
+        } else if let Ok(_) = input.try(|i| i.expect_ident_matching("none")) {
             Ok(generic::SVGStrokeDashArray::Values(vec![]))
         } else {
             parse_context_value(input, generic::SVGStrokeDashArray::ContextValue)
@@ -123,7 +123,7 @@ impl Parse for SVGStrokeDashArray {
     }
 }
 
-/// <opacity-value> | context-fill-opacity | context-stroke-opacity
+
 pub type SVGOpacity = generic::SVGOpacity<Opacity>;
 
 impl Parse for SVGOpacity {
@@ -131,7 +131,7 @@ impl Parse for SVGOpacity {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(opacity) = input.r#try(|i| Opacity::parse(context, i)) {
+        if let Ok(opacity) = input.try(|i| Opacity::parse(context, i)) {
             return Ok(generic::SVGOpacity::Opacity(opacity));
         }
 
@@ -142,51 +142,51 @@ impl Parse for SVGOpacity {
     }
 }
 
-/// The specified value for a single CSS paint-order property.
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, ToCss)]
 pub enum PaintOrder {
-    /// `normal` variant
+    
     Normal = 0,
-    /// `fill` variant
+    
     Fill = 1,
-    /// `stroke` variant
+    
     Stroke = 2,
-    /// `markers` variant
+    
     Markers = 3,
 }
 
-/// Number of non-normal components
+
 const PAINT_ORDER_COUNT: u8 = 3;
 
-/// Number of bits for each component
+
 const PAINT_ORDER_SHIFT: u8 = 2;
 
-/// Mask with above bits set
+
 const PAINT_ORDER_MASK: u8 = 0b11;
 
-/// The specified value is tree `PaintOrder` values packed into the
-/// bitfields below, as a six-bit field, of 3 two-bit pairs
-///
-/// Each pair can be set to FILL, STROKE, or MARKERS
-/// Lowest significant bit pairs are highest priority.
-///  `normal` is the empty bitfield. The three pairs are
-/// never zero in any case other than `normal`.
-///
-/// Higher priority values, i.e. the values specified first,
-/// will be painted first (and may be covered by paintings of lower priority)
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct SVGPaintOrder(pub u8);
 
 impl SVGPaintOrder {
-    /// Get default `paint-order` with `0`
+    
     pub fn normal() -> Self {
         SVGPaintOrder(0)
     }
 
-    /// Get variant of `paint-order`
+    
     pub fn order_at(&self, pos: u8) -> PaintOrder {
-        // Safe because PaintOrder covers all possible patterns.
+        
         unsafe { ::std::mem::transmute((self.0 >> pos * PAINT_ORDER_SHIFT) & PAINT_ORDER_MASK) }
     }
 }
@@ -196,18 +196,18 @@ impl Parse for SVGPaintOrder {
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<SVGPaintOrder, ParseError<'i>> {
-        if let Ok(()) = input.r#try(|i| i.expect_ident_matching("normal")) {
+        if let Ok(()) = input.try(|i| i.expect_ident_matching("normal")) {
             return Ok(SVGPaintOrder::normal());
         }
 
         let mut value = 0;
-        // bitfield representing what we've seen so far
-        // bit 1 is fill, bit 2 is stroke, bit 3 is markers
+        
+        
         let mut seen = 0;
         let mut pos = 0;
 
         loop {
-            let result: Result<_, ParseError> = input.r#try(|input| {
+            let result: Result<_, ParseError> = input.try(|input| {
                 try_match_ident_ignore_ascii_case! { input,
                     "fill" => Ok(PaintOrder::Fill),
                     "stroke" => Ok(PaintOrder::Stroke),
@@ -218,7 +218,7 @@ impl Parse for SVGPaintOrder {
             match result {
                 Ok(val) => {
                     if (seen & (1 << val as u8)) != 0 {
-                        // don't parse the same ident twice
+                        
                         return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                     }
 
@@ -231,14 +231,14 @@ impl Parse for SVGPaintOrder {
         }
 
         if value == 0 {
-            // Couldn't find any keyword
+            
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        // fill in rest
+        
         for i in pos..PAINT_ORDER_COUNT {
             for paint in 0..PAINT_ORDER_COUNT {
-                // if not seen, set bit at position, mark as seen
+                
                 if (seen & (1 << paint)) == 0 {
                     seen |= 1 << paint;
                     value |= paint << (i * PAINT_ORDER_SHIFT);
@@ -280,8 +280,8 @@ impl ToCss for SVGPaintOrder {
     }
 }
 
-/// Specified MozContextProperties value.
-/// Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-context-properties)
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct MozContextProperties(pub CustomIdent);
 

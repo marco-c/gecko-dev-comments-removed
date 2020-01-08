@@ -38,7 +38,7 @@ impl Transform {
         use style_traits::{Separator, Space};
 
         if input
-            .r#try(|input| input.expect_ident_matching("none"))
+            .try(|input| input.expect_ident_matching("none"))
             .is_ok()
         {
             return Ok(generic::Transform(Vec::new()));
@@ -106,7 +106,7 @@ impl Transform {
                     },
                     "translate" => {
                         let sx = specified::LengthOrPercentage::parse(context, input)?;
-                        if input.r#try(|input| input.expect_comma()).is_ok() {
+                        if input.try(|input| input.expect_comma()).is_ok() {
                             let sy = specified::LengthOrPercentage::parse(context, input)?;
                             Ok(generic::TransformOperation::Translate(sx, Some(sy)))
                         } else {
@@ -135,7 +135,7 @@ impl Transform {
                     },
                     "scale" => {
                         let sx = Number::parse(context, input)?;
-                        if input.r#try(|input| input.expect_comma()).is_ok() {
+                        if input.try(|input| input.expect_comma()).is_ok() {
                             let sy = Number::parse(context, input)?;
                             Ok(generic::TransformOperation::Scale(sx, Some(sy)))
                         } else {
@@ -191,7 +191,7 @@ impl Transform {
                     },
                     "skew" => {
                         let ax = specified::Angle::parse_with_unitless(context, input)?;
-                        if input.r#try(|input| input.expect_comma()).is_ok() {
+                        if input.try(|input| input.expect_comma()).is_ok() {
                             let ay = specified::Angle::parse_with_unitless(context, input)?;
                             Ok(generic::TransformOperation::Skew(ax, Some(ay)))
                         } else {
@@ -230,14 +230,14 @@ impl Parse for Transform {
     }
 }
 
-/// The specified value of a component of a CSS `<transform-origin>`.
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum OriginComponent<S> {
-    /// `center`
+    
     Center,
-    /// `<lop>`
+    
     Length(LengthOrPercentage),
-    /// `<side>`
+    
     Side(S),
 }
 
@@ -248,17 +248,17 @@ impl Parse for TransformOrigin {
     ) -> Result<Self, ParseError<'i>> {
         let parse_depth = |input: &mut Parser| {
             input
-                .r#try(|i| Length::parse(context, i))
+                .try(|i| Length::parse(context, i))
                 .unwrap_or(Length::from_px(0.))
         };
-        match input.r#try(|i| OriginComponent::parse(context, i)) {
+        match input.try(|i| OriginComponent::parse(context, i)) {
             Ok(x_origin @ OriginComponent::Center) => {
-                if let Ok(y_origin) = input.r#try(|i| OriginComponent::parse(context, i)) {
+                if let Ok(y_origin) = input.try(|i| OriginComponent::parse(context, i)) {
                     let depth = parse_depth(input);
                     return Ok(Self::new(x_origin, y_origin, depth));
                 }
                 let y_origin = OriginComponent::Center;
-                if let Ok(x_keyword) = input.r#try(X::parse) {
+                if let Ok(x_keyword) = input.try(X::parse) {
                     let x_origin = OriginComponent::Side(x_keyword);
                     let depth = parse_depth(input);
                     return Ok(Self::new(x_origin, y_origin, depth));
@@ -267,7 +267,7 @@ impl Parse for TransformOrigin {
                 return Ok(Self::new(x_origin, y_origin, depth));
             },
             Ok(x_origin) => {
-                if let Ok(y_origin) = input.r#try(|i| OriginComponent::parse(context, i)) {
+                if let Ok(y_origin) = input.try(|i| OriginComponent::parse(context, i)) {
                     let depth = parse_depth(input);
                     return Ok(Self::new(x_origin, y_origin, depth));
                 }
@@ -279,12 +279,12 @@ impl Parse for TransformOrigin {
         }
         let y_keyword = Y::parse(input)?;
         let y_origin = OriginComponent::Side(y_keyword);
-        if let Ok(x_keyword) = input.r#try(X::parse) {
+        if let Ok(x_keyword) = input.try(X::parse) {
             let x_origin = OriginComponent::Side(x_keyword);
             let depth = parse_depth(input);
             return Ok(Self::new(x_origin, y_origin, depth));
         }
-        if input.r#try(|i| i.expect_ident_matching("center")).is_ok() {
+        if input.try(|i| i.expect_ident_matching("center")).is_ok() {
             let x_origin = OriginComponent::Center;
             let depth = parse_depth(input);
             return Ok(Self::new(x_origin, y_origin, depth));
@@ -303,10 +303,10 @@ where
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.r#try(|i| i.expect_ident_matching("center")).is_ok() {
+        if input.try(|i| i.expect_ident_matching("center")).is_ok() {
             return Ok(OriginComponent::Center);
         }
-        if let Ok(lop) = input.r#try(|i| LengthOrPercentage::parse(context, i)) {
+        if let Ok(lop) = input.try(|i| LengthOrPercentage::parse(context, i)) {
             return Ok(OriginComponent::Length(lop));
         }
         let keyword = S::parse(context, input)?;
@@ -339,13 +339,13 @@ where
 }
 
 impl<S> OriginComponent<S> {
-    /// `0%`
+    
     pub fn zero() -> Self {
         OriginComponent::Length(LengthOrPercentage::Percentage(ComputedPercentage::zero()))
     }
 }
 
-/// A specified CSS `rotate`
+
 pub type Rotate = generic::Rotate<Number, Angle>;
 
 impl Parse for Rotate {
@@ -353,25 +353,25 @@ impl Parse for Rotate {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(generic::Rotate::None);
         }
 
-        if let Ok(rx) = input.r#try(|i| Number::parse(context, i)) {
-            // 'rotate: <number>{3} <angle>'
+        if let Ok(rx) = input.try(|i| Number::parse(context, i)) {
+            
             let ry = Number::parse(context, input)?;
             let rz = Number::parse(context, input)?;
             let angle = specified::Angle::parse(context, input)?;
             return Ok(generic::Rotate::Rotate3D(rx, ry, rz, angle));
         }
 
-        // 'rotate: <angle>'
+        
         let angle = specified::Angle::parse(context, input)?;
         Ok(generic::Rotate::Rotate(angle))
     }
 }
 
-/// A specified CSS `translate`
+
 pub type Translate = generic::Translate<LengthOrPercentage, Length>;
 
 impl Parse for Translate {
@@ -379,22 +379,22 @@ impl Parse for Translate {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(generic::Translate::None);
         }
 
         let tx = specified::LengthOrPercentage::parse(context, input)?;
-        if let Ok(ty) = input.r#try(|i| specified::LengthOrPercentage::parse(context, i)) {
-            if let Ok(tz) = input.r#try(|i| specified::Length::parse(context, i)) {
-                // 'translate: <length-percentage> <length-percentage> <length>'
+        if let Ok(ty) = input.try(|i| specified::LengthOrPercentage::parse(context, i)) {
+            if let Ok(tz) = input.try(|i| specified::Length::parse(context, i)) {
+                
                 return Ok(generic::Translate::Translate3D(tx, ty, tz));
             }
 
-            // translate: <length-percentage> <length-percentage>'
+            
             return Ok(generic::Translate::Translate(tx, ty));
         }
 
-        // 'translate: <length-percentage> '
+        
         Ok(generic::Translate::Translate(
             tx,
             specified::LengthOrPercentage::zero(),
@@ -402,7 +402,7 @@ impl Parse for Translate {
     }
 }
 
-/// A specified CSS `scale`
+
 pub type Scale = generic::Scale<Number>;
 
 impl Parse for Scale {
@@ -410,13 +410,13 @@ impl Parse for Scale {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(generic::Scale::None);
         }
 
         let sx = Number::parse(context, input)?;
-        if let Ok(sy) = input.r#try(|i| Number::parse(context, i)) {
-            if let Ok(sz) = input.r#try(|i| Number::parse(context, i)) {
+        if let Ok(sy) = input.try(|i| Number::parse(context, i)) {
+            if let Ok(sz) = input.try(|i| Number::parse(context, i)) {
                 
                 return Ok(generic::Scale::Scale3D(sx, sy, sz));
             }

@@ -84,10 +84,10 @@ fn parse_fallback<'i, 't, ColorType: Parse>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
 ) -> Option<Either<ColorType, None_>> {
-    if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
+    if input.try(|i| i.expect_ident_matching("none")).is_ok() {
         Some(Either::Second(None_))
     } else {
-        if let Ok(color) = input.r#try(|i| ColorType::parse(context, i)) {
+        if let Ok(color) = input.try(|i| ColorType::parse(context, i)) {
             Some(Either::First(color))
         } else {
             None
@@ -100,12 +100,12 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(url) = input.r#try(|i| UrlPaintServer::parse(context, i)) {
+        if let Ok(url) = input.try(|i| UrlPaintServer::parse(context, i)) {
             Ok(SVGPaint {
                 kind: SVGPaintKind::PaintServer(url),
                 fallback: parse_fallback(context, input),
             })
-        } else if let Ok(kind) = input.r#try(SVGPaintKind::parse_ident) {
+        } else if let Ok(kind) = input.try(SVGPaintKind::parse_ident) {
             if let SVGPaintKind::None = kind {
                 Ok(SVGPaint {
                     kind: kind,
@@ -117,7 +117,7 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
                     fallback: parse_fallback(context, input),
                 })
             }
-        } else if let Ok(color) = input.r#try(|i| ColorType::parse(context, i)) {
+        } else if let Ok(color) = input.try(|i| ColorType::parse(context, i)) {
             Ok(SVGPaint {
                 kind: SVGPaintKind::Color(color),
                 fallback: None,
@@ -128,8 +128,8 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
     }
 }
 
-/// A value of <length> | <percentage> | <number> for svg which allow unitless length.
-/// <https://www.w3.org/TR/SVG11/painting.html#StrokeProperties>
+
+
 #[derive(
     Clone,
     Copy,
@@ -143,14 +143,14 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
     ToCss,
 )]
 pub enum SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number> {
-    /// <length> | <percentage>
+    
     LengthOrPercentage(LengthOrPercentage),
-    /// <number>
+    
     Number(Number),
 }
 
-/// Parsing the SvgLengthOrPercentageOrNumber. At first, we need to parse number
-/// since prevent converting to the length.
+
+
 impl<LengthOrPercentageType: Parse, NumberType: Parse> Parse
     for SvgLengthOrPercentageOrNumber<LengthOrPercentageType, NumberType>
 {
@@ -158,7 +158,7 @@ impl<LengthOrPercentageType: Parse, NumberType: Parse> Parse
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(num) = input.r#try(|i| NumberType::parse(context, i)) {
+        if let Ok(num) = input.try(|i| NumberType::parse(context, i)) {
             return Ok(SvgLengthOrPercentageOrNumber::Number(num));
         }
 
@@ -167,7 +167,7 @@ impl<LengthOrPercentageType: Parse, NumberType: Parse> Parse
     }
 }
 
-/// An SVG length value supports `context-value` in addition to length.
+
 #[derive(
     Clone,
     ComputeSquaredDistance,
@@ -182,13 +182,13 @@ impl<LengthOrPercentageType: Parse, NumberType: Parse> Parse
     ToCss,
 )]
 pub enum SVGLength<LengthType> {
-    /// `<length> | <percentage> | <number>`
+    
     Length(LengthType),
-    /// `context-value`
+    
     ContextValue,
 }
 
-/// Generic value for stroke-dasharray.
+
 #[derive(
     Clone,
     Debug,
@@ -200,7 +200,7 @@ pub enum SVGLength<LengthType> {
     ToCss,
 )]
 pub enum SVGStrokeDashArray<LengthType> {
-    /// `[ <length> | <percentage> | <number> ]#`
+    
     #[css(comma)]
     Values(#[css(if_empty = "none", iterable)] Vec<LengthType>),
     

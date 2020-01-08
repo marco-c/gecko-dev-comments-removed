@@ -117,7 +117,7 @@ impl Parse for FontWeight {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<FontWeight, ParseError<'i>> {
-        if let Ok(absolute) = input.r#try(|input| AbsoluteFontWeight::parse(context, input)) {
+        if let Ok(absolute) = input.try(|input| AbsoluteFontWeight::parse(context, input)) {
             return Ok(FontWeight::Absolute(absolute));
         }
 
@@ -157,23 +157,23 @@ impl ToComputedValue for FontWeight {
     }
 }
 
-/// An absolute font-weight value for a @font-face rule.
-///
-/// https://drafts.csswg.org/css-fonts-4/#font-weight-absolute-values
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum AbsoluteFontWeight {
-    /// A `<number>`, with the additional constraints specified in:
-    ///
-    ///   https://drafts.csswg.org/css-fonts-4/#font-weight-numeric-values
+    
+    
+    
     Weight(Number),
-    /// Normal font weight. Same as 400.
+    
     Normal,
-    /// Bold font weight. Same as 700.
+    
     Bold,
 }
 
 impl AbsoluteFontWeight {
-    /// Returns the computed value for this absolute font weight.
+    
     pub fn compute(&self) -> computed::FontWeight {
         match *self {
             AbsoluteFontWeight::Weight(weight) => {
@@ -190,10 +190,10 @@ impl Parse for AbsoluteFontWeight {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(number) = input.r#try(|input| Number::parse(context, input)) {
-            // We could add another AllowedNumericType value, but it doesn't
-            // seem worth it just for a single property with such a weird range,
-            // so we do the clamping here manually.
+        if let Ok(number) = input.try(|input| Number::parse(context, input)) {
+            
+            
+            
             if !number.was_calc() &&
                 (number.get() < MIN_FONT_WEIGHT || number.get() > MAX_FONT_WEIGHT)
             {
@@ -209,8 +209,8 @@ impl Parse for AbsoluteFontWeight {
     }
 }
 
-/// The specified value of the `font-style` property, without the system font
-/// crap.
+
+
 pub type SpecifiedFontStyle = generics::FontStyle<Angle>;
 
 impl ToCss for SpecifiedFontStyle {
@@ -242,7 +242,7 @@ impl Parse for SpecifiedFontStyle {
             "normal" => generics::FontStyle::Normal,
             "italic" => generics::FontStyle::Italic,
             "oblique" => {
-                let angle = input.r#try(|input| Self::parse_angle(context, input))
+                let angle = input.try(|input| Self::parse_angle(context, input))
                     .unwrap_or_else(|_| Self::default_angle());
 
                 generics::FontStyle::Oblique(angle)
@@ -275,27 +275,27 @@ impl ToComputedValue for SpecifiedFontStyle {
     }
 }
 
-/// The default angle for `font-style: oblique`.
-///
-/// NOTE(emilio): As of right now this diverges from the spec, which specifies
-/// 20, because it's not updated yet to account for the resolution in:
-///
-///   https://github.com/w3c/csswg-drafts/issues/2295
+
+
+
+
+
+
 pub const DEFAULT_FONT_STYLE_OBLIQUE_ANGLE_DEGREES: f32 = 14.;
 
-/// From https://drafts.csswg.org/css-fonts-4/#valdef-font-style-oblique-angle:
-///
-///     Values less than -90deg or values greater than 90deg are
-///     invalid and are treated as parse errors.
-///
-/// The maximum angle value that `font-style: oblique` should compute to.
+
+
+
+
+
+
 pub const FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES: f32 = 90.;
 
-/// The minimum angle value that `font-style: oblique` should compute to.
+
 pub const FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES: f32 = -90.;
 
 impl SpecifiedFontStyle {
-    /// Gets a clamped angle in degrees from a specified Angle.
+    
     pub fn compute_angle_degrees(angle: &Angle) -> f32 {
         angle
             .degrees()
@@ -307,7 +307,7 @@ impl SpecifiedFontStyle {
         ComputedAngle::from_degrees(Self::compute_angle_degrees(angle))
     }
 
-    /// Parse a suitable angle for font-style: oblique.
+    
     pub fn parse_angle<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -326,16 +326,16 @@ impl SpecifiedFontStyle {
         return Ok(angle);
     }
 
-    /// The default angle for `font-style: oblique`.
+    
     pub fn default_angle() -> Angle {
         Angle::from_degrees(
             DEFAULT_FONT_STYLE_OBLIQUE_ANGLE_DEGREES,
-            /* was_calc = */ false,
+             false,
         )
     }
 }
 
-/// The specified value of the `font-style` property.
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 #[allow(missing_docs)]
 pub enum FontStyle {
@@ -345,7 +345,7 @@ pub enum FontStyle {
 }
 
 impl FontStyle {
-    /// Return the `normal` value.
+    
     #[inline]
     pub fn normal() -> Self {
         FontStyle::Specified(generics::FontStyle::Normal)
@@ -380,9 +380,9 @@ impl Parse for FontStyle {
     }
 }
 
-/// A value for the `font-stretch` property.
-///
-/// https://drafts.csswg.org/css-fonts-4/#font-stretch-prop
+
+
+
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 #[repr(u8)]
@@ -393,7 +393,7 @@ pub enum FontStretch {
     System(SystemFont),
 }
 
-/// A keyword value for `font-stretch`.
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
 #[allow(missing_docs)]
 pub enum FontStretchKeyword {
@@ -409,9 +409,9 @@ pub enum FontStretchKeyword {
 }
 
 impl FontStretchKeyword {
-    /// Resolves the value of the keyword as specified in:
-    ///
-    /// https://drafts.csswg.org/css-fonts-4/#font-stretch-prop
+    
+    
+    
     pub fn compute(&self) -> ComputedPercentage {
         use self::FontStretchKeyword::*;
         ComputedPercentage(match *self {
@@ -427,11 +427,11 @@ impl FontStretchKeyword {
         })
     }
 
-    /// Does the opposite operation to `compute`, in order to serialize keywords
-    /// if possible.
+    
+    
     pub fn from_percentage(percentage: f32) -> Option<Self> {
         use self::FontStretchKeyword::*;
-        // NOTE(emilio): Can't use `match` because of rust-lang/rust#41620.
+        
         if percentage == 0.5 {
             return Some(UltraCondensed);
         }
@@ -464,7 +464,7 @@ impl FontStretchKeyword {
 }
 
 impl FontStretch {
-    /// `normal`.
+    
     pub fn normal() -> Self {
         FontStretch::Keyword(FontStretchKeyword::Normal)
     }
@@ -477,12 +477,11 @@ impl Parse for FontStretch {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        // From https://drafts.csswg.org/css-fonts-4/#font-stretch-prop:
-        //
-        //    Values less than 0% are not allowed and are treated as parse
-        //    errors.
-        if let Ok(percentage) = input.r#try(|input| Percentage::parse_non_negative(context, input))
-        {
+        
+        
+        
+        
+        if let Ok(percentage) = input.try(|input| Percentage::parse_non_negative(context, input)) {
             return Ok(FontStretch::Stretch(percentage));
         }
 
@@ -509,26 +508,26 @@ impl ToComputedValue for FontStretch {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-/// A specified font-size value
+
 pub enum FontSize {
-    /// A length; e.g. 10px.
+    
     Length(LengthOrPercentage),
-    /// A keyword value, along with a ratio and absolute offset.
-    /// The ratio in any specified keyword value
-    /// will be 1 (with offset 0), but we cascade keywordness even
-    /// after font-relative (percent and em) values
-    /// have been applied, which is where the ratio
-    /// comes in. The offset comes in if we cascaded a calc value,
-    /// where the font-relative portion (em and percentage) will
-    /// go into the ratio, and the remaining units all computed together
-    /// will go into the offset.
-    /// See bug 1355707.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Keyword(KeywordInfo),
-    /// font-size: smaller
+    
     Smaller,
-    /// font-size: larger
+    
     Larger,
-    /// Derived from a specified system font.
+    
     #[css(skip)]
     System(SystemFont),
 }
@@ -539,13 +538,13 @@ impl From<LengthOrPercentage> for FontSize {
     }
 }
 
-/// Specifies a prioritized list of font family names or generic family names.
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss)]
 pub enum FontFamily {
-    /// List of `font-family`
+    
     #[css(comma)]
     Values(#[css(iterable)] FontFamilyList),
-    /// System font
+    
     #[css(skip)]
     System(SystemFont),
 }
@@ -553,7 +552,7 @@ pub enum FontFamily {
 impl FontFamily {
     system_font_methods!(FontFamily, font_family);
 
-    /// Parse a specified font-family value
+    
     pub fn parse_specified<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         input
             .parse_comma_separated(|input| SingleFontFamily::parse(input))
@@ -561,7 +560,7 @@ impl FontFamily {
     }
 
     #[cfg(feature = "gecko")]
-    /// Return the generic ID if it is a single generic font
+    
     pub fn single_generic(&self) -> Option<u8> {
         match *self {
             FontFamily::Values(ref values) => values.single_generic(),
@@ -590,8 +589,8 @@ impl MallocSizeOf for FontFamily {
     fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         match *self {
             FontFamily::Values(ref v) => {
-                // Although a SharedFontList object is refcounted, we always
-                // attribute its size to the specified value.
+                
+                
                 unsafe { bindings::Gecko_SharedFontList_SizeOfIncludingThis(v.0.get()) }
             },
             FontFamily::System(_) => 0,
@@ -600,9 +599,9 @@ impl MallocSizeOf for FontFamily {
 }
 
 impl Parse for FontFamily {
-    /// <family-name>#
-    /// <family-name> = <string> | [ <ident>+ ]
-    /// TODO: <generic-family>
+    
+    
+    
     fn parse<'i, 't>(
         _: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -613,8 +612,8 @@ impl Parse for FontFamily {
 
 impl SpecifiedValueInfo for FontFamily {}
 
-/// `FamilyName::parse` is based on `SingleFontFamily::parse` and not the other way around
-/// because we want the former to exclude generic family keywords.
+
+
 impl Parse for FamilyName {
     fn parse<'i, 't>(
         _: &ParserContext,
@@ -631,20 +630,20 @@ impl Parse for FamilyName {
 }
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Preserve the readability of text when font fallback occurs
+
 pub enum FontSizeAdjust {
-    /// None variant
+    
     None,
-    /// Number variant
+    
     Number(Number),
-    /// system font
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontSizeAdjust {
     #[inline]
-    /// Default value of font-size-adjust
+    
     pub fn none() -> Self {
         FontSizeAdjust::None
     }
@@ -676,13 +675,13 @@ impl ToComputedValue for FontSizeAdjust {
 }
 
 impl Parse for FontSizeAdjust {
-    /// none | <number>
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<FontSizeAdjust, ParseError<'i>> {
         if input
-            .r#try(|input| input.expect_ident_matching("none"))
+            .try(|input| input.expect_ident_matching("none"))
             .is_ok()
         {
             return Ok(FontSizeAdjust::None);
@@ -694,18 +693,18 @@ impl Parse for FontSizeAdjust {
     }
 }
 
-/// Additional information for specified keyword-derived font sizes.
+
 pub type KeywordInfo = generics::KeywordInfo<NonNegativeLength>;
 
 impl KeywordInfo {
-    /// Computes the final size for this font-size keyword, accounting for
-    /// text-zoom.
+    
+    
     pub fn to_computed_value(&self, context: &Context) -> NonNegativeLength {
         let base = context.maybe_zoom_text(self.kw.to_computed_value(context));
         base.scale_by(self.factor) + context.maybe_zoom_text(self.offset)
     }
 
-    /// Given a parent keyword info (self), apply an additional factor/offset to it
+    
     pub fn compose(self, factor: f32, offset: NonNegativeLength) -> Self {
         KeywordInfo {
             kw: self.kw,
@@ -715,11 +714,11 @@ impl KeywordInfo {
     }
 }
 
-/// This is the ratio applied for font-size: larger
-/// and smaller by both Firefox and Chrome
+
+
 const LARGER_FONT_SIZE_RATIO: f32 = 1.2;
 
-/// The default font size.
+
 pub const FONT_MEDIUM_PX: i32 = 16;
 
 #[cfg(feature = "servo")]
@@ -727,7 +726,7 @@ impl ToComputedValue for KeywordSize {
     type ComputedValue = NonNegativeLength;
     #[inline]
     fn to_computed_value(&self, _: &Context) -> NonNegativeLength {
-        // https://drafts.csswg.org/css-fonts-3/#font-size-prop
+        
         match *self {
             KeywordSize::XXSmall => Au::from_px(FONT_MEDIUM_PX) * 3 / 5,
             KeywordSize::XSmall => Au::from_px(FONT_MEDIUM_PX) * 3 / 4,
@@ -755,18 +754,18 @@ impl ToComputedValue for KeywordSize {
         use crate::context::QuirksMode;
         use crate::values::specified::length::au_to_int_px;
 
-        // The tables in this function are originally from
-        // nsRuleNode::CalcFontPointSize in Gecko:
-        //
-        // https://searchfox.org/mozilla-central/rev/c05d9d61188d32b8/layout/style/nsRuleNode.cpp#3150
-        //
-        // Mapping from base size and HTML size to pixels
-        // The first index is (base_size - 9), the second is the
-        // HTML size. "0" is CSS keyword xx-small, not HTML size 0,
-        // since HTML size 0 is the same as 1.
-        //
-        //  xxs   xs      s      m     l      xl     xxl   -
-        //  -     0/1     2      3     4      5      6     7
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         static FONT_SIZE_MAPPING: [[i32; 8]; 8] = [
             [9, 9, 9, 9, 11, 14, 18, 27],
             [9, 9, 9, 10, 12, 15, 20, 30],
@@ -778,14 +777,14 @@ impl ToComputedValue for KeywordSize {
             [9, 10, 13, 16, 18, 24, 32, 48],
         ];
 
-        // This table gives us compatibility with WinNav4 for the default fonts only.
-        // In WinNav4, the default fonts were:
-        //
-        //     Times/12pt ==   Times/16px at 96ppi
-        //   Courier/10pt == Courier/13px at 96ppi
-        //
-        // xxs   xs     s      m      l     xl     xxl    -
-        // -     1      2      3      4     5      6      7
+        
+        
+        
+        
+        
+        
+        
+        
         static QUIRKS_FONT_SIZE_MAPPING: [[i32; 8]; 8] = [
             [9, 9, 9, 9, 11, 14, 18, 28],
             [9, 9, 9, 10, 12, 15, 20, 31],
@@ -829,25 +828,25 @@ impl ToComputedValue for KeywordSize {
 }
 
 impl FontSize {
-    /// <https://html.spec.whatwg.org/multipage/#rules-for-parsing-a-legacy-font-size>
+    
     pub fn from_html_size(size: u8) -> Self {
         FontSize::Keyword(
             match size {
-                // If value is less than 1, let it be 1.
+                
                 0 | 1 => KeywordSize::XSmall,
                 2 => KeywordSize::Small,
                 3 => KeywordSize::Medium,
                 4 => KeywordSize::Large,
                 5 => KeywordSize::XLarge,
                 6 => KeywordSize::XXLarge,
-                // If value is greater than 7, let it be 7.
+                
                 _ => KeywordSize::XXXLarge,
             }
             .into(),
         )
     }
 
-    /// Compute it against a given base font size
+    
     pub fn to_computed_value_against(
         &self,
         context: &Context,
@@ -867,8 +866,8 @@ impl FontSize {
         let size = match *self {
             FontSize::Length(LengthOrPercentage::Length(NoCalcLength::FontRelative(value))) => {
                 if let FontRelativeLength::Em(em) = value {
-                    // If the parent font was keyword-derived, this is too.
-                    // Tack the em unit onto the factor
+                    
+                    
                     info = compose_keyword(em);
                 }
                 value.to_computed_value(context, base_size).into()
@@ -883,31 +882,31 @@ impl FontSize {
                 l.to_computed_value(context).into()
             },
             FontSize::Length(LengthOrPercentage::Percentage(pc)) => {
-                // If the parent font was keyword-derived, this is too.
-                // Tack the % onto the factor
+                
+                
                 info = compose_keyword(pc.0);
                 base_size.resolve(context).scale_by(pc.0).into()
             },
             FontSize::Length(LengthOrPercentage::Calc(ref calc)) => {
                 let parent = context.style().get_parent_font().clone_font_size();
-                // if we contain em/% units and the parent was keyword derived, this is too
-                // Extract the ratio/offset and compose it
+                
+                
                 if (calc.em.is_some() || calc.percentage.is_some()) && parent.keyword_info.is_some()
                 {
                     let ratio = calc.em.unwrap_or(0.) + calc.percentage.map_or(0., |pc| pc.0);
-                    // Compute it, but shave off the font-relative part (em, %).
-                    //
-                    // This will mean that other font-relative units like ex and
-                    // ch will be computed against the old parent font even when
-                    // the font changes.
-                    //
-                    // There's no particular "right answer" for what to do here,
-                    // Gecko recascades as if the font had changed, we instead
-                    // track the changes and reapply, which means that we carry
-                    // over old computed ex/ch values whilst Gecko recomputes
-                    // new ones.
-                    //
-                    // This is enough of an edge case to not really matter.
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     let abs = calc
                         .to_computed_value_zoomed(
                             context,
@@ -923,7 +922,7 @@ impl FontSize {
                     .into()
             },
             FontSize::Keyword(i) => {
-                // As a specified keyword, this is keyword derived
+                
                 info = Some(i);
                 i.to_computed_value(context)
             },
@@ -977,25 +976,25 @@ impl ToComputedValue for FontSize {
 impl FontSize {
     system_font_methods!(FontSize);
 
-    /// Get initial value for specified font size.
+    
     #[inline]
     pub fn medium() -> Self {
         FontSize::Keyword(KeywordInfo::medium())
     }
 
-    /// Parses a font-size, with quirks.
+    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<FontSize, ParseError<'i>> {
         if let Ok(lop) =
-            input.r#try(|i| LengthOrPercentage::parse_non_negative_quirky(context, i, allow_quirks))
+            input.try(|i| LengthOrPercentage::parse_non_negative_quirky(context, i, allow_quirks))
         {
             return Ok(FontSize::Length(lop));
         }
 
-        if let Ok(kw) = input.r#try(KeywordSize::parse) {
+        if let Ok(kw) = input.try(KeywordSize::parse) {
             return Ok(FontSize::Keyword(kw.into()));
         }
 
@@ -1006,18 +1005,18 @@ impl FontSize {
     }
 
     #[allow(unused_mut)]
-    /// Cascade `font-size` with specified value
+    
     pub fn cascade_specified_font_size(
         context: &mut Context,
         specified_value: &FontSize,
         mut computed: computed::FontSize,
     ) {
-        // we could use clone_language and clone_font_family() here but that's
-        // expensive. Do it only in gecko mode for now.
+        
+        
         #[cfg(feature = "gecko")]
         {
-            // if the language or generic changed, we need to recalculate
-            // the font size from the stored font-size origin information.
+            
+            
             if context.builder.get_font().gecko().mLanguage.mRawPtr !=
                 context.builder.get_parent_font().gecko().mLanguage.mRawPtr ||
                 context.builder.get_font().gecko().mGenericID !=
@@ -1049,7 +1048,7 @@ impl FontSize {
 }
 
 impl Parse for FontSize {
-    /// <length> | <percentage> | <absolute-size> | <relative-size>
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1082,38 +1081,38 @@ bitflags! {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Set of variant alternates
+
 pub enum VariantAlternates {
-    /// Enables display of stylistic alternates
+    
     #[css(function)]
     Stylistic(CustomIdent),
-    /// Enables display with stylistic sets
+    
     #[css(comma, function)]
     Styleset(#[css(iterable)] Box<[CustomIdent]>),
-    /// Enables display of specific character variants
+    
     #[css(comma, function)]
     CharacterVariant(#[css(iterable)] Box<[CustomIdent]>),
-    /// Enables display of swash glyphs
+    
     #[css(function)]
     Swash(CustomIdent),
-    /// Enables replacement of default glyphs with ornaments
+    
     #[css(function)]
     Ornaments(CustomIdent),
-    /// Enables display of alternate annotation forms
+    
     #[css(function)]
     Annotation(CustomIdent),
-    /// Enables display of historical forms
+    
     HistoricalForms,
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-/// List of Variant Alternates
+
 pub struct VariantAlternatesList(
     #[css(if_empty = "normal", iterable)] pub Box<[VariantAlternates]>,
 );
 
 impl VariantAlternatesList {
-    /// Returns the length of all variant alternates.
+    
     pub fn len(&self) -> usize {
         self.0.iter().fold(0, |acc, alternate| match *alternate {
             VariantAlternates::Swash(_) |
@@ -1128,18 +1127,18 @@ impl VariantAlternatesList {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Control over the selection of these alternate glyphs
+
 pub enum FontVariantAlternates {
-    /// Use alternative glyph from value
+    
     Value(VariantAlternatesList),
-    /// Use system font glyph
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontVariantAlternates {
     #[inline]
-    /// Get initial specified value with VariantAlternatesList
+    
     pub fn get_initial_specified_value() -> Self {
         FontVariantAlternates::Value(VariantAlternatesList(vec![].into_boxed_slice()))
     }
@@ -1163,21 +1162,21 @@ impl ToComputedValue for FontVariantAlternates {
 }
 
 impl Parse for FontVariantAlternates {
-    /// normal |
-    ///  [ stylistic(<feature-value-name>)           ||
-    ///    historical-forms                          ||
-    ///    styleset(<feature-value-name> #)          ||
-    ///    character-variant(<feature-value-name> #) ||
-    ///    swash(<feature-value-name>)               ||
-    ///    ornaments(<feature-value-name>)           ||
-    ///    annotation(<feature-value-name>) ]
+    
+    
+    
+    
+    
+    
+    
+    
     fn parse<'i, 't>(
         _: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<FontVariantAlternates, ParseError<'i>> {
         let mut alternates = Vec::new();
         if input
-            .r#try(|input| input.expect_ident_matching("normal"))
+            .try(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
             return Ok(FontVariantAlternates::Value(VariantAlternatesList(
@@ -1194,8 +1193,8 @@ impl Parse for FontVariantAlternates {
                 parsed_alternates |= $flag;
             )
         );
-        while let Ok(_) = input.r#try(|input| {
-            // FIXME: remove clone() when lifetimes are non-lexical
+        while let Ok(_) = input.try(|input| {
+            
             match input.next()?.clone() {
                 Token::Ident(ref value) if value.eq_ignore_ascii_case("historical-forms") => {
                     check_if_parsed!(input, VariantAlternatesParsingFlags::HISTORICAL_FORMS);
@@ -1346,14 +1345,14 @@ impl_variant_east_asian! {
 
 #[cfg(feature = "gecko")]
 impl VariantEastAsian {
-    /// Obtain a specified value from a Gecko keyword value
-    ///
-    /// Intended for use with presentation attributes, not style structs
+    
+    
+    
     pub fn from_gecko_keyword(kw: u16) -> Self {
         Self::from_bits_truncate(kw)
     }
 
-    /// Transform into gecko keyword
+    
     pub fn to_gecko_keyword(self) -> u16 {
         self.bits()
     }
@@ -1364,18 +1363,18 @@ impl_gecko_keyword_conversions!(VariantEastAsian, u16);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Allows control of glyph substitution and sizing in East Asian text.
+
 pub enum FontVariantEastAsian {
-    /// Value variant with `variant-east-asian`
+    
     Value(VariantEastAsian),
-    /// System font variant
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontVariantEastAsian {
     #[inline]
-    /// Get default `font-variant-east-asian` with `empty` variant
+    
     pub fn empty() -> Self {
         FontVariantEastAsian::Value(VariantEastAsian::empty())
     }
@@ -1399,9 +1398,9 @@ impl ToComputedValue for FontVariantEastAsian {
 }
 
 impl Parse for FontVariantEastAsian {
-    /// normal | [ <east-asian-variant-values> || <east-asian-width-values> || ruby ]
-    /// <east-asian-variant-values> = [ jis78 | jis83 | jis90 | jis04 | simplified | traditional ]
-    /// <east-asian-width-values>   = [ full-width | proportional-width ]
+    
+    
+    
     fn parse<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1409,13 +1408,13 @@ impl Parse for FontVariantEastAsian {
         let mut result = VariantEastAsian::empty();
 
         if input
-            .r#try(|input| input.expect_ident_matching("normal"))
+            .try(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
             return Ok(FontVariantEastAsian::Value(result));
         }
 
-        while let Ok(flag) = input.r#try(|input| {
+        while let Ok(flag) = input.try(|input| {
             Ok(
                 match_ignore_ascii_case! { &input.expect_ident().map_err(|_| ())?,
                     "jis78" =>
@@ -1557,14 +1556,14 @@ impl_variant_ligatures! {
 
 #[cfg(feature = "gecko")]
 impl VariantLigatures {
-    /// Obtain a specified value from a Gecko keyword value
-    ///
-    /// Intended for use with presentation attributes, not style structs
+    
+    
+    
     pub fn from_gecko_keyword(kw: u16) -> Self {
         Self::from_bits_truncate(kw)
     }
 
-    /// Transform into gecko keyword
+    
     pub fn to_gecko_keyword(self) -> u16 {
         self.bits()
     }
@@ -1575,12 +1574,12 @@ impl_gecko_keyword_conversions!(VariantLigatures, u16);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Ligatures and contextual forms are ways of combining glyphs
-/// to produce more harmonized forms
+
+
 pub enum FontVariantLigatures {
-    /// Value variant with `variant-ligatures`
+    
     Value(VariantLigatures),
-    /// System font variant
+    
     #[css(skip)]
     System(SystemFont),
 }
@@ -1588,14 +1587,14 @@ pub enum FontVariantLigatures {
 impl FontVariantLigatures {
     system_font_methods!(FontVariantLigatures, font_variant_ligatures);
 
-    /// Default value of `font-variant-ligatures` as `empty`
+    
     #[inline]
     pub fn empty() -> FontVariantLigatures {
         FontVariantLigatures::Value(VariantLigatures::empty())
     }
 
     #[inline]
-    /// Get `none` variant of `font-variant-ligatures`
+    
     pub fn none() -> FontVariantLigatures {
         FontVariantLigatures::Value(VariantLigatures::NONE)
     }
@@ -1617,15 +1616,15 @@ impl ToComputedValue for FontVariantLigatures {
 }
 
 impl Parse for FontVariantLigatures {
-    /// normal | none |
-    /// [ <common-lig-values> ||
-    ///   <discretionary-lig-values> ||
-    ///   <historical-lig-values> ||
-    ///   <contextual-alt-values> ]
-    /// <common-lig-values>        = [ common-ligatures | no-common-ligatures ]
-    /// <discretionary-lig-values> = [ discretionary-ligatures | no-discretionary-ligatures ]
-    /// <historical-lig-values>    = [ historical-ligatures | no-historical-ligatures ]
-    /// <contextual-alt-values>    = [ contextual | no-contextual ]
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn parse<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1633,19 +1632,19 @@ impl Parse for FontVariantLigatures {
         let mut result = VariantLigatures::empty();
 
         if input
-            .r#try(|input| input.expect_ident_matching("normal"))
+            .try(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
             return Ok(FontVariantLigatures::Value(result));
         }
         if input
-            .r#try(|input| input.expect_ident_matching("none"))
+            .try(|input| input.expect_ident_matching("none"))
             .is_ok()
         {
             return Ok(FontVariantLigatures::Value(VariantLigatures::NONE));
         }
 
-        while let Ok(flag) = input.r#try(|input| {
+        while let Ok(flag) = input.try(|input| {
             Ok(
                 match_ignore_ascii_case! { &input.expect_ident().map_err(|_| ())?,
                     "common-ligatures" =>
@@ -1773,14 +1772,14 @@ impl_variant_numeric! {
 
 #[cfg(feature = "gecko")]
 impl VariantNumeric {
-    /// Obtain a specified value from a Gecko keyword value
-    ///
-    /// Intended for use with presentation attributes, not style structs
+    
+    
+    
     pub fn from_gecko_keyword(kw: u8) -> Self {
         Self::from_bits_truncate(kw)
     }
 
-    /// Transform into gecko keyword
+    
     pub fn to_gecko_keyword(self) -> u8 {
         self.bits()
     }
@@ -1791,18 +1790,18 @@ impl_gecko_keyword_conversions!(VariantNumeric, u8);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Specifies control over numerical forms.
+
 pub enum FontVariantNumeric {
-    /// Value variant with `variant-numeric`
+    
     Value(VariantNumeric),
-    /// System font
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontVariantNumeric {
     #[inline]
-    /// Default value of `font-variant-numeric` as `empty`
+    
     pub fn empty() -> FontVariantNumeric {
         FontVariantNumeric::Value(VariantNumeric::empty())
     }
@@ -1826,15 +1825,15 @@ impl ToComputedValue for FontVariantNumeric {
 }
 
 impl Parse for FontVariantNumeric {
-    /// normal |
-    ///  [ <numeric-figure-values>   ||
-    ///    <numeric-spacing-values>  ||
-    ///    <numeric-fraction-values> ||
-    ///    ordinal                   ||
-    ///    slashed-zero ]
-    /// <numeric-figure-values>   = [ lining-nums | oldstyle-nums ]
-    /// <numeric-spacing-values>  = [ proportional-nums | tabular-nums ]
-    /// <numeric-fraction-values> = [ diagonal-fractions | stacked-fractions ]
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn parse<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1842,13 +1841,13 @@ impl Parse for FontVariantNumeric {
         let mut result = VariantNumeric::empty();
 
         if input
-            .r#try(|input| input.expect_ident_matching("normal"))
+            .try(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
             return Ok(FontVariantNumeric::Value(result));
         }
 
-        while let Ok(flag) = input.r#try(|input| {
+        while let Ok(flag) = input.try(|input| {
             Ok(
                 match_ignore_ascii_case! { &input.expect_ident().map_err(|_| ())?,
                     "ordinal" =>
@@ -1894,23 +1893,23 @@ impl Parse for FontVariantNumeric {
     }
 }
 
-/// This property provides low-level control over OpenType or TrueType font features.
+
 pub type SpecifiedFontFeatureSettings = FontSettings<FeatureTagValue<Integer>>;
 
-/// Define initial settings that apply when the font defined by an @font-face
-/// rule is rendered.
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum FontFeatureSettings {
-    /// Value of `FontSettings`
+    
     Value(SpecifiedFontFeatureSettings),
-    /// System font
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontFeatureSettings {
     #[inline]
-    /// Get default value of `font-feature-settings` as normal
+    
     pub fn normal() -> FontFeatureSettings {
         FontFeatureSettings::Value(FontSettings::normal())
     }
@@ -1934,7 +1933,7 @@ impl ToComputedValue for FontFeatureSettings {
 }
 
 impl Parse for FontFeatureSettings {
-    /// normal | <feature-tag-value>#
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1944,23 +1943,23 @@ impl Parse for FontFeatureSettings {
 }
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
-/// Whether user agents are allowed to synthesize bold or oblique font faces
-/// when a font family lacks bold or italic faces
+
+
 pub struct FontSynthesis {
-    /// If a `font-weight` is requested that the font family does not contain,
-    /// the user agent may synthesize the requested weight from the weights
-    /// that do exist in the font family.
+    
+    
+    
     #[css(represents_keyword)]
     pub weight: bool,
-    /// If a font-style is requested that the font family does not contain,
-    /// the user agent may synthesize the requested style from the normal face in the font family.
+    
+    
     #[css(represents_keyword)]
     pub style: bool,
 }
 
 impl FontSynthesis {
     #[inline]
-    /// Get the default value of font-synthesis
+    
     pub fn get_initial_value() -> Self {
         FontSynthesis {
             weight: true,
@@ -1982,14 +1981,14 @@ impl Parse for FontSynthesis {
             "none" => Ok(result),
             "weight" => {
                 result.weight = true;
-                if input.r#try(|input| input.expect_ident_matching("style")).is_ok() {
+                if input.try(|input| input.expect_ident_matching("style")).is_ok() {
                     result.style = true;
                 }
                 Ok(result)
             },
             "style" => {
                 result.style = true;
-                if input.r#try(|input| input.expect_ident_matching("weight")).is_ok() {
+                if input.try(|input| input.expect_ident_matching("weight")).is_ok() {
                     result.weight = true;
                 }
                 Ok(result)
@@ -2044,31 +2043,31 @@ impl From<FontSynthesis> for u8 {
 }
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Allows authors to explicitly specify the language system of the font,
-/// overriding the language system implied by the content language
+
+
 pub enum FontLanguageOverride {
-    /// When rendering with OpenType fonts,
-    /// the content language of the element is
-    /// used to infer the OpenType language system
+    
+    
+    
     Normal,
-    /// Single three-letter case-sensitive OpenType language system tag,
-    /// specifies the OpenType language system to be used instead of
-    /// the language system implied by the language of the element
+    
+    
+    
     Override(Box<str>),
-    /// Use system font
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontLanguageOverride {
     #[inline]
-    /// Get default value with `normal`
+    
     pub fn normal() -> FontLanguageOverride {
         FontLanguageOverride::Normal
     }
 
-    /// The ToComputedValue implementation for non-system-font
-    /// FontLanguageOverride, used for @font-face descriptors.
+    
+    
     #[inline]
     pub fn compute_non_system(&self) -> computed::FontLanguageOverride {
         match *self {
@@ -2122,13 +2121,13 @@ impl ToComputedValue for FontLanguageOverride {
 }
 
 impl Parse for FontLanguageOverride {
-    /// normal | <string>
+    
     fn parse<'i, 't>(
         _: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<FontLanguageOverride, ParseError<'i>> {
         if input
-            .r#try(|input| input.expect_ident_matching("normal"))
+            .try(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
             return Ok(FontLanguageOverride::Normal);
@@ -2141,24 +2140,24 @@ impl Parse for FontLanguageOverride {
     }
 }
 
-/// This property provides low-level control over OpenType or TrueType font
-/// variations.
+
+
 pub type SpecifiedFontVariationSettings = FontSettings<VariationValue<Number>>;
 
-/// Define initial settings that apply when the font defined by an @font-face
-/// rule is rendered.
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum FontVariationSettings {
-    /// Value of `FontSettings`
+    
     Value(SpecifiedFontVariationSettings),
-    /// System font
+    
     #[css(skip)]
     System(SystemFont),
 }
 
 impl FontVariationSettings {
     #[inline]
-    /// Get default value of `font-variation-settings` as normal
+    
     pub fn normal() -> FontVariationSettings {
         FontVariationSettings::Value(FontSettings::normal())
     }
@@ -2182,7 +2181,7 @@ impl ToComputedValue for FontVariationSettings {
 }
 
 impl Parse for FontVariationSettings {
-    /// normal | <variation-tag-value>#
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -2195,7 +2194,7 @@ fn parse_one_feature_value<'i, 't>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
 ) -> Result<Integer, ParseError<'i>> {
-    if let Ok(integer) = input.r#try(|i| Integer::parse_non_negative(context, i)) {
+    if let Ok(integer) = input.try(|i| Integer::parse_non_negative(context, i)) {
         return Ok(integer);
     }
 
@@ -2206,14 +2205,14 @@ fn parse_one_feature_value<'i, 't>(
 }
 
 impl Parse for FeatureTagValue<Integer> {
-    /// https://drafts.csswg.org/css-fonts-4/#feature-tag-value
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let tag = FontTag::parse(context, input)?;
         let value = input
-            .r#try(|i| parse_one_feature_value(context, i))
+            .try(|i| parse_one_feature_value(context, i))
             .unwrap_or_else(|_| Integer::new(1));
 
         Ok(Self { tag, value })
@@ -2221,8 +2220,8 @@ impl Parse for FeatureTagValue<Integer> {
 }
 
 impl Parse for VariationValue<Number> {
-    /// This is the `<string> <number>` part of the font-variation-settings
-    /// syntax.
+    
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -2236,7 +2235,7 @@ impl Parse for VariationValue<Number> {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
 )]
-/// text-zoom. Enable if true, disable if false
+
 pub struct XTextZoom(#[css(skip)] pub bool);
 
 impl Parse for XTextZoom {
@@ -2253,12 +2252,12 @@ impl Parse for XTextZoom {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
-/// Internal property that reflects the lang attribute
+
 pub struct XLang(#[css(skip)] pub Atom);
 
 impl XLang {
     #[inline]
-    /// Get default value for `-x-lang`
+    
     pub fn get_initial_value() -> XLang {
         XLang(atom!(""))
     }
@@ -2279,13 +2278,13 @@ impl Parse for XLang {
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Specifies the minimum font size allowed due to changes in scriptlevel.
-/// Ref: https://wiki.mozilla.org/MathML:mstyle
+
+
 pub struct MozScriptMinSize(pub NoCalcLength);
 
 impl MozScriptMinSize {
     #[inline]
-    /// Calculate initial value of -moz-script-min-size.
+    
     pub fn get_initial_value() -> Length {
         Length::new(DEFAULT_SCRIPT_MIN_SIZE_PT as f32 * (AU_PER_PT / AU_PER_PX))
     }
@@ -2306,22 +2305,22 @@ impl Parse for MozScriptMinSize {
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
-/// Changes the scriptlevel in effect for the children.
-/// Ref: https://wiki.mozilla.org/MathML:mstyle
-///
-/// The main effect of scriptlevel is to control the font size.
-/// https://www.w3.org/TR/MathML3/chapter3.html#presm.scriptlevel
+
+
+
+
+
 pub enum MozScriptLevel {
-    /// Change `font-size` relatively.
+    
     Relative(i32),
-    /// Change `font-size` absolutely.
-    ///
-    /// Should only be serialized by presentation attributes, so even though
-    /// serialization for this would look the same as for the `Relative`
-    /// variant, it is unexposed, so no big deal.
+    
+    
+    
+    
+    
     #[css(function)]
     MozAbsolute(i32),
-    /// Change `font-size` automatically.
+    
     Auto,
 }
 
@@ -2330,8 +2329,8 @@ impl Parse for MozScriptLevel {
         _: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<MozScriptLevel, ParseError<'i>> {
-        // We don't bother to handle calc here.
-        if let Ok(i) = input.r#try(|i| i.expect_integer()) {
+        
+        if let Ok(i) = input.try(|i| i.expect_integer()) {
             return Ok(MozScriptLevel::Relative(i));
         }
         input.expect_ident_matching("auto")?;
@@ -2341,15 +2340,15 @@ impl Parse for MozScriptLevel {
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
-/// Specifies the multiplier to be used to adjust font size
-/// due to changes in scriptlevel.
-///
-/// Ref: https://www.w3.org/TR/MathML3/chapter3.html#presm.mstyle.attrs
+
+
+
+
 pub struct MozScriptSizeMultiplier(pub f32);
 
 impl MozScriptSizeMultiplier {
     #[inline]
-    /// Get default value of `-moz-script-size-multiplier`
+    
     pub fn get_initial_value() -> MozScriptSizeMultiplier {
         MozScriptSizeMultiplier(DEFAULT_SCRIPT_SIZE_MULTIPLIER as f32)
     }

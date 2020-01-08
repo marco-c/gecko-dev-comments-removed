@@ -111,29 +111,26 @@ impl Parse for CounterStyleOrNone {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(name) = input.r#try(|i| parse_counter_style_name(i)) {
+        if let Ok(name) = input.try(|i| parse_counter_style_name(i)) {
             return Ok(CounterStyleOrNone::Name(name));
         }
-        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(CounterStyleOrNone::None);
         }
-        if input
-            .r#try(|i| i.expect_function_matching("symbols"))
-            .is_ok()
-        {
+        if input.try(|i| i.expect_function_matching("symbols")).is_ok() {
             return input.parse_nested_block(|input| {
                 let symbols_type = input
-                    .r#try(|i| SymbolsType::parse(i))
+                    .try(|i| SymbolsType::parse(i))
                     .unwrap_or(SymbolsType::Symbolic);
                 let symbols = Symbols::parse(context, input)?;
-                // There must be at least two symbols for alphabetic or
-                // numeric system.
+                
+                
                 if (symbols_type == SymbolsType::Alphabetic ||
                     symbols_type == SymbolsType::Numeric) && symbols.0.len() < 2
                 {
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
-                // Identifier is not allowed in symbols() function.
+                
                 if symbols.0.iter().any(|sym| !sym.is_allowed_in_symbols()) {
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
@@ -146,11 +143,11 @@ impl Parse for CounterStyleOrNone {
 
 impl SpecifiedValueInfo for CounterStyleOrNone {
     fn collect_completion_keywords(f: KeywordsCollectFn) {
-        // XXX The best approach for implementing this is probably
-        // having a CounterStyleName type wrapping CustomIdent, and
-        // put the predefined list for that type in counter_style mod.
-        // But that's a non-trivial change itself, so we use a simpler
-        // approach here.
+        
+        
+        
+        
+        
         macro_rules! predefined {
             ($($name:expr,)+) => {
                 f(&["none", "symbols", $($name,)+]);
@@ -160,7 +157,7 @@ impl SpecifiedValueInfo for CounterStyleOrNone {
     }
 }
 
-/// A wrapper of Non-negative values.
+
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,
@@ -179,7 +176,7 @@ impl SpecifiedValueInfo for CounterStyleOrNone {
 )]
 pub struct NonNegative<T>(pub T);
 
-/// A wrapper of greater-than-or-equal-to-one values.
+
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Animate,

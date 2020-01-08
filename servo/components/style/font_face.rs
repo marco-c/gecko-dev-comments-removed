@@ -120,7 +120,7 @@ macro_rules! impl_range {
             ) -> Result<Self, ParseError<'i>> {
                 let first = $component::parse(context, input)?;
                 let second = input
-                    .r#try(|input| $component::parse(context, input))
+                    .try(|input| $component::parse(context, input))
                     .unwrap_or_else(|_| first.clone());
                 Ok($range(first, second))
             }
@@ -234,7 +234,7 @@ impl Parse for FontStyle {
             GenericFontStyle::Italic => FontStyle::Italic,
             GenericFontStyle::Oblique(angle) => {
                 let second_angle = input
-                    .r#try(|input| SpecifiedFontStyle::parse_angle(context, input))
+                    .try(|input| SpecifiedFontStyle::parse_angle(context, input))
                     .unwrap_or_else(|_| angle.clone());
 
                 FontStyle::Oblique(angle, second_angle)
@@ -268,7 +268,7 @@ impl ToCss for FontStyle {
 }
 
 impl FontStyle {
-    /// Returns a computed font-style descriptor.
+    
     pub fn compute(&self) -> ComputedFontStyleDescriptor {
         match *self {
             FontStyle::Normal => ComputedFontStyleDescriptor::Normal,
@@ -284,9 +284,9 @@ impl FontStyle {
     }
 }
 
-/// Parse the block inside a `@font-face` rule.
-///
-/// Note that the prelude parsing code lives in the `stylesheets` module.
+
+
+
 pub fn parse_font_face_block(
     context: &ParserContext,
     input: &mut Parser,
@@ -310,11 +310,11 @@ pub fn parse_font_face_block(
     rule
 }
 
-/// A @font-face rule that is known to have font-family and src declarations.
+
 #[cfg(feature = "servo")]
 pub struct FontFace<'a>(&'a FontFaceRuleData);
 
-/// A list of effective sources that we send over through IPC to the font cache.
+
 #[cfg(feature = "servo")]
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
@@ -322,9 +322,9 @@ pub struct EffectiveSources(Vec<Source>);
 
 #[cfg(feature = "servo")]
 impl<'a> FontFace<'a> {
-    /// Returns the list of effective sources for that font-face, that is the
-    /// sources which don't list any format hint, or the ones which list at
-    /// least "truetype" or "opentype".
+    
+    
+    
     pub fn effective_sources(&self) -> EffectiveSources {
         EffectiveSources(
             self.sources()
@@ -333,9 +333,9 @@ impl<'a> FontFace<'a> {
                 .filter(|source| {
                     if let Source::Url(ref url_source) = **source {
                         let hints = &url_source.format_hints;
-                        // We support only opentype fonts and truetype is an alias for
-                        // that format. Sources without format hints need to be
-                        // downloaded in case we support them.
+                        
+                        
+                        
                         hints.is_empty() || hints
                             .iter()
                             .any(|hint| hint == "truetype" || hint == "opentype" || hint == "woff")
@@ -366,7 +366,7 @@ struct FontFaceRuleParser<'a, 'b: 'a> {
     rule: &'a mut FontFaceRuleData,
 }
 
-/// Default methods reject all at rules.
+
 impl<'a, 'b, 'i> AtRuleParser<'i> for FontFaceRuleParser<'a, 'b> {
     type PreludeNoBlock = ();
     type PreludeBlock = ();
@@ -380,7 +380,7 @@ impl Parse for Source {
         input: &mut Parser<'i, 't>,
     ) -> Result<Source, ParseError<'i>> {
         if input
-            .r#try(|input| input.expect_function_matching("local"))
+            .try(|input| input.expect_function_matching("local"))
             .is_ok()
         {
             return input
@@ -390,9 +390,9 @@ impl Parse for Source {
 
         let url = SpecifiedUrl::parse(context, input)?;
 
-        // Parsing optional format()
+        
         let format_hints = if input
-            .r#try(|input| input.expect_function_matching("format"))
+            .try(|input| input.expect_function_matching("format"))
             .is_ok()
         {
             input.parse_nested_block(|input| {
@@ -494,7 +494,7 @@ macro_rules! font_face_descriptors_common {
 }
 
 impl ToCssWithGuard for FontFaceRuleData {
-    // Serialization of FontFaceRule is not specced.
+    
     fn to_css(&self, _guard: &SharedRwLockReadGuard, dest: &mut CssStringWriter) -> fmt::Result {
         dest.write_str("@font-face {\n")?;
         self.decl_to_css(dest)?;
@@ -544,7 +544,7 @@ macro_rules! font_face_descriptors {
     }
 }
 
-/// css-name rust_identifier: Type,
+
 #[cfg(feature = "gecko")]
 font_face_descriptors! {
     mandatory descriptors = [

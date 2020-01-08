@@ -324,7 +324,7 @@ impl Separator for Space {
         let mut results = vec![parse_one(input)?];
         loop {
             input.skip_whitespace(); 
-            if let Ok(item) = input.r#try(&mut parse_one) {
+            if let Ok(item) = input.try(&mut parse_one) {
                 results.push(item);
             } else {
                 return Ok(results);
@@ -345,14 +345,14 @@ impl Separator for CommaWithSpace {
     where
         F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
     {
-        input.skip_whitespace(); // Unnecessary for correctness, but may help try() rewind less.
+        input.skip_whitespace(); 
         let mut results = vec![parse_one(input)?];
         loop {
-            input.skip_whitespace(); // Unnecessary for correctness, but may help try() rewind less.
+            input.skip_whitespace(); 
             let comma_location = input.current_source_location();
-            let comma = input.r#try(|i| i.expect_comma()).is_ok();
-            input.skip_whitespace(); // Unnecessary for correctness, but may help try() rewind less.
-            if let Ok(item) = input.r#try(&mut parse_one) {
+            let comma = input.try(|i| i.expect_comma()).is_ok();
+            input.skip_whitespace(); 
+            if let Ok(item) = input.try(&mut parse_one) {
                 results.push(item);
             } else if comma {
                 return Err(comma_location.new_unexpected_token_error(Token::Comma));
@@ -364,10 +364,10 @@ impl Separator for CommaWithSpace {
     }
 }
 
-/// Marker trait on T to automatically implement ToCss for Vec<T> when T's are
-/// separated by some delimiter `delim`.
+
+
 pub trait OneOrMoreSeparated {
-    /// Associated type indicating which separator is used.
+    
     type S: Separator;
 }
 
@@ -461,7 +461,7 @@ macro_rules! define_css_keyword_enum {
         }
 
         impl $name {
-            
+            /// Parse this property from a CSS input stream.
             pub fn parse<'i, 't>(input: &mut ::cssparser::Parser<'i, 't>)
                                  -> Result<$name, $crate::ParseError<'i>> {
                 use cssparser::Token;
@@ -480,7 +480,7 @@ macro_rules! define_css_keyword_enum {
                 }
             }
 
-            
+            /// Parse this property from an already-tokenized identifier.
             pub fn from_ident(ident: &str) -> Result<$name, ()> {
                 match_ignore_ascii_case! { ident,
                     $($css => Ok($name::$variant),)+
