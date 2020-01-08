@@ -571,7 +571,7 @@ TraceLoggerGraph::getTreeEntry(uint32_t treeId, TreeEntry* entry)
     }
 
     
-    if (treeFile != nullptr) return false;
+    if (!treeFile) return false;
 
     
     int success = fseek(treeFile, treeId * sizeof(TreeEntry), SEEK_SET);
