@@ -6,8 +6,6 @@
 
 
 
-#include "mozilla/Unused.h"
-#include "gfxPrefs.h"
 #include "nsColumnSetFrame.h"
 
 #include "mozilla/Logging.h"
