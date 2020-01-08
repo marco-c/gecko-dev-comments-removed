@@ -2168,7 +2168,13 @@ Toolbox.prototype = {
 
 
   reloadTarget: function(force) {
-    this.target.activeTab.reload({ force: force });
+    if (this.target.canRewind) {
+      
+      const { reloadAndRecordTab } = require("devtools/client/webreplay/menu");
+      reloadAndRecordTab();
+    } else {
+      this.target.activeTab.reload({ force: force });
+    }
   },
 
   

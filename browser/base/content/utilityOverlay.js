@@ -504,6 +504,13 @@ function openLinkIn(url, where, params) {
       targetBrowser.createAboutBlankContentViewer(aPrincipal);
     }
 
+    
+    
+    if (targetBrowser.hasAttribute("recordExecution")) {
+      w.gBrowser.updateBrowserRemoteness(targetBrowser, true,
+                                         { recordExecution: "*", newFrameloader: true });
+    }
+
     targetBrowser.loadURI(url, {
       triggeringPrincipal: aTriggeringPrincipal,
       flags,
