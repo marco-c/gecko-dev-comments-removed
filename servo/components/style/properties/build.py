@@ -49,7 +49,8 @@ STYLE_STRUCT_LIST = [
 
 
 def main():
-    usage = "Usage: %s [ servo | gecko ] [ style-crate | geckolib <template> | html ]" % sys.argv[0]
+    usage = ("Usage: %s [ servo | gecko ] [ style-crate | geckolib <template> | html ]" %
+             sys.argv[0])
     if len(sys.argv) < 3:
         abort(usage)
     product = sys.argv[1]
@@ -122,7 +123,7 @@ def render(filename, **context):
         
         
         return template.render(**context).encode("utf8")
-    except:
+    except Exception:
         
         
         abort(exceptions.text_error_template().render().encode("utf8"))
