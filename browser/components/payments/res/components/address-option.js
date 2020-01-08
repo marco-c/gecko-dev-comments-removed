@@ -21,6 +21,7 @@ import RichOption from "./rich-option.js";
 
 
 
+
 export default class AddressOption extends ObservedPropertiesMixin(RichOption) {
   static get recordAttributes() {
     return [
@@ -54,6 +55,10 @@ export default class AddressOption extends ObservedPropertiesMixin(RichOption) {
       this.appendChild(this[`_${name}`]);
     }
     super.connectedCallback();
+  }
+
+  static formatSingleLineLabel(address) {
+    return PaymentDialogUtils.getAddressLabel(address);
   }
 
   render() {

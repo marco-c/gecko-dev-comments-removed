@@ -30,6 +30,7 @@ export let requestStore = new PaymentsStore({
     previousId: null,
     
     
+    
   },
   request: {
     tabId: null,
