@@ -165,10 +165,10 @@
 
 #include "DOMMatrix.h"
 
-using namespace mozilla;
-using namespace mozilla::dom;
-
 using mozilla::gfx::Matrix4x4;
+
+namespace mozilla {
+namespace dom {
 
 
 
@@ -205,12 +205,18 @@ ASSERT_NODE_SIZE(Text, 120, 64);
 #undef ASSERT_NODE_SIZE
 #undef EXTRA_DOM_NODE_BYTES
 
+}  
+}  
+
 nsAtom* nsIContent::DoGetID() const {
   MOZ_ASSERT(HasID(), "Unexpected call");
   MOZ_ASSERT(IsElement(), "Only elements can have IDs");
 
   return AsElement()->GetParsedAttr(nsGkAtoms::id)->GetAtomValue();
 }
+
+namespace mozilla {
+namespace dom {
 
 const nsAttrValue* Element::GetSVGAnimatedClass() const {
   MOZ_ASSERT(MayHaveClass() && IsSVGElement(), "Unexpected call");
@@ -272,6 +278,9 @@ void Element::UpdateState(bool aNotify) {
   }
 }
 
+}  
+}  
+
 void nsIContent::UpdateEditableState(bool aNotify) {
   
   NS_ASSERTION(!IsElement(), "What happened here?");
@@ -300,6 +309,9 @@ void nsIContent::UpdateEditableState(bool aNotify) {
   SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE) &&
                   !isUnknownNativeAnon);
 }
+
+namespace mozilla {
+namespace dom {
 
 void Element::UpdateEditableState(bool aNotify) {
   nsIContent* parent = GetParent();
@@ -4375,3 +4387,6 @@ void Element::NoteDescendantsNeedFramesForServo() {
   NoteDirtyElement(this, NODE_DESCENDANTS_NEED_FRAMES);
   SetFlags(NODE_DESCENDANTS_NEED_FRAMES);
 }
+
+}  
+}  
