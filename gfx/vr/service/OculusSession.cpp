@@ -242,7 +242,8 @@ OculusSession::Initialize(mozilla::gfx::VRSystemState& aSystemState)
   if (!CreateShaders()) {
     return false;
   }
-
+  
+  
   if (!LoadOvrLib()) {
     return false;
   }
