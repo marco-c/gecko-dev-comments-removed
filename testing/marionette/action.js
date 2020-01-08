@@ -984,7 +984,7 @@ action.Mouse = class {
 
 
 
-action.dispatch = function(chain, window, specCompatPointerOrigin = true) {
+action.dispatch = function(chain, win, specCompatPointerOrigin = true) {
   action.specCompatPointerOrigin = specCompatPointerOrigin;
 
   let chainEvents = (async () => {
@@ -992,7 +992,7 @@ action.dispatch = function(chain, window, specCompatPointerOrigin = true) {
       await action.dispatchTickActions(
           tickActions,
           action.computeTickDuration(tickActions),
-          window);
+          win);
     }
   })();
   return chainEvents;
@@ -1019,8 +1019,8 @@ action.dispatch = function(chain, window, specCompatPointerOrigin = true) {
 
 
 
-action.dispatchTickActions = function(tickActions, tickDuration, window) {
-  let pendingEvents = tickActions.map(toEvents(tickDuration, window));
+action.dispatchTickActions = function(tickActions, tickDuration, win) {
+  let pendingEvents = tickActions.map(toEvents(tickDuration, win));
   return Promise.all(pendingEvents);
 };
 
@@ -1092,26 +1092,26 @@ action.computePointerDestination = function(
 
 
 
-function toEvents(tickDuration, window) {
+function toEvents(tickDuration, win) {
   return a => {
     let inputState = action.inputStateMap.get(a.id);
 
     switch (a.subtype) {
       case action.KeyUp:
-        return dispatchKeyUp(a, inputState, window);
+        return dispatchKeyUp(a, inputState, win);
 
       case action.KeyDown:
-        return dispatchKeyDown(a, inputState, window);
+        return dispatchKeyDown(a, inputState, win);
 
       case action.PointerDown:
-        return dispatchPointerDown(a, inputState, window);
+        return dispatchPointerDown(a, inputState, win);
 
       case action.PointerUp:
-        return dispatchPointerUp(a, inputState, window);
+        return dispatchPointerUp(a, inputState, win);
 
       case action.PointerMove:
         return dispatchPointerMove(
-            a, inputState, tickDuration, window);
+            a, inputState, tickDuration, win);
 
       case action.PointerCancel:
         throw new UnsupportedOperationError();
@@ -1138,7 +1138,7 @@ function toEvents(tickDuration, window) {
 
 
 
-function dispatchKeyDown(a, inputState, window) {
+function dispatchKeyDown(a, inputState, win) {
   return new Promise(resolve => {
     let keyEvent = new action.Key(a.value);
     keyEvent.repeat = inputState.isPressed(keyEvent.key);
@@ -1150,7 +1150,7 @@ function dispatchKeyDown(a, inputState, window) {
     
     action.inputsToCancel.push(Object.assign({}, a, {subtype: action.KeyUp}));
     keyEvent.update(inputState);
-    event.sendKeyDown(a.value, keyEvent, window);
+    event.sendKeyDown(a.value, keyEvent, win);
 
     resolve();
   });
@@ -1169,7 +1169,7 @@ function dispatchKeyDown(a, inputState, window) {
 
 
 
-function dispatchKeyUp(a, inputState, window) {
+function dispatchKeyUp(a, inputState, win) {
   return new Promise(resolve => {
     let keyEvent = new action.Key(a.value);
 
@@ -1184,7 +1184,7 @@ function dispatchKeyUp(a, inputState, window) {
     inputState.release(keyEvent.key);
     keyEvent.update(inputState);
 
-    event.sendKeyUp(a.value, keyEvent, window);
+    event.sendKeyUp(a.value, keyEvent, win);
     resolve();
   });
 }
@@ -1203,7 +1203,7 @@ function dispatchKeyUp(a, inputState, window) {
 
 
 
-function dispatchPointerDown(a, inputState, window) {
+function dispatchPointerDown(a, inputState, win) {
   return new Promise(resolve => {
     if (inputState.isPressed(a.button)) {
       resolve();
@@ -1232,7 +1232,7 @@ function dispatchPointerDown(a, inputState, window) {
             inputState.x,
             inputState.y,
             mouseEvent,
-            window);
+            win);
         if (event.MouseButton.isSecondary(a.button) ||
             mouseEvent.ctrlKey && Services.appinfo.OS !== "WINNT") {
           let contextMenuEvent = Object.assign({},
@@ -1241,7 +1241,7 @@ function dispatchPointerDown(a, inputState, window) {
               inputState.x,
               inputState.y,
               contextMenuEvent,
-              window);
+              win);
         }
         break;
 
@@ -1271,7 +1271,7 @@ function dispatchPointerDown(a, inputState, window) {
 
 
 
-function dispatchPointerUp(a, inputState, window) {
+function dispatchPointerUp(a, inputState, win) {
   return new Promise(resolve => {
     if (!inputState.isPressed(a.button)) {
       resolve();
@@ -1289,7 +1289,7 @@ function dispatchPointerUp(a, inputState, window) {
               mouseEvent, {clickCount: 2});
         }
         event.synthesizeMouseAtPoint(
-            inputState.x, inputState.y, mouseEvent, window);
+            inputState.x, inputState.y, mouseEvent, win);
         break;
 
       case action.PointerType.Pen:
@@ -1324,7 +1324,7 @@ function dispatchPointerUp(a, inputState, window) {
 
 
 
-function dispatchPointerMove(a, inputState, tickDuration, window) {
+function dispatchPointerMove(a, inputState, tickDuration, win) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   
   const fps60 = 17;
@@ -1333,21 +1333,21 @@ function dispatchPointerMove(a, inputState, tickDuration, window) {
     const start = Date.now();
     const [startX, startY] = [inputState.x, inputState.y];
 
-    let coords = getElementCenter(a.origin, window);
+    let coords = getElementCenter(a.origin, win);
     let target = action.computePointerDestination(a, inputState, coords);
     const [targetX, targetY] = [target.x, target.y];
 
-    if (!inViewPort(targetX, targetY, window)) {
+    if (!inViewPort(targetX, targetY, win)) {
       throw new MoveTargetOutOfBoundsError(
           `(${targetX}, ${targetY}) is out of bounds of viewport ` +
-          `width (${window.innerWidth}) ` +
-          `and height (${window.innerHeight})`);
+          `width (${win.innerWidth}) ` +
+          `and height (${win.innerHeight})`);
     }
 
     const duration = typeof a.duration == "undefined" ? tickDuration : a.duration;
     if (duration === 0) {
       
-      performOnePointerMove(inputState, targetX, targetY, window);
+      performOnePointerMove(inputState, targetX, targetY, win);
       resolve();
       return;
     }
@@ -1365,7 +1365,7 @@ function dispatchPointerMove(a, inputState, tickDuration, window) {
       while ((1 - durationRatio) > epsilon) {
         let x = Math.floor(durationRatio * distanceX + startX);
         let y = Math.floor(durationRatio * distanceY + startY);
-        performOnePointerMove(inputState, x, y, window);
+        performOnePointerMove(inputState, x, y, win);
         
         await new Promise(resolveTimer =>
             timer.initWithCallback(resolveTimer, fps60, ONE_SHOT));
@@ -1377,7 +1377,7 @@ function dispatchPointerMove(a, inputState, tickDuration, window) {
     
     
     intermediatePointerEvents.then(() => {
-      performOnePointerMove(inputState, targetX, targetY, window);
+      performOnePointerMove(inputState, targetX, targetY, win);
       resolve();
     }).catch(err => {
       reject(err);
@@ -1441,10 +1441,10 @@ function inViewPort(x, y, win) {
   return !(x < 0 || y < 0 || x > win.innerWidth || y > win.innerHeight);
 }
 
-function getElementCenter(el, window) {
+function getElementCenter(el, win) {
   if (element.isDOMElement(el)) {
     if (action.specCompatPointerOrigin) {
-      return element.getInViewCentrePoint(el.getClientRects()[0], window);
+      return element.getInViewCentrePoint(el.getClientRects()[0], win);
     }
     return element.coordinates(el);
   }

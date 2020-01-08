@@ -276,10 +276,10 @@ function MessageManagerDestroyedPromise(messageManager) {
 
 
 
-function IdlePromise(window) {
+function IdlePromise(win) {
   return new Promise(resolve => {
     Services.tm.idleDispatchToMainThread(() => {
-      window.requestAnimationFrame(resolve);
+      win.requestAnimationFrame(resolve);
     });
   });
 }

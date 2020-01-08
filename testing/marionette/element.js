@@ -218,7 +218,7 @@ element.Store = class {
 
 
 
-  get(webEl, window) {
+  get(webEl, win) {
     if (!(webEl instanceof WebElement)) {
       throw new TypeError(
           pprint`Expected web element, got: ${webEl}`);
@@ -236,7 +236,7 @@ element.Store = class {
       delete this.els[webEl.uuid];
     }
 
-    if (element.isStale(el, window)) {
+    if (element.isStale(el, win)) {
       throw new StaleElementReferenceError(
           pprint`The element reference of ${el || webEl.uuid} is stale; ` +
               "either the element is no longer attached to the DOM, " +
@@ -728,14 +728,14 @@ element.isCollection = function(seq) {
 
 
 
-element.isStale = function(el, window = undefined) {
-  if (typeof window == "undefined") {
-    window = el.ownerGlobal;
+element.isStale = function(el, win = undefined) {
+  if (typeof win == "undefined") {
+    win = el.ownerGlobal;
   }
 
   if (el === null ||
       !el.ownerGlobal ||
-      el.ownerDocument !== window.document) {
+      el.ownerDocument !== win.document) {
     return true;
   }
 
@@ -1153,16 +1153,16 @@ element.isObscured = function(el) {
 
 
 
-element.getInViewCentrePoint = function(rect, window) {
+element.getInViewCentrePoint = function(rect, win) {
   const {max, min} = Math;
 
   let x = {
     left: max(0, min(rect.x, rect.x + rect.width)),
-    right: min(window.innerWidth, max(rect.x, rect.x + rect.width)),
+    right: min(win.innerWidth, max(rect.x, rect.x + rect.width)),
   };
   let y = {
     top: max(0, min(rect.y, rect.y + rect.height)),
-    bottom: min(window.innerHeight, max(rect.y, rect.y + rect.height)),
+    bottom: min(win.innerHeight, max(rect.y, rect.y + rect.height)),
   };
 
   return {

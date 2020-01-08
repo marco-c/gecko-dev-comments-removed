@@ -166,7 +166,7 @@ evaluate.sandbox = function(sb, script, args = [],
 
 
 
-evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
+evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
   switch (typeof obj) {
     case "boolean":
     case "number":
@@ -180,13 +180,13 @@ evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
 
       
       } else if (Array.isArray(obj)) {
-        return obj.map(e => evaluate.fromJSON(e, seenEls, window));
+        return obj.map(e => evaluate.fromJSON(e, seenEls, win));
 
       
       } else if (WebElement.isReference(obj)) {
         let webEl = WebElement.fromJSON(obj);
         if (seenEls) {
-          return seenEls.get(webEl, window);
+          return seenEls.get(webEl, win);
         }
         return webEl;
       }
@@ -194,7 +194,7 @@ evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
       
       let rv = {};
       for (let prop in obj) {
-        rv[prop] = evaluate.fromJSON(obj[prop], seenEls, window);
+        rv[prop] = evaluate.fromJSON(obj[prop], seenEls, win);
       }
       return rv;
   }
@@ -427,11 +427,11 @@ sandbox.augment = function(sb, adapter) {
 
 
 
-sandbox.create = function(window, principal = null, opts = {}) {
-  let p = principal || window;
+sandbox.create = function(win, principal = null, opts = {}) {
+  let p = principal || win;
   opts = Object.assign({
-    sameZoneAs: window,
-    sandboxPrototype: window,
+    sameZoneAs: win,
+    sandboxPrototype: win,
     wantComponents: true,
     wantXrays: true,
   }, opts);
@@ -448,23 +448,23 @@ sandbox.create = function(window, principal = null, opts = {}) {
 
 
 
-sandbox.createMutable = function(window) {
+sandbox.createMutable = function(win) {
   let opts = {
     wantComponents: false,
     wantXrays: false,
   };
   
-  return Cu.waiveXrays(sandbox.create(window, null, opts));
+  return Cu.waiveXrays(sandbox.create(win, null, opts));
 };
 
-sandbox.createSystemPrincipal = function(window) {
+sandbox.createSystemPrincipal = function(win) {
   let principal = Cc["@mozilla.org/systemprincipal;1"]
       .createInstance(Ci.nsIPrincipal);
-  return sandbox.create(window, principal);
+  return sandbox.create(win, principal);
 };
 
-sandbox.createSimpleTest = function(window, harness) {
-  let sb = sandbox.create(window);
+sandbox.createSimpleTest = function(win, harness) {
+  let sb = sandbox.create(win);
   sb = sandbox.augment(sb, harness);
   sb[FINISH] = () => sb[COMPLETE](harness.generate_results());
   return sb;
