@@ -762,9 +762,13 @@ class Dumper_Linux(Dumper):
         
         
         
+        
+        
+        
         file_dbg = file + ".dbg"
         if subprocess.call([self.objcopy, '--only-keep-debug', file, file_dbg]) == 0 and \
-           subprocess.call([self.objcopy, '--add-gnu-debuglink=%s' % file_dbg, file]) == 0:
+           subprocess.call([self.objcopy, '--remove-section', '.gnu_debuglink',
+                            '--add-gnu-debuglink=%s' % file_dbg, file]) == 0:
             rel_path = os.path.join(debug_file,
                                     guid,
                                     debug_file + ".dbg")
