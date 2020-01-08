@@ -1454,7 +1454,6 @@ BrowserGlue.prototype = {
     AboutPrivateBrowsingHandler.uninit();
     AutoCompletePopup.uninit();
     DateTimePickerParent.uninit();
-    SaveToPocket.uninit();
 
     
     
