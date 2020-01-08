@@ -948,7 +948,7 @@ public:
   
 
 
-  virtual nsIFrame* GetEventTargetFrame() = 0;
+  virtual nsIFrame* GetCurrentEventFrame() = 0;
 
   
 
