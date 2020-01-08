@@ -162,8 +162,8 @@ IonGetPropertyIC::update(JSContext* cx, HandleScript outerScript, IonGetProperty
         
         
         
-        JitSpew(JitSpew_IonIC, "Invalidating from idempotent cache %s:%u",
-                outerScript->filename(), outerScript->lineno());
+        JitSpew(JitSpew_IonIC, "Invalidating from idempotent cache %s:%u:%u",
+                outerScript->filename(), outerScript->lineno(), outerScript->column());
 
         outerScript->setInvalidatedIdempotentCache();
 
