@@ -568,6 +568,12 @@ var LoginHelper = {
     if (ChromeUtils.getClassName(element) !== "HTMLInputElement")
       return false;
 
+    if (!element.isConnected) {
+      
+      
+      return false;
+    }
+
     let fieldType = (element.hasAttribute("type") ?
                      element.getAttribute("type").toLowerCase() :
                      element.type);
