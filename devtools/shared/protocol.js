@@ -1325,14 +1325,6 @@ Front.prototype = extend(Pool.prototype, {
     return Pool.prototype.manage.call(this, front);
   },
 
-  
-
-
-
-  actor: function() {
-    return Promise.resolve(this.actorID);
-  },
-
   toString: function() {
     return "[Front for " + this.typeName + "/" + this.actorID + "]";
   },
@@ -1350,13 +1342,11 @@ Front.prototype = extend(Pool.prototype, {
     if (packet.to) {
       this.conn._transport.send(packet);
     } else {
-      this.actor().then(actorID => {
-        packet.to = actorID;
-        
-        if (this.conn._transport) {
-          this.conn._transport.send(packet);
-        }
-      }).catch(console.error);
+      packet.to = this.actorID;
+      
+      if (this.conn._transport) {
+        this.conn._transport.send(packet);
+      }
     }
   },
 
