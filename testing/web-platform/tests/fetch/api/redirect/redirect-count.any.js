@@ -1,7 +1,6 @@
 
 
 
-
 function redirectCount(desc, redirectUrl, redirectLocation, redirectStatus, maxCount, shouldPass) {
   var uuid_token = token();
 
