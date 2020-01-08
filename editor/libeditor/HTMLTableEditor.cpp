@@ -229,6 +229,12 @@ HTMLEditor::InsertTableCellsWithTransaction(int32_t aNumberOfCellsToInsert,
       MOZ_ASSERT_UNREACHABLE("Invalid InsertPosition");
   }
 
+  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this, EditSubAction::eInsertNode,
+                                      nsIEditor::eNext);
+
   
   AutoSelectionSetterAfterTableEdit setCaret(*this, table,
                                              cellDataAtSelection.mCurrent.mRow,
