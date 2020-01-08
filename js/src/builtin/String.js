@@ -67,6 +67,33 @@ function String_generic_match(thisValue, regexp) {
 
 
 
+function String_matchAll(regexp) {
+    
+    RequireObjectCoercible(this);
+
+    
+    if (regexp !== undefined && regexp !== null) {
+        
+        var matcher = GetMethod(regexp, std_matchAll);
+
+        
+        if (matcher !== undefined)
+            return callContentFunction(matcher, regexp, this);
+    }
+
+    
+    var string = ToString(this);
+
+    
+    var rx = RegExpCreate(regexp, "g");
+
+    
+    return callContentFunction(GetMethod(rx, std_matchAll), rx, string);
+}
+
+
+
+
 
 function String_pad(maxLength, fillString, padEnd) {
     
