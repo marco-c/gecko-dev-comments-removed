@@ -22,6 +22,7 @@ pub mod color;
 pub mod effects;
 mod font;
 mod length;
+mod svg;
 
 
 
