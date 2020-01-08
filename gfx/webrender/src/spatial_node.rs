@@ -33,15 +33,6 @@ pub enum SpatialNodeType {
     Empty,
 }
 
-impl SpatialNodeType {
-    fn is_reference_frame(&self) -> bool {
-        match *self {
-            SpatialNodeType::ReferenceFrame(_) => true,
-            _ => false,
-        }
-    }
-}
-
 
 #[derive(Clone, Debug)]
 pub struct SpatialNode {
@@ -282,98 +273,82 @@ impl SpatialNode {
         next_coordinate_system_id: &mut CoordinateSystemId,
         scene_properties: &SceneProperties,
     ) {
-        if self.node_type.is_reference_frame() {
-            self.update_transform_for_reference_frame(
-                state,
-                next_coordinate_system_id,
-                scene_properties
-            );
-            return;
-        }
+        match self.node_type {
+            SpatialNodeType::ReferenceFrame(ref mut info) => {
+                
+                let source_transform = scene_properties.resolve_layout_transform(&info.source_transform);
+                info.resolved_transform =
+                    LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
+                    .pre_mul(&source_transform.into())
+                    .pre_mul(&info.source_perspective);
 
-        
-        let sticky_offset = self.calculate_sticky_offset(
-            &state.nearest_scrolling_ancestor_offset,
-            &state.nearest_scrolling_ancestor_viewport,
-        );
+                
+                
+                
+                
+                let relative_transform = info.resolved_transform
+                    .post_translate(state.parent_accumulated_scroll_offset)
+                    .to_transform()
+                    .with_destination::<LayoutPixel>();
+                self.world_viewport_transform =
+                    state.parent_reference_frame_transform.pre_mul(&relative_transform.into());
+                self.world_content_transform = self.world_viewport_transform;
 
-        
-        
-        
-        let accumulated_offset = state.parent_accumulated_scroll_offset + sticky_offset;
-        self.world_viewport_transform = if accumulated_offset != LayoutVector2D::zero() {
-            state.parent_reference_frame_transform.pre_translate(&accumulated_offset)
-        } else {
-            state.parent_reference_frame_transform
-        };
+                info.invertible = self.world_viewport_transform.is_invertible();
+                if !info.invertible {
+                    return;
+                }
 
-        
-        
-        let scroll_offset = self.scroll_offset();
-        self.world_content_transform = if scroll_offset != LayoutVector2D::zero() {
-            self.world_viewport_transform.pre_translate(&scroll_offset)
-        } else {
-            self.world_viewport_transform
-        };
+                
+                
+                match state.coordinate_system_relative_transform.update(relative_transform) {
+                    Some(offset) => self.coordinate_system_relative_transform = offset,
+                    None => {
+                        self.coordinate_system_relative_transform = LayoutFastTransform::identity();
+                        state.current_coordinate_system_id = *next_coordinate_system_id;
+                        next_coordinate_system_id.advance();
+                    }
+                }
 
-        let added_offset = state.parent_accumulated_scroll_offset + sticky_offset + scroll_offset;
-        self.coordinate_system_relative_transform =
-            state.coordinate_system_relative_transform.offset(added_offset);
+                self.coordinate_system_id = state.current_coordinate_system_id;
+            }
+            _ => {
+                
+                let sticky_offset = self.calculate_sticky_offset(
+                    &state.nearest_scrolling_ancestor_offset,
+                    &state.nearest_scrolling_ancestor_viewport,
+                );
 
-        if let SpatialNodeType::StickyFrame(ref mut info) = self.node_type {
-            info.current_offset = sticky_offset;
-        }
+                
+                
+                
+                let accumulated_offset = state.parent_accumulated_scroll_offset + sticky_offset;
+                self.world_viewport_transform = if accumulated_offset != LayoutVector2D::zero() {
+                    state.parent_reference_frame_transform.pre_translate(&accumulated_offset)
+                } else {
+                    state.parent_reference_frame_transform
+                };
 
-        self.coordinate_system_id = state.current_coordinate_system_id;
-    }
+                
+                
+                let scroll_offset = self.scroll_offset();
+                self.world_content_transform = if scroll_offset != LayoutVector2D::zero() {
+                    self.world_viewport_transform.pre_translate(&scroll_offset)
+                } else {
+                    self.world_viewport_transform
+                };
 
-    pub fn update_transform_for_reference_frame(
-        &mut self,
-        state: &mut TransformUpdateState,
-        next_coordinate_system_id: &mut CoordinateSystemId,
-        scene_properties: &SceneProperties,
-    ) {
-        let info = match self.node_type {
-            SpatialNodeType::ReferenceFrame(ref mut info) => info,
-            _ => unreachable!("Called update_transform_for_reference_frame on non-ReferenceFrame"),
-        };
+                let added_offset = state.parent_accumulated_scroll_offset + sticky_offset + scroll_offset;
+                self.coordinate_system_relative_transform =
+                    state.coordinate_system_relative_transform.offset(added_offset);
 
-        
-        let source_transform = scene_properties.resolve_layout_transform(&info.source_transform);
-        info.resolved_transform =
-            LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
-            .pre_mul(&source_transform.into())
-            .pre_mul(&info.source_perspective);
+                if let SpatialNodeType::StickyFrame(ref mut info) = self.node_type {
+                    info.current_offset = sticky_offset;
+                }
 
-        
-        
-        
-        
-        let relative_transform = info.resolved_transform
-            .post_translate(state.parent_accumulated_scroll_offset)
-            .to_transform()
-            .with_destination::<LayoutPixel>();
-        self.world_viewport_transform =
-            state.parent_reference_frame_transform.pre_mul(&relative_transform.into());
-        self.world_content_transform = self.world_viewport_transform;
-
-        info.invertible = self.world_viewport_transform.is_invertible();
-        if !info.invertible {
-            return;
-        }
-
-        
-        
-        match state.coordinate_system_relative_transform.update(relative_transform) {
-            Some(offset) => self.coordinate_system_relative_transform = offset,
-            None => {
-                self.coordinate_system_relative_transform = LayoutFastTransform::identity();
-                state.current_coordinate_system_id = *next_coordinate_system_id;
-                next_coordinate_system_id.advance();
+                self.coordinate_system_id = state.current_coordinate_system_id;
             }
         }
-
-        self.coordinate_system_id = state.current_coordinate_system_id;
     }
 
     fn calculate_sticky_offset(

@@ -174,33 +174,62 @@ impl ImageData {
     }
 }
 
+
 pub trait BlobImageResources {
     fn get_font_data(&self, key: FontKey) -> &FontTemplate;
     fn get_image(&self, key: ImageKey) -> Option<(&ImageData, &ImageDescriptor)>;
 }
 
-pub trait BlobImageRenderer: Send {
-    fn add(&mut self, key: ImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>);
 
-    fn update(&mut self, key: ImageKey, data: Arc<BlobImageData>, dirty_rect: Option<DeviceUintRect>);
 
-    fn delete(&mut self, key: ImageKey);
 
-    fn request(
+
+
+pub trait BlobImageHandler: Send {
+    
+    fn create_blob_rasterizer(&mut self) -> Box<AsyncBlobImageRasterizer>;
+
+    
+    
+    fn prepare_resources(
         &mut self,
-        resources: &BlobImageResources,
-        key: BlobImageRequest,
-        descriptor: &BlobImageDescriptor,
-        dirty_rect: Option<DeviceUintRect>,
+        services: &BlobImageResources,
+        requests: &[BlobImageParams],
     );
 
-    fn resolve(&mut self, key: BlobImageRequest) -> BlobImageResult;
+    
+    fn add(&mut self, key: ImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>);
 
+    
+    fn update(&mut self, key: ImageKey, data: Arc<BlobImageData>, dirty_rect: Option<DeviceUintRect>);
+
+    
+    fn delete(&mut self, key: ImageKey);
+
+    
+    
     fn delete_font(&mut self, key: FontKey);
 
+    
+    
     fn delete_font_instance(&mut self, key: FontInstanceKey);
 
+    
+    
     fn clear_namespace(&mut self, namespace: IdNamespace);
+}
+
+
+pub trait AsyncBlobImageRasterizer : Send {
+    fn rasterize(&mut self, requests: &[BlobImageParams]) -> Vec<(BlobImageRequest, BlobImageResult)>;
+}
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct BlobImageParams {
+    pub request: BlobImageRequest,
+    pub descriptor: BlobImageDescriptor,
+    pub dirty_rect: Option<DeviceUintRect>,
 }
 
 pub type BlobImageData = Vec<u8>;
@@ -217,7 +246,7 @@ pub struct BlobImageDescriptor {
 
 pub struct RasterizedBlobImage {
     pub size: DeviceUintSize,
-    pub data: Vec<u8>,
+    pub data: Arc<Vec<u8>>,
 }
 
 #[derive(Clone, Debug)]
@@ -228,7 +257,7 @@ pub enum BlobImageError {
     Other(String),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct BlobImageRequest {
     pub key: ImageKey,
     pub tile: Option<TileOffset>,
