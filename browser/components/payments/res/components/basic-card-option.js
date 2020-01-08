@@ -30,7 +30,7 @@ export default class BasicCardOption extends ObservedPropertiesMixin(RichOption)
     super();
 
     for (let name of ["cc-name", "cc-number", "cc-exp", "cc-type"]) {
-      this[`_${name}`] = document.createElement("span");
+      this[`_${name}`] = document.createElement(name == "cc-type" ? "img" : "span");
       this[`_${name}`].classList.add(name);
     }
   }
@@ -42,21 +42,42 @@ export default class BasicCardOption extends ObservedPropertiesMixin(RichOption)
     super.connectedCallback();
   }
 
-  static formatSingleLineLabel(basicCard) {
+  static formatCCNumber(ccNumber) {
     
-    let ccNumber = basicCard["cc-number"] || "";
-    let ccExp = basicCard["cc-exp"] || "";
-    let ccName = basicCard["cc-name"] || "";
+    return ccNumber ? ccNumber.replace(/[*]{4,}/, "****") : "";
+  }
+
+  static formatSingleLineLabel(basicCard) {
+    let ccNumber = BasicCardOption.formatCCNumber(basicCard["cc-number"]);
+
+    
+    let ccExp = basicCard["cc-exp"] ? "Exp. " + basicCard["cc-exp"] : "";
+    let ccName = basicCard["cc-name"];
     
     let ccType = basicCard["cc-type"] || "";
-    return `${ccType} ${ccNumber} ${ccExp} ${ccName}`;
+    
+    
+    return [
+      ccType.replace(/^[a-z]/, $0 => $0.toUpperCase()),
+      ccNumber,
+      ccExp,
+      ccName,
+      
+    ].filter(str => !!str).join(" \xa0 ");
+  }
+
+  get requiredFields() {
+    return BasicCardOption.recordAttributes;
   }
 
   render() {
-    this["_cc-name"].textContent = this.ccName;
-    this["_cc-number"].textContent = this.ccNumber;
-    this["_cc-exp"].textContent = this.ccExp;
-    this["_cc-type"].textContent = this.ccType;
+    this["_cc-name"].textContent = this.ccName || "";
+    this["_cc-number"].textContent = BasicCardOption.formatCCNumber(this.ccNumber);
+    
+    this["_cc-exp"].textContent = this.ccExp ? "Exp. " + this.ccExp : "";
+    
+    this["_cc-type"].alt = this.ccType || "";
+    this["_cc-type"].src = "chrome://formautofill/content/icon-credit-card-generic.svg";
   }
 }
 
