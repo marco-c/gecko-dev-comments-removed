@@ -1789,6 +1789,12 @@ CompositorBridgeParent::RecvAdoptChild(const LayersId& child)
 
   { 
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
+    
+    
+    if (sIndirectLayerTrees[child].mParent == this) {
+      return IPC_OK();
+    }
+
     if (sIndirectLayerTrees[child].mParent) {
       
       
