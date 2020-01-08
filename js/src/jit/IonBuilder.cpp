@@ -782,7 +782,7 @@ IonBuilder::build()
 {
     
     
-#ifdef JS_STRUCTURED_SPEW
+#ifdef JS_JITSPEW
     if (!info().isAnalysis()) {
         JitSpewBaselineICStats(script(), "To-Be-Compiled");
     }
@@ -983,7 +983,7 @@ IonBuilder::buildInline(IonBuilder* callerBuilder, MResumePoint* callerResumePoi
 
     
     
-#ifdef JS_STRUCTURED_SPEW
+#ifdef JS_JITSPEW
     if (!info().isAnalysis()) {
         JitSpewBaselineICStats(script(), "To-Be-Inlined");
     }

@@ -62,7 +62,6 @@ class JSONPrinter
 #endif
 
     void formatProperty(const char* name, const char* format, ...) MOZ_FORMAT_PRINTF(3, 4);
-    void formatProperty(const char* name, const char* format, va_list ap);
 
     
     

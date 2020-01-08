@@ -3517,11 +3517,6 @@ JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script, frontend::Byt
         initFromModuleContext(script);
     }
 
-#ifdef JS_STRUCTURED_SPEW
-    
-    script->setSpewEnabled(StructuredSpewer::enabled(script));
-#endif
-
 #ifdef DEBUG
     script->assertValidJumpTargets();
 #endif

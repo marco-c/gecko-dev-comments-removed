@@ -435,7 +435,7 @@ class TypeZone
     }
 };
 
-enum TypeSpewChannel {
+enum SpewChannel {
     ISpewOps,      
     ISpewResult,   
     SPEW_COUNT
@@ -443,7 +443,7 @@ enum TypeSpewChannel {
 
 #ifdef DEBUG
 
-bool InferSpewActive(TypeSpewChannel channel);
+bool InferSpewActive(SpewChannel channel);
 const char * InferSpewColorReset();
 const char * InferSpewColor(TypeConstraint* constraint);
 const char * InferSpewColor(TypeSet* types);
