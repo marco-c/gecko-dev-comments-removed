@@ -251,7 +251,9 @@ var NativeApp = class extends EventEmitter {
       
       
       let timer = setTimeout(() => {
-        this.proc.kill(GRACEFUL_SHUTDOWN_TIME);
+        if (this.proc) {
+          this.proc.kill(GRACEFUL_SHUTDOWN_TIME);
+        }
       }, GRACEFUL_SHUTDOWN_TIME);
 
       let promise = Promise.all([
