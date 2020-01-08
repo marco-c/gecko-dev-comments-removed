@@ -620,27 +620,6 @@ nsXULElement::UpdateEditableState(bool aNotify)
     UpdateState(aNotify);
 }
 
-#ifdef DEBUG
-
-
-
-
-static inline bool XULElementsRulesInMinimalXULSheet(nsAtom* aTag)
-{
-  return 
-         aTag == nsGkAtoms::scrollbar ||
-         aTag == nsGkAtoms::scrollbarbutton ||
-         aTag == nsGkAtoms::scrollcorner ||
-         aTag == nsGkAtoms::slider ||
-         aTag == nsGkAtoms::thumb ||
-         
-         aTag == nsGkAtoms::datetimebox ||
-         aTag == nsGkAtoms::resizer ||
-         aTag == nsGkAtoms::label ||
-         aTag == nsGkAtoms::videocontrols;
-}
-#endif
-
 class XULInContentErrorReporter : public Runnable
 {
 public:
@@ -699,9 +678,21 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
     
     
     
-    if (!XULElementsRulesInMinimalXULSheet(NodeInfo()->NameAtom())) {
-      NS_ERROR("Unexpected XUL element in non-XUL doc");
-    }
+    nsAtom* tag = NodeInfo()->NameAtom();
+    MOZ_ASSERT(
+      
+      tag == nsGkAtoms::scrollbar ||
+      tag == nsGkAtoms::scrollbarbutton ||
+      tag == nsGkAtoms::scrollcorner ||
+      tag == nsGkAtoms::slider ||
+      tag == nsGkAtoms::thumb ||
+      
+      tag == nsGkAtoms::datetimebox ||
+      tag == nsGkAtoms::resizer ||
+      tag == nsGkAtoms::label ||
+      tag == nsGkAtoms::videocontrols,
+      "Unexpected XUL element in non-XUL doc"
+    );
   }
 #endif
 
