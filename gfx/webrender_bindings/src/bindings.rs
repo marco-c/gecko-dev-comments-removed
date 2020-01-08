@@ -38,14 +38,6 @@ pub enum WrExternalImageBufferType {
     ExternalBuffer = 4,
 }
 
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum OpacityType {
-    Opaque = 0,
-    HasAlphaChannel = 1,
-}
-
 impl WrExternalImageBufferType {
     fn to_wr(self) -> ExternalImageType {
         match self {
@@ -291,7 +283,7 @@ pub struct WrImageDescriptor {
     pub width: u32,
     pub height: u32,
     pub stride: u32,
-    pub opacity: OpacityType,
+    pub is_opaque: bool,
 }
 
 impl<'a> Into<ImageDescriptor> for &'a WrImageDescriptor {
@@ -304,7 +296,7 @@ impl<'a> Into<ImageDescriptor> for &'a WrImageDescriptor {
                 None
             },
             format: self.format,
-            is_opaque: self.opacity == OpacityType::Opaque,
+            is_opaque: self.is_opaque,
             offset: 0,
             allow_mipmaps: false,
         }
@@ -2058,6 +2050,7 @@ pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
          .dl_builder
          .push_yuv_image(&prim_info,
                          YuvData::PlanarYCbCr(image_key_0, image_key_1, image_key_2),
+                         ColorDepth::Color8,
                          color_space,
                          image_rendering);
 }
@@ -2081,6 +2074,7 @@ pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
          .dl_builder
          .push_yuv_image(&prim_info,
                          YuvData::NV12(image_key_0, image_key_1),
+                         ColorDepth::Color8,
                          color_space,
                          image_rendering);
 }
@@ -2103,6 +2097,7 @@ pub extern "C" fn wr_dp_push_yuv_interleaved_image(state: &mut WrState,
          .dl_builder
          .push_yuv_image(&prim_info,
                          YuvData::InterleavedYCbCr(image_key_0),
+                         ColorDepth::Color8,
                          color_space,
                          image_rendering);
 }
