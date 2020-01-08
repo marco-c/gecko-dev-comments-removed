@@ -6,11 +6,47 @@
 
 
 
+
+
+
+
+
 extern crate arrayvec;
 
 use arrayvec::{Array, ArrayVec};
 
 #[cfg(test)] mod tests;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30,9 +66,6 @@ pub struct LRUCache<A: Array> {
     
     tail: u16,
 }
-
-
-pub struct CacheIndex(u16);
 
 
 pub struct Entry<T> {
@@ -63,10 +96,10 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
 
     #[inline]
     
-    pub fn touch(&mut self, idx: CacheIndex) {
-        if idx.0 != self.head {
-            self.remove(idx.0);
-            self.push_front(idx.0);
+    fn touch(&mut self, idx: u16) {
+        if idx != self.head {
+            self.remove(idx);
+            self.push_front(idx);
         }
     }
 
@@ -81,17 +114,7 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
     }
 
     
-    
-    pub fn iter(&self) -> LRUCacheIterator<A> {
-        LRUCacheIterator {
-            pos: self.head,
-            done: self.entries.len() == 0,
-            cache: self,
-        }
-    }
-
-    
-    pub fn iter_mut(&mut self) -> LRUCacheMutIterator<A> {
+    fn iter_mut(&mut self) -> LRUCacheMutIterator<A> {
         LRUCacheMutIterator {
             pos: self.head,
             done: self.entries.len() == 0,
@@ -205,35 +228,7 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
 }
 
 
-pub struct LRUCacheIterator<'a, A: 'a + Array> {
-    cache: &'a LRUCache<A>,
-    pos: u16,
-    done: bool,
-}
-
-impl<'a, T, A> Iterator for LRUCacheIterator<'a, A>
-where T: 'a,
-      A: 'a + Array<Item=Entry<T>>
-{
-    type Item = (CacheIndex, &'a T);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.done { return None }
-
-        let entry = &self.cache.entries[self.pos as usize];
-
-        let index = CacheIndex(self.pos);
-        if self.pos == self.cache.tail {
-            self.done = true;
-        }
-        self.pos = entry.next;
-
-        Some((index, &entry.val))
-    }
-}
-
-
-pub struct LRUCacheMutIterator<'a, A: 'a + Array> {
+struct LRUCacheMutIterator<'a, A: 'a + Array> {
     cache: &'a mut LRUCache<A>,
     pos: u16,
     done: bool,
@@ -243,7 +238,7 @@ impl<'a, T, A> Iterator for LRUCacheMutIterator<'a, A>
 where T: 'a,
       A: 'a + Array<Item=Entry<T>>
 {
-    type Item = (CacheIndex, &'a mut T);
+    type Item = (u16, &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.done { return None }
@@ -253,7 +248,7 @@ where T: 'a,
             &mut *(&mut self.cache.entries[self.pos as usize] as *mut Entry<T>)
         };
 
-        let index = CacheIndex(self.pos);
+        let index = self.pos;
         if self.pos == self.cache.tail {
             self.done = true;
         }
