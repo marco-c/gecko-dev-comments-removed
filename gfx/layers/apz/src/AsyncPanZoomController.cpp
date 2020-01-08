@@ -4296,7 +4296,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 #endif
   if (entertainViewportUpdates) {
     if (Metrics().GetLayoutViewport().Size() !=
-            aLayerMetrics.GetLayoutViewport().Size()) {
+        aLayerMetrics.GetLayoutViewport().Size()) {
       needContentRepaint = true;
       viewportUpdated = true;
     }
@@ -4498,6 +4498,33 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     mExpectedGeckoMetrics = aLayerMetrics;
 
     SmoothScrollTo(Metrics().GetSmoothScrollOffset());
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  FrameMetrics::ScrollOffsetUpdateType visualUpdateType =
+      aLayerMetrics.GetVisualScrollUpdateType();
+  MOZ_ASSERT(visualUpdateType == FrameMetrics::eNone ||
+             visualUpdateType == FrameMetrics::eMainThread);
+  if (visualUpdateType == FrameMetrics::eMainThread) {
+    Metrics().ClampAndSetScrollOffset(aLayerMetrics.GetVisualViewportOffset());
+
+    
+    
+    Metrics().RecalculateLayoutViewportOffset();
+    mCompositedLayoutViewport = Metrics().GetLayoutViewport();
+    mCompositedScrollOffset = Metrics().GetScrollOffset();
+    mExpectedGeckoMetrics = aLayerMetrics;
+    if (!mAnimation || !mAnimation->HandleScrollOffsetUpdate(Nothing())) {
+      CancelAnimation();
+    }
+    needContentRepaint = true;
+    ScheduleComposite();
   }
 
   if (viewportUpdated) {

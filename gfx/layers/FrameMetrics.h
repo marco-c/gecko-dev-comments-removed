@@ -104,6 +104,8 @@ struct FrameMetrics {
         mExtraResolution(),
         mPaintRequestTime(),
         mScrollUpdateType(eNone),
+        mVisualViewportOffset(0, 0),
+        mVisualScrollUpdateType(eNone),
         mIsRootContent(false),
         mIsRelative(false),
         mDoSmoothScroll(false),
@@ -133,6 +135,8 @@ struct FrameMetrics {
            mExtraResolution == aOther.mExtraResolution &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mScrollUpdateType == aOther.mScrollUpdateType &&
+           mVisualViewportOffset == aOther.mVisualViewportOffset &&
+           mVisualScrollUpdateType == aOther.mVisualScrollUpdateType &&
            mIsRootContent == aOther.mIsRootContent &&
            mIsRelative == aOther.mIsRelative &&
            mDoSmoothScroll == aOther.mDoSmoothScroll &&
@@ -480,6 +484,20 @@ struct FrameMetrics {
   }
   bool IsScrollInfoLayer() const { return mIsScrollInfoLayer; }
 
+  void SetVisualViewportOffset(const CSSPoint& aVisualViewportOffset) {
+    mVisualViewportOffset = aVisualViewportOffset;
+  }
+  const CSSPoint& GetVisualViewportOffset() const {
+    return mVisualViewportOffset;
+  }
+
+  void SetVisualScrollUpdateType(ScrollOffsetUpdateType aUpdateType) {
+    mVisualScrollUpdateType = aUpdateType;
+  }
+  ScrollOffsetUpdateType GetVisualScrollUpdateType() const {
+    return mVisualScrollUpdateType;
+  }
+
   
   
   
@@ -639,6 +657,18 @@ struct FrameMetrics {
   
   
   ScrollOffsetUpdateType mScrollUpdateType;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CSSPoint mVisualViewportOffset;
+  ScrollOffsetUpdateType mVisualScrollUpdateType;
 
   
   bool mIsRootContent : 1;
