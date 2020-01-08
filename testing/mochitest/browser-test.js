@@ -244,8 +244,9 @@ function takeInstrumentation() {
 
   
   function immediateSelector(element) {
-    if (element.localName == "notificationbox" && element.parentNode &&
-        element.parentNode.classList.contains("tabbrowser-tabpanels")) {
+    if (element.localName == "notificationbox" &&
+        element.parentNode &&
+        element.parentNode.id == "tabbrowser-tabpanels") {
       
       return element.localName;
     }
