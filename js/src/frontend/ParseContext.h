@@ -19,6 +19,16 @@ namespace frontend {
 
 class ParserBase;
 
+const char*
+DeclarationKindString(DeclarationKind kind);
+
+
+bool
+DeclarationKindIsVar(DeclarationKind kind);
+
+bool
+DeclarationKindIsParameter(DeclarationKind kind);
+
 
 
 
