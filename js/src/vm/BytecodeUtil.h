@@ -64,28 +64,17 @@ enum {
     JOF_PROP            = 2 << 5,   
     JOF_ELEM            = 3 << 5,   
     JOF_MODEMASK        = 3 << 5,   
+
     JOF_PROPSET         = 1 << 7,   
     JOF_PROPINIT        = 1 << 8,   
-    
-    
-    
-    
-    
-    JOF_DETECTING       = 1 << 14,  
-    
-    JOF_LEFTASSOC       = 1 << 16,  
-    
-    
-    JOF_CHECKSLOPPY     = 1 << 19,  
-    JOF_CHECKSTRICT     = 1 << 20,  
-    JOF_INVOKE          = 1 << 21,  
+    JOF_DETECTING       = 1 << 9,   
+    JOF_CHECKSLOPPY     = 1 << 10,  
+    JOF_CHECKSTRICT     = 1 << 11,  
+    JOF_INVOKE          = 1 << 12,  
 
-    
-    
-    
-    JOF_GNAME           = 1 << 25,  
-    JOF_TYPESET         = 1 << 26,  
-    JOF_ARITH           = 1 << 27   
+    JOF_GNAME           = 1 << 13,  
+    JOF_TYPESET         = 1 << 14,  
+    JOF_ARITH           = 1 << 15   
 };
 
 
