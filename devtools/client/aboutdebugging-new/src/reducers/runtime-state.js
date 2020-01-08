@@ -38,10 +38,7 @@ function runtimeReducer(state = RuntimeState(), action) {
     }
     case REQUEST_EXTENSIONS_SUCCESS: {
       const { installedExtensions, temporaryExtensions } = action;
-      return Object.assign({}, state, {
-        installedExtensions: toExtensionComponentData(installedExtensions),
-        temporaryExtensions: toExtensionComponentData(temporaryExtensions),
-      });
+      return Object.assign({}, state, { installedExtensions, temporaryExtensions });
     }
     case REQUEST_TABS_SUCCESS: {
       const { tabs } = action;
@@ -59,48 +56,6 @@ function runtimeReducer(state = RuntimeState(), action) {
     default:
       return state;
   }
-}
-
-function getExtensionFilePath(extension) {
-  
-  if (!extension.temporarilyInstalled ||
-      !extension.url ||
-      !extension.url.startsWith("file://")) {
-    return null;
-  }
-
-  
-  
-  
-  const windowsRegex = /^file:\/\/\/([a-zA-Z]:\/.*)/;
-
-  if (windowsRegex.test(extension.url)) {
-    return windowsRegex.exec(extension.url)[1];
-  }
-
-  return extension.url.slice("file://".length);
-}
-
-function toExtensionComponentData(extensions) {
-  return extensions.map(extension => {
-    const type = DEBUG_TARGETS.EXTENSION;
-    const { actor, iconURL, id, manifestURL, name } = extension;
-    const icon = iconURL || "chrome://mozapps/skin/extensions/extensionGeneric.svg";
-    const location = getExtensionFilePath(extension);
-    const uuid = manifestURL ? /moz-extension:\/\/([^/]*)/.exec(manifestURL)[1] : null;
-    return {
-      name,
-      icon,
-      id,
-      type,
-      details: {
-        actor,
-        location,
-        manifestURL,
-        uuid,
-      },
-    };
-  });
 }
 
 function getServiceWorkerStatus(isActive, isRunning) {
