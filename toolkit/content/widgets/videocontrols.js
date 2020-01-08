@@ -1158,10 +1158,36 @@ this.VideoControlsImplPageWidget = class {
         element.classList.toggle("fadein", fadeIn);
         let finishedPromise;
         if (!immediate) {
-          animation.playbackRate = fadeIn ? 1 : -1;
-          animation.play();
-          finishedPromise = animation.finished;
-        } else {
+          
+          
+          
+          if (animation.pending) {
+            
+            
+            animation.cancel();
+            finishedPromise = Promise.resolve();
+          } else {
+            switch (animation.playState) {
+              case "idle":
+              case "finished":
+                
+                
+                animation.updatePlaybackRate(fadeIn ? 1 : -1);
+                animation.play();
+                break;
+              case "running":
+                
+                
+                animation.reverse();
+                break;
+              case "pause":
+                throw new Error("Animation should never reach pause state.");
+              default:
+                throw new Error("Unknown Animation playState: " + animation.playState);
+            }
+            finishedPromise = animation.finished;
+          }
+        } else { 
           animation.cancel();
           finishedPromise = Promise.resolve();
         }
