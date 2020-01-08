@@ -1343,8 +1343,11 @@ static MOZ_MUST_USE JSObject* ReadableStreamAddReadOrReadIntoRequest(
   if (!unwrappedReader) {
     return nullptr;
   }
+  MOZ_ASSERT(unwrappedReader->is<ReadableStreamDefaultReader>());
 
   
+  
+  MOZ_ASSERT(unwrappedStream->readable() || unwrappedStream->closed());
   MOZ_ASSERT_IF(unwrappedReader->is<ReadableStreamDefaultReader>(),
                 unwrappedStream->readable());
 
@@ -2124,8 +2127,7 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericRelease(
   
   Rooted<PromiseObject*> unwrappedClosedPromise(cx);
   if (unwrappedStream->readable()) {
-    unwrappedClosedPromise = 
-      UnwrapInternalSlot<PromiseObject>(
+    unwrappedClosedPromise = UnwrapInternalSlot<PromiseObject>(
         cx, unwrappedReader, ReadableStreamReader::Slot_ClosedPromise);
     if (!unwrappedClosedPromise) {
       return false;
@@ -4291,6 +4293,9 @@ inline static MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, HandleValue O,
                                              HandleValue arg,
                                              MutableHandleValue rval) {
   cx->check(O, P, arg);
+
+  
+  MOZ_ASSERT(!O.isUndefined());
 
   
   
