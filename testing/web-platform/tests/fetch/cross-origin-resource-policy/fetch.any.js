@@ -1,11 +1,6 @@
 
 
 
-if (!self.document) {
-    importScripts("/resources/testharness.js");
-    importScripts("/common/get-host-info.sub.js");
-}
-
 const host = get_host_info();
 const path = "/fetch/cross-origin-resource-policy/";
 const localBaseURL = host.HTTP_ORIGIN + path;
