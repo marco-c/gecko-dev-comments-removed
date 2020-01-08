@@ -2807,12 +2807,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
   nsChangeHint CalcDifference(const nsStyleColumn& aNewData) const;
 
   
-
-
-
+  
   static const uint32_t kMaxColumnCount = 1000;
 
-  uint32_t     mColumnCount; 
+  
+  static const uint32_t kColumnCountAuto = 0;
+
+  uint32_t mColumnCount = kColumnCountAuto;
   nsStyleCoord mColumnWidth; 
 
   mozilla::StyleComplexColor mColumnRuleColor;
