@@ -43,17 +43,7 @@ const appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
 const isContentProcess = appinfo.processType == appinfo.PROCESS_TYPE_CONTENT;
 
 var extensions = new DefaultWeakMap(policy => {
-  let data = policy.initData;
-  if (data.serialize) {
-    
-    
-    
-    data = data.serialize();
-  }
-
-  let extension = new ExtensionChild.BrowserExtensionContent(data);
-  extension.policy = policy;
-  return extension;
+  return new ExtensionChild.BrowserExtensionContent(policy);
 });
 
 var ExtensionManager;
@@ -178,7 +168,8 @@ ExtensionManager = {
       }
 
       policy.active = true;
-      policy.initData = extension;
+      policy.instanceId = extension.instanceId;
+      policy.optionalPermissions = extension.optionalPermissions;
     }
     return policy;
   },

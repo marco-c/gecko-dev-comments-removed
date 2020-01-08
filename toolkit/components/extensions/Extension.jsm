@@ -1552,6 +1552,10 @@ class Extension extends ExtensionData {
             this.manifest.background.scripts);
   }
 
+  get optionalPermissions() {
+    return this.manifest.optional_permissions;
+  }
+
   
   
   
@@ -1567,7 +1571,7 @@ class Extension extends ExtensionData {
       webAccessibleResources: this.webAccessibleResources.map(res => res.glob),
       whiteListedHosts: this.whiteListedHosts.patterns.map(pat => pat.pattern),
       permissions: this.permissions,
-      optionalPermissions: this.manifest.optional_permissions,
+      optionalPermissions: this.optionalPermissions,
     };
   }
 
