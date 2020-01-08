@@ -7,19 +7,6 @@ function workerTestDone() {
   postMessage({ type: 'finish' });
 }
 
-function workerTestGetOSCPU(cb) {
-  addEventListener('message', function workerTestGetOSCPUCB(e) {
-    if (e.data.type !== 'returnOSCPU') {
-      return;
-    }
-    removeEventListener('message', workerTestGetOSCPUCB);
-    cb(e.data.result);
-  });
-  postMessage({
-    type: 'getOSCPU'
-  });
-}
-
 ok(self.performance, "Performance object should exist.");
 ok(typeof self.performance.now == 'function', "Performance object should have a 'now' method.");
 var n = self.performance.now(), d = Date.now();
@@ -34,12 +21,8 @@ ok(self.performance.now() >= n, "The value of now() should monotonically increas
 
 
 
-var platformPossiblyLowRes;
-workerTestGetOSCPU(function(oscpu) {
-    platformPossiblyLowRes = oscpu.indexOf("Windows NT 5.1") == 0; 
-    setTimeout(checkAfterTimeout, 1);
-});
-var allInts = (n % 1) == 0; 
+setTimeout(checkAfterTimeout, 1);
+
 var checks = 0;
 
 function checkAfterTimeout() {
@@ -47,30 +30,28 @@ function checkAfterTimeout() {
   var d2 = Date.now();
   var n2 = self.performance.now();
 
-  allInts = allInts && (n2 % 1) == 0;
-  var lowResCounter = platformPossiblyLowRes && allInts;
-
-  if ( n2 == n && checks < 50 && 
-       ( (d2 - d) < 2 
-         ||
-         lowResCounter &&
-         (d2 - d) < 25
-       )
-     ) {
+  
+  
+  let elapsedTime = d2 - d;
+  let elapsedPerf = n2 - n;
+  if (elapsedPerf == 0 && elapsedTime < 2 && checks < 50) {
     setTimeout(checkAfterTimeout, 1);
     return;
   }
 
   
   
-  ok(n2 > n, "Loose - the value of now() should increase within 2ms (or 25ms if low-res counter) (delta now(): " + (n2 - n) + " ms).");
+  
+  
+  ok(elapsedPerf > 0,
+     `Loose - the value of now() should increase after 2ms. ` +
+     `delta now(): ${elapsedPerf} ms`);
 
   
   
-  ok(n2 > n && (lowResCounter || checks == 1),
-     "Strict - [if high-res counter] the value of now() should increase after one setTimeout (hi-res: " + (!lowResCounter) +
-                                                                                              ", iters: " + checks +
-                                                                                              ", dt: " + (d2 - d) +
-                                                                                              ", now(): " + n2 + ").");
+  ok(checks == 1,
+     `Strict - the value of now() should increase after one setTimeout. ` +
+     `iters: ${checks}, dt: ${elapsedTime}, now(): ${n2}`);
+
   workerTestDone();
 };
