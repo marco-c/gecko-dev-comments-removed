@@ -702,22 +702,6 @@ class Operand {
   
   explicit Operand(Register reg, Extend extend, unsigned shift_amount = 0);
 
-  
-  
-  
-  explicit Operand(js::jit::Register) {
-    MOZ_CRASH("Operand with Register");
-  }
-  explicit Operand(js::jit::FloatRegister) {
-    MOZ_CRASH("Operand with FloatRegister");
-  }
-  explicit Operand(js::jit::Register, int32_t) {
-    MOZ_CRASH("Operand with implicit Address");
-  }
-  explicit Operand(js::jit::RegisterOrSP, int32_t) {
-    MOZ_CRASH("Operand with implicit Address");
-  }
-
   bool IsImmediate() const;
   bool IsShiftedRegister() const;
   bool IsExtendedRegister() const;
