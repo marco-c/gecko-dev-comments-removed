@@ -3370,11 +3370,13 @@ ContentParent::KillHard(const char* aReason)
     
     
     nsAutoCString additionalDumps("browser");
-    mCrashReporter->AddAnnotation(
-      CrashReporter::Annotation::additional_minidumps, additionalDumps);
+    mCrashReporter->AddNote(
+      NS_LITERAL_CSTRING("additional_minidumps"),
+      additionalDumps);
     nsDependentCString reason(aReason);
-    mCrashReporter->AddAnnotation(CrashReporter::Annotation::ipc_channel_error,
-                                  reason);
+    mCrashReporter->AddNote(
+      NS_LITERAL_CSTRING("ipc_channel_error"),
+      reason);
 
     Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
 

@@ -603,8 +603,8 @@ nsTerminator::UpdateCrashReport(const char* aTopic)
   
   nsAutoCString report(aTopic);
 
-  Unused << CrashReporter::AnnotateCrashReport(
-    CrashReporter::Annotation::ShutdownProgress, report);
+  Unused << CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ShutdownProgress"),
+                                               report);
 }
 
 void
