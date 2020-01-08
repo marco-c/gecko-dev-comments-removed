@@ -216,113 +216,28 @@ void TypeFallbackICSpew(JSContext* cx, ICTypeMonitor_Fallback* stub, const char*
 
 
 
-
 class ICEntry
 {
-  private:
     
     ICStub* firstStub_;
 
     
-    
-    uint32_t returnOffset_;
-
-    
-    uint32_t pcOffset_ : 28;
+    uint32_t pcOffset_ : 31;
+    uint32_t isForOp_ : 1;
 
   public:
-    enum Kind {
-        
-        Kind_Op = 0,
-
-        
-        Kind_NonOp,
-
-        
-        Kind_CallVM,
-
-        
-        
-        Kind_NonOpCallVM,
-
-        
-        
-        Kind_WarmupCounter,
-
-        
-        
-        Kind_StackCheck,
-
-        
-        Kind_DebugTrap,
-
-        
-        
-        Kind_DebugPrologue,
-        Kind_DebugAfterYield,
-        Kind_DebugEpilogue,
-
-        Kind_Invalid
-    };
-
-  private:
-    
-    Kind kind_ : 4;
-
-    
-    void setKind(Kind kind) {
-        MOZ_ASSERT(kind < Kind_Invalid);
-        kind_ = kind;
-        MOZ_ASSERT(this->kind() == kind);
-    }
-
-  public:
-    ICEntry(uint32_t pcOffset, Kind kind)
-      : firstStub_(nullptr), returnOffset_(), pcOffset_(pcOffset)
+    ICEntry(ICStub* firstStub, uint32_t pcOffset, bool isForOp)
+      : firstStub_(firstStub), pcOffset_(pcOffset), isForOp_(uint32_t(isForOp))
     {
         
         
         MOZ_ASSERT(pcOffset_ == pcOffset);
-        JS_STATIC_ASSERT(BaselineScript::MAX_JSSCRIPT_LENGTH <= (1u << 28) - 1);
-        MOZ_ASSERT(pcOffset <= BaselineScript::MAX_JSSCRIPT_LENGTH);
-        setKind(kind);
+        JS_STATIC_ASSERT(BaselineMaxScriptLength <= (1u << 31) - 1);
+        MOZ_ASSERT(pcOffset <= BaselineMaxScriptLength);
     }
 
-    CodeOffset returnOffset() const {
-        return CodeOffset(returnOffset_);
-    }
-
-    void setReturnOffset(CodeOffset offset) {
-        MOZ_ASSERT(offset.offset() <= (size_t) UINT32_MAX);
-        returnOffset_ = (uint32_t) offset.offset();
-    }
-
-    uint32_t pcOffset() const {
-        return pcOffset_;
-    }
-
-    jsbytecode* pc(JSScript* script) const {
-        return script->offsetToPC(pcOffset_);
-    }
-
-    Kind kind() const {
-        
-        return Kind(kind_ & 0xf);
-    }
-    bool isForOp() const {
-        return kind() == Kind_Op;
-    }
-
-    void setFakeKind(Kind kind) {
-        MOZ_ASSERT(kind != Kind_Op && kind != Kind_NonOp);
-        setKind(kind);
-    }
-
-    bool hasStub() const {
-        return firstStub_ != nullptr;
-    }
     ICStub* firstStub() const {
-        MOZ_ASSERT(hasStub());
+        MOZ_ASSERT(firstStub_);
         return firstStub_;
     }
 
@@ -332,12 +247,23 @@ class ICEntry
         firstStub_ = stub;
     }
 
+    uint32_t pcOffset() const {
+        return pcOffset_;
+    }
+    jsbytecode* pc(JSScript* script) const {
+        return script->offsetToPC(pcOffset_);
+    }
+
     static inline size_t offsetOfFirstStub() {
         return offsetof(ICEntry, firstStub_);
     }
 
     inline ICStub** addressOfFirstStub() {
         return &firstStub_;
+    }
+
+    bool isForOp() const {
+        return !!isForOp_;
     }
 
     void trace(JSTracer* trc);

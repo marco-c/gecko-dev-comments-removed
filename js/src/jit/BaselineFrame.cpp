@@ -155,7 +155,8 @@ BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues)
         JSJitFrameIter frame(cx->activation()->asJit());
         MOZ_ASSERT(frame.returnAddress() == nullptr);
         BaselineScript* baseline = fp->script()->baselineScript();
-        frame.current()->setReturnAddress(baseline->returnAddressForIC(baseline->icEntry(0)));
+        uint8_t* retAddr = baseline->returnAddressForEntry(baseline->retAddrEntry(0));
+        frame.current()->setReturnAddress(retAddr);
 
         if (!Debugger::handleBaselineOsr(cx, fp, this)) {
             return false;

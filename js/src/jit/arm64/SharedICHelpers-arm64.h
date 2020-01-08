@@ -31,7 +31,7 @@ EmitRepushTailCallReg(MacroAssembler& masm)
 }
 
 inline void
-EmitCallIC(CodeOffset* patchOffset, MacroAssembler& masm)
+EmitCallIC(MacroAssembler& masm, CodeOffset* patchOffset, CodeOffset* callOffset)
 {
     
     CodeOffset offset = masm.movWithPatch(ImmWord(-1), ICStubReg);
@@ -47,6 +47,7 @@ EmitCallIC(CodeOffset* patchOffset, MacroAssembler& masm)
 
     
     masm.Blr(x0);
+    *callOffset = CodeOffset(masm.currentOffset());
 }
 
 inline void

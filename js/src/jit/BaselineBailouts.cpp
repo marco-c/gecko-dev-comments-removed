@@ -1193,10 +1193,13 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
             
             
-            builder.setResumeAddr(baselineScript->returnAddressForIC(icEntry));
+            RetAddrEntry& retAddrEntry =
+                baselineScript->retAddrEntryFromPCOffset(pcOff, RetAddrEntry::Kind::IC);
+            uint8_t* retAddr = baselineScript->returnAddressForEntry(retAddrEntry);
+            builder.setResumeAddr(retAddr);
             builder.setMonitorStub(firstMonStub);
             JitSpew(JitSpew_BaselineBailouts, "      Set resumeAddr=%p monitorStub=%p",
-                    baselineScript->returnAddressForIC(icEntry), firstMonStub);
+                    retAddr, firstMonStub);
 
         } else {
             
@@ -1309,7 +1312,10 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     ICEntry& icEntry = baselineScript->icEntryFromPCOffset(pcOff);
     MOZ_ASSERT(IsInlinableFallback(icEntry.firstStub()->getChainFallback()));
-    if (!builder.writePtr(baselineScript->returnAddressForIC(icEntry), "ReturnAddr")) {
+
+    RetAddrEntry& retAddrEntry =
+        baselineScript->retAddrEntryFromPCOffset(pcOff, RetAddrEntry::Kind::IC);
+    if (!builder.writePtr(baselineScript->returnAddressForEntry(retAddrEntry), "ReturnAddr")) {
         return false;
     }
 

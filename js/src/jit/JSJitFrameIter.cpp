@@ -149,8 +149,8 @@ JSJitFrameIter::baselineScriptAndPc(JSScript** scriptRes, jsbytecode** pcRes) co
 
     
     uint8_t* retAddr = returnAddressToFp();
-    ICEntry& icEntry = script->baselineScript()->icEntryFromReturnAddress(retAddr);
-    *pcRes = icEntry.pc(script);
+    RetAddrEntry& entry = script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
+    *pcRes = entry.pc(script);
 }
 
 Value*

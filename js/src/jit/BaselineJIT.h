@@ -25,6 +25,7 @@ class StackValue;
 class ICEntry;
 class ICStub;
 class ControlFlowGraph;
+class ReturnAddressEntry;
 
 class PCMappingSlotInfo
 {
@@ -108,24 +109,128 @@ struct DependentWasmImport
     { }
 };
 
-struct BaselineScript
-{
-  public:
-    
+
 #if defined(JS_CODEGEN_ARM)
-    
-    
-    
-    static const uint32_t MAX_JSSCRIPT_LENGTH = 1000000u;
+
+
+
+static constexpr uint32_t BaselineMaxScriptLength = 1000000u;
 #else
-    static const uint32_t MAX_JSSCRIPT_LENGTH = 0x0fffffffu;
+static constexpr uint32_t BaselineMaxScriptLength = 0x0fffffffu;
 #endif
 
-    
-    
-    
-    static const uint32_t MAX_JSSCRIPT_SLOTS = 0xffffu;
 
+
+
+static constexpr uint32_t BaselineMaxScriptSlots = 0xffffu;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RetAddrEntry
+{
+    
+    uint32_t returnOffset_;
+
+    
+    uint32_t pcOffset_ : 28;
+
+  public:
+    enum class Kind : uint32_t {
+        
+        IC,
+
+        
+        NonOpIC,
+
+        
+        CallVM,
+
+        
+        NonOpCallVM,
+
+        
+        WarmupCounter,
+
+        
+        StackCheck,
+
+        
+        DebugTrap,
+
+        
+        DebugPrologue,
+        DebugAfterYield,
+        DebugEpilogue,
+
+        Invalid
+    };
+
+  private:
+    
+    uint32_t kind_ : 4;
+
+  public:
+    RetAddrEntry(uint32_t pcOffset, Kind kind, CodeOffset retOffset)
+      : returnOffset_(uint32_t(retOffset.offset())), pcOffset_(pcOffset)
+    {
+        MOZ_ASSERT(returnOffset_ == retOffset.offset(),
+                   "retOffset must fit in returnOffset_");
+
+        
+        
+        MOZ_ASSERT(pcOffset_ == pcOffset);
+        JS_STATIC_ASSERT(BaselineMaxScriptLength <= (1u << 28) - 1);
+        MOZ_ASSERT(pcOffset <= BaselineMaxScriptLength);
+        setKind(kind);
+    }
+
+    
+    void setKind(Kind kind) {
+        MOZ_ASSERT(kind < Kind::Invalid);
+        kind_ = uint32_t(kind);
+        MOZ_ASSERT(this->kind() == kind);
+    }
+
+    CodeOffset returnOffset() const {
+        return CodeOffset(returnOffset_);
+    }
+
+    uint32_t pcOffset() const {
+        return pcOffset_;
+    }
+
+    jsbytecode* pc(JSScript* script) const {
+        return script->offsetToPC(pcOffset_);
+    }
+
+    Kind kind() const {
+        MOZ_ASSERT(kind_ < uint32_t(Kind::Invalid));
+        return Kind(kind_);
+    }
+    bool isForOp() const {
+        return kind() == Kind::IC;
+    }
+
+    void setNonICKind(Kind kind) {
+        MOZ_ASSERT(kind != Kind::IC && kind != Kind::NonOpIC);
+        setKind(kind);
+    }
+};
+
+struct BaselineScript
+{
   private:
     
     HeapPtr<JitCode*> method_;
@@ -211,6 +316,9 @@ struct BaselineScript
     uint32_t icEntriesOffset_;
     uint32_t icEntries_;
 
+    uint32_t retAddrEntriesOffset_;
+    uint32_t retAddrEntries_;
+
     uint32_t pcMappingIndexOffset_;
     uint32_t pcMappingIndexEntries_;
 
@@ -266,6 +374,7 @@ struct BaselineScript
                                uint32_t profilerExitToggleOffset,
                                uint32_t postDebugPrologueOffset,
                                size_t icEntries,
+                               size_t retAddrEntries,
                                size_t pcMappingIndexEntries, size_t pcMappingSize,
                                size_t bytecodeTypeMapEntries,
                                size_t yieldEntries,
@@ -358,6 +467,9 @@ struct BaselineScript
     ICEntry* icEntryList() {
         return (ICEntry*)(reinterpret_cast<uint8_t*>(this) + icEntriesOffset_);
     }
+    RetAddrEntry* retAddrEntryList() {
+        return (RetAddrEntry*)(reinterpret_cast<uint8_t*>(this) + retAddrEntriesOffset_);
+    }
     uint8_t** yieldEntryList() {
         return (uint8_t**)(reinterpret_cast<uint8_t*>(this) + yieldEntriesOffset_);
     }
@@ -393,23 +505,31 @@ struct BaselineScript
 
     ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset);
     ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset,
-                                              ICEntry* prevLookedUpEntry);
+                                      ICEntry* prevLookedUpEntry);
 
     ICEntry& icEntry(size_t index);
-    ICEntry& icEntryFromReturnOffset(CodeOffset returnOffset);
     ICEntry& icEntryFromPCOffset(uint32_t pcOffset);
     ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
-    ICEntry& callVMEntryFromPCOffset(uint32_t pcOffset);
-    ICEntry& stackCheckICEntry();
-    ICEntry& warmupCountICEntry();
-    ICEntry& icEntryFromReturnAddress(uint8_t* returnAddr);
-    uint8_t* returnAddressForIC(const ICEntry& ent);
+
+    uint8_t* returnAddressForEntry(const RetAddrEntry& ent);
+
+    RetAddrEntry& retAddrEntry(size_t index);
+    RetAddrEntry& retAddrEntryFromPCOffset(uint32_t pcOffset, RetAddrEntry::Kind kind);
+    RetAddrEntry& prologueRetAddrEntry(RetAddrEntry::Kind kind);
+    RetAddrEntry& retAddrEntryFromReturnOffset(CodeOffset returnOffset);
+    RetAddrEntry& retAddrEntryFromReturnAddress(uint8_t* returnAddr);
 
     size_t numICEntries() const {
         return icEntries_;
     }
 
+    size_t numRetAddrEntries() const {
+        return retAddrEntries_;
+    }
+
     void copyICEntries(JSScript* script, const ICEntry* entries);
+    void copyRetAddrEntries(JSScript* script, const RetAddrEntry* entries);
+
     void adoptFallbackStubs(FallbackICStubSpace* stubSpace);
 
     void copyYieldAndAwaitEntries(JSScript* script, Vector<uint32_t>& yieldAndAwaitOffsets);

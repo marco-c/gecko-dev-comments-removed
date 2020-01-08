@@ -245,6 +245,7 @@ BaselineCompiler::compile()
                             profilerExitFrameToggleOffset_.offset(),
                             postDebugPrologueOffset_.offset(),
                             icEntries_.length(),
+                            retAddrEntries_.length(),
                             pcMappingIndexEntries.length(),
                             pcEntries.length(),
                             bytecodeTypeMapEntries,
@@ -270,8 +271,11 @@ BaselineCompiler::compile()
     baselineScript->copyPCMappingEntries(pcEntries);
 
     
-    if (icEntries_.length()) {
+    if (icEntries_.length() > 0) {
         baselineScript->copyICEntries(script, &icEntries_[0]);
+    }
+    if (retAddrEntries_.length() > 0) {
+        baselineScript->copyRetAddrEntries(script, &retAddrEntries_[0]);
     }
 
     
@@ -578,16 +582,28 @@ BaselineCompiler::emitOutOfLinePostBarrierSlot()
 }
 
 bool
-BaselineCompiler::emitIC(ICStub* stub, ICEntry::Kind kind)
+BaselineCompiler::emitIC(ICStub* stub, bool isForOp)
 {
-    ICEntry* entry = allocateICEntry(stub, kind);
-    if (!entry) {
+    if (!stub) {
         return false;
     }
 
-    CodeOffset patchOffset;
-    EmitCallIC(&patchOffset, masm);
-    entry->setReturnOffset(CodeOffset(masm.currentOffset()));
+    CodeOffset patchOffset, callOffset;
+    EmitCallIC(masm, &patchOffset, &callOffset);
+
+    
+
+    RetAddrEntry::Kind kind = isForOp ? RetAddrEntry::Kind::IC : RetAddrEntry::Kind::NonOpIC;
+    if (!retAddrEntries_.emplaceBack(script->pcToOffset(pc), kind, callOffset)) {
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
+    if (!icEntries_.emplaceBack(stub, script->pcToOffset(pc), isForOp)) {
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
     if (!addICLoadLabel(patchOffset)) {
         return false;
     }
@@ -686,9 +702,7 @@ BaselineCompiler::callVM(const VMFunction& fun, CallVMPhase phase)
     }
 #endif
 
-    
-    
-    return appendICEntry(ICEntry::Kind_CallVM, callOffset);
+    return appendRetAddrEntry(RetAddrEntry::Kind::CallVM, callOffset);
 }
 
 typedef bool (*CheckOverRecursedBaselineFn)(JSContext*, BaselineFrame*);
@@ -735,7 +749,7 @@ BaselineCompiler::emitStackCheck()
         return false;
     }
 
-    icEntries_.back().setFakeKind(ICEntry::Kind_StackCheck);
+    retAddrEntries_.back().setKind(RetAddrEntry::Kind::StackCheck);
 
     masm.bind(&skipCall);
     return true;
@@ -773,7 +787,7 @@ BaselineCompiler::emitDebugPrologue()
         }
 
         
-        icEntries_.back().setFakeKind(ICEntry::Kind_DebugPrologue);
+        retAddrEntries_.back().setKind(RetAddrEntry::Kind::DebugPrologue);
 
         
         
@@ -946,7 +960,7 @@ BaselineCompiler::emitWarmUpCounterIncrement(bool allowOsr)
         }
 
         
-        icEntries_.back().setFakeKind(ICEntry::Kind_WarmupCounter);
+        retAddrEntries_.back().setKind(RetAddrEntry::Kind::WarmupCounter);
     }
     masm.bind(&skipCall);
 
@@ -1011,7 +1025,7 @@ BaselineCompiler::emitDebugTrap()
 #endif
 
     
-    return appendICEntry(ICEntry::Kind_DebugTrap, masm.currentOffset());
+    return appendRetAddrEntry(RetAddrEntry::Kind::DebugTrap, masm.currentOffset());
 }
 
 #ifdef JS_TRACE_LOGGING
@@ -4208,7 +4222,7 @@ BaselineCompiler::emitReturn()
         }
 
         
-        icEntries_.back().setFakeKind(ICEntry::Kind_DebugEpilogue);
+        retAddrEntries_.back().setKind(RetAddrEntry::Kind::DebugEpilogue);
 
         masm.loadValue(frame.addressOfReturnValue(), JSReturnOperand);
     }
@@ -4946,7 +4960,7 @@ BaselineCompiler::emit_JSOP_DEBUGAFTERYIELD()
         return false;
     }
 
-    icEntries_.back().setFakeKind(ICEntry::Kind_DebugAfterYield);
+    retAddrEntries_.back().setKind(RetAddrEntry::Kind::DebugAfterYield);
 
     Label done;
     masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, &done);
@@ -5069,7 +5083,7 @@ BaselineCompiler::emit_JSOP_RESUME()
 #endif
 
     
-    if (!appendICEntry(ICEntry::Kind_Op, masm.currentOffset())) {
+    if (!appendRetAddrEntry(RetAddrEntry::Kind::IC, masm.currentOffset())) {
         return false;
     }
 
