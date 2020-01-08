@@ -923,6 +923,8 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   aPopupFrame->ShowPopup(aIsContextMenu);
   NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
+  item->UpdateFollowAnchor();
+
   
   
   
@@ -935,8 +937,6 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   mPopups = item;
   SetCaptureState(oldmenu);
   NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
-
-  item->UpdateFollowAnchor();
 
   if (aSelectFirstItem) {
     nsMenuFrame* next = GetNextMenuItem(aPopupFrame, nullptr, true, false);
