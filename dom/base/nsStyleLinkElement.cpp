@@ -303,11 +303,6 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     
     
     
-    
-    
-    
-    
-    
     if (aOldShadowRoot) {
       aOldShadowRoot->RemoveSheet(mStyleSheet);
     } else {
@@ -317,8 +312,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     SetStyleSheet(nullptr);
   }
 
-  nsIDocument* doc = thisContent->IsInShadowTree()
-    ? thisContent->OwnerDoc() : thisContent->GetUncomposedDoc();
+  nsIDocument* doc = thisContent->GetComposedDoc();
 
   
   if (!doc || !doc->CSSLoader() || !doc->CSSLoader()->GetEnabled()) {
