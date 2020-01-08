@@ -508,7 +508,9 @@ END_GLOBALS
 static const size_t gRecycleLimit = 128_MiB;
 
 
-static Atomic<size_t, ReleaseAcquire> gRecycledSize;
+
+
+static Atomic<size_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve> gRecycledSize;
 
 
 #define DIRTY_MAX_DEFAULT (1U << 8)
@@ -548,7 +550,10 @@ base_alloc(size_t aSize);
 
 static bool malloc_initialized;
 #else
-static Atomic<bool> malloc_initialized;
+
+
+static Atomic<bool, SequentiallyConsistent,
+	      recordreplay::Behavior::DontPreserve> malloc_initialized;
 #endif
 
 static StaticMutex gInitLock = { STATIC_MUTEX_INIT };
