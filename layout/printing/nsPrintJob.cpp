@@ -47,7 +47,6 @@ static const char sPrintSettingsServiceContractID[] =
 
 
 #include "imgIContainer.h"       
-#include "nsIWebBrowserPrint.h"  
 
 
 #include "nsIPrintProgress.h"
@@ -94,7 +93,6 @@ static const char kPrintingPromptService[] =
 #include "nsIDeviceContextSpec.h"
 #include "nsDeviceContextSpecProxy.h"
 #include "nsViewManager.h"
-#include "nsView.h"
 
 #include "nsIPageSequenceFrame.h"
 #include "nsIURL.h"
