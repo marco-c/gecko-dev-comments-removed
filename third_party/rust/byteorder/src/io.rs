@@ -21,6 +21,10 @@ use ByteOrder;
 
 
 
+
+
+
+
 pub trait ReadBytesExt: io::Read {
     
     
@@ -238,6 +242,58 @@ pub trait ReadBytesExt: io::Read {
         let mut buf = [0; 4];
         try!(self.read_exact(&mut buf));
         Ok(T::read_i32(&buf))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn read_u48<T: ByteOrder>(&mut self) -> Result<u64> {
+        let mut buf = [0; 6];
+        try!(self.read_exact(&mut buf));
+        Ok(T::read_u48(&buf))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn read_i48<T: ByteOrder>(&mut self) -> Result<i64> {
+        let mut buf = [0; 6];
+        try!(self.read_exact(&mut buf));
+        Ok(T::read_i48(&buf))
     }
 
     
@@ -623,7 +679,7 @@ pub trait ReadBytesExt: io::Read {
         dst: &mut [u128],
     ) -> Result<()> {
         {
-            let mut buf = unsafe { slice_to_u8_mut(dst) };
+            let buf = unsafe { slice_to_u8_mut(dst) };
             try!(self.read_exact(buf));
         }
         T::from_slice_u128(dst);
@@ -773,7 +829,7 @@ pub trait ReadBytesExt: io::Read {
         dst: &mut [i128],
     ) -> Result<()> {
         {
-            let mut buf = unsafe { slice_to_u8_mut(dst) };
+            let buf = unsafe { slice_to_u8_mut(dst) };
             try!(self.read_exact(buf));
         }
         T::from_slice_i128(dst);
@@ -860,6 +916,7 @@ pub trait ReadBytesExt: io::Read {
     
     
     #[inline]
+    #[deprecated(since="1.2.0", note="please use `read_f32_into` instead")]
     fn read_f32_into_unchecked<T: ByteOrder>(
         &mut self,
         dst: &mut [f32],
@@ -953,6 +1010,7 @@ pub trait ReadBytesExt: io::Read {
     
     
     #[inline]
+    #[deprecated(since="1.2.0", note="please use `read_f64_into` instead")]
     fn read_f64_into_unchecked<T: ByteOrder>(
         &mut self,
         dst: &mut [f64],
@@ -983,7 +1041,24 @@ impl<R: io::Read + ?Sized> ReadBytesExt for R {}
 
 
 
+
+
+
+
 pub trait WriteBytesExt: io::Write {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1009,11 +1084,37 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_i8(&mut self, n: i8) -> Result<()> {
         self.write_all(&[n as u8])
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1035,6 +1136,19 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_i16<T: ByteOrder>(&mut self, n: i16) -> Result<()> {
         let mut buf = [0; 2];
@@ -1042,6 +1156,19 @@ pub trait WriteBytesExt: io::Write {
         self.write_all(&buf)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1063,6 +1190,19 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_i24<T: ByteOrder>(&mut self, n: i32) -> Result<()> {
         let mut buf = [0; 3];
@@ -1070,6 +1210,19 @@ pub trait WriteBytesExt: io::Write {
         self.write_all(&buf)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1091,6 +1244,19 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_i32<T: ByteOrder>(&mut self, n: i32) -> Result<()> {
         let mut buf = [0; 4];
@@ -1105,6 +1271,73 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn write_u48<T: ByteOrder>(&mut self, n: u64) -> Result<()> {
+        let mut buf = [0; 6];
+        T::write_u48(&mut buf, n);
+        self.write_all(&buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn write_i48<T: ByteOrder>(&mut self, n: i64) -> Result<()> {
+        let mut buf = [0; 6];
+        T::write_i48(&mut buf, n);
+        self.write_all(&buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_u64<T: ByteOrder>(&mut self, n: u64) -> Result<()> {
         let mut buf = [0; 8];
@@ -1112,6 +1345,19 @@ pub trait WriteBytesExt: io::Write {
         self.write_all(&buf)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1156,6 +1402,19 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_uint<T: ByteOrder>(
         &mut self,
@@ -1167,6 +1426,19 @@ pub trait WriteBytesExt: io::Write {
         self.write_all(&buf[0..nbytes])
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1230,6 +1502,20 @@ pub trait WriteBytesExt: io::Write {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn write_f32<T: ByteOrder>(&mut self, n: f32) -> Result<()> {
         let mut buf = [0; 4];
@@ -1237,6 +1523,26 @@ pub trait WriteBytesExt: io::Write {
         self.write_all(&buf)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]

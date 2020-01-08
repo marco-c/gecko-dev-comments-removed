@@ -36,19 +36,41 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "i128", feature(i128_type))]
-#![cfg_attr(all(feature = "i128", test), feature(i128))]
-#![doc(html_root_url = "https://docs.rs/byteorder/1.2.1")]
 
 #[cfg(feature = "std")]
 extern crate core;
 
 use core::fmt::Debug;
 use core::hash::Hash;
-use core::mem::transmute;
 use core::ptr::copy_nonoverlapping;
+use core::slice;
 
 #[cfg(feature = "std")]
 pub use io::{ReadBytesExt, WriteBytesExt};
@@ -181,6 +203,9 @@ mod private {
 
 
 
+
+
+
 pub trait ByteOrder
     : Clone + Copy + Debug + Default + Eq + Hash + Ord + PartialEq + PartialOrd
     + private::Sealed
@@ -231,6 +256,27 @@ pub trait ByteOrder
     
     
     fn read_u32(buf: &[u8]) -> u32;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn read_u48(buf: &[u8]) -> u64 {
+        Self::read_uint(buf, 6) as u64
+    }
 
     
     
@@ -370,6 +416,27 @@ pub trait ByteOrder
     
     
     fn write_u32(buf: &mut [u8], n: u32);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_u48(buf: &mut [u8], n: u64) {
+        Self::write_uint(buf, n as u64, 6)
+    }
 
     
     
@@ -535,6 +602,28 @@ pub trait ByteOrder
     
     
     #[inline]
+    fn read_i48(buf: &[u8]) -> i64 {
+        Self::read_int(buf, 6) as i64
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     fn read_i64(buf: &[u8]) -> i64 {
         Self::read_u64(buf) as i64
     }
@@ -629,7 +718,7 @@ pub trait ByteOrder
     
     #[inline]
     fn read_f32(buf: &[u8]) -> f32 {
-        unsafe { transmute(Self::read_u32(buf)) }
+        unsafe { *(&Self::read_u32(buf) as *const u32 as *const f32) }
     }
 
     
@@ -652,7 +741,7 @@ pub trait ByteOrder
     
     #[inline]
     fn read_f64(buf: &[u8]) -> f64 {
-        unsafe { transmute(Self::read_u64(buf)) }
+        unsafe { *(&Self::read_u64(buf) as *const u64 as *const f64) }
     }
 
     
@@ -719,6 +808,28 @@ pub trait ByteOrder
     #[inline]
     fn write_i32(buf: &mut [u8], n: i32) {
         Self::write_u32(buf, n as u32)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn write_i48(buf: &mut [u8], n: i64) {
+        Self::write_int(buf, n as i64, 6)
     }
 
     
@@ -833,7 +944,8 @@ pub trait ByteOrder
     
     #[inline]
     fn write_f32(buf: &mut [u8], n: f32) {
-        Self::write_u32(buf, unsafe { transmute(n) })
+        let n = unsafe { *(&n as *const f32 as *const u32) };
+        Self::write_u32(buf, n)
     }
 
     
@@ -856,7 +968,8 @@ pub trait ByteOrder
     
     #[inline]
     fn write_f64(buf: &mut [u8], n: f64) {
-        Self::write_u64(buf, unsafe { transmute(n) })
+        let n = unsafe { *(&n as *const f64 as *const u64) };
+        Self::write_u64(buf, n)
     }
 
     
@@ -975,7 +1088,10 @@ pub trait ByteOrder
     
     #[inline]
     fn read_i16_into(src: &[u8], dst: &mut [i16]) {
-        Self::read_u16_into(src, unsafe { transmute(dst) });
+        let dst = unsafe {
+            slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u16, dst.len())
+        };
+        Self::read_u16_into(src, dst)
     }
 
     
@@ -1001,7 +1117,10 @@ pub trait ByteOrder
     
     #[inline]
     fn read_i32_into(src: &[u8], dst: &mut [i32]) {
-        Self::read_u32_into(src, unsafe { transmute(dst) });
+        let dst = unsafe {
+            slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u32, dst.len())
+        };
+        Self::read_u32_into(src, dst);
     }
 
     
@@ -1027,7 +1146,10 @@ pub trait ByteOrder
     
     #[inline]
     fn read_i64_into(src: &[u8], dst: &mut [i64]) {
-        Self::read_u64_into(src, unsafe { transmute(dst) });
+        let dst = unsafe {
+            slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u64, dst.len())
+        };
+        Self::read_u64_into(src, dst);
     }
 
     
@@ -1054,7 +1176,10 @@ pub trait ByteOrder
     #[cfg(feature = "i128")]
     #[inline]
     fn read_i128_into(src: &[u8], dst: &mut [i128]) {
-        Self::read_u128_into(src, unsafe { transmute(dst) });
+        let dst = unsafe {
+            slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u128, dst.len())
+        };
+        Self::read_u128_into(src, dst);
     }
 
     
@@ -1081,7 +1206,10 @@ pub trait ByteOrder
     
     #[inline]
     fn read_f32_into_unchecked(src: &[u8], dst: &mut [f32]) {
-        Self::read_u32_into(src, unsafe { transmute(dst) });
+        let dst = unsafe {
+            slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u32, dst.len())
+        };
+        Self::read_u32_into(src, dst);
     }
 
     
@@ -1108,7 +1236,10 @@ pub trait ByteOrder
     
     #[inline]
     fn read_f64_into_unchecked(src: &[u8], dst: &mut [f64]) {
-        Self::read_u64_into(src, unsafe { transmute(dst) });
+        let dst = unsafe {
+            slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u64, dst.len())
+        };
+        Self::read_u64_into(src, dst);
     }
 
     
@@ -1226,7 +1357,10 @@ pub trait ByteOrder
     
     
     fn write_i16_into(src: &[i16], dst: &mut [u8]) {
-        Self::write_u16_into(unsafe { transmute(src) }, dst);
+        let src = unsafe {
+            slice::from_raw_parts(src.as_ptr() as *const u16, src.len())
+        };
+        Self::write_u16_into(src, dst);
     }
 
     
@@ -1251,7 +1385,10 @@ pub trait ByteOrder
     
     
     fn write_i32_into(src: &[i32], dst: &mut [u8]) {
-        Self::write_u32_into(unsafe { transmute(src) }, dst);
+        let src = unsafe {
+            slice::from_raw_parts(src.as_ptr() as *const u32, src.len())
+        };
+        Self::write_u32_into(src, dst);
     }
 
     
@@ -1276,7 +1413,10 @@ pub trait ByteOrder
     
     
     fn write_i64_into(src: &[i64], dst: &mut [u8]) {
-        Self::write_u64_into(unsafe { transmute(src) }, dst);
+        let src = unsafe {
+            slice::from_raw_parts(src.as_ptr() as *const u64, src.len())
+        };
+        Self::write_u64_into(src, dst);
     }
 
     
@@ -1302,7 +1442,10 @@ pub trait ByteOrder
     
     #[cfg(feature = "i128")]
     fn write_i128_into(src: &[i128], dst: &mut [u8]) {
-        Self::write_u128_into(unsafe { transmute(src) }, dst);
+        let src = unsafe {
+            slice::from_raw_parts(src.as_ptr() as *const u128, src.len())
+        };
+        Self::write_u128_into(src, dst);
     }
 
     
@@ -1330,7 +1473,10 @@ pub trait ByteOrder
     
     
     fn write_f32_into(src: &[f32], dst: &mut [u8]) {
-        Self::write_u32_into(unsafe { transmute(src) }, dst);
+        let src = unsafe {
+            slice::from_raw_parts(src.as_ptr() as *const u32, src.len())
+        };
+        Self::write_u32_into(src, dst);
     }
 
     
@@ -1358,13 +1504,12 @@ pub trait ByteOrder
     
     
     fn write_f64_into(src: &[f64], dst: &mut [u8]) {
-        Self::write_u64_into(unsafe { transmute(src) }, dst);
+        let src = unsafe {
+            slice::from_raw_parts(src.as_ptr() as *const u64, src.len())
+        };
+        Self::write_u64_into(src, dst);
     }
 
-    
-    
-    
-    
     
     
     
@@ -1401,10 +1546,6 @@ pub trait ByteOrder
     
     
     
-    
-    
-    
-    
     fn from_slice_u32(numbers: &mut [u32]);
 
     
@@ -1424,18 +1565,8 @@ pub trait ByteOrder
     
     
     
-    
-    
-    
-    
     fn from_slice_u64(numbers: &mut [u64]);
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1473,13 +1604,12 @@ pub trait ByteOrder
     
     
     
-    
-    
-    
-    
     #[inline]
-    fn from_slice_i16(numbers: &mut [i16]) {
-        Self::from_slice_u16(unsafe { transmute(numbers) });
+    fn from_slice_i16(src: &mut [i16]) {
+        let src = unsafe {
+            slice::from_raw_parts_mut(src.as_ptr() as *mut u16, src.len())
+        };
+        Self::from_slice_u16(src);
     }
 
     
@@ -1499,13 +1629,12 @@ pub trait ByteOrder
     
     
     
-    
-    
-    
-    
     #[inline]
-    fn from_slice_i32(numbers: &mut [i32]) {
-        Self::from_slice_u32(unsafe { transmute(numbers) });
+    fn from_slice_i32(src: &mut [i32]) {
+        let src = unsafe {
+            slice::from_raw_parts_mut(src.as_ptr() as *mut u32, src.len())
+        };
+        Self::from_slice_u32(src);
     }
 
     
@@ -1525,21 +1654,14 @@ pub trait ByteOrder
     
     
     
-    
-    
-    
-    
     #[inline]
-    fn from_slice_i64(numbers: &mut [i64]) {
-        Self::from_slice_u64(unsafe { transmute(numbers) });
+    fn from_slice_i64(src: &mut [i64]) {
+        let src = unsafe {
+            slice::from_raw_parts_mut(src.as_ptr() as *mut u64, src.len())
+        };
+        Self::from_slice_u64(src);
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1559,8 +1681,11 @@ pub trait ByteOrder
     
     #[cfg(feature = "i128")]
     #[inline]
-    fn from_slice_i128(numbers: &mut [i128]) {
-        Self::from_slice_u128(unsafe { transmute(numbers) });
+    fn from_slice_i128(src: &mut [i128]) {
+        let src = unsafe {
+            slice::from_raw_parts_mut(src.as_ptr() as *mut u128, src.len())
+        };
+        Self::from_slice_u128(src);
     }
 
     
@@ -1604,6 +1729,8 @@ impl Default for BigEndian {
 }
 
 
+
+
 pub type BE = BigEndian;
 
 
@@ -1632,7 +1759,11 @@ impl Default for LittleEndian {
 }
 
 
+
+
 pub type LE = LittleEndian;
+
+
 
 
 
@@ -1662,8 +1793,16 @@ pub type NetworkEndian = BigEndian;
 
 
 
+
+
+
+
 #[cfg(target_endian = "little")]
 pub type NativeEndian = LittleEndian;
+
+
+
+
 
 
 
@@ -1692,7 +1831,7 @@ macro_rules! write_num_bytes {
         assert!($size <= $dst.len());
         unsafe {
             // N.B. https://github.com/rust-lang/rust/issues/22776
-            let bytes = transmute::<_, [u8; $size]>($n.$which());
+            let bytes = *(&$n.$which() as *const _ as *const [u8; $size]);
             copy_nonoverlapping((&bytes).as_ptr(), $dst.as_mut_ptr(), $size);
         }
     });
@@ -1812,7 +1951,7 @@ impl ByteOrder for BigEndian {
         assert!(pack_size(n) <= nbytes && nbytes <= 8);
         assert!(nbytes <= buf.len());
         unsafe {
-            let bytes: [u8; 8] = transmute(n.to_be());
+            let bytes = *(&n.to_be() as *const u64 as *const [u8; 8]);
             copy_nonoverlapping(
                 bytes.as_ptr().offset((8 - nbytes) as isize),
                 buf.as_mut_ptr(),
@@ -1826,7 +1965,7 @@ impl ByteOrder for BigEndian {
         assert!(pack_size128(n) <= nbytes && nbytes <= 16);
         assert!(nbytes <= buf.len());
         unsafe {
-            let bytes: [u8; 16] = transmute(n.to_be());
+            let bytes = *(&n.to_be() as *const u128 as *const [u8; 16]);
             copy_nonoverlapping(
                 bytes.as_ptr().offset((16 - nbytes) as isize),
                 buf.as_mut_ptr(),
@@ -1933,8 +2072,10 @@ impl ByteOrder for BigEndian {
     fn from_slice_f32(numbers: &mut [f32]) {
         if cfg!(target_endian = "little") {
             for n in numbers {
-                let int: u32 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_be()) };
+                unsafe {
+                    let int = *(n as *const f32 as *const u32);
+                    *n = *(&int.to_be() as *const u32 as *const f32);
+                }
             }
         }
     }
@@ -1943,8 +2084,10 @@ impl ByteOrder for BigEndian {
     fn from_slice_f64(numbers: &mut [f64]) {
         if cfg!(target_endian = "little") {
             for n in numbers {
-                let int: u64 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_be()) };
+                unsafe {
+                    let int = *(n as *const f64 as *const u64);
+                    *n = *(&int.to_be() as *const u64 as *const f64);
+                }
             }
         }
     }
@@ -2021,7 +2164,7 @@ impl ByteOrder for LittleEndian {
         assert!(pack_size(n as u64) <= nbytes && nbytes <= 8);
         assert!(nbytes <= buf.len());
         unsafe {
-            let bytes: [u8; 8] = transmute(n.to_le());
+            let bytes = *(&n.to_le() as *const u64 as *const [u8; 8]);
             copy_nonoverlapping(bytes.as_ptr(), buf.as_mut_ptr(), nbytes);
         }
     }
@@ -2032,7 +2175,7 @@ impl ByteOrder for LittleEndian {
         assert!(pack_size128(n as u128) <= nbytes && nbytes <= 16);
         assert!(nbytes <= buf.len());
         unsafe {
-            let bytes: [u8; 16] = transmute(n.to_le());
+            let bytes = *(&n.to_le() as *const u128 as *const [u8; 16]);
             copy_nonoverlapping(bytes.as_ptr(), buf.as_mut_ptr(), nbytes);
         }
     }
@@ -2136,8 +2279,10 @@ impl ByteOrder for LittleEndian {
     fn from_slice_f32(numbers: &mut [f32]) {
         if cfg!(target_endian = "big") {
             for n in numbers {
-                let int: u32 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_le()) };
+                unsafe {
+                    let int = *(n as *const f32 as *const u32);
+                    *n = *(&int.to_le() as *const u32 as *const f32);
+                }
             }
         }
     }
@@ -2146,8 +2291,10 @@ impl ByteOrder for LittleEndian {
     fn from_slice_f64(numbers: &mut [f64]) {
         if cfg!(target_endian = "big") {
             for n in numbers {
-                let int: u64 = unsafe { transmute(*n) };
-                *n = unsafe { transmute(int.to_le()) };
+                unsafe {
+                    let int = *(n as *const f64 as *const u64);
+                    *n = *(&int.to_le() as *const u64 as *const f64);
+                }
             }
         }
     }
@@ -2159,11 +2306,13 @@ mod test {
     extern crate rand;
 
     use self::quickcheck::{QuickCheck, StdGen, Testable};
-    use self::rand::thread_rng;
+    use self::rand::{Rng, thread_rng};
     #[cfg(feature = "i128")] use self::quickcheck::{Arbitrary, Gen};
 
     pub const U24_MAX: u32 = 16_777_215;
     pub const I24_MAX: i32 = 8_388_607;
+    pub const U48_MAX: u64 = 281_474_976_710_655;
+    pub const I48_MAX: i64 = 140_737_488_355_327;
 
     pub const U64_MAX: u64 = ::core::u64::MAX;
     pub const I64_MAX: u64 = ::core::i64::MAX as u64;
@@ -2308,6 +2457,8 @@ mod test {
     qc_byte_order!(prop_i24, i32, ::test::I24_MAX as u64, read_i24, write_i24);
     qc_byte_order!(prop_u32, u32, ::core::u32::MAX as u64, read_u32, write_u32);
     qc_byte_order!(prop_i32, i32, ::core::i32::MAX as u64, read_i32, write_i32);
+    qc_byte_order!(prop_u48, u64, ::test::U48_MAX as u64, read_u48, write_u48);
+    qc_byte_order!(prop_i48, i64, ::test::I48_MAX as u64, read_i48, write_i48);
     qc_byte_order!(prop_u64, u64, ::core::u64::MAX as u64, read_u64, write_u64);
     qc_byte_order!(prop_i64, i64, ::core::i64::MAX as u64, read_i64, write_i64);
     qc_byte_order!(prop_f32, f32, ::core::u64::MAX as u64, read_f32, write_f32);

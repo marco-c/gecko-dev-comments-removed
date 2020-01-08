@@ -49,25 +49,17 @@
 
 
 
-
-
-
-
-
-
 #![deny(
     missing_docs, trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces,
-    unused_results, variant_size_differences, warnings
+    unused_results, variant_size_differences, warnings, unsafe_code
 )]
 
 extern crate byteorder;
 
 mod chunked_encoder;
 pub mod display;
-mod line_wrap;
+pub mod write;
 mod tables;
-
-use line_wrap::{line_wrap, line_wrap_parameters};
 
 mod encode;
 pub use encode::{encode, encode_config, encode_config_buf, encode_config_slice};
@@ -82,9 +74,15 @@ mod tests;
 #[derive(Clone, Copy, Debug)]
 pub enum CharacterSet {
     
+    
+    
     Standard,
     
+    
+    
     UrlSafe,
+    
+    
     
     Crypt,
 }
@@ -109,44 +107,11 @@ impl CharacterSet {
 
 
 #[derive(Clone, Copy, Debug)]
-pub enum LineEnding {
-    
-    LF,
-    
-    CRLF,
-}
-
-impl LineEnding {
-    fn len(&self) -> usize {
-        match *self {
-            LineEnding::LF => 1,
-            LineEnding::CRLF => 2,
-        }
-    }
-}
-
-
-#[derive(Clone, Copy, Debug)]
-pub enum LineWrap {
-    
-    NoWrap,
-    
-    Wrap(usize, LineEnding),
-}
-
-
-#[derive(Clone, Copy, Debug)]
 pub struct Config {
     
     char_set: CharacterSet,
     
     pad: bool,
-    
-    
-    strip_whitespace: bool,
-    
-    
-    line_wrap: LineWrap,
 }
 
 impl Config {
@@ -154,19 +119,10 @@ impl Config {
     pub fn new(
         char_set: CharacterSet,
         pad: bool,
-        strip_whitespace: bool,
-        input_line_wrap: LineWrap,
     ) -> Config {
-        let line_wrap = match input_line_wrap {
-            LineWrap::Wrap(0, _) => LineWrap::NoWrap,
-            _ => input_line_wrap,
-        };
-
         Config {
             char_set,
             pad,
-            strip_whitespace,
-            line_wrap,
         }
     }
 }
@@ -175,46 +131,28 @@ impl Config {
 pub const STANDARD: Config = Config {
     char_set: CharacterSet::Standard,
     pad: true,
-    strip_whitespace: false,
-    line_wrap: LineWrap::NoWrap,
 };
 
 
 pub const STANDARD_NO_PAD: Config = Config {
     char_set: CharacterSet::Standard,
     pad: false,
-    strip_whitespace: false,
-    line_wrap: LineWrap::NoWrap,
-};
-
-
-pub const MIME: Config = Config {
-    char_set: CharacterSet::Standard,
-    pad: true,
-    strip_whitespace: true,
-    line_wrap: LineWrap::Wrap(76, LineEnding::CRLF),
 };
 
 
 pub const URL_SAFE: Config = Config {
     char_set: CharacterSet::UrlSafe,
     pad: true,
-    strip_whitespace: false,
-    line_wrap: LineWrap::NoWrap,
 };
 
 
 pub const URL_SAFE_NO_PAD: Config = Config {
     char_set: CharacterSet::UrlSafe,
     pad: false,
-    strip_whitespace: false,
-    line_wrap: LineWrap::NoWrap,
 };
 
 
 pub const CRYPT: Config = Config {
     char_set: CharacterSet::Crypt,
     pad: false,
-    strip_whitespace: false,
-    line_wrap: LineWrap::NoWrap,
 };

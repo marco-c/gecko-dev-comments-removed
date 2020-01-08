@@ -9,20 +9,10 @@
 
 
 
-use super::chunked_encoder::{ChunkedEncoder, ChunkedEncoderError};
+use super::chunked_encoder::ChunkedEncoder;
 use super::Config;
 use std::fmt::{Display, Formatter};
 use std::{fmt, str};
-
-
-
-
-#[derive(Debug, PartialEq)]
-pub enum DisplayError {
-    
-    
-    InvalidLineLength,
-}
 
 
 pub struct Base64Display<'a> {
@@ -32,25 +22,11 @@ pub struct Base64Display<'a> {
 
 impl<'a> Base64Display<'a> {
     
-    pub fn with_config(bytes: &[u8], config: Config) -> Result<Base64Display, DisplayError> {
-        ChunkedEncoder::new(config)
-            .map(|c| Base64Display {
-                bytes,
-                chunked_encoder: c,
-            })
-            .map_err(|e| match e {
-                ChunkedEncoderError::InvalidLineLength => DisplayError::InvalidLineLength,
-            })
-    }
-
-    
-    pub fn standard(bytes: &[u8]) -> Base64Display {
-        Base64Display::with_config(bytes, super::STANDARD).expect("STANDARD is valid")
-    }
-
-    
-    pub fn url_safe(bytes: &[u8]) -> Base64Display {
-        Base64Display::with_config(bytes, super::URL_SAFE).expect("URL_SAFE is valid")
+    pub fn with_config(bytes: &[u8], config: Config) -> Base64Display {
+        Base64Display {
+            bytes,
+            chunked_encoder: ChunkedEncoder::new(config),
+        }
     }
 }
 
@@ -87,11 +63,11 @@ mod tests {
     fn basic_display() {
         assert_eq!(
             "~$Zm9vYmFy#*",
-            format!("~${}#*", Base64Display::standard("foobar".as_bytes()))
+            format!("~${}#*", Base64Display::with_config(b"foobar", STANDARD))
         );
         assert_eq!(
             "~$Zm9vYmFyZg==#*",
-            format!("~${}#*", Base64Display::standard("foobarf".as_bytes()))
+            format!("~${}#*", Base64Display::with_config(b"foobarf", STANDARD))
         );
     }
 
@@ -105,8 +81,7 @@ mod tests {
 
     impl SinkTestHelper for DisplaySinkTestHelper {
         fn encode_to_string(&self, config: Config, bytes: &[u8]) -> String {
-            format!("{}", Base64Display::with_config(bytes, config).unwrap())
+            format!("{}", Base64Display::with_config(bytes, config))
         }
     }
-
 }

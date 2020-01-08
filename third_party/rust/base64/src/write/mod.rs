@@ -1,0 +1,6 @@
+
+mod encoder;
+pub use self::encoder::EncoderWriter;
+
+#[cfg(test)]
+mod encoder_tests;
