@@ -28,6 +28,7 @@ class nsAtom;
 class nsIPresShell;
 class nsIURI;
 class nsSVGClipPathFrame;
+class nsSVGMarkerFrame;
 class nsSVGPaintServerFrame;
 class nsSVGFilterFrame;
 class nsSVGMaskFrame;
@@ -690,9 +691,10 @@ public:
   
 
 
-  static SVGMarkerObserver *
-  GetMarkerProperty(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
-    const mozilla::FramePropertyDescriptor<SVGMarkerObserver>* aProperty);
+
+
+  static bool
+  GetMarkerFrames(nsIFrame* aMarkedFrame, nsSVGMarkerFrame*(*aFrames)[3]);
 
   
 
