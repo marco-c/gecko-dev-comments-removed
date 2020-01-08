@@ -159,7 +159,7 @@ class KeyframeEffect : public AnimationEffect {
   void SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
 
   void GetKeyframes(JSContext*& aCx, nsTArray<JSObject*>& aResult,
-                    ErrorResult& aRv);
+                    ErrorResult& aRv) const;
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
@@ -361,7 +361,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  already_AddRefed<ComputedStyle> GetTargetComputedStyle();
+  already_AddRefed<ComputedStyle> GetTargetComputedStyle() const;
 
   
   
