@@ -32,7 +32,7 @@ public:
 private:
   virtual ~AltDataOutputStreamChild() = default;
   
-  bool WriteDataInChunks(const nsCString& data);
+  bool WriteDataInChunks(const nsDependentCSubstring& data);
 
   bool mIPCOpen;
   
