@@ -168,6 +168,15 @@ var whitelist = [
    platforms: ["macosx"]},
   
   {file: "chrome://browser/content/browser.xhtml"},
+  
+  {file: "chrome://devtools/skin/images/aboutdebugging-firefox-aurora.svg",
+   isFromDevTools: true},
+  
+  {file: "chrome://devtools/skin/images/aboutdebugging-firefox-beta.svg",
+   isFromDevTools: true},
+  
+  {file: "chrome://devtools/skin/images/aboutdebugging-firefox-release.svg",
+   isFromDevTools: true},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
