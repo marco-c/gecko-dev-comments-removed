@@ -44,6 +44,8 @@ const NOTIFICATIONS = [
   "update-restart",
 ];
 
+let gOriginalUpdateAutoValue = null;
+
 
 
 
@@ -90,6 +92,27 @@ function setUpdateTimerPrefs() {
   Services.prefs.setIntPref(PREF_APP_UPDATE_LASTUPDATETIME, now);
   Services.prefs.setIntPref(PREF_APP_UPDATE_INTERVAL, 43200);
 }
+
+
+
+
+
+async function setAutoUpdateIsEnabled(enabled) {
+  if (gOriginalUpdateAutoValue == null) {
+    gOriginalUpdateAutoValue = await gAUS.getAutoUpdateIsEnabled();
+    registerCleanupFunction(async () => {
+      await gAUS.setAutoUpdateIsEnabled(gOriginalUpdateAutoValue);
+    });
+  }
+  await gAUS.setAutoUpdateIsEnabled(enabled);
+}
+
+
+add_task(async function setDefaults() {
+  
+  
+  await setAutoUpdateIsEnabled(true);
+});
 
 
 

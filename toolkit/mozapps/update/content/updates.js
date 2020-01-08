@@ -12,9 +12,12 @@ ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm", this);
 
+XPCOMUtils.defineLazyServiceGetter(this, "gAUS",
+                                   "@mozilla.org/updates/update-service;1",
+                                   "nsIApplicationUpdateService");
+
 const XMLNS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
-const PREF_APP_UPDATE_AUTO                = "app.update.auto";
 const PREF_APP_UPDATE_BACKGROUNDERRORS    = "app.update.backgroundErrors";
 const PREF_APP_UPDATE_CERT_ERRORS         = "app.update.cert.errors";
 const PREF_APP_UPDATE_ELEVATE_NEVER       = "app.update.elevate.never";
@@ -204,9 +207,7 @@ var gUpdates = {
     
     
     
-    let aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
-    if (aus.elevationRequired) {
+    if (gAUS.elevationRequired) {
       Services.prefs.setCharPref(PREF_APP_UPDATE_ELEVATE_NEVER,
                                  this.update.appVersion);
     }
@@ -256,6 +257,8 @@ var gUpdates = {
   },
 
   
+
+
 
 
 
@@ -401,9 +404,7 @@ var gUpdates = {
           }
         }
 
-        let aus = Cc["@mozilla.org/updates/update-service;1"].
-                  getService(Ci.nsIApplicationUpdateService);
-        if (!aus.canApplyUpdates) {
+        if (!gAUS.canApplyUpdates) {
           aCallback("manualUpdate");
           return;
         }
@@ -504,9 +505,7 @@ var gCheckingPage = {
 
 
     onCheckComplete(request, updates, updateCount) {
-      var aus = Cc["@mozilla.org/updates/update-service;1"].
-                getService(Ci.nsIApplicationUpdateService);
-      gUpdates.setUpdate(aus.selectUpdate(updates, updates.length));
+      gUpdates.setUpdate(gAUS.selectUpdate(updates, updates.length));
       if (gUpdates.update) {
         LOG("gCheckingPage", "onCheckComplete - update found");
         if (gUpdates.update.unsupported) {
@@ -522,7 +521,7 @@ var gCheckingPage = {
           return;
         }
 
-        if (!aus.canApplyUpdates) {
+        if (!gAUS.canApplyUpdates) {
           gUpdates.wiz.goTo("manualUpdate");
           return;
         }
@@ -558,16 +557,17 @@ var gNoUpdatesPage = {
   
 
 
-  onPageShow() {
+  async onPageShow() {
     LOG("gNoUpdatesPage", "onPageShow - could not select an appropriate " +
         "update. Either there were no updates or |selectUpdate| failed");
-    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO, true))
+    gUpdates.setButtons(null, null, "okButton", true);
+    gUpdates.wiz.getButton("finish").focus();
+
+    let autoUpdateEnabled = await gAUS.getAutoUpdateIsEnabled();
+    if (autoUpdateEnabled)
       document.getElementById("noUpdatesAutoEnabled").hidden = false;
     else
       document.getElementById("noUpdatesAutoDisabled").hidden = false;
-
-    gUpdates.setButtons(null, null, "okButton", true);
-    gUpdates.wiz.getButton("finish").focus();
   },
 };
 
@@ -704,9 +704,6 @@ var gDownloadingPage = {
     this._pauseButton.focus();
     this._pauseButton.disabled = true;
 
-    var aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
-
     var um = Cc["@mozilla.org/updates/update-manager;1"].
              getService(Ci.nsIUpdateManager);
     var activeUpdate = um.activeUpdate;
@@ -747,8 +744,8 @@ var gDownloadingPage = {
 
       
       
-      aus.pauseDownload();
-      var state = aus.downloadUpdate(gUpdates.update, false);
+      gAUS.pauseDownload();
+      var state = gAUS.downloadUpdate(gUpdates.update, false);
       if (state == "failed") {
         
         
@@ -759,10 +756,10 @@ var gDownloadingPage = {
         return;
       }
       
-      aus.addDownloadListener(this);
+      gAUS.addDownloadListener(this);
 
       if (activeUpdate)
-        this._setUIState(!aus.isDownloading);
+        this._setUIState(!gAUS.isDownloading);
     } catch (e) {
       LOG("gDownloadingPage", "onPageShow - error: " + e);
     }
@@ -853,9 +850,7 @@ var gDownloadingPage = {
 
 
   cleanUp() {
-    var aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
-    aus.removeDownloadListener(this);
+    gAUS.removeDownloadListener(this);
 
     if (this._updateApplyingObserver) {
       Services.obs.removeObserver(this, "update-staged");
@@ -867,15 +862,13 @@ var gDownloadingPage = {
 
 
   onPause() {
-    var aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
     if (this._paused)
-      aus.downloadUpdate(gUpdates.update, false);
+      gAUS.downloadUpdate(gUpdates.update, false);
     else {
       var patch = gUpdates.update.selectedPatch;
       patch.QueryInterface(Ci.nsIWritablePropertyBag);
       patch.setProperty("status", this._pausedStatus);
-      aus.pauseDownload();
+      gAUS.pauseDownload();
     }
     this._paused = !this._paused;
 
@@ -907,8 +900,6 @@ var gDownloadingPage = {
     
     this.cleanUp();
 
-    var aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
     var um = Cc["@mozilla.org/updates/update-manager;1"].
              getService(Ci.nsIUpdateManager);
     um.activeUpdate = gUpdates.update;
@@ -936,7 +927,7 @@ var gDownloadingPage = {
       
       LOG("gDownloadingPage", "onHide - continuing download in background " +
           "at full speed");
-      aus.downloadUpdate(gUpdates.update, false);
+      gAUS.downloadUpdate(gUpdates.update, false);
     }
     gUpdates.wiz.cancel();
   },
@@ -1055,9 +1046,7 @@ var gDownloadingPage = {
         LOG("gDownloadingPage", "onStopRequest - patch verification succeeded");
         
         
-        let aus = Cc["@mozilla.org/updates/update-service;1"].
-                  getService(Ci.nsIApplicationUpdateService);
-        if (aus.canStageUpdates) {
+        if (gAUS.canStageUpdates) {
           this._setUpdateApplying();
         } else {
           this.cleanUp();
@@ -1171,9 +1160,7 @@ var gErrorPatchingPage = {
         break;
       case STATE_PENDING:
       case STATE_PENDING_SERVICE:
-        let aus = Cc["@mozilla.org/updates/update-service;1"].
-                  getService(Ci.nsIApplicationUpdateService);
-        if (!aus.canStageUpdates) {
+        if (!gAUS.canStageUpdates) {
           gUpdates.wiz.goTo("finished");
           break;
         }
@@ -1197,9 +1184,7 @@ var gFinishedPage = {
 
 
   onPageShow() {
-    let aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
-    if (aus.elevationRequired) {
+    if (gAUS.elevationRequired) {
       LOG("gFinishedPage", "elevationRequired");
       gUpdates.setButtons("restartLaterButton", "noThanksButton",
                           "restartNowButton", true);
@@ -1228,9 +1213,7 @@ var gFinishedPage = {
     } else {
       link.hidden = true;
     }
-    let aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
-    if (aus.elevationRequired) {
+    if (gAUS.elevationRequired) {
       let more = document.getElementById("finishedBackgroundMore");
       more.setAttribute("hidden", "true");
       let moreElevated =
@@ -1256,9 +1239,7 @@ var gFinishedPage = {
     
     LOG("gFinishedPage", "onWizardFinish - restarting the application");
 
-    let aus = Cc["@mozilla.org/updates/update-service;1"].
-              getService(Ci.nsIApplicationUpdateService);
-    if (aus.elevationRequired) {
+    if (gAUS.elevationRequired) {
       let um = Cc["@mozilla.org/updates/update-manager;1"].
                getService(Ci.nsIUpdateManager);
       if (um) {

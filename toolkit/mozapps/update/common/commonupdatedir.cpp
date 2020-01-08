@@ -761,8 +761,31 @@ SetUpdateDirectoryPermissions(const SimpleAutoString& basePath,
       
       return returnValue;
     } else {
-      returnValue = FAILED(returnValue) ? returnValue
-                                        : HRESULT_FROM_WIN32(GetLastError());
+      DWORD error = GetLastError();
+      if (error != ERROR_ALREADY_EXISTS) {
+        returnValue = FAILED(returnValue) ? returnValue
+                                          : HRESULT_FROM_WIN32(error);
+      } else {
+        
+        
+        
+        attributes = GetFileAttributesW(basePath.String());
+        if (attributes == INVALID_FILE_ATTRIBUTES ||
+            !(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+          returnValue = FAILED(returnValue) ? returnValue
+                                            : HRESULT_FROM_WIN32(error);
+        } else if (permsToSet != SetPermissionsOf::BaseDirIfNotExists) {
+          
+          
+          mutableBasePath.CopyFrom(basePath);
+          if (mutableBasePath.Length() == 0) {
+            returnValue = FAILED(returnValue) ? returnValue : E_OUTOFMEMORY;
+          } else {
+            hrv = SetPathPerms(mutableBasePath, perms);
+            returnValue = FAILED(returnValue) ? returnValue : hrv;
+          }
+        }
+      }
     }
   }
 

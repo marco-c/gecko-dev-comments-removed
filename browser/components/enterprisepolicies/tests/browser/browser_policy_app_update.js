@@ -11,6 +11,14 @@ var updateService = Cc["@mozilla.org/updates/update-service;1"].
 
 
 add_task(async function test_updates_pre_policy() {
+  
+  
+  let originalUpdateAutoValue = await updateService.getAutoUpdateIsEnabled();
+  await updateService.setAutoUpdateIsEnabled(false);
+  registerCleanupFunction(async () => {
+    await updateService.setAutoUpdateIsEnabled(originalUpdateAutoValue);
+  });
+
   await SpecialPowers.pushPrefEnv({"set": [["app.update.disabledForTesting", false]]});
 
   is(Services.policies.isAllowed("appUpdate"), true,
