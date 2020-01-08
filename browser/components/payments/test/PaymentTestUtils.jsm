@@ -91,6 +91,19 @@ var PaymentTestUtils = {
 
       handle.destruct();
     },
+
+    
+
+
+
+    catchShowPromiseRejection: () => {
+      content.rqResult = {};
+      content.showPromise.then(res => content.rqResult.response = res)
+                         .catch(ex => content.rqResult.showException = {
+                           name: ex.name,
+                           message: ex.message,
+                         });
+    },
   },
 
   DialogContentTasks: {
