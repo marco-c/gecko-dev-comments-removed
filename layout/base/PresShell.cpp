@@ -1045,9 +1045,9 @@ PresShell::Init(nsIDocument* aDocument,
   if (mPresContext->IsRootContentDocument()) {
     mZoomConstraintsClient = new ZoomConstraintsClient();
     mZoomConstraintsClient->Init(this, mDocument);
-    if (nsLayoutUtils::ShouldHandleMetaViewport(mDocument) || gfxPrefs::APZAllowZooming()) {
-      mMobileViewportManager = new MobileViewportManager(this, mDocument);
-    }
+
+    
+    UpdateViewportOverridden(false);
   }
 }
 
@@ -10494,6 +10494,49 @@ PresShell::SetIsActive(bool aIsActive)
   }
 #endif
   return rv;
+}
+
+void
+PresShell::UpdateViewportOverridden(bool aAfterInitialization)
+{
+  
+  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument) ||
+                 gfxPrefs::APZAllowZooming();
+
+  if (needMVM == !!mMobileViewportManager) {
+    
+    
+    return;
+  }
+
+  if (needMVM) {
+    if (mPresContext->IsRootContentDocument()) {
+      mMobileViewportManager = new MobileViewportManager(this, mDocument);
+
+      if (aAfterInitialization) {
+        
+        mMobileViewportManager->SetInitialViewport();
+      }
+    }
+    return;
+  }
+
+  MOZ_ASSERT(mMobileViewportManager, "Shouldn't reach this without a "
+                                     "MobileViewportManager.");
+  mMobileViewportManager->Destroy();
+  mMobileViewportManager = nullptr;
+
+  if (aAfterInitialization) {
+    
+    
+    
+    
+    nsDocShell* docShell =
+      static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
+    int32_t width, height;
+    docShell->GetSize(&width, &height);
+    docShell->SetSize(width, height, false);
+  }
 }
 
 
