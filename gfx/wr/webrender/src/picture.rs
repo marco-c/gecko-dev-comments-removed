@@ -732,13 +732,23 @@ impl TileCache {
 
         let prim_data = &resources.as_common_data(&prim_instance);
 
-        let prim_rect = LayoutRect::new(
-            prim_instance.prim_origin,
-            prim_data.prim_size,
-        );
-        let clip_rect = prim_data
-            .prim_relative_clip_rect
-            .translate(&prim_instance.prim_origin.to_vector());
+        let (prim_rect, clip_rect) = match prim_instance.kind {
+            PrimitiveInstanceKind::Picture { pic_index, .. } => {
+                let pic = &pictures[pic_index.0];
+                (pic.local_rect, LayoutRect::max_rect())
+            }
+            _ => {
+                let prim_rect = LayoutRect::new(
+                    prim_instance.prim_origin,
+                    prim_data.prim_size,
+                );
+                let clip_rect = prim_data
+                    .prim_relative_clip_rect
+                    .translate(&prim_instance.prim_origin.to_vector());
+
+                (prim_rect, clip_rect)
+            }
+        };
 
         
         
@@ -850,7 +860,7 @@ impl TileCache {
             
             
             
-            if clip_chain_node.spatial_node_index > surface_spatial_node_index {
+            if clip_chain_node.spatial_node_index >= surface_spatial_node_index {
                 clip_chain_spatial_nodes.push(clip_chain_node.spatial_node_index);
                 clip_chain_uids.push(clip_chain_node.handle.uid());
             }
