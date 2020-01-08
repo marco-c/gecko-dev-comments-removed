@@ -12,6 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 const USER_AGENT_MODE_MOBILE = 0;
+const USER_AGENT_MODE_DESKTOP = 1;
 
 
 
@@ -47,7 +48,7 @@ class GeckoViewContentSettings extends GeckoViewContentModule {
       return;
     }
     let utils = content.windowUtils;
-    utils.setDesktopModeViewport(aMode != USER_AGENT_MODE_MOBILE);
+    utils.setDesktopModeViewport(aMode === USER_AGENT_MODE_DESKTOP);
     this._userAgentMode = aMode;
   }
 
