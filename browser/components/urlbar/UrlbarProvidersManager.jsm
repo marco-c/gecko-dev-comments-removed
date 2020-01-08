@@ -252,6 +252,14 @@ class Query {
       return;
     }
 
+    
+    
+    if (match.url.startsWith("javascript:") &&
+        !this.context.searchString.startsWith("javascript:") &&
+        UrlbarPrefs.get("filter.javascript")) {
+      return;
+    }
+
     this.context.results.push(match);
 
     let notifyResults = () => {
