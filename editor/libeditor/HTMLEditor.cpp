@@ -3010,24 +3010,17 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
   iter->Init(firstRange);
 
   RefPtr<Element> lastElementInRange;
-  for (bool foundElementInRange = false; !iter->IsDone(); iter->Next()) {
-    
-    
-    
-    
-    
-    
-    lastElementInRange = Element::FromNodeOrNull(iter->GetCurrentNode());
-    if (!lastElementInRange) {
-      continue;
-    }
-
-    if (foundElementInRange) {
+  for (; !iter->IsDone(); iter->Next()) {
+    if (lastElementInRange) {
+      
       
       return nullptr;
     }
 
-    foundElementInRange = true;
+    lastElementInRange = Element::FromNodeOrNull(iter->GetCurrentNode());
+    if (!lastElementInRange) {
+      continue;
+    }
 
     if (!aTagName) {
       continue;
