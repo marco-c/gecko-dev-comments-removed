@@ -72,6 +72,11 @@ exports.debugRemoteAddon = async function(addonForm, client) {
   });
 };
 
+exports.getAddonForm = async function(addonID, client) {
+  const { addons } = await client.listAddons();
+  return addons.find(addon => addon.id === addonID);
+};
+
 
 
 
