@@ -20,9 +20,17 @@ PORT = 5037
 
 class ADBServer(SocketServer.BaseRequestHandler):
     def sendData(self, data):
-        self.request.send('OKAY')
-        self.request.send('%04x' % len(data))
-        self.request.send(data)
+        header = 'OKAY%04x' % len(data)
+        all_data = header + data
+        total_length = len(all_data)
+        sent_length = 0
+        
+        
+        
+        
+        while sent_length < total_length:
+            sent = self.request.send(all_data[sent_length:])
+            sent_length = sent_length + sent
 
     def handle(self):
         while True:
