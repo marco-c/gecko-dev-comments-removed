@@ -365,25 +365,20 @@ XRE_API(nsresult, XRE_ParseAppData,
         (nsIFile * aINIFile, mozilla::XREAppData& aAppData))
 
 enum GeckoProcessType {
-  GeckoProcessType_Default = 0,
-
-  GeckoProcessType_Plugin,
-  GeckoProcessType_Content,
-
-  GeckoProcessType_IPDLUnitTest,
-
-  GeckoProcessType_GMPlugin,  
-
-  GeckoProcessType_GPU,  
-  GeckoProcessType_VR,   
-  GeckoProcessType_RDD,  
+#define GECKO_PROCESS_TYPE(enum_name, string_name, xre_name) \
+  GeckoProcessType_##enum_name,
+#include "mozilla/GeckoProcessTypes.h"
+#undef GECKO_PROCESS_TYPE
   GeckoProcessType_End,
   GeckoProcessType_Invalid = GeckoProcessType_End
 };
 
 static const char* const kGeckoProcessTypeString[] = {
-    "default",  "plugin", "tab", "ipdlunittest",
-    "gmplugin", "gpu",    "vr",  "rdd"};
+#define GECKO_PROCESS_TYPE(enum_name, string_name, xre_name) \
+  string_name,
+#include "mozilla/GeckoProcessTypes.h"
+#undef GECKO_PROCESS_TYPE
+};
 
 static_assert(MOZ_ARRAY_LENGTH(kGeckoProcessTypeString) == GeckoProcessType_End,
               "Array length mismatch");
@@ -441,17 +436,13 @@ XRE_API(bool, XRE_IsE10sParentProcess, ())
 
 
 
-XRE_API(bool, XRE_IsParentProcess, ())
 
-XRE_API(bool, XRE_IsContentProcess, ())
 
-XRE_API(bool, XRE_IsGPUProcess, ())
 
-XRE_API(bool, XRE_IsRDDProcess, ())
-
-XRE_API(bool, XRE_IsVRProcess, ())
-
-XRE_API(bool, XRE_IsPluginProcess, ())
+#define GECKO_PROCESS_TYPE(enum_name, string_name, xre_name) \
+  XRE_API(bool, XRE_Is##xre_name##Process, ())
+#include "mozilla/GeckoProcessTypes.h"
+#undef GECKO_PROCESS_TYPE
 
 
 
