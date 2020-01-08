@@ -5420,13 +5420,20 @@ void CodeGenerator::visitDefVar(LDefVar* lir) {
   callVM(DefVarInfo, lir);
 }
 
-typedef bool (*DefLexicalFn)(JSContext*, HandlePropertyName, unsigned);
+typedef bool (*DefLexicalFn)(JSContext*, HandleObject, HandleScript,
+                             jsbytecode*);
 static const VMFunction DefLexicalInfo =
-    FunctionInfo<DefLexicalFn>(DefGlobalLexical, "DefGlobalLexical");
+    FunctionInfo<DefLexicalFn>(DefLexicalOperation, "DefLexicalOperation");
 
 void CodeGenerator::visitDefLexical(LDefLexical* lir) {
-  pushArg(Imm32(lir->mir()->attrs()));    
-  pushArg(ImmGCPtr(lir->mir()->name()));  
+  Register envChain = ToRegister(lir->environmentChain());
+
+  JSScript* script = current->mir()->info().script();
+  jsbytecode* pc = lir->mir()->resumePoint()->pc();
+
+  pushArg(ImmPtr(pc));        
+  pushArg(ImmGCPtr(script));  
+  pushArg(envChain);          
 
   callVM(DefLexicalInfo, lir);
 }
