@@ -955,6 +955,11 @@ def enable_webrender(config, tests):
         if test.get('webrender'):
             test['mozharness'].setdefault('extra-options', [])\
                               .append("--enable-webrender")
+        
+        
+        elif test['suite'] == 'awsy':
+            test['mozharness'].setdefault('extra-options', [])\
+                              .append("--disable-webrender")
 
         yield test
 
