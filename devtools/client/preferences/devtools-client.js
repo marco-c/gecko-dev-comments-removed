@@ -37,18 +37,9 @@ pref("devtools.inspector.activeSidebar", "ruleview");
 pref("devtools.inspector.remote", false);
 
 
-#if defined(RELEASE_OR_BETA)
-pref("devtools.inspector.show-three-pane-tooltip", true);
-#else
-pref("devtools.inspector.show-three-pane-tooltip", false);
-#endif
-
 pref("devtools.inspector.three-pane-enabled", true);
 
 pref("devtools.inspector.chrome.three-pane-enabled", false);
-
-
-pref("devtools.inspector.three-pane-first-run", true);
 
 pref("devtools.inspector.show_pseudo_elements", false);
 
