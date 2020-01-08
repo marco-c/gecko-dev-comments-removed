@@ -6,9 +6,11 @@
 
 
 
+use super::computed::transform::DirectionVector;
 use super::computed::{Context, ToComputedValue};
 use super::generics::grid::{GridLine as GenericGridLine, TrackBreadth as GenericTrackBreadth};
 use super::generics::grid::{TrackList as GenericTrackList, TrackSize as GenericTrackSize};
+use super::generics::transform::IsParallelTo;
 use super::generics::{GreaterThanOrEqualToOne, NonNegative};
 use super::{Auto, CSSFloat, CSSInteger, Either};
 use crate::context::QuirksMode;
@@ -289,6 +291,16 @@ impl ToCss for Number {
             dest.write_str(")")?;
         }
         Ok(())
+    }
+}
+
+impl IsParallelTo for (Number, Number, Number) {
+    fn is_parallel_to(&self, vector: &DirectionVector) -> bool {
+        use euclid::approxeq::ApproxEq;
+        
+        
+        let self_vector = DirectionVector::new(self.0.get(), self.1.get(), self.2.get());
+        self_vector.cross(*vector).square_length().approx_eq(&0.0f32)
     }
 }
 
