@@ -188,15 +188,6 @@ public:
   }
 
   
-  nsQueryInterface do_QueryInterface() {
-    return nsQueryInterface(static_cast<nsIChannel *>(this));
-  }
-  
-  nsQueryInterface do_QueryInterface(nsISupports *obj) {
-    return nsQueryInterface(obj);
-  }
-
-  
   
   
   
