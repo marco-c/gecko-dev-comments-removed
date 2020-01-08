@@ -1120,8 +1120,11 @@ public:
   bool HadNonBlankPaint() const {
     return mHadNonBlankPaint;
   }
-
+  bool HadContentfulPaint() const {
+    return mHadContentfulPaint;
+  }
   void NotifyNonBlankPaint();
+  void NotifyContentfulPaint();
   void NotifyDOMContentFlushed();
 
   bool UsesRootEMUnits() const {
@@ -1398,6 +1401,7 @@ protected:
   
   
   mozilla::TimeStamp    mFirstNonBlankPaintTime;
+  mozilla::TimeStamp    mFirstContentfulPaintTime;
   mozilla::TimeStamp    mFirstClickTime;
   mozilla::TimeStamp    mFirstKeyTime;
   mozilla::TimeStamp    mFirstMouseMoveTime;
@@ -1474,6 +1478,8 @@ protected:
 
   
   unsigned              mHadNonBlankPaint : 1;
+  
+  unsigned              mHadContentfulPaint : 1;
 
 #ifdef DEBUG
   unsigned mInitialized : 1;

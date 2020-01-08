@@ -180,6 +180,9 @@ pref("dom.permissions.revoke.enable", false);
 pref("dom.performance.time_to_non_blank_paint.enabled", false);
 
 
+pref("dom.performance.time_to_contentful_paint.enabled", false);
+
+
 pref("dom.performance.time_to_dom_content_flushed.enabled", false);
 
 
@@ -1424,6 +1427,9 @@ pref("dom.ua_widget.enabled", true);
 #else
 pref("dom.ua_widget.enabled", false);
 #endif
+
+pref("dom.webcomponents.shadowdom.enabled", true);
+pref("dom.webcomponents.customelements.enabled", true);
 
 pref("javascript.enabled",                  true);
 pref("javascript.options.strict",           false);
