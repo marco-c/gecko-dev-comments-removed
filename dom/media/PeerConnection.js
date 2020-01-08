@@ -310,8 +310,10 @@ class RTCStatsReport {
       
       if (underlying.type == "local-candidate" || underlying.type == "remote-candidate") {
             
-            underlying.ipAddress = underlying.address;
+            delete underlying.transportId;
             if (isLegacy) {
+              
+              underlying.ipAddress = underlying.address;
               
               delete underlying.address;
             }
