@@ -1,6 +1,7 @@
-use event_imp::{Ready, ready_from_usize};
+use event_imp::{Ready, ready_as_usize, ready_from_usize};
 
 use std::ops;
+use std::fmt;
 
 
 
@@ -81,12 +82,35 @@ use std::ops;
 
 
 
-#[derive(Debug, Copy, PartialEq, Eq, Clone, PartialOrd, Ord)]
+
+
+
+
+
+
+
+#[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct UnixReady(Ready);
 
-const ERROR: usize = 0b00100;
-const HUP: usize   = 0b01000;
-const AIO: usize   = 0b10000;
+const ERROR: usize = 0b000100;
+const HUP: usize   = 0b001000;
+
+#[cfg(any(target_os = "dragonfly",
+    target_os = "freebsd", target_os = "ios", target_os = "macos"))]
+const AIO: usize   = 0b010000;
+
+#[cfg(not(any(target_os = "dragonfly",
+    target_os = "freebsd", target_os = "ios", target_os = "macos")))]
+const AIO: usize   = 0b000000;
+
+#[cfg(any(target_os = "freebsd"))]
+const LIO: usize   = 0b100000;
+
+#[cfg(not(any(target_os = "freebsd")))]
+const LIO: usize   = 0b000000;
+
+
+pub const READY_ALL: usize = ERROR | HUP | AIO | LIO;
 
 impl UnixReady {
     
@@ -105,8 +129,18 @@ impl UnixReady {
     
     
     #[inline]
+    #[cfg(any(target_os = "dragonfly",
+        target_os = "freebsd", target_os = "ios", target_os = "macos"))]
     pub fn aio() -> UnixReady {
         UnixReady(ready_from_usize(AIO))
+    }
+
+    #[cfg(not(any(target_os = "dragonfly",
+        target_os = "freebsd", target_os = "ios", target_os = "macos")))]
+    #[deprecated(since = "0.6.12", note = "this function is now platform specific")]
+    #[doc(hidden)]
+    pub fn aio() -> UnixReady {
+        UnixReady(Ready::empty())
     }
 
     
@@ -177,11 +211,46 @@ impl UnixReady {
     
     
     
+    
+    
     #[inline]
+    #[cfg(any(target_os = "freebsd"))]
+    pub fn lio() -> UnixReady {
+        UnixReady(ready_from_usize(LIO))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[cfg(any(target_os = "dragonfly",
+        target_os = "freebsd", target_os = "ios", target_os = "macos"))]
     pub fn is_aio(&self) -> bool {
         self.contains(ready_from_usize(AIO))
     }
 
+    #[deprecated(since = "0.6.12", note = "this function is now platform specific")]
+    #[cfg(feature = "with-deprecated")]
+    #[cfg(not(any(target_os = "dragonfly",
+        target_os = "freebsd", target_os = "ios", target_os = "macos")))]
+    #[doc(hidden)]
+    pub fn is_aio(&self) -> bool {
+        false
+    }
+
+    
     
     
     
@@ -230,9 +299,29 @@ impl UnixReady {
     
     
     
+    
     #[inline]
     pub fn is_hup(&self) -> bool {
         self.contains(ready_from_usize(HUP))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[cfg(any(target_os = "freebsd"))]
+    pub fn is_lio(&self) -> bool {
+        self.contains(ready_from_usize(LIO))
     }
 }
 
@@ -294,15 +383,46 @@ impl ops::Sub for UnixReady {
 
     #[inline]
     fn sub(self, other: UnixReady) -> UnixReady {
-        (self.0 & !other.0).into()
+        ready_from_usize(ready_as_usize(self.0) & !ready_as_usize(other.0)).into()
     }
 }
 
+#[deprecated(since = "0.6.10", note = "removed")]
+#[cfg(feature = "with-deprecated")]
+#[doc(hidden)]
 impl ops::Not for UnixReady {
     type Output = UnixReady;
 
     #[inline]
     fn not(self) -> UnixReady {
         (!self.0).into()
+    }
+}
+
+impl fmt::Debug for UnixReady {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut one = false;
+        let flags = [
+            (UnixReady(Ready::readable()), "Readable"),
+            (UnixReady(Ready::writable()), "Writable"),
+            (UnixReady::error(), "Error"),
+            (UnixReady::hup(), "Hup"),
+            #[allow(deprecated)]
+            (UnixReady::aio(), "Aio")];
+
+        for &(flag, msg) in &flags {
+            if self.contains(flag) {
+                if one { write!(fmt, " | ")? }
+                write!(fmt, "{}", msg)?;
+
+                one = true
+            }
+        }
+
+        if !one {
+            fmt.write_str("(empty)")?;
+        }
+
+        Ok(())
     }
 }

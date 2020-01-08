@@ -7,7 +7,7 @@
 
 
 
-
+use std::fmt;
 use std::io::{Read, Write};
 use std::net::{self, SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 use std::time::Duration;
@@ -51,13 +51,33 @@ use poll::SelectorId;
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
+
 pub struct TcpStream {
     sys: sys::TcpStream,
     selector_id: SelectorId,
 }
 
 use std::net::Shutdown;
+
+
+#[cfg(target_os = "fuchsia")]
+fn set_nonblocking(stream: &net::TcpStream) -> io::Result<()> {
+    sys::set_nonblock(
+        ::std::os::unix::io::AsRawFd::as_raw_fd(stream))
+}
+#[cfg(not(target_os = "fuchsia"))]
+fn set_nonblocking(stream: &net::TcpStream) -> io::Result<()> {
+    stream.set_nonblocking(true)
+}
+
 
 impl TcpStream {
     
@@ -70,16 +90,16 @@ impl TcpStream {
     
     
     pub fn connect(addr: &SocketAddr) -> io::Result<TcpStream> {
-        let sock = try!(match *addr {
+        let sock = match *addr {
             SocketAddr::V4(..) => TcpBuilder::new_v4(),
             SocketAddr::V6(..) => TcpBuilder::new_v6(),
-        });
+        }?;
         
         
         if cfg!(windows) {
-            try!(sock.bind(&inaddr_any(addr)));
+            sock.bind(&inaddr_any(addr))?;
         }
-        TcpStream::connect_stream(try!(sock.to_tcp_stream()), addr)
+        TcpStream::connect_stream(sock.to_tcp_stream()?, addr)
     }
 
     
@@ -103,7 +123,7 @@ impl TcpStream {
     pub fn connect_stream(stream: net::TcpStream,
                           addr: &SocketAddr) -> io::Result<TcpStream> {
         Ok(TcpStream {
-            sys: try!(sys::TcpStream::connect(stream, addr)),
+            sys: sys::TcpStream::connect(stream, addr)?,
             selector_id: SelectorId::new(),
         })
     }
@@ -119,7 +139,8 @@ impl TcpStream {
     
     
     pub fn from_stream(stream: net::TcpStream) -> io::Result<TcpStream> {
-        try!(stream.set_nonblocking(true));
+        set_nonblocking(&stream)?;
+
         Ok(TcpStream {
             sys: sys::TcpStream::from_stream(stream),
             selector_id: SelectorId::new(),
@@ -211,6 +232,7 @@ impl TcpStream {
     
     
     
+    
     pub fn send_buffer_size(&self) -> io::Result<usize> {
         self.sys.send_buffer_size()
     }
@@ -285,6 +307,10 @@ impl TcpStream {
     }
 
     
+    
+    
+    
+    
     pub fn linger(&self) -> io::Result<Option<Duration>> {
         self.sys.linger()
     }
@@ -314,6 +340,16 @@ impl TcpStream {
     
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.sys.take_error()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.sys.peek(buf)
     }
 
     
@@ -403,7 +439,7 @@ impl<'a> Write for &'a TcpStream {
 impl Evented for TcpStream {
     fn register(&self, poll: &Poll, token: Token,
                 interest: Ready, opts: PollOpt) -> io::Result<()> {
-        try!(self.selector_id.associate_selector(poll));
+        self.selector_id.associate_selector(poll)?;
         self.sys.register(poll, token, interest, opts)
     }
 
@@ -414,6 +450,12 @@ impl Evented for TcpStream {
 
     fn deregister(&self, poll: &Poll) -> io::Result<()> {
         self.sys.deregister(poll)
+    }
+}
+
+impl fmt::Debug for TcpStream {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.sys, f)
     }
 }
 
@@ -445,7 +487,14 @@ impl Evented for TcpStream {
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
 pub struct TcpListener {
     sys: sys::TcpListener,
     selector_id: SelectorId,
@@ -468,25 +517,33 @@ impl TcpListener {
     
     pub fn bind(addr: &SocketAddr) -> io::Result<TcpListener> {
         
-        let sock = try!(match *addr {
+        let sock = match *addr {
             SocketAddr::V4(..) => TcpBuilder::new_v4(),
             SocketAddr::V6(..) => TcpBuilder::new_v6(),
-        });
+        }?;
 
         
         if cfg!(unix) {
-            try!(sock.reuse_address(true));
+            sock.reuse_address(true)?;
         }
 
         
-        try!(sock.bind(addr));
+        sock.bind(addr)?;
 
         
-        let listener = try!(sock.listen(1024));
+        let listener = sock.listen(1024)?;
         Ok(TcpListener {
-            sys: try!(sys::TcpListener::new(listener, addr)),
+            sys: sys::TcpListener::new(listener)?,
             selector_id: SelectorId::new(),
         })
+    }
+
+    #[deprecated(since = "0.6.13", note = "use from_std instead")]
+    #[cfg(feature = "with-deprecated")]
+    #[doc(hidden)]
+    pub fn from_listener(listener: net::TcpListener, _: &SocketAddr)
+                         -> io::Result<TcpListener> {
+        TcpListener::from_std(listener)
     }
 
     
@@ -498,9 +555,8 @@ impl TcpListener {
     
     
     
-    pub fn from_listener(listener: net::TcpListener, addr: &SocketAddr)
-                         -> io::Result<TcpListener> {
-        sys::TcpListener::new(listener, addr).map(|s| {
+    pub fn from_std(listener: net::TcpListener) -> io::Result<TcpListener> {
+        sys::TcpListener::new(listener).map(|s| {
             TcpListener {
                 sys: s,
                 selector_id: SelectorId::new(),
@@ -518,14 +574,17 @@ impl TcpListener {
     
     
     pub fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        self.sys.accept().map(|(s, a)| {
-            let stream = TcpStream {
-                sys: s,
-                selector_id: SelectorId::new(),
-            };
+        let (s, a) = try!(self.accept_std());
+        Ok((TcpStream::from_stream(s)?, a))
+    }
 
-            (stream, a)
-        })
+    
+    
+    
+    
+    
+    pub fn accept_std(&self) -> io::Result<(net::TcpStream, SocketAddr)> {
+        self.sys.accept()
     }
 
     
@@ -598,7 +657,7 @@ impl TcpListener {
 impl Evented for TcpListener {
     fn register(&self, poll: &Poll, token: Token,
                 interest: Ready, opts: PollOpt) -> io::Result<()> {
-        try!(self.selector_id.associate_selector(poll));
+        self.selector_id.associate_selector(poll)?;
         self.sys.register(poll, token, interest, opts)
     }
 
@@ -612,30 +671,36 @@ impl Evented for TcpListener {
     }
 }
 
+impl fmt::Debug for TcpListener {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.sys, f)
+    }
+}
 
 
 
 
 
 
-#[cfg(unix)]
+
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl IntoRawFd for TcpStream {
     fn into_raw_fd(self) -> RawFd {
         self.sys.into_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl AsRawFd for TcpStream {
     fn as_raw_fd(&self) -> RawFd {
         self.sys.as_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl FromRawFd for TcpStream {
     unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
         TcpStream {
@@ -645,21 +710,21 @@ impl FromRawFd for TcpStream {
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl IntoRawFd for TcpListener {
     fn into_raw_fd(self) -> RawFd {
         self.sys.into_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl AsRawFd for TcpListener {
     fn as_raw_fd(&self) -> RawFd {
         self.sys.as_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl FromRawFd for TcpListener {
     unsafe fn from_raw_fd(fd: RawFd) -> TcpListener {
         TcpListener {

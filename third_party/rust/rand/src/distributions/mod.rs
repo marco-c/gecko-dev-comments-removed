@@ -17,19 +17,28 @@
 
 
 
-use std::marker;
+use core::marker;
 
 use {Rng, Rand};
 
 pub use self::range::Range;
+#[cfg(feature="std")]
 pub use self::gamma::{Gamma, ChiSquared, FisherF, StudentT};
+#[cfg(feature="std")]
 pub use self::normal::{Normal, LogNormal};
+#[cfg(feature="std")]
 pub use self::exponential::Exp;
 
 pub mod range;
+#[cfg(feature="std")]
 pub mod gamma;
+#[cfg(feature="std")]
 pub mod normal;
+#[cfg(feature="std")]
 pub mod exponential;
+
+#[cfg(feature="std")]
+mod ziggurat_tables;
 
 
 pub trait Sample<Support> {
@@ -203,7 +212,6 @@ impl<'a, T: Clone> IndependentSample<T> for WeightedChoice<'a, T> {
     }
 }
 
-mod ziggurat_tables;
 
 
 
@@ -219,7 +227,7 @@ mod ziggurat_tables;
 
 
 
-
+#[cfg(feature="std")]
 #[inline(always)]
 fn ziggurat<R: Rng, P, Z>(
             rng: &mut R,

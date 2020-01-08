@@ -10,6 +10,7 @@
 use {io, sys, Ready, Poll, PollOpt, Token};
 use event::Evented;
 use poll::SelectorId;
+use std::fmt;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 
@@ -17,7 +18,74 @@ use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct UdpSocket {
     sys: sys::UdpSocket,
     selector_id: SelectorId,
@@ -25,8 +93,34 @@ pub struct UdpSocket {
 
 impl UdpSocket {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn bind(addr: &SocketAddr) -> io::Result<UdpSocket> {
-        let socket = try!(net::UdpSocket::bind(addr));
+        let socket = net::UdpSocket::bind(addr)?;
         UdpSocket::from_socket(socket)
     }
 
@@ -42,16 +136,60 @@ impl UdpSocket {
     
     pub fn from_socket(socket: net::UdpSocket) -> io::Result<UdpSocket> {
         Ok(UdpSocket {
-            sys: try!(sys::UdpSocket::new(socket)),
+            sys: sys::UdpSocket::new(socket)?,
             selector_id: SelectorId::new(),
         })
     }
 
     
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(not(target_os = "freebsd"), doc = " ```")]
+    #[cfg_attr(target_os = "freebsd", doc = " ```no_run")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.sys.local_addr()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -72,19 +210,64 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn send_to(&self, buf: &[u8], target: &SocketAddr) -> io::Result<usize> {
         self.sys.send_to(buf, target)
     }
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.sys.recv_from(buf)
     }
 
-    
-    
-    
     
     
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
@@ -110,10 +293,23 @@ impl UdpSocket {
     
     
     
-    pub fn broadcast(&self) -> io::Result<bool> {
-        self.sys.broadcast()
-    }
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -128,8 +324,27 @@ impl UdpSocket {
     
     
     
-    pub fn multicast_loop_v4(&self) -> io::Result<bool> {
-        self.sys.multicast_loop_v4()
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn broadcast(&self) -> io::Result<bool> {
+        self.sys.broadcast()
     }
 
     
@@ -146,8 +361,8 @@ impl UdpSocket {
     
     
     
-    pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
-        self.sys.multicast_ttl_v4()
+    pub fn multicast_loop_v4(&self) -> io::Result<bool> {
+        self.sys.multicast_loop_v4()
     }
 
     
@@ -167,8 +382,8 @@ impl UdpSocket {
     
     
     
-    pub fn multicast_loop_v6(&self) -> io::Result<bool> {
-        self.sys.multicast_loop_v6()
+    pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
+        self.sys.multicast_ttl_v4()
     }
 
     
@@ -184,16 +399,70 @@ impl UdpSocket {
     
     
     
-    pub fn ttl(&self) -> io::Result<u32> {
-        self.sys.ttl()
+    
+    pub fn multicast_loop_v6(&self) -> io::Result<bool> {
+        self.sys.multicast_loop_v6()
     }
 
     
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
         self.sys.set_ttl(ttl)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn ttl(&self) -> io::Result<u32> {
+        self.sys.ttl()
     }
 
     
@@ -249,6 +518,27 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    pub fn set_only_v6(&self, only_v6: bool) -> io::Result<()> {
+        self.sys.set_only_v6(only_v6)
+    }
+
+    
+    
+    
+    
+    
+    pub fn only_v6(&self) -> io::Result<bool> {
+        self.sys.only_v6()
+    }
+
+    
+    
+    
+    
+    
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.sys.take_error()
     }
@@ -256,7 +546,7 @@ impl UdpSocket {
 
 impl Evented for UdpSocket {
     fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        try!(self.selector_id.associate_selector(poll));
+        self.selector_id.associate_selector(poll)?;
         self.sys.register(poll, token, interest, opts)
     }
 
@@ -269,30 +559,36 @@ impl Evented for UdpSocket {
     }
 }
 
+impl fmt::Debug for UdpSocket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.sys, f)
+    }
+}
 
 
 
 
 
 
-#[cfg(unix)]
+
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl IntoRawFd for UdpSocket {
     fn into_raw_fd(self) -> RawFd {
         self.sys.into_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl AsRawFd for UdpSocket {
     fn as_raw_fd(&self) -> RawFd {
         self.sys.as_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl FromRawFd for UdpSocket {
     unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
         UdpSocket {

@@ -48,6 +48,7 @@ use std::cell::UnsafeCell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 
+#[derive(Debug, Default)]
 pub struct LazyCell<T> {
     inner: UnsafeCell<Option<T>>,
 }
@@ -61,14 +62,14 @@ impl<T> LazyCell<T> {
     
     
     
-    pub fn fill(&self, t: T) -> Result<(), T> {
+    pub fn fill(&self, value: T) -> Result<(), T> {
         let mut slot = unsafe { &mut *self.inner.get() };
         if slot.is_some() {
-	    return Err(t);
+            return Err(value);
         }
-        *slot = Some(t);
+        *slot = Some(value);
 
-	Ok(())
+        Ok(())
     }
 
     
@@ -86,8 +87,65 @@ impl<T> LazyCell<T> {
     }
 
     
+    
+    
+    
+    
+    pub fn borrow_mut(&mut self) -> Option<&mut T> {
+        unsafe { &mut *self.inner.get() }.as_mut()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn borrow_with<F: FnOnce() -> T>(&self, f: F) -> &T {
+        if let Some(value) = self.borrow() {
+            return value;
+        }
+        let value = f();
+        if self.fill(value).is_err() {
+            panic!("borrow_with: cell was filled by closure")
+        }
+        self.borrow().unwrap()
+    }
+
+    
+    
+    
+    
+    
+    pub fn try_borrow_with<E, F>(&self, f: F) -> Result<&T, E>
+        where F: FnOnce() -> Result<T, E>
+    {
+        if let Some(value) = self.borrow() {
+            return Ok(value);
+        }
+        let value = f()?;
+        if self.fill(value).is_err() {
+            panic!("try_borrow_with: cell was filled by closure")
+        }
+        Ok(self.borrow().unwrap())
+    }
+
+    
     pub fn into_inner(self) -> Option<T> {
         unsafe { self.inner.into_inner() }
+    }
+}
+
+impl<T: Copy> LazyCell<T> {
+    
+    
+    
+    
+    pub fn get(&self) -> Option<T> {
+        unsafe { *self.inner.get() }
     }
 }
 
@@ -97,6 +155,7 @@ const LOCK: usize = 1;
 const SOME: usize = 2;
 
 
+#[derive(Debug, Default)]
 pub struct AtomicLazyCell<T> {
     inner: UnsafeCell<Option<T>>,
     state: AtomicUsize,
@@ -151,18 +210,35 @@ impl<T> AtomicLazyCell<T> {
     }
 }
 
-unsafe impl<T: Sync> Sync for AtomicLazyCell<T> { }
-unsafe impl<T: Send> Send for AtomicLazyCell<T> { }
+impl<T: Copy> AtomicLazyCell<T> {
+    
+    
+    
+    
+    pub fn get(&self) -> Option<T> {
+        match self.state.load(Ordering::Acquire) {
+            SOME => unsafe { *self.inner.get() },
+            _ => None,
+        }
+    }
+}
+
+unsafe impl<T: Sync + Send> Sync for AtomicLazyCell<T> {}
+
+unsafe impl<T: Send> Send for AtomicLazyCell<T> {}
 
 #[cfg(test)]
 mod tests {
-    use super::{LazyCell, AtomicLazyCell};
+    use super::{AtomicLazyCell, LazyCell};
 
     #[test]
     fn test_borrow_from_empty() {
         let lazycell: LazyCell<usize> = LazyCell::new();
 
         let value = lazycell.borrow();
+        assert_eq!(value, None);
+
+        let value = lazycell.get();
         assert_eq!(value, None);
     }
 
@@ -176,6 +252,25 @@ mod tests {
 
         let value = lazycell.borrow();
         assert_eq!(value, Some(&1));
+
+        let value = lazycell.get();
+        assert_eq!(value, Some(1));
+    }
+
+    #[test]
+    fn test_borrow_mut() {
+        let mut lazycell = LazyCell::new();
+        assert!(lazycell.borrow_mut().is_none());
+
+        lazycell.fill(1).unwrap();
+        assert_eq!(lazycell.borrow_mut(), Some(&mut 1));
+
+        *lazycell.borrow_mut().unwrap() = 2;
+        assert_eq!(lazycell.borrow_mut(), Some(&mut 2));
+
+        
+        lazycell = LazyCell::new();
+        assert!(lazycell.borrow_mut().is_none());
     }
 
     #[test]
@@ -184,6 +279,85 @@ mod tests {
 
         lazycell.fill(1).unwrap();
         assert_eq!(lazycell.fill(1), Err(1));
+    }
+
+    #[test]
+    fn test_borrow_with() {
+        let lazycell = LazyCell::new();
+
+        let value = lazycell.borrow_with(|| 1);
+        assert_eq!(&1, value);
+    }
+
+    #[test]
+    fn test_borrow_with_already_filled() {
+        let lazycell = LazyCell::new();
+        lazycell.fill(1).unwrap();
+
+        let value = lazycell.borrow_with(|| 1);
+        assert_eq!(&1, value);
+    }
+
+    #[test]
+    fn test_borrow_with_not_called_when_filled() {
+        let lazycell = LazyCell::new();
+
+        lazycell.fill(1).unwrap();
+
+        let value = lazycell.borrow_with(|| 2);
+        assert_eq!(&1, value);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_borrow_with_sound_with_reentrancy() {
+        
+        
+        let lazycell: LazyCell<Box<i32>> = LazyCell::new();
+
+        let mut reference: Option<&i32> = None;
+
+        lazycell.borrow_with(|| {
+            let _ = lazycell.fill(Box::new(1));
+            reference = lazycell.borrow().map(|r| &**r);
+            Box::new(2)
+        });
+    }
+
+    #[test]
+    fn test_try_borrow_with_ok() {
+        let lazycell = LazyCell::new();
+        let result = lazycell.try_borrow_with::<(), _>(|| Ok(1));
+        assert_eq!(result, Ok(&1));
+    }
+
+    #[test]
+    fn test_try_borrow_with_err() {
+        let lazycell = LazyCell::<()>::new();
+        let result = lazycell.try_borrow_with(|| Err(1));
+        assert_eq!(result, Err(1));
+    }
+
+    #[test]
+    fn test_try_borrow_with_already_filled() {
+        let lazycell = LazyCell::new();
+        lazycell.fill(1).unwrap();
+        let result = lazycell.try_borrow_with::<(), _>(|| unreachable!());
+        assert_eq!(result, Ok(&1));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_try_borrow_with_sound_with_reentrancy() {
+        let lazycell: LazyCell<Box<i32>> = LazyCell::new();
+
+        let mut reference: Option<&i32> = None;
+
+        let _ = lazycell.try_borrow_with::<(), _>(|| {
+            let _ = lazycell.fill(Box::new(1));
+            reference = lazycell.borrow().map(|r| &**r);
+            Ok(Box::new(2))
+        });
     }
 
     #[test]
@@ -201,6 +375,9 @@ mod tests {
 
         let value = lazycell.borrow();
         assert_eq!(value, None);
+
+        let value = lazycell.get();
+        assert_eq!(value, None);
     }
 
     #[test]
@@ -213,6 +390,9 @@ mod tests {
 
         let value = lazycell.borrow();
         assert_eq!(value, Some(&1));
+
+        let value = lazycell.get();
+        assert_eq!(value, Some(1));
     }
 
     #[test]

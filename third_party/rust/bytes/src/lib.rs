@@ -69,7 +69,7 @@
 
 
 #![deny(warnings, missing_docs, missing_debug_implementations)]
-#![doc(html_root_url = "https://docs.rs/bytes/0.4")]
+#![doc(html_root_url = "https://docs.rs/bytes/0.4.9")]
 
 extern crate byteorder;
 extern crate iovec;
@@ -92,6 +92,7 @@ mod bytes;
 mod debug;
 pub use bytes::{Bytes, BytesMut};
 
+#[deprecated]
 pub use byteorder::{ByteOrder, BigEndian, LittleEndian};
 
 

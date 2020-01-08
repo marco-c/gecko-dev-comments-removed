@@ -5,7 +5,7 @@
 
 
 use {AsHandleRef, HandleBased, Handle, HandleRef, Peered};
-use {sys, Status, into_result};
+use {sys, Status, ok};
 
 use std::ptr;
 
@@ -18,63 +18,23 @@ pub struct Socket(Handle);
 impl_handle_based!(Socket);
 impl Peered for Socket {}
 
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SocketOpts {
-    
-    Default = 0,
-}
-
-impl Default for SocketOpts {
-    fn default() -> Self {
-        SocketOpts::Default
-    }
-}
-
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SocketWriteOpts {
-    
-    Default = 0,
-}
-
-impl Default for SocketWriteOpts {
-    fn default() -> Self {
-        SocketWriteOpts::Default
-    }
-}
-
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SocketReadOpts {
-    
-    Default = 0,
-}
-
-impl Default for SocketReadOpts {
-    fn default() -> Self {
-        SocketReadOpts::Default
-    }
-}
-
-
 impl Socket {
     
     
     
     
     
-    pub fn create(opts: SocketOpts) -> Result<(Socket, Socket), Status> {
+    pub fn create() -> Result<(Socket, Socket), Status> {
         unsafe {
             let mut out0 = 0;
             let mut out1 = 0;
-            let status = sys::zx_socket_create(opts as u32, &mut out0, &mut out1);
-            into_result(status, ||
-                (Self::from(Handle(out0)),
-                    Self::from(Handle(out1))))
+            let opts = 0;
+            let status = sys::zx_socket_create(opts, &mut out0, &mut out1);
+            ok(status)?;
+            Ok((
+                Self::from(Handle::from_raw(out0)),
+                Self::from(Handle::from_raw(out1))
+            ))
         }
     }
 
@@ -83,13 +43,14 @@ impl Socket {
     
     
     
-    pub fn write(&self, opts: SocketWriteOpts, bytes: &[u8]) -> Result<usize, Status> {
+    pub fn write(&self, bytes: &[u8]) -> Result<usize, Status> {
         let mut actual = 0;
+        let opts = 0;
         let status = unsafe {
-            sys::zx_socket_write(self.raw_handle(), opts as u32, bytes.as_ptr(), bytes.len(),
+            sys::zx_socket_write(self.raw_handle(), opts, bytes.as_ptr(), bytes.len(),
                 &mut actual)
         };
-        into_result(status, || actual)
+        ok(status).map(|()| actual)
     }
 
     
@@ -97,18 +58,21 @@ impl Socket {
     
     
     
-    pub fn read(&self, opts: SocketReadOpts, bytes: &mut [u8]) -> Result<usize, Status> {
+    pub fn read(&self, bytes: &mut [u8]) -> Result<usize, Status> {
         let mut actual = 0;
+        let opts = 0;
         let status = unsafe {
-            sys::zx_socket_read(self.raw_handle(), opts as u32, bytes.as_mut_ptr(),
+            sys::zx_socket_read(self.raw_handle(), opts, bytes.as_mut_ptr(),
                 bytes.len(), &mut actual)
         };
-        if status != sys::ZX_OK {
-            
-            
-            actual = 0;
-        }
-        into_result(status, || actual)
+        ok(status)
+            .map(|()| actual)
+            .map_err(|status| {
+                
+                
+                actual = 0;
+                status
+            })
     }
 
     
@@ -118,7 +82,7 @@ impl Socket {
     pub fn half_close(&self) -> Result<(), Status> {
         let status = unsafe { sys::zx_socket_write(self.raw_handle(), sys::ZX_SOCKET_HALF_CLOSE,
             ptr::null(), 0, ptr::null_mut()) };
-        into_result(status, || ())
+        ok(status)
     }
 
     pub fn outstanding_read_bytes(&self) -> Result<usize, Status> {
@@ -126,7 +90,7 @@ impl Socket {
         let status = unsafe {
             sys::zx_socket_read(self.raw_handle(), 0, ptr::null_mut(), 0, &mut outstanding)
         };
-        into_result(status, || outstanding)
+        ok(status).map(|()| outstanding)
     }
 }
 
@@ -136,27 +100,27 @@ mod tests {
 
     #[test]
     fn socket_basic() {
-        let (s1, s2) = Socket::create(SocketOpts::Default).unwrap();
+        let (s1, s2) = Socket::create().unwrap();
 
         
-        assert_eq!(s1.write(SocketWriteOpts::Default, b"hello").unwrap(), 5);
+        assert_eq!(s1.write(b"hello").unwrap(), 5);
 
         let mut read_vec = vec![0; 8];
-        assert_eq!(s2.read(SocketReadOpts::Default, &mut read_vec).unwrap(), 5);
+        assert_eq!(s2.read(&mut read_vec).unwrap(), 5);
         assert_eq!(&read_vec[0..5], b"hello");
 
         
-        assert_eq!(s2.read(SocketReadOpts::Default, &mut read_vec), Err(Status::ErrShouldWait));
+        assert_eq!(s2.read(&mut read_vec), Err(Status::SHOULD_WAIT));
 
         
         assert!(s1.half_close().is_ok());
-        assert_eq!(s2.read(SocketReadOpts::Default, &mut read_vec), Err(Status::ErrBadState));
-        assert_eq!(s1.write(SocketWriteOpts::Default, b"fail"), Err(Status::ErrBadState));
+        assert_eq!(s2.read(&mut read_vec), Err(Status::BAD_STATE));
+        assert_eq!(s1.write(b"fail"), Err(Status::BAD_STATE));
 
         
-        assert_eq!(s1.read(SocketReadOpts::Default, &mut read_vec), Err(Status::ErrShouldWait));
-        assert_eq!(s2.write(SocketWriteOpts::Default, b"back").unwrap(), 4);
-        assert_eq!(s1.read(SocketReadOpts::Default, &mut read_vec).unwrap(), 4);
+        assert_eq!(s1.read(&mut read_vec), Err(Status::SHOULD_WAIT));
+        assert_eq!(s2.write(b"back").unwrap(), 4);
+        assert_eq!(s1.read(&mut read_vec).unwrap(), 4);
         assert_eq!(&read_vec[0..4], b"back");
     }
 }

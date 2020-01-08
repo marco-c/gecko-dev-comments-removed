@@ -104,6 +104,44 @@ impl<'a> PrivateJar<'a> {
     
     
     pub fn add(&mut self, mut cookie: Cookie<'static>) {
+        self.encrypt_cookie(&mut cookie);
+
+        
+        self.parent.add(cookie);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_original(&mut self, mut cookie: Cookie<'static>) {
+        self.encrypt_cookie(&mut cookie);
+
+        
+        self.parent.add_original(cookie);
+    }
+
+    
+    
+    fn encrypt_cookie(&self, cookie: &mut Cookie) {
         let mut data;
         let output_len = {
             
@@ -129,9 +167,6 @@ impl<'a> PrivateJar<'a> {
         
         let sealed_value = base64::encode(&data[..(NONCE_LEN + output_len)]);
         cookie.set_value(sealed_value);
-
-        
-        self.parent.add(cookie);
     }
 
     

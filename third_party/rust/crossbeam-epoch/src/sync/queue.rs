@@ -5,13 +5,11 @@
 
 
 
-use core::fmt;
-use core::mem;
+use core::mem::{self, ManuallyDrop};
 use core::ptr;
 use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 
 use crossbeam_utils::cache_padded::CachePadded;
-use nodrop::NoDrop;
 
 use {unprotected, Atomic, Guard, Owned, Shared};
 
@@ -24,6 +22,7 @@ pub struct Queue<T> {
     tail: CachePadded<Atomic<Node<T>>>,
 }
 
+#[derive(Debug)]
 struct Node<T> {
     
     
@@ -31,20 +30,15 @@ struct Node<T> {
     
     
     
-    data: NoDrop<T>,
+    data: ManuallyDrop<T>,
 
     next: Atomic<Node<T>>,
-}
-
-impl<T> fmt::Debug for Node<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "node {{ ... }}")
-    }
 }
 
 
 unsafe impl<T: Send> Sync for Queue<T> {}
 unsafe impl<T: Send> Send for Queue<T> {}
+
 
 impl<T> Queue<T> {
     
@@ -93,7 +87,7 @@ impl<T> Queue<T> {
     
     pub fn push(&self, t: T, guard: &Guard) {
         let new = Owned::new(Node {
-            data: NoDrop::new(t),
+            data: ManuallyDrop::new(t),
             next: Atomic::null(),
         });
         let new = Owned::into_shared(new, guard);
@@ -121,7 +115,7 @@ impl<T> Queue<T> {
                     .compare_and_set(head, next, Release, guard)
                     .map(|_| {
                         guard.defer(move || drop(head.into_owned()));
-                        Some(NoDrop::into_inner(ptr::read(&n.data)))
+                        Some(ManuallyDrop::into_inner(ptr::read(&n.data)))
                     })
                     .map_err(|_| ())
             },
@@ -146,7 +140,7 @@ impl<T> Queue<T> {
                     .compare_and_set(head, next, Release, guard)
                     .map(|_| {
                         guard.defer(move || drop(head.into_owned()));
-                        Some(NoDrop::into_inner(ptr::read(&n.data)))
+                        Some(ManuallyDrop::into_inner(ptr::read(&n.data)))
                     })
                     .map_err(|_| ())
             },
@@ -199,10 +193,9 @@ impl<T> Drop for Queue<T> {
 
 #[cfg(test)]
 mod test {
-    use {pin};
-
-    use core::sync::atomic::Ordering;
+    use super::*;
     use crossbeam_utils::scoped;
+    use pin;
 
     struct Queue<T> {
         queue: super::Queue<T>,
@@ -220,9 +213,9 @@ mod test {
 
         pub fn is_empty(&self) -> bool {
             let guard = &pin();
-            let head = self.queue.head.load(Ordering::Acquire, guard);
+            let head = self.queue.head.load(Acquire, guard);
             let h = unsafe { head.deref() };
-            h.next.load(Ordering::Acquire, guard).is_null()
+            h.next.load(Acquire, guard).is_null()
         }
 
         pub fn try_pop(&self) -> Option<T> {

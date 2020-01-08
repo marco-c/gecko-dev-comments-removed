@@ -58,11 +58,13 @@
 #![cfg_attr(feature = "nightly", feature(alloc))]
 #![cfg_attr(not(test), no_std)]
 
+#![warn(missing_docs, missing_debug_implementations)]
+
+#[cfg(test)]
+extern crate core;
 #[cfg(all(not(test), feature = "use_std"))]
 #[macro_use]
 extern crate std;
-#[cfg(test)]
-extern crate core;
 
 
 #[cfg(feature = "nightly")]
@@ -74,13 +76,6 @@ mod alloc {
     pub use self::std::boxed;
     pub use self::std::sync as arc;
 }
-
-#[cfg(feature = "manually_drop")]
-mod nodrop {
-    pub use std::mem::ManuallyDrop as NoDrop;
-}
-#[cfg(not(feature = "manually_drop"))]
-extern crate nodrop;
 
 extern crate arrayvec;
 extern crate crossbeam_utils;
@@ -98,13 +93,12 @@ mod collector;
 mod default;
 mod deferred;
 mod epoch;
-mod garbage;
 mod guard;
 mod internal;
 mod sync;
 
-pub use self::atomic::{Atomic, CompareAndSetError, CompareAndSetOrdering, Owned, Shared};
+pub use self::atomic::{Atomic, CompareAndSetError, CompareAndSetOrdering, Owned, Shared, Pointer};
 pub use self::guard::{unprotected, Guard};
 #[cfg(feature = "use_std")]
-pub use self::default::{default_handle, is_pinned, pin};
+pub use self::default::{default_collector, default_handle, is_pinned, pin};
 pub use self::collector::{Collector, Handle};

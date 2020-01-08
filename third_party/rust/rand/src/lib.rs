@@ -239,48 +239,62 @@
 
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
        html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://docs.rs/rand/0.3")]
+       html_root_url = "https://docs.rs/rand/0.4")]
 
 #![deny(missing_debug_implementations)]
 
-#![cfg_attr(feature = "i128_support", feature(i128_type))]
+#![cfg_attr(not(feature="std"), no_std)]
+#![cfg_attr(all(feature="alloc", not(feature="std")), feature(alloc))]
+#![cfg_attr(feature = "i128_support", feature(i128_type, i128))]
 
-#[cfg(test)] #[macro_use] extern crate log;
+#[cfg(feature="std")] extern crate std as core;
+#[cfg(all(feature = "alloc", not(feature="std")))] extern crate alloc;
+
+use core::marker;
+use core::mem;
+#[cfg(feature="std")] use std::cell::RefCell;
+#[cfg(feature="std")] use std::io;
+#[cfg(feature="std")] use std::rc::Rc;
 
 
-use std::cell::RefCell;
-use std::marker;
-use std::mem;
-use std::io;
-use std::rc::Rc;
-use std::num::Wrapping as w;
-use std::time;
+pub use jitter::JitterRng;
+#[cfg(feature="std")] pub use os::OsRng;
 
-pub use os::OsRng;
 
 pub use isaac::{IsaacRng, Isaac64Rng};
 pub use chacha::ChaChaRng;
+pub use prng::XorShiftRng;
+
 
 #[cfg(target_pointer_width = "32")]
-use IsaacRng as IsaacWordRng;
+use prng::IsaacRng as IsaacWordRng;
 #[cfg(target_pointer_width = "64")]
-use Isaac64Rng as IsaacWordRng;
+use prng::Isaac64Rng as IsaacWordRng;
 
 use distributions::{Range, IndependentSample};
 use distributions::range::SampleRange;
 
-pub mod distributions;
-pub mod isaac;
-pub mod chacha;
-pub mod reseeding;
-mod rand_impls;
-pub mod os;
-pub mod read;
 
-#[allow(bad_style)]
-type w64 = w<u64>;
-#[allow(bad_style)]
-type w32 = w<u32>;
+pub mod distributions;
+pub mod jitter;
+#[cfg(feature="std")] pub mod os;
+#[cfg(feature="std")] pub mod read;
+pub mod reseeding;
+#[cfg(any(feature="std", feature = "alloc"))] pub mod seq;
+
+
+pub mod chacha {
+    
+    pub use prng::ChaChaRng;
+}
+pub mod isaac {
+    
+    pub use prng::{IsaacRng, Isaac64Rng};
+}
+
+
+mod rand_impls;
+mod prng;
 
 
 
@@ -618,6 +632,7 @@ impl<'a, R: ?Sized> Rng for &'a mut R where R: Rng {
     }
 }
 
+#[cfg(feature="std")]
 impl<R: ?Sized> Rng for Box<R> where R: Rng {
     fn next_u32(&mut self) -> u32 {
         (**self).next_u32()
@@ -725,93 +740,6 @@ pub trait SeedableRng<Seed>: Rng {
 
 
 
-#[allow(missing_copy_implementations)]
-#[derive(Clone, Debug)]
-pub struct XorShiftRng {
-    x: w32,
-    y: w32,
-    z: w32,
-    w: w32,
-}
-
-impl XorShiftRng {
-    
-    
-    
-    
-    
-    
-    pub fn new_unseeded() -> XorShiftRng {
-        XorShiftRng {
-            x: w(0x193a6754),
-            y: w(0xa8a7d469),
-            z: w(0x97830e05),
-            w: w(0x113ba7bb),
-        }
-    }
-}
-
-impl Rng for XorShiftRng {
-    #[inline]
-    fn next_u32(&mut self) -> u32 {
-        let x = self.x;
-        let t = x ^ (x << 11);
-        self.x = self.y;
-        self.y = self.z;
-        self.z = self.w;
-        let w_ = self.w;
-        self.w = w_ ^ (w_ >> 19) ^ (t ^ (t >> 8));
-        self.w.0
-    }
-}
-
-impl SeedableRng<[u32; 4]> for XorShiftRng {
-    
-    fn reseed(&mut self, seed: [u32; 4]) {
-        assert!(!seed.iter().all(|&x| x == 0),
-                "XorShiftRng.reseed called with an all zero seed.");
-
-        self.x = w(seed[0]);
-        self.y = w(seed[1]);
-        self.z = w(seed[2]);
-        self.w = w(seed[3]);
-    }
-
-    
-    fn from_seed(seed: [u32; 4]) -> XorShiftRng {
-        assert!(!seed.iter().all(|&x| x == 0),
-                "XorShiftRng::from_seed called with an all zero seed.");
-
-        XorShiftRng {
-            x: w(seed[0]),
-            y: w(seed[1]),
-            z: w(seed[2]),
-            w: w(seed[3]),
-        }
-    }
-}
-
-impl Rand for XorShiftRng {
-    fn rand<R: Rng>(rng: &mut R) -> XorShiftRng {
-        let mut tuple: (u32, u32, u32, u32) = rng.gen();
-        while tuple == (0, 0, 0, 0) {
-            tuple = rng.gen();
-        }
-        let (x, y, z, w_) = tuple;
-        XorShiftRng { x: w(x), y: w(y), z: w(z), w: w(w_) }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -856,8 +784,19 @@ impl StdRng {
     
     
     
+    #[cfg(feature="std")]
     pub fn new() -> io::Result<StdRng> {
-        OsRng::new().map(|mut r| StdRng { rng: r.gen() })
+        match OsRng::new() {
+            Ok(mut r) => Ok(StdRng { rng: r.gen() }),
+            Err(e1) => {
+                match JitterRng::new() {
+                    Ok(mut r) => Ok(StdRng { rng: r.gen() }),
+                    Err(_) => {
+                        Err(e1)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -893,26 +832,32 @@ impl<'a> SeedableRng<&'a [usize]> for StdRng {
 
 
 
+#[cfg(feature="std")]
 pub fn weak_rng() -> XorShiftRng {
     thread_rng().gen()
 }
 
 
+#[cfg(feature="std")]
 #[derive(Debug)]
 struct ThreadRngReseeder;
 
+#[cfg(feature="std")]
 impl reseeding::Reseeder<StdRng> for ThreadRngReseeder {
     fn reseed(&mut self, rng: &mut StdRng) {
         match StdRng::new() {
             Ok(r) => *rng = r,
-            Err(_) => rng.reseed(&weak_seed())
+            Err(e) => panic!("No entropy available: {}", e),
         }
     }
 }
+#[cfg(feature="std")]
 const THREAD_RNG_RESEED_THRESHOLD: u64 = 32_768;
+#[cfg(feature="std")]
 type ThreadRngInner = reseeding::ReseedingRng<StdRng, ThreadRngReseeder>;
 
 
+#[cfg(feature="std")]
 #[derive(Clone, Debug)]
 pub struct ThreadRng {
     rng: Rc<RefCell<ThreadRngInner>>,
@@ -930,12 +875,13 @@ pub struct ThreadRng {
 
 
 
+#[cfg(feature="std")]
 pub fn thread_rng() -> ThreadRng {
     
     thread_local!(static THREAD_RNG_KEY: Rc<RefCell<ThreadRngInner>> = {
         let r = match StdRng::new() {
             Ok(r) => r,
-            Err(_) => StdRng::from_seed(&weak_seed())
+            Err(e) => panic!("No entropy available: {}", e),
         };
         let rng = reseeding::ReseedingRng::new(r,
                                                THREAD_RNG_RESEED_THRESHOLD,
@@ -946,14 +892,7 @@ pub fn thread_rng() -> ThreadRng {
     ThreadRng { rng: THREAD_RNG_KEY.with(|t| t.clone()) }
 }
 
-fn weak_seed() -> [usize; 2] {
-    let now = time::SystemTime::now();
-    let unix_time = now.duration_since(time::UNIX_EPOCH).unwrap();
-    let seconds = unix_time.as_secs() as usize;
-    let nanoseconds = unix_time.subsec_nanos() as usize;
-    [seconds, nanoseconds]
-}
-
+#[cfg(feature="std")]
 impl Rng for ThreadRng {
     fn next_u32(&mut self) -> u32 {
         self.rng.borrow_mut().next_u32()
@@ -1011,6 +950,7 @@ impl Rng for ThreadRng {
 
 
 
+#[cfg(feature="std")]
 #[inline]
 pub fn random<T: Rand>() -> T {
     thread_rng().gen()
@@ -1028,28 +968,23 @@ pub fn random<T: Rand>() -> T {
 
 
 
+
+
+#[cfg(feature="std")]
+#[inline(always)]
+#[deprecated(since="0.4.0", note="renamed to seq::sample_iter")]
 pub fn sample<T, I, R>(rng: &mut R, iterable: I, amount: usize) -> Vec<T>
     where I: IntoIterator<Item=T>,
           R: Rng,
 {
-    let mut iter = iterable.into_iter();
-    let mut reservoir: Vec<T> = iter.by_ref().take(amount).collect();
     
-    if reservoir.len() == amount {
-        for (i, elem) in iter.enumerate() {
-            let k = rng.gen_range(0, i + 1 + amount);
-            if let Some(spot) = reservoir.get_mut(k) {
-                *spot = elem;
-            }
-        }
-    }
-    reservoir
+    seq::sample_iter(rng, iterable, amount)
+        .unwrap_or_else(|e| e)
 }
 
 #[cfg(test)]
 mod test {
-    use super::{Rng, thread_rng, random, SeedableRng, StdRng, sample,
-                weak_rng};
+    use super::{Rng, thread_rng, random, SeedableRng, StdRng, weak_rng};
     use std::iter::repeat;
 
     pub struct MyRng<R> { inner: R }
@@ -1143,14 +1078,6 @@ mod test {
     fn test_gen_range_panic_usize() {
         let mut r = thread_rng();
         r.gen_range(5, 2);
-    }
-
-    #[test]
-    fn test_gen_f64() {
-        let mut r = thread_rng();
-        let a = r.gen::<f64>();
-        let b = r.gen::<f64>();
-        debug!("{:?}", (a, b));
     }
 
     #[test]
@@ -1253,24 +1180,6 @@ mod test {
                       Option<(u32, (bool,))>),
                      (u8, i8, u16, i16, u32, i32, u64, i64),
                      (f32, (f64, (f64,)))) = random();
-    }
-
-    #[test]
-    fn test_sample() {
-        let min_val = 1;
-        let max_val = 100;
-
-        let mut r = thread_rng();
-        let vals = (min_val..max_val).collect::<Vec<i32>>();
-        let small_sample = sample(&mut r, vals.iter(), 5);
-        let large_sample = sample(&mut r, vals.iter(), vals.len() + 5);
-
-        assert_eq!(small_sample.len(), 5);
-        assert_eq!(large_sample.len(), vals.len());
-
-        assert!(small_sample.iter().all(|e| {
-            **e >= min_val && **e <= max_val
-        }));
     }
 
     #[test]

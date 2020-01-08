@@ -16,31 +16,116 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use core::cell::{Cell, UnsafeCell};
-use core::mem;
+use core::mem::{self, ManuallyDrop};
 use core::num::Wrapping;
 use core::ptr;
 use core::sync::atomic;
 use core::sync::atomic::Ordering;
 use alloc::boxed::Box;
-use alloc::arc::Arc;
 
 use crossbeam_utils::cache_padded::CachePadded;
-use nodrop::NoDrop;
+use arrayvec::ArrayVec;
 
 use atomic::Owned;
+use collector::{Handle, Collector};
 use epoch::{AtomicEpoch, Epoch};
 use guard::{unprotected, Guard};
-use garbage::{Bag, Garbage};
+use deferred::Deferred;
 use sync::list::{List, Entry, IterError, IsElement};
 use sync::queue::Queue;
 
 
-const COLLECT_STEPS: usize = 8;
+#[cfg(not(feature = "sanitize"))]
+const MAX_OBJECTS: usize = 64;
+#[cfg(feature = "sanitize")]
+const MAX_OBJECTS: usize = 4;
 
 
+#[derive(Default, Debug)]
+pub struct Bag {
+    
+    deferreds: ArrayVec<[Deferred; MAX_OBJECTS]>,
+}
 
-const PINNINGS_BETWEEN_COLLECT: usize = 128;
+
+unsafe impl Send for Bag {}
+
+impl Bag {
+    
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.deferreds.is_empty()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn try_push(&mut self, deferred: Deferred) -> Result<(), Deferred> {
+        self.deferreds.try_push(deferred).map_err(|e| e.element())
+    }
+
+    
+    fn seal(self, epoch: Epoch) -> SealedBag {
+        SealedBag { epoch, bag: self }
+    }
+}
+
+impl Drop for Bag {
+    fn drop(&mut self) {
+        
+        for deferred in self.deferreds.drain(..) {
+            deferred.call();
+        }
+    }
+}
+
+
+#[derive(Default, Debug)]
+struct SealedBag {
+    epoch: Epoch,
+    bag: Bag,
+}
+
+
+unsafe impl Sync for SealedBag {}
+
+impl SealedBag {
+    
+    fn is_expired(&self, global_epoch: Epoch) -> bool {
+        
+        
+        global_epoch.wrapping_sub(self.epoch) >= 2
+    }
+}
 
 
 pub struct Global {
@@ -48,26 +133,24 @@ pub struct Global {
     locals: List<Local>,
 
     
-    queue: Queue<(Epoch, Bag)>,
+    queue: Queue<SealedBag>,
 
     
-    epoch: CachePadded<AtomicEpoch>,
+    pub(crate) epoch: CachePadded<AtomicEpoch>,
 }
 
 impl Global {
     
+    const COLLECT_STEPS: usize = 8;
+
+    
     #[inline]
-    pub fn new() -> Global {
-        Global {
+    pub fn new() -> Self {
+        Self {
             locals: List::new(),
             queue: Queue::new(),
             epoch: CachePadded::new(AtomicEpoch::new(Epoch::starting())),
         }
-    }
-
-    
-    pub fn load_epoch(&self, ordering: Ordering) -> Epoch {
-        self.epoch.load(ordering)
     }
 
     
@@ -77,7 +160,7 @@ impl Global {
         atomic::fence(Ordering::SeqCst);
 
         let epoch = self.epoch.load(Ordering::Relaxed);
-        self.queue.push((epoch, bag), guard);
+        self.queue.push(bag.seal(epoch), guard);
     }
 
     
@@ -91,22 +174,20 @@ impl Global {
     pub fn collect(&self, guard: &Guard) {
         let global_epoch = self.try_advance(guard);
 
-        let condition = |item: &(Epoch, Bag)| {
-            
-            
-            global_epoch.wrapping_sub(item.0) >= 2
-        };
-
         let steps = if cfg!(feature = "sanitize") {
             usize::max_value()
         } else {
-            COLLECT_STEPS
+            Self::COLLECT_STEPS
         };
 
         for _ in 0..steps {
-            match self.queue.try_pop_if(&condition, guard) {
+            match self.queue.try_pop_if(
+                &|sealed_bag: &SealedBag| sealed_bag.is_expired(global_epoch),
+                guard,
+            )
+            {
                 None => break,
-                Some(bag) => drop(bag),
+                Some(sealed_bag) => drop(sealed_bag),
             }
         }
     }
@@ -172,10 +253,10 @@ pub struct Local {
     
     
     
-    global: UnsafeCell<NoDrop<Arc<Global>>>,
+    collector: UnsafeCell<ManuallyDrop<Collector>>,
 
     
-    bag: UnsafeCell<Bag>,
+    pub(crate) bag: UnsafeCell<Bag>,
 
     
     guard_count: Cell<usize>,
@@ -189,38 +270,40 @@ pub struct Local {
     pin_count: Cell<Wrapping<usize>>,
 }
 
-unsafe impl Sync for Local {}
-
 impl Local {
     
-    pub fn register(global: &Arc<Global>) -> *const Local {
+    
+    const PINNINGS_BETWEEN_COLLECT: usize = 128;
+
+    
+    pub fn register(collector: &Collector) -> Handle {
         unsafe {
             
 
             let local = Owned::new(Local {
                 entry: Entry::default(),
                 epoch: AtomicEpoch::new(Epoch::starting()),
-                global: UnsafeCell::new(NoDrop::new(global.clone())),
+                collector: UnsafeCell::new(ManuallyDrop::new(collector.clone())),
                 bag: UnsafeCell::new(Bag::new()),
                 guard_count: Cell::new(0),
                 handle_count: Cell::new(1),
                 pin_count: Cell::new(Wrapping(0)),
             }).into_shared(&unprotected());
-            global.locals.insert(local, &unprotected());
-            local.as_raw()
+            collector.global.locals.insert(local, &unprotected());
+            Handle { local: local.as_raw() }
         }
     }
 
     
     #[inline]
-    pub fn is_bag_empty(&self) -> bool {
-        unsafe { (*self.bag.get()).is_empty() }
+    pub fn global(&self) -> &Global {
+        &self.collector().global
     }
 
     
     #[inline]
-    pub fn global(&self) -> &Global {
-        unsafe { &*self.global.get() }
+    pub fn collector(&self) -> &Collector {
+        unsafe { &**self.collector.get() }
     }
 
     
@@ -229,12 +312,17 @@ impl Local {
         self.guard_count.get() > 0
     }
 
-    pub fn defer(&self, mut garbage: Garbage, guard: &Guard) {
-        let bag = unsafe { &mut *self.bag.get() };
+    
+    
+    
+    
+    
+    pub unsafe fn defer(&self, mut deferred: Deferred, guard: &Guard) {
+        let bag = &mut *self.bag.get();
 
-        while let Err(g) = bag.try_push(garbage) {
+        while let Err(d) = bag.try_push(deferred) {
             self.global().push_bag(bag, guard);
-            garbage = g;
+            deferred = d;
         }
     }
 
@@ -251,7 +339,7 @@ impl Local {
     
     #[inline]
     pub fn pin(&self) -> Guard {
-        let guard = unsafe { Guard::new(self) };
+        let guard = Guard { local: self };
 
         let guard_count = self.guard_count.get();
         self.guard_count.set(guard_count.checked_add(1).unwrap());
@@ -287,7 +375,7 @@ impl Local {
 
             
             
-            if count.0 % PINNINGS_BETWEEN_COLLECT == 0 {
+            if count.0 % Self::PINNINGS_BETWEEN_COLLECT == 0 {
                 self.global().collect(&guard);
             }
         }
@@ -376,7 +464,7 @@ impl Local {
             
             
             
-            let global: Arc<Global> = ptr::read(&**self.global.get());
+            let collector: Collector = ptr::read(&*(*self.collector.get()));
 
             
             self.entry.delete(&unprotected());
@@ -384,7 +472,7 @@ impl Local {
             
             
             
-            drop(global);
+            drop(collector);
         }
     }
 }
@@ -405,5 +493,51 @@ impl IsElement<Local> for Local {
     unsafe fn finalize(entry: &Entry) {
         let local = Self::element_of(entry);
         drop(Box::from_raw(local as *const Local as *mut Local));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
+    use std::sync::atomic::Ordering;
+
+    use super::*;
+
+    #[test]
+    fn check_defer() {
+        static FLAG: AtomicUsize = ATOMIC_USIZE_INIT;
+        fn set() {
+            FLAG.store(42, Ordering::Relaxed);
+        }
+
+        let d = Deferred::new(set);
+        assert_eq!(FLAG.load(Ordering::Relaxed), 0);
+        d.call();
+        assert_eq!(FLAG.load(Ordering::Relaxed), 42);
+    }
+
+    #[test]
+    fn check_bag() {
+        static FLAG: AtomicUsize = ATOMIC_USIZE_INIT;
+        fn incr() {
+            FLAG.fetch_add(1, Ordering::Relaxed);
+        }
+
+        let mut bag = Bag::new();
+        assert!(bag.is_empty());
+
+        for _ in 0..MAX_OBJECTS {
+            assert!(unsafe { bag.try_push(Deferred::new(incr)).is_ok() });
+            assert!(!bag.is_empty());
+            assert_eq!(FLAG.load(Ordering::Relaxed), 0);
+        }
+
+        let result = unsafe { bag.try_push(Deferred::new(incr)) };
+        assert!(result.is_err());
+        assert!(!bag.is_empty());
+        assert_eq!(FLAG.load(Ordering::Relaxed), 0);
+
+        drop(bag);
+        assert_eq!(FLAG.load(Ordering::Relaxed), MAX_OBJECTS);
     }
 }

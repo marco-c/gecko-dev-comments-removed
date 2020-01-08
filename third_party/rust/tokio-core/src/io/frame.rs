@@ -310,6 +310,7 @@ pub trait Codec {
 
 
 
+#[must_use = "streams do nothing unless polled"]
 pub struct Framed<T, C> {
     upstream: T,
     codec: C,

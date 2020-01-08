@@ -8,15 +8,41 @@
 
 use std::fmt;
 use std::io::{self, Read, Write};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering::Relaxed;
 
-use futures::{Async, Poll};
+use futures::{task, Async, Poll};
 use mio::event::Evented;
+use mio::Ready;
 use tokio_io::{AsyncRead, AsyncWrite};
+use tokio::reactor::{Registration};
 
 use reactor::{Handle, Remote};
-use reactor::Readiness::*;
-use reactor::io_token::IoToken;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39,18 +65,19 @@ use reactor::io_token::IoToken;
 
 
 pub struct PollEvented<E> {
-    token: IoToken,
-    handle: Remote,
-    readiness: AtomicUsize,
     io: E,
+    inner: Inner,
+    remote: Remote,
 }
 
-impl<E: Evented + fmt::Debug> fmt::Debug for PollEvented<E> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("PollEvented")
-         .field("io", &self.io)
-         .finish()
-    }
+struct Inner {
+    registration: Registration,
+
+    
+    read_readiness: AtomicUsize,
+
+    
+    write_readiness: AtomicUsize,
 }
 
 impl<E: Evented> PollEvented<E> {
@@ -60,11 +87,17 @@ impl<E: Evented> PollEvented<E> {
     
     
     pub fn new(io: E, handle: &Handle) -> io::Result<PollEvented<E>> {
+        let registration = Registration::new();
+        registration.register_with(&io, handle.new_tokio_handle())?;
+
         Ok(PollEvented {
-            token: try!(IoToken::new(&io, handle)),
-            handle: handle.remote().clone(),
-            readiness: AtomicUsize::new(0),
             io: io,
+            inner: Inner {
+                registration,
+                read_readiness: AtomicUsize::new(0),
+                write_readiness: AtomicUsize::new(0),
+            },
+            remote: handle.remote().clone(),
         })
     }
 
@@ -80,13 +113,10 @@ impl<E: Evented> PollEvented<E> {
     
     
     
-    pub fn deregister(self, handle: &Handle) -> io::Result<()> {
-        let inner = match handle.inner.upgrade() {
-            Some(inner) => inner,
-            None => return Ok(()),
-        };
-        let ret = inner.borrow_mut().deregister_source(&self.io);
-        return ret
+    pub fn deregister(self, _: &Handle) -> io::Result<()> {
+        
+        
+        Ok(())
     }
 }
 
@@ -98,19 +128,54 @@ impl<E> PollEvented<E> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_read(&self) -> Async<()> {
-        if self.readiness.load(Ordering::SeqCst) & Readable as usize != 0 {
-            return Async::Ready(())
+        if self.poll_read2().is_ready() {
+            return ().into();
         }
-        self.readiness.fetch_or(self.token.take_readiness(), Ordering::SeqCst);
-        if self.readiness.load(Ordering::SeqCst) & Readable as usize != 0 {
-            Async::Ready(())
-        } else {
-            self.token.schedule_read(&self.handle);
-            Async::NotReady
-        }
+
+        Async::NotReady
     }
 
+    fn poll_read2(&self) -> Async<Ready> {
+        
+        match self.inner.read_readiness.load(Relaxed) {
+            0 => {}
+            mut n => {
+                
+                if let Some(ready) = self.inner.registration.take_read_ready().unwrap() {
+                    n |= super::ready2usize(ready);
+                    self.inner.read_readiness.store(n, Relaxed);
+                }
+
+                return super::usize2ready(n).into();
+            }
+        }
+
+        let ready = match self.inner.registration.poll_read_ready().unwrap() {
+            Async::Ready(r) => r,
+            _ => return Async::NotReady,
+        };
+
+        
+        self.inner.read_readiness.store(super::ready2usize(ready), Relaxed);
+
+        ready.into()
+    }
+
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -119,18 +184,97 @@ impl<E> PollEvented<E> {
     
     
     pub fn poll_write(&self) -> Async<()> {
-        if self.readiness.load(Ordering::SeqCst) & Writable as usize != 0 {
-            return Async::Ready(())
+        match self.inner.write_readiness.load(Relaxed) {
+            0 => {}
+            mut n => {
+                
+                if let Some(ready) = self.inner.registration.take_write_ready().unwrap() {
+                    n |= super::ready2usize(ready);
+                    self.inner.write_readiness.store(n, Relaxed);
+                }
+
+                return ().into();
+            }
         }
-        self.readiness.fetch_or(self.token.take_readiness(), Ordering::SeqCst);
-        if self.readiness.load(Ordering::SeqCst) & Writable as usize != 0 {
-            Async::Ready(())
-        } else {
-            self.token.schedule_write(&self.handle);
+
+        let ready = match self.inner.registration.poll_write_ready().unwrap() {
+            Async::Ready(r) => r,
+            _ => return Async::NotReady,
+        };
+
+        
+        self.inner.write_readiness.store(super::ready2usize(ready), Relaxed);
+
+        ().into()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_ready(&self, mask: Ready) -> Async<Ready> {
+        let mut ret = Ready::empty();
+
+        if mask.is_empty() {
+            return ret.into();
+        }
+
+        if mask.is_writable() {
+            if self.poll_write().is_ready() {
+                ret = Ready::writable();
+            }
+        }
+
+        let mask = mask - Ready::writable();
+
+        if !mask.is_empty() {
+            if let Async::Ready(v) = self.poll_read2() {
+                ret |= v & mask;
+            }
+        }
+
+        if ret.is_empty() {
+            if mask.is_writable() {
+                self.need_write();
+            }
+
+            if mask.is_readable() {
+                self.need_read();
+            }
+
             Async::NotReady
+        } else {
+            ret.into()
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -147,10 +291,19 @@ impl<E> PollEvented<E> {
     
     
     pub fn need_read(&self) {
-        self.readiness.fetch_and(!(Readable as usize), Ordering::SeqCst);
-        self.token.schedule_read(&self.handle)
+        self.inner.read_readiness.store(0, Relaxed);
+
+        if self.poll_read().is_ready() {
+            
+            task::current().notify();
+        }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -167,14 +320,18 @@ impl<E> PollEvented<E> {
     
     
     pub fn need_write(&self) {
-        self.readiness.fetch_and(!(Writable as usize), Ordering::SeqCst);
-        self.token.schedule_write(&self.handle)
+        self.inner.write_readiness.store(0, Relaxed);
+
+        if self.poll_write().is_ready() {
+            
+            task::current().notify();
+        }
     }
 
     
     
     pub fn remote(&self) -> &Remote {
-        &self.handle
+        &self.remote
     }
 
     
@@ -192,38 +349,47 @@ impl<E> PollEvented<E> {
 
 impl<E: Read> Read for PollEvented<E> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if let Async::NotReady = self.poll_read() {
-            return Err(::would_block())
+        if let Async::NotReady = PollEvented::poll_read(self) {
+            return Err(io::ErrorKind::WouldBlock.into())
         }
+
         let r = self.get_mut().read(buf);
+
         if is_wouldblock(&r) {
             self.need_read();
         }
-        return r
+
+        r
     }
 }
 
 impl<E: Write> Write for PollEvented<E> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if let Async::NotReady = self.poll_write() {
-            return Err(::would_block())
+        if let Async::NotReady = PollEvented::poll_write(self) {
+            return Err(io::ErrorKind::WouldBlock.into())
         }
+
         let r = self.get_mut().write(buf);
+
         if is_wouldblock(&r) {
             self.need_write();
         }
-        return r
+
+        r
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        if let Async::NotReady = self.poll_write() {
-            return Err(::would_block())
+        if let Async::NotReady = PollEvented::poll_write(self) {
+            return Err(io::ErrorKind::WouldBlock.into())
         }
+
         let r = self.get_mut().flush();
+
         if is_wouldblock(&r) {
             self.need_write();
         }
-        return r
+
+        r
     }
 }
 
@@ -251,14 +417,17 @@ impl<'a, E> Read for &'a PollEvented<E>
     where &'a E: Read,
 {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if let Async::NotReady = self.poll_read() {
-            return Err(::would_block())
+        if let Async::NotReady = PollEvented::poll_read(self) {
+            return Err(io::ErrorKind::WouldBlock.into())
         }
+
         let r = self.get_ref().read(buf);
+
         if is_wouldblock(&r) {
             self.need_read();
         }
-        return r
+
+        r
     }
 }
 
@@ -266,25 +435,31 @@ impl<'a, E> Write for &'a PollEvented<E>
     where &'a E: Write,
 {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if let Async::NotReady = self.poll_write() {
-            return Err(::would_block())
+        if let Async::NotReady = PollEvented::poll_write(self) {
+            return Err(io::ErrorKind::WouldBlock.into())
         }
+
         let r = self.get_ref().write(buf);
+
         if is_wouldblock(&r) {
             self.need_write();
         }
-        return r
+
+        r
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        if let Async::NotReady = self.poll_write() {
-            return Err(::would_block())
+        if let Async::NotReady = PollEvented::poll_write(self) {
+            return Err(io::ErrorKind::WouldBlock.into())
         }
+
         let r = self.get_ref().flush();
+
         if is_wouldblock(&r) {
             self.need_write();
         }
-        return r
+
+        r
     }
 }
 
@@ -321,8 +496,10 @@ fn is_wouldblock<T>(r: &io::Result<T>) -> bool {
     }
 }
 
-impl<E> Drop for PollEvented<E> {
-    fn drop(&mut self) {
-        self.token.drop_source(&self.handle);
+impl<E: Evented + fmt::Debug> fmt::Debug for PollEvented<E> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("PollEvented")
+         .field("io", &self.io)
+         .finish()
     }
 }

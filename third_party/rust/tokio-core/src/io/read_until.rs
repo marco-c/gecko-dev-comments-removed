@@ -9,6 +9,7 @@ use futures::{Poll, Future};
 
 
 
+#[must_use = "futures do nothing unless polled"]
 pub struct ReadUntil<A> {
     state: State<A>,
 }

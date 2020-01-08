@@ -8,6 +8,7 @@ use futures::{Poll, Future};
 
 
 
+#[must_use = "futures do nothing unless polled"]
 pub struct WriteAll<A, T> {
     state: State<A, T>,
 }

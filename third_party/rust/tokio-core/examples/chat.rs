@@ -68,7 +68,7 @@ fn main() {
         
         
         
-        let iter = stream::iter(iter::repeat(()).map(Ok::<(), Error>));
+        let iter = stream::iter_ok::<_, Error>(iter::repeat(()));
         let socket_reader = iter.fold(reader, move |reader, _| {
             
             let line = io::read_until(reader, b'\n', Vec::new());
@@ -96,11 +96,11 @@ fn main() {
                                     .filter(|&(&k, _)| k != addr)
                                     .map(|(_, v)| v);
                     for tx in iter {
-                        tx.send(format!("{}: {}", addr, msg)).unwrap();
+                        tx.unbounded_send(format!("{}: {}", addr, msg)).unwrap();
                     }
                 } else {
                     let tx = conns.get_mut(&addr).unwrap();
-                    tx.send("You didn't send valid UTF-8.".to_string()).unwrap();
+                    tx.unbounded_send("You didn't send valid UTF-8.".to_string()).unwrap();
                 }
                 reader
             })

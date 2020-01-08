@@ -85,6 +85,7 @@
 extern crate crossbeam_epoch as epoch;
 extern crate crossbeam_utils as utils;
 
+use std::cmp;
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
@@ -136,10 +137,7 @@ impl<T> Buffer<T> {
         let ptr = v.as_mut_ptr();
         mem::forget(v);
 
-        Buffer {
-            ptr: ptr,
-            cap: cap,
-        }
+        Buffer { ptr, cap }
     }
 
     
@@ -343,6 +341,8 @@ impl<T> Deque<T> {
     
     
     
+    
+    
     pub fn with_min_capacity(min_cap: usize) -> Deque<T> {
         Deque {
             inner: Arc::new(CachePadded::new(Inner::with_min_capacity(min_cap))),
@@ -399,6 +399,96 @@ impl<T> Deque<T> {
     
     
     
+    
+    
+    pub fn min_capacity(&self) -> usize {
+        self.inner.min_cap
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn capacity(&self) -> usize {
+        unsafe {
+            let buf = self.inner.buffer.load(Relaxed, epoch::unprotected());
+            buf.deref().cap
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn shrink_to_fit(&self) {
+        let b = self.inner.bottom.load(Relaxed);
+        let t = self.inner.top.load(Acquire);
+        let cap = self.capacity();
+        let len = b.wrapping_sub(t);
+
+        
+        let mut new_cap = cap;
+        while self.inner.min_cap <= new_cap / 2 && len <= new_cap as isize / 2 {
+            new_cap /= 2;
+        }
+
+        if new_cap != cap {
+            unsafe {
+                self.inner.resize(new_cap);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn push(&self, value: T) {
         unsafe {
             
@@ -411,11 +501,16 @@ impl<T> Deque<T> {
             
             let len = b.wrapping_sub(t);
 
-            
             let cap = buffer.deref().cap;
+            
             if len >= cap as isize {
                 
                 self.inner.resize(2 * cap);
+                buffer = self.inner.buffer.load(Relaxed, epoch::unprotected());
+            
+            } else if cap > self.inner.min_cap && len + 1 < cap as isize / 4 {
+                
+                self.inner.resize(cap / 2);
                 buffer = self.inner.buffer.load(Relaxed, epoch::unprotected());
             }
 
@@ -506,8 +601,6 @@ impl<T> Deque<T> {
         }
     }
 
-    
-    
     
     
     
@@ -669,11 +762,9 @@ impl<T> Stealer<T> {
         let t = self.inner.top.load(Relaxed);
         atomic::fence(SeqCst);
         let b = self.inner.bottom.load(Relaxed);
-        std::cmp::max(b.wrapping_sub(t), 0) as usize
+        cmp::max(b.wrapping_sub(t), 0) as usize
     }
 
-    
-    
     
     
     

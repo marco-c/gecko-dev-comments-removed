@@ -9,6 +9,7 @@ use futures::{Poll, Future, Async};
 
 
 
+#[must_use = "futures do nothing unless polled"]
 pub struct Flush<A> {
     a: Option<A>,
 }

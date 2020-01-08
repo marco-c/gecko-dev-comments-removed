@@ -10,6 +10,7 @@
 
 
 #![deprecated(note = "moved to the `tokio-io` crate")]
+#![allow(deprecated)]
 
 use std::io;
 

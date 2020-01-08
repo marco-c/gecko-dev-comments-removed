@@ -1,11 +1,14 @@
+#![allow(deprecated)]
+
 use {codec, AsyncRead, AsyncWrite};
 
-use bytes::{Buf, BufMut, BytesMut, IntoBuf, BigEndian, LittleEndian};
+use bytes::{Buf, BufMut, BytesMut, IntoBuf};
 use bytes::buf::Chain;
 
 use futures::{Async, AsyncSink, Stream, Sink, StartSend, Poll};
 
 use std::{cmp, fmt};
+use std::error::Error as StdError;
 use std::io::{self, Cursor};
 
 
@@ -53,6 +56,11 @@ pub struct Framed<T, B: IntoBuf = BytesMut> {
 #[derive(Debug)]
 pub struct FramedRead<T> {
     inner: codec::FramedRead<T, Decoder>,
+}
+
+
+pub struct FrameTooBig {
+    _priv: (),
 }
 
 #[derive(Debug)]
@@ -285,13 +293,15 @@ impl Decoder {
 
             
             let n = if self.builder.length_field_is_big_endian {
-                src.get_uint::<BigEndian>(field_len)
+                src.get_uint_be(field_len)
             } else {
-                src.get_uint::<LittleEndian>(field_len)
+                src.get_uint_le(field_len)
             };
 
             if n > self.builder.max_frame_len as u64 {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "frame size too big"));
+                return Err(io::Error::new(io::ErrorKind::InvalidData, FrameTooBig {
+                    _priv: (),
+                }));
             }
 
             
@@ -382,6 +392,24 @@ impl<T, B: IntoBuf> FramedWrite<T, B> {
     
     
     
+    pub fn max_frame_length(&self) -> usize {
+        self.builder.max_frame_len
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn set_max_frame_length(&mut self, val: usize) {
+        self.builder.max_frame_length(val);
+    }
+
+    
+    
+    
+    
     
     
     pub fn get_ref(&self) -> &T {
@@ -434,7 +462,9 @@ impl<T: AsyncWrite, B: IntoBuf> FramedWrite<T, B> {
         let n = buf.remaining();
 
         if n > self.builder.max_frame_len {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "frame too big"));
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, FrameTooBig {
+                _priv: (),
+            }));
         }
 
         
@@ -451,9 +481,9 @@ impl<T: AsyncWrite, B: IntoBuf> FramedWrite<T, B> {
         };
 
         if self.builder.length_field_is_big_endian {
-            head.put_uint::<BigEndian>(n as u64, self.builder.length_field_len);
+            head.put_uint_be(n as u64, self.builder.length_field_len);
         } else {
-            head.put_uint::<LittleEndian>(n as u64, self.builder.length_field_len);
+            head.put_uint_le(n as u64, self.builder.length_field_len);
         }
 
         debug_assert!(self.frame.is_none());
@@ -483,7 +513,7 @@ impl<T: AsyncWrite, B: IntoBuf> Sink for FramedWrite<T, B> {
         try_ready!(self.do_write());
 
         
-        try_nb!(self.inner.flush());
+        try_ready!(self.inner.poll_flush());
 
         return Ok(Async::Ready(()));
     }
@@ -621,6 +651,35 @@ impl Builder {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn native_endian(&mut self) -> &mut Self {
+        if cfg!(target_endian = "big") {
+            self.big_endian()
+        } else {
+            self.little_endian()
+        }
+    }
+
+    
+    
+    
     
     
     
@@ -826,5 +885,27 @@ impl Builder {
 
     fn get_num_skip(&self) -> usize {
         self.num_skip.unwrap_or(self.length_field_offset + self.length_field_len)
+    }
+}
+
+
+
+
+impl fmt::Debug for FrameTooBig {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FrameTooBig")
+            .finish()
+    }
+}
+
+impl fmt::Display for FrameTooBig {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.description())
+    }
+}
+
+impl StdError for FrameTooBig {
+    fn description(&self) -> &str {
+        "frame size too big"
     }
 }

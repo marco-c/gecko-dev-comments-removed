@@ -6,22 +6,22 @@
 use std::io;
 use std::time::{Duration, Instant};
 
-use futures::{Future, Poll, Async};
+use futures::{Future, Poll};
+use tokio_timer::Delay;
 
-use reactor::{Remote, Handle};
-use reactor::timeout_token::TimeoutToken;
-
-
+use reactor::Handle;
 
 
 
 
 
 
+
+
+#[must_use = "futures do nothing unless polled"]
+#[derive(Debug)]
 pub struct Timeout {
-    token: TimeoutToken,
-    when: Instant,
-    handle: Remote,
+    delay: Delay
 }
 
 impl Timeout {
@@ -41,10 +41,25 @@ impl Timeout {
     
     pub fn new_at(at: Instant, handle: &Handle) -> io::Result<Timeout> {
         Ok(Timeout {
-            token: try!(TimeoutToken::new(at, &handle)),
-            when: at,
-            handle: handle.remote().clone(),
+            delay: handle.remote.timer_handle.delay(at)
         })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reset(&mut self, at: Instant) {
+        self.delay.reset(at)
     }
 }
 
@@ -53,19 +68,7 @@ impl Future for Timeout {
     type Error = io::Error;
 
     fn poll(&mut self) -> Poll<(), io::Error> {
-        
-        let now = Instant::now();
-        if self.when <= now {
-            Ok(Async::Ready(()))
-        } else {
-            self.token.update_timeout(&self.handle);
-            Ok(Async::NotReady)
-        }
-    }
-}
-
-impl Drop for Timeout {
-    fn drop(&mut self) {
-        self.token.cancel_timeout(&self.handle);
+        self.delay.poll()
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
     }
 }

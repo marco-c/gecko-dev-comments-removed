@@ -1,499 +1,930 @@
-
-use std::borrow::ToOwned;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
-use std::io::{self, Read, Write};
-use std::net::{SocketAddr, Shutdown};
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Ordering};
-
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 
-use net::{NetworkConnector, NetworkStream, DefaultConnector};
-use client::scheme::Scheme;
+use futures::{Future, Async, Poll};
+use futures::sync::oneshot;
+#[cfg(feature = "runtime")]
+use tokio_timer::Interval;
 
-use self::stale::{StaleCheck, Stale};
+use common::Exec;
+use super::Ver;
 
-
-pub struct Pool<C: NetworkConnector> {
-    connector: C,
-    inner: Arc<Mutex<PoolImpl<<C as NetworkConnector>::Stream>>>,
-    stale_check: Option<StaleCallback<C::Stream>>,
+pub(super) struct Pool<T> {
+    inner: Arc<PoolInner<T>>,
 }
 
 
-#[derive(Debug)]
-pub struct Config {
+
+
+
+
+pub(super) trait Poolable: Send + Sized + 'static {
+    fn is_open(&self) -> bool;
     
-    pub max_idle: usize,
-}
-
-impl Default for Config {
-    #[inline]
-    fn default() -> Config {
-        Config {
-            max_idle: 5,
-        }
-    }
-}
-
-
-
-#[derive(Debug)]
-struct Config2 {
-    idle_timeout: Option<Duration>,
-    max_idle: usize,
-}
-
-
-#[derive(Debug)]
-struct PoolImpl<S> {
-    conns: HashMap<Key, Vec<PooledStreamInner<S>>>,
-    config: Config2,
-}
-
-type Key = (String, u16, Scheme);
-
-fn key<T: Into<Scheme>>(host: &str, port: u16, scheme: T) -> Key {
-    (host.to_owned(), port, scheme.into())
-}
-
-impl Pool<DefaultConnector> {
     
-    #[inline]
-    pub fn new(config: Config) -> Pool<DefaultConnector> {
-        Pool::with_connector(config, DefaultConnector::default())
-    }
+    
+    fn reserve(self) -> Reservation<Self>;
 }
 
-impl<C: NetworkConnector> Pool<C> {
+
+
+
+
+
+pub(super) enum Reservation<T> {
     
-    #[inline]
-    pub fn with_connector(config: Config, connector: C) -> Pool<C> {
+    
+    
+    Shared(T, T),
+    
+    
+    Unique(T),
+}
+
+
+type Key = (Arc<String>, Ver);
+
+struct PoolInner<T> {
+    connections: Mutex<Connections<T>>,
+    enabled: bool,
+}
+
+struct Connections<T> {
+    
+    
+    
+    connecting: HashSet<Key>,
+    
+    
+    idle: HashMap<Key, Vec<Idle<T>>>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    waiters: HashMap<Key, VecDeque<oneshot::Sender<T>>>,
+    
+    
+    #[cfg(feature = "runtime")]
+    idle_interval_ref: Option<oneshot::Sender<::common::Never>>,
+    #[cfg(feature = "runtime")]
+    exec: Exec,
+    timeout: Option<Duration>,
+}
+
+
+
+struct WeakOpt<T>(Option<Weak<T>>);
+
+impl<T> Pool<T> {
+    pub fn new(enabled: bool, timeout: Option<Duration>, __exec: &Exec) -> Pool<T> {
         Pool {
-            connector: connector,
-            inner: Arc::new(Mutex::new(PoolImpl {
-                conns: HashMap::new(),
-                config: Config2 {
-                    idle_timeout: None,
-                    max_idle: config.max_idle,
-                }
-            })),
-            stale_check: None,
+            inner: Arc::new(PoolInner {
+                connections: Mutex::new(Connections {
+                    connecting: HashSet::new(),
+                    idle: HashMap::new(),
+                    #[cfg(feature = "runtime")]
+                    idle_interval_ref: None,
+                    waiters: HashMap::new(),
+                    #[cfg(feature = "runtime")]
+                    exec: __exec.clone(),
+                    timeout,
+                }),
+                enabled,
+            }),
         }
-    }
-
-    
-    pub fn set_idle_timeout(&mut self, timeout: Option<Duration>) {
-        self.inner.lock().unwrap().config.idle_timeout = timeout;
-    }
-
-    pub fn set_stale_check<F>(&mut self, callback: F)
-    where F: Fn(StaleCheck<C::Stream>) -> Stale + Send + Sync + 'static {
-        self.stale_check = Some(Box::new(callback));
-    }
-
-    
-    #[inline]
-    pub fn clear_idle(&mut self) {
-        self.inner.lock().unwrap().conns.clear();
-    }
-
-    
-
-    fn checkout(&self, key: &Key) -> Option<PooledStreamInner<C::Stream>> {
-        while let Some(mut inner) = self.lookup(key) {
-            if let Some(ref stale_check) = self.stale_check {
-                let dur = inner.idle.expect("idle is never missing inside pool").elapsed();
-                let arg = stale::check(&mut inner.stream, dur);
-                if stale_check(arg).is_stale() {
-                    trace!("ejecting stale connection");
-                    continue;
-                }
-            }
-            return Some(inner);
-        }
-        None
-    }
-
-
-    fn lookup(&self, key: &Key) -> Option<PooledStreamInner<C::Stream>> {
-        let mut locked = self.inner.lock().unwrap();
-        let mut should_remove = false;
-        let deadline = locked.config.idle_timeout.map(|dur| Instant::now() - dur);
-        let inner = locked.conns.get_mut(key).and_then(|vec| {
-            while let Some(inner) = vec.pop() {
-                should_remove = vec.is_empty();
-                if let Some(deadline) = deadline {
-                    if inner.idle.expect("idle is never missing inside pool") < deadline {
-                        trace!("ejecting expired connection");
-                        continue;
-                    }
-                }
-                return Some(inner);
-            }
-            None
-        });
-        if should_remove {
-            locked.conns.remove(key);
-        }
-        inner
-    }
-}
-
-impl<S> PoolImpl<S> {
-    fn reuse(&mut self, key: Key, conn: PooledStreamInner<S>) {
-        trace!("reuse {:?}", key);
-        let conns = self.conns.entry(key).or_insert(vec![]);
-        if conns.len() < self.config.max_idle {
-            conns.push(conn);
-        }
-    }
-}
-
-impl<C: NetworkConnector<Stream=S>, S: NetworkStream + Send> NetworkConnector for Pool<C> {
-    type Stream = PooledStream<S>;
-    fn connect(&self, host: &str, port: u16, scheme: &str) -> ::Result<PooledStream<S>> {
-        let key = key(host, port, scheme);
-        let inner = match self.checkout(&key) {
-            Some(inner) => {
-                trace!("Pool had connection, using");
-                inner
-            },
-            None => PooledStreamInner {
-                key: key.clone(),
-                idle: None,
-                stream: try!(self.connector.connect(host, port, scheme)),
-                previous_response_expected_no_content: false,
-            }
-
-        };
-        Ok(PooledStream {
-            has_read: false,
-            inner: Some(inner),
-            is_closed: AtomicBool::new(false),
-            pool: self.inner.clone(),
-        })
-    }
-}
-
-type StaleCallback<S> = Box<Fn(StaleCheck<S>) -> Stale + Send + Sync + 'static>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-mod stale {
-    use std::time::Duration;
-
-    pub struct StaleCheck<'a, S: 'a> {
-        stream: &'a mut S,
-        duration: Duration,
-    }
-
-    #[inline]
-    pub fn check<'a, S: 'a>(stream: &'a mut S, dur: Duration) -> StaleCheck<'a, S> {
-        StaleCheck {
-            stream: stream,
-            duration: dur,
-        }
-    }
-
-    impl<'a, S: 'a> StaleCheck<'a, S> {
-        pub fn stream(&mut self) -> &mut S {
-            self.stream
-        }
-
-        pub fn idle_duration(&self) -> Duration {
-            self.duration
-        }
-
-        pub fn stale(self) -> Stale {
-            Stale(true)
-        }
-
-        pub fn fresh(self) -> Stale {
-            Stale(false)
-        }
-    }
-
-    pub struct Stale(bool);
-
-
-    impl Stale {
-        #[inline]
-        pub fn is_stale(self) -> bool {
-            self.0
-        }
-    }
-}
-
-
-
-pub struct PooledStream<S> {
-    has_read: bool,
-    inner: Option<PooledStreamInner<S>>,
-    
-    is_closed: AtomicBool,
-    pool: Arc<Mutex<PoolImpl<S>>>,
-}
-
-
-impl<S> fmt::Debug for PooledStream<S> where S: fmt::Debug + 'static {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("PooledStream")
-           .field("inner", &self.inner)
-           .field("has_read", &self.has_read)
-           .field("is_closed", &self.is_closed.load(Ordering::Relaxed))
-           .field("pool", &self.pool)
-           .finish()
-    }
-}
-
-impl<S: NetworkStream> PooledStream<S> {
-    
-    pub fn into_inner(mut self) -> S {
-        self.inner.take().expect("PooledStream lost its inner stream").stream
-    }
-
-    
-    pub fn get_ref(&self) -> &S {
-        &self.inner.as_ref().expect("PooledStream lost its inner stream").stream
     }
 
     #[cfg(test)]
-    fn get_mut(&mut self) -> &mut S {
-        &mut self.inner.as_mut().expect("PooledStream lost its inner stream").stream
+    pub(super) fn no_timer(&self) {
+        
+        #[cfg(feature = "runtime")]
+        {
+            let mut inner = self.inner.connections.lock().unwrap();
+            assert!(inner.idle_interval_ref.is_none(), "timer already spawned");
+            let (tx, _) = oneshot::channel();
+            inner.idle_interval_ref = Some(tx);
+        }
     }
 }
 
-#[derive(Debug)]
-struct PooledStreamInner<S> {
-    key: Key,
-    idle: Option<Instant>,
-    stream: S,
-    previous_response_expected_no_content: bool,
-}
+impl<T: Poolable> Pool<T> {
+    
+    
+    pub fn checkout(&self, key: Key) -> Checkout<T> {
+        Checkout {
+            key,
+            pool: self.clone(),
+            waiter: None,
+        }
+    }
 
-impl<S: NetworkStream> Read for PooledStream<S> {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let inner = self.inner.as_mut().unwrap();
-        let n = try!(inner.stream.read(buf));
-        if n == 0 {
-            
-            
-            
-            self.is_closed.store(true, Ordering::Relaxed);
-
-            
-            
-            
-            if !self.has_read && inner.idle.is_some() {
-                
-                Err(io::Error::new(
-                    io::ErrorKind::ConnectionAborted,
-                    "Pooled stream disconnected"
-                ))
+    
+    
+    pub(super) fn connecting(&self, key: &Key) -> Option<Connecting<T>> {
+        if key.1 == Ver::Http2 && self.inner.enabled {
+            let mut inner = self.inner.connections.lock().unwrap();
+            if inner.connecting.insert(key.clone()) {
+                let connecting = Connecting {
+                    key: key.clone(),
+                    pool: WeakOpt::downgrade(&self.inner),
+                };
+                Some(connecting)
             } else {
-                Ok(0)
+                trace!("HTTP/2 connecting already in progress for {:?}", key.0);
+                None
             }
         } else {
-            self.has_read = true;
-            Ok(n)
+            Some(Connecting {
+                key: key.clone(),
+                
+                
+                pool: WeakOpt::none(),
+            })
         }
     }
-}
 
-impl<S: NetworkStream> Write for PooledStream<S> {
-    #[inline]
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.as_mut().unwrap().stream.write(buf)
+    #[cfg(feature = "runtime")]
+    #[cfg(test)]
+    pub(super) fn h1_key(&self, s: &str) -> Key {
+        (Arc::new(s.to_string()), Ver::Http1)
     }
 
-    #[inline]
-    fn flush(&mut self) -> io::Result<()> {
-        self.inner.as_mut().unwrap().stream.flush()
-    }
-}
-
-impl<S: NetworkStream> NetworkStream for PooledStream<S> {
-    #[inline]
-    fn peer_addr(&mut self) -> io::Result<SocketAddr> {
-        self.inner.as_mut().unwrap().stream.peer_addr()
-            .map_err(|e| {
-                self.is_closed.store(true, Ordering::Relaxed);
-                e
-            })
+    #[cfg(feature = "runtime")]
+    #[cfg(test)]
+    pub(super) fn idle_count(&self, key: &Key) -> usize {
+        self
+            .inner
+            .connections
+            .lock()
+            .unwrap()
+            .idle
+            .get(key)
+            .map(|list| list.len())
+            .unwrap_or(0)
     }
 
-    #[inline]
-    fn set_read_timeout(&self, dur: Option<Duration>) -> io::Result<()> {
-        self.inner.as_ref().unwrap().stream.set_read_timeout(dur)
-            .map_err(|e| {
-                self.is_closed.store(true, Ordering::Relaxed);
-                e
-            })
-    }
+    fn take(&self, key: &Key) -> Option<Pooled<T>> {
+        let entry = {
+            let mut inner = self.inner.connections.lock().unwrap();
+            let expiration = Expiration::new(inner.timeout);
+            let maybe_entry = inner.idle.get_mut(key)
+                .and_then(|list| {
+                    trace!("take? {:?}: expiration = {:?}", key, expiration.0);
+                    
+                    
+                    {
+                        let popper = IdlePopper {
+                            key,
+                            list,
+                        };
+                        popper.pop(&expiration)
+                    }
+                        .map(|e| (e, list.is_empty()))
+                });
 
-    #[inline]
-    fn set_write_timeout(&self, dur: Option<Duration>) -> io::Result<()> {
-        self.inner.as_ref().unwrap().stream.set_write_timeout(dur)
-            .map_err(|e| {
-                self.is_closed.store(true, Ordering::Relaxed);
-                e
-            })
-    }
-
-    #[inline]
-    fn close(&mut self, how: Shutdown) -> io::Result<()> {
-        self.is_closed.store(true, Ordering::Relaxed);
-        self.inner.as_mut().unwrap().stream.close(how)
-    }
-
-    #[inline]
-    fn set_previous_response_expected_no_content(&mut self, expected: bool) {
-        trace!("set_previous_response_expected_no_content {}", expected);
-        self.inner.as_mut().unwrap().previous_response_expected_no_content = expected;
-    }
-
-    #[inline]
-    fn previous_response_expected_no_content(&self) -> bool {
-        let answer = self.inner.as_ref().unwrap().previous_response_expected_no_content;
-        trace!("previous_response_expected_no_content {}", answer);
-        answer
-    }
-}
-
-impl<S> Drop for PooledStream<S> {
-    fn drop(&mut self) {
-        let is_closed = self.is_closed.load(Ordering::Relaxed);
-        trace!("PooledStream.drop, is_closed={}", is_closed);
-        if !is_closed {
-            self.inner.take().map(|mut inner| {
-                let now = Instant::now();
-                inner.idle = Some(now);
-                if let Ok(mut pool) = self.pool.lock() {
-                    pool.reuse(inner.key.clone(), inner);
-                }
+            let (entry, empty) = if let Some((e, empty)) = maybe_entry {
+                (Some(e), empty)
+            } else {
                 
+                (None, true)
+            };
+            if empty {
+                
+                inner.idle.remove(key);
+            }
+            entry
+        };
+
+        entry.map(|e| self.reuse(key, e.value))
+    }
+
+    pub(super) fn pooled(&self, mut connecting: Connecting<T>, value: T) -> Pooled<T> {
+        let (value, pool_ref)  = if self.inner.enabled {
+            match value.reserve() {
+                Reservation::Shared(to_insert, to_return) => {
+                    debug_assert_eq!(
+                        connecting.key.1,
+                        Ver::Http2,
+                        "shared reservation without Http2"
+                    );
+                    let mut inner = self.inner.connections.lock().unwrap();
+                    inner.put(connecting.key.clone(), to_insert, &self.inner);
+                    
+                    
+                    inner.connected(&connecting.key);
+                    
+                    connecting.pool = WeakOpt::none();
+
+                    
+                    
+                    (to_return, WeakOpt::none())
+                },
+                Reservation::Unique(value) => {
+                    
+                    
+                    
+                    (value, WeakOpt::downgrade(&self.inner))
+                },
+            }
+        } else {
+            
+
+            
+            debug_assert!(connecting.pool.upgrade().is_none());
+
+            (value, WeakOpt::none())
+        };
+        Pooled {
+            key: connecting.key.clone(),
+            is_reused: false,
+            pool: pool_ref,
+            value: Some(value)
+        }
+    }
+
+    fn reuse(&self, key: &Key, value: T) -> Pooled<T> {
+        debug!("reuse idle connection for {:?}", key);
+        
+        
+        
+        
+        
+        
+        
+        
+        let pool_ref = if key.1 == Ver::Http2 {
+            WeakOpt::none()
+        } else {
+            WeakOpt::downgrade(&self.inner)
+        };
+
+        Pooled {
+            is_reused: true,
+            key: key.clone(),
+            pool: pool_ref,
+            value: Some(value),
+        }
+    }
+
+    fn waiter(&mut self, key: Key, tx: oneshot::Sender<T>) {
+        trace!("checkout waiting for idle connection: {:?}", key);
+        self.inner.connections.lock().unwrap()
+            .waiters.entry(key)
+            .or_insert(VecDeque::new())
+            .push_back(tx);
+    }
+}
+
+
+struct IdlePopper<'a, T: 'a> {
+    key: &'a Key,
+    list: &'a mut Vec<Idle<T>>,
+}
+
+impl<'a, T: Poolable + 'a> IdlePopper<'a, T> {
+    fn pop(self, expiration: &Expiration) -> Option<Idle<T>> {
+        while let Some(entry) = self.list.pop() {
+            
+            
+            if !entry.value.is_open() {
+                trace!("removing closed connection for {:?}", self.key);
+                continue;
+            }
+            
+            
+            
+            
+            
+            
+            if expiration.expires(entry.idle_at) {
+                trace!("removing expired connection for {:?}", self.key);
+                continue;
+            }
+
+            let value = match entry.value.reserve() {
+                Reservation::Shared(to_reinsert, to_checkout) => {
+                    self.list.push(Idle {
+                        idle_at: Instant::now(),
+                        value: to_reinsert,
+                    });
+                    to_checkout
+                },
+                Reservation::Unique(unique) => {
+                    unique
+                }
+            };
+
+            return Some(Idle {
+                idle_at: entry.idle_at,
+                value,
             });
         }
+
+        None
+    }
+}
+
+impl<T: Poolable> Connections<T> {
+    fn put(&mut self, key: Key, value: T, __pool_ref: &Arc<PoolInner<T>>) {
+        if key.1 == Ver::Http2 && self.idle.contains_key(&key) {
+            trace!("put; existing idle HTTP/2 connection for {:?}", key);
+            return;
+        }
+        trace!("put; add idle connection for {:?}", key);
+        let mut remove_waiters = false;
+        let mut value = Some(value);
+        if let Some(waiters) = self.waiters.get_mut(&key) {
+            while let Some(tx) = waiters.pop_front() {
+                if !tx.is_canceled() {
+                    let reserved = value.take().expect("value already sent");
+                    let reserved = match reserved.reserve() {
+                        Reservation::Shared(to_keep, to_send) => {
+                            value = Some(to_keep);
+                            to_send
+                        },
+                        Reservation::Unique(uniq) => uniq,
+                    };
+                    match tx.send(reserved) {
+                        Ok(()) => {
+                            if value.is_none() {
+                                break;
+                            } else {
+                                continue;
+                            }
+                        },
+                        Err(e) => {
+                            value = Some(e);
+                        }
+                    }
+                }
+
+                trace!("put; removing canceled waiter for {:?}", key);
+            }
+            remove_waiters = waiters.is_empty();
+        }
+        if remove_waiters {
+            self.waiters.remove(&key);
+        }
+
+        match value {
+            Some(value) => {
+                debug!("pooling idle connection for {:?}", key);
+                self.idle.entry(key)
+                     .or_insert(Vec::new())
+                     .push(Idle {
+                         value: value,
+                         idle_at: Instant::now(),
+                     });
+
+                #[cfg(feature = "runtime")]
+                {
+                    self.spawn_idle_interval(__pool_ref);
+                }
+            }
+            None => trace!("put; found waiter for {:?}", key),
+        }
+    }
+
+    
+    
+    fn connected(&mut self, key: &Key) {
+        let existed = self.connecting.remove(key);
+        debug_assert!(
+            existed,
+            "Connecting dropped, key not in pool.connecting"
+        );
+        
+        
+        
+        self.waiters.remove(key);
+    }
+
+    #[cfg(feature = "runtime")]
+    fn spawn_idle_interval(&mut self, pool_ref: &Arc<PoolInner<T>>) {
+        let (dur, rx) = {
+            debug_assert!(pool_ref.enabled);
+
+            if self.idle_interval_ref.is_some() {
+                return;
+            }
+
+            if let Some(dur) = self.timeout {
+                let (tx, rx) = oneshot::channel();
+                self.idle_interval_ref = Some(tx);
+                (dur, rx)
+            } else {
+                return
+            }
+        };
+
+        let start = Instant::now() + dur;
+
+        let interval = IdleInterval {
+            interval: Interval::new(start, dur),
+            pool: WeakOpt::downgrade(pool_ref),
+            pool_drop_notifier: rx,
+        };
+
+        if let Err(err) = self.exec.execute(interval) {
+            
+            warn!("error spawning connection pool idle interval: {}", err);
+        }
+    }
+}
+
+impl<T> Connections<T> {
+    
+    
+    
+    
+    fn clean_waiters(&mut self, key: &Key) {
+        let mut remove_waiters = false;
+        if let Some(waiters) = self.waiters.get_mut(key) {
+            waiters.retain(|tx| {
+                !tx.is_canceled()
+            });
+            remove_waiters = waiters.is_empty();
+        }
+        if remove_waiters {
+            self.waiters.remove(key);
+        }
+    }
+}
+
+#[cfg(feature = "runtime")]
+impl<T: Poolable> Connections<T> {
+    
+    fn clear_expired(&mut self) {
+        let dur = self.timeout.expect("interval assumes timeout");
+
+        let now = Instant::now();
+        
+
+        self.idle.retain(|key, values| {
+            values.retain(|entry| {
+                if !entry.value.is_open() {
+                    trace!("idle interval evicting closed for {:?}", key);
+                    return false;
+                }
+                if now - entry.idle_at > dur {
+                    trace!("idle interval evicting expired for {:?}", key);
+                    return false;
+                }
+
+                
+                true
+            });
+
+            
+            !values.is_empty()
+        });
+    }
+}
+
+impl<T> Clone for Pool<T> {
+    fn clone(&self) -> Pool<T> {
+        Pool {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+
+
+pub(super) struct Pooled<T: Poolable> {
+    value: Option<T>,
+    is_reused: bool,
+    key: Key,
+    pool: WeakOpt<PoolInner<T>>,
+}
+
+impl<T: Poolable> Pooled<T> {
+    pub fn is_reused(&self) -> bool {
+        self.is_reused
+    }
+
+    pub fn is_pool_enabled(&self) -> bool {
+        self.pool.0.is_some()
+    }
+
+    fn as_ref(&self) -> &T {
+        self.value.as_ref().expect("not dropped")
+    }
+
+    fn as_mut(&mut self) -> &mut T {
+        self.value.as_mut().expect("not dropped")
+    }
+}
+
+impl<T: Poolable> Deref for Pooled<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        self.as_ref()
+    }
+}
+
+impl<T: Poolable> DerefMut for Pooled<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        self.as_mut()
+    }
+}
+
+impl<T: Poolable> Drop for Pooled<T> {
+    fn drop(&mut self) {
+        if let Some(value) = self.value.take() {
+            if !value.is_open() {
+                
+                
+                return;
+            }
+
+            if let Some(pool) = self.pool.upgrade() {
+                
+                
+                debug_assert!(pool.enabled);
+
+                if let Ok(mut inner) = pool.connections.lock() {
+                    inner.put(self.key.clone(), value, &pool);
+                }
+            } else if self.key.1 == Ver::Http1 {
+                trace!("pool dropped, dropping pooled ({:?})", self.key);
+            }
+            
+            
+        }
+    }
+}
+
+impl<T: Poolable> fmt::Debug for Pooled<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Pooled")
+            .field("key", &self.key)
+            .finish()
+    }
+}
+
+struct Idle<T> {
+    idle_at: Instant,
+    value: T,
+}
+
+pub(super) struct Checkout<T> {
+    key: Key,
+    pool: Pool<T>,
+    waiter: Option<oneshot::Receiver<T>>,
+}
+
+impl<T: Poolable> Checkout<T> {
+    fn poll_waiter(&mut self) -> Poll<Option<Pooled<T>>, ::Error> {
+        static CANCELED: &str = "pool checkout failed";
+        if let Some(mut rx) = self.waiter.take() {
+            match rx.poll() {
+                Ok(Async::Ready(value)) => {
+                    if value.is_open() {
+                        Ok(Async::Ready(Some(self.pool.reuse(&self.key, value))))
+                    } else {
+                        Err(::Error::new_canceled(Some(CANCELED)))
+                    }
+                },
+                Ok(Async::NotReady) => {
+                    self.waiter = Some(rx);
+                    Ok(Async::NotReady)
+                },
+                Err(_canceled) => Err(::Error::new_canceled(Some(CANCELED))),
+            }
+        } else {
+            Ok(Async::Ready(None))
+        }
+    }
+
+    fn add_waiter(&mut self) {
+        if self.waiter.is_none() {
+            let (tx, mut rx) = oneshot::channel();
+            let _ = rx.poll(); 
+            self.pool.waiter(self.key.clone(), tx);
+            self.waiter = Some(rx);
+        }
+    }
+}
+
+impl<T: Poolable> Future for Checkout<T> {
+    type Item = Pooled<T>;
+    type Error = ::Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        if let Some(pooled) = try_ready!(self.poll_waiter()) {
+            return Ok(Async::Ready(pooled));
+        }
+
+        let entry = self.pool.take(&self.key);
+
+        if let Some(pooled) = entry {
+            Ok(Async::Ready(pooled))
+        } else {
+            self.add_waiter();
+            Ok(Async::NotReady)
+        }
+    }
+}
+
+impl<T> Drop for Checkout<T> {
+    fn drop(&mut self) {
+        if self.waiter.take().is_some() {
+            if let Ok(mut inner) = self.pool.inner.connections.lock() {
+                inner.clean_waiters(&self.key);
+            }
+        }
+    }
+}
+
+pub(super) struct Connecting<T: Poolable> {
+    key: Key,
+    pool: WeakOpt<PoolInner<T>>,
+}
+
+impl<T: Poolable> Drop for Connecting<T> {
+    fn drop(&mut self) {
+        if let Some(pool) = self.pool.upgrade() {
+            
+            if let Ok(mut inner) = pool.connections.lock() {
+                debug_assert_eq!(
+                    self.key.1,
+                    Ver::Http2,
+                    "Connecting constructed without Http2"
+                );
+                inner.connected(&self.key);
+            }
+        }
+    }
+}
+
+struct Expiration(Option<Duration>);
+
+impl Expiration {
+    fn new(dur: Option<Duration>) -> Expiration {
+        Expiration(dur)
+    }
+
+    fn expires(&self, instant: Instant) -> bool {
+        match self.0 {
+            Some(timeout) => instant.elapsed() > timeout,
+            None => false,
+        }
+    }
+}
+
+#[cfg(feature = "runtime")]
+struct IdleInterval<T> {
+    interval: Interval,
+    pool: WeakOpt<PoolInner<T>>,
+    
+    
+    
+    pool_drop_notifier: oneshot::Receiver<::common::Never>,
+}
+
+#[cfg(feature = "runtime")]
+impl<T: Poolable + 'static> Future for IdleInterval<T> {
+    type Item = ();
+    type Error = ();
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        
+        use futures::Stream;
+
+        loop {
+            match self.pool_drop_notifier.poll() {
+                Ok(Async::Ready(n)) => match n {},
+                Ok(Async::NotReady) => (),
+                Err(_canceled) => {
+                    trace!("pool closed, canceling idle interval");
+                    return Ok(Async::Ready(()));
+                }
+            }
+
+            try_ready!(self.interval.poll().map_err(|err| {
+                error!("idle interval timer error: {}", err);
+            }));
+
+            if let Some(inner) = self.pool.upgrade() {
+                if let Ok(mut inner) = inner.connections.lock() {
+                    trace!("idle interval checking for expired");
+                    inner.clear_expired();
+                    continue;
+                }
+            }
+            return Ok(Async::Ready(()));
+        }
+    }
+}
+
+impl<T> WeakOpt<T> {
+    fn none() -> Self {
+        WeakOpt(None)
+    }
+
+    fn downgrade(arc: &Arc<T>) -> Self {
+        WeakOpt(Some(Arc::downgrade(arc)))
+    }
+
+    fn upgrade(&self) -> Option<Arc<T>> {
+        self.0
+            .as_ref()
+            .and_then(Weak::upgrade)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::net::Shutdown;
-    use std::io::Read;
+    use std::sync::Arc;
     use std::time::Duration;
-    use mock::{MockConnector};
-    use net::{NetworkConnector, NetworkStream};
+    use futures::{Async, Future};
+    use futures::future;
+    use common::Exec;
+    use super::{Connecting, Key, Poolable, Pool, Reservation, Ver, WeakOpt};
 
-    use super::{Pool, key};
+    
+    #[derive(Debug, PartialEq, Eq)]
+    struct Uniq<T>(T);
 
-    macro_rules! mocked {
-        () => ({
-            Pool::with_connector(Default::default(), MockConnector)
-        })
-    }
-
-    #[test]
-    fn test_connect_and_drop() {
-        let mut pool = mocked!();
-        pool.set_idle_timeout(Some(Duration::from_millis(100)));
-        let key = key("127.0.0.1", 3000, "http");
-        let mut stream = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        assert_eq!(stream.get_ref().id, 0);
-        stream.get_mut().id = 9;
-        drop(stream);
-        {
-            let locked = pool.inner.lock().unwrap();
-            assert_eq!(locked.conns.len(), 1);
-            assert_eq!(locked.conns.get(&key).unwrap().len(), 1);
+    impl<T: Send + 'static> Poolable for Uniq<T> {
+        fn is_open(&self) -> bool {
+            true
         }
-        let stream = pool.connect("127.0.0.1", 3000, "http").unwrap(); 
-        assert_eq!(stream.get_ref().id, 9);
-        drop(stream);
-        {
-            let locked = pool.inner.lock().unwrap();
-            assert_eq!(locked.conns.len(), 1);
-            assert_eq!(locked.conns.get(&key).unwrap().len(), 1);
+
+        fn reserve(self) -> Reservation<Self> {
+            Reservation::Unique(self)
         }
     }
 
-    #[test]
-    fn test_double_connect_reuse() {
-        let mut pool = mocked!();
-        pool.set_idle_timeout(Some(Duration::from_millis(100)));
-        let key = key("127.0.0.1", 3000, "http");
-        let stream1 = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        let stream2 = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        drop(stream1);
-        drop(stream2);
-        let stream1 = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        {
-            let locked = pool.inner.lock().unwrap();
-            assert_eq!(locked.conns.len(), 1);
-            assert_eq!(locked.conns.get(&key).unwrap().len(), 1);
+    fn c<T: Poolable>(key: Key) -> Connecting<T> {
+        Connecting {
+            key,
+            pool: WeakOpt::none(),
         }
-        let _ = stream1;
+    }
+
+    fn pool_no_timer<T>() -> Pool<T> {
+        let pool = Pool::new(true, Some(Duration::from_millis(100)), &Exec::Default);
+        pool.no_timer();
+        pool
     }
 
     #[test]
-    fn test_closed() {
-        let pool = mocked!();
-        let mut stream = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        stream.close(Shutdown::Both).unwrap();
-        drop(stream);
-        let locked = pool.inner.lock().unwrap();
-        assert_eq!(locked.conns.len(), 0);
+    fn test_pool_checkout_smoke() {
+        let pool = pool_no_timer();
+        let key = (Arc::new("foo".to_string()), Ver::Http1);
+        let pooled = pool.pooled(c(key.clone()), Uniq(41));
+
+        drop(pooled);
+
+        match pool.checkout(key).poll().unwrap() {
+            Async::Ready(pooled) => assert_eq!(*pooled, Uniq(41)),
+            _ => panic!("not ready"),
+        }
     }
 
     #[test]
-    fn test_eof_closes() {
-        let pool = mocked!();
-
-        let mut stream = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        assert_eq!(stream.read(&mut [0]).unwrap(), 0);
-        drop(stream);
-        let locked = pool.inner.lock().unwrap();
-        assert_eq!(locked.conns.len(), 0);
+    fn test_pool_checkout_returns_none_if_expired() {
+        future::lazy(|| {
+            let pool = pool_no_timer();
+            let key = (Arc::new("foo".to_string()), Ver::Http1);
+            let pooled = pool.pooled(c(key.clone()), Uniq(41));
+            drop(pooled);
+            ::std::thread::sleep(pool.inner.connections.lock().unwrap().timeout.unwrap());
+            assert!(pool.checkout(key).poll().unwrap().is_not_ready());
+            ::futures::future::ok::<(), ()>(())
+        }).wait().unwrap();
     }
 
     #[test]
-    fn test_read_conn_aborted() {
-        let pool = mocked!();
+    fn test_pool_checkout_removes_expired() {
+        future::lazy(|| {
+            let pool = pool_no_timer();
+            let key = (Arc::new("foo".to_string()), Ver::Http1);
 
-        pool.connect("127.0.0.1", 3000, "http").unwrap();
-        let mut stream = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        let err = stream.read(&mut [0]).unwrap_err();
-        assert_eq!(err.kind(), ::std::io::ErrorKind::ConnectionAborted);
-        drop(stream);
-        let locked = pool.inner.lock().unwrap();
-        assert_eq!(locked.conns.len(), 0);
+            pool.pooled(c(key.clone()), Uniq(41));
+            pool.pooled(c(key.clone()), Uniq(5));
+            pool.pooled(c(key.clone()), Uniq(99));
+
+            assert_eq!(pool.inner.connections.lock().unwrap().idle.get(&key).map(|entries| entries.len()), Some(3));
+            ::std::thread::sleep(pool.inner.connections.lock().unwrap().timeout.unwrap());
+
+            
+            pool.checkout(key.clone()).poll().unwrap();
+            assert!(pool.inner.connections.lock().unwrap().idle.get(&key).is_none());
+
+            Ok::<(), ()>(())
+        }).wait().unwrap();
+    }
+
+    #[cfg(feature = "runtime")]
+    #[test]
+    fn test_pool_timer_removes_expired() {
+        use std::time::Instant;
+        use tokio_timer::Delay;
+        let mut rt = ::tokio::runtime::current_thread::Runtime::new().unwrap();
+        let pool = Pool::new(true, Some(Duration::from_millis(100)), &Exec::Default);
+
+        let key = (Arc::new("foo".to_string()), Ver::Http1);
+
+        
+        
+        
+        rt.block_on(::futures::future::lazy(|| {
+            pool.pooled(c(key.clone()), Uniq(41));
+            pool.pooled(c(key.clone()), Uniq(5));
+            pool.pooled(c(key.clone()), Uniq(99));
+            Ok::<_, ()>(())
+        })).unwrap();
+
+        assert_eq!(pool.inner.connections.lock().unwrap().idle.get(&key).map(|entries| entries.len()), Some(3));
+
+        
+        rt
+            .block_on(Delay::new(Instant::now() + Duration::from_millis(200)))
+            .expect("rt block_on 200ms");
+
+        assert!(pool.inner.connections.lock().unwrap().idle.get(&key).is_none());
     }
 
     #[test]
-    fn test_idle_timeout() {
-        let mut pool = mocked!();
-        pool.set_idle_timeout(Some(Duration::from_millis(10)));
-        let mut stream = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        assert_eq!(stream.get_ref().id, 0);
-        stream.get_mut().id = 1337;
-        drop(stream);
-        ::std::thread::sleep(Duration::from_millis(100));
-        let stream = pool.connect("127.0.0.1", 3000, "http").unwrap();
-        assert_eq!(stream.get_ref().id, 0);
+    fn test_pool_checkout_task_unparked() {
+        let pool = pool_no_timer();
+        let key = (Arc::new("foo".to_string()), Ver::Http1);
+        let pooled = pool.pooled(c(key.clone()), Uniq(41));
+
+        let checkout = pool.checkout(key).join(future::lazy(move || {
+            
+            
+            
+            
+            
+            drop(pooled);
+            Ok(())
+        })).map(|(entry, _)| entry);
+        assert_eq!(*checkout.wait().unwrap(), Uniq(41));
+    }
+
+    #[test]
+    fn test_pool_checkout_drop_cleans_up_waiters() {
+        future::lazy(|| {
+            let pool = pool_no_timer::<Uniq<i32>>();
+            let key = (Arc::new("localhost:12345".to_string()), Ver::Http1);
+
+            let mut checkout1 = pool.checkout(key.clone());
+            let mut checkout2 = pool.checkout(key.clone());
+
+            
+            checkout1.poll().unwrap();
+            assert_eq!(pool.inner.connections.lock().unwrap().waiters.get(&key).unwrap().len(), 1);
+            checkout2.poll().unwrap();
+            assert_eq!(pool.inner.connections.lock().unwrap().waiters.get(&key).unwrap().len(), 2);
+
+            
+            drop(checkout1);
+            assert_eq!(pool.inner.connections.lock().unwrap().waiters.get(&key).unwrap().len(), 1);
+
+            drop(checkout2);
+            assert!(pool.inner.connections.lock().unwrap().waiters.get(&key).is_none());
+
+            ::futures::future::ok::<(), ()>(())
+        }).wait().unwrap();
+    }
+
+    #[derive(Debug)]
+    struct CanClose {
+        val: i32,
+        closed: bool,
+    }
+
+    impl Poolable for CanClose {
+        fn is_open(&self) -> bool {
+            !self.closed
+        }
+
+        fn reserve(self) -> Reservation<Self> {
+            Reservation::Unique(self)
+        }
+    }
+
+    #[test]
+    fn pooled_drop_if_closed_doesnt_reinsert() {
+        let pool = pool_no_timer();
+        let key = (Arc::new("localhost:12345".to_string()), Ver::Http1);
+        pool.pooled(c(key.clone()), CanClose {
+            val: 57,
+            closed: true,
+        });
+
+        assert!(!pool.inner.connections.lock().unwrap().idle.contains_key(&key));
     }
 }

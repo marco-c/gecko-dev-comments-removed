@@ -96,12 +96,42 @@ impl<'a> SignedJar<'a> {
     
     
     pub fn add(&mut self, mut cookie: Cookie<'static>) {
+        self.sign_cookie(&mut cookie);
+        self.parent.add(cookie);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_original(&mut self, mut cookie: Cookie<'static>) {
+        self.sign_cookie(&mut cookie);
+        self.parent.add_original(cookie);
+    }
+
+    
+    fn sign_cookie(&self, cookie: &mut Cookie) {
         let digest = sign(&self.key, cookie.value().as_bytes());
         let mut new_value = base64::encode(digest.as_ref());
         new_value.push_str(cookie.value());
         cookie.set_value(new_value);
-
-        self.parent.add(cookie);
     }
 
     

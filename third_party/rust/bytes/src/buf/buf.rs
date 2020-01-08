@@ -1,8 +1,40 @@
 use super::{IntoBuf, Take, Reader, Iter, FromBuf, Chain};
-use byteorder::ByteOrder;
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use iovec::IoVec;
 
 use std::{cmp, io, ptr};
+
+macro_rules! buf_get_impl {
+    ($this:ident, $size:expr, $conv:path) => ({
+         // try to convert directly from the bytes
+        let ret = {
+            // this Option<ret> trick is to avoid keeping a borrow on self
+            // when advance() is called (mut borrow) and to call bytes() only once
+            if let Some(src) = $this.bytes().get(..($size)) {
+                Some($conv(src))
+            } else {
+                None
+            }
+        };
+        if let Some(ret) = ret {
+             // if the direct convertion was possible, advance and return
+            $this.advance($size);
+            return ret;
+        } else {
+            // if not we copy the bytes in a temp buffer then convert
+            let mut buf = [0; ($size)];
+            $this.copy_to_slice(&mut buf); // (do the advance)
+            return $conv(&buf);
+        }
+    });
+    ($this:ident, $buf_size:expr, $conv:path, $len_to_read:expr) => ({
+        // The same trick as above does not improve the best case speed.
+        // It seems to be linked to the way the method is optimised by the compiler
+        let mut buf = [0; ($buf_size)];
+        $this.copy_to_slice(&mut buf[..($len_to_read)]);
+        return $conv(&buf[..($len_to_read)], $len_to_read);
+    });
+}
 
 
 
@@ -243,9 +275,10 @@ pub trait Buf {
     
     
     fn get_u8(&mut self) -> u8 {
-        let mut buf = [0; 1];
-        self.copy_to_slice(&mut buf);
-        buf[0]
+        assert!(self.remaining() >= 1);
+        let ret = self.bytes()[0];
+        self.advance(1);
+        ret
     }
 
     
@@ -266,29 +299,15 @@ pub trait Buf {
     
     
     fn get_i8(&mut self) -> i8 {
-        let mut buf = [0; 1];
-        self.copy_to_slice(&mut buf);
-        buf[0] as i8
+        assert!(self.remaining() >= 1);
+        let ret = self.bytes()[0] as i8;
+        self.advance(1);
+        ret
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn get_u16<T: ByteOrder>(&mut self) -> u16 {
+    #[doc(hidden)]
+    #[deprecated(note="use get_u16_be or get_u16_le")]
+    fn get_u16<T: ByteOrder>(&mut self) -> u16 where Self: Sized {
         let mut buf = [0; 2];
         self.copy_to_slice(&mut buf);
         T::read_u16(&buf)
@@ -311,7 +330,34 @@ pub trait Buf {
     
     
     
-    fn get_i16<T: ByteOrder>(&mut self) -> i16 {
+    fn get_u16_be(&mut self) -> u16 {
+        buf_get_impl!(self, 2, BigEndian::read_u16);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_u16_le(&mut self) -> u16 {
+        buf_get_impl!(self, 2, LittleEndian::read_u16);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_i16_be or get_i16_le")]
+    fn get_i16<T: ByteOrder>(&mut self) -> i16 where Self: Sized {
         let mut buf = [0; 2];
         self.copy_to_slice(&mut buf);
         T::read_i16(&buf)
@@ -334,7 +380,34 @@ pub trait Buf {
     
     
     
-    fn get_u32<T: ByteOrder>(&mut self) -> u32 {
+    fn get_i16_be(&mut self) -> i16 {
+        buf_get_impl!(self, 2, BigEndian::read_i16);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i16_le(&mut self) -> i16 {
+        buf_get_impl!(self, 2, LittleEndian::read_i16);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_u32_be or get_u32_le")]
+    fn get_u32<T: ByteOrder>(&mut self) -> u32 where Self: Sized {
         let mut buf = [0; 4];
         self.copy_to_slice(&mut buf);
         T::read_u32(&buf)
@@ -357,7 +430,34 @@ pub trait Buf {
     
     
     
-    fn get_i32<T: ByteOrder>(&mut self) -> i32 {
+    fn get_u32_be(&mut self) -> u32 {
+        buf_get_impl!(self, 4, BigEndian::read_u32);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_u32_le(&mut self) -> u32 {
+        buf_get_impl!(self, 4, LittleEndian::read_u32);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_i32_be or get_i32_le")]
+    fn get_i32<T: ByteOrder>(&mut self) -> i32 where Self: Sized {
         let mut buf = [0; 4];
         self.copy_to_slice(&mut buf);
         T::read_i32(&buf)
@@ -380,7 +480,34 @@ pub trait Buf {
     
     
     
-    fn get_u64<T: ByteOrder>(&mut self) -> u64 {
+    fn get_i32_be(&mut self) -> i32 {
+        buf_get_impl!(self, 4, BigEndian::read_i32);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i32_le(&mut self) -> i32 {
+        buf_get_impl!(self, 4, LittleEndian::read_i32);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_u64_be or get_u64_le")]
+    fn get_u64<T: ByteOrder>(&mut self) -> u64 where Self: Sized {
         let mut buf = [0; 8];
         self.copy_to_slice(&mut buf);
         T::read_u64(&buf)
@@ -403,7 +530,34 @@ pub trait Buf {
     
     
     
-    fn get_i64<T: ByteOrder>(&mut self) -> i64 {
+    fn get_u64_be(&mut self) -> u64 {
+        buf_get_impl!(self, 8, BigEndian::read_u64);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_u64_le(&mut self) -> u64 {
+        buf_get_impl!(self, 8, LittleEndian::read_u64);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_i64_be or get_i64_le")]
+    fn get_i64<T: ByteOrder>(&mut self) -> i64 where Self: Sized {
         let mut buf = [0; 8];
         self.copy_to_slice(&mut buf);
         T::read_i64(&buf)
@@ -426,7 +580,126 @@ pub trait Buf {
     
     
     
-    fn get_uint<T: ByteOrder>(&mut self, nbytes: usize) -> u64 {
+    fn get_i64_be(&mut self) -> i64 {
+        buf_get_impl!(self, 8, BigEndian::read_i64);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_i64_le(&mut self) -> i64 {
+        buf_get_impl!(self, 8, LittleEndian::read_i64);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "i128")]
+    fn get_u128_be(&mut self) -> u128 {
+        buf_get_impl!(self, 16, BigEndian::read_u128);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "i128")]
+    fn get_u128_le(&mut self) -> u128 {
+        buf_get_impl!(self, 16, LittleEndian::read_u128);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "i128")]
+    fn get_i128_be(&mut self) -> i128 {
+        buf_get_impl!(self, 16, BigEndian::read_i128);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "i128")]
+    fn get_i128_le(&mut self) -> i128 {
+        buf_get_impl!(self, 16, LittleEndian::read_i128);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_uint_be or get_uint_le")]
+    fn get_uint<T: ByteOrder>(&mut self, nbytes: usize) -> u64 where Self: Sized {
         let mut buf = [0; 8];
         self.copy_to_slice(&mut buf[..nbytes]);
         T::read_uint(&buf[..nbytes], nbytes)
@@ -449,7 +722,34 @@ pub trait Buf {
     
     
     
-    fn get_int<T: ByteOrder>(&mut self, nbytes: usize) -> i64 {
+    fn get_uint_be(&mut self, nbytes: usize) -> u64 {
+        buf_get_impl!(self, 8, BigEndian::read_uint, nbytes);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_uint_le(&mut self, nbytes: usize) -> u64 {
+        buf_get_impl!(self, 8, LittleEndian::read_uint, nbytes);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_int_be or get_int_le")]
+    fn get_int<T: ByteOrder>(&mut self, nbytes: usize) -> i64 where Self: Sized {
         let mut buf = [0; 8];
         self.copy_to_slice(&mut buf[..nbytes]);
         T::read_int(&buf[..nbytes], nbytes)
@@ -472,8 +772,34 @@ pub trait Buf {
     
     
     
+    fn get_int_be(&mut self, nbytes: usize) -> i64 {
+        buf_get_impl!(self, 8, BigEndian::read_int, nbytes);
+    }
+
     
-    fn get_f32<T: ByteOrder>(&mut self) -> f32 {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_int_le(&mut self, nbytes: usize) -> i64 {
+        buf_get_impl!(self, 8, LittleEndian::read_int, nbytes);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_f32_be or get_f32_le")]
+    fn get_f32<T: ByteOrder>(&mut self) -> f32 where Self: Sized {
         let mut buf = [0; 4];
         self.copy_to_slice(&mut buf);
         T::read_f32(&buf)
@@ -497,10 +823,82 @@ pub trait Buf {
     
     
     
-    fn get_f64<T: ByteOrder>(&mut self) -> f64 {
+    fn get_f32_be(&mut self) -> f32 {
+        buf_get_impl!(self, 4, BigEndian::read_f32);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_f32_le(&mut self) -> f32 {
+        buf_get_impl!(self, 4, LittleEndian::read_f32);
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note="use get_f64_be or get_f64_le")]
+    fn get_f64<T: ByteOrder>(&mut self) -> f64 where Self: Sized {
         let mut buf = [0; 8];
         self.copy_to_slice(&mut buf);
         T::read_f64(&buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_f64_be(&mut self) -> f64 {
+        buf_get_impl!(self, 8, BigEndian::read_f64);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_f64_le(&mut self) -> f64 {
+        buf_get_impl!(self, 8, LittleEndian::read_f64);
     }
 
     
@@ -749,3 +1147,7 @@ impl Buf for Option<[u8; 1]> {
         }
     }
 }
+
+
+
+fn _assert_trait_object(_b: &Buf) {}

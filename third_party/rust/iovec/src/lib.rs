@@ -51,11 +51,33 @@ pub const MAX_LENGTH: usize = sys::MAX_LENGTH;
 
 
 
+
+
 pub struct IoVec {
     sys: sys::IoVec,
 }
 
 impl IoVec {
+    pub fn from_bytes(slice: &[u8]) -> Option<&IoVec> {
+        if slice.len() == 0 {
+            return None
+        }
+        unsafe {
+            let iovec: &sys::IoVec = slice.into();
+            Some(mem::transmute(iovec))
+        }
+    }
+
+    pub fn from_bytes_mut(slice: &mut [u8]) -> Option<&mut IoVec> {
+        if slice.len() == 0 {
+            return None
+        }
+        unsafe {
+            let iovec: &mut sys::IoVec = slice.into();
+            Some(mem::transmute(iovec))
+        }
+    }
+
     #[deprecated(since = "0.1.0", note = "deref instead")]
     #[doc(hidden)]
     pub fn as_bytes(&self) -> &[u8] {
@@ -83,35 +105,43 @@ impl ops::DerefMut for IoVec {
     }
 }
 
+#[doc(hidden)]
 impl<'a> From<&'a [u8]> for &'a IoVec {
     fn from(bytes: &'a [u8]) -> &'a IoVec {
-        unsafe {
-            let iovec: &sys::IoVec = bytes.into();
-            mem::transmute(iovec)
-        }
+        IoVec::from_bytes(bytes)
+            .expect("this crate accidentally accepted 0-sized slices \
+                     originally but this was since discovered as a soundness \
+                     hole, it's recommended to use the `from_bytes` \
+                     function instead")
     }
 }
 
+#[doc(hidden)]
 impl<'a> From<&'a mut [u8]> for &'a mut IoVec {
     fn from(bytes: &'a mut [u8]) -> &'a mut IoVec {
-        unsafe {
-            let iovec: &mut sys::IoVec = bytes.into();
-            mem::transmute(iovec)
-        }
+        IoVec::from_bytes_mut(bytes)
+            .expect("this crate accidentally accepted 0-sized slices \
+                     originally but this was since discovered as a soundness \
+                     hole, it's recommended to use the `from_bytes_mut` \
+                     function instead")
     }
 }
 
+#[doc(hidden)]
 impl<'a> Default for &'a IoVec {
     fn default() -> Self {
-        let b: &[u8] = Default::default();
-        b.into()
+        panic!("this implementation was accidentally provided but is \
+                unfortunately unsound, it's recommended to stop using \
+                `IoVec::default` or construct a vector with a nonzero length");
     }
 }
 
+#[doc(hidden)]
 impl<'a> Default for &'a mut IoVec {
     fn default() -> Self {
-        let b: &mut [u8] = Default::default();
-        b.into()
+        panic!("this implementation was accidentally provided but is \
+                unfortunately unsound, it's recommended to stop using \
+                `IoVec::default` or construct a vector with a nonzero length");
     }
 }
 

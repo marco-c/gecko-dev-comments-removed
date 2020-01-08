@@ -1,11 +1,9 @@
-#![allow(dead_code)]
-
 use super::Task;
 
 use core::fmt;
 use core::cell::UnsafeCell;
 use core::sync::atomic::AtomicUsize;
-use core::sync::atomic::Ordering::{Acquire, Release};
+use core::sync::atomic::Ordering::{Acquire, Release, AcqRel};
 
 
 
@@ -37,26 +35,104 @@ pub struct AtomicTask {
 
 
 
-const WAITING: usize = 2;
 
 
 
 
 
-const LOCKED_WRITE: usize = 0;
 
 
 
 
 
-const LOCKED_WRITE_NOTIFIED: usize = 1;
 
 
 
 
 
-#[allow(dead_code)]
-const LOCKED_READ: usize = 3;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const WAITING: usize = 0;
+
+
+const REGISTERING: usize = 0b01;
+
+
+const NOTIFYING: usize = 0b10;
 
 impl AtomicTask {
     
@@ -74,51 +150,94 @@ impl AtomicTask {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn register(&self) {
-        
-        let task = super::current();
+        self.register_task(super::current());
+    }
 
-        match self.state.compare_and_swap(WAITING, LOCKED_WRITE, Acquire) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn register_task(&self, task: Task) {
+        match self.state.compare_and_swap(WAITING, REGISTERING, Acquire) {
             WAITING => {
                 unsafe {
                     
-                    *self.task.get() = Some(task);
+                    *self.task.get() = Some(task.clone());
 
                     
                     
                     
-                    if LOCKED_WRITE_NOTIFIED == self.state.swap(WAITING, Release) {
-                        (*self.task.get()).as_ref().unwrap().notify();
+                    
+                    
+                    
+                    
+                    let mut curr = REGISTERING;
+
+                    
+                    let mut notify: Option<Task> = None;
+
+                    loop {
+                        let res = self.state.compare_exchange(
+                            curr, WAITING, AcqRel, Acquire);
+
+                        match res {
+                            Ok(_) => {
+                                
+                                
+                                if let Some(task) = notify {
+                                    task.notify();
+                                }
+
+                                return;
+                            }
+                            Err(actual) => {
+                                
+                                
+                                
+                                
+                                debug_assert_eq!(actual, REGISTERING | NOTIFYING);
+
+                                
+                                
+                                notify = (*self.task.get()).take();
+
+                                
+                                
+                                curr = actual;
+                            }
+                        }
                     }
                 }
             }
-            LOCKED_WRITE | LOCKED_WRITE_NOTIFIED => {
-                
-                
-                
-                
-                
-            }
-            state => {
-                debug_assert!(state != LOCKED_WRITE, "unexpected state LOCKED_WRITE");
-                debug_assert!(state != LOCKED_WRITE_NOTIFIED, "unexpected state LOCKED_WRITE_NOTIFIED");
-
+            NOTIFYING => {
                 
                 
                 
                 task.notify();
+            }
+            state => {
+                
+                
+                
+                
+                
+                
+                
+                debug_assert!(
+                    state == REGISTERING ||
+                    state == REGISTERING | NOTIFYING);
             }
         }
     }
@@ -127,49 +246,33 @@ impl AtomicTask {
     
     
     pub fn notify(&self) {
-        let mut curr = WAITING;
-
-        loop {
-            if curr == LOCKED_WRITE {
+        
+        
+        
+        match self.state.fetch_or(NOTIFYING, AcqRel) {
+            WAITING => {
                 
-                let actual = self.state.compare_and_swap(LOCKED_WRITE, LOCKED_WRITE_NOTIFIED, Release);
+                let task = unsafe { (*self.task.get()).take() };
 
-                if curr == actual {
-                    
-                    return;
+                
+                self.state.fetch_and(!NOTIFYING, Release);
+
+                if let Some(task) = task {
+                    task.notify();
                 }
-
-                
-                curr = actual;
-
-            } else if curr == LOCKED_WRITE_NOTIFIED {
-                
-                return;
-
-            } else {
+            }
+            state => {
                 
                 
-                let actual = self.state.compare_and_swap(curr, curr + 1, Acquire);
-
                 
-                if actual == curr {
-                    
-                    unsafe {
-                        if let Some(ref task) = *self.task.get() {
-                            task.notify();
-                        }
-                    }
-
-                    
-                    self.state.fetch_sub(1, Release);
-
-                    
-                    return;
-                }
-
                 
-                curr = actual;
-
+                
+                
+                
+                debug_assert!(
+                    state == REGISTERING ||
+                    state == REGISTERING | NOTIFYING ||
+                    state == NOTIFYING);
             }
         }
     }

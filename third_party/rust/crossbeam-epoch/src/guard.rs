@@ -1,8 +1,10 @@
+use core::fmt;
 use core::ptr;
 use core::mem;
 
-use garbage::Garbage;
+use deferred::Deferred;
 use internal::Local;
+use collector::Collector;
 
 
 
@@ -73,7 +75,7 @@ use internal::Local;
 
 
 pub struct Guard {
-    local: *const Local,
+    pub(crate) local: *const Local,
 }
 
 impl Guard {
@@ -82,17 +84,14 @@ impl Guard {
     
     
     
-    #[doc(hidden)]
-    pub unsafe fn new(local: *const Local) -> Guard {
-        Guard { local: local }
-    }
-
     
-    #[doc(hidden)]
-    pub unsafe fn get_local(&self) -> *const Local {
-        self.local
-    }
-
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -173,10 +172,8 @@ impl Guard {
     where
         F: FnOnce() -> R,
     {
-        let garbage = Garbage::new(|| drop(f()));
-
         if let Some(local) = self.local.as_ref() {
-            local.defer(garbage, self);
+            local.defer(Deferred::new(move || drop(f())), self);
         }
     }
 
@@ -300,6 +297,28 @@ impl Guard {
 
         f()
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn collector(&self) -> Option<&Collector> {
+        unsafe { self.local.as_ref().map(|local| local.collector()) }
+    }
 }
 
 impl Drop for Guard {
@@ -320,6 +339,14 @@ impl Clone for Guard {
         }
     }
 }
+
+impl fmt::Debug for Guard {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Guard").finish()
+    }
+}
+
+
 
 
 

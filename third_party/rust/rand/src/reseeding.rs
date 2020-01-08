@@ -11,7 +11,7 @@
 
 
 
-use std::default::Default;
+use core::default::Default;
 
 use {Rng, SeedableRng};
 

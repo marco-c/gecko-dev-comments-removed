@@ -55,692 +55,916 @@
 
 
 
-use std::borrow::Cow;
-use std::default::Default;
-use std::io::{self, copy, Read};
-use std::fmt;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use std::fmt;
+use std::mem;
+use std::sync::Arc;
 use std::time::Duration;
 
-use url::Url;
-use url::ParseError as UrlError;
+use futures::{Async, Future, Poll};
+use futures::future::{self, Either, Executor};
+use futures::sync::oneshot;
+use http::{Method, Request, Response, Uri, Version};
+use http::header::{Entry, HeaderValue, HOST};
+use http::uri::Scheme;
 
-use header::{Headers, Header, HeaderFormat};
-use header::{ContentLength, Host, Location};
-use method::Method;
-use net::{NetworkConnector, NetworkStream, SslClient};
-use Error;
+use body::{Body, Payload};
+use common::Exec;
+use common::lazy as hyper_lazy;
+use self::connect::{Connect, Destination};
+use self::pool::{Pool, Poolable, Reservation};
 
-use self::proxy::{Proxy, tunnel};
-use self::scheme::Scheme;
-pub use self::pool::Pool;
-pub use self::request::Request;
-pub use self::response::Response;
+#[cfg(feature = "runtime")] pub use self::connect::HttpConnector;
 
-mod proxy;
-pub mod pool;
-pub mod request;
-pub mod response;
-
-use http::Protocol;
-use http::h1::Http11Protocol;
-
-
+pub mod conn;
+pub mod connect;
+pub(crate) mod dispatch;
+#[cfg(feature = "runtime")] mod dns;
+mod pool;
+#[cfg(test)]
+mod tests;
 
 
-
-pub struct Client {
-    protocol: Box<Protocol + Send + Sync>,
-    redirect_policy: RedirectPolicy,
-    read_timeout: Option<Duration>,
-    write_timeout: Option<Duration>,
-    proxy: Option<(Scheme, Cow<'static, str>, u16)>
+pub struct Client<C, B = Body> {
+    connector: Arc<C>,
+    executor: Exec,
+    h1_writev: bool,
+    h1_title_case_headers: bool,
+    pool: Pool<PoolClient<B>>,
+    retry_canceled_requests: bool,
+    set_host: bool,
+    ver: Ver,
 }
 
-impl fmt::Debug for Client {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Client")
-           .field("redirect_policy", &self.redirect_policy)
-           .field("read_timeout", &self.read_timeout)
-           .field("write_timeout", &self.write_timeout)
-           .field("proxy", &self.proxy)
-           .finish()
+#[cfg(feature = "runtime")]
+impl Client<HttpConnector, Body> {
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn new() -> Client<HttpConnector, Body> {
+        Builder::default().build_http()
     }
 }
 
-impl Client {
-
-    
-    pub fn new() -> Client {
-        Client::with_pool_config(Default::default())
+#[cfg(feature = "runtime")]
+impl Default for Client<HttpConnector, Body> {
+    fn default() -> Client<HttpConnector, Body> {
+        Client::new()
     }
+}
 
+impl Client<(), Body> {
     
-    pub fn with_pool_config(config: pool::Config) -> Client {
-        Client::with_connector(Pool::new(config))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn builder() -> Builder {
+        Builder::default()
     }
+}
+
+impl<C, B> Client<C, B>
+where C: Connect + Sync + 'static,
+      C::Transport: 'static,
+      C::Future: 'static,
+      B: Payload + Send + 'static,
+      B::Data: Send,
+{
 
     
-    pub fn with_http_proxy<H>(host: H, port: u16) -> Client
-    where H: Into<Cow<'static, str>> {
-        let host = host.into();
-        let proxy = tunnel((Scheme::Http, host.clone(), port));
-        let mut client = Client::with_connector(Pool::with_connector(Default::default(), proxy));
-        client.proxy = Some((Scheme::Http, host, port));
-        client
-    }
-
     
-    pub fn with_proxy_config<C, S>(proxy_config: ProxyConfig<C, S>) -> Client
-    where C: NetworkConnector + Send + Sync + 'static,
-          C::Stream: NetworkStream + Send + Clone,
-          S: SslClient<C::Stream> + Send + Sync + 'static {
-
-        let scheme = proxy_config.scheme;
-        let host = proxy_config.host;
-        let port = proxy_config.port;
-        let proxy = Proxy {
-            proxy: (scheme.clone(), host.clone(), port),
-            connector: proxy_config.connector,
-            ssl: proxy_config.ssl,
-        };
-
-        let mut client = match proxy_config.pool_config {
-            Some(pool_config) => Client::with_connector(Pool::with_connector(pool_config, proxy)),
-            None => Client::with_connector(proxy),
-        };
-        client.proxy = Some((scheme, host, port));
-        client
-    }
-
     
-    pub fn with_connector<C, S>(connector: C) -> Client
-    where C: NetworkConnector<Stream=S> + Send + Sync + 'static, S: NetworkStream + Send {
-        Client::with_protocol(Http11Protocol::with_connector(connector))
-    }
-
     
-    pub fn with_protocol<P: Protocol + Send + Sync + 'static>(protocol: P) -> Client {
-        Client {
-            protocol: Box::new(protocol),
-            redirect_policy: Default::default(),
-            read_timeout: None,
-            write_timeout: None,
-            proxy: None,
+    
+    
+    
+    pub fn get(&self, uri: Uri) -> ResponseFuture
+    where
+        B: Default,
+    {
+        let body = B::default();
+        if !body.is_end_stream() {
+            warn!("default Payload used for get() does not return true for is_end_stream");
         }
+
+        let mut req = Request::new(body);
+        *req.uri_mut() = uri;
+        self.request(req)
     }
 
     
-    pub fn set_redirect_policy(&mut self, policy: RedirectPolicy) {
-        self.redirect_policy = policy;
-    }
-
-    
-    pub fn set_read_timeout(&mut self, dur: Option<Duration>) {
-        self.read_timeout = dur;
-    }
-
-    
-    pub fn set_write_timeout(&mut self, dur: Option<Duration>) {
-        self.write_timeout = dur;
-    }
-
-    
-    pub fn get<U: IntoUrl>(&self, url: U) -> RequestBuilder {
-        self.request(Method::Get, url)
-    }
-
-    
-    pub fn head<U: IntoUrl>(&self, url: U) -> RequestBuilder {
-        self.request(Method::Head, url)
-    }
-
-    
-    pub fn patch<U: IntoUrl>(&self, url: U) -> RequestBuilder {
-        self.request(Method::Patch, url)
-    }
-
-    
-    pub fn post<U: IntoUrl>(&self, url: U) -> RequestBuilder {
-        self.request(Method::Post, url)
-    }
-
-    
-    pub fn put<U: IntoUrl>(&self, url: U) -> RequestBuilder {
-        self.request(Method::Put, url)
-    }
-
-    
-    pub fn delete<U: IntoUrl>(&self, url: U) -> RequestBuilder {
-        self.request(Method::Delete, url)
-    }
-
-
-    
-    pub fn request<U: IntoUrl>(&self, method: Method, url: U) -> RequestBuilder {
-        RequestBuilder {
-            client: self,
-            method: method,
-            url: url.into_url(),
-            body: None,
-            headers: None,
-        }
-    }
-}
-
-impl Default for Client {
-    fn default() -> Client { Client::new() }
-}
-
-
-
-
-
-pub struct RequestBuilder<'a> {
-    client: &'a Client,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    url: Result<Url, UrlError>,
-    headers: Option<Headers>,
-    method: Method,
-    body: Option<Body<'a>>,
-}
-
-impl<'a> RequestBuilder<'a> {
-
-    
-    pub fn body<B: Into<Body<'a>>>(mut self, body: B) -> RequestBuilder<'a> {
-        self.body = Some(body.into());
-        self
-    }
-
-    
-    pub fn headers(mut self, headers: Headers) -> RequestBuilder<'a> {
-        self.headers = Some(headers);
-        self
-    }
-
-    
-    pub fn header<H: Header + HeaderFormat>(mut self, header: H) -> RequestBuilder<'a> {
-        {
-            let headers = match self.headers {
-                Some(ref mut h) => h,
-                None => {
-                    self.headers = Some(Headers::new());
-                    self.headers.as_mut().unwrap()
-                }
-            };
-
-            headers.set(header);
-        }
-        self
-    }
-
-    
-    pub fn send(self) -> ::Result<Response> {
-        let RequestBuilder { client, method, url, headers, body } = self;
-        let mut url = try!(url);
-        trace!("send method={:?}, url={:?}, client={:?}", method, url, client);
-
-        let can_have_body = match method {
-            Method::Get | Method::Head => false,
-            _ => true
+    pub fn request(&self, mut req: Request<B>) -> ResponseFuture {
+        let is_http_11 = self.ver == Ver::Http1 && match req.version() {
+            Version::HTTP_11 => true,
+            Version::HTTP_10 => false,
+            other => {
+                error!("Request has unsupported version \"{:?}\"", other);
+                return ResponseFuture::new(Box::new(future::err(::Error::new_user_unsupported_version())));
+            }
         };
 
-        let mut body = if can_have_body {
-            body
-        } else {
-            None
-        };
+        let is_http_connect = req.method() == &Method::CONNECT;
 
-        loop {
-            let mut req = {
-                let (host, port) = try!(get_host_and_port(&url));
-                let mut message = try!(client.protocol.new_message(&host, port, url.scheme()));
-                if url.scheme() == "http" && client.proxy.is_some() {
-                    message.set_proxied(true);
-                }
+        if !is_http_11 && is_http_connect {
+            debug!("client does not support CONNECT requests for {:?}", req.version());
+            return ResponseFuture::new(Box::new(future::err(::Error::new_user_unsupported_request_method())));
+        }
 
-                let mut h = Headers::new();
-                h.set(Host {
-                    hostname: host.to_owned(),
-                    port: Some(port),
-                });
-                if let Some(ref headers) = headers {
-                    h.extend(headers.iter());
-                }
-                let headers = h;
-                Request::with_headers_and_message(method.clone(), url.clone(), headers, message)
-            };
 
-            try!(req.set_write_timeout(client.write_timeout));
-            try!(req.set_read_timeout(client.read_timeout));
-
-            match (can_have_body, body.as_ref()) {
-                (true, Some(body)) => match body.size() {
-                    Some(size) => req.headers_mut().set(ContentLength(size)),
-                    None => (), 
-                },
-                (true, None) => req.headers_mut().set(ContentLength(0)),
-                _ => () 
+        let uri = req.uri().clone();
+        let domain = match (uri.scheme_part(), uri.authority_part()) {
+            (Some(scheme), Some(auth)) => {
+                format!("{}://{}", scheme, auth)
             }
-            let mut streaming = try!(req.start());
-            if let Some(mut rdr) = body.take() {
-                try!(copy(&mut rdr, &mut streaming));
-            }
-            let res = try!(streaming.send());
-            if !res.status.is_redirection() {
-                return Ok(res)
-            }
-            debug!("redirect code {:?} for {}", res.status, url);
-
-            let loc = {
-                
-                let loc = match res.headers.get::<Location>() {
-                    Some(&Location(ref loc)) => {
-                        Some(url.join(loc))
-                    }
-                    None => {
-                        debug!("no Location header");
-                        
-                        None
-                    }
+            (None, Some(auth)) if is_http_connect => {
+                let scheme = match auth.port() {
+                    Some(443) => {
+                        set_scheme(req.uri_mut(), Scheme::HTTPS);
+                        "https"
+                    },
+                    _ => {
+                        set_scheme(req.uri_mut(), Scheme::HTTP);
+                        "http"
+                    },
                 };
-                match loc {
-                    Some(r) => r,
-                    None => return Ok(res)
-                }
+                format!("{}://{}", scheme, auth)
+            },
+            _ => {
+                debug!("Client requires absolute-form URIs, received: {:?}", uri);
+                return ResponseFuture::new(Box::new(future::err(::Error::new_user_absolute_uri_required())))
+            }
+        };
+
+        if self.set_host && self.ver == Ver::Http1 {
+            if let Entry::Vacant(entry) = req.headers_mut().entry(HOST).expect("HOST is always valid header name") {
+                let hostname = uri.host().expect("authority implies host");
+                let host = if let Some(port) = uri.port() {
+                    let s = format!("{}:{}", hostname, port);
+                    HeaderValue::from_str(&s)
+                } else {
+                    HeaderValue::from_str(hostname)
+                }.expect("uri host is valid header value");
+                entry.insert(host);
+            }
+        }
+
+
+        let client = self.clone();
+        let uri = req.uri().clone();
+        let fut = RetryableSendRequest {
+            client: client,
+            future: self.send_request(req, &domain),
+            domain: domain,
+            uri: uri,
+        };
+        ResponseFuture::new(Box::new(fut))
+    }
+
+    
+    fn send_request(&self, mut req: Request<B>, domain: &str) -> Box<Future<Item=Response<Body>, Error=ClientError<B>> + Send> {
+        let url = req.uri().clone();
+        let ver = self.ver;
+        let pool_key = (Arc::new(domain.to_string()), self.ver);
+        let checkout = self.pool.checkout(pool_key.clone());
+        let connect = {
+            let executor = self.executor.clone();
+            let pool = self.pool.clone();
+            let h1_writev = self.h1_writev;
+            let h1_title_case_headers = self.h1_title_case_headers;
+            let connector = self.connector.clone();
+            let dst = Destination {
+                uri: url,
             };
-            url = match loc {
-                Ok(u) => u,
-                Err(e) => {
-                    debug!("Location header had invalid URI: {:?}", e);
-                    return Ok(res);
+            hyper_lazy(move || {
+                if let Some(connecting) = pool.connecting(&pool_key) {
+                    Either::A(connector.connect(dst)
+                        .map_err(::Error::new_connect)
+                        .and_then(move |(io, connected)| {
+                            conn::Builder::new()
+                                .exec(executor.clone())
+                                .h1_writev(h1_writev)
+                                .h1_title_case_headers(h1_title_case_headers)
+                                .http2_only(pool_key.1 == Ver::Http2)
+                                .handshake(io)
+                                .and_then(move |(tx, conn)| {
+                                    let bg = executor.execute(conn.map_err(|e| {
+                                        debug!("client connection error: {}", e)
+                                    }));
+
+                                    
+                                    
+                                    if let Err(err) = bg {
+                                        warn!("error spawning critical client task: {}", err);
+                                        return Either::A(future::err(err));
+                                    }
+
+                                    
+                                    
+                                    Either::B(tx.when_ready())
+                                })
+                                .map(move |tx| {
+                                    pool.pooled(connecting, PoolClient {
+                                        is_proxied: connected.is_proxied,
+                                        tx: match ver {
+                                            Ver::Http1 => PoolTx::Http1(tx),
+                                            Ver::Http2 => PoolTx::Http2(tx.into_http2()),
+                                        },
+                                    })
+                                })
+                        }))
+                } else {
+                    let canceled = ::Error::new_canceled(Some("HTTP/2 connection in progress"));
+                    Either::B(future::err(canceled))
                 }
-            };
-            match client.redirect_policy {
+            })
+        };
+
+        let executor = self.executor.clone();
+        
+        let race = checkout.select2(connect)
+            .map(move |either| match either {
                 
-                RedirectPolicy::FollowAll => (), 
-                RedirectPolicy::FollowIf(cond) if cond(&url) => (), 
-                _ => return Ok(res),
+                
+                
+                
+                Either::A((checked_out, connecting)) => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if connecting.started() {
+                        let bg = connecting
+                            .map(|_pooled| {
+                                
+                                
+                            })
+                            .map_err(|err| {
+                                trace!("background connect error: {}", err);
+                            });
+                        
+                        
+                        let _ = executor.execute(bg);
+                    }
+                    checked_out
+                },
+                
+                Either::B((connected, _checkout)) => {
+                    connected
+                },
+            })
+            .or_else(|either| match either {
+                
+                
+                
+                
+                
+                
+                
+                
+                Either::A((err, connecting)) => {
+                    if err.is_canceled() {
+                        Either::A(Either::A(connecting.map_err(ClientError::Normal)))
+                    } else {
+                        Either::B(future::err(ClientError::Normal(err)))
+                    }
+                },
+                Either::B((err, checkout)) => {
+                    if err.is_canceled() {
+                        Either::A(Either::B(checkout.map_err(ClientError::Normal)))
+                    } else {
+                        Either::B(future::err(ClientError::Normal(err)))
+                    }
+                }
+            });
+
+        let executor = self.executor.clone();
+        let resp = race.and_then(move |mut pooled| {
+            let conn_reused = pooled.is_reused();
+            if ver == Ver::Http1 {
+                
+                if req.method() == &Method::CONNECT {
+                    authority_form(req.uri_mut());
+                } else if pooled.is_proxied {
+                    absolute_form(req.uri_mut());
+                } else {
+                    origin_form(req.uri_mut());
+                };
+            } else {
+                debug_assert!(
+                    req.method() != &Method::CONNECT,
+                    "Client should have returned Error for HTTP2 CONNECT"
+                );
+            }
+
+            let fut = pooled.send_request_retryable(req);
+
+            
+            
+            
+            
+            
+            
+            
+            if pooled.is_closed() {
+                drop(pooled);
+                let fut = fut
+                    .map_err(move |(err, orig_req)| {
+                        if let Some(req) = orig_req {
+                            ClientError::Canceled {
+                                connection_reused: conn_reused,
+                                reason: err,
+                                req,
+                            }
+                        } else {
+                            ClientError::Normal(err)
+                        }
+                    });
+                Either::A(fut)
+            } else {
+                let fut = fut
+                    .map_err(move |(err, orig_req)| {
+                        if let Some(req) = orig_req {
+                            ClientError::Canceled {
+                                connection_reused: conn_reused,
+                                reason: err,
+                                req,
+                            }
+                        } else {
+                            ClientError::Normal(err)
+                        }
+                    })
+                    .and_then(move |mut res| {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        if ver == Ver::Http2 || !pooled.is_pool_enabled() || pooled.is_ready() {
+                            drop(pooled);
+                        } else if !res.body().is_end_stream() {
+                            let (delayed_tx, delayed_rx) = oneshot::channel();
+                            res.body_mut().delayed_eof(delayed_rx);
+                            let on_idle = future::poll_fn(move || {
+                                pooled.poll_ready()
+                            })
+                                .then(move |_| {
+                                    
+                                    
+                                    drop(delayed_tx);
+                                    Ok(())
+                                });
+
+                            if let Err(err) = executor.execute(on_idle) {
+                                
+                                warn!("error spawning task to insert idle connection: {}", err);
+                            }
+                        } else {
+                            
+                            
+                            let on_idle = future::poll_fn(move || {
+                                pooled.poll_ready()
+                            })
+                                .then(|_| Ok(()));
+
+                            if let Err(err) = executor.execute(on_idle) {
+                                
+                                warn!("error spawning task to insert idle connection: {}", err);
+                            }
+                        }
+                        Ok(res)
+                    });
+                Either::B(fut)
+            }
+        });
+
+        Box::new(resp)
+    }
+}
+
+impl<C, B> Clone for Client<C, B> {
+    fn clone(&self) -> Client<C, B> {
+        Client {
+            connector: self.connector.clone(),
+            executor: self.executor.clone(),
+            h1_writev: self.h1_writev,
+            h1_title_case_headers: self.h1_title_case_headers,
+            pool: self.pool.clone(),
+            retry_canceled_requests: self.retry_canceled_requests,
+            set_host: self.set_host,
+            ver: self.ver,
+        }
+    }
+}
+
+impl<C, B> fmt::Debug for Client<C, B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Client")
+            .finish()
+    }
+}
+
+
+#[must_use = "futures do nothing unless polled"]
+pub struct ResponseFuture {
+    inner: Box<Future<Item=Response<Body>, Error=::Error> + Send>,
+}
+
+impl ResponseFuture {
+    fn new(fut: Box<Future<Item=Response<Body>, Error=::Error> + Send>) -> Self {
+        Self {
+            inner: fut,
+        }
+    }
+}
+
+impl fmt::Debug for ResponseFuture {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.pad("Future<Response>")
+    }
+}
+
+impl Future for ResponseFuture {
+    type Item = Response<Body>;
+    type Error = ::Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        self.inner.poll()
+    }
+}
+
+struct RetryableSendRequest<C, B> {
+    client: Client<C, B>,
+    domain: String,
+    future: Box<Future<Item=Response<Body>, Error=ClientError<B>> + Send>,
+    uri: Uri,
+}
+
+impl<C, B> Future for RetryableSendRequest<C, B>
+where
+    C: Connect + 'static,
+    C::Future: 'static,
+    B: Payload + Send + 'static,
+    B::Data: Send,
+{
+    type Item = Response<Body>;
+    type Error = ::Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        loop {
+            match self.future.poll() {
+                Ok(Async::Ready(resp)) => return Ok(Async::Ready(resp)),
+                Ok(Async::NotReady) => return Ok(Async::NotReady),
+                Err(ClientError::Normal(err)) => return Err(err),
+                Err(ClientError::Canceled {
+                    connection_reused,
+                    mut req,
+                    reason,
+                }) => {
+                    if !self.client.retry_canceled_requests || !connection_reused {
+                        
+                        
+                        return Err(reason);
+                    }
+
+                    trace!("unstarted request canceled, trying again (reason={:?})", reason);
+                    *req.uri_mut() = self.uri.clone();
+                    self.future = self.client.send_request(req, &self.domain);
+                }
             }
         }
     }
 }
 
-
-pub enum Body<'a> {
-    
-    ChunkedBody(&'a mut (Read + 'a)),
-    
-    SizedBody(&'a mut (Read + 'a), u64),
-    
-    BufBody(&'a [u8] , usize),
+struct PoolClient<B> {
+    is_proxied: bool,
+    tx: PoolTx<B>,
 }
 
-impl<'a> Body<'a> {
-    fn size(&self) -> Option<u64> {
-        match *self {
-            Body::SizedBody(_, len) => Some(len),
-            Body::BufBody(_, len) => Some(len as u64),
-            _ => None
+enum PoolTx<B> {
+    Http1(conn::SendRequest<B>),
+    Http2(conn::Http2SendRequest<B>),
+}
+
+impl<B> PoolClient<B> {
+    fn poll_ready(&mut self) -> Poll<(), ::Error> {
+        match self.tx {
+            PoolTx::Http1(ref mut tx) => tx.poll_ready(),
+            PoolTx::Http2(_) => Ok(Async::Ready(())),
+        }
+    }
+
+    fn is_ready(&self) -> bool {
+        match self.tx {
+            PoolTx::Http1(ref tx) => tx.is_ready(),
+            PoolTx::Http2(ref tx) => tx.is_ready(),
+        }
+    }
+
+    fn is_closed(&self) -> bool {
+        match self.tx {
+            PoolTx::Http1(ref tx) => tx.is_closed(),
+            PoolTx::Http2(ref tx) => tx.is_closed(),
         }
     }
 }
 
-impl<'a> Read for Body<'a> {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        match *self {
-            Body::ChunkedBody(ref mut r) => r.read(buf),
-            Body::SizedBody(ref mut r, _) => r.read(buf),
-            Body::BufBody(ref mut r, _) => Read::read(r, buf),
+impl<B: Payload + 'static> PoolClient<B> {
+    
+    fn send_request_retryable(&mut self, req: Request<B>) -> Box<Future<Item=Response<Body>, Error=(::Error, Option<Request<B>>)> + Send>
+    where
+        B: Send,
+    {
+        match self.tx {
+            PoolTx::Http1(ref mut tx) => tx.send_request_retryable(req),
+            PoolTx::Http2(ref mut tx) => tx.send_request_retryable(req),
         }
     }
 }
 
-impl<'a> Into<Body<'a>> for &'a [u8] {
-    #[inline]
-    fn into(self) -> Body<'a> {
-        Body::BufBody(self, self.len())
-    }
-}
-
-impl<'a> Into<Body<'a>> for &'a str {
-    #[inline]
-    fn into(self) -> Body<'a> {
-        self.as_bytes().into()
-    }
-}
-
-impl<'a> Into<Body<'a>> for &'a String {
-    #[inline]
-    fn into(self) -> Body<'a> {
-        self.as_bytes().into()
-    }
-}
-
-impl<'a, R: Read> From<&'a mut R> for Body<'a> {
-    #[inline]
-    fn from(r: &'a mut R) -> Body<'a> {
-        Body::ChunkedBody(r)
-    }
-}
-
-
-pub trait IntoUrl {
-    
-    fn into_url(self) -> Result<Url, UrlError>;
-}
-
-impl IntoUrl for Url {
-    fn into_url(self) -> Result<Url, UrlError> {
-        Ok(self)
-    }
-}
-
-impl<'a> IntoUrl for &'a str {
-    fn into_url(self) -> Result<Url, UrlError> {
-        Url::parse(self)
-    }
-}
-
-impl<'a> IntoUrl for &'a String {
-    fn into_url(self) -> Result<Url, UrlError> {
-        Url::parse(self)
-    }
-}
-
-
-pub struct ProxyConfig<C, S>
-where C: NetworkConnector + Send + Sync + 'static,
-      C::Stream: NetworkStream + Clone + Send,
-      S: SslClient<C::Stream> + Send + Sync + 'static {
-    scheme: Scheme,
-    host: Cow<'static, str>,
-    port: u16,
-    pool_config: Option<pool::Config>,
-    connector: C,
-    ssl: S,
-}
-
-impl<C, S> ProxyConfig<C, S>
-where C: NetworkConnector + Send + Sync + 'static,
-      C::Stream: NetworkStream + Clone + Send,
-      S: SslClient<C::Stream> + Send + Sync + 'static {
-
-    
-    #[inline]
-    pub fn new<H: Into<Cow<'static, str>>>(scheme: &str, host: H, port: u16, connector: C, ssl: S) -> ProxyConfig<C, S> {
-        ProxyConfig {
-            scheme: scheme.into(),
-            host: host.into(),
-            port: port,
-            pool_config: Some(pool::Config::default()),
-            connector: connector,
-            ssl: ssl,
+impl<B> Poolable for PoolClient<B>
+where
+    B: Send + 'static,
+{
+    fn is_open(&self) -> bool {
+        match self.tx {
+            PoolTx::Http1(ref tx) => tx.is_ready(),
+            PoolTx::Http2(ref tx) => tx.is_ready(),
         }
     }
 
-    
-    
-    
-    
-    
-    pub fn set_pool_config(&mut self, pool_config: Option<pool::Config>) {
-        self.pool_config = pool_config;
-    }
-}
-
-
-#[derive(Copy)]
-pub enum RedirectPolicy {
-    
-    FollowNone,
-    
-    FollowAll,
-    
-    FollowIf(fn(&Url) -> bool),
-}
-
-impl fmt::Debug for RedirectPolicy {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            RedirectPolicy::FollowNone => fmt.write_str("FollowNone"),
-            RedirectPolicy::FollowAll => fmt.write_str("FollowAll"),
-            RedirectPolicy::FollowIf(_) => fmt.write_str("FollowIf"),
+    fn reserve(self) -> Reservation<Self> {
+        match self.tx {
+            PoolTx::Http1(tx) => {
+                Reservation::Unique(PoolClient {
+                    is_proxied: self.is_proxied,
+                    tx: PoolTx::Http1(tx),
+                })
+            },
+            PoolTx::Http2(tx) => {
+                let b = PoolClient {
+                    is_proxied: self.is_proxied,
+                    tx: PoolTx::Http2(tx.clone()),
+                };
+                let a = PoolClient {
+                    is_proxied: self.is_proxied,
+                    tx: PoolTx::Http2(tx),
+                };
+                Reservation::Shared(a, b)
+            }
         }
     }
 }
 
-
-impl Clone for RedirectPolicy {
-    fn clone(&self) -> RedirectPolicy {
-        *self
-    }
-}
-
-impl Default for RedirectPolicy {
-    fn default() -> RedirectPolicy {
-        RedirectPolicy::FollowAll
+enum ClientError<B> {
+    Normal(::Error),
+    Canceled {
+        connection_reused: bool,
+        req: Request<B>,
+        reason: ::Error,
     }
 }
 
 
-fn get_host_and_port(url: &Url) -> ::Result<(&str, u16)> {
-    let host = match url.host_str() {
-        Some(host) => host,
-        None => return Err(Error::Uri(UrlError::EmptyHost)),
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Ver {
+    Http1,
+    Http2,
+}
+
+fn origin_form(uri: &mut Uri) {
+    let path = match uri.path_and_query() {
+        Some(path) if path.as_str() != "/" => {
+            let mut parts = ::http::uri::Parts::default();
+            parts.path_and_query = Some(path.clone());
+            Uri::from_parts(parts).expect("path is valid uri")
+        },
+        _none_or_just_slash => {
+            debug_assert!(Uri::default() == "/");
+            Uri::default()
+        }
     };
-    trace!("host={:?}", host);
-    let port = match url.port_or_known_default() {
-        Some(port) => port,
-        None => return Err(Error::Uri(UrlError::InvalidPort)),
-    };
-    trace!("port={:?}", port);
-    Ok((host, port))
+    *uri = path
 }
 
-mod scheme {
-
-    #[derive(Clone, PartialEq, Eq, Debug, Hash)]
-    pub enum Scheme {
-        Http,
-        Https,
-        Other(String),
+fn absolute_form(uri: &mut Uri) {
+    debug_assert!(uri.scheme_part().is_some(), "absolute_form needs a scheme");
+    debug_assert!(uri.authority_part().is_some(), "absolute_form needs an authority");
+    
+    
+    
+    if uri.scheme_part() == Some(&Scheme::HTTPS) {
+        origin_form(uri);
     }
+}
 
-    impl<'a> From<&'a str> for Scheme {
-        fn from(s: &'a str) -> Scheme {
-            match s {
-                "http" => Scheme::Http,
-                "https" => Scheme::Https,
-                s => Scheme::Other(String::from(s)),
+fn authority_form(uri: &mut Uri) {
+    if log_enabled!(::log::Level::Warn) {
+        if let Some(path) = uri.path_and_query() {
+            
+            
+            if path != "/" {
+                warn!(
+                    "HTTP/1.1 CONNECT request stripping path: {:?}",
+                    path
+                );
             }
         }
     }
+    *uri = match uri.authority_part() {
+        Some(auth) => {
+            let mut parts = ::http::uri::Parts::default();
+            parts.authority = Some(auth.clone());
+            Uri::from_parts(parts).expect("authority is valid")
+        },
+        None => {
+            unreachable!("authority_form with relative uri");
+        }
+    };
+}
 
-    impl AsRef<str> for Scheme {
-        fn as_ref(&self) -> &str {
-            match *self {
-                Scheme::Http => "http",
-                Scheme::Https => "https",
-                Scheme::Other(ref s) => s,
-            }
+fn set_scheme(uri: &mut Uri, scheme: Scheme) {
+    debug_assert!(uri.scheme_part().is_none(), "set_scheme expects no existing scheme");
+    let old = mem::replace(uri, Uri::default());
+    let mut parts: ::http::uri::Parts = old.into();
+    parts.scheme = Some(scheme);
+    parts.path_and_query = Some("/".parse().expect("slash is a valid path"));
+    *uri = Uri::from_parts(parts).expect("scheme is valid");
+}
+
+
+#[derive(Clone)]
+pub struct Builder {
+    
+    exec: Exec,
+    keep_alive: bool,
+    keep_alive_timeout: Option<Duration>,
+    h1_writev: bool,
+    h1_title_case_headers: bool,
+    
+    max_idle: usize,
+    retry_canceled_requests: bool,
+    set_host: bool,
+    ver: Ver,
+}
+
+impl Default for Builder {
+    fn default() -> Self {
+        Self {
+            exec: Exec::Default,
+            keep_alive: true,
+            keep_alive_timeout: Some(Duration::from_secs(90)),
+            h1_writev: true,
+            h1_title_case_headers: false,
+            max_idle: 5,
+            retry_canceled_requests: true,
+            set_host: true,
+            ver: Ver::Http1,
         }
     }
+}
 
+impl Builder {
+    
+    
+    
+    #[inline]
+    pub fn keep_alive(&mut self, val: bool) -> &mut Self {
+        self.keep_alive = val;
+        self
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn keep_alive_timeout<D>(&mut self, val: D) -> &mut Self
+    where
+        D: Into<Option<Duration>>,
+    {
+        self.keep_alive_timeout = val.into();
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn http1_writev(&mut self, val: bool) -> &mut Self {
+        self.h1_writev = val;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn http1_title_case_headers(&mut self, val: bool) -> &mut Self {
+        self.h1_title_case_headers = val;
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn http2_only(&mut self, val: bool) -> &mut Self {
+        self.ver = if val {
+            Ver::Http2
+        } else {
+            Ver::Http1
+        };
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn retry_canceled_requests(&mut self, val: bool) -> &mut Self {
+        self.retry_canceled_requests = val;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn set_host(&mut self, val: bool) -> &mut Self {
+        self.set_host = val;
+        self
+    }
+
+    
+    pub fn executor<E>(&mut self, exec: E) -> &mut Self
+    where
+        E: Executor<Box<Future<Item=(), Error=()> + Send>> + Send + Sync + 'static,
+    {
+        self.exec = Exec::Executor(Arc::new(exec));
+        self
+    }
+
+    
+    #[cfg(feature = "runtime")]
+    pub fn build_http<B>(&self) -> Client<HttpConnector, B>
+    where
+        B: Payload + Send,
+        B::Data: Send,
+    {
+        let mut connector = HttpConnector::new(4);
+        if self.keep_alive {
+            connector.set_keepalive(self.keep_alive_timeout);
+        }
+        self.build(connector)
+    }
+
+    
+    pub fn build<C, B>(&self, connector: C) -> Client<C, B>
+    where
+        C: Connect,
+        C::Transport: 'static,
+        C::Future: 'static,
+        B: Payload + Send,
+        B::Data: Send,
+    {
+        Client {
+            connector: Arc::new(connector),
+            executor: self.exec.clone(),
+            h1_writev: self.h1_writev,
+            h1_title_case_headers: self.h1_title_case_headers,
+            pool: Pool::new(self.keep_alive, self.keep_alive_timeout, &self.exec),
+            retry_canceled_requests: self.retry_canceled_requests,
+            set_host: self.set_host,
+            ver: self.ver,
+        }
+    }
+}
+
+impl fmt::Debug for Builder {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Builder")
+            .field("keep_alive", &self.keep_alive)
+            .field("keep_alive_timeout", &self.keep_alive_timeout)
+            .field("http1_writev", &self.h1_writev)
+            .field("max_idle", &self.max_idle)
+            .field("set_host", &self.set_host)
+            .field("version", &self.ver)
+            .finish()
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use std::io::Read;
-    use header::Server;
-    use http::h1::Http11Message;
-    use mock::{MockStream, MockSsl};
-    use super::{Client, RedirectPolicy};
-    use super::scheme::Scheme;
-    use super::proxy::Proxy;
-    use super::pool::Pool;
-    use url::Url;
-
-    mock_connector!(MockRedirectPolicy {
-        "http://127.0.0.1" =>       "HTTP/1.1 301 Redirect\r\n\
-                                     Location: http://127.0.0.2\r\n\
-                                     Server: mock1\r\n\
-                                     \r\n\
-                                    "
-        "http://127.0.0.2" =>       "HTTP/1.1 302 Found\r\n\
-                                     Location: https://127.0.0.3\r\n\
-                                     Server: mock2\r\n\
-                                     \r\n\
-                                    "
-        "https://127.0.0.3" =>      "HTTP/1.1 200 OK\r\n\
-                                     Server: mock3\r\n\
-                                     \r\n\
-                                    "
-    });
-
+mod unit_tests {
+    use super::*;
 
     #[test]
-    fn test_proxy() {
-        use super::pool::PooledStream;
-        type MessageStream = PooledStream<super::proxy::Proxied<MockStream, MockStream>>;
-        mock_connector!(ProxyConnector {
-            b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"
-        });
-        let tunnel = Proxy {
-            connector: ProxyConnector,
-            proxy: (Scheme::Http, "example.proxy".into(), 8008),
-            ssl: MockSsl,
-        };
-        let mut client = Client::with_connector(Pool::with_connector(Default::default(), tunnel));
-        client.proxy = Some((Scheme::Http, "example.proxy".into(), 8008));
-        let mut dump = vec![];
-        client.get("http://127.0.0.1/foo/bar").send().unwrap().read_to_end(&mut dump).unwrap();
-
-        let box_message = client.protocol.new_message("127.0.0.1", 80, "http").unwrap();
-        let message = box_message.downcast::<Http11Message>().unwrap();
-        let stream =  message.into_inner().downcast::<MessageStream>().unwrap().into_inner().into_normal().unwrap();
-
-        let s = ::std::str::from_utf8(&stream.write).unwrap();
-        let request_line = "GET http://127.0.0.1/foo/bar HTTP/1.1\r\n";
-        assert!(s.starts_with(request_line), "{:?} doesn't start with {:?}", s, request_line);
-        assert!(s.contains("Host: 127.0.0.1\r\n"));
+    fn set_relative_uri_with_implicit_path() {
+        let mut uri = "http://hyper.rs".parse().unwrap();
+        origin_form(&mut uri);
+        assert_eq!(uri.to_string(), "/");
     }
 
     #[test]
-    fn test_proxy_tunnel() {
-        use super::pool::PooledStream;
-        type MessageStream = PooledStream<super::proxy::Proxied<MockStream, MockStream>>;
+    fn test_origin_form() {
+        let mut uri = "http://hyper.rs/guides".parse().unwrap();
+        origin_form(&mut uri);
+        assert_eq!(uri.to_string(), "/guides");
 
-        mock_connector!(ProxyConnector {
-            b"HTTP/1.1 200 OK\r\n\r\n",
-            b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"
-        });
-        let tunnel = Proxy {
-            connector: ProxyConnector,
-            proxy: (Scheme::Http, "example.proxy".into(), 8008),
-            ssl: MockSsl,
-        };
-        let mut client = Client::with_connector(Pool::with_connector(Default::default(), tunnel));
-        client.proxy = Some((Scheme::Http, "example.proxy".into(), 8008));
-        let mut dump = vec![];
-        client.get("https://127.0.0.1/foo/bar").send().unwrap().read_to_end(&mut dump).unwrap();
-
-        let box_message = client.protocol.new_message("127.0.0.1", 443, "https").unwrap();
-        let message = box_message.downcast::<Http11Message>().unwrap();
-        let stream = message.into_inner().downcast::<MessageStream>().unwrap().into_inner().into_tunneled().unwrap();
-
-        let s = ::std::str::from_utf8(&stream.write).unwrap();
-        let connect_line = "CONNECT 127.0.0.1:443 HTTP/1.1\r\nHost: 127.0.0.1:443\r\n\r\n";
-        assert_eq!(&s[..connect_line.len()], connect_line);
-
-        let s = &s[connect_line.len()..];
-        let request_line = "GET /foo/bar HTTP/1.1\r\n";
-        assert_eq!(&s[..request_line.len()], request_line);
-        assert!(s.contains("Host: 127.0.0.1\r\n"));
+        let mut uri = "http://hyper.rs/guides?foo=bar".parse().unwrap();
+        origin_form(&mut uri);
+        assert_eq!(uri.to_string(), "/guides?foo=bar");
     }
 
     #[test]
-    fn test_redirect_followall() {
-        let mut client = Client::with_connector(MockRedirectPolicy);
-        client.set_redirect_policy(RedirectPolicy::FollowAll);
+    fn test_absolute_form() {
+        let mut uri = "http://hyper.rs/guides".parse().unwrap();
+        absolute_form(&mut uri);
+        assert_eq!(uri.to_string(), "http://hyper.rs/guides");
 
-        let res = client.get("http://127.0.0.1").send().unwrap();
-        assert_eq!(res.headers.get(), Some(&Server("mock3".to_owned())));
+        let mut uri = "https://hyper.rs/guides".parse().unwrap();
+        absolute_form(&mut uri);
+        assert_eq!(uri.to_string(), "/guides");
     }
 
     #[test]
-    fn test_redirect_dontfollow() {
-        let mut client = Client::with_connector(MockRedirectPolicy);
-        client.set_redirect_policy(RedirectPolicy::FollowNone);
-        let res = client.get("http://127.0.0.1").send().unwrap();
-        assert_eq!(res.headers.get(), Some(&Server("mock1".to_owned())));
-    }
+    fn test_authority_form() {
+        extern crate pretty_env_logger;
+        let _ = pretty_env_logger::try_init();
 
-    #[test]
-    fn test_redirect_followif() {
-        fn follow_if(url: &Url) -> bool {
-            !url.as_str().contains("127.0.0.3")
-        }
-        let mut client = Client::with_connector(MockRedirectPolicy);
-        client.set_redirect_policy(RedirectPolicy::FollowIf(follow_if));
-        let res = client.get("http://127.0.0.1").send().unwrap();
-        assert_eq!(res.headers.get(), Some(&Server("mock2".to_owned())));
-    }
+        let mut uri = "http://hyper.rs".parse().unwrap();
+        authority_form(&mut uri);
+        assert_eq!(uri.to_string(), "hyper.rs");
 
-    mock_connector!(Issue640Connector {
-        b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\n",
-        b"GET",
-        b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\n",
-        b"HEAD",
-        b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\n",
-        b"POST"
-    });
-
-    
-    #[test]
-    fn test_head_response_body_keep_alive() {
-        let client = Client::with_connector(Pool::with_connector(Default::default(), Issue640Connector));
-
-        let mut s = String::new();
-        client.get("http://127.0.0.1").send().unwrap().read_to_string(&mut s).unwrap();
-        assert_eq!(s, "GET");
-
-        let mut s = String::new();
-        client.head("http://127.0.0.1").send().unwrap().read_to_string(&mut s).unwrap();
-        assert_eq!(s, "");
-
-        let mut s = String::new();
-        client.post("http://127.0.0.1").send().unwrap().read_to_string(&mut s).unwrap();
-        assert_eq!(s, "POST");
-    }
-
-    #[test]
-    fn test_request_body_error_is_returned() {
-        mock_connector!(Connector {
-            b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n",
-            b"HELLO"
-        });
-
-        struct BadBody;
-
-        impl ::std::io::Read for BadBody {
-            fn read(&mut self, _buf: &mut [u8]) -> ::std::io::Result<usize> {
-                Err(::std::io::Error::new(::std::io::ErrorKind::Other, "BadBody read"))
-            }
-        }
-
-        let client = Client::with_connector(Connector);
-        let err = client.post("http://127.0.0.1").body(&mut BadBody).send().unwrap_err();
-        assert_eq!(err.to_string(), "BadBody read");
+        let mut uri = "hyper.rs".parse().unwrap();
+        authority_form(&mut uri);
+        assert_eq!(uri.to_string(), "hyper.rs");
     }
 }

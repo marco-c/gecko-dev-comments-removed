@@ -14,6 +14,46 @@ pub fn new<S: Stream>(s: S) -> StreamFuture<S> {
     StreamFuture { stream: Some(s) }
 }
 
+impl<S> StreamFuture<S> {
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_ref(&self) -> Option<&S> {
+        self.stream.as_ref()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> Option<&mut S> {
+        self.stream.as_mut()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_inner(self) -> Option<S> {
+        self.stream
+    }
+}
+
 impl<S: Stream> Future for StreamFuture<S> {
     type Item = (Option<S::Item>, S);
     type Error = (S::Error, S);

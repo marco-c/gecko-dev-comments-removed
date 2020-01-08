@@ -75,15 +75,35 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/mio/0.6.1")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/mio/0.6.15")]
 #![crate_name = "mio"]
 
 #![deny(warnings, missing_docs, missing_debug_implementations)]
 
 extern crate lazycell;
 extern crate net2;
-extern crate slab;
 extern crate iovec;
+extern crate slab;
+
+#[cfg(target_os = "fuchsia")]
+extern crate fuchsia_zircon as zircon;
+#[cfg(target_os = "fuchsia")]
+extern crate fuchsia_zircon_sys as zircon_sys;
 
 #[cfg(unix)]
 extern crate libc;
@@ -100,9 +120,6 @@ extern crate kernel32;
 #[macro_use]
 extern crate log;
 
-#[cfg(test)]
-extern crate env_logger;
-
 mod event_imp;
 mod io;
 mod poll;
@@ -111,12 +128,12 @@ mod token;
 
 pub mod net;
 
-#[deprecated(since = "0.6.5", note = "use mio-more instead")]
+#[deprecated(since = "0.6.5", note = "use mio-extras instead")]
 #[cfg(feature = "with-deprecated")]
 #[doc(hidden)]
 pub mod channel;
 
-#[deprecated(since = "0.6.5", note = "use mio-more instead")]
+#[deprecated(since = "0.6.5", note = "use mio-extras instead")]
 #[cfg(feature = "with-deprecated")]
 #[doc(hidden)]
 pub mod timer;
@@ -181,13 +198,28 @@ pub use poll::Iter as EventsIter;
 #[doc(hidden)]
 pub use io::deprecated::would_block;
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 pub mod unix {
     
     pub use sys::{
         EventedFd,
     };
     pub use sys::unix::UnixReady;
+}
+
+#[cfg(target_os = "fuchsia")]
+pub mod fuchsia {
+    
+    
+    
+    
+    
+    
+    
+    pub use sys::{
+        EventedHandle,
+    };
+    pub use sys::fuchsia::{FuchsiaReady, zx_signals_t};
 }
 
 

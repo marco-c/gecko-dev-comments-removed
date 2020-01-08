@@ -19,6 +19,18 @@ pub fn new<A: Future>(f: A) -> Fuse<A> {
     }
 }
 
+impl<A: Future> Fuse<A> {
+    
+    
+    
+    
+    
+    
+    pub fn is_done(&self) -> bool {
+        self.future.is_none()
+    }
+}
+
 impl<A: Future> Future for Fuse<A> {
     type Item = A::Item;
     type Error = A::Error;

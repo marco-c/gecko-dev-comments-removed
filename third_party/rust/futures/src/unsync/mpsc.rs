@@ -110,7 +110,11 @@ impl<T> Drop for Sender<T> {
             Some(shared) => shared,
             None => return,
         };
-        if Rc::weak_count(&shared) == 0 {
+        
+        
+        
+        
+        if Rc::weak_count(&shared) == 1 {
             if let Some(task) = shared.borrow_mut().blocked_recv.take() {
                 
                 task.notify();

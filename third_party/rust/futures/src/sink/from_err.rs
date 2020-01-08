@@ -5,7 +5,7 @@ use {Sink, Poll, StartSend};
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[must_use = "futures do nothing unless polled"]
 pub struct SinkFromErr<S, E> {
     sink: S,

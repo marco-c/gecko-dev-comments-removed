@@ -3,7 +3,7 @@ use sink::Sink;
 use {Poll, StartSend, Stream};
 
 
-#[derive(Debug)]
+#[derive(Clone,Debug)]
 #[must_use = "sinks do nothing unless polled"]
 pub struct SinkMapErr<S, F> {
     sink: S,

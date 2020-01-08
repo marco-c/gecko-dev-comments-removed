@@ -7,7 +7,7 @@
 use std::mem;
 
 use {AsHandleRef, HandleBased, Handle, HandleRef, Signals, Status, Time};
-use {sys, into_result};
+use {sys, ok};
 
 
 
@@ -31,6 +31,9 @@ pub enum PacketContents {
     SignalOne(SignalPacket),
     
     SignalRep(SignalPacket),
+
+    #[doc(hidden)]
+    __Nonexhaustive
 }
 
 
@@ -98,12 +101,12 @@ impl UserPacket {
 impl SignalPacket {
     
     pub fn trigger(&self) -> Signals {
-        self.0.trigger
+        Signals::from_bits_truncate(self.0.trigger)
     }
 
     
     pub fn observed(&self) -> Signals {
-        self.0.observed
+        Signals::from_bits_truncate(self.0.observed)
     }
 
     
@@ -118,11 +121,13 @@ impl Port {
     
     
     
-    pub fn create(opts: PortOpts) -> Result<Port, Status> {
+    pub fn create() -> Result<Port, Status> {
         unsafe {
             let mut handle = 0;
-            let status = sys::zx_port_create(opts as u32, &mut handle);
-            into_result(status, || Self::from(Handle(handle)))
+            let opts = 0;
+            let status = sys::zx_port_create(opts, &mut handle);
+            ok(status)?;
+            Ok(Handle::from_raw(handle).into())
         }
     }
 
@@ -134,9 +139,9 @@ impl Port {
     pub fn queue(&self, packet: &Packet) -> Result<(), Status> {
         let status = unsafe {
             sys::zx_port_queue(self.raw_handle(),
-                &packet.0 as *const sys::zx_port_packet_t as *const u8, 0)
+                &packet.0 as *const sys::zx_port_packet_t, 0)
         };
-        into_result(status, || ())
+        ok(status)
     }
 
     
@@ -147,10 +152,11 @@ impl Port {
     pub fn wait(&self, deadline: Time) -> Result<Packet, Status> {
         let mut packet = Default::default();
         let status = unsafe {
-            sys::zx_port_wait(self.raw_handle(), deadline,
-                &mut packet as *mut sys::zx_port_packet_t as *mut u8, 0)
+            sys::zx_port_wait(self.raw_handle(), deadline.nanos(),
+                &mut packet as *mut sys::zx_port_packet_t, 0)
         };
-        into_result(status, || Packet(packet))
+        ok(status)?;
+        Ok(Packet(packet))
     }
 
     
@@ -162,21 +168,7 @@ impl Port {
         let status = unsafe {
             sys::zx_port_cancel(self.raw_handle(), source.raw_handle(), key)
         };
-        into_result(status, || ())
-    }
-}
-
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum PortOpts {
-    
-    Default = 0,
-}
-
-impl Default for PortOpts {
-    fn default() -> Self {
-        PortOpts::Default
+        ok(status)
     }
 }
 
@@ -191,18 +183,16 @@ pub enum WaitAsyncOpts {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use {Duration, Event, EventOpts};
-    use {ZX_SIGNAL_LAST_HANDLE, ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0, ZX_USER_SIGNAL_1};
-    use deadline_after;
+    use {DurationNum, Event};
 
     #[test]
     fn port_basic() {
-        let ten_ms: Duration = 10_000_000;
+        let ten_ms = 10.millis();
 
-        let port = Port::create(PortOpts::Default).unwrap();
+        let port = Port::create().unwrap();
 
         
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
         let packet = Packet::from_user_packet(
@@ -213,50 +203,50 @@ mod tests {
         assert!(port.queue(&packet).is_ok());
 
         
-        let read_packet = port.wait(deadline_after(ten_ms)).unwrap();
+        let read_packet = port.wait(ten_ms.after_now()).unwrap();
         assert_eq!(read_packet, packet);
     }
 
     #[test]
     fn wait_async_once() {
-        let ten_ms: Duration = 10_000_000;
+        let ten_ms = 10.millis();
         let key = 42;
 
-        let port = Port::create(PortOpts::Default).unwrap();
-        let event = Event::create(EventOpts::Default).unwrap();
+        let port = Port::create().unwrap();
+        let event = Event::create().unwrap();
 
-        assert!(event.wait_async_handle(&port, key, ZX_USER_SIGNAL_0 | ZX_USER_SIGNAL_1,
+        assert!(event.wait_async_handle(&port, key, Signals::USER_0 | Signals::USER_1,
             WaitAsyncOpts::Once).is_ok());
 
         
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
-        assert!(event.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        let read_packet = port.wait(deadline_after(ten_ms)).unwrap();
+        assert!(event.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        let read_packet = port.wait(ten_ms.after_now()).unwrap();
         assert_eq!(read_packet.key(), key);
         assert_eq!(read_packet.status(), 0);
         match read_packet.contents() {
             PacketContents::SignalOne(sig) => {
-                assert_eq!(sig.trigger(), ZX_USER_SIGNAL_0 | ZX_USER_SIGNAL_1);
-                assert_eq!(sig.observed(), ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+                assert_eq!(sig.trigger(), Signals::USER_0 | Signals::USER_1);
+                assert_eq!(sig.observed(), Signals::USER_0);
                 assert_eq!(sig.count(), 1);
             }
             _ => panic!("wrong packet type"),
         }
 
         
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
-        assert!(event.wait_async_handle(&port, key, ZX_USER_SIGNAL_0, WaitAsyncOpts::Once).is_ok());
-        let read_packet = port.wait(deadline_after(ten_ms)).unwrap();
+        assert!(event.wait_async_handle(&port, key, Signals::USER_0, WaitAsyncOpts::Once).is_ok());
+        let read_packet = port.wait(ten_ms.after_now()).unwrap();
         assert_eq!(read_packet.key(), key);
         assert_eq!(read_packet.status(), 0);
         match read_packet.contents() {
             PacketContents::SignalOne(sig) => {
-                assert_eq!(sig.trigger(), ZX_USER_SIGNAL_0);
-                assert_eq!(sig.observed(), ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+                assert_eq!(sig.trigger(), Signals::USER_0);
+                assert_eq!(sig.observed(), Signals::USER_0);
                 assert_eq!(sig.count(), 1);
             }
             _ => panic!("wrong packet type"),
@@ -264,41 +254,41 @@ mod tests {
 
         
         
-        assert!(event.wait_async_handle(&port, key, ZX_USER_SIGNAL_0, WaitAsyncOpts::Once).is_ok());
+        assert!(event.wait_async_handle(&port, key, Signals::USER_0, WaitAsyncOpts::Once).is_ok());
         assert!(port.cancel(&event, key).is_ok());
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
-        assert!(event.signal_handle(ZX_USER_SIGNAL_0, ZX_SIGNAL_NONE).is_ok());  
-        assert!(event.wait_async_handle(&port, key, ZX_USER_SIGNAL_0, WaitAsyncOpts::Once).is_ok());
+        assert!(event.signal_handle(Signals::USER_0, Signals::NONE).is_ok());  
+        assert!(event.wait_async_handle(&port, key, Signals::USER_0, WaitAsyncOpts::Once).is_ok());
         assert!(port.cancel(&event, key).is_ok());
-        assert!(event.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert!(event.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
     }
 
     #[test]
     fn wait_async_repeating() {
-        let ten_ms: Duration = 10_000_000;
+        let ten_ms = 10.millis();
         let key = 42;
 
-        let port = Port::create(PortOpts::Default).unwrap();
-        let event = Event::create(EventOpts::Default).unwrap();
+        let port = Port::create().unwrap();
+        let event = Event::create().unwrap();
 
-        assert!(event.wait_async_handle(&port, key, ZX_USER_SIGNAL_0 | ZX_USER_SIGNAL_1,
+        assert!(event.wait_async_handle(&port, key, Signals::USER_0 | Signals::USER_1,
             WaitAsyncOpts::Repeating).is_ok());
 
         
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
-        assert!(event.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        let read_packet = port.wait(deadline_after(ten_ms)).unwrap();
+        assert!(event.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        let read_packet = port.wait(ten_ms.after_now()).unwrap();
         assert_eq!(read_packet.key(), key);
         assert_eq!(read_packet.status(), 0);
         match read_packet.contents() {
             PacketContents::SignalRep(sig) => {
-                assert_eq!(sig.trigger(), ZX_USER_SIGNAL_0 | ZX_USER_SIGNAL_1);
-                assert_eq!(sig.observed(), ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+                assert_eq!(sig.trigger(), Signals::USER_0 | Signals::USER_1);
+                assert_eq!(sig.observed(), Signals::USER_0);
                 assert_eq!(sig.count(), 1);
             }
             _ => panic!("wrong packet type"),
@@ -306,19 +296,19 @@ mod tests {
 
         
         
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
         
-        assert!(event.signal_handle(ZX_USER_SIGNAL_0, ZX_SIGNAL_NONE).is_ok());  
-        assert!(event.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        let read_packet = port.wait(deadline_after(ten_ms)).unwrap();
+        assert!(event.signal_handle(Signals::USER_0, Signals::NONE).is_ok());  
+        assert!(event.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        let read_packet = port.wait(ten_ms.after_now()).unwrap();
         assert_eq!(read_packet.key(), key);
         assert_eq!(read_packet.status(), 0);
         match read_packet.contents() {
             PacketContents::SignalRep(sig) => {
-                assert_eq!(sig.trigger(), ZX_USER_SIGNAL_0 | ZX_USER_SIGNAL_1);
-                assert_eq!(sig.observed(), ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+                assert_eq!(sig.trigger(), Signals::USER_0 | Signals::USER_1);
+                assert_eq!(sig.observed(), Signals::USER_0);
                 assert_eq!(sig.count(), 1);
             }
             _ => panic!("wrong packet type"),
@@ -326,22 +316,22 @@ mod tests {
 
         
         assert!(port.cancel(&event, key).is_ok());
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
         
-        assert!(event.signal_handle(ZX_USER_SIGNAL_0, ZX_SIGNAL_NONE).is_ok());  
-        assert!(event.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert!(event.signal_handle(Signals::USER_0, Signals::NONE).is_ok());  
+        assert!(event.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
         assert!(event.wait_async_handle(
-            &port, key, ZX_USER_SIGNAL_0, WaitAsyncOpts::Repeating).is_ok());
-        let read_packet = port.wait(deadline_after(ten_ms)).unwrap();
+            &port, key, Signals::USER_0, WaitAsyncOpts::Repeating).is_ok());
+        let read_packet = port.wait(ten_ms.after_now()).unwrap();
         assert_eq!(read_packet.key(), key);
         assert_eq!(read_packet.status(), 0);
         match read_packet.contents() {
             PacketContents::SignalRep(sig) => {
-                assert_eq!(sig.trigger(), ZX_USER_SIGNAL_0);
-                assert_eq!(sig.observed(), ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+                assert_eq!(sig.trigger(), Signals::USER_0);
+                assert_eq!(sig.observed(), Signals::USER_0);
                 assert_eq!(sig.count(), 1);
             }
             _ => panic!("wrong packet type"),
@@ -349,6 +339,6 @@ mod tests {
 
         
         drop(event);
-        assert_eq!(port.wait(deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+        assert_eq!(port.wait(ten_ms.after_now()), Err(Status::TIMED_OUT));
     }
 }

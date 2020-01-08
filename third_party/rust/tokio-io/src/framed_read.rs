@@ -1,100 +1,23 @@
-use std::{fmt, io};
+#![allow(deprecated)]
+
+use std::fmt;
 
 use AsyncRead;
+use codec::Decoder;
 use framed::Fuse;
 
 use futures::{Async, Poll, Stream, Sink, StartSend};
 use bytes::BytesMut;
 
 
-
-
-
-
-
-
-
-
-
-pub trait Decoder {
-    
-    type Item;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    type Error: From<io::Error>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn decode_eof(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        match try!(self.decode(buf)) {
-            Some(frame) => Ok(Some(frame)),
-            None => {
-                if buf.is_empty() {
-                    Ok(None)
-                } else {
-                    Err(io::Error::new(io::ErrorKind::Other,
-                                       "bytes remaining on stream").into())
-                }
-            }
-        }
-    }
-}
-
-
+#[deprecated(since = "0.1.7", note = "Moved to tokio-codec")]
+#[doc(hidden)]
 pub struct FramedRead<T, D> {
     inner: FramedRead2<Fuse<T, D>>,
 }
 
+#[deprecated(since = "0.1.7", note = "Moved to tokio-codec")]
+#[doc(hidden)]
 pub struct FramedRead2<T> {
     inner: T,
     eof: bool,

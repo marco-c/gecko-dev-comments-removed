@@ -5,7 +5,7 @@
 
 
 use {AsHandleRef, HandleBased, Handle, HandleRef, Status};
-use {sys, into_result};
+use {sys, ok};
 
 
 
@@ -19,15 +19,20 @@ impl Fifo {
     
     
     
-    pub fn create(elem_count: u32, elem_size: u32, options: FifoOpts)
+    pub fn create(elem_count: u32, elem_size: u32)
         -> Result<(Fifo, Fifo), Status>
     {
         let mut out0 = 0;
         let mut out1 = 0;
+        let options = 0;
         let status = unsafe {
-            sys::zx_fifo_create(elem_count, elem_size, options as u32, &mut out0, &mut out1)
+            sys::zx_fifo_create(elem_count, elem_size, options, &mut out0, &mut out1)
         };
-        into_result(status, || (Self::from(Handle(out0)), Self::from(Handle(out1))))
+        ok(status)?;
+        unsafe { Ok((
+            Self::from(Handle::from_raw(out0)),
+            Self::from(Handle::from_raw(out1))
+        ))}
     }
 
     
@@ -42,7 +47,7 @@ impl Fifo {
             sys::zx_fifo_write(self.raw_handle(), bytes.as_ptr(), bytes.len(),
                 &mut num_entries_written)
         };
-        into_result(status, || num_entries_written)
+        ok(status).map(|()| num_entries_written)
     }
 
     
@@ -57,21 +62,7 @@ impl Fifo {
             sys::zx_fifo_read(self.raw_handle(), bytes.as_mut_ptr(), bytes.len(),
                 &mut num_entries_read)
         };
-        into_result(status, || num_entries_read)
-    }
-}
-
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum FifoOpts {
-    
-    Default = 0,
-}
-
-impl Default for FifoOpts {
-    fn default() -> Self {
-        FifoOpts::Default
+        ok(status).map(|()| num_entries_read)
     }
 }
 
@@ -81,11 +72,11 @@ mod tests {
 
     #[test]
     fn fifo_basic() {
-        let (fifo1, fifo2) = Fifo::create(4, 2, FifoOpts::Default).unwrap();
+        let (fifo1, fifo2) = Fifo::create(4, 2).unwrap();
 
         
-        assert_eq!(fifo1.write(b""), Err(Status::ErrOutOfRange));
-        assert_eq!(fifo1.write(b"h"), Err(Status::ErrOutOfRange));
+        assert_eq!(fifo1.write(b""), Err(Status::OUT_OF_RANGE));
+        assert_eq!(fifo1.write(b"h"), Err(Status::OUT_OF_RANGE));
 
         
         assert_eq!(fifo1.write(b"hex").unwrap(), 1);
@@ -94,7 +85,7 @@ mod tests {
         assert_eq!(fifo1.write(b"llo worlds").unwrap(), 3);
 
         
-        assert_eq!(fifo1.write(b"blah blah"), Err(Status::ErrShouldWait));
+        assert_eq!(fifo1.write(b"blah blah"), Err(Status::SHOULD_WAIT));
 
         
         let mut read_vec = vec![0; 8];
@@ -102,6 +93,6 @@ mod tests {
         assert_eq!(read_vec, b"hello wo");
 
         
-        assert_eq!(fifo2.read(&mut read_vec), Err(Status::ErrShouldWait));
+        assert_eq!(fifo2.read(&mut read_vec), Err(Status::SHOULD_WAIT));
     }
 }

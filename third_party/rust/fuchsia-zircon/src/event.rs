@@ -5,7 +5,7 @@
 
 
 use {AsHandleRef, Cookied, HandleBased, Handle, HandleRef, Status};
-use {sys, into_result};
+use {sys, ok};
 
 
 
@@ -20,23 +20,13 @@ impl Event {
     
     
     
-    pub fn create(options: EventOpts) -> Result<Event, Status> {
+    pub fn create() -> Result<Event, Status> {
         let mut out = 0;
-        let status = unsafe { sys::zx_event_create(options as u32, &mut out) };
-        into_result(status, || Self::from(Handle(out)))
-    }
-}
-
-
-#[repr(u32)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum EventOpts {
-    
-    Default = 0,
-}
-
-impl Default for EventOpts {
-    fn default() -> Self {
-        EventOpts::Default
+        let opts = 0;
+        let status = unsafe { sys::zx_event_create(opts, &mut out) };
+        ok(status)?;
+        unsafe {
+            Ok(Self::from(Handle::from_raw(out)))
+        }
     }
 }

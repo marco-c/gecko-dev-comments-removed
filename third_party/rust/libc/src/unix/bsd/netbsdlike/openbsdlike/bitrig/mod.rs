@@ -65,6 +65,26 @@ pub const ALTMON_12: ::nl_item = 69;
 
 pub const KERN_RND: ::c_int = 31;
 
+
+pub const IFF_UP: ::c_int = 0x1; 
+pub const IFF_BROADCAST: ::c_int = 0x2; 
+pub const IFF_DEBUG: ::c_int = 0x4; 
+pub const IFF_LOOPBACK: ::c_int = 0x8; 
+pub const IFF_POINTOPOINT: ::c_int = 0x10; 
+pub const IFF_NOTRAILERS: ::c_int = 0x20; 
+pub const IFF_RUNNING: ::c_int = 0x40; 
+pub const IFF_NOARP: ::c_int = 0x80; 
+pub const IFF_PROMISC: ::c_int = 0x100; 
+pub const IFF_ALLMULTI: ::c_int = 0x200; 
+pub const IFF_OACTIVE: ::c_int = 0x400; 
+pub const IFF_SIMPLEX: ::c_int = 0x800; 
+pub const IFF_LINK0: ::c_int = 0x1000; 
+pub const IFF_LINK1: ::c_int = 0x2000; 
+pub const IFF_LINK2: ::c_int = 0x4000; 
+pub const IFF_MULTICAST: ::c_int = 0x8000; 
+
+pub const SIGSTKSZ : ::size_t = 40960;
+
 extern {
     pub fn nl_langinfo_l(item: ::nl_item, locale: ::locale_t) -> *mut ::c_char;
     pub fn duplocale(base: ::locale_t) -> ::locale_t;
@@ -73,6 +93,8 @@ extern {
                      locale: *const ::c_char,
                      base: ::locale_t) -> ::locale_t;
     pub fn uselocale(loc: ::locale_t) -> ::locale_t;
+    pub fn pledge(promises: *const ::c_char,
+                  paths: *mut *const ::c_char) -> ::c_int;
     pub fn querylocale(mask: ::c_int, loc: ::locale_t) -> *const ::c_char;
 }
 

@@ -6,8 +6,8 @@
 
 
 
-#![deny(missing_docs, missing_debug_implementations)]
-#![doc(html_root_url = "https://docs.rs/tokio-io/0.1")]
+#![deny(missing_docs, missing_debug_implementations, warnings)]
+#![doc(html_root_url = "https://docs.rs/tokio-io/0.1.7")]
 
 #[macro_use]
 extern crate log;
@@ -17,19 +17,14 @@ extern crate futures;
 extern crate bytes;
 
 use std::io as std_io;
-use std::io::Write;
 
-use futures::{Async, Poll};
-use futures::future::BoxFuture;
-use futures::stream::BoxStream;
-
-use bytes::{Buf, BufMut};
+use futures::{Future, Stream};
 
 
-pub type IoFuture<T> = BoxFuture<T, std_io::Error>;
+pub type IoFuture<T> = Box<Future<Item = T, Error = std_io::Error> + Send>;
 
 
-pub type IoStream<T> = BoxStream<T, std_io::Error>;
+pub type IoStream<T> = Box<Stream<Item = T, Error = std_io::Error> + Send>;
 
 
 
@@ -51,331 +46,20 @@ macro_rules! try_nb {
 pub mod io;
 pub mod codec;
 
-mod copy;
-mod flush;
+mod allow_std;
+mod async_read;
+mod async_write;
 mod framed;
 mod framed_read;
 mod framed_write;
 mod length_delimited;
 mod lines;
-mod read;
-mod read_exact;
-mod read_to_end;
-mod read_until;
-mod shutdown;
 mod split;
 mod window;
-mod write_all;
+pub mod _tokio_codec;
 
-use codec::{Decoder, Encoder, Framed};
-use split::{ReadHalf, WriteHalf};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait AsyncRead: std_io::Read {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
-        for i in 0..buf.len() {
-            buf[i] = 0;
-        }
-
-        true
-    }
-
-    
-    
-    
-    
-    
-    
-    fn read_buf<B: BufMut>(&mut self, buf: &mut B) -> Poll<usize, std_io::Error>
-        where Self: Sized,
-    {
-        if !buf.has_remaining_mut() {
-            return Ok(Async::Ready(0));
-        }
-
-        unsafe {
-            let n = {
-                let b = buf.bytes_mut();
-
-                self.prepare_uninitialized_buffer(b);
-
-                try_nb!(self.read(b))
-            };
-
-            buf.advance_mut(n);
-            Ok(Async::Ready(n))
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn framed<T: Encoder + Decoder>(self, codec: T) -> Framed<Self, T>
-        where Self: AsyncWrite + Sized,
-    {
-        framed::framed(self, codec)
-    }
-
-    
-    
-    
-    
-    fn split(self) -> (ReadHalf<Self>, WriteHalf<Self>)
-        where Self: AsyncWrite + Sized,
-    {
-        split::split(self)
-    }
-}
-
-impl<T: ?Sized + AsyncRead> AsyncRead for Box<T> {
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
-        (**self).prepare_uninitialized_buffer(buf)
-    }
-}
-
-impl<'a, T: ?Sized + AsyncRead> AsyncRead for &'a mut T {
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
-        (**self).prepare_uninitialized_buffer(buf)
-    }
-}
-
-impl<'a> AsyncRead for &'a [u8] {
-    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [u8]) -> bool {
-        false
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait AsyncWrite: std_io::Write {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn shutdown(&mut self) -> Poll<(), std_io::Error>;
-
-    
-    
-    
-    
-    fn write_buf<B: Buf>(&mut self, buf: &mut B) -> Poll<usize, std_io::Error>
-        where Self: Sized,
-    {
-        if !buf.has_remaining() {
-            return Ok(Async::Ready(0));
-        }
-
-        let n = try_nb!(self.write(buf.bytes()));
-        buf.advance(n);
-        Ok(Async::Ready(n))
-    }
-}
-
-impl<T: ?Sized + AsyncWrite> AsyncWrite for Box<T> {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        (**self).shutdown()
-    }
-}
-impl<'a, T: ?Sized + AsyncWrite> AsyncWrite for &'a mut T {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        (**self).shutdown()
-    }
-}
-
-impl AsyncRead for std_io::Repeat {
-    unsafe fn prepare_uninitialized_buffer(&self, _: &mut [u8]) -> bool {
-        false
-    }
-}
-
-impl AsyncWrite for std_io::Sink {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        Ok(().into())
-    }
-}
-
-
-
-impl<T: AsyncRead> AsyncRead for std_io::Take<T> {
-}
-
-
-
-impl<T, U> AsyncRead for std_io::Chain<T, U>
-    where T: AsyncRead,
-          U: AsyncRead,
-{
-}
-
-impl<T: AsyncWrite> AsyncWrite for std_io::BufWriter<T> {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        try_nb!(self.flush());
-        self.get_mut().shutdown()
-    }
-}
-
-impl<T: AsyncRead> AsyncRead for std_io::BufReader<T> {
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
-        self.get_ref().prepare_uninitialized_buffer(buf)
-    }
-}
-
-impl<T: AsRef<[u8]>> AsyncRead for std_io::Cursor<T> {
-}
-
-impl<'a> AsyncWrite for std_io::Cursor<&'a mut [u8]> {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        Ok(().into())
-    }
-}
-
-impl AsyncWrite for std_io::Cursor<Vec<u8>> {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        Ok(().into())
-    }
-}
-
-impl AsyncWrite for std_io::Cursor<Box<[u8]>> {
-    fn shutdown(&mut self) -> Poll<(), std_io::Error> {
-        Ok(().into())
-    }
-}
+pub use self::async_read::AsyncRead;
+pub use self::async_write::AsyncWrite;
 
 fn _assert_objects() {
     fn _assert<T>() {}

@@ -1,6 +1,7 @@
-#![doc(html_root_url = "https://docs.rs/hyper/v0.10.13")]
-#![cfg_attr(test, deny(missing_docs))]
-#![cfg_attr(test, deny(warnings))]
+#![doc(html_root_url = "https://docs.rs/hyper/0.12.7")]
+#![deny(missing_docs)]
+#![deny(warnings)]
+#![deny(missing_debug_implementations)]
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
 
 
@@ -13,190 +14,53 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern crate base64;
-extern crate time;
-#[macro_use] extern crate url;
-extern crate unicase;
+extern crate bytes;
+#[macro_use] extern crate futures;
+#[cfg(feature = "runtime")] extern crate futures_cpupool;
+extern crate h2;
+extern crate http;
 extern crate httparse;
-extern crate num_cpus;
-extern crate traitobject;
-extern crate typeable;
-
-#[cfg_attr(test, macro_use)]
-extern crate language_tags;
-
-#[macro_use]
-extern crate mime as mime_crate;
-
-#[macro_use]
-extern crate log;
+extern crate iovec;
+extern crate itoa;
+#[macro_use] extern crate log;
+#[cfg(feature = "runtime")] extern crate net2;
+extern crate time;
+#[cfg(feature = "runtime")] extern crate tokio;
+#[cfg(feature = "runtime")] extern crate tokio_executor;
+#[macro_use] extern crate tokio_io;
+#[cfg(feature = "runtime")] extern crate tokio_reactor;
+#[cfg(feature = "runtime")] extern crate tokio_tcp;
+#[cfg(feature = "runtime")] extern crate tokio_timer;
+extern crate want;
 
 #[cfg(all(test, feature = "nightly"))]
 extern crate test;
 
+pub use http::{
+    header,
+    HeaderMap,
+    Method,
+    Request,
+    Response,
+    StatusCode,
+    Uri,
+    Version,
+};
 
-pub use url::Url;
 pub use client::Client;
 pub use error::{Result, Error};
-pub use method::Method::{Get, Head, Post, Delete};
-pub use status::StatusCode::{Ok, BadRequest, NotFound};
+pub use body::{Body, Chunk};
 pub use server::Server;
-pub use language_tags::LanguageTag;
 
-macro_rules! todo(
-    ($($arg:tt)*) => (if cfg!(not(ndebug)) {
-        trace!("TODO: {:?}", format_args!($($arg)*))
-    })
-);
-
+mod common;
 #[cfg(test)]
-#[macro_use]
 mod mock;
-#[doc(hidden)]
-pub mod buffer;
+pub mod body;
 pub mod client;
 pub mod error;
-pub mod method;
-pub mod header;
-pub mod http;
-pub mod net;
+mod headers;
+mod proto;
 pub mod server;
-pub mod status;
-pub mod uri;
-pub mod version;
-
-
-pub mod mime {
-    pub use mime_crate::*;
-}
-
-
-fn _assert_types() {
-    fn _assert_send<T: Send>() {}
-    fn _assert_sync<T: Sync>() {}
-
-    _assert_send::<Client>();
-    _assert_send::<client::Request<net::Fresh>>();
-    _assert_send::<client::Response>();
-    _assert_send::<error::Error>();
-    _assert_send::<::client::pool::Pool<::net::DefaultConnector>>();
-
-    _assert_sync::<Client>();
-    _assert_sync::<error::Error>();
-    _assert_sync::<::client::pool::Pool<::net::DefaultConnector>>();
-}
+pub mod service;
+#[cfg(feature = "runtime")] pub mod rt;
+pub mod upgrade;

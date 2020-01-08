@@ -8,6 +8,12 @@
 
 
 
+
+
+
+
+
+
 extern crate futures;
 extern crate tokio_core;
 extern crate tokio_io;
@@ -18,17 +24,23 @@ use std::io::{self, Read, Write};
 use std::net::SocketAddr;
 use std::thread;
 
-use bytes::{BufMut, BytesMut};
 use futures::sync::mpsc;
 use futures::{Sink, Future, Stream};
-use tokio_core::net::TcpStream;
 use tokio_core::reactor::Core;
-use tokio_io::AsyncRead;
-use tokio_io::codec::{Encoder, Decoder};
 
 fn main() {
     
-    let addr = env::args().nth(1).unwrap_or_else(|| {
+    let mut args = env::args().skip(1).collect::<Vec<_>>();
+    let tcp = match args.iter().position(|a| a == "--udp") {
+        Some(i) => {
+            args.remove(i);
+            false
+        }
+        None => true,
+    };
+
+    
+    let addr = args.first().unwrap_or_else(|| {
         panic!("this program requires at least one argument")
     });
     let addr = addr.parse::<SocketAddr>().unwrap();
@@ -36,7 +48,6 @@ fn main() {
     
     let mut core = Core::new().unwrap();
     let handle = core.handle();
-    let tcp = TcpStream::connect(&addr, &handle);
 
     
     
@@ -49,69 +60,206 @@ fn main() {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let mut stdout = io::stdout();
-    let client = tcp.and_then(|stream| {
-        let (sink, stream) = stream.framed(Bytes).split();
-        let send_stdin = stdin_rx.forward(sink);
-        let write_stdout = stream.for_each(move |buf| {
-            stdout.write_all(&buf)
-        });
-
-        send_stdin.map(|_| ())
-                  .select(write_stdout.map(|_| ()))
-                  .then(|_| Ok(()))
-    });
+    let stdout = if tcp {
+        tcp::connect(&addr, &handle, Box::new(stdin_rx))
+    } else {
+        udp::connect(&addr, &handle, Box::new(stdin_rx))
+    };
 
     
-    core.run(client).unwrap();
+    
+    
+    
+    
+    let mut out = io::stdout();
+    core.run(stdout.for_each(|chunk| {
+        out.write_all(&chunk)
+    })).unwrap();
 }
 
+mod tcp {
+    use std::io::{self, Read, Write};
+    use std::net::{SocketAddr, Shutdown};
 
+    use bytes::{BufMut, BytesMut};
+    use futures::prelude::*;
+    use tokio_core::net::TcpStream;
+    use tokio_core::reactor::Handle;
+    use tokio_io::{AsyncRead, AsyncWrite};
+    use tokio_io::codec::{Encoder, Decoder};
 
+    pub fn connect(addr: &SocketAddr,
+                   handle: &Handle,
+                   stdin: Box<Stream<Item = Vec<u8>, Error = io::Error>>)
+        -> Box<Stream<Item = BytesMut, Error = io::Error>>
+    {
+        let tcp = TcpStream::connect(addr, handle);
+        let handle = handle.clone();
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Box::new(tcp.map(move |stream| {
+            let stream = CloseWithShutdown(stream);
+            let (sink, stream) = stream.framed(Bytes).split();
+            let copy_stdin = stdin.forward(sink)
+                .then(|result| {
+                    if let Err(e) = result {
+                        panic!("failed to write to socket: {}", e)
+                    }
+                    Ok(())
+                });
+            handle.spawn(copy_stdin);
+            stream
+        }).flatten_stream())
+    }
 
+    
+    
+    
+    struct CloseWithShutdown(TcpStream);
 
-
-struct Bytes;
-
-impl Decoder for Bytes {
-    type Item = BytesMut;
-    type Error = io::Error;
-
-    fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<BytesMut>> {
-        if buf.len() > 0 {
-            let len = buf.len();
-            Ok(Some(buf.split_to(len)))
-        } else {
-            Ok(None)
+    impl Read for CloseWithShutdown {
+        fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+            self.0.read(buf)
         }
     }
 
-    fn decode_eof(&mut self, buf: &mut BytesMut) -> io::Result<Option<BytesMut>> {
-        self.decode(buf)
+    impl AsyncRead for CloseWithShutdown {}
+
+    impl Write for CloseWithShutdown {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.0.write(buf)
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            self.0.flush()
+        }
+    }
+
+    impl AsyncWrite for CloseWithShutdown {
+        fn shutdown(&mut self) -> Poll<(), io::Error> {
+            self.0.shutdown(Shutdown::Write)?;
+            Ok(().into())
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    struct Bytes;
+
+    impl Decoder for Bytes {
+        type Item = BytesMut;
+        type Error = io::Error;
+
+        fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<BytesMut>> {
+            if buf.len() > 0 {
+                let len = buf.len();
+                Ok(Some(buf.split_to(len)))
+            } else {
+                Ok(None)
+            }
+        }
+
+        fn decode_eof(&mut self, buf: &mut BytesMut) -> io::Result<Option<BytesMut>> {
+            self.decode(buf)
+        }
+    }
+
+    impl Encoder for Bytes {
+        type Item = Vec<u8>;
+        type Error = io::Error;
+
+        fn encode(&mut self, data: Vec<u8>, buf: &mut BytesMut) -> io::Result<()> {
+            buf.put(&data[..]);
+            Ok(())
+        }
     }
 }
 
-impl Encoder for Bytes {
-    type Item = Vec<u8>;
-    type Error = io::Error;
+mod udp {
+    use std::io;
+    use std::net::SocketAddr;
 
-    fn encode(&mut self, data: Vec<u8>, buf: &mut BytesMut) -> io::Result<()> {
-        buf.put(&data[..]);
-        Ok(())
+    use bytes::BytesMut;
+    use futures::{Future, Stream};
+    use tokio_core::net::{UdpCodec, UdpSocket};
+    use tokio_core::reactor::Handle;
+
+    pub fn connect(&addr: &SocketAddr,
+                   handle: &Handle,
+                   stdin: Box<Stream<Item = Vec<u8>, Error = io::Error>>)
+        -> Box<Stream<Item = BytesMut, Error = io::Error>>
+    {
+        
+        
+        let addr_to_bind = if addr.ip().is_ipv4() {
+            "0.0.0.0:0".parse().unwrap()
+        } else {
+            "[::]:0".parse().unwrap()
+        };
+        let udp = UdpSocket::bind(&addr_to_bind, handle)
+            .expect("failed to bind socket");
+
+        
+        
+        
+        
+        let (sink, stream) = udp.framed(Bytes).split();
+
+        
+        
+        handle.spawn(stdin.map(move |chunk| {
+            (addr, chunk)
+        }).forward(sink).then(|result| {
+            if let Err(e) = result {
+                panic!("failed to write to socket: {}", e)
+            }
+            Ok(())
+        }));
+
+        
+        
+        Box::new(stream.filter_map(move |(src, chunk)| {
+            if src == addr {
+                Some(chunk.into())
+            } else {
+                None
+            }
+        }))
+    }
+
+    struct Bytes;
+
+    impl UdpCodec for Bytes {
+        type In = (SocketAddr, Vec<u8>);
+        type Out = (SocketAddr, Vec<u8>);
+
+        fn decode(&mut self, addr: &SocketAddr, buf: &[u8]) -> io::Result<Self::In> {
+            Ok((*addr, buf.to_vec()))
+        }
+
+        fn encode(&mut self, (addr, buf): Self::Out, into: &mut Vec<u8>) -> SocketAddr {
+            into.extend(buf);
+            addr
+        }
     }
 }
 
@@ -127,6 +275,9 @@ fn read_stdin(mut tx: mpsc::Sender<Vec<u8>>) {
             Ok(n) => n,
         };
         buf.truncate(n);
-        tx = tx.send(buf).wait().unwrap();
+        tx = match tx.send(buf).wait() {
+            Ok(tx) => tx,
+            Err(_) => break,
+        };
     }
 }

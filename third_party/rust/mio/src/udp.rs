@@ -29,7 +29,7 @@ pub struct UdpSocket {
 impl UdpSocket {
     
     pub fn bind(addr: &SocketAddr) -> io::Result<UdpSocket> {
-        let socket = try!(net::UdpSocket::bind(addr));
+        let socket = net::UdpSocket::bind(addr)?;
         UdpSocket::from_socket(socket)
     }
 
@@ -45,7 +45,7 @@ impl UdpSocket {
     
     pub fn from_socket(socket: net::UdpSocket) -> io::Result<UdpSocket> {
         Ok(UdpSocket {
-            sys: try!(sys::UdpSocket::new(socket)),
+            sys: sys::UdpSocket::new(socket)?,
             selector_id: SelectorId::new(),
         })
     }
@@ -82,6 +82,15 @@ impl UdpSocket {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn recv_from(&self, buf: &mut [u8])
                      -> io::Result<Option<(usize, SocketAddr)>> {
         self.sys.recv_from(buf).map_non_block()
@@ -89,14 +98,20 @@ impl UdpSocket {
 
     
     
-    
-    
-    
     pub fn send(&self, buf: &[u8])
                    -> io::Result<Option<usize>> {
         self.sys.send(buf).map_non_block()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     pub fn recv(&self, buf: &mut [u8])
@@ -264,7 +279,7 @@ impl UdpSocket {
 
 impl Evented for UdpSocket {
     fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
-        try!(self.selector_id.associate_selector(poll));
+        self.selector_id.associate_selector(poll)?;
         self.sys.register(poll, token, interest, opts)
     }
 
@@ -283,24 +298,24 @@ impl Evented for UdpSocket {
 
 
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::{IntoRawFd, AsRawFd, FromRawFd, RawFd};
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl IntoRawFd for UdpSocket {
     fn into_raw_fd(self) -> RawFd {
         self.sys.into_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl AsRawFd for UdpSocket {
     fn as_raw_fd(&self) -> RawFd {
         self.sys.as_raw_fd()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl FromRawFd for UdpSocket {
     unsafe fn from_raw_fd(fd: RawFd) -> UdpSocket {
         UdpSocket {

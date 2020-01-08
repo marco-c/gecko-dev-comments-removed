@@ -9,6 +9,7 @@ use futures::{Poll, Future};
 
 
 
+#[must_use = "futures do nothing unless polled"]
 pub struct ReadExact<A, T> {
     state: State<A, T>,
 }

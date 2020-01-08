@@ -129,13 +129,8 @@ pub trait Evented {
     
     
     
-    
-    
-    
     fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>;
 
-    
-    
     
     
     
@@ -156,10 +151,49 @@ pub trait Evented {
     
     
     
-    
-    
-    
     fn deregister(&self, poll: &Poll) -> io::Result<()>;
+}
+
+impl Evented for Box<Evented> {
+    fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.as_ref().register(poll, token, interest, opts)
+    }
+
+    fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.as_ref().reregister(poll, token, interest, opts)
+    }
+
+    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+        self.as_ref().deregister(poll)
+    }
+}
+
+impl<T: Evented> Evented for Box<T> {
+    fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.as_ref().register(poll, token, interest, opts)
+    }
+
+    fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.as_ref().reregister(poll, token, interest, opts)
+    }
+
+    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+        self.as_ref().deregister(poll)
+    }
+}
+
+impl<T: Evented> Evented for ::std::sync::Arc<T> {
+    fn register(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.as_ref().register(poll, token, interest, opts)
+    }
+
+    fn reregister(&self, poll: &Poll, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()> {
+        self.as_ref().reregister(poll, token, interest, opts)
+    }
+
+    fn deregister(&self, poll: &Poll) -> io::Result<()> {
+        self.as_ref().deregister(poll)
+    }
 }
 
 
@@ -478,6 +512,9 @@ impl ops::Sub for PollOpt {
     }
 }
 
+#[deprecated(since = "0.6.10", note = "removed")]
+#[cfg(feature = "with-deprecated")]
+#[doc(hidden)]
 impl ops::Not for PollOpt {
     type Output = PollOpt;
 
@@ -497,15 +534,27 @@ impl fmt::Debug for PollOpt {
 
         for &(flag, msg) in &flags {
             if self.contains(flag) {
-                if one { try!(write!(fmt, " | ")) }
-                try!(write!(fmt, "{}", msg));
+                if one { write!(fmt, " | ")? }
+                write!(fmt, "{}", msg)?;
 
                 one = true
             }
         }
 
+        if !one {
+            fmt.write_str("(empty)")?;
+        }
+
         Ok(())
     }
+}
+
+#[test]
+fn test_debug_pollopt() {
+    assert_eq!("(empty)", format!("{:?}", PollOpt::empty()));
+    assert_eq!("Edge-Triggered", format!("{:?}", PollOpt::edge()));
+    assert_eq!("Level-Triggered", format!("{:?}", PollOpt::level()));
+    assert_eq!("OneShot", format!("{:?}", PollOpt::oneshot()));
 }
 
 
@@ -545,8 +594,10 @@ pub struct Ready(usize);
 
 const READABLE: usize = 0b00001;
 const WRITABLE: usize = 0b00010;
-const ERROR: usize    = 0b00100;
-const HUP: usize      = 0b01000;
+
+
+const ERROR: usize = 0b00100;
+const HUP: usize = 0b01000;
 
 impl Ready {
     
@@ -631,13 +682,28 @@ impl Ready {
         Ready(HUP)
     }
 
-    #[deprecated(since = "0.6.5", note = "removed")]
-    #[cfg(feature = "with-deprecated")]
-    #[doc(hidden)]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn all() -> Ready {
-        Ready::readable() |
-            Ready::writable()
+        Ready(READABLE | WRITABLE | ::sys::READY_ALL)
     }
 
     
@@ -807,11 +873,63 @@ impl Ready {
     
     
     
-    
     #[inline]
     pub fn contains<T: Into<Self>>(&self, other: T) -> bool {
         let other = other.into();
         (*self & other) == other
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_usize(val: usize) -> Ready {
+        Ready(val)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_usize(&self) -> usize {
+        self.0
     }
 }
 
@@ -824,12 +942,26 @@ impl<T: Into<Ready>> ops::BitOr<T> for Ready {
     }
 }
 
+impl<T: Into<Ready>> ops::BitOrAssign<T> for Ready {
+    #[inline]
+    fn bitor_assign(&mut self, other: T) {
+        self.0 |= other.into().0;
+    }
+}
+
 impl<T: Into<Ready>> ops::BitXor<T> for Ready {
     type Output = Ready;
 
     #[inline]
     fn bitxor(self, other: T) -> Ready {
         Ready(self.0 ^ other.into().0)
+    }
+}
+
+impl<T: Into<Ready>> ops::BitXorAssign<T> for Ready {
+    #[inline]
+    fn bitxor_assign(&mut self, other: T) {
+        self.0 ^= other.into().0;
     }
 }
 
@@ -842,6 +974,13 @@ impl<T: Into<Ready>> ops::BitAnd<T> for Ready {
     }
 }
 
+impl<T: Into<Ready>> ops::BitAndAssign<T> for Ready {
+    #[inline]
+    fn bitand_assign(&mut self, other: T) {
+        self.0 &= other.into().0
+    }
+}
+
 impl<T: Into<Ready>> ops::Sub<T> for Ready {
     type Output = Ready;
 
@@ -851,6 +990,16 @@ impl<T: Into<Ready>> ops::Sub<T> for Ready {
     }
 }
 
+impl<T: Into<Ready>> ops::SubAssign<T> for Ready {
+    #[inline]
+    fn sub_assign(&mut self, other: T) {
+        self.0 &= !other.into().0;
+    }
+}
+
+#[deprecated(since = "0.6.10", note = "removed")]
+#[cfg(feature = "with-deprecated")]
+#[doc(hidden)]
 impl ops::Not for Ready {
     type Output = Ready;
 
@@ -859,7 +1008,6 @@ impl ops::Not for Ready {
         Ready(!self.0)
     }
 }
-
 
 impl fmt::Debug for Ready {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -870,22 +1018,30 @@ impl fmt::Debug for Ready {
             (Ready(ERROR), "Error"),
             (Ready(HUP), "Hup")];
 
-        try!(write!(fmt, "Ready {{"));
-
         for &(flag, msg) in &flags {
             if self.contains(flag) {
-                if one { try!(write!(fmt, " | ")) }
-                try!(write!(fmt, "{}", msg));
+                if one { write!(fmt, " | ")? }
+                write!(fmt, "{}", msg)?;
 
                 one = true
             }
         }
 
-        try!(write!(fmt, "}}"));
+        if !one {
+            fmt.write_str("(empty)")?;
+        }
 
         Ok(())
     }
 }
+
+#[test]
+fn test_debug_ready() {
+    assert_eq!("(empty)", format!("{:?}", Ready::empty()));
+    assert_eq!("Readable", format!("{:?}", Ready::readable()));
+    assert_eq!("Writable", format!("{:?}", Ready::writable()));
+}
+
 
 
 
@@ -928,6 +1084,7 @@ impl Event {
     
     
     
+    
     pub fn new(readiness: Ready, token: Token) -> Event {
         Event {
             kind: readiness,
@@ -935,6 +1092,7 @@ impl Event {
         }
     }
 
+    
     
     
     
@@ -957,6 +1115,7 @@ impl Event {
         self.kind
     }
 
+    
     
     
     

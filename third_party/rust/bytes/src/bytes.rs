@@ -3,10 +3,12 @@ use buf::Iter;
 use debug;
 
 use std::{cmp, fmt, mem, hash, ops, slice, ptr, usize};
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
 use std::io::Cursor;
 use std::sync::atomic::{self, AtomicUsize, AtomicPtr};
 use std::sync::atomic::Ordering::{Relaxed, Acquire, Release, AcqRel};
+use std::iter::{FromIterator, Iterator};
+
 
 
 
@@ -101,7 +103,7 @@ use std::sync::atomic::Ordering::{Relaxed, Acquire, Release, AcqRel};
 
 
 pub struct Bytes {
-    inner: Inner2,
+    inner: Inner,
 }
 
 
@@ -147,7 +149,7 @@ pub struct Bytes {
 
 
 pub struct BytesMut {
-    inner: Inner2,
+    inner: Inner,
 }
 
 
@@ -294,6 +296,8 @@ pub struct BytesMut {
 #[cfg(target_endian = "little")]
 #[repr(C)]
 struct Inner {
+    
+    
     arc: AtomicPtr<Shared>,
     ptr: *mut u8,
     len: usize,
@@ -303,20 +307,12 @@ struct Inner {
 #[cfg(target_endian = "big")]
 #[repr(C)]
 struct Inner {
+    
+    
     ptr: *mut u8,
     len: usize,
     cap: usize,
     arc: AtomicPtr<Shared>,
-}
-
-
-
-
-
-
-
-struct Inner2 {
-    inner: Inner,
 }
 
 
@@ -330,7 +326,7 @@ struct Inner2 {
 
 struct Shared {
     vec: Vec<u8>,
-    original_capacity: usize,
+    original_capacity_repr: usize,
     ref_count: AtomicUsize,
 }
 
@@ -341,7 +337,24 @@ const KIND_STATIC: usize = 0b10;
 const KIND_VEC: usize = 0b11;
 const KIND_MASK: usize = 0b11;
 
-const MAX_ORIGINAL_CAPACITY: usize = 1 << 16;
+
+
+const MAX_ORIGINAL_CAPACITY_WIDTH: usize = 17;
+
+
+const MIN_ORIGINAL_CAPACITY_WIDTH: usize = 10;
+
+
+const ORIGINAL_CAPACITY_MASK: usize = 0b11100;
+const ORIGINAL_CAPACITY_OFFSET: usize = 2;
+
+
+
+
+
+const VEC_POS_OFFSET: usize = 5;
+const MAX_VEC_POS: usize = usize::MAX >> VEC_POS_OFFSET;
+const NOT_VEC_POS_MASK: usize = 0b11111;
 
 
 const INLINE_LEN_MASK: usize = 0b11111100;
@@ -355,6 +368,11 @@ const INLINE_LEN_OFFSET: usize = 2;
 const INLINE_DATA_OFFSET: isize = 1;
 #[cfg(target_endian = "big")]
 const INLINE_DATA_OFFSET: isize = 0;
+
+#[cfg(target_pointer_width = "64")]
+const PTR_WIDTH: usize = 64;
+#[cfg(target_pointer_width = "32")]
+const PTR_WIDTH: usize = 32;
 
 
 
@@ -396,9 +414,7 @@ impl Bytes {
     #[inline]
     pub fn with_capacity(capacity: usize) -> Bytes {
         Bytes {
-            inner: Inner2 {
-                inner: Inner::with_capacity(capacity),
-            },
+            inner: Inner::with_capacity(capacity),
         }
     }
 
@@ -435,9 +451,7 @@ impl Bytes {
     #[inline]
     pub fn from_static(bytes: &'static [u8]) -> Bytes {
         Bytes {
-            inner: Inner2 {
-                inner: Inner::from_static(bytes),
-            }
+            inner: Inner::from_static(bytes),
         }
     }
 
@@ -451,6 +465,7 @@ impl Bytes {
     
     
     
+    #[inline]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
@@ -465,6 +480,7 @@ impl Bytes {
     
     
     
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
@@ -595,9 +611,7 @@ impl Bytes {
         }
 
         Bytes {
-            inner: Inner2 {
-                inner: self.inner.split_off(at),
-            }
+            inner: self.inner.split_off(at),
         }
     }
 
@@ -636,9 +650,7 @@ impl Bytes {
         }
 
         Bytes {
-            inner: Inner2 {
-                inner: self.inner.split_to(at),
-            }
+            inner: self.inner.split_to(at),
         }
     }
 
@@ -670,6 +682,22 @@ impl Bytes {
     
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn advance(&mut self, cnt: usize) {
+        assert!(cnt <= self.len(), "cannot advance past `remaining`");
+        unsafe { self.inner.set_start(cnt); }
     }
 
     
@@ -785,9 +813,7 @@ impl<'a> IntoBuf for &'a Bytes {
 impl Clone for Bytes {
     fn clone(&self) -> Bytes {
         Bytes {
-            inner: Inner2 {
-                inner: self.inner.shallow_clone(),
-            }
+            inner: unsafe { self.inner.shallow_clone(false) },
         }
     }
 }
@@ -835,6 +861,28 @@ impl<'a> From<&'a [u8]> for Bytes {
 impl<'a> From<&'a str> for Bytes {
     fn from(src: &'a str) -> Bytes {
         BytesMut::from(src).freeze()
+    }
+}
+
+impl FromIterator<u8> for BytesMut {
+    fn from_iter<T: IntoIterator<Item = u8>>(into_iter: T) -> Self {
+        let iter = into_iter.into_iter();
+        let (min, maybe_max) = iter.size_hint();
+
+        let mut out = BytesMut::with_capacity(maybe_max.unwrap_or(min));
+
+        for i in iter {
+            out.reserve(1);
+            out.put(i);
+        }
+
+        out
+    }
+}
+
+impl FromIterator<u8> for Bytes {
+    fn from_iter<T: IntoIterator<Item = u8>>(into_iter: T) -> Self {
+        BytesMut::from_iter(into_iter).freeze()
     }
 }
 
@@ -968,9 +1016,7 @@ impl BytesMut {
     #[inline]
     pub fn with_capacity(capacity: usize) -> BytesMut {
         BytesMut {
-            inner: Inner2 {
-                inner: Inner::with_capacity(capacity),
-            },
+            inner: Inner::with_capacity(capacity),
         }
     }
 
@@ -1100,9 +1146,7 @@ impl BytesMut {
     
     pub fn split_off(&mut self, at: usize) -> BytesMut {
         BytesMut {
-            inner: Inner2 {
-                inner: self.inner.split_off(at),
-            }
+            inner: self.inner.split_off(at),
         }
     }
 
@@ -1170,9 +1214,7 @@ impl BytesMut {
     
     pub fn split_to(&mut self, at: usize) -> BytesMut {
         BytesMut {
-            inner: Inner2 {
-                inner: self.inner.split_to(at),
-            }
+            inner: self.inner.split_to(at),
         }
     }
 
@@ -1216,9 +1258,51 @@ impl BytesMut {
     
     
     
+    #[inline]
+    pub fn advance(&mut self, cnt: usize) {
+        assert!(cnt <= self.len(), "cannot advance past `remaining`");
+        unsafe { self.inner.set_start(cnt); }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn clear(&mut self) {
         self.truncate(0);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn resize(&mut self, new_len: usize, value: u8) {
+        self.inner.resize(new_len, value);
     }
 
     
@@ -1328,6 +1412,55 @@ impl BytesMut {
         self.reserve(extend.len());
         self.put_slice(extend);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unsplit(&mut self, other: BytesMut) {
+        let ptr;
+
+        if other.is_empty() {
+            return;
+        }
+
+        if self.is_empty() {
+            *self = other;
+            return;
+        }
+
+        unsafe {
+            ptr = self.inner.ptr.offset(self.inner.len as isize); 
+        }
+        if ptr == other.inner.ptr &&
+           self.inner.kind() == KIND_ARC &&
+           other.inner.kind() == KIND_ARC
+        {
+            debug_assert_eq!(self.inner.arc.load(Acquire),
+                             other.inner.arc.load(Acquire));
+            
+            self.inner.len += other.inner.len;
+            self.inner.cap += other.inner.cap;
+        }
+        else {
+            self.extend_from_slice(&other);
+        }
+    }
 }
 
 impl BufMut for BytesMut {
@@ -1423,9 +1556,7 @@ impl ops::DerefMut for BytesMut {
 impl From<Vec<u8>> for BytesMut {
     fn from(src: Vec<u8>) -> BytesMut {
         BytesMut {
-            inner: Inner2 {
-                inner: Inner::from_vec(src),
-            },
+            inner: Inner::from_vec(src),
         }
     }
 }
@@ -1452,9 +1583,7 @@ impl<'a> From<&'a [u8]> for BytesMut {
                 inner.as_raw()[0..len].copy_from_slice(src);
 
                 BytesMut {
-                    inner: Inner2 {
-                        inner: inner,
-                    }
+                    inner: inner,
                 }
             }
         } else {
@@ -1520,6 +1649,12 @@ impl hash::Hash for BytesMut {
 impl Borrow<[u8]> for BytesMut {
     fn borrow(&self) -> &[u8] {
         self.as_ref()
+    }
+}
+
+impl BorrowMut<[u8]> for BytesMut {
+    fn borrow_mut(&mut self) -> &mut [u8] {
+        self.as_mut()
     }
 }
 
@@ -1616,8 +1751,8 @@ impl Inner {
 
         mem::forget(src);
 
-        let original_capacity = cmp::min(cap, MAX_ORIGINAL_CAPACITY);
-        let arc = (original_capacity & !KIND_MASK) | KIND_VEC;
+        let original_capacity_repr = original_capacity_to_repr(cap);
+        let arc = (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | KIND_VEC;
 
         Inner {
             arc: AtomicPtr::new(arc as *mut Shared),
@@ -1632,10 +1767,9 @@ impl Inner {
         if capacity <= INLINE_CAP {
             unsafe {
                 
-                Inner {
-                    arc: AtomicPtr::new(KIND_INLINE as *mut Shared),
-                    .. mem::uninitialized()
-                }
+                let mut inner: Inner = mem::uninitialized();
+                inner.arc = AtomicPtr::new(KIND_INLINE as *mut Shared);
+                inner
             }
         } else {
             Inner::from_vec(Vec::with_capacity(capacity))
@@ -1727,8 +1861,8 @@ impl Inner {
     #[inline]
     fn set_inline_len(&mut self, len: usize) {
         debug_assert!(len <= INLINE_CAP);
-        let p: &mut usize = unsafe { mem::transmute(&mut self.arc) };
-        *p = (*p & !INLINE_LEN_MASK) | (len << INLINE_LEN_OFFSET);
+        let p = self.arc.get_mut();
+        *p = ((*p as usize & !INLINE_LEN_MASK) | (len << INLINE_LEN_OFFSET)) as _;
     }
 
     
@@ -1758,7 +1892,7 @@ impl Inner {
     }
 
     fn split_off(&mut self, at: usize) -> Inner {
-        let mut other = self.shallow_clone();
+        let mut other = unsafe { self.shallow_clone(true) };
 
         unsafe {
             other.set_start(at);
@@ -1769,7 +1903,7 @@ impl Inner {
     }
 
     fn split_to(&mut self, at: usize) -> Inner {
-        let mut other = self.shallow_clone();
+        let mut other = unsafe { self.shallow_clone(true) };
 
         unsafe {
             other.set_end(at);
@@ -1785,20 +1919,33 @@ impl Inner {
         }
     }
 
-    unsafe fn set_start(&mut self, start: usize) {
-        
-        
-        debug_assert!(self.is_shared());
+    fn resize(&mut self, new_len: usize, value: u8) {
+        let len = self.len();
+        if new_len > len {
+            let additional = new_len - len;
+            self.reserve(additional);
+            unsafe {
+                let dst = self.as_raw()[len..].as_mut_ptr();
+                ptr::write_bytes(dst, value, additional);
+                self.set_len(new_len);
+            }
+        } else {
+            self.truncate(new_len);
+        }
+    }
 
+    unsafe fn set_start(&mut self, start: usize) {
         
         
         if start == 0 {
             return;
         }
 
+        let kind = self.kind();
+
         
         
-        if self.is_inline() {
+        if kind == KIND_INLINE {
             assert!(start <= INLINE_CAP);
 
             let len = self.inline_len();
@@ -1821,6 +1968,25 @@ impl Inner {
             }
         } else {
             assert!(start <= self.cap);
+
+            if kind == KIND_VEC {
+                
+                
+                
+                
+                let (mut pos, prev) = self.uncoordinated_get_vec_pos();
+                pos += start;
+
+                if pos <= MAX_VEC_POS {
+                    self.uncoordinated_set_vec_pos(pos, prev);
+                } else {
+                    
+                    
+                    
+                    
+                    let _ = self.shallow_clone(true);
+                }
+            }
 
             
             
@@ -1871,127 +2037,154 @@ impl Inner {
         } else {
             
             
-            
-            
-            let arc = self.arc.load(Relaxed);
-
-            
-            
-            unsafe { (*arc).is_unique() }
+            unsafe { (**self.arc.get_mut()).is_unique() }
         }
     }
 
     
     
     
-    fn shallow_clone(&self) -> Inner {
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn shallow_clone(&self, mut_self: bool) -> Inner {
         
         
-        if self.is_inline() {
-            
-            unsafe {
-                
-                let mut inner: Inner = mem::uninitialized();
-                let len = self.inline_len();
+        
+        
+        
 
-                inner.arc = AtomicPtr::new(KIND_INLINE as *mut Shared);
-                inner.set_inline_len(len);
-                inner.as_raw()[0..len].copy_from_slice(self.as_ref());
-                inner
-            }
+        if self.is_inline_or_static() {
+            
+            let mut inner: Inner = mem::uninitialized();
+            ptr::copy_nonoverlapping(
+                self,
+                &mut inner,
+                1,
+            );
+            inner
         } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            let mut arc = self.arc.load(Acquire);
-
-            
-            
-            
-            if arc as usize & KIND_MASK == KIND_VEC {
-                unsafe {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let shared = Box::new(Shared {
-                        vec: Vec::from_raw_parts(self.ptr, self.len, self.cap),
-                        original_capacity: arc as usize & !KIND_MASK,
-                        
-                        
-                        
-                        ref_count: AtomicUsize::new(2),
-                    });
-
-                    let shared = Box::into_raw(shared);
-
-                    
-                    
-                    debug_assert!(0 == (shared as usize & 0b11));
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let actual = self.arc.compare_and_swap(arc, shared, AcqRel);
-
-                    if actual == arc {
-                        
-                        
-                        return Inner {
-                            arc: AtomicPtr::new(shared),
-                            .. *self
-                        };
-                    }
-
-                    
-                    
-                    
-                    let shared: Box<Shared> = mem::transmute(shared);
-                    mem::forget(*shared);
-
-                    
-                    
-                    arc = actual;
-                }
-            } else if arc as usize & KIND_MASK == KIND_STATIC {
-                
-                return Inner {
-                    arc: AtomicPtr::new(arc),
-                    .. *self
-                };
-            }
-
-            
-            
-            unsafe {
-                
-                
-                let old_size = (*arc).ref_count.fetch_add(1, Relaxed);
-
-                if old_size == usize::MAX {
-                    panic!(); 
-                }
-            }
-
-            Inner {
-                arc: AtomicPtr::new(arc),
-                .. *self
-            }
+            self.shallow_clone_sync(mut_self)
         }
+    }
+
+
+    #[cold]
+    unsafe fn shallow_clone_sync(&self, mut_self: bool) -> Inner {
+        
+        
+        
+        
+        
+        
+        
+        
+        let arc = self.arc.load(Acquire);
+        let kind = arc as usize & KIND_MASK;
+
+        if kind == KIND_ARC {
+            self.shallow_clone_arc(arc)
+        } else {
+            assert!(kind == KIND_VEC);
+            self.shallow_clone_vec(arc as usize, mut_self)
+        }
+    }
+
+    unsafe fn shallow_clone_arc(&self, arc: *mut Shared) -> Inner {
+        debug_assert!(arc as usize & KIND_MASK == KIND_ARC);
+
+        let old_size = (*arc).ref_count.fetch_add(1, Relaxed);
+
+        if old_size == usize::MAX {
+            abort();
+        }
+
+        Inner {
+            arc: AtomicPtr::new(arc),
+            .. *self
+        }
+    }
+
+    #[cold]
+    unsafe fn shallow_clone_vec(&self, arc: usize, mut_self: bool) -> Inner {
+        
+        
+        
+
+        debug_assert!(arc & KIND_MASK == KIND_VEC);
+
+        let original_capacity_repr =
+            (arc as usize & ORIGINAL_CAPACITY_MASK) >> ORIGINAL_CAPACITY_OFFSET;
+
+        
+        
+        let off = (arc as usize) >> VEC_POS_OFFSET;
+
+        
+        
+        
+        
+        
+        
+        
+        let shared = Box::new(Shared {
+            vec: rebuild_vec(self.ptr, self.len, self.cap, off),
+            original_capacity_repr: original_capacity_repr,
+            
+            
+            
+            ref_count: AtomicUsize::new(2),
+        });
+
+        let shared = Box::into_raw(shared);
+
+        
+        
+        debug_assert!(0 == (shared as usize & 0b11));
+
+        
+        
+        if mut_self {
+            self.arc.store(shared, Relaxed);
+            return Inner {
+                arc: AtomicPtr::new(shared),
+                .. *self
+            };
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let actual = self.arc.compare_and_swap(arc as *mut Shared, shared, AcqRel);
+
+        if actual as usize == arc {
+            
+            
+            return Inner {
+                arc: AtomicPtr::new(shared),
+                .. *self
+            };
+        }
+
+        
+        
+        
+        let shared = Box::from_raw(shared);
+        mem::forget(*shared);
+
+        
+        
+        self.shallow_clone_arc(actual)
     }
 
     #[inline]
@@ -2030,26 +2223,46 @@ impl Inner {
 
         if kind == KIND_VEC {
             
+            
+            
+            
+            
             unsafe {
-                let mut v = Vec::from_raw_parts(self.ptr, self.len, self.cap);
-                v.reserve(additional);
+                let (off, prev) = self.uncoordinated_get_vec_pos();
 
                 
-                self.ptr = v.as_mut_ptr();
-                self.len = v.len();
-                self.cap = v.capacity();
-
                 
-                mem::forget(v);
+                if off >= additional && off >= (self.cap / 2) {
+                    
+                    
+                    
+                    
+                    let base_ptr = self.ptr.offset(-(off as isize));
+                    ptr::copy(self.ptr, base_ptr, self.len);
+                    self.ptr = base_ptr;
+                    self.uncoordinated_set_vec_pos(0, prev);
 
+                    
+                    
+                    self.cap += off;
+                } else {
+                    
+                    let mut v = rebuild_vec(self.ptr, self.len, self.cap, off);
+                    v.reserve(additional);
+
+                    
+                    self.ptr = v.as_mut_ptr().offset(off as isize);
+                    self.len = v.len() - off;
+                    self.cap = v.capacity() - off;
+
+                    
+                    mem::forget(v);
+                }
                 return;
             }
         }
 
-        
-        
-        
-        let arc = self.arc.load(Relaxed);
+        let arc = *self.arc.get_mut();
 
         debug_assert!(kind == KIND_ARC);
 
@@ -2059,9 +2272,11 @@ impl Inner {
         
         let mut new_cap = len + additional;
         let original_capacity;
+        let original_capacity_repr;
 
         unsafe {
-            original_capacity = (*arc).original_capacity;
+            original_capacity_repr = (*arc).original_capacity_repr;
+            original_capacity = original_capacity_from_repr(original_capacity_repr);
 
             
             
@@ -2114,7 +2329,7 @@ impl Inner {
         self.len = v.len();
         self.cap = v.capacity();
 
-        let arc = (original_capacity & !KIND_MASK) | KIND_VEC;
+        let arc = (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | KIND_VEC;
 
         self.arc = AtomicPtr::new(arc as *mut Shared);
 
@@ -2126,6 +2341,18 @@ impl Inner {
     #[inline]
     fn is_inline(&self) -> bool {
         self.kind() == KIND_INLINE
+    }
+
+    #[inline]
+    fn is_inline_or_static(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        let kind = self.kind();
+        kind == KIND_INLINE || kind == KIND_STATIC
     }
 
     
@@ -2187,21 +2414,56 @@ impl Inner {
 
         imp(&self.arc)
     }
+
+    #[inline]
+    fn uncoordinated_get_vec_pos(&mut self) -> (usize, usize) {
+        
+        
+        
+        
+        let prev = unsafe {
+            let p: &AtomicPtr<Shared> = &self.arc;
+            let p: &usize = mem::transmute(p);
+            *p
+        };
+
+        (prev >> VEC_POS_OFFSET, prev)
+    }
+
+    #[inline]
+    fn uncoordinated_set_vec_pos(&mut self, pos: usize, prev: usize) {
+        
+        debug_assert!(pos <= MAX_VEC_POS);
+
+        unsafe {
+            let p: &mut AtomicPtr<Shared> = &mut self.arc;
+            let p: &mut usize = mem::transmute(p);
+            *p = (pos << VEC_POS_OFFSET) | (prev & NOT_VEC_POS_MASK);
+        }
+    }
 }
 
-impl Drop for Inner2 {
+fn rebuild_vec(ptr: *mut u8, mut len: usize, mut cap: usize, off: usize) -> Vec<u8> {
+    unsafe {
+        let ptr = ptr.offset(-(off as isize));
+        len += off;
+        cap += off;
+
+        Vec::from_raw_parts(ptr, len, cap)
+    }
+}
+
+impl Drop for Inner {
     fn drop(&mut self) {
         let kind = self.kind();
 
         if kind == KIND_VEC {
+            let (off, _) = self.uncoordinated_get_vec_pos();
+
             
-            unsafe {
-                let _ = Vec::from_raw_parts(self.ptr, self.len, self.cap);
-            }
+            let _ = rebuild_vec(self.ptr, self.len, self.cap, off);
         } else if kind == KIND_ARC {
-            
-            let arc = self.arc.load(Relaxed);
-            release_shared(arc);
+            release_shared(*self.arc.get_mut());
         }
     }
 }
@@ -2233,7 +2495,7 @@ fn release_shared(ptr: *mut Shared) {
         atomic::fence(Acquire);
 
         
-        let _: Box<Shared> = mem::transmute(ptr);
+        Box::from_raw(ptr);
     }
 }
 
@@ -2253,30 +2515,54 @@ impl Shared {
     }
 }
 
+fn original_capacity_to_repr(cap: usize) -> usize {
+    let width = PTR_WIDTH - ((cap >> MIN_ORIGINAL_CAPACITY_WIDTH).leading_zeros() as usize);
+    cmp::min(width, MAX_ORIGINAL_CAPACITY_WIDTH - MIN_ORIGINAL_CAPACITY_WIDTH)
+}
+
+fn original_capacity_from_repr(repr: usize) -> usize {
+    if repr == 0 {
+        return 0;
+    }
+
+    1 << (repr + (MIN_ORIGINAL_CAPACITY_WIDTH - 1))
+}
+
+#[test]
+fn test_original_capacity_to_repr() {
+    for &cap in &[0, 1, 16, 1000] {
+        assert_eq!(0, original_capacity_to_repr(cap));
+    }
+
+    for &cap in &[1024, 1025, 1100, 2000, 2047] {
+        assert_eq!(1, original_capacity_to_repr(cap));
+    }
+
+    for &cap in &[2048, 2049] {
+        assert_eq!(2, original_capacity_to_repr(cap));
+    }
+
+    
+
+    for &cap in &[65536, 65537, 68000, 1 << 17, 1 << 18, 1 << 20, 1 << 30] {
+        assert_eq!(7, original_capacity_to_repr(cap), "cap={}", cap);
+    }
+}
+
+#[test]
+fn test_original_capacity_from_repr() {
+    assert_eq!(0, original_capacity_from_repr(0));
+    assert_eq!(1024, original_capacity_from_repr(1));
+    assert_eq!(1024 * 2, original_capacity_from_repr(2));
+    assert_eq!(1024 * 4, original_capacity_from_repr(3));
+    assert_eq!(1024 * 8, original_capacity_from_repr(4));
+    assert_eq!(1024 * 16, original_capacity_from_repr(5));
+    assert_eq!(1024 * 32, original_capacity_from_repr(6));
+    assert_eq!(1024 * 64, original_capacity_from_repr(7));
+}
+
 unsafe impl Send for Inner {}
 unsafe impl Sync for Inner {}
-
-
-
-
-
-
-
-impl ops::Deref for Inner2 {
-    type Target = Inner;
-
-    #[inline]
-    fn deref(&self) -> &Inner {
-        &self.inner
-    }
-}
-
-impl ops::DerefMut for Inner2 {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Inner {
-        &mut self.inner
-    }
-}
 
 
 
@@ -2568,4 +2854,22 @@ impl PartialEq<Bytes> for BytesMut
     fn eq(&self, other: &Bytes) -> bool {
         &other[..] == &self[..]
     }
+}
+
+
+
+
+struct Abort;
+
+impl Drop for Abort {
+    fn drop(&mut self) {
+        panic!();
+    }
+}
+
+#[inline(never)]
+#[cold]
+fn abort() {
+    let _a = Abort;
+    panic!();
 }

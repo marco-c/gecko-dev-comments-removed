@@ -58,7 +58,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/cookie/0.10")]
+#![doc(html_root_url = "https://docs.rs/cookie/0.11")]
 #![deny(missing_docs)]
 
 #[cfg(feature = "percent-encode")] extern crate url;
@@ -74,9 +74,11 @@ mod draft;
 #[cfg(feature = "secure")] pub use secure::*;
 
 use std::borrow::Cow;
-use std::ascii::AsciiExt;
 use std::fmt;
 use std::str::FromStr;
+
+#[allow(unused_imports, deprecated)]
+use std::ascii::AsciiExt;
 
 #[cfg(feature = "percent-encode")]
 use url::percent_encoding::{USERINFO_ENCODE_SET, percent_encode};
@@ -173,9 +175,9 @@ pub struct Cookie<'c> {
     
     path: Option<CookieStr>,
     
-    secure: bool,
+    secure: Option<bool>,
     
-    http_only: bool,
+    http_only: Option<bool>,
     
     same_site: Option<SameSite>,
 }
@@ -203,8 +205,8 @@ impl Cookie<'static> {
             max_age: None,
             domain: None,
             path: None,
-            secure: false,
-            http_only: false,
+            secure: None,
+            http_only: None,
             same_site: None,
         }
     }
@@ -389,8 +391,25 @@ impl<'c> Cookie<'c> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn http_only(&self) -> bool {
+    pub fn http_only(&self) -> Option<bool> {
         self.http_only
     }
 
@@ -404,8 +423,25 @@ impl<'c> Cookie<'c> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn secure(&self) -> bool {
+    pub fn secure(&self) -> Option<bool> {
         self.secure
     }
 
@@ -556,7 +592,7 @@ impl<'c> Cookie<'c> {
     
     #[inline]
     pub fn set_http_only(&mut self, value: bool) {
-        self.http_only = value;
+        self.http_only = Some(value);
     }
 
     
@@ -574,7 +610,7 @@ impl<'c> Cookie<'c> {
     
     #[inline]
     pub fn set_secure(&mut self, value: bool) {
-        self.secure = value;
+        self.secure = Some(value);
     }
 
     
@@ -708,16 +744,18 @@ impl<'c> Cookie<'c> {
     }
 
     fn fmt_parameters(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.http_only() {
+        if let Some(true) = self.http_only() {
             write!(f, "; HttpOnly")?;
         }
 
-        if self.secure() {
+        if let Some(true) = self.secure() {
             write!(f, "; Secure")?;
         }
 
         if let Some(same_site) = self.same_site() {
-            write!(f, "; SameSite={}", same_site)?;
+            if !same_site.is_none() {
+                write!(f, "; SameSite={}", same_site)?;
+            }
         }
 
         if let Some(path) = self.path() {
@@ -1002,6 +1040,10 @@ mod tests {
         let cookie = Cookie::build("foo", "bar")
             .same_site(SameSite::Lax).finish();
         assert_eq!(&cookie.to_string(), "foo=bar; SameSite=Lax");
+
+        let cookie = Cookie::build("foo", "bar")
+            .same_site(SameSite::None).finish();
+        assert_eq!(&cookie.to_string(), "foo=bar");
     }
 
     #[test]

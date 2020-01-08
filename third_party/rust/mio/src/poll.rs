@@ -3,16 +3,30 @@ use event_imp::{self as event, Ready, Event, Evented, PollOpt};
 use std::{fmt, io, ptr, usize};
 use std::cell::UnsafeCell;
 use std::{mem, ops, isize};
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::AsRawFd;
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 use std::os::unix::io::RawFd;
 use std::sync::{Arc, Mutex, Condvar};
 use std::sync::atomic::{AtomicUsize, AtomicPtr, AtomicBool};
 use std::sync::atomic::Ordering::{self, Acquire, Release, AcqRel, Relaxed, SeqCst};
 use std::time::{Duration, Instant};
-#[cfg(unix)]
-use sys::unix::UnixReady;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -417,12 +431,18 @@ pub struct Poll {
 
 
 
+
+
+
+
+
 pub struct Registration {
     inner: RegistrationInner,
 }
 
 unsafe impl Send for Registration {}
 unsafe impl Sync for Registration {}
+
 
 
 
@@ -619,20 +639,28 @@ impl Poll {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn new() -> io::Result<Poll> {
         is_send::<Poll>();
         is_sync::<Poll>();
 
         let poll = Poll {
-            selector: try!(sys::Selector::new()),
-            readiness_queue: try!(ReadinessQueue::new()),
+            selector: sys::Selector::new()?,
+            readiness_queue: ReadinessQueue::new()?,
             lock_state: AtomicUsize::new(0),
             lock: Mutex::new(()),
             condvar: Condvar::new(),
         };
 
         
-        try!(poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::readable(), PollOpt::edge()));
+        poll.readiness_queue.inner.awakener.register(&poll, AWAKEN, Ready::readable(), PollOpt::edge())?;
 
         Ok(poll)
     }
@@ -736,10 +764,18 @@ impl Poll {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn register<E: ?Sized>(&self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented
     {
-        try!(validate_args(token, interest));
+        validate_args(token)?;
 
         
 
@@ -749,11 +785,19 @@ impl Poll {
         trace!("registering with poller");
 
         
-        try!(handle.register(self, token, interest, opts));
+        handle.register(self, token, interest, opts)?;
 
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -802,16 +846,24 @@ impl Poll {
     pub fn reregister<E: ?Sized>(&self, handle: &E, token: Token, interest: Ready, opts: PollOpt) -> io::Result<()>
         where E: Evented
     {
-        try!(validate_args(token, interest));
+        validate_args(token)?;
 
         trace!("registering with poller");
 
         
-        try!(handle.reregister(self, token, interest, opts));
+        handle.reregister(self, token, interest, opts)?;
 
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -853,7 +905,7 @@ impl Poll {
         trace!("deregistering handle with poller");
 
         
-        try!(handle.deregister(self));
+        handle.deregister(self)?;
 
         Ok(())
     }
@@ -940,7 +992,31 @@ impl Poll {
     
     
     
-    pub fn poll(&self, events: &mut Events, mut timeout: Option<Duration>) -> io::Result<usize> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<usize> {
+        self.poll1(events, timeout, false)
+    }
+
+    
+    
+    
+    
+    pub fn poll_interruptible(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<usize> {
+        self.poll1(events, timeout, true)
+    }
+
+    fn poll1(&self, events: &mut Events, mut timeout: Option<Duration>, interruptible: bool) -> io::Result<usize> {
         let zero = Some(Duration::from_millis(0));
 
         
@@ -1058,7 +1134,7 @@ impl Poll {
             }
         }
 
-        let ret = self.poll2(events, timeout);
+        let ret = self.poll2(events, timeout, interruptible);
 
         
         if 1 != self.lock_state.fetch_and(!1, Release) {
@@ -1073,60 +1149,61 @@ impl Poll {
     }
 
     #[inline]
-    fn poll2(&self, events: &mut Events, timeout: Option<Duration>) -> io::Result<usize> {
+    fn poll2(&self, events: &mut Events, mut timeout: Option<Duration>, interruptible: bool) -> io::Result<usize> {
         
         
         
         
-        let timeout = if timeout == Some(Duration::from_millis(0)) {
+        if timeout == Some(Duration::from_millis(0)) {
             
             
-            timeout
         } else if self.readiness_queue.prepare_for_sleep() {
             
             
             
             
-            timeout
         } else {
             
-            Some(Duration::from_millis(0))
-        };
+            timeout = Some(Duration::from_millis(0));
+        }
 
-        
-        let res = self.selector.select(&mut events.inner, AWAKEN, timeout);
-
-        if try!(res) {
+        loop {
+            let now = Instant::now();
             
-            self.readiness_queue.inner.awakener.cleanup();
+            let res = self.selector.select(&mut events.inner, AWAKEN, timeout);
+            match res {
+                Ok(true) => {
+                    
+                    self.readiness_queue.inner.awakener.cleanup();
+                    break;
+                }
+                Ok(false) => break,
+                Err(ref e) if e.kind() == io::ErrorKind::Interrupted && !interruptible => {
+                    
+                    if let Some(to) = timeout {
+                        let elapsed = now.elapsed();
+                        if elapsed >= to {
+                            break;
+                        } else {
+                            timeout = Some(to - elapsed);
+                        }
+                    }
+                }
+                Err(e) => return Err(e),
+            }
         }
 
         
         self.readiness_queue.poll(&mut events.inner);
 
         
-        Ok(events.len())
+        Ok(events.inner.len())
     }
 }
 
-#[cfg(unix)]
-fn registerable(interest: Ready) -> bool {
-    let unixinterest = UnixReady::from(interest);
-    unixinterest.is_readable() || unixinterest.is_writable() || unixinterest.is_aio()
-}
-
-#[cfg(not(unix))]
-fn registerable(interest: Ready) -> bool {
-    interest.is_readable() || interest.is_writable()
-}
-
-fn validate_args(token: Token, interest: Ready) -> io::Result<()> {
+fn validate_args(token: Token) -> io::Result<()> {
     if token == AWAKEN {
         return Err(io::Error::new(io::ErrorKind::Other, "invalid token"));
-    }
-
-    if !registerable(interest) {
-        return Err(io::Error::new(io::ErrorKind::Other, "interest must include readable or writable or aio"));
     }
 
     Ok(())
@@ -1134,16 +1211,24 @@ fn validate_args(token: Token, interest: Ready) -> io::Result<()> {
 
 impl fmt::Debug for Poll {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "Poll")
+        fmt.debug_struct("Poll")
+            .finish()
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 impl AsRawFd for Poll {
     fn as_raw_fd(&self) -> RawFd {
         self.selector.as_raw_fd()
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -1205,9 +1290,53 @@ pub struct Events {
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone)]
 pub struct Iter<'a> {
     inner: &'a Events,
+    pos: usize,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct IntoIter {
+    inner: Events,
     pos: usize,
 }
 
@@ -1229,41 +1358,14 @@ impl Events {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since="0.6.10", note="Index access removed in favor of iterator only API.")]
+    #[doc(hidden)]
     pub fn get(&self, idx: usize) -> Option<Event> {
         self.inner.get(idx)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[doc(hidden)]
+    #[deprecated(since="0.6.10", note="Index access removed in favor of iterator only API.")]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
@@ -1315,11 +1417,52 @@ impl Events {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn iter(&self) -> Iter {
         Iter {
             inner: self,
             pos: 0
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clear(&mut self) {
+        self.inner.clear();
     }
 }
 
@@ -1336,7 +1479,29 @@ impl<'a> Iterator for Iter<'a> {
     type Item = Event;
 
     fn next(&mut self) -> Option<Event> {
-        let ret = self.inner.get(self.pos);
+        let ret = self.inner.inner.get(self.pos);
+        self.pos += 1;
+        ret
+    }
+}
+
+impl IntoIterator for Events {
+    type Item = Event;
+    type IntoIter = IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            inner: self,
+            pos: 0,
+        }
+    }
+}
+
+impl Iterator for IntoIter {
+    type Item = Event;
+
+    fn next(&mut self) -> Option<Event> {
+        let ret = self.inner.inner.get(self.pos);
         self.pos += 1;
         ret
     }
@@ -1345,7 +1510,6 @@ impl<'a> Iterator for Iter<'a> {
 impl fmt::Debug for Events {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Events")
-            .field("len", &self.len())
             .field("capacity", &self.capacity())
             .finish()
     }
@@ -1372,6 +1536,13 @@ pub fn new_registration(poll: &Poll, token: Token, ready: Ready, opt: PollOpt)
 }
 
 impl Registration {
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1545,10 +1716,35 @@ impl SetReadiness {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn readiness(&self) -> Ready {
         self.inner.readiness()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1618,7 +1814,8 @@ impl SetReadiness {
 
 impl fmt::Debug for SetReadiness {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "SetReadiness")
+        f.debug_struct("SetReadiness")
+            .finish()
     }
 }
 
@@ -1666,7 +1863,7 @@ impl RegistrationInner {
         if !state.is_queued() && next.is_queued() {
             
             
-            try!(self.enqueue_with_wakeup());
+            self.enqueue_with_wakeup()?;
         }
 
         Ok(())
@@ -1824,7 +2021,7 @@ impl RegistrationInner {
 
         if !state.is_queued() && next.is_queued() {
             
-            try!(enqueue_with_wakeup(queue, self));
+            enqueue_with_wakeup(queue, self)?;
         }
 
         Ok(())
@@ -1902,7 +2099,7 @@ impl ReadinessQueue {
 
         Ok(ReadinessQueue {
             inner: Arc::new(ReadinessQueueInner {
-                awakener: try!(sys::Awakener::new()),
+                awakener: sys::Awakener::new()?,
                 head_readiness: AtomicPtr::new(ptr),
                 tail_readiness: UnsafeCell::new(ptr),
                 end_marker: end_marker,
@@ -2033,6 +2230,16 @@ impl ReadinessQueue {
             return false;
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         self.inner.sleep_marker.next_readiness.store(ptr::null_mut(), Relaxed);
 
         let actual = self.inner.head_readiness.compare_and_swap(
@@ -2094,7 +2301,7 @@ impl ReadinessQueueInner {
     
     fn enqueue_node_with_wakeup(&self, node: &ReadinessNode) -> io::Result<()> {
         if self.enqueue_node(node) {
-            try!(self.wakeup());
+            self.wakeup()?;
         }
 
         Ok(())
@@ -2519,7 +2726,7 @@ impl Clone for SelectorId {
 }
 
 #[test]
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "fuchsia")))]
 pub fn as_raw_fd() {
     let poll = Poll::new().unwrap();
     assert!(poll.as_raw_fd() > 0);

@@ -5,10 +5,17 @@
 
 
 
-extern crate fuchsia_zircon_sys as zircon_sys;
+#![deny(warnings)]
 
-use std::io;
-use std::marker::PhantomData;
+#[macro_use]
+extern crate bitflags;
+
+pub extern crate fuchsia_zircon_sys as sys;
+
+#[deprecated(note="use fuchsia_zircon::sys::ZX_CPRNG_DRAW_MAX_LEN instead")]
+#[doc(hidden)]
+pub use sys::ZX_CPRNG_DRAW_MAX_LEN;
+
 
 macro_rules! impl_handle_based {
     ($type_name:path) => {
@@ -34,295 +41,71 @@ macro_rules! impl_handle_based {
     }
 }
 
+
+
+macro_rules! assoc_consts {
+    ($typename:ident, [$($name:ident = $num:expr;)*]) => {
+        #[allow(non_upper_case_globals)]
+        impl $typename {
+            $(
+                pub const $name: $typename = $typename($num);
+            )*
+        }
+    }
+}
+
 mod channel;
+mod cprng;
 mod event;
 mod eventpair;
 mod fifo;
+mod handle;
 mod job;
 mod port;
 mod process;
+mod rights;
 mod socket;
-mod timer;
+mod signals;
+mod status;
+mod time;
 mod thread;
+mod vmar;
 mod vmo;
 
-pub use channel::{Channel, ChannelOpts, MessageBuf};
-pub use event::{Event, EventOpts};
-pub use eventpair::{EventPair, EventPairOpts};
-pub use fifo::{Fifo, FifoOpts};
-pub use job::Job;
-pub use port::{Packet, PacketContents, Port, PortOpts, SignalPacket, UserPacket, WaitAsyncOpts};
-pub use process::Process;
-pub use socket::{Socket, SocketOpts, SocketReadOpts, SocketWriteOpts};
-pub use timer::{Timer, TimerOpts};
-pub use thread::Thread;
-pub use vmo::{Vmo, VmoCloneOpts, VmoOp, VmoOpts};
-
-use zircon_sys as sys;
-
-type Duration = sys::zx_duration_t;
-type Time = sys::zx_time_t;
-pub use zircon_sys::ZX_TIME_INFINITE;
-
-
-
-const INVALID_HANDLE: sys::zx_handle_t = 0;
+pub use channel::*;
+pub use cprng::*;
+pub use event::*;
+pub use eventpair::*;
+pub use fifo::*;
+pub use handle::*;
+pub use job::*;
+pub use port::*;
+pub use process::*;
+pub use rights::*;
+pub use socket::*;
+pub use signals::*;
+pub use status::*;
+pub use thread::*;
+pub use time::*;
+pub use vmar::*;
+pub use vmo::*;
 
 
 
-
-
-
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[repr(i32)]
-
-pub enum Status {
-    NoError = 0,
-    ErrInternal = -1,
-    ErrNotSupported = -2,
-    ErrNoResources = -3,
-    ErrNoMemory = -4,
-    ErrCallFailed = -5,
-    ErrInterruptedRetry = -6,
-    ErrInvalidArgs = -10,
-    ErrBadHandle = -11,
-    ErrWrongType = -12,
-    ErrBadSyscall = -13,
-    ErrOutOfRange = -14,
-    ErrBufferTooSmall = -15,
-    ErrBadState = -20,
-    ErrTimedOut = -21,
-    ErrShouldWait = -22,
-    ErrCanceled = -23,
-    ErrPeerClosed = -24,
-    ErrNotFound = -25,
-    ErrAlreadyExists = -26,
-    ErrAlreadyBound = -27,
-    ErrUnavailable = -28,
-    ErrAccessDenied = -30,
-    ErrIo = -40,
-    ErrIoRefused = -41,
-    ErrIoDataIntegrity = -42,
-    ErrIoDataLoss = -43,
-    ErrBadPath = -50,
-    ErrNotDir = -51,
-    ErrNotFile = -52,
-    ErrFileBig = -53,
-    ErrNoSpace = -54,
-    ErrStop = -60,
-    ErrNext = -61,
-
-    
-    UnknownOther = -32768,
-
-    
-    #[doc(hidden)]
-    __Nonexhaustive = -32787,
-}
-
-impl Status {
-    pub fn from_raw(raw: sys::zx_status_t) -> Self {
-        match raw {
-            
-            sys::ZX_OK => Status::NoError,
-            sys::ZX_ERR_INTERNAL => Status::ErrInternal,
-            sys::ZX_ERR_NOT_SUPPORTED => Status::ErrNotSupported,
-            sys::ZX_ERR_NO_RESOURCES => Status::ErrNoResources,
-            sys::ZX_ERR_NO_MEMORY => Status::ErrNoMemory,
-            sys::ZX_ERR_CALL_FAILED => Status::ErrCallFailed,
-            sys::ZX_ERR_INTERRUPTED_RETRY => Status::ErrInterruptedRetry,
-            sys::ZX_ERR_INVALID_ARGS => Status::ErrInvalidArgs,
-            sys::ZX_ERR_BAD_HANDLE => Status::ErrBadHandle,
-            sys::ZX_ERR_WRONG_TYPE => Status::ErrWrongType,
-            sys::ZX_ERR_BAD_SYSCALL => Status::ErrBadSyscall,
-            sys::ZX_ERR_OUT_OF_RANGE => Status::ErrOutOfRange,
-            sys::ZX_ERR_BUFFER_TOO_SMALL => Status::ErrBufferTooSmall,
-            sys::ZX_ERR_BAD_STATE => Status::ErrBadState,
-            sys::ZX_ERR_TIMED_OUT => Status::ErrTimedOut,
-            sys::ZX_ERR_SHOULD_WAIT => Status::ErrShouldWait,
-            sys::ZX_ERR_CANCELED => Status::ErrCanceled,
-            sys::ZX_ERR_PEER_CLOSED => Status::ErrPeerClosed,
-            sys::ZX_ERR_NOT_FOUND => Status::ErrNotFound,
-            sys::ZX_ERR_ALREADY_EXISTS => Status::ErrAlreadyExists,
-            sys::ZX_ERR_ALREADY_BOUND => Status::ErrAlreadyBound,
-            sys::ZX_ERR_UNAVAILABLE => Status::ErrUnavailable,
-            sys::ZX_ERR_ACCESS_DENIED => Status::ErrAccessDenied,
-            sys::ZX_ERR_IO => Status::ErrIo,
-            sys::ZX_ERR_IO_REFUSED => Status::ErrIoRefused,
-            sys::ZX_ERR_IO_DATA_INTEGRITY => Status::ErrIoDataIntegrity,
-            sys::ZX_ERR_IO_DATA_LOSS => Status::ErrIoDataLoss,
-            sys::ZX_ERR_BAD_PATH => Status::ErrBadPath,
-            sys::ZX_ERR_NOT_DIR => Status::ErrNotDir,
-            sys::ZX_ERR_NOT_FILE => Status::ErrNotFile,
-            sys::ZX_ERR_FILE_BIG => Status::ErrFileBig,
-            sys::ZX_ERR_NO_SPACE => Status::ErrNoSpace,
-            sys::ZX_ERR_STOP => Status::ErrStop,
-            sys::ZX_ERR_NEXT => Status::ErrNext,
-            _ => Status::UnknownOther,
-        }
-    }
-
-    pub fn into_io_err(self) -> io::Error {
-        self.into()
-    }
-
-    
-    
-}
-
-impl From<io::ErrorKind> for Status {
-    fn from(kind: io::ErrorKind) -> Self {
-        use io::ErrorKind::*;
-        use Status::*;
-
-        match kind {
-            NotFound => ErrNotFound,
-            PermissionDenied => ErrAccessDenied,
-            ConnectionRefused => ErrIoRefused,
-            ConnectionAborted => ErrPeerClosed,
-            AddrInUse => ErrAlreadyBound,
-            AddrNotAvailable => ErrUnavailable,
-            BrokenPipe => ErrPeerClosed,
-            AlreadyExists => ErrAlreadyExists,
-            WouldBlock => ErrShouldWait,
-            InvalidInput => ErrInvalidArgs,
-            TimedOut => ErrTimedOut,
-            Interrupted => ErrInterruptedRetry,
-
-            UnexpectedEof |
-            WriteZero |
-            ConnectionReset |
-            NotConnected |
-            Other | _ => ErrIo,
-        }
-    }
-}
-
-impl From<Status> for io::ErrorKind {
-    fn from(status: Status) -> io::ErrorKind {
-        use io::ErrorKind::*;
-        use Status::*;
-
-        match status {
-            ErrInterruptedRetry => Interrupted,
-            ErrBadHandle => BrokenPipe,
-            ErrTimedOut => TimedOut,
-            ErrShouldWait => WouldBlock,
-            ErrPeerClosed => ConnectionAborted,
-            ErrNotFound => NotFound,
-            ErrAlreadyExists => AlreadyExists,
-            ErrAlreadyBound => AlreadyExists,
-            ErrUnavailable => AddrNotAvailable,
-            ErrAccessDenied => PermissionDenied,
-            ErrIoRefused => ConnectionRefused,
-            ErrIoDataIntegrity => InvalidData,
-
-            ErrBadPath |
-            ErrInvalidArgs |
-            ErrOutOfRange |
-            ErrWrongType => InvalidInput,
-
-            Status::__Nonexhaustive |
-            UnknownOther |
-            NoError |
-            ErrNext |
-            ErrStop |
-            ErrNoSpace |
-            ErrFileBig |
-            ErrNotFile |
-            ErrNotDir |
-            ErrIoDataLoss |
-            ErrIo |
-            ErrCanceled |
-            ErrBadState |
-            ErrBufferTooSmall |
-            ErrBadSyscall |
-            ErrInternal |
-            ErrNotSupported |
-            ErrNoResources |
-            ErrNoMemory |
-            ErrCallFailed => Other,
-        }
-    }
-}
-
-impl From<io::Error> for Status {
-    fn from(err: io::Error) -> Status {
-        err.kind().into()
-    }
-}
-
-impl From<Status> for io::Error {
-    fn from(status: Status) -> io::Error {
-        io::Error::from(io::ErrorKind::from(status))
-    }
+pub mod prelude {
+    pub use {
+        AsHandleRef,
+        Cookied,
+        DurationNum,
+        HandleBased,
+        Peered,
+    };
 }
 
 
-
-
-
-pub type Rights = sys::zx_rights_t;
-pub use zircon_sys::{
-    ZX_RIGHT_NONE,
-    ZX_RIGHT_DUPLICATE,
-    ZX_RIGHT_TRANSFER,
-    ZX_RIGHT_READ,
-    ZX_RIGHT_WRITE,
-    ZX_RIGHT_EXECUTE,
-    ZX_RIGHT_MAP,
-    ZX_RIGHT_GET_PROPERTY,
-    ZX_RIGHT_SET_PROPERTY,
-    ZX_RIGHT_DEBUG,
-    ZX_RIGHT_SAME_RIGHTS,
-};
-
-
-
-
-
-
-pub type Signals = sys::zx_signals_t;
-
-pub use zircon_sys::{
-        ZX_SIGNAL_NONE,
-
-        ZX_SIGNAL_HANDLE_CLOSED,
-        ZX_SIGNAL_LAST_HANDLE,
-
-        ZX_USER_SIGNAL_0,
-        ZX_USER_SIGNAL_1,
-        ZX_USER_SIGNAL_2,
-        ZX_USER_SIGNAL_3,
-        ZX_USER_SIGNAL_4,
-        ZX_USER_SIGNAL_5,
-        ZX_USER_SIGNAL_6,
-        ZX_USER_SIGNAL_7,
-
-        
-        ZX_EVENT_SIGNALED,
-
-        
-        ZX_EPAIR_SIGNALED,
-        ZX_EPAIR_CLOSED,
-
-        
-        ZX_TASK_TERMINATED,
-
-        
-        ZX_CHANNEL_READABLE,
-        ZX_CHANNEL_WRITABLE,
-        ZX_CHANNEL_PEER_CLOSED,
-
-        
-        ZX_SOCKET_READABLE,
-        ZX_SOCKET_WRITABLE,
-        ZX_SOCKET_PEER_CLOSED,
-
-        
-        ZX_TIMER_SIGNALED,
-};
+pub fn ok(raw: sys::zx_status_t) -> Result<(), Status> {
+    Status::ok(raw)
+}
 
 
 
@@ -336,7 +119,6 @@ pub struct WaitItem<'a> {
     
     pub pending: Signals,
 }
-
 
 
 
@@ -360,387 +142,83 @@ pub enum ClockId {
 
 
 
-pub fn time_get(clock_id: ClockId) -> Time {
-    unsafe { sys::zx_time_get(clock_id as u32) }
-}
-
-
-
-
-
-
-
-
-pub fn ticks_get() -> u64 {
-    unsafe { sys::zx_ticks_get() }
-}
-
-
-
-
-
-
-pub fn deadline_after(nanos: Duration) -> Time {
-    unsafe { sys::zx_deadline_after(nanos) }
-}
-
-
-
-
-
-
-pub fn nanosleep(deadline: Time) {
-    unsafe { sys::zx_nanosleep(deadline); }
-}
-
-
-
-
-
-
-pub fn ticks_per_second() -> u64 {
-    unsafe { sys::zx_ticks_per_second() }
-}
-
-pub use zircon_sys::{
-    ZX_CPRNG_DRAW_MAX_LEN,
-    ZX_CPRNG_ADD_ENTROPY_MAX_LEN,
-};
-
-
-
-
-
-
-
-
-
-pub fn cprng_draw(buffer: &mut [u8]) -> Result<usize, Status> {
-    let mut actual = 0;
-    let status = unsafe { sys::zx_cprng_draw(buffer.as_mut_ptr(), buffer.len(), &mut actual) };
-    into_result(status, || actual)
-}
-
-
-
-
-
-
-
-
-pub fn cprng_add_entropy(buffer: &[u8]) -> Result<(), Status> {
-    let status = unsafe { sys::zx_cprng_add_entropy(buffer.as_ptr(), buffer.len()) };
-    into_result(status, || ())
-}
-
-fn into_result<T, F>(status: sys::zx_status_t, f: F) -> Result<T, Status>
-    where F: FnOnce() -> T {
-    
-    
-    if status >= 0 {
-        Ok(f())
-    } else {
-        Err(Status::from_raw(status))
-    }
-}
-
-
-
-
-
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct HandleRef<'a> {
-    handle: sys::zx_handle_t,
-    phantom: PhantomData<&'a sys::zx_handle_t>,
-}
-
-impl<'a> HandleRef<'a> {
-    pub fn raw_handle(&self) -> sys::zx_handle_t {
-        self.handle
-    }
-
-    pub fn duplicate(&self, rights: Rights) -> Result<Handle, Status> {
-        let handle = self.handle;
-        let mut out = 0;
-        let status = unsafe { sys::zx_handle_duplicate(handle, rights, &mut out) };
-        into_result(status, || Handle(out))
-    }
-
-    pub fn signal(&self, clear_mask: Signals, set_mask: Signals) -> Result<(), Status> {
-        let handle = self.handle;
-        let status = unsafe { sys::zx_object_signal(handle, clear_mask.bits(), set_mask.bits()) };
-        into_result(status, || ())
-    }
-
-    pub fn wait(&self, signals: Signals, deadline: Time) -> Result<Signals, Status> {
-        let handle = self.handle;
-        let mut pending = sys::zx_signals_t::empty();
-        let status = unsafe {
-            sys::zx_object_wait_one(handle, signals, deadline, &mut pending)
-        };
-        into_result(status, || pending)
-    }
-
-    pub fn wait_async(&self, port: &Port, key: u64, signals: Signals, options: WaitAsyncOpts)
-        -> Result<(), Status>
-    {
-        let handle = self.handle;
-        let status = unsafe {
-            sys::zx_object_wait_async(handle, port.raw_handle(), key, signals, options as u32)
-        };
-        into_result(status, || ())
-    }
-}
-
-
-pub trait AsHandleRef {
-    
-    
-    fn as_handle_ref(&self) -> HandleRef;
-
-    
-    
-    
-    fn raw_handle(&self) -> sys::zx_handle_t {
-        self.as_handle_ref().raw_handle()
-    }
-
-    
-    
-    
-    fn signal_handle(&self, clear_mask: Signals, set_mask: Signals) -> Result<(), Status> {
-        self.as_handle_ref().signal(clear_mask, set_mask)
-    }
-
-    
-    
-    
-    fn wait_handle(&self, signals: Signals, deadline: Time) -> Result<Signals, Status> {
-        self.as_handle_ref().wait(signals, deadline)
-    }
-
-    
-    
-    
-    fn wait_async_handle(&self, port: &Port, key: u64, signals: Signals, options: WaitAsyncOpts)
-        -> Result<(), Status>
-    {
-        self.as_handle_ref().wait_async(port, key, signals, options)
-    }
-}
-
-impl<'a> AsHandleRef for HandleRef<'a> {
-    fn as_handle_ref(&self) -> HandleRef { *self }
-}
-
-
-
-
-
-
-
-
-pub trait HandleBased: AsHandleRef + From<Handle> + Into<Handle> {
-    
-    
-    
-    fn duplicate_handle(&self, rights: Rights) -> Result<Self, Status> {
-        self.as_handle_ref().duplicate(rights).map(|handle| Self::from(handle))
-    }
-
-    
-    
-    
-    
-    fn replace_handle(self, rights: Rights) -> Result<Self, Status> {
-        <Self as Into<Handle>>::into(self)
-            .replace(rights).map(|handle| Self::from(handle))
-    }
-
-    
-    
-    
-    fn into_handle(self) -> Handle {
-        self.into()
-    }
-
-    
-    
-    
-    fn from_handle(handle: Handle) -> Self {
-        Self::from(handle)
-    }
-
-    
-    fn into_handle_based<H: HandleBased>(self) -> H {
-        H::from_handle(self.into_handle())
-    }
-
-    
-    
-    fn from_handle_based<H: HandleBased>(h: H) -> Self {
-        Self::from_handle(h.into_handle())
-    }
-}
-
-
-pub trait Peered: HandleBased {
-    
-    
-    
-    fn signal_peer(&self, clear_mask: Signals, set_mask: Signals) -> Result<(), Status> {
-        let handle = self.as_handle_ref().handle;
-        let status = unsafe {
-            sys::zx_object_signal_peer(handle, clear_mask.bits(), set_mask.bits())
-        };
-        into_result(status, || ())
-    }
-}
-
-
-pub trait Cookied: HandleBased {
-    
-    
-    
-    fn get_cookie(&self, scope: &HandleRef) -> Result<u64, Status> {
-        let handle = self.as_handle_ref().handle;
-        let mut cookie = 0;
-        let status = unsafe { sys::zx_object_get_cookie(handle, scope.handle, &mut cookie) };
-        into_result(status, || cookie)
-    }
-
-    
-    
-    
-    
-    fn set_cookie(&self, scope: &HandleRef, cookie: u64) -> Result<(), Status> {
-        let handle = self.as_handle_ref().handle;
-        let status = unsafe { sys::zx_object_set_cookie(handle, scope.handle, cookie) };
-        into_result(status, || ())
-    }
-}
-
-fn handle_drop(handle: sys::zx_handle_t) {
-    let _ = unsafe { sys::zx_handle_close(handle) };
-}
-
-
-
-
-
-
 
 
 pub fn object_wait_many(items: &mut [WaitItem], deadline: Time) -> Result<bool, Status>
 {
-    let len = try!(usize_into_u32(items.len()).map_err(|_| Status::ErrOutOfRange));
+    let len = try!(usize_into_u32(items.len()).map_err(|_| Status::OUT_OF_RANGE));
     let items_ptr = items.as_mut_ptr() as *mut sys::zx_wait_item_t;
-    let status = unsafe { sys::zx_object_wait_many( items_ptr, len, deadline) };
+    let status = unsafe { sys::zx_object_wait_many( items_ptr, len, deadline.nanos()) };
     if status == sys::ZX_ERR_CANCELED {
-        return Ok((true))
+        return Ok(true)
     }
-    into_result(status, || false)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Debug, Eq, PartialEq, Hash)]
-pub struct Handle(sys::zx_handle_t);
-
-impl AsHandleRef for Handle {
-    fn as_handle_ref(&self) -> HandleRef {
-        HandleRef { handle: self.0, phantom: Default::default() }
-    }
-}
-
-impl HandleBased for Handle {}
-
-impl Drop for Handle {
-    fn drop(&mut self) {
-        handle_drop(self.0)
-    }
-}
-
-impl Handle {
-    
-    
-    pub unsafe fn from_raw(raw: sys::zx_handle_t) -> Handle {
-        Handle(raw)
-    }
-
-    pub fn replace(self, rights: Rights) -> Result<Handle, Status> {
-        let handle = self.0;
-        let mut out = 0;
-        let status = unsafe { sys::zx_handle_replace(handle, rights, &mut out) };
-        into_result(status, || Handle(out))
-    }
+    ok(status).map(|()| false)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[allow(unused_imports)]
+    use super::prelude::*;
 
     #[test]
     fn monotonic_time_increases() {
-        let time1 = time_get(ClockId::Monotonic);
-        nanosleep(deadline_after(1_000));
-        let time2 = time_get(ClockId::Monotonic);
+        let time1 = Time::get(ClockId::Monotonic);
+        1_000.nanos().sleep();
+        let time2 = Time::get(ClockId::Monotonic);
         assert!(time2 > time1);
     }
 
     #[test]
     fn utc_time_increases() {
-        let time1 = time_get(ClockId::UTC);
-        nanosleep(deadline_after(1_000));
-        let time2 = time_get(ClockId::UTC);
+        let time1 = Time::get(ClockId::UTC);
+        1_000.nanos().sleep();
+        let time2 = Time::get(ClockId::UTC);
         assert!(time2 > time1);
     }
 
     #[test]
     fn thread_time_increases() {
-        let time1 = time_get(ClockId::Thread);
-        nanosleep(deadline_after(1_000));
-        let time2 = time_get(ClockId::Thread);
+        let time1 = Time::get(ClockId::Thread);
+        1_000.nanos().sleep();
+        let time2 = Time::get(ClockId::Thread);
         assert!(time2 > time1);
     }
 
     #[test]
     fn ticks_increases() {
         let ticks1 = ticks_get();
-        nanosleep(deadline_after(1_000));
+        1_000.nanos().sleep();
         let ticks2 = ticks_get();
         assert!(ticks2 > ticks1);
     }
 
     #[test]
     fn tick_length() {
-        let sleep_ns = 1_000_000;  
-        let one_second_ns = 1_000_000_000; 
+        let sleep_time = 1.milli();
         let ticks1 = ticks_get();
-        nanosleep(deadline_after(sleep_ns));
+        sleep_time.sleep();
         let ticks2 = ticks_get();
+
         
-        assert!(ticks2 > ticks1 + sleep_ns * ticks_per_second() / one_second_ns);
+        let sleep_ticks = sleep_time.millis() * ticks_per_second() / 1000;
+        assert!(ticks2 >= (ticks1 + sleep_ticks));
+    }
+
+    #[test]
+    fn into_raw() {
+        let vmo = Vmo::create(1).unwrap();
+        let h = vmo.into_raw();
+        let vmo2 = Vmo::from(unsafe { Handle::from_raw(h) });
+        assert!(vmo2.write(b"1", 0).is_ok());
     }
 
     #[test]
     fn sleep() {
-        let sleep_ns = 1_000_000;  
-        let time1 = time_get(ClockId::Monotonic);
-        nanosleep(deadline_after(sleep_ns));
-        let time2 = time_get(ClockId::Monotonic);
+        let sleep_ns = 1.millis();
+        let time1 = Time::get(ClockId::Monotonic);
+        sleep_ns.sleep();
+        let time2 = Time::get(ClockId::Monotonic);
         assert!(time2 > time1 + sleep_ns);
     }
 
@@ -750,16 +228,16 @@ mod tests {
         let hello_length: usize = 5;
 
         
-        let vmo = Vmo::create(hello_length as u64, VmoOpts::Default).unwrap();
+        let vmo = Vmo::create(hello_length as u64).unwrap();
         assert!(vmo.write(b"hello", 0).is_ok());
 
         
-        let readonly_vmo = vmo.duplicate_handle(ZX_RIGHT_READ).unwrap();
+        let readonly_vmo = vmo.duplicate_handle(Rights::READ).unwrap();
         
         let mut read_vec = vec![0; hello_length];
         assert_eq!(readonly_vmo.read(&mut read_vec, 0).unwrap(), hello_length);
         assert_eq!(read_vec, b"hello");
-        assert_eq!(readonly_vmo.write(b"", 0), Err(Status::ErrAccessDenied));
+        assert_eq!(readonly_vmo.write(b"", 0), Err(Status::ACCESS_DENIED));
 
         
         assert!(vmo.write(b"bye", 0).is_ok());
@@ -773,84 +251,84 @@ mod tests {
         let hello_length: usize = 5;
 
         
-        let vmo = Vmo::create(hello_length as u64, VmoOpts::Default).unwrap();
+        let vmo = Vmo::create(hello_length as u64).unwrap();
         assert!(vmo.write(b"hello", 0).is_ok());
 
         
-        let readonly_vmo = vmo.replace_handle(ZX_RIGHT_READ).unwrap();
+        let readonly_vmo = vmo.replace_handle(Rights::READ).unwrap();
         
         let mut read_vec = vec![0; hello_length];
         assert_eq!(readonly_vmo.read(&mut read_vec, 0).unwrap(), hello_length);
         assert_eq!(read_vec, b"hello");
-        assert_eq!(readonly_vmo.write(b"", 0), Err(Status::ErrAccessDenied));
+        assert_eq!(readonly_vmo.write(b"", 0), Err(Status::ACCESS_DENIED));
     }
 
     #[test]
     fn wait_and_signal() {
-        let event = Event::create(EventOpts::Default).unwrap();
-        let ten_ms: Duration = 10_000_000;
+        let event = Event::create().unwrap();
+        let ten_ms = 10.millis();
 
         
         assert_eq!(event.wait_handle(
-            ZX_USER_SIGNAL_0, deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+            Signals::USER_0, ten_ms.after_now()), Err(Status::TIMED_OUT));
 
         
-        assert!(event.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        assert_eq!(event.wait_handle(ZX_USER_SIGNAL_0, deadline_after(ten_ms)).unwrap(),
-            ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+        assert!(event.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        assert_eq!(event.wait_handle(Signals::USER_0, ten_ms.after_now()).unwrap(),
+            Signals::USER_0);
 
         
-        assert_eq!(event.wait_handle(ZX_USER_SIGNAL_0, deadline_after(ten_ms)).unwrap(),
-            ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
+        assert_eq!(event.wait_handle(Signals::USER_0, ten_ms.after_now()).unwrap(),
+            Signals::USER_0);
 
         
-        assert!(event.signal_handle(ZX_USER_SIGNAL_0, ZX_SIGNAL_NONE).is_ok());
+        assert!(event.signal_handle(Signals::USER_0, Signals::NONE).is_ok());
         assert_eq!(event.wait_handle(
-            ZX_USER_SIGNAL_0, deadline_after(ten_ms)), Err(Status::ErrTimedOut));
+            Signals::USER_0, ten_ms.after_now()), Err(Status::TIMED_OUT));
     }
 
     #[test]
     fn wait_many_and_signal() {
-        let ten_ms: Duration = 10_000_000;
-        let e1 = Event::create(EventOpts::Default).unwrap();
-        let e2 = Event::create(EventOpts::Default).unwrap();
+        let ten_ms = 10.millis();
+        let e1 = Event::create().unwrap();
+        let e2 = Event::create().unwrap();
 
         
         let mut items = vec![
-          WaitItem { handle: e1.as_handle_ref(), waitfor: ZX_USER_SIGNAL_0, pending: ZX_SIGNAL_NONE },
-          WaitItem { handle: e2.as_handle_ref(), waitfor: ZX_USER_SIGNAL_1, pending: ZX_SIGNAL_NONE },
+          WaitItem { handle: e1.as_handle_ref(), waitfor: Signals::USER_0, pending: Signals::NONE },
+          WaitItem { handle: e2.as_handle_ref(), waitfor: Signals::USER_1, pending: Signals::NONE },
         ];
-        assert_eq!(object_wait_many(&mut items, deadline_after(ten_ms)), Err(Status::ErrTimedOut));
-        assert_eq!(items[0].pending, ZX_SIGNAL_LAST_HANDLE);
-        assert_eq!(items[1].pending, ZX_SIGNAL_LAST_HANDLE);
+        assert_eq!(object_wait_many(&mut items, ten_ms.after_now()), Err(Status::TIMED_OUT));
+        assert_eq!(items[0].pending, Signals::NONE);
+        assert_eq!(items[1].pending, Signals::NONE);
 
         
-        assert!(e1.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_0).is_ok());
-        assert!(object_wait_many(&mut items, deadline_after(ten_ms)).is_ok());
-        assert_eq!(items[0].pending, ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
-        assert_eq!(items[1].pending, ZX_SIGNAL_LAST_HANDLE);
+        assert!(e1.signal_handle(Signals::NONE, Signals::USER_0).is_ok());
+        assert!(object_wait_many(&mut items, ten_ms.after_now()).is_ok());
+        assert_eq!(items[0].pending, Signals::USER_0);
+        assert_eq!(items[1].pending, Signals::NONE);
 
         
-        assert!(e2.signal_handle(ZX_SIGNAL_NONE, ZX_USER_SIGNAL_1).is_ok());
-        assert!(object_wait_many(&mut items, deadline_after(ten_ms)).is_ok());
-        assert_eq!(items[0].pending, ZX_USER_SIGNAL_0 | ZX_SIGNAL_LAST_HANDLE);
-        assert_eq!(items[1].pending, ZX_USER_SIGNAL_1 | ZX_SIGNAL_LAST_HANDLE);
+        assert!(e2.signal_handle(Signals::NONE, Signals::USER_1).is_ok());
+        assert!(object_wait_many(&mut items, ten_ms.after_now()).is_ok());
+        assert_eq!(items[0].pending, Signals::USER_0);
+        assert_eq!(items[1].pending, Signals::USER_1);
 
         
-        assert!(e1.signal_handle(ZX_USER_SIGNAL_0, ZX_SIGNAL_NONE).is_ok());
-        assert!(e2.signal_handle(ZX_USER_SIGNAL_1, ZX_SIGNAL_NONE).is_ok());
-        assert_eq!(object_wait_many(&mut items, deadline_after(ten_ms)), Err(Status::ErrTimedOut));
-        assert_eq!(items[0].pending, ZX_SIGNAL_LAST_HANDLE);
-        assert_eq!(items[1].pending, ZX_SIGNAL_LAST_HANDLE);
+        assert!(e1.signal_handle(Signals::USER_0, Signals::NONE).is_ok());
+        assert!(e2.signal_handle(Signals::USER_1, Signals::NONE).is_ok());
+        assert_eq!(object_wait_many(&mut items, ten_ms.after_now()), Err(Status::TIMED_OUT));
+        assert_eq!(items[0].pending, Signals::NONE);
+        assert_eq!(items[1].pending, Signals::NONE);
     }
 
     #[test]
     fn cookies() {
-        let event = Event::create(EventOpts::Default).unwrap();
-        let scope = Event::create(EventOpts::Default).unwrap();
+        let event = Event::create().unwrap();
+        let scope = Event::create().unwrap();
 
         
-        assert_eq!(event.get_cookie(&scope.as_handle_ref()), Err(Status::ErrAccessDenied));
+        assert_eq!(event.get_cookie(&scope.as_handle_ref()), Err(Status::ACCESS_DENIED));
 
         
         assert_eq!(event.set_cookie(&scope.as_handle_ref(), 42), Ok(()));
@@ -859,37 +337,13 @@ mod tests {
         assert_eq!(event.get_cookie(&scope.as_handle_ref()), Ok(42));
 
         
-        assert_eq!(event.get_cookie(&event.as_handle_ref()), Err(Status::ErrAccessDenied));
+        assert_eq!(event.get_cookie(&event.as_handle_ref()), Err(Status::ACCESS_DENIED));
 
         
         assert_eq!(event.set_cookie(&scope.as_handle_ref(), 123), Ok(()));
 
         
-        assert_eq!(event.set_cookie(&event.as_handle_ref(), 123), Err(Status::ErrAccessDenied));
-    }
-
-    #[test]
-    fn cprng() {
-        let mut buffer = [0; 20];
-        assert_eq!(cprng_draw(&mut buffer), Ok(20));
-        assert_ne!(buffer[0], 0);
-        assert_ne!(buffer[19], 0);
-    }
-
-    #[test]
-    fn cprng_too_large() {
-        let mut buffer = [0; ZX_CPRNG_DRAW_MAX_LEN + 1];
-        assert_eq!(cprng_draw(&mut buffer), Err(Status::ErrInvalidArgs));
-
-        for mut s in buffer.chunks_mut(ZX_CPRNG_DRAW_MAX_LEN) {
-            assert_eq!(cprng_draw(&mut s), Ok(s.len()));
-        }
-    }
-
-    #[test]
-    fn cprng_add() {
-        let buffer = [0, 1, 2];
-        assert_eq!(cprng_add_entropy(&buffer), Ok(()));
+        assert_eq!(event.set_cookie(&event.as_handle_ref(), 123), Err(Status::ACCESS_DENIED));
     }
 }
 

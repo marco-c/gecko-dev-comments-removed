@@ -1,219 +1,387 @@
 
 use std::error::Error as StdError;
 use std::fmt;
-use std::io::Error as IoError;
-use std::str::Utf8Error;
-use std::string::FromUtf8Error;
+use std::io;
 
 use httparse;
-use url;
-
-#[cfg(feature = "openssl")]
-use openssl::ssl::error::SslError;
-
-use self::Error::{
-    Method,
-    Uri,
-    Version,
-    Header,
-    Status,
-    Io,
-    Ssl,
-    TooLarge,
-    Utf8
-};
-
-pub use url::ParseError;
+use http;
 
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
+type Cause = Box<StdError + Send + Sync>;
 
-#[derive(Debug)]
-pub enum Error {
-    
-    Method,
-    
-    Uri(url::ParseError),
-    
-    Version,
-    
-    Header,
-    
-    TooLarge,
-    
-    Status,
-    
-    Io(IoError),
-    
-    Ssl(Box<StdError + Send + Sync>),
-    
-    Utf8(Utf8Error),
 
-    #[doc(hidden)]
-    __Nonexhaustive(Void)
+pub struct Error {
+    inner: Box<ErrorImpl>,
 }
 
-#[doc(hidden)]
-pub struct Void(());
+struct ErrorImpl {
+    kind: Kind,
+    cause: Option<Cause>,
+}
 
-impl fmt::Debug for Void {
-    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
-        unreachable!()
+#[derive(Debug, PartialEq)]
+pub(crate) enum Kind {
+    Parse(Parse),
+    
+    Incomplete,
+    
+    MismatchedResponse,
+    
+    Canceled,
+    
+    Closed,
+    
+    Io,
+    
+    Connect,
+    
+    #[cfg(feature = "runtime")]
+    Listen,
+    
+    Accept,
+    
+    NewService,
+    
+    Service,
+    
+    Body,
+    
+    BodyWrite,
+    
+    BodyUser,
+    
+    Shutdown,
+
+    
+    Http2,
+
+    
+    UnsupportedVersion,
+    
+    UnsupportedRequestMethod,
+    
+    UnsupportedStatusCode,
+    
+    AbsoluteUriRequired,
+
+    
+    NoUpgrade,
+
+    
+    ManualUpgrade,
+
+    
+    Execute,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum Parse {
+    Method,
+    Version,
+    VersionH2,
+    Uri,
+    Header,
+    TooLarge,
+    Status,
+}
+
+
+
+
+
+
+
+
+
+
+impl Error {
+    
+    
+    
+    
+    
+    
+
+    
+    pub fn is_parse(&self) -> bool {
+        match self.inner.kind {
+            Kind::Parse(_) => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn is_user(&self) -> bool {
+        match self.inner.kind {
+            Kind::BodyUser |
+            Kind::NewService |
+            Kind::Service |
+            Kind::Closed |
+            Kind::UnsupportedVersion |
+            Kind::UnsupportedRequestMethod |
+            Kind::UnsupportedStatusCode |
+            Kind::AbsoluteUriRequired |
+            Kind::NoUpgrade |
+            Kind::Execute => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn is_canceled(&self) -> bool {
+        self.inner.kind == Kind::Canceled
+    }
+
+    
+    pub fn is_closed(&self) -> bool {
+        self.inner.kind == Kind::Closed
+    }
+
+    
+    
+    
+    
+    pub fn cause2(&self) -> Option<&(StdError + 'static + Sync + Send)> {
+        self.inner.cause.as_ref().map(|e| &**e)
+    }
+
+    
+    pub fn into_cause(self) -> Option<Box<StdError + Sync + Send>> {
+        self.inner.cause
+    }
+
+    pub(crate) fn new(kind: Kind, cause: Option<Cause>) -> Error {
+        Error {
+            inner: Box::new(ErrorImpl {
+                kind,
+                cause,
+            }),
+        }
+    }
+
+    pub(crate) fn kind(&self) -> &Kind {
+        &self.inner.kind
+    }
+
+    pub(crate) fn new_canceled<E: Into<Cause>>(cause: Option<E>) -> Error {
+        Error::new(Kind::Canceled, cause.map(Into::into))
+    }
+
+    pub(crate) fn new_incomplete() -> Error {
+        Error::new(Kind::Incomplete, None)
+    }
+
+    pub(crate) fn new_too_large() -> Error {
+        Error::new(Kind::Parse(Parse::TooLarge), None)
+    }
+
+    pub(crate) fn new_header() -> Error {
+        Error::new(Kind::Parse(Parse::Header), None)
+    }
+
+    pub(crate) fn new_version_h2() -> Error {
+        Error::new(Kind::Parse(Parse::VersionH2), None)
+    }
+
+    pub(crate) fn new_mismatched_response() -> Error {
+        Error::new(Kind::MismatchedResponse, None)
+    }
+
+    pub(crate) fn new_io(cause: io::Error) -> Error {
+        Error::new(Kind::Io, Some(cause.into()))
+    }
+
+    #[cfg(feature = "runtime")]
+    pub(crate) fn new_listen<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::Listen, Some(cause.into()))
+    }
+
+    pub(crate) fn new_accept<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::Accept, Some(cause.into()))
+    }
+
+    pub(crate) fn new_connect<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::Connect, Some(cause.into()))
+    }
+
+    pub(crate) fn new_closed() -> Error {
+        Error::new(Kind::Closed, None)
+    }
+
+    pub(crate) fn new_body<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::Body, Some(cause.into()))
+    }
+
+    pub(crate) fn new_body_write<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::BodyWrite, Some(cause.into()))
+    }
+
+    pub(crate) fn new_user_unsupported_version() -> Error {
+        Error::new(Kind::UnsupportedVersion, None)
+    }
+
+    pub(crate) fn new_user_unsupported_request_method() -> Error {
+        Error::new(Kind::UnsupportedRequestMethod, None)
+    }
+
+    pub(crate) fn new_user_unsupported_status_code() -> Error {
+        Error::new(Kind::UnsupportedStatusCode, None)
+    }
+
+    pub(crate) fn new_user_absolute_uri_required() -> Error {
+        Error::new(Kind::AbsoluteUriRequired, None)
+    }
+
+    pub(crate) fn new_user_no_upgrade() -> Error {
+        Error::new(Kind::NoUpgrade, None)
+    }
+
+    pub(crate) fn new_user_manual_upgrade() -> Error {
+        Error::new(Kind::ManualUpgrade, None)
+    }
+
+    pub(crate) fn new_user_new_service<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::NewService, Some(cause.into()))
+    }
+
+    pub(crate) fn new_user_service<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::Service, Some(cause.into()))
+    }
+
+    pub(crate) fn new_user_body<E: Into<Cause>>(cause: E) -> Error {
+        Error::new(Kind::BodyUser, Some(cause.into()))
+    }
+
+    pub(crate) fn new_shutdown(cause: io::Error) -> Error {
+        Error::new(Kind::Shutdown, Some(Box::new(cause)))
+    }
+
+    pub(crate) fn new_execute() -> Error {
+        Error::new(Kind::Execute, None)
+    }
+
+    pub(crate) fn new_h2(cause: ::h2::Error) -> Error {
+        Error::new(Kind::Http2, Some(Box::new(cause)))
+    }
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Error")
+            .field("kind", &self.inner.kind)
+            .field("cause", &self.inner.cause)
+            .finish()
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Uri(ref e) => fmt::Display::fmt(e, f),
-            Io(ref e) => fmt::Display::fmt(e, f),
-            Ssl(ref e) => fmt::Display::fmt(e, f),
-            Utf8(ref e) => fmt::Display::fmt(e, f),
-            ref e => f.write_str(e.description()),
+        if let Some(ref cause) = self.inner.cause {
+            write!(f, "{}: {}", self.description(), cause)
+        } else {
+            f.write_str(self.description())
         }
     }
 }
 
 impl StdError for Error {
     fn description(&self) -> &str {
-        match *self {
-            Method => "Invalid Method specified",
-            Version => "Invalid HTTP version specified",
-            Header => "Invalid Header provided",
-            TooLarge => "Message head is too large",
-            Status => "Invalid Status provided",
-            Uri(ref e) => e.description(),
-            Io(ref e) => e.description(),
-            Ssl(ref e) => e.description(),
-            Utf8(ref e) => e.description(),
-            Error::__Nonexhaustive(..) =>  unreachable!(),
+        match self.inner.kind {
+            Kind::Parse(Parse::Method) => "invalid Method specified",
+            Kind::Parse(Parse::Version) => "invalid HTTP version specified",
+            Kind::Parse(Parse::VersionH2) => "invalid HTTP version specified (Http2)",
+            Kind::Parse(Parse::Uri) => "invalid URI",
+            Kind::Parse(Parse::Header) => "invalid Header provided",
+            Kind::Parse(Parse::TooLarge) => "message head is too large",
+            Kind::Parse(Parse::Status) => "invalid Status provided",
+            Kind::Incomplete => "parsed HTTP message from remote is incomplete",
+            Kind::MismatchedResponse => "response received without matching request",
+            Kind::Closed => "connection closed",
+            Kind::Connect => "an error occurred trying to connect",
+            Kind::Canceled => "an operation was canceled internally before starting",
+            #[cfg(feature = "runtime")]
+            Kind::Listen => "error creating server listener",
+            Kind::Accept => "error accepting connection",
+            Kind::NewService => "calling user's new_service failed",
+            Kind::Service => "error from user's server service",
+            Kind::Body => "error reading a body from connection",
+            Kind::BodyWrite => "error writing a body to connection",
+            Kind::BodyUser => "error from user's Payload stream",
+            Kind::Shutdown => "error shutting down connection",
+            Kind::Http2 => "http2 general error",
+            Kind::UnsupportedVersion => "request has unsupported HTTP version",
+            Kind::UnsupportedRequestMethod => "request has unsupported HTTP method",
+            Kind::UnsupportedStatusCode => "response has 1xx status code, not supported by server",
+            Kind::AbsoluteUriRequired => "client requires absolute-form URIs",
+            Kind::NoUpgrade => "no upgrade available",
+            Kind::ManualUpgrade => "upgrade expected but low level API in use",
+            Kind::Execute => "executor failed to spawn task",
+
+            Kind::Io => "an IO error occurred",
         }
     }
 
     fn cause(&self) -> Option<&StdError> {
-        match *self {
-            Io(ref error) => Some(error),
-            Ssl(ref error) => Some(&**error),
-            Uri(ref error) => Some(error),
-            Utf8(ref error) => Some(error),
-            _ => None,
-        }
+        self
+            .inner
+            .cause
+            .as_ref()
+            .map(|cause| &**cause as &StdError)
     }
 }
 
-impl From<IoError> for Error {
-    fn from(err: IoError) -> Error {
-        Io(err)
+#[doc(hidden)]
+impl From<Parse> for Error {
+    fn from(err: Parse) -> Error {
+        Error::new(Kind::Parse(err), None)
     }
 }
 
-impl From<url::ParseError> for Error {
-    fn from(err: url::ParseError) -> Error {
-        Uri(err)
-    }
-}
-
-#[cfg(feature = "openssl")]
-impl From<SslError> for Error {
-    fn from(err: SslError) -> Error {
+impl From<httparse::Error> for Parse {
+    fn from(err: httparse::Error) -> Parse {
         match err {
-            SslError::StreamError(err) => Io(err),
-            err => Ssl(Box::new(err)),
+            httparse::Error::HeaderName |
+            httparse::Error::HeaderValue |
+            httparse::Error::NewLine |
+            httparse::Error::Token => Parse::Header,
+            httparse::Error::Status => Parse::Status,
+            httparse::Error::TooManyHeaders => Parse::TooLarge,
+            httparse::Error::Version => Parse::Version,
         }
     }
 }
 
-impl From<Utf8Error> for Error {
-    fn from(err: Utf8Error) -> Error {
-        Utf8(err)
+impl From<http::method::InvalidMethod> for Parse {
+    fn from(_: http::method::InvalidMethod) -> Parse {
+        Parse::Method
     }
 }
 
-impl From<FromUtf8Error> for Error {
-    fn from(err: FromUtf8Error) -> Error {
-        Utf8(err.utf8_error())
+impl From<http::status::InvalidStatusCode> for Parse {
+    fn from(_: http::status::InvalidStatusCode) -> Parse {
+        Parse::Status
     }
 }
 
-impl From<httparse::Error> for Error {
-    fn from(err: httparse::Error) -> Error {
-        match err {
-            httparse::Error::HeaderName => Header,
-            httparse::Error::HeaderValue => Header,
-            httparse::Error::NewLine => Header,
-            httparse::Error::Status => Status,
-            httparse::Error::Token => Header,
-            httparse::Error::TooManyHeaders => TooLarge,
-            httparse::Error::Version => Version,
-        }
+impl From<http::uri::InvalidUri> for Parse {
+    fn from(_: http::uri::InvalidUri) -> Parse {
+        Parse::Uri
     }
 }
+
+impl From<http::uri::InvalidUriParts> for Parse {
+    fn from(_: http::uri::InvalidUriParts) -> Parse {
+        Parse::Uri
+    }
+}
+
+#[doc(hidden)]
+trait AssertSendSync: Send + Sync + 'static {}
+#[doc(hidden)]
+impl AssertSendSync for Error {}
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error as StdError;
-    use std::io;
-    use httparse;
-    use url;
-    use super::Error;
-    use super::Error::*;
-
-    #[test]
-    fn test_cause() {
-        let orig = io::Error::new(io::ErrorKind::Other, "other");
-        let desc = orig.description().to_owned();
-        let e = Io(orig);
-        assert_eq!(e.cause().unwrap().description(), desc);
-    }
-
-    macro_rules! from {
-        ($from:expr => $error:pat) => {
-            match Error::from($from) {
-                e @ $error => {
-                    assert!(e.description().len() > 5);
-                } ,
-                _ => panic!("{:?}", $from)
-            }
-        }
-    }
-
-    macro_rules! from_and_cause {
-        ($from:expr => $error:pat) => {
-            match Error::from($from) {
-                e @ $error => {
-                    let desc = e.cause().unwrap().description();
-                    assert_eq!(desc, $from.description().to_owned());
-                    assert_eq!(desc, e.description());
-                },
-                _ => panic!("{:?}", $from)
-            }
-        }
-    }
-
-    #[test]
-    fn test_from() {
-
-        from_and_cause!(io::Error::new(io::ErrorKind::Other, "other") => Io(..));
-        from_and_cause!(url::ParseError::EmptyHost => Uri(..));
-
-        from!(httparse::Error::HeaderName => Header);
-        from!(httparse::Error::HeaderName => Header);
-        from!(httparse::Error::HeaderValue => Header);
-        from!(httparse::Error::NewLine => Header);
-        from!(httparse::Error::Status => Status);
-        from!(httparse::Error::Token => Header);
-        from!(httparse::Error::TooManyHeaders => TooLarge);
-        from!(httparse::Error::Version => Version);
-    }
-
-    #[cfg(feature = "openssl")]
-    #[test]
-    fn test_from_ssl() {
-        use openssl::ssl::error::SslError;
-
-        from!(SslError::StreamError(
-            io::Error::new(io::ErrorKind::Other, "ssl negotiation")) => Io(..));
-        from_and_cause!(SslError::SslSessionClosed => Ssl(..));
-    }
 }

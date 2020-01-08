@@ -143,10 +143,14 @@ impl CookieJar {
     
     
     
+    
+    
+    
     pub fn add_original(&mut self, cookie: Cookie<'static>) {
         self.original_cookies.replace(DeltaCookie::added(cookie));
     }
 
+    
     
     
     
@@ -226,6 +230,47 @@ impl CookieJar {
         } else {
             self.delta_cookies.remove(cookie.name());
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn force_remove<'a>(&mut self, cookie: Cookie<'a>) {
+        self.original_cookies.remove(cookie.name());
+        self.delta_cookies.remove(cookie.name());
     }
 
     

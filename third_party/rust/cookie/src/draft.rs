@@ -13,15 +13,20 @@ use std::fmt;
 
 
 
+
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SameSite {
     
     Strict,
     
-    Lax
+    Lax,
+    
+    None
 }
 
 impl SameSite {
+    
     
     
     
@@ -37,10 +42,11 @@ impl SameSite {
     pub fn is_strict(&self) -> bool {
         match *self {
             SameSite::Strict => true,
-            SameSite::Lax => false
+            SameSite::Lax | SameSite::None => false,
         }
     }
 
+    
     
     
     
@@ -55,8 +61,28 @@ impl SameSite {
     #[inline]
     pub fn is_lax(&self) -> bool {
         match *self {
-            SameSite::Strict => false,
-            SameSite::Lax => true
+            SameSite::Lax => true,
+            SameSite::Strict | SameSite::None => false,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn is_none(&self) -> bool {
+        match *self {
+            SameSite::None => true,
+            SameSite::Lax | SameSite::Strict => false
         }
     }
 }
@@ -65,7 +91,8 @@ impl fmt::Display for SameSite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             SameSite::Strict => write!(f, "Strict"),
-            SameSite::Lax => write!(f, "Lax")
+            SameSite::Lax => write!(f, "Lax"),
+            SameSite::None => Ok(()),
         }
     }
 }
