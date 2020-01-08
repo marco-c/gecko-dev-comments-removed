@@ -133,7 +133,9 @@ VRDisplayExternal::StartPresentation()
   PushState();
 
   mDisplayInfo.mDisplayState.mLastSubmittedFrameId = 0;
-  
+  if (mDisplayInfo.mDisplayState.mReportsDroppedFrames) {
+    mTelemetry.mLastDroppedFrameCount = mDisplayInfo.mDisplayState.mDroppedFrameCount;
+  }
 }
 
 void
@@ -149,20 +151,31 @@ VRDisplayExternal::StopPresentation()
 
   PushState(true);
 
-  
+  Telemetry::HistogramID timeSpentID = Telemetry::HistogramCount;
+  Telemetry::HistogramID droppedFramesID = Telemetry::HistogramCount;
+  int viewIn = 0;
 
+  if (mDisplayInfo.mDisplayState.mEightCC == GFX_VR_EIGHTCC('O', 'c', 'u', 'l', 'u', 's', ' ', 'D')) {
+    
+    timeSpentID = Telemetry::WEBVR_TIME_SPENT_VIEWING_IN_OCULUS;
+    droppedFramesID = Telemetry::WEBVR_DROPPED_FRAMES_IN_OCULUS;
+    viewIn = 1;
+  } else if (mDisplayInfo.mDisplayState.mEightCC == GFX_VR_EIGHTCC('O', 'p', 'e', 'n', 'V', 'R', ' ', ' ')) {
+    
+    timeSpentID = Telemetry::WEBVR_TIME_SPENT_VIEWING_IN_OPENVR;
+    droppedFramesID = Telemetry::WEBVR_DROPPED_FRAMES_IN_OPENVR;
+    viewIn = 2;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
+  if (viewIn) {
+    const TimeDuration duration = TimeStamp::Now() - mTelemetry.mPresentationStart;
+    Telemetry::Accumulate(Telemetry::WEBVR_USERS_VIEW_IN, viewIn);
+    Telemetry::Accumulate(timeSpentID,
+                          duration.ToMilliseconds());
+    const uint32_t droppedFramesPerSec = (mDisplayInfo.mDisplayState.mDroppedFrameCount -
+                                          mTelemetry.mLastDroppedFrameCount) / duration.ToSeconds();
+    Telemetry::Accumulate(droppedFramesID, droppedFramesPerSec);
+  }
 }
 
 void
