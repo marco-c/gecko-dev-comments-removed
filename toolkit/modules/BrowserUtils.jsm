@@ -606,7 +606,10 @@ var BrowserUtils = {
       
       try {
         
-        charset = await PlacesUtils.getCharsetForURI(this.makeURI(url));
+        let pageInfo = await PlacesUtils.history.fetch(url, {includeAnnotations: true});
+        if (pageInfo && pageInfo.annotations.has(PlacesUtils.CHARSET_ANNO)) {
+          charset = pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO);
+        }
       } catch (ex) {
         
         Cu.reportError(ex);

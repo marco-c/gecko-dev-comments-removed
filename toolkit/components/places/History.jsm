@@ -66,6 +66,8 @@
 
 
 
+
+
 var EXPORTED_SYMBOLS = [ "History" ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -137,6 +139,8 @@ var History = Object.freeze({
 
 
 
+
+
   fetch(guidOrURI, options = {}) {
     
     guidOrURI = PlacesUtils.normalizeToURLOrGUID(guidOrURI);
@@ -154,6 +158,11 @@ var History = Object.freeze({
     let hasIncludeMeta = "includeMeta" in options;
     if (hasIncludeMeta && typeof options.includeMeta !== "boolean") {
       throw new TypeError("includeMeta should be a boolean if exists");
+    }
+
+    let hasIncludeAnnotations = "includeAnnotations" in options;
+    if (hasIncludeAnnotations && typeof options.includeAnnotations !== "boolean") {
+      throw new TypeError("includeAnnotations should be a boolean if exists");
     }
 
     return PlacesUtils.promiseDBConnection()
@@ -1001,6 +1010,7 @@ var fetch = async function(db, guidOrURL, options) {
                ${whereClauseFragment}
                ${visitOrderFragment}`;
   let pageInfo = null;
+  let placeId = null;
   await db.executeCached(
     query,
     params,
@@ -1013,6 +1023,7 @@ var fetch = async function(db, guidOrURL, options) {
           frecency: row.getResultByName("frecency"),
           title: row.getResultByName("title") || ""
         };
+        placeId = row.getResultByName("id");
       }
       if (options.includeMeta) {
         pageInfo.description = row.getResultByName("description") || "";
@@ -1031,6 +1042,19 @@ var fetch = async function(db, guidOrURL, options) {
         pageInfo.visits.push({ date, transition });
       }
     });
+
+  
+  if (pageInfo && options.includeAnnotations) {
+    let rows = await db.executeCached(`
+      SELECT n.name, a.content FROM moz_anno_attributes n
+      JOIN moz_annos a ON n.id = a.anno_attribute_id
+      WHERE a.place_id = :placeId
+    `, {placeId});
+
+    pageInfo.annotations = new Map(rows.map(
+      row => [row.getResultByName("name"), row.getResultByName("content")]
+    ));
+  }
   return pageInfo;
 };
 

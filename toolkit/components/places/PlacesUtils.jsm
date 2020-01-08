@@ -1489,26 +1489,6 @@ var PlacesUtils = {
 
 
 
-  getCharsetForURI: function PU_getCharsetForURI(aURI) {
-    return new Promise(resolve => {
-      Services.tm.dispatchToMainThread(function() {
-        let charset = null;
-        try {
-          charset = PlacesUtils.annotations.getPageAnnotation(aURI,
-                                                              PlacesUtils.CHARSET_ANNO);
-        } catch (ex) { }
-        resolve(charset);
-      });
-    });
-  },
-
-  
-
-
-
-
-
-
 
   promiseFaviconData(aPageUrl) {
     return new Promise((resolve, reject) => {

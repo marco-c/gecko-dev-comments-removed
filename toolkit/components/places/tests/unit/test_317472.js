@@ -5,7 +5,7 @@
 
 
 const charset = "UTF-8";
-const CHARSET_ANNO = "URIProperties/characterSet";
+const CHARSET_ANNO = PlacesUtils.CHARSET_ANNO;
 
 const TEST_URI = uri("http://foo.com");
 const TEST_BOOKMARKED_URI = uri("http://bar.com");
@@ -35,16 +35,18 @@ add_task(async function test_execute() {
   
   Assert.equal(PlacesUtils.annotations.getPageAnnotation(TEST_URI, CHARSET_ANNO), charset);
 
-  
-  Assert.equal((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
+  let pageInfo = await PlacesUtils.history.fetch(TEST_URI, {includeAnnotations: true});
+  Assert.equal(pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO), charset,
+    "Should return correct charset for a not-bookmarked page");
 
-  
-  Assert.equal((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  pageInfo = await PlacesUtils.history.fetch(TEST_BOOKMARKED_URI, {includeAnnotations: true});
+  Assert.equal(pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO), charset,
+    "Should return correct charset for a bookmarked page");
 
   await PlacesUtils.history.clear();
 
-  
-  Assert.notEqual((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
+  pageInfo = await PlacesUtils.history.fetch(TEST_URI, {includeAnnotations: true});
+  Assert.ok(!pageInfo, "Should not return pageInfo for a page after history cleared");
 
   
   try {
@@ -52,10 +54,12 @@ add_task(async function test_execute() {
     do_throw("Charset page annotation has not been removed correctly");
   } catch (e) {}
 
-  
-  Assert.equal((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  pageInfo = await PlacesUtils.history.fetch(TEST_BOOKMARKED_URI, {includeAnnotations: true});
+  Assert.equal(pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO), charset,
+    "Charset should still be set for a bookmarked page after history clear");
 
-  
   await PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, "");
-  Assert.notEqual((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  pageInfo = await PlacesUtils.history.fetch(TEST_BOOKMARKED_URI, {includeAnnotations: true});
+  Assert.notEqual(pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO), charset,
+    "Should not have a charset after it has been removed from the page");
 });
