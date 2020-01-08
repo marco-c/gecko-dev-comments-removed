@@ -10444,9 +10444,7 @@ nsCSSFrameConstructor::WrapFramesInFirstLineFrame(
 {
   
   nsFrameList::FrameLinkEnumerator link(aFrameItems);
-  while (!link.AtEnd() && link.NextFrame()->IsInlineOutside()) {
-    link.Next();
-  }
+  FindFirstBlock(link);
 
   nsFrameList firstLineChildren = aFrameItems.ExtractHead(link);
 
