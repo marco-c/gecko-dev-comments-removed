@@ -2417,67 +2417,54 @@ function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
 
 
 
-function getShortcutOrURIAndPostData(url, callback = null) {
-  if (callback) {
-    Deprecated.warning("Please use the Promise returned by " +
-                       "getShortcutOrURIAndPostData() instead of passing a " +
-                       "callback",
-                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1100294");
-  }
-  return (async function() {
-    let mayInheritPrincipal = false;
-    let postData = null;
-    
-    let [keyword, param = ""] = url.trim().split(/\s(.+)/, 2);
+async function getShortcutOrURIAndPostData(url) {
+  let mayInheritPrincipal = false;
+  let postData = null;
+  
+  let [keyword, param = ""] = url.trim().split(/\s(.+)/, 2);
 
-    if (!keyword) {
-      return { url, postData, mayInheritPrincipal };
-    }
-
-    let engine = Services.search.getEngineByAlias(keyword);
-    if (engine) {
-      let submission = engine.getSubmission(param, null, "keyword");
-      return { url: submission.uri.spec,
-               postData: submission.postData,
-               mayInheritPrincipal };
-    }
-
-    
-    
-    let entry = null;
-    try {
-      entry = await PlacesUtils.keywords.fetch(keyword);
-    } catch (ex) {
-      Cu.reportError(`Unable to fetch Places keyword "${keyword}": ${ex}`);
-    }
-    if (!entry || !entry.url) {
-      
-      return { url, postData, mayInheritPrincipal };
-    }
-
-    try {
-      [url, postData] =
-        await BrowserUtils.parseUrlAndPostData(entry.url.href,
-                                               entry.postData,
-                                               param);
-      if (postData) {
-        postData = getPostDataStream(postData);
-      }
-
-      
-      
-      mayInheritPrincipal = true;
-    } catch (ex) {
-      
-    }
-
+  if (!keyword) {
     return { url, postData, mayInheritPrincipal };
-  })().then(data => {
-    if (callback) {
-      callback(data);
+  }
+
+  let engine = Services.search.getEngineByAlias(keyword);
+  if (engine) {
+    let submission = engine.getSubmission(param, null, "keyword");
+    return { url: submission.uri.spec,
+             postData: submission.postData,
+             mayInheritPrincipal };
+  }
+
+  
+  
+  let entry = null;
+  try {
+    entry = await PlacesUtils.keywords.fetch(keyword);
+  } catch (ex) {
+    Cu.reportError(`Unable to fetch Places keyword "${keyword}": ${ex}`);
+  }
+  if (!entry || !entry.url) {
+    
+    return { url, postData, mayInheritPrincipal };
+  }
+
+  try {
+    [url, postData] =
+      await BrowserUtils.parseUrlAndPostData(entry.url.href,
+                                             entry.postData,
+                                             param);
+    if (postData) {
+      postData = getPostDataStream(postData);
     }
-    return data;
-  });
+
+    
+    
+    mayInheritPrincipal = true;
+  } catch (ex) {
+    
+  }
+
+  return { url, postData, mayInheritPrincipal };
 }
 
 function getPostDataStream(aPostDataString,
@@ -6225,9 +6212,8 @@ function BrowserSetForcedCharacterSet(aCharset) {
   if (aCharset) {
     gBrowser.selectedBrowser.characterSet = aCharset;
     
-    PlacesUIUtils.setCharsetForPage(getWebNavigation().currentURI,
-                                    aCharset,
-                                    window).catch(Cu.reportError);
+    if (!PrivateBrowsingUtils.isWindowPrivate(window))
+      PlacesUtils.setCharsetForURI(getWebNavigation().currentURI, aCharset);
   }
   BrowserCharsetReload();
 }
@@ -8245,3 +8231,4 @@ var ConfirmationHint = {
     return this._message = document.getElementById("confirmation-hint-message");
   },
 };
+
