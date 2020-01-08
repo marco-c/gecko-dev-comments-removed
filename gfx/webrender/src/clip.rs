@@ -330,6 +330,9 @@ pub struct ClipChainInstance {
     pub has_non_local_clips: bool,
     
     
+    pub needs_mask: bool,
+    
+    
     pub pic_clip_rect: PictureRect,
 }
 
@@ -524,6 +527,7 @@ impl ClipStore {
         let first_clip_node_index = self.clip_node_indices.len() as u32;
         let mut has_non_root_coord_system = false;
         let mut has_non_local_clips = false;
+        let mut needs_mask = false;
 
         
         for node_info in self.clip_node_info.drain(..) {
@@ -581,6 +585,26 @@ impl ClipStore {
                     };
 
                     
+                    
+                    
+                    
+                    
+                    
+                    needs_mask |= match node.item {
+                        ClipItem::Rectangle(_, ClipMode::ClipOut) |
+                        ClipItem::RoundedRectangle(..) |
+                        ClipItem::Image(..) |
+                        ClipItem::BoxShadow(..) |
+                        ClipItem::LineDecoration(..) => {
+                            true
+                        }
+
+                        ClipItem::Rectangle(_, ClipMode::Clip) => {
+                            !flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM)
+                        }
+                    };
+
+                    
                     self.clip_node_indices
                         .push(ClipNodeInstance::new(node_info.node_index, flags));
 
@@ -602,6 +626,7 @@ impl ClipStore {
             has_non_local_clips,
             local_clip_rect,
             pic_clip_rect,
+            needs_mask,
         })
     }
 }

@@ -382,7 +382,7 @@ impl TransactionMsg {
     }
 
     
-    fn frame_message(msg: FrameMsg) -> Self {
+    pub fn frame_message(msg: FrameMsg) -> Self {
         TransactionMsg {
             scene_ops: Vec::new(),
             frame_ops: vec![msg],
@@ -393,7 +393,7 @@ impl TransactionMsg {
         }
     }
 
-    fn scene_message(msg: SceneMsg) -> Self {
+    pub fn scene_message(msg: SceneMsg) -> Self {
         TransactionMsg {
             scene_ops: vec![msg],
             frame_ops: Vec::new(),
