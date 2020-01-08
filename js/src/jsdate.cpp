@@ -123,6 +123,33 @@ static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed> sReduceMicros
 
 
 
+namespace
+{
+
+class DateTimeHelper
+{
+  private:
+#if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
+    static double localTZA(double t, DateTimeInfo::TimeZoneOffset offset);
+#else
+    static int equivalentYearForDST(int year);
+    static bool isRepresentableAsTime32(double t);
+    static double daylightSavingTA(double t);
+    static double adjustTime(double date);
+    static PRMJTime toPRMJTime(double localTime, double utcTime);
+#endif
+
+  public:
+    static double localTime(double t);
+    static double UTC(double t);
+    static JSString* timeZoneComment(JSContext* cx, double utcTime, double localTime);
+#if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
+    static size_t formatTime(char* buf, size_t buflen, const char* fmt, double utcTime, double localTime);
+#endif
+};
+
+}
+
 
 
 static inline double
@@ -440,8 +467,8 @@ JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter)
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
 
 
-static double
-LocalTZA(double t, DateTimeInfo::TimeZoneOffset offset)
+double
+DateTimeHelper::localTZA(double t, DateTimeInfo::TimeZoneOffset offset)
 {
     MOZ_ASSERT(IsFinite(t));
 
@@ -452,20 +479,20 @@ LocalTZA(double t, DateTimeInfo::TimeZoneOffset offset)
 
 
 
-static double
-LocalTime(double t)
+double
+DateTimeHelper::localTime(double t)
 {
     if (!IsFinite(t))
         return GenericNaN();
 
     MOZ_ASSERT(StartOfTime <= t && t <= EndOfTime);
-    return t + LocalTZA(t, DateTimeInfo::TimeZoneOffset::UTC);
+    return t + localTZA(t, DateTimeInfo::TimeZoneOffset::UTC);
 }
 
 
 
-static double
-UTC(double t)
+double
+DateTimeHelper::UTC(double t)
 {
     if (!IsFinite(t))
         return GenericNaN();
@@ -473,7 +500,7 @@ UTC(double t)
     if (t < (StartOfTime - msPerDay) || t > (EndOfTime + msPerDay))
         return GenericNaN();
 
-    return t - LocalTZA(t, DateTimeInfo::TimeZoneOffset::Local);
+    return t - localTZA(t, DateTimeInfo::TimeZoneOffset::Local);
 }
 #else
 
@@ -483,8 +510,8 @@ UTC(double t)
 
 
 
-static int
-EquivalentYearForDST(int year)
+int
+DateTimeHelper::equivalentYearForDST(int year)
 {
     
 
@@ -517,15 +544,15 @@ EquivalentYearForDST(int year)
 
 
 
-static bool
-IsRepresentableAsTime32(double t)
+bool
+DateTimeHelper::isRepresentableAsTime32(double t)
 {
     return 0.0 <= t && t < 2145916800000.0;
 }
 
 
-static double
-DaylightSavingTA(double t)
+double
+DateTimeHelper::daylightSavingTA(double t)
 {
     if (!IsFinite(t))
         return GenericNaN();
@@ -534,8 +561,8 @@ DaylightSavingTA(double t)
 
 
 
-    if (!IsRepresentableAsTime32(t)) {
-        int year = EquivalentYearForDST(int(YearFromTime(t)));
+    if (!isRepresentableAsTime32(t)) {
+        int year = equivalentYearForDST(int(YearFromTime(t)));
         double day = MakeDay(year, MonthFromTime(t), DateFromTime(t));
         t = MakeDate(day, TimeWithinDay(t));
     }
@@ -545,35 +572,47 @@ DaylightSavingTA(double t)
     return static_cast<double>(offsetMilliseconds);
 }
 
-static double
-AdjustTime(double date)
+double
+DateTimeHelper::adjustTime(double date)
 {
     double localTZA = DateTimeInfo::localTZA();
-    double t = DaylightSavingTA(date) + localTZA;
+    double t = daylightSavingTA(date) + localTZA;
     t = (localTZA >= 0) ? fmod(t, msPerDay) : -fmod(msPerDay - t, msPerDay);
     return t;
 }
 
 
+double
+DateTimeHelper::localTime(double t)
+{
+    return t + adjustTime(t);
+}
+
+double
+DateTimeHelper::UTC(double t)
+{
+    
+    
+    
+    
+    
+    
+
+    return t - adjustTime(t - DateTimeInfo::localTZA() - msPerHour);
+}
+#endif 
+
 static double
 LocalTime(double t)
 {
-    return t + AdjustTime(t);
+    return DateTimeHelper::localTime(t);
 }
 
 static double
 UTC(double t)
 {
-    
-    
-    
-    
-    
-    
-
-    return t - AdjustTime(t - DateTimeInfo::localTZA() - msPerHour);
+    return DateTimeHelper::UTC(t);
 }
-#endif 
 
 
 static double
@@ -2712,8 +2751,8 @@ date_toJSON(JSContext* cx, unsigned argc, Value* vp)
 }
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
-static JSString*
-TimeZoneComment(JSContext* cx, double utcTime, double localTime)
+JSString*
+DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime, double localTime)
 {
     const char* locale = cx->runtime()->getDefaultLocale();
     if (!locale) {
@@ -2747,8 +2786,8 @@ TimeZoneComment(JSContext* cx, double utcTime, double localTime)
 }
 #else
 
-static PRMJTime
-ToPRMJTime(double localTime, double utcTime)
+PRMJTime
+DateTimeHelper::toPRMJTime(double localTime, double utcTime)
 {
     double year = YearFromTime(localTime);
 
@@ -2762,33 +2801,33 @@ ToPRMJTime(double localTime, double utcTime)
     prtm.tm_wday = int8_t(WeekDay(localTime));
     prtm.tm_year = year;
     prtm.tm_yday = int16_t(DayWithinYear(localTime, year));
-    prtm.tm_isdst = (DaylightSavingTA(utcTime) != 0);
+    prtm.tm_isdst = (daylightSavingTA(utcTime) != 0);
 
     return prtm;
 }
 
-static size_t
-FormatTime(char* buf, size_t buflen, const char* fmt, double utcTime, double localTime)
+size_t
+DateTimeHelper::formatTime(char* buf, size_t buflen, const char* fmt, double utcTime, double localTime)
 {
-    PRMJTime prtm = ToPRMJTime(localTime, utcTime);
+    PRMJTime prtm = toPRMJTime(localTime, utcTime);
 
     
     
     
-    int timeZoneYear = IsRepresentableAsTime32(utcTime)
+    int timeZoneYear = isRepresentableAsTime32(utcTime)
                        ? prtm.tm_year
-                       : EquivalentYearForDST(prtm.tm_year);
+                       : equivalentYearForDST(prtm.tm_year);
     int offsetInSeconds = (int) floor((localTime - utcTime) / msPerSecond);
 
     return PRMJ_FormatTime(buf, buflen, fmt, &prtm, timeZoneYear, offsetInSeconds);
 }
 
-static JSString*
-TimeZoneComment(JSContext* cx, double utcTime, double localTime)
+JSString*
+DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime, double localTime)
 {
     char tzbuf[100];
 
-    size_t tzlen = FormatTime(tzbuf, sizeof tzbuf, " (%Z)", utcTime, localTime);
+    size_t tzlen = formatTime(tzbuf, sizeof tzbuf, " (%Z)", utcTime, localTime);
     if (tzlen != 0) {
         
         
@@ -2815,6 +2854,12 @@ TimeZoneComment(JSContext* cx, double utcTime, double localTime)
     return cx->names().empty;
 }
 #endif 
+
+static JSString*
+TimeZoneComment(JSContext* cx, double utcTime, double localTime)
+{
+    return DateTimeHelper::timeZoneComment(cx, utcTime, localTime);
+}
 
 enum class FormatSpec {
     DateTime,
@@ -2924,7 +2969,7 @@ ToLocaleFormatHelper(JSContext* cx, HandleObject obj, const char* format, Mutabl
         double localTime = LocalTime(utcTime);
 
         
-        size_t result_len = FormatTime(buf, sizeof buf, format, utcTime, localTime);
+        size_t result_len = DateTimeHelper::formatTime(buf, sizeof buf, format, utcTime, localTime);
 
         
         if (result_len == 0)
