@@ -1,7 +1,6 @@
 use common::MAX_SAFE_INTEGER;
 use error::{ErrorStatus, WebDriverError, WebDriverResult};
 use serde_json::{Map, Value};
-use std::convert::From;
 use url::Url;
 
 pub type Capabilities = Map<String, Value>;
@@ -211,10 +210,12 @@ impl SpecNewSessionParameters {
 
                 "proxyAutoconfigUrl" => match value.as_str() {
                     Some(x) => {
-                        Url::parse(x).or(Err(WebDriverError::new(
-                            ErrorStatus::InvalidArgument,
-                            format!("proxyAutoconfigUrl is not a valid URL: {}", x),
-                        )))?;
+                        Url::parse(x).or_else(|_| {
+                            Err(WebDriverError::new(
+                                ErrorStatus::InvalidArgument,
+                                format!("proxyAutoconfigUrl is not a valid URL: {}", x),
+                            ))
+                        })?;
                     }
                     None => {
                         return Err(WebDriverError::new(
@@ -287,14 +288,18 @@ impl SpecNewSessionParameters {
                 }
 
                 
-                let s = String::from(format!("http://{}", host));
-                let url = Url::parse(s.as_str()).or(Err(WebDriverError::new(
-                    ErrorStatus::InvalidArgument,
-                    format!("{} is not a valid URL: {}", entry, host),
-                )))?;
+                let url = Url::parse(&format!("http://{}", host)).or_else(|_| {
+                    Err(WebDriverError::new(
+                        ErrorStatus::InvalidArgument,
+                        format!("{} is not a valid URL: {}", entry, host),
+                    ))
+                })?;
 
-                if url.username() != "" || url.password() != None || url.path() != "/"
-                    || url.query() != None || url.fragment() != None
+                if url.username() != ""
+                    || url.password() != None
+                    || url.path() != "/"
+                    || url.query() != None
+                    || url.fragment() != None
                 {
                     return Err(WebDriverError::new(
                         ErrorStatus::InvalidArgument,
