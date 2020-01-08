@@ -20,9 +20,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 XPCOMUtils.defineLazyModuleGetter(this, "Log", "resource://gre/modules/AndroidLog.jsm", "AndroidLog");
 
-const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
-              .getService(Ci.nsISessionStoreUtils);
-
 function dump(a) {
   Services.console.logStringMessage(a);
 }
@@ -932,7 +929,8 @@ SessionStore.prototype = {
 
     
     let content = aBrowser.contentWindow;
-    let [scrolldata] = Utils.mapFrameTree(content, ssu.collectScrollPosition.bind(ssu));
+    let [scrolldata] =
+        Utils.mapFrameTree(content, SessionStoreUtils.collectScrollPosition);
     scrolldata = scrolldata || {};
 
     
@@ -1418,7 +1416,7 @@ SessionStore.prototype = {
       log("_restoreScrollPosition()");
       Utils.restoreFrameTreeData(aBrowser.contentWindow, aScrollData, (frame, data) => {
         if (data.scroll) {
-          ssu.restoreScrollPosition(frame, data.scroll);
+          SessionStoreUtils.restoreScrollPosition(frame, data);
         }
       });
     }

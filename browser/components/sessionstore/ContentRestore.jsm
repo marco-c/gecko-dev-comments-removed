@@ -17,9 +17,6 @@ ChromeUtils.defineModuleGetter(this, "SessionStorage",
 ChromeUtils.defineModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
 
-const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
-              .getService(Ci.nsISessionStoreUtils);
-
 
 
 
@@ -140,7 +137,8 @@ ContentRestoreInternal.prototype = {
 
     
     
-    ssu.restoreDocShellCapabilities(this.docShell, tabData.disallow);
+    SessionStoreUtils.restoreDocShellCapabilities(this.docShell, tabData.disallow);
+
 
     if (tabData.storage && this.docShell instanceof Ci.nsIDocShell) {
       SessionStorage.restore(this.docShell, tabData.storage);
@@ -298,7 +296,7 @@ ContentRestoreInternal.prototype = {
     
     Utils.restoreFrameTreeData(window, scrollPositions, (frame, data) => {
       if (data.scroll) {
-        ssu.restoreScrollPosition(frame, data.scroll);
+        SessionStoreUtils.restoreScrollPosition(frame, data);
       }
     });
   },
