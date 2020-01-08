@@ -88,8 +88,9 @@ class SourceBufferHolder final
     }
 
     ~SourceBufferHolder() {
-        if (ownsChars_)
+        if (ownsChars_) {
             js_free(const_cast<char16_t*>(data_));
+        }
     }
 
     

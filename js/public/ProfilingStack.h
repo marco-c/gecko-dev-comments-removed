@@ -366,8 +366,9 @@ class ProfilingStack final
                         uint32_t line, js::ProfilingStackFrame::Category category) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
             frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
+        }
 
         
         
@@ -383,8 +384,9 @@ class ProfilingStack final
     void pushSpMarkerFrame(void* sp) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
             frames[oldStackPointer].initSpMarkerFrame(sp);
+        }
 
         
         stackPointer = oldStackPointer + 1;
@@ -394,8 +396,9 @@ class ProfilingStack final
                      jsbytecode* pc) {
         uint32_t oldStackPointer = stackPointer;
 
-        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
+        if (MOZ_LIKELY(capacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow())) {
             frames[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
+        }
 
         
         stackPointer = oldStackPointer + 1;
