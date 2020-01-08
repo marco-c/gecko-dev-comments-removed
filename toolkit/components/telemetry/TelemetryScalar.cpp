@@ -33,6 +33,7 @@
 using mozilla::Preferences;
 using mozilla::StaticAutoPtr;
 using mozilla::StaticMutex;
+using mozilla::StaticMutexNotRecorded;
 using mozilla::StaticMutexAutoLock;
 using mozilla::Some;
 using mozilla::Nothing;
@@ -2191,7 +2192,7 @@ internal_ApplyPendingOperations(const StaticMutexAutoLock& lock)
 
 
 
-static StaticMutex gTelemetryScalarsMutex;
+static StaticMutexNotRecorded gTelemetryScalarsMutex;
 
 void
 TelemetryScalar::InitializeGlobalState(bool aCanRecordBase, bool aCanRecordExtended)
