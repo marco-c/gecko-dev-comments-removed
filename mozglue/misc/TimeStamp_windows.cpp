@@ -428,6 +428,12 @@ BaseTimeDurationPlatformUtils::ResolutionInTicks()
 static bool
 HasStableTSC()
 {
+#if defined(_M_ARM64)
+  
+  
+  
+  return true;
+#else
   union
   {
     int regs[4];
@@ -463,6 +469,7 @@ HasStableTSC()
   
   
   return regs[3] & (1 << 8);
+#endif
 }
 
 static bool gInitialized = false;
