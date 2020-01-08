@@ -43,7 +43,7 @@ public:
     
 
 
-    static bool isWhitespace(const nsString& aText);
+    static bool isWhitespace(const nsAString& aText);
 
     
 
@@ -53,7 +53,7 @@ public:
     
 
 
-    static bool isValidQName(const nsString& aQName, const char16_t** aColon);
+    static bool isValidQName(const nsAString& aQName, const char16_t** aColon);
 
     
 
