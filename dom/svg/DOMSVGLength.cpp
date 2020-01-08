@@ -81,7 +81,9 @@ public:
   {
     mLength->Element()->DidChangeLengthList(mLength->mAttrEnum,
                                             mEmptyOrOldValue);
-    if (mLength->mList->IsAnimating()) {
+    
+    
+    if (mLength->mList && mLength->mList->IsAnimating()) {
       mLength->Element()->AnimationNeedsResample();
     }
   }

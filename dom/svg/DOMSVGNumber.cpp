@@ -70,7 +70,9 @@ public:
   {
     mNumber->Element()->DidChangeNumberList(mNumber->mAttrEnum,
                                             mEmptyOrOldValue);
-    if (mNumber->mList->IsAnimating()) {
+    
+    
+    if (mNumber->mList && mNumber->mList->IsAnimating()) {
       mNumber->Element()->AnimationNeedsResample();
     }
   }

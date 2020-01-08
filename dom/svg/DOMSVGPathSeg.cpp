@@ -63,7 +63,9 @@ public:
   ~AutoChangePathSegNotifier()
   {
     mPathSeg->Element()->DidChangePathSegList(mEmptyOrOldValue);
-    if (mPathSeg->mList->AttrIsAnimating()) {
+    
+    
+    if (mPathSeg->mList && mPathSeg->mList->AttrIsAnimating()) {
       mPathSeg->Element()->AnimationNeedsResample();
     }
   }
