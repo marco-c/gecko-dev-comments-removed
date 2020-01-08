@@ -2947,10 +2947,12 @@ static bool ReadableStreamControllerShouldCallPull(
 static void ReadableStreamControllerClearAlgorithms(
     ReadableStreamController* controller) {
   
-  controller->setPullMethod(UndefinedHandleValue);
-
   
+  
+  
+  controller->setPullMethod(UndefinedHandleValue);
   controller->setCancelMethod(UndefinedHandleValue);
+  controller->clearUnderlyingSource();
 
   
   
