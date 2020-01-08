@@ -105,10 +105,10 @@ public:
 
   
   #define CSS_PSEUDO_ELEMENT(name_, value_, flags_)       \
-    static nsICSSPseudoElement* name_()                   \
+    static nsCSSPseudoElementStaticAtom* name_()          \
     {                                                     \
-      return const_cast<nsICSSPseudoElement*>(            \
-        static_cast<const nsICSSPseudoElement*>(          \
+      return const_cast<nsCSSPseudoElementStaticAtom*>(   \
+        static_cast<const nsCSSPseudoElementStaticAtom*>( \
           nsGkAtoms::PseudoElement_##name_));             \
     }
   #include "nsCSSPseudoElementList.h"

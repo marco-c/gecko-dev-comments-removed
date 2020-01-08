@@ -62,8 +62,8 @@
       : nsStaticAtom(aLength, aHash, aOffset) {}                               \
   };
 
-DEFINE_STATIC_ATOM_SUBCLASS(nsICSSAnonBoxPseudo)
-DEFINE_STATIC_ATOM_SUBCLASS(nsICSSPseudoElement)
+DEFINE_STATIC_ATOM_SUBCLASS(nsCSSAnonBoxPseudoStaticAtom)
+DEFINE_STATIC_ATOM_SUBCLASS(nsCSSPseudoElementStaticAtom)
 
 #undef DEFINE_STATIC_ATOM_SUBCLASS
 

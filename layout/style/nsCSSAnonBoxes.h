@@ -96,10 +96,10 @@ public:
 
   
   #define CSS_ANON_BOX(name_, value_)                     \
-    static nsICSSAnonBoxPseudo* name_()                   \
+    static nsCSSAnonBoxPseudoStaticAtom* name_()          \
     {                                                     \
-      return const_cast<nsICSSAnonBoxPseudo*>(            \
-        static_cast<const nsICSSAnonBoxPseudo*>(          \
+      return const_cast<nsCSSAnonBoxPseudoStaticAtom*>(   \
+        static_cast<const nsCSSAnonBoxPseudoStaticAtom*>( \
           nsGkAtoms::AnonBox_##name_));                   \
     }
   #include "nsCSSAnonBoxList.h"

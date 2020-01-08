@@ -314,15 +314,15 @@ protected:
                          nsRect& aTextRect);
 
   
-  nsICSSAnonBoxPseudo* GetItemWithinCellAt(nscoord aX,
-                                           const nsRect& aCellRect,
-                                           int32_t aRowIndex,
-                                           nsTreeColumn* aColumn);
+  nsCSSAnonBoxPseudoStaticAtom* GetItemWithinCellAt(nscoord aX,
+                                                    const nsRect& aCellRect,
+                                                    int32_t aRowIndex,
+                                                    nsTreeColumn* aColumn);
 
   
   
   void GetCellAt(nscoord aX, nscoord aY, int32_t* aRow, nsTreeColumn** aCol,
-                 nsICSSAnonBoxPseudo** aChildElt);
+                 nsCSSAnonBoxPseudoStaticAtom** aChildElt);
 
   
   nsITheme* GetTwistyRect(int32_t aRowIndex,
@@ -360,7 +360,8 @@ protected:
 
   
   
-  ComputedStyle* GetPseudoComputedStyle(nsICSSAnonBoxPseudo* aPseudoElement);
+  ComputedStyle* GetPseudoComputedStyle(
+    nsCSSAnonBoxPseudoStaticAtom* aPseudoElement);
 
   
   

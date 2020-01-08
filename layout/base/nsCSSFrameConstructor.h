@@ -33,7 +33,7 @@ struct nsGenConInitializer;
 class nsContainerFrame;
 class nsFirstLineFrame;
 class nsFirstLetterFrame;
-class nsICSSAnonBoxPseudo;
+class nsCSSAnonBoxPseudoStaticAtom;
 class nsIDocument;
 class nsPageContentFrame;
 struct PendingBinding;
@@ -742,7 +742,7 @@ private:
     FrameFullConstructor mFullConstructor;
     
     
-    nsICSSAnonBoxPseudo* const mAnonBoxPseudo;
+    nsCSSAnonBoxPseudoStaticAtom* const mAnonBoxPseudo;
   };
 
   
@@ -781,7 +781,7 @@ private:
 
   struct PseudoParentData {
     const FrameConstructionData mFCData;
-    nsICSSAnonBoxPseudo* const mPseudoType;
+    nsCSSAnonBoxPseudoStaticAtom* const mPseudoType;
   };
   
 
@@ -1586,7 +1586,7 @@ private:
                                   nsFrameItems&            aFrameItems,
                                   ContainerFrameCreationFunc aConstructor,
                                   ContainerFrameCreationFunc aInnerConstructor,
-                                  nsICSSAnonBoxPseudo*     aInnerPseudo,
+                                  nsCSSAnonBoxPseudoStaticAtom* aInnerPseudo,
                                   bool                     aCandidateRootFrame);
 
   
