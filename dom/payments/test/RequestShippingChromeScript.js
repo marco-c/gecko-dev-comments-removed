@@ -26,6 +26,7 @@ shippingAddress.init("",
                      "",  
                      "",  
                      "",  
+                     "",  
                      ""); 
 
 const NormalUIService = {
