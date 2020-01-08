@@ -6,18 +6,21 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
   "resource://gre/modules/BrowserUtils.jsm");
 
-var EXPORTED_SYMBOLS = ["DateTimePickerContent"];
+var EXPORTED_SYMBOLS = ["DateTimePickerChild"];
+
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 
 
 
 
 
-class DateTimePickerContent {
+class DateTimePickerChild extends ActorChild {
   
 
 
 
   constructor(global) {
+    super(global);
     this._inputElement = null;
     this._global = global;
   }
