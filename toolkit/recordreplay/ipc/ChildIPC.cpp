@@ -231,6 +231,11 @@ InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
 
   gGraphicsShmem = (void*) address;
 
+  
+  
+  
+  AddInitialUntrackedMemoryRegion((uint8_t*) gGraphicsShmem, parent::GraphicsMemorySize);
+
   pt.reset();
 
   
