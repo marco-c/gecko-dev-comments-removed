@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   ExtensionTestUtils: "resource://testing-common/ExtensionXPCShellUtils.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
+  MessageChannel: "resource://gre/modules/MessageChannel.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   PromiseTestUtils: "resource://testing-common/PromiseTestUtils.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
@@ -140,3 +141,38 @@ async function runWithPrefs(prefsToSet, testFn) {
     }
   }
 }
+
+
+
+let extensionHandlers = new WeakSet();
+
+function handlingUserInputFrameScript() {
+  
+  ChromeUtils.import("resource://gre/modules/MessageChannel.jsm");
+
+  let handle;
+  MessageChannel.addListener(this, "ExtensionTest:HandleUserInput", {
+    receiveMessage({name, data}) {
+      if (data) {
+        handle = content.windowUtils.setHandlingUserInput(true);
+      } else if (handle) {
+        handle.destruct();
+        handle = null;
+      }
+    },
+  });
+}
+
+async function withHandlingUserInput(extension, fn) {
+  let {messageManager} = extension.extension.groupFrameLoader;
+
+  if (!extensionHandlers.has(extension)) {
+    messageManager.loadFrameScript(`data:,(${handlingUserInputFrameScript}).call(this)`, false, true);
+    extensionHandlers.add(extension);
+  }
+
+  await MessageChannel.sendMessage(messageManager, "ExtensionTest:HandleUserInput", true);
+  await fn();
+  await MessageChannel.sendMessage(messageManager, "ExtensionTest:HandleUserInput", false);
+}
+

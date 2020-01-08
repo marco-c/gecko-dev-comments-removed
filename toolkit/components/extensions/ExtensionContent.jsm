@@ -471,24 +471,7 @@ class Script {
       }
     }
 
-    let scriptPromises = this.compileScripts();
-
-    let scripts = scriptPromises.map(promise => promise.script);
-    
-    
-    if (!scripts.every(script => script)) {
-      let promise = Promise.all(scriptPromises);
-
-      
-      
-      
-      let {document} = context.contentWindow;
-      if (this.runAt === "document_start" && document.readyState !== "complete") {
-        document.blockParsing(promise, {blockScriptCreated: false});
-      }
-
-      scripts = await promise;
-    }
+    let scripts = await this.awaitCompiledScripts(context);
 
     let result;
 
@@ -512,10 +495,126 @@ class Script {
     await cssPromise;
     return result;
   }
+
+  async awaitCompiledScripts(context) {
+    let scriptPromises = this.compileScripts();
+
+    let scripts = scriptPromises.map(promise => promise.script);
+
+    
+    
+    if (!scripts.every(script => script)) {
+      let promise = Promise.all(scriptPromises);
+
+      
+      
+      
+      let {document} = context.contentWindow;
+      if (this.runAt === "document_start" && document.readyState !== "complete") {
+        document.blockParsing(promise, {blockScriptCreated: false});
+      }
+
+      scripts = await promise;
+    }
+
+    return scripts;
+  }
+}
+
+
+class UserScript extends Script {
+  
+
+
+
+
+
+  constructor(extension, matcher) {
+    super(extension, matcher);
+
+    this.scriptPromises = null;
+
+    
+    this.sandboxes = new DefaultWeakMap((context) => {
+      return this.createSandbox(context);
+    });
+  }
+
+  compileScripts() {
+    if (!this.scriptPromises) {
+      this.scriptPromises = this.js.map(url => this.scriptCache.get(url));
+    }
+
+    return this.scriptPromises;
+  }
+
+  async inject(context) {
+    const {extension} = context;
+
+    DocumentManager.lazyInit();
+
+    let sandboxScripts = await this.awaitCompiledScripts(context);
+
+    
+    
+    ExtensionTelemetry.contentScriptInjection.stopwatchStart(extension, context);
+    try {
+      let userScriptSandbox = this.sandboxes.get(context);
+
+      context.callOnClose({
+        close: () => {
+          
+          
+          this.sandboxes.delete(context);
+          Cu.nukeSandbox(userScriptSandbox);
+        },
+      });
+
+      for (let script of sandboxScripts) {
+        script.executeInGlobal(userScriptSandbox);
+      }
+    } finally {
+      ExtensionTelemetry.contentScriptInjection.stopwatchFinish(extension, context);
+    }
+  }
+
+  createSandbox(context) {
+    const {contentWindow} = context;
+    const contentPrincipal = contentWindow.document.nodePrincipal;
+    const ssm = Services.scriptSecurityManager;
+
+    let principal;
+    if (ssm.isSystemPrincipal(contentPrincipal)) {
+      principal = ssm.createNullPrincipal(contentPrincipal.originAttributes);
+    } else {
+      principal = [contentPrincipal];
+    }
+
+    const sandbox = Cu.Sandbox(principal, {
+      sandboxName: `User Script registered by ${this.extension.policy.debugName}`,
+      sandboxPrototype: contentWindow,
+      sameZoneAs: contentWindow,
+      wantXrays: true,
+      wantGlobalProperties: ["XMLHttpRequest", "fetch"],
+      originAttributes: contentPrincipal.originAttributes,
+      metadata: {
+        "inner-window-id": context.innerWindowID,
+        addonId: this.extension.policy.id,
+      },
+    });
+
+    return sandbox;
+  }
 }
 
 var contentScripts = new DefaultWeakMap(matcher => {
-  return new Script(processScript.extensions.get(matcher.extension), matcher);
+  const extension = processScript.extensions.get(matcher.extension);
+
+  if ("userScriptOptions" in matcher) {
+    return new UserScript(extension, matcher);
+  }
+
+  return new Script(extension, matcher);
 });
 
 
@@ -661,6 +760,7 @@ class ContentScriptContextChild extends BaseContext {
       }
     }
     Cu.nukeSandbox(this.sandbox);
+
     this.sandbox = null;
   }
 }
