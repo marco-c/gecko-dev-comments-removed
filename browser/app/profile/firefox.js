@@ -1793,7 +1793,7 @@ pref("prio.enabled", true);
 #endif
 
 
-pref("browser.discovery.enabled", false);
+pref("browser.discovery.enabled", true);
 pref("browser.discovery.containers.enabled", true);
 pref("browser.discovery.sites", "addons.mozilla.org");
 
