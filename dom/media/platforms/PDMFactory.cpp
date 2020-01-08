@@ -46,6 +46,7 @@
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"
 #include "mozilla/GpuDecoderModule.h"
+#include "mozilla/RemoteDecoderModule.h"
 
 #include "H264.h"
 
@@ -350,6 +351,11 @@ PDMFactory::CreatePDMs()
     
     
     return;
+  }
+
+  if (StaticPrefs::MediaRddProcessEnabled()) {
+    m = new RemoteDecoderModule;
+    StartupPDM(m);
   }
 
 #ifdef XP_WIN

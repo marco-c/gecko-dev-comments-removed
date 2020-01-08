@@ -143,8 +143,10 @@ auto
 GeckoChildProcessHost::GetPathToBinary(FilePath& exePath, GeckoProcessType processType) -> BinaryPathType
 {
   if (sRunSelfAsContentProc &&
-      (processType == GeckoProcessType_Content || processType == GeckoProcessType_GPU ||
-       processType == GeckoProcessType_VR)) {
+      (processType == GeckoProcessType_Content ||
+       processType == GeckoProcessType_GPU ||
+       processType == GeckoProcessType_VR ||
+       processType == GeckoProcessType_RDD)) {
 #if defined(OS_WIN)
     wchar_t exePathBuf[MAXPATHLEN];
     if (!::GetModuleFileNameW(nullptr, exePathBuf, MAXPATHLEN)) {
@@ -747,7 +749,10 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 
   
   
-  if (mProcessType == GeckoProcessType_GPU || mProcessType == GeckoProcessType_VR) {
+  
+  if (mProcessType == GeckoProcessType_GPU ||
+      mProcessType == GeckoProcessType_RDD ||
+      mProcessType == GeckoProcessType_VR) {
     nsCOMPtr<nsIFile> file;
     CrashReporter::GetChildProcessTmpDir(getter_AddRefs(file));
     nsAutoCString path;
@@ -1021,7 +1026,9 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 
   
   
-  if (mProcessType == GeckoProcessType_GPU) {
+  
+  if (mProcessType == GeckoProcessType_GPU ||
+      mProcessType == GeckoProcessType_RDD) {
     nsCOMPtr<nsIFile> file;
     CrashReporter::GetChildProcessTmpDir(getter_AddRefs(file));
     nsString path;
