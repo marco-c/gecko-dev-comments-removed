@@ -175,6 +175,7 @@ TabParent::TabParent(nsIContentParent* aManager,
   , mHasPresented(false)
   , mHasBeforeUnload(false)
   , mIsMouseEnterIntoWidgetEventSuppressed(false)
+  , mIsActiveRecordReplayTab(false)
 {
   MOZ_ASSERT(aManager);
   
@@ -374,6 +375,8 @@ TabParent::DestroyInternal()
        iter.Get()->GetKey())->ParentDestroy();
   }
 #endif
+
+  SetIsActiveRecordReplayTab(false);
 }
 
 void
@@ -2874,6 +2877,11 @@ TabParent::SetDocShellIsActive(bool isActive)
   
   ProcessPriorityManager::TabActivityChanged(this, isActive);
 
+  
+  if (Manager()->AsContentParent()->IsRecordingOrReplaying()) {
+    SetIsActiveRecordReplayTab(isActive);
+  }
+
   return NS_OK;
 }
 
@@ -3590,6 +3598,17 @@ void
 TabParent::LiveResizeStopped()
 {
   SuppressDisplayport(false);
+}
+
+ size_t TabParent::gNumActiveRecordReplayTabs;
+
+void
+TabParent::SetIsActiveRecordReplayTab(bool aIsActive)
+{
+  if (aIsActive != mIsActiveRecordReplayTab) {
+    gNumActiveRecordReplayTabs += aIsActive ? 1 : -1;
+    mIsActiveRecordReplayTab = aIsActive;
+  }
 }
 
 NS_IMETHODIMP

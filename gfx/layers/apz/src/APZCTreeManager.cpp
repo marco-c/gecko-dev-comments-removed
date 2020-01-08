@@ -16,6 +16,7 @@
 #include "InputData.h"                  
 #include "Layers.h"                     
 #include "mozilla/dom/MouseEventBinding.h" 
+#include "mozilla/dom/TabParent.h"      
 #include "mozilla/dom/Touch.h"          
 #include "mozilla/gfx/gfxVars.h"        
 #include "mozilla/gfx/GPUParent.h"      
@@ -1135,6 +1136,13 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
                                    uint64_t* aOutInputBlockId)
 {
   APZThreadUtils::AssertOnControllerThread();
+
+  
+  
+  
+  if (dom::TabParent::AreRecordReplayTabsActive()) {
+    return nsEventStatus_eIgnore;
+  }
 
   
   AutoFocusSequenceNumberSetter focusSetter(mFocusState, aEvent);

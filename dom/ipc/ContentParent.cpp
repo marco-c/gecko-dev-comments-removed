@@ -2049,7 +2049,7 @@ ContentParent::RecvOpenRecordReplayChannel(const uint32_t& aChannelId,
                                            FileDescriptor* aConnection)
 {
   
-  if (!recordreplay::IsRecordingOrReplaying()) {
+  if (!this->IsRecordingOrReplaying()) {
     return IPC_FAIL_NO_REASON(this);
   }
 
@@ -2061,7 +2061,7 @@ mozilla::ipc::IPCResult
 ContentParent::RecvCreateReplayingProcess(const uint32_t& aChannelId)
 {
   
-  if (!recordreplay::IsRecordingOrReplaying()) {
+  if (!this->IsRecordingOrReplaying()) {
     return IPC_FAIL_NO_REASON(this);
   }
 
@@ -2092,7 +2092,7 @@ mozilla::ipc::IPCResult
 ContentParent::RecvTerminateReplayingProcess(const uint32_t& aChannelId)
 {
   
-  if (!recordreplay::IsRecordingOrReplaying()) {
+  if (!this->IsRecordingOrReplaying()) {
     return IPC_FAIL_NO_REASON(this);
   }
 

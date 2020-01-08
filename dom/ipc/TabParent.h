@@ -591,6 +591,10 @@ public:
   void SetReadyToHandleInputEvents() { mIsReadyToHandleInputEvents = true; }
   bool IsReadyToHandleInputEvents() { return mIsReadyToHandleInputEvents; }
 
+  static bool AreRecordReplayTabsActive() {
+    return gNumActiveRecordReplayTabs != 0;
+  }
+
 protected:
   bool ReceiveMessage(const nsString& aMessage,
                       bool aSync,
@@ -785,6 +789,15 @@ private:
   
   
   bool mIsMouseEnterIntoWidgetEventSuppressed;
+
+  
+  static size_t gNumActiveRecordReplayTabs;
+
+  
+  bool mIsActiveRecordReplayTab;
+
+  
+  void SetIsActiveRecordReplayTab(bool aIsActive);
 
 public:
   static TabParent* GetTabParentFromLayersId(layers::LayersId aLayersId);
