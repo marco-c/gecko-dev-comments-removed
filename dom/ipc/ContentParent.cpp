@@ -616,8 +616,6 @@ ContentParent::PreallocateProcess()
                       eNotRecordingOrReplaying,
                        EmptyString());
 
-  PreallocatedProcessManager::AddBlocker(process);
-
   if (!process->LaunchSubprocess(PROCESS_PRIORITY_PREALLOC)) {
     return nullptr;
   }
@@ -883,6 +881,7 @@ ContentParent::GetNewOrUsedBrowserProcess(Element* aFrameElement,
   PreallocatedProcessManager::AddBlocker(p);
 
   if (!p->LaunchSubprocess(aPriority)) {
+    PreallocatedProcessManager::RemoveBlocker(p);
     return nullptr;
   }
 
@@ -1757,6 +1756,10 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
   
   
   mIPCOpen = false;
+
+  
+  
+  PreallocatedProcessManager::RemoveBlocker(this);
 
   if (mHangMonitorActor) {
     ProcessHangMonitor::RemoveProcess(mHangMonitorActor);
