@@ -5,36 +5,21 @@
 
 
 
-var SidebarUI = {
-  get sidebars() {
-    if (this._sidebars) {
-      return this._sidebars;
-    }
-    return this._sidebars = new Map([
-      ["viewBookmarksSidebar", {
-        title: document.getElementById("sidebar-switcher-bookmarks")
-                       .getAttribute("label"),
-        url: "chrome://browser/content/places/bookmarksSidebar.xul",
-        menuId: "menu_bookmarksSidebar",
-        buttonId: "sidebar-switcher-bookmarks",
-      }],
-      ["viewHistorySidebar", {
-        title: document.getElementById("sidebar-switcher-history")
-                       .getAttribute("label"),
-        url: "chrome://browser/content/places/historySidebar.xul",
-        menuId: "menu_historySidebar",
-        buttonId: "sidebar-switcher-history",
-      }],
-      ["viewTabsSidebar", {
-        title: document.getElementById("sidebar-switcher-tabs")
-                       .getAttribute("label"),
-        url: "chrome://browser/content/syncedtabs/sidebar.xhtml",
-        menuId: "menu_tabsSidebar",
-        buttonId: "sidebar-switcher-tabs",
-      }],
-    ]);
-  },
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SidebarUI = {
   
   
   get browser() {
@@ -241,7 +226,7 @@ var SidebarUI = {
 
     
     
-    if (!this.sidebars.has(commandID)) {
+    if (!document.getElementById(commandID)) {
       return true;
     }
 
@@ -281,7 +266,7 @@ var SidebarUI = {
     }
 
     let commandID = this._box.getAttribute("sidebarcommand");
-    if (commandID && this.sidebars.has(commandID)) {
+    if (commandID && document.getElementById(commandID)) {
       this.showInitially(commandID);
     } else {
       this._box.removeAttribute("checked");
@@ -343,6 +328,14 @@ var SidebarUI = {
     this._title.value = value;
   },
 
+  getBroadcasterById(id) {
+    let sidebarBroadcaster = document.getElementById(id);
+    if (sidebarBroadcaster && sidebarBroadcaster.localName == "broadcaster") {
+      return sidebarBroadcaster;
+    }
+    return null;
+  },
+
   
 
 
@@ -361,7 +354,7 @@ var SidebarUI = {
     if (!commandID) {
       commandID = this._box.getAttribute("sidebarcommand");
     }
-    if (!commandID || !this.sidebars.has(commandID)) {
+    if (!commandID || !this.getBroadcasterById(commandID)) {
       commandID = this.DEFAULT_SIDEBAR_ID;
     }
 
@@ -372,12 +365,12 @@ var SidebarUI = {
     return this.show(commandID, triggerNode);
   },
 
-  _loadSidebarExtension(commandID) {
-    let sidebar = this.sidebars.get(commandID);
-    let {extensionId} = sidebar;
+  _loadSidebarExtension(sidebarBroadcaster) {
+    let extensionId = sidebarBroadcaster.getAttribute("extensionId");
     if (extensionId) {
-      SidebarUI.browser.contentWindow.loadPanel(extensionId, sidebar.panel,
-                                                sidebar.browserStyle);
+      let extensionUrl = sidebarBroadcaster.getAttribute("panel");
+      let browserStyle = sidebarBroadcaster.getAttribute("browserStyle");
+      SidebarUI.browser.contentWindow.loadPanel(extensionId, extensionUrl, browserStyle);
     }
   },
 
@@ -390,9 +383,10 @@ var SidebarUI = {
 
 
 
+
   show(commandID, triggerNode) {
-    return this._show(commandID).then(() => {
-      this._loadSidebarExtension(commandID);
+    return this._show(commandID).then((sidebarBroadcaster) => {
+      this._loadSidebarExtension(sidebarBroadcaster);
 
       if (triggerNode) {
         updateToggleControlLabel(triggerNode);
@@ -410,8 +404,8 @@ var SidebarUI = {
 
 
   showInitially(commandID) {
-    return this._show(commandID).then(() => {
-      this._loadSidebarExtension(commandID);
+    return this._show(commandID).then((sidebarBroadcaster) => {
+      this._loadSidebarExtension(sidebarBroadcaster);
     });
   },
 
@@ -422,8 +416,21 @@ var SidebarUI = {
 
 
   _show(commandID) {
-    return new Promise(resolve => {
-      this.selectMenuItem(commandID);
+    return new Promise((resolve, reject) => {
+      let sidebarBroadcaster = this.getBroadcasterById(commandID);
+      if (!sidebarBroadcaster) {
+        reject(new Error("Invalid sidebar broadcaster specified: " + commandID));
+        return;
+      }
+
+      let broadcasters = document.querySelectorAll("broadcaster[group=sidebar]");
+      for (let broadcaster of broadcasters) {
+        if (broadcaster != sidebarBroadcaster) {
+          broadcaster.removeAttribute("checked");
+        } else {
+          sidebarBroadcaster.setAttribute("checked", "true");
+        }
+      }
 
       this._box.hidden = this._splitter.hidden = false;
       this.setPosition();
@@ -431,11 +438,20 @@ var SidebarUI = {
       this.hideSwitcherPanel();
 
       this._box.setAttribute("checked", "true");
-      this._box.setAttribute("sidebarcommand", commandID);
-      this.lastOpenedId = commandID;
+      this._box.setAttribute("sidebarcommand", sidebarBroadcaster.id);
+      this.lastOpenedId = sidebarBroadcaster.id;
 
-      let {url, title} = this.sidebars.get(commandID);
-      this.title = title;
+      let title = sidebarBroadcaster.getAttribute("sidebartitle") ||
+                  sidebarBroadcaster.getAttribute("label");
+
+      
+      
+      
+      if (title) {
+        this.title = title;
+      }
+
+      let url = sidebarBroadcaster.getAttribute("sidebarurl");
       this.browser.setAttribute("src", url); 
 
       if (this.browser.contentDocument.location.href != url) {
@@ -443,14 +459,14 @@ var SidebarUI = {
           
           
           setTimeout(() => {
-            resolve();
+            resolve(sidebarBroadcaster);
 
             
             this._fireShowEvent();
           }, 0);
         }, {capture: true, once: true});
       } else {
-        resolve();
+        resolve(sidebarBroadcaster);
 
         
         this._fireShowEvent();
@@ -477,7 +493,11 @@ var SidebarUI = {
     this.hideSwitcherPanel();
 
     let commandID = this._box.getAttribute("sidebarcommand");
-    this.selectMenuItem("");
+    let sidebarBroadcaster = document.getElementById(commandID);
+
+    if (sidebarBroadcaster.getAttribute("checked") != "true") {
+      return;
+    }
 
     
     
@@ -487,6 +507,7 @@ var SidebarUI = {
     this.browser.setAttribute("src", "about:blank");
     this.browser.docShell.createAboutBlankContentViewer(null);
 
+    sidebarBroadcaster.removeAttribute("checked");
     this._box.removeAttribute("checked");
     this._box.hidden = this._splitter.hidden = true;
 
@@ -497,24 +518,6 @@ var SidebarUI = {
     );
     if (triggerNode) {
       updateToggleControlLabel(triggerNode);
-    }
-  },
-
-  
-
-
-
-  selectMenuItem(commandID) {
-    for (let [id, {menuId, buttonId}] of this.sidebars) {
-      let menu = document.getElementById(menuId);
-      let button = document.getElementById(buttonId);
-      if (id == commandID) {
-        menu.setAttribute("checked", "true");
-        button.setAttribute("checked", "true");
-      } else {
-        menu.removeAttribute("checked");
-        button.removeAttribute("checked");
-      }
     }
   },
 };
