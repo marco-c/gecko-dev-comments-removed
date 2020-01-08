@@ -922,6 +922,12 @@ private:
 
   const uint32_t mOutputChannels;
 
+  
+
+
+
+  const float mGlobalVolume;
+
 #ifdef DEBUG
   
 
