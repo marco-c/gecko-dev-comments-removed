@@ -74,19 +74,6 @@ enum class CallerType : uint32_t;
 }  
 }  
 
-
-
-
-
-
-enum PopupControlState {
-  openAllowed = 0,  
-  openControlled,   
-  openBlocked,      
-  openAbused,       
-  openOverridden    
-};
-
 enum UIStateChangeType {
   UIStateChangeType_NoChange,
   UIStateChangeType_Set,
@@ -382,8 +369,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   mozilla::dom::WindowGlobalChild* GetWindowGlobalChild() {
     return mWindowGlobalChild;
   }
-
-  virtual PopupControlState GetPopupControlState() const = 0;
 
   
   
@@ -875,11 +860,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
   virtual void SetInitialPrincipalToSubject() = 0;
 
-  virtual PopupControlState PushPopupControlState(PopupControlState aState,
-                                                  bool aForce) const = 0;
-  virtual void PopPopupControlState(PopupControlState state) const = 0;
-  virtual PopupControlState GetPopupControlState() const = 0;
-
   
   
   virtual already_AddRefed<nsISupports> SaveWindowState() = 0;
@@ -1209,53 +1189,5 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)
 
 #include "nsPIDOMWindowInlines.h"
-
-#ifdef MOZILLA_INTERNAL_API
-#define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherInternal
-#else
-#define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherExternal
-#endif
-
-
-
-
-
-
-
-class NS_AUTO_POPUP_STATE_PUSHER {
- public:
-#ifdef MOZILLA_INTERNAL_API
-  explicit NS_AUTO_POPUP_STATE_PUSHER(PopupControlState aState,
-                                      bool aForce = false);
-  ~NS_AUTO_POPUP_STATE_PUSHER();
-#else
-  NS_AUTO_POPUP_STATE_PUSHER(nsPIDOMWindowOuter* aWindow,
-                             PopupControlState aState)
-      : mWindow(aWindow), mOldState(openAbused) {
-    if (aWindow) {
-      mOldState = aWindow->PushPopupControlState(aState, false);
-    }
-  }
-
-  ~NS_AUTO_POPUP_STATE_PUSHER() {
-    if (mWindow) {
-      mWindow->PopPopupControlState(mOldState);
-    }
-  }
-#endif
-
- protected:
-#ifndef MOZILLA_INTERNAL_API
-  nsCOMPtr<nsPIDOMWindowOuter> mWindow;
-#endif
-  PopupControlState mOldState;
-
- private:
-  
-  static void* operator new(size_t ) CPP_THROW_NEW { return nullptr; }
-  static void operator delete(void* ) {}
-};
-
-#define nsAutoPopupStatePusher NS_AUTO_POPUP_STATE_PUSHER
 
 #endif  

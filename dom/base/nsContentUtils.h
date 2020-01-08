@@ -3280,26 +3280,6 @@ class nsContentUtils {
   static already_AddRefed<mozilla::dom::ContentFrameMessageManager>
   TryGetTabChildGlobal(nsISupports* aFrom);
 
-  static PopupControlState PushPopupControlState(PopupControlState aState,
-                                                 bool aForce) {
-    MOZ_ASSERT(NS_IsMainThread());
-    PopupControlState old = sPopupControlState;
-    if (aState < old || aForce) {
-      sPopupControlState = aState;
-    }
-    return old;
-  }
-
-  static void PopPopupControlState(PopupControlState aState) {
-    MOZ_ASSERT(NS_IsMainThread());
-    sPopupControlState = aState;
-  }
-
-  static PopupControlState GetPopupControlState() { return sPopupControlState; }
-
-  static void PopupStatePusherCreated();
-  static void PopupStatePusherDestroyed();
-
   
   static uint32_t InnerOrOuterWindowCreated();
   
@@ -3308,15 +3288,6 @@ class nsContentUtils {
   static int32_t GetCurrentInnerOrOuterWindowCount() {
     return sInnerOrOuterWindowCount;
   }
-
-  
-  
-  static bool CanShowPopupByPermission(nsIPrincipal* aPrincipal);
-
-  
-  
-  
-  static bool TryUsePopupOpeningToken();
 
   
 
@@ -3448,7 +3419,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sDisablePopups;
   static bool sIsFullscreenApiEnabled;
   static bool sIsUnprefixedFullscreenApiEnabled;
   static bool sTrustedFullscreenOnly;
@@ -3507,13 +3477,6 @@ class nsContentUtils {
 
   static bool sDoNotTrackEnabled;
   static mozilla::LazyLogModule sDOMDumpLog;
-
-  static PopupControlState sPopupControlState;
-  static uint32_t sPopupStatePusherCount;
-
-  
-  
-  static bool sUnusedPopupToken;
 
   static int32_t sInnerOrOuterWindowCount;
   static uint32_t sInnerOrOuterWindowSerialCounter;

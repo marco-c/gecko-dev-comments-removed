@@ -1356,19 +1356,6 @@ void nsGlobalWindowOuter::SetInitialPrincipalToSubject() {
   }
 }
 
-PopupControlState nsGlobalWindowOuter::PushPopupControlState(
-    PopupControlState aState, bool aForce) const {
-  return nsContentUtils::PushPopupControlState(aState, aForce);
-}
-
-void nsGlobalWindowOuter::PopPopupControlState(PopupControlState aState) const {
-  nsContentUtils::PopPopupControlState(aState);
-}
-
-PopupControlState nsGlobalWindowOuter::GetPopupControlState() const {
-  return nsContentUtils::GetPopupControlState();
-}
-
 #define WINDOWSTATEHOLDER_IID                        \
   {                                                  \
     0x0b917c3e, 0xbd50, 0x4683, {                    \
@@ -2374,7 +2361,7 @@ bool nsGlobalWindowOuter::ConfirmDialogIfNeeded() {
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(openAbused, true);
+  nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
   bool disableDialog = false;
   nsAutoString label, title;
@@ -4316,7 +4303,7 @@ bool nsGlobalWindowOuter::AlertOrConfirm(bool aAlert, const nsAString& aMessage,
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(openAbused, true);
+  nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
   
   
@@ -4404,7 +4391,7 @@ void nsGlobalWindowOuter::PromptOuter(const nsAString& aMessage,
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(openAbused, true);
+  nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
   
   
@@ -4500,7 +4487,8 @@ void nsGlobalWindowOuter::FocusOuter(ErrorResult& aError) {
   
   bool canFocus = CanSetProperty("dom.disable_window_flip") ||
                   (opener == callerOuter &&
-                   RevisePopupAbuseLevel(GetPopupControlState()) < openBlocked);
+                   RevisePopupAbuseLevel(PopupBlocker::GetPopupControlState()) <
+                       PopupBlocker::openBlocked);
 
   nsCOMPtr<mozIDOMWindowProxy> activeDOMWindow;
   fm->GetActiveWindow(getter_AddRefs(activeDOMWindow));
@@ -5129,7 +5117,7 @@ bool nsGlobalWindowOuter::CanSetProperty(const char* aPrefName) {
 }
 
 bool nsGlobalWindowOuter::PopupWhitelisted() {
-  if (mDoc && nsContentUtils::CanShowPopupByPermission(mDoc->NodePrincipal())) {
+  if (mDoc && PopupBlocker::CanShowPopupByPermission(mDoc->NodePrincipal())) {
     return true;
   }
 
@@ -5147,45 +5135,48 @@ bool nsGlobalWindowOuter::PopupWhitelisted() {
 
 
 
-PopupControlState nsGlobalWindowOuter::RevisePopupAbuseLevel(
-    PopupControlState aControl) {
+PopupBlocker::PopupControlState nsGlobalWindowOuter::RevisePopupAbuseLevel(
+    PopupBlocker::PopupControlState aControl) {
   NS_ASSERTION(mDocShell, "Must have docshell");
 
   if (mDocShell->ItemType() != nsIDocShellTreeItem::typeContent) {
-    return openAllowed;
+    return PopupBlocker::openAllowed;
   }
 
-  PopupControlState abuse = aControl;
+  PopupBlocker::PopupControlState abuse = aControl;
   switch (abuse) {
-    case openControlled:
-    case openBlocked:
-    case openOverridden:
-      if (PopupWhitelisted()) abuse = PopupControlState(abuse - 1);
+    case PopupBlocker::openControlled:
+    case PopupBlocker::openBlocked:
+    case PopupBlocker::openOverridden:
+      if (PopupWhitelisted())
+        abuse = PopupBlocker::PopupControlState(abuse - 1);
       break;
-    case openAbused:
+    case PopupBlocker::openAbused:
       if (PopupWhitelisted())
         
-        abuse = openControlled;
+        abuse = PopupBlocker::openControlled;
       break;
-    case openAllowed:
+    case PopupBlocker::openAllowed:
       break;
     default:
       NS_WARNING("Strange PopupControlState!");
   }
 
   
-  if (abuse == openAbused || abuse == openBlocked || abuse == openControlled) {
+  if (abuse == PopupBlocker::openAbused || abuse == PopupBlocker::openBlocked ||
+      abuse == PopupBlocker::openControlled) {
     int32_t popupMax = Preferences::GetInt("dom.popup_maximum", -1);
     if (popupMax >= 0 && gOpenPopupSpamCount >= popupMax)
-      abuse = openOverridden;
+      abuse = PopupBlocker::openOverridden;
   }
 
   
   
-  if ((abuse == openAllowed || abuse == openControlled) &&
+  if ((abuse == PopupBlocker::openAllowed ||
+       abuse == PopupBlocker::openControlled) &&
       StaticPrefs::dom_block_multiple_popups() && !PopupWhitelisted() &&
-      !nsContentUtils::TryUsePopupOpeningToken()) {
-    abuse = openBlocked;
+      !PopupBlocker::TryUsePopupOpeningToken()) {
+    abuse = PopupBlocker::openBlocked;
   }
 
   return abuse;
@@ -6624,10 +6615,11 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 
   if (NS_FAILED(rv)) return rv;
 
-  PopupControlState abuseLevel = GetPopupControlState();
+  PopupBlocker::PopupControlState abuseLevel =
+      PopupBlocker::GetPopupControlState();
   if (checkForPopup) {
     abuseLevel = RevisePopupAbuseLevel(abuseLevel);
-    if (abuseLevel >= openBlocked) {
+    if (abuseLevel >= PopupBlocker::openBlocked) {
       if (!aCalledNoScript) {
         
         
@@ -6663,18 +6655,20 @@ nsresult nsGlobalWindowOuter::OpenInternal(
   nsCOMPtr<nsPIWindowWatcher> pwwatch(do_QueryInterface(wwatch));
   NS_ENSURE_STATE(pwwatch);
 
-  MOZ_ASSERT_IF(checkForPopup, abuseLevel < openBlocked);
+  MOZ_ASSERT_IF(checkForPopup, abuseLevel < PopupBlocker::openBlocked);
   
   
   
   
-  bool isPopupSpamWindow = checkForPopup && (abuseLevel >= openControlled);
+  
+  bool isPopupSpamWindow =
+      checkForPopup && (abuseLevel >= PopupBlocker::openControlled);
 
   {
     
     
     
-    nsAutoPopupStatePusher popupStatePusher(openAbused, true);
+    nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
     if (!aCalledNoScript) {
       
@@ -7388,17 +7382,6 @@ nsPIDOMWindowOuter::nsPIDOMWindowOuter(uint64_t aWindowID)
       mLargeAllocStatus(LargeAllocStatus::NONE) {}
 
 nsPIDOMWindowOuter::~nsPIDOMWindowOuter() {}
-
-nsAutoPopupStatePusherInternal::nsAutoPopupStatePusherInternal(
-    PopupControlState aState, bool aForce)
-    : mOldState(nsContentUtils::PushPopupControlState(aState, aForce)) {
-  nsContentUtils::PopupStatePusherCreated();
-}
-
-nsAutoPopupStatePusherInternal::~nsAutoPopupStatePusherInternal() {
-  nsContentUtils::PopPopupControlState(mOldState);
-  nsContentUtils::PopupStatePusherDestroyed();
-}
 
 mozilla::dom::BrowsingContext* nsPIDOMWindowOuter::GetBrowsingContext() const {
   return mDocShell ? nsDocShell::Cast(mDocShell)->GetBrowsingContext()

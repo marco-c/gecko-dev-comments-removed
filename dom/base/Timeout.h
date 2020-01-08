@@ -7,16 +7,17 @@
 #ifndef mozilla_dom_timeout_h
 #define mozilla_dom_timeout_h
 
+#include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsGlobalWindow.h"
 #include "nsITimeoutHandler.h"
 
 class nsIEventTarget;
 class nsIPrincipal;
 class nsIEventTarget;
+class nsGlobalWindowInner;
 
 namespace mozilla {
 namespace dom {
@@ -83,7 +84,7 @@ class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
 
   
   
-  PopupControlState mPopupState;
+  PopupBlocker::PopupControlState mPopupState;
 
   
   

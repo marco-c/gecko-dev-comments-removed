@@ -573,7 +573,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   nsInterfaceHashtable<nsStringHashKey, nsISupports> mPastNameLookupTable;
 
   
-  PopupControlState mSubmitPopupState;
+  PopupBlocker::PopupControlState mSubmitPopupState;
 
   
 

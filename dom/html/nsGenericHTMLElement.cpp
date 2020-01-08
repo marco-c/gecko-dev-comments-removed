@@ -2289,8 +2289,8 @@ bool nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
 
   if (aKeyCausesActivation) {
     
-    nsAutoPopupStatePusher popupStatePusher(aIsTrustedEvent ? openAllowed
-                                                            : openAbused);
+    nsAutoPopupStatePusher popupStatePusher(
+        aIsTrustedEvent ? PopupBlocker::openAllowed : PopupBlocker::openAbused);
     DispatchSimulatedClick(this, aIsTrustedEvent, presContext);
   }
 

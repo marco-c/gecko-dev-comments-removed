@@ -5,7 +5,6 @@
 
 
 #include "TimeoutManager.h"
-#include "nsContentUtils.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PerformanceCounter.h"
@@ -17,6 +16,7 @@
 #include "nsINamed.h"
 #include "nsITimeoutHandler.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/TabGroup.h"
 #include "TimeoutExecutor.h"
 #include "TimeoutBudgetManager.h"
@@ -496,7 +496,7 @@ nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   timeout->mReason = aReason;
 
   
-  timeout->mPopupState = openAbused;
+  timeout->mPopupState = PopupBlocker::openAbused;
 
   timeout->mNestingLevel = sNestingLevel < DOM_CLAMP_TIMEOUT_NESTING_LEVEL
                                ? sNestingLevel + 1
@@ -516,7 +516,7 @@ nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   if (gRunningTimeoutDepth == 0 &&
-      nsContentUtils::GetPopupControlState() < openBlocked) {
+      PopupBlocker::GetPopupControlState() < PopupBlocker::openBlocked) {
     
     
     
@@ -526,7 +526,7 @@ nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     
     
     if (interval <= gDisableOpenClickDelay) {
-      timeout->mPopupState = nsContentUtils::GetPopupControlState();
+      timeout->mPopupState = PopupBlocker::GetPopupControlState();
     }
   }
 

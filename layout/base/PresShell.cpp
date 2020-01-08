@@ -43,8 +43,8 @@
 #include "nsIContentIterator.h"
 #include "nsIPresShellInlines.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/Event.h"  
 #include "mozilla/dom/PointerEventHandler.h"
+#include "mozilla/dom/PopupBlocker.h"
 #include "nsIDocument.h"
 #include "nsAnimationManager.h"
 #include "nsNameSpaceManager.h"  
@@ -7265,7 +7265,7 @@ nsresult PresShell::HandleEventInternal(WidgetEvent* aEvent,
     }
 
     nsAutoPopupStatePusher popupStatePusher(
-        Event::GetEventPopupControlState(aEvent));
+        PopupBlocker::GetEventPopupControlState(aEvent));
 
     
     

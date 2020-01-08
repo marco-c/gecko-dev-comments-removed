@@ -1202,7 +1202,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       
       
       
-      nsAutoPopupStatePusher popupStatePusher(openAbused);
+      nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused);
 
       newChrome->ShowAsModal();
     }
