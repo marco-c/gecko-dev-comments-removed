@@ -3521,9 +3521,10 @@ HTMLEditor::DoContentInserted(nsIContent* aChild,
       
       return;
     }
-    
-    RefPtr<TextEditRules> rules(mRules);
-    rules->DocumentModified();
+    RefPtr<HTMLEditRules> htmlRules = mRules->AsHTMLEditRules();
+    if (htmlRules) {
+      htmlRules->DocumentModified();
+    }
 
     
     if (mInlineSpellChecker) {
@@ -3564,9 +3565,11 @@ HTMLEditor::ContentRemoved(nsIContent* aChild,
       
       return;
     }
-    
-    RefPtr<TextEditRules> rules(mRules);
-    rules->DocumentModified();
+
+    RefPtr<HTMLEditRules> htmlRules = mRules->AsHTMLEditRules();
+    if (htmlRules) {
+      htmlRules->DocumentModified();
+    }
   }
 }
 
@@ -5220,6 +5223,20 @@ HTMLEditor::GetHTMLDocument() const
     return nullptr;
   }
   return doc->AsHTMLDocument();
+}
+
+void
+HTMLEditor::OnModifyDocument()
+{
+  MOZ_ASSERT(mRules);
+
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return;
+  }
+
+  RefPtr<HTMLEditRules> htmlRules = mRules->AsHTMLEditRules();
+  htmlRules->OnModifyDocument(*selection);
 }
 
 } 

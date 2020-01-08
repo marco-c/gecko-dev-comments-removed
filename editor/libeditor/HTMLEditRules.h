@@ -108,7 +108,11 @@ public:
                                EditSubActionInfo& aInfo,
                                nsresult aResult) override;
   virtual bool DocumentIsEmpty() override;
-  virtual nsresult DocumentModified() override;
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DocumentModified();
 
   nsresult GetListState(bool* aMixed, bool* aOL, bool* aUL, bool* aDL);
   nsresult GetListItemState(bool* aMixed, bool* aLI, bool* aDT, bool* aDD);
@@ -144,6 +148,12 @@ public:
 
   void StartToListenToEditSubActions() { mListenerEnabled = true; }
   void EndListeningToEditSubActions() { mListenerEnabled = false; }
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void OnModifyDocument(Selection& aSelection);
 
 protected:
   virtual ~HTMLEditRules();
@@ -1316,7 +1326,11 @@ protected:
 
   MOZ_MUST_USE nsresult ChangeMarginStart(Element& aElement, bool aIncrease);
 
-  void DocumentModifiedWorker();
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void DocumentModifiedWorker();
 
   
 

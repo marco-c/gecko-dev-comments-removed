@@ -981,6 +981,13 @@ protected:
   nsresult SetPositionToAbsolute(Element& aElement);
   nsresult SetPositionToStatic(Element& aElement);
 
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void OnModifyDocument();
+
 protected: 
   virtual void
   OnStartToHandleTopLevelEditSubAction(
