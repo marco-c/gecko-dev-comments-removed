@@ -54,6 +54,7 @@ class ModuleLoadEvent {
     uintptr_t mBase;
     nsString mLdrName;
     nsCOMPtr<nsIFile> mFile;  
+    Maybe<double> mLoadDurationMS;
 
     
     nsString mFilePathClean;  

@@ -52,7 +52,8 @@ class UntrustedDllsHandler {
 
 
   static void OnAfterModuleLoad(uintptr_t aBaseAddr,
-                                PUNICODE_STRING aLdrModuleName);
+                                PUNICODE_STRING aLdrModuleName,
+                                double aLoadDurationMS);
 
   
 

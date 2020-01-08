@@ -302,6 +302,7 @@ class UntrustedModulesManager {
         
         ModuleLoadEvent::ModuleInfo mi;
         mi.mBase = base;
+        mi.mLoadDurationMS = Nothing();
         ModuleLoadEvent e;
         e.mIsStartup = true;
         e.mProcessUptimeMS = 0;
