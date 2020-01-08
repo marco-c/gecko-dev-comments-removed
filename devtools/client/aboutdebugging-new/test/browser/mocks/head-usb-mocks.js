@@ -41,7 +41,7 @@ class UsbMocks {
     this.runtimeClientFactoryMock = createRuntimeClientFactoryMock();
     this._clients = {};
     this.runtimeClientFactoryMock.createClientForRuntime = runtime => {
-      return { clientWrapper: this._clients[runtime.id] };
+      return this._clients[runtime.id];
     };
 
     
