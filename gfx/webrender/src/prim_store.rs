@@ -932,6 +932,7 @@ pub struct BrushPrimitive {
     pub kind: BrushKind,
     pub opacity: PrimitiveOpacity,
     pub segment_desc: Option<BrushSegmentDescriptor>,
+    pub gpu_location: GpuCacheHandle,
 }
 
 impl BrushPrimitive {
@@ -943,80 +944,101 @@ impl BrushPrimitive {
             kind,
             opacity: PrimitiveOpacity::translucent(),
             segment_desc,
+            gpu_location: GpuCacheHandle::new(),
         }
     }
 
-    fn write_gpu_blocks(
-        &self,
-        request: &mut GpuDataRequest,
+    fn write_gpu_blocks_if_required(
+        &mut self,
         local_rect: LayoutRect,
+        gpu_cache: &mut GpuCache,
     ) {
-        
-        match self.kind {
-            BrushKind::Border { .. } => {
+        if let Some(mut request) = gpu_cache.request(&mut self.gpu_location) {
+            
+            match self.kind {
+                BrushKind::Border { .. } => {
+                    
+                    
+                    
+                    request.push(PremultipliedColorF::WHITE);
+                    request.push(PremultipliedColorF::WHITE);
+                    request.push([
+                        local_rect.size.width,
+                        local_rect.size.height,
+                        0.0,
+                        0.0,
+                    ]);
+                }
+                BrushKind::YuvImage { color_depth, .. } => {
+                    request.push([
+                        color_depth.rescaling_factor(),
+                        0.0,
+                        0.0,
+                        0.0
+                    ]);
+                }
                 
                 
+                BrushKind::Image { stretch_size, tile_spacing, color, .. } => {
+                    request.push(color.premultiplied());
+                    request.push(PremultipliedColorF::WHITE);
+                    request.push([
+                        stretch_size.width + tile_spacing.width,
+                        stretch_size.height + tile_spacing.height,
+                        0.0,
+                        0.0,
+                    ]);
+                }
                 
-                request.push(PremultipliedColorF::WHITE);
-                request.push(PremultipliedColorF::WHITE);
-                request.push([
-                    local_rect.size.width,
-                    local_rect.size.height,
-                    0.0,
-                    0.0,
-                ]);
+                BrushKind::Solid { ref color, .. } => {
+                    request.push(color.premultiplied());
+                }
+                BrushKind::LinearGradient { stretch_size, start_point, end_point, extend_mode, .. } => {
+                    request.push([
+                        start_point.x,
+                        start_point.y,
+                        end_point.x,
+                        end_point.y,
+                    ]);
+                    request.push([
+                        pack_as_float(extend_mode as u32),
+                        stretch_size.width,
+                        stretch_size.height,
+                        0.0,
+                    ]);
+                }
+                BrushKind::RadialGradient { stretch_size, center, start_radius, end_radius, ratio_xy, extend_mode, .. } => {
+                    request.push([
+                        center.x,
+                        center.y,
+                        start_radius,
+                        end_radius,
+                    ]);
+                    request.push([
+                        ratio_xy,
+                        pack_as_float(extend_mode as u32),
+                        stretch_size.width,
+                        stretch_size.height,
+                    ]);
+                }
             }
-            BrushKind::YuvImage { color_depth, .. } => {
-                request.push([
-                    color_depth.rescaling_factor(),
-                    0.0,
-                    0.0,
-                    0.0
-                ]);
-            }
-            
-            
-            BrushKind::Image { stretch_size, tile_spacing, color, .. } => {
-                request.push(color.premultiplied());
-                request.push(PremultipliedColorF::WHITE);
-                request.push([
-                    stretch_size.width + tile_spacing.width,
-                    stretch_size.height + tile_spacing.height,
-                    0.0,
-                    0.0,
-                ]);
-            }
-            
-            BrushKind::Solid { ref color, .. } => {
-                request.push(color.premultiplied());
-            }
-            BrushKind::LinearGradient { stretch_size, start_point, end_point, extend_mode, .. } => {
-                request.push([
-                    start_point.x,
-                    start_point.y,
-                    end_point.x,
-                    end_point.y,
-                ]);
-                request.push([
-                    pack_as_float(extend_mode as u32),
-                    stretch_size.width,
-                    stretch_size.height,
-                    0.0,
-                ]);
-            }
-            BrushKind::RadialGradient { stretch_size, center, start_radius, end_radius, ratio_xy, extend_mode, .. } => {
-                request.push([
-                    center.x,
-                    center.y,
-                    start_radius,
-                    end_radius,
-                ]);
-                request.push([
-                    ratio_xy,
-                    pack_as_float(extend_mode as u32),
-                    stretch_size.width,
-                    stretch_size.height,
-                ]);
+
+            match self.segment_desc {
+                Some(ref segment_desc) => {
+                    for segment in &segment_desc.segments {
+                        
+                        request.write_segment(
+                            segment.local_rect,
+                            segment.extra_data,
+                        );
+                    }
+                }
+                None => {
+                    request.write_segment(
+                        local_rect,
+                        [0.0; 4],
+                    );
+                }
             }
         }
     }
@@ -1855,13 +1877,6 @@ pub struct PrimitiveInstance {
     pub clip_task_index: ClipTaskIndex,
 
     
-    
-    
-    
-    
-    pub gpu_location: GpuCacheHandle,
-
-    
     pub clip_chain_id: ClipChainId,
 
     
@@ -1887,7 +1902,6 @@ impl PrimitiveInstance {
             prepared_frame_id: FrameId::INVALID,
             #[cfg(debug_assertions)]
             id: PrimitiveDebugId(NEXT_PRIM_ID.fetch_add(1, Ordering::Relaxed)),
-            gpu_location: GpuCacheHandle::new(),
             clip_task_index: ClipTaskIndex::INVALID,
             clip_chain_id,
             spatial_node_index,
@@ -2195,10 +2209,7 @@ impl PrimitiveStore {
                         frame_state,
                     );
 
-                if local_rect_changed {
-                    frame_state.gpu_cache.invalidate(&mut prim_instance.gpu_location);
-                    pic_state.local_rect_changed = true;
-                }
+                pic_state.local_rect_changed |= local_rect_changed;
 
                 (is_passthrough, clip_node_collector)
             }
@@ -2370,7 +2381,7 @@ impl PrimitiveStore {
                     prim_instance.clipped_world_rect = None;
                 }
 
-                if let Some(mut request) = frame_state.gpu_cache.request(&mut prim_instance.gpu_location) {
+                if let Some(mut request) = frame_state.gpu_cache.request(&mut pic.gpu_location) {
                     request.push(PremultipliedColorF::WHITE);
                     request.push(PremultipliedColorF::WHITE);
                     request.push([
@@ -3458,33 +3469,12 @@ impl PrimitiveInstance {
         }
 
         
-        let is_chased = self.is_chased();
-        if let Some(mut request) = frame_state.gpu_cache.request(&mut self.gpu_location) {
-            match *prim_details {
-                PrimitiveDetails::Brush(ref mut brush) => {
-                    brush.write_gpu_blocks(&mut request, prim_local_rect);
-
-                    match brush.segment_desc {
-                        Some(ref segment_desc) => {
-                            for segment in &segment_desc.segments {
-                                if is_chased {
-                                    println!("\t\t{:?}", segment);
-                                }
-                                
-                                request.write_segment(
-                                    segment.local_rect,
-                                    segment.extra_data,
-                                );
-                            }
-                        }
-                        None => {
-                            request.write_segment(
-                                prim_local_rect,
-                                [0.0; 4],
-                            );
-                        }
-                    }
-                }
+        match *prim_details {
+            PrimitiveDetails::Brush(ref mut brush) => {
+                brush.write_gpu_blocks_if_required(
+                    prim_local_rect,
+                    frame_state.gpu_cache,
+                );
             }
         }
     }
