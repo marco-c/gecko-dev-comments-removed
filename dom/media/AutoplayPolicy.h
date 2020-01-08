@@ -43,6 +43,14 @@ class AutoplayPolicy {
   
   static bool WouldBeAllowedToPlayIfAutoplayDisabled(
       const HTMLMediaElement& aElement);
+
+  
+  
+  
+  
+  
+  static bool WouldBeAllowedToPlayIfAutoplayDisabled(
+      const AudioContext& aContext);
 };
 
 }  

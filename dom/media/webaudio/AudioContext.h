@@ -328,6 +328,17 @@ class AudioContext final : public DOMEventTargetHelper,
 
   void ReportToConsole(uint32_t aErrorFlags, const char* aMsg) const;
 
+  
+  
+  void UpdateAutoplayAssumptionStatus();
+
+  
+  
+  
+  
+  void MaybeUpdateAutoplayTelemetry();
+  void MaybeUpdateAutoplayTelemetryWhenShutdown();
+
  private:
   
   
@@ -368,6 +379,20 @@ class AudioContext final : public DOMEventTargetHelper,
   bool mIsDisconnecting;
   
   bool mWasAllowedToStart;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mWasEverAllowedToStart;
+  bool mWasEverBlockedToStart;
+  bool mWouldBeAllowedToStart;
 };
 
 static const dom::AudioContext::AudioContextId NO_AUDIO_CONTEXT = 0;
