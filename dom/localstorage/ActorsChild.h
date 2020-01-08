@@ -246,6 +246,9 @@ private:
   
   void
   ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult
+  RecvMarkDirty() override;
 };
 
 } 
