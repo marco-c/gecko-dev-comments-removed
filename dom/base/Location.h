@@ -169,8 +169,9 @@ protected:
   nsresult SetURI(nsIURI* aURL, bool aReplace = false);
   nsresult SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
                            bool aReplace);
-  nsresult SetHrefWithContext(JSContext* cx, const nsAString& aHref,
-                              bool aReplace);
+
+  
+  void DoSetHref(const nsAString& aHref, bool aReplace, ErrorResult& aRv);
 
   
   
