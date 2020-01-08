@@ -181,7 +181,8 @@ HttpBackgroundChannelChild::RecvOnStopRequest(
                                     const nsHttpHeaderArray& aResponseTrailers)
 {
   LOG(("HttpBackgroundChannelChild::RecvOnStopRequest [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread());
+  MOZ_ASSERT(gSocketTransportService);
+  MOZ_ASSERT(gSocketTransportService->IsOnCurrentThreadInfallible());
 
   
   
