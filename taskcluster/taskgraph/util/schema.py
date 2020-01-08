@@ -234,10 +234,3 @@ OptimizationSchema = voluptuous.Any(
     
     {'only-if-dependencies-run': None}
 )
-
-
-taskref_or_string = voluptuous.Any(
-    basestring,
-    {voluptuous.Required('task-reference'): basestring},
-    {voluptuous.Required('artifact-reference'): basestring},
-)

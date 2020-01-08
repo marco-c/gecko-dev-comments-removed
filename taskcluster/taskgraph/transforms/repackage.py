@@ -20,12 +20,17 @@ from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.platforms import archive_format, executable_extension
 from taskgraph.util.workertypes import worker_type_implementation
 from taskgraph.transforms.job import job_description_schema
-from voluptuous import Required, Optional
+from voluptuous import Any, Required, Optional
 
 
 
 job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
 
+
+
+taskref_or_string = Any(
+    basestring,
+    {Required('task-reference'): basestring})
 
 packaging_description_schema = schema.extend({
     

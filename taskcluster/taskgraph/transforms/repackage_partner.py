@@ -22,7 +22,7 @@ from taskgraph.util.platforms import archive_format, executable_extension
 from taskgraph.util.workertypes import worker_type_implementation
 from taskgraph.transforms.task import task_description_schema
 from taskgraph.transforms.repackage import PACKAGE_FORMATS
-from voluptuous import Required, Optional
+from voluptuous import Any, Required, Optional
 
 
 
@@ -32,6 +32,11 @@ task_description_schema = {str(k): v for k, v in task_description_schema.schema.
 def _by_platform(arg):
     return optionally_keyed_by('build-platform', arg)
 
+
+
+taskref_or_string = Any(
+    basestring,
+    {Required('task-reference'): basestring})
 
 packaging_description_schema = schema.extend({
     
