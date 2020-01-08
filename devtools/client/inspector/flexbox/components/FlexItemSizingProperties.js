@@ -221,6 +221,7 @@ class FlexItemSizingProperties extends PureComponent {
   renderMaximumSizeSection(flexItemSizing, properties, dimension) {
     const { clampState, mainMaxSize, mainDeltaSize } = flexItemSizing;
     const grew = mainDeltaSize > 0;
+    const shrank = mainDeltaSize < 0;
     const maxDimensionValue = properties[`max-${dimension}`];
 
     if (clampState !== "clamped_to_max") {
@@ -228,7 +229,8 @@ class FlexItemSizingProperties extends PureComponent {
     }
 
     const reasons = [];
-    if (grew) {
+    if (grew || shrank) {
+      
       
       reasons.push(getStr("flexbox.itemSizing.clampedToMax"));
     }
