@@ -33,7 +33,6 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
@@ -50,7 +49,6 @@
 #include "mozilla/dom/PerformanceService.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SharedWorker.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/DebugOnly.h"
@@ -1407,28 +1405,6 @@ RuntimeService::RegisterWorker(WorkerPrivate* aWorkerPrivate)
     else {
       domainInfo->mActiveWorkers.AppendElement(aWorkerPrivate);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   }
 
   
@@ -1484,22 +1460,6 @@ RuntimeService::RegisterWorker(WorkerPrivate* aWorkerPrivate)
 }
 
 void
-RuntimeService::RemoveSharedWorker(WorkerDomainInfo* aDomainInfo,
-                                   WorkerPrivate* aWorkerPrivate)
-{
-
-
-
-
-
-
-
-
-
-
-}
-
-void
 RuntimeService::UnregisterWorker(WorkerPrivate* aWorkerPrivate)
 {
   aWorkerPrivate->AssertIsOnParentThread();
@@ -1539,10 +1499,6 @@ RuntimeService::UnregisterWorker(WorkerPrivate* aWorkerPrivate)
       MOZ_ASSERT(domainInfo->mActiveWorkers.Contains(aWorkerPrivate),
                  "Don't know about this worker!");
       domainInfo->mActiveWorkers.RemoveElement(aWorkerPrivate);
-    }
-
-    if (aWorkerPrivate->IsSharedWorker()) {
-      RemoveSharedWorker(domainInfo, aWorkerPrivate);
     }
 
     
@@ -2213,12 +2169,8 @@ RuntimeService::CancelWorkersForWindow(nsPIDOMWindowInner* aWindow)
   if (!workers.IsEmpty()) {
     for (uint32_t index = 0; index < workers.Length(); index++) {
       WorkerPrivate*& worker = workers[index];
-
-      if (worker->IsSharedWorker()) {
-        worker->CloseSharedWorkersForWindow(aWindow);
-      } else {
-        worker->Cancel();
-      }
+      MOZ_ASSERT(!worker->IsSharedWorker());
+      worker->Cancel();
     }
   }
 }
@@ -2233,6 +2185,7 @@ RuntimeService::FreezeWorkersForWindow(nsPIDOMWindowInner* aWindow)
   GetWorkersForWindow(aWindow, workers);
 
   for (uint32_t index = 0; index < workers.Length(); index++) {
+    MOZ_ASSERT(!workers[index]->IsSharedWorker());
     workers[index]->Freeze(aWindow);
   }
 }
@@ -2247,6 +2200,7 @@ RuntimeService::ThawWorkersForWindow(nsPIDOMWindowInner* aWindow)
   GetWorkersForWindow(aWindow, workers);
 
   for (uint32_t index = 0; index < workers.Length(); index++) {
+    MOZ_ASSERT(!workers[index]->IsSharedWorker());
     workers[index]->Thaw(aWindow);
   }
 }
@@ -2261,6 +2215,7 @@ RuntimeService::SuspendWorkersForWindow(nsPIDOMWindowInner* aWindow)
   GetWorkersForWindow(aWindow, workers);
 
   for (uint32_t index = 0; index < workers.Length(); index++) {
+    MOZ_ASSERT(!workers[index]->IsSharedWorker());
     workers[index]->ParentWindowPaused();
   }
 }
@@ -2275,6 +2230,7 @@ RuntimeService::ResumeWorkersForWindow(nsPIDOMWindowInner* aWindow)
   GetWorkersForWindow(aWindow, workers);
 
   for (uint32_t index = 0; index < workers.Length(); index++) {
+    MOZ_ASSERT(!workers[index]->IsSharedWorker());
     workers[index]->ParentWindowResumed();
   }
 }
@@ -2292,145 +2248,6 @@ RuntimeService::PropagateFirstPartyStorageAccessGranted(nsPIDOMWindowInner* aWin
 
   for (uint32_t index = 0; index < workers.Length(); index++) {
     workers[index]->PropagateFirstPartyStorageAccessGranted();
-  }
-}
-
-nsresult
-RuntimeService::CreateSharedWorkerFromLoadInfo(JSContext* aCx,
-                                               WorkerLoadInfo* aLoadInfo,
-                                               const nsAString& aScriptURL,
-                                               const nsAString& aName,
-                                               SharedWorker** aSharedWorker)
-{
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  return NS_OK;
-}
-
-void
-RuntimeService::ForgetSharedWorker(WorkerPrivate* aWorkerPrivate)
-{
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aWorkerPrivate);
-  MOZ_ASSERT(aWorkerPrivate->IsSharedWorker());
-
-  MutexAutoLock lock(mMutex);
-
-  WorkerDomainInfo* domainInfo;
-  if (mDomainMap.Get(aWorkerPrivate->Domain(), &domainInfo)) {
-    RemoveSharedWorker(domainInfo, aWorkerPrivate);
   }
 }
 

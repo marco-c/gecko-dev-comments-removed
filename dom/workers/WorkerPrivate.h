@@ -723,7 +723,7 @@ public:
   IsParentWindowPaused() const
   {
     AssertIsOnParentThread();
-    return mParentWindowPausedDepth > 0;
+    return mParentWindowPaused;
   }
 
   
@@ -1080,9 +1080,6 @@ public:
     mLoadingWorkerScript = aLoadingWorkerScript;
   }
 
-  bool
-  RegisterSharedWorker(SharedWorker* aSharedWorker, MessagePort* aPort);
-
   void
   BroadcastErrorToSharedWorkers(JSContext* aCx,
                                 const WorkerErrorReport* aReport,
@@ -1092,18 +1089,11 @@ public:
   GetAllSharedWorkers(nsTArray<RefPtr<SharedWorker>>& aSharedWorkers);
 
   void
-  CloseSharedWorkersForWindow(nsPIDOMWindowInner* aWindow);
-
-  void
   CloseAllSharedWorkers();
 
   void
   FlushReportsToSharedWorkers(nsIConsoleReportCollector* aReporter);
 
-  
-  
-  
-  
   
   
   bool
@@ -1464,9 +1454,7 @@ private:
   };
   ThreadBound<WorkerThreadAccessible> mWorkerThreadAccessible;
 
-  
-  
-  uint32_t mParentWindowPausedDepth;
+  bool mParentWindowPaused;
 
   bool mPendingEventQueueClearing;
   bool mCancelAllPendingRunnables;

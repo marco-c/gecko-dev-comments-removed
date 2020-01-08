@@ -25,19 +25,14 @@ class MessagePort;
 class StringOrWorkerOptions;
 class Event;
 
-namespace workerinternals {
-class RuntimeService;
-}
-
 class SharedWorkerChild;
 
 class SharedWorker final : public DOMEventTargetHelper
 {
-  friend class workerinternals::RuntimeService;
-
   typedef mozilla::ErrorResult ErrorResult;
   typedef mozilla::dom::GlobalObject GlobalObject;
 
+  RefPtr<nsPIDOMWindowInner> mWindow;
   RefPtr<SharedWorkerChild> mActor;
   RefPtr<MessagePort> mMessagePort;
   nsTArray<RefPtr<Event>> mFrozenEvents;
@@ -58,16 +53,7 @@ public:
   }
 
   void
-  Freeze();
-
-  void
-  Thaw();
-
-  void
   QueueEvent(Event* aEvent);
-
-  void
-  Close();
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SharedWorker, DOMEventTargetHelper)
@@ -79,8 +65,27 @@ public:
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
-private:
+  void
+  ErrorPropagation(nsresult aError);
+
   
+
+  void
+  Close();
+
+  void
+  Suspend();
+
+  void
+  Resume();
+
+  void
+  Freeze();
+
+  void
+  Thaw();
+
+private:
   SharedWorker(nsPIDOMWindowInner* aWindow,
                SharedWorkerChild* aActor,
                MessagePort* aMessagePort);
