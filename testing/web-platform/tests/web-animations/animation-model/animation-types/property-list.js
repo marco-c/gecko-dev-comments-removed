@@ -1005,6 +1005,11 @@ const gCSSProperties = {
     types: [
     ]
   },
+  'offset-path': {
+    
+    types: [
+    ]
+  },
   'opacity': {
     
     types: [

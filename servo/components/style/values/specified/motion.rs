@@ -12,7 +12,8 @@ use values::specified::SVGPathData;
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
+         SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum OffsetPath {
     
     
@@ -20,6 +21,7 @@ pub enum OffsetPath {
     #[css(function)]
     Path(SVGPathData),
     
+    #[animation(error)]
     None,
     
 }
