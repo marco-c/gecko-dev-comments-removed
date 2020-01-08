@@ -3500,7 +3500,7 @@ public:
 
   
   
-  void SetUserHasInteracted(bool aUserHasInteracted);
+  void SetUserHasInteracted();
   bool UserHasInteracted()
   {
     return mUserHasInteracted;
