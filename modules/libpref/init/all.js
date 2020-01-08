@@ -185,9 +185,6 @@ pref("dom.performance.time_to_non_blank_paint.enabled", false);
 pref("dom.performance.time_to_dom_content_flushed.enabled", false);
 
 
-pref("dom.enable_performance_observer", true);
-
-
 pref("dom.requestIdleCallback.enabled", true);
 
 

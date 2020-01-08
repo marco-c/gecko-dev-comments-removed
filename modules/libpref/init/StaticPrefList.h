@@ -333,6 +333,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.enable_performance_observer",
+   dom_enable_performance_observer,
+  RelaxedAtomicBool, true
+)
+
+
 
 
 
