@@ -93,6 +93,9 @@ def validate(config, jobs):
 def process_fetch_job(config, jobs):
     
     for job in jobs:
+        if 'fetch' not in job:
+            continue
+
         typ = job['fetch']['type']
 
         if typ == 'static-url':
