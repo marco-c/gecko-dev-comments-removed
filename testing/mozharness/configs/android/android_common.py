@@ -52,6 +52,10 @@ config = {
     "minidump_stackwalk_path": "/usr/local/bin/linux64-minidump_stackwalk",
     "marionette_address": "localhost:2828",
     "marionette_test_manifest": "unit-tests.ini",
+    
+    
+    
+    
 
     "suite_definitions": {
         "mochitest": {
