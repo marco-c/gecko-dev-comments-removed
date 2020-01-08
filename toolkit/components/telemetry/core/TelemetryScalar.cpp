@@ -2158,7 +2158,10 @@ void internal_ApplyScalarActions(
     nsresult rv =
         internal_GetScalarByEnum(lock, uniqueId, processType, &scalar);
     if (NS_FAILED(rv)) {
-      NS_WARNING("NS_FAILED internal_GetScalarByEnum for CHILD");
+      
+      if (rv != NS_ERROR_NOT_AVAILABLE) {
+        NS_WARNING("NS_FAILED internal_GetScalarByEnum for CHILD");
+      }
       continue;
     }
 
@@ -2271,7 +2274,10 @@ void internal_ApplyKeyedScalarActions(
     nsresult rv =
         internal_GetKeyedScalarByEnum(lock, uniqueId, processType, &scalar);
     if (NS_FAILED(rv)) {
-      NS_WARNING("NS_FAILED internal_GetScalarByEnum for CHILD");
+      
+      if (rv != NS_ERROR_NOT_AVAILABLE) {
+        NS_WARNING("NS_FAILED internal_GetScalarByEnum for CHILD");
+      }
       continue;
     }
 
