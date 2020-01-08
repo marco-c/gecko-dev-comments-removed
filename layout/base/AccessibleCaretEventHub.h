@@ -179,6 +179,9 @@ protected:
   
   bool mIsInReflowCallback = false;
 
+  
+  static bool sUseLongTapInjector;
+
   static const int32_t kMoveStartToleranceInPixel = 5;
   static const int32_t kInvalidTouchId = -1;
   static const int32_t kDefaultTouchId = 0; 
