@@ -84,7 +84,16 @@ def package_fennec_apk(inputs=[], omni_ja=None,
     for assets_dir in assets_dirs:
         finder = FileFinder(assets_dir)
         for p, f in finder.find('**'):
-            add(mozpath.join('assets', p), f)
+            compress = None  
+            if p.endswith('.so'):
+                
+                if f.open().read(5)[1:] == '7zXZ':
+                    print('%s is already compressed' % p)
+                    
+                    
+                    compress = False
+
+            add(mozpath.join('assets', p), f, compress=compress)
 
     for lib_dir in lib_dirs:
         finder = FileFinder(lib_dir)
