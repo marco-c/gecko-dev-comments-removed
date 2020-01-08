@@ -154,7 +154,8 @@ public final class GeckoProfile {
             }
         }
 
-        if (profileName == null && profilePath == null) {
+        if (TextUtils.isEmpty(profileName) && profilePath == null) {
+            informIfCustomProfileIsUnavailable(profileName, false);
             
             return getDefaultProfile(context);
         }
@@ -212,14 +213,20 @@ public final class GeckoProfile {
         
         
         
+        
+        
+        
+        
 
-        if (profileName == null && profileDir == null) {
+        if (TextUtils.isEmpty(profileName) && profileDir == null) {
             
             final GeckoProfile profile = GeckoThread.getActiveProfile();
             if (profile != null) {
+                informIfCustomProfileIsUnavailable(profileName, true);
                 return profile;
             }
 
+            informIfCustomProfileIsUnavailable(profileName, false);
             return GeckoProfile.initFromArgs(context, sIntentArgs);
         } else if (profileName == null) {
             
@@ -274,6 +281,28 @@ public final class GeckoProfile {
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+    private static void informIfCustomProfileIsUnavailable(
+            final String profileName, final boolean activeOrDefaultProfileFallback) {
+        if (CUSTOM_PROFILE.equals(profileName)) {
+            final String fallbackProfileName = activeOrDefaultProfileFallback ? "active" : "default";
+            Log.w(LOGTAG, String.format("Custom profile must have a directory specified! " +
+                    "Reverting to use the %s profile", fallbackProfileName));
+        }
+    }
+
+    
     @RobocopTarget
     public static boolean removeProfile(final Context context, final GeckoProfile profile) {
         final boolean success = profile.remove();
@@ -313,8 +342,6 @@ public final class GeckoProfile {
     private GeckoProfile(Context context, String profileName, File profileDir) throws NoMozillaDirectoryException {
         if (profileName == null) {
             throw new IllegalArgumentException("Unable to create GeckoProfile for empty profile name.");
-        } else if (CUSTOM_PROFILE.equals(profileName) && profileDir == null) {
-            throw new IllegalArgumentException("Custom profile must have a directory");
         }
 
         mName = profileName;
