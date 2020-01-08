@@ -41,7 +41,7 @@ function run_generic_sensor_iframe_tests(sensorName) {
     
     window.focus();
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ['reading']);
+    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
     sensor.start();
 
     await sensorWatcher.wait_for('reading');
@@ -83,8 +83,16 @@ function run_generic_sensor_iframe_tests(sensorName) {
 
     
     window.focus();
-    const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ['reading']);
+    const sensor = new sensorType({
+      
+      
+      
+      
+      
+      
+      frequency: 15
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
     sensor.start();
     await sensorWatcher.wait_for('reading');
     let cachedTimeStamp = sensor.timestamp;
@@ -93,7 +101,10 @@ function run_generic_sensor_iframe_tests(sensorName) {
     
     
     
+    
+    
     sensor.stop();
+
     iframe.contentWindow.focus();
     await send_message_to_iframe(iframe, {command: 'start_sensor'});
 
@@ -103,6 +114,7 @@ function run_generic_sensor_iframe_tests(sensorName) {
     await sensorWatcher.wait_for('reading');
     assert_greater_than(sensor.timestamp, cachedTimeStamp);
     cachedTimeStamp = sensor.timestamp;
+    sensor.stop();
 
     
     await send_message_to_iframe(iframe, {command: 'is_sensor_suspended'}, false);
