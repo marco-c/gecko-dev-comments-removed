@@ -5834,12 +5834,13 @@ static bool IsItemTooSmallForActiveLayer(nsIFrame* aFrame) {
 }
 
  bool nsDisplayOpacity::NeedsActiveLayer(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+    bool aEnforceMinimumSize) {
   if (EffectCompositor::HasAnimationsForCompositor(aFrame,
                                                    eCSSProperty_opacity) ||
       (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
                                            eCSSProperty_opacity) &&
-       !IsItemTooSmallForActiveLayer(aFrame))) {
+       !(aEnforceMinimumSize && IsItemTooSmallForActiveLayer(aFrame)))) {
     return true;
   }
   return false;
@@ -7962,7 +7963,8 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(
   return container.forget();
 }
 
-bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder) const {
+bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder,
+                                       bool aEnforceMinimumSize) const {
   
   
   
@@ -7974,7 +7976,7 @@ bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder) const {
                                                    eCSSProperty_transform) ||
       (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame,
                                            eCSSProperty_transform) &&
-       !IsItemTooSmallForActiveLayer(mFrame))) {
+       !(aEnforceMinimumSize && IsItemTooSmallForActiveLayer(mFrame)))) {
     return true;
   }
   return false;
