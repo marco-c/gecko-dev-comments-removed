@@ -68,6 +68,7 @@ class ServiceWorker;
 class ServiceWorkerDescriptor;
 class Timeout;
 class TimeoutManager;
+class WindowGlobalChild;
 class CustomElementRegistry;
 enum class CallerType : uint32_t;
 } 
@@ -394,6 +395,11 @@ public:
       MaybeCreateDoc();
     }
     return mDoc;
+  }
+
+  mozilla::dom::WindowGlobalChild* GetWindowGlobalChild()
+  {
+    return mWindowGlobalChild;
   }
 
   virtual PopupControlState GetPopupControlState() const = 0;
@@ -731,6 +737,12 @@ protected:
   
   
   nsTArray<nsCString> mStorageAccessGranted;
+
+  
+  
+  
+  
+  RefPtr<mozilla::dom::WindowGlobalChild> mWindowGlobalChild;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
