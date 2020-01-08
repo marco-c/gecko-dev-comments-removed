@@ -196,8 +196,6 @@ public class CrashReporterService extends JobIntentService {
             if (profileName != null) {
                 
                 final String passedMinidumpName = passedMinidumpFile.getName();
-                
-                final String crashId = passedMinidumpName.substring(0, passedMinidumpName.length() - 4);
                 final GeckoProfile profile = GeckoProfile.get(this, profileName, profileDir);
                 final String clientId = profile.getClientId();
             }
