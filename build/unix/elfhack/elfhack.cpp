@@ -809,7 +809,7 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     
     
     
-    if (relhackcode->getOffset() + relhackcode->getSize() >= old_exec) {
+    if (!force && relhackcode->getOffset() + relhackcode->getSize() >= old_exec) {
         fprintf(stderr, "No gain. Skipping\n");
         return -1;
     }
