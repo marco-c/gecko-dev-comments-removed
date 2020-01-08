@@ -4,7 +4,7 @@
 "use strict";
 
 const { Cu } = require("chrome");
-const { Front, FrontClassWithSpec, custom, preEvent } = require("devtools/shared/protocol");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 const { PerformanceRecordingFront } = require("devtools/shared/fronts/performance-recording");
 const { performanceSpec } = require("devtools/shared/specs/performance");
 
@@ -13,30 +13,31 @@ loader.lazyRequireGetter(this, "PerformanceIO",
 loader.lazyRequireGetter(this, "getSystemInfo",
   "devtools/shared/system", true);
 
-const PerformanceFront = FrontClassWithSpec(performanceSpec, {
-  initialize: function(client, form) {
-    Front.prototype.initialize.call(this, client, form);
+class PerformanceFront extends FrontClassWithSpec(performanceSpec) {
+  constructor(client, form) {
+    super(client, form);
     this.actorID = form.performanceActor;
     this.manage(this);
-  },
 
-  destroy: function() {
-    Front.prototype.destroy.call(this);
-  },
+    this.before("profiler-status", this._onProfilerStatus.bind(this));
+    this.before("timeline-data", this._onTimelineEvent.bind(this));
+  }
+
+  destroy() {
+    super.destroy();
+  }
 
   
 
 
 
-  connect: custom(async function() {
+  async connect() {
     const systemClient = await getSystemInfo();
-    const { traits } = await this._connect({ systemClient });
+    const { traits } = await super.connect({ systemClient });
     this._traits = traits;
 
     return this._traits;
-  }, {
-    impl: "_connect",
-  }),
+  }
 
   get traits() {
     if (!this._traits) {
@@ -44,7 +45,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
                      "calling `connect()`.");
     }
     return this._traits;
-  },
+  }
 
   
 
@@ -53,7 +54,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  getBufferUsageForRecording: function(recording) {
+  getBufferUsageForRecording(recording) {
     if (!recording.isRecording()) {
       return void 0;
     }
@@ -82,7 +83,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
     }
 
     return percent;
-  },
+  }
 
   
 
@@ -91,7 +92,7 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
 
 
 
-  importRecording: function(file) {
+  importRecording(file) {
     return PerformanceIO.loadRecordingFromFile(file).then(recordingData => {
       const model = new PerformanceRecordingFront();
       model._imported = true;
@@ -108,26 +109,27 @@ const PerformanceFront = FrontClassWithSpec(performanceSpec, {
       model._systemClient = recordingData.systemClient;
       return model;
     });
-  },
+  }
 
   
 
 
 
-  _onProfilerStatus: preEvent("profiler-status", function(data) {
+  _onProfilerStatus(data) {
     this._currentBufferStatus = data;
-  }),
+  }
 
   
 
 
 
 
-  _onTimelineEvent: preEvent("timeline-data", function(type, data, recordings) {
+  _onTimelineEvent(type, data, recordings) {
     for (const recording of recordings) {
       recording._addTimelineData(type, data);
     }
-  }),
-});
+  }
+}
 
 exports.PerformanceFront = PerformanceFront;
+registerFront(PerformanceFront);

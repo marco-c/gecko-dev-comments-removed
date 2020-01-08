@@ -10,7 +10,7 @@ const {
   NODE_CREATION_METHODS,
   NODE_ROUTING_METHODS,
 } = require("devtools/shared/specs/webaudio");
-const protocol = require("devtools/shared/protocol");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 loader.lazyRequireGetter(this, "AUDIO_NODE_DEFINITION",
   "devtools/server/actors/utils/audionodes.json");
 
@@ -26,8 +26,8 @@ loader.lazyRequireGetter(this, "AUDIO_NODE_DEFINITION",
 
 
 
-const AudioNodeFront = protocol.FrontClassWithSpec(audionodeSpec, {
-  form: function(form, detail) {
+class AudioNodeFront extends FrontClassWithSpec(audionodeSpec) {
+  form(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -37,35 +37,38 @@ const AudioNodeFront = protocol.FrontClassWithSpec(audionodeSpec, {
     this.type = form.type;
     this.source = form.source;
     this.bypassable = form.bypassable;
-  },
+  }
 
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
+  constructor(client, form) {
+    super(client, form);
     
     
     if (form) {
       this.manage(this);
     }
-  },
-});
+  }
+}
 
 exports.AudioNodeFront = AudioNodeFront;
+registerFront(AudioNodeFront);
 
 
 
 
-const WebAudioFront = protocol.FrontClassWithSpec(webAudioSpec, {
-  initialize: function(client, { webaudioActor }) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: webaudioActor });
+class WebAudioFront extends FrontClassWithSpec(webAudioSpec) {
+  constructor(client, { webaudioActor }) {
+    super(client, { actor: webaudioActor });
     this.manage(this);
-  },
+
+    this.before("create-node", this._onCreateNode.bind(this));
+  }
 
   
 
 
 
 
-  _onCreateNode: protocol.preEvent("create-node", function(audionode) {
+  _onCreateNode(audionode) {
     if (!audionode.type) {
       return audionode.getType().then(type => {
         audionode.type = type;
@@ -74,11 +77,12 @@ const WebAudioFront = protocol.FrontClassWithSpec(webAudioSpec, {
       });
     }
     return null;
-  }),
-});
+  }
+}
 
 WebAudioFront.AUTOMATION_METHODS = new Set(AUTOMATION_METHODS);
 WebAudioFront.NODE_CREATION_METHODS = new Set(NODE_CREATION_METHODS);
 WebAudioFront.NODE_ROUTING_METHODS = new Set(NODE_ROUTING_METHODS);
 
 exports.WebAudioFront = WebAudioFront;
+registerFront(WebAudioFront);

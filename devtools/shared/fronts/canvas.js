@@ -12,37 +12,35 @@ const {
   DRAW_CALLS,
   INTERESTING_CALLS,
 } = require("devtools/shared/specs/canvas");
-const protocol = require("devtools/shared/protocol");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 const promise = require("promise");
 
 
 
 
-const FrameSnapshotFront = protocol.FrontClassWithSpec(frameSnapshotSpec, {
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
+class FrameSnapshotFront extends FrontClassWithSpec(frameSnapshotSpec) {
+  constructor(client, form) {
+    super(client, form);
     this._animationFrameEndScreenshot = null;
     this._cachedScreenshots = new WeakMap();
-  },
+  }
 
   
 
 
 
-  getOverview: protocol.custom(function() {
-    return this._getOverview().then(data => {
+  getOverview() {
+    return super.getOverview().then(data => {
       this._animationFrameEndScreenshot = data.screenshot;
       return data;
     });
-  }, {
-    impl: "_getOverview",
-  }),
+  }
 
   
 
 
 
-  generateScreenshotFor: protocol.custom(function(functionCall) {
+  generateScreenshotFor(functionCall) {
     if (CanvasFront.ANIMATION_GENERATORS.has(functionCall.name) ||
         CanvasFront.LOOP_GENERATORS.has(functionCall.name)) {
       return promise.resolve(this._animationFrameEndScreenshot);
@@ -51,25 +49,24 @@ const FrameSnapshotFront = protocol.FrontClassWithSpec(frameSnapshotSpec, {
     if (cachedScreenshot) {
       return cachedScreenshot;
     }
-    const screenshot = this._generateScreenshotFor(functionCall);
+    const screenshot = super.generateScreenshotFor(functionCall);
     this._cachedScreenshots.set(functionCall, screenshot);
     return screenshot;
-  }, {
-    impl: "_generateScreenshotFor",
-  }),
-});
+  }
+}
 
 exports.FrameSnapshotFront = FrameSnapshotFront;
+registerFront(FrameSnapshotFront);
 
 
 
 
-const CanvasFront = protocol.FrontClassWithSpec(canvasSpec, {
-  initialize: function(client, { canvasActor }) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: canvasActor });
+class CanvasFront extends FrontClassWithSpec(canvasSpec) {
+  constructor(client, { canvasActor }) {
+    super(client, { actor: canvasActor });
     this.manage(this);
-  },
-});
+  }
+}
 
 
 
@@ -89,3 +86,4 @@ CanvasFront.INVALID_SNAPSHOT_IMAGE = {
 };
 
 exports.CanvasFront = CanvasFront;
+registerFront(CanvasFront);

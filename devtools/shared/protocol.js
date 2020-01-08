@@ -1293,6 +1293,12 @@ var Front = function(conn = null, form = null, detail = null, context = null) {
   
   
   
+  this._beforeListeners = new Map();
+
+  
+  
+  
+  
   if (form) {
     this.actorID = form.actor;
     form = types.getType(this.typeName).formType(detail).read(form, this, detail);
@@ -1302,9 +1308,6 @@ var Front = function(conn = null, form = null, detail = null, context = null) {
 
 Front.prototype = extend(Pool.prototype, {
   actorID: null,
-
-  
-  initialize: Front,
 
   destroy: function() {
     
@@ -1319,6 +1322,7 @@ Front.prototype = extend(Pool.prototype, {
     Pool.prototype.destroy.call(this);
     this.actorID = null;
     this._frontListeners = null;
+    this._beforeListeners = null;
   },
 
   manage: function(front) {
@@ -1343,6 +1347,24 @@ Front.prototype = extend(Pool.prototype, {
     }
     
     this._frontListeners.on(typeName, callback);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  before(type, callback) {
+    if (this._beforeListeners.has(type)) {
+      throw new Error(`Can't register multiple before listeners for "${type}".`);
+    }
+    this._beforeListeners.set(type, callback);
   },
 
   toString: function() {
@@ -1403,13 +1425,16 @@ Front.prototype = extend(Pool.prototype, {
         console.exception(ex);
         throw ex;
       }
-      if (event.pre) {
-        const results = event.pre.map(pre => pre.apply(this, args));
-
+      
+      
+      
+      const beforeEvent = this._beforeListeners.get(event.name);
+      if (beforeEvent) {
+        const result = beforeEvent.apply(this, args);
         
         
-        if (results.some(result => result && typeof result.then === "function")) {
-          Promise.all(results).then(() => {
+        if (result && typeof result.then == "function") {
+          result.then(() => {
             return EventEmitter.emit.apply(null, [this, event.name].concat(args));
           });
           return;
@@ -1469,31 +1494,6 @@ exports.Front = Front;
 
 
 
-exports.preEvent = function(eventName, fn) {
-  fn._preEvent = eventName;
-  return fn;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-exports.custom = function(fn, options = {}) {
-  fn._customFront = options;
-  return fn;
-};
-
-
-
-
-
 var generateRequestMethods = function(actorSpec, frontProto) {
   if (frontProto._actorSpec) {
     throw new Error("frontProto called twice on the same front prototype!");
@@ -1504,22 +1504,7 @@ var generateRequestMethods = function(actorSpec, frontProto) {
   
   const methods = actorSpec.methods;
   methods.forEach(spec => {
-    let name = spec.name;
-
-    
-    
-    if (name in frontProto) {
-      const custom = frontProto[spec.name]._customFront;
-      if (custom === undefined) {
-        throw Error(`Existing method for ${spec.name} not marked customFront while ` +
-                    ` processing ${actorSpec.typeName}.`);
-      }
-      
-      if (!custom.impl) {
-        return;
-      }
-      name = custom.impl;
-    }
+    const name = spec.name;
 
     frontProto[name] = function(...args) {
       
@@ -1571,34 +1556,12 @@ var generateRequestMethods = function(actorSpec, frontProto) {
 
   const actorEvents = actorSpec.events;
   if (actorEvents) {
-    
-    const preHandlers = new Map();
-    for (const name of Object.getOwnPropertyNames(frontProto)) {
-      const desc = Object.getOwnPropertyDescriptor(frontProto, name);
-      if (!desc.value) {
-        continue;
-      }
-      if (desc.value._preEvent) {
-        const preEvent = desc.value._preEvent;
-        if (!actorEvents.has(preEvent)) {
-          throw Error("preEvent for event that doesn't exist: " + preEvent);
-        }
-        let handlers = preHandlers.get(preEvent);
-        if (!handlers) {
-          handlers = [];
-          preHandlers.set(preEvent, handlers);
-        }
-        handlers.push(desc.value);
-      }
-    }
-
     frontProto._clientSpec.events = new Map();
 
     for (const [name, request] of actorEvents) {
       frontProto._clientSpec.events.set(request.type, {
-        name: name,
-        request: request,
-        pre: preHandlers.get(name),
+        name,
+        request,
       });
     }
   }
@@ -1617,29 +1580,21 @@ var generateRequestMethods = function(actorSpec, frontProto) {
 
 
 
-var FrontClassWithSpec = function(actorSpec, frontProto) {
-  
-  const cls = function() {
-    const instance = Object.create(cls.prototype);
-    const initializer = instance.initialize.apply(instance, arguments);
-
-    
-    
-    if (initializer && typeof initializer.then === "function") {
-      return initializer.then(resolve => instance);
-    }
-    return instance;
-  };
-  cls.prototype = extend(Front.prototype, generateRequestMethods(actorSpec, frontProto));
-
-  if (!registeredTypes.has(actorSpec.typeName)) {
-    types.addActorType(actorSpec.typeName);
+var FrontClassWithSpec = function(actorSpec) {
+  class OneFront extends Front {
   }
-  registeredTypes.get(actorSpec.typeName).frontClass = cls;
-
-  return cls;
+  generateRequestMethods(actorSpec, OneFront.prototype);
+  return OneFront;
 };
 exports.FrontClassWithSpec = FrontClassWithSpec;
+
+exports.registerFront = function(cls) {
+  const { typeName } = cls.prototype;
+  if (!registeredTypes.has(typeName)) {
+    types.addActorType(typeName);
+  }
+  registeredTypes.get(typeName).frontClass = cls;
+};
 
 exports.dumpActorSpec = function(type) {
   const actorSpec = type.actorSpec;
@@ -1702,6 +1657,13 @@ function getFront(client, typeName, form) {
   if (!type.frontClass) {
     lazyLoadFront(typeName);
   }
-  return type.frontClass(client, form);
+  
+  
+  const Class = type.frontClass;
+  const instance = new Class(client, form);
+  if (typeof (instance.initialize) == "function") {
+    return instance.initialize(client, form).then(() => instance);
+  }
+  return instance;
 }
 exports.getFront = getFront;

@@ -4,21 +4,21 @@
 "use strict";
 
 const { functionCallSpec } = require("devtools/shared/specs/function-call");
-const protocol = require("devtools/shared/protocol");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 
 
 
 
-const FunctionCallFront = protocol.FrontClassWithSpec(functionCallSpec, {
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-  },
+class FunctionCallFront extends FrontClassWithSpec(functionCallSpec) {
+  constructor(client, form) {
+    super(client, form);
+  }
 
   
 
 
 
-  form: function(form) {
+  form(form) {
     this.actorID = form.actor;
     this.type = form.type;
     this.name = form.name;
@@ -28,10 +28,11 @@ const FunctionCallFront = protocol.FrontClassWithSpec(functionCallSpec, {
     this.callerPreview = form.callerPreview;
     this.argsPreview = form.argsPreview;
     this.resultPreview = form.resultPreview;
-  },
-});
+  }
+}
 
 exports.FunctionCallFront = FunctionCallFront;
+registerFront(FunctionCallFront);
 
 
 

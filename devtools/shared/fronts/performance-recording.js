@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 const { performanceRecordingSpec } = require("devtools/shared/specs/performance-recording");
 
 loader.lazyRequireGetter(this, "PerformanceIO",
@@ -17,9 +17,8 @@ loader.lazyRequireGetter(this, "RecordingUtils",
 
 
 
-const PerformanceRecordingFront = FrontClassWithSpec(performanceRecordingSpec,
-Object.assign({
-  form: function(form, detail) {
+class PerformanceRecordingFront extends FrontClassWithSpec(performanceRecordingSpec) {
+  form(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -49,20 +48,20 @@ Object.assign({
       this._markers = this._markers.sort((a, b) => (a.start > b.start));
       this._markersSorted = true;
     }
-  },
+  }
 
-  initialize: function(client, form, config) {
-    Front.prototype.initialize.call(this, client, form);
+  constructor(client, form, config) {
+    super(client, form);
     this._markers = [];
     this._frames = [];
     this._memory = [];
     this._ticks = [];
     this._allocations = { sites: [], timestamps: [], frames: [], sizes: [] };
-  },
+  }
 
-  destroy: function() {
-    Front.prototype.destroy.call(this);
-  },
+  destroy() {
+    super.destroy();
+  }
 
   
 
@@ -70,15 +69,15 @@ Object.assign({
 
 
 
-  exportRecording: function(file) {
+  exportRecording(file) {
     const recordingData = this.getAllData();
     return PerformanceIO.saveRecordingToFile(recordingData, file);
-  },
+  }
 
   
 
 
-  _addTimelineData: function(eventName, data) {
+  _addTimelineData(eventName, data) {
     const config = this.getConfiguration();
 
     switch (eventName) {
@@ -144,9 +143,18 @@ Object.assign({
         break;
       }
     }
-  },
+  }
 
-  toString: () => "[object PerformanceRecordingFront]",
-}, PerformanceRecordingCommon));
+  toString() {
+    return "[object PerformanceRecordingFront]";
+  }
+}
+
+
+
+
+Object.defineProperties(PerformanceRecordingFront.prototype,
+  Object.getOwnPropertyDescriptors(PerformanceRecordingCommon));
 
 exports.PerformanceRecordingFront = PerformanceRecordingFront;
+registerFront(PerformanceRecordingFront);

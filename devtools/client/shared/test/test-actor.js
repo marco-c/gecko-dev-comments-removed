@@ -791,12 +791,13 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   },
 });
 
-var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSpec, {
-  initialize: function(client, { testActor }, toolbox) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: testActor });
+class TestActorFront extends protocol.FrontClassWithSpec(testSpec) {
+  constructor(client, { testActor }, toolbox) {
+    super(client, { actor: testActor });
+
     this.manage(this);
     this.toolbox = toolbox;
-  },
+  }
 
   
 
@@ -805,19 +806,17 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  zoomPageTo: function(level, actorID = this.toolbox.highlighter.actorID) {
+  zoomPageTo(level, actorID = this.toolbox.highlighter.actorID) {
     return this.changeZoomLevel(level, actorID);
-  },
+  }
 
   
-  changeHighlightedNodeWaitForUpdate: protocol.custom(function(name, value, highlighter) {
+  changeHighlightedNodeWaitForUpdate(name, value, highlighter) {
     
-    return this._changeHighlightedNodeWaitForUpdate(
+    return super.changeHighlightedNodeWaitForUpdate(
       name, value, (highlighter || this.toolbox.highlighter).actorID
     );
-  }, {
-    impl: "_changeHighlightedNodeWaitForUpdate",
-  }),
+  }
 
   
 
@@ -826,27 +825,25 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  getHighlighterNodeAttribute: function(nodeID, name, highlighter) {
+  getHighlighterNodeAttribute(nodeID, name, highlighter) {
     return this.getHighlighterAttribute(
       nodeID, name, (highlighter || this.toolbox.highlighter).actorID
     );
-  },
+  }
 
-  getHighlighterNodeTextContent: protocol.custom(function(nodeID, highlighter) {
-    return this._getHighlighterNodeTextContent(
+  getHighlighterNodeTextContent(nodeID, highlighter) {
+    return super.getHighlighterNodeTextContent(
       nodeID, (highlighter || this.toolbox.highlighter).actorID
     );
-  }, {
-    impl: "_getHighlighterNodeTextContent",
-  }),
+  }
 
   
 
 
-  isHighlighting: function() {
+  isHighlighting() {
     return this.getHighlighterNodeAttribute("box-model-elements", "hidden")
       .then(value => value === null);
-  },
+  }
 
   
 
@@ -871,7 +868,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
           prefix + boxType + " point " + point + " y coordinate is correct");
       }
     }
-  },
+  }
 
   
 
@@ -886,7 +883,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
       width: p2.x - p1.x,
       height: p4.y - p1.y,
     };
-  },
+  }
 
   
 
@@ -911,7 +908,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
     }
 
     return ret;
-  },
+  }
 
   
 
@@ -922,7 +919,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
   async assertHighlightedNode(selector) {
     const rect = await this.getNodeRect(selector);
     return this.isNodeRectHighlighted(rect);
-  },
+  }
 
   
 
@@ -935,7 +932,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
   async assertHighlightedTextNode(parentSelector, childNodeIndex) {
     const rect = await this.getTextNodeRect(parentSelector, childNodeIndex);
     return this.isNodeRectHighlighted(rect);
-  },
+  }
 
   
 
@@ -966,7 +963,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
            isInside([right, top], points) &&
            isInside([right, bottom], points) &&
            isInside([left, bottom], points);
-  },
+  }
 
   
 
@@ -1002,7 +999,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
         y: parseFloat(points[3][1]),
       },
     };
-  },
+  }
 
   
 
@@ -1011,7 +1008,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
   async _isRegionHidden(region) {
     const value = await this.getHighlighterNodeAttribute("box-model-" + region, "hidden");
     return value !== null;
-  },
+  }
 
   async _getGuideStatus(location) {
     const id = "box-model-guide-" + location;
@@ -1029,7 +1026,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
       x2: x2,
       y2: y2,
     };
-  },
+  }
 
   
 
@@ -1053,13 +1050,11 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
       p3: {x: +rGuide.x1 + 1, y: +bGuide.y1 + 1},
       p4: {x: lGuide.x1, y: +bGuide.y1 + 1},
     };
-  },
+  }
 
-  waitForHighlighterEvent: protocol.custom(function(event) {
-    return this._waitForHighlighterEvent(event, this.toolbox.highlighter.actorID);
-  }, {
-    impl: "_waitForHighlighterEvent",
-  }),
+  waitForHighlighterEvent(event) {
+    return super.waitForHighlighterEvent(event, this.toolbox.highlighter.actorID);
+  }
 
   
 
@@ -1092,8 +1087,9 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
     }
 
     return {d, points};
-  },
-});
+  }
+}
+exports.TestActorFront = TestActorFront;
 
 
 

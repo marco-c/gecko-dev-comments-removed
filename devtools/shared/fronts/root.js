@@ -5,16 +5,15 @@
 
 const {Ci} = require("chrome");
 const {rootSpec} = require("devtools/shared/specs/root");
-const protocol = require("devtools/shared/protocol");
-const {custom} = protocol;
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 loader.lazyRequireGetter(this, "BrowsingContextTargetFront", "devtools/shared/fronts/targets/browsing-context", true);
 loader.lazyRequireGetter(this, "ContentProcessTargetFront", "devtools/shared/fronts/targets/content-process", true);
 
-const RootFront = protocol.FrontClassWithSpec(rootSpec, {
-  initialize: function(client, form) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: form.from });
+class RootFront extends FrontClassWithSpec(rootSpec) {
+  constructor(client, form) {
+    super(client, { actor: form.from });
 
     this.applicationType = form.applicationType;
     this.traits = form.traits;
@@ -34,7 +33,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
     this.fronts = new Map();
 
     this._client = client;
-  },
+  }
 
   
 
@@ -51,7 +50,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
 
 
 
-  listAllWorkers: async function() {
+  async listAllWorkers() {
     let registrations = [];
     let workers = [];
 
@@ -132,7 +131,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
     });
 
     return result;
-  },
+  }
 
   
 
@@ -142,13 +141,13 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
 
   getMainProcess() {
     return this.getProcess(0);
-  },
+  }
 
-  getProcess: custom(async function(id) {
+  async getProcess(id) {
     
     
     
-    const { form } = await this._getProcess(id);
+    const { form } = await super.getProcess(id);
     let front = this.actor(form.actor);
     if (front) {
       return front;
@@ -167,9 +166,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
     this.manage(front);
 
     return front;
-  }, {
-    impl: "_getProcess",
-  }),
+  }
 
   
 
@@ -183,7 +180,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
 
 
 
-  getTab: custom(async function(filter) {
+  async getTab(filter) {
     const packet = {};
     if (filter) {
       if (typeof (filter.outerWindowID) == "number") {
@@ -210,10 +207,8 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
       }
     }
 
-    return this._getTab(packet);
-  }, {
-    impl: "_getTab",
-  }),
+    return super.getTab(packet);
+  }
 
   
 
@@ -227,7 +222,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
     const addons = await this.listAddons();
     const addonTargetFront = addons.find(addon => addon.id === id);
     return addonTargetFront;
-  },
+  }
 
   
 
@@ -239,7 +234,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
   echo(packet) {
     packet.type = "echo";
     return this.request(packet);
-  },
+  }
 
   
 
@@ -257,6 +252,7 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
     front = getFront(this._client, typeName, rootForm);
     this.fronts.set(typeName, front);
     return front;
-  },
-});
+  }
+}
 exports.RootFront = RootFront;
+registerFront(RootFront);

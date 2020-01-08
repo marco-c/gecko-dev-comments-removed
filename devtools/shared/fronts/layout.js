@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { FrontClassWithSpec } = require("devtools/shared/protocol");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 const {
   flexboxSpec,
   flexItemSpec,
@@ -12,14 +12,14 @@ const {
   layoutSpec,
 } = require("devtools/shared/specs/layout");
 
-const FlexboxFront = FrontClassWithSpec(flexboxSpec, {
-  form: function(form, detail) {
+class FlexboxFront extends FrontClassWithSpec(flexboxSpec) {
+  form(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
     }
     this._form = form;
-  },
+  }
 
   
 
@@ -31,31 +31,31 @@ const FlexboxFront = FrontClassWithSpec(flexboxSpec, {
     }
 
     return this.conn.getActor(this._form.containerNodeActorID);
-  },
+  }
 
   
 
 
   get properties() {
     return this._form.properties;
-  },
-});
+  }
+}
 
-const FlexItemFront = FrontClassWithSpec(flexItemSpec, {
-  form: function(form, detail) {
+class FlexItemFront extends FrontClassWithSpec(flexItemSpec) {
+  form(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
     }
     this._form = form;
-  },
+  }
 
   
 
 
   get flexItemSizing() {
     return this._form.flexItemSizing;
-  },
+  }
 
   
 
@@ -67,31 +67,31 @@ const FlexItemFront = FrontClassWithSpec(flexItemSpec, {
     }
 
     return this.conn.getActor(this._form.nodeActorID);
-  },
+  }
 
   
 
 
   get computedStyle() {
     return this._form.computedStyle;
-  },
+  }
 
   
 
 
   get properties() {
     return this._form.properties;
-  },
-});
+  }
+}
 
-const GridFront = FrontClassWithSpec(gridSpec, {
-  form: function(form, detail) {
+class GridFront extends FrontClassWithSpec(gridSpec) {
+  form(form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
     }
     this._form = form;
-  },
+  }
 
   
 
@@ -103,7 +103,7 @@ const GridFront = FrontClassWithSpec(gridSpec, {
     }
 
     return this.conn.getActor(this._form.containerNodeActorID);
-  },
+  }
 
   
 
@@ -115,14 +115,14 @@ const GridFront = FrontClassWithSpec(gridSpec, {
     }
 
     return this._form.direction;
-  },
+  }
 
   
 
 
   get gridFragments() {
     return this._form.gridFragments;
-  },
+  }
 
   
 
@@ -134,12 +134,17 @@ const GridFront = FrontClassWithSpec(gridSpec, {
     }
 
     return this._form.writingMode;
-  },
-});
+  }
+}
 
-const LayoutFront = FrontClassWithSpec(layoutSpec, {});
+class LayoutFront extends FrontClassWithSpec(layoutSpec) {
+}
 
 exports.FlexboxFront = FlexboxFront;
+registerFront(FlexboxFront);
 exports.FlexItemFront = FlexItemFront;
+registerFront(FlexItemFront);
 exports.GridFront = GridFront;
+registerFront(GridFront);
 exports.LayoutFront = LayoutFront;
+registerFront(LayoutFront);

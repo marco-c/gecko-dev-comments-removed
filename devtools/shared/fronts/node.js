@@ -4,10 +4,9 @@
 "use strict";
 
 const {
-  Front,
   FrontClassWithSpec,
-  custom,
   types,
+  registerFront,
 } = require("devtools/shared/protocol.js");
 
 const {
@@ -26,42 +25,39 @@ const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 
 
 
-const NodeListFront = FrontClassWithSpec(nodeListSpec, {
-  initialize: function(client, form) {
-    Front.prototype.initialize.call(this, client, form);
-  },
+class NodeListFront extends FrontClassWithSpec(nodeListSpec) {
+  constructor(client, form) {
+    super(client, form);
+  }
 
-  destroy: function() {
-    Front.prototype.destroy.call(this);
-  },
+  destroy() {
+    super.destroy();
+  }
 
-  marshallPool: function() {
+  marshallPool() {
     return this.parent();
-  },
+  }
 
   
-  form: function(json) {
+  form(json) {
     this.length = json.length;
-  },
+  }
 
-  item: custom(function(index) {
-    return this._item(index).then(response => {
+  item(index) {
+    return super.item(index).then(response => {
       return response.node;
     });
-  }, {
-    impl: "_item",
-  }),
+  }
 
-  items: custom(function(start, end) {
-    return this._items(start, end).then(response => {
+  items(start, end) {
+    return super.items(start, end).then(response => {
       return response.nodes;
     });
-  }, {
-    impl: "_items",
-  }),
-});
+  }
+}
 
 exports.NodeListFront = NodeListFront;
+registerFront(NodeListFront);
 
 
 
@@ -118,8 +114,9 @@ class AttributeModificationList {
 
 
 
-const NodeFront = FrontClassWithSpec(nodeSpec, {
-  initialize: function(conn, form, detail, ctx) {
+class NodeFront extends FrontClassWithSpec(nodeSpec) {
+  constructor(conn, form, detail, ctx) {
+    super(conn, form, detail, ctx);
     
     this._parent = null;
     
@@ -128,20 +125,19 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     this._next = null;
     
     this._prev = null;
-    Front.prototype.initialize.call(this, conn, form, detail, ctx);
-  },
+  }
 
   
 
 
 
 
-  destroy: function() {
-    Front.prototype.destroy.call(this);
-  },
+  destroy() {
+    super.destroy();
+  }
 
   
-  form: function(form, detail, ctx) {
+  form(form, detail, ctx) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -177,22 +173,22 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     } else {
       this.inlineTextChild = undefined;
     }
-  },
+  }
 
   
 
 
-  parentNode: function() {
+  parentNode() {
     return this._parent;
-  },
+  }
 
   
 
 
 
-  parentOrHost: function() {
+  parentOrHost() {
     return this.isShadowRoot ? this.host : this._parent;
-  },
+  }
 
   
 
@@ -200,7 +196,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  updateMutation: function(change) {
+  updateMutation(change) {
     if (change.type === "attributes") {
       
       this._attrMap = undefined;
@@ -236,140 +232,140 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     } else if (change.type === "events") {
       this._form.hasEventListeners = change.hasEventListeners;
     }
-  },
+  }
 
   
 
   get id() {
     return this.getAttribute("id");
-  },
+  }
 
   get nodeType() {
     return this._form.nodeType;
-  },
+  }
   get namespaceURI() {
     return this._form.namespaceURI;
-  },
+  }
   get nodeName() {
     return this._form.nodeName;
-  },
+  }
   get displayName() {
     const {displayName, nodeName} = this._form;
 
     
     return displayName || nodeName.toLowerCase();
-  },
+  }
   get doctypeString() {
     return "<!DOCTYPE " + this._form.name +
      (this._form.publicId ? " PUBLIC \"" + this._form.publicId + "\"" : "") +
      (this._form.systemId ? " \"" + this._form.systemId + "\"" : "") +
      ">";
-  },
+  }
 
   get baseURI() {
     return this._form.baseURI;
-  },
+  }
 
   get className() {
     return this.getAttribute("class") || "";
-  },
+  }
 
   get hasChildren() {
     return this._form.numChildren > 0;
-  },
+  }
   get numChildren() {
     return this._form.numChildren;
-  },
+  }
   get hasEventListeners() {
     return this._form.hasEventListeners;
-  },
+  }
 
   get isBeforePseudoElement() {
     return this._form.isBeforePseudoElement;
-  },
+  }
   get isAfterPseudoElement() {
     return this._form.isAfterPseudoElement;
-  },
+  }
   get isPseudoElement() {
     return this.isBeforePseudoElement || this.isAfterPseudoElement;
-  },
+  }
   get isAnonymous() {
     return this._form.isAnonymous;
-  },
+  }
   get isInHTMLDocument() {
     return this._form.isInHTMLDocument;
-  },
+  }
   get tagName() {
     return this.nodeType === nodeConstants.ELEMENT_NODE ? this.nodeName : null;
-  },
+  }
 
   get isDocumentElement() {
     return !!this._form.isDocumentElement;
-  },
+  }
 
   get isShadowRoot() {
     return this._form.isShadowRoot;
-  },
+  }
 
   get shadowRootMode() {
     return this._form.shadowRootMode;
-  },
+  }
 
   get isShadowHost() {
     return this._form.isShadowHost;
-  },
+  }
 
   get customElementLocation() {
     return this._form.customElementLocation;
-  },
+  }
 
   get isDirectShadowHostChild() {
     return this._form.isDirectShadowHostChild;
-  },
+  }
 
   
   get name() {
     return this._form.name;
-  },
+  }
   get publicId() {
     return this._form.publicId;
-  },
+  }
   get systemId() {
     return this._form.systemId;
-  },
+  }
 
-  getAttribute: function(name) {
+  getAttribute(name) {
     const attr = this._getAttribute(name);
     return attr ? attr.value : null;
-  },
-  hasAttribute: function(name) {
+  }
+  hasAttribute(name) {
     this._cacheAttributes();
     return (name in this._attrMap);
-  },
+  }
 
   get hidden() {
     const cls = this.getAttribute("class");
     return cls && cls.indexOf(HIDDEN_CLASS) > -1;
-  },
+  }
 
   get attributes() {
     return this._form.attrs;
-  },
+  }
 
   get pseudoClassLocks() {
     return this._form.pseudoClassLocks || [];
-  },
-  hasPseudoClassLock: function(pseudo) {
+  }
+  hasPseudoClassLock(pseudo) {
     return this.pseudoClassLocks.some(locked => locked === pseudo);
-  },
+  }
 
   get displayType() {
     return this._form.displayType;
-  },
+  }
 
   get isDisplayed() {
     return this._form.isDisplayed;
-  },
+  }
 
   get isTreeDisplayed() {
     let parent = this;
@@ -380,29 +376,27 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       parent = parent.parentNode();
     }
     return true;
-  },
+  }
 
-  getNodeValue: custom(function() {
+  getNodeValue() {
     
     
     if (this._form.nodeValue === null && this._form.shortValue) {
-      return this._getNodeValue();
+      return super.getNodeValue();
     }
 
     const str = this._form.nodeValue || "";
     return promise.resolve(new SimpleStringFront(str));
-  }, {
-    impl: "_getNodeValue",
-  }),
+  }
 
   
 
 
-  startModifyingAttributes: function() {
+  startModifyingAttributes() {
     return new AttributeModificationList(this);
-  },
+  }
 
-  _cacheAttributes: function() {
+  _cacheAttributes() {
     if (typeof this._attrMap != "undefined") {
       return;
     }
@@ -410,19 +404,19 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
     for (const attr of this.attributes) {
       this._attrMap[attr.name] = attr;
     }
-  },
+  }
 
-  _getAttribute: function(name) {
+  _getAttribute(name) {
     this._cacheAttributes();
     return this._attrMap[name] || undefined;
-  },
+  }
 
   
 
 
 
 
-  reparent: function(parent) {
+  reparent(parent) {
     if (this._parent === parent) {
       return;
     }
@@ -448,18 +442,18 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       this._next._prev = this;
     }
     parent._child = this;
-  },
+  }
 
   
 
 
-  treeChildren: function() {
+  treeChildren() {
     const ret = [];
     for (let child = this._child; child != null; child = child._next) {
       ret.push(child);
     }
     return ret;
-  },
+  }
 
   
 
@@ -468,16 +462,16 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
 
 
 
-  isLocalToBeDeprecated: function() {
+  isLocalToBeDeprecated() {
     return !!this.conn._transport._serverConnection;
-  },
+  }
 
   
 
 
 
 
-  rawNode: function(rawNode) {
+  rawNode(rawNode) {
     if (!this.isLocalToBeDeprecated()) {
       console.warn("Tried to use rawNode on a remote connection.");
       return null;
@@ -490,7 +484,8 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       return null;
     }
     return actor.rawNode;
-  },
-});
+  }
+}
 
 exports.NodeFront = NodeFront;
+registerFront(NodeFront);
