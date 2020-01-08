@@ -154,6 +154,9 @@ public:
 
   
   static bool IsSeparator(Accessible* aAccessible);
+
+  
+  virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 };
 
 

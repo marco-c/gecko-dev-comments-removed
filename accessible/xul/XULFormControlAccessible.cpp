@@ -471,6 +471,20 @@ XULToolbarButtonAccessible::IsSeparator(Accessible* aAccessible)
 
 
 
+bool
+XULToolbarButtonAccessible::IsAcceptableChild(nsIContent* aEl) const
+{
+  
+  
+  
+  return aEl->IsXULElement(nsGkAtoms::menupopup) ||
+         aEl->IsXULElement(nsGkAtoms::popup) ||
+         aEl->IsXULElement(nsGkAtoms::label);
+}
+
+
+
+
 
 
 XULToolbarAccessible::
