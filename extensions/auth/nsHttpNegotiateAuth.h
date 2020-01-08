@@ -10,7 +10,6 @@
 #include "nsIURI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LazyIdleThread.h"
-#include "mozilla/StaticPtr.h"
 
 
 
@@ -20,8 +19,6 @@ class nsHttpNegotiateAuth final : public nsIHttpAuthenticator
 public:
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSIHTTPAUTHENTICATOR
-
-    static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
 
 private:
     ~nsHttpNegotiateAuth() {}
@@ -34,8 +31,5 @@ private:
 
     
     RefPtr<mozilla::LazyIdleThread> mNegotiateThread;
-
-    
-    static mozilla::StaticRefPtr<nsHttpNegotiateAuth> gSingleton;
 };
 #endif 
