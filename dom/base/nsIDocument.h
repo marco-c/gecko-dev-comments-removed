@@ -995,9 +995,25 @@ public:
   
 
 
+  bool GetHasTrackingCookiesBlocked()
+  {
+    return mHasTrackingCookiesBlocked;
+  }
+
+  
+
+
   void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked)
   {
     mHasTrackingContentBlocked = aHasTrackingContentBlocked;
+  }
+
+  
+
+
+  void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked)
+  {
+    mHasTrackingCookiesBlocked = aHasTrackingCookiesBlocked;
   }
 
   
@@ -3904,6 +3920,9 @@ protected:
 
   
   bool mHasTrackingContentBlocked : 1;
+
+  
+  bool mHasTrackingCookiesBlocked : 1;
 
   
   bool mHasTrackingContentLoaded : 1;
