@@ -21,6 +21,7 @@
 #include "nsIScriptError.h"
 #include "nsContentUtils.h"
 #include "nsContentPolicyUtils.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla;
 
@@ -249,6 +250,17 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
                                    nsIChannel *newChannel, uint32_t flags,
                                    nsIAsyncVerifyRedirectCallback *callback) {
   net::nsAsyncRedirectAutoCallback autoCallback(callback);
+
+  if (XRE_IsE10sParentProcess()) {
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(oldChannel, parentChannel);
+    if (parentChannel) {
+      
+      
+      
+      return NS_OK;
+    }
+  }
 
   nsCOMPtr<nsIURI> newUri;
   nsresult rv = newChannel->GetURI(getter_AddRefs(newUri));
