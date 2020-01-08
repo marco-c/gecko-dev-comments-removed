@@ -295,7 +295,7 @@ GetResolution(nsIDocument* aDocument, const nsMediaFeature*,
     } else {
       
       dppx =
-        float(nsPresContext::AppUnitsPerCSSPixel()) / dx->AppUnitsPerDevPixel();
+        float(AppUnitsPerCSSPixel()) / dx->AppUnitsPerDevPixel();
     }
   }
 

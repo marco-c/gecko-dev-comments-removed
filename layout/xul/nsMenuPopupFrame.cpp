@@ -1382,7 +1382,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     
     
     if (mAnchorType == MenuPopupAnchorType_Rect) {
-      anchorRect = ToAppUnits(mScreenRect, nsPresContext::AppUnitsPerCSSPixel());
+      anchorRect = ToAppUnits(mScreenRect, AppUnitsPerCSSPixel());
     }
     else {
       

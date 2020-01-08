@@ -238,7 +238,7 @@ nsSVGForeignObjectFrame::PaintSVG(gfxContext& aContext,
 
     kidDirtyRect.IntersectRect(kidDirtyRect,
       nsLayoutUtils::RoundGfxRectToAppRect(transDirtyRect,
-                       PresContext()->AppUnitsPerCSSPixel()));
+                       AppUnitsPerCSSPixel()));
 
     
     
@@ -313,7 +313,7 @@ nsSVGForeignObjectFrame::GetFrameForPoint(const gfxPoint& aPoint)
   
   
 
-  gfxPoint pt = (aPoint + gfxPoint(x, y)) * nsPresContext::AppUnitsPerCSSPixel();
+  gfxPoint pt = (aPoint + gfxPoint(x, y)) * AppUnitsPerCSSPixel();
   nsPoint point = nsPoint(NSToIntRound(pt.x), NSToIntRound(pt.y));
 
   return nsLayoutUtils::GetFrameForPoint(kid, point);
@@ -345,7 +345,7 @@ nsSVGForeignObjectFrame::ReflowSVG()
 
   mRect = nsLayoutUtils::RoundGfxRectToAppRect(
                            gfxRect(x, y, w, h),
-                           PresContext()->AppUnitsPerCSSPixel());
+                           AppUnitsPerCSSPixel());
 
   
   
@@ -563,7 +563,7 @@ nsSVGForeignObjectFrame::GetInvalidRegion()
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->HasInvalidFrameInSubtree()) {
     gfxRect r(mRect.x, mRect.y, mRect.width, mRect.height);
-    r.Scale(1.0 / nsPresContext::AppUnitsPerCSSPixel());
+    r.Scale(1.0 / AppUnitsPerCSSPixel());
     nsRect rect = nsSVGUtils::ToCanvasBounds(r, GetCanvasTM(), PresContext());
     rect = nsSVGUtils::GetPostFilterVisualOverflowRect(this, rect);
     return rect;

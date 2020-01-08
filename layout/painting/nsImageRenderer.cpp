@@ -383,13 +383,13 @@ nsImageRenderer::ComputeConstrainedSize(const nsSize& aConstrainingSize,
                     aIntrinsicRatio.height, scaleX);
     
     
-    if (aFitType == CONTAIN && aConstrainingSize.height - size.height < nsPresContext::AppUnitsPerCSSPixel()) {
+    if (aFitType == CONTAIN && aConstrainingSize.height - size.height < AppUnitsPerCSSPixel()) {
       size.height = aConstrainingSize.height;
     }
   } else {
     size.width = NSCoordSaturatingNonnegativeMultiply(
                    aIntrinsicRatio.width, scaleY);
-    if (aFitType == CONTAIN && aConstrainingSize.width - size.width < nsPresContext::AppUnitsPerCSSPixel()) {
+    if (aFitType == CONTAIN && aConstrainingSize.width - size.width < AppUnitsPerCSSPixel()) {
       size.width = aConstrainingSize.width;
     }
     size.height = aConstrainingSize.height;
