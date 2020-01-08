@@ -1241,14 +1241,9 @@ var gViewController = {
           if (result != nsIFilePicker.returnOK)
             return;
 
-          let installTelemetryInfo = {
-            source: "about:addons",
-            method: "install-from-file",
-          };
-
           let browser = getBrowserElement();
           for (let file of fp.files) {
-            let install = await AddonManager.getInstallForFile(file, null, installTelemetryInfo);
+            let install = await AddonManager.getInstallForFile(file);
             AddonManager.installAddonFromAOM(browser, document.documentURIObject, install);
           }
         });
@@ -1994,7 +1989,7 @@ var gDiscoverView = {
     }
 
     gPendingInitializations++;
-    let aAddons = await AddonManager.getAllAddons();
+    let aAddons = await AddonManager.getAddonsByTypes(["extension", "theme"]);
     var list = {};
     for (let addon of aAddons) {
       var prefName = PREF_GETADDONS_CACHE_ID_ENABLED.replace("%ID%",
@@ -3438,11 +3433,7 @@ var gDragDrop = {
       }
 
       if (url) {
-        let install = await AddonManager.getInstallForURL(url, "application/x-xpinstall",
-                                                          null, null, null, null, null, {
-                                                            source: "about:addons",
-                                                            method: "drag-and-drop",
-                                                          });
+        let install = await AddonManager.getInstallForURL(url, "application/x-xpinstall");
         AddonManager.installAddonFromAOM(browser, document.documentURIObject, install);
       }
     }
