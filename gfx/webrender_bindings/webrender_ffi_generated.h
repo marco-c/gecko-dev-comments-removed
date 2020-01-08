@@ -61,6 +61,18 @@ enum class ClipMode {
   Sentinel 
 };
 
+
+enum class ColorDepth : uint8_t {
+  
+  Color8,
+  
+  Color10,
+  
+  Color12,
+
+  Sentinel 
+};
+
 enum class ExtendMode : uint32_t {
   Clamp,
   Repeat,
@@ -934,6 +946,8 @@ struct GlyphOptions {
   }
 };
 
+using WrColorDepth = ColorDepth;
+
 using WrYuvColorSpace = YuvColorSpace;
 
 struct ByteSlice {
@@ -1490,6 +1504,7 @@ void wr_dp_push_yuv_NV12_image(WrState *aState,
                                bool aIsBackfaceVisible,
                                WrImageKey aImageKey0,
                                WrImageKey aImageKey1,
+                               WrColorDepth aColorDepth,
                                WrYuvColorSpace aColorSpace,
                                ImageRendering aImageRendering)
 WR_FUNC;
@@ -1501,6 +1516,7 @@ void wr_dp_push_yuv_interleaved_image(WrState *aState,
                                       LayoutRect aClip,
                                       bool aIsBackfaceVisible,
                                       WrImageKey aImageKey0,
+                                      WrColorDepth aColorDepth,
                                       WrYuvColorSpace aColorSpace,
                                       ImageRendering aImageRendering)
 WR_FUNC;
@@ -1514,6 +1530,7 @@ void wr_dp_push_yuv_planar_image(WrState *aState,
                                  WrImageKey aImageKey0,
                                  WrImageKey aImageKey1,
                                  WrImageKey aImageKey2,
+                                 WrColorDepth aColorDepth,
                                  WrYuvColorSpace aColorSpace,
                                  ImageRendering aImageRendering)
 WR_FUNC;
