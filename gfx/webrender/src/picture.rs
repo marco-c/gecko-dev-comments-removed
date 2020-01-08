@@ -164,38 +164,6 @@ pub enum PictureSurface {
 }
 
 
-
-
-
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct PictureId(pub u64);
-
-
-
-
-
-
-pub struct PictureIdGenerator {
-    next: u64,
-}
-
-impl PictureIdGenerator {
-    pub fn new() -> Self {
-        PictureIdGenerator {
-            next: 0,
-        }
-    }
-
-    pub fn next(&mut self) -> PictureId {
-        let id = PictureId(self.next);
-        self.next += 1;
-        id
-    }
-}
-
-
 #[derive(Clone, Debug)]
 pub enum Picture3DContext<C> {
     
@@ -427,9 +395,6 @@ pub struct PicturePrimitive {
     pub extra_gpu_data_handle: GpuCacheHandle,
 
     
-    pub id: PictureId,
-
-    
     
     pub spatial_node_index: SpatialNodeIndex,
 
@@ -471,7 +436,6 @@ impl PicturePrimitive {
     }
 
     pub fn new_image(
-        id: PictureId,
         requested_composite_mode: Option<PictureCompositeMode>,
         context_3d: Picture3DContext<OrderedPictureChild>,
         pipeline_id: PipelineId,
@@ -517,7 +481,6 @@ impl PicturePrimitive {
             extra_gpu_data_handle: GpuCacheHandle::new(),
             apply_local_clip_rect,
             pipeline_id,
-            id,
             requested_raster_space,
             spatial_node_index,
             local_rect: LayoutRect::zero(),
