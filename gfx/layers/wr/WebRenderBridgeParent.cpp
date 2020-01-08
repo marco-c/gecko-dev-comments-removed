@@ -1659,6 +1659,8 @@ WebRenderBridgeParent::FlushRendering()
   }
 
   
+  
+  FlushSceneBuilds();
   FlushFrameGeneration();
   FlushFramePresentation();
 }
