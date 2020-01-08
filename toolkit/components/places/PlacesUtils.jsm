@@ -1436,6 +1436,13 @@ var PlacesUtils = {
 
 
 
+  promiseLargeCacheDBConnection: () => gAsyncDBLargeCacheConnPromised,
+
+  
+
+
+
+
 
 
 
@@ -1936,6 +1943,22 @@ XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
   }).then(conn => {
     setupDbForShutdown(conn, "PlacesUtils wrapped connection");
     return conn;
+  }).catch(Cu.reportError)
+);
+
+XPCOMUtils.defineLazyGetter(this, "gAsyncDBLargeCacheConnPromised",
+  () => Sqlite.cloneStorageConnection({
+    connection: PlacesUtils.history.DBConnection,
+    readOnly:   true,
+  }).then(async conn => {
+      setupDbForShutdown(conn, "PlacesUtils large cache read-only connection");
+      
+      
+      
+      
+      
+      await conn.execute("PRAGMA cache_size = -6144"); 
+      return conn;
   }).catch(Cu.reportError)
 );
 

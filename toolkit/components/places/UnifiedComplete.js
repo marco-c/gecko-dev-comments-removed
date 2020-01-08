@@ -2593,35 +2593,22 @@ UnifiedComplete.prototype = {
   getDatabaseHandle() {
     if (Prefs.get("autocomplete.enabled") && !this._promiseDatabase) {
       this._promiseDatabase = (async () => {
-        let conn = await Sqlite.cloneStorageConnection({
-          connection: PlacesUtils.history.DBConnection,
-          readOnly: true,
-        });
+        let conn = await PlacesUtils.promiseLargeCacheDBConnection();
 
         try {
-           Sqlite.shutdown.addBlocker("Places UnifiedComplete.js clone closing",
-                                      async () => {
+           Sqlite.shutdown.addBlocker("Places UnifiedComplete.js closing",
+                                      () => {
                                         
                                         
                                         
                                         this._currentSearch = null;
                                         SwitchToTabStorage.shutdown();
-                                        await conn.close();
                                       });
         } catch (ex) {
           
-          await conn.close();
           throw ex;
         }
-
-        
-        
-        
-        
-        await conn.execute("PRAGMA cache_size = -6144"); 
-
         await SwitchToTabStorage.initDatabase(conn);
-
         return conn;
       })().catch(ex => {
         dump("Couldn't get database handle: " + ex + "\n");
