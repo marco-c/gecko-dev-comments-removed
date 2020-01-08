@@ -1187,10 +1187,27 @@ static const Class RegExpStringIteratorPrototypeClass = {
     "RegExp String Iterator", 0};
 
 enum {
+  
+  
   RegExpStringIteratorSlotRegExp,
+
+  
   RegExpStringIteratorSlotString,
+
+  
+  
+  RegExpStringIteratorSlotSource,
+
+  
   RegExpStringIteratorSlotFlags,
-  RegExpStringIteratorSlotDone,
+
+  
+  
+  
+  
+  
+  RegExpStringIteratorSlotLastIndex,
+
   RegExpStringIteratorSlotCount
 };
 
@@ -1202,13 +1219,18 @@ static_assert(RegExpStringIteratorSlotString ==
                   REGEXP_STRING_ITERATOR_STRING_SLOT,
               "RegExpStringIteratorSlotString must match self-hosting define "
               "for string slot.");
+static_assert(RegExpStringIteratorSlotSource ==
+                  REGEXP_STRING_ITERATOR_SOURCE_SLOT,
+              "RegExpStringIteratorSlotString must match self-hosting define "
+              "for source slot.");
 static_assert(RegExpStringIteratorSlotFlags ==
                   REGEXP_STRING_ITERATOR_FLAGS_SLOT,
               "RegExpStringIteratorSlotFlags must match self-hosting define "
               "for flags slot.");
-static_assert(RegExpStringIteratorSlotDone == REGEXP_STRING_ITERATOR_DONE_SLOT,
-              "RegExpStringIteratorSlotDone must match self-hosting define for "
-              "done slot.");
+static_assert(RegExpStringIteratorSlotLastIndex ==
+                  REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+              "RegExpStringIteratorSlotLastIndex must match self-hosting "
+              "define for lastIndex slot.");
 
 const Class RegExpStringIteratorObject::class_ = {
     "RegExp String Iterator",

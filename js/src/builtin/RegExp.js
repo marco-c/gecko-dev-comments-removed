@@ -1076,6 +1076,19 @@ function RegExpSpecies() {
 }
 _SetCanonicalName(RegExpSpecies, "get [Symbol.species]");
 
+function IsRegExpMatchAllOptimizable(rx, C) {
+    if (!IsRegExpObject(rx))
+        return false;
+
+    var RegExpCtor = GetBuiltinConstructor("RegExp");
+    if (C !== RegExpCtor)
+        return false;
+
+    var RegExpProto = RegExpCtor.prototype;
+    return RegExpPrototypeOptimizable(RegExpProto) &&
+           RegExpInstanceOptimizable(rx, RegExpProto);
+}
+
 
 
 
@@ -1093,42 +1106,73 @@ function RegExpMatchAll(string) {
     
     var C = SpeciesConstructor(rx, GetBuiltinConstructor("RegExp"));
 
-    
-    var flags = ToString(rx.flags);
+    var source, flags, matcher, lastIndex;
+    if (IsRegExpMatchAllOptimizable(rx, C)) {
+        
+        source = UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT);
+        flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
 
-    
-    var matcher = new C(rx, flags);
+        
+        matcher = rx;
 
-    
-    matcher.lastIndex = ToLength(rx.lastIndex);
+        
+        lastIndex = ToLength(rx.lastIndex);
 
-    
-    var flags = (callFunction(std_String_includes, flags, "g") ? REGEXP_GLOBAL_FLAG : 0) |
+        
+    } else {
+        
+        source = "";
+        flags = ToString(rx.flags);
+
+        
+        matcher = new C(rx, flags);
+
+        
+        matcher.lastIndex = ToLength(rx.lastIndex);
+
+        
+        flags = (callFunction(std_String_includes, flags, "g") ? REGEXP_GLOBAL_FLAG : 0) |
                 (callFunction(std_String_includes, flags, "u") ? REGEXP_UNICODE_FLAG : 0);
 
+        
+        lastIndex = REGEXP_STRING_ITERATOR_LASTINDEX_SLOW;
+    }
+
     
-    return CreateRegExpStringIterator(matcher, str, flags);
+    return CreateRegExpStringIterator(matcher, str, source, flags, lastIndex);
 }
 
 
 
 
-function CreateRegExpStringIterator(regexp, string, flags) {
+function CreateRegExpStringIterator(regexp, string, source, flags, lastIndex) {
     
     assert(typeof string === "string", "|string| is a string value");
 
     
     assert(typeof flags === "number", "|flags| is a number value");
 
+    assert(typeof source === "string", "|source| is a string value");
+    assert(typeof lastIndex === "number", "|lastIndex| is a number value");
+
     
     var iterator = NewRegExpStringIterator();
     UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_REGEXP_SLOT, regexp);
     UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_STRING_SLOT, string);
+    UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_SOURCE_SLOT, source);
     UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_FLAGS_SLOT, flags | 0);
-    UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_DONE_SLOT, false);
+    UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT, lastIndex);
 
     
     return iterator;
+}
+
+function IsRegExpStringIteratorNextOptimizable() {
+    var RegExpProto = GetBuiltinPrototype("RegExp");
+    
+    
+    return RegExpPrototypeOptimizable(RegExpProto) &&
+           RegExpProto.exec === RegExp_prototype_Exec;
 }
 
 
@@ -1145,8 +1189,8 @@ function RegExpStringIteratorNext() {
     var result = { value: undefined, done: false };
 
     
-    var done = UnsafeGetReservedSlot(obj, REGEXP_STRING_ITERATOR_DONE_SLOT);
-    if (done) {
+    var lastIndex = UnsafeGetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT);
+    if (lastIndex === REGEXP_STRING_ITERATOR_LASTINDEX_DONE) {
         result.done = true;
         return result;
     }
@@ -1162,13 +1206,76 @@ function RegExpStringIteratorNext() {
     var global = !!(flags & REGEXP_GLOBAL_FLAG);
     var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
 
+    if (lastIndex >= 0) {
+        assert(IsRegExpObject(regexp), "|regexp| is a RegExp object");
+
+        var source = UnsafeGetStringFromReservedSlot(obj, REGEXP_STRING_ITERATOR_SOURCE_SLOT);
+        if (IsRegExpStringIteratorNextOptimizable() &&
+            UnsafeGetStringFromReservedSlot(regexp, REGEXP_SOURCE_SLOT) === source &&
+            UnsafeGetInt32FromReservedSlot(regexp, REGEXP_FLAGS_SLOT) === flags)
+        {
+            
+            var globalOrSticky = !!(flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG));
+            if (!globalOrSticky)
+                lastIndex = 0;
+
+            var match = (lastIndex <= string.length)
+                        ? RegExpMatcher(regexp, string, lastIndex)
+                        : null;
+
+            
+            if (match === null) {
+                
+                UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+                                      REGEXP_STRING_ITERATOR_LASTINDEX_DONE);
+
+                
+                result.done = true;
+                return result;
+            }
+
+            
+            if (global) {
+                
+                var matchLength = match[0].length;
+                lastIndex = match.index + matchLength;
+
+                
+                if (matchLength === 0) {
+                    
+                    lastIndex = fullUnicode ? AdvanceStringIndex(string, lastIndex) : lastIndex + 1;
+                }
+
+                UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT, lastIndex);
+            } else {
+                
+                UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+                                      REGEXP_STRING_ITERATOR_LASTINDEX_DONE);
+            }
+
+            
+            result.value = match;
+            return result;
+        }
+
+        
+        regexp = regexp_construct_raw_flags(source, flags);
+        regexp.lastIndex = lastIndex;
+        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_REGEXP_SLOT, regexp);
+
+        
+        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+                              REGEXP_STRING_ITERATOR_LASTINDEX_SLOW);
+    }
+
     
     var match = RegExpExec(regexp, string, false);
 
     
     if (match === null) {
         
-        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_DONE_SLOT, true);
+        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+                              REGEXP_STRING_ITERATOR_LASTINDEX_DONE);
 
         
         result.done = true;
@@ -1193,7 +1300,8 @@ function RegExpStringIteratorNext() {
         }
     } else {
         
-        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_DONE_SLOT, true);
+        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+                              REGEXP_STRING_ITERATOR_LASTINDEX_DONE);
     }
 
     
