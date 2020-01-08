@@ -319,8 +319,8 @@ nsXMLContentSink::DidBuildModel(bool aTerminated)
 
       
       
-      if (mDocument->CSSLoader()->HasPendingLoads() &&
-          NS_SUCCEEDED(mDocument->CSSLoader()->AddObserver(this))) {
+      if (mDocument->CSSLoader()->HasPendingLoads()) {
+        mDocument->CSSLoader()->AddObserver(this);
         
         startLayout = false;
       }

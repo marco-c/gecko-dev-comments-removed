@@ -429,7 +429,7 @@ public:
 
 
 
-  nsresult AddObserver(nsICSSLoaderObserver* aObserver);
+  void AddObserver(nsICSSLoaderObserver* aObserver);
 
   
 
