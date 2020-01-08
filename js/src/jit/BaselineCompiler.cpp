@@ -86,11 +86,11 @@ BaselineCompiler::addPCMappingEntry(bool addIndexEntry)
 MethodStatus
 BaselineCompiler::compile()
 {
-    JitSpew(JitSpew_BaselineScripts, "Baseline compiling script %s:%u:%u (%p)",
-            script->filename(), script->lineno(), script->column(), script);
+    JitSpew(JitSpew_BaselineScripts, "Baseline compiling script %s:%u (%p)",
+            script->filename(), script->lineno(), script);
 
-    JitSpew(JitSpew_Codegen, "# Emitting baseline code for script %s:%u:%u",
-            script->filename(), script->lineno(), script->column());
+    JitSpew(JitSpew_Codegen, "# Emitting baseline code for script %s:%u",
+            script->filename(), script->lineno());
 
     TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
     TraceLoggerEvent scriptEvent(TraceLogger_AnnotateScripts, script);
@@ -222,9 +222,9 @@ BaselineCompiler::compile()
     baselineScript->setMethod(code);
     baselineScript->setTemplateEnvironment(templateEnv);
 
-    JitSpew(JitSpew_BaselineScripts, "Created BaselineScript %p (raw %p) for %s:%u:%u",
+    JitSpew(JitSpew_BaselineScripts, "Created BaselineScript %p (raw %p) for %s:%u",
             (void*) baselineScript.get(), (void*) code->raw(),
-            script->filename(), script->lineno(), script->column());
+            script->filename(), script->lineno());
 
     MOZ_ASSERT(pcMappingIndexEntries.length() > 0);
     baselineScript->copyPCMappingIndexEntries(&pcMappingIndexEntries[0]);
@@ -278,8 +278,8 @@ BaselineCompiler::compile()
     
     
     {
-        JitSpew(JitSpew_Profiling, "Added JitcodeGlobalEntry for baseline script %s:%u:%u (%p)",
-                    script->filename(), script->lineno(), script->column(), baselineScript.get());
+        JitSpew(JitSpew_Profiling, "Added JitcodeGlobalEntry for baseline script %s:%u (%p)",
+                    script->filename(), script->lineno(), baselineScript.get());
 
         
         char* str = JitcodeGlobalEntry::createScriptString(cx, script);
