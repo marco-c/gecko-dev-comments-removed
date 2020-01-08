@@ -112,6 +112,8 @@ namespace jit {
     _(MegamorphicStoreSlot)               \
     _(MegamorphicHasPropResult)           \
     _(CallObjectHasSparseElementResult)   \
+    _(CallInt32ToString)                  \
+    _(CallNumberToString)                 \
     _(WrapResult)
 
 

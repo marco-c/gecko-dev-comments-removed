@@ -46,6 +46,11 @@ warmup(funAdd5, [[true, 10, 11], [false, 1, 1], [10, true, 11], [1, false, 1],
                  [2147483647, true, 2147483648],[true, 2147483647, 2147483648]]);
 
 
+var funAdd6 = (a, b) => { return a + b; }
+warmup(funAdd6, [["x", 10, "x10"], [10, "bba", "10bba"], ["x", 1.2, "x1.2"],
+                 [1.2, "bba", "1.2bba"]]);
+
+
 var funSub1 = (a, b) => { return a - b; }
 warmup(funSub1, [[7, 0, 7], [7, 8, -1], [4294967295, 2, 4294967293], [0,0,0]]);
 
@@ -211,3 +216,34 @@ for (var k=0; k < 30; k++) {
     }
     assertEq(res, "76543210");
 }
+
+
+if (!('oomTest' in this))
+    quit();
+
+
+var addOom = (a, b) => { return a + b; }
+
+function generate_digits(prefix, start) {
+    digits = []
+    number = ""+start+".25";
+    for (var i = 1; i < 7; i++) {
+        number = i + number;
+        digits.push([prefix, Number(number), prefix + number]);
+    }
+    return digits;
+}
+
+
+
+var warmup_digits = generate_digits("x", 1);
+var test_digits = generate_digits("x", 2);
+
+function ot(digits) {
+    warmup(addOom, digits);
+}
+
+
+ot(warmup_digits);
+
+oomTest(() => { ot(test_digits); });
