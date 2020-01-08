@@ -637,7 +637,10 @@ exports.isShadowHost = isShadowHost;
 
 function isDirectShadowHostChild(node) {
   
-  if (isBeforePseudoElement(node) || isAfterPseudoElement(node)) {
+  if (
+    isBeforePseudoElement(node) ||
+    isAfterPseudoElement(node) ||
+    isNativeAnonymous(node)) {
     return false;
   }
 
