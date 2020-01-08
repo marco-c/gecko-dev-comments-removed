@@ -223,7 +223,7 @@ public:
   
 
 
-  bool IsWriteOnly();
+  bool IsWriteOnly() const;
 
   
 
