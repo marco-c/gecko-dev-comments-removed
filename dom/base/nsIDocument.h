@@ -283,8 +283,6 @@ public:
 
 
   nsIDocument* RequestResource(nsIURI* aURI,
-                               nsIURI* aReferrer,
-                               uint32_t aReferrerPolicy,
                                nsINode* aRequestingNode,
                                nsIDocument* aDisplayDocument,
                                ExternalResourceLoad** aPendingLoad);
@@ -350,10 +348,8 @@ protected:
 
 
 
-    nsresult StartLoad(nsIURI* aURI,
-                       nsIURI* aReferrer,
-                       uint32_t aReferrerPolicy,
-                       nsINode* aRequestingNode);
+    nsresult StartLoad(nsIURI* aURI, nsINode* aRequestingNode);
+
     
 
 
@@ -1237,6 +1233,11 @@ public:
   Element* GetRootElement() const;
 
   mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aRv);
+
+  already_AddRefed<mozilla::dom::Promise>
+    HasStorageAccess(mozilla::ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::Promise>
+    RequestStorageAccess(mozilla::ErrorResult& aRv);
 
   
 
@@ -2548,11 +2549,7 @@ public:
 
 
 
-
-
   nsIDocument* RequestExternalResource(nsIURI* aURI,
-                                       nsIURI* aReferrer,
-                                       uint32_t aReferrerPolicy,
                                        nsINode* aRequestingNode,
                                        ExternalResourceLoad** aPendingLoad);
 

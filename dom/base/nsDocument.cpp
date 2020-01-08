@@ -117,6 +117,7 @@
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
 #include "nsFocusManager.h"
+#include "nsICookieService.h"
 
 
 #include "nsIRadioVisitor.h"
@@ -818,8 +819,6 @@ nsExternalResourceMap::nsExternalResourceMap()
 
 nsIDocument*
 nsExternalResourceMap::RequestResource(nsIURI* aURI,
-                                       nsIURI* aReferrer,
-                                       uint32_t aReferrerPolicy,
                                        nsINode* aRequestingNode,
                                        nsIDocument* aDisplayDocument,
                                        ExternalResourceLoad** aPendingLoad)
@@ -857,8 +856,7 @@ nsExternalResourceMap::RequestResource(nsIURI* aURI,
   RefPtr<PendingLoad> load(new PendingLoad(aDisplayDocument));
   loadEntry = load;
 
-  if (NS_FAILED(load->StartLoad(clone, aReferrer, aReferrerPolicy,
-                                aRequestingNode))) {
+  if (NS_FAILED(load->StartLoad(clone, aRequestingNode))) {
     
     
     AddExternalResource(clone, nullptr, nullptr, aDisplayDocument);
@@ -1167,8 +1165,6 @@ nsExternalResourceMap::PendingLoad::OnStopRequest(nsIRequest* aRequest,
 
 nsresult
 nsExternalResourceMap::PendingLoad::StartLoad(nsIURI* aURI,
-                                              nsIURI* aReferrer,
-                                              uint32_t aReferrerPolicy,
                                               nsINode* aRequestingNode)
 {
   MOZ_ASSERT(aURI, "Must have a URI");
@@ -1187,12 +1183,6 @@ nsExternalResourceMap::PendingLoad::StartLoad(nsIURI* aURI,
                      nullptr, 
                      loadGroup);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(channel));
-  if (httpChannel) {
-    rv = httpChannel->SetReferrerWithPolicy(aReferrer, aReferrerPolicy);
-    Unused << NS_WARN_IF(NS_FAILED(rv));
-  }
 
   mURI = aURI;
 
@@ -3750,13 +3740,11 @@ nsIDocument::DefaultStyleAttrURLData()
   nsIURI* baseURI = GetDocBaseURI();
   nsIURI* docURI = GetDocumentURI();
   nsIPrincipal* principal = NodePrincipal();
-  mozilla::net::ReferrerPolicy policy = GetReferrerPolicy();
   if (!mCachedURLData ||
       mCachedURLData->BaseURI() != baseURI ||
       mCachedURLData->GetReferrer() != docURI ||
-      mCachedURLData->GetReferrerPolicy() != policy ||
       mCachedURLData->GetPrincipal() != principal) {
-    mCachedURLData = new URLExtraData(baseURI, docURI, principal, policy);
+    mCachedURLData = new URLExtraData(baseURI, docURI, principal);
   }
   return mCachedURLData;
 }
@@ -6712,8 +6700,6 @@ nsIDocument::TryCancelFrameLoaderInitialization(nsIDocShell* aShell)
 
 nsIDocument*
 nsIDocument::RequestExternalResource(nsIURI* aURI,
-                                     nsIURI* aReferrer,
-                                     uint32_t aReferrerPolicy,
                                      nsINode* aRequestingNode,
                                      ExternalResourceLoad** aPendingLoad)
 {
@@ -6721,15 +6707,12 @@ nsIDocument::RequestExternalResource(nsIURI* aURI,
   MOZ_ASSERT(aRequestingNode, "Must have a node");
   if (mDisplayDocument) {
     return mDisplayDocument->RequestExternalResource(aURI,
-                                                     aReferrer,
-                                                     aReferrerPolicy,
                                                      aRequestingNode,
                                                      aPendingLoad);
   }
 
-  return mExternalResourceMap.RequestResource(aURI, aReferrer, aReferrerPolicy,
-                                              aRequestingNode, this,
-                                              aPendingLoad);
+  return mExternalResourceMap.RequestResource(aURI, aRequestingNode,
+                                              this, aPendingLoad);
 }
 
 void
@@ -11164,10 +11147,6 @@ GetFullscreenError(nsIDocument* aDoc, CallerType aCallerType)
     return "FullscreenDeniedDisabled";
   }
 
-  if (!aDoc->IsVisible()) {
-    return "FullscreenDeniedHidden";
-  }
-
   
   
   nsCOMPtr<nsIDocShell> docShell(aDoc->GetDocShell());
@@ -11204,6 +11183,10 @@ nsIDocument::FullscreenElementReadyCheck(const FullscreenRequest& aRequest)
   }
   if (const char* msg = GetFullscreenError(this, aRequest.mCallerType)) {
     aRequest.Reject(msg);
+    return false;
+  }
+  if (!IsVisible()) {
+    aRequest.Reject("FullscreenDeniedHidden");
     return false;
   }
   if (HasFullscreenSubDocument(this)) {
@@ -13545,6 +13528,175 @@ nsIDocument::GetSelection(ErrorResult& aRv)
   }
 
   return nsGlobalWindowInner::Cast(window)->GetSelection(aRv);
+}
+
+already_AddRefed<mozilla::dom::Promise>
+nsIDocument::HasStorageAccess(mozilla::ErrorResult& aRv)
+{
+  nsIGlobalObject* global = GetScopeObject();
+  if (!global) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (NodePrincipal()->GetIsNullPrincipal()) {
+    promise->MaybeResolve(false);
+    return promise.forget();
+  }
+
+  if (IsTopLevelContentDocument()) {
+    promise->MaybeResolve(true);
+    return promise.forget();
+  }
+
+  nsCOMPtr<nsIDocument> topLevelDoc = GetTopLevelContentDocument();
+  if (!topLevelDoc) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
+  }
+  if (topLevelDoc->NodePrincipal()->Equals(NodePrincipal())) {
+    promise->MaybeResolve(true);
+    return promise.forget();
+  }
+
+  nsPIDOMWindowInner* inner = GetInnerWindow();
+  nsGlobalWindowOuter* outer = nullptr;
+  if (inner) {
+    outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
+    promise->MaybeResolve(outer->HasStorageAccess());
+  } else {
+    promise->MaybeRejectWithUndefined();
+  }
+  return promise.forget();
+}
+
+already_AddRefed<mozilla::dom::Promise>
+nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
+{
+  nsIGlobalObject* global = GetScopeObject();
+  if (!global) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  nsPIDOMWindowInner* inner = GetInnerWindow();
+  nsGlobalWindowOuter* outer = nullptr;
+  if (inner) {
+    outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
+    if (outer->HasStorageAccess()) {
+      promise->MaybeResolveWithUndefined();
+      return promise.forget();
+    }
+  }
+
+  
+  if (NodePrincipal()->GetIsNullPrincipal()) {
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  if (StaticPrefs::network_cookie_cookieBehavior() !=
+        nsICookieService::BEHAVIOR_ACCEPT) {
+    
+    if (IsTopLevelContentDocument()) {
+      promise->MaybeResolveWithUndefined();
+      return promise.forget();
+    }
+
+    
+    nsCOMPtr<nsIDocument> topLevelDoc = GetTopLevelContentDocument();
+    if (!topLevelDoc) {
+      aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+      return nullptr;
+    }
+    if (topLevelDoc->NodePrincipal()->Equals(NodePrincipal())) {
+      promise->MaybeResolveWithUndefined();
+      return promise.forget();
+    }
+  }
+
+  
+  
+  
+  if (mSandboxFlags & SANDBOXED_STORAGE_ACCESS) {
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  nsIDocument* parent = GetParentDocument();
+  if (parent && !parent->IsTopLevelContentDocument()) {
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  if (!EventStateManager::IsHandlingUserInput()) {
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  
+  
+  
+
+  bool granted = true;
+  bool isTrackingWindow = false;
+  if (StaticPrefs::browser_contentblocking_enabled() &&
+      StaticPrefs::network_cookie_cookieBehavior() ==
+        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+    
+    if (nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
+      isTrackingWindow = true;
+      
+    }
+  }
+
+  
+  
+  
+  if (granted && inner) {
+    outer->SetHasStorageAccess(true);
+    if (isTrackingWindow) {
+      nsCOMPtr<nsIURI> uri = GetDocumentURI();
+      if (NS_WARN_IF(!uri)) {
+        aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+        return nullptr;
+      }
+      nsAutoString origin;
+      nsresult rv = nsContentUtils::GetUTFOrigin(uri, origin);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        aRv.Throw(rv);
+        return nullptr;
+      }
+      AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(origin,
+                                                               inner,
+                                                               AntiTrackingCommon::eStorageAccessAPI)
+        ->Then(GetCurrentThreadSerialEventTarget(), __func__,
+               [promise] (bool) {
+                 promise->MaybeResolveWithUndefined();
+               },
+               [promise] (bool) {
+                 promise->MaybeRejectWithUndefined();
+               });
+    } else {
+      promise->MaybeResolveWithUndefined();
+    }
+  }
+  return promise.forget();
 }
 
 void
