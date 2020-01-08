@@ -498,6 +498,27 @@ nsOuterWindowProxy::getPropertyDescriptor(JSContext* cx,
   return js::Wrapper::getPropertyDescriptor(cx, proxy, id, desc);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+IsNonConfigurableReadonlyPrimitiveGlobalProp(JSContext* cx, JS::Handle<jsid> id)
+{
+  return id == GetJSIDByIndex(cx, XPCJSContext::IDX_NAN) ||
+         id == GetJSIDByIndex(cx, XPCJSContext::IDX_UNDEFINED) ||
+         id == GetJSIDByIndex(cx, XPCJSContext::IDX_INFINITY);
+}
+
 bool
 nsOuterWindowProxy::getOwnPropertyDescriptor(JSContext* cx,
                                              JS::Handle<JSObject*> proxy,
@@ -515,7 +536,18 @@ nsOuterWindowProxy::getOwnPropertyDescriptor(JSContext* cx,
   }
   
 
-  return js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
+  bool ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
+  if (!ok) {
+    return false;
+  }
+
+#ifndef RELEASE_OR_BETA 
+  if (!IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
+    desc.setConfigurable(true);
+  }
+#endif
+
+  return true;
 }
 
 bool
@@ -532,7 +564,68 @@ nsOuterWindowProxy::defineProperty(JSContext* cx,
     return result.failCantDefineWindowElement();
   }
 
-  return js::Wrapper::defineProperty(cx, proxy, id, desc, result);
+  JS::ObjectOpResult ourResult;
+  bool ok = js::Wrapper::defineProperty(cx, proxy, id, desc, ourResult);
+  if (!ok) {
+    return false;
+  }
+
+  if (!ourResult.ok()) {
+    
+    
+    
+    
+    
+    
+    if (!desc.hasConfigurable() || !desc.configurable()) {
+      
+      
+      result = ourResult;
+      return true;
+    }
+
+    JS::Rooted<JS::PropertyDescriptor> existingDesc(cx);
+    ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, &existingDesc);
+    if (!ok) {
+      return false;
+    }
+    if (!existingDesc.object() || existingDesc.configurable()) {
+      
+      
+      
+      result = ourResult;
+      return true;
+    }
+
+    JS::Rooted<JS::PropertyDescriptor> updatedDesc(cx, desc);
+    updatedDesc.setConfigurable(false);
+
+    JS::ObjectOpResult ourNewResult;
+    ok = js::Wrapper::defineProperty(cx, proxy, id, updatedDesc, ourNewResult);
+    if (!ok) {
+      return false;
+    }
+
+    if (!ourNewResult.ok()) {
+      
+      
+      result = ourNewResult;
+      return true;
+    }
+  }
+
+#ifndef RELEASE_OR_BETA 
+  if (desc.hasConfigurable() && !desc.configurable() &&
+      !IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
+    
+    
+    result.failCantDefineWindowNonConfigurable();
+    return true;
+  }
+#endif
+
+  result.succeed();
+  return true;
 }
 
 bool
