@@ -263,12 +263,7 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
         w.isApzSubtest = true;
         w.SimpleTest = SimpleTest;
         w.is = function(a, b, msg) { return is(a, b, aFile + " | " + msg); };
-        w.ok = function(cond, msg) {
-          arguments[1] = aFile + " | " + msg;
-          
-          
-          return SimpleTest.ok.apply(SimpleTest, arguments);
-        };
+        w.ok = function(cond, name, diag) { return ok(cond, aFile + " | " + name, diag); };
         if (test.onload) {
           w.addEventListener('load', function(e) { test.onload(w); }, { once: true });
         }
