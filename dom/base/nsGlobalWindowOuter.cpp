@@ -1920,7 +1920,12 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
         
         newInnerWindow->mLocalStorage = nullptr;
         newInnerWindow->mSessionStorage = nullptr;
+        newInnerWindow->mPerformance = nullptr;
 
+        
+        
+        
+        
         newInnerWindow->ClearDocumentDependentSlots(cx);
 
         
