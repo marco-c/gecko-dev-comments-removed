@@ -317,25 +317,10 @@ var BrowserUtils = {
 
 
 
-  canFastFind(win) {
-    if (!win)
-      return false;
-
-    if (!this.mimeTypeIsTextBased(win.document.contentType))
-      return false;
-
-    
-    let loc = win.location;
-    if (loc.href == "about:blank")
-      return false;
-
-    
-    if ((loc.protocol == "about:" || loc.protocol == "chrome:") &&
-        (win.document.documentElement &&
-         win.document.documentElement.getAttribute("disablefastfind") == "true"))
-      return false;
-
-    return true;
+  canFindInPage(location) {
+    return !location.startsWith("about:addons") &&
+           !location.startsWith("about:config") &&
+           !location.startsWith("about:preferences");
   },
 
   _visibleToolbarsMap: new WeakMap(),

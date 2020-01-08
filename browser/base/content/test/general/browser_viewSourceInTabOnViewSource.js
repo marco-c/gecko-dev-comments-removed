@@ -24,7 +24,7 @@ var with_new_tab_opened = async function(options, taskFn) {
 
 add_task(async function test_regular_page() {
   function test_expect_view_source_enabled(browser) {
-    for (let element of [...XULBrowserWindow.elementsForViewSource]) {
+    for (let element of [...XULBrowserWindow._elementsForViewSource]) {
       ok(!element.hasAttribute("disabled"),
          "View Source should be enabled");
     }
@@ -38,7 +38,7 @@ add_task(async function test_regular_page() {
 
 add_task(async function test_view_source_page() {
   function test_expect_view_source_disabled(browser) {
-    for (let element of [...XULBrowserWindow.elementsForViewSource]) {
+    for (let element of [...XULBrowserWindow._elementsForViewSource]) {
       ok(element.hasAttribute("disabled"),
          "View Source should be disabled");
     }

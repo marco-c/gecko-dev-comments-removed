@@ -61,8 +61,15 @@ class FindBarChild extends ActorChild {
       return FindBarContent.start(event);
     }
 
+    
+    let location = this.content.location.href;
+    if (location == "about:blank") {
+      return null;
+    }
+
     if (event.ctrlKey || event.altKey || event.metaKey || event.defaultPrevented ||
-        !BrowserUtils.canFastFind(this.content)) {
+        !BrowserUtils.mimeTypeIsTextBased(this.content.document.contentType) ||
+        !BrowserUtils.canFindInPage(location)) {
       return null;
     }
 
