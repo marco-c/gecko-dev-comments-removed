@@ -124,7 +124,8 @@ CallQueryInterface(T* aSource, DestinationType** aDestination)
 {
   
   
-  static_assert(!mozilla::IsSame<T, DestinationType>::value ||
+  static_assert(!(mozilla::IsSame<DestinationType, T>::value ||
+                  mozilla::IsBaseOf<DestinationType, T>::value) ||
                 mozilla::IsSame<DestinationType, nsISupports>::value,
                 "don't use CallQueryInterface for compile-time-determinable casts");
 
