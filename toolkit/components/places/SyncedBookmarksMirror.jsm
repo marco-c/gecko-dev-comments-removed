@@ -1251,15 +1251,7 @@ class SyncedBookmarksMirror {
                   /* Queries are bookmarks with a "place:" URL scheme. */
                   WHEN 'place:' THEN :queryKind
                   ELSE :bookmarkKind END)
-                WHEN :folderType THEN (
-                  CASE WHEN EXISTS(
-                    /* Livemarks are folders with a feed URL annotation. */
-                    SELECT 1 FROM moz_items_annos a
-                    JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id
-                    WHERE a.item_id = s.id AND
-                          n.name = :feedURLAnno
-                  ) THEN :livemarkKind
-                  ELSE :folderKind END)
+                WHEN :folderType THEN :folderKind
                 ELSE :separatorKind END) AS kind,
              s.lastModified / 1000 AS localModified, s.syncChangeCounter,
              s.level, s.isSyncable
@@ -1269,8 +1261,6 @@ class SyncedBookmarksMirror {
         queryKind: SyncedBookmarksMirror.KIND.QUERY,
         bookmarkKind: SyncedBookmarksMirror.KIND.BOOKMARK,
         folderType: PlacesUtils.bookmarks.TYPE_FOLDER,
-        feedURLAnno: PlacesUtils.LMANNO_FEEDURI,
-        livemarkKind: SyncedBookmarksMirror.KIND.LIVEMARK,
         folderKind: SyncedBookmarksMirror.KIND.FOLDER,
         separatorKind: SyncedBookmarksMirror.KIND.SEPARATOR });
 
@@ -1646,29 +1636,6 @@ class SyncedBookmarksMirror {
         }
 
         case PlacesUtils.bookmarks.TYPE_FOLDER: {
-          let feedURLHref = row.getResultByName("feedURL");
-          if (feedURLHref) {
-            
-            
-            let livemarkCleartext = {
-              id: recordId,
-              type: "livemark",
-              parentid: parentRecordId,
-              hasDupe: true,
-              parentName: row.getResultByName("parentTitle"),
-              dateAdded: row.getResultByName("dateAdded") || undefined,
-              title: row.getResultByName("title"),
-              feedUri: feedURLHref,
-            };
-            let siteURLHref = row.getResultByName("siteURL");
-            if (siteURLHref) {
-              livemarkCleartext.siteUri = siteURLHref;
-            }
-            changeRecords[recordId] = new BookmarkChangeRecord(
-              syncChangeCounter, livemarkCleartext);
-            continue;
-          }
-
           let folderCleartext = {
             id: recordId,
             type: "folder",
@@ -2682,9 +2649,18 @@ async function inflateTree(tree, pseudoTree, parentNode) {
       
       
       
-      node.isSyncable = parentNode == tree.root ?
-        PlacesUtils.bookmarks.userContentRoots.includes(node.guid) :
-        parentNode.isSyncable;
+      if (parentNode == tree.root) {
+        node.isSyncable = PlacesUtils.bookmarks.userContentRoots.includes(node.guid);
+      } else if (node.kind == SyncedBookmarksMirror.KIND.LIVEMARK) {
+        
+        
+        
+        
+        
+        node.isSyncable = false;
+      } else {
+        node.isSyncable = parentNode.isSyncable;
+      }
       tree.insert(parentNode.guid, node);
       await inflateTree(tree, pseudoTree, node);
     }
@@ -2972,20 +2948,6 @@ class BookmarkNode {
          remoteNode.kind == SyncedBookmarksMirror.KIND.QUERY) ||
         (this.kind == SyncedBookmarksMirror.KIND.QUERY &&
          remoteNode.kind == SyncedBookmarksMirror.KIND.BOOKMARK)) {
-      return true;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (this.kind == SyncedBookmarksMirror.KIND.FOLDER &&
-        remoteNode.kind == SyncedBookmarksMirror.KIND.LIVEMARK) {
       return true;
     }
     return false;
@@ -4434,7 +4396,6 @@ class BookmarkObserverRecorder {
       await PlacesUtils.keywords.invalidateCachedKeywords();
     }
     await this.notifyBookmarkObservers();
-    await PlacesUtils.livemarks.invalidateCachedLivemarks();
     await this.updateFrecencies();
   }
 

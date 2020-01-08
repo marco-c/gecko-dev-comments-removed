@@ -1076,6 +1076,19 @@ BookmarksStore.prototype = {
     }
     this._log.debug("Remote parent is " + parentGUID);
 
+    if (record.type == "livemark") {
+      
+      
+      
+      let livemarkInfo = record.toSyncBookmark();
+      let newChanges = await PlacesSyncUtils.bookmarks.removeLivemark(
+        livemarkInfo);
+      if (newChanges) {
+        this.engine._modified.insert(newChanges);
+        return;
+      }
+    }
+
     
     await Store.prototype.applyIncoming.call(this, record);
 

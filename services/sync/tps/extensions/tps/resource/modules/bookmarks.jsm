@@ -7,7 +7,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["PlacesItem", "Bookmark", "Separator", "Livemark",
+var EXPORTED_SYMBOLS = ["PlacesItem", "Bookmark", "Separator",
                         "BookmarkFolder", "DumpBookmarks"];
 
 ChromeUtils.import("resource://gre/modules/PlacesBackups.jsm");
@@ -40,9 +40,6 @@ function PlacesItemProps(props) {
   this.folder = null;
   this.position = null;
   this.delete = false;
-  this.siteUri = null;
-  this.feedUri = null;
-  this.livemark = null;
   this.tags = null;
   this.last_item_pos = null;
   this.type = null;
@@ -90,7 +87,7 @@ PlacesItem.prototype = {
 
   toString() {
     var that = this;
-    var props = ["uri", "title", "location", "folder", "feedUri", "siteUri", "livemark"];
+    var props = ["uri", "title", "location", "folder"];
     var string = (this.props.type ? this.props.type + " " : "") +
       "(" +
       (function() {
@@ -643,134 +640,6 @@ BookmarkFolder.prototype = {
 };
 
 extend(BookmarkFolder, PlacesItem);
-
-
-
-
-function Livemark(props) {
-  PlacesItem.call(this, props);
-  this.props.type = "livemark";
-}
-
-
-
-
-Livemark.prototype = {
-  
-
-
-
-
-
-
-  async Create() {
-    this.props.parentGuid = await this.GetOrCreateFolder(this.props.location);
-    Logger.AssertTrue(this.props.parentGuid, "Unable to create " +
-      "folder, error creating parent folder " + this.props.location);
-    let siteURI = null;
-    if (this.props.siteUri != null)
-      siteURI = Services.io.newURI(this.props.siteUri);
-    let livemarkObj = {parentGuid: this.props.parentGuid,
-                       title: this.props.livemark,
-                       siteURI,
-                       feedURI: Services.io.newURI(this.props.feedUri),
-                       index: PlacesUtils.bookmarks.DEFAULT_INDEX};
-
-    let livemark = await PlacesUtils.livemarks.addLivemark(livemarkObj);
-    this.props.guid = livemark.guid;
-    return this.props.guid;
-  },
-
-  
-
-
-
-
-
-
-
-  async Find() {
-    this.props.parentGuid = await this.GetFolder(this.props.location);
-    if (this.props.parentGuid == null) {
-      Logger.logError("Unable to find folder " + this.props.location);
-      return null;
-    }
-    this.props.guid = await this.GetPlacesChildGuid(
-                              this.props.parentGuid,
-                              PlacesUtils.bookmarks.TYPE_FOLDER,
-                              this.props.livemark);
-    if (!this.props.guid) {
-      Logger.logPotentialError("can't find livemark for " + this.toString());
-      return null;
-    }
-    let itemId = await PlacesUtils.promiseItemId(this.props.guid);
-    if (!PlacesUtils.annotations
-                    .itemHasAnnotation(itemId, PlacesUtils.LMANNO_FEEDURI)) {
-      Logger.logPotentialError("livemark folder found, but it's just a regular folder, for " +
-        this.toString());
-      this.props.guid = null;
-      return null;
-    }
-    let feedURI = Services.io.newURI(this.props.feedUri);
-    let lmFeedURISpec =
-      PlacesUtils.annotations.getItemAnnotation(itemId,
-                                                PlacesUtils.LMANNO_FEEDURI);
-    if (feedURI.spec != lmFeedURISpec) {
-      Logger.logPotentialError("livemark feed uri not correct, expected: " +
-        this.props.feedUri + ", actual: " + lmFeedURISpec +
-        " for " + this.toString());
-      return null;
-    }
-    if (this.props.siteUri != null) {
-      let siteURI = Services.io.newURI(this.props.siteUri);
-      let lmSiteURISpec =
-        PlacesUtils.annotations.getItemAnnotation(itemId,
-                                                  PlacesUtils.LMANNO_SITEURI);
-      if (siteURI.spec != lmSiteURISpec) {
-        Logger.logPotentialError("livemark site uri not correct, expected: " +
-        this.props.siteUri + ", actual: " + lmSiteURISpec + " for " +
-        this.toString());
-        return null;
-      }
-    }
-    if (!(await this.CheckPosition(this.props.before,
-                                   this.props.after,
-                                   this.props.last_item_pos)))
-      return null;
-    return this.props.guid;
-  },
-
-  
-
-
-
-
-
-
-
-  async Update() {
-    Logger.AssertTrue(this.props.guid, "Invalid guid during Update");
-    await this.SetLocation(this.updateProps.location);
-    await this.SetPosition(this.updateProps.position);
-    await this.SetTitle(this.updateProps.livemark);
-    return true;
-  },
-
-  
-
-
-
-
-
-
-
-  async Remove() {
-    Logger.AssertTrue(this.props.guid, "Invalid guid during Remove");
-    await PlacesUtils.bookmarks.remove(this.props.guid);
-  },
-};
-
-extend(Livemark, PlacesItem);
 
 
 
