@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef wasm_cranelift_compile_h
+#define wasm_cranelift_compile_h
+
+#include "mozilla/Attributes.h"
+
+#include "wasm/WasmGenerator.h"
+
+namespace js {
+namespace wasm {
+
+
+MOZ_MUST_USE bool
+CraneliftCompileFunctions(const ModuleEnvironment& env,
+                         LifoAlloc& lifo,
+                         const FuncCompileInputVector& inputs,
+                         CompiledCode* code,
+                         UniqueChars* error);
+
+} 
+} 
+
+#endif 
