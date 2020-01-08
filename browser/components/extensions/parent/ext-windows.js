@@ -2,8 +2,9 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "HomePage",
-                               "resource:///modules/HomePage.jsm");
+XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
+                                   "@mozilla.org/browser/aboutnewtab-service;1",
+                                   "nsIAboutNewTabService");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -151,6 +152,9 @@ this.windows = class extends ExtensionAPI {
             if (createData.incognito !== null && createData.incognito != incognito) {
               return Promise.reject({message: "`incognito` property must match the incognito state of tab"});
             }
+            if (createData.incognito && !PrivateBrowsingUtils.enabled) {
+              return Promise.reject({message: "`incognito` cannot be used if incognito mode is disabled"});
+            }
             createData.incognito = incognito;
 
             if (createData.cookieStoreId && createData.cookieStoreId !== getCookieStoreIdForTab(createData, tab)) {
@@ -169,12 +173,10 @@ this.windows = class extends ExtensionAPI {
               args.appendElement(mkstr(createData.url));
             }
           } else {
-            let url = createData.incognito && !PrivateBrowsingUtils.permanentPrivateBrowsing ?
-              "about:privatebrowsing" : HomePage.get().split("|", 1)[0];
+            let url = aboutNewTabService.newTabURL;
             args.appendElement(mkstr(url));
 
-            if (url.startsWith("about:") &&
-                !context.checkLoadURL(url, {dontReportErrors: true})) {
+            if (url === "about:newtab") {
               
               
               principal = Services.scriptSecurityManager.getSystemPrincipal();
@@ -211,9 +213,6 @@ this.windows = class extends ExtensionAPI {
 
           if (createData.incognito !== null) {
             if (createData.incognito) {
-              if (!PrivateBrowsingUtils.enabled) {
-                return Promise.reject({message: "`incognito` cannot be used if incognito mode is disabled"});
-              }
               features.push("private");
             } else {
               features.push("non-private");
