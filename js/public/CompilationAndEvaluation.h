@@ -128,9 +128,15 @@ Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         const char* filename, MutableHandle<Value> rval);
+EvaluateUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
+                 const char* filename, MutableHandle<Value> rval);
 
 
 
