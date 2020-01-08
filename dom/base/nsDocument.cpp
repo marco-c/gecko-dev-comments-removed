@@ -58,7 +58,6 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/FullscreenRequest.h"
 
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -1673,6 +1672,20 @@ nsDocument::~nsDocument()
       if (mDocTreeHadPlayRevoked) {
         ScalarAdd(Telemetry::ScalarID::MEDIA_PAGE_HAD_PLAY_REVOKED_COUNT, 1);
       }
+    }
+
+    
+    
+    
+    
+    if (StaticPrefs::browser_contentblocking_enabled() &&
+        StaticPrefs::browser_fastblock_enabled() &&
+        !nsContentUtils::IsInPrivateBrowsing(this)) {
+      for (auto label : mTrackerBlockedReasons) {
+        AccumulateCategorical(label);
+      }
+      
+      AccumulateCategorical(Telemetry::LABELS_DOCUMENT_ANALYTICS_TRACKER_FASTBLOCKED::all);
     }
   }
 
@@ -10912,7 +10925,7 @@ public:
 
   NS_IMETHOD Run() override
   {
-    nsIDocument* doc = mRequest->Document();
+    nsIDocument* doc = mRequest->GetDocument();
     doc->RequestFullscreen(std::move(mRequest));
     return NS_OK;
   }
@@ -10923,10 +10936,31 @@ public:
 void
 nsIDocument::AsyncRequestFullscreen(UniquePtr<FullscreenRequest> aRequest)
 {
+  if (!aRequest->GetElement()) {
+    MOZ_ASSERT_UNREACHABLE(
+      "Must pass non-null element to nsDocument::AsyncRequestFullscreen");
+    return;
+  }
+
   
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIRunnable> event = new nsCallRequestFullscreen(std::move(aRequest));
   Dispatch(TaskCategory::Other, event.forget());
+}
+
+void
+nsIDocument::DispatchFullscreenError(const char* aMessage, nsINode* aTarget)
+{
+  if (nsPresContext* presContext = GetPresContext()) {
+    auto pendingEvent = MakeUnique<PendingFullscreenEvent>(
+      FullscreenEventType::Error, this, aTarget);
+    presContext->RefreshDriver()->
+      ScheduleFullscreenEvent(std::move(pendingEvent));
+  }
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("DOM"), this,
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  aMessage);
 }
 
 static void
@@ -11088,8 +11122,11 @@ nsresult nsIDocument::RemoteFrameFullscreenChanged(Element* aFrameElement)
   
   
   
-  auto request = FullscreenRequest::CreateForRemote(aFrameElement);
+  auto request = MakeUnique<FullscreenRequest>(aFrameElement,
+                                               CallerType::NonSystem);
+  request->mShouldNotifyNewOrigin = false;
   RequestFullscreen(std::move(request));
+
   return NS_OK;
 }
 
@@ -11142,68 +11179,76 @@ GetFullscreenError(nsIDocument* aDoc, CallerType aCallerType)
 }
 
 bool
-nsIDocument::FullscreenElementReadyCheck(const FullscreenRequest& aRequest)
+nsIDocument::FullscreenElementReadyCheck(Element* aElement,
+                                         CallerType aCallerType)
 {
-  Element* elem = aRequest.Element();
-  
-  
-  
-  
-  
-  if (elem == FullscreenStackTop()) {
-    aRequest.MayResolvePromise();
+  NS_ASSERTION(aElement,
+    "Must pass non-null element to nsDocument::RequestFullscreen");
+  if (!aElement || aElement == FullscreenStackTop()) {
     return false;
   }
-  if (!elem->IsInComposedDoc()) {
-    aRequest.Reject("FullscreenDeniedNotInDocument");
+  if (!aElement->IsInComposedDoc()) {
+    DispatchFullscreenError("FullscreenDeniedNotInDocument", aElement);
     return false;
   }
-  if (elem->OwnerDoc() != this) {
-    aRequest.Reject("FullscreenDeniedMovedDocument");
+  if (aElement->OwnerDoc() != this) {
+    DispatchFullscreenError("FullscreenDeniedMovedDocument", aElement);
     return false;
   }
   if (!GetWindow()) {
-    aRequest.Reject("FullscreenDeniedLostWindow");
+    DispatchFullscreenError("FullscreenDeniedLostWindow", aElement);
     return false;
   }
-  if (const char* msg = GetFullscreenError(this, aRequest.mCallerType)) {
-    aRequest.Reject(msg);
+  if (const char* msg = GetFullscreenError(this, aCallerType)) {
+    DispatchFullscreenError(msg, aElement);
     return false;
   }
   if (!IsVisible()) {
-    aRequest.Reject("FullscreenDeniedHidden");
+    DispatchFullscreenError("FullscreenDeniedHidden", aElement);
     return false;
   }
   if (HasFullscreenSubDocument(this)) {
-    aRequest.Reject("FullscreenDeniedSubDocFullScreen");
+    DispatchFullscreenError("FullscreenDeniedSubDocFullScreen", aElement);
     return false;
   }
   
   
   if (FullscreenStackTop() &&
-      !nsContentUtils::ContentIsHostIncludingDescendantOf(elem,
+      !nsContentUtils::ContentIsHostIncludingDescendantOf(aElement,
                                                           FullscreenStackTop())) {
     
     
-    aRequest.Reject("FullscreenDeniedNotDescendant");
+    DispatchFullscreenError("FullscreenDeniedNotDescendant", aElement);
     return false;
   }
   if (!nsContentUtils::IsChromeDoc(this) && !IsInActiveTab(this)) {
-    aRequest.Reject("FullscreenDeniedNotFocusedTab");
+    DispatchFullscreenError("FullscreenDeniedNotFocusedTab", aElement);
     return false;
   }
   
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
     NS_WARNING("Failed to retrieve focus manager in fullscreen request.");
-    aRequest.MayRejectPromise();
     return false;
   }
   if (nsContentUtils::HasPluginWithUncontrolledEventDispatch(fm->GetFocusedElement())) {
-    aRequest.Reject("FullscreenDeniedFocusedPlugin");
+    DispatchFullscreenError("FullscreenDeniedFocusedPlugin", aElement);
     return false;
   }
   return true;
+}
+
+FullscreenRequest::FullscreenRequest(Element* aElement, CallerType aCallerType)
+  : mElement(aElement)
+  , mDocument(static_cast<nsDocument*>(aElement->OwnerDoc()))
+  , mCallerType(aCallerType)
+{
+  MOZ_COUNT_CTOR(FullscreenRequest);
+}
+
+FullscreenRequest::~FullscreenRequest()
+{
+  MOZ_COUNT_DTOR(FullscreenRequest);
 }
 
 
@@ -11252,31 +11297,30 @@ public:
       }
     }
 
-    UniquePtr<FullscreenRequest> TakeAndNext()
+    void DeleteAndNext()
     {
-      auto thisRequest = TakeAndNextInternal();
+      DeleteAndNextInternal();
       SkipToNextMatch();
-      return thisRequest;
     }
     bool AtEnd() const { return mCurrent == nullptr; }
+    const FullscreenRequest& Get() const { return *mCurrent; }
 
   private:
-    UniquePtr<FullscreenRequest> TakeAndNextInternal()
+    void DeleteAndNextInternal()
     {
-      UniquePtr<FullscreenRequest> thisRequest(mCurrent);
-      mCurrent = mCurrent->removeAndGetNext();
-      return thisRequest;
+      FullscreenRequest* thisRequest = mCurrent;
+      mCurrent = mCurrent->getNext();
+      delete thisRequest;
     }
     void SkipToNextMatch()
     {
       while (mCurrent) {
         nsCOMPtr<nsIDocShellTreeItem>
-          docShell = mCurrent->Document()->GetDocShell();
+          docShell = mCurrent->GetDocument()->GetDocShell();
         if (!docShell) {
           
           
-          UniquePtr<FullscreenRequest> request = TakeAndNextInternal();
-          request->MayRejectPromise();
+          DeleteAndNextInternal();
         } else {
           while (docShell && docShell != mRootShellForIteration) {
             docShell->GetParent(getter_AddRefs(docShell));
@@ -11354,28 +11398,27 @@ nsIDocument::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest)
 {
   nsCOMPtr<nsPIDOMWindowOuter> rootWin = GetRootWindow(this);
   if (!rootWin) {
-    aRequest->MayRejectPromise();
     return;
   }
 
   if (ShouldApplyFullscreenDirectly(this, rootWin)) {
-    ApplyFullscreen(std::move(aRequest));
+    ApplyFullscreen(*aRequest);
     return;
   }
 
   
   
-  Element* elem = aRequest->Element();
+  Element* elem = aRequest->GetElement();
   if (!elem->IsHTMLElement() && !elem->IsXULElement() &&
       !elem->IsSVGElement(nsGkAtoms::svg) &&
       !elem->IsMathMLElement(nsGkAtoms::math)) {
-    aRequest->Reject("FullscreenDeniedNotHTMLSVGOrMathML");
+    DispatchFullscreenError("FullscreenDeniedNotHTMLSVGOrMathML", elem);
     return;
   }
 
   
   
-  if (!FullscreenElementReadyCheck(*aRequest)) {
+  if (!FullscreenElementReadyCheck(elem, aRequest->mCallerType)) {
     return;
   }
 
@@ -11399,11 +11442,11 @@ nsIDocument::HandlePendingFullscreenRequests(nsIDocument* aDoc)
   PendingFullscreenRequestList::Iterator iter(
     aDoc, PendingFullscreenRequestList::eDocumentsWithSameRoot);
   while (!iter.AtEnd()) {
-    UniquePtr<FullscreenRequest> request = iter.TakeAndNext();
-    nsIDocument* doc = request->Document();
-    if (doc->ApplyFullscreen(std::move(request))) {
+    const FullscreenRequest& request = iter.Get();
+    if (request.GetDocument()->ApplyFullscreen(request)) {
       handled = true;
     }
+    iter.DeleteAndNext();
   }
   return handled;
 }
@@ -11414,15 +11457,15 @@ ClearPendingFullscreenRequests(nsIDocument* aDoc)
   PendingFullscreenRequestList::Iterator iter(
     aDoc, PendingFullscreenRequestList::eInclusiveDescendants);
   while (!iter.AtEnd()) {
-    UniquePtr<FullscreenRequest> request = iter.TakeAndNext();
-    request->MayRejectPromise();
+    iter.DeleteAndNext();
   }
 }
 
 bool
-nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
+nsIDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
 {
-  if (!FullscreenElementReadyCheck(*aRequest)) {
+  Element* elem = aRequest.GetElement();
+  if (!FullscreenElementReadyCheck(elem, aRequest.mCallerType)) {
     return false;
   }
 
@@ -11448,12 +11491,11 @@ nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
   
   
   
-  Element* elem = aRequest->Element();
   DebugOnly<bool> x = FullscreenStackPush(elem);
   NS_ASSERTION(x, "Fullscreen state of requesting doc should always change!");
   
-  if (auto* iframe = HTMLIFrameElement::FromNode(elem)) {
-    iframe->SetFullscreenFlag(true);
+  if (elem->IsHTMLElement(nsGkAtoms::iframe)) {
+    static_cast<HTMLIFrameElement*>(elem)->SetFullscreenFlag(true);
   }
   changed.AppendElement(this);
 
@@ -11504,7 +11546,7 @@ nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
   
   
   
-  if (aRequest->mShouldNotifyNewOrigin &&
+  if (aRequest.mShouldNotifyNewOrigin &&
       !nsContentUtils::HaveEqualPrincipals(previousFullscreenDoc, this)) {
     DispatchFullscreenNewOriginEvent(this);
   }
@@ -11515,7 +11557,6 @@ nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest)
   for (nsIDocument* d : Reversed(changed)) {
     DispatchFullscreenChange(d, d->FullscreenStackTop());
   }
-  aRequest->MayResolvePromise();
   return true;
 }
 

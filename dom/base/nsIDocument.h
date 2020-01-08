@@ -45,6 +45,7 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
@@ -125,7 +126,6 @@ class Encoding;
 class ErrorResult;
 class EventStates;
 class EventListenerManager;
-struct FullscreenRequest;
 class PendingAnimationTracker;
 class ServoStyleSet;
 template<typename> class OwningNonNull;
@@ -161,6 +161,7 @@ class Event;
 class EventTarget;
 class FontFaceSet;
 class FrameRequestCallback;
+struct FullscreenRequest;
 class ImageTracker;
 class HTMLBodyElement;
 class HTMLSharedElement;
@@ -446,9 +447,9 @@ protected:
 
 public:
   typedef nsExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
-  typedef mozilla::FullscreenRequest FullscreenRequest;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicyEnum;
   typedef mozilla::dom::Element Element;
+  typedef mozilla::dom::FullscreenRequest FullscreenRequest;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
 
@@ -1756,8 +1757,8 @@ public:
 
   
   
-  
-  bool FullscreenElementReadyCheck(const FullscreenRequest&);
+  bool FullscreenElementReadyCheck(Element* aElement,
+                                   mozilla::dom::CallerType aCallerType);
 
   
   
@@ -1853,6 +1854,12 @@ public:
 
 
   static bool HandlePendingFullscreenRequests(nsIDocument* aDocument);
+
+  
+
+
+
+  void DispatchFullscreenError(const char* aMessage, nsINode* aTarget);
 
   void RequestPointerLock(Element* aElement, mozilla::dom::CallerType);
   bool SetPointerLock(Element* aElement, int aCursorStyle);
@@ -3690,6 +3697,13 @@ public:
     ++mNumTrackersBlocked;
   }
 
+  void NoteTrackerBlockedReason(
+    mozilla::Telemetry::LABELS_DOCUMENT_ANALYTICS_TRACKER_FASTBLOCKED aLabel)
+  {
+    MOZ_ASSERT(!GetSameTypeParentDocument());
+    mTrackerBlockedReasons += aLabel;
+  }
+
   uint32_t NumTrackersFound()
   {
     MOZ_ASSERT(!GetSameTypeParentDocument() || mNumTrackersFound == 0);
@@ -3787,7 +3801,7 @@ protected:
   
   
   
-  bool ApplyFullscreen(mozilla::UniquePtr<FullscreenRequest> aRequest);
+  bool ApplyFullscreen(const FullscreenRequest& aRequest);
 
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -4677,6 +4691,9 @@ protected:
   
   uint32_t mNumTrackersFound;
   uint32_t mNumTrackersBlocked;
+
+  mozilla::EnumSet<mozilla::Telemetry::LABELS_DOCUMENT_ANALYTICS_TRACKER_FASTBLOCKED>
+    mTrackerBlockedReasons;
 
   
   
