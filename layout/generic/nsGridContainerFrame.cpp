@@ -5504,7 +5504,7 @@ nsGridContainerFrame::ReflowRowsInFragmentainer(
 
     if (childStatus.IsInlineBreakBefore()) {
       MOZ_ASSERT(!child->GetPrevInFlow(),
-                 "continuations should never report BREAK_BEFORE status");
+                 "continuations should never report InlineBreak::Before status");
       MOZ_ASSERT(!aFragmentainer.mIsTopOfPage,
                  "got IsInlineBreakBefore() at top of page");
       if (!didGrowRow) {
@@ -5545,16 +5545,23 @@ nsGridContainerFrame::ReflowRowsInFragmentainer(
           aStatus.SetIncomplete();
           continue;
         }
-        NS_ERROR("got BREAK_BEFORE at top-of-page");
+        NS_ERROR("got InlineBreak::Before at top-of-page");
         childStatus.Reset();
       } else {
-        NS_ERROR("got BREAK_BEFORE again after growing the row?");
-        childStatus.SetIncomplete();
+        
+        
+        childStatus.Reset();
+        if (child->GetNextInFlow()) {
+          
+          childStatus.SetIncomplete();
+        } 
       }
     } else if (childStatus.IsInlineBreakAfter()) {
       MOZ_ASSERT_UNREACHABLE("unexpected child reflow status");
     }
 
+    MOZ_ASSERT(!childStatus.IsInlineBreakBefore(),
+               "should've handled InlineBreak::Before above");
     if (childStatus.IsIncomplete()) {
       incompleteItems.PutEntry(child);
     } else if (!childStatus.IsFullyComplete()) {
