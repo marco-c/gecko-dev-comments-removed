@@ -291,6 +291,7 @@ public:
       mValue(value)
   {}
 
+  
   explicit SdpDtlsMessageAttribute(const std::string& unparsed)
     : SdpAttribute(kDtlsMessageAttribute),
       mRole(kClient)
@@ -303,6 +304,8 @@ public:
   }
 
   virtual void Serialize(std::ostream& os) const override;
+
+  
   bool Parse(std::istream& is, std::string* error);
 
   Role mRole;
