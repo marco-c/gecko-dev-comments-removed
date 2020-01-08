@@ -3035,22 +3035,19 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSIntSize& aSize) {
   }
 
   
-
-
-
-
-
   if (presShell->IsVisualViewportSizeSet()) {
     aSize = CSSIntRect::FromAppUnitsRounded(presShell->GetVisualViewportSize());
-  } else {
-    RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
-    if (viewManager) {
-      viewManager->FlushDelayedResize(false);
-    }
-
-    aSize =
-        CSSIntRect::FromAppUnitsRounded(presContext->GetVisibleArea().Size());
+    return NS_OK;
   }
+
+  
+  
+  RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
+  if (viewManager) {
+    viewManager->FlushDelayedResize(false);
+  }
+
+  aSize = CSSIntRect::FromAppUnitsRounded(presContext->GetVisibleArea().Size());
   return NS_OK;
 }
 
@@ -3073,9 +3070,26 @@ void nsGlobalWindowOuter::SetInnerWidthOuter(int32_t aInnerWidth,
   }
 
   CheckSecurityWidthAndHeight(&aInnerWidth, nullptr, aCallerType);
-
   RefPtr<nsIPresShell> presShell = mDocShell->GetPresShell();
 
+  
+  
+  
+  
+  
+  
+  
+  if (presShell && presShell->IsVisualViewportSizeSet()) {
+    CSSSize viewportSize =
+        CSSRect::FromAppUnits(presShell->GetVisualViewportSize());
+    viewportSize.width = aInnerWidth;
+    nsLayoutUtils::SetVisualViewportSize(presShell, viewportSize);
+    return;
+  }
+
+  
+  
+  
   if (presShell && presShell->GetIsViewportOverridden()) {
     nscoord height = 0;
 
@@ -3089,6 +3103,8 @@ void nsGlobalWindowOuter::SetInnerWidthOuter(int32_t aInnerWidth,
     return;
   }
 
+  
+  
   int32_t height = 0;
   int32_t unused = 0;
 
@@ -3115,27 +3131,47 @@ void nsGlobalWindowOuter::SetInnerHeightOuter(int32_t aInnerHeight,
     return;
   }
 
+  CheckSecurityWidthAndHeight(nullptr, &aInnerHeight, aCallerType);
   RefPtr<nsIPresShell> presShell = mDocShell->GetPresShell();
 
+  
+  
+  
+  
+  
+  
+  
+  if (presShell && presShell->IsVisualViewportSizeSet()) {
+    CSSSize viewportSize =
+        CSSRect::FromAppUnits(presShell->GetVisualViewportSize());
+    viewportSize.height = aInnerHeight;
+    nsLayoutUtils::SetVisualViewportSize(presShell, viewportSize);
+    return;
+  }
+
+  
+  
+  
   if (presShell && presShell->GetIsViewportOverridden()) {
+    nscoord width = 0;
+
     RefPtr<nsPresContext> presContext;
     presContext = presShell->GetPresContext();
 
     nsRect shellArea = presContext->GetVisibleArea();
-    nscoord height = aInnerHeight;
-    nscoord width = shellArea.Width();
-    CheckSecurityWidthAndHeight(nullptr, &height, aCallerType);
-    SetCSSViewportWidthAndHeight(width,
-                                 nsPresContext::CSSPixelsToAppUnits(height));
+    width = shellArea.Width();
+    SetCSSViewportWidthAndHeight(
+        width, nsPresContext::CSSPixelsToAppUnits(aInnerHeight));
     return;
   }
 
+  
+  
   int32_t height = 0;
   int32_t width = 0;
 
   nsCOMPtr<nsIBaseWindow> docShellAsWin(do_QueryInterface(mDocShell));
   docShellAsWin->GetSize(&width, &height);
-  CheckSecurityWidthAndHeight(nullptr, &aInnerHeight, aCallerType);
   aError = SetDocShellWidthAndHeight(width, CSSToDevIntPixels(aInnerHeight));
 }
 
