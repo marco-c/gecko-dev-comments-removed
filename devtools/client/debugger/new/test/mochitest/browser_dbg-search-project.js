@@ -1,6 +1,7 @@
 
 
 
+
 function openProjectSearch(dbg) {
   synthesizeKeyShortcut("CmdOrCtrl+Shift+F");
   return waitForState(
@@ -23,7 +24,11 @@ async function selectResult(dbg) {
   return select;
 }
 
-function getResultsCount(dbg) {
+function getExpandedResultsCount(dbg) {
+  return findAllElements(dbg, "projectSerchExpandedResults").length;
+}
+
+function getResultsFiles(dbg) {
   const matches = dbg.selectors
     .getTextSearchResults(dbg.getState())
     .map(file => file.matches);
@@ -33,8 +38,6 @@ function getResultsCount(dbg) {
 
 
 add_task(async function() {
-  await pushPref("devtools.debugger.project-text-search-enabled", true);
-
   const dbg = await initDebugger("doc-script-switching.html", "switching-01");
 
   await selectSource(dbg, "switching-01");
@@ -47,7 +50,7 @@ add_task(async function() {
   type(dbg, "first");
   pressKey(dbg, "Enter");
 
-  await waitForState(dbg, () => getResultsCount(dbg) === 1);
+  await waitForState(dbg, () => getResultsFiles(dbg) === 1);
 
   await selectResult(dbg);
 
@@ -55,4 +58,21 @@ add_task(async function() {
 
   const selectedSource = dbg.selectors.getSelectedSource(dbg.getState());
   ok(selectedSource.url.includes("switching-01"));
+});
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-react.html", "App.js");
+  await openProjectSearch(dbg);
+  type(dbg, "we");
+  pressKey(dbg, "Enter");
+  await waitForState(dbg, state => state.projectTextSearch.status === "DONE");
+
+  is(getExpandedResultsCount(dbg), 15);
+
+  const collapsedNodes = findAllElements(dbg, "projectSearchCollapsed");
+  is(collapsedNodes.length, 1);
+
+  collapsedNodes[0].click();
+
+  is(getExpandedResultsCount(dbg), 155);
 });
