@@ -5,9 +5,6 @@
 
 
 #include "ProcessedStack.h"
-#if defined(MOZ_GECKO_PROFILER)
-#include "shared-libraries.h"
-#endif 
 
 namespace {
 
@@ -84,6 +81,23 @@ void ProcessedStack::Clear() {
 ProcessedStack
 GetStackAndModules(const std::vector<uintptr_t>& aPCs)
 {
+  return BatchProcessedStackGenerator().GetStackAndModules(aPCs);
+}
+
+BatchProcessedStackGenerator::BatchProcessedStackGenerator()
+#ifdef MOZ_GECKO_PROFILER
+  : mSortedRawModules(SharedLibraryInfo::GetInfoForSelf())
+#endif
+{
+#ifdef MOZ_GECKO_PROFILER
+  mSortedRawModules.SortByAddress();
+#endif
+}
+
+ProcessedStack
+BatchProcessedStackGenerator::GetStackAndModules(
+    const std::vector<uintptr_t> &aPCs)
+{
   std::vector<StackFrame> rawStack;
   auto stackEnd = aPCs.begin() + std::min(aPCs.size(), kMaxChromeStackDepth);
   for (auto i = aPCs.begin(); i != stackEnd; ++i) {
@@ -94,15 +108,13 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
   }
 
 #ifdef MOZ_GECKO_PROFILER
+  SharedLibraryInfo rawModules(mSortedRawModules);
   
   std::sort(rawStack.begin(), rawStack.end(), CompareByPC);
 
   size_t moduleIndex = 0;
   size_t stackIndex = 0;
   size_t stackSize = rawStack.size();
-
-  SharedLibraryInfo rawModules = SharedLibraryInfo::GetInfoForSelf();
-  rawModules.SortByAddress();
 
   while (moduleIndex < rawModules.GetSize()) {
     const SharedLibrary& module = rawModules.GetEntry(moduleIndex);
