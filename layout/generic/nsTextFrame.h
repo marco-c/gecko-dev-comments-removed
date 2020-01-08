@@ -135,11 +135,6 @@ public:
   nsTextFrame* LastInFlow() const final;
   nsTextFrame* LastContinuation() const final;
 
-  nsSplittableType GetSplittableType() const final
-  {
-    return NS_FRAME_SPLITTABLE;
-  }
-
   bool IsFrameOfType(uint32_t aFlags) const final
   {
     

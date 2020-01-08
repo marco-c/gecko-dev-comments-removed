@@ -6630,12 +6630,6 @@ nsFrame::AttributeChanged(int32_t         aNameSpaceID,
 
 
 
-nsSplittableType
-nsFrame::GetSplittableType() const
-{
-  return NS_FRAME_NOT_SPLITTABLE;
-}
-
 nsIFrame* nsFrame::GetPrevContinuation() const
 {
   return nullptr;

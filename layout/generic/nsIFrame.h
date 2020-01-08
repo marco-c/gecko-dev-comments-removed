@@ -122,31 +122,6 @@ class Selection;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-typedef uint32_t nsSplittableType;
-
-#define NS_FRAME_NOT_SPLITTABLE             0   // Note: not a bit!
-#define NS_FRAME_SPLITTABLE                 0x1
-#define NS_FRAME_SPLITTABLE_NON_RECTANGULAR 0x3
-
-#define NS_FRAME_IS_SPLITTABLE(type)\
-  (0 != ((type) & NS_FRAME_SPLITTABLE))
-
-#define NS_FRAME_IS_NOT_SPLITTABLE(type)\
-  (0 == ((type) & NS_FRAME_SPLITTABLE))
-
-
-
 #define NS_SUBTREE_DIRTY(_frame)  \
   (((_frame)->GetStateBits() &      \
     (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) != 0)
@@ -2074,11 +2049,6 @@ public:
 
 
   virtual void ContentStatesChanged(mozilla::EventStates aStates);
-
-  
-
-
-  virtual nsSplittableType GetSplittableType() const = 0;
 
   
 
