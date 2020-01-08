@@ -28,7 +28,7 @@ loader.lazyRequireGetter(this, "FileUtils",
 loader.lazyRequireGetter(this, "OS", "resource://gre/modules/osfile.jsm", true);
 
 function getHeapSnapshotFileTemplate() {
-  return OS.Path.join(OS.Constants.Path.tmpDir, `${Date.now()}.fxsnapshot`);
+  return OS.Path.join(OS.Constants.Path.tmpDir, `${Date.now()}.fxsnapshot.gz`);
 }
 
 
@@ -63,7 +63,7 @@ exports.getHeapSnapshotTempFilePath = function(snapshotId) {
   if (!isValidSnapshotFileId(snapshotId)) {
     return null;
   }
-  return OS.Path.join(OS.Constants.Path.tmpDir, snapshotId + ".fxsnapshot");
+  return OS.Path.join(OS.Constants.Path.tmpDir, snapshotId + ".fxsnapshot.gz");
 };
 
 
