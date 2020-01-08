@@ -1779,8 +1779,6 @@ protected:
 
   nsresult RefereshEditingUI(Selection& aSelection);
 
-  nsresult ShowResizersInner(Element& aResizedElement);
-
   
 
 
@@ -1804,7 +1802,7 @@ protected:
 
 
 
-  nsresult ShowResizers(Element& aResizedElement);
+  nsresult ShowResizersInternal(Element& aResizedElement);
 
   ManualNACPtr CreateResizer(int16_t aLocation, nsIContent& aParentContent);
   void SetAnonymousElementPosition(int32_t aX, int32_t aY,
