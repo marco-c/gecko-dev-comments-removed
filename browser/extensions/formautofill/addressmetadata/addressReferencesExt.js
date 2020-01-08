@@ -13,5 +13,8 @@
 
 
 var addressDataExt = {
-  "data/US": {"alternative_names": ["US", "United States of America", "United States", "America", "U.S.", "USA", "U.S.A.", "U.S.A"]},
+  "data/US": {
+    alternative_names: ["US", "United States of America", "United States", "America", "U.S.", "USA", "U.S.A.", "U.S.A"],
+    fmt: "%N%n%A%n%C%S%n%Z%O",
+  },
 };
