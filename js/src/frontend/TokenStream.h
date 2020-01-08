@@ -1921,36 +1921,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
 
-
-
-
-
-
-
-    void ungetCodePointIgnoreEOL(uint32_t codePoint);
-
-    
-
-
-
-
-    void ungetNonAsciiNormalizedCodePoint(int32_t codePoint) {
-        MOZ_ASSERT_IF(isAsciiCodePoint(codePoint),
-                      codePoint == '\n');
-        MOZ_ASSERT(codePoint != unicode::LINE_SEPARATOR,
-                   "should not be ungetting un-normalized code points");
-        MOZ_ASSERT(codePoint != unicode::PARA_SEPARATOR,
-                   "should not be ungetting un-normalized code points");
-
-        ungetCodePointIgnoreEOL(codePoint);
-        if (codePoint == '\n')
-            anyCharsAccess().undoInternalUpdateLineInfoForEOL();
-    }
-
-    
-
-
-
     MOZ_MUST_USE bool consumeRestOfSingleLineComment() {
         
         
@@ -2075,9 +2045,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::newSimpleToken;
     using CharsBase::peekCodeUnit;
     
-    using SpecializedChars::ungetCodePointIgnoreEOL;
     using GeneralCharsBase::ungetCodeUnit;
-    using SpecializedChars::ungetNonAsciiNormalizedCodePoint;
     using GeneralCharsBase::updateLineInfoForEOL;
 
     template<typename CharU> friend class TokenStreamPosition;
