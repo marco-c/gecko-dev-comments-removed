@@ -1207,6 +1207,18 @@ nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
   
   
   
+  
+  if (!IsTextFrame() && !GetPrevContinuation()) {
+    
+    
+    
+    Unused << SVGObserverUtils::GetEffectProperties(this);
+  }
+
+  
+  
+  
+  
   if (StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL) {
     PresContext()->SetBidiEnabled();
   }
