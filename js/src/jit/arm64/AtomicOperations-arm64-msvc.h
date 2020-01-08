@@ -61,7 +61,9 @@ inline void
 js::jit::AtomicOperations::fenceSeqCst()
 {
     _ReadWriteBarrier();
-    MemoryBarrier();
+    
+    
+    __dmb(_ARM64_BARRIER_SY);
 }
 
 template<typename T>
