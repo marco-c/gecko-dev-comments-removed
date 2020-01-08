@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-// @flow
+
+
+
+
 
 import * as timings from "./timings";
 import { prefs, asyncStore, features } from "./prefs";
@@ -49,8 +49,9 @@ function getCM() {
 }
 
 function _formatPausePoints(dbg: Object, url: string) {
-  const source = dbg.helpers.findSource(url);
-  const pausePoints = dbg.selectors.getPausePoints(source);
+  const source =
+    dbg.helpers.findSource(url) || dbg.selectors.getSelectedSource();
+  const pausePoints = dbg.selectors.getPausePoints(source.id);
   console.log(formatPausePoints(source.text, pausePoints));
 }
 

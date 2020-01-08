@@ -4,7 +4,7 @@
 
 
 
-import type { Position } from "../../../types";
+import type { PartialPosition } from "../../../types";
 import { locColumn } from "./locColumn";
 
 
@@ -12,7 +12,7 @@ import { locColumn } from "./locColumn";
 
 
 
-export function positionCmp(p1: Position, p2: Position) {
+export function positionCmp(p1: PartialPosition, p2: PartialPosition) {
   if (p1.line === p2.line) {
     const l1 = locColumn(p1);
     const l2 = locColumn(p2);

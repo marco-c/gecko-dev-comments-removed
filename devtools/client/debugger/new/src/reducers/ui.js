@@ -1,18 +1,18 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-// @flow
 
-/**
- * UI reducer
- * @module reducers/ui
- */
+
+
+
+
+
+
+
+
 
 import makeRecord from "../utils/makeRecord";
 import { prefs } from "../utils/prefs";
 
-import type { Source, Range } from "../types";
+import type { Source, PartialRange } from "../types";
 
 import type { Action, panelPositionType } from "../actions/types";
 import type { Record } from "../utils/makeRecord";
@@ -23,7 +23,7 @@ export type OrientationType = "horizontal" | "vertical";
 
 export type SelectedPrimaryPaneTabType = "sources" | "outline";
 
-type Viewport = Range;
+type Viewport = PartialRange;
 
 export type UIState = {
   selectedPrimaryPaneTab: SelectedPrimaryPaneTabType,
@@ -139,8 +139,8 @@ function update(
   }
 }
 
-// NOTE: we'd like to have the app state fully typed
-// https://github.com/devtools-html/debugger.html/blob/master/src/reducers/sources.js#L179-L185
+
+
 type OuterState = { ui: Record<UIState> };
 
 export function getSelectedPrimaryPaneTab(
