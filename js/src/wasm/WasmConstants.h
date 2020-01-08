@@ -104,6 +104,8 @@ enum class Trap
     IndirectCallToNull,
     
     IndirectCallBadSig,
+    
+    NullPointerDereference,
 
     
     
@@ -401,6 +403,8 @@ enum class MiscOp
 
     
     StructNew                            = 0x50,
+    StructGet                            = 0x51,
+    StructSet                            = 0x52,
 
     Limit
 };

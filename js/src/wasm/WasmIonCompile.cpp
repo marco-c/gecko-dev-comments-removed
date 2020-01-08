@@ -3615,6 +3615,8 @@ EmitBodyExprs(FunctionCompiler& f)
 #endif
 #ifdef ENABLE_WASM_GC
               case uint16_t(MiscOp::StructNew):
+              case uint16_t(MiscOp::StructGet):
+              case uint16_t(MiscOp::StructSet):
                 
                 return f.iter().unrecognizedOpcode(&op);
 #endif
