@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+ChromeUtils.import("resource://pdf.js/PdfjsContentUtils.jsm");
+
+
+PdfjsContentUtils.init();

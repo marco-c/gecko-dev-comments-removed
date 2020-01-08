@@ -65,6 +65,10 @@ const whitelist = {
     "resource://gre/modules/TelemetryUtils.jsm", 
 
     
+    "resource://pdf.js/PdfJsRegistration.jsm",
+    "resource://pdf.js/PdfjsContentUtils.jsm",
+
+    
     "resource://gre/modules/ExtensionUtils.jsm",
     "resource://gre/modules/MessageChannel.jsm",
   ]),

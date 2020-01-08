@@ -968,6 +968,15 @@ BrowserGlue.prototype = {
 
   
   _onFirstWindowLoaded: function BG__onFirstWindowLoaded(aWindow) {
+    
+    
+    
+    Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap.js", true);
+    if (PdfJs.enabled) {
+      PdfJs.ensureRegistered();
+      Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap-enabled.js", true);
+    }
+
     TabCrashHandler.init();
     if (AppConstants.MOZ_CRASHREPORTER) {
       PluginCrashReporter.init();

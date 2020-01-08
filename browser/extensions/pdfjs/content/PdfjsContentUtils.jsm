@@ -20,11 +20,30 @@ var EXPORTED_SYMBOLS = ["PdfjsContentUtils"];
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var PdfjsContentUtils = {
-  _mm: Services.cpmm,
+  _mm: null,
 
   
 
 
+
+  init() {
+    
+    
+    if (!this._mm) {
+      this._mm = Services.cpmm;
+      this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
+
+      Services.obs.addObserver(this, "quit-application");
+    }
+  },
+
+  uninit() {
+    if (this._mm) {
+      this._mm.removeMessageListener("PDFJS:Child:updateSettings", this);
+      Services.obs.removeObserver(this, "quit-application");
+    }
+    this._mm = null;
+  },
 
   
 
@@ -80,6 +99,34 @@ var PdfjsContentUtils = {
       label: aLabel,
       accessKey: aAccessKey,
     });
+  },
+
+  
+
+
+
+  observe(aSubject, aTopic, aData) {
+    if (aTopic === "quit-application") {
+      this.uninit();
+    }
+  },
+
+  receiveMessage(aMsg) {
+    switch (aMsg.name) {
+      case "PDFJS:Child:updateSettings":
+        
+        if (Services.appinfo.processType ===
+            Services.appinfo.PROCESS_TYPE_CONTENT) {
+          let jsm = "resource://pdf.js/PdfJsRegistration.jsm";
+          let pdfjsr = ChromeUtils.import(jsm, {}).PdfJsRegistration;
+          if (aMsg.data.enabled) {
+            pdfjsr.ensureRegistered();
+          } else {
+            pdfjsr.ensureUnregistered();
+          }
+        }
+        break;
+    }
   },
 };
 
