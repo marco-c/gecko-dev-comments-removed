@@ -411,16 +411,6 @@ var XPCOMUtils = {
   
 
 
-
-
-  IterStringEnumerator: function XPCU_IterStringEnumerator(e)
-  {
-    return e;
-  },
-
-  
-
-
   _getFactory: function XPCOMUtils__getFactory(component) {
     var factory = component.prototype._xpcom_factory;
     if (!factory) {
