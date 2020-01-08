@@ -977,7 +977,7 @@ nsSHEntry::SetSHistory(nsISHistory* aSHistory)
 }
 
 NS_IMETHODIMP
-nsSHEntry::SetAsHistoryLoad()
+nsSHEntry::SetLoadTypeAsHistory()
 {
   
   mLoadType = LOAD_HISTORY;
