@@ -20,6 +20,8 @@ var hasSharedArrayBuffer = !!(this.SharedArrayBuffer &&
 
 if (hasSharedArrayBuffer && helperThreadCount() !== 0) {
 
+var mem = new Int32Array(new SharedArrayBuffer(1024));
+
 
 
 
@@ -55,7 +57,7 @@ dprint("Sleeping for 2 seconds");
 sleep(2);
 dprint("Waking the main thread now");
 setSharedObject(null);
-assertEq(Atomics.wake(mem, 0, 1), 1); 
+assertEq(Atomics.notify(mem, 0, 1), 1); 
 `);
 
 var then = Date.now();
@@ -73,7 +75,7 @@ setSharedObject(mem.buffer);
 evalInWorker(`
 var mem = new Int32Array(getSharedObject());
 sleep(2);				
-assertEq(Atomics.wake(mem, 0), 1);	
+assertEq(Atomics.notify(mem, 0), 1);	
 `);
 
 var then = Date.now();

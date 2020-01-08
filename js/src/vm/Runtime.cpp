@@ -499,7 +499,7 @@ JSContext::requestInterrupt(InterruptReason reason)
         
         FutexThread::lock();
         if (fx.isWaiting())
-            fx.wake(FutexThread::WakeForJSInterrupt);
+            fx.notify(FutexThread::NotifyForJSInterrupt);
         fx.unlock();
         wasm::InterruptRunningCode(this);
     }

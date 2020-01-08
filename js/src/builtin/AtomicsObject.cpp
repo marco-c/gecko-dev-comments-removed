@@ -689,10 +689,10 @@ js::atomics_wait(JSContext* cx, unsigned argc, Value* vp)
 }
 
 int64_t
-js::atomics_wake_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t count)
+js::atomics_notify_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t count)
 {
     
-    MOZ_ASSERT(sarb, "wake is only applicable to shared memory");
+    MOZ_ASSERT(sarb, "notify is only applicable to shared memory");
 
     AutoLockFutexAPI lock;
 
@@ -706,7 +706,7 @@ js::atomics_wake_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t c
             iter = iter->lower_pri;
             if (c->offset != byteOffset || !c->cx->fx.isWaiting())
                 continue;
-            c->cx->fx.wake(FutexThread::WakeExplicit);
+            c->cx->fx.notify(FutexThread::NotifyExplicit);
             
             
             
@@ -723,7 +723,7 @@ js::atomics_wake_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t c
 }
 
 bool
-js::atomics_wake(JSContext* cx, unsigned argc, Value* vp)
+js::atomics_notify(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     HandleValue objv = args.get(0);
@@ -758,7 +758,7 @@ js::atomics_wake(JSContext* cx, unsigned argc, Value* vp)
                           (view->viewDataShared().cast<uint8_t*>().unwrap() -
                            sab->dataPointerShared().unwrap());
 
-    r.setNumber(double(atomics_wake_impl(sab->rawBufferObject(), byteOffset, count)));
+    r.setNumber(double(atomics_notify_impl(sab->rawBufferObject(), byteOffset, count)));
 
     return true;
 }
@@ -947,25 +947,25 @@ js::FutexThread::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
 }
 
 void
-js::FutexThread::wake(WakeReason reason)
+js::FutexThread::notify(NotifyReason reason)
 {
     MOZ_ASSERT(isWaiting());
 
-    if ((state_ == WaitingInterrupted || state_ == WaitingNotifiedForInterrupt) && reason == WakeExplicit) {
+    if ((state_ == WaitingInterrupted || state_ == WaitingNotifiedForInterrupt) && reason == NotifyExplicit) {
         state_ = Woken;
         return;
     }
     switch (reason) {
-      case WakeExplicit:
+      case NotifyExplicit:
         state_ = Woken;
         break;
-      case WakeForJSInterrupt:
+      case NotifyForJSInterrupt:
         if (state_ == WaitingNotifiedForInterrupt)
             return;
         state_ = WaitingNotifiedForInterrupt;
         break;
       default:
-        MOZ_CRASH("bad WakeReason in FutexThread::wake()");
+        MOZ_CRASH("bad NotifyReason in FutexThread::notify()");
     }
     cond_->notify_all();
 }
@@ -982,7 +982,8 @@ const JSFunctionSpec AtomicsMethods[] = {
     JS_INLINABLE_FN("xor",                atomics_xor,                3,0, AtomicsXor),
     JS_INLINABLE_FN("isLockFree",         atomics_isLockFree,         1,0, AtomicsIsLockFree),
     JS_FN("wait",                         atomics_wait,               4,0),
-    JS_FN("wake",                         atomics_wake,               3,0),
+    JS_FN("notify",                       atomics_notify,             3,0),
+    JS_FN("wake",                         atomics_notify,             3,0), 
     JS_FS_END
 };
 

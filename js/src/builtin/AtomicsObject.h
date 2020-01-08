@@ -39,7 +39,7 @@ MOZ_MUST_USE bool atomics_or(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_xor(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_isLockFree(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_wait(JSContext* cx, unsigned argc, Value* vp);
-MOZ_MUST_USE bool atomics_wake(JSContext* cx, unsigned argc, Value* vp);
+MOZ_MUST_USE bool atomics_notify(JSContext* cx, unsigned argc, Value* vp);
 
 class FutexThread
 {
@@ -57,9 +57,9 @@ public:
     void destroyInstance();
 
     
-    enum WakeReason {
-        WakeExplicit,           
-        WakeForJSInterrupt      
+    enum NotifyReason {
+        NotifyExplicit,           
+        NotifyForJSInterrupt      
     };
 
     
@@ -70,8 +70,6 @@ public:
         TimedOut                
     };
 
-    
-    
     
     
     
@@ -100,7 +98,7 @@ public:
     
     
     
-    void wake(WakeReason reason);
+    void notify(NotifyReason reason);
 
     bool isWaiting();
 
@@ -162,7 +160,7 @@ atomics_wait_impl(JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset
 
 
 MOZ_MUST_USE int64_t
-atomics_wake_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t count);
+atomics_notify_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t count);
 
 }  
 
