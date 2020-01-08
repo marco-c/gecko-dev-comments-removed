@@ -227,11 +227,29 @@ const CFRPageActions = {
 
 
 
+  async forceRecommendation(browser, recommendation, dispatchToASRouter) {
+    
+    const win = browser.browser.ownerGlobal;
+    const {id, content} = recommendation;
+    RecommendationMap.set(browser.browser, {id, content});
+    if (!PageActionMap.has(win)) {
+      PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
+    }
+    await PageActionMap.get(win).show(recommendation.content.notification_text, true);
+    return true;
+  },
+
+  
 
 
-  async addRecommendation(browser, host, recommendation, dispatchToASRouter, force = false) {
+
+
+
+
+
+  async addRecommendation(browser, host, recommendation, dispatchToASRouter) {
     const win = browser.ownerGlobal;
-    if (browser !== win.gBrowser.selectedBrowser || !(force || isHostMatch(browser, host))) {
+    if (browser !== win.gBrowser.selectedBrowser || !isHostMatch(browser, host)) {
       return false;
     }
     const {id, content} = recommendation;

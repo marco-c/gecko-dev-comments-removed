@@ -495,7 +495,11 @@ class _ASRouter {
 
     
     } else if (message.template === "cfr_doorhanger") {
-      CFRPageActions.addRecommendation(target, trigger.param, message, this.dispatch, force);
+      if (force) {
+        CFRPageActions.forceRecommendation(target, message, this.dispatch);
+      } else {
+        CFRPageActions.addRecommendation(target, trigger.param, message, this.dispatch);
+      }
 
     
     } else {
@@ -621,7 +625,7 @@ class _ASRouter {
     await this.setState({lastMessageId: id});
     const newMessage = this.getMessageById(id);
 
-    await this._sendMessageToTarget(newMessage, target, force, action.data);
+    await this._sendMessageToTarget(newMessage, target, action.data, force);
   }
 
   async blockMessageById(idOrIds) {
