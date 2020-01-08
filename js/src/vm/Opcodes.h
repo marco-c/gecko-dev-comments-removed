@@ -846,9 +846,6 @@
 
 
 
-
-
-
  \
     macro(JSOP_NEWINIT,   89, "newinit",    NULL,         5,  0,  1, JOF_UINT8) \
     
