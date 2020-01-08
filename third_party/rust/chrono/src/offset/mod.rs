@@ -18,17 +18,11 @@
 
 
 
-
-
 use std::fmt;
 
 use Weekday;
-use duration::Duration;
-use naive::date::NaiveDate;
-use naive::time::NaiveTime;
-use naive::datetime::NaiveDateTime;
-use date::Date;
-use datetime::DateTime;
+use naive::{NaiveDate, NaiveTime, NaiveDateTime};
+use {Date, DateTime};
 use format::{parse, Parsed, ParseResult, StrftimeItems};
 
 
@@ -160,8 +154,11 @@ impl<T: fmt::Debug> LocalResult<T> {
 
 pub trait Offset: Sized + Clone + fmt::Debug {
     
-    fn local_minus_utc(&self) -> Duration;
+    fn fix(&self) -> FixedOffset;
 }
+
+
+
 
 
 pub trait TimeZone: Sized + Clone {
@@ -170,6 +167,14 @@ pub trait TimeZone: Sized + Clone {
     
     type Offset: Offset;
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -188,6 +193,15 @@ pub trait TimeZone: Sized + Clone {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn ymd_opt(&self, year: i32, month: u32, day: u32) -> LocalResult<Date<Self>> {
         match NaiveDate::from_ymd_opt(year, month, day) {
             Some(d) => self.from_local_date(&d),
@@ -195,6 +209,14 @@ pub trait TimeZone: Sized + Clone {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -229,6 +251,14 @@ pub trait TimeZone: Sized + Clone {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     fn isoywd(&self, year: i32, week: u32, weekday: Weekday) -> Date<Self> {
         self.isoywd_opt(year, week, weekday).unwrap()
     }
@@ -254,10 +284,20 @@ pub trait TimeZone: Sized + Clone {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn timestamp(&self, secs: i64, nsecs: u32) -> DateTime<Self> {
         self.timestamp_opt(secs, nsecs).unwrap()
     }
 
+    
     
     
     
@@ -268,6 +308,45 @@ pub trait TimeZone: Sized + Clone {
             Some(dt) => LocalResult::Single(self.from_utc_datetime(&dt)),
             None => LocalResult::None,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn timestamp_millis(&self, millis: i64) -> DateTime<Self> {
+        self.timestamp_millis_opt(millis).unwrap()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn timestamp_millis_opt(&self, millis: i64) -> LocalResult<DateTime<Self>> {
+        let (secs, millis) = (millis / 1000, millis % 1000);
+        self.timestamp_opt(secs, millis as u32 * 1_000_000)
     }
 
     
@@ -298,14 +377,15 @@ pub trait TimeZone: Sized + Clone {
     
     fn from_local_date(&self, local: &NaiveDate) -> LocalResult<Date<Self>> {
         self.offset_from_local_date(local).map(|offset| {
-            Date::from_utc(*local - offset.local_minus_utc(), offset)
+            
+            Date::from_utc(*local, offset)
         })
     }
 
     
     fn from_local_datetime(&self, local: &NaiveDateTime) -> LocalResult<DateTime<Self>> {
         self.offset_from_local_datetime(local).map(|offset| {
-            DateTime::from_utc(*local - offset.local_minus_utc(), offset)
+            DateTime::from_utc(*local - offset.fix(), offset)
         })
     }
 
@@ -318,17 +398,22 @@ pub trait TimeZone: Sized + Clone {
     
     
     fn from_utc_date(&self, utc: &NaiveDate) -> Date<Self> {
-        Date::from_utc(utc.clone(), self.offset_from_utc_date(utc))
+        Date::from_utc(*utc, self.offset_from_utc_date(utc))
     }
 
     
     
     fn from_utc_datetime(&self, utc: &NaiveDateTime) -> DateTime<Self> {
-        DateTime::from_utc(utc.clone(), self.offset_from_utc_datetime(utc))
+        DateTime::from_utc(*utc, self.offset_from_utc_datetime(utc))
     }
 }
 
-pub mod utc;
-pub mod fixed;
-pub mod local;
+mod utc;
+mod fixed;
+#[cfg(feature="clock")]
+mod local;
 
+pub use self::utc::Utc;
+pub use self::fixed::FixedOffset;
+#[cfg(feature="clock")]
+pub use self::local::Local;

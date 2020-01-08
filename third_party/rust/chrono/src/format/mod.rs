@@ -4,19 +4,33 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 use std::fmt;
+use std::str::FromStr;
 use std::error::Error;
 
-use {Datelike, Timelike};
+use {Datelike, Timelike, Weekday, ParseWeekdayError};
 use div::{div_floor, mod_floor};
-use duration::Duration;
-use offset::Offset;
-use naive::date::NaiveDate;
-use naive::time::NaiveTime;
+use offset::{Offset, FixedOffset};
+use naive::{NaiveDate, NaiveTime};
 
 pub use self::strftime::StrftimeItems;
 pub use self::parsed::Parsed;
 pub use self::parse::parse;
+
+
+#[derive(Clone, PartialEq, Eq)]
+enum Void {}
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -42,7 +56,7 @@ pub enum Pad {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Numeric {
     
     
@@ -89,13 +103,45 @@ pub enum Numeric {
     
     
     Timestamp,
+
+    
+    
+    
+    
+    Internal(InternalNumeric),
+}
+
+
+pub struct InternalNumeric {
+    _dummy: Void,
+}
+
+impl Clone for InternalNumeric {
+    fn clone(&self) -> Self {
+        match self._dummy {}
+    }
+}
+
+impl PartialEq for InternalNumeric {
+    fn eq(&self, _other: &InternalNumeric) -> bool {
+        match self._dummy {}
+    }
+}
+
+impl Eq for InternalNumeric {
+}
+
+impl fmt::Debug for InternalNumeric {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<InternalNumeric>")
+    }
 }
 
 
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Fixed {
     
     
@@ -158,15 +204,50 @@ pub enum Fixed {
     RFC2822,
     
     RFC3339,
+
+    
+    
+    
+    
+    Internal(InternalFixed),
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InternalFixed {
+    val: InternalInternal,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum InternalInternal {
+    
+    
+    
+    
+    
+    
+    
+    
+    TimezoneOffsetPermissive,
+    
+    Nanosecond3NoDot,
+    
+    Nanosecond6NoDot,
+    
+    Nanosecond9NoDot,
+}
+
+
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Item<'a> {
     
     Literal(&'a str),
     
+    OwnedLiteral(Box<str>),
+    
     Space(&'a str),
+    
+    OwnedSpace(Box<str>),
     
     
     Numeric(Numeric, Pad),
@@ -182,12 +263,13 @@ macro_rules! num  { ($x:ident) => (Item::Numeric(Numeric::$x, Pad::None)) }
 macro_rules! num0 { ($x:ident) => (Item::Numeric(Numeric::$x, Pad::Zero)) }
 macro_rules! nums { ($x:ident) => (Item::Numeric(Numeric::$x, Pad::Space)) }
 macro_rules! fix  { ($x:ident) => (Item::Fixed(Fixed::$x)) }
+macro_rules! internal_fix { ($x:ident) => (Item::Fixed(Fixed::Internal(InternalFixed { val: InternalInternal::$x })))}
 
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct ParseError(ParseErrorKind);
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 enum ParseErrorKind {
     
     OutOfRange,
@@ -253,7 +335,7 @@ const BAD_FORMAT:   ParseError = ParseError(ParseErrorKind::BadFormat);
 
 
 pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Option<&NaiveTime>,
-                     off: Option<&(String, Duration)>, items: I) -> fmt::Result
+                     off: Option<&(String, FixedOffset)>, items: I) -> fmt::Result
         where I: Iterator<Item=Item<'a>> {
     
     static SHORT_MONTHS: [&'static str; 12] =
@@ -269,6 +351,7 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
     for item in items {
         match item {
             Item::Literal(s) | Item::Space(s) => try!(write!(w, "{}", s)),
+            Item::OwnedLiteral(ref s) | Item::OwnedSpace(ref s) => try!(write!(w, "{}", s)),
 
             Item::Numeric(spec, pad) => {
                 use self::Numeric::*;
@@ -279,26 +362,30 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
                     (d.ordinal() as i32 - d.weekday().num_days_from_monday() as i32 + 7) / 7;
 
                 let (width, v) = match spec {
-                    Year           => (4, date.map(|d| d.year() as i64)),
-                    YearDiv100     => (2, date.map(|d| div_floor(d.year() as i64, 100))),
-                    YearMod100     => (2, date.map(|d| mod_floor(d.year() as i64, 100))),
-                    IsoYear        => (4, date.map(|d| d.isoweekdate().0 as i64)),
-                    IsoYearDiv100  => (2, date.map(|d| div_floor(d.isoweekdate().0 as i64, 100))),
-                    IsoYearMod100  => (2, date.map(|d| mod_floor(d.isoweekdate().0 as i64, 100))),
-                    Month          => (2, date.map(|d| d.month() as i64)),
-                    Day            => (2, date.map(|d| d.day() as i64)),
-                    WeekFromSun    => (2, date.map(|d| week_from_sun(d) as i64)),
-                    WeekFromMon    => (2, date.map(|d| week_from_mon(d) as i64)),
-                    IsoWeek        => (2, date.map(|d| d.isoweekdate().1 as i64)),
-                    NumDaysFromSun => (1, date.map(|d| d.weekday().num_days_from_sunday() as i64)),
-                    WeekdayFromMon => (1, date.map(|d| d.weekday().number_from_monday() as i64)),
-                    Ordinal        => (3, date.map(|d| d.ordinal() as i64)),
-                    Hour           => (2, time.map(|t| t.hour() as i64)),
-                    Hour12         => (2, time.map(|t| t.hour12().1 as i64)),
-                    Minute         => (2, time.map(|t| t.minute() as i64)),
-                    Second         => (2, time.map(|t| (t.second() +
-                                                        t.nanosecond() / 1_000_000_000) as i64)),
-                    Nanosecond     => (9, time.map(|t| (t.nanosecond() % 1_000_000_000) as i64)),
+                    Year           => (4, date.map(|d| i64::from(d.year()))),
+                    YearDiv100     => (2, date.map(|d| div_floor(i64::from(d.year()), 100))),
+                    YearMod100     => (2, date.map(|d| mod_floor(i64::from(d.year()), 100))),
+                    IsoYear        => (4, date.map(|d| i64::from(d.iso_week().year()))),
+                    IsoYearDiv100  => (2, date.map(|d| div_floor(
+                        i64::from(d.iso_week().year()), 100))),
+                    IsoYearMod100  => (2, date.map(|d| mod_floor(
+                        i64::from(d.iso_week().year()), 100))),
+                    Month          => (2, date.map(|d| i64::from(d.month()))),
+                    Day            => (2, date.map(|d| i64::from(d.day()))),
+                    WeekFromSun    => (2, date.map(|d| i64::from(week_from_sun(d)))),
+                    WeekFromMon    => (2, date.map(|d| i64::from(week_from_mon(d)))),
+                    IsoWeek        => (2, date.map(|d| i64::from(d.iso_week().week()))),
+                    NumDaysFromSun => (1, date.map(|d| i64::from(d.weekday()
+                                                                  .num_days_from_sunday()))),
+                    WeekdayFromMon => (1, date.map(|d| i64::from(d.weekday()
+                                                                  .number_from_monday()))),
+                    Ordinal        => (3, date.map(|d| i64::from(d.ordinal()))),
+                    Hour           => (2, time.map(|t| i64::from(t.hour()))),
+                    Hour12         => (2, time.map(|t| i64::from(t.hour12().1))),
+                    Minute         => (2, time.map(|t| i64::from(t.minute()))),
+                    Second         => (2, time.map(|t| i64::from(t.second() +
+                                                        t.nanosecond() / 1_000_000_000))),
+                    Nanosecond     => (9, time.map(|t| i64::from(t.nanosecond() % 1_000_000_000))),
                     Timestamp      => (1, match (date, time, off) {
                         (Some(d), Some(t), None) =>
                             Some(d.and_time(*t).timestamp()),
@@ -306,10 +393,13 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
                             Some((d.and_time(*t) - off).timestamp()),
                         (_, _, _) => None
                     }),
+
+                    
+                    Internal(ref int) => match int._dummy {},
                 };
 
                 if let Some(v) = v {
-                    if (spec == Year || spec == IsoYear) && !(0 <= v && v < 10000) {
+                    if (spec == Year || spec == IsoYear) && !(0 <= v && v < 10_000) {
                         
                         match pad {
                             Pad::None => try!(write!(w, "{:+}", v)),
@@ -333,15 +423,15 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
 
                 
                 
-                fn write_local_minus_utc(w: &mut fmt::Formatter, off: Duration,
+                fn write_local_minus_utc(w: &mut fmt::Formatter, off: FixedOffset,
                                          allow_zulu: bool, use_colon: bool) -> fmt::Result {
-                    let off = off.num_minutes();
+                    let off = off.local_minus_utc();
                     if !allow_zulu || off != 0 {
                         let (sign, off) = if off < 0 {('-', -off)} else {('+', off)};
                         if use_colon {
-                            write!(w, "{}{:02}:{:02}", sign, off / 60, off % 60)
+                            write!(w, "{}{:02}:{:02}", sign, off / 3600, off / 60 % 60)
                         } else {
-                            write!(w, "{}{:02}{:02}", sign, off / 60, off % 60)
+                            write!(w, "{}{:02}{:02}", sign, off / 3600, off / 60 % 60)
                         }
                     } else {
                         write!(w, "Z")
@@ -391,6 +481,21 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
                             let nano = t.nanosecond() % 1_000_000_000;
                             write!(w, ".{:09}", nano)
                         }),
+                    Internal(InternalFixed { val: InternalInternal::Nanosecond3NoDot }) =>
+                        time.map(|t| {
+                            let nano = t.nanosecond() % 1_000_000_000;
+                            write!(w, "{:03}", nano / 1_000_000)
+                        }),
+                    Internal(InternalFixed { val: InternalInternal::Nanosecond6NoDot }) =>
+                        time.map(|t| {
+                            let nano = t.nanosecond() % 1_000_000_000;
+                            write!(w, "{:06}", nano / 1_000)
+                        }),
+                    Internal(InternalFixed { val: InternalInternal::Nanosecond9NoDot }) =>
+                        time.map(|t| {
+                            let nano = t.nanosecond() % 1_000_000_000;
+                            write!(w, "{:09}", nano)
+                        }),
                     TimezoneName =>
                         off.map(|&(ref name, _)| write!(w, "{}", *name)),
                     TimezoneOffsetColon =>
@@ -401,6 +506,8 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
                         off.map(|&(_, off)| write_local_minus_utc(w, off, false, false)),
                     TimezoneOffsetZ =>
                         off.map(|&(_, off)| write_local_minus_utc(w, off, true, false)),
+                    Internal(InternalFixed { val: InternalInternal::TimezoneOffsetPermissive }) =>
+                        panic!("Do not try to write %#z it is undefined"),
                     RFC2822 => 
                         if let (Some(d), Some(t), Some(&(_, off))) = (date, time, off) {
                             let sec = t.second() + t.nanosecond() / 1_000_000_000;
@@ -436,7 +543,7 @@ pub fn format<'a, I>(w: &mut fmt::Formatter, date: Option<&NaiveDate>, time: Opt
     Ok(())
 }
 
-pub mod parsed;
+mod parsed;
 
 
 mod scan;
@@ -453,7 +560,7 @@ pub struct DelayedFormat<I> {
     
     time: Option<NaiveTime>,
     
-    off: Option<(String, Duration)>,
+    off: Option<(String, FixedOffset)>,
     
     items: I,
 }
@@ -468,7 +575,7 @@ impl<'a, I: Iterator<Item=Item<'a>> + Clone> DelayedFormat<I> {
     pub fn new_with_offset<Off>(date: Option<NaiveDate>, time: Option<NaiveTime>,
                                 offset: &Off, items: I) -> DelayedFormat<I>
             where Off: Offset + fmt::Display {
-        let name_and_diff = (offset.to_string(), offset.local_minus_utc());
+        let name_and_diff = (offset.to_string(), offset.fix());
         DelayedFormat { date: date, time: time, off: Some(name_and_diff), items: items }
     }
 }
@@ -479,3 +586,40 @@ impl<'a, I: Iterator<Item=Item<'a>> + Clone> fmt::Display for DelayedFormat<I> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl FromStr for Weekday {
+    type Err = ParseWeekdayError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(("", w)) = scan::short_or_long_weekday(s) {
+            Ok(w)
+        } else {
+            Err(ParseWeekdayError { _dummy: () })
+        }
+    }
+}
