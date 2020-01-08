@@ -261,6 +261,19 @@ class RemoteSettingsClient {
     this._listeners.get(event).push(callback);
   }
 
+  off(event, callback) {
+    if (!this._listeners.has(event)) {
+      throw new Error(`Unknown event type ${event}`);
+    }
+    const callbacks = this._listeners.get(event);
+    const i = callbacks.indexOf(callback);
+    if (i < 0) {
+      throw new Error(`Unknown callback`);
+    } else {
+      callbacks.splice(i, 1);
+    }
+  }
+
   
 
 
