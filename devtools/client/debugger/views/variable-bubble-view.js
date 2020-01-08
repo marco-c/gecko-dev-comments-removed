@@ -9,7 +9,7 @@
 
 "use strict";
 
-const {setTooltipVariableContent} = require("devtools/client/shared/widgets/tooltip/VariableContentHelper");
+const {setTooltipVariableContent} = require("devtools/client/debugger/content/tooltip/VariableContentHelper");
 
 
 
