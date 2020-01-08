@@ -28,6 +28,19 @@ function run_test() {
     },
     
     {
+      input: "see http://www.mozilla.org/maybe today",  
+      url: "http://www.mozilla.org/maybe"
+    },
+    {
+      input: "see \"http://www.mozilla.org/maybe today\"",  
+      url: "http://www.mozilla.org/maybetoday"              
+    },
+    {
+      input: "see <http://www.mozilla.org/maybe today>",  
+      url: "http://www.mozilla.org/maybetoday"            
+    },
+    
+    {
       input:"I mean http://www.mozilla.org/.",
       url: "http://www.mozilla.org/"
     },
