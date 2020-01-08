@@ -1150,32 +1150,6 @@ nsComputedDOMStyle::SetValueFromComplexColor(nsROCSSPrimitiveValue* aValue,
   SetToRGBAColor(aValue, aColor.CalcColor(mComputedStyle));
 }
 
-void
-nsComputedDOMStyle::SetValueForWidgetColor(nsROCSSPrimitiveValue* aValue,
-                                           const StyleComplexColor& aColor,
-                                           StyleAppearance aWidgetType)
-{
-  if (!aColor.IsAuto()) {
-    SetToRGBAColor(aValue, aColor.CalcColor(mComputedStyle));
-    return;
-  }
-  nsPresContext* presContext = mPresShell->GetPresContext();
-  MOZ_ASSERT(presContext);
-  if (nsContentUtils::ShouldResistFingerprinting(presContext->GetDocShell())) {
-    
-    SetToRGBAColor(aValue, NS_RGBA(0, 0, 0, 0));
-    return;
-  }
-  if (nsITheme* theme = presContext->GetTheme()) {
-    nscolor color = theme->GetWidgetAutoColor(mComputedStyle, aWidgetType);
-    SetToRGBAColor(aValue, color);
-  } else {
-    
-    
-    SetToRGBAColor(aValue, NS_RGBA(0, 0, 0, 0));
-  }
-}
-
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetColor()
 {
@@ -2486,15 +2460,24 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetScrollbarColor()
 {
   const nsStyleUI* ui = StyleUI();
-  RefPtr<nsDOMCSSValueList> list = GetROCSSValueList(false);
-  auto put = [this, &list](const StyleComplexColor& color,
-                           StyleAppearance type) {
+  MOZ_ASSERT(ui->mScrollbarFaceColor.IsAuto() ==
+             ui->mScrollbarTrackColor.IsAuto(),
+             "Whether the two colors are auto should be identical");
+
+  if (ui->mScrollbarFaceColor.IsAuto()) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-    SetValueForWidgetColor(val, color, type);
+    val->SetIdent(eCSSKeyword_auto);
+    return val.forget();
+  }
+
+  RefPtr<nsDOMCSSValueList> list = GetROCSSValueList(false);
+  auto put = [this, &list](const StyleComplexColor& color) {
+    RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+    SetValueFromComplexColor(val, color);
     list->AppendCSSValue(val.forget());
   };
-  put(ui->mScrollbarFaceColor, StyleAppearance::ScrollbarthumbVertical);
-  put(ui->mScrollbarTrackColor, StyleAppearance::ScrollbarVertical);
+  put(ui->mScrollbarFaceColor);
+  put(ui->mScrollbarTrackColor);
   return list.forget();
 }
 

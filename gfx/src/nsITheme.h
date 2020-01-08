@@ -78,14 +78,6 @@ public:
 
 
 
-  virtual nscolor GetWidgetAutoColor(mozilla::ComputedStyle* aStyle,
-                                     WidgetType aWidgetType)
-  { return NS_RGB(0, 0, 0); }
-
-  
-
-
-
 
 
   virtual bool CreateWebRenderCommandsForWidget(mozilla::wr::DisplayListBuilder& aBuilder,
