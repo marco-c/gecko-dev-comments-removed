@@ -192,7 +192,7 @@ nsDiskCacheBindery::CreateBinding(nsCacheEntry *       entry,
 
 
 nsDiskCacheBinding *
-nsDiskCacheBindery::FindActiveBinding(uint32_t  hashNumber)
+nsDiskCacheBindery::FindActiveBinding(uint32_t  hashNumber) const
 {
     NS_ASSERTION(initialized, "nsDiskCacheBindery not initialized");
     
