@@ -195,4 +195,14 @@ public class ViewUtil {
             textView.setTextDirection(View.TEXT_DIRECTION_LTR);
         }
     }
+
+    
+
+
+
+
+
+    public static boolean isLayoutRtl(final View view) {
+        return ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL;
+    }
 }

@@ -1331,12 +1331,17 @@ public class BrowserApp extends GeckoApp
             }
         });
 
-        mBrowserToolbar.setOnFilterListener(new BrowserToolbar.OnFilterListener() {
-            @Override
-            public void onFilter(String searchText, AutocompleteHandler handler) {
-                filterEditingMode(searchText, handler);
-            }
-        });
+        
+        
+        
+        if (!isInAutomation) {
+            mBrowserToolbar.setOnFilterListener(new BrowserToolbar.OnFilterListener() {
+                @Override
+                public void onFilter(String searchText, AutocompleteHandler handler) {
+                    filterEditingMode(searchText, handler);
+                }
+            });
+        }
 
         mBrowserToolbar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
