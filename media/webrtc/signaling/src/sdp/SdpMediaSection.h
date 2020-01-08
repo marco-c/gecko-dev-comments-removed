@@ -53,6 +53,7 @@ class SdpMediaSection {
     kDccpTlsRtpSavp,     
     kUdpTlsRtpSavpf,     
     kTcpTlsRtpSavpf,     
+    kTcpDtlsRtpSavpf,    
     kDccpTlsRtpSavpf,    
     kUdpMbmsFecRtpAvp,   
     kUdpMbmsFecRtpSavp,  
@@ -233,6 +234,8 @@ inline std::ostream& operator<<(std::ostream& os, SdpMediaSection::Protocol p) {
       return os << "UDP/TLS/RTP/SAVPF";
     case SdpMediaSection::kTcpTlsRtpSavpf:
       return os << "TCP/TLS/RTP/SAVPF";
+    case SdpMediaSection::kTcpDtlsRtpSavpf:
+      return os << "TCP/DTLS/RTP/SAVPF";
     case SdpMediaSection::kDccpTlsRtpSavpf:
       return os << "DCCP/TLS/RTP/SAVPF";
     case SdpMediaSection::kUdpMbmsFecRtpAvp:
