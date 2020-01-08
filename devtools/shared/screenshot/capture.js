@@ -3,22 +3,16 @@
 
 
 "use strict";
-
 const { Cu } = require("chrome");
-const { getRect } = require("devtools/shared/layout/utils");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 
 const CONTAINER_FLASHING_DURATION = 500;
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
-exports.screenshot = function takeAsyncScreenshot(owner, args = {}) {
-  if (args.help) {
-    
-    return null;
-  }
-  return captureScreenshot(args, owner.window.document);
-};
+loader.lazyRequireGetter(this, "getRect", "devtools/shared/layout/utils", true);
+
+
 
 
 
@@ -34,21 +28,26 @@ function simulateCameraFlash(document) {
 
 
 function captureScreenshot(args, document) {
+  if (args.help) {
+    return null;
+  }
   if (args.delay > 0) {
     return new Promise((resolve, reject) => {
       document.defaultView.setTimeout(() => {
-        createScreenshotData(document, args).then(resolve, reject);
+        createScreenshotDataURL(document, args).then(resolve, reject);
       }, args.delay * 1000);
     });
   }
-  return createScreenshotData(document, args);
+  return createScreenshotDataURL(document, args);
 }
 
+exports.captureScreenshot = captureScreenshot;
 
 
 
 
-function createScreenshotData(document, args) {
+
+function createScreenshotDataURL(document, args) {
   const window = document.defaultView;
   let left = 0;
   let top = 0;
@@ -111,6 +110,8 @@ function createScreenshotData(document, args) {
   });
 }
 
+exports.createScreenshotDataURL = createScreenshotDataURL;
+
 
 
 
@@ -138,3 +139,4 @@ function getFilename(defaultName) {
     timeString
   ) + ".png";
 }
+

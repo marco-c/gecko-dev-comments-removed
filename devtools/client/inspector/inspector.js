@@ -33,9 +33,10 @@ loader.lazyRequireGetter(this, "nodeConstants", "devtools/shared/dom-node-consta
 loader.lazyRequireGetter(this, "Menu", "devtools/client/framework/menu");
 loader.lazyRequireGetter(this, "MenuItem", "devtools/client/framework/menu-item");
 loader.lazyRequireGetter(this, "ExtensionSidebar", "devtools/client/inspector/extensions/extension-sidebar");
-loader.lazyRequireGetter(this, "CommandUtils", "devtools/client/shared/developer-toolbar", true);
 loader.lazyRequireGetter(this, "clipboardHelper", "devtools/shared/platform/clipboard");
 loader.lazyRequireGetter(this, "openContentLink", "devtools/client/shared/link", true);
+loader.lazyRequireGetter(this, "getScreenshotFront", "devtools/shared/fronts/screenshot", true);
+loader.lazyRequireGetter(this, "saveScreenshot", "devtools/shared/screenshot/save");
 
 loader.lazyImporter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm");
 
@@ -619,17 +620,14 @@ Inspector.prototype = {
     if (window.closed) {
       return;
     }
-
     
     
     const useLandscapeMode = await window.top.promiseDocumentFlushed(() => {
       return this.useLandscapeMode();
     });
-
     if (window.closed) {
       return;
     }
-
     this.splitBox.setState({ vert: useLandscapeMode });
     this.emit("inspector-resize");
   },
@@ -639,10 +637,6 @@ Inspector.prototype = {
 
 
   onPanelWindowResize: function() {
-    if (this.toolbox.currentToolId !== "inspector") {
-      return;
-    }
-
     if (!this._lazyResizeHandler) {
       this._lazyResizeHandler = new DeferredTask(this._onLazyPanelResize.bind(this),
                                                  LAZY_RESIZE_INTERVAL_MS, 0);
@@ -2318,21 +2312,22 @@ Inspector.prototype = {
 
 
   async screenshotNode() {
-    const command = Services.prefs.getBoolPref("devtools.screenshot.clipboard.enabled") ?
-      "screenshot --file --clipboard --selector" :
-      "screenshot --file --selector";
-
     
     
     
     
     await this.highlighter.hideBoxModel();
 
-    
-    
-    
-    CommandUtils.executeOnTarget(this._target,
-      `${command} '${this.selectionCssSelector}'`);
+    const clipboardEnabled = Services.prefs
+      .getBoolPref("devtools.screenshot.clipboard.enabled");
+    const args = {
+      file: true,
+      selector: this.selectionCssSelector,
+      clipboard: clipboardEnabled
+    };
+    const screenshotFront = getScreenshotFront(this.target);
+    const screenshot = await screenshotFront.capture(args);
+    await saveScreenshot(this.panelWin, args, screenshot);
   },
 
   

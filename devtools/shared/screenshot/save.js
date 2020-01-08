@@ -113,14 +113,14 @@ function getFormattedHelpData() {
 
 
 
-function processScreenshot(window, args = {}, value) {
+function saveScreenshot(window, args = {}, value) {
   if (args.help) {
     const message = getFormattedHelpData();
     
     return [message];
   }
-  simulateCameraShutter(window.document);
-  return saveScreenshot(window, args, value);
+  simulateCameraShutter(window);
+  return save(args, value);
 }
 
 
@@ -129,8 +129,7 @@ function processScreenshot(window, args = {}, value) {
 
 
 
-function simulateCameraShutter(document) {
-  const window = document.defaultView;
+function simulateCameraShutter(window) {
   if (Services.prefs.getBoolPref("devtools.screenshot.audio.enabled")) {
     const audioCamera = new window.Audio("resource://devtools/client/themes/audio/shutter.wav");
     audioCamera.play();
@@ -149,21 +148,18 @@ function simulateCameraShutter(document) {
 
 
 
-
-
-
-async function saveScreenshot(window, args, image) {
+async function save(args, image) {
   const fileNeeded = args.filename ||
     !args.clipboard || args.file;
   const results = [];
 
   if (args.clipboard) {
-    const result = saveToClipboard(window, image.data);
+    const result = saveToClipboard(image.data);
     results.push(result);
   }
 
   if (fileNeeded) {
-    const result = await saveToFile(window, image);
+    const result = await saveToFile(image);
     results.push(result);
   }
   return results;
@@ -179,10 +175,7 @@ async function saveScreenshot(window, args, image) {
 
 
 
-
-
-
-function saveToClipboard(window, base64URI) {
+function saveToClipboard(base64URI) {
   try {
     const imageTools = Cc["@mozilla.org/image/tools;1"]
                        .getService(Ci.imgITools);
@@ -218,10 +211,7 @@ function saveToClipboard(window, base64URI) {
 
 
 
-
-
-
-async function saveToFile(window, image) {
+async function saveToFile(image) {
   let filename = image.filename;
 
   
@@ -258,4 +248,4 @@ async function saveToFile(window, image) {
   }
 }
 
-module.exports = processScreenshot;
+module.exports = saveScreenshot;
