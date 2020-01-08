@@ -18,11 +18,6 @@ namespace recordreplay {
 
 
 
-
-
-
-
-static const size_t gAtomicLockId = 1;
 static Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> gNumLocks;
 
 struct LockAcquires
@@ -63,6 +58,19 @@ typedef std::unordered_map<void*, Lock*> LockMap;
 static LockMap* gLocks;
 static ReadWriteSpinLock gLocksLock;
 
+static Lock*
+CreateNewLock(Thread* aThread, size_t aId)
+{
+  LockAcquires* info = gLockAcquires.Create(aId);
+  info->mAcquires = gRecordingFile->OpenStream(StreamName::Lock, aId);
+
+  if (IsReplaying()) {
+    info->ReadAndNotifyNextOwner(aThread);
+  }
+
+  return new Lock(aId);
+}
+
  void
 Lock::New(void* aNativeLock)
 {
@@ -81,12 +89,7 @@ Lock::New(void* aNativeLock)
   }
   thread->Events().RecordOrReplayScalar(&id);
 
-  LockAcquires* info = gLockAcquires.Create(id);
-  info->mAcquires = gRecordingFile->OpenStream(StreamName::Lock, id);
-
-  if (IsReplaying()) {
-    info->ReadAndNotifyNextOwner(thread);
-  }
+  Lock* lock = CreateNewLock(thread, id);
 
   
   
@@ -99,7 +102,7 @@ Lock::New(void* aNativeLock)
     gLocks = new LockMap();
   }
 
-  gLocks->insert(LockMap::value_type(aNativeLock, new Lock(id)));
+  gLocks->insert(LockMap::value_type(aNativeLock, lock));
 
   thread->EndDisallowEvents();
 }
@@ -201,30 +204,6 @@ Lock::Exit()
   }
 }
 
-struct AtomicLock : public detail::MutexImpl
-{
-  using detail::MutexImpl::lock;
-  using detail::MutexImpl::unlock;
-};
-
-
-static AtomicLock* gAtomicLock = nullptr;
-
- void
-Lock::InitializeLocks()
-{
-  gNumLocks = gAtomicLockId;
-  gAtomicLock = new AtomicLock();
-
-  AssertEventsAreNotPassedThrough();
-
-  
-  
-  MOZ_RELEASE_ASSERT(!IsRecording() ||
-                     gNumLocks == gAtomicLockId + 1 ||
-                     gInitializationFailureMessage);
-}
-
  void
 Lock::LockAquiresUpdated(size_t aLockId)
 {
@@ -234,24 +213,94 @@ Lock::LockAquiresUpdated(size_t aLockId)
   }
 }
 
+
+
+
+
+
+
+
+
+static const size_t NumAtomicLocks = 89;
+static Lock** gAtomicLocks;
+
+
+
+static SpinLock* gAtomicLockOwners;
+
+ void
+Lock::InitializeLocks()
+{
+  Thread* thread = Thread::Current();
+
+  gNumLocks = 1;
+  gAtomicLocks = new Lock*[NumAtomicLocks];
+  for (size_t i = 0; i < NumAtomicLocks; i++) {
+    gAtomicLocks[i] = CreateNewLock(thread, gNumLocks++);
+  }
+  if (IsRecording()) {
+    gAtomicLockOwners = new SpinLock[NumAtomicLocks];
+    PodZero(gAtomicLockOwners, NumAtomicLocks);
+  }
+}
+
 extern "C" {
 
 MOZ_EXPORT void
-RecordReplayInterface_InternalBeginOrderedAtomicAccess()
+RecordReplayInterface_InternalBeginOrderedAtomicAccess(const void* aValue)
 {
   MOZ_RELEASE_ASSERT(IsRecordingOrReplaying());
-  if (!gInitializationFailureMessage) {
-    gAtomicLock->lock();
+
+  Thread* thread = Thread::Current();
+
+  
+  size_t atomicId;
+  {
+    RecordingEventSection res(thread);
+    if (!res.CanAccessEvents()) {
+      return;
+    }
+
+    thread->Events().RecordOrReplayThreadEvent(ThreadEvent::AtomicAccess);
+
+    atomicId = IsRecording() ? (HashGeneric(aValue) % NumAtomicLocks) : 0;
+    thread->Events().RecordOrReplayScalar(&atomicId);
+    MOZ_RELEASE_ASSERT(atomicId < NumAtomicLocks);
   }
+
+  
+  
+  
+  
+  if (IsRecording()) {
+    gAtomicLockOwners[atomicId].Lock();
+  }
+
+  gAtomicLocks[atomicId]->Enter();
+
+  MOZ_RELEASE_ASSERT(thread->AtomicLockId().isNothing());
+  thread->AtomicLockId().emplace(atomicId);
 }
 
 MOZ_EXPORT void
 RecordReplayInterface_InternalEndOrderedAtomicAccess()
 {
   MOZ_RELEASE_ASSERT(IsRecordingOrReplaying());
-  if (!gInitializationFailureMessage) {
-    gAtomicLock->unlock();
+
+  Thread* thread = Thread::Current();
+  if (!thread || thread->PassThroughEvents() || thread->HasDivergedFromRecording()) {
+    return;
   }
+
+  MOZ_RELEASE_ASSERT(thread->AtomicLockId().isSome());
+  size_t atomicId = thread->AtomicLockId().ref();
+  thread->AtomicLockId().reset();
+
+  if (IsRecording()) {
+    gAtomicLockOwners[atomicId].Unlock();
+  }
+
+  gAtomicLocks[atomicId]->Exit();
 }
 
 } 

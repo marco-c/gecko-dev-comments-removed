@@ -140,6 +140,9 @@ private:
   bool mUnrecordedWaitOnlyWhenDiverged;
   bool mUnrecordedWaitNotified;
 
+  
+  Maybe<size_t> mAtomicLockId;
+
 public:
 
 
@@ -253,6 +256,9 @@ public:
 
   
   void Join();
+
+  
+  Maybe<size_t>& AtomicLockId() { return mAtomicLockId; }
 
 
 
