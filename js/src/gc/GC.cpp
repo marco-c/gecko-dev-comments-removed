@@ -993,6 +993,7 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     fullGCForAtomsRequested_(false),
     minorGCNumber(0),
     majorGCNumber(0),
+    jitReleaseNumber(0),
     number(0),
     isFull(false),
     incrementalState(gc::State::NotActive),
@@ -1340,6 +1341,12 @@ js::gc::DumpArenaInfo()
 
 #endif 
 
+
+
+
+
+static const unsigned JIT_SCRIPT_RELEASE_TYPES_PERIOD = 20;
+
 bool
 GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
 {
@@ -1356,6 +1363,8 @@ GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
         if (size) {
             setMarkStackLimit(atoi(size), lock);
         }
+
+        jitReleaseNumber = majorGCNumber + JIT_SCRIPT_RELEASE_TYPES_PERIOD;
 
         if (!nursery().init(maxNurseryBytes, lock)) {
             return false;
@@ -3952,6 +3961,33 @@ GCRuntime::waitBackgroundSweepEnd()
     }
 }
 
+bool
+GCRuntime::shouldReleaseObservedTypes()
+{
+    bool releaseTypes = false;
+
+    if (cleanUpEverything) {
+        releaseTypes = true;
+    }
+
+#ifdef JS_GC_ZEAL
+    if (zealModeBits != 0) {
+        releaseTypes = true;
+    }
+#endif
+
+    
+    if (majorGCNumber >= jitReleaseNumber) {
+        releaseTypes = true;
+    }
+
+    if (releaseTypes) {
+        jitReleaseNumber = majorGCNumber + JIT_SCRIPT_RELEASE_TYPES_PERIOD;
+    }
+
+    return releaseTypes;
+}
+
 struct IsAboutToBeFinalizedFunctor {
     template <typename T> bool operator()(Cell** t) {
         mozilla::DebugOnly<const Cell*> prior = *t;
@@ -4523,14 +4559,12 @@ GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason, bool* isFullOu
 }
 
 static void
-DiscardJITCodeForGC(JSRuntime* rt)
+DiscardJITCodeForGC(JSRuntime* rt, bool releaseTypes)
 {
     js::CancelOffThreadIonCompile(rt, JS::Zone::Mark);
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         gcstats::AutoPhase ap(rt->gc.stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
-        zone->discardJitCode(rt->defaultFreeOp(),
-                              true,
-                              true);
+        zone->discardJitCode(rt->defaultFreeOp(),  true, releaseTypes);
     }
 }
 
@@ -4637,7 +4671,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoGCSession& session)
 
         
         
-        DiscardJITCodeForGC(rt);
+        DiscardJITCodeForGC(rt, shouldReleaseObservedTypes());
 
         
 
@@ -5860,16 +5894,6 @@ GCRuntime::sweepJitDataOnMainThread(FreeOp* fop)
             js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
         }
 
-        for (SweepGroupRealmsIter r(rt); !r.done(); r.next()) {
-            r->sweepJitRealm();
-        }
-
-        for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
-            if (jit::JitZone* jitZone = zone->jitZone()) {
-                jitZone->sweep();
-            }
-        }
-
         
         
 
@@ -5882,6 +5906,22 @@ GCRuntime::sweepJitDataOnMainThread(FreeOp* fop)
         gcstats::AutoPhase apdc(stats(), gcstats::PhaseKind::SWEEP_DISCARD_CODE);
         for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
             zone->discardJitCode(fop);
+        }
+    }
+
+    
+    
+    {
+        gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
+
+        for (SweepGroupRealmsIter r(rt); !r.done(); r.next()) {
+            r->sweepJitRealm();
+        }
+
+        for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
+            if (jit::JitZone* jitZone = zone->jitZone()) {
+                jitZone->sweep();
+            }
         }
     }
 
