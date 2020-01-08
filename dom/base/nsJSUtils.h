@@ -108,7 +108,6 @@ public:
 
     
     
-    
     ExecutionContext(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
 
     ExecutionContext(const ExecutionContext&) = delete;
