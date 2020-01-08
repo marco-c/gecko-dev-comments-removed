@@ -610,6 +610,17 @@ public:
                                 const nsTArray<nsIntRegion>& aInputExtents);
 };
 
+
+
+
+
+
+
+
+bool
+ComputeColorMatrix(const ColorMatrixAttributes& aMatrixAttributes,
+                   float aOutMatrix[20]);
+
 } 
 } 
 
