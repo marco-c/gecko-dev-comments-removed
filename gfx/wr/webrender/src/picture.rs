@@ -4,11 +4,11 @@
 
 use api::{DeviceRect, FilterOp, MixBlendMode, PipelineId, PremultipliedColorF, PictureRect, PicturePoint, WorldPoint};
 use api::{DeviceIntRect, DevicePoint, LayoutRect, PictureToRasterTransform, LayoutPixel, PropertyBinding, PropertyBindingId};
-use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, DirtyRect, WorldSize, LayoutSize};
+use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, DirtyRect, WorldSize, LayoutSize, ClipMode};
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor, WorldVector2D};
 use box_shadow::{BLUR_SAMPLE_SCALE};
-use clip::{ClipNodeCollector, ClipStore, ClipChainId, ClipChainNode};
-use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
+use clip::{ClipNodeCollector, ClipStore, ClipChainId, ClipChainNode, ClipItem};
+use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
 use device::TextureFilter;
 use euclid::{TypedScale, vec3, TypedRect, TypedPoint2D, TypedSize2D};
 use euclid::approxeq::ApproxEq;
@@ -108,7 +108,7 @@ pub struct Tile {
     
     pub local_rect: LayoutRect,
     
-    pixel_rect: Option<DeviceIntRect>,
+    valid_rect: WorldRect,
     
     
     descriptor: TileDescriptor,
@@ -125,12 +125,12 @@ impl Tile {
     fn new(
     ) -> Self {
         Tile {
-            handle: TextureCacheHandle::invalid(),
             local_rect: LayoutRect::zero(),
             world_rect: WorldRect::zero(),
+            valid_rect: WorldRect::zero(),
+            handle: TextureCacheHandle::invalid(),
             descriptor: TileDescriptor::new(),
             is_valid: false,
-            pixel_rect: None,
         }
     }
 
@@ -177,6 +177,12 @@ pub struct TileDescriptor {
     
     
     opacity_bindings: ComparableVec<PropertyBindingId>,
+
+    
+    needed_rects: Vec<WorldRect>,
+
+    
+    current_rects: Vec<WorldRect>,
 }
 
 impl TileDescriptor {
@@ -187,6 +193,8 @@ impl TileDescriptor {
             clip_vertices: ComparableVec::new(),
             opacity_bindings: ComparableVec::new(),
             image_keys: ComparableVec::new(),
+            needed_rects: Vec::new(),
+            current_rects: Vec::new(),
         }
     }
 
@@ -198,15 +206,37 @@ impl TileDescriptor {
         self.clip_vertices.reset();
         self.opacity_bindings.reset();
         self.image_keys.reset();
+        self.needed_rects.clear();
     }
 
     
     fn is_valid(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        let rects_valid = if self.needed_rects.len() == self.current_rects.len() {
+            for (needed, current) in self.needed_rects.iter().zip(self.current_rects.iter()) {
+                if !current.contains_rect(needed) {
+                    return false;
+                }
+            }
+
+            true
+        } else {
+            false
+        };
+
         self.image_keys.is_valid() &&
         self.opacity_bindings.is_valid() &&
         self.clip_uids.is_valid() &&
         self.clip_vertices.is_valid() &&
-        self.prims.is_valid()
+        self.prims.is_valid() &&
+        rects_valid
     }
 }
 
@@ -255,7 +285,11 @@ pub struct TileCache {
     
     pub pending_blits: Vec<TileBlit>,
     
-    clip_node_collector: ClipNodeCollector,
+    
+    
+    
+    
+    world_bounding_rect: WorldRect,
 }
 
 impl TileCache {
@@ -277,7 +311,7 @@ impl TileCache {
             tile_count: TileSize::zero(),
             scroll_offset: None,
             pending_blits: Vec::new(),
-            clip_node_collector: ClipNodeCollector::new(spatial_node_index),
+            world_bounding_rect: WorldRect::zero(),
         }
     }
 
@@ -514,7 +548,7 @@ impl TileCache {
         
         
         self.needs_update = true;
-        self.clip_node_collector.clear();
+        self.world_bounding_rect = WorldRect::zero();
 
         
         for tile in &mut self.tiles {
@@ -558,6 +592,7 @@ impl TileCache {
         resource_cache: &ResourceCache,
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
+        screen_world_rect: &WorldRect,
     ) {
         if !self.needs_update {
             return;
@@ -687,14 +722,52 @@ impl TileCache {
 
         
         
+        let mut world_clip_rect = world_rect;
         while current_clip_chain_id != ClipChainId::NONE {
             let clip_chain_node = &clip_chain_nodes[current_clip_chain_id.0 as usize];
+            let clip_node = &resources.clip_data_store[clip_chain_node.handle];
+
+            self.map_local_to_world.set_target_spatial_node(
+                clip_chain_node.spatial_node_index,
+                clip_scroll_tree,
+            );
+
             
             
             
-            if clip_chain_node.spatial_node_index < self.spatial_node_index {
-                self.clip_node_collector.insert(current_clip_chain_id)
-            } else {
+            let add_to_clip_deps = match clip_node.item {
+                ClipItem::Rectangle(size, ClipMode::Clip) => {
+                    let clip_spatial_node = &clip_scroll_tree.spatial_nodes[clip_chain_node.spatial_node_index.0 as usize];
+
+                    
+                    
+                    if clip_spatial_node.coordinate_system_id == CoordinateSystemId(0) {
+                        let local_rect = LayoutRect::new(
+                            clip_chain_node.local_pos,
+                            size,
+                        );
+
+                        if let Some(clip_world_rect) = self.map_local_to_world.map(&local_rect) {
+                            world_clip_rect = match world_clip_rect.intersection(&clip_world_rect) {
+                                Some(rect) => rect,
+                                None => return,
+                            };
+                        }
+
+                        false
+                    } else {
+                        true
+                    }
+                }
+                ClipItem::Rectangle(_, ClipMode::ClipOut) |
+                ClipItem::RoundedRectangle(..) |
+                ClipItem::Image { .. } |
+                ClipItem::BoxShadow(..) => {
+                    true
+                }
+            };
+
+            if add_to_clip_deps {
                 
                 
                 
@@ -703,21 +776,17 @@ impl TileCache {
                     LayoutSize::zero(),
                 );
 
-                self.map_local_to_world.set_target_spatial_node(
-                    clip_chain_node.spatial_node_index,
-                    clip_scroll_tree,
-                );
+                if let Some(clip_world_rect) = self.map_local_to_world.map(&local_rect) {
+                    clip_vertices.push(clip_world_rect.origin);
+                }
 
-                let clip_world_rect = self
-                    .map_local_to_world
-                    .map(&local_rect)
-                    .expect("bug: unable to map clip rect to world");
-
-                clip_vertices.push(clip_world_rect.origin);
                 clip_chain_uids.push(clip_chain_node.handle.uid());
             }
+
             current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
+
+        self.world_bounding_rect = self.world_bounding_rect.union(&world_clip_rect);
 
         
         
@@ -731,6 +800,17 @@ impl TileCache {
 
                 let index = (y * self.tile_count.width + x) as usize;
                 let tile = &mut self.tiles[index];
+
+                
+                
+                
+                
+                let needed_rect = match world_clip_rect.intersection(&tile.world_rect).and_then(|r| r.intersection(screen_world_rect)) {
+                    Some(rect) => rect.translate(&-tile.world_rect.origin.to_vector()),
+                    None => continue,
+                };
+
+                tile.descriptor.needed_rects.push(needed_rect);
 
                 
                 tile.is_valid &= is_cacheable;
@@ -784,9 +864,7 @@ impl TileCache {
         &mut self,
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
-        clip_store: &ClipStore,
         frame_context: &FrameBuildingContext,
-        resources: &FrameResources,
     ) -> LayoutRect {
         let mut dirty_world_rect = WorldRect::zero();
 
@@ -802,17 +880,9 @@ impl TileCache {
         );
 
         
-        
-        let clip_rect = match self
-            .clip_node_collector
-            .get_world_clip_rect(
-                clip_store,
-                &resources.clip_data_store,
-                frame_context.clip_scroll_tree,
-            ) {
-            Some(clip_rect) => clip_rect,
-            None => return LayoutRect::zero(),
-        };
+        if !self.world_bounding_rect.intersects(&frame_context.screen_world_rect) {
+            return LayoutRect::zero();
+        }
 
         let map_surface_to_world: SpaceMapper<LayoutPixel, WorldPixel> = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
@@ -822,51 +892,24 @@ impl TileCache {
         );
 
         let local_clip_rect = map_surface_to_world
-            .unmap(&clip_rect)
+            .unmap(&self.world_bounding_rect)
             .expect("bug: unable to map local clip rect");
-
-        let clip_rect = match clip_rect.intersection(&frame_context.screen_world_rect) {
-            Some(clip_rect) => clip_rect,
-            None => return LayoutRect::zero(),
-        };
-
-        let clipped = (clip_rect * frame_context.device_pixel_scale).round().to_i32();
 
         
         for (i, tile) in self.tiles.iter_mut().enumerate() {
+            let visible_rect = match tile
+                .world_rect
+                .intersection(&frame_context.screen_world_rect)
+            {
+                Some(rect) => rect,
+                None => continue,
+            };
+
             
             tile.is_valid &= tile.descriptor.is_valid();
 
             
             if !resource_cache.texture_cache.is_allocated(&tile.handle) {
-                tile.is_valid = false;
-            }
-
-            
-            let tile_device_rect = (tile.world_rect * frame_context.device_pixel_scale).round().to_i32();
-
-            
-            let src_rect = clipped.intersection(&tile_device_rect);
-
-            
-            let src_rect = match src_rect {
-                Some(rect) => rect,
-                None => {
-                    continue;
-                }
-            };
-
-            
-            let unit_rect = src_rect
-                .translate(&-tile_device_rect.origin.to_vector());
-
-            
-            
-            let valid_pixel_rect = match tile.pixel_rect {
-                Some(pixel_rect) => pixel_rect.contains_rect(&unit_rect),
-                None => false,
-            };
-            if !valid_pixel_rect {
                 tile.is_valid = false;
             }
 
@@ -886,9 +929,6 @@ impl TileCache {
                 dirty_world_rect = dirty_world_rect.union(&tile.world_rect);
 
                 
-                tile.pixel_rect = Some(unit_rect);
-
-                
                 resource_cache.texture_cache.update(
                     &mut tile.handle,
                     descriptor,
@@ -905,18 +945,25 @@ impl TileCache {
                 let cache_item = resource_cache
                     .get_texture_cache_item(&tile.handle);
 
+                let src_origin = (visible_rect.origin * frame_context.device_pixel_scale).round().to_i32();
+                tile.valid_rect = visible_rect.translate(&-tile.world_rect.origin.to_vector());
+
                 
                 
-                let dest_offset = unit_rect.origin;
+                let dest_rect = (tile.valid_rect * frame_context.device_pixel_scale).round().to_i32();
                 self.pending_blits.push(TileBlit {
                     target: cache_item,
-                    src_offset: src_rect.origin,
-                    dest_offset,
-                    size: unit_rect.size,
+                    src_offset: src_origin,
+                    dest_offset: dest_rect.origin,
+                    size: dest_rect.size,
                 });
 
                 
                 tile.is_valid = true;
+                tile.descriptor.current_rects = mem::replace(
+                    &mut tile.descriptor.needed_rects,
+                    Vec::new(),
+                );
             }
         }
 
@@ -1938,6 +1985,7 @@ impl PicturePrimitive {
                 resource_cache,
                 opacity_binding_store,
                 image_instances,
+                &frame_context.screen_world_rect,
             );
         }
     }
