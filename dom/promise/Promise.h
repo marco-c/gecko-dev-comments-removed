@@ -25,6 +25,7 @@
 class nsIGlobalObject;
 
 namespace mozilla {
+
 namespace dom {
 
 class AnyCallback;
@@ -141,6 +142,40 @@ public:
        AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
        JS::MutableHandle<JS::Value> aRetval,
        ErrorResult& aRv);
+
+  template <typename Callback, typename... Args>
+  using IsHandlerCallback =
+      IsSame<already_AddRefed<Promise>,
+             decltype(DeclVal<Callback>()(
+                (JSContext*)(nullptr),
+                DeclVal<JS::Handle<JS::Value>>(),
+                DeclVal<Args>()...))>;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Callback, typename... Args>
+  typename EnableIf<
+    IsHandlerCallback<Callback, Args...>::value,
+    Result<RefPtr<Promise>, nsresult>>::Type
+  ThenWithCycleCollectedArgs(Callback&& aOnResolve, Args&&... aArgs);
+
+  Result<RefPtr<Promise>, nsresult>
+  ThenWithoutCycleCollection(
+    const std::function<already_AddRefed<Promise>(JSContext*,
+                                                  JS::HandleValue)>& aCallback);
 
   JSObject* PromiseObj() const
   {
