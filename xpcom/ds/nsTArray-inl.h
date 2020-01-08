@@ -461,9 +461,8 @@ nsTArray_base<Alloc, Copy>::SwapArrayElements(nsTArray_base<Allocator,
   
   
   
-  AutoTArray<nsTArray_Impl<uint8_t, ActualAlloc>, 64> temp;
-  if (!ActualAlloc::Successful(temp.template EnsureCapacity<ActualAlloc>(smallerLength,
-                                                                         aElemSize))) {
+  AutoTArray<uint8_t, 64 * sizeof(void*)> temp;
+  if (!ActualAlloc::Successful(temp.template EnsureCapacity<ActualAlloc>(smallerLength * aElemSize, sizeof(uint8_t)))) {
     return ActualAlloc::FailureResult();
   }
 
