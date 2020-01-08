@@ -60,27 +60,34 @@ HTMLEditor::SetInlineProperty(const nsAString& aProperty,
                               const nsAString& aValue)
 {
   RefPtr<nsAtom> property = NS_Atomize(aProperty);
+  if (NS_WARN_IF(!property)) {
+    return NS_ERROR_INVALID_ARG;
+  }
   RefPtr<nsAtom> attribute = NS_Atomize(aAttribute);
-  return SetInlineProperty(property, attribute, aValue);
+  return SetInlinePropertyInternal(*property, attribute, aValue);
 }
 
 nsresult
-HTMLEditor::SetInlineProperty(nsAtom* aProperty,
-                              nsAtom* aAttribute,
-                              const nsAString& aValue)
+HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
+                                      nsAtom* aAttribute,
+                                      const nsAString& aValue)
 {
-  NS_ENSURE_TRUE(aProperty, NS_ERROR_NULL_POINTER);
-  NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
+  if (NS_WARN_IF(!mRules)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
   RefPtr<TextEditRules> rules(mRules);
   CommitComposition();
 
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (selection->IsCollapsed()) {
     
     
-    mTypeInState->SetProp(aProperty, aAttribute, aValue);
+    mTypeInState->SetProp(&aProperty, aAttribute, aValue);
     return NS_OK;
   }
 
@@ -106,7 +113,9 @@ HTMLEditor::SetInlineProperty(nsAtom* aProperty,
       
       
       rv = PromoteInlineRange(*range);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       nsCOMPtr<nsINode> startNode = range->GetStartContainer();
@@ -115,8 +124,10 @@ HTMLEditor::SetInlineProperty(nsAtom* aProperty,
         rv = SetInlinePropertyOnTextNode(*startNode->GetAsText(),
                                          range->StartOffset(),
                                          range->EndOffset(),
-                                         *aProperty, aAttribute, aValue);
-        NS_ENSURE_SUCCESS(rv, rv);
+                                         aProperty, aAttribute, aValue);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         continue;
       }
 
@@ -155,15 +166,19 @@ HTMLEditor::SetInlineProperty(nsAtom* aProperty,
       if (startNode && startNode->GetAsText() && IsEditable(startNode)) {
         rv = SetInlinePropertyOnTextNode(*startNode->GetAsText(),
                                          range->StartOffset(),
-                                         startNode->Length(), *aProperty,
+                                         startNode->Length(), aProperty,
                                          aAttribute, aValue);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
 
       
       for (auto& node : arrayOfNodes) {
-        rv = SetInlinePropertyOnNode(*node, *aProperty, aAttribute, aValue);
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = SetInlinePropertyOnNode(*node, aProperty, aAttribute, aValue);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
 
       
@@ -171,15 +186,21 @@ HTMLEditor::SetInlineProperty(nsAtom* aProperty,
       
       if (endNode && endNode->GetAsText() && IsEditable(endNode)) {
         rv = SetInlinePropertyOnTextNode(*endNode->GetAsText(), 0,
-                                          range->EndOffset(), *aProperty,
+                                          range->EndOffset(), aProperty,
                                           aAttribute, aValue);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
   }
-  if (!cancel) {
-    
-    return rules->DidDoAction(selection, subActionInfo, rv);
+  if (cancel) {
+    return NS_OK;
+  }
+
+  rv = rules->DidDoAction(selection, subActionInfo, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
   return NS_OK;
 }
