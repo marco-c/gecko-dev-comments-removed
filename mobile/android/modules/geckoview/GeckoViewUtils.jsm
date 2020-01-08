@@ -375,6 +375,8 @@ var GeckoViewUtils = {
 
 
   initLogging: function(aTag, aScope) {
+    const tag = "GeckoView." + aTag.replace(/^GeckoView\.?/, "");
+
     
     
     
@@ -383,7 +385,7 @@ var GeckoViewUtils = {
           this._log(log.logger, level, strings, exprs);
 
       XPCOMUtils.defineLazyGetter(log, "logger", _ => {
-        const logger = Log.repository.getLogger(aTag);
+        const logger = Log.repository.getLogger(tag);
         logger.parent = this.rootLogger;
         return logger;
       });

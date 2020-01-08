@@ -3,18 +3,19 @@
 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/GeckoViewUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.jsm",
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
   FileSource: "resource://gre/modules/L10nRegistry.jsm",
   GeckoViewTelemetryController: "resource://gre/modules/GeckoViewTelemetryController.jsm",
-  GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
   L10nRegistry: "resource://gre/modules/L10nRegistry.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
-const {debug, warn} = GeckoViewUtils.initLogging("GeckoViewStartup", this);
+
+GeckoViewUtils.initLogging("Startup", this);
 
 function GeckoViewStartup() {
 }
