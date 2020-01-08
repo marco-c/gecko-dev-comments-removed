@@ -45,13 +45,13 @@ const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
 
 
 
-  initialize: function(threadActor, originalLocation) {
+  initialize: function(threadActor, generatedLocation) {
     
     
     this.scripts = new Set();
 
     this.threadActor = threadActor;
-    this.originalLocation = originalLocation;
+    this.generatedLocation = generatedLocation;
     this.condition = null;
     this.isPending = true;
   },
@@ -154,10 +154,10 @@ const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
 
     
     
-    const locationAtFinish = frame.onPop && frame.onPop.originalLocation;
+    const locationAtFinish = frame.onPop && frame.onPop.generatedLocation;
     if (locationAtFinish &&
-        locationAtFinish.originalLine === generatedLine &&
-        locationAtFinish.originalColumn === generatedColumn) {
+        locationAtFinish.generatedLine === generatedLine &&
+        locationAtFinish.generatedColumn === generatedColumn) {
       return undefined;
     }
 
@@ -192,8 +192,8 @@ const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
 
   delete: function() {
     
-    if (this.originalLocation) {
-      this.threadActor.breakpointActorMap.deleteActor(this.originalLocation);
+    if (this.generatedLocation) {
+      this.threadActor.breakpointActorMap.deleteActor(this.generatedLocation);
     }
     this.threadActor.threadLifetimePool.removeActor(this);
     
