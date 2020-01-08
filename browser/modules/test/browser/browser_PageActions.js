@@ -1280,8 +1280,8 @@ add_task(async function contextMenu() {
   let menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 3,
                "Context menu has 3 children");
-  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
-               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[0].label, "Remove from Address Bar",
+               "Context menu is in the 'remove' state");
   Assert.equal(menuItems[1].localName, "menuseparator",
                "menuseparator is present");
   Assert.equal(menuItems[2].label, "Manage Extension\u2026",
@@ -1309,8 +1309,8 @@ add_task(async function contextMenu() {
   menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 3,
                "Context menu has 3 children");
-  Assert.equal(menuItems[0].label, "Show in Address Bar",
-               "Context menu is in the 'show' state");
+  Assert.equal(menuItems[0].label, "Add to Address Bar",
+               "Context menu is in the 'add' state");
   Assert.equal(menuItems[1].localName, "menuseparator",
                "menuseparator is present");
   Assert.equal(menuItems[2].label, "Manage Extension\u2026",
@@ -1338,8 +1338,8 @@ add_task(async function contextMenu() {
   menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 3,
                "Context menu has 3 children");
-  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
-               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[0].label, "Remove from Address Bar",
+               "Context menu is in the 'remove' state");
   Assert.equal(menuItems[1].localName, "menuseparator",
                "menuseparator is present");
   Assert.equal(menuItems[2].label, "Manage Extension\u2026",
@@ -1366,8 +1366,8 @@ add_task(async function contextMenu() {
   menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 3,
                "Context menu has 3 children");
-  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
-               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[0].label, "Remove from Address Bar",
+               "Context menu is in the 'remove' state");
   Assert.equal(menuItems[1].localName, "menuseparator",
                "menuseparator is present");
   Assert.equal(menuItems[2].label, "Manage Extension\u2026",
@@ -1395,8 +1395,8 @@ add_task(async function contextMenu() {
   menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 3,
                "Context menu has 3 children");
-  Assert.equal(menuItems[0].label, "Show in Address Bar",
-               "Context menu is in the 'show' state");
+  Assert.equal(menuItems[0].label, "Add to Address Bar",
+               "Context menu is in the 'add' state");
   Assert.equal(menuItems[1].localName, "menuseparator",
                "menuseparator is present");
   Assert.equal(menuItems[2].label, "Manage Extension\u2026",
@@ -1424,8 +1424,8 @@ add_task(async function contextMenu() {
   menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 3,
                "Context menu has 3 children");
-  Assert.equal(menuItems[0].label, "Don\u2019t Show in Address Bar",
-               "Context menu is in the 'don't show' state");
+  Assert.equal(menuItems[0].label, "Remove from Address Bar",
+               "Context menu is in the 'remove' state");
   Assert.equal(menuItems[1].localName, "menuseparator",
                "menuseparator is present");
   Assert.equal(menuItems[2].label, "Manage Extension\u2026",
