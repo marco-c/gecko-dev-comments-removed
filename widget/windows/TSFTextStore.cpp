@@ -4918,11 +4918,14 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
       break;
     
     
+    
+    
+    
+    
+    
+    
     case TextInputProcessorID::eMicrosoftPinyin:
     case TextInputProcessorID::eMicrosoftWubi:
-      if (!sTSFHasTheBug) {
-        return false;
-      }
       if (!IsWin8OrLater() ||
           !TSFPrefs::DoNotReturnNoLayoutErrorToMSSimplifiedTIP()) {
         return false;
