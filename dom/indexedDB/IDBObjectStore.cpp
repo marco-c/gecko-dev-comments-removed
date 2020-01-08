@@ -1941,10 +1941,16 @@ IDBObjectStore::GetAddInfo(JSContext* aCx,
   
   const nsTArray<IndexMetadata>& indexes = mSpec->indexes();
 
-  const uint32_t idxCount = indexes.Length();
+  uint32_t idxCount = indexes.Length();
 
-  if (idxCount && !aValueWrapper.Clone(aCx)) {
-    return NS_ERROR_DOM_DATA_CLONE_ERR;
+  if (idxCount) {
+    if (!aValueWrapper.Clone(aCx)) {
+      return NS_ERROR_DOM_DATA_CLONE_ERR;
+    }
+
+    
+    
+    idxCount = indexes.Length();
   }
 
   aUpdateInfoArray.SetCapacity(idxCount); 
