@@ -47,12 +47,21 @@ const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
 
     this.url = response.url;
 
+    
+    
+    const connectResponse = await this.connect({});
+    this.consoleActor = connectResponse.consoleActor;
+    this.threadActor = connectResponse.threadActor;
+
     return response;
   }, {
     impl: "_attach",
   }),
 
   detach: custom(async function() {
+    if (this.isClosed) {
+      return {};
+    }
     let response;
     try {
       response = await this._detach();
@@ -81,18 +90,15 @@ const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
       return response;
     }
 
-    
-    const connectResponse = await this.connect(options);
-    await this.client.request({
-      to: connectResponse.threadActor,
+    const attachResponse = await this.client.request({
+      to: this.threadActor,
       type: "attach",
       options,
     });
-    this.thread = new ThreadClient(this, connectResponse.threadActor);
-    this.consoleActor = connectResponse.consoleActor;
+    this.thread = new ThreadClient(this, this.threadActor);
     this.client.registerClient(this.thread);
 
-    return [connectResponse, this.thread];
+    return [attachResponse, this.thread];
   },
 
 });

@@ -126,7 +126,23 @@ const TargetFactory = exports.TargetFactory = {
   forWorker: function(workerTargetFront) {
     let target = targets.get(workerTargetFront);
     if (target == null) {
-      target = new WorkerTarget(workerTargetFront);
+      target = new TabTarget({
+        client: workerTargetFront.client,
+        
+        
+        get form() {
+          return {
+            actor: workerTargetFront.actorID,
+            traits: {},
+            
+            
+            
+            consoleActor: workerTargetFront.consoleActor,
+          };
+        },
+        activeTab: workerTargetFront,
+        chrome: false,
+      });
       targets.set(workerTargetFront, target);
     }
     return target;
@@ -194,11 +210,14 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-function TabTarget({ form, client, chrome, tab = null }) {
+
+
+function TabTarget({ form, client, chrome, activeTab = null, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
   this._onTabNavigated = this._onTabNavigated.bind(this);
-  this.activeTab = this.activeConsole = null;
+  this.activeConsole = null;
+  this.activeTab = activeTab;
 
   this._form = form;
   this._url = form.url;
@@ -231,7 +250,7 @@ function TabTarget({ form, client, chrome, tab = null }) {
   if (this._form.traits && ("isBrowsingContext" in this._form.traits)) {
     this._isBrowsingContext = this._form.traits.isBrowsingContext;
   } else {
-    this._isBrowsingContext = !this.isLegacyAddon && !this.isContentProcess;
+    this._isBrowsingContext = !this.isLegacyAddon && !this.isContentProcess && !this.isWorkerTarget;
   }
 
   
@@ -416,6 +435,10 @@ TabTarget.prototype = {
     return this.isLegacyAddon || this.isWebExtension;
   },
 
+  get isWorkerTarget() {
+    return this.activeTab && this.activeTab.typeName === "workerTarget";
+  },
+
   get isLegacyAddon() {
     return !!(this._form && this._form.actor &&
       this._form.actor.match(/conn\d+\.addon(Target)?\d+/));
@@ -550,6 +573,9 @@ TabTarget.prototype = {
       } else if (this.isLegacyAddon) {
         const [, addonTargetFront] = await this._client.attachAddon(this._form);
         this.activeTab = addonTargetFront;
+      } else if (this.isWorkerTarget) {
+        
+        
       } else {
         throw new Error(`Unsupported type of target. Expected target of one of the` +
           ` following types: BrowsingContext, ContentProcess, or Addon (legacy).`);
