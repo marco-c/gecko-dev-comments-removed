@@ -41,7 +41,7 @@ function test_black_box() {
   
   Cu.evalInSandbox(
     "" + function doStuff(k) {                                   
-      throw new Error("wu tang clan ain't nuthin' ta fuck wit"); 
+      throw new Error("error msg");                              
       k(100);                                                    
     },                                                           
     gDebuggee,
