@@ -30,6 +30,7 @@ static NS_DEFINE_CID(kPrefServiceCID,   NS_PREFSERVICE_CID);
 
 
 static const char kCookiesPermissions[] = "network.cookie.cookieBehavior";
+static const char kPrefCookieQuotaPerHost[] = "network.cookie.quotaPerHost";
 static const char kCookiesMaxPerHost[] = "network.cookie.maxPerHost";
 static const char kCookieLeaveSecurityAlone[] = "network.cookie.leave-secure-alone";
 
@@ -179,6 +180,9 @@ InitPrefs(nsIPrefBranch *aPrefBranch)
     
     aPrefBranch->SetIntPref(kCookiesPermissions, 0); 
     aPrefBranch->SetBoolPref(kCookieLeaveSecurityAlone, true);
+    
+    
+    aPrefBranch->SetIntPref(kPrefCookieQuotaPerHost, 49);
     
     aPrefBranch->SetIntPref(kCookiesMaxPerHost, 50);
 }
