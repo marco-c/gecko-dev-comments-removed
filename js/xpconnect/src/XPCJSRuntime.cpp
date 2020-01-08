@@ -116,6 +116,9 @@ const char* const XPCJSRuntime::mStrings[] = {
     "isInstance",           
     "Infinity",             
     "NaN",                  
+    "classId",              
+    "interfaceId",          
+    "initializer",          
 };
 
 
