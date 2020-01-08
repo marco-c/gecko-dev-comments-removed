@@ -76,7 +76,6 @@ Document* nsGenericHTMLFrameElement::GetContentDocument(
     return nullptr;
   }
 
-<<<<<<< working copy
   nsPIDOMWindowOuter* window = bc->GetDOMWindow();
   if (!window) {
     
