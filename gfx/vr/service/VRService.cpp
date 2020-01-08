@@ -6,10 +6,15 @@
 
 #include "VRService.h"
 #include "gfxPrefs.h"
-#include "base/thread.h"                
-#include <cstring>                      
+#include "base/thread.h" 
+#include <cstring>       
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
+#if defined(XP_WIN)
+#include "OculusSession.h"
+#endif
+
+#if defined(XP_WIN) || defined(XP_MACOSX) ||                                   \
+  (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
 #include "OpenVRSession.h"
 #endif
 #if !defined(MOZ_WIDGET_ANDROID)
@@ -25,7 +30,7 @@ namespace {
 int64_t
 FrameIDFromBrowserState(const mozilla::gfx::VRBrowserState& aState)
 {
-  for (int iLayer=0; iLayer < kVRLayerMaxCount; iLayer++) {
+  for (int iLayer = 0; iLayer < kVRLayerMaxCount; iLayer++) {
     const VRLayerState& layer = aState.layerState[iLayer];
     if (layer.type == VRLayerType::LayerType_Stereo_Immersive) {
       return layer.layer_stereo_immersive.mFrameId;
@@ -37,7 +42,7 @@ FrameIDFromBrowserState(const mozilla::gfx::VRBrowserState& aState)
 bool
 IsImmersiveContentActive(const mozilla::gfx::VRBrowserState& aState)
 {
-  for (int iLayer=0; iLayer < kVRLayerMaxCount; iLayer++) {
+  for (int iLayer = 0; iLayer < kVRLayerMaxCount; iLayer++) {
     const VRLayerState& layer = aState.layerState[iLayer];
     if (layer.type == VRLayerType::LayerType_Stereo_Immersive) {
       return true;
@@ -62,21 +67,22 @@ VRService::Create()
 }
 
 VRService::VRService()
- : mSystemState{}
- , mBrowserState{}
- , mBrowserGeneration(0)
- , mServiceThread(nullptr)
- , mShutdownRequested(false)
- , mAPIShmem(nullptr)
- , mTargetShmemFile(0)
- , mLastHapticState{}
- , mFrameStartTime{}
+  : mSystemState{}
+  , mBrowserState{}
+  , mBrowserGeneration(0)
+  , mServiceThread(nullptr)
+  , mShutdownRequested(false)
+  , mAPIShmem(nullptr)
+  , mTargetShmemFile(0)
+  , mLastHapticState{}
+  , mFrameStartTime{}
+  , mVRProcessEnabled(gfxPrefs::VRProcessEnabled())
 {
   
   
   
   
-  if (!gfxPrefs::VRProcessEnabled()) {
+  if (!mVRProcessEnabled) {
     mAPIShmem = new VRExternalShmem();
     memset(mAPIShmem, 0, sizeof(VRExternalShmem));
   }
@@ -86,9 +92,21 @@ VRService::~VRService()
 {
   Stop();
 
-  if (!gfxPrefs::VRProcessEnabled() && mAPIShmem) {
+  if (!mVRProcessEnabled && mAPIShmem) {
     delete mAPIShmem;
     mAPIShmem = nullptr;
+  }
+}
+
+void
+VRService::Refresh()
+{
+  if (!mAPIShmem) {
+    return;
+  }
+
+  if (mAPIShmem->state.displayState.shutdown) {
+    Stop();
   }
 }
 
@@ -123,10 +141,10 @@ VRService::Start()
       return;
     }
 
-    mServiceThread->message_loop()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceInitialize",
-      this, &VRService::ServiceInitialize
-    ));
+    mServiceThread->message_loop()->PostTask(
+      NewRunnableMethod("gfx::VRService::ServiceInitialize",
+                        this,
+                        &VRService::ServiceInitialize));
   }
 }
 
@@ -144,9 +162,9 @@ VRService::Stop()
 #endif
     mTargetShmemFile = 0;
   }
-  if (gfxPrefs::VRProcessEnabled() && mAPIShmem) {
+  if (mVRProcessEnabled && mAPIShmem) {
 #if defined(XP_WIN)
-    UnmapViewOfFile((void *)mAPIShmem);
+    UnmapViewOfFile((void*)mAPIShmem);
 #endif
     mAPIShmem = nullptr;
   }
@@ -156,7 +174,7 @@ VRService::Stop()
 bool
 VRService::InitShmem()
 {
-  if (!gfxPrefs::VRProcessEnabled()) {
+  if (!mVRProcessEnabled) {
     return true;
   }
 
@@ -165,20 +183,20 @@ VRService::InitShmem()
   base::ProcessHandle targetHandle = 0;
 
   
-  targetHandle = OpenFileMappingA(
-                  FILE_MAP_ALL_ACCESS,   
-                  FALSE,                 
-                  kShmemName);           
+  targetHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, 
+                                  FALSE,       
+                                  kShmemName); 
 
   MOZ_ASSERT(GetLastError() == 0);
 
   LARGE_INTEGER length;
   length.QuadPart = sizeof(VRExternalShmem);
-  mAPIShmem = (VRExternalShmem *)MapViewOfFile(reinterpret_cast<base::ProcessHandle>(targetHandle), 
-                                               FILE_MAP_ALL_ACCESS,  
-                                               0,
-                                               0,
-                                               length.QuadPart);
+  mAPIShmem = (VRExternalShmem*)MapViewOfFile(
+    reinterpret_cast<base::ProcessHandle>(targetHandle), 
+    FILE_MAP_ALL_ACCESS, 
+    0,
+    0,
+    length.QuadPart);
   MOZ_ASSERT(GetLastError() == 0);
   
   mTargetShmemFile = targetHandle;
@@ -187,16 +205,17 @@ VRService::InitShmem()
     return false;
   }
 #else
-  
+    
 #endif
 
- return true;
+  return true;
 }
 
 bool
 VRService::IsInServiceThread()
 {
-  return mServiceThread && mServiceThread->thread_id() == PlatformThread::CurrentId();
+  return (mServiceThread != nullptr) &&
+         mServiceThread->thread_id() == PlatformThread::CurrentId();
 }
 
 void
@@ -214,7 +233,19 @@ VRService::ServiceInitialize()
   
   UniquePtr<VRSession> session;
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
+  
+  
+  
+#if defined(XP_WIN)
+  
+  session = MakeUnique<OculusSession>();
+  if (!session->Initialize(mSystemState)) {
+    session = nullptr;
+  }
+#endif
+
+#if defined(XP_WIN) || defined(XP_MACOSX) ||                                   \
+  (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
   
   if (!session) {
     session = MakeUnique<OpenVRSession>();
@@ -241,10 +272,10 @@ VRService::ServiceInitialize()
     mSystemState.enumerationCompleted = true;
     PushState(mSystemState);
 
-    MessageLoop::current()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceWaitForImmersive",
-      this, &VRService::ServiceWaitForImmersive
-    ));
+    MessageLoop::current()->PostTask(
+      NewRunnableMethod("gfx::VRService::ServiceWaitForImmersive",
+                        this,
+                        &VRService::ServiceWaitForImmersive));
   } else {
     
     
@@ -253,6 +284,9 @@ VRService::ServiceInitialize()
     
     memset(&mSystemState, 0, sizeof(mSystemState));
     mSystemState.enumerationCompleted = true;
+    mSystemState.displayState.mMinRestartInterval =
+      gfxPrefs::VRExternalNotDetectedTimeout();
+    mSystemState.displayState.shutdown = true;
     PushState(mSystemState);
   }
 }
@@ -262,14 +296,18 @@ VRService::ServiceShutdown()
 {
   MOZ_ASSERT(IsInServiceThread());
 
-  mSession = nullptr;
-
   
   
   
   memset(&mSystemState, 0, sizeof(mSystemState));
   mSystemState.enumerationCompleted = true;
+  mSystemState.displayState.shutdown = true;
+  if (mSession && mSession->ShouldQuit()) {
+    mSystemState.displayState.mMinRestartInterval =
+      gfxPrefs::VRExternalQuitTimeout();
+  }
   PushState(mSystemState);
+  mSession = nullptr;
 }
 
 void
@@ -285,25 +323,23 @@ VRService::ServiceWaitForImmersive()
   if (mSession->ShouldQuit() || mShutdownRequested) {
     
     MessageLoop::current()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceShutdown",
-      this, &VRService::ServiceShutdown
-    ));
+      "gfx::VRService::ServiceShutdown", this, &VRService::ServiceShutdown));
   } else if (IsImmersiveContentActive(mBrowserState)) {
     
     mSession->StartPresentation();
     mSession->StartFrame(mSystemState);
     PushState(mSystemState);
 
-    MessageLoop::current()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceImmersiveMode",
-      this, &VRService::ServiceImmersiveMode
-    ));
+    MessageLoop::current()->PostTask(
+      NewRunnableMethod("gfx::VRService::ServiceImmersiveMode",
+                        this,
+                        &VRService::ServiceImmersiveMode));
   } else {
     
-    MessageLoop::current()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceWaitForImmersive",
-      this, &VRService::ServiceWaitForImmersive
-    ));
+    MessageLoop::current()->PostTask(
+      NewRunnableMethod("gfx::VRService::ServiceWaitForImmersive",
+                        this,
+                        &VRService::ServiceWaitForImmersive));
   }
 }
 
@@ -321,18 +357,16 @@ VRService::ServiceImmersiveMode()
   if (mSession->ShouldQuit() || mShutdownRequested) {
     
     MessageLoop::current()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceShutdown",
-      this, &VRService::ServiceShutdown
-    ));
+      "gfx::VRService::ServiceShutdown", this, &VRService::ServiceShutdown));
     return;
   } else if (!IsImmersiveContentActive(mBrowserState)) {
     
     mSession->StopAllHaptics();
     mSession->StopPresentation();
-    MessageLoop::current()->PostTask(NewRunnableMethod(
-      "gfx::VRService::ServiceWaitForImmersive",
-      this, &VRService::ServiceWaitForImmersive
-    ));
+    MessageLoop::current()->PostTask(
+      NewRunnableMethod("gfx::VRService::ServiceWaitForImmersive",
+                        this,
+                        &VRService::ServiceWaitForImmersive));
     return;
   }
 
@@ -341,7 +375,7 @@ VRService::ServiceImmersiveMode()
     
     
     bool success = false;
-    for (int iLayer=0; iLayer < kVRLayerMaxCount; iLayer++) {
+    for (int iLayer = 0; iLayer < kVRLayerMaxCount; iLayer++) {
       const VRLayerState& layer = mBrowserState.layerState[iLayer];
       if (layer.type == VRLayerType::LayerType_Stereo_Immersive) {
         
@@ -361,16 +395,17 @@ VRService::ServiceImmersiveMode()
     
     mSession->StartFrame(mSystemState);
     mSystemState.sensorState.inputFrameID++;
-    size_t historyIndex = mSystemState.sensorState.inputFrameID % ArrayLength(mFrameStartTime);
+    size_t historyIndex =
+      mSystemState.sensorState.inputFrameID % ArrayLength(mFrameStartTime);
     mFrameStartTime[historyIndex] = TimeStamp::Now();
     PushState(mSystemState);
   }
 
   
-  MessageLoop::current()->PostTask(NewRunnableMethod(
-    "gfx::VRService::ServiceImmersiveMode",
-    this, &VRService::ServiceImmersiveMode
-  ));
+  MessageLoop::current()->PostTask(
+    NewRunnableMethod("gfx::VRService::ServiceImmersiveMode",
+                      this,
+                      &VRService::ServiceImmersiveMode));
 }
 
 void
@@ -378,7 +413,7 @@ VRService::UpdateHaptics()
 {
   MOZ_ASSERT(IsInServiceThread());
   MOZ_ASSERT(mSession);
-  
+
   for (size_t i = 0; i < ArrayLength(mBrowserState.hapticState); i++) {
     VRHapticState& state = mBrowserState.hapticState[i];
     VRHapticState& lastState = mLastHapticState[i];
@@ -400,13 +435,15 @@ VRService::UpdateHaptics()
       }
       
       size_t historyIndex = state.inputFrameID % ArrayLength(mFrameStartTime);
-      float startOffset = (float)(now - mFrameStartTime[historyIndex]).ToSeconds();
+      float startOffset =
+        (float)(now - mFrameStartTime[historyIndex]).ToSeconds();
 
       
       mSession->VibrateHaptic(state.controllerIndex,
                               state.hapticIndex,
                               state.pulseIntensity,
-                              state.pulseDuration + state.pulseStart - startOffset);
+                              state.pulseDuration + state.pulseStart -
+                                startOffset);
     }
     
     memcpy(&lastState, &state, sizeof(VRHapticState));
@@ -425,13 +462,14 @@ VRService::PushState(const mozilla::gfx::VRSystemState& aState)
   
 
 #if defined(MOZ_WIDGET_ANDROID)
-    if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) == 0) {
-      memcpy((void *)&mAPIShmem->state, &aState, sizeof(VRSystemState));
-      pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
-    }
+  if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->systemMutex)) ==
+      0) {
+    memcpy((void*)&mAPIShmem->state, &aState, sizeof(VRSystemState));
+    pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->systemMutex));
+  }
 #else
   mAPIShmem->generationA++;
-  memcpy((void *)&mAPIShmem->state, &aState, sizeof(VRSystemState));
+  memcpy((void*)&mAPIShmem->state, &aState, sizeof(VRSystemState));
   mAPIShmem->generationB++;
 #endif
 }
@@ -452,15 +490,17 @@ VRService::PullState(mozilla::gfx::VRBrowserState& aState)
   
 
 #if defined(MOZ_WIDGET_ANDROID)
-    if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->browserMutex)) == 0) {
-      memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
-      pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->browserMutex));
-    }
+  if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->browserMutex)) ==
+      0) {
+    memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
+    pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->browserMutex));
+  }
 #else
   VRExternalShmem tmp;
   if (mAPIShmem->browserGenerationA != mBrowserGeneration) {
     memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
-    if (tmp.browserGenerationA == tmp.browserGenerationB && tmp.browserGenerationA != 0 && tmp.browserGenerationA != -1) {
+    if (tmp.browserGenerationA == tmp.browserGenerationB &&
+        tmp.browserGenerationA != 0 && tmp.browserGenerationA != -1) {
       memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
       mBrowserGeneration = tmp.browserGenerationA;
     }

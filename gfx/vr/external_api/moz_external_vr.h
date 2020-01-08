@@ -35,7 +35,7 @@ namespace dom {
 #endif 
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 4;
+static const int32_t kVRExternalVersion = 5;
 
 
 
@@ -267,9 +267,11 @@ struct VRDisplayState
     NumEyes
   };
 
-#if defined(__ANDROID__)
+  
   bool shutdown;
-#endif 
+  
+  
+  uint32_t mMinRestartInterval;
   char mDisplayName[kVRDisplayNameMaxLen];
   
   

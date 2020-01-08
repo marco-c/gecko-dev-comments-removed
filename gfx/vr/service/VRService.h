@@ -28,6 +28,7 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRService)
   static already_AddRefed<VRService> Create();
 
+  void Refresh();
   void Start();
   void Stop();
   VRExternalShmem* GetAPIShmem();
@@ -64,6 +65,11 @@ private:
   base::ProcessHandle mTargetShmemFile;
   VRHapticState mLastHapticState[kVRHapticsMaxCount];
   TimeStamp mFrameStartTime[kVRFrameTimingHistoryDepth];
+  
+  
+  
+  
+  bool mVRProcessEnabled;
 
   bool IsInServiceThread();
   void UpdateHaptics();
