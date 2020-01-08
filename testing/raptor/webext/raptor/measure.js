@@ -24,6 +24,13 @@ var getFNBPaint = false;
 
 
 
+var getFCP = false;
+
+
+
+
+
+
 var getDCF = false;
 
 
@@ -32,12 +39,6 @@ var getDCF = false;
 
 
 var getTTFI = false;
-
-
-
-
-var getFCP = false;
-
 
 
 
@@ -231,7 +232,6 @@ function measureTTFI() {
     
     
     
-    
     if (gRetryCounter <= 25 * (1000 / 200)) {
       console.log("TTFI is not yet available (0), retry number " + gRetryCounter + "...\n");
       window.setTimeout(measureTTFI, 200);
@@ -246,17 +246,30 @@ function measureTTFI() {
 function measureFCP() {
   
   var resultType = "fcp";
-  var result = 0;
+  var result;
 
-  let perfEntries = perfData.getEntriesByType("paint");
+  
+  result = window.performance.timing.timeToContentfulPaint;
+  if (typeof(result) == "undefined") {
+    
+    result = 0;
+    let perfEntries = perfData.getEntriesByType("paint");
 
-  if (perfEntries.length >= 2) {
-    if (perfEntries[1].name == "first-contentful-paint" && perfEntries[1].startTime != undefined)
-      result = perfEntries[1].startTime;
+    if (perfEntries.length >= 2) {
+      if (perfEntries[1].name == "first-contentful-paint" && perfEntries[1].startTime != undefined) {
+        
+        result = perfEntries[1].startTime;
+      }
+    }
   }
 
   if (result > 0) {
     console.log("got time to first-contentful-paint");
+    if (typeof(browser) !== "undefined") {
+      
+      var startTime = perfData.timing.fetchStart;
+      result = result - startTime;
+    }
     sendResult(resultType, result);
     perfData.clearMarks();
     perfData.clearMeasures();

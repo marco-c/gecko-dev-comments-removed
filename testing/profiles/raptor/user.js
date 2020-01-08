@@ -1,6 +1,7 @@
 
 
 user_pref("dom.performance.time_to_non_blank_paint.enabled", true);
+user_pref("dom.performance.time_to_contentful_paint.enabled", true);
 user_pref("dom.performance.time_to_dom_content_flushed.enabled", true);
 user_pref("dom.performance.time_to_first_interactive.enabled", true);
 
