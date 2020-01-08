@@ -17,7 +17,7 @@ class nsFrameLoader;
 namespace mozilla {
 namespace dom  {
 
-class BrowsingContext;
+class ChromeBrowsingContext;
 class WindowGlobalChild;
 
 
@@ -46,7 +46,7 @@ public:
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
   
-  already_AddRefed<dom::BrowsingContext> BrowsingContext();
+  ChromeBrowsingContext* BrowsingContext() { return mBrowsingContext; }
 
   
   
@@ -63,7 +63,7 @@ public:
 
   
   
-  void Init();
+  void Init(const WindowGlobalInit& aInit);
 
 protected:
   
@@ -76,15 +76,10 @@ private:
 
   
   
-  
-  
-  uint64_t mBrowsingContextId;
-
-  
-  
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   nsCOMPtr<nsIURI> mDocumentURI;
   RefPtr<nsFrameLoader> mFrameLoader;
+  RefPtr<ChromeBrowsingContext> mBrowsingContext;
   bool mInProcess;
   bool mIPCClosed;
 };
