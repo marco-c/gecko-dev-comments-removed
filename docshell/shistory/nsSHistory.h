@@ -22,7 +22,6 @@ class nsIDocShell;
 class nsDocShell;
 class nsSHistoryObserver;
 class nsISHEntry;
-class nsISHTransaction;
 
 class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
                          public nsISHistory,
@@ -147,13 +146,13 @@ private:
   
   
   nsresult FindTransactionForBFCache(nsIBFCacheEntry* aEntry,
-                                     nsISHTransaction** aResult,
+                                     nsISHEntry** aResult,
                                      int32_t* aResultIndex);
 
   
   
   void EvictOutOfRangeWindowContentViewers(int32_t aIndex);
-  void EvictContentViewerForTransaction(nsISHTransaction* aTrans);
+  void EvictContentViewerForTransaction(nsISHEntry* aTrans);
   static void GloballyEvictContentViewers();
   static void GloballyEvictAllContentViewers();
 
@@ -172,7 +171,7 @@ private:
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  nsTArray<nsCOMPtr<nsISHTransaction>> mTransactions; 
+  nsTArray<nsCOMPtr<nsISHEntry>> mTransactions; 
   int32_t mIndex;           
   int32_t mRequestedIndex;  
 
