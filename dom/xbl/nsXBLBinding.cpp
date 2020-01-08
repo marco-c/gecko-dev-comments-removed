@@ -892,7 +892,8 @@ GetOrCreateMapEntryForPrototype(JSContext *cx, JS::Handle<JSObject*> proto)
   
   
   
-  JS::Rooted<JSObject*> scope(cx, xpc::GetXBLScopeOrGlobal(cx, proto));
+  JS::Rooted<JSObject*> scope(cx,
+    xpc::GetXBLScopeOrGlobal(cx, JS::CurrentGlobalOrNull(cx)));
   NS_ENSURE_TRUE(scope, nullptr);
   MOZ_ASSERT(JS_IsGlobalObject(scope));
 
@@ -959,6 +960,9 @@ nsXBLBinding::DoInitJSClass(JSContext *cx,
   
   
   JS::Rooted<JSObject*> global(cx, JS::GetNonCCWObjectGlobal(obj));
+
+  
+  MOZ_ASSERT(JS::CurrentGlobalOrNull(cx) == global);
 
   
   JS::Rooted<JSObject*> xblScope(cx, xpc::GetXBLScopeOrGlobal(cx, global));
