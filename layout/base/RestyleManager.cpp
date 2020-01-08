@@ -1800,7 +1800,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
          LayerAnimationInfo::sRecords) {
     Maybe<uint64_t> generation =
       layers::AnimationInfo::GetGenerationFromFrame(aFrame,
-                                                    layerInfo.mLayerType);
+                                                    layerInfo.mDisplayItemType);
     if (generation && frameGeneration != *generation) {
       
       
@@ -1821,7 +1821,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       
       
       
-      if (layerInfo.mLayerType == DisplayItemType::TYPE_TRANSFORM &&
+      if (layerInfo.mDisplayItemType == DisplayItemType::TYPE_TRANSFORM &&
           !aFrame->StyleDisplay()->HasTransformStyle()) {
         
         
