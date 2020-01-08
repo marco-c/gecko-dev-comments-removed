@@ -415,29 +415,27 @@ get_full_path(const NS_tchar *relpath)
 
 
 
+static const NS_tchar*
+get_relative_path(const NS_tchar *fullpath)
+{
+  
+#ifdef XP_WIN
+  if (fullpath[1] != ':' && fullpath[2] != '\\') {
+#else
+  if (fullpath[0] != '/') {
+#endif
+    return fullpath;
+  }
 
+  NS_tchar *prefix = sStagedUpdate ? gWorkingDirPath : gInstallDirPath;
 
+  
+  if (NS_tstrlen(fullpath) <= NS_tstrlen(prefix)) {
+    return fullpath;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return fullpath + NS_tstrlen(prefix) + 1;
+}
 
 
 
