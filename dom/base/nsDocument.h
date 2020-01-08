@@ -101,8 +101,6 @@ class nsDocument : public nsIDocument {
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
-  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
-
   
   
   
@@ -144,10 +142,6 @@ class nsDocument : public nsIDocument {
 
   
   void AsyncBlockOnload();
-
-  virtual void DocAddSizeOfExcludingThis(
-      nsWindowSizes& aWindowSizes) const override;
-  
 
  protected:
   friend class nsNodeUtils;

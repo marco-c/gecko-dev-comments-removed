@@ -10935,32 +10935,63 @@ void nsIDocument::MaybeActiveMediaComponents() {
   GetWindow()->MaybeActiveMediaComponents();
 }
 
- void nsIDocument::DocAddSizeOfExcludingThis(
-    nsWindowSizes& aSizes) const {
-  if (mPresShell) {
-    mPresShell->AddSizeOfIncludingThis(aSizes);
+void nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const {
+  nsINode::AddSizeOfExcludingThis(aWindowSizes, &aWindowSizes.mDOMOtherSize);
+
+  for (nsIContent* kid = GetFirstChild(); kid; kid = kid->GetNextSibling()) {
+    AddSizeOfNodeTree(*kid, aWindowSizes);
   }
 
-  aSizes.mPropertyTablesSize +=
-      mPropertyTable.SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+  
+  
+  
+  
+  
+  
+  
+  if (mPresShell) {
+    mPresShell->AddSizeOfIncludingThis(aWindowSizes);
+  }
+
+  aWindowSizes.mPropertyTablesSize +=
+      mPropertyTable.SizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
 
   if (EventListenerManager* elm = GetExistingListenerManager()) {
-    aSizes.mDOMEventListenersCount += elm->ListenerCount();
+    aWindowSizes.mDOMEventListenersCount += elm->ListenerCount();
   }
 
   if (mNodeInfoManager) {
-    mNodeInfoManager->AddSizeOfIncludingThis(aSizes);
+    mNodeInfoManager->AddSizeOfIncludingThis(aWindowSizes);
   }
 
-  aSizes.mDOMMediaQueryLists +=
-      mDOMMediaQueryLists.sizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+  aWindowSizes.mDOMMediaQueryLists +=
+      mDOMMediaQueryLists.sizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
 
   for (const MediaQueryList* mql : mDOMMediaQueryLists) {
-    aSizes.mDOMMediaQueryLists +=
-        mql->SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+    aWindowSizes.mDOMMediaQueryLists +=
+        mql->SizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
   }
 
-  mContentBlockingLog.AddSizeOfExcludingThis(aSizes);
+  mContentBlockingLog.AddSizeOfExcludingThis(aWindowSizes);
+
+  DocumentOrShadowRoot::AddSizeOfExcludingThis(aWindowSizes);
+
+  for (auto& sheetArray : mAdditionalSheets) {
+    AddSizeOfOwnedSheetArrayExcludingThis(aWindowSizes, sheetArray);
+  }
+  
+  
+  
+  aWindowSizes.mLayoutStyleSheetsSize +=
+      CSSLoader()->SizeOfIncludingThis(aWindowSizes.mState.mMallocSizeOf);
+
+  aWindowSizes.mDOMOtherSize += mAttrStyleSheet
+                                    ? mAttrStyleSheet->DOMSizeOfIncludingThis(
+                                          aWindowSizes.mState.mMallocSizeOf)
+                                    : 0;
+
+  aWindowSizes.mDOMOtherSize += mStyledLinks.ShallowSizeOfExcludingThis(
+      aWindowSizes.mState.mMallocSizeOf);
 
   
   
@@ -10972,8 +11003,8 @@ void nsIDocument::DocAddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const {
   DocAddSizeOfExcludingThis(aWindowSizes);
 }
 
-void nsDocument::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
-                                        size_t* aNodeSize) const {
+void nsIDocument::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
+                                         size_t* aNodeSize) const {
   
   
   
@@ -11040,45 +11071,6 @@ void nsDocument::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
        kid = kid->GetNextSibling()) {
     AddSizeOfNodeTree(*kid, aWindowSizes);
   }
-}
-
-void nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const {
-  nsINode::AddSizeOfExcludingThis(aWindowSizes, &aWindowSizes.mDOMOtherSize);
-
-  for (nsIContent* kid = GetFirstChild(); kid; kid = kid->GetNextSibling()) {
-    AddSizeOfNodeTree(*kid, aWindowSizes);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
-
-  DocumentOrShadowRoot::AddSizeOfExcludingThis(aWindowSizes);
-  for (auto& sheetArray : mAdditionalSheets) {
-    AddSizeOfOwnedSheetArrayExcludingThis(aWindowSizes, sheetArray);
-  }
-  
-  
-  
-  aWindowSizes.mLayoutStyleSheetsSize +=
-      CSSLoader()->SizeOfIncludingThis(aWindowSizes.mState.mMallocSizeOf);
-
-  aWindowSizes.mDOMOtherSize += mAttrStyleSheet
-                                    ? mAttrStyleSheet->DOMSizeOfIncludingThis(
-                                          aWindowSizes.mState.mMallocSizeOf)
-                                    : 0;
-
-  aWindowSizes.mDOMOtherSize += mStyledLinks.ShallowSizeOfExcludingThis(
-      aWindowSizes.mState.mMallocSizeOf);
-
-  
-  
-  
 }
 
 already_AddRefed<nsIDocument> nsIDocument::Constructor(
