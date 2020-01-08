@@ -36,7 +36,13 @@ static bool
 PostCreationSetup(HANDLE aChildProcess, HANDLE aChildMainThread,
                   const bool aIsSafeMode)
 {
+  
+  
+#if defined(MOZ_ASAN)
+  return true;
+#else
   return mozilla::InitializeDllBlocklistOOP(aChildProcess);
+#endif 
 }
 
 #if !defined(PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_PREFER_SYSTEM32_ALWAYS_ON)
