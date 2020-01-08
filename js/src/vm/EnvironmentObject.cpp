@@ -922,51 +922,6 @@ const Class NonSyntacticVariablesObject::class_ = {
     JSCLASS_IS_ANONYMOUS
 };
 
-bool
-js::CreateNonSyntacticEnvironmentChain(JSContext* cx, AutoObjectVector& envChain,
-                                       MutableHandleObject env, MutableHandleScope scope)
-{
-    RootedObject globalLexical(cx, &cx->global()->lexicalEnvironment());
-    if (!CreateObjectsForEnvironmentChain(cx, envChain, globalLexical, env)) {
-        return false;
-    }
-
-    if (!envChain.empty()) {
-        scope.set(GlobalScope::createEmpty(cx, ScopeKind::NonSyntactic));
-        if (!scope) {
-            return false;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        if (!JSObject::setQualifiedVarObj(cx, env)) {
-            return false;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        env.set(ObjectRealm::get(env).getOrCreateNonSyntacticLexicalEnvironment(cx, env));
-        if (!env) {
-            return false;
-        }
-    } else {
-        scope.set(&cx->global()->emptyGlobalScope());
-    }
-
-    return true;
-}
-
 
 
  LexicalEnvironmentObject*
@@ -3854,6 +3809,7 @@ js::GetFrameEnvironmentAndScope(JSContext* cx, AbstractFramePtr frame, jsbytecod
     }
     return true;
 }
+
 
 #ifdef DEBUG
 
