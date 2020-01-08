@@ -309,7 +309,9 @@ impl PropertyDeclarationBlock {
             .find(|(declaration, _)| declaration.id() == property)
     }
 
-    fn shorthand_to_css(
+    
+    
+    pub fn shorthand_to_css(
         &self,
         shorthand: ShorthandId,
         dest: &mut CssStringWriter,
