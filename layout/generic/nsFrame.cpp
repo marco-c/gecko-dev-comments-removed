@@ -3931,14 +3931,39 @@ nsresult nsFrame::GetDataForTableSelection(
   return NS_OK;
 }
 
+static bool IsEditingHost(const nsIFrame* aFrame) {
+  auto* element = nsGenericHTMLElement::FromNodeOrNull(aFrame->GetContent());
+  return element && element->IsEditableRoot();
+}
+
 static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
   if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
     return StyleUserSelect::None;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   auto style = aFrame->StyleUIReset()->mUserSelect;
   if (style != StyleUserSelect::Auto) {
     return style;
+  }
+
+  if (IsEditingHost(aFrame)) {
+    
+    
+    return StyleUserSelect::Text;
   }
 
   auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(aFrame);

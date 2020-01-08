@@ -849,6 +849,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   
   already_AddRefed<nsIURI> GetHrefURIForAnchors() const;
 
+ public:
   
 
 
