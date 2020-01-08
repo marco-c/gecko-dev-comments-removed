@@ -58,8 +58,9 @@ function test() {
     b = Array(5);
     assertEq(b.length, 5);
     a = check(b);
-    assertEq(a.length, 0);
+    assertEq(a.length, 5);
 
+    b = Array(0);
     b[1] = "ok";
     a = check(b);
     assertEq(a.length, 2);
@@ -104,6 +105,19 @@ function test() {
     b[255] = 1;
     check(b);
     assertEq(serialize(b).clonebuffer.length < 255, true);
+
+    
+    b = [1,2,3,,];
+    assertEq(b.length, 4);
+    a = check(b);
+    assertEq(a.length, 4);
+    assertEq(a.toString(), "1,2,3,");
+
+    b = [1,2,3,,,];
+    assertEq(b.length, 5);
+    a = check(b);
+    assertEq(a.length, 5);
+    assertEq(a.toString(), "1,2,3,,");
 
     
     
