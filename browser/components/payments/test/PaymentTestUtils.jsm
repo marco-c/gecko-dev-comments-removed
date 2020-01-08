@@ -76,14 +76,29 @@ var PaymentTestUtils = {
       content[eventName + "Promise"] =
         new Promise(resolve => {
           content.rq.addEventListener(eventName, () => {
+            info(`Received event: ${eventName}`);
             resolve();
           });
         });
     },
 
-    awaitPaymentRequestEventPromise: async ({eventName}) => {
+    
+
+
+    awaitPaymentEventPromise: async ({eventName}) => {
       await content[eventName + "Promise"];
       return true;
+    },
+
+    promisePaymentResponseEvent: async ({eventName}) => {
+      let response = await content.showPromise;
+      content[eventName + "Promise"] =
+        new Promise(resolve => {
+          response.addEventListener(eventName, () => {
+            info(`Received event: ${eventName}`);
+            resolve();
+          });
+        });
     },
 
     updateWith: async ({eventName, details}) => {
@@ -176,15 +191,15 @@ var PaymentTestUtils = {
         doc.querySelector("address-picker[selected-state-key='selectedShippingAddress']");
       let select = Cu.waiveXrays(addressPicker).dropdown.popupBox;
       let option = select.querySelector(`[country="${country}"]`);
-      if (Cu.waiveXrays(doc.activeElement) == select) {
-        
-        
-        
-        select.blur();
-      }
-      select.focus();
-      
-      EventUtils.synthesizeKey(option.label, {}, content.window);
+      content.fillField(select, option.value);
+    },
+
+    selectPayerAddressByGuid: guid => {
+      let doc = content.document;
+      let addressPicker =
+        doc.querySelector("address-picker[selected-state-key='selectedPayerAddress']");
+      let select = Cu.waiveXrays(addressPicker).dropdown.popupBox;
+      content.fillField(select, guid);
     },
 
     selectShippingAddressByGuid: guid => {
@@ -192,16 +207,7 @@ var PaymentTestUtils = {
       let addressPicker =
         doc.querySelector("address-picker[selected-state-key='selectedShippingAddress']");
       let select = Cu.waiveXrays(addressPicker).dropdown.popupBox;
-      let option = select.querySelector(`[guid="${guid}"]`);
-      if (Cu.waiveXrays(doc.activeElement) == select) {
-        
-        
-        
-        select.blur();
-      }
-      select.focus();
-      
-      EventUtils.synthesizeKey(option.label, {}, content.window);
+      content.fillField(select, guid);
     },
 
     selectShippingOptionById: value => {
@@ -209,33 +215,14 @@ var PaymentTestUtils = {
       let optionPicker =
         doc.querySelector("shipping-option-picker");
       let select = Cu.waiveXrays(optionPicker).dropdown.popupBox;
-      let option = select.querySelector(`[value="${value}"]`);
-      if (Cu.waiveXrays(doc.activeElement) == select) {
-        
-        
-        
-        select.blur();
-      }
-      select.focus();
-      
-      EventUtils.synthesizeKey(option.textContent, {}, content.window);
+      content.fillField(select, value);
     },
 
     selectPaymentOptionByGuid: guid => {
       let doc = content.document;
       let methodPicker = doc.querySelector("payment-method-picker");
       let select = Cu.waiveXrays(methodPicker).dropdown.popupBox;
-      let option = select.querySelector(`[value="${guid}"]`);
-      if (Cu.waiveXrays(doc.activeElement) == select) {
-        
-        
-        
-        select.blur();
-      }
-      select.focus();
-      
-      
-      EventUtils.synthesizeKey(option.textContent.substring(0, 4), {}, content.window);
+      content.fillField(select, guid);
     },
 
     
@@ -532,7 +519,7 @@ var PaymentTestUtils = {
       "postal-code": "02138",
       country: "DE",
       tel: "+16172535702",
-      email: "timbl@example.org",
+      email: "timbl@example.com",
     },
     
     Temp: {

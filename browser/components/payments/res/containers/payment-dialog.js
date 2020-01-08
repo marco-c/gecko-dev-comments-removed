@@ -154,6 +154,22 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     });
   }
 
+  
+
+
+
+  changePayerAddress(payerAddressGUID) {
+    
+    let request = Object.assign({}, this.requestStore.getState().request);
+    request.paymentDetails = Object.assign({}, request.paymentDetails);
+    request.paymentDetails.payerErrors = {};
+    this.requestStore.setState({request});
+
+    paymentRequest.changePayerAddress({
+      payerAddressGUID,
+    });
+  }
+
   _isPayerRequested(paymentOptions) {
     return paymentOptions.requestPayerName ||
            paymentOptions.requestPayerEmail ||
@@ -198,7 +214,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
 
 
-  async setStateFromParent(state) {
+  async setStateFromParent(state) { 
     let oldAddresses = paymentRequest.getAddresses(this.requestStore.getState());
     if (state.request) {
       state = this._updateCompleteStatus(state);
@@ -214,28 +230,43 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       selectedShippingOption,
     } = state;
     let addresses = paymentRequest.getAddresses(state);
-    let shippingOptions = state.request.paymentDetails.shippingOptions;
-    let shippingAddress = selectedShippingAddress && addresses[selectedShippingAddress];
-    let oldShippingAddress = selectedShippingAddress &&
-                             oldAddresses[selectedShippingAddress];
+    let {paymentOptions} = state.request;
 
-    
-    
-    
-    if (shippingAddress) {
+    if (paymentOptions.requestShipping) {
+      let shippingOptions = state.request.paymentDetails.shippingOptions;
+      let shippingAddress = selectedShippingAddress && addresses[selectedShippingAddress];
+      let oldShippingAddress = selectedShippingAddress &&
+                               oldAddresses[selectedShippingAddress];
+
       
-      if (oldShippingAddress &&
-          shippingAddress.guid == oldShippingAddress.guid &&
-          shippingAddress.timeLastModified != oldShippingAddress.timeLastModified) {
-        delete this._cachedState.selectedShippingAddress;
+      
+      
+      if (shippingAddress) {
+        
+        if (oldShippingAddress &&
+            shippingAddress.guid == oldShippingAddress.guid &&
+            shippingAddress.timeLastModified != oldShippingAddress.timeLastModified) {
+          delete this._cachedState.selectedShippingAddress;
+        }
+      } else if (selectedShippingAddress !== null) {
+        
+        
+        log.debug("resetting invalid/deleted shipping address");
+        this.requestStore.setState({
+          selectedShippingAddress: null,
+        });
       }
-    } else if (selectedShippingAddress !== null) {
+
       
       
-      log.debug("resetting invalid/deleted shipping address");
-      this.requestStore.setState({
-        selectedShippingAddress: null,
-      });
+      if (shippingOptions && (!selectedShippingOption ||
+                              !shippingOptions.find(opt => opt.id == selectedShippingOption))) {
+        this._cachedState.selectedShippingOption = selectedShippingOption;
+        this.requestStore.setState({
+          
+          selectedShippingOption: state.request.shippingOption,
+        });
+      }
     }
 
     
@@ -249,23 +280,26 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       });
     }
 
-    
-    
-    if (shippingOptions && (!selectedShippingOption ||
-                            !shippingOptions.find(option => option.id == selectedShippingOption))) {
-      this._cachedState.selectedShippingOption = selectedShippingOption;
-      this.requestStore.setState({
-        
-        selectedShippingOption: state.request.shippingOption,
-      });
-    }
+    if (this._isPayerRequested(state.request.paymentOptions)) {
+      let payerAddress = selectedPayerAddress && addresses[selectedPayerAddress];
+      let oldPayerAddress = selectedPayerAddress && oldAddresses[selectedPayerAddress];
 
-    
-    
-    if (!addresses[selectedPayerAddress]) {
-      this.requestStore.setState({
-        selectedPayerAddress: Object.keys(addresses)[0] || null,
-      });
+      if (oldPayerAddress && payerAddress && (
+          (paymentOptions.requestPayerName && payerAddress.name != oldPayerAddress.name) ||
+          (paymentOptions.requestPayerEmail && payerAddress.email != oldPayerAddress.email) ||
+          (paymentOptions.requestPayerPhone && payerAddress.tel != oldPayerAddress.tel)
+      )) {
+        
+        delete this._cachedState.selectedPayerAddress;
+      }
+
+      
+      
+      if (!addresses[selectedPayerAddress]) {
+        this.requestStore.setState({
+          selectedPayerAddress: Object.keys(addresses)[0] || null,
+        });
+      }
     }
   }
 
@@ -364,8 +398,15 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       }
     }
 
+    if (this._isPayerRequested(state.request.paymentOptions)) {
+      if (state.selectedPayerAddress != this._cachedState.selectedPayerAddress) {
+        this.changePayerAddress(state.selectedPayerAddress);
+      }
+    }
+
     this._cachedState.selectedShippingAddress = state.selectedShippingAddress;
     this._cachedState.selectedShippingOption = state.selectedShippingOption;
+    this._cachedState.selectedPayerAddress = state.selectedPayerAddress;
   }
 
   render(state) {

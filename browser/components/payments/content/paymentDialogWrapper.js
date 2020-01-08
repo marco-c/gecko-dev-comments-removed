@@ -627,6 +627,20 @@ var paymentDialogWrapper = {
     this.sendMessageToContent("responseSent");
   },
 
+  async onChangePayerAddress({payerAddressGUID}) {
+    if (payerAddressGUID) {
+      
+      
+      
+      let {
+        payerName,
+        payerEmail,
+        payerPhone,
+      } = await this._convertProfileAddressToPayerData(payerAddressGUID);
+      paymentSrv.changePayerDetail(this.request.requestId, payerName, payerEmail, payerPhone);
+    }
+  },
+
   async onChangeShippingAddress({shippingAddressGUID}) {
     if (shippingAddressGUID) {
       
@@ -731,6 +745,10 @@ var paymentDialogWrapper = {
       }
       case "initializeRequest": {
         this.initializeFrame();
+        break;
+      }
+      case "changePayerAddress": {
+        this.onChangePayerAddress(data);
         break;
       }
       case "changeShippingAddress": {
