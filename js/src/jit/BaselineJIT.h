@@ -542,7 +542,15 @@ struct BaselineScript final
     void copyPCMappingIndexEntries(const PCMappingIndexEntry* entries);
     void copyPCMappingEntries(const CompactBufferWriter& entries);
 
-    uint8_t* nativeCodeForPC(JSScript* script, jsbytecode* pc, PCMappingSlotInfo* slotInfo);
+    
+    
+    uint8_t* maybeNativeCodeForPC(JSScript* script, jsbytecode* pc, PCMappingSlotInfo* slotInfo);
+    uint8_t* nativeCodeForPC(JSScript* script, jsbytecode* pc, PCMappingSlotInfo* slotInfo)
+    {
+        uint8_t* native = maybeNativeCodeForPC(script, pc, slotInfo);
+        MOZ_ASSERT(native);
+        return native;
+    }
 
     
     
