@@ -23,6 +23,7 @@ namespace mozilla {
 namespace wr {
 class DisplayListBuilder;
 class WebRenderAPI;
+class WebRenderPipelineInfo;
 }
 
 namespace layers {
@@ -56,7 +57,7 @@ public:
   
   
   
-  void NotifyPipelinesUpdated(const wr::WrPipelineInfo& aInfo, bool aRender);
+  void NotifyPipelinesUpdated(RefPtr<wr::WebRenderPipelineInfo> aInfo, bool aRender);
 
   
   
@@ -247,10 +248,9 @@ private:
   
   Atomic<uint64_t> mUpdatesCount;
   struct PipelineUpdates {
-    PipelineUpdates(const uint64_t aUpdatesCount, const bool aRendered)
-      : mUpdatesCount(aUpdatesCount)
-      , mRendered(aRendered)
-    {}
+    PipelineUpdates(RefPtr<wr::WebRenderPipelineInfo> aPipelineInfo,
+                    const uint64_t aUpdatesCount,
+                    const bool aRendered);
     bool NeedsToWait(const uint64_t aUpdatesCount) {
       MOZ_ASSERT(mUpdatesCount <= aUpdatesCount);
       if (mUpdatesCount == aUpdatesCount && !mRendered) {
@@ -259,14 +259,9 @@ private:
       }
       return false;
     }
+    RefPtr<wr::WebRenderPipelineInfo> mPipelineInfo;
     const uint64_t mUpdatesCount;
     const bool mRendered;
-    
-    
-    
-    
-    
-    std::queue<std::pair<wr::PipelineId, Maybe<wr::Epoch>>> mQueue;
   };
   std::queue<UniquePtr<PipelineUpdates>> mUpdatesQueues;
 

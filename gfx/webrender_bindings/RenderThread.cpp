@@ -425,7 +425,7 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
   
   
   MOZ_ASSERT(pipelineMgr);
-  pipelineMgr->NotifyPipelinesUpdated(info->Raw(), aRender);
+  pipelineMgr->NotifyPipelinesUpdated(info, aRender);
 }
 
 void
