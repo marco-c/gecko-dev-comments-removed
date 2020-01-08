@@ -16,6 +16,9 @@
 #include "mozilla/ipc/FileDescriptorShuffle.h"
 #include "mozilla/UniquePtr.h"
 
+
+
+
 namespace {
 
 static mozilla::EnvironmentLog gProcessLog("MOZ_PROCESS_LOG");
@@ -36,12 +39,16 @@ bool LaunchApp(const std::vector<std::string>& argv,
     return false;
   }
 
+#ifdef OS_LINUX
   pid_t pid = options.fork_delegate ? options.fork_delegate->Fork() : fork();
   
   
   
   
   
+#else
+  pid_t pid = fork();
+#endif
 
   if (pid < 0)
     return false;
