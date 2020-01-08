@@ -10,6 +10,7 @@
 #include "nsISupportsImpl.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/VsyncDispatcher.h"
 
 namespace mozilla {
 namespace layers {
@@ -80,6 +81,8 @@ class TransactionIdAllocator {
 
 
   virtual mozilla::TimeStamp GetTransactionStart() = 0;
+
+  virtual VsyncId GetVsyncId() = 0;
 };
 
 }  

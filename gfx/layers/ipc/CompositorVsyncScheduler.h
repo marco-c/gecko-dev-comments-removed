@@ -108,7 +108,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void PostCompositeTask(TimeStamp aCompositeTimestamp);
+  void PostCompositeTask(VsyncId aId, TimeStamp aCompositeTimestamp);
 
   
   
@@ -116,7 +116,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void Composite(TimeStamp aVsyncTimestamp);
+  void Composite(VsyncId aId, TimeStamp aVsyncTimestamp);
 
   void ObserveVsync();
   void UnobserveVsync();
