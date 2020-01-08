@@ -705,12 +705,6 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   
   
   
-  nsCOMPtr<nsISupports> componentLoader =
-    do_GetService("@mozilla.org/moz/jsloader;1");
-
-  
-  
-  
   nsDirectoryService::gService->RegisterCategoryProviders();
 
   
