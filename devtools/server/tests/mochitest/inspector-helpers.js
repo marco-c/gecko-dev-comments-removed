@@ -5,8 +5,9 @@
 "use strict";
 
 const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-const {DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {TargetFactory} = require("devtools/client/framework/target");
 const {DebuggerServer} = require("devtools/server/main");
+const {BrowserTestUtils} = require("resource://testing-common/BrowserTestUtils.jsm");
 
 const Services = require("Services");
 const {DocumentWalker: _documentWalker} = require("devtools/server/actors/inspector/document-walker");
@@ -39,49 +40,48 @@ SimpleTest.registerCleanupFunction(function() {
 
 
 
+async function getTargetForSelectedTab(gBrowser) {
+  const selectedTab = gBrowser.selectedTab;
+  await BrowserTestUtils.browserLoaded(selectedTab.linkedBrowser);
+  return TargetFactory.forTab(selectedTab);
+}
 
-function attachURL(url, callback) {
+
+
+
+
+
+
+
+async function attachURL(url) {
+  
+  const gBrowser = Services.wm.getMostRecentWindow("navigator:browser").gBrowser;
+
+  
+  
+  
+  
+  
+  const windowOpened = BrowserTestUtils.waitForNewTab(gBrowser, url);
   let win = window.open(url, "_blank");
-  let client = null;
+  await windowOpened;
 
-  const cleanup = () => {
+  const target = await getTargetForSelectedTab(gBrowser);
+  const client = target.client;
+  await target.attach();
+
+  const cleanup = async function() {
     if (client) {
-      client.close();
-      client = null;
+      await client.close();
     }
     if (win) {
       win.close();
       win = null;
     }
   };
+
   gAttachCleanups.push(cleanup);
-
-  window.addEventListener("message", function loadListener(event) {
-    if (event.data === "ready") {
-      client = new DebuggerClient(DebuggerServer.connectPipe());
-      client.connect().then(([applicationType, traits]) => {
-        client.listTabs().then(response => {
-          for (const tab of response.tabs) {
-            if (tab.url === url) {
-              window.removeEventListener("message", loadListener);
-              
-              client.attachTarget(tab.actor).then(function() {
-                try {
-                  callback(null, client, tab, win.document);
-                } catch (ex) {
-                  Cu.reportError(ex);
-                  dump(ex);
-                }
-              });
-              break;
-            }
-          }
-        });
-      });
-    }
-  });
-
-  return cleanup;
+  return { client, target, doc: win.document, cleanup };
 }
 
 function promiseOnce(target, event) {
