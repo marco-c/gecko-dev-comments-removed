@@ -22,7 +22,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
   Log: "resource://gre/modules/Log.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
-  Task: "resource://gre/modules/Task.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
 });
 
@@ -599,13 +598,7 @@ ConnectionData.prototype = Object.freeze({
 
           let result;
           try {
-            
-            
-            result = func();
-            if (Object.prototype.toString.call(result) == "[object Generator]")
-              result = await Task.spawn(func); 
-            else
-              result = await result;
+            result = await func();
           } catch (ex) {
             
             
@@ -1400,7 +1393,6 @@ OpenedConnection.prototype = Object.freeze({
   },
 
   
-
 
 
 
