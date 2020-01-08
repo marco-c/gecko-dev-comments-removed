@@ -258,10 +258,10 @@ CompileFunction(JSContext* cx, AutoVector<JSObject*>& envChain,
 
 
 extern JS_PUBLIC_API(bool)
-CompileFunction(JSContext* cx, AutoVector<JSObject*>& envChain,
-                const ReadOnlyCompileOptions& options,
-                const char* name, unsigned nargs, const char* const* argnames,
-                const char* bytes, size_t length, MutableHandle<JSFunction*> fun);
+CompileFunctionUtf8(JSContext* cx, AutoVector<JSObject*>& envChain,
+                    const ReadOnlyCompileOptions& options,
+                    const char* name, unsigned nargs, const char* const* argnames,
+                    const char* utf8, size_t length, MutableHandle<JSFunction*> fun);
 
 
 
