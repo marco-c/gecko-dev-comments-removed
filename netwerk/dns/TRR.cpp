@@ -177,7 +177,9 @@ TRR::SendHTTPRequest()
 
   if ((mType == TRRTYPE_A) || (mType == TRRTYPE_AAAA)) {
     
-    if (gTRRService->IsTRRBlacklisted(mHost, mPB, true)) {
+    MOZ_ASSERT(mRec);
+
+    if (gTRRService->IsTRRBlacklisted(mHost, mRec->originSuffix, mPB, true)) {
       if (mType == TRRTYPE_A) {
         
         Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED, true);
