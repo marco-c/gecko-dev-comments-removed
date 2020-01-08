@@ -25,6 +25,7 @@
 
 #include "ds/Nestable.h"
 #include "frontend/BytecodeControlStructures.h"
+#include "frontend/CForEmitter.h"
 #include "frontend/EmitterScope.h"
 #include "frontend/ForOfLoopControl.h"
 #include "frontend/IfEmitter.h"
@@ -4785,7 +4786,7 @@ BytecodeEmitter::emitInitializeForInOrOfTarget(ParseNode* forHead)
 }
 
 bool
-BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitterScope)
+BytecodeEmitter::emitForOf(ParseNode* forOfLoop, const EmitterScope* headLexicalEmitterScope)
 {
     MOZ_ASSERT(forOfLoop->isKind(ParseNodeKind::For));
     MOZ_ASSERT(forOfLoop->isArity(PN_BINARY));
@@ -4976,7 +4977,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
 }
 
 bool
-BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitterScope)
+BytecodeEmitter::emitForIn(ParseNode* forInLoop, const EmitterScope* headLexicalEmitterScope)
 {
     MOZ_ASSERT(forInLoop->isKind(ParseNodeKind::For));
     MOZ_ASSERT(forInLoop->isArity(PN_BINARY));
@@ -5125,193 +5126,82 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
 
 
 bool
-BytecodeEmitter::emitCStyleFor(ParseNode* pn, EmitterScope* headLexicalEmitterScope)
+BytecodeEmitter::emitCStyleFor(ParseNode* pn, const EmitterScope* headLexicalEmitterScope)
 {
-    LoopControl loopInfo(this, StatementKind::ForLoop);
-
     ParseNode* forHead = pn->pn_left;
     ParseNode* forBody = pn->pn_right;
+    ParseNode* init = forHead->pn_kid1;
+    ParseNode* cond = forHead->pn_kid2;
+    ParseNode* update = forHead->pn_kid3;
+    bool isLet = init && init->isKind(ParseNodeKind::Let);
+
+    CForEmitter cfor(this, isLet ? headLexicalEmitterScope : nullptr);
+
+    if (!cfor.emitInit(init ? Some(init->pn_pos.begin) : Nothing()))
+        return false;                                     
 
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool forLoopRequiresFreshening = false;
-    if (ParseNode* init = forHead->pn_kid1) {
+    if (init) {
         
         
         
-        if (!updateSourceCoordNotes(init->pn_pos.begin))
-            return false;
         if (init->isForLoopDeclaration()) {
-            if (!emitTree(init))
+            if (!emitTree(init))                          
                 return false;
         } else {
             
             
-            if (!emitTree(init, ValueUsage::IgnoreValue))
+            if (!emitTree(init, ValueUsage::IgnoreValue)) 
                 return false;
-            if (!emit1(JSOP_POP))
-                return false;
-        }
-
-        
-        
-        
-        
-        
-        forLoopRequiresFreshening = init->isKind(ParseNodeKind::Let) && headLexicalEmitterScope;
-        if (forLoopRequiresFreshening) {
-            
-            
-            
-            
-            
-            
-            MOZ_ASSERT(headLexicalEmitterScope == innermostEmitterScope());
-            MOZ_ASSERT(headLexicalEmitterScope->scope(this)->kind() == ScopeKind::Lexical);
-
-            if (headLexicalEmitterScope->hasEnvironment()) {
-                if (!emit1(JSOP_FRESHENLEXICALENV))
-                    return false;
-            }
-        }
-    }
-
-    
-
-
-
-
-
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_FOR, &noteIndex))
-        return false;
-    if (!emit1(JSOP_NOP))
-        return false;
-    ptrdiff_t top = offset();
-
-    if (forHead->pn_kid2) {
-        
-        if (!loopInfo.emitEntryJump(this))
-            return false;
-    }
-
-    
-    if (!loopInfo.emitLoopHead(this, getOffsetForLoop(forBody)))
-        return false;
-    if (!forHead->pn_kid2) {
-        if (!loopInfo.emitLoopEntry(this, getOffsetForLoop(forBody)))
-            return false;
-    }
-
-    if (!emitTreeInBranch(forBody))
-        return false;
-
-    
-    
-    
-    if (!loopInfo.emitContinueTarget(this))
-        return false;
-
-    
-    if (forLoopRequiresFreshening) {
-        MOZ_ASSERT(headLexicalEmitterScope == innermostEmitterScope());
-        MOZ_ASSERT(headLexicalEmitterScope->scope(this)->kind() == ScopeKind::Lexical);
-
-        if (headLexicalEmitterScope->hasEnvironment()) {
-            if (!emit1(JSOP_FRESHENLEXICALENV))
+            if (!emit1(JSOP_POP))                         
                 return false;
         }
     }
 
-    
-    
-    if (ParseNode* update = forHead->pn_kid3) {
-        TDZCheckCache tdzCache(this);
-
-        if (!updateSourceCoordNotes(update->pn_pos.begin))
-            return false;
-        if (!emitTree(update, ValueUsage::IgnoreValue))
-            return false;
-        if (!emit1(JSOP_POP))
-            return false;
-
-        
-        uint32_t lineNum = parser->errorReporter().lineAt(pn->pn_pos.end);
-        if (currentLine() != lineNum) {
-            if (!newSrcNote2(SRC_SETLINE, ptrdiff_t(lineNum)))
-                return false;
-            current->currentLine = lineNum;
-            current->lastColumn = 0;
-        }
-    }
-
-    ptrdiff_t tmp3 = offset();
-
-    if (forHead->pn_kid2) {
-        
-        if (!loopInfo.emitLoopEntry(this, getOffsetForLoop(forHead->pn_kid2)))
-            return false;
-
-        if (!emitTree(forHead->pn_kid2))
-            return false;
-    } else if (!forHead->pn_kid3) {
-        
-        
-        
-        
-        if (!updateSourceCoordNotes(pn->pn_pos.begin))
-            return false;
-    }
-
-    
-    if (!setSrcNoteOffset(noteIndex, 0, tmp3 - top))
-        return false;
-    if (!setSrcNoteOffset(noteIndex, 1, loopInfo.continueTargetOffset() - top))
-        return false;
-
-    
-    if (!loopInfo.emitLoopEnd(this, forHead->pn_kid2 ? JSOP_IFNE : JSOP_GOTO))
-        return false;
-
-    
-    if (!setSrcNoteOffset(noteIndex, 2, loopInfo.loopEndOffset() - top))
-        return false;
-
-    if (!tryNoteList.append(JSTRY_LOOP, stackDepth, loopInfo.headOffset(),
-                            loopInfo.breakTargetOffset()))
+    if (!cfor.emitBody(cond ? CForEmitter::Cond::Present : CForEmitter::Cond::Missing,
+                       getOffsetForLoop(forBody)))        
     {
         return false;
     }
 
-    if (!loopInfo.patchBreaksAndContinues(this))
+    if (!emitTree(forBody))                               
+        return false;
+
+    if (!cfor.emitUpdate(update ? CForEmitter::Update::Present : CForEmitter::Update::Missing,
+                         update ? Some(update->pn_pos.begin) : Nothing()))
+    {                                                     
+        return false;
+    }
+
+    
+    if (update) {
+        if (!emitTree(update, ValueUsage::IgnoreValue))   
+            return false;
+    }
+
+    if (!cfor.emitCond(Some(pn->pn_pos.begin),
+                       cond ? Some(cond->pn_pos.begin) : Nothing(),
+                       Some(pn->pn_pos.end)))             
+    {
+        return false;
+    }
+
+    if (cond) {
+        if (!emitTree(cond))                              
+            return false;
+    }
+
+    if (!cfor.emitEnd())                                  
         return false;
 
     return true;
 }
 
 bool
-BytecodeEmitter::emitFor(ParseNode* pn, EmitterScope* headLexicalEmitterScope)
+BytecodeEmitter::emitFor(ParseNode* pn, const EmitterScope* headLexicalEmitterScope)
 {
     MOZ_ASSERT(pn->isKind(ParseNodeKind::For));
 
