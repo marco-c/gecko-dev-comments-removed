@@ -505,8 +505,9 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
   
   
   
-  
-  
+  if (alignConst & NS_STYLE_ALIGN_SAFE) {
+    flags |= AlignJustifyFlags::eOverflowSafe;
+  }
   alignConst &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
   

@@ -1217,6 +1217,7 @@ nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
                                          : axisTracker.IsCrossAxisReversed();
 
   uint8_t alignment;
+  uint8_t alignmentFlags = 0;
   if (isMainAxis) {
     alignment = SimplifyAlignOrJustifyContentForOneItem(
                   containerStylePos->mJustifyContent,
@@ -1235,7 +1236,7 @@ nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
       
       alignment = aChildRI.mStylePosition->UsedAlignSelf(Style());
       
-      
+      alignmentFlags = alignment & NS_STYLE_ALIGN_FLAG_BITS;
       alignment &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
       if (alignment == NS_STYLE_ALIGN_NORMAL) {
@@ -1269,7 +1270,7 @@ nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
     alignment = NS_STYLE_ALIGN_END;
   }
 
-  return alignment;
+  return (alignment | alignmentFlags);
 }
 
 UniquePtr<FlexItem>

@@ -6597,7 +6597,7 @@ nsGridContainerFrame::CSSAlignmentForAbsPosChild(const ReflowInput& aChildRI,
     aChildRI.mStylePosition->UsedAlignSelf(Style());
 
   
-  
+  uint16_t alignmentFlags = alignment & NS_STYLE_ALIGN_FLAG_BITS;
   alignment &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
   if (alignment == NS_STYLE_ALIGN_NORMAL) {
@@ -6628,7 +6628,7 @@ nsGridContainerFrame::CSSAlignmentForAbsPosChild(const ReflowInput& aChildRI,
     alignment = NS_STYLE_ALIGN_END;
   }
 
-  return alignment;
+  return (alignment | alignmentFlags);
 }
 
 nscoord
