@@ -2,6 +2,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use api::{LayoutPrimitiveInfo};
 use internal_types::FastHashMap;
 use malloc_size_of::MallocSizeOf;
@@ -13,55 +44,14 @@ use std::{mem, ops, u64};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use util::VecHelper;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
 struct Epoch(u64);
 
-impl Epoch {
-    pub const INVALID: Self = Epoch(u64::MAX);
-}
-
 
 
 pub struct UpdateList<S> {
-    
-    epoch: Epoch,
     
     updates: Vec<Update>,
     
@@ -109,7 +99,6 @@ impl <M> Handle<M> where M: Copy {
 pub enum UpdateKind {
     Insert,
     Remove,
-    UpdateEpoch,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -118,16 +107,6 @@ pub enum UpdateKind {
 pub struct Update {
     index: usize,
     kind: UpdateKind,
-}
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
-struct Item<T: MallocSizeOf> {
-    epoch: Epoch,
-    data: T,
 }
 
 pub trait InternDebug {
@@ -140,7 +119,7 @@ pub trait InternDebug {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 pub struct DataStore<S, T: MallocSizeOf, M> {
-    items: Vec<Item<T>>,
+    items: Vec<Option<T>>,
     _source: PhantomData<S>,
     _marker: PhantomData<M>,
 }
@@ -177,16 +156,11 @@ where
         for update in update_list.updates {
             match update.kind {
                 UpdateKind::Insert => {
-                    self.items.entry(update.index).set(Item {
-                        data: T::from(data_iter.next().unwrap()),
-                        epoch: update_list.epoch,
-                    });
+                    self.items.entry(update.index).
+                        set(Some(T::from(data_iter.next().unwrap())));
                 }
                 UpdateKind::Remove => {
-                    self.items[update.index].epoch = Epoch::INVALID;
-                }
-                UpdateKind::UpdateEpoch => {
-                    self.items[update.index].epoch = update_list.epoch;
+                    self.items[update.index] = None;
                 }
             }
         }
@@ -207,9 +181,7 @@ where
 {
     type Output = T;
     fn index(&self, handle: Handle<M>) -> &T {
-        let item = &self.items[handle.index as usize];
-        assert_eq!(item.epoch, handle.epoch);
-        &item.data
+        self.items[handle.index as usize].as_ref().expect("Bad datastore lookup")
     }
 }
 
@@ -222,9 +194,7 @@ where
     M: Copy
 {
     fn index_mut(&mut self, handle: Handle<M>) -> &mut T {
-        let item = &mut self.items[handle.index as usize];
-        assert_eq!(item.epoch, handle.epoch);
-        &mut item.data
+        self.items[handle.index as usize].as_mut().expect("Bad datastore lookup")
     }
 }
 
@@ -254,7 +224,7 @@ where
     current_epoch: Epoch,
     
     
-    local_data: Vec<Item<D>>,
+    local_data: Vec<D>,
 }
 
 impl<S, D, M> ::std::default::Default for Interner<S, D, M>
@@ -297,17 +267,6 @@ where
         
         
         if let Some(handle) = self.map.get_mut(data) {
-            
-            
-            
-            
-            if handle.epoch != self.current_epoch {
-                self.updates.push(Update {
-                    index: handle.index as usize,
-                    kind: UpdateKind::UpdateEpoch,
-                });
-                self.local_data[handle.index as usize].epoch = self.current_epoch;
-            }
             handle.epoch = self.current_epoch;
             return *handle;
         }
@@ -344,10 +303,7 @@ where
 
         
         
-        self.local_data.entry(index).set(Item {
-            epoch: self.current_epoch,
-            data: f(),
-        });
+        self.local_data.entry(index).set(f());
 
         handle
     }
@@ -389,7 +345,6 @@ where
         let updates = UpdateList {
             updates,
             data,
-            epoch: self.current_epoch,
         };
 
         
@@ -408,9 +363,7 @@ where
 {
     type Output = D;
     fn index(&self, handle: Handle<M>) -> &D {
-        let item = &self.local_data[handle.index as usize];
-        assert_eq!(item.epoch, handle.epoch);
-        &item.data
+        &self.local_data[handle.index as usize]
     }
 }
 
