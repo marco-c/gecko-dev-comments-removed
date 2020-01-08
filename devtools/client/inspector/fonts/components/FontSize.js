@@ -20,7 +20,13 @@ class FontSize extends PureComponent {
     };
   }
 
+  constructor(props) {
+    super(props);
+    this.historicMax = {};
+  }
+
   render() {
+    const value = parseFloat(this.props.value);
     const unit = getUnitFromValue(this.props.value);
     let max;
     switch (unit) {
@@ -42,16 +48,25 @@ class FontSize extends PureComponent {
         break;
     }
 
+    
+    max = Math.max(max, value);
+    
+    
+    
+    this.historicMax[unit] = this.historicMax[unit]
+      ? Math.max(this.historicMax[unit], max)
+      : max;
+
     return FontPropertyValue({
       label: getStr("fontinspector.fontSizeLabel"),
       min: 0,
-      max,
+      max: this.historicMax[unit],
       name: "font-size",
       onChange: this.props.onChange,
       showUnit: true,
       step: getStepForUnit(unit),
       unit,
-      value: parseFloat(this.props.value),
+      value,
     });
   }
 }
