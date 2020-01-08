@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "nsContentUtils.h"
 #include "nsCOMArray.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDocShell.h"
@@ -1594,6 +1595,8 @@ nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry, nsIDocShell* aFrameDS,
   nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
   loadState->SetURI(newURI);
   loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
+  
+  loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
   loadState->SetFirstParty(false);
 
   

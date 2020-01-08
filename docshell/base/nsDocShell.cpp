@@ -679,6 +679,11 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState)
              "Should not have these flags set");
   MOZ_ASSERT(aLoadState->URI(), "Should have a valid URI to load");
 
+  if (mUseStrictSecurityChecks && !aLoadState->TriggeringPrincipal()) {
+    MOZ_ASSERT(false, "LoadURI must have a triggering principal");
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   
@@ -7565,6 +7570,12 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal)
   return CreateAboutBlankContentViewer(aPrincipal, nullptr);
 }
 
+NS_IMETHODIMP
+nsDocShell::ForceCreateAboutBlankContentViewer(nsIPrincipal* aPrincipal)
+{
+  return CreateAboutBlankContentViewer(aPrincipal, nullptr, true, false);
+}
+
 bool
 nsDocShell::CanSavePresentation(uint32_t aLoadType,
                                 nsIRequest* aNewRequest,
@@ -9094,6 +9105,17 @@ bool
 nsDocShell::JustStartedNetworkLoad()
 {
   return mDocumentRequest && mDocumentRequest != GetCurrentDocChannel();
+}
+
+nsresult
+nsDocShell::CreatePrincipalFromReferrer(nsIURI* aReferrer,
+                                        nsIPrincipal** aResult)
+{
+  nsCOMPtr<nsIPrincipal> prin =
+    BasePrincipal::CreateCodebasePrincipal(aReferrer, mOriginAttributes);
+  prin.forget(aResult);
+
+  return *aResult ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
