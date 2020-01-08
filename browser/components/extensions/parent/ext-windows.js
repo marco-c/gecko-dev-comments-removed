@@ -12,10 +12,6 @@ var {
   promiseObserved,
 } = ExtensionUtils;
 
-const onXULFrameLoaderCreated = ({target}) => {
-  target.messageManager.sendAsyncMessage("AllowScriptsToClose", {});
-};
-
 
 
 
@@ -206,19 +202,15 @@ this.windows = class extends ExtensionAPI {
           
 
           return new Promise(resolve => {
-            window.addEventListener("load", function() {
+            window.addEventListener("DOMContentLoaded", function() {
+              if (allowScriptsToClose) {
+                window.gBrowserAllowScriptsToCloseInitialTabs = true;
+              }
               resolve(promiseObserved("browser-delayed-startup-finished", win => win == window));
             }, {once: true});
           }).then(() => {
             if (["minimized", "fullscreen", "docked", "normal", "maximized"].includes(createData.state)) {
               win.state = createData.state;
-            }
-            if (allowScriptsToClose) {
-              for (let {linkedBrowser} of window.gBrowser.tabs) {
-                onXULFrameLoaderCreated({target: linkedBrowser});
-                
-                linkedBrowser.addEventListener("XULFrameLoaderCreated", onXULFrameLoaderCreated);
-              }
             }
             if (createData.titlePreface !== null) {
               win.setTitlePreface(createData.titlePreface);

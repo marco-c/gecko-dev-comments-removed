@@ -2110,6 +2110,13 @@ nsFrameLoader::MaybeCreateDocShell()
   }
 
   
+  if (win_private && mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
+      mOwnerContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::allowscriptstoclose,
+                                 nsGkAtoms::_true, eCaseMatters)) {
+    nsGlobalWindowOuter::Cast(win_private)->AllowScriptsToClose();
+  }
+
+  
   
   
   if (NS_FAILED(base_win->Create()) || !win_private) {
@@ -2703,12 +2710,18 @@ nsFrameLoader::TryRemoteBrowser()
   }
 
   
-  
   if (mOwnerContent->IsXULElement()) {
+    
     nsAutoString frameName;
     mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, frameName);
     if (nsContentUtils::IsOverridingWindowName(frameName)) {
       Unused << mRemoteBrowser->SendSetWindowName(frameName);
+    }
+    
+    if (mOwnerContent->AttrValueIs(kNameSpaceID_None,
+                                   nsGkAtoms::allowscriptstoclose,
+                                   nsGkAtoms::_true, eCaseMatters)) {
+      Unused << mRemoteBrowser->SendAllowScriptsToClose();
     }
   }
 

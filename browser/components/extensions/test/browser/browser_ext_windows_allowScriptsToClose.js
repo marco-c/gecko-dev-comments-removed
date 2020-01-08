@@ -2,6 +2,11 @@
 
 "use strict";
 
+if (!gMultiProcessBrowser) {
+  const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
+  PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
+}
+
 
 add_task(async function test_allowScriptsToClose() {
   const files = {
