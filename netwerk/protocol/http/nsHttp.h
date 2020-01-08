@@ -109,6 +109,10 @@ namespace net {
 
 
 
+#define NS_HTTP_DISABLE_TRR (1<<14)
+
+
+
 
 
 #define NS_HTTP_DEFAULT_PORT  80
