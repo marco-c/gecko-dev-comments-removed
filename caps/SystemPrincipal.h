@@ -6,8 +6,8 @@
 
 
 
-#ifndef SystemPrincipal_h
-#define SystemPrincipal_h
+#ifndef mozilla_SystemPrincipal_h
+#define mozilla_SystemPrincipal_h
 
 #include "nsIPrincipal.h"
 #include "nsJSPrincipals.h"
@@ -19,8 +19,9 @@
 { 0xb7, 0x65, 0x0, 0x60, 0xb0, 0xb6, 0xce, 0xcb }}
 #define NS_SYSTEMPRINCIPAL_CONTRACTID "@mozilla.org/systemprincipal;1"
 
+namespace mozilla {
 
-class SystemPrincipal final : public mozilla::BasePrincipal
+class SystemPrincipal final : public BasePrincipal
 {
   SystemPrincipal()
     : BasePrincipal(eSystemPrincipal)
@@ -62,5 +63,7 @@ protected:
     return true;
   }
 };
+
+} 
 
 #endif 

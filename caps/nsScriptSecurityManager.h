@@ -21,10 +21,10 @@
 
 class nsIIOService;
 class nsIStringBundle;
-class SystemPrincipal;
 
 namespace mozilla {
 class OriginAttributes;
+class SystemPrincipal;
 } 
 
 
@@ -50,7 +50,7 @@ public:
     
     static void InitStatics();
 
-    static already_AddRefed<SystemPrincipal>
+    static already_AddRefed<mozilla::SystemPrincipal>
     SystemPrincipalSingletonConstructor();
 
     
