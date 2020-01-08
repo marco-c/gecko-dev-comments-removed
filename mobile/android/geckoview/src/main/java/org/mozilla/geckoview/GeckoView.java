@@ -462,13 +462,26 @@ public class GeckoView extends FrameLayout {
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
 
-        if (mSession != null) {
-            mSession.setFocused(hasWindowFocus && isFocused());
+        
+        
+        
+        if (mSession != null && hasWindowFocus && isFocused()) {
+            mSession.setFocused(true);
         }
     }
 
     @Override
-    public void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+    protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+
+        
+        if (mSession != null && visibility != View.VISIBLE && !hasWindowFocus()) {
+            mSession.setFocused(false);
+        }
+    }
+
+    @Override
+    protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
 
         if (mIsResettingFocus) {
