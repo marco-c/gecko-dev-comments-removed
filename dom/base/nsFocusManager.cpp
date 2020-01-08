@@ -3127,10 +3127,11 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
     bool aForward, int32_t* aCurrentTabIndex, bool aIgnoreTabIndex,
     bool aForDocumentNavigation) {
   nsIContent* startContent = *aStartContent;
-  while (1) {
-    nsIContent* owner = FindOwner(startContent);
-    MOZ_ASSERT(owner, "focus navigation scope owner not in document");
+  nsIContent* owner = FindOwner(startContent);
+  MOZ_ASSERT(owner, "focus navigation scope owner not in document");
+  MOZ_ASSERT(IsHostOrSlot(owner), "scope owner should be host or slot");
 
+  while (IsHostOrSlot(owner)) {
     int32_t tabIndex = 0;
     if (IsHostOrSlot(startContent)) {
       tabIndex = HostOrSlotTabIndexValue(startContent);
@@ -3144,17 +3145,13 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
       return contentToFocus;
     }
 
-    
-    if (!owner->IsInShadowTree()) {
-      MOZ_ASSERT(owner->GetShadowRoot());
-
-      *aStartContent = owner;
-      *aCurrentTabIndex = HostOrSlotTabIndexValue(owner);
-      break;
-    }
-
     startContent = owner;
+    owner = FindOwner(startContent);
   }
+
+  
+  *aStartContent = startContent;
+  *aCurrentTabIndex = HostOrSlotTabIndexValue(startContent);
 
   return nullptr;
 }
@@ -3222,6 +3219,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
   
   
   
+  MOZ_ASSERT(FindOwner(aStartContent) == rootElement,
+             "aStartContent should be owned by the root element at this point");
 
   nsPresContext* presContext = aPresShell->GetPresContext();
 
