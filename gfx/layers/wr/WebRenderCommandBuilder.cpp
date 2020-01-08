@@ -258,7 +258,7 @@ IsContainerLayerItem(nsDisplayItem* aItem)
 #include <sstream>
 
 bool
-UpdateContainerLayerPropertiesAndDetectChange(nsDisplayItem* aItem, BlobItemData* aData)
+UpdateContainerLayerPropertiesAndDetectChange(nsDisplayItem* aItem, BlobItemData* aData, nsDisplayItemGeometry& aGeometry)
 {
   bool changed = false;
   switch (aItem->GetType()) {
@@ -284,10 +284,17 @@ UpdateContainerLayerPropertiesAndDetectChange(nsDisplayItem* aItem, BlobItemData
       GP("UpdateContainerLayerPropertiesAndDetectChange Opacity\n");
       break;
     }
+    case DisplayItemType::TYPE_MASK:
+    case DisplayItemType::TYPE_FILTER: {
+      
+      aGeometry.mBounds = aGeometry.mBounds.Intersect(aItem->GetBuildingRect());
+      break;
+    }
     default:
       break;
   }
-  return changed;
+
+  return changed || !aGeometry.mBounds.IsEqualEdges(aData->mGeometry->mBounds);
 }
 
 struct DIGroup
@@ -505,8 +512,7 @@ struct DIGroup
         } else if (IsContainerLayerItem(aItem)) {
           UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
           
-          if (!geometry->mBounds.IsEqualEdges(aData->mGeometry->mBounds) ||
-              UpdateContainerLayerPropertiesAndDetectChange(aItem, aData)) {
+          if (UpdateContainerLayerPropertiesAndDetectChange(aItem, aData, *geometry)) {
             combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
             aData->mGeometry = std::move(geometry);
             IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
