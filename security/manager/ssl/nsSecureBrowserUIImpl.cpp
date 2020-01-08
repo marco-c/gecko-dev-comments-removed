@@ -53,6 +53,13 @@ nsSecureBrowserUIImpl::Init(mozIDOMWindowProxy* aWindow)
     return NS_ERROR_FAILURE;
   }
 
+  
+  nsresult rv;
+  mWebProgress = do_GetWeakReference(wp, &rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   return wp->AddProgressListener(this, nsIWebProgress::NOTIFY_LOCATION);
 }
 
@@ -243,6 +250,13 @@ nsSecureBrowserUIImpl::UpdateStateAndSecurityInfo(nsIChannel* channel,
 
 
 
+
+
+
+
+
+
+
 NS_IMETHODIMP
 nsSecureBrowserUIImpl::OnLocationChange(nsIWebProgress* aWebProgress,
                                         nsIRequest* aRequest,
@@ -257,6 +271,17 @@ nsSecureBrowserUIImpl::OnLocationChange(nsIWebProgress* aWebProgress,
   MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
           ("%p OnLocationChange: %p %p %s %x", this, aWebProgress, aRequest,
            aLocation->GetSpecOrDefault().get(), aFlags));
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWebProgress> originalWebProgress = do_QueryReferent(mWebProgress);
+  if (aWebProgress != originalWebProgress) {
+    return NS_OK;
+  }
 
   
   if (!(aFlags & LOCATION_CHANGE_SAME_DOCUMENT)) {
