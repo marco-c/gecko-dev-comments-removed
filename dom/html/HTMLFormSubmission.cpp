@@ -823,6 +823,25 @@ void GetEnumAttr(nsGenericHTMLElement* aContent, nsAtom* atom,
   rv = aForm->GetActionURL(getter_AddRefs(actionURL), aOriginatingElement);
   NS_ENSURE_SUCCESS(rv, rv);
 
+ 
+ nsCOMPtr<nsIContentSecurityPolicy> csp;
+ rv = aForm->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+ NS_ENSURE_SUCCESS(rv, rv);
+ if (csp) {
+   bool permitsFormAction = true;
+
+   
+   
+   
+   rv = csp->Permits(aForm, nullptr , actionURL,
+                     nsIContentSecurityPolicy::FORM_ACTION_DIRECTIVE, true,
+                     &permitsFormAction);
+   NS_ENSURE_SUCCESS(rv, rv);
+   if (!permitsFormAction) {
+     return NS_ERROR_CSP_FORM_ACTION_VIOLATION;
+   }
+ }
+
   
   
   

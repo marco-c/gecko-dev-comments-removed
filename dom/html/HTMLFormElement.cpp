@@ -1560,25 +1560,6 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (csp) {
-    bool permitsFormAction = true;
-
-    
-    
-    
-    rv = csp->Permits(this, nullptr , actionURL,
-                      nsIContentSecurityPolicy::FORM_ACTION_DIRECTIVE, true,
-                      &permitsFormAction);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!permitsFormAction) {
-      return NS_ERROR_CSP_FORM_ACTION_VIOLATION;
-    }
-  }
-
-  
   
   
   bool isHttpScheme = false;
