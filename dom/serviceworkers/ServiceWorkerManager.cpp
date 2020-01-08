@@ -2434,6 +2434,20 @@ ServiceWorkerManager::Update(nsIPrincipal* aPrincipal,
                                                nsCString(aScope));
 }
 
+namespace {
+
+void
+RejectUpdateWithInvalidStateError(ServiceWorkerUpdateFinishCallback& aCallback)
+{
+  ErrorResult error(NS_ERROR_DOM_INVALID_STATE_ERR);
+  aCallback.UpdateFailed(error);
+
+  
+  error.SuppressException();
+}
+
+}
+
 void
 ServiceWorkerManager::UpdateInternal(nsIPrincipal* aPrincipal,
                                      const nsACString& aScope,
@@ -2459,12 +2473,12 @@ ServiceWorkerManager::UpdateInternal(nsIPrincipal* aPrincipal,
   
   RefPtr<ServiceWorkerInfo> newest = registration->Newest();
   if (!newest) {
-    ErrorResult error(NS_ERROR_DOM_INVALID_STATE_ERR);
-    aCallback->UpdateFailed(error);
+    RejectUpdateWithInvalidStateError(*aCallback);
+    return;
+  }
 
-    
-    error.SuppressException();
-
+  if (newest->State() == ServiceWorkerState::Installing) {
+    RejectUpdateWithInvalidStateError(*aCallback);
     return;
   }
 
