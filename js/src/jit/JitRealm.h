@@ -346,9 +346,6 @@ enum class ICStubEngine : uint8_t {
     Baseline = 0,
 
     
-    IonSharedIC,
-
-    
     IonIC
 };
 
