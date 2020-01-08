@@ -5,6 +5,7 @@
 "use strict";
 
 const { Cu } = require("chrome");
+const { dumpn } = require("devtools/shared/DevToolsUtils");
 
 function createTCPSocket(location, port, options) {
   
@@ -53,7 +54,7 @@ class AdbSocket {
         dbg += s[i];
       }
     }
-    console.debug(dbg);
+    dumpn(dbg);
   }
 
   
