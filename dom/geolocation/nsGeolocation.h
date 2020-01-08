@@ -209,6 +209,10 @@ private:
 
   
   
+  bool FeaturePolicyBlocked() const;
+
+  
+  
   
   
   
