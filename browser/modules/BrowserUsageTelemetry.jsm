@@ -136,7 +136,7 @@ let URICountListener = {
   
   _domainSet: new Set(),
   
-  _origin24hrSet: new Set(),
+  _domain24hrSet: new Set(),
   
   _restoredURIsMap: new WeakMap(),
 
@@ -236,11 +236,6 @@ let URICountListener = {
     BrowserUsageTelemetry._recordTabCount();
 
     
-    if (this._domainSet.size == MAX_UNIQUE_VISITED_DOMAINS) {
-      return;
-    }
-
-    
     
     let baseDomain;
     try {
@@ -248,23 +243,22 @@ let URICountListener = {
       
       
       baseDomain = Services.eTLD.getBaseDomain(uri);
-      this._domainSet.add(baseDomain);
     } catch (e) {
-      baseDomain = uri.host;
+      return;
     }
 
     
-    let baseDomainURI = uri.mutate()
-                           .setHost(baseDomain)
-                           .finalize();
-    this._origin24hrSet.add(baseDomainURI.prePath);
-    if (gRecentVisitedOriginsExpiry) {
-      setTimeout(() => {
-        this._origin24hrSet.delete(baseDomainURI.prePath);
-      }, gRecentVisitedOriginsExpiry * 1000);
+    if (this._domainSet.size < MAX_UNIQUE_VISITED_DOMAINS) {
+      this._domainSet.add(baseDomain);
+      Services.telemetry.scalarSet(UNIQUE_DOMAINS_COUNT_SCALAR_NAME, this._domainSet.size);
     }
 
-    Services.telemetry.scalarSet(UNIQUE_DOMAINS_COUNT_SCALAR_NAME, this._domainSet.size);
+    this._domain24hrSet.add(baseDomain);
+    if (gRecentVisitedOriginsExpiry) {
+      setTimeout(() => {
+        this._domain24hrSet.delete(baseDomain);
+      }, gRecentVisitedOriginsExpiry * 1000);
+    }
   },
 
   
@@ -278,15 +272,15 @@ let URICountListener = {
 
 
 
-  get uniqueOriginsVisitedInPast24Hours() {
-    return this._origin24hrSet.size;
+  get uniqueDomainsVisitedInPast24Hours() {
+    return this._domain24hrSet.size;
   },
 
   
 
 
-  resetUniqueOriginsVisitedInPast24Hours() {
-    this._origin24hrSet.clear();
+  resetUniqueDomainsVisitedInPast24Hours() {
+    this._domain24hrSet.clear();
   },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,

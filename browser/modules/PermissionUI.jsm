@@ -1041,7 +1041,7 @@ StorageAccessPermissionPrompt.prototype = {
     
     
     
-    return Math.max(Math.max(Math.floor(URICountListener.uniqueOriginsVisitedInPast24Hours / 100),
+    return Math.max(Math.max(Math.floor(URICountListener.uniqueDomainsVisitedInPast24Hours / 100),
                              this._maxConcurrentAutoGrants), 0);
   },
 
