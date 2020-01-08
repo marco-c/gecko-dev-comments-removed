@@ -1059,6 +1059,8 @@ public:
     return mMainGapSize;
   }
 
+  inline void SetMainGapSize (nscoord aNewSize) { mMainGapSize = aNewSize; }
+
   
   
   void ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
@@ -1107,7 +1109,7 @@ private:
   nscoord mLastBaselineOffset;
 
   
-  const nscoord mMainGapSize;
+  nscoord mMainGapSize;
 };
 
 
@@ -2309,6 +2311,8 @@ public:
 
   
   void TraverseLine(FlexLine& aLine) { mPosition += aLine.GetLineCrossSize(); }
+
+  inline void SetCrossGapSize(nscoord aNewSize) { mCrossGapSize = aNewSize; }
 
 private:
   
@@ -4854,6 +4858,25 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     ConvertLegacyStyleToJustifyContent(StyleXUL()) :
     aReflowInput.mStylePosition->mJustifyContent;
 
+  
+  
+  if (aReflowInput.ComputedBSize() == NS_INTRINSICSIZE &&
+      aReflowInput.mStylePosition->mRowGap.HasPercent()) {
+    bool rowIsCross = aAxisTracker.IsRowOriented();
+    nscoord newBlockGapSize =
+      nsLayoutUtils::ResolveGapToLength(aReflowInput.mStylePosition->mRowGap,
+                                        rowIsCross
+                                        ? contentBoxCrossSize
+                                        : aContentBoxMainSize);
+    if (rowIsCross) {
+      crossAxisPosnTracker.SetCrossGapSize(newBlockGapSize);
+    } else {
+      for (FlexLine* line = lines.getFirst(); line; line = line->getNext(),
+                                                    ++lineIndex) {
+        line->SetMainGapSize(newBlockGapSize);
+      }
+    }
+  }
 
   lineIndex = 0;
   for (FlexLine* line = lines.getFirst(); line; line = line->getNext(),
