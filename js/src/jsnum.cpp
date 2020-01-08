@@ -1245,7 +1245,7 @@ js::InitNumberClass(JSContext* cx, Handle<GlobalObject*> global)
 
 
 
-    static JSConstDoubleSpec number_constants[] = {
+    static const JSConstDoubleSpec number_constants[] = {
         {"NaN",               GenericNaN()               },
         {"POSITIVE_INFINITY", mozilla::PositiveInfinity<double>() },
         {"NEGATIVE_INFINITY", mozilla::NegativeInfinity<double>() },

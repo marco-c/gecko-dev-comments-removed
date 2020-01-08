@@ -103,7 +103,7 @@ static size_t ChannelIndentLevel[] =
 static bool
 FilterContainsLocation(JSScript* function)
 {
-    static const char* filter = getenv("IONFILTER");
+    static const char* const filter = getenv("IONFILTER");
 
     
     if (!filter || !filter[0])

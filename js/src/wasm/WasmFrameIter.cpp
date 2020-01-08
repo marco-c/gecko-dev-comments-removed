@@ -1285,11 +1285,11 @@ ProfilingFrameIterator::label() const
     
     
     
-    static const char* importJitDescription = "fast exit trampoline (in wasm)";
-    static const char* importInterpDescription = "slow exit trampoline (in wasm)";
-    static const char* builtinNativeDescription = "fast exit trampoline to native (in wasm)";
-    static const char* trapDescription = "trap handling (in wasm)";
-    static const char* debugTrapDescription = "debug trap handling (in wasm)";
+    static const char importJitDescription[] = "fast exit trampoline (in wasm)";
+    static const char importInterpDescription[] = "slow exit trampoline (in wasm)";
+    static const char builtinNativeDescription[] = "fast exit trampoline to native (in wasm)";
+    static const char trapDescription[] = "trap handling (in wasm)";
+    static const char debugTrapDescription[] = "debug trap handling (in wasm)";
 
     if (!exitReason_.isFixed())
         return ThunkedNativeToDescription(exitReason_.symbolic());

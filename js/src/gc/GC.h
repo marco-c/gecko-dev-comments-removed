@@ -145,7 +145,7 @@ enum VerifierType {
 
 #ifdef JS_GC_ZEAL
 
-extern const char* ZealModeHelpText;
+extern const char ZealModeHelpText[];
 
 
 void
