@@ -93,8 +93,8 @@ SharedRef::Clear()
 
 } 
 
-typedef BaseAutoLock<detail::SharedRef> SharedRefAutoLock;
-typedef BaseAutoUnlock<detail::SharedRef> SharedRefAutoUnlock;
+typedef BaseAutoLock<detail::SharedRef&> SharedRefAutoLock;
+typedef BaseAutoUnlock<detail::SharedRef&> SharedRefAutoUnlock;
 
 WeakReferenceSupport::WeakReferenceSupport(Flags aFlags)
   : mRefCnt(0)

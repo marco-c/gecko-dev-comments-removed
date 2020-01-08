@@ -182,7 +182,7 @@ public:
 
 class PSMutex : public StaticMutex {};
 
-typedef BaseAutoLock<PSMutex> PSAutoLock;
+typedef BaseAutoLock<PSMutex&> PSAutoLock;
 
 
 

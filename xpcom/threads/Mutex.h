@@ -42,8 +42,9 @@ public:
 
 
 
-  explicit OffTheBooksMutex(const char* aName)
-    : detail::MutexImpl()
+  explicit OffTheBooksMutex(const char* aName,
+                            recordreplay::Behavior aRecorded = recordreplay::Behavior::Preserve)
+    : detail::MutexImpl(aRecorded)
     , BlockingResourceBase(aName, eMutex)
 #ifdef DEBUG
     , mOwningThread(nullptr)
@@ -119,8 +120,9 @@ private:
 class Mutex : public OffTheBooksMutex
 {
 public:
-  explicit Mutex(const char* aName)
-    : OffTheBooksMutex(aName)
+  explicit Mutex(const char* aName,
+                 recordreplay::Behavior aRecorded = recordreplay::Behavior::Preserve)
+    : OffTheBooksMutex(aName, aRecorded)
   {
     MOZ_COUNT_CTOR(Mutex);
   }
@@ -158,17 +160,16 @@ public:
 
 
 
-  explicit BaseAutoLock(T& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mLock(&aLock)
+  explicit BaseAutoLock(T aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : mLock(aLock)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    NS_ASSERTION(mLock, "null mutex");
-    mLock->Lock();
+    mLock.Lock();
   }
 
   ~BaseAutoLock(void)
   {
-    mLock->Unlock();
+    mLock.Unlock();
   }
 
   
@@ -198,8 +199,8 @@ public:
   
   void AssertOwns(const T& aLock) const
   {
-    MOZ_ASSERT(&aLock == mLock);
-    mLock->AssertCurrentThreadOwns();
+    MOZ_ASSERT(&aLock == &mLock);
+    mLock.AssertCurrentThreadOwns();
   }
 
 private:
@@ -210,12 +211,12 @@ private:
 
   friend class BaseAutoUnlock<T>;
 
-  T* mLock;
+  T mLock;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-typedef BaseAutoLock<Mutex> MutexAutoLock;
-typedef BaseAutoLock<OffTheBooksMutex> OffTheBooksMutexAutoLock;
+typedef BaseAutoLock<Mutex&> MutexAutoLock;
+typedef BaseAutoLock<OffTheBooksMutex&> OffTheBooksMutexAutoLock;
 
 
 
@@ -228,12 +229,11 @@ template<typename T>
 class MOZ_RAII BaseAutoUnlock
 {
 public:
-  explicit BaseAutoUnlock(T& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mLock(&aLock)
+  explicit BaseAutoUnlock(T aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : mLock(aLock)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    NS_ASSERTION(mLock, "null lock");
-    mLock->Unlock();
+    mLock.Unlock();
   }
 
   explicit BaseAutoUnlock(
@@ -247,7 +247,7 @@ public:
 
   ~BaseAutoUnlock()
   {
-    mLock->Lock();
+    mLock.Lock();
   }
 
 private:
@@ -256,12 +256,12 @@ private:
   BaseAutoUnlock& operator=(BaseAutoUnlock&);
   static void* operator new(size_t) CPP_THROW_NEW;
 
-  T* mLock;
+  T mLock;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-typedef BaseAutoUnlock<Mutex> MutexAutoUnlock;
-typedef BaseAutoUnlock<OffTheBooksMutex> OffTheBooksMutexAutoUnlock;
+typedef BaseAutoUnlock<Mutex&> MutexAutoUnlock;
+typedef BaseAutoUnlock<OffTheBooksMutex&> OffTheBooksMutexAutoUnlock;
 
 } 
 

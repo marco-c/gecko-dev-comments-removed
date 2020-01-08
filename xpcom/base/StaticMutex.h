@@ -26,14 +26,15 @@ namespace mozilla {
 
 
 
-class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS StaticMutex
+template <recordreplay::Behavior Recording>
+class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS BaseStaticMutex
 {
 public:
   
   
   
 #ifdef DEBUG
-  StaticMutex()
+  BaseStaticMutex()
   {
     MOZ_ASSERT(!mMutex);
   }
@@ -63,7 +64,7 @@ private:
       return mMutex;
     }
 
-    OffTheBooksMutex* mutex = new OffTheBooksMutex("StaticMutex");
+    OffTheBooksMutex* mutex = new OffTheBooksMutex("StaticMutex", Recording);
     if (!mMutex.compareExchange(nullptr, mutex)) {
       delete mutex;
     }
@@ -71,7 +72,7 @@ private:
     return mMutex;
   }
 
-  Atomic<OffTheBooksMutex*> mMutex;
+  Atomic<OffTheBooksMutex*, SequentiallyConsistent, Recording> mMutex;
 
 
   
@@ -79,17 +80,55 @@ private:
   
   
 #ifdef DEBUG
-  StaticMutex(StaticMutex& aOther);
+  BaseStaticMutex(BaseStaticMutex& aOther);
 #endif
 
   
-  StaticMutex& operator=(StaticMutex* aRhs);
+  BaseStaticMutex& operator=(BaseStaticMutex* aRhs);
   static void* operator new(size_t) CPP_THROW_NEW;
   static void operator delete(void*);
 };
 
-typedef BaseAutoLock<StaticMutex> StaticMutexAutoLock;
-typedef BaseAutoUnlock<StaticMutex> StaticMutexAutoUnlock;
+typedef BaseStaticMutex<recordreplay::Behavior::Preserve> StaticMutex;
+typedef BaseStaticMutex<recordreplay::Behavior::DontPreserve> StaticMutexNotRecorded;
+
+
+class MOZ_STACK_CLASS AnyStaticMutex
+{
+public:
+  MOZ_IMPLICIT AnyStaticMutex(StaticMutex& aMutex)
+    : mStaticMutex(&aMutex), mStaticMutexNotRecorded(nullptr)
+  {}
+
+  MOZ_IMPLICIT AnyStaticMutex(StaticMutexNotRecorded& aMutex)
+    : mStaticMutex(nullptr), mStaticMutexNotRecorded(&aMutex)
+  {}
+
+  void Lock()
+  {
+    if (mStaticMutex) {
+      mStaticMutex->Lock();
+    } else {
+      mStaticMutexNotRecorded->Lock();
+    }
+  }
+
+  void Unlock()
+  {
+    if (mStaticMutex) {
+      mStaticMutex->Unlock();
+    } else {
+      mStaticMutexNotRecorded->Unlock();
+    }
+  }
+
+private:
+  StaticMutex* mStaticMutex;
+  StaticMutexNotRecorded* mStaticMutexNotRecorded;
+};
+
+typedef BaseAutoLock<AnyStaticMutex> StaticMutexAutoLock;
+typedef BaseAutoUnlock<AnyStaticMutex> StaticMutexAutoUnlock;
 
 } 
 

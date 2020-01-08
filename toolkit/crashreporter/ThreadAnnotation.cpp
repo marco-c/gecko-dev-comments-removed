@@ -70,7 +70,7 @@ StaticMutex MacCrashReporterLock::sInnerMutex;
 bool MacCrashReporterLock::sIsLocked;
 
 
-typedef mozilla::BaseAutoLock<MacCrashReporterLock> CrashReporterAutoLock;
+typedef mozilla::BaseAutoLock<MacCrashReporterLock&> CrashReporterAutoLock;
 typedef MacCrashReporterLock CrashReporterLockType;
 #else 
 
