@@ -2941,6 +2941,11 @@ nsCycleCollector::ForgetSkippable(js::SliceBudget& aBudget,
   
   MOZ_ASSERT(IsIdle());
 
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return;
+  }
+
   if (mCCJSRuntime) {
     mCCJSRuntime->PrepareForForgetSkippable();
   }
@@ -3718,7 +3723,8 @@ nsCycleCollector::Collect(ccType aCCType,
   CheckThreadSafety();
 
   
-  if (mActivelyCollecting || mFreeingSnowWhite) {
+  
+  if (mActivelyCollecting || mFreeingSnowWhite || recordreplay::IsRecordingOrReplaying()) {
     return false;
   }
   mActivelyCollecting = true;
@@ -4171,7 +4177,9 @@ nsCycleCollector_suspectedCount()
   
   MOZ_ASSERT(data);
 
-  if (!data->mCollector) {
+  
+  
+  if (!data->mCollector || recordreplay::IsRecordingOrReplaying()) {
     return 0;
   }
 

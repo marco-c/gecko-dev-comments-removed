@@ -638,6 +638,10 @@ CycleCollectedJSRuntime::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 void
 CycleCollectedJSRuntime::UnmarkSkippableJSHolders()
 {
+  
+  
+  recordreplay::AutoDisallowThreadEvents disallow;
+
   for (auto iter = mJSHolders.Iter(); !iter.Done(); iter.Next()) {
     void* holder = iter.Get().mHolder;
     nsScriptObjectTracer* tracer = iter.Get().mTracer;
