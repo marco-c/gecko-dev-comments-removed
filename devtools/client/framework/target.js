@@ -199,14 +199,15 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-
-
-
-function Target({ client, chrome, activeTab = null, tab = null }) {
+function Target({ activeTab, client, chrome, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
   this._onTabNavigated = this._onTabNavigated.bind(this);
   this.activeConsole = null;
+
+  if (!activeTab) {
+    throw new Error("Cannot instanciate target without a non-null activeTab");
+  }
   this.activeTab = activeTab;
 
   this._url = this.form.url;
