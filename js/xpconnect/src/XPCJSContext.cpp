@@ -1087,6 +1087,18 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
 #  else
     const size_t kTrustedScriptBuffer = 180 * 1024;
 #  endif
+#elif defined(XP_WIN)
+    
+    
+    
+    const size_t kStackQuota = GetWindowsStackSize();
+#  if defined(MOZ_ASAN)
+    
+    const size_t kTrustedScriptBuffer = 450 * 1024;
+#  else
+    const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8) ? 180 * 1024   
+                                                              : 120 * 1024;  
+#  endif
 #elif defined(MOZ_ASAN)
     
     
@@ -1099,13 +1111,6 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
     
     const size_t kStackQuota =  2 * kDefaultStackQuota;
     const size_t kTrustedScriptBuffer = 450 * 1024;
-#elif defined(XP_WIN)
-    
-    
-    
-    const size_t kStackQuota = GetWindowsStackSize();
-    const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8) ? 180 * 1024   
-                                                              : 120 * 1024;  
 #elif defined(ANDROID)
     
     
