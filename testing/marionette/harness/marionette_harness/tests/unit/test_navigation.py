@@ -116,17 +116,17 @@ class BaseNavigationTestCase(WindowManagerMixin, MarionetteTestCase):
 class TestNavigate(BaseNavigationTestCase):
 
     def test_set_location_through_execute_script(self):
-        test_element_locator = (By.ID, "testh1")
+        
+        
+        
+        self.marionette.navigate(self.test_page_push_state)
 
         self.marionette.execute_script(
             "window.location.href = arguments[0];",
             script_args=(self.test_page_remote,), sandbox=None)
 
-        
-        
-        
         Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
-            expected.element_present(*test_element_locator),
+            expected.element_present(*(By.ID, "testh1")),
             message="Target element 'testh1' has not been found")
 
         self.assertEqual(self.test_page_remote, self.marionette.get_url())
