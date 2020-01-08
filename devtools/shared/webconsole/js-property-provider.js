@@ -60,8 +60,11 @@ function findCompletionBeginning(str) {
   let state = STATE_NORMAL;
   let start = 0;
   let c;
-  for (let i = 0; i < str.length; i++) {
-    c = str[i];
+
+  
+  const characters = Array.from(str);
+  for (let i = 0; i < characters.length; i++) {
+    c = characters[i];
 
     switch (state) {
       
@@ -73,7 +76,33 @@ function findCompletionBeginning(str) {
         } else if (c == ";") {
           start = i + 1;
         } else if (c == " ") {
-          start = i + 1;
+          const before = characters.slice(0, i);
+          const after = characters.slice(i + 1);
+          const trimmedBefore = Array.from(before.join("").trimRight());
+          const trimmedAfter = Array.from(after.join("").trimLeft());
+
+          const nextNonSpaceChar = trimmedAfter[0];
+          const nextNonSpaceCharIndex = after.indexOf(nextNonSpaceChar);
+          const previousNonSpaceChar = trimmedBefore[trimmedBefore.length - 1];
+
+          
+          
+          if (previousNonSpaceChar === "." && !nextNonSpaceChar) {
+            break;
+          }
+
+          if (nextNonSpaceChar) {
+            
+            
+            if (previousNonSpaceChar !== "." && nextNonSpaceChar !== ".") {
+              start = i + nextNonSpaceCharIndex;
+            }
+            
+            i = i + nextNonSpaceCharIndex;
+          } else {
+            
+            break;
+          }
         } else if (OPEN_BODY.includes(c)) {
           bodyStack.push({
             token: c,
@@ -125,7 +154,7 @@ function findCompletionBeginning(str) {
 
   return {
     state: state,
-    startPos: start
+    lastStatement: characters.slice(start).join("")
   };
 }
 
@@ -165,20 +194,20 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
 
   
   
-  const beginning = findCompletionBeginning(inputValue);
+  const {err, state, lastStatement} = findCompletionBeginning(inputValue);
 
   
-  if (beginning.err) {
+  if (err) {
     return null;
   }
 
   
   
-  if (beginning.state != STATE_NORMAL) {
+  if (state != STATE_NORMAL) {
     return null;
   }
 
-  const completionPart = inputValue.substring(beginning.startPos);
+  const completionPart = lastStatement;
   const lastDot = completionPart.lastIndexOf(".");
 
   
@@ -201,7 +230,7 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
     
     if (lastBody) {
       const expression = lastBody.expression;
-      const matchProp = completionPart.slice(lastDot + 1);
+      const matchProp = completionPart.slice(lastDot + 1).trimLeft();
       if (expression.type === "ArrayExpression") {
         return getMatchedProps(Array.prototype, matchProp);
       } else if (expression.type === "Literal" &&

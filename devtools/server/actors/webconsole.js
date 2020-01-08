@@ -1182,7 +1182,8 @@ WebConsoleActor.prototype =
 
       
       
-      const lastNonAlphaIsDot = /[.][a-zA-Z0-9$]*$/.test(reqText);
+      
+      const lastNonAlphaIsDot = /[.][a-zA-Z0-9$\s]*$/.test(reqText);
       if (!lastNonAlphaIsDot) {
         matches = matches.concat(this._getWebConsoleCommandsCache().filter(n =>
           
