@@ -41,7 +41,7 @@ class nsIURI;
 class nsPresContext;
 template <class T>
 class nsPtrHashKey;
-struct RustString;
+struct RawServoCssUrlData;
 
 namespace mozilla {
 class CSSStyleSheet;
@@ -97,18 +97,16 @@ struct URLValue final
 {
 public:
   
-  
-  
-  
-  URLValue(ServoRawOffsetArc<RustString> aString,
-           already_AddRefed<URLExtraData> aExtraData,
+  URLValue(already_AddRefed<RawServoCssUrlData> aCssUrl,
+           URLExtraData* aExtraData,
            CORSMode aCORSMode)
-    : mExtraData(std::move(aExtraData))
+    : mExtraData(aExtraData)
     , mURIResolved(false)
-    , mString(aString)
+    , mCssUrl(aCssUrl)
     , mCORSMode(aCORSMode)
   {
     MOZ_ASSERT(mExtraData);
+    MOZ_ASSERT(mCssUrl);
   }
 
   
@@ -171,7 +169,7 @@ private:
   
   mutable Maybe<bool> mIsLocalRef;
 
-  mozilla::ServoRawOffsetArc<RustString> mString;
+  RefPtr<RawServoCssUrlData> mCssUrl;
 
   const CORSMode mCORSMode;
 
