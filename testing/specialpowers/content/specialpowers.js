@@ -25,6 +25,7 @@ function SpecialPowers(window, mm) {
   this._encounteredCrashDumpFiles = [];
   this._unexpectedCrashDumpFiles = { };
   this._crashDumpDir = null;
+  this._serviceWorkerRegistered = false;
   this.DOMWindowUtils = bindDOMWindowUtils(window);
   Object.defineProperty(this, "Components", {
       configurable: true, enumerable: true, value: this.getFullComponents(),
@@ -57,6 +58,7 @@ function SpecialPowers(window, mm) {
                             "SPRequestDumpCoverageCounters",
                             "SPRequestResetCoverageCounters"];
   mm.addMessageListener("SPPingService", this._messageListener);
+  mm.addMessageListener("SPServiceWorkerRegistered", this._messageListener);
   mm.addMessageListener("SpecialPowers.FilesCreated", this._messageListener);
   mm.addMessageListener("SpecialPowers.FilesError", this._messageListener);
   let self = this;
@@ -142,6 +144,10 @@ SpecialPowers.prototype._messageReceived = function(aMessage) {
           this._grandChildFrameMM.sendAsyncMessage("SPPingService", { op: "pong" });
         }
       }
+      break;
+
+    case "SPServiceWorkerRegistered":
+      this._serviceWorkerRegistered = aMessage.data.registered;
       break;
 
     case "SpecialPowers.FilesCreated":
@@ -234,9 +240,18 @@ SpecialPowers.prototype.nestedFrameSetup = function() {
 };
 
 SpecialPowers.prototype.isServiceWorkerRegistered = function() {
-  var swm = Cc["@mozilla.org/serviceworkers/manager;1"]
-              .getService(Ci.nsIServiceWorkerManager);
-  return swm.getAllRegistrations().length != 0;
+  
+  
+  
+  if (!Services.prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false)) {
+    let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
+                .getService(Ci.nsIServiceWorkerManager);
+    return swm.getAllRegistrations().length != 0;
+  }
+
+  
+  
+  return this._serviceWorkerRegistered;
 };
 
 
