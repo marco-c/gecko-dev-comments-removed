@@ -245,5 +245,44 @@ var AddonStudies = {
       addonVersion: study.addonVersion,
       reason,
     });
+
+    await this.onUnenroll(study.addonId);
+  },
+
+  
+  _unenrollListeners: new Map(),
+
+  
+
+
+
+
+
+  addUnenrollListener(id, listener) {
+    let listeners = this._unenrollListeners.get(id);
+    if (!listeners) {
+      listeners = new Set();
+      this._unenrollListeners.set(id, listeners);
+    }
+    listeners.add(listener);
+  },
+
+  
+
+
+
+
+
+
+
+  onUnenroll(id) {
+    let callbacks = this._unenrollListeners.get(id);
+    let promises = [];
+    if (callbacks) {
+      for (let callback of callbacks) {
+        promises.push(callback());
+      }
+    }
+    return Promise.all(promises);
   },
 };
