@@ -3717,6 +3717,22 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
         if (dom::Element* element = presShell->GetDocument()->GetDocumentElement()) {
           id = nsLayoutUtils::FindOrCreateIDFor(element);
         }
+      
+      
+      
+      
+      
+      
+      
+      } else if (XRE_IsParentProcess() && presContext->IsRoot()
+          && presShell->GetDocument() != nullptr
+          && presShell->GetRootScrollFrame() != nullptr
+          && nsLayoutUtils::UsesAsyncScrolling(presShell->GetRootScrollFrame())) {
+        if (dom::Element* element = presShell->GetDocument()->GetDocumentElement()) {
+          if (!nsLayoutUtils::HasDisplayPort(element)) {
+            APZCCallbackHelper::InitializeRootDisplayport(presShell);
+          }
+        }
       }
 
       nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(&builder, id);
