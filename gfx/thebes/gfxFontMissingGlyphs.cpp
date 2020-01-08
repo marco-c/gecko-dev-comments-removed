@@ -157,7 +157,6 @@ public:
     void
     Remove()
     {
-        remove();
         mManager->RemoveUserData(&sWRUserDataKey);
     }
 
@@ -232,8 +231,11 @@ PurgeWRGlyphAtlas()
                 }
             }
         }
-        
-        user->Remove();
+    }
+    
+    
+    while (!gWRUsers.isEmpty()) {
+        gWRUsers.popFirst()->Remove();
     }
     
     for (size_t i = 0; i < 8; i++) {
