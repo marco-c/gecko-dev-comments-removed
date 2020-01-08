@@ -2118,7 +2118,6 @@ ProtoSetter(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static const JSFunctionSpec object_methods[] = {
-    
     JS_FN(js_toSource_str,             obj_toSource,                0,0),
     JS_INLINABLE_FN(js_toString_str,   obj_toString,                0,0, ObjectToString),
     JS_SELF_HOSTED_FN(js_toLocaleString_str, "Object_toLocaleString", 0, 0),
@@ -2131,18 +2130,14 @@ static const JSFunctionSpec object_methods[] = {
     JS_SELF_HOSTED_FN(js_lookupGetter_str, "ObjectLookupGetter",    1,0),
     JS_SELF_HOSTED_FN(js_lookupSetter_str, "ObjectLookupSetter",    1,0),
     JS_FS_END
-    
 };
 
 static const JSPropertySpec object_properties[] = {
-    
     JS_PSGS("__proto__", ProtoGetter, ProtoSetter, 0),
     JS_PS_END
-    
 };
 
 static const JSFunctionSpec object_static_methods[] = {
-    
     JS_FN("assign",                    obj_assign,                  2, 0),
     JS_SELF_HOSTED_FN("getPrototypeOf", "ObjectGetPrototypeOf",     1, 0),
     JS_FN("setPrototypeOf",            obj_setPrototypeOf,          2, 0),
@@ -2165,7 +2160,6 @@ static const JSFunctionSpec object_static_methods[] = {
     JS_FN("isSealed",                  obj_isSealed,                1, 0),
     JS_SELF_HOSTED_FN("fromEntries",   "ObjectFromEntries",         1, 0),
     JS_FS_END
-    
 };
 
 static JSObject*
