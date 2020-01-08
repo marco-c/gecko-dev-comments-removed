@@ -1509,6 +1509,11 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 
 pref("media.gmp-provider.enabled", true);
 
+
+#ifdef NIGHTLY_BUILD
+pref("network.cookie.cookieBehavior", 4 );
+#endif
+
 pref("browser.contentblocking.allowlist.storage.enabled", true);
 
 #ifdef NIGHTLY_BUILD
