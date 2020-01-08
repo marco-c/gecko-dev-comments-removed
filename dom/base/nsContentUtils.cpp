@@ -1755,7 +1755,6 @@ nsContentUtils::IsHTMLBlock(nsIContent* aContent)
                                        nsGkAtoms::li,
                                        nsGkAtoms::listing,
                                        nsGkAtoms::menu,
-                                       nsGkAtoms::multicol, 
                                        nsGkAtoms::nav,
                                        nsGkAtoms::ol,
                                        nsGkAtoms::p,
