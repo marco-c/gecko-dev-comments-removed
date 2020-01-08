@@ -3,7 +3,7 @@
 
 
 use api::{BorderRadius, DeviceIntPoint, DeviceIntRect, DeviceIntSize, DevicePixelScale};
-use api::{DevicePoint, DeviceRect, DeviceSize, LayoutPixel, LayoutPoint, LayoutRect, LayoutSize};
+use api::{DeviceRect, LayoutPixel, LayoutRect};
 use api::{WorldPixel, WorldRect};
 use euclid::{Point2D, Rect, Size2D, TypedPoint2D, TypedRect, TypedSize2D};
 use euclid::{TypedTransform2D, TypedTransform3D, TypedVector2D};
@@ -331,15 +331,6 @@ pub trait MaxRect {
     fn max_rect() -> Self;
 }
 
-impl MaxRect for LayoutRect {
-    fn max_rect() -> Self {
-        LayoutRect::new(
-            LayoutPoint::new(f32::MIN / 2.0, f32::MIN / 2.0),
-            LayoutSize::new(f32::MAX, f32::MAX),
-        )
-    }
-}
-
 impl MaxRect for DeviceIntRect {
     fn max_rect() -> Self {
         DeviceIntRect::new(
@@ -349,7 +340,7 @@ impl MaxRect for DeviceIntRect {
     }
 }
 
-impl MaxRect for DeviceRect {
+impl<U> MaxRect for TypedRect<f32, U> {
     fn max_rect() -> Self {
         
         
@@ -359,9 +350,9 @@ impl MaxRect for DeviceRect {
         
         const MAX_COORD: f32 = 1.0e9;
 
-        DeviceRect::new(
-            DevicePoint::new(-MAX_COORD, -MAX_COORD),
-            DeviceSize::new(2.0 * MAX_COORD, 2.0 * MAX_COORD),
+        TypedRect::new(
+            TypedPoint2D::new(-MAX_COORD, -MAX_COORD),
+            TypedSize2D::new(2.0 * MAX_COORD, 2.0 * MAX_COORD),
         )
     }
 }
