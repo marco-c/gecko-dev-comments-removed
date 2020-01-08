@@ -203,7 +203,17 @@ pref("int.ok", 0);
 pref("string.bad-u-surrogate", "foo\)" R"(ud83c\u1234");
 pref("int.ok", 0);
     )",
-    "test:2: prefs parse error: invalid low surrogate value after high surrogate\n"
+    "test:2: prefs parse error: invalid low surrogate after high surrogate\n"
+  );
+
+  
+  
+  
+  DEFAULT(R"(
+pref("string.bad-u-surrogate", "foo\)" R"(udc00");
+pref("int.ok", 0);
+    )",
+    "test:2: prefs parse error: expected high surrogate before low surrogate\n"
   );
 
   
