@@ -29,7 +29,7 @@ var EXPORTED_SYMBOLS = ["Sanitizer"];
 
 function Sanitizer() {}
 Sanitizer.prototype = {
-  clearItem: function(aItemName, startTime) {
+  clearItem: function(aItemName, startTime, clearUnfinishedDownloads) {
     
     
     if (typeof startTime != "undefined") {
@@ -43,6 +43,8 @@ Sanitizer.prototype = {
         default:
           return Promise.reject({message: `Invalid argument: ${aItemName} does not support startTime argument.`});
       }
+    } else if (aItemName === "downloadFiles" && typeof clearUnfinishedDownloads != "undefined") {
+      return this._clear(aItemName, { clearUnfinishedDownloads });
     } else {
       return this._clear(aItemName);
     }
@@ -316,7 +318,9 @@ Sanitizer.prototype = {
 
     
     downloadFiles: {
-      clear: Task.async(function* ({ startTime = 0, deleteFiles = true} = {}) {
+      clear: Task.async(function* ({ startTime = 0,
+                                     deleteFiles = true,
+                                     clearUnfinishedDownloads = false } = {}) {
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_DOWNLOADS", refObj);
 
@@ -328,12 +332,10 @@ Sanitizer.prototype = {
         
         
         for (let download of downloads) {
-          
-          
-          
-          
-          if (download.stopped && (!download.hasPartialData || download.error) &&
-              download.startTime.getTime() >= startTime) {
+          let downloadFinished = download.stopped &&
+                                 (!download.hasPartialData || download.error);
+          if ((downloadFinished || clearUnfinishedDownloads) &&
+               download.startTime.getTime() >= startTime) {
             
             
             yield list.remove(download);

@@ -1579,6 +1579,13 @@ var BrowserApp = {
           promises.push(Sanitizer.clearItem("cookies"));
           promises.push(Sanitizer.clearItem("sessions"));
           break;
+        case "downloadFiles":
+          
+          
+          
+          let clearUnfinishedDownloads = aShutdown === true;
+          promises.push(Sanitizer.clearItem(key, undefined, clearUnfinishedDownloads));
+          break;
         case "openTabs":
           if (aShutdown === true) {
             Services.obs.notifyObservers(null, "browser:purge-session-tabs");
