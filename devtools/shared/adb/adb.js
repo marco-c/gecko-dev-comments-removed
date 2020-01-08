@@ -51,7 +51,7 @@ const ADB = {
 
   
   
-  start() {
+  async start() {
     return new Promise(async (resolve, reject) => {
       const onSuccessfulStart = () => {
         Services.obs.notifyObservers(null, "adb-ready");
