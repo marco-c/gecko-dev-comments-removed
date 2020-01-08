@@ -8,6 +8,14 @@
 
 
 
+
+
+
+
+
+
+
+
 var effects = [];
 
 function makeEntry(label) {

@@ -23,7 +23,6 @@
 
 
 
-function DummyError() {}
 
 var returned = false;
 var iterable = {
@@ -37,13 +36,7 @@ var iterable = {
         advanced = true;
         return {
           done: false,
-          value: {
-            0: {
-              toString: function() {
-                throw new DummyError();
-              },
-            },
-          },
+          value: null,
         };
       },
       return: function() {
@@ -56,10 +49,10 @@ var iterable = {
   },
 };
 
-assert.throws(DummyError, function() {
+assert.throws(TypeError, function() {
   Object.fromEntries(iterable);
 });
 
-assert(returned, 'iterator should be closed when key toString throws');
+assert(returned, 'iterator should be closed when entry is null');
 
 reportCompare(0, 0);

@@ -18,9 +18,9 @@ function always(s) {
 
 
 const units = {
-  "second": always("s"),
+  "second": always("sek."),
   "minute": always("min"),
-  "hour": always("g."),
+  "hour": always("godz."),
   "day": {
     "many": "dni",
     "few": "dni",

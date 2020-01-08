@@ -7,6 +7,14 @@
 
 
 
+
+
+
+
+
+
+
+
 var result = Object.fromEntries([]);
 assert.sameValue(Object.keys(result).length, 0);
 

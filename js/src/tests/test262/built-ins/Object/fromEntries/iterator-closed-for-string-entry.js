@@ -7,7 +7,22 @@
 
 
 
-function DummyError() {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 var returned = false;
 var iterable = {
@@ -21,11 +36,7 @@ var iterable = {
         advanced = true;
         return {
           done: false,
-          value: {
-            get '0'() {
-              throw new DummyError();
-            },
-          },
+          value: 'ab',
         };
       },
       return: function() {
@@ -38,10 +49,10 @@ var iterable = {
   },
 };
 
-assert.throws(DummyError, function() {
+assert.throws(TypeError, function() {
   Object.fromEntries(iterable);
 });
 
-assert(returned, 'iterator should be closed when entry property access throws');
+assert(returned, 'iterator should be closed when entry is a string');
 
 reportCompare(0, 0);

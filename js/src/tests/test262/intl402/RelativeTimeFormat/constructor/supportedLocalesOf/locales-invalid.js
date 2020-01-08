@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Intl.RelativeTimeFormat.supportedLocalesOf, "function",
+                 "Should support Intl.RelativeTimeFormat.supportedLocalesOf.");
+
+for (const [locales, expectedError] of getInvalidLocaleArguments()) {
+    assert.throws(expectedError, () => Intl.RelativeTimeFormat.supportedLocalesOf(locales));
+}
+
+reportCompare(0, 0);
