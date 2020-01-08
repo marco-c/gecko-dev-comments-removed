@@ -467,6 +467,14 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF(
+  "layout.accessiblecaret.use_long_tap_injector",
+   layout_accessiblecaret_use_long_tap_injector,
+  bool, false
+)
+
+
 VARCACHE_PREF(
   "layout.css.parsing.parallel",
    layout_css_parsing_parallel,
