@@ -811,7 +811,11 @@ class RecursiveMakeBackend(CommonBackend):
 
         def add_category_rules(category, roots, graph):
             rule = root_deps_mk.create_rule(['recurse_%s' % category])
-            rule.add_dependencies(roots)
+            
+            
+            
+            rule.add_dependencies(chain((r for r in roots if 'rust' in r),
+                                        (r for r in roots if 'rust' not in r)))
             for target, deps in sorted(graph.items()):
                 if deps:
                     rule = root_deps_mk.create_rule([target])
