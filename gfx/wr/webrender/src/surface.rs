@@ -3,11 +3,12 @@
 
 
 use api::{LayoutPixel, PicturePixel, RasterSpace};
-use clip::{ClipChainId, ClipStore, ClipUid};
+use clip::{ClipChainId, ClipStore};
 use clip_scroll_tree::{ClipScrollTree, SpatialNodeIndex};
 use euclid::TypedTransform3D;
+use intern::ItemUid;
 use internal_types::FastHashSet;
-use prim_store::{CoordinateSpaceMapping, PrimitiveUid, PrimitiveInstance, PrimitiveInstanceKind};
+use prim_store::{CoordinateSpaceMapping, PrimitiveInstance, PrimitiveInstanceKind};
 use std::hash;
 use util::ScaleOffset;
 
@@ -165,10 +166,10 @@ impl<F, T> From<CoordinateSpaceMapping<F, T>> for TransformKey {
 pub struct SurfaceCacheKey {
     
     
-    pub primitive_ids: Vec<PrimitiveUid>,
+    pub primitive_ids: Vec<ItemUid>,
     
     
-    pub clip_ids: Vec<ClipUid>,
+    pub clip_ids: Vec<ItemUid>,
     
     
     pub transforms: Vec<TransformKey>,
@@ -235,25 +236,13 @@ impl SurfaceDescriptor {
             
             
             
-            match prim_instance.kind {
-                PrimitiveInstanceKind::Picture { .. } => {
-                    return None;
-                }
-                PrimitiveInstanceKind::Image { .. } |
-                PrimitiveInstanceKind::YuvImage { .. } |
-                PrimitiveInstanceKind::LineDecoration { .. } |
-                PrimitiveInstanceKind::LinearGradient { .. } |
-                PrimitiveInstanceKind::RadialGradient { .. } |
-                PrimitiveInstanceKind::TextRun { .. } |
-                PrimitiveInstanceKind::NormalBorder { .. } |
-                PrimitiveInstanceKind::Rectangle { .. } |
-                PrimitiveInstanceKind::ImageBorder { .. } |
-                PrimitiveInstanceKind::Clear => {}
+            if let PrimitiveInstanceKind::Picture { .. } = prim_instance.kind {
+                return None;
             }
 
             
             
-            primitive_ids.push(prim_instance.prim_data_handle.uid());
+            primitive_ids.push(prim_instance.uid());
         }
 
         

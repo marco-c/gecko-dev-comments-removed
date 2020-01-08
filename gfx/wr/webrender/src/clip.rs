@@ -104,7 +104,6 @@ pub type ClipDataStore = intern::DataStore<ClipItemKey, ClipNode, ClipDataMarker
 pub type ClipDataHandle = intern::Handle<ClipDataMarker>;
 pub type ClipDataUpdateList = intern::UpdateList<ClipItemKey>;
 pub type ClipDataInterner = intern::Interner<ClipItemKey, ClipItemSceneData, ClipDataMarker>;
-pub type ClipUid = intern::ItemUid<ClipDataMarker>;
 
 
 #[derive(Debug)]
