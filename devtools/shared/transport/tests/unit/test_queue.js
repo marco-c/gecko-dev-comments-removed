@@ -25,8 +25,15 @@ function run_test() {
 
 
 var test_transport = async function(transportFactory) {
-  const clientDeferred = defer();
-  const serverDeferred = defer();
+  let clientResolve;
+  const clientDeferred = new Promise((resolve) => {
+    clientResolve = resolve;
+  });
+
+  let serverResolve;
+  const serverDeferred = new Promise((resolve) => {
+    serverResolve = resolve;
+  });
 
   
   cleanup_files();
@@ -66,7 +73,7 @@ var test_transport = async function(transportFactory) {
     }).then(() => {
       
       transport.hooks.onClosed = () => {
-        clientDeferred.resolve();
+        clientResolve();
       };
       transport.close();
     });
@@ -114,7 +121,7 @@ var test_transport = async function(transportFactory) {
 
       DebuggerServer.on("connectionchange", type => {
         if (type === "closed") {
-          serverDeferred.resolve();
+          serverResolve();
         }
       });
 
@@ -134,7 +141,7 @@ var test_transport = async function(transportFactory) {
 
   transport.ready();
 
-  return promise.all([clientDeferred.promise, serverDeferred.promise]);
+  return Promise.all([clientDeferred, serverDeferred]);
 };
 
 
@@ -149,19 +156,19 @@ function verify() {
   Assert.equal(outputFile.fileSize, reallyLong.length);
 
   
-  const compareDeferred = defer();
-  NetUtil.asyncFetch({
-    uri: NetUtil.newURI(getTestTempFile("bulk-output")),
-    loadUsingSystemPrincipal: true
-  }, input => {
-    const outputData = NetUtil.readInputStreamToString(input, reallyLong.length);
+  return new Promise((resolve) => {
+    NetUtil.asyncFetch({
+      uri: NetUtil.newURI(getTestTempFile("bulk-output")),
+      loadUsingSystemPrincipal: true
+    }, input => {
+      const outputData = NetUtil.readInputStreamToString(input, reallyLong.length);
       
-    Assert.ok(outputData === reallyLong);
-    input.close();
-    compareDeferred.resolve();
-  });
-
-  return compareDeferred.promise.then(cleanup_files);
+      Assert.ok(outputData === reallyLong);
+      input.close();
+      resolve();
+    });
+  })
+  .then(cleanup_files);
 }
 
 function cleanup_files() {

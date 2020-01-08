@@ -60,23 +60,23 @@ var test_helper = async function(payload) {
     host: "127.0.0.1",
     port: listener.port
   });
-  const closedDeferred = defer();
-  transport.hooks = {
-    onPacket: function(packet) {
-      this.onPacket = function() {
-        do_throw(new Error("This connection should be dropped."));
-        transport.close();
-      };
+  return new Promise((resolve) => {
+    transport.hooks = {
+      onPacket: function(packet) {
+        this.onPacket = function() {
+          do_throw(new Error("This connection should be dropped."));
+          transport.close();
+        };
 
-      
-      transport._outgoing.push(new RawPacket(transport, payload));
-      transport._flushOutgoing();
-    },
-    onClosed: function(status) {
-      Assert.ok(true);
-      closedDeferred.resolve();
-    },
-  };
-  transport.ready();
-  return closedDeferred.promise;
+        
+        transport._outgoing.push(new RawPacket(transport, payload));
+        transport._flushOutgoing();
+      },
+      onClosed: function(status) {
+        Assert.ok(true);
+        resolve();
+      },
+    };
+    transport.ready();
+  });
 };
