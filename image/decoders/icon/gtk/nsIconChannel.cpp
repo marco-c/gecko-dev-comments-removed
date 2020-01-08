@@ -10,6 +10,7 @@
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/NullPrincipal.h"
 #include <algorithm>
 
 #include <gio/gio.h>
@@ -25,7 +26,6 @@
 #include "nsComponentManagerUtils.h"
 #include "nsIStringStream.h"
 #include "nsServiceManagerUtils.h"
-#include "NullPrincipal.h"
 #include "nsIURL.h"
 #include "prlink.h"
 #include "gfxPlatform.h"
@@ -106,7 +106,8 @@ moz_gdk_pixbuf_to_channel(GdkPixbuf* aPixbuf, nsIURI* aURI,
   
   
   
-  nsCOMPtr<nsIPrincipal> nullPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
+  nsCOMPtr<nsIPrincipal> nullPrincipal =
+    mozilla::NullPrincipal::CreateWithoutOriginAttributes();
   return NS_NewInputStreamChannel(aChannel,
                                   aURI,
                                   stream.forget(),

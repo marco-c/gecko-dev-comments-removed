@@ -11,10 +11,10 @@
 #include "nsContentUtils.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsContentSecurityManager.h"
-#include "NullPrincipal.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIInputStreamChannel.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/NullPrincipal.h"
 
 NS_IMPL_ADDREF(nsViewSourceChannel)
 NS_IMPL_RELEASE(nsViewSourceChannel)
@@ -67,7 +67,8 @@ nsViewSourceChannel::Init(nsIURI* uri)
     
     
     
-    nsCOMPtr<nsIPrincipal> nullPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
+    nsCOMPtr<nsIPrincipal> nullPrincipal =
+      mozilla::NullPrincipal::CreateWithoutOriginAttributes();
 
     rv = pService->NewChannel2(path,
                                nullptr, 

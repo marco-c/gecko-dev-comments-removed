@@ -110,7 +110,7 @@
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "ExpandedPrincipal.h"
-#include "NullPrincipal.h"
+#include "mozilla/NullPrincipal.h"
 
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
@@ -3305,39 +3305,6 @@ nsDocument::IsWebAnimationsEnabled(CallerType aCallerType)
 
   return aCallerType == dom::CallerType::System ||
          nsContentUtils::AnimationsAPICoreEnabled();
-}
-
-bool
-nsDocument::IsWebAnimationsGetAnimationsEnabled(JSContext* aCx,
-                                                JSObject* 
-)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_getAnimations_enabled();
-}
-
-bool
-nsDocument::AreWebAnimationsImplicitKeyframesEnabled(JSContext* aCx,
-                                                     JSObject* 
-)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_implicit_keyframes_enabled();
-}
-
-bool
-nsDocument::AreWebAnimationsTimelinesEnabled(JSContext* aCx,
-                                             JSObject* 
-)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_timelines_enabled();
 }
 
 DocumentTimeline*

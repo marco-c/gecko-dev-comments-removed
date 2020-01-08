@@ -8,8 +8,8 @@
 
 
 
-#ifndef __NullPrincipalURI_h__
-#define __NullPrincipalURI_h__
+#ifndef mozilla_NullPrincipalURI_h
+#define mozilla_NullPrincipalURI_h
 
 #include "nsIURI.h"
 #include "nsISizeOf.h"
@@ -27,8 +27,8 @@
     {0xb9, 0x1b, 0x6b, 0x54, 0x10, 0x22, 0x36, 0xe6} }
 
 namespace mozilla {
+
 class Encoding;
-}
 
 class NullPrincipalURI final : public nsIURI
                              , public nsISizeOf
@@ -40,8 +40,8 @@ public:
   NS_DECL_NSIIPCSERIALIZABLEURI
 
   
-  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
-  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
+  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   
   static already_AddRefed<NullPrincipalURI> Create();
@@ -69,7 +69,7 @@ private:
   nsresult SetRef(const nsACString &input);
   nsresult SetFilePath(const nsACString &input);
   nsresult SetQuery(const nsACString &input);
-  nsresult SetQueryWithEncoding(const nsACString &input, const mozilla::Encoding* encoding);
+  nsresult SetQueryWithEncoding(const nsACString &input, const Encoding* encoding);
   bool Deserialize(const mozilla::ipc::URIParams&);
 
 public:
@@ -109,5 +109,7 @@ public:
 
   friend class BaseURIMutator<NullPrincipalURI>;
 };
+
+} 
 
 #endif 
