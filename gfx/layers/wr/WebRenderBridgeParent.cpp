@@ -320,7 +320,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
 {
   MOZ_ASSERT(mAsyncImageManager);
   MOZ_ASSERT(mAnimStorage);
-  mAsyncImageManager->AddPipeline(mPipelineId);
+  mAsyncImageManager->AddPipeline(mPipelineId, this);
   if (IsRootWebRenderBridgeParent()) {
     MOZ_ASSERT(!mCompositorScheduler);
     mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
@@ -445,12 +445,12 @@ WebRenderBridgeParent::UpdateResources(const nsTArray<OpUpdateResource>& aResour
         if (!reader.Read(op.bytes(), bytes)) {
           return false;
         }
-        aUpdates.UpdateBlobImage(op.key(), op.descriptor(), bytes, wr::ToDeviceIntRect(op.dirtyRect()));
+        aUpdates.UpdateBlobImage(op.key(), op.descriptor(), bytes, wr::ToDeviceUintRect(op.dirtyRect()));
         break;
       }
       case OpUpdateResource::TOpSetImageVisibleArea: {
         const auto& op = cmd.get_OpSetImageVisibleArea();
-        wr::DeviceIntRect area;
+        wr::DeviceUintRect area;
         area.origin.x = op.area().x;
         area.origin.y = op.area().y;
         area.size.width = op.area().width;
@@ -699,7 +699,7 @@ WebRenderBridgeParent::UpdateExternalImage(wr::ExternalImageId aExtId,
                                    dSurf->GetFormat());
     aResources.UpdateExternalImageWithDirtyRect(aKey, descriptor, aExtId,
                                                 wr::WrExternalImageBufferType::ExternalBuffer,
-                                                wr::ToDeviceIntRect(aDirtyRect),
+                                                wr::ToDeviceUintRect(aDirtyRect),
                                                 0);
     return true;
   }
