@@ -188,6 +188,8 @@ class TypeDescr : public NativeObject {
   
   
   
+  
+  
   MOZ_MUST_USE bool hasTraceList() const {
     return !getFixedSlot(JS_DESCR_SLOT_TRACE_LIST).isUndefined();
   }
@@ -284,6 +286,7 @@ class ScalarTypeDescr : public SimpleTypeDescr {
 enum class ReferenceType {
   TYPE_ANY = JS_REFERENCETYPEREPR_ANY,
   TYPE_OBJECT = JS_REFERENCETYPEREPR_OBJECT,
+  TYPE_WASM_ANYREF = JS_REFERENCETYPEREPR_WASM_ANYREF,
   TYPE_STRING = JS_REFERENCETYPEREPR_STRING
 };
 
@@ -313,9 +316,12 @@ class ReferenceTypeDescr : public SimpleTypeDescr {
   static MOZ_MUST_USE bool call(JSContext* cx, unsigned argc, Value* vp);
 };
 
-#define JS_FOR_EACH_REFERENCE_TYPE_REPR(MACRO_)           \
-  MACRO_(ReferenceType::TYPE_ANY, GCPtrValue, Any)        \
-  MACRO_(ReferenceType::TYPE_OBJECT, GCPtrObject, Object) \
+
+
+#define JS_FOR_EACH_REFERENCE_TYPE_REPR(MACRO_)                    \
+  MACRO_(ReferenceType::TYPE_ANY, GCPtrValue, Any)                 \
+  MACRO_(ReferenceType::TYPE_WASM_ANYREF, GCPtrObject, WasmAnyRef) \
+  MACRO_(ReferenceType::TYPE_OBJECT, GCPtrObject, Object)          \
   MACRO_(ReferenceType::TYPE_STRING, GCPtrString, string)
 
 
@@ -509,6 +515,7 @@ class TypedObjectModuleObject : public NativeObject {
     Float32Desc,
     Float64Desc,
     ObjectDesc,
+    WasmAnyRefDesc,
     SlotCount
   };
 
@@ -867,6 +874,39 @@ MOZ_MUST_USE bool ClampToUint8(JSContext* cx, unsigned argc, Value* vp);
 
 
 MOZ_MUST_USE bool GetTypedObjectModule(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+MOZ_MUST_USE bool IsBoxedWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool IsBoxableWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+MOZ_MUST_USE bool BoxWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+MOZ_MUST_USE bool UnboxBoxedWasmAnyRef(JSContext* cx, unsigned argc, Value* vp);
 
 
 

@@ -1377,14 +1377,7 @@ static bool DecodeStructType(Decoder& d, ModuleEnvironment* env,
         offset = layout.addReference(ReferenceType::TYPE_OBJECT);
         break;
       case ValType::AnyRef:
-        
-        
-        
-        
-        
-        
-        ASSERT_ANYREF_IS_JSOBJECT;
-        offset = layout.addReference(ReferenceType::TYPE_OBJECT);
+        offset = layout.addReference(ReferenceType::TYPE_WASM_ANYREF);
         break;
       default:
         MOZ_CRASH("Unknown type");
