@@ -638,6 +638,17 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
 
 @media (-moz-gtk-csd-available) {
+  
+
+
+
+  @supports -moz-bool-pref("mozilla.widget.use-argb-visuals") {
+    :root[tabsintitlebar]:not(:-moz-lwtheme) {
+      background-color: transparent;
+      -moz-appearance: none;
+    }
+  }
+
   :root[tabsintitlebar] > #titlebar:-moz-lwtheme {
     visibility: hidden;
   }
