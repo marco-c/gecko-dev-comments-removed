@@ -87,6 +87,7 @@ public:
   void SetUpgradeInsecureRequests();
   void SetBrowserUpgradeInsecureRequests();
   void SetBrowserWouldUpgradeInsecureRequests();
+  void SetIsFromProcessingFrameAttributes();
 
 private:
   
@@ -219,6 +220,11 @@ private:
   bool                             mIsTrackerBlocked;
   bool                             mDocumentHasUserInteracted;
   bool                             mDocumentHasLoaded;
+
+  
+  
+  
+  bool                             mIsFromProcessingFrameAttributes;
 };
 
 } 
