@@ -38,7 +38,7 @@ public:
   bool WaitingForLoad() const { return mMakeEditable; }
 
 protected:
-  nsresult EnsureEditingSession();
+  void EnsureEditingSession();
 
   
   nsIDocShell* mDocShell;
