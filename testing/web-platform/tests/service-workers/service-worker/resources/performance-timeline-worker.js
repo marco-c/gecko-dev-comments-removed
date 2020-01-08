@@ -44,13 +44,19 @@ promise_test(function(test) {
               assert_greater_than(entry.startTime, 0);
               assert_greater_than(entry.responseEnd, entry.startTime);
           }
-          return new Promise(function(resolve) {
+          return Promise.race([
+            new Promise(function(resolve) {
               performance.onresourcetimingbufferfull = _ => {
                 resolve('bufferfull');
               }
               performance.setResourceTimingBufferSize(expectedResources.length);
-              fetch('dummy.txt');
-          });
+            }),
+
+            
+            
+            
+            fetch('dummy.txt').then(resp => resp.text())
+          ]);
         })
       .then(function(result) {
           assert_equals(result, 'bufferfull');
