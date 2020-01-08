@@ -180,30 +180,6 @@ impl Display {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    pub fn should_ignore_parsed_value(_old_display: Self, _new_display: Self) -> bool {
-        #[cfg(feature = "gecko")]
-        {
-            match (_old_display, _new_display) {
-                (Display::WebkitBox, Display::MozBox) |
-                (Display::WebkitInlineBox, Display::MozInlineBox) => {
-                    return true;
-                },
-                _ => {},
-            }
-        }
-
-        return false;
-    }
-
-    
-    
     #[cfg(feature = "gecko")]
     pub fn is_ruby_type(&self) -> bool {
         matches!(

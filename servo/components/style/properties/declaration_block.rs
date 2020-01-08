@@ -462,22 +462,6 @@ impl PropertyDeclarationBlock {
                     return false;
                 }
 
-                
-                
-                
-                
-                
-                
-                if let PropertyDeclaration::Display(old_display) = *slot {
-                    use crate::properties::longhands::display::computed_value::T as display;
-
-                    if let PropertyDeclaration::Display(new_display) = declaration {
-                        if display::should_ignore_parsed_value(old_display, new_display) {
-                            return false;
-                        }
-                    }
-                }
-
                 index_to_remove = Some(i);
                 break;
             }
