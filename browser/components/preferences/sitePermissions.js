@@ -346,17 +346,6 @@ var gSitePermissionsManager = {
 
   onPermissionSelect() {
     this._setRemoveButtonState();
-
-    
-    
-    this._list.children.forEach((item) => {
-      let menulist = item.getElementsByTagName("menulist")[0];
-      if (!item.selected) {
-        menulist.setAttribute("tabindex", -1);
-      } else {
-        menulist.removeAttribute("tabindex");
-      }
-    });
   },
 
   onPermissionChange(perm, capability) {
