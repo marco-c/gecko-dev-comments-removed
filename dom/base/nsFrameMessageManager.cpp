@@ -664,6 +664,17 @@ public:
 };
 
 
+
+static bool
+DirectMessageToMiddleman(const nsAString& aMessage)
+{
+  
+  
+  
+  return StringBeginsWith(aMessage, NS_LITERAL_STRING("debug:"))
+      || aMessage.EqualsLiteral("SessionStore:flush");
+}
+
 void
 nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
                                       nsFrameLoader* aTargetFrameLoader,
@@ -676,6 +687,19 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
                                       nsTArray<StructuredCloneData>* aRetVal,
                                       ErrorResult& aError)
 {
+  
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    if (DirectMessageToMiddleman(aMessage)) {
+      return;
+    }
+  } else if (recordreplay::IsMiddleman()) {
+    if (!DirectMessageToMiddleman(aMessage)) {
+      return;
+    }
+  }
+
   MOZ_ASSERT(aTarget);
 
   nsAutoTObserverArray<nsMessageListenerInfo, 1>* listeners =
