@@ -10,8 +10,18 @@
 function log({ dispatch, getState }) {
   return next => action => {
     try {
-      console.log("[DISPATCH]", JSON.stringify(action, null, 2));
+      
+      console.log("[DISPATCH] action type:", action.type);
+      
+
+
+
+
+
+
     } catch (e) {
+      
+      console.warn(e);
       console.log("[DISPATCH]", action);
     }
     next(action);
