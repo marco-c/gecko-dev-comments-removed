@@ -2761,7 +2761,10 @@ window._gBrowser = {
     
     let tabWidth = windowUtils.getBoundsWithoutFlushing(aTab).width;
 
-    if (!this._beginRemoveTab(aTab, null, null, true, skipPermitUnload)) {
+    if (!this._beginRemoveTab(aTab, {
+          closeWindowFastpath: true,
+          skipPermitUnload,
+        })) {
       TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
       TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_NO_ANIM_MS", aTab);
       return;
@@ -2809,13 +2812,19 @@ window._gBrowser = {
            browser.frameLoader.tabParent.hasBeforeUnload;
   },
 
-  _beginRemoveTab(aTab, aAdoptedByTab, aCloseWindowWithLastTab, aCloseWindowFastpath, aSkipPermitUnload) {
+  _beginRemoveTab(aTab, {
+    adoptedByTab,
+    closeWindowWithLastTab,
+    closeWindowFastpath,
+    skipPermitUnload,
+  } = {}) {
     if (aTab.closing ||
-      this._windowIsClosing)
+        this._windowIsClosing) {
       return false;
+    }
 
     var browser = this.getBrowserForTab(aTab);
-    if (!aSkipPermitUnload && !aAdoptedByTab &&
+    if (!skipPermitUnload && !adoptedByTab &&
         aTab.linkedPanel && !aTab._pendingPermitUnload &&
         (!browser.isRemoteBrowser || this._hasBeforeUnload(aTab))) {
       TelemetryStopwatch.start("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", aTab);
@@ -2849,7 +2858,7 @@ window._gBrowser = {
     var closeWindow = false;
     var newTab = false;
     if (this.tabs.length - this._removingTabs.length == 1) {
-      closeWindow = aCloseWindowWithLastTab != null ? aCloseWindowWithLastTab :
+      closeWindow = closeWindowWithLastTab != null ? closeWindowWithLastTab :
         !window.toolbar.visible ||
         Services.prefs.getBoolPref("browser.tabs.closeWindowWithLastTab");
 
@@ -2863,7 +2872,7 @@ window._gBrowser = {
       
       
       if (closeWindow &&
-          aCloseWindowFastpath &&
+          closeWindowFastpath &&
           this._removingTabs.length == 0) {
         
         
@@ -2876,7 +2885,7 @@ window._gBrowser = {
     aTab._endRemoveArgs = [closeWindow, newTab];
 
     
-    if (closeWindow && aAdoptedByTab) {
+    if (closeWindow && adoptedByTab) {
       
       if (aTab.linkedPanel) {
         const filter = this._tabFilters.get(aTab);
@@ -2899,7 +2908,7 @@ window._gBrowser = {
     this.tabAnimationsInProgress++;
 
     
-    if (!aAdoptedByTab && aTab.hasAttribute("soundplaying")) {
+    if (!adoptedByTab && aTab.hasAttribute("soundplaying")) {
       
       
       aTab.linkedBrowser.mute(true);
@@ -2924,7 +2933,7 @@ window._gBrowser = {
     
     
     
-    var evt = new CustomEvent("TabClose", { bubbles: true, detail: { adoptedBy: aAdoptedByTab } });
+    let evt = new CustomEvent("TabClose", { bubbles: true, detail: { adoptedBy: adoptedByTab } });
     aTab.dispatchEvent(evt);
 
     if (this.tabs.length == 2) {
@@ -2935,7 +2944,7 @@ window._gBrowser = {
     }
 
     if (aTab.linkedPanel) {
-      if (!aAdoptedByTab && !gMultiProcessBrowser) {
+      if (!adoptedByTab && !gMultiProcessBrowser) {
         
         browser.contentWindow.windowUtils.disableDialogs();
       }
@@ -2950,7 +2959,7 @@ window._gBrowser = {
       listener.destroy();
     }
 
-    if (browser.registeredOpenURI && !aAdoptedByTab) {
+    if (browser.registeredOpenURI && !adoptedByTab) {
       let userContextId = browser.getAttribute("usercontextid") || 0;
       this.UrlbarProviderOpenTabs.unregisterOpenTab(browser.registeredOpenURI.spec,
                                                     userContextId);
@@ -3136,19 +3145,25 @@ window._gBrowser = {
     this.selectedTab = this._findTabToBlurTo(aTab);
   },
 
+  
+
+
+
   swapBrowsersAndCloseOther(aOurTab, aOtherTab) {
     
     
     if (PrivateBrowsingUtils.isWindowPrivate(window) !=
-      PrivateBrowsingUtils.isWindowPrivate(aOtherTab.ownerGlobal))
-      return;
+        PrivateBrowsingUtils.isWindowPrivate(aOtherTab.ownerGlobal)) {
+      return false;
+    }
 
     let ourBrowser = this.getBrowserForTab(aOurTab);
     let otherBrowser = aOtherTab.linkedBrowser;
 
     
-    if (ourBrowser.isRemoteBrowser != otherBrowser.isRemoteBrowser)
-      return;
+    if (ourBrowser.isRemoteBrowser != otherBrowser.isRemoteBrowser) {
+      return false;
+    }
 
     
     if (otherBrowser.hasAttribute("usercontextid")) {
@@ -3173,8 +3188,12 @@ window._gBrowser = {
     
     
     
-    if (!remoteBrowser._beginRemoveTab(aOtherTab, aOurTab, true))
-      return;
+    if (!remoteBrowser._beginRemoveTab(aOtherTab, {
+          adoptedByTab: aOurTab,
+          closeWindowWithLastTab: true,
+        })) {
+      return false;
+    }
 
     
     
@@ -3279,6 +3298,8 @@ window._gBrowser = {
     if (modifiedAttrs.length) {
       this._tabAttrModified(aOurTab, modifiedAttrs);
     }
+
+    return true;
   },
 
   swapBrowsers(aOurTab, aOtherTab, aFlags) {
@@ -3675,6 +3696,9 @@ window._gBrowser = {
   
 
 
+
+
+
   adoptTab(aTab, aIndex, aSelectTab) {
     
     
@@ -3702,27 +3726,21 @@ window._gBrowser = {
     let newTab = this.addWebTab("about:blank", params);
     let newBrowser = this.getBrowserForTab(newTab);
 
+    aTab.parentNode._finishAnimateTabMove();
+
     
     newBrowser.stop();
     
     newBrowser.docShell;
 
-    
-    
-    
-    
-    
-    if (aSelectTab) {
-      this.selectedTab = newTab;
+    if (!this.swapBrowsersAndCloseOther(newTab, aTab)) {
+      
+      this.removeTab(newTab);
+      return null;
     }
 
-    aTab.parentNode._finishAnimateTabMove();
-    this.swapBrowsersAndCloseOther(newTab, aTab);
-
     if (aSelectTab) {
-      
-      
-      this.updateCurrentBrowser(true);
+      this.selectedTab = newTab;
     }
 
     return newTab;
