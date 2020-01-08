@@ -8,6 +8,8 @@
 #define mozilla_antitrackingservice_h
 
 #include "nsString.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
 
 class nsIHttpChannel;
 class nsIPrincipal;
@@ -19,6 +21,13 @@ namespace mozilla {
 class AntiTrackingCommon final
 {
 public:
+  
+  
+  
+  
+  typedef std::function<void(const bool&)>
+    FirstPartyStorageAccessGrantedForOriginResolver;
+
   
   
   
@@ -59,7 +68,8 @@ public:
   
   
   
-  static void
+  typedef MozPromise<bool, bool, false> StorageAccessGrantPromise;
+  static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise>
   AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigin,
                                        nsPIDOMWindowInner* aParentWindow);
 
@@ -67,7 +77,8 @@ public:
   static void
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(nsIPrincipal* aPrincipal,
                                                              const nsCString& aParentOrigin,
-                                                             const nsCString& aGrantedOrigin);
+                                                             const nsCString& aGrantedOrigin,
+                                                             FirstPartyStorageAccessGrantedForOriginResolver&& aResolver);
 
 };
 

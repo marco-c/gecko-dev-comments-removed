@@ -7148,7 +7148,9 @@ nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI)
     return;
   }
 
-  AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(origin, inner);
+  
+  Unused << AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(origin,
+                                                                     inner);
 }
 
 
