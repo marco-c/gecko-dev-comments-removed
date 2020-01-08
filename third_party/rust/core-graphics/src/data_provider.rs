@@ -72,6 +72,21 @@ impl CGDataProvider {
         let result = CGDataProviderCreateWithData(ptr::null_mut(), ptr, len, None);
         CGDataProvider::from_ptr(result)
     }
+
+    
+    
+    
+    
+    pub unsafe fn from_custom_data(custom_data: Box<Box<CustomData>>) -> Self {
+        let (ptr, len) = (custom_data.ptr() as *const c_void, custom_data.len());
+        let userdata = mem::transmute::<Box<Box<CustomData>>, &mut c_void>(custom_data);
+        let data_provider = CGDataProviderCreateWithData(userdata, ptr, len, Some(release));
+        return CGDataProvider::from_ptr(data_provider);
+
+        unsafe extern "C" fn release(info: *mut c_void, _: *const c_void, _: size_t) {
+            drop(mem::transmute::<*mut c_void, Box<Box<CustomData>>>(info))
+        }
+    }
 }
 
 impl CGDataProviderRef {
@@ -79,6 +94,16 @@ impl CGDataProviderRef {
     pub fn copy_data(&self) -> CFData {
         unsafe { CFData::wrap_under_create_rule(CGDataProviderCopyData(self.as_ptr())) }
     }
+}
+
+
+pub trait CustomData {
+    
+    
+    unsafe fn ptr(&self) -> *const u8;
+    
+    
+    unsafe fn len(&self) -> usize;
 }
 
 #[link(name = "CoreGraphics", kind = "framework")]
