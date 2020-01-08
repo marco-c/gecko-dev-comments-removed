@@ -386,7 +386,7 @@ nsAccessiblePivot::MoveNextByText(TextBoundaryType aBoundary,
     Accessible* childAtOffset = nullptr;
     for (int32_t i = tempStart; i < tempEnd; i++) {
       childAtOffset = text->GetChildAtOffset(i);
-      if (childAtOffset && !childAtOffset->IsText()) {
+      if (childAtOffset && childAtOffset->IsHyperText()) {
         tempEnd = i;
         break;
       }
@@ -394,7 +394,7 @@ nsAccessiblePivot::MoveNextByText(TextBoundaryType aBoundary,
     
     
     
-    if (childAtOffset && !childAtOffset->IsText() &&
+    if (childAtOffset && childAtOffset->IsHyperText() &&
         tempStart == static_cast<int32_t>(childAtOffset->StartOffset())) {
       tempPosition = childAtOffset;
       tempStart = tempEnd = -1;
