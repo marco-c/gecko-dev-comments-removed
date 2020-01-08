@@ -89,6 +89,12 @@ public:
   void MoveRegisterToRax( int aRegister);
 
   
+  void ExchangeByteRegisterWithAddressAtRbx( int aRegister);
+
+  
+  void ExchangeByteRbxWithAddressAtRax();
+
+  
   
   static  int NormalizeRegister( int aRegister);
 
