@@ -1037,12 +1037,12 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     
     
     mShouldFallbackIfError = false;
-    
-    
-    mGraphImpl->SignalMainThreadCleanup();
     RemoveMixerCallback();
     
     mAudioThreadRunning = false;
+    
+    
+    mGraphImpl->SignalMainThreadCleanup();
     return aFrames - 1;
   }
 
@@ -1062,8 +1062,8 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     }
     LOG(LogLevel::Debug, ("%p: Switching to system driver.", GraphImpl()));
     RemoveMixerCallback();
-    SwitchToNextDriver();
     mAudioThreadRunning = false;
+    SwitchToNextDriver();
     
     
     return aFrames - 1;
