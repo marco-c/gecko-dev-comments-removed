@@ -5,6 +5,7 @@
 "use strict";
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { ClientWrapper } = require("./modules/client-wrapper");
 
 const runtimeInfo = {
   
@@ -31,7 +32,7 @@ const runtimeTransportDetails = {
 
 const runtimeDetails = {
   
-  client: PropTypes.object.isRequired,
+  client: PropTypes.instanceOf(ClientWrapper).isRequired,
 
   
   connectionPromptEnabled: PropTypes.bool.isRequired,
