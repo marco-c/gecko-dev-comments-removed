@@ -191,6 +191,11 @@ class MediaStreamTrackSourceGetter : public nsISupports {
 
 
 
+
+
+
+
+
 class DOMMediaStream
     : public DOMEventTargetHelper,
       public dom::PrincipalChangeObserver<dom::MediaStreamTrack>,
