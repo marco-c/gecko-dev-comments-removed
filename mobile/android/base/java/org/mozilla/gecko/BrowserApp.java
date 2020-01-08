@@ -183,6 +183,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import static org.mozilla.gecko.mma.MmaDelegate.NEW_TAB;
+import static org.mozilla.gecko.util.JavaUtil.getBundleSizeInBytes;
 
 public class BrowserApp extends GeckoApp
                         implements ActionModePresenter,
@@ -212,6 +213,8 @@ public class BrowserApp extends GeckoApp
     private static final String STATE_ABOUT_HOME_TOP_PADDING = "abouthome_top_padding";
 
     private static final String BROWSER_SEARCH_TAG = "browser_search";
+
+    private static final int MAX_BUNDLE_SIZE = 300000; 
 
     
     public static final int ACTIVITY_REQUEST_PREFERENCES = 1001;
@@ -2267,6 +2270,15 @@ public class BrowserApp extends GeckoApp
         super.onSaveInstanceState(outState);
         mDynamicToolbar.onSaveInstanceState(outState);
         outState.putInt(STATE_ABOUT_HOME_TOP_PADDING, mHomeScreenContainer.getPaddingTop());
+
+        
+        
+        
+        
+        
+        if (getBundleSizeInBytes(outState) > MAX_BUNDLE_SIZE) {
+            outState.remove("android:viewHierarchyState");
+        }
     }
 
     
