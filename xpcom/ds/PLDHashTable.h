@@ -485,7 +485,6 @@ public:
     PLDHashTable* mTable;             
 
   private:
-    char* mStart;                     
     char* mLimit;                     
     char* mCurrent;                   
     uint32_t mNexts;                  
