@@ -186,6 +186,18 @@ fn buffer_len(cap: usize) -> usize {
     (cap + bits_per_storage() - 1) / bits_per_storage()
 }
 
+
+
+
+pub enum InternalStorage {
+    
+    
+    Inline(usize),
+
+    
+    Spilled(Box<[usize]>),
+}
+
 impl SmallBitVec {
     
     #[inline]
@@ -468,6 +480,8 @@ impl SmallBitVec {
     }
 
     
+    
+    
     #[inline]
     pub fn all_false(&self) -> bool {
         let mut len = self.len();
@@ -498,6 +512,8 @@ impl SmallBitVec {
     }
 
     
+    
+    
     #[inline]
     pub fn all_true(&self) -> bool {
         let mut len = self.len();
@@ -524,6 +540,42 @@ impl SmallBitVec {
                 }
             }
             true
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn truncate(&mut self, len: usize) {
+        unsafe {
+            if len < self.len() {
+                self.set_len(len);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn resize(&mut self, len: usize, value: bool) {
+        let old_len = self.len();
+
+        if len > old_len {
+            unsafe {
+                self.reallocate(len);
+                self.set_len(len);
+                for i in old_len..len {
+                    self.set(i, value);
+                }
+            }
+        } else {
+            self.truncate(len);
         }
     }
 
@@ -572,6 +624,66 @@ impl SmallBitVec {
             Some((self.data & !HEAP_FLAG) as *const Storage)
         } else {
             None
+        }
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn into_storage(self) -> InternalStorage {
+        if self.is_heap() {
+            let alloc_len = header_len() + self.header().buffer_len;
+            let ptr = self.header_raw() as *mut Storage;
+            let slice = unsafe { Box::from_raw(slice::from_raw_parts_mut(ptr, alloc_len)) };
+            forget(self);
+            InternalStorage::Spilled(slice)
+        } else {
+            InternalStorage::Inline(self.data)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_storage(storage: InternalStorage) -> SmallBitVec {
+        match storage {
+            InternalStorage::Inline(data) => SmallBitVec { data },
+            InternalStorage::Spilled(vs) => {
+                let ptr = Box::into_raw(vs);
+                SmallBitVec {
+                    data: (ptr as *mut usize as usize) | HEAP_FLAG,
+                }
+            }
         }
     }
 
