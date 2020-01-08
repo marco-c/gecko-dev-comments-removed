@@ -27,6 +27,8 @@ using namespace js;
 using mozilla::CheckedInt;
 using mozilla::IsAsciiDigit;
 
+using JS::CompileOptions;
+
 
 
 

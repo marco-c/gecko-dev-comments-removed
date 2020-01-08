@@ -152,6 +152,8 @@ class JS_PUBLIC_API(TransitiveCompileOptions)
     void operator=(const TransitiveCompileOptions&) = delete;
 };
 
+class JS_PUBLIC_API(CompileOptions);
+
 
 
 

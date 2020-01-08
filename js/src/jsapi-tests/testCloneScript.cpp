@@ -7,7 +7,15 @@
 
 
 
+#include <string.h> 
+
+#include "jsapi.h" 
 #include "jsfriendapi.h"
+#include "jspubtd.h" 
+
+#include "js/CompileOptions.h" 
+#include "js/RootingAPI.h" 
+#include "js/TypeDecls.h" 
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(test_cloneScript)

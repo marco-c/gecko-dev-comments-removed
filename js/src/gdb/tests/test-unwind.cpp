@@ -1,13 +1,19 @@
 #include "gdb-tests.h"
-#include "jsapi.h"
-#include "jit/JitOptions.h"
+#include "jsapi.h" 
 
-#include <string.h>
+#include "jit/JitOptions.h" 
+#include "js/CallArgs.h" 
+#include "js/CompileOptions.h" 
+#include "js/RootingAPI.h" 
+#include "js/Value.h" 
+
+#include <stdint.h> 
+#include <string.h> 
 
 static bool
 Something(JSContext* cx, unsigned argc, JS::Value* vp)
 {
-    JS::CallArgs args = CallArgsFromVp(argc, vp);
+    JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
     args.rval().setInt32(23);
     breakpoint();
     return true;
@@ -43,10 +49,10 @@ FRAGMENT(unwind, simple) {
         "\n"
         "unwindFunctionOuter();\n";
 
-    CompileOptions opts(cx);
+    JS::CompileOptions opts(cx);
     opts.setFileAndLine(__FILE__, line0 + 1);
-    RootedValue rval(cx);
-    Evaluate(cx, opts, bytes, strlen(bytes), &rval);
+    JS::Rooted<JS::Value> rval(cx);
+    JS::Evaluate(cx, opts, bytes, strlen(bytes), &rval);
 
     js::jit::JitOptions.baselineWarmUpThreshold = saveThreshold;
 }
