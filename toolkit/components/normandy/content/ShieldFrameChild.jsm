@@ -3,7 +3,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ShieldFrameListener"];
+var EXPORTED_SYMBOLS = ["ShieldFrameChild"];
 
 
 
@@ -15,6 +15,7 @@ var EXPORTED_SYMBOLS = ["ShieldFrameListener"];
 
 
 
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -36,17 +37,8 @@ XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
 
 
 
-class ShieldFrameListener {
-  constructor(mm) {
-    this.mm = mm;
-  }
-
+class ShieldFrameChild extends ActorChild {
   handleEvent(event) {
-    
-    if (!this.ensureTrustedOrigin()) {
-      return;
-    }
-
     
     
     this.mm.addMessageListener("Shield:ShuttingDown", this);
@@ -96,14 +88,6 @@ class ShieldFrameListener {
 
 
 
-  ensureTrustedOrigin() {
-    return this.mm.content.document.documentURI.startsWith("about:studies");
-  }
-
-  
-
-
-
 
   receiveMessage(message) {
     switch (message.name) {
@@ -125,11 +109,6 @@ class ShieldFrameListener {
 
 
   triggerPageCallback(type, detail) {
-    
-    if (!this.ensureTrustedOrigin()) {
-      return;
-    }
-
     let {content} = this.mm;
 
     
