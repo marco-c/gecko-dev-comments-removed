@@ -202,25 +202,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-
-
         public @NonNull Builder cookieLifetime(@CookieLifetime int lifetime) {
             mSettings.mCookieLifetime.set(lifetime);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder cookieLifetimeDays(int days) {
-            if (mSettings.mCookieLifetime.get() != COOKIE_LIFETIME_DAYS) {
-                throw new IllegalStateException(
-                    "Setting expiration days for incompatible cookie lifetime");
-            }
-            mSettings.mCookieLifetimeDays.set(days);
             return this;
         }
 
@@ -302,8 +285,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
         "network.cookie.cookieBehavior", COOKIE_ACCEPT_ALL);
      Pref<Integer> mCookieLifetime = new Pref<Integer>(
         "network.cookie.lifetimePolicy", COOKIE_LIFETIME_NORMAL);
-     Pref<Integer> mCookieLifetimeDays = new Pref<Integer>(
-        "network.cookie.lifetime.days", 90);
      Pref<String> mTrackingProtection = new Pref<String>(
         "urlclassifier.trackingTable",
         TrackingProtection.buildPrefValue(
@@ -320,7 +301,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
      boolean mDebugPause;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
-        mCookieBehavior, mCookieLifetime, mCookieLifetimeDays, mConsoleOutput,
+        mCookieBehavior, mCookieLifetime, mConsoleOutput,
         mJavaScript, mRemoteDebugging, mTrackingProtection, mWebFonts
     };
 
@@ -567,37 +548,9 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public int getCookieLifetimeDays() {
-        return mCookieLifetimeDays.get();
-    }
-
-    
-
-
-
-
-
-
-
-
     public @NonNull GeckoRuntimeSettings setCookieLifetime(
             @CookieLifetime int lifetime) {
         mCookieLifetime.set(lifetime);
-        return this;
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setCookieLifetimeDays(int days) {
-        if (mCookieLifetime.get() != COOKIE_LIFETIME_DAYS) {
-            throw new IllegalStateException(
-                "Setting expiration days for incompatible cookie lifetime");
-        }
-        mCookieLifetimeDays.set(days);
         return this;
     }
 
