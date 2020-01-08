@@ -2669,6 +2669,13 @@ nsDocShell::SetMetaViewportOverride(uint32_t aMetaViewportOverride)
 
   mMetaViewportOverride = aMetaViewportOverride;
 
+  
+  
+  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  if (presShell) {
+    presShell->UpdateViewportOverridden(true);
+  }
+
   return NS_OK;
 }
 
