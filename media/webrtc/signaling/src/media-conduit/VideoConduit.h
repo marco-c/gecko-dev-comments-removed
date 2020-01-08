@@ -67,13 +67,13 @@ class WebrtcVideoConduit : public VideoSessionConduit
                          , public rtc::VideoSourceInterface<webrtc::VideoFrame>
 {
 public:
-
-  
-  static const uint32_t kDefaultMinBitrate_bps;
-  
-  static const uint32_t kDefaultStartBitrate_bps;
-  
-  static const uint32_t kDefaultMaxBitrate_bps;
+  struct ResolutionAndBitrateLimits
+  {
+    int resolution_in_mb;
+    int min_bitrate_bps;
+    int start_bitrate_bps;
+    int max_bitrate_bps;
+  };
 
   
   static const unsigned int CODEC_PLNAME_SIZE;

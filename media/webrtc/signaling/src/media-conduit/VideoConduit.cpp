@@ -79,9 +79,6 @@ static const char* kRedPayloadName = "red";
 
 
 #define KBPS(kbps) kbps * 1000
-const uint32_t WebrtcVideoConduit::kDefaultMinBitrate_bps =  KBPS(200);
-const uint32_t WebrtcVideoConduit::kDefaultStartBitrate_bps = KBPS(300);
-const uint32_t WebrtcVideoConduit::kDefaultMaxBitrate_bps = KBPS(2000);
 
 
 const unsigned int WebrtcVideoConduit::CODEC_PLNAME_SIZE = 32;
@@ -641,31 +638,9 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
     auto& simulcastEncoding = mConduit->mCurSendCodecConfig->mSimulcastEncodings[idx];
     MOZ_ASSERT(simulcastEncoding.constraints.scaleDownBy >= 1.0);
 
-    
-    video_stream.max_bitrate_bps = MinIgnoreZero(simulcastEncoding.constraints.maxBr,
-                                                 kDefaultMaxBitrate_bps);
-    video_stream.max_bitrate_bps = MinIgnoreZero((int) mConduit->mPrefMaxBitrate*1000,
-                                                 video_stream.max_bitrate_bps);
-    video_stream.min_bitrate_bps = (mConduit->mMinBitrate ?
-                                    mConduit->mMinBitrate : kDefaultMinBitrate_bps);
-    if (video_stream.min_bitrate_bps > video_stream.max_bitrate_bps) {
-      video_stream.min_bitrate_bps = video_stream.max_bitrate_bps;
-    }
-    video_stream.target_bitrate_bps = (mConduit->mStartBitrate ?
-                                       mConduit->mStartBitrate : kDefaultStartBitrate_bps);
-    if (video_stream.target_bitrate_bps > video_stream.max_bitrate_bps) {
-      video_stream.target_bitrate_bps = video_stream.max_bitrate_bps;
-    }
-    if (video_stream.target_bitrate_bps < video_stream.min_bitrate_bps) {
-      video_stream.target_bitrate_bps = video_stream.min_bitrate_bps;
-    }
-    
-    
-    if (mConduit->mSendingWidth) { 
-      mConduit->SelectBitrates(
-        video_stream.width, video_stream.height, 
-        simulcastEncoding.constraints.maxBr, video_stream);
-    }
+    mConduit->SelectBitrates(
+      video_stream.width, video_stream.height,
+      simulcastEncoding.constraints.maxBr, video_stream);
 
     video_stream.max_qp = kQpMax;
     video_stream.SetRid(simulcastEncoding.rid);
@@ -1654,14 +1629,6 @@ WebrtcVideoConduit::CreateEncoder(webrtc::VideoCodecType aType,
   return encoder;
 }
 
-struct ResolutionAndBitrateLimits
-{
-  int resolution_in_mb;
-  int min_bitrate_bps;
-  int start_bitrate_bps;
-  int max_bitrate_bps;
-};
-
 #define MB_OF(w,h) ((unsigned int)((((w+15)>>4))*((unsigned int)((h+15)>>4))))
 
 
@@ -1670,7 +1637,7 @@ struct ResolutionAndBitrateLimits
 
 
 
-static ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
+static WebrtcVideoConduit::ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
   {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
   {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
   {MB_OF(800, 480), KBPS(600), KBPS(800), KBPS(2500)}, 
@@ -1680,6 +1647,27 @@ static ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
   {0 , KBPS(40), KBPS(80), KBPS(250)} 
 };
 
+static WebrtcVideoConduit::ResolutionAndBitrateLimits
+GetLimitsFor(unsigned int aWidth, unsigned int aHeight, int aCapBps = 0)
+{
+  
+  
+  int fs = MB_OF(aWidth, aHeight);
+
+  for (const auto& resAndLimits : kResolutionAndBitrateLimits) {
+    if (fs > resAndLimits.resolution_in_mb &&
+        
+        
+        (aCapBps == 0 ||
+         resAndLimits.start_bitrate_bps <= aCapBps ||
+         resAndLimits.resolution_in_mb == 0)) {
+      return resAndLimits;
+    }
+  }
+
+  MOZ_CRASH("Loop should have handled fallback");
+}
+
 void
 WebrtcVideoConduit::SelectBitrates(
   unsigned short width, unsigned short height, int cap,
@@ -1688,21 +1676,11 @@ WebrtcVideoConduit::SelectBitrates(
   int& out_min = aVideoStream.min_bitrate_bps;
   int& out_start = aVideoStream.target_bitrate_bps;
   int& out_max = aVideoStream.max_bitrate_bps;
-  
-  int fs = MB_OF(width, height);
 
-  for (ResolutionAndBitrateLimits resAndLimits : kResolutionAndBitrateLimits) {
-    if (fs > resAndLimits.resolution_in_mb &&
-        
-        
-        (!cap || resAndLimits.start_bitrate_bps <= cap ||
-         resAndLimits.resolution_in_mb == 0)) {
-      out_min = MinIgnoreZero(resAndLimits.min_bitrate_bps, cap);
-      out_start = MinIgnoreZero(resAndLimits.start_bitrate_bps, cap);
-      out_max = MinIgnoreZero(resAndLimits.max_bitrate_bps, cap);
-      break;
-    }
-  }
+  ResolutionAndBitrateLimits resAndLimits = GetLimitsFor(width, height);
+  out_min = MinIgnoreZero(resAndLimits.min_bitrate_bps, cap);
+  out_start = MinIgnoreZero(resAndLimits.start_bitrate_bps, cap);
+  out_max = MinIgnoreZero(resAndLimits.max_bitrate_bps, cap);
 
   
   
