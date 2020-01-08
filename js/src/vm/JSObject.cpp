@@ -3157,6 +3157,10 @@ js::DefineDataElement(JSContext* cx, HandleObject obj, uint32_t index, HandleVal
 
 
 
+
+
+
+
 bool
 js::SetImmutablePrototype(JSContext* cx, HandleObject obj, bool* succeeded)
 {
