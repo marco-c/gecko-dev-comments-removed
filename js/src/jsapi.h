@@ -6351,7 +6351,7 @@ BuildStackString(JSContext* cx, HandleObject stack, MutableHandleString stringp,
 
 
 extern JS_PUBLIC_API(bool)
-IsSavedFrame(JSObject* obj);
+IsMaybeWrappedSavedFrame(JSObject* obj);
 
 } 
 
