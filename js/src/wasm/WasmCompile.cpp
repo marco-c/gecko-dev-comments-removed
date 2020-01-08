@@ -164,21 +164,23 @@ static SystemClass ClassifySystem() {
 
 
 
+
+
+
 static const double x64Tox86Inflation = 1.25;
 
 static const double x64IonBytesPerBytecode = 2.45;
 static const double x86IonBytesPerBytecode =
     x64IonBytesPerBytecode * x64Tox86Inflation;
 static const double arm32IonBytesPerBytecode = 3.3;
-static const double arm64IonBytesPerBytecode = 3.0;  
+static const double arm64IonBytesPerBytecode = 3.0 / 1.4;  
 
 static const double x64BaselineBytesPerBytecode = x64IonBytesPerBytecode * 1.43;
 static const double x86BaselineBytesPerBytecode =
     x64BaselineBytesPerBytecode * x64Tox86Inflation;
 static const double arm32BaselineBytesPerBytecode =
     arm32IonBytesPerBytecode * 1.39;
-static const double arm64BaselineBytesPerBytecode =
-    arm64IonBytesPerBytecode * 1.39;  
+static const double arm64BaselineBytesPerBytecode = 3.0;
 
 static double OptimizedBytesPerBytecode(SystemClass cls) {
   switch (cls) {
@@ -242,22 +244,29 @@ static const double tierCutoffMs = 250;
 
 
 
-static const double x64BytecodesPerMs = 2100;
-static const double x86BytecodesPerMs = 1500;
-static const double arm32BytecodesPerMs = 450;
-static const double arm64BytecodesPerMs = 650;  
 
 
 
 
 
-static const double x64DesktopTierCutoff = x64BytecodesPerMs * tierCutoffMs;
-static const double x86DesktopTierCutoff = x86BytecodesPerMs * tierCutoffMs;
+
+
+static const double x64IonBytecodesPerMs = 2100;
+static const double x86IonBytecodesPerMs = 1500;
+static const double arm32IonBytecodesPerMs = 450;
+static const double arm64IonBytecodesPerMs = 750;  
+
+
+
+
+
+static const double x64DesktopTierCutoff = x64IonBytecodesPerMs * tierCutoffMs;
+static const double x86DesktopTierCutoff = x86IonBytecodesPerMs * tierCutoffMs;
 static const double x86MobileTierCutoff = x86DesktopTierCutoff / 2;  
-static const double arm32MobileTierCutoff = arm32BytecodesPerMs * tierCutoffMs;
-static const double arm64MobileTierCutoff = arm64BytecodesPerMs * tierCutoffMs;
+static const double arm32MobileTierCutoff = arm32IonBytecodesPerMs * tierCutoffMs;
+static const double arm64MobileTierCutoff = arm64IonBytecodesPerMs * tierCutoffMs;
 
-static double CodesizeCutoff(SystemClass cls, uint32_t codeSize) {
+static double CodesizeCutoff(SystemClass cls) {
   switch (cls) {
     case SystemClass::DesktopX86:
     case SystemClass::DesktopUnknown32:
@@ -335,7 +344,7 @@ static bool TieringBeneficial(uint32_t codeSize) {
   
   
 
-  double cutoffSize = CodesizeCutoff(cls, codeSize);
+  double cutoffSize = CodesizeCutoff(cls);
   double effectiveCores = EffectiveCores(cls, cores);
 
   if ((codeSize / effectiveCores) < cutoffSize) {
