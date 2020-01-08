@@ -5204,17 +5204,8 @@ nsGlobalWindowInner::GetCaches(ErrorResult& aRv)
   if (!mCacheStorage) {
     bool forceTrustedOrigin =
       GetOuterWindow()->GetServiceWorkersTestingEnabled();
-
-    nsContentUtils::StorageAccess access =
-      nsContentUtils::StorageAllowedForWindow(this);
-
-    
-    
-    bool storageBlocked = access <= nsContentUtils::StorageAccess::ePrivateBrowsing;
-
     mCacheStorage = CacheStorage::CreateOnMainThread(cache::DEFAULT_NAMESPACE,
                                                      this, GetPrincipal(),
-                                                     storageBlocked,
                                                      forceTrustedOrigin, aRv);
   }
 
