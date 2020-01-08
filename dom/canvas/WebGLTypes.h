@@ -193,7 +193,7 @@ enum class AttribBaseType : uint8_t {
     Int,
     UInt,
     Float, 
-    Bool, 
+    Boolean, 
 };
 const char* ToString(AttribBaseType);
 
