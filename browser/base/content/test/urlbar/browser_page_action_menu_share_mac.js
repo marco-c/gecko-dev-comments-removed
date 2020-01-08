@@ -10,8 +10,9 @@ Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
 const URL = "http://example.org/";
 
 
-let serviceName, sharedUrl, sharedTitle;
-let sharingPreferencesCalled = false;
+let serviceName;
+let sharedUrl;
+let sharedTitle;
 
 let mockShareData = [{
   name: "NSA",
@@ -29,9 +30,6 @@ let stub = sinon.stub(BrowserPageActions.shareURL, "_sharingService").get(() => 
       serviceName = name;
       sharedUrl = url;
       sharedTitle = title;
-    },
-    openSharingPreferences() {
-      sharingPreferencesCalled = true;
     }
   };
 });
@@ -56,8 +54,7 @@ add_task(async function shareURL() {
     let view = await viewPromise;
     let body = document.getElementById(view.id + "-body");
 
-    
-    Assert.equal(body.childNodes.length, 2, "Has correct share receivers");
+    Assert.equal(body.childNodes.length, 1, "Has correct share receivers");
     let shareButton = body.childNodes[0];
     Assert.equal(shareButton.label, mockShareData[0].menuItemTitle);
     let hiddenPromise = promisePageActionPanelHidden();
@@ -110,8 +107,7 @@ add_task(async function shareURLAddressBar() {
 
     
     let panel = document.getElementById("pageAction-urlbar-shareURL-subview-body");
-    
-    Assert.equal(panel.childNodes.length, 2, "Has correct share receivers");
+    Assert.equal(panel.childNodes.length, 1, "Has correct share receivers");
 
     
     
@@ -127,32 +123,5 @@ add_task(async function shareURLAddressBar() {
                                            ".pageActionContextMenuItem");
     EventUtils.synthesizeMouseAtCenter(ctxMenuButton, {});
     await contextMenuPromise;
-  });
-});
-
-add_task(async function openSharingPreferences() {
-  await BrowserTestUtils.withNewTab(URL, async () => {
-    
-    await promisePageActionPanelOpen();
-
-    
-    let shareURLButton = document.getElementById("pageAction-panel-shareURL");
-    let viewPromise = promisePageActionViewShown();
-    EventUtils.synthesizeMouseAtCenter(shareURLButton, {});
-
-    let view = await viewPromise;
-    let body = document.getElementById(view.id + "-body");
-
-    
-    Assert.equal(body.childNodes.length, 2, "Has correct share receivers");
-    let moreButton = body.childNodes[1];
-    let hiddenPromise = promisePageActionPanelHidden();
-    
-    
-    EventUtils.synthesizeMouseAtCenter(moreButton, {});
-    await hiddenPromise;
-
-    Assert.equal(sharingPreferencesCalled, true,
-                 "We called openSharingPreferences");
   });
 });
