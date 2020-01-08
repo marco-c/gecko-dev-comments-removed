@@ -23,6 +23,18 @@ class BaseAction {
     this.state = BaseAction.STATE_PREPARING;
     this.log = LogManager.getLogger(`action.${this.name}`);
     this.lastError = null;
+  }
+
+  
+
+
+
+
+
+  _ensurePreExecution() {
+    if (this.state !== BaseAction.STATE_PREPARING) {
+      return;
+    }
 
     try {
       this._preExecution();
@@ -94,6 +106,8 @@ class BaseAction {
 
 
   async runRecipe(recipe) {
+    this._ensurePreExecution();
+
     if (this.state === BaseAction.STATE_FINALIZED) {
       throw new Error("Action has already been finalized");
     }
@@ -138,6 +152,11 @@ class BaseAction {
 
 
   async finalize() {
+    
+    
+    
+    this._ensurePreExecution();
+
     let status;
     switch (this.state) {
       case BaseAction.STATE_FINALIZED: {

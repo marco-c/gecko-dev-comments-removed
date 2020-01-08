@@ -59,6 +59,11 @@ class AddonStudyAction extends BaseAction {
     return ActionSchemas["addon-study"];
   }
 
+  constructor() {
+    super();
+    this.seenRecipeIds = new Set();
+  }
+
   
 
 
@@ -72,8 +77,6 @@ class AddonStudyAction extends BaseAction {
       this.log.info("User has opted-out of opt-out experiments, disabling action.");
       this.disable();
     }
-
-    this.seenRecipeIds = new Set();
   }
 
   

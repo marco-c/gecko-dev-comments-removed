@@ -6,10 +6,7 @@ ChromeUtils.import("resource://normandy/lib/Uptake.jsm", this);
 class NoopAction extends BaseAction {
   constructor() {
     super();
-    
-    if (this._testPreExecutionFlag === undefined) {
-      this._testPreExecutionFlag = false;
-    }
+    this._testPreExecutionFlag = false;
     this._testRunFlag = false;
     this._testFinalizeFlag = false;
   }
@@ -52,18 +49,25 @@ decorate_task(
   withStub(Uptake, "reportRecipe"),
   withStub(Uptake, "reportAction"),
   async () => {
-    const action = new NoopAction();
-    is(action._testPreExecutionFlag, true, "_preExecution should be called on a new action");
+    let action = new NoopAction();
+    is(action._testPreExecutionFlag, false, "_preExecution should not have been called on a new action");
     is(action._testRunFlag, false, "_run has should not have been called on a new action");
     is(action._testFinalizeFlag, false, "_finalize should not be called on a new action");
 
     const recipe = recipeFactory();
     await action.runRecipe(recipe);
+    is(action._testPreExecutionFlag, true, "_preExecution should be called when a recipe is executed");
     is(action._testRunFlag, true, "_run should be called when a recipe is executed");
     is(action._testFinalizeFlag, false, "_finalize should not have been called when a recipe is executed");
 
     await action.finalize();
     is(action._testFinalizeFlag, true, "_finalizeExecution should be called when finalize was called");
+
+    action = new NoopAction();
+    await action.finalize();
+    is(action._testPreExecutionFlag, true, "_preExecution should be called when finalized even if no recipes");
+    is(action._testRunFlag, false, "_run should be called if no recipes were run");
+    is(action._testFinalizeFlag, true, "_finalize should be called when finalized");
   }
 );
 
@@ -129,12 +133,13 @@ decorate_task(
   async function(reportRecipeStub, reportActionStub) {
     const recipe = recipeFactory();
     const action = new FailPreExecutionAction();
-    is(action.state, FailPreExecutionAction.STATE_FAILED, "Action should fail during pre-execution fail");
-    is(action.lastError, NoopAction._errorToThrow, "The thrown error should be stored in lastError");
+    is(action.state, FailPreExecutionAction.STATE_PREPARING, "Pre-execution should not happen immediately");
 
     
+    
     await action.runRecipe(recipe);
-    is(action.state, FailPreExecutionAction.STATE_FAILED, "Action should remain failed");
+    is(action.state, FailPreExecutionAction.STATE_FAILED, "Action fails if pre-execution fails");
+    is(action.lastError, NoopAction._errorToThrow, "The thrown error should be stored in lastError");
 
     
     await action.finalize();
