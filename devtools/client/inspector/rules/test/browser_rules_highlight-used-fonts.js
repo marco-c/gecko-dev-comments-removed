@@ -32,6 +32,10 @@ const TEST_URI = `
     #id8 {
       font-family: important;
     }
+    #id9::before {
+      content: ' ';
+      font-family: foo, monospace;
+    }
   </style>
   <div id="id1">Text</div>
   <div id="id2">Text</div>
@@ -41,6 +45,7 @@ const TEST_URI = `
   <div id="id6">A &#586;</div>
   <div id="id7">Text</div>
   <div id="id8">Text</div>
+  <div id="id9">Text</div>
 `;
 
 
@@ -52,33 +57,46 @@ const TEST_URI = `
 
 
 
+
 const TESTS = [
-  {selector: "#id1", nb: 3, used: [2]}, 
-  {selector: "#id2", nb: 1, used: [0]}, 
-  {selector: "#id3", nb: 4, used: [1]}, 
-  {selector: "#id4", nb: 2, used: null},
-  {selector: "#id5", nb: 1, used: [0]}, 
-  {selector: "#id7", nb: 2, used: [1]}, 
-  {selector: "#id8", nb: 1, used: null},
+  {baseSelector: "#id1", nb: 3, used: [2]}, 
+  {baseSelector: "#id2", nb: 1, used: [0]}, 
+  {baseSelector: "#id3", nb: 4, used: [1]}, 
+  {baseSelector: "#id4", nb: 2, used: null},
+  {baseSelector: "#id5", nb: 1, used: [0]}, 
+  {baseSelector: "#id7", nb: 2, used: [1]}, 
+  {baseSelector: "#id8", nb: 1, used: null},
+  {baseSelector: "#id9", nb: 2, used: [1], selectBeforePseudoElement: true}, 
 ];
 
 if (Services.appinfo.OS !== "Linux") {
   
   
   
-  TESTS.push({selector: "#id6", nb: 2, used: [0, 1]});
+  TESTS.push({baseSelector: "#id6", nb: 2, used: [0, 1]});
 }
 
 add_task(async function() {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const {inspector, view} = await openRuleView();
 
-  for (const {selector, nb, used} of TESTS) {
+  for (const {baseSelector, nb, used, selectBeforePseudoElement} of TESTS) {
     const onFontHighlighted = view.once("font-highlighted");
-    await selectNode(selector, inspector);
+
+    if (selectBeforePseudoElement) {
+      
+      const baseNode = await getNodeFront(baseSelector, inspector);
+      const pseudoElement =
+          (await inspector.walker.children(baseNode)).nodes[0];
+      await selectNode(pseudoElement, inspector);
+    } else {
+      await selectNode(baseSelector, inspector);
+    }
     await onFontHighlighted;
 
-    info("Looking for fonts in font-family property in selector " + selector);
+    const selector =
+       !selectBeforePseudoElement ? baseSelector : `${baseSelector}::before`;
+    info(`Looking for fonts in font-family property for: <${selector}>`);
 
     const prop = getRuleViewProperty(view, selector, "font-family").valueSpan;
     const fonts = prop.querySelectorAll(".ruleview-font-family");
