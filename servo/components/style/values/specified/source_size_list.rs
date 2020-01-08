@@ -18,6 +18,7 @@ use values::specified::{Length, NoCalcLength, ViewportPercentageLength};
 
 
 
+#[derive(Debug)]
 pub struct SourceSize {
     condition: MediaCondition,
     value: Length,
@@ -38,6 +39,7 @@ impl Parse for SourceSize {
 
 
 
+#[derive(Debug)]
 pub struct SourceSizeList {
     source_sizes: Vec<SourceSize>,
     value: Option<Length>,
@@ -50,6 +52,11 @@ impl SourceSizeList {
             source_sizes: vec![],
             value: None,
         }
+    }
+
+    
+    pub fn set_fallback_value(&mut self, width: Option<Length>) {
+        self.value = width;
     }
 
     
