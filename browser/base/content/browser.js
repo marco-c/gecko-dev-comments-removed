@@ -5335,6 +5335,17 @@ var TabsProgressListener = {
 
     FullZoom.onLocationChange(aLocationURI, false, aBrowser);
   },
+
+  onLinkIconAvailable(browser, dataURI, iconURI) {
+    if (!iconURI) {
+      return;
+    }
+    if (browser == gBrowser.selectedBrowser) {
+      
+      
+      BrowserSearch.updateOpenSearchBadge();
+    }
+  },
 };
 
 function nsBrowserAccess() { }
