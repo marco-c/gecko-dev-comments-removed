@@ -2924,7 +2924,14 @@ ContainerState::FindOpaqueBackgroundColorInLayer(const PaintedLayerData* aData,
   appUnitRect.ScaleInverseRoundOut(mParameters.mXScale, mParameters.mYScale);
 
   for (auto& assignedItem : Reversed(aData->mAssignedDisplayItems)) {
-    if (assignedItem.mType != DisplayItemEntryType::ITEM) {
+    if (assignedItem.mHasOpacity || assignedItem.mHasTransform) {
+      
+      
+      continue;
+    }
+
+    if (IsEffectEndMarker(assignedItem.mType)) {
+      
       
       continue;
     }
@@ -2961,12 +2968,11 @@ ContainerState::FindOpaqueBackgroundColorInLayer(const PaintedLayerData* aData,
       return NS_RGBA(0,0,0,0);
     }
 
-    if (!assignedItem.mHasOpacity && !assignedItem.mHasTransform) {
-      Maybe<nscolor> color = item->IsUniform(mBuilder);
+    MOZ_ASSERT(!assignedItem.mHasOpacity && !assignedItem.mHasTransform);
+    Maybe<nscolor> color = item->IsUniform(mBuilder);
 
-      if (color && NS_GET_A(*color) == 255) {
-        return *color;
-      }
+    if (color && NS_GET_A(*color) == 255) {
+      return *color;
     }
 
     return NS_RGBA(0,0,0,0);
