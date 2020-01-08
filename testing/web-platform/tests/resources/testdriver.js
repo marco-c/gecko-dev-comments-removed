@@ -1,5 +1,6 @@
 (function() {
     "use strict";
+    var idCounter = 0;
 
     function getInViewCenterPoint(rect) {
         var left = Math.max(0, rect.left);
@@ -46,6 +47,41 @@
 
 
     window.test_driver = {
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        bless: function(intent, action) {
+            var button = document.createElement("button");
+            button.innerHTML = "This test requires user interaction.<br />" +
+                "Please click here to allow " + intent + ".";
+            button.id = "wpt-test-driver-bless-" + (idCounter += 1);
+            document.body.appendChild(button);
+
+            return new Promise(function(resolve, reject) {
+                    button.addEventListener("click", resolve);
+
+                    test_driver.click(button).catch(reject);
+                }).then(function() {
+                    button.remove();
+
+                    if (typeof action === "function") {
+                        return action();
+                    }
+                });
+        };
+
         
 
 
