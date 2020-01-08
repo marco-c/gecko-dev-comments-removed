@@ -223,9 +223,8 @@ AnimationFrameDiscardingQueue::AdvanceInternal()
 
   
   
-  
-  MOZ_ASSERT(mRecycling || bool(mDisplay.front()));
   MOZ_ASSERT(!mDisplay.empty());
+  MOZ_ASSERT(mDisplay.front());
   mDisplay.pop_front();
   MOZ_ASSERT(!mDisplay.empty());
   MOZ_ASSERT(mDisplay.front());
@@ -354,6 +353,11 @@ AnimationFrameRecyclingQueue::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
 void
 AnimationFrameRecyclingQueue::AdvanceInternal()
 {
+  
+  
+  
+  MOZ_ASSERT(mGetIndex < mSize);
+
   MOZ_ASSERT(!mDisplay.empty());
   MOZ_ASSERT(mDisplay.front());
 
@@ -388,7 +392,30 @@ AnimationFrameRecyclingQueue::AdvanceInternal()
   
   
   mRecycle.push_back(std::move(newEntry));
-  AnimationFrameDiscardingQueue::AdvanceInternal();
+  mDisplay.pop_front();
+  MOZ_ASSERT(!mDisplay.empty());
+  MOZ_ASSERT(mDisplay.front());
+
+  if (mDisplay.size() + mPending - 1 < mBatch) {
+    
+    
+    
+    
+    
+    
+    
+    size_t newPending = std::min(mPending + mBatch, mRecycle.size() - 1);
+    if (newPending == 0 && (mDisplay.size() <= 1 || mPending > 0)) {
+      
+      
+      
+      
+      
+      
+      newPending = 1;
+    }
+    mPending = newPending;
+  }
 }
 
 bool

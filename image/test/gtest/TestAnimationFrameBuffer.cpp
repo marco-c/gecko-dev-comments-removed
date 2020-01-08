@@ -488,7 +488,15 @@ static void TestDiscardingQueueLoop(AnimationFrameDiscardingQueue& aQueue,
   EXPECT_EQ(size_t(1), aQueue.Display().size());
   VerifyInsertAndAdvance(aQueue, 6, AnimationFrameBuffer::InsertStatus::CONTINUE);
   EXPECT_EQ(size_t(1), aQueue.Display().size());
-  VerifyInsertAndAdvance(aQueue, 7, AnimationFrameBuffer::InsertStatus::CONTINUE);
+
+  
+  
+  
+  if (aQueue.IsRecycling()) {
+    VerifyInsertAndAdvance(aQueue, 7, AnimationFrameBuffer::InsertStatus::YIELD);
+  } else {
+    VerifyInsertAndAdvance(aQueue, 7, AnimationFrameBuffer::InsertStatus::CONTINUE);
+  }
   EXPECT_EQ(size_t(1), aQueue.Display().size());
 
   
