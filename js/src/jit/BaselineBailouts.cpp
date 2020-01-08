@@ -1260,7 +1260,7 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 
                 MOZ_ASSERT(fun);
                 MOZ_ASSERT(numUnsynced == 0);
-                opReturnAddr = baselineScript->prologueEntryAddr();
+                opReturnAddr = baselineScript->bailoutPrologueEntryAddr();
                 JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
 
                 

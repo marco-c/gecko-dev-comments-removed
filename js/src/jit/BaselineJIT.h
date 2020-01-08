@@ -248,11 +248,16 @@ struct BaselineScript final
     Vector<DependentWasmImport>* dependentWasmImports_ = nullptr;
 
     
-    uint32_t prologueOffset_;
+    
+    uint32_t bailoutPrologueOffset_;
 
     
     
-    uint32_t epilogueOffset_;
+    uint32_t debugOsrPrologueOffset_;
+
+    
+    
+    uint32_t debugOsrEpilogueOffset_;
 
     
     uint32_t profilerEnterToggleOffset_;
@@ -266,14 +271,6 @@ struct BaselineScript final
 # endif
     TraceLoggerEvent traceLoggerScriptEvent_ = {};
 #endif
-
-    
-    
-    
-    
-    
-    
-    uint32_t postDebugPrologueOffset_;
 
   public:
     enum Flag {
@@ -357,15 +354,16 @@ struct BaselineScript final
 
     
     
-    BaselineScript(uint32_t prologueOffset, uint32_t epilogueOffset,
+    BaselineScript(uint32_t bailoutPrologueOffset,
+                   uint32_t debugOsrPrologueOffset,
+                   uint32_t debugOsrEpilogueOffset,
                    uint32_t profilerEnterToggleOffset,
-                   uint32_t profilerExitToggleOffset,
-                   uint32_t postDebugPrologueOffset)
-      : prologueOffset_(prologueOffset),
-        epilogueOffset_(epilogueOffset),
+                   uint32_t profilerExitToggleOffset)
+      : bailoutPrologueOffset_(bailoutPrologueOffset),
+        debugOsrPrologueOffset_(debugOsrPrologueOffset),
+        debugOsrEpilogueOffset_(debugOsrEpilogueOffset),
         profilerEnterToggleOffset_(profilerEnterToggleOffset),
-        profilerExitToggleOffset_(profilerExitToggleOffset),
-        postDebugPrologueOffset_(postDebugPrologueOffset)
+        profilerExitToggleOffset_(profilerExitToggleOffset)
     { }
 
   public:
@@ -376,10 +374,11 @@ struct BaselineScript final
     }
 
     static BaselineScript* New(JSScript* jsscript,
-                               uint32_t prologueOffset, uint32_t epilogueOffset,
+                               uint32_t bailoutPrologueOffset,
+                               uint32_t debugOsrPrologueOffset,
+                               uint32_t debugOsrEpilogueOffset,
                                uint32_t profilerEnterToggleOffset,
                                uint32_t profilerExitToggleOffset,
-                               uint32_t postDebugPrologueOffset,
                                size_t icEntries,
                                size_t retAddrEntries,
                                size_t pcMappingIndexEntries, size_t pcMappingSize,
@@ -450,25 +449,14 @@ struct BaselineScript final
         return flags_ & USES_ENVIRONMENT_CHAIN;
     }
 
-    uint32_t prologueOffset() const {
-        return prologueOffset_;
+    uint8_t* bailoutPrologueEntryAddr() const {
+        return method_->raw() + bailoutPrologueOffset_;
     }
-    uint8_t* prologueEntryAddr() const {
-        return method_->raw() + prologueOffset_;
+    uint8_t* debugOsrPrologueEntryAddr() const {
+        return method_->raw() + debugOsrPrologueOffset_;
     }
-
-    uint32_t epilogueOffset() const {
-        return epilogueOffset_;
-    }
-    uint8_t* epilogueEntryAddr() const {
-        return method_->raw() + epilogueOffset_;
-    }
-
-    uint32_t postDebugPrologueOffset() const {
-        return postDebugPrologueOffset_;
-    }
-    uint8_t* postDebugPrologueAddr() const {
-        return method_->raw() + postDebugPrologueOffset_;
+    uint8_t* debugOsrEpilogueEntryAddr() const {
+        return method_->raw() + debugOsrEpilogueOffset_;
     }
 
     ICEntry* icEntryList() {

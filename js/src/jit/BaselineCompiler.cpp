@@ -239,11 +239,11 @@ BaselineCompiler::compile()
     
     size_t bytecodeTypeMapEntries = script->nTypeSets() + 1;
     UniquePtr<BaselineScript> baselineScript(
-        BaselineScript::New(script, prologueOffset_.offset(),
-                            epilogueOffset_.offset(),
+        BaselineScript::New(script, bailoutPrologueOffset_.offset(),
+                            debugOsrPrologueOffset_.offset(),
+                            debugOsrEpilogueOffset_.offset(),
                             profilerEnterFrameToggleOffset_.offset(),
                             profilerExitFrameToggleOffset_.offset(),
-                            postDebugPrologueOffset_.offset(),
                             icEntries_.length(),
                             retAddrEntries_.length(),
                             pcMappingIndexEntries.length(),
@@ -486,7 +486,7 @@ BaselineCompiler::emitPrologue()
 
     
     
-    prologueOffset_ = CodeOffset(masm.currentOffset());
+    bailoutPrologueOffset_ = CodeOffset(masm.currentOffset());
 
     
     
@@ -525,7 +525,7 @@ BaselineCompiler::emitEpilogue()
 {
     
     
-    epilogueOffset_ = CodeOffset(masm.currentOffset());
+    debugOsrEpilogueOffset_ = CodeOffset(masm.currentOffset());
 
     masm.bind(&return_);
 
@@ -800,7 +800,7 @@ BaselineCompiler::emitDebugPrologue()
         masm.bind(&done);
     }
 
-    postDebugPrologueOffset_ = CodeOffset(masm.currentOffset());
+    debugOsrPrologueOffset_ = CodeOffset(masm.currentOffset());
 
     return true;
 }

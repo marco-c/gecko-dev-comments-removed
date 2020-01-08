@@ -544,7 +544,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
                 
                 
                 
-                recompInfo->resumeAddr = bl->postDebugPrologueAddr();
+                recompInfo->resumeAddr = bl->debugOsrPrologueEntryAddr();
                 popFrameReg = true;
                 break;
 
@@ -565,7 +565,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
                 
                 
                 MOZ_ASSERT(kind == RetAddrEntry::Kind::DebugEpilogue);
-                recompInfo->resumeAddr = bl->epilogueEntryAddr();
+                recompInfo->resumeAddr = bl->debugOsrEpilogueEntryAddr();
                 popFrameReg = true;
                 break;
             }
@@ -1032,7 +1032,7 @@ SyncBaselineDebugModeOSRInfo(BaselineFrame* frame, Value* vp, bool rv)
         
         MOZ_ASSERT(R0 == JSReturnOperand);
         info->valueR0 = frame->returnValue();
-        info->resumeAddr = frame->script()->baselineScript()->epilogueEntryAddr();
+        info->resumeAddr = frame->script()->baselineScript()->debugOsrEpilogueEntryAddr();
         return;
     }
 

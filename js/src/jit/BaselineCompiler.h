@@ -306,15 +306,16 @@ class BaselineCompiler final
     NonAssertingLabel postBarrierSlot_;
 
     
-    CodeOffset prologueOffset_;
+    
+    CodeOffset bailoutPrologueOffset_;
 
     
     
-    CodeOffset epilogueOffset_;
+    CodeOffset debugOsrPrologueOffset_;
 
     
     
-    CodeOffset postDebugPrologueOffset_;
+    CodeOffset debugOsrEpilogueOffset_;
 
     
     
