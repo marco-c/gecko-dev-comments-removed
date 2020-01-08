@@ -1073,12 +1073,11 @@ Search.prototype = {
       return false;
     }
     for (const url of AboutPagesUtils.visibleAboutUrls) {
-      if (url.startsWith(`about:${this._searchString}`)) {
+      if (url.startsWith(`about:${this._searchString.toLowerCase()}`)) {
+        this._result.setDefaultIndex(0);
         this._addAutofillMatch(
-          url.replace(/^about:/, ""),
+          url.substr(6),
           url,
-          Infinity,
-          []
         );
         return true;
       }
@@ -1975,7 +1974,7 @@ Search.prototype = {
     );
   },
 
-  _addAutofillMatch(autofilledValue, finalCompleteValue, frecency, extraStyles = []) {
+  _addAutofillMatch(autofilledValue, finalCompleteValue, frecency = Infinity, extraStyles = []) {
     
     
     
