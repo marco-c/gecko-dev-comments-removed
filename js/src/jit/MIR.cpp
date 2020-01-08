@@ -2327,31 +2327,6 @@ MPhi::congruentTo(const MDefinition* ins) const
     return congruentIfOperandsEqual(ins);
 }
 
-bool
-MPhi::updateForReplacement(MDefinition* def)
-{
-    
-    
-    
-    
-    
-    
-    MPhi* other = def->toPhi();
-    if (usageAnalysis_ == PhiUsage::Used || other->usageAnalysis_ == PhiUsage::Used) {
-        usageAnalysis_ = PhiUsage::Used;
-    } else if (usageAnalysis_ != other->usageAnalysis_) {
-        
-        
-        usageAnalysis_ = PhiUsage::Unknown;
-    } else {
-        
-        
-        MOZ_ASSERT(usageAnalysis_ == PhiUsage::Used || usageAnalysis_ == PhiUsage::Unknown);
-        MOZ_ASSERT(usageAnalysis_ == other->usageAnalysis_);
-    }
-    return true;
-}
-
 static inline TemporaryTypeSet*
 MakeMIRTypeSet(TempAllocator& alloc, MIRType type)
 {

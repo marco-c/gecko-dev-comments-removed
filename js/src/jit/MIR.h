@@ -6826,15 +6826,6 @@ class MArrowNewTarget
     }
 };
 
-
-
-
-enum class PhiUsage : uint8_t {
-    Unknown,
-    Unused,
-    Used
-};
-
 class MPhi final
   : public MDefinition,
     public InlineListNode<MPhi>,
@@ -6849,9 +6840,6 @@ class MPhi final
     bool isIterator_;
     bool canProduceFloat32_;
     bool canConsumeFloat32_;
-    
-    
-    PhiUsage usageAnalysis_;
 
 #if DEBUG
     bool specialized_;
@@ -6883,8 +6871,7 @@ class MPhi final
         triedToSpecialize_(false),
         isIterator_(false),
         canProduceFloat32_(false),
-        canConsumeFloat32_(false),
-        usageAnalysis_(PhiUsage::Unknown)
+        canConsumeFloat32_(false)
 #if DEBUG
         , specialized_(false)
 #endif
@@ -6991,7 +6978,6 @@ class MPhi final
     MDefinition* foldsFilterTypeSet();
 
     bool congruentTo(const MDefinition* ins) const override;
-    bool updateForReplacement(MDefinition* def) override;
 
     bool isIterator() const {
         return isIterator_;
@@ -7026,13 +7012,6 @@ class MPhi final
     TruncateKind operandTruncateKind(size_t index) const override;
     bool needTruncation(TruncateKind kind) override;
     void truncate() override;
-
-    PhiUsage getUsageAnalysis() const { return usageAnalysis_; }
-    void setUsageAnalysis(PhiUsage pu) {
-        MOZ_ASSERT(usageAnalysis_ == PhiUsage::Unknown);
-        usageAnalysis_ = pu;
-        MOZ_ASSERT(usageAnalysis_ != PhiUsage::Unknown);
-    }
 };
 
 

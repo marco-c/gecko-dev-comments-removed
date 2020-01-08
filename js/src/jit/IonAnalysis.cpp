@@ -6,8 +6,6 @@
 
 #include "jit/IonAnalysis.h"
 
-#include <utility> 
-
 #include "jit/AliasAnalysis.h"
 #include "jit/BaselineInspector.h"
 #include "jit/BaselineJIT.h"
@@ -31,116 +29,11 @@ using namespace js::jit;
 
 using mozilla::DebugOnly;
 
-
-
-using MPhiUseIteratorStack = Vector<std::pair<MPhi*, MUseIterator>, 16, SystemAllocPolicy>;
-
-
-
-static bool
-DepthFirstSearchUse(MIRGenerator* mir, MPhiUseIteratorStack& worklist, MPhi* phi)
-{
-    
-    auto push = [&worklist](MPhi* phi, MUseIterator use) -> bool {
-        phi->setInWorklist();
-        return worklist.append(std::make_pair(phi, use));
-    };
-
-#ifdef DEBUG
-    
-    
-    size_t refUseCount = phi->useCount();
-    size_t useCount = 0;
-#endif
-    MOZ_ASSERT(worklist.empty());
-    if (!push(phi, phi->usesBegin())) {
-        return false;
-    }
-
-    while (!worklist.empty()) {
-        
-        auto pair = worklist.popCopy();
-        MPhi* producer = pair.first;
-        MUseIterator use = pair.second;
-        MUseIterator end(producer->usesEnd());
-        producer->setNotInWorklist();
-
-        
-        
-        
-        while (use != end) {
-            MNode* consumer = (*use)->consumer();
-            MUseIterator it = use;
-            use++;
-#ifdef DEBUG
-            useCount++;
-#endif
-            if (mir->shouldCancel("FlagPhiInputsAsHavingRemovedUses inner loop")) {
-                return false;
-            }
-
-            if (consumer->isResumePoint()) {
-                MResumePoint* rp = consumer->toResumePoint();
-                
-                if (rp->isObservableOperand(*it)) {
-                    return push(producer, use);
-                }
-                continue;
-            }
-
-            MDefinition* cdef = consumer->toDefinition();
-            if (!cdef->isPhi()) {
-                
-                return push(producer, use);
-            }
-
-            MPhi* cphi = cdef->toPhi();
-            if (cphi->getUsageAnalysis() == PhiUsage::Used || cphi->isUseRemoved()) {
-                
-                
-                
-                return push(producer, use);
-            }
-
-            if (cphi->isInWorklist() || cphi == producer) {
-                
-                
-                continue;
-            }
-
-            if (cphi->getUsageAnalysis() == PhiUsage::Unused) {
-                
-                
-                continue;
-            }
-
-            
-            
-            
-            if (!push(producer, use)) {
-                return false;
-            }
-            producer = cphi;
-            use = producer->usesBegin();
-            end = producer->usesEnd();
-#ifdef DEBUG
-            refUseCount += producer->useCount();
-#endif
-        }
-
-        
-        
-        MOZ_ASSERT(use == end);
-        producer->setUsageAnalysis(PhiUsage::Unused);
-    }
-
-    MOZ_ASSERT(useCount == refUseCount);
-    return true;
-}
+typedef Vector<MPhi*, 16, SystemAllocPolicy> MPhiVector;
 
 static bool
 FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block, MBasicBlock* succ,
-                                 MPhiUseIteratorStack& worklist)
+                                 MPhiVector& worklist)
 {
     
     
@@ -201,11 +94,12 @@ FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block, MBasicBl
     
     
     
+
     
     
-    
-    
-    
+    const size_t conservativeUsesLimit = 128;
+
+    MOZ_ASSERT(worklist.empty());
     size_t predIndex = succ->getPredecessorIndex(block);
     MPhiIterator end = succ->phisEnd();
     MPhiIterator it = succ->phisBegin();
@@ -223,36 +117,82 @@ FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block, MBasicBl
             continue;
         }
 
-        
-        
-        if (phi->getUsageAnalysis() == PhiUsage::Used || phi->isUseRemoved()) {
-            def->setUseRemoved();
-            continue;
-        } else if (phi->getUsageAnalysis() == PhiUsage::Unused) {
-            continue;
-        }
-
-        
-        
-        
-        MOZ_ASSERT(worklist.empty());
-        if (!DepthFirstSearchUse(mir, worklist, phi)) {
+        phi->setInWorklist();
+        if (!worklist.append(phi)) {
             return false;
         }
 
-        MOZ_ASSERT_IF(worklist.empty(), phi->getUsageAnalysis() == PhiUsage::Unused);
-        if (!worklist.empty()) {
+        
+        
+        
+        
+        bool isUsed = false;
+        for (size_t idx = 0; !isUsed && idx < worklist.length(); idx++) {
+            phi = worklist[idx];
+
+            if (mir->shouldCancel("FlagPhiInputsAsHavingRemovedUses inner loop 1")) {
+                return false;
+            }
+
+            if (phi->isUseRemoved() || phi->isImplicitlyUsed()) {
+                
+                isUsed = true;
+                break;
+            }
+
+            MUseIterator usesEnd(phi->usesEnd());
+            for (MUseIterator use(phi->usesBegin()); use != usesEnd; use++) {
+                MNode* consumer = (*use)->consumer();
+
+                if (mir->shouldCancel("FlagPhiInputsAsHavingRemovedUses inner loop 2")) {
+                    return false;
+                }
+
+                if (consumer->isResumePoint()) {
+                    MResumePoint* rp = consumer->toResumePoint();
+                    if (rp->isObservableOperand(*use)) {
+                        
+                        isUsed = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                MDefinition* cdef = consumer->toDefinition();
+                if (!cdef->isPhi()) {
+                    
+                    isUsed = true;
+                    break;
+                }
+
+                phi = cdef->toPhi();
+                if (phi->isInWorklist()) {
+                    continue;
+                }
+
+                phi->setInWorklist();
+                if (!worklist.append(phi)) {
+                    return false;
+                }
+            }
+
             
             
-            def->setUseRemoved();
-            do {
-                auto pair = worklist.popCopy();
-                MPhi* producer = pair.first;
-                producer->setUsageAnalysis(PhiUsage::Used);
-                producer->setNotInWorklist();
-            } while (!worklist.empty());
+            if (idx >= conservativeUsesLimit) {
+                isUsed = true;
+                break;
+            }
         }
-        MOZ_ASSERT(phi->getUsageAnalysis() != PhiUsage::Unknown);
+
+        if (isUsed) {
+            def->setUseRemoved();
+        }
+
+        
+        while (!worklist.empty()) {
+            phi = worklist.popCopy();
+            phi->setNotInWorklist();
+        }
     }
 
     return true;
@@ -306,7 +246,7 @@ FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block)
     }
 
     
-    MPhiUseIteratorStack worklist;
+    MPhiVector worklist;
     for (size_t i = 0, e = block->numSuccessors(); i < e; i++) {
         if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 3")) {
             return false;
