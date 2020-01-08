@@ -9,11 +9,10 @@
 
 #include "mozilla/embedding/PPrinting.h"
 #include "nsCOMPtr.h"
+#include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
 #include "nsString.h"
 #include "nsFont.h"
-
-class nsIPrintSettings;
 
 
 

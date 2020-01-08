@@ -34,6 +34,7 @@
 #include "nsIOutputStream.h"
 #include "nsIInputStream.h"
 #include "nsILoadContext.h"
+#include "nsXULAppAPI.h"
 #include "mozilla/UniquePtr.h"
 
 using namespace mozilla;

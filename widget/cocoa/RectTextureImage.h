@@ -6,7 +6,10 @@
 #ifndef RectTextureImage_h_
 #define RectTextureImage_h_
 
+#include "GLTypes.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
+#include "Units.h"
 
 class MacIOSurface;
 
@@ -14,6 +17,10 @@ namespace mozilla {
 
 namespace gl {
 class GLContext;
+} 
+
+namespace layers {
+class GLManager;
 } 
 
 namespace widget {
