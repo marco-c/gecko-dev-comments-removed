@@ -47,12 +47,6 @@
 
 extern "C" {
 
-#if defined(_MSC_VER) && defined(__clang__)
-#pragma clang diagnostic warning "-Wdll-attribute-on-redeclaration"
-#pragma clang diagnostic warning "-Winconsistent-dllimport"
-#endif
-
-
 
 
 void MOZ_ASAN_VISIBILITY
