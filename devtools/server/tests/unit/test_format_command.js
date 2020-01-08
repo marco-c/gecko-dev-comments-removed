@@ -70,21 +70,20 @@ const edgecases = [
   { input: ":screenshot --", expectedError: /invalid flag/ },
   {
     input: ":screenshot \"fo\"o bar",
-    
-    expectedError: /String does not terminate/
+    expectedError:
+      /String has unescaped `"` in \["fo"o\.\.\.\], may miss a space between arguments/
   },
   {
     input: ":screenshot \"foo b\"ar",
-    
-    expectedError: /String does not terminate/
+    expectedError:
+      
+      /String has unescaped `"` in \["foo b"ar\.\.\.\], may miss a space between arguments/
   },
   { input: ": screenshot", expectedError: /'' is not a valid command/ },
   { input: ":screenshot \"file name", expectedError: /String does not terminate/ },
   {
     input: ":screenshot \"file name --clipboard",
-    
-    
-    expectedError: /String does not terminate before flag clipboard/
+    expectedError: /String does not terminate before flag "clipboard"/
   },
   { input: "::screenshot", expectedError: /':screenshot' is not a valid command/ }
 ];
