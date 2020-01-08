@@ -71,6 +71,17 @@ GeckoViewStartup.prototype = {
           handler: _ => this.GeckoViewConsole,
         });
 
+        
+        
+        Services.obs.addObserver({
+          QueryInterface: ChromeUtils.generateQI([
+            Ci.nsIObserver, Ci.nsIFormSubmitObserver,
+          ]),
+          notifyInvalidSubmit: (form, element) => {
+            
+          },
+        }, "invalidformsubmit");
+
         if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
           ActorManagerParent.flush();
 
