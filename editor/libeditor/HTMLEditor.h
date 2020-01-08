@@ -174,7 +174,7 @@ public:
 
 
 
-  nsresult InsertLineBreakAsAction();
+  virtual nsresult InsertLineBreakAsAction() override;
 
   
 

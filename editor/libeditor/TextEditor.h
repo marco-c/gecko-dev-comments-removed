@@ -190,6 +190,12 @@ public:
 
 
 
+  virtual nsresult InsertLineBreakAsAction();
+
+  
+
+
+
   nsresult InsertParagraphSeparatorAsAction();
 
   
@@ -379,6 +385,9 @@ protected:
 
 
 
+  nsresult InsertLineBreakAsSubAction();
+
+  
 
 
 
