@@ -632,9 +632,6 @@ private:
   
   nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument);
 
-  nsresult CreatePrincipalFromReferrer(nsIURI* aReferrer,
-                                       nsIPrincipal** aResult);
-
   
 
 
