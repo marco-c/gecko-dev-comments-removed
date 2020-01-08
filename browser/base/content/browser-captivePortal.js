@@ -2,10 +2,6 @@
 
 
 
-XPCOMUtils.defineLazyServiceGetter(this, "cps",
-                                   "@mozilla.org/network/captive-portal-service;1",
-                                   "nsICaptivePortalService");
-
 var CaptivePortalWatcher = {
   
   PORTAL_NOTIFICATION_VALUE: "captive-portal-detected",
@@ -46,7 +42,10 @@ var CaptivePortalWatcher = {
     Services.obs.addObserver(this, "captive-portal-login-abort");
     Services.obs.addObserver(this, "captive-portal-login-success");
 
-    if (cps.state == cps.LOCKED_PORTAL) {
+    this._cps = Cc["@mozilla.org/network/captive-portal-service;1"]
+                  .getService(Ci.nsICaptivePortalService);
+
+    if (this._cps.state == this._cps.LOCKED_PORTAL) {
       
       this._captivePortalDetected();
 
@@ -54,7 +53,7 @@ var CaptivePortalWatcher = {
       if (BrowserWindowTracker.windowCount == 1) {
         this.ensureCaptivePortalTab();
       }
-    } else if (cps.state == cps.UNKNOWN) {
+    } else if (this._cps.state == this._cps.UNKNOWN) {
       
       
       this._delayedRecheckPending = true;
@@ -78,7 +77,7 @@ var CaptivePortalWatcher = {
   delayedStartup() {
     if (this._delayedRecheckPending) {
       delete this._delayedRecheckPending;
-      cps.recheckCaptivePortal();
+      this._cps.recheckCaptivePortal();
     }
   },
 
@@ -143,27 +142,27 @@ var CaptivePortalWatcher = {
 
     
     
-    cps.recheckCaptivePortal();
+    this._cps.recheckCaptivePortal();
     this._waitingForRecheck = true;
     let requestTime = Date.now();
 
-    let self = this;
-    Services.obs.addObserver(function observer() {
+    let observer = () => {
       let time = Date.now() - requestTime;
       Services.obs.removeObserver(observer, "captive-portal-check-complete");
-      self._waitingForRecheck = false;
-      if (cps.state != cps.LOCKED_PORTAL) {
+      this._waitingForRecheck = false;
+      if (this._cps.state != this._cps.LOCKED_PORTAL) {
         
         return;
       }
 
-      if (time <= self.PORTAL_RECHECK_DELAY_MS) {
+      if (time <= this.PORTAL_RECHECK_DELAY_MS) {
         
         
         
-        self.ensureCaptivePortalTab();
+        this.ensureCaptivePortalTab();
       }
-    }, "captive-portal-check-complete");
+    };
+    Services.obs.addObserver(observer, "captive-portal-check-complete");
   },
 
   _captivePortalGone() {
