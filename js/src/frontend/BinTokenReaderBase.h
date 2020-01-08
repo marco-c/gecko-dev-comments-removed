@@ -131,10 +131,12 @@ class MOZ_STACK_CLASS BinTokenReaderBase
             return false;
         }
 
+#ifndef FUZZING
         
         if (!std::equal(current_, current_ + N + (expectNul ? 0 : -1), value)) {
             return false;
         }
+#endif
 
         
         current_ += N + (expectNul ? 0 : -1);

@@ -60,8 +60,8 @@ testBinASTReaderFuzz(const uint8_t* buf, size_t size) {
     Directives directives(false);
     GlobalSharedContext globalsc(gCx, ScopeKind::Global, directives, false);
 
-    BinASTParser<js::frontend::BinTokenReaderTester> reader(gCx, gCx->tempLifoAlloc(),
-                                                            binUsedNames, options);
+    BinASTParser<js::frontend::BinTokenReaderMultipart> reader(gCx, gCx->tempLifoAlloc(),
+                                                               binUsedNames, options);
 
     
     auto binParsed = reader.parse(&globalsc, binSource);
