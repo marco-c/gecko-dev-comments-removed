@@ -51,7 +51,7 @@ SharedWorkerManager::MaybeCreateRemoteWorker(const RemoteWorkerData& aData,
   AssertIsOnBackgroundThread();
 
   if (!mRemoteWorkerController) {
-    mRemoteWorkerController = RemoteWorkerController::Create(aData);
+    mRemoteWorkerController = RemoteWorkerController::Create(aData, this);
     if (NS_WARN_IF(!mRemoteWorkerController)) {
       return false;
     }
@@ -188,112 +188,42 @@ SharedWorkerManager::IsSecureContext() const
   return mIsSecureContext;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void
+SharedWorkerManager::CreationFailed()
+{
+  AssertIsOnBackgroundThread();
+
+  for (SharedWorkerParent* actor : mActors) {
+    Unused << actor->SendError(NS_ERROR_FAILURE);
+  }
+}
+
+void
+SharedWorkerManager::CreationSucceeded()
+{
+  AssertIsOnBackgroundThread();
+  
+}
+
+void
+SharedWorkerManager::ErrorReceived(const ErrorValue& aValue)
+{
+  AssertIsOnBackgroundThread();
+
+  for (SharedWorkerParent* actor : mActors) {
+    Unused << actor->SendError(aValue);
+  }
+}
+
+void
+SharedWorkerManager::Terminated()
+{
+  AssertIsOnBackgroundThread();
+
+  for (SharedWorkerParent* actor : mActors) {
+    Unused << actor->SendTerminate();
+  }
+}
 
 } 
 } 
