@@ -361,13 +361,13 @@ const gCSSProperties = {
   'color-interpolation': {
     
     types: [
-      { type: 'discrete', options: [ [ 'linearRGB', 'auto' ] ] }
+      { type: 'discrete', options: [ [ 'linearrgb', 'auto' ] ] }
     ]
   },
   'color-interpolation-filters': {
     
     types: [
-      { type: 'discrete', options: [ [ 'sRGB', 'linearRGB' ] ] }
+      { type: 'discrete', options: [ [ 'srgb', 'linearrgb' ] ] }
     ]
   },
   'column-count': {
