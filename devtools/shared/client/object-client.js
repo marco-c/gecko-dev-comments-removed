@@ -186,31 +186,8 @@ ObjectClient.prototype = {
 
 
 
-
-  getPropertyValue: DebuggerClient.requester({
-    type: "propertyValue",
-    name: arg(0)
-  }),
-
-  
-
-
-
-
   getPrototype: DebuggerClient.requester({
     type: "prototype"
-  }),
-
-  
-
-
-
-
-
-  apply: DebuggerClient.requester({
-    type: "apply",
-    this: arg(0),
-    arguments: arg(1),
   }),
 
   
