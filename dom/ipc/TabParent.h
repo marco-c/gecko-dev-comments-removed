@@ -329,7 +329,7 @@ public:
 
   void LoadURL(nsIURI* aURI);
 
-  void InitRenderFrame();
+  void InitRendering();
   void MaybeShowFrame();
 
   
