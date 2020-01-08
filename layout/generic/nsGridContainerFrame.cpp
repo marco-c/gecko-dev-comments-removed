@@ -5988,7 +5988,7 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   const nscoord computedBSize = aReflowInput.ComputedBSize();
   const nscoord computedISize = aReflowInput.ComputedISize();
   const WritingMode& wm = gridReflowInput.mWM;
-  LogicalSize computedSize(wm, computedISize, computedBSize);
+  const LogicalSize computedSize(wm, computedISize, computedBSize);
 
   nscoord consumedBSize = 0;
   nscoord bSize = 0;
@@ -6001,16 +6001,26 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
                                         SizingConstraint::eNoConstraint);
     
     
-    for (const auto& sz : gridReflowInput.mRows.mSizes) {
-      bSize += sz.mBase;
+    
+    if (!aReflowInput.mStyleDisplay->IsContainSize()) {
+      
+      
+      for (const auto& sz : gridReflowInput.mRows.mSizes) {
+        bSize += sz.mBase;
+      }
+      bSize += gridReflowInput.mRows.SumOfGridGaps();
     }
-    bSize += gridReflowInput.mRows.SumOfGridGaps();
   } else {
     consumedBSize = ConsumedBSize(wm);
     gridReflowInput.InitializeForContinuation(this, consumedBSize);
-    const uint32_t numRows = gridReflowInput.mRows.mSizes.Length();
-    bSize = gridReflowInput.mRows.GridLineEdge(numRows,
-                                               GridLineSide::eAfterGridGap);
+    
+    
+    
+    if (!aReflowInput.mStyleDisplay->IsContainSize()) {
+      const uint32_t numRows = gridReflowInput.mRows.mSizes.Length();
+      bSize = gridReflowInput.mRows.GridLineEdge(numRows,
+                                                 GridLineSide::eAfterGridGap);
+    }
   }
   if (computedBSize == NS_AUTOHEIGHT) {
     bSize = NS_CSS_MINMAX(bSize,
@@ -6476,7 +6486,9 @@ nsGridContainerFrame::GetMinISize(gfxContext* aRC)
 {
   DISPLAY_MIN_WIDTH(this, mCachedMinISize);
   if (mCachedMinISize == NS_INTRINSIC_WIDTH_UNKNOWN) {
-    mCachedMinISize = IntrinsicISize(aRC, nsLayoutUtils::MIN_ISIZE);
+    mCachedMinISize = StyleDisplay()->IsContainSize()
+      ? 0
+      : IntrinsicISize(aRC, nsLayoutUtils::MIN_ISIZE);
   }
   return mCachedMinISize;
 }
@@ -6486,7 +6498,9 @@ nsGridContainerFrame::GetPrefISize(gfxContext* aRC)
 {
   DISPLAY_PREF_WIDTH(this, mCachedPrefISize);
   if (mCachedPrefISize == NS_INTRINSIC_WIDTH_UNKNOWN) {
-    mCachedPrefISize = IntrinsicISize(aRC, nsLayoutUtils::PREF_ISIZE);
+    mCachedPrefISize = StyleDisplay()->IsContainSize()
+      ? 0
+      : IntrinsicISize(aRC, nsLayoutUtils::PREF_ISIZE);
   }
   return mCachedPrefISize;
 }
