@@ -37,6 +37,7 @@ class AnimationListContainer extends PureComponent {
       setAnimationsCurrentTime: PropTypes.func.isRequired,
       setHighlightedNode: PropTypes.func.isRequired,
       setSelectedNode: PropTypes.func.isRequired,
+      sidebarWidth: PropTypes.number.isRequired,
       simulateAnimation: PropTypes.func.isRequired,
       timeScale: PropTypes.object.isRequired,
     };
@@ -55,8 +56,17 @@ class AnimationListContainer extends PureComponent {
     this.updateState(this.props);
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.updateState(nextProps);
+  componentDidUpdate(prevProps) {
+    const {
+      timeScale,
+      sidebarWidth
+    } = this.props;
+
+    if (timeScale.getDuration() !== prevProps.timeScale.getDuration() ||
+        timeScale.zeroPositionTime !== prevProps.timeScale.zeroPositionTime ||
+        sidebarWidth !== prevProps.sidebarWidth) {
+      this.updateState(this.props);
+    }
   }
 
   updateState(props) {
@@ -79,25 +89,16 @@ class AnimationListContainer extends PureComponent {
     
     if (needToShift) {
       const label = timeScale.formatTime(timeScale.distanceToRelativeTime(0));
-      ticks.push({ position: 0, label });
+      ticks.push({ position: 0, label, width: shiftWidth });
     }
 
     for (let i = 0; i <= tickCount; i++) {
       const position = ((i * intervalWidth) + shiftWidth) * 100 / width;
       const distance = timeScale.distanceToRelativeTime(position);
-      let label = isAllDurationInfinity && i === tickCount
-                  ? getStr("player.infiniteTimeLabel")
-                  : timeScale.formatTime(distance);
-      
-      
-      
-      if (i === 0 &&
-          needToShift &&
-          shiftWidth < intervalWidth &&
-          Math.abs(distance) >= 0.001) {
-        label = "";
-      }
-      ticks.push({ position, label });
+      const label = isAllDurationInfinity && i === tickCount
+                    ? getStr("player.infiniteTimeLabel")
+                    : timeScale.formatTime(distance);
+      ticks.push({ position, label, width: intervalWidth });
     }
 
     this.setState({ ticks });
