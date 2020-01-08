@@ -2203,9 +2203,6 @@ public:
     void SetLineContainer(nsIFrame* aLineContainer)
     {
       mLineContainer = aLineContainer;
-      if (mLineContainer) {
-        mLineContainerWM = mLineContainer->GetWritingMode();
-      }
     }
     nsIFrame* LineContainer() const { return mLineContainer; }
 
@@ -2225,10 +2222,6 @@ public:
     
     
     bool mSkipWhitespace;
-
-    
-    
-    mozilla::WritingMode mLineContainerWM;
 
     
     class FloatInfo {
