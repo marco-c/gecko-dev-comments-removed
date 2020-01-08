@@ -11,9 +11,11 @@
 #include "mozIDOMWindow.h"
 
 #include "nsCOMPtr.h"
+#include "nsDataHashtable.h"
 #include "nsTArray.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/TaskCategory.h"
+#include "mozilla/TimeStamp.h"
 #include "js/TypeDecls.h"
 #include "nsRefPtrHashtable.h"
 
@@ -862,6 +864,13 @@ public:
   
 
 
+  void NotifyTemporaryAutoplayPermissionChanged(int32_t aState,
+                                                const nsAString& aPrePath);
+  bool HasTemporaryAutoplayPermission();
+
+  
+
+
 
 
 
@@ -1278,6 +1287,9 @@ protected:
   mozilla::dom::LargeAllocStatus mLargeAllocStatus;
 
   nsCOMPtr<nsPIDOMWindowOuter> mOpenerForInitialContentBrowser;
+
+  using PermissionInfo = std::pair<bool, mozilla::TimeStamp>;
+  nsDataHashtable<nsStringHashKey, PermissionInfo> mAutoplayTemporaryPermission;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)
