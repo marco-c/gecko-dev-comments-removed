@@ -149,8 +149,6 @@ window._gBrowser = {
 
   _clearMultiSelectionLocked: false,
 
-  _clearMultiSelectionLockedOnce: false,
-
   
 
 
@@ -660,10 +658,7 @@ window._gBrowser = {
     
     
     if (!gMultiProcessBrowser) {
-      let browser = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIWebNavigation)
-                           .QueryInterface(Ci.nsIDocShell)
-                           .chromeEventHandler;
+      let browser = aWindow.docShell.chromeEventHandler;
       return this.getTabForBrowser(browser);
     }
 
@@ -3070,11 +3065,7 @@ window._gBrowser = {
       win.windowUtils.suppressAnimation(true);
       
       
-      let baseWin = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDocShell)
-                       .QueryInterface(Ci.nsIDocShellTreeItem)
-                       .treeOwner
-                       .QueryInterface(Ci.nsIBaseWindow);
+      let baseWin = win.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
       baseWin.visibility = false;
     }
 
@@ -3697,10 +3688,6 @@ window._gBrowser = {
 
   clearMultiSelectedTabs(updatePositionalAttributes) {
     if (this._clearMultiSelectionLocked) {
-      if (this._clearMultiSelectionLockedOnce) {
-        this._clearMultiSelectionLockedOnce = false;
-        this._clearMultiSelectionLocked = false;
-      }
       return;
     }
 
@@ -3717,11 +3704,6 @@ window._gBrowser = {
     if (updatePositionalAttributes) {
       this.tabContainer._setPositionalAttributes();
     }
-  },
-
-  lockClearMultiSelectionOnce() {
-    this._clearMultiSelectionLockedOnce = true;
-    this._clearMultiSelectionLocked = true;
   },
 
   

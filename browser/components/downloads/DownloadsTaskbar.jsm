@@ -122,9 +122,7 @@ var DownloadsTaskbar = {
 
   _attachIndicator(aWindow) {
     
-    let docShell = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIWebNavigation)
-                          .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
+    let docShell = aWindow.docShell.treeOwner
                           .QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIXULWindow).docShell;
     this._taskbarProgress = gWinTaskbar.getTaskbarProgress(docShell);

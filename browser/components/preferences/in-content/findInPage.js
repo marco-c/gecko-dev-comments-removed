@@ -185,9 +185,7 @@ var gSearchResultsPane = {
 
   getFindSelection(win) {
     
-    let docShell = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsIWebNavigation)
-                      .QueryInterface(Ci.nsIDocShell);
+    let docShell = win.docShell;
 
     let controller = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsISelectionDisplay)

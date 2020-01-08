@@ -1715,10 +1715,7 @@ var CustomizableUIInternal = {
           break;
         }
         
-        target = target.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
-                                   .getInterface(Ci.nsIWebNavigation)
-                                   .QueryInterface(Ci.nsIDocShell)
-                                   .chromeEventHandler;
+        target = target.defaultView.docShell.chromeEventHandler;
         if (!target) {
           break;
         }

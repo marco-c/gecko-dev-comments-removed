@@ -356,10 +356,7 @@ var gSyncPane = {
   
   replaceTabWithUrl(url) {
     
-    let browser = window.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIWebNavigation)
-      .QueryInterface(Ci.nsIDocShell)
-      .chromeEventHandler;
+    let browser = window.docShell.chromeEventHandler;
     
     browser.loadURI(url);
   },

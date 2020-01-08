@@ -1690,11 +1690,7 @@ var SessionStoreInternal = {
       
       
       
-      let baseWin = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIDocShell)
-                          .QueryInterface(Ci.nsIDocShellTreeItem)
-                          .treeOwner
-                          .QueryInterface(Ci.nsIBaseWindow);
+      let baseWin = window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
       baseWin.visibility = false;
     }
 
@@ -4473,7 +4469,7 @@ var SessionStoreInternal = {
         }
         
         
-        let xulWin = aWindow.getInterface(Ci.nsIDocShell)
+        let xulWin = aWindow.docShell
                             .treeOwner
                             .QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIXULWindow);
