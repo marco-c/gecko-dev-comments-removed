@@ -66,6 +66,22 @@ nsMIMEHeaderParamImpl::GetParameterHTTP(const nsACString& aHeaderVal,
 
 
 nsresult
+nsMIMEHeaderParamImpl::GetParameterHTTP(const nsACString& aHeaderVal,
+                                        const char *aParamName,
+                                        nsAString& aResult)
+{
+  return DoGetParameter(aHeaderVal,
+                        aParamName,
+                        HTTP_FIELD_ENCODING,
+                        EmptyCString(),
+                        false,
+                        nullptr,
+                        aResult);
+}
+
+
+
+nsresult
 nsMIMEHeaderParamImpl::DoGetParameter(const nsACString& aHeaderVal,
                                       const char *aParamName,
                                       ParamDecoding aDecoding,
@@ -353,6 +369,7 @@ nsMIMEHeaderParamImpl::GetParameterInternal(const char *aHeaderValue,
   return DoParameterInternal(aHeaderValue, aParamName, MIME_FIELD_ENCODING,
                              aCharset, aLang, aResult);
 }
+
 
 
 nsresult

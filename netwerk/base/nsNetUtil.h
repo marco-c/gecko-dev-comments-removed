@@ -991,6 +991,24 @@ bool InScriptableRange(int64_t val);
 
 bool InScriptableRange(uint64_t val);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult
+GetParameterHTTP(const nsACString& aHeaderVal,
+                 const char* aParamName,
+                 nsAString& aResult);
+
 } 
 } 
 
