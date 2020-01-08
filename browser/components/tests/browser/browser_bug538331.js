@@ -294,8 +294,6 @@ const BG_NOTIFY_TESTS = [
 
 
 function testShowNotification() {
-  let notifyBox = document.getElementById("high-priority-global-notificationbox");
-
   
   
   gWindowCatcher.start();
@@ -328,7 +326,8 @@ function testShowNotification() {
 
     gBG.observe(null, "browser-glue-test", "post-update-notification");
 
-    let updateBox = notifyBox.getNotificationWithValue("post-update-notification");
+    let updateBox = gHighPriorityNotificationBox.getNotificationWithValue(
+                                                    "post-update-notification");
     if (testCase.actions && testCase.actions.includes("showNotification") &&
         !testCase.actions.includes("silent")) {
       ok(updateBox, "Update notification box should have been displayed");
@@ -357,7 +356,7 @@ function testShowNotification() {
             button.click();
           });
         } else {
-          notifyBox.removeAllNotifications(true);
+          gHighPriorityNotificationBox.removeAllNotifications(true);
         }
       } else if (i == (BG_NOTIFY_TESTS.length - 1)) {
         

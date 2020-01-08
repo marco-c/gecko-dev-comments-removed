@@ -654,7 +654,14 @@ window._gBrowser = {
   },
 
   getNotificationBox(aBrowser) {
-    return this.getBrowserContainer(aBrowser).firstElementChild;
+    let container = this.getBrowserContainer(aBrowser);
+    let notificationbox = container.firstElementChild;
+    if (notificationbox.localName != "notificationbox") {
+      notificationbox = document.createXULElement("notificationbox");
+      notificationbox.setAttribute("notificationside", "top");
+      container.prepend(notificationbox);
+    }
+    return notificationbox;
   },
 
   getTabModalPromptBox(aBrowser) {
@@ -5437,8 +5444,8 @@ var TabContextMenu = {
     contextMoveTabToStart.disabled = selectedTabs[0]._tPos == 0 && allSelectedTabsAdjacent;
 
     
-    document.getElementById("context_duplicateTab").hidden = multiselectionContext;
-    document.getElementById("context_duplicateTabs").hidden = !multiselectionContext;
+    let contextDuplicateTab = document.getElementById("context_duplicateTab");
+    contextDuplicateTab.hidden = multiselectionContext;
 
     
     
@@ -5529,14 +5536,6 @@ var TabContextMenu = {
       isContextMenu: true,
       excludeUserContextId: this.contextTab.getAttribute("usercontextid"),
     });
-  },
-  duplicateSelectedTabs() {
-    let tabsToDuplicate = gBrowser.selectedTabs;
-    let newIndex = tabsToDuplicate[tabsToDuplicate.length - 1]._tPos + 1;
-    for (let tab of tabsToDuplicate) {
-      let newTab = SessionStore.duplicateTab(window, tab);
-      gBrowser.moveTabTo(newTab, newIndex++);
-    }
   },
   reopenInContainer(event) {
     let userContextId = parseInt(event.target.getAttribute("data-usercontextid"));

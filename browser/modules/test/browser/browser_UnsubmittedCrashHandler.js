@@ -169,8 +169,6 @@ function waitForIgnoredReports(reportIDs) {
   return Promise.all(promises);
 }
 
-let gNotificationBox;
-
 add_task(async function setup() {
   
   
@@ -181,7 +179,6 @@ add_task(async function setup() {
   await makeFakeAppDir();
   
   
-  gNotificationBox = document.getElementById("global-notificationbox");
 
   
   
@@ -239,7 +236,6 @@ add_task(async function setup() {
   UnsubmittedCrashHandler.init();
 
   registerCleanupFunction(function() {
-    gNotificationBox = null;
     clearPendingCrashReports();
     env.set("MOZ_CRASHREPORTER_URL", oldServerURL);
   });

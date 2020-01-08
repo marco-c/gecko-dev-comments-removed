@@ -420,8 +420,8 @@ var ProcessHangMonitor = {
 
 
   showNotification(win, report) {
-    let nb = win.document.getElementById("high-priority-global-notificationbox");
-    let notification = nb.getNotificationWithValue("process-hang");
+    let notification =
+        win.gHighPriorityNotificationBox.getNotificationWithValue("process-hang");
     if (notification) {
       return;
     }
@@ -487,19 +487,19 @@ var ProcessHangMonitor = {
       });
     }
 
-    nb.appendNotification(message, "process-hang",
-                          "chrome://browser/content/aboutRobots-icon.png",
-                          nb.PRIORITY_WARNING_HIGH, buttons);
+    win.gHighPriorityNotificationBox.appendNotification(message, "process-hang",
+      "chrome://browser/content/aboutRobots-icon.png",
+      win.gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH, buttons);
   },
 
   
 
 
   hideNotification(win) {
-    let nb = win.document.getElementById("high-priority-global-notificationbox");
-    let notification = nb.getNotificationWithValue("process-hang");
+    let notification =
+        win.gHighPriorityNotificationBox.getNotificationWithValue("process-hang");
     if (notification) {
-      nb.removeNotification(notification);
+      win.gHighPriorityNotificationBox.removeNotification(notification);
     }
   },
 

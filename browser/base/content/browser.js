@@ -295,6 +295,38 @@ Object.defineProperty(this, "gNavToolbox", {
 });
 
 
+Object.defineProperty(this, "gHighPriorityNotificationBox", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    delete this.gHighPriorityNotificationBox;
+
+    let notificationbox = document.createXULElement("notificationbox");
+    notificationbox.className = "global-notificationbox";
+    notificationbox.setAttribute("notificationside", "top");
+    document.getElementById("appcontent").prepend(notificationbox);
+
+    return this.gHighPriorityNotificationBox = notificationbox;
+  },
+});
+
+
+Object.defineProperty(this, "gNotificationBox", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    delete this.gNotificationBox;
+
+    let notificationbox = document.createXULElement("notificationbox");
+    notificationbox.className = "global-notificationbox";
+    notificationbox.setAttribute("notificationside", "bottom");
+    document.getElementById("browser-bottombox").appendChild(notificationbox);
+
+    return this.gNotificationBox = notificationbox;
+  },
+});
+
+
 
 
 Object.defineProperty(this, "gFindBar", {
@@ -527,8 +559,7 @@ const gStoragePressureObserver = {
     }
 
     const NOTIFICATION_VALUE = "storage-pressure-notification";
-    let notificationBox = document.getElementById("high-priority-global-notificationbox");
-    if (notificationBox.getNotificationWithValue(NOTIFICATION_VALUE)) {
+    if (gHighPriorityNotificationBox.getNotificationWithValue(NOTIFICATION_VALUE)) {
       
       return;
     }
@@ -597,8 +628,9 @@ const gStoragePressureObserver = {
       });
     }
 
-    notificationBox.appendNotification(
-      msg, NOTIFICATION_VALUE, null, notificationBox.PRIORITY_WARNING_HIGH, buttons, null);
+    gHighPriorityNotificationBox.appendNotification(
+      msg, NOTIFICATION_VALUE, null,
+      gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH, buttons, null);
   },
 };
 
@@ -3503,10 +3535,10 @@ var PrintPreviewListener = {
       gFindBar.close();
 
     gBrowser.getNotificationBox().hidden = true;
-    document.getElementById("global-notificationbox").hidden = true;
+    gNotificationBox.hidden = true;
   },
   _showChrome() {
-    document.getElementById("global-notificationbox").hidden = false;
+    gNotificationBox.hidden = false;
     gBrowser.getNotificationBox().hidden = false;
 
     if (this._chromeState.findOpen) {

@@ -1584,10 +1584,8 @@ var BrowserTestUtils = {
 
 
   waitForGlobalNotificationBar(win, notificationValue) {
-    let notificationBox =
-      win.document.getElementById("high-priority-global-notificationbox");
-    return this.waitForNotificationInNotificationBox(notificationBox,
-                                                     notificationValue);
+    return this.waitForNotificationInNotificationBox(
+                       win.gHighPriorityNotificationBox, notificationValue);
   },
 
   waitForNotificationInNotificationBox(notificationBox, notificationValue) {

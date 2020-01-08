@@ -79,7 +79,7 @@ sandboxManager.addHold("test running");
 
 add_task(async function() {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
-  const notificationBox = targetWindow.document.querySelector("#high-priority-global-notificationbox");
+  const notificationBox = targetWindow.gHighPriorityNotificationBox;
 
   const preCount = notificationBox.childElementCount;
   const hb = new Heartbeat(targetWindow, sandboxManager, {
@@ -128,7 +128,7 @@ add_task(async function() {
 
 add_task(async function() {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
-  const notificationBox = targetWindow.document.querySelector("#high-priority-global-notificationbox");
+  const notificationBox = targetWindow.gHighPriorityNotificationBox;
   const hb = new Heartbeat(targetWindow, sandboxManager, {
     testing: true,
     flowId: "test",
