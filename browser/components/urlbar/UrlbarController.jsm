@@ -80,6 +80,7 @@ class QueryContext {
 
 
 
+
 class UrlbarController {
   
 
@@ -119,6 +120,8 @@ class UrlbarController {
     this._notify("onQueryStarted", queryContext);
 
     await this.manager.startQuery(queryContext, this);
+
+    this._notify("onQueryFinished", queryContext);
   }
 
   

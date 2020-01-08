@@ -83,6 +83,14 @@ class UrlbarView {
     this._rows.textContent = "";
   }
 
+  onQueryCancelled(queryContext) {
+    
+  }
+
+  onQueryFinished(queryContext) {
+    
+  }
+
   onQueryResults(queryContext) {
     
     

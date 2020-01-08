@@ -68,6 +68,19 @@ var UrlbarUtils = {
   },
 
   
+  
+  
+  
+  MATCH_SOURCE: {
+    BOOKMARKS: 1,
+    HISTORY: 2,
+    SEARCHENGINE: 3,
+    TABS: 4,
+    OTHER_LOCAL: 5,
+    OTHER_NETWORK: 6,
+  },
+
+  
 
 
 
