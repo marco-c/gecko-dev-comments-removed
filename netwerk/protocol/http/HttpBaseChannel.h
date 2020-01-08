@@ -74,15 +74,6 @@ extern mozilla::LazyLogModule gHttpLog;
 
 typedef nsTArray<Tuple<nsCString, nsCString>> ArrayOfStringPairs;
 
-enum CacheDisposition : uint8_t {
-  kCacheUnresolved = 0,
-  kCacheHit = 1,
-  kCacheHitViaReval = 2,
-  kCacheMissedViaReval = 3,
-  kCacheMissed = 4,
-  kCacheUnknown = 5
-};
-
 
 
 
