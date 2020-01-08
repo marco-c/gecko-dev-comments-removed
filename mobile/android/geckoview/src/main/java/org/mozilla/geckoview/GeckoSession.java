@@ -1302,10 +1302,29 @@ public class GeckoSession extends LayerSession
 
 
 
+
+
+
+
     public void setActive(boolean active) {
-        final GeckoBundle msg = new GeckoBundle();
+        final GeckoBundle msg = new GeckoBundle(1);
         msg.putBoolean("active", active);
         mEventDispatcher.dispatch("GeckoView:SetActive", msg);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void setFocused(boolean focused) {
+        final GeckoBundle msg = new GeckoBundle(1);
+        msg.putBoolean("focused", focused);
+        mEventDispatcher.dispatch("GeckoView:SetFocused", msg);
     }
 
     
