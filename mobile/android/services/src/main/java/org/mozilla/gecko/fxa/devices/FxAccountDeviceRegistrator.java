@@ -7,11 +7,11 @@ package org.mozilla.gecko.fxa.devices;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Log;
 
+import org.mozilla.gecko.GeckoServicesCreatorService;
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.background.fxa.FxAccountClient;
 import org.mozilla.gecko.background.fxa.FxAccountClient20;
@@ -27,12 +27,9 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.GeneralSecurityException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -123,21 +120,20 @@ public class FxAccountDeviceRegistrator implements BundleEventListener {
     
     
     final Intent geckoIntent = buildCreatePushServiceIntent(context, "android-fxa-subscribe");
-    context.startService(geckoIntent);
+    GeckoServicesCreatorService.enqueueWork(context, geckoIntent);
     
   }
 
   private void beginRegistrationRenewal(Context context) {
     
     final Intent geckoIntent = buildCreatePushServiceIntent(context, "android-fxa-resubscribe");
-    context.startService(geckoIntent);
+    GeckoServicesCreatorService.enqueueWork(context, geckoIntent);
     
   }
 
   private Intent buildCreatePushServiceIntent(final Context context, final String data) {
     final Intent intent = new Intent();
     intent.setAction("create-services");
-    intent.setClassName(context, "org.mozilla.gecko.GeckoService");
     intent.putExtra("category", "android-push-service");
     intent.putExtra("data", data);
     final AndroidFxAccount fxAccount = AndroidFxAccount.fromContext(context);
