@@ -126,6 +126,10 @@ let propNameWhitelist = [
    isFromDevTools: true},
   {propName: "--bezier-grid-color",
    isFromDevTools: true},
+
+  
+  {propName: "--tracking-protection-shield-color",
+   isFromDevTools: false},
 ];
 
 
