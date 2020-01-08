@@ -70,7 +70,7 @@ add_task(async function() {
   
   
   let faviconErrorPageURI =
-    Services.io.newURI("chrome://global/skin/icons/warning-16.png");
+    Services.io.newURI("chrome://global/skin/icons/warning.svg");
   pageURI = Services.io.newURI("http://example.com/errorIcon");
   await PlacesTestUtils.addVisits({ uri: pageURI, transition: TRANSITION_TYPED });
   PlacesUtils.favicons.setAndFetchFaviconForPage(pageURI,
