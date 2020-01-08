@@ -231,14 +231,16 @@ void PlatformThread::Start() {
   
   
   
-  thread_ = ::CreateThread(nullptr, 1024 * 1024, &StartThread, this,
+  
+  thread_ = ::CreateThread(nullptr, 256 * 1024, &StartThread, this,
                            STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id_);
   RTC_CHECK(thread_) << "CreateThread failed";
   RTC_DCHECK(thread_id_);
 #else
   ThreadAttributes attr;
   
-  pthread_attr_setstacksize(&attr, 1024 * 1024);
+  
+  pthread_attr_setstacksize(&attr, 256 * 1024);
   RTC_CHECK_EQ(0, pthread_create(&thread_, &attr, &StartThread, this));
 #endif  
 }
