@@ -156,7 +156,10 @@ class FontInspector {
 
 
 
-  async convertUnits(value, fromUnit, toUnit) {
+
+
+
+  async convertUnits(property, value, fromUnit, toUnit) {
     if (value !== parseFloat(value)) {
       throw TypeError(`Invalid value for conversion. Expected Number, got ${value}`);
     }
@@ -166,9 +169,15 @@ class FontInspector {
     }
 
     
+    if (property === "line-height" &&
+       (fromUnit === "" && toUnit === "em") || (fromUnit === "em" && toUnit === "")) {
+      return value;
+    }
+
+    
     
     if (toUnit !== "px" && fromUnit !== "px") {
-      value = await this.convertUnits(value, fromUnit, "px");
+      value = await this.convertUnits(property, value, fromUnit, "px");
       fromUnit = "px";
     }
 
@@ -178,6 +187,8 @@ class FontInspector {
     const unit = toUnit === "px" ? fromUnit : toUnit;
     
     const node = this.inspector.selection.nodeFront;
+    
+    const referenceNode = (property === "line-height") ? node : node.parentNode();
     
     
     let out = value;
@@ -216,7 +227,7 @@ class FontInspector {
 
     if (unit === "%") {
       computedStyle =
-        await this.pageStyle.getComputed(node.parentNode()).catch(console.error);
+        await this.pageStyle.getComputed(referenceNode).catch(console.error);
 
       if (!computedStyle) {
         return value;
@@ -227,9 +238,10 @@ class FontInspector {
         : value / 100 * parseFloat(computedStyle["font-size"].value);
     }
 
-    if (unit === "em") {
+    
+    if (unit === "em" || (unit === "" && property === "line-height")) {
       computedStyle =
-        await this.pageStyle.getComputed(node.parentNode()).catch(console.error);
+        await this.pageStyle.getComputed(referenceNode).catch(console.error);
 
       if (!computedStyle) {
         return value;
@@ -772,8 +784,9 @@ class FontInspector {
     if (FONT_PROPERTIES.includes(property)) {
       let unit = fromUnit;
 
-      if (toUnit && fromUnit) {
-        value = await this.convertUnits(value, fromUnit, toUnit);
+      
+      if (toUnit !== undefined && fromUnit !== undefined) {
+        value = await this.convertUnits(property, value, fromUnit, toUnit);
         unit = toUnit;
       }
 
