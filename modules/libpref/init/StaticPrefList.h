@@ -340,6 +340,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.indexedDB.storageOption.enabled",
+   dom_indexedDB_storageOption_enabled,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 
