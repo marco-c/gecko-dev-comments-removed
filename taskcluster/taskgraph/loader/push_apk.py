@@ -14,7 +14,7 @@ def loader(kind, path, config, params, loaded_tasks):
     jobs = base_loader(kind, path, config, params, loaded_tasks)
 
     for job in jobs:
-        dependent_tasks = get_dependent_loaded_tasks(config, loaded_tasks)
+        dependent_tasks = get_dependent_loaded_tasks(config, params, loaded_tasks)
         if not dependent_tasks:
             
             
@@ -26,24 +26,30 @@ def loader(kind, path, config, params, loaded_tasks):
         yield job
 
 
-def get_dependent_loaded_tasks(config, loaded_tasks):
+def get_dependent_loaded_tasks(config, params, loaded_tasks):
     nightly_tasks = (
         task for task in loaded_tasks if task.attributes.get('nightly')
     )
     tasks_with_matching_kind = (
         task for task in nightly_tasks if task.kind in config.get('kind-dependencies')
     )
-    android_tasks = [
+    android_tasks = (
         task for task in tasks_with_matching_kind
         if task.attributes.get('build_platform', '').startswith('android')
-    ]
+    )
 
     
     
-    non_shipping_tasks = [
+    aarch64_tasks_only_on_central = (
         task for task in android_tasks
-        if 'aarch64' not in task.attributes.get('build_platform', '') and
-           'x86_64' not in task.attributes.get('build_platform', '')
+        if params['project'] == 'mozilla-central' or
+        'aarch64' not in task.attributes.get('build_platform', '')
+    )
+
+    
+    non_shipping_tasks = [
+        task for task in aarch64_tasks_only_on_central
+        if 'x86_64' not in task.attributes.get('build_platform', '')
     ]
 
     return non_shipping_tasks
