@@ -5455,13 +5455,7 @@ nsBrowserAccess.prototype = {
         }
         
         
-        try {
-          newWindow = openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", features,
-                      
-                      url, null, null, null, null, null, null, null, aTriggeringPrincipal);
-        } catch (ex) {
-          Cu.reportError(ex);
-        }
+        newWindow = openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", features, url, null, null, null);
         break;
       case Ci.nsIBrowserDOMWindow.OPEN_NEWTAB :
         
