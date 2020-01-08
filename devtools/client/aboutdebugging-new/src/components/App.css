@@ -2,8 +2,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
 .app {
+  display: grid;
   font-size: 15px;
+  grid-template-columns: 240px auto;
   height: 100vh;
   overflow: hidden;
   width: 100vw;

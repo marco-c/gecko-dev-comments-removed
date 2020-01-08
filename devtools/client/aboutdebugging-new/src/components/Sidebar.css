@@ -3,6 +3,5 @@
 
 
 .sidebar {
-  margin-block-start: 70px;
-  width: 240px;
+  padding-block-start: 70px;
 }
