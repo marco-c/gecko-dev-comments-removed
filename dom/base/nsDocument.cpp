@@ -2236,16 +2236,31 @@ nsIDocument::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup)
 
 
 
-
-
 bool
 PrincipalAllowsL10n(nsIPrincipal* principal)
 {
+  
   if (nsContentUtils::IsSystemPrincipal(principal)) {
     return true;
   }
 
-  return false;
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = principal->GetURI(getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  bool hasFlags;
+
+  
+  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_DANGEROUS_TO_LOAD, &hasFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (hasFlags) {
+    return true;
+  }
+
+  
+  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE, &hasFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+  return hasFlags;
 }
 
 void
@@ -3400,7 +3415,8 @@ nsIDocument::GetL10n()
 bool
 nsDocument::DocumentSupportsL10n(JSContext* aCx, JSObject* aObject)
 {
-  return PrincipalAllowsL10n(nsContentUtils::SubjectPrincipal(aCx));
+  nsCOMPtr<nsIPrincipal> callerPrincipal = nsContentUtils::SubjectPrincipal(aCx);
+  return PrincipalAllowsL10n(callerPrincipal);
 }
 
 void
