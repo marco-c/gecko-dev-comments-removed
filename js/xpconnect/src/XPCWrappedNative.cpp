@@ -987,9 +987,6 @@ nsresult XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
   
   
 
-  
-  
-
   nsCOMPtr<nsIXPConnectWrappedJS> wrappedJS(do_QueryInterface(qiResult));
   if (wrappedJS) {
     RootedObject jso(cx, wrappedJS->GetJSObject());
@@ -1008,32 +1005,6 @@ nsresult XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
 
       aTearOff->SetInterface(nullptr);
       return NS_OK;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (iid->Equals(NS_GET_IID(nsIPropertyBag)) && jso) {
-      RootedObject jsoGlobal(cx, wrappedJS->GetJSObjectGlobal());
-      RefPtr<nsXPCWrappedJSClass> clasp =
-          nsXPCWrappedJSClass::GetNewOrUsed(cx, *iid);
-      if (clasp) {
-        RootedObject answer(
-            cx, clasp->CallQueryInterfaceOnJSObject(cx, jso, jsoGlobal, *iid));
-
-        if (!answer) {
-          aTearOff->SetInterface(nullptr);
-          return NS_ERROR_NO_INTERFACE;
-        }
-      }
     }
   }
 
