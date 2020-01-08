@@ -599,7 +599,7 @@ RestyleManager::ChangeHintToString(nsChangeHint aHint)
     "NeutralChange", "InvalidateRenderingObservers",
     "ReflowChangesSizeOrPosition", "UpdateComputedBSize",
     "UpdateUsesOpacity", "UpdateBackgroundPosition",
-    "AddOrRemoveTransform", "CSSOverflowChange",
+    "AddOrRemoveTransform", "ScrollbarChange",
     "UpdateWidgetProperties", "UpdateTableCellSpans",
     "VisibilityChange"
   };
@@ -1358,8 +1358,8 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   
   
   for (nsStyleChangeData& data : aChangeList) {
-    if (data.mHint & nsChangeHint_CSSOverflowChange) {
-      data.mHint &= ~nsChangeHint_CSSOverflowChange;
+    if (data.mHint & nsChangeHint_ScrollbarChange) {
+      data.mHint &= ~nsChangeHint_ScrollbarChange;
       bool doReconstruct = true; 
 
       

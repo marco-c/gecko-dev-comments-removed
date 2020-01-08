@@ -3771,7 +3771,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 
   if (mOverflowX != aNewData.mOverflowX
       || mOverflowY != aNewData.mOverflowY) {
-    hint |= nsChangeHint_CSSOverflowChange;
+    hint |= nsChangeHint_ScrollbarChange;
   }
 
   
@@ -3808,7 +3808,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
       
       
       hint |= nsChangeHint_ReflowHintsForFloatAreaChange |
-              nsChangeHint_CSSOverflowChange;
+              nsChangeHint_ScrollbarChange;
     } else {
       
       

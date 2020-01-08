@@ -229,7 +229,9 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_CSSOverflowChange = 1 << 28,
+
+
+  nsChangeHint_ScrollbarChange = 1 << 28,
 
   
 
@@ -356,7 +358,7 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
 #define nsChangeHint_Hints_NeverHandledForDescendants (    \
   nsChangeHint_BorderStyleNoneChange |                     \
   nsChangeHint_ChildrenOnlyTransform |                     \
-  nsChangeHint_CSSOverflowChange |                         \
+  nsChangeHint_ScrollbarChange |                           \
   nsChangeHint_InvalidateRenderingObservers |              \
   nsChangeHint_RecomputePosition |                         \
   nsChangeHint_UpdateBackgroundPosition |                  \
