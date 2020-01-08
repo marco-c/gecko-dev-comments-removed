@@ -413,10 +413,9 @@ var XPCOMUtils = {
 
 
 
-  IterStringEnumerator: function* XPCU_IterStringEnumerator(e)
+  IterStringEnumerator: function XPCU_IterStringEnumerator(e)
   {
-    while (e.hasMore())
-      yield e.getNext();
+    return e;
   },
 
   
