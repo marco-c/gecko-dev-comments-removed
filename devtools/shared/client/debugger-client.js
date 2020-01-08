@@ -340,14 +340,6 @@ DebuggerClient.prototype = {
 
 
 
-  listTabs: function(options) {
-    return this.mainRoot.listTabs(options);
-  },
-
-  
-
-
-
 
 
 

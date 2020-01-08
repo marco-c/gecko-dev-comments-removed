@@ -172,6 +172,18 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
+  async listTabs(options) {
+    const { selected, tabs } = await super.listTabs(options);
+    for (const i in tabs) {
+      tabs[i].setIsSelected(i == selected);
+    }
+    return tabs;
+  }
+
+  
+
+
+
 
 
 

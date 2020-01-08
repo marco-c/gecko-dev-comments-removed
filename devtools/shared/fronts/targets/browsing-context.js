@@ -21,6 +21,9 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
     };
 
     
+    this._selected = false;
+
+    
     this.client = client;
   }
 
@@ -30,6 +33,22 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
     
     
     this.targetForm = json;
+
+    this.outerWindowID = json.outerWindowID;
+    this.favicon = json.favicon;
+    this.title = json.title;
+    this.url = json.url;
+  }
+
+  
+  
+  get selected() {
+    return this._selected;
+  }
+
+  
+  setIsSelected(selected) {
+    this._selected = selected;
   }
 
   

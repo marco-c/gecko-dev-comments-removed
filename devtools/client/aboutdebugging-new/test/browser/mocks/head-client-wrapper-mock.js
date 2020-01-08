@@ -69,7 +69,7 @@ function createClientMock() {
     
     listAddons: () => [],
     
-    listTabs: () => ({ tabs: []}),
+    listTabs: () => [],
     
     listWorkers: () => ({
       otherWorkers: [],
@@ -101,7 +101,7 @@ function createThisFirefoxClientMock() {
   };
 
   const mockThisFirefoxClient = createClientMock();
-  mockThisFirefoxClient.listTabs = () => ({ tabs: [mockAboutDebuggingTab] });
+  mockThisFirefoxClient.listTabs = () => ([mockAboutDebuggingTab]);
   mockThisFirefoxClient.getDeviceDescription = () => mockThisFirefoxDescription;
 
   return mockThisFirefoxClient;
