@@ -22,6 +22,8 @@ nsresult
 GetCertFingerprintByOidTag(CERTCertificate* nsscert, SECOidTag aOidTag,
                            nsCString& fp);
 
+
+
 void
 LossyUTF8ToUTF16(const char* str, uint32_t len,  nsAString& result);
 
