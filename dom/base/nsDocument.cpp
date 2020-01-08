@@ -9578,6 +9578,13 @@ nsIDocument::CreateStaticClone(nsIDocShell* aCloneContainer)
           }
         }
       }
+
+      
+      
+      if (const FontFaceSet* set = GetFonts()) {
+        set->CopyNonRuleFacesTo(clonedDoc->Fonts());
+      }
+
     }
   }
   mCreatingStaticClone = false;
