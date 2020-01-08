@@ -280,8 +280,10 @@ class GCMarker : public JSTracer {
 
   void delayMarkingArena(gc::Arena* arena);
   void delayMarkingChildren(const void* thing);
-  void markDelayedChildren(gc::Arena* arena);
-  MOZ_MUST_USE bool markDelayedChildren(SliceBudget& budget);
+  void markDelayedChildren(gc::Arena* arena, gc::MarkColor color);
+  MOZ_MUST_USE bool markAllDelayedChildren(SliceBudget& budget);
+  bool processDelayedMarkingList(gc::Arena** outputList, gc::MarkColor color,
+                                 bool shouldYield, SliceBudget& budget);
   bool hasDelayedChildren() const { return !!unmarkedArenaStackTop; }
 
   bool isDrained() { return isMarkStackEmpty() && !unmarkedArenaStackTop; }
@@ -348,6 +350,10 @@ class GCMarker : public JSTracer {
 
   bool isMarkStackEmpty() { return stack.isEmpty(); }
 
+  bool hasBlackEntries() const { return stack.position() > grayPosition; }
+
+  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
+
   MOZ_MUST_USE bool restoreValueArray(
       const gc::MarkStack::SavedValueArray& array, HeapSlot** vpp,
       HeapSlot** endp);
@@ -362,6 +368,9 @@ class GCMarker : public JSTracer {
 
   
   gc::MarkStack stack;
+
+  
+  MainThreadData<size_t> grayPosition;
 
   
   MainThreadData<gc::MarkColor> color;
