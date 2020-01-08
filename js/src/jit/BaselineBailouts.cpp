@@ -489,21 +489,20 @@ HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
         return false;
     }
 
-    JSTryNote* tn = script->trynotes()->vector;
-    JSTryNote* tnEnd = tn + script->trynotes()->length;
     uint32_t pcOffset = uint32_t(pc - script->main());
-    for (; tn != tnEnd; ++tn) {
-        if (pcOffset < tn->start) {
+
+    for (const JSTryNote& tn : script->trynotes()) {
+        if (pcOffset < tn.start) {
             continue;
         }
-        if (pcOffset >= tn->start + tn->length) {
+        if (pcOffset >= tn.start + tn.length) {
             continue;
         }
 
-        switch (tn->kind) {
+        switch (tn.kind) {
           case JSTRY_FOR_IN:
             
-            if (stackDepth == tn->stackDepth) {
+            if (stackDepth == tn.stackDepth) {
                 return true;
             }
             break;
@@ -513,7 +512,7 @@ HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
             
             
             
-            if (stackDepth == tn->stackDepth - 1 || stackDepth == tn->stackDepth - 2) {
+            if (stackDepth == tn.stackDepth - 1 || stackDepth == tn.stackDepth - 2) {
                 return true;
             }
             break;
@@ -521,7 +520,7 @@ HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
           case JSTRY_DESTRUCTURING_ITERCLOSE:
             
             
-            if (stackDepth == tn->stackDepth || stackDepth == tn->stackDepth - 1) {
+            if (stackDepth == tn.stackDepth || stackDepth == tn.stackDepth - 1) {
                 return true;
             }
             break;
