@@ -222,6 +222,44 @@ this.CrashManager.prototype = Object.freeze({
   EVENT_FILE_ERROR_UNKNOWN_EVENT: "unknown-event",
 
   
+  
+  ANNOTATION_WHITELIST: [
+    "AsyncShutdownTimeout",
+    "BuildID",
+    "ipc_channel_error",
+    "LowCommitSpaceEvents",
+    "ProductID",
+    "ProductName",
+    "ReleaseChannel",
+    "RemoteType",
+    "SecondsSinceLastCrash",
+    "ShutdownProgress",
+    "StartupCrash",
+    "TelemetryEnvironment",
+    "Version",
+    
+    
+    "AvailablePageFile",
+    "AvailablePhysicalMemory",
+    "AvailableVirtualMemory",
+    "BlockedDllList",
+    "BlocklistInitFailed",
+    "ContainsMemoryReport",
+    "CrashTime",
+    "EventLoopNestingLevel",
+    "IsGarbageCollecting",
+    "MozCrashReason",
+    "OOMAllocationSize",
+    "SystemMemoryUsePercentage",
+    "TextureUsage",
+    "TotalPageFile",
+    "TotalPhysicalMemory",
+    "TotalVirtualMemory",
+    "UptimeTS",
+    "User32BeforeBlocklist",
+  ],
+
+  
 
 
 
@@ -599,16 +637,10 @@ this.CrashManager.prototype = Object.freeze({
 
   _filterAnnotations(annotations) {
     let filteredAnnotations = {};
-    let crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"]
-                          .getService(Ci.nsICrashReporter);
 
     for (let line in annotations) {
-      try {
-        if (crashReporter.isAnnotationWhitelistedForPing(line)) {
-          filteredAnnotations[line] = annotations[line];
-        }
-      } catch (e) {
-        
+      if (this.ANNOTATION_WHITELIST.includes(line)) {
+        filteredAnnotations[line] = annotations[line];
       }
     }
 

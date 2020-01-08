@@ -242,7 +242,7 @@ Compatibility::Init()
   InitConsumers();
 
   CrashReporter::
-    AnnotateCrashReport(CrashReporter::Annotation::AccessibilityInProcClient,
+    AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityInProcClient"),
                         nsPrintfCString("0x%X", sConsumers));
 
   
@@ -436,9 +436,8 @@ UseIAccessibleProxyStub()
   
   
   
-  CrashReporter::AnnotateCrashReport(
-    CrashReporter::Annotation::IAccessibleConfig,
-    NS_LITERAL_CSTRING("NoSystemTypeLibOrPS"));
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IAccessibleConfig"),
+                                     NS_LITERAL_CSTRING("NoSystemTypeLibOrPS"));
   return false;
 }
 

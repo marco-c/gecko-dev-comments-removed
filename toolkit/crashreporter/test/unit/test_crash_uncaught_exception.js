@@ -5,8 +5,7 @@ function run_test() {
   
   do_crash(function() {
              crashType = CrashTestUtils.CRASH_UNCAUGHT_EXCEPTION;
-             crashReporter.annotateCrashReport(
-              CrashReporter.annotations.TestKey, "TestValue");
+             crashReporter.annotateCrashReport("TestKey", "TestValue");
            },
            function(mdump, extra) {
              Assert.equal(extra.TestKey, "TestValue");

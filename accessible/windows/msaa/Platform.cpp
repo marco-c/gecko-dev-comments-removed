@@ -358,7 +358,7 @@ AccumulateInstantiatorTelemetry(const nsAString& aValue)
 #endif 
 #if defined(MOZ_CRASHREPORTER)
     CrashReporter::
-      AnnotateCrashReport(CrashReporter::Annotation::AccessibilityClient,
+      AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityClient"),
                           NS_ConvertUTF16toUTF8(aValue));
 #endif 
   }

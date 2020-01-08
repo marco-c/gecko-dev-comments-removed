@@ -7,8 +7,7 @@ function run_test() {
   do_crash(
     function() {
       crashType = CrashTestUtils.CRASH_MOZ_CRASH;
-      crashReporter.annotateCrashReport(
-        CrashReporter.annotations.TestKey, "Yes");
+      crashReporter.annotateCrashReport("TestingOOMCrash", "Yes");
 
       
       
@@ -17,7 +16,7 @@ function run_test() {
       Cu.getJSTestingFunctions().reportOutOfMemory();
     },
     function(mdump, extra) {
-      Assert.equal(extra.TestKey, "Yes");
+      Assert.equal(extra.TestingOOMCrash, "Yes");
 
       
       

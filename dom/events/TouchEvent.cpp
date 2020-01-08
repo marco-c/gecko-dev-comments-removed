@@ -276,8 +276,10 @@ TouchEvent::PrefEnabled(nsIDocShell* aDocShell)
       
       
       if (firstTime && !XRE_IsParentProcess()) {
-        CrashReporter::AnnotateCrashReport(
-          CrashReporter::Annotation::HasDeviceTouchScreen, enabled);
+        CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("HasDeviceTouchScreen"),
+                                           enabled ?
+                                             NS_LITERAL_CSTRING("1") :
+                                             NS_LITERAL_CSTRING("0"));
         firstTime = false;
       }
 

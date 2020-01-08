@@ -165,8 +165,9 @@ DriverCrashGuard::~DriverCrashGuard()
     dom::ContentChild::GetSingleton()->SendEndDriverCrashGuard(uint32_t(mType));
   }
 
-  CrashReporter::RemoveCrashReportAnnotation(
-    CrashReporter::Annotation::GraphicsStartupTest);
+  
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
+                                     NS_LITERAL_CSTRING(""));
 }
 
 bool
@@ -209,8 +210,8 @@ DriverCrashGuard::ActivateGuard()
   
   
   if (mMode != Mode::Proxy) {
-    CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::GraphicsStartupTest, true);
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
+                                       NS_LITERAL_CSTRING("1"));
   }
 
   
