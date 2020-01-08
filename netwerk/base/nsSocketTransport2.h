@@ -342,6 +342,13 @@ private:
     nsCOMPtr<nsICancelable> mDNSRequest;
     nsCOMPtr<nsIDNSRecord>  mDNSRecord;
 
+    nsresult                mDNSLookupStatus;
+    PRIntervalTime          mDNSARequestFinished;
+    nsCOMPtr<nsICancelable> mDNSTxtRequest;
+    nsCString               mDNSRecordTxt;
+    bool                    mEsniQueried;
+    bool                    mEsniUsed;
+
     
     
     void                    SetSocketName(PRFileDesc *fd);
