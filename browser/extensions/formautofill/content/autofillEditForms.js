@@ -34,10 +34,11 @@ class EditAutofillForm {
     if (!record.guid) {
       
       this._elements.form.reset();
-    }
-
-    for (let field of this._elements.form.elements) {
-      this.updatePopulatedState(field);
+    } else {
+      for (let field of this._elements.form.elements) {
+        this.updatePopulatedState(field);
+        this.updateCustomValidity(field);
+      }
     }
   }
 
@@ -126,6 +127,13 @@ class EditAutofillForm {
     }
     span.toggleAttribute("field-populated", !!field.value.trim());
   }
+
+  
+
+
+
+
+  updateCustomValidity(field) {}
 }
 
 class EditAddress extends EditAutofillForm {
@@ -456,8 +464,8 @@ class EditCreditCard extends EditAutofillForm {
       billingAddressRow: this._elements.form.querySelector(".billingAddressRow"),
     });
 
-    this.loadRecord(record, addresses);
     this.attachEventListeners();
+    this.loadRecord(record, addresses);
   }
 
   loadRecord(record, addresses, preserveFieldValues) {
@@ -473,11 +481,6 @@ class EditCreditCard extends EditAutofillForm {
       
       this.generateYears();
       super.loadRecord(record);
-
-      
-      
-      
-      this._elements.ccNumber.setCustomValidity("");
     }
   }
 
@@ -574,22 +577,6 @@ class EditCreditCard extends EditAutofillForm {
     super.attachEventListeners();
   }
 
-  handleChange(event) {
-    super.handleChange(event);
-
-    if (event.target != this._elements.ccNumber) {
-      return;
-    }
-
-    let ccNumberField = this._elements.ccNumber;
-
-    
-    if (!this.isCCNumber(ccNumberField.value)) {
-      let invalidCardNumberString = this._elements.invalidCardNumberStringElement.textContent;
-      ccNumberField.setCustomValidity(invalidCardNumberString || " ");
-    }
-  }
-
   handleInput(event) {
     
     if (event.target == this._elements.ccNumber &&
@@ -597,5 +584,16 @@ class EditCreditCard extends EditAutofillForm {
       this._elements.ccNumber.setCustomValidity("");
     }
     super.handleInput(event);
+  }
+
+  updateCustomValidity(field) {
+    super.updateCustomValidity(field);
+
+    
+    if (field == this._elements.ccNumber &&
+        !this.isCCNumber(field.value)) {
+      let invalidCardNumberString = this._elements.invalidCardNumberStringElement.textContent;
+      field.setCustomValidity(invalidCardNumberString || " ");
+    }
   }
 }
