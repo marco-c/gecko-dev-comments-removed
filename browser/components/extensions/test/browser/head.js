@@ -44,6 +44,11 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
 });
 
 
+if (AppConstants.ASAN) {
+  SimpleTest.requestLongerTimeout(10);
+}
+
+
 
 
 
