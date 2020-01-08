@@ -17,7 +17,7 @@
 #include "nsIX509CertDB.h"
 #include "nsNSSCertificate.h"
 #include "nsNetUtil.h"
-#include "pkix/pkixnss.h"
+#include "mozpkix/pkixnss.h"
 #include "prerror.h"
 
 
