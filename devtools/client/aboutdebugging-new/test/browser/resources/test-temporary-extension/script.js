@@ -1,0 +1,9 @@
+
+
+
+
+
+
+"use strict";
+
+document.body.innerText = "Background Page Body Test Content";
