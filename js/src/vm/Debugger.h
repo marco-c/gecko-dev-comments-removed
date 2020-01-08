@@ -568,6 +568,28 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     void removeDebuggeeGlobal(FreeOp* fop, GlobalObject* global,
                               WeakGlobalObjectSet::Enum* debugEnum);
 
+    enum class CallUncaughtExceptionHook {
+        No,
+        Yes
+    };
+
+    
+
+
+
+
+
+
+
+
+
+    ResumeMode leaveDebugger(mozilla::Maybe<AutoRealm>& ar,
+                             AbstractFramePtr frame,
+                             const mozilla::Maybe<HandleValue>& maybeThisv,
+                             CallUncaughtExceptionHook callHook,
+                             ResumeMode resumeMode,
+                             MutableHandleValue vp);
+
     
 
 
@@ -637,26 +659,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
                                           AbstractFramePtr frame, jsbytecode* pc,
                                           bool success, ResumeMode resumeMode,
                                           MutableHandleValue vp);
-
-    ResumeMode processParsedHandlerResultHelper(mozilla::Maybe<AutoRealm>& ar,
-                                                AbstractFramePtr frame,
-                                                const mozilla::Maybe<HandleValue>& maybeThisv,
-                                                bool success, ResumeMode resumeMode,
-                                                MutableHandleValue vp);
-
-    
-
-
-
-
-
-
-    bool processResumptionValueNoUncaughtExceptionHook(mozilla::Maybe<AutoRealm>& ar,
-                                                       AbstractFramePtr frame,
-                                                       const mozilla::Maybe<HandleValue>& maybeThis,
-                                                       HandleValue rval,
-                                                       ResumeMode& resumeMode,
-                                                       MutableHandleValue vp);
 
     GlobalObject* unwrapDebuggeeArgument(JSContext* cx, const Value& v);
 
