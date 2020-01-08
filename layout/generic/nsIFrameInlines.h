@@ -7,6 +7,7 @@
 #ifndef nsIFrameInlines_h___
 #define nsIFrameInlines_h___
 
+#include "mozilla/dom/ElementInlines.h"
 #include "nsContainerFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsStyleStructInlines.h"
@@ -178,6 +179,44 @@ nsIFrame::GetInFlowParent() const
   }
 
   return GetParent();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsIFrame*
+nsIFrame::GetClosestFlattenedTreeAncestorPrimaryFrame() const
+{
+  if (!mContent) {
+    return nullptr;
+  }
+  Element* parent = mContent->GetFlattenedTreeParentElementForStyle();
+  while (parent) {
+    if (nsIFrame* frame = parent->GetPrimaryFrame()) {
+      return frame;
+    }
+    
+    
+    if (MOZ_UNLIKELY(!parent->IsDisplayContents())) {
+      return nullptr;
+    }
+    parent = parent->GetFlattenedTreeParentElementForStyle();
+  }
+  return nullptr;
 }
 
 #endif
