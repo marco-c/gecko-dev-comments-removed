@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim: set ts=8 sts=4 et sw=4 tw=99: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "AutoMemMap.h"
 #include "ScriptPreloader-inl.h"
@@ -72,23 +72,26 @@ AutoMemMap::initInternal(PRFileMapProtect prot, size_t expectedSize)
     PRFileInfo64 fileInfo;
     MOZ_TRY(PR_GetOpenFileInfo64(fd.get(), &fileInfo));
 
-    if (fileInfo.size > UINT32_MAX)
+    if (fileInfo.size > UINT32_MAX) {
         return Err(NS_ERROR_INVALID_ARG);
+    }
 
     fileMap = PR_CreateFileMap(fd, 0, prot);
-    if (!fileMap)
+    if (!fileMap) {
         return Err(NS_ERROR_FAILURE);
+    }
 
     size_ = fileInfo.size;
-    // The memory region size passed in certain IPC messages isn't necessary on
-    // Unix-like systems, since we can always stat the file descriptor to
-    // determine it accurately. But since we have it, anyway, sanity check that
-    // it matches the size returned by the stat.
+    
+    
+    
+    
     MOZ_ASSERT_IF(expectedSize > 0, size_ == expectedSize);
 
     addr = PR_MemMap(fileMap, 0, size_);
-    if (!addr)
+    if (!addr) {
         return Err(NS_ERROR_FAILURE);
+    }
 
     return Ok();
 }
@@ -160,5 +163,5 @@ AutoMemMap::reset()
     fd.dispose();
 }
 
-} // namespace loader
-} // namespace mozilla
+} 
+} 
