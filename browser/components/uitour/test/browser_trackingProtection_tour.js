@@ -29,12 +29,12 @@ add_UITour_task(function setup_block_target() {
   
   
   
-  TrackingProtection.disableForCurrentPage();
+  window.ContentBlocking.disableForCurrentPage();
 });
 
 add_UITour_task(async function test_block_target() {
   await checkToggleTarget("controlCenter-trackingBlock");
-  TrackingProtection.enableForCurrentPage();
+  window.ContentBlocking.enableForCurrentPage();
 });
 
 
