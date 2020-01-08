@@ -428,9 +428,6 @@ class ExternalResourceMap {
 
 
 
-class PrincipalFlashClassifier;
-
-
 
 class Document : public nsINode,
                  public DocumentOrShadowRoot,
@@ -3412,6 +3409,8 @@ class Document : public nsINode,
                                          const nsAString& aHeightString,
                                          const nsAString& aScaleString);
 
+  mozilla::dom::FlashClassification DocumentFlashClassificationInternal();
+
   nsTArray<nsString> mL10nResources;
 
   
@@ -3419,7 +3418,7 @@ class Document : public nsINode,
   nsCOMPtr<nsIApplicationCache> mApplicationCache;
 
  public:
-  bool IsThirdParty();
+  bool IsThirdPartyForFlashClassifier();
 
   bool IsScopedStyleEnabled();
 
@@ -3519,14 +3518,6 @@ class Document : public nsINode,
 
 
   Element* GetTitleElement();
-
-  
-  
-  mozilla::dom::FlashClassification PrincipalFlashClassification();
-
-  
-  
-  mozilla::dom::FlashClassification ComputeFlashClassification();
 
   void RecordNavigationTiming(ReadyState aReadyState);
 
@@ -4294,11 +4285,11 @@ class Document : public nsINode,
 
   
   
-  RefPtr<PrincipalFlashClassifier> mPrincipalFlashClassifier;
   mozilla::dom::FlashClassification mFlashClassification;
+
   
   
-  mozilla::Maybe<bool> mIsThirdParty;
+  mozilla::Maybe<bool> mIsThirdPartyForFlashClassifier;
 
   nsRevocableEventPtr<nsRunnableMethod<Document, void, false>>
       mPendingTitleChangeEvent;
