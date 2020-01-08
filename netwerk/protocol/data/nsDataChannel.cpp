@@ -82,7 +82,13 @@ nsresult nsDataChannel::OpenContentStream(bool async, nsIInputStream** result,
   if (lBase64) {
     nsAutoCString decodedData;
     rv = Base64Decode(data, decodedData);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      
+      return NS_ERROR_MALFORMED_URI;
+    }
 
     contentLen = decodedData.Length();
     rv = NS_NewCStringInputStream(getter_AddRefs(bufInStream), decodedData);
