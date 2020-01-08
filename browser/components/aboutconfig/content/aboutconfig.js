@@ -10,6 +10,35 @@ let gPrefArray;
 let gPrefRowInEdit;
 let gPrefInEdit;
 
+class PrefRow {
+  constructor(name) {
+    this.name = name;
+    this.refreshValue();
+  }
+
+  refreshValue() {
+    this.hasUserValue = Services.prefs.prefHasUserValue(this.name);
+    this.hasDefaultValue = this.hasUserValue ? prefHasDefaultValue(this.name)
+                                             : true;
+    this.isLocked = Services.prefs.prefIsLocked(this.name);
+
+    try {
+      
+      this.value = Preferences.get(this.name);
+      
+      
+      if (!this.hasUserValue &&
+          /^chrome:\/\/.+\/locale\/.+\.properties/.test(this.value)) {
+        
+        this.value = Services.prefs.getComplexValue(this.name,
+          Ci.nsIPrefLocalizedString).data;
+      }
+    } catch (ex) {
+      this.value = "";
+    }
+  }
+}
+
 function getPrefName(prefRow) {
   return prefRow.getAttribute("aria-label");
 }
@@ -38,28 +67,7 @@ function loadPrefs() {
   prefs.id = "prefs";
   document.body.appendChild(prefs);
 
-  gPrefArray = Services.prefs.getChildList("").map(function(name) {
-    let hasUserValue = Services.prefs.prefHasUserValue(name);
-    let pref = {
-      name,
-      hasUserValue,
-      hasDefaultValue: hasUserValue ? prefHasDefaultValue(name) : true,
-      isLocked: Services.prefs.prefIsLocked(name),
-    };
-    
-    
-    try {
-      
-      pref.value = Preferences.get(name);
-      
-      if (!pref.hasUserValue && /^chrome:\/\/.+\/locale\/.+\.properties/.test(pref.value)) {
-        pref.value = Services.prefs.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
-      }
-    } catch (ex) {
-      pref.value = "";
-    }
-    return pref;
-  });
+  gPrefArray = Services.prefs.getChildList("").map(name => new PrefRow(name));
 
   gPrefArray.sort((a, b) => a.name > b.name);
 
@@ -80,8 +88,7 @@ function loadPrefs() {
     if (button.classList.contains("button-reset")) {
       
       Services.prefs.clearUserPref(prefName);
-      pref.value = Preferences.get(prefName);
-      pref.hasUserValue = false;
+      pref.refreshValue();
       
       prefRow.textContent = "";
       prefRow.classList.remove("has-user-value");
@@ -102,8 +109,7 @@ function loadPrefs() {
     } else if (button.classList.contains("button-toggle")) {
       
       Services.prefs.setBoolPref(prefName, !pref.value);
-      pref.value = !pref.value;
-      pref.hasUserValue = Services.prefs.prefHasUserValue(pref.name);
+      pref.refreshValue();
       
       prefRow.textContent = "";
       if (pref.hasUserValue) {
@@ -296,8 +302,7 @@ function endEditingPref(row) {
   }
 
   
-  gPrefInEdit.value = newValue;
-  gPrefInEdit.hasUserValue = Services.prefs.prefHasUserValue(name);
+  gPrefInEdit.refreshValue();
   
   row.textContent = "";
   if (gPrefInEdit.hasUserValue) {
@@ -327,12 +332,7 @@ function prefHasDefaultValue(name) {
 
 function addNewPref(name, value) {
   Preferences.set(name, value);
-  gPrefArray.push({
-    name,
-    value,
-    hasUserValue: true,
-    hasDefaultValue: false,
-  });
+  gPrefArray.push(new PrefRow(name));
   gPrefArray.sort((a, b) => a.name > b.name);
   filterPrefs();
 }
