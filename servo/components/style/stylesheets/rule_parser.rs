@@ -19,7 +19,7 @@ use servo_arc::Arc;
 use shared_lock::{Locked, SharedRwLock};
 use str::starts_with_ignore_ascii_case;
 use style_traits::{ParseError, StyleParseErrorKind};
-use stylesheets::{CssRule, CssRuleType, CssRules, Origin, RulesMutateError, StylesheetLoader};
+use stylesheets::{CssRule, CssRuleType, CssRules, RulesMutateError, StylesheetLoader};
 use stylesheets::{DocumentRule, FontFeatureValuesRule, KeyframesRule, MediaRule};
 use stylesheets::{NamespaceRule, PageRule, StyleRule, SupportsRule, ViewportRule};
 use stylesheets::document_rule::DocumentCondition;
@@ -41,8 +41,6 @@ pub struct InsertRuleContext<'a> {
 
 
 pub struct TopLevelRuleParser<'a> {
-    
-    pub stylesheet_origin: Origin,
     
     pub shared_lock: &'a SharedRwLock,
     
@@ -69,7 +67,6 @@ pub struct TopLevelRuleParser<'a> {
 impl<'b> TopLevelRuleParser<'b> {
     fn nested<'a: 'b>(&'a self) -> NestedRuleParser<'a, 'b> {
         NestedRuleParser {
-            stylesheet_origin: self.stylesheet_origin,
             shared_lock: self.shared_lock,
             context: &self.context,
             namespaces: &self.namespaces,
@@ -325,7 +322,6 @@ impl<'a, 'i> QualifiedRuleParser<'i> for TopLevelRuleParser<'a> {
 
 #[derive(Clone)] 
 struct NestedRuleParser<'a, 'b: 'a> {
-    stylesheet_origin: Origin,
     shared_lock: &'a SharedRwLock,
     context: &'a ParserContext<'b>,
     namespaces: &'a Namespaces,
@@ -340,7 +336,6 @@ impl<'a, 'b> NestedRuleParser<'a, 'b> {
         let context = ParserContext::new_with_rule_type(self.context, rule_type, self.namespaces);
 
         let nested_parser = NestedRuleParser {
-            stylesheet_origin: self.stylesheet_origin,
             shared_lock: self.shared_lock,
             context: &context,
             namespaces: self.namespaces,
@@ -501,7 +496,7 @@ impl<'a, 'b, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'b> {
                     self.namespaces,
                 );
 
-                let enabled = condition.eval(&eval_context);
+                let enabled = condition.eval(&eval_context, self.namespaces);
                 Ok(CssRule::Supports(Arc::new(self.shared_lock.wrap(
                     SupportsRule {
                         condition,
@@ -577,7 +572,7 @@ impl<'a, 'b, 'i> QualifiedRuleParser<'i> for NestedRuleParser<'a, 'b> {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self::Prelude, ParseError<'i>> {
         let selector_parser = SelectorParser {
-            stylesheet_origin: self.stylesheet_origin,
+            stylesheet_origin: self.context.stylesheet_origin,
             namespaces: self.namespaces,
             url_data: Some(self.context.url_data),
         };
