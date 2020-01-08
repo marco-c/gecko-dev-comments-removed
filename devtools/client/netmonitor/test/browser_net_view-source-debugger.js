@@ -29,15 +29,13 @@ add_task(async function() {
   await performRequests(monitor, tab, 2);
 
   info("Clicking stack-trace tab and waiting for stack-trace panel to open");
-  const waitForTab = waitForDOM(document, "#stack-trace-tab");
+  const wait = waitForDOM(document, "#stack-trace-panel .frame-link", 5);
   
   EventUtils.sendMouseEvent({ type: "mousedown" },
     document.querySelector(".request-list-item"));
-  await waitForTab;
-  const waitForPanel = waitForDOM(document, "#stack-trace-panel .frame-link", 5);
   
   document.getElementById("stack-trace-tab").click();
-  await waitForPanel;
+  await wait;
 
   const frameLinkNode = document.querySelector(".frame-link");
   await checkClickOnNode(toolbox, frameLinkNode);

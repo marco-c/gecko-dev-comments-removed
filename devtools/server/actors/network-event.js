@@ -16,12 +16,12 @@ const { LongStringActor } = require("devtools/server/actors/string");
 
 
 const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
-  initialize(netMonitorActor) {
+  initialize(webConsoleActor) {
     
-    protocol.Actor.prototype.initialize.call(this, netMonitorActor.conn);
+    protocol.Actor.prototype.initialize.call(this, webConsoleActor.conn);
 
-    this.netMonitorActor = netMonitorActor;
-    this.conn = this.netMonitorActor.conn;
+    this.webConsoleActor = webConsoleActor;
+    this.conn = this.webConsoleActor.conn;
 
     this._request = {
       method: null,
@@ -72,15 +72,21 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   destroy(conn) {
-    if (!this.netMonitorActor) {
+    if (!this.webConsoleActor) {
       return;
     }
     if (this._request.url) {
-      this.netMonitorActor._networkEventActorsByURL.delete(this._request.url);
+      this.webConsoleActor._networkEventActorsByURL.delete(this._request.url);
     }
     if (this.channel) {
-      this.netMonitorActor._netEvents.delete(this.channel);
+      this.webConsoleActor._netEvents.delete(this.channel);
     }
+
+    
+    
+    const actor = this.webConsoleActor;
+    this.webConsoleActor = null;
+    actor.releaseActor(this);
 
     protocol.Actor.prototype.destroy.call(this, conn);
   },
@@ -102,17 +108,14 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._cause = networkEvent.cause;
     this._fromCache = networkEvent.fromCache;
     this._fromServiceWorker = networkEvent.fromServiceWorker;
-    this._channelId = networkEvent.channelId;
 
-    
     
     
     
     this._stackTrace = networkEvent.cause.stacktrace;
     delete networkEvent.cause.stacktrace;
     networkEvent.cause.stacktraceAvailable =
-      !!(this._stackTrace &&
-         (typeof this._stackTrace == "boolean" || this._stackTrace.length));
+      !!(this._stackTrace && this._stackTrace.length);
 
     for (const prop of ["method", "url", "httpVersion", "headersSize"]) {
       this._request[prop] = networkEvent[prop];
@@ -248,29 +251,9 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
 
-  async getStackTrace() {
-    let stacktrace = this._stackTrace;
-    
-    
-    
-    if (stacktrace && typeof stacktrace == "boolean") {
-      const messageManager = this.netMonitorActor.messageManager;
-      stacktrace = await new Promise(resolve => {
-        const onMessage = ({ data }) => {
-          const { channelId, stack } = data;
-          if (channelId == this._channelId) {
-            messageManager.removeMessageListener("debug:request-stack", onMessage);
-            resolve(stack);
-          }
-        };
-        messageManager.addMessageListener("debug:request-stack", onMessage);
-        messageManager.sendAsyncMessage("debug:request-stack", this._channelId);
-      });
-      this._stackTrace = stacktrace;
-    }
-
+  getStackTrace() {
     return {
-      stacktrace,
+      stacktrace: this._stackTrace,
     };
   },
 

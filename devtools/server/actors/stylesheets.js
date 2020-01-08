@@ -145,6 +145,46 @@ exports.getSheetText = getSheetText;
 
 
 
+
+
+
+
+function fetchStylesheetFromNetworkMonitor(href, consoleActor) {
+  if (!consoleActor) {
+    return null;
+  }
+  const request = consoleActor.getNetworkEventActorForURL(href);
+  if (!request) {
+    return null;
+  }
+  const content = request._response.content;
+  if (request._discardResponseBody || request._truncated || !content || !content.size) {
+    
+    
+    return null;
+  }
+
+  if (content.text.type != "longString") {
+    
+    return {
+      content: content.text,
+      contentType: content.mimeType,
+    };
+  }
+  
+  const longStringActor = consoleActor.conn._getOrCreateActor(content.text.actor);
+  if (!longStringActor) {
+    return null;
+  }
+  return {
+    content: longStringActor.str,
+    contentType: content.mimeType,
+  };
+}
+
+
+
+
 function getCSSCharset(sheet) {
   if (sheet) {
     
@@ -177,12 +217,9 @@ function getCSSCharset(sheet) {
 async function fetchStylesheet(sheet, consoleActor) {
   const href = sheet.href;
 
-  let result;
-  if (consoleActor) {
-    result = await consoleActor.getRequestContentForURL(href);
-    if (result) {
-      return result;
-    }
+  let result = fetchStylesheetFromNetworkMonitor(href, consoleActor);
+  if (result) {
+    return result;
   }
 
   const options = {
