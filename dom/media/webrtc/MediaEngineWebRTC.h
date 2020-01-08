@@ -200,16 +200,16 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource,
                                           public AudioDataListenerInterface
 {
 public:
-  MediaEngineWebRTCMicrophoneSource(mozilla::AudioInput* aAudioInput,
-                                    int aIndex,
-                                    const char* name,
-                                    const char* uuid,
+  MediaEngineWebRTCMicrophoneSource(RefPtr<AudioDeviceInfo> aInfo,
+                                    const nsString& name,
+                                    const nsCString& uuid,
+                                    uint32_t maxChannelCount,
                                     bool aDelayAgnostic,
                                     bool aExtendedFilter);
 
   bool RequiresSharing() const override
   {
-    return true;
+    return false;
   }
 
   nsString GetName() const override;
@@ -255,6 +255,11 @@ public:
                        TrackRate aRate, uint32_t aChannels) override;
 
   void DeviceChanged() override;
+
+  uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override
+  {
+    return GetRequestedInputChannelCount(aGraph);
+  }
 
   dom::MediaSourceEnum GetMediaSource() const override
   {
@@ -369,18 +374,19 @@ private:
   
   
   
-  bool PassThrough() const;
+  bool PassThrough(MediaStreamGraphImpl* aGraphImpl) const;
 
   
   void SetPassThrough(bool aPassThrough);
+  uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
+  void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
 
   
   RefPtr<WebRTCAudioDataListener> mListener;
 
   
-  static int sChannelsOpen;
+  const RefPtr<AudioDeviceInfo> mDeviceInfo;
 
-  const RefPtr<mozilla::AudioInput> mAudioInput;
   const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
 
   
@@ -397,9 +403,8 @@ private:
 
   
   
-  MediaEngineSourceState mState = kReleased;
+  Atomic<MediaEngineSourceState> mState;
 
-  int mCapIndex;
   bool mDelayAgnostic;
   bool mExtendedFilter;
   bool mStarted;
@@ -411,6 +416,10 @@ private:
   
   const nsMainThreadPtrHandle<media::Refcountable<dom::MediaTrackSettings>> mSettings;
 
+  
+  
+  
+  uint32_t mRequestedInputChannelCount;
   uint64_t mTotalFrames;
   uint64_t mLastLogFrames;
 
