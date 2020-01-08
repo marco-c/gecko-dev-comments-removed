@@ -189,28 +189,7 @@ Animation::SetEffectNoUpdate(AnimationEffect* aEffect)
       nsNodeUtils::AnimationChanged(this);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!mPendingReadyTime.IsNull()) {
-      mPendingReadyTime.SetNull();
-
-      nsIDocument* doc = GetRenderedDocument();
-      if (doc) {
-        PendingAnimationTracker* tracker =
-          doc->GetOrCreatePendingAnimationTracker();
-        if (mPendingState == PendingState::PlayPending) {
-          tracker->AddPlayPending(*this);
-        } else {
-          tracker->AddPausePending(*this);
-        }
-      }
-    }
+    ReschedulePendingTasks();
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -1479,6 +1458,27 @@ Animation::ResetPendingTasks()
   if (mReady) {
     mReady->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
     mReady = nullptr;
+  }
+}
+
+void
+Animation::ReschedulePendingTasks()
+{
+  if (mPendingReadyTime.IsNull()) {
+    return;
+  }
+
+  mPendingReadyTime.SetNull();
+
+  nsIDocument* doc = GetRenderedDocument();
+  if (doc) {
+    PendingAnimationTracker* tracker =
+      doc->GetOrCreatePendingAnimationTracker();
+    if (mPendingState == PendingState::PlayPending) {
+      tracker->AddPlayPending(*this);
+    } else {
+      tracker->AddPausePending(*this);
+    }
   }
 }
 

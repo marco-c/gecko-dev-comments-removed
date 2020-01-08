@@ -388,6 +388,21 @@ public:
 
 
 
+
+
+
+
+
+  void ReschedulePendingTasks();
+
+  
+
+
+
+
+
+
+
   virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) {};
 
 protected:
