@@ -19,9 +19,6 @@ public:
   
   static bool DumpEnabled();
 
-  
-  static bool SchedulerTimingEnabled();
-
 #define DOM_PREF(name, pref) static bool name();
 #define DOM_WEBIDL_PREF(name) static bool name(JSContext* aCx, JSObject* aObj);
 #define DOM_WEBIDL_PREF2(name) static bool name(JSContext* aCx, JSObject* aObj);
