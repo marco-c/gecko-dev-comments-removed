@@ -1,5 +1,12 @@
 
 
+
+
+
+opts = getJitCompilerOptions();
+if (opts['ion.enable'] || opts['baseline.enable'])
+  quit();
+
 const { startProfiling, endProfiling, assertEqPreciseStacks, isSingleStepProfilingEnabled } = WasmHelpers;
 
 let e = wasmEvalText(`(module
