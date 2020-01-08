@@ -44,7 +44,7 @@ public:
   using nsWrapperCache::PreserveWrapper;
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 protected:
-  virtual ~HTMLOptionsCollection();
+  virtual ~HTMLOptionsCollection() = default;
 
   virtual JSObject* GetWrapperPreserveColorInternal() override
   {
@@ -113,11 +113,6 @@ public:
   
 
 
-  void DropReference();
-
-  
-
-
 
 
 
@@ -156,7 +151,7 @@ private:
 
   nsTArray<RefPtr<mozilla::dom::HTMLOptionElement> > mElements;
   
-  HTMLSelectElement* mSelect;
+  RefPtr<HTMLSelectElement> mSelect;
 };
 
 } 
