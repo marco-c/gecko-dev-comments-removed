@@ -583,12 +583,6 @@ public:
 
   struct EffectProperties {
     SVGMaskObserverList* mMaskObservers;
-    nsSVGPaintingProperty* mClipPath;
-
-    
-
-
-    nsSVGClipPathFrame* GetClipPathFrame();
 
     
 
@@ -606,19 +600,6 @@ public:
 
     bool HasInvalidEffects() {
       return !HasNoOrValidEffects();
-    }
-
-    
-
-
-
-    bool HasNoOrValidClipPath();
-
-    
-
-
-    bool HasInvalidClipPath() {
-      return !HasNoOrValidClipPath();
     }
 
     
@@ -797,6 +778,27 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static ReferenceState
+  GetAndObserveClipPath(nsIFrame* aClippedFrame,
+                        nsSVGClipPathFrame** aClipPathFrame);
+
+  
+
+
+
   static SVGGeometryElement*
   GetTextPathsReferencedPath(nsIFrame* aTextPathFrame);
 
@@ -848,12 +850,6 @@ public:
   static already_AddRefed<URLAndReferrerInfo>
   GetMarkerURI(nsIFrame* aFrame,
                RefPtr<mozilla::css::URLValue> nsStyleSVG::* aMarker);
-
-  
-
-
-  static already_AddRefed<URLAndReferrerInfo>
-  GetClipPathURI(nsIFrame* aFrame);
 
   
 
