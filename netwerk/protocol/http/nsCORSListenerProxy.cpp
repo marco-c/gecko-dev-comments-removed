@@ -1076,17 +1076,6 @@ nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel, UpdateType aUpda
     return NS_OK;
   }
 
-  
-  
-  
-  if (aUpdateType != UpdateType::InternalOrHSTSRedirect) {
-    if (mHasBeenCrossSite) {
-      LogBlockedRequest(aChannel, "CORSPreflightDidNotSucceed", nullptr,
-                        mHttpChannel);
-      return NS_ERROR_DOM_BAD_URI;
-    }
-  }
-
   nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(http);
   if (!internal) {
     LogBlockedRequest(aChannel, "CORSDidNotSucceed", nullptr, mHttpChannel);
