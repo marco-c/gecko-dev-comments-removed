@@ -9,6 +9,7 @@
 #include "jsapi.h"
 
 #include "js/CharacterEncoding.h"
+#include "js/PropertyDescriptor.h"  
 #include "vm/EqualityOperations.h"  
 
 #include "vm/JSObject-inl.h"
