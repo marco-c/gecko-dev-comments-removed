@@ -29,6 +29,9 @@ public:
               RootedDictionary<PrioEncodedData>& aData,
               ErrorResult& aRv);
 
+  
+  const static uint32_t gNumBooleans = 2046;
+
 private:
   PrioEncoder();
   ~PrioEncoder();
