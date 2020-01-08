@@ -25,13 +25,6 @@ function getRootBindingParent(node) {
     return node;
   }
 
-  if (getShadowRoot(node)) {
-    
-    
-    
-    return node;
-  }
-
   let parent;
   while ((parent = doc.getBindingParent(node))) {
     node = parent;
@@ -76,16 +69,24 @@ function positionInNodeList(element, nodeList) {
 
 
 
-function getDocumentOrShadowRoot(node) {
+function findNodeAndContainer(node) {
   const shadowRoot = getShadowRoot(node);
   if (shadowRoot) {
     
     
-    return shadowRoot;
+    return {
+      containingDocOrShadow: shadowRoot,
+      node
+    };
   }
 
   
-  return node.ownerDocument;
+  
+  const bindingParent = getRootBindingParent(node);
+  return {
+    containingDocOrShadow: bindingParent.ownerDocument,
+    node: bindingParent
+  };
 }
 
 
@@ -93,10 +94,11 @@ function getDocumentOrShadowRoot(node) {
 
 
 
-const findCssSelector = function(ele) {
-  ele = getRootBindingParent(ele);
 
-  let containingDocOrShadow = getDocumentOrShadowRoot(ele);
+const findCssSelector = function(ele) {
+  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
+  ele = node;
+
   if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
     
     return "";
