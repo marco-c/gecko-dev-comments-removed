@@ -7434,14 +7434,6 @@ nsDocShell::BeginRestore(nsIContentViewer* aContentViewer, bool aTop) {
     }
   }
 
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(
-      (aTop && !mBrowsingContext->GetParent()) ||
-      ((!aTop || GetIsMozBrowser()) && mBrowsingContext->GetParent()));
-  mBrowsingContext->Attach();
-
   if (!aTop) {
     
     
@@ -7957,6 +7949,13 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     
     AddChild(childItem);
+
+    
+    
+    
+    RefPtr<BrowsingContext> childContext =
+        nsDocShell::Cast(childShell)->GetBrowsingContext();
+    childContext->Attach();
 
     childShell->SetAllowPlugins(allowPlugins);
     childShell->SetAllowJavascript(allowJavascript);
