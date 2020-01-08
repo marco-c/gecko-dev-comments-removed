@@ -195,6 +195,13 @@ VARCACHE_PREF(
 PREF("dom.serviceWorkers.parent_intercept", bool, false)
 
 
+VARCACHE_PREF(
+  "dom.payments.request.user_interaction_required",
+  dom_payments_request_user_interaction_required,
+  bool, true
+)
+
+
 
 VARCACHE_PREF(
   "dom.payments.response.timeout",
