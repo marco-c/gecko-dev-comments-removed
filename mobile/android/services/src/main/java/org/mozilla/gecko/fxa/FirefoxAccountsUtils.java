@@ -96,11 +96,11 @@ public class FirefoxAccountsUtils {
         return true;
     }
 
-    private static void separateAccountAndShowNotification(final Context context, final AndroidFxAccount fxAccount) {
+    public static void separateAccountAndShowNotification(final Context context, final AndroidFxAccount fxAccount) {
         final State currentState = fxAccount.getState();
         
         if (!(currentState instanceof Separated)) {
-            fxAccount.setState(new Separated(fxAccount.getEmail(), currentState.uid, currentState.verified));
+            fxAccount.setState(currentState.makeSeparatedState());
         }
         final FxAccountNotificationManager notificationManager = new FxAccountNotificationManager(
                 FxAccountSyncAdapter.NOTIFICATION_ID);
