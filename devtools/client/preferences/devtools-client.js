@@ -141,6 +141,13 @@ pref("devtools.performance.ui.experimental", false);
 #endif
 
 
+
+
+
+
+pref("devtools.performance.recording.ui-base-url", "https://perf-html.io");
+
+
 pref("devtools.cache.disabled", false);
 
 
