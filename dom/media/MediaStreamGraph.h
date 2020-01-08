@@ -702,12 +702,12 @@ class SourceMediaStream : public MediaStream {
 
 
 
-  bool PullNewData(StreamTime aDesiredUpToTime);
+  bool PullNewData(GraphTime aDesiredUpToTime);
 
   
 
 
-  void ExtractPendingInput();
+  void ExtractPendingInput(GraphTime aCurrentTime);
 
   
 
@@ -725,17 +725,15 @@ class SourceMediaStream : public MediaStream {
 
 
 
-
-  void AddTrack(TrackID aID, StreamTime aStart, MediaSegment* aSegment,
-                uint32_t aFlags = 0) {
-    AddTrackInternal(aID, GraphRate(), aStart, aSegment, aFlags);
+  void AddTrack(TrackID aID, MediaSegment* aSegment, uint32_t aFlags = 0) {
+    AddTrackInternal(aID, GraphRate(), aSegment, aFlags);
   }
 
   
 
 
-  void AddAudioTrack(TrackID aID, TrackRate aRate, StreamTime aStart,
-                     AudioSegment* aSegment, uint32_t aFlags = 0);
+  void AddAudioTrack(TrackID aID, TrackRate aRate, AudioSegment* aSegment,
+                     uint32_t aFlags = 0);
 
   
 
@@ -832,7 +830,6 @@ class SourceMediaStream : public MediaStream {
     
     nsAutoRef<SpeexResamplerState> mResampler;
     int mResamplerChannelCount;
-    StreamTime mStart;
     
     StreamTime mEndOfFlushedData;
     
@@ -854,8 +851,8 @@ class SourceMediaStream : public MediaStream {
   void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
                                      TrackID aTrackID) override;
 
-  void AddTrackInternal(TrackID aID, TrackRate aRate, StreamTime aStart,
-                        MediaSegment* aSegment, uint32_t aFlags);
+  void AddTrackInternal(TrackID aID, TrackRate aRate, MediaSegment* aSegment,
+                        uint32_t aFlags);
 
   TrackData* FindDataForTrack(TrackID aID) {
     mMutex.AssertCurrentThreadOwns();
