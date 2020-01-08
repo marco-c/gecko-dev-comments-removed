@@ -959,10 +959,10 @@ public static final ElementName LINE = new ElementName("line", "line",
 
 
 TreeBuilder.OTHER);
-public static final ElementName MARQUEE = new ElementName("marquee", "marquee", 
-
-
-TreeBuilder.MARQUEE_OR_APPLET | SPECIAL | SCOPING);
+public static final ElementName MARQUEE = new ElementName("marquee", "marquee",
+    
+    
+    TreeBuilder.MARQUEE_OR_APPLET | SPECIAL | SCOPING);
 public static final ElementName POLYLINE = new ElementName("polyline", "polyline", 
 
 
