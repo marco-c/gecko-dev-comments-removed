@@ -157,7 +157,10 @@ Damp.prototype = {
   },
 
   async addTab(url) {
-    let tab = this._win.gBrowser.selectedTab = this._win.gBrowser.addTrustedTab(url);
+    
+    
+    let tab = this._win.gBrowser.selectedTab = this._win.gBrowser.addTrustedTab(url,
+      { skipAnimation: true });
     let browser = tab.linkedBrowser;
     await awaitBrowserLoaded(browser);
     return tab;
@@ -175,11 +178,6 @@ Damp.prototype = {
       });
     }
     window.performance.measure("pending paints", "pending paints.start");
-  },
-
-  closeCurrentTab() {
-    this._win.BrowserCloseTabOrWindow();
-    return this._win.gBrowser.selectedTab;
   },
 
   reloadPage(onReload) {
@@ -203,7 +201,9 @@ Damp.prototype = {
   },
 
   async testTeardown(url) {
-    this.closeCurrentTab();
+    
+    
+    this._win.gBrowser.removeCurrentTab({ animate: false });
 
     
     await this.garbageCollect();
