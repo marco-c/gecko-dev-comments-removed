@@ -23,7 +23,6 @@ exports.getRawSourceURL = getRawSourceURL;
 exports.getFormattedSourceId = getFormattedSourceId;
 exports.getFilename = getFilename;
 exports.getTruncatedFileName = getTruncatedFileName;
-exports.getDisplayPath = getDisplayPath;
 exports.getFileURL = getFileURL;
 exports.getSourcePath = getSourcePath;
 exports.getSourceLineCount = getSourceLineCount;
@@ -184,40 +183,6 @@ function getFilename(source) {
 
 function getTruncatedFileName(source, length = 30) {
   return (0, _text.truncateMiddleText)(getFilename(source), length);
-}
-
-
-
-
-
-
-
-
-function getDisplayPath(mySource, sources) {
-  const filename = getFilename(mySource); 
-  
-
-  const similarSources = sources.filter(source => mySource.url != source.url && filename == getFilename(source));
-
-  if (similarSources.length == 0) {
-    return undefined;
-  } 
-
-
-  const paths = [mySource, ...similarSources].map(source => (0, _sourcesTree.getURL)(source).path.split("/").reverse().slice(1)); 
-  
-  
-
-  let similar = true;
-  const displayPath = [];
-
-  for (let i = 0; similar && i < paths[0].length; i++) {
-    const [dir, ...dirs] = paths.map(path => path[i]);
-    displayPath.push(dir);
-    similar = dirs.includes(dir);
-  }
-
-  return displayPath.reverse().join("/");
 }
 
 
