@@ -26,7 +26,7 @@ use gpu_types::BrushFlags;
 use image::{Repetition};
 use intern;
 use picture::{PictureCompositeMode, PicturePrimitive, PictureUpdateState, TileCacheUpdateState};
-use picture::{ClusterRange, PrimitiveList, SurfaceIndex, SurfaceInfo, RetainedTiles, RasterConfig};
+use picture::{ClusterIndex, PrimitiveList, SurfaceIndex, SurfaceInfo, RetainedTiles, RasterConfig};
 use prim_store::borders::{ImageBorderDataHandle, NormalBorderDataHandle};
 use prim_store::gradient::{LinearGradientDataHandle, RadialGradientDataHandle};
 use prim_store::image::{ImageDataHandle, ImageInstance, VisibleImageTile, YuvImageDataHandle};
@@ -309,7 +309,7 @@ pub struct DeferredResolve {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct ClipTaskIndex(pub u32);
+pub struct ClipTaskIndex(pub u16);
 
 impl ClipTaskIndex {
     pub const INVALID: ClipTaskIndex = ClipTaskIndex(0);
@@ -1559,13 +1559,15 @@ pub struct PrimitiveInstance {
     pub clip_task_index: ClipTaskIndex,
 
     
+    
+    
+    pub cluster_index: ClusterIndex,
+
+    
     pub clip_chain_id: ClipChainId,
 
     
     pub spatial_node_index: SpatialNodeIndex,
-
-    
-    pub cluster_range: ClusterRange,
 }
 
 impl PrimitiveInstance {
@@ -1587,7 +1589,7 @@ impl PrimitiveInstance {
             clip_task_index: ClipTaskIndex::INVALID,
             clip_chain_id,
             spatial_node_index,
-            cluster_range: ClusterRange { start: 0, end: 0 },
+            cluster_index: ClusterIndex::INVALID,
         }
     }
 
@@ -2393,39 +2395,7 @@ impl PrimitiveStore {
             }
 
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let mut in_visible_cluster = false;
-            for ci in prim_instance.cluster_range.start .. prim_instance.cluster_range.end {
-                
-                let cluster_index = prim_list.prim_cluster_map[ci as usize];
-
-                
-                let cluster = &prim_list.clusters[cluster_index.0 as usize];
-                in_visible_cluster |= cluster.is_visible;
-
-                
-                
-                if cluster.is_visible {
-                    break;
-                }
-            }
-
-            
-            if !in_visible_cluster {
+            if !prim_list.clusters[prim_instance.cluster_index.0 as usize].is_visible {
                 continue;
             }
 
@@ -3556,7 +3526,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 128, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 120, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 40, "PrimitiveInstanceKind size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplate>(), 96, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 36, "PrimitiveTemplateKind size changed");

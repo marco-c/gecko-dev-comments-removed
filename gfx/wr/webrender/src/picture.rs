@@ -31,7 +31,7 @@ use scene::{FilterOpHelpers, SceneProperties};
 use scene_builder::DocumentResources;
 use smallvec::SmallVec;
 use surface::{SurfaceDescriptor, TransformKey};
-use std::{mem, ops};
+use std::{mem, u16};
 use texture_cache::{Eviction, TextureCacheHandle};
 use tiling::RenderTargetKind;
 use util::{TransformedRectKind, MatrixHelpers, MaxRect, RectHelpers};
@@ -710,25 +710,7 @@ impl TileCache {
         
         
         
-        
-        
-        
-        let mut in_visible_cluster = false;
-        for ci in prim_instance.cluster_range.start .. prim_instance.cluster_range.end {
-            
-            let cluster_index = prim_list.prim_cluster_map[ci as usize];
-
-            
-            let cluster = &prim_list.clusters[cluster_index.0 as usize];
-            in_visible_cluster |= cluster.is_visible;
-
-            
-            
-            if cluster.is_visible {
-                break;
-            }
-        }
-        if !in_visible_cluster {
+        if !prim_list.clusters[prim_instance.cluster_index.0 as usize].is_visible {
             return;
         }
 
@@ -1344,7 +1326,12 @@ impl PrimitiveCluster {
 #[derive(Debug, Copy, Clone)]
 pub struct PrimitiveClusterIndex(pub u32);
 
-pub type ClusterRange = ops::Range<u32>;
+#[derive(Debug, Copy, Clone)]
+pub struct ClusterIndex(pub u16);
+
+impl ClusterIndex {
+    pub const INVALID: ClusterIndex = ClusterIndex(u16::MAX);
+}
 
 
 
@@ -1362,10 +1349,6 @@ pub struct PrimitiveList {
     pub pictures: PictureList,
     
     pub clusters: SmallVec<[PrimitiveCluster; 4]>,
-    
-    
-    
-    pub prim_cluster_map: Vec<PrimitiveClusterIndex>,
 }
 
 impl PrimitiveList {
@@ -1378,7 +1361,6 @@ impl PrimitiveList {
             prim_instances: Vec::new(),
             pictures: SmallVec::new(),
             clusters: SmallVec::new(),
-            prim_cluster_map: Vec::new(),
         }
     }
 
@@ -1393,7 +1375,6 @@ impl PrimitiveList {
         let mut pictures = SmallVec::new();
         let mut clusters_map = FastHashMap::default();
         let mut clusters: SmallVec<[PrimitiveCluster; 4]> = SmallVec::new();
-        let mut prim_cluster_map = Vec::new();
 
         
         
@@ -1479,27 +1460,13 @@ impl PrimitiveList {
                 cluster.bounding_rect = cluster.bounding_rect.union(&culling_rect);
             }
 
-            
-            
-            
-            
-            
-            let start = prim_cluster_map.len() as u32;
-            let cluster_range = ClusterRange {
-                start,
-                end: start + 1,
-            };
-
-            
-            prim_cluster_map.push(PrimitiveClusterIndex(cluster_index as u32));
-            prim_instance.cluster_range = cluster_range;
+            prim_instance.cluster_index = ClusterIndex(cluster_index as u16);
         }
 
         PrimitiveList {
             prim_instances,
             pictures,
             clusters,
-            prim_cluster_map,
         }
     }
 }
