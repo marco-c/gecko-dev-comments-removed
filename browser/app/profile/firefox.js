@@ -1064,8 +1064,7 @@ pref("security.sandbox.gmp.win32k-disable", false);
 pref("security.sandbox.content.level", 3);
 #endif
 
-
-#if defined(EARLY_BETA_OR_EARLIER) && defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 
 
 
