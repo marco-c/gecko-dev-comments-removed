@@ -15,7 +15,6 @@
 
 #include "jspubtd.h"
 
-#include "js/AutoByteString.h"
 #include "js/CallArgs.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/CharacterEncoding.h"
@@ -1464,13 +1463,13 @@ struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
     JS::RootedObject exnObject;
 
     
-    JSAutoByteString filename;
+    JS::UniqueChars filename;
 
     
     
     
     JS::ConstUTF8CharsZ toStringResult_;
-    JSAutoByteString toStringResultBytesStorage;
+    JS::UniqueChars toStringResultBytesStorage;
 };
 
 

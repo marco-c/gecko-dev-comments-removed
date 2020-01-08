@@ -25,7 +25,7 @@
 #include "gc/PublicIterators.h"
 #include "jit/BaselineDebugModeOSR.h"
 #include "jit/BaselineJIT.h"
-#include "js/AutoByteString.h"
+#include "js/CharacterEncoding.h"
 #include "js/Date.h"
 #include "js/SourceBufferHolder.h"
 #include "js/StableStringChars.h"
@@ -486,10 +486,10 @@ ParseEvalOptions(JSContext* cx, HandleValue value, EvalOptions& options)
         RootedString url_str(cx, ToString<CanGC>(cx, v));
         if (!url_str)
             return false;
-        JSAutoByteString url_bytes(cx, url_str);
+        UniqueChars url_bytes = JS_EncodeString(cx, url_str);
         if (!url_bytes)
             return false;
-        if (!options.setFilename(cx, url_bytes.ptr()))
+        if (!options.setFilename(cx, url_bytes.get()))
             return false;
     }
 
@@ -4481,7 +4481,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     RootedValue url;
 
     
-    JSAutoByteString urlCString;
+    UniqueChars urlCString;
 
     
 
@@ -4567,7 +4567,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         
         if (url.isString()) {
-            if (!urlCString.encodeLatin1(cx, url.toString()))
+            urlCString = JS_EncodeString(cx, url.toString());
+            if (!urlCString)
                 return false;
         }
 
@@ -4608,14 +4609,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
     template <typename T>
     MOZ_MUST_USE bool commonFilter(T script, const JS::AutoRequireNoGC& nogc) {
-        if (urlCString.ptr()) {
+        if (urlCString) {
             bool gotFilename = false;
-            if (script->filename() && strcmp(script->filename(), urlCString.ptr()) == 0)
+            if (script->filename() && strcmp(script->filename(), urlCString.get()) == 0)
                 gotFilename = true;
 
             bool gotSourceURL = false;
             if (!gotFilename && script->scriptSource()->introducerFilename() &&
-                strcmp(script->scriptSource()->introducerFilename(), urlCString.ptr()) == 0)
+                strcmp(script->scriptSource()->introducerFilename(), urlCString.get()) == 0)
             {
                 gotSourceURL = true;
             }
@@ -4920,7 +4921,7 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
 
         if (!className.isUndefined()) {
             const char* objClassName = obj->getClass()->name;
-            if (strcmp(objClassName, classNameCString.ptr()) != 0)
+            if (strcmp(objClassName, classNameCString.get()) != 0)
                 return true;
         }
 
@@ -4941,7 +4942,7 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
     RootedValue className;
 
     
-    JSAutoByteString classNameCString;
+    UniqueChars classNameCString;
 
     
 
@@ -4949,7 +4950,8 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery
 
     bool prepareQuery() {
         if (className.isString()) {
-            if (!classNameCString.encodeLatin1(cx, className.toString()))
+            classNameCString = JS_EncodeString(cx, className.toString());
+            if (!classNameCString)
                 return false;
         }
 

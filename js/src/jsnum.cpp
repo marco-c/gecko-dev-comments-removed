@@ -27,6 +27,7 @@
 
 #include "builtin/String.h"
 #include "double-conversion/double-conversion.h"
+#include "js/CharacterEncoding.h"
 #include "js/Conversions.h"
 #if !EXPOSE_INTL_API
 #include "js/LocaleSensitive.h"
@@ -796,10 +797,10 @@ num_toLocaleString_impl(JSContext* cx, const CallArgs& args)
 
 
 
-    JSAutoByteString numBytes(cx, str);
+    UniqueChars numBytes = JS_EncodeString(cx, str);
     if (!numBytes)
         return false;
-    const char* num = numBytes.ptr();
+    const char* num = numBytes.get();
     if (!num)
         return false;
 
@@ -1590,19 +1591,6 @@ js::StringToNumber(JSContext* cx, JSString* str, double* result)
     return linearStr->hasLatin1Chars()
            ? CharsToNumber(cx, linearStr->latin1Chars(nogc), str->length(), result)
            : CharsToNumber(cx, linearStr->twoByteChars(nogc), str->length(), result);
-}
-
-bool
-js::StringToNumberDontReportOOM(JSContext* cx, JSString* str, double* result)
-{
-    
-    AutoUnsafeCallWithABI unsafe;
-
-    if (!StringToNumber(cx, str, result)) {
-        cx->recoverFromOutOfMemory();
-        return false;
-    }
-    return true;
 }
 
 JS_PUBLIC_API(bool)
