@@ -39,6 +39,13 @@ FileChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
+FileChannelParent::NotifyTrackingCookieBlocked()
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FileChannelParent::NotifyTrackingResource(bool aIsThirdParty)
 {
   

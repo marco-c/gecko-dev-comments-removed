@@ -19,11 +19,13 @@
 #include "nsICookieService.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIIOService.h"
+#include "nsIParentChannel.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
 #include "nsIURL.h"
 #include "nsIWebProgressListener.h"
+#include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsScriptSecurityManager.h"
 #include "prtime.h"
@@ -840,6 +842,16 @@ AntiTrackingCommon::NotifyRejection(nsIChannel* aChannel)
 {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (!httpChannel) {
+    return;
+  }
+
+  
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(aChannel, parentChannel);
+  if (parentChannel) {
+    
+    
+    parentChannel->NotifyTrackingCookieBlocked();
     return;
   }
 

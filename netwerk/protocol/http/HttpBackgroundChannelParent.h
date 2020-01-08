@@ -70,6 +70,9 @@ public:
   bool OnNotifyTrackingProtectionDisabled();
 
   
+  bool OnNotifyTrackingCookieBlocked();
+
+  
   bool OnNotifyTrackingResource(bool aIsThirdParty);
 
   

@@ -39,6 +39,13 @@ SimpleChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
+SimpleChannelParent::NotifyTrackingCookieBlocked()
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 SimpleChannelParent::NotifyTrackingResource(bool aIsThirdParty)
 {
   
