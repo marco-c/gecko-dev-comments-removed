@@ -646,6 +646,12 @@ public:
   void
   NotifyReportingObservers();
 
+  void
+  SaveStorageAccessGranted(const nsACString& aPermissionKey);
+
+  bool
+  HasStorageAccessGranted(const nsACString& aPermissionKey);
+
 protected:
   void CreatePerformanceObjectIfNeeded();
 
@@ -744,6 +750,11 @@ protected:
   
   nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
   nsTArray<RefPtr<mozilla::dom::Report>> mReportRecords;
+
+  
+  
+  
+  nsTArray<nsCString> mStorageAccessGranted;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
