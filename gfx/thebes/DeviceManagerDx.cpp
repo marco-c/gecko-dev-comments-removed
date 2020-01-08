@@ -201,7 +201,15 @@ DeviceManagerDx::CreateCompositorDevices()
     return false;
   }
 
-  PreloadAttachmentsOnCompositorThread();
+  
+  
+  
+  
+  
+  if (!gfx::gfxVars::UseWebRender()) {
+    PreloadAttachmentsOnCompositorThread();
+  }
+
   return true;
 }
 
