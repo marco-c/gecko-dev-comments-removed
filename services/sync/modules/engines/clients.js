@@ -51,6 +51,10 @@ const STALE_CLIENT_REMOTE_AGE = 604800;
 const NOTIFY_TAB_SENT_TTL_SECS = 1 * 3600; 
 
 
+
+const TIME_BETWEEN_FXA_DEVICES_FETCH_MS = 10 * 1000;
+
+
 const COLLECTION_MODIFIED_REASON_SENDTAB = "sendtab";
 const COLLECTION_MODIFIED_REASON_FIRSTSYNC = "firstsync";
 
@@ -128,6 +132,10 @@ ClientEngine.prototype = {
   },
   set lastRecordUpload(value) {
     Svc.Prefs.set(this.name + ".lastRecordUpload", Math.floor(value));
+  },
+
+  get fxaDevices() {
+    return this._fxaDevices;
   },
 
   get remoteClients() {
@@ -327,7 +335,8 @@ ClientEngine.prototype = {
 
   async updateKnownStaleClients() {
     this._log.debug("Updating the known stale clients");
-    await this._refreshKnownStaleClients();
+    
+    await this._fetchFxADevices();
     let localFxADeviceId = await fxAccounts.getDeviceId();
     
     
@@ -353,22 +362,30 @@ ClientEngine.prototype = {
     }
   },
 
-  
-  
-  async _refreshKnownStaleClients() {
+  async _fetchFxADevices() {
+    const now = new Date().getTime();
+    if ((this._lastFxADevicesFetch || 0) + TIME_BETWEEN_FXA_DEVICES_FETCH_MS >= now) {
+      return;
+    }
+    const remoteClients = Object.values(this.remoteClients);
+    try {
+      this._fxaDevices = await this.fxAccounts.getDeviceList();
+      for (const device of this._fxaDevices) {
+        device.clientRecord = remoteClients.find(c => c.fxaDeviceId == device.id);
+      }
+    } catch (e) {
+      this._log.error("Could not retrieve the FxA device list", e);
+      this._fxaDevices = [];
+    }
+    this._lastFxADevicesFetch = now;
+
+    
+    
     this._log.debug("Refreshing the known stale clients list");
     let localClients = Object.values(this._store._remoteClients)
                              .filter(client => client.fxaDeviceId) 
                              .map(client => client.fxaDeviceId);
-    let fxaClients;
-    try {
-      let deviceList = await this.fxAccounts.getDeviceList();
-      fxaClients = deviceList.map(device => device.id);
-    } catch (ex) {
-      this._log.error("Could not retrieve the FxA device list", ex);
-      this._knownStaleFxADeviceIds = [];
-      return;
-    }
+    const fxaClients = this._fxaDevices.map(device => device.id);
     this._knownStaleFxADeviceIds = Utils.arraySub(localClients, fxaClients);
   },
 
@@ -387,10 +404,7 @@ ClientEngine.prototype = {
     try {
       await SyncEngine.prototype._processIncoming.call(this);
       
-      
-      if (!this._knownStaleFxADeviceIds) {
-        await this._refreshKnownStaleClients();
-      }
+      await this._fetchFxADevices();
       
       
       
