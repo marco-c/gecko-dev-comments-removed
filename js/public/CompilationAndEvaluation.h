@@ -175,6 +175,20 @@ CompileUtf8(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
+
+extern JS_PUBLIC_API(bool)
+CompileUtf8DontInflate(JSContext* cx, const ReadOnlyCompileOptions& options,
+                       const char* bytes, size_t length, MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
 CompileLatin1(JSContext* cx, const ReadOnlyCompileOptions& options,
               const char* bytes, size_t length, MutableHandle<JSScript*> script);
