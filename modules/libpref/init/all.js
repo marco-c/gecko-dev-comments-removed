@@ -4989,7 +4989,11 @@ pref("extensions.webextensions.tabhide.enabled", true);
 pref("extensions.webextensions.background-delayed-startup", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("extensions.webextensions.ExtensionStorageIDB.enabled", true);
+#else
 pref("extensions.webextensions.ExtensionStorageIDB.enabled", false);
+#endif
 
 
 pref("extensions.webextensions.enablePerformanceCounters", false);
