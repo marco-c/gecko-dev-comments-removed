@@ -1,83 +1,90 @@
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+var urifixup = Cc["@mozilla.org/docshell/urifixup;1"].
+               getService(Ci.nsIURIFixup);
+var prefs = Cc["@mozilla.org/preferences-service;1"].
+            getService(Ci.nsIPrefBranch);
 
 var pref = "browser.fixup.typo.scheme";
 
 var data = [
   {
     
-    wrong: "ttp://www.example.com/",
-    fixed: "http://www.example.com/",
+    wrong: 'ttp://www.example.com/',
+    fixed: 'http://www.example.com/',
   },
   {
     
-    wrong: "htp://www.example.com/",
-    fixed: "http://www.example.com/",
+    wrong: 'htp://www.example.com/',
+    fixed: 'http://www.example.com/',
   },
   {
     
-    wrong: "ttps://www.example.com/",
-    fixed: "https://www.example.com/",
+    wrong: 'ttps://www.example.com/',
+    fixed: 'https://www.example.com/',
   },
   {
     
-    wrong: "tps://www.example.com/",
-    fixed: "https://www.example.com/",
+    wrong: 'tps://www.example.com/',
+    fixed: 'https://www.example.com/',
   },
   {
     
-    wrong: "ps://www.example.com/",
-    fixed: "https://www.example.com/",
+    wrong: 'ps://www.example.com/',
+    fixed: 'https://www.example.com/',
   },
   {
     
-    wrong: "htps://www.example.com/",
-    fixed: "https://www.example.com/",
+    wrong: 'htps://www.example.com/',
+    fixed: 'https://www.example.com/',
   },
   {
     
-    wrong: "ile:///this/is/a/test.html",
-    fixed: "file:///this/is/a/test.html",
+    wrong: 'ile:///this/is/a/test.html',
+    fixed: 'file:///this/is/a/test.html',
   },
   {
     
-    wrong: "le:///this/is/a/test.html",
-    fixed: "file:///this/is/a/test.html",
+    wrong: 'le:///this/is/a/test.html',
+    fixed: 'file:///this/is/a/test.html',
   },
   {
     
-    wrong: "https://example.com/this/is/a/test.html",
-    fixed: "https://example.com/this/is/a/test.html",
+    wrong: 'https://example.com/this/is/a/test.html',
+    fixed: 'https://example.com/this/is/a/test.html',
   },
   {
     
-    wrong: "whatever://this/is/a/test.html",
-    fixed: "whatever://this/is/a/test.html",
+    wrong: 'whatever://this/is/a/test.html',
+    fixed: 'whatever://this/is/a/test.html',
   },
 ];
 
 var len = data.length;
 
+function run_test() {
+  run_next_test();
+}
+
 
 add_task(function test_unset_pref_fixes_typos() {
-  Services.prefs.clearUserPref(pref);
+  prefs.clearUserPref(pref);
   for (let i = 0; i < len; ++i) {
     let item = data[i];
     let result =
-      Services.uriFixup.createFixupURI(item.wrong,
-                              Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS).spec;
+      urifixup.createFixupURI(item.wrong,
+                              urifixup.FIXUP_FLAG_FIX_SCHEME_TYPOS).spec;
     Assert.equal(result, item.fixed);
   }
 });
-
+  
 
 
 add_task(function test_false_pref_keeps_typos() {
-  Services.prefs.setBoolPref(pref, false);
+  prefs.setBoolPref(pref, false);
   for (let i = 0; i < len; ++i) {
     let item = data[i];
     let result =
-      Services.uriFixup.createFixupURI(item.wrong,
-                              Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS).spec;
+      urifixup.createFixupURI(item.wrong,
+                              urifixup.FIXUP_FLAG_FIX_SCHEME_TYPOS).spec;
     Assert.equal(result, item.wrong);
   }
 });
@@ -85,12 +92,12 @@ add_task(function test_false_pref_keeps_typos() {
 
 
 add_task(function test_true_pref_fixes_typos() {
-  Services.prefs.setBoolPref(pref, true);
+  prefs.setBoolPref(pref, true);
   for (let i = 0; i < len; ++i) {
     let item = data[i];
     let result =
-        Services.uriFixup.createFixupURI(item.wrong,
-                                Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS).spec;
+        urifixup.createFixupURI(item.wrong,
+                                urifixup.FIXUP_FLAG_FIX_SCHEME_TYPOS).spec;
     Assert.equal(result, item.fixed);
   }
 });
