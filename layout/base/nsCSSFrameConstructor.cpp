@@ -5432,7 +5432,7 @@ nsCSSFrameConstructor::AddFrameConstructionItems(nsFrameConstructorState& aState
 
 static bool
 ShouldSuppressFrameInSelect(const nsIContent* aParent,
-                            const nsIContent* aChild)
+                            const nsIContent& aChild)
 {
   if (!aParent ||
       !aParent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup)) {
@@ -5443,23 +5443,23 @@ ShouldSuppressFrameInSelect(const nsIContent* aParent,
   
   
   
-  if (aChild->GetParent() != aParent) {
+  if (aChild.GetParent() != aParent) {
     return true;
   }
 
   
-  if (aChild->IsHTMLElement(nsGkAtoms::option)) {
+  if (aChild.IsHTMLElement(nsGkAtoms::option)) {
     return false;
   }
 
   
-  if (aChild->IsHTMLElement(nsGkAtoms::optgroup) &&
+  if (aChild.IsHTMLElement(nsGkAtoms::optgroup) &&
       aParent->IsHTMLElement(nsGkAtoms::select)) {
     return false;
   }
 
   
-  if (aChild->IsRootOfAnonymousSubtree()) {
+  if (aChild.IsRootOfAnonymousSubtree()) {
     return false;
   }
 
@@ -5468,13 +5468,13 @@ ShouldSuppressFrameInSelect(const nsIContent* aParent,
 
 static bool
 ShouldSuppressFrameInNonOpenDetails(const HTMLDetailsElement* aDetails,
-                                    const nsIContent* aChild)
+                                    const nsIContent& aChild)
 {
   if (!aDetails || aDetails->Open()) {
     return false;
   }
 
-  if (aChild->GetParent() != aDetails) {
+  if (aChild.GetParent() != aDetails) {
     return true;
   }
 
@@ -5484,9 +5484,9 @@ ShouldSuppressFrameInNonOpenDetails(const HTMLDetailsElement* aDetails,
   }
 
   
-  if (aChild->IsRootOfAnonymousSubtree() &&
-      !aChild->IsGeneratedContentContainerForBefore() &&
-      !aChild->IsGeneratedContentContainerForAfter()) {
+  if (aChild.IsRootOfAnonymousSubtree() &&
+      !aChild.IsGeneratedContentContainerForBefore() &&
+      !aChild.IsGeneratedContentContainerForAfter()) {
     return false;
   }
 
@@ -5599,8 +5599,9 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     return;
   }
 
+
   nsIContent* parent = aParentFrame ? aParentFrame->GetContent() : nullptr;
-  if (ShouldSuppressFrameInSelect(parent, aContent)) {
+  if (ShouldSuppressFrameInSelect(parent, *aContent)) {
     return;
   }
 
@@ -5610,7 +5611,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   
   
   auto* details = HTMLDetailsElement::FromNodeOrNull(parent);
-  if (ShouldSuppressFrameInNonOpenDetails(details, aContent)) {
+  if (ShouldSuppressFrameInNonOpenDetails(details, *aContent)) {
     return;
   }
 
