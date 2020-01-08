@@ -208,6 +208,9 @@ public class GeckoView extends FrameLayout {
             return null;
         }
 
+        
+        coverUntilFirstPaint(Color.WHITE);
+
         GeckoSession session = mSession;
         mSession.releaseDisplay(mDisplay.release());
         mSession.getOverscrollEdgeEffect().setInvalidationCallback(null);
