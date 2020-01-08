@@ -213,6 +213,7 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult OnDrop(dom::DragEvent* aDropEvent);
 
   

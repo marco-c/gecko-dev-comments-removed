@@ -784,6 +784,22 @@ public:
 
 
 
+
+
+  MOZ_CAN_RUN_SCRIPT
+  static void GetContainerAndOffsetAtEvent(nsIPresShell* aPresShell,
+                                           const mozilla::WidgetEvent* aEvent,
+                                           nsIContent** aContainer,
+                                           int32_t* aOffset);
+
+  
+
+
+
+
+
+
+
   static nsPoint TranslateWidgetToView(nsPresContext* aPresContext,
                                        nsIWidget* aWidget,
                                        const mozilla::LayoutDeviceIntPoint& aPt,
