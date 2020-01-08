@@ -344,14 +344,6 @@ DebuggerClient.prototype = {
     return this.mainRoot.listTabs(options);
   },
 
-  
-
-
-
-  listAddons: function() {
-    return this.mainRoot.listAddons();
-  },
-
   getTab: function(filter) {
     return this.mainRoot.getTab(filter);
   },
