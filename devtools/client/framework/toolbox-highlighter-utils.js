@@ -182,22 +182,6 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  exported.getHighlighterByType = requireInspector(async function(typeName) {
-    const highlighter = await toolbox.inspector.getHighlighterByType(typeName);
-
-    return highlighter || promise.reject("The target doesn't support " +
-        `creating highlighters by types or ${typeName} is unknown`);
-  });
-
-  
-
-
-
-
-
-
-
-
   exported.getOrCreateHighlighterByType = requireInspector(async function(typeName) {
     const highlighter = await toolbox.inspector.getOrCreateHighlighterByType(typeName);
 
