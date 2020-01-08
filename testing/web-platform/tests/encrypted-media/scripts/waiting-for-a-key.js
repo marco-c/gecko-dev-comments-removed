@@ -101,7 +101,7 @@ function runTest(config)
 
         
         
-    }, 'Waiting for a key.');
+    }, 'Waiting for a key.', {timeout: 20000});
 
     
     function wait_for_encrypted_event(video)

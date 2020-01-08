@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CSS Test: 'contain: size' on buttons should cause them to be sized as if they had no contents.</title>
+  <title>CSS Test: 'contain: size' on buttons should cause them to be sized and baseline-aligned as if they had no contents.</title>
   <link rel="author" title="Morgan Rae Reschenberg" href="mailto:mreschenberg@berkeley.edu">
   <link rel="help" href="https://drafts.csswg.org/css-contain/#containment-size">
   <link rel="match" href="contain-size-button-001-ref.html">
@@ -10,13 +10,7 @@
   button {
     contain: size;
     border: 1em solid green;
-    /* In case the testcase's 'inner' text is taller than the button, don't let
-       it influence its line-box's size.  This lets us more-easily compare
-       sizing between empty buttons vs. contained nonempty buttons. */
-    vertical-align: top;
-  }
-  .vaBaseline {
-    vertical-align: baseline;
+    background: red;
   }
   .innerContents {
     color: transparent;
@@ -44,7 +38,6 @@
     float: left;
     width: 50px;
   }
-  br { clear: both }
   .iFlexBasic {
     display: inline-flex;
   }
@@ -79,7 +72,7 @@
   <br>
 
   
-  outside before<button class="vaBaseline"><div class="innerContents">inner</div></button>outside after
+  outside before<button><div class="innerContents">inner</div></button>outside after
   <br>
 
   
@@ -99,7 +92,7 @@
   <br>
 
   
-  s<button class="orthog vaBaseline"><div class="innerContents">inner</div></button>endtext
+  s<button class="orthog"><div class="innerContents">inner</div></button>endtext
   <br>
 
   

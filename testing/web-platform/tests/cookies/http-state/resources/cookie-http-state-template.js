@@ -86,13 +86,6 @@ CookieManager.prototype.resetCookies = () => {
     expireCookie(cookies_to_delete[i].replace(/=.*$/, ""),
                  null,
                  '/');
-    
-    
-    
-    
-    expireCookie(cookies_to_delete[i].replace(/=.*$/, ""),
-                 null,
-                 getLocalResourcesPath() + "/");
   }
 }
 

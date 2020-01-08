@@ -1,16 +1,16 @@
 from .base import Browser, ExecutorBrowser, require_arg
 from ..webdriver_server import SafariDriverServer
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
-                                           WebDriverRefTestExecutor)  
+from ..executors.executorselenium import (SeleniumTestharnessExecutor,  
+                                          SeleniumRefTestExecutor)  
 from ..executors.executorsafari import SafariDriverWdspecExecutor  
 
 
 __wptrunner__ = {"product": "safari",
                  "check_args": "check_args",
                  "browser": "SafariBrowser",
-                 "executor": {"testharness": "WebDriverTestharnessExecutor",
-                              "reftest": "WebDriverRefTestExecutor",
+                 "executor": {"testharness": "SeleniumTestharnessExecutor",
+                              "reftest": "SeleniumRefTestExecutor",
                               "wdspec": "SafariDriverWdspecExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
