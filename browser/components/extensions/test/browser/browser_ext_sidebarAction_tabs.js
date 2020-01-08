@@ -43,10 +43,4 @@ add_task(async function sidebar_tab_query_bug_1340739() {
   await extension.startup();
   await extension.awaitMessage("sidebar");
   await extension.unload();
-
-  
-  CustomizableUI.removeWidgetFromArea("sidebar-button", CustomizableUI.AREA_NAVBAR);
-  ok(!document.getElementById("sidebar-button"), "sidebar button is not in UI");
-  
-  Services.prefs.clearUserPref("extensions.sidebar-button.shown");
 });
