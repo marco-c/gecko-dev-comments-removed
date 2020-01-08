@@ -37,6 +37,15 @@ const ChangesActor = protocol.ActorClassWithSpec(changesSpec, {
     protocol.Actor.prototype.destroy.call(this);
   },
 
+  start: function() {
+    
+
+
+
+
+
+  },
+
   changeCount: function() {
     return this.changes.length;
   },
