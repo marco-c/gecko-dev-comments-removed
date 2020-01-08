@@ -119,9 +119,13 @@ add_task(async function test_modify() {
     Assert.equal(row.value, Preferences.get("test.aboutconfig.modify.string"));
 
     
-    intRow.valueInput.value += "a";
-    intRow.editColumnButton.click();
-    Assert.ok(!intRow.valueInput.checkValidity());
+    for (let invalidValue of
+         ["", " ", "a", "1.5", "-2147483649", "2147483648"]) {
+      intRow.valueInput.value = invalidValue;
+      intRow.editColumnButton.click();
+      
+      Assert.ok(intRow.valueInput);
+    }
 
     
     for (let prefName of [
