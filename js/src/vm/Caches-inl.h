@@ -53,6 +53,12 @@ inline NativeObject* NewObjectCache::newObjectFromHit(JSContext* cx,
   
   ObjectGroup* group = templateObj->group_;
 
+  
+  
+  if (group->realm() != cx->realm()) {
+    return nullptr;
+  }
+
   MOZ_ASSERT(!group->hasUnanalyzedPreliminaryObjects());
 
   {

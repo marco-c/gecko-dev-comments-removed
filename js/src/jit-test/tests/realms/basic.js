@@ -43,3 +43,14 @@ function testSystemNonSystemRealms() {
     assertEq(ex.toString().includes("non-system realms"), true);
 }
 testSystemNonSystemRealms();
+
+function testNewObjectCache() {
+    
+    
+    var g = newGlobal({sameCompartmentAs: this});
+    var o1 = g.evaluate("Object.create(Math)");
+    var o2 = Object.create(g.Math);
+    assertEq(objectGlobal(o1), g);
+    assertEq(objectGlobal(o2), this);
+}
+testNewObjectCache();
