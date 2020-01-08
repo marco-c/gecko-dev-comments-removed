@@ -157,7 +157,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
 
     
     masm.subl(esp, esi);
-    masm.makeFrameDescriptor(esi, JitFrame_CppToJSJit, JitFrameLayout::Size());
+    masm.makeFrameDescriptor(esi, FrameType::CppToJSJit, JitFrameLayout::Size());
     masm.push(esi);
 
     CodeLabel returnLabel;
@@ -221,7 +221,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
 
         
         masm.addPtr(Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset), scratch);
-        masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS, ExitFrameLayout::Size());
+        masm.makeFrameDescriptor(scratch, FrameType::BaselineJS, ExitFrameLayout::Size());
         masm.push(scratch); 
         masm.push(Imm32(0));
         
@@ -494,7 +494,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
     
     masm.lea(Operand(FramePointer, sizeof(void*)), ebx);
     masm.subl(esp, ebx);
-    masm.makeFrameDescriptor(ebx, JitFrame_Rectifier, JitFrameLayout::Size());
+    masm.makeFrameDescriptor(ebx, FrameType::Rectifier, JitFrameLayout::Size());
 
     
     masm.push(edx); 
@@ -1034,15 +1034,15 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
     Label handle_Entry;
     Label end;
 
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_IonJS), &handle_IonJS);
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_BaselineJS), &handle_IonJS);
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_BaselineStub), &handle_BaselineStub);
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_Rectifier), &handle_Rectifier);
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_IonICCall), &handle_IonICCall);
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_CppToJSJit), &handle_Entry);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::IonJS), &handle_IonJS);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::BaselineJS), &handle_IonJS);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::BaselineStub), &handle_BaselineStub);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::Rectifier), &handle_Rectifier);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::IonICCall), &handle_IonICCall);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::CppToJSJit), &handle_Entry);
 
     
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_WasmToJSJit), &handle_Entry);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(FrameType::WasmToJSJit), &handle_Entry);
 
     masm.assumeUnreachable("Invalid caller frame type when exiting from Ion frame.");
 
@@ -1174,7 +1174,7 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
 
         
         Label notIonFrame;
-        masm.branch32(Assembler::NotEqual, scratch3, Imm32(JitFrame_IonJS), &notIonFrame);
+        masm.branch32(Assembler::NotEqual, scratch3, Imm32(FrameType::IonJS), &notIonFrame);
 
         
         
@@ -1190,7 +1190,7 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
 
         
         
-        masm.branch32(Assembler::NotEqual, scratch3, Imm32(JitFrame_BaselineStub), &handle_Entry);
+        masm.branch32(Assembler::NotEqual, scratch3, Imm32(FrameType::BaselineStub), &handle_Entry);
 
         
         BaseIndex stubFrameReturnAddr(scratch2, scratch1, TimesOne,
@@ -1235,7 +1235,7 @@ JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profi
         masm.and32(Imm32((1 << FRAMETYPE_BITS) - 1), scratch1);
         {
             Label checkOk;
-            masm.branch32(Assembler::Equal, scratch1, Imm32(JitFrame_IonJS), &checkOk);
+            masm.branch32(Assembler::Equal, scratch1, Imm32(FrameType::IonJS), &checkOk);
             masm.assumeUnreachable("IonICCall frame must be preceded by IonJS frame");
             masm.bind(&checkOk);
         }

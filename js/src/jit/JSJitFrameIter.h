@@ -20,50 +20,50 @@ namespace jit {
 
 typedef void * CalleeToken;
 
-enum FrameType
+enum class FrameType
 {
     
     
-    JitFrame_IonJS,
+    IonJS,
 
     
-    JitFrame_BaselineJS,
-
-    
-    
-    JitFrame_BaselineStub,
+    BaselineJS,
 
     
     
-    JitFrame_CppToJSJit,
+    BaselineStub,
 
     
     
-    JitFrame_Rectifier,
-
-    
-    JitFrame_IonICCall,
+    CppToJSJit,
 
     
     
+    Rectifier,
+
     
-    JitFrame_Exit,
+    IonICCall,
 
     
     
     
-    
-    JitFrame_Bailout,
+    Exit,
 
     
     
     
-    JitFrame_WasmToJSJit,
+    
+    Bailout,
 
     
     
     
-    JitFrame_JSJitToWasm,
+    WasmToJSJit,
+
+    
+    
+    
+    JSJitToWasm,
 };
 
 enum ReadFrameArgsBehavior {
@@ -156,37 +156,37 @@ class JSJitFrameIter
     bool checkInvalidation() const;
 
     bool isExitFrame() const {
-        return type_ == JitFrame_Exit;
+        return type_ == FrameType::Exit;
     }
     bool isScripted() const {
-        return type_ == JitFrame_BaselineJS || type_ == JitFrame_IonJS || type_ == JitFrame_Bailout;
+        return type_ == FrameType::BaselineJS || type_ == FrameType::IonJS || type_ == FrameType::Bailout;
     }
     bool isBaselineJS() const {
-        return type_ == JitFrame_BaselineJS;
+        return type_ == FrameType::BaselineJS;
     }
     bool isIonScripted() const {
-        return type_ == JitFrame_IonJS || type_ == JitFrame_Bailout;
+        return type_ == FrameType::IonJS || type_ == FrameType::Bailout;
     }
     bool isIonJS() const {
-        return type_ == JitFrame_IonJS;
+        return type_ == FrameType::IonJS;
     }
     bool isIonICCall() const {
-        return type_ == JitFrame_IonICCall;
+        return type_ == FrameType::IonICCall;
     }
     bool isBailoutJS() const {
-        return type_ == JitFrame_Bailout;
+        return type_ == FrameType::Bailout;
     }
     bool isBaselineStub() const {
-        return type_ == JitFrame_BaselineStub;
+        return type_ == FrameType::BaselineStub;
     }
     bool isRectifier() const {
-        return type_ == JitFrame_Rectifier;
+        return type_ == FrameType::Rectifier;
     }
     bool isBareExit() const;
     template <typename T> bool isExitFrameLayout() const;
 
     static bool isEntry(FrameType type) {
-        return type == JitFrame_CppToJSJit || type == JitFrame_WasmToJSJit;
+        return type == FrameType::CppToJSJit || type == FrameType::WasmToJSJit;
     }
     bool isEntry() const {
         return isEntry(type_);

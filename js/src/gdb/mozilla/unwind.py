@@ -38,17 +38,17 @@ def debug(something):
 
 
 SizeOfFramePrefix = {
-    'JitFrame_IonJS': 'ExitFrameLayout',
-    'JitFrame_BaselineJS': 'JitFrameLayout',
-    'JitFrame_BaselineStub': 'BaselineStubFrameLayout',
-    'JitFrame_IonStub': 'JitStubFrameLayout',
-    'JitFrame_CppToJSJit': 'JitFrameLayout',
-    'JitFrame_WasmToJSJit': 'JitFrameLayout',
-    'JitFrame_Rectifier': 'RectifierFrameLayout',
-    'JitFrame_IonAccessorIC': 'IonAccessorICFrameLayout',
-    'JitFrame_IonICCall': 'IonICCallFrameLayout',
-    'JitFrame_Exit': 'ExitFrameLayout',
-    'JitFrame_Bailout': 'JitFrameLayout',
+    'FrameType::IonJS': 'ExitFrameLayout',
+    'FrameType::BaselineJS': 'JitFrameLayout',
+    'FrameType::BaselineStub': 'BaselineStubFrameLayout',
+    'FrameType::IonStub': 'JitStubFrameLayout',
+    'FrameType::CppToJSJit': 'JitFrameLayout',
+    'FrameType::WasmToJSJit': 'JitFrameLayout',
+    'FrameType::Rectifier': 'RectifierFrameLayout',
+    'FrameType::IonAccessorIC': 'IonAccessorICFrameLayout',
+    'FrameType::IonICCall': 'IonICCallFrameLayout',
+    'FrameType::Exit': 'ExitFrameLayout',
+    'FrameType::Bailout': 'JitFrameLayout',
 }
 
 
@@ -387,7 +387,7 @@ class UnwinderState(object):
                        self.typecache.FRAME_HEADER_SIZE_MASK)
         header_size = header_size * self.typecache.void_starstar.sizeof
         frame_type = long(value & self.typecache.FRAMETYPE_MASK)
-        if frame_type == self.typecache.JitFrame_CppToJSJit:
+        if frame_type == self.typecache.CppToJSJit:
             
             
             
@@ -463,7 +463,7 @@ class UnwinderState(object):
             return None
 
         exit_sp = pending_frame.read_register(self.SP_REGISTER)
-        frame_type = self.typecache.JitFrame_Exit
+        frame_type = self.typecache.Exit
         return self.create_frame(pc, exit_sp, packedExitFP, frame_type, pending_frame)
 
     
@@ -471,7 +471,7 @@ class UnwinderState(object):
     def unwind_entry_frame(self, pc, pending_frame):
         sp = self.next_sp
         
-        self.add_frame(sp, name='JitFrame_CppToJSJit')
+        self.add_frame(sp, name='FrameType::CppToJSJit')
         
         frame_id = SpiderMonkeyFrameId(sp, pc)
         unwind_info = pending_frame.create_unwind_info(frame_id)
@@ -492,7 +492,7 @@ class UnwinderState(object):
             return None
 
         if self.next_sp is not None:
-            if self.next_type == self.typecache.JitFrame_CppToJSJit:
+            if self.next_type == self.typecache.CppToJSJit:
                 return self.unwind_entry_frame(pc, pending_frame)
             return self.unwind_ordinary(pc, pending_frame)
         

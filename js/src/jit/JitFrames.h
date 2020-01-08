@@ -303,9 +303,10 @@ EncodeFrameHeaderSize(size_t headerSize)
 static inline uint32_t
 MakeFrameDescriptor(uint32_t frameSize, FrameType type, uint32_t headerSize)
 {
-    MOZ_ASSERT(headerSize < FRAMESIZE_MASK);
+    MOZ_ASSERT(frameSize < FRAMESIZE_MASK);
     headerSize = EncodeFrameHeaderSize(headerSize);
-    return 0 | (frameSize << FRAMESIZE_SHIFT) | (headerSize << FRAME_HEADER_SIZE_SHIFT) | type;
+    return 0 | (frameSize << FRAMESIZE_SHIFT) | (headerSize << FRAME_HEADER_SIZE_SHIFT) |
+           uint32_t(type);
 }
 
 
@@ -313,7 +314,7 @@ inline JSScript*
 GetTopJitJSScript(JSContext* cx)
 {
     JSJitFrameIter frame(cx->activation()->asJit());
-    MOZ_ASSERT(frame.type() == JitFrame_Exit);
+    MOZ_ASSERT(frame.type() == FrameType::Exit);
     ++frame;
 
     if (frame.isBaselineStub()) {
@@ -358,7 +359,7 @@ class CommonFrameLayout
     }
     void changePrevType(FrameType type) {
         descriptor_ &= ~FRAMETYPE_MASK;
-        descriptor_ |= type;
+        descriptor_ |= uintptr_t(type);
     }
     size_t prevFrameLocalSize() const {
         return descriptor_ >> FRAMESIZE_SHIFT;

@@ -361,20 +361,20 @@ struct BaselineStackBuilder
         
         
         
-        if (JSJitFrameIter::isEntry(type) || type == JitFrame_IonJS || type == JitFrame_IonICCall)
+        if (JSJitFrameIter::isEntry(type) || type == FrameType::IonJS || type == FrameType::IonICCall)
             return nullptr;
 
         
         
         
         
-        if (type == JitFrame_BaselineStub) {
+        if (type == FrameType::BaselineStub) {
             size_t offset = JitFrameLayout::Size() + topFrame->prevFrameLocalSize() +
                             BaselineStubFrameLayout::reverseOffsetOfSavedFramePtr();
             return virtualPointerAtStackOffset(offset);
         }
 
-        MOZ_ASSERT(type == JitFrame_Rectifier);
+        MOZ_ASSERT(type == FrameType::Rectifier);
         
         
         
@@ -394,12 +394,12 @@ struct BaselineStackBuilder
             pointerAtStackOffset<RectifierFrameLayout>(priorOffset);
         FrameType priorType = priorFrame->prevType();
         MOZ_ASSERT(JSJitFrameIter::isEntry(priorType) ||
-                   priorType == JitFrame_IonJS ||
-                   priorType == JitFrame_BaselineStub);
+                   priorType == FrameType::IonJS ||
+                   priorType == FrameType::BaselineStub);
 
         
         
-        if (priorType == JitFrame_IonJS || JSJitFrameIter::isEntry(priorType))
+        if (priorType == FrameType::IonJS || JSJitFrameIter::isEntry(priorType))
             return nullptr;
 
         
@@ -1240,7 +1240,7 @@ InitFromBailout(JSContext* cx, size_t frameNo,
 
     
     size_t baselineFrameDescr = MakeFrameDescriptor((uint32_t) builder.framePushed(),
-                                                    JitFrame_BaselineJS,
+                                                    FrameType::BaselineJS,
                                                     BaselineStubFrameLayout::Size());
     if (!builder.writeWord(baselineFrameDescr, "Descriptor"))
         return false;
@@ -1351,7 +1351,7 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     size_t baselineStubFrameSize = builder.framePushed() - startOfBaselineStubFrame;
     size_t baselineStubFrameDescr = MakeFrameDescriptor((uint32_t) baselineStubFrameSize,
-                                                        JitFrame_BaselineStub,
+                                                        FrameType::BaselineStub,
                                                         JitFrameLayout::Size());
 
     
@@ -1464,7 +1464,7 @@ InitFromBailout(JSContext* cx, size_t frameNo,
     
     size_t rectifierFrameSize = builder.framePushed() - startOfRectifierFrame;
     size_t rectifierFrameDescr = MakeFrameDescriptor((uint32_t) rectifierFrameSize,
-                                                     JitFrame_Rectifier,
+                                                     FrameType::Rectifier,
                                                      JitFrameLayout::Size());
 
     
@@ -1526,10 +1526,10 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 #if defined(DEBUG) || defined(JS_JITSPEW)
     FrameType prevFrameType = iter.prevType();
     MOZ_ASSERT(JSJitFrameIter::isEntry(prevFrameType) ||
-               prevFrameType == JitFrame_IonJS ||
-               prevFrameType == JitFrame_BaselineStub ||
-               prevFrameType == JitFrame_Rectifier ||
-               prevFrameType == JitFrame_IonICCall);
+               prevFrameType == FrameType::IonJS ||
+               prevFrameType == FrameType::BaselineStub ||
+               prevFrameType == FrameType::Rectifier ||
+               prevFrameType == FrameType::IonICCall);
 #endif
 
     

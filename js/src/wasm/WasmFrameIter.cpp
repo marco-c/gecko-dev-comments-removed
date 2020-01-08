@@ -132,7 +132,7 @@ WasmFrameIter::popFrame()
         MOZ_ASSERT(!LookupCode(prevFP->returnAddress));
 
         unwoundIonCallerFP_ = (uint8_t*)(uintptr_t(fp_) & ~uintptr_t(ExitOrJitEntryFPTag));
-        unwoundIonFrameType_ = JitFrame_Exit;
+        unwoundIonFrameType_ = FrameType::Exit;
 
         fp_ = nullptr;
         code_ = nullptr;
@@ -181,7 +181,7 @@ WasmFrameIter::popFrame()
         
         
         unwoundIonCallerFP_ = (uint8_t*) fp_;
-        unwoundIonFrameType_ = JitFrame_JSJitToWasm;
+        unwoundIonFrameType_ = FrameType::JSJitToWasm;
 
         fp_ = nullptr;
         code_ = nullptr;
