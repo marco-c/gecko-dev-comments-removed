@@ -845,18 +845,14 @@ or run without that action (ie: --no-{action})"
             
             if c.get('update_channel'):
                 env["MOZ_UPDATE_CHANNEL"] = c['update_channel']
+            elif c.get('enable_release_promotion'):
+                env["MOZ_UPDATE_CHANNEL"] = self.branch
             else:  
                 env["MOZ_UPDATE_CHANNEL"] = "nightly-%s" % (self.branch,)
+            self.info("Update channel set to: {}".format(env["MOZ_UPDATE_CHANNEL"]))
 
         if self.config.get('pgo_build') or self._compile_against_pgo():
             env['MOZ_PGO'] = '1'
-
-        
-        if c.get('enable_release_promotion'):
-            update_channel = c.get('update_channel', self.branch)
-            self.info("Release promotion update channel: %s"
-                      % (update_channel,))
-            env["MOZ_UPDATE_CHANNEL"] = update_channel
 
         return env
 
