@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "ServiceWorkerRegistrationChild.h"
+
+namespace mozilla {
+namespace dom {
+
+void
+ServiceWorkerRegistrationChild::ActorDestroy(ActorDestroyReason aReason)
+{
+  
+}
+
+} 
+} 

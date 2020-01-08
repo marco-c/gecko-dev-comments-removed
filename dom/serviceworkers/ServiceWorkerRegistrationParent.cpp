@@ -1,0 +1,34 @@
+
+
+
+
+
+
+#include "ServiceWorkerRegistrationParent.h"
+
+namespace mozilla {
+namespace dom {
+
+using mozilla::ipc::IPCResult;
+
+void
+ServiceWorkerRegistrationParent::ActorDestroy(ActorDestroyReason aReason)
+{
+  
+}
+
+IPCResult
+ServiceWorkerRegistrationParent::RecvTeardown()
+{
+  
+  return IPC_OK();
+}
+
+void
+ServiceWorkerRegistrationParent::Init(const IPCServiceWorkerRegistrationDescriptor& aDescriptor)
+{
+  
+}
+
+} 
+} 

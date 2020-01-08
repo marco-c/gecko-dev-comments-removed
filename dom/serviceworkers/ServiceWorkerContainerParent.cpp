@@ -1,0 +1,34 @@
+
+
+
+
+
+
+#include "mozilla/dom/PServiceWorkerContainerParent.h"
+
+namespace mozilla {
+namespace dom {
+
+using mozilla::ipc::IPCResult;
+
+void
+ServiceWorkerContainerParent::ActorDestroy(ActorDestroyReason aReason)
+{
+  
+}
+
+IPCResult
+ServiceWorkerContainerParent::RecvTeardown()
+{
+  
+  return IPC_OK();
+}
+
+void
+ServiceWorkerContainerParent::Init()
+{
+  
+}
+
+} 
+} 

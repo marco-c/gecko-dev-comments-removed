@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "mozilla/dom/PServiceWorkerContainerChild.h"
+
+namespace mozilla {
+namespace dom {
+
+void
+ServiceWorkerContainerChild::ActorDestroy(ActorDestroyReason aReason)
+{
+  
+}
+
+} 
+} 
