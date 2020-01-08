@@ -108,6 +108,9 @@ public:
                                        nsPIDOMWindowInner* aParentWindow,
                                        StorageAccessGrantedReason aReason);
 
+  static void
+  StoreUserInteractionFor(nsIPrincipal* aPrincipal);
+
   
   static void
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(nsIPrincipal* aPrincipal,

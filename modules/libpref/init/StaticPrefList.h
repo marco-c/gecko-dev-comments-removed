@@ -1623,6 +1623,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "privacy.userInteraction.expiration",
+   privacy_userInteraction_expiration,
+  uint32_t, 2592000 
+)
+
+
+VARCACHE_PREF(
   "privacy.resistFingerprinting",
    privacy_resistFingerprinting,
   RelaxedAtomicBool, false

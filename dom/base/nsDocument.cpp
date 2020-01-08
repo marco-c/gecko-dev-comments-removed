@@ -12638,6 +12638,7 @@ nsIDocument::SetUserHasInteracted()
   }
 
   MaybeAllowStorageForOpener();
+  MaybeStoreUserInteractionAsPermission();
 }
 
 void
@@ -12755,6 +12756,15 @@ nsIDocument::MaybeAllowStorageForOpener()
   Unused << AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(origin,
                                                                      openerInner,
                                                                      AntiTrackingCommon::eHeuristic);
+}
+
+void
+nsIDocument::MaybeStoreUserInteractionAsPermission()
+{
+  
+  if (!mParentDocument) {
+    AntiTrackingCommon::StoreUserInteractionFor(NodePrincipal());
+  }
 }
 
 bool

@@ -1256,6 +1256,9 @@ public:
                                               const nsCString& aGrantedOrigin,
                                               FirstPartyStorageAccessGrantedForOriginResolver&& aResolver) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvStoreUserInteractionAsPermission(const Principal& aPrincipal) override;
+
   
   
   void MaybeEnableRemoteInputEventQueue();
