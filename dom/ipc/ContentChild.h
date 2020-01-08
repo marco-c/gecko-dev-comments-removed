@@ -64,12 +64,6 @@ class OptionalURIParams;
 class URIParams;
 }
 
-namespace ipdl {
-namespace ipc {
-class PContentChildIPCInterface;
-} 
-} 
-
 namespace dom {
 
 namespace ipc {
@@ -405,13 +399,6 @@ public:
                                                    InfallibleTArray<CpowEntry>&& aCpows,
                                                    const IPC::Principal& aPrincipal,
                                                    const ClonedMessageData& aData) override;
-
-  
-  virtual mozilla::ipc::IPCResult RecvAsyncMessageIPDL(const nsCString& aProtocol,
-                                                       const uint32_t& aChannelId,
-                                                       const nsCString& aMessage,
-                                                       const ClonedMessageData& aData,
-                                                       AsyncMessageIPDLResolver&& aResolve) override;
 
   mozilla::ipc::IPCResult RecvRegisterStringBundles(nsTArray<StringBundleDescriptor>&& stringBundles) override;
 
@@ -761,9 +748,6 @@ public:
   }
 #endif
 
-  void RegisterIPDLIPCInterface(
-    mozilla::ipdl::ipc::PContentChildIPCInterface* aIPDLIPCInterface);
-
 private:
   static void ForceKillTimerCallback(nsITimer* aTimer, void* aClosure);
   void StartForceKillTimer();
@@ -868,8 +852,6 @@ private:
   nsClassHashtable<nsUint64HashKey, AnonymousTemporaryFileCallback> mPendingAnonymousTemporaryFiles;
 
   mozilla::Atomic<bool> mShuttingDown;
-
-  mozilla::ipdl::ipc::PContentChildIPCInterface* mIPDLIPCInterface;
 
 #ifdef NIGHTLY_BUILD
   
