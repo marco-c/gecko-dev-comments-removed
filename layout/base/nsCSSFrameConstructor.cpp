@@ -6583,12 +6583,14 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
     } else {
       
       *aIsAppend = true;
-      aInsertion->mParentFrame =
-        ::ContinuationToAppendTo(aInsertion->mParentFrame);
 
       
       aInsertion->mParentFrame =
         ::GetAdjustedParentFrame(aInsertion->mParentFrame, aChild);
+
+      aInsertion->mParentFrame =
+        ::ContinuationToAppendTo(aInsertion->mParentFrame);
+
       prevSibling = ::FindAppendPrevSibling(aInsertion->mParentFrame, nullptr);
     }
   }
