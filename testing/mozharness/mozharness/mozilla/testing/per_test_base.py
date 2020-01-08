@@ -122,6 +122,10 @@ class SingleTestMixin(object):
 
             self.info("Per-test run found test %s (%s)" % (file, entry[0]))
             subsuite_mapping = {
+                
+                
+                
+                
                 ('browser-chrome', 'clipboard'): 'browser-chrome-clipboard',
                 ('chrome', 'clipboard'): 'chrome-clipboard',
                 ('plain', 'clipboard'): 'plain-clipboard',

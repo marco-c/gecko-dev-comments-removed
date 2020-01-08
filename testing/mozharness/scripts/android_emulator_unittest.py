@@ -612,12 +612,17 @@ class AndroidEmulatorTest(TestingMixin, BaseScript, MozbaseMixin, CodeCoverageMi
         if self.test_suite:
             return [(self.test_suite, self.test_suite)]
         
+
+        
+        
         all = [('mochitest', {'plain': 'mochitest',
                               'chrome': 'mochitest-chrome',
+                              'mochitest-media': 'mochitest-media',
                               'plain-clipboard': 'mochitest-plain-clipboard',
                               'plain-gpu': 'mochitest-plain-gpu'}),
                ('reftest', {'reftest': 'reftest',
-                            'crashtest': 'crashtest'}),
+                            'crashtest': 'crashtest',
+                            'jsreftest': 'jsreftest'}),
                ('xpcshell', {'xpcshell': 'xpcshell'})]
         suites = []
         for (category, all_suites) in all:
