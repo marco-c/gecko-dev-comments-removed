@@ -1256,6 +1256,15 @@ protected:
     
     bool mIsSelected;
 
+    CellData()
+      : mRowSpan(-1)
+      , mColSpan(-1)
+      , mEffectiveRowSpan(-1)
+      , mEffectiveColSpan(-1)
+      , mIsSelected(false)
+    {
+    }
+
     
 
 
