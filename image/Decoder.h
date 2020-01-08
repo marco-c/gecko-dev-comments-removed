@@ -91,6 +91,26 @@ struct DecoderTelemetry final
   const TimeDuration mDecodeTime;
 };
 
+
+
+
+
+
+class IDecoderFrameRecycler
+{
+public:
+  
+
+
+
+
+
+
+
+
+  virtual RawAccessFrameRef RecycleFrame(gfx::IntRect& aRecycleRect) = 0;
+};
+
 class Decoder
 {
 public:
@@ -425,7 +445,6 @@ public:
 
   imgFrame* GetCurrentFrame()
   {
-    MOZ_ASSERT(ShouldBlendAnimation());
     return mCurrentFrame.get();
   }
 
@@ -460,6 +479,12 @@ public:
   void ClearHasFrameToTake() {
     MOZ_ASSERT(mHasFrameToTake);
     mHasFrameToTake = false;
+  }
+
+  IDecoderFrameRecycler* GetFrameRecycler() const { return mFrameRecycler; }
+  void SetFrameRecycler(IDecoderFrameRecycler* aFrameRecycler)
+  {
+    mFrameRecycler = aFrameRecycler;
   }
 
 protected:
@@ -604,6 +629,7 @@ protected:
 private:
   RefPtr<RasterImage> mImage;
   Maybe<SourceBufferIterator> mIterator;
+  IDecoderFrameRecycler* mFrameRecycler;
 
   
   RawAccessFrameRef mCurrentFrame;

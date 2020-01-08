@@ -53,6 +53,7 @@ Decoder::Decoder(RasterImage* aImage)
   , mColormap(nullptr)
   , mColormapSize(0)
   , mImage(aImage)
+  , mFrameRecycler(nullptr)
   , mProgress(NoProgress)
   , mFrameCount(0)
   , mLoopLength(FrameTimeout::Zero())
@@ -339,33 +340,12 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
     return RawAccessFrameRef();
   }
 
-  
-  
-  mRecycleRect = IntRect(IntPoint(0, 0), aOutputSize);
-
-  auto frame = MakeNotNull<RefPtr<imgFrame>>();
-  bool nonPremult = bool(mSurfaceFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
-  if (NS_FAILED(frame->InitForDecoder(aOutputSize, aFrameRect, aFormat,
-                                      aPaletteDepth, nonPremult,
-                                      aAnimParams, ShouldBlendAnimation()))) {
-    NS_WARNING("imgFrame::Init should succeed");
-    return RawAccessFrameRef();
-  }
-
-  RawAccessFrameRef ref = frame->RawAccessRef();
-  if (!ref) {
-    frame->Abort();
-    return RawAccessFrameRef();
-  }
-
   if (frameNum == 1) {
     MOZ_ASSERT(aPreviousFrame, "Must provide a previous frame when animated");
     aPreviousFrame->SetRawAccessOnly();
   }
 
   if (frameNum > 0) {
-    ref->SetRawAccessOnly();
-
     if (ShouldBlendAnimation()) {
       if (aPreviousFrame->GetDisposalMethod() !=
           DisposalMethod::RESTORE_PREVIOUS) {
@@ -383,6 +363,64 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
         
         mRestoreDirtyRect = aPreviousFrame->GetBoundedBlendRect();
       }
+    }
+  }
+
+  RawAccessFrameRef ref;
+
+  
+  
+  
+  
+  if (mFrameRecycler) {
+    MOZ_ASSERT(ShouldBlendAnimation());
+    MOZ_ASSERT(aPaletteDepth == 0);
+    MOZ_ASSERT(aAnimParams);
+    MOZ_ASSERT(aFrameRect.IsEqualEdges(IntRect(IntPoint(0, 0), aOutputSize)));
+
+    ref = mFrameRecycler->RecycleFrame(mRecycleRect);
+    if (ref) {
+      
+      
+      
+      
+      bool blocked = ref.get() == mRestoreFrame.get();
+      if (!blocked) {
+        nsresult rv = ref->InitForDecoderRecycle(aAnimParams.ref());
+        blocked = NS_WARN_IF(NS_FAILED(rv));
+      }
+
+      if (blocked) {
+        ref.reset();
+      }
+    }
+  }
+
+  
+  
+  if (!ref) {
+    
+    
+    mRecycleRect = IntRect(IntPoint(0, 0), aOutputSize);
+
+    bool nonPremult = bool(mSurfaceFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA);
+    auto frame = MakeNotNull<RefPtr<imgFrame>>();
+    if (NS_FAILED(frame->InitForDecoder(aOutputSize, aFrameRect, aFormat,
+                                        aPaletteDepth, nonPremult,
+                                        aAnimParams, ShouldBlendAnimation(),
+                                        bool(mFrameRecycler)))) {
+      NS_WARNING("imgFrame::Init should succeed");
+      return RawAccessFrameRef();
+    }
+
+    ref = frame->RawAccessRef();
+    if (!ref) {
+      frame->Abort();
+      return RawAccessFrameRef();
+    }
+
+    if (frameNum > 0) {
+      frame->SetRawAccessOnly();
     }
   }
 
