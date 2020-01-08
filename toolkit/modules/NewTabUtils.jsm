@@ -814,7 +814,8 @@ var ActivityStreamProvider = {
   _processHighlights(aLinks, aOptions, aType) {
     
     if (!aOptions.ignoreBlocked) {
-      aLinks = aLinks.filter(link => !BlockedLinks.isBlocked(link));
+      aLinks = aLinks.filter(link =>
+        !BlockedLinks.isBlocked(link.pocket_id ? {url: link.open_url} : link));
     }
 
     
