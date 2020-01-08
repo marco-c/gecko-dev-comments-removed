@@ -3106,7 +3106,7 @@ RSA_HashCheckSign(SECOidTag digestOid, NSSLOWKEYPublicKey *key,
         digest.len = digestLen;
         rv = _SGN_VerifyPKCS1DigestInfo(
             digestOid, &digest, &pkcs1DigestInfo,
-            PR_TRUE );
+            PR_FALSE );
     }
 
     PORT_Free(pkcs1DigestInfoData);
