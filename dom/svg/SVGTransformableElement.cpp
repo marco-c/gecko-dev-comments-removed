@@ -6,7 +6,7 @@
 
 #include "gfx2DGlue.h"
 #include "mozilla/dom/MutationEventBinding.h"
-#include "mozilla/dom/SVGAnimatedTransformList.h"
+#include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGGraphicsElementBinding.h"
 #include "mozilla/dom/SVGTransformableElement.h"
 #include "mozilla/dom/SVGMatrix.h"
@@ -23,11 +23,11 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace dom {
 
-already_AddRefed<SVGAnimatedTransformList>
+already_AddRefed<DOMSVGAnimatedTransformList>
 SVGTransformableElement::Transform() {
   
   
-  return SVGAnimatedTransformList::GetDOMWrapper(
+  return DOMSVGAnimatedTransformList::GetDOMWrapper(
       GetAnimatedTransformList(DO_ALLOCATE), this);
 }
 

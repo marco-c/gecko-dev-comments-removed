@@ -8,7 +8,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsGkAtoms.h"
-#include "mozilla/dom/SVGAnimatedTransformList.h"
+#include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGPatternElement.h"
 #include "mozilla/dom/SVGPatternElementBinding.h"
@@ -83,11 +83,11 @@ SVGPatternElement::PatternContentUnits() {
   return mEnumAttributes[PATTERNCONTENTUNITS].ToDOMAnimatedEnum(this);
 }
 
-already_AddRefed<SVGAnimatedTransformList>
+already_AddRefed<DOMSVGAnimatedTransformList>
 SVGPatternElement::PatternTransform() {
   
   
-  return SVGAnimatedTransformList::GetDOMWrapper(
+  return DOMSVGAnimatedTransformList::GetDOMWrapper(
       GetAnimatedTransformList(DO_ALLOCATE), this);
 }
 

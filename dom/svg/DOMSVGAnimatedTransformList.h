@@ -37,12 +37,14 @@ namespace dom {
 
 
 
-class SVGAnimatedTransformList final : public nsWrapperCache {
+class DOMSVGAnimatedTransformList final : public nsWrapperCache {
   friend class mozilla::DOMSVGTransformList;
 
  public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SVGAnimatedTransformList)
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(SVGAnimatedTransformList)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
+      DOMSVGAnimatedTransformList)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(
+      DOMSVGAnimatedTransformList)
 
   
 
@@ -55,7 +57,7 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
 
 
 
-  static already_AddRefed<SVGAnimatedTransformList> GetDOMWrapper(
+  static already_AddRefed<DOMSVGAnimatedTransformList> GetDOMWrapper(
       nsSVGAnimatedTransformList* aList, SVGElement* aElement);
 
   
@@ -63,7 +65,7 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
 
 
 
-  static SVGAnimatedTransformList* GetDOMWrapperIfExists(
+  static DOMSVGAnimatedTransformList* GetDOMWrapperIfExists(
       nsSVGAnimatedTransformList* aList);
 
   
@@ -100,10 +102,10 @@ class SVGAnimatedTransformList final : public nsWrapperCache {
 
 
 
-  explicit SVGAnimatedTransformList(SVGElement* aElement)
+  explicit DOMSVGAnimatedTransformList(SVGElement* aElement)
       : mBaseVal(nullptr), mAnimVal(nullptr), mElement(aElement) {}
 
-  ~SVGAnimatedTransformList();
+  ~DOMSVGAnimatedTransformList();
 
   
   nsSVGAnimatedTransformList& InternalAList();

@@ -7,7 +7,7 @@
 #include "nsSVGAnimatedTransformList.h"
 
 #include "mozilla/dom/MutationEventBinding.h"
-#include "mozilla/dom/SVGAnimatedTransformList.h"
+#include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/Move.h"
 #include "nsCharSeparatedTokenizer.h"
@@ -34,8 +34,8 @@ nsresult nsSVGAnimatedTransformList::SetBaseValueString(
 
 nsresult nsSVGAnimatedTransformList::SetBaseValue(
     const SVGTransformList& aValue, SVGElement* aSVGElement) {
-  SVGAnimatedTransformList* domWrapper =
-      SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
+  DOMSVGAnimatedTransformList* domWrapper =
+      DOMSVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {
     
     
@@ -70,8 +70,8 @@ nsresult nsSVGAnimatedTransformList::SetBaseValue(
 void nsSVGAnimatedTransformList::ClearBaseValue() {
   mRequiresFrameReconstruction = !HasTransform();
 
-  SVGAnimatedTransformList* domWrapper =
-      SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
+  DOMSVGAnimatedTransformList* domWrapper =
+      DOMSVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {
     
     domWrapper->InternalBaseValListWillChangeLengthTo(0);
@@ -84,8 +84,8 @@ void nsSVGAnimatedTransformList::ClearBaseValue() {
 nsresult nsSVGAnimatedTransformList::SetAnimValue(
     const SVGTransformList& aValue, SVGElement* aElement) {
   bool prevSet = HasTransform() || aElement->GetAnimateMotionTransform();
-  SVGAnimatedTransformList* domWrapper =
-      SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
+  DOMSVGAnimatedTransformList* domWrapper =
+      DOMSVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {
     
     
@@ -126,8 +126,8 @@ nsresult nsSVGAnimatedTransformList::SetAnimValue(
 }
 
 void nsSVGAnimatedTransformList::ClearAnimValue(SVGElement* aElement) {
-  SVGAnimatedTransformList* domWrapper =
-      SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
+  DOMSVGAnimatedTransformList* domWrapper =
+      DOMSVGAnimatedTransformList::GetDOMWrapperIfExists(this);
   if (domWrapper) {
     
     
