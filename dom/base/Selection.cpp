@@ -60,7 +60,6 @@
 #include "nsINamed.h"
 
 #include "nsISelectionController.h" 
-#include "SelectionChangeListener.h"
 #include "nsCopySupport.h"
 #include "nsIClipboard.h"
 #include "nsIFrameInlines.h"
@@ -738,6 +737,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Selection)
   
   tmp->mNotifyAutoCopy = false;
   tmp->StopNotifyingAccessibleCaretEventHub();
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionChangeListener)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionListeners)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCachedRange)
   tmp->RemoveAllRanges(IgnoreErrors());
@@ -754,6 +754,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Selection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnchorFocusRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameSelection)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionChangeListener)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionListeners)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(Selection)
@@ -3490,7 +3491,7 @@ Selection::NotifySelectionListeners()
   
   
   
-  AutoTArray<nsCOMPtr<nsISelectionListener>, 8>
+  AutoTArray<nsCOMPtr<nsISelectionListener>, 5>
     selectionListeners(mSelectionListeners);
 
   int16_t reason = frameSelection->PopReason();
@@ -3504,6 +3505,10 @@ Selection::NotifySelectionListeners()
     hub->OnSelectionChange(doc, this, reason);
   }
 
+  if (mSelectionChangeListener) {
+    RefPtr<SelectionChangeListener> listener(mSelectionChangeListener);
+    listener->OnSelectionChange(doc, this, reason);
+  }
   for (auto& listener : selectionListeners) {
     listener->NotifySelectionChanged(doc, this, reason);
   }

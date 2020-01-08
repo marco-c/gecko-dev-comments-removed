@@ -7,7 +7,6 @@
 #ifndef mozilla_SelectionChangeListener_h_
 #define mozilla_SelectionChangeListener_h_
 
-#include "nsISelectionListener.h"
 #include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -19,14 +18,21 @@ class nsINode;
 namespace mozilla {
 namespace dom {
 
-class SelectionChangeListener final : public nsISelectionListener
+
+
+
+class SelectionChangeListener final
 {
 public:
   
   
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(SelectionChangeListener)
-  NS_DECL_NSISELECTIONLISTENER
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SelectionChangeListener)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(SelectionChangeListener)
+
+  MOZ_CAN_RUN_SCRIPT
+  void OnSelectionChange(nsIDocument* aDocument,
+                         Selection* aSelection,
+                         int16_t aReason);
 
   
   

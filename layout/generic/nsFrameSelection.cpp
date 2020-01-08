@@ -60,7 +60,6 @@ static NS_DEFINE_CID(kFrameTraversalCID, NS_FRAMETRAVERSAL_CID);
 #include "nsIDocument.h"
 
 #include "nsISelectionController.h" 
-#include "SelectionChangeListener.h"
 #include "nsCopySupport.h"
 #include "nsIClipboard.h"
 #include "nsIFrameInlines.h"
@@ -667,10 +666,7 @@ nsFrameSelection::Init(nsIPresShell *aShell, nsIContent *aLimiter,
       (doc && nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()))) {
     int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
     if (mDomSelections[index]) {
-      
-      
-      RefPtr<SelectionChangeListener> listener = new SelectionChangeListener;
-      mDomSelections[index]->AddSelectionListener(listener);
+      mDomSelections[index]->EnableSelectionChangeEvent();
     }
   }
 }
