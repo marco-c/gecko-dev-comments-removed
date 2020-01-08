@@ -5,7 +5,10 @@
 
 
 #include "nsContentTypeParser.h"
+#include "nsContentUtils.h"
 #include "nsNetUtil.h"
+
+using namespace mozilla;
 
 nsContentTypeParser::nsContentTypeParser(const nsAString& aString)
   : mString(aString)
