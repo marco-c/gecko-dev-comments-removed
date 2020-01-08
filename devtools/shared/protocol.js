@@ -815,38 +815,40 @@ Response.prototype = {
 
 
 
-var Pool = function(conn) {
-  if (conn) {
-    this.conn = conn;
+class Pool extends EventEmitter {
+  constructor(conn) {
+    super();
+
+    if (conn) {
+      this.conn = conn;
+    }
+    this.__poolMap = null;
   }
-};
 
-Pool.prototype = extend(EventEmitter.prototype, {
   
 
 
-  parent: function() {
+  parent() {
     return this.conn.poolFor(this.actorID);
-  },
+  }
 
-  poolFor: function(actorID) {
+  poolFor(actorID) {
     return this.conn.poolFor(actorID);
-  },
+  }
 
   
 
 
 
-  marshallPool: function() {
+  marshallPool() {
     return this;
-  },
+  }
 
   
 
 
 
 
-  __poolMap: null,
   get _poolMap() {
     if (this.__poolMap) {
       return this.__poolMap;
@@ -854,12 +856,12 @@ Pool.prototype = extend(EventEmitter.prototype, {
     this.__poolMap = new Map();
     this.conn.addActorPool(this);
     return this.__poolMap;
-  },
+  }
 
   
 
 
-  manage: function(actor) {
+  manage(actor) {
     if (!actor.actorID) {
       actor.actorID = this.conn.allocID(actor.actorPrefix || actor.typeName);
     } else {
@@ -875,44 +877,44 @@ Pool.prototype = extend(EventEmitter.prototype, {
       }
     }
     this._poolMap.set(actor.actorID, actor);
-  },
+  }
 
   
 
 
-  unmanage: function(actor) {
+  unmanage(actor) {
     this.__poolMap && this.__poolMap.delete(actor.actorID);
-  },
+  }
 
   
-  has: function(actorID) {
+  has(actorID) {
     return this.__poolMap && this._poolMap.has(actorID);
-  },
+  }
 
   
-  actor: function(actorID) {
+  actor(actorID) {
     if (this.__poolMap) {
       return this._poolMap.get(actorID);
     }
     return null;
-  },
+  }
 
   
   
-  get: function(actorID) {
+  get(actorID) {
     if (this.__poolMap) {
       return this._poolMap.get(actorID);
     }
     return null;
-  },
+  }
 
   
-  isEmpty: function() {
+  isEmpty() {
     return !this.__poolMap || this._poolMap.size == 0;
-  },
+  }
 
   
-  poolChildren: function* () {
+  * poolChildren() {
     if (!this.__poolMap) {
       return;
     }
@@ -923,13 +925,13 @@ Pool.prototype = extend(EventEmitter.prototype, {
       }
       yield actor;
     }
-  },
+  }
 
   
 
 
 
-  destroy: function() {
+  destroy() {
     const parent = this.parent();
     if (parent) {
       parent.unmanage(this);
@@ -954,16 +956,16 @@ Pool.prototype = extend(EventEmitter.prototype, {
     this.conn.removeActorPool(this, true);
     this.__poolMap.clear();
     this.__poolMap = null;
-  },
+  }
 
   
 
 
 
-  cleanup: function() {
+  cleanup() {
     this.destroy();
-  },
-});
+  }
+}
 exports.Pool = Pool;
 
 
@@ -982,32 +984,35 @@ var actorSpecs = new WeakMap();
 
 
 
-var Actor = function(conn) {
-  Pool.call(this, conn);
-
-  this._actorSpec = actorSpecs.get(Object.getPrototypeOf(this));
+class Actor extends Pool {
   
-  if (this._actorSpec && this._actorSpec.events) {
-    for (const [name, request] of this._actorSpec.events.entries()) {
-      this.on(name, (...args) => {
-        this._sendEvent(name, request, ...args);
-      });
+  initialize(conn) {
+    
+    
+    
+    if (conn) {
+      this.conn = conn;
+    }
+
+    
+    this.actorID = null;
+
+    this._actorSpec = actorSpecs.get(Object.getPrototypeOf(this));
+    
+    if (this._actorSpec && this._actorSpec.events) {
+      for (const [name, request] of this._actorSpec.events.entries()) {
+        this.on(name, (...args) => {
+          this._sendEvent(name, request, ...args);
+        });
+      }
     }
   }
-};
 
-Actor.prototype = extend(Pool.prototype, {
-  
-  actorID: null,
-
-  
-  initialize: Actor,
-
-  toString: function() {
+  toString() {
     return "[Actor " + this.typeName + "/" + this.actorID + "]";
-  },
+  }
 
-  _sendEvent: function(name, request, ...args) {
+  _sendEvent(name, request, ...args) {
     if (!this.actorID) {
       console.error(`Tried to send a '${name}' event on an already destroyed actor` +
                     ` '${this.typeName}'`);
@@ -1022,12 +1027,12 @@ Actor.prototype = extend(Pool.prototype, {
     }
     packet.from = packet.from || this.actorID;
     this.conn.send(packet);
-  },
+  }
 
-  destroy: function() {
-    Pool.prototype.destroy.call(this);
+  destroy() {
+    super.destroy();
     this.actorID = null;
-  },
+  }
 
   
 
@@ -1035,11 +1040,11 @@ Actor.prototype = extend(Pool.prototype, {
 
 
 
-  form: function(hint) {
+  form(hint) {
     return { actor: this.actorID };
-  },
+  }
 
-  writeError: function(error, typeName, method) {
+  writeError(error, typeName, method) {
     console.error(`Error while calling actor '${typeName}'s method '${method}'`,
                   error.message);
     if (error.stack) {
@@ -1050,13 +1055,13 @@ Actor.prototype = extend(Pool.prototype, {
       error: error.error || "unknownError",
       message: error.message,
     });
-  },
+  }
 
-  _queueResponse: function(create) {
+  _queueResponse(create) {
     const pending = this._pendingResponse || Promise.resolve(null);
     const response = create(pending);
     this._pendingResponse = response;
-  },
+  }
 
   
 
@@ -1066,12 +1071,13 @@ Actor.prototype = extend(Pool.prototype, {
 
 
 
-  throwError: function(error, message) {
+  throwError(error, message) {
     const err = new Error(message);
     err.error = error;
     throw err;
-  },
-});
+  }
+}
+
 exports.Actor = Actor;
 
 
@@ -1284,35 +1290,34 @@ exports.ActorClassWithSpec = ActorClassWithSpec;
 
 
 
-var Front = function(conn = null, form = null, detail = null, context = null) {
-  Pool.call(this, conn);
-  this._requests = [];
+class Front extends Pool {
+  constructor(conn = null, form = null, detail = null, context = null) {
+    super(conn);
+    this.actorID = null;
+    this._requests = [];
 
-  
-  
-  this._frontListeners = new EventEmitter();
+    
+    
+    this._frontListeners = new EventEmitter();
 
-  
-  
-  
-  
-  this._beforeListeners = new Map();
+    
+    
+    
+    
+    this._beforeListeners = new Map();
 
-  
-  
-  
-  
-  if (form) {
-    this.actorID = form.actor;
-    form = types.getType(this.typeName).formType(detail).read(form, this, detail);
-    this.form(form, detail, context);
+    
+    
+    
+    
+    if (form) {
+      this.actorID = form.actor;
+      form = types.getType(this.typeName).formType(detail).read(form, this, detail);
+      this.form(form, detail, context);
+    }
   }
-};
 
-Front.prototype = extend(Pool.prototype, {
-  actorID: null,
-
-  destroy: function() {
+  destroy() {
     
     
     while (this._requests && this._requests.length > 0) {
@@ -1322,23 +1327,23 @@ Front.prototype = extend(Pool.prototype, {
                 "\n\nRequest stack:\n" + stack.formattedStack;
       deferred.reject(new Error(msg));
     }
-    Pool.prototype.destroy.call(this);
+    super.destroy();
     this.clearEvents();
     this.actorID = null;
     this._frontListeners = null;
     this._beforeListeners = null;
-  },
+  }
 
-  manage: function(front) {
+  manage(front) {
     if (!front.actorID) {
       throw new Error("Can't manage front without an actor ID.\n" +
                       "Ensure server supports " + front.typeName + ".");
     }
-    Pool.prototype.manage.call(this, front);
+    super.manage(front);
 
     
     this._frontListeners.emit(front.typeName, front);
-  },
+  }
 
   
   
@@ -1351,7 +1356,7 @@ Front.prototype = extend(Pool.prototype, {
     }
     
     this._frontListeners.on(typeName, callback);
-  },
+  }
 
   
 
@@ -1369,22 +1374,22 @@ Front.prototype = extend(Pool.prototype, {
       throw new Error(`Can't register multiple before listeners for "${type}".`);
     }
     this._beforeListeners.set(type, callback);
-  },
+  }
 
-  toString: function() {
+  toString() {
     return "[Front for " + this.typeName + "/" + this.actorID + "]";
-  },
+  }
 
   
 
 
 
-  form: function(form) {},
+  form(form) {}
 
   
 
 
-  send: function(packet) {
+  send(packet) {
     if (packet.to) {
       this.conn._transport.send(packet);
     } else {
@@ -1394,12 +1399,12 @@ Front.prototype = extend(Pool.prototype, {
         this.conn._transport.send(packet);
       }
     }
-  },
+  }
 
   
 
 
-  request: function(packet) {
+  request(packet) {
     const deferred = defer();
     
     const { to, type } = packet;
@@ -1411,12 +1416,12 @@ Front.prototype = extend(Pool.prototype, {
     });
     this.send(packet);
     return deferred.promise;
-  },
+  }
 
   
 
 
-  onPacket: function(packet) {
+  onPacket(packet) {
     
     const type = packet.type || undefined;
     if (this._clientSpec.events && this._clientSpec.events.has(type)) {
@@ -1439,13 +1444,13 @@ Front.prototype = extend(Pool.prototype, {
         
         if (result && typeof result.then == "function") {
           result.then(() => {
-            return EventEmitter.emit.apply(null, [this, event.name].concat(args));
+            super.emit(event.name, ...args);
           });
           return;
         }
       }
 
-      EventEmitter.emit.apply(null, [this, event.name].concat(args));
+      super.emit(event.name, ...args);
       return;
     }
 
@@ -1473,11 +1478,11 @@ Front.prototype = extend(Pool.prototype, {
         deferred.resolve(packet);
       }
     }, stack, "DevTools RDP");
-  },
+  }
 
   hasRequests() {
     return !!this._requests.length;
-  },
+  }
 
   
 
@@ -1489,8 +1494,8 @@ Front.prototype = extend(Pool.prototype, {
 
   waitForRequestsToSettle() {
     return settleAll(this._requests.map(({ deferred }) => deferred.promise));
-  },
-});
+  }
+}
 
 exports.Front = Front;
 
