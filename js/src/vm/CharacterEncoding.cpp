@@ -274,9 +274,6 @@ enum class OnUTF8Error {
 
 
 
-
-
-
 template <OnUTF8Error ErrorAction, typename OutputFn>
 static bool
 InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars src, OutputFn dst)
