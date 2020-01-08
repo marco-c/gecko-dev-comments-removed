@@ -290,6 +290,10 @@ window.MozElementMixin = MozElementMixin;
 window.MozXULElement = MozXULElement;
 window.MozElements = MozElements;
 
+customElements.setElementCreationCallback("browser", () => {
+  Services.scriptloader.loadSubScript("chrome://global/content/elements/browser-custom-element.js", window);
+});
+
 
 
 const isDummyDocument = document.documentURI == "chrome://extensions/content/dummy.xul";

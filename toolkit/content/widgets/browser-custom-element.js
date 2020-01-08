@@ -2,25 +2,56 @@
 
 
 
-  
-
 "use strict";
 
 
 
 {
 
-class MozBrowser extends MozXULElement {
+const elementsToDestroyOnUnload = new Set();
+
+window.addEventListener("unload", () => {
+  for (let element of elementsToDestroyOnUnload.values()) {
+    element.destroy();
+  }
+  elementsToDestroyOnUnload.clear();
+}, { mozSystemGroup: true, once: true });
+
+class MozBrowser extends MozElementMixin(XULFrameElement) {
+  static get observedAttributes() {
+    return ["remote"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    
+    
+    
+    if (name === "remote" && oldValue != newValue && this.isConnectedAndReady) {
+      this.destroy();
+      this.construct();
+    }
+  }
+
   constructor() {
     super();
+
+    this.onPageHide = this.onPageHide.bind(this);
+
+    
+
+
+    this.droppedLinkHandler = null;
+    this.mIconURL = null;
+    this.lastURI = null;
 
     this.addEventListener("keypress", (event) => {
       if (event.keyCode != KeyEvent.DOM_VK_F7) {
         return;
       }
 
-      if (event.defaultPrevented || !event.isTrusted)
+      if (event.defaultPrevented || !event.isTrusted) {
         return;
+      }
 
       const kPrefShortcutEnabled = "accessibility.browsewithcaret_shortcut.enabled";
       const kPrefWarnOnEnable = "accessibility.warn_on_browsewithcaret";
@@ -35,8 +66,7 @@ class MozBrowser extends MozXULElement {
       var warn = this.mPrefs.getBoolPref(kPrefWarnOnEnable, true);
       if (warn && !browseWithCaretOn) {
         var checkValue = { value: false };
-        var promptService = Cc["@mozilla.org/embedcomp/prompt-service;1"]
-          .getService(Ci.nsIPromptService);
+        var promptService = Services.prompt;
 
         var buttonPressed = promptService.confirmEx(window,
           this.mStrBundle.GetStringFromName("browsewithcaret.checkWindowTitle"),
@@ -67,8 +97,9 @@ class MozBrowser extends MozXULElement {
     }, { mozSystemGroup: true });
 
     this.addEventListener("dragover", (event) => {
-      if (!this.droppedLinkHandler || event.defaultPrevented)
+      if (!this.droppedLinkHandler || event.defaultPrevented) {
         return;
+      }
 
       
       
@@ -85,8 +116,7 @@ class MozBrowser extends MozXULElement {
       if (this.isRemoteBrowser)
         return;
 
-      let linkHandler = Cc["@mozilla.org/content/dropped-link-handler;1"].
-      getService(Ci.nsIDroppedLinkHandler);
+      let linkHandler = Services.droppedLinkHandler;
       if (linkHandler.canDropLink(event, false))
         event.preventDefault();
     }, { mozSystemGroup: true });
@@ -94,11 +124,11 @@ class MozBrowser extends MozXULElement {
     this.addEventListener("drop", (event) => {
       
       
-      if (!this.droppedLinkHandler || event.defaultPrevented || this.isRemoteBrowser)
+      if (!this.droppedLinkHandler || event.defaultPrevented || this.isRemoteBrowser) {
         return;
+      }
 
-      let linkHandler = Cc["@mozilla.org/content/dropped-link-handler;1"].
-      getService(Ci.nsIDroppedLinkHandler);
+      let linkHandler = Services.droppedLinkHandler;
       try {
         
         var links = linkHandler.dropLinks(event, true);
@@ -123,14 +153,39 @@ class MozBrowser extends MozXULElement {
 
   }
 
-  connectedCallback() {
-    if (this.delayConnectedCallback()) {
-      return;
+  resetFields() {
+    if (this.observer) {
+      try {
+        Services.obs.removeObserver(this.observer, "browser:purge-session-history");
+      } catch (ex) {
+        
+      }
+      this.observer = null;
     }
-    this.textContent = "";
-    this.appendChild(MozXULElement.parseXULToFragment(`
-      <children></children>
-    `));
+
+    let browser = this;
+    this.observer = {
+      observe(aSubject, aTopic, aState) {
+        if (aTopic == "browser:purge-session-history") {
+          browser.purgeSessionHistory();
+        } else if (aTopic == "apz:cancel-autoscroll") {
+          if (aState == browser._autoScrollScrollId) {
+            
+            
+            
+            browser._autoScrollScrollId = null;
+            browser._autoScrollPresShellId = null;
+
+            browser._autoScrollPopup.hidePopup();
+          }
+        }
+      },
+      QueryInterface: ChromeUtils.generateQI([
+        Ci.nsIObserver,
+        Ci.nsISupportsWeakReference,
+      ]),
+    };
+
 
     this._documentURI = null;
 
@@ -187,7 +242,7 @@ class MozBrowser extends MozXULElement {
 
     this._isSyntheticDocument = false;
 
-    this.mPrefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
+    this.mPrefs = Services.prefs;
 
     this._mStrBundle = null;
 
@@ -223,17 +278,6 @@ class MozBrowser extends MozXULElement {
 
     this._userTypedValue = null;
 
-    this.droppedLinkHandler = null;
-
-    this.mIconURL = null;
-
-    
-
-
-    this.lastURI = null;
-
-    this.mDestroyed = false;
-
     this._AUTOSCROLL_SNAP = 10;
 
     this._scrolling = false;
@@ -254,9 +298,21 @@ class MozBrowser extends MozXULElement {
     this._autoScrollPresShellId = null;
 
     this._permitUnloadId = 0;
+  }
+
+  connectedCallback() {
+    
+    
+    
+    if (this.delayConnectedCallback()) {
+      return;
+    }
 
     this.construct();
+  }
 
+  disconnectedCallback() {
+    this.destroy();
   }
 
   get autoscrollEnabled() {
@@ -312,11 +368,11 @@ class MozBrowser extends MozXULElement {
   }
 
   get autoCompletePopup() {
-    return document.getElementById(this.getAttribute('autocompletepopup'))
+    return document.getElementById(this.getAttribute("autocompletepopup"));
   }
 
   get dateTimePicker() {
-    return document.getElementById(this.getAttribute('datetimepicker'))
+    return document.getElementById(this.getAttribute("datetimepicker"));
   }
 
   set docShellIsActive(val) {
@@ -385,7 +441,7 @@ class MozBrowser extends MozXULElement {
   }
 
   get isRemoteBrowser() {
-    return (this.getAttribute('remote') == 'true');
+    return (this.getAttribute("remote") == "true");
   }
 
   get remoteType() {
@@ -490,11 +546,11 @@ class MozBrowser extends MozXULElement {
 
 
   get webNavigation() {
-    return this.isRemoteBrowser ? this._remoteWebNavigation : this.docShell.QueryInterface(Components.interfaces.nsIWebNavigation);
+    return this.isRemoteBrowser ? this._remoteWebNavigation : this.docShell && this.docShell.QueryInterface(Ci.nsIWebNavigation);
   }
 
   get webProgress() {
-    return this.isRemoteBrowser ? this._remoteWebProgress : this.docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIWebProgress);
+    return this.isRemoteBrowser ? this._remoteWebProgress : this.docShell && this.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebProgress);
   }
 
   get sessionHistory() {
@@ -544,13 +600,15 @@ class MozBrowser extends MozXULElement {
   }
 
   set showWindowResizer(val) {
-    if (val) this.setAttribute('showresizer', 'true');
-    else this.removeAttribute('showresizer');
-    return val;
+    if (val) {
+      this.setAttribute("showresizer", "true");
+    } else {
+      this.removeAttribute("showresizer");
+    }
   }
 
   get showWindowResizer() {
-    return this.getAttribute('showresizer') == 'true';
+    return this.getAttribute("showresizer") == "true";
   }
 
   set fullZoom(val) {
@@ -622,8 +680,7 @@ class MozBrowser extends MozXULElement {
     if (!this._mStrBundle) {
       
       
-      this._mStrBundle = Cc["@mozilla.org/intl/stringbundle;1"]
-        .getService(Ci.nsIStringBundleService)
+      this._mStrBundle = Services.strings
         .createBundle("chrome://global/locale/browser.properties");
     }
     return this._mStrBundle;
@@ -950,6 +1007,9 @@ class MozBrowser extends MozXULElement {
   }
 
   construct() {
+    elementsToDestroyOnUnload.add(this);
+    this.resetFields();
+    this.mInitialized = true;
     if (this.isRemoteBrowser) {
       
 
@@ -998,7 +1058,7 @@ class MozBrowser extends MozXULElement {
       }
 
       if (!this.hasAttribute("disablehistory")) {
-        Services.obs.addObserver(this, "browser:purge-session-history", true);
+        Services.obs.addObserver(this.observer, "browser:purge-session-history", true);
       }
 
       let rc_js = "resource://gre/modules/RemoteController.js";
@@ -1014,9 +1074,7 @@ class MozBrowser extends MozXULElement {
       
       
       if (this.docShell && this.webNavigation.sessionHistory) {
-        var os = Cc["@mozilla.org/observer-service;1"]
-          .getService(Ci.nsIObserverService);
-        os.addObserver(this, "browser:purge-session-history", true);
+        Services.obs.addObserver(this.observer, "browser:purge-session-history", true);
 
         
         if (!this.hasAttribute("disableglobalhistory") && !this.isRemoteBrowser) {
@@ -1079,14 +1137,20 @@ class MozBrowser extends MozXULElement {
 
 
   destroy() {
+    elementsToDestroyOnUnload.delete(this);
+
     
     if (this._selectParentHelper) {
       let menulist = document.getElementById(this.getAttribute("selectmenulist"));
       this._selectParentHelper.hide(menulist, this);
     }
-    if (this.mDestroyed)
+
+    this.resetFields();
+
+    if (!this.mInitialized)
       return;
-    this.mDestroyed = true;
+
+    this.mInitialized = false;
 
     if (this.isRemoteBrowser) {
       try {
@@ -1095,31 +1159,8 @@ class MozBrowser extends MozXULElement {
         
         
       }
-
-      if (!this.hasAttribute("disablehistory")) {
-        let Services = ChromeUtils.import("resource://gre/modules/Services.jsm", {}).Services;
-        try {
-          Services.obs.removeObserver(this, "browser:purge-session-history");
-        } catch (ex) {
-          
-        }
-      }
-
       return;
     }
-
-    if (this.docShell && this.webNavigation.sessionHistory) {
-      var os = Cc["@mozilla.org/observer-service;1"]
-        .getService(Ci.nsIObserverService);
-      try {
-        os.removeObserver(this, "browser:purge-session-history");
-      } catch (ex) {
-        
-      }
-    }
-
-    this._fastFind = null;
-    this._webBrowserFind = null;
 
     this.lastURI = null;
 
@@ -1164,9 +1205,8 @@ class MozBrowser extends MozXULElement {
               
               
               
-              var os = Cc["@mozilla.org/observer-service;1"]
-                .getService(Ci.nsIObserverService);
-              os.addObserver(this, "apz:cancel-autoscroll", true);
+              var os = Services.obs;
+              os.addObserver(this.observer, "apz:cancel-autoscroll", true);
 
               usingApz = tabParent.startApzAutoscroll(
                 data.screenX, data.screenY,
@@ -1225,7 +1265,6 @@ class MozBrowser extends MozXULElement {
           }
           break;
         }
-
     }
     return undefined;
   }
@@ -1312,22 +1351,6 @@ class MozBrowser extends MozXULElement {
     }
   }
 
-  observe(aSubject, aTopic, aState) {
-    if (aTopic == "browser:purge-session-history") {
-      this.purgeSessionHistory();
-    } else if (aTopic == "apz:cancel-autoscroll") {
-      if (aState == this._autoScrollScrollId) {
-        
-        
-        
-        this._autoScrollScrollId = null;
-        this._autoScrollPresShellId = null;
-
-        this._autoScrollPopup.hidePopup();
-      }
-    }
-  }
-
   purgeSessionHistory() {
     if (this.isRemoteBrowser) {
       try {
@@ -1374,10 +1397,8 @@ class MozBrowser extends MozXULElement {
       window.removeEventListener("keyup", this, true);
       this.messageManager.sendAsyncMessage("Autoscroll:Stop");
 
-      var os = Cc["@mozilla.org/observer-service;1"]
-        .getService(Ci.nsIObserverService);
       try {
-        os.removeObserver(this, "apz:cancel-autoscroll");
+        Services.obs.removeObserver(this.observer, "apz:cancel-autoscroll");
       } catch (ex) {
         
       }
@@ -1769,7 +1790,7 @@ class MozBrowser extends MozXULElement {
     }
     return {
       permitUnload: this.docShell.contentViewer.permitUnload(aPermitUnloadFlags),
-      timedOut: false
+      timedOut: false,
     };
   }
 
@@ -1815,12 +1836,9 @@ class MozBrowser extends MozXULElement {
       this.docShell.getContentBlockingLog() :
       Promise.reject("docshell isn't available");
   }
-  disconnectedCallback() {
-    this.destroy();
-  }
 }
 
-MozXULElement.implementCustomInterface(MozBrowser, [Ci.nsIObserver, Ci.nsIBrowser]);
+MozXULElement.implementCustomInterface(MozBrowser, [Ci.nsIBrowser, Ci.nsIFrameLoaderOwner]);
 customElements.define("browser", MozBrowser);
 
 }

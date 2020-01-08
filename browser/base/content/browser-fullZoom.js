@@ -346,7 +346,7 @@ var FullZoom = {
     
     
     
-    if (!aBrowser.parentNode || aBrowser.isSyntheticDocument) {
+    if (!aBrowser.mInitialized || aBrowser.isSyntheticDocument) {
       this._executeSoon(aCallback);
       return;
     }
@@ -434,7 +434,7 @@ var FullZoom = {
         
         
         
-        return map.get(browser) === this.token && browser.parentNode;
+        return map.get(browser) === this.token && browser.mInitialized;
       },
     };
   },
