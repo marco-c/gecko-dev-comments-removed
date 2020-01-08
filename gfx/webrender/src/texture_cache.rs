@@ -5,7 +5,7 @@
 use api::{DeviceUintPoint, DeviceUintRect, DeviceUintSize};
 use api::{ExternalImageType, ImageData, ImageFormat};
 use api::ImageDescriptor;
-use device::TextureFilter;
+use device::{TextureFilter, total_gpu_bytes_allocated};
 use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle};
 use gpu_types::{ImageSource, UvRectKind};
@@ -37,6 +37,13 @@ enum EntryKind {
         
         region_index: u16,
     },
+}
+
+impl EntryKind {
+    
+    fn is_standalone(&self) -> bool {
+        matches!(*self, EntryKind::Standalone)
+    }
 }
 
 #[derive(Debug)]
@@ -130,7 +137,6 @@ impl CacheEntry {
     }
 }
 
-type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntryMarker>;
 
 
 
@@ -138,25 +144,23 @@ type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntryMarker>;
 
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TextureCacheHandle {
-    entry: Option<WeakCacheEntryHandle>,
-}
+pub type TextureCacheHandle = WeakFreeListHandle<CacheEntryMarker>;
 
-impl TextureCacheHandle {
-    pub fn new() -> Self {
-        TextureCacheHandle { entry: None }
-    }
-}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum Eviction {
+    
+    
     Auto,
+    
+    
     Manual,
+    
+    
+    
+    Eager,
 }
 
 
@@ -271,7 +275,7 @@ impl TextureCache {
             ),
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
-            frame_id: FrameId(0),
+            frame_id: FrameId::invalid(),
             entries: FreeList::new(),
             standalone_entry_handles: Vec::new(),
             shared_entry_handles: Vec::new(),
@@ -358,18 +362,13 @@ impl TextureCache {
     
     
     pub fn request(&mut self, handle: &TextureCacheHandle, gpu_cache: &mut GpuCache) -> bool {
-        match handle.entry {
-            Some(ref handle) => {
-                match self.entries.get_opt_mut(handle) {
-                    
-                    
-                    Some(entry) => {
-                        entry.last_access = self.frame_id;
-                        entry.update_gpu_cache(gpu_cache);
-                        false
-                    }
-                    None => true,
-                }
+        match self.entries.get_opt_mut(handle) {
+            
+            
+            Some(entry) => {
+                entry.last_access = self.frame_id;
+                entry.update_gpu_cache(gpu_cache);
+                false
             }
             None => true,
         }
@@ -379,10 +378,7 @@ impl TextureCache {
     
     
     pub fn needs_upload(&self, handle: &TextureCacheHandle) -> bool {
-        match handle.entry {
-            Some(ref handle) => self.entries.get_opt(handle).is_none(),
-            None => true,
-        }
+        self.entries.get_opt(handle).is_none()
     }
 
     pub fn max_texture_size(&self) -> u32 {
@@ -413,17 +409,9 @@ impl TextureCache {
         
         
         
-        let realloc = match handle.entry {
-            Some(ref handle) => {
-                match self.entries.get_opt(handle) {
-                    Some(entry) => {
-                        entry.size != descriptor.size || entry.format != descriptor.format
-                    }
-                    None => {
-                        
-                        true
-                    }
-                }
+        let realloc = match self.entries.get_opt(handle) {
+            Some(entry) => {
+                entry.size != descriptor.size || entry.format != descriptor.format
             }
             None => {
                 
@@ -444,8 +432,7 @@ impl TextureCache {
             dirty_rect = None;
         }
 
-        let entry = self.entries
-            .get_opt_mut(handle.entry.as_ref().unwrap())
+        let entry = self.entries.get_opt_mut(handle)
             .expect("BUG: handle must be valid now");
 
         
@@ -514,9 +501,7 @@ impl TextureCache {
     
     
     pub fn is_allocated(&self, handle: &TextureCacheHandle) -> bool {
-        handle.entry.as_ref().map_or(false, |handle| {
-            self.entries.get_opt(handle).is_some()
-        })
+        self.entries.get_opt(handle).is_some()
     }
 
     
@@ -525,30 +510,25 @@ impl TextureCache {
     
     
     pub fn get(&self, handle: &TextureCacheHandle) -> CacheItem {
-        match handle.entry {
-            Some(ref handle) => {
-                let entry = self.entries
-                    .get_opt(handle)
-                    .expect("BUG: was dropped from cache or not updated!");
-                debug_assert_eq!(entry.last_access, self.frame_id);
-                let (layer_index, origin) = match entry.kind {
-                    EntryKind::Standalone { .. } => {
-                        (0, DeviceUintPoint::zero())
-                    }
-                    EntryKind::Cache {
-                        layer_index,
-                        origin,
-                        ..
-                    } => (layer_index, origin),
-                };
-                CacheItem {
-                    uv_rect_handle: entry.uv_rect_handle,
-                    texture_id: TextureSource::TextureCache(entry.texture_id),
-                    uv_rect: DeviceUintRect::new(origin, entry.size),
-                    texture_layer: layer_index as i32,
-                }
+        let entry = self.entries
+            .get_opt(handle)
+            .expect("BUG: was dropped from cache or not updated!");
+        debug_assert_eq!(entry.last_access, self.frame_id);
+        let (layer_index, origin) = match entry.kind {
+            EntryKind::Standalone { .. } => {
+                (0, DeviceUintPoint::zero())
             }
-            None => panic!("BUG: handle not requested earlier in frame"),
+            EntryKind::Cache {
+                layer_index,
+                origin,
+                ..
+            } => (layer_index, origin),
+        };
+        CacheItem {
+            uv_rect_handle: entry.uv_rect_handle,
+            texture_id: TextureSource::TextureCache(entry.texture_id),
+            uv_rect: DeviceUintRect::new(origin, entry.size),
+            texture_layer: layer_index as i32,
         }
     }
 
@@ -560,11 +540,6 @@ impl TextureCache {
         &self,
         handle: &TextureCacheHandle,
     ) -> (CacheTextureId, LayerIndex, DeviceUintRect) {
-        let handle = handle
-            .entry
-            .as_ref()
-            .expect("BUG: handle not requested earlier in frame");
-
         let entry = self.entries
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
@@ -585,56 +560,71 @@ impl TextureCache {
     }
 
     pub fn mark_unused(&mut self, handle: &TextureCacheHandle) {
-        if let Some(ref handle) = handle.entry {
-            if let Some(entry) = self.entries.get_opt_mut(handle) {
-                
-                
-                entry.last_access = FrameId(0);
-                entry.eviction = Eviction::Auto;
-            }
+        if let Some(entry) = self.entries.get_opt_mut(handle) {
+            
+            
+            entry.last_access = FrameId::invalid();
+            entry.eviction = Eviction::Auto;
         }
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn expire_old_standalone_entries(&mut self) {
-        let mut eviction_candidates = Vec::new();
-        let mut retained_entries = Vec::new();
+        
+        
+        
+        
+        const MAX_FRAME_AGE_WITHOUT_PRESSURE: f64 = 75.0;
+        const MAX_MEMORY_PRESSURE_BYTES: f64 = (500 * 1024 * 1024) as f64;
+
+        
+        let pressure_factor =
+            (total_gpu_bytes_allocated() as f64 / MAX_MEMORY_PRESSURE_BYTES as f64).min(1.0);
 
         
         
-        for handle in self.standalone_entry_handles.drain(..) {
-            let entry = self.entries.get(&handle);
-            if entry.eviction == Eviction::Manual || entry.last_access == self.frame_id {
-                retained_entries.push(handle);
-            } else {
-                eviction_candidates.push(handle);
+        let max_frame_age_raw =
+            ((1.0 - pressure_factor) * MAX_FRAME_AGE_WITHOUT_PRESSURE) as usize;
+
+        
+        
+        let max_frame_age = max_frame_age_raw.min(self.frame_id.as_usize() - 1);
+
+        
+        let frame_id_threshold = self.frame_id - max_frame_age;
+
+        
+        
+        
+        for i in (0..self.standalone_entry_handles.len()).rev() {
+            let evict = {
+                let entry = self.entries.get(&self.standalone_entry_handles[i]);
+                match entry.eviction {
+                    Eviction::Manual => false,
+                    Eviction::Auto => entry.last_access < frame_id_threshold,
+                    Eviction::Eager => entry.last_access < self.frame_id,
+                }
+            };
+            if evict {
+                let handle = self.standalone_entry_handles.swap_remove(i);
+                let entry = self.entries.free(handle);
+                entry.evict();
+                self.free(entry);
             }
         }
-
-        
-        eviction_candidates.sort_by_key(|handle| {
-            let entry = self.entries.get(handle);
-            entry.last_access
-        });
-
-        
-        
-        
-        
-        if eviction_candidates.len() > 32 {
-            let entries_to_keep = eviction_candidates.split_off(32);
-            retained_entries.extend(entries_to_keep);
-        }
-
-        
-        for handle in eviction_candidates {
-            let entry = self.entries.free(handle);
-            entry.evict();
-            self.free(entry);
-        }
-
-        
-        self.standalone_entry_handles = retained_entries;
     }
 
     
@@ -701,7 +691,6 @@ impl TextureCache {
         match entry.kind {
             EntryKind::Standalone { .. } => {
                 
-                
                 self.pending_updates.push(TextureUpdate {
                     id: entry.texture_id,
                     op: TextureUpdateOp::Free,
@@ -761,11 +750,6 @@ impl TextureCache {
                     height: texture_array.dimensions,
                     format: descriptor.format,
                     filter: texture_array.filter,
-                    
-                    
-                    
-                    
-                    
                     
                     
                     render_target: Some(RenderTargetInfo { has_depth: false }),
@@ -834,7 +818,7 @@ impl TextureCache {
             filter,
             &descriptor,
         );
-        let mut allocated_in_shared_cache = true;
+        let mut allocated_standalone = false;
         let mut new_cache_entry = None;
         let frame_id = self.frame_id;
 
@@ -893,52 +877,42 @@ impl TextureCache {
                 uv_rect_kind,
             ));
 
-            allocated_in_shared_cache = false;
+            allocated_standalone = true;
         }
-
         let new_cache_entry = new_cache_entry.expect("BUG: must have allocated by now");
 
         
         
-        let new_entry_handle = match handle.entry {
-            Some(ref existing_entry) => {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                match self.entries.upsert(existing_entry, new_cache_entry) {
-                    UpsertResult::Updated(old_entry) => {
-                        self.free(old_entry);
-                        None
-                    }
-                    UpsertResult::Inserted(new_handle) => Some(new_handle),
-                }
-            }
-            None => {
-                
-                
-                Some(self.entries.insert(new_cache_entry))
-            }
-        };
-
         
-        if let Some(new_entry_handle) = new_entry_handle {
-            handle.entry = Some(new_entry_handle.weak());
-            
-            
-            if allocated_in_shared_cache {
-                self.shared_entry_handles.push(new_entry_handle);
-            } else {
-                self.standalone_entry_handles.push(new_entry_handle);
+        
+        
+        
+        
+        
+        
+        match self.entries.upsert(handle, new_cache_entry) {
+            UpsertResult::Updated(old_entry) => {
+                if allocated_standalone != old_entry.kind.is_standalone() {
+                    
+                    
+                    
+                    let (from, to) = if allocated_standalone {
+                        (&mut self.shared_entry_handles, &mut self.standalone_entry_handles)
+                    } else {
+                        (&mut self.standalone_entry_handles, &mut self.shared_entry_handles)
+                    };
+                    let idx = from.iter().position(|h| h.weak() == *handle).unwrap();
+                    to.push(from.remove(idx));
+                }
+                self.free(old_entry);
+            }
+            UpsertResult::Inserted(new_handle) => {
+                *handle = new_handle.weak();
+                if allocated_standalone {
+                    self.standalone_entry_handles.push(new_handle);
+                } else {
+                    self.shared_entry_handles.push(new_handle);
+                }
             }
         }
     }

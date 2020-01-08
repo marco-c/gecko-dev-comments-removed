@@ -1201,6 +1201,14 @@ impl RenderTaskCache {
 
                 
                 
+                
+                
+                
+                
+                
+                
+                
+                
                 texture_cache.update(
                     &mut entry.handle,
                     descriptor,
@@ -1211,7 +1219,7 @@ impl RenderTaskCache {
                     gpu_cache,
                     None,
                     render_task.uv_rect_kind(),
-                    Eviction::Auto,
+                    Eviction::Eager,
                 );
 
                 
@@ -1248,7 +1256,7 @@ impl RenderTaskCache {
                                .entry(key)
                                .or_insert_with(|| {
                                     let entry = RenderTaskCacheEntry {
-                                        handle: TextureCacheHandle::new(),
+                                        handle: TextureCacheHandle::invalid(),
                                         pending_render_task_id: None,
                                         user_data,
                                         is_opaque,
