@@ -38,11 +38,14 @@ class SourceEditor extends Component {
 
     
     this.editorTimeout = setTimeout(() => {
+      this.editorTimeout = null;
       this.editor.appendToLocalElement(this.refs.editorElement);
+
       
       
       
       this.editorSetModeTimeout = setTimeout(() => {
+        this.editorSetModeTimeout = null;
         this.editor.setMode(mode);
       });
     });
@@ -55,16 +58,26 @@ class SourceEditor extends Component {
   componentDidUpdate(prevProps) {
     const { mode, text } = this.props;
 
+    
+    if (this.editor.isDestroyed()) {
+      return;
+    }
+
     if (prevProps.text !== text) {
       
       
       this.editor.setMode(null);
       this.editor.setText(text);
 
+      if (this.editorSetModeTimeout) {
+        clearTimeout(this.editorSetModeTimeout);
+      }
+
       
       
       
       this.editorSetModeTimeout = setTimeout(() => {
+        this.editorSetModeTimeout = null;
         this.editor.setMode(mode);
       });
     }
