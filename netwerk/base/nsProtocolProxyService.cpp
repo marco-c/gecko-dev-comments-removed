@@ -2494,17 +2494,17 @@ nsProtocolProxyService::PruneProxyInfo(const nsProtocolInfo &info,
     
     
 
-    bool allDisabled = true;
+    bool allNonDirectProxiesDisabled = true;
 
     nsProxyInfo *iter;
     for (iter = head; iter; iter = iter->mNext) {
-        if (!IsProxyDisabled(iter)) {
-            allDisabled = false;
+        if (!IsProxyDisabled(iter) && iter->mType != kProxyType_DIRECT) {
+            allNonDirectProxiesDisabled = false;
             break;
         }
     }
 
-    if (allDisabled) {
+    if (allNonDirectProxiesDisabled) {
         LOG(("All proxies are disabled, so trying all again"));
     } else {
         
