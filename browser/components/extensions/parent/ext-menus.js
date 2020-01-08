@@ -348,7 +348,11 @@ var gMenuBuilder = {
         item.checked = true;
       }
 
-      if (contextData.tab) {
+      let {webExtContextData} = contextData;
+      if (contextData.tab &&
+          
+          
+          (!webExtContextData || webExtContextData.extensionId !== item.extension.id)) {
         item.tabManager.addActiveTabPermission(contextData.tab);
       }
 
