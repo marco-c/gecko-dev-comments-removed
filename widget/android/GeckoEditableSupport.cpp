@@ -870,6 +870,16 @@ GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags)
 
         selStart = int32_t(event.GetSelectionStart());
         selEnd = int32_t(event.GetSelectionEnd());
+
+        if (aFlags == FLUSH_FLAG_RECOVER) {
+            
+            
+            for (const TextRecord& record : textTransaction) {
+                const int32_t end = record.start + record.text.Length();
+                selStart = std::min(selStart, end);
+                selEnd = std::min(selEnd, end);
+            }
+        }
     }
 
     JNIEnv* const env = jni::GetGeckoThreadEnv();
