@@ -1,5 +1,11 @@
 "use strict";
 
+
+
+
+
+SimpleTest.ignoreAllUncaughtExceptions(true);
+
 function frameScript() {
   addMessageListener("Test:RequestFullscreen", () => {
     content.document.body.requestFullscreen();
