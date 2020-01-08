@@ -31,8 +31,6 @@ public:
   virtual nsresult Lock() = 0;
   
   virtual nsresult Unlock() = 0;
-  
-  virtual bool IsNSSKeyStore();
   virtual ~AbstractOSKeyStore() {}
 
   
@@ -70,10 +68,12 @@ private:
 
 nsresult GetPromise(JSContext* aCx,  RefPtr<mozilla::dom::Promise>& aPromise);
 
-class OSKeyStore : public nsIOSKeyStore
+class OSKeyStore final : public nsIOSKeyStore
+                       , public nsIObserver
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
   NS_DECL_NSIOSKEYSTORE
 
   OSKeyStore();
@@ -95,17 +95,24 @@ public:
   nsresult Lock();
   nsresult Unlock();
 
-protected:
-  virtual ~OSKeyStore();
-
 private:
-  nsresult FinishAsync(RefPtr<mozilla::dom::Promise>& aPromise,
-                        mozilla::dom::Promise** anotherPromise,
-                       const nsACString& aName,
-                       nsCOMPtr<nsIRunnable> aRunnable);
+  ~OSKeyStore() = default;
 
-  std::unique_ptr<AbstractOSKeyStore> mKs = nullptr;
-  Mutex mMutex;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<AbstractOSKeyStore> mKs;
+  nsCOMPtr<nsIThread> mKsThread;
+
+  bool mKsIsNSSKeyStore;
   const nsCString mLabelPrefix =
     NS_LITERAL_CSTRING("org.mozilla.nss.keystore.");
 };
