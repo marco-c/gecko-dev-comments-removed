@@ -1,0 +1,21 @@
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(window.wrappedJSObject, "sidebar", {
+  get: exportFunction(function() {
+    return false;
+  }, window),
+
+  set: exportFunction(function() {}, window)
+});
