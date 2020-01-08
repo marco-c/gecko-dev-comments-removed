@@ -3,13 +3,10 @@
 
 
 
-
-
-const Cm = Components.manager;
+"use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.defineModuleGetter(this, "AboutPocket",
                                "chrome://pocket/content/AboutPocket.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
@@ -28,8 +25,10 @@ XPCOMUtils.defineLazyGetter(this, "gPocketBundle", function() {
   return Services.strings.createBundle("chrome://pocket/locale/pocket.properties");
 });
 XPCOMUtils.defineLazyGetter(this, "gPocketStyleURI", function() {
-  return Services.io.newURI("chrome://pocket-shared/skin/pocket.css");
+  return Services.io.newURI("chrome://pocket/skin/pocket.css");
 });
+
+var EXPORTED_SYMBOLS = ["SaveToPocket"];
 
 
 
@@ -396,7 +395,7 @@ function pktUIGetter(prop, window) {
 }
 
 var PocketOverlay = {
-  startup(reason) {
+  startup() {
     let styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"]
                               .getService(Ci.nsIStyleSheetService);
     this._sheetType = styleSheetService.AUTHOR_SHEET;
@@ -411,7 +410,7 @@ var PocketOverlay = {
       this.onWindowOpened(win);
     }
   },
-  shutdown(reason) {
+  shutdown() {
     Services.ppmm.broadcastAsyncMessage("PocketShuttingDown");
     Services.obs.removeObserver(this, "browser-delayed-startup-finished");
     
@@ -501,43 +500,37 @@ var PocketOverlay = {
 function prefObserver(aSubject, aTopic, aData) {
   let enabled = Services.prefs.getBoolPref("extensions.pocket.enabled");
   if (enabled)
-    PocketOverlay.startup(ADDON_ENABLE);
+    PocketOverlay.startup();
   else
-    PocketOverlay.shutdown(ADDON_DISABLE);
-}
-
-function startup(data, reason) {
-  if (AddonManagerPrivate.addonIsActive("isreaditlater@ideashower.com"))
-    return;
-
-  setDefaultPrefs();
-  
-  if (Services.prefs.prefHasUserValue("browser.pocket.enabled")) {
-    Services.prefs.setBoolPref("extensions.pocket.enabled", Services.prefs.getBoolPref("browser.pocket.enabled"));
-    Services.prefs.clearUserPref("browser.pocket.enabled");
-  }
-  
-  Services.prefs.addObserver("extensions.pocket.enabled", prefObserver);
-  if (!Services.prefs.getBoolPref("extensions.pocket.enabled"))
-    return;
-  PocketOverlay.startup(reason);
-}
-
-function shutdown(data, reason) {
-  
-  
-  if (reason != APP_SHUTDOWN) {
-    Services.prefs.removeObserver("extensions.pocket.enabled", prefObserver);
-    PocketOverlay.shutdown(reason);
-  }
-}
-
-function install() {
-}
-
-function uninstall() {
+    PocketOverlay.shutdown();
 }
 
 function browserWindows() {
   return Services.wm.getEnumerator("navigator:browser");
 }
+
+var SaveToPocket = {
+  init() {
+    if (AddonManagerPrivate.addonIsActive("isreaditlater@ideashower.com"))
+      return;
+
+    setDefaultPrefs();
+    
+    if (Services.prefs.prefHasUserValue("browser.pocket.enabled")) {
+      Services.prefs.setBoolPref("extensions.pocket.enabled", Services.prefs.getBoolPref("browser.pocket.enabled"));
+      Services.prefs.clearUserPref("browser.pocket.enabled");
+    }
+    
+    Services.prefs.addObserver("extensions.pocket.enabled", prefObserver);
+    if (!Services.prefs.getBoolPref("extensions.pocket.enabled"))
+      return;
+    PocketOverlay.startup();
+  },
+
+  uninit() {
+    
+    
+    Services.prefs.removeObserver("extensions.pocket.enabled", prefObserver);
+    PocketOverlay.shutdown();
+  },
+};
