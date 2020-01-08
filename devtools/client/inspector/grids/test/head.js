@@ -17,10 +17,31 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
   this);
 
+Services.prefs.setIntPref("devtools.toolbox.footer.height", 350);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.toolbox.footer.height");
+});
+
 const asyncStorage = require("devtools/shared/async-storage");
 
-Services.prefs.setIntPref("devtools.toolbox.footer.height", 350);
+
+
+
+
+
+
+
+
+var simulateColorPickerChange = async function(colorPicker, newRgba) {
+  info("Getting the spectrum colorpicker object");
+  const spectrum = await colorPicker.spectrum;
+  info("Setting the new color");
+  spectrum.rgb = newRgba;
+  info("Applying the change");
+  spectrum.updateUI();
+  spectrum.onChange();
+};
+
 registerCleanupFunction(async function() {
-  Services.prefs.clearUserPref("devtools.toolbox.footer.height");
   await asyncStorage.removeItem("gridInspectorHostColors");
 });

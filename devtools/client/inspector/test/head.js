@@ -886,21 +886,3 @@ async function expandContainerByClick(inspector, container) {
   await onChildren;
   await onUpdated;
 }
-
-
-
-
-
-
-
-
-
-async function simulateColorPickerChange(colorPicker, newRgba) {
-  info("Getting the spectrum colorpicker object");
-  const spectrum = await colorPicker.spectrum;
-  info("Setting the new color");
-  spectrum.rgb = newRgba;
-  info("Applying the change");
-  spectrum.updateUI();
-  spectrum.onChange();
-}
