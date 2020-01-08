@@ -262,17 +262,18 @@ nsTransferable::GetTransferData(const char* aFlavor,
       nsCOMPtr<nsISupports> dataBytes;
       uint32_t len;
       data.GetData(getter_AddRefs(dataBytes), &len);
-      if (len == kFlavorHasDataProvider && dataBytes) {
-        
-        nsCOMPtr<nsIFlavorDataProvider> dataProvider =
-          do_QueryInterface(dataBytes);
-        if (dataProvider) {
-          rv = dataProvider->GetFlavorData(
-            this, aFlavor, getter_AddRefs(dataBytes), &len);
-          if (NS_FAILED(rv))
-            break; 
+
+      
+      if (nsCOMPtr<nsIFlavorDataProvider> dataProvider =
+            do_QueryInterface(dataBytes)) {
+        rv = dataProvider->GetFlavorData(this, aFlavor,
+                                         getter_AddRefs(dataBytes), &len);
+        if (NS_FAILED(rv)) {
+          
+          break;
         }
       }
+
       if (dataBytes && len > 0) { 
         *aDataLen = len;
         dataBytes.forget(aData);
@@ -295,17 +296,18 @@ nsTransferable::GetTransferData(const char* aFlavor,
         nsCOMPtr<nsISupports> dataBytes;
         uint32_t len;
         data.GetData(getter_AddRefs(dataBytes), &len);
-        if (len == kFlavorHasDataProvider && dataBytes) {
-          
-          nsCOMPtr<nsIFlavorDataProvider> dataProvider =
-            do_QueryInterface(dataBytes);
-          if (dataProvider) {
-            rv = dataProvider->GetFlavorData(
-              this, aFlavor, getter_AddRefs(dataBytes), &len);
-            if (NS_FAILED(rv))
-              break; 
+
+        
+        if (nsCOMPtr<nsIFlavorDataProvider> dataProvider =
+              do_QueryInterface(dataBytes)) {
+          rv = dataProvider->GetFlavorData(this, aFlavor,
+                                           getter_AddRefs(dataBytes), &len);
+          if (NS_FAILED(rv)) {
+            
+            break;
           }
         }
+
         mFormatConv->Convert(
           data.GetFlavor().get(), dataBytes, len, aFlavor, aData, aDataLen);
         found = true;
