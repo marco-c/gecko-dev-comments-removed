@@ -214,7 +214,7 @@ protected:
   
   
   
-  nsIPresShell* const MOZ_NON_OWNING_REF mPresShell = nullptr;
+  nsIPresShell* MOZ_NON_OWNING_REF const mPresShell = nullptr;
 
   RefPtr<dom::AnonymousContent> mCaretElementHolder;
 
