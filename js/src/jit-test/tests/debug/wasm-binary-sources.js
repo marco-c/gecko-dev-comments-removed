@@ -32,6 +32,6 @@ assertEq(s.format, "wasm");
 var source2 = s.source;
 
 
-assertEq(source2.text, '[wasm]');
+assertEq(source2.text, '[debugger missing wasm binary-to-text conversion]');
 
 arraysEqual(source2.binary, wasmTextToBinary('(module (func) (export "" 0))'));

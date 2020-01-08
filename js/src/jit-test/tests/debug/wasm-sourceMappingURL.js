@@ -71,4 +71,4 @@ assertThrowsInstanceOf(() => gotScript.source.sourceMapURL = 'foo', Error);
 dbg.allowWasmBinarySource = false;
 g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "a" 0))', 'http://example.org/test2')));`);
 assertEq(gotScript.format, "wasm");
-assertEq(gotScript.source.sourceMapURL, null);
+assertEq(gotScript.source.sourceMapURL, 'http://example.org/test2');

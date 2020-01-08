@@ -179,9 +179,10 @@ struct ModuleEnvironment
 
     
     DataSegmentEnvVector      dataSegments;
-    Maybe<NameInBytecode>     moduleName;
-    NameInBytecodeVector      funcNames;
-    CustomSectionVector       customSections;
+    CustomSectionEnvVector    customSections;
+    Maybe<uint32_t>           nameCustomSectionIndex;
+    Maybe<Name>               moduleName;
+    NameVector                funcNames;
 
     explicit ModuleEnvironment(HasGcTypes gcTypesConfigured,
                                CompilerEnvironment* compilerEnv,

@@ -92,7 +92,7 @@ CompileBuffer(const CompileArgs& args,
 
 
 void
-CompileTier2(const CompileArgs& args, Module& module, Atomic<bool>* cancelled);
+CompileTier2(const CompileArgs& args, const Module& module, Atomic<bool>* cancelled);
 
 
 

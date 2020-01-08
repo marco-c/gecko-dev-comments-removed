@@ -468,7 +468,7 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
         
         
         if (obj->is<WasmModuleObject>()) {
-            wasm::Module& module = obj->as<WasmModuleObject>().module();
+            const wasm::Module& module = obj->as<WasmModuleObject>().module();
             if (ScriptSource* ss = module.metadata().maybeScriptSource()) {
                 CollectScriptSourceStats<granularity>(closure, ss);
             }
