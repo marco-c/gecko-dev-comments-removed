@@ -319,10 +319,10 @@ impl Color {
 
     
     
-    pub fn is_non_transparent(&self) -> bool {
+    pub fn is_transparent(&self) -> bool {
         match *self {
-            Color::Numeric { ref parsed, .. } => parsed.alpha != 0,
-            _ => true,
+            Color::Numeric { ref parsed, .. } => parsed.alpha == 0,
+            _ => false,
         }
     }
 }
