@@ -770,6 +770,15 @@ impl Drop for SharedDepthTarget {
     }
 }
 
+
+
+#[derive(PartialEq, Debug)]
+enum TexStorageUsage {
+    Never,
+    NonBGRA8,
+    Always,
+}
+
 pub struct Device {
     gl: Rc<gl::Gl>,
     
@@ -820,7 +829,8 @@ pub struct Device {
     
     
     
-    supports_texture_storage: bool,
+    
+    texture_storage_usage: TexStorageUsage,
 
     
     extensions: Vec<String>,
@@ -925,17 +935,60 @@ impl Device {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let supports_bgra = supports_extension(&extensions, "GL_EXT_texture_format_BGRA8888");
-        let (bgra_format_internal, bgra_format_external) = if supports_bgra {
-            assert_eq!(gl.get_type(), gl::GlType::Gles, "gleam only detects bgra on gles");
-            (gl::BGRA8_EXT, gl::BGRA_EXT)
-        } else {
-            (gl::RGBA8, gl::BGRA)
-        };
-
         let supports_texture_storage = match gl.get_type() {
             gl::GlType::Gl => supports_extension(&extensions, "GL_ARB_texture_storage"),
             gl::GlType::Gles => true,
+        };
+
+
+        let (bgra_format_internal, bgra_format_external, texture_storage_usage) = if supports_bgra {
+            assert_eq!(gl.get_type(), gl::GlType::Gles, "gleam only detects bgra on gles");
+            
+            
+            if supports_extension(&extensions, "GL_EXT_texture_format_BGRA8888") && supports_extension(&extensions, "GL_EXT_texture_storage") {
+                
+                (gl::BGRA8_EXT, gl::BGRA_EXT, TexStorageUsage::Always)
+            } else {
+                
+                
+                
+                (
+                    gl::BGRA_EXT,
+                    gl::BGRA_EXT,
+                    if supports_texture_storage {
+                        TexStorageUsage::NonBGRA8
+                    } else {
+                        TexStorageUsage::Never
+                    },
+                )
+            }
+        } else {
+            
+            
+            
+            
+            
+            assert_ne!(gl.get_type(), gl::GlType::Gles, "gles must have compatible internal and external formats");
+            (
+                gl::RGBA8,
+                gl::BGRA,
+                if supports_texture_storage {
+                    TexStorageUsage::Always
+                } else {
+                    TexStorageUsage::Never
+                },
+            )
         };
 
         Device {
@@ -973,7 +1026,7 @@ impl Device {
             cached_programs,
             frame_id: GpuFrameId(0),
             extensions,
-            supports_texture_storage,
+            texture_storage_usage,
         }
     }
 
@@ -1409,7 +1462,12 @@ impl Device {
         
         
         
-        match (self.supports_texture_storage, is_array) {
+        let use_texture_storage = match self.texture_storage_usage {
+            TexStorageUsage::Always => true,
+            TexStorageUsage::NonBGRA8 => texture.format != ImageFormat::BGRA8,
+            TexStorageUsage::Never => false,
+        };
+        match (use_texture_storage, is_array) {
             (true, true) =>
                 self.gl.tex_storage_3d(
                     gl::TEXTURE_2D_ARRAY,
