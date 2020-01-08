@@ -3,6 +3,13 @@
 
 
 
+#include "nsIApplicationCache.h"
+#include "nsWeakReference.h"
+#include "mozilla/RefPtr.h"
+#include "nsString.h"
+
+class nsOfflineCacheDevice;
+
 class nsApplicationCache : public nsIApplicationCache
                          , public nsSupportsWeakReference
 {
