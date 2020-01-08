@@ -25,7 +25,10 @@ let RPMAccessManager = {
       
       
       
-      "getBoolPref": ["privacy.trackingprotection.enabled",
+      
+      "getBoolPref": ["browser.contentblocking.enabled",
+                      "browser.contentblocking.ui.enabled",
+                      "privacy.trackingprotection.enabled",
                       "privacy.trackingprotection.pbmode.enabled"],
       "getFormatURLPref": ["privacy.trackingprotection.introURL",
                            "app.support.baseURL"],
