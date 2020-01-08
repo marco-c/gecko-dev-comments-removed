@@ -57,6 +57,9 @@ class ServoWebDriverProtocol(Protocol):
 
     def connect(self):
         """Connect to browser via WebDriver."""
+        
+        wait_for_service((self.host, self.port), timeout=120)
+
         self.session = webdriver.Session(self.host, self.port, extension=ServoCommandExtensions)
         self.session.start()
 
