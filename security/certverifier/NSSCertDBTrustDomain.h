@@ -58,6 +58,30 @@ void UnloadLoadableRoots();
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                nsCString& nickname);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult BuildRevocationCheckStrings(const CERTCertificate* cert,
+                               nsCString& encIssuer,
+                               nsCString& encSerial,
+                               nsCString& encSubject,
+                               nsCString& encPubKey);
+
 void SaveIntermediateCerts(const UniqueCERTCertList& certList);
 
 class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain

@@ -206,16 +206,20 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   
   if (mCertDBTrustType == trustSSL) {
     bool isCertRevoked;
-    nsresult nsrv = mCertBlocklist->IsCertRevoked(
-                      candidateCert->derIssuer.data,
-                      candidateCert->derIssuer.len,
-                      candidateCert->serialNumber.data,
-                      candidateCert->serialNumber.len,
-                      candidateCert->derSubject.data,
-                      candidateCert->derSubject.len,
-                      candidateCert->derPublicKey.data,
-                      candidateCert->derPublicKey.len,
-                      &isCertRevoked);
+
+    nsAutoCString encIssuer;
+    nsAutoCString encSerial;
+    nsAutoCString encSubject;
+    nsAutoCString encPubKey;
+
+    nsresult nsrv = BuildRevocationCheckStrings(candidateCert.get(), encIssuer, encSerial, encSubject, encPubKey);
+
+    if (NS_FAILED(nsrv))  {
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+    }
+
+    nsrv = mCertBlocklist->IsCertRevoked(
+      encIssuer, encSerial, encSubject, encPubKey, &isCertRevoked);
     if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
@@ -1283,6 +1287,47 @@ DefaultServerNicknameForCert(const CERTCertificate* cert,
   }
 
   return NS_ERROR_FAILURE;
+}
+
+nsresult
+BuildRevocationCheckStrings(const CERTCertificate* cert,
+                     nsCString& encIssuer,
+                     nsCString& encSerial,
+                     nsCString& encSubject,
+                     nsCString& encPubKey)
+{
+  
+  nsDependentCSubstring issuerString(
+    BitwiseCast<char*, uint8_t*>(cert->derIssuer.data),
+    cert->derIssuer.len);
+  nsDependentCSubstring serialString(
+    BitwiseCast<char*, uint8_t*>(cert->serialNumber.data),
+    cert->serialNumber.len);
+  nsDependentCSubstring subjectString(
+    BitwiseCast<char*, uint8_t*>(cert->derSubject.data),
+    cert->derSubject.len);
+  nsDependentCSubstring pubKeyString(
+    BitwiseCast<char*, uint8_t*>(cert->derPublicKey.data),
+    cert->derPublicKey.len);
+
+  nsresult rv = Base64Encode(issuerString, encIssuer);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = Base64Encode(serialString, encSerial);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = Base64Encode(subjectString, encSubject);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = Base64Encode(pubKeyString, encPubKey);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return NS_OK;
 }
 
 
