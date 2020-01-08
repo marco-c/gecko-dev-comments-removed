@@ -1,0 +1,19 @@
+
+
+
+
+
+"use strict";
+
+idl_test(
+  ['accelerometer'],
+  ['generic-sensor', 'dom'],
+  idl_array => {
+    idl_array.add_objects({
+      Accelerometer: ['new Accelerometer();'],
+      LinearAccelerationSensor: ['new LinearAccelerationSensor();'],
+      GravitySensor: ['new GravitySensor();']
+    });
+  },
+  'Test IDL implementation of Accelerometer Sensor'
+);
