@@ -5,12 +5,12 @@
 
 use api::{ExternalScrollId, LayoutPixel, LayoutPoint, LayoutRect, LayoutSize, LayoutTransform};
 use api::{LayoutVector2D, PipelineId, PropertyBinding, ScrollClamping, ScrollLocation};
-use api::{ScrollSensitivity, StickyOffsetBounds, LayoutVector3D};
+use api::{ScrollSensitivity, StickyOffsetBounds};
 use clip_scroll_tree::{CoordinateSystem, CoordinateSystemId, SpatialNodeIndex, TransformUpdateState};
 use euclid::SideOffsets2D;
 use gpu_types::TransformPalette;
 use scene::SceneProperties;
-use util::{LayoutFastTransform, LayoutToWorldFastTransform, MatrixHelpers, TransformedRectKind};
+use util::{LayoutFastTransform, LayoutToWorldFastTransform, ScaleOffset, TransformedRectKind};
 
 #[derive(Clone, Debug)]
 pub enum SpatialNodeType {
@@ -66,7 +66,7 @@ pub struct SpatialNode {
     
     
     
-    pub coordinate_system_relative_offset: LayoutVector2D,
+    pub coordinate_system_relative_scale_offset: ScaleOffset,
 }
 
 impl SpatialNode {
@@ -85,7 +85,7 @@ impl SpatialNode {
             node_type,
             invertible: true,
             coordinate_system_id: CoordinateSystemId(0),
-            coordinate_system_relative_offset: LayoutVector2D::zero(),
+            coordinate_system_relative_scale_offset: ScaleOffset::identity(),
         }
     }
 
@@ -275,27 +275,28 @@ impl SpatialNode {
 
                 
                 
-                if relative_transform.is_simple_2d_translation() {
-                    self.coordinate_system_relative_offset =
-                        state.coordinate_system_relative_offset +
-                        LayoutVector2D::new(relative_transform.m41, relative_transform.m42);
-                } else {
-                    
-                    
-                    self.coordinate_system_relative_offset = LayoutVector2D::zero();
+                match ScaleOffset::from_transform(&relative_transform) {
+                    Some(ref scale_offset) => {
+                        self.coordinate_system_relative_scale_offset =
+                            state.coordinate_system_relative_scale_offset.accumulate(scale_offset);
+                    }
+                    None => {
+                        
+                        
+                        self.coordinate_system_relative_scale_offset = ScaleOffset::identity();
 
-                    
-                    let coord_system = CoordinateSystem {
-                        offset: LayoutVector3D::new(
-                            state.coordinate_system_relative_offset.x,
-                            state.coordinate_system_relative_offset.y,
-                            0.0,
-                        ),
-                        transform: relative_transform,
-                        parent: Some(state.current_coordinate_system_id),
-                    };
-                    state.current_coordinate_system_id = CoordinateSystemId(coord_systems.len() as u32);
-                    coord_systems.push(coord_system);
+                        let transform = state.coordinate_system_relative_scale_offset
+                                             .to_transform()
+                                             .pre_mul(&relative_transform);
+
+                        
+                        let coord_system = CoordinateSystem {
+                            transform,
+                            parent: Some(state.current_coordinate_system_id),
+                        };
+                        state.current_coordinate_system_id = CoordinateSystemId(coord_systems.len() as u32);
+                        coord_systems.push(coord_system);
+                    }
                 }
 
                 self.coordinate_system_id = state.current_coordinate_system_id;
@@ -327,8 +328,8 @@ impl SpatialNode {
                 };
 
                 let added_offset = state.parent_accumulated_scroll_offset + sticky_offset + scroll_offset;
-                self.coordinate_system_relative_offset =
-                    state.coordinate_system_relative_offset + added_offset;
+                self.coordinate_system_relative_scale_offset =
+                    state.coordinate_system_relative_scale_offset.offset(added_offset.to_untyped());
 
                 if let SpatialNodeType::StickyFrame(ref mut info) = self.node_type {
                     info.current_offset = sticky_offset;
@@ -475,7 +476,7 @@ impl SpatialNode {
             SpatialNodeType::ReferenceFrame(ref info) => {
                 state.parent_reference_frame_transform = self.world_viewport_transform;
                 state.parent_accumulated_scroll_offset = LayoutVector2D::zero();
-                state.coordinate_system_relative_offset = self.coordinate_system_relative_offset;
+                state.coordinate_system_relative_scale_offset = self.coordinate_system_relative_scale_offset;
                 let translation = -info.origin_in_parent_reference_frame;
                 state.nearest_scrolling_ancestor_viewport =
                     state.nearest_scrolling_ancestor_viewport
