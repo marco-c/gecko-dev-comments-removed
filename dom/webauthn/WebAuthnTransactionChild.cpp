@@ -28,7 +28,12 @@ WebAuthnTransactionChild::RecvConfirmRegister(const uint64_t& aTransactionId,
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mManager->FinishMakeCredential(aTransactionId, aResult);
+  
+  
+  
+  
+  RefPtr<WebAuthnManagerBase> kungFuDeathGrip(mManager);
+  kungFuDeathGrip->FinishMakeCredential(aTransactionId, aResult);
   return IPC_OK();
 }
 
@@ -40,7 +45,12 @@ WebAuthnTransactionChild::RecvConfirmSign(const uint64_t& aTransactionId,
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mManager->FinishGetAssertion(aTransactionId, aResult);
+  
+  
+  
+  
+  RefPtr<WebAuthnManagerBase> kungFuDeathGrip(mManager);
+  kungFuDeathGrip->FinishGetAssertion(aTransactionId, aResult);
   return IPC_OK();
 }
 
@@ -52,7 +62,12 @@ WebAuthnTransactionChild::RecvAbort(const uint64_t& aTransactionId,
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mManager->RequestAborted(aTransactionId, aError);
+  
+  
+  
+  
+  RefPtr<WebAuthnManagerBase> kungFuDeathGrip(mManager);
+  kungFuDeathGrip->RequestAborted(aTransactionId, aError);
   return IPC_OK();
 }
 
