@@ -22,11 +22,6 @@ this.EXPORTED_SYMBOLS = ["event"];
 
 let seenEvent = false;
 
-function getDOMWindowUtils(win) {
-  
-  return win.windowUtils;
-}
-
 event.MouseEvents = {
   click: 0,
   dblclick: 1,
@@ -77,119 +72,6 @@ event.DoubleClickTracker = {
   cancelTimer() {
     dblclickTimer.cancel();
   },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-event.sendMouseEvent = function(mouseEvent, target, win) {
-  if (!event.MouseEvents.hasOwnProperty(mouseEvent.type)) {
-    throw new TypeError("Unsupported event type: " + mouseEvent.type);
-  }
-
-  if (!target.nodeType && typeof target != "string") {
-    throw new TypeError(
-        "Target can only be a DOM element or a string: " + target);
-  }
-
-  if (!target.nodeType) {
-    target = win.document.getElementById(target);
-  } else {
-    win = win || target.ownerGlobal;
-  }
-
-  let ev = win.document.createEvent("MouseEvent");
-
-  let view = win;
-
-  let detail = mouseEvent.detail;
-  if (!detail) {
-    if (mouseEvent.type in ["click", "mousedown", "mouseup"]) {
-      detail = 1;
-    } else if (mouseEvent.type == "dblclick") {
-      detail = 2;
-    } else {
-      detail = 0;
-    }
-  }
-
-  let screenX = mouseEvent.screenX || 0;
-  let screenY = mouseEvent.screenY || 0;
-  let clientX = mouseEvent.clientX || 0;
-  let clientY = mouseEvent.clientY || 0;
-  let ctrlKey = mouseEvent.ctrlKey || false;
-  let altKey = mouseEvent.altKey || false;
-  let shiftKey = mouseEvent.shiftKey || false;
-  let metaKey = mouseEvent.metaKey || false;
-  let button = mouseEvent.button || 0;
-  let relatedTarget = mouseEvent.relatedTarget || null;
-
-  ev.initMouseEvent(
-      mouseEvent.type,
-       true,
-       true,
-      view,
-      detail,
-      screenX,
-      screenY,
-      clientX,
-      clientY,
-      ctrlKey,
-      altKey,
-      shiftKey,
-      metaKey,
-      button,
-      relatedTarget);
-};
-
-
-
-
-
-
-
-
-
-
-
-event.sendChar = function(char, win) {
-  
-  let hasShift = (char == char.toUpperCase());
-  event.synthesizeKey(char, {shiftKey: hasShift}, win);
-};
-
-
-
-
-
-
-
-event.sendString = function(string, win) {
-  for (let i = 0; i < string.length; ++i) {
-    event.sendChar(string.charAt(i), win);
-  }
-};
-
-
-
-
-
-
-
-
-event.sendKey = function(key, win) {
-  let keyName = "VK_" + key.toUpperCase();
-  event.synthesizeKey(keyName, {shiftKey: false}, win);
 };
 
 
@@ -265,7 +147,7 @@ event.synthesizeMouse = function(element, offsetX, offsetY, opts, win) {
 
 
 event.synthesizeMouseAtPoint = function(left, top, opts, win) {
-  let domutils = getDOMWindowUtils(win);
+  let domutils = win.windowUtils;
 
   let button = opts.button || 0;
   let clickCount = opts.clickCount || 1;
@@ -330,20 +212,6 @@ event.synthesizeMouseAtPoint = function(left, top, opts, win) {
         isWidgetEventSynthesized,
         buttons);
   }
-};
-
-
-
-
-
-event.synthesizeMouseAtCenter = function(element, event, win) {
-  let rect = element.getBoundingClientRect();
-  event.synthesizeMouse(
-      element,
-      rect.width / 2,
-      rect.height / 2,
-      event,
-      win);
 };
 
 
@@ -955,82 +823,6 @@ event.synthesizeMouseExpectEvent = function(
       expectedEvent,
       eventHandler,
       testName);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-event.synthesizeKeyExpectEvent = function(
-    key, ev, expectedTarget, expectedEvent, testName, win) {
-
-  let eventHandler = expectEvent_(
-      expectedTarget,
-      expectedEvent,
-      testName);
-  event.synthesizeKey(key, ev, win);
-  checkExpectedEvent_(
-      expectedTarget,
-      expectedEvent,
-      eventHandler,
-      testName);
-};
-
-
-
-
-
-
-
-
-
-
-event.synthesizeQuerySelectedText = function(win) {
-  let domutils = getDOMWindowUtils(win);
-  return domutils.sendQueryContentEvent(
-      domutils.QUERY_SELECTED_TEXT, 0, 0, 0, 0);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-event.synthesizeSelectionSet = function(offset, length, reverse, win) {
-  let domutils = getDOMWindowUtils(win);
-  return domutils.sendSelectionSetEvent(offset, length, reverse);
 };
 
 const KEYCODES_LOOKUP = {
