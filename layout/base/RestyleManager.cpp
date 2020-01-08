@@ -1803,7 +1803,6 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
 
   Maybe<nsCSSPropertyIDSet> effectiveAnimationProperties;
 
-  Maybe<uint64_t> generation;
   nsChangeHint hint = nsChangeHint(0);
   auto maybeApplyChangeHint = [&](const Maybe<uint64_t>& aGeneration,
                                   DisplayItemType aDisplayItemType) -> bool {
@@ -1854,7 +1853,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
     
     
     
-    if (!generation) {
+    if (!aGeneration) {
       if (!effectiveAnimationProperties) {
         effectiveAnimationProperties.emplace(
           nsLayoutUtils::GetAnimationPropertiesForCompositor(aFrame));
