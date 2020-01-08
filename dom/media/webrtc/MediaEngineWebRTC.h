@@ -160,6 +160,8 @@ private:
   bool mManualInvalidation;
 };
 
+
+
 class WebRTCAudioDataListener : public AudioDataListener
 {
 protected:
@@ -168,31 +170,29 @@ protected:
 
 public:
   explicit WebRTCAudioDataListener(MediaEngineWebRTCMicrophoneSource* aAudioSource)
-    : mMutex("WebRTCAudioDataListener::mMutex")
-    , mAudioSource(aAudioSource)
+    : mAudioSource(aAudioSource)
   {}
 
   
-  void NotifyOutputData(MediaStreamGraph* aGraph,
+  void NotifyOutputData(MediaStreamGraphImpl* aGraph,
                         AudioDataValue* aBuffer,
                         size_t aFrames,
                         TrackRate aRate,
                         uint32_t aChannels) override;
 
-  void NotifyInputData(MediaStreamGraph* aGraph,
+  void NotifyInputData(MediaStreamGraphImpl* aGraph,
                        const AudioDataValue* aBuffer,
                        size_t aFrames,
                        TrackRate aRate,
                        uint32_t aChannels) override;
 
-  uint32_t InputChannelCount() override;
+  uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override;
 
-  void DeviceChanged() override;
+  void DeviceChanged(MediaStreamGraphImpl* aGraph) override;
 
-  void Shutdown();
+  void Disconnect(MediaStreamGraphImpl* aGraph) override;
 
 private:
-  Mutex mMutex;
   RefPtr<MediaEngineWebRTCMicrophoneSource> mAudioSource;
 };
 
@@ -247,19 +247,21 @@ public:
             const PrincipalHandle& aPrincipalHandle) override;
 
   
-  void NotifyOutputData(MediaStreamGraph* aGraph,
+  void NotifyOutputData(MediaStreamGraphImpl* aGraph,
                         AudioDataValue* aBuffer, size_t aFrames,
                         TrackRate aRate, uint32_t aChannels) override;
-  void NotifyInputData(MediaStreamGraph* aGraph,
+  void NotifyInputData(MediaStreamGraphImpl* aGraph,
                        const AudioDataValue* aBuffer, size_t aFrames,
                        TrackRate aRate, uint32_t aChannels) override;
 
-  void DeviceChanged() override;
+  void DeviceChanged(MediaStreamGraphImpl* aGraph) override;
 
   uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) override
   {
     return GetRequestedInputChannelCount(aGraph);
   }
+
+  void Disconnect(MediaStreamGraphImpl* aGraph) override;
 
   dom::MediaSourceEnum GetMediaSource() const override
   {
@@ -364,7 +366,7 @@ private:
                      size_t aFrames,
                      uint32_t aChannels);
 
-  void PacketizeAndProcess(MediaStreamGraph* aGraph,
+  void PacketizeAndProcess(MediaStreamGraphImpl* aGraph,
                            const AudioDataValue* aBuffer,
                            size_t aFrames,
                            TrackRate aRate,
@@ -381,6 +383,8 @@ private:
   uint32_t GetRequestedInputChannelCount(MediaStreamGraphImpl* aGraphImpl);
   void SetRequestedInputChannelCount(uint32_t aRequestedInputChannelCount);
 
+  
+  
   
   RefPtr<WebRTCAudioDataListener> mListener;
 

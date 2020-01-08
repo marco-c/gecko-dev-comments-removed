@@ -106,26 +106,31 @@ public:
 
 
 
-  virtual void NotifyOutputData(MediaStreamGraph* aGraph,
+  virtual void NotifyOutputData(MediaStreamGraphImpl* aGraph,
                                 AudioDataValue* aBuffer, size_t aFrames,
                                 TrackRate aRate, uint32_t aChannels) = 0;
   
 
 
 
-  virtual void NotifyInputData(MediaStreamGraph* aGraph,
+  virtual void NotifyInputData(MediaStreamGraphImpl* aGraph,
                                const AudioDataValue* aBuffer, size_t aFrames,
                                TrackRate aRate, uint32_t aChannels) = 0;
 
   
 
 
-  virtual uint32_t InputChannelCount() = 0;
+  virtual uint32_t RequestedInputChannelCount(MediaStreamGraphImpl* aGraph) = 0;
 
   
 
 
-  virtual void DeviceChanged() = 0;
+  virtual void DeviceChanged(MediaStreamGraphImpl* aGraph) = 0;
+
+  
+
+
+  virtual void Disconnect(MediaStreamGraphImpl* aGraph) = 0;
 };
 
 class AudioDataListener : public AudioDataListenerInterface {

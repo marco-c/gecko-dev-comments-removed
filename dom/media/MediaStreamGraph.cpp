@@ -878,6 +878,10 @@ MediaStreamGraphImpl::CloseAudioInputImpl(Maybe<CubebUtils::AudioDeviceID>& aID,
   MOZ_ASSERT(listeners);
   DebugOnly<bool> wasPresent = listeners->RemoveElement(aListener);
   MOZ_ASSERT(wasPresent);
+
+  
+  aListener->Disconnect(this);
+
   if (!listeners->IsEmpty()) {
     
     return;
@@ -990,7 +994,7 @@ void MediaStreamGraphImpl::DeviceChangedImpl()
   nsTArray<RefPtr<AudioDataListener>>* listeners =
     mInputDeviceUsers.GetValue(mInputDeviceID);
   for (auto& listener : *listeners) {
-    listener->DeviceChanged();
+    listener->DeviceChanged(this);
   }
 }
 
