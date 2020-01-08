@@ -66,7 +66,7 @@ def assert_success(response, value=None):
     return response.body.get("value")
 
 
-def assert_dialog_handled(session, expected_text):
+def assert_dialog_handled(session, expected_text, expected_retval):
     
     
     
@@ -76,7 +76,9 @@ def assert_dialog_handled(session, expected_text):
             "User prompt with text '%s' was not handled." % expected_text)
 
     except NoSuchAlertException:
-        pass
+        
+        prompt_retval = session.execute_script(" return window.dialog_return_value;")
+        assert prompt_retval == expected_retval
 
 
 def assert_files_uploaded(session, element, files):
