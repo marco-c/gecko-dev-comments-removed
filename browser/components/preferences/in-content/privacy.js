@@ -257,6 +257,7 @@ var gPrivacyPane = {
   init() {
     this._updateSanitizeSettingsButton();
     this.initializeHistoryMode();
+    this.initAutoplay();
     this.updateAutoplayMediaControlsVisibility();
     this.updateHistoryModePane();
     this.updatePrivacyMicroControls();
@@ -1168,6 +1169,12 @@ var gPrivacyPane = {
 
 
   
+
+  initAutoplay() {
+    let url = Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      "block-autoplay";
+    document.getElementById("autoplayLearnMoreLink").setAttribute("href", url);
+  },
 
   
 
