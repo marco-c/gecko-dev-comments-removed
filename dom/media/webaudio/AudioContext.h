@@ -185,6 +185,10 @@ class AudioContext final : public DOMEventTargetHelper,
 
   
   
+  void NotifyScheduledSourceNodeStarted();
+
+  
+  
   
   
   
@@ -362,6 +366,8 @@ class AudioContext final : public DOMEventTargetHelper,
   
   bool mSuspendCalled;
   bool mIsDisconnecting;
+  
+  bool mWasAllowedToStart;
 };
 
 static const dom::AudioContext::AudioContextId NO_AUDIO_CONTEXT = 0;
