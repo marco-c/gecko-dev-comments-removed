@@ -545,7 +545,6 @@ public:
     , mForceTransparentSurface(false)
     , mHideAllLayersBelow(false)
     , mOpaqueForAnimatedGeometryRootParent(false)
-    , mDisableFlattening(false)
     , mBackfaceHidden(false)
     , mShouldPaintOnContentSide(false)
     , mDTCRequiresTargetConfirmation(false)
@@ -748,10 +747,6 @@ public:
 
 
   bool mOpaqueForAnimatedGeometryRootParent;
-  
-
-
-  bool mDisableFlattening;
   
 
 
@@ -3858,9 +3853,6 @@ ContainerState::FinishPaintedLayerData(
   } else if (data->mNeedComponentAlpha && !hidpi) {
     flags |= Layer::CONTENT_COMPONENT_ALPHA;
   }
-  if (data->mDisableFlattening) {
-    flags |= Layer::CONTENT_DISABLE_FLATTENING;
-  }
   layer->SetContentFlags(flags);
 
   userData->mItems = std::move(data->mAssignedDisplayItems);
@@ -4231,15 +4223,6 @@ PaintedLayerData::Accumulate(ContainerState* aState,
         aItem->DisableComponentAlpha();
       }
     }
-  }
-
-  
-  
-  
-  
-  if (aState->mParameters.mInActiveTransformedSubtree &&
-      (mNeedComponentAlpha || !componentAlphaBounds.IsEmpty())) {
-    mDisableFlattening = true;
   }
 }
 
