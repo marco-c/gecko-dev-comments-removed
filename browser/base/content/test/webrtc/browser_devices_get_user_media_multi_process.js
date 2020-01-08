@@ -230,7 +230,8 @@ var gTests = [
     checkDeviceSelectors(false, false, true);
 
     
-    document.getElementById("webRTC-selectWindow-menulist").getItemAtIndex(2).doCommand();
+    let menulist = document.getElementById("webRTC-selectWindow-menulist");
+    menulist.getItemAtIndex(menulist.itemCount - 1).doCommand();
 
     let indicator = promiseIndicatorWindow();
     await promiseMessage("ok", () => {
@@ -283,7 +284,7 @@ var gTests = [
     checkDeviceSelectors(false, false, true);
 
     
-    document.getElementById("webRTC-selectWindow-menulist").getItemAtIndex(2).doCommand();
+    menulist.getItemAtIndex(menulist.itemCount - 1).doCommand();
 
     await promiseMessage("ok", () => {
       PopupNotifications.panel.firstElementChild.button.click();
