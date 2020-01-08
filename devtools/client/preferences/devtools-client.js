@@ -57,8 +57,6 @@ pref("devtools.inspector.fonthighlighter.enabled", true);
 
 pref("devtools.inspector.changes.enabled", true);
 
-pref("devtools.inspector.new-rulesview.enabled", false);
-
 
 pref("devtools.inspector.flexboxHighlighter.enabled", true);
 pref("devtools.flexboxinspector.enabled", true);
