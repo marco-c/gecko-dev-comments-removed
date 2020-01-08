@@ -347,6 +347,10 @@ function moveMouseAndScrollWheelOver(element, dx, dy, testDriver, waitForScroll 
 
 
 
+
+
+
+
 function* dragVerticalScrollbar(element, testDriver, distance = 20, increment = 5) {
   var boundingClientRect = element.getBoundingClientRect();
   var verticalScrollbarWidth = boundingClientRect.width - element.clientWidth;
@@ -369,8 +373,10 @@ function* dragVerticalScrollbar(element, testDriver, distance = 20, increment = 
     yield synthesizeNativeMouseEvent(element, mouseX, mouseY + y, nativeMouseMoveEventMsg(), testDriver);
   }
   yield synthesizeNativeMouseEvent(element, mouseX, mouseY + distance, nativeMouseMoveEventMsg(), testDriver);
-  
-  yield synthesizeNativeMouseEvent(element, mouseX, mouseY + distance, nativeMouseUpEventMsg(), testDriver);
 
-  return true;
+  
+  return function*() {
+    dump("Finishing drag of #" + element.id + "\n");
+    yield synthesizeNativeMouseEvent(element, mouseX, mouseY + distance, nativeMouseUpEventMsg(), testDriver);
+  };
 }

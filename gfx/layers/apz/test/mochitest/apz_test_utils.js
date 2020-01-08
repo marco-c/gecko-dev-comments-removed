@@ -237,6 +237,8 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
         return;
       }
 
+      SimpleTest.ok(true, "Starting subtest " + test.file);
+
       if (typeof test.dp_suppression != 'undefined') {
         
         
