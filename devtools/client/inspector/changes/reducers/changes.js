@@ -86,7 +86,7 @@ function createRule(ruleData, rules) {
       const nextRuleId = array[index + 1];
 
       
-      const defaults = { selector, add: [], remove: [], children: [] };
+      const defaults = { selector, ruleId, add: [], remove: [], children: [] };
       rules[ruleId] = Object.assign(defaults, rules[ruleId]);
 
       
@@ -122,6 +122,7 @@ function removeRule(ruleId, rules) {
 
   delete rules[ruleId];
 }
+
 
 
 

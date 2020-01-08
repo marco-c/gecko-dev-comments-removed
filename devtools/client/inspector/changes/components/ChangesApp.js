@@ -10,6 +10,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
 const CSSDeclaration = createFactory(require("./CSSDeclaration"));
+const { getChangesTree } = require("../selectors/changes");
 const { getSourceForDisplay } = require("../utils/changes-utils");
 const { getStr } = require("../utils/l10n");
 
@@ -17,22 +18,12 @@ class ChangesApp extends PureComponent {
   static get propTypes() {
     return {
       
-      changes: PropTypes.object.isRequired,
+      changesTree: PropTypes.object.isRequired,
     };
   }
 
   constructor(props) {
     super(props);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.renderedRules = [];
   }
 
   renderDeclarations(remove = [], add = []) {
@@ -63,15 +54,8 @@ class ChangesApp extends PureComponent {
     return [removals, additions];
   }
 
-  renderRule(ruleId, rule, rules, level = 0) {
+  renderRule(ruleId, rule, level = 0) {
     const selector = rule.selector;
-
-    if (this.renderedRules.includes(ruleId)) {
-      return null;
-    }
-
-    
-    this.renderedRules.push(ruleId);
 
     let diffClass = "";
     if (rule.changeType === "rule-add") {
@@ -97,8 +81,8 @@ class ChangesApp extends PureComponent {
         dom.span({ className: "bracket-open" }, "{")
       ),
       
-      rule.children.map(childRuleId => {
-        return this.renderRule(childRuleId, rules[childRuleId], rules, level + 1);
+      rule.children.map(childRule => {
+        return this.renderRule(childRule.ruleId, childRule, level + 1);
       }),
       
       this.renderDeclarations(rule.remove, rule.add),
@@ -127,7 +111,7 @@ class ChangesApp extends PureComponent {
         ),
         
         Object.entries(rules).map(([ruleId, rule]) => {
-          return this.renderRule(ruleId, rule, rules);
+          return this.renderRule(ruleId, rule);
         })
       );
     });
@@ -151,19 +135,22 @@ class ChangesApp extends PureComponent {
   }
 
   render() {
-    
-    this.renderedRules = [];
-    const hasChanges = Object.keys(this.props.changes).length > 0;
-
+    const hasChanges = Object.keys(this.props.changesTree).length > 0;
     return dom.div(
       {
         className: "theme-sidebar inspector-tabpanel",
         id: "sidebar-panel-changes",
       },
       !hasChanges && this.renderEmptyState(),
-      hasChanges && this.renderDiff(this.props.changes)
+      hasChanges && this.renderDiff(this.props.changesTree)
     );
   }
 }
 
-module.exports = connect(state => state)(ChangesApp);
+const mapStateToProps = state => {
+  return {
+    changesTree: getChangesTree(state.changes),
+  };
+};
+
+module.exports = connect(mapStateToProps)(ChangesApp);
