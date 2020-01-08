@@ -174,7 +174,11 @@ private:
   int32_t mMouseScreenY;
 
   bool mShowingTooltip;
+
   bool mTooltipShownOnce;
+
+  
+  nsString mLastShownTooltipText;
 
   
   
