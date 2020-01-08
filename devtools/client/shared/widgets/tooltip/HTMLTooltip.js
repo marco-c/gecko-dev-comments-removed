@@ -489,7 +489,7 @@ HTMLTooltip.prototype = {
       anchorRect = this._convertToScreenRect(anchorRect);
     }
 
-    const { viewportRect, windowRect } = this._getBoundingRects();
+    const { viewportRect, windowRect } = this._getBoundingRects(anchorRect);
 
     
     let preferredWidth;
@@ -621,7 +621,13 @@ HTMLTooltip.prototype = {
 
 
 
-  _getBoundingRects: function() {
+
+
+
+
+
+
+  _getBoundingRects: function(anchorRect) {
     let viewportRect;
     let windowRect;
 
@@ -660,6 +666,25 @@ HTMLTooltip.prototype = {
         width: outerWidth,
         height: outerHeight,
       };
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (anchorRect.left > viewportRect.right) {
+        const diffWidth = windowRect.right - viewportRect.right;
+        viewportRect.right += diffWidth;
+        viewportRect.width += diffWidth;
+      }
+      if (anchorRect.right < viewportRect.left) {
+        const diffWidth = viewportRect.left - windowRect.left;
+        viewportRect.left -= diffWidth;
+        viewportRect.width += diffWidth;
+      }
     } else {
       viewportRect = windowRect =
         this.doc.documentElement.getBoundingClientRect();
