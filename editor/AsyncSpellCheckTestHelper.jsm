@@ -39,8 +39,7 @@ function onSpellCheck(editableElement, callback) {
     
     
     var isc = editor.getInlineSpellChecker(false);
-  }
-  catch (err) {
+  } catch (err) {
     
     
     
@@ -77,4 +76,4 @@ function onSpellCheck(editableElement, callback) {
     os.removeObserver(observe, SPELL_CHECK_ENDED_TOPIC);
     callback();
   }, 0, Ci.nsITimer.TYPE_REPEATING_SLACK);
-};
+}
