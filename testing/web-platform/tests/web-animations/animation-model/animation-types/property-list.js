@@ -679,18 +679,6 @@ const gCSSProperties = {
       { type: 'discrete', options: [ [ '". . a b" ". .a b"', 'none' ] ] }
     ]
   },
-  'grid-template-columns': {
-    
-    types: [
-      { type: 'discrete', options: [ [ '1px', '5px' ] ] }
-    ]
-  },
-  'grid-template-rows': {
-    
-    types: [
-      { type: 'discrete', options: [ [ '1px', '5px' ] ] }
-    ]
-  },
   'height': {
     
     types: [

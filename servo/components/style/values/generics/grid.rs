@@ -151,6 +151,7 @@ impl Parse for GridLine<specified::Integer> {
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
+    Animate,
     Clone,
     Copy,
     Debug,
@@ -172,7 +173,16 @@ pub enum TrackKeyword {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum TrackBreadth<L> {
     
     Breadth(L),
@@ -481,12 +491,21 @@ impl<L: Clone> TrackRepeat<L, specified::Integer> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss
+)]
 pub enum TrackListValue<LengthPercentage, Integer> {
     
-    TrackSize(TrackSize<LengthPercentage>),
+    TrackSize(#[animation(field_bound)] TrackSize<LengthPercentage>),
     
-    TrackRepeat(TrackRepeat<LengthPercentage, Integer>),
+    TrackRepeat(#[animation(field_bound)] TrackRepeat<LengthPercentage, Integer>),
 }
 
 
@@ -692,13 +711,24 @@ impl ToCss for LineNameList {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss
+)]
 pub enum GridTemplateComponent<L, I> {
     
     None,
     
-    TrackList(#[compute(field_bound)] TrackList<L, I>),
+    TrackList(#[animation(field_bound)] #[compute(field_bound)] TrackList<L, I>),
     
+    
+    #[animation(error)]
     Subgrid(LineNameList),
 }
 
