@@ -92,13 +92,6 @@ const MATCH_ANYWHERE_UNMODIFIED = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE_UNMOD
 const BEHAVIOR_BOOKMARK = Ci.mozIPlacesAutoComplete.BEHAVIOR_BOOKMARK;
 const SQLITE_MAX_VARIABLE_NUMBER = 999;
 
-
-
-const ACCEPTED_ANNOTATIONS = [
-  PlacesUtils.LMANNO_FEEDURI,
-  PlacesUtils.LMANNO_SITEURI,
-];
-
 var Bookmarks = Object.freeze({
   
 
@@ -443,8 +436,6 @@ var Bookmarks = Object.freeze({
                                         (b.dateAdded && b.lastModified >= b.dateAdded) },
           index: { replaceWith: indexToUse++ },
           source: { replaceWith: source },
-          annos: { validIf: b => false,
-                   fixup: b => b.annos = b.annos.filter(anno => ACCEPTED_ANNOTATIONS.includes(anno.name))},
           keyword: { validIf: b => b.type == TYPE_BOOKMARK },
           charset: { validIf: b => b.type == TYPE_BOOKMARK },
           postData: { validIf: b => b.type == TYPE_BOOKMARK },
@@ -568,9 +559,6 @@ var Bookmarks = Object.freeze({
           isTagging: false,
         }));
 
-        
-        
-        
         try {
           await handleBookmarkItemSpecialData(itemId, item);
         } catch (ex) {

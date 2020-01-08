@@ -235,15 +235,6 @@ private:
 
   ~nsNavBookmarks();
 
-  
-
-
-
-
-
-
-  bool IsLivemark(int64_t aFolderId);
-
   nsresult AdjustIndices(int64_t aFolder,
                          int32_t aStartIndex,
                          int32_t aEndIndex,

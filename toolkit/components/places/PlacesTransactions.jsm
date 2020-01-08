@@ -168,9 +168,6 @@ var EXPORTED_SYMBOLS = ["PlacesTransactions"];
 
 
 
-
-
-
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -899,7 +896,7 @@ DefineTransaction.verifyInput = function(input,
 
 
 
-DefineTransaction.defineInputProps(["url", "feedUrl", "siteUrl"],
+DefineTransaction.defineInputProps(["url"],
                                    DefineTransaction.urlValidate, null);
 DefineTransaction.defineInputProps(["guid", "parentGuid", "newParentGuid"],
                                    DefineTransaction.guidValidate);
@@ -1389,18 +1386,13 @@ PT.Remove.prototype = {
     }
 
     let removeThem = async function() {
-      let bmsToRemove = [];
-      for (let info of removedItems) {
-        if (info.annos &&
-            info.annos.some(anno => anno.name == PlacesUtils.LMANNO_FEEDURI)) {
-          await PlacesUtils.livemarks.removeLivemark({ guid: info.guid });
-        } else {
-          bmsToRemove.push({guid: info.guid});
-        }
-      }
-
-      if (bmsToRemove.length) {
-        await PlacesUtils.bookmarks.remove(bmsToRemove);
+      if (removedItems.length) {
+        
+        
+        
+        await PlacesUtils.bookmarks.remove(removedItems.map(info => {
+          return { guid: info.guid};
+        }));
       }
     };
     await removeThem();
