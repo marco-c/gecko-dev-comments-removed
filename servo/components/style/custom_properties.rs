@@ -553,7 +553,7 @@ fn parse_var_function<'i, 't>(
     let name = parse_name(&name).map_err(|()| {
         input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name.clone()))
     })?;
-    if input.r#try(|input| input.expect_comma()).is_ok() {
+    if input.try(|input| input.expect_comma()).is_ok() {
         parse_fallback(input)?;
     }
     if let Some(refs) = references {
@@ -566,10 +566,10 @@ fn parse_env_function<'i, 't>(
     input: &mut Parser<'i, 't>,
     references: Option<&mut VarOrEnvReferences>,
 ) -> Result<(), ParseError<'i>> {
-    // TODO(emilio): This should be <custom-ident> per spec, but no other
-    // browser does that, see https://github.com/w3c/csswg-drafts/issues/3262.
+    
+    
     input.expect_ident()?;
-    if input.r#try(|input| input.expect_comma()).is_ok() {
+    if input.try(|input| input.expect_comma()).is_ok() {
         parse_fallback(input)?;
     }
     if let Some(references) = references {
@@ -578,8 +578,8 @@ fn parse_env_function<'i, 't>(
     Ok(())
 }
 
-/// A struct that takes care of encapsulating the cascade process for custom
-/// properties.
+
+
 pub struct CustomPropertiesBuilder<'a> {
     seen: PrecomputedHashSet<&'a Name>,
     may_have_cycles: bool,
@@ -589,7 +589,7 @@ pub struct CustomPropertiesBuilder<'a> {
 }
 
 impl<'a> CustomPropertiesBuilder<'a> {
-    /// Create a new builder, inheriting from a given custom properties map.
+    
     pub fn new(
         inherited: Option<&'a Arc<CustomPropertiesMap>>,
         environment: &'a CssEnvironment,
@@ -603,7 +603,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
         }
     }
 
-    /// Cascade a given custom property declaration.
+    
     pub fn cascade(&mut self, name: &'a Name, specified_value: &CustomDeclarationValue) {
         let was_already_present = !self.seen.insert(name);
         if was_already_present {
@@ -627,9 +627,9 @@ impl<'a> CustomPropertiesBuilder<'a> {
                 let has_references = !unparsed_value.references.is_empty();
                 self.may_have_cycles |= has_references;
 
-                // If the variable value has no references and it has an
-                // environment variable here, perform substitution here instead
-                // of forcing a full traversal in `substitute_all` afterwards.
+                
+                
+                
                 let value = if !has_references && unparsed_value.references_environment {
                     let result =
                         substitute_references_in_value(unparsed_value, &map, &self.environment);
@@ -649,7 +649,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
                 CSSWideKeyword::Initial => {
                     map.remove(name);
                 },
-                // handled in value_may_affect_style
+                
                 CSSWideKeyword::Unset | CSSWideKeyword::Inherit => unreachable!(),
             },
         }
@@ -659,9 +659,9 @@ impl<'a> CustomPropertiesBuilder<'a> {
         match *value {
             CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Unset) |
             CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Inherit) => {
-                // Custom properties are inherited by default. So
-                // explicit 'inherit' or 'unset' means we can just use
-                // any existing value in the inherited CustomPropertiesMap.
+                
+                
+                
                 return false;
             },
             _ => {},
@@ -675,13 +675,13 @@ impl<'a> CustomPropertiesBuilder<'a> {
 
         match (existing_value, value) {
             (None, &CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Initial)) => {
-                // The initial value of a custom property is the same as it
-                // not existing in the map.
+                
+                
                 return false;
             },
             (Some(existing_value), &CustomDeclarationValue::Value(ref specified_value)) => {
-                // Don't bother overwriting an existing inherited value with
-                // the same specified value.
+                
+                
                 if existing_value == specified_value {
                     return false;
                 }
@@ -692,12 +692,12 @@ impl<'a> CustomPropertiesBuilder<'a> {
         true
     }
 
-    /// Returns the final map of applicable custom properties.
-    ///
-    /// If there was any specified property, we've created a new map and now we
-    /// need to remove any potential cycles, and wrap it in an arc.
-    ///
-    /// Otherwise, just use the inherited custom properties map.
+    
+    
+    
+    
+    
+    
     pub fn build(mut self) -> Option<Arc<CustomPropertiesMap>> {
         let mut map = match self.custom_properties.take() {
             Some(m) => m,
@@ -710,71 +710,71 @@ impl<'a> CustomPropertiesBuilder<'a> {
     }
 }
 
-/// Resolve all custom properties to either substituted or invalid.
-///
-/// It does cycle dependencies removal at the same time as substitution.
-fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: &CssEnvironment) {
-    // The cycle dependencies removal in this function is a variant
-    // of Tarjan's algorithm. It is mostly based on the pseudo-code
-    // listed in
-    // https://en.wikipedia.org/w/index.php?
-    // title=Tarjan%27s_strongly_connected_components_algorithm&oldid=801728495
 
-    /// Struct recording necessary information for each variable.
+
+
+fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: &CssEnvironment) {
+    
+    
+    
+    
+    
+
+    
     struct VarInfo {
-        /// The name of the variable. It will be taken to save addref
-        /// when the corresponding variable is popped from the stack.
-        /// This also serves as a mark for whether the variable is
-        /// currently in the stack below.
+        
+        
+        
+        
         name: Option<Name>,
-        /// If the variable is in a dependency cycle, lowlink represents
-        /// a smaller index which corresponds to a variable in the same
-        /// strong connected component, which is known to be accessible
-        /// from this variable. It is not necessarily the root, though.
+        
+        
+        
+        
         lowlink: usize,
     }
-    /// Context struct for traversing the variable graph, so that we can
-    /// avoid referencing all the fields multiple times.
+    
+    
     struct Context<'a> {
-        /// Number of variables visited. This is used as the order index
-        /// when we visit a new unresolved variable.
+        
+        
         count: usize,
-        /// The map from custom property name to its order index.
+        
         index_map: PrecomputedHashMap<Name, usize>,
-        /// Information of each variable indexed by the order index.
+        
         var_info: SmallVec<[VarInfo; 5]>,
-        /// The stack of order index of visited variables. It contains
-        /// all unfinished strong connected components.
+        
+        
         stack: SmallVec<[usize; 5]>,
         map: &'a mut CustomPropertiesMap,
-        /// The environment to substitute `env()` variables.
+        
         environment: &'a CssEnvironment,
     }
 
-    /// This function combines the traversal for cycle removal and value
-    /// substitution. It returns either a signal None if this variable
-    /// has been fully resolved (to either having no reference or being
-    /// marked invalid), or the order index for the given name.
-    ///
-    /// When it returns, the variable corresponds to the name would be
-    /// in one of the following states:
-    /// * It is still in context.stack, which means it is part of an
-    ///   potentially incomplete dependency circle.
-    /// * It has been removed from the map.  It can be either that the
-    ///   substitution failed, or it is inside a dependency circle.
-    ///   When this function removes a variable from the map because
-    ///   of dependency circle, it would put all variables in the same
-    ///   strong connected component to the set together.
-    /// * It doesn't have any reference, because either this variable
-    ///   doesn't have reference at all in specified value, or it has
-    ///   been completely resolved.
-    /// * There is no such variable at all.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn traverse<'a>(name: Name, context: &mut Context<'a>) -> Option<usize> {
-        // Some shortcut checks.
+        
         let (name, value) = {
             let value = context.map.get(&name)?;
 
-            // Nothing to resolve.
+            
             if value.references.is_empty() {
                 debug_assert!(
                     !value.references_environment,
@@ -783,7 +783,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
                 return None;
             }
 
-            // Whether this variable has been visited in this traversal.
+            
             let key;
             match context.index_map.entry(name) {
                 Entry::Occupied(entry) => {
@@ -795,12 +795,12 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
                 },
             }
 
-            // Hold a strong reference to the value so that we don't
-            // need to keep reference to context.map.
+            
+            
             (key, value.clone())
         };
 
-        // Add new entry to the information table.
+        
         let index = context.count;
         context.count += 1;
         debug_assert_eq!(index, context.var_info.len());
@@ -815,40 +815,40 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
         for next in value.references.iter() {
             let next_index = match traverse(next.clone(), context) {
                 Some(index) => index,
-                // There is nothing to do if the next variable has been
-                // fully resolved at this point.
+                
+                
                 None => {
                     continue;
                 },
             };
             let next_info = &context.var_info[next_index];
             if next_index > index {
-                // The next variable has a larger index than us, so it
-                // must be inserted in the recursive call above. We want
-                // to get its lowlink.
+                
+                
+                
                 lowlink = cmp::min(lowlink, next_info.lowlink);
             } else if next_index == index {
                 self_ref = true;
             } else if next_info.name.is_some() {
-                // The next variable has a smaller order index and it is
-                // in the stack, so we are at the same component.
+                
+                
                 lowlink = cmp::min(lowlink, next_index);
             }
         }
 
         context.var_info[index].lowlink = lowlink;
         if lowlink != index {
-            // This variable is in a loop, but it is not the root of
-            // this strong connected component. We simply return for
-            // now, and the root would remove it from the map.
-            //
-            // This cannot be removed from the map here, because
-            // otherwise the shortcut check at the beginning of this
-            // function would return the wrong value.
+            
+            
+            
+            
+            
+            
+            
             return Some(index);
         }
 
-        // This is the root of a strong-connected component.
+        
         let mut in_loop = self_ref;
         let name;
         loop {
@@ -857,9 +857,9 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
                 .pop()
                 .expect("The current variable should still be in stack");
             let var_info = &mut context.var_info[var_index];
-            // We should never visit the variable again, so it's safe
-            // to take the name away, so that we don't do additional
-            // reference count.
+            
+            
+            
             let var_name = var_info
                 .name
                 .take()
@@ -868,21 +868,21 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
                 name = var_name;
                 break;
             }
-            // Anything here is in a loop which can traverse to the
-            // variable we are handling, so remove it from the map, it's invalid
-            // at computed-value time.
+            
+            
+            
             context.map.remove(&var_name);
             in_loop = true;
         }
         if in_loop {
-            // This variable is in loop. Resolve to invalid.
+            
             context.map.remove(&name);
             return None;
         }
 
-        // Now we have shown that this variable is not in a loop, and
-        // all of its dependencies should have been resolved. We can
-        // start substitution now.
+        
+        
+        
         let result = substitute_references_in_value(&value, &context.map, &context.environment);
 
         match result {
@@ -894,12 +894,12 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
             },
         }
 
-        // All resolved, so return the signal value.
+        
         None
     }
 
-    // We have to clone the names so that we can mutably borrow the map
-    // in the context we create for traversal.
+    
+    
     let names = custom_properties_map.index.clone();
     for name in names.into_iter() {
         let mut context = Context {
@@ -914,7 +914,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
     }
 }
 
-/// Replace `var()` and `env()` functions in a pre-existing variable value.
+
 fn substitute_references_in_value<'i>(
     value: &'i VariableValue,
     custom_properties: &CustomPropertiesMap,
@@ -939,16 +939,16 @@ fn substitute_references_in_value<'i>(
     Ok(computed_value)
 }
 
-/// Replace `var()` functions in an arbitrary bit of input.
-///
-/// If the variable has its initial value, the callback should return `Err(())`
-/// and leave `partial_computed_value` unchanged.
-///
-/// Otherwise, it should push the value of the variable (with its own `var()` functions replaced)
-/// to `partial_computed_value` and return `Ok(last_token_type of what was pushed)`
-///
-/// Return `Err(())` if `input` is invalid at computed-value time.
-/// or `Ok(last_token_type that was pushed to partial_computed_value)` otherwise.
+
+
+
+
+
+
+
+
+
+
 fn substitute_block<'i, 't>(
     input: &mut Parser<'i, 't>,
     position: &mut (SourcePosition, TokenSerializationType),
@@ -960,7 +960,7 @@ fn substitute_block<'i, 't>(
     let mut set_position_at_next_iteration = false;
     loop {
         let before_this_token = input.position();
-        // FIXME: remove clone() when borrows are non-lexical
+        
         let next = input
             .next_including_whitespace_and_comments()
             .map(|t| t.clone());
@@ -990,7 +990,7 @@ fn substitute_block<'i, 't>(
                     last_token_type,
                 );
                 input.parse_nested_block(|input| {
-                    // parse_var_function() / parse_env_function() ensure neither .unwrap() will fail.
+                    
                     let name = {
                         let name = input.expect_ident().unwrap();
                         if is_env {
@@ -1009,16 +1009,16 @@ fn substitute_block<'i, 't>(
                     if let Some(v) = value {
                         last_token_type = v.last_token_type;
                         partial_computed_value.push_variable(v);
-                        // Skip over the fallback, as `parse_nested_block` would return `Err`
-                        // if we don't consume all of `input`.
-                        // FIXME: Add a specialized method to cssparser to do this with less work.
+                        
+                        
+                        
                         while input.next().is_ok() {}
                     } else {
                         input.expect_comma()?;
                         let after_comma = input.state();
                         let first_token_type = input
                             .next_including_whitespace_and_comments()
-                            // parse_var_function() ensures that .unwrap() will not fail.
+                            
                             .unwrap()
                             .serialization_type();
                         input.reset(&after_comma);
@@ -1049,17 +1049,17 @@ fn substitute_block<'i, 't>(
                         env,
                     )
                 })?;
-                // It's the same type for CloseCurlyBracket and CloseSquareBracket.
+                
                 last_token_type = Token::CloseParenthesis.serialization_type();
             },
 
             _ => last_token_type = token.serialization_type(),
         }
     }
-    // FIXME: deal with things being implicitly closed at the end of the input. E.g.
-    // ```html
-    // <div style="--color: rgb(0,0,0">
-    // <p style="background: var(--color) var(--image) top left; --image: url('a.png"></p>
+    
+    
+    
+    
     
     
     Ok(last_token_type)

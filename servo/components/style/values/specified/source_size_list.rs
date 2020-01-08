@@ -92,7 +92,7 @@ impl Parse for SourceSizeOrLength {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(size) = input.r#try(|input| SourceSize::parse(context, input)) {
+        if let Ok(size) = input.try(|input| SourceSize::parse(context, input)) {
             return Ok(SourceSizeOrLength::SourceSize(size));
         }
 
@@ -102,9 +102,9 @@ impl Parse for SourceSizeOrLength {
 }
 
 impl SourceSizeList {
-    /// NOTE(emilio): This doesn't match the grammar in the spec, see:
-    ///
-    /// https://html.spec.whatwg.org/multipage/#parsing-a-sizes-attribute
+    
+    
+    
     pub fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Self {
         let mut source_sizes = vec![];
 

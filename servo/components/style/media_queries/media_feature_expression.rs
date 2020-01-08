@@ -221,14 +221,14 @@ fn consume_operation_or_colon(input: &mut Parser) -> Result<Option<Operator>, ()
     Ok(Some(match first_delim {
         '=' => Operator::Equal,
         '>' => {
-            if input.r#try(|i| i.expect_delim('=')).is_ok() {
+            if input.try(|i| i.expect_delim('=')).is_ok() {
                 Operator::GreaterThanEqual
             } else {
                 Operator::GreaterThan
             }
         },
         '<' => {
-            if input.r#try(|i| i.expect_delim('=')).is_ok() {
+            if input.try(|i| i.expect_delim('=')).is_ok() {
                 Operator::LessThanEqual
             } else {
                 Operator::LessThan
@@ -251,11 +251,11 @@ impl MediaFeatureExpression {
         }
     }
 
-    /// Parse a media expression of the form:
-    ///
-    /// ```
-    /// (media-feature: media-value)
-    /// ```
+    
+    
+    
+    
+    
     pub fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -264,8 +264,8 @@ impl MediaFeatureExpression {
         input.parse_nested_block(|input| Self::parse_in_parenthesis_block(context, input))
     }
 
-    /// Parse a media feature expression where we've already consumed the
-    /// parenthesis.
+    
+    
     pub fn parse_in_parenthesis_block<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -275,7 +275,7 @@ impl MediaFeatureExpression {
         #[cfg(feature = "servo")]
         use crate::servo::media_queries::MEDIA_FEATURES;
 
-        // FIXME: remove extra indented block when lifetimes are non-lexical
+        
         let feature;
         let range;
         {
@@ -350,15 +350,15 @@ impl MediaFeatureExpression {
             }
         }
 
-        let operator = input.r#try(consume_operation_or_colon);
+        let operator = input.try(consume_operation_or_colon);
         let operator = match operator {
             Err(..) => {
-                // If there's no colon, this is a media query of the
-                // form '(<feature>)', that is, there's no value
-                // specified.
-                //
-                // Gecko doesn't allow ranged expressions without a
-                // value, so just reject them here too.
+                
+                
+                
+                
+                
+                
                 if range.is_some() {
                     return Err(
                         input.new_custom_error(StyleParseErrorKind::RangedExpressionWithNoValue)
@@ -399,7 +399,7 @@ impl MediaFeatureExpression {
         Ok(Self::new(feature, Some(value), range_or_operator))
     }
 
-    /// Returns whether this media query evaluates to true for the given device.
+    
     pub fn matches(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
         let value = self.value.as_ref();
 
@@ -449,33 +449,33 @@ impl MediaFeatureExpression {
     }
 }
 
-/// A value found or expected in a media expression.
-///
-/// FIXME(emilio): How should calc() serialize in the Number / Integer /
-/// BoolInteger / IntRatio case, as computed or as specified value?
-///
-/// If the first, this would need to store the relevant values.
-///
-/// See: https://github.com/w3c/csswg-drafts/issues/1968
+
+
+
+
+
+
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum MediaExpressionValue {
-    /// A length.
+    
     Length(Length),
-    /// A (non-negative) integer.
+    
     Integer(u32),
-    /// A floating point value.
+    
     Float(CSSFloat),
-    /// A boolean value, specified as an integer (i.e., either 0 or 1).
+    
     BoolInteger(bool),
-    /// Two integers separated by '/', with optional whitespace on either side
-    /// of the '/'.
+    
+    
     IntRatio(AspectRatio),
-    /// A resolution.
+    
     Resolution(Resolution),
-    /// An enumerated value, defined by the variant keyword table in the
-    /// feature's `mData` member.
+    
+    
     Enumerated(KeywordDiscriminant),
-    /// An identifier.
+    
     Ident(Atom),
 }
 

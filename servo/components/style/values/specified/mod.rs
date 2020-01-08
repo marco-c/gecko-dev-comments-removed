@@ -359,14 +359,14 @@ impl NumberOrPercentage {
         input: &mut Parser<'i, 't>,
         type_: AllowedNumericType,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(per) = input.r#try(|i| Percentage::parse_with_clamping_mode(context, i, type_)) {
+        if let Ok(per) = input.try(|i| Percentage::parse_with_clamping_mode(context, i, type_)) {
             return Ok(NumberOrPercentage::Percentage(per));
         }
 
         parse_number_with_clamping_mode(context, input, type_).map(NumberOrPercentage::Number)
     }
 
-    /// Parse a non-negative number or percentage.
+    
     pub fn parse_non_negative<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -404,8 +404,8 @@ impl ToComputedValue for Opacity {
     fn to_computed_value(&self, context: &Context) -> CSSFloat {
         let value = self.0.to_computed_value(context);
         if context.for_smil_animation {
-            // SMIL expects to be able to interpolate between out-of-range
-            // opacity values.
+            
+            
             value
         } else {
             value.min(1.0).max(0.0)
@@ -418,9 +418,9 @@ impl ToComputedValue for Opacity {
     }
 }
 
-/// A specified `<integer>`, optionally coming from a `calc()` expression.
-///
-/// <https://drafts.csswg.org/css-values/#integers>
+
+
+
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, PartialOrd)]
 pub struct Integer {
     value: CSSInteger,
@@ -434,7 +434,7 @@ impl One for Integer {
     }
 }
 
-// This is not great, because it loses calc-ness, but it's necessary for One.
+
 impl ::std::ops::Mul<Integer> for Integer {
     type Output = Self;
 
@@ -444,7 +444,7 @@ impl ::std::ops::Mul<Integer> for Integer {
 }
 
 impl Integer {
-    /// Trivially constructs a new `Integer` value.
+    
     pub fn new(val: CSSInteger) -> Self {
         Integer {
             value: val,
@@ -452,12 +452,12 @@ impl Integer {
         }
     }
 
-    /// Returns the integer value associated with this value.
+    
     pub fn value(&self) -> CSSInteger {
         self.value
     }
 
-    /// Trivially constructs a new integer value from a `calc()` expression.
+    
     fn from_calc(val: CSSInteger) -> Self {
         Integer {
             value: val,
@@ -473,7 +473,7 @@ impl Parse for Integer {
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
 
-        // FIXME: remove early returns when lifetimes are non-lexical
+        
         match *input.next()? {
             Token::Number {
                 int_value: Some(v), ..
@@ -489,25 +489,25 @@ impl Parse for Integer {
 }
 
 impl Integer {
-    /// Parse an integer value which is at least `min`.
+    
     pub fn parse_with_minimum<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         min: i32,
     ) -> Result<Integer, ParseError<'i>> {
         match Integer::parse(context, input) {
-            // FIXME(emilio): The spec asks us to avoid rejecting it at parse
-            // time except until computed value time.
-            //
-            // It's not totally clear it's worth it though, and no other browser
-            // does this.
+            
+            
+            
+            
+            
             Ok(value) if value.value() >= min => Ok(value),
             Ok(_value) => Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
             Err(e) => Err(e),
         }
     }
 
-    /// Parse a non-negative integer.
+    
     pub fn parse_non_negative<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -515,7 +515,7 @@ impl Integer {
         Integer::parse_with_minimum(context, input, 0)
     }
 
-    /// Parse a positive integer (>= 1).
+    
     pub fn parse_positive<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -556,7 +556,7 @@ impl ToCss for Integer {
 
 impl SpecifiedValueInfo for Integer {}
 
-/// A wrapper of Integer, with value >= 1.
+
 pub type PositiveInteger = GreaterThanOrEqualToOne<Integer>;
 
 impl Parse for PositiveInteger {
@@ -569,33 +569,33 @@ impl Parse for PositiveInteger {
     }
 }
 
-/// The specified value of a grid `<track-breadth>`
+
 pub type TrackBreadth = GenericTrackBreadth<LengthOrPercentage>;
 
-/// The specified value of a grid `<track-size>`
+
 pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
 
-/// The specified value of a grid `<track-list>`
-/// (could also be `<auto-track-list>` or `<explicit-track-list>`)
+
+
 pub type TrackList = GenericTrackList<LengthOrPercentage, Integer>;
 
-/// The specified value of a `<grid-line>`.
+
 pub type GridLine = GenericGridLine<Integer>;
 
-/// `<grid-template-rows> | <grid-template-columns>`
+
 pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage, Integer>;
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo)]
-/// rect(<top>, <left>, <bottom>, <right>) used by clip and image-region
+
 #[css(function = "rect")]
 pub struct ClipRect {
-    /// <top> (<length> | <auto>)
+    
     pub top: Option<Length>,
-    /// <right> (<length> | <auto>)
+    
     pub right: Option<Length>,
-    /// <bottom> (<length> | <auto>)
+    
     pub bottom: Option<Length>,
-    /// <left> (<length> | <auto>)
+    
     pub left: Option<Length>,
 }
 
@@ -689,7 +689,7 @@ impl Parse for ClipRect {
 }
 
 impl ClipRect {
-    /// Parses a rect(<top>, <left>, <bottom>, <right>), allowing quirks.
+    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -703,7 +703,7 @@ impl ClipRect {
             allow_quirks: AllowQuirks,
         ) -> Result<Option<Length>, ParseError<'i>> {
             if input
-                .r#try(|input| input.expect_ident_matching("auto"))
+                .try(|input| input.expect_ident_matching("auto"))
                 .is_ok()
             {
                 Ok(None)
@@ -720,7 +720,7 @@ impl ClipRect {
             let bottom;
             let left;
 
-            if input.r#try(|input| input.expect_comma()).is_ok() {
+            if input.try(|input| input.expect_comma()).is_ok() {
                 right = parse_argument(context, input, allow_quirks)?;
                 input.expect_comma()?;
                 bottom = parse_argument(context, input, allow_quirks)?;
@@ -741,17 +741,17 @@ impl ClipRect {
     }
 }
 
-/// rect(...) | auto
+
 pub type ClipRectOrAuto = Either<ClipRect, Auto>;
 
 impl ClipRectOrAuto {
-    /// Parses a ClipRect or Auto, allowing quirks.
+    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(v) = input.r#try(|i| ClipRect::parse_quirky(context, i, allow_quirks)) {
+        if let Ok(v) = input.try(|i| ClipRect::parse_quirky(context, i, allow_quirks)) {
             Ok(Either::First(v))
         } else {
             Auto::parse(context, input).map(Either::Second)
@@ -759,31 +759,31 @@ impl ClipRectOrAuto {
     }
 }
 
-/// Whether quirks are allowed in this context.
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum AllowQuirks {
-    /// Quirks are allowed.
+    
     Yes,
-    /// Quirks are not allowed.
+    
     No,
 }
 
 impl AllowQuirks {
-    /// Returns `true` if quirks are allowed in this context.
+    
     pub fn allowed(self, quirks_mode: QuirksMode) -> bool {
         self == AllowQuirks::Yes && quirks_mode == QuirksMode::Quirks
     }
 }
 
-/// An attr(...) rule
-///
-/// `[namespace? `|`]? ident`
+
+
+
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 #[css(function)]
 pub struct Attr {
-    /// Optional namespace prefix and URL.
+    
     pub namespace: Option<(Prefix, Namespace)>,
-    /// Attribute name
+    
     pub attribute: Atom,
 }
 
@@ -797,7 +797,7 @@ impl Parse for Attr {
     }
 }
 
-/// Get the Namespace for a given prefix from the namespace map.
+
 fn get_namespace_for_prefix(prefix: &Prefix, context: &ParserContext) -> Option<Namespace> {
     context
         .namespaces
@@ -808,20 +808,20 @@ fn get_namespace_for_prefix(prefix: &Prefix, context: &ParserContext) -> Option<
 }
 
 impl Attr {
-    /// Parse contents of attr() assuming we have already parsed `attr` and are
-    /// within a parse_nested_block()
+    
+    
     pub fn parse_function<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Attr, ParseError<'i>> {
-        // Syntax is `[namespace? `|`]? ident`
-        // no spaces allowed
-        let first = input.r#try(|i| i.expect_ident_cloned()).ok();
-        if let Ok(token) = input.r#try(|i| i.next_including_whitespace().map(|t| t.clone())) {
+        
+        
+        let first = input.try(|i| i.expect_ident_cloned()).ok();
+        if let Ok(token) = input.try(|i| i.next_including_whitespace().map(|t| t.clone())) {
             match token {
                 Token::Delim('|') => {
                     let location = input.current_source_location();
-                    // must be followed by an ident
+                    
                     let second_token = match *input.next_including_whitespace()? {
                         Token::Ident(ref second) => second,
                         ref t => return Err(location.new_unexpected_token_error(t.clone())),
@@ -845,8 +845,8 @@ impl Attr {
                         attribute: Atom::from(second_token.as_ref()),
                     });
                 },
-                // In the case of attr(foobar    ) we don't want to error out
-                // because of the trailing whitespace
+                
+                
                 Token::WhiteSpace(..) => {},
                 ref t => return Err(input.new_unexpected_token_error(t.clone())),
             }

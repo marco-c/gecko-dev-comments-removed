@@ -265,7 +265,7 @@ fn parse_shorthand<'i, 't>(
     input: &mut Parser<'i, 't>,
 ) -> Result<(ViewportLength, ViewportLength), ParseError<'i>> {
     let min = ViewportLength::parse(context, input)?;
-    match input.r#try(|i| ViewportLength::parse(context, i)) {
+    match input.try(|i| ViewportLength::parse(context, i)) {
         Err(_) => Ok((min.clone(), min)),
         Ok(max) => Ok((min, max)),
     }
@@ -289,8 +289,8 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for ViewportRuleParser<'a, 'b> {
     ) -> Result<Vec<ViewportDescriptorDeclaration>, ParseError<'i>> {
         macro_rules! declaration {
             ($declaration:ident($parse:expr)) => {
-                declaration!($declaration(value: r#try!($parse(input)),
-                                          important: input.r#try(parse_important).is_ok()))
+                declaration!($declaration(value: try!($parse(input)),
+                                          important: input.try(parse_important).is_ok()))
             };
             ($declaration:ident(value: $value:expr, important: $important:expr)) => {
                 ViewportDescriptorDeclaration::new(
@@ -306,7 +306,7 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for ViewportRuleParser<'a, 'b> {
             };
             (shorthand -> [$min:ident, $max:ident]) => {{
                 let shorthand = parse_shorthand(self.context, input)?;
-                let important = input.r#try(parse_important).is_ok();
+                let important = input.try(parse_important).is_ok();
 
                 Ok(vec![
                     declaration!($min(value: shorthand.0, important: important)),
@@ -332,20 +332,20 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for ViewportRuleParser<'a, 'b> {
     }
 }
 
-/// A `@viewport` rule.
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct ViewportRule {
-    /// The declarations contained in this @viewport rule.
+    
     pub declarations: Vec<ViewportDescriptorDeclaration>,
 }
 
-/// Whitespace as defined by DEVICE-ADAPT § 9.2
-// TODO: should we just use whitespace as defined by HTML5?
+
+
 const WHITESPACE: &'static [char] = &['\t', '\n', '\r', ' '];
 
-/// Separators as defined by DEVICE-ADAPT § 9.2
-// need to use \x2c instead of ',' due to test-tidy
+
+
 const SEPARATOR: &'static [char] = &['\x2c', ';'];
 
 #[inline]
@@ -354,9 +354,9 @@ fn is_whitespace_separator_or_equals(c: &char) -> bool {
 }
 
 impl ViewportRule {
-    /// Parse a single @viewport rule.
-    ///
-    /// TODO(emilio): This could use the `Parse` trait now.
+    
+    
+    
     pub fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -461,8 +461,8 @@ impl ViewportRule {
             }
         }
 
-        // DEVICE-ADAPT § 9.4 - The 'width' and 'height' properties
-        // http://dev.w3.org/csswg/css-device-adapt/#width-and-height-properties
+        
+        
         if !has_width && has_zoom {
             if has_height {
                 push_descriptor!(MinWidth(ViewportLength::Specified(
@@ -504,7 +504,7 @@ impl ViewportRule {
                 .next()
         }
 
-        // <name> <whitespace>* '='
+        
         let end = match end_of_token(iter) {
             Some((end, c)) if WHITESPACE.contains(&c) => match skip_whitespace(iter) {
                 Some((_, c)) if c == '=' => end,
@@ -515,7 +515,7 @@ impl ViewportRule {
         };
         let name = &content[start..end];
 
-        // <whitespace>* <value>
+        
         let start = match skip_whitespace(iter) {
             Some((start, c)) if !SEPARATOR.contains(&c) => start,
             _ => return None,
@@ -530,7 +530,7 @@ impl ViewportRule {
 }
 
 impl ToCssWithGuard for ViewportRule {
-    // Serialization of ViewportRule is not specced.
+    
     fn to_css(&self, _guard: &SharedRwLockReadGuard, dest: &mut CssStringWriter) -> fmt::Result {
         dest.write_str("@viewport { ")?;
         let mut iter = self.declarations.iter();
