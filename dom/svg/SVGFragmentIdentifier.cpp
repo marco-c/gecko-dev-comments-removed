@@ -8,9 +8,9 @@
 
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGViewElement.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"  
 #include "SVGAnimatedTransformList.h"
-#include "nsCharSeparatedTokenizer.h"
 
 namespace mozilla {
 

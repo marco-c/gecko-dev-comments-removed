@@ -4,19 +4,20 @@
 
 
 
+#include "SVGTransformableElement.h"
+
+#include "DOMSVGAnimatedTransformList.h"
 #include "gfx2DGlue.h"
 #include "mozilla/dom/MutationEventBinding.h"
-#include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGGraphicsElementBinding.h"
-#include "mozilla/dom/SVGTransformableElement.h"
 #include "mozilla/dom/SVGMatrix.h"
+#include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
-#include "nsSVGDisplayableFrame.h"
-#include "mozilla/dom/SVGRect.h"
-#include "nsSVGUtils.h"
 #include "SVGContentUtils.h"
+#include "nsSVGDisplayableFrame.h"
+#include "nsSVGUtils.h"
 
 using namespace mozilla::gfx;
 

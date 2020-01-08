@@ -5,11 +5,12 @@
 
 
 #include "DOMSVGTransformList.h"
+
+#include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGTransform.h"
 #include "mozilla/dom/SVGMatrix.h"
-#include "SVGAnimatedTransformList.h"
-#include "SVGElement.h"
 #include "mozilla/dom/SVGTransformListBinding.h"
+#include "SVGAnimatedTransformList.h"
 #include "nsError.h"
 #include <algorithm>
 
