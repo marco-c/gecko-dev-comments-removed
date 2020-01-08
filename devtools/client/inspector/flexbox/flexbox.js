@@ -8,6 +8,7 @@ const { throttle } = require("devtools/client/inspector/shared/utils");
 
 const {
   clearFlexbox,
+  toggleFlexItemShown,
   updateFlexbox,
   updateFlexboxColor,
   updateFlexboxHighlighted,
@@ -31,6 +32,7 @@ class FlexboxInspector {
     this.onSetFlexboxOverlayColor = this.onSetFlexboxOverlayColor.bind(this);
     this.onSidebarSelect = this.onSidebarSelect.bind(this);
     this.onToggleFlexboxHighlighter = this.onToggleFlexboxHighlighter.bind(this);
+    this.onToggleFlexItemShown = this.onToggleFlexItemShown.bind(this);
     this.onUpdatePanel = this.onUpdatePanel.bind(this);
 
     this.init();
@@ -95,6 +97,7 @@ class FlexboxInspector {
     return {
       onSetFlexboxOverlayColor: this.onSetFlexboxOverlayColor,
       onToggleFlexboxHighlighter: this.onToggleFlexboxHighlighter,
+      onToggleFlexItemShown: this.onToggleFlexItemShown,
     };
   }
 
@@ -269,6 +272,19 @@ class FlexboxInspector {
 
 
 
+
+
+
+
+  onToggleFlexItemShown(node) {
+    this.highlighters.toggleFlexItemHighlighter(node);
+    this.store.dispatch(toggleFlexItemShown(node));
+  }
+
+  
+
+
+
   onUpdatePanel() {
     if (!this.isPanelVisible()) {
       return;
@@ -354,6 +370,7 @@ class FlexboxInspector {
 
       flexItems.push({
         actorID: flexItemFront.actorID,
+        shown: false,
         flexItemSizing: flexItemFront.flexItemSizing,
         nodeFront: itemNodeFront,
         properties: flexItemFront.properties,

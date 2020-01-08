@@ -9,19 +9,102 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
+const flexItemProperties = exports.flexItemProperties = {
+
+  
+  "flex-basis": PropTypes.string,
+
+  
+  "flex-grow": PropTypes.string,
+
+  
+  "min-height": PropTypes.string,
+
+  
+  "min-width": PropTypes.string,
+
+  
+  "max-height": PropTypes.string,
+
+  
+  "max-width": PropTypes.string,
+
+  
+  "height": PropTypes.number,
+
+  
+  "width": PropTypes.number,
+
+};
+
+
+
+
+const flexItemSizing = exports.flexItemSizing = {
+
+  
+  crossMaxSize: PropTypes.number,
+
+  
+  crossMinSize: PropTypes.number,
+
+  
+  
+  mainBaseSize: PropTypes.number,
+
+  
+  
+  mainDeltaSize: PropTypes.number,
+
+  
+  mainMaxSize: PropTypes.number,
+
+  
+  mainMinSize: PropTypes.number,
+
+};
+
+
+
+
 const flexItem = exports.flexItem = {
 
   
   actorID: PropTypes.string,
 
   
-  flexItemSizing: PropTypes.object,
+  flexItemSizing: PropTypes.shape(flexItemSizing),
 
   
   nodeFront: PropTypes.object,
 
   
-  properties: PropTypes.object,
+  properties: PropTypes.shape(flexItemProperties),
+
+  
+  shown: PropTypes.bool,
+
+};
+
+
+
+
+const flexContainerProperties = exports.flexContainerProperties = {
+
+  
+  "align-content": PropTypes.string,
+
+  
+  "align-items": PropTypes.string,
+
+  
+  "flex-direction": PropTypes.string,
+
+  
+  "flex-wrap": PropTypes.string,
+
+  
+  "justify-content": PropTypes.string,
 
 };
 
@@ -46,6 +129,6 @@ exports.flexbox = {
   nodeFront: PropTypes.object,
 
   
-  properties: PropTypes.object,
+  properties: PropTypes.shape(flexContainerProperties),
 
 };
