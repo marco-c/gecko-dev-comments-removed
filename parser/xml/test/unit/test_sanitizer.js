@@ -1,9 +1,9 @@
 function run_test() {
   
-  load("results.js");   
+  load("results.js"); 
 
   var ParserUtils =  Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
-  var sanitizeFlags = ParserUtils.SanitizerCidEmbedsOnly|ParserUtils.SanitizerDropForms|ParserUtils.SanitizerDropNonCSSPresentation;
+  var sanitizeFlags = ParserUtils.SanitizerCidEmbedsOnly | ParserUtils.SanitizerDropForms | ParserUtils.SanitizerDropNonCSSPresentation;
   
   
   
