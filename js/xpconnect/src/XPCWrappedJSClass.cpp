@@ -549,8 +549,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
     
     RootedObject obj(RootingCx(), self->GetJSObject());
-    nsIGlobalObject* nativeGlobal =
-      NativeGlobal(JS::GetNonCCWObjectGlobal(js::UncheckedUnwrap(obj)));
+    nsIGlobalObject* nativeGlobal = NativeGlobal(js::UncheckedUnwrap(obj));
     NS_ENSURE_TRUE(nativeGlobal, NS_ERROR_FAILURE);
     NS_ENSURE_TRUE(nativeGlobal->GetGlobalJSObject(), NS_ERROR_FAILURE);
     AutoEntryScript aes(nativeGlobal, "XPCWrappedJS QueryInterface",
@@ -947,8 +946,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
     
     RootedObject obj(RootingCx(), wrapper->GetJSObject());
-    nsIGlobalObject* nativeGlobal =
-      NativeGlobal(JS::GetNonCCWObjectGlobal(js::UncheckedUnwrap(obj)));
+    nsIGlobalObject* nativeGlobal = NativeGlobal(js::UncheckedUnwrap(obj));
     AutoEntryScript aes(nativeGlobal, "XPCWrappedJS method call",
                          true);
     XPCCallContext ccx(aes.cx());

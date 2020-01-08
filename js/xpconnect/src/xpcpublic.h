@@ -505,8 +505,10 @@ CompilationScope();
 
 
 
+
+
 nsIGlobalObject*
-NativeGlobal(JSObject* aObj);
+NativeGlobal(JSObject* obj);
 
 
 

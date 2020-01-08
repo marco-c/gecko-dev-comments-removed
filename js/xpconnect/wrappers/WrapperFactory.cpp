@@ -673,7 +673,7 @@ TransplantObjectRetainingXrayExpandos(JSContext* cx, JS::HandleObject origobj,
 nsIGlobalObject*
 NativeGlobal(JSObject* obj)
 {
-    obj = js::GetGlobalForObjectCrossCompartment(obj);
+    obj = JS::GetNonCCWObjectGlobal(obj);
 
     
     
