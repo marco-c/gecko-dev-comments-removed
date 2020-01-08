@@ -1936,6 +1936,12 @@ ContentParent::ShouldKeepProcessAlive() const
     return false;
   }
 
+  
+  
+  if (this->IsRecordingOrReplaying()) {
+    return false;
+  }
+
   auto contentParents = sBrowserContentParents->Get(mRemoteType);
   if (!contentParents) {
     return false;
@@ -5542,7 +5548,7 @@ ContentParent::SendGetFilesResponseAndForget(const nsID& aUUID,
 void
 ContentParent::PaintTabWhileInterruptingJS(TabParent* aTabParent,
                                            bool aForceRepaint,
-                                           const layers::LayersObserverEpoch& aEpoch)
+                                           uint64_t aLayerObserverEpoch)
 {
   if (!mHangMonitorActor) {
     return;
@@ -5550,7 +5556,7 @@ ContentParent::PaintTabWhileInterruptingJS(TabParent* aTabParent,
   ProcessHangMonitor::PaintWhileInterruptingJS(mHangMonitorActor,
                                                aTabParent,
                                                aForceRepaint,
-                                               aEpoch);
+                                               aLayerObserverEpoch);
 }
 
 void
