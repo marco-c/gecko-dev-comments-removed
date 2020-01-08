@@ -901,7 +901,7 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
               nextCol = nextSelectedCellIndexes.mColumn;
             }
             
-            rv = DeleteColumn(table, startColIndex);
+            rv = DeleteTableColumnWithTransaction(*table, startColIndex);
             NS_ENSURE_SUCCESS(rv, rv);
             if (cell) {
               
@@ -1166,7 +1166,7 @@ HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
       std::min(aNumberOfColumnsToDelete,
                tableSize.mColumnCount - startColIndex);
     for (int32_t i = 0; i < columnCountToRemove; i++) {
-      rv = DeleteColumn(table, startColIndex);
+      rv = DeleteTableColumnWithTransaction(*table, startColIndex);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1203,7 +1203,7 @@ HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
       startRowIndex = cellIndexes.mRow;
       nextCol = cellIndexes.mColumn;
     }
-    rv = DeleteColumn(table, startColIndex);
+    rv = DeleteTableColumnWithTransaction(*table, startColIndex);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1212,22 +1212,20 @@ HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
 }
 
 nsresult
-HTMLEditor::DeleteColumn(Element* aTable,
-                         int32_t aColIndex)
+HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
+                                             int32_t aColumnIndex)
 {
-  if (NS_WARN_IF(!aTable)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  RefPtr<Element> cell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-  int32_t rowIndex = 0;
-
+  
   ErrorResult error;
-  do {
+  for (int32_t rowIndex = 0;; rowIndex++) {
+    RefPtr<Element> cell;
+    int32_t startRowIndex = 0, startColIndex = 0;
+    int32_t rowSpan = 0, colSpan = 0;
+    int32_t actualRowSpan = 0, actualColSpan = 0;
+    bool isSelected = false;
     nsresult rv =
-      GetCellDataAt(aTable, rowIndex, aColIndex, getter_AddRefs(cell),
+      GetCellDataAt(&aTableElement, rowIndex, aColumnIndex,
+                    getter_AddRefs(cell),
                     &startRowIndex, &startColIndex, &rowSpan, &colSpan,
                     &actualRowSpan, &actualColSpan, &isSelected);
     
@@ -1236,85 +1234,86 @@ HTMLEditor::DeleteColumn(Element* aTable,
     
     
     
-    if (NS_FAILED(rv)) {
-      break;
+    if (NS_FAILED(rv) || !cell) {
+      return NS_OK;
     }
 
-    if (cell) {
+    
+    MOZ_ASSERT(colSpan >= 0);
+    if (startColIndex < aColumnIndex || colSpan != 1) {
       
-      if (startColIndex < aColIndex || colSpan > 1 || !colSpan) {
-        
-        
-        
-        if (colSpan > 0) {
-          NS_ASSERTION((colSpan > 1),"Bad COLSPAN in DeleteTableColumn");
-          SetColSpan(cell, colSpan-1);
-        }
-        if (startColIndex == aColIndex) {
-          
-          
-          
-          DeleteCellContents(cell);
-        }
-        
-        rowIndex += actualRowSpan;
-      } else {
-        
-        if (GetNumberOfCellsInRow(*aTable, rowIndex) == 1) {
-          
-          Element* parentRow =
-            GetElementOrParentByTagNameInternal(*nsGkAtoms::tr, *cell);
-          if (NS_WARN_IF(!parentRow)) {
-            return NS_ERROR_FAILURE;
-          }
-
-          
-          
-          
-          TableSize tableSize(*this, *aTable, error);
-          if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
-          }
-
-          if (tableSize.mRowCount == 1) {
-            RefPtr<Selection> selection = GetSelection();
-            if (NS_WARN_IF(!selection)) {
-              return NS_ERROR_FAILURE;
-            }
-            rv = DeleteTableElementAndChildrenWithTransaction(*selection,
-                                                              *aTable);
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-              return rv;
-            }
-            return NS_OK;
-          }
-
-          
-          
-          
-          rv = DeleteTableRowWithTransaction(*aTable, startRowIndex);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-
-          
-          
-          
-        } else {
-          
-          rv = DeleteNodeWithTransaction(*cell);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-
-          
-          rowIndex += actualRowSpan;
-        }
+      
+      
+      if (colSpan > 0) {
+        NS_WARNING_ASSERTION(colSpan > 1, "colspan should be 2 or larger");
+        SetColSpan(cell, colSpan - 1);
       }
+      if (startColIndex == aColumnIndex) {
+        
+        
+        
+        DeleteCellContents(cell);
+      }
+      
+      rowIndex += actualRowSpan - 1;
+      continue;
     }
-  } while (cell);
 
-  return NS_OK;
+    
+    int32_t numberOfCellsInRow =
+      GetNumberOfCellsInRow(aTableElement, rowIndex);
+    NS_WARNING_ASSERTION(numberOfCellsInRow > 0,
+      "Failed to count existing cells in the row");
+    if (numberOfCellsInRow != 1) {
+      
+      
+      rv = DeleteNodeWithTransaction(*cell);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      
+      rowIndex += actualRowSpan - 1;
+      continue;
+    }
+
+    
+    Element* parentRow =
+      GetElementOrParentByTagNameInternal(*nsGkAtoms::tr, *cell);
+    if (NS_WARN_IF(!parentRow)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    
+    TableSize tableSize(*this, aTableElement, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+
+    if (tableSize.mRowCount == 1) {
+      
+      RefPtr<Selection> selection = GetSelection();
+      if (NS_WARN_IF(!selection)) {
+        return NS_ERROR_FAILURE;
+      }
+      rv = DeleteTableElementAndChildrenWithTransaction(*selection,
+                                                        aTableElement);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
+    }
+
+    
+    
+    rv = DeleteTableRowWithTransaction(aTableElement, startRowIndex);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    rowIndex--;
+  }
 }
 
 NS_IMETHODIMP

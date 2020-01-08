@@ -1585,6 +1585,22 @@ protected:
 
 
 
+  nsresult
+  DeleteTableColumnWithTransaction(Element& aTableElement,
+                                   int32_t aColumnIndex);
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1608,7 +1624,6 @@ protected:
   
 
 
-  nsresult DeleteColumn(Element* aTable, int32_t aColIndex);
   nsresult DeleteCellContents(Element* aCell);
 
   
