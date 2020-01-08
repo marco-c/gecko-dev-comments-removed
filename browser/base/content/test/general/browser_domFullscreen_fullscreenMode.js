@@ -3,6 +3,12 @@
 
 "use strict";
 
+
+
+
+
+SimpleTest.ignoreAllUncaughtExceptions(true);
+
 var gMessageManager;
 
 function frameScript() {
