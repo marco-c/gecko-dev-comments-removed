@@ -36,8 +36,6 @@ static bool sandboxEnabled;
 
 nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled)
 {
-    nsresult rv;
-
     
     if (autoconfigSb.initialized())
         return NS_OK;
@@ -45,10 +43,7 @@ nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled)
     sandboxEnabled = aSandboxEnabled;
 
     
-    nsCOMPtr<nsIXPConnect> xpc = do_GetService(nsIXPConnect::GetCID(), &rv);
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
+    nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
 
     
     nsCOMPtr<nsIPrincipal> principal;
@@ -58,7 +53,7 @@ nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled)
     
     AutoSafeJSContext cx;
     JS::Rooted<JSObject*> sandbox(cx);
-    rv = xpc->CreateSandbox(cx, principal, sandbox.address());
+    nsresult rv = xpc->CreateSandbox(cx, principal, sandbox.address());
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -117,8 +112,6 @@ nsresult EvaluateAdminConfigScript(JS::HandleObject sandbox,
                                    const char *filename, bool globalContext,
                                    bool callbacks, bool skipFirstLine)
 {
-    nsresult rv = NS_OK;
-
     if (skipFirstLine) {
         
 
@@ -142,10 +135,7 @@ nsresult EvaluateAdminConfigScript(JS::HandleObject sandbox,
     }
 
     
-    nsCOMPtr<nsIXPConnect> xpc = do_GetService(nsIXPConnect::GetCID(), &rv);
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
+    nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
 
     AutoJSAPI jsapi;
     if (!jsapi.Init(sandbox)) {
@@ -176,7 +166,7 @@ nsresult EvaluateAdminConfigScript(JS::HandleObject sandbox,
             return NS_ERROR_UNEXPECTED;
         }
     }
-    rv = xpc->EvalInSandboxObject(convertedScript, filename, cx,
+    nsresult rv = xpc->EvalInSandboxObject(convertedScript, filename, cx,
                                   sandbox, &v);
     NS_ENSURE_SUCCESS(rv, rv);
 
