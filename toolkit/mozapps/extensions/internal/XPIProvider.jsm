@@ -1500,6 +1500,20 @@ class BootstrapScope {
 
 
 
+  fetchState() {
+    if (this.scope && this.scope.fetchState) {
+      return this.scope.fetchState();
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -2192,9 +2206,12 @@ var XPIProvider = {
               }
             }
 
-            let promise = BootstrapScope.get(addon).shutdown(reason);
+            let scope = BootstrapScope.get(addon);
+            let promise = scope.shutdown(reason);
             AsyncShutdown.profileChangeTeardown.addBlocker(
-              `Extension shutdown: ${addon.id}`, promise);
+              `Extension shutdown: ${addon.id}`, promise, {
+                fetchState: scope.fetchState.bind(scope),
+              });
           }
         });
 
