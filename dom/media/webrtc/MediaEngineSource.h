@@ -149,6 +149,8 @@ class MediaEngineSourceInterface {
 
 
 
+
+
   virtual nsresult Start(const RefPtr<const AllocationHandle>& aHandle) = 0;
 
   
@@ -188,6 +190,8 @@ class MediaEngineSourceInterface {
                                const char** aOutBadConstraint) = 0;
 
   
+
+
 
 
 
