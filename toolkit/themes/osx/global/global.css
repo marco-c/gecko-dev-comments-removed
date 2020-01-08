@@ -12,12 +12,6 @@
 %include ../../shared/global.inc.css
 
 
-
-menulist > menupopup {
-  -moz-binding: url("chrome://global/content/bindings/popup.xml#popup-scrollbars");
-}
-
-
 :root {
   --arrowpanel-padding: 16px;
   --default-arrowpanel-background: #fff;

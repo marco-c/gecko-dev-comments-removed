@@ -11,15 +11,10 @@
 @import url("chrome://global/content/widgets.css");
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
-@namespace html url("http://www.w3.org/1999/xhtml");
 
 %include ../../shared/global.inc.css
 
 
-
-menulist > menupopup {
-  -moz-binding: url("chrome://global/content/bindings/popup.xml#popup-scrollbars");
-}
 
 @media (-moz-menubar-drag) {
   toolbar[type="menubar"] {
@@ -126,10 +121,9 @@ toolbar[mode="text"] .toolbarbutton-text {
   list-style-image: url("moz-icon://stock/gtk-orientation-landscape?size=button");
 }
 
-html|*#print-preview-pageNumber {
+#print-preview-pageNumber {
   
-  width: calc(8px + 3ch);
-  margin: 0 4px;
+  width: calc(18px + 3ch);
 }
 
 
@@ -263,3 +257,4 @@ popupnotificationcontent {
 }
 
 %include ../../shared/notification-popup.inc.css
+
