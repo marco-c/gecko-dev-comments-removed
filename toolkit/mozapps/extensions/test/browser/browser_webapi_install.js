@@ -213,6 +213,10 @@ function makeRegularTest(options, what) {
     let addons = await promiseAddonsByIDs([ID]);
     isnot(addons[0], null, "Found the addon");
 
+    
+    Assert.deepEqual(addons[0].installTelemetryInfo, {source: "test-host", method: "amWebAPI"},
+                     "Got the expected addon.installTelemetryInfo");
+
     await addons[0].uninstall();
 
     addons = await promiseAddonsByIDs([ID]);

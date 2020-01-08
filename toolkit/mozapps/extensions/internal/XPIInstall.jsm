@@ -1318,6 +1318,9 @@ class AddonInstall {
 
 
 
+
+
+
   constructor(installLocation, url, options = {}) {
     this.wrapper = new AddonInstallWrapper(this);
     this.location = installLocation;
@@ -1357,6 +1360,15 @@ class AddonInstall {
     this.name = options.name || null;
     this.type = options.type || null;
     this.version = options.version || null;
+    this.installTelemetryInfo = null;
+
+    if (options.installTelemetryInfo) {
+      this.installTelemetryInfo = options.installTelemetryInfo;
+    } else if (this.existingAddon) {
+      
+      
+      this.installTelemetryInfo = this.existingAddon.installTelemetryInfo;
+    }
 
     this.file = null;
     this.ownsTempFile = null;
@@ -1515,11 +1527,16 @@ class AddonInstall {
   
 
 
-
-  updateAddonURIs() {
+  updatePersistedMetadata() {
     this.addon.sourceURI = this.sourceURI.spec;
-    if (this.releaseNotesURI)
+
+    if (this.releaseNotesURI) {
       this.addon.releaseNotesURI = this.releaseNotesURI.spec;
+    }
+
+    if (this.installTelemetryInfo) {
+      this.addon.installTelemetryInfo = this.installTelemetryInfo;
+    }
   }
 
   
@@ -1582,7 +1599,7 @@ class AddonInstall {
       pkg.close();
     }
 
-    this.updateAddonURIs();
+    this.updatePersistedMetadata();
 
     this.addon._install = this;
     this.name = this.addon.selectedLocale.name;
@@ -2425,6 +2442,7 @@ function createUpdate(aCallback, aAddon, aUpdate) {
       icons: aAddon.icons,
       version: aUpdate.version,
     };
+
     let install;
     if (url instanceof Ci.nsIFileURL) {
       install = new LocalAddonInstall(aAddon.location, url, opts);
@@ -2486,6 +2504,10 @@ AddonInstallWrapper.prototype = {
 
   set promptHandler(handler) {
     installFor(this).promptHandler = handler;
+  },
+
+  get installTelemetryInfo() {
+    return installFor(this).installTelemetryInfo;
   },
 
   install() {
@@ -2726,14 +2748,19 @@ UpdateChecker.prototype = {
 
 
 
-function createLocalInstall(file, location) {
+
+
+
+function createLocalInstall(file, location, telemetryInfo) {
   if (!location) {
     location = XPIStates.getLocation(KEY_APP_PROFILE);
   }
   let url = Services.io.newFileURI(file);
 
   try {
-    let install = new LocalAddonInstall(location, url);
+    let install = new LocalAddonInstall(location, url, {
+      installTelemetryInfo: telemetryInfo,
+    });
     return install.init().then(() => install);
   } catch (e) {
     logger.error("Error creating install", e);
@@ -3432,6 +3459,7 @@ var XPIInstall = {
 
   async installDistributionAddon(id, file, location) {
     let addon = await loadManifestFromFile(file, location);
+    addon.installTelemetryInfo = {source: "distribution"};
 
     if (addon.id != id) {
       throw new Error(`File file ${file.path} contains an add-on with an incorrect ID`);
@@ -3749,7 +3777,10 @@ var XPIInstall = {
 
 
 
-  async getInstallForURL(aUrl, aHash, aName, aIcons, aVersion, aBrowser) {
+
+
+
+  async getInstallForURL(aUrl, aHash, aName, aIcons, aVersion, aBrowser, aInstallTelemetryInfo) {
     let location = XPIStates.getLocation(KEY_APP_PROFILE);
     let url = Services.io.newURI(aUrl);
 
@@ -3759,6 +3790,7 @@ var XPIInstall = {
       name: aName,
       icons: aIcons,
       version: aVersion,
+      installTelemetryInfo: aInstallTelemetryInfo,
     };
 
     if (url instanceof Ci.nsIFileURL) {
@@ -3778,8 +3810,11 @@ var XPIInstall = {
 
 
 
-  async getInstallForFile(aFile) {
-    let install = await createLocalInstall(aFile);
+
+
+
+  async getInstallForFile(aFile, aInstallTelemetryInfo) {
+    let install = await createLocalInstall(aFile, null, aInstallTelemetryInfo);
     return install ? install.wrapper : null;
   },
 

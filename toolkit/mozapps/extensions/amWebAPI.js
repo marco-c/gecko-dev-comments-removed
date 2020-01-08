@@ -224,7 +224,15 @@ class WebAPI extends APIObject {
   }
 
   createInstall(options) {
-    return this._apiTask("createInstall", [options], installInfo => {
+    let installOptions = {
+      ...options,
+      
+      
+      
+      sourceHost: this.window.document.nodePrincipal.URI &&
+        this.window.document.nodePrincipal.URI.host,
+    };
+    return this._apiTask("createInstall", [installOptions], installInfo => {
       if (!installInfo) {
         return null;
       }
