@@ -484,10 +484,9 @@ XULDocument::ContentAppended(nsIContent* aFirstNewContent)
     nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
 
     
-    nsresult rv = NS_OK;
-    for (nsIContent* cur = aFirstNewContent; cur && NS_SUCCEEDED(rv);
+    for (nsIContent* cur = aFirstNewContent; cur;
          cur = cur->GetNextSibling()) {
-        rv = AddSubtreeToDocument(cur);
+        AddSubtreeToDocument(cur);
     }
 }
 
@@ -505,12 +504,8 @@ XULDocument::ContentInserted(nsIContent* aChild)
 void
 XULDocument::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)
 {
-    NS_ASSERTION(aChild->OwnerDoc() == this, "unexpected doc");
-
     
-    nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-
-    RemoveSubtreeFromDocument(aChild);
+    
 }
 
 
@@ -570,25 +565,7 @@ XULDocument::Persist(Element* aElement, int32_t aNameSpaceID,
     mLocalStore->SetValue(uri, id, attrstr, valuestr);
 }
 
-nsresult
-XULDocument::AddElementToDocumentPre(Element* aElement)
-{
-    
-    
-
-    
-    
-    nsAtom* id = aElement->GetID();
-    if (id) {
-        
-        nsAutoScriptBlocker scriptBlocker;
-        AddToIdTable(aElement, id);
-    }
-
-    return NS_OK;
-}
-
-nsresult
+void
 XULDocument::AddElementToDocumentPost(Element* aElement)
 {
     if (aElement == GetRootElement()) {
@@ -600,11 +577,9 @@ XULDocument::AddElementToDocumentPost(Element* aElement)
     } else if (aElement->IsXULElement(nsGkAtoms::linkset)) {
         OnL10nResourceContainerParsed();
     }
-
-    return NS_OK;
 }
 
-nsresult
+void
 XULDocument::AddSubtreeToDocument(nsIContent* aContent)
 {
     MOZ_ASSERT(aContent->GetComposedDoc() == this, "Element not in doc!");
@@ -616,66 +591,24 @@ XULDocument::AddSubtreeToDocument(nsIContent* aContent)
     
     if (MOZ_UNLIKELY(!aContent->IsInUncomposedDoc())) {
         MOZ_ASSERT(aContent->IsInShadowTree());
-        return NS_OK;
+        return;
     }
 
     
     Element* aElement = Element::FromNode(aContent);
     if (!aElement) {
-        return NS_OK;
+        return;
     }
-
-    
-    nsresult rv = AddElementToDocumentPre(aElement);
-    if (NS_FAILED(rv)) return rv;
 
     
     for (nsIContent* child = aElement->GetLastChild();
          child;
          child = child->GetPreviousSibling()) {
-
-        rv = AddSubtreeToDocument(child);
-        if (NS_FAILED(rv))
-            return rv;
+        AddSubtreeToDocument(child);
     }
 
     
-    return AddElementToDocumentPost(aElement);
-}
-
-nsresult
-XULDocument::RemoveSubtreeFromDocument(nsIContent* aContent)
-{
-    
-    Element* aElement = Element::FromNode(aContent);
-    if (!aElement) {
-        return NS_OK;
-    }
-
-    
-    
-    nsresult rv;
-
-    
-    for (nsIContent* child = aElement->GetLastChild();
-         child;
-         child = child->GetPreviousSibling()) {
-
-        rv = RemoveSubtreeFromDocument(child);
-        if (NS_FAILED(rv))
-            return rv;
-    }
-
-    
-    
-    nsAtom* id = aElement->GetID();
-    if (id) {
-        
-        nsAutoScriptBlocker scriptBlocker;
-        RemoveFromIdTable(aElement, id);
-    }
-
-    return NS_OK;
+    AddElementToDocumentPost(aElement);
 }
 
 
@@ -1250,9 +1183,6 @@ XULDocument::ResumeWalk()
                 
                 rv = element->AppendChildTo(child, false);
                 if (NS_FAILED(rv)) return rv;
-
-                
-                AddElementToDocumentPre(child);
 
                 
                 

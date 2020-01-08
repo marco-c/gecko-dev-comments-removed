@@ -88,11 +88,7 @@ public:
     
 
 
-    nsresult AddSubtreeToDocument(nsIContent* aContent);
-    
-
-
-    nsresult RemoveSubtreeFromDocument(nsIContent* aContent);
+    void AddSubtreeToDocument(nsIContent* aContent);
     
 
 
@@ -155,11 +151,7 @@ protected:
     nsresult ApplyPersistentAttributesToElements(const nsAString &aID,
                                                  nsCOMArray<Element>& aElements);
 
-    nsresult
-    AddElementToDocumentPre(Element* aElement);
-
-    nsresult
-    AddElementToDocumentPost(Element* aElement);
+    void AddElementToDocumentPost(Element* aElement);
 
     static void DirectionChanged(const char* aPrefName, XULDocument* aData);
 
