@@ -241,7 +241,12 @@ void Axis::EndTouch(uint32_t aTimestampMs) {
   APZThreadUtils::AssertOnControllerThread();
 
   mAxisLocked = false;
-  mVelocity = mVelocityTracker->ComputeVelocity(aTimestampMs);
+  
+  
+  
+  if (Maybe<float> velocity = mVelocityTracker->ComputeVelocity(aTimestampMs)) {
+    mVelocity = *velocity;
+  }
   AXIS_LOG("%p|%s ending touch, computed velocity %f\n",
     mAsyncPanZoomController, Name(), mVelocity);
 }

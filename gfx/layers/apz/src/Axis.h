@@ -73,7 +73,9 @@ public:
 
 
 
-  virtual float ComputeVelocity(uint32_t aTimestampMs) = 0;
+
+
+  virtual Maybe<float> ComputeVelocity(uint32_t aTimestampMs) = 0;
   
 
 

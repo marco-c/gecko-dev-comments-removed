@@ -242,14 +242,12 @@ static bool SolveLeastSquares(const float* x,
   return true;
 }
 
-float
+Maybe<float>
 AndroidVelocityTracker::ComputeVelocity(uint32_t aTimestampMs)
 {
-  
-  float velocity = 0;
 
   if (mHistory.IsEmpty()) {
-    return velocity;
+    return Nothing{};
   }
 
   
@@ -282,7 +280,7 @@ AndroidVelocityTracker::ComputeVelocity(uint32_t aTimestampMs)
   } while (index >= 0);
 
   if (m == 0) {
-    return velocity;  
+    return Nothing{};  
   }
 
   
@@ -297,14 +295,16 @@ AndroidVelocityTracker::ComputeVelocity(uint32_t aTimestampMs)
   if (degree >= 1) {  
     uint32_t n = degree + 1;
     if (SolveLeastSquares(time, pos, w, m, n, xcoeff)) {
-      velocity = xcoeff[1];
+      float velocity = xcoeff[1];
+
+      
+      
+      
+      return Some(-velocity / 1000.0f);  
     }
   }
 
-  
-  
-  
-  return -velocity / 1000.0f;  
+  return Nothing{};
 }
 
 void
