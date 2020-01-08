@@ -298,6 +298,16 @@ GetColumnGap(nsColumnSetFrame* aFrame,
   return nsLayoutUtils::ResolveGapToLength(columnGap, aPercentageBasis);
 }
 
+ nscoord
+nsColumnSetFrame::ClampUsedColumnWidth(const nsStyleCoord& aColumnWidth)
+{
+  MOZ_ASSERT(aColumnWidth.GetUnit() == eStyleUnit_Coord,
+             "This should only be called when column-width is a <length>!");
+
+  
+  return std::max(CSSPixel::ToAppUnits(1), aColumnWidth.GetCoordValue());
+}
+
 nsColumnSetFrame::ReflowConfig
 nsColumnSetFrame::ChooseColumnStrategy(const ReflowInput& aReflowInput,
                                        bool aForceAuto = false,
@@ -353,7 +363,7 @@ nsColumnSetFrame::ChooseColumnStrategy(const ReflowInput& aReflowInput,
   
   
   if (colStyle->mColumnWidth.GetUnit() == eStyleUnit_Coord) {
-    colISize = colStyle->mColumnWidth.GetCoordValue();
+    colISize = ClampUsedColumnWidth(colStyle->mColumnWidth);
     NS_ASSERTION(colISize >= 0, "negative column width");
     
     
@@ -504,7 +514,7 @@ nsColumnSetFrame::GetMinISize(gfxContext *aRenderingContext)
   const nsStyleColumn* colStyle = StyleColumn();
   nscoord colISize;
   if (colStyle->mColumnWidth.GetUnit() == eStyleUnit_Coord) {
-    colISize = colStyle->mColumnWidth.GetCoordValue();
+    colISize = ClampUsedColumnWidth(colStyle->mColumnWidth);
     
     
     
@@ -542,7 +552,7 @@ nsColumnSetFrame::GetPrefISize(gfxContext *aRenderingContext)
 
   nscoord colISize;
   if (colStyle->mColumnWidth.GetUnit() == eStyleUnit_Coord) {
-    colISize = colStyle->mColumnWidth.GetCoordValue();
+    colISize = ClampUsedColumnWidth(colStyle->mColumnWidth);
   } else if (mFrames.FirstChild() && !StyleDisplay()->IsContainSize()) {
     
     
