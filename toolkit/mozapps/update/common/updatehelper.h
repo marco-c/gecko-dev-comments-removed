@@ -2,10 +2,14 @@
 
 
 
+#include "nsWindowsHelpers.h"
+
 BOOL StartServiceUpdate(LPCWSTR installDir);
 DWORD LaunchServiceSoftwareUpdateCommand(int argc, LPCWSTR *argv);
 BOOL GetUUIDTempFilePath(LPCWSTR basePath, LPCWSTR prefix, LPWSTR tmpPath);
-BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode);
+BOOL WriteStatusFailure(LPCWSTR updateDirPath,
+                        int errorCode,
+                        nsAutoHandle &userToken);
 DWORD WaitForServiceStop(LPCWSTR serviceName, DWORD maxWaitSeconds);
 DWORD WaitForProcessExit(LPCWSTR filename, DWORD maxSeconds);
 DWORD IsProcessRunning(LPCWSTR filename);
@@ -20,6 +24,9 @@ BOOL IsUnpromptedElevation(BOOL &isUnpromptedElevation);
   L"SOFTWARE\\Mozilla\\MaintenanceService"
 
 
+#define USER_TOKEN_VAR_NAME "MOZ_USER_TOKEN"
+
+
 
 
 
@@ -27,4 +34,3 @@ BOOL IsUnpromptedElevation(BOOL &isUnpromptedElevation);
 
 #define TEST_ONLY_FALLBACK_KEY_PATH \
   BASE_SERVICE_REG_KEY L"\\3932ecacee736d366d6436db0f55bce4"
-

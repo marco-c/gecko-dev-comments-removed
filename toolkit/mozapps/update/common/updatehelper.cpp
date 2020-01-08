@@ -14,6 +14,7 @@
 #include "uachelper.h"
 #include "pathhash.h"
 #include "mozilla/UniquePtr.h"
+#include "nsWindowsHelpers.h"
 
 
 #include <shlwapi.h>
@@ -222,10 +223,12 @@ StartServiceCommand(int argc, LPCWSTR* argv)
 
 
 
-
 DWORD
 LaunchServiceSoftwareUpdateCommand(int argc, LPCWSTR* argv)
 {
+  
+  
+  
   
   
   
@@ -307,9 +310,19 @@ GetUUIDTempFilePath(LPCWSTR basePath, LPCWSTR prefix, LPWSTR tmpPath)
 
 
 
+
+
+
 BOOL
-WriteStatusFailure(LPCWSTR updateDirPath, int errorCode)
+WriteStatusFailure(LPCWSTR updateDirPath,
+                   int     errorCode,
+                   nsAutoHandle& userToken)
 {
+  ImpersonationScope impersonated(userToken);
+  if (userToken && !impersonated) {
+    return FALSE;
+  }
+
   
   
   WCHAR tmpUpdateStatusFilePath[MAX_PATH + 1] = { L'\0' };
