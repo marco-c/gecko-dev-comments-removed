@@ -1886,9 +1886,6 @@ var gBrowserInit = {
     if (this._boundDelayedStartup) {
       this._cancelDelayedStartup();
     } else {
-      if (Win7Features) {
-        Win7Features.onCloseWindow();
-      }
       Services.prefs.removeObserver(ctrlTab.prefName, ctrlTab);
       ctrlTab.uninit();
       gBrowserThumbnails.uninit();
@@ -2686,15 +2683,9 @@ function URLBarSetURI(aURI) {
     valid = true;
   }
 
-  let isDifferentValidValue = valid && value != gURLBar.value;
   gURLBar.value = value;
   gURLBar.valueIsTyped = !valid;
   gURLBar.removeAttribute("usertyping");
-  if (isDifferentValidValue) {
-    
-    
-    gURLBar.selectionStart = gURLBar.selectionEnd = 0;
-  }
 
   SetPageProxyState(valid ? "valid" : "invalid");
 }
@@ -3681,9 +3672,7 @@ const DOMEventHandler = {
 
   setPendingIcon(aBrowser) {
     let tab = gBrowser.getTabForBrowser(aBrowser);
-    if (tab.hasAttribute("busy")) {
-      tab.setAttribute("pendingicon", "true");
-    }
+    tab.setAttribute("pendingicon", "true");
   },
 
   clearPendingIcon(aBrowser) {
@@ -7992,7 +7981,7 @@ var ToolbarIconColor = {
         break;
     }
 
-    let toolbarSelector = "#navigator-toolbox > toolbar:not([collapsed=true])";
+    let toolbarSelector = ".browser-toolbar:not([collapsed=true])";
     if (AppConstants.platform == "macosx")
       toolbarSelector += ":not([type=menubar])";
 
