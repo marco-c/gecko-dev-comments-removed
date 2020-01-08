@@ -178,6 +178,9 @@ NetMonitorAPI.prototype = {
 
   async getHarExportConnector() {
     if (this.harExportConnector) {
+      
+      
+      await this.harExportConnectorReady;
       return this.harExportConnector;
     }
 
@@ -189,7 +192,9 @@ NetMonitorAPI.prototype = {
     };
 
     this.harExportConnector = new Connector();
-    await this.connectBackend(this.harExportConnector, connection);
+    this.harExportConnectorReady =
+      this.connectBackend(this.harExportConnector, connection);
+    await this.harExportConnectorReady;
     return this.harExportConnector;
   },
 };
