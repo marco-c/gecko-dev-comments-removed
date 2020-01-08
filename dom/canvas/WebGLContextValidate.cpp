@@ -305,23 +305,22 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
 {
     MOZ_RELEASE_ASSERT(gl, "GFX: GL not initialized");
 
+    if (!gl->MakeCurrent(true)) {
+        MOZ_ASSERT(false);
+        *out_failReason = { "FEATURE_FAILURE_WEBGL_MAKECURRENT",
+                            "Failed to MakeCurrent for init." };
+        return false;
+    }
+
     
     
     
     mFormatUsage = CreateFormatUsage(gl);
-    if (!mFormatUsage) {
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_FORMAT",
-                            "Failed to create mFormatUsage." };
-        return false;
-    }
+    MOZ_RELEASE_ASSERT(mFormatUsage);
 
-    GLenum error = gl->fGetError();
-    if (error != LOCAL_GL_NO_ERROR) {
-        const nsPrintfCString reason("GL error 0x%x occurred during OpenGL context"
-                                     " initialization, before WebGL initialization!",
-                                     error);
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_GLERR_1", reason };
-        return false;
+    {
+        const auto error = gl->fGetError();
+        MOZ_ALWAYS_TRUE(!error);
     }
 
     mDisableExtensions = gfxPrefs::WebGLDisableExtensions();
@@ -604,13 +603,9 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     
     
     
-    error = gl->fGetError();
-    if (error != LOCAL_GL_NO_ERROR) {
-        const nsPrintfCString reason("GL error 0x%x occurred during WebGL context"
-                                     " initialization!",
-                                     error);
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_GLERR_2", reason };
-        return false;
+    {
+        const auto error = gl->fGetError();
+        MOZ_ALWAYS_TRUE(!error);
     }
 
     if (IsWebGL2() &&
