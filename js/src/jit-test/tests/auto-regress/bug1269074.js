@@ -1,6 +1,3 @@
 
 
-if (!('oomTest' in this))
-    quit();
-
 evalcx('oomTest(function() { Array(...""); })', newGlobal());

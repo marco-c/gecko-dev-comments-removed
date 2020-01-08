@@ -1,5 +1,4 @@
-if (!("oomTest" in this))
-    quit();
+
 
 var globals = [];
 for (var i = 0; i < 24; ++i) {

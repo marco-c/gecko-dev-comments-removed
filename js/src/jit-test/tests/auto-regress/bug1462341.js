@@ -1,8 +1,5 @@
 
 
-if (!('oomTest' in this))
-  quit();
-
 loadFile(`
   switch (0) {
     case (-1):
