@@ -2406,6 +2406,7 @@ function synthesizeDrop(aSrcElement, aDestElement, aDragData, aDropEffect, aWind
 
 
 
+
 async function synthesizePlainDragAndDrop(aParams)
 {
   let {
@@ -2415,8 +2416,8 @@ async function synthesizePlainDragAndDrop(aParams)
     srcY = 2,
     stepX = 9,
     stepY = 9,
-    destX = 2,
-    destY = 2,
+    finalX = srcX + stepX * 2,
+    finalY = srcY + stepY * 2,
     srcWindow = window,
     destWindow = window,
   } = aParams;
@@ -2451,15 +2452,26 @@ async function synthesizePlainDragAndDrop(aParams)
 
     await new Promise(r => setTimeout(r, 0));
 
-    let event = createDragEventObject("dragover", destElement, destWindow,
-                                      dataTransfer, {});
-    sendDragEvent(event, destElement, destWindow);
+    let event;
+    if (destElement) {
+      
+      
+      
+      event = createDragEventObject("dragover", destElement, destWindow,
+                                        dataTransfer, {});
+      sendDragEvent(event, destElement, destWindow);
 
-    await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
 
-    event = createDragEventObject("drop", destElement, destWindow,
-                                  dataTransfer, {});
-    sendDragEvent(event, destElement, destWindow);
+      event = createDragEventObject("drop", destElement, destWindow,
+                                    dataTransfer, {});
+      sendDragEvent(event, destElement, destWindow);
+    }
+
+    
+    event = createDragEventObject("dragend", srcElement, srcWindow,
+                                  dataTransfer, {clientX: finalX, clientY: finalY});
+    sendDragEvent(event, srcElement, srcWindow);
 
     await new Promise(r => setTimeout(r, 0));
 
