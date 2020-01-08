@@ -923,11 +923,18 @@ var Impl = {
       .keys(measurements)
       .some(key => "gpu" in measurements[key]);
 
+    let measurementsContainSocket = Object
+      .keys(measurements)
+      .some(key => "socket" in measurements[key]);
+
     payloadObj.processes = {};
     let processTypes = ["parent", "content", "extension", "dynamic"];
     
     if (measurementsContainGPU) {
       processTypes.push("gpu");
+    }
+    if (measurementsContainSocket) {
+      processTypes.push("socket");
     }
 
     
