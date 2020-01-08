@@ -1163,12 +1163,11 @@ class JSTerm extends Component {
         && items[0].label !== matchProp
       )
     ) {
-      let popupAlignElement;
+      const popupAlignElement = this.props.serviceContainer.getJsTermTooltipAnchor();
       let xOffset;
       let yOffset;
 
       if (this.editor) {
-        popupAlignElement = this.node.querySelector(".CodeMirror-cursor");
         
         xOffset = -1 * matchProp.length * this._inputCharWidth;
         yOffset = 5;
@@ -1177,10 +1176,6 @@ class JSTerm extends Component {
           (inputUntilCursor.lastIndexOf("\n") + 1) -
           matchProp.length;
         xOffset = (offset * this._inputCharWidth) + this._paddingInlineStart;
-        
-        
-        
-        popupAlignElement = this.completeNode;
       }
 
       if (popupAlignElement) {

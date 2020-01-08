@@ -17,7 +17,9 @@ const {
 
 
 
-function autocompleteUpdate(force) {
+
+
+function autocompleteUpdate(force, getterPath) {
   return ({dispatch, getState, services}) => {
     if (services.inputHasSelection()) {
       return dispatch(autocompleteClear());
@@ -48,10 +50,32 @@ function autocompleteUpdate(force) {
       return dispatch(autoCompleteDataRetrieveFromCache(input));
     }
 
+    let authorizedEvaluations = (
+      Array.isArray(state.authorizedEvaluations) &&
+      state.authorizedEvaluations.length > 0
+    ) ? state.authorizedEvaluations : [];
+
+    if (Array.isArray(getterPath) && getterPath.length > 0) {
+      
+      
+      
+      
+      
+      const last = authorizedEvaluations[authorizedEvaluations.length - 1];
+      const concat = !last || last.every((x, index) => x === getterPath[index]);
+      if (concat) {
+        authorizedEvaluations.push(getterPath);
+      } else {
+        authorizedEvaluations = [getterPath];
+      }
+    }
+
     return dispatch(autocompleteDataFetch({
       input,
       frameActorId,
       client: services.getWebConsoleClient(),
+      authorizedEvaluations,
+      force,
     }));
   };
 }
@@ -91,17 +115,38 @@ function generateRequestId() {
 
 
 
+
+
+
+
+
 function autocompleteDataFetch({
   input,
   frameActorId,
+  force,
   client,
+  authorizedEvaluations,
 }) {
   return ({dispatch, services}) => {
     const selectedNodeActor = services.getSelectedNodeActor();
     const id = generateRequestId();
     dispatch({type: AUTOCOMPLETE_PENDING_REQUEST, id});
-    client.autocomplete(input, undefined, frameActorId, selectedNodeActor).then(res => {
-      dispatch(autocompleteDataReceive(id, input, frameActorId, res));
+    client.autocomplete(
+      input,
+      undefined,
+      frameActorId,
+      selectedNodeActor,
+      authorizedEvaluations
+    ).then(data => {
+      dispatch(
+        autocompleteDataReceive({
+          id,
+          input,
+          force,
+          frameActorId,
+          data,
+          authorizedEvaluations,
+        }));
     }).catch(e => {
       console.error("failed autocomplete", e);
       dispatch(autocompleteClear());
@@ -118,18 +163,32 @@ function autocompleteDataFetch({
 
 
 
-function autocompleteDataReceive(id, input, frameActorId, data) {
+
+
+
+
+
+
+function autocompleteDataReceive({
+  id,
+  input,
+  frameActorId,
+  force,
+  data,
+  authorizedEvaluations,
+}) {
   return {
     type: AUTOCOMPLETE_DATA_RECEIVE,
     id,
     input,
+    force,
     frameActorId,
     data,
+    authorizedEvaluations,
   };
 }
 
 module.exports = {
+  autocompleteClear,
   autocompleteUpdate,
-  autocompleteDataFetch,
-  autocompleteDataReceive,
 };

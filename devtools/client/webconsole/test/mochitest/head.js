@@ -425,6 +425,22 @@ async function setInputValueForAutocompletion(
 
 
 
+
+
+async function setInputValueForGetterConfirmDialog(toolbox, jsterm, value) {
+  await setInputValueForAutocompletion(jsterm, value);
+  await waitFor(() => isConfirmDialogOpened(toolbox));
+  ok(true, "The confirm dialog is displayed");
+  return getConfirmDialog(toolbox);
+}
+
+
+
+
+
+
+
+
 function checkJsTermCompletionValue(jsterm, expectedValue, assertionInfo) {
   const completionValue = getJsTermCompletionValue(jsterm);
   if (completionValue === null) {
@@ -1076,3 +1092,39 @@ function findObjectInspectorNode(oi, nodeLabel) {
     return label.textContent === nodeLabel;
   });
 }
+
+
+
+
+
+
+
+function getAutocompletePopupLabels(popup) {
+  return popup.getItems().map(item => item.label);
+}
+
+
+
+
+
+
+
+function getConfirmDialog(toolbox) {
+  const {doc} = toolbox;
+  return doc.querySelector(".invoke-confirm");
+}
+
+
+
+
+
+
+function isConfirmDialogOpened(toolbox) {
+  const tooltip = getConfirmDialog(toolbox);
+  if (!tooltip) {
+    return false;
+  }
+
+  return tooltip.classList.contains("tooltip-visible");
+}
+
