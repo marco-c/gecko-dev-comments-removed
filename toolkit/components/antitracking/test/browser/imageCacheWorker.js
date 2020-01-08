@@ -1,3 +1,5 @@
+
+
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 AntiTracking.runTest("Image cache - should load the image twice.",
@@ -18,19 +20,24 @@ AntiTracking.runTest("Image cache - should load the image twice.",
   },
 
   
-  async _ => {
-    
-    let img = document.createElement("img");
-    document.body.appendChild(img);
-    img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
-    await new Promise(resolve => { img.onload = resolve; });
-    ok(true, "Image 3 loaded");
+  {
+    runExtraTests: false,
+    blockingByCookieBehavior,
+    blockingByContentBlocking,
+    callback: async _ => {
+      
+      let img = document.createElement("img");
+      document.body.appendChild(img);
+      img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
+      await new Promise(resolve => { img.onload = resolve; });
+      ok(true, "Image 3 loaded");
 
-    img = document.createElement("img");
-    document.body.appendChild(img);
-    img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
-    await new Promise(resolve => { img.onload = resolve; });
-    ok(true, "Image 4 loaded");
+      img = document.createElement("img");
+      document.body.appendChild(img);
+      img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
+      await new Promise(resolve => { img.onload = resolve; });
+      ok(true, "Image 4 loaded");
+    },
   },
   null, 
   null, 
