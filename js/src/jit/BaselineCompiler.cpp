@@ -2167,10 +2167,26 @@ bool
 BaselineCompiler::emit_JSOP_NEWINIT()
 {
     frame.syncStack(0);
+    JSProtoKey key = JSProtoKey(GET_UINT8(pc));
 
-    ICNewObject_Fallback::Compiler stubCompiler(cx, ICStubCompiler::Engine::Baseline);
-    if (!emitOpIC(stubCompiler.getStub(&stubSpace_)))
-        return false;
+    if (key == JSProto_Array) {
+        
+        masm.move32(Imm32(0), R0.scratchReg());
+
+        ObjectGroup* group = ObjectGroup::allocationSiteGroup(cx, script, pc, JSProto_Array);
+        if (!group)
+            return false;
+
+        ICNewArray_Fallback::Compiler stubCompiler(cx, group, ICStubCompiler::Engine::Baseline);
+        if (!emitOpIC(stubCompiler.getStub(&stubSpace_)))
+            return false;
+    } else {
+        MOZ_ASSERT(key == JSProto_Object);
+
+        ICNewObject_Fallback::Compiler stubCompiler(cx, ICStubCompiler::Engine::Baseline);
+        if (!emitOpIC(stubCompiler.getStub(&stubSpace_)))
+            return false;
+    }
 
     frame.push(R0);
     return true;
@@ -5122,7 +5138,8 @@ BaselineCompiler::emit_JSOP_IMPORTMETA()
     RootedModuleObject module(cx, GetModuleObjectForScript(script));
     MOZ_ASSERT(module);
 
-    JSObject* metaObject = GetOrCreateModuleMetaObject(cx, module);
+    RootedScript moduleScript(cx, module->script());
+    JSObject* metaObject = GetOrCreateModuleMetaObject(cx, moduleScript);
     if (!metaObject)
         return false;
 

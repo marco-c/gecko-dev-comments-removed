@@ -1234,6 +1234,12 @@ CurrentGlobalOrNull(JSContext* cx);
 extern JS_PUBLIC_API(JSObject*)
 GetNonCCWObjectGlobal(JSObject* obj);
 
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetScriptGlobal(JSScript* script);
+
 } 
 
 
@@ -3692,7 +3698,7 @@ CompileOffThreadModule(JSContext* cx, const ReadOnlyCompileOptions& options,
                        JS::SourceBufferHolder& srcBuf,
                        OffThreadCompileCallback callback, void* callbackData);
 
-extern JS_PUBLIC_API(JSObject*)
+extern JS_PUBLIC_API(JSScript*)
 FinishOffThreadModule(JSContext* cx, OffThreadToken* token);
 
 extern JS_PUBLIC_API(void)
@@ -3864,7 +3870,7 @@ extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
          const char* filename, JS::MutableHandleValue rval);
 
-using ModuleResolveHook = JSObject* (*)(JSContext*, HandleObject, HandleString);
+using ModuleResolveHook = JSScript* (*)(JSContext*, HandleScript, HandleString);
 
 
 
@@ -3878,7 +3884,7 @@ GetModuleResolveHook(JSRuntime* rt);
 extern JS_PUBLIC_API(void)
 SetModuleResolveHook(JSRuntime* rt, ModuleResolveHook func);
 
-using ModuleMetadataHook = bool (*)(JSContext*, HandleObject, HandleObject);
+using ModuleMetadataHook = bool (*)(JSContext*, HandleScript, HandleObject);
 
 
 
@@ -3899,20 +3905,20 @@ SetModuleMetadataHook(JSRuntime* rt, ModuleMetadataHook func);
 
 extern JS_PUBLIC_API(bool)
 CompileModule(JSContext* cx, const ReadOnlyCompileOptions& options,
-              SourceBufferHolder& srcBuf, JS::MutableHandleObject moduleRecord);
+              SourceBufferHolder& srcBuf, JS::MutableHandleScript script);
 
 
 
 
 
 extern JS_PUBLIC_API(void)
-SetModuleHostDefinedField(JSObject* module, const JS::Value& value);
+SetModuleHostDefinedField(JSScript* module, const JS::Value& value);
 
 
 
 
 extern JS_PUBLIC_API(JS::Value)
-GetModuleHostDefinedField(JSObject* module);
+GetModuleHostDefinedField(JSScript* script);
 
 
 
@@ -3923,7 +3929,7 @@ GetModuleHostDefinedField(JSObject* module);
 
 
 extern JS_PUBLIC_API(bool)
-ModuleInstantiate(JSContext* cx, JS::HandleObject moduleRecord);
+ModuleInstantiate(JSContext* cx, JS::HandleScript script);
 
 
 
@@ -3935,7 +3941,7 @@ ModuleInstantiate(JSContext* cx, JS::HandleObject moduleRecord);
 
 
 extern JS_PUBLIC_API(bool)
-ModuleEvaluate(JSContext* cx, JS::HandleObject moduleRecord);
+ModuleEvaluate(JSContext* cx, JS::HandleScript script);
 
 
 
@@ -3954,7 +3960,7 @@ ModuleEvaluate(JSContext* cx, JS::HandleObject moduleRecord);
 
 
 extern JS_PUBLIC_API(JSObject*)
-GetRequestedModules(JSContext* cx, JS::HandleObject moduleRecord);
+GetRequestedModules(JSContext* cx, JS::HandleScript script);
 
 extern JS_PUBLIC_API(JSString*)
 GetRequestedModuleSpecifier(JSContext* cx, JS::HandleValue requestedModuleObject);
@@ -3962,9 +3968,6 @@ GetRequestedModuleSpecifier(JSContext* cx, JS::HandleValue requestedModuleObject
 extern JS_PUBLIC_API(void)
 GetRequestedModuleSourcePos(JSContext* cx, JS::HandleValue requestedModuleObject,
                             uint32_t* lineNumber, uint32_t* columnNumber);
-
-extern JS_PUBLIC_API(JSScript*)
-GetModuleScript(JS::HandleObject moduleRecord);
 
 } 
 

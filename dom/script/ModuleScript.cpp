@@ -21,7 +21,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ModuleScript)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ModuleScript)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLoader)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBaseURL)
-  tmp->UnlinkModuleRecord();
+  tmp->UnlinkScript();
   tmp->mParseError.setUndefined();
   tmp->mErrorToRethrow.setUndefined();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -31,7 +31,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ModuleScript)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ModuleScript)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mModuleRecord)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mScript)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mParseError)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mErrorToRethrow)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
@@ -46,42 +46,42 @@ ModuleScript::ModuleScript(ScriptLoader* aLoader, nsIURI* aBaseURL)
 {
   MOZ_ASSERT(mLoader);
   MOZ_ASSERT(mBaseURL);
-  MOZ_ASSERT(!mModuleRecord);
+  MOZ_ASSERT(!mScript);
   MOZ_ASSERT(!HasParseError());
   MOZ_ASSERT(!HasErrorToRethrow());
 }
 
 void
-ModuleScript::UnlinkModuleRecord()
+ModuleScript::UnlinkScript()
 {
   
-  if (mModuleRecord) {
-    MOZ_ASSERT(JS::GetModuleHostDefinedField(mModuleRecord).toPrivate() ==
+  if (mScript) {
+    MOZ_ASSERT(JS::GetModuleHostDefinedField(mScript).toPrivate() ==
                this);
-    JS::SetModuleHostDefinedField(mModuleRecord, JS::UndefinedValue());
-    mModuleRecord = nullptr;
+    JS::SetModuleHostDefinedField(mScript, JS::UndefinedValue());
+    mScript = nullptr;
   }
 }
 
 ModuleScript::~ModuleScript()
 {
   
-  UnlinkModuleRecord();
+  UnlinkScript();
   DropJSObjects(this);
 }
 
 void
-ModuleScript::SetModuleRecord(JS::Handle<JSObject*> aModuleRecord)
+ModuleScript::SetScript(JS::Handle<JSScript*> aScript)
 {
-  MOZ_ASSERT(!mModuleRecord);
+  MOZ_ASSERT(!mScript);
   MOZ_ASSERT(!HasParseError());
   MOZ_ASSERT(!HasErrorToRethrow());
 
-  mModuleRecord = aModuleRecord;
+  mScript = aScript;
 
   
   
-  JS::SetModuleHostDefinedField(mModuleRecord, JS::PrivateValue(this));
+  JS::SetModuleHostDefinedField(mScript, JS::PrivateValue(this));
   HoldJSObjects(this);
 }
 
@@ -92,7 +92,7 @@ ModuleScript::SetParseError(const JS::Value& aError)
   MOZ_ASSERT(!HasParseError());
   MOZ_ASSERT(!HasErrorToRethrow());
 
-  UnlinkModuleRecord();
+  UnlinkScript();
   mParseError = aError;
   HoldJSObjects(this);
 }
@@ -105,7 +105,7 @@ ModuleScript::SetErrorToRethrow(const JS::Value& aError)
 
   
   
-  MOZ_ASSERT(mModuleRecord || HasParseError());
+  MOZ_ASSERT(mScript || HasParseError());
 
   mErrorToRethrow = aError;
 }
@@ -113,7 +113,7 @@ ModuleScript::SetErrorToRethrow(const JS::Value& aError)
 void
 ModuleScript::SetSourceElementAssociated()
 {
-  MOZ_ASSERT(mModuleRecord);
+  MOZ_ASSERT(mScript);
   MOZ_ASSERT(!mSourceElementAssociated);
 
   mSourceElementAssociated = true;

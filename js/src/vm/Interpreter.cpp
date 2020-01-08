@@ -3906,7 +3906,14 @@ END_CASE(JSOP_HOLE)
 
 CASE(JSOP_NEWINIT)
 {
-    JSObject* obj = NewObjectOperation(cx, script, REGS.pc);
+    uint8_t i = GET_UINT8(REGS.pc);
+    MOZ_ASSERT(i == JSProto_Array || i == JSProto_Object);
+
+    JSObject* obj;
+    if (i == JSProto_Array)
+        obj = NewArrayOperation(cx, script, REGS.pc, 0);
+    else
+        obj = NewObjectOperation(cx, script, REGS.pc);
 
     if (!obj)
         goto error;
@@ -4396,7 +4403,8 @@ CASE(JSOP_IMPORTMETA)
     ReservedRooted<JSObject*> module(&rootObject0, GetModuleObjectForScript(script));
     MOZ_ASSERT(module);
 
-    JSObject* metaObject = GetOrCreateModuleMetaObject(cx, module);
+    ReservedRooted<JSScript*> script(&rootScript0, module->as<ModuleObject>().script());
+    JSObject* metaObject = GetOrCreateModuleMetaObject(cx, script);
     if (!metaObject)
         goto error;
 
@@ -5154,13 +5162,8 @@ js::NewObjectOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
             AutoSweepObjectGroup sweep(group);
             if (group->maybePreliminaryObjects(sweep)) {
                 group->maybePreliminaryObjects(sweep)->maybeAnalyze(cx, group);
-                if (group->maybeUnboxedLayout(sweep)) {
-                    
-                    
-                    
-                    MOZ_ASSERT(JSOp(*pc) != JSOP_NEWINIT);
+                if (group->maybeUnboxedLayout(sweep))
                     group->maybeUnboxedLayout(sweep)->setAllocationSite(script, pc);
-                }
             }
 
             if (group->shouldPreTenure(sweep) || group->maybePreliminaryObjects(sweep))
@@ -5178,6 +5181,7 @@ js::NewObjectOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
         obj = CopyInitializerObject(cx, baseObject, newKind);
     } else {
         MOZ_ASSERT(*pc == JSOP_NEWINIT);
+        MOZ_ASSERT(GET_UINT8(pc) == JSProto_Object);
         obj = NewBuiltinClassInstance<PlainObject>(cx, newKind);
     }
 

@@ -2992,6 +2992,13 @@ public:
     }
 
     
+    static RealmPrivate* Get(JSScript* script)
+    {
+        JS::Realm* realm = JS::GetScriptRealm(script);
+        return Get(realm);
+    }
+
+    
     Scriptability scriptability;
 
     
