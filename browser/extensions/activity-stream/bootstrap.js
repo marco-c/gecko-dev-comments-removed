@@ -16,65 +16,12 @@ const RESOURCE_HOST = "activity-stream";
 
 
 
-
-
-
-
-
-function migratePref(oldPrefName, cbIfNotDefault) {
-  
-  if (!Services.prefs.prefHasUserValue(oldPrefName)) {
-    return;
-  }
-
-  
-  let prefGetter;
-  switch (Services.prefs.getPrefType(oldPrefName)) {
-    case Services.prefs.PREF_BOOL:
-      prefGetter = "getBoolPref";
-      break;
-    case Services.prefs.PREF_INT:
-      prefGetter = "getIntPref";
-      break;
-    case Services.prefs.PREF_STRING:
-      prefGetter = "getStringPref";
-      break;
-  }
-
-  
-  cbIfNotDefault(Services.prefs[prefGetter](oldPrefName));
-  Services.prefs.clearUserPref(oldPrefName);
-}
-
-
-
 this.install = function install(data, reason) {};
 
 this.startup = function startup(data, reason) {
   resProto.setSubstitutionWithFlags(RESOURCE_HOST,
                                     Services.io.newURI("chrome/content/", null, data.resourceURI),
                                     resProto.ALLOW_CONTENT_ACCESS);
-
-  
-  migratePref("browser.newtabpage.rows", rows => {
-    
-    if (rows <= 0) {
-      Services.prefs.setBoolPref("browser.newtabpage.activity-stream.feeds.topsites", false);
-    } else {
-      Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", rows);
-    }
-  });
-
-  migratePref("browser.newtabpage.activity-stream.showTopSites", value => {
-    if (value === false) {
-      Services.prefs.setBoolPref("browser.newtabpage.activity-stream.feeds.topsites", false);
-    }
-  });
-
-  
-  migratePref("browser.newtabpage.activity-stream.topSitesCount", count => {
-    Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", Math.ceil(count / 6));
-  });
 };
 
 this.shutdown = function shutdown(data, reason) {

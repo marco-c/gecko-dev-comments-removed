@@ -287,44 +287,44 @@ this.TopStoriesFeed = class TopStoriesFeed {
   }
 
   maybeAddSpoc(target) {
-    if (!this.shouldShowSpocs()) {
-      return;
-    }
-
-    if (Math.random() <= this.spocsPerNewTabs) {
-      const updateContent = () => {
-        if (!this.spocs || !this.spocs.length) {
-          
-          
-          return false;
-        }
-
-        
-        const impressions = this.readImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF);
-        const spocs = this.spocs.filter(s => this.isBelowFrequencyCap(impressions, s));
-
-        if (!spocs.length) {
-          
-          return false;
-        }
-
-        
-        const section = this.store.getState().Sections.find(s => s.id === SECTION_ID);
-        let rows = section.rows.slice(0, this.stories.length);
-        rows.splice(2, 0, Object.assign(spocs[0], {pinned: true}));
-
-        
-        const action = {type: at.SECTION_UPDATE, data: Object.assign({rows}, {id: SECTION_ID})};
-        this.store.dispatch(ac.OnlyToOneContent(action, target));
+    const updateContent = () => {
+      if (!this.shouldShowSpocs()) {
         return false;
-      };
-
-      if (this.stories) {
-        updateContent();
-      } else {
-        
-        this.contentUpdateQueue.push(updateContent);
       }
+      if (Math.random() > this.spocsPerNewTabs) {
+        return false;
+      }
+      if (!this.spocs || !this.spocs.length) {
+        
+        
+        return false;
+      }
+
+      
+      const impressions = this.readImpressionsPref(SPOC_IMPRESSION_TRACKING_PREF);
+      const spocs = this.spocs.filter(s => this.isBelowFrequencyCap(impressions, s));
+
+      if (!spocs.length) {
+        
+        return false;
+      }
+
+      
+      const section = this.store.getState().Sections.find(s => s.id === SECTION_ID);
+      let rows = section.rows.slice(0, this.stories.length);
+      rows.splice(2, 0, Object.assign(spocs[0], {pinned: true}));
+
+      
+      const action = {type: at.SECTION_UPDATE, data: Object.assign({rows}, {id: SECTION_ID})};
+      this.store.dispatch(ac.OnlyToOneContent(action, target));
+      return false;
+    };
+
+    if (this.stories) {
+      updateContent();
+    } else {
+      
+      this.contentUpdateQueue.push(updateContent);
     }
   }
 
