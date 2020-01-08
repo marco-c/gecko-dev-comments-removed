@@ -113,6 +113,14 @@ struct GkAtoms {
 
 
 
+
+
+const ptrdiff_t kGkAtomsArrayOffset = offsetof(GkAtoms, mAtoms);
+
+
+
+
+
 #if defined(__GNUC__) && !defined(__clang__)
 extern NS_EXTERNAL_VIS const GkAtoms gGkAtoms;
 #else

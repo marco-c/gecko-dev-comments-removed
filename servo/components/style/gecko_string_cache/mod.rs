@@ -15,7 +15,9 @@ use crate::gecko_bindings::bindings::Gecko_Atomize;
 use crate::gecko_bindings::bindings::Gecko_Atomize16;
 use crate::gecko_bindings::bindings::Gecko_ReleaseAtom;
 use crate::gecko_bindings::structs::{nsAtom, nsDynamicAtom, nsStaticAtom};
+use crate::gecko_bindings::structs::root::mozilla::detail::GkAtoms_Atoms_AtomsCount;
 use crate::gecko_bindings::structs::root::mozilla::detail::gGkAtoms;
+use crate::gecko_bindings::structs::root::mozilla::detail::kGkAtomsArrayOffset;
 use nsstring::{nsAString, nsStr};
 use precomputed_hash::PrecomputedHash;
 use std::borrow::{Borrow, Cow};
@@ -57,11 +59,32 @@ pub struct Atom(usize);
 
 pub struct WeakAtom(nsAtom);
 
+
+const STATIC_ATOM_COUNT: usize = GkAtoms_Atoms_AtomsCount as usize;
+
+
+
+
+
+
+
+
+#[inline]
+fn static_atoms() -> &'static [nsStaticAtom; STATIC_ATOM_COUNT] {
+    unsafe {
+        let addr = &gGkAtoms as *const _ as usize + kGkAtomsArrayOffset as usize;
+        &*(addr as *const _)
+    }
+}
+
+
+
 #[inline]
 fn valid_static_atom_addr(addr: usize) -> bool {
     unsafe {
-        let start = gGkAtoms.mAtoms.get_unchecked(0) as *const _;
-        let end = gGkAtoms.mAtoms.get_unchecked(gGkAtoms.mAtoms.len()) as *const _;
+        let atoms = static_atoms();
+        let start = atoms.get_unchecked(0) as *const _;
+        let end = atoms.get_unchecked(STATIC_ATOM_COUNT) as *const _;
         let in_range = addr >= start as usize && addr < end as usize;
         let aligned = addr % mem::align_of::<nsStaticAtom>() == 0;
         in_range && aligned
@@ -341,7 +364,7 @@ impl Atom {
     
     #[inline]
     pub unsafe fn from_index(index: u16) -> Self {
-        let ptr = gGkAtoms.mAtoms.get_unchecked(index as usize) as *const _;
+        let ptr = static_atoms().get_unchecked(index as usize) as *const _;
         let handle = make_static_handle(ptr);
         let atom = Atom(handle);
         debug_assert!(valid_static_atom_addr(ptr as usize));
