@@ -126,9 +126,6 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(disableCacheIRBinaryArith, false);
 
     
-    SET_DEFAULT(disableSharedStubs, false);
-
-    
     
     #if defined(XP_MACOSX)
         SET_DEFAULT(disableSincos, false);
