@@ -953,8 +953,6 @@ GetPrototypeOf(JSContext* cx, HandleObject target, MutableHandleValue rval);
 void
 CloseIteratorFromIon(JSContext* cx, JSObject* obj);
 
-extern const VMFunction SetObjectElementInfo;
-
 bool
 DoConcatStringObject(JSContext* cx, HandleValue lhs, HandleValue rhs,
                      MutableHandleValue res);
@@ -967,10 +965,23 @@ MOZ_MUST_USE bool
 TrySkipAwait(JSContext* cx, HandleValue val, MutableHandleValue resolved);
 
 
-extern const VMFunction DoConcatStringObjectInfo;
+extern const VMFunction SetArrayLengthInfo;
+extern const VMFunction SetObjectElementInfo;
 
 extern const VMFunction StringsEqualInfo;
 extern const VMFunction StringsNotEqualInfo;
+extern const VMFunction ConcatStringsInfo;
+extern const VMFunction StringSplitHelperInfo;
+
+extern const VMFunction ProxyGetPropertyInfo;
+extern const VMFunction ProxyGetPropertyByValueInfo;
+extern const VMFunction ProxySetPropertyInfo;
+extern const VMFunction ProxySetPropertyByValueInfo;
+extern const VMFunction ProxyHasInfo;
+extern const VMFunction ProxyHasOwnInfo;
+
+
+extern const VMFunction DoConcatStringObjectInfo;
 
 } 
 } 
