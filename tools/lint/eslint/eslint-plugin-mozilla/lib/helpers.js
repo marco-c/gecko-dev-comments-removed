@@ -288,10 +288,17 @@ module.exports = {
         let globalModules = this.modulesGlobalData;
 
         if (match[1] in globalModules) {
-          return globalModules[match[1]].map(name => ({ name, writable: true }));
+          
+          
+          
+          
+          let explicit = globalModules[match[1]].length == 1;
+          return globalModules[match[1]].map(name => ({
+            name, writable: true, explicit
+          }));
         }
 
-        return [{ name: match[2], writable: true }];
+        return [{ name: match[2], writable: true, explicit: true }];
       }
     }
 
