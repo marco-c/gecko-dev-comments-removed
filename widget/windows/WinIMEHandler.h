@@ -72,6 +72,16 @@ class IMEHandler final {
 
 
 
+  static bool NeedsToCreateNativeCaret() {
+    return sHasNativeCaretBeenRequested && !IsA11yHandlingNativeCaret();
+  }
+
+  
+
+
+
+
+
   static bool CreateNativeCaret(nsWindow* aWindow,
                                 const LayoutDeviceIntRect& aCaretRect);
 
@@ -173,6 +183,7 @@ class IMEHandler final {
   static bool sForceDisableCurrentIMM_IME;
   static bool sPluginHasFocus;
   static bool sNativeCaretIsCreated;
+  static bool sHasNativeCaretBeenRequested;
 
 #ifdef NS_ENABLE_TSF
   static decltype(SetInputScopes)* sSetInputScopes;

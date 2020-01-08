@@ -4654,6 +4654,9 @@ TSFTextStore::GetTextExt(TsViewCookie vcView, LONG acpStart, LONG acpEnd,
   
   
   
+  
+  
+  
   if (!IMEHandler::IsA11yHandlingNativeCaret() &&
       TSFPrefs::NeedToCreateNativeCaretForLegacyATOK() &&
       TSFStaticSink::IsATOKReferringNativeCaretActive() &&
@@ -6127,6 +6130,14 @@ nsresult TSFTextStore::OnSelectionChangeInternal(
   
   MaybeFlushPendingNotifications();
 
+  
+  
+  
+  
+  if (!IsHandlingComposition() && IMEHandler::NeedsToCreateNativeCaret()) {
+    CreateNativeCaret();
+  }
+
   return NS_OK;
 }
 
@@ -6219,9 +6230,15 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
     mContentForTSF.OnLayoutChanged();
   }
 
-  
-  
-  IMEHandler::MaybeDestroyNativeCaret();
+  if (IMEHandler::NeedsToCreateNativeCaret()) {
+    
+    
+    CreateNativeCaret();
+  } else {
+    
+    
+    IMEHandler::MaybeDestroyNativeCaret();
+  }
 
   
   bool ret = true;
@@ -6365,6 +6382,13 @@ nsresult TSFTextStore::OnUpdateCompositionInternal() {
   }
   mDeferNotifyingTSF = false;
   MaybeFlushPendingNotifications();
+
+  
+  
+  if (IMEHandler::NeedsToCreateNativeCaret()) {
+    CreateNativeCaret();
+  }
+
   return NS_OK;
 }
 

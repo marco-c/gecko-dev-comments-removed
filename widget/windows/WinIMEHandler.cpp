@@ -50,6 +50,7 @@ InputContextAction::Cause IMEHandler::sLastContextActionCause =
 bool IMEHandler::sForceDisableCurrentIMM_IME = false;
 bool IMEHandler::sPluginHasFocus = false;
 bool IMEHandler::sNativeCaretIsCreated = false;
+bool IMEHandler::sHasNativeCaretBeenRequested = false;
 
 #ifdef NS_ENABLE_TSF
 bool IMEHandler::sIsInTSFMode = false;
@@ -163,6 +164,30 @@ bool IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
       DismissOnScreenKeyboard();
     }
     return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!sHasNativeCaretBeenRequested && aMessage == WM_GETOBJECT &&
+      static_cast<DWORD>(aLParam) == OBJID_CARET) {
+    
+    
+    sHasNativeCaretBeenRequested = true;
+    
   }
 
 #ifdef NS_ENABLE_TSF
