@@ -105,6 +105,12 @@ public:
   
   
   void
+  MaybeSetAllowedPolicy(const nsAString& aFeatureName);
+
+  
+  
+  
+  void
   ResetDeclaredPolicy();
 
   
