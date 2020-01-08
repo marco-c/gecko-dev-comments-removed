@@ -44,6 +44,7 @@ const FONT_PROPERTIES = [
   "font-style",
   "font-variation-settings",
   "font-weight",
+  "line-height",
 ];
 const PREF_FONT_EDITOR = "devtools.inspector.fonteditor.enabled";
 const REGISTERED_AXES_TO_FONT_PROPERTIES = {
@@ -403,8 +404,14 @@ class FontInspector {
 
 
 
+
   getFontPropertyValueKeywords() {
-    return ["font-size", "font-weight", "font-stretch"].reduce((acc, property) => {
+    return [
+      "font-size",
+      "font-weight",
+      "font-stretch",
+      "line-height"
+    ].reduce((acc, property) => {
       return acc.concat(this.cssProperties.getValues(property));
     }, []);
   }

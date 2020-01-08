@@ -13,6 +13,7 @@ const FontPropertyValue = createFactory(require("./FontPropertyValue"));
 const FontSize = createFactory(require("./FontSize"));
 const FontStyle = createFactory(require("./FontStyle"));
 const FontWeight = createFactory(require("./FontWeight"));
+const LineHeight = createFactory(require("./LineHeight"));
 
 const { getStr } = require("../utils/l10n");
 const Types = require("../types");
@@ -195,7 +196,15 @@ class FontEditor extends PureComponent {
 
   renderFontSize(value) {
     return value && FontSize({
-      key: this.props.fontEditor.id,
+      key: `${this.props.fontEditor.id}:font-size`,
+      onChange: this.props.onPropertyChange,
+      value,
+    });
+  }
+
+  renderLineHeight(value) {
+    return value && LineHeight({
+      key: `${this.props.fontEditor.id}:line-height`,
       onChange: this.props.onPropertyChange,
       value,
     });
@@ -318,6 +327,8 @@ class FontEditor extends PureComponent {
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       
       this.renderFontSize(properties["font-size"]),
+      
+      this.renderLineHeight(properties["line-height"]),
       
       !hasWeightAxis && this.renderFontWeight(properties["font-weight"]),
       
