@@ -3,11 +3,11 @@
 
 
 use api::{DeviceRect, FilterOp, MixBlendMode, PipelineId, PremultipliedColorF, PictureRect, PicturePoint};
-use api::{DeviceIntRect, DeviceIntSize, DevicePoint, LayoutRect, PictureToRasterTransform, LayoutPixel};
-use api::{DevicePixelScale, PictureIntPoint, PictureIntRect, PictureIntSize, RasterRect, RasterSpace};
+use api::{DeviceIntRect, DevicePoint, LayoutRect, PictureToRasterTransform, LayoutPixel};
+use api::{DevicePixelScale, RasterRect, RasterSpace};
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect};
 use box_shadow::{BLUR_SAMPLE_SCALE};
-use clip::ClipNodeCollector;
+use clip::{ClipNodeCollector, ClipStore};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
 use euclid::{TypedScale, vec3, TypedRect};
 use internal_types::{FastHashMap, PlaneSplitter};
@@ -21,6 +21,7 @@ use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle};
 use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use scene::{FilterOpHelpers, SceneProperties};
 use smallvec::SmallVec;
+use surface::SurfaceDescriptor;
 use std::{mem, ops};
 use tiling::RenderTargetKind;
 use util::{TransformedRectKind, MatrixHelpers, MaxRect};
@@ -192,59 +193,6 @@ impl PictureIdGenerator {
         self.next += 1;
         id
     }
-}
-
-
-
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct PictureCacheKey {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    scene_id: u64,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    picture_id: PictureId,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pic_relative_render_rect: PictureIntRect,
-
-    
-    
-    
-    
-    unclipped_size: DeviceIntSize,
 }
 
 
@@ -491,6 +439,9 @@ pub struct PicturePrimitive {
 
     
     pub local_clip_rect: LayoutRect,
+
+    
+    surface_desc: Option<SurfaceDescriptor>,
 }
 
 impl PicturePrimitive {
@@ -530,8 +481,32 @@ impl PicturePrimitive {
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
         local_clip_rect: LayoutRect,
+        clip_store: &ClipStore,
     ) -> Self {
+        
+        
+        
+        let create_cache_descriptor = match requested_composite_mode {
+            Some(PictureCompositeMode::Filter(FilterOp::Blur(blur_radius))) => {
+                blur_radius > 0.0
+            }
+            Some(_) | None => {
+                false
+            }
+        };
+
+        let surface_desc = if create_cache_descriptor {
+            SurfaceDescriptor::new(
+                &prim_list.prim_instances,
+                spatial_node_index,
+                clip_store,
+            )
+        } else {
+            None
+        };
+
         PicturePrimitive {
+            surface_desc,
             prim_list,
             state: None,
             secondary_render_task_id: None,
@@ -617,7 +592,6 @@ impl PicturePrimitive {
         };
 
         let state = PictureState {
-            has_non_root_coord_system: false,
             is_cacheable: true,
             local_rect_changed: false,
             map_local_to_pic,
@@ -845,6 +819,12 @@ impl PicturePrimitive {
                 
                 let establishes_raster_root = xf.has_perspective_component();
 
+                
+                
+                
+                
+                let raster_space = RasterSpace::Screen;
+
                 let raster_spatial_node_index = if establishes_raster_root {
                     surface_spatial_node_index
                 } else {
@@ -864,6 +844,17 @@ impl PicturePrimitive {
                     composite_mode,
                     surface_index,
                 });
+
+                
+                
+                if let Some(ref mut surface_desc) = self.surface_desc {
+                    surface_desc.update(
+                        surface_spatial_node_index,
+                        raster_spatial_node_index,
+                        frame_context.clip_scroll_tree,
+                        raster_space,
+                    );
+                }
 
                 surface_index
             }
@@ -1062,26 +1053,45 @@ impl PicturePrimitive {
                 
                 
                 
-                let device_rect = clipped
-                    .inflate(blur_range, blur_range)
-                    .intersection(&unclipped.to_i32())
-                    .unwrap();
-
-                let uv_rect_kind = calculate_uv_rect_kind(
-                    &pic_rect,
-                    &transform,
-                    &device_rect,
-                    frame_context.device_pixel_scale,
-                );
+                
+                
+                
 
                 
                 
                 
+                const MAX_CACHE_SIZE: f32 = 2048.0;
+                let too_big_to_cache = unclipped.size.width > MAX_CACHE_SIZE ||
+                                       unclipped.size.height > MAX_CACHE_SIZE;
+
                 
                 
                 
-                if pic_state_for_children.has_non_root_coord_system ||
+                let has_valid_cache_key = self.surface_desc.is_some();
+
+                if !has_valid_cache_key ||
+                   too_big_to_cache ||
                    !pic_state_for_children.is_cacheable {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let device_rect = clipped
+                        .inflate(blur_range, blur_range)
+                        .intersection(&unclipped.to_i32())
+                        .unwrap();
+
+                    let uv_rect_kind = calculate_uv_rect_kind(
+                        &pic_rect,
+                        &transform,
+                        &device_rect,
+                        frame_context.device_pixel_scale,
+                    );
+
                     let picture_task = RenderTask::new_picture(
                         RenderTaskLocation::Dynamic(None, device_rect.size),
                         unclipped.size,
@@ -1110,28 +1120,27 @@ impl PicturePrimitive {
                 } else {
                     
                     
-                    let pic_relative_render_rect = PictureIntRect::new(
-                        PictureIntPoint::new(
-                            device_rect.origin.x - unclipped.origin.x as i32,
-                            device_rect.origin.y - unclipped.origin.y as i32,
-                        ),
-                        PictureIntSize::new(
-                            device_rect.size.width,
-                            device_rect.size.height,
-                        ),
+                    let device_rect = unclipped.to_i32();
+
+                    let uv_rect_kind = calculate_uv_rect_kind(
+                        &pic_rect,
+                        &transform,
+                        &device_rect,
+                        frame_context.device_pixel_scale,
                     );
 
                     
                     
+                    let cache_key = self.surface_desc
+                        .as_ref()
+                        .expect("bug: no cache key for surface")
+                        .cache_key
+                        .clone();
+
                     let cache_item = frame_state.resource_cache.request_render_task(
                         RenderTaskCacheKey {
                             size: device_rect.size,
-                            kind: RenderTaskCacheKeyKind::Picture(PictureCacheKey {
-                                scene_id: frame_context.scene_id,
-                                picture_id: self.id,
-                                unclipped_size: unclipped.size.to_i32(),
-                                pic_relative_render_rect,
-                            }),
+                            kind: RenderTaskCacheKeyKind::Picture(cache_key),
                         },
                         frame_state.gpu_cache,
                         frame_state.render_tasks,

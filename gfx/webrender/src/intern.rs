@@ -65,11 +65,26 @@ pub struct UpdateList<S> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
+pub struct ItemUid<T> {
+    uid: usize,
+    _marker: PhantomData<T>,
+}
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Copy, Clone)]
 pub struct Handle<T> {
-    index: usize,
+    index: u32,
     epoch: Epoch,
+    uid: ItemUid<T>,
     _marker: PhantomData<T>,
+}
+
+impl <T> Handle<T> where T: Copy {
+    pub fn uid(&self) -> ItemUid<T> {
+        self.uid
+    }
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -150,7 +165,7 @@ impl<S, T, M> DataStore<S, T, M> where S: Debug, T: From<S>, M: Debug {
 impl<S, T, M> ops::Index<Handle<M>> for DataStore<S, T, M> {
     type Output = T;
     fn index(&self, handle: Handle<M>) -> &T {
-        let item = &self.items[handle.index];
+        let item = &self.items[handle.index as usize];
         assert_eq!(item.epoch, handle.epoch);
         &item.data
     }
@@ -160,7 +175,7 @@ impl<S, T, M> ops::Index<Handle<M>> for DataStore<S, T, M> {
 
 impl<S, T, M> ops::IndexMut<Handle<M>> for DataStore<S, T, M> {
     fn index_mut(&mut self, handle: Handle<M>) -> &mut T {
-        let item = &mut self.items[handle.index];
+        let item = &mut self.items[handle.index as usize];
         assert_eq!(item.epoch, handle.epoch);
         &mut item.data
     }
@@ -183,6 +198,8 @@ pub struct Interner<S : Eq + Hash + Clone + Debug, D, M> {
     
     current_epoch: Epoch,
     
+    next_uid: usize,
+    
     
     local_data: Vec<Item<D>>,
 }
@@ -195,6 +212,7 @@ impl<S, D, M> Interner<S, D, M> where S: Eq + Hash + Clone + Debug, M: Copy + De
             free_list: Vec::new(),
             updates: Vec::new(),
             current_epoch: Epoch(1),
+            next_uid: 0,
             local_data: Vec::new(),
         }
     }
@@ -221,10 +239,10 @@ impl<S, D, M> Interner<S, D, M> where S: Eq + Hash + Clone + Debug, M: Copy + De
             
             if handle.epoch != self.current_epoch {
                 self.updates.push(Update {
-                    index: handle.index,
+                    index: handle.index as usize,
                     kind: UpdateKind::UpdateEpoch,
                 });
-                self.local_data[handle.index].epoch = self.current_epoch;
+                self.local_data[handle.index as usize].epoch = self.current_epoch;
             }
             handle.epoch = self.current_epoch;
             return *handle;
@@ -246,14 +264,19 @@ impl<S, D, M> Interner<S, D, M> where S: Eq + Hash + Clone + Debug, M: Copy + De
 
         
         let handle = Handle {
-            index,
+            index: index as u32,
             epoch: self.current_epoch,
+            uid: ItemUid {
+                uid: self.next_uid,
+                _marker: PhantomData,
+            },
             _marker: PhantomData,
         };
 
         
         
         self.map.insert(data.clone(), handle);
+        self.next_uid += 1;
 
         
         
@@ -291,9 +314,9 @@ impl<S, D, M> Interner<S, D, M> where S: Eq + Hash + Clone + Debug, M: Copy + De
                 
                 
                 
-                free_list.push(handle.index);
+                free_list.push(handle.index as usize);
                 updates.push(Update {
-                    index: handle.index,
+                    index: handle.index as usize,
                     kind: UpdateKind::Remove,
                 });
                 return false;
@@ -318,7 +341,7 @@ impl<S, D, M> Interner<S, D, M> where S: Eq + Hash + Clone + Debug, M: Copy + De
 impl<S, D, M> ops::Index<Handle<M>> for Interner<S, D, M> where S: Eq + Clone + Hash + Debug, M: Copy + Debug {
     type Output = D;
     fn index(&self, handle: Handle<M>) -> &D {
-        let item = &self.local_data[handle.index];
+        let item = &self.local_data[handle.index as usize];
         assert_eq!(item.epoch, handle.epoch);
         &item.data
     }
