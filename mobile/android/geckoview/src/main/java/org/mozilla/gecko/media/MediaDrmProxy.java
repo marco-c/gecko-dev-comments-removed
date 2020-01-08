@@ -282,6 +282,16 @@ public final class MediaDrmProxy {
         return mDrmStubId;
     }
 
+    @WrapForJNI
+    public boolean setServerCertificate(final byte[] cert) {
+        try {
+            mImpl.setServerCertificate(cert);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     
     
     @WrapForJNI
