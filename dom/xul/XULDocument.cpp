@@ -1042,11 +1042,7 @@ XULDocument::AddElementToDocumentPost(Element* aElement)
         ResetDocumentDirection();
     }
 
-    
-    if (aElement->NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
-        
-        nsXBLService::AttachGlobalKeyHandler(aElement);
-    } else if (aElement->IsXULElement(nsGkAtoms::link)) {
+    if (aElement->IsXULElement(nsGkAtoms::link)) {
         LocalizationLinkAdded(aElement);
     } else if (aElement->IsXULElement(nsGkAtoms::linkset)) {
         OnL10nResourceContainerParsed();
@@ -1095,10 +1091,6 @@ XULDocument::RemoveSubtreeFromDocument(nsIContent* aContent)
     
     
     nsresult rv;
-
-    if (aElement->NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
-        nsXBLService::DetachGlobalKeyHandler(aElement);
-    }
 
     
     for (nsIContent* child = aElement->GetLastChild();
