@@ -44,7 +44,10 @@ const parentProcessTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
-parentProcessTargetPrototype.initialize = function(connection) {
+
+
+
+parentProcessTargetPrototype.initialize = function(connection, window) {
   BrowsingContextTargetActor.prototype.initialize.call(this, connection);
 
   
@@ -57,7 +60,9 @@ parentProcessTargetPrototype.initialize = function(connection) {
   this.listenForNewDocShells = true;
 
   
-  let window = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
+  if (!window) {
+    window = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
+  }
 
   
   
@@ -68,17 +73,11 @@ parentProcessTargetPrototype.initialize = function(connection) {
   
   
   if (!window) {
-    try {
-      window = Services.appShell.hiddenDOMWindow;
-    } catch (e) {
-      
-    }
+    window = Services.appShell.hiddenDOMWindow;
   }
 
-  
-  const docShell = window ? window.docShell : null;
   Object.defineProperty(this, "docShell", {
-    value: docShell,
+    value: window.docShell,
     configurable: true
   });
 };

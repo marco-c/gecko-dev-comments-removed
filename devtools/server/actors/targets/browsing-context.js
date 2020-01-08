@@ -336,11 +336,7 @@ const browsingContextTargetPrototype = {
 
 
   get window() {
-    
-    if (this.docShell) {
-      return this.docShell.domWindow;
-    }
-    return null;
+    return this.docShell.domWindow;
   },
 
   get outerWindowID() {
@@ -358,8 +354,7 @@ const browsingContextTargetPrototype = {
     
     
     
-    
-    if (this.window && Cu.isModuleLoaded(EXTENSION_CONTENT_JSM)) {
+    if (Cu.isModuleLoaded(EXTENSION_CONTENT_JSM)) {
       return ExtensionContent.getContentScriptGlobals(this.window);
     }
 
@@ -462,15 +457,13 @@ const browsingContextTargetPrototype = {
       traits: {
         
         
-        
-        isBrowsingContext: !!this.docShell,
+        isBrowsingContext: true,
       },
     };
 
     
     
-    
-    if (this.docShell && !this.docShell.isBeingDestroyed()) {
+    if (!this.docShell.isBeingDestroyed()) {
       response.title = this.title;
       response.url = this.url;
       response.outerWindowID = this.outerWindowID;
@@ -575,17 +568,14 @@ const browsingContextTargetPrototype = {
     
     this._createThreadActor();
 
+    this._progressListener = new DebuggerProgressListener(this);
+
     
-    if (this.window) {
-      this._progressListener = new DebuggerProgressListener(this);
+    this._originalWindow = this.window;
 
-      
-      this._originalWindow = this.window;
-
-      
-      
-      DevToolsUtils.executeSoon(() => this._watchDocshells());
-    }
+    
+    
+    DevToolsUtils.executeSoon(() => this._watchDocshells());
 
     this._attached = true;
   },

@@ -75,10 +75,19 @@ const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
 
 
 webExtensionTargetPrototype.initialize = function(conn, chromeGlobal, prefix, addonId) {
-  parentProcessTargetPrototype.initialize.call(this, conn);
+  this.id = addonId;
+
+  
+  
+  let extensionWindow = this._searchForExtensionWindow();
+  if (!extensionWindow) {
+    this._createFallbackWindow();
+    extensionWindow = this.fallbackWindow;
+  }
+
+  parentProcessTargetPrototype.initialize.call(this, conn, extensionWindow);
   this._chromeGlobal = chromeGlobal;
   this._prefix = prefix;
-  this.id = addonId;
 
   
   
@@ -115,14 +124,6 @@ webExtensionTargetPrototype.initialize = function(conn, chromeGlobal, prefix, ad
     },
     shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee.bind(this),
   });
-
-  
-  
-  const extensionWindow = this._searchForExtensionWindow();
-
-  if (extensionWindow) {
-    this._setWindow(extensionWindow);
-  }
 };
 
 
