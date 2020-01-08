@@ -1,5 +1,5 @@
-if (!this.hasOwnProperty("TypedObject"))
-    quit();
+
+
 function test() {
     var g = newGlobal({sameCompartmentAs: this});
     var S = g.evaluate("new TypedObject.StructType({x: TypedObject.uint32});");
