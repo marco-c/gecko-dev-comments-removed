@@ -397,9 +397,6 @@ class Nursery
     mozilla::TimeDuration timeInChunkAlloc_;
 
     
-    float previousPromotionRate_;
-
-    
     mozilla::TimeDuration profileThreshold_;
     bool enableProfiling_;
 

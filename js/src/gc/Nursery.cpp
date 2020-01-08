@@ -130,7 +130,6 @@ js::Nursery::Nursery(JSRuntime* rt)
   , maxChunkCount_(0)
   , chunkCountLimit_(0)
   , timeInChunkAlloc_(0)
-  , previousPromotionRate_(0)
   , profileThreshold_(0)
   , enableProfiling_(false)
   , canAllocateStrings_(false)
@@ -1213,6 +1212,17 @@ js::Nursery::maybeResizeNursery(JS::gcreason::Reason reason)
     }
 #endif
 
+    newMaxNurseryChunks = runtime()->gc.tunables.gcMaxNurseryBytes() >> ChunkShift;
+    if (newMaxNurseryChunks != chunkCountLimit_) {
+        chunkCountLimit_ = newMaxNurseryChunks;
+        
+        if (maxChunkCount() > newMaxNurseryChunks) {
+            
+            shrinkAllocableSpace(newMaxNurseryChunks);
+            return;
+        }
+    }
+
     
 
 
@@ -1221,28 +1231,13 @@ js::Nursery::maybeResizeNursery(JS::gcreason::Reason reason)
     const float promotionRate =
         float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
 
-    newMaxNurseryChunks = runtime()->gc.tunables.gcMaxNurseryBytes() >> ChunkShift;
-    if (newMaxNurseryChunks != chunkCountLimit_) {
-        chunkCountLimit_ = newMaxNurseryChunks;
-        
-        if (maxChunkCount() > newMaxNurseryChunks) {
-            
-            shrinkAllocableSpace(newMaxNurseryChunks);
-
-            previousPromotionRate_ = promotionRate;
-            return;
-        }
-    }
-
     if (promotionRate > GrowThreshold) {
         
         
         growAllocableSpace();
-    } else if (promotionRate < ShrinkThreshold && previousPromotionRate_ < ShrinkThreshold) {
+    } else if (promotionRate < ShrinkThreshold) {
         shrinkAllocableSpace(maxChunkCount() - 1);
     }
-
-    previousPromotionRate_ = promotionRate;
 }
 
 void
