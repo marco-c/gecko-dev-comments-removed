@@ -39,23 +39,52 @@ class AccessibilityStartup {
 
 
 
+
+  async prepareAccessibility() {
+    
+    
+    
+    this._walker = await this._accessibility.getWalker();
+
+    this._supports = {};
+    
+    this._supports.enableDisable =
+      await this.target.actorHasMethod("accessibility", "enable");
+
+    if (this._supports.enableDisable) {
+      this._supports.relations =
+        await this.target.actorHasMethod("accessible", "getRelations");
+      await this._accessibility.bootstrap();
+    }
+
+    return true;
+  }
+
+  
+
+
+
+
+
   initAccessibility() {
     if (!this._initAccessibility) {
       this._initAccessibility = (async function() {
+        await Promise.race([
+          this.toolbox.isOpen,
+          this.toolbox.once("accessibility-init"),
+        ]);
+
         this._accessibility = this.target.getFront("accessibility");
         
         
         
-        this._walker = await this._accessibility.getWalker();
-        this._supports = {};
+        const prepared = await Promise.race([
+          this.prepareAccessibility(),
+          this.target.once("close"), 
+        ]);
         
-        this._supports.enableDisable =
-          await this.target.actorHasMethod("accessibility", "enable");
-
-        if (this._supports.enableDisable) {
-          this._supports.relations =
-            await this.target.actorHasMethod("accessible", "getRelations");
-          await this._accessibility.bootstrap();
+        if (!prepared) {
+          return;
         }
 
         this._updateToolHighlight();
