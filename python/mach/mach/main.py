@@ -493,6 +493,27 @@ To see more help for a specific command, run:
 
         handler = getattr(args, 'mach_handler')
 
+        
+        
+        
+        
+        if handler.category == 'testing':
+            from mozbuild.base import BuildEnvironmentNotFoundException
+            try:
+                from mozbuild.base import MozbuildObject
+                
+                build = MozbuildObject.from_environment()
+                if build is not None and hasattr(build, 'mozconfig'):
+                    ac_options = build.mozconfig['configure_args']
+                    if ac_options and '--disable-tests' in ac_options:
+                        print('Tests have been disabled by mozconfig with the flag' +
+                              '"ac_add_options --disable-tests".\n' +
+                              'Remove the flag, and re-compile to enable tests.')
+                        return 1
+            except BuildEnvironmentNotFoundException:
+                
+                pass
+
         try:
             return Registrar._run_command_handler(handler, context=context,
                                                   debug_command=args.debug_command,
