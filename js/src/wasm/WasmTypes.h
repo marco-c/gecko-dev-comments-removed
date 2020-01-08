@@ -1892,9 +1892,7 @@ enum class SymbolicAddress
     TableCopy,
     TableDrop,
     TableInit,
-#ifdef ENABLE_WASM_GC
     PostBarrier,
-#endif
     StructNew,
     StructNarrow,
 #if defined(JS_CODEGEN_MIPS32)
@@ -2001,9 +1999,7 @@ struct TlsData
     
     Atomic<uint32_t, mozilla::Relaxed> interrupt;
 
-#ifdef ENABLE_WASM_GC
     uint8_t* addressOfNeedsIncrementalBarrier;
-#endif
 
     
     

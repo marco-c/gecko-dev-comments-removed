@@ -3558,11 +3558,13 @@ EmitBodyExprs(FunctionCompiler& f)
           case uint16_t(Op::F64ReinterpretI64):
             CHECK(EmitReinterpret(f, ValType::F64, ValType::I64, MIRType::Double));
 
-          
+#ifdef ENABLE_WASM_GC
           case uint16_t(Op::RefEq):
           case uint16_t(Op::RefNull):
           case uint16_t(Op::RefIsNull):
+            
             return f.iter().unrecognizedOpcode(&op);
+#endif
 
           
           case uint16_t(Op::I32Extend8S):

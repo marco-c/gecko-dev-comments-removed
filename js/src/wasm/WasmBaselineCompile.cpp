@@ -5736,7 +5736,6 @@ class BaseCompiler final : public BaseCompilerInterface
     
     
 
-#ifdef ENABLE_WASM_GC
     
     
     
@@ -5849,7 +5848,6 @@ class BaseCompiler final : public BaseCompilerInterface
         emitPostBarrier(valueAddr);
         masm.bind(&skipBarrier);
     }
-#endif 
 
     
     
@@ -6164,12 +6162,10 @@ class BaseCompiler final : public BaseCompilerInterface
     MOZ_MUST_USE bool emitMemFill();
     MOZ_MUST_USE bool emitMemOrTableInit(bool isMem);
 #endif
-#ifdef ENABLE_WASM_GC
     MOZ_MUST_USE bool emitStructNew();
     MOZ_MUST_USE bool emitStructGet();
     MOZ_MUST_USE bool emitStructSet();
     MOZ_MUST_USE bool emitStructNarrow();
-#endif
 };
 
 void
@@ -8683,7 +8679,6 @@ BaseCompiler::emitSetGlobal()
         freeF64(rv);
         break;
       }
-#ifdef ENABLE_WASM_GC
       case ValType::Ref:
       case ValType::AnyRef: {
         RegPtr valueAddr(PreBarrierReg);
@@ -8697,7 +8692,6 @@ BaseCompiler::emitSetGlobal()
         freeRef(rv);
         break;
       }
-#endif
       default:
         MOZ_CRASH("Global variable type");
         break;
@@ -9759,7 +9753,6 @@ BaseCompiler::emitMemOrTableInit(bool isMem)
 }
 #endif
 
-#ifdef ENABLE_WASM_GC
 bool
 BaseCompiler::emitStructNew()
 {
@@ -10115,7 +10108,6 @@ BaseCompiler::emitStructNarrow()
 
     return true;
 }
-#endif  
 
 bool
 BaseCompiler::emitBody()
