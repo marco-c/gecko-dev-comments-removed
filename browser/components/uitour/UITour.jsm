@@ -1550,7 +1550,7 @@ var UITour = {
 
       
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-      let profileAge = new ProfileAge(null, null);
+      let profileAge = await ProfileAge();
       let createdDate = await profileAge.created;
       let resetDate = await profileAge.reset;
       let createdWeeksAgo = Math.floor((Date.now() - createdDate) / ONE_WEEK);
