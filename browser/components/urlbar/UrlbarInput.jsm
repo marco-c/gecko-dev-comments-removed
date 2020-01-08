@@ -50,6 +50,7 @@ class UrlbarInput {
     this.controller = options.controller || new UrlbarController({
       browserWindow: this.window,
     });
+    this.controller.setInput(this);
     this.view = new UrlbarView(this);
     this.valueIsTyped = false;
     this.userInitiatedFocus = false;
@@ -104,7 +105,7 @@ class UrlbarInput {
     this.inputField.addEventListener("underflow", this);
     this.inputField.addEventListener("scrollend", this);
     this.inputField.addEventListener("select", this);
-    this.inputField.addEventListener("keyup", this);
+    this.inputField.addEventListener("keydown", this);
 
     this.inputField.controllers.insertControllerAt(0, new CopyCutController(this));
   }
@@ -260,7 +261,7 @@ class UrlbarInput {
 
 
 
-  resultSelected(event, result) {
+  pickResult(event, result) {
     this.setValueFromResult(result);
 
     
@@ -712,13 +713,8 @@ class UrlbarInput {
     this.controller.tabContextChanged();
   }
 
-  _on_keyup(event) {
-    
-    
-    
-    if (event.key == "Enter") {
-      this.handleCommand(event);
-    }
+  _on_keydown(event) {
+    this.controller.handleKeyNavigation(event);
   }
 }
 
