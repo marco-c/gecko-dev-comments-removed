@@ -35,11 +35,14 @@ DocOrShadowFromContent(nsIContent& aContent)
 }
 
 void
-IDTracker::Reset(nsIContent* aFromContent, nsIURI* aURI,nsIURI* aReferrer,
-                 uint32_t aReferrerPolicy,
-                 bool aWatch, bool aReferenceImage)
+IDTracker::ResetToURIFragmentID(nsIContent* aFromContent,
+                                nsIURI* aURI,
+                                nsIURI* aReferrer,
+                                uint32_t aReferrerPolicy,
+                                bool aWatch,
+                                bool aReferenceImage)
 {
-  MOZ_ASSERT(aFromContent, "Reset() expects non-null content pointer");
+  MOZ_ASSERT(aFromContent, "ResetToURIFragmentID() expects non-null content pointer");
 
   Unlink();
 

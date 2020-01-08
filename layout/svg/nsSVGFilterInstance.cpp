@@ -144,13 +144,13 @@ nsSVGFilterInstance::GetFilterFrame(nsIFrame* aTargetFrame)
   }
 
   
-  IDTracker filterElement;
+  IDTracker idTracker;
   bool watch = false;
-  filterElement.Reset(mTargetContent, url,
-                      mFilter.GetURL()->ExtraData()->GetReferrer(),
-                      mFilter.GetURL()->ExtraData()->GetReferrerPolicy(),
-                      watch);
-  Element* element = filterElement.get();
+  idTracker.ResetToURIFragmentID(mTargetContent, url,
+                                 mFilter.GetURL()->ExtraData()->GetReferrer(),
+                                 mFilter.GetURL()->ExtraData()->GetReferrerPolicy(),
+                                 watch);
+  Element* element = idTracker.get();
   if (!element) {
     
     return nullptr;

@@ -66,9 +66,9 @@ public:
 
 
 
-  void Reset(nsIContent* aFrom, nsIURI* aURI, nsIURI* aReferrer,
-             uint32_t aReferrerPolicy, bool aWatch = true,
-             bool aReferenceImage = false);
+  void ResetToURIFragmentID(nsIContent* aFrom, nsIURI* aURI, nsIURI* aReferrer,
+                            uint32_t aReferrerPolicy, bool aWatch = true,
+                            bool aReferenceImage = false);
 
   
 

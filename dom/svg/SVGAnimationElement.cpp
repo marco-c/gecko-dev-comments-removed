@@ -415,10 +415,10 @@ SVGAnimationElement::UpdateHrefTarget(const nsAString& aHrefStr)
   nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI),
                                             aHrefStr, OwnerDoc(), baseURI);
   
-  mHrefTarget.Reset(this,
-                    targetURI,
-                    OwnerDoc()->GetDocumentURI(),
-                    OwnerDoc()->GetReferrerPolicy());
+  mHrefTarget.ResetToURIFragmentID(this,
+                                   targetURI,
+                                   OwnerDoc()->GetDocumentURI(),
+                                   OwnerDoc()->GetReferrerPolicy());
   AnimationTargetChanged();
 }
 

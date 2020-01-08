@@ -240,9 +240,9 @@ SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
     
     
     
-    mPathTracker.Reset(aParent, targetURI,
-                       OwnerDoc()->GetDocumentURI(),
-                       OwnerDoc()->GetReferrerPolicy());
+    mPathTracker.ResetToURIFragmentID(aParent, targetURI,
+                                      OwnerDoc()->GetDocumentURI(),
+                                      OwnerDoc()->GetReferrerPolicy());
   } else {
     
     
