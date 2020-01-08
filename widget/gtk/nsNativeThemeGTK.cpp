@@ -1278,7 +1278,7 @@ nsNativeThemeGTK::GetCachedWidgetBorder(nsIFrame* aFrame, uint8_t aWidgetType,
     } else {
       moz_gtk_get_widget_border(gtkWidgetType, &aResult->left, &aResult->top,
                                 &aResult->right, &aResult->bottom, aDirection);
-      if (aWidgetType != MOZ_GTK_DROPDOWN) { 
+      if (gtkWidgetType != MOZ_GTK_DROPDOWN) { 
         mBorderCacheValid[cacheIndex] |= cacheBit;
         mBorderCache[gtkWidgetType] = *aResult;
       }
