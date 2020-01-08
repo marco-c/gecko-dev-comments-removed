@@ -584,6 +584,34 @@ function fetchRegion(ss) {
 
 
 
+function convertGoogleEngines(engineNames) {
+  let overrides = {
+    "google": "google-b-d",
+    "google-2018": "google-b-1-d",
+  };
+
+  let esrOverrides = {
+    "google": "google-b-e",
+    "google-2018": "google-b-1-e",
+    "google-b-d": "google-b-e",
+    "google-b-1-d": "google-b-1-e",
+  };
+
+  if (AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")) {
+    overrides = esrOverrides;
+  }
+  for (let engine in overrides) {
+    let index = engineNames.indexOf(engine);
+    if (index > -1) {
+      engineNames[index] = overrides[engine];
+    }
+  }
+  return engineNames;
+}
+
+
+
+
 
 
 
@@ -3567,6 +3595,8 @@ SearchService.prototype = {
         }
       }
     }
+
+    engineNames = convertGoogleEngines(engineNames);
 
     for (let name of engineNames) {
       uris.push(APP_SEARCH_PREFIX + name + ".xml");
