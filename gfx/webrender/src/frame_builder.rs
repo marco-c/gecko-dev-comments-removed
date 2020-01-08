@@ -12,7 +12,7 @@ use gpu_cache::GpuCache;
 use gpu_types::{PrimitiveHeaders, TransformPalette, UvRectKind, ZBufferIdGenerator};
 use hit_test::{HitTester, HitTestingRun};
 use internal_types::{FastHashMap, PlaneSplitter};
-use picture::{PictureCompositeMode, PictureSurface, RasterConfig};
+use picture::{PictureCompositeMode, PictureSurface, PictureUpdateContext, RasterConfig};
 use prim_store::{PrimitiveIndex, PrimitiveStore, SpaceMapper, PictureIndex};
 use profiler::{FrameProfileCounters, GpuCacheProfileCounters, TextureCacheProfileCounters};
 use render_backend::{FrameResources, FrameId};
@@ -233,6 +233,24 @@ impl FrameBuilder {
             resources,
             segment_builder: SegmentBuilder::new(),
         };
+
+        let pic_update_context = PictureUpdateContext {
+            surface_spatial_node_index: ROOT_SPATIAL_NODE_INDEX,
+            raster_spatial_node_index: ROOT_SPATIAL_NODE_INDEX,
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        self.prim_store.update_picture(
+            self.root_pic_index,
+            &pic_update_context,
+            &frame_context,
+        );
 
         let prim_context = PrimitiveContext::new(
             &clip_scroll_tree.spatial_nodes[root_spatial_node_index.0],

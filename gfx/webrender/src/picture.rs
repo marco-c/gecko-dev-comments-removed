@@ -16,11 +16,12 @@ use frame_builder::{PictureContext, PrimitiveContext};
 use gpu_cache::{GpuCacheAddress, GpuCacheHandle};
 use gpu_types::{TransformPalette, TransformPaletteId, UvRectKind};
 use plane_split::{Clipper, Polygon, Splitter};
-use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper};
-use prim_store::{get_raster_rects};
+use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, PrimitiveDetails};
+use prim_store::{Primitive, get_raster_rects, BrushKind, BrushPrimitive};
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle};
 use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use scene::{FilterOpHelpers, SceneProperties};
+use smallvec::SmallVec;
 use std::mem;
 use tiling::RenderTargetKind;
 use util::{TransformedRectKind, MatrixHelpers, MaxRect};
@@ -34,6 +35,14 @@ use util::{TransformedRectKind, MatrixHelpers, MaxRect};
 
 
 
+
+
+
+
+pub struct PictureUpdateContext {
+    pub surface_spatial_node_index: SpatialNodeIndex,
+    pub raster_spatial_node_index: SpatialNodeIndex,
+}
 
 #[derive(Debug)]
 pub struct RasterConfig {
@@ -183,6 +192,46 @@ pub struct OrderedPictureChild {
     pub gpu_address: GpuCacheAddress,
 }
 
+
+
+
+
+pub struct PrimitiveList {
+    pub prim_instances: Vec<PrimitiveInstance>,
+    pub pictures: SmallVec<[PictureIndex; 4]>,
+}
+
+impl PrimitiveList {
+    pub fn new(
+        prim_instances: Vec<PrimitiveInstance>,
+        primitives: &[Primitive],
+    ) -> Self {
+        let mut pictures = SmallVec::new();
+
+        
+        
+        for prim_instance in &prim_instances {
+            let prim = &primitives[prim_instance.prim_index.0];
+            match prim.details {
+                PrimitiveDetails::Brush(BrushPrimitive { kind: BrushKind::Picture { pic_index }, .. }) => {
+                    pictures.push(pic_index);
+                }
+                _ => {
+                    
+                    
+                    
+                    
+                }
+            }
+        }
+
+        PrimitiveList {
+            prim_instances,
+            pictures,
+        }
+    }
+}
+
 pub struct PicturePrimitive {
     
     pub prim_instances: Vec<PrimitiveInstance>,
@@ -223,6 +272,13 @@ pub struct PicturePrimitive {
 
     
     pub id: PictureId,
+
+    
+    child_pictures: SmallVec<[PictureIndex; 4]>,
+
+    
+    
+    spatial_node_index: SpatialNodeIndex,
 }
 
 impl PicturePrimitive {
@@ -242,6 +298,15 @@ impl PicturePrimitive {
         }
     }
 
+    fn is_visible(&self) -> bool {
+        match self.requested_composite_mode {
+            Some(PictureCompositeMode::Filter(ref filter)) => {
+                filter.is_visible()
+            }
+            _ => true,
+        }
+    }
+
     pub fn new_image(
         id: PictureId,
         requested_composite_mode: Option<PictureCompositeMode>,
@@ -250,10 +315,12 @@ impl PicturePrimitive {
         frame_output_pipeline_id: Option<PipelineId>,
         apply_local_clip_rect: bool,
         requested_raster_space: RasterSpace,
-        prim_instances: Vec<PrimitiveInstance>,
+        prim_list: PrimitiveList,
+        spatial_node_index: SpatialNodeIndex,
     ) -> Self {
         PicturePrimitive {
-            prim_instances,
+            prim_instances: prim_list.prim_instances,
+            child_pictures: prim_list.pictures,
             state: None,
             secondary_render_task_id: None,
             requested_composite_mode,
@@ -265,6 +332,7 @@ impl PicturePrimitive {
             pipeline_id,
             id,
             requested_raster_space,
+            spatial_node_index,
         }
     }
 
@@ -280,7 +348,7 @@ impl PicturePrimitive {
         frame_context: &FrameBuildingContext,
         is_chased: bool,
     ) -> Option<(PictureContext, PictureState, Vec<PrimitiveInstance>)> {
-        if !self.resolve_scene_properties(frame_context.scene_properties) {
+        if !self.is_visible() {
             if cfg!(debug_assertions) && is_chased {
                 println!("\tculled for carrying an invisible composite filter");
             }
@@ -288,51 +356,19 @@ impl PicturePrimitive {
             return None;
         }
 
-        let actual_composite_mode = match self.requested_composite_mode {
-            Some(PictureCompositeMode::Filter(filter)) if filter.is_noop() => None,
-            mode => mode,
+        
+        
+        
+        let (raster_spatial_node_index, surface_spatial_node_index) = match self.raster_config {
+            Some(ref raster_config) => {
+                (raster_config.raster_spatial_node_index, self.spatial_node_index)
+            }
+            None => {
+                (raster_spatial_node_index, surface_spatial_node_index)
+            }
         };
 
-        let has_surface = actual_composite_mode.is_some();
-
-        let surface_spatial_node_index = if has_surface {
-            prim_context.spatial_node_index
-        } else {
-            surface_spatial_node_index
-        };
-
-        let xf = frame_context.clip_scroll_tree.get_relative_transform(
-            raster_spatial_node_index,
-            surface_spatial_node_index,
-        ).expect("todo");
-
-        
-        
-        
-        let raster_space = self.requested_raster_space;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let wants_raster_root = xf.has_perspective_component();
-
-        let establishes_raster_root = has_surface && wants_raster_root;
-
-        let raster_spatial_node_index = if establishes_raster_root {
-            surface_spatial_node_index
-        } else {
-            raster_spatial_node_index
-        };
-
-        if has_surface {
+        if self.raster_config.is_some() {
             frame_state.clip_store
                 .push_surface(surface_spatial_node_index);
         }
@@ -375,14 +411,6 @@ impl PicturePrimitive {
             LayoutRect::zero(), 
         );
 
-        self.raster_config = actual_composite_mode.map(|composite_mode| {
-            RasterConfig {
-                composite_mode,
-                surface: None,
-                raster_spatial_node_index,
-            }
-        });
-
         let state = PictureState {
             tasks: Vec::new(),
             has_non_root_coord_system: false,
@@ -420,7 +448,7 @@ impl PicturePrimitive {
             inflation_factor,
             allow_subpixel_aa,
             is_passthrough: self.raster_config.is_none(),
-            raster_space,
+            raster_space: self.requested_raster_space,
             local_spatial_node_index: prim_context.spatial_node_index,
             raster_spatial_node_index,
             surface_spatial_node_index,
@@ -592,6 +620,85 @@ impl PicturePrimitive {
                 gpu_address,
             });
         }
+    }
+
+    
+    
+    
+    pub fn pre_update(
+        &mut self,
+        context: &PictureUpdateContext,
+        frame_context: &FrameBuildingContext,
+    ) -> Option<(PictureUpdateContext, SmallVec<[PictureIndex; 4]>)> {
+        
+        self.raster_config = None;
+
+        if !self.resolve_scene_properties(frame_context.scene_properties) {
+            return None;
+        }
+
+        let actual_composite_mode = match self.requested_composite_mode {
+            Some(PictureCompositeMode::Filter(filter)) if filter.is_noop() => None,
+            mode => mode,
+        };
+
+        let has_surface = actual_composite_mode.is_some();
+
+        let surface_spatial_node_index = if has_surface {
+            self.spatial_node_index
+        } else {
+            context.surface_spatial_node_index
+        };
+
+        let xf = frame_context.clip_scroll_tree.get_relative_transform(
+            context.raster_spatial_node_index,
+            surface_spatial_node_index,
+        ).expect("BUG: unable to get relative transform");
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let wants_raster_root = xf.has_perspective_component();
+
+        let establishes_raster_root = has_surface && wants_raster_root;
+
+        let raster_spatial_node_index = if establishes_raster_root {
+            surface_spatial_node_index
+        } else {
+            context.raster_spatial_node_index
+        };
+
+        self.raster_config = actual_composite_mode.map(|composite_mode| {
+            RasterConfig {
+                composite_mode,
+                surface: None,
+                raster_spatial_node_index,
+            }
+        });
+
+        let child_context = PictureUpdateContext {
+            raster_spatial_node_index,
+            surface_spatial_node_index,
+        };
+
+        Some((child_context, mem::replace(&mut self.child_pictures, SmallVec::new())))
+    }
+
+    
+    
+    pub fn post_update(
+        &mut self,
+        child_pictures: SmallVec<[PictureIndex; 4]>,
+    ) {
+        self.child_pictures = child_pictures;
     }
 
     pub fn prepare_for_render(
