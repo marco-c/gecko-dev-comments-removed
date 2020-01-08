@@ -19,7 +19,6 @@ BEGIN_TEST(testBug795104)
     s[strLen - 1] = '"';
 
     JS::CompileOptions opts(cx);
-    opts.setUTF8(true);
 
     
     opts.setNoScriptRval(true);

@@ -20,7 +20,6 @@ BEGIN_TEST(test_functionBinding)
 
     JS::CompileOptions options(cx);
     options.setFileAndLine(__FILE__, __LINE__);
-    options.setUTF8(true);
 
     
     const char s1chars[] = "return (typeof s1) == 'undefined';";
