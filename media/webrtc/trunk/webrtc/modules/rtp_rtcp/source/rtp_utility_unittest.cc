@@ -160,6 +160,7 @@ TEST(RtpHeaderParser, ParseAll8Extensions) {
       0x40, 0x80|kAudioLevel,  
       0x22, 0x01, 0x56, 0xce,  
       0x62, 0x12, 0x34, 0x56,  
+      0x72, 0x7f, 0x01, 0x10,  
       0x81, 0xce, 0xab,        
       0xa0, 0x03,              
       0xb2, 0x12, 0x48, 0x76,  
@@ -174,6 +175,7 @@ TEST(RtpHeaderParser, ParseAll8Extensions) {
   extensions.Register<TransmissionOffset>(2);
   extensions.Register<AudioLevel>(4);
   extensions.Register<AbsoluteSendTime>(6);
+  extensions.Register<CsrcAudioLevel>(7);
   extensions.Register<TransportSequenceNumber>(8);
   extensions.Register<VideoOrientation>(0xa);
   extensions.Register<PlayoutDelayLimits>(0xb);
@@ -206,6 +208,11 @@ TEST(RtpHeaderParser, ParseAll8Extensions) {
             header.extension.playout_delay.max_ms);
   EXPECT_EQ(header.extension.stream_id, StreamId("rtx"));
   EXPECT_EQ(header.extension.repaired_stream_id, StreamId("stream"));
+
+  EXPECT_EQ(header.extension.csrcAudioLevels.numAudioLevels, 3);
+  EXPECT_EQ(header.extension.csrcAudioLevels.arrOfAudioLevels[0], 0x7f);
+  EXPECT_EQ(header.extension.csrcAudioLevels.arrOfAudioLevels[1], 0x01);
+  EXPECT_EQ(header.extension.csrcAudioLevels.arrOfAudioLevels[2], 0x10);
 }
 
 TEST(RtpHeaderParser, ParseMalformedRsidExtensions) {

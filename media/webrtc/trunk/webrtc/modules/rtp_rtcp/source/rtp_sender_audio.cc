@@ -119,7 +119,8 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                int8_t payload_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
-                               size_t payload_size) {
+                               size_t payload_size,
+                               const StreamId* mId) {
   
   
   
@@ -221,6 +222,10 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
   
   packet->SetExtension<AudioLevel>(frame_type == kAudioFrameSpeech,
                                    audio_level_dbov);
+
+  if (mId && !mId->empty()) {
+    packet->SetExtension<RtpMid>(*mId);
+  }
 
   uint8_t* payload = packet->AllocatePayload(payload_size);
   if (!payload)  

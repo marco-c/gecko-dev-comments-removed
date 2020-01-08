@@ -40,6 +40,7 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<RtpStreamId>(),
     CreateExtensionInfo<RepairedRtpStreamId>(),
     CreateExtensionInfo<RtpMid>(),
+    CreateExtensionInfo<CsrcAudioLevel>(),
 };
 
 
