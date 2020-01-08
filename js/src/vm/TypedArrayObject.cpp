@@ -77,6 +77,7 @@ using mozilla::IsAsciiDigit;
     return true;
   }
 
+  AutoRealm ar(cx, tarray);
   Rooted<ArrayBufferObject*> buffer(
       cx, ArrayBufferObject::create(cx, tarray->byteLength()));
   if (!buffer) {
@@ -1083,12 +1084,12 @@ template <typename T>
       return nullptr;
     }
 
-    JSAutoRealm ar(cx, unwrapped);
-
     srcArray = &unwrapped->as<TypedArrayObject>();
+  }
 
-    
-    
+  
+  
+  if (cx->realm() != srcArray->realm()) {
     if (!TypedArrayObject::ensureHasBuffer(cx, srcArray)) {
       return nullptr;
     }
