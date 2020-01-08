@@ -172,7 +172,7 @@
 
 
 
-.tooltip-xul-wrapper[type="arrow"] {
+.tooltip-xul-wrapper[type="arrow"][side] {
   margin: 0;
 }
 
