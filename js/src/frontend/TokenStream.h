@@ -1111,6 +1111,16 @@ PeekCodePoint(const mozilla::Utf8Unit* const ptr, const mozilla::Utf8Unit* const
     return PeekedCodePoint<mozilla::Utf8Unit>(codePoint.value(), len);
 }
 
+inline bool
+IsSingleUnitLineTerminator(mozilla::Utf8Unit unit)
+{
+    
+    
+    
+    
+    return unit == mozilla::Utf8Unit('\n') || unit == mozilla::Utf8Unit('\r');
+}
+
 
 
 
