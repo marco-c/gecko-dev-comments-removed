@@ -485,8 +485,8 @@ nsDOMOfflineResourceList::MozRemove(const nsAString& aURI, ErrorResult& aRv)
   }
 }
 
-NS_IMETHODIMP
-nsDOMOfflineResourceList::GetStatus(uint16_t *aStatus)
+uint16_t
+nsDOMOfflineResourceList::GetStatus(ErrorResult& aRv)
 {
   nsresult rv = Init();
 
@@ -495,35 +495,35 @@ nsDOMOfflineResourceList::GetStatus(uint16_t *aStatus)
   
   if (rv == NS_ERROR_DOM_INVALID_STATE_ERR ||
       !nsContentUtils::OfflineAppAllowed(mDocumentURI)) {
-    *aStatus = OfflineResourceList_Binding::UNCACHED;
-    return NS_OK;
+    return OfflineResourceList_Binding::UNCACHED;
   }
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(rv);
+    return 0;
+  }
 
   
   nsCOMPtr<nsIApplicationCache> appCache = GetDocumentAppCache();
   if (!appCache) {
-    *aStatus = OfflineResourceList_Binding::UNCACHED;
-    return NS_OK;
+    return OfflineResourceList_Binding::UNCACHED;
   }
 
 
   
   if (mCacheUpdate && mExposeCacheUpdateStatus) {
-    rv = mCacheUpdate->GetStatus(aStatus);
-    if (NS_SUCCEEDED(rv) && *aStatus != OfflineResourceList_Binding::IDLE) {
-      return NS_OK;
+    uint16_t status;
+    rv = mCacheUpdate->GetStatus(&status);
+    if (NS_SUCCEEDED(rv) && status != OfflineResourceList_Binding::IDLE) {
+      return status;
     }
   }
 
   if (mAvailableApplicationCache) {
-    *aStatus = OfflineResourceList_Binding::UPDATEREADY;
-    return NS_OK;
+    return OfflineResourceList_Binding::UPDATEREADY;
   }
 
-  *aStatus = mStatus;
-  return NS_OK;
+  return mStatus;
 }
 
 NS_IMETHODIMP
