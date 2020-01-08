@@ -135,7 +135,7 @@ class CachedAsyncIterable extends CachedIterable {
 
 
 function defaultGenerateMessages(resourceIds) {
-  const appLocales = Services.locale.getAppLocalesAsBCP47();
+  const appLocales = Services.locale.appLocalesAsBCP47;
   return L10nRegistry.generateContexts(appLocales, resourceIds);
 }
 
@@ -335,7 +335,7 @@ class Localization {
       
       
       
-      const appLocale = Services.locale.getAppLocaleAsBCP47();
+      const appLocale = Services.locale.appLocaleAsBCP47;
       const lastFallback = Services.locale.lastFallbackLocale;
       const prefetchCount = appLocale === lastFallback ? 1 : 2;
       this.ctxs.touchNext(prefetchCount);

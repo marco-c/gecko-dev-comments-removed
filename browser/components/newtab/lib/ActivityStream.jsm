@@ -441,7 +441,7 @@ this.ActivityStream = class ActivityStream {
       this.geo = "";
     }
 
-    this.locale = Services.locale.getAppLocaleAsLangTag();
+    this.locale = Services.locale.appLocaleAsLangTag;
 
     
     for (const pref of PREFS_CONFIG.keys()) {

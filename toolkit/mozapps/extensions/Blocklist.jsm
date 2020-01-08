@@ -273,7 +273,7 @@ function matchesOSABI(blocklistElement) {
 
 
 function getLocale() {
-  return Services.locale.getRequestedLocale();
+  return Services.locale.requestedLocale;
 }
 
 

@@ -661,7 +661,7 @@ const AutoMigrate = {
       
       surveyLocales = new Set(surveyLocales.filter(str => !!str));
       canDoSurveyInLocale =
-        surveyLocales.has(Services.locale.getAppLocaleAsLangTag());
+        surveyLocales.has(Services.locale.appLocaleAsLangTag);
     } catch (ex) {
       
     }

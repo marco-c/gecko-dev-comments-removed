@@ -310,7 +310,7 @@ AboutNewTabService.prototype = {
     return Services.locale.negotiateLanguages(
       
       
-      Services.locale.getAppLocalesAsBCP47().map(l => l.replace(/^(ja-JP-mac)$/, "$1os")),
+      Services.locale.appLocalesAsBCP47.map(l => l.replace(/^(ja-JP-mac)$/, "$1os")),
       ACTIVITY_STREAM_BCP47,
       
       "en-US",

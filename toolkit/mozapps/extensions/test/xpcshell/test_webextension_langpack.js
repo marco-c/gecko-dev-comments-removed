@@ -73,7 +73,7 @@ add_task(async function() {
 
   
   equal(L10nRegistry.getAvailableLocales().includes("und"), false);
-  equal(Services.locale.getAvailableLocales().includes("und"), false);
+  equal(Services.locale.availableLocales.includes("und"), false);
 
   let [, {addon}] = await Promise.all([
     promiseLangpackStartup(),
@@ -82,13 +82,13 @@ add_task(async function() {
 
   
   equal(L10nRegistry.getAvailableLocales().includes("und"), true);
-  equal(Services.locale.getAvailableLocales().includes("und"), true);
+  equal(Services.locale.availableLocales.includes("und"), true);
 
   await addon.disable();
 
   
   equal(L10nRegistry.getAvailableLocales().includes("und"), false);
-  equal(Services.locale.getAvailableLocales().includes("und"), false);
+  equal(Services.locale.availableLocales.includes("und"), false);
 
   
   
@@ -99,13 +99,13 @@ add_task(async function() {
 
   
   equal(L10nRegistry.getAvailableLocales().includes("und"), true);
-  equal(Services.locale.getAvailableLocales().includes("und"), true);
+  equal(Services.locale.availableLocales.includes("und"), true);
 
   await addon.uninstall();
 
   
   equal(L10nRegistry.getAvailableLocales().includes("und"), false);
-  equal(Services.locale.getAvailableLocales().includes("und"), false);
+  equal(Services.locale.availableLocales.includes("und"), false);
 });
 
 
@@ -134,8 +134,8 @@ add_task(async function() {
 
   {
     
-    let reqLocs = Services.locale.getRequestedLocales();
-    Services.locale.setRequestedLocales(["und"]);
+    let reqLocs = Services.locale.requestedLocales;
+    Services.locale.requestedLocales = ["und"];
 
     let bundle = Services.strings.createBundle(
       "chrome://global/locale/test.properties"
@@ -143,7 +143,7 @@ add_task(async function() {
     let entry = bundle.GetStringFromName("message");
     equal(entry, "Value from .properties");
 
-    Services.locale.setRequestedLocales(reqLocs);
+    Services.locale.requestedLocales = reqLocs;
   }
 
   await addon.uninstall();
@@ -153,7 +153,7 @@ add_task(async function() {
 add_task(async function test_amazing_disappearing_langpacks() {
   let check = (yes) => {
     equal(L10nRegistry.getAvailableLocales().includes("und"), yes);
-    equal(Services.locale.getAvailableLocales().includes("und"), yes);
+    equal(Services.locale.availableLocales.includes("und"), yes);
   };
 
   await promiseStartupManager();

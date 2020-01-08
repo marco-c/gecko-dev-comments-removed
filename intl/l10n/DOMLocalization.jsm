@@ -581,7 +581,7 @@ class DOMLocalization extends Localization {
         
         
         await this.translateFragment(root);
-        let primaryLocale = Services.locale.getAppLocaleAsBCP47();
+        let primaryLocale = Services.locale.appLocaleAsBCP47;
         let direction = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
         root.setAttribute("lang", primaryLocale);
         root.setAttribute(root.namespaceURI ===

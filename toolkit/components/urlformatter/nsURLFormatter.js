@@ -60,7 +60,7 @@ nsURLFormatterService.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIURLFormatter]),
 
   _defaults: {
-    LOCALE:           () => Services.locale.getAppLocaleAsLangTag(),
+    LOCALE:           () => Services.locale.appLocaleAsLangTag,
     REGION() {
       try {
         

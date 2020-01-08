@@ -114,7 +114,7 @@ async function getSystemInfo() {
     geckoversion: geckoVersion,
 
     
-    locale: Services.locale.getAppLocaleAsLangTag(),
+    locale: Services.locale.appLocaleAsLangTag,
 
     
 

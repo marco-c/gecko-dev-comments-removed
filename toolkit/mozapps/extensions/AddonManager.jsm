@@ -238,7 +238,7 @@ async function promiseCallProvider(aProvider, aMethod, ...aArgs) {
 
 
 function getLocale() {
-  return Services.locale.getRequestedLocale() || "en-US";
+  return Services.locale.requestedLocale || "en-US";
 }
 
 const WEB_EXPOSED_ADDON_PROPERTIES = [ "id", "version", "type", "name",
