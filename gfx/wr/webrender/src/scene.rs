@@ -112,6 +112,15 @@ impl SceneProperties {
             }
         }
     }
+
+    pub fn get_float_value(
+        &self,
+        id: PropertyBindingId,
+    ) -> Option<f32> {
+        self.float_properties
+            .get(&id)
+            .cloned()
+    }
 }
 
 
