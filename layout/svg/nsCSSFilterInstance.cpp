@@ -149,7 +149,9 @@ nsCSSFilterInstance::SetAttributesForBlur(FilterPrimitiveDescription& aDescr)
   }
 
   Size radiusInFilterSpace = BlurRadiusToFilterSpace(radiusInFrameSpace.GetCoordValue());
-  aDescr.Attributes().Set(eGaussianBlurStdDeviation, radiusInFilterSpace);
+  GaussianBlurAttributes atts;
+  atts.mStdDeviation = radiusInFilterSpace;
+  aDescr.Attributes() = AsVariant(atts);
   return NS_OK;
 }
 
@@ -158,21 +160,25 @@ nsCSSFilterInstance::SetAttributesForBrightness(FilterPrimitiveDescription& aDes
 {
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = styleValue.GetFactorOrPercentValue();
+  float intercept = 0.0f;
+  ComponentTransferAttributes atts;
 
   
-  AttributeMap brightnessAttrs;
-  brightnessAttrs.Set(eComponentTransferFunctionType,
-                      (uint32_t)SVG_FECOMPONENTTRANSFER_TYPE_LINEAR);
-  brightnessAttrs.Set(eComponentTransferFunctionSlope, value);
-  brightnessAttrs.Set(eComponentTransferFunctionIntercept, 0.0f);
-  aDescr.Attributes().Set(eComponentTransferFunctionRGB, std::move(brightnessAttrs));
+  atts.mTypes[kChannelROrRGB] =
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_LINEAR;
+  atts.mTypes[kChannelG] =
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN;
+  atts.mTypes[kChannelB] =
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN;
+  float slopeIntercept[2];
+  slopeIntercept[kComponentTransferSlopeIndex] = value;
+  slopeIntercept[kComponentTransferInterceptIndex] = intercept;
+  atts.mValues[kChannelROrRGB].AppendElements(slopeIntercept, 2);
 
-  
-  AttributeMap identityAttrs;
-  identityAttrs.Set(eComponentTransferFunctionType,
-                    (uint32_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY);
-  aDescr.Attributes().Set(eComponentTransferFunctionA, std::move(identityAttrs));
+  atts.mTypes[kChannelA] = 
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY;
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
@@ -182,21 +188,24 @@ nsCSSFilterInstance::SetAttributesForContrast(FilterPrimitiveDescription& aDescr
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = styleValue.GetFactorOrPercentValue();
   float intercept = -(0.5 * value) + 0.5;
+  ComponentTransferAttributes atts;
 
   
-  AttributeMap contrastAttrs;
-  contrastAttrs.Set(eComponentTransferFunctionType,
-                    (uint32_t)SVG_FECOMPONENTTRANSFER_TYPE_LINEAR);
-  contrastAttrs.Set(eComponentTransferFunctionSlope, value);
-  contrastAttrs.Set(eComponentTransferFunctionIntercept, intercept);
-  aDescr.Attributes().Set(eComponentTransferFunctionRGB, std::move(contrastAttrs));
+  atts.mTypes[kChannelROrRGB] =
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_LINEAR;
+  atts.mTypes[kChannelG] =
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN;
+  atts.mTypes[kChannelB] =
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN;
+  float slopeIntercept[2];
+  slopeIntercept[kComponentTransferSlopeIndex] = value;
+  slopeIntercept[kComponentTransferInterceptIndex] = intercept;
+  atts.mValues[kChannelROrRGB].AppendElements(slopeIntercept, 2);
 
-  
-  AttributeMap identityAttrs;
-  identityAttrs.Set(eComponentTransferFunctionType,
-                    (uint32_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY);
-  aDescr.Attributes().Set(eComponentTransferFunctionA, std::move(identityAttrs));
+  atts.mTypes[kChannelA] = 
+    (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY;
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
@@ -209,111 +218,122 @@ nsCSSFilterInstance::SetAttributesForDropShadow(FilterPrimitiveDescription& aDes
     return NS_ERROR_FAILURE;
   }
 
+  DropShadowAttributes atts;
   nsCSSShadowItem* shadow = shadows->ShadowAt(0);
 
   
   Size radiusInFilterSpace = BlurRadiusToFilterSpace(shadow->mRadius);
-  aDescr.Attributes().Set(eDropShadowStdDeviation, radiusInFilterSpace);
+  atts.mStdDeviation = radiusInFilterSpace;
 
   
   IntPoint offsetInFilterSpace = OffsetToFilterSpace(shadow->mXOffset, shadow->mYOffset);
-  aDescr.Attributes().Set(eDropShadowOffset, offsetInFilterSpace);
+  atts.mOffset = offsetInFilterSpace;
 
   
   nscolor shadowColor = shadow->mColor.CalcColor(mShadowFallbackColor);
-  aDescr.Attributes().Set(eDropShadowColor, ToAttributeColor(shadowColor));
+  atts.mColor = ToAttributeColor(shadowColor);
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
 nsresult
 nsCSSFilterInstance::SetAttributesForGrayscale(FilterPrimitiveDescription& aDescr)
 {
+  ColorMatrixAttributes atts;
   
-  aDescr.Attributes().Set(eColorMatrixType, (uint32_t)SVG_FECOLORMATRIX_TYPE_SATURATE);
+  atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_SATURATE;
 
   
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = 1 - ClampFactor(styleValue.GetFactorOrPercentValue());
-  aDescr.Attributes().Set(eColorMatrixValues, &value, 1);
+  atts.mValues.AppendElements(&value, 1);
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
 nsresult
 nsCSSFilterInstance::SetAttributesForHueRotate(FilterPrimitiveDescription& aDescr)
 {
+  ColorMatrixAttributes atts;
   
-  aDescr.Attributes().Set(eColorMatrixType, (uint32_t)SVG_FECOLORMATRIX_TYPE_HUE_ROTATE);
+  atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_HUE_ROTATE;
 
   
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = styleValue.GetAngleValueInDegrees();
-  aDescr.Attributes().Set(eColorMatrixValues, &value, 1);
+  atts.mValues.AppendElements(&value, 1);
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
 nsresult
 nsCSSFilterInstance::SetAttributesForInvert(FilterPrimitiveDescription& aDescr)
 {
+  ComponentTransferAttributes atts;
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = ClampFactor(styleValue.GetFactorOrPercentValue());
 
   
-  AttributeMap invertAttrs;
   float invertTableValues[2];
   invertTableValues[0] = value;
   invertTableValues[1] = 1 - value;
-  invertAttrs.Set(eComponentTransferFunctionType,
-                  (uint32_t)SVG_FECOMPONENTTRANSFER_TYPE_TABLE);
-  invertAttrs.Set(eComponentTransferFunctionTableValues, invertTableValues, 2);
-  aDescr.Attributes().Set(eComponentTransferFunctionRGB, std::move(invertAttrs));
 
   
-  AttributeMap identityAttrs;
-  identityAttrs.Set(eComponentTransferFunctionType,
-                    (uint32_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY);
-  aDescr.Attributes().Set(eComponentTransferFunctionA, std::move(identityAttrs));
+  atts.mTypes[kChannelROrRGB] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_TABLE;
+  atts.mTypes[kChannelG] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN;
+  atts.mTypes[kChannelB] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN;
+  atts.mValues[kChannelROrRGB].AppendElements(invertTableValues, 2);
 
+  atts.mTypes[kChannelA] = (uint8_t)SVG_FECOMPONENTTRANSFER_TYPE_IDENTITY;
+
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
 nsresult
 nsCSSFilterInstance::SetAttributesForOpacity(FilterPrimitiveDescription& aDescr)
 {
+  OpacityAttributes atts;
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = ClampFactor(styleValue.GetFactorOrPercentValue());
 
-  aDescr.Attributes().Set(eOpacityOpacity, value);
+  atts.mOpacity = value;
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
 nsresult
 nsCSSFilterInstance::SetAttributesForSaturate(FilterPrimitiveDescription& aDescr)
 {
+  ColorMatrixAttributes atts;
   
-  aDescr.Attributes().Set(eColorMatrixType, (uint32_t)SVG_FECOLORMATRIX_TYPE_SATURATE);
+  atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_SATURATE;
 
   
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = styleValue.GetFactorOrPercentValue();
-  aDescr.Attributes().Set(eColorMatrixValues, &value, 1);
+  atts.mValues.AppendElements(&value, 1);
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
 nsresult
 nsCSSFilterInstance::SetAttributesForSepia(FilterPrimitiveDescription& aDescr)
 {
+  ColorMatrixAttributes atts;
   
-  aDescr.Attributes().Set(eColorMatrixType, (uint32_t)SVG_FECOLORMATRIX_TYPE_SEPIA);
+  atts.mType = (uint32_t)SVG_FECOLORMATRIX_TYPE_SEPIA;
 
   
   const nsStyleCoord& styleValue = mFilter.GetFilterParameter();
   float value = ClampFactor(styleValue.GetFactorOrPercentValue());
-  aDescr.Attributes().Set(eColorMatrixValues, &value, 1);
+  atts.mValues.AppendElements(&value, 1);
 
+  aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
 }
 
