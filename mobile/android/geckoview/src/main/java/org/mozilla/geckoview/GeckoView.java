@@ -242,14 +242,6 @@ public class GeckoView extends FrameLayout {
         }
     }
 
-    
-
-
-
-
-
-
-    @UiThread
     public @Nullable GeckoSession releaseSession() {
         ThreadUtils.assertOnUiThread();
 
@@ -291,9 +283,6 @@ public class GeckoView extends FrameLayout {
 
 
 
-
-
-
     public void setSession(@NonNull final GeckoSession session) {
         ThreadUtils.assertOnUiThread();
 
@@ -305,10 +294,6 @@ public class GeckoView extends FrameLayout {
     }
 
     
-
-
-
-
 
 
 
