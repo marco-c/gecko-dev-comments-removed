@@ -545,10 +545,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       if (steppingType == "finish") {
         const parentFrame = thread._getNextStepFrame(this);
         if (parentFrame && parentFrame.script) {
-          const { onStep } = thread._makeSteppingHooks(
+          const { onStep, onPop } = thread._makeSteppingHooks(
             originalLocation, "next", false, completion
           );
           parentFrame.onStep = onStep;
+          
+          
+          
+          parentFrame.onPop = onPop;
           return undefined;
         }
       }
