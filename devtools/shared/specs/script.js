@@ -3,31 +3,12 @@
 
 "use strict";
 
-const {Arg, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const {generateActorSpec} = require("devtools/shared/protocol");
 
 const threadSpec = generateActorSpec({
   typeName: "context",
 
-  methods: {
-    setXHRBreakpoint: {
-      request: {
-        path: Arg(0, "string"),
-        method: Arg(1, "string")
-      },
-      response: {
-        value: RetVal("boolean")
-      }
-    },
-    removeXHRBreakpoint: {
-      request: {
-        path: Arg(0, "string"),
-        method: Arg(1, "string")
-      },
-      response: {
-        value: RetVal("boolean")
-      }
-    }
-  },
+  methods: {},
 });
 
 exports.threadSpec = threadSpec;
