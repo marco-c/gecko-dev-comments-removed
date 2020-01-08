@@ -67,7 +67,7 @@ def build_dict(config, env=os.environ):
         p = "x86"
     d["processor"] = p
     
-    if p in ["x86_64", "ppc64"]:
+    if p in ["x86_64", "ppc64", "aarch64"]:
         d["bits"] = 64
     
     elif p in ["x86", "arm", "ppc"]:
