@@ -799,9 +799,9 @@ def init_remote_dir(device, path, root=True):
 
 def run_tests_remote(tests, num_tests, prefix, options, slog):
     
-    from mozdevice import ADBAndroid
-    device = ADBAndroid(device=options.device_serial,
-                        test_root=options.remote_test_root)
+    from mozdevice import ADBDevice
+    device = ADBDevice(device=options.device_serial,
+                       test_root=options.remote_test_root)
 
     init_remote_dir(device, options.remote_test_root)
 
