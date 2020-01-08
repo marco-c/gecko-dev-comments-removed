@@ -33,6 +33,7 @@ static const uint8_t kHistorySize = 20;
 
 AndroidVelocityTracker::AndroidVelocityTracker()
   : mLastEventTime(0)
+  , mAdditionalDelta(0)
 {
 }
 
@@ -57,10 +58,10 @@ AndroidVelocityTracker::AddPosition(ParentLayerCoord aPos,
   
   
   if (aIsAxisLocked && !mHistory.IsEmpty()) {
-    aPos = mHistory[mHistory.Length() - 1].second;
+    aPos = mHistory[mHistory.Length() - 1].second - mAdditionalDelta;
   }
 
-  mHistory.AppendElement(std::make_pair(aTimestampMs, aPos));
+  mHistory.AppendElement(std::make_pair(aTimestampMs, aPos + mAdditionalDelta));
   if (mHistory.Length() > kHistorySize) {
     mHistory.RemoveElementAt(0);
   }
@@ -80,6 +81,15 @@ AndroidVelocityTracker::HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
                                                      ParentLayerCoord aDelta)
 {
   
+  
+  
+  
+  
+  
+  
+  
+  mAdditionalDelta += aDelta;
+
   float timeDelta = aEndTimestampMs - aStartTimestampMs;
   MOZ_ASSERT(timeDelta != 0);
   return aDelta / timeDelta;
@@ -300,6 +310,7 @@ AndroidVelocityTracker::ComputeVelocity(uint32_t aTimestampMs)
 void
 AndroidVelocityTracker::Clear()
 {
+  mAdditionalDelta = 0;
   mHistory.Clear();
 }
 

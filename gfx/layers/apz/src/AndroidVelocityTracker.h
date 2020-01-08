@@ -37,6 +37,9 @@ private:
   
   
   uint32_t mLastEventTime;
+  
+  
+  ParentLayerCoord mAdditionalDelta;
 };
 
 } 
