@@ -3135,10 +3135,14 @@ SetUpReadableStreamDefaultController(JSContext* cx,
     stream->setController(controller);
 
     
+    
+    
     RootedValue startResult(cx);
-    RootedValue controllerVal(cx, ObjectValue(*controller));
-    if (!InvokeOrNoop(cx, underlyingSource, cx->names().start, controllerVal, &startResult)) {
-        return false;
+    if (!underlyingSource.isObject() || !underlyingSource.toObject().is<TeeState>()) {
+        RootedValue controllerVal(cx, ObjectValue(*controller));
+        if (!InvokeOrNoop(cx, underlyingSource, cx->names().start, controllerVal, &startResult)) {
+            return false;
+        }
     }
 
     
