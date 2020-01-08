@@ -250,6 +250,17 @@ Inspector.prototype = {
   
 
 
+  _supportsChangesPanel() {
+    
+    
+    
+    return this._target.hasActor("changes") &&
+      Services.prefs.getBoolPref(TRACK_CHANGES_PREF);
+  },
+
+  
+
+
 
 
 
@@ -269,7 +280,7 @@ Inspector.prototype = {
       this.selection.setNodeFront(this._defaultNode, { reason: "inspector-open" });
     }
 
-    if (Services.prefs.getBoolPref(TRACK_CHANGES_PREF)) {
+    if (this._supportsChangesPanel()) {
       
       
       
@@ -941,7 +952,7 @@ Inspector.prototype = {
       },
     ];
 
-    if (Services.prefs.getBoolPref(TRACK_CHANGES_PREF)) {
+    if (this._supportsChangesPanel()) {
       
       
       sidebarPanels.splice(2, 0, {
