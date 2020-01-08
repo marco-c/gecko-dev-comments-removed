@@ -6,247 +6,35 @@
 
 
 const {Cu} = require("chrome");
-const protocol = require("devtools/shared/protocol");
 const ChromeUtils = require("ChromeUtils");
 
 
 const {serializeStack, parseStack} = ChromeUtils.import("resource://devtools/shared/base-loader.js", {});
 
-const { functionCallSpec, callWatcherSpec } = require("devtools/shared/specs/call-watcher");
-const { CallWatcherFront } = require("devtools/shared/fronts/call-watcher");
+const {
+  METHOD_FUNCTION,
+  GETTER_FUNCTION,
+  SETTER_FUNCTION
+} = require("devtools/shared/fronts/function-call");
 
+const { FunctionCallActor } = require("devtools/server/actors/utils/function-call");
 
 
 
 
-var FunctionCallActor = protocol.ActorClassWithSpec(functionCallSpec, {
-  
+function CallWatcher(conn, targetActor) {
+  this.targetActor = targetActor;
+  this.conn = conn;
+  this._onGlobalCreated = this._onGlobalCreated.bind(this);
+  this._onGlobalDestroyed = this._onGlobalDestroyed.bind(this);
+  this._onContentFunctionCall = this._onContentFunctionCall.bind(this);
+  this.targetActor.on("window-ready", this._onGlobalCreated);
+  this.targetActor.on("window-destroyed", this._onGlobalDestroyed);
+}
 
+exports.CallWatcher = CallWatcher;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  initialize: function(
-    conn,
-    [window, global, caller, type, name, stack, timestamp, args, result],
-    holdWeak
-  ) {
-    protocol.Actor.prototype.initialize.call(this, conn);
-
-    this.details = {
-      global: global,
-      type: type,
-      name: name,
-      stack: stack,
-      timestamp: timestamp
-    };
-
-    
-    
-    
-    if (holdWeak) {
-      const weakRefs = {
-        window: Cu.getWeakReference(window),
-        caller: Cu.getWeakReference(caller),
-        args: Cu.getWeakReference(args),
-        result: Cu.getWeakReference(result),
-      };
-
-      Object.defineProperties(this.details, {
-        window: { get: () => weakRefs.window.get() },
-        caller: { get: () => weakRefs.caller.get() },
-        args: { get: () => weakRefs.args.get() },
-        result: { get: () => weakRefs.result.get() },
-      });
-    } else {
-      
-      this.details.window = window;
-      this.details.caller = caller;
-      this.details.args = args;
-      this.details.result = result;
-    }
-
-    
-    
-    
-    
-    this.details.previews = {
-      caller: this._generateStringPreview(caller),
-      args: this._generateArgsPreview(args),
-      result: this._generateStringPreview(result)
-    };
-  },
-
-  
-
-
-
-  form: function() {
-    return {
-      actor: this.actorID,
-      type: this.details.type,
-      name: this.details.name,
-      file: this.details.stack[0].file,
-      line: this.details.stack[0].line,
-      timestamp: this.details.timestamp,
-      callerPreview: this.details.previews.caller,
-      argsPreview: this.details.previews.args,
-      resultPreview: this.details.previews.result
-    };
-  },
-
-  
-
-
-
-  getDetails: function() {
-    const { type, name, stack, timestamp } = this.details;
-
-    
-    
-    
-    for (let i = stack.length - 1; ;) {
-      if (stack[i].file) {
-        break;
-      }
-      stack.pop();
-      i--;
-    }
-
-    
-    
-    return {
-      type: type,
-      name: name,
-      stack: stack,
-      timestamp: timestamp
-    };
-  },
-
-  
-
-
-
-
-
-
-
-
-  _generateArgsPreview: function(args) {
-    const { global, name, caller } = this.details;
-
-    
-    
-    let methodSignatureEnums;
-
-    const knownGlobal = CallWatcherFront.KNOWN_METHODS[global];
-    if (knownGlobal) {
-      const knownMethod = knownGlobal[name];
-      if (knownMethod) {
-        const isOverloaded = typeof knownMethod.enums === "function";
-        if (isOverloaded) {
-          methodSignatureEnums = knownMethod.enums(args);
-        } else {
-          methodSignatureEnums = knownMethod.enums;
-        }
-      }
-    }
-
-    const serializeArgs = () => args.map((arg, i) => {
-      
-      if (arg === undefined) {
-        return "undefined";
-      }
-      if (arg === null) {
-        return "null";
-      }
-      if (typeof arg == "function") {
-        return "Function";
-      }
-      if (typeof arg == "object") {
-        return "Object";
-      }
-      
-      
-      if (methodSignatureEnums && methodSignatureEnums.has(i)) {
-        return getBitToEnumValue(global, caller, arg);
-      }
-      return arg + "";
-    });
-
-    return serializeArgs().join(", ");
-  },
-
-  
-
-
-
-
-
-
-
-
-  _generateStringPreview: function(data) {
-    
-    if (data === undefined) {
-      return "undefined";
-    }
-    if (data === null) {
-      return "null";
-    }
-    if (typeof data == "function") {
-      return "Function";
-    }
-    if (typeof data == "object") {
-      return "Object";
-    }
-    return data + "";
-  }
-});
-
-
-
-
-exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
-  initialize: function(conn, targetActor) {
-    protocol.Actor.prototype.initialize.call(this, conn);
-    this.targetActor = targetActor;
-    this._onGlobalCreated = this._onGlobalCreated.bind(this);
-    this._onGlobalDestroyed = this._onGlobalDestroyed.bind(this);
-    this._onContentFunctionCall = this._onContentFunctionCall.bind(this);
-    this.targetActor.on("window-ready", this._onGlobalCreated);
-    this.targetActor.on("window-destroyed", this._onGlobalDestroyed);
-  },
-  destroy: function(conn) {
-    protocol.Actor.prototype.destroy.call(this, conn);
-    this.targetActor.off("window-ready", this._onGlobalCreated);
-    this.targetActor.off("window-destroyed", this._onGlobalDestroyed);
-    this.finalize();
-  },
-
+CallWatcher.prototype = {
   
 
 
@@ -288,6 +76,8 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
 
 
   finalize: function() {
+    this.targetActor.off("window-ready", this._onGlobalCreated);
+    this.targetActor.off("window-destroyed", this._onGlobalDestroyed);
     if (!this._initialized) {
       return;
     }
@@ -397,7 +187,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
         }
 
         if (self._recording) {
-          const type = CallWatcherFront.METHOD_FUNCTION;
+          const type = METHOD_FUNCTION;
           const stack = getStack(name);
           const now = self.targetActor.window.performance.now();
           const timestamp = now - self._timestampEpoch;
@@ -431,7 +221,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
           const result = Cu.waiveXrays(originalGetter.apply(this, args));
 
           if (self._recording) {
-            const type = CallWatcherFront.GETTER_FUNCTION;
+            const type = GETTER_FUNCTION;
             const stack = getStack(name);
             const now = self.targetActor.window.performance.now();
             const timestamp = now - self._timestampEpoch;
@@ -447,7 +237,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
           originalSetter.apply(this, args);
 
           if (self._recording) {
-            const type = CallWatcherFront.SETTER_FUNCTION;
+            const type = SETTER_FUNCTION;
             const stack = getStack(name);
             const now = self.targetActor.window.performance.now();
             const timestamp = now - self._timestampEpoch;
@@ -549,64 +339,7 @@ exports.CallWatcherActor = protocol.ActorClassWithSpec(callWatcherSpec, {
       this.emit("call", functionCall);
     }
   }
-});
-
-
-
-
-
-
-
-
-var gEnumRegex = /^[A-Z][A-Z0-9_]+$/;
-var gEnumsLookupTable = {};
-
-
-
-var INVALID_ENUMS = [
-  "INVALID_ENUM", "NO_ERROR", "INVALID_VALUE", "OUT_OF_MEMORY", "NONE"
-];
-
-function getBitToEnumValue(type, object, arg) {
-  let table = gEnumsLookupTable[type];
-
-  
-  if (!table) {
-    table = gEnumsLookupTable[type] = {};
-
-    for (const key in object) {
-      if (key.match(gEnumRegex)) {
-        
-        table[object[key]] = key;
-      }
-    }
-  }
-
-  
-  if (table[arg]) {
-    return table[arg];
-  }
-
-  
-  
-  const flags = [];
-  for (let flag in table) {
-    if (INVALID_ENUMS.includes(table[flag])) {
-      continue;
-    }
-
-    
-    
-    flag = flag | 0;
-    if (flag && (arg & flag) === flag) {
-      flags.push(table[flag]);
-    }
-  }
-
-  
-  table[arg] = flags.join(" | ") || arg;
-  return table[arg];
-}
+};
 
 
 

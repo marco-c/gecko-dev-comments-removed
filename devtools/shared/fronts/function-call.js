@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { functionCallSpec, callWatcherSpec } = require("devtools/shared/specs/call-watcher");
+const { functionCallSpec } = require("devtools/shared/specs/function-call");
 const protocol = require("devtools/shared/protocol");
 
 
@@ -36,31 +36,17 @@ exports.FunctionCallFront = FunctionCallFront;
 
 
 
-var CallWatcherFront =
-exports.CallWatcherFront =
-protocol.FrontClassWithSpec(callWatcherSpec, {
-  initialize: function(client, { callWatcherActor }) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: callWatcherActor });
-    this.manage(this);
-  }
-});
+exports.METHOD_FUNCTION = 0;
+exports.GETTER_FUNCTION = 1;
+exports.SETTER_FUNCTION = 2;
 
-
-
-
-CallWatcherFront.METHOD_FUNCTION = 0;
-CallWatcherFront.GETTER_FUNCTION = 1;
-CallWatcherFront.SETTER_FUNCTION = 2;
-
-CallWatcherFront.KNOWN_METHODS = {};
-
-CallWatcherFront.KNOWN_METHODS.CanvasRenderingContext2D = {
+const CanvasRenderingContext2D = {
   drawWindow: {
     enums: new Set([6])
   },
 };
 
-CallWatcherFront.KNOWN_METHODS.WebGLRenderingContext = {
+const WebGLRenderingContext = {
   activeTexture: {
     enums: new Set([0]),
   },
@@ -221,3 +207,5 @@ CallWatcherFront.KNOWN_METHODS.WebGLRenderingContext = {
     enums: new Set([2])
   },
 };
+
+exports.KNOWN_METHODS = { CanvasRenderingContext2D, WebGLRenderingContext };

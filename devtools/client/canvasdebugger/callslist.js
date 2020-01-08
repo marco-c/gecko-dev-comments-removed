@@ -5,6 +5,7 @@
 
 "use strict";
 
+const { METHOD_FUNCTION } = require("devtools/shared/fronts/function-call");
 
 
 
@@ -93,7 +94,7 @@ var CallsListView = extend(WidgetMethods, {
       argsPreview.setAttribute("crop", "end");
       argsPreview.setAttribute("flex", "100");
       
-      if (call.type == CallWatcherFront.METHOD_FUNCTION) {
+      if (call.type == METHOD_FUNCTION) {
         argsPreview.setAttribute("value", "(" + call.argsPreview + ")");
       } else {
         argsPreview.setAttribute("value", " = " + call.argsPreview);
