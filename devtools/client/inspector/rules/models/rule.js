@@ -57,6 +57,8 @@ function Rule(elementStyle, options) {
   
   this.textProps = this._getTextProperties();
   this.textProps = this.textProps.concat(this._getDisabledProperties());
+
+  this.getUniqueSelector = this.getUniqueSelector.bind(this);
 }
 
 Rule.prototype = {
@@ -79,6 +81,7 @@ Rule.prototype = {
 
   get selector() {
     return {
+      getUniqueSelector: this.getUniqueSelector,
       matchedSelectors: this.matchedSelectors,
       selectors: this.domRule.selectors,
       selectorText: this.keyframes ? this.domRule.keyText : this.selectorText,
@@ -178,6 +181,27 @@ Rule.prototype = {
 
   getDeclaration: function(id) {
     return this.textProps.find(textProp => textProp.id === id);
+  },
+
+  
+
+
+  async getUniqueSelector() {
+    let selector = "";
+
+    if (this.domRule.selectors) {
+      
+      selector = this.domRule.selectors.join(", ");
+    } else if (this.inherited) {
+      
+      
+      selector = await this.inherited.getUniqueSelector();
+    } else {
+      
+      selector = this.elementStyle.ruleView.inspector.selectionCssSelector;
+    }
+
+    return selector;
   },
 
   

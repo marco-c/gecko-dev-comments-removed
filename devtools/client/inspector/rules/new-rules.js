@@ -8,13 +8,17 @@ const Services = require("Services");
 const ElementStyle = require("devtools/client/inspector/rules/models/element-style");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 const {
   disableAllPseudoClasses,
   setPseudoClassLocks,
   togglePseudoClass,
 } = require("./actions/pseudo-classes");
-const { updateRules } = require("./actions/rules");
+const {
+  updateHighlightedSelector,
+  updateRules,
+} = require("./actions/rules");
 
 const RulesApp = createFactory(require("./components/RulesApp"));
 
@@ -40,6 +44,7 @@ class RulesView {
     this.onSelection = this.onSelection.bind(this);
     this.onToggleDeclaration = this.onToggleDeclaration.bind(this);
     this.onTogglePseudoClass = this.onTogglePseudoClass.bind(this);
+    this.onToggleSelectorHighlighter = this.onToggleSelectorHighlighter.bind(this);
     this.updateRules = this.updateRules.bind(this);
 
     this.inspector.sidebar.on("select", this.onSelection);
@@ -47,6 +52,8 @@ class RulesView {
     this.selection.on("new-node-front", this.onSelection);
 
     this.init();
+
+    EventEmitter.decorate(this);
   }
 
   init() {
@@ -57,6 +64,7 @@ class RulesView {
     const rulesApp = RulesApp({
       onToggleDeclaration: this.onToggleDeclaration,
       onTogglePseudoClass: this.onTogglePseudoClass,
+      onToggleSelectorHighlighter: this.onToggleSelectorHighlighter,
     });
 
     const provider = createElement(Provider, {
@@ -74,6 +82,11 @@ class RulesView {
     this.inspector.sidebar.off("select", this.onSelection);
     this.selection.off("detached-front", this.onSelection);
     this.selection.off("new-node-front", this.onSelection);
+
+    if (this._selectHighlighter) {
+      this._selectorHighlighter.finalize();
+      this._selectorHighlighter = null;
+    }
 
     if (this.elementStyle) {
       this.elementStyle.destroy();
@@ -107,6 +120,41 @@ class RulesView {
     }
 
     return this._dummyElement;
+  }
+
+  
+
+
+
+
+  get highlighters() {
+    return this.inspector.highlighters;
+  }
+
+  
+
+
+
+
+
+  async getSelectorHighlighter() {
+    if (!this.inspector) {
+      return null;
+    }
+
+    if (this._selectorHighlighter) {
+      return this._selectorHighlighter;
+    }
+
+    try {
+      const front = this.inspector.inspector;
+      this._selectorHighlighter = await front.getHighlighterByType("SelectorHighlighter");
+      return this._selectorHighlighter;
+    } catch (e) {
+      
+      
+      return null;
+    }
   }
 
   
@@ -162,6 +210,45 @@ class RulesView {
   onTogglePseudoClass(value) {
     this.store.dispatch(togglePseudoClass(value));
     this.inspector.togglePseudoClass(value);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async onToggleSelectorHighlighter(selector) {
+    const highlighter = await this.getSelectorHighlighter();
+    if (!highlighter) {
+      return;
+    }
+
+    await highlighter.hide();
+
+    if (selector !== this.highlighters.selectorHighlighterShown) {
+      this.store.dispatch(updateHighlightedSelector(selector));
+
+      await highlighter.show(this.selection.nodeFront, {
+        hideInfoBar: true,
+        hideGuides: true,
+        selector,
+      });
+
+      this.highlighters.selectorHighlighterShown = selector;
+      
+      this.emit("ruleview-selectorhighlighter-toggled", true);
+    } else {
+      this.highlighters.selectorHighlighterShown = null;
+      this.store.dispatch(updateHighlightedSelector(""));
+      
+      this.emit("ruleview-selectorhighlighter-toggled", false);
+    }
   }
 
   

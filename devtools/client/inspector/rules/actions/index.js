@@ -20,6 +20,9 @@ createEnum([
   "TOGGLE_PSEUDO_CLASS",
 
   
+  "UPDATE_HIGHLIGHTED_SELECTOR",
+
+  
   "UPDATE_RULES",
 
 ], module.exports);

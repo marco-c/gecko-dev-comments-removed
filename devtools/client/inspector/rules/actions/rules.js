@@ -5,10 +5,24 @@
 "use strict";
 
 const {
+  UPDATE_HIGHLIGHTED_SELECTOR,
   UPDATE_RULES,
 } = require("./index");
 
 module.exports = {
+
+  
+
+
+
+
+
+  updateHighlightedSelector(highlightedSelector) {
+    return {
+      type: UPDATE_HIGHLIGHTED_SELECTOR,
+      highlightedSelector,
+    };
+  },
 
   
 

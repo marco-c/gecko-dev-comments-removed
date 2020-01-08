@@ -86,6 +86,8 @@ exports.pseudoClasses = {
 
 const selector = exports.selector = {
   
+  getUniqueSelector: PropTypes.func,
+  
   matchedSelectors: PropTypes.arrayOf(PropTypes.string),
   
   selectorText: PropTypes.string,
