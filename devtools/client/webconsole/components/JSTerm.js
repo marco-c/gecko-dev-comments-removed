@@ -1180,9 +1180,16 @@ class JSTerm extends Component {
     
     
     
-    if (items.length >= minimumAutoCompleteLength || (
-      items.length === 1 && items[0].preLabel !== matchProp
-    )) {
+    
+    
+    if (items.length >= minimumAutoCompleteLength
+      || (items.length === 1 && items[0].preLabel !== matchProp)
+      || (
+        items.length === 1
+        && !this.canDisplayAutoCompletionText()
+        && items[0].label !== matchProp
+      )
+    ) {
       let popupAlignElement;
       let xOffset;
       let yOffset;
