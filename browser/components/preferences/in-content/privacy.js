@@ -579,6 +579,14 @@ var gPrivacyPane = {
     }
 
     
+    if (contentBlockingUiEnabled) {
+      let dntDefaultRadioItem =
+        document.querySelector("#doNotTrackRadioGroup > radio[value=false]");
+      document.l10n.setAttributes(
+        dntDefaultRadioItem, "do-not-track-option-default-content-blocking");
+    }
+
+    
     let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackers");
     if (contentBlockingCookiesAndSiteDataRejectTrackersRecommended) {
       document.l10n.setAttributes(blockCookiesFromTrackers, "sitedata-block-trackers-option-recommended");
