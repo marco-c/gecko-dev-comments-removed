@@ -29,6 +29,24 @@ billingAddress.init("USA",
                      "Bill A. Pacheco",  
                      "+14344413879"); 
 
+const specialAddress = Cc["@mozilla.org/dom/payments/payment-address;1"].
+                           createInstance(Ci.nsIPaymentAddress);
+const specialAddressLine = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+const specialData = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
+specialData.data = ":$%@&*";
+specialAddressLine.appendElement(specialData);
+specialAddress.init("USA",               
+                     specialAddressLine, 
+                     "CA",               
+                     "CA",               
+                     "San Bruno",        
+                     "",                 
+                     "94066",            
+                     "123456",           
+                     "",                 
+                     "Bill A. Pacheco",  
+                     "+14344413879"); 
+
 const basiccardResponseData = Cc["@mozilla.org/dom/payments/basiccard-response-data;1"].
                                  createInstance(Ci.nsIBasicCardResponseData);
 
@@ -109,12 +127,46 @@ const simpleResponseUI = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIPaymentUIService]),
 };
 
+const specialAddressUI = {
+  showPayment: function(requestId) {
+    try {
+      basiccardResponseData.initData("Bill A. Pacheco",  
+                                     "4916855166538720", 
+                                     "01",               
+                                     "2024",             
+                                     "180",              
+                                     specialAddress);    
+    } catch (e) {
+      emitTestFail("Fail to initialize basic card response data.");
+    }
+    showResponse.init(requestId,
+                      Ci.nsIPaymentActionResponse.PAYMENT_ACCEPTED,
+                      "basic-card",         
+                      basiccardResponseData,
+                      "Bill A. Pacheco",    
+                      "",                   
+                      "");                  
+    paymentSrv.respondPayment(showResponse.QueryInterface(Ci.nsIPaymentActionResponse));
+  },
+  abortPayment: abortPaymentResponse,
+  completePayment: completePaymentResponse,
+  updatePayment: function(requestId) {
+  },
+  closePayment: function (requestId) {
+  },
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPaymentUIService]),
+};
+
 addMessageListener("set-detailed-ui-service", function() {
   paymentSrv.setTestingUIService(detailedResponseUI.QueryInterface(Ci.nsIPaymentUIService));
 });
 
 addMessageListener("set-simple-ui-service", function() {
   paymentSrv.setTestingUIService(simpleResponseUI.QueryInterface(Ci.nsIPaymentUIService));
+});
+
+addMessageListener("set-special-address-ui-service", function() {
+  paymentSrv.setTestingUIService(specialAddressUI.QueryInterface(Ci.nsIPaymentUIService));
 });
 
 addMessageListener("error-response-test", function() {
