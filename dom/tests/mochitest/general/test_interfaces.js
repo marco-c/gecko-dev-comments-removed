@@ -208,6 +208,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "ChromeNodeList", insecureContext: true, xbl: true},
 
+    {name: "Clipboard"},
+
     {name: "ClipboardEvent", insecureContext: true},
 
     {name: "CloseEvent", insecureContext: true},
