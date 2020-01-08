@@ -137,7 +137,7 @@ ReportError(JSContext* cx, const char* origMsg, nsIURI* uri)
 static bool
 PrepareScript(nsIURI* uri,
               JSContext* cx,
-              HandleObject targetObj,
+              bool wantGlobalScript,
               const char* uriStr,
               const nsAString& charset,
               const char* buf,
@@ -164,7 +164,7 @@ PrepareScript(nsIURI* uri,
             return false;
         }
 
-        if (JS_IsGlobalObject(targetObj)) {
+        if (wantGlobalScript) {
             return JS::Compile(cx, options, srcBuf, script);
         }
         return JS::CompileForNonSyntacticScope(cx, options, srcBuf, script);
@@ -172,7 +172,7 @@ PrepareScript(nsIURI* uri,
     
     
     options.setSourceIsLazy(true);
-    if (JS_IsGlobalObject(targetObj)) {
+    if (wantGlobalScript) {
         return JS::Compile(cx, options, buf, len, script);
     }
     return JS::CompileForNonSyntacticScope(cx, options, buf, len, script);
@@ -244,6 +244,8 @@ EvalScript(JSContext* cx,
 
         nsCString uriStr;
         if (preloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
+            
+            
             
             
             
@@ -419,8 +421,8 @@ AsyncScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
     RootedObject targetObj(cx, mTargetObj);
     RootedObject loadScope(cx, mLoadScope);
 
-    if (!PrepareScript(uri, cx, targetObj, spec.get(), mCharset,
-                       reinterpret_cast<const char*>(aBuf), aLength,
+    if (!PrepareScript(uri, cx, JS_IsGlobalObject(targetObj), spec.get(),
+                       mCharset, reinterpret_cast<const char*>(aBuf), aLength,
                        mWantReturnValue, &script))
     {
         return NS_OK;
@@ -508,6 +510,7 @@ mozJSSubScriptLoader::ReadScript(nsIURI* uri,
                                  const char* uriStr,
                                  nsIIOService* serv,
                                  bool wantReturnValue,
+                                 bool useCompilationScope,
                                  MutableHandleScript script)
 {
     script.set(nullptr);
@@ -555,8 +558,22 @@ mozJSSubScriptLoader::ReadScript(nsIURI* uri,
     rv = NS_ReadInputStreamToString(instream, buf, len);
     NS_ENSURE_SUCCESS(rv, false);
 
-    return PrepareScript(uri, cx, targetObj, uriStr, charset,
-                         buf.get(), len, wantReturnValue,
+    Maybe<JSAutoRealm> ar;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (useCompilationScope) {
+        ar.emplace(cx, xpc::CompilationScope());
+    }
+
+    return PrepareScript(uri, cx, JS_IsGlobalObject(targetObj),
+                         uriStr, charset, buf.get(), len, wantReturnValue,
                          script);
 }
 
@@ -692,6 +709,7 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
 
     
     
+    bool useCompilationScope = false;
     auto* principal = BasePrincipal::Cast(GetObjectPrincipal(targetObj));
     bool isSystem = principal->Is<SystemPrincipal>();
     if (!isSystem && principal->Is<ContentPrincipal>()) {
@@ -706,9 +724,10 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
             nsAutoCString filePath;
             content->mCodebase->GetFilePath(filePath);
 
-            isSystem = filePath.EqualsLiteral("home") ||
-                       filePath.EqualsLiteral("newtab") ||
-                       filePath.EqualsLiteral("welcome");
+            useCompilationScope = filePath.EqualsLiteral("home") ||
+                                  filePath.EqualsLiteral("newtab") ||
+                                  filePath.EqualsLiteral("welcome");
+            isSystem = true;
         }
     }
     bool ignoreCache = options.ignoreCache || !isSystem || scheme.EqualsLiteral("blob");
@@ -742,7 +761,7 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
         cache = nullptr;
     } else if (!ReadScript(uri, cx, targetObj, options.charset,
                         static_cast<const char*>(uriStr.get()), serv,
-                        options.wantReturnValue, &script)) {
+                        options.wantReturnValue, useCompilationScope, &script)) {
         return NS_OK;
     }
 
