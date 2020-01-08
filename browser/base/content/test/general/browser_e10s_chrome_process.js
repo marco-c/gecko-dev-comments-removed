@@ -14,7 +14,7 @@ function makeTest(name, startURL, startProcessIsRemote, endURL, endProcessIsRemo
 
     
     info("Loading initial URL");
-    browser.loadURI(startURL);
+    BrowserTestUtils.loadURI(browser, startURL);
     await BrowserTestUtils.browserLoaded(browser);
 
     is(browser.currentURI.spec, startURL, "Shouldn't have been redirected");

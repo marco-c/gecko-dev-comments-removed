@@ -22,7 +22,7 @@ add_task(async function test_blob_uri_inherit_oa_from_content() {
   
   let win = await BrowserTestUtils.openNewBrowserWindow({ remote: true });
   let browser = win.gBrowser.selectedBrowser;
-  browser.loadURI(BASE_URI);
+  BrowserTestUtils.loadURI(browser, BASE_URI);
   await BrowserTestUtils.browserLoaded(browser);
 
   

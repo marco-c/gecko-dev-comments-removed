@@ -401,7 +401,7 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
 
   
   
-  gBrowser.selectedBrowser.loadURI("about:robots");
+  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:robots");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   
