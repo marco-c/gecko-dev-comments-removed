@@ -14,7 +14,7 @@ from serve.serve import make_hosts_file
 from .base import (get_free_port,
                    cmd_arg,
                    browser_command)
-from ..executors.executormarionette import (MarionetteTestharnessExecutor, 
+from ..executors.executormarionette import (MarionetteTestharnessExecutor,  
                                             MarionetteRefTestExecutor)  
 from .firefox import (get_timeout_multiplier,
                       update_properties,
