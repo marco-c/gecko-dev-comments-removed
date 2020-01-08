@@ -228,13 +228,6 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
 # define LIFO_CHUNK_PROTECT 1
 #endif
 
-#ifdef LIFO_CHUNK_PROTECT
-    
-    
-    
-    const uintptr_t protect_ : 1;
-#endif
-
     
     
     
@@ -286,14 +279,11 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     BumpChunk& operator=(const BumpChunk&) = delete;
     BumpChunk(const BumpChunk&) = delete;
 
-    explicit BumpChunk(uintptr_t capacity, bool protect)
+    explicit BumpChunk(uintptr_t capacity)
       : bump_(begin()),
         capacity_(base() + capacity)
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       , magic_(magicNumber)
-#endif
-#ifdef LIFO_CHUNK_PROTECT
-      , protect_(protect ? 1 : 0)
 #endif
     {
         assertInvariants();
@@ -303,7 +293,6 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
         
         LIFO_MAKE_MEM_NOACCESS(bump_, capacity_ - bump_);
 #endif
-        addMProtectHandler();
     }
 
     
@@ -343,7 +332,6 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
   public:
     ~BumpChunk() {
         release();
-        removeMProtectHandler();
     }
 
     
@@ -363,10 +351,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     
     
     
-    
-    
-    
-    static UniquePtr<BumpChunk> newWithCapacity(size_t size, bool protect);
+    static UniquePtr<BumpChunk> newWithCapacity(size_t size);
 
     
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
@@ -474,42 +459,12 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
         return aligned;
     }
 
-    
-    
-    enum class Loc {
-        
-        
-        
-        
-        
-        Header = 0,
-        
-        
-        
-        
-        
-        Allocated = 1,
-        
-        
-        
-        
-        
-        
-        Reserved = 2,
-        
-        
-        
-        
-        End = 3
-    };
 #ifdef LIFO_CHUNK_PROTECT
-    void setRWUntil(Loc loc) const;
-    void addMProtectHandler() const;
-    void removeMProtectHandler() const;
+    void setReadOnly();
+    void setReadWrite();
 #else
-    void setRWUntil(Loc loc) const {}
-    void addMProtectHandler() const {}
-    void removeMProtectHandler() const {}
+    void setReadOnly() const {}
+    void setReadWrite() const {}
 #endif
 };
 
@@ -538,7 +493,6 @@ BumpChunk::begin()
 
 class LifoAlloc
 {
-    using Loc = detail::BumpChunk::Loc;
     using UniqueBumpChunk = js::UniquePtr<detail::BumpChunk>;
     using BumpChunkList = detail::SingleLinkedList<detail::BumpChunk>;
 
@@ -557,9 +511,6 @@ class LifoAlloc
     size_t      peakSize_;
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
     bool        fallibleScope_;
-#endif
-#ifdef LIFO_CHUNK_PROTECT
-    const bool  protect_;
 #endif
 
     void operator=(const LifoAlloc&) = delete;
@@ -616,13 +567,10 @@ class LifoAlloc
     }
 
   public:
-    explicit LifoAlloc(size_t defaultChunkSize, bool protect = true)
+    explicit LifoAlloc(size_t defaultChunkSize)
       : peakSize_(0)
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
       , fallibleScope_(true)
-#endif
-#ifdef LIFO_CHUNK_PROTECT
-      , protect_(protect)
 #endif
     {
         reset(defaultChunkSize);
@@ -725,7 +673,6 @@ class LifoAlloc
         if (!newChunk)
             return false;
         size_t size = newChunk->computedSizeOfIncludingThis();
-        newChunk->setRWUntil(Loc::Allocated);
         unused_.pushFront(std::move(newChunk));
         incrementCurSize(size);
         return true;
@@ -799,48 +746,40 @@ class LifoAlloc
             released = chunks_.splitAfter(mark.markedChunk());
 
         
-        for (detail::BumpChunk& bc : released) {
+        for (detail::BumpChunk& bc : released)
             bc.release();
-            bc.setRWUntil(Loc::Allocated);
-        }
         unused_.appendAll(std::move(released));
 
         
-        if (!chunks_.empty()) {
-            chunks_.last()->setRWUntil(Loc::End);
+        if (!chunks_.empty())
             chunks_.last()->release(mark);
-        }
     }
 
     void releaseAll() {
         MOZ_ASSERT(!markCount);
-        for (detail::BumpChunk& bc : chunks_) {
+        for (detail::BumpChunk& bc : chunks_)
             bc.release();
-            bc.setRWUntil(Loc::Allocated);
-        }
         unused_.appendAll(std::move(chunks_));
     }
 
     
-    void setReadOnly() {
 #ifdef LIFO_CHUNK_PROTECT
+    void setReadOnly() {
         for (detail::BumpChunk& bc : chunks_)
-            bc.setRWUntil(Loc::Header);
+            bc.setReadOnly();
         for (detail::BumpChunk& bc : unused_)
-            bc.setRWUntil(Loc::Header);
-#endif
+            bc.setReadOnly();
     }
     void setReadWrite() {
-#ifdef LIFO_CHUNK_PROTECT
-        BumpChunkList::Iterator e(chunks_.last());
-        for (BumpChunkList::Iterator i(chunks_.begin()); i != e; ++i)
-            i->setRWUntil(Loc::Reserved);
-        if (!chunks_.empty())
-            chunks_.last()->setRWUntil(Loc::End);
+        for (detail::BumpChunk& bc : chunks_)
+            bc.setReadWrite();
         for (detail::BumpChunk& bc : unused_)
-            bc.setRWUntil(Loc::Allocated);
-#endif
+            bc.setReadWrite();
     }
+#else
+    void setReadOnly() const {}
+    void setReadWrite() const {}
+#endif
 
     
     size_t used() const {

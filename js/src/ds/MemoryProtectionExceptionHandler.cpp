@@ -73,7 +73,7 @@ class ProtectedRegionTree
       : lock(mutexid::ProtectedRegionTree),
         
         
-        alloc(4096, false),
+        alloc(4096),
         tree(&alloc)
     {
         sProtectedRegionsInit = true;
