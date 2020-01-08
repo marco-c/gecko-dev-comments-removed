@@ -397,8 +397,20 @@ public:
   
   void IncrementAnimationGeneration();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static void AddLayerChangesForAnimation(nsIFrame* aFrame,
                                           nsIContent* aContent,
+                                          nsChangeHint aHintForThisFrame,
                                           nsStyleChangeList&
                                             aChangeListToProcess);
 

@@ -1748,6 +1748,7 @@ RestyleManager::IncrementAnimationGeneration()
  void
 RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
                                             nsIContent* aContent,
+                                            nsChangeHint aHintForThisFrame,
                                             nsStyleChangeList&
                                               aChangeListToProcess)
 {
@@ -1771,8 +1772,27 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       if (layerInfo.mLayerType == DisplayItemType::TYPE_TRANSFORM &&
           !aFrame->StyleDisplay()->HasTransformStyle()) {
+        
+        
+        if (!(NS_IsHintSubset(
+                nsChangeHint_ComprehensiveAddOrRemoveTransform,
+                aHintForThisFrame))) {
+          hint |= nsChangeHint_ComprehensiveAddOrRemoveTransform;
+        }
         continue;
       }
       hint |= layerInfo.mChangeHint;
@@ -2749,7 +2769,7 @@ RestyleManager::ProcessPostTraversal(
     
     
     AddLayerChangesForAnimation(
-      styleFrame, aElement, aRestyleState.ChangeList());
+      styleFrame, aElement, changeHint, aRestyleState.ChangeList());
 
     childrenFlags |= SendA11yNotifications(mPresContext,
                                            aElement,
