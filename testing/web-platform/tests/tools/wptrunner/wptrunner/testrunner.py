@@ -693,7 +693,16 @@ class TestRunnerManager(threading.Thread):
             
             self.logger.warning("Forcibly terminating runner process")
             self.test_runner_proc.terminate()
-            self.test_runner_proc.join(10)
+
+            
+            
+            
+            
+            
+            self.command_queue.close()
+            self.command_queue = Queue()
+            self.remote_queue.close()
+            self.remote_queue = Queue()
         else:
             self.logger.debug("Runner process exited with code %i" % self.test_runner_proc.exitcode)
 
