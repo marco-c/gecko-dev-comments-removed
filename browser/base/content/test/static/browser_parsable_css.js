@@ -99,11 +99,6 @@ let propNameWhitelist = [
   
   
   
-  {propName: "--in-content-category-text-active",
-   isFromDevTools: false},
-  
-  
-  
   {propName: "--clickToPlay-width",
    isFromDevTools: false},
   {propName: "--playButton-width",
