@@ -275,7 +275,14 @@ function parseManifest(manifestUri) {
       let [type, ...argv] = line.split(/\s+/);
       if (type == "content" || type == "skin" || type == "locale") {
         let chromeUri = `chrome://${argv[0]}/${type}/`;
-        trackChromeUri(chromeUri);
+        
+        
+        
+        if (chromeUri === "chrome://webcompat-reporter/locale/") {
+          gChromeMap.set("chrome://webcompat-reporter/locale/", true);
+        } else {
+          trackChromeUri(chromeUri);
+        }
       } else if (type == "override" || type == "overlay") {
         
         
