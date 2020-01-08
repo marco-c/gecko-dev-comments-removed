@@ -2423,6 +2423,23 @@ HelperThread::threadLoop()
     while (!terminate) {
         MOZ_ASSERT(idle());
 
+        if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+            
+            
+            
+            
+            
+            {
+                AutoUnlockHelperThreadState unlock(lock);
+                mozilla::recordreplay::MaybeWaitForCheckpointSave();
+            }
+            
+            
+            
+            
+            mozilla::recordreplay::NotifyUnrecordedWait(WakeupAll);
+        }
+
         
         
         
@@ -2432,19 +2449,6 @@ HelperThread::threadLoop()
         const TaskSpec* task = findHighestPriorityTask(lock);
         if (!task) {
             AUTO_PROFILER_LABEL("HelperThread::threadLoop::wait", IDLE);
-            if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-                
-                
-                
-                
-                
-                {
-                    AutoUnlockHelperThreadState unlock(lock);
-                    mozilla::recordreplay::MaybeWaitForCheckpointSave();
-                }
-                mozilla::recordreplay::NotifyUnrecordedWait(WakeupAll);
-            }
-
             HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
             continue;
         }
