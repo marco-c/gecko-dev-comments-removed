@@ -29,6 +29,7 @@ loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-cl
 loader.lazyRequireGetter(this, "WorkerClient", "devtools/shared/client/worker-client");
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
 loader.lazyRequireGetter(this, "Pool", "devtools/shared/protocol", true);
+loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
 
 
 const PLATFORM_MAJOR_VERSION = AppConstants.MOZ_APP_VERSION.match(/\d+/)[0];
@@ -1046,7 +1047,11 @@ DebuggerClient.prototype = {
     
     while (poolsToVisit.length) {
       const pool = poolsToVisit.shift();
-      fronts.add(pool);
+      
+      
+      if (pool instanceof Front) {
+        fronts.add(pool);
+      }
       for (const child of pool.poolChildren()) {
         poolsToVisit.push(child);
       }
