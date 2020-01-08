@@ -1658,10 +1658,15 @@ var gBrowserInit = {
           gBrowser.loadTabs(specs, {
             inBackground: false,
             replace: true,
-            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+            
+            userContextId: window.arguments[6],
+            triggeringPrincipal: window.arguments[8] || Services.scriptSecurityManager.getSystemPrincipal(),
+            allowInheritPrincipal: window.arguments[9],
           });
         } catch (e) {}
       } else if (window.arguments.length >= 3) {
+        
+        
         
         
         
@@ -1688,7 +1693,7 @@ var gBrowserInit = {
                 window.arguments[7], !!window.arguments[7], window.arguments[8],
                 
                 
-                true);
+                window.arguments[9] !== false);
         window.focus();
       } else {
         
