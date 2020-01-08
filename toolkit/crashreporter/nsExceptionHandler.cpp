@@ -1384,13 +1384,13 @@ ChildFPEFilter(void* context, EXCEPTION_POINTERS* exinfo,
 static MINIDUMP_TYPE
 GetMinidumpType()
 {
-  MINIDUMP_TYPE minidump_type = MiniDumpWithFullMemoryInfo;
+  MINIDUMP_TYPE minidump_type = static_cast<MINIDUMP_TYPE>(
+      MiniDumpWithFullMemoryInfo | MiniDumpWithUnloadedModules);
 
 #ifdef NIGHTLY_BUILD
   
   
   minidump_type = static_cast<MINIDUMP_TYPE>(minidump_type |
-      MiniDumpWithUnloadedModules |
       MiniDumpWithProcessThreadData);
 
   
