@@ -387,19 +387,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   NS_DECL_NSIINTERFACEREQUESTOR
 
   
-  already_AddRefed<nsPIDOMWindowOuter> IndexedGetter(JSContext* aCx,
-                                                     uint32_t aIndex);
+  already_AddRefed<nsPIDOMWindowOuter> IndexedGetter(uint32_t aIndex);
 
   static bool IsPrivilegedChromeWindow(JSContext* , JSObject* aObj);
-
-  
-  
-  
-  
-  
-  
-  
-  static bool AllowChromeFrameAccess(JSContext* aCx, JSObject* aObj);
 
   static bool OfflineCacheAllowedForContext(JSContext* ,
                                             JSObject* aObj);
@@ -632,7 +622,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void Blur(mozilla::ErrorResult& aError);
   nsDOMWindowList* GetFrames() final;
   already_AddRefed<nsPIDOMWindowOuter> GetFrames(mozilla::ErrorResult& aError);
-  uint32_t Length(mozilla::dom::CallerType aCallerType);
+  uint32_t Length();
   already_AddRefed<nsPIDOMWindowOuter> GetTop(mozilla::ErrorResult& aError);
 
  protected:
