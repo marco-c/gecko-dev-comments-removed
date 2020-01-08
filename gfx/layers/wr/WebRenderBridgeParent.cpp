@@ -1846,13 +1846,6 @@ WebRenderBridgeParent::ClearResources()
     mCompositorScheduler->Destroy();
   }
 
-  
-  
-  
-  
-  
-  FlushSceneBuilds();
-
   mAnimStorage = nullptr;
   mCompositorScheduler = nullptr;
   mAsyncImageManager = nullptr;

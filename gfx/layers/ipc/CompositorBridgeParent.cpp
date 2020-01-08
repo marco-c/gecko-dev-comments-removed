@@ -523,10 +523,19 @@ CompositorBridgeParent::StopAndClearResources()
     }
     indirectBridgeParents.clear();
 
+    RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI();
     
     
     mWrBridge->Destroy();
     mWrBridge = nullptr;
+
+    if (api) {
+      
+      
+      api->FlushSceneBuilder();
+      api = nullptr;
+    }
+
     if (mAsyncImageManager) {
       mAsyncImageManager->Destroy();
       
