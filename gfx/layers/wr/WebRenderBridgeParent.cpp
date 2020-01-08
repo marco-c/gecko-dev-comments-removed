@@ -1848,7 +1848,9 @@ void WebRenderBridgeParent::NotifySceneBuiltForEpoch(
   }
 }
 
-void WebRenderBridgeParent::NotifyDidSceneBuild() {
+void WebRenderBridgeParent::NotifyDidSceneBuild(
+    RefPtr<wr::WebRenderPipelineInfo> aInfo) {
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
   if (!mCompositorScheduler) {
     return;
   }
@@ -1859,13 +1861,39 @@ void WebRenderBridgeParent::NotifyDidSceneBuild() {
   
   
   TimeStamp lastVsync = mCompositorScheduler->GetLastVsyncTime();
-  if (mMostRecentComposite && mMostRecentComposite < lastVsync &&
-      ((TimeStamp::Now() - lastVsync).ToMilliseconds() <
+  VsyncId lastVsyncId = mCompositorScheduler->GetLastVsyncId();
+  if (lastVsyncId == VsyncId() || !mMostRecentComposite ||
+      mMostRecentComposite >= lastVsync ||
+      ((TimeStamp::Now() - lastVsync).ToMilliseconds() >
        gfxPrefs::WebRenderLateSceneBuildThreshold())) {
-    CompositeToTarget(mCompositorScheduler->GetLastVsyncId(), nullptr, nullptr);
-  } else {
     mCompositorScheduler->ScheduleComposition();
+    return;
   }
+
+  
+  
+  auto info = aInfo->Raw();
+  for (uintptr_t i = 0; i < info.epochs.length; i++) {
+    auto epoch = info.epochs.data[i];
+
+    WebRenderBridgeParent* wrBridge = this;
+    if (!(epoch.pipeline_id == PipelineId())) {
+      wrBridge = mAsyncImageManager->GetWrBridge(epoch.pipeline_id);
+    }
+
+    if (wrBridge) {
+      VsyncId startId = wrBridge->GetVsyncIdForEpoch(epoch.epoch);
+      
+      
+      
+      if (startId == lastVsyncId) {
+        mCompositorScheduler->ScheduleComposition();
+        return;
+      }
+    }
+  }
+
+  CompositeToTarget(mCompositorScheduler->GetLastVsyncId(), nullptr, nullptr);
 }
 
 TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
