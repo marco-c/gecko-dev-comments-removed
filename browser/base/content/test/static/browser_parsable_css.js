@@ -101,9 +101,6 @@ let propNameWhitelist = [
   {propName: "--theme-search-overlays-semitransparent",
    isFromDevTools: true},
   
-  {propName: "--theme-codemirror-gutter-background",
-   isFromDevTools: true},
-  
   
   
   {propName: "--clickToPlay-width",
