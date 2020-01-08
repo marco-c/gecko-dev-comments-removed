@@ -95,7 +95,6 @@ add_task(async function muteTabs_usingButton() {
   ok(muted(tab3), "Tab3 is now muted");
   ok(!muted(tab4) && !activeMediaBlocked(tab4), "Tab4 is not muted and not activemedia-blocked");
 
-
   for (let tab of tabs) {
     BrowserTestUtils.removeTab(tab);
   }
@@ -151,6 +150,58 @@ add_task(async function unmuteTabs_usingButton() {
   ok(!muted(tab3) && !activeMediaBlocked(tab3), "Tab3 is unmuted and not media-blocked");
   ok(muted(tab4), "Tab4 is muted");
   is(gBrowser.selectedTab, tab0, "Tab0 is active");
+
+  for (let tab of tabs) {
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(async function muteAndUnmuteTabs_usingKeyboard() {
+  let tab0 = await addMediaTab();
+  let tab1 = await addMediaTab();
+  let tab2 = await addMediaTab();
+  let tab3 = await addMediaTab();
+  let tab4 = await addMediaTab();
+
+  let tabs = [tab0, tab1, tab2, tab3, tab4];
+
+  await BrowserTestUtils.switchTab(gBrowser, tab0);
+
+  let mutedPromise = get_wait_for_mute_promise(tab0, true);
+  EventUtils.synthesizeKey("M", {ctrlKey: true});
+  await mutedPromise;
+  ok(muted(tab0), "Tab0 should be muted");
+  ok(!muted(tab1), "Tab1 should not be muted");
+  ok(!muted(tab2), "Tab2 should not be muted");
+  ok(!muted(tab3), "Tab3 should not be muted");
+  ok(!muted(tab4), "Tab4 should not be muted");
+
+  
+  await triggerClickOn(tab3, { shiftKey: true });
+
+  
+  for (let i = 0; i <= 3; i++) {
+    ok(tabs[i].multiselected, "tab" + i + " is multiselected");
+  }
+  ok(!tab4.multiselected, "tab4 is not multiselected");
+
+  mutedPromise = get_wait_for_mute_promise(tab0, false);
+  EventUtils.synthesizeKey("M", {ctrlKey: true});
+  await mutedPromise;
+  ok(!muted(tab0), "Tab0 should not be muted");
+  ok(!muted(tab1), "Tab1 should not be muted");
+  ok(!muted(tab2), "Tab2 should not be muted");
+  ok(!muted(tab3), "Tab3 should not be muted");
+  ok(!muted(tab4), "Tab4 should not be muted");
+
+  mutedPromise = get_wait_for_mute_promise(tab0, true);
+  EventUtils.synthesizeKey("M", {ctrlKey: true});
+  await mutedPromise;
+  ok(muted(tab0), "Tab0 should be muted");
+  ok(muted(tab1), "Tab1 should be muted");
+  ok(muted(tab2), "Tab2 should be muted");
+  ok(muted(tab3), "Tab3 should be muted");
+  ok(!muted(tab4), "Tab4 should not be muted");
 
   for (let tab of tabs) {
     BrowserTestUtils.removeTab(tab);
