@@ -47,7 +47,7 @@ function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri) {
   
   
   const sm = Services.scriptSecurityManager;
-  if (sm.inFileURIWhitelist(aTargetUri)) {
+  if (sm.inFileURIAllowlist(aTargetUri)) {
     return FILE_REMOTE_TYPE;
   }
 

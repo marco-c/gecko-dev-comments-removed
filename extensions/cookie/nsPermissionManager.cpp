@@ -2402,7 +2402,7 @@ nsPermissionManager::CommonTestPermissionInternal(nsIPrincipal* aPrincipal,
   auto* basePrin = BasePrincipal::Cast(aPrincipal);
   if (basePrin && basePrin->Is<ExpandedPrincipal>()) {
     auto ep = basePrin->As<ExpandedPrincipal>();
-    for (auto& prin : ep->WhiteList()) {
+    for (auto& prin : ep->AllowList()) {
       uint32_t perm;
       nsresult rv = CommonTestPermission(prin, aType, &perm,
                                          aExactHostMatch, aIncludingSession);

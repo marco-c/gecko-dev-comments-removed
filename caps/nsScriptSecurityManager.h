@@ -100,7 +100,7 @@ private:
     ScriptSecurityPrefChanged(const char* aPref = nullptr);
 
     inline void
-    AddSitesToFileURIWhitelist(const nsCString& aSiteList);
+    AddSitesToFileURIAllowlist(const nsCString& aSiteList);
 
     nsresult GetChannelResultPrincipal(nsIChannel* aChannel,
                                        nsIPrincipal** aPrincipal,
@@ -112,7 +112,7 @@ private:
 
     
     
-    const nsTArray<nsCOMPtr<nsIURI>>& EnsureFileURIWhitelist();
+    const nsTArray<nsCOMPtr<nsIURI>>& EnsureFileURIAllowlist();
 
     nsCOMPtr<nsIPrincipal> mSystemPrincipal;
     bool mPrefInitialized;
@@ -121,7 +121,7 @@ private:
     
     
     
-    mozilla::Maybe<nsTArray<nsCOMPtr<nsIURI>>> mFileURIWhitelist;
+    mozilla::Maybe<nsTArray<nsCOMPtr<nsIURI>>> mFileURIAllowlist;
 
     
     

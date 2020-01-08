@@ -112,20 +112,20 @@ PrincipalInfoToPrincipal(const PrincipalInfo& aPrincipalInfo,
     case PrincipalInfo::TExpandedPrincipalInfo: {
       const ExpandedPrincipalInfo& info = aPrincipalInfo.get_ExpandedPrincipalInfo();
 
-      nsTArray<nsCOMPtr<nsIPrincipal>> whitelist;
-      nsCOMPtr<nsIPrincipal> wlPrincipal;
+      nsTArray<nsCOMPtr<nsIPrincipal>> allowlist;
+      nsCOMPtr<nsIPrincipal> alPrincipal;
 
-      for (uint32_t i = 0; i < info.whitelist().Length(); i++) {
-        wlPrincipal = PrincipalInfoToPrincipal(info.whitelist()[i], &rv);
+      for (uint32_t i = 0; i < info.allowlist().Length(); i++) {
+        alPrincipal = PrincipalInfoToPrincipal(info.allowlist()[i], &rv);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return nullptr;
         }
         
-        whitelist.AppendElement(wlPrincipal);
+        allowlist.AppendElement(alPrincipal);
       }
 
       RefPtr<ExpandedPrincipal> expandedPrincipal =
-        ExpandedPrincipal::Create(whitelist, info.attrs());
+        ExpandedPrincipal::Create(allowlist, info.attrs());
       if (!expandedPrincipal) {
         NS_WARNING("could not instantiate expanded principal");
         return nullptr;
@@ -194,21 +194,21 @@ PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
   if (basePrin->Is<ExpandedPrincipal>()) {
     auto* expanded = basePrin->As<ExpandedPrincipal>();
 
-    nsTArray<PrincipalInfo> whitelistInfo;
+    nsTArray<PrincipalInfo> allowlistInfo;
     PrincipalInfo info;
 
-    for (auto& prin : expanded->WhiteList()) {
+    for (auto& prin : expanded->AllowList()) {
       rv = PrincipalToPrincipalInfo(prin, &info);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       
-      whitelistInfo.AppendElement(info);
+      allowlistInfo.AppendElement(info);
     }
 
     *aPrincipalInfo =
       ExpandedPrincipalInfo(aPrincipal->OriginAttributesRef(),
-                            std::move(whitelistInfo));
+                            std::move(allowlistInfo));
     return NS_OK;
   }
 

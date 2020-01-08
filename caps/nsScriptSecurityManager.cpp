@@ -705,7 +705,7 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         auto* basePrin = BasePrincipal::Cast(aPrincipal);
         if (basePrin->Is<ExpandedPrincipal>()) {
             auto expanded = basePrin->As<ExpandedPrincipal>();
-            for (auto& prin : expanded->WhiteList()) {
+            for (auto& prin : expanded->AllowList()) {
                 nsresult rv = CheckLoadURIWithPrincipal(prin,
                                                         aTargetURI,
                                                         aFlags);
@@ -1035,9 +1035,9 @@ nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
     if (hasFlags) {
         
         
-        bool isWhitelisted;
-        MOZ_ALWAYS_SUCCEEDS(InFileURIWhitelist(aSourceURI, &isWhitelisted));
-        if (isWhitelisted) {
+        bool isAllowlisted;
+        MOZ_ALWAYS_SUCCEEDS(InFileURIAllowlist(aSourceURI, &isAllowlisted));
+        if (isAllowlisted) {
             return NS_OK;
         }
 
@@ -1195,13 +1195,13 @@ nsScriptSecurityManager::CheckLoadURIStrWithPrincipal(nsIPrincipal* aPrincipal,
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::InFileURIWhitelist(nsIURI* aUri, bool* aResult)
+nsScriptSecurityManager::InFileURIAllowlist(nsIURI* aUri, bool* aResult)
 {
     MOZ_ASSERT(aUri);
     MOZ_ASSERT(aResult);
 
     *aResult = false;
-    for (nsIURI* uri : EnsureFileURIWhitelist()) {
+    for (nsIURI* uri : EnsureFileURIAllowlist()) {
         if (EqualOrSubdomain(aUri, uri)) {
             *aResult = true;
             return NS_OK;
@@ -1533,11 +1533,11 @@ nsScriptSecurityManager::ScriptSecurityPrefChanged(const char* aPref)
         Preferences::GetBool(sJSEnabledPrefName, mIsJavaScriptEnabled);
     sStrictFileOriginPolicy =
         Preferences::GetBool(sFileOriginPolicyPrefName, false);
-    mFileURIWhitelist.reset();
+    mFileURIAllowlist.reset();
 }
 
 void
-nsScriptSecurityManager::AddSitesToFileURIWhitelist(const nsCString& aSiteList)
+nsScriptSecurityManager::AddSitesToFileURIAllowlist(const nsCString& aSiteList)
 {
     for (uint32_t base = SkipPast<IsWhitespace>(aSiteList, 0), bound = 0;
          base < aSiteList.Length();
@@ -1550,8 +1550,8 @@ nsScriptSecurityManager::AddSitesToFileURIWhitelist(const nsCString& aSiteList)
         
         nsAutoCString unused;
         if (NS_FAILED(sIOService->ExtractScheme(site, unused))) {
-            AddSitesToFileURIWhitelist(NS_LITERAL_CSTRING("http://") + site);
-            AddSitesToFileURIWhitelist(NS_LITERAL_CSTRING("https://") + site);
+            AddSitesToFileURIAllowlist(NS_LITERAL_CSTRING("http://") + site);
+            AddSitesToFileURIAllowlist(NS_LITERAL_CSTRING("https://") + site);
             continue;
         }
 
@@ -1559,11 +1559,11 @@ nsScriptSecurityManager::AddSitesToFileURIWhitelist(const nsCString& aSiteList)
         nsCOMPtr<nsIURI> uri;
         nsresult rv = NS_NewURI(getter_AddRefs(uri), site, nullptr, nullptr, sIOService);
         if (NS_SUCCEEDED(rv)) {
-            mFileURIWhitelist.ref().AppendElement(uri);
+            mFileURIAllowlist.ref().AppendElement(uri);
         } else {
             nsCOMPtr<nsIConsoleService> console(do_GetService("@mozilla.org/consoleservice;1"));
             if (console) {
-                nsAutoString msg = NS_LITERAL_STRING("Unable to to add site to file:// URI whitelist: ") +
+                nsAutoString msg = NS_LITERAL_STRING("Unable to to add site to file:// URI allowlist: ") +
                                    NS_ConvertASCIItoUTF16(site);
                 console->LogStringMessage(msg.get());
             }
@@ -1662,11 +1662,11 @@ nsScriptSecurityManager::PolicyAllowsScript(nsIURI* aURI, bool *aRv)
     nsCOMPtr<nsIDomainSet> exceptions;
     nsCOMPtr<nsIDomainSet> superExceptions;
     if (*aRv) {
-        mDomainPolicy->GetBlacklist(getter_AddRefs(exceptions));
-        mDomainPolicy->GetSuperBlacklist(getter_AddRefs(superExceptions));
+        mDomainPolicy->GetBlocklist(getter_AddRefs(exceptions));
+        mDomainPolicy->GetSuperBlocklist(getter_AddRefs(superExceptions));
     } else {
-        mDomainPolicy->GetWhitelist(getter_AddRefs(exceptions));
-        mDomainPolicy->GetSuperWhitelist(getter_AddRefs(superExceptions));
+        mDomainPolicy->GetAllowlist(getter_AddRefs(exceptions));
+        mDomainPolicy->GetSuperAllowlist(getter_AddRefs(superExceptions));
     }
 
     bool contains;
@@ -1686,10 +1686,10 @@ nsScriptSecurityManager::PolicyAllowsScript(nsIURI* aURI, bool *aRv)
 }
 
 const nsTArray<nsCOMPtr<nsIURI>>&
-nsScriptSecurityManager::EnsureFileURIWhitelist()
+nsScriptSecurityManager::EnsureFileURIAllowlist()
 {
-    if (mFileURIWhitelist.isSome()) {
-        return mFileURIWhitelist.ref();
+    if (mFileURIAllowlist.isSome()) {
+        return mFileURIAllowlist.ref();
     }
 
     
@@ -1698,7 +1698,7 @@ nsScriptSecurityManager::EnsureFileURIWhitelist()
     
     
 
-    mFileURIWhitelist.emplace();
+    mFileURIAllowlist.emplace();
     nsAutoCString policies;
     mozilla::Preferences::GetCString("capability.policy.policynames", policies);
     for (uint32_t base = SkipPast<IsWhitespaceOrComma>(policies, 0), bound = 0;
@@ -1725,8 +1725,8 @@ nsScriptSecurityManager::EnsureFileURIWhitelist()
                                    NS_LITERAL_CSTRING(".sites");
         nsAutoCString siteList;
         Preferences::GetCString(domainPrefName.get(), siteList);
-        AddSitesToFileURIWhitelist(siteList);
+        AddSitesToFileURIAllowlist(siteList);
     }
 
-    return mFileURIWhitelist.ref();
+    return mFileURIAllowlist.ref();
 }

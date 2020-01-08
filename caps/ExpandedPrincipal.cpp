@@ -45,14 +45,14 @@ struct OriginComparator
   }
 };
 
-ExpandedPrincipal::ExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aWhiteList)
+ExpandedPrincipal::ExpandedPrincipal(nsTArray<nsCOMPtr<nsIPrincipal>> &aAllowList)
   : BasePrincipal(eExpandedPrincipal)
 {
   
   
   OriginComparator c;
-  for (size_t i = 0; i < aWhiteList.Length(); ++i) {
-    mPrincipals.InsertElementSorted(aWhiteList[i], c);
+  for (size_t i = 0; i < aAllowList.Length(); ++i) {
+    mPrincipals.InsertElementSorted(aAllowList[i], c);
   }
 }
 
@@ -65,10 +65,10 @@ ExpandedPrincipal::~ExpandedPrincipal()
 { }
 
 already_AddRefed<ExpandedPrincipal>
-ExpandedPrincipal::Create(nsTArray<nsCOMPtr<nsIPrincipal>>& aWhiteList,
+ExpandedPrincipal::Create(nsTArray<nsCOMPtr<nsIPrincipal>>& aAllowList,
                           const OriginAttributes& aAttrs)
 {
-  RefPtr<ExpandedPrincipal> ep = new ExpandedPrincipal(aWhiteList);
+  RefPtr<ExpandedPrincipal> ep = new ExpandedPrincipal(aAllowList);
 
   nsAutoCString origin;
   origin.AssignLiteral("[Expanded Principal [");
@@ -110,7 +110,7 @@ ExpandedPrincipal::SubsumesInternal(nsIPrincipal* aOther,
   if (Cast(aOther)->Is<ExpandedPrincipal>()) {
     auto* expanded = Cast(aOther)->As<ExpandedPrincipal>();
 
-    for (auto& other : expanded->WhiteList()) {
+    for (auto& other : expanded->AllowList()) {
       
       
       
@@ -158,7 +158,7 @@ ExpandedPrincipal::GetURI(nsIURI** aURI)
 }
 
 const nsTArray<nsCOMPtr<nsIPrincipal>>&
-ExpandedPrincipal::WhiteList()
+ExpandedPrincipal::AllowList()
 {
   return mPrincipals;
 }
@@ -316,16 +316,16 @@ ExpandedPrincipal::GetSiteIdentifier(SiteIdentifier& aSite)
   
   
 
-  nsTArray<nsCOMPtr<nsIPrincipal>> whitelist;
+  nsTArray<nsCOMPtr<nsIPrincipal>> allowlist;
   for (const auto& principal : mPrincipals) {
     SiteIdentifier site;
     nsresult rv = Cast(principal)->GetSiteIdentifier(site);
     NS_ENSURE_SUCCESS(rv, rv);
-    whitelist.AppendElement(site.GetPrincipal());
+    allowlist.AppendElement(site.GetPrincipal());
   }
 
   RefPtr<ExpandedPrincipal> expandedPrincipal =
-    ExpandedPrincipal::Create(whitelist, OriginAttributesRef());
+    ExpandedPrincipal::Create(allowlist, OriginAttributesRef());
   MOZ_ASSERT(expandedPrincipal, "ExpandedPrincipal::Create returned nullptr?");
 
   aSite.Init(expandedPrincipal);
