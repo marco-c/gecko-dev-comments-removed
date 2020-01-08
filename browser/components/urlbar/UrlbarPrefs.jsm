@@ -88,6 +88,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["maxRichResults", 10],
 
   
+  
+  ["openintab", false],
+
+  
   ["suggest.bookmark", true],
 
   
