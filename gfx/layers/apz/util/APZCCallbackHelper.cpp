@@ -676,12 +676,13 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
   nsPoint point =
     nsLayoutUtils::GetEventCoordinatesRelativeTo(aWidget, aRefPoint, aRootFrame);
   uint32_t flags = 0;
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  
-  flags = nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME;
-#endif
+  if (gfxPrefs::APZAllowZooming()) {
+    
+    
+    
+    
+    flags = nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME;
+  }
   nsIFrame* target =
     nsLayoutUtils::GetFrameForPoint(aRootFrame, point, flags);
   nsIScrollableFrame* scrollAncestor = target
