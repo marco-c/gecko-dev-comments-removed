@@ -127,7 +127,7 @@ var WindowHelper = {
     messageManager.removeMessageListener("Browser:Init", _handleMessage);
   },
 
-  onActivate(window, hasFocus) {
+  onActivate(window) {
     
     if (window == _trackedWindows[0])
       return;
