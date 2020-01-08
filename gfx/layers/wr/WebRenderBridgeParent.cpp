@@ -229,6 +229,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
   , mPaused(false)
   , mDestroyed(false)
   , mReceivedDisplayList(false)
+  , mIsFirstPaint(true)
 {
   MOZ_ASSERT(mAsyncImageManager);
   MOZ_ASSERT(mAnimStorage);
@@ -249,6 +250,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId)
   , mPaused(false)
   , mDestroyed(true)
   , mReceivedDisplayList(false)
+  , mIsFirstPaint(false)
 {
 }
 
@@ -819,6 +821,10 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
   mReceivedDisplayList = true;
 
+  if (aScrollData.IsFirstPaint()) {
+    mIsFirstPaint = true;
+  }
+
   
   
   
@@ -864,7 +870,8 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   }
 
   HoldPendingTransactionId(wrEpoch, aTransactionId, aContainsSVGGroup,
-                           aRefreshStartTime, aTxnStartTime, aFwdTime);
+                           aRefreshStartTime, aTxnStartTime, aFwdTime, mIsFirstPaint);
+  mIsFirstPaint = false;
 
   if (!validTransaction) {
     
@@ -964,6 +971,7 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
                            aRefreshStartTime,
                            aTxnStartTime,
                            aFwdTime,
+                           false,
                            scheduleComposite);
 
   if (scheduleComposite) {
@@ -1688,6 +1696,7 @@ WebRenderBridgeParent::HoldPendingTransactionId(const wr::Epoch& aWrEpoch,
                                                 const TimeStamp& aRefreshStartTime,
                                                 const TimeStamp& aTxnStartTime,
                                                 const TimeStamp& aFwdTime,
+                                                const bool aIsFirstPaint,
                                                 const bool aUseForTelemetry)
 {
   MOZ_ASSERT(aTransactionId > LastPendingTransactionId());
@@ -1697,6 +1706,7 @@ WebRenderBridgeParent::HoldPendingTransactionId(const wr::Epoch& aWrEpoch,
                                                    aRefreshStartTime,
                                                    aTxnStartTime,
                                                    aFwdTime,
+                                                   aIsFirstPaint,
                                                    aUseForTelemetry));
 }
 
@@ -1711,7 +1721,8 @@ WebRenderBridgeParent::LastPendingTransactionId()
 }
 
 TransactionId
-WebRenderBridgeParent::FlushTransactionIdsForEpoch(const wr::Epoch& aEpoch, const TimeStamp& aEndTime)
+WebRenderBridgeParent::FlushTransactionIdsForEpoch(const wr::Epoch& aEpoch, const TimeStamp& aEndTime,
+                                                   UiCompositorControllerParent* aUiController)
 {
   TransactionId id{0};
   while (!mPendingTransactionIds.empty()) {
@@ -1741,6 +1752,11 @@ WebRenderBridgeParent::FlushTransactionIdsForEpoch(const wr::Epoch& aEpoch, cons
       printf_stderr("From forwarding transaction to end of generate frame latencyMs %d this %p\n", latencyMs, this);
     }
 #endif
+
+    if (aUiController && transactionId.mIsFirstPaint) {
+      aUiController->NotifyFirstPaint();
+    }
+
     id = transactionId.mId;
     mPendingTransactionIds.pop();
   }
