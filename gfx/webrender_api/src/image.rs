@@ -343,7 +343,14 @@ pub trait BlobImageHandler: Send {
 
 pub trait AsyncBlobImageRasterizer : Send {
     
-    fn rasterize(&mut self, requests: &[BlobImageParams]) -> Vec<(BlobImageRequest, BlobImageResult)>;
+    
+    
+    
+    fn rasterize(
+        &mut self,
+        requests: &[BlobImageParams],
+        low_priority: bool
+    ) -> Vec<(BlobImageRequest, BlobImageResult)>;
 }
 
 
