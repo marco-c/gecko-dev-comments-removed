@@ -531,25 +531,31 @@ this.browserAction = class extends ExtensionAPI {
 
 
 
-
-
-
-  getContextData({tabId, windowId}) {
+  getTargetFromDetails({tabId, windowId}) {
     if (tabId != null && windowId != null) {
       throw new ExtensionError("Only one of tabId and windowId can be specified.");
     }
-    let target, values;
     if (tabId != null) {
-      target = tabTracker.getTab(tabId);
-      values = this.tabContext.get(target);
+      return tabTracker.getTab(tabId);
     } else if (windowId != null) {
-      target = windowTracker.getWindow(windowId);
-      values = this.tabContext.get(target);
-    } else {
-      target = null;
-      values = this.globals;
+      return windowTracker.getWindow(windowId);
     }
-    return {target, values};
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+  getContextData(target) {
+    if (target) {
+      return this.tabContext.get(target);
+    }
+    return this.globals;
   }
 
   
@@ -565,8 +571,8 @@ this.browserAction = class extends ExtensionAPI {
 
 
 
-  setProperty(details, prop, value) {
-    let {target, values} = this.getContextData(details);
+  setProperty(target, prop, value) {
+    let values = this.getContextData(target);
     if (value === null) {
       delete values[prop];
     } else {
@@ -575,6 +581,29 @@ this.browserAction = class extends ExtensionAPI {
 
     this.updateOnChange(target);
     return values;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  getProperty(target, prop) {
+    return this.getContextData(target)[prop];
+  }
+
+  setPropertyFromDetails(details, prop, value) {
+    return this.setProperty(this.getTargetFromDetails(details), prop, value);
+  }
+
+  getPropertyFromDetails(details, prop) {
+    return this.getProperty(this.getTargetFromDetails(details), prop);
   }
 
   
@@ -624,21 +653,6 @@ this.browserAction = class extends ExtensionAPI {
     return result;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  getProperty(details, prop) {
-    return this.getContextData(details).values[prop];
-  }
-
   getAPI(context) {
     let {extension} = context;
     let {tabManager} = extension;
@@ -675,23 +689,23 @@ this.browserAction = class extends ExtensionAPI {
         }).api(),
 
         enable: function(tabId) {
-          browserAction.setProperty({tabId}, "enabled", true);
+          browserAction.setPropertyFromDetails({tabId}, "enabled", true);
         },
 
         disable: function(tabId) {
-          browserAction.setProperty({tabId}, "enabled", false);
+          browserAction.setPropertyFromDetails({tabId}, "enabled", false);
         },
 
         isEnabled: function(details) {
-          return browserAction.getProperty(details, "enabled");
+          return browserAction.getPropertyFromDetails(details, "enabled");
         },
 
         setTitle: function(details) {
-          browserAction.setProperty(details, "title", details.title);
+          browserAction.setPropertyFromDetails(details, "title", details.title);
         },
 
         getTitle: function(details) {
-          return browserAction.getProperty(details, "title");
+          return browserAction.getPropertyFromDetails(details, "title");
         },
 
         setIcon: function(details) {
@@ -701,15 +715,15 @@ this.browserAction = class extends ExtensionAPI {
           if (!Object.keys(icon).length) {
             icon = null;
           }
-          browserAction.setProperty(details, "icon", icon);
+          browserAction.setPropertyFromDetails(details, "icon", icon);
         },
 
         setBadgeText: function(details) {
-          browserAction.setProperty(details, "badgeText", details.text);
+          browserAction.setPropertyFromDetails(details, "badgeText", details.text);
         },
 
         getBadgeText: function(details) {
-          return browserAction.getProperty(details, "badgeText");
+          return browserAction.getPropertyFromDetails(details, "badgeText");
         },
 
         setPopup: function(details) {
@@ -722,16 +736,17 @@ this.browserAction = class extends ExtensionAPI {
           if (url && !context.checkLoadURL(url)) {
             return Promise.reject({message: `Access denied for URL ${url}`});
           }
-          browserAction.setProperty(details, "popup", url);
+          browserAction.setPropertyFromDetails(details, "popup", url);
         },
 
         getPopup: function(details) {
-          return browserAction.getProperty(details, "popup");
+          return browserAction.getPropertyFromDetails(details, "popup");
         },
 
         setBadgeBackgroundColor: function(details) {
           let color = parseColor(details.color, "background");
-          let values = browserAction.setProperty(details, "badgeBackgroundColor", color);
+          let values = browserAction.setPropertyFromDetails(
+            details, "badgeBackgroundColor", color);
           if (color === null) {
             
             delete values.badgeDefaultColor;
@@ -742,16 +757,17 @@ this.browserAction = class extends ExtensionAPI {
         },
 
         getBadgeBackgroundColor: function(details, callback) {
-          return browserAction.getProperty(details, "badgeBackgroundColor");
+          return browserAction.getPropertyFromDetails(details, "badgeBackgroundColor");
         },
 
         setBadgeTextColor: function(details) {
           let color = parseColor(details.color, "text");
-          browserAction.setProperty(details, "badgeTextColor", color);
+          browserAction.setPropertyFromDetails(details, "badgeTextColor", color);
         },
 
         getBadgeTextColor: function(details) {
-          let {values} = browserAction.getContextData(details);
+          let target = browserAction.getTargetFromDetails(details);
+          let values = browserAction.getContextData(target);
           return browserAction.getTextColor(values);
         },
 
