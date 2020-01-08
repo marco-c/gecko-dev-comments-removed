@@ -41,8 +41,6 @@
 
 #include "gtest/gtest.h"
 #include "gtest_utils.h"
-#include "nss.h"
-#include "ssl.h"
 
 extern "C" {
 #include "stun_msg.h"
