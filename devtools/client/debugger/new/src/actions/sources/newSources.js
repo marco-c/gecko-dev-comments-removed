@@ -84,11 +84,17 @@ function loadSourceMap(sourceId: SourceId) {
 
     if (!urls) {
       
+      
+      
+      
+      const currentSource = getSource(getState(), sourceId);
+
+      
       dispatch(
         ({
           type: "UPDATE_SOURCE",
           
-          source: (({ ...source, sourceMapURL: "" }: any): Source)
+          source: (({ ...currentSource, sourceMapURL: "" }: any): Source)
         }: Action)
       );
       return;
