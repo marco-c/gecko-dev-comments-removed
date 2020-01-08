@@ -76,6 +76,9 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   bool OnNotifyTrackingResource(bool aIsThirdParty);
 
   
+  bool OnNotifyFlashPluginStateChanged(nsIHttpChannel::FlashPluginState aState);
+
+  
   bool OnSetClassifierMatchedInfo(const nsACString& aList,
                                   const nsACString& aProvider,
                                   const nsACString& aFullHash);

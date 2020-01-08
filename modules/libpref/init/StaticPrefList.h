@@ -1944,6 +1944,22 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "plugins.flashBlock.enabled",
+   plugins_flashBlock_enabled,
+  bool, false
+)
+
+VARCACHE_PREF(
+  "plugins.http_https_only",
+   plugins_http_https_only,
+  bool, true
+)
+
+
+
+
+
 #ifdef NIGHTLY_BUILD
 # define PREF_VALUE true
 #else

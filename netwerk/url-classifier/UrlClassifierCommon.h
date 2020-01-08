@@ -41,6 +41,11 @@ class UrlClassifierCommon final {
                                     const nsACString& aList,
                                     const nsACString& aProvider,
                                     const nsACString& aFullHash);
+
+  
+  
+  static nsresult CreatePairwiseWhiteListURI(nsIChannel* aChannel,
+                                             nsIURI** aURI);
 };
 
 }  
