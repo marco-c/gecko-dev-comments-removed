@@ -12,6 +12,11 @@
 #  error "STL code can only be used with -fno-exceptions"
 #endif
 
+#if defined(__clang__)
+
+#pragma clang system_header
+#endif
+
 
 
 #if !defined(MOZ_INCLUDE_MOZALLOC_H)
