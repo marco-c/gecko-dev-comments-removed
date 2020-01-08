@@ -160,17 +160,6 @@ public:
 
 
 
-  void SelectBitrates(unsigned short width,
-                      unsigned short height,
-                      int cap,
-                      webrtc::VideoStream& aVideoStream);
-
-  
-
-
-
-
-
   void SelectSendResolution(unsigned short width,
                             unsigned short height);
 
@@ -242,6 +231,7 @@ public:
   }
 
   webrtc::VideoCodecMode CodecMode() const {
+    MOZ_ASSERT(NS_IsMainThread());
     return mCodecMode;
   }
 
@@ -467,22 +457,62 @@ private:
   void DumpCodecDB() const;
 
   
-  
   class VideoStreamFactory : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface
   {
   public:
-    VideoStreamFactory(const std::string& aCodecName,
-                       WebrtcVideoConduit *aConduit)
-      : mCodecName(aCodecName),
-        mConduit(aConduit) {}
+    VideoStreamFactory(VideoCodecConfig aConfig,
+                       webrtc::VideoCodecMode aCodecMode,
+                       int aMinBitrate, int aStartBitrate,
+                       int aPrefMaxBitrate, int aNegotiatedMaxBitrate,
+                       unsigned int aSendingFramerate)
+      : mCodecMode(aCodecMode)
+      , mSendingFramerate(aSendingFramerate)
+      , mCodecConfig(std::forward<VideoCodecConfig>(aConfig))
+      , mMinBitrate(aMinBitrate)
+      , mStartBitrate(aStartBitrate)
+      , mPrefMaxBitrate(aPrefMaxBitrate)
+      , mNegotiatedMaxBitrate(aNegotiatedMaxBitrate)
+      , mSimulcastAdapter(MakeUnique<cricket::VideoAdapter>())
+    {}
+
+    void SetCodecMode(webrtc::VideoCodecMode aCodecMode)
+    {
+      MOZ_ASSERT(NS_IsMainThread());
+      mCodecMode = aCodecMode;
+    }
+
+    void SetSendingFramerate(unsigned int aSendingFramerate)
+    {
+      MOZ_ASSERT(NS_IsMainThread());
+      mSendingFramerate = aSendingFramerate;
+    }
 
   private:
+    
+    
     std::vector<webrtc::VideoStream>
       CreateEncoderStreams(int width, int height,
                            const webrtc::VideoEncoderConfig& config) override;
-    std::string mCodecName;
+
     
-    WebrtcVideoConduit* mConduit;
+    Atomic<webrtc::VideoCodecMode> mCodecMode;
+
+    
+    Atomic<unsigned int> mSendingFramerate;
+
+    
+    const VideoCodecConfig mCodecConfig;
+
+    
+    const int mMinBitrate = 0;
+    const int mStartBitrate = 0;
+    const int mPrefMaxBitrate = 0;
+    const int mNegotiatedMaxBitrate = 0;
+
+    
+    
+    
+    UniquePtr<cricket::VideoAdapter> mSimulcastAdapter;
   };
 
   
@@ -526,12 +556,6 @@ private:
   
   
   UniquePtr<cricket::VideoAdapter> mVideoAdapter;
-
-  
-  
-  
-  
-  UniquePtr<cricket::VideoAdapter> mSimulcastAdapter;
 
   
   
@@ -621,7 +645,7 @@ private:
   RefPtr<WebrtcAudioConduit> mSyncedTo;
 
   
-  Atomic<webrtc::VideoCodecMode> mCodecMode;
+  webrtc::VideoCodecMode mCodecMode;
 
   
   
@@ -633,6 +657,10 @@ private:
 
   
   VideoEncoderConfigBuilder mEncoderConfig;
+
+  
+  
+  RefPtr<rtc::RefCountedObject<VideoStreamFactory>> mVideoStreamFactory;
 
   
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;

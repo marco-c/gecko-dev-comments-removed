@@ -173,6 +173,100 @@ SelectSendFrameRate(const VideoCodecConfig* codecConfig,
   return new_framerate;
 }
 
+#define MB_OF(w,h) ((unsigned int)((((w+15)>>4))*((unsigned int)((h+15)>>4))))
+
+
+
+
+
+
+
+static WebrtcVideoConduit::ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
+  {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
+  {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
+  {MB_OF(800, 480), KBPS(600), KBPS(800), KBPS(2500)}, 
+  {MB_OF(480, 270), KBPS(150), KBPS(500), KBPS(2000)}, 
+  {tl::Max<MB_OF(400, 240), MB_OF(352, 288)>::value, KBPS(125), KBPS(300), KBPS(1300)}, 
+  {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
+  {0 , KBPS(40), KBPS(80), KBPS(250)} 
+};
+
+static WebrtcVideoConduit::ResolutionAndBitrateLimits
+GetLimitsFor(unsigned int aWidth, unsigned int aHeight, int aCapBps = 0)
+{
+  
+  
+  int fs = MB_OF(aWidth, aHeight);
+
+  for (const auto& resAndLimits : kResolutionAndBitrateLimits) {
+    if (fs > resAndLimits.resolution_in_mb &&
+        
+        
+        (aCapBps == 0 ||
+         resAndLimits.start_bitrate_bps <= aCapBps ||
+         resAndLimits.resolution_in_mb == 0)) {
+      return resAndLimits;
+    }
+  }
+
+  MOZ_CRASH("Loop should have handled fallback");
+}
+
+
+
+
+
+
+
+
+
+
+
+static void
+SelectBitrates(
+  unsigned short width, unsigned short height,
+  int min, int start,
+  int cap, int pref_cap, int negotiated_cap,
+  webrtc::VideoStream& aVideoStream)
+{
+  int& out_min = aVideoStream.min_bitrate_bps;
+  int& out_start = aVideoStream.target_bitrate_bps;
+  int& out_max = aVideoStream.max_bitrate_bps;
+
+  WebrtcVideoConduit::ResolutionAndBitrateLimits resAndLimits =
+    GetLimitsFor(width, height);
+  out_min = MinIgnoreZero(resAndLimits.min_bitrate_bps, cap);
+  out_start = MinIgnoreZero(resAndLimits.start_bitrate_bps, cap);
+  out_max = MinIgnoreZero(resAndLimits.max_bitrate_bps, cap);
+
+  
+  
+  
+  
+  
+  out_max = MinIgnoreZero(negotiated_cap, out_max);
+  out_min = std::min(out_min, out_max);
+  out_start = std::min(out_start, out_max);
+
+  if (min && min > out_min) {
+    out_min = min;
+  }
+  
+  out_min = std::max(kViEMinCodecBitrate_bps, out_min);
+  out_max = std::max(kViEMinCodecBitrate_bps, out_max);
+  if (start && start > out_start) {
+    out_start = start;
+  }
+
+  
+  if (out_min > out_max) {
+    out_min = out_max;
+  }
+  out_start = std::min(out_max, std::max(out_start, out_min));
+
+  MOZ_ASSERT(pref_cap == 0 || out_max <= pref_cap);
+}
+
 
 
 
@@ -582,6 +676,9 @@ WebrtcVideoConduit::ConfigureCodecMode(webrtc::VideoCodecMode mode)
   if (mode == webrtc::VideoCodecMode::kRealtimeVideo ||
       mode == webrtc::VideoCodecMode::kScreensharing) {
     mCodecMode = mode;
+    if (mVideoStreamFactory) {
+      mVideoStreamFactory->SetCodecMode(mCodecMode);
+    }
     return kMediaConduitNoError;
   }
 
@@ -806,27 +903,24 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
   int width, int height, const webrtc::VideoEncoderConfig& config)
 {
   size_t streamCount = config.number_of_streams;
-  webrtc::VideoCodecMode codecMode = mConduit->mCodecMode;
 
   
-  if (codecMode == webrtc::VideoCodecMode::kScreensharing) {
+  if (mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
     streamCount = 1;
   }
 
   std::vector<webrtc::VideoStream> streams;
   streams.reserve(streamCount);
-  MOZ_ASSERT(mConduit);
-  MutexAutoLock lock(mConduit->mMutex);
 
   
 
   
-  mConduit->mSimulcastAdapter->OnOutputFormatRequest(
+  mSimulcastAdapter->OnOutputFormatRequest(
     cricket::VideoFormat(width, height, 0, 0));
 
   for (size_t idx = streamCount - 1; streamCount > 0; idx--, streamCount--) {
     webrtc::VideoStream video_stream;
-    auto& simulcastEncoding = mConduit->mCurSendCodecConfig->mSimulcastEncodings[idx];
+    auto& simulcastEncoding = mCodecConfig.mSimulcastEncodings[idx];
     MOZ_ASSERT(simulcastEncoding.constraints.scaleDownBy >= 1.0);
 
     
@@ -843,13 +937,13 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
     } else {
       float effectiveScaleDownBy =
         simulcastEncoding.constraints.scaleDownBy /
-        mConduit->mCurSendCodecConfig->mSimulcastEncodings[0].constraints.scaleDownBy;
+        mCodecConfig.mSimulcastEncodings[0].constraints.scaleDownBy;
       MOZ_ASSERT(effectiveScaleDownBy >= 1.0);
-      mConduit->mSimulcastAdapter->OnScaleResolutionBy(
+      mSimulcastAdapter->OnScaleResolutionBy(
         effectiveScaleDownBy > 1.0 ?
           rtc::Optional<float>(effectiveScaleDownBy) :
           rtc::Optional<float>());
-      bool rv = mConduit->mSimulcastAdapter->AdaptFrameResolution(
+      bool rv = mSimulcastAdapter->AdaptFrameResolution(
         width,
         height,
         0, 
@@ -890,11 +984,12 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
     }
 
     
-    video_stream.max_framerate = mConduit->mSendingFramerate;
+    video_stream.max_framerate = mSendingFramerate;
 
-    mConduit->SelectBitrates(
+    SelectBitrates(
       video_stream.width, video_stream.height,
-      simulcastEncoding.constraints.maxBr, video_stream);
+      mMinBitrate, mStartBitrate, simulcastEncoding.constraints.maxBr,
+      mPrefMaxBitrate, mNegotiatedMaxBitrate, video_stream);
 
     video_stream.max_qp = kQpMax;
     video_stream.SetRid(simulcastEncoding.rid);
@@ -912,7 +1007,7 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
       
       
       
-      if (codecMode == webrtc::VideoCodecMode::kScreensharing) {
+      if (mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
         video_stream.temporal_layer_thresholds_bps.push_back(video_stream.target_bitrate_bps);
       } else {
         video_stream.temporal_layer_thresholds_bps.resize(2);
@@ -921,8 +1016,8 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(
       
     }
 
-    if (mConduit->mCurSendCodecConfig->mName == "H264") {
-      if (mConduit->mCurSendCodecConfig->mEncodingConstraints.maxMbps > 0) {
+    if (mCodecConfig.mName == "H264") {
+      if (mCodecConfig.mEncodingConstraints.maxMbps > 0) {
         
         CSFLogError(LOGTAG, "%s H.264 max_mbps not supported yet", __FUNCTION__);
       }
@@ -997,15 +1092,16 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     mCall->Call()->SetBitrateConfig(config);
   }
 
-  
-  mEncoderConfig.SetVideoStreamFactory(
-    new rtc::RefCountedObject<WebrtcVideoConduit::VideoStreamFactory>(
-      codecConfig->mName, this));
+  mVideoStreamFactory =
+    new rtc::RefCountedObject<VideoStreamFactory>(
+      *codecConfig, mCodecMode,
+      mMinBitrate, mStartBitrate, mPrefMaxBitrate,
+      mNegotiatedMaxBitrate, mSendingFramerate);
+  mEncoderConfig.SetVideoStreamFactory(mVideoStreamFactory.get());
 
   
   mVideoAdapter = MakeUnique<cricket::VideoAdapter>(
     streamCount > 1 ? SIMULCAST_RESOLUTION_ALIGNMENT : 1);
-  mSimulcastAdapter = MakeUnique<cricket::VideoAdapter>();
   mVideoAdapter->OnScaleResolutionBy(
     (streamCount >= 1 && codecConfig->mSimulcastEncodings[0].constraints.scaleDownBy > 1.0) ?
       rtc::Optional<float>(codecConfig->mSimulcastEncodings[0].constraints.scaleDownBy) :
@@ -1944,89 +2040,6 @@ WebrtcVideoConduit::CreateEncoder(webrtc::VideoCodecType aType,
   return encoder;
 }
 
-#define MB_OF(w,h) ((unsigned int)((((w+15)>>4))*((unsigned int)((h+15)>>4))))
-
-
-
-
-
-
-
-static WebrtcVideoConduit::ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
-  {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
-  {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
-  {MB_OF(800, 480), KBPS(600), KBPS(800), KBPS(2500)}, 
-  {MB_OF(480, 270), KBPS(150), KBPS(500), KBPS(2000)}, 
-  {tl::Max<MB_OF(400, 240), MB_OF(352, 288)>::value, KBPS(125), KBPS(300), KBPS(1300)}, 
-  {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
-  {0 , KBPS(40), KBPS(80), KBPS(250)} 
-};
-
-static WebrtcVideoConduit::ResolutionAndBitrateLimits
-GetLimitsFor(unsigned int aWidth, unsigned int aHeight, int aCapBps = 0)
-{
-  
-  
-  int fs = MB_OF(aWidth, aHeight);
-
-  for (const auto& resAndLimits : kResolutionAndBitrateLimits) {
-    if (fs > resAndLimits.resolution_in_mb &&
-        
-        
-        (aCapBps == 0 ||
-         resAndLimits.start_bitrate_bps <= aCapBps ||
-         resAndLimits.resolution_in_mb == 0)) {
-      return resAndLimits;
-    }
-  }
-
-  MOZ_CRASH("Loop should have handled fallback");
-}
-
-void
-WebrtcVideoConduit::SelectBitrates(
-  unsigned short width, unsigned short height, int cap,
-  webrtc::VideoStream& aVideoStream)
-{
-  mMutex.AssertCurrentThreadOwns();
-
-  int& out_min = aVideoStream.min_bitrate_bps;
-  int& out_start = aVideoStream.target_bitrate_bps;
-  int& out_max = aVideoStream.max_bitrate_bps;
-
-  ResolutionAndBitrateLimits resAndLimits = GetLimitsFor(width, height);
-  out_min = MinIgnoreZero(resAndLimits.min_bitrate_bps, cap);
-  out_start = MinIgnoreZero(resAndLimits.start_bitrate_bps, cap);
-  out_max = MinIgnoreZero(resAndLimits.max_bitrate_bps, cap);
-
-  
-  
-  
-  
-  
-  out_max = MinIgnoreZero((int)mNegotiatedMaxBitrate, out_max);
-  out_min = std::min(out_min, out_max);
-  out_start = std::min(out_start, out_max);
-
-  if (mMinBitrate && mMinBitrate > out_min) {
-    out_min = mMinBitrate;
-  }
-  
-  out_min = std::max(kViEMinCodecBitrate_bps, out_min);
-  out_max = std::max(kViEMinCodecBitrate_bps, out_max);
-  if (mStartBitrate && mStartBitrate > out_start) {
-    out_start = mStartBitrate;
-  }
-
-  
-  if (out_min > out_max) {
-    out_min = out_max;
-  }
-  out_start = std::min(out_max, std::max(out_start, out_min));
-
-  MOZ_ASSERT(mPrefMaxBitrate == 0 || out_max <= mPrefMaxBitrate);
-}
-
 
 
 void
@@ -2067,6 +2080,7 @@ WebrtcVideoConduit::SelectSendResolution(
     CSFLogDebug(LOGTAG, "%s: framerate changing to %u (from %u)",
                 __FUNCTION__, framerate, mSendingFramerate);
     mSendingFramerate = framerate;
+    mVideoStreamFactory->SetSendingFramerate(mSendingFramerate);
   }
 }
 
