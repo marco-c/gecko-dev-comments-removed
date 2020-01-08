@@ -203,6 +203,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "canvas.imagebitmap_extensions.enabled",
+   canvas_imagebitmap_extensions_enabled,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 

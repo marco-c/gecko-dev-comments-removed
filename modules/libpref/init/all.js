@@ -969,9 +969,6 @@ pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
 
 
-pref("canvas.imagebitmap_extensions.enabled", false);
-
-
 
 
 
