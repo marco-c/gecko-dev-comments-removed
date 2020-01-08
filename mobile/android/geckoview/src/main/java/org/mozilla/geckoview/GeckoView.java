@@ -413,9 +413,13 @@ public class GeckoView extends FrameLayout {
         }
 
         
+        mSession.releaseDisplay(mDisplay.release());
+
+        
         if (!mStateSaved && mSession.isOpen()) {
             mSession.close();
         }
+
     }
 
     @Override
