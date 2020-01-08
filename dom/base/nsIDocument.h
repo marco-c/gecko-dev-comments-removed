@@ -210,6 +210,12 @@ enum class CallerType : uint32_t;
 }  
 }  
 
+namespace mozilla {
+namespace net {
+class ChannelEventQueue;
+} 
+} 
+
 
 #define NS_IDOCUMENT_IID                             \
   {                                                  \
@@ -2445,6 +2451,14 @@ class nsIDocument : public nsINode,
   
 
 
+
+
+
+  void AddSuspendedChannelEventQueue(mozilla::net::ChannelEventQueue* aQueue);
+
+  
+
+
   void IncrementIgnoreDestructiveWritesCounter() {
     ++mIgnoreDestructiveWritesCounter;
   }
@@ -4024,6 +4038,10 @@ class nsIDocument : public nsINode,
   nsCOMPtr<nsIDocument> mDisplayDocument;
 
   uint32_t mEventsSuppressed;
+
+  
+  
+  nsTArray<RefPtr<mozilla::net::ChannelEventQueue>> mSuspendedQueues;
 
   
 
