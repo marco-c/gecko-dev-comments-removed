@@ -399,6 +399,10 @@ class nsSocketTransport final : public nsASocketHandler,
   uint16_t mTimeouts[2];
 
   
+  bool mLingerPolarity;
+  int16_t mLingerTimeout;
+
+  
   uint8_t mQoSBits;
 
   

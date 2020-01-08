@@ -398,7 +398,7 @@ nsHttpServer.prototype =
 
     try {
       var conn = new Connection(input, output, this, socket.port, trans.port,
-                                connectionNumber);
+                                connectionNumber, trans);
       var reader = new RequestReader(conn);
 
       
@@ -1067,7 +1067,8 @@ ServerIdentity.prototype =
 
 
 
-function Connection(input, output, server, port, outgoingPort, number) {
+function Connection(input, output, server, port, outgoingPort, number,
+                    transport) {
   dumpn("*** opening new connection " + number + " on port " + outgoingPort);
 
   
@@ -1087,6 +1088,9 @@ function Connection(input, output, server, port, outgoingPort, number) {
 
   
   this.number = number;
+
+  
+  this.transport = transport;
 
   
 
@@ -3560,8 +3564,17 @@ Response.prototype =
 
 
 
-  abort(e) {
+
+
+
+
+  abort(e, truncateConnection = false) {
     dumpn("*** abort(<" + e + ">)");
+
+    if (truncateConnection) {
+      dumpn("*** truncate connection");
+      this._connection.transport.setLinger(true, 0);
+    }
 
     
     var copier = this._asyncCopier;
