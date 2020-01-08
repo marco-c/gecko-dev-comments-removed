@@ -204,12 +204,13 @@ var gPrivacyPane = {
       if (contentBlockingUiEnabled) {
         let tpCheckbox =
           document.getElementById("contentBlockingTrackingProtectionCheckbox");
-        if (!tpCheckbox.checked) {
-          disabled = true;
-        }
+        
         
         document.getElementById("trackingProtectionMenu").disabled = disabled ||
+          !tpCheckbox.checked ||
           !contentBlockingEnabled;
+        
+        tpCheckbox.disabled = disabled || !contentBlockingEnabled;
       } else {
         document.querySelectorAll("#trackingProtectionRadioGroup > radio")
           .forEach((element) => {
