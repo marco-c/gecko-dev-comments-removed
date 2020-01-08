@@ -593,11 +593,7 @@ pub trait Deserialize<'de>: Sized {
 
 
 pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
-impl<T> DeserializeOwned for T
-where
-    T: for<'de> Deserialize<'de>,
-{
-}
+impl<T> DeserializeOwned for T where T: for<'de> Deserialize<'de> {}
 
 
 
@@ -782,6 +778,9 @@ where
         T::deserialize(deserializer)
     }
 }
+
+
+
 
 
 

@@ -326,6 +326,7 @@ pub trait Serialize {
 
 
 
+
 pub trait Serializer: Sized {
     
     
@@ -1323,6 +1324,10 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
     fn serialize_struct_variant(
         self,
         name: &'static str,
@@ -1972,6 +1977,10 @@ pub trait SerializeStruct {
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
+
+
+
+
 
 
 

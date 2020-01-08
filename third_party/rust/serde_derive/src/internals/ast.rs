@@ -6,23 +6,35 @@
 
 
 
+
+
 use internals::attr;
 use internals::check;
 use internals::{Ctxt, Derive};
 use syn;
 use syn::punctuated::Punctuated;
 
+
+
 pub struct Container<'a> {
+    
     pub ident: syn::Ident,
+    
     pub attrs: attr::Container,
+    
     pub data: Data<'a>,
+    
     pub generics: &'a syn::Generics,
 }
+
+
+
 
 pub enum Data<'a> {
     Enum(Repr, Vec<Variant<'a>>),
     Struct(Style, Vec<Field<'a>>),
 }
+
 
 pub struct Variant<'a> {
     pub ident: syn::Ident,
@@ -30,6 +42,7 @@ pub struct Variant<'a> {
     pub style: Style,
     pub fields: Vec<Field<'a>>,
 }
+
 
 pub struct Field<'a> {
     pub member: syn::Member,
@@ -46,13 +59,18 @@ pub struct Repr {
 
 #[derive(Copy, Clone)]
 pub enum Style {
+    
     Struct,
+    
     Tuple,
+    
     Newtype,
+    
     Unit,
 }
 
 impl<'a> Container<'a> {
+    
     pub fn from_ast(cx: &Ctxt, item: &'a syn::DeriveInput, derive: Derive) -> Container<'a> {
         let mut attrs = attr::Container::from_ast(cx, item);
 
@@ -244,6 +262,5 @@ fn fields_from_ast<'a>(
             attrs: attr::Field::from_ast(cx, i, field, attrs, container_default),
             ty: &field.ty,
             original: field,
-        })
-        .collect()
+        }).collect()
 }

@@ -11,6 +11,9 @@ fn main() {
         None => return,
     };
 
+    let target = env::var("TARGET").unwrap();
+    let emscripten = target == "asmjs-unknown-emscripten" || target == "wasm32-unknown-emscripten";
+
     
     
     if minor >= 20 {
@@ -32,8 +35,17 @@ fn main() {
 
     
     
-    if minor >= 26 {
+    
+    
+    
+    if minor >= 26 && !emscripten {
         println!("cargo:rustc-cfg=integer128");
+    }
+
+    
+    
+    if minor >= 27 {
+        println!("cargo:rustc-cfg=range_inclusive");
     }
 
     

@@ -7,12 +7,16 @@
 
 
 
+
+
+
 #[allow(deprecated, unused_imports)]
 use std::ascii::AsciiExt;
 
 use std::str::FromStr;
 
 use self::RenameRule::*;
+
 
 #[derive(PartialEq)]
 pub enum RenameRule {
@@ -23,11 +27,14 @@ pub enum RenameRule {
     
     UPPERCASE,
     
+    
     PascalCase,
     
     CamelCase,
     
+    
     SnakeCase,
+    
     
     ScreamingSnakeCase,
     
@@ -37,6 +44,7 @@ pub enum RenameRule {
 }
 
 impl RenameRule {
+    
     pub fn apply_to_variant(&self, variant: &str) -> String {
         match *self {
             None | PascalCase => variant.to_owned(),
@@ -61,6 +69,7 @@ impl RenameRule {
         }
     }
 
+    
     pub fn apply_to_field(&self, field: &str) -> String {
         match *self {
             None | LowerCase | SnakeCase => field.to_owned(),

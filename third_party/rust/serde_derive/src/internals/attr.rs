@@ -11,8 +11,8 @@ use proc_macro2::{Group, Span, TokenStream, TokenTree};
 use std::collections::BTreeSet;
 use std::str::FromStr;
 use syn;
+use syn::parse::{self, Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::synom::{ParseError, Synom};
 use syn::Ident;
 use syn::Meta::{List, NameValue, Word};
 use syn::NestedMeta::{Literal, Meta};
@@ -88,6 +88,10 @@ impl<'c> BoolAttr<'c> {
 pub struct Name {
     serialize: String,
     deserialize: String,
+}
+
+fn unraw(ident: &Ident) -> String {
+    ident.to_string().trim_left_matches("r#").to_owned()
 }
 
 impl Name {
@@ -380,8 +384,8 @@ impl Container {
 
         Container {
             name: Name {
-                serialize: ser_name.get().unwrap_or_else(|| item.ident.to_string()),
-                deserialize: de_name.get().unwrap_or_else(|| item.ident.to_string()),
+                serialize: ser_name.get().unwrap_or_else(|| unraw(&item.ident)),
+                deserialize: de_name.get().unwrap_or_else(|| unraw(&item.ident)),
             },
             transparent: transparent.get(),
             deny_unknown_fields: deny_unknown_fields.get(),
@@ -697,8 +701,8 @@ impl Variant {
         let de_renamed = de_name.is_some();
         Variant {
             name: Name {
-                serialize: ser_name.unwrap_or_else(|| variant.ident.to_string()),
-                deserialize: de_name.unwrap_or_else(|| variant.ident.to_string()),
+                serialize: ser_name.unwrap_or_else(|| unraw(&variant.ident)),
+                deserialize: de_name.unwrap_or_else(|| unraw(&variant.ident)),
             },
             ser_renamed: ser_renamed,
             de_renamed: de_renamed,
@@ -822,7 +826,7 @@ impl Field {
         let mut flatten = BoolAttr::none(cx, "flatten");
 
         let ident = match field.ident {
-            Some(ref ident) => ident.to_string(),
+            Some(ref ident) => unraw(ident),
             None => index.to_string(),
         };
 
@@ -1296,11 +1300,10 @@ fn parse_lit_into_lifetimes(
 
     struct BorrowedLifetimes(Punctuated<syn::Lifetime, Token![+]>);
 
-    impl Synom for BorrowedLifetimes {
-        named!(parse -> Self, map!(
-            call!(Punctuated::parse_separated_nonempty),
-            BorrowedLifetimes
-        ));
+    impl Parse for BorrowedLifetimes {
+        fn parse(input: ParseStream) -> parse::Result<Self> {
+            Punctuated::parse_separated_nonempty(input).map(BorrowedLifetimes)
+        }
     }
 
     if let Ok(BorrowedLifetimes(lifetimes)) = parse_lit_str(string) {
@@ -1509,7 +1512,8 @@ fn collect_lifetimes(ty: &syn::Type, out: &mut BTreeSet<syn::Lifetime>) {
                             syn::GenericArgument::Binding(ref binding) => {
                                 collect_lifetimes(&binding.ty, out);
                             }
-                            syn::GenericArgument::Const(_) => {}
+                            syn::GenericArgument::Constraint(_)
+                            | syn::GenericArgument::Const(_) => {}
                         }
                     }
                 }
@@ -1531,15 +1535,15 @@ fn collect_lifetimes(ty: &syn::Type, out: &mut BTreeSet<syn::Lifetime>) {
     }
 }
 
-fn parse_lit_str<T>(s: &syn::LitStr) -> Result<T, ParseError>
+fn parse_lit_str<T>(s: &syn::LitStr) -> parse::Result<T>
 where
-    T: Synom,
+    T: Parse,
 {
     let tokens = try!(spanned_tokens(s));
     syn::parse2(tokens)
 }
 
-fn spanned_tokens(s: &syn::LitStr) -> Result<TokenStream, ParseError> {
+fn spanned_tokens(s: &syn::LitStr) -> parse::Result<TokenStream> {
     let stream = try!(syn::parse_str(&s.value()));
     Ok(respan_token_stream(stream, s.span()))
 }

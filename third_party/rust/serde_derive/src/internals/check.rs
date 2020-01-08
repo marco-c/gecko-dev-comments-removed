@@ -111,42 +111,48 @@ fn check_identifier(cx: &Ctxt, cont: &Container) {
             variant.style,
             cont.attrs.identifier(),
             variant.attrs.other(),
+            cont.attrs.tag(),
         ) {
             
-            (_, Identifier::Variant, true) | (_, Identifier::No, true) => {
-                cx.error("#[serde(other)] may only be used inside a field_identifier");
+            (_, Identifier::Variant, true, _) => {
+                cx.error("#[serde(other)] may not be used on a variant_identifier");
             }
 
             
-            (Style::Unit, Identifier::Field, true) => {
+            (_, Identifier::No, true, &EnumTag::None) => {
+                cx.error("#[serde(other)] cannot appear on untagged enum");
+            }
+
+            
+            (Style::Unit, Identifier::Field, true, _) | (Style::Unit, Identifier::No, true, _) => {
                 if i < variants.len() - 1 {
                     cx.error("#[serde(other)] must be the last variant");
                 }
             }
 
             
-            (_, Identifier::Field, true) => {
+            (_, Identifier::Field, true, _) | (_, Identifier::No, true, _) => {
                 cx.error("#[serde(other)] must be on a unit variant");
             }
 
             
-            (_, Identifier::No, false) => {}
+            (_, Identifier::No, false, _) => {}
 
             
-            (Style::Unit, _, false) => {}
+            (Style::Unit, _, false, _) => {}
 
             
-            (Style::Newtype, Identifier::Field, false) => {
+            (Style::Newtype, Identifier::Field, false, _) => {
                 if i < variants.len() - 1 {
                     cx.error(format!("`{}` must be the last variant", variant.ident));
                 }
             }
 
-            (_, Identifier::Field, false) => {
+            (_, Identifier::Field, false, _) => {
                 cx.error("field_identifier may only contain unit variants");
             }
 
-            (_, Identifier::Variant, false) => {
+            (_, Identifier::Variant, false, _) => {
                 cx.error("variant_identifier may only contain unit variants");
             }
         }

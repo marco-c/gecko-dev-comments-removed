@@ -82,7 +82,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.66")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.80")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -91,13 +91,21 @@
 
 #![cfg_attr(feature = "unstable", feature(specialization, never_type))]
 #![cfg_attr(feature = "alloc", feature(alloc))]
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
-        cast_lossless, const_static_lifetime, doc_markdown, linkedlist, needless_pass_by_value,
-        redundant_field_names, type_complexity, unreadable_literal, zero_prefixed_literal
+        cast_lossless,
+        const_static_lifetime,
+        doc_markdown,
+        linkedlist,
+        needless_pass_by_value,
+        redundant_field_names,
+        type_complexity,
+        unreadable_literal,
+        zero_prefixed_literal
     )
 )]
 
@@ -118,6 +126,7 @@
     stutter,
     use_self,
 
+    indexing_slicing,
     many_single_char_names,
     missing_docs_in_private_items,
     similar_names,
@@ -126,7 +135,10 @@
     use_debug,
 ))]
 
-#![deny(missing_docs, unused_imports)]
+
+
+
+#![deny(missing_docs, )]
 
 
 
@@ -144,7 +156,7 @@ mod lib {
         pub use std::*;
     }
 
-    pub use self::core::{cmp, iter, mem, num, ops, slice, str};
+    pub use self::core::{cmp, iter, mem, num, slice, str};
     pub use self::core::{f32, f64};
     pub use self::core::{i16, i32, i64, i8, isize};
     pub use self::core::{u16, u32, u64, u8, usize};
@@ -155,6 +167,7 @@ mod lib {
     pub use self::core::default::{self, Default};
     pub use self::core::fmt::{self, Debug, Display};
     pub use self::core::marker::{self, PhantomData};
+    pub use self::core::ops::Range;
     pub use self::core::option::{self, Option};
     pub use self::core::result::{self, Result};
 
@@ -184,12 +197,12 @@ mod lib {
     pub use std::rc::{Rc, Weak as RcWeak};
 
     #[cfg(all(feature = "rc", feature = "alloc", not(feature = "std")))]
-    pub use alloc::arc::{Arc, Weak as ArcWeak};
+    pub use alloc::sync::{Arc, Weak as ArcWeak};
     #[cfg(all(feature = "rc", feature = "std"))]
     pub use std::sync::{Arc, Weak as ArcWeak};
 
     #[cfg(all(feature = "alloc", not(feature = "std")))]
-    pub use alloc::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque};
+    pub use alloc::collections::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque};
     #[cfg(feature = "std")]
     pub use std::collections::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque};
 
@@ -215,6 +228,9 @@ mod lib {
 
     #[cfg(any(core_duration, feature = "std"))]
     pub use self::core::time::Duration;
+
+    #[cfg(range_inclusive)]
+    pub use self::core::ops::RangeInclusive;
 }
 
 

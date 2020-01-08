@@ -10,18 +10,29 @@ use std::cell::RefCell;
 use std::fmt::Display;
 use std::thread;
 
+
+
+
+
+
 #[derive(Default)]
 pub struct Ctxt {
+    
+    
     errors: RefCell<Option<Vec<String>>>,
 }
 
 impl Ctxt {
+    
+    
+    
     pub fn new() -> Self {
         Ctxt {
             errors: RefCell::new(Some(Vec::new())),
         }
     }
 
+    
     pub fn error<T: Display>(&self, msg: T) {
         self.errors
             .borrow_mut()
@@ -30,6 +41,7 @@ impl Ctxt {
             .push(msg.to_string());
     }
 
+    
     pub fn check(self) -> Result<(), String> {
         let mut errors = self.errors.borrow_mut().take().unwrap();
         match errors.len() {
