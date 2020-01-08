@@ -305,28 +305,28 @@ private:
   
   
   
-  bool mIgnoreProgress              : 1;
+  uint8_t mIgnoreProgress              : 1;
 
-  bool mSentRedirect1BeginFailed    : 1;
-  bool mReceivedRedirect2Verify     : 1;
-
-  
-  
-  bool mPendingDiversion;
-  
-  
-  
-  bool mDivertingFromChild;
+  uint8_t mSentRedirect1BeginFailed    : 1;
+  uint8_t mReceivedRedirect2Verify     : 1;
 
   
-  bool mDivertedOnStartRequest;
-
-  bool mSuspendedForDiversion;
+  
+  uint8_t mPendingDiversion            : 1;
+  
+  
+  
+  uint8_t mDivertingFromChild          : 1;
 
   
-  bool mSuspendAfterSynthesizeResponse;
+  uint8_t mDivertedOnStartRequest      : 1;
+
+  uint8_t mSuspendedForDiversion       : 1;
+
   
-  bool mWillSynthesizeResponse;
+  uint8_t mSuspendAfterSynthesizeResponse : 1;
+  
+  uint8_t mWillSynthesizeResponse         : 1;
 
   
   
