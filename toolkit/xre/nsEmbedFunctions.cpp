@@ -202,9 +202,7 @@ XRE_InitEmbedding2(nsIFile *aLibXULDirectory,
   
   
 
-  nsCOMPtr<nsIObserver> startupNotifier = new nsAppStartupNotifier();
-
-  startupNotifier->Observe(nullptr, APPSTARTUP_TOPIC, nullptr);
+  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_TOPIC);
 
   return NS_OK;
 }
