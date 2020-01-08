@@ -22,6 +22,8 @@ class nsIPrincipal;
 namespace mozilla {
 namespace dom {
 
+class BrowsingContext;
+
 
 
 
@@ -30,7 +32,7 @@ class PostMessageEvent final : public Runnable, public StructuredCloneHolder {
  public:
   NS_DECL_NSIRUNNABLE
 
-  PostMessageEvent(nsGlobalWindowOuter* aSource, const nsAString& aCallerOrigin,
+  PostMessageEvent(BrowsingContext* aSource, const nsAString& aCallerOrigin,
                    nsGlobalWindowOuter* aTargetWindow,
                    nsIPrincipal* aProvidedPrincipal,
                    nsIDocument* aSourceDocument);
@@ -43,7 +45,7 @@ class PostMessageEvent final : public Runnable, public StructuredCloneHolder {
   void DispatchError(JSContext* aCx, nsGlobalWindowInner* aTargetWindow,
                      mozilla::dom::EventTarget* aEventTarget);
 
-  RefPtr<nsGlobalWindowOuter> mSource;
+  RefPtr<BrowsingContext> mSource;
   nsString mCallerOrigin;
   RefPtr<nsGlobalWindowOuter> mTargetWindow;
   nsCOMPtr<nsIPrincipal> mProvidedPrincipal;

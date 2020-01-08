@@ -204,7 +204,7 @@ BrowserElementParent::OpenWindowResult BrowserElementParent::OpenWindowOOP(
 
 
 BrowserElementParent::OpenWindowResult
-BrowserElementParent::OpenWindowInProcess(nsPIDOMWindowOuter* aOpenerWindow,
+BrowserElementParent::OpenWindowInProcess(BrowsingContext* aOpenerWindow,
                                           nsIURI* aURI, const nsAString& aName,
                                           const nsACString& aFeatures,
                                           bool aForceNoOpener,
@@ -219,7 +219,8 @@ BrowserElementParent::OpenWindowInProcess(nsPIDOMWindowOuter* aOpenerWindow,
   
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> win = aOpenerWindow->GetScriptableTop();
+  nsCOMPtr<nsPIDOMWindowOuter> win =
+      aOpenerWindow->GetDOMWindow()->GetScriptableTop();
 
   nsCOMPtr<Element> openerFrameElement = win->GetFrameElementInternal();
   NS_ENSURE_TRUE(openerFrameElement, BrowserElementParent::OPEN_WINDOW_IGNORED);
