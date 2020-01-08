@@ -2350,18 +2350,21 @@ HTMLEditRules::WillDeleteSelection(nsIEditor::EDirection aAction,
   }
 
   
-  RefPtr<Element> cell;
-  nsresult rv =
-    HTMLEditorRef().GetFirstSelectedCell(nullptr, getter_AddRefs(cell));
-  if (NS_SUCCEEDED(rv) && cell) {
-    rv = HTMLEditorRef().DeleteTableCellContents();
+  ErrorResult error;
+  RefPtr<Element> cellElement =
+    HTMLEditorRef().GetFirstSelectedTableCellElement(SelectionRef(),
+                                                     error);
+  if (cellElement) {
+    error.SuppressException();
+    nsresult rv = HTMLEditorRef().DeleteTableCellContents();
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     *aHandled = true;
     return rv;
   }
-  cell = nullptr;
+  nsresult rv = error.StealNSResult();
+  cellElement = nullptr;
 
   
   
@@ -2443,6 +2446,7 @@ HTMLEditRules::WillDeleteSelection(nsIEditor::EDirection aAction,
     if (!visNode) {
       
       *aCancel = true;
+      
       
       
       return rv;

@@ -203,7 +203,9 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
 
   
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_STATE(selection);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   nsCOMPtr<nsINode> fragmentAsNode, streamStartParent, streamEndParent;
@@ -282,9 +284,10 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   
   
   bool cellSelectionMode = false;
-  RefPtr<Element> cell;
-  rv = GetFirstSelectedCell(nullptr, getter_AddRefs(cell));
-  if (NS_SUCCEEDED(rv) && cell) {
+  IgnoredErrorResult ignoredError;
+  RefPtr<Element> cellElement =
+    GetFirstSelectedTableCellElement(*selection, ignoredError);
+  if (cellElement) {
     cellSelectionMode = true;
   }
 

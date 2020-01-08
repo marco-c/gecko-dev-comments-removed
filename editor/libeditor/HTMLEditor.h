@@ -530,6 +530,28 @@ protected:
 
   Element* GetSelectionContainerElement(Selection& aSelection) const;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  GetFirstSelectedTableCellElement(Selection& aSelection,
+                                   ErrorResult& aRv) const;
+
   void IsNextCharInNodeWhitespace(nsIContent* aContent,
                                   int32_t aOffset,
                                   bool* outIsSpace,
@@ -1214,7 +1236,7 @@ protected:
   nsresult GetLastCellInRow(nsINode* aRowNode,
                             nsINode** aCellNode);
 
-  nsresult GetCellFromRange(nsRange* aRange, Element** aCell);
+  static nsresult GetCellFromRange(nsRange* aRange, Element** aCell);
 
   
 
@@ -1856,7 +1878,8 @@ protected:
   UniquePtr<CSSEditUtils> mCSSEditUtils;
 
   
-  int32_t  mSelectedCellIndex;
+  
+  mutable int32_t mSelectedCellIndex;
 
   nsString mLastStyleSheetURL;
   nsString mLastOverrideStyleSheetURL;
