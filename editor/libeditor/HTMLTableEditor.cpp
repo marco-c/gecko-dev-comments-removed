@@ -212,7 +212,6 @@ HTMLEditor::InsertTableCellsWithTransaction(int32_t aNumberOfCellsToInsert,
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
   
-  
   int32_t    colSpan =          cellDataAtSelection.mColSpan;
   
   
@@ -450,7 +449,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
   
-  
   int32_t    colSpan =          cellDataAtSelection.mColSpan;
   
   int32_t    actualColSpan =    cellDataAtSelection.mEffectiveColSpan;
@@ -518,7 +516,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
         return NS_ERROR_FAILURE;
       }
 
-      int32_t    curStartColIndex =       cellData.mFirst.mColumn;
       
       int32_t    colSpan =                cellData.mColSpan;
       
@@ -533,7 +530,7 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
         continue;
       }
 
-      if (curStartColIndex < cellData.mCurrent.mColumn) {
+      if (cellData.mFirst.mColumn < cellData.mCurrent.mColumn) {
         
         
         
@@ -650,7 +647,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
   }
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  
   int32_t    rowSpan =          cellDataAtSelection.mRowSpan;
   
   int32_t    actualRowSpan =    cellDataAtSelection.mEffectiveRowSpan;
@@ -708,7 +704,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
         break; 
       }
 
-      
       int32_t    rowSpan =                    cellData.mRowSpan;
       
       
@@ -752,7 +747,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
         break; 
       }
 
-      
       int32_t    rowSpan =                    cellData.mRowSpan;
       
       
@@ -1405,7 +1399,6 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
       return NS_OK;
     }
 
-    int32_t    startColIndex =       cellData.mFirst.mColumn;
     
     int32_t    colSpan =             cellData.mColSpan;
     int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
@@ -1414,7 +1407,7 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
 
     
     MOZ_ASSERT(colSpan >= 0);
-    if (startColIndex < cellData.mCurrent.mColumn || colSpan != 1) {
+    if (cellData.mFirst.mColumn < cellData.mCurrent.mColumn || colSpan != 1) {
       
       
       
@@ -1422,7 +1415,7 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
         NS_WARNING_ASSERTION(colSpan > 1, "colspan should be 2 or larger");
         SetColSpan(cellData.mElement, colSpan - 1);
       }
-      if (startColIndex == cellData.mCurrent.mColumn) {
+      if (cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
         
         
         
@@ -1680,7 +1673,6 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    startColIndex =       cellData.mFirst.mColumn;
     int32_t    rowSpan =             cellData.mRowSpan;
     
     int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
@@ -1716,7 +1708,8 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
           cellData.NumberOfPrecedingRows() + 1;
         int32_t numOfRawSpanRemainingBelow = actualRowSpan - 1;
         nsresult rv =
-          SplitCellIntoRows(&aTableElement, cellData.mFirst.mRow, startColIndex,
+          SplitCellIntoRows(&aTableElement,
+                            cellData.mFirst.mRow, cellData.mFirst.mColumn,
                             aboveRowToInsertNewCellInto,
                             numOfRawSpanRemainingBelow, nullptr);
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1902,7 +1895,6 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
         return NS_ERROR_FAILURE;
       }
 
-      int32_t    currentColIndex =     cellData.mFirst.mColumn;
       
       
       
@@ -1914,7 +1906,7 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
       
       if (!isSelected && cellData.mElement &&
           !cellData.IsSpannedFromOtherRow() &&
-          cellData.mCurrent.mColumn == currentColIndex) {
+          cellData.mCurrent.mColumn == cellData.mFirst.mColumn) {
         rv = AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
           break;
@@ -1976,7 +1968,6 @@ HTMLEditor::SelectAllTableCells()
         break;
       }
 
-      int32_t    currentColIndex =     cellData.mFirst.mColumn;
       
       
       
@@ -1988,7 +1979,7 @@ HTMLEditor::SelectAllTableCells()
       
       if (cellData.mElement &&
           !cellData.IsSpannedFromOtherRow() &&
-          cellData.mCurrent.mColumn == currentColIndex) {
+          cellData.mCurrent.mColumn == cellData.mFirst.mColumn) {
         rv =  AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
           break;
@@ -2069,7 +2060,6 @@ HTMLEditor::SelectTableRow()
       break;
     }
 
-    int32_t    currentColIndex =     cellData.mFirst.mColumn;
     
     
     
@@ -2081,7 +2071,7 @@ HTMLEditor::SelectTableRow()
     
     if (cellData.mElement &&
         !cellData.IsSpannedFromOtherRow() &&
-        currentColIndex == cellData.mCurrent.mColumn) {
+        cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
       rv = AppendNodeToSelectionAsRange(cellData.mElement);
       if (NS_FAILED(rv)) {
         break;
@@ -2157,7 +2147,6 @@ HTMLEditor::SelectTableColumn()
       break;
     }
 
-    int32_t    currentColIndex =     cellData.mFirst.mColumn;
     
     
                actualRowSpan =       cellData.mEffectiveRowSpan;
@@ -2169,7 +2158,7 @@ HTMLEditor::SelectTableColumn()
     
     if (cellData.mElement &&
         !cellData.IsSpannedFromOtherRow() &&
-        currentColIndex == cellData.mCurrent.mColumn) {
+        cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
       rv = AppendNodeToSelectionAsRange(cellData.mElement);
       if (NS_FAILED(rv)) {
         break;
@@ -2301,7 +2290,6 @@ HTMLEditor::SplitCellIntoColumns(Element* aTable,
 
   
   
-  
   int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
   int32_t    actualColSpan =       cellData.mEffectiveColSpan;
   
@@ -2360,7 +2348,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
     return NS_ERROR_FAILURE;
   }
 
-  int32_t    startColIndex =       cellData.mFirst.mColumn;
   
   
   int32_t    actualRowSpan =       cellData.mEffectiveRowSpan;
@@ -2381,7 +2368,7 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
   
   RefPtr<Element> cellElementAtInsertionPoint;
   RefPtr<Element> lastCellFound;
-  bool insertAfter = (startColIndex > 0);
+  bool insertAfter = (cellData.mFirst.mColumn > 0);
   for (int32_t colIndex = 0, actualColSpan2 = 0,
                rowBelowIndex = cellData.mFirst.mRow + aRowSpanAbove;
        colIndex <= tableSize.mColumnCount;
@@ -2398,7 +2385,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    startColIndex2 = cellDataAtInsertionPoint.mFirst.mColumn;
     
     
     
@@ -2420,13 +2406,14 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       }
       
       
-      if (startColIndex2 + actualColSpan2 == startColIndex) {
+      if (cellDataAtInsertionPoint.mFirst.mColumn + actualColSpan2 ==
+            cellData.mFirst.mColumn) {
         break;
       }
       
       
       
-      if (startColIndex2 > startColIndex) {
+      if (cellDataAtInsertionPoint.mFirst.mColumn > cellData.mFirst.mColumn) {
         
         insertAfter = false;
         break;
@@ -2625,7 +2612,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
         
         
         
-        
                    actualColSpan2 =          cellData.mEffectiveColSpan;
         bool       isSelected2 =             cellData.mIsSelected;
 
@@ -2704,7 +2690,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           return NS_ERROR_FAILURE;
         }
 
-        int32_t    startColIndex2 =       cellData.mFirst.mColumn;
         
         
         
@@ -2732,13 +2717,17 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             if (actualColSpan2 > 1) {
               
               
-              int32_t extraColSpan = (startColIndex2 + actualColSpan2) - (lastColIndex+1);
+              int32_t extraColSpan =
+                cellData.mFirst.mColumn + actualColSpan2 - (lastColIndex + 1);
               if ( extraColSpan > 0) {
                 rv = SplitCellIntoColumns(table,
-                                          cellData.mFirst.mRow, startColIndex2,
+                                          cellData.mFirst.mRow,
+                                          cellData.mFirst.mColumn,
                                           actualColSpan2 - extraColSpan,
                                           extraColSpan, nullptr);
-                NS_ENSURE_SUCCESS(rv, rv);
+                if (NS_WARN_IF(NS_FAILED(rv))) {
+                  return rv;
+                }
               }
             }
 
@@ -2822,7 +2811,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
       return NS_ERROR_FAILURE;
     }
 
-               startColIndex =             leftCellData.mFirst.mColumn;
     
     
     int32_t    actualRowSpan =             leftCellData.mEffectiveRowSpan;
@@ -2832,13 +2820,12 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     
     CellData rightCellData(*this, *table,
                            leftCellData.mFirst.mRow,
-                           startColIndex + actualColSpan,
+                           leftCellData.mFirst.mColumn + actualColSpan,
                            ignoredError);
     if (NS_WARN_IF(rightCellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    startColIndex2 =       rightCellData.mFirst.mColumn;
     
     
     int32_t    actualRowSpan2 =       rightCellData.mEffectiveRowSpan;
@@ -2862,7 +2849,9 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     if (effectiveRowSpan2 > actualRowSpan) {
       
       
-      rv = SplitCellIntoRows(table, rightCellData.mFirst.mRow, startColIndex2,
+      rv = SplitCellIntoRows(table,
+                             rightCellData.mFirst.mRow,
+                             rightCellData.mFirst.mColumn,
                              spanAboveMergedCell + actualRowSpan,
                              effectiveRowSpan2-actualRowSpan, nullptr);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3004,7 +2993,6 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
       return NS_ERROR_FAILURE;
     }
 
-    
     int32_t    rowSpan =             cellData.mRowSpan;
     
     
@@ -3036,7 +3024,6 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
         return NS_ERROR_FAILURE;
       }
 
-      int32_t    startColIndex =       cellData.mFirst.mColumn;
       int32_t    rowSpan =             cellData.mRowSpan;
       
       
@@ -3048,7 +3035,7 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
       
       if (cellData.mElement && rowSpan > 0 &&
           !cellData.IsSpannedFromOtherRow() &&
-          startColIndex == cellData.mCurrent.mColumn) {
+          cellData.mFirst.mColumn == cellData.mCurrent.mColumn) {
         nsresult rv = SetRowSpan(cellData.mElement, rowSpan-rowsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -3095,7 +3082,6 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    startColIndex =       cellData.mFirst.mColumn;
     
     int32_t    colSpan =             cellData.mColSpan;
                actualRowSpan =       cellData.mEffectiveRowSpan;
@@ -3108,7 +3094,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       break;
     }
     if (colSpan > 0 &&
-        startColIndex == cellData.mCurrent.mColumn &&
+        cellData.mFirst.mColumn == cellData.mCurrent.mColumn &&
         (colSpan < minColSpan || minColSpan == -1)) {
       minColSpan = colSpan;
     }
@@ -3126,7 +3112,6 @@ HTMLEditor::FixBadColSpan(Element* aTable,
         return NS_ERROR_FAILURE;
       }
 
-      int32_t    startColIndex =       cellData.mFirst.mColumn;
       
       int32_t    colSpan =             cellData.mColSpan;
                  actualRowSpan =       cellData.mEffectiveRowSpan;
@@ -3137,7 +3122,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       
       
       if (cellData.mElement && colSpan > 0 &&
-          startColIndex == cellData.mCurrent.mColumn &&
+          cellData.mFirst.mColumn == cellData.mCurrent.mColumn &&
           !cellData.IsSpannedFromOtherRow()) {
         nsresult rv = SetColSpan(cellData.mElement, colSpan-colsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3240,7 +3225,6 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
         return NS_ERROR_FAILURE;
       }
 
-      
       
       
       
@@ -3394,7 +3378,6 @@ HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
       break;
     }
 
-    
     
     
     
@@ -4383,7 +4366,6 @@ HTMLEditor::AllCellsInRowSelected(Element* aTable,
     
     
     
-    
                actualColSpan =       cellData.mEffectiveColSpan;
     bool       isSelected =          cellData.mIsSelected;
 
@@ -4425,7 +4407,6 @@ HTMLEditor::AllCellsInColumnSelected(Element* aTable,
       return false;
     }
 
-    
     
     
                actualRowSpan =       cellData.mEffectiveRowSpan;
