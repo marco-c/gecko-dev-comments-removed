@@ -108,8 +108,42 @@ HUDService.prototype = {
 
 
 
+  getHudByWindow(contentWindow) {
+    for (const [, hud] of this.consoles) {
+      const target = hud.target;
+      if (target && target.tab && target.window === contentWindow) {
+        return hud;
+      }
+    }
+    return null;
+  },
+
+  
+
+
+
+
+
   getHudReferenceById(id) {
     return this.consoles.get(id);
+  },
+
+  
+
+
+
+
+
+
+  getOpenWebConsole() {
+    const tab = this.currentContext().gBrowser.selectedTab;
+    if (!tab || !TargetFactory.isKnownTab(tab)) {
+      return null;
+    }
+    const target = TargetFactory.forTab(tab);
+    const toolbox = gDevTools.getToolbox(target);
+    const panel = toolbox ? toolbox.getPanel("webconsole") : null;
+    return panel ? panel.hud : null;
   },
 
   

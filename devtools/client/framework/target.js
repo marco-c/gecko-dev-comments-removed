@@ -313,6 +313,23 @@ TabTarget.prototype = {
     return this._isBrowsingContext;
   },
 
+  get window() {
+    
+    
+    
+    
+    if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      console.error("The .window getter on devtools' |target| object isn't " +
+                    "e10s friendly!\n" + Error().stack);
+    }
+    
+    
+    if (this._tab && this._tab.linkedBrowser) {
+      return this._tab.linkedBrowser.contentWindow;
+    }
+    return null;
+  },
+
   get name() {
     if (this.isAddon) {
       return this._form.name;
