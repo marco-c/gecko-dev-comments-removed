@@ -114,6 +114,8 @@ const char* const XPCJSRuntime::mStrings[] = {
     "lastIndex",            
     "then",                 
     "isInstance",           
+    "Infinity",             
+    "NaN",                  
 };
 
 
