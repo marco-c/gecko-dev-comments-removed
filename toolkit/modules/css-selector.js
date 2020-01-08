@@ -6,12 +6,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "findAllCssSelectors",
-  "findCssSelector",
-  "getCssPath",
-  "getXPath"
-];
+var EXPORTED_SYMBOLS = ["findAllCssSelectors", "findCssSelector"];
 
 
 
@@ -27,6 +22,13 @@ var EXPORTED_SYMBOLS = [
 function getRootBindingParent(node) {
   let doc = node.ownerDocument;
   if (!doc) {
+    return node;
+  }
+
+  if (getShadowRoot(node)) {
+    
+    
+    
     return node;
   }
 
@@ -74,24 +76,16 @@ function positionInNodeList(element, nodeList) {
 
 
 
-function findNodeAndContainer(node) {
+function getDocumentOrShadowRoot(node) {
   const shadowRoot = getShadowRoot(node);
   if (shadowRoot) {
     
     
-    return {
-      containingDocOrShadow: shadowRoot,
-      node
-    };
+    return shadowRoot;
   }
 
   
-  
-  const bindingParent = getRootBindingParent(node);
-  return {
-    containingDocOrShadow: bindingParent.ownerDocument,
-    node: bindingParent
-  };
+  return node.ownerDocument;
 }
 
 
@@ -99,11 +93,10 @@ function findNodeAndContainer(node) {
 
 
 
-
 const findCssSelector = function(ele) {
-  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
-  ele = node;
+  ele = getRootBindingParent(ele);
 
+  let containingDocOrShadow = getDocumentOrShadowRoot(ele);
   if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
     
     return "";
@@ -205,116 +198,3 @@ const findAllCssSelectors = function(node) {
 
   return selectors;
 };
-
-
-
-
-
-
-
-function getCssPath(ele) {
-  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
-  ele = node;
-  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
-    
-    return "";
-  }
-
-  const nodeGlobal = ele.ownerGlobal.Node;
-
-  const getElementSelector = element => {
-    if (!element.localName) {
-      return "";
-    }
-
-    let label = element.nodeName == element.nodeName.toUpperCase()
-                ? element.localName.toLowerCase()
-                : element.localName;
-
-    if (element.id) {
-      label += "#" + element.id;
-    }
-
-    if (element.classList) {
-      for (const cl of element.classList) {
-        label += "." + cl;
-      }
-    }
-
-    return label;
-  };
-
-  const paths = [];
-
-  while (ele) {
-    if (!ele || ele.nodeType !== nodeGlobal.ELEMENT_NODE) {
-      break;
-    }
-
-    paths.splice(0, 0, getElementSelector(ele));
-    ele = ele.parentNode;
-  }
-
-  return paths.length ? paths.join(" ") : "";
-}
-
-
-
-
-
-
-function getXPath(ele) {
-  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
-  ele = node;
-  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
-    
-    return "";
-  }
-
-  
-  if (ele.id) {
-    return `//*[@id="${ele.id}"]`;
-  }
-
-  
-  const parts = [];
-
-  const nodeGlobal = ele.ownerGlobal.Node;
-  
-  while (ele && ele.nodeType === nodeGlobal.ELEMENT_NODE) {
-    let nbOfPreviousSiblings = 0;
-    let hasNextSiblings = false;
-
-    
-    let sibling = ele.previousSibling;
-    while (sibling) {
-      
-      if (sibling.nodeType !== nodeGlobal.DOCUMENT_TYPE_NODE &&
-          sibling.nodeName == ele.nodeName) {
-        nbOfPreviousSiblings++;
-      }
-
-      sibling = sibling.previousSibling;
-    }
-
-    
-    sibling = ele.nextSibling;
-    while (sibling) {
-      if (sibling.nodeName == ele.nodeName) {
-        hasNextSiblings = true;
-        break;
-      }
-      sibling = sibling.nextSibling;
-    }
-
-    const prefix = ele.prefix ? ele.prefix + ":" : "";
-    const nth = nbOfPreviousSiblings || hasNextSiblings
-                ? `[${nbOfPreviousSiblings + 1}]` : "";
-
-    parts.push(prefix + ele.localName + nth);
-
-    ele = ele.parentNode;
-  }
-
-  return parts.length ? "/" + parts.reverse().join("/") : "";
-}
