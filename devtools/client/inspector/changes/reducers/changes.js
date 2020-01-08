@@ -192,13 +192,13 @@ const reducers = {
     change = { ...defaults, ...change };
     state = cloneState(state);
 
-    const { type, href, index } = change.source;
+    const { type, href, index, isFramed } = change.source;
     const { selector, ancestors, ruleIndex, type: changeType } = change;
     const sourceId = getSourceHash(change.source);
     const ruleId = getRuleHash({ selector, ancestors, ruleIndex });
 
     
-    const source = Object.assign({}, state[sourceId], { type, href, index });
+    const source = Object.assign({}, state[sourceId], { type, href, index, isFramed });
     
     const rules = Object.assign({}, source.rules);
     
