@@ -906,9 +906,9 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   
   
   nsAutoString libxul;
-  libxul.AppendLiteral(DLL_PREFIX);
+  libxul.AppendLiteral(MOZ_DLL_PREFIX);
   libxul.AppendLiteral("xul");
-  libxul.AppendLiteral(DLL_SUFFIX);
+  libxul.AppendLiteral(MOZ_DLL_SUFFIX);
 #endif 
 
   if (!SetStringProperty(aCx, objPath, "libxul", libxul)) {
@@ -953,14 +953,14 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   nsAutoString libsqlite3;
 #if defined(ANDROID)
   
-  libsqlite3.AppendLiteral(DLL_PREFIX);
+  libsqlite3.AppendLiteral(MOZ_DLL_PREFIX);
   libsqlite3.AppendLiteral("sqlite3");
-  libsqlite3.AppendLiteral(DLL_SUFFIX);
+  libsqlite3.AppendLiteral(MOZ_DLL_SUFFIX);
 #elif defined(XP_WIN)
   
-  libsqlite3.AppendLiteral(DLL_PREFIX);
+  libsqlite3.AppendLiteral(MOZ_DLL_PREFIX);
   libsqlite3.AppendLiteral("nss3");
-  libsqlite3.AppendLiteral(DLL_SUFFIX);
+  libsqlite3.AppendLiteral(MOZ_DLL_SUFFIX);
 #else
     
   libsqlite3 = libxul;

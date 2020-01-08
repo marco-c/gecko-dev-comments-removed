@@ -1199,7 +1199,7 @@ LoadLoadableRoots(const nsCString& dir)
     fullLibraryPath.Assign(dir);
     fullLibraryPath.AppendLiteral(FILE_PATH_SEPARATOR);
   }
-  fullLibraryPath.Append(DLL_PREFIX "nssckbi" DLL_SUFFIX);
+  fullLibraryPath.Append(MOZ_DLL_PREFIX "nssckbi" MOZ_DLL_SUFFIX);
   
   fullLibraryPath.ReplaceSubstring("\\", "\\\\");
   fullLibraryPath.ReplaceSubstring("\"", "\\\"");

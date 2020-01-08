@@ -988,7 +988,7 @@ static nsresult
 GetNSS3Directory(nsCString& result)
 {
   UniquePRString nss3Path(
-    PR_GetLibraryFilePathname(DLL_PREFIX "nss3" DLL_SUFFIX,
+    PR_GetLibraryFilePathname(MOZ_DLL_PREFIX "nss3" MOZ_DLL_SUFFIX,
                               reinterpret_cast<PRFuncPtr>(NSS_Initialize)));
   if (!nss3Path) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nss not loaded?"));
@@ -1220,7 +1220,6 @@ static const bool REQUIRE_SAFE_NEGOTIATION_DEFAULT = false;
 static const bool FALSE_START_ENABLED_DEFAULT = true;
 static const bool ALPN_ENABLED_DEFAULT = false;
 static const bool ENABLED_0RTT_DATA_DEFAULT = false;
-static const bool HELLO_DOWNGRADE_CHECK_DEFAULT = false;
 
 static void
 ConfigureTLSSessionIdentifiers()
@@ -1889,11 +1888,6 @@ nsNSSComponent::InitializeNSS()
 
   SSL_OptionSetDefault(SSL_ENABLE_EXTENDED_MASTER_SECRET, true);
 
-  bool enableDowngradeCheck =
-      Preferences::GetBool("security.tls.hello_downgrade_check",
-                           HELLO_DOWNGRADE_CHECK_DEFAULT);
-  SSL_OptionSetDefault(SSL_ENABLE_HELLO_DOWNGRADE_CHECK, enableDowngradeCheck);
-
   SSL_OptionSetDefault(SSL_ENABLE_FALSE_START,
                        Preferences::GetBool("security.ssl.enable_false_start",
                                             FALSE_START_ENABLED_DEFAULT));
@@ -2076,11 +2070,6 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
     if (prefName.EqualsLiteral("security.tls.version.min") ||
         prefName.EqualsLiteral("security.tls.version.max")) {
       (void) setEnabledTLSVersions();
-    } else if (prefName.EqualsLiteral("security.tls.hello_downgrade_check")) {
-      bool enableDowngradeCheck =
-        Preferences::GetBool("security.tls.hello_downgrade_check",
-                             HELLO_DOWNGRADE_CHECK_DEFAULT);
-      SSL_OptionSetDefault(SSL_ENABLE_HELLO_DOWNGRADE_CHECK, enableDowngradeCheck);
     } else if (prefName.EqualsLiteral("security.ssl.require_safe_negotiation")) {
       bool requireSafeNegotiation =
         Preferences::GetBool("security.ssl.require_safe_negotiation",
