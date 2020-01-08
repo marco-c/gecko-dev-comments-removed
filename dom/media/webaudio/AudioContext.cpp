@@ -161,21 +161,20 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
   
   
   const bool allowedToStart = AutoplayPolicy::IsAllowedToPlay(*this);
+  
+  
+  
+  if (!allowedToStart) {
+    AUTOPLAY_LOG("AudioContext %p is not allowed to start", this);
+    mSuspendCalled = true;
+    ReportBlocked();
+  }
   mDestination = new AudioDestinationNode(this, aIsOffline, allowedToStart,
                                           aNumberOfChannels, aLength);
 
   
   if (mute) {
     Mute();
-  }
-
-  
-  
-  
-  if (!allowedToStart) {
-    AUTOPLAY_LOG("AudioContext %p is not allowed to start", this);
-    SuspendInternal(nullptr);
-    ReportBlocked();
   }
 
   UpdateAutoplayAssumptionStatus();
