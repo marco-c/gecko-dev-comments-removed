@@ -7,7 +7,10 @@
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { translateNodeFrontToGrip } = require("devtools/client/inspector/shared/utils");
+const {
+  getSelectorFromGrip,
+  translateNodeFrontToGrip,
+} = require("devtools/client/inspector/shared/utils");
 
 
 const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
@@ -43,7 +46,7 @@ class FlexItemSelector extends PureComponent {
     for (const item of flexItems) {
       const grip = translateNodeFrontToGrip(item.nodeFront);
       menuItems.push({
-        label: getLabel(grip),
+        label: getSelectorFromGrip(grip),
         type: "checkbox",
         checked: item === flexItem,
         click: () => onToggleFlexItemShown(item.nodeFront),
@@ -77,43 +80,6 @@ class FlexItemSelector extends PureComponent {
       )
     );
   }
-}
-
-
-
-
-
-
-
-
-
-function getLabel(grip) {
-  const {
-    attributes,
-    nodeName,
-    isAfterPseudoElement,
-    isBeforePseudoElement
-  } = grip.preview;
-
-  if (isAfterPseudoElement || isBeforePseudoElement) {
-    return `::${isAfterPseudoElement ? "after" : "before"}`;
-  }
-
-  let label = nodeName;
-
-  if (attributes.id) {
-    label += `#${attributes.id}`;
-  }
-
-  if (attributes.class) {
-    label += attributes.class
-      .trim()
-      .split(/\s+/)
-      .map(cls => `.${cls}`)
-      .join("");
-  }
-
-  return label;
 }
 
 module.exports = FlexItemSelector;

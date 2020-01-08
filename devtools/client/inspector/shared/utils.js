@@ -117,6 +117,43 @@ function createChild(parent, tagName, attributes = {}) {
 
 
 
+function getSelectorFromGrip(grip) {
+  const {
+    attributes,
+    nodeName,
+    isAfterPseudoElement,
+    isBeforePseudoElement
+  } = grip.preview;
+
+  if (isAfterPseudoElement || isBeforePseudoElement) {
+    return `::${isAfterPseudoElement ? "after" : "before"}`;
+  }
+
+  let selector = nodeName;
+
+  if (attributes.id) {
+    selector += `#${attributes.id}`;
+  }
+
+  if (attributes.class) {
+    selector += attributes.class
+      .trim()
+      .split(/\s+/)
+      .map(cls => `.${cls}`)
+      .join("");
+  }
+
+  return selector;
+}
+
+
+
+
+
+
+
+
+
 function promiseWarn(error) {
   console.error(error);
   return promise.reject(error);
@@ -160,6 +197,7 @@ exports.advanceValidate = advanceValidate;
 exports.appendText = appendText;
 exports.blurOnMultipleProperties = blurOnMultipleProperties;
 exports.createChild = createChild;
+exports.getSelectorFromGrip = getSelectorFromGrip;
 exports.promiseWarn = promiseWarn;
 exports.throttle = throttle;
 exports.translateNodeFrontToGrip = translateNodeFrontToGrip;
