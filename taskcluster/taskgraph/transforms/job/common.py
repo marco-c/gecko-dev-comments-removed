@@ -64,8 +64,18 @@ def support_vcs_checkout(config, job, taskdesc, sparse=False):
     This can only be used with ``run-task`` tasks, as the cache name is
     reserved for ``run-task`` tasks.
     """
-    level = config.params['level']
+    is_win = job['worker']['os'] == 'windows'
 
+    if is_win:
+        checkoutdir = './build'
+        geckodir = '{}/src'.format(checkoutdir)
+        hgstore = 'y:/hg-shared'
+    else:
+        checkoutdir = '{workdir}/checkouts'.format(**job['run'])
+        geckodir = '{}/gecko'.format(checkoutdir)
+        hgstore = '{}/hg-store'.format(checkoutdir)
+
+    level = config.params['level']
     
     
     if job['worker']['implementation'] in ('docker-worker', 'docker-engine'):
@@ -84,15 +94,15 @@ def support_vcs_checkout(config, job, taskdesc, sparse=False):
         taskdesc['worker'].setdefault('caches', []).append({
             'type': 'persistent',
             'name': name,
-            'mount-point': '{workdir}/checkouts'.format(**job['run']),
+            'mount-point': checkoutdir,
         })
 
     taskdesc['worker'].setdefault('env', {}).update({
         'GECKO_BASE_REPOSITORY': config.params['base_repository'],
         'GECKO_HEAD_REPOSITORY': config.params['head_repository'],
         'GECKO_HEAD_REV': config.params['head_rev'],
-        'GECKO_PATH': '{workdir}/checkouts/gecko'.format(**job['run']),
-        'HG_STORE_PATH': '{workdir}/checkouts/hg-store'.format(**job['run']),
+        'GECKO_PATH': geckodir,
+        'HG_STORE_PATH': hgstore,
     })
 
     if 'comm_base_repository' in config.params:
