@@ -428,6 +428,9 @@ class ExternalResourceMap {
 
 
 
+class PrincipalFlashClassifier;
+
+
 
 class Document : public nsINode,
                  public DocumentOrShadowRoot,
@@ -3409,8 +3412,6 @@ class Document : public nsINode,
                                          const nsAString& aHeightString,
                                          const nsAString& aScaleString);
 
-  mozilla::dom::FlashClassification DocumentFlashClassificationInternal();
-
   nsTArray<nsString> mL10nResources;
 
   
@@ -3418,7 +3419,7 @@ class Document : public nsINode,
   nsCOMPtr<nsIApplicationCache> mApplicationCache;
 
  public:
-  bool IsThirdPartyForFlashClassifier();
+  bool IsThirdParty();
 
   bool IsScopedStyleEnabled();
 
@@ -3485,6 +3486,10 @@ class Document : public nsINode,
   void ReportShadowDOMUsage();
 
   
+  
+  void MaybeNotifyAutoplayBlocked();
+
+  
   void SetDocTreeHadAudibleMedia();
   void SetDocTreeHadPlayRevoked();
 
@@ -3514,6 +3519,14 @@ class Document : public nsINode,
 
 
   Element* GetTitleElement();
+
+  
+  
+  mozilla::dom::FlashClassification PrincipalFlashClassification();
+
+  
+  
+  mozilla::dom::FlashClassification ComputeFlashClassification();
 
   void RecordNavigationTiming(ReadyState aReadyState);
 
@@ -4281,11 +4294,11 @@ class Document : public nsINode,
 
   
   
+  RefPtr<PrincipalFlashClassifier> mPrincipalFlashClassifier;
   mozilla::dom::FlashClassification mFlashClassification;
-
   
   
-  mozilla::Maybe<bool> mIsThirdPartyForFlashClassifier;
+  mozilla::Maybe<bool> mIsThirdParty;
 
   nsRevocableEventPtr<nsRunnableMethod<Document, void, false>>
       mPendingTitleChangeEvent;

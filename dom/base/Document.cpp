@@ -282,6 +282,7 @@
 
 #include "mozilla/MediaManager.h"
 
+#include "nsIURIClassifier.h"
 #include "nsIURIMutator.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/PendingFullscreenEvent.h"
@@ -334,6 +335,65 @@ static nsresult GetHttpChannelHelper(nsIChannel* aChannel,
 
   return NS_OK;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PrincipalFlashClassifier final : public nsIURIClassifierCallback {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIURICLASSIFIERCALLBACK
+
+  PrincipalFlashClassifier();
+
+  
+  void AsyncClassify(nsIPrincipal* aPrincipal);
+
+  
+  mozilla::dom::FlashClassification ClassifyMaybeSync(nsIPrincipal* aPrincipal,
+                                                      bool aIsThirdParty);
+
+ private:
+  ~PrincipalFlashClassifier() = default;
+
+  void Reset();
+  bool EnsureUriClassifier();
+  mozilla::dom::FlashClassification CheckIfClassifyNeeded(
+      nsIPrincipal* aPrincipal);
+  mozilla::dom::FlashClassification Resolve(bool aIsThirdParty);
+  mozilla::dom::FlashClassification AsyncClassifyInternal(
+      nsIPrincipal* aPrincipal);
+  void GetClassificationTables(bool aIsThirdParty, nsACString& aTables);
+
+  
+  nsCOMPtr<nsIURI> mClassificationURI;
+
+  nsCOMPtr<nsIURIClassifier> mUriClassifier;
+  bool mAsyncClassified;
+  nsTArray<nsCString> mMatchedTables;
+  mozilla::dom::FlashClassification mResult;
+};
 
 }  
 }  
@@ -1335,7 +1395,8 @@ Document::Document(const char* aContentType)
       mViewportOverflowType(ViewportOverflowType::NoOverflow),
       mSubDocuments(nullptr),
       mHeaderData(nullptr),
-      mFlashClassification(FlashClassification::Unknown),
+      mPrincipalFlashClassifier(new PrincipalFlashClassifier()),
+      mFlashClassification(FlashClassification::Unclassified),
       mBoxObjectTable(nullptr),
       mCurrentOrientationAngle(0),
       mCurrentOrientationType(OrientationType::Portrait_primary),
@@ -2566,6 +2627,11 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     
     aChannel->Cancel(NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION);
   }
+
+  
+  
+  mFlashClassification = FlashClassification::Unclassified;
+  mPrincipalFlashClassifier->AsyncClassify(GetPrincipal());
 
   return NS_OK;
 }
@@ -11672,6 +11738,20 @@ void Document::NotifyUserGestureActivation() {
   }
 }
 
+void Document::MaybeNotifyAutoplayBlocked() {
+  Document* topLevelDoc = GetTopLevelContentDocument();
+  if (!topLevelDoc) {
+    return;
+  }
+
+  
+  
+  RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+      topLevelDoc, NS_LITERAL_STRING("GloballyAutoplayBlocked"),
+      CanBubble::eYes, ChromeOnlyDispatch::eYes);
+  asyncDispatcher->PostDOMEvent();
+}
+
 void Document::SetDocTreeHadAudibleMedia() {
   Document* topLevelDoc = GetTopLevelContentDocument();
   if (!topLevelDoc) {
@@ -11965,24 +12045,314 @@ Document* Document::GetSameTypeParentDocument() {
 
 
 
-FlashClassification Document::DocumentFlashClassification() {
+
+
+
+
+FlashClassification Document::PrincipalFlashClassification() {
+  MOZ_ASSERT(mPrincipalFlashClassifier);
+  return mPrincipalFlashClassifier->ClassifyMaybeSync(NodePrincipal(),
+                                                      IsThirdParty());
+}
+
+
+
+
+
+
+
+static void MaybeAddTableToTableList(const nsACString& aTableNames,
+                                     nsACString& aTableList) {
+  if (aTableNames.IsEmpty()) {
+    return;
+  }
+  if (!aTableList.IsEmpty()) {
+    aTableList.AppendLiteral(",");
+  }
+  aTableList.Append(aTableNames);
+}
+
+
+
+
+
+
+
+
+static bool ArrayContainsTable(const nsTArray<nsCString>& aTableArray,
+                               const nsACString& aTableNames) {
+  for (const nsCString& table : aTableArray) {
+    
+    
+    if (FindInReadable(table, aTableNames)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+namespace {
+
+static const char* gCallbackPrefs[] = {
+    
+    "urlclassifier.flashAllowTable",
+    "urlclassifier.flashAllowExceptTable",
+    "urlclassifier.flashTable",
+    "urlclassifier.flashExceptTable",
+    "urlclassifier.flashSubDocTable",
+    "urlclassifier.flashSubDocExceptTable",
+    nullptr,
+};
+
+
+struct PrefStore {
+  PrefStore() : mFlashBlockEnabled(false), mPluginsHttpOnly(false) {
+    Preferences::AddBoolVarCache(&mFlashBlockEnabled,
+                                 "plugins.flashBlock.enabled");
+    Preferences::AddBoolVarCache(&mPluginsHttpOnly, "plugins.http_https_only");
+
+    Preferences::RegisterCallbacks(
+        PREF_CHANGE_METHOD(PrefStore::UpdateStringPrefs), gCallbackPrefs, this);
+
+    UpdateStringPrefs();
+  }
+
+  ~PrefStore() {
+    Preferences::UnregisterCallbacks(
+        PREF_CHANGE_METHOD(PrefStore::UpdateStringPrefs), gCallbackPrefs, this);
+  }
+
+  void UpdateStringPrefs(const char* aPref = nullptr) {
+    Preferences::GetCString("urlclassifier.flashAllowTable", mAllowTables);
+    Preferences::GetCString("urlclassifier.flashAllowExceptTable",
+                            mAllowExceptionsTables);
+    Preferences::GetCString("urlclassifier.flashTable", mDenyTables);
+    Preferences::GetCString("urlclassifier.flashExceptTable",
+                            mDenyExceptionsTables);
+    Preferences::GetCString("urlclassifier.flashSubDocTable",
+                            mSubDocDenyTables);
+    Preferences::GetCString("urlclassifier.flashSubDocExceptTable",
+                            mSubDocDenyExceptionsTables);
+  }
+
+  bool mFlashBlockEnabled;
+  bool mPluginsHttpOnly;
+
+  nsCString mAllowTables;
+  nsCString mAllowExceptionsTables;
+  nsCString mDenyTables;
+  nsCString mDenyExceptionsTables;
+  nsCString mSubDocDenyTables;
+  nsCString mSubDocDenyExceptionsTables;
+};
+
+static const PrefStore& GetPrefStore() {
+  static UniquePtr<PrefStore> sPrefStore;
+  if (!sPrefStore) {
+    sPrefStore.reset(new PrefStore());
+    ClearOnShutdown(&sPrefStore);
+  }
+  return *sPrefStore;
+}
+
+}  
+
+
+
+
+NS_IMPL_ISUPPORTS(PrincipalFlashClassifier, nsIURIClassifierCallback)
+
+PrincipalFlashClassifier::PrincipalFlashClassifier() { Reset(); }
+
+void PrincipalFlashClassifier::Reset() {
+  mAsyncClassified = false;
+  mMatchedTables.Clear();
+  mResult = FlashClassification::Unclassified;
+}
+
+void PrincipalFlashClassifier::GetClassificationTables(bool aIsThirdParty,
+                                                       nsACString& aTables) {
+  aTables.Truncate();
+  auto& prefs = GetPrefStore();
+
+  MaybeAddTableToTableList(prefs.mAllowTables, aTables);
+  MaybeAddTableToTableList(prefs.mAllowExceptionsTables, aTables);
+  MaybeAddTableToTableList(prefs.mDenyTables, aTables);
+  MaybeAddTableToTableList(prefs.mDenyExceptionsTables, aTables);
+
+  if (aIsThirdParty) {
+    MaybeAddTableToTableList(prefs.mSubDocDenyTables, aTables);
+    MaybeAddTableToTableList(prefs.mSubDocDenyExceptionsTables, aTables);
+  }
+}
+
+bool PrincipalFlashClassifier::EnsureUriClassifier() {
+  if (!mUriClassifier) {
+    mUriClassifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
+  }
+
+  return !!mUriClassifier;
+}
+
+FlashClassification PrincipalFlashClassifier::ClassifyMaybeSync(
+    nsIPrincipal* aPrincipal, bool aIsThirdParty) {
+  if (FlashClassification::Unclassified != mResult) {
+    
+    return mResult;
+  }
+
   
-  if (!StaticPrefs::plugins_http_https_only() &&
-      !StaticPrefs::plugins_flashBlock_enabled()) {
+  
+  if (!mAsyncClassified) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (!EnsureUriClassifier()) {
+      return FlashClassification::Denied;
+    }
+    mResult = CheckIfClassifyNeeded(aPrincipal);
+    if (FlashClassification::Unclassified != mResult) {
+      return mResult;
+    }
+
+    nsresult rv;
+    nsAutoCString classificationTables;
+    GetClassificationTables(aIsThirdParty, classificationTables);
+
+    if (!mClassificationURI) {
+      rv = aPrincipal->GetURI(getter_AddRefs(mClassificationURI));
+      if (NS_FAILED(rv) || !mClassificationURI) {
+        mResult = FlashClassification::Denied;
+        return mResult;
+      }
+    }
+
+    rv = mUriClassifier->ClassifyLocalWithTables(
+        mClassificationURI, classificationTables, mMatchedTables);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (rv == NS_ERROR_MALFORMED_URI) {
+        
+        
+        mResult = FlashClassification::Unknown;
+      } else {
+        mResult = FlashClassification::Denied;
+      }
+      return mResult;
+    }
+  }
+
+  
+  mResult = Resolve(aIsThirdParty);
+  MOZ_ASSERT(FlashClassification::Unclassified != mResult);
+
+  
+  
+  return mResult;
+}
+
+ nsresult PrincipalFlashClassifier::OnClassifyComplete(
+    nsresult ,
+    const nsACString& aLists,  
+    const nsACString& , const nsACString& ) {
+  mAsyncClassified = true;
+
+  if (FlashClassification::Unclassified != mResult) {
+    
+    return NS_OK;
+  }
+
+  
+  
+
+  
+  
+  
+  
+  nsACString::const_iterator begin, iter, end;
+  aLists.BeginReading(begin);
+  aLists.EndReading(end);
+  while (begin != end) {
+    iter = begin;
+    FindCharInReadable(',', iter, end);
+    nsDependentCSubstring table = Substring(begin, iter);
+    if (!table.IsEmpty()) {
+      mMatchedTables.AppendElement(Substring(begin, iter));
+    }
+    begin = iter;
+    if (begin != end) {
+      begin++;
+    }
+  }
+
+  return NS_OK;
+}
+
+
+
+FlashClassification PrincipalFlashClassifier::Resolve(bool aIsThirdParty) {
+  MOZ_ASSERT(FlashClassification::Unclassified == mResult,
+             "We already have resolved classification result.");
+
+  if (mMatchedTables.IsEmpty()) {
     return FlashClassification::Unknown;
   }
 
-  if (NodePrincipal()->GetIsNullPrincipal()) {
+  auto& prefs = GetPrefStore();
+  if (ArrayContainsTable(mMatchedTables, prefs.mDenyTables) &&
+      !ArrayContainsTable(mMatchedTables, prefs.mDenyExceptionsTables)) {
+    return FlashClassification::Denied;
+  } else if (ArrayContainsTable(mMatchedTables, prefs.mAllowTables) &&
+             !ArrayContainsTable(mMatchedTables,
+                                 prefs.mAllowExceptionsTables)) {
+    return FlashClassification::Allowed;
+  }
+
+  if (aIsThirdParty &&
+      ArrayContainsTable(mMatchedTables, prefs.mSubDocDenyTables) &&
+      !ArrayContainsTable(mMatchedTables, prefs.mSubDocDenyExceptionsTables)) {
+    return FlashClassification::Denied;
+  }
+
+  return FlashClassification::Unknown;
+}
+
+void PrincipalFlashClassifier::AsyncClassify(nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(FlashClassification::Unclassified == mResult,
+             "The old classification result should be reset first.");
+  Reset();
+  mResult = AsyncClassifyInternal(aPrincipal);
+}
+
+FlashClassification PrincipalFlashClassifier::CheckIfClassifyNeeded(
+    nsIPrincipal* aPrincipal) {
+  nsresult rv;
+
+  auto& prefs = GetPrefStore();
+
+  
+  if (prefs.mPluginsHttpOnly && !prefs.mFlashBlockEnabled) {
+    return FlashClassification::Unknown;
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = aPrincipal;
+  if (principal->GetIsNullPrincipal()) {
     return FlashClassification::Denied;
   }
 
   nsCOMPtr<nsIURI> classificationURI;
-  nsresult rv = NodePrincipal()->GetURI(getter_AddRefs(classificationURI));
+  rv = principal->GetURI(getter_AddRefs(classificationURI));
   if (NS_FAILED(rv) || !classificationURI) {
     return FlashClassification::Denied;
   }
 
-  if (StaticPrefs::plugins_http_https_only()) {
+  if (prefs.mPluginsHttpOnly) {
     
     
     
@@ -11998,12 +12368,117 @@ FlashClassification Document::DocumentFlashClassification() {
 
   
   
-  if (!StaticPrefs::plugins_flashBlock_enabled()) {
+  if (!prefs.mFlashBlockEnabled) {
     return FlashClassification::Unknown;
   }
 
-  if (mFlashClassification == FlashClassification::Unknown) {
-    mFlashClassification = DocumentFlashClassificationInternal();
+  return FlashClassification::Unclassified;
+}
+
+
+
+FlashClassification PrincipalFlashClassifier::AsyncClassifyInternal(
+    nsIPrincipal* aPrincipal) {
+  auto result = CheckIfClassifyNeeded(aPrincipal);
+  if (FlashClassification::Unclassified != result) {
+    return result;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString tables;
+  GetClassificationTables(true, tables);
+
+  if (tables.IsEmpty()) {
+    return FlashClassification::Unknown;
+  }
+
+  if (!EnsureUriClassifier()) {
+    return FlashClassification::Denied;
+  }
+
+  nsresult rv = aPrincipal->GetURI(getter_AddRefs(mClassificationURI));
+  if (NS_FAILED(rv) || !mClassificationURI) {
+    return FlashClassification::Denied;
+  }
+
+  
+  rv = mUriClassifier->AsyncClassifyLocalWithTables(
+      mClassificationURI, tables, nsTArray<nsCString>(), nsTArray<nsCString>(),
+      this);
+
+  if (NS_FAILED(rv)) {
+    if (rv == NS_ERROR_MALFORMED_URI) {
+      
+      
+      return FlashClassification::Unknown;
+    } else {
+      return FlashClassification::Denied;
+    }
+  }
+
+  return FlashClassification::Unclassified;
+}
+
+FlashClassification Document::ComputeFlashClassification() {
+  nsCOMPtr<nsIDocShellTreeItem> current = this->GetDocShell();
+  if (!current) {
+    return FlashClassification::Denied;
+  }
+  nsCOMPtr<nsIDocShellTreeItem> parent;
+  DebugOnly<nsresult> rv = current->GetSameTypeParent(getter_AddRefs(parent));
+  MOZ_ASSERT(NS_SUCCEEDED(rv),
+             "nsIDocShellTreeItem::GetSameTypeParent should never fail");
+
+  bool isTopLevel = !parent;
+  FlashClassification classification;
+  if (isTopLevel) {
+    classification = PrincipalFlashClassification();
+  } else {
+    nsCOMPtr<Document> parentDocument = GetParentDocument();
+    if (!parentDocument) {
+      return FlashClassification::Denied;
+    }
+    FlashClassification parentClassification =
+        parentDocument->DocumentFlashClassification();
+
+    if (parentClassification == FlashClassification::Denied) {
+      classification = FlashClassification::Denied;
+    } else {
+      classification = PrincipalFlashClassification();
+
+      
+      
+      if (classification == FlashClassification::Unknown &&
+          parentClassification == FlashClassification::Allowed) {
+        classification = FlashClassification::Allowed;
+      }
+    }
+  }
+
+  return classification;
+}
+
+
+
+
+
+
+
+
+
+FlashClassification Document::DocumentFlashClassification() {
+  if (mFlashClassification == FlashClassification::Unclassified) {
+    FlashClassification result = ComputeFlashClassification();
+    mFlashClassification = result;
+    MOZ_ASSERT(
+        result != FlashClassification::Unclassified,
+        "Document::GetPluginClassification should never return Unclassified");
   }
 
   return mFlashClassification;
@@ -12024,16 +12499,15 @@ FlashClassification Document::DocumentFlashClassification() {
 
 
 
-
-bool Document::IsThirdPartyForFlashClassifier() {
-  if (mIsThirdPartyForFlashClassifier.isSome()) {
-    return mIsThirdPartyForFlashClassifier.value();
+bool Document::IsThirdParty() {
+  if (mIsThirdParty.isSome()) {
+    return mIsThirdParty.value();
   }
 
   nsCOMPtr<nsIDocShellTreeItem> docshell = this->GetDocShell();
   if (!docshell) {
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
   }
 
   nsCOMPtr<nsIDocShellTreeItem> parent;
@@ -12043,20 +12517,20 @@ bool Document::IsThirdPartyForFlashClassifier() {
   bool isTopLevel = !parent;
 
   if (isTopLevel) {
-    mIsThirdPartyForFlashClassifier.emplace(false);
-    return mIsThirdPartyForFlashClassifier.value();
+    mIsThirdParty.emplace(false);
+    return mIsThirdParty.value();
   }
 
   nsCOMPtr<Document> parentDocument = GetParentDocument();
   if (!parentDocument) {
     
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
   }
 
-  if (parentDocument->IsThirdPartyForFlashClassifier()) {
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
+  if (parentDocument->IsThirdParty()) {
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
   }
 
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
@@ -12067,69 +12541,18 @@ bool Document::IsThirdPartyForFlashClassifier() {
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
   }
 
   if (!principalsMatch) {
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
   }
 
   
-  mIsThirdPartyForFlashClassifier.emplace(false);
-  return mIsThirdPartyForFlashClassifier.value();
-}
-
-FlashClassification Document::DocumentFlashClassificationInternal() {
-  FlashClassification classification = FlashClassification::Unknown;
-
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(GetChannel());
-  if (httpChannel) {
-    nsIHttpChannel::FlashPluginState state = nsIHttpChannel::FlashPluginUnknown;
-    httpChannel->GetFlashPluginState(&state);
-
-    
-    
-
-    if (state == nsIHttpChannel::FlashPluginDeniedInSubdocuments &&
-        IsThirdPartyForFlashClassifier()) {
-      return FlashClassification::Denied;
-    }
-
-    if (state == nsIHttpChannel::FlashPluginDenied) {
-      return FlashClassification::Denied;
-    }
-
-    if (state == nsIHttpChannel::FlashPluginAllowed) {
-      classification = FlashClassification::Allowed;
-    }
-  }
-
-  if (IsTopLevelContentDocument()) {
-    return classification;
-  }
-
-  Document* parentDocument = GetParentDocument();
-  if (!parentDocument) {
-    return FlashClassification::Denied;
-  }
-
-  FlashClassification parentClassification =
-      parentDocument->DocumentFlashClassification();
-
-  if (parentClassification == FlashClassification::Denied) {
-    return FlashClassification::Denied;
-  }
-
-  
-  
-  if (classification == FlashClassification::Unknown &&
-      parentClassification == FlashClassification::Allowed) {
-    return FlashClassification::Allowed;
-  }
-
-  return classification;
+  mIsThirdParty.emplace(false);
+  return mIsThirdParty.value();
 }
 
 void Document::ClearStaleServoData() {
