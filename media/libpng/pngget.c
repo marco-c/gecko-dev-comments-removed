@@ -26,7 +26,7 @@ png_get_valid(png_const_structrp png_ptr, png_const_inforp info_ptr,
    return(0);
 }
 
-png_size_t PNGAPI
+size_t PNGAPI
 png_get_rowbytes(png_const_structrp png_ptr, png_const_inforp info_ptr)
 {
    if (png_ptr != NULL && info_ptr != NULL)
@@ -741,8 +741,7 @@ png_get_iCCP(png_const_structrp png_ptr, png_inforp info_ptr,
 
    if (png_ptr != NULL && info_ptr != NULL &&
        (info_ptr->valid & PNG_INFO_iCCP) != 0 &&
-       name != NULL && compression_type != NULL && profile != NULL &&
-           proflen != NULL)
+       name != NULL && profile != NULL && proflen != NULL)
    {
       *name = info_ptr->iccp_name;
       *profile = info_ptr->iccp_profile;
@@ -750,11 +749,13 @@ png_get_iCCP(png_const_structrp png_ptr, png_inforp info_ptr,
       
 
 
-      *compression_type = PNG_COMPRESSION_TYPE_BASE;
+      if (compression_type != NULL)
+         *compression_type = PNG_COMPRESSION_TYPE_BASE;
       return (PNG_INFO_iCCP);
    }
 
    return (0);
+
 }
 #endif
 
@@ -1164,7 +1165,7 @@ png_get_user_chunk_ptr(png_const_structrp png_ptr)
 }
 #endif
 
-png_size_t PNGAPI
+size_t PNGAPI
 png_get_compression_buffer_size(png_const_structrp png_ptr)
 {
    if (png_ptr == NULL)

@@ -214,7 +214,7 @@ struct png_struct_def
    png_uint_32 height;        
    png_uint_32 num_rows;      
    png_uint_32 usr_width;     
-   png_size_t rowbytes;       
+   size_t rowbytes;           
    png_uint_32 iwidth;        
    png_uint_32 row_number;    
    png_uint_32 chunk_name;    
@@ -232,7 +232,7 @@ struct png_struct_def
    png_bytep try_row;    
    png_bytep tst_row;    
 #endif
-   png_size_t info_rowbytes;  
+   size_t info_rowbytes;      
 
    png_uint_32 idat_size;     
    png_uint_32 crc;           
@@ -328,10 +328,10 @@ struct png_struct_def
    png_bytep current_buffer;         
    png_uint_32 push_length;          
    png_uint_32 skip_length;          
-   png_size_t save_buffer_size;      
-   png_size_t save_buffer_max;       
-   png_size_t buffer_size;           
-   png_size_t current_buffer_size;   
+   size_t save_buffer_size;          
+   size_t save_buffer_max;           
+   size_t buffer_size;               
+   size_t current_buffer_size;       
    int process_mode;                 
    int cur_palette;                  
 
@@ -472,7 +472,7 @@ struct png_struct_def
 #endif
 
 
-  png_size_t old_big_row_buf_size;
+   size_t old_big_row_buf_size;
 
 #ifdef PNG_READ_SUPPORTED
 

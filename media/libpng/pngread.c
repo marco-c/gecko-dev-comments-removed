@@ -1612,7 +1612,7 @@ png_image_begin_read_from_file(png_imagep image, const char *file_name)
 #endif 
 
 static void PNGCBAPI
-png_image_memory_read(png_structp png_ptr, png_bytep out, png_size_t need)
+png_image_memory_read(png_structp png_ptr, png_bytep out, size_t need)
 {
    if (png_ptr != NULL)
    {
@@ -1623,7 +1623,7 @@ png_image_memory_read(png_structp png_ptr, png_bytep out, png_size_t need)
          if (cp != NULL)
          {
             png_const_bytep memory = cp->memory;
-            png_size_t size = cp->size;
+            size_t size = cp->size;
 
             if (memory != NULL && size >= need)
             {
@@ -1642,7 +1642,7 @@ png_image_memory_read(png_structp png_ptr, png_bytep out, png_size_t need)
 }
 
 int PNGAPI png_image_begin_read_from_memory(png_imagep image,
-    png_const_voidp memory, png_size_t size)
+    png_const_voidp memory, size_t size)
 {
    if (image != NULL && image->version == PNG_IMAGE_VERSION)
    {

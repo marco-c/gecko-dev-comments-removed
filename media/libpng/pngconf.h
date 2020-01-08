@@ -518,6 +518,8 @@
 
 
 
+
+
 typedef size_t png_size_t;
 typedef ptrdiff_t png_ptrdiff_t;
 
@@ -549,11 +551,10 @@ typedef ptrdiff_t png_ptrdiff_t;
 
 
 
-
 #ifdef PNG_SMALL_SIZE_T
    typedef png_uint_32 png_alloc_size_t;
 #else
-   typedef png_size_t png_alloc_size_t;
+   typedef size_t png_alloc_size_t;
 #endif
 
 
@@ -589,8 +590,8 @@ typedef char                  * png_charp;
 typedef const char            * png_const_charp;
 typedef png_fixed_point       * png_fixed_point_p;
 typedef const png_fixed_point * png_const_fixed_point_p;
-typedef png_size_t            * png_size_tp;
-typedef const png_size_t      * png_const_size_tp;
+typedef size_t                * png_size_tp;
+typedef const size_t          * png_const_size_tp;
 
 #ifdef PNG_STDIO_SUPPORTED
 typedef FILE            * png_FILE_p;

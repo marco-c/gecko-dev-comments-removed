@@ -71,7 +71,7 @@ void png_read_filter_row_sub3_sse2(png_row_infop row_info, png_bytep row,
 
 
 
-   png_size_t rb;
+   size_t rb;
 
    __m128i a, d = _mm_setzero_si128();
 
@@ -104,7 +104,7 @@ void png_read_filter_row_sub4_sse2(png_row_infop row_info, png_bytep row,
 
 
 
-   png_size_t rb;
+   size_t rb;
 
    __m128i a, d = _mm_setzero_si128();
 
@@ -131,7 +131,7 @@ void png_read_filter_row_avg3_sse2(png_row_infop row_info, png_bytep row,
 
 
 
-   png_size_t rb;
+   size_t rb;
 
    const __m128i zero = _mm_setzero_si128();
 
@@ -185,7 +185,7 @@ void png_read_filter_row_avg4_sse2(png_row_infop row_info, png_bytep row,
 
 
 
-   png_size_t rb;
+   size_t rb;
    const __m128i zero = _mm_setzero_si128();
    __m128i    b;
    __m128i a, d = zero;
@@ -257,7 +257,7 @@ void png_read_filter_row_paeth3_sse2(png_row_infop row_info, png_bytep row,
 
 
 
-   png_size_t rb;
+   size_t rb;
    const __m128i zero = _mm_setzero_si128();
    __m128i c, b = zero,
            a, d = zero;
@@ -356,7 +356,7 @@ void png_read_filter_row_paeth4_sse2(png_row_infop row_info, png_bytep row,
 
 
 
-   png_size_t rb;
+   size_t rb;
    const __m128i zero = _mm_setzero_si128();
    __m128i pa,pb,pc,smallest,nearest;
    __m128i c, b = zero,

@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_34 Your_png_h_is_not_version_1_6_34;
+typedef png_libpng_version_1_6_35 Your_png_h_is_not_version_1_6_35;
 
 #ifdef __GNUC__
 
@@ -71,7 +71,7 @@ png_set_sig_bytes(png_structrp png_ptr, int num_bytes)
 
 
 int PNGAPI
-png_sig_cmp(png_const_bytep sig, png_size_t start, png_size_t num_to_check)
+png_sig_cmp(png_const_bytep sig, size_t start, size_t num_to_check)
 {
    png_byte png_signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
@@ -136,7 +136,7 @@ png_reset_crc(png_structrp png_ptr)
 
 
 void 
-png_calculate_crc(png_structrp png_ptr, png_const_bytep ptr, png_size_t length)
+png_calculate_crc(png_structrp png_ptr, png_const_bytep ptr, size_t length)
 {
    int need_crc = 1;
 
@@ -421,7 +421,7 @@ png_destroy_info_struct(png_const_structrp png_ptr, png_infopp info_ptr_ptr)
 
 
 PNG_FUNCTION(void,PNGAPI
-png_info_init_3,(png_infopp ptr_ptr, png_size_t png_info_struct_size),
+png_info_init_3,(png_infopp ptr_ptr, size_t png_info_struct_size),
     PNG_DEPRECATED)
 {
    png_inforp info_ptr = *ptr_ptr;
@@ -816,21 +816,21 @@ png_get_copyright(png_const_structrp png_ptr)
 #else
 #  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.34+apng - September 29, 2017" PNG_STRING_NEWLINE \
-      "Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson" \
+      "libpng version 1.6.35+apng - July 15, 2018" PNG_STRING_NEWLINE \
+      "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
       "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
       PNG_STRING_NEWLINE \
       "Portions Copyright (c) 2006-2007 Andrew Smith" PNG_STRING_NEWLINE \
-      "Portions Copyright (c) 2008-2017 Max Stepin" PNG_STRING_NEWLINE ;
+      "Portions Copyright (c) 2008-2018 Max Stepin" PNG_STRING_NEWLINE ;
 #  else
-   return "libpng version 1.6.34+apng - September 29, 2017\
-      Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson\
+   return "libpng version 1.6.35+apng - July 15, 2018\
+      Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson\
       Copyright (c) 1996-1997 Andreas Dilger\
       Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\
       Portions Copyright (c) 2006-2007 Andrew Smith\
-      Portions Copyright (c) 2008-2017 Max Stepin";
+      Portions Copyright (c) 2008-2018 Max Stepin";
 #  endif
 #endif
 }
@@ -2719,11 +2719,11 @@ png_check_IHDR(png_const_structrp png_ptr,
 #define png_fp_set(state, value) ((state) = (value) | ((state) & PNG_FP_STICKY))
 
 int 
-png_check_fp_number(png_const_charp string, png_size_t size, int *statep,
+png_check_fp_number(png_const_charp string, size_t size, int *statep,
     png_size_tp whereami)
 {
    int state = *statep;
-   png_size_t i = *whereami;
+   size_t i = *whereami;
 
    while (i < size)
    {
@@ -2846,10 +2846,10 @@ PNG_FP_End:
 
 
 int
-png_check_fp_string(png_const_charp string, png_size_t size)
+png_check_fp_string(png_const_charp string, size_t size)
 {
    int        state=0;
-   png_size_t char_index=0;
+   size_t char_index=0;
 
    if (png_check_fp_number(string, size, &state, &char_index) != 0 &&
       (char_index == size || string[char_index] == 0))
@@ -2910,7 +2910,7 @@ png_pow10(int power)
 #pragma GCC diagnostic warning "-Wstrict-overflow=2"
 #endif 
 void 
-png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
+png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, size_t size,
     double fp, unsigned int precision)
 {
    
@@ -3241,7 +3241,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
 void 
 png_ascii_from_fixed(png_const_structrp png_ptr, png_charp ascii,
-    png_size_t size, png_fixed_point fp)
+    size_t size, png_fixed_point fp)
 {
    
 
@@ -4348,7 +4348,7 @@ png_set_option(png_structrp png_ptr, int option, int onoff)
       png_uint_32 setting = (2U + (onoff != 0)) << option;
       png_uint_32 current = png_ptr->options;
 
-      png_ptr->options = (png_uint_32)(((current & ~mask) | setting) & 0xff);
+      png_ptr->options = (png_uint_32)((current & ~mask) | setting);
 
       return (int)(current & mask) >> option;
    }

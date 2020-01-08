@@ -55,10 +55,10 @@
 struct png_info_def
 {
    
-   png_uint_32 width;  
-   png_uint_32 height; 
-   png_uint_32 valid;  
-   png_size_t rowbytes; 
+   png_uint_32 width;       
+   png_uint_32 height;      
+   png_uint_32 valid;       
+   size_t rowbytes;         
    png_colorp palette;      
    png_uint_16 num_palette; 
    png_uint_16 num_trans;   
