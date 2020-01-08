@@ -1757,7 +1757,7 @@ nsPresContext::RefreshSystemMetrics()
   
   
   
-  MediaFeatureValuesChanged({
+  MediaFeatureValuesChangedAllDocuments({
     eRestyle_ForceDescendants,
     NS_STYLE_HINT_REFLOW,
     MediaFeatureChangeReason::SystemMetricsChange,
