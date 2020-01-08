@@ -591,6 +591,7 @@ WebRenderBridgeParent::RecvUpdateResources(nsTArray<OpUpdateResource>&& aResourc
   }
 
   wr::TransactionBuilder txn;
+  txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
   if (!UpdateResources(aResourceUpdates, aSmallShmems, aLargeShmems, txn)) {
     wr::IpcResourceUpdateQueue::ReleaseShmems(this, aSmallShmems);
@@ -778,6 +779,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
   
   bool validTransaction = aIdNamespace == mIdNamespace;
   wr::TransactionBuilder txn;
+  txn.SetLowPriority(!IsRootWebRenderBridgeParent());
   Maybe<wr::AutoTransactionSender> sender;
   if (validTransaction) {
     sender.emplace(mApi, &txn);
@@ -883,6 +885,7 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
   if (!aCommands.IsEmpty()) {
     mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
     wr::TransactionBuilder txn;
+    txn.SetLowPriority(!IsRootWebRenderBridgeParent());
     wr::Epoch wrEpoch = GetNextWrEpoch();
     txn.UpdateEpoch(mPipelineId, wrEpoch);
     if (!ProcessWebRenderParentCommands(aCommands, txn)) {
@@ -946,6 +949,7 @@ WebRenderBridgeParent::RecvParentCommands(nsTArray<WebRenderParentCommand>&& aCo
     return IPC_OK();
   }
   wr::TransactionBuilder txn;
+  txn.SetLowPriority(!IsRootWebRenderBridgeParent());
   if (!ProcessWebRenderParentCommands(aCommands, txn)) {
     return IPC_FAIL(this, "Invalid parent command found");
   }
@@ -1264,6 +1268,7 @@ WebRenderBridgeParent::RecvClearCachedResources()
 
   
   wr::TransactionBuilder txn;
+  txn.SetLowPriority(true);
   txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
   mApi->SendTransaction(txn);
   
@@ -1539,10 +1544,12 @@ WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame)
   
   
   
-  wr::TransactionBuilder fastTxn( false);
+  bool useSceneBuilderThread = false;
+  wr::TransactionBuilder fastTxn(useSceneBuilderThread);
 
   
   wr::TransactionBuilder sceneBuilderTxn;
+  sceneBuilderTxn.SetLowPriority(!IsRootWebRenderBridgeParent());
   wr::AutoTransactionSender sender(mApi, &sceneBuilderTxn);
 
   
@@ -1721,6 +1728,7 @@ WebRenderBridgeParent::ClearResources()
   wr::Epoch wrEpoch = GetNextWrEpoch();
 
   wr::TransactionBuilder txn;
+  txn.SetLowPriority(true);
   txn.ClearDisplayList(wrEpoch, mPipelineId);
   mReceivedDisplayList = false;
 
