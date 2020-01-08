@@ -638,7 +638,11 @@ WebRenderLayerManager::FlushRendering()
   MOZ_ASSERT(mWidget);
 
   
-  if (WrBridge()->GetCompositorUseDComp()) {
+  bool resizing = mWidget && mWidget->IsResizingNativeWidget().valueOr(true);
+
+  
+  
+  if (WrBridge()->GetCompositorUseDComp() && !resizing) {
     cBridge->SendFlushRenderingAsync();
   } else if (mWidget->SynchronouslyRepaintOnResize() || gfxPrefs::LayersForceSynchronousResize()) {
     cBridge->SendFlushRendering();
