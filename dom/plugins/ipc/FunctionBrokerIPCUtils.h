@@ -48,7 +48,9 @@ enum FunctionHookId
   , ID_FreeCredentialsHandle
   , ID_PrintDlgW
   , ID_CreateMutexW
+#if defined(MOZ_SANDBOX)
   , ID_GetFileAttributesW
+#endif 
   , ID_FunctionHookCount
 #else 
     ID_FunctionHookCount
