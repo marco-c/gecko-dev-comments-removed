@@ -64,6 +64,11 @@ LSDatabaseChild::RecvRequestAllowToClose()
 
   if (mDatabase) {
     mDatabase->AllowToClose();
+
+    
+    
+    
+    
   }
 
   return IPC_OK();

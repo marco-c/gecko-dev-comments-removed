@@ -167,6 +167,12 @@ LSObject::Create(nsPIDOMWindowInner* aWindow,
     quotaInfo.origin() = origin;
 
     *info = quotaInfo;
+
+    
+    nsCOMPtr<mozIStorageService> ss;
+    if (NS_WARN_IF(!(ss = do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID)))) {
+      return NS_ERROR_FAILURE;
+    }
   } else {
     PrincipalInfo principalInfo;
     rv = PrincipalToPrincipalInfo(principal, &principalInfo);
