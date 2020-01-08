@@ -741,6 +741,13 @@ LogicalSize nsRangeFrame::ComputeAutoSize(
 }
 
 nscoord nsRangeFrame::GetMinISize(gfxContext* aRenderingContext) {
+  auto pos = StylePosition();
+  auto wm = GetWritingMode();
+  if (pos->ISize(wm).HasPercent()) {
+    
+    
+    return nsLayoutUtils::ResolveToLength<true>(pos->ISize(wm), nscoord(0));
+  }
   return GetPrefISize(aRenderingContext);
 }
 
