@@ -4644,6 +4644,11 @@ pref("image.animated.decode-on-demand.batch-size", 6);
 
 
 
+
+pref("image.animated.decode-on-demand.recycle", true);
+
+
+
 pref("image.animated.generate-full-frames", false);
 
 
