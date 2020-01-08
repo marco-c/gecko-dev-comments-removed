@@ -244,17 +244,9 @@ class Arena
 
 
 
-
-
-
-
-
-
-
     size_t hasDelayedMarking : 1;
-    size_t markOverflow : 1;
-    size_t auxNextLink : JS_BITS_PER_WORD - 8 - 1 - 1;
-    static_assert(ArenaShift >= 8 + 1 + 1,
+    size_t auxNextLink : JS_BITS_PER_WORD - 8 - 1;
+    static_assert(ArenaShift >= 8 + 1,
                   "Arena::auxNextLink packing assumes that ArenaShift has "
                   "enough bits to cover allocKind and hasDelayedMarking.");
 
@@ -304,7 +296,6 @@ class Arena
         zone = nullptr;
         allocKind = size_t(AllocKind::LIMIT);
         hasDelayedMarking = 0;
-        markOverflow = 0;
         auxNextLink = 0;
         bufferedCells_ = nullptr;
     }
