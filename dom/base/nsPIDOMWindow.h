@@ -260,6 +260,16 @@ public:
   }
 
   
+
+
+
+
+  void SetHasTextEventListenerInDefaultGroup()
+  {
+    mMayHaveTextEventListenerInDefaultGroup = true;
+  }
+
+  
   
   
   
@@ -677,6 +687,9 @@ protected:
   bool mMayHaveSelectionChangeEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
+  
+  
+  bool mMayHaveTextEventListenerInDefaultGroup;
 
   bool mAudioCaptured;
 
