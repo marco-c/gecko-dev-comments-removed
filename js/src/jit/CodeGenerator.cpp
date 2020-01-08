@@ -2880,10 +2880,19 @@ CodeGenerator::visitNullarySharedStub(LNullarySharedStub* lir)
         emitSharedStub(ICStub::Kind::NewArray_Fallback, lir);
         break;
       }
-      case JSOP_NEWINIT:
       case JSOP_NEWOBJECT:
         emitSharedStub(ICStub::Kind::NewObject_Fallback, lir);
         break;
+      case JSOP_NEWINIT: {
+        JSProtoKey key = JSProtoKey(GET_UINT8(pc));
+        if (key == JSProto_Array) {
+            masm.move32(Imm32(0), R0.scratchReg());
+            emitSharedStub(ICStub::Kind::NewArray_Fallback, lir);
+        } else {
+            emitSharedStub(ICStub::Kind::NewObject_Fallback, lir);
+        }
+        break;
+      }
       default:
         MOZ_CRASH("Unsupported jsop in shared stubs.");
     }
@@ -13580,22 +13589,13 @@ CodeGenerator::visitIsPackedArray(LIsPackedArray* lir)
     Register output = ToRegister(lir->output());
     Register elementsTemp = ToRegister(lir->temp());
 
-    Label notPacked, done;
-
     
     masm.loadPtr(Address(array, NativeObject::offsetOfElements()), elementsTemp);
     masm.load32(Address(elementsTemp, ObjectElements::offsetOfLength()), output);
 
     
     Address initLength(elementsTemp, ObjectElements::offsetOfInitializedLength());
-    masm.branch32(Assembler::NotEqual, initLength, output, &notPacked);
-
-    masm.move32(Imm32(1), output);
-    masm.jump(&done);
-    masm.bind(&notPacked);
-    masm.move32(Imm32(0), output);
-
-    masm.bind(&done);
+    masm.cmp32Set(Assembler::Equal, initLength, output, output);
 }
 
 typedef bool (*GetPrototypeOfFn)(JSContext*, HandleObject, MutableHandleValue);
