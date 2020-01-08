@@ -379,7 +379,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
         uint8_t* bump_;
 
         friend class BumpChunk;
-        Mark(BumpChunk* chunk, uint8_t* bump)
+        explicit Mark(BumpChunk* chunk, uint8_t* bump)
           : chunk_(chunk), bump_(bump)
         {}
 
@@ -534,22 +534,12 @@ class LifoAlloc
     BumpChunkList chunks_;
 
     
-    
-    
-    
-    
-    
-    BumpChunkList oversize_;
-
-    
     BumpChunkList unused_;
 
     size_t      markCount;
     size_t      defaultChunkSize_;
-    size_t      oversizeThreshold_;
     size_t      curSize_;
     size_t      peakSize_;
-    size_t      oversizeSize_;
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
     bool        fallibleScope_;
 #endif
@@ -558,11 +548,11 @@ class LifoAlloc
     LifoAlloc(const LifoAlloc&) = delete;
 
     
-    UniqueBumpChunk newChunkWithCapacity(size_t n, bool oversize);
+    UniqueBumpChunk newChunkWithCapacity(size_t n);
 
     
     
-    UniqueBumpChunk getOrCreateChunk(size_t n);
+    MOZ_MUST_USE bool getOrCreateChunk(size_t n);
 
     void reset(size_t defaultChunkSize);
 
@@ -594,25 +584,22 @@ class LifoAlloc
         curSize_ -= size;
     }
 
-    void* allocImplColdPath(size_t n);
-    void* allocImplOversize(size_t n);
-
     MOZ_ALWAYS_INLINE
     void* allocImpl(size_t n) {
         void* result;
-        
-        
-        if (MOZ_UNLIKELY(n > oversizeThreshold_)) {
-            return allocImplOversize(n);
-        }
-        if (MOZ_LIKELY(!chunks_.empty() && (result = chunks_.last()->tryAlloc(n)))) {
+        if (!chunks_.empty() && (result = chunks_.last()->tryAlloc(n))) {
             return result;
         }
-        return allocImplColdPath(n);
-    }
 
-    
-    MOZ_MUST_USE bool ensureUnusedApproximateColdPath(size_t n, size_t total);
+        if (!getOrCreateChunk(n)) {
+            return nullptr;
+        }
+
+        
+        result = chunks_.last()->tryAlloc(n);
+        MOZ_ASSERT(result);
+        return result;
+    }
 
   public:
     explicit LifoAlloc(size_t defaultChunkSize)
@@ -625,17 +612,25 @@ class LifoAlloc
     }
 
     
-    
-    void disableOversize() {
-        oversizeThreshold_ = SIZE_MAX;
-    }
-    void setOversizeThreshold(size_t oversizeThreshold) {
-        MOZ_ASSERT(oversizeThreshold <= defaultChunkSize_);
-        oversizeThreshold_ = oversizeThreshold;
-    }
+    void steal(LifoAlloc* other) {
+        MOZ_ASSERT(!other->markCount);
+        MOZ_DIAGNOSTIC_ASSERT(unused_.empty());
+        MOZ_DIAGNOSTIC_ASSERT(chunks_.empty());
 
-    
-    void steal(LifoAlloc* other);
+        
+        
+        chunks_ = std::move(other->chunks_);
+        unused_ = std::move(other->unused_);
+        markCount = other->markCount;
+        defaultChunkSize_ = other->defaultChunkSize_;
+        curSize_ = other->curSize_;
+        peakSize_ = Max(peakSize_, other->peakSize_);
+#if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
+        fallibleScope_ = other->fallibleScope_;
+#endif
+
+        other->reset(defaultChunkSize_);
+    }
 
     
     void transferFrom(LifoAlloc* other);
@@ -671,7 +666,7 @@ class LifoAlloc
 
     template<typename T, typename... Args>
     MOZ_ALWAYS_INLINE T*
-    newWithSize(size_t n, Args&&... args)
+    allocInSize(size_t n, Args&&... args)
     {
         MOZ_ASSERT(n >= sizeof(T), "must request enough space to store a T");
         static_assert(alignof(T) <= detail::LIFO_ALLOC_ALIGN,
@@ -708,7 +703,21 @@ class LifoAlloc
             }
         }
 
-        return ensureUnusedApproximateColdPath(n, total);
+        for (detail::BumpChunk& bc : unused_) {
+            total += bc.unused();
+            if (total >= n) {
+                return true;
+            }
+        }
+
+        UniqueBumpChunk newChunk = newChunkWithCapacity(n);
+        if (!newChunk) {
+            return false;
+        }
+        size_t size = newChunk->computedSizeOfIncludingThis();
+        unused_.pushFront(std::move(newChunk));
+        incrementCurSize(size);
+        return true;
     }
 
     MOZ_ALWAYS_INLINE
@@ -760,13 +769,38 @@ class LifoAlloc
         return static_cast<T*>(alloc(bytes));
     }
 
-    class Mark {
-        friend class LifoAlloc;
-        detail::BumpChunk::Mark chunk;
-        detail::BumpChunk::Mark oversize;
-    };
-    Mark mark();
-    void release(Mark mark);
+    using Mark = detail::BumpChunk::Mark;
+
+    Mark mark() {
+        markCount++;
+        if (chunks_.empty()) {
+            return Mark();
+        }
+        return chunks_.last()->mark();
+    }
+
+    void release(Mark mark) {
+        markCount--;
+
+        
+        BumpChunkList released;
+        if (!mark.markedChunk()) {
+            released = std::move(chunks_);
+        } else {
+            released = chunks_.splitAfter(mark.markedChunk());
+        }
+
+        
+        for (detail::BumpChunk& bc : released) {
+            bc.release();
+        }
+        unused_.appendAll(std::move(released));
+
+        
+        if (!chunks_.empty()) {
+            chunks_.last()->release(mark);
+        }
+    }
 
     void releaseAll() {
         MOZ_ASSERT(!markCount);
@@ -774,19 +808,26 @@ class LifoAlloc
             bc.release();
         }
         unused_.appendAll(std::move(chunks_));
-        
-        
-        while (!oversize_.empty()) {
-            UniqueBumpChunk bc = oversize_.popFirst();
-            decrementCurSize(bc->computedSizeOfIncludingThis());
-            oversizeSize_ -= bc->computedSizeOfIncludingThis();
-        }
     }
 
     
 #ifdef LIFO_CHUNK_PROTECT
-    void setReadOnly();
-    void setReadWrite();
+    void setReadOnly() {
+        for (detail::BumpChunk& bc : chunks_) {
+            bc.setReadOnly();
+        }
+        for (detail::BumpChunk& bc : unused_) {
+            bc.setReadOnly();
+        }
+    }
+    void setReadWrite() {
+        for (detail::BumpChunk& bc : chunks_) {
+            bc.setReadWrite();
+        }
+        for (detail::BumpChunk& bc : unused_) {
+            bc.setReadWrite();
+        }
+    }
 #else
     void setReadOnly() const {}
     void setReadWrite() const {}
@@ -803,10 +844,8 @@ class LifoAlloc
 
     
     bool isEmpty() const {
-        bool empty = chunks_.empty() ||
-            (chunks_.begin() == chunks_.last() && chunks_.last()->empty());
-        MOZ_ASSERT_IF(!oversize_.empty(), !oversize_.last()->empty());
-        return empty && oversize_.empty();
+        return chunks_.empty() ||
+               (chunks_.begin() == chunks_.last() && chunks_.last()->empty());
     }
 
     
@@ -824,9 +863,6 @@ class LifoAlloc
         for (const detail::BumpChunk& chunk : chunks_) {
             n += chunk.sizeOfIncludingThis(mallocSizeOf);
         }
-        for (const detail::BumpChunk& chunk : oversize_) {
-            n += chunk.sizeOfIncludingThis(mallocSizeOf);
-        }
         for (const detail::BumpChunk& chunk : unused_) {
             n += chunk.sizeOfIncludingThis(mallocSizeOf);
         }
@@ -837,9 +873,6 @@ class LifoAlloc
     size_t computedSizeOfExcludingThis() const {
         size_t n = 0;
         for (const detail::BumpChunk& chunk : chunks_) {
-            n += chunk.computedSizeOfIncludingThis();
-        }
-        for (const detail::BumpChunk& chunk : oversize_) {
             n += chunk.computedSizeOfIncludingThis();
         }
         for (const detail::BumpChunk& chunk : unused_) {
@@ -870,11 +903,6 @@ class LifoAlloc
 #ifdef DEBUG
     bool contains(void* ptr) const {
         for (const detail::BumpChunk& chunk : chunks_) {
-            if (chunk.contains(ptr)) {
-                return true;
-            }
-        }
-        for (const detail::BumpChunk& chunk : oversize_) {
             if (chunk.contains(ptr)) {
                 return true;
             }
@@ -919,7 +947,6 @@ class LifoAlloc
             chunkEnd_(alloc.chunks_.end()),
             head_(nullptr)
         {
-            MOZ_RELEASE_ASSERT(alloc.oversize_.empty());
             if (chunkIt_ != chunkEnd_) {
                 head_ = chunkIt_->begin();
             }
