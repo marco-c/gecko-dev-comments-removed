@@ -4,11 +4,9 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "Ci", "chrome", true);
 loader.lazyRequireGetter(this, "colorUtils", "devtools/shared/css/color", true);
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
 loader.lazyRequireGetter(this, "InspectorActorUtils", "devtools/server/actors/inspector/utils");
-loader.lazyRequireGetter(this, "Services");
 
 
 
@@ -64,35 +62,4 @@ function getContrastRatioFor(node) {
   };
 }
 
-
-
-
-
-
-
-
-
-function isDefunct(accessible) {
-  
-  
-  if (!Services.appinfo.accessibilityEnabled) {
-    return true;
-  }
-
-  let defunct = false;
-
-  try {
-    const extraState = {};
-    accessible.getState({}, extraState);
-    
-    
-    defunct = !!(extraState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT);
-  } catch (e) {
-    defunct = true;
-  }
-
-  return defunct;
-}
-
 exports.getContrastRatioFor = getContrastRatioFor;
-exports.isDefunct = isDefunct;
