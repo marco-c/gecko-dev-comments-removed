@@ -219,7 +219,7 @@ task_description_schema = Schema({
 
     
     'worker': Any({
-        Required('implementation'): Any('docker-worker', 'docker-engine'),
+        Required('implementation'): 'docker-worker',
         Required('os'): 'linux',
 
         
