@@ -262,8 +262,7 @@ OnFifoEnabledChange(const char* , void* )
   LOG("%s changed", FifoWatcher::kPrefName);
   if (SetupFifo()) {
     Preferences::UnregisterCallback(OnFifoEnabledChange,
-                                    FifoWatcher::kPrefName,
-                                    nullptr);
+                                    FifoWatcher::kPrefName);
   }
 }
 
@@ -304,8 +303,7 @@ nsMemoryInfoDumper::Initialize()
     
     
     Preferences::RegisterCallback(OnFifoEnabledChange,
-                                  FifoWatcher::kPrefName,
-                                  nullptr);
+                                  FifoWatcher::kPrefName);
   }
 #endif
 }
