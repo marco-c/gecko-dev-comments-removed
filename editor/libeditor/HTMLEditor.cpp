@@ -871,10 +871,10 @@ HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
       aKeyboardEvent->PreventDefault(); 
       if (aKeyboardEvent->IsShift()) {
         
-        return OnInputLineBreak();
+        return InsertLineBreakAsAction();
       }
       
-      return OnInputParagraphSeparator();
+      return InsertParagraphSeparatorAsAction();
   }
 
   if (!aKeyboardEvent->IsInputtingText()) {
@@ -1123,7 +1123,7 @@ HTMLEditor::UpdateBaseURL()
 }
 
 nsresult
-HTMLEditor::OnInputLineBreak()
+HTMLEditor::InsertLineBreakAsAction()
 {
   AutoEditActionDataSetter editActionData(*this, EditAction::eInsertLineBreak);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
