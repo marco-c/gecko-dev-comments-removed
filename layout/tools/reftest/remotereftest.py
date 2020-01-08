@@ -176,9 +176,12 @@ class RemoteReftest(RefTest):
         
         
         self.outputHandler.write = self.outputHandler.__call__
-        self.automation = RemoteAutomation(self.device, options.app, self.remoteProfile,
-                                           options.remoteLogFile, processArgs=None)
-        self.automation._processArgs['messageLogger'] = self.outputHandler
+        args = {'messageLogger': self.outputHandler}
+        self.automation = RemoteAutomation(self.device,
+                                           appName=options.app,
+                                           remoteProfile=self.remoteProfile,
+                                           remoteLog=options.remoteLogFile,
+                                           processArgs=args)
 
         self.environment = self.automation.environment
         if self.automation.IS_DEBUG_BUILD:
