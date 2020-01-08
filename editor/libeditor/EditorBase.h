@@ -1046,7 +1046,7 @@ protected:
 
 
 
-  already_AddRefed<Element> CreateHTMLContent(nsAtom* aTag);
+  already_AddRefed<Element> CreateHTMLContent(const nsAtom* aTag);
 
   
 

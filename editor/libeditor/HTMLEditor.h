@@ -183,6 +183,22 @@ public:
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element> CreateElementWithDefaults(const nsAtom& aTagName);
+
+  
+
+
   nsresult IndentAsAction();
   nsresult OutdentAsAction();
 
@@ -1477,10 +1493,7 @@ protected:
                                        const nsAString& aValue);
   typedef enum { eInserted, eAppended } InsertedOrAppended;
   void DoContentInserted(nsIContent* aChild, InsertedOrAppended);
-  
-  
-  already_AddRefed<Element> CreateElementWithDefaults(
-                              const nsAString& aTagName);
+
   
 
 
