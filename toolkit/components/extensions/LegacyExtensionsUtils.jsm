@@ -131,6 +131,7 @@ class EmbeddedExtension {
 
 
 
+
   startup(reason, addonData = {}) {
     if (this.started) {
       return Promise.reject(new Error("This embedded extension has already been started"));
@@ -150,7 +151,7 @@ class EmbeddedExtension {
         id: this.addonId,
         resourceURI: embeddedExtensionURI,
         version: this.version,
-      });
+      }, reason);
 
       this.extension.isEmbedded = true;
 
@@ -190,7 +191,7 @@ class EmbeddedExtension {
 
       
       
-      this.extension.startup(reason).catch((err) => {
+      this.extension.startup().catch((err) => {
         this.started = false;
         this.startupPromise = null;
         this.extension.off("startup", onBeforeStarted);
@@ -203,6 +204,7 @@ class EmbeddedExtension {
   }
 
   
+
 
 
 
