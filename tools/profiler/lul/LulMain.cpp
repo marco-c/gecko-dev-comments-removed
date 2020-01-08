@@ -1421,9 +1421,7 @@ LUL::Unwind(uintptr_t* aFramePCs,
 
     }
 
-#if defined(GP_PLAT_amd64_linux)
-    
-    
+#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux)
     
     
 
