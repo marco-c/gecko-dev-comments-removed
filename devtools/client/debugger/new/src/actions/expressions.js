@@ -217,9 +217,15 @@ function getMappedExpression(expression) {
     sourceMaps
   }) {
     const mappings = (0, _selectors.getSelectedScopeMappings)(getState());
-    const bindings = (0, _selectors.getSelectedFrameBindings)(getState());
+    const bindings = (0, _selectors.getSelectedFrameBindings)(getState()); 
+    
+    
+    
+    
+    
+    
 
-    if (!mappings && !bindings && !expression.includes("await")) {
+    if (!mappings && !expression.match(/(await|=)/)) {
       return expression;
     }
 
