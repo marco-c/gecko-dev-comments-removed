@@ -1117,10 +1117,11 @@ PREF("media.navigator.hardware.vp8_decode.acceleration_enabled", bool, false)
 
 
 VARCACHE_PREF(
-  "media.navigator.mediadatadecoder_enabled",
-   MediaNavigatorMediadatadecoderEnabled,
-  bool, false
+  "media.navigator.mediadatadecoder_vpx_enabled",
+   MediaNavigatorMediadatadecoderVPXEnabled,
+  RelaxedAtomicBool, false
 )
+
 
 
 # if defined(ANDROID)
