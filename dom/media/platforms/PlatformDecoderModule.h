@@ -13,6 +13,7 @@
 #include "MediaInfo.h"
 #include "MediaResult.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
@@ -158,6 +159,15 @@ private:
     Set(std::forward<T2>(a2), std::forward<Ts>(args)...);
   }
 };
+
+
+
+template <>
+struct MaxEnumValue<::mozilla::CreateDecoderParams::Option>
+{
+  static constexpr unsigned int value = static_cast<unsigned int>(CreateDecoderParams::Option::HardwareDecoderNotAllowed);
+};
+
 
 
 

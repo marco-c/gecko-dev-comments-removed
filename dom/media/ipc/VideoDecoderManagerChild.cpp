@@ -116,14 +116,15 @@ VideoDecoderManagerChild::GetManagerAbstractThread()
 }
 
 PVideoDecoderChild*
-VideoDecoderManagerChild::AllocPVideoDecoderChild(const VideoInfo& aVideoInfo,
-                                                  const float& aFramerate,
-                                                  const bool& aDisallowHWDecoder,
-                                                  const layers::TextureFactoryIdentifier& aIdentifier,
-                                                  bool* aSuccess,
-                                                  nsCString* ,
-                                                  nsCString* ,
-                                                  nsCString* )
+VideoDecoderManagerChild::AllocPVideoDecoderChild(
+  const VideoInfo& aVideoInfo,
+  const float& aFramerate,
+  const CreateDecoderParams::OptionSet& aOptions,
+  const layers::TextureFactoryIdentifier& aIdentifier,
+  bool* aSuccess,
+  nsCString* ,
+  nsCString* ,
+  nsCString* )
 {
   return new VideoDecoderChild();
 }
