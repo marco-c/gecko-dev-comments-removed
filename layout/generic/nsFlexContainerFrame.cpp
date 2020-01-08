@@ -4038,7 +4038,7 @@ nsFlexContainerFrame::GenerateFlexLines(
 
     
     if (!isSingleLine && !curLine->IsEmpty() &&
-        childFrame->StyleDisplay()->mBreakBefore) {
+        childFrame->StyleDisplay()->BreakBefore()) {
       curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
     }
 
@@ -4096,7 +4096,7 @@ nsFlexContainerFrame::GenerateFlexLines(
 
     
     if (!isSingleLine && childFrame->GetNextSibling() &&
-        childFrame->StyleDisplay()->mBreakAfter) {
+        childFrame->StyleDisplay()->BreakAfter()) {
       curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
     }
     itemIdxInContainer++;

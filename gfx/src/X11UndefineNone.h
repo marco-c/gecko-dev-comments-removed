@@ -21,3 +21,8 @@
 #  endif
 #endif
 
+
+
+#ifdef Always
+#undef Always
+#endif

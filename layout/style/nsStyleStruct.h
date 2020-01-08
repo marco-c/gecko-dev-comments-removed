@@ -2015,8 +2015,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   mozilla::StyleClear mBreakType;
   uint8_t mBreakInside;         
-  bool mBreakBefore;
-  bool mBreakAfter;
+  mozilla::StyleBreakBetween mPageBreakBefore;
+  mozilla::StyleBreakBetween mPageBreakAfter;
   uint8_t mOverflowX;           
   uint8_t mOverflowY;           
   uint8_t mOverflowClipBoxBlock;     
@@ -2322,6 +2322,36 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   bool BackfaceIsHidden() const {
     return mBackfaceVisibility == NS_STYLE_BACKFACE_VISIBILITY_HIDDEN;
+  }
+
+  
+  
+  static bool ShouldBreak(mozilla::StyleBreakBetween aBreak)
+  {
+    switch (aBreak) {
+      
+      
+      case mozilla::StyleBreakBetween::Left:
+      case mozilla::StyleBreakBetween::Right:
+      case mozilla::StyleBreakBetween::Always:
+        return true;
+      case mozilla::StyleBreakBetween::Auto:
+      case mozilla::StyleBreakBetween::Avoid:
+        return false;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unknown break kind");
+        return false;
+    }
+  }
+
+  bool BreakBefore() const
+  {
+    return ShouldBreak(mPageBreakBefore);
+  }
+
+  bool BreakAfter() const
+  {
+    return ShouldBreak(mPageBreakAfter);
   }
 
   
