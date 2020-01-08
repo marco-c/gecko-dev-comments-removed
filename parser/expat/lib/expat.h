@@ -707,6 +707,7 @@ XML_UseParserAsHandlerArg(XML_Parser parser);
 
 
 
+
 XMLPARSEAPI(enum XML_Error)
 XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD);
 
@@ -733,6 +734,7 @@ XML_GetBase(XML_Parser parser);
 
 XMLPARSEAPI(int)
 XML_GetSpecifiedAttributeCount(XML_Parser parser);
+
 
 
 
@@ -879,6 +881,7 @@ enum XML_ParamEntityParsing {
 
 
 
+
 XMLPARSEAPI(int)
 XML_SetParamEntityParsing(XML_Parser parser,
                           enum XML_ParamEntityParsing parsing);
@@ -898,6 +901,10 @@ XML_SetHashSalt(XML_Parser parser,
 
 XMLPARSEAPI(enum XML_Error)
 XML_GetErrorCode(XML_Parser parser);
+
+
+
+
 
 
 
@@ -1005,8 +1012,6 @@ typedef struct {
 
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
-
-
 
 
 
