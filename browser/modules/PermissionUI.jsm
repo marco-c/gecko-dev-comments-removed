@@ -306,6 +306,19 @@ var PermissionPromptPrototype = {
                                         this.browser);
 
       if (state == SitePermissions.BLOCK) {
+        
+        
+        
+        
+        if (state == SitePermissions.getDefault(this.permissionKey) &&
+            SitePermissions.showGloballyBlocked(this.permissionKey)) {
+          SitePermissions.set(this.principal.URI,
+                              this.permissionKey,
+                              state,
+                              SitePermissions.SCOPE_GLOBAL,
+                              this.browser);
+        }
+
         this.cancel();
         return;
       }
@@ -327,6 +340,8 @@ var PermissionPromptPrototype = {
                                         this.browser);
 
       if (state == SitePermissions.BLOCK) {
+        
+
         this.cancel();
         return;
       }

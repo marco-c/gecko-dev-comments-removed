@@ -11750,28 +11750,18 @@ void nsIDocument::NotifyUserGestureActivation() {
   }
 }
 
-void nsIDocument::MaybeNotifyAutoplayBlocked() {
-  nsIDocument* topLevelDoc = GetTopLevelContentDocument();
-  if (!topLevelDoc ||
-      !nsContentUtils::IsExactSitePermDeny(topLevelDoc->NodePrincipal(),
-          "autoplay-media")) {
-    return;
-  }
-
-  
-  
-  RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
-      topLevelDoc, NS_LITERAL_STRING("GloballyAutoplayBlocked"),
-      CanBubble::eYes, ChromeOnlyDispatch::eYes);
-  asyncDispatcher->PostDOMEvent();
-}
-
 void nsIDocument::SetDocTreeHadAudibleMedia() {
   nsIDocument* topLevelDoc = GetTopLevelContentDocument();
   if (!topLevelDoc) {
     return;
   }
 
+  if (!topLevelDoc->mDocTreeHadAudibleMedia) {
+    RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+        topLevelDoc, NS_LITERAL_STRING("AudibleAutoplayMediaOccurred"),
+        CanBubble::eYes, ChromeOnlyDispatch::eYes);
+    asyncDispatcher->PostDOMEvent();
+  }
   topLevelDoc->mDocTreeHadAudibleMedia = true;
 }
 
