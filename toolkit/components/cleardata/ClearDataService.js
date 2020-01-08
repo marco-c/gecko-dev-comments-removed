@@ -291,13 +291,12 @@ const AppCacheCleaner = {
 
 const QuotaCleaner = {
   deleteByPrincipal(aPrincipal) {
-    if (!Services.lsm.nextGenLocalStorageEnabled) {
-      
-      
-      
-      Services.obs.notifyObservers(null, "browser:purge-domain-data",
-                                   aPrincipal.URI.host);
-    }
+    
+    
+    
+    
+    Services.obs.notifyObservers(null, "browser:purge-domain-data",
+                                 aPrincipal.URI.host);
 
     
     return ServiceWorkerCleanUp.removeFromPrincipal(aPrincipal)
@@ -319,12 +318,10 @@ const QuotaCleaner = {
   },
 
   deleteByHost(aHost, aOriginAttributes) {
-    if (!Services.lsm.nextGenLocalStorageEnabled) {
-      
-      
-      
-      Services.obs.notifyObservers(null, "browser:purge-domain-data", aHost);
-    }
+    
+    
+    
+    Services.obs.notifyObservers(null, "browser:purge-domain-data", aHost);
 
     let exceptionThrown = false;
 
