@@ -131,6 +131,9 @@ FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus)
       
       JS::ReadableStreamReaderCancel(aCx, reader, errorValue);
     }
+
+    
+    JS_ClearPendingException(aCx);
   }
 
   mStreamClosed = true;
