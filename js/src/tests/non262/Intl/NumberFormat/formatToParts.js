@@ -54,6 +54,14 @@ function assertParts(nf, x, expected)
 
 
 
+
+
+var deadSimpleFormatter = new Intl.NumberFormat("en-US");
+
+assertParts(deadSimpleFormatter, -0,
+            [MinusSign("-"), Integer("0")]);
+
+
 var usdCodeOptions =
   {
     style: "currency",
