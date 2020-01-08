@@ -66,6 +66,29 @@ class SrcNote {
     };
     
     
+    
+    class DoWhile1 {
+      public:
+        enum Fields {
+            
+            CondOffset,
+            Count,
+        };
+    };
+    
+    
+    
+    class DoWhile2 {
+      public:
+        enum Fields {
+            
+            
+            BackJumpOffset,
+            Count,
+        };
+    };
+    
+    
     class ForIn {
       public:
         enum Fields {
@@ -147,6 +170,12 @@ class SrcNote {
         };
     };
 };
+
+
+static_assert(unsigned(SrcNote::While::Count) == unsigned(SrcNote::DoWhile1::Count),
+              "SRC_WHILE can be shared between while and do-while");
+static_assert(unsigned(SrcNote::While::Count) == unsigned(SrcNote::DoWhile2::Count),
+              "SRC_WHILE can be shared between while and do-while");
 
 #define FOR_EACH_SRC_NOTE_TYPE(M)                                                                  \
     M(SRC_NULL,         "null",        0)  /* Terminates a note vector. */                         \

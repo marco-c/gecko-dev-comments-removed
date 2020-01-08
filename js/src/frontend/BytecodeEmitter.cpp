@@ -26,6 +26,7 @@
 #include "ds/Nestable.h"
 #include "frontend/BytecodeControlStructures.h"
 #include "frontend/CForEmitter.h"
+#include "frontend/DoWhileEmitter.h"
 #include "frontend/EmitterScope.h"
 #include "frontend/ForInEmitter.h"
 #include "frontend/ForOfEmitter.h"
@@ -5310,64 +5311,21 @@ BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isA
 bool
 BytecodeEmitter::emitDo(ParseNode* pn)
 {
-    
-    if (!updateSourceCoordNotes(pn->pn_pos.begin))
-        return false;
+    DoWhileEmitter doWhile(this);
 
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_WHILE, &noteIndex))
-        return false;
-    if (!emit1(JSOP_NOP))
-        return false;
-
-    unsigned noteIndex2;
-    if (!newSrcNote(SRC_WHILE, &noteIndex2))
-        return false;
-
-    
-    LoopControl loopInfo(this, StatementKind::DoLoop);
-
-    if (!loopInfo.emitLoopHead(this, getOffsetForLoop(pn->pn_left)))
-        return false;
-
-    if (!loopInfo.emitLoopEntry(this, Nothing()))
+    if (!doWhile.emitBody(Some(pn->pn_pos.begin), getOffsetForLoop(pn->pn_left)))
         return false;
 
     if (!emitTree(pn->pn_left))
         return false;
 
-    
-    if (!loopInfo.emitContinueTarget(this))
+    if (!doWhile.emitCond())
         return false;
 
-    
     if (!emitTree(pn->pn_right))
         return false;
 
-    if (!loopInfo.emitLoopEnd(this, JSOP_IFNE))
-        return false;
-
-    if (!tryNoteList.append(JSTRY_LOOP, stackDepth, loopInfo.headOffset(),
-                            loopInfo.breakTargetOffset()))
-    {
-        return false;
-    }
-
-    
-
-
-
-
-
-
-    if (!setSrcNoteOffset(noteIndex2, 0, loopInfo.loopEndOffsetFromLoopHead()))
-        return false;
-    
-    if (!setSrcNoteOffset(noteIndex, 0, loopInfo.continueTargetOffsetFromLoopHead() + 1))
-        return false;
-
-    if (!loopInfo.patchBreaksAndContinues(this))
+    if (!doWhile.emitEnd())
         return false;
 
     return true;
