@@ -2040,7 +2040,7 @@ ScrollFrameHelper::AsyncScroll::InitSmoothScroll(TimeStamp aTime,
                                                  const nsRect& aRange,
                                                  const nsSize& aCurrentVelocity)
 {
-  if (!aOrigin || aOrigin == nsGkAtoms::restore) {
+  if (!aOrigin || aOrigin == nsGkAtoms::restore || aOrigin == nsGkAtoms::relative) {
     
     
     
@@ -2122,6 +2122,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter,
   , mDestination(0, 0)
   , mRestorePos(-1, -1)
   , mLastPos(-1, -1)
+  , mApzScrollPos(0, 0)
   , mScrollPosForLayerPixelAlignment(-1, -1)
   , mLastUpdateFramesPos(-1, -1)
   , mHadDisplayPortAtLastFrameUpdate(false)
@@ -2927,18 +2928,33 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsAtom* aOrig
   
   
   
+  if (aOrigin == nsGkAtoms::relative &&
+      (mLastScrollOrigin &&
+       mLastScrollOrigin != nsGkAtoms::relative &&
+       mLastScrollOrigin != nsGkAtoms::apz)) {
+    aOrigin = nsGkAtoms::other;
+  }
+
+  
+  
+  
+  
   
   bool isScrollOriginDowngrade =
     nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin) &&
     !nsLayoutUtils::CanScrollOriginClobberApz(aOrigin);
   bool allowScrollOriginChange = mAllowScrollOriginDowngrade ||
     !isScrollOriginDowngrade;
+
   if (allowScrollOriginChange) {
     mLastScrollOrigin = aOrigin;
     mAllowScrollOriginDowngrade = false;
   }
   mLastSmoothScrollOrigin = nullptr;
   mScrollGeneration = ++sScrollGenerationCounter;
+  if (mLastScrollOrigin == nsGkAtoms::apz) {
+    mApzScrollPos = GetScrollPosition();
+  }
 
   
   
@@ -3006,7 +3022,12 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsAtom* aOrig
             
             
             success = manager->SetPendingScrollUpdateForNextTransaction(id,
-                { mScrollGeneration, CSSPoint::FromAppUnits(GetScrollPosition()) });
+                {
+                  mScrollGeneration,
+                  CSSPoint::FromAppUnits(GetScrollPosition()),
+                  CSSPoint::FromAppUnits(GetApzScrollPosition()),
+                  mLastScrollOrigin == nsGkAtoms::relative
+                });
             if (success) {
               schedulePaint = false;
               mOuter->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);

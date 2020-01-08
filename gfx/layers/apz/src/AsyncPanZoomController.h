@@ -712,11 +712,6 @@ protected:
   
 
 
-  void CopyScrollInfoFrom(const FrameMetrics& aFrameMetrics);
-
-  
-
-
 
 
   void ScaleWithFocus(float aScale,

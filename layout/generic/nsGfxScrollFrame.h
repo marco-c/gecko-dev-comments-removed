@@ -213,6 +213,9 @@ public:
     pt.y = mScrollPort.y - mScrolledFrame->GetPosition().y;
     return pt;
   }
+  nsPoint GetApzScrollPosition() const {
+    return mApzScrollPos;
+  }
   nsRect GetScrollRange() const;
   
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
@@ -443,6 +446,10 @@ public:
                              nsRect* aDirtyRect,
                              bool aSetBase,
                              bool* aDirtyRectHasBeenOverriden = nullptr);
+  void NotifyApzTransaction() {
+    mAllowScrollOriginDowngrade = true;
+    mApzScrollPos = GetScrollPosition();
+  }
   void NotifyApproximateFrameVisibilityUpdate(bool aIgnoreDisplayPort);
   bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* aDisplayPort);
 
@@ -456,7 +463,6 @@ public:
   void HandleScrollbarStyleSwitching();
 
   nsAtom* LastScrollOrigin() const { return mLastScrollOrigin; }
-  void AllowScrollOriginDowngrade() { mAllowScrollOriginDowngrade = true; }
   nsAtom* LastSmoothScrollOrigin() const { return mLastSmoothScrollOrigin; }
   uint32_t CurrentScrollGeneration() const { return mScrollGeneration; }
   nsPoint LastScrollDestination() const { return mDestination; }
@@ -549,6 +555,11 @@ public:
   
   
   nsPoint mLastPos;
+
+  
+  
+  
+  nsPoint mApzScrollPos;
 
   nsExpirationState mActivityExpirationState;
 
@@ -857,6 +868,9 @@ public:
   virtual nsPoint GetLogicalScrollPosition() const override {
     return mHelper.GetLogicalScrollPosition();
   }
+  virtual nsPoint GetApzScrollPosition() const override {
+    return mHelper.GetApzScrollPosition();
+  }
   virtual nsRect GetScrollRange() const override {
     return mHelper.GetScrollRange();
   }
@@ -973,9 +987,6 @@ public:
   virtual nsAtom* LastScrollOrigin() override {
     return mHelper.LastScrollOrigin();
   }
-  virtual void AllowScrollOriginDowngrade() override {
-    mHelper.AllowScrollOriginDowngrade();
-  }
   virtual nsAtom* LastSmoothScrollOrigin() override {
     return mHelper.LastSmoothScrollOrigin();
   }
@@ -1019,6 +1030,9 @@ public:
                                      nsRect* aDirtyRect,
                                      bool aSetBase) override {
     return mHelper.DecideScrollableLayer(aBuilder, aVisibleRect, aDirtyRect, aSetBase);
+  }
+  virtual void NotifyApzTransaction() override {
+    mHelper.NotifyApzTransaction();
   }
   virtual void NotifyApproximateFrameVisibilityUpdate(bool aIgnoreDisplayPort) override {
     mHelper.NotifyApproximateFrameVisibilityUpdate(aIgnoreDisplayPort);
@@ -1319,6 +1333,9 @@ public:
   virtual nsPoint GetLogicalScrollPosition() const override {
     return mHelper.GetLogicalScrollPosition();
   }
+  virtual nsPoint GetApzScrollPosition() const override {
+    return mHelper.GetApzScrollPosition();
+  }
   virtual nsRect GetScrollRange() const override {
     return mHelper.GetScrollRange();
   }
@@ -1430,9 +1447,6 @@ public:
   }
   virtual nsAtom* LastScrollOrigin() override {
     return mHelper.LastScrollOrigin();
-  }
-  virtual void AllowScrollOriginDowngrade() override {
-    mHelper.AllowScrollOriginDowngrade();
   }
   virtual nsAtom* LastSmoothScrollOrigin() override {
     return mHelper.LastSmoothScrollOrigin();
@@ -1552,6 +1566,9 @@ public:
                                      nsRect* aDirtyRect,
                                      bool aSetBase) override {
     return mHelper.DecideScrollableLayer(aBuilder, aVisibleRect, aDirtyRect, aSetBase);
+  }
+  virtual void NotifyApzTransaction() override {
+    mHelper.NotifyApzTransaction();
   }
   virtual void NotifyApproximateFrameVisibilityUpdate(bool aIgnoreDisplayPort) override {
     mHelper.NotifyApproximateFrameVisibilityUpdate(aIgnoreDisplayPort);

@@ -737,6 +737,9 @@ pref("apz.pinch_lock.scoll_lock_threshold", "0.03125");
 pref("apz.pinch_lock.span_breakout_threshold", "0.03125");  
 pref("apz.pinch_lock.span_lock_threshold", "0.03125");  
 pref("apz.popups.enabled", false);
+#ifdef NIGHTLY_BUILD
+pref("apz.relative-update.enabled", true);
+#endif
 
 
 pref("apz.printtree", false);
@@ -5502,7 +5505,7 @@ pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");
 
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
 
 pref("urlclassifier.trackingAnnotationTable", "test-track-simple,base-track-digest256,content-track-digest256");
 #else

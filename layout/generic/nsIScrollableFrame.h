@@ -142,6 +142,12 @@ public:
 
 
 
+  virtual nsPoint GetApzScrollPosition() const = 0;
+
+  
+
+
+
 
 
 
@@ -388,15 +394,6 @@ public:
 
 
 
-  virtual void AllowScrollOriginDowngrade() = 0;
-  
-
-
-
-
-
-
-
 
 
 
@@ -493,6 +490,22 @@ public:
                                      nsRect* aVisibleRect,
                                      nsRect* aDirtyRect,
                                      bool aSetBase) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void NotifyApzTransaction() = 0;
 
   
 
