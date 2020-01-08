@@ -68,6 +68,15 @@ const whitelist = {
     "resource://gre/modules/ExtensionUtils.jsm",
     "resource://gre/modules/MessageChannel.jsm",
   ]),
+  processScripts: new Set([
+    "chrome://global/content/process-content.js",
+    "resource:///modules/ContentObservers.js",
+    "data:,ChromeUtils.import('resource://gre/modules/ExtensionProcessScript.jsm')",
+    "chrome://satchel/content/formSubmitListener.js",
+    "resource://devtools/client/jsonview/converter-observer.js",
+    "resource://gre/modules/WebRequestContent.js",
+    "data:,new function() {\n      ChromeUtils.import(\"resource://formautofill/FormAutofillContent.jsm\");\n    }",
+  ]),
 };
 
 
@@ -80,6 +89,7 @@ const intermittently_loaded_whitelist = {
   modules: new Set([
     "resource://gre/modules/sessionstore/Utils.jsm",
   ]),
+  processScripts: new Set([]),
 };
 
 const blacklist = {
@@ -129,6 +139,13 @@ add_task(async function() {
   } + ")()", false);
 
   let loadedInfo = await promise;
+
+  
+  loadedInfo.processScripts = {};
+  for (let [uri] of Services.ppmm.getDelayedProcessScripts()) {
+    loadedInfo.processScripts[uri] = "";
+  }
+
   let loadedList = {};
 
   for (let scriptType in whitelist) {
