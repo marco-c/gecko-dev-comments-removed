@@ -168,8 +168,7 @@ public:
     return mIdNamespace;
   }
 
-  void FlushRendering();
-  void FlushRenderingAsync();
+  void FlushRendering(bool aWaitForPresent = true);
 
   
 
