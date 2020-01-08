@@ -10,7 +10,7 @@
 
 
 const URL = "data:text/html;charset=utf8,test for textbox context menu";
-const textboxToolId = "testtool1";
+const textboxToolId = "test-tool-1";
 
 registerCleanupFunction(() => {
   gDevTools.unregisterTool(textboxToolId);

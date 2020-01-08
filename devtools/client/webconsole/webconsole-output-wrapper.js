@@ -429,13 +429,8 @@ WebConsoleOutputWrapper.prototype = {
         store.dispatch(actions.messagesAdd(this.queuedMessageAdds));
 
         const length = this.queuedMessageAdds.length;
-
-        
-        
-        if (this.toolbox) {
-          this.telemetry.addEventProperty(
-            "devtools.main", "enter", "webconsole", null, "message_count", length);
-        }
+        this.telemetry.addEventProperty(
+          "devtools.main", "enter", "webconsole", null, "message_count", length);
 
         this.queuedMessageAdds = [];
 
