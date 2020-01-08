@@ -2367,7 +2367,8 @@ GCMarker::GCMarker(JSRuntime* rt)
       stack(),
       grayPosition(0),
       color(MarkColor::Black),
-      unmarkedArenaStackTop(nullptr)
+      delayedMarkingList(nullptr),
+      delayedMarkingWorkAdded(false)
 #ifdef DEBUG
       ,
       markLaterArenas(0),
@@ -2387,7 +2388,7 @@ void GCMarker::start() {
   color = MarkColor::Black;
   linearWeakMarkingDisabled_ = false;
 
-  MOZ_ASSERT(!unmarkedArenaStackTop);
+  MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(markLaterArenas == 0);
 }
 
@@ -2398,7 +2399,7 @@ void GCMarker::stop() {
   MOZ_ASSERT(started);
   started = false;
 
-  MOZ_ASSERT(!unmarkedArenaStackTop);
+  MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(markLaterArenas == 0);
 #endif
 
@@ -2412,23 +2413,35 @@ void GCMarker::stop() {
   }
 }
 
+template <typename F>
+inline void GCMarker::forEachDelayedMarkingArena(F&& f)
+{
+  Arena* arena = delayedMarkingList;
+  Arena* next;
+  while (arena) {
+    next = arena->getNextDelayedMarking();
+    f(arena);
+    arena = next;
+  }
+}
+
 void GCMarker::reset() {
   color = MarkColor::Black;
 
   stack.clear();
   MOZ_ASSERT(isMarkStackEmpty());
 
-  while (unmarkedArenaStackTop) {
-    Arena* arena = unmarkedArenaStackTop;
-    MOZ_ASSERT(arena->hasDelayedMarking);
-    MOZ_ASSERT(markLaterArenas);
-    unmarkedArenaStackTop = arena->getNextDelayedMarking();
-    arena->unsetDelayedMarking();
-
+  forEachDelayedMarkingArena(
+    [&](Arena* arena) {
+      MOZ_ASSERT(arena->onDelayedMarkingList());
+      arena->clearDelayedMarkingState();
 #ifdef DEBUG
-    markLaterArenas--;
+      MOZ_ASSERT(markLaterArenas);
+      markLaterArenas--;
 #endif
-  }
+    });
+  delayedMarkingList = nullptr;
+
   MOZ_ASSERT(isDrained());
   MOZ_ASSERT(!markLaterArenas);
 }
@@ -2531,6 +2544,28 @@ void GCMarker::leaveWeakMarkingMode() {
   }
 }
 
+void GCMarker::delayMarkingChildren(Cell* cell) {
+  delayMarkingArena(cell->asTenured().arena());
+}
+
+void GCMarker::delayMarkingArena(Arena* arena) {
+  if (arena->onDelayedMarkingList()) {
+    
+    
+    if (!arena->hasDelayedMarking()) {
+      arena->setHasDelayedMarking(true);
+      delayedMarkingWorkAdded = true;
+    }
+    return;
+  }
+  arena->setNextDelayedMarkingArena(delayedMarkingList);
+  delayedMarkingList = arena;
+  delayedMarkingWorkAdded = true;
+#ifdef DEBUG
+  markLaterArenas++;
+#endif
+}
+
 void GCMarker::markDelayedChildren(Arena* arena, MarkColor color) {
   JS::TraceKind kind = MapAllocToTraceKind(arena->getAllocKind());
   MOZ_ASSERT_IF(color == MarkColor::Gray, TraceKindParticipatesInCC(kind));
@@ -2557,41 +2592,30 @@ static inline bool ArenaCanHaveGrayThings(Arena* arena) {
 
 
 
-
-bool GCMarker::processDelayedMarkingList(Arena** outputList, MarkColor color,
-                                         bool shouldYield,
+bool GCMarker::processDelayedMarkingList(MarkColor color, bool shouldYield,
                                          SliceBudget& budget) {
   
   
   
+  
 
-  while (unmarkedArenaStackTop) {
-    Arena* arena = unmarkedArenaStackTop;
-    unmarkedArenaStackTop = arena->getNextDelayedMarking();
-
-    arena->unsetDelayedMarking();
-
-#ifdef DEBUG
-    MOZ_ASSERT(markLaterArenas);
-    if (!outputList) {
-      markLaterArenas--;
-    }
-#endif
-
-    if (color == MarkColor::Black ||
-        (color == MarkColor::Gray && ArenaCanHaveGrayThings(arena))) {
+  do {
+    delayedMarkingWorkAdded = false;
+    for (Arena* arena = delayedMarkingList;
+         arena;
+         arena = arena->getNextDelayedMarking()) {
+      if (!arena->hasDelayedMarking() ||
+          (color == MarkColor::Gray && !ArenaCanHaveGrayThings(arena))) {
+        continue;
+      }
+      arena->setHasDelayedMarking(false);
       markDelayedChildren(arena, color);
       budget.step(150);
       if (shouldYield && budget.isOverBudget()) {
         return false;
       }
     }
-
-    if (outputList) {
-      arena->setNextDelayedMarking(*outputList);
-      *outputList = arena;
-    }
-  }
+  } while (delayedMarkingWorkAdded);
 
   return true;
 }
@@ -2617,29 +2641,59 @@ bool GCMarker::markAllDelayedChildren(SliceBudget& budget) {
   
   
   
-  
 
-  MOZ_ASSERT(unmarkedArenaStackTop);
+  MOZ_ASSERT(delayedMarkingList);
 
-  Arena* processedList = nullptr;
   bool finished;
-  finished = processDelayedMarkingList(&processedList, MarkColor::Gray,
+  finished = processDelayedMarkingList(MarkColor::Gray,
                                        false, 
                                        budget);
   MOZ_ASSERT(finished);
 
-  unmarkedArenaStackTop = processedList;
-  finished = processDelayedMarkingList(nullptr, MarkColor::Black,
+  forEachDelayedMarkingArena(
+    [&](Arena* arena) {
+      MOZ_ASSERT(!arena->hasDelayedMarking());
+      arena->setHasDelayedMarking(true);
+    });
+
+  finished = processDelayedMarkingList(MarkColor::Black,
                                        true, 
                                        budget);
+
+  
+  Arena* listTail = nullptr;
+  forEachDelayedMarkingArena(
+    [&](Arena* arena) {
+      if (!arena->hasDelayedMarking()) {
+        arena->clearDelayedMarkingState();
+#ifdef DEBUG
+        MOZ_ASSERT(markLaterArenas);
+        markLaterArenas--;
+#endif
+        return;
+      }
+
+      appendToDelayedMarkingList(&listTail, arena);
+    });
+  appendToDelayedMarkingList(&listTail, nullptr);
+
   if (!finished) {
     return false;
   }
 
-  MOZ_ASSERT(!unmarkedArenaStackTop);
+  MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(!markLaterArenas);
 
   return true;
+}
+
+inline void GCMarker::appendToDelayedMarkingList(Arena** listTail, Arena* arena) {
+  if (*listTail) {
+    (*listTail)->updateNextDelayedMarkingArena(arena);
+  } else {
+    delayedMarkingList = arena;
+  }
+  *listTail = arena;
 }
 
 template <typename T>

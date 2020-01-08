@@ -294,14 +294,14 @@ class GCMarker : public JSTracer {
   }
 
   void delayMarkingArena(gc::Arena* arena);
-  void delayMarkingChildren(const void* thing);
+  void delayMarkingChildren(gc::Cell* cell);
   void markDelayedChildren(gc::Arena* arena, gc::MarkColor color);
   MOZ_MUST_USE bool markAllDelayedChildren(SliceBudget& budget);
-  bool processDelayedMarkingList(gc::Arena** outputList, gc::MarkColor color,
-                                 bool shouldYield, SliceBudget& budget);
-  bool hasDelayedChildren() const { return !!unmarkedArenaStackTop; }
+  bool processDelayedMarkingList(gc::MarkColor color, bool shouldYield,
+                                 SliceBudget& budget);
+  bool hasDelayedChildren() const { return !!delayedMarkingList; }
 
-  bool isDrained() { return isMarkStackEmpty() && !unmarkedArenaStackTop; }
+  bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
 
   MOZ_MUST_USE bool markUntilBudgetExhausted(SliceBudget& budget);
 
@@ -384,6 +384,11 @@ class GCMarker : public JSTracer {
 
   inline void processMarkStackTop(SliceBudget& budget);
 
+  void appendToDelayedMarkingList(gc::Arena** listTail, gc::Arena* arena);
+
+  template <typename F>
+  void forEachDelayedMarkingArena(F&& f);
+
   
   gc::MarkStack stack;
 
@@ -394,7 +399,10 @@ class GCMarker : public JSTracer {
   MainThreadData<gc::MarkColor> color;
 
   
-  MainThreadData<js::gc::Arena*> unmarkedArenaStackTop;
+  MainThreadData<js::gc::Arena*> delayedMarkingList;
+
+  
+  MainThreadData<bool> delayedMarkingWorkAdded;
 
   
 
