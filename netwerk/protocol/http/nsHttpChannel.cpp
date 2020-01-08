@@ -2460,9 +2460,6 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
 
   uint32_t httpStatus = mResponseHead->Status();
 
-  bool successfulReval = false;
-  bool partialContentUsed = false;
-
   
   
   
@@ -2486,10 +2483,16 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
       break;
     case 206:
       if (mCachedContentIsPartial) {  
-        rv = ProcessPartialContent();
-        if (NS_SUCCEEDED(rv)) {
-          partialContentUsed = true;
+        auto func = [](auto *self, nsresult aRv) {
+          return self->ContinueProcessResponseAfterPartialContent(aRv);
+        };
+        rv = ProcessPartialContent(func);
+        
+        
+        if (!mSuspendCount || NS_FAILED(rv)) {
+          return ContinueProcessResponseAfterPartialContent(rv);
         }
+        return NS_OK;
       } else {
         mCacheInputStream.CloseAndRelease();
         rv = ProcessNormal();
@@ -2524,29 +2527,16 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
       break;
     case 304:
       if (!ShouldBypassProcessNotModified()) {
-        rv = ProcessNotModified();
-        if (NS_SUCCEEDED(rv)) {
-          successfulReval = true;
-          break;
-        }
-
-        LOG(("ProcessNotModified failed [rv=%" PRIx32 "]\n",
-             static_cast<uint32_t>(rv)));
-
+        auto func = [](auto *self, nsresult aRv) {
+          return self->ContinueProcessResponseAfterNotModified(aRv);
+        };
+        rv = ProcessNotModified(func);
         
         
-        
-        mCacheInputStream.CloseAndRelease();
-        if (mCacheEntry) {
-          mCacheEntry->AsyncDoom(nullptr);
-          mCacheEntry = nullptr;
+        if (!mSuspendCount || NS_FAILED(rv)) {
+          return ContinueProcessResponseAfterNotModified(rv);
         }
-
-        rv = StartRedirectChannelToURI(mURI,
-                                       nsIChannelEventSink::REDIRECT_INTERNAL);
-        if (NS_SUCCEEDED(rv)) {
-          return NS_OK;
-        }
+        return NS_OK;
       }
 
       
@@ -2617,9 +2607,69 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
       break;
   }
 
+  UpdateCacheDisposition(false, false);
+  return rv;
+}
+
+nsresult nsHttpChannel::ContinueProcessResponseAfterPartialContent(
+    nsresult aRv) {
+  LOG(
+      ("nsHttpChannel::ContinueProcessResponseAfterPartialContent "
+       "[this=%p, rv=%" PRIx32 "]",
+       this, static_cast<uint32_t>(aRv)));
+
+  UpdateCacheDisposition(false, NS_SUCCEEDED(aRv));
+  return aRv;
+}
+
+nsresult nsHttpChannel::ContinueProcessResponseAfterNotModified(nsresult aRv) {
+  LOG(
+      ("nsHttpChannel::ContinueProcessResponseAfterNotModified "
+       "[this=%p, rv=%" PRIx32 "]",
+       this, static_cast<uint32_t>(aRv)));
+
+  if (NS_SUCCEEDED(aRv)) {
+    mTransactionReplaced = true;
+    UpdateCacheDisposition(true, false);
+    return NS_OK;
+  }
+
+  LOG(("ProcessNotModified failed [rv=%" PRIx32 "]\n",
+       static_cast<uint32_t>(aRv)));
+
+  
+  
+  
+  mCacheInputStream.CloseAndRelease();
+  if (mCacheEntry) {
+    mCacheEntry->AsyncDoom(nullptr);
+    mCacheEntry = nullptr;
+  }
+
+  nsresult rv =
+      StartRedirectChannelToURI(mURI, nsIChannelEventSink::REDIRECT_INTERNAL);
+  if (NS_SUCCEEDED(rv)) {
+    return NS_OK;
+  }
+
+  
+  if (mCustomConditionalRequest) {
+    CloseCacheEntry(false);
+  }
+
+  if (ShouldBypassProcessNotModified() || NS_FAILED(rv)) {
+    rv = ProcessNormal();
+  }
+
+  UpdateCacheDisposition(false, false);
+  return rv;
+}
+
+void nsHttpChannel::UpdateCacheDisposition(bool aSuccessfulReval,
+                                           bool aPartialContentUsed) {
   if (mRaceDelay && !mRaceCacheWithNetwork &&
       (mCachedContentIsPartial || mDidReval)) {
-    if (successfulReval || partialContentUsed) {
+    if (aSuccessfulReval || aPartialContentUsed) {
       AccumulateCategorical(
           Telemetry::LABELS_NETWORK_RACE_CACHE_VALIDATION::CachedContentUsed);
     } else {
@@ -2632,7 +2682,7 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
     CacheDisposition cacheDisposition;
     if (!mDidReval) {
       cacheDisposition = kCacheMissed;
-    } else if (successfulReval) {
+    } else if (aSuccessfulReval) {
       cacheDisposition = kCacheHitViaReval;
     } else {
       cacheDisposition = kCacheMissedViaReval;
@@ -2656,7 +2706,6 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
       Telemetry::Accumulate(Telemetry::HTTP_09_INFO, v09Info);
     }
   }
-  return rv;
 }
 
 nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
@@ -3267,7 +3316,9 @@ void nsHttpChannel::UntieByteRangeRequest() {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
-nsresult nsHttpChannel::ProcessPartialContent() {
+nsresult nsHttpChannel::ProcessPartialContent(
+    const std::function<nsresult(nsHttpChannel *, nsresult)>
+        &aContinueProcessResponseFunc) {
   
   
   
@@ -3367,15 +3418,16 @@ nsresult nsHttpChannel::ProcessPartialContent() {
     
     
     
-
-    
-  } else {
-    
-    mCachedContentIsValid = true;
-    rv = ReadFromCache(false);
+    return rv;
   }
 
-  return rv;
+  
+  
+  mCachedContentIsValid = true;
+  return CallOrWaitForResume([aContinueProcessResponseFunc](auto *self) {
+    nsresult rv = self->ReadFromCache(false);
+    return aContinueProcessResponseFunc(self, rv);
+  });
 }
 
 nsresult nsHttpChannel::OnDoneReadingPartialCacheEntry(bool *streamDone) {
@@ -3441,7 +3493,9 @@ bool nsHttpChannel::ShouldBypassProcessNotModified() {
   return false;
 }
 
-nsresult nsHttpChannel::ProcessNotModified() {
+nsresult nsHttpChannel::ProcessNotModified(
+    const std::function<nsresult(nsHttpChannel *, nsresult)>
+        &aContinueProcessResponseFunc) {
   nsresult rv;
 
   LOG(("nsHttpChannel::ProcessNotModified [this=%p]\n", this));
@@ -3511,11 +3565,10 @@ nsresult nsHttpChannel::ProcessNotModified() {
   rv = mCacheEntry->SetValid();
   if (NS_FAILED(rv)) return rv;
 
-  rv = ReadFromCache(false);
-  if (NS_FAILED(rv)) return rv;
-
-  mTransactionReplaced = true;
-  return NS_OK;
+  return CallOrWaitForResume([aContinueProcessResponseFunc](auto *self) {
+    nsresult rv = self->ReadFromCache(false);
+    return aContinueProcessResponseFunc(self, rv);
+  });
 }
 
 nsresult nsHttpChannel::ProcessFallback(bool *waitingForRedirectCallback) {
