@@ -88,6 +88,7 @@ public:
                               nsIEditor::EDirection aDirection);
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult WillDoAction(Selection* aSelection,
                                 EditSubActionInfo& aInfo,
                                 bool* aCancel,
@@ -150,6 +151,12 @@ public:
     return !!mBogusNode;
   }
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult HideLastPasswordInput(Selection& aSelection);
+
 protected:
 
   void InitFields();
@@ -170,6 +177,7 @@ protected:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   WillInsertText(EditSubAction aEditSubAction, bool* aCancel, bool* aHandled,
                  const nsAString* inString, nsAString* outString,
@@ -223,6 +231,7 @@ protected:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
                       bool* aCancel, bool* aHandled);
@@ -238,6 +247,7 @@ protected:
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   DeleteSelectionWithTransaction(nsIEditor::EDirection aCollapsedAction,
                                  bool* aCancel, bool* aHandled);
@@ -357,7 +367,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult HideLastPWInput();
+  MOZ_CAN_RUN_SCRIPT
+  MOZ_MUST_USE nsresult HideLastPasswordInputInternal();
 
   
 

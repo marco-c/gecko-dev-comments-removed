@@ -336,6 +336,14 @@ protected:
   nsresult ExtendSelectionForDelete(Selection* aSelection,
                                     nsIEditor::EDirection* aAction);
 
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult HideLastPasswordInput();
+
   static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
                                     int32_t& aCaretStyle);
 

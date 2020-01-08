@@ -2176,4 +2176,24 @@ TextEditor::RemoveAttributeOrEquivalent(Element* aElement,
   return RemoveAttributeWithTransaction(*aElement, *aAttribute);
 }
 
+nsresult
+TextEditor::HideLastPasswordInput()
+{
+  
+  MOZ_ASSERT(mRules);
+  MOZ_ASSERT(IsPasswordEditor());
+
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<TextEditRules> rules(mRules);
+  nsresult rv = rules->HideLastPasswordInput(*selection);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
 } 
