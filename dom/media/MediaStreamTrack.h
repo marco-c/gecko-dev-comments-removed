@@ -41,6 +41,7 @@ namespace dom {
 class AudioStreamTrack;
 class VideoStreamTrack;
 class MediaStreamError;
+class TrackSink;
 enum class CallerType : uint32_t;
 
 
@@ -86,8 +87,20 @@ class MediaStreamTrackSource : public nsISupports {
 
     virtual bool Enabled() const = 0;
 
+    
+
+
+
     virtual void PrincipalChanged() = 0;
+
+    
+
+
+
     virtual void MutedChanged(bool aNewState) = 0;
+
+   protected:
+    virtual ~Sink() = default;
   };
 
   MediaStreamTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel)
@@ -338,7 +351,7 @@ class MediaStreamTrackConsumer
 
 
 class MediaStreamTrack : public DOMEventTargetHelper,
-                         public MediaStreamTrackSource::Sink {
+                         public SupportsWeakPtr<MediaStreamTrack> {
   
   
   friend class mozilla::DOMMediaStream;
@@ -365,6 +378,8 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaStreamTrack,
                                            DOMEventTargetHelper)
 
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrack)
+
   nsPIDOMWindowInner* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -381,7 +396,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   virtual void GetLabel(nsAString& aLabel, CallerType ) {
     GetSource().GetLabel(aLabel);
   }
-  bool Enabled() const override { return mEnabled; }
+  bool Enabled() const { return mEnabled; }
   void SetEnabled(bool aEnabled);
   bool Muted() { return mMuted; }
   void Stop();
@@ -464,24 +479,13 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
   
 
-  
 
-
-
-  bool KeepsSourceAlive() const override { return true; }
-
-  void PrincipalChanged() override;
+  void PrincipalChanged();
 
   
 
 
-
-
-
-
-
-
-  void MutedChanged(bool aNewState) override;
+  void MutedChanged(bool aNewState);
 
   
 
@@ -594,6 +598,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   TrackID mTrackID;
   TrackID mInputTrackID;
   RefPtr<MediaStreamTrackSource> mSource;
+  const UniquePtr<TrackSink> mSink;
   RefPtr<MediaStreamTrack> mOriginalTrack;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mPendingPrincipal;

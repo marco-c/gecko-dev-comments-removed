@@ -76,11 +76,9 @@ auto MediaStreamTrackSource::ApplyConstraints(
 class MediaStreamTrack::PrincipalHandleListener
     : public MediaStreamTrackListener {
  public:
-  explicit PrincipalHandleListener(MediaStreamTrack* aTrack) : mTrack(aTrack) {}
-
-  void Forget() {
-    MOZ_ASSERT(NS_IsMainThread());
-    mTrack = nullptr;
+  explicit PrincipalHandleListener(MediaStreamTrack* aTrack)
+      : mGraph(aTrack->GraphImpl()), mTrack(aTrack) {
+    MOZ_ASSERT(mGraph);
   }
 
   void DoNotifyPrincipalHandleChanged(
@@ -97,7 +95,7 @@ class MediaStreamTrack::PrincipalHandleListener
   void NotifyPrincipalHandleChanged(
       MediaStreamGraph* aGraph,
       const PrincipalHandle& aNewPrincipalHandle) override {
-    aGraph->DispatchToMainThreadAfterStreamStateUpdate(
+    mGraph->DispatchToMainThreadAfterStreamStateUpdate(
         NewRunnableMethod<StoreCopyPassByConstLRef<PrincipalHandle>>(
             "dom::MediaStreamTrack::PrincipalHandleListener::"
             "DoNotifyPrincipalHandleChanged",
@@ -105,9 +103,53 @@ class MediaStreamTrack::PrincipalHandleListener
             aNewPrincipalHandle));
   }
 
+  void NotifyRemoved() override {
+    
+    
+    
+    mGraph->DispatchToMainThreadAfterStreamStateUpdate(NS_NewRunnableFunction(
+        "MediaStreamTrack::PrincipleHandleListener::mTrackReleaser",
+        [self = RefPtr<PrincipalHandleListener>(this)]() {}));
+  }
+
  protected:
+  const RefPtr<MediaStreamGraphImpl> mGraph;
+
   
-  MediaStreamTrack* mTrack;
+  WeakPtr<MediaStreamTrack> mTrack;
+};
+
+class TrackSink : public MediaStreamTrackSource::Sink {
+ public:
+  explicit TrackSink(MediaStreamTrack* aTrack) : mTrack(aTrack) {}
+
+  
+
+
+
+  bool KeepsSourceAlive() const override { return true; }
+
+  bool Enabled() const override {
+    if (!mTrack) {
+      return false;
+    }
+    return mTrack->Enabled();
+  }
+
+  void PrincipalChanged() override {
+    if (mTrack) {
+      mTrack->PrincipalChanged();
+    }
+  }
+
+  void MutedChanged(bool aNewState) override {
+    if (mTrack) {
+      mTrack->MutedChanged(aNewState);
+    }
+  }
+
+ private:
+  WeakPtr<MediaStreamTrack> mTrack;
 };
 
 MediaStreamTrack::MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
@@ -118,12 +160,13 @@ MediaStreamTrack::MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
       mTrackID(aTrackID),
       mInputTrackID(aInputTrackID),
       mSource(aSource),
+      mSink(MakeUnique<TrackSink>(this)),
       mPrincipal(aSource->GetPrincipal()),
       mReadyState(MediaStreamTrackState::Live),
       mEnabled(true),
       mMuted(false),
       mConstraints(aConstraints) {
-  GetSource().RegisterSink(this);
+  GetSource().RegisterSink(mSink.get());
 
   if (GetOwnedStream()) {
     mPrincipalHandleListener = new PrincipalHandleListener(this);
@@ -148,14 +191,14 @@ MediaStreamTrack::MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
 MediaStreamTrack::~MediaStreamTrack() { Destroy(); }
 
 void MediaStreamTrack::Destroy() {
+  mReadyState = MediaStreamTrackState::Ended;
   if (mSource) {
-    mSource->UnregisterSink(this);
+    mSource->UnregisterSink(mSink.get());
   }
   if (mPrincipalHandleListener) {
     if (GetOwnedStream()) {
       RemoveListener(mPrincipalHandleListener);
     }
-    mPrincipalHandleListener->Forget();
     mPrincipalHandleListener = nullptr;
   }
   
@@ -238,7 +281,7 @@ void MediaStreamTrack::Stop() {
     return;
   }
 
-  mSource->UnregisterSink(this);
+  mSource->UnregisterSink(mSink.get());
 
   MOZ_ASSERT(mOwningStream,
              "Every MediaStreamTrack needs an owning DOMMediaStream");
@@ -371,6 +414,16 @@ void MediaStreamTrack::NotifyPrincipalHandleChanged(
 void MediaStreamTrack::MutedChanged(bool aNewState) {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+
+
+
+
+
+
+
+
+
   if (mMuted == aNewState) {
     MOZ_ASSERT_UNREACHABLE("Muted state didn't actually change");
     return;
@@ -448,7 +501,7 @@ void MediaStreamTrack::SetReadyState(MediaStreamTrackState aState) {
 
   if (mReadyState == MediaStreamTrackState::Live &&
       aState == MediaStreamTrackState::Ended && mSource) {
-    mSource->UnregisterSink(this);
+    mSource->UnregisterSink(mSink.get());
   }
 
   mReadyState = aState;
@@ -468,7 +521,12 @@ void MediaStreamTrack::OverrideEnded() {
     return;
   }
 
-  mSource->UnregisterSink(this);
+  mSource->UnregisterSink(mSink.get());
+
+  if (mPrincipalHandleListener) {
+    RemoveListener(mPrincipalHandleListener);
+  }
+  mPrincipalHandleListener = nullptr;
 
   mReadyState = MediaStreamTrackState::Ended;
 
