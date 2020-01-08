@@ -403,21 +403,26 @@ nsSecureBrowserUIImpl::OnLocationChange(nsIWebProgress* aWebProgress,
     mTopLevelSecurityInfo = nullptr;
   }
 
-  
-  nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
-  if (channel) {
-    MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
-            ("  we have a channel %p", channel.get()));
-    nsresult rv = UpdateStateAndSecurityInfo(channel, aLocation);
+  if (aFlags & LOCATION_CHANGE_ERROR_PAGE) {
+    mState = STATE_IS_INSECURE;
+    mTopLevelSecurityInfo = nullptr;
+  } else {
     
-    
-    
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
+    if (channel) {
       MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
-              ("  Failed to update security info. "
-               "Setting everything to 'not secure' to be safe."));
-      mState = STATE_IS_INSECURE;
-      mTopLevelSecurityInfo = nullptr;
+              ("  we have a channel %p", channel.get()));
+      nsresult rv = UpdateStateAndSecurityInfo(channel, aLocation);
+      
+      
+      
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+                ("  Failed to update security info. "
+                 "Setting everything to 'not secure' to be safe."));
+        mState = STATE_IS_INSECURE;
+        mTopLevelSecurityInfo = nullptr;
+      }
     }
   }
 
