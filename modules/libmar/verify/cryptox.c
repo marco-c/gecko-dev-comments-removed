@@ -49,7 +49,7 @@ NSS_LoadPublicKey(const unsigned char *certData, unsigned int certDataSize,
 }
 
 CryptoX_Result
-NSS_VerifyBegin(VFYContext **ctx, 
+NSS_VerifyBegin(VFYContext **ctx,
                 SECKEYPublicKey * const *publicKey)
 {
   SECStatus status;
@@ -58,14 +58,14 @@ NSS_VerifyBegin(VFYContext **ctx,
   }
 
   
-  if ((SECKEY_PublicKeyStrength(*publicKey) * 8) < 
+  if ((SECKEY_PublicKeyStrength(*publicKey) * 8) <
       XP_MIN_SIGNATURE_LEN_IN_BYTES) {
-    fprintf(stderr, "ERROR: Key length must be >= %d bytes\n", 
+    fprintf(stderr, "ERROR: Key length must be >= %d bytes\n",
             XP_MIN_SIGNATURE_LEN_IN_BYTES);
     return CryptoX_Error;
   }
 
-  *ctx = VFY_CreateContext(*publicKey, NULL, 
+  *ctx = VFY_CreateContext(*publicKey, NULL,
                            SEC_OID_PKCS1_SHA384_WITH_RSA_ENCRYPTION, NULL);
   if (*ctx == NULL) {
     return CryptoX_Error;
@@ -84,8 +84,8 @@ NSS_VerifyBegin(VFYContext **ctx,
 
 
 CryptoX_Result
-NSS_VerifySignature(VFYContext * const *ctx, 
-                    const unsigned char *signature, 
+NSS_VerifySignature(VFYContext * const *ctx,
+                    const unsigned char *signature,
                     unsigned int signatureLen)
 {
   SECItem signedItem;
@@ -113,7 +113,7 @@ NSS_VerifySignature(VFYContext * const *ctx,
 CryptoX_Result
 CryptoAPI_VerifySignature(HCRYPTHASH *hash,
                           HCRYPTKEY *pubKey,
-                          const BYTE *signature, 
+                          const BYTE *signature,
                           DWORD signatureLen)
 {
   DWORD i;
@@ -133,7 +133,7 @@ CryptoAPI_VerifySignature(HCRYPTHASH *hash,
   }
 
   for (i = 0; i < signatureLen; i++) {
-    signatureReversed[i] = signature[signatureLen - 1 - i]; 
+    signatureReversed[i] = signature[signatureLen - 1 - i];
   }
   result = CryptVerifySignature(*hash, signatureReversed,
                                 signatureLen, *pubKey, NULL, 0);
@@ -151,7 +151,7 @@ CryptoAPI_VerifySignature(HCRYPTHASH *hash,
 
 
 CryptoX_Result
-CryptoAPI_LoadPublicKey(HCRYPTPROV provider, 
+CryptoAPI_LoadPublicKey(HCRYPTPROV provider,
                         BYTE *certData,
                         DWORD sizeOfCertData,
                         HCRYPTKEY *publicKey)
@@ -164,15 +164,15 @@ CryptoAPI_LoadPublicKey(HCRYPTPROV provider,
 
   blob.cbData = sizeOfCertData;
   blob.pbData = certData;
-  if (!CryptQueryObject(CERT_QUERY_OBJECT_BLOB, &blob, 
-                        CERT_QUERY_CONTENT_FLAG_CERT, 
-                        CERT_QUERY_FORMAT_FLAG_BINARY, 
-                        0, NULL, NULL, NULL, 
+  if (!CryptQueryObject(CERT_QUERY_OBJECT_BLOB, &blob,
+                        CERT_QUERY_CONTENT_FLAG_CERT,
+                        CERT_QUERY_FORMAT_FLAG_BINARY,
+                        0, NULL, NULL, NULL,
                         NULL, NULL, (const void **)&context)) {
     return CryptoX_Error;
   }
 
-  if (!CryptImportPublicKeyInfo(provider, 
+  if (!CryptImportPublicKeyInfo(provider,
                                 PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
                                 &context->pCertInfo->SubjectPublicKeyInfo,
                                 publicKey)) {
@@ -198,25 +198,25 @@ CryptoAPI_LoadPublicKey(HCRYPTPROV provider,
 CryptoX_Result
 CryptoAPI_InitCryptoContext(HCRYPTPROV *provider)
 {
-  if (!CryptAcquireContext(provider, 
-                           NULL, 
-                           MS_ENH_RSA_AES_PROV, 
-                           PROV_RSA_AES, 
+  if (!CryptAcquireContext(provider,
+                           NULL,
+                           MS_ENH_RSA_AES_PROV,
+                           PROV_RSA_AES,
                            CRYPT_VERIFYCONTEXT)) {
-    if (!CryptAcquireContext(provider, 
-                             NULL, 
-                             MS_ENH_RSA_AES_PROV, 
-                             PROV_RSA_AES, 
+    if (!CryptAcquireContext(provider,
+                             NULL,
+                             MS_ENH_RSA_AES_PROV,
+                             PROV_RSA_AES,
                              CRYPT_NEWKEYSET | CRYPT_VERIFYCONTEXT)) {
-      if (!CryptAcquireContext(provider, 
-                               NULL, 
-                               NULL, 
-                               PROV_RSA_AES, 
+      if (!CryptAcquireContext(provider,
+                               NULL,
+                               NULL,
+                               PROV_RSA_AES,
                                CRYPT_VERIFYCONTEXT)) {
-        if (!CryptAcquireContext(provider, 
-                                 NULL, 
-                                 NULL, 
-                                 PROV_RSA_AES, 
+        if (!CryptAcquireContext(provider,
+                                 NULL,
+                                 NULL,
+                                 PROV_RSA_AES,
                                  CRYPT_NEWKEYSET | CRYPT_VERIFYCONTEXT)) {
           *provider = CryptoX_InvalidHandleValue;
           return CryptoX_Error;

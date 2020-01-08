@@ -1394,7 +1394,7 @@ nsHTMLDocument::Open(JSContext* cx,
   if (curDocShell) {
     curDocShell->GetSameTypeParent(getter_AddRefs(parent));
   }
-  
+
   
   
   
@@ -1983,7 +1983,7 @@ nsHTMLDocument::ResolveName(JSContext* aCx, const nsAString& aName,
   } else {
     
     Element *e = entry->GetIdElement();
-  
+
     if (!e || !nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(e)) {
       return false;
     }

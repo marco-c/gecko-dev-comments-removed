@@ -35,7 +35,7 @@ class nsContentPolicy : public nsIContentPolicy
     
     
     nsresult CheckPolicy(CPMethod policyMethod,
-                         nsIURI *aURI, 
+                         nsIURI *aURI,
                          nsILoadInfo *aLoadInfo,
                          const nsACString &mimeGuess,
                          int16_t *decision);

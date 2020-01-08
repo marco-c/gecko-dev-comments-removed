@@ -34,7 +34,7 @@
 int
 NSSInitCryptoContext(const char *NSSConfigDir)
 {
-  SECStatus status = NSS_Initialize(NSSConfigDir, 
+  SECStatus status = NSS_Initialize(NSSConfigDir,
                                     "", "", SECMOD_DB, NSS_INIT_READONLY);
   if (SECSuccess != status) {
     fprintf(stderr, "ERROR: Could not initialize NSS\n");
@@ -52,11 +52,11 @@ NSSInitCryptoContext(const char *NSSConfigDir)
 
 
 int
-NSSSignBegin(const char *certName, 
-             SGNContext **ctx, 
-             SECKEYPrivateKey **privKey, 
+NSSSignBegin(const char *certName,
+             SGNContext **ctx,
+             SECKEYPrivateKey **privKey,
              CERTCertificate **cert,
-             uint32_t *signatureLength) 
+             uint32_t *signatureLength)
 {
   secuPWData pwdata = { PW_NONE, 0 };
   if (!certName || !ctx || !privKey || !cert || !signatureLength) {
@@ -81,16 +81,16 @@ NSSSignBegin(const char *certName,
   *signatureLength = PK11_SignatureLen(*privKey);
 
   if (*signatureLength > BLOCKSIZE) {
-    fprintf(stderr, 
+    fprintf(stderr,
             "ERROR: Program must be compiled with a larger block size"
-            " to support signing with signatures this large: %u.\n", 
+            " to support signing with signatures this large: %u.\n",
             *signatureLength);
     return -1;
   }
 
   
   if (*signatureLength < XP_MIN_SIGNATURE_LEN_IN_BYTES) {
-    fprintf(stderr, "ERROR: Key length must be >= %d bytes\n", 
+    fprintf(stderr, "ERROR: Key length must be >= %d bytes\n",
             XP_MIN_SIGNATURE_LEN_IN_BYTES);
     return -1;
   }
@@ -100,12 +100,12 @@ NSSSignBegin(const char *certName,
     fprintf(stderr, "ERROR: Could not create signature context\n");
     return -1;
   }
-  
+
   if (SGN_Begin(*ctx) != SECSuccess) {
     fprintf(stderr, "ERROR: Could not begin signature\n");
     return -1;
   }
-  
+
   return 0;
 }
 
@@ -130,7 +130,7 @@ WriteAndUpdateSignatures(FILE *fpDest, void *buffer,
                          const char *err)
 {
   uint32_t k;
-  if (!size) { 
+  if (!size) {
     return 0;
   }
 
@@ -157,7 +157,7 @@ WriteAndUpdateSignatures(FILE *fpDest, void *buffer,
 
 
 void
-AdjustIndexContentOffsets(char *indexBuf, uint32_t indexLength, uint32_t offsetAmount) 
+AdjustIndexContentOffsets(char *indexBuf, uint32_t indexLength, uint32_t offsetAmount)
 {
   uint32_t *offsetToContent;
   char *indexBufLoc = indexBuf;
@@ -165,7 +165,7 @@ AdjustIndexContentOffsets(char *indexBuf, uint32_t indexLength, uint32_t offsetA
   
   while (indexBufLoc != (indexBuf + indexLength)) {
     
-    offsetToContent = (uint32_t *)indexBufLoc; 
+    offsetToContent = (uint32_t *)indexBufLoc;
     *offsetToContent = ntohl(*offsetToContent);
     *offsetToContent += offsetAmount;
     *offsetToContent = htonl(*offsetToContent);
@@ -197,7 +197,7 @@ ReadWriteAndUpdateSignatures(FILE *fpSrc, FILE *fpDest, void *buffer,
                              uint32_t ctxCount,
                              const char *err)
 {
-  if (!size) { 
+  if (!size) {
     return 0;
   }
 
@@ -223,10 +223,10 @@ ReadWriteAndUpdateSignatures(FILE *fpSrc, FILE *fpDest, void *buffer,
 
 
 int
-ReadAndWrite(FILE *fpSrc, FILE *fpDest, void *buffer, 
-             uint32_t size, const char *err) 
+ReadAndWrite(FILE *fpSrc, FILE *fpDest, void *buffer,
+             uint32_t size, const char *err)
 {
-  if (!size) { 
+  if (!size) {
     return 0;
   }
 
@@ -255,7 +255,7 @@ ReadAndWrite(FILE *fpSrc, FILE *fpDest, void *buffer,
 int
 strip_signature_block(const char *src, const char * dest)
 {
-  uint32_t offsetToIndex, dstOffsetToIndex, indexLength, 
+  uint32_t offsetToIndex, dstOffsetToIndex, indexLength,
     numSignatures = 0, leftOver;
   int32_t stripAmount = 0;
   int64_t oldPos, sizeOfEntireMAR = 0, realSizeOfSrcMAR, numBytesToCopy,
@@ -314,7 +314,7 @@ strip_signature_block(const char *src, const char * dest)
 
   if (hasSignatureBlock) {
     
-    if (fread(&sizeOfEntireMAR, 
+    if (fread(&sizeOfEntireMAR,
               sizeof(sizeOfEntireMAR), 1, fpSrc) != 1) {
       fprintf(stderr, "ERROR: Could read mar size\n");
       goto failure;
@@ -324,7 +324,7 @@ strip_signature_block(const char *src, const char * dest)
       fprintf(stderr, "ERROR: Source MAR is not of the right size\n");
       goto failure;
     }
-  
+
     
     if (fread(&numSignatures, sizeof(numSignatures), 1, fpSrc) != 1) {
       fprintf(stderr, "ERROR: Could read num signatures\n");
@@ -352,7 +352,7 @@ strip_signature_block(const char *src, const char * dest)
         fprintf(stderr, "ERROR: Could not skip past signature algorithm ID\n");
       }
 
-      stripAmount += sizeof(uint32_t) + sizeof(uint32_t) + signatureLen; 
+      stripAmount += sizeof(uint32_t) + sizeof(uint32_t) + signatureLen;
     }
 
   } else {
@@ -419,13 +419,13 @@ strip_signature_block(const char *src, const char * dest)
   }
 
   
-  if (ReadAndWrite(fpSrc, fpDest, buf, 
+  if (ReadAndWrite(fpSrc, fpDest, buf,
                    leftOver, "left over content block")) {
     goto failure;
   }
 
   
-  if (ReadAndWrite(fpSrc, fpDest, &indexLength, 
+  if (ReadAndWrite(fpSrc, fpDest, &indexLength,
                    sizeof(indexLength), "index length")) {
     goto failure;
   }
@@ -442,9 +442,9 @@ strip_signature_block(const char *src, const char * dest)
   if (hasSignatureBlock) {
     AdjustIndexContentOffsets(indexBuf, indexLength, -stripAmount);
   } else {
-    AdjustIndexContentOffsets(indexBuf, indexLength, 
-                              sizeof(sizeOfEntireMAR) + 
-                              sizeof(numSignatures) - 
+    AdjustIndexContentOffsets(indexBuf, indexLength,
+                              sizeof(sizeOfEntireMAR) +
+                              sizeof(numSignatures) -
                               stripAmount);
   }
 
@@ -454,7 +454,7 @@ strip_signature_block(const char *src, const char * dest)
   }
 
   rv = 0;
-failure: 
+failure:
   if (fpSrc) {
     fclose(fpSrc);
   }
@@ -467,7 +467,7 @@ failure:
     remove(dest);
   }
 
-  if (indexBuf) { 
+  if (indexBuf) {
     free(indexBuf);
   }
 
@@ -816,18 +816,18 @@ failure:
 
 
 int
-mar_repackage_and_sign(const char *NSSConfigDir, 
+mar_repackage_and_sign(const char *NSSConfigDir,
                        const char * const *certNames,
                        uint32_t certCount,
-                       const char *src, 
-                       const char *dest) 
+                       const char *src,
+                       const char *dest)
 {
-  uint32_t offsetToIndex, dstOffsetToIndex, indexLength, 
+  uint32_t offsetToIndex, dstOffsetToIndex, indexLength,
     numSignatures = 0, leftOver,
     signatureAlgorithmID, signatureSectionLength = 0;
   uint32_t signatureLengths[MAX_SIGNATURES];
-  int64_t oldPos, sizeOfEntireMAR = 0, realSizeOfSrcMAR, 
-    signaturePlaceholderOffset, numBytesToCopy, 
+  int64_t oldPos, sizeOfEntireMAR = 0, realSizeOfSrcMAR,
+    signaturePlaceholderOffset, numBytesToCopy,
     numChunks, i;
   FILE *fpSrc = NULL, *fpDest = NULL;
   int rv = -1, hasSignatureBlock;
@@ -911,7 +911,7 @@ mar_repackage_and_sign(const char *NSSConfigDir,
 
   if (hasSignatureBlock) {
     
-    if (fread(&sizeOfEntireMAR, 
+    if (fread(&sizeOfEntireMAR,
               sizeof(sizeOfEntireMAR), 1, fpSrc) != 1) {
       fprintf(stderr, "ERROR: Could read mar size\n");
       goto failure;
@@ -921,7 +921,7 @@ mar_repackage_and_sign(const char *NSSConfigDir,
       fprintf(stderr, "ERROR: Source MAR is not of the right size\n");
       goto failure;
     }
-  
+
     
     if (fread(&numSignatures, sizeof(numSignatures), 1, fpSrc) != 1) {
       fprintf(stderr, "ERROR: Could read num signatures\n");
@@ -1067,9 +1067,9 @@ mar_repackage_and_sign(const char *NSSConfigDir,
   if (hasSignatureBlock) {
     AdjustIndexContentOffsets(indexBuf, indexLength, signatureSectionLength);
   } else {
-    AdjustIndexContentOffsets(indexBuf, indexLength, 
-                              sizeof(sizeOfEntireMAR) + 
-                              sizeof(numSignatures) + 
+    AdjustIndexContentOffsets(indexBuf, indexLength,
+                              sizeof(sizeOfEntireMAR) +
+                              sizeof(numSignatures) +
                               signatureSectionLength);
   }
 
@@ -1119,7 +1119,7 @@ mar_repackage_and_sign(const char *NSSConfigDir,
   }
 
   rv = 0;
-failure: 
+failure:
   if (fpSrc) {
     fclose(fpSrc);
   }
@@ -1132,7 +1132,7 @@ failure:
     remove(dest);
   }
 
-  if (indexBuf) { 
+  if (indexBuf) {
     free(indexBuf);
   }
 

@@ -31,7 +31,7 @@ struct ProductInformationBlock;
 
 
 
-int get_mar_file_info(const char *path, 
+int get_mar_file_info(const char *path,
                       int *hasSignatureBlock,
                       uint32_t *numSignatures,
                       int *hasAdditionalBlocks,
@@ -47,7 +47,7 @@ int get_mar_file_info(const char *path,
 
 
 int
-read_product_info_block(char *path, 
+read_product_info_block(char *path,
                         struct ProductInformationBlock *infoBlock);
 
 

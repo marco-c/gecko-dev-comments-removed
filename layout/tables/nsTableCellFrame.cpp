@@ -243,7 +243,7 @@ nsTableCellFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
     
     
     TableArea damageArea(colIndex, rowIndex, GetColSpan(),
-      std::min(static_cast<uint32_t>(GetRowSpan()), 
+      std::min(static_cast<uint32_t>(GetRowSpan()),
                tableFrame->GetRowCount() - rowIndex));
     tableFrame->AddBCDamageArea(damageArea);
   }

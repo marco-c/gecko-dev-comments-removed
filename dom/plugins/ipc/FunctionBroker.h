@@ -168,7 +168,7 @@ extern IdToPtrMap sIdToPtrMap;
 #else 
 
 
-#define HOOK_CALL 
+#define HOOK_CALL
 
 #endif 
 

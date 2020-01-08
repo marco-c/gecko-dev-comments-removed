@@ -90,7 +90,7 @@ public:
     return AddEventListener(aType, aListener, aUseCapture,
                             Nullable<bool>(aWantsUntrusted));
   }
-  
+
   
 
 
@@ -240,7 +240,7 @@ public:
 
 
 
-  virtual void GetEventTargetParent(EventChainPreVisitor& aVisitor) = 0;  
+  virtual void GetEventTargetParent(EventChainPreVisitor& aVisitor) = 0;
 
   
 
@@ -269,7 +269,7 @@ public:
 
 
   virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) = 0;
-  
+
 protected:
   EventHandlerNonNull* GetEventHandler(nsAtom* aType);
   void SetEventHandler(nsAtom* aType, EventHandlerNonNull* aHandler);

@@ -33,7 +33,7 @@ static int mar_insert_item(MarFile *mar, const char *name, int namelen,
                            uint32_t offset, uint32_t length, uint32_t flags) {
   MarItem *item, *root;
   uint32_t hash;
-  
+
   item = (MarItem *) malloc(sizeof(MarItem) + namelen);
   if (!item)
     return -1;
@@ -231,7 +231,7 @@ void mar_close(MarFile *mar) {
 
 
 
-int get_mar_file_info_fp(FILE *fp, 
+int get_mar_file_info_fp(FILE *fp,
                          int *hasSignatureBlock,
                          uint32_t *numSignatures,
                          int *hasAdditionalBlocks,
@@ -239,7 +239,7 @@ int get_mar_file_info_fp(FILE *fp,
                          uint32_t *numAdditionalBlocks)
 {
   uint32_t offsetToIndex, offsetToContent, signatureCount, signatureLen, i;
-  
+
   
   if (!hasSignatureBlock && !hasAdditionalBlocks) {
     return -1;
@@ -369,7 +369,7 @@ int get_mar_file_info_fp(FILE *fp,
 
 
 int
-read_product_info_block(char *path, 
+read_product_info_block(char *path,
                         struct ProductInformationBlock *infoBlock)
 {
   int rv;
@@ -394,7 +394,7 @@ read_product_info_block(char *path,
 
 
 int
-mar_read_product_info_block(MarFile *mar, 
+mar_read_product_info_block(MarFile *mar,
                             struct ProductInformationBlock *infoBlock)
 {
   uint32_t i, offsetAdditionalBlocks, numAdditionalBlocks,
@@ -412,18 +412,18 @@ mar_read_product_info_block(MarFile *mar,
   }
   for (i = 0; i < numAdditionalBlocks; ++i) {
     
-    if (fread(&additionalBlockSize, 
-              sizeof(additionalBlockSize), 
+    if (fread(&additionalBlockSize,
+              sizeof(additionalBlockSize),
               1, mar->fp) != 1) {
       return -1;
     }
-    additionalBlockSize = ntohl(additionalBlockSize) - 
-                          sizeof(additionalBlockSize) - 
+    additionalBlockSize = ntohl(additionalBlockSize) -
+                          sizeof(additionalBlockSize) -
                           sizeof(additionalBlockID);
 
     
-    if (fread(&additionalBlockID, 
-              sizeof(additionalBlockID), 
+    if (fread(&additionalBlockID,
+              sizeof(additionalBlockID),
               1, mar->fp) != 1) {
       return -1;
     }
@@ -466,9 +466,9 @@ mar_read_product_info_block(MarFile *mar,
         infoBlock->productVersion = NULL;
         return -1;
       }
-      infoBlock->MARChannelID = 
+      infoBlock->MARChannelID =
         strdup(infoBlock->MARChannelID);
-      infoBlock->productVersion = 
+      infoBlock->productVersion =
         strdup(infoBlock->productVersion);
       return 0;
     } else {
@@ -566,7 +566,7 @@ int mar_read(MarFile *mar, const MarItem *item, int offset, uint8_t *buf,
 
 
 
-int get_mar_file_info(const char *path, 
+int get_mar_file_info(const char *path,
                       int *hasSignatureBlock,
                       uint32_t *numSignatures,
                       int *hasAdditionalBlocks,
@@ -581,7 +581,7 @@ int get_mar_file_info(const char *path,
     return -1;
   }
 
-  rv = get_mar_file_info_fp(fp, hasSignatureBlock, 
+  rv = get_mar_file_info_fp(fp, hasSignatureBlock,
                             numSignatures, hasAdditionalBlocks,
                             offsetAdditionalBlocks, numAdditionalBlocks);
 

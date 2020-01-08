@@ -121,7 +121,7 @@ private:
   {
     static Dst* QueryFrame(Src* aFrame) { return nullptr; }
   };
-  
+
   
   
   

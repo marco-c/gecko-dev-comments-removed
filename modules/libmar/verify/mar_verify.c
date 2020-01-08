@@ -85,12 +85,12 @@ int mar_verify_signatures_for_fp(FILE *fp,
 
 
 int
-ReadAndUpdateVerifyContext(FILE *fp, 
+ReadAndUpdateVerifyContext(FILE *fp,
                            void *buffer,
-                           uint32_t size, 
+                           uint32_t size,
                            CryptoX_SignatureHandle *ctxs,
                            uint32_t count,
-                           const char *err) 
+                           const char *err)
 {
   uint32_t k;
   if (!fp || !buffer || !ctxs || count == 0 || !err) {
@@ -98,7 +98,7 @@ ReadAndUpdateVerifyContext(FILE *fp,
     return CryptoX_Error;
   }
 
-  if (!size) { 
+  if (!size) {
     return CryptoX_Success;
   }
 
@@ -140,7 +140,7 @@ mar_verify_signatures(MarFile *mar,
   CryptoX_ProviderHandle provider = CryptoX_InvalidHandleValue;
   CryptoX_PublicKey keys[MAX_SIGNATURES];
   uint32_t k;
-  
+
   memset(keys, 0, sizeof(keys));
 
   if (!mar || !certData || !certDataSizes || certCount == 0) {
@@ -153,7 +153,7 @@ mar_verify_signatures(MarFile *mar,
     goto failure;
   }
 
-  if (CryptoX_Failed(CryptoX_InitCryptoProvider(&provider))) { 
+  if (CryptoX_Failed(CryptoX_InitCryptoProvider(&provider))) {
     fprintf(stderr, "ERROR: Could not init crytpo library.\n");
     goto failure;
   }
@@ -206,7 +206,7 @@ mar_extract_and_verify_signatures_fp(FILE *fp,
     fprintf(stderr, "ERROR: Invalid file pointer passed.\n");
     return CryptoX_Error;
   }
-  
+
   
 
   if (fseeko(fp, 0, SEEK_END)) {
@@ -246,7 +246,7 @@ mar_extract_and_verify_signatures_fp(FILE *fp,
       return CryptoX_Error;
     }
     signatureAlgorithmIDs[i] = ntohl(signatureAlgorithmIDs[i]);
-  
+
     if (fread(&signatureLen, sizeof(uint32_t), 1, fp) != 1) {
       fprintf(stderr, "ERROR: Could not read signatures length.\n");
       return CryptoX_Error;
@@ -384,7 +384,7 @@ mar_verify_signatures_for_fp(FILE *fp,
 
 
 
-  if (CryptoX_Failed(ReadAndUpdateVerifyContext(fp, buf, 
+  if (CryptoX_Failed(ReadAndUpdateVerifyContext(fp, buf,
                                                 SIGNATURE_BLOCK_OFFSET +
                                                 sizeof(uint32_t),
                                                 signatureHandles,
@@ -397,7 +397,7 @@ mar_verify_signatures_for_fp(FILE *fp,
   for (i = 0; i < signatureCount; i++) {
     
     if (CryptoX_Failed(ReadAndUpdateVerifyContext(fp,
-                                                  &buf, 
+                                                  &buf,
                                                   sizeof(uint32_t),
                                                   signatureHandles,
                                                   signatureCount,
@@ -405,9 +405,9 @@ mar_verify_signatures_for_fp(FILE *fp,
       goto failure;
     }
 
-    if (CryptoX_Failed(ReadAndUpdateVerifyContext(fp, 
+    if (CryptoX_Failed(ReadAndUpdateVerifyContext(fp,
                                                   &signatureLengths[i],
-                                                  sizeof(uint32_t), 
+                                                  sizeof(uint32_t),
                                                   signatureHandles,
                                                   signatureCount,
                                                   "signature length"))) {

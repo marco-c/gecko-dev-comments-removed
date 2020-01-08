@@ -142,7 +142,7 @@ public:
 
 
   static bool IsDOMAttrTrue(const Accessible* aAccessible, nsAtom* aAttr);
-  
+
   
 
 

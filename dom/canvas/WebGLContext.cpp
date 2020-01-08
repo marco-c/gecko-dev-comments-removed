@@ -2306,7 +2306,7 @@ WebGLContext::GetVRFrame()
 {
     if (!gl)
         return nullptr;
-    
+
     
     if (!mVRScreen) {
         auto caps = gl->Screen()->mCaps;

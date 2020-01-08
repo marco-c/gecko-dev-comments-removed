@@ -56,8 +56,8 @@ user_pref("string", "value");
   );
 
   
-  DEFAULT(R"(   
-		
+  DEFAULT(R"(
+
     )" "\v \t \v \f",
     ""
   );

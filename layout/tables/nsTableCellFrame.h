@@ -192,7 +192,7 @@ public:
                "mColIndex out of sync with first continuation");
     return mColIndex;
   }
-    
+
   void SetColIndex(int32_t aColIndex);
 
   

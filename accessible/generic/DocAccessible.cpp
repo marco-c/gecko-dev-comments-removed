@@ -2516,7 +2516,7 @@ DocAccessible::ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm)
   if (!acc) {
     return;
   }
-  
+
   
   
   mNotificationController->ScheduleNotification<DocAccessible, Accessible>

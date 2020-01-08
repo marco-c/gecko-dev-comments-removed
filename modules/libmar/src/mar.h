@@ -122,9 +122,9 @@ int mar_read(MarFile *mar, const MarItem *item, int offset, uint8_t *buf,
 
 
 
-int mar_create(const char *dest, 
-               int numfiles, 
-               char **files, 
+int mar_create(const char *dest,
+               int numfiles,
+               char **files,
                struct ProductInformationBlock *infoBlock);
 
 
@@ -189,7 +189,7 @@ int mar_verify_signatures(MarFile *mar,
 
 
 int
-mar_read_product_info_block(MarFile *mar, 
+mar_read_product_info_block(MarFile *mar,
                             struct ProductInformationBlock *infoBlock);
 
 #ifdef __cplusplus
