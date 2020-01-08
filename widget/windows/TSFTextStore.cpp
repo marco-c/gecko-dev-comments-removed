@@ -5041,17 +5041,19 @@ TSFTextStore::InsertTextAtSelectionInternal(const nsAString& aInsertStr,
     PendingAction* compositionEnd = mPendingActions.AppendElement();
     compositionEnd->mType = PendingAction::Type::eCompositionEnd;
     compositionEnd->mData = aInsertStr;
+    compositionEnd->mSelectionStart = compositionStart->mSelectionStart;
 
     MOZ_LOG(sTextStoreLog, LogLevel::Debug,
       ("0x%p   TSFTextStore::InsertTextAtSelectionInternal() "
        "appending pending compositionstart and compositionend... "
        "PendingCompositionStart={ mSelectionStart=%d, "
        "mSelectionLength=%d }, PendingCompositionEnd={ mData=\"%s\" "
-       "(Length()=%u) }",
+       "(Length()=%u), mSelectionStart=%d }",
        this, compositionStart->mSelectionStart,
        compositionStart->mSelectionLength,
        GetEscapedUTF8String(compositionEnd->mData).get(),
-       compositionEnd->mData.Length()));
+       compositionEnd->mData.Length(),
+       compositionEnd->mSelectionStart));
   }
 
   contentForTSF.ReplaceSelectedTextWith(aInsertStr);
@@ -5151,13 +5153,17 @@ TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
   
   
   
+  
+  
+  
+  
+  
+  
   if (!aPreserveSelection &&
-      WasTextInsertedWithoutCompositionAt(aStart, aLength)) {
+      IsLastPendingActionCompositionEndAt(aStart, aLength)) {
     const PendingAction& pendingCompositionEnd = mPendingActions.LastElement();
-    const PendingAction& pendingCompositionStart =
-      mPendingActions[mPendingActions.Length() - 2];
-    contentForTSF.RestoreCommittedComposition(
-      aComposition, pendingCompositionStart, pendingCompositionEnd);
+    contentForTSF.RestoreCommittedComposition(aComposition,
+                                              pendingCompositionEnd);
     mPendingActions.RemoveLastElement();
     MOZ_LOG(sTextStoreLog, LogLevel::Info,
       ("0x%p   TSFTextStore::RecordCompositionStartAction() "
@@ -5239,6 +5245,7 @@ TSFTextStore::RecordCompositionEndAction()
   PendingAction* action = mPendingActions.AppendElement();
   action->mType = PendingAction::Type::eCompositionEnd;
   action->mData = mComposition.mString;
+  action->mSelectionStart = mComposition.mStart;
 
   Content& contentForTSF = ContentForTSFRef();
   if (!contentForTSF.IsInitialized()) {
@@ -7150,24 +7157,21 @@ TSFTextStore::Content::StartComposition(ITfCompositionView* aCompositionView,
 void
 TSFTextStore::Content::RestoreCommittedComposition(
                          ITfCompositionView* aCompositionView,
-                         const PendingAction& aPendingCompositionStart,
                          const PendingAction& aCanceledCompositionEnd)
 {
   MOZ_ASSERT(mInitialized);
   MOZ_ASSERT(aCompositionView);
   MOZ_ASSERT(!mComposition.mView);
-  MOZ_ASSERT(aPendingCompositionStart.mType ==
-               PendingAction::Type::eCompositionStart);
   MOZ_ASSERT(aCanceledCompositionEnd.mType ==
                PendingAction::Type::eCompositionEnd);
   MOZ_ASSERT(GetSubstring(
-               static_cast<uint32_t>(aPendingCompositionStart.mSelectionStart),
+               static_cast<uint32_t>(aCanceledCompositionEnd.mSelectionStart),
                static_cast<uint32_t>(aCanceledCompositionEnd.mData.Length())) ==
                aCanceledCompositionEnd.mData);
 
   
   mComposition.Start(aCompositionView,
-                     aPendingCompositionStart.mSelectionStart,
+                     aCanceledCompositionEnd.mSelectionStart,
                      aCanceledCompositionEnd.mData);
   mLatestCompositionStartOffset = mComposition.mStart;
   mLatestCompositionEndOffset = mComposition.EndOffset();

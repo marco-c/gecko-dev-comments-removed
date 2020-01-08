@@ -702,6 +702,7 @@ protected:
     Type mType;
     
     LONG mSelectionStart;
+    
     LONG mSelectionLength;
     
     nsString mData;
@@ -747,21 +748,18 @@ protected:
 
 
 
-  bool WasTextInsertedWithoutCompositionAt(LONG aStart, LONG aLength) const
+
+
+
+  bool IsLastPendingActionCompositionEndAt(LONG aStart, LONG aLength) const
   {
-    if (mPendingActions.Length() < 2) {
+    if (mPendingActions.IsEmpty()) {
       return false;
     }
     const PendingAction& pendingLastAction = mPendingActions.LastElement();
-    if (pendingLastAction.mType != PendingAction::Type::eCompositionEnd ||
-        pendingLastAction.mData.Length() != ULONG(aLength)) {
-      return false;
-    }
-    const PendingAction& pendingPreLastAction =
-      mPendingActions[mPendingActions.Length() - 2];
-    return pendingPreLastAction.mType ==
-             PendingAction::Type::eCompositionStart &&
-           pendingPreLastAction.mSelectionStart == aStart;
+    return pendingLastAction.mType == PendingAction::Type::eCompositionEnd &&
+           pendingLastAction.mSelectionStart == aStart &&
+           pendingLastAction.mData.Length() == static_cast<ULONG>(aLength);
   }
 
   bool IsPendingCompositionUpdateIncomplete() const
@@ -901,10 +899,8 @@ protected:
 
 
 
-
     void RestoreCommittedComposition(
                          ITfCompositionView* aCompositionView,
-                         const PendingAction& aPendingCompositionStart,
                          const PendingAction& aCanceledCompositionEnd);
     void EndComposition(const PendingAction& aCompEnd);
 
