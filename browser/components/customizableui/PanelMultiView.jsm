@@ -1419,6 +1419,15 @@ var PanelView = class extends AssociatedToNode {
 
 
 
+  focusLastNavigableElement() {
+    this.selectedElement = this._navigableElements[this._navigableElements.length - 1];
+    this.focusSelectedElement();
+  }
+
+  
+
+
+
 
 
 
@@ -1515,6 +1524,14 @@ var PanelView = class extends AssociatedToNode {
         button.focus();
         break;
       }
+      case "Home":
+        stop();
+        this.focusFirstNavigableElement();
+        break;
+      case "End":
+        stop();
+        this.focusLastNavigableElement();
+        break;
       case "ArrowLeft":
       case "ArrowRight": {
         stop();
