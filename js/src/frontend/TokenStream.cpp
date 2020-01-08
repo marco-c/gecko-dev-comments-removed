@@ -3188,7 +3188,7 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::getStringOrTemplateToken(char untilCh
                 
                 
                 if (codePoint != '\n') {
-                    if (!this->charBuffer.append(unit)) {
+                    if (!appendCodePointToCharBuffer(AssertedCast<char32_t>(codePoint))) {
                         return false;
                     }
                 }
