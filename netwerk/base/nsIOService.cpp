@@ -192,6 +192,7 @@ nsIOService::nsIOService()
       mOfflineMirrorsConnectivity(true),
       mSettingOffline(false),
       mSetOfflineValue(false),
+      mSocketProcessLaunchComplete(false),
       mShutdown(false),
       mHttpHandlerAlreadyShutingDown(false),
       mNetworkLinkServiceInitialized(false),
@@ -441,14 +442,16 @@ bool nsIOService::SocketProcessReady() {
 void nsIOService::NotifySocketProcessPrefsChanged(const char *aName) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!SocketProcessReady()) {
-    mQueuedPrefNames.AppendElement(aName);
+  if (!XRE_IsParentProcess()) {
     return;
   }
 
   dom::Pref pref(nsCString(aName),  false, null_t(), null_t());
   Preferences::GetPreference(&pref);
-  Unused << mSocketProcess->GetActor()->SendPreferenceUpdate(pref);
+  auto sendPrefUpdate = [pref]() {
+    Unused << gIOService->mSocketProcess->GetActor()->SendPreferenceUpdate(pref);
+  };
+  CallOrWaitForSocketProcess(sendPrefUpdate);
 }
 
 void nsIOService::OnProcessLaunchComplete(SocketProcessHost *aHost,
@@ -456,10 +459,34 @@ void nsIOService::OnProcessLaunchComplete(SocketProcessHost *aHost,
   MOZ_ASSERT(NS_IsMainThread());
 
   LOG(("nsIOService::OnProcessLaunchComplete aSucceeded=%d\n", aSucceeded));
-  for (auto name : mQueuedPrefNames) {
-    NotifySocketProcessPrefsChanged(name);
+
+  mSocketProcessLaunchComplete = true;
+
+  if (mShutdown || !SocketProcessReady()) {
+    return;
   }
-  mQueuedPrefNames.Clear();
+
+  if (!mPendingEvents.IsEmpty()) {
+    nsTArray<std::function<void()>> pendingEvents;
+    mPendingEvents.SwapElements(pendingEvents);
+    for (auto& func : pendingEvents) {
+      func();
+    }
+  }
+}
+
+void nsIOService::CallOrWaitForSocketProcess(const std::function<void()>& aFunc) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (IsSocketProcessLaunchComplete() && SocketProcessReady()) {
+    aFunc();
+  } else {
+    mPendingEvents.AppendElement(aFunc);  
+  }
+}
+
+bool nsIOService::IsSocketProcessLaunchComplete() {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mSocketProcessLaunchComplete;
 }
 
 void nsIOService::OnProcessUnexpectedShutdown(SocketProcessHost *aHost) {
@@ -1383,7 +1410,10 @@ nsIOService::Observe(nsISupports *subject, const char *topic,
       SetOffline(false);
     }
   } else if (!strcmp(topic, kProfileDoChange)) {
-    if (data && NS_LITERAL_STRING("startup").Equals(data)) {
+    if (!data) {
+      return NS_OK;
+    }
+    if (NS_LITERAL_STRING("startup").Equals(data)) {
       
       InitializeNetworkLinkService();
       
@@ -1398,6 +1428,9 @@ nsIOService::Observe(nsISupports *subject, const char *topic,
       
       nsCOMPtr<nsISupports> cookieServ =
           do_GetService(NS_COOKIESERVICE_CONTRACTID);
+    } else if (NS_LITERAL_STRING("xpcshell-do-get-profile").Equals(data)) {
+      
+      LaunchSocketProcess();
     }
   } else if (!strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     
