@@ -1150,26 +1150,27 @@ class MOZ_RAII AutoArrayRooter : private JS::AutoGCRooter
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class AutoAssertNoException
+
+class AutoAssertNoPendingException
 {
 #ifdef DEBUG
-    JSContext* cx;
-    bool hadException;
-#endif
+    JSContext* cx_;
 
   public:
-    explicit AutoAssertNoException(JSContext* cx)
-#ifdef DEBUG
-      : cx(cx),
-        hadException(cx->isExceptionPending())
-#endif
+    explicit AutoAssertNoPendingException(JSContext* cxArg)
+      : cx_(cxArg)
     {
+        MOZ_ASSERT(!JS_IsExceptionPending(cx_));
     }
 
-    ~AutoAssertNoException()
-    {
-        MOZ_ASSERT_IF(!hadException, !cx->isExceptionPending());
+    ~AutoAssertNoPendingException() {
+        MOZ_ASSERT(!JS_IsExceptionPending(cx_));
     }
+#else
+  public:
+    explicit AutoAssertNoPendingException(JSContext* cxArg)
+    {}
+#endif
 };
 
 class MOZ_RAII AutoLockScriptData
@@ -1261,6 +1262,22 @@ class MOZ_RAII AutoEnterIonCompilation
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+enum UnsafeABIStrictness {
+    NoExceptions,
+    AllowPendingExceptions,
+    AllowThrownExceptions
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 class MOZ_RAII AutoUnsafeCallWithABI
@@ -1268,13 +1285,19 @@ class MOZ_RAII AutoUnsafeCallWithABI
 #ifdef DEBUG
     JSContext* cx_;
     bool nested_;
+    bool checkForPendingException_;
 #endif
     JS::AutoCheckCannotGC nogc;
 
   public:
 #ifdef DEBUG
-    AutoUnsafeCallWithABI();
+    explicit AutoUnsafeCallWithABI(UnsafeABIStrictness strictness =
+                                   UnsafeABIStrictness::NoExceptions);
     ~AutoUnsafeCallWithABI();
+#else
+    explicit AutoUnsafeCallWithABI(UnsafeABIStrictness unused_ =
+                                   UnsafeABIStrictness::NoExceptions)
+    {}
 #endif
 };
 
