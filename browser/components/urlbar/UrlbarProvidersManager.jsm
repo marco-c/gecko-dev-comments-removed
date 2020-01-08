@@ -424,6 +424,11 @@ function getAcceptableMatchSources(context) {
                                                ].includes(t.type));
   let restrictTokenType = restrictToken ? restrictToken.type : undefined;
   for (let source of Object.values(UrlbarUtils.MATCH_SOURCE)) {
+    
+    if (context.sources && !context.sources.includes(source)) {
+      continue;
+    }
+    
     switch (source) {
       case UrlbarUtils.MATCH_SOURCE.BOOKMARKS:
         if (UrlbarPrefs.get("suggest.bookmark") &&
