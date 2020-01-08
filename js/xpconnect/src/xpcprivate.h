@@ -2876,11 +2876,6 @@ public:
     
     
     
-    bool isAddonCompartment;
-
-    
-    
-    
     
     
     
