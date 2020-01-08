@@ -80,6 +80,12 @@ void ProxyAccessibleWrap::ScrollTo(uint32_t aHow) const {
   Proxy()->ScrollTo(aHow);
 }
 
+uint8_t
+ProxyAccessibleWrap::ActionCount() const
+{
+  return Proxy()->ActionCount();
+}
+
 
 
 void ProxyAccessibleWrap::SetTextContents(const nsAString& aText) {
