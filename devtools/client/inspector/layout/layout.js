@@ -34,8 +34,8 @@ class LayoutView {
     }
 
     const {
-      setSelectedNode,
       onShowBoxModelHighlighterForNode,
+      setSelectedNode,
     } = this.inspector.getCommonComponentProps();
 
     const {
@@ -63,12 +63,6 @@ class LayoutView {
 
     const layoutApp = LayoutApp({
       getSwatchColorPickerTooltip: this.getSwatchColorPickerTooltip,
-      setSelectedNode,
-      
-
-
-
-      showBoxModelProperties: true,
       onHideBoxModelHighlighter,
       onSetFlexboxOverlayColor,
       onSetGridOverlayColor,
@@ -82,6 +76,12 @@ class LayoutView {
       onToggleShowGridAreas,
       onToggleShowGridLineNumbers,
       onToggleShowInfiniteLines,
+      setSelectedNode,
+      
+
+
+
+      showBoxModelProperties: true,
     });
 
     const provider = createElement(Provider, {
