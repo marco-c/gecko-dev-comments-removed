@@ -40,7 +40,6 @@ add_task(async function test_empty_resourceids() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -57,7 +56,6 @@ add_task(async function test_empty_sources() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -80,7 +78,6 @@ add_task(async function test_methods_calling() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -118,7 +115,6 @@ add_task(async function test_has_one_source() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -175,7 +171,6 @@ add_task(async function test_has_two_sources() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -203,7 +198,6 @@ add_task(async function test_indexed() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -244,7 +238,6 @@ add_task(async function test_override() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -282,7 +275,6 @@ add_task(async function test_updating() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -348,7 +340,6 @@ add_task(async function test_removing() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -378,15 +369,16 @@ add_task(async function test_missing_file() {
   
 
   let ctxs = L10nRegistry.generateContexts(["en-US"], ["test.ftl", "test2.ftl"]);
-  (await ctxs.next());
-  (await ctxs.next());
+  (await ctxs.next()); 
+  (await ctxs.next()); 
+  (await ctxs.next()); 
+  (await ctxs.next()); 
 
   equal((await ctxs.next()).done, true);
 
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
 });
 
 
@@ -447,6 +439,5 @@ add_task(async function test_parallel_io() {
 
   
   L10nRegistry.sources.clear();
-  L10nRegistry.ctxCache.clear();
   L10nRegistry.load = originalLoad;
 });

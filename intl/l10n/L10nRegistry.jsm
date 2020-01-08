@@ -1,6 +1,6 @@
 const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
-const { MessageContext } = ChromeUtils.import("resource://gre/modules/MessageContext.jsm", {});
+const { MessageContext, FluentResource } = ChromeUtils.import("resource://gre/modules/MessageContext.jsm", {});
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -76,10 +76,8 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 
 
-
 const L10nRegistry = {
   sources: new Map(),
-  ctxCache: new Map(),
   bootstrap: null,
 
   
@@ -95,8 +93,27 @@ const L10nRegistry = {
       await this.bootstrap;
     }
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
+    const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
-      yield * generateContextsForLocale(locale, sourcesOrder, resourceIds);
+      for (const fetchPromises of generateResourceSetsForLocale(locale, sourcesOrder, resourceIds)) {
+        const ctxPromise = Promise.all(fetchPromises).then(
+          dataSets => {
+            const ctx = new MessageContext(locale, {
+              ...MSG_CONTEXT_OPTIONS,
+              transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
+            });
+            for (const data of dataSets) {
+              if (data === null) {
+                return null;
+              }
+              ctx.addResource(data);
+            }
+            return ctx;
+          },
+          () => null
+        );
+        yield await ctxPromise;
+      }
     }
   },
 
@@ -126,7 +143,6 @@ const L10nRegistry = {
       throw new Error(`Source with name "${source.name}" is not registered.`);
     }
     this.sources.set(source.name, source);
-    this.ctxCache.clear();
     Services.locale.setAvailableLocales(this.getAvailableLocales());
   },
 
@@ -167,27 +183,12 @@ const L10nRegistry = {
 
 
 
-function generateContextID(locale, sourcesOrder, resourceIds) {
-  const sources = sourcesOrder.join(",");
-  const ids = resourceIds.join(",");
-  return `${locale}|${sources}|${ids}`;
-}
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
+function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
   const resolvedLength = resolvedOrder.length;
   const resourcesLength = resourceIds.length;
 
@@ -208,14 +209,11 @@ async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, res
     
     
     if (resolvedLength + 1 === resourcesLength) {
-      const ctx = await generateContext(locale, order, resourceIds);
-      if (ctx !== null) {
-        yield ctx;
-      }
+      yield generateResourceSet(locale, order, resourceIds);
     } else if (resolvedLength < resourcesLength) {
       
       
-      yield * generateContextsForLocale(locale, sourcesOrder, resourceIds, order);
+      yield * generateResourceSetsForLocale(locale, sourcesOrder, resourceIds, order);
     }
   }
 }
@@ -346,35 +344,10 @@ const PSEUDO_STRATEGIES = {
 
 
 
-function generateContext(locale, sourcesOrder, resourceIds) {
-  const ctxId = generateContextID(locale, sourcesOrder, resourceIds);
-  if (L10nRegistry.ctxCache.has(ctxId)) {
-    return L10nRegistry.ctxCache.get(ctxId);
-  }
-
-  const fetchPromises = resourceIds.map((resourceId, i) => {
+function generateResourceSet(locale, sourcesOrder, resourceIds) {
+  return resourceIds.map((resourceId, i) => {
     return L10nRegistry.sources.get(sourcesOrder[i]).fetchFile(locale, resourceId);
   });
-
-  const ctxPromise = Promise.all(fetchPromises).then(
-    dataSets => {
-      const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
-      const ctx = new MessageContext(locale, {
-        ...MSG_CONTEXT_OPTIONS,
-        transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
-      });
-      for (const data of dataSets) {
-        if (data === null) {
-          return null;
-        }
-        ctx.addMessages(data);
-      }
-      return ctx;
-    },
-    () => null
-  );
-  L10nRegistry.ctxCache.set(ctxId, ctxPromise);
-  return ctxPromise;
 }
 
 
@@ -454,7 +427,9 @@ class FileSource {
       if (this.cache[fullPath] === false) {
         return Promise.reject(`The source has no resources for path "${fullPath}"`);
       }
-      if (this.cache[fullPath].then) {
+      
+      
+      if (this.cache[fullPath] !== true) {
         return this.cache[fullPath];
       }
     } else if (this.indexed) {
@@ -462,7 +437,7 @@ class FileSource {
       }
     return this.cache[fullPath] = L10nRegistry.load(fullPath).then(
       data => {
-        return this.cache[fullPath] = data;
+        return this.cache[fullPath] = FluentResource.fromString(data);
       },
       err => {
         this.cache[fullPath] = false;
