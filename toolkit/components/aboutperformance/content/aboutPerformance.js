@@ -623,7 +623,8 @@ var State = {
           name = found.tab.getAttribute("label");
           image = found.tab.getAttribute("image");
         } else {
-          name = "Preloaded: " + found.tab.linkedBrowser.contentTitle;
+          name = {id: "preloaded-tab",
+                  title: found.tab.linkedBrowser.contentTitle};
           type = "other";
         }
       } else if (id == 1) {
@@ -636,7 +637,7 @@ var State = {
         image = "chrome://mozapps/skin/extensions/extensionGeneric-16.svg";
         type = "addon";
       } else if (id == 0 && !tab.isWorker) {
-        name = "Ghost windows";
+        name = {id: "ghost-windows"};
         type = "other";
       }
 
@@ -1005,11 +1006,18 @@ var View = {
     row.parentNode.insertBefore(this._fragment, row.nextSibling);
     this._fragment = document.createDocumentFragment();
   },
-  appendRow(name, value, tooltip, type, image = "") {
+  appendRow(name, energyImpact, tooltip, type, image = "") {
     let row = document.createElement("tr");
 
     let elt = document.createElement("td");
-    elt.textContent = name;
+    if (typeof name == "string") {
+      elt.textContent = name;
+    } else {
+      if (name.title)
+        document.l10n.setAttributes(elt, name.id, {title: name.title});
+      else
+        document.l10n.setAttributes(elt, name.id);
+    }
     if (image)
       elt.style.backgroundImage = `url('${image}')`;
 
@@ -1022,26 +1030,36 @@ var View = {
     row.appendChild(elt);
 
     elt = document.createElement("td");
-    elt.textContent = type;
+    document.l10n.setAttributes(elt, "type-" + type);
     row.appendChild(elt);
 
     elt = document.createElement("td");
-    elt.textContent = value;
+    if (!energyImpact)
+      elt.textContent = "–";
+    else {
+      let impact = "high";
+      if (energyImpact < 1)
+        impact = "low";
+      else if (energyImpact < 25)
+        impact = "medium";
+      document.l10n.setAttributes(elt, "energy-impact-" + impact,
+                                  {value: energyImpact});
+    }
     row.appendChild(elt);
 
     if (tooltip)
-      row.title = tooltip;
+      document.l10n.setAttributes(row, "item", tooltip);
 
     elt = document.createElement("td");
     if (type == "tab") {
       let img = document.createElement("img");
       img.className = "action-icon close-icon";
-      img.title = "Close tab";
+      document.l10n.setAttributes(img, "close-tab");
       elt.appendChild(img);
     } else if (type == "addon") {
       let img = document.createElement("img");
       img.className = "action-icon addon-icon";
-      img.title = "Show in add-on manager";
+      document.l10n.setAttributes(img, "show-addon");
       elt.appendChild(img);
     }
     row.appendChild(elt);
@@ -1163,9 +1181,11 @@ var Control = {
                 totalDuration, durationSincePrevious, children} of counters) {
         let row =
           View.appendRow(name,
-                         this._formatEnergyImpact(dispatchesSincePrevious, durationSincePrevious),
-                         this._formatTooltip(totalDispatches, totalDuration,
-                                             dispatchesSincePrevious, durationSincePrevious),
+                         this._computeEnergyImpact(dispatchesSincePrevious,
+                                                   durationSincePrevious),
+                         {totalDispatches, totalDuration: Math.ceil(totalDuration / 1000),
+                          dispatchesSincePrevious,
+                          durationSincePrevious: Math.ceil(durationSincePrevious / 1000)},
                          type, image);
         row.windowId = id;
         if (id == selectedId) {
@@ -1176,6 +1196,7 @@ var Control = {
         if (!children.length)
           continue;
 
+        
         let elt = row.firstChild;
         let img = document.createElement("img");
         img.className = "twisty";
@@ -1184,6 +1205,18 @@ var Control = {
           img.classList.add("open");
           this._openItems.add(id);
         }
+
+        
+        
+        let l10nAttrs = document.l10n.getAttributes(elt);
+        if (l10nAttrs.id) {
+          let span = document.createElement("span");
+          document.l10n.setAttributes(span, l10nAttrs.id, l10nAttrs.args);
+          elt.removeAttribute("data-l10n-id");
+          elt.removeAttribute("data-l10n-args");
+          elt.insertBefore(span, elt.firstChild);
+        }
+
         elt.insertBefore(img, elt.firstChild);
 
         row._children = children;
@@ -1210,11 +1243,12 @@ var Control = {
       if (row.isWorker)
         type = "worker";
       View.appendRow(row.host,
-                     this._formatEnergyImpact(row.dispatchesSincePrevious,
-                                              row.durationSincePrevious),
-                     this._formatTooltip(row.dispatchCount, row.duration,
-                                         row.dispatchesSincePrevious,
-                                         row.durationSincePrevious),
+                     this._computeEnergyImpact(row.dispatchesSincePrevious,
+                                               row.durationSincePrevious),
+                     {totalDispatches: row.dispatchCount,
+                      totalDuration: Math.ceil(row.duration / 1000),
+                      dispatchesSincePrevious: row.dispatchesSincePrevious,
+                      durationSincePrevious: Math.ceil(row.durationSincePrevious / 1000)},
                      type);
     }
   },
@@ -1227,39 +1261,18 @@ var Control = {
     
     
     
-    return Math.max(duration || 0, dispatches * 1000) / UPDATE_INTERVAL_MS / 10;
-  },
-  _formatTooltip(totalDispatches, totalDuration,
-                 dispatchesSincePrevious, durationSincePrevious) {
-    function dispatchesAndDuration(dispatches, duration) {
-      let result = dispatches;
-      if (duration) {
-        duration /= 1000;
-        duration = Math.round(duration);
-        if (duration)
-          result += duration >= 1000 ? ` (${duration / 1000}s)` : ` (${duration}ms)`;
-        else
-          result += " (< 1ms)";
-      }
-      return result;
-    }
-
-    return `${dispatchesAndDuration(totalDispatches, totalDuration)} dispatches since load\n` +
-      `${dispatchesAndDuration(dispatchesSincePrevious, durationSincePrevious)} in the last seconds`;
-  },
-  _formatEnergyImpact(dispatches, duration) {
-    let energyImpact = this._computeEnergyImpact(dispatches, duration);
-    if (!energyImpact)
-      return "None";
-    energyImpact = Math.ceil(energyImpact * 100) / 100;
-    if (energyImpact < 1)
-      return `Low (${energyImpact})`;
-    if (energyImpact < 25)
-      return `Medium (${energyImpact})`;
-    return `High (${energyImpact})`;
+    let energyImpact =
+      Math.max(duration || 0, dispatches * 1000) / UPDATE_INTERVAL_MS / 10;
+    
+    return Math.ceil(energyImpact * 100) / 100;
   },
   _sortCounters(counters) {
     return counters.sort((a, b) => {
+      
+      
+      if (a.name.id && a.name.id == "ghost-windows")
+        return 1;
+
       
       
       
@@ -1270,7 +1283,9 @@ var Control = {
                                           b.durationSinceStartOfBuffer);
       if (aEI != bEI)
         return bEI - aEI;
-      return a.name.localeCompare(b.name);
+
+      
+      return String.prototype.localeCompare.call(a.name, b.name);
     });
   },
   _setOptions(options) {
