@@ -294,10 +294,8 @@ public class FileUtils {
     }
 
     public static String resolveContentUri(final Context context, final Uri uri) {
-        String path;
-        try {
-            path = getOriginalFilePathFromUri(context, uri);
-        } catch (IllegalArgumentException ex) {
+        String path = getOriginalFilePathFromUri(context, uri);
+        if (TextUtils.isEmpty(path)) {
             
             
             
