@@ -15,13 +15,13 @@
 
 
 
-if (!opener) {
+if (window.name !== "opened-dummy-window") {
   async_test(t => {
     const testURL = document.URL;
     const dummyURL = new URL("resources/dummy.html", document.URL).href;
 
     
-    const win = window.open("resources/dummy.html");
+    const win = window.open("resources/dummy.html", "opened-dummy-window");
     t.add_cleanup(() => { win.close(); });
 
     win.addEventListener("load", t.step_func(() => {
