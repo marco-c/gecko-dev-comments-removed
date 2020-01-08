@@ -5240,6 +5240,13 @@ nsFrame::MarkIntrinsicISizesDirty()
     CoordNeedsRecalc(metrics->mAscent);
   }
 
+  
+  
+  auto* parentFrame = GetParent();
+  if (parentFrame && parentFrame->IsFlexContainerFrame()) {
+    DeleteProperty(CachedFlexMeasuringReflow());
+  }
+
   if (GetStateBits() & NS_FRAME_FONT_INFLATION_FLOW_ROOT) {
     nsFontInflationData::MarkFontInflationDataTextDirty(this);
   }

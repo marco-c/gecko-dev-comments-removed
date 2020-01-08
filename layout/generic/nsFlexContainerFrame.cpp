@@ -1739,6 +1739,20 @@ nsFlexContainerFrame::
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class nsFlexContainerFrame::CachedMeasuringReflowResult
 {
   struct Key
@@ -1776,6 +1790,11 @@ public:
     , mBSize(aDesiredSize.BSize(aReflowInput.GetWritingMode()))
     , mAscent(aDesiredSize.BlockStartAscent())
   { }
+
+  
+
+
+
 
   bool IsValidFor(const ReflowInput& aReflowInput) const
   {
@@ -1837,9 +1856,6 @@ nsFlexContainerFrame::MarkIntrinsicISizesDirty()
   mCachedMinISize = NS_INTRINSIC_WIDTH_UNKNOWN;
   mCachedPrefISize = NS_INTRINSIC_WIDTH_UNKNOWN;
 
-  for (nsIFrame* childFrame : mFrames) {
-    childFrame->DeleteProperty(CachedFlexMeasuringReflow());
-  }
   nsContainerFrame::MarkIntrinsicISizesDirty();
 }
 
