@@ -4,8 +4,8 @@
 
 
 
-#ifndef BTInclusionProof_h
-#define BTInclusionProof_h
+#ifndef BTTypes_h
+#define BTTypes_h
 
 #include <vector>
 
@@ -33,6 +33,30 @@ struct InclusionProofDataV2
   uint64_t treeSize;
   uint64_t leafIndex;
   std::vector<Buffer> inclusionPath;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SignedTreeHeadDataV2
+{
+  Buffer logId;
+  uint64_t timestamp;
+  uint64_t treeSize;
+  Buffer rootHash;
 };
 
 } } 

@@ -7,12 +7,23 @@
 #ifndef BTVerifier_h
 #define BTVerifier_h
 
-#include "BTInclusionProof.h"
+#include "BTTypes.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
+#include "mozpkix/pkixder.h"
 #include "mozpkix/pkixtypes.h"
 
 namespace mozilla { namespace ct {
+
+
+
+
+
+
+pkix::Result DecodeAndVerifySignedTreeHead(
+  pkix::Input signerSubjectPublicKeyInfo, pkix::DigestAlgorithm digestAlgorithm,
+  pkix::der::PublicKeyAlgorithm publicKeyAlg, pkix::Input signedTreeHeadInput,
+  SignedTreeHeadDataV2& signedTreeHead);
 
 
 
