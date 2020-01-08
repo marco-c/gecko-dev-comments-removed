@@ -56,15 +56,16 @@ function loadSourceMaps(sources: Source[]) {
       return [];
     }
 
-    return flatten(
-      await Promise.all(
-        sources.map(async ({ id }) => {
-          const originalSources = await dispatch(loadSourceMap(id));
-          sourceQueue.queueSources(originalSources);
-          return originalSources;
-        })
-      )
-    );
+    const sourceList = await Promise.all(
+      sources.map(async ({ id }) => {
+        const originalSources = await dispatch(loadSourceMap(id));
+        sourceQueue.queueSources(originalSources);
+        return originalSources;
+      })
+    )
+
+    await sourceQueue.flush()
+    return flatten(sourceList);
   };
 }
 
@@ -206,15 +207,21 @@ export function newSources(sources: Source[]) {
 
     dispatch(({ type: "ADD_SOURCES", sources: sources }: Action));
 
-    dispatch(loadSourceMaps(sources));
-
     for (const source of sources) {
       dispatch(checkSelectedSource(source.id));
-      dispatch(checkPendingBreakpoints(source.id));
     }
 
     
     
-    await dispatch(restoreBlackBoxedSources(sources));
+    dispatch(restoreBlackBoxedSources(sources));
+
+    dispatch(loadSourceMaps(sources)).then(() => {
+      
+      
+      
+      for (const source of sources) {
+        dispatch(checkPendingBreakpoints(source.id));
+      }
+    });
   };
 }
