@@ -738,6 +738,20 @@ async function sanitizeSessionPrincipals() {
     principals.push(sw.principal);
   }
 
+  
+  let enumerator = Services.cookies.enumerator;
+  let hosts = new Set();
+  for (let cookie of enumerator) {
+    hosts.add(cookie.host + ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
+  }
+
+  hosts.forEach(host => {
+    
+    
+    principals.push(
+      Services.scriptSecurityManager.createCodebasePrincipalFromOrigin("https://" + host));
+  });
+
   await maybeSanitizeSessionPrincipals(principals);
 }
 
@@ -761,7 +775,8 @@ async function maybeSanitizeSessionPrincipals(principals) {
 async function sanitizeSessionPrincipal(principal) {
   await new Promise(resolve => {
     Services.clearData.deleteDataFromPrincipal(principal, true ,
-                                               Ci.nsIClearDataService.CLEAR_DOM_STORAGES,
+                                               Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
+                                               Ci.nsIClearDataService.CLEAR_COOKIES,
                                                resolve);
   });
 }
