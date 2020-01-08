@@ -674,6 +674,12 @@ SharedStubInfo::outerScript(JSContext* cx)
 
 
 
+
+extern bool
+DoCacheIRBinaryArithFallback(JSContext* cx, BaselineFrame* frame, ICBinaryArith_Fallback* stub_,
+                             HandleValue lhs, HandleValue rhs, MutableHandleValue ret,
+                             DebugModeOSRVolatileStub<ICBinaryArith_Fallback*>& stub);
+
 static bool
 DoBinaryArithFallback(JSContext* cx, void* payload, ICBinaryArith_Fallback* stub_,
                       HandleValue lhs, HandleValue rhs, MutableHandleValue ret)
@@ -689,6 +695,7 @@ DoBinaryArithFallback(JSContext* cx, void* payload, ICBinaryArith_Fallback* stub
     FallbackICSpew(cx, stub, "BinaryArith(%s,%d,%d)", CodeName[op],
             int(lhs.isDouble() ? JSVAL_TYPE_DOUBLE : lhs.extractNonDoubleType()),
             int(rhs.isDouble() ? JSVAL_TYPE_DOUBLE : rhs.extractNonDoubleType()));
+
 
     
     
@@ -769,6 +776,13 @@ DoBinaryArithFallback(JSContext* cx, void* payload, ICBinaryArith_Fallback* stub
     
     if (stub.invalid())
         return true;
+
+    
+    
+    if (engine == ICStubCompiler::Engine::Baseline && !JitOptions.disableCacheIRBinaryArith) {
+        if (DoCacheIRBinaryArithFallback(cx, (BaselineFrame*)payload, stub_, lhs, rhs, ret, stub))
+            return true;
+    }
 
     if (ret.isDouble())
         stub->setSawDoubleResult();
