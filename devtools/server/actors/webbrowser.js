@@ -713,13 +713,50 @@ Object.defineProperty(BrowserAddonList.prototype, "onListChanged", {
   },
 });
 
-BrowserAddonList.prototype.onInstalled = function(addon) {
-  this._notifyListChanged();
-  this._adjustListener();
+
+
+
+BrowserAddonList.prototype.onDisabled = function(addon) {
+  this._onAddonManagerUpdated();
 };
+
+
+
+
+BrowserAddonList.prototype.onEnabled = function(addon) {
+  this._onAddonManagerUpdated();
+};
+
+
+
+
+BrowserAddonList.prototype.onInstalled = function(addon) {
+  this._onAddonManagerUpdated();
+};
+
+
+
+
+BrowserAddonList.prototype.onOperationCancelled = function(addon) {
+  this._onAddonManagerUpdated();
+};
+
+
+
+
+BrowserAddonList.prototype.onUninstalling = function(addon) {
+  this._onAddonManagerUpdated();
+};
+
+
+
 
 BrowserAddonList.prototype.onUninstalled = function(addon) {
   this._actorByAddonId.delete(addon.id);
+  this._onAddonManagerUpdated();
+};
+
+BrowserAddonList.prototype._onAddonManagerUpdated = function(addon) {
   this._notifyListChanged();
   this._adjustListener();
 };
