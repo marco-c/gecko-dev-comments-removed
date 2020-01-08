@@ -51,6 +51,7 @@ fn device_size(device: &Device) -> Size2D<Au> {
     Size2D::new(Au(width), Au(height))
 }
 
+
 fn eval_width(
     device: &Device,
     value: Option<CSSPixelLength>,
@@ -62,6 +63,7 @@ fn eval_width(
         viewport_size(device).width,
     )
 }
+
 
 fn eval_device_width(
     device: &Device,
@@ -75,6 +77,7 @@ fn eval_device_width(
     )
 }
 
+
 fn eval_height(
     device: &Device,
     value: Option<CSSPixelLength>,
@@ -86,6 +89,7 @@ fn eval_height(
         viewport_size(device).height,
     )
 }
+
 
 fn eval_device_height(
     device: &Device,
@@ -121,6 +125,7 @@ where
     )
 }
 
+
 fn eval_aspect_ratio(
     device: &Device,
     query_value: Option<AspectRatio>,
@@ -129,6 +134,7 @@ fn eval_aspect_ratio(
     eval_aspect_ratio_for(device, query_value, range_or_operator, viewport_size)
 }
 
+
 fn eval_device_aspect_ratio(
     device: &Device,
     query_value: Option<AspectRatio>,
@@ -136,6 +142,11 @@ fn eval_device_aspect_ratio(
 ) -> bool {
     eval_aspect_ratio_for(device, query_value, range_or_operator, device_size)
 }
+
+
+
+
+
 
 fn eval_device_pixel_ratio(
     device: &Device,
@@ -183,12 +194,14 @@ where
     }
 }
 
+
 fn eval_orientation(
     device: &Device,
     value: Option<Orientation>,
 ) -> bool {
     eval_orientation_for(device, value, viewport_size)
 }
+
 
 fn eval_device_orientation(
     device: &Device,
@@ -208,6 +221,7 @@ pub enum DisplayMode {
   Fullscreen,
 }
 
+
 fn eval_display_mode(
     device: &Device,
     query_value: Option<DisplayMode>,
@@ -225,12 +239,14 @@ fn eval_display_mode(
     gecko_display_mode as u8 == query_value as u8
 }
 
+
 fn eval_grid(_: &Device, query_value: Option<bool>, _: Option<RangeOrOperator>) -> bool {
     
     
     let supports_grid = false;
     query_value.map_or(supports_grid, |v| v == supports_grid)
 }
+
 
 fn eval_transform_3d(
     _: &Device,
@@ -248,11 +264,13 @@ enum Scan {
     Interlace,
 }
 
+
 fn eval_scan(_: &Device, _: Option<Scan>) -> bool {
     
     
     false
 }
+
 
 fn eval_color(
     device: &Device,
@@ -268,12 +286,12 @@ fn eval_color(
     )
 }
 
+
 fn eval_color_index(
     _: &Device,
     query_value: Option<u32>,
     range_or_operator: Option<RangeOrOperator>,
 ) -> bool {
-    
     
     let index = 0;
     RangeOrOperator::evaluate(
@@ -282,6 +300,7 @@ fn eval_color_index(
         index,
     )
 }
+
 
 fn eval_monochrome(
     _: &Device,
@@ -297,6 +316,7 @@ fn eval_monochrome(
         depth,
     )
 }
+
 
 fn eval_resolution(
     device: &Device,
@@ -318,6 +338,7 @@ enum PrefersReducedMotion {
     NoPreference,
     Reduce,
 }
+
 
 fn eval_prefers_reduced_motion(
     device: &Device,
