@@ -60,6 +60,9 @@
   border-top: 1px solid var(--panel-separator-color);
   
   color: inherit !important;
+  min-width: 0;
+  margin: 0;
+  padding: .9em;
 }
 
 .panel-footer > button[disabled] {
