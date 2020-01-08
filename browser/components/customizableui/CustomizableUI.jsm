@@ -55,7 +55,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 14;
+var kVersion = 15;
 
 
 
@@ -63,6 +63,7 @@ var kVersion = 14;
 
 
 var ObsoleteBuiltinButtons = {
+  "feed-button": 15,
 };
 
 

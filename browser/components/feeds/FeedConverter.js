@@ -341,12 +341,6 @@ FeedResultService.prototype = {
                                        subtitle,
                                        feedHandler: "default" });
       break;
-    default:
-      
-    case "bookmarks":
-      Services.cpmm.sendAsyncMessage("FeedConverter:addLiveBookmark",
-                                     { spec, title });
-      break;
     }
   },
 
