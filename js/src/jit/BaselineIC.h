@@ -716,6 +716,12 @@ class ICFallbackStub : public ICStub
     
     
     
+    uint32_t enteredCount_;
+
+    
+    
+    
+    
     
     ICStub** lastStubPtrAddr_;
 
@@ -723,12 +729,14 @@ class ICFallbackStub : public ICStub
       : ICStub(kind, ICStub::Fallback, stubCode),
         icEntry_(nullptr),
         state_(),
+        enteredCount_(0),
         lastStubPtrAddr_(nullptr) {}
 
     ICFallbackStub(Kind kind, Trait trait, JitCode* stubCode)
       : ICStub(kind, trait, stubCode),
         icEntry_(nullptr),
         state_(),
+        enteredCount_(0),
         lastStubPtrAddr_(nullptr)
     {
         MOZ_ASSERT(trait == ICStub::Fallback ||
@@ -809,6 +817,11 @@ class ICFallbackStub : public ICStub
 
     void unlinkStub(Zone* zone, ICStub* prev, ICStub* stub);
     void unlinkStubsWithKind(JSContext* cx, ICStub::Kind kind);
+
+    
+    
+    uint32_t enteredCount() const { return enteredCount_; }
+    inline void incrementEnteredCount() { enteredCount_++; }
 };
 
 
@@ -816,10 +829,17 @@ class ICCacheIR_Regular : public ICStub
 {
     const CacheIRStubInfo* stubInfo_;
 
+    
+    
+    
+    
+    uint32_t enteredCount_;
+
   public:
     ICCacheIR_Regular(JitCode* stubCode, const CacheIRStubInfo* stubInfo)
       : ICStub(ICStub::CacheIR_Regular, stubCode),
-        stubInfo_(stubInfo)
+        stubInfo_(stubInfo),
+        enteredCount_(0)
     {}
 
     static ICCacheIR_Regular* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
@@ -837,6 +857,11 @@ class ICCacheIR_Regular : public ICStub
     }
 
     uint8_t* stubDataStart();
+
+    
+    
+    uint32_t enteredCount() const { return enteredCount_; }
+    static size_t offsetOfEnteredCount() { return offsetof(ICCacheIR_Regular, enteredCount_); }
 };
 
 
