@@ -65,21 +65,11 @@ public:
     void UpdateUserFonts(gfxUserFontSet* aUserFontSet);
 
 protected:
-    
-    
-    
-    
-    
-    static const int32_t kMaxCacheEntries = 128;
-
     ~nsFontCache() {}
 
     nsDeviceContext*          mContext; 
     RefPtr<nsAtom>         mLocaleLanguage;
-
-    
-    
-    AutoTArray<nsFontMetrics*,kMaxCacheEntries> mFontMetrics;
+    nsTArray<nsFontMetrics*>  mFontMetrics;
 };
 
 NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
@@ -129,7 +119,8 @@ nsFontCache::GetMetricsFor(const nsFont& aFont,
 
     
     
-    const int32_t n = mFontMetrics.Length() - 1;
+
+    int32_t n = mFontMetrics.Length() - 1;
     for (int32_t i = n; i >= 0; --i) {
         nsFontMetrics* fm = mFontMetrics[i];
         if (fm->Font().Equals(aFont) &&
@@ -147,11 +138,6 @@ nsFontCache::GetMetricsFor(const nsFont& aFont,
     }
 
     
-    
-    
-    if (n >= kMaxCacheEntries - 1) {
-        mFontMetrics.RemoveElementsAt(0, kMaxCacheEntries / 2);
-    }
 
     nsFontMetrics::Params params = aParams;
     params.language = language;
