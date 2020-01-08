@@ -129,19 +129,26 @@ const previewers = {
     const items = grip.preview.items = [];
 
     for (let i = 0; i < length; ++i) {
-      
-      
-      
-      
-      
-      
-      const desc = Object.getOwnPropertyDescriptor(Cu.waiveXrays(raw), i);
-      if (desc && !desc.get && !desc.set) {
-        let value = Cu.unwaiveXrays(desc.value);
-        value = ObjectUtils.makeDebuggeeValueIfNeeded(obj, value);
-        items.push(hooks.createValueGrip(value));
+      if (raw) {
+        
+        
+        
+        
+        
+        
+        const desc = Object.getOwnPropertyDescriptor(Cu.waiveXrays(raw), i);
+        if (desc && !desc.get && !desc.set) {
+          let value = Cu.unwaiveXrays(desc.value);
+          value = ObjectUtils.makeDebuggeeValueIfNeeded(obj, value);
+          items.push(hooks.createValueGrip(value));
+        } else {
+          items.push(null);
+        }
       } else {
-        items.push(null);
+        
+        
+        const value = DevToolsUtils.getProperty(obj, i);
+        items.push(hooks.createValueGrip(value));
       }
 
       if (items.length == OBJECT_PREVIEW_MAX_ITEMS) {

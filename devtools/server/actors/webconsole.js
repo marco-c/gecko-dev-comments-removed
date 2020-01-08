@@ -1393,6 +1393,29 @@ WebConsoleActor.prototype =
     
     
     const dbg = frame ? frameActor.threadActor.dbg : this.dbg;
+
+    
+    
+    if (dbg.replaying) {
+      let result;
+      if (frame) {
+        try {
+          result = frame.eval(string);
+        } catch (e) {
+          result = { "throw": e };
+        }
+      } else {
+        result = { "throw": "Cannot evaluate while replaying without a frame" };
+      }
+      return {
+        result: result,
+        helperResult: null,
+        dbg: dbg,
+        frame: frame,
+        window: null,
+      };
+    }
+
     let dbgWindow = dbg.makeGlobalObjectReference(this.evalWindow);
 
     

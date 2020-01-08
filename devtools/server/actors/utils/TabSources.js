@@ -577,17 +577,30 @@ TabSources.prototype = {
 
 
 
+
+  getScriptOffsetLocation: function(script, offset) {
+    const {lineNumber, columnNumber} = script.getOffsetLocation(offset);
+    return new GeneratedLocation(
+      this.createNonSourceMappedActor(script.source),
+      lineNumber,
+      columnNumber
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
   getFrameLocation: function(frame) {
     if (!frame || !frame.script) {
       return new GeneratedLocation();
     }
-    const {lineNumber, columnNumber} =
-        frame.script.getOffsetLocation(frame.offset);
-    return new GeneratedLocation(
-      this.createNonSourceMappedActor(frame.script.source),
-      lineNumber,
-      columnNumber
-    );
+    return this.getScriptOffsetLocation(frame.script, frame.offset);
   },
 
   

@@ -367,6 +367,14 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       
       
       
+      if (this.dbg.replaying) {
+        assert(!this._contentType);
+        return this.dbg.replayingContent(this.url);
+      }
+
+      
+      
+      
       
       
       
