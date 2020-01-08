@@ -1578,7 +1578,16 @@ pub struct Renderer {
     output_image_handler: Option<Box<OutputImageHandler>>,
 
     
+    
     size_of_op: Option<VoidPtrToSizeFn>,
+
+    
+    
+    
+    
+    
+    
+    _enclosing_size_of_op: Option<VoidPtrToSizeFn>,
 
     
     output_targets: FastHashMap<u32, FrameOutput>,
@@ -1870,6 +1879,7 @@ impl Renderer {
             });
         let sampler = options.sampler;
         let size_of_op = options.size_of_op;
+        let enclosing_size_of_op = options.enclosing_size_of_op;
         let namespace_alloc_by_client = options.namespace_alloc_by_client;
 
         let blob_image_handler = options.blob_image_handler.take();
@@ -1885,7 +1895,10 @@ impl Renderer {
         let (scene_builder, scene_tx, scene_rx) = SceneBuilder::new(
             config,
             api_tx.clone(),
-            scene_builder_hooks);
+            scene_builder_hooks,
+            size_of_op,
+            enclosing_size_of_op,
+        );
         thread::Builder::new().name(scene_thread_name.clone()).spawn(move || {
             register_thread_with_profiler(scene_thread_name.clone());
             if let Some(ref thread_listener) = *thread_listener_for_scene_builder {
@@ -2018,6 +2031,7 @@ impl Renderer {
             external_image_handler: None,
             output_image_handler: None,
             size_of_op: options.size_of_op,
+            _enclosing_size_of_op: options.enclosing_size_of_op,
             output_targets: FastHashMap::default(),
             cpu_profiles: VecDeque::new(),
             gpu_profiles: VecDeque::new(),
@@ -4773,6 +4787,7 @@ pub struct RendererOptions {
     pub recorder: Option<Box<ApiRecordingReceiver>>,
     pub thread_listener: Option<Box<ThreadListener + Send + Sync>>,
     pub size_of_op: Option<VoidPtrToSizeFn>,
+    pub enclosing_size_of_op: Option<VoidPtrToSizeFn>,
     pub cached_programs: Option<Rc<ProgramCache>>,
     pub debug_flags: DebugFlags,
     pub renderer_id: Option<u64>,
@@ -4810,6 +4825,7 @@ impl Default for RendererOptions {
             recorder: None,
             thread_listener: None,
             size_of_op: None,
+            enclosing_size_of_op: None,
             renderer_id: None,
             cached_programs: None,
             disable_dual_source_blending: false,
