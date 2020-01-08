@@ -291,20 +291,25 @@ const AppCacheCleaner = {
 
 const QuotaCleaner = {
   deleteByPrincipal(aPrincipal) {
-    
-    Services.obs.notifyObservers(null, "browser:purge-domain-data",
-                                 aPrincipal.URI.host);
+    if (!Services.lsm.nextGenLocalStorageEnabled) {
+      
+      
+      
+      Services.obs.notifyObservers(null, "browser:purge-domain-data",
+                                   aPrincipal.URI.host);
+    }
 
     
     return ServiceWorkerCleanUp.removeFromPrincipal(aPrincipal)
       .then(_ =>  false, _ =>  true)
       .then(exceptionThrown => {
         
+        
         return new Promise((aResolve, aReject) => {
           let req = Services.qms.clearStoragesForPrincipal(aPrincipal);
           req.callback = () => {
-            if (exceptionThrown) {
-              aReject();
+            if (exceptionThrown || req.resultCode != Cr.NS_OK) {
+              aReject({message: "Delete by principal failed"});
             } else {
               aResolve();
             }
@@ -314,8 +319,12 @@ const QuotaCleaner = {
   },
 
   deleteByHost(aHost, aOriginAttributes) {
-    
-    Services.obs.notifyObservers(null, "browser:purge-domain-data", aHost);
+    if (!Services.lsm.nextGenLocalStorageEnabled) {
+      
+      
+      
+      Services.obs.notifyObservers(null, "browser:purge-domain-data", aHost);
+    }
 
     let exceptionThrown = false;
 
@@ -326,22 +335,70 @@ const QuotaCleaner = {
     ]).then(() => {
         
         
+
+        
         let httpURI = Services.io.newURI("http://" + aHost);
         let httpsURI = Services.io.newURI("https://" + aHost);
         let httpPrincipal = Services.scriptSecurityManager
                                      .createCodebasePrincipal(httpURI, aOriginAttributes);
         let httpsPrincipal = Services.scriptSecurityManager
                                      .createCodebasePrincipal(httpsURI, aOriginAttributes);
-        return Promise.all([
-          new Promise(aResolve => {
-            let req = Services.qms.clearStoragesForPrincipal(httpPrincipal, null, null, true);
-            req.callback = () => { aResolve(); };
-          }),
-          new Promise(aResolve => {
-            let req = Services.qms.clearStoragesForPrincipal(httpsPrincipal, null, null, true);
-            req.callback = () => { aResolve(); };
-          }),
-        ]).then(() => {
+        let promises = [];
+        promises.push(new Promise((aResolve, aReject) => {
+          let req = Services.qms.clearStoragesForPrincipal(httpPrincipal, null, null, true);
+          req.callback = () => {
+            if (req.resultCode == Cr.NS_OK) {
+              aResolve();
+            } else {
+              aReject({message: "Delete by host failed"});
+            }
+          };
+        }));
+        promises.push(new Promise((aResolve, aReject) => {
+          let req = Services.qms.clearStoragesForPrincipal(httpsPrincipal, null, null, true);
+          req.callback = () => {
+            if (req.resultCode == Cr.NS_OK) {
+              aResolve();
+            } else {
+              aReject({message: "Delete by host failed"});
+            }
+          };
+        }));
+        if (Services.lsm.nextGenLocalStorageEnabled) {
+          
+          
+          
+          
+          
+          promises.push(new Promise((aResolve, aReject) => {
+            Services.qms.getUsage(aRequest => {
+              if (aRequest.resultCode != Cr.NS_OK) {
+                aReject({message: "Delete by host failed"});
+                return;
+              }
+
+              let promises = [];
+              for (let item of aRequest.result) {
+                let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
+                if (eTLDService.hasRootDomain(principal.URI.host, aHost)) {
+                  promises.push(new Promise((aResolve, aReject) => {
+                    let clearRequest = Services.qms.clearStoragesForPrincipal(principal, null, "ls");
+                    clearRequest.callback = () => {
+                      if (clearRequest.resultCode == Cr.NS_OK) {
+                        aResolve();
+                      } else {
+                        aReject({message: "Delete by host failed"});
+                      }
+                    };
+                  }));
+                }
+              }
+
+              Promise.all(promises).then(aResolve);
+            });
+          }));
+        }
+        return Promise.all(promises).then(() => {
           return exceptionThrown ? Promise.reject() : Promise.resolve();
         });
       });
@@ -376,15 +433,11 @@ const QuotaCleaner = {
       .then(_ =>  false, _ =>  true)
       .then(exceptionThrown => {
         
+        
         return new Promise((aResolve, aReject) => {
           Services.qms.getUsage(aRequest => {
             if (aRequest.resultCode != Cr.NS_OK) {
-              
-              if (exceptionThrown) {
-                aReject();
-              } else {
-                aResolve();
-              }
+              aReject({message: "Delete all failed"});
               return;
             }
 
@@ -394,9 +447,15 @@ const QuotaCleaner = {
               if (principal.URI.scheme == "http" ||
                   principal.URI.scheme == "https" ||
                   principal.URI.scheme == "file") {
-                promises.push(new Promise(aResolve => {
+                promises.push(new Promise((aResolve, aReject) => {
                   let req = Services.qms.clearStoragesForPrincipal(principal);
-                  req.callback = () => { aResolve(); };
+                  req.callback = () => {
+                    if (req.resultCode == Cr.NS_OK) {
+                      aResolve();
+                    } else {
+                      aReject({message: "Delete all failed"});
+                    }
+                  };
                 }));
               }
             }

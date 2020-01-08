@@ -244,6 +244,7 @@ var UninstallObserver = {
         ExtensionStorage.clear(addon.id, {shouldNotifyListeners: false}));
 
       
+      
       let baseURI = Services.io.newURI(`moz-extension://${uuid}/`);
       let principal = Services.scriptSecurityManager.createCodebasePrincipal(
         baseURI, {});
@@ -258,9 +259,13 @@ var UninstallObserver = {
       ExtensionStorageIDB.clearMigratedExtensionPref(addon.id);
 
       
-      let storage = Services.domStorageManager.getStorage(null, principal);
-      if (storage) {
-        storage.clear();
+      
+      if (!Services.lsm.nextGenLocalStorageEnabled) {
+        
+        let storage = Services.domStorageManager.getStorage(null, principal);
+        if (storage) {
+          storage.clear();
+        }
       }
 
       
