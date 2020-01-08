@@ -25,6 +25,7 @@
 
 function onLoad() {
   window.frames[0].frameElement.onload = onReload;
+  // eslint-disable-next-line no-self-assign
   window.frames[0].frameElement.srcdoc = window.frames[0].frameElement.srcdoc;
 }
 
