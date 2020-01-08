@@ -187,7 +187,7 @@ const ADB = {
   
   
   
-  trackDevices: function adb_trackDevices() {
+  trackDevices() {
     console.log("trackDevices");
     const socket = client.connect();
     let waitForFirst = true;
@@ -281,7 +281,7 @@ const ADB = {
   },
 
   
-  listDevices: function adb_listDevices() {
+  listDevices() {
     console.log("listDevices");
 
     return this.runCommand("host:devices").then(
@@ -301,7 +301,7 @@ const ADB = {
   },
 
   
-  forwardPort: function adb_forwardPort(localPort, devicePort) {
+  forwardPort(localPort, devicePort) {
     console.log("forwardPort " + localPort + " -- " + devicePort);
     
 
@@ -323,7 +323,7 @@ const ADB = {
   
   
   
-  pull: function adb_pull(from, dest) {
+  pull(from, dest) {
     const deferred = PromiseUtils.defer();
     let state;
     let fileData = null;
@@ -550,7 +550,7 @@ const ADB = {
   
   
   
-  push: function adb_push(from, dest) {
+  push(from, dest) {
     const deferred = PromiseUtils.defer();
     let socket;
     let state;
@@ -719,7 +719,7 @@ const ADB = {
   },
 
   
-  shell: function adb_shell(command) {
+  shell(command) {
     const deferred = PromiseUtils.defer();
     let state;
     let stdout = "";
@@ -806,19 +806,19 @@ const ADB = {
     return deferred.promise;
   },
 
-  reboot: function adb_reboot() {
+  reboot() {
     return this.shell("reboot");
   },
 
-  rebootRecovery: function adb_rebootRecovery() {
+  rebootRecovery() {
     return this.shell("reboot recovery");
   },
 
-  rebootBootloader: function adb_rebootBootloader() {
+  rebootBootloader() {
     return this.shell("reboot bootloader");
   },
 
-  root: function adb_root() {
+  root() {
     const deferred = PromiseUtils.defer();
     let state;
 
@@ -893,7 +893,7 @@ const ADB = {
   
   
   
-  runCommand: function adb_runCommand(command) {
+  runCommand(command) {
     console.log("runCommand " + command);
     const deferred = PromiseUtils.defer();
     if (!this.ready) {
