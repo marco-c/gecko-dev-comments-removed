@@ -223,60 +223,93 @@ MacroAssemblerMIPS::ma_liPatchable(Register dest, ImmWord imm)
 void
 MacroAssemblerMIPS::ma_addTestOverflow(Register rd, Register rs, Register rt, Label* overflow)
 {
-    Label goodAddition;
-    as_addu(rd, rs, rt);
+    MOZ_ASSERT_IF(rs == rd, rs != rt);
+    MOZ_ASSERT(rs != ScratchRegister);
+    MOZ_ASSERT(rt != ScratchRegister);
+    MOZ_ASSERT(rd != rt);
+    MOZ_ASSERT(rd != ScratchRegister);
+    MOZ_ASSERT(rd != SecondScratchReg);
 
-    as_xor(ScratchRegister, rs, rt); 
-    ma_b(ScratchRegister, Imm32(0), &goodAddition, Assembler::LessThan, ShortJump);
+    if (rs == rt) {
+       as_addu(rd, rs, rs);
+       as_xor(SecondScratchReg, rs, rd);
+       ma_b(SecondScratchReg, Imm32(0), overflow, Assembler::LessThan);
+       return;
+    }
 
     
-    as_xor(ScratchRegister, rs, rd);
-    ma_b(ScratchRegister, Imm32(0), overflow, Assembler::LessThan);
+    as_xor(ScratchRegister, rs, rt);
 
-    bind(&goodAddition);
+    as_addu(rd, rs, rt);
+    as_nor(ScratchRegister, ScratchRegister, zero);
+    
+    as_xor(SecondScratchReg, rt, rd);
+    as_and(SecondScratchReg, SecondScratchReg, ScratchRegister);
+    ma_b(SecondScratchReg, Imm32(0), overflow, Assembler::LessThan);
+
 }
 
 void
 MacroAssemblerMIPS::ma_addTestOverflow(Register rd, Register rs, Imm32 imm, Label* overflow)
 {
-    
-    
-    if (Imm16::IsInSignedRange(imm.value) && Imm16::IsInUnsignedRange(imm.value)) {
-        Label goodAddition;
-        as_addiu(rd, rs, imm.value);
+    MOZ_ASSERT(rs != ScratchRegister);
+    MOZ_ASSERT(rs != SecondScratchReg);
+    MOZ_ASSERT(rd != ScratchRegister);
+    MOZ_ASSERT(rd != SecondScratchReg);
 
-        
-        as_xori(ScratchRegister, rs, imm.value);
-        ma_b(ScratchRegister, Imm32(0), &goodAddition, Assembler::LessThan, ShortJump);
+    Register rs_copy = rs;
 
-        
-        as_xor(ScratchRegister, rs, rd);
-        ma_b(ScratchRegister, Imm32(0), overflow, Assembler::LessThan);
-
-        bind(&goodAddition);
-    } else {
-        ma_li(ScratchRegister, imm);
-        ma_addTestOverflow(rd, rs, ScratchRegister, overflow);
+    if (imm.value > 0) {
+        as_nor(ScratchRegister, rs, zero);
+    } else if (rs == rd) {
+        ma_move(ScratchRegister, rs);
+        rs_copy = ScratchRegister;
     }
+
+    if (Imm16::IsInSignedRange(imm.value)) {
+        as_addiu(rd, rs, imm.value);
+    } else {
+        ma_li(SecondScratchReg, imm);
+        as_addu(rd, rs, SecondScratchReg);
+    }
+
+    if (imm.value > 0) {
+        as_and(ScratchRegister, ScratchRegister, rd);
+    } else {
+        as_nor(SecondScratchReg, rd, zero);
+        as_and(ScratchRegister, rs_copy, SecondScratchReg);
+    }
+
+    ma_b(ScratchRegister, Imm32(0), overflow, Assembler::LessThan);
 }
 
 
 void
 MacroAssemblerMIPS::ma_subTestOverflow(Register rd, Register rs, Register rt, Label* overflow)
 {
-    Label goodSubtraction;
     
     
+    MOZ_ASSERT_IF(rs == rd, rs != rt);
+    MOZ_ASSERT(rs != SecondScratchReg);
+    MOZ_ASSERT(rt != SecondScratchReg);
+    MOZ_ASSERT(rd != rt);
+    MOZ_ASSERT(rd != ScratchRegister);
+    MOZ_ASSERT(rd != SecondScratchReg);
+
+    Register rs_copy = rs;
+
+    if (rs == rd) {
+       ma_move(SecondScratchReg, rs);
+       rs_copy = SecondScratchReg;
+    }
+
     as_subu(rd, rs, rt);
-
-    as_xor(ScratchRegister, rs, rt); 
-    ma_b(ScratchRegister, Imm32(0), &goodSubtraction, Assembler::GreaterThanOrEqual, ShortJump);
-
     
-    as_xor(ScratchRegister, rs, rd);
-    ma_b(ScratchRegister, Imm32(0), overflow, Assembler::LessThan);
-
-    bind(&goodSubtraction);
+    as_xor(ScratchRegister, rs_copy, rt);
+    
+    as_xor(SecondScratchReg, rs_copy, rd);
+    as_and(SecondScratchReg, SecondScratchReg, ScratchRegister);
+    ma_b(SecondScratchReg, Imm32(0), overflow, Assembler::LessThan);
 }
 
 
