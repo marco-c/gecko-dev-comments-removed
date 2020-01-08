@@ -113,6 +113,7 @@
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/ReportingHeader.h"
 #include "nsThreadManager.h"
 #include "mozilla/css/ImageLoader.h"
 
@@ -285,6 +286,9 @@ nsresult nsLayoutStatics::Initialize() {
   mozilla::Fuzzyfox::Start();
 
   ClearSiteData::Initialize();
+
+  
+  ReportingHeader::Initialize();
 
   return NS_OK;
 }
