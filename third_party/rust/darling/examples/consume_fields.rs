@@ -2,19 +2,20 @@
 
 #[macro_use]
 extern crate darling;
-
+extern crate proc_macro2;
 #[macro_use]
 extern crate quote;
 extern crate syn;
 
 use darling::ast;
 use darling::FromDeriveInput;
-use quote::{Tokens, ToTokens};
+use proc_macro2::TokenStream;
+use quote::ToTokens;
 use syn::parse_str;
 
 
 
-#[derive(Debug, Clone, Copy, FromMetaItem)]
+#[derive(Debug, Clone, Copy, FromMeta)]
 #[darling(default)]
 enum Volume {
     Normal,
@@ -54,7 +55,7 @@ struct MyInputReceiver {
 }
 
 impl ToTokens for MyInputReceiver {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let MyInputReceiver {
             ref ident,
             ref generics,
@@ -78,11 +79,10 @@ impl ToTokens for MyInputReceiver {
                 
                 format!(
                     "{} = {{}}",
-                    f.ident.as_ref().map(|v| format!("{}", v)).unwrap_or_else(
-                        || {
-                            format!("{}", i)
-                        },
-                    )
+                    f.ident
+                        .as_ref()
+                        .map(|v| format!("{}", v))
+                        .unwrap_or_else(|| format!("{}", i))
                 )
             })
             .collect::<Vec<_>>()
@@ -97,7 +97,10 @@ impl ToTokens for MyInputReceiver {
 
                 
                 
-                let field_ident = f.ident.as_ref().map(|v| quote!(#v)).unwrap_or_else(|| quote!(#i));
+                let field_ident = f.ident
+                    .as_ref()
+                    .map(|v| quote!(#v))
+                    .unwrap_or_else(|| quote!(#i));
 
                 match field_volume {
                     Volume::Normal => quote!(self.#field_ident),
@@ -111,7 +114,7 @@ impl ToTokens for MyInputReceiver {
             })
             .collect::<Vec<_>>();
 
-        tokens.append_all(quote! {
+        tokens.extend(quote! {
             impl #imp Speak for #ident #ty #wher {
                 fn speak(&self, writer: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                     write!(#fmt_string, #(#field_list),*)
@@ -152,7 +155,8 @@ pub struct Foo {
     let receiver = MyInputReceiver::from_derive_input(&parsed).unwrap();
     let tokens = quote!(#receiver);
 
-    println!(r#"
+    println!(
+        r#"
 INPUT:
 
 {}
@@ -164,5 +168,7 @@ PARSED AS:
 EMITS:
 
 {}
-    "#, input, receiver, tokens);
+    "#,
+        input, receiver, tokens
+    );
 }

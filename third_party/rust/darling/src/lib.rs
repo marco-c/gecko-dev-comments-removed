@@ -48,6 +48,14 @@
 
 
 
+
+
+
+
+
+
+
+
 extern crate core;
 extern crate darling_core;
 
@@ -59,22 +67,32 @@ extern crate darling_macro;
 pub use darling_macro::*;
 
 #[doc(inline)]
-pub use darling_core::{FromMetaItem, FromDeriveInput, FromField, FromVariant};
+pub use darling_core::{FromDeriveInput, FromField, FromGenericParam, FromGenerics, FromMeta,
+                       FromTypeParam, FromVariant};
 
 #[doc(inline)]
-pub use darling_core::{Result, Error};
+pub use darling_core::{Error, Result};
 
 #[doc(inline)]
-pub use darling_core::{ast, error, util};
+pub use darling_core::{ast, error, usage, util};
+
+
+
+#[doc(hidden)]
+pub use darling_core::ToTokens;
 
 
 
 
 #[doc(hidden)]
-pub mod export {    
-    pub use ::core::convert::From;
-    pub use ::core::option::Option::{self, Some, None};
-    pub use ::core::result::Result::{self, Ok, Err};
-    pub use ::core::default::Default;
-    pub use ::std::vec::Vec;
+pub mod export {
+    pub use core::convert::From;
+    pub use core::default::Default;
+    pub use core::option::Option::{self, None, Some};
+    pub use core::result::Result::{self, Err, Ok};
+    pub use std::vec::Vec;
+    pub use std::string::ToString;
 }
+
+#[macro_use]
+mod macros_public;

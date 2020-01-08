@@ -1,0 +1,396 @@
+use std::cell::RefCell;
+use std::collections::hash_map::{Entry, HashMap};
+use std::rc::Rc;
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
+
+use ident_case;
+use syn::{self, Lit, Meta, NestedMeta};
+
+use {Error, Result};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait FromMeta: Sized {
+    fn from_nested_meta(item: &NestedMeta) -> Result<Self> {
+        match *item {
+            NestedMeta::Literal(ref lit) => Self::from_value(lit),
+            NestedMeta::Meta(ref mi) => Self::from_meta(mi),
+        }
+    }
+
+    
+    
+    fn from_meta(item: &Meta) -> Result<Self> {
+        match *item {
+            Meta::Word(_) => Self::from_word(),
+            Meta::List(ref value) => Self::from_list(
+                &value
+                    .nested
+                    .clone()
+                    .into_iter()
+                    .collect::<Vec<syn::NestedMeta>>()[..],
+            ),
+            Meta::NameValue(ref value) => Self::from_value(&value.lit),
+        }
+    }
+
+    
+    
+    fn from_word() -> Result<Self> {
+        Err(Error::unsupported_format("word"))
+    }
+
+    
+    #[allow(unused_variables)]
+    fn from_list(items: &[NestedMeta]) -> Result<Self> {
+        Err(Error::unsupported_format("list"))
+    }
+
+    
+    
+    
+    fn from_value(value: &Lit) -> Result<Self> {
+        match *value {
+            Lit::Bool(ref b) => Self::from_bool(b.value),
+            Lit::Str(ref s) => Self::from_string(&s.value()),
+            ref _other => Err(Error::unexpected_type("other")),
+        }
+    }
+
+    
+    #[allow(unused_variables)]
+    fn from_char(value: char) -> Result<Self> {
+        Err(Error::unexpected_type("char"))
+    }
+
+    
+    #[allow(unused_variables)]
+    fn from_string(value: &str) -> Result<Self> {
+        Err(Error::unexpected_type("string"))
+    }
+
+    
+    #[allow(unused_variables)]
+    fn from_bool(value: bool) -> Result<Self> {
+        Err(Error::unexpected_type("bool"))
+    }
+}
+
+
+
+impl FromMeta for () {
+    fn from_word() -> Result<Self> {
+        Ok(())
+    }
+}
+
+impl FromMeta for bool {
+    fn from_word() -> Result<Self> {
+        Ok(true)
+    }
+
+    fn from_bool(value: bool) -> Result<Self> {
+        Ok(value)
+    }
+
+    fn from_string(value: &str) -> Result<Self> {
+        value.parse().map_err(|_| Error::unknown_value(value))
+    }
+}
+
+impl FromMeta for AtomicBool {
+    fn from_meta(mi: &Meta) -> Result<Self> {
+        FromMeta::from_meta(mi).map(AtomicBool::new)
+    }
+}
+
+impl FromMeta for String {
+    fn from_string(s: &str) -> Result<Self> {
+        Ok(s.to_string())
+    }
+}
+
+impl FromMeta for u8 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for u16 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for u32 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for u64 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for usize {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for i8 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for i16 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for i32 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for i64 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for isize {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().map_err(|_| Error::unknown_value(s))
+    }
+}
+
+impl FromMeta for syn::Ident {
+    fn from_string(value: &str) -> Result<Self> {
+        Ok(syn::Ident::new(value, ::proc_macro2::Span::call_site()))
+    }
+}
+
+impl FromMeta for syn::Path {
+    fn from_string(value: &str) -> Result<Self> {
+        syn::parse_str(value).map_err(|_| Error::unknown_value(value))
+    }
+}
+
+
+
+
+
+
+
+
+impl FromMeta for syn::Meta {
+    fn from_meta(value: &syn::Meta) -> Result<Self> {
+        Ok(value.clone())
+    }
+}
+
+impl FromMeta for syn::WhereClause {
+    fn from_string(value: &str) -> Result<Self> {
+        syn::parse_str(value).map_err(|_| Error::unknown_value(value))
+    }
+}
+
+impl FromMeta for Vec<syn::WherePredicate> {
+    fn from_string(value: &str) -> Result<Self> {
+        syn::WhereClause::from_string(&format!("where {}", value))
+            .map(|c| c.predicates.into_iter().collect())
+    }
+}
+
+impl FromMeta for ident_case::RenameRule {
+    fn from_string(value: &str) -> Result<Self> {
+        value.parse().map_err(|_| Error::unknown_value(value))
+    }
+}
+
+impl<T: FromMeta> FromMeta for Option<T> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        FromMeta::from_meta(item).map(Some)
+    }
+}
+
+impl<T: FromMeta> FromMeta for Box<T> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        FromMeta::from_meta(item).map(Box::new)
+    }
+}
+
+impl<T: FromMeta> FromMeta for Result<T> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        Ok(FromMeta::from_meta(item))
+    }
+}
+
+
+
+impl<T: FromMeta> FromMeta for ::std::result::Result<T, Meta> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        T::from_meta(item)
+            .map(Ok)
+            .or_else(|_| Ok(Err(item.clone())))
+    }
+}
+
+impl<T: FromMeta> FromMeta for Rc<T> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        FromMeta::from_meta(item).map(Rc::new)
+    }
+}
+
+impl<T: FromMeta> FromMeta for Arc<T> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        FromMeta::from_meta(item).map(Arc::new)
+    }
+}
+
+impl<T: FromMeta> FromMeta for RefCell<T> {
+    fn from_meta(item: &Meta) -> Result<Self> {
+        FromMeta::from_meta(item).map(RefCell::new)
+    }
+}
+
+impl<V: FromMeta> FromMeta for HashMap<String, V> {
+    fn from_list(nested: &[syn::NestedMeta]) -> Result<Self> {
+        let mut map = HashMap::with_capacity(nested.len());
+        for item in nested {
+            if let syn::NestedMeta::Meta(ref inner) = *item {
+                match map.entry(inner.name().to_string()) {
+                    Entry::Occupied(_) => return Err(Error::duplicate_field(&inner.name().to_string())),
+                    Entry::Vacant(entry) => {
+                        entry.insert(FromMeta::from_meta(inner).map_err(|e| e.at(inner.name()))?);
+                    }
+                }
+            }
+        }
+
+        Ok(map)
+    }
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use proc_macro2::TokenStream;
+    use syn;
+
+    use {FromMeta, Result};
+
+    
+    fn pm(tokens: TokenStream) -> ::std::result::Result<syn::Meta, String> {
+        let attribute: syn::Attribute = parse_quote!(#[#tokens]);
+        attribute.interpret_meta().ok_or("Unable to parse".into())
+    }
+
+    fn fm<T: FromMeta>(tokens: TokenStream) -> T {
+        FromMeta::from_meta(&pm(tokens).expect("Tests should pass well-formed input"))
+            .expect("Tests should pass valid input")
+    }
+
+    #[test]
+    fn unit_succeeds() {
+        assert_eq!(fm::<()>(quote!(ignore)), ());
+    }
+
+    #[test]
+    fn bool_succeeds() {
+        
+        assert_eq!(fm::<bool>(quote!(ignore)), true);
+
+        
+        assert_eq!(fm::<bool>(quote!(ignore = true)), true);
+        assert_eq!(fm::<bool>(quote!(ignore = false)), false);
+
+        
+        assert_eq!(fm::<bool>(quote!(ignore = "true")), true);
+        assert_eq!(fm::<bool>(quote!(ignore = "false")), false);
+    }
+
+    #[test]
+    fn string_succeeds() {
+        
+        assert_eq!(&fm::<String>(quote!(ignore = "world")), "world");
+
+        
+        assert_eq!(&fm::<String>(quote!(ignore = r#"world"#)), "world");
+    }
+
+    #[test]
+    fn number_succeeds() {
+        assert_eq!(fm::<u8>(quote!(ignore = "2")), 2u8);
+        assert_eq!(fm::<i16>(quote!(ignore = "-25")), -25i16);
+    }
+
+    #[test]
+    fn meta_succeeds() {
+        use syn::Meta;
+
+        assert_eq!(
+            fm::<Meta>(quote!(hello(world, today))),
+            pm(quote!(hello(world, today))).unwrap()
+        );
+    }
+
+    #[test]
+    fn hash_map_succeeds() {
+        use std::collections::HashMap;
+
+        let comparison = {
+            let mut c = HashMap::new();
+            c.insert("hello".to_string(), true);
+            c.insert("world".to_string(), false);
+            c.insert("there".to_string(), true);
+            c
+        };
+
+        assert_eq!(
+            fm::<HashMap<String, bool>>(quote!(ignore(hello, world = false, there = "true"))),
+            comparison
+        );
+    }
+
+    
+    
+    #[test]
+    fn darling_result_succeeds() {
+        fm::<Result<()>>(quote!(ignore)).unwrap();
+        fm::<Result<()>>(quote!(ignore(world))).unwrap_err();
+    }
+}
