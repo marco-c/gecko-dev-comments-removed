@@ -371,18 +371,6 @@ public:
     mNHooks = aNumHooks;
   }
 
-  
-
-  void TestOnlyDetourInit(const wchar_t* aModuleName, DetourFlags aFlags,
-                          int aNumHooks = 0)
-  {
-    Init(aModuleName, aNumHooks);
-
-    if (!mDetourPatcher.Initialized()) {
-      mDetourPatcher.Init(aFlags, mNHooks);
-    }
-  }
-
   void Clear()
   {
     if (!mModule) {
@@ -467,16 +455,7 @@ private:
 #endif
 
     if (!mDetourPatcher.Initialized()) {
-      DetourFlags flags = DetourFlags::eDefault;
-#if defined(_M_X64)
-      if (mModule == ::GetModuleHandleW(L"ntdll.dll")) {
-        
-        
-        flags |= DetourFlags::eEnable10BytePatch;
-      }
-#endif 
-
-      mDetourPatcher.Init(flags, mNHooks);
+      mDetourPatcher.Init(mNHooks);
     }
 
     return mDetourPatcher.AddHook(aProc, aHookDest, aOrigFunc);

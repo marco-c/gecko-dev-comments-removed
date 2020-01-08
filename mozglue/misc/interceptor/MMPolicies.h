@@ -8,27 +8,13 @@
 #define mozilla_interceptor_MMPolicies_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/Types.h"
 #include "mozilla/WindowsMapRemoteView.h"
 
 #include <windows.h>
 
-
-#if !defined(_CRT_RAND_S)
-extern "C" errno_t rand_s(unsigned int* randomValue);
-#endif 
-
 namespace mozilla {
 namespace interceptor {
-
-enum class ReservationFlags : uint32_t
-{
-  eDefault = 0,
-  eForceFirst2GB = 1,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ReservationFlags)
 
 class MMPolicyBase
 {
@@ -68,100 +54,6 @@ public:
     }();
 
     return kPageSize;
-  }
-
-#if defined(_M_X64)
-
-  
-
-
-
-
-
-
-
-  static PVOID FindLowRegion(HANDLE aProcess, const size_t aDesiredBytesLen)
-  {
-    const DWORD granularity = GetAllocGranularity();
-
-    MOZ_ASSERT(aDesiredBytesLen / granularity > 0);
-    if (!aDesiredBytesLen) {
-      return nullptr;
-    }
-
-    
-    
-    unsigned int rnd = 0;
-    rand_s(&rnd);
-
-    
-    const uint64_t kMinAddress = 0x0000000000100000ULL;
-    const uint64_t kMaxAddress = 0x0000000080000000ULL;
-    uint64_t maxOffset = (kMaxAddress - kMinAddress - aDesiredBytesLen) /
-                         granularity;
-    uint64_t offset = (uint64_t(rnd) % maxOffset) * granularity;
-
-    
-    char* address = reinterpret_cast<char*>(kMinAddress) + offset;
-    
-    char* const kMaxPtr = reinterpret_cast<char*>(kMaxAddress) -
-                          aDesiredBytesLen;
-
-    MOZ_DIAGNOSTIC_ASSERT(address <= kMaxPtr);
-
-    MEMORY_BASIC_INFORMATION mbi = {};
-    SIZE_T len = sizeof(mbi);
-
-    
-    
-    while (address <= kMaxPtr &&
-           ::VirtualQueryEx(aProcess, address, &mbi, len)) {
-      if (mbi.State == MEM_FREE && mbi.RegionSize >= aDesiredBytesLen) {
-        return mbi.BaseAddress;
-      }
-
-      address = reinterpret_cast<char*>(mbi.BaseAddress) + mbi.RegionSize;
-    }
-
-    return nullptr;
-  }
-
-#endif 
-
-  template <typename ReserveFnT>
-  static PVOID Reserve(HANDLE aProcess, const uint32_t aSize,
-                       const ReserveFnT& aReserveFn,
-                       const ReservationFlags aFlags)
-  {
-#if defined(_M_X64)
-    if (aFlags & ReservationFlags::eForceFirst2GB) {
-      size_t curAttempt = 0;
-      const size_t kMaxAttempts = 8;
-
-      
-      
-      
-      while (curAttempt < kMaxAttempts) {
-        PVOID base = FindLowRegion(aProcess, aSize);
-        if (!base) {
-          return nullptr;
-        }
-
-        PVOID result = aReserveFn(aProcess, base, aSize);
-        if (result) {
-          return result;
-        }
-
-        ++curAttempt;
-      }
-
-      
-      
-      
-    }
-#endif 
-
-    return aReserveFn(aProcess, nullptr, aSize);
   }
 };
 
@@ -275,14 +167,6 @@ public:
     return PAGE_EXECUTE_READWRITE;
   }
 
-#if defined(_M_X64)
-  bool IsTrampolineSpaceInLowest2GB() const
-  {
-    return (mBase + mReservationSize) <=
-           reinterpret_cast<uint8_t*>(0x0000000080000000ULL);
-  }
-#endif 
-
 protected:
   uint8_t* GetLocalView() const
   {
@@ -298,8 +182,7 @@ protected:
   
 
 
-  uint32_t Reserve(const uint32_t aSize,
-                   const ReservationFlags aFlags)
+  uint32_t Reserve(const uint32_t aSize)
   {
     if (!aSize) {
       return 0;
@@ -311,19 +194,11 @@ protected:
     }
 
     mReservationSize = ComputeAllocationSize(aSize);
-
-    auto reserveFn = [](HANDLE aProcess, PVOID aBase, uint32_t aSize) -> PVOID {
-      return ::VirtualAlloc(aBase, aSize, MEM_RESERVE, PAGE_NOACCESS);
-    };
-
-    mBase = static_cast<uint8_t*>(
-      MMPolicyBase::Reserve(::GetCurrentProcess(), mReservationSize, reserveFn,
-                            aFlags));
-
+    mBase = static_cast<uint8_t*>(::VirtualAlloc(nullptr, mReservationSize,
+                                                 MEM_RESERVE, PAGE_NOACCESS));
     if (!mBase) {
       return 0;
     }
-
     return mReservationSize;
   }
 
@@ -513,13 +388,6 @@ public:
     return PAGE_READWRITE;
   }
 
-#if defined(_M_X64)
-  bool IsTrampolineSpaceInLowest2GB() const
-  {
-    return (GetRemoteView() + mReservationSize) <= 0x0000000080000000ULL;
-  }
-#endif 
-
 protected:
   uint8_t* GetLocalView() const
   {
@@ -534,8 +402,7 @@ protected:
   
 
 
-  uint32_t Reserve(const uint32_t aSize,
-                   const ReservationFlags aFlags)
+  uint32_t Reserve(const uint32_t aSize)
   {
     if (!aSize || !mProcess) {
       return 0;
@@ -561,14 +428,8 @@ protected:
       return 0;
     }
 
-    auto reserveFn = [mapping = mMapping](HANDLE aProcess, PVOID aBase,
-                                          uint32_t aSize) -> PVOID {
-      return mozilla::MapRemoteViewOfFile(mapping, aProcess, 0ULL, aBase, 0, 0,
-                                          PAGE_EXECUTE_READ);
-    };
-
-    mRemoteView = MMPolicyBase::Reserve(mProcess, mReservationSize, reserveFn,
-                                        aFlags);
+    mRemoteView = MapRemoteViewOfFile(mMapping, mProcess, 0ULL,
+                                      nullptr, 0, 0, PAGE_EXECUTE_READ);
     if (!mRemoteView) {
       return 0;
     }
