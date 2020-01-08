@@ -13071,7 +13071,7 @@ class OnLinkClickEvent : public Runnable
 public:
   OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
                    nsIURI* aURI,
-                   const char16_t* aTargetSpec,
+                   const nsAString& aTargetSpec,
                    const nsAString& aFileName,
                    nsIInputStream* aPostDataStream,
                    nsIInputStream* aHeadersDataStream,
@@ -13092,7 +13092,7 @@ public:
     AutoJSAPI jsapi;
     if (mIsTrusted || jsapi.Init(mContent->OwnerDoc()->GetScopeObject())) {
       mHandler->OnLinkClickSync(mContent, mURI,
-                                mTargetSpec.get(), mFileName,
+                                mTargetSpec, mFileName,
                                 mPostDataStream,
                                 mHeadersDataStream, mNoOpenerImplied,
                                 nullptr, nullptr, mIsUserTriggered,
@@ -13119,7 +13119,7 @@ private:
 OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler,
                                    nsIContent* aContent,
                                    nsIURI* aURI,
-                                   const char16_t* aTargetSpec,
+                                   const nsAString& aTargetSpec,
                                    const nsAString& aFileName,
                                    nsIInputStream* aPostDataStream,
                                    nsIInputStream* aHeadersDataStream,
@@ -13146,7 +13146,7 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler,
 NS_IMETHODIMP
 nsDocShell::OnLinkClick(nsIContent* aContent,
                         nsIURI* aURI,
-                        const char16_t* aTargetSpec,
+                        const nsAString& aTargetSpec,
                         const nsAString& aFileName,
                         nsIInputStream* aPostDataStream,
                         nsIInputStream* aHeadersDataStream,
@@ -13183,10 +13183,9 @@ nsDocShell::OnLinkClick(nsIContent* aContent,
   nsCOMPtr<nsIWebBrowserChrome3> browserChrome3 = do_GetInterface(mTreeOwner);
   bool noOpenerImplied = false;
   if (browserChrome3) {
-    nsAutoString oldTarget(aTargetSpec);
-    rv = browserChrome3->OnBeforeLinkTraversal(oldTarget, aURI,
+    rv = browserChrome3->OnBeforeLinkTraversal(aTargetSpec, aURI,
                                                aContent, mIsAppTab, target);
-    if (!oldTarget.Equals(target)) {
+    if (!aTargetSpec.Equals(target)) {
       noOpenerImplied = true;
     }
   }
@@ -13196,7 +13195,7 @@ nsDocShell::OnLinkClick(nsIContent* aContent,
   }
 
   nsCOMPtr<nsIRunnable> ev =
-    new OnLinkClickEvent(this, aContent, aURI, target.get(), aFileName,
+    new OnLinkClickEvent(this, aContent, aURI, target, aFileName,
                          aPostDataStream, aHeadersDataStream, noOpenerImplied,
                          aIsUserTriggered, aIsTrusted, aTriggeringPrincipal);
   return DispatchToTabGroup(TaskCategory::UI, ev.forget());
@@ -13213,7 +13212,7 @@ IsElementAnchorOrArea(nsIContent* aContent)
 NS_IMETHODIMP
 nsDocShell::OnLinkClickSync(nsIContent* aContent,
                             nsIURI* aURI,
-                            const char16_t* aTargetSpec,
+                            const nsAString& aTargetSpec,
                             const nsAString& aFileName,
                             nsIInputStream* aPostDataStream,
                             nsIInputStream* aHeadersDataStream,
@@ -13326,8 +13325,6 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
   
   
 
-  nsAutoString target(aTargetSpec);
-
   
   nsAutoString typeHint;
   RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromNode(aContent);
@@ -13366,7 +13363,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              triggeringPrincipal,
                              aContent->NodePrincipal(),
                              flags,
-                             target,                    
+                             aTargetSpec,               
                              NS_LossyConvertUTF16toASCII(typeHint),
                              aFileName,                 
                              aPostDataStream,           
@@ -13388,7 +13385,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
 NS_IMETHODIMP
 nsDocShell::OnOverLink(nsIContent* aContent,
                        nsIURI* aURI,
-                       const char16_t* aTargetSpec)
+                       const nsAString& aTargetSpec)
 {
   if (aContent->IsEditable()) {
     return NS_OK;
