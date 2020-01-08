@@ -862,8 +862,6 @@ private:
   
   void StartForceKillTimer();
 
-  void OnGenerateMinidumpComplete(bool aDumpResult);
-
   
   
   

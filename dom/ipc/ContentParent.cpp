@@ -3381,33 +3381,16 @@ ContentParent::KillHard(const char* aReason)
     mCrashReporter->AddAnnotation(CrashReporter::Annotation::ipc_channel_error,
                                   reason);
 
+    
+    if (mCrashReporter->GenerateMinidumpAndPair(this,
+                                                nullptr,
+                                                NS_LITERAL_CSTRING("browser")))
+    {
+      mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();
+    }
+
     Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
-
-    RefPtr<ContentParent> self = this;
-    std::function<void(bool)> callback = [self](bool aResult) {
-      self->OnGenerateMinidumpComplete(aResult);
-    };
-    
-    mCrashReporter->GenerateMinidumpAndPair(Process(),
-                                            nullptr,
-                                            NS_LITERAL_CSTRING("browser"),
-                                            std::move(callback),
-                                            true);
-    return;
   }
-
-  OnGenerateMinidumpComplete(false);
-}
-
-void
-ContentParent::OnGenerateMinidumpComplete(bool aDumpResult)
-{
-  if (mCrashReporter && aDumpResult) {
-    
-    mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();
-  }
-
-  Unused << aDumpResult; 
 
   ProcessHandle otherProcessHandle;
   if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle)) {

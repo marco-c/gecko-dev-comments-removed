@@ -4,6 +4,8 @@
 
 
 
+#include <functional>
+
 #include "nsExceptionHandler.h"
 #include "nsExceptionHandlerUtils.h"
 
@@ -393,15 +395,14 @@ TakeMinidump(nsIFile** aResult, bool aMoveToPending)
   return false;
 }
 
-void
+bool
 CreateMinidumpsAndPair(ProcessHandle aTargetPid,
                        ThreadId aTargetBlamedThread,
                        const nsACString& aIncomingPairName,
                        nsIFile* aIncomingDumpToPair,
-                       nsIFile** aMainDumpOut,
-                       std::function<void(bool)>&& aCallback,
-                       bool aAsync)
+                       nsIFile** aTargetDumpOut)
 {
+  return false;
 }
 
 bool

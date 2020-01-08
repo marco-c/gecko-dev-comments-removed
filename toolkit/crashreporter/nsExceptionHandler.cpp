@@ -306,8 +306,6 @@ static ChildMinidumpMap* pidToMinidump;
 static uint32_t crashSequence;
 static bool OOPInitialized();
 
-static nsIThread* sMinidumpWriterThread;
-
 #ifdef MOZ_CRASHREPORTER_INJECTOR
 static nsIThread* sInjectorThread;
 
@@ -3408,11 +3406,6 @@ OOPDeinit()
   }
 #endif
 
-  if (sMinidumpWriterThread) {
-    sMinidumpWriterThread->Shutdown();
-    NS_RELEASE(sMinidumpWriterThread);
-  }
-
   delete crashServer;
   crashServer = nullptr;
 
@@ -3851,37 +3844,17 @@ bool TakeMinidump(nsIFile** aResult, bool aMoveToPending)
   return true;
 }
 
-static inline void
-NotifyDumpResult(bool aResult,
-                 bool aAsync,
-                 std::function<void(bool)>&& aCallback,
-                 RefPtr<nsIThread>&& aCallbackThread)
+bool
+CreateMinidumpsAndPair(ProcessHandle aTargetPid,
+                       ThreadId aTargetBlamedThread,
+                       const nsACString& aIncomingPairName,
+                       nsIFile* aIncomingDumpToPair,
+                       nsIFile** aMainDumpOut)
 {
-  std::function<void()> runnable = [&](){
-    aCallback(aResult);
-  };
-
-  if (aAsync) {
-    MOZ_ASSERT(!!aCallbackThread);
-    Unused << aCallbackThread->Dispatch(NS_NewRunnableFunction("CrashReporter::InvokeCallback",
-                                                               std::move(runnable)),
-                                        NS_DISPATCH_SYNC);
-  } else {
-    runnable();
+  if (!GetEnabled()) {
+    return false;
   }
-}
 
-static void
-CreatePairedChildMinidumpAsync(ProcessHandle aTargetPid,
-                               ThreadId aTargetBlamedThread,
-                               nsCString aIncomingPairName,
-                               nsCOMPtr<nsIFile> aIncomingDumpToPair,
-                               nsIFile** aMainDumpOut,
-                               xpstring aDumpPath,
-                               std::function<void(bool)>&& aCallback,
-                               RefPtr<nsIThread>&& aCallbackThread,
-                               bool aAsync)
-{
   AutoIOInterposerDisable disableIOInterposition;
 
 #ifdef XP_MACOSX
@@ -3889,64 +3862,6 @@ CreatePairedChildMinidumpAsync(ProcessHandle aTargetPid,
 #else
   ThreadId targetThread = aTargetBlamedThread;
 #endif
-
-  
-  nsCOMPtr<nsIFile> targetMinidump;
-  if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
-         aTargetPid,
-         targetThread,
-         aDumpPath,
-         PairedDumpCallbackExtra,
-         static_cast<void*>(&targetMinidump)
-#ifdef XP_WIN32
-         , GetMinidumpType()
-#endif
-      )) {
-    NotifyDumpResult(false, aAsync, std::move(aCallback), std::move(aCallbackThread));
-    return;
-  }
-
-  nsCOMPtr<nsIFile> targetExtra;
-  GetExtraFileForMinidump(targetMinidump, getter_AddRefs(targetExtra));
-  if (!targetExtra) {
-    targetMinidump->Remove(false);
-
-    NotifyDumpResult(false, aAsync, std::move(aCallback), std::move(aCallbackThread));
-    return;
-  }
-
-  RenameAdditionalHangMinidump(aIncomingDumpToPair,
-                               targetMinidump,
-                               aIncomingPairName);
-
-  if (ShouldReport()) {
-    MoveToPending(targetMinidump, targetExtra, nullptr);
-    MoveToPending(aIncomingDumpToPair, nullptr, nullptr);
-  }
-
-  targetMinidump.forget(aMainDumpOut);
-
-  NotifyDumpResult(true, aAsync, std::move(aCallback), std::move(aCallbackThread));
-}
-
-void
-CreateMinidumpsAndPair(ProcessHandle aTargetPid,
-                       ThreadId aTargetBlamedThread,
-                       const nsACString& aIncomingPairName,
-                       nsIFile* aIncomingDumpToPair,
-                       nsIFile** aMainDumpOut,
-                       std::function<void(bool)>&& aCallback,
-                       bool aAsync)
-{
-  if (!GetEnabled()) {
-    aCallback(false);
-    return;
-  }
-#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-  DllBlocklist_Shutdown();
-#endif
-
-  AutoIOInterposerDisable disableIOInterposition;
 
   xpstring dump_path;
 #ifndef XP_LINUX
@@ -3956,9 +3871,25 @@ CreateMinidumpsAndPair(ProcessHandle aTargetPid,
 #endif
 
   
+  nsCOMPtr<nsIFile> targetMinidump;
+  if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
+         aTargetPid,
+         targetThread,
+         dump_path,
+         PairedDumpCallbackExtra,
+         static_cast<void*>(&targetMinidump)
+#ifdef XP_WIN32
+         , GetMinidumpType()
+#endif
+      )) {
+    return false;
+  }
+
+  nsCOMPtr<nsIFile> targetExtra;
+  GetExtraFileForMinidump(targetMinidump, getter_AddRefs(targetExtra));
+
   
-  
-  nsCOMPtr<nsIFile> incomingDumpToPair;
+  nsCOMPtr<nsIFile> incomingDump;
   if (aIncomingDumpToPair == nullptr) {
     if (!google_breakpad::ExceptionHandler::WriteMinidump(
         dump_path,
@@ -3966,52 +3897,32 @@ CreateMinidumpsAndPair(ProcessHandle aTargetPid,
         true,
 #endif
         PairedDumpCallback,
-        static_cast<void*>(&incomingDumpToPair)
+        static_cast<void*>(&incomingDump)
 #ifdef XP_WIN32
         , GetMinidumpType()
 #endif
         )) {
-      aCallback(false);
-      return;
-    } 
+      targetMinidump->Remove(false);
+      targetExtra->Remove(false);
+      return false;
+    }
   } else {
-    incomingDumpToPair = aIncomingDumpToPair;
-  }
-  MOZ_ASSERT(!!incomingDumpToPair);
-
-  if (aAsync &&
-      !sMinidumpWriterThread &&
-      NS_FAILED(NS_NewNamedThread("Minidump Writer", &sMinidumpWriterThread))) {
-    aCallback(false);
-    return;
+    incomingDump = aIncomingDumpToPair;
   }
 
-  nsCString incomingPairName(aIncomingPairName);
-  std::function<void(bool)> callback = std::move(aCallback);
-  
-  
-  
-  RefPtr<nsIThread> callbackThread = aAsync ? do_GetCurrentThread() : nullptr;
+  RenameAdditionalHangMinidump(incomingDump, targetMinidump, aIncomingPairName);
 
-  std::function<void()> doDump = [=]() mutable {
-    CreatePairedChildMinidumpAsync(aTargetPid,
-                                   aTargetBlamedThread,
-                                   incomingPairName,
-                                   incomingDumpToPair,
-                                   aMainDumpOut,
-                                   dump_path,
-                                   std::move(callback),
-                                   std::move(callbackThread),
-                                   aAsync);
-  };
-
-  if (aAsync) {
-    sMinidumpWriterThread->Dispatch(NS_NewRunnableFunction("CrashReporter::CreateMinidumpsAndPair",
-                                                           std::move(doDump)),
-                                    nsIEventTarget::DISPATCH_NORMAL);
-  } else {
-    doDump();
+  if (ShouldReport()) {
+    MoveToPending(targetMinidump, targetExtra, nullptr);
+    MoveToPending(incomingDump, nullptr, nullptr);
   }
+#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
+  DllBlocklist_Shutdown();
+#endif
+
+  targetMinidump.forget(aMainDumpOut);
+
+  return true;
 }
 
 bool
