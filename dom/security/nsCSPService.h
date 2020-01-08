@@ -30,8 +30,5 @@ public:
 protected:
   virtual ~CSPService();
 
-private:
-  
-  nsDataHashtable<nsCStringHashKey, uint16_t> mAppStatusCache;
 };
 #endif 
