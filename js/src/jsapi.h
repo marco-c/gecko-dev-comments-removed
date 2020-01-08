@@ -1460,6 +1460,13 @@ extern JS_PUBLIC_API bool OrdinaryHasInstance(JSContext* cx,
                                               HandleObject objArg,
                                               HandleValue v, bool* bp);
 
+
+
+
+
+extern JS_PUBLIC_API bool InstanceofOperator(JSContext* cx, HandleObject obj,
+                                              HandleValue v, bool* bp);
+
 }  
 
 extern JS_PUBLIC_API void* JS_GetPrivate(JSObject* obj);

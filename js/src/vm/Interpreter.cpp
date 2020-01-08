@@ -819,7 +819,7 @@ bool js::Execute(JSContext* cx, HandleScript script, JSObject& envChainArg,
 
 
 
-extern bool js::InstanceOfOperator(JSContext* cx, HandleObject obj,
+extern bool JS::InstanceofOperator(JSContext* cx, HandleObject obj,
                                    HandleValue v, bool* bp) {
   
 
@@ -860,7 +860,7 @@ bool js::HasInstance(JSContext* cx, HandleObject obj, HandleValue v, bool* bp) {
   if (JSHasInstanceOp hasInstance = clasp->getHasInstance()) {
     return hasInstance(cx, obj, &local, bp);
   }
-  return js::InstanceOfOperator(cx, obj, local, bp);
+  return JS::InstanceofOperator(cx, obj, local, bp);
 }
 
 static inline bool EqualGivenSameType(JSContext* cx, HandleValue lval,
