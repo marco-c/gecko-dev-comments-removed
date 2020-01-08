@@ -4,8 +4,6 @@ const { FluentBundle, FluentResource } = ChromeUtils.import("resource://gre/modu
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
-const isParentProcess =
-  Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
 
 
@@ -78,23 +76,9 @@ const isParentProcess =
 
 
 
-class L10nRegistryService {
-  constructor() {
-    this.sources = new Map();
-
-    if (!isParentProcess) {
-      this._setSourcesFromSharedData();
-      Services.cpmm.sharedData.addEventListener("change", this);
-    }
-  }
-
-  handleEvent(event) {
-    if (event.type === "change") {
-      if (event.changedKeys.includes("L10nRegistry:Sources")) {
-        this._setSourcesFromSharedData();
-      }
-    }
-  }
+const L10nRegistry = {
+  sources: new Map(),
+  bootstrap: null,
 
   
 
@@ -105,6 +89,9 @@ class L10nRegistryService {
 
 
   async* generateBundles(requestedLangs, resourceIds) {
+    if (this.bootstrap !== null) {
+      await this.bootstrap;
+    }
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
     const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
@@ -122,7 +109,7 @@ class L10nRegistryService {
         yield bundle;
       }
     }
-  }
+  },
 
   
 
@@ -134,12 +121,8 @@ class L10nRegistryService {
       throw new Error(`Source with name "${source.name}" already registered.`);
     }
     this.sources.set(source.name, source);
-
-    if (isParentProcess) {
-      this._synchronizeSharedData();
-      Services.locale.availableLocales = this.getAvailableLocales();
-    }
-  }
+    Services.locale.availableLocales = this.getAvailableLocales();
+  },
 
   
 
@@ -154,11 +137,8 @@ class L10nRegistryService {
       throw new Error(`Source with name "${source.name}" is not registered.`);
     }
     this.sources.set(source.name, source);
-    if (isParentProcess) {
-      this._synchronizeSharedData();
-      Services.locale.availableLocales = this.getAvailableLocales();
-    }
-  }
+    Services.locale.availableLocales = this.getAvailableLocales();
+  },
 
   
 
@@ -167,41 +147,8 @@ class L10nRegistryService {
 
   removeSource(sourceName) {
     this.sources.delete(sourceName);
-    if (isParentProcess) {
-      this._synchronizeSharedData();
-      Services.locale.availableLocales = this.getAvailableLocales();
-    }
-  }
-
-  _synchronizeSharedData() {
-    const sources = new Map();
-    for (const [name, source] of this.sources.entries()) {
-      if (source.indexed) {
-        continue;
-      }
-      sources.set(name, {
-        locales: source.locales,
-        prePath: source.prePath,
-      });
-    }
-    Services.ppmm.sharedData.set("L10nRegistry:Sources", sources);
-    Services.ppmm.sharedData.flush();
-  }
-
-  _setSourcesFromSharedData() {
-    let sources = Services.cpmm.sharedData.get("L10nRegistry:Sources");
-    for (let [name, data] of sources.entries()) {
-      if (!this.sources.has(name)) {
-        const source = new FileSource(name, data.locales, data.prePath);
-        this.registerSource(source);
-      }
-    }
-    for (let name of this.sources.keys()) {
-      if (!sources.has(name)) {
-        this.removeSource(name);
-      }
-    }
-  }
+    Services.locale.availableLocales = this.getAvailableLocales();
+  },
 
   
 
@@ -218,8 +165,8 @@ class L10nRegistryService {
       }
     }
     return Array.from(locales);
-  }
-}
+  },
+};
 
 
 
@@ -537,7 +484,6 @@ class IndexedFileSource extends FileSource {
   }
 }
 
-this.L10nRegistry = new L10nRegistryService();
 
 
 
@@ -548,8 +494,7 @@ this.L10nRegistry = new L10nRegistryService();
 
 
 
-
-this.L10nRegistry.load = function(url) {
+L10nRegistry.load = function(url) {
   return fetch(url).then(response => {
     if (!response.ok) {
       return Promise.reject(response.statusText);
@@ -558,6 +503,7 @@ this.L10nRegistry.load = function(url) {
   });
 };
 
+this.L10nRegistry = L10nRegistry;
 this.FileSource = FileSource;
 this.IndexedFileSource = IndexedFileSource;
 
