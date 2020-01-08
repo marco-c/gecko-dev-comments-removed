@@ -72,6 +72,13 @@ const FlexItemFront = FrontClassWithSpec(flexItemSpec, {
   
 
 
+  get computedStyle() {
+    return this._form.computedStyle;
+  },
+
+  
+
+
   get properties() {
     return this._form.properties;
   },

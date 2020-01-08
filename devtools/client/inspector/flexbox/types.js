@@ -73,6 +73,9 @@ const flexItem = exports.flexItem = {
   actorID: PropTypes.string,
 
   
+  computedStyle: PropTypes.object,
+
+  
   flexItemSizing: PropTypes.shape(flexItemSizing),
 
   

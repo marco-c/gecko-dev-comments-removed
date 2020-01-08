@@ -168,7 +168,9 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
       [dimension]: "",
     };
 
-    if (this.element.nodeType === this.element.ELEMENT_NODE) {
+    const isElementNode = this.element.nodeType === this.element.ELEMENT_NODE;
+
+    if (isElementNode) {
       for (const name in properties) {
         let value = "";
         
@@ -192,12 +194,20 @@ const FlexItemActor = ActorClassWithSpec(flexItemSpec, {
       }
     }
 
+    
+    const { flexGrow, flexShrink } = isElementNode
+      ? CssLogic.getComputedStyle(this.element)
+      : { flexGrow: null, flexShrink: null };
+    const computedStyle = { flexGrow, flexShrink };
+
     const form = {
       actor: this.actorID,
       
       flexItemSizing: this.flexItemSizing,
       
       properties,
+      
+      computedStyle,
     };
 
     

@@ -131,7 +131,7 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  renderFlexibilitySection(flexItemSizing, properties) {
+  renderFlexibilitySection(flexItemSizing, properties, computedStyle) {
     const {
       mainDeltaSize,
       mainBaseSize,
@@ -145,27 +145,32 @@ class FlexItemSizingProperties extends PureComponent {
       return null;
     }
 
-    const flexGrow = properties["flex-grow"];
-    const nonZeroFlexGrowDefined = flexGrow && parseFloat(flexGrow) !== 0;
-    const flexShrink = properties["flex-shrink"];
-    const flexShrink0 = parseFloat(flexShrink) === 0;
+    
     const grew = mainDeltaSize > 0;
     const shrank = mainDeltaSize < 0;
+    if (!grew && !shrank) {
+      return null;
+    }
+
+    const definedFlexGrow = properties["flex-grow"];
+    const computedFlexGrow = computedStyle.flexGrow;
+    const definedFlexShrink = properties["flex-shrink"];
+    const computedFlexShrink = computedStyle.flexShrink;
     const wasClamped = clampState !== "unclamped";
 
     const reasons = [];
 
     
-    if (nonZeroFlexGrowDefined && lineGrowthState !== "shrinking") {
+    if (computedFlexGrow && lineGrowthState === "growing") {
       reasons.push(getStr("flexbox.itemSizing.setToGrow"));
     }
-    if (flexShrink && !flexShrink0 && lineGrowthState !== "growing") {
+    if (computedFlexShrink && lineGrowthState === "shrinking") {
       reasons.push(getStr("flexbox.itemSizing.setToShrink"));
     }
-    if (!nonZeroFlexGrowDefined && !grew && !shrank && lineGrowthState === "growing") {
+    if (!computedFlexGrow && !grew && !shrank && lineGrowthState === "growing") {
       reasons.push(getStr("flexbox.itemSizing.notSetToGrow"));
     }
-    if (!grew && !shrank && lineGrowthState === "shrinking") {
+    if (!computedFlexShrink && !grew && !shrank && lineGrowthState === "shrinking") {
       reasons.push(getStr("flexbox.itemSizing.notSetToShrink"));
     }
 
@@ -173,57 +178,32 @@ class FlexItemSizingProperties extends PureComponent {
 
     if (grew) {
       
-      if (flexGrow) {
+      if (definedFlexGrow) {
         
-        property = this.renderCssProperty("flex-grow", flexGrow);
+        property = this.renderCssProperty("flex-grow", definedFlexGrow);
       }
 
-      if (wasClamped) {
+      if (wasClamped && clampState === "clamped_to_max") {
         
-        reasons.push(getStr("flexbox.itemSizing.growthAttemptWhenClamped"));
+        reasons.push(getStr("flexbox.itemSizing.growthAttemptButMaxClamped"));
+      } else if (wasClamped && clampState === "clamped_to_min") {
+        
+        reasons.push(getStr("flexbox.itemSizing.growthAttemptButMinClamped"));
       }
     } else if (shrank) {
       
-      if (flexShrink && !flexShrink0) {
+      if (definedFlexShrink && computedFlexShrink) {
         
-        property = this.renderCssProperty("flex-shrink", flexShrink);
-      } else {
+        property = this.renderCssProperty("flex-shrink", definedFlexShrink);
+      } else if (computedFlexShrink) {
         
-        property = this.renderCssProperty("flex-shrink", "1", true);
+        property = this.renderCssProperty("flex-shrink", computedFlexShrink, true);
       }
 
       if (wasClamped) {
         
         
         reasons.push(getStr("flexbox.itemSizing.shrinkAttemptWhenClamped"));
-      }
-    } else if (lineGrowthState === "growing" && nonZeroFlexGrowDefined) {
-      property = this.renderCssProperty("flex-grow", flexGrow);
-      if (!wasClamped) {
-        
-        
-        reasons.push(getStr("flexbox.itemSizing.growthAttemptButSiblings"));
-      }
-    } else if (lineGrowthState === "shrinking") {
-      
-      if (!flexShrink0) {
-        
-        
-        if (flexShrink) {
-          property = this.renderCssProperty("flex-shrink", flexShrink);
-        } else {
-          property = this.renderCssProperty("flex-shrink", 1, true);
-        }
-
-        reasons.push(getStr("flexbox.itemSizing.shrinkAttemptButCouldnt"));
-
-        if (wasClamped) {
-          
-          reasons.push(getStr("flexbox.itemSizing.shrinkAttemptWhenClamped"));
-        }
-      } else {
-        
-        property = this.renderCssProperty("flex-shrink", flexShrink);
       }
     }
 
@@ -308,6 +288,7 @@ class FlexItemSizingProperties extends PureComponent {
       flexItem,
     } = this.props;
     const {
+      computedStyle,
       flexItemSizing,
       properties,
     } = flexItem;
@@ -328,7 +309,7 @@ class FlexItemSizingProperties extends PureComponent {
     return (
       dom.ul({ className: "flex-item-sizing" },
         this.renderBaseSizeSection(flexItemSizing, properties, dimension),
-        this.renderFlexibilitySection(flexItemSizing, properties),
+        this.renderFlexibilitySection(flexItemSizing, properties, computedStyle),
         this.renderMinimumSizeSection(flexItemSizing, properties, dimension),
         this.renderMaximumSizeSection(flexItemSizing, properties, dimension),
         this.renderFinalSizeSection(flexItemSizing)
