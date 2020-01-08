@@ -154,7 +154,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     ModuleEnvironment* const        env_;
 
     
-    Assumptions                     assumptions_;
     UniqueLinkDataTier              linkDataTier_;
     UniqueMetadataTier              metadataTier_;
     MutableMetadata                 metadata_;

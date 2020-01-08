@@ -191,9 +191,6 @@ ModuleGenerator::init(Metadata* maybeAsmJSMetadata)
     if (!metadataTier_)
         return false;
 
-    if (!assumptions_.clone(compileArgs_->assumptions))
-        return false;
-
     
     
 
@@ -832,7 +829,7 @@ ModuleGenerator::finishMetadata(const ShareableBytes& bytecode)
     
 
     metadata_->memoryUsage = env_->memoryUsage;
-    metadata_->temporaryHasGcTypes = env_->gcTypesEnabled;
+    metadata_->temporaryGcTypesConfigured = env_->gcTypesConfigured;
     metadata_->minMemoryLength = env_->minMemoryLength;
     metadata_->maxMemoryLength = env_->maxMemoryLength;
     metadata_->startFuncIndex = env_->startFuncIndex;
@@ -979,8 +976,7 @@ ModuleGenerator::finishModule(const ShareableBytes& bytecode)
             return nullptr;
     }
 
-    SharedModule module(js_new<Module>(std::move(assumptions_),
-                                       *code,
+    SharedModule module(js_new<Module>(*code,
                                        std::move(maybeDebuggingBytes),
                                        LinkData(std::move(linkDataTier_)),
                                        std::move(env_->imports),

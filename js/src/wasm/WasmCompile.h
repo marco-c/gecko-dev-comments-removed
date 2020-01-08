@@ -26,6 +26,13 @@ namespace wasm {
 
 
 
+
+
+uint32_t
+ObservedCPUFeatures();
+
+
+
 struct ScriptedCaller
 {
     UniqueChars filename;
@@ -39,31 +46,26 @@ struct ScriptedCaller
 
 struct CompileArgs : ShareableBase<CompileArgs>
 {
-    Assumptions assumptions;
     ScriptedCaller scriptedCaller;
     UniqueChars sourceMapURL;
     bool baselineEnabled;
     bool debugEnabled;
     bool ionEnabled;
     bool sharedMemoryEnabled;
-    HasGcTypes gcTypesEnabled;
+    HasGcTypes gcTypesConfigured;
     bool testTiering;
 
-    CompileArgs(Assumptions&& assumptions, ScriptedCaller&& scriptedCaller)
-      : assumptions(std::move(assumptions)),
-        scriptedCaller(std::move(scriptedCaller)),
+    explicit CompileArgs(ScriptedCaller&& scriptedCaller)
+      : scriptedCaller(std::move(scriptedCaller)),
         baselineEnabled(false),
         debugEnabled(false),
         ionEnabled(false),
         sharedMemoryEnabled(false),
-        gcTypesEnabled(HasGcTypes::False),
+        gcTypesConfigured(HasGcTypes::False),
         testTiering(false)
     {}
 
-    
-    
-    CompileArgs() = default;
-    bool initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller);
+    CompileArgs(JSContext* cx, ScriptedCaller&& scriptedCaller);
 };
 
 typedef RefPtr<CompileArgs> MutableCompileArgs;
