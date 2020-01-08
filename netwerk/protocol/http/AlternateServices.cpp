@@ -942,7 +942,17 @@ AltSvcCache::UpdateAltServiceMapping(AltSvcMapping *map, nsProxyInfo *pi,
     }
   } else {
     
-    nsAutoCString origin (NS_LITERAL_CSTRING("http://") + map->OriginHost());
+    nsAutoCString origin (NS_LITERAL_CSTRING("http://"));
+
+    
+    
+    if (map->OriginHost().FindChar(':') != kNotFound) {
+      origin.Append('[');
+      origin.Append(map->OriginHost());
+      origin.Append(']');
+    } else {
+      origin.Append(map->OriginHost());
+    }
     if (map->OriginPort() != NS_HTTP_DEFAULT_PORT) {
       origin.Append(':');
       origin.AppendInt(map->OriginPort());
