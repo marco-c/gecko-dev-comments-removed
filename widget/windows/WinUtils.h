@@ -506,6 +506,11 @@ public:
 
   static void Initialize();
 
+  static nsresult WriteBitmap(nsIFile* aFile, mozilla::gfx::SourceSurface* surface);
+  
+  
+  static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage);
+
   
 
 
