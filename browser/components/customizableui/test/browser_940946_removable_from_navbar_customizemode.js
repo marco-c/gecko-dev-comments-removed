@@ -9,7 +9,7 @@ const kTestBtnId = "test-removable-navbar-customize-mode";
 
 add_task(async function() {
   let btn = createDummyXULButton(kTestBtnId, "Test removable in navbar in customize mode");
-  document.getElementById("nav-bar").customizationTarget.appendChild(btn);
+  CustomizableUI.getCustomizationTarget(document.getElementById("nav-bar")).appendChild(btn);
   await startCustomizing();
   ok(!CustomizableUI.isWidgetRemovable(kTestBtnId), "Widget should not be considered removable");
   await endCustomizing();
