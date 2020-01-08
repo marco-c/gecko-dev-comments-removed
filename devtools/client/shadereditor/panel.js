@@ -34,11 +34,6 @@ ShaderEditorPanel.prototype = {
 
 
   async open() {
-    
-    if (!this.target.isRemote) {
-      await this.target.attach();
-    }
-
     this.front = new WebGLFront(this.target.client, this.target.form);
     this.shadersListView = new ShadersListView();
     this.eventsHandler = new EventsHandler();

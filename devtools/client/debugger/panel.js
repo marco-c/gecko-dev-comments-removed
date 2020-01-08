@@ -35,20 +35,13 @@ DebuggerPanel.prototype = {
 
 
   open: function () {
-    let targetPromise;
-
     
-    if (!this.target.isRemote) {
-      targetPromise = this.target.attach();
-      
-      
+    
+    if (this.target.isLocalTab) {
       this.target.tab.addEventListener("TabSelect", this);
-    } else {
-      targetPromise = promise.resolve(this.target);
     }
 
-    return targetPromise
-      .then(() => this._controller.startupDebugger())
+    return Promise.resolve(this._controller.startupDebugger())
       .then(() => this._controller.connect())
       .then(() => {
         this._toolbox.on("host-changed", this.handleHostChanged);

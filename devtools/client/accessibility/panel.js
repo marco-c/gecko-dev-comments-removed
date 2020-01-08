@@ -59,11 +59,6 @@ AccessibilityPanel.prototype = {
       resolver = resolve;
     });
 
-    
-    if (!this.target.isRemote) {
-      await this.target.attach();
-    }
-
     this._telemetry = new Telemetry();
     this.panelWin.gTelemetry = this._telemetry;
 

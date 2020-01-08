@@ -409,7 +409,6 @@ var openToolboxForTab = async function(tab, toolId, hostType) {
 
   let toolbox;
   const target = await TargetFactory.forTab(tab);
-  await target.attach();
 
   
   toolbox = gDevTools.getToolbox(target);
@@ -755,7 +754,7 @@ async function registerActorInContentProcess(url, options) {
   return ContentTask.spawn(gBrowser.selectedBrowser, { url, options }, args => {
     
     const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-    const { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
-    ActorRegistry.registerModule(args.url, args.options);
+    const { DebuggerServer } = require("devtools/server/main");
+    DebuggerServer.registerModule(args.url, args.options);
   });
 }

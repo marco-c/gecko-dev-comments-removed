@@ -82,11 +82,6 @@ OptionsPanel.prototype = {
   },
 
   async open() {
-    
-    if (!this.target.isRemote) {
-      await this.target.attach();
-    }
-
     this.setupToolsList();
     this.setupToolbarButtonsList();
     this.setupThemeList();

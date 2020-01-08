@@ -11,10 +11,6 @@ function NetMonitorPanel(iframeWindow, toolbox) {
 
 NetMonitorPanel.prototype = {
   async open() {
-    if (!this.toolbox.target.isRemote) {
-      await this.toolbox.target.attach();
-    }
-
     
     
     const api = await this.toolbox.getNetMonitorAPI();

@@ -27,31 +27,16 @@ CanvasDebuggerPanel.prototype = {
 
 
 
-  open: function() {
-    let targetPromise;
+  open: async function() {
+    this.panelWin.gToolbox = this._toolbox;
+    this.panelWin.gTarget = this.target;
+    this.panelWin.gFront = new CanvasFront(this.target.client, this.target.form);
 
-    
-    if (!this.target.isRemote) {
-      targetPromise = this.target.attach();
-    } else {
-      targetPromise = Promise.resolve(this.target);
-    }
+    await this.panelWin.startupCanvasDebugger();
 
-    return targetPromise
-      .then(() => {
-        this.panelWin.gToolbox = this._toolbox;
-        this.panelWin.gTarget = this.target;
-        this.panelWin.gFront = new CanvasFront(this.target.client, this.target.form);
-        return this.panelWin.startupCanvasDebugger();
-      })
-      .then(() => {
-        this.isReady = true;
-        this.emit("ready");
-        return this;
-      })
-      .catch(function onError(aReason) {
-        DevToolsUtils.reportException("CanvasDebuggerPanel.prototype.open", aReason);
-      });
+    this.isReady = true;
+    this.emit("ready");
+    return this;
   },
 
   
