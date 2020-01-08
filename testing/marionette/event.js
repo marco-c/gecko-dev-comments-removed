@@ -28,8 +28,7 @@ function getDOMWindowUtils(win) {
   }
 
   
-  return win.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindowUtils);
+  return win.windowUtils;
 }
 
 event.MouseEvents = {

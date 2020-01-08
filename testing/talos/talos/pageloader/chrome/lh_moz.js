@@ -2,7 +2,7 @@
 
 
 function _contentPaintHandler() {
-  var utils = content.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+  var utils = content.windowUtils;
   if (utils.isMozAfterPaintPending) {
     addEventListener("MozAfterPaint", function afterpaint(e) {
       removeEventListener("MozAfterPaint", afterpaint, true);

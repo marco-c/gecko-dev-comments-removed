@@ -300,17 +300,13 @@ TalosPowersService.prototype = {
 
     
     startFrameTimeRecording(arg, callback, win) {
-      var rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils)
-                  .startFrameTimeRecording();
+      var rv = win.windowUtils.startFrameTimeRecording();
       callback(rv);
     },
 
     
     stopFrameTimeRecording(arg, callback, win) {
-      var rv = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils)
-                  .stopFrameTimeRecording(arg);
+      var rv = win.windowUtils.stopFrameTimeRecording(arg);
       callback(rv);
     },
 

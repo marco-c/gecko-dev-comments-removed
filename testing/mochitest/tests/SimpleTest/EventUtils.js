@@ -1283,9 +1283,7 @@ function _getDOMWindowUtils(aWindow = window)
   
   
   if (!window.document || window.document.documentURIObject) {
-    return aWindow
-        .QueryInterface(_EU_Ci.nsIInterfaceRequestor)
-        .getInterface(_EU_Ci.nsIDOMWindowUtils);
+    return aWindow.windowUtils;
   }
 
   
@@ -1300,9 +1298,7 @@ function _getDOMWindowUtils(aWindow = window)
   }
 
   
-  return aWindow
-      .QueryInterface(_EU_Ci.nsIInterfaceRequestor)
-      .getInterface(_EU_Ci.nsIDOMWindowUtils);
+  return aWindow.windowUtils;
 }
 
 function _defineConstant(name, value) {
