@@ -988,6 +988,13 @@ protected:
 
 
 
+  nsresult AddOverrideStyleSheetInternal(const nsAString& aURL);
+
+  
+
+
+
+
 
 
 
