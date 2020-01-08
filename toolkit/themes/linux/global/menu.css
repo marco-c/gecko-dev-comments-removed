@@ -80,7 +80,7 @@ menucaption {
 
 
 menulist > menupopup {
-  font: message-box;
+  font: inherit;
 }
 
 menulist > menupopup > menuitem,
