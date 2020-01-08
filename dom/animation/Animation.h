@@ -60,8 +60,8 @@ public:
   explicit Animation(nsIGlobalObject* aGlobal)
     : DOMEventTargetHelper(aGlobal)
     , mPlaybackRate(1.0)
-    , mPendingState(PendingState::NotPending)
     , mAnimationIndex(sNextAnimationIndex++)
+    , mPendingState(PendingState::NotPending)
     , mFinishedAtLastComposeStyle(false)
     , mIsRelevant(false)
     , mFinishedIsResolved(false)
@@ -568,15 +568,6 @@ protected:
   
   RefPtr<Promise> mFinished;
 
-  
-  
-  
-  
-  
-  
-  enum class PendingState { NotPending, PlayPending, PausePending };
-  PendingState mPendingState;
-
   static uint64_t sNextAnimationIndex;
 
   
@@ -588,12 +579,25 @@ protected:
   
   uint64_t mAnimationIndex;
 
+  
+  
+  
+  
+  
+  
+  enum class PendingState : uint8_t
+  {
+    NotPending,
+    PlayPending,
+    PausePending
+  };
+  PendingState mPendingState;
+
   bool mFinishedAtLastComposeStyle;
   
   
   bool mIsRelevant;
 
-  RefPtr<MicroTaskRunnable> mFinishNotificationTask;
   
   
   
@@ -604,6 +608,8 @@ protected:
   
   
   bool mSyncWithGeometricAnimations;
+
+  RefPtr<MicroTaskRunnable> mFinishNotificationTask;
 
   nsString mId;
 };
