@@ -14,6 +14,7 @@
 #include "ds/InlineTable.h"
 #include "frontend/BCEParserHandle.h"
 #include "frontend/EitherParser.h"
+#include "frontend/JumpList.h"
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"
 #include "vm/BytecodeUtil.h"
@@ -109,61 +110,6 @@ typedef Vector<jsbytecode, 64> BytecodeVector;
 typedef Vector<jssrcnote, 64> SrcNotesVector;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct JumpTarget {
-    ptrdiff_t offset;
-};
-
-struct JumpList {
-    
-    JumpList() : offset(-1) {}
-    ptrdiff_t offset;
-
-    
-    void push(jsbytecode* code, ptrdiff_t jumpOffset);
-
-    
-    
-    void patchAll(jsbytecode* code, JumpTarget target);
-};
-
-
 enum class ValueUsage {
     
     
@@ -176,12 +122,11 @@ enum class ValueUsage {
 };
 
 class EmitterScope;
+class NestableControl;
 class TDZCheckCache;
 
 struct MOZ_STACK_CLASS BytecodeEmitter
 {
-    class NestableControl;
-
     SharedContext* const sc;      
 
     JSContext* const cx;

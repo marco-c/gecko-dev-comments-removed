@@ -24,6 +24,7 @@
 #include "jsutil.h"
 
 #include "ds/Nestable.h"
+#include "frontend/BytecodeControlStructures.h"
 #include "frontend/EmitterScope.h"
 #include "frontend/Parser.h"
 #include "frontend/TDZCheckCache.h"
@@ -57,12 +58,6 @@ using mozilla::PodCopy;
 using mozilla::Some;
 using mozilla::Unused;
 
-class BreakableControl;
-class LabelControl;
-class LoopControl;
-class ForOfLoopControl;
-class TryFinallyControl;
-
 static bool
 ParseNodeRequiresSpecialLineNumberNotes(ParseNode* pn)
 {
@@ -77,242 +72,6 @@ ParseNodeRequiresSpecialLineNumberNotes(ParseNode* pn)
            kind == ParseNodeKind::For ||
            kind == ParseNodeKind::Function;
 }
-
-class BytecodeEmitter::NestableControl : public Nestable<BytecodeEmitter::NestableControl>
-{
-    StatementKind kind_;
-
-    
-    EmitterScope* emitterScope_;
-
-  protected:
-    NestableControl(BytecodeEmitter* bce, StatementKind kind)
-      : Nestable<NestableControl>(&bce->innermostNestableControl),
-        kind_(kind),
-        emitterScope_(bce->innermostEmitterScopeNoCheck())
-    { }
-
-  public:
-    using Nestable<NestableControl>::enclosing;
-    using Nestable<NestableControl>::findNearest;
-
-    StatementKind kind() const {
-        return kind_;
-    }
-
-    EmitterScope* emitterScope() const {
-        return emitterScope_;
-    }
-
-    template <typename T>
-    bool is() const;
-
-    template <typename T>
-    T& as() {
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<T&>(*this);
-    }
-};
-
-
-
-namespace js {
-namespace frontend {
-
-template <>
-bool
-BytecodeEmitter::NestableControl::is<BreakableControl>() const
-{
-    return StatementKindIsUnlabeledBreakTarget(kind_) || kind_ == StatementKind::Label;
-}
-
-template <>
-bool
-BytecodeEmitter::NestableControl::is<LabelControl>() const
-{
-    return kind_ == StatementKind::Label;
-}
-
-template <>
-bool
-BytecodeEmitter::NestableControl::is<LoopControl>() const
-{
-    return StatementKindIsLoop(kind_);
-}
-
-template <>
-bool
-BytecodeEmitter::NestableControl::is<ForOfLoopControl>() const
-{
-    return kind_ == StatementKind::ForOfLoop;
-}
-
-template <>
-bool
-BytecodeEmitter::NestableControl::is<TryFinallyControl>() const
-{
-    return kind_ == StatementKind::Try || kind_ == StatementKind::Finally;
-}
-
-} 
-} 
-
-class BreakableControl : public BytecodeEmitter::NestableControl
-{
-  public:
-    
-    JumpList breaks;
-
-    BreakableControl(BytecodeEmitter* bce, StatementKind kind)
-      : NestableControl(bce, kind)
-    {
-        MOZ_ASSERT(is<BreakableControl>());
-    }
-
-    MOZ_MUST_USE bool patchBreaks(BytecodeEmitter* bce) {
-        return bce->emitJumpTargetAndPatch(breaks);
-    }
-};
-
-class LabelControl : public BreakableControl
-{
-    RootedAtom label_;
-
-    
-    ptrdiff_t startOffset_;
-
-  public:
-    LabelControl(BytecodeEmitter* bce, JSAtom* label, ptrdiff_t startOffset)
-      : BreakableControl(bce, StatementKind::Label),
-        label_(bce->cx, label),
-        startOffset_(startOffset)
-    { }
-
-    HandleAtom label() const {
-        return label_;
-    }
-
-    ptrdiff_t startOffset() const {
-        return startOffset_;
-    }
-};
-
-class LoopControl : public BreakableControl
-{
-    
-    
-    TDZCheckCache tdzCache_;
-
-    
-    int32_t stackDepth_;
-
-    
-    uint32_t loopDepth_;
-
-    
-    bool canIonOsr_;
-
-  public:
-    
-    
-    JumpTarget continueTarget;
-
-    
-    JumpList continues;
-
-    LoopControl(BytecodeEmitter* bce, StatementKind loopKind)
-      : BreakableControl(bce, loopKind),
-        tdzCache_(bce),
-        continueTarget({ -1 })
-    {
-        MOZ_ASSERT(is<LoopControl>());
-
-        LoopControl* enclosingLoop = findNearest<LoopControl>(enclosing());
-
-        stackDepth_ = bce->stackDepth;
-        loopDepth_ = enclosingLoop ? enclosingLoop->loopDepth_ + 1 : 1;
-
-        int loopSlots;
-        if (loopKind == StatementKind::Spread) {
-            
-            
-            loopSlots = 4;
-        } else if (loopKind == StatementKind::ForOfLoop) {
-            
-            
-            loopSlots = 3;
-        } else if (loopKind == StatementKind::ForInLoop) {
-            
-            loopSlots = 2;
-        } else {
-            
-            loopSlots = 0;
-        }
-
-        MOZ_ASSERT(loopSlots <= stackDepth_);
-
-        if (enclosingLoop) {
-            canIonOsr_ = (enclosingLoop->canIonOsr_ &&
-                          stackDepth_ == enclosingLoop->stackDepth_ + loopSlots);
-        } else {
-            canIonOsr_ = stackDepth_ == loopSlots;
-        }
-    }
-
-    uint32_t loopDepth() const {
-        return loopDepth_;
-    }
-
-    bool canIonOsr() const {
-        return canIonOsr_;
-    }
-
-    MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce) {
-        
-        
-        MOZ_ASSERT(bce->stackDepth == stackDepth_);
-        MOZ_ASSERT(bce->innermostNestableControl == this);
-
-        if (!bce->newSrcNote(SRC_BREAK))
-            return false;
-        if (!bce->emitJump(JSOP_GOTO, &breaks))
-            return false;
-
-        return true;
-    }
-
-    MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce) {
-        MOZ_ASSERT(continueTarget.offset != -1);
-        if (!patchBreaks(bce))
-            return false;
-        bce->patchJumpsToTarget(continues, continueTarget);
-        return true;
-    }
-};
-
-class TryFinallyControl : public BytecodeEmitter::NestableControl
-{
-    bool emittingSubroutine_;
-
-  public:
-    
-    JumpList gosubs;
-
-    TryFinallyControl(BytecodeEmitter* bce, StatementKind kind)
-      : NestableControl(bce, kind),
-        emittingSubroutine_(false)
-    {
-        MOZ_ASSERT(is<TryFinallyControl>());
-    }
-
-    void setEmittingSubroutine() {
-        emittingSubroutine_ = true;
-    }
-
-    bool emittingSubroutine() const {
-        return emittingSubroutine_;
-    }
-};
 
 
 
@@ -1295,6 +1054,18 @@ class ForOfLoopControl : public LoopControl
     }
 };
 
+namespace js {
+namespace frontend {
+
+template <>
+bool
+NestableControl::is<ForOfLoopControl>() const
+{
+    return kind_ == StatementKind::ForOfLoop;
+}
+
+} 
+} 
 
 BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
                                  SharedContext* sc, HandleScript script,
@@ -1540,27 +1311,6 @@ BytecodeEmitter::emitJumpTarget(JumpTarget* target)
     if (!emit1(JSOP_JUMPTARGET))
         return false;
     return true;
-}
-
-void
-JumpList::push(jsbytecode* code, ptrdiff_t jumpOffset)
-{
-    SET_JUMP_OFFSET(&code[jumpOffset], offset - jumpOffset);
-    offset = jumpOffset;
-}
-
-void
-JumpList::patchAll(jsbytecode* code, JumpTarget target)
-{
-    ptrdiff_t delta;
-    for (ptrdiff_t jumpOffset = offset; jumpOffset != -1; jumpOffset += delta) {
-        jsbytecode* pc = &code[jumpOffset];
-        MOZ_ASSERT(IsJumpOpcode(JSOp(*pc)) || JSOp(*pc) == JSOP_LABEL);
-        delta = GET_JUMP_OFFSET(pc);
-        MOZ_ASSERT(delta < 0);
-        ptrdiff_t span = target.offset - jumpOffset;
-        SET_JUMP_OFFSET(pc, span);
-    }
 }
 
 bool
@@ -1879,7 +1629,7 @@ class NonLocalExitControl
         bce_->stackDepth = savedDepth_;
     }
 
-    MOZ_MUST_USE bool prepareForNonLocalJump(BytecodeEmitter::NestableControl* target);
+    MOZ_MUST_USE bool prepareForNonLocalJump(NestableControl* target);
 
     MOZ_MUST_USE bool prepareForNonLocalJumpToOutermost() {
         return prepareForNonLocalJump(nullptr);
@@ -1910,10 +1660,8 @@ NonLocalExitControl::leaveScope(EmitterScope* es)
 
 
 bool
-NonLocalExitControl::prepareForNonLocalJump(BytecodeEmitter::NestableControl* target)
+NonLocalExitControl::prepareForNonLocalJump(NestableControl* target)
 {
-    using NestableControl = BytecodeEmitter::NestableControl;
-
     EmitterScope* es = bce_->innermostEmitterScope();
     int npops = 0;
 
