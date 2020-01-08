@@ -293,7 +293,7 @@ var PaymentTestUtils = {
       let picker = Cu.waiveXrays(content.document.querySelector("payment-method-picker"));
       
       
-      Cu.unwaiveXrays(picker.securityCodeInput).setUserInput(securityCode);
+      Cu.unwaiveXrays(picker.securityCodeInput).querySelector("input").setUserInput(securityCode);
     },
   },
 
