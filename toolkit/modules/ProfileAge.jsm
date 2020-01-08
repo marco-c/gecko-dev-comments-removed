@@ -94,6 +94,12 @@ class ProfileAgeImpl {
     this.profilePath = profile || OS.Constants.Path.profileDir;
     this._times = times;
     this._log = Log.repository.getLogger("Toolkit.ProfileAge");
+
+    if ("firstUse" in this._times && this._times.firstUse === null) {
+      
+      this._times.firstUse = Date.now();
+      this.writeTimes();
+    }
   }
 
   
@@ -120,6 +126,17 @@ class ProfileAgeImpl {
     }
 
     return this._created;
+  }
+
+  
+
+
+
+  get firstUse() {
+    if ("firstUse" in this._times) {
+      return Promise.resolve(this._times.firstUse);
+    }
+    return Promise.resolve(undefined);
   }
 
   
@@ -176,7 +193,10 @@ async function initProfileAge(profile) {
     let times = await CommonUtils.readJSON(timesPath);
     return new ProfileAgeImpl(profile, times || {});
   } catch (e) {
-    return new ProfileAgeImpl(profile, {});
+    
+    
+    
+    return new ProfileAgeImpl(profile, { firstUse: null });
   }
 }
 
