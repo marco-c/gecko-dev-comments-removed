@@ -89,48 +89,15 @@ GetProcSelfSmapsPrivate(int64_t* aN)
   
   
 
-  FILE* f = fopen("/proc/self/smaps", "r");
-  if (NS_WARN_IF(!f)) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  
-  static const uint32_t carryOver = 32;
-  static const uint32_t readSize = 4096;
+  nsTArray<MemoryMapping> mappings(1024);
+  MOZ_TRY(GetMemoryMappings(mappings));
 
   int64_t amount = 0;
-  char buffer[carryOver + readSize + 1];
-
-  
-  
-  memset(buffer, ' ', carryOver);
-
-  for (;;) {
-    size_t bytes = fread(buffer + carryOver, sizeof(*buffer), readSize, f);
-    char* end = buffer + bytes;
-    char* ptr = buffer;
-    end[carryOver] = '\0';
-    
-    while ((ptr = strstr(ptr, "Private"))) {
-      if (ptr >= end) {
-        break;
-      }
-      ptr += sizeof("Private_Xxxxx:");
-      amount += strtol(ptr, nullptr, 10);
-    }
-    if (bytes < readSize) {
-      
-      MOZ_ASSERT(!strstr(end, "Private"));
-      break;
-    }
-    
-    memcpy(buffer, end, carryOver);
+  for (auto& mapping : mappings) {
+    amount += mapping.Private_Clean();
+    amount += mapping.Private_Dirty();
   }
-
-  fclose(f);
-  
-  *aN = amount * 1024;
+  *aN = amount;
   return NS_OK;
 }
 
