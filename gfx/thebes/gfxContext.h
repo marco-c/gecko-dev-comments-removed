@@ -315,8 +315,6 @@ public:
     
     
     bool CurrentDash(FallibleTArray<Float>& dashes, Float* offset) const;
-    
-    Float CurrentDashOffset() const;
 
     
 
