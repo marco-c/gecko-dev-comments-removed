@@ -211,8 +211,6 @@ HTMLEditor::InsertTableCellsWithTransaction(int32_t aNumberOfCellsToInsert,
   }
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  
-
   int32_t newCellIndex;
   switch (aInsertPosition) {
     case InsertPosition::eBeforeSelectedCell:
@@ -445,8 +443,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
   }
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  
-
   ErrorResult error;
   TableSize tableSize(*this, *table, error);
   if (NS_WARN_IF(error.Failed())) {
@@ -509,8 +505,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
       if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-
-      
 
       
       
@@ -638,8 +632,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
   }
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  
-
   ErrorResult error;
   TableSize tableSize(*this, *table, error);
   if (NS_WARN_IF(error.Failed())) {
@@ -693,8 +685,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
       }
 
       
-
-      
       if (NS_WARN_IF(!cellData.mElement)) {
         actualColSpan = 1;
         continue;
@@ -733,8 +723,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
       if (cellData.FailedOrNotFound()) {
         break; 
       }
-
-      
 
      actualColSpan = cellData.mEffectiveColSpan;
 
@@ -1385,8 +1373,6 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
     }
 
     
-
-    
     MOZ_ASSERT(cellData.mColSpan >= 0);
     if (cellData.IsSpannedFromOtherColumn() || cellData.mColSpan != 1) {
       
@@ -1656,8 +1642,6 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
     }
 
     
-
-    
     
     if (!cellData.mElement) {
       break;
@@ -1873,12 +1857,10 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
         return NS_ERROR_FAILURE;
       }
 
-      bool       isSelected =          cellData.mIsSelected;
-
       
       
       
-      if (!isSelected && cellData.mElement &&
+      if (!cellData.mIsSelected && cellData.mElement &&
           !cellData.IsSpannedFromOtherRowOrColumn()) {
         rv = AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
@@ -1942,8 +1924,6 @@ HTMLEditor::SelectAllTableCells()
         rv = NS_ERROR_FAILURE;
         break;
       }
-
-      
 
       
       
@@ -2033,8 +2013,6 @@ HTMLEditor::SelectTableRow()
     }
 
     
-
-    
     
     
     if (cellData.mElement &&
@@ -2115,8 +2093,6 @@ HTMLEditor::SelectTableColumn()
       rv = NS_ERROR_FAILURE;
       break;
     }
-
-    
 
     
     
@@ -2254,8 +2230,6 @@ HTMLEditor::SplitCellIntoColumns(Element* aTable,
   }
 
   
-
-  
   if (cellData.mEffectiveColSpan <= 1 ||
       aColSpanLeft + aColSpanRight > cellData.mEffectiveColSpan) {
     return NS_OK;
@@ -2312,8 +2286,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
   }
 
   
-
-  
   if (cellData.mEffectiveRowSpan <= 1 ||
       aRowSpanAbove + aRowSpanBelow > cellData.mEffectiveRowSpan) {
     return NS_OK;
@@ -2344,8 +2316,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
     if (NS_WARN_IF(cellDataAtInsertionPoint.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-
-    
 
     
     
@@ -2569,9 +2539,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           return NS_ERROR_FAILURE;
         }
 
-        bool       isSelected2 =             cellData.mIsSelected;
-
-        if (isSelected2) {
+        if (cellData.mIsSelected) {
           if (!cellFoundInRow) {
             
             firstColInRow = cellData.mCurrent.mColumn;
@@ -2648,15 +2616,14 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           return NS_ERROR_FAILURE;
         }
 
-        bool       isSelected2 =          cellData.mIsSelected;
-
         
         if (!cellData.mEffectiveColSpan) {
           break;
         }
 
         
-        if (isSelected2 && cellData.mElement != firstSelectedCell.mElement) {
+        if (cellData.mIsSelected &&
+            cellData.mElement != firstSelectedCell.mElement) {
           if (cellData.mCurrent.mRow >= firstSelectedCell.mIndexes.mRow &&
               cellData.mCurrent.mRow <= lastRowIndex &&
               cellData.mCurrent.mColumn >= firstSelectedCell.mIndexes.mColumn &&
@@ -2768,8 +2735,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     }
 
     
-
-    
     CellData rightCellData(
                *this, *table,
                leftCellData.mFirst.mRow,
@@ -2778,8 +2743,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     if (NS_WARN_IF(rightCellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
-
-    
 
     
     
@@ -2948,8 +2911,6 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
     }
 
     
-
-    
     
     if (!cellData.mElement) {
       break;
@@ -2974,8 +2935,6 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
       if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-
-      
 
       
       
@@ -3031,8 +2990,6 @@ HTMLEditor::FixBadColSpan(Element* aTable,
     }
 
     
-
-    
     
     if (!cellData.mElement) {
       break;
@@ -3056,8 +3013,6 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-
-      
 
       
       
@@ -3166,8 +3121,6 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
       if (NS_WARN_IF(cellData.FailedOrNotFound())) {
         return NS_ERROR_FAILURE;
       }
-
-      
 
       if (cellData.mElement) {
         
@@ -3315,8 +3268,6 @@ HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
     if (cellData.FailedOrNotFound()) {
       break;
     }
-
-    
 
     if (cellData.mElement) {
       
@@ -4297,8 +4248,6 @@ HTMLEditor::AllCellsInRowSelected(Element* aTable,
       return false;
     }
 
-    bool       isSelected =          cellData.mIsSelected;
-
     
     
     
@@ -4310,7 +4259,7 @@ HTMLEditor::AllCellsInRowSelected(Element* aTable,
     
     
     
-    if (NS_WARN_IF(!isSelected)) {
+    if (NS_WARN_IF(!cellData.mIsSelected)) {
       return false;
     }
 
@@ -4338,8 +4287,6 @@ HTMLEditor::AllCellsInColumnSelected(Element* aTable,
       return false;
     }
 
-    bool       isSelected =          cellData.mIsSelected;
-
     
     
     
@@ -4351,7 +4298,7 @@ HTMLEditor::AllCellsInColumnSelected(Element* aTable,
     
     
     
-    if (NS_WARN_IF(!isSelected)) {
+    if (NS_WARN_IF(!cellData.mIsSelected)) {
       return false;
     }
 
