@@ -10,12 +10,15 @@
 
   <body>
     <script type="text/javascript">
+      "use strict";
+
+      // eslint-disable-next-line no-unused-vars
       function makePromises() {
-        var p = new Promise(() => {});
+        const p = new Promise(() => {});
         p.name = "p";
-        var q = p.then();
+        const q = p.then();
         q.name = "q";
-        var r = p.catch(() => {});
+        const r = p.catch(() => {});
         r.name = "r";
       }
     </script>
