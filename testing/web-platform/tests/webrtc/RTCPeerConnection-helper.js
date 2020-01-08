@@ -354,8 +354,106 @@ function generateMediaStreamTrack(kind) {
 
 
 
+
+
+
+
+
+const trackFactories = {
+  
+  
+  audioContext: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  canCreate(requested) {
+    const supported = {
+      audio: !!window.MediaStreamAudioDestinationNode,
+      video: !!HTMLCanvasElement.prototype.captureStream
+    };
+
+    return (!requested.audio || supported.audio) &&
+      (!requested.video || supported.video);
+  },
+
+  audio() {
+    const ctx = trackFactories.audioContext = trackFactories.audioContext ||
+      new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const dst = oscillator.connect(ctx.createMediaStreamDestination());
+    oscillator.start();
+    return dst.stream.getAudioTracks()[0];
+  },
+
+  video({width = 640, height = 480} = {}) {
+    const canvas = Object.assign(
+      document.createElement("canvas"), {width, height}
+    );
+    const ctx = canvas.getContext('2d');
+    const stream = canvas.captureStream();
+
+    let count = 0;
+    setInterval(() => {
+      ctx.fillStyle = `rgb(${count%255}, ${count*count%255}, ${count%255})`;
+      count += 1;
+
+      ctx.fillRect(0, 0, width, height);
+    }, 100);
+
+    if (document.body) {
+      document.body.appendChild(canvas);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.appendChild(canvas);
+      });
+    }
+
+    return stream.getVideoTracks()[0];
+  }
+};
+
+
+
+
+
+
+
+
+async function getNoiseStream(caps = {}) {
+  if (!trackFactories.canCreate(caps)) {
+    return navigator.mediaDevices.getUserMedia(caps);
+  }
+  const tracks = [];
+
+  if (caps.audio) {
+    tracks.push(trackFactories.audio());
+  }
+
+  if (caps.video) {
+    tracks.push(trackFactories.video());
+  }
+
+  return new MediaStream(tracks);
+}
+
+
+
+
+
+
+
 function getTrackFromUserMedia(kind) {
-  return navigator.mediaDevices.getUserMedia({ [kind]: true })
+  return getNoiseStream({ [kind]: true })
   .then(mediaStream => {
     const [track] = mediaStream.getTracks();
     return [track, mediaStream];
