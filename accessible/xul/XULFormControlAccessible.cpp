@@ -286,24 +286,13 @@ Relation
 XULGroupboxAccessible::RelationByType(RelationType aType) const
 {
   Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABELLED_BY)
-    return rel;
 
   
-  
-  
-  uint32_t childCount = ChildCount();
-  for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
-    Accessible* childAcc = GetChildAt(childIdx);
-    if (childAcc->Role() == roles::LABEL) {
-      
-      Relation reverseRel = childAcc->RelationByType(RelationType::LABEL_FOR);
-      Accessible* testGroupbox = nullptr;
-      while ((testGroupbox = reverseRel.Next()))
-        if (testGroupbox == this) {
-          
-          rel.AppendTarget(childAcc);
-        }
+  if (aType == RelationType::LABELLED_BY && ChildCount() > 0) {
+    Accessible* childAcc = GetChildAt(0);
+    if (childAcc->Role() == roles::LABEL &&
+        childAcc->GetContent()->IsXULElement(nsGkAtoms::label)) {
+      rel.AppendTarget(childAcc);
     }
   }
 
