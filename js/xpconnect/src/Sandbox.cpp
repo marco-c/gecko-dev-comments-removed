@@ -64,6 +64,7 @@
 #include "mozilla/dom/XMLHttpRequest.h"
 #include "mozilla/dom/XMLSerializerBinding.h"
 #include "mozilla/dom/FormDataBinding.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/NullPrincipal.h"
 
@@ -1045,7 +1046,7 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
   
   
 
-  bool isSystemPrincipal = principal == nsXPConnect::SystemPrincipal();
+  bool isSystemPrincipal = principal->IsSystemPrincipal();
   if (isSystemPrincipal) {
     creationOptions.setClampAndJitterTime(false);
   }
@@ -1171,7 +1172,7 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
       }
     }
 
-    bool allowComponents = principal == nsXPConnect::SystemPrincipal();
+    bool allowComponents = principal->IsSystemPrincipal();
     if (options.wantComponents && allowComponents &&
         !ObjectScope(sandbox)->AttachComponentsObject(cx))
       return NS_ERROR_XPC_UNEXPECTED;
@@ -1348,7 +1349,6 @@ static bool GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj,
       return false;
     }
 
-    nsresult rv;
     nsCOMPtr<nsIPrincipal> principal;
     if (allowed.isObject()) {
       
@@ -1381,10 +1381,7 @@ static bool GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj,
       }
 
       
-      bool isSystem;
-      rv = nsXPConnect::SecurityManager()->IsSystemPrincipal(principal,
-                                                             &isSystem);
-      NS_ENSURE_SUCCESS(rv, false);
+      bool isSystem = principal->IsSystemPrincipal();
       if (isSystem) {
         JS_ReportErrorASCII(
             cx, "System principal is not allowed in an expanded principal");
