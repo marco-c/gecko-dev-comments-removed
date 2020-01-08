@@ -88,10 +88,17 @@ public:
   
   HRESULT SendMFTMessage(MFT_MESSAGE_TYPE aMsg, ULONG_PTR aData);
 
-  HRESULT SetDecoderOutputType(bool aMatchAllAttributes,
+  HRESULT FindDecoderOutputTypeWithSubtype(const GUID& aSubType,
+                                           bool aMatchAllAttributes);
+  HRESULT FindDecoderOutputType(bool aMatchAllAttributes);
+private:
+  
+  
+  HRESULT SetDecoderOutputType(const GUID& aSubType,
+                               IMFMediaType* aTypeToUse,
+                               bool aMatchAllAttributes,
                                ConfigureOutputCallback aCallback,
                                void* aData);
-private:
   HRESULT CreateOutputSample(RefPtr<IMFSample>* aOutSample);
 
   MFT_INPUT_STREAM_INFO mInputStreamInfo;
