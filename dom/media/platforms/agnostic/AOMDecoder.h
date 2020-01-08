@@ -38,6 +38,9 @@ public:
   static bool IsAV1(const nsACString& aMimeType);
 
   
+  static bool IsSupportedCodec(const nsAString& aCodecType);
+
+  
   static bool IsKeyframe(Span<const uint8_t> aBuffer);
 
   

@@ -603,10 +603,6 @@ pref("media.audioipc.stack_size", 262144);
 pref("media.cubeb.sandbox", false);
 #endif
 
-#ifdef MOZ_AV1
-pref("media.av1.enabled", false);
-#endif
-
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
 
 
