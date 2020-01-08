@@ -38,10 +38,7 @@ def run_mach(tmpdir):
                                 **kwargs)
         
         path = unicode(tmpdir.join('telemetry', 'outgoing'))
-        try:
-            return [json.load(open(os.path.join(path, f), 'rb')) for f in os.listdir(path)]
-        except OSError:
-            return []
+        return [json.load(open(os.path.join(path, f), 'rb')) for f in os.listdir(path)]
     return run
 
 
