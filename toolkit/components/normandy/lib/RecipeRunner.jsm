@@ -284,6 +284,8 @@ var RecipeRunner = {
       arguments: recipe.arguments,
     };
     return {
+      environment,
+      
       normandy: environment,
     };
   },
