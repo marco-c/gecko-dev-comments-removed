@@ -1624,7 +1624,13 @@ var SessionStoreInternal = {
 
           const observeTopic = topic => {
             let deferred = PromiseUtils.defer();
-            const cleanup = () => Services.obs.removeObserver(deferred.resolve, topic);
+            const cleanup = () => {
+              try {
+                Services.obs.removeObserver(deferred.resolve, topic);
+              } catch (ex) {
+                Cu.reportError("SessionStore: exception whilst flushing all windows: " + ex);
+              }
+            };
             Services.obs.addObserver(subject => {
               
               subject.QueryInterface(Ci.nsIPropertyBag2);
