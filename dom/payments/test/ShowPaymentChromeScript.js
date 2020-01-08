@@ -26,7 +26,6 @@ addressLine.appendElement(address);
 shippingAddress.init("USA",              
                      addressLine,        
                      "CA",               
-                     "CA",               
                      "San Bruno",        
                      "Test locality",    
                      "94066",            

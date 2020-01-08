@@ -17,9 +17,8 @@ const addressLine = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray
 const address = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
 address.data = "Easton Ave";
 addressLine.appendElement(address);
-billingAddress.init("USA",               
+billingAddress.init("USA",              
                      addressLine,        
-                     "CA",               
                      "CA",               
                      "San Bruno",        
                      "",                 

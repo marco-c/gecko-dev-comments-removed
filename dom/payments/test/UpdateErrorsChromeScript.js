@@ -23,7 +23,6 @@ addressLine.appendElement(address);
 shippingAddress.init("USA",              
                      addressLine,        
                      "CA",               
-                     "CA",               
                      "San Bruno",        
                      "Test locality",    
                      "94066",            
@@ -121,10 +120,6 @@ function checkAddressErrors(errors) {
   }
   if (errors.region != "region error") {
     emitTestFail("Expect shippingAddressErrors.region as 'region error', but got" +
-                  errors.region);
-  }
-  if (errors.regionCode != "regionCode error") {
-    emitTestFail("Expect shippingAddressErrors.regionCode as 'regionCode error', but got" +
                   errors.region);
   }
   if (errors.sortingCode != "sortingCode error") {
