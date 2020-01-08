@@ -34,11 +34,15 @@
 
 #include "mozilla/Encoding.h"
 
-
 using namespace mozilla;
 
 
 const int kClipboardTimeout = 500000;
+
+
+
+static const char kHTMLMarkupPrefix[] =
+    R"(<meta http-equiv="content-type" content="text/html; charset=utf-8">)";
 
 
 void
@@ -527,6 +531,31 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
         return;
     }
 
+    if (selectionTarget == gdk_atom_intern(kHTMLMime, FALSE)) {
+        rv = trans->GetTransferData(kHTMLMime, getter_AddRefs(item), &len);
+        if (!item || NS_FAILED(rv)) {
+            return;
+        }
+
+        nsCOMPtr<nsISupportsString> wideString;
+        wideString = do_QueryInterface(item);
+        if (!wideString) {
+            return;
+        }
+
+        nsAutoString ucs2string;
+        wideString->GetData(ucs2string);
+
+        nsAutoCString html;
+        
+        html.AppendLiteral(kHTMLMarkupPrefix);
+        AppendUTF16toUTF8(ucs2string, html);
+
+        gtk_selection_data_set(aSelectionData, selectionTarget, 8,
+                               (const guchar*)html.get(), html.Length());
+        return;
+    }
+
     
     
     gchar *target_name = gdk_atom_name(selectionTarget);
@@ -545,31 +574,10 @@ nsClipboard::SelectionGetEvent(GtkClipboard     *aClipboard,
                                                 item, &primitive_data, len);
 
     if (primitive_data) {
-        
-        if (selectionTarget == gdk_atom_intern (kHTMLMime, FALSE)) {
-            
-
-
-
-
-
-
-            guchar *buffer = (guchar *)
-                    g_malloc((len * sizeof(guchar)) + sizeof(char16_t));
-            if (!buffer)
-                return;
-            char16_t prefix = 0xFEFF;
-            memcpy(buffer, &prefix, sizeof(prefix));
-            memcpy(buffer + sizeof(prefix), primitive_data, len);
-            g_free((guchar *)primitive_data);
-            primitive_data = (guchar *)buffer;
-            len += sizeof(prefix);
-        }
-
         gtk_selection_data_set(aSelectionData, selectionTarget,
                                8, 
                                (const guchar *)primitive_data, len);
-        g_free(primitive_data);
+        free(primitive_data);
     }
 
     g_free(target_name);
@@ -656,8 +664,19 @@ void ConvertHTMLtoUCS2(const char* data, int32_t dataLength,
             outUnicodeLen = 0;
             return;
         }
+
+        auto dataSpan = MakeSpan(data, dataLength);
+        
+        
+        const size_t prefixLen = ArrayLength(kHTMLMarkupPrefix) - 1;
+        if (dataSpan.Length() >= prefixLen &&
+            !strncmp(data, kHTMLMarkupPrefix, prefixLen)) {
+          dataSpan = dataSpan.From(prefixLen);
+        }
+
         auto decoder = encoding->NewDecoder();
-        CheckedInt<size_t> needed = decoder->MaxUTF16BufferLength(dataLength);
+        CheckedInt<size_t> needed =
+            decoder->MaxUTF16BufferLength(dataSpan.Length());
         if (!needed.isValid() || needed.value() > INT32_MAX) {
           outUnicodeLen = 0;
           return;
@@ -672,17 +691,13 @@ void ConvertHTMLtoUCS2(const char* data, int32_t dataLength,
           size_t written;
           bool hadErrors;
           Tie(result, read, written, hadErrors) =
-            decoder->DecodeToUTF16(AsBytes(MakeSpan(data, dataLength)),
+            decoder->DecodeToUTF16(AsBytes(dataSpan),
                                    MakeSpan(*unicodeData, needed.value()),
                                    true);
           MOZ_ASSERT(result == kInputEmpty);
-          MOZ_ASSERT(read == size_t(dataLength));
+          MOZ_ASSERT(read == size_t(dataSpan.Length()));
           MOZ_ASSERT(written <= needed.value());
           Unused << hadErrors;
-#ifdef DEBUG_CLIPBOARD
-          if (read != dataLength)
-            printf("didn't consume all the bytes\n");
-#endif
           outUnicodeLen = written;
           
           (*unicodeData)[outUnicodeLen] = '\0';
