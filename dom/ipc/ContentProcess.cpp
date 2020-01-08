@@ -83,11 +83,18 @@ SetUpSandboxEnvironment()
 
 #ifdef ANDROID
 static int gPrefsFd = -1;
+static int gPrefMapFd = -1;
 
 void
 SetPrefsFd(int aFd)
 {
   gPrefsFd = aFd;
+}
+
+void
+SetPrefMapFd(int aFd)
+{
+  gPrefMapFd = aFd;
 }
 #endif
 
@@ -228,6 +235,9 @@ ContentProcess::Init(int aArgc, char* aArgv[])
   
   MOZ_RELEASE_ASSERT(gPrefsFd != -1);
   prefsHandle = Some(base::FileDescriptor(gPrefsFd,  true));
+
+  FileDescriptor::UniquePlatformHandle handle(gPrefMapFd);
+  prefMapHandle.emplace(handle.get());
 #elif XP_UNIX
   prefsHandle = Some(base::FileDescriptor(kPrefsFileDescriptor,
                                            true));
