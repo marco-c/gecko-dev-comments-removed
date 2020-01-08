@@ -666,7 +666,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "MediaStreamTrack", insecureContext: true},
 
-    {name: "MerchantValidationEvent", insecureContext: false, desktop: true, nightly: true, linux: false},
+    {name: "MerchantValidationEvent", insecureContext: false, desktop: true, nightly: true, linux: false, disabled: true},
 
     {name: "MessageChannel", insecureContext: true},
 
@@ -748,15 +748,15 @@ var interfaceNamesInGlobalScope =
 
     {name: "Path2D", insecureContext: true},
 
-    {name: "PaymentAddress", insecureContext: false, desktop: true, nightly: true, linux: false},
+    {name: "PaymentAddress", insecureContext: false, desktop: true, nightly: true, linux: false, disabled: true},
 
-    {name: "PaymentMethodChangeEvent", insecureContext: false, desktop: true, nightly: true, linux: false},
+    {name: "PaymentMethodChangeEvent", insecureContext: false, desktop: true, nightly: true, linux: false, disabled: true},
 
-    {name: "PaymentRequest", insecureContext: false, desktop: true, nightly: true, linux: false},
+    {name: "PaymentRequest", insecureContext: false, desktop: true, nightly: true, linux: false, disabled: true},
 
-    {name: "PaymentRequestUpdateEvent", insecureContext: false, desktop: true, nightly: true, linux: false},
+    {name: "PaymentRequestUpdateEvent", insecureContext: false, desktop: true, nightly: true, linux: false, disabled: true},
 
-    {name: "PaymentResponse", insecureContext: false, desktop: true, nightly: true, linux: false},
+    {name: "PaymentResponse", insecureContext: false, desktop: true, nightly: true, linux: false, disabled: true},
 
     {name: "Performance", insecureContext: true},
 

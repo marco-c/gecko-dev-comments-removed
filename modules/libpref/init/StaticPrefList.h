@@ -247,17 +247,11 @@ VARCACHE_PREF(
 PREF("dom.serviceWorkers.parent_intercept", bool, false)
 
 
-#if defined(NIGHTLY_BUILD) && (defined(XP_WIN) || defined(XP_MACOSX))
-# define PREF_VALUE  true
-#else
-# define PREF_VALUE  false
-#endif
 VARCACHE_PREF(
   "dom.payments.request.enabled",
    dom_payments_request_enabled,
-  bool, PREF_VALUE
+  bool, false
 )
-#undef PREF_VALUE
 
 
 VARCACHE_PREF(
