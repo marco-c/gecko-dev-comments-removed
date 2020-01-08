@@ -517,27 +517,6 @@ var FullScreen = {
   
   _isPopupOpen: false,
   _isChromeCollapsed: false,
-  _safeToCollapse() {
-    if (!Services.prefs.getBoolPref("browser.fullscreen.autohide"))
-      return false;
-
-    
-    if (this._isPopupOpen)
-      return false;
-
-    
-    if (this.useLionFullScreen)
-      return false;
-
-    
-    if (document.commandDispatcher.focusedElement &&
-        document.commandDispatcher.focusedElement.ownerDocument == document &&
-        document.commandDispatcher.focusedElement.localName == "input") {
-      return false;
-    }
-
-    return true;
-  },
 
   _setPopupOpen(aEvent) {
     
@@ -596,8 +575,27 @@ var FullScreen = {
   },
 
   hideNavToolbox(aAnimate = false) {
-    if (this._isChromeCollapsed || !this._safeToCollapse())
+    if (this._isChromeCollapsed) {
       return;
+    }
+    if (!Services.prefs.getBoolPref("browser.fullscreen.autohide")) {
+      return;
+    }
+    
+    if (this._isPopupOpen) {
+      return;
+    }
+    
+    if (this.useLionFullScreen) {
+      return;
+    }
+
+    
+    if (document.commandDispatcher.focusedElement &&
+        document.commandDispatcher.focusedElement.ownerDocument == document &&
+        document.commandDispatcher.focusedElement.localName == "input") {
+      return;
+    }
 
     this._fullScrToggler.hidden = false;
 
