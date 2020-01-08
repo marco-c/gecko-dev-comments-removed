@@ -4,18 +4,22 @@
 
 
 
-#ifndef ChromeBrowsingContext_h
-#define ChromeBrowsingContext_h
+#ifndef mozilla_dom_ChromeBrowsingContext_h
+#define mozilla_dom_ChromeBrowsingContext_h
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
+#include "nsTHashtable.h"
+#include "nsHashKeys.h"
 
 class nsIDocShell;
 
 namespace mozilla {
 namespace dom {
+
+class WindowGlobalParent;
 
 
 
@@ -34,9 +38,13 @@ public:
     return mProcessId == aProcessId;
   }
 
+  
+  void RegisterWindowGlobal(WindowGlobalParent* aGlobal);
+  void UnregisterWindowGlobal(WindowGlobalParent* aGlobal);
+
 protected:
-  void Traverse(nsCycleCollectionTraversalCallback& cb) {}
-  void Unlink() {}
+  void Traverse(nsCycleCollectionTraversalCallback& cb);
+  void Unlink();
 
   using Type = BrowsingContext::Type;
   ChromeBrowsingContext(BrowsingContext* aParent,
@@ -51,8 +59,12 @@ private:
   
   
   uint64_t mProcessId;
+
+  
+  nsTHashtable<nsRefPtrHashKey<WindowGlobalParent>> mWindowGlobals;
 };
 
 } 
 } 
-#endif
+
+#endif 
