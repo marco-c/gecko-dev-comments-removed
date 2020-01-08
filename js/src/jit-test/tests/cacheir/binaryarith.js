@@ -178,6 +178,9 @@ var funURsh2 = (a, b) => { return a >>> b; }
 warmup(funURsh2, [[true,1,0], [5,true,2], [63,false,63], [false, 20, 0]]);
 
 
+var funURsh3 = (a, b) => { return a >>> b; }
+warmup(funURsh3, [[4294967295, 0, 4294967295]]);
+
 
 for (var k=0; k < 30; k++) {
     A="01234567";
