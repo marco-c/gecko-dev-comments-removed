@@ -1005,9 +1005,11 @@ TableWidget.prototype = {
 
 
   afterScroll: function() {
-    const maxScrollTop = this.tbody.scrollHeight - this.tbody.clientHeight;
+    const scrollHeight = this.tbody.getBoundingClientRect().height -
+        this.tbody.querySelector(".table-widget-column-header").clientHeight;
+
     
-    if (this.tbody.scrollTop >= 0.9 * maxScrollTop) {
+    if (this.tbody.scrollTop >= 0.9 * scrollHeight) {
       this.emit("scroll-end");
     }
   }
