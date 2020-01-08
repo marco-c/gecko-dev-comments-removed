@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 {
 
 class MozDeck extends MozXULElement {
