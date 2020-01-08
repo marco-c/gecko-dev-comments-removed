@@ -9,10 +9,10 @@ ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 
 async function verifyPref(configFile, expectedValue) {
   let decoder = new TextDecoder();
-  let configValue = await gAUS.getAutoUpdateIsEnabled();
+  let configValue = await UpdateUtils.getAppUpdateAutoEnabled();
   Assert.equal(configValue, expectedValue,
-               "Value returned by getAutoUpdateIsEnabled should have matched " +
-               "the expected value");
+               "Value returned by getAppUpdateAutoEnabled should have " +
+               "matched the expected value");
   let fileContents = await OS.File.read(configFile.path);
   let saveObject = JSON.parse(decoder.decode(fileContents));
   Assert.equal(saveObject["app.update.auto"], expectedValue,
@@ -40,12 +40,12 @@ async function run_test() {
   debugDump(`about to remove config file`);
   configFile.remove(false);
   Assert.ok(!configFile.exists(), "Pref file should have been removed");
-  let configValue = await gAUS.getAutoUpdateIsEnabled();
-  Assert.equal(configValue, true, "getAutoUpdateIsEnabled should have " +
+  let configValue = await UpdateUtils.getAppUpdateAutoEnabled();
+  Assert.equal(configValue, true, "getAppUpdateAutoEnabled should have " +
                                   "returned the default value (true)");
 
   
-  await gAUS.setAutoUpdateIsEnabled(false);
+  await UpdateUtils.setAppUpdateAutoEnabled(false);
   await verifyPref(configFile, false);
 
   
@@ -57,7 +57,7 @@ async function run_test() {
   await verifyPref(configFile, true);
 
   
-  await gAUS.setAutoUpdateIsEnabled(false);
+  await UpdateUtils.setAppUpdateAutoEnabled(false);
   await verifyPref(configFile, false);
 
   doTestFinish();

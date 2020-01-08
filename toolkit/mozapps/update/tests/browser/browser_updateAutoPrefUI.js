@@ -23,7 +23,7 @@ async function changeAndVerifyPref(tab, newConfigValue) {
   
   
 
-  let configValueRead = await gAUS.getAutoUpdateIsEnabled();
+  let configValueRead = await UpdateUtils.getAppUpdateAutoEnabled();
   is(configValueRead, newConfigValue,
      "Value returned should have matched the expected value");
 

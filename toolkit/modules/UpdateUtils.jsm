@@ -7,16 +7,31 @@ var EXPORTED_SYMBOLS = ["UpdateUtils"];
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]); 
 
 ChromeUtils.defineModuleGetter(this, "WindowsRegistry",
                                "resource://gre/modules/WindowsRegistry.jsm");
 
+
+
+
+const FILE_UPDATE_CONFIG_JSON             = "update-config.json";
 const FILE_UPDATE_LOCALE                  = "update.locale";
 const PREF_APP_DISTRIBUTION               = "distribution.id";
 const PREF_APP_DISTRIBUTION_VERSION       = "distribution.version";
 
+
+const PREF_APP_UPDATE_AUTO                = "app.update.auto";
+const PREF_APP_UPDATE_AUTO_MIGRATED       = "app.update.auto.migrated";
+
+
+const CONFIG_APP_UPDATE_AUTO               = "app.update.auto";
+
+
+const DEFAULT_APP_UPDATE_AUTO              = true;
 
 var UpdateUtils = {
   _locale: undefined,
@@ -125,7 +140,159 @@ var UpdateUtils = {
 
     return this._locale = null;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getAppUpdateAutoEnabled() {
+    if (AppConstants.platform != "win") {
+      
+      let prefValue = Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO,
+                                                 DEFAULT_APP_UPDATE_AUTO);
+      return Promise.resolve(prefValue);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let readPromise = updateAutoIOPromise.catch(() => {}).then(async () => {
+      try {
+        let configValue = await readUpdateAutoConfig();
+        
+        
+        
+        Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
+        return configValue;
+      } catch (e) {
+        Cu.reportError("UpdateUtils.getAppUpdateAutoEnabled - Unable to read " +
+                       "app update configuration file. Exception: " + e);
+        let valueMigrated = Services.prefs.getBoolPref(
+                              PREF_APP_UPDATE_AUTO_MIGRATED,
+                              false);
+        if (!valueMigrated) {
+          Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
+          let prefValue = Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO,
+                                                     DEFAULT_APP_UPDATE_AUTO);
+          try {
+            let writtenValue = await writeUpdateAutoConfig(prefValue);
+            Services.prefs.clearUserPref(PREF_APP_UPDATE_AUTO);
+            return writtenValue;
+          } catch (e) {
+            Cu.reportError("UpdateUtils.getAppUpdateAutoEnabled - Migration " +
+                           "failed. Exception: " + e);
+          }
+        }
+      }
+      
+      return DEFAULT_APP_UPDATE_AUTO;
+    }).then(maybeUpdateAutoConfigChanged.bind(this));
+    updateAutoIOPromise = readPromise;
+    return readPromise;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  setAppUpdateAutoEnabled(enabledValue) {
+    if (AppConstants.platform != "win") {
+      
+      let prefValue = !!enabledValue;
+      Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, prefValue);
+      maybeUpdateAutoConfigChanged(prefValue);
+      return Promise.resolve(prefValue);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let writePromise = updateAutoIOPromise.catch(() => {}).then(async () => {
+      try {
+        return await writeUpdateAutoConfig(enabledValue);
+      } catch (e) {
+        Cu.reportError("UpdateUtils.setAppUpdateAutoEnabled - App update " +
+                       "configuration file write failed. Exception: " + e);
+        
+        
+        throw e;
+      }
+    }).then(maybeUpdateAutoConfigChanged.bind(this));
+    updateAutoIOPromise = writePromise;
+    return writePromise;
+  },
 };
+
+
+
+
+var updateAutoIOPromise = Promise.resolve();
+var updateAutoSettingCachedVal = null;
+
+async function readUpdateAutoConfig() {
+  let configFile = FileUtils.getDir("UpdRootD", [], true);
+  configFile.append(FILE_UPDATE_CONFIG_JSON);
+  let binaryData = await OS.File.read(configFile.path);
+  let jsonData = new TextDecoder().decode(binaryData);
+  let configData = JSON.parse(jsonData);
+  return !!configData[CONFIG_APP_UPDATE_AUTO];
+}
+
+async function writeUpdateAutoConfig(enabledValue) {
+  let enabledBoolValue = !!enabledValue;
+  let configFile = FileUtils.getDir("UpdRootD", [], true);
+  configFile.append(FILE_UPDATE_CONFIG_JSON);
+  let configObject = {[CONFIG_APP_UPDATE_AUTO]: enabledBoolValue};
+  await OS.File.writeAtomic(configFile.path, JSON.stringify(configObject));
+  return enabledBoolValue;
+}
+
+
+
+function maybeUpdateAutoConfigChanged(newValue) {
+  
+  if (updateAutoSettingCachedVal !== null &&
+      newValue != updateAutoSettingCachedVal) {
+    updateAutoSettingCachedVal = newValue;
+    Services.obs.notifyObservers(null, "auto-update-config-change",
+                                 newValue.toString());
+  }
+  return newValue;
+}
 
 
 function getDistributionPrefValue(aPrefName) {

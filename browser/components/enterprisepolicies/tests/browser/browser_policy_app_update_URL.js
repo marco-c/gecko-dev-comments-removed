@@ -12,7 +12,8 @@ add_task(async function test_app_update_URL() {
 
   is(Services.policies.status, Ci.nsIEnterprisePolicies.ACTIVE, "Engine is active");
 
-  let expected = Services.prefs.getStringPref("app.update.url", undefined);
+  
+  let expected = Services.prefs.getDefaultBranch(null).getCharPref("app.update.url", undefined);
 
   is("https://www.example.com/", expected, "Correct app update URL");
 });

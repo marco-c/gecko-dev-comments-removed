@@ -30,6 +30,8 @@ ChromeUtils.defineModuleGetter(this, "ProfileAge",
                                "resource://gre/modules/ProfileAge.jsm");
 ChromeUtils.defineModuleGetter(this, "WindowsRegistry",
                                "resource://gre/modules/WindowsRegistry.jsm");
+ChromeUtils.defineModuleGetter(this, "UpdateUtils",
+                               "resource://gre/modules/UpdateUtils.jsm");
 
 
 const MAX_ADDON_STRING_LENGTH = 100;
@@ -1510,9 +1512,11 @@ EnvironmentCache.prototype = {
 
 
   async _loadAutoUpdateAsync() {
-    let aus = Cc["@mozilla.org/updates/update-service;1"]
-              .getService(Ci.nsIApplicationUpdateService);
-    this._updateAutoDownloadCache = await aus.getAutoUpdateIsEnabled();
+    if (AppConstants.MOZ_UPDATER) {
+      this._updateAutoDownloadCache = await UpdateUtils.getAppUpdateAutoEnabled();
+    } else {
+      this._updateAutoDownloadCache = false;
+    }
     this._updateAutoDownload();
   },
 

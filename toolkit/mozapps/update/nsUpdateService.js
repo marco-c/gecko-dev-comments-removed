@@ -6,25 +6,16 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
-ChromeUtils.import("resource://gre/modules/FileUtils.jsm", this);
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/ctypes.jsm", this);
-ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm", this);
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm", this);
-ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "XMLHttpRequest"]);
 
 const UPDATESERVICE_CID = Components.ID("{B3C290A6-3943-4B89-8BBE-C01EB7B3B311}");
 
 const PREF_APP_UPDATE_ALTWINDOWTYPE        = "app.update.altwindowtype";
-
-
-
-
-
-const PREF_APP_UPDATE_AUTO                 = "app.update.auto";
-const PREF_APP_UPDATE_AUTO_MIGRATED        = "app.update.auto.migrated";
 const PREF_APP_UPDATE_BACKGROUNDINTERVAL   = "app.update.download.backgroundInterval";
 const PREF_APP_UPDATE_BACKGROUNDERRORS     = "app.update.backgroundErrors";
 const PREF_APP_UPDATE_BACKGROUNDMAXERRORS  = "app.update.backgroundMaxErrors";
@@ -54,14 +45,6 @@ const PREF_APP_UPDATE_STAGING_ENABLED      = "app.update.staging.enabled";
 const PREF_APP_UPDATE_URL                  = "app.update.url";
 const PREF_APP_UPDATE_URL_DETAILS          = "app.update.url.details";
 
-
-
-
-
-const CONFIG_APP_UPDATE_AUTO               = "app.update.auto";
-
-const DEFAULT_APP_UPDATE_AUTO = true;
-
 const URI_BRAND_PROPERTIES      = "chrome://branding/locale/brand.properties";
 const URI_UPDATE_HISTORY_DIALOG = "chrome://mozapps/content/update/history.xul";
 const URI_UPDATE_NS             = "http://www.mozilla.org/2005/app-update";
@@ -78,7 +61,6 @@ const FILE_BACKUP_UPDATE_LOG = "backup-update.log";
 const FILE_BT_RESULT         = "bt.result";
 const FILE_LAST_UPDATE_LOG   = "last-update.log";
 const FILE_UPDATES_XML       = "updates.xml";
-const FILE_UPDATE_CONFIG_JSON = "update-config.json";
 const FILE_UPDATE_LOG        = "update.log";
 const FILE_UPDATE_MAR        = "update.mar";
 const FILE_UPDATE_STATUS     = "update.status";
@@ -212,18 +194,15 @@ var gUpdateMutexHandle = null;
 
 var gUpdateDirPermissionFixAttempted = false;
 
-ChromeUtils.defineModuleGetter(this, "UpdateUtils",
-                               "resource://gre/modules/UpdateUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "WindowsRegistry",
-                               "resource://gre/modules/WindowsRegistry.jsm");
-ChromeUtils.defineModuleGetter(this, "AsyncShutdown",
-                               "resource://gre/modules/AsyncShutdown.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "CertUtils",
-                               "resource://gre/modules/CertUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "DeferredTask",
-                               "resource://gre/modules/DeferredTask.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  CertUtils: "resource://gre/modules/CertUtils.jsm",
+  ctypes: "resource://gre/modules/ctypes.jsm",
+  DeferredTask: "resource://gre/modules/DeferredTask.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
+  WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
+});
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false);
@@ -232,8 +211,6 @@ XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
 XPCOMUtils.defineLazyGetter(this, "gUpdateBundle", function aus_gUpdateBundle() {
   return Services.strings.createBundle(URI_UPDATES_PROPERTIES);
 });
-
-XPCOMUtils.defineLazyGetter(this, "gTextDecoder", () => new TextDecoder());
 
 
 
@@ -2133,9 +2110,9 @@ UpdateService.prototype = {
     
     
     
-    this.getAutoUpdateIsEnabled().then(enabled => {
+    UpdateUtils.getAppUpdateAutoEnabled().then(enabled => {
       AUSTLMY.pingGeneric("UPDATE_NOT_PREF_UPDATE_AUTO_" + this._pingSuffix,
-                          enabled, DEFAULT_APP_UPDATE_AUTO);
+                          enabled, true);
     });
     
     
@@ -2414,7 +2391,7 @@ UpdateService.prototype = {
 
 
 
-    let updateAuto = await this.getAutoUpdateIsEnabled();
+    let updateAuto = await UpdateUtils.getAppUpdateAutoEnabled();
     if (!updateAuto) {
       LOG("UpdateService:_selectAndInstallUpdate - prompting because silent " +
           "install is disabled. Notifying observers. topic: update-available, " +
@@ -2496,132 +2473,6 @@ UpdateService.prototype = {
 
     LOG("UpdateService.canCheckForUpdates - able to check for updates");
     return true;
-  },
-
-  _updateAutoSettingCachedVal: null,
-  
-  
-  
-  
-  
-  _updateAutoIOPromise: Promise.resolve(),
-
-  _readUpdateAutoConfig: async function AUS__readUpdateAuto() {
-    let configFile = getUpdateFile([FILE_UPDATE_CONFIG_JSON ]);
-    let binaryData = await OS.File.read(configFile.path);
-    let jsonData = gTextDecoder.decode(binaryData);
-    let configData = JSON.parse(jsonData);
-    return !!configData[CONFIG_APP_UPDATE_AUTO];
-  },
-
-  _writeUpdateAutoConfig: async function AUS__writeUpdateAutoPref(enabledValue) {
-    let enabledBoolValue = !!enabledValue;
-    let configFile = getUpdateFile([FILE_UPDATE_CONFIG_JSON]);
-    let configObject = {[CONFIG_APP_UPDATE_AUTO]: enabledBoolValue};
-
-    await OS.File.writeAtomic(configFile.path, JSON.stringify(configObject));
-    return enabledBoolValue;
-  },
-
-  
-  
-  _maybeUpdateAutoConfigChanged: function AUS__maybeUpdateAutoConfigChanged(newValue) {
-    if (newValue != this._updateAutoSettingCachedVal) {
-      this._updateAutoSettingCachedVal = newValue;
-      Services.obs.notifyObservers(null, "auto-update-config-change",
-                                   newValue.toString());
-    }
-    return newValue;
-  },
-
-  
-
-
-  getAutoUpdateIsEnabled: function AUS_getAutoUpdateIsEnabled() {
-    if (AppConstants.platform != "win") {
-      
-      let prefValue = Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO,
-                                                 DEFAULT_APP_UPDATE_AUTO);
-      return Promise.resolve(prefValue);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let readPromise = this._updateAutoIOPromise.catch(() => {}).then(async () => {
-      try {
-        let configValue = await this._readUpdateAutoConfig();
-        
-        
-        
-        Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
-        return configValue;
-      } catch (e) {
-        LOG("UpdateService.getAutoUpdateIsEnabled - Unable to read app " +
-            "update configuration file. Exception: " + e);
-        let valueMigrated = Services.prefs.getBoolPref(
-                              PREF_APP_UPDATE_AUTO_MIGRATED,
-                              false);
-        if (!valueMigrated) {
-          LOG("UpdateService.getAutoUpdateIsEnabled - Attempting migration.");
-          Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
-          let prefValue = Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO,
-                                                     DEFAULT_APP_UPDATE_AUTO);
-          try {
-            let writtenValue = await this._writeUpdateAutoConfig(prefValue);
-            Services.prefs.clearUserPref(PREF_APP_UPDATE_AUTO);
-            return writtenValue;
-          } catch (e) {
-            LOG("UpdateService.getAutoUpdateIsEnabled - Migration failed. " +
-                "Exception: " + e);
-          }
-        }
-      }
-      
-      return DEFAULT_APP_UPDATE_AUTO;
-    }).then(this._maybeUpdateAutoConfigChanged.bind(this));
-    this._updateAutoIOPromise = readPromise;
-    return readPromise;
-  },
-
-  
-
-
-  setAutoUpdateIsEnabled: function AUS_setAutoUpdateIsEnabled(enabledValue) {
-    if (AppConstants.platform != "win") {
-      
-      let prefValue = !!enabledValue;
-      Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, prefValue);
-      this._maybeUpdateAutoConfigChanged(prefValue);
-      return Promise.resolve(prefValue);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let writePromise = this._updateAutoIOPromise.catch(() => {}).then(async () => {
-      try {
-        return await this._writeUpdateAutoConfig(enabledValue);
-      } catch (e) {
-        LOG("UpdateService.setAutoUpdateIsEnabled - App update configuration " +
-            "file write failed. Exception: " + e);
-        
-        
-        throw e;
-      }
-    }).then(this._maybeUpdateAutoConfigChanged.bind(this));
-    this._updateAutoIOPromise = writePromise;
-    return writePromise;
   },
 
   

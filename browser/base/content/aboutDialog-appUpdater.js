@@ -40,7 +40,7 @@ function appUpdater(options = {}) {
 
   this.options = options;
   this.updateDeck = document.getElementById("updateDeck");
-  this.promiseAutoUpdateSetting;
+  this.promiseAutoUpdateSetting = null;
 
   
   
@@ -83,7 +83,7 @@ function appUpdater(options = {}) {
   }
 
   
-  this.promiseAutoUpdateSetting = this.aus.getAutoUpdateIsEnabled();
+  this.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
 
   
   
@@ -257,7 +257,7 @@ appUpdater.prototype =
       }
 
       if (!gAppUpdater.promiseAutoUpdateSetting) {
-        gAppUpdater.promiseAutoUpdateSetting = gAppUpdater.aus.getAutoUpdateIsEnabled();
+        gAppUpdater.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
       }
       gAppUpdater.promiseAutoUpdateSetting.then(updateAuto => {
         if (updateAuto) { 
