@@ -48,6 +48,11 @@ let whitelist = [
    isFromDevTools: false},
   
   
+  {sourceName: /(?:res|gre-resources)\/forms\.css$/i,
+   errorMessage: /Error in parsing value for ‘-moz-appearance’\. Declaration dropped\./i,
+   isFromDevTools: false},
+  
+  
   
   {sourceName: /jsonview\/css\/general\.css$/i,
    intermittent: true,
