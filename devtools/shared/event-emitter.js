@@ -103,6 +103,14 @@ class EventEmitter {
     }
   }
 
+  static clearEvents(target) {
+    const events = target[eventListeners];
+    if (!events) {
+      return;
+    }
+    events.clear();
+  }
+
   
 
 
@@ -245,6 +253,10 @@ class EventEmitter {
 
   off(...args) {
     EventEmitter.off(this, ...args);
+  }
+
+  clearEvents() {
+    EventEmitter.clearEvents(this);
   }
 
   once(...args) {
