@@ -1819,10 +1819,10 @@ class JSScript : public js::gc::TenuredCell
     
     
     
-    
-    static bool partiallyInit(JSContext* cx, JS::Handle<JSScript*> script,
-                              uint32_t nscopes, uint32_t nconsts, uint32_t nobjects,
-                              uint32_t ntrynotes, uint32_t nscopenotes, uint32_t nyieldoffsets);
+    static bool createPrivateScriptData(JSContext* cx, JS::Handle<JSScript*> script,
+                                        uint32_t nscopes, uint32_t nconsts,
+                                        uint32_t nobjects, uint32_t ntrynotes,
+                                        uint32_t nscopenotes, uint32_t nyieldoffsets);
 
   private:
     static void initFromFunctionBox(js::HandleScript script, js::frontend::FunctionBox* funbox);
@@ -2446,8 +2446,8 @@ class JSScript : public js::gc::TenuredCell
   private:
     bool makeTypes(JSContext* cx);
 
-    bool createScriptData(JSContext* cx, uint32_t codeLength, uint32_t srcnotesLength,
-                          uint32_t natoms);
+    bool createSharedScriptData(JSContext* cx, uint32_t codeLength,
+                                uint32_t noteLength, uint32_t natoms);
     bool shareScriptData(JSContext* cx);
     void freeScriptData();
     void setScriptData(js::SharedScriptData* data);
