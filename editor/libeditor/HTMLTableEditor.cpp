@@ -1316,10 +1316,9 @@ HTMLEditor::DeleteTableRow(int32_t aNumber)
       }
 
       
-      rv = GetCellAt(table, startRowIndex, startColIndex, getter_AddRefs(cell));
-      NS_ENSURE_SUCCESS(rv, rv);
+      cell = GetTableCellElementAt(*table, startRowIndex, startColIndex);
       if (!cell) {
-        break;
+        return NS_OK;
       }
     }
   }
@@ -2854,11 +2853,14 @@ HTMLEditor::CellIndexes::Update(Element& aCellElement,
   NS_WARNING_ASSERTION(!aRv.Failed(), "Failed to get cell indexes");
 }
 
+
 nsTableWrapperFrame*
-HTMLEditor::GetTableFrame(Element* aTable)
+HTMLEditor::GetTableFrame(Element* aTableElement)
 {
-  NS_ENSURE_TRUE(aTable, nullptr);
-  return do_QueryFrame(aTable->GetPrimaryFrame());
+  if (NS_WARN_IF(!aTableElement)) {
+    return nullptr;
+  }
+  return do_QueryFrame(aTableElement->GetPrimaryFrame());
 }
 
 
@@ -3006,7 +3008,7 @@ HTMLEditor::GetCellDataAt(Element* aTable,
     aTable = table;
   }
 
-  nsTableWrapperFrame* tableFrame = GetTableFrame(aTable);
+  nsTableWrapperFrame* tableFrame = HTMLEditor::GetTableFrame(aTable);
   NS_ENSURE_TRUE(tableFrame, NS_ERROR_FAILURE);
 
   nsTableCellFrame* cellFrame =
@@ -3028,46 +3030,53 @@ HTMLEditor::GetCellDataAt(Element* aTable,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
-HTMLEditor::GetCellAt(Element* aTable,
+HTMLEditor::GetCellAt(Element* aTableElement,
                       int32_t aRowIndex,
-                      int32_t aColIndex,
-                      Element** aCell)
+                      int32_t aColumnIndex,
+                      Element** aCellElement)
 {
-  NS_ENSURE_ARG_POINTER(aCell);
-  *aCell = nullptr;
+  if (NS_WARN_IF(!aCellElement)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  
-  
-  
-  
-  RefPtr<Element> table;
-  if (!aTable) {
+  *aCellElement = nullptr;
+
+  Element* tableElement = aTableElement;
+  if (!tableElement) {
     RefPtr<Selection> selection = GetSelection();
     if (NS_WARN_IF(!selection)) {
       return NS_ERROR_FAILURE;
     }
     
-    table =
+    tableElement =
       GetElementOrParentByTagNameAtSelection(*selection, *nsGkAtoms::table);
-    if (NS_WARN_IF(!table)) {
+    if (NS_WARN_IF(!tableElement)) {
       return NS_ERROR_FAILURE;
     }
-    aTable = table;
   }
 
-  nsTableWrapperFrame* tableFrame = GetTableFrame(aTable);
-  if (!tableFrame) {
-    *aCell = nullptr;
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
-  }
-
-  nsIContent* cell = tableFrame->GetCellAt(aRowIndex, aColIndex);
-  RefPtr<Element> cellElement = cell ? cell->AsElement() : nullptr;
-  cellElement.forget(aCell);
-
+  RefPtr<Element> cellElement =
+    GetTableCellElementAt(*tableElement, aRowIndex, aColumnIndex);
+  cellElement.forget(aCellElement);
   return NS_OK;
+}
+
+Element*
+HTMLEditor::GetTableCellElementAt(Element& aTableElement,
+                                  int32_t aRowIndex,
+                                  int32_t aColumnIndex) const
+{
+  
+  
+  
+  OwningNonNull<Element> tableElement(aTableElement);
+  nsTableWrapperFrame* tableFrame = HTMLEditor::GetTableFrame(tableElement);
+  if (!tableFrame) {
+    return nullptr;
+  }
+  nsIContent* cell = tableFrame->GetCellAt(aRowIndex, aColumnIndex);
+  return Element::FromNodeOrNull(cell);
 }
 
 
@@ -3078,7 +3087,7 @@ HTMLEditor::GetCellSpansAt(Element* aTable,
                            int32_t& aActualRowSpan,
                            int32_t& aActualColSpan)
 {
-  nsTableWrapperFrame* tableFrame = GetTableFrame(aTable);
+  nsTableWrapperFrame* tableFrame = HTMLEditor::GetTableFrame(aTable);
   if (!tableFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -3403,11 +3412,7 @@ HTMLEditor::SetSelectionAfterTableEdit(Element* aTable,
   RefPtr<Element> cell;
   bool done = false;
   do {
-    nsresult rv = GetCellAt(aTable, aRow, aCol, getter_AddRefs(cell));
-    if (NS_FAILED(rv)) {
-      break;
-    }
-
+    cell = GetTableCellElementAt(*aTable, aRow, aCol);
     if (cell) {
       if (aSelected) {
         

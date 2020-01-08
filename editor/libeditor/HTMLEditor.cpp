@@ -1196,10 +1196,14 @@ HTMLEditor::TabInTable(bool inIsShift,
                         getter_AddRefs(cell),
                         nullptr, nullptr,
                         &row, nullptr);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (NS_WARN_IF(!tblElement)) {
+      return NS_ERROR_FAILURE;
+    }
     
-    rv = GetCellAt(tblElement, row, 0, getter_AddRefs(cell));
-    NS_ENSURE_SUCCESS(rv, rv);
+    cell = GetTableCellElementAt(*tblElement, row, 0);
     
     
     

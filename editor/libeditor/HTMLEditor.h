@@ -1112,6 +1112,29 @@ protected:
 
 
 
+
+
+
+
+
+  Element* GetTableCellElementAt(Element& aTableElement,
+                                 const CellIndexes& aCellIndexes) const
+  {
+    return GetTableCellElementAt(aTableElement, aCellIndexes.mRow,
+                                 aCellIndexes.mColumn);
+  }
+  Element* GetTableCellElementAt(Element& aTableElement,
+                                 int32_t aRowIndex,
+                                 int32_t aColumnIndex) const;
+
+  
+
+
+
+
+
+
+
   nsresult PasteInternal(int32_t aClipboardType);
 
   
@@ -1384,7 +1407,7 @@ protected:
   
 
 
-  nsTableWrapperFrame* GetTableFrame(Element* aTable);
+  static nsTableWrapperFrame* GetTableFrame(Element* aTable);
 
   
 
