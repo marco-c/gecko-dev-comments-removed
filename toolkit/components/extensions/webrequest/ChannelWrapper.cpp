@@ -521,13 +521,14 @@ ChannelWrapper::Matches(const dom::MozRequestFilter& aFilter,
   }
 
   if (aExtension) {
-    if (!aExtension->CanAccessURI(urlInfo)) {
+    bool isProxy = aOptions.mIsProxy && aExtension->HasPermission(nsGkAtoms::proxy);
+    
+    if (!aExtension->CanAccessURI(urlInfo, false, !isProxy)) {
       return false;
     }
 
     
     
-    bool isProxy = aOptions.mIsProxy && aExtension->HasPermission(nsGkAtoms::proxy);
     if (!isProxy) {
       if (IsSystemLoad()) {
         return false;
