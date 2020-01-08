@@ -46,8 +46,6 @@ public:
 
   static nsIScriptGlobalObject *GetStaticScriptGlobal(JSObject* aObj);
 
-  static nsIScriptContext *GetStaticScriptContext(JSObject* aObj);
-
   
 
 
