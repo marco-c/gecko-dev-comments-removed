@@ -628,6 +628,11 @@ private:
     
     uint32_t                          mAuthConnectionRestartable : 1;
 
+    
+    
+    
+    uint32_t                          mTrackingProtectionCancellationPending : 1;
+
     nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
     
