@@ -4,83 +4,44 @@
 
 "use strict";
 
-const Services = require("Services");
-const {
-  createElement,
-  createFactory,
-  createRef,
-  Fragment,
-  PureComponent,
-} = require("devtools/client/shared/vendor/react");
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 const Font = createFactory(require("./Font"));
-const FontPreviewInput = createFactory(require("./FontPreviewInput"));
 
 const Types = require("../types");
-
-const PREF_FONT_EDITOR = "devtools.inspector.fonteditor.enabled";
 
 class FontList extends PureComponent {
   static get propTypes() {
     return {
       fontOptions: PropTypes.shape(Types.fontOptions).isRequired,
       fonts: PropTypes.arrayOf(PropTypes.shape(Types.font)).isRequired,
-      onPreviewTextChange: PropTypes.func.isRequired,
+      onPreviewFonts: PropTypes.func.isRequired,
       onToggleFontHighlight: PropTypes.func.isRequired,
     };
-  }
-
-  constructor(props) {
-    super(props);
-
-    this.onPreviewClick = this.onPreviewClick.bind(this);
-    this.previewInputRef = createRef();
-  }
-
-  
-
-
-
-  onPreviewClick() {
-    this.previewInputRef.current && this.previewInputRef.current.focus();
   }
 
   render() {
     const {
       fonts,
       fontOptions,
-      onPreviewTextChange,
+      onPreviewFonts,
       onToggleFontHighlight
     } = this.props;
 
-    const { previewText } = fontOptions;
-    const { onPreviewClick } = this;
-
-    const list = dom.ul(
+    return dom.ul(
       {
         className: "fonts-list"
       },
       fonts.map((font, i) => Font({
         key: i,
         font,
-        onPreviewClick,
+        fontOptions,
+        onPreviewFonts,
         onToggleFontHighlight,
       }))
     );
-
-    
-    const previewInput = Services.prefs.getBoolPref(PREF_FONT_EDITOR) ?
-      FontPreviewInput({
-        ref: this.previewInputRef,
-        onPreviewTextChange,
-        previewText,
-      })
-      :
-      null;
-
-    return createElement(Fragment, null, previewInput, list);
   }
 }
 
