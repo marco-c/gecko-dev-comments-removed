@@ -4695,9 +4695,21 @@ static
 
 #define MALLOC_DECL(name, return_type, ...) MozJemalloc::name,
 
-static malloc_table_t gReplaceMallocTable = {
+static const malloc_table_t gReplaceMallocTableDefault = {
 #include "malloc_decls.h"
 };
+static malloc_table_t gReplaceMallocTables[2] = {
+  {
+#include "malloc_decls.h"
+  },
+  {
+#include "malloc_decls.h"
+  },
+};
+unsigned gReplaceMallocIndex = 0;
+
+
+static Atomic<malloc_table_t const*, mozilla::MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve> gReplaceMallocTable;
 
 #ifdef MOZ_DYNAMIC_REPLACE_INIT
 #undef replace_init
@@ -4744,7 +4756,7 @@ replace_malloc_handle()
 #endif
 
 static void
-replace_malloc_init_funcs();
+replace_malloc_init_funcs(malloc_table_t*);
 
 #ifdef MOZ_REPLACE_MALLOC_STATIC
 extern "C" void
@@ -4755,21 +4767,18 @@ dmd_init(malloc_table_t*, ReplaceMallocBridge**);
 #endif
 
 bool
-Equals(malloc_table_t& aTable1, malloc_table_t& aTable2)
+Equals(const malloc_table_t& aTable1, const malloc_table_t& aTable2)
 {
   return memcmp(&aTable1, &aTable2, sizeof(malloc_table_t)) == 0;
 }
 
 
 
-static bool gReplaceMallocInitialized = false;
 static ReplaceMallocBridge* gReplaceMallocBridge = nullptr;
 static void
 init()
 {
-#ifdef MOZ_REPLACE_MALLOC_STATIC
-  malloc_table_t initialTable = gReplaceMallocTable;
-#endif
+  malloc_table_t tempTable = gReplaceMallocTableDefault;
 
 #ifdef MOZ_DYNAMIC_REPLACE_INIT
   replace_malloc_handle_t handle = replace_malloc_handle();
@@ -4780,39 +4789,81 @@ init()
 
   
   
-  gReplaceMallocInitialized = true;
+  gReplaceMallocTable = &gReplaceMallocTableDefault;
+
+  
+  
+  
+  
   if (replace_init) {
-    replace_init(&gReplaceMallocTable, &gReplaceMallocBridge);
+    replace_init(&tempTable, &gReplaceMallocBridge);
   }
 #ifdef MOZ_REPLACE_MALLOC_STATIC
-  if (Equals(initialTable, gReplaceMallocTable)) {
-    logalloc_init(&gReplaceMallocTable, &gReplaceMallocBridge);
+  if (Equals(tempTable, gReplaceMallocTableDefault)) {
+    logalloc_init(&tempTable, &gReplaceMallocBridge);
   }
 #ifdef MOZ_DMD
-  if (Equals(initialTable, gReplaceMallocTable)) {
-    dmd_init(&gReplaceMallocTable, &gReplaceMallocBridge);
+  if (Equals(tempTable, gReplaceMallocTableDefault)) {
+    dmd_init(&tempTable, &gReplaceMallocBridge);
   }
 #endif
 #endif
-  replace_malloc_init_funcs();
+  if (!Equals(tempTable, gReplaceMallocTableDefault)) {
+    replace_malloc_init_funcs(&tempTable);
+    gReplaceMallocIndex = (gReplaceMallocIndex + 1) % 2;
+    gReplaceMallocTables[gReplaceMallocIndex] = tempTable;
+    
+    gReplaceMallocTable = &gReplaceMallocTables[gReplaceMallocIndex];
+  }
 }
 
-#define MALLOC_DECL(name, return_type, ...)                                    \
+
+
+
+
+
+
+
+MOZ_JEMALLOC_API void
+jemalloc_replace_dynamic(jemalloc_init_func replace_init_func)
+{
+  malloc_table_t tempTable = gReplaceMallocTableDefault;
+  if (replace_init_func) {
+    (*replace_init_func)(&tempTable, &gReplaceMallocBridge);
+    if (!Equals(tempTable, gReplaceMallocTableDefault)) {
+      replace_malloc_init_funcs(&tempTable);
+      
+      gReplaceMallocIndex = (gReplaceMallocIndex + 1) % 2;
+      gReplaceMallocTables[gReplaceMallocIndex] = tempTable;
+      gReplaceMallocTable = &gReplaceMallocTables[gReplaceMallocIndex];
+      
+      
+      
+      return;
+    }
+  }
+  
+  
+  
+  gReplaceMallocTable = &gReplaceMallocTableDefault;
+}
+
+#define MALLOC_DECL(name, return_type, ...)                             \
   template<>                                                                   \
   inline return_type ReplaceMalloc::name(                                      \
     ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__))                                    \
   {                                                                            \
-    if (MOZ_UNLIKELY(!gReplaceMallocInitialized)) {                            \
+    if (MOZ_UNLIKELY(!gReplaceMallocTable)) {                            \
       init();                                                                  \
     }                                                                          \
-    return gReplaceMallocTable.name(ARGS_HELPER(ARGS, ##__VA_ARGS__));         \
+    return (*gReplaceMallocTable).name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
   }
 #include "malloc_decls.h"
 
 MOZ_JEMALLOC_API struct ReplaceMallocBridge*
 get_bridge(void)
 {
-  if (MOZ_UNLIKELY(!gReplaceMallocInitialized)) {
+  if (MOZ_UNLIKELY(!gReplaceMallocTable)) {
     init();
   }
   return gReplaceMallocBridge;
@@ -4824,29 +4875,37 @@ get_bridge(void)
 
 
 static void
-replace_malloc_init_funcs()
+replace_malloc_init_funcs(malloc_table_t *table)
 {
-  if (gReplaceMallocTable.posix_memalign == MozJemalloc::posix_memalign &&
-      gReplaceMallocTable.memalign != MozJemalloc::memalign) {
-    gReplaceMallocTable.posix_memalign =
+  if (table->posix_memalign == MozJemalloc::posix_memalign &&
+      table->memalign != MozJemalloc::memalign) {
+    table->posix_memalign =
       AlignedAllocator<ReplaceMalloc::memalign>::posix_memalign;
   }
-  if (gReplaceMallocTable.aligned_alloc == MozJemalloc::aligned_alloc &&
-      gReplaceMallocTable.memalign != MozJemalloc::memalign) {
-    gReplaceMallocTable.aligned_alloc =
+  if (table->aligned_alloc == MozJemalloc::aligned_alloc &&
+      table->memalign != MozJemalloc::memalign) {
+    table->aligned_alloc =
       AlignedAllocator<ReplaceMalloc::memalign>::aligned_alloc;
   }
-  if (gReplaceMallocTable.valloc == MozJemalloc::valloc &&
-      gReplaceMallocTable.memalign != MozJemalloc::memalign) {
-    gReplaceMallocTable.valloc =
+  if (table->valloc == MozJemalloc::valloc &&
+      table->memalign != MozJemalloc::memalign) {
+    table->valloc =
       AlignedAllocator<ReplaceMalloc::memalign>::valloc;
   }
-  if (gReplaceMallocTable.moz_create_arena_with_params ==
+  if (table->moz_create_arena_with_params ==
         MozJemalloc::moz_create_arena_with_params &&
-      gReplaceMallocTable.malloc != MozJemalloc::malloc) {
+      table->malloc != MozJemalloc::malloc) {
 #define MALLOC_DECL(name, ...)                                                 \
-  gReplaceMallocTable.name = DummyArenaAllocator<ReplaceMalloc>::name;
-#define MALLOC_FUNCS MALLOC_FUNCS_ARENA
+  table->name = DummyArenaAllocator<ReplaceMalloc>::name;
+#define MALLOC_FUNCS MALLOC_FUNCS_ARENA_BASE
+#include "malloc_decls.h"
+  }
+  if (table->moz_arena_malloc ==
+        MozJemalloc::moz_arena_malloc &&
+      table->malloc != MozJemalloc::malloc) {
+#define MALLOC_DECL(name, ...)                                                 \
+  table->name = DummyArenaAllocator<ReplaceMalloc>::name;
+#define MALLOC_FUNCS MALLOC_FUNCS_ARENA_ALLOC
 #include "malloc_decls.h"
   }
 }
