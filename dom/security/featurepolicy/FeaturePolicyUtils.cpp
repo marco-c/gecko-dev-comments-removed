@@ -26,21 +26,21 @@ struct FeatureMap {
 
 static FeatureMap sSupportedFeatures[] = {
   
-  { "autoplay", FeatureMap::eSelf },
+  { "autoplay", FeatureMap::eAll },
   
-  { "camera", FeatureMap::eSelf  },
-  { "encrypted-media", FeatureMap::eSelf  },
+  { "camera", FeatureMap::eAll  },
+  { "encrypted-media", FeatureMap::eAll  },
   
-  { "fullscreen", FeatureMap::eSelf  },
+  { "fullscreen", FeatureMap::eAll  },
   
-  { "geolocation", FeatureMap::eSelf  },
+  { "geolocation", FeatureMap::eAll  },
   
-  { "microphone", FeatureMap::eSelf  },
-  { "midi", FeatureMap::eSelf  },
-  { "payment", FeatureMap::eSelf  },
+  { "microphone", FeatureMap::eAll  },
+  { "midi", FeatureMap::eAll  },
+  { "payment", FeatureMap::eAll  },
   
-  { "speaker", FeatureMap::eSelf  },
-  { "vr", FeatureMap::eSelf  },
+  { "speaker", FeatureMap::eAll  },
+  { "vr", FeatureMap::eAll  },
 };
 
  bool
