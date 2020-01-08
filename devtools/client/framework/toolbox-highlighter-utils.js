@@ -28,15 +28,12 @@ const flags = require("devtools/shared/flags");
 
 
 exports.getHighlighterUtils = function(toolbox) {
-  if (!toolbox || !toolbox.target) {
+  if (!toolbox) {
     throw new Error("Missing or invalid toolbox passed to getHighlighterUtils");
   }
 
   
   const exported = {};
-
-  
-  let target = toolbox.target;
 
   
   let isPicking = false;
@@ -49,17 +46,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   exported.release = function() {
-    toolbox = target = null;
-  };
-
-  
-
-
-
-
-
-  const isRemoteHighlightable = exported.isRemoteHighlightable = function() {
-    return target.client.traits.highlightable;
+    toolbox = null;
   };
 
   
@@ -115,22 +102,13 @@ exports.getHighlighterUtils = function(toolbox) {
       await toolbox.selectTool("inspector", "inspect_dom");
       toolbox.on("select", cancelPicker);
 
-      if (isRemoteHighlightable()) {
-        toolbox.walker.on("picker-node-hovered", onPickerNodeHovered);
-        toolbox.walker.on("picker-node-picked", onPickerNodePicked);
-        toolbox.walker.on("picker-node-previewed", onPickerNodePreviewed);
-        toolbox.walker.on("picker-node-canceled", onPickerNodeCanceled);
+      toolbox.walker.on("picker-node-hovered", onPickerNodeHovered);
+      toolbox.walker.on("picker-node-picked", onPickerNodePicked);
+      toolbox.walker.on("picker-node-previewed", onPickerNodePreviewed);
+      toolbox.walker.on("picker-node-canceled", onPickerNodeCanceled);
 
-        await toolbox.highlighter.pick(doFocus);
-        toolbox.emit("picker-started");
-      } else {
-        
-        
-        
-        toolbox.emit("picker-started");
-        const node = await toolbox.walker.pick();
-        onPickerNodePicked({node: node});
-      }
+      await toolbox.highlighter.pick(doFocus);
+      toolbox.emit("picker-started");
     });
 
   
@@ -147,17 +125,11 @@ exports.getHighlighterUtils = function(toolbox) {
 
     toolbox.pickerButton.isChecked = false;
 
-    if (isRemoteHighlightable()) {
-      await toolbox.highlighter.cancelPick();
-      toolbox.walker.off("picker-node-hovered", onPickerNodeHovered);
-      toolbox.walker.off("picker-node-picked", onPickerNodePicked);
-      toolbox.walker.off("picker-node-previewed", onPickerNodePreviewed);
-      toolbox.walker.off("picker-node-canceled", onPickerNodeCanceled);
-    } else {
-      
-      
-      await toolbox.walker.cancelPick();
-    }
+    await toolbox.highlighter.cancelPick();
+    toolbox.walker.off("picker-node-hovered", onPickerNodeHovered);
+    toolbox.walker.off("picker-node-picked", onPickerNodePicked);
+    toolbox.walker.off("picker-node-previewed", onPickerNodePreviewed);
+    toolbox.walker.off("picker-node-canceled", onPickerNodeCanceled);
 
     toolbox.off("select", cancelPicker);
     toolbox.emit("picker-stopped");
@@ -221,13 +193,7 @@ exports.getHighlighterUtils = function(toolbox) {
     }
 
     isNodeFrontHighlighted = true;
-    if (isRemoteHighlightable()) {
-      await toolbox.highlighter.showBoxModel(nodeFront, options);
-    } else {
-      
-      
-      await toolbox.walker.highlight(nodeFront);
-    }
+    await toolbox.highlighter.showBoxModel(nodeFront, options);
 
     toolbox.emit("node-highlight", nodeFront);
   });
@@ -271,10 +237,7 @@ exports.getHighlighterUtils = function(toolbox) {
   exported.unhighlight = async function(forceHide = false) {
     forceHide = forceHide || !flags.testing;
 
-    
-    
-    if (isNodeFrontHighlighted && forceHide && toolbox.highlighter &&
-        isRemoteHighlightable()) {
+    if (isNodeFrontHighlighted && forceHide && toolbox.highlighter) {
       isNodeFrontHighlighted = false;
       await toolbox.highlighter.hideBoxModel();
     }

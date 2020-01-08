@@ -116,9 +116,6 @@ RootActor.prototype = {
 
   traits: {
     sources: true,
-    
-    
-    highlightable: true,
     networkMonitor: true,
     
     storageInspector: true,
