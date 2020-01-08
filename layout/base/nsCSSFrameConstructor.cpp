@@ -10168,26 +10168,11 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
       NS_WARNING("ProcessChildren max depth exceeded");
     }
 
-    InsertionPoint insertion(aFrame, nullptr);
     FlattenedChildIterator iter(aContent);
+    const InsertionPoint insertion(aFrame, aContent);
     for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
-      
-      
-      
-      
-      
-      insertion.mContainer = aContent;
-
-
-      
-      
-      nsIContent* parent = child->GetParent();
-      MOZ_ASSERT(parent, "Parent must be non-null because we are iterating children.");
-      if (parent != aContent && parent->IsElement()) {
-        insertion.mContainer = child->GetFlattenedTreeParent();
-        MOZ_ASSERT(insertion.mContainer == GetInsertionPoint(child).mContainer);
-      }
-
+      MOZ_ASSERT(insertion.mContainer == GetInsertionPoint(child).mContainer,
+                 "GetInsertionPoint should agree with us");
       if (addChildItems) {
         AddFrameConstructionItems(aState, child, iter.XBLInvolved(), insertion,
                                   itemsToConstruct);
