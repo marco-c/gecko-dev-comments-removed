@@ -137,13 +137,15 @@
 #ifdef MOZ_XUL
 #include "nsMenuFrame.h"
 #include "nsTreeBodyFrame.h"
-#include "XULTreeElement.h"
+#include "nsIBoxObject.h"
+#include "nsITreeBoxObject.h"
 #include "nsMenuPopupFrame.h"
 #include "nsTreeColumns.h"
 #include "nsIDOMXULMultSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsXULElement.h"
+#include "mozilla/dom/BoxObject.h"
 #endif  
 
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -8005,35 +8007,41 @@ void PresShell::GetCurrentItemAndPositionForElement(
     int32_t currentIndex;
     multiSelect->GetCurrentIndex(&currentIndex);
     if (currentIndex >= 0) {
-      RefPtr<XULTreeElement> tree = XULTreeElement::FromNode(focusedContent);
-      
-      
-      
-      
-      
-      
-      if (tree) {
-        tree->EnsureRowIsVisible(currentIndex);
-        int32_t firstVisibleRow = tree->GetFirstVisibleRow();
-        int32_t rowHeight = tree->RowHeight();
+      RefPtr<nsXULElement> xulElement = nsXULElement::FromNode(focusedContent);
+      if (xulElement) {
+        nsCOMPtr<nsIBoxObject> box = xulElement->GetBoxObject(IgnoreErrors());
+        nsCOMPtr<nsITreeBoxObject> treeBox(do_QueryInterface(box));
+        
+        
+        
+        
+        
+        
+        if (treeBox) {
+          treeBox->EnsureRowIsVisible(currentIndex);
+          int32_t firstVisibleRow, rowHeight;
+          treeBox->GetFirstVisibleRow(&firstVisibleRow);
+          treeBox->GetRowHeight(&rowHeight);
 
-        extraTreeY += nsPresContext::CSSPixelsToAppUnits(
-            (currentIndex - firstVisibleRow + 1) * rowHeight);
-        istree = true;
+          extraTreeY += nsPresContext::CSSPixelsToAppUnits(
+              (currentIndex - firstVisibleRow + 1) * rowHeight);
+          istree = true;
 
-        RefPtr<nsTreeColumns> cols = tree->GetColumns();
-        if (cols) {
-          nsTreeColumn* col = cols->GetFirstColumn();
-          if (col) {
-            RefPtr<Element> colElement = col->Element();
-            nsIFrame* frame = colElement->GetPrimaryFrame();
-            if (frame) {
-              extraTreeY += frame->GetSize().height;
+          RefPtr<nsTreeColumns> cols;
+          treeBox->GetColumns(getter_AddRefs(cols));
+          if (cols) {
+            nsTreeColumn* col = cols->GetFirstColumn();
+            if (col) {
+              RefPtr<Element> colElement = col->Element();
+              nsIFrame* frame = colElement->GetPrimaryFrame();
+              if (frame) {
+                extraTreeY += frame->GetSize().height;
+              }
             }
           }
+        } else {
+          multiSelect->GetCurrentItem(getter_AddRefs(item));
         }
-      } else {
-        multiSelect->GetCurrentItem(getter_AddRefs(item));
       }
     }
   } else {
@@ -10094,9 +10102,9 @@ void nsIPresShell::SetVisualViewportSize(nscoord aWidth, nscoord aHeight) {
 bool nsIPresShell::SetVisualViewportOffset(
     const nsPoint& aScrollOffset, const nsPoint& aPrevLayoutScrollPos) {
   bool didChange = false;
-  if (mVisualViewportOffset != aScrollOffset) {
-    nsPoint prevOffset = mVisualViewportOffset;
-    mVisualViewportOffset = aScrollOffset;
+  if (GetVisualViewportOffset() != aScrollOffset) {
+    nsPoint prevOffset = GetVisualViewportOffset();
+    mVisualViewportOffset = Some(aScrollOffset);
     didChange = true;
 
     if (auto* window = nsGlobalWindowInner::Cast(mDocument->GetInnerWindow())) {
