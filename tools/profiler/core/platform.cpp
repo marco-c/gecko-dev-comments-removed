@@ -718,7 +718,8 @@ uint32_t ActivePS::sNextGeneration = 0;
 
 static PSMutex gPSMutex;
 
-Atomic<uint32_t, MemoryOrdering::Relaxed> RacyFeatures::sActiveAndFeatures(0);
+Atomic<uint32_t, MemoryOrdering::Relaxed, recordreplay::Behavior::DontPreserve>
+  RacyFeatures::sActiveAndFeatures(0);
 
 
 

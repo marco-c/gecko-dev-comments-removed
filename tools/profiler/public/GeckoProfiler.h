@@ -206,7 +206,9 @@ private:
 
   
   
-  static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed> sActiveAndFeatures;
+  
+  static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed,
+                         recordreplay::Behavior::DontPreserve> sActiveAndFeatures;
 };
 
 } 
