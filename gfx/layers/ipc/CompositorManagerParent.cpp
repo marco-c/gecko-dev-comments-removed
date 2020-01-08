@@ -26,7 +26,7 @@ StaticAutoPtr<nsTArray<CompositorManagerParent*>> CompositorManagerParent::sActi
  already_AddRefed<CompositorManagerParent>
 CompositorManagerParent::CreateSameProcess()
 {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying());
   MOZ_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
 
@@ -71,7 +71,7 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(CSSToLayoutDevi
                                                                  bool aUseExternalSurfaceSize,
                                                                  const gfx::IntSize& aSurfaceSize)
 {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying());
   MOZ_ASSERT(NS_IsMainThread());
 
   
