@@ -28,7 +28,7 @@ function test() {
     
     
     gBrowser.removeProgressListener(listener);
-    BrowserTestUtils.loadURI(gBrowser, "about:home");
+    gBrowser.loadURI("about:home");
     info("Waiting for about:home load");
     tab.linkedBrowser.addEventListener("load", function load(event) {
       if (event.originalTarget != tab.linkedBrowser.contentDocumentAsCPOW ||

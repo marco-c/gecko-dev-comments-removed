@@ -25,7 +25,7 @@ function frame_script() {
 
 
 function prepareNonRemoteBrowser(aWindow, browser) {
-  BrowserTestUtils.loadURI(browser, NON_REMOTE_PAGE);
+  browser.loadURI(NON_REMOTE_PAGE);
   return BrowserTestUtils.browserLoaded(browser);
 }
 

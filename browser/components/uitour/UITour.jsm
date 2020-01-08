@@ -468,9 +468,7 @@ var UITour = {
           }
 
           
-          browser.loadURI(url.href, {
-            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
-          });
+          browser.loadURI(url.href);
         });
         break;
       }
@@ -485,9 +483,7 @@ var UITour = {
           }
 
           
-          browser.loadURI(url.href, {
-            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
-          });
+          browser.loadURI(url.href);
         });
         break;
       }

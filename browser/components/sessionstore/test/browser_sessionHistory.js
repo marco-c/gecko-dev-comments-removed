@@ -76,7 +76,7 @@ add_task(async function test_pageshow() {
   await promiseBrowserLoaded(browser);
 
   
-  BrowserTestUtils.loadURI(browser, URL2);
+  browser.loadURI(URL2);
   await promiseBrowserLoaded(browser);
 
   
@@ -164,7 +164,7 @@ add_task(async function test_about_page_navigate() {
   
   is(entries[0].title, "about:blank", "title is correct");
 
-  BrowserTestUtils.loadURI(browser, "about:robots");
+  browser.loadURI("about:robots");
   await promiseBrowserLoaded(browser);
 
   

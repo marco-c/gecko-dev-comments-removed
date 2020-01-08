@@ -220,9 +220,7 @@ async function test(window) {
   
   
   
-  initialTab.linkedBrowser.loadURI("about:blank", {
-    triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
-  });
+  initialTab.linkedBrowser.loadURI("about:blank", null, null);
 
   let tabs = gBrowser.getTabsToTheEndFrom(initialTab);
   let times = [];
