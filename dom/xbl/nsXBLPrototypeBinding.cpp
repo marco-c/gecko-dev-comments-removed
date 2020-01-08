@@ -722,31 +722,23 @@ nsXBLPrototypeBinding::ConstructInterfaceTable(const nsAString& aImpls)
 
       if (iinfo) {
         
-        const nsIID* iid = nullptr;
-        iinfo->GetIIDShared(&iid);
+        mInterfaceTable.Put(iinfo->IID(), mBinding);
 
-        if (iid) {
+        
+        
+        const nsXPTInterfaceInfo* parentInfo;
+        
+        while ((parentInfo = iinfo->GetParent())) {
           
-          mInterfaceTable.Put(*iid, mBinding);
-
-          
-          
-          const nsXPTInterfaceInfo* parentInfo;
-          
-          while (NS_SUCCEEDED(iinfo->GetParent(&parentInfo)) && parentInfo) {
-            
-            parentInfo->GetIIDShared(&iid);
-
-            
-            if (!iid || iid->Equals(NS_GET_IID(nsISupports)))
-              break;
-
-            
-            mInterfaceTable.Put(*iid, mBinding);
-
-            
-            iinfo = parentInfo;
+          if (parentInfo->IID().Equals(NS_GET_IID(nsISupports))) {
+            break;
           }
+
+          
+          mInterfaceTable.Put(parentInfo->IID(), mBinding);
+
+          
+          iinfo = parentInfo;
         }
       }
 
