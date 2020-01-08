@@ -204,6 +204,7 @@ pub struct ClipChainId(pub u32);
 
 impl ClipChainId {
     pub const NONE: Self = ClipChainId(u32::MAX);
+    pub const INVALID: Self = ClipChainId(0xDEADBEEF);
 }
 
 
