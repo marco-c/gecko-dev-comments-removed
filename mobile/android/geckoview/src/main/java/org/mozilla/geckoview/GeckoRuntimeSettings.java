@@ -587,7 +587,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
     
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({ COOKIE_ACCEPT_ALL, COOKIE_ACCEPT_FIRST_PARTY,
-              COOKIE_ACCEPT_NONE, COOKIE_ACCEPT_VISITED })
+              COOKIE_ACCEPT_NONE, COOKIE_ACCEPT_VISITED,
+              COOKIE_ACCEPT_NON_TRACKERS })
      @interface CookieBehavior {}
 
     
@@ -608,6 +609,12 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
     public static final int COOKIE_ACCEPT_VISITED = 3;
+    
+
+
+
+
+    public static final int COOKIE_ACCEPT_NON_TRACKERS = 4;
 
     
 
