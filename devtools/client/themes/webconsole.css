@@ -901,6 +901,7 @@ body {
 
 .webconsole-output-wrapper .object-inspector.tree {
   display: inline-block;
+  max-width: 100%;
 }
 
 .webconsole-output-wrapper .object-inspector.tree .tree-indent {
