@@ -100,6 +100,7 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/ParentSHistory.h"
 #include "mozilla/dom/ChildSHistory.h"
+#include "mozilla/dom/ChromeBrowsingContext.h"
 
 #include "mozilla/dom/HTMLBodyElement.h"
 
@@ -179,6 +180,7 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, nsPIDOMWindowOuter* aOpener,
   , mLoadingOriginalSrc(false)
   , mRemoteBrowserShown(false)
   , mRemoteFrame(false)
+  , mClipSubdocument(true)
   , mClampScrollPosition(true)
   , mObservingOwnerContent(false)
 {
@@ -2422,6 +2424,30 @@ nsFrameLoader::LazyHeight() const
 }
 
 void
+nsFrameLoader::SetClipSubdocument(bool aClip)
+{
+  mClipSubdocument = aClip;
+  nsIFrame* frame = GetPrimaryFrameOfOwningContent();
+  if (frame) {
+    frame->InvalidateFrame();
+    frame->PresShell()->
+      FrameNeedsReflow(frame, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+    nsSubDocumentFrame* subdocFrame = do_QueryFrame(frame);
+    if (subdocFrame) {
+      nsIFrame* subdocRootFrame = subdocFrame->GetSubdocumentRootFrame();
+      if (subdocRootFrame) {
+        nsIFrame* subdocRootScrollFrame = subdocRootFrame->PresShell()->
+          GetRootScrollFrame();
+        if (subdocRootScrollFrame) {
+          frame->PresShell()->
+            FrameNeedsReflow(frame, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+        }
+      }
+    }
+  }
+}
+
+void
 nsFrameLoader::SetClampScrollPosition(bool aClamp)
 {
   mClampScrollPosition = aClamp;
@@ -3167,6 +3193,19 @@ nsFrameLoader::LoadContext()
     loadContext = do_GetInterface(GetDocShell(IgnoreErrors()));
   }
   return loadContext.forget();
+}
+
+already_AddRefed<BrowsingContext>
+nsFrameLoader::GetBrowsingContext()
+{
+  RefPtr<BrowsingContext> browsingContext;
+  if (IsRemoteFrame() &&
+      (mRemoteBrowser || TryRemoteBrowser())) {
+    browsingContext = mRemoteBrowser->GetBrowsingContext();
+  } else if (GetDocShell(IgnoreErrors())) {
+    browsingContext = nsDocShell::Cast(mDocShell)->GetBrowsingContext();
+  }
+  return browsingContext.forget();
 }
 
 void

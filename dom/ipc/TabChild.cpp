@@ -597,6 +597,11 @@ TabChild::Init()
       mChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
 
   
+  RefPtr<BrowsingContext> browsingContext =
+    nsDocShell::Cast(docShell)->GetBrowsingContext();
+  SendRootBrowsingContext(BrowsingContextId(browsingContext->Id()));
+
+  
   
   
   

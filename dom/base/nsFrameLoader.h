@@ -48,6 +48,7 @@ namespace mozilla {
 class OriginAttributes;
 
 namespace dom {
+class BrowsingContext;
 class ChromeMessageSender;
 class ContentParent;
 class InProcessTabChildMessageManager;
@@ -120,6 +121,8 @@ public:
   already_AddRefed<nsITabParent> GetTabParent();
 
   already_AddRefed<nsILoadContext> LoadContext();
+
+  already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContext();
 
   
 
@@ -198,6 +201,9 @@ public:
 
   bool ClampScrollPosition() const { return mClampScrollPosition; }
   void SetClampScrollPosition(bool aClamp);
+
+  bool ClipSubdocument() const { return mClipSubdocument; }
+  void SetClipSubdocument(bool aClip);
 
   bool DepthTooGreat() const { return mDepthTooGreat; }
 
@@ -298,6 +304,7 @@ public:
   mozilla::dom::ChromeMessageSender* GetFrameMessageManager() { return mMessageManager; }
 
   mozilla::dom::Element* GetOwnerContent() { return mOwnerContent; }
+  bool ShouldClipSubdocument() { return mClipSubdocument; }
 
   bool ShouldClampScrollPosition() { return mClampScrollPosition; }
 
@@ -493,6 +500,7 @@ private:
 
   bool mRemoteBrowserShown : 1;
   bool mRemoteFrame : 1;
+  bool mClipSubdocument : 1;
   bool mClampScrollPosition : 1;
   bool mObservingOwnerContent : 1;
 };
