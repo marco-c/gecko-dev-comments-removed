@@ -161,15 +161,19 @@ impl<T, U> Polygon<T, U> where
 
     
     pub fn from_rect(rect: TypedRect<T, U>, anchor: usize) -> Self {
-        Self::from_points(
-            [
+        Polygon {
+            points: [
                 rect.origin.to_3d(),
                 rect.top_right().to_3d(),
                 rect.bottom_right().to_3d(),
                 rect.bottom_left().to_3d(),
             ],
+            plane: Plane {
+                normal: TypedVector3D::new(T::zero(), T::zero(), T::one()),
+                offset: T::zero(),
+            },
             anchor,
-        ).unwrap()
+        }
     }
 
     
@@ -187,11 +191,46 @@ impl<T, U> Polygon<T, U> where
             transform.transform_point3d(&rect.bottom_right().to_3d())?,
             transform.transform_point3d(&rect.bottom_left().to_3d())?,
         ];
+        Self::from_points(points, anchor)
+    }
+
+    
+    pub fn from_transformed_rect_with_inverse<V>(
+        rect: TypedRect<T, V>,
+        transform: &TypedTransform3D<T, V, U>,
+        inv_transform: &TypedTransform3D<T, U, V>,
+        anchor: usize,
+    ) -> Option<Self>
+    where
+        T: Trig + ops::Neg<Output=T>,
+    {
+        let points = [
+            transform.transform_point3d(&rect.origin.to_3d())?,
+            transform.transform_point3d(&rect.top_right().to_3d())?,
+            transform.transform_point3d(&rect.bottom_right().to_3d())?,
+            transform.transform_point3d(&rect.bottom_left().to_3d())?,
+        ];
 
         
         
-        
-        Self::from_points(points, anchor)
+        let normal_raw = TypedVector3D::new(inv_transform.m13, inv_transform.m23, inv_transform.m33);
+        let normal_sql = normal_raw.square_length();
+        if normal_sql.approx_eq(&T::zero()) {
+            None
+        } else {
+            let normal = normal_raw / normal_sql.sqrt();
+            let offset = -TypedVector3D::new(transform.m41, transform.m42, transform.m43)
+                .dot(normal) * transform.m44;
+
+            Some(Polygon {
+                points,
+                plane: Plane {
+                    normal,
+                    offset,
+                },
+                anchor,
+            })
+        }
     }
 
     
