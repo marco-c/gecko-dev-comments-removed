@@ -975,6 +975,9 @@ void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
   mProfilerScreenshotGrabber.MaybeProcessQueue();
 
   RecordFrame();
+
+  PayloadPresented();
+
   
   mPayload.Clear();
 }
