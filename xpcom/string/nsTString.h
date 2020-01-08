@@ -38,8 +38,6 @@ public:
   typedef typename nsTSubstring<T>::substring_type substring_type;
 #endif
 
-  typedef typename substring_type::literalstring_type literalstring_type;
-
   typedef typename substring_type::fallible_t fallible_t;
 
   typedef typename substring_type::char_type char_type;
@@ -124,15 +122,6 @@ public:
   }
 
   
-  explicit
-  nsTString(const literalstring_type& aReadable)
-    : substring_type(ClassFlags::NULL_TERMINATED)
-  {
-    this->Assign(aReadable);
-  }
-
-
-  
   self_type& operator=(char_type aChar)
   {
     this->Assign(aChar);
@@ -169,12 +158,6 @@ public:
   self_type& operator=(substring_type&& aStr)
   {
     this->Assign(std::move(aStr));
-    return *this;
-  }
-  
-  self_type& operator=(const literalstring_type& aStr)
-  {
-    this->Assign(aStr);
     return *this;
   }
   self_type& operator=(const substring_tuple_type& aTuple)
@@ -570,7 +553,6 @@ public:
   typedef typename base_string_type::substring_type substring_type;
   typedef typename base_string_type::size_type size_type;
   typedef typename base_string_type::substring_tuple_type substring_tuple_type;
-  typedef typename base_string_type::literalstring_type literalstring_type;
 
   
   typedef typename base_string_type::DataFlags DataFlags;
@@ -640,14 +622,6 @@ public:
     this->Assign(std::move(aStr));
   }
 
-  
-  explicit
-  nsTAutoStringN(const literalstring_type& aStr)
-    : self_type()
-  {
-    this->Assign(aStr);
-  }
-
   MOZ_IMPLICIT nsTAutoStringN(const substring_tuple_type& aTuple)
     : self_type()
   {
@@ -691,12 +665,6 @@ public:
   self_type& operator=(substring_type&& aStr)
   {
     this->Assign(std::move(aStr));
-    return *this;
-  }
-  
-  self_type& operator=(const literalstring_type& aStr)
-  {
-    this->Assign(aStr);
     return *this;
   }
   self_type& operator=(const substring_tuple_type& aTuple)
