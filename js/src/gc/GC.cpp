@@ -993,7 +993,6 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     fullGCForAtomsRequested_(false),
     minorGCNumber(0),
     majorGCNumber(0),
-    jitReleaseNumber(0),
     number(0),
     isFull(false),
     incrementalState(gc::State::NotActive),
@@ -1341,12 +1340,6 @@ js::gc::DumpArenaInfo()
 
 #endif 
 
-
-
-
-
-static const unsigned JIT_SCRIPT_RELEASE_TYPES_PERIOD = 20;
-
 bool
 GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
 {
@@ -1363,8 +1356,6 @@ GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
         if (size) {
             setMarkStackLimit(atoi(size), lock);
         }
-
-        jitReleaseNumber = majorGCNumber + JIT_SCRIPT_RELEASE_TYPES_PERIOD;
 
         if (!nursery().init(maxNurseryBytes, lock)) {
             return false;
@@ -3961,33 +3952,6 @@ GCRuntime::waitBackgroundSweepEnd()
     }
 }
 
-bool
-GCRuntime::shouldReleaseObservedTypes()
-{
-    bool releaseTypes = false;
-
-    if (cleanUpEverything) {
-        releaseTypes = true;
-    }
-
-#ifdef JS_GC_ZEAL
-    if (zealModeBits != 0) {
-        releaseTypes = true;
-    }
-#endif
-
-    
-    if (majorGCNumber >= jitReleaseNumber) {
-        releaseTypes = true;
-    }
-
-    if (releaseTypes) {
-        jitReleaseNumber = majorGCNumber + JIT_SCRIPT_RELEASE_TYPES_PERIOD;
-    }
-
-    return releaseTypes;
-}
-
 struct IsAboutToBeFinalizedFunctor {
     template <typename T> bool operator()(Cell** t) {
         mozilla::DebugOnly<const Cell*> prior = *t;
@@ -4559,12 +4523,14 @@ GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason, bool* isFullOu
 }
 
 static void
-DiscardJITCodeForGC(JSRuntime* rt, bool releaseTypes)
+DiscardJITCodeForGC(JSRuntime* rt)
 {
     js::CancelOffThreadIonCompile(rt, JS::Zone::Mark);
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         gcstats::AutoPhase ap(rt->gc.stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
-        zone->discardJitCode(rt->defaultFreeOp(),  true, releaseTypes);
+        zone->discardJitCode(rt->defaultFreeOp(),
+                              true,
+                              true);
     }
 }
 
@@ -4671,7 +4637,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoGCSession& session)
 
         
         
-        DiscardJITCodeForGC(rt, shouldReleaseObservedTypes());
+        DiscardJITCodeForGC(rt);
 
         
 

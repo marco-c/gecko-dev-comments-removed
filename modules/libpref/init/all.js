@@ -1573,6 +1573,9 @@ pref("javascript.options.streams", false);
 #endif
 
 
+pref("javascript.options.bigint", false);
+
+
 pref("advanced.mailftp",                    false);
 pref("image.animation_mode",                "normal");
 
