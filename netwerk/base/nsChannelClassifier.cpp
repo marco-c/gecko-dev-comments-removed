@@ -793,33 +793,6 @@ nsChannelClassifier::HasBeenClassified(nsIChannel *aChannel)
 }
 
 
-bool
-nsChannelClassifier::SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel)
-{
-  nsCOMPtr<nsIURI> docURI = aDoc->GetDocumentURI();
-  nsCOMPtr<nsILoadInfo> channelLoadInfo = aChannel->GetLoadInfo();
-  if (!channelLoadInfo || !docURI) {
-    return false;
-  }
-
-  nsCOMPtr<nsIPrincipal> channelLoadingPrincipal = channelLoadInfo->LoadingPrincipal();
-  if (!channelLoadingPrincipal) {
-    
-    
-    
-    return false;
-  }
-  nsCOMPtr<nsIURI> channelLoadingURI;
-  channelLoadingPrincipal->GetURI(getter_AddRefs(channelLoadingURI));
-  if (!channelLoadingURI) {
-    return false;
-  }
-  bool equals = false;
-  nsresult rv = docURI->EqualsExceptRef(channelLoadingURI, &equals);
-  return NS_SUCCEEDED(rv) && equals;
-}
-
-
 nsresult
 nsChannelClassifier::SetBlockedContent(nsIChannel *channel,
                                        nsresult aErrorCode,
@@ -861,33 +834,13 @@ nsChannelClassifier::SetBlockedContent(nsIChannel *channel,
   nsCOMPtr<nsIDocument> doc = docShell->GetDocument();
   NS_ENSURE_TRUE(doc, NS_OK);
 
-  
-  
-  
-  
-  if (!SameLoadingURI(doc, channel)) {
-    return NS_OK;
-  }
-
-  
-  
-  nsCOMPtr<nsISecurityEventSink> eventSink = do_QueryInterface(docShell, &rv);
-  NS_ENSURE_SUCCESS(rv, NS_OK);
-  uint32_t state = 0;
-  nsCOMPtr<nsISecureBrowserUI> securityUI;
-  docShell->GetSecurityUI(getter_AddRefs(securityUI));
-  if (!securityUI) {
-    return NS_OK;
-  }
-  securityUI->GetState(&state);
+  unsigned state;
   if (aErrorCode == NS_ERROR_TRACKING_URI) {
-    doc->SetHasTrackingContentBlocked(true);
-    state |= nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT;
+    state = nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT;
   } else {
-    state |= nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
+    state = nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
   }
-
-  eventSink->OnSecurityChange(channel, state);
+  pwin->NotifyContentBlockingState(state, channel);
 
   
   nsCOMPtr<nsIURI> uri;

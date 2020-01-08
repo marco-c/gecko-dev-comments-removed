@@ -491,6 +491,10 @@ public:
                         const nsAString& aPopupWindowName,
                         const nsAString& aPopupWindowFeatures) override;
 
+  virtual void
+  NotifyContentBlockingState(unsigned aState,
+                             nsIChannel* aChannel) override;
+
   virtual uint32_t GetSerial() override {
     return mSerial;
   }
@@ -900,6 +904,9 @@ private:
                         nsDocShellLoadInfo* aLoadInfo,
                         bool aForceNoOpener,
                         nsPIDOMWindowOuter **aReturn);
+
+  
+  static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
 
 public:
   
