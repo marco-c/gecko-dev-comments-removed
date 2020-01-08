@@ -1311,8 +1311,6 @@ Database::InitSchema(bool* aDatabaseMigrated)
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
-      
-
       if (currentSchemaVersion < 52) {
         rv = MigrateV52Up();
         NS_ENSURE_SUCCESS(rv, rv);
