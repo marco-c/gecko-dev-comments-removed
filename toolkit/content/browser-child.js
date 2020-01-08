@@ -28,5 +28,5 @@ addEventListener("ImageContentLoaded", function(aEvent) {
 
 
 
-var outerWindowID = content.windowUtils.outerWindowID;
+var outerWindowID = docShell.outerWindowID;
 sendAsyncMessage("Browser:Init", {outerWindowID});
