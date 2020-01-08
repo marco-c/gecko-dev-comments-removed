@@ -4,7 +4,6 @@
 
 
 
-
 const TP_PREF = "privacy.trackingprotection.enabled";
 const TP_PB_PREF = "privacy.trackingprotection.enabled";
 const NCB_PREF = "network.cookie.cookieBehavior";
@@ -31,7 +30,7 @@ function waitForSecurityChange(tabbrowser, numChanges = 1) {
         info("Received onSecurityChange event " + n + " of " + numChanges);
         if (n >= numChanges) {
           tabbrowser.removeProgressListener(listener);
-          resolve(n);
+          resolve();
         }
       },
     };
@@ -86,7 +85,7 @@ async function testTrackingProtectionAnimation(tabbrowser) {
   ok(!ContentBlocking.iconBox.hasAttribute("animate"), "iconBox not animating");
 
   info("Reload tracking cookies tab");
-  securityChanged = waitForSecurityChange(tabbrowser, 3);
+  securityChanged = waitForSecurityChange(tabbrowser, 4);
   tabbrowser.reload();
   await securityChanged;
 
@@ -95,7 +94,7 @@ async function testTrackingProtectionAnimation(tabbrowser) {
   await BrowserTestUtils.waitForEvent(ContentBlocking.animatedIcon, "animationend");
 
   info("Reload tracking tab");
-  securityChanged = waitForSecurityChange(tabbrowser, 4);
+  securityChanged = waitForSecurityChange(tabbrowser, 5);
   tabbrowser.selectedTab = trackingTab;
   tabbrowser.reload();
   await securityChanged;
@@ -105,27 +104,23 @@ async function testTrackingProtectionAnimation(tabbrowser) {
   await BrowserTestUtils.waitForEvent(ContentBlocking.animatedIcon, "animationend");
 
   info("Inject tracking cookie inside tracking tab");
-  securityChanged = waitForSecurityChange(tabbrowser);
-  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
+  securityChanged = waitForSecurityChange(tabbrowser, 2);
   await ContentTask.spawn(tabbrowser.selectedBrowser, {},
                           function() {
     content.postMessage("cookie", "*");
   });
-  let result = await Promise.race([securityChanged, timeoutPromise]);
-  is(result, undefined, "No securityChange events should be received");
+  await securityChanged;
 
   ok(ContentBlocking.iconBox.hasAttribute("active"), "iconBox active");
   ok(!ContentBlocking.iconBox.hasAttribute("animate"), "iconBox not animating");
 
   info("Inject tracking element inside tracking tab");
   securityChanged = waitForSecurityChange(tabbrowser);
-  timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
   await ContentTask.spawn(tabbrowser.selectedBrowser, {},
                           function() {
     content.postMessage("tracking", "*");
   });
-  result = await Promise.race([securityChanged, timeoutPromise]);
-  is(result, undefined, "No securityChange events should be received");
+  await securityChanged;
 
   ok(ContentBlocking.iconBox.hasAttribute("active"), "iconBox active");
   ok(!ContentBlocking.iconBox.hasAttribute("animate"), "iconBox not animating");
@@ -133,27 +128,23 @@ async function testTrackingProtectionAnimation(tabbrowser) {
   tabbrowser.selectedTab = trackingCookiesTab;
 
   info("Inject tracking cookie inside tracking cookies tab");
-  securityChanged = waitForSecurityChange(tabbrowser);
-  timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
+  securityChanged = waitForSecurityChange(tabbrowser, 2);
   await ContentTask.spawn(tabbrowser.selectedBrowser, {},
                           function() {
     content.postMessage("cookie", "*");
   });
-  result = await Promise.race([securityChanged, timeoutPromise]);
-  is(result, undefined, "No securityChange events should be received");
+  await securityChanged;
 
   ok(ContentBlocking.iconBox.hasAttribute("active"), "iconBox active");
   ok(!ContentBlocking.iconBox.hasAttribute("animate"), "iconBox not animating");
 
   info("Inject tracking element inside tracking cookies tab");
-  securityChanged = waitForSecurityChange(tabbrowser);
-  timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
+  securityChanged = waitForSecurityChange(tabbrowser, 2);
   await ContentTask.spawn(tabbrowser.selectedBrowser, {},
                           function() {
     content.postMessage("tracking", "*");
   });
-  result = await Promise.race([securityChanged, timeoutPromise]);
-  is(result, undefined, "No securityChange events should be received");
+  await securityChanged;
 
   ok(ContentBlocking.iconBox.hasAttribute("active"), "iconBox active");
   ok(!ContentBlocking.iconBox.hasAttribute("animate"), "iconBox not animating");

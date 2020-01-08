@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const TRACKING_PAGE = "http://tracking.example.org/browser/browser/base/content/test/trackingUI/trackingPage.html";
@@ -28,7 +27,7 @@ function waitForSecurityChange(counter) {
       onSecurityChange: (webProgress, request, oldState, state) => {
         if (--counter == 0) {
           gBrowser.removeProgressListener(webProgressListener);
-          resolve(counter);
+          resolve();
         }
       },
       onProgressChange: () => {},
@@ -68,15 +67,13 @@ async function assertSitesListed(blocked) {
 
     ok(true, "Main view was shown");
 
-    let change = waitForSecurityChange(1);
-    let timeoutPromise = new Promise(resolve => setTimeout(resolve, 500));
+    let change = waitForSecurityChange(2);
 
     await ContentTask.spawn(browser, {}, function() {
       content.postMessage("more-tracking", "*");
     });
 
-    let result = await Promise.race([change, timeoutPromise]);
-    is(result, undefined, "No securityChange events should be received");
+    await change;
 
     viewShown = BrowserTestUtils.waitForEvent(trackersView, "ViewShown");
     categoryItem.click();
