@@ -449,13 +449,6 @@ VARCACHE_PREF(
 )
 
 
-VARCACHE_PREF(
-  "layout.css.column-span.enabled",
-   layout_css_column_span_enabled,
-  bool, false
-)
-
-
 
 
 
@@ -1252,6 +1245,13 @@ PREF("preferences.allow.omt-write", bool, true)
 
 
 
+
+
+VARCACHE_PREF(
+  "browser.contentblocking.enabled",
+   browser_contentblocking_enabled,
+  bool, true
+)
 
 VARCACHE_PREF(
   "privacy.restrict3rdpartystorage.ui.enabled",
