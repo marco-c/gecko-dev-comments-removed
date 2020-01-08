@@ -2133,9 +2133,7 @@ ScriptLoader::FillCompileOptionsForRequest(const AutoJSAPI&jsapi,
 {
   
   
-  nsresult rv;
-  nsContentUtils::GetWrapperSafeScriptFilename(mDocument, aRequest->mURI,
-                                               aRequest->mURL, &rv);
+  nsresult rv = aRequest->mURI->GetSpec(aRequest->mURL);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

@@ -1263,20 +1263,6 @@ public:
 
   static bool IsUtf8OnlyPlainTextType(const nsACString& aContentType);
 
-  
-
-
-
-
-
-
-
-
-  static bool GetWrapperSafeScriptFilename(nsIDocument *aDocument,
-                                             nsIURI *aURI,
-                                             nsACString& aScriptURI,
-                                             nsresult* aRv);
-
 
   
 
