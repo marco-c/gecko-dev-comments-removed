@@ -11,20 +11,18 @@ using mozilla::SupportsThreadSafeWeakPtr;
 using mozilla::ThreadSafeWeakPtr;
 
 
-class C : public SupportsThreadSafeWeakPtr<C>
-{
-public:
+
+class C : public SupportsThreadSafeWeakPtr<C> {
+ public:
   MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(C)
   MOZ_DECLARE_REFCOUNTED_TYPENAME(C)
 
   int mNum;
 
-  C()
-    : mNum(0)
-  {}
+  C() : mNum(0) {}
 
-  ~C()
-  {
+  ~C() {
+    
     
     mNum = 0xDEAD;
   }
@@ -32,9 +30,7 @@ public:
   void act() {}
 };
 
-int
-main()
-{
+int main() {
   RefPtr<C> c1 = new C;
   MOZ_RELEASE_ASSERT(c1->mNum == 0);
 
@@ -65,6 +61,7 @@ main()
   
   
   
+  
   {
     ThreadSafeWeakPtr<C> w4local(c1);
     MOZ_RELEASE_ASSERT(w4local == c1);
@@ -73,15 +70,17 @@ main()
   
   MOZ_RELEASE_ASSERT(c1->mNum == 1);
   
+  
   MOZ_RELEASE_ASSERT(w1 == c1);
   MOZ_RELEASE_ASSERT(w2 == c1);
 
+  
   
   RefPtr<C> c2 = new C;
   c2->mNum = 2;
   {
     RefPtr<C> s2(w2);
-    MOZ_RELEASE_ASSERT(s2->mNum == 1); 
+    MOZ_RELEASE_ASSERT(s2->mNum == 1);  
   }
   w2 = c2;
   {
@@ -96,9 +95,13 @@ main()
   
   
   c1 = nullptr;
-  MOZ_RELEASE_ASSERT(!bool(w1), "Deleting an object should clear ThreadSafeWeakPtr's to it.");
-  MOZ_RELEASE_ASSERT(bool(w2), "Deleting an object should not clear ThreadSafeWeakPtr that are not pointing to it.");
+  MOZ_RELEASE_ASSERT(
+      !bool(w1), "Deleting an object should clear ThreadSafeWeakPtr's to it.");
+  MOZ_RELEASE_ASSERT(bool(w2),
+                     "Deleting an object should not clear ThreadSafeWeakPtr "
+                     "that are not pointing to it.");
 
   c2 = nullptr;
-  MOZ_RELEASE_ASSERT(!bool(w2), "Deleting an object should clear ThreadSafeWeakPtr's to it.");
+  MOZ_RELEASE_ASSERT(
+      !bool(w2), "Deleting an object should clear ThreadSafeWeakPtr's to it.");
 }

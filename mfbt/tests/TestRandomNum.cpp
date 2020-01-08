@@ -28,33 +28,29 @@
 using mozilla::Maybe;
 using mozilla::RandomUint64;
 
-static uint64_t getRandomUint64OrDie()
-{
+static uint64_t getRandomUint64OrDie() {
   Maybe<uint64_t> maybeRandomNum = RandomUint64();
-    
+
   MOZ_RELEASE_ASSERT(maybeRandomNum.isSome());
-  
+
   return maybeRandomNum.value();
 }
 
-static void TestRandomUint64()
-{ 
+static void TestRandomUint64() {
   uint64_t randomsList[NUM_RANDOMS_TO_GENERATE];
-  
-  for(uint8_t i = 0; i < NUM_RANDOMS_TO_GENERATE; ++i) {
+
+  for (uint8_t i = 0; i < NUM_RANDOMS_TO_GENERATE; ++i) {
     uint64_t randomNum = getRandomUint64OrDie();
-    
-    for(uint8_t j = 0; j < i; ++j) {
+
+    for (uint8_t j = 0; j < i; ++j) {
       MOZ_RELEASE_ASSERT(randomNum != randomsList[j]);
     }
-    
+
     randomsList[i] = randomNum;
   }
 }
 
-int
-main()
-{
+int main() {
   TestRandomUint64();
   return 0;
 }

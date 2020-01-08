@@ -12,8 +12,7 @@
 
 
 
-void TestArrayManipulation()
-{
+void TestArrayManipulation() {
   using namespace mozilla;
   SmallPointerArray<void> testArray;
 
@@ -114,8 +113,7 @@ void TestArrayManipulation()
   MOZ_RELEASE_ASSERT(testArray.ElementAt(0) == PTR1);
 }
 
-void TestRangeBasedLoops()
-{
+void TestRangeBasedLoops() {
   using namespace mozilla;
   SmallPointerArray<void> testArray;
   void* verification[3];
@@ -194,9 +192,7 @@ void TestRangeBasedLoops()
   MOZ_RELEASE_ASSERT(entries == 0);
 }
 
-int
-main()
-{
+int main() {
   TestArrayManipulation();
   TestRangeBasedLoops();
   return 0;

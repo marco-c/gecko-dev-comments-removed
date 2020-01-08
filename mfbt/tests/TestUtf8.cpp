@@ -20,9 +20,7 @@ using mozilla::IsAscii;
 using mozilla::IsValidUtf8;
 using mozilla::Utf8Unit;
 
-static void
-TestUtf8Unit()
-{
+static void TestUtf8Unit() {
   Utf8Unit c('A');
   MOZ_RELEASE_ASSERT(c.toChar() == 'A');
   MOZ_RELEASE_ASSERT(c == Utf8Unit('A'));
@@ -42,15 +40,11 @@ TestUtf8Unit()
   MOZ_RELEASE_ASSERT(first == second);
 }
 
-template<typename Char>
-struct ToUtf8Units
-{
-public:
+template <typename Char>
+struct ToUtf8Units {
+ public:
   explicit ToUtf8Units(const Char* aStart, const Char* aEnd)
-    : lead(Utf8Unit(aStart[0]))
-    , iter(aStart + 1)
-    , end(aEnd)
-  {
+      : lead(Utf8Unit(aStart[0])), iter(aStart + 1), end(aEnd) {
     MOZ_RELEASE_ASSERT(!IsAscii(aStart[0]));
   }
 
@@ -59,10 +53,9 @@ public:
   const Char* const end;
 };
 
-class AssertIfCalled
-{
-public:
-  template<typename... Args>
+class AssertIfCalled {
+ public:
+  template <typename... Args>
   void operator()(Args&&... aArgs) {
     MOZ_RELEASE_ASSERT(false, "AssertIfCalled instance was called");
   }
@@ -72,11 +65,9 @@ public:
 
 
 
-template<typename Char, size_t N>
-static void
-ExpectValidCodePoint(const Char (&aCharN)[N],
-                     char32_t aExpectedCodePoint)
-{
+template <typename Char, size_t N>
+static void ExpectValidCodePoint(const Char (&aCharN)[N],
+                                 char32_t aExpectedCodePoint) {
   MOZ_RELEASE_ASSERT(aCharN[N - 1] == 0,
                      "array must be null-terminated for |aCharN + N - 1| to "
                      "compute the value of |aIter| as altered by "
@@ -84,26 +75,21 @@ ExpectValidCodePoint(const Char (&aCharN)[N],
 
   ToUtf8Units<Char> simpleUnit(aCharN, aCharN + N - 1);
   auto simple =
-    DecodeOneUtf8CodePoint(simpleUnit.lead, &simpleUnit.iter, simpleUnit.end);
+      DecodeOneUtf8CodePoint(simpleUnit.lead, &simpleUnit.iter, simpleUnit.end);
   MOZ_RELEASE_ASSERT(simple.isSome());
   MOZ_RELEASE_ASSERT(*simple == aExpectedCodePoint);
   MOZ_RELEASE_ASSERT(simpleUnit.iter == simpleUnit.end);
 
   ToUtf8Units<Char> complexUnit(aCharN, aCharN + N - 1);
-  auto complex =
-    DecodeOneUtf8CodePoint(complexUnit.lead, &complexUnit.iter, complexUnit.end,
-                           AssertIfCalled(),
-                           AssertIfCalled(),
-                           AssertIfCalled(),
-                           AssertIfCalled(),
-                           AssertIfCalled());
+  auto complex = DecodeOneUtf8CodePoint(
+      complexUnit.lead, &complexUnit.iter, complexUnit.end, AssertIfCalled(),
+      AssertIfCalled(), AssertIfCalled(), AssertIfCalled(), AssertIfCalled());
   MOZ_RELEASE_ASSERT(complex.isSome());
   MOZ_RELEASE_ASSERT(*complex == aExpectedCodePoint);
   MOZ_RELEASE_ASSERT(complexUnit.iter == complexUnit.end);
 }
 
-enum class InvalidUtf8Reason
-{
+enum class InvalidUtf8Reason {
   BadLeadUnit,
   NotEnoughUnits,
   BadTrailingUnit,
@@ -111,15 +97,13 @@ enum class InvalidUtf8Reason
   NotShortestForm,
 };
 
-template<typename Char, size_t N>
-static void
-ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
-                             InvalidUtf8Reason aExpectedReason,
-                             uint8_t aExpectedUnitsAvailable,
-                             uint8_t aExpectedUnitsNeeded,
-                             char32_t aExpectedBadCodePoint,
-                             uint8_t aExpectedUnitsObserved)
-{
+template <typename Char, size_t N>
+static void ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
+                                         InvalidUtf8Reason aExpectedReason,
+                                         uint8_t aExpectedUnitsAvailable,
+                                         uint8_t aExpectedUnitsNeeded,
+                                         char32_t aExpectedBadCodePoint,
+                                         uint8_t aExpectedUnitsObserved) {
   MOZ_RELEASE_ASSERT(aCharN[N - 1] == 0,
                      "array must be null-terminated for |aCharN + N - 1| to "
                      "compute the value of |aIter| as altered by "
@@ -127,7 +111,7 @@ ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
 
   ToUtf8Units<Char> simpleUnit(aCharN, aCharN + N - 1);
   auto simple =
-    DecodeOneUtf8CodePoint(simpleUnit.lead, &simpleUnit.iter, simpleUnit.end);
+      DecodeOneUtf8CodePoint(simpleUnit.lead, &simpleUnit.iter, simpleUnit.end);
   MOZ_RELEASE_ASSERT(simple.isNothing());
   MOZ_RELEASE_ASSERT(static_cast<const void*>(simpleUnit.iter) == aCharN);
 
@@ -137,8 +121,7 @@ ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
   char32_t badCodePoint;
   uint8_t unitsObserved;
 
-  struct OnNotShortestForm
-  {
+  struct OnNotShortestForm {
     EnumSet<InvalidUtf8Reason>& reasons;
     char32_t& badCodePoint;
     uint8_t& unitsObserved;
@@ -151,37 +134,31 @@ ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
   };
 
   ToUtf8Units<Char> complexUnit(aCharN, aCharN + N - 1);
-  auto complex =
-    DecodeOneUtf8CodePoint(complexUnit.lead, &complexUnit.iter, complexUnit.end,
-                           [&reasons]() {
-                             reasons += InvalidUtf8Reason::BadLeadUnit;
-                           },
-                           [&reasons, &unitsAvailable, &unitsNeeded](uint8_t aUnitsAvailable,
-                                                                     uint8_t aUnitsNeeded)
-                           {
-                             reasons += InvalidUtf8Reason::NotEnoughUnits;
-                             unitsAvailable = aUnitsAvailable;
-                             unitsNeeded = aUnitsNeeded;
-                           },
-                           [&reasons, &unitsObserved](uint8_t aUnitsObserved)
-                           {
-                             reasons += InvalidUtf8Reason::BadTrailingUnit;
-                             unitsObserved = aUnitsObserved;
-                           },
-                           [&reasons, &badCodePoint, &unitsObserved](char32_t aBadCodePoint,
-                                                                     uint8_t aUnitsObserved)
-                           {
-                             reasons += InvalidUtf8Reason::BadCodePoint;
-                             badCodePoint = aBadCodePoint;
-                             unitsObserved = aUnitsObserved;
-                           },
-                           [&reasons, &badCodePoint, &unitsObserved](char32_t aBadCodePoint,
-                                                                     uint8_t aUnitsObserved)
-                           {
-                             reasons += InvalidUtf8Reason::NotShortestForm;
-                             badCodePoint = aBadCodePoint;
-                             unitsObserved = aUnitsObserved;
-                           });
+  auto complex = DecodeOneUtf8CodePoint(
+      complexUnit.lead, &complexUnit.iter, complexUnit.end,
+      [&reasons]() { reasons += InvalidUtf8Reason::BadLeadUnit; },
+      [&reasons, &unitsAvailable, &unitsNeeded](uint8_t aUnitsAvailable,
+                                                uint8_t aUnitsNeeded) {
+        reasons += InvalidUtf8Reason::NotEnoughUnits;
+        unitsAvailable = aUnitsAvailable;
+        unitsNeeded = aUnitsNeeded;
+      },
+      [&reasons, &unitsObserved](uint8_t aUnitsObserved) {
+        reasons += InvalidUtf8Reason::BadTrailingUnit;
+        unitsObserved = aUnitsObserved;
+      },
+      [&reasons, &badCodePoint, &unitsObserved](char32_t aBadCodePoint,
+                                                uint8_t aUnitsObserved) {
+        reasons += InvalidUtf8Reason::BadCodePoint;
+        badCodePoint = aBadCodePoint;
+        unitsObserved = aUnitsObserved;
+      },
+      [&reasons, &badCodePoint, &unitsObserved](char32_t aBadCodePoint,
+                                                uint8_t aUnitsObserved) {
+        reasons += InvalidUtf8Reason::NotShortestForm;
+        badCodePoint = aBadCodePoint;
+        unitsObserved = aUnitsObserved;
+      });
   MOZ_RELEASE_ASSERT(complex.isNothing());
   MOZ_RELEASE_ASSERT(static_cast<const void*>(complexUnit.iter) == aCharN);
 
@@ -191,27 +168,27 @@ ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
     alreadyIterated = true;
 
     switch (reason) {
-    case InvalidUtf8Reason::BadLeadUnit:
-      break;
+      case InvalidUtf8Reason::BadLeadUnit:
+        break;
 
-    case InvalidUtf8Reason::NotEnoughUnits:
-      MOZ_RELEASE_ASSERT(unitsAvailable == aExpectedUnitsAvailable);
-      MOZ_RELEASE_ASSERT(unitsNeeded == aExpectedUnitsNeeded);
-      break;
+      case InvalidUtf8Reason::NotEnoughUnits:
+        MOZ_RELEASE_ASSERT(unitsAvailable == aExpectedUnitsAvailable);
+        MOZ_RELEASE_ASSERT(unitsNeeded == aExpectedUnitsNeeded);
+        break;
 
-    case InvalidUtf8Reason::BadTrailingUnit:
-      MOZ_RELEASE_ASSERT(unitsObserved == aExpectedUnitsObserved);
-      break;
+      case InvalidUtf8Reason::BadTrailingUnit:
+        MOZ_RELEASE_ASSERT(unitsObserved == aExpectedUnitsObserved);
+        break;
 
-    case InvalidUtf8Reason::BadCodePoint:
-      MOZ_RELEASE_ASSERT(badCodePoint == aExpectedBadCodePoint);
-      MOZ_RELEASE_ASSERT(unitsObserved == aExpectedUnitsObserved);
-      break;
+      case InvalidUtf8Reason::BadCodePoint:
+        MOZ_RELEASE_ASSERT(badCodePoint == aExpectedBadCodePoint);
+        MOZ_RELEASE_ASSERT(unitsObserved == aExpectedUnitsObserved);
+        break;
 
-    case InvalidUtf8Reason::NotShortestForm:
-      MOZ_RELEASE_ASSERT(badCodePoint == aExpectedBadCodePoint);
-      MOZ_RELEASE_ASSERT(unitsObserved == aExpectedUnitsObserved);
-      break;
+      case InvalidUtf8Reason::NotShortestForm:
+        MOZ_RELEASE_ASSERT(badCodePoint == aExpectedBadCodePoint);
+        MOZ_RELEASE_ASSERT(unitsObserved == aExpectedUnitsObserved);
+        break;
     }
   }
 }
@@ -220,87 +197,68 @@ ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
 
 
 
-template<typename Char, size_t N>
-static void
-ExpectBadLeadUnit(const Char (&aCharN)[N])
-{
-  ExpectInvalidCodePointHelper(aCharN,
-                               InvalidUtf8Reason::BadLeadUnit,
-                               0xFF, 0xFF, 0xFFFFFFFF, 0xFF);
+template <typename Char, size_t N>
+static void ExpectBadLeadUnit(const Char (&aCharN)[N]) {
+  ExpectInvalidCodePointHelper(aCharN, InvalidUtf8Reason::BadLeadUnit, 0xFF,
+                               0xFF, 0xFFFFFFFF, 0xFF);
 }
 
-template<typename Char, size_t N>
-static void
-ExpectNotEnoughUnits(const Char (&aCharN)[N],
-                     uint8_t aExpectedUnitsAvailable,
-                     uint8_t aExpectedUnitsNeeded)
-{
-  ExpectInvalidCodePointHelper(aCharN,
-                               InvalidUtf8Reason::NotEnoughUnits,
+template <typename Char, size_t N>
+static void ExpectNotEnoughUnits(const Char (&aCharN)[N],
+                                 uint8_t aExpectedUnitsAvailable,
+                                 uint8_t aExpectedUnitsNeeded) {
+  ExpectInvalidCodePointHelper(aCharN, InvalidUtf8Reason::NotEnoughUnits,
                                aExpectedUnitsAvailable, aExpectedUnitsNeeded,
                                0xFFFFFFFF, 0xFF);
 }
 
-template<typename Char, size_t N>
-static void
-ExpectBadTrailingUnit(const Char (&aCharN)[N],
-                      uint8_t aExpectedUnitsObserved)
-{
-  ExpectInvalidCodePointHelper(aCharN,
-                               InvalidUtf8Reason::BadTrailingUnit,
-                               0xFF, 0xFF, 0xFFFFFFFF,
+template <typename Char, size_t N>
+static void ExpectBadTrailingUnit(const Char (&aCharN)[N],
+                                  uint8_t aExpectedUnitsObserved) {
+  ExpectInvalidCodePointHelper(aCharN, InvalidUtf8Reason::BadTrailingUnit, 0xFF,
+                               0xFF, 0xFFFFFFFF, aExpectedUnitsObserved);
+}
+
+template <typename Char, size_t N>
+static void ExpectNotShortestForm(const Char (&aCharN)[N],
+                                  char32_t aExpectedBadCodePoint,
+                                  uint8_t aExpectedUnitsObserved) {
+  ExpectInvalidCodePointHelper(aCharN, InvalidUtf8Reason::NotShortestForm, 0xFF,
+                               0xFF, aExpectedBadCodePoint,
                                aExpectedUnitsObserved);
 }
 
-template<typename Char, size_t N>
-static void
-ExpectNotShortestForm(const Char (&aCharN)[N],
-                      char32_t aExpectedBadCodePoint,
-                      uint8_t aExpectedUnitsObserved)
-{
-  ExpectInvalidCodePointHelper(aCharN,
-                               InvalidUtf8Reason::NotShortestForm,
-                               0xFF, 0xFF,
-                               aExpectedBadCodePoint,
+template <typename Char, size_t N>
+static void ExpectBadCodePoint(const Char (&aCharN)[N],
+                               char32_t aExpectedBadCodePoint,
+                               uint8_t aExpectedUnitsObserved) {
+  ExpectInvalidCodePointHelper(aCharN, InvalidUtf8Reason::BadCodePoint, 0xFF,
+                               0xFF, aExpectedBadCodePoint,
                                aExpectedUnitsObserved);
 }
 
-template<typename Char, size_t N>
-static void
-ExpectBadCodePoint(const Char (&aCharN)[N],
-                   char32_t aExpectedBadCodePoint,
-                   uint8_t aExpectedUnitsObserved)
-{
-  ExpectInvalidCodePointHelper(aCharN,
-                               InvalidUtf8Reason::BadCodePoint,
-                               0xFF, 0xFF,
-                               aExpectedBadCodePoint,
-                               aExpectedUnitsObserved);
-}
-
-static void
-TestIsValidUtf8()
-{
+static void TestIsValidUtf8() {
   
   static const char asciiBytes[] = u8"How about a nice game of chess?";
   MOZ_RELEASE_ASSERT(IsValidUtf8(asciiBytes, ArrayLength(asciiBytes)));
 
   static const char endNonAsciiBytes[] = u8"Life is like a 🌯";
-  MOZ_RELEASE_ASSERT(IsValidUtf8(endNonAsciiBytes, ArrayLength(endNonAsciiBytes) - 1));
+  MOZ_RELEASE_ASSERT(
+      IsValidUtf8(endNonAsciiBytes, ArrayLength(endNonAsciiBytes) - 1));
 
-  static const unsigned char badLeading[] = { 0x80 };
+  static const unsigned char badLeading[] = {0x80};
   MOZ_RELEASE_ASSERT(!IsValidUtf8(badLeading, ArrayLength(badLeading)));
 
   
 
   
-  static const char oneBytes[] = u8"A"; 
+  static const char oneBytes[] = u8"A";  
   constexpr size_t oneBytesLen = ArrayLength(oneBytes);
   static_assert(oneBytesLen == 2, "U+0041 plus nul");
   MOZ_RELEASE_ASSERT(IsValidUtf8(oneBytes, oneBytesLen));
 
   
-  static const char twoBytes[] = u8"؆"; 
+  static const char twoBytes[] = u8"؆";  
   constexpr size_t twoBytesLen = ArrayLength(twoBytes);
   static_assert(twoBytesLen == 3, "U+0606 in two bytes plus nul");
   MOZ_RELEASE_ASSERT(IsValidUtf8(twoBytes, twoBytesLen));
@@ -308,7 +266,7 @@ TestIsValidUtf8()
   ExpectValidCodePoint(twoBytes, 0x0606);
 
   
-  static const char threeBytes[] = u8"᨞"; 
+  static const char threeBytes[] = u8"᨞";  
   constexpr size_t threeBytesLen = ArrayLength(threeBytes);
   static_assert(threeBytesLen == 4, "U+1A1E in three bytes plus nul");
   MOZ_RELEASE_ASSERT(IsValidUtf8(threeBytes, threeBytesLen));
@@ -316,7 +274,8 @@ TestIsValidUtf8()
   ExpectValidCodePoint(threeBytes, 0x1A1E);
 
   
-  static const char fourBytes[] = u8"🁡"; 
+  static const char fourBytes[] =
+      u8"🁡";  
   constexpr size_t fourBytesLen = ArrayLength(fourBytes);
   static_assert(fourBytesLen == 5, "U+1F061 in four bytes plus nul");
   MOZ_RELEASE_ASSERT(IsValidUtf8(fourBytes, fourBytesLen));
@@ -324,7 +283,7 @@ TestIsValidUtf8()
   ExpectValidCodePoint(fourBytes, 0x1F061);
 
   
-  static const char maxCodePoint[] = u8"􏿿"; 
+  static const char maxCodePoint[] = u8"􏿿";  
   constexpr size_t maxCodePointLen = ArrayLength(maxCodePoint);
   static_assert(maxCodePointLen == 5, "U+10FFFF in four bytes plus nul");
   MOZ_RELEASE_ASSERT(IsValidUtf8(maxCodePoint, maxCodePointLen));
@@ -332,7 +291,8 @@ TestIsValidUtf8()
   ExpectValidCodePoint(maxCodePoint, 0x10FFFF);
 
   
-  static const unsigned char onePastMaxCodePoint[] = { 0xF4, 0x90, 0x80, 0x80, 0x0 };
+  static const unsigned char onePastMaxCodePoint[] = {0xF4, 0x90, 0x80, 0x80,
+                                                      0x0};
   constexpr size_t onePastMaxCodePointLen = ArrayLength(onePastMaxCodePoint);
   MOZ_RELEASE_ASSERT(!IsValidUtf8(onePastMaxCodePoint, onePastMaxCodePointLen));
 
@@ -343,109 +303,119 @@ TestIsValidUtf8()
   
   
 
-  static const unsigned char justBeforeSurrogates[] = { 0xED, 0x9F, 0xBF, 0x0 };
-  constexpr size_t justBeforeSurrogatesLen = ArrayLength(justBeforeSurrogates) - 1;
-  MOZ_RELEASE_ASSERT(IsValidUtf8(justBeforeSurrogates, justBeforeSurrogatesLen));
+  static const unsigned char justBeforeSurrogates[] = {0xED, 0x9F, 0xBF, 0x0};
+  constexpr size_t justBeforeSurrogatesLen =
+      ArrayLength(justBeforeSurrogates) - 1;
+  MOZ_RELEASE_ASSERT(
+      IsValidUtf8(justBeforeSurrogates, justBeforeSurrogatesLen));
 
   ExpectValidCodePoint(justBeforeSurrogates, 0xD7FF);
 
-  static const unsigned char leastSurrogate[] = { 0xED, 0xA0, 0x80, 0x0 };
+  static const unsigned char leastSurrogate[] = {0xED, 0xA0, 0x80, 0x0};
   constexpr size_t leastSurrogateLen = ArrayLength(leastSurrogate) - 1;
   MOZ_RELEASE_ASSERT(!IsValidUtf8(leastSurrogate, leastSurrogateLen));
 
   ExpectBadCodePoint(leastSurrogate, 0xD800, 3);
 
-  static const unsigned char arbitraryHighSurrogate[] = { 0xED, 0xA2, 0x87, 0x0 };
-  constexpr size_t arbitraryHighSurrogateLen = ArrayLength(arbitraryHighSurrogate) - 1;
-  MOZ_RELEASE_ASSERT(!IsValidUtf8(arbitraryHighSurrogate, arbitraryHighSurrogateLen));
+  static const unsigned char arbitraryHighSurrogate[] = {0xED, 0xA2, 0x87, 0x0};
+  constexpr size_t arbitraryHighSurrogateLen =
+      ArrayLength(arbitraryHighSurrogate) - 1;
+  MOZ_RELEASE_ASSERT(
+      !IsValidUtf8(arbitraryHighSurrogate, arbitraryHighSurrogateLen));
 
   ExpectBadCodePoint(arbitraryHighSurrogate, 0xD887, 3);
 
-  static const unsigned char arbitraryLowSurrogate[] = { 0xED, 0xB7, 0xAF, 0x0 };
-  constexpr size_t arbitraryLowSurrogateLen = ArrayLength(arbitraryLowSurrogate) - 1;
-  MOZ_RELEASE_ASSERT(!IsValidUtf8(arbitraryLowSurrogate, arbitraryLowSurrogateLen));
+  static const unsigned char arbitraryLowSurrogate[] = {0xED, 0xB7, 0xAF, 0x0};
+  constexpr size_t arbitraryLowSurrogateLen =
+      ArrayLength(arbitraryLowSurrogate) - 1;
+  MOZ_RELEASE_ASSERT(
+      !IsValidUtf8(arbitraryLowSurrogate, arbitraryLowSurrogateLen));
 
   ExpectBadCodePoint(arbitraryLowSurrogate, 0xDDEF, 3);
 
-  static const unsigned char greatestSurrogate[] = { 0xED, 0xBF, 0xBF, 0x0 };
+  static const unsigned char greatestSurrogate[] = {0xED, 0xBF, 0xBF, 0x0};
   constexpr size_t greatestSurrogateLen = ArrayLength(greatestSurrogate) - 1;
   MOZ_RELEASE_ASSERT(!IsValidUtf8(greatestSurrogate, greatestSurrogateLen));
 
   ExpectBadCodePoint(greatestSurrogate, 0xDFFF, 3);
 
-  static const unsigned char justAfterSurrogates[] = { 0xEE, 0x80, 0x80, 0x0 };
-  constexpr size_t justAfterSurrogatesLen = ArrayLength(justAfterSurrogates) - 1;
+  static const unsigned char justAfterSurrogates[] = {0xEE, 0x80, 0x80, 0x0};
+  constexpr size_t justAfterSurrogatesLen =
+      ArrayLength(justAfterSurrogates) - 1;
   MOZ_RELEASE_ASSERT(IsValidUtf8(justAfterSurrogates, justAfterSurrogatesLen));
 
   ExpectValidCodePoint(justAfterSurrogates, 0xE000);
 }
 
-static void
-TestDecodeOneValidUtf8CodePoint()
-{
+static void TestDecodeOneValidUtf8CodePoint() {
   
   
 
   
 
-  ExpectValidCodePoint(u8"", 0x80); 
-  ExpectValidCodePoint(u8"©", 0xA9); 
-  ExpectValidCodePoint(u8"¶", 0xB6); 
-  ExpectValidCodePoint(u8"¾", 0xBE); 
-  ExpectValidCodePoint(u8"÷", 0xF7); 
-  ExpectValidCodePoint(u8"ÿ", 0xFF); 
-  ExpectValidCodePoint(u8"Ā", 0x100); 
-  ExpectValidCodePoint(u8"Ĳ", 0x132); 
-  ExpectValidCodePoint(u8"ͼ", 0x37C); 
-  ExpectValidCodePoint(u8"Ӝ", 0x4DC); 
-  ExpectValidCodePoint(u8"۩", 0x6E9); 
-  ExpectValidCodePoint(u8"߿", 0x7FF); 
+  ExpectValidCodePoint(u8"", 0x80);  
+  ExpectValidCodePoint(u8"©", 0xA9);   
+  ExpectValidCodePoint(u8"¶", 0xB6);   
+  ExpectValidCodePoint(u8"¾", 0xBE);   
+  ExpectValidCodePoint(u8"÷", 0xF7);   
+  ExpectValidCodePoint(u8"ÿ", 0xFF);   
+  ExpectValidCodePoint(u8"Ā", 0x100);  
+  ExpectValidCodePoint(u8"Ĳ", 0x132);  
+  ExpectValidCodePoint(u8"ͼ", 0x37C);  
+  ExpectValidCodePoint(u8"Ӝ",
+                       0x4DC);  
+  ExpectValidCodePoint(u8"۩", 0x6E9);   
+  ExpectValidCodePoint(u8"߿", 0x7FF);  
 
   
 
-  ExpectValidCodePoint(u8"ࠀ", 0x800); 
-  ExpectValidCodePoint(u8"ࡁ", 0x841); 
-  ExpectValidCodePoint(u8"ࣿ", 0x8FF); 
-  ExpectValidCodePoint(u8"ஆ", 0xB86); 
-  ExpectValidCodePoint(u8"༃", 0xF03); 
-  ExpectValidCodePoint(u8"࿉", 0xFC9); 
-  ExpectValidCodePoint(u8"ဪ", 0x102A); 
-  ExpectValidCodePoint(u8"ᚏ", 0x168F); 
-  ExpectValidCodePoint("\xE2\x80\xA8", 0x2028); 
-  ExpectValidCodePoint("\xE2\x80\xA9", 0x2029); 
-  ExpectValidCodePoint(u8"☬", 0x262C); 
-  ExpectValidCodePoint(u8"㊮", 0x32AE); 
-  ExpectValidCodePoint(u8"㏖", 0x33D6); 
-  ExpectValidCodePoint(u8"ꔄ", 0xA504); 
-  ExpectValidCodePoint(u8"ퟕ", 0xD7D5); 
-  ExpectValidCodePoint(u8"퟿", 0xD7FF); 
-  ExpectValidCodePoint(u8"", 0xE000); 
-  ExpectValidCodePoint(u8"鱗", 0xF9F2); 
-  ExpectValidCodePoint(u8"﷽", 0xFDFD); 
-  ExpectValidCodePoint(u8"￿", 0xFFFF); 
+  ExpectValidCodePoint(u8"ࠀ", 0x800);    
+  ExpectValidCodePoint(u8"ࡁ", 0x841);    
+  ExpectValidCodePoint(u8"ࣿ", 0x8FF);  
+  ExpectValidCodePoint(u8"ஆ", 0xB86);    
+  ExpectValidCodePoint(u8"༃",
+                       0xF03);  
+  ExpectValidCodePoint(
+      u8"࿉",
+      0xFC9);  
+               
+  ExpectValidCodePoint(u8"ဪ", 0x102A);           
+  ExpectValidCodePoint(u8"ᚏ", 0x168F);           
+  ExpectValidCodePoint("\xE2\x80\xA8", 0x2028);  
+  ExpectValidCodePoint("\xE2\x80\xA9",
+                       0x2029);           
+  ExpectValidCodePoint(u8"☬", 0x262C);    
+  ExpectValidCodePoint(u8"㊮", 0x32AE);   
+  ExpectValidCodePoint(u8"㏖", 0x33D6);   
+  ExpectValidCodePoint(u8"ꔄ", 0xA504);    
+  ExpectValidCodePoint(u8"ퟕ", 0xD7D5);   
+  ExpectValidCodePoint(u8"퟿", 0xD7FF);  
+  ExpectValidCodePoint(u8"", 0xE000);    
+  ExpectValidCodePoint(u8"鱗", 0xF9F2);   
+  ExpectValidCodePoint(
+      u8"﷽", 0xFDFD);  
+  ExpectValidCodePoint(u8"￿", 0xFFFF);  
 
   
-  ExpectValidCodePoint(u8"𐀀", 0x10000); 
-  ExpectValidCodePoint(u8"𔑀", 0x14440); 
-  ExpectValidCodePoint(u8"𝛗", 0x1D6D7); 
-  ExpectValidCodePoint(u8"💩", 0x1F4A9); 
-  ExpectValidCodePoint(u8"🔫", 0x1F52B); 
-  ExpectValidCodePoint(u8"🥌", 0x1F94C); 
-  ExpectValidCodePoint(u8"🥏", 0x1F94F); 
-  ExpectValidCodePoint(u8"𠍆", 0x20346); 
-  ExpectValidCodePoint(u8"𡠺", 0x2183A); 
-  ExpectValidCodePoint(u8"񁟶", 0x417F6); 
-  ExpectValidCodePoint(u8"񾠶", 0x7E836); 
-  ExpectValidCodePoint(u8"󾽧", 0xFEF67); 
-  ExpectValidCodePoint(u8"􏿿", 0x10FFFF); 
+  ExpectValidCodePoint(u8"𐀀", 0x10000);      
+  ExpectValidCodePoint(u8"𔑀", 0x14440);   
+  ExpectValidCodePoint(u8"𝛗", 0x1D6D7);      
+  ExpectValidCodePoint(u8"💩", 0x1F4A9);      
+  ExpectValidCodePoint(u8"🔫", 0x1F52B);      
+  ExpectValidCodePoint(u8"🥌", 0x1F94C);   
+  ExpectValidCodePoint(u8"🥏", 0x1F94F);   
+  ExpectValidCodePoint(u8"𠍆", 0x20346);     
+  ExpectValidCodePoint(u8"𡠺", 0x2183A);     
+  ExpectValidCodePoint(u8"񁟶", 0x417F6);   
+  ExpectValidCodePoint(u8"񾠶", 0x7E836);   
+  ExpectValidCodePoint(u8"󾽧", 0xFEF67);      
+  ExpectValidCodePoint(u8"􏿿", 0x10FFFF);  
 }
 
-static void
-TestDecodeBadLeadUnit()
-{
+static void TestDecodeBadLeadUnit() {
   
 
-  unsigned char badLead[] = { '\0', '\0' };
+  unsigned char badLead[] = {'\0', '\0'};
 
   for (uint8_t lead : IntegerRange(0b1000'0000, 0b1100'0000)) {
     badLead[0] = lead;
@@ -466,13 +436,11 @@ TestDecodeBadLeadUnit()
   }
 }
 
-static void
-TestTooFewOrBadTrailingUnits()
-{
+static void TestTooFewOrBadTrailingUnits() {
   
 
-  char truncatedTwo[] = { '\0', '\0' };
-  char badTrailTwo[] = { '\0', '\0', '\0' };
+  char truncatedTwo[] = {'\0', '\0'};
+  char badTrailTwo[] = {'\0', '\0', '\0'};
 
   for (uint8_t lead : IntegerRange(0b1100'0000, 0b1110'0000)) {
     truncatedTwo[0] = lead;
@@ -492,9 +460,9 @@ TestTooFewOrBadTrailingUnits()
 
   
 
-  char truncatedThreeOne[] = { '\0', '\0' };
-  char truncatedThreeTwo[] = { '\0', '\0', '\0' };
-  unsigned char badTrailThree[] = { '\0', '\0', '\0', '\0' };
+  char truncatedThreeOne[] = {'\0', '\0'};
+  char truncatedThreeTwo[] = {'\0', '\0', '\0'};
+  unsigned char badTrailThree[] = {'\0', '\0', '\0', '\0'};
 
   for (uint8_t lead : IntegerRange(0b1110'0000, 0b1111'0000)) {
     truncatedThreeOne[0] = lead;
@@ -504,7 +472,7 @@ TestTooFewOrBadTrailingUnits()
     ExpectNotEnoughUnits(truncatedThreeTwo, 2, 3);
 
     badTrailThree[0] = lead;
-    badTrailThree[2] = 0b1011'1111; 
+    badTrailThree[2] = 0b1011'1111;  
     for (uint8_t mid : IntegerRange(0b0000'0000, 0b1000'0000)) {
       badTrailThree[1] = mid;
       ExpectBadTrailingUnit(badTrailThree, 2);
@@ -543,11 +511,11 @@ TestTooFewOrBadTrailingUnits()
 
   
 
-  char truncatedFourOne[] = { '\0', '\0' };
-  char truncatedFourTwo[] = { '\0', '\0', '\0' };
-  char truncatedFourThree[] = { '\0', '\0', '\0', '\0' };
+  char truncatedFourOne[] = {'\0', '\0'};
+  char truncatedFourTwo[] = {'\0', '\0', '\0'};
+  char truncatedFourThree[] = {'\0', '\0', '\0', '\0'};
 
-  unsigned char badTrailFour[] = { '\0', '\0', '\0', '\0', '\0' };
+  unsigned char badTrailFour[] = {'\0', '\0', '\0', '\0', '\0'};
 
   for (uint8_t lead : IntegerRange(0b1111'0000, 0b1111'1000)) {
     truncatedFourOne[0] = lead;
@@ -560,7 +528,7 @@ TestTooFewOrBadTrailingUnits()
     ExpectNotEnoughUnits(truncatedFourThree, 3, 4);
 
     badTrailFour[0] = lead;
-    badTrailFour[2] = badTrailFour[3] = 0b1011'1111; 
+    badTrailFour[2] = badTrailFour[3] = 0b1011'1111;  
     for (uint8_t second : IntegerRange(0b0000'0000, 0b1000'0000)) {
       badTrailFour[1] = second;
       ExpectBadTrailingUnit(badTrailFour, 2);
@@ -578,7 +546,7 @@ TestTooFewOrBadTrailingUnits()
       } while (true);
     }
 
-    badTrailFour[1] = badTrailFour[3] = 0b1011'1111; 
+    badTrailFour[1] = badTrailFour[3] = 0b1011'1111;  
     for (uint8_t third : IntegerRange(0b0000'0000, 0b1000'0000)) {
       badTrailFour[2] = third;
       ExpectBadTrailingUnit(badTrailFour, 3);
@@ -616,18 +584,16 @@ TestTooFewOrBadTrailingUnits()
   }
 }
 
-static void
-TestBadSurrogate()
-{
+static void TestBadSurrogate() {
   
 
-  ExpectValidCodePoint("\xED\x9F\xBF", 0xD7FF); 
-  ExpectValidCodePoint("\xEE\x80\x80", 0xE000); 
+  ExpectValidCodePoint("\xED\x9F\xBF", 0xD7FF);  
+  ExpectValidCodePoint("\xEE\x80\x80", 0xE000);  
 
   
   
 
-  char badSurrogate[] = { '\xED', '\0', '\0', '\0' };
+  char badSurrogate[] = {'\xED', '\0', '\0', '\0'};
 
   for (char32_t c = 0xD800; c < 0xE000; c++) {
     badSurrogate[1] = 0b1000'0000 ^ ((c & 0b1111'1100'0000) >> 6);
@@ -637,12 +603,10 @@ TestBadSurrogate()
   }
 }
 
-static void
-TestBadTooBig()
-{
+static void TestBadTooBig() {
   
 
-  ExpectValidCodePoint("\xF4\x8F\xBF\xBF", 0x10'FFFF); 
+  ExpectValidCodePoint("\xF4\x8F\xBF\xBF", 0x10'FFFF);  
 
   
   
@@ -651,32 +615,31 @@ TestBadTooBig()
   
   
 
-  char tooLargeCodePoint[] = { '\0', '\0', '\0', '\0', '\0' };
+  char tooLargeCodePoint[] = {'\0', '\0', '\0', '\0', '\0'};
 
   for (char32_t c = 0x11'0000; c < (1 << 21); c++) {
-    tooLargeCodePoint[0] = 0b1111'0000 ^ ((c & 0b1'1100'0000'0000'0000'0000) >> 18);
-    tooLargeCodePoint[1] = 0b1000'0000 ^ ((c & 0b0'0011'1111'0000'0000'0000) >> 12);
-    tooLargeCodePoint[2] = 0b1000'0000 ^ ((c & 0b0'0000'0000'1111'1100'0000) >> 6);
+    tooLargeCodePoint[0] =
+        0b1111'0000 ^ ((c & 0b1'1100'0000'0000'0000'0000) >> 18);
+    tooLargeCodePoint[1] =
+        0b1000'0000 ^ ((c & 0b0'0011'1111'0000'0000'0000) >> 12);
+    tooLargeCodePoint[2] =
+        0b1000'0000 ^ ((c & 0b0'0000'0000'1111'1100'0000) >> 6);
     tooLargeCodePoint[3] = 0b1000'0000 ^ ((c & 0b0'0000'0000'0000'0011'1111));
 
     ExpectBadCodePoint(tooLargeCodePoint, c, 4);
   }
 }
 
-static void
-TestBadCodePoint()
-{
+static void TestBadCodePoint() {
   TestBadSurrogate();
   TestBadTooBig();
 }
 
-static void
-TestNotShortestForm()
-{
+static void TestNotShortestForm() {
   {
     
 
-    char oneInTwo[] = { '\0', '\0', '\0' };
+    char oneInTwo[] = {'\0', '\0', '\0'};
 
     for (char32_t c = '\0'; c < 0x80; c++) {
       oneInTwo[0] = 0b1100'0000 ^ ((c & 0b0111'1100'0000) >> 6);
@@ -687,7 +650,7 @@ TestNotShortestForm()
 
     
 
-    char oneInThree[] = { '\0', '\0', '\0', '\0' };
+    char oneInThree[] = {'\0', '\0', '\0', '\0'};
 
     for (char32_t c = '\0'; c < 0x80; c++) {
       oneInThree[0] = 0b1110'0000 ^ ((c & 0b1111'0000'0000'0000) >> 12);
@@ -699,7 +662,7 @@ TestNotShortestForm()
 
     
 
-    char oneInFour[] = { '\0', '\0', '\0', '\0', '\0' };
+    char oneInFour[] = {'\0', '\0', '\0', '\0', '\0'};
 
     for (char32_t c = '\0'; c < 0x80; c++) {
       oneInFour[0] = 0b1111'0000 ^ ((c & 0b1'1100'0000'0000'0000'0000) >> 18);
@@ -714,7 +677,7 @@ TestNotShortestForm()
   {
     
 
-    char twoInThree[] = { '\0', '\0', '\0', '\0' };
+    char twoInThree[] = {'\0', '\0', '\0', '\0'};
 
     for (char32_t c = 0x80; c < 0x800; c++) {
       twoInThree[0] = 0b1110'0000 ^ ((c & 0b1111'0000'0000'0000) >> 12);
@@ -726,7 +689,7 @@ TestNotShortestForm()
 
     
 
-    char twoInFour[] = { '\0', '\0', '\0', '\0', '\0' };
+    char twoInFour[] = {'\0', '\0', '\0', '\0', '\0'};
 
     for (char32_t c = 0x80; c < 0x800; c++) {
       twoInFour[0] = 0b1111'0000 ^ ((c & 0b1'1100'0000'0000'0000'0000) >> 18);
@@ -741,7 +704,7 @@ TestNotShortestForm()
   {
     
 
-    char threeInFour[] = { '\0', '\0', '\0', '\0', '\0' };
+    char threeInFour[] = {'\0', '\0', '\0', '\0', '\0'};
 
     for (char32_t c = 0x800; c < 0x1'0000; c++) {
       threeInFour[0] = 0b1111'0000 ^ ((c & 0b1'1100'0000'0000'0000'0000) >> 18);
@@ -754,25 +717,19 @@ TestNotShortestForm()
   }
 }
 
-static void
-TestDecodeOneInvalidUtf8CodePoint()
-{
+static void TestDecodeOneInvalidUtf8CodePoint() {
   TestDecodeBadLeadUnit();
   TestTooFewOrBadTrailingUnits();
   TestBadCodePoint();
   TestNotShortestForm();
 }
 
-static void
-TestDecodeOneUtf8CodePoint()
-{
+static void TestDecodeOneUtf8CodePoint() {
   TestDecodeOneValidUtf8CodePoint();
   TestDecodeOneInvalidUtf8CodePoint();
 }
 
-int
-main()
-{
+int main() {
   TestUtf8Unit();
   TestIsValidUtf8();
   TestDecodeOneUtf8CodePoint();

@@ -29,16 +29,10 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
 
-enum class BMPWithinICO
-{
-  NO,
-  YES
-};
+enum class BMPWithinICO { NO, YES };
 
-static void
-CheckMetadata(const ImageTestCase& aTestCase,
-              BMPWithinICO aBMPWithinICO = BMPWithinICO::NO)
-{
+static void CheckMetadata(const ImageTestCase& aTestCase,
+                          BMPWithinICO aBMPWithinICO = BMPWithinICO::NO) {
   nsCOMPtr<nsIInputStream> inputStream = LoadFile(aTestCase.mPath);
   ASSERT_TRUE(inputStream != nullptr);
 
@@ -55,13 +49,12 @@ CheckMetadata(const ImageTestCase& aTestCase,
   sourceBuffer->Complete(NS_OK);
 
   
-  DecoderType decoderType =
-    DecoderFactory::GetDecoderType(aTestCase.mMimeType);
+  DecoderType decoderType = DecoderFactory::GetDecoderType(aTestCase.mMimeType);
   RefPtr<Decoder> decoder =
-    DecoderFactory::CreateAnonymousMetadataDecoder(decoderType, sourceBuffer);
+      DecoderFactory::CreateAnonymousMetadataDecoder(decoderType, sourceBuffer);
   ASSERT_TRUE(decoder != nullptr);
   RefPtr<IDecodingTask> task =
-    new AnonymousDecodingTask(WrapNotNull(decoder),  false);
+      new AnonymousDecodingTask(WrapNotNull(decoder),  false);
 
   if (aBMPWithinICO == BMPWithinICO::YES) {
     static_cast<nsBMPDecoder*>(decoder.get())->SetIsWithinICO();
@@ -73,9 +66,9 @@ CheckMetadata(const ImageTestCase& aTestCase,
   
   
   Progress metadataProgress = decoder->TakeProgress();
-  EXPECT_TRUE(0 == (metadataProgress & ~(FLAG_SIZE_AVAILABLE |
-                                         FLAG_HAS_TRANSPARENCY |
-                                         FLAG_IS_ANIMATED)));
+  EXPECT_TRUE(
+      0 == (metadataProgress &
+            ~(FLAG_SIZE_AVAILABLE | FLAG_HAS_TRANSPARENCY | FLAG_IS_ANIMATED)));
 
   
   if (aTestCase.mFlags & TEST_CASE_HAS_ERROR) {
@@ -98,21 +91,22 @@ CheckMetadata(const ImageTestCase& aTestCase,
     EXPECT_EQ(aTestCase.mSize.height, metadataSize.height);
   }
 
-  bool expectTransparency = aBMPWithinICO == BMPWithinICO::YES
-                          ? true
-                          : bool(aTestCase.mFlags & TEST_CASE_IS_TRANSPARENT);
+  bool expectTransparency =
+      aBMPWithinICO == BMPWithinICO::YES
+          ? true
+          : bool(aTestCase.mFlags & TEST_CASE_IS_TRANSPARENT);
   EXPECT_EQ(expectTransparency, bool(metadataProgress & FLAG_HAS_TRANSPARENCY));
 
   EXPECT_EQ(bool(aTestCase.mFlags & TEST_CASE_IS_ANIMATED),
             bool(metadataProgress & FLAG_IS_ANIMATED));
 
   
-  decoder =
-    DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer, Nothing(),
-                                           DecoderFlags::FIRST_FRAME_ONLY,
-                                           DefaultSurfaceFlags());
+  decoder = DecoderFactory::CreateAnonymousDecoder(
+      decoderType, sourceBuffer, Nothing(), DecoderFlags::FIRST_FRAME_ONLY,
+      DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
-  task = new AnonymousDecodingTask(WrapNotNull(decoder),  false);
+  task =
+      new AnonymousDecodingTask(WrapNotNull(decoder),  false);
 
   if (aBMPWithinICO == BMPWithinICO::YES) {
     static_cast<nsBMPDecoder*>(decoder.get())->SetIsWithinICO();
@@ -140,45 +134,43 @@ CheckMetadata(const ImageTestCase& aTestCase,
               (fullProgress & FLAG_IS_ANIMATED));
 }
 
-class ImageDecoderMetadata : public ::testing::Test
-{
-protected:
+class ImageDecoderMetadata : public ::testing::Test {
+ protected:
   AutoInitializeImageLib mInit;
 };
 
 TEST_F(ImageDecoderMetadata, PNG) { CheckMetadata(GreenPNGTestCase()); }
-TEST_F(ImageDecoderMetadata, TransparentPNG) { CheckMetadata(TransparentPNGTestCase()); }
+TEST_F(ImageDecoderMetadata, TransparentPNG) {
+  CheckMetadata(TransparentPNGTestCase());
+}
 TEST_F(ImageDecoderMetadata, GIF) { CheckMetadata(GreenGIFTestCase()); }
-TEST_F(ImageDecoderMetadata, TransparentGIF) { CheckMetadata(TransparentGIFTestCase()); }
+TEST_F(ImageDecoderMetadata, TransparentGIF) {
+  CheckMetadata(TransparentGIFTestCase());
+}
 TEST_F(ImageDecoderMetadata, JPG) { CheckMetadata(GreenJPGTestCase()); }
 TEST_F(ImageDecoderMetadata, BMP) { CheckMetadata(GreenBMPTestCase()); }
 TEST_F(ImageDecoderMetadata, ICO) { CheckMetadata(GreenICOTestCase()); }
 TEST_F(ImageDecoderMetadata, Icon) { CheckMetadata(GreenIconTestCase()); }
 TEST_F(ImageDecoderMetadata, WebP) { CheckMetadata(GreenWebPTestCase()); }
 
-TEST_F(ImageDecoderMetadata, AnimatedGIF)
-{
+TEST_F(ImageDecoderMetadata, AnimatedGIF) {
   CheckMetadata(GreenFirstFrameAnimatedGIFTestCase());
 }
 
-TEST_F(ImageDecoderMetadata, AnimatedPNG)
-{
+TEST_F(ImageDecoderMetadata, AnimatedPNG) {
   CheckMetadata(GreenFirstFrameAnimatedPNGTestCase());
 }
 
-TEST_F(ImageDecoderMetadata, FirstFramePaddingGIF)
-{
+TEST_F(ImageDecoderMetadata, FirstFramePaddingGIF) {
   CheckMetadata(FirstFramePaddingGIFTestCase());
 }
 
-TEST_F(ImageDecoderMetadata, TransparentIfWithinICOBMPNotWithinICO)
-{
+TEST_F(ImageDecoderMetadata, TransparentIfWithinICOBMPNotWithinICO) {
   CheckMetadata(TransparentIfWithinICOBMPTestCase(TEST_CASE_DEFAULT_FLAGS),
                 BMPWithinICO::NO);
 }
 
-TEST_F(ImageDecoderMetadata, TransparentIfWithinICOBMPWithinICO)
-{
+TEST_F(ImageDecoderMetadata, TransparentIfWithinICOBMPWithinICO) {
   CheckMetadata(TransparentIfWithinICOBMPTestCase(TEST_CASE_IS_TRANSPARENT),
                 BMPWithinICO::YES);
 }
@@ -188,13 +180,11 @@ TEST_F(ImageDecoderMetadata, RLE8BMP) { CheckMetadata(RLE8BMPTestCase()); }
 
 TEST_F(ImageDecoderMetadata, Corrupt) { CheckMetadata(CorruptTestCase()); }
 
-TEST_F(ImageDecoderMetadata, NoFrameDelayGIF)
-{
+TEST_F(ImageDecoderMetadata, NoFrameDelayGIF) {
   CheckMetadata(NoFrameDelayGIFTestCase());
 }
 
-TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode)
-{
+TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode) {
   ImageTestCase testCase = NoFrameDelayGIFTestCase();
 
   
@@ -203,8 +193,8 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode)
   
 
   
-  RefPtr<Image> image =
-    ImageFactory::CreateAnonymousImage(nsDependentCString(testCase.mMimeType));
+  RefPtr<Image> image = ImageFactory::CreateAnonymousImage(
+      nsDependentCString(testCase.mMimeType));
   ASSERT_TRUE(!image->HasError());
 
   nsCOMPtr<nsIInputStream> inputStream = LoadFile(testCase.mPath);
@@ -228,9 +218,8 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode)
   tracker->SyncNotifyProgress(FLAG_LOAD_COMPLETE);
 
   
-  RefPtr<SourceSurface> surface =
-    image->GetFrame(imgIContainer::FRAME_CURRENT,
-                    imgIContainer::FLAG_SYNC_DECODE);
+  RefPtr<SourceSurface> surface = image->GetFrame(
+      imgIContainer::FRAME_CURRENT, imgIContainer::FLAG_SYNC_DECODE);
 
   
   IntSize imageSize(0, 0);
@@ -249,11 +238,10 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode)
 
   
   LookupResult result =
-    SurfaceCache::Lookup(ImageKey(image.get()),
-                         RasterSurfaceKey(imageSize,
-                                          DefaultSurfaceFlags(),
-                                          PlaybackType::eAnimated),
-                          true);
+      SurfaceCache::Lookup(ImageKey(image.get()),
+                           RasterSurfaceKey(imageSize, DefaultSurfaceFlags(),
+                                            PlaybackType::eAnimated),
+                            true);
   ASSERT_EQ(MatchType::EXACT, result.Type());
 
   EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));

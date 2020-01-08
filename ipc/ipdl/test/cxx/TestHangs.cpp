@@ -2,7 +2,7 @@
 
 #include "TestHangs.h"
 
-#include "IPDLUnitTests.h"      
+#include "IPDLUnitTests.h"  
 
 using base::KillProcess;
 
@@ -13,142 +13,117 @@ namespace _ipdltest {
 
 
 TestHangsParent::TestHangsParent()
-  : mDetectedHang(false)
-  , mNumAnswerStackFrame(0)
-{
-    MOZ_COUNT_CTOR(TestHangsParent);
+    : mDetectedHang(false), mNumAnswerStackFrame(0) {
+  MOZ_COUNT_CTOR(TestHangsParent);
 }
 
-TestHangsParent::~TestHangsParent()
-{
-    MOZ_COUNT_DTOR(TestHangsParent);
+TestHangsParent::~TestHangsParent() { MOZ_COUNT_DTOR(TestHangsParent); }
+
+void TestHangsParent::Main() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  if (!SendStart()) fail("sending Start");
+
+  
+  
+  
+  
+  
+  
+  
+  PR_Sleep(5000);
+
+  
+  
+  
+  if (CallStackFrame() && mDetectedHang) fail("should have timed out!");
+
+  
 }
 
-void
-TestHangsParent::Main()
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+bool TestHangsParent::ShouldContinueFromReplyTimeout() {
+  mDetectedHang = true;
 
-    
-    if (!SendStart())
-        fail("sending Start");
+  
+  
+  
 
-    
-    
-    
-    
-    
-    
-    
-    PR_Sleep(5000);
+  PR_Sleep(5000);
 
-    
-    
-    
-    if (CallStackFrame() && mDetectedHang)
-        fail("should have timed out!");
-
-    
-}
-
-bool
-TestHangsParent::ShouldContinueFromReplyTimeout()
-{
-    mDetectedHang = true;
-
-    
-    
-    
-
-    PR_Sleep(5000);
-
-    
-    
-    MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
+  
+  
+  MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
       "_ipdltest::TestHangsParent::CleanUp", this, &TestHangsParent::CleanUp));
 
-    GetIPCChannel()->CloseWithTimeout();
+  GetIPCChannel()->CloseWithTimeout();
 
-    return false;
+  return false;
 }
 
-mozilla::ipc::IPCResult
-TestHangsParent::AnswerStackFrame()
-{
-    ++mNumAnswerStackFrame;
+mozilla::ipc::IPCResult TestHangsParent::AnswerStackFrame() {
+  ++mNumAnswerStackFrame;
 
-    
+  
 
-    if (mNumAnswerStackFrame == 1) {
-        if (CallStackFrame()) {
-          fail("should have timed out!");
-        }
-    } else if (mNumAnswerStackFrame == 2) {
-        
-        
-        SetReplyTimeoutMs(2);
-
-        if (CallHang())
-            fail("should have timed out!");
-    } else {
-        fail("unexpected state");
+  if (mNumAnswerStackFrame == 1) {
+    if (CallStackFrame()) {
+      fail("should have timed out!");
     }
+  } else if (mNumAnswerStackFrame == 2) {
+    
+    
+    SetReplyTimeoutMs(2);
 
-    return IPC_OK();
+    if (CallHang()) fail("should have timed out!");
+  } else {
+    fail("unexpected state");
+  }
+
+  return IPC_OK();
 }
 
-void
-TestHangsParent::CleanUp()
-{
-    ipc::ScopedProcessHandle otherProcessHandle;
-    if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle.rwget())) {
-        fail("couldn't open child process");
-    } else {
-        if (!KillProcess(otherProcessHandle, 0, false)) {
-            fail("terminating child process");
-        }
+void TestHangsParent::CleanUp() {
+  ipc::ScopedProcessHandle otherProcessHandle;
+  if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle.rwget())) {
+    fail("couldn't open child process");
+  } else {
+    if (!KillProcess(otherProcessHandle, 0, false)) {
+      fail("terminating child process");
     }
-    Close();
+  }
+  Close();
 }
 
 
 
 
+TestHangsChild::TestHangsChild() { MOZ_COUNT_CTOR(TestHangsChild); }
 
-TestHangsChild::TestHangsChild()
-{
-    MOZ_COUNT_CTOR(TestHangsChild);
+TestHangsChild::~TestHangsChild() { MOZ_COUNT_DTOR(TestHangsChild); }
+
+mozilla::ipc::IPCResult TestHangsChild::AnswerHang() {
+  puts(" (child process is 'hanging' now)");
+
+  
+  
+  
+  PR_Sleep(1000);
+
+  return IPC_OK();
 }
 
-TestHangsChild::~TestHangsChild()
-{
-    MOZ_COUNT_DTOR(TestHangsChild);
-}
-
-mozilla::ipc::IPCResult
-TestHangsChild::AnswerHang()
-{
-    puts(" (child process is 'hanging' now)");
-
-    
-    
-    
-    PR_Sleep(1000);
-
-    return IPC_OK();
-}
-
-} 
-} 
+}  
+}  

@@ -15,12 +15,10 @@ using mozilla::SegmentedVector;
 
 
 
-class InfallibleAllocPolicy
-{
-public:
+class InfallibleAllocPolicy {
+ public:
   template <typename T>
-  T* pod_malloc(size_t aNumElems)
-  {
+  T* pod_malloc(size_t aNumElems) {
     if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
       MOZ_CRASH("TestSegmentedVector.cpp: overflow");
     }
@@ -32,7 +30,9 @@ public:
   }
 
   template <typename T>
-  void free_(T* aPtr, size_t aNumElems = 0) { free(aPtr); }
+  void free_(T* aPtr, size_t aNumElems = 0) {
+    free(aPtr);
+  }
 };
 
 
@@ -43,8 +43,7 @@ public:
 static int gDummy;
 
 
-void TestBasics()
-{
+void TestBasics() {
   
   typedef SegmentedVector<int, 1024, InfallibleAllocPolicy> MyVector;
   MyVector v;
@@ -54,7 +53,7 @@ void TestBasics()
 
   
   i = 0;
-  for ( ; i < 100; i++) {
+  for (; i < 100; i++) {
     gDummy = v.Append(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
@@ -68,7 +67,7 @@ void TestBasics()
   MOZ_RELEASE_ASSERT(n == 100);
 
   
-  for ( ; i < 1000; i++) {
+  for (; i < 1000; i++) {
     v.InfallibleAppend(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
@@ -127,19 +126,17 @@ static size_t gNumCopyCtors;
 static size_t gNumMoveCtors;
 static size_t gNumDtors;
 
-struct NonPOD
-{
-  NonPOD()                { gNumDefaultCtors++; }
-  explicit NonPOD(int x)  { gNumExplicitCtors++; }
-  NonPOD(NonPOD&)         { gNumCopyCtors++; }
-  NonPOD(NonPOD&&)        { gNumMoveCtors++; }
-  ~NonPOD()               { gNumDtors++; }
+struct NonPOD {
+  NonPOD() { gNumDefaultCtors++; }
+  explicit NonPOD(int x) { gNumExplicitCtors++; }
+  NonPOD(NonPOD&) { gNumCopyCtors++; }
+  NonPOD(NonPOD&&) { gNumMoveCtors++; }
+  ~NonPOD() { gNumDtors++; }
 };
 
 
 
-void TestConstructorsAndDestructors()
-{
+void TestConstructorsAndDestructors() {
   size_t defaultCtorCalls = 0;
   size_t explicitCtorCalls = 0;
   size_t copyCtorCalls = 0;
@@ -150,25 +147,25 @@ void TestConstructorsAndDestructors()
     static const size_t segmentSize = 64;
 
     
-    NonPOD x(1);                          
+    NonPOD x(1);  
     explicitCtorCalls++;
     SegmentedVector<NonPOD, segmentSize, InfallibleAllocPolicy> v;
-                                          
+    
     MOZ_RELEASE_ASSERT(v.IsEmpty());
-    gDummy = v.Append(x);                 
+    gDummy = v.Append(x);  
     copyCtorCalls++;
-    NonPOD y(1);                          
+    NonPOD y(1);  
     explicitCtorCalls++;
     gDummy = v.Append(std::move(y));  
     moveCtorCalls++;
-    NonPOD z(1);                          
+    NonPOD z(1);  
     explicitCtorCalls++;
-    v.InfallibleAppend(std::move(z)); 
+    v.InfallibleAppend(std::move(z));  
     moveCtorCalls++;
-    v.PopLast();                          
+    v.PopLast();  
     dtorCalls++;
     MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
-    v.Clear();                            
+    v.Clear();  
     dtorCalls += 2;
 
     
@@ -181,7 +178,7 @@ void TestConstructorsAndDestructors()
 
     size_t nonFullLastSegmentSize = segmentSize - 1;
     for (size_t i = 0; i < nonFullLastSegmentSize; ++i) {
-      gDummy = v.Append(x);     
+      gDummy = v.Append(x);  
       copyCtorCalls++;
     }
     MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
@@ -190,9 +187,10 @@ void TestConstructorsAndDestructors()
     {
       size_t partialPopAmount = 5;
       MOZ_RELEASE_ASSERT(nonFullLastSegmentSize > partialPopAmount);
-      v.PopLastN(partialPopAmount); 
+      v.PopLastN(partialPopAmount);  
       dtorCalls += partialPopAmount;
-      MOZ_RELEASE_ASSERT(v.Length() == nonFullLastSegmentSize - partialPopAmount);
+      MOZ_RELEASE_ASSERT(v.Length() ==
+                         nonFullLastSegmentSize - partialPopAmount);
       MOZ_RELEASE_ASSERT(!v.IsEmpty());
       MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
     }
@@ -212,7 +210,7 @@ void TestConstructorsAndDestructors()
 
     size_t multipleSegmentsSize = (segmentSize * 3) / 2;
     for (size_t i = 0; i < multipleSegmentsSize; ++i) {
-      gDummy = v.Append(x);     
+      gDummy = v.Append(x);  
       copyCtorCalls++;
     }
     MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
@@ -235,26 +233,37 @@ void TestConstructorsAndDestructors()
       MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
     }
 
-    MOZ_RELEASE_ASSERT(gNumDefaultCtors  == defaultCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumDefaultCtors == defaultCtorCalls);
     MOZ_RELEASE_ASSERT(gNumExplicitCtors == explicitCtorCalls);
-    MOZ_RELEASE_ASSERT(gNumCopyCtors     == copyCtorCalls);
-    MOZ_RELEASE_ASSERT(gNumMoveCtors     == moveCtorCalls);
-    MOZ_RELEASE_ASSERT(gNumDtors         == dtorCalls);
-  }                                       
+    MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumMoveCtors == moveCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
+  }  
   dtorCalls += 3;
   MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
 }
 
-struct A { int mX; int mY; };
-struct B { int mX; char mY; double mZ; };
-struct C { A mA; B mB; };
-struct D { char mBuf[101]; };
-struct E { };
+struct A {
+  int mX;
+  int mY;
+};
+struct B {
+  int mX;
+  char mY;
+  double mZ;
+};
+struct C {
+  A mA;
+  B mB;
+};
+struct D {
+  char mBuf[101];
+};
+struct E {};
 
 
 
-void TestSegmentCapacitiesAndAlignments()
-{
+void TestSegmentCapacitiesAndAlignments() {
   
   
   
@@ -270,9 +279,7 @@ void TestSegmentCapacitiesAndAlignments()
   SegmentedVector<mozilla::AlignedElem<16>, 100> v7(100);
 }
 
-void
-TestIterator()
-{
+void TestIterator() {
   SegmentedVector<int, 4> v;
 
   auto iter = v.Iter();
@@ -330,7 +337,8 @@ TestIterator()
   iter = v.Iter();
   iterFromLast = v.IterFromLast();
   int count = 0;
-  for (; !iter.Done() && !iterFromLast.Done(); iter.Next(), iterFromLast.Prev()) {
+  for (; !iter.Done() && !iterFromLast.Done();
+       iter.Next(), iterFromLast.Prev()) {
     ++count;
   }
   MOZ_RELEASE_ASSERT(count == 5);
@@ -351,8 +359,7 @@ TestIterator()
   MOZ_RELEASE_ASSERT(iterFromLast.Done());
 }
 
-int main(void)
-{
+int main(void) {
   TestBasics();
   TestConstructorsAndDestructors();
   TestSegmentCapacitiesAndAlignments();

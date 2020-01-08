@@ -4,7 +4,6 @@
 
 
 
-
 #include "gtest/gtest.h"
 
 #include "mozilla/MruCache.h"
@@ -13,48 +12,50 @@
 using namespace mozilla;
 
 
-struct IntMap : public MruCache<int, int, IntMap>
-{
+struct IntMap : public MruCache<int, int, IntMap> {
   static HashNumber Hash(const KeyType& aKey) { return aKey - 1; }
-  static bool Match(const KeyType& aKey, const ValueType& aVal) { return aKey == aVal; }
+  static bool Match(const KeyType& aKey, const ValueType& aVal) {
+    return aKey == aVal;
+  }
 };
 
-struct UintPtrMap : public MruCache<uintptr_t, int*, UintPtrMap>
-{
+struct UintPtrMap : public MruCache<uintptr_t, int*, UintPtrMap> {
   static HashNumber Hash(const KeyType& aKey) { return aKey - 1; }
-  static bool Match(const KeyType& aKey, const ValueType& aVal) { return aKey == (KeyType)aVal; }
+  static bool Match(const KeyType& aKey, const ValueType& aVal) {
+    return aKey == (KeyType)aVal;
+  }
 };
 
-struct StringStruct
-{
+struct StringStruct {
   nsCString mKey;
   nsCString mOther;
 };
 
-struct StringStructMap : public MruCache<nsCString, StringStruct, StringStructMap>
-{
-  static HashNumber Hash(const KeyType& aKey) { return *aKey.BeginReading() - 1; }
-  static bool Match(const KeyType& aKey, const ValueType& aVal) { return aKey == aVal.mKey; }
+struct StringStructMap
+    : public MruCache<nsCString, StringStruct, StringStructMap> {
+  static HashNumber Hash(const KeyType& aKey) {
+    return *aKey.BeginReading() - 1;
+  }
+  static bool Match(const KeyType& aKey, const ValueType& aVal) {
+    return aKey == aVal.mKey;
+  }
 };
 
 
 template <typename T>
-struct Convertable
-{
+struct Convertable {
   T mItem;
   operator T() const { return mItem; }
 };
 
 
-nsCString MakeStringKey(char aKey)
-{
+nsCString MakeStringKey(char aKey) {
   nsCString key;
   key.Append(aKey);
   return key;
 }
 
-TEST(MruCache, TestNullChecker)
-{
+TEST(MruCache, TestNullChecker) {
   using mozilla::detail::EmptyChecker;
 
   {
@@ -83,8 +84,7 @@ TEST(MruCache, TestNullChecker)
   }
 }
 
-TEST(MruCache, TestEmptyCache)
-{
+TEST(MruCache, TestEmptyCache) {
   {
     
     IntMap mru;
@@ -126,8 +126,7 @@ TEST(MruCache, TestEmptyCache)
   }
 }
 
-TEST(MruCache, TestPut)
-{
+TEST(MruCache, TestPut) {
   IntMap mru;
 
   
@@ -145,8 +144,7 @@ TEST(MruCache, TestPut)
   }
 }
 
-TEST(MruCache, TestPutConvertable)
-{
+TEST(MruCache, TestPutConvertable) {
   UintPtrMap mru;
 
   
@@ -165,8 +163,7 @@ TEST(MruCache, TestPutConvertable)
   }
 }
 
-TEST(MruCache, TestOverwriting)
-{
+TEST(MruCache, TestOverwriting) {
   
   IntMap mru;
 
@@ -185,8 +182,7 @@ TEST(MruCache, TestOverwriting)
   }
 }
 
-TEST(MruCache, TestRemove)
-{
+TEST(MruCache, TestRemove) {
   {
     IntMap mru;
 
@@ -257,8 +253,7 @@ TEST(MruCache, TestRemove)
   }
 }
 
-TEST(MruCache, TestClear)
-{
+TEST(MruCache, TestClear) {
   IntMap mru;
 
   
@@ -278,8 +273,7 @@ TEST(MruCache, TestClear)
   }
 }
 
-TEST(MruCache, TestLookupMissingAndSet)
-{
+TEST(MruCache, TestLookupMissingAndSet) {
   IntMap mru;
 
   
@@ -312,8 +306,7 @@ TEST(MruCache, TestLookupMissingAndSet)
   EXPECT_EQ(p.Data(), 2);
 }
 
-TEST(MruCache, TestLookupAndOverwrite)
-{
+TEST(MruCache, TestLookupAndOverwrite) {
   IntMap mru;
 
   
@@ -321,7 +314,7 @@ TEST(MruCache, TestLookupAndOverwrite)
 
   
   auto p = mru.Lookup(32);
-  EXPECT_FALSE(p); 
+  EXPECT_FALSE(p);  
 
   
   p.Set(32);
@@ -338,8 +331,7 @@ TEST(MruCache, TestLookupAndOverwrite)
   EXPECT_EQ(p.Data(), 32);
 }
 
-TEST(MruCache, TestLookupAndRemove)
-{
+TEST(MruCache, TestLookupAndRemove) {
   IntMap mru;
 
   
@@ -357,8 +349,7 @@ TEST(MruCache, TestLookupAndRemove)
   EXPECT_FALSE(p);
 }
 
-TEST(MruCache, TestLookupNotMatchedAndRemove)
-{
+TEST(MruCache, TestLookupNotMatchedAndRemove) {
   IntMap mru;
 
   
@@ -377,8 +368,7 @@ TEST(MruCache, TestLookupNotMatchedAndRemove)
   EXPECT_EQ(p.Data(), 1);
 }
 
-TEST(MruCache, TestLookupAndSetWithMove)
-{
+TEST(MruCache, TestLookupAndSetWithMove) {
   StringStructMap mru;
 
   const nsCString key = MakeStringKey((char)1);

@@ -18,214 +18,211 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
 
-template <typename Func> void
-WithDownscalingFilter(const IntSize& aInputSize,
-                      const IntSize& aOutputSize,
-                      Func aFunc)
-{
+template <typename Func>
+void WithDownscalingFilter(const IntSize& aInputSize,
+                           const IntSize& aOutputSize, Func aFunc) {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 
-  WithFilterPipeline(decoder, std::forward<Func>(aFunc),
-                     DownscalingConfig { aInputSize,
-                                         SurfaceFormat::B8G8R8A8 },
-                     SurfaceConfig { decoder, aOutputSize,
-                                     SurfaceFormat::B8G8R8A8, false });
+  WithFilterPipeline(
+      decoder, std::forward<Func>(aFunc),
+      DownscalingConfig{aInputSize, SurfaceFormat::B8G8R8A8},
+      SurfaceConfig{decoder, aOutputSize, SurfaceFormat::B8G8R8A8, false});
 }
 
-void
-AssertConfiguringDownscalingFilterFails(const IntSize& aInputSize,
-                                        const IntSize& aOutputSize)
-{
+void AssertConfiguringDownscalingFilterFails(const IntSize& aInputSize,
+                                             const IntSize& aOutputSize) {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 
-  AssertConfiguringPipelineFails(decoder,
-                                 DownscalingConfig { aInputSize,
-                                                     SurfaceFormat::B8G8R8A8 },
-                                 SurfaceConfig { decoder, aOutputSize,
-                                                 SurfaceFormat::B8G8R8A8, false });
+  AssertConfiguringPipelineFails(
+      decoder, DownscalingConfig{aInputSize, SurfaceFormat::B8G8R8A8},
+      SurfaceConfig{decoder, aOutputSize, SurfaceFormat::B8G8R8A8, false});
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to99_99)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to99_99) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(99, 99),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 99, 99)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 99, 99)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to33_33)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to33_33) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(33, 33),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 33, 33)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 33, 33)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to1_1)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to1_1) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(1, 1),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 1, 1)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 1, 1)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to33_99)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to33_99) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(33, 99),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 33, 99)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 33, 99)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to99_33)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to99_33) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(99, 33),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 99, 33)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 99, 33)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to99_1)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to99_1) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(99, 1),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 99, 1)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 99, 1)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, WritePixels100_100to1_99)
-{
+TEST(ImageDownscalingFilter, WritePixels100_100to1_99) {
   WithDownscalingFilter(IntSize(100, 100), IntSize(1, 99),
                         [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 1, 99)));
-  });
+                          CheckWritePixels(
+                              aDecoder, aFilter,
+                               Some(IntRect(0, 0, 1, 99)));
+                        });
 }
 
-TEST(ImageDownscalingFilter, DownscalingFailsFor100_100to101_101)
-{
+TEST(ImageDownscalingFilter, DownscalingFailsFor100_100to101_101) {
   
   AssertConfiguringDownscalingFilterFails(IntSize(100, 100), IntSize(101, 101));
 }
 
-TEST(ImageDownscalingFilter, DownscalingFailsFor100_100to100_100)
-{
+TEST(ImageDownscalingFilter, DownscalingFailsFor100_100to100_100) {
   
   AssertConfiguringDownscalingFilterFails(IntSize(100, 100), IntSize(100, 100));
 }
 
-TEST(ImageDownscalingFilter, DownscalingFailsFor0_0toMinus1_Minus1)
-{
+TEST(ImageDownscalingFilter, DownscalingFailsFor0_0toMinus1_Minus1) {
   
   AssertConfiguringDownscalingFilterFails(IntSize(0, 0), IntSize(-1, -1));
 }
 
-TEST(ImageDownscalingFilter, DownscalingFailsForMinus1_Minus1toMinus2_Minus2)
-{
+TEST(ImageDownscalingFilter, DownscalingFailsForMinus1_Minus1toMinus2_Minus2) {
   
   AssertConfiguringDownscalingFilterFails(IntSize(-1, -1), IntSize(-2, -2));
 }
 
-TEST(ImageDownscalingFilter, DownscalingFailsFor100_100to0_0)
-{
+TEST(ImageDownscalingFilter, DownscalingFailsFor100_100to0_0) {
   
   AssertConfiguringDownscalingFilterFails(IntSize(100, 100), IntSize(0, 0));
 }
 
-TEST(ImageDownscalingFilter, DownscalingFailsFor100_100toMinus1_Minus1)
-{
+TEST(ImageDownscalingFilter, DownscalingFailsFor100_100toMinus1_Minus1) {
   
   AssertConfiguringDownscalingFilterFails(IntSize(100, 100), IntSize(-1, -1));
 }
 
-TEST(ImageDownscalingFilter, WritePixelsOutput100_100to20_20)
-{
-  WithDownscalingFilter(IntSize(100, 100), IntSize(20, 20),
-                        [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() -> NextPixel<uint32_t> {
-      uint32_t color = (count <= 25 * 100) || (count > 50 * 100 && count <= 75 * 100)
-                     ? BGRAColor::Green().AsPixel()
-                     : BGRAColor::Red().AsPixel();
-      ++count;
-      return AsVariant(color);
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(100u * 100u, count);
+TEST(ImageDownscalingFilter, WritePixelsOutput100_100to20_20) {
+  WithDownscalingFilter(
+      IntSize(100, 100), IntSize(20, 20),
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
+        uint32_t count = 0;
+        auto result =
+            aFilter->WritePixels<uint32_t>([&]() -> NextPixel<uint32_t> {
+              uint32_t color =
+                  (count <= 25 * 100) || (count > 50 * 100 && count <= 75 * 100)
+                      ? BGRAColor::Green().AsPixel()
+                      : BGRAColor::Red().AsPixel();
+              ++count;
+              return AsVariant(color);
+            });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(100u * 100u, count);
 
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 100, 100),
-                                    IntRect(0, 0, 20, 20));
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 100, 100),
+                                        IntRect(0, 0, 20, 20));
 
-    
-    
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-    EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  2));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  3));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  3));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),  3));
-  });
+        
+        
+        
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),
+                                       2));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),
+                                       3));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),
+                                       3));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),
+                                       3));
+      });
 }
 
-TEST(ImageDownscalingFilter, WritePixelsOutput100_100to10_20)
-{
-  WithDownscalingFilter(IntSize(100, 100), IntSize(10, 20),
-                        [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() -> NextPixel<uint32_t> {
-      uint32_t color = (count <= 25 * 100) || (count > 50 * 100 && count <= 75 * 100)
-                     ? BGRAColor::Green().AsPixel()
-                     : BGRAColor::Red().AsPixel();
-      ++count;
-      return AsVariant(color);
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(100u * 100u, count);
+TEST(ImageDownscalingFilter, WritePixelsOutput100_100to10_20) {
+  WithDownscalingFilter(
+      IntSize(100, 100), IntSize(10, 20),
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
+        uint32_t count = 0;
+        auto result =
+            aFilter->WritePixels<uint32_t>([&]() -> NextPixel<uint32_t> {
+              uint32_t color =
+                  (count <= 25 * 100) || (count > 50 * 100 && count <= 75 * 100)
+                      ? BGRAColor::Green().AsPixel()
+                      : BGRAColor::Red().AsPixel();
+              ++count;
+              return AsVariant(color);
+            });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(100u * 100u, count);
 
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 100, 100),
-                                    IntRect(0, 0, 10, 20));
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 100, 100),
+                                        IntRect(0, 0, 10, 20));
 
-    
-    
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-    EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  2));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  3));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  3));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),  3));
-  });
+        
+        
+        
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),
+                                       2));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),
+                                       3));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),
+                                       3));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),
+                                       3));
+      });
 }
 
-TEST(ImageDownscalingFilter, ConfiguringPalettedDownscaleFails)
-{
+TEST(ImageDownscalingFilter, ConfiguringPalettedDownscaleFails) {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 
   
   
-  AssertConfiguringPipelineFails(decoder,
-                                 DownscalingConfig { IntSize(100, 100),
-                                                     SurfaceFormat::B8G8R8A8 },
-                                 PalettedSurfaceConfig { decoder, IntSize(20, 20),
-                                                         IntRect(0, 0, 20, 20),
-                                                         SurfaceFormat::B8G8R8A8, 8,
-                                                         false });
+  AssertConfiguringPipelineFails(
+      decoder, DownscalingConfig{IntSize(100, 100), SurfaceFormat::B8G8R8A8},
+      PalettedSurfaceConfig{decoder, IntSize(20, 20), IntRect(0, 0, 20, 20),
+                            SurfaceFormat::B8G8R8A8, 8, false});
 }

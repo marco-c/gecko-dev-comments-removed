@@ -15,38 +15,34 @@ class MockMP3StreamMediaResource;
 namespace mozilla {
 DDLoggedTypeNameAndBase(::MockMP3MediaResource, MockMediaResource);
 DDLoggedTypeNameAndBase(::MockMP3StreamMediaResource, MockMP3MediaResource);
-} 
+}  
 
 using namespace mozilla;
 using media::TimeUnit;
 
 
 class MockMP3MediaResource
-  : public MockMediaResource
-  , public DecoderDoctorLifeLogger<MockMP3MediaResource>
-{
-public:
+    : public MockMediaResource,
+      public DecoderDoctorLifeLogger<MockMP3MediaResource> {
+ public:
   explicit MockMP3MediaResource(const char* aFileName)
-    : MockMediaResource(aFileName)
-  {}
+      : MockMediaResource(aFileName) {}
 
-protected:
+ protected:
   virtual ~MockMP3MediaResource() {}
 };
 
 
 class MockMP3StreamMediaResource
-  : public MockMP3MediaResource
-  , public DecoderDoctorLifeLogger<MockMP3StreamMediaResource>
-{
-public:
+    : public MockMP3MediaResource,
+      public DecoderDoctorLifeLogger<MockMP3StreamMediaResource> {
+ public:
   explicit MockMP3StreamMediaResource(const char* aFileName)
-    : MockMP3MediaResource(aFileName)
-  {}
+      : MockMP3MediaResource(aFileName) {}
 
   int64_t GetLength() override { return -1; }
 
-protected:
+ protected:
   virtual ~MockMP3StreamMediaResource() {}
 };
 
@@ -81,7 +77,7 @@ struct MP3Resource {
 };
 
 class MP3DemuxerTest : public ::testing::Test {
-protected:
+ protected:
   void SetUp() override {
     {
       MP3Resource res;
@@ -104,7 +100,7 @@ protected:
       res.mBitrate = 256000;
       res.mSlotSize = 1;
       res.mPrivate = 0;
-      const int syncs[] = { 2151, 2987, 3823, 4659, 5495, 6331 };
+      const int syncs[] = {2151, 2987, 3823, 4659, 5495, 6331};
       res.mSyncOffsets.insert(res.mSyncOffsets.begin(), syncs, syncs + 6);
 
       
@@ -128,6 +124,7 @@ protected:
       
       
       
+      
       res.mFilePath = "id3v2header.mp3";
       res.mIsVBR = false;
       res.mFileSize = 191302;
@@ -147,7 +144,7 @@ protected:
       res.mBitrate = 192000;
       res.mSlotSize = 1;
       res.mPrivate = 1;
-      const int syncs[] = { 115314, 115941, 116568, 117195, 117822, 118449 };
+      const int syncs[] = {115314, 115941, 116568, 117195, 117822, 118449};
       res.mSyncOffsets.insert(res.mSyncOffsets.begin(), syncs, syncs + 6);
 
       
@@ -186,7 +183,7 @@ protected:
       res.mBitrate = 154000;
       res.mSlotSize = 1;
       res.mPrivate = 0;
-      const int syncs[] = { 2231, 2648, 2752, 3796, 4318, 4735 };
+      const int syncs[] = {2231, 2648, 2752, 3796, 4318, 4735};
       res.mSyncOffsets.insert(res.mSyncOffsets.begin(), syncs, syncs + 6);
 
       
@@ -224,8 +221,8 @@ protected:
       res.mBitrate = 256000;
       res.mSlotSize = 1;
       res.mPrivate = 0;
-      const int syncs[] = { 34, 556, 1078, 1601, 2123, 2646, 3168, 3691, 4213,
-                            4736, 5258, 5781, 6303 };
+      const int syncs[] = {34,   556,  1078, 1601, 2123, 2646, 3168,
+                           3691, 4213, 4736, 5258, 5781, 6303};
       res.mSyncOffsets.insert(res.mSyncOffsets.begin(), syncs, syncs + 13);
 
       
@@ -264,8 +261,8 @@ protected:
       res.mBitrate = 256000;
       res.mSlotSize = 1;
       res.mPrivate = 0;
-      const int syncs[] = { 54, 576, 1098, 1621, 2143, 2666, 3188, 3711, 4233,
-        4756, 5278, 5801, 6323 };
+      const int syncs[] = {54,   576,  1098, 1621, 2143, 2666, 3188,
+                           3711, 4233, 4756, 5278, 5801, 6323};
       res.mSyncOffsets.insert(res.mSyncOffsets.begin(), syncs, syncs + 13);
 
       
@@ -302,8 +299,8 @@ protected:
       res.mBitrate = 256000;
       res.mSlotSize = 1;
       res.mPrivate = 0;
-      const int syncs[] = { 34, 556, 1078, 1601, 2123, 2646, 3168, 3691, 4213,
-                            4736, 5258, 5781, 6303 };
+      const int syncs[] = {34,   556,  1078, 1601, 2123, 2646, 3168,
+                           3691, 4213, 4736, 5258, 5781, 6303};
       res.mSyncOffsets.insert(res.mSyncOffsets.begin(), syncs, syncs + 13);
 
       
@@ -319,7 +316,7 @@ protected:
       mTargets.push_back(streamRes);
     }
 
-    for (auto& target: mTargets) {
+    for (auto& target : mTargets) {
       ASSERT_EQ(NS_OK, target.mResource->Open());
       ASSERT_TRUE(target.mDemuxer->Init());
     }
@@ -329,7 +326,7 @@ protected:
 };
 
 TEST_F(MP3DemuxerTest, ID3Tags) {
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     RefPtr<MediaRawData> frame(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frame);
 
@@ -344,7 +341,7 @@ TEST_F(MP3DemuxerTest, ID3Tags) {
 }
 
 TEST_F(MP3DemuxerTest, VBRHeader) {
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     RefPtr<MediaRawData> frame(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frame);
 
@@ -352,6 +349,7 @@ TEST_F(MP3DemuxerTest, VBRHeader) {
 
     if (target.mIsVBR) {
       EXPECT_EQ(FrameParser::VBRHeader::XING, vbr.Type());
+      
       
       
     } else {
@@ -362,7 +360,7 @@ TEST_F(MP3DemuxerTest, VBRHeader) {
 }
 
 TEST_F(MP3DemuxerTest, FrameParsing) {
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     RefPtr<MediaRawData> frameData(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frameData);
     EXPECT_EQ(target.mFileSize, target.mDemuxer->StreamLength());
@@ -424,13 +422,14 @@ TEST_F(MP3DemuxerTest, FrameParsing) {
 }
 
 TEST_F(MP3DemuxerTest, Duration) {
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     RefPtr<MediaRawData> frameData(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frameData);
     EXPECT_EQ(target.mFileSize, target.mDemuxer->StreamLength());
 
     while (frameData) {
-      EXPECT_NEAR(target.mDuration, target.mDemuxer->Duration().ToMicroseconds(),
+      EXPECT_NEAR(target.mDuration,
+                  target.mDemuxer->Duration().ToMicroseconds(),
                   target.mDurationError * target.mDuration);
 
       frameData = target.mDemuxer->DemuxSample();
@@ -438,7 +437,7 @@ TEST_F(MP3DemuxerTest, Duration) {
   }
 
   
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     
     if (target.mFileSize <= 0) {
       continue;
@@ -465,7 +464,7 @@ TEST_F(MP3DemuxerTest, Duration) {
 }
 
 TEST_F(MP3DemuxerTest, Seek) {
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     RefPtr<MediaRawData> frameData(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frameData);
 
@@ -484,7 +483,7 @@ TEST_F(MP3DemuxerTest, Seek) {
   }
 
   
-  for (const auto& target: mTargets) {
+  for (const auto& target : mTargets) {
     target.mDemuxer->Reset();
     RefPtr<MediaRawData> frameData(target.mDemuxer->DemuxSample());
     ASSERT_TRUE(frameData);

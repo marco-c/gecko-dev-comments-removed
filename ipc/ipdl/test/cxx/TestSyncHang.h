@@ -9,52 +9,40 @@
 namespace mozilla {
 namespace _ipdltest {
 
+class TestSyncHangParent : public PTestSyncHangParent {
+ public:
+  TestSyncHangParent();
+  virtual ~TestSyncHangParent();
 
-class TestSyncHangParent :
-    public PTestSyncHangParent
-{
-public:
-    TestSyncHangParent();
-    virtual ~TestSyncHangParent();
+  static bool RunTestInProcesses() { return true; }
+  
+  static bool RunTestInThreads() { return false; }
 
-    static bool RunTestInProcesses() { return true; }
-    
-    static bool RunTestInThreads() { return false; }
+  void Main();
 
-    void Main();
-
-protected:
-    virtual void ActorDestroy(ActorDestroyReason why) override
-    {
-        if (NormalShutdown != why)
-            fail("unexpected destruction!");
-        passed("ok");
-        QuitParent();
-    }
+ protected:
+  virtual void ActorDestroy(ActorDestroyReason why) override {
+    if (NormalShutdown != why) fail("unexpected destruction!");
+    passed("ok");
+    QuitParent();
+  }
 };
 
+class TestSyncHangChild : public PTestSyncHangChild {
+ public:
+  TestSyncHangChild();
+  virtual ~TestSyncHangChild();
 
-class TestSyncHangChild :
-    public PTestSyncHangChild
-{
-public:
-    TestSyncHangChild();
-    virtual ~TestSyncHangChild();
+ protected:
+  virtual mozilla::ipc::IPCResult RecvUnusedMessage() override;
 
-protected:
-    virtual mozilla::ipc::IPCResult RecvUnusedMessage() override;
-
-    virtual void ActorDestroy(ActorDestroyReason why) override
-    {
-        if (NormalShutdown != why)
-            fail("unexpected destruction!");
-        QuitChild();
-    }
+  virtual void ActorDestroy(ActorDestroyReason why) override {
+    if (NormalShutdown != why) fail("unexpected destruction!");
+    QuitChild();
+  }
 };
 
+}  
+}  
 
-} 
-} 
-
-
-#endif 
+#endif  

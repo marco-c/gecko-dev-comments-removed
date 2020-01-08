@@ -6,7 +6,6 @@
 
 NS_DEF_PTR(nsINode);
 
-	
 
 
 
@@ -21,77 +20,75 @@ NS_DEF_PTR(nsINode);
 
 
 
-void 
-Test03_raw( nsINode* aDOMNode, nsString* aResult )
-		
-	{
 
 
 
 
+void  
+Test03_raw(nsINode* aDOMNode, nsString* aResult)
 
+{
+  
+  
 
-		nsINode* parent = 0;
-		nsresult status = aDOMNode->GetParentNode(&parent);
+  
+  
 
-		if ( NS_SUCCEEDED(status) )
-			{
-				parent->GetNodeName(*aResult);
-			}
+  nsINode* parent = 0;
+  nsresult status = aDOMNode->GetParentNode(&parent);
 
-		NS_IF_RELEASE(parent);
+  if (NS_SUCCEEDED(status)) {
+    parent->GetNodeName(*aResult);
+  }
 
+  NS_IF_RELEASE(parent);
 
-	}
+  
+}
 
+void  
+Test03_raw_optimized(nsINode* aDOMNode, nsString* aResult)
 
-void 
-Test03_raw_optimized( nsINode* aDOMNode, nsString* aResult )
-		
-	{
+{
+  
+  
 
+  nsINode* parent;
+  nsresult status = aDOMNode->GetParentNode(&parent);
 
+  if (NS_SUCCEEDED(status)) {
+    parent->GetNodeName(*aResult);
+    NS_RELEASE(parent);
+  }
 
-		nsINode* parent;
-		nsresult status = aDOMNode->GetParentNode(&parent);
+  
+}
 
-		if ( NS_SUCCEEDED(status) )
-			{
-				parent->GetNodeName(*aResult);
-				NS_RELEASE(parent);
-			}
+void  
+Test03_nsCOMPtr(nsINode* aDOMNode, nsString* aResult)
 
+{
+  
+  
 
-	}
+  nsCOMPtr<nsINode> parent;
+  nsresult status = aDOMNode->GetParentNode(getter_AddRefs(parent));
+  if (parent) parent->GetNodeName(*aResult);
 
+  
+}
 
-void 
-Test03_nsCOMPtr( nsINode* aDOMNode, nsString* aResult )
-		
-	{
+void  
+Test03_nsCOMPtr_optimized(nsINode* aDOMNode, nsString* aResult)
 
+{
+  
+  
 
+  nsINode* temp;
+  nsresult status = aDOMNode->GetParentNode(&temp);
+  nsCOMPtr<nsINode> parent(dont_AddRef(temp));
+  if (parent) parent->GetNodeName(*aResult);
 
-		nsCOMPtr<nsINode> parent;
-		nsresult status = aDOMNode->GetParentNode( getter_AddRefs(parent) );
-		if ( parent )
-			parent->GetNodeName(*aResult);
-
-
-	}
-
-void 
-Test03_nsCOMPtr_optimized( nsINode* aDOMNode, nsString* aResult )
-		
-	{
-
-
-
-		nsINode* temp;
-		nsresult status = aDOMNode->GetParentNode(&temp);
-		nsCOMPtr<nsINode> parent( dont_AddRef(temp) );
-		if ( parent )
-			parent->GetNodeName(*aResult);
-
-
-	}
+  
+}

@@ -15,11 +15,10 @@ using namespace mozilla::storage;
 
 
 
-TEST(storage_mutex, AutoLock)
-{
+TEST(storage_mutex, AutoLock) {
   int lockTypes[] = {
-    SQLITE_MUTEX_FAST,
-    SQLITE_MUTEX_RECURSIVE,
+      SQLITE_MUTEX_FAST,
+      SQLITE_MUTEX_RECURSIVE,
   };
   for (int lockType : lockTypes) {
     
@@ -42,11 +41,10 @@ TEST(storage_mutex, AutoLock)
   }
 }
 
-TEST(storage_mutex, AutoUnlock)
-{
+TEST(storage_mutex, AutoUnlock) {
   int lockTypes[] = {
-    SQLITE_MUTEX_FAST,
-    SQLITE_MUTEX_RECURSIVE,
+      SQLITE_MUTEX_FAST,
+      SQLITE_MUTEX_RECURSIVE,
   };
   for (int lockType : lockTypes) {
     
@@ -71,4 +69,3 @@ TEST(storage_mutex, AutoUnlock)
     sqlite3_mutex_free(inner);
   }
 }
-

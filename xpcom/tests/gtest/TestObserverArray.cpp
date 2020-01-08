@@ -12,23 +12,24 @@ using namespace mozilla;
 
 typedef nsTObserverArray<int> IntArray;
 
-#define DO_TEST(_type, _exp, _code)                                   \
-  do {                                                                \
-    ++testNum;                                                        \
-    count = 0;                                                        \
-    IntArray::_type iter(arr);                                        \
-    while (iter.HasMore() && count != ArrayLength(_exp)) {            \
-      _code                                                           \
-      int next = iter.GetNext();                                      \
-      int expected = _exp[count++];                                   \
-      ASSERT_EQ(next, expected) << "During test " << testNum << " at position " << count - 1;  \
-    }                                                                 \
-    ASSERT_FALSE(iter.HasMore()) << "During test " << testNum << ", iterator ran over"; \
-    ASSERT_EQ(count, ArrayLength(_exp)) << "During test " << testNum << ", iterator finished too early"; \
+#define DO_TEST(_type, _exp, _code)                                      \
+  do {                                                                   \
+    ++testNum;                                                           \
+    count = 0;                                                           \
+    IntArray::_type iter(arr);                                           \
+    while (iter.HasMore() && count != ArrayLength(_exp)) {               \
+      _code int next = iter.GetNext();                                   \
+      int expected = _exp[count++];                                      \
+      ASSERT_EQ(next, expected)                                          \
+          << "During test " << testNum << " at position " << count - 1;  \
+    }                                                                    \
+    ASSERT_FALSE(iter.HasMore())                                         \
+        << "During test " << testNum << ", iterator ran over";           \
+    ASSERT_EQ(count, ArrayLength(_exp))                                  \
+        << "During test " << testNum << ", iterator finished too early"; \
   } while (0)
 
-TEST(ObserverArray, Tests)
-{
+TEST(ObserverArray, Tests) {
   IntArray arr;
   arr.AppendElement(3);
   arr.AppendElement(4);
@@ -37,129 +38,112 @@ TEST(ObserverArray, Tests)
   int testNum = 0;
 
   
-  static int test1Expected[] = { 3, 4 };
-  DO_TEST(ForwardIterator, test1Expected, {  });
+  static int test1Expected[] = {3, 4};
+  DO_TEST(ForwardIterator, test1Expected, {});
 
   
-  static int test2Expected[] = { 3, 4, 2 };
+  static int test2Expected[] = {3, 4, 2};
   DO_TEST(ForwardIterator, test2Expected,
-          if (count == 1) arr.AppendElement(2);
-          );
-  DO_TEST(ForwardIterator, test2Expected, {  });
+          if (count == 1) arr.AppendElement(2););
+  DO_TEST(ForwardIterator, test2Expected, {});
 
   DO_TEST(EndLimitedIterator, test2Expected,
-          if (count == 1) arr.AppendElement(5);
-          );
+          if (count == 1) arr.AppendElement(5););
 
-  static int test5Expected[] = { 3, 4, 2, 5 };
-  DO_TEST(ForwardIterator, test5Expected, {  });
+  static int test5Expected[] = {3, 4, 2, 5};
+  DO_TEST(ForwardIterator, test5Expected, {});
 
   
   DO_TEST(ForwardIterator, test5Expected,
-          if (count == 1) arr.RemoveElementAt(0);
-          );
+          if (count == 1) arr.RemoveElementAt(0););
 
-  static int test7Expected[] = { 4, 2, 5 };
-  DO_TEST(ForwardIterator, test7Expected, {  });
+  static int test7Expected[] = {4, 2, 5};
+  DO_TEST(ForwardIterator, test7Expected, {});
 
-  static int test8Expected[] = { 4, 5 };
+  static int test8Expected[] = {4, 5};
   DO_TEST(ForwardIterator, test8Expected,
-          if (count == 1) arr.RemoveElementAt(1);
-          );
-  DO_TEST(ForwardIterator, test8Expected, {  });
+          if (count == 1) arr.RemoveElementAt(1););
+  DO_TEST(ForwardIterator, test8Expected, {});
 
   arr.AppendElement(2);
   arr.AppendElementUnlessExists(6);
-  static int test10Expected[] = { 4, 5, 2, 6 };
-  DO_TEST(ForwardIterator, test10Expected, {  });
+  static int test10Expected[] = {4, 5, 2, 6};
+  DO_TEST(ForwardIterator, test10Expected, {});
 
   arr.AppendElementUnlessExists(5);
-  DO_TEST(ForwardIterator, test10Expected, {  });
+  DO_TEST(ForwardIterator, test10Expected, {});
 
-  static int test12Expected[] = { 4, 5, 6 };
+  static int test12Expected[] = {4, 5, 6};
   DO_TEST(ForwardIterator, test12Expected,
-          if (count == 1) arr.RemoveElementAt(2);
-          );
-  DO_TEST(ForwardIterator, test12Expected, {  });
+          if (count == 1) arr.RemoveElementAt(2););
+  DO_TEST(ForwardIterator, test12Expected, {});
 
   
-  static int test14Expected[] = { 4, 6, 7 };
-  DO_TEST(ForwardIterator, test14Expected,
-          if (count == 1) {
-            arr.RemoveElementAt(1);
-            arr.AppendElement(7);
-          }
-          );
-  DO_TEST(ForwardIterator, test14Expected, {  });
+  static int test14Expected[] = {4, 6, 7};
+  DO_TEST(ForwardIterator, test14Expected, if (count == 1) {
+    arr.RemoveElementAt(1);
+    arr.AppendElement(7);
+  });
+  DO_TEST(ForwardIterator, test14Expected, {});
 
   arr.AppendElement(2);
-  static int test16Expected[] = { 4, 6, 7, 2 };
-  DO_TEST(ForwardIterator, test16Expected, {  });
+  static int test16Expected[] = {4, 6, 7, 2};
+  DO_TEST(ForwardIterator, test16Expected, {});
 
-  static int test17Expected[] = { 4, 7, 2 };
-  DO_TEST(EndLimitedIterator, test17Expected,
-          if (count == 1) {
-            arr.RemoveElementAt(1);
-            arr.AppendElement(8);
-          }
-          );
+  static int test17Expected[] = {4, 7, 2};
+  DO_TEST(EndLimitedIterator, test17Expected, if (count == 1) {
+    arr.RemoveElementAt(1);
+    arr.AppendElement(8);
+  });
 
-  static int test18Expected[] = { 4, 7, 2, 8 };
-  DO_TEST(ForwardIterator, test18Expected, {  });
+  static int test18Expected[] = {4, 7, 2, 8};
+  DO_TEST(ForwardIterator, test18Expected, {});
 
   
   arr.PrependElementUnlessExists(3);
-  static int test19Expected[] = { 3, 4, 7, 2, 8 };
-  DO_TEST(ForwardIterator, test19Expected, {  });
+  static int test19Expected[] = {3, 4, 7, 2, 8};
+  DO_TEST(ForwardIterator, test19Expected, {});
 
   arr.PrependElementUnlessExists(7);
-  DO_TEST(ForwardIterator, test19Expected, {  });
+  DO_TEST(ForwardIterator, test19Expected, {});
 
   DO_TEST(ForwardIterator, test19Expected,
-          if (count == 1) {
-            arr.PrependElementUnlessExists(9);
-          }
-          );
+          if (count == 1) { arr.PrependElementUnlessExists(9); });
 
-  static int test22Expected[] = { 9, 3, 4, 7, 2, 8 };
-  DO_TEST(ForwardIterator, test22Expected, { });
+  static int test22Expected[] = {9, 3, 4, 7, 2, 8};
+  DO_TEST(ForwardIterator, test22Expected, {});
 
   
-  static int test23Expected[] = { 8, 2, 7, 4, 3, 9 };
+  static int test23Expected[] = {8, 2, 7, 4, 3, 9};
   DO_TEST(BackwardIterator, test23Expected, );
 
   
-  static int test24Expected[] = { 8, 2, 7, 4, 9 };
+  static int test24Expected[] = {8, 2, 7, 4, 9};
   DO_TEST(BackwardIterator, test24Expected,
-          if (count == 1) arr.RemoveElementAt(1);
-          );
+          if (count == 1) arr.RemoveElementAt(1););
 
   
   DO_TEST(BackwardIterator, test24Expected,
-          if (count == 1) arr.AppendElement(1);
-          );
+          if (count == 1) arr.AppendElement(1););
 
-  static int test26Expected[] = { 1, 8, 2, 7, 4, 9 };
+  static int test26Expected[] = {1, 8, 2, 7, 4, 9};
   DO_TEST(BackwardIterator, test26Expected, );
 
   
-  static int test27Expected[] = { 1, 8, 2, 7, 4, 9, 3 };
+  static int test27Expected[] = {1, 8, 2, 7, 4, 9, 3};
   DO_TEST(BackwardIterator, test27Expected,
-          if (count == 1) arr.PrependElementUnlessExists(3);
-          );
+          if (count == 1) arr.PrependElementUnlessExists(3););
 
   
   DO_TEST(BackwardIterator, test27Expected,
           
           
-          if (count == 1) iter.Remove();
-          );
+          if (count == 1) iter.Remove(););
 
-  static int test28Expected[] = { 8, 2, 7, 4, 9, 3 };
+  static int test28Expected[] = {8, 2, 7, 4, 9, 3};
   DO_TEST(BackwardIterator, test28Expected, );
 
   
-
 
 
 

@@ -7,35 +7,32 @@
 
 
 
-void main(int argc, char* argv[])
-{
-    nsresult rv;
-    nsIServiceManager* servMgr;
-    rv = NS_InitXPCOM2(&servMgr, nullptr, nullptr);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "NS_InitXPCOM failed");
+void main(int argc, char* argv[]) {
+  nsresult rv;
+  nsIServiceManager* servMgr;
+  rv = NS_InitXPCOM2(&servMgr, nullptr, nullptr);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "NS_InitXPCOM failed");
 
-    
-    if (argc > 1 && argv[1] != nullptr) {
-        char* cidStr = argv[1];
-        nsISupports* obj = nullptr;
-        if (cidStr[0] == '{') {
-            nsCID cid;
-            cid.Parse(cidStr);
-            rv = CallCreateInstance(cid, &obj);
-        }
-        else {
-            
-            rv = CallCreateInstance(cidStr, &obj);
-        }
-        if (NS_SUCCEEDED(rv)) {
-            printf("Successfully created %s\n", cidStr);
-            NS_RELEASE(obj);
-        }
-        else {
-            printf("Failed to create %s (%x)\n", cidStr, rv);
-        }
+  
+  if (argc > 1 && argv[1] != nullptr) {
+    char* cidStr = argv[1];
+    nsISupports* obj = nullptr;
+    if (cidStr[0] == '{') {
+      nsCID cid;
+      cid.Parse(cidStr);
+      rv = CallCreateInstance(cid, &obj);
+    } else {
+      
+      rv = CallCreateInstance(cidStr, &obj);
     }
+    if (NS_SUCCEEDED(rv)) {
+      printf("Successfully created %s\n", cidStr);
+      NS_RELEASE(obj);
+    } else {
+      printf("Failed to create %s (%x)\n", cidStr, rv);
+    }
+  }
 
-    rv = NS_ShutdownXPCOM(servMgr);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "NS_ShutdownXPCOM failed");
+  rv = NS_ShutdownXPCOM(servMgr);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "NS_ShutdownXPCOM failed");
 }

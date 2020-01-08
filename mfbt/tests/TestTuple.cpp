@@ -1,5 +1,5 @@
 
-   
+
 
 
 
@@ -26,26 +26,23 @@ using mozilla::UniquePtr;
 using mozilla::Unused;
 using std::pair;
 
-#define CHECK(c) \
-  do { \
-    bool cond = !!(c); \
+#define CHECK(c)                                       \
+  do {                                                 \
+    bool cond = !!(c);                                 \
     MOZ_RELEASE_ASSERT(cond, "Failed assertion: " #c); \
   } while (false)
 
 
 
-#define CHECK_TYPE(expression, ...)  \
+#define CHECK_TYPE(expression, ...)                               \
   static_assert(IsSame<decltype(expression), __VA_ARGS__>::value, \
-      "Type mismatch!")
+                "Type mismatch!")
 
-struct ConvertibleToInt
-{
+struct ConvertibleToInt {
   operator int() const { return 42; }
 };
 
-static void
-TestConstruction()
-{
+static void TestConstruction() {
   
   Tuple<> a;
   Unused << a;
@@ -81,9 +78,7 @@ TestConstruction()
   CHECK(*Get<0>(h) == 42);
 }
 
-static void
-TestConstructionFromMozPair()
-{
+static void TestConstructionFromMozPair() {
   
   int x = 1, y = 1;
   Pair<int, int> a{x, y};
@@ -98,9 +93,7 @@ TestConstructionFromMozPair()
   CHECK(Get<1>(d) == 42);
 }
 
-static void
-TestConstructionFromStdPair()
-{
+static void TestConstructionFromStdPair() {
   
   int x = 1, y = 1;
   pair<int, int> a{x, y};
@@ -115,9 +108,7 @@ TestConstructionFromStdPair()
   CHECK(Get<1>(d) == 42);
 }
 
-static void
-TestAssignment()
-{
+static void TestAssignment() {
   
   Tuple<int> a{0};
   Tuple<int> b{42};
@@ -140,9 +131,7 @@ TestAssignment()
   CHECK(Get<0>(f) == nullptr);
 }
 
-static void
-TestAssignmentFromMozPair()
-{
+static void TestAssignmentFromMozPair() {
   
   Tuple<int, int> a{0, 0};
   Pair<int, int> b{42, 42};
@@ -172,9 +161,7 @@ TestAssignmentFromMozPair()
   CHECK(f.second() == nullptr);
 }
 
-static void
-TestAssignmentFromStdPair()
-{
+static void TestAssignmentFromStdPair() {
   
   Tuple<int, int> a{0, 0};
   pair<int, int> b{42, 42};
@@ -193,7 +180,8 @@ TestAssignmentFromStdPair()
   CHECK(j == 42);
 
   
-  Tuple<UniquePtr<int>, UniquePtr<int>> e{MakeUnique<int>(0), MakeUnique<int>(0)};
+  Tuple<UniquePtr<int>, UniquePtr<int>> e{MakeUnique<int>(0),
+                                          MakeUnique<int>(0)};
   
   pair<UniquePtr<int>, UniquePtr<int>> f;
   f.first = MakeUnique<int>(42);
@@ -206,9 +194,7 @@ TestAssignmentFromStdPair()
   CHECK(f.second == nullptr);
 }
 
-static void
-TestGet()
-{
+static void TestGet() {
   int x = 1;
   int y = 2;
   int z = 3;
@@ -229,9 +215,7 @@ TestGet()
   CHECK(y == 42);
 }
 
-static void
-TestMakeTuple()
-{
+static void TestMakeTuple() {
   auto tuple = MakeTuple(42, 0.5f, 'c');
   CHECK_TYPE(tuple, Tuple<int, float, char>);
   CHECK(Get<0>(tuple) == 42);
@@ -246,9 +230,7 @@ TestMakeTuple()
   CHECK(Get<0>(tuple2) == 1);
 }
 
-static bool
-TestTie()
-{
+static bool TestTie() {
   int i;
   float f;
   char c;
@@ -258,8 +240,8 @@ TestTie()
   CHECK(f == Get<1>(rhs1));
   CHECK(c == Get<2>(rhs1));
   
-  Tuple<ConvertibleToInt, double, unsigned char> rhs2(ConvertibleToInt(),
-      0.7f, 'd');
+  Tuple<ConvertibleToInt, double, unsigned char> rhs2(ConvertibleToInt(), 0.7f,
+                                                      'd');
   Tie(i, f, c) = rhs2;
   CHECK(i == Get<0>(rhs2));
   CHECK(f == Get<1>(rhs2));
@@ -279,9 +261,7 @@ TestTie()
   return true;
 }
 
-int
-main()
-{
+int main() {
   TestConstruction();
   TestConstructionFromMozPair();
   TestConstructionFromStdPair();

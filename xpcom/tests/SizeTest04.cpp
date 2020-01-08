@@ -5,7 +5,6 @@
 
 NS_DEF_PTR(nsINode);
 
-	
 
 
 
@@ -15,54 +14,48 @@ NS_DEF_PTR(nsINode);
 
 
 
-class Test04_Raw
-	{
-		public:
-			Test04_Raw();
-		 ~Test04_Raw();
-
-			void  SetNode( nsINode* newNode );
-
-		private:
-			nsINode* mNode;
-	};
-
-Test04_Raw::Test04_Raw()
-		: mNode(0)
-	{
-		
-	}
-
-Test04_Raw::~Test04_Raw()
-	{
-		NS_IF_RELEASE(mNode);
-	}
-
-void 
-Test04_Raw::SetNode( nsINode* newNode )
-		
-	{
-		NS_IF_ADDREF(newNode);
-		NS_IF_RELEASE(mNode);
-		mNode = newNode;
-
-
-	}
 
 
 
-class Test04_nsCOMPtr
-	{
-		public:
-			void  SetNode( nsINode* newNode );
+class Test04_Raw {
+ public:
+  Test04_Raw();
+  ~Test04_Raw();
 
-		private:
-			nsCOMPtr<nsINode> mNode;
-	};
+  void  SetNode(nsINode* newNode);
 
-void 
-Test04_nsCOMPtr::SetNode( nsINode* newNode )
-		
-	{
-		mNode = newNode;
-	}
+ private:
+  nsINode* mNode;
+};
+
+Test04_Raw::Test04_Raw() : mNode(0) {
+  
+}
+
+Test04_Raw::~Test04_Raw() { NS_IF_RELEASE(mNode); }
+
+void  
+Test04_Raw::SetNode(nsINode* newNode)
+
+{
+  NS_IF_ADDREF(newNode);
+  NS_IF_RELEASE(mNode);
+  mNode = newNode;
+
+  
+}
+
+class Test04_nsCOMPtr {
+ public:
+  void  SetNode(nsINode* newNode);
+
+ private:
+  nsCOMPtr<nsINode> mNode;
+};
+
+void  
+Test04_nsCOMPtr::SetNode(nsINode* newNode)
+
+{
+  mNode = newNode;
+}

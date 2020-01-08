@@ -12,9 +12,7 @@ namespace _ipdltest {
 
 
 
-void
-TestUniquePtrIPCParent::Main()
-{
+void TestUniquePtrIPCParent::Main() {
   UniquePtr<int> a1 = MakeUnique<int>(1);
   UniquePtr<DummyStruct> a2 = MakeUnique<DummyStruct>(2);
   DummyStruct a3(3);
@@ -47,12 +45,9 @@ TestUniquePtrIPCParent::Main()
 
 
 
-mozilla::ipc::IPCResult
-TestUniquePtrIPCChild::RecvTestMessage(UniquePtr<int>&& aA1,
-                                       UniquePtr<DummyStruct>&& aA2,
-                                       const DummyStruct& aA3,
-                                       UniquePtr<int>&& aA4)
-{
+mozilla::ipc::IPCResult TestUniquePtrIPCChild::RecvTestMessage(
+    UniquePtr<int>&& aA1, UniquePtr<DummyStruct>&& aA2, const DummyStruct& aA3,
+    UniquePtr<int>&& aA4) {
   if ((!aA1) || (!aA2)) {
     fail("TestMessage received NULL items in child");
   }
@@ -68,9 +63,8 @@ TestUniquePtrIPCChild::RecvTestMessage(UniquePtr<int>&& aA1,
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestUniquePtrIPCChild::RecvTestSendReference(UniquePtr<DummyStruct>&& aA)
-{
+mozilla::ipc::IPCResult TestUniquePtrIPCChild::RecvTestSendReference(
+    UniquePtr<DummyStruct>&& aA) {
   if (!aA) {
     fail("TestSendReference received NULL item in child");
   }
@@ -83,6 +77,5 @@ TestUniquePtrIPCChild::RecvTestSendReference(UniquePtr<DummyStruct>&& aA)
   return IPC_OK();
 }
 
-
-} 
-} 
+}  
+}  

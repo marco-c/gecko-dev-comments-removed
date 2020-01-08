@@ -30,40 +30,32 @@ namespace image {
 
 
 
-enum TestCaseFlags
-{
-  TEST_CASE_DEFAULT_FLAGS   = 0,
-  TEST_CASE_IS_FUZZY        = 1 << 0,
-  TEST_CASE_HAS_ERROR       = 1 << 1,
-  TEST_CASE_IS_TRANSPARENT  = 1 << 2,
-  TEST_CASE_IS_ANIMATED     = 1 << 3,
-  TEST_CASE_IGNORE_OUTPUT   = 1 << 4,
+enum TestCaseFlags {
+  TEST_CASE_DEFAULT_FLAGS = 0,
+  TEST_CASE_IS_FUZZY = 1 << 0,
+  TEST_CASE_HAS_ERROR = 1 << 1,
+  TEST_CASE_IS_TRANSPARENT = 1 << 2,
+  TEST_CASE_IS_ANIMATED = 1 << 3,
+  TEST_CASE_IGNORE_OUTPUT = 1 << 4,
 };
 
-struct ImageTestCase
-{
-  ImageTestCase(const char* aPath,
-                const char* aMimeType,
-                gfx::IntSize aSize,
+struct ImageTestCase {
+  ImageTestCase(const char* aPath, const char* aMimeType, gfx::IntSize aSize,
                 uint32_t aFlags = TEST_CASE_DEFAULT_FLAGS)
-    : mPath(aPath)
-    , mMimeType(aMimeType)
-    , mSize(aSize)
-    , mOutputSize(aSize)
-    , mFlags(aFlags)
-  { }
+      : mPath(aPath),
+        mMimeType(aMimeType),
+        mSize(aSize),
+        mOutputSize(aSize),
+        mFlags(aFlags) {}
 
-  ImageTestCase(const char* aPath,
-                const char* aMimeType,
-                gfx::IntSize aSize,
+  ImageTestCase(const char* aPath, const char* aMimeType, gfx::IntSize aSize,
                 gfx::IntSize aOutputSize,
                 uint32_t aFlags = TEST_CASE_DEFAULT_FLAGS)
-    : mPath(aPath)
-    , mMimeType(aMimeType)
-    , mSize(aSize)
-    , mOutputSize(aOutputSize)
-    , mFlags(aFlags)
-  { }
+      : mPath(aPath),
+        mMimeType(aMimeType),
+        mSize(aSize),
+        mOutputSize(aOutputSize),
+        mFlags(aFlags) {}
 
   const char* mPath;
   const char* mMimeType;
@@ -72,31 +64,27 @@ struct ImageTestCase
   uint32_t mFlags;
 };
 
-struct BGRAColor
-{
-  BGRAColor() : BGRAColor(0, 0, 0, 0) { }
+struct BGRAColor {
+  BGRAColor() : BGRAColor(0, 0, 0, 0) {}
 
-  BGRAColor(uint8_t aBlue, uint8_t aGreen, uint8_t aRed, uint8_t aAlpha, bool aPremultiplied = false)
-    : mBlue(aBlue)
-    , mGreen(aGreen)
-    , mRed(aRed)
-    , mAlpha(aAlpha)
-    , mPremultiplied(aPremultiplied)
-  { }
+  BGRAColor(uint8_t aBlue, uint8_t aGreen, uint8_t aRed, uint8_t aAlpha,
+            bool aPremultiplied = false)
+      : mBlue(aBlue),
+        mGreen(aGreen),
+        mRed(aRed),
+        mAlpha(aAlpha),
+        mPremultiplied(aPremultiplied) {}
 
   static BGRAColor Green() { return BGRAColor(0x00, 0xFF, 0x00, 0xFF); }
-  static BGRAColor Red()   { return BGRAColor(0x00, 0x00, 0xFF, 0xFF); }
-  static BGRAColor Blue()   { return BGRAColor(0xFF, 0x00, 0x00, 0xFF); }
+  static BGRAColor Red() { return BGRAColor(0x00, 0x00, 0xFF, 0xFF); }
+  static BGRAColor Blue() { return BGRAColor(0xFF, 0x00, 0x00, 0xFF); }
   static BGRAColor Transparent() { return BGRAColor(0x00, 0x00, 0x00, 0x00); }
 
-  BGRAColor Premultiply() const
-  {
+  BGRAColor Premultiply() const {
     if (!mPremultiplied) {
       return BGRAColor(gfxPreMultiply(mBlue, mAlpha),
                        gfxPreMultiply(mGreen, mAlpha),
-                       gfxPreMultiply(mRed, mAlpha),
-                       mAlpha,
-                       true);
+                       gfxPreMultiply(mRed, mAlpha), mAlpha, true);
     }
     return *this;
   }
@@ -126,10 +114,8 @@ struct BGRAColor
 
 
 
-
-class AutoInitializeImageLib
-{
-public:
+class AutoInitializeImageLib {
+ public:
   AutoInitializeImageLib();
 };
 
@@ -146,8 +132,7 @@ already_AddRefed<nsIInputStream> LoadFile(const char* aRelativePath);
 
 
 
-bool IsSolidColor(gfx::SourceSurface* aSurface,
-                  BGRAColor aColor,
+bool IsSolidColor(gfx::SourceSurface* aSurface, BGRAColor aColor,
                   uint8_t aFuzz = 0);
 
 
@@ -164,20 +149,15 @@ bool IsSolidPalettedColor(Decoder* aDecoder, uint8_t aColor);
 
 
 
-bool RowsAreSolidColor(gfx::SourceSurface* aSurface,
-                       int32_t aStartRow,
-                       int32_t aRowCount,
-                       BGRAColor aColor,
-                       uint8_t aFuzz = 0);
+bool RowsAreSolidColor(gfx::SourceSurface* aSurface, int32_t aStartRow,
+                       int32_t aRowCount, BGRAColor aColor, uint8_t aFuzz = 0);
 
 
 
 
 
-bool PalettedRowsAreSolidColor(Decoder* aDecoder,
-                               int32_t aStartRow,
-                               int32_t aRowCount,
-                               uint8_t aColor);
+bool PalettedRowsAreSolidColor(Decoder* aDecoder, int32_t aStartRow,
+                               int32_t aRowCount, uint8_t aColor);
 
 
 
@@ -186,58 +166,51 @@ bool PalettedRowsAreSolidColor(Decoder* aDecoder,
 
 
 
-bool RectIsSolidColor(gfx::SourceSurface* aSurface,
-                      const gfx::IntRect& aRect,
-                      BGRAColor aColor,
-                      uint8_t aFuzz = 0);
+bool RectIsSolidColor(gfx::SourceSurface* aSurface, const gfx::IntRect& aRect,
+                      BGRAColor aColor, uint8_t aFuzz = 0);
 
 
 
 
 
-bool PalettedRectIsSolidColor(Decoder* aDecoder,
-                              const gfx::IntRect& aRect,
+bool PalettedRectIsSolidColor(Decoder* aDecoder, const gfx::IntRect& aRect,
                               uint8_t aColor);
 
 
 
 
 
-bool RowHasPixels(gfx::SourceSurface* aSurface,
-                  int32_t aRow,
+bool RowHasPixels(gfx::SourceSurface* aSurface, int32_t aRow,
                   const std::vector<BGRAColor>& aPixels);
 
 
 
-class ExpectNoResume final : public IResumable
-{
-public:
+class ExpectNoResume final : public IResumable {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ExpectNoResume, override)
 
   void Resume() override { FAIL() << "Resume() should not get called"; }
 
-private:
-  ~ExpectNoResume() override { }
+ private:
+  ~ExpectNoResume() override {}
 };
 
 
 
-class CountResumes : public IResumable
-{
-public:
+class CountResumes : public IResumable {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CountResumes, override)
 
-  CountResumes() : mCount(0) { }
+  CountResumes() : mCount(0) {}
 
   void Resume() override { mCount++; }
   uint32_t Count() const { return mCount; }
 
-private:
-  ~CountResumes() override { }
+ private:
+  ~CountResumes() override {}
 
   uint32_t mCount;
 };
-
 
 
 
@@ -264,8 +237,8 @@ already_AddRefed<Decoder> CreateTrivialDecoder();
 
 
 template <typename Func, typename... Configs>
-void WithFilterPipeline(Decoder* aDecoder, Func aFunc, bool aFinish, const Configs&... aConfigs)
-{
+void WithFilterPipeline(Decoder* aDecoder, Func aFunc, bool aFinish,
+                        const Configs&... aConfigs) {
   auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
   nsresult rv = pipe->Configure(aConfigs...);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
@@ -281,8 +254,8 @@ void WithFilterPipeline(Decoder* aDecoder, Func aFunc, bool aFinish, const Confi
 }
 
 template <typename Func, typename... Configs>
-void WithFilterPipeline(Decoder* aDecoder, Func aFunc, const Configs&... aConfigs)
-{
+void WithFilterPipeline(Decoder* aDecoder, Func aFunc,
+                        const Configs&... aConfigs) {
   WithFilterPipeline(aDecoder, aFunc, true, aConfigs...);
 }
 
@@ -295,8 +268,8 @@ void WithFilterPipeline(Decoder* aDecoder, Func aFunc, const Configs&... aConfig
 
 
 template <typename... Configs>
-void AssertConfiguringPipelineFails(Decoder* aDecoder, const Configs&... aConfigs)
-{
+void AssertConfiguringPipelineFails(Decoder* aDecoder,
+                                    const Configs&... aConfigs) {
   auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
   nsresult rv = pipe->Configure(aConfigs...);
 
@@ -334,8 +307,7 @@ void AssertCorrectPipelineFinalState(SurfaceFilter* aFilter,
 
 
 
-void CheckGeneratedImage(Decoder* aDecoder,
-                         const gfx::IntRect& aRect,
+void CheckGeneratedImage(Decoder* aDecoder, const gfx::IntRect& aRect,
                          uint8_t aFuzz = 0);
 
 
@@ -352,8 +324,7 @@ void CheckGeneratedImage(Decoder* aDecoder,
 void CheckGeneratedSurface(gfx::SourceSurface* aSurface,
                            const gfx::IntRect& aRect,
                            const BGRAColor& aInnerColor,
-                           const BGRAColor& aOuterColor,
-                           uint8_t aFuzz = 0);
+                           const BGRAColor& aOuterColor, uint8_t aFuzz = 0);
 
 
 
@@ -396,8 +367,7 @@ void CheckGeneratedPalettedImage(Decoder* aDecoder, const gfx::IntRect& aRect);
 
 
 
-void CheckWritePixels(Decoder* aDecoder,
-                      SurfaceFilter* aFilter,
+void CheckWritePixels(Decoder* aDecoder, SurfaceFilter* aFilter,
                       const Maybe<gfx::IntRect>& aOutputRect = Nothing(),
                       const Maybe<gfx::IntRect>& aInputRect = Nothing(),
                       const Maybe<gfx::IntRect>& aInputWriteRect = Nothing(),
@@ -409,37 +379,29 @@ void CheckWritePixels(Decoder* aDecoder,
 
 
 
-void CheckPalettedWritePixels(Decoder* aDecoder,
-                              SurfaceFilter* aFilter,
-                              const Maybe<gfx::IntRect>& aOutputRect = Nothing(),
-                              const Maybe<gfx::IntRect>& aInputRect = Nothing(),
-                              const Maybe<gfx::IntRect>& aInputWriteRect = Nothing(),
-                              const Maybe<gfx::IntRect>& aOutputWriteRect = Nothing(),
-                              uint8_t aFuzz = 0);
+void CheckPalettedWritePixels(
+    Decoder* aDecoder, SurfaceFilter* aFilter,
+    const Maybe<gfx::IntRect>& aOutputRect = Nothing(),
+    const Maybe<gfx::IntRect>& aInputRect = Nothing(),
+    const Maybe<gfx::IntRect>& aInputWriteRect = Nothing(),
+    const Maybe<gfx::IntRect>& aOutputWriteRect = Nothing(), uint8_t aFuzz = 0);
 
 
 
 
 
 
-class MOZ_STACK_CLASS DecoderTestHelper final
-{
-public:
-  explicit DecoderTestHelper(Decoder* aDecoder)
-    : mDecoder(aDecoder)
-  { }
+class MOZ_STACK_CLASS DecoderTestHelper final {
+ public:
+  explicit DecoderTestHelper(Decoder* aDecoder) : mDecoder(aDecoder) {}
 
-  void PostIsAnimated(FrameTimeout aTimeout)
-  {
+  void PostIsAnimated(FrameTimeout aTimeout) {
     mDecoder->PostIsAnimated(aTimeout);
   }
 
-  void PostFrameStop(Opacity aOpacity)
-  {
-    mDecoder->PostFrameStop(aOpacity);
-  }
+  void PostFrameStop(Opacity aOpacity) { mDecoder->PostFrameStop(aOpacity); }
 
-private:
+ private:
   Decoder* mDecoder;
 };
 
@@ -498,7 +460,7 @@ ImageTestCase LargeICOWithBMPTestCase();
 ImageTestCase LargeICOWithPNGTestCase();
 ImageTestCase GreenMultipleSizesICOTestCase();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -1,6 +1,6 @@
 #include "TestActorPunning.h"
 
-#include "IPDLUnitTests.h"      
+#include "IPDLUnitTests.h"  
 #include "mozilla/Unused.h"
 
 namespace mozilla {
@@ -9,28 +9,21 @@ namespace _ipdltest {
 
 
 
-void
-TestActorPunningParent::Main()
-{
-    if (!SendStart())
-        fail("sending Start");
+void TestActorPunningParent::Main() {
+  if (!SendStart()) fail("sending Start");
 }
 
-mozilla::ipc::IPCResult
-TestActorPunningParent::RecvPun(PTestActorPunningSubParent* a, const Bad& bad)
-{
-    if (a->SendBad())
-        fail("bad!");
-    fail("shouldn't have received this message in the first place");
-    return IPC_OK();
+mozilla::ipc::IPCResult TestActorPunningParent::RecvPun(
+    PTestActorPunningSubParent* a, const Bad& bad) {
+  if (a->SendBad()) fail("bad!");
+  fail("shouldn't have received this message in the first place");
+  return IPC_OK();
 }
 
 
 
 
-void
-TestActorPunningParent::HandleFatalError(const char* aErrorMsg) const
-{
+void TestActorPunningParent::HandleFatalError(const char* aErrorMsg) const {
   if (!!strcmp(aErrorMsg, "Error deserializing 'PTestActorPunningSubParent'")) {
     fail("wrong fatal error");
   }
@@ -46,103 +39,88 @@ TestActorPunningParent::HandleFatalError(const char* aErrorMsg) const
 }
 
 PTestActorPunningPunnedParent*
-TestActorPunningParent::AllocPTestActorPunningPunnedParent()
-{
-    return new TestActorPunningPunnedParent();
+TestActorPunningParent::AllocPTestActorPunningPunnedParent() {
+  return new TestActorPunningPunnedParent();
 }
 
-bool
-TestActorPunningParent::DeallocPTestActorPunningPunnedParent(PTestActorPunningPunnedParent* a)
-{
-    delete a;
-    return true;
+bool TestActorPunningParent::DeallocPTestActorPunningPunnedParent(
+    PTestActorPunningPunnedParent* a) {
+  delete a;
+  return true;
 }
 
 PTestActorPunningSubParent*
-TestActorPunningParent::AllocPTestActorPunningSubParent()
-{
-    return new TestActorPunningSubParent();
+TestActorPunningParent::AllocPTestActorPunningSubParent() {
+  return new TestActorPunningSubParent();
 }
 
-bool
-TestActorPunningParent::DeallocPTestActorPunningSubParent(PTestActorPunningSubParent* a)
-{
-    delete a;
-    return true;
+bool TestActorPunningParent::DeallocPTestActorPunningSubParent(
+    PTestActorPunningSubParent* a) {
+  delete a;
+  return true;
 }
 
 
 
 
 PTestActorPunningPunnedChild*
-TestActorPunningChild::AllocPTestActorPunningPunnedChild()
-{
-    return new TestActorPunningPunnedChild();
+TestActorPunningChild::AllocPTestActorPunningPunnedChild() {
+  return new TestActorPunningPunnedChild();
 }
 
-bool
-TestActorPunningChild::DeallocPTestActorPunningPunnedChild(PTestActorPunningPunnedChild*)
-{
-    fail("should have died by now");
-    return true;
+bool TestActorPunningChild::DeallocPTestActorPunningPunnedChild(
+    PTestActorPunningPunnedChild*) {
+  fail("should have died by now");
+  return true;
 }
 
 PTestActorPunningSubChild*
-TestActorPunningChild::AllocPTestActorPunningSubChild()
-{
-    return new TestActorPunningSubChild();
+TestActorPunningChild::AllocPTestActorPunningSubChild() {
+  return new TestActorPunningSubChild();
 }
 
-bool
-TestActorPunningChild::DeallocPTestActorPunningSubChild(PTestActorPunningSubChild*)
-{
-    fail("should have died by now");
-    return true;
+bool TestActorPunningChild::DeallocPTestActorPunningSubChild(
+    PTestActorPunningSubChild*) {
+  fail("should have died by now");
+  return true;
 }
 
-mozilla::ipc::IPCResult
-TestActorPunningChild::RecvStart()
-{
-    SendPTestActorPunningSubConstructor();
-    SendPTestActorPunningPunnedConstructor();
-    PTestActorPunningSubChild* a = SendPTestActorPunningSubConstructor();
-    
-    
-    SendPun(a, Bad());
-    return IPC_OK();
+mozilla::ipc::IPCResult TestActorPunningChild::RecvStart() {
+  SendPTestActorPunningSubConstructor();
+  SendPTestActorPunningPunnedConstructor();
+  PTestActorPunningSubChild* a = SendPTestActorPunningSubConstructor();
+  
+  
+  SendPun(a, Bad());
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestActorPunningSubChild::RecvBad()
-{
-    fail("things are going really badly right now");
-    return IPC_OK();
+mozilla::ipc::IPCResult TestActorPunningSubChild::RecvBad() {
+  fail("things are going really badly right now");
+  return IPC_OK();
 }
 
-
-} 
-} 
+}  
+}  
 
 namespace IPC {
 using namespace mozilla::_ipdltest;
 using namespace mozilla::ipc;
 
- void
-ParamTraits<Bad>::Write(Message* aMsg, const paramType& aParam)
-{
-    
-    int32_t* ptr = aMsg->GetInt32PtrForTest(2 * sizeof(int32_t));
-    ActorHandle* ah = reinterpret_cast<ActorHandle*>(ptr);
-    if (ah->mId != -3)
-        fail("guessed wrong offset (value is %d, should be -3)", ah->mId);
-    ah->mId = -2;
+ void ParamTraits<Bad>::Write(Message* aMsg,
+                                        const paramType& aParam) {
+  
+  int32_t* ptr = aMsg->GetInt32PtrForTest(2 * sizeof(int32_t));
+  ActorHandle* ah = reinterpret_cast<ActorHandle*>(ptr);
+  if (ah->mId != -3)
+    fail("guessed wrong offset (value is %d, should be -3)", ah->mId);
+  ah->mId = -2;
 }
 
- bool
-ParamTraits<Bad>::Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-{
-    return true;
+ bool ParamTraits<Bad>::Read(const Message* aMsg,
+                                       PickleIterator* aIter,
+                                       paramType* aResult) {
+  return true;
 }
 
-} 
-
+}  

@@ -14,8 +14,7 @@ using mozilla::RecursiveMutexAutoLock;
 
 
 
-TEST(RecursiveMutex, SmokeTest)
-{
+TEST(RecursiveMutex, SmokeTest) {
   RecursiveMutex mutex("testing mutex");
 
   RecursiveMutexAutoLock lock1(mutex);

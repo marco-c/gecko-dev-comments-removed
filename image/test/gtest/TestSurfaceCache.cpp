@@ -19,19 +19,17 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
 
-class ImageSurfaceCache : public ::testing::Test
-{
-protected:
+class ImageSurfaceCache : public ::testing::Test {
+ protected:
   AutoInitializeImageLib mInit;
 };
 
-TEST_F(ImageSurfaceCache, Factor2)
-{
+TEST_F(ImageSurfaceCache, Factor2) {
   ImageTestCase testCase = GreenPNGTestCase();
 
   
-  RefPtr<Image> image =
-    ImageFactory::CreateAnonymousImage(nsDependentCString(testCase.mMimeType));
+  RefPtr<Image> image = ImageFactory::CreateAnonymousImage(
+      nsDependentCString(testCase.mMimeType));
   ASSERT_TRUE(!image->HasError());
 
   nsCOMPtr<nsIInputStream> inputStream = LoadFile(testCase.mPath);
@@ -44,11 +42,12 @@ TEST_F(ImageSurfaceCache, Factor2)
 
   
   
-  ASSERT_LT(length, static_cast<uint64_t>(gfxPrefs::ImageMemDecodeBytesAtATime()));
+  ASSERT_LT(length,
+            static_cast<uint64_t>(gfxPrefs::ImageMemDecodeBytesAtATime()));
 
   
   rv = image->OnImageDataAvailable(nullptr, nullptr, inputStream, 0,
-                                       static_cast<uint32_t>(length));
+                                   static_cast<uint32_t>(length));
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
@@ -92,7 +91,7 @@ TEST_F(ImageSurfaceCache, Factor2)
   IntSize size = testCase.mSize;
   for (int32_t i = 0; i <= totalThreshold; ++i) {
     RefPtr<SourceSurface> surf =
-      image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
+        image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
     ASSERT_TRUE(surf);
     EXPECT_EQ(surf->GetSize(), size);
 
@@ -103,7 +102,7 @@ TEST_F(ImageSurfaceCache, Factor2)
   
   
   RefPtr<SourceSurface> surf =
-    image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
+      image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
   ASSERT_TRUE(surf);
 
   EXPECT_EQ(surf->GetSize(), testCase.mSize);
@@ -113,7 +112,7 @@ TEST_F(ImageSurfaceCache, Factor2)
   size = testCase.mSize;
   for (int32_t i = 0; i < totalThreshold; ++i) {
     RefPtr<SourceSurface> surf =
-      image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
+        image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
     ASSERT_TRUE(surf);
     EXPECT_EQ(surf->GetSize(), size);
 
@@ -143,7 +142,7 @@ TEST_F(ImageSurfaceCache, Factor2)
   size = testCase.mSize;
   for (int32_t i = 0; i < totalThreshold - 1; ++i) {
     RefPtr<SourceSurface> surf =
-      image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
+        image->GetFrameAtSize(size, whichFrame, bestMatchFlags);
     ASSERT_TRUE(surf);
     EXPECT_EQ(surf->GetSize(), testCase.mSize);
 

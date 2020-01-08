@@ -109,9 +109,9 @@ namespace test_assembler {
 
 class Label {
  public:
-  Label();                               
-  explicit Label(uint64_t value);        
-  Label(const Label &value);             
+  Label();                         
+  explicit Label(uint64_t value);  
+  Label(const Label &value);       
   ~Label();
 
   Label &operator=(uint64_t value);
@@ -225,9 +225,9 @@ class Label {
 
 
 enum Endianness {
-  kBigEndian,        
-  kLittleEndian,     
-  kUnsetEndian,      
+  kBigEndian,     
+  kLittleEndian,  
+  kUnsetEndian,   
 };
 
 
@@ -256,11 +256,11 @@ enum Endianness {
 class Section {
  public:
   explicit Section(Endianness endianness = kUnsetEndian)
-      : endianness_(endianness) { };
+      : endianness_(endianness){};
 
   
   
-  virtual ~Section() { };
+  virtual ~Section(){};
 
   
   Endianness endianness() const { return endianness_; }
@@ -275,7 +275,7 @@ class Section {
   
   
   Section &Append(size_t size, uint8_t byte) {
-    contents_.append(size, (char) byte);
+    contents_.append(size, (char)byte);
     return *this;
   }
 
@@ -318,18 +318,27 @@ class Section {
   
   
   
-  Section &L8(uint8_t value) { contents_ += value; return *this; }
-  Section &B8(uint8_t value) { contents_ += value; return *this; }
-  Section &D8(uint8_t value) { contents_ += value; return *this; }
-  Section &L16(uint16_t), &L32(uint32_t), &L64(uint64_t),
-          &B16(uint16_t), &B32(uint32_t), &B64(uint64_t),
-          &D16(uint16_t), &D32(uint32_t), &D64(uint64_t);
-  Section &L8(const Label &label),  &L16(const Label &label),
-          &L32(const Label &label), &L64(const Label &label),
-          &B8(const Label &label),  &B16(const Label &label),
-          &B32(const Label &label), &B64(const Label &label),
-          &D8(const Label &label),  &D16(const Label &label),
-          &D32(const Label &label), &D64(const Label &label);
+  Section &L8(uint8_t value) {
+    contents_ += value;
+    return *this;
+  }
+  Section &B8(uint8_t value) {
+    contents_ += value;
+    return *this;
+  }
+  Section &D8(uint8_t value) {
+    contents_ += value;
+    return *this;
+  }
+  Section &L16(uint16_t), &L32(uint32_t), &L64(uint64_t), &B16(uint16_t),
+      &B32(uint32_t), &B64(uint64_t), &D16(uint16_t), &D32(uint32_t),
+      &D64(uint64_t);
+  Section &L8(const Label &label), &L16(const Label &label),
+      &L32(const Label &label), &L64(const Label &label),
+      &B8(const Label &label), &B16(const Label &label),
+      &B32(const Label &label), &B64(const Label &label),
+      &D8(const Label &label), &D16(const Label &label),
+      &D32(const Label &label), &D64(const Label &label);
 
   
   
@@ -399,7 +408,10 @@ class Section {
   Label Here() const { return start_ + Size(); }
 
   
-  Section &Mark(Label *label) { *label = Here(); return *this; }
+  Section &Mark(Label *label) {
+    *label = Here();
+    return *this;
+  }
 
   
   
@@ -410,10 +422,12 @@ class Section {
  private:
   
   struct Reference {
-    Reference(size_t set_offset, Endianness set_endianness,  size_t set_size,
+    Reference(size_t set_offset, Endianness set_endianness, size_t set_size,
               const Label &set_label)
-        : offset(set_offset), endianness(set_endianness), size(set_size),
-          label(set_label) { }
+        : offset(set_offset),
+          endianness(set_endianness),
+          size(set_size),
+          label(set_label) {}
 
     
     size_t offset;
@@ -444,7 +458,6 @@ class Section {
 }  
 }  
 
-
 namespace lul_test {
 
 using lul::DwarfPointerEncoding;
@@ -452,9 +465,8 @@ using lul_test::test_assembler::Endianness;
 using lul_test::test_assembler::Label;
 using lul_test::test_assembler::Section;
 
-class CFISection: public Section {
+class CFISection : public Section {
  public:
-
   
   
   
@@ -476,7 +488,7 @@ class CFISection: public Section {
   
   
   struct EncodedPointerBases {
-    EncodedPointerBases() : cfi(), text(), data() { }
+    EncodedPointerBases() : cfi(), text(), data() {}
 
     
     
@@ -496,11 +508,14 @@ class CFISection: public Section {
   
   
   
-  CFISection(Endianness endianness, size_t address_size,
-             bool eh_frame = false)
-      : Section(endianness), address_size_(address_size), eh_frame_(eh_frame),
+  CFISection(Endianness endianness, size_t address_size, bool eh_frame = false)
+      : Section(endianness),
+        address_size_(address_size),
+        eh_frame_(eh_frame),
         pointer_encoding_(lul::DW_EH_PE_absptr),
-        encoded_pointer_bases_(), entry_length_(NULL), in_fde_(false) {
+        encoded_pointer_bases_(),
+        entry_length_(NULL),
+        in_fde_(false) {
     
     
     start() = 0;
@@ -536,10 +551,8 @@ class CFISection: public Section {
   
   CFISection &CIEHeader(uint64_t code_alignment_factor,
                         int data_alignment_factor,
-                        unsigned return_address_register,
-                        uint8_t version = 3,
-                        const string &augmentation = "",
-                        bool dwarf64 = false);
+                        unsigned return_address_register, uint8_t version = 3,
+                        const string &augmentation = "", bool dwarf64 = false);
 
   
   
@@ -551,10 +564,8 @@ class CFISection: public Section {
   
   
   
-  CFISection &FDEHeader(Label cie_pointer,
-                        uint64_t initial_location,
-                        uint64_t address_range,
-                        bool dwarf64 = false);
+  CFISection &FDEHeader(Label cie_pointer, uint64_t initial_location,
+                        uint64_t address_range, bool dwarf64 = false);
 
   
   
@@ -596,16 +607,46 @@ class CFISection: public Section {
                              const EncodedPointerBases &bases);
 
   
-  CFISection &Mark(Label *label)   { Section::Mark(label); return *this; }
-  CFISection &D8(uint8_t v)       { Section::D8(v);       return *this; }
-  CFISection &D16(uint16_t v)     { Section::D16(v);      return *this; }
-  CFISection &D16(Label v)         { Section::D16(v);      return *this; }
-  CFISection &D32(uint32_t v)     { Section::D32(v);      return *this; }
-  CFISection &D32(const Label &v)  { Section::D32(v);      return *this; }
-  CFISection &D64(uint64_t v)     { Section::D64(v);      return *this; }
-  CFISection &D64(const Label &v)  { Section::D64(v);      return *this; }
-  CFISection &LEB128(long long v)  { Section::LEB128(v);   return *this; }
-  CFISection &ULEB128(uint64_t v) { Section::ULEB128(v);  return *this; }
+  CFISection &Mark(Label *label) {
+    Section::Mark(label);
+    return *this;
+  }
+  CFISection &D8(uint8_t v) {
+    Section::D8(v);
+    return *this;
+  }
+  CFISection &D16(uint16_t v) {
+    Section::D16(v);
+    return *this;
+  }
+  CFISection &D16(Label v) {
+    Section::D16(v);
+    return *this;
+  }
+  CFISection &D32(uint32_t v) {
+    Section::D32(v);
+    return *this;
+  }
+  CFISection &D32(const Label &v) {
+    Section::D32(v);
+    return *this;
+  }
+  CFISection &D64(uint64_t v) {
+    Section::D64(v);
+    return *this;
+  }
+  CFISection &D64(const Label &v) {
+    Section::D64(v);
+    return *this;
+  }
+  CFISection &LEB128(long long v) {
+    Section::LEB128(v);
+    return *this;
+  }
+  CFISection &ULEB128(uint64_t v) {
+    Section::ULEB128(v);
+    return *this;
+  }
 
  private:
   
@@ -663,4 +704,4 @@ class CFISection: public Section {
 
 }  
 
-#endif 
+#endif  

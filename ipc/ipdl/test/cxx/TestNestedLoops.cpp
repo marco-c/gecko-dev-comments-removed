@@ -4,7 +4,7 @@
 
 #include "TestNestedLoops.h"
 
-#include "IPDLUnitTests.h"      
+#include "IPDLUnitTests.h"  
 
 namespace mozilla {
 namespace _ipdltest {
@@ -12,89 +12,67 @@ namespace _ipdltest {
 
 
 
-TestNestedLoopsParent::TestNestedLoopsParent() : mBreakNestedLoop(false)
-{
-    MOZ_COUNT_CTOR(TestNestedLoopsParent);
+TestNestedLoopsParent::TestNestedLoopsParent() : mBreakNestedLoop(false) {
+  MOZ_COUNT_CTOR(TestNestedLoopsParent);
 }
 
-TestNestedLoopsParent::~TestNestedLoopsParent()
-{
-    MOZ_COUNT_DTOR(TestNestedLoopsParent);
+TestNestedLoopsParent::~TestNestedLoopsParent() {
+  MOZ_COUNT_DTOR(TestNestedLoopsParent);
 }
 
-void
-TestNestedLoopsParent::Main()
-{
-    if (!SendStart())
-        fail("sending Start");
+void TestNestedLoopsParent::Main() {
+  if (!SendStart()) fail("sending Start");
 
-    
-    puts(" (sleeping to wait for nonce ... sorry)");
-    PR_Sleep(5000);
+  
+  puts(" (sleeping to wait for nonce ... sorry)");
+  PR_Sleep(5000);
 
-    
-    if (!CallR())
-        fail("calling R");
+  
+  if (!CallR()) fail("calling R");
 
-    Close();
+  Close();
 }
 
-mozilla::ipc::IPCResult
-TestNestedLoopsParent::RecvNonce()
-{
-    
-    
-    
-    MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
-      "_ipdltest::TestNestedLoopsParent::BreakNestedLoop",
-      this,
+mozilla::ipc::IPCResult TestNestedLoopsParent::RecvNonce() {
+  
+  
+  
+  MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
+      "_ipdltest::TestNestedLoopsParent::BreakNestedLoop", this,
       &TestNestedLoopsParent::BreakNestedLoop));
 
-    
-    puts(" (sleeping to wait for reply to R ... sorry)");
-    PR_Sleep(5000);
+  
+  puts(" (sleeping to wait for reply to R ... sorry)");
+  PR_Sleep(5000);
 
-    
-    do {
-        if (!NS_ProcessNextEvent(nullptr, false))
-            fail("expected at least one pending event");
-    } while (!mBreakNestedLoop);
+  
+  do {
+    if (!NS_ProcessNextEvent(nullptr, false))
+      fail("expected at least one pending event");
+  } while (!mBreakNestedLoop);
 
-    return IPC_OK();
+  return IPC_OK();
 }
 
-void
-TestNestedLoopsParent::BreakNestedLoop()
-{
-    mBreakNestedLoop = true;
+void TestNestedLoopsParent::BreakNestedLoop() { mBreakNestedLoop = true; }
+
+
+
+
+TestNestedLoopsChild::TestNestedLoopsChild() {
+  MOZ_COUNT_CTOR(TestNestedLoopsChild);
 }
 
-
-
-
-TestNestedLoopsChild::TestNestedLoopsChild()
-{
-    MOZ_COUNT_CTOR(TestNestedLoopsChild);
+TestNestedLoopsChild::~TestNestedLoopsChild() {
+  MOZ_COUNT_DTOR(TestNestedLoopsChild);
 }
 
-TestNestedLoopsChild::~TestNestedLoopsChild()
-{
-    MOZ_COUNT_DTOR(TestNestedLoopsChild);
+mozilla::ipc::IPCResult TestNestedLoopsChild::RecvStart() {
+  if (!SendNonce()) fail("sending Nonce");
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestNestedLoopsChild::RecvStart()
-{
-    if (!SendNonce())
-        fail("sending Nonce");
-    return IPC_OK();
-}
+mozilla::ipc::IPCResult TestNestedLoopsChild::AnswerR() { return IPC_OK(); }
 
-mozilla::ipc::IPCResult
-TestNestedLoopsChild::AnswerR()
-{
-    return IPC_OK();
-}
-
-} 
-} 
+}  
+}  

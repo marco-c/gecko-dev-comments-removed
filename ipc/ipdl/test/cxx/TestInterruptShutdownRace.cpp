@@ -1,7 +1,7 @@
 #include "TestInterruptShutdownRace.h"
 
 #include "base/task.h"
-#include "IPDLUnitTests.h"      
+#include "IPDLUnitTests.h"  
 #include "IPDLUnitTestSubprocess.h"
 
 namespace mozilla {
@@ -15,120 +15,97 @@ namespace {
 
 
 
-void DeleteSubprocess()
-{
-    delete gSubprocess;
-    gSubprocess = nullptr;
+void DeleteSubprocess() {
+  delete gSubprocess;
+  gSubprocess = nullptr;
 }
 
-void Done()
-{
-    passed(__FILE__);
-    QuitParent();
+void Done() {
+  passed(__FILE__);
+  QuitParent();
 }
 
-} 
+}  
 
-TestInterruptShutdownRaceParent::TestInterruptShutdownRaceParent()
-{
-    MOZ_COUNT_CTOR(TestInterruptShutdownRaceParent);
+TestInterruptShutdownRaceParent::TestInterruptShutdownRaceParent() {
+  MOZ_COUNT_CTOR(TestInterruptShutdownRaceParent);
 }
 
-TestInterruptShutdownRaceParent::~TestInterruptShutdownRaceParent()
-{
-    MOZ_COUNT_DTOR(TestInterruptShutdownRaceParent);
+TestInterruptShutdownRaceParent::~TestInterruptShutdownRaceParent() {
+  MOZ_COUNT_DTOR(TestInterruptShutdownRaceParent);
 }
 
-void
-TestInterruptShutdownRaceParent::Main()
-{
-    if (!SendStart())
-        fail("sending Start");
+void TestInterruptShutdownRaceParent::Main() {
+  if (!SendStart()) fail("sending Start");
 }
 
-mozilla::ipc::IPCResult
-TestInterruptShutdownRaceParent::RecvStartDeath()
-{
-    
-    
-    MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
-      "_ipdltest::TestInterruptShutdownRaceParent::StartShuttingDown",
-      this,
+mozilla::ipc::IPCResult TestInterruptShutdownRaceParent::RecvStartDeath() {
+  
+  
+  MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
+      "_ipdltest::TestInterruptShutdownRaceParent::StartShuttingDown", this,
       &TestInterruptShutdownRaceParent::StartShuttingDown));
-    return IPC_OK();
+  return IPC_OK();
 }
 
-void
-TestInterruptShutdownRaceParent::StartShuttingDown()
-{
-    
-    
-    
-    
-    PR_Sleep(2000);
+void TestInterruptShutdownRaceParent::StartShuttingDown() {
+  
+  
+  
+  
+  PR_Sleep(2000);
 
-    if (CallExit())
-        fail("connection was supposed to be interrupted");
+  if (CallExit()) fail("connection was supposed to be interrupted");
 
-    Close();
+  Close();
 
-    delete static_cast<TestInterruptShutdownRaceParent*>(gParentActor);
-    gParentActor = nullptr;
+  delete static_cast<TestInterruptShutdownRaceParent*>(gParentActor);
+  gParentActor = nullptr;
 
-    XRE_GetIOMessageLoop()->PostTask(NewRunnableFunction("DeleteSubprocess",
-                                                         DeleteSubprocess));
+  XRE_GetIOMessageLoop()->PostTask(
+      NewRunnableFunction("DeleteSubprocess", DeleteSubprocess));
 
-    
-    MessageLoop::current()->PostTask(NewRunnableFunction("Done", Done));
+  
+  MessageLoop::current()->PostTask(NewRunnableFunction("Done", Done));
 
-    
+  
 }
 
-mozilla::ipc::IPCResult
-TestInterruptShutdownRaceParent::RecvOrphan()
-{
-    
-    
-    
-    
-    return IPC_OK();
+mozilla::ipc::IPCResult TestInterruptShutdownRaceParent::RecvOrphan() {
+  
+  
+  
+  
+  return IPC_OK();
 }
 
 
 
 
-TestInterruptShutdownRaceChild::TestInterruptShutdownRaceChild()
-{
-    MOZ_COUNT_CTOR(TestInterruptShutdownRaceChild);
+TestInterruptShutdownRaceChild::TestInterruptShutdownRaceChild() {
+  MOZ_COUNT_CTOR(TestInterruptShutdownRaceChild);
 }
 
-TestInterruptShutdownRaceChild::~TestInterruptShutdownRaceChild()
-{
-    MOZ_COUNT_DTOR(TestInterruptShutdownRaceChild);
+TestInterruptShutdownRaceChild::~TestInterruptShutdownRaceChild() {
+  MOZ_COUNT_DTOR(TestInterruptShutdownRaceChild);
 }
 
-mozilla::ipc::IPCResult
-TestInterruptShutdownRaceChild::RecvStart()
-{
-    if (!SendStartDeath())
-        fail("sending StartDeath");
+mozilla::ipc::IPCResult TestInterruptShutdownRaceChild::RecvStart() {
+  if (!SendStartDeath()) fail("sending StartDeath");
 
-    
-    
-    PR_Sleep(1000);
+  
+  
+  PR_Sleep(1000);
 
-    if (!SendOrphan())
-        fail("sending Orphan");
+  if (!SendOrphan()) fail("sending Orphan");
 
-    return IPC_OK();
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestInterruptShutdownRaceChild::AnswerExit()
-{
-    _exit(0);
-    MOZ_CRASH("unreached");
+mozilla::ipc::IPCResult TestInterruptShutdownRaceChild::AnswerExit() {
+  _exit(0);
+  MOZ_CRASH("unreached");
 }
 
-} 
-} 
+}  
+}  

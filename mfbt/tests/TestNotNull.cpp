@@ -17,21 +17,19 @@ using mozilla::WrapNotNull;
 
 #define CHECK MOZ_RELEASE_ASSERT
 
-class Blah
-{
-public:
+class Blah {
+ public:
   Blah() : mX(0) {}
-  void blah() {};
+  void blah(){};
   int mX;
 };
 
 
 template <typename T>
-class MyPtr
-{
+class MyPtr {
   T* mRawPtr;
 
-public:
+ public:
   MyPtr() : mRawPtr(nullptr) {}
   MOZ_IMPLICIT MyPtr(T* aRawPtr) : mRawPtr(aRawPtr) {}
 
@@ -43,21 +41,16 @@ public:
 
 
 
-class MyRefType
-{
+class MyRefType {
   int mExpectedMaxRefCnt;
   int mMaxRefCnt;
   int mRefCnt;
-public:
-  explicit MyRefType(int aExpectedMaxRefCnt)
-    : mExpectedMaxRefCnt(aExpectedMaxRefCnt)
-    , mMaxRefCnt(0)
-    , mRefCnt(0)
-  {}
 
-  ~MyRefType() {
-    CHECK(mMaxRefCnt == mExpectedMaxRefCnt);
-  }
+ public:
+  explicit MyRefType(int aExpectedMaxRefCnt)
+      : mExpectedMaxRefCnt(aExpectedMaxRefCnt), mMaxRefCnt(0), mRefCnt(0) {}
+
+  ~MyRefType() { CHECK(mMaxRefCnt == mExpectedMaxRefCnt); }
 
   uint32_t AddRef() {
     mRefCnt++;
@@ -84,9 +77,7 @@ void f_my(MyPtr<int> aPtr) {}
 void f_nni(NotNull<int*> aPtr) {}
 void f_nnmy(NotNull<MyPtr<int>> aPtr) {}
 
-void
-TestNotNullWithMyPtr()
-{
+void TestNotNullWithMyPtr() {
   int i4 = 4;
   int i5 = 5;
 
@@ -106,10 +97,10 @@ TestNotNullWithMyPtr()
   
   
   
-  NotNull<int*> nni4b(WrapNotNull(&i4));        
-  NotNull<int*> nni4c(WrapNotNull(my4));        
-  NotNull<int*> nni4d(nni4);                    
-  NotNull<int*> nni4e(nnmy4);                   
+  NotNull<int*> nni4b(WrapNotNull(&i4));  
+  NotNull<int*> nni4c(WrapNotNull(my4));  
+  NotNull<int*> nni4d(nni4);              
+  NotNull<int*> nni4e(nnmy4);             
   CHECK(*nni4b == 4);
   CHECK(*nni4c == 4);
   CHECK(*nni4d == 4);
@@ -121,10 +112,10 @@ TestNotNullWithMyPtr()
   
   
   
-  NotNull<MyPtr<int>> nnmy4b(WrapNotNull(&i4)); 
-  NotNull<MyPtr<int>> nnmy4c(WrapNotNull(my4)); 
-  NotNull<MyPtr<int>> nnmy4d(nni4);             
-  NotNull<MyPtr<int>> nnmy4e(nnmy4);            
+  NotNull<MyPtr<int>> nnmy4b(WrapNotNull(&i4));  
+  NotNull<MyPtr<int>> nnmy4c(WrapNotNull(my4));  
+  NotNull<MyPtr<int>> nnmy4d(nni4);              
+  NotNull<MyPtr<int>> nnmy4e(nnmy4);             
   CHECK(*nnmy4b == 4);
   CHECK(*nnmy4c == 4);
   CHECK(*nnmy4d == 4);
@@ -135,10 +126,10 @@ TestNotNullWithMyPtr()
   
   
   
-  nni4b = WrapNotNull(&i4);                     
-  nni4c = WrapNotNull(my4);                     
-  nni4d = nni4;                                 
-  nni4e = nnmy4;                                
+  nni4b = WrapNotNull(&i4);  
+  nni4c = WrapNotNull(my4);  
+  nni4d = nni4;              
+  nni4e = nnmy4;             
   CHECK(*nni4b == 4);
   CHECK(*nni4c == 4);
   CHECK(*nni4d == 4);
@@ -149,10 +140,10 @@ TestNotNullWithMyPtr()
   
   
   
-  nnmy4b = WrapNotNull(&i4);                    
-  nnmy4c = WrapNotNull(my4);                    
-  nnmy4d = nni4;                                
-  nnmy4e = nnmy4;                               
+  nnmy4b = WrapNotNull(&i4);  
+  nnmy4c = WrapNotNull(my4);  
+  nnmy4d = nni4;              
+  nnmy4e = nnmy4;             
   CHECK(*nnmy4b == 4);
   CHECK(*nnmy4c == 4);
   CHECK(*nnmy4d == 4);
@@ -160,60 +151,61 @@ TestNotNullWithMyPtr()
 
   NotNull<MyPtr<int>> nnmy5 = WrapNotNull(&i5);
   CHECK(*nnmy5 == 5);
-  CHECK(nnmy5 == &i5);       
-  CHECK(nnmy5 == my5);       
-  CHECK(nnmy5 == nni5);      
-  CHECK(nnmy5 == nnmy5);     
-  CHECK(&i5   == nnmy5);     
-  CHECK(my5   == nnmy5);     
-  CHECK(nni5  == nnmy5);     
-  CHECK(nnmy5 == nnmy5);     
+  CHECK(nnmy5 == &i5);    
+  CHECK(nnmy5 == my5);    
+  CHECK(nnmy5 == nni5);   
+  CHECK(nnmy5 == nnmy5);  
+  CHECK(&i5 == nnmy5);    
+  CHECK(my5 == nnmy5);    
+  CHECK(nni5 == nnmy5);   
+  CHECK(nnmy5 == nnmy5);  
   
   
   
   
 
   CHECK(*nnmy5 == 5);
-  CHECK(nnmy5 != &i4);       
-  CHECK(nnmy5 != my4);       
-  CHECK(nnmy5 != nni4);      
-  CHECK(nnmy5 != nnmy4);     
-  CHECK(&i4   != nnmy5);     
-  CHECK(my4   != nnmy5);     
-  CHECK(nni4  != nnmy5);     
-  CHECK(nnmy4 != nnmy5);     
+  CHECK(nnmy5 != &i4);    
+  CHECK(nnmy5 != my4);    
+  CHECK(nnmy5 != nni4);   
+  CHECK(nnmy5 != nnmy4);  
+  CHECK(&i4 != nnmy5);    
+  CHECK(my4 != nnmy5);    
+  CHECK(nni4 != nnmy5);   
+  CHECK(nnmy4 != nnmy5);  
   
   
   
   
 
   
-  f_i(&i4);             
-  f_i(my4);             
-  f_i(my4.get());       
-  f_i(nni4);            
-  f_i(nni4.get());      
+  f_i(&i4);         
+  f_i(my4);         
+  f_i(my4.get());   
+  f_i(nni4);        
+  f_i(nni4.get());  
   
-  f_i(nnmy4.get());     
-  f_i(nnmy4.get().get());
+  f_i(nnmy4.get());        
+  f_i(nnmy4.get().get());  
 
   
-  f_my(&i4);            
-  f_my(my4);            
-  f_my(my4.get());      
+  f_my(&i4);        
+  f_my(my4);        
+  f_my(my4.get());  
   
-  f_my(nni4.get());     
-  f_my(nnmy4);          
-  f_my(nnmy4.get());    
-  f_my(nnmy4.get().get());
+  f_my(nni4.get());   
+  f_my(nnmy4);        
+  f_my(nnmy4.get());  
+  f_my(
+      nnmy4.get().get());  
 
   
-  f_nni(nni4);          
-  f_nni(nnmy4);         
+  f_nni(nni4);   
+  f_nni(nnmy4);  
 
   
-  f_nnmy(nni4);         
-  f_nnmy(nnmy4);        
+  f_nnmy(nni4);   
+  f_nnmy(nnmy4);  
 
   
   
@@ -223,10 +215,10 @@ TestNotNullWithMyPtr()
   MyPtr<Blah> myblah = &blah;
   NotNull<Blah*> nnblah = WrapNotNull(&blah);
   NotNull<MyPtr<Blah>> nnmyblah = WrapNotNull(myblah);
-  (&blah)->blah();          
-  myblah->blah();           
-  nnblah->blah();           
-  nnmyblah->blah();         
+  (&blah)->blah();   
+  myblah->blah();    
+  nnblah->blah();    
+  nnmyblah->blah();  
 
   (&blah)->mX = 1;
   CHECK((&blah)->mX == 1);
@@ -238,13 +230,13 @@ TestNotNullWithMyPtr()
   CHECK(nnmyblah->mX == 4);
 
   
-  *(&i4) = 7;               
+  *(&i4) = 7;  
   CHECK(*(&i4) == 7);
-  *my4 = 6;                 
+  *my4 = 6;  
   CHECK(*my4 == 6);
-  *nni4 = 5;                
+  *nni4 = 5;  
   CHECK(*nni4 == 5);
-  *nnmy4 = 4;               
+  *nnmy4 = 4;  
   CHECK(*nnmy4 == 4);
 
   
@@ -262,14 +254,9 @@ TestNotNullWithMyPtr()
   }
 }
 
-void f_ref(NotNull<MyRefType*> aR)
-{
-  NotNull<RefPtr<MyRefType>> r = aR;
-}
+void f_ref(NotNull<MyRefType*> aR) { NotNull<RefPtr<MyRefType>> r = aR; }
 
-void
-TestNotNullWithRefPtr()
-{
+void TestNotNullWithRefPtr() {
   
   NotNull<RefPtr<MyRefType>> r1 = WrapNotNull(new MyRefType(5));
 
@@ -304,9 +291,7 @@ TestNotNullWithRefPtr()
   
 }
 
-void
-TestMakeNotNull()
-{
+void TestMakeNotNull() {
   
   auto nni = MakeNotNull<int*>(11);
   static_assert(mozilla::IsSame<NotNull<int*>, decltype(nni)>::value,
@@ -322,13 +307,11 @@ TestMakeNotNull()
   delete nnci;
 
   
-  struct Base
-  {
+  struct Base {
     virtual ~Base() = default;
     virtual bool IsDerived() const { return false; }
   };
-  struct Derived : Base
-  {
+  struct Derived : Base {
     bool IsDerived() const override { return true; }
   };
   auto nnd = MakeNotNull<Derived*>();
@@ -352,25 +335,23 @@ TestMakeNotNull()
 
   auto nnui = MakeNotNull<UniquePtr<int>>(24);
   static_assert(
-    mozilla::IsSame<NotNull<UniquePtr<int>>, decltype(nnui)>::value,
-    "MakeNotNull<UniquePtr<int>> should return NotNull<UniquePtr<int>>");
+      mozilla::IsSame<NotNull<UniquePtr<int>>, decltype(nnui)>::value,
+      "MakeNotNull<UniquePtr<int>> should return NotNull<UniquePtr<int>>");
   CHECK(*nnui == 24);
 
   
   auto nnr = MakeNotNull<RefPtr<MyRefType>>(1);
   static_assert(
-    mozilla::IsSame<NotNull<RefPtr<MyRefType>>, decltype(nnr)>::value,
-    "MakeNotNull<RefPtr<MyRefType>> should return NotNull<RefPtr<MyRefType>>");
+      mozilla::IsSame<NotNull<RefPtr<MyRefType>>, decltype(nnr)>::value,
+      "MakeNotNull<RefPtr<MyRefType>> should return "
+      "NotNull<RefPtr<MyRefType>>");
   mozilla::Unused << nnr;
 }
 
-int
-main()
-{
+int main() {
   TestNotNullWithMyPtr();
   TestNotNullWithRefPtr();
   TestMakeNotNull();
 
   return 0;
 }
-

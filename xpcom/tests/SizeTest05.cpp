@@ -5,7 +5,6 @@
 
 NS_DEF_PTR(nsINode);
 
-	
 
 
 
@@ -13,62 +12,54 @@ NS_DEF_PTR(nsINode);
 
 
 
-class Test05_Raw
-	{
-		public:
-                        Test05_Raw();
-                 ~Test05_Raw();
 
-			void  GetNode( nsINode** aNode );
+class Test05_Raw {
+ public:
+  Test05_Raw();
+  ~Test05_Raw();
 
-		private:
-			nsINode* mNode;
-	};
+  void  GetNode(nsINode** aNode);
 
-Test05_Raw::Test05_Raw()
-		: mNode(0)
-	{
-		
-	}
+ private:
+  nsINode* mNode;
+};
 
-Test05_Raw::~Test05_Raw()
-	{
-		NS_IF_RELEASE(mNode);
-	}
+Test05_Raw::Test05_Raw() : mNode(0) {
+  
+}
 
-void 
-Test05_Raw::GetNode( nsINode** aNode )
-		
-	{
+Test05_Raw::~Test05_Raw() { NS_IF_RELEASE(mNode); }
 
+void  
+Test05_Raw::GetNode(nsINode** aNode)
 
+{
+  
+  
 
-		*aNode = mNode;
-		NS_IF_ADDREF(*aNode);
+  *aNode = mNode;
+  NS_IF_ADDREF(*aNode);
 
+  
+}
 
-	}
+class Test05_nsCOMPtr {
+ public:
+  void  GetNode(nsINode** aNode);
 
+ private:
+  nsCOMPtr<nsINode> mNode;
+};
 
+void  
+Test05_nsCOMPtr::GetNode(nsINode** aNode)
 
-class Test05_nsCOMPtr
-	{
-		public:
-			void  GetNode( nsINode** aNode );
+{
+  
+  
 
-		private:
-			nsCOMPtr<nsINode> mNode;
-	};
+  *aNode = mNode;
+  NS_IF_ADDREF(*aNode);
 
-void 
-Test05_nsCOMPtr::GetNode( nsINode** aNode )
-		
-	{
-
-
-
-		*aNode = mNode;
-		NS_IF_ADDREF(*aNode);
-
-
-	}
+  
+}

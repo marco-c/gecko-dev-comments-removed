@@ -16,8 +16,4 @@ static_assert(!IsConvertible<Range<const int>, Range<int>>::value,
               "Range should not drop const in conversion");
 
 
-int
-main()
-{
-  return 0;
-}
+int main() { return 0; }

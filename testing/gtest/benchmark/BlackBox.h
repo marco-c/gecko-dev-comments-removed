@@ -18,7 +18,7 @@
 #include "mozilla/Attributes.h"
 #if defined(_MSC_VER)
 #include <intrin.h>
-#endif 
+#endif  
 
 namespace mozilla {
 
@@ -49,13 +49,13 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG void* BlackBoxVoidPtr(void* aPtr) {
   return aPtr;
 }
 
-#endif 
+#endif  
 
-template<class T>
+template <class T>
 MOZ_ALWAYS_INLINE_EVEN_DEBUG T* BlackBox(T* aPtr) {
   return static_cast<T*>(BlackBoxVoidPtr(aPtr));
 }
 
-} 
+}  
 
-#endif 
+#endif  

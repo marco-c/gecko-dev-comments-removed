@@ -14,15 +14,13 @@
 
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
-#include "nsServiceManagerUtils.h" 
-#include "nsWidgetsCID.h"       
+#include "nsServiceManagerUtils.h"  
+#include "nsWidgetsCID.h"           
 #include "nsXULAppAPI.h"
-
 
 #define MOZ_IPDL_TESTFAIL_LABEL "TEST-UNEXPECTED-FAIL"
 #define MOZ_IPDL_TESTPASS_LABEL "TEST-PASS"
 #define MOZ_IPDL_TESTINFO_LABEL "TEST-INFO"
-
 
 namespace mozilla {
 namespace _ipdltest {
@@ -35,8 +33,7 @@ const char* IPDLUnitTestName();
 
 
 
-inline void fail(const char* fmt, ...)
-{
+inline void fail(const char* fmt, ...) {
   va_list ap;
 
   fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL " | %s | ", IPDLUnitTestName());
@@ -50,8 +47,7 @@ inline void fail(const char* fmt, ...)
   MOZ_CRASH("failed test");
 }
 
-inline void passed(const char* fmt, ...)
-{
+inline void passed(const char* fmt, ...) {
   va_list ap;
 
   printf(MOZ_IPDL_TESTPASS_LABEL " | %s | ", IPDLUnitTestName());
@@ -80,14 +76,12 @@ void QuitParent();
 
 extern void* gChildActor;
 
-void IPDLUnitTestChildInit(IPC::Channel* transport,
-                           base::ProcessId parentPid,
+void IPDLUnitTestChildInit(IPC::Channel* transport, base::ProcessId parentPid,
                            MessageLoop* worker);
 
 void QuitChild();
 
-} 
-} 
+}  
+}  
 
-
-#endif 
+#endif  

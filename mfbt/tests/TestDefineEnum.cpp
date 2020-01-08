@@ -1,5 +1,5 @@
 
-   
+
 
 
 
@@ -66,16 +66,13 @@ struct TestClass {
 
 
 
-
 #ifdef CONFIRM_COMPILATION_ERRORS
 MOZ_DEFINE_ENUM_CLASS(EnumWithInitializer1, (A = -1, B, C))
 MOZ_DEFINE_ENUM_CLASS(EnumWithInitializer2, (A = 1, B, C))
 MOZ_DEFINE_ENUM_CLASS(EnumWithInitializer3, (A, B = 6, C))
 #endif
 
-int
-main()
-{
+int main() {
   
   return 0;
 }

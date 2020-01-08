@@ -16,15 +16,14 @@
 
 
 
-class ServiceInitializer : public mozilla::Runnable
-{
-public:
+class ServiceInitializer : public mozilla::Runnable {
+ public:
   ServiceInitializer() : mozilla::Runnable("ServiceInitializer") {}
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     
     
-    nsCOMPtr<mozIStorageService> service = do_GetService("@mozilla.org/storage/service;1");
+    nsCOMPtr<mozIStorageService> service =
+        do_GetService("@mozilla.org/storage/service;1");
     do_check_false(service);
     return NS_OK;
   }
@@ -41,8 +40,7 @@ public:
 
 
 
-TEST(storage_service_init_background_thread_DeathTest, Test)
-{
+TEST(storage_service_init_background_thread_DeathTest, Test) {
   nsCOMPtr<nsIRunnable> event = new ServiceInitializer();
   do_check_true(event);
 

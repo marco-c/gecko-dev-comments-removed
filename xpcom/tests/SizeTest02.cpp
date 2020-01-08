@@ -6,7 +6,6 @@
 
 NS_DEF_PTR(nsINode);
 
-	
 
 
 
@@ -34,56 +33,55 @@ NS_DEF_PTR(nsINode);
 
 
 
-void 
-Test02_Raw00( nsISupports* aDOMNode, nsString* aResult )
-		
-	{
 
+void  
+Test02_Raw00(nsISupports* aDOMNode, nsString* aResult)
 
+{
+  
+  
 
+  
+  
 
+  nsINode* node = 0;
+  nsresult status =
+      aDOMNode->QueryInterface(NS_GET_IID(nsINode), (void**)&node);
+  if (NS_SUCCEEDED(status)) {
+    node->GetNodeName(*aResult);
+  }
 
+  NS_IF_RELEASE(node);
 
-		nsINode* node = 0;
-		nsresult status = aDOMNode->QueryInterface(NS_GET_IID(nsINode), (void**)&node);
-		if ( NS_SUCCEEDED(status) )
-			{
-				node->GetNodeName(*aResult);
-			}
+  
+}
 
-		NS_IF_RELEASE(node);
+void  
+Test02_Raw01(nsISupports* aDOMNode, nsString* aResult)
 
+{
+  
+  
 
-	}
+  nsINode* node;
+  nsresult status =
+      aDOMNode->QueryInterface(NS_GET_IID(nsINode), (void**)&node);
+  if (NS_SUCCEEDED(status)) {
+    node->GetNodeName(*aResult);
+    NS_RELEASE(node);
+  }
 
-void 
-Test02_Raw01( nsISupports* aDOMNode, nsString* aResult )
-		
-	{
+  
+}
 
+void  
+Test02_nsCOMPtr(nsISupports* aDOMNode, nsString* aResult)
 
+{
+  nsresult status;
+  nsCOMPtr<nsINode> node = do_QueryInterface(aDOMNode, &status);
 
-		nsINode* node;
-                nsresult status = aDOMNode->QueryInterface(NS_GET_IID(nsINode), (void**)&node);
-		if ( NS_SUCCEEDED(status) )
-			{
-				node->GetNodeName(*aResult);
-				NS_RELEASE(node);
-			}
+  if (node) node->GetNodeName(*aResult);
 
-
-	}
-
-void 
-Test02_nsCOMPtr( nsISupports* aDOMNode, nsString* aResult )
-		
-	{
-		nsresult status;
-		nsCOMPtr<nsINode> node = do_QueryInterface(aDOMNode, &status);
-
-		if ( node )
-			node->GetNodeName(*aResult);
-
-
-	}
-
+  
+}

@@ -23,9 +23,8 @@ class GlobalObject;
 
 
 class TestInterfaceSetlikeNode final : public nsISupports,
-                                       public nsWrapperCache
-{
-public:
+                                       public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TestInterfaceSetlikeNode)
   explicit TestInterfaceSetlikeNode(JSContext* aCx,
@@ -33,14 +32,15 @@ public:
   nsPIDOMWindowInner* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
-  static already_AddRefed<TestInterfaceSetlikeNode>
-    Constructor(const GlobalObject& aGlobal, ErrorResult& rv);
-private:
+  static already_AddRefed<TestInterfaceSetlikeNode> Constructor(
+      const GlobalObject& aGlobal, ErrorResult& rv);
+
+ private:
   virtual ~TestInterfaceSetlikeNode() {}
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -14,10 +14,8 @@
 namespace mozilla {
 namespace _ipdltest {
 
-class TestUniquePtrIPCParent :
-  public PTestUniquePtrIPCParent
-{
-public:
+class TestUniquePtrIPCParent : public PTestUniquePtrIPCParent {
+ public:
   TestUniquePtrIPCParent() { MOZ_COUNT_CTOR(TestUniquePtrIPCParent); }
   virtual ~TestUniquePtrIPCParent() { MOZ_COUNT_DTOR(TestUniquePtrIPCParent); }
 
@@ -26,13 +24,9 @@ public:
 
   void Main();
 
-  bool ShouldContinueFromReplyTimeout() override
-  {
-    return false;
-  }
+  bool ShouldContinueFromReplyTimeout() override { return false; }
 
-  virtual void ActorDestroy(ActorDestroyReason why) override
-  {
+  virtual void ActorDestroy(ActorDestroyReason why) override {
     if (NormalShutdown != why) {
       fail("Abnormal shutdown of parent");
     }
@@ -41,23 +35,20 @@ public:
   }
 };
 
-
-class TestUniquePtrIPCChild :
-  public PTestUniquePtrIPCChild
-{
-public:
+class TestUniquePtrIPCChild : public PTestUniquePtrIPCChild {
+ public:
   TestUniquePtrIPCChild() { MOZ_COUNT_CTOR(TestUniquePtrIPCChild); }
   virtual ~TestUniquePtrIPCChild() { MOZ_COUNT_DTOR(TestUniquePtrIPCChild); }
 
-  mozilla::ipc::IPCResult
-  RecvTestMessage(UniquePtr<int>&& aA1, UniquePtr<DummyStruct>&& aA2,
-                  const DummyStruct& aA3, UniquePtr<int>&& aA4) override;
+  mozilla::ipc::IPCResult RecvTestMessage(UniquePtr<int>&& aA1,
+                                          UniquePtr<DummyStruct>&& aA2,
+                                          const DummyStruct& aA3,
+                                          UniquePtr<int>&& aA4) override;
 
-  mozilla::ipc::IPCResult
-  RecvTestSendReference(UniquePtr<DummyStruct>&& aA) override;
+  mozilla::ipc::IPCResult RecvTestSendReference(
+      UniquePtr<DummyStruct>&& aA) override;
 
-  virtual void ActorDestroy(ActorDestroyReason why) override
-  {
+  virtual void ActorDestroy(ActorDestroyReason why) override {
     if (NormalShutdown != why) {
       fail("Abnormal shutdown of child");
     }
@@ -65,7 +56,7 @@ public:
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

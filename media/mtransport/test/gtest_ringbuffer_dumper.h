@@ -23,58 +23,56 @@ using mozilla::WrapRunnable;
 
 namespace test {
 class RingbufferDumper : public ::testing::EmptyTestEventListener {
-  public:
-    explicit RingbufferDumper(MtransportTestUtils* test_utils) :
-      test_utils_(test_utils)
-    {}
+ public:
+  explicit RingbufferDumper(MtransportTestUtils* test_utils)
+      : test_utils_(test_utils) {}
 
-    void ClearRingBuffer_s() {
-      RLogConnector::CreateInstance();
-      
-      RLogConnector::GetInstance()->SetLogLimit(0);
-      RLogConnector::GetInstance()->SetLogLimit(UINT32_MAX);
-    }
-
-    void DestroyRingBuffer_s() {
-      RLogConnector::DestroyInstance();
-    }
-
-    void DumpRingBuffer_s() {
-      std::deque<std::string> logs;
-      
-      RLogConnector::GetInstance()->GetAny(0, &logs);
-      for (auto l = logs.begin(); l != logs.end(); ++l) {
-        std::cout << *l << std::endl;
-      }
-      ClearRingBuffer_s();
-    }
-
-    virtual void OnTestStart(const ::testing::TestInfo& testInfo) override {
-      mozilla::SyncRunnable::DispatchToThread(
-          test_utils_->sts_target(),
-          WrapRunnable(this, &RingbufferDumper::ClearRingBuffer_s));
-    }
-
-    virtual void OnTestEnd(const ::testing::TestInfo& testInfo) override {
-      mozilla::SyncRunnable::DispatchToThread(
-          test_utils_->sts_target(),
-          WrapRunnable(this, &RingbufferDumper::DestroyRingBuffer_s));
-    }
-
+  void ClearRingBuffer_s() {
+    RLogConnector::CreateInstance();
     
-    virtual void OnTestPartResult(const ::testing::TestPartResult& testResult) override {
-      if (testResult.failed()) {
-        
-        mozilla::SyncRunnable::DispatchToThread(
-            test_utils_->sts_target(),
-            WrapRunnable(this, &RingbufferDumper::DumpRingBuffer_s));
-      }
-    }
+    RLogConnector::GetInstance()->SetLogLimit(0);
+    RLogConnector::GetInstance()->SetLogLimit(UINT32_MAX);
+  }
 
-  private:
-    MtransportTestUtils *test_utils_;
+  void DestroyRingBuffer_s() { RLogConnector::DestroyInstance(); }
+
+  void DumpRingBuffer_s() {
+    std::deque<std::string> logs;
+    
+    RLogConnector::GetInstance()->GetAny(0, &logs);
+    for (auto l = logs.begin(); l != logs.end(); ++l) {
+      std::cout << *l << std::endl;
+    }
+    ClearRingBuffer_s();
+  }
+
+  virtual void OnTestStart(const ::testing::TestInfo& testInfo) override {
+    mozilla::SyncRunnable::DispatchToThread(
+        test_utils_->sts_target(),
+        WrapRunnable(this, &RingbufferDumper::ClearRingBuffer_s));
+  }
+
+  virtual void OnTestEnd(const ::testing::TestInfo& testInfo) override {
+    mozilla::SyncRunnable::DispatchToThread(
+        test_utils_->sts_target(),
+        WrapRunnable(this, &RingbufferDumper::DestroyRingBuffer_s));
+  }
+
+  
+  virtual void OnTestPartResult(
+      const ::testing::TestPartResult& testResult) override {
+    if (testResult.failed()) {
+      
+      mozilla::SyncRunnable::DispatchToThread(
+          test_utils_->sts_target(),
+          WrapRunnable(this, &RingbufferDumper::DumpRingBuffer_s));
+    }
+  }
+
+ private:
+  MtransportTestUtils* test_utils_;
 };
 
-} 
+}  
 
-#endif 
+#endif  

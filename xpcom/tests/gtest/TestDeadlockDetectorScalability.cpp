@@ -14,27 +14,23 @@
 
 
 
-static void
-AllocLockRecurseUnlockFree(int i)
-{
-    if (0 == i)
-        return;
+static void AllocLockRecurseUnlockFree(int i) {
+  if (0 == i) return;
 
-    mozilla::Mutex* lock = new mozilla::Mutex("deadlockDetector.scalability.t1");
-    {
-        mozilla::MutexAutoLock _(*lock);
-        AllocLockRecurseUnlockFree(i - 1);
-    }
-    delete lock;
+  mozilla::Mutex* lock = new mozilla::Mutex("deadlockDetector.scalability.t1");
+  {
+    mozilla::MutexAutoLock _(*lock);
+    AllocLockRecurseUnlockFree(i - 1);
+  }
+  delete lock;
 }
 
 
 
-TEST(DeadlockDetectorScalability, LengthNDepChain)
-{
-    const int N = 1 << 14; 
-    AllocLockRecurseUnlockFree(N);
-    ASSERT_TRUE(true);
+TEST(DeadlockDetectorScalability, LengthNDepChain) {
+  const int N = 1 << 14;  
+  AllocLockRecurseUnlockFree(N);
+  ASSERT_TRUE(true);
 }
 
 
@@ -43,39 +39,36 @@ TEST(DeadlockDetectorScalability, LengthNDepChain)
 
 
 
-TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
-{
-    
-    const int N = 1 << 17; 
-    const int K = 100;
+TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps) {
+  
+  const int N = 1 << 17;  
+  const int K = 100;
 
-    mozilla::Mutex* lock = new mozilla::Mutex("deadlockDetector.scalability.t2.master");
-    mozilla::Mutex** locks = new mozilla::Mutex*[N];
-    if (!locks)
-        MOZ_CRASH("couldn't allocate lock array");
+  mozilla::Mutex* lock =
+      new mozilla::Mutex("deadlockDetector.scalability.t2.master");
+  mozilla::Mutex** locks = new mozilla::Mutex*[N];
+  if (!locks) MOZ_CRASH("couldn't allocate lock array");
 
-    for (int i = 0; i < N; ++i)
-        locks[i] =
-            new mozilla::Mutex("deadlockDetector.scalability.t2.dep");
+  for (int i = 0; i < N; ++i)
+    locks[i] = new mozilla::Mutex("deadlockDetector.scalability.t2.dep");
 
-    
-    {mozilla::MutexAutoLock m(*lock);
-        for (int i = 0; i < N; ++i)
-            mozilla::MutexAutoLock s(*locks[i]);
-    }
+  
+  {
+    mozilla::MutexAutoLock m(*lock);
+    for (int i = 0; i < N; ++i) mozilla::MutexAutoLock s(*locks[i]);
+  }
 
-    
-    {mozilla::MutexAutoLock m(*lock);
-        for (int i = 0; i < K; ++i)
-            for (int j = 0; j < N; ++j)
-                mozilla::MutexAutoLock s(*locks[i]);
-    }
+  
+  {
+    mozilla::MutexAutoLock m(*lock);
+    for (int i = 0; i < K; ++i)
+      for (int j = 0; j < N; ++j) mozilla::MutexAutoLock s(*locks[i]);
+  }
 
-    for (int i = 0; i < N; ++i)
-        delete locks[i];
-    delete[] locks;
+  for (int i = 0; i < N; ++i) delete locks[i];
+  delete[] locks;
 
-    ASSERT_TRUE(true);
+  ASSERT_TRUE(true);
 }
 
 
@@ -87,37 +80,32 @@ TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
 
 
 
-TEST(DeadlockDetectorScalability, MaxDepsNsq)
-{
-    const int N = 1 << 10; 
-    const int K = 10;
+TEST(DeadlockDetectorScalability, MaxDepsNsq) {
+  const int N = 1 << 10;  
+  const int K = 10;
 
-    mozilla::Mutex** locks = new mozilla::Mutex*[N];
-    if (!locks)
-        MOZ_CRASH("couldn't allocate lock array");
+  mozilla::Mutex** locks = new mozilla::Mutex*[N];
+  if (!locks) MOZ_CRASH("couldn't allocate lock array");
 
-    for (int i = 0; i < N; ++i)
-        locks[i] = new mozilla::Mutex("deadlockDetector.scalability.t3");
+  for (int i = 0; i < N; ++i)
+    locks[i] = new mozilla::Mutex("deadlockDetector.scalability.t3");
 
-    for (int i = 0; i < N; ++i) {
-        mozilla::MutexAutoLock al1(*locks[i]);
-        for (int j = i+1; j < N; ++j)
-            mozilla::MutexAutoLock al2(*locks[j]);
+  for (int i = 0; i < N; ++i) {
+    mozilla::MutexAutoLock al1(*locks[i]);
+    for (int j = i + 1; j < N; ++j) mozilla::MutexAutoLock al2(*locks[j]);
+  }
+
+  for (int i = 0; i < K; ++i) {
+    for (int j = 0; j < N; ++j) {
+      mozilla::MutexAutoLock al1(*locks[j]);
+      for (int k = j + 1; k < N; ++k) mozilla::MutexAutoLock al2(*locks[k]);
     }
+  }
 
-    for (int i = 0; i < K; ++i) {
-        for (int j = 0; j < N; ++j) {
-            mozilla::MutexAutoLock al1(*locks[j]);
-            for (int k = j+1; k < N; ++k)
-                mozilla::MutexAutoLock al2(*locks[k]);
-        }
-    }
+  for (int i = 0; i < N; ++i) delete locks[i];
+  delete[] locks;
 
-    for (int i = 0; i < N; ++i)
-        delete locks[i];
-    delete[] locks;
-
-    ASSERT_TRUE(true);
+  ASSERT_TRUE(true);
 }
 
 
@@ -126,33 +114,34 @@ TEST(DeadlockDetectorScalability, MaxDepsNsq)
 
 
 
-TEST(DeadlockDetectorScalability, OneLockNDepsUsedSeveralTimes)
-{
-    const size_t N = 1 << 17; 
-    const size_t K = 3;
+TEST(DeadlockDetectorScalability, OneLockNDepsUsedSeveralTimes) {
+  const size_t N = 1 << 17;  
+  const size_t K = 3;
+
+  
+  mozilla::Mutex* lock_1 =
+      new mozilla::Mutex("deadlockDetector.scalability.t4.master");
+  for (size_t n = 0; n < N; n++) {
+    
+    mozilla::Mutex* lock_2 =
+        new mozilla::Mutex("deadlockDetector.scalability.t4.child");
 
     
-    mozilla::Mutex* lock_1 = new mozilla::Mutex("deadlockDetector.scalability.t4.master");
-    for (size_t n = 0; n < N; n++) {
-        
-        mozilla::Mutex* lock_2 = new mozilla::Mutex("deadlockDetector.scalability.t4.child");
+    mozilla::MutexAutoLock m(*lock_1);
 
-        
-        mozilla::MutexAutoLock m(*lock_1);
-
-        
-        for (size_t k = 0; k < K; k++) {
-            mozilla::MutexAutoLock c(*lock_2);
-        }
-
-        
-        delete lock_2;
+    
+    for (size_t k = 0; k < K; k++) {
+      mozilla::MutexAutoLock c(*lock_2);
     }
 
     
-    delete lock_1;
+    delete lock_2;
+  }
 
-    ASSERT_TRUE(true);
+  
+  delete lock_1;
+
+  ASSERT_TRUE(true);
 }
 
 
@@ -161,10 +150,9 @@ MOZ_DEFINE_MALLOC_SIZE_OF(DeadlockDetectorMallocSizeOf)
 
 
 
-TEST(DeadlockDetectorScalability, SizeOf)
-{
-    size_t memory_used = mozilla::BlockingResourceBase::SizeOfDeadlockDetector(
-        DeadlockDetectorMallocSizeOf);
+TEST(DeadlockDetectorScalability, SizeOf) {
+  size_t memory_used = mozilla::BlockingResourceBase::SizeOfDeadlockDetector(
+      DeadlockDetectorMallocSizeOf);
 
-    ASSERT_GT(memory_used, size_t(0));
+  ASSERT_GT(memory_used, size_t(0));
 }

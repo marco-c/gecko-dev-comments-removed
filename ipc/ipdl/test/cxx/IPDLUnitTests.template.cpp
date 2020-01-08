@@ -18,7 +18,7 @@
 
 
 
-${INCLUDES}
+$ { INCLUDES }
 
 
 using namespace std;
@@ -36,77 +36,62 @@ void* gChildActor;
 
 
 Thread* gChildThread;
-MessageLoop *gParentMessageLoop;
+MessageLoop* gParentMessageLoop;
 bool gParentDone;
 bool gChildDone;
 
-void
-DeleteChildActor();
+void DeleteChildActor();
 
 
 
 
 char* gIPDLUnitTestName = nullptr;
 
-const char*
-IPDLUnitTestName()
-{
-    if (!gIPDLUnitTestName) {
+const char* IPDLUnitTestName() {
+  if (!gIPDLUnitTestName) {
 #if defined(OS_WIN)
-        vector<wstring> args =
-            CommandLine::ForCurrentProcess()->GetLooseValues();
-        gIPDLUnitTestName = ::strdup(WideToUTF8(args[0]).c_str());
+    vector<wstring> args = CommandLine::ForCurrentProcess()->GetLooseValues();
+    gIPDLUnitTestName = ::strdup(WideToUTF8(args[0]).c_str());
 #elif defined(OS_POSIX)
-        vector<string> argv = CommandLine::ForCurrentProcess()->argv();
-        gIPDLUnitTestName = ::moz_xstrdup(argv[1].c_str());
+    vector<string> argv = CommandLine::ForCurrentProcess()->argv();
+    gIPDLUnitTestName = ::moz_xstrdup(argv[1].c_str());
 #else
-#  error Sorry
+#error Sorry
 #endif
-    }
-    return gIPDLUnitTestName;
+  }
+  return gIPDLUnitTestName;
 }
 
-} 
-} 
-
+}  
+}  
 
 namespace {
 
 enum IPDLUnitTestType {
-    NoneTest = 0,
+  NoneTest = 0,
 
+  
+  
+  ${ENUM_VALUES}
 
-
-${ENUM_VALUES}
-
-    LastTest = ${LAST_ENUM}
-
+  LastTest = ${LAST_ENUM}
+  
 };
 
-
-IPDLUnitTestType
-IPDLUnitTestFromString(const char* const aString)
-{
-    if (!aString)
-        return static_cast<IPDLUnitTestType>(0);
-
-
-${STRING_TO_ENUMS}
-
-    else
-        return static_cast<IPDLUnitTestType>(0);
+IPDLUnitTestType IPDLUnitTestFromString(const char* const aString) {
+  if (!aString) return static_cast<IPDLUnitTestType>(0);
+  
+  
+  $ { STRING_TO_ENUMS }
+  
+  else return static_cast<IPDLUnitTestType>(0);
 }
 
-
-IPDLUnitTestType
-IPDLUnitTest()
-{
-    return IPDLUnitTestFromString(::mozilla::_ipdltest::IPDLUnitTestName());
+IPDLUnitTestType IPDLUnitTest() {
+  return IPDLUnitTestFromString(::mozilla::_ipdltest::IPDLUnitTestName());
 }
 
-
-} 
-
+}  
 
 
 
@@ -114,225 +99,195 @@ IPDLUnitTest()
 namespace mozilla {
 namespace _ipdltest {
 
-void
-DeferredParentShutdown();
+void DeferredParentShutdown();
 
-void
-IPDLUnitTestThreadMain(char *testString);
+void IPDLUnitTestThreadMain(char* testString);
 
-void
-IPDLUnitTestMain(void* aData)
-{
-    char* testString = reinterpret_cast<char*>(aData);
+void IPDLUnitTestMain(void* aData) {
+  char* testString = reinterpret_cast<char*>(aData);
 
+  
+  const char* prefix = "thread:";
+  const int prefixLen = strlen(prefix);
+  if (!strncmp(testString, prefix, prefixLen)) {
+    IPDLUnitTestThreadMain(testString + prefixLen);
+    return;
+  }
+
+  IPDLUnitTestType test = IPDLUnitTestFromString(testString);
+  if (!test) {
     
-    const char *prefix = "thread:";
-    const int prefixLen = strlen(prefix);
-    if (!strncmp(testString, prefix, prefixLen)) {
-        IPDLUnitTestThreadMain(testString + prefixLen);
-        return;
-    }
+    fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL "| %s | unknown unit test %s\n",
+            "<--->", testString);
+    MOZ_CRASH("can't continue");
+  }
+  gIPDLUnitTestName = testString;
 
-    IPDLUnitTestType test = IPDLUnitTestFromString(testString);
-    if (!test) {
-        
-        fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL "| %s | unknown unit test %s\n",
-                "<--->", testString);
-        MOZ_CRASH("can't continue");
-    }
-    gIPDLUnitTestName = testString;
-
+  
+  switch (test) {
     
-    switch (test) {
-
-
-${PARENT_ENABLED_CASES_PROC}
-
+    
+    $ { PARENT_ENABLED_CASES_PROC }
+      
 
     default:
-        fail("not reached");
-        return;                 
-    }
+      fail("not reached");
+      return;  
+  }
 
-    printf(MOZ_IPDL_TESTINFO_LABEL "| running test | %s\n", gIPDLUnitTestName);
+  printf(MOZ_IPDL_TESTINFO_LABEL "| running test | %s\n", gIPDLUnitTestName);
 
-    std::vector<std::string> testCaseArgs;
-    testCaseArgs.push_back(testString);
+  std::vector<std::string> testCaseArgs;
+  testCaseArgs.push_back(testString);
 
-    gSubprocess = new IPDLUnitTestSubprocess();
-    if (!gSubprocess->SyncLaunch(testCaseArgs))
-        fail("problem launching subprocess");
+  gSubprocess = new IPDLUnitTestSubprocess();
+  if (!gSubprocess->SyncLaunch(testCaseArgs))
+    fail("problem launching subprocess");
 
-    IPC::Channel* transport = gSubprocess->GetChannel();
-    if (!transport)
-        fail("no transport");
+  IPC::Channel* transport = gSubprocess->GetChannel();
+  if (!transport) fail("no transport");
 
-    base::ProcessId child = base::GetProcId(gSubprocess->GetChildProcessHandle());
+  base::ProcessId child = base::GetProcId(gSubprocess->GetChildProcessHandle());
 
-    switch (test) {
-
-
-${PARENT_MAIN_CASES_PROC}
-
+  switch (test) {
+    
+    
+    $ { PARENT_MAIN_CASES_PROC }
+      
 
     default:
-        fail("not reached");
-        return;                 
-    }
+      fail("not reached");
+      return;  
+  }
 }
 
-void
-IPDLUnitTestThreadMain(char *testString)
-{
-    IPDLUnitTestType test = IPDLUnitTestFromString(testString);
-    if (!test) {
-        
-        fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL "| %s | unknown unit test %s\n",
-                "<--->", testString);
-        MOZ_CRASH("can't continue");
-    }
-    gIPDLUnitTestName = testString;
-
+void IPDLUnitTestThreadMain(char* testString) {
+  IPDLUnitTestType test = IPDLUnitTestFromString(testString);
+  if (!test) {
     
-    switch (test) {
+    fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL "| %s | unknown unit test %s\n",
+            "<--->", testString);
+    MOZ_CRASH("can't continue");
+  }
+  gIPDLUnitTestName = testString;
 
-
-${PARENT_ENABLED_CASES_THREAD}
-
-
-    default:
-        fail("not reached");
-        return;                 
-    }
-
-    printf(MOZ_IPDL_TESTINFO_LABEL "| running test | %s\n", gIPDLUnitTestName);
-
-    std::vector<std::string> testCaseArgs;
-    testCaseArgs.push_back(testString);
-
-    gChildThread = new Thread("ParentThread");
-    if (!gChildThread->Start())
-        fail("starting parent thread");
-
-    gParentMessageLoop = MessageLoop::current();
-    MessageLoop *childMessageLoop = gChildThread->message_loop();
-
-    switch (test) {
-
-
-${PARENT_MAIN_CASES_THREAD}
-
+  
+  switch (test) {
+    
+    
+    $ { PARENT_ENABLED_CASES_THREAD }
+      
 
     default:
-        fail("not reached");
-        return;                 
-    }
+      fail("not reached");
+      return;  
+  }
+
+  printf(MOZ_IPDL_TESTINFO_LABEL "| running test | %s\n", gIPDLUnitTestName);
+
+  std::vector<std::string> testCaseArgs;
+  testCaseArgs.push_back(testString);
+
+  gChildThread = new Thread("ParentThread");
+  if (!gChildThread->Start()) fail("starting parent thread");
+
+  gParentMessageLoop = MessageLoop::current();
+  MessageLoop* childMessageLoop = gChildThread->message_loop();
+
+  switch (test) {
+    
+    
+    $ { PARENT_MAIN_CASES_THREAD }
+      
+
+    default:
+      fail("not reached");
+      return;  
+  }
 }
 
-void
-DeleteParentActor()
-{
-    if (!gParentActor)
-        return;
+void DeleteParentActor() {
+  if (!gParentActor) return;
 
-    switch (IPDLUnitTest()) {
-
-
-${PARENT_DELETE_CASES}
-
-    default:  ::mozilla::_ipdltest::fail("???");
-    }
+  switch (IPDLUnitTest()) {
+    
+    
+    $ { PARENT_DELETE_CASES }
+      
+    default:
+      ::mozilla::_ipdltest::fail("???");
+  }
 }
 
-void
-QuitXPCOM()
-{
+void QuitXPCOM() {
   DeleteParentActor();
 
   static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
-  nsCOMPtr<nsIAppShell> appShell (do_GetService(kAppShellCID));
+  nsCOMPtr<nsIAppShell> appShell(do_GetService(kAppShellCID));
   appShell->Exit();
 }
 
-void
-DeleteSubprocess(MessageLoop* uiLoop)
-{
+void DeleteSubprocess(MessageLoop* uiLoop) {
   
   delete gSubprocess;
   uiLoop->PostTask(NewRunnableFunction("QuitXPCOM", QuitXPCOM));
 }
 
-void
-DeferredParentShutdown()
-{
-    
-    XRE_GetIOMessageLoop()->PostTask(
-        NewRunnableFunction("DeleteSubprocess", DeleteSubprocess,
-                            MessageLoop::current()));
+void DeferredParentShutdown() {
+  
+  XRE_GetIOMessageLoop()->PostTask(NewRunnableFunction(
+      "DeleteSubprocess", DeleteSubprocess, MessageLoop::current()));
 }
 
-void
-TryThreadedShutdown()
-{
-    
-    
-    
-    
-    
-    
-    if (!gChildDone || !gParentDone || !gChildThread)
-        return;
+void TryThreadedShutdown() {
+  
+  
+  
+  
+  
+  
+  if (!gChildDone || !gParentDone || !gChildThread) return;
 
-    delete gChildThread;
-    gChildThread = 0;
-    DeferredParentShutdown();
+  delete gChildThread;
+  gChildThread = 0;
+  DeferredParentShutdown();
 }
 
-void
-ChildCompleted()
-{
+void ChildCompleted() {
+  
+  gChildDone = true;
+  TryThreadedShutdown();
+}
+
+void QuitParent() {
+  if (gChildThread) {
+    gParentDone = true;
+    MessageLoop::current()->PostTask(
+        NewRunnableFunction("TryThreadedShutdown", TryThreadedShutdown));
+  } else {
     
-    gChildDone = true;
-    TryThreadedShutdown();
+    
+    MessageLoop::current()->PostTask(
+        NewRunnableFunction("DeferredParentShutdown", DeferredParentShutdown));
+  }
 }
 
-void
-QuitParent()
-{
-    if (gChildThread) {
-        gParentDone = true;
-        MessageLoop::current()->PostTask(
-            NewRunnableFunction("TryThreadedShutdown", TryThreadedShutdown));
-    } else {
-        
-        
-        MessageLoop::current()->PostTask(
-            NewRunnableFunction("DeferredParentShutdown", DeferredParentShutdown));
-    }
+static void ChildDie() {
+  DeleteChildActor();
+  XRE_ShutdownChildProcess();
 }
 
-static void
-ChildDie()
-{
-    DeleteChildActor();
-    XRE_ShutdownChildProcess();
+void QuitChild() {
+  if (gChildThread) {  
+    gParentMessageLoop->PostTask(
+        NewRunnableFunction("ChildCompleted", ChildCompleted));
+  } else {  
+    MessageLoop::current()->PostTask(NewRunnableFunction("ChildDie", ChildDie));
+  }
 }
 
-void
-QuitChild()
-{
-    if (gChildThread) { 
-        gParentMessageLoop->PostTask(
-            NewRunnableFunction("ChildCompleted", ChildCompleted));
-    } else { 
-        MessageLoop::current()->PostTask(
-            NewRunnableFunction("ChildDie", ChildDie));
-    }
-}
-
-} 
-} 
-
+}  
+}  
 
 
 
@@ -340,37 +295,32 @@ QuitChild()
 namespace mozilla {
 namespace _ipdltest {
 
-void
-DeleteChildActor()
-{
-    if (!gChildActor)
-        return;
+void DeleteChildActor() {
+  if (!gChildActor) return;
 
-    switch (IPDLUnitTest()) {
-
-
-${CHILD_DELETE_CASES}
-
-    default:  ::mozilla::_ipdltest::fail("???");
-    }
+  switch (IPDLUnitTest()) {
+    
+    
+    $ { CHILD_DELETE_CASES }
+      
+    default:
+      ::mozilla::_ipdltest::fail("???");
+  }
 }
 
-void
-IPDLUnitTestChildInit(IPC::Channel* transport,
-                      base::ProcessId parentPid,
-                      MessageLoop* worker)
-{
-    switch (IPDLUnitTest()) {
-
-
-${CHILD_INIT_CASES}
-
+void IPDLUnitTestChildInit(IPC::Channel* transport, base::ProcessId parentPid,
+                           MessageLoop* worker) {
+  switch (IPDLUnitTest()) {
+    
+    
+    $ { CHILD_INIT_CASES }
+      
 
     default:
-        fail("not reached");
-        return;                 
-    }
+      fail("not reached");
+      return;  
+  }
 }
 
-} 
-} 
+}  
+}  

@@ -1,10 +1,10 @@
 #if defined(OS_POSIX)
-#include <unistd.h>             
+#include <unistd.h>  
 #endif
 
 #include "TestSyncWakeup.h"
 
-#include "IPDLUnitTests.h"      
+#include "IPDLUnitTests.h"  
 
 namespace mozilla {
 namespace _ipdltest {
@@ -12,123 +12,95 @@ namespace _ipdltest {
 
 
 
-TestSyncWakeupParent::TestSyncWakeupParent()
-{
-    MOZ_COUNT_CTOR(TestSyncWakeupParent);
+TestSyncWakeupParent::TestSyncWakeupParent() {
+  MOZ_COUNT_CTOR(TestSyncWakeupParent);
 }
 
-TestSyncWakeupParent::~TestSyncWakeupParent()
-{
-    MOZ_COUNT_DTOR(TestSyncWakeupParent);
+TestSyncWakeupParent::~TestSyncWakeupParent() {
+  MOZ_COUNT_DTOR(TestSyncWakeupParent);
 }
 
-void
-TestSyncWakeupParent::Main()
-{
-    if (!SendStart())
-        fail("sending Start()");
+void TestSyncWakeupParent::Main() {
+  if (!SendStart()) fail("sending Start()");
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupParent::AnswerStackFrame()
-{
-    if (!CallStackFrame())
-        fail("calling StackFrame()");
-    return IPC_OK();
+mozilla::ipc::IPCResult TestSyncWakeupParent::AnswerStackFrame() {
+  if (!CallStackFrame()) fail("calling StackFrame()");
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupParent::RecvSync1()
-{
-    if (!SendNote1())
-        fail("sending Note1()");
+mozilla::ipc::IPCResult TestSyncWakeupParent::RecvSync1() {
+  if (!SendNote1()) fail("sending Note1()");
 
     
     
     
 #if defined(OS_POSIX)
-    
-    
-    
-    puts(" (sleeping for 5 seconds. sorry!)");
-    sleep(5);
+  
+  
+  
+  puts(" (sleeping for 5 seconds. sorry!)");
+  sleep(5);
 #endif
 
-    return IPC_OK();
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupParent::RecvSync2()
-{
-    if (!SendNote2())
-        fail("sending Note2()");
+mozilla::ipc::IPCResult TestSyncWakeupParent::RecvSync2() {
+  if (!SendNote2()) fail("sending Note2()");
 
 #if defined(OS_POSIX)
-    
-    sleep(5);
-    puts(" (sleeping for 5 seconds. sorry!)");
+  
+  sleep(5);
+  puts(" (sleeping for 5 seconds. sorry!)");
 #endif
 
-    return IPC_OK();
+  return IPC_OK();
 }
 
 
 
 
-TestSyncWakeupChild::TestSyncWakeupChild() : mDone(false)
-{
-    MOZ_COUNT_CTOR(TestSyncWakeupChild);
+TestSyncWakeupChild::TestSyncWakeupChild() : mDone(false) {
+  MOZ_COUNT_CTOR(TestSyncWakeupChild);
 }
 
-TestSyncWakeupChild::~TestSyncWakeupChild()
-{
-    MOZ_COUNT_DTOR(TestSyncWakeupChild);
+TestSyncWakeupChild::~TestSyncWakeupChild() {
+  MOZ_COUNT_DTOR(TestSyncWakeupChild);
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupChild::RecvStart()
-{
-    
-    
-    if (!SendSync1())
-        fail("sending Sync()");
+mozilla::ipc::IPCResult TestSyncWakeupChild::RecvStart() {
+  
+  
+  if (!SendSync1()) fail("sending Sync()");
 
-    
-    
-    return IPC_OK();
+  
+  
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupChild::RecvNote1()
-{
-    
-    
-    if (!CallStackFrame())
-        fail("calling StackFrame()");
+mozilla::ipc::IPCResult TestSyncWakeupChild::RecvNote1() {
+  
+  
+  if (!CallStackFrame()) fail("calling StackFrame()");
 
-    if (!mDone)
-        fail("should have received Note2()!");
+  if (!mDone) fail("should have received Note2()!");
 
-    Close();
+  Close();
 
-    return IPC_OK();
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupChild::AnswerStackFrame()
-{
-    if (!SendSync2())
-        fail("sending Sync()");
+mozilla::ipc::IPCResult TestSyncWakeupChild::AnswerStackFrame() {
+  if (!SendSync2()) fail("sending Sync()");
 
-    return IPC_OK();
+  return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-TestSyncWakeupChild::RecvNote2()
-{
-    mDone = true;
-    return IPC_OK();
+mozilla::ipc::IPCResult TestSyncWakeupChild::RecvNote2() {
+  mDone = true;
+  return IPC_OK();
 }
 
-} 
-} 
+}  
+}  

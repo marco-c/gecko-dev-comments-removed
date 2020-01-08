@@ -13,9 +13,7 @@ using mozilla::NonDereferenceable;
 
 #define CHECK MOZ_RELEASE_ASSERT
 
-void
-TestNonDereferenceableSimple()
-{
+void TestNonDereferenceableSimple() {
   
   NonDereferenceable<int> nd0;
   CHECK(!nd0);
@@ -42,7 +40,7 @@ TestNonDereferenceableSimple()
   CHECK(!nd2.value());
 
   
-  NonDereferenceable<int> nd3{ NonDereferenceable<int>(&i) };
+  NonDereferenceable<int> nd3{NonDereferenceable<int>(&i)};
   CHECK(nd3.value() == reinterpret_cast<uintptr_t>(&i));
 
   
@@ -54,23 +52,15 @@ TestNonDereferenceableSimple()
   CHECK(nd1.value() == reinterpret_cast<uintptr_t>(&i));
 }
 
-void
-TestNonDereferenceableHierarchy()
-{
-  struct Base1
-  {
+void TestNonDereferenceableHierarchy() {
+  struct Base1 {
     
     int x1;
   };
-  struct Base2
-  {
+  struct Base2 {
     int x2;
   };
-  struct Derived
-    : Base1
-    , Base2
-  {
-  };
+  struct Derived : Base1, Base2 {};
 
   Derived d;
 
@@ -120,27 +110,17 @@ TestNonDereferenceableHierarchy()
   CHECK(!nddb2.value());
 }
 
-template<typename T, size_t Index>
-struct CRTPBase
-{
+template <typename T, size_t Index>
+struct CRTPBase {
   
   
   
-  CRTPBase()
-    : mDerived(this)
-  {
-  }
+  CRTPBase() : mDerived(this) {}
   NonDereferenceable<T> mDerived;
 };
 
-void
-TestNonDereferenceableCRTP()
-{
-  struct Derived
-    : CRTPBase<Derived, 1>
-    , CRTPBase<Derived, 2>
-  {
-  };
+void TestNonDereferenceableCRTP() {
+  struct Derived : CRTPBase<Derived, 1>, CRTPBase<Derived, 2> {};
   using Base1 = Derived::CRTPBase<Derived, 1>;
   using Base2 = Derived::CRTPBase<Derived, 2>;
 
@@ -182,9 +162,7 @@ TestNonDereferenceableCRTP()
   CHECK(ndb22.value() == reinterpret_cast<uintptr_t>(static_cast<Base2*>(&d)));
 }
 
-int
-main()
-{
+int main() {
   TestNonDereferenceableSimple();
   TestNonDereferenceableHierarchy();
   TestNonDereferenceableCRTP();

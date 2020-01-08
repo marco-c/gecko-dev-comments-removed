@@ -30,9 +30,7 @@ extern unsigned int _gdb_sleep_duration;
 
 
 
-void
-TestCrashyOperation(void (*aCrashyOperation)())
-{
+void TestCrashyOperation(void (*aCrashyOperation)()) {
 #if defined(XP_UNIX) && defined(DEBUG) && !defined(MOZ_ASAN)
   
   
@@ -47,16 +45,18 @@ TestCrashyOperation(void (*aCrashyOperation)())
     
     
     nsCOMPtr<nsICrashReporter> crashreporter =
-      do_GetService("@mozilla.org/toolkit/crash-reporter;1");
+        do_GetService("@mozilla.org/toolkit/crash-reporter;1");
     if (crashreporter) {
       crashreporter->SetEnabled(false);
     }
 
     
-    fprintf(stderr, "TestCrashyOperation: The following crash is expected. Do not panic.\n");
+    fprintf(stderr,
+            "TestCrashyOperation: The following crash is expected. Do not "
+            "panic.\n");
     aCrashyOperation();
     fprintf(stderr, "TestCrashyOperation: didn't crash?!\n");
-    ASSERT_TRUE(false);   
+    ASSERT_TRUE(false);  
   }
 
   
@@ -87,31 +87,24 @@ TestCrashyOperation(void (*aCrashyOperation)())
 #endif
 }
 
-void
-InitCapacityOk_InitialLengthTooBig()
-{
+void InitCapacityOk_InitialLengthTooBig() {
   PLDHashTable t(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub),
                  PLDHashTable::kMaxInitialLength + 1);
 }
 
-void
-InitCapacityOk_InitialEntryStoreTooBig()
-{
+void InitCapacityOk_InitialEntryStoreTooBig() {
   
   
   
   PLDHashTable t(PLDHashTable::StubOps(), (uint32_t)1 << 8, (uint32_t)1 << 23);
 }
 
-void
-InitCapacityOk_EntrySizeTooBig()
-{
+void InitCapacityOk_EntrySizeTooBig() {
   
   PLDHashTable t(PLDHashTable::StubOps(), 256);
 }
 
-TEST(PLDHashTableTest, InitCapacityOk)
-{
+TEST(PLDHashTableTest, InitCapacityOk) {
   
   
   
@@ -141,8 +134,7 @@ TEST(PLDHashTableTest, InitCapacityOk)
   
 }
 
-TEST(PLDHashTableTest, LazyStorage)
-{
+TEST(PLDHashTableTest, LazyStorage) {
   PLDHashTable t(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub));
 
   
@@ -160,7 +152,7 @@ TEST(PLDHashTableTest, LazyStorage)
   t.Remove((const void*)2);
 
   for (auto iter = t.Iter(); !iter.Done(); iter.Next()) {
-    ASSERT_TRUE(false); 
+    ASSERT_TRUE(false);  
   }
 
   ASSERT_EQ(t.ShallowSizeOfExcludingThis(moz_malloc_size_of), 0u);
@@ -169,29 +161,20 @@ TEST(PLDHashTableTest, LazyStorage)
 
 
 
-static PLDHashNumber
-TrivialHash(const void *key)
-{
+static PLDHashNumber TrivialHash(const void* key) {
   return (PLDHashNumber)(size_t)key;
 }
 
-static void
-TrivialInitEntry(PLDHashEntryHdr* aEntry, const void* aKey)
-{
+static void TrivialInitEntry(PLDHashEntryHdr* aEntry, const void* aKey) {
   auto entry = static_cast<PLDHashEntryStub*>(aEntry);
   entry->key = aKey;
 }
 
 static const PLDHashTableOps trivialOps = {
-  TrivialHash,
-  PLDHashTable::MatchEntryStub,
-  PLDHashTable::MoveEntryStub,
-  PLDHashTable::ClearEntryStub,
-  TrivialInitEntry
-};
+    TrivialHash, PLDHashTable::MatchEntryStub, PLDHashTable::MoveEntryStub,
+    PLDHashTable::ClearEntryStub, TrivialInitEntry};
 
-TEST(PLDHashTableTest, MoveSemantics)
-{
+TEST(PLDHashTableTest, MoveSemantics) {
   PLDHashTable t1(&trivialOps, sizeof(PLDHashEntryStub));
   t1.Add((const void*)88);
   PLDHashTable t2(&trivialOps, sizeof(PLDHashEntryStub));
@@ -201,24 +184,24 @@ TEST(PLDHashTableTest, MoveSemantics)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wself-move"
 #endif
-  t1 = std::move(t1);   
+  t1 = std::move(t1);  
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
-  t1 = std::move(t2);   
+  t1 = std::move(t2);  
 
   PLDHashTable t3(&trivialOps, sizeof(PLDHashEntryStub));
   PLDHashTable t4(&trivialOps, sizeof(PLDHashEntryStub));
   t3.Add((const void*)88);
 
-  t3 = std::move(t4);   
+  t3 = std::move(t4);  
 
   PLDHashTable t5(&trivialOps, sizeof(PLDHashEntryStub));
   PLDHashTable t6(&trivialOps, sizeof(PLDHashEntryStub));
   t6.Add((const void*)88);
 
-  t5 = std::move(t6);   
+  t5 = std::move(t6);  
 
   PLDHashTable t7(&trivialOps, sizeof(PLDHashEntryStub));
   PLDHashTable t8(std::move(t7));  
@@ -228,8 +211,7 @@ TEST(PLDHashTableTest, MoveSemantics)
   PLDHashTable t10(std::move(t9));  
 }
 
-TEST(PLDHashTableTest, Clear)
-{
+TEST(PLDHashTableTest, Clear) {
   PLDHashTable t1(&trivialOps, sizeof(PLDHashEntryStub));
 
   t1.Clear();
@@ -257,8 +239,7 @@ TEST(PLDHashTableTest, Clear)
   ASSERT_EQ(t1.EntryCount(), 0u);
 }
 
-TEST(PLDHashTableTest, Iterator)
-{
+TEST(PLDHashTableTest, Iterator) {
   PLDHashTable t(&trivialOps, sizeof(PLDHashEntryStub));
 
   
@@ -271,8 +252,8 @@ TEST(PLDHashTableTest, Iterator)
 
   
   for (PLDHashTable::Iterator iter(&t); !iter.Done(); iter.Next()) {
-    (void) iter.Get();
-    ASSERT_TRUE(false); 
+    (void)iter.Get();
+    ASSERT_TRUE(false);  
   }
 
   
@@ -311,7 +292,7 @@ TEST(PLDHashTableTest, Iterator)
   
   
   for (PLDHashTable::Iterator iter(&t); !iter.Done(); iter.Next()) {
-    (void) iter.Get();
+    (void)iter.Get();
   }
   ASSERT_EQ(t.EntryCount(), 64u);
   ASSERT_EQ(t.Capacity(), 128u);
@@ -354,11 +335,10 @@ TEST(PLDHashTableTest, Iterator)
 
 
 #ifdef HAVE_64BIT_BUILD
-TEST(PLDHashTableTest, GrowToMaxCapacity)
-{
+TEST(PLDHashTableTest, GrowToMaxCapacity) {
   
   PLDHashTable* t =
-    new PLDHashTable(&trivialOps, sizeof(PLDHashEntryStub), 128);
+      new PLDHashTable(&trivialOps, sizeof(PLDHashEntryStub), 128);
 
   
   size_t numInserted = 0;
@@ -380,4 +360,3 @@ TEST(PLDHashTableTest, GrowToMaxCapacity)
   delete t;
 }
 #endif
-

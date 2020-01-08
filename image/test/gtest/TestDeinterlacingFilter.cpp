@@ -18,451 +18,433 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
 
-template <typename Func> void
-WithDeinterlacingFilter(const IntSize& aSize,
-                        bool aProgressiveDisplay,
-                        Func aFunc)
-{
+template <typename Func>
+void WithDeinterlacingFilter(const IntSize& aSize, bool aProgressiveDisplay,
+                             Func aFunc) {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(bool(decoder));
 
-  WithFilterPipeline(decoder, std::forward<Func>(aFunc),
-                     DeinterlacingConfig<uint32_t> { aProgressiveDisplay },
-                     SurfaceConfig { decoder, aSize,
-                                     SurfaceFormat::B8G8R8A8, false });
+  WithFilterPipeline(
+      decoder, std::forward<Func>(aFunc),
+      DeinterlacingConfig<uint32_t>{aProgressiveDisplay},
+      SurfaceConfig{decoder, aSize, SurfaceFormat::B8G8R8A8, false});
 }
 
-template <typename Func> void
-WithPalettedDeinterlacingFilter(const IntSize& aSize,
-                                Func aFunc)
-{
+template <typename Func>
+void WithPalettedDeinterlacingFilter(const IntSize& aSize, Func aFunc) {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 
-  WithFilterPipeline(decoder, std::forward<Func>(aFunc),
-                     DeinterlacingConfig<uint8_t> {  true },
-                     PalettedSurfaceConfig { decoder, aSize,
-                                             IntRect(0, 0, 100, 100),
-                                             SurfaceFormat::B8G8R8A8, 8,
-                                             false });
+  WithFilterPipeline(
+      decoder, std::forward<Func>(aFunc),
+      DeinterlacingConfig<uint8_t>{ true},
+      PalettedSurfaceConfig{decoder, aSize, IntRect(0, 0, 100, 100),
+                            SurfaceFormat::B8G8R8A8, 8, false});
 }
 
-void
-AssertConfiguringDeinterlacingFilterFails(const IntSize& aSize)
-{
+void AssertConfiguringDeinterlacingFilterFails(const IntSize& aSize) {
   RefPtr<Decoder> decoder = CreateTrivialDecoder();
   ASSERT_TRUE(decoder != nullptr);
 
-  AssertConfiguringPipelineFails(decoder,
-                                 DeinterlacingConfig<uint32_t> {  true},
-                                 SurfaceConfig { decoder, aSize,
-                                                 SurfaceFormat::B8G8R8A8, false });
+  AssertConfiguringPipelineFails(
+      decoder, DeinterlacingConfig<uint32_t>{ true},
+      SurfaceConfig{decoder, aSize, SurfaceFormat::B8G8R8A8, false});
 }
 
-class ImageDeinterlacingFilter : public ::testing::Test
-{
-protected:
+class ImageDeinterlacingFilter : public ::testing::Test {
+ protected:
   AutoInitializeImageLib mInit;
 };
 
-TEST_F(ImageDeinterlacingFilter, WritePixels100_100)
-{
-  WithDeinterlacingFilter(IntSize(100, 100),  true,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 100, 100)),
-                      Some(IntRect(0, 0, 100, 100)));
-  });
+TEST_F(ImageDeinterlacingFilter, WritePixels100_100) {
+  WithDeinterlacingFilter(
+      IntSize(100, 100),  true,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        CheckWritePixels(aDecoder, aFilter,
+                          Some(IntRect(0, 0, 100, 100)),
+                          Some(IntRect(0, 0, 100, 100)));
+      });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixels99_99)
-{
+TEST_F(ImageDeinterlacingFilter, WritePixels99_99) {
   WithDeinterlacingFilter(IntSize(99, 99),  true,
                           [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 99, 99)),
-                      Some(IntRect(0, 0, 99, 99)));
-  });
+                            CheckWritePixels(
+                                aDecoder, aFilter,
+                                 Some(IntRect(0, 0, 99, 99)),
+                                 Some(IntRect(0, 0, 99, 99)));
+                          });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixels8_8)
-{
+TEST_F(ImageDeinterlacingFilter, WritePixels8_8) {
   WithDeinterlacingFilter(IntSize(8, 8),  true,
                           [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 8, 8)),
-                      Some(IntRect(0, 0, 8, 8)));
-  });
+                            CheckWritePixels(
+                                aDecoder, aFilter,
+                                 Some(IntRect(0, 0, 8, 8)),
+                                 Some(IntRect(0, 0, 8, 8)));
+                          });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixels7_7)
-{
+TEST_F(ImageDeinterlacingFilter, WritePixels7_7) {
   WithDeinterlacingFilter(IntSize(7, 7),  true,
                           [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 7, 7)),
-                      Some(IntRect(0, 0, 7, 7)));
-  });
+                            CheckWritePixels(
+                                aDecoder, aFilter,
+                                 Some(IntRect(0, 0, 7, 7)),
+                                 Some(IntRect(0, 0, 7, 7)));
+                          });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixels3_3)
-{
+TEST_F(ImageDeinterlacingFilter, WritePixels3_3) {
   WithDeinterlacingFilter(IntSize(3, 3),  true,
                           [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 3, 3)),
-                      Some(IntRect(0, 0, 3, 3)));
-  });
+                            CheckWritePixels(
+                                aDecoder, aFilter,
+                                 Some(IntRect(0, 0, 3, 3)),
+                                 Some(IntRect(0, 0, 3, 3)));
+                          });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixels1_1)
-{
+TEST_F(ImageDeinterlacingFilter, WritePixels1_1) {
   WithDeinterlacingFilter(IntSize(1, 1),  true,
                           [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckWritePixels(aDecoder, aFilter,
-                      Some(IntRect(0, 0, 1, 1)),
-                      Some(IntRect(0, 0, 1, 1)));
-  });
+                            CheckWritePixels(
+                                aDecoder, aFilter,
+                                 Some(IntRect(0, 0, 1, 1)),
+                                 Some(IntRect(0, 0, 1, 1)));
+                          });
 }
 
-TEST_F(ImageDeinterlacingFilter, PalettedWritePixels)
-{
-  WithPalettedDeinterlacingFilter(IntSize(100, 100),
-                                  [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    CheckPalettedWritePixels(aDecoder, aFilter);
-  });
+TEST_F(ImageDeinterlacingFilter, PalettedWritePixels) {
+  WithPalettedDeinterlacingFilter(
+      IntSize(100, 100), [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        CheckPalettedWritePixels(aDecoder, aFilter);
+      });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixelsNonProgressiveOutput51_52)
-{
-  WithDeinterlacingFilter(IntSize(51, 52),  false,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() {
-      uint32_t row = count / 51;  
-      ++count;
-
-      
-      
-      
-
-      switch (row) {
+TEST_F(ImageDeinterlacingFilter, WritePixelsNonProgressiveOutput51_52) {
+  WithDeinterlacingFilter(
+      IntSize(51, 52),  false,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
         
-        case 0:  
-        case 1:  
-        case 2:  
-        case 3:  
-        case 4:  
-        case 5:  
-        case 6:  
-          return AsVariant(BGRAColor::Green().AsPixel());
+        
+        
+        uint32_t count = 0;
+        auto result = aFilter->WritePixels<uint32_t>([&]() {
+          uint32_t row = count / 51;  
+          ++count;
+
+          
+          
+          
+
+          switch (row) {
+            
+            case 0:  
+            case 1:  
+            case 2:  
+            case 3:  
+            case 4:  
+            case 5:  
+            case 6:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 7:   
+            case 8:   
+            case 9:   
+            case 10:  
+            case 11:  
+            case 12:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 13:  
+            case 14:  
+            case 15:  
+            case 16:  
+            case 17:  
+            case 18:  
+            case 19:  
+            case 20:  
+            case 21:  
+            case 22:  
+            case 23:  
+            case 24:  
+            case 25:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 26:  
+            case 27:  
+            case 28:  
+            case 29:  
+            case 30:  
+            case 31:  
+            case 32:  
+            case 33:  
+            case 34:  
+            case 35:  
+            case 36:  
+            case 37:  
+            case 38:  
+            case 39:  
+            case 40:  
+            case 41:  
+            case 42:  
+            case 43:  
+            case 44:  
+            case 45:  
+            case 46:  
+            case 47:  
+            case 48:  
+            case 49:  
+            case 50:  
+            case 51:  
+              return AsVariant(BGRAColor::Red().AsPixel());
+
+            default:
+              MOZ_ASSERT_UNREACHABLE("Unexpected row");
+              return AsVariant(BGRAColor::Transparent().AsPixel());
+          }
+        });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(51u * 52u, count);
+
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 51, 52),
+                                        IntRect(0, 0, 51, 52));
 
         
-        case 7:   
-        case 8:   
-        case 9:   
-        case 10:  
-        case 11:  
-        case 12:  
-          return AsVariant(BGRAColor::Green().AsPixel());
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+
+        for (uint32_t row = 0; row < 52; ++row) {
+          EXPECT_TRUE(RowsAreSolidColor(
+              surface, row, 1,
+              row % 2 == 0 ? BGRAColor::Green() : BGRAColor::Red()));
+        }
+      });
+}
+
+TEST_F(ImageDeinterlacingFilter, WritePixelsOutput20_20) {
+  WithDeinterlacingFilter(
+      IntSize(20, 20),  true,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
+        uint32_t count = 0;
+        auto result = aFilter->WritePixels<uint32_t>([&]() {
+          uint32_t row = count / 20;  
+          ++count;
+
+          
+          
+          
+
+          switch (row) {
+            
+            case 0:  
+            case 1:  
+            case 2:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 3:  
+            case 4:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 5:  
+            case 6:  
+            case 7:  
+            case 8:  
+            case 9:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 10:  
+            case 11:  
+            case 12:  
+            case 13:  
+            case 14:  
+            case 15:  
+            case 16:  
+            case 17:  
+            case 18:  
+            case 19:  
+              return AsVariant(BGRAColor::Red().AsPixel());
+
+            default:
+              MOZ_ASSERT_UNREACHABLE("Unexpected row");
+              return AsVariant(BGRAColor::Transparent().AsPixel());
+          }
+        });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(20u * 20u, count);
+
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 20, 20),
+                                        IntRect(0, 0, 20, 20));
 
         
-        case 13:  
-        case 14:  
-        case 15:  
-        case 16:  
-        case 17:  
-        case 18:  
-        case 19:  
-        case 20:  
-        case 21:  
-        case 22:  
-        case 23:  
-        case 24:  
-        case 25:  
-          return AsVariant(BGRAColor::Green().AsPixel());
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+
+        for (uint32_t row = 0; row < 20; ++row) {
+          EXPECT_TRUE(RowsAreSolidColor(
+              surface, row, 1,
+              row % 2 == 0 ? BGRAColor::Green() : BGRAColor::Red()));
+        }
+      });
+}
+
+TEST_F(ImageDeinterlacingFilter, WritePixelsOutput7_7) {
+  WithDeinterlacingFilter(
+      IntSize(7, 7),  true,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
+        uint32_t count = 0;
+        auto result = aFilter->WritePixels<uint32_t>([&]() {
+          uint32_t row = count / 7;  
+          ++count;
+
+          switch (row) {
+            
+            case 0:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 1:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 2:  
+            case 3:  
+              return AsVariant(BGRAColor::Red().AsPixel());
+
+            
+            case 4:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            case 5:  
+              return AsVariant(BGRAColor::Red().AsPixel());
+
+            case 6:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            default:
+              MOZ_ASSERT_UNREACHABLE("Unexpected row");
+              return AsVariant(BGRAColor::Transparent().AsPixel());
+          }
+        });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(7u * 7u, count);
+
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 7, 7),
+                                        IntRect(0, 0, 7, 7));
 
         
-        case 26:  
-        case 27:  
-        case 28:  
-        case 29:  
-        case 30:  
-        case 31:  
-        case 32:  
-        case 33:  
-        case 34:  
-        case 35:  
-        case 36:  
-        case 37:  
-        case 38:  
-        case 39:  
-        case 40:  
-        case 41:  
-        case 42:  
-        case 43:  
-        case 44:  
-        case 45:  
-        case 46:  
-        case 47:  
-        case 48:  
-        case 49:  
-        case 50:  
-        case 51:  
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+
+        for (uint32_t row = 0; row < 7; ++row) {
+          BGRAColor color = row == 0 || row == 1 || row == 4 || row == 5
+                                ? BGRAColor::Green()
+                                : BGRAColor::Red();
+          EXPECT_TRUE(RowsAreSolidColor(surface, row, 1, color));
+        }
+      });
+}
+
+TEST_F(ImageDeinterlacingFilter, WritePixelsOutput3_3) {
+  WithDeinterlacingFilter(
+      IntSize(3, 3),  true,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
+        uint32_t count = 0;
+        auto result = aFilter->WritePixels<uint32_t>([&]() {
+          uint32_t row = count / 3;  
+          ++count;
+
+          switch (row) {
+            
+            case 0:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            
+
+            
+            case 1:  
+              return AsVariant(BGRAColor::Green().AsPixel());
+
+            
+            case 2:  
+              return AsVariant(BGRAColor::Red().AsPixel());
+
+            default:
+              MOZ_ASSERT_UNREACHABLE("Unexpected row");
+              return AsVariant(BGRAColor::Transparent().AsPixel());
+          }
+        });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(3u * 3u, count);
+
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 3, 3),
+                                        IntRect(0, 0, 3, 3));
+
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+
+        for (uint32_t row = 0; row < 3; ++row) {
+          EXPECT_TRUE(RowsAreSolidColor(
+              surface, row, 1,
+              row == 0 || row == 2 ? BGRAColor::Green() : BGRAColor::Red()));
+        }
+      });
+}
+
+TEST_F(ImageDeinterlacingFilter, WritePixelsOutput1_1) {
+  WithDeinterlacingFilter(
+      IntSize(1, 1),  true,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        uint32_t count = 0;
+        auto result = aFilter->WritePixels<uint32_t>([&]() {
+          ++count;
           return AsVariant(BGRAColor::Red().AsPixel());
+        });
+        EXPECT_EQ(WriteState::FINISHED, result);
+        EXPECT_EQ(1u, count);
 
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unexpected row");
-          return AsVariant(BGRAColor::Transparent().AsPixel());
-      }
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(51u * 52u, count);
+        AssertCorrectPipelineFinalState(aFilter, IntRect(0, 0, 1, 1),
+                                        IntRect(0, 0, 1, 1));
 
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 51, 52),
-                                    IntRect(0, 0, 51, 52));
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
 
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-
-    for (uint32_t row = 0; row < 52; ++row) {
-      EXPECT_TRUE(RowsAreSolidColor(surface, row, 1,
-                                    row % 2 == 0 ? BGRAColor::Green()
-                                                 : BGRAColor::Red()));
-    }
-  });
+        EXPECT_TRUE(RowsAreSolidColor(surface, 0, 1, BGRAColor::Red()));
+      });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixelsOutput20_20)
-{
-  WithDeinterlacingFilter(IntSize(20, 20),  true,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() {
-      uint32_t row = count / 20;  
-      ++count;
-
-      
-      
-      
-
-      switch (row) {
-        
-        case 0:  
-        case 1:  
-        case 2:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        case 3:  
-        case 4:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        case 5: 
-        case 6: 
-        case 7: 
-        case 8: 
-        case 9: 
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        case 10:  
-        case 11:  
-        case 12:  
-        case 13:  
-        case 14:  
-        case 15:  
-        case 16:  
-        case 17:  
-        case 18:  
-        case 19:  
-          return AsVariant(BGRAColor::Red().AsPixel());
-
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unexpected row");
-          return AsVariant(BGRAColor::Transparent().AsPixel());
-      }
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(20u * 20u, count);
-
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 20, 20),
-                                    IntRect(0, 0, 20, 20));
-
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-
-    for (uint32_t row = 0; row < 20; ++row) {
-      EXPECT_TRUE(RowsAreSolidColor(surface, row, 1,
-                                    row % 2 == 0 ? BGRAColor::Green()
-                                                 : BGRAColor::Red()));
-    }
-  });
-}
-
-TEST_F(ImageDeinterlacingFilter, WritePixelsOutput7_7)
-{
-  WithDeinterlacingFilter(IntSize(7, 7),  true,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() {
-      uint32_t row = count / 7;  
-      ++count;
-
-      switch (row) {
-        
-        case 0:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        case 1:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        case 2: 
-        case 3: 
-          return AsVariant(BGRAColor::Red().AsPixel());
-
-        
-        case 4:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        case 5:  
-          return AsVariant(BGRAColor::Red().AsPixel());
-
-        case 6:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unexpected row");
-          return AsVariant(BGRAColor::Transparent().AsPixel());
-      }
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(7u * 7u, count);
-
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 7, 7),
-                                    IntRect(0, 0, 7, 7));
-
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-
-    for (uint32_t row = 0; row < 7; ++row) {
-      BGRAColor color = row == 0 || row == 1 || row == 4 || row == 5
-                      ? BGRAColor::Green()
-                      : BGRAColor::Red();
-      EXPECT_TRUE(RowsAreSolidColor(surface, row, 1, color));
-    }
-  });
-}
-
-TEST_F(ImageDeinterlacingFilter, WritePixelsOutput3_3)
-{
-  WithDeinterlacingFilter(IntSize(3, 3),  true,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() {
-      uint32_t row = count / 3;  
-      ++count;
-
-      switch (row) {
-        
-        case 0:  
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        
-
-        
-        case 1: 
-          return AsVariant(BGRAColor::Green().AsPixel());
-
-        
-        case 2:  
-          return AsVariant(BGRAColor::Red().AsPixel());
-
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unexpected row");
-          return AsVariant(BGRAColor::Transparent().AsPixel());
-      }
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(3u * 3u, count);
-
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 3, 3),
-                                    IntRect(0, 0, 3, 3));
-
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-
-    for (uint32_t row = 0; row < 3; ++row) {
-      EXPECT_TRUE(RowsAreSolidColor(surface, row, 1,
-                                    row == 0 || row == 2 ? BGRAColor::Green()
-                                                         : BGRAColor::Red()));
-    }
-  });
-}
-
-TEST_F(ImageDeinterlacingFilter, WritePixelsOutput1_1)
-{
-  WithDeinterlacingFilter(IntSize(1, 1),  true,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    uint32_t count = 0;
-    auto result = aFilter->WritePixels<uint32_t>([&]() {
-      ++count;
-      return AsVariant(BGRAColor::Red().AsPixel());
-    });
-    EXPECT_EQ(WriteState::FINISHED, result);
-    EXPECT_EQ(1u, count);
-
-    AssertCorrectPipelineFinalState(aFilter,
-                                    IntRect(0, 0, 1, 1),
-                                    IntRect(0, 0, 1, 1));
-
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
-
-    EXPECT_TRUE(RowsAreSolidColor(surface, 0, 1, BGRAColor::Red()));
-  });
-}
-
-void
-WriteRowAndCheckInterlacerOutput(Decoder* aDecoder,
-                                 SurfaceFilter* aFilter,
-                                 BGRAColor aColor,
-                                 WriteState aNextState,
-                                 IntRect aInvalidRect,
-                                 uint32_t aFirstHaeberliRow,
-                                 uint32_t aLastHaeberliRow)
-{
+void WriteRowAndCheckInterlacerOutput(Decoder* aDecoder, SurfaceFilter* aFilter,
+                                      BGRAColor aColor, WriteState aNextState,
+                                      IntRect aInvalidRect,
+                                      uint32_t aFirstHaeberliRow,
+                                      uint32_t aLastHaeberliRow) {
   uint32_t count = 0;
 
   auto result = aFilter->WritePixels<uint32_t>([&]() -> NextPixel<uint32_t> {
@@ -496,177 +478,177 @@ WriteRowAndCheckInterlacerOutput(Decoder* aDecoder,
   }
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixelsIntermediateOutput7_7)
-{
-  WithDeinterlacingFilter(IntSize(7, 7),  true,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    
+TEST_F(ImageDeinterlacingFilter, WritePixelsIntermediateOutput7_7) {
+  WithDeinterlacingFilter(
+      IntSize(7, 7),  true,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
 
-    
+        
 
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 0, 7, 7), 0, 4);
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 0, 7, 7), 0, 4);
 
-    
+        
 
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 0, 7, 7), 1, 4);
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 0, 7, 7), 1, 4);
 
-    
+        
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 2, 7, 4), 2, 3);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 2, 7, 4), 2, 3);
 
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 0, 7, 7), 6, 6);
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 0, 7, 7), 6, 6);
 
-    
+        
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 1, 7, 2), 1, 1);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 1, 7, 2), 1, 1);
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 3, 7, 2), 3, 3);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 3, 7, 2), 3, 3);
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::FINISHED,
-                                     IntRect(0, 5, 7, 2), 5, 5);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::FINISHED,
+                                         IntRect(0, 5, 7, 2), 5, 5);
 
-    
-    EXPECT_TRUE(aFilter->IsSurfaceFinished());
-    Maybe<SurfaceInvalidRect> invalidRect = aFilter->TakeInvalidRect();
-    EXPECT_TRUE(invalidRect.isNothing());
+        
+        EXPECT_TRUE(aFilter->IsSurfaceFinished());
+        Maybe<SurfaceInvalidRect> invalidRect = aFilter->TakeInvalidRect();
+        EXPECT_TRUE(invalidRect.isNothing());
 
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
 
-    for (uint32_t row = 0; row < 7; ++row) {
-      BGRAColor color = row == 0 || row == 1 || row == 4 || row == 5
-                      ? BGRAColor::Green()
-                      : BGRAColor::Red();
-      EXPECT_TRUE(RowsAreSolidColor(surface, row, 1, color));
-    }
-  });
+        for (uint32_t row = 0; row < 7; ++row) {
+          BGRAColor color = row == 0 || row == 1 || row == 4 || row == 5
+                                ? BGRAColor::Green()
+                                : BGRAColor::Red();
+          EXPECT_TRUE(RowsAreSolidColor(surface, row, 1, color));
+        }
+      });
 }
 
-TEST_F(ImageDeinterlacingFilter, WritePixelsNonProgressiveIntermediateOutput7_7)
-{
-  WithDeinterlacingFilter(IntSize(7, 7),  false,
-                          [](Decoder* aDecoder, SurfaceFilter* aFilter) {
-    
-    
-    
+TEST_F(ImageDeinterlacingFilter,
+       WritePixelsNonProgressiveIntermediateOutput7_7) {
+  WithDeinterlacingFilter(
+      IntSize(7, 7),  false,
+      [](Decoder* aDecoder, SurfaceFilter* aFilter) {
+        
+        
+        
 
-    
+        
 
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 0, 7, 7), 0, 0);
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 0, 7, 7), 0, 0);
 
-    
+        
 
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 0, 7, 7), 4, 4);
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 0, 7, 7), 4, 4);
 
-    
+        
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 2, 7, 4), 2, 2);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 2, 7, 4), 2, 2);
 
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 0, 7, 7), 6, 6);
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 0, 7, 7), 6, 6);
 
-    
+        
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 1, 7, 2), 1, 1);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 1, 7, 2), 1, 1);
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
-                                     WriteState::NEED_MORE_DATA,
-                                     IntRect(0, 3, 7, 2), 3, 3);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
+                                         WriteState::NEED_MORE_DATA,
+                                         IntRect(0, 3, 7, 2), 3, 3);
 
-    
-    
-    
-    WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
-                                     WriteState::FINISHED,
-                                     IntRect(0, 5, 7, 2), 5, 5);
+        
+        
+        
+        WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
+                                         WriteState::FINISHED,
+                                         IntRect(0, 5, 7, 2), 5, 5);
 
-    
-    EXPECT_TRUE(aFilter->IsSurfaceFinished());
-    Maybe<SurfaceInvalidRect> invalidRect = aFilter->TakeInvalidRect();
-    EXPECT_TRUE(invalidRect.isNothing());
+        
+        EXPECT_TRUE(aFilter->IsSurfaceFinished());
+        Maybe<SurfaceInvalidRect> invalidRect = aFilter->TakeInvalidRect();
+        EXPECT_TRUE(invalidRect.isNothing());
 
-    
-    
-    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        
+        
+        
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
 
-    for (uint32_t row = 0; row < 7; ++row) {
-      BGRAColor color = row == 0 || row == 1 || row == 4 || row == 5
-                      ? BGRAColor::Green()
-                      : BGRAColor::Red();
-      EXPECT_TRUE(RowsAreSolidColor(surface, row, 1, color));
-    }
-  });
+        for (uint32_t row = 0; row < 7; ++row) {
+          BGRAColor color = row == 0 || row == 1 || row == 4 || row == 5
+                                ? BGRAColor::Green()
+                                : BGRAColor::Red();
+          EXPECT_TRUE(RowsAreSolidColor(surface, row, 1, color));
+        }
+      });
 }
 
-
-TEST_F(ImageDeinterlacingFilter, DeinterlacingFailsFor0_0)
-{
+TEST_F(ImageDeinterlacingFilter, DeinterlacingFailsFor0_0) {
   
   AssertConfiguringDeinterlacingFilterFails(IntSize(0, 0));
 }
 
-TEST_F(ImageDeinterlacingFilter, DeinterlacingFailsForMinus1_Minus1)
-{
+TEST_F(ImageDeinterlacingFilter, DeinterlacingFailsForMinus1_Minus1) {
   
   AssertConfiguringDeinterlacingFilterFails(IntSize(-1, -1));
 }

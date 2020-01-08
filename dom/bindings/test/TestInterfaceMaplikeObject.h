@@ -23,9 +23,8 @@ class GlobalObject;
 
 
 class TestInterfaceMaplikeObject final : public nsISupports,
-                                         public nsWrapperCache
-{
-public:
+                                         public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TestInterfaceMaplikeObject)
 
@@ -33,20 +32,21 @@ public:
   nsPIDOMWindowInner* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
-  static already_AddRefed<TestInterfaceMaplikeObject>
-    Constructor(const GlobalObject& aGlobal,ErrorResult& rv);
+  static already_AddRefed<TestInterfaceMaplikeObject> Constructor(
+      const GlobalObject& aGlobal, ErrorResult& rv);
 
   
   void SetInternal(const nsAString& aKey);
   void ClearInternal();
   bool DeleteInternal(const nsAString& aKey);
   bool HasInternal(const nsAString& aKey);
-private:
+
+ private:
   virtual ~TestInterfaceMaplikeObject() {}
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -9,8 +9,7 @@
 
 
 
-TEST(storage_true_async, TrueAsyncStatement)
-{
+TEST(storage_true_async, TrueAsyncStatement) {
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
@@ -21,18 +20,16 @@ TEST(storage_true_async, TrueAsyncStatement)
   
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
   db->CreateAsyncStatement(
-    NS_LITERAL_CSTRING("CREATE TABLE test (id INTEGER PRIMARY KEY)"),
-    getter_AddRefs(stmt)
-  );
+      NS_LITERAL_CSTRING("CREATE TABLE test (id INTEGER PRIMARY KEY)"),
+      getter_AddRefs(stmt));
   blocking_async_execute(stmt);
   stmt->Finalize();
   do_check_false(mutex_used_on_watched_thread);
 
   
   db->CreateAsyncStatement(
-    NS_LITERAL_CSTRING("INSERT INTO test (id) VALUES (?)"),
-    getter_AddRefs(stmt)
-  );
+      NS_LITERAL_CSTRING("INSERT INTO test (id) VALUES (?)"),
+      getter_AddRefs(stmt));
   stmt->BindInt32ByIndex(0, 1);
   blocking_async_execute(stmt);
   stmt->Finalize();
@@ -40,9 +37,8 @@ TEST(storage_true_async, TrueAsyncStatement)
 
   
   db->CreateAsyncStatement(
-    NS_LITERAL_CSTRING("INSERT INTO test (id) VALUES (:id)"),
-    getter_AddRefs(stmt)
-  );
+      NS_LITERAL_CSTRING("INSERT INTO test (id) VALUES (:id)"),
+      getter_AddRefs(stmt));
   nsCOMPtr<mozIStorageBindingParamsArray> paramsArray;
   stmt->NewBindingParamsArray(getter_AddRefs(paramsArray));
   nsCOMPtr<mozIStorageBindingParams> params;
@@ -71,8 +67,7 @@ TEST(storage_true_async, TrueAsyncStatement)
 
 
 
-TEST(storage_true_async, AsyncCancellation)
-{
+TEST(storage_true_async, AsyncCancellation) {
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
@@ -80,15 +75,14 @@ TEST(storage_true_async, AsyncCancellation)
   
   nsCOMPtr<nsIThread> target(get_conn_async_thread(db));
   do_check_true(target);
-  RefPtr<ThreadWedger> wedger (new ThreadWedger(target));
+  RefPtr<ThreadWedger> wedger(new ThreadWedger(target));
 
   
   
   nsCOMPtr<mozIStorageAsyncStatement> asyncStmt;
   db->CreateAsyncStatement(
-    NS_LITERAL_CSTRING("CREATE TABLE asyncTable (id INTEGER PRIMARY KEY)"),
-    getter_AddRefs(asyncStmt)
-  );
+      NS_LITERAL_CSTRING("CREATE TABLE asyncTable (id INTEGER PRIMARY KEY)"),
+      getter_AddRefs(asyncStmt));
 
   RefPtr<AsyncStatementSpinner> asyncSpin(new AsyncStatementSpinner());
   nsCOMPtr<mozIStoragePendingStatement> asyncPend;
@@ -99,9 +93,8 @@ TEST(storage_true_async, AsyncCancellation)
   
   nsCOMPtr<mozIStorageStatement> syncStmt;
   db->CreateStatement(
-    NS_LITERAL_CSTRING("CREATE TABLE syncTable (id INTEGER PRIMARY KEY)"),
-    getter_AddRefs(syncStmt)
-  );
+      NS_LITERAL_CSTRING("CREATE TABLE syncTable (id INTEGER PRIMARY KEY)"),
+      getter_AddRefs(syncStmt));
 
   RefPtr<AsyncStatementSpinner> syncSpin(new AsyncStatementSpinner());
   nsCOMPtr<mozIStoragePendingStatement> syncPend;
@@ -143,8 +136,7 @@ TEST(storage_true_async, AsyncCancellation)
 
 
 
-TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread)
-{
+TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread) {
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
@@ -153,9 +145,8 @@ TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread)
   
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
   db->CreateAsyncStatement(
-    NS_LITERAL_CSTRING("CREATE TABLE test (id INTEGER PRIMARY KEY)"),
-    getter_AddRefs(stmt)
-  );
+      NS_LITERAL_CSTRING("CREATE TABLE test (id INTEGER PRIMARY KEY)"),
+      getter_AddRefs(stmt));
 
   
   blocking_async_execute(stmt);
@@ -171,4 +162,3 @@ TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread)
   
   blocking_async_close(db);
 }
-

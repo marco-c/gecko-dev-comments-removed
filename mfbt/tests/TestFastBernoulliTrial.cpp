@@ -16,56 +16,44 @@
 
 
 
-static void
-TestProportions()
-{
-  mozilla::FastBernoulliTrial bernoulli(1.0,
-                                        698079309544035222ULL,
+static void TestProportions() {
+  mozilla::FastBernoulliTrial bernoulli(1.0, 698079309544035222ULL,
                                         6012389156611637584ULL);
 
-  for (size_t i = 0; i < 100; i++)
-    MOZ_RELEASE_ASSERT(bernoulli.trial());
+  for (size_t i = 0; i < 100; i++) MOZ_RELEASE_ASSERT(bernoulli.trial());
 
   {
     bernoulli.setProbability(0.5);
     size_t count = 0;
-    for (size_t i = 0; i < 1000; i++)
-      count += bernoulli.trial();
+    for (size_t i = 0; i < 1000; i++) count += bernoulli.trial();
     MOZ_RELEASE_ASSERT(count == 496);
   }
 
   {
     bernoulli.setProbability(0.001);
     size_t count = 0;
-    for (size_t i = 0; i < 1000; i++)
-      count += bernoulli.trial();
+    for (size_t i = 0; i < 1000; i++) count += bernoulli.trial();
     MOZ_RELEASE_ASSERT(count == 2);
   }
 
   {
     bernoulli.setProbability(0.85);
     size_t count = 0;
-    for (size_t i = 0; i < 1000; i++)
-      count += bernoulli.trial();
+    for (size_t i = 0; i < 1000; i++) count += bernoulli.trial();
     MOZ_RELEASE_ASSERT(count == 852);
   }
 
   bernoulli.setProbability(0.0);
-  for (size_t i = 0; i < 100; i++)
-    MOZ_RELEASE_ASSERT(!bernoulli.trial());
+  for (size_t i = 0; i < 100; i++) MOZ_RELEASE_ASSERT(!bernoulli.trial());
 }
 
-static void
-TestHarmonics()
-{
-  mozilla::FastBernoulliTrial bernoulli(0.1,
-                                        698079309544035222ULL,
+static void TestHarmonics() {
+  mozilla::FastBernoulliTrial bernoulli(0.1, 698079309544035222ULL,
                                         6012389156611637584ULL);
 
   const size_t n = 100000;
   bool trials[n];
-  for (size_t i = 0; i < n; i++)
-    trials[i] = bernoulli.trial();
+  for (size_t i = 0; i < n; i++) trials[i] = bernoulli.trial();
 
   
   
@@ -76,25 +64,20 @@ TestHarmonics()
 
     for (size_t phase = 0; phase < harmonic; phase++) {
       size_t count = 0;
-      for (size_t i = phase; i < n; i += harmonic)
-        count += trials[i];
+      for (size_t i = phase; i < n; i += harmonic) count += trials[i];
 
       MOZ_RELEASE_ASSERT(low_expected <= count && count <= high_expected);
     }
   }
 }
 
-static void
-TestTrialN()
-{
-  mozilla::FastBernoulliTrial bernoulli(0.01,
-                                        0x67ff17e25d855942ULL,
+static void TestTrialN() {
+  mozilla::FastBernoulliTrial bernoulli(0.01, 0x67ff17e25d855942ULL,
                                         0x74f298193fe1c5b1ULL);
 
   {
     size_t count = 0;
-    for (size_t i = 0; i < 10000; i++)
-      count += bernoulli.trial(1);
+    for (size_t i = 0; i < 10000; i++) count += bernoulli.trial(1);
 
     
     MOZ_RELEASE_ASSERT(count == 97);
@@ -102,8 +85,7 @@ TestTrialN()
 
   {
     size_t count = 0;
-    for (size_t i = 0; i < 10000; i++)
-      count += bernoulli.trial(3);
+    for (size_t i = 0; i < 10000; i++) count += bernoulli.trial(3);
 
     
     
@@ -112,8 +94,7 @@ TestTrialN()
 
   {
     size_t count = 0;
-    for (size_t i = 0; i < 10000; i++)
-      count += bernoulli.trial(10);
+    for (size_t i = 0; i < 10000; i++) count += bernoulli.trial(10);
 
     
     
@@ -122,8 +103,7 @@ TestTrialN()
 
   {
     size_t count = 0;
-    for (size_t i = 0; i < 10000; i++)
-      count += bernoulli.trial(100);
+    for (size_t i = 0; i < 10000; i++) count += bernoulli.trial(100);
 
     
     
@@ -132,8 +112,7 @@ TestTrialN()
 
   {
     size_t count = 0;
-    for (size_t i = 0; i < 10000; i++)
-      count += bernoulli.trial(1000);
+    for (size_t i = 0; i < 10000; i++) count += bernoulli.trial(1000);
 
     
     
@@ -141,11 +120,8 @@ TestTrialN()
   }
 }
 
-static void
-TestChangeProbability()
-{
-  mozilla::FastBernoulliTrial bernoulli(1.0,
-                                        0x67ff17e25d855942ULL,
+static void TestChangeProbability() {
+  mozilla::FastBernoulliTrial bernoulli(1.0, 0x67ff17e25d855942ULL,
                                         0x74f298193fe1c5b1ULL);
 
   
@@ -158,9 +134,7 @@ TestChangeProbability()
   MOZ_RELEASE_ASSERT(bernoulli.trial());
 }
 
-static void
-TestCuspProbabilities()
-{
+static void TestCuspProbabilities() {
   
 
 
@@ -172,33 +146,27 @@ TestCuspProbabilities()
 
 
 
-  mozilla::FastBernoulliTrial bernoulli(nextafter(1, 0),
-                                        0x67ff17e25d855942ULL,
+  mozilla::FastBernoulliTrial bernoulli(nextafter(1, 0), 0x67ff17e25d855942ULL,
                                         0x74f298193fe1c5b1ULL);
 
-  for (size_t i = 0; i < 1000; i++)
-    MOZ_RELEASE_ASSERT(bernoulli.trial());
+  for (size_t i = 0; i < 1000; i++) MOZ_RELEASE_ASSERT(bernoulli.trial());
 
   
 
 
 
   bernoulli.setProbability(nextafter(0, 1));
-  for (size_t i = 0; i < 1000; i++)
-    MOZ_RELEASE_ASSERT(!bernoulli.trial());
+  for (size_t i = 0; i < 1000; i++) MOZ_RELEASE_ASSERT(!bernoulli.trial());
 
   
 
 
 
   bernoulli.setProbability(1 - nextafter(1, 0));
-  for (size_t i = 0; i < 1000; i++)
-    MOZ_RELEASE_ASSERT(!bernoulli.trial());
+  for (size_t i = 0; i < 1000; i++) MOZ_RELEASE_ASSERT(!bernoulli.trial());
 }
 
-int
-main()
-{
+int main() {
   TestProportions();
   TestHarmonics();
   TestTrialN();

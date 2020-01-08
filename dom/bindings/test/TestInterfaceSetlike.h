@@ -22,25 +22,23 @@ class GlobalObject;
 
 
 
-class TestInterfaceSetlike final : public nsISupports,
-                                   public nsWrapperCache
-{
-public:
+class TestInterfaceSetlike final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TestInterfaceSetlike)
-  explicit TestInterfaceSetlike(JSContext* aCx,
-                                nsPIDOMWindowInner* aParent);
+  explicit TestInterfaceSetlike(JSContext* aCx, nsPIDOMWindowInner* aParent);
   nsPIDOMWindowInner* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
-  static already_AddRefed<TestInterfaceSetlike>
-    Constructor(const GlobalObject& aGlobal, ErrorResult& rv);
-private:
+  static already_AddRefed<TestInterfaceSetlike> Constructor(
+      const GlobalObject& aGlobal, ErrorResult& rv);
+
+ private:
   virtual ~TestInterfaceSetlike() {}
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
