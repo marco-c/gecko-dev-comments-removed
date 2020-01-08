@@ -14,7 +14,6 @@ namespace jit {
 
 
 
-
 void
 MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest)
 {
@@ -1109,7 +1108,6 @@ MacroAssembler::clampIntToUint8(Register reg)
     as_slti(ScratchRegister, reg, 255);
     as_movz(reg, SecondScratchReg, ScratchRegister);
 }
-
 
 
 

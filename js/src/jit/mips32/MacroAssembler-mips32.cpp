@@ -2113,7 +2113,6 @@ MacroAssembler::subFromStackPtr(Imm32 imm32)
 
 
 
-
 void
 MacroAssembler::PushRegsInMask(LiveRegisterSet set)
 {
@@ -2966,6 +2965,5 @@ MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest, Regist
     convertUInt32ToDouble(src.low, ScratchDoubleReg);
     addDouble(ScratchDoubleReg, dest);
 }
-
 
 

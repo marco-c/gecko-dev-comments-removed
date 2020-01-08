@@ -2958,7 +2958,6 @@ MacroAssembler::subFromStackPtr(Register reg)
 
 
 
-
 void
 MacroAssembler::PushRegsInMask(LiveGeneralRegisterSet set)
 {
@@ -3805,7 +3804,6 @@ MacroAssembler::boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* 
         and32(Imm32(length - 1), index);
     }
 }
-
 
 
 
