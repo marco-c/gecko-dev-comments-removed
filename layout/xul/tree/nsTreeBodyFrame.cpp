@@ -1917,7 +1917,7 @@ nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
       
       nsresult rv = nsContentUtils::LoadImage(
           srcURI, mContent, doc, mContent->NodePrincipal(), 0,
-          doc->GetDocumentURI(), doc->GetReferrerPolicy(),
+          doc->GetDocumentURIAsReferrer(), doc->GetReferrerPolicy(),
           imgNotificationObserver, nsIRequest::LOAD_NORMAL, EmptyString(),
           getter_AddRefs(imageRequest));
       NS_ENSURE_SUCCESS(rv, rv);

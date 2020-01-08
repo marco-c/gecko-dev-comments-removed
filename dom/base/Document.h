@@ -675,7 +675,8 @@ class Document : public nsINode,
 
 
 
-  ReferrerPolicyEnum GetReferrerPolicy() const { return mReferrerPolicy; }
+
+  ReferrerPolicyEnum GetReferrerPolicy() const;
 
   
 
@@ -753,6 +754,22 @@ class Document : public nsINode,
   nsIURI* GetFallbackBaseURI() const {
     if (mIsSrcdocDocument && mParentDocument) {
       return mParentDocument->GetDocBaseURI();
+    }
+    return mDocumentURI;
+  }
+
+  
+
+
+
+
+
+
+
+
+  nsIURI* GetDocumentURIAsReferrer() const {
+    if (mIsSrcdocDocument && mParentDocument) {
+      return mParentDocument->GetDocumentURIAsReferrer();
     }
     return mDocumentURI;
   }
