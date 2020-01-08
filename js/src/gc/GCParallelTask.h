@@ -31,7 +31,7 @@ class GCParallelTask {
   TaskFunc func_;
 
   
-  enum class State { NotStarted, Dispatched, Finished };
+  enum class State { NotStarted, Dispatched, Finishing, Finished };
   UnprotectedData<State> state_;
 
   
@@ -79,6 +79,11 @@ class GCParallelTask {
 
   
   void runFromMainThread(JSRuntime* rt);
+  void joinAndRunFromMainThread(JSRuntime* rt);
+
+  
+  
+  void startOrRunIfIdle(AutoLockHelperThreadState& lock);
 
   
   void cancelAndWait() {
@@ -112,7 +117,7 @@ class GCParallelTask {
     state_ = State::Dispatched;
   }
   void setFinished(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(state_ == State::Dispatched);
+    MOZ_ASSERT(state_ == State::Dispatched || state_ == State::Finishing);
     state_ = State::Finished;
   }
   void setNotStarted(const AutoLockHelperThreadState& lock) {
@@ -121,6 +126,16 @@ class GCParallelTask {
   }
 
   void runTask() { func_(this); }
+
+ protected:
+  
+  
+  void setFinishing(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(state_ == State::NotStarted || state_ == State::Dispatched);
+    if (state_ == State::Dispatched) {
+      state_ = State::Finishing;
+    }
+  }
 
   
   

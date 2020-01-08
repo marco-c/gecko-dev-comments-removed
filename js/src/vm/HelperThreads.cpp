@@ -1528,6 +1528,7 @@ js::GCParallelTask::~GCParallelTask() {
 }
 
 bool js::GCParallelTask::startWithLockHeld(AutoLockHelperThreadState& lock) {
+  MOZ_ASSERT(CanUseExtraThreads());
   assertNotStarted();
 
   
@@ -1550,6 +1551,21 @@ bool js::GCParallelTask::startWithLockHeld(AutoLockHelperThreadState& lock) {
 bool js::GCParallelTask::start() {
   AutoLockHelperThreadState helperLock;
   return startWithLockHeld(helperLock);
+}
+
+void js::GCParallelTask::startOrRunIfIdle(AutoLockHelperThreadState& lock) {
+  if (isRunningWithLockHeld(lock)) {
+    return;
+  }
+
+  
+  
+  joinWithLockHeld(lock);
+
+  if (!startWithLockHeld(lock)) {
+    AutoUnlockHelperThreadState unlock(lock);
+    runFromMainThread(runtime());
+  }
 }
 
 void js::GCParallelTask::joinWithLockHeld(AutoLockHelperThreadState& lock) {
@@ -1578,6 +1594,16 @@ static inline TimeDuration TimeSince(TimeStamp prev) {
     now = prev;
   }
   return now - prev;
+}
+
+void GCParallelTask::joinAndRunFromMainThread(JSRuntime* rt) {
+  {
+    AutoLockHelperThreadState lock;
+    MOZ_ASSERT(!isRunningWithLockHeld(lock));
+    joinWithLockHeld(lock);
+  }
+
+  runFromMainThread(rt);
 }
 
 void js::GCParallelTask::runFromMainThread(JSRuntime* rt) {
