@@ -290,8 +290,8 @@ HTMLEditor::HideAnonymousEditingUIs()
     NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
   }
   if (mInlineEditedCell) {
-    HideInlineTableEditingUI();
-    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
+    HideInlineTableEditingUIInternal();
+    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUIInternal failed");
   }
   if (mResizedObject) {
     DebugOnly<nsresult> rv = HideResizersInternal();
@@ -315,8 +315,8 @@ HTMLEditor::HideAnonymousEditingUIsIfUnnecessary()
   if (!IsInlineTableEditorEnabled() && mInlineEditedCell) {
     
     
-    HideInlineTableEditingUI();
-    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
+    HideInlineTableEditingUIInternal();
+    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUIInternal failed");
   }
   if (!IsObjectResizerEnabled() && mResizedObject) {
     
@@ -438,10 +438,8 @@ HTMLEditor::RefereshEditingUI(Selection& aSelection)
 
   if (IsInlineTableEditorEnabled() && mInlineEditedCell &&
       mInlineEditedCell != cellElement) {
-    
-    
-    HideInlineTableEditingUI();
-    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
+    HideInlineTableEditingUIInternal();
+    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUIInternal failed");
   }
 
   
@@ -483,12 +481,12 @@ HTMLEditor::RefereshEditingUI(Selection& aSelection)
   if (IsInlineTableEditorEnabled() && cellElement &&
       IsModifiableNode(*cellElement) && cellElement != hostContent) {
     if (mInlineEditedCell) {
-      nsresult rv = RefreshInlineTableEditingUI();
+      nsresult rv = RefreshInlineTableEditingUIInternal();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     } else {
-      nsresult rv = ShowInlineTableEditingUI(cellElement);
+      nsresult rv = ShowInlineTableEditingUIInternal(*cellElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }

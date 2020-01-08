@@ -1930,12 +1930,23 @@ protected:
 
 
 
-  nsresult ShowInlineTableEditingUI(Element* aCell);
+
+
+
+
+  nsresult ShowInlineTableEditingUIInternal(Element& aCellElement);
 
   
 
 
-  void HideInlineTableEditingUI();
+  void HideInlineTableEditingUIInternal();
+
+  
+
+
+
+
+  nsresult RefreshInlineTableEditingUIInternal();
 
   
 
