@@ -178,7 +178,7 @@ public:
   EventHandlerNonNull* GetEventHandler(const nsAString& aType)
   {
     RefPtr<nsAtom> type = NS_Atomize(aType);
-    return GetEventHandler(type, EmptyString());
+    return GetEventHandler(type);
   }
 
   
@@ -186,20 +186,10 @@ public:
                        ErrorResult& rv);
 
   
-  
-  
-  
-  
   virtual void EventListenerAdded(nsAtom* aType) {}
-  virtual void EventListenerAdded(const nsAString& aType) {}
 
   
-  
-  
-  
-  
   virtual void EventListenerRemoved(nsAtom* aType) {}
-  virtual void EventListenerRemoved(const nsAString& aType) {}
 
   
   
@@ -281,10 +271,8 @@ public:
   virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) = 0;
   
 protected:
-  EventHandlerNonNull* GetEventHandler(nsAtom* aType,
-                                       const nsAString& aTypeString);
-  void SetEventHandler(nsAtom* aType, const nsAString& aTypeString,
-                       EventHandlerNonNull* aHandler);
+  EventHandlerNonNull* GetEventHandler(nsAtom* aType);
+  void SetEventHandler(nsAtom* aType, EventHandlerNonNull* aHandler);
 
   
 

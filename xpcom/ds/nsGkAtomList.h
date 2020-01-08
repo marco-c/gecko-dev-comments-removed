@@ -1893,6 +1893,7 @@ GK_ATOM(ongamepadbuttonup, "ongamepadbuttonup")
 GK_ATOM(ongamepadaxismove, "ongamepadaxismove")
 GK_ATOM(ongamepadconnected, "ongamepadconnected")
 GK_ATOM(ongamepaddisconnected, "ongamepaddisconnected")
+GK_ATOM(onfetch, "onfetch")
 
 
 GK_ATOM(afterPseudoProperty, "afterPseudoProperty")  

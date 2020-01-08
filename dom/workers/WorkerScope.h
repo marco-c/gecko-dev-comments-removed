@@ -352,11 +352,7 @@ public:
   void
   SetOnfetch(mozilla::dom::EventHandlerNonNull* aCallback);
 
-  
-  
-  
-  using DOMEventTargetHelper::EventListenerAdded;
-  void EventListenerAdded(const nsAString& aType) override;
+  void EventListenerAdded(nsAtom* aType) override;
 };
 
 class WorkerDebuggerGlobalScope final : public DOMEventTargetHelper,

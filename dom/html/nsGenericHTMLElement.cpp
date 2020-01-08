@@ -628,7 +628,7 @@ nsGenericHTMLElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
     }
     if (!aValue && IsEventAttributeName(aName)) {
       if (EventListenerManager* manager = GetExistingListenerManager()) {
-        manager->RemoveEventHandler(aName, EmptyString());
+        manager->RemoveEventHandler(aName);
       }
     }
   }
@@ -2901,7 +2901,7 @@ nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 }
 
 static bool
-IsOrHasAncestorWithDisplayNone(Element* aElement)
+IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
 {
   return !aElement->HasServoData() || Servo_Element_IsDisplayNone(aElement);
 }
@@ -2910,65 +2910,18 @@ void
 nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
                                    mozilla::ErrorResult& aError)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  nsIDocument* doc = GetComposedDoc();
-  if (doc) {
-    doc->FlushPendingNotifications(FlushType::Style);
-  }
-
-  
-  
-  nsIFrame* frame = GetPrimaryFrame();
-  if (IsDisplayContents()) {
-    for (Element* parent = GetFlattenedTreeParentElement();
-         parent;
-         parent = parent->GetFlattenedTreeParentElement())
-    {
-      frame = parent->GetPrimaryFrame();
-      if (frame) {
-        break;
-      }
+  if (!GetPrimaryFrame(FlushType::Layout)) {
+    nsIPresShell* presShell = nsContentUtils::GetPresShellForContent(this);
+    
+    
+    if (!presShell || !presShell->DidInitialize() ||
+        IsOrHasAncestorWithDisplayNone(this, presShell)) {
+      GetTextContentInternal(aValue, aError);
+      return;
     }
   }
 
-  
-  
-  bool dirty = frame && frame->PresShell()->FrameIsAncestorOfDirtyRoot(frame);
-
-  
-  
-  
-  
-  
-  dirty |= frame && frame->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
-  while (!dirty && frame) {
-    dirty |= frame->HasAnyStateBits(NS_FRAME_IS_DIRTY);
-    frame = frame->GetInFlowParent();
-  }
-
-  
-  if (dirty && doc) {
-    doc->FlushPendingNotifications(FlushType::Layout);
-  }
-
-  if (IsOrHasAncestorWithDisplayNone(this)) {
-    GetTextContentInternal(aValue, aError);
-  } else {
-    nsRange::GetInnerTextNoFlush(aValue, aError, this);
-  }
+  nsRange::GetInnerTextNoFlush(aValue, aError, this);
 }
 
 void
