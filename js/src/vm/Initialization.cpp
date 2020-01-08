@@ -88,6 +88,8 @@ JS::detail::InitWithFailureDiagnostic(bool isDebugBuild)
 
     PRMJ_NowInit();
 
+    js::SliceBudget::Init();
+
     
     
     
