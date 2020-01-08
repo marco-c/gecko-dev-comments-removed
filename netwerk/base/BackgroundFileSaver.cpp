@@ -491,9 +491,15 @@ BackgroundFileSaver::ProcessStateChange()
       }
 
       
-      mActualTarget = renamedTarget;
-      mActualTargetKeepPartial = renamedTargetKeepPartial;
+      
+      
+      
     }
+
+    
+    
+    mActualTarget = renamedTarget;
+    mActualTargetKeepPartial = renamedTargetKeepPartial;
   }
 
   
