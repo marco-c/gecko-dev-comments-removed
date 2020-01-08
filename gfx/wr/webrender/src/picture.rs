@@ -414,14 +414,6 @@ impl TileCache {
                             
                             
                             
-                            BrushKind::Solid { opacity_binding_index, .. } => {
-                                let opacity_binding = &opacity_binding_store[opacity_binding_index];
-                                for binding in &opacity_binding.bindings {
-                                    if let PropertyBinding::Binding(key, default) = binding {
-                                        opacity_bindings.push((key.id, *default));
-                                    }
-                                }
-                            }
                             BrushKind::Image { opacity_binding_index, ref request, .. } => {
                                 let opacity_binding = &opacity_binding_store[opacity_binding_index];
                                 for binding in &opacity_binding.bindings {
@@ -439,6 +431,14 @@ impl TileCache {
                             BrushKind::LinearGradient { .. } => {
                             }
                         }
+                    }
+                }
+            }
+            PrimitiveInstanceKind::Rectangle { opacity_binding_index, .. } => {
+                let opacity_binding = &opacity_binding_store[opacity_binding_index];
+                for binding in &opacity_binding.bindings {
+                    if let PropertyBinding::Binding(key, default) = binding {
+                        opacity_bindings.push((key.id, *default));
                     }
                 }
             }

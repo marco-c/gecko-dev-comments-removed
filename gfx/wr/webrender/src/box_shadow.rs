@@ -8,7 +8,7 @@ use clip::ClipItemKey;
 use display_list_flattener::DisplayListFlattener;
 use gpu_cache::GpuCacheHandle;
 use gpu_types::BoxShadowStretchMode;
-use prim_store::{BrushKind, BrushPrimitive, PrimitiveContainer};
+use prim_store::PrimitiveContainer;
 use prim_store::ScrollNodeAndClipChain;
 use render_task::RenderTaskCacheEntryHandle;
 use util::RectHelpers;
@@ -149,7 +149,9 @@ impl<'a> DisplayListFlattener<'a> {
                 clip_and_scroll,
                 &LayoutPrimitiveInfo::with_clip_rect(final_prim_rect, prim_info.clip_rect),
                 clips,
-                PrimitiveContainer::Brush(BrushPrimitive::new(BrushKind::new_solid(*color), None)),
+                PrimitiveContainer::Rectangle {
+                    color: *color,
+                },
             );
         } else {
             
@@ -170,7 +172,9 @@ impl<'a> DisplayListFlattener<'a> {
 
             
             
-            let prim = BrushPrimitive::new(BrushKind::new_solid(*color), None);
+            let prim = PrimitiveContainer::Rectangle {
+                color: *color,
+            };
 
             
             let shadow_clip_source = ClipItemKey::box_shadow(
@@ -221,7 +225,7 @@ impl<'a> DisplayListFlattener<'a> {
                 clip_and_scroll,
                 &prim_info,
                 extra_clips,
-                PrimitiveContainer::Brush(prim),
+                prim,
             );
         }
     }
