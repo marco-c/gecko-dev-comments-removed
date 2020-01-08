@@ -5031,6 +5031,7 @@ void nsGlobalWindowOuter::NotifyContentBlockingState(unsigned aState,
   nsAutoString origin;
   nsContentUtils::GetUTFOrigin(aURIHint, origin);
 
+  bool blockedValue = aBlocked;
   bool unblocked = false;
   if (aState == nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT) {
     doc->SetHasTrackingContentBlocked(aBlocked, origin);
@@ -5069,14 +5070,16 @@ void nsGlobalWindowOuter::NotifyContentBlockingState(unsigned aState,
     
     
     
-    doc->SetHasCookiesLoaded(!aBlocked, origin);
-    aBlocked = true;
-    unblocked = false;
+    blockedValue = !aBlocked;
+    doc->SetHasCookiesLoaded(blockedValue, origin);
+    if (!aBlocked) {
+      unblocked = !doc->GetHasCookiesLoaded();
+    }
   } else {
     
   }
   const uint32_t oldState = state;
-  if (aBlocked) {
+  if (blockedValue) {
     state |= aState;
   } else if (unblocked) {
     state &= ~aState;

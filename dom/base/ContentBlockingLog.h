@@ -156,6 +156,10 @@ class ContentBlockingLog final {
   }
 
   bool HasBlockedAnyOfType(uint32_t aType) {
+    
+    
+    
+    
     for (auto iter = mLog.Iter(); !iter.Done(); iter.Next()) {
       if (!iter.UserData()) {
         continue;
@@ -166,10 +170,10 @@ class ContentBlockingLog final {
           return true;
         }
       } else if (aType == nsIWebProgressListener::STATE_COOKIES_LOADED) {
-        if (Get<1>(*iter.UserData()).isSome()) {
-          return Get<1>(*iter.UserData()).value();
+        if (Get<1>(*iter.UserData()).isSome() &&
+            Get<1>(*iter.UserData()).value()) {
+          return true;
         }
-        return false;  
       } else {
         for (auto& item : Get<2>(*iter.UserData())) {
           if ((item.mType & aType) != 0) {
