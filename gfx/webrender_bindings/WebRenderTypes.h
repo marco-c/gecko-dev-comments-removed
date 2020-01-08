@@ -50,6 +50,12 @@ typedef Maybe<ExternalImageId> MaybeExternalImageId;
 typedef Maybe<FontInstanceOptions> MaybeFontInstanceOptions;
 typedef Maybe<FontInstancePlatformOptions> MaybeFontInstancePlatformOptions;
 
+struct ExternalImageKeyPair
+{
+  ImageKey key;
+  ExternalImageId id;
+};
+
 
 WindowId NewWindowId();
 

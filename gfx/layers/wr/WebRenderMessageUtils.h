@@ -189,6 +189,12 @@ struct ParamTraits<mozilla::wr::OpacityType>
 {
 };
 
+template<>
+struct ParamTraits<mozilla::wr::ExternalImageKeyPair>
+  : public PlainOldDataSerializer<mozilla::wr::ExternalImageKeyPair>
+{
+};
+
 } 
 
 #endif 
