@@ -270,16 +270,9 @@ class GCMarker : public JSTracer
 
 
 
-    void setMarkColorGray() {
-        MOZ_ASSERT(isDrained());
-        MOZ_ASSERT(color == gc::MarkColor::Black);
-        color = gc::MarkColor::Gray;
-    }
-    void setMarkColorBlack() {
-        MOZ_ASSERT(isDrained());
-        MOZ_ASSERT(color == gc::MarkColor::Gray);
-        color = gc::MarkColor::Black;
-    }
+    void setMarkColorGray();
+    void setMarkColorBlack();
+    void setMarkColor(gc::MarkColor newColor);
     gc::MarkColor markColor() const { return color; }
 
     void enterWeakMarkingMode();
@@ -398,6 +391,34 @@ class GCMarker : public JSTracer
     MainThreadData<bool> strictCompartmentChecking;
 #endif 
 };
+
+namespace gc {
+
+
+
+
+
+
+
+class MOZ_RAII AutoSetMarkColor
+{
+    GCMarker& marker_;
+    MarkColor initialColor_;
+
+  public:
+    AutoSetMarkColor(GCMarker& marker, MarkColor newColor)
+      : marker_(marker),
+        initialColor_(marker.markColor())
+    {
+        marker_.setMarkColor(newColor);
+    }
+
+    ~AutoSetMarkColor() {
+        marker_.setMarkColor(initialColor_);
+    }
+};
+
+} 
 
 } 
 
