@@ -1,6 +1,4 @@
 
-if (!('oomTest' in this))
-    quit();
 
 enableGeckoProfiling();
 var lfGlobal = newGlobal();
