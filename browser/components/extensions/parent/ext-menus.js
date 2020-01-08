@@ -72,6 +72,7 @@ var gMenuBuilder = {
       menu: contextData.menu,
       
       originalViewType: getContextViewType(contextData),
+      originalViewUrl: contextData.inFrame ? contextData.frameUrl : contextData.pageUrl,
       webExtContextData,
     };
     if (webExtContextData.overrideContext === "bookmark") {
@@ -608,6 +609,12 @@ function addMenuEventInfo(info, contextData, extension, includeSensitiveData) {
       info.selectionText = contextData.selectionText;
     }
   }
+  
+  
+  
+  if (contextData.originalViewUrl) {
+    info.frameUrl = contextData.originalViewUrl;
+  }
 }
 
 function MenuItem(extension, createProperties, isRoot = false) {
@@ -805,11 +812,23 @@ MenuItem.prototype = {
       return false;
     }
 
+    let docPattern = this.documentUrlMatchPattern;
+    
+    
+    
+    
+    
+    if (docPattern && this.viewTypes && contextData.originalViewUrl) {
+      if (!docPattern.matches(Services.io.newURI(contextData.originalViewUrl))) {
+        return false;
+      }
+      docPattern = null; 
+    }
+
     if (contextData.onBookmark) {
       return this.extension.hasPermission("bookmarks");
     }
 
-    let docPattern = this.documentUrlMatchPattern;
     let pageURI = Services.io.newURI(contextData[contextData.inFrame ? "frameUrl" : "pageUrl"]);
     if (docPattern && !docPattern.matches(pageURI)) {
       return false;
