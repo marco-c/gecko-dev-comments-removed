@@ -76,6 +76,16 @@ class SharedSurfacesChild final {
 
 
 
+  static nsresult Share(gfx::SourceSurface* aSurface,
+                        RenderRootStateManager* aManager,
+                        wr::IpcResourceUpdateQueue& aResources,
+                        wr::ImageKey& aKey);
+
+  
+
+
+
+
 
 
   static nsresult Share(ImageContainer* aContainer,
