@@ -49,12 +49,10 @@ const {nsIBlocklistService} = Ci;
 
 
 
-
 for (let sym of [
   "BOOTSTRAP_REASONS",
   "DB_SCHEMA",
   "XPIStates",
-  "isWebExtension",
 ]) {
   XPCOMUtils.defineLazyGetter(this, sym, () => XPIInternal[sym]);
 }
@@ -100,12 +98,11 @@ const PENDING_INSTALL_METADATA =
 const COMPATIBLE_BY_DEFAULT_TYPES = {
   extension: true,
   dictionary: true,
-  "webextension-dictionary": true,
 };
 
 
 const PROP_JSON_FIELDS = ["id", "syncGUID", "version", "type",
-                          "updateURL", "optionsURL",
+                          "isWebExtension", "updateURL", "optionsURL",
                           "optionsType", "optionsBrowserStyle", "aboutURL",
                           "defaultLocale", "visible", "active", "userDisabled",
                           "appDisabled", "pendingUninstall", "installDate",
@@ -123,20 +120,10 @@ const LEGACY_TYPES = new Set([
   "extension",
 ]);
 
-
-
-const TYPE_ALIASES = {
-  "webextension": "extension",
-  "webextension-dictionary": "dictionary",
-  "webextension-langpack": "locale",
-  "webextension-theme": "theme",
-};
-
 const SIGNED_TYPES = new Set([
   "extension",
-  "webextension",
-  "webextension-langpack",
-  "webextension-theme",
+  "locale",
+  "theme",
 ]);
 
 
@@ -195,46 +182,6 @@ async function getRepositoryAddon(aAddon) {
     aAddon._repositoryAddon = await AddonRepository.getCachedAddonByID(aAddon.id);
   }
   return aAddon;
-}
-
-
-
-
-
-
-
-
-
-function isTheme(type) {
-  return type == "theme" || TYPE_ALIASES[type] == "theme";
-}
-
-
-
-
-
-
-
-
-
-
-function getAllAliasesForTypes(aTypes) {
-  if (!aTypes)
-    return null;
-
-  let types = new Set(aTypes);
-  for (let [alias, type] of Object.entries(TYPE_ALIASES)) {
-    
-    if (types.has(type)) {
-      types.add(alias);
-    } else {
-      
-      
-      types.delete(alias);
-    }
-  }
-
-  return types;
 }
 
 
@@ -497,7 +444,7 @@ class AddonInternal {
     if (this.type in COMPATIBLE_BY_DEFAULT_TYPES &&
         !this.strictCompatibility &&
         (!AddonManager.strictCompatibility ||
-         this.type == "webextension-dictionary")) {
+         this.type == "dictionary")) {
 
       
       
@@ -727,14 +674,6 @@ AddonWrapper = class {
     }
 
     return addon.installTelemetryInfo;
-  }
-
-  get type() {
-    return XPIDatabase.getExternalType(addonFor(this).type);
-  }
-
-  get isWebExtension() {
-    return isWebExtension(addonFor(this).type);
   }
 
   get temporarilyInstalled() {
@@ -987,8 +926,8 @@ AddonWrapper = class {
 
     if (addon.inDatabase) {
       
-      if (isTheme(addon.type) && val && !addon.userDisabled) {
-        if (isWebExtension(addon.type))
+      if (addon.type === "theme" && val && !addon.userDisabled) {
+        if (addon.isWebExtension)
           XPIDatabase.updateAddonDisabledState(addon, undefined, val);
       } else {
         XPIDatabase.updateAddonDisabledState(addon, undefined, val);
@@ -1111,7 +1050,8 @@ function defineAddonWrapperProperty(name, getter) {
   });
 }
 
-["id", "syncGUID", "version", "isCompatible", "isPlatformCompatible",
+["id", "syncGUID", "version", "type", "isWebExtension",
+ "isCompatible", "isPlatformCompatible",
  "providesUpdatesSecurely", "blocklistState", "appDisabled",
  "softDisabled", "skinnable", "foreignInstall",
  "strictCompatibility", "updateURL", "dependencies",
@@ -1622,10 +1562,10 @@ this.XPIDatabase = {
 
   async addonChanged(aId, aType) {
     
-    if (!isTheme(aType))
+    if (aType !== "theme")
       return;
 
-    let addons = this.getAddonsByType("webextension-theme");
+    let addons = this.getAddonsByType("theme");
     for (let theme of addons) {
       if (theme.visible && theme.id != aId)
         await this.updateAddonDisabledState(theme, true, undefined, true);
@@ -1642,21 +1582,6 @@ this.XPIDatabase = {
     }
   },
 
-  
-
-
-
-
-
-
-
-  getExternalType(aType) {
-    if (aType in TYPE_ALIASES)
-      return TYPE_ALIASES[aType];
-    return aType;
-  },
-
-  isTheme,
   SIGNED_TYPES,
 
   
@@ -1830,7 +1755,7 @@ this.XPIDatabase = {
 
 
   async getAddonsByTypes(aTypes) {
-    let addons = await this.getVisibleAddons(getAllAliasesForTypes(aTypes));
+    let addons = await this.getVisibleAddons(aTypes ? new Set(aTypes) : null);
     return addons.map(a => a.wrapper);
   },
 
@@ -1845,7 +1770,7 @@ this.XPIDatabase = {
     if (!SIGNED_TYPES.has(aType))
       return false;
 
-    if (aType == "webextension-langpack") {
+    if (aType == "locale") {
       return AddonSettings.LANGPACKS_REQUIRE_SIGNING;
     }
 
@@ -1861,6 +1786,7 @@ this.XPIDatabase = {
 
   isDisabledLegacy(addon) {
     return (!AddonSettings.ALLOW_LEGACY_EXTENSIONS &&
+            !addon.isWebExtension &&
             LEGACY_TYPES.has(addon.type) &&
 
             
@@ -2243,7 +2169,7 @@ this.XPIDatabase = {
     }
 
     
-    if (isTheme(aAddon.type)) {
+    if (aAddon.type === "theme") {
       if (!isDisabled) {
         AddonManagerPrivate.notifyAddonChanged(aAddon.id, aAddon.type);
         this.updateXPIStates(aAddon);
@@ -2895,7 +2821,7 @@ this.XPIDatabaseReconcile = {
     } else if (xpiState && xpiState.wasRestored) {
       isActive = xpiState.enabled;
 
-      if (currentAddon.type == "webextension-theme")
+      if (currentAddon.isWebExtension && currentAddon.type == "theme")
         currentAddon.userDisabled = !isActive;
 
       
