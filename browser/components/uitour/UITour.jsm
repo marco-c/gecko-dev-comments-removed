@@ -1365,12 +1365,12 @@ var UITour = {
   },
 
   showNewTab(aWindow, aBrowser) {
+    aWindow.gURLBar.focus();
     let url = "about:newtab";
     aWindow.openLinkIn(url, "current", {
       targetBrowser: aBrowser,
       triggeringPrincipal: Services.scriptSecurityManager.createCodebasePrincipal(Services.io.newURI(url), {}),
     });
-    aWindow.gURLBar.focus();
   },
 
   _hideAnnotationsForPanel(aEvent, aShouldClosePanel, aTargetPositionCallback) {
@@ -1550,7 +1550,7 @@ var UITour = {
 
       
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-      let profileAge = await ProfileAge();
+      let profileAge = new ProfileAge(null, null);
       let createdDate = await profileAge.created;
       let resetDate = await profileAge.reset;
       let createdWeeksAgo = Math.floor((Date.now() - createdDate) / ONE_WEEK);
