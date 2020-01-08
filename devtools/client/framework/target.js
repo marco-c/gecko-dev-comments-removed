@@ -364,7 +364,8 @@ TabTarget.prototype = {
   
   getFront(typeName) {
     let front = this.fronts.get(typeName);
-    if (front) {
+    
+    if (front && front.actorID) {
       return front;
     }
     front = getFront(this.client, typeName, this.form);
