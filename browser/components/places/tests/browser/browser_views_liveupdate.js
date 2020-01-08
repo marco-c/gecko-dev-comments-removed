@@ -28,8 +28,12 @@ async function testInFolder(folderGuid, prefix) {
     title: `${prefix}1`,
     url: `http://${prefix}1.mozilla.org/`,
   });
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
+
   item.title = `${prefix}1_edited`;
   await PlacesUtils.bookmarks.update(item);
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
+
   addedBookmarks.push(item);
 
   item = await PlacesUtils.bookmarks.insert({
@@ -37,15 +41,18 @@ async function testInFolder(folderGuid, prefix) {
     title: `${prefix}2`,
     url: "place:",
   });
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
 
   item.title = `${prefix}2_edited`;
   await PlacesUtils.bookmarks.update(item);
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
   addedBookmarks.push(item);
 
   item = await PlacesUtils.bookmarks.insert({
     parentGuid: folderGuid,
     type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
   });
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
   addedBookmarks.push(item);
 
   item = await PlacesUtils.bookmarks.insert({
@@ -53,9 +60,11 @@ async function testInFolder(folderGuid, prefix) {
     title: `${prefix}f`,
     type: PlacesUtils.bookmarks.TYPE_FOLDER,
   });
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
 
   item.title = `${prefix}f_edited`;
   await PlacesUtils.bookmarks.update(item);
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
   addedBookmarks.push(item);
 
   item = await PlacesUtils.bookmarks.insert({
@@ -63,11 +72,13 @@ async function testInFolder(folderGuid, prefix) {
     title: `${prefix}f1`,
     url: `http://${prefix}f1.mozilla.org/`,
   });
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
   addedBookmarks.push(item);
 
   item.index = 0;
   item.parentGuid = folderGuid;
   await PlacesUtils.bookmarks.update(item);
+  await bookmarksObserver.assertViewsUpdatedCorrectly();
 
   return addedBookmarks;
 }
@@ -108,6 +119,7 @@ add_task(async function test() {
       try {
         await PlacesUtils.bookmarks.remove(bm);
       } catch (ex) {}
+      await bookmarksObserver.assertViewsUpdatedCorrectly();
     }
 
     
@@ -125,89 +137,98 @@ add_task(async function test() {
 
 
 var bookmarksObserver = {
+  _notifications: [],
+
   QueryInterface: ChromeUtils.generateQI([
     Ci.nsINavBookmarkObserver,
   ]),
 
   
-  onItemAdded: function PSB_onItemAdded(aItemId, aFolderId, aIndex,
-                                        aItemType, aURI) {
-    var views = getViewsForFolder(aFolderId);
-    ok(views.length > 0, "Found affected views (" + views.length + "): " + views);
-
-    
-    for (var i = 0; i < views.length; i++) {
-      var [node, index] = searchItemInView(aItemId, views[i]);
-      isnot(node, null, "Found new Places node in " + views[i]);
-      is(index, aIndex, "Node is at index " + index);
-    }
+  onItemAdded(itemId, folderId, index, itemType, uri, title, dataAdded, guid,
+              parentGuid) {
+    this._notifications.push(["assertItemAdded", parentGuid, guid, index]);
   },
 
-  onItemRemoved: function PSB_onItemRemoved(aItemId, aFolderId, aIndex,
-                                            aItemType, url, aGuid) {
-    var views = getViewsForFolder(aFolderId);
-    ok(views.length > 0, "Found affected views (" + views.length + "): " + views);
-    
-    for (var i = 0; i < views.length; i++) {
-      var node = null;
-      [node, ] = searchItemInView(aItemId, views[i]);
-      is(node, null, "Places node should not be found in " + views[i]);
-    }
+  onItemRemoved(itemId, folderId, index, itemType, uri, guid, parentGuid) {
+    this._notifications.push(["assertItemRemoved", parentGuid, guid]);
   },
 
-  onItemMoved(aItemId,
-                        aOldFolderId, aOldIndex,
-                        aNewFolderId, aNewIndex,
-                        aItemType) {
-    var views = getViewsForFolder(aNewFolderId);
-    ok(views.length > 0, "Found affected views: " + views);
-
-    
-    for (var i = 0; i < views.length; i++) {
-      var node = null;
-      var index = null;
-      [node, index] = searchItemInView(aItemId, views[i]);
-      isnot(node, null, "Found new Places node in " + views[i]);
-      is(index, aNewIndex, "Node is at index " + index);
-    }
+  onItemMoved(itemId, oldFolderId, oldIndex, newFolderId, newIndex, itemType, guid,
+              oldParentGuid, newParentGuid) {
+    this._notifications.push(["assertItemMoved", newParentGuid, guid, newIndex]);
   },
 
-  onBeginUpdateBatch: function PSB_onBeginUpdateBatch() {},
-  onEndUpdateBatch: function PSB_onEndUpdateBatch() {},
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
   onItemVisited() {},
 
-  onItemChanged: function PSB_onItemChanged(aItemId, aProperty,
-                                            aIsAnnotationProperty, aNewValue,
-                                            aLastModified, aItemType,
-                                            aParentId) {
-    if (aProperty !== "title")
+  onItemChanged(itemId, property, annoProperty, newValue, lastModified, itemType,
+                parentId, guid, parentGuid) {
+    if (property !== "title")
       return;
 
-    var views = getViewsForFolder(aParentId);
-    ok(views.length > 0, "Found affected views (" + views.length + "): " + views);
+    this._notifications.push(["assertItemChanged", parentGuid, guid, newValue]);
+  },
 
+  async assertViewsUpdatedCorrectly() {
+    for (let notification of this._notifications) {
+      let assertFunction = notification.shift();
+
+      let views = await getViewsForFolder(notification.shift());
+      Assert.greater(views.length, 0, "Should have found one or more views for the parent folder.");
+
+      await this[assertFunction](views, ...notification);
+    }
+
+    this._notifications = [];
+  },
+
+  async assertItemAdded(views, guid, expectedIndex) {
+    for (let i = 0; i < views.length; i++) {
+      let [node, index] = searchItemInView(guid, views[i]);
+      Assert.notEqual(node, null, "Should have found the view in " + views[i]);
+      Assert.equal(index, expectedIndex, "Should have found the node at the expected index");
+    }
+  },
+
+  async assertItemRemoved(views, guid) {
+    for (let i = 0; i < views.length; i++) {
+      let [node, ] = searchItemInView(guid, views[i]);
+      Assert.equal(node, null, "Should not have found the node");
+    }
+  },
+
+  async assertItemMoved(views, guid, newIndex) {
     
+    for (let i = 0; i < views.length; i++) {
+      let [node, index] = searchItemInView(guid, views[i]);
+      Assert.notEqual(node, null, "Should have found the view in " + views[i]);
+      Assert.equal(index, newIndex, "Should have found the node at the expected index");
+    }
+  },
+
+  async assertItemChanged(views, guid, newValue) {
     let validator = function(aElementOrTreeIndex) {
       if (typeof(aElementOrTreeIndex) == "number") {
-        var sidebar = document.getElementById("sidebar");
-        var tree = sidebar.contentDocument.getElementById("bookmarks-view");
+        let sidebar = document.getElementById("sidebar");
+        let tree = sidebar.contentDocument.getElementById("bookmarks-view");
         let cellText = tree.view.getCellText(aElementOrTreeIndex,
                                              tree.columns.getColumnAt(0));
-        if (!aNewValue)
+        if (!newValue)
           return cellText == PlacesUIUtils.getBestTitle(tree.view.nodeForTreeIndex(aElementOrTreeIndex), true);
-        return cellText == aNewValue;
+        return cellText == newValue;
       }
-      if (!aNewValue && aElementOrTreeIndex.localName != "toolbarbutton") {
+      if (!newValue && aElementOrTreeIndex.localName != "toolbarbutton") {
         return aElementOrTreeIndex.getAttribute("label") == PlacesUIUtils.getBestTitle(aElementOrTreeIndex._placesNode);
       }
-      return aElementOrTreeIndex.getAttribute("label") == aNewValue;
+      return aElementOrTreeIndex.getAttribute("label") == newValue;
     };
 
-    for (var i = 0; i < views.length; i++) {
-      var [node, , valid] = searchItemInView(aItemId, views[i], validator);
-      isnot(node, null, "Found changed Places node in " + views[i]);
-      is(node.title, aNewValue, "Node has correct title: " + aNewValue);
-      ok(valid, "Node element has correct label: " + aNewValue);
+    for (let i = 0; i < views.length; i++) {
+      let [node, , valid] = searchItemInView(guid, views[i], validator);
+      Assert.notEqual(node, null, "Should have found the view in " + views[i]);
+      Assert.equal(node.title, newValue, "Node should have the correct new title");
+      Assert.ok(valid, "Node element should have the correct label");
     }
   }
 };
@@ -223,14 +244,14 @@ var bookmarksObserver = {
 
 
 
-function searchItemInView(aItemId, aView, aValidator) {
-  switch (aView) {
+function searchItemInView(itemGuid, view, validator) {
+  switch (view) {
   case "toolbar":
-    return getNodeForToolbarItem(aItemId, aValidator);
+    return getNodeForToolbarItem(itemGuid, validator);
   case "menu":
-    return getNodeForMenuItem(aItemId, aValidator);
+    return getNodeForMenuItem(itemGuid, validator);
   case "sidebar":
-    return getNodeForSidebarItem(aItemId, aValidator);
+    return getNodeForSidebarItem(itemGuid, validator);
   }
 
   return [null, null, false];
@@ -243,7 +264,7 @@ function searchItemInView(aItemId, aView, aValidator) {
 
 
 
-function getNodeForToolbarItem(aItemId, aValidator) {
+function getNodeForToolbarItem(itemGuid, validator) {
   var placesToolbarItems = document.getElementById("PlacesToolbarItems");
 
   function findNode(aContainer) {
@@ -257,8 +278,8 @@ function getNodeForToolbarItem(aItemId, aValidator) {
         continue;
       }
 
-      if (child._placesNode.itemId == aItemId) {
-        let valid = aValidator ? aValidator(child) : true;
+      if (child._placesNode.bookmarkGuid == itemGuid) {
+        let valid = validator ? validator(child) : true;
         return [child._placesNode, i - staticNodes, valid];
       }
 
@@ -286,7 +307,7 @@ function getNodeForToolbarItem(aItemId, aValidator) {
 
 
 
-function getNodeForMenuItem(aItemId, aValidator) {
+function getNodeForMenuItem(itemGuid, validator) {
   var menu = document.getElementById("bookmarksMenu");
 
   function findNode(aContainer) {
@@ -300,8 +321,8 @@ function getNodeForMenuItem(aItemId, aValidator) {
         continue;
       }
 
-      if (child._placesNode.itemId == aItemId) {
-        let valid = aValidator ? aValidator(child) : true;
+      if (child._placesNode.bookmarkGuid == itemGuid) {
+        let valid = validator ? validator(child) : true;
         return [child._placesNode, i - staticNodes, valid];
       }
 
@@ -330,7 +351,7 @@ function getNodeForMenuItem(aItemId, aValidator) {
 
 
 
-function getNodeForSidebarItem(aItemId, aValidator) {
+function getNodeForSidebarItem(itemGuid, validator) {
   var sidebar = document.getElementById("sidebar");
   var tree = sidebar.contentDocument.getElementById("bookmarks-view");
 
@@ -343,9 +364,9 @@ function getNodeForSidebarItem(aItemId, aValidator) {
     for (var i = aContainerIndex + 1; i < tree.view.rowCount; i++) {
       var node = tree.view.nodeForTreeIndex(i);
 
-      if (node.itemId == aItemId) {
+      if (node.bookmarkGuid == itemGuid) {
         
-        let valid = aValidator ? aValidator(i) : true;
+        let valid = validator ? validator(i) : true;
         return [node, i - tree.view.getParentIndex(i) - 1, valid];
       }
 
@@ -390,17 +411,19 @@ function getNodeForSidebarItem(aItemId, aValidator) {
 
 
 
-function getViewsForFolder(aFolderId) {
-  var rootId = aFolderId;
-  while (!PlacesUtils.isRootItem(rootId))
-    rootId = PlacesUtils.bookmarks.getFolderIdForItem(rootId);
+async function getViewsForFolder(folderGuid) {
+  let rootGuid = folderGuid;
+  while (!PlacesUtils.isRootItem(rootGuid)) {
+    let itemData = await PlacesUtils.bookmarks.fetch(rootGuid);
+    rootGuid = itemData.parentGuid;
+  }
 
-  switch (rootId) {
-    case PlacesUtils.toolbarFolderId:
+  switch (rootGuid) {
+    case PlacesUtils.bookmarks.toolbarGuid:
       return ["toolbar", "sidebar"];
-    case PlacesUtils.bookmarksMenuFolderId:
+    case PlacesUtils.bookmarks.menuGuid:
       return ["menu", "sidebar"];
-    case PlacesUtils.unfiledBookmarksFolderId:
+    case PlacesUtils.bookmarks.unfiledGuid:
       return ["sidebar"];
   }
   return [];
