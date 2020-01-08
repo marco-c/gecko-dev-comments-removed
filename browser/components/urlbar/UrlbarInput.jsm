@@ -231,6 +231,16 @@ class UrlbarInput {
 
   resultSelected(event, result) {
     
+    let val = result.url;
+    let uri;
+    try {
+      uri = Services.io.newURI(val);
+    } catch (ex) {}
+    if (uri) {
+      val = this.window.losslessDecodeURI(uri);
+    }
+    this.value = val;
+
     this.controller.resultSelected(event, result);
   }
 
