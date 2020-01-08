@@ -73,13 +73,6 @@ function run_test() {
   Assert.equal(interfaces, Ci.nsIClassInfo.number);
 
   
-  const cid = "{6b933fe6-6eba-4622-ac86-e4f654f1b474}";
-  Assert.ok(cid in Components.classesByID);
-  foo = Components.classesByID[cid]
-                  .createInstance(Ci.nsIClassInfo);
-  Assert.ok(foo.contractID == contractID + "1");
-
-  
   Assert.ok((contractID + "2") in Cc);
   var bar = Cc[contractID + "2"]
               .createInstance(Ci.nsIClassInfo);

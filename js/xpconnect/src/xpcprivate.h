@@ -2257,7 +2257,6 @@ protected:
 
     
     RefPtr<nsXPCComponents_Interfaces>     mInterfaces;
-    RefPtr<nsXPCComponents_InterfacesByID> mInterfacesByID;
     RefPtr<nsXPCComponents_Results>        mResults;
 
     friend class XPCWrappedNativeScope;
@@ -2278,7 +2277,6 @@ protected:
 
     
     RefPtr<nsXPCComponents_Classes>     mClasses;
-    RefPtr<nsXPCComponents_ClassesByID> mClassesByID;
     RefPtr<nsXPCComponents_ID>          mID;
     RefPtr<nsXPCComponents_Exception>   mException;
     RefPtr<nsXPCComponents_Constructor> mConstructor;
