@@ -660,11 +660,13 @@ class FontInspector {
       
       
       
-      try {
-        textProperty.setValue(value);
-      } catch (e) {
-        
-      }
+      textProperty.setValue(value).catch(error => {
+        if (!this.document) {
+          return;
+        }
+
+        throw error;
+      });
     }
 
     this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
@@ -1072,7 +1074,7 @@ class FontInspector {
     
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     
-    textProperty.rule.previewPropertyValue(textProperty, value, "");
+    textProperty.rule.previewPropertyValue(textProperty, value, "").catch(console.error);
 
     
     this.syncChanges(name, value);
