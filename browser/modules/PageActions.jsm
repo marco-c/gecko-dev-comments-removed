@@ -523,9 +523,6 @@ var PageActions = {
 
 
 
-
-
-
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -535,7 +532,6 @@ function Action(options) {
     extensionID: false,
     iconURL: false,
     labelForHistogram: false,
-    nodeAttributes: false,
     onBeforePlacedInWindow: false,
     onCommand: false,
     onIframeHiding: false,
@@ -619,14 +615,6 @@ Action.prototype = {
 
   get id() {
     return this._id;
-  },
-
-  
-
-
-
-  get nodeAttributes() {
-    return this._nodeAttributes;
   },
 
   
