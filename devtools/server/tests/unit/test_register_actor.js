@@ -26,14 +26,14 @@ function test_lazy_api() {
     }
   }
   Services.obs.addObserver(onActorEvent, "actor");
-  ActorRegistry.registerModule("xpcshell-test/registertestactors-lazy", {
+  DebuggerServer.registerModule("xpcshell-test/registertestactors-lazy", {
     prefix: "lazy",
     constructor: "LazyActor",
     type: { global: true, target: true }
   });
   
-  Assert.ok(ActorRegistry.targetScopedActorFactories.hasOwnProperty("lazyActor"));
-  Assert.ok(ActorRegistry.globalActorFactories.hasOwnProperty("lazyActor"));
+  Assert.ok(DebuggerServer.targetScopedActorFactories.hasOwnProperty("lazyActor"));
+  Assert.ok(DebuggerServer.globalActorFactories.hasOwnProperty("lazyActor"));
   Assert.ok(!isActorLoaded);
   Assert.ok(!isActorInstantiated);
 
@@ -65,9 +65,9 @@ function test_lazy_api() {
 }
 
 function manual_remove() {
-  Assert.ok(ActorRegistry.globalActorFactories.hasOwnProperty("lazyActor"));
-  ActorRegistry.removeGlobalActor("lazyActor");
-  Assert.ok(!ActorRegistry.globalActorFactories.hasOwnProperty("lazyActor"));
+  Assert.ok(DebuggerServer.globalActorFactories.hasOwnProperty("lazyActor"));
+  DebuggerServer.removeGlobalActor("lazyActor");
+  Assert.ok(!DebuggerServer.globalActorFactories.hasOwnProperty("lazyActor"));
 
   run_next_test();
 }
@@ -76,8 +76,8 @@ function cleanup() {
   DebuggerServer.destroy();
 
   
-  Assert.ok(!ActorRegistry.targetScopedActorFactories.hasOwnProperty("lazyActor"));
-  Assert.ok(!ActorRegistry.globalActorFactories.hasOwnProperty("lazyActor"));
+  Assert.ok(!DebuggerServer.targetScopedActorFactories.hasOwnProperty("lazyActor"));
+  Assert.ok(!DebuggerServer.globalActorFactories.hasOwnProperty("lazyActor"));
 
   run_next_test();
 }

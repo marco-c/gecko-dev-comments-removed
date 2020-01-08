@@ -23,7 +23,10 @@
 var { Ci, Cu, Cr, Cc } = require("chrome");
 var Services = require("Services");
 const ChromeUtils = require("ChromeUtils");
-var { ActorRegistry } = require("devtools/server/actor-registry");
+var {
+  ActorPool, createExtraActors, appendExtraActors
+} = require("devtools/server/actors/common");
+var { DebuggerServer } = require("devtools/server/main");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
 var { TabSources } = require("devtools/server/actors/utils/TabSources");
@@ -38,8 +41,7 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const STRINGS_URI = "devtools/shared/locales/browsing-context.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
-const { ActorClassWithSpec, Actor, Pool } = require("devtools/shared/protocol");
-const { LazyPool, createExtraActors } = require("devtools/shared/protocol/lazy-pool");
+const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const { browsingContextTargetSpec } = require("devtools/shared/specs/targets/browsing-context");
 
 loader.lazyRequireGetter(this, "ThreadActor", "devtools/server/actors/thread", true);
@@ -478,18 +480,16 @@ const browsingContextTargetPrototype = {
     
     
     if (!this._targetScopedActorPool) {
-      this._targetScopedActorPool = new LazyPool(this.conn);
+      this._targetScopedActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._targetScopedActorPool);
     }
 
     
     
-    const actors = createExtraActors(
-      ActorRegistry.targetScopedActorFactories,
-      this._targetScopedActorPool,
-      this
-    );
+    this._createExtraActors(DebuggerServer.targetScopedActorFactories,
+      this._targetScopedActorPool);
 
-    Object.assign(response, actors);
+    this._appendExtraActors(response);
     return response;
   },
 
@@ -562,6 +562,10 @@ const browsingContextTargetPrototype = {
 
     return false;
   },
+
+  
+  _createExtraActors: createExtraActors,
+  _appendExtraActors: appendExtraActors,
 
   
 
@@ -649,18 +653,15 @@ const browsingContextTargetPrototype = {
     }
 
     return this._workerTargetActorList.getList().then((actors) => {
-      const pool = new Pool(this.conn);
+      const pool = new ActorPool(this.conn);
       for (const actor of actors) {
-        pool.manage(actor);
+        pool.addActor(actor);
       }
 
-      
-      
-      if (this._workerTargetActorPool) {
-        this._workerTargetActorPool.destroy();
-      }
-
+      this.conn.removeActorPool(this._workerTargetActorPool);
       this._workerTargetActorPool = pool;
+      this.conn.addActorPool(this._workerTargetActorPool);
+
       this._workerTargetActorList.onListChanged = this._onWorkerTargetActorListChanged;
 
       return {
@@ -889,7 +890,7 @@ const browsingContextTargetPrototype = {
     
     this._styleSheetActors.clear();
     if (this._targetScopedActorPool) {
-      this._targetScopedActorPool.destroy();
+      this.conn.removeActorPool(this._targetScopedActorPool);
       this._targetScopedActorPool = null;
     }
 
@@ -900,7 +901,7 @@ const browsingContextTargetPrototype = {
     }
 
     if (this._workerTargetActorPool !== null) {
-      this._workerTargetActorPool.destroy();
+      this.conn.removeActorPool(this._workerTargetActorPool);
       this._workerTargetActorPool = null;
     }
 
@@ -1416,7 +1417,7 @@ const browsingContextTargetPrototype = {
     const actor = new StyleSheetActor(styleSheet, this);
     this._styleSheetActors.set(styleSheet, actor);
 
-    this._targetScopedActorPool.manage(actor);
+    this._targetScopedActorPool.addActor(actor);
     this.emit("stylesheet-added", actor);
 
     return actor;
@@ -1430,7 +1431,7 @@ const browsingContextTargetPrototype = {
       }
       delete this._extraActors[name];
     }
-  }
+  },
 };
 
 exports.browsingContextTargetPrototype = browsingContextTargetPrototype;

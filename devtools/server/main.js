@@ -10,8 +10,8 @@
 
 var { Ci, Cc } = require("chrome");
 var Services = require("Services");
-var { Pool } = require("devtools/shared/protocol");
-var { ActorRegistry } = require("devtools/server/actor-registry");
+var { ActorPool, RegisteredActorFactory,
+      ObservedActorFactory } = require("devtools/server/actors/common");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
 
@@ -33,6 +33,8 @@ const CONTENT_PROCESS_SERVER_STARTUP_SCRIPT =
   "resource://devtools/server/startup/content-process.js";
 
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
+
+var gRegisteredModules = Object.create(null);
 
 
 
@@ -81,7 +83,6 @@ var DebuggerServer = {
     }
 
     this._connections = {};
-    ActorRegistry.init(this._connections);
     this._nextConnID = 0;
 
     this._initialized = true;
@@ -111,9 +112,14 @@ var DebuggerServer = {
       this._connections[connID].close();
     }
 
-    ActorRegistry.destroy();
+    for (const id of Object.getOwnPropertyNames(gRegisteredModules)) {
+      this.unregisterModule(id);
+    }
+    gRegisteredModules = Object.create(null);
 
     this.closeAllListeners();
+    this.globalActorFactories = {};
+    this.targetScopedActorFactories = {};
     this._initialized = false;
 
     dumpn("Debugger server is shut down.");
@@ -149,7 +155,7 @@ var DebuggerServer = {
 
   registerActors({ root, browser, target }) {
     if (browser) {
-      ActorRegistry.addBrowserActors();
+      this._addBrowserActors();
     }
 
     if (root) {
@@ -158,7 +164,7 @@ var DebuggerServer = {
     }
 
     if (target) {
-      ActorRegistry.addTargetScopedActors();
+      this._addTargetScopedActors();
     }
   },
 
@@ -167,6 +173,259 @@ var DebuggerServer = {
 
   registerAllActors() {
     this.registerActors({ root: true, browser: true, target: true });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerModule(id, options) {
+    if (id in gRegisteredModules) {
+      return;
+    }
+
+    if (!options) {
+      throw new Error("DebuggerServer.registerModule requires an options argument");
+    }
+    const {prefix, constructor, type} = options;
+    if (typeof (prefix) !== "string") {
+      throw new Error(`Lazy actor definition for '${id}' requires a string ` +
+                      `'prefix' option.`);
+    }
+    if (typeof (constructor) !== "string") {
+      throw new Error(`Lazy actor definition for '${id}' requires a string ` +
+                      `'constructor' option.`);
+    }
+    if (!("global" in type) && !("target" in type)) {
+      throw new Error(`Lazy actor definition for '${id}' requires a dictionary ` +
+                      `'type' option whose attributes can be 'global' or 'target'.`);
+    }
+    const name = prefix + "Actor";
+    const mod = {
+      id,
+      prefix,
+      constructorName: constructor,
+      type,
+      globalActor: type.global,
+      targetScopedActor: type.target
+    };
+    gRegisteredModules[id] = mod;
+    if (mod.targetScopedActor) {
+      this.addTargetScopedActor(mod, name);
+    }
+    if (mod.globalActor) {
+      this.addGlobalActor(mod, name);
+    }
+  },
+
+  
+
+
+  isModuleRegistered(id) {
+    return (id in gRegisteredModules);
+  },
+
+  
+
+
+  unregisterModule(id) {
+    const mod = gRegisteredModules[id];
+    if (!mod) {
+      throw new Error("Tried to unregister a module that was not previously registered.");
+    }
+
+    
+    if (mod.targetScopedActor) {
+      this.removeTargetScopedActor(mod);
+    }
+    if (mod.globalActor) {
+      this.removeGlobalActor(mod);
+    }
+
+    delete gRegisteredModules[id];
+  },
+
+  
+
+
+
+
+
+  _addBrowserActors() {
+    this.registerModule("devtools/server/actors/preference", {
+      prefix: "preference",
+      constructor: "PreferenceActor",
+      type: { global: true }
+    });
+    this.registerModule("devtools/server/actors/actor-registry", {
+      prefix: "actorRegistry",
+      constructor: "ActorRegistryActor",
+      type: { global: true }
+    });
+    this.registerModule("devtools/server/actors/addon/addons", {
+      prefix: "addons",
+      constructor: "AddonsActor",
+      type: { global: true }
+    });
+    this.registerModule("devtools/server/actors/device", {
+      prefix: "device",
+      constructor: "DeviceActor",
+      type: { global: true }
+    });
+    this.registerModule("devtools/server/actors/heap-snapshot-file", {
+      prefix: "heapSnapshotFile",
+      constructor: "HeapSnapshotFileActor",
+      type: { global: true }
+    });
+    
+    
+    
+    
+    this.registerModule("devtools/server/actors/perf", {
+      prefix: "perf",
+      constructor: "PerfActor",
+      type: { global: true }
+    });
+  },
+
+  
+
+
+  _addTargetScopedActors() {
+    this.registerModule("devtools/server/actors/webconsole", {
+      prefix: "console",
+      constructor: "WebConsoleActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/inspector/inspector", {
+      prefix: "inspector",
+      constructor: "InspectorActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/call-watcher", {
+      prefix: "callWatcher",
+      constructor: "CallWatcherActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/canvas", {
+      prefix: "canvas",
+      constructor: "CanvasActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/webgl", {
+      prefix: "webgl",
+      constructor: "WebGLActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/webaudio", {
+      prefix: "webaudio",
+      constructor: "WebAudioActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/stylesheets", {
+      prefix: "styleSheets",
+      constructor: "StyleSheetsActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/storage", {
+      prefix: "storage",
+      constructor: "StorageActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/gcli", {
+      prefix: "gcli",
+      constructor: "GcliActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/memory", {
+      prefix: "memory",
+      constructor: "MemoryActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/framerate", {
+      prefix: "framerate",
+      constructor: "FramerateActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/reflow", {
+      prefix: "reflow",
+      constructor: "ReflowActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/css-properties", {
+      prefix: "cssProperties",
+      constructor: "CssPropertiesActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/csscoverage", {
+      prefix: "cssUsage",
+      constructor: "CSSUsageActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/timeline", {
+      prefix: "timeline",
+      constructor: "TimelineActor",
+      type: { target: true }
+    });
+    if ("nsIProfiler" in Ci &&
+        !Services.prefs.getBoolPref("devtools.performance.new-panel-enabled", false)) {
+      this.registerModule("devtools/server/actors/performance", {
+        prefix: "performance",
+        constructor: "PerformanceActor",
+        type: { target: true }
+      });
+    }
+    this.registerModule("devtools/server/actors/animation", {
+      prefix: "animations",
+      constructor: "AnimationsActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/promises", {
+      prefix: "promises",
+      constructor: "PromisesActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/emulation", {
+      prefix: "emulation",
+      constructor: "EmulationActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/addon/webextension-inspected-window", {
+      prefix: "webExtensionInspectedWindow",
+      constructor: "WebExtensionInspectedWindowActor",
+      type: { target: true }
+    });
+    this.registerModule("devtools/server/actors/accessibility", {
+      prefix: "accessibility",
+      constructor: "AccessibilityActor",
+      type: { target: true }
+    });
   },
 
   
@@ -904,6 +1163,147 @@ var DebuggerServer = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addTargetScopedActor(actor, name) {
+    if (!name) {
+      throw Error("addTargetScopedActor requires the `name` argument");
+    }
+    if (["title", "url", "actor"].includes(name)) {
+      throw Error(name + " is not allowed");
+    }
+    if (DebuggerServer.targetScopedActorFactories.hasOwnProperty(name)) {
+      throw Error(name + " already exists");
+    }
+    DebuggerServer.targetScopedActorFactories[name] =
+      new RegisteredActorFactory(actor, name);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  removeTargetScopedActor(actorOrName) {
+    let name;
+    if (typeof actorOrName == "string") {
+      name = actorOrName;
+    } else {
+      const actor = actorOrName;
+      for (const factoryName in DebuggerServer.targetScopedActorFactories) {
+        const handler = DebuggerServer.targetScopedActorFactories[factoryName];
+        if ((handler.name && handler.name == actor.name) ||
+            (handler.id && handler.id == actor.id)) {
+          name = factoryName;
+          break;
+        }
+      }
+    }
+    if (!name) {
+      return;
+    }
+    delete DebuggerServer.targetScopedActorFactories[name];
+    for (const connID of Object.getOwnPropertyNames(this._connections)) {
+      
+      if (this._connections[connID].rootActor) {
+        this._connections[connID].rootActor.removeActorByName(name);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addGlobalActor(actor, name) {
+    if (!name) {
+      throw Error("addGlobalActor requires the `name` argument");
+    }
+    if (["from", "tabs", "selected"].includes(name)) {
+      throw Error(name + " is not allowed");
+    }
+    if (DebuggerServer.globalActorFactories.hasOwnProperty(name)) {
+      throw Error(name + " already exists");
+    }
+    DebuggerServer.globalActorFactories[name] = new RegisteredActorFactory(actor, name);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  removeGlobalActor(actorOrName) {
+    let name;
+    if (typeof actorOrName == "string") {
+      name = actorOrName;
+    } else {
+      const actor = actorOrName;
+      for (const factoryName in DebuggerServer.globalActorFactories) {
+        const handler = DebuggerServer.globalActorFactories[factoryName];
+        if ((handler.name && handler.name == actor.name) ||
+            (handler.id && handler.id == actor.id)) {
+          name = factoryName;
+          break;
+        }
+      }
+    }
+    if (!name) {
+      return;
+    }
+    delete DebuggerServer.globalActorFactories[name];
+    for (const connID of Object.getOwnPropertyNames(this._connections)) {
+      
+      if (this._connections[connID].rootActor) {
+        this._connections[connID].rootActor.removeActorByName(name);
+      }
+    }
+  },
+
+  
+
+
+
+
   removeContentServerScript() {
     Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SERVER_STARTUP_SCRIPT);
     try {
@@ -971,7 +1371,7 @@ function DebuggerServerConnection(prefix, transport) {
   this._transport.hooks = this;
   this._nextID = 1;
 
-  this._actorPool = new Pool(this);
+  this._actorPool = new ActorPool(this);
   this._extraPools = [this._actorPool];
 
   
@@ -1083,14 +1483,14 @@ DebuggerServerConnection.prototype = {
 
 
   addActor(actor) {
-    this._actorPool.manage(actor);
+    this._actorPool.addActor(actor);
   },
 
   
 
 
   removeActor(actor) {
-    this._actorPool.unmanage(actor);
+    this._actorPool.removeActor(actor);
   },
 
   
@@ -1121,27 +1521,30 @@ DebuggerServerConnection.prototype = {
   },
 
   _getOrCreateActor(actorID) {
-    try {
-      const actor = this.getActor(actorID);
-      if (!actor) {
-        this.transport.send({ from: actorID ? actorID : "root",
-                              error: "noSuchActor",
-                              message: "No such actor for ID: " + actorID });
-        return null;
-      }
-
-      if (typeof (actor) !== "object") {
-        
-        throw new Error("Unexpected actor constructor/function in ActorPool " +
-                        "for actorID=" + actorID + ".");
-      }
-
-      return actor;
-    } catch (error) {
-      const prefix = `Error occurred while creating actor' ${actorID}`;
-      this.transport.send(this._unknownError(actorID, prefix, error));
+    let actor = this.getActor(actorID);
+    if (!actor) {
+      this.transport.send({ from: actorID ? actorID : "root",
+                            error: "noSuchActor",
+                            message: "No such actor for ID: " + actorID });
+      return null;
     }
-    return null;
+
+    
+    if (actor instanceof ObservedActorFactory) {
+      try {
+        actor = actor.createActor();
+      } catch (error) {
+        const prefix = "Error occurred while creating actor '" + actor.name;
+        this.transport.send(this._unknownError(actorID, prefix, error));
+      }
+    } else if (typeof (actor) !== "object") {
+      
+      
+      throw new Error("Unexpected actor constructor/function in ActorPool " +
+                      "for actorID=" + actorID + ".");
+    }
+
+    return actor;
   },
 
   poolFor(actorID) {

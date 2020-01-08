@@ -9,7 +9,6 @@
 var { Ci } = require("chrome");
 var Services = require("Services");
 var { DebuggerServer } = require("devtools/server/main");
-var { ActorRegistry } = require("devtools/server/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(this, "RootActor", "devtools/server/actors/root", true);
@@ -79,7 +78,7 @@ exports.createRootActor = function createRootActor(connection) {
     serviceWorkerRegistrationList:
       new ServiceWorkerRegistrationActorList(connection),
     processList: new ProcessActorList(),
-    globalActorFactories: ActorRegistry.globalActorFactories,
+    globalActorFactories: DebuggerServer.globalActorFactories,
     onShutdown: sendShutdownEvent
   });
 };

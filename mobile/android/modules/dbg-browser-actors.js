@@ -11,7 +11,7 @@
 
 
 const { RootActor } = require("devtools/server/actors/root");
-const { ActorRegistry } = require("devtools/server/actor-registry");
+const { DebuggerServer } = require("devtools/server/main");
 const { BrowserTabList, BrowserAddonList, sendShutdownEvent } =
   require("devtools/server/actors/webbrowser");
 
@@ -30,7 +30,7 @@ exports.createRootActor = function createRootActor(aConnection) {
   let parameters = {
     tabList: new MobileTabList(aConnection),
     addonList: new BrowserAddonList(aConnection),
-    globalActorFactories: ActorRegistry.globalActorFactories,
+    globalActorFactories: DebuggerServer.globalActorFactories,
     onShutdown: sendShutdownEvent
   };
   return new RootActor(aConnection, parameters);
