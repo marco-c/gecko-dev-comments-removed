@@ -4764,6 +4764,10 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
                cases->isKind(ParseNodeKind::StatementList));
 
     
+    if (!updateSourceCoordNotes(pn->pn_pos.begin))
+        return false;
+
+    
     if (!emitTree(pn->pn_left))
         return false;
 
@@ -7023,6 +7027,11 @@ BytecodeEmitter::emitIf(ParseNode* pn)
 
   if_again:
     
+    
+    if (!updateSourceCoordNotes(pn->pn_pos.begin))
+        return false;
+
+    
     if (!emitTree(pn->pn_kid1))
         return false;
 
@@ -7152,6 +7161,10 @@ BytecodeEmitter::emitLexicalScope(ParseNode* pn)
 bool
 BytecodeEmitter::emitWith(ParseNode* pn)
 {
+    
+    if (!updateSourceCoordNotes(pn->pn_pos.begin))
+        return false;
+
     if (!emitTree(pn->pn_left))
         return false;
 
@@ -8290,6 +8303,10 @@ BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isA
 bool
 BytecodeEmitter::emitDo(ParseNode* pn)
 {
+    
+    if (!updateSourceCoordNotes(pn->pn_pos.begin))
+        return false;
+
     
     unsigned noteIndex;
     if (!newSrcNote(SRC_WHILE, &noteIndex))
@@ -10943,11 +10960,19 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
         break;
 
       case ParseNodeKind::Break:
+        
+        if (!updateSourceCoordNotes(pn->pn_pos.begin))
+            return false;
+
         if (!emitBreak(pn->as<BreakStatement>().label()))
             return false;
         break;
 
       case ParseNodeKind::Continue:
+        
+        if (!updateSourceCoordNotes(pn->pn_pos.begin))
+            return false;
+
         if (!emitContinue(pn->as<ContinueStatement>().label()))
             return false;
         break;
