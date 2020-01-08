@@ -480,11 +480,16 @@ To see more help for a specific command, run:
             _check_debugger(getattr(args.command_args, "debugger"))
         
         
+        
         elif (hasattr(args.command_args, "extra_args") and
                 getattr(args.command_args, "extra_args")):
             extra_args = getattr(args.command_args, "extra_args")
-            
-            debugger = [ea.split("=")[1] for ea in extra_args if "debugger" in ea]
+            try:
+                debugger = [ea.split("=")[1] for ea in extra_args if "debugger" in ea]
+            except IndexError:
+                print("Debugger must be specified with '=' when invoking ./mach test.\n" +
+                      "Please correct the command and try again.")
+                sys.exit(1)
             if debugger:
                 _check_debugger(''.join(debugger))
 
