@@ -92,6 +92,7 @@ public:
   nsresult   ThrowMemoryCachedData();
 
   nsresult GetAltDataSize(int64_t *aSize);
+  nsresult GetAltDataType(nsACString& aType);
 
   
   nsresult GetElement(const char *aKey, char **_retval);
@@ -215,6 +216,7 @@ private:
                                  
                                  
   nsCString      mKey;
+  nsCString      mAltDataType; 
 
   RefPtr<CacheFileHandle>      mHandle;
   RefPtr<CacheFileMetadata>    mMetadata;
