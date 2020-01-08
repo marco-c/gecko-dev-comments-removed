@@ -1677,22 +1677,23 @@ SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t lengt
 UniqueChars
 EncodeLatin1(JSContext* cx, JSString* str);
 
+enum class IdToPrintableBehavior : bool {
+    
 
 
+    IdIsIdentifier,
+
+    
 
 
+    IdIsPropertyKey
+};
 
 
 
 
 extern UniqueChars
-ValueToPrintableLatin1(JSContext* cx, const Value&, bool asSource = false);
-
-
-
-
-extern UniqueChars
-ValueToPrintableUTF8(JSContext* cx, const Value&, bool asSource = false);
+IdToPrintableUTF8(JSContext* cx, HandleId id, IdToPrintableBehavior behavior);
 
 
 
