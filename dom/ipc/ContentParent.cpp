@@ -2458,6 +2458,12 @@ ContentParent::~ContentParent()
                !sBrowserContentParents->Contains(mRemoteType) ||
                !sBrowserContentParents->Get(mRemoteType)->Contains(this));
   }
+
+  
+  
+  if (mSubprocess) {
+    DelayedDeleteSubprocess(mSubprocess);
+  }
 }
 
 void
