@@ -37,8 +37,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
 hb_set_t *
-hb_set_create (void)
+hb_set_create ()
 {
   hb_set_t *set;
 
@@ -58,7 +67,7 @@ hb_set_create (void)
 
 
 hb_set_t *
-hb_set_get_empty (void)
+hb_set_get_empty ()
 {
   return const_cast<hb_set_t *> (&Null(hb_set_t));
 }
@@ -391,7 +400,7 @@ hb_set_symmetric_difference (hb_set_t       *set,
 
 
 void
-hb_set_invert (hb_set_t *set)
+hb_set_invert (hb_set_t *set HB_UNUSED)
 {
 }
 

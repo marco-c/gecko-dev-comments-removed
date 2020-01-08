@@ -88,7 +88,10 @@ enum use_category_t {
   USE_VMPre	= 23,	
   USE_SMAbv	= 41,	
   USE_SMBlw	= 42,	
-  USE_CS	= 43	
+  USE_CS	= 43,	
+
+  
+  USE_HVM	= 44,	
 };
 
 HB_INTERNAL USE_TABLE_ELEMENT_TYPE

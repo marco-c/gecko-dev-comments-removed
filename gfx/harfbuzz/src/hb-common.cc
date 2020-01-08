@@ -38,17 +38,46 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 hb_atomic_int_t _hb_options;
 
 void
-_hb_options_init (void)
+_hb_options_init ()
 {
   hb_options_union_t u;
   u.i = 0;
-  u.opts.initialized = 1;
+  u.opts.initialized = true;
 
-  char *c = getenv ("HB_OPTIONS");
-  u.opts.uniscribe_bug_compatible = c && strstr (c, "uniscribe-bug-compatible");
+  const char *c = getenv ("HB_OPTIONS");
+  if (c)
+  {
+    while (*c)
+    {
+      const char *p = strchr (c, ':');
+      if (!p)
+        p = c + strlen (c);
+
+#define OPTION(name, symbol) \
+	if (0 == strncmp (c, name, p - c) && strlen (name) == p - c) u.opts.symbol = true;
+
+      OPTION ("uniscribe-bug-compatible", uniscribe_bug_compatible);
+      OPTION ("aat", aat);
+
+#undef OPTION
+
+      c = *p ? p + 1 : p;
+    }
+
+  }
 
   
   _hb_options.set_relaxed (u.i);
@@ -175,7 +204,7 @@ static const char canon_map[256] = {
    0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
    0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,  '-',  0,   0,
   '0', '1', '2', '3', '4', '5', '6', '7',  '8', '9',  0,   0,   0,   0,   0,   0,
-  '-', 'a', 'b', 'c', 'd', 'e', 'f', 'g',  'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+   0,  'a', 'b', 'c', 'd', 'e', 'f', 'g',  'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
   'p', 'q', 'r', 's', 't', 'u', 'v', 'w',  'x', 'y', 'z',  0,   0,   0,   0,  '-',
    0,  'a', 'b', 'c', 'd', 'e', 'f', 'g',  'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
   'p', 'q', 'r', 's', 't', 'u', 'v', 'w',  'x', 'y', 'z',  0,   0,   0,   0,   0
@@ -218,11 +247,10 @@ struct hb_language_item_t {
   struct hb_language_item_t *next;
   hb_language_t lang;
 
-  inline bool operator == (const char *s) const {
-    return lang_equal (lang, s);
-  }
+  bool operator == (const char *s) const
+  { return lang_equal (lang, s); }
 
-  inline hb_language_item_t & operator = (const char *s) {
+  hb_language_item_t & operator = (const char *s) {
     
 
 
@@ -239,7 +267,7 @@ struct hb_language_item_t {
     return *this;
   }
 
-  void fini (void) { free ((void *) lang); }
+  void fini () { free ((void *) lang); }
 };
 
 
@@ -247,12 +275,12 @@ struct hb_language_item_t {
 
 static hb_atomic_ptr_t <hb_language_item_t> langs;
 
-#ifdef HB_USE_ATEXIT
+#if HB_USE_ATEXIT
 static void
-free_langs (void)
+free_langs ()
 {
 retry:
-  hb_language_item_t *first_lang = langs.get ();
+  hb_language_item_t *first_lang = langs;
   if (unlikely (!langs.cmpexch (first_lang, nullptr)))
     goto retry;
 
@@ -269,7 +297,7 @@ static hb_language_item_t *
 lang_find_or_insert (const char *key)
 {
 retry:
-  hb_language_item_t *first_lang = langs.get ();
+  hb_language_item_t *first_lang = langs;
 
   for (hb_language_item_t *lang = first_lang; lang; lang = lang->next)
     if (*lang == key)
@@ -294,7 +322,7 @@ retry:
     goto retry;
   }
 
-#ifdef HB_USE_ATEXIT
+#if HB_USE_ATEXIT
   if (!first_lang)
     atexit (free_langs); 
 #endif
@@ -367,12 +395,19 @@ hb_language_to_string (hb_language_t language)
 
 
 
+
+
+
+
+
+
+
 hb_language_t
-hb_language_get_default (void)
+hb_language_get_default ()
 {
   static hb_atomic_ptr_t <hb_language_t> default_language;
 
-  hb_language_t language = default_language.get ();
+  hb_language_t language = default_language;
   if (unlikely (language == HB_LANGUAGE_INVALID))
   {
     language = hb_language_from_string (setlocale (LC_CTYPE, nullptr), -1);
@@ -531,7 +566,6 @@ hb_script_get_horizontal_direction (hb_script_t script)
 
     
     case HB_SCRIPT_HATRAN:
-    case HB_SCRIPT_OLD_HUNGARIAN:
 
     
     case HB_SCRIPT_ADLAM:
@@ -545,6 +579,7 @@ hb_script_get_horizontal_direction (hb_script_t script)
 
 
     
+    case HB_SCRIPT_OLD_HUNGARIAN:
     case HB_SCRIPT_OLD_ITALIC:
     case HB_SCRIPT_RUNIC:
 
@@ -599,6 +634,19 @@ hb_user_data_array_t::get (hb_user_data_key_t *key)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 hb_version (unsigned int *major,
 	    unsigned int *minor,
@@ -619,7 +667,7 @@ hb_version (unsigned int *major,
 
 
 const char *
-hb_version_string (void)
+hb_version_string ()
 {
   return HB_VERSION_STRING;
 }
@@ -731,43 +779,43 @@ parse_uint32 (const char **pp, const char *end, uint32_t *pv)
 
 #ifdef USE_XLOCALE
 
-#ifdef HB_USE_ATEXIT
-static void free_static_C_locale (void);
+#if HB_USE_ATEXIT
+static void free_static_C_locale ();
 #endif
 
-static struct hb_C_locale_lazy_loader_t : hb_lazy_loader_t<hb_remove_ptr_t<HB_LOCALE_T>::value,
+static struct hb_C_locale_lazy_loader_t : hb_lazy_loader_t<hb_remove_pointer (HB_LOCALE_T),
 							  hb_C_locale_lazy_loader_t>
 {
-  static inline HB_LOCALE_T create (void)
+  static HB_LOCALE_T create ()
   {
     HB_LOCALE_T C_locale = HB_CREATE_LOCALE ("C");
 
-#ifdef HB_USE_ATEXIT
+#if HB_USE_ATEXIT
     atexit (free_static_C_locale);
 #endif
 
     return C_locale;
   }
-  static inline void destroy (HB_LOCALE_T p)
+  static void destroy (HB_LOCALE_T p)
   {
     HB_FREE_LOCALE (p);
   }
-  static inline HB_LOCALE_T get_null (void)
+  static HB_LOCALE_T get_null ()
   {
     return nullptr;
   }
 } static_C_locale;
 
-#ifdef HB_USE_ATEXIT
+#if HB_USE_ATEXIT
 static
-void free_static_C_locale (void)
+void free_static_C_locale ()
 {
   static_C_locale.free_instance ();
 }
 #endif
 
 static HB_LOCALE_T
-get_C_locale (void)
+get_C_locale ()
 {
   return static_C_locale.get_unconst ();
 }
@@ -877,15 +925,15 @@ parse_feature_indices (const char **pp, const char *end, hb_feature_t *feature)
 
   bool has_start;
 
-  feature->start = 0;
-  feature->end = (unsigned int) -1;
+  feature->start = HB_FEATURE_GLOBAL_START;
+  feature->end = HB_FEATURE_GLOBAL_END;
 
   if (!parse_char (pp, end, '['))
     return true;
 
   has_start = parse_uint (pp, end, &feature->start);
 
-  if (parse_char (pp, end, ':')) {
+  if (parse_char (pp, end, ':') || parse_char (pp, end, ';')) {
     parse_uint (pp, end, &feature->end);
   } else {
     if (has_start)
@@ -1065,7 +1113,7 @@ hb_variation_to_string (hb_variation_t *variation,
   while (len && s[len - 1] == ' ')
     len--;
   s[len++] = '=';
-  len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%g", variation->value));
+  len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%g", (double) variation->value));
 
   assert (len < ARRAY_LENGTH (s));
   len = MIN (len, size - 1);

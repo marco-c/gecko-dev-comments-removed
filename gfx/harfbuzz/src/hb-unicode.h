@@ -230,9 +230,6 @@ hb_unicode_funcs_get_parent (hb_unicode_funcs_t *ufuncs);
 typedef hb_unicode_combining_class_t	(*hb_unicode_combining_class_func_t)	(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      unicode,
 										 void               *user_data);
-typedef unsigned int			(*hb_unicode_eastasian_width_func_t)	(hb_unicode_funcs_t *ufuncs,
-										 hb_codepoint_t      unicode,
-										 void               *user_data);
 typedef hb_unicode_general_category_t	(*hb_unicode_general_category_func_t)	(hb_unicode_funcs_t *ufuncs,
 										 hb_codepoint_t      unicode,
 										 void               *user_data);
@@ -267,51 +264,9 @@ typedef hb_bool_t			(*hb_unicode_decompose_func_t)		(hb_unicode_funcs_t *ufuncs,
 
 
 
-
-
-
-
-
-typedef unsigned int			(*hb_unicode_decompose_compatibility_func_t)	(hb_unicode_funcs_t *ufuncs,
-											 hb_codepoint_t      u,
-											 hb_codepoint_t     *decomposed,
-											 void               *user_data);
-
-
-#define HB_UNICODE_MAX_DECOMPOSITION_LEN (18+1) /* codepoints */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 HB_EXTERN void
 hb_unicode_funcs_set_combining_class_func (hb_unicode_funcs_t *ufuncs,
 					   hb_unicode_combining_class_func_t func,
-					   void *user_data, hb_destroy_func_t destroy);
-
-
-
-
-
-
-
-
-
-
-
-
-HB_EXTERN void
-hb_unicode_funcs_set_eastasian_width_func (hb_unicode_funcs_t *ufuncs,
-					   hb_unicode_eastasian_width_func_t func,
 					   void *user_data, hb_destroy_func_t destroy);
 
 
@@ -401,33 +356,8 @@ hb_unicode_funcs_set_decompose_func (hb_unicode_funcs_t *ufuncs,
 
 
 
-
-
-
-
-HB_EXTERN void
-hb_unicode_funcs_set_decompose_compatibility_func (hb_unicode_funcs_t *ufuncs,
-						   hb_unicode_decompose_compatibility_func_t func,
-						   void *user_data, hb_destroy_func_t destroy);
-
-
-
-
-
-
-
-
 HB_EXTERN hb_unicode_combining_class_t
 hb_unicode_combining_class (hb_unicode_funcs_t *ufuncs,
-			    hb_codepoint_t unicode);
-
-
-
-
-
-
-HB_EXTERN unsigned int
-hb_unicode_eastasian_width (hb_unicode_funcs_t *ufuncs,
 			    hb_codepoint_t unicode);
 
 
@@ -468,11 +398,6 @@ hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,
 		      hb_codepoint_t      ab,
 		      hb_codepoint_t     *a,
 		      hb_codepoint_t     *b);
-
-HB_EXTERN unsigned int
-hb_unicode_decompose_compatibility (hb_unicode_funcs_t *ufuncs,
-				    hb_codepoint_t      u,
-				    hb_codepoint_t     *decomposed);
 
 HB_END_DECLS
 

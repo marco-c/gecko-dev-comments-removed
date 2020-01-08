@@ -34,14 +34,8 @@
 
 HB_SHAPER_IMPLEMENT (graphite2)
 #endif
-#ifdef HAVE_CORETEXT
 
-HB_SHAPER_IMPLEMENT (coretext_aat)
-#endif
-
-#ifdef HAVE_OT
 HB_SHAPER_IMPLEMENT (ot) 
-#endif
 
 #ifdef HAVE_UNISCRIBE
 HB_SHAPER_IMPLEMENT (uniscribe)
@@ -51,6 +45,10 @@ HB_SHAPER_IMPLEMENT (directwrite)
 #endif
 #ifdef HAVE_CORETEXT
 HB_SHAPER_IMPLEMENT (coretext)
+
+
+
+HB_SHAPER_IMPLEMENT (coretext_aat)
 #endif
 
 #ifdef HAVE_FALLBACK

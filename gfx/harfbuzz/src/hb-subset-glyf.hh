@@ -33,8 +33,8 @@
 
 HB_INTERNAL bool
 hb_subset_glyf_and_loca (hb_subset_plan_t *plan,
-                         bool             *use_short_loca, 
-                         hb_blob_t       **glyf_prime ,
-                         hb_blob_t       **loca_prime );
+			 bool             *use_short_loca, 
+			 hb_blob_t       **glyf_prime      ,
+			 hb_blob_t       **loca_prime      );
 
 #endif 

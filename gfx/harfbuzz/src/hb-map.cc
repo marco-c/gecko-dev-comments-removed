@@ -37,8 +37,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
 hb_map_t *
-hb_map_create (void)
+hb_map_create ()
 {
   hb_map_t *map;
 
@@ -58,7 +67,7 @@ hb_map_create (void)
 
 
 hb_map_t *
-hb_map_get_empty (void)
+hb_map_get_empty ()
 {
   return const_cast<hb_map_t *> (&Null(hb_map_t));
 }

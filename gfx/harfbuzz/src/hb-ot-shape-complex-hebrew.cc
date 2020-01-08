@@ -70,7 +70,7 @@ compose_hebrew (const hb_ot_shape_normalize_context_t *c,
 
   bool found = (bool) c->unicode->compose (a, b, ab);
 
-  if (!found && !c->plan->has_mark)
+  if (!found && !c->plan->has_gpos_mark)
   {
       
 
@@ -154,18 +154,6 @@ compose_hebrew (const hb_ot_shape_normalize_context_t *c,
   return found;
 }
 
-static bool
-disable_otl_hebrew (const hb_ot_shape_plan_t *plan)
-{
-  
-
-
-
-
-
-  return plan->map.chosen_script[1] != HB_TAG ('h','e','b','r');
-}
-
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hebrew =
 {
@@ -179,7 +167,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hebrew =
   nullptr, 
   compose_hebrew,
   nullptr, 
-  disable_otl_hebrew,
+  HB_TAG ('h','e','b','r'), 
   nullptr, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, 

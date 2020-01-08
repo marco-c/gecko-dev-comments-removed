@@ -59,17 +59,21 @@ HB_BEGIN_DECLS
 
 
 
-
-
-typedef struct hb_glyph_info_t {
+typedef struct hb_glyph_info_t
+{
   hb_codepoint_t codepoint;
-  hb_mask_t      mask; 
+  
+  hb_mask_t      mask;
+  
   uint32_t       cluster;
 
   
   hb_var_int_t   var1;
   hb_var_int_t   var2;
 } hb_glyph_info_t;
+
+
+
 
 
 
@@ -301,6 +305,14 @@ hb_buffer_get_flags (hb_buffer_t *buffer);
 
 
 
+
+
+
+
+
+
+
+
 typedef enum {
   HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES	= 0,
   HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS	= 1,
@@ -331,6 +343,13 @@ hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
 
 HB_EXTERN hb_codepoint_t
 hb_buffer_get_replacement_codepoint (hb_buffer_t    *buffer);
+
+HB_EXTERN void
+hb_buffer_set_invisible_glyph (hb_buffer_t    *buffer,
+			       hb_codepoint_t  invisible);
+
+HB_EXTERN hb_codepoint_t
+hb_buffer_get_invisible_glyph (hb_buffer_t    *buffer);
 
 
 HB_EXTERN void

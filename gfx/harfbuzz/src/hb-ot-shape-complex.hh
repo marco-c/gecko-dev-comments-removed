@@ -29,9 +29,9 @@
 
 #include "hb.hh"
 
+#include "hb-ot-layout.hh"
 #include "hb-ot-shape.hh"
 #include "hb-ot-shape-normalize.hh"
-
 
 
 
@@ -57,9 +57,8 @@ enum hb_ot_shape_zero_width_marks_type_t {
   HB_COMPLEX_SHAPER_IMPLEMENT (indic) \
   HB_COMPLEX_SHAPER_IMPLEMENT (khmer) \
   HB_COMPLEX_SHAPER_IMPLEMENT (myanmar) \
-  HB_COMPLEX_SHAPER_IMPLEMENT (myanmar_old) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (myanmar_zawgyi) \
   HB_COMPLEX_SHAPER_IMPLEMENT (thai) \
-  HB_COMPLEX_SHAPER_IMPLEMENT (tibetan) \
   HB_COMPLEX_SHAPER_IMPLEMENT (use) \
   /* ^--- Add new shapers here */
 
@@ -151,9 +150,7 @@ struct hb_ot_complex_shaper_t
 
 
 
-
-
-  bool (*disable_otl) (const hb_ot_shape_plan_t *plan);
+  hb_tag_t gpos_tag;
 
   
 
@@ -235,23 +232,10 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 
 
     
-    case HB_SCRIPT_TIBETAN:
-
-      return &_hb_ot_complex_shaper_tibetan;
-
-
-    
     case HB_SCRIPT_HEBREW:
 
       return &_hb_ot_complex_shaper_hebrew;
 
-
-    
-
-#if 0
-    
-    case HB_SCRIPT_NEW_TAI_LUE:
-#endif
 
     
     case HB_SCRIPT_BENGALI:
@@ -275,6 +259,8 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
       if (planner->map.chosen_script[0] == HB_TAG ('D','F','L','T') ||
 	  planner->map.chosen_script[0] == HB_TAG ('l','a','t','n'))
 	return &_hb_ot_complex_shaper_default;
+      else if ((planner->map.chosen_script[0] & 0x000000FF) == '3')
+	return &_hb_ot_complex_shaper_use;
       else
 	return &_hb_ot_complex_shaper_indic;
 
@@ -282,16 +268,29 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 	return &_hb_ot_complex_shaper_khmer;
 
     case HB_SCRIPT_MYANMAR:
-      if (planner->map.chosen_script[0] == HB_TAG ('m','y','m','2'))
-	return &_hb_ot_complex_shaper_myanmar;
-      else if (planner->map.chosen_script[0] == HB_TAG ('m','y','m','r'))
-	return &_hb_ot_complex_shaper_myanmar_old;
-      else
+      
+
+
+
+
+
+
+      if (planner->map.chosen_script[0] == HB_TAG ('D','F','L','T') ||
+	  planner->map.chosen_script[0] == HB_TAG ('l','a','t','n') ||
+	  planner->map.chosen_script[0] == HB_TAG ('m','y','m','r'))
 	return &_hb_ot_complex_shaper_default;
+      else
+	return &_hb_ot_complex_shaper_myanmar;
 
 
     
+    case HB_SCRIPT_MYANMAR_ZAWGYI:
+
+      return &_hb_ot_complex_shaper_myanmar_zawgyi;
+
+
     
+    case HB_SCRIPT_TIBETAN:
 
     
     
@@ -359,8 +358,8 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 
     
     case HB_SCRIPT_AHOM:
-    
 
+    
     
     case HB_SCRIPT_BHAIKSUKI:
     case HB_SCRIPT_MARCHEN:
@@ -374,7 +373,9 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_DOGRA:
     case HB_SCRIPT_GUNJALA_GONDI:
+    
     case HB_SCRIPT_MAKASAR:
+    
 
       
 

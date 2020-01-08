@@ -159,11 +159,6 @@ static const struct arabic_state_table_entry {
 
 
 static void
-nuke_joiners (const hb_ot_shape_plan_t *plan,
-	      hb_font_t *font,
-	      hb_buffer_t *buffer);
-
-static void
 arabic_fallback_shape (const hb_ot_shape_plan_t *plan,
 		       hb_font_t *font,
 		       hb_buffer_t *buffer);
@@ -200,34 +195,40 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
 
 
 
-  map->add_gsub_pause (nuke_joiners);
 
-  map->add_global_bool_feature (HB_TAG('s','t','c','h'));
+  map->enable_feature (HB_TAG('s','t','c','h'));
   map->add_gsub_pause (record_stch);
 
-  map->add_global_bool_feature (HB_TAG('c','c','m','p'));
-  map->add_global_bool_feature (HB_TAG('l','o','c','l'));
+  map->enable_feature (HB_TAG('c','c','m','p'));
+  map->enable_feature (HB_TAG('l','o','c','l'));
 
   map->add_gsub_pause (nullptr);
 
   for (unsigned int i = 0; i < ARABIC_NUM_FEATURES; i++)
   {
     bool has_fallback = plan->props.script == HB_SCRIPT_ARABIC && !FEATURE_IS_SYRIAC (arabic_features[i]);
-    map->add_feature (arabic_features[i], 1, has_fallback ? F_HAS_FALLBACK : F_NONE);
+    map->add_feature (arabic_features[i], has_fallback ? F_HAS_FALLBACK : F_NONE);
     map->add_gsub_pause (nullptr);
   }
 
-  map->add_feature (HB_TAG('r','l','i','g'), 1, F_GLOBAL|F_HAS_FALLBACK);
+  
+
+
+
+  map->enable_feature (HB_TAG('r','l','i','g'), F_MANUAL_ZWJ | F_HAS_FALLBACK);
+
   if (plan->props.script == HB_SCRIPT_ARABIC)
     map->add_gsub_pause (arabic_fallback_shape);
 
   
-  map->add_global_bool_feature (HB_TAG('r','c','l','t'));
-  map->add_global_bool_feature (HB_TAG('c','a','l','t'));
+  map->enable_feature (HB_TAG('r','c','l','t'), F_MANUAL_ZWJ);
+  map->enable_feature (HB_TAG('c','a','l','t'), F_MANUAL_ZWJ);
   map->add_gsub_pause (nullptr);
 
   
 
+  
+
 
 
 
@@ -235,15 +236,13 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
 
 
   
-  map->add_global_bool_feature (HB_TAG('m','s','e','t'));
+  map->enable_feature (HB_TAG('m','s','e','t'));
 }
 
 #include "hb-ot-shape-complex-arabic-fallback.hh"
 
 struct arabic_shape_plan_t
 {
-  ASSERT_POD ();
-
   
 
 
@@ -280,7 +279,7 @@ data_destroy_arabic (void *data)
 {
   arabic_shape_plan_t *arabic_plan = (arabic_shape_plan_t *) data;
 
-  arabic_fallback_plan_destroy (arabic_plan->fallback_plan.get ());
+  arabic_fallback_plan_destroy (arabic_plan->fallback_plan);
 
   free (data);
 }
@@ -379,19 +378,6 @@ setup_masks_arabic (const hb_ot_shape_plan_t *plan,
   setup_masks_arabic_plan (arabic_plan, buffer, plan->props.script);
 }
 
-
-static void
-nuke_joiners (const hb_ot_shape_plan_t *plan HB_UNUSED,
-	      hb_font_t *font HB_UNUSED,
-	      hb_buffer_t *buffer)
-{
-  unsigned int count = buffer->len;
-  hb_glyph_info_t *info = buffer->info;
-  for (unsigned int i = 0; i < count; i++)
-    if (_hb_glyph_info_is_zwj (&info[i]))
-      _hb_glyph_info_flip_joiners (&info[i]);
-}
-
 static void
 arabic_fallback_shape (const hb_ot_shape_plan_t *plan,
 		       hb_font_t *font,
@@ -403,7 +389,7 @@ arabic_fallback_shape (const hb_ot_shape_plan_t *plan,
     return;
 
 retry:
-  arabic_fallback_plan_t *fallback_plan = arabic_plan->fallback_plan.get ();
+  arabic_fallback_plan_t *fallback_plan = arabic_plan->fallback_plan;
   if (unlikely (!fallback_plan))
   {
     
@@ -428,7 +414,7 @@ retry:
 
 static void
 record_stch (const hb_ot_shape_plan_t *plan,
-	     hb_font_t *font,
+	     hb_font_t *font HB_UNUSED,
 	     hb_buffer_t *buffer)
 {
   const arabic_shape_plan_t *arabic_plan = (const arabic_shape_plan_t *) plan->data;
@@ -452,7 +438,7 @@ record_stch (const hb_ot_shape_plan_t *plan,
 }
 
 static void
-apply_stch (const hb_ot_shape_plan_t *plan,
+apply_stch (const hb_ot_shape_plan_t *plan HB_UNUSED,
 	    hb_buffer_t              *buffer,
 	    hb_font_t                *font)
 {
@@ -470,9 +456,9 @@ apply_stch (const hb_ot_shape_plan_t *plan,
 
   int sign = font->x_scale < 0 ? -1 : +1;
   unsigned int extra_glyphs_needed = 0; 
-  typedef enum { MEASURE, CUT } step_t;
+  enum { MEASURE, CUT } ;
 
-  for (step_t step = MEASURE; step <= CUT; step = (step_t) (step + 1))
+  for (unsigned int step = MEASURE; step <= CUT; step = step + 1)
   {
     unsigned int count = buffer->len;
     hb_glyph_info_t *info = buffer->info;
@@ -623,6 +609,7 @@ modifier_combining_marks[] =
   0x06E3u, 
   0x06E7u, 
   0x06E8u, 
+  0x08D3u, 
   0x08F3u, 
 };
 
@@ -637,7 +624,7 @@ info_is_mcm (const hb_glyph_info_t &info)
 }
 
 static void
-reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
+reorder_marks_arabic (const hb_ot_shape_plan_t *plan HB_UNUSED,
 		      hb_buffer_t              *buffer,
 		      unsigned int              start,
 		      unsigned int              end)
@@ -714,7 +701,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_arabic =
   nullptr, 
   nullptr, 
   setup_masks_arabic,
-  nullptr, 
+  HB_TAG_NONE, 
   reorder_marks_arabic,
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, 

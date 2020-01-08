@@ -38,6 +38,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static hb_unicode_combining_class_t
 hb_unicode_combining_class_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
 				hb_codepoint_t      unicode   HB_UNUSED,
@@ -109,40 +123,23 @@ hb_unicode_decompose_compatibility_nil (hb_unicode_funcs_t *ufuncs     HB_UNUSED
 }
 
 
-#define HB_UNICODE_FUNCS_IMPLEMENT_SET \
-  HB_UNICODE_FUNCS_IMPLEMENT (glib) \
-  HB_UNICODE_FUNCS_IMPLEMENT (icu) \
-  HB_UNICODE_FUNCS_IMPLEMENT (ucdn) \
-  HB_UNICODE_FUNCS_IMPLEMENT (nil) \
-  /* ^--- Add new callbacks before nil */
-
-#define hb_nil_get_unicode_funcs hb_unicode_funcs_get_empty
-
-
-#define HB_UNICODE_FUNCS_IMPLEMENT(set) \
-extern "C" hb_unicode_funcs_t *hb_##set##_get_unicode_funcs (void);
-HB_UNICODE_FUNCS_IMPLEMENT_SET
-#undef HB_UNICODE_FUNCS_IMPLEMENT
-
+extern "C" hb_unicode_funcs_t *hb_glib_get_unicode_funcs ();
+extern "C" hb_unicode_funcs_t *hb_icu_get_unicode_funcs ();
+extern "C" hb_unicode_funcs_t *hb_ucdn_get_unicode_funcs ();
 
 hb_unicode_funcs_t *
-hb_unicode_funcs_get_default (void)
+hb_unicode_funcs_get_default ()
 {
-#define HB_UNICODE_FUNCS_IMPLEMENT(set) \
-  return hb_##set##_get_unicode_funcs ();
-
 #if defined(HAVE_UCDN)
-  HB_UNICODE_FUNCS_IMPLEMENT(ucdn)
+  return hb_ucdn_get_unicode_funcs ();
 #elif defined(HAVE_GLIB)
-  HB_UNICODE_FUNCS_IMPLEMENT(glib)
+  return hb_glib_get_unicode_funcs ();
 #elif defined(HAVE_ICU) && defined(HAVE_ICU_BUILTIN)
-  HB_UNICODE_FUNCS_IMPLEMENT(icu)
+  return hb_icu_get_unicode_funcs ();
 #else
 #define HB_UNICODE_FUNCS_NIL 1
-  HB_UNICODE_FUNCS_IMPLEMENT(nil)
+  return hb_unicode_funcs_get_empty ();
 #endif
-
-#undef HB_UNICODE_FUNCS_IMPLEMENT
 }
 
 #if !defined(HB_NO_UNICODE_FUNCS) && defined(HB_UNICODE_FUNCS_NIL)
@@ -190,7 +187,6 @@ DEFINE_NULL_INSTANCE (hb_unicode_funcs_t) =
   HB_OBJECT_HEADER_STATIC,
 
   nullptr, 
-  true, 
   {
 #define HB_UNICODE_FUNC_IMPLEMENT(name) hb_unicode_##name##_nil,
     HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS
@@ -208,7 +204,7 @@ DEFINE_NULL_INSTANCE (hb_unicode_funcs_t) =
 
 
 hb_unicode_funcs_t *
-hb_unicode_funcs_get_empty (void)
+hb_unicode_funcs_get_empty ()
 {
   return const_cast<hb_unicode_funcs_t *> (&Null(hb_unicode_funcs_t));
 }
@@ -306,10 +302,10 @@ hb_unicode_funcs_get_user_data (hb_unicode_funcs_t *ufuncs,
 void
 hb_unicode_funcs_make_immutable (hb_unicode_funcs_t *ufuncs)
 {
-  if (unlikely (hb_object_is_inert (ufuncs)))
+  if (hb_object_is_immutable (ufuncs))
     return;
 
-  ufuncs->immutable = true;
+  hb_object_make_immutable (ufuncs);
 }
 
 
@@ -325,7 +321,7 @@ hb_unicode_funcs_make_immutable (hb_unicode_funcs_t *ufuncs)
 hb_bool_t
 hb_unicode_funcs_is_immutable (hb_unicode_funcs_t *ufuncs)
 {
-  return ufuncs->immutable;
+  return hb_object_is_immutable (ufuncs);
 }
 
 
@@ -353,7 +349,7 @@ hb_unicode_funcs_set_##name##_func (hb_unicode_funcs_t		   *ufuncs,	\
 				    void			   *user_data,	\
 				    hb_destroy_func_t		    destroy)	\
 {										\
-  if (ufuncs->immutable)							\
+  if (hb_object_is_immutable (ufuncs))						\
     return;									\
 										\
   if (ufuncs->destroy.name)							\
@@ -428,6 +424,7 @@ hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,
 {
   return ufuncs->decompose (ab, a, b);
 }
+
 
 
 
@@ -562,3 +559,19 @@ _hb_modified_combining_class[256] =
   241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254,
   255, 
 };
+
+
+
+
+
+
+#include "hb-unicode-emoji-table.hh"
+
+bool
+_hb_unicode_is_emoji_Extended_Pictographic (hb_codepoint_t cp)
+{
+  return hb_bsearch (&cp, _hb_unicode_emoji_Extended_Pictographic_table,
+		     ARRAY_LENGTH (_hb_unicode_emoji_Extended_Pictographic_table),
+		     sizeof (hb_unicode_range_t),
+		     hb_unicode_range_t::cmp);
+}

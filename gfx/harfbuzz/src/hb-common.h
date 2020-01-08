@@ -33,6 +33,10 @@
 #ifndef HB_COMMON_H
 #define HB_COMMON_H
 
+#ifndef HB_EXTERN
+#define HB_EXTERN extern
+#endif
+
 #ifndef HB_BEGIN_DECLS
 # ifdef __cplusplus
 #  define HB_BEGIN_DECLS	extern "C" {
@@ -63,6 +67,23 @@ typedef unsigned __int64 uint64_t;
 #  include <stdint.h>
 #endif
 
+#if    __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
+#define HB_DEPRECATED __attribute__((__deprecated__))
+#elif defined(_MSC_VER) && (_MSC_VER >= 1300)
+#define HB_DEPRECATED __declspec(deprecated)
+#else
+#define HB_DEPRECATED
+#endif
+
+#if    __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
+#define HB_DEPRECATED_FOR(f) __attribute__((__deprecated__("Use '" #f "' instead")))
+#elif defined(_MSC_FULL_VER) && (_MSC_FULL_VER > 140050320)
+#define HB_DEPRECATED_FOR(f) __declspec(deprecated("is deprecated. Use '" #f "' instead"))
+#else
+#define HB_DEPRECATED_FOR(f) HB_DEPRECATED
+#endif
+
+
 HB_BEGIN_DECLS
 
 
@@ -86,8 +107,8 @@ typedef union _hb_var_int_t {
 
 typedef uint32_t hb_tag_t;
 
-#define HB_TAG(c1,c2,c3,c4) ((hb_tag_t)((((uint8_t)(c1))<<24)|(((uint8_t)(c2))<<16)|(((uint8_t)(c3))<<8)|((uint8_t)(c4))))
-#define HB_UNTAG(tag)   ((uint8_t)((tag)>>24)), ((uint8_t)((tag)>>16)), ((uint8_t)((tag)>>8)), ((uint8_t)(tag))
+#define HB_TAG(c1,c2,c3,c4) ((hb_tag_t)((((uint32_t)(c1)&0xFF)<<24)|(((uint32_t)(c2)&0xFF)<<16)|(((uint32_t)(c3)&0xFF)<<8)|((uint32_t)(c4)&0xFF)))
+#define HB_UNTAG(tag)   (((tag)>>24)&0xFF), (((tag)>>16)&0xFF), (((tag)>>8)&0xFF), ((tag)&0xFF)
 
 #define HB_TAG_NONE HB_TAG(0,0,0,0)
 #define HB_TAG_MAX HB_TAG(0xff,0xff,0xff,0xff)
@@ -346,7 +367,9 @@ typedef enum
 
 
 
-  _HB_SCRIPT_MAX_VALUE				= HB_TAG_MAX, 
+
+
+  _HB_SCRIPT_MAX_VALUE				= HB_TAG_MAX_SIGNED, 
   _HB_SCRIPT_MAX_VALUE_SIGNED			= HB_TAG_MAX_SIGNED 
 
 } hb_script_t;
@@ -378,6 +401,19 @@ typedef void (*hb_destroy_func_t) (void *user_data);
 
 
 
+
+
+
+
+
+
+#define HB_FEATURE_GLOBAL_START	0
+
+
+
+
+
+#define HB_FEATURE_GLOBAL_END	((unsigned int) -1)
 
 typedef struct hb_feature_t {
   hb_tag_t      tag;
@@ -411,6 +447,50 @@ hb_variation_from_string (const char *str, int len,
 HB_EXTERN void
 hb_variation_to_string (hb_variation_t *variation,
 			char *buf, unsigned int size);
+
+
+
+
+
+
+
+
+typedef uint32_t hb_color_t;
+
+#define HB_COLOR(b,g,r,a) ((hb_color_t) HB_TAG ((b),(g),(r),(a)))
+
+
+
+
+
+
+
+
+#define hb_color_get_alpha(color)	((color) & 0xFF)
+
+
+
+
+
+
+
+#define hb_color_get_red(color)		(((color) >> 8) & 0xFF)
+
+
+
+
+
+
+
+#define hb_color_get_green(color)	(((color) >> 16) & 0xFF)
+
+
+
+
+
+
+
+#define hb_color_get_blue(color)	(((color) >> 24) & 0xFF)
 
 
 HB_END_DECLS

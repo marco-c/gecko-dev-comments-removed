@@ -42,29 +42,40 @@ namespace OT {
 
 struct InstanceRecord
 {
-  inline bool sanitize (hb_sanitize_context_t *c, unsigned int axis_count) const
+  friend struct fvar;
+
+  hb_array_t<const Fixed> get_coordinates (unsigned int axis_count) const
+  { return coordinatesZ.as_array (axis_count); }
+
+  bool sanitize (hb_sanitize_context_t *c, unsigned int axis_count) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-		  c->check_array (coordinates, coordinates[0].static_size, axis_count));
+		  c->check_array (coordinatesZ.arrayZ, axis_count));
   }
 
   protected:
   NameID	subfamilyNameID;
 
-  HBUINT16	reserved;	
-  Fixed		coordinates[VAR];
+  HBUINT16	flags;		
+  UnsizedArrayOf<Fixed>
+		coordinatesZ;	
   
   
   
 
   public:
-  DEFINE_SIZE_ARRAY (4, coordinates);
+  DEFINE_SIZE_UNBOUNDED (4);
 };
 
 struct AxisRecord
 {
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  enum
+  {
+    AXIS_FLAG_HIDDEN	= 0x0001,
+  };
+
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this));
@@ -75,7 +86,7 @@ struct AxisRecord
   Fixed		minValue;	
   Fixed		defaultValue;	
   Fixed		maxValue;	
-  HBUINT16	reserved;	
+  HBUINT16	flags;		
   NameID	axisNameID;	
 
 
@@ -85,52 +96,58 @@ struct AxisRecord
 
 struct fvar
 {
-  static const hb_tag_t tableTag	= HB_OT_TAG_fvar;
+  enum { tableTag = HB_OT_TAG_fvar };
 
-  inline bool has_data (void) const { return version.to_int () != 0; }
+  bool has_data () const { return version.to_int (); }
 
-  inline bool sanitize (hb_sanitize_context_t *c) const
+  bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
     return_trace (version.sanitize (c) &&
 		  likely (version.major == 1) &&
 		  c->check_struct (this) &&
+		  axisSize == 20 && 
 		  instanceSize >= axisCount * 4 + 4 &&
-		  axisSize <= 1024 && 
-		  instanceSize <= 1024 && 
-		  c->check_range (this, things) &&
-		  c->check_range (&StructAtOffset<char> (this, things),
-				  axisCount * axisSize + instanceCount * instanceSize));
+		  get_axes ().sanitize (c) &&
+		  c->check_range (get_instance (0), instanceCount, instanceSize));
   }
 
-  inline unsigned int get_axis_count (void) const
-  { return axisCount; }
+  unsigned int get_axis_count () const { return axisCount; }
 
-  inline bool get_axis (unsigned int index, hb_ot_var_axis_t *info) const
+  void get_axis_deprecated (unsigned int axis_index,
+				   hb_ot_var_axis_t *info) const
   {
-    if (unlikely (index >= axisCount))
-      return false;
-
-    if (info)
-    {
-      const AxisRecord &axis = get_axes ()[index];
-      info->tag = axis.axisTag;
-      info->name_id =  axis.axisNameID;
-      info->default_value = axis.defaultValue / 65536.;
-      
-      info->min_value = MIN<float> (info->default_value, axis.minValue / 65536.);
-      info->max_value = MAX<float> (info->default_value, axis.maxValue / 65536.);
-    }
-
-    return true;
+    const AxisRecord &axis = get_axes ()[axis_index];
+    info->tag = axis.axisTag;
+    info->name_id =  axis.axisNameID;
+    info->default_value = axis.defaultValue / 65536.;
+    
+    info->min_value = MIN<float> (info->default_value, axis.minValue / 65536.);
+    info->max_value = MAX<float> (info->default_value, axis.maxValue / 65536.);
   }
 
-  inline unsigned int get_axis_infos (unsigned int      start_offset,
-				      unsigned int     *axes_count ,
-				      hb_ot_var_axis_t *axes_array ) const
+  void get_axis_info (unsigned int axis_index,
+		      hb_ot_var_axis_info_t *info) const
+  {
+    const AxisRecord &axis = get_axes ()[axis_index];
+    info->axis_index = axis_index;
+    info->tag = axis.axisTag;
+    info->name_id =  axis.axisNameID;
+    info->flags = (hb_ot_var_axis_flags_t) (unsigned int) axis.flags;
+    info->default_value = axis.defaultValue / 65536.;
+    
+    info->min_value = MIN<float> (info->default_value, axis.minValue / 65536.);
+    info->max_value = MAX<float> (info->default_value, axis.maxValue / 65536.);
+    info->reserved = 0;
+  }
+
+  unsigned int get_axes_deprecated (unsigned int      start_offset,
+				    unsigned int     *axes_count ,
+				    hb_ot_var_axis_t *axes_array ) const
   {
     if (axes_count)
     {
+      
       unsigned int count = axisCount;
       start_offset = MIN (start_offset, count);
 
@@ -141,32 +158,70 @@ struct fvar
       *axes_count = count;
 
       for (unsigned int i = 0; i < count; i++)
-	get_axis (start_offset + i, axes_array + i);
+	get_axis_deprecated (start_offset + i, axes_array + i);
     }
     return axisCount;
   }
 
-  inline bool find_axis (hb_tag_t tag, unsigned int *index, hb_ot_var_axis_t *info) const
+  unsigned int get_axis_infos (unsigned int           start_offset,
+			       unsigned int          *axes_count ,
+			       hb_ot_var_axis_info_t *axes_array ) const
+  {
+    if (axes_count)
+    {
+      
+      unsigned int count = axisCount;
+      start_offset = MIN (start_offset, count);
+
+      count -= start_offset;
+      axes_array += start_offset;
+
+      count = MIN (count, *axes_count);
+      *axes_count = count;
+
+      for (unsigned int i = 0; i < count; i++)
+	get_axis_info (start_offset + i, axes_array + i);
+    }
+    return axisCount;
+  }
+
+  bool find_axis_deprecated (hb_tag_t tag,
+			     unsigned int *axis_index,
+			     hb_ot_var_axis_t *info) const
   {
     const AxisRecord *axes = get_axes ();
     unsigned int count = get_axis_count ();
     for (unsigned int i = 0; i < count; i++)
       if (axes[i].axisTag == tag)
       {
-        if (index)
-	  *index = i;
-	return get_axis (i, info);
+        if (axis_index)
+	  *axis_index = i;
+	get_axis_deprecated (i, info);
+	return true;
       }
-    if (index)
-      *index = HB_OT_VAR_NO_AXIS_INDEX;
+    if (axis_index)
+      *axis_index = HB_OT_VAR_NO_AXIS_INDEX;
     return false;
   }
 
-  inline int normalize_axis_value (unsigned int axis_index, float v) const
+  bool find_axis_info (hb_tag_t tag,
+		       hb_ot_var_axis_info_t *info) const
   {
-    hb_ot_var_axis_t axis;
-    if (!get_axis (axis_index, &axis))
-      return 0;
+    const AxisRecord *axes = get_axes ();
+    unsigned int count = get_axis_count ();
+    for (unsigned int i = 0; i < count; i++)
+      if (axes[i].axisTag == tag)
+      {
+	get_axis_info (i, info);
+	return true;
+      }
+    return false;
+  }
+
+  int normalize_axis_value (unsigned int axis_index, float v) const
+  {
+    hb_ot_var_axis_info_t axis;
+    get_axis_info (axis_index, &axis);
 
     v = MAX (MIN (v, axis.max_value), axis.min_value); 
 
@@ -176,20 +231,65 @@ struct fvar
       v = (v - axis.default_value) / (axis.default_value - axis.min_value);
     else
       v = (v - axis.default_value) / (axis.max_value - axis.default_value);
-    return (int) (v * 16384. + (v >= 0. ? .5 : -.5));
+    return (int) (v * 16384.f + (v >= 0.f ? .5f : -.5f));
+  }
+
+  unsigned int get_instance_count () const { return instanceCount; }
+
+  hb_ot_name_id_t get_instance_subfamily_name_id (unsigned int instance_index) const
+  {
+    const InstanceRecord *instance = get_instance (instance_index);
+    if (unlikely (!instance)) return HB_OT_NAME_ID_INVALID;
+    return instance->subfamilyNameID;
+  }
+
+  hb_ot_name_id_t get_instance_postscript_name_id (unsigned int instance_index) const
+  {
+    const InstanceRecord *instance = get_instance (instance_index);
+    if (unlikely (!instance)) return HB_OT_NAME_ID_INVALID;
+    if (instanceSize >= axisCount * 4 + 6)
+      return StructAfter<NameID> (instance->get_coordinates (axisCount));
+    return HB_OT_NAME_ID_INVALID;
+  }
+
+  unsigned int get_instance_coords (unsigned int  instance_index,
+					   unsigned int *coords_length, 
+					   float        *coords         ) const
+  {
+    const InstanceRecord *instance = get_instance (instance_index);
+    if (unlikely (!instance))
+    {
+      if (coords_length)
+        *coords_length = 0;
+      return 0;
+    }
+
+    if (coords_length && *coords_length)
+    {
+      hb_array_t<const Fixed> instanceCoords = instance->get_coordinates (axisCount)
+							 .sub_array (0, *coords_length);
+      for (unsigned int i = 0; i < instanceCoords.len; i++)
+        coords[i] = instanceCoords.arrayZ[i].to_float ();
+    }
+    return axisCount;
   }
 
   protected:
-  inline const AxisRecord * get_axes (void) const
-  { return &StructAtOffset<AxisRecord> (this, things); }
+  hb_array_t<const AxisRecord> get_axes () const
+  { return hb_array (&(this+firstAxis), axisCount); }
 
-  inline const InstanceRecord * get_instances (void) const
-  { return &StructAtOffset<InstanceRecord> (get_axes () + axisCount, 0); }
+  const InstanceRecord *get_instance (unsigned int i) const
+  {
+    if (unlikely (i >= instanceCount)) return nullptr;
+   return &StructAtOffset<InstanceRecord> (&StructAfter<InstanceRecord> (get_axes ()),
+					   i * instanceSize);
+  }
 
   protected:
   FixedVersion<>version;	
 
-  Offset16	things;		
+  OffsetTo<AxisRecord>
+		firstAxis;	
 
   HBUINT16	reserved;	
   HBUINT16	axisCount;	

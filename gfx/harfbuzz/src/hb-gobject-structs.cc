@@ -27,6 +27,18 @@
 #include "hb.hh"
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #include <glib.h>
 #if !GLIB_CHECK_VERSION(2,29,16)
 #undef __GNUC__
@@ -39,7 +51,7 @@
 
 #define HB_DEFINE_BOXED_TYPE(name,copy_func,free_func) \
 GType \
-hb_gobject_##name##_get_type (void) \
+hb_gobject_##name##_get_type () \
 { \
    static gsize type_id = 0; \
    if (g_once_init_enter (&type_id)) { \

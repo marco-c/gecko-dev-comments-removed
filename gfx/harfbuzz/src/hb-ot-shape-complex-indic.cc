@@ -25,6 +25,7 @@
 
 
 #include "hb-ot-shape-complex-indic.hh"
+#include "hb-ot-shape-complex-vowel-constraints.hh"
 #include "hb-ot-layout.hh"
 
 
@@ -95,42 +96,41 @@ static const indic_config_t indic_configs[] =
 
 
 
-struct feature_list_t {
-  hb_tag_t tag;
-  hb_ot_map_feature_flags_t flags;
-};
-
-static const feature_list_t
+static const hb_ot_map_feature_t
 indic_features[] =
 {
   
 
 
 
-  {HB_TAG('n','u','k','t'), F_GLOBAL},
-  {HB_TAG('a','k','h','n'), F_GLOBAL},
-  {HB_TAG('r','p','h','f'), F_NONE},
-  {HB_TAG('r','k','r','f'), F_GLOBAL},
-  {HB_TAG('p','r','e','f'), F_NONE},
-  {HB_TAG('b','l','w','f'), F_NONE},
-  {HB_TAG('a','b','v','f'), F_NONE},
-  {HB_TAG('h','a','l','f'), F_NONE},
-  {HB_TAG('p','s','t','f'), F_NONE},
-  {HB_TAG('v','a','t','u'), F_GLOBAL},
-  {HB_TAG('c','j','c','t'), F_GLOBAL},
+  {HB_TAG('n','u','k','t'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('a','k','h','n'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('r','p','h','f'),        F_MANUAL_JOINERS},
+  {HB_TAG('r','k','r','f'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('p','r','e','f'),        F_MANUAL_JOINERS},
+  {HB_TAG('b','l','w','f'),        F_MANUAL_JOINERS},
+  {HB_TAG('a','b','v','f'),        F_MANUAL_JOINERS},
+  {HB_TAG('h','a','l','f'),        F_MANUAL_JOINERS},
+  {HB_TAG('p','s','t','f'),        F_MANUAL_JOINERS},
+  {HB_TAG('v','a','t','u'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('c','j','c','t'), F_GLOBAL_MANUAL_JOINERS},
   
 
 
 
 
 
-  {HB_TAG('i','n','i','t'), F_NONE},
-  {HB_TAG('p','r','e','s'), F_GLOBAL},
-  {HB_TAG('a','b','v','s'), F_GLOBAL},
-  {HB_TAG('b','l','w','s'), F_GLOBAL},
-  {HB_TAG('p','s','t','s'), F_GLOBAL},
-  {HB_TAG('h','a','l','n'), F_GLOBAL},
+
+  {HB_TAG('i','n','i','t'),        F_MANUAL_JOINERS},
+  {HB_TAG('p','r','e','s'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('a','b','v','s'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('b','l','w','s'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('p','s','t','s'), F_GLOBAL_MANUAL_JOINERS},
+  {HB_TAG('h','a','l','n'), F_GLOBAL_MANUAL_JOINERS},
   
+
+
+
   {HB_TAG('d','i','s','t'), F_GLOBAL},
   {HB_TAG('a','b','v','m'), F_GLOBAL},
   {HB_TAG('b','l','w','m'), F_GLOBAL},
@@ -158,12 +158,13 @@ enum {
   _BLWS,
   _PSTS,
   _HALN,
+
   _DIST,
   _ABVM,
   _BLWM,
 
   INDIC_NUM_FEATURES,
-  INDIC_BASIC_FEATURES = INIT 
+  INDIC_BASIC_FEATURES = INIT, 
 };
 
 static void
@@ -191,25 +192,27 @@ collect_features_indic (hb_ot_shape_planner_t *plan)
   
   map->add_gsub_pause (setup_syllables);
 
-  map->add_global_bool_feature (HB_TAG('l','o','c','l'));
+  map->enable_feature (HB_TAG('l','o','c','l'));
   
 
-  map->add_global_bool_feature (HB_TAG('c','c','m','p'));
+  map->enable_feature (HB_TAG('c','c','m','p'));
 
 
   unsigned int i = 0;
   map->add_gsub_pause (initial_reordering);
+
   for (; i < INDIC_BASIC_FEATURES; i++) {
-    map->add_feature (indic_features[i].tag, 1, indic_features[i].flags | F_MANUAL_ZWJ | F_MANUAL_ZWNJ);
+    map->add_feature (indic_features[i]);
     map->add_gsub_pause (nullptr);
   }
-  map->add_gsub_pause (final_reordering);
-  for (; i < INDIC_NUM_FEATURES; i++) {
-    map->add_feature (indic_features[i].tag, 1, indic_features[i].flags | F_MANUAL_ZWJ | F_MANUAL_ZWNJ);
-  }
 
-  map->add_global_bool_feature (HB_TAG('c','a','l','t'));
-  map->add_global_bool_feature (HB_TAG('c','l','i','g'));
+  map->add_gsub_pause (final_reordering);
+
+  for (; i < INDIC_NUM_FEATURES; i++)
+    map->add_feature (indic_features[i]);
+
+  map->enable_feature (HB_TAG('c','a','l','t'));
+  map->enable_feature (HB_TAG('c','l','i','g'));
 
   map->add_gsub_pause (clear_syllables);
 }
@@ -217,13 +220,13 @@ collect_features_indic (hb_ot_shape_planner_t *plan)
 static void
 override_features_indic (hb_ot_shape_planner_t *plan)
 {
-  plan->map.add_feature (HB_TAG('l','i','g','a'), 0, F_GLOBAL);
+  plan->map.disable_feature (HB_TAG('l','i','g','a'));
 }
 
 
 struct would_substitute_feature_t
 {
-  inline void init (const hb_ot_map_t *map, hb_tag_t feature_tag, bool zero_context_)
+  void init (const hb_ot_map_t *map, hb_tag_t feature_tag, bool zero_context_)
   {
     zero_context = zero_context_;
     map->get_stage_lookups (0,
@@ -231,9 +234,9 @@ struct would_substitute_feature_t
 			    &lookups, &count);
   }
 
-  inline bool would_substitute (const hb_codepoint_t *glyphs,
-				unsigned int          glyphs_count,
-				hb_face_t            *face) const
+  bool would_substitute (const hb_codepoint_t *glyphs,
+			 unsigned int          glyphs_count,
+			 hb_face_t            *face) const
   {
     for (unsigned int i = 0; i < count; i++)
       if (hb_ot_layout_lookup_would_substitute_fast (face, lookups[i].index, glyphs, glyphs_count, zero_context))
@@ -249,9 +252,7 @@ struct would_substitute_feature_t
 
 struct indic_shape_plan_t
 {
-  ASSERT_POD ();
-
-  inline bool load_virama_glyph (hb_font_t *font, hb_codepoint_t *pglyph) const
+  bool load_virama_glyph (hb_font_t *font, hb_codepoint_t *pglyph) const
   {
     hb_codepoint_t glyph = virama_glyph.get_relaxed ();
     if (unlikely (glyph == (hb_codepoint_t) -1))
@@ -273,6 +274,7 @@ struct indic_shape_plan_t
   const indic_config_t *config;
 
   bool is_old_spec;
+  bool uniscribe_bug_compatible;
   mutable hb_atomic_int_t virama_glyph;
 
   would_substitute_feature_t rphf;
@@ -298,6 +300,7 @@ data_create_indic (const hb_ot_shape_plan_t *plan)
     }
 
   indic_plan->is_old_spec = indic_plan->config->has_old_spec && ((plan->map.chosen_script[0] & 0x000000FFu) != '2');
+  indic_plan->uniscribe_bug_compatible = hb_options ().uniscribe_bug_compatible;
   indic_plan->virama_glyph.set_relaxed (-1);
 
   
@@ -717,7 +720,7 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
     indic_position_t last_pos = POS_START;
     for (unsigned int i = start; i < end; i++)
     {
-      if ((FLAG_UNSAFE (info[i].indic_category()) & (JOINER_FLAGS | FLAG (OT_N) | FLAG (OT_RS) | MEDIAL_FLAGS | FLAG (OT_H))))
+      if ((FLAG_UNSAFE (info[i].indic_category()) & (JOINER_FLAGS | FLAG (OT_N) | FLAG (OT_RS) | FLAG (OT_H))))
       {
 	info[i].indic_position() = last_pos;
 	if (unlikely (info[i].indic_category() == OT_H &&
@@ -784,7 +787,9 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
 
 
 
-    if (indic_plan->is_old_spec || end - base > 127)
+
+
+    if (indic_plan->is_old_spec || end - start > 127)
       buffer->merge_clusters (base, end);
     else
     {
@@ -913,10 +918,12 @@ initial_reordering_standalone_cluster (const hb_ot_shape_plan_t *plan,
 				       hb_buffer_t *buffer,
 				       unsigned int start, unsigned int end)
 {
+  const indic_shape_plan_t *indic_plan = (const indic_shape_plan_t *) plan->data;
+
   
 
 
-  if (hb_options ().uniscribe_bug_compatible)
+  if (indic_plan->uniscribe_bug_compatible)
   {
     
 
@@ -959,6 +966,7 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
 		       hb_buffer_t *buffer)
 {
   
+
   bool has_broken_syllables = false;
   unsigned int count = buffer->len;
   hb_glyph_info_t *info = buffer->info;
@@ -1010,7 +1018,6 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
     else
       buffer->next_glyph ();
   }
-
   buffer->swap_buffers ();
 }
 
@@ -1356,7 +1363,7 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
 
 
 
-      if (!hb_options ().uniscribe_bug_compatible &&
+      if (!indic_plan->uniscribe_bug_compatible &&
 	  unlikely (is_halant (info[new_reph_pos]))) {
 	for (unsigned int i = base + 1; i < new_reph_pos; i++)
 	  if (info[i].indic_category() == OT_M) {
@@ -1462,7 +1469,7 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
   
 
 
-  if (hb_options ().uniscribe_bug_compatible)
+  if (indic_plan->uniscribe_bug_compatible)
   {
     switch ((hb_tag_t) plan->props.script)
     {
@@ -1509,6 +1516,14 @@ clear_syllables (const hb_ot_shape_plan_t *plan HB_UNUSED,
     info[i].syllable() = 0;
 }
 
+
+static void
+preprocess_text_indic (const hb_ot_shape_plan_t *plan,
+		       hb_buffer_t              *buffer,
+		       hb_font_t                *font)
+{
+  _hb_preprocess_text_vowel_constraints (plan, buffer, font);
+}
 
 static bool
 decompose_indic (const hb_ot_shape_normalize_context_t *c,
@@ -1609,13 +1624,13 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_indic =
   override_features_indic,
   data_create_indic,
   data_destroy_indic,
-  nullptr, 
+  preprocess_text_indic,
   nullptr, 
   HB_OT_SHAPE_NORMALIZATION_MODE_COMPOSED_DIACRITICS_NO_SHORT_CIRCUIT,
   decompose_indic,
   compose_indic,
   setup_masks_indic,
-  nullptr, 
+  HB_TAG_NONE, 
   nullptr, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE,
   false, 

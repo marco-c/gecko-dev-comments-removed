@@ -54,7 +54,14 @@ other_features[] =
   HB_TAG('a','b','v','s'),
   HB_TAG('b','l','w','s'),
   HB_TAG('p','s','t','s'),
+};
+static const hb_tag_t
+positioning_features[] =
+{
   
+
+
+
   HB_TAG('d','i','s','t'),
   
 
@@ -73,13 +80,13 @@ setup_syllables (const hb_ot_shape_plan_t *plan,
 		 hb_font_t *font,
 		 hb_buffer_t *buffer);
 static void
-initial_reordering (const hb_ot_shape_plan_t *plan,
-		    hb_font_t *font,
-		    hb_buffer_t *buffer);
+reorder (const hb_ot_shape_plan_t *plan,
+	 hb_font_t *font,
+	 hb_buffer_t *buffer);
 static void
-final_reordering (const hb_ot_shape_plan_t *plan,
-		  hb_font_t *font,
-		  hb_buffer_t *buffer);
+clear_syllables (const hb_ot_shape_plan_t *plan,
+		 hb_font_t *font,
+		 hb_buffer_t *buffer);
 
 static void
 collect_features_myanmar (hb_ot_shape_planner_t *plan)
@@ -89,27 +96,33 @@ collect_features_myanmar (hb_ot_shape_planner_t *plan)
   
   map->add_gsub_pause (setup_syllables);
 
-  map->add_global_bool_feature (HB_TAG('l','o','c','l'));
+  map->enable_feature (HB_TAG('l','o','c','l'));
   
 
-  map->add_global_bool_feature (HB_TAG('c','c','m','p'));
+  map->enable_feature (HB_TAG('c','c','m','p'));
 
 
-  map->add_gsub_pause (initial_reordering);
+  map->add_gsub_pause (reorder);
+
   for (unsigned int i = 0; i < ARRAY_LENGTH (basic_features); i++)
   {
-    map->add_feature (basic_features[i], 1, F_GLOBAL | F_MANUAL_ZWJ);
+    map->enable_feature (basic_features[i], F_MANUAL_ZWJ);
     map->add_gsub_pause (nullptr);
   }
-  map->add_gsub_pause (final_reordering);
+
+  map->add_gsub_pause (clear_syllables);
+
   for (unsigned int i = 0; i < ARRAY_LENGTH (other_features); i++)
-    map->add_feature (other_features[i], 1, F_GLOBAL | F_MANUAL_ZWJ);
+    map->enable_feature (other_features[i], F_MANUAL_ZWJ);
+
+  for (unsigned int i = 0; i < ARRAY_LENGTH (positioning_features); i++)
+    map->enable_feature (positioning_features[i]);
 }
 
 static void
 override_features_myanmar (hb_ot_shape_planner_t *plan)
 {
-  plan->map.add_feature (HB_TAG('l','i','g','a'), 0, F_GLOBAL);
+  plan->map.disable_feature (HB_TAG('l','i','g','a'));
 }
 
 
@@ -261,8 +274,8 @@ initial_reordering_consonant_syllable (hb_buffer_t *buffer,
 }
 
 static void
-initial_reordering_syllable (const hb_ot_shape_plan_t *plan,
-			     hb_face_t *face,
+initial_reordering_syllable (const hb_ot_shape_plan_t *plan HB_UNUSED,
+			     hb_face_t *face HB_UNUSED,
 			     hb_buffer_t *buffer,
 			     unsigned int start, unsigned int end)
 {
@@ -330,57 +343,34 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
     else
       buffer->next_glyph ();
   }
-
   buffer->swap_buffers ();
 }
 
 static void
-initial_reordering (const hb_ot_shape_plan_t *plan,
-		    hb_font_t *font,
-		    hb_buffer_t *buffer)
+reorder (const hb_ot_shape_plan_t *plan,
+	 hb_font_t *font,
+	 hb_buffer_t *buffer)
 {
   insert_dotted_circles (plan, font, buffer);
 
   foreach_syllable (buffer, start, end)
     initial_reordering_syllable (plan, font->face, buffer, start, end);
-}
-
-static void
-final_reordering (const hb_ot_shape_plan_t *plan,
-		  hb_font_t *font HB_UNUSED,
-		  hb_buffer_t *buffer)
-{
-  hb_glyph_info_t *info = buffer->info;
-  unsigned int count = buffer->len;
-
-  
-  for (unsigned int i = 0; i < count; i++)
-    info[i].syllable() = 0;
 
   HB_BUFFER_DEALLOCATE_VAR (buffer, myanmar_category);
   HB_BUFFER_DEALLOCATE_VAR (buffer, myanmar_position);
 }
 
-
-
-
-const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_old =
+static void
+clear_syllables (const hb_ot_shape_plan_t *plan HB_UNUSED,
+		 hb_font_t *font HB_UNUSED,
+		 hb_buffer_t *buffer)
 {
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  nullptr, 
-  HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
-  true, 
-};
+  hb_glyph_info_t *info = buffer->info;
+  unsigned int count = buffer->len;
+  for (unsigned int i = 0; i < count; i++)
+    info[i].syllable() = 0;
+}
+
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
 {
@@ -394,8 +384,30 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
   nullptr, 
   nullptr, 
   setup_masks_myanmar,
-  nullptr, 
+  HB_TAG_NONE, 
   nullptr, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_EARLY,
+  false, 
+};
+
+
+
+
+
+const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_zawgyi =
+{
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  HB_OT_SHAPE_NORMALIZATION_MODE_NONE,
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  HB_TAG_NONE, 
+  nullptr, 
+  HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE,
   false, 
 };

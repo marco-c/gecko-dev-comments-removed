@@ -53,6 +53,7 @@
 
 
 
+
 hb_bool_t
 hb_segment_properties_equal (const hb_segment_properties_t *a,
 			     const hb_segment_properties_t *b)
@@ -183,6 +184,10 @@ hb_buffer_t::shift_forward (unsigned int count)
   {
     
 
+
+
+
+
     memset (info + len, 0, (idx + count - len) * sizeof (info[0]));
   }
   len += count;
@@ -210,23 +215,24 @@ hb_buffer_t::get_scratch_buffer (unsigned int *size)
 
 
 void
-hb_buffer_t::reset (void)
+hb_buffer_t::reset ()
 {
-  if (unlikely (hb_object_is_inert (this)))
+  if (unlikely (hb_object_is_immutable (this)))
     return;
 
   hb_unicode_funcs_destroy (unicode);
   unicode = hb_unicode_funcs_reference (hb_unicode_funcs_get_default ());
   flags = HB_BUFFER_FLAG_DEFAULT;
   replacement = HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT;
+  invisible = 0;
 
   clear ();
 }
 
 void
-hb_buffer_t::clear (void)
+hb_buffer_t::clear ()
 {
-  if (unlikely (hb_object_is_inert (this)))
+  if (unlikely (hb_object_is_immutable (this)))
     return;
 
   hb_segment_properties_t default_props = HB_SEGMENT_PROPERTIES_DEFAULT;
@@ -281,9 +287,9 @@ hb_buffer_t::add_info (const hb_glyph_info_t &glyph_info)
 
 
 void
-hb_buffer_t::remove_output (void)
+hb_buffer_t::remove_output ()
 {
-  if (unlikely (hb_object_is_inert (this)))
+  if (unlikely (hb_object_is_immutable (this)))
     return;
 
   have_output = false;
@@ -294,9 +300,9 @@ hb_buffer_t::remove_output (void)
 }
 
 void
-hb_buffer_t::clear_output (void)
+hb_buffer_t::clear_output ()
 {
-  if (unlikely (hb_object_is_inert (this)))
+  if (unlikely (hb_object_is_immutable (this)))
     return;
 
   have_output = true;
@@ -307,9 +313,9 @@ hb_buffer_t::clear_output (void)
 }
 
 void
-hb_buffer_t::clear_positions (void)
+hb_buffer_t::clear_positions ()
 {
-  if (unlikely (hb_object_is_inert (this)))
+  if (unlikely (hb_object_is_immutable (this)))
     return;
 
   have_output = false;
@@ -322,7 +328,7 @@ hb_buffer_t::clear_positions (void)
 }
 
 void
-hb_buffer_t::swap_buffers (void)
+hb_buffer_t::swap_buffers ()
 {
   if (unlikely (!successful)) return;
 
@@ -354,6 +360,8 @@ hb_buffer_t::replace_glyphs (unsigned int num_in,
 {
   if (unlikely (!make_room_for (num_in, num_out))) return;
 
+  assert (idx + num_in <= len);
+
   merge_clusters (idx, idx + num_in);
 
   hb_glyph_info_t orig_info = info[idx];
@@ -367,37 +375,6 @@ hb_buffer_t::replace_glyphs (unsigned int num_in,
 
   idx  += num_in;
   out_len += num_out;
-}
-
-void
-hb_buffer_t::output_glyph (hb_codepoint_t glyph_index)
-{
-  if (unlikely (!make_room_for (0, 1))) return;
-
-  out_info[out_len] = info[idx];
-  out_info[out_len].codepoint = glyph_index;
-
-  out_len++;
-}
-
-void
-hb_buffer_t::output_info (const hb_glyph_info_t &glyph_info)
-{
-  if (unlikely (!make_room_for (0, 1))) return;
-
-  out_info[out_len] = glyph_info;
-
-  out_len++;
-}
-
-void
-hb_buffer_t::copy_glyph (void)
-{
-  if (unlikely (!make_room_for (0, 1))) return;
-
-  out_info[out_len] = info[idx];
-
-  out_len++;
 }
 
 bool
@@ -430,7 +407,13 @@ hb_buffer_t::move_to (unsigned int i)
 
     
 
-    if (unlikely (idx < count && !shift_forward (count + 32))) return false;
+
+
+
+
+
+
+    if (unlikely (idx < count && !shift_forward (count + 0))) return false;
 
     assert (idx >= count);
 
@@ -440,19 +423,6 @@ hb_buffer_t::move_to (unsigned int i)
   }
 
   return true;
-}
-
-void
-hb_buffer_t::replace_glyph (hb_codepoint_t glyph_index)
-{
-  if (unlikely (out_info != info || out_len != idx)) {
-    if (unlikely (!make_room_for (1, 1))) return;
-    out_info[out_len] = info[idx];
-  }
-  out_info[out_len].codepoint = glyph_index;
-
-  idx++;
-  out_len++;
 }
 
 
@@ -510,7 +480,7 @@ hb_buffer_t::reverse_range (unsigned int start,
 }
 
 void
-hb_buffer_t::reverse (void)
+hb_buffer_t::reverse ()
 {
   if (unlikely (!len))
     return;
@@ -519,7 +489,7 @@ hb_buffer_t::reverse (void)
 }
 
 void
-hb_buffer_t::reverse_clusters (void)
+hb_buffer_t::reverse_clusters ()
 {
   unsigned int i, start, count, last_cluster;
 
@@ -666,7 +636,7 @@ hb_buffer_t::unsafe_to_break_from_outbuffer (unsigned int start, unsigned int en
 }
 
 void
-hb_buffer_t::guess_segment_properties (void)
+hb_buffer_t::guess_segment_properties ()
 {
   assert (content_type == HB_BUFFER_CONTENT_TYPE_UNICODE ||
 	  (!len && content_type == HB_BUFFER_CONTENT_TYPE_INVALID));
@@ -709,6 +679,7 @@ DEFINE_NULL_INSTANCE (hb_buffer_t) =
   HB_BUFFER_FLAG_DEFAULT,
   HB_BUFFER_CLUSTER_LEVEL_DEFAULT,
   HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT,
+  0, 
   HB_BUFFER_SCRATCH_FLAG_DEFAULT,
   HB_BUFFER_MAX_LEN_DEFAULT,
   HB_BUFFER_MAX_OPS_DEFAULT,
@@ -738,7 +709,7 @@ DEFINE_NULL_INSTANCE (hb_buffer_t) =
 
 
 hb_buffer_t *
-hb_buffer_create (void)
+hb_buffer_create ()
 {
   hb_buffer_t *buffer;
 
@@ -763,7 +734,7 @@ hb_buffer_create (void)
 
 
 hb_buffer_t *
-hb_buffer_get_empty (void)
+hb_buffer_get_empty ()
 {
   return const_cast<hb_buffer_t *> (&Null(hb_buffer_t));
 }
@@ -902,7 +873,7 @@ void
 hb_buffer_set_unicode_funcs (hb_buffer_t        *buffer,
 			     hb_unicode_funcs_t *unicode_funcs)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   if (!unicode_funcs)
@@ -949,7 +920,7 @@ hb_buffer_set_direction (hb_buffer_t    *buffer,
 			 hb_direction_t  direction)
 
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->props.direction = direction;
@@ -993,7 +964,7 @@ void
 hb_buffer_set_script (hb_buffer_t *buffer,
 		      hb_script_t  script)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->props.script = script;
@@ -1037,7 +1008,7 @@ void
 hb_buffer_set_language (hb_buffer_t   *buffer,
 			hb_language_t  language)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->props.language = language;
@@ -1075,7 +1046,7 @@ void
 hb_buffer_set_segment_properties (hb_buffer_t *buffer,
 				  const hb_segment_properties_t *props)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->props = *props;
@@ -1111,7 +1082,7 @@ void
 hb_buffer_set_flags (hb_buffer_t       *buffer,
 		     hb_buffer_flags_t  flags)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->flags = flags;
@@ -1147,7 +1118,7 @@ void
 hb_buffer_set_cluster_level (hb_buffer_t       *buffer,
 		     hb_buffer_cluster_level_t  cluster_level)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->cluster_level = cluster_level;
@@ -1186,7 +1157,7 @@ void
 hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
 				     hb_codepoint_t  replacement)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   buffer->replacement = replacement;
@@ -1207,6 +1178,46 @@ hb_codepoint_t
 hb_buffer_get_replacement_codepoint (hb_buffer_t    *buffer)
 {
   return buffer->replacement;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_buffer_set_invisible_glyph (hb_buffer_t    *buffer,
+			       hb_codepoint_t  invisible)
+{
+  if (unlikely (hb_object_is_immutable (buffer)))
+    return;
+
+  buffer->invisible = invisible;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+hb_codepoint_t
+hb_buffer_get_invisible_glyph (hb_buffer_t    *buffer)
+{
+  return buffer->invisible;
 }
 
 
@@ -1318,7 +1329,7 @@ hb_bool_t
 hb_buffer_set_length (hb_buffer_t  *buffer,
 		      unsigned int  length)
 {
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return length == 0;
 
   if (!buffer->ensure (length))
@@ -1502,6 +1513,8 @@ hb_buffer_reverse_clusters (hb_buffer_t *buffer)
 
 
 
+
+
 void
 hb_buffer_guess_segment_properties (hb_buffer_t *buffer)
 {
@@ -1522,7 +1535,7 @@ hb_buffer_add_utf (hb_buffer_t  *buffer,
   assert (buffer->content_type == HB_BUFFER_CONTENT_TYPE_UNICODE ||
 	  (!buffer->len && buffer->content_type == HB_BUFFER_CONTENT_TYPE_INVALID));
 
-  if (unlikely (hb_object_is_inert (buffer)))
+  if (unlikely (hb_object_is_immutable (buffer)))
     return;
 
   if (text_length == -1)
@@ -1653,7 +1666,7 @@ hb_buffer_add_utf32 (hb_buffer_t    *buffer,
 		     unsigned int    item_offset,
 		     int             item_length)
 {
-  hb_buffer_add_utf<hb_utf32_t<> > (buffer, text, text_length, item_offset, item_length);
+  hb_buffer_add_utf<hb_utf32_t> (buffer, text, text_length, item_offset, item_length);
 }
 
 
@@ -1714,7 +1727,7 @@ hb_buffer_add_codepoints (hb_buffer_t          *buffer,
 			  unsigned int          item_offset,
 			  int                   item_length)
 {
-  hb_buffer_add_utf<hb_utf32_t<false> > (buffer, text, text_length, item_offset, item_length);
+  hb_buffer_add_utf<hb_utf32_novalidate_t> (buffer, text, text_length, item_offset, item_length);
 }
 
 
@@ -1879,6 +1892,10 @@ hb_buffer_t::sort (unsigned int start, unsigned int end, int(*compar)(const hb_g
     }
   }
 }
+
+
+
+
 
 
 
