@@ -3108,6 +3108,18 @@ public:
                                     const mozilla::dom::Sequence<JSObject*>& aTransfer,
                                     JS::MutableHandle<JS::Value> aValue);
 
+  
+
+
+
+
+
+
+
+
+  static bool
+  IsUAWidgetEnabled() { return sIsShadowDOMEnabled && sIsUAWidgetEnabled; }
+
   static bool
   IsShadowDOMEnabled() { return sIsShadowDOMEnabled; }
 
@@ -3427,6 +3439,7 @@ private:
   static bool sIsUpgradableDisplayContentPrefEnabled;
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
+  static bool sIsUAWidgetEnabled;
   static bool sIsShadowDOMEnabled;
   static bool sIsCustomElementsEnabled;
   static bool sSendPerformanceTimingNotifications;
