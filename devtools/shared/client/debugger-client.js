@@ -326,16 +326,16 @@ DebuggerClient.prototype = {
 
 
 
-  listTabs: function(options, onResponse) {
-    return this.mainRoot.listTabs(options, onResponse);
+  listTabs: function(options) {
+    return this.mainRoot.listTabs(options);
   },
 
   
 
 
 
-  listAddons: function(onResponse) {
-    return this.mainRoot.listAddons(onResponse);
+  listAddons: function() {
+    return this.mainRoot.listAddons();
   },
 
   getTab: function(filter) {
