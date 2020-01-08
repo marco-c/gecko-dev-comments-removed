@@ -163,7 +163,7 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
 
   if (result.mAsyncPaint) {
-    result.mAsyncTask = new PaintTask();
+    result.mAsyncTask.reset(new PaintTask());
   }
 
   

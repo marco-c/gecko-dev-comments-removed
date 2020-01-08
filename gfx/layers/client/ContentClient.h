@@ -25,6 +25,7 @@
 #include "mozilla/layers/PaintThread.h"  
 #include "mozilla/Maybe.h"              
 #include "mozilla/mozalloc.h"           
+#include "mozilla/UniquePtr.h"          
 #include "ReadbackProcessor.h"          
 #include "nsCOMPtr.h"                   
 #include "nsPoint.h"                    
@@ -117,7 +118,7 @@ public:
     DrawRegionClip mClip;
     gfxContentType mContentType;
     bool mAsyncPaint;
-    RefPtr<PaintTask> mAsyncTask;
+    UniquePtr<PaintTask> mAsyncTask;
   };
 
   enum {

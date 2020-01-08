@@ -14,6 +14,7 @@
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/LayersMessages.h"      
 #include "mozilla/layers/TiledContentClient.h"  
+#include "mozilla/UniquePtr.h"                  
 #include "TiledLayerBuffer.h"                   
 
 namespace mozilla {
@@ -121,8 +122,8 @@ private:
 
   
   
-  std::vector<gfx::Tile> mPaintTiles;
-  std::vector<RefPtr<PaintTask>> mPaintTasks;
+  AutoTArray<gfx::Tile, 4> mPaintTiles;
+  AutoTArray<UniquePtr<PaintTask>, 4> mPaintTasks;
 
   
 

@@ -34,18 +34,15 @@ namespace layers {
 
 
 class PaintTask {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PaintTask)
 public:
   PaintTask() {}
+  ~PaintTask() {}
 
   void DropTextureClients();
 
   RefPtr<gfx::DrawTarget> mTarget;
   RefPtr<gfx::DrawTargetCapture> mCapture;
   AutoTArray<RefPtr<TextureClient>, 4> mClients;
-
-protected:
-  virtual ~PaintTask() {}
 };
 
 class CompositorBridgeChild;
@@ -73,7 +70,7 @@ public:
 
   
   
-  void QueuePaintTask(PaintTask* aTask);
+  void QueuePaintTask(UniquePtr<PaintTask>&& aTask);
 
   
   
