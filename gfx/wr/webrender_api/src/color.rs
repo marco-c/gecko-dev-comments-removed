@@ -39,7 +39,7 @@ impl PremultipliedColorF {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ColorF {
     pub r: f32,
     pub g: f32,
@@ -112,7 +112,7 @@ impl Hash for PremultipliedColorF {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, MallocSizeOf, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, PartialEq, PartialOrd, Ord, Serialize)]
 pub struct ColorU {
     pub r: u8,
     pub g: u8,

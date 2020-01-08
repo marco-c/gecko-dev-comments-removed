@@ -1113,7 +1113,7 @@ pub struct RenderTaskCacheEntry {
     pub handle: TextureCacheHandle,
 }
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Debug)]
 pub enum RenderTaskCacheMarker {}
 
 

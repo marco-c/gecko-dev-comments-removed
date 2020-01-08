@@ -1821,13 +1821,6 @@ impl ResourceCache {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
     pub fn report_memory(&self, op: VoidPtrToSizeFn) -> MemoryReport {
         let mut report = MemoryReport::default();
 

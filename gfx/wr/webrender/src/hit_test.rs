@@ -3,19 +3,19 @@
 
 
 use api::{BorderRadius, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag, LayoutPoint};
-use api::{LayoutPrimitiveInfo, LayoutRect, PipelineId, WorldPoint};
+use api::{LayoutPrimitiveInfo, LayoutRect, PipelineId, VoidPtrToSizeFn, WorldPoint};
 use clip::{ClipDataStore, ClipNode, ClipItem, ClipStore};
 use clip::{rounded_rectangle_contains_point};
 use clip_scroll_tree::{SpatialNodeIndex, ClipScrollTree};
 use internal_types::FastHashMap;
 use prim_store::ScrollNodeAndClipChain;
+use std::os::raw::c_void;
 use std::u32;
 use util::LayoutToWorldFastTransform;
 
 
 
 
-#[derive(MallocSizeOf)]
 pub struct HitTestSpatialNode {
     
     pipeline_id: PipelineId,
@@ -27,7 +27,6 @@ pub struct HitTestSpatialNode {
     world_viewport_transform: LayoutToWorldFastTransform,
 }
 
-#[derive(MallocSizeOf)]
 pub struct HitTestClipNode {
     
     
@@ -65,21 +64,20 @@ impl HitTestClipNode {
 
 
 
-#[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct HitTestClipChainId(u32);
 
 impl HitTestClipChainId {
     pub const NONE: Self = HitTestClipChainId(u32::MAX);
 }
 
-#[derive(MallocSizeOf)]
 pub struct HitTestClipChainNode {
     pub region: HitTestClipNode,
     pub spatial_node_index: SpatialNodeIndex,
     pub parent_clip_chain_id: HitTestClipChainId,
 }
 
-#[derive(Clone, MallocSizeOf)]
+#[derive(Clone)]
 pub struct HitTestingItem {
     rect: LayoutRect,
     clip_rect: LayoutRect,
@@ -98,10 +96,9 @@ impl HitTestingItem {
     }
 }
 
-#[derive(Clone, MallocSizeOf)]
+#[derive(Clone)]
 pub struct HitTestingRun(pub Vec<HitTestingItem>, pub ScrollNodeAndClipChain);
 
-#[derive(MallocSizeOf)]
 enum HitTestRegion {
     Invalid,
     Rectangle(LayoutRect, ClipMode),
@@ -124,7 +121,6 @@ impl HitTestRegion {
     }
 }
 
-#[derive(MallocSizeOf)]
 pub struct HitTester {
     runs: Vec<HitTestingRun>,
     spatial_nodes: Vec<HitTestSpatialNode>,
@@ -375,15 +371,28 @@ impl HitTester {
     pub fn get_pipeline_root(&self, pipeline_id: PipelineId) -> &HitTestSpatialNode {
         &self.spatial_nodes[self.pipeline_root_nodes[&pipeline_id].0 as usize]
     }
+
+    
+    pub fn malloc_size_of(&self, op: VoidPtrToSizeFn) -> usize {
+        let mut size = 0;
+        unsafe {
+            size += op(self.runs.as_ptr() as *const c_void);
+            size += op(self.spatial_nodes.as_ptr() as *const c_void);
+            size += op(self.clip_chains.as_ptr() as *const c_void);
+            
+            
+            
+        }
+        size
+    }
 }
 
-#[derive(Clone, Copy, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum ClippedIn {
     ClippedIn,
     NotClippedIn,
 }
 
-#[derive(MallocSizeOf)]
 pub struct HitTest {
     pipeline_id: Option<PipelineId>,
     point: WorldPoint,

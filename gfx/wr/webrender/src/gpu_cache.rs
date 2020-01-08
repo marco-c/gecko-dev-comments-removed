@@ -25,6 +25,7 @@
 
 
 use api::{DebugFlags, DocumentId, PremultipliedColorF, IdNamespace, TexelRect};
+use api::{VoidPtrToSizeFn};
 use euclid::TypedRect;
 use internal_types::{FastHashMap};
 use profiler::GpuCacheProfileCounters;
@@ -33,6 +34,7 @@ use renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use std::{mem, u16, u32};
 use std::num::NonZeroU32;
 use std::ops::Add;
+use std::os::raw::c_void;
 use std::time::{Duration, Instant};
 
 
@@ -53,7 +55,7 @@ const RECLAIM_THRESHOLD: f32 = 0.2;
 
 const RECLAIM_DELAY_S: u64 = 5;
 
-#[derive(Debug, Copy, Clone, Eq, MallocSizeOf, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Epoch(u32);
@@ -64,7 +66,7 @@ impl Epoch {
     }
 }
 
-#[derive(Debug, Copy, Clone, MallocSizeOf)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct CacheLocation {
@@ -73,7 +75,7 @@ struct CacheLocation {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf)]
+#[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuBlockData {
@@ -129,7 +131,7 @@ pub trait ToGpuBlocks {
 }
 
 
-#[derive(Debug, Copy, Clone, MallocSizeOf)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuCacheHandle {
@@ -145,7 +147,7 @@ impl GpuCacheHandle {
 
 
 
-#[derive(Copy, Debug, Clone, MallocSizeOf, Eq, PartialEq)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuCacheAddress {
@@ -181,7 +183,7 @@ impl Add<usize> for GpuCacheAddress {
 }
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Block {
@@ -233,7 +235,7 @@ impl Block {
 
 
 
-#[derive(Debug, Copy, Clone, MallocSizeOf)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct BlockIndex(NonZeroU32);
@@ -252,7 +254,6 @@ impl BlockIndex {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 struct Row {
     
     
@@ -275,7 +276,6 @@ impl Row {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 pub enum GpuCacheUpdate {
     Copy {
         block_index: usize,
@@ -286,7 +286,6 @@ pub enum GpuCacheUpdate {
 
 
 
-#[derive(MallocSizeOf)]
 pub enum GpuCacheDebugCmd {
     
     Alloc(GpuCacheDebugChunk),
@@ -294,7 +293,7 @@ pub enum GpuCacheDebugCmd {
     Free(GpuCacheAddress),
 }
 
-#[derive(Clone, MallocSizeOf)]
+#[derive(Clone)]
 pub struct GpuCacheDebugChunk {
     pub address: GpuCacheAddress,
     pub size: usize,
@@ -303,7 +302,6 @@ pub struct GpuCacheDebugChunk {
 #[must_use]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 pub struct GpuCacheUpdateList {
     
     pub frame_id: FrameId,
@@ -327,7 +325,6 @@ pub struct GpuCacheUpdateList {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 struct FreeBlockLists {
     free_list_1: Option<BlockIndex>,
     free_list_2: Option<BlockIndex>,
@@ -395,7 +392,6 @@ impl FreeBlockLists {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 struct Texture {
     
     height: i32,
@@ -458,6 +454,18 @@ impl Texture {
             debug_commands: Vec::new(),
             debug_flags,
         }
+    }
+
+    
+    fn malloc_size_of(&self, op: VoidPtrToSizeFn) -> usize {
+        let mut size = 0;
+        unsafe {
+            size += op(self.blocks.as_ptr() as *const c_void);
+            size += op(self.rows.as_ptr() as *const c_void);
+            size += op(self.pending_blocks.as_ptr() as *const c_void);
+            size += op(self.updates.as_ptr() as *const c_void);
+        }
+        size
     }
 
     
@@ -664,7 +672,6 @@ impl<'a> Drop for GpuDataRequest<'a> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 pub struct GpuCache {
     
     now: FrameStamp,
@@ -857,6 +864,11 @@ impl GpuCache {
         debug_assert_eq!(block.epoch, location.epoch);
         debug_assert_eq!(block.last_access_time, self.now.frame_id());
         block.address
+    }
+
+    
+    pub fn malloc_size_of(&self, op: VoidPtrToSizeFn) -> usize {
+        self.texture.malloc_size_of(op)
     }
 }
 
