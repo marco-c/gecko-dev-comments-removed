@@ -1508,17 +1508,19 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   TimeStamp start = TimeStamp::Now();
   mAsyncImageManager->SetCompositionTime(start);
 
-  {
-    
-    
-    
-    
-    
-    
-    wr::TransactionBuilder txn;
-    mAsyncImageManager->ApplyAsyncImagesOfImageBridge(txn);
-    mApi->SendTransaction(txn);
-  }
+  
+  
+  
+  wr::TransactionBuilder fastTxn( false);
+
+  
+  wr::TransactionBuilder sceneBuilderTxn;
+  wr::AutoTransactionSender sender(mApi, &sceneBuilderTxn);
+
+  
+  
+  
+  mAsyncImageManager->ApplyAsyncImagesOfImageBridge(sceneBuilderTxn, fastTxn);
 
   if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
     
@@ -1528,16 +1530,12 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   }
 
   if (!mAsyncImageManager->GetAndResetWillGenerateFrame() &&
+      fastTxn.IsEmpty() &&
       !mForceRendering) {
     
     mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
-
-  
-  
-  
-  wr::TransactionBuilder txn( false);
 
   nsTArray<wr::WrOpacityProperty> opacityArray;
   nsTArray<wr::WrTransformProperty> transformArray;
@@ -1547,7 +1545,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   }
   
   
-  txn.UpdateDynamicProperties(opacityArray, transformArray);
+  fastTxn.UpdateDynamicProperties(opacityArray, transformArray);
 
   SetAPZSampleTime();
 
@@ -1558,9 +1556,9 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   mApi->SetFrameStartTime(startTime);
 #endif
 
-  txn.GenerateFrame();
+  fastTxn.GenerateFrame();
 
-  mApi->SendTransaction(txn);
+  mApi->SendTransaction(fastTxn);
 }
 
 void
