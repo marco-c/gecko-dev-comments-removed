@@ -45,7 +45,7 @@ typedef uint32_t SuspendTypes;
 
 namespace mozilla {
 class ThrottledEventQueue;
-class AutoplayRequest;
+class AutoplayPermissionManager;
 namespace dom {
 class AudioContext;
 class ClientInfo;
@@ -627,7 +627,8 @@ public:
 
   
   
-  already_AddRefed<mozilla::AutoplayRequest> GetAutoplayRequest();
+  already_AddRefed<mozilla::AutoplayPermissionManager>
+  GetAutoplayPermissionManager();
 
 protected:
   void CreatePerformanceObjectIfNeeded();
@@ -715,7 +716,7 @@ protected:
   
   
   
-  RefPtr<mozilla::AutoplayRequest> mAutoplayRequest;
+  RefPtr<mozilla::AutoplayPermissionManager> mAutoplayPermissionManager;
 
   
   

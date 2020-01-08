@@ -1,0 +1,57 @@
+
+
+
+
+
+
+#ifndef AutoplayPermissionRequest_h_
+#define AutoplayPermissionRequest_h_
+
+#include "nsGlobalWindowInner.h"
+#include "nsISupportsImpl.h"
+#include "nsContentPermissionHelper.h"
+
+namespace mozilla {
+
+class AutoplayPermissionManager;
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AutoplayPermissionRequest final : public nsIContentPermissionRequest
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTPERMISSIONREQUEST
+
+  static already_AddRefed<AutoplayPermissionRequest> Create(
+    nsGlobalWindowInner* aWindow,
+    AutoplayPermissionManager* aManager);
+
+private:
+  AutoplayPermissionRequest(AutoplayPermissionManager* aManager,
+                            nsGlobalWindowInner* aWindow,
+                            nsIPrincipal* aNodePrincipal,
+                            nsIEventTarget* aMainThreadTarget);
+  ~AutoplayPermissionRequest();
+
+  WeakPtr<AutoplayPermissionManager> mManager;
+
+  nsWeakPtr mWindow;
+  nsCOMPtr<nsIPrincipal> mNodePrincipal;
+  nsCOMPtr<nsIEventTarget> mMainThreadTarget;
+  nsCOMPtr<nsIContentPermissionRequester> mRequester;
+};
+
+} 
+
+#endif 

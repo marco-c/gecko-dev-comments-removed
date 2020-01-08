@@ -13,7 +13,7 @@ class nsIDocument;
 
 namespace mozilla {
 
-class AutoplayRequest;
+class AutoplayPermissionManager;
 
 namespace dom {
 
@@ -50,7 +50,7 @@ public:
 
   
   
-  static already_AddRefed<AutoplayRequest> RequestFor(
+  static already_AddRefed<AutoplayPermissionManager> RequestFor(
     const nsIDocument& aDocument);
 };
 
