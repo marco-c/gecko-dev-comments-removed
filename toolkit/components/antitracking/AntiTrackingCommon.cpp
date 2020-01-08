@@ -67,7 +67,8 @@ GetParentPrincipalAndTrackingOrigin(nsGlobalWindowInner* a3rdPartyTrackingWindow
 
   nsIDocument* doc = a3rdPartyTrackingWindow->GetDocument();
   
-  if (doc && (doc->GetSandboxFlags() & SANDBOXED_STORAGE_ACCESS)) {
+  if (doc && ((doc->GetSandboxFlags() & SANDBOXED_STORAGE_ACCESS) != 0 ||
+              nsContentUtils::IsInPrivateBrowsing(doc))) {
     return false;
   }
 
