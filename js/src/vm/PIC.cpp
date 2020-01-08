@@ -26,14 +26,16 @@ js::ForOfPIC::Chain::initialize(JSContext* cx)
 
     
     RootedNativeObject arrayProto(cx, GlobalObject::getOrCreateArrayPrototype(cx, cx->global()));
-    if (!arrayProto)
+    if (!arrayProto) {
         return false;
+    }
 
     
     RootedNativeObject arrayIteratorProto(cx,
         GlobalObject::getOrCreateArrayIteratorPrototype(cx, cx->global()));
-    if (!arrayIteratorProto)
+    if (!arrayIteratorProto) {
         return false;
+    }
 
     
     
@@ -47,29 +49,35 @@ js::ForOfPIC::Chain::initialize(JSContext* cx)
 
     
     Shape* iterShape = arrayProto->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator));
-    if (!iterShape || !iterShape->isDataProperty())
+    if (!iterShape || !iterShape->isDataProperty()) {
         return true;
+    }
 
     
     Value iterator = arrayProto->getSlot(iterShape->slot());
     JSFunction* iterFun;
-    if (!IsFunctionObject(iterator, &iterFun))
+    if (!IsFunctionObject(iterator, &iterFun)) {
         return true;
-    if (!IsSelfHostedFunctionWithName(iterFun, cx->names().ArrayValues))
+    }
+    if (!IsSelfHostedFunctionWithName(iterFun, cx->names().ArrayValues)) {
         return true;
+    }
 
     
     Shape* nextShape = arrayIteratorProto->lookup(cx, cx->names().next);
-    if (!nextShape || !nextShape->isDataProperty())
+    if (!nextShape || !nextShape->isDataProperty()) {
         return true;
+    }
 
     
     Value next = arrayIteratorProto->getSlot(nextShape->slot());
     JSFunction* nextFun;
-    if (!IsFunctionObject(next, &nextFun))
+    if (!IsFunctionObject(next, &nextFun)) {
         return true;
-    if (!IsSelfHostedFunctionWithName(nextFun, cx->names().ArrayIteratorNext))
+    }
+    if (!IsSelfHostedFunctionWithName(nextFun, cx->names().ArrayIteratorNext)) {
         return true;
+    }
 
     disabled_ = false;
     arrayProtoShape_ = arrayProto->lastProperty();
@@ -90,28 +98,32 @@ js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bo
 
     if (!initialized_) {
         
-        if (!initialize(cx))
+        if (!initialize(cx)) {
             return false;
+        }
 
     } else if (!disabled_ && !isArrayStateStillSane()) {
         
         reset();
 
-        if (!initialize(cx))
+        if (!initialize(cx)) {
             return false;
+        }
     }
     MOZ_ASSERT(initialized_);
 
     
-    if (disabled_)
+    if (disabled_) {
         return true;
+    }
 
     
     MOZ_ASSERT(isArrayStateStillSane());
 
     
-    if (array->staticPrototype() != arrayProto_)
+    if (array->staticPrototype() != arrayProto_) {
         return true;
+    }
 
     
     if (hasMatchingStub(array)) {
@@ -120,20 +132,23 @@ js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bo
     }
 
     
-    if (array->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator)))
+    if (array->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator))) {
         return true;
+    }
 
     
     
     
-    if (numStubs() >= MAX_STUBS)
+    if (numStubs() >= MAX_STUBS) {
         eraseChain();
+    }
 
     
     RootedShape shape(cx, array->lastProperty());
     Stub* stub = cx->new_<Stub>(shape);
-    if (!stub)
+    if (!stub) {
         return false;
+    }
 
     
     addStub(stub);
@@ -150,8 +165,9 @@ js::ForOfPIC::Chain::hasMatchingStub(ArrayObject* obj)
 
     
     for (Stub* stub = stubs(); stub != nullptr; stub = stub->next()) {
-        if (stub->shape() == obj->shape())
+        if (stub->shape() == obj->shape()) {
             return true;
+        }
     }
 
     return false;
@@ -161,13 +177,15 @@ bool
 js::ForOfPIC::Chain::isArrayStateStillSane()
 {
     
-    if (arrayProto_->lastProperty() != arrayProtoShape_)
+    if (arrayProto_->lastProperty() != arrayProtoShape_) {
         return false;
+    }
 
     
     
-    if (arrayProto_->getSlot(arrayProtoIteratorSlot_) != canonicalIteratorFunc_)
+    if (arrayProto_->getSlot(arrayProtoIteratorSlot_) != canonicalIteratorFunc_) {
         return false;
+    }
 
     
     return isArrayNextStillSane();
@@ -217,8 +235,9 @@ js::ForOfPIC::Chain::eraseChain()
 void
 js::ForOfPIC::Chain::trace(JSTracer* trc)
 {
-    if (!initialized_ || disabled_)
+    if (!initialized_ || disabled_) {
         return;
+    }
 
     TraceEdge(trc, &arrayProto_, "ForOfPIC Array.prototype.");
     TraceEdge(trc, &arrayIteratorProto_, "ForOfPIC ArrayIterator.prototype.");
@@ -230,8 +249,9 @@ js::ForOfPIC::Chain::trace(JSTracer* trc)
     TraceEdge(trc, &canonicalNextFunc_, "ForOfPIC ArrayIterator.prototype.next builtin.");
 
     
-    while (stubs_)
+    while (stubs_) {
         removeStub(stubs_, nullptr);
+    }
 }
 
 void
@@ -250,15 +270,17 @@ static void
 ForOfPIC_finalize(FreeOp* fop, JSObject* obj)
 {
     MOZ_ASSERT(fop->maybeOnHelperThread());
-    if (ForOfPIC::Chain* chain = ForOfPIC::fromJSObject(&obj->as<NativeObject>()))
+    if (ForOfPIC::Chain* chain = ForOfPIC::fromJSObject(&obj->as<NativeObject>())) {
         chain->sweep(fop);
+    }
 }
 
 static void
 ForOfPIC_traceObject(JSTracer* trc, JSObject* obj)
 {
-    if (ForOfPIC::Chain* chain = ForOfPIC::fromJSObject(&obj->as<NativeObject>()))
+    if (ForOfPIC::Chain* chain = ForOfPIC::fromJSObject(&obj->as<NativeObject>())) {
         chain->trace(trc);
+    }
 }
 
 static const ClassOps ForOfPICClassOps = {
@@ -282,11 +304,13 @@ js::ForOfPIC::createForOfPICObject(JSContext* cx, Handle<GlobalObject*> global)
 {
     cx->check(global);
     NativeObject* obj = NewNativeObjectWithGivenProto(cx, &ForOfPIC::class_, nullptr);
-    if (!obj)
+    if (!obj) {
         return nullptr;
+    }
     ForOfPIC::Chain* chain = cx->new_<ForOfPIC::Chain>();
-    if (!chain)
+    if (!chain) {
         return nullptr;
+    }
     obj->setPrivate(chain);
     return obj;
 }
@@ -297,7 +321,8 @@ js::ForOfPIC::create(JSContext* cx)
     MOZ_ASSERT(!cx->global()->getForOfPICObject());
     Rooted<GlobalObject*> global(cx, cx->global());
     NativeObject* obj = GlobalObject::getOrCreateForOfPICObject(cx, global);
-    if (!obj)
+    if (!obj) {
         return nullptr;
+    }
     return fromJSObject(obj);
 }
