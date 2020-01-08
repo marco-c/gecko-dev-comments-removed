@@ -384,7 +384,9 @@ struct ObjectGroupRealm::NewEntry {
     JSObject* associated;
 
     Lookup(const Class* clasp, TaggedProto proto, JSObject* associated)
-        : clasp(clasp), proto(proto), associated(associated) {}
+        : clasp(clasp), proto(proto), associated(associated) {
+      MOZ_ASSERT((associated && associated->is<JSFunction>()) == !clasp);
+    }
 
     explicit Lookup(const NewEntry& entry)
         : clasp(entry.group.unbarrieredGet()->clasp()),
@@ -494,8 +496,8 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
   
   MOZ_ASSERT_IF(!clasp, !!associated);
 
-  if (associated && !associated->is<TypeDescr>()) {
-    MOZ_ASSERT(!clasp);
+  if (associated) {
+    MOZ_ASSERT_IF(!associated->is<TypeDescr>(), !clasp);
     if (associated->is<JSFunction>()) {
       
       
@@ -508,7 +510,13 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
                          associated->as<JSFunction>().realm() != cx->realm())) {
         associated = nullptr;
       }
-
+    } else if (associated->is<TypeDescr>()) {
+      if (!clasp) {
+        
+        
+        
+        associated = nullptr;
+      }
     } else {
       associated = nullptr;
     }
