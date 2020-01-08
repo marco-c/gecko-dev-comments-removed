@@ -15,7 +15,7 @@ import sys
 from automation import Automation
 from mozdevice import ADBTimeoutError
 from mozlog import get_default_logger
-from mozscreenshot import dump_screen
+from mozscreenshot import dump_screen, dump_device_screen
 import mozcrash
 
 
@@ -410,8 +410,11 @@ class RemoteAutomation(Automation):
             return status
 
         def kill(self, stagedShutdown=False):
-            if self.utilityPath:
-                
+            
+            
+            if not self.device._device_serial.startswith('emulator-'):
+                dump_device_screen(self.device, get_default_logger())
+            elif self.utilityPath:
                 
                 
                 
