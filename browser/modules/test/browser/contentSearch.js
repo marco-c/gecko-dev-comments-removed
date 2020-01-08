@@ -23,58 +23,11 @@ addMessageListener(TEST_MSG, msg => {
   (async function() {
     
     
-    let loadPromise;
-    if (msg.data.type == "Search") {
-      loadPromise = waitForLoadAndStopIt(msg.data.expectedURL);
-    }
 
     content.dispatchEvent(
       new content.CustomEvent(CLIENT_EVENT_TYPE, {
         detail: Cu.cloneInto(msg.data, content),
       })
     );
-
-    if (msg.data.type == "Search") {
-      let url = await loadPromise;
-
-      sendAsyncMessage(TEST_MSG, {
-        type: "loadStopped",
-        url,
-      });
-    }
   })();
 });
-
-
-
-
-var webProgressListener;
-
-function waitForLoadAndStopIt(expectedURL) {
-  return new Promise(resolve => {
-    let webProgress = content.docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                      .getInterface(Ci.nsIWebProgress);
-    webProgressListener = {
-      onStateChange(webProg, req, flags, status) {
-        if (req instanceof Ci.nsIChannel) {
-          let url = req.originalURI.spec;
-          dump("waitForLoadAndStopIt: onStateChange " + url + "\n");
-          let docStart = Ci.nsIWebProgressListener.STATE_IS_DOCUMENT |
-                         Ci.nsIWebProgressListener.STATE_START;
-          if ((flags & docStart) && webProg.isTopLevel && url == expectedURL) {
-            webProgress.removeProgressListener(webProgressListener);
-            webProgressListener = null;
-            req.cancel(Cr.NS_ERROR_FAILURE);
-            resolve(url);
-          }
-        }
-      },
-      QueryInterface: ChromeUtils.generateQI([
-        Ci.nsIWebProgressListener,
-        Ci.nsISupportsWeakReference,
-      ]),
-    };
-    webProgress.addProgressListener(webProgressListener, Ci.nsIWebProgress.NOTIFY_ALL);
-    dump("waitForLoadAndStopIt: Waiting for URL to load: " + expectedURL + "\n");
-  });
-}
