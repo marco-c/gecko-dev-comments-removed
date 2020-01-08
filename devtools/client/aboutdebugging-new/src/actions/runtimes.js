@@ -26,6 +26,7 @@ const {
   DISCONNECT_RUNTIME_FAILURE,
   DISCONNECT_RUNTIME_START,
   DISCONNECT_RUNTIME_SUCCESS,
+  PAGE_TYPES,
   REMOTE_RUNTIMES_UPDATED,
   RUNTIME_PREFERENCE,
   RUNTIMES,
@@ -267,13 +268,27 @@ function updateUSBRuntimes(adbRuntimes) {
   return updateRemoteRuntimes(runtimes, RUNTIMES.USB);
 }
 
+
+
+
+
+
+
+function _isRuntimeValid(runtime, runtimes) {
+  const isRuntimeAvailable = runtimes.some(r => r.id === runtime.id);
+  const isConnectionValid = runtime.runtimeDetails &&
+    !runtime.runtimeDetails.clientWrapper.isClosed();
+  return isRuntimeAvailable && isConnectionValid;
+}
+
 function updateRemoteRuntimes(runtimes, type) {
   return async (dispatch, getState) => {
     const currentRuntime = getCurrentRuntime(getState().runtimes);
 
-    if (currentRuntime &&
-        currentRuntime.type === type &&
-        !runtimes.find(runtime => currentRuntime.id === runtime.id)) {
+    
+    
+    if (currentRuntime && currentRuntime.type === type &&
+      !_isRuntimeValid(currentRuntime, runtimes)) {
       
       
       
@@ -283,27 +298,26 @@ function updateRemoteRuntimes(runtimes, type) {
       
       
       
-
-      await dispatch(Actions.selectPage(RUNTIMES.THIS_FIREFOX, RUNTIMES.THIS_FIREFOX));
+      await dispatch(Actions.selectPage(PAGE_TYPES.RUNTIME, RUNTIMES.THIS_FIREFOX));
     }
 
     
     runtimes.forEach(runtime => {
       const existingRuntime = findRuntimeById(runtime.id, getState().runtimes);
-      runtime.runtimeDetails = existingRuntime ? existingRuntime.runtimeDetails : null;
+      const isConnectionValid = existingRuntime && existingRuntime.runtimeDetails &&
+        !existingRuntime.runtimeDetails.clientWrapper.isClosed();
+      runtime.runtimeDetails = isConnectionValid ? existingRuntime.runtimeDetails : null;
     });
 
-    
-    const validIds = runtimes.map(r => r.id);
     const existingRuntimes = getAllRuntimes(getState().runtimes);
-    const invalidRuntimes = existingRuntimes.filter(r => {
-      return r.type === type && !validIds.includes(r.id);
-    });
-
-    for (const invalidRuntime of invalidRuntimes) {
-      const isConnected = !!invalidRuntime.runtimeDetails;
-      if (isConnected) {
-        await dispatch(disconnectRuntime(invalidRuntime.id));
+    for (const runtime of existingRuntimes) {
+      
+      const isConnected = runtime.runtimeDetails;
+      
+      const isSameType = runtime.type === type;
+      if (isConnected && isSameType && !_isRuntimeValid(runtime, runtimes)) {
+        
+        await dispatch(disconnectRuntime(runtime.id));
       }
     }
 
@@ -314,6 +328,7 @@ function updateRemoteRuntimes(runtimes, type) {
         continue;
       }
 
+      
       const isConnected = !!runtime.runtimeDetails;
       const hasConnectedClient = remoteClientManager.hasClient(runtime.id, runtime.type);
       if (!isConnected && hasConnectedClient) {
