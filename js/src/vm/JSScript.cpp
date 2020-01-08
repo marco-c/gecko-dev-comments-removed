@@ -701,6 +701,10 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
         }
     }
 
+    
+    
+    
+    
     auto scriptDataGuard = mozilla::MakeScopeExit([&] {
         if (mode == XDR_DECODE) {
             script->freeScriptData();
@@ -722,7 +726,6 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
         }
     }
 
-    scriptDataGuard.release();
     if (mode == XDR_DECODE) {
         if (!script->shareScriptData(cx)) {
             return xdr->fail(JS::TranscodeResult_Throw);
@@ -981,6 +984,7 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
         }
     }
 
+    scriptDataGuard.release();
     return Ok();
 }
 
