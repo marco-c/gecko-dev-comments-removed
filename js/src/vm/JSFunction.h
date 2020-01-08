@@ -273,8 +273,6 @@ class JSFunction : public js::NativeObject
     
     bool hasScript()                const { return flags() & INTERPRETED; }
 
-    bool infallibleIsDefaultClassConstructor(JSContext* cx) const;
-
     
     bool isArrow()                  const { return kind() == Arrow; }
     

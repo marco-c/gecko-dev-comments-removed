@@ -305,7 +305,6 @@ js::MakeDefaultConstructor(JSContext* cx, HandleScript script, jsbytecode* pc, H
 
     ctor->setIsConstructor();
     ctor->setIsClassConstructor();
-    MOZ_ASSERT(ctor->infallibleIsDefaultClassConstructor(cx));
 
     
     
