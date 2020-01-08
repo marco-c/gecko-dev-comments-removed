@@ -14,7 +14,14 @@ let generalListener;
 let input;
 let inputOptions;
 
-ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.import("resource:///modules/UrlbarController.jsm", this);
+
+
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
+
+registerCleanupFunction(function() {
+  delete window.sinon;
+});
 
 
 
@@ -30,15 +37,6 @@ function assertContextMatches(context, expectedValues) {
     Assert.equal(context[key], value,
       `Should have the expected value for ${key} in the QueryContext`);
   }
-}
-
-
-
-
-function createFakeElement() {
-  return {
-    addEventListener() {},
-  };
 }
 
 
@@ -68,7 +66,7 @@ function checkHandleQueryCall(stub, expectedQueryContextProps) {
   }
 }
 
-add_task(function setup() {
+add_task(async function setup() {
   sandbox = sinon.sandbox.create();
 
   fakeController = new UrlbarController();
@@ -76,17 +74,30 @@ add_task(function setup() {
   sandbox.stub(fakeController, "handleQuery");
   sandbox.stub(PrivateBrowsingUtils, "isWindowPrivate").returns(false);
 
-  let textbox = createFakeElement();
-  textbox.inputField = createFakeElement();
-  textbox.inputField.controllers = { insertControllerAt() {} };
+  
+  
+  let gTestRoot = getRootDirectory(gTestPath);
+
+  let win = window.openDialog(gTestRoot + "empty.xul",
+                    "", "chrome");
+  await BrowserTestUtils.waitForEvent(win, "load");
+
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+    sandbox.restore();
+  });
+
+  
+  
+  let doc = win.document;
+  let textbox = doc.importNode(document.getElementById("urlbar"), true);
+  doc.documentElement.appendChild(textbox);
+  let panel = doc.importNode(document.getElementById("urlbar-results"), true);
+  doc.documentElement.appendChild(panel);
+
   inputOptions = {
     textbox,
-    panel: {
-      ownerDocument: {},
-      querySelector() {
-        return createFakeElement();
-      },
-    },
+    panel,
     controller: fakeController,
   };
 
