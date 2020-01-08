@@ -39,25 +39,24 @@ FOR_EACH_OPCODE(ENUMERATE_OPCODE)
 
 enum {
     JOF_BYTE            = 0,        
-    JOF_JUMP            = 1,        
-    JOF_ATOM            = 2,        
-    JOF_UINT16          = 3,        
-    JOF_TABLESWITCH     = 4,        
-    
-    JOF_QARG            = 6,        
-    JOF_LOCAL           = 7,        
-    JOF_DOUBLE          = 8,        
-    JOF_UINT24          = 12,       
-    JOF_UINT8           = 13,       
-
-    JOF_INT32           = 14,       
-    JOF_UINT32          = 15,       
-    JOF_OBJECT          = 16,       
-    JOF_REGEXP          = 17,       
-    JOF_INT8            = 18,       
-    JOF_ATOMOBJECT      = 19,       
-    JOF_SCOPE           = 20,       
-    JOF_ENVCOORD        = 21,       
+    JOF_UINT8           = 1,        
+    JOF_UINT16          = 2,        
+    JOF_UINT24          = 3,        
+    JOF_UINT32          = 4,        
+    JOF_INT8            = 5,        
+    JOF_INT32           = 6,        
+    JOF_JUMP            = 7,        
+    JOF_TABLESWITCH     = 8,        
+    JOF_ENVCOORD        = 9,        
+    JOF_ARGC            = 10,       
+    JOF_QARG            = 11,       
+    JOF_LOCAL           = 12,       
+    JOF_RESUMEINDEX     = 13,       
+    JOF_ATOM            = 14,       
+    JOF_OBJECT          = 15,       
+    JOF_REGEXP          = 16,       
+    JOF_DOUBLE          = 17,       
+    JOF_SCOPE           = 18,       
     JOF_TYPEMASK        = 0x001f,   
 
     JOF_NAME            = 1 << 5,   
@@ -307,6 +306,19 @@ SET_LOCALNO(jsbytecode* pc, uint32_t varno)
 static const unsigned LOCALNO_LEN       = 3;
 static const unsigned LOCALNO_BITS      = 24;
 static const uint32_t LOCALNO_LIMIT     = 1 << LOCALNO_BITS;
+
+static inline uint32_t
+GET_RESUMEINDEX(const jsbytecode* pc)
+{
+    return GET_UINT24(pc);
+}
+
+static inline void
+SET_RESUMEINDEX(jsbytecode* pc, uint32_t resumeIndex)
+{
+    SET_UINT24(pc, resumeIndex);
+}
+
 
 static inline unsigned
 LoopEntryDepthHint(jsbytecode* pc)

@@ -597,7 +597,7 @@
 
 
  \
-    macro(JSOP_CALL, 58, "call", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    macro(JSOP_CALL, 58, "call", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
 
 
@@ -792,7 +792,7 @@
 
 
  \
-    macro(JSOP_FUNAPPLY, 79, "funapply", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    macro(JSOP_FUNAPPLY, 79, "funapply", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
 
 
@@ -821,7 +821,7 @@
 
 
  \
-    macro(JSOP_NEW, 82, "new", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC|JOF_IC) \
+    macro(JSOP_NEW, 82, "new", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC|JOF_IC) \
     
 
 
@@ -891,7 +891,7 @@
 
 
  \
-    macro(JSOP_NEWINIT, 89, "newinit", NULL, 5, 0, 1, JOF_UINT8|JOF_IC) \
+    macro(JSOP_NEWINIT, 89, "newinit", NULL, 5, 0, 1, JOF_UINT32|JOF_IC) \
     
 
 
@@ -1120,7 +1120,7 @@
 
 
  \
-    macro(JSOP_FUNCALL, 108, "funcall", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    macro(JSOP_FUNCALL, 108, "funcall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
 
 
@@ -1316,7 +1316,7 @@
 
 
  \
-    macro(JSOP_EVAL, 123, "eval", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
+    macro(JSOP_EVAL, 123, "eval", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
     
 
 
@@ -1329,7 +1329,7 @@
 
 
  \
-    macro(JSOP_STRICTEVAL, 124, "strict-eval", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
+    macro(JSOP_STRICTEVAL, 124, "strict-eval", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
     
 
 
@@ -1351,7 +1351,7 @@
 
 
  \
-    macro(JSOP_RESUMEINDEX, 126, "resume-index", NULL, 4, 0, 1, JOF_UINT24) \
+    macro(JSOP_RESUMEINDEX, 126, "resume-index", NULL, 4, 0, 1, JOF_RESUMEINDEX) \
     
 
 
@@ -1573,7 +1573,7 @@
 
 
  \
-    macro(JSOP_CALLITER, 145, "calliter", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    macro(JSOP_CALLITER, 145, "calliter", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
 
 
@@ -1803,7 +1803,7 @@
 
 
  \
-    macro(JSOP_SUPERCALL, 165, "supercall", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    macro(JSOP_SUPERCALL, 165, "supercall", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
 
 
@@ -2198,7 +2198,7 @@
 
 
  \
-    macro(JSOP_INITIALYIELD, 202, "initialyield", NULL, 4, 1, 1, JOF_UINT24) \
+    macro(JSOP_INITIALYIELD, 202, "initialyield", NULL, 4, 1, 1, JOF_RESUMEINDEX) \
     
 
 
@@ -2208,7 +2208,7 @@
 
 
  \
-    macro(JSOP_YIELD, 203, "yield", NULL, 4, 2, 1, JOF_UINT24) \
+    macro(JSOP_YIELD, 203, "yield", NULL, 4, 2, 1, JOF_RESUMEINDEX) \
     
 
 
@@ -2229,7 +2229,7 @@
 
 
  \
-    macro(JSOP_RESUME, 205, "resume", NULL, 3, 2, 1, JOF_UINT8|JOF_INVOKE) \
+    macro(JSOP_RESUME, 205, "resume", NULL, 3, 2, 1, JOF_UINT16|JOF_INVOKE) \
     
  \
     macro(JSOP_UNUSED206, 206, "unused206", NULL, 1, 0, 0, JOF_BYTE) \
@@ -2261,7 +2261,7 @@
 
 
  \
-    macro(JSOP_AWAIT, 209, "await", NULL, 4, 2, 1, JOF_UINT24) \
+    macro(JSOP_AWAIT, 209, "await", NULL, 4, 2, 1, JOF_RESUMEINDEX) \
     
 
 
@@ -2490,7 +2490,7 @@
 
 
  \
-    macro(JSOP_CALL_IGNORES_RV, 231, "call-ignores-rv", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    macro(JSOP_CALL_IGNORES_RV, 231, "call-ignores-rv", NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
     
 
 
