@@ -3672,9 +3672,8 @@ nsWindow::Create(nsIWidget* aParent,
     
     
     
-    if (mWindowType == eWindowType_toplevel &&
-        Preferences::GetBool("mozilla.widget.use-argb-visuals", false)) {
-        needsAlphaVisual = true;
+    if (mWindowType == eWindowType_toplevel) {
+        needsAlphaVisual = TopLevelWindowUseARGBVisual();
     }
 
     if (aParent) {
@@ -7217,6 +7216,33 @@ nsWindow::GetSystemCSDSupportLevel() {
     }
 
     return sCSDSupportLevel;
+}
+
+bool
+nsWindow::TopLevelWindowUseARGBVisual()
+{
+    static int useARGBVisual = -1;
+    if (useARGBVisual != -1) {
+        return useARGBVisual;
+    }
+
+    if (Preferences::HasUserValue("mozilla.widget.use-argb-visuals")) {
+        useARGBVisual =
+            Preferences::GetBool("mozilla.widget.use-argb-visuals", false);
+    } else {
+        const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+        useARGBVisual =
+            (currentDesktop &&
+             GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
+
+        if (useARGBVisual) {
+            useARGBVisual =
+                (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
+                 strstr(currentDesktop, "GNOME") != nullptr);
+        }
+    }
+
+    return useARGBVisual;
 }
 
 int32_t

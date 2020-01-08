@@ -5901,11 +5901,6 @@ pref("dom.events.asyncClipboard.dataTransfer", false);
 
 pref("dom.events.testing.asyncClipboard", false);
 
-
-#if defined(MOZ_WIDGET_GTK)
-pref("mozilla.widget.use-argb-visuals", false);
-#endif
-
 #ifdef NIGHTLY_BUILD
 
 pref("dom.datatransfer.mozAtAPIs", false);
