@@ -711,14 +711,6 @@ async function sanitizeSessionPrincipals() {
     return;
   }
 
-  
-  
-  
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_COOKIES,
-                                  resolve);
-  });
-
   let principals = await new Promise(resolve => {
     quotaManagerService.getUsage(request => {
       if (request.resultCode != Cr.NS_OK) {
