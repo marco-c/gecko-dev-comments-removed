@@ -5687,9 +5687,8 @@ var IdentityHandler = {
 
 
   checkIdentity: function checkIdentity(aState, aBrowser) {
-    this._lastStatus = aBrowser.securityUI
-                               .QueryInterface(Ci.nsISSLStatusProvider)
-                               .SSLStatus;
+    this._lastStatus = aBrowser.securityUI.secInfo &&
+                       aBrowser.securityUI.secInfo.SSLStatus;
 
     
     
