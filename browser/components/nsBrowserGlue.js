@@ -1811,7 +1811,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 70;
+    const UI_VERSION = 71;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2132,6 +2132,14 @@ BrowserGlue.prototype = {
       
       
       Services.prefs.setBoolPref("browser.ctrlTab.migrated", true);
+    }
+
+    if (currentUIVersion < 71) {
+      
+      let savedContentHandlers = Services.prefs.getChildList("browser.contentHandlers.types");
+      for (let savedHandlerPref of savedContentHandlers) {
+        Services.prefs.clearUserPref(savedHandlerPref);
+      }
     }
 
     
