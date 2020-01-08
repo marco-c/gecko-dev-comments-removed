@@ -656,8 +656,12 @@ class MacroAssembler : public js::jit::Assembler {
              const Register& rm,
              Condition cond) {
     VIXL_ASSERT(!rd.IsZero());
-    VIXL_ASSERT(!rn.IsZero());
-    VIXL_ASSERT(!rm.IsZero());
+    
+    
+    
+    
+    
+    
     VIXL_ASSERT((cond != al) && (cond != nv));
     SingleEmissionCheckScope guard(this);
     csinc(rd, rn, rm, cond);
