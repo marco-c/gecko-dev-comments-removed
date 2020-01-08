@@ -1662,18 +1662,11 @@ var gBrowserInit = {
 
       
       
-      if (uriToLoad instanceof Ci.nsIArray) {
-        let count = uriToLoad.length;
-        let specs = [];
-        for (let i = 0; i < count; i++) {
-          let urisstring = uriToLoad.queryElementAt(i, Ci.nsISupportsString);
-          specs.push(urisstring.data);
-        }
-
+      if (Array.isArray(uriToLoad)) {
         
         
         try {
-          gBrowser.loadTabs(specs, {
+          gBrowser.loadTabs(uriToLoad, {
             inBackground: false,
             replace: true,
             
@@ -1840,6 +1833,14 @@ var gBrowserInit = {
 
       
       if (uri != defaultArgs) {
+        if (uri instanceof Ci.nsIArray) {
+          
+          
+          return Array.from(uri.enumerate(Ci.nsISupportsString),
+                            supportStr => supportStr.data);
+        } else if (uri instanceof Ci.nsISupportsString) {
+          return uri.data;
+        }
         return uri;
       }
 

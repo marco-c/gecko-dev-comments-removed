@@ -298,6 +298,10 @@ window._gBrowser = {
       remoteType = E10SUtils.NOT_REMOTE;
     } else {
       let uriToLoad = gBrowserInit.uriToLoadPromise;
+      if (uriToLoad && Array.isArray(uriToLoad)) {
+        uriToLoad = uriToLoad[0]; 
+      }
+
       if (uriToLoad && typeof uriToLoad == "string") {
         remoteType = E10SUtils.getRemoteTypeForURI(
           uriToLoad,
