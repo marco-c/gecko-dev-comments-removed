@@ -22,9 +22,11 @@ using namespace js::jit;
 
 
 
+
+
 static const LiveRegisterSet AllRegs =
     LiveRegisterSet(GeneralRegisterSet(Registers::AllMask & ~(1 << 31 | 1 << 30 | 1 << 29| 1 << 28)),
-                FloatRegisterSet(FloatRegisters::AllMask));
+                    FloatRegisterSet(FloatRegisters::AllMask));
 
 
 
@@ -415,8 +417,18 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
 }
 
 static void
-PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
+PushBailoutFrame(MacroAssembler& masm, Register spArg)
 {
+    const LiveRegisterSet First28GeneralRegisters =
+        LiveRegisterSet(GeneralRegisterSet(
+                            Registers::AllMask & ~(1 << 31 | 1 << 30 | 1 << 29 | 1 << 28)),
+                        FloatRegisterSet(FloatRegisters::NoneMask));
+
+    const LiveRegisterSet AllFloatRegisters =
+        LiveRegisterSet(GeneralRegisterSet(Registers::NoneMask),
+                        FloatRegisterSet(FloatRegisters::AllMask));
+
+    
     
     
     
@@ -426,56 +438,32 @@ PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
 
     
     
-    
+    masm.asVIXL().Push(xzr, x30, x29, xzr);
 
     
-    
-    masm.subFromStackPtr(Imm32(Registers::TotalPhys * sizeof(void*)));
-    for (uint32_t i = 0; i < Registers::TotalPhys; i += 2) {
-        masm.Stp(ARMRegister::XRegFromCode(i),
-                 ARMRegister::XRegFromCode(i + 1),
-                 MemOperand(masm.GetStackPointer64(), i * sizeof(void*)));
-    }
+    masm.PushRegsInMask(First28GeneralRegisters);
 
     
-    
-    
-    masm.subFromStackPtr(Imm32(FloatRegisters::TotalPhys * sizeof(double)));
-    for (uint32_t i = 0; i < FloatRegisters::TotalPhys; i += 2) {
-        masm.Stp(ARMFPRegister::DRegFromCode(i),
-                 ARMFPRegister::DRegFromCode(i + 1),
-                 MemOperand(masm.GetStackPointer64(), i * sizeof(void*)));
-    }
+    masm.PushRegsInMask(AllFloatRegisters);
 
     
     
     
     
     
-    
-
-    
-    masm.Mov(x9, frameClass);
-
-    
-    
-    
-    
-    masm.push(r30, r9);
     masm.moveStackPtrTo(spArg);
 }
 
 static void
-GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass, Label* bailoutTail)
+GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail)
 {
-    PushBailoutFrame(masm, frameClass, r0);
+    PushBailoutFrame(masm, r0);
 
     
     
     
     
-    const int sizeOfBailoutInfo = sizeof(void*) * 2;
-    masm.reserveStack(sizeOfBailoutInfo);
+    masm.reserveStack(sizeof(void*));
     masm.moveStackPtrTo(r1);
 
     masm.setupUnalignedABICall(r2);
@@ -484,23 +472,27 @@ GenerateBailoutThunk(MacroAssembler& masm, uint32_t frameClass, Label* bailoutTa
     masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, Bailout), MoveOp::GENERAL,
                      CheckUnsafeCallWithABI::DontCheckOther);
 
-    masm.Ldr(x2, MemOperand(masm.GetStackPointer64(), 0));
-    masm.addToStackPtr(Imm32(sizeOfBailoutInfo));
+    
+    masm.pop(r2);
 
-    static const uint32_t BailoutDataSize = sizeof(void*) * Registers::Total +
-                                            sizeof(double) * FloatRegisters::TotalPhys;
+    
+    
+    
+    
+    
+    
+    
 
-    if (frameClass == NO_FRAME_SIZE_CLASS_ID) {
-        vixl::UseScratchRegisterScope temps(&masm.asVIXL());
-        const ARMRegister scratch64 = temps.AcquireX();
+    
+    static const uint32_t BailoutDataSize = sizeof(RegisterDump);
+    masm.addToStackPtr(Imm32(BailoutDataSize));
 
-        masm.Ldr(scratch64, MemOperand(masm.GetStackPointer64(), sizeof(uintptr_t)));
-        masm.addToStackPtr(Imm32(BailoutDataSize + 32));
-        masm.addToStackPtr(scratch64.asUnsized());
-    } else {
-        uint32_t frameSize = FrameSizeClass::FromClass(frameClass).frameSize();
-        masm.addToStackPtr(Imm32(frameSize + BailoutDataSize + sizeof(void*)));
-    }
+    
+    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+    const ARMRegister scratch64 = temps.AcquireX();
+    masm.Ldr(scratch64, MemOperand(masm.GetStackPointer64(), 0x0));
+    masm.addPtr(Imm32(2 * sizeof(void*)), scratch64.asUnsized());
+    masm.addToStackPtr(scratch64.asUnsized());
 
     
     masm.jump(bailoutTail);
@@ -517,7 +509,7 @@ JitRuntime::generateBailoutHandler(MacroAssembler& masm, Label* bailoutTail)
 {
     bailoutHandlerOffset_ = startTrampolineCode(masm);
 
-    GenerateBailoutThunk(masm, NO_FRAME_SIZE_CLASS_ID, bailoutTail);
+    GenerateBailoutThunk(masm, bailoutTail);
 }
 
 bool
