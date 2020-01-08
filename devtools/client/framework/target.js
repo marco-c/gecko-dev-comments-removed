@@ -52,6 +52,12 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
+
+
+
+
+
+
   async createTargetForTab(tab) {
     function createLocalServer() {
       
@@ -109,7 +115,7 @@ const TargetFactory = exports.TargetFactory = {
     let targetPromise = promiseTargets.get(options);
     if (targetPromise == null) {
       const target = new TabTarget(options);
-      targetPromise = target.makeRemote().then(() => target);
+      targetPromise = target.attach().then(() => target);
       promiseTargets.set(options, targetPromise);
     }
     return targetPromise;
@@ -460,73 +466,64 @@ TabTarget.prototype = {
 
 
 
-  makeRemote: async function() {
-    if (this._remote) {
-      return this._remote;
+
+
+
+  attach() {
+    if (this._attach) {
+      return this._attach;
     }
 
-    if (this._form.isWebExtension &&
-        this.client.mainRoot.traits.webExtensionAddonConnect) {
-      
-      
-      
-      
-      
-      
-      
-      const {form} = await this._client.request({
-        to: this._form.actor, type: "connect",
-      });
+    
+    const attachTarget = async () => {
+      const [response, tabClient] = await this._client.attachTab(this._form.actor);
+      this.activeTab = tabClient;
+      this.threadActor = response.threadActor;
+    };
 
-      this._form = form;
-      this._url = form.url;
-      this._title = form.title;
-    }
+    
+    const attachConsole = async () => {
+      const [, consoleClient] = await this._client.attachConsole(
+        this._form.consoleActor, []);
+      this.activeConsole = consoleClient;
 
-    this._setupRemoteListeners();
+      this._onInspectObject = packet => this.emit("inspect-object", packet);
+      this.activeConsole.on("inspectObject", this._onInspectObject);
+    };
 
-    this._remote = new Promise((resolve, reject) => {
-      const attachTab = async () => {
-        try {
-          const [response, tabClient] = await this._client.attachTab(this._form.actor);
-          this.activeTab = tabClient;
-          this.threadActor = response.threadActor;
-        } catch (e) {
-          reject("Unable to attach to the tab: " + e);
-          return;
-        }
-        attachConsole();
-      };
-
-      const onConsoleAttached = ([response, consoleClient]) => {
-        this.activeConsole = consoleClient;
-
-        this._onInspectObject = packet => this.emit("inspect-object", packet);
-        this.activeConsole.on("inspectObject", this._onInspectObject);
-
-        resolve(null);
-      };
-
-      const attachConsole = () => {
-        this._client.attachConsole(this._form.consoleActor, [])
-          .then(onConsoleAttached, response => {
-            reject(
-              `Unable to attach to the console [${response.error}]: ${response.message}`);
-          });
-      };
-
-      if (this.isBrowsingContext) {
+    this._attach = (async () => {
+      if (this._form.isWebExtension &&
+          this.client.mainRoot.traits.webExtensionAddonConnect) {
         
         
-        attachTab();
-      } else {
         
         
-        attachConsole();
+        
+        
+        
+        const {form} = await this._client.request({
+          to: this._form.actor, type: "connect",
+        });
+
+        this._form = form;
+        this._url = form.url;
+        this._title = form.title;
       }
-    });
 
-    return this._remote;
+      this._setupRemoteListeners();
+
+      
+      
+      
+      if (this.isBrowsingContext) {
+        await attachTarget();
+      }
+
+      
+      return attachConsole();
+    })();
+
+    return this._attach;
   },
 
   
@@ -731,7 +728,7 @@ TabTarget.prototype = {
     this._client = null;
     this._tab = null;
     this._form = null;
-    this._remote = null;
+    this._attach = null;
     this._root = null;
     this._title = null;
     this._url = null;
@@ -845,7 +842,7 @@ WorkerTarget.prototype = {
     return undefined;
   },
 
-  makeRemote: function() {
+  attach: function() {
     return Promise.resolve();
   },
 
