@@ -101,9 +101,7 @@ add_task(async function testNoAdbJSON() {
   await extension.unload();
 });
 
-add_task({
-  skip_if: () => mozinfo.os == "win" 
-}, async function testNoTargetBinaries() {
+add_task(async function testNoTargetBinaries() {
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
       version: (extension_version++).toString(),
