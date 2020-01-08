@@ -760,16 +760,48 @@ async function sanitizeSessionPrincipals() {
 async function maybeSanitizeSessionPrincipals(principals) {
   let promises = [];
 
-  for (let i = 0; i < principals.length; ++i) {
-    let p = Services.perms.testPermissionFromPrincipal(principals[i], "cookie");
-    if (p != Ci.nsICookiePermission.ACCESS_ALLOW &&
-        p != Ci.nsICookiePermission.ACCESS_ALLOW_FIRST_PARTY_ONLY &&
-        p != Ci.nsICookiePermission.ACCESS_LIMIT_THIRD_PARTY) {
-      promises.push(sanitizeSessionPrincipal(principals[i]));
+  principals.forEach(principal => {
+    if (!cookiesAllowedForDomainOrSubDomain(principal)) {
+      promises.push(sanitizeSessionPrincipal(principal));
+    }
+  });
+
+  return Promise.all(promises);
+}
+
+function cookiesAllowedForDomainOrSubDomain(principal) {
+  
+  
+  let p = Services.perms.testPermissionFromPrincipal(principal, "cookie");
+  if (p == Ci.nsICookiePermission.ACCESS_ALLOW ||
+      p == Ci.nsICookiePermission.ACCESS_ALLOW_FIRST_PARTY_ONLY ||
+      p == Ci.nsICookiePermission.ACCESS_LIMIT_THIRD_PARTY) {
+    return true;
+  }
+
+  if (p == Ci.nsICookiePermission.ACCESS_DENY ||
+      p == Ci.nsICookiePermission.ACCESS_SESSION) {
+    return false;
+  }
+
+  for (let perm of Services.perms.enumerator) {
+    if (perm.type != "cookie") {
+      continue;
+    }
+
+    if (!ChromeUtils.isOriginAttributesEqual(principal.originAttributes,
+                                             perm.principal.originAttributes)) {
+      continue;
+    }
+
+    
+    if (Services.eTLD.hasRootDomain(perm.principal.URI.host,
+                                    principal.URI.host)) {
+      return cookiesAllowedForDomainOrSubDomain(perm.principal);
     }
   }
 
-  return Promise.all(promises);
+  return false;
 }
 
 async function sanitizeSessionPrincipal(principal) {
