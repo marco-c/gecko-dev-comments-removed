@@ -92,9 +92,8 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
     }
 
     pub fn compile(&mut self) -> CodegenResult<()> {
-        let orig_size = self.context.compile(&*self.isa)?;
-        let size = self.remove_return_inst(orig_size) as usize;
-        self.binemit(size)
+        let size = self.context.compile(&*self.isa)?;
+        self.binemit(size as usize)
     }
 
     
@@ -117,37 +116,6 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         info!("Translated wasm function {}.", func.index);
         debug!("Content: {}", self.context.func.display(&*self.isa));
         Ok(wsig)
-    }
-
-    
-    
-    
-    
-    fn remove_return_inst(&mut self, size: CodeOffset) -> CodeOffset {
-        
-        let mut pos = FuncCursor::new(&mut self.context.func);
-
-        
-        pos.prev_ebb().expect("empty function");
-
-        
-        let inst = pos.prev_inst().expect("last EBB has not terminator");
-
-        
-        
-
-        if pos.func.dfg[inst].opcode().is_return() {
-            let enc = pos.func.encodings[inst];
-            let ret_size = self.isa.encoding_info().bytes(enc);
-            
-            
-            
-            pos.remove_inst();
-            return size - ret_size;
-        }
-
-        
-        size
     }
 
     
