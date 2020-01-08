@@ -225,7 +225,7 @@ bool ElemOpEmitter::emitIncDec() {
 
   MOZ_ASSERT(state_ == State::Get);
 
-  JSOp binOp = isInc() ? JSOP_ADD : JSOP_SUB;
+  JSOp incOp = isInc() ? JSOP_INC : JSOP_DEC;
   if (!bce_->emit1(JSOP_POS)) {
     
     return false;
@@ -236,11 +236,7 @@ bool ElemOpEmitter::emitIncDec() {
       return false;
     }
   }
-  if (!bce_->emit1(JSOP_ONE)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(binOp)) {
+  if (!bce_->emit1(incOp)) {
     
     return false;
   }

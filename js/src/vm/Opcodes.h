@@ -2517,8 +2517,26 @@
 
 
 
+
  \
-    IF_BIGINT(MACRO(JSOP_BIGINT, 234, "bigint", NULL, 5, 0, 1, JOF_BIGINT),)
+    MACRO(JSOP_INC, 234, "inc", NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+ \
+    MACRO(JSOP_DEC, 235, "dec", NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+ \
+    IF_BIGINT(MACRO(JSOP_BIGINT, 236, "bigint", NULL, 5, 0, 1, JOF_BIGINT),)
 
 
 
@@ -2526,9 +2544,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_BIGINT(, MACRO(234))                      \
-  MACRO(235)                                   \
-  MACRO(236)                                   \
+  IF_BIGINT(, MACRO(236))                      \
   MACRO(237)                                   \
   MACRO(238)                                   \
   MACRO(239)                                   \

@@ -208,7 +208,7 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
 
   MOZ_ASSERT(state_ == State::Get);
 
-  JSOp binOp = isInc() ? JSOP_ADD : JSOP_SUB;
+  JSOp incOp = isInc() ? JSOP_INC : JSOP_DEC;
 
   if (!bce_->emit1(JSOP_POS)) {
     
@@ -220,11 +220,7 @@ bool PropOpEmitter::emitIncDec(JSAtom* prop) {
       return false;
     }
   }
-  if (!bce_->emit1(JSOP_ONE)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(binOp)) {
+  if (!bce_->emit1(incOp)) {
     
     return false;
   }

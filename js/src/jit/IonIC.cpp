@@ -494,18 +494,30 @@ static void TryAttachIonStub(JSContext* cx, IC* ic, IonScript* ionScript,
   jsbytecode* pc = ic->pc();
   JSOp op = JSOp(*pc);
 
+  
+  
+  RootedValue valCopy(cx, val);
   switch (op) {
     case JSOP_BITNOT: {
-      RootedValue valCopy(cx, val);
       if (!BitNot(cx, &valCopy, res)) {
         return false;
       }
       break;
     }
     case JSOP_NEG: {
-      
-      RootedValue valCopy(cx, val);
       if (!NegOperation(cx, &valCopy, res)) {
+        return false;
+      }
+      break;
+    }
+    case JSOP_INC: {
+      if (!IncOperation(cx, &valCopy, res)) {
+        return false;
+      }
+      break;
+    }
+    case JSOP_DEC: {
+      if (!DecOperation(cx, &valCopy, res)) {
         return false;
       }
       break;

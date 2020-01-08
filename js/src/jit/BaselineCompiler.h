@@ -248,7 +248,9 @@ namespace jit {
   _(JSOP_CLASSCONSTRUCTOR)      \
   _(JSOP_DERIVEDCONSTRUCTOR)    \
   _(JSOP_IMPORTMETA)            \
-  _(JSOP_DYNAMIC_IMPORT)
+  _(JSOP_DYNAMIC_IMPORT)        \
+  _(JSOP_INC)                   \
+  _(JSOP_DEC)
 
 
 

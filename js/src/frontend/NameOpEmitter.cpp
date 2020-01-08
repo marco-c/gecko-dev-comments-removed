@@ -352,7 +352,7 @@ bool NameOpEmitter::emitAssignment() {
 bool NameOpEmitter::emitIncDec() {
   MOZ_ASSERT(state_ == State::Start);
 
-  JSOp binOp = isInc() ? JSOP_ADD : JSOP_SUB;
+  JSOp incOp = isInc() ? JSOP_INC : JSOP_DEC;
   if (!prepareForRhs()) {
     
     return false;
@@ -367,11 +367,7 @@ bool NameOpEmitter::emitIncDec() {
       return false;
     }
   }
-  if (!bce_->emit1(JSOP_ONE)) {
-    
-    return false;
-  }
-  if (!bce_->emit1(binOp)) {
+  if (!bce_->emit1(incOp)) {
     
     return false;
   }
