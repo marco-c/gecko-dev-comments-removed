@@ -1293,7 +1293,7 @@ AntiTrackingCommon::NotifyBlockingDecision(nsIChannel* aChannel,
     
     if (aDecision == BlockingDecision::eBlock) {
       parentChannel->NotifyTrackingCookieBlocked(aRejectedReason);
-    } else {
+    } else if (sendCookieLoadedNotification) {
       
       parentChannel->NotifyCookieAllowed();
     }
