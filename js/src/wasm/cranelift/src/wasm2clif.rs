@@ -531,7 +531,6 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         let wsig = self.env.signature(sig_index);
 
         
-        
         assert_eq!(table_index.index(), 0);
         let wtable = self.get_table(pos.func, table_index);
 

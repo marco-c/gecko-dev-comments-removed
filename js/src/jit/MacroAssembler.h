@@ -1613,7 +1613,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     void wasmCallImport(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee);
 
     
-    void wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee, bool needsBoundsCheck);
+    void wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
+                          bool needsBoundsCheck);
 
     
     
