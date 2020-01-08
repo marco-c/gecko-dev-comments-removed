@@ -381,7 +381,7 @@ AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::Epoch& aEpoch,
 
   float opacity = 1.0f;
   Maybe<wr::WrClipId> referenceFrameId = builder.PushStackingContext(
-    wr::ToRoundedLayoutRect(aPipeline->mScBounds),
+    wr::ToLayoutRect(aPipeline->mScBounds),
     nullptr,
     nullptr,
     &opacity,
@@ -404,15 +404,15 @@ AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::Epoch& aEpoch,
       MOZ_ASSERT(aPipeline->mCurrentTexture->AsWebRenderTextureHost());
       Range<wr::ImageKey> range_keys(&keys[0], keys.Length());
       aPipeline->mCurrentTexture->PushDisplayItems(builder,
-                                                  wr::ToRoundedLayoutRect(rect),
-                                                  wr::ToRoundedLayoutRect(rect),
+                                                  wr::ToLayoutRect(rect),
+                                                  wr::ToLayoutRect(rect),
                                                   aPipeline->mFilter,
                                                   range_keys);
       HoldExternalImage(aPipelineId, aEpoch, aPipeline->mCurrentTexture->AsWebRenderTextureHost());
     } else {
       MOZ_ASSERT(keys.Length() == 1);
-      builder.PushImage(wr::ToRoundedLayoutRect(rect),
-                        wr::ToRoundedLayoutRect(rect),
+      builder.PushImage(wr::ToLayoutRect(rect),
+                        wr::ToLayoutRect(rect),
                         true,
                         aPipeline->mFilter,
                         keys[0]);
@@ -433,7 +433,9 @@ AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::Epoch& aEpoch,
 }
 
 void
-AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::PipelineId& aPipelineId, wr::TransactionBuilder& aSceneBuilderTxn)
+AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::PipelineId& aPipelineId,
+                                                      wr::TransactionBuilder& aTxn,
+                                                      wr::TransactionBuilder& aTxnForImageBridge)
 {
   AsyncImagePipeline* pipeline = mAsyncImagePipelines.Get(wr::AsUint64(aPipelineId));
   if (!pipeline) {
@@ -443,24 +445,33 @@ AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::PipelineId& aPip
   wr::AutoTransactionSender sender(mApi, &fastTxn);
 
   
+  auto& sceneBuilderTxn = pipeline->mImageHost->GetAsyncRef() ? aTxnForImageBridge : aTxn;
+
   
   
   
   
   
-  auto& txn = pipeline->mImageHost->GetAsyncRef() ? fastTxn : aSceneBuilderTxn;
+  
+  auto& maybeFastTxn = pipeline->mImageHost->GetAsyncRef() ? fastTxn : aTxn;
 
   wr::Epoch epoch = GetNextImageEpoch();
-  ApplyAsyncImageForPipeline(epoch, aPipelineId, pipeline, aSceneBuilderTxn, txn);
+
+  ApplyAsyncImageForPipeline(epoch, aPipelineId, pipeline, sceneBuilderTxn, maybeFastTxn);
 }
 
 void
-AsyncImagePipelineManager::SetEmptyDisplayList(const wr::PipelineId& aPipelineId, wr::TransactionBuilder& aTxn)
+AsyncImagePipelineManager::SetEmptyDisplayList(const wr::PipelineId& aPipelineId,
+                                               wr::TransactionBuilder& aTxn,
+                                               wr::TransactionBuilder& aTxnForImageBridge)
 {
   AsyncImagePipeline* pipeline = mAsyncImagePipelines.Get(wr::AsUint64(aPipelineId));
   if (!pipeline) {
     return;
   }
+
+  
+  auto& txn = pipeline->mImageHost->GetAsyncRef() ? aTxnForImageBridge : aTxn;
 
   wr::Epoch epoch = GetNextImageEpoch();
   wr::LayoutSize contentSize { pipeline->mScBounds.Width(), pipeline->mScBounds.Height() };
@@ -469,11 +480,11 @@ AsyncImagePipelineManager::SetEmptyDisplayList(const wr::PipelineId& aPipelineId
   wr::BuiltDisplayList dl;
   wr::LayoutSize builderContentSize;
   builder.Finalize(builderContentSize, dl);
-  aTxn.SetDisplayList(gfx::Color(0.f, 0.f, 0.f, 0.f),
-                      epoch,
-                      LayerSize(pipeline->mScBounds.Width(), pipeline->mScBounds.Height()),
-                      aPipelineId, builderContentSize,
-                      dl.dl_desc, dl.dl);
+  txn.SetDisplayList(gfx::Color(0.f, 0.f, 0.f, 0.f),
+                     epoch,
+                     LayerSize(pipeline->mScBounds.Width(), pipeline->mScBounds.Height()),
+                     aPipelineId, builderContentSize,
+                     dl.dl_desc, dl.dl);
 }
 
 void
