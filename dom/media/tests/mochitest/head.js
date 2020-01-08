@@ -407,6 +407,9 @@ function setupEnvironment() {
 
   var defaultMochitestPrefs = {
     'set': [
+      
+      
+      ['media.navigator.mediadatadecoder_h264_enabled', false],
       ['media.peerconnection.enabled', true],
       ['media.peerconnection.identity.enabled', true],
       ['media.peerconnection.identity.timeout', 120000],
