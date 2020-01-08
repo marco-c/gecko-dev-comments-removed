@@ -11,7 +11,9 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   QueryContext: "resource:///modules/UrlbarController.jsm",
+  Services: "resource://gre/modules/Services.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarView: "resource:///modules/UrlbarView.jsm",
 });
 
@@ -58,6 +60,10 @@ class UrlbarInput {
       Object.defineProperty(this, property, {
         enumerable: true,
         get() {
+          let getter = "_get_" + property;
+          if (getter in this) {
+            return this[getter]();
+          }
           return this.textbox[property];
         },
       });
@@ -67,18 +73,40 @@ class UrlbarInput {
       Object.defineProperty(this, property, {
         enumerable: true,
         get() {
+          let getter = "_get_" + property;
+          if (getter in this) {
+            return this[getter]();
+          }
           return this.textbox[property];
         },
         set(val) {
+          let setter = "_set_" + property;
+          if (setter in this) {
+            return this[setter](val);
+          }
           return this.textbox[property] = val;
         },
       });
     }
 
     this.addEventListener("input", this);
+    this.inputField.addEventListener("select", this);
     this.inputField.addEventListener("overflow", this);
     this.inputField.addEventListener("underflow", this);
     this.inputField.addEventListener("scrollend", this);
+
+    this.inputField.controllers.insertControllerAt(0, new CopyCutController(this));
+  }
+
+  
+
+
+
+
+
+
+  trimValue(val) {
+    return UrlbarPrefs.get("trimURLs") ? this.window.trimURL(val) : val;
   }
 
   formatValue() {
@@ -97,6 +125,30 @@ class UrlbarInput {
 
 
 
+
+
+
+
+  makeURIReadable(uri) {
+    
+    
+    let readerStrippedURI = this.window.ReaderMode.getOriginalUrlObjectForDisplay(uri.displaySpec);
+    if (readerStrippedURI) {
+      return readerStrippedURI;
+    }
+
+    try {
+      return Services.uriFixup.createExposableURI(uri);
+    } catch (ex) {}
+
+    return uri;
+  }
+
+  
+
+
+
+
   handleEvent(event) {
     let methodName = "_on" + event.type;
     if (methodName in this) {
@@ -104,6 +156,17 @@ class UrlbarInput {
     } else {
       throw "Unrecognized urlbar event: " + event.type;
     }
+  }
+
+  
+
+  _set_value(val) {
+    val = this.trimValue(val);
+
+    this.valueIsTyped = false;
+    this.inputField.value = val;
+
+    return val;
   }
 
   
@@ -125,9 +188,122 @@ class UrlbarInput {
     });
   }
 
+  _getSelectedValueForClipboard() {
+    
+    
+    let inputVal = this.inputField.value;
+    let selection = this.editor.selection;
+    const flags = Ci.nsIDocumentEncoder.OutputPreformatted |
+                  Ci.nsIDocumentEncoder.OutputRaw;
+    let selectedVal = selection.toStringWithFormat("text/plain", flags, 0);
+
+    
+    if (selection.rangeCount > 1) {
+      return selectedVal;
+    }
+
+    
+    
+    
+    if (this.selectionStart > 0 || this.valueIsTyped || selectedVal == "") {
+      return selectedVal;
+    }
+
+    
+    
+    if (!selectedVal.includes("/")) {
+      let remainder = inputVal.replace(selectedVal, "");
+      if (remainder != "" && remainder[0] != "/") {
+        return selectedVal;
+      }
+    }
+
+    
+    let action = this._parseActionUrl(this.value);
+    if (action && action.type == "searchengine") {
+      return selectedVal;
+    }
+
+    let uri;
+    if (this.getAttribute("pageproxystate") == "valid") {
+      uri = this.window.gBrowser.currentURI;
+    } else {
+      
+      try {
+        uri = Services.uriFixup.createFixupURI(inputVal, Services.uriFixup.FIXUP_FLAG_NONE);
+      } catch (e) {}
+      if (!uri) {
+        return selectedVal;
+      }
+    }
+
+    uri = this.makeURIReadable(uri);
+
+    
+    
+    
+    if (inputVal == selectedVal &&
+        !uri.schemeIs("javascript") && !uri.schemeIs("data") &&
+        !Services.prefs.getBoolPref("browser.urlbar.decodeURLsOnCopy")) {
+      return uri.displaySpec;
+    }
+
+    
+    
+    let spec = uri.displaySpec;
+    let trimmedSpec = this.trimValue(spec);
+    if (spec != trimmedSpec) {
+      
+      
+      
+      let trimmedSegments = spec.split(trimmedSpec);
+      selectedVal = trimmedSegments[0] + selectedVal;
+    }
+
+    return selectedVal;
+  }
+
+  
+
+
+
+
+  _parseActionUrl(url) {
+    const MOZ_ACTION_REGEX = /^moz-action:([^,]+),(.*)$/;
+    if (!MOZ_ACTION_REGEX.test(url)) {
+      return null;
+    }
+
+    
+    
+    let [, type, params] = url.match(MOZ_ACTION_REGEX);
+
+    let action = {
+      type,
+    };
+
+    action.params = JSON.parse(params);
+    for (let key in action.params) {
+      action.params[key] = decodeURIComponent(action.params[key]);
+    }
+
+    if ("url" in action.params) {
+      try {
+        let uri = Services.io.newURI(action.params.url);
+        action.params.displayUrl = this.window.losslessDecodeURI(uri);
+      } catch (e) {
+        action.params.displayUrl = action.params.url;
+      }
+    }
+
+    return action;
+  }
+
   
 
   _oninput(event) {
+    this.valueIsTyped = true;
+
     
     this.controller.handleQuery(new QueryContext({
       searchString: event.target.value,
@@ -135,6 +311,23 @@ class UrlbarInput {
       maxResults: 12,
       isPrivate: this.isPrivate,
     }));
+  }
+
+  _onselect(event) {
+    if (!Services.clipboard.supportsSelectionClipboard()) {
+      return;
+    }
+
+    if (!this.window.windowUtils.isHandlingUserInput) {
+      return;
+    }
+
+    let val = this._getSelectedValueForClipboard();
+    if (!val) {
+      return;
+    }
+
+    Services.clipboard.copyStringToClipboard(val, Services.clipboard.kSelectionClipboard);
   }
 
   _onoverflow(event) {
@@ -165,3 +358,74 @@ class UrlbarInput {
     this._updateTextOverflow();
   }
 }
+
+
+
+
+class CopyCutController {
+  
+
+
+
+  constructor(urlbar) {
+    this.urlbar = urlbar;
+  }
+
+  
+
+
+
+  doCommand(command) {
+    let urlbar = this.urlbar;
+    let val = urlbar._getSelectedValueForClipboard();
+    if (!val) {
+      return;
+    }
+
+    if (command == "cmd_cut" && this.isCommandEnabled(command)) {
+      let start = urlbar.selectionStart;
+      let end = urlbar.selectionEnd;
+      urlbar.inputField.value = urlbar.inputField.value.substring(0, start) +
+                                urlbar.inputField.value.substring(end);
+      urlbar.selectionStart = urlbar.selectionEnd = start;
+
+      let event = urlbar.window.document.createEvent("UIEvents");
+      event.initUIEvent("input", true, false, this.window, 0);
+      urlbar.dispatchEvent(event);
+
+      urlbar.window.SetPageProxyState("invalid");
+    }
+
+    Cc["@mozilla.org/widget/clipboardhelper;1"]
+      .getService(Ci.nsIClipboardHelper)
+      .copyString(val);
+  }
+
+  
+
+
+
+
+  supportsCommand(command) {
+    switch (command) {
+      case "cmd_copy":
+      case "cmd_cut":
+        return true;
+    }
+    return false;
+  }
+
+  
+
+
+
+
+  isCommandEnabled(command) {
+    return this.supportsCommand(command) &&
+           (command != "cmd_cut" || !this.urlbar.readOnly) &&
+           this.urlbar.selectionStart < this.urlbar.selectionEnd;
+  }
+
+  onEvent() {}
+}
+
