@@ -243,7 +243,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
   void DoStopRequest();
 
-  void DoDataAvailable(const uint8_t* aBuffer, uint32_t aLength);
+  void DoDataAvailable(mozilla::Span<const uint8_t> aBuffer);
 
   static nsresult CopySegmentsToParser(nsIInputStream* aInStream,
                                        void* aClosure, const char* aFromSegment,
@@ -268,37 +268,17 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
 
 
-  nsresult SniffStreamBytes(const uint8_t* aFromSegment, uint32_t aCount,
-                            uint32_t* aWriteCount);
+  nsresult SniffStreamBytes(mozilla::Span<const uint8_t> aFromSegment);
 
   
 
 
-  nsresult WriteStreamBytes(const uint8_t* aFromSegment, uint32_t aCount,
-                            uint32_t* aWriteCount);
+  nsresult WriteStreamBytes(mozilla::Span<const uint8_t> aFromSegment);
 
   
 
 
-  void SniffBOMlessUTF16BasicLatin(const uint8_t* aFromSegment,
-                                   uint32_t aCountToSniffingLimit);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult FinalizeSniffing(const uint8_t* aFromSegment, uint32_t aCount,
-                            uint32_t* aWriteCount,
-                            uint32_t aCountToSniffingLimit);
+  void SniffBOMlessUTF16BasicLatin(mozilla::Span<const uint8_t> aFromSegment);
 
   
 
@@ -306,13 +286,20 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
 
+
+
+
+  nsresult FinalizeSniffing(mozilla::Span<const uint8_t> aFromSegment,
+                            uint32_t aCountToSniffingLimit, bool aEof);
+
+  
 
 
 
 
 
   nsresult SetupDecodingAndWriteSniffingBufferAndCurrentSegment(
-      const uint8_t* aFromSegment, uint32_t aCount, uint32_t* aWriteCount);
+      mozilla::Span<const uint8_t> aFromSegment);
 
   
 
