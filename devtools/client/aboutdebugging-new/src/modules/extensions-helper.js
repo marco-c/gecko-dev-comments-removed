@@ -52,7 +52,10 @@ exports.debugLocalAddon = async function(addonID) {
 
 
 
-exports.debugRemoteAddon = async function(addonForm, client) {
+exports.debugRemoteAddon = async function(id, client) {
+  const { addons } = await client.listAddons();
+  const addonForm = addons.find(addon => addon.id === id);
+
   
   closeToolbox();
 
@@ -69,11 +72,6 @@ exports.debugRemoteAddon = async function(addonForm, client) {
   remoteAddonToolbox.once("destroy", () => {
     remoteAddonToolbox = null;
   });
-};
-
-exports.getAddonForm = async function(addonID, client) {
-  const { addons } = await client.listAddons();
-  return addons.find(addon => addon.id === addonID);
 };
 
 
