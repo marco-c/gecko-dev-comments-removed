@@ -679,40 +679,6 @@ KeyframeEffect::ConstructKeyframeEffect(
   return effect.forget();
 }
 
- already_AddRefed<KeyframeEffect>
-KeyframeEffect::ConstructKeyframeEffect(const GlobalObject& aGlobal,
-                                        KeyframeEffect& aSource,
-                                        ErrorResult& aRv)
-{
-  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
-  if (!doc) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  RefPtr<KeyframeEffect> effect =
-    new KeyframeEffect(doc,
-                       aSource.mTarget,
-                       aSource.SpecifiedTiming(),
-                       aSource.mEffectOptions);
-  
-  
-  effect->mCumulativeChangeHint = aSource.mCumulativeChangeHint;
-
-  
-  
-  
-  effect->mKeyframes = aSource.mKeyframes;
-  effect->mProperties = aSource.mProperties;
-  return effect.forget();
-}
-
 nsTArray<AnimationProperty>
 KeyframeEffect::BuildProperties(const ComputedStyle* aStyle)
 {
@@ -885,14 +851,6 @@ KeyframeEffect::Constructor(
 }
 
  already_AddRefed<KeyframeEffect>
-KeyframeEffect::Constructor(const GlobalObject& aGlobal,
-                            KeyframeEffect& aSource,
-                            ErrorResult& aRv)
-{
-  return ConstructKeyframeEffect(aGlobal, aSource, aRv);
-}
-
- already_AddRefed<KeyframeEffect>
 KeyframeEffect::Constructor(
     const GlobalObject& aGlobal,
     const Nullable<ElementOrCSSPseudoElement>& aTarget,
@@ -901,6 +859,40 @@ KeyframeEffect::Constructor(
     ErrorResult& aRv)
 {
   return ConstructKeyframeEffect(aGlobal, aTarget, aKeyframes, aOptions, aRv);
+}
+
+ already_AddRefed<KeyframeEffect>
+KeyframeEffect::Constructor(const GlobalObject& aGlobal,
+                            KeyframeEffect& aSource,
+                            ErrorResult& aRv)
+{
+  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
+  if (!doc) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  RefPtr<KeyframeEffect> effect =
+    new KeyframeEffect(doc,
+                       aSource.mTarget,
+                       aSource.SpecifiedTiming(),
+                       aSource.mEffectOptions);
+  
+  
+  effect->mCumulativeChangeHint = aSource.mCumulativeChangeHint;
+
+  
+  
+  
+  effect->mKeyframes = aSource.mKeyframes;
+  effect->mProperties = aSource.mProperties;
+  return effect.forget();
 }
 
 void

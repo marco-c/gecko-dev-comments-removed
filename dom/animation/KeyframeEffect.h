@@ -313,11 +313,6 @@ protected:
                           const OptionsType& aOptions,
                           ErrorResult& aRv);
 
-  static already_AddRefed<KeyframeEffect>
-  ConstructKeyframeEffect(const GlobalObject& aGlobal,
-                          KeyframeEffect& aSource,
-                          ErrorResult& aRv);
-
   
   
   
