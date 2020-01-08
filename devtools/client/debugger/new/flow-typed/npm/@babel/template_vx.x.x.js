@@ -1,0 +1,7 @@
+
+
+
+
+declare module "@babel/template" {
+  declare module.exports: any;
+}

@@ -1,0 +1,7 @@
+
+
+
+
+declare module "devtools-contextmenu" {
+  declare module.exports: any;
+}
