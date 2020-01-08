@@ -487,6 +487,13 @@ public:
   
 
 
+
+
+  Maybe<ScrollDirection> GetBestGuessPanDirection(const MultiTouchInput& aInput);
+
+  
+
+
   uint32_t GetActiveTouchCount() const;
 
   void DispatchEvent(const InputData& aEvent) const override;

@@ -955,8 +955,9 @@ AsyncPanZoomController::PinchLockMode AsyncPanZoomController::GetPinchLockMode()
 }
 
 bool
-AsyncPanZoomController::ArePointerEventsConsumable(TouchBlockState* aBlock, uint32_t aTouchPoints) {
-  if (aTouchPoints == 0) {
+AsyncPanZoomController::ArePointerEventsConsumable(TouchBlockState* aBlock, const MultiTouchInput& aInput) {
+  uint32_t touchPoints = aInput.mTouches.Length();
+  if (touchPoints == 0) {
     
     return false;
   }
@@ -967,16 +968,34 @@ AsyncPanZoomController::ArePointerEventsConsumable(TouchBlockState* aBlock, uint
   
   
   
+  
+  
+  
+  
 
-  bool pannable = aBlock->GetOverscrollHandoffChain()->CanBePanned(this);
+  bool pannableX = aBlock->TouchActionAllowsPanningX() &&
+      aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(this, ScrollDirection::eHorizontal);
+  bool pannableY = aBlock->TouchActionAllowsPanningY() &&
+      aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(this, ScrollDirection::eVertical);
+
+  bool pannable;
+
+  Maybe<ScrollDirection> panDirection = aBlock->GetBestGuessPanDirection(aInput);
+  if (panDirection == Some(ScrollDirection::eVertical)) {
+    pannable = pannableY;
+  } else if (panDirection == Some(ScrollDirection::eHorizontal)) {
+    pannable = pannableX;
+  } else {
+    
+    pannable = pannableX || pannableY;
+  }
+
   bool zoomable = mZoomConstraints.mAllowZoom;
-
-  pannable &= (aBlock->TouchActionAllowsPanningX() || aBlock->TouchActionAllowsPanningY());
   zoomable &= (aBlock->TouchActionAllowsPinchZoom());
 
   
   
-  bool consumable = (aTouchPoints == 1 ? pannable : zoomable);
+  bool consumable = (touchPoints == 1 ? pannable : zoomable);
   if (!consumable) {
     return false;
   }
