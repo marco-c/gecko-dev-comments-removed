@@ -451,6 +451,12 @@ class nsIDocument : public nsINode,
   template <typename T>
   using NotNull = mozilla::NotNull<T>;
 
+  explicit nsIDocument(const char* aContentType);
+  virtual ~nsIDocument();
+
+  nsIDocument(const nsIDocument&) = delete;
+  nsIDocument& operator=(const nsIDocument&) = delete;
+
  public:
   typedef nsExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
   typedef mozilla::FullscreenRequest FullscreenRequest;
@@ -477,10 +483,6 @@ class nsIDocument : public nsINode,
       shell->func_ params_;                                                   \
     }                                                                         \
   } while (0)
-
-#ifdef MOZILLA_INTERNAL_API
-  nsIDocument();
-#endif
 
   
   NS_DECL_NSIAPPLICATIONCACHECONTAINER
@@ -3624,8 +3626,6 @@ class nsIDocument : public nsINode,
     }
   }
 
-  ~nsIDocument();
-
   
   nsPIDOMWindowOuter* GetWindowInternal() const;
 
@@ -4313,6 +4313,8 @@ class nsIDocument : public nsINode,
 
   nsDocHeaderData* mHeaderData;
 
+  
+  
   RefPtr<PrincipalFlashClassifier> mPrincipalFlashClassifier;
   mozilla::dom::FlashClassification mFlashClassification;
   

@@ -61,7 +61,7 @@
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MouseEvents.h"
 #include "nsNodeUtils.h"
-#include "nsDocument.h"
+#include "nsIDocument.h"
 #include "nsAttrValueOrString.h"
 #include "nsQueryObject.h"
 #ifdef MOZ_XUL

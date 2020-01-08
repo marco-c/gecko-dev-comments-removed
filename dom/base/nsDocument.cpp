@@ -9,7 +9,7 @@
 
 
 #include "AudioChannelService.h"
-#include "nsDocument.h"
+#include "nsIDocument.h"
 #include "nsIDocumentInlines.h"
 #include "mozilla/AnimationComparator.h"
 #include "mozilla/AntiTrackingCommon.h"
@@ -294,6 +294,11 @@
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/net/RequestContextService.h"
 #include "StorageAccessPermissionRequest.h"
+
+#define XML_DECLARATION_BITS_DECLARATION_EXISTS (1 << 0)
+#define XML_DECLARATION_BITS_ENCODING_EXISTS (1 << 1)
+#define XML_DECLARATION_BITS_STANDALONE_EXISTS (1 << 2)
+#define XML_DECLARATION_BITS_STANDALONE_YES (1 << 3)
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1238,7 +1243,7 @@ struct nsIDocument::FrameRequest {
 
 
 
-nsIDocument::nsIDocument()
+nsIDocument::nsIDocument(const char* aContentType)
     : nsINode(nullptr),
       DocumentOrShadowRoot(*this),
       mReferrerPolicySet(false),
@@ -1378,6 +1383,7 @@ nsIDocument::nsIDocument()
       mViewportOverflowType(ViewportOverflowType::NoOverflow),
       mSubDocuments(nullptr),
       mHeaderData(nullptr),
+      mPrincipalFlashClassifier(new PrincipalFlashClassifier()),
       mFlashClassification(FlashClassification::Unclassified),
       mBoxObjectTable(nullptr),
       mCurrentOrientationAngle(0),
@@ -1387,27 +1393,22 @@ nsIDocument::nsIDocument()
       mIgnoreOpensDuringUnloadCounter(0),
       mDocLWTheme(Doc_Theme_Uninitialized),
       mSavedResolution(1.0f) {
+  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p created", this));
+
   SetIsInDocument();
   SetIsConnected(true);
 
   if (StaticPrefs::layout_css_use_counters_enabled()) {
     mStyleUseCounters.reset(Servo_UseCounters_Create());
   }
-}
 
-nsDocument::nsDocument(const char* aContentType) : nsIDocument() {
   SetContentTypeInternal(nsDependentCString(aContentType));
-
-  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p created", this));
 
   
   SetDOMStringToNull(mLastStyleSheetSet);
 
   
   mPreloadPictureFoundSource.SetIsVoid(true);
-  
-  
-  mPrincipalFlashClassifier = new PrincipalFlashClassifier();
 }
 
 void nsIDocument::ClearAllBoxObjects() {
@@ -1421,21 +1422,6 @@ void nsIDocument::ClearAllBoxObjects() {
     delete mBoxObjectTable;
     mBoxObjectTable = nullptr;
   }
-}
-
-nsIDocument::~nsIDocument() {
-  MOZ_ASSERT(mDOMMediaQueryLists.isEmpty(),
-             "must not have media query lists left");
-
-  if (mNodeInfoManager) {
-    mNodeInfoManager->DropDocumentReference();
-  }
-
-  if (mDocGroup) {
-    mDocGroup->RemoveDocument(this);
-  }
-
-  UnlinkOriginalDocumentIfStatic();
 }
 
 bool nsIDocument::IsAboutPage() const {
@@ -1453,7 +1439,7 @@ void nsIDocument::ConstructUbiNode(void* storage) {
   JS::ubi::Concrete<nsIDocument>::construct(storage, this);
 }
 
-nsDocument::~nsDocument() {
+nsIDocument::~nsIDocument() {
   MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p destroyed", this));
   MOZ_ASSERT(!IsTopLevelContentDocument() || !IsResourceDoc(),
              "Can't be top-level and a resource doc at the same time");
@@ -1638,6 +1624,19 @@ nsDocument::~nsDocument() {
   mPendingTitleChangeEvent.Revoke();
 
   mPlugins.Clear();
+
+  MOZ_ASSERT(mDOMMediaQueryLists.isEmpty(),
+             "must not have media query lists left");
+
+  if (mNodeInfoManager) {
+    mNodeInfoManager->DropDocumentReference();
+  }
+
+  if (mDocGroup) {
+    mDocGroup->RemoveDocument(this);
+  }
+
+  UnlinkOriginalDocumentIfStatic();
 }
 
 NS_INTERFACE_TABLE_HEAD(nsIDocument)
@@ -2749,8 +2748,7 @@ nsresult nsIDocument::InitCSP(nsIChannel* aChannel) {
           ("Document is an add-on or CSP header specified %p", this));
 
   nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv =
-      principal->EnsureCSP(static_cast<nsDocument*>(this), getter_AddRefs(csp));
+  rv = principal->EnsureCSP(this, getter_AddRefs(csp));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -4616,8 +4614,8 @@ void nsIDocument::MaybeEndOutermostXBLUpdate() {
     } else if (!mInDestructor) {
       if (!mMaybeEndOutermostXBLUpdateRunner) {
         mMaybeEndOutermostXBLUpdateRunner =
-            NewRunnableMethod("nsDocument::MaybeEndOutermostXBLUpdate", this,
-                              &nsDocument::MaybeEndOutermostXBLUpdate);
+            NewRunnableMethod("nsIDocument::MaybeEndOutermostXBLUpdate", this,
+                              &nsIDocument::MaybeEndOutermostXBLUpdate);
       }
       nsContentUtils::AddScriptRunner(mMaybeEndOutermostXBLUpdateRunner);
     }
@@ -7290,7 +7288,7 @@ already_AddRefed<Element> nsIDocument::CreateElem(const nsAString& aName,
   
   bool nsAware = aPrefix != nullptr || aNamespaceID != GetDefaultNamespaceID();
   NS_ASSERTION(NS_SUCCEEDED(nsContentUtils::CheckQName(qName, nsAware)),
-               "Don't pass invalid prefixes to nsDocument::CreateElem, "
+               "Don't pass invalid prefixes to nsIDocument::CreateElem, "
                "check caller.");
 #endif
 
@@ -8582,18 +8580,15 @@ nsIDocument* nsIDocument::GetTemplateContentsOwner() {
     mTemplateContentsOwner = document;
     NS_ENSURE_TRUE(mTemplateContentsOwner, nullptr);
 
-    nsDocument* doc = static_cast<nsDocument*>(mTemplateContentsOwner.get());
-
     if (!scriptObject) {
       mTemplateContentsOwner->SetScopeObject(GetScopeObject());
     }
 
-    doc->mHasHadScriptHandlingObject = hasHadScriptObject;
+    mTemplateContentsOwner->mHasHadScriptHandlingObject = hasHadScriptObject;
 
     
     
-    
-    doc->mTemplateContentsOwner = doc;
+    mTemplateContentsOwner->mTemplateContentsOwner = mTemplateContentsOwner;
   }
 
   return mTemplateContentsOwner;
@@ -8877,24 +8872,22 @@ void nsIDocument::FlushPendingLinkUpdates() {
 
 already_AddRefed<nsIDocument> nsIDocument::CreateStaticClone(
     nsIDocShell* aCloneContainer) {
-  nsDocument* thisAsDoc = static_cast<nsDocument*>(this);
   mCreatingStaticClone = true;
 
   
   RefPtr<nsDocShell> originalShell = mDocumentContainer.get();
   SetContainer(static_cast<nsDocShell*>(aCloneContainer));
   ErrorResult rv;
-  nsCOMPtr<nsINode> clonedNode = thisAsDoc->CloneNode(true, rv);
+  nsCOMPtr<nsINode> clonedNode = this->CloneNode(true, rv);
   SetContainer(originalShell);
 
-  RefPtr<nsDocument> clonedDoc;
+  nsCOMPtr<nsIDocument> clonedDoc;
   if (rv.Failed()) {
     
     rv.SuppressException();
   } else {
-    nsCOMPtr<nsIDocument> tmp = do_QueryInterface(clonedNode);
-    if (tmp) {
-      clonedDoc = static_cast<nsDocument*>(tmp.get());
+    clonedDoc = do_QueryInterface(clonedNode);
+    if (clonedDoc) {
       if (IsStaticDocument()) {
         clonedDoc->mOriginalDocument = mOriginalDocument;
       } else {
@@ -10577,7 +10570,7 @@ bool nsIDocument::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
     }
     nsIDocument* parent = child->GetParentDocument();
     Element* element = parent->FindContentForSubDocument(child);
-    if (static_cast<nsDocument*>(parent)->FullscreenStackPush(element)) {
+    if (parent->FullscreenStackPush(element)) {
       changed.AppendElement(parent);
       child = parent;
     } else {
@@ -10761,18 +10754,17 @@ NS_IMETHODIMP
 PointerLockRequest::Run() {
   nsCOMPtr<Element> e = do_QueryReferent(mElement);
   nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocument);
-  nsDocument* d = static_cast<nsDocument*>(doc.get());
   const char* error = nullptr;
-  if (!e || !d || !e->GetComposedDoc()) {
+  if (!e || !doc || !e->GetComposedDoc()) {
     error = "PointerLockDeniedNotInDocument";
-  } else if (e->GetComposedDoc() != d) {
+  } else if (e->GetComposedDoc() != doc) {
     error = "PointerLockDeniedMovedDocument";
   }
   if (!error) {
     nsCOMPtr<Element> pointerLockedElement =
         do_QueryReferent(EventStateManager::sPointerLockedElement);
     if (e == pointerLockedElement) {
-      DispatchPointerLockChange(d);
+      DispatchPointerLockChange(doc);
       return NS_OK;
     }
     
@@ -10780,7 +10772,7 @@ PointerLockRequest::Run() {
     
     
     if (!error && pointerLockedElement) {
-      ChangePointerLockedElement(e, d, pointerLockedElement);
+      ChangePointerLockedElement(e, doc, pointerLockedElement);
       return NS_OK;
     }
   }
@@ -10789,15 +10781,15 @@ PointerLockRequest::Run() {
   if (!error && !mUserInputOrChromeCaller && !doc->GetFullscreenElement()) {
     error = "PointerLockDeniedNotInputDriven";
   }
-  if (!error && !d->SetPointerLock(e, NS_STYLE_CURSOR_NONE)) {
+  if (!error && !doc->SetPointerLock(e, NS_STYLE_CURSOR_NONE)) {
     error = "PointerLockDeniedFailedToLock";
   }
   if (error) {
-    DispatchPointerLockError(d, error);
+    DispatchPointerLockError(doc, error);
     return NS_OK;
   }
 
-  ChangePointerLockedElement(e, d, nullptr);
+  ChangePointerLockedElement(e, doc, nullptr);
   nsContentUtils::DispatchEventOnlyToChrome(
       doc, ToSupports(e), NS_LITERAL_STRING("MozDOMPointerLock:Entered"),
       CanBubble::eYes, Cancelable::eNo,  nullptr);
@@ -10807,7 +10799,7 @@ PointerLockRequest::Run() {
 void nsIDocument::RequestPointerLock(Element* aElement,
                                      CallerType aCallerType) {
   NS_ASSERTION(aElement,
-               "Must pass non-null element to nsDocument::RequestPointerLock");
+               "Must pass non-null element to nsIDocument::RequestPointerLock");
 
   nsCOMPtr<Element> pointerLockedElement =
       do_QueryReferent(EventStateManager::sPointerLockedElement);
@@ -11189,8 +11181,7 @@ nsIDocument* nsIDocument::GetTopLevelContentDocument() {
       return nullptr;
     }
 
-    nsIDocument* candidate = parent->GetParentDocument();
-    parent = static_cast<nsDocument*>(candidate);
+    parent = parent->GetParentDocument();
   } while (parent);
 
   return parent;
@@ -11306,8 +11297,8 @@ bool nsIDocument::InlineScriptAllowedByCSP() {
 static bool ReportExternalResourceUseCounters(nsIDocument* aDocument,
                                               void* aData) {
   const auto reportKind =
-      nsDocument::UseCounterReportKind::eIncludeExternalResources;
-  static_cast<nsDocument*>(aDocument)->ReportUseCounters(reportKind);
+      nsIDocument::UseCounterReportKind::eIncludeExternalResources;
+  aDocument->ReportUseCounters(reportKind);
   return true;
 }
 
@@ -11461,8 +11452,8 @@ void nsIDocument::ScheduleIntersectionObserverNotification() {
   }
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIRunnable> notification =
-      NewRunnableMethod("nsDocument::NotifyIntersectionObservers", this,
-                        &nsDocument::NotifyIntersectionObservers);
+      NewRunnableMethod("nsIDocument::NotifyIntersectionObservers", this,
+                        &nsIDocument::NotifyIntersectionObservers);
   Dispatch(TaskCategory::Other, notification.forget());
 }
 
@@ -12487,7 +12478,7 @@ FlashClassification nsIDocument::DocumentFlashClassification() {
     mFlashClassification = result;
     MOZ_ASSERT(
         result != FlashClassification::Unclassified,
-        "nsDocument::GetPluginClassification should never return Unclassified");
+        "nsIDocument::GetPluginClassification should never return Unclassified");
   }
 
   return mFlashClassification;

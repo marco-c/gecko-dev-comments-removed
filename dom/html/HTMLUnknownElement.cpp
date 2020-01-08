@@ -4,7 +4,7 @@
 
 
 
-#include "nsDocument.h"
+#include "nsIDocument.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/HTMLElementBinding.h"
 #include "jsapi.h"

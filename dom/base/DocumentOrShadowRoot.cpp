@@ -9,7 +9,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StyleSheetList.h"
-#include "nsDocument.h"
+#include "nsIDocument.h"
 #include "nsFocusManager.h"
 #include "nsIRadioVisitor.h"
 #include "nsIFormControl.h"

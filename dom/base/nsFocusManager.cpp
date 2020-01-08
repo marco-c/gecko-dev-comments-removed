@@ -13,7 +13,7 @@
 #include "nsGkAtoms.h"
 #include "nsGlobalWindow.h"
 #include "nsContentUtils.h"
-#include "nsDocument.h"
+#include "nsIDocument.h"
 #include "nsIContentParent.h"
 #include "nsPIDOMWindow.h"
 #include "nsIDOMChromeWindow.h"

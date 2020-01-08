@@ -143,7 +143,7 @@ nsresult MediaDocument::StartDocumentLoad(const char* aCommand,
                                           nsISupports* aContainer,
                                           nsIStreamListener** aDocListener,
                                           bool aReset, nsIContentSink* aSink) {
-  nsresult rv = nsDocument::StartDocumentLoad(
+  nsresult rv = nsIDocument::StartDocumentLoad(
       aCommand, aChannel, aLoadGroup, aContainer, aDocListener, aReset, aSink);
   if (NS_FAILED(rv)) {
     return rv;
