@@ -29,7 +29,8 @@ exports.initPanelInTab = async function({ tool, tab }) {
   
   
   const toolbox = await gDevTools.showToolbox(target, tool);
-  await toolbox.initPerformance();
+  
+  await target.getFront("performance");
 
   const panel = toolbox.getCurrentPanel();
   return { target, toolbox, panel };
@@ -73,7 +74,8 @@ exports.initConsoleInTab = async function({ tab }) {
   });
 
   const consoleMethod = async function(method, label, event) {
-    const recordingEventReceived = once(toolbox.performance, event);
+    const performanceFront = await toolbox.target.getFront("performance");
+    const recordingEventReceived = once(performanceFront, event);
     if (label === undefined) {
       await panel.hud.jsterm.execute(`console.${method}()`);
     } else {

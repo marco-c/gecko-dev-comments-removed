@@ -386,14 +386,6 @@ Toolbox.prototype = {
 
 
 
-  get performance() {
-    return this._performance;
-  },
-
-  
-
-
-
   get inspector() {
     return this._inspector;
   },
@@ -3047,10 +3039,37 @@ Toolbox.prototype = {
       return promise.resolve();
     }
 
-    this._performance =  await this.target.getFront("performance");
-    this._performance.on("console-profile-start", this._onPerformanceFrontEvent);
+    const performanceFront = await this.target.getFront("performance");
+    performanceFront.once(
+      "console-profile-start",
+      () => this._onPerformanceFrontEvent(performanceFront)
+    );
 
-    return this._performance;
+    return performanceFront;
+  },
+
+  
+
+
+
+
+
+  async _onPerformanceFrontEvent(performanceFront) {
+    if (this.getPanel("performance")) {
+      
+      
+      performanceFront.flushQueuedRecordings();
+      return;
+    }
+
+    
+    
+    
+    
+    const panel = await this.loadTool("performance");
+    const recordings = performanceFront.flushQueuedRecordings();
+    panel.panelWin.PerformanceController.populateWithRecordings(recordings);
+    await panel.open();
   },
 
   
@@ -3068,32 +3087,6 @@ Toolbox.prototype = {
     }
 
     this._preferenceFront = null;
-  },
-
-  
-
-
-
-
-
-
-  async _onPerformanceFrontEvent(recording) {
-    this.performance.off("console-profile-start", this._onPerformanceFrontEvent);
-    if (this.getPanel("performance")) {
-      
-      
-      this.performance.flushQueuedRecordings();
-      return;
-    }
-
-    
-    
-    
-    
-    const panel = await this.loadTool("performance");
-    const recordings = this.performance.flushQueuedRecordings();
-    panel.panelWin.PerformanceController.populateWithRecordings(recordings);
-    await panel.open();
   },
 
   
