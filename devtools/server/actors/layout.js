@@ -340,7 +340,9 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-  getCurrentDisplay(node, type) {
+
+
+  getCurrentDisplay(node, type, onlyLookAtContainer) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -361,7 +363,17 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
       }
 
       if (flexType && displayType.includes("flex")) {
-        return new FlexboxActor(this, node);
+        if (!onlyLookAtContainer) {
+          return new FlexboxActor(this, node);
+        }
+
+        const container = findFlexOrGridParentContainerForNode(node, type, this.walker);
+
+        if (container) {
+          return new FlexboxActor(this, container);
+        }
+
+        return null;
       } else if (gridType && displayType.includes("grid")) {
         return new GridActor(this, node);
       }
@@ -414,11 +426,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
   getCurrentFlexbox(node, onlyLookAtParents) {
-    if (onlyLookAtParents) {
-      node = node.rawNode.parentNode;
-    }
-
-    return this.getCurrentDisplay(node, "flex");
+    return this.getCurrentDisplay(node, "flex", onlyLookAtParents);
   },
 
   
