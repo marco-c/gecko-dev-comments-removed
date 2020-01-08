@@ -299,7 +299,7 @@ template<typename Iter,
          class OnNotShortestForm>
 MOZ_ALWAYS_INLINE Maybe<char32_t>
 DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
-                             Iter* aIter, const EndIter aEnd,
+                             Iter* aIter, const EndIter& aEnd,
                              OnBadLeadUnit aOnBadLeadUnit,
                              OnNotEnoughUnits aOnNotEnoughUnits,
                              OnBadTrailingUnit aOnBadTrailingUnit,
@@ -391,7 +391,7 @@ template<typename Iter,
          class OnNotShortestForm>
 inline Maybe<char32_t>
 DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
-                       Iter* aIter, const EndIter aEnd,
+                       Iter* aIter, const EndIter& aEnd,
                        OnBadLeadUnit aOnBadLeadUnit,
                        OnNotEnoughUnits aOnNotEnoughUnits,
                        OnBadTrailingUnit aOnBadTrailingUnit,
@@ -414,7 +414,7 @@ DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
 template<typename Iter, typename EndIter>
 MOZ_ALWAYS_INLINE Maybe<char32_t>
 DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
-                             Iter* aIter, const EndIter aEnd)
+                             Iter* aIter, const EndIter& aEnd)
 {
   
   
@@ -466,7 +466,7 @@ DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
 template<typename Iter, typename EndIter>
 inline Maybe<char32_t>
 DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
-                       Iter* aIter, const EndIter aEnd)
+                       Iter* aIter, const EndIter& aEnd)
 {
   return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd);
 }
