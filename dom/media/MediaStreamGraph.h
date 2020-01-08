@@ -119,6 +119,11 @@ public:
   
 
 
+  virtual uint32_t InputChannelCount() = 0;
+
+  
+
+
   virtual void DeviceChanged() = 0;
 };
 
