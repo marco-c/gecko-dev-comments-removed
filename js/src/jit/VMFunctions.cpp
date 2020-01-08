@@ -901,36 +901,6 @@ bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
   return false;
 }
 
-bool CheckGlobalOrEvalDeclarationConflicts(JSContext* cx, HandleObject envChain,
-                                           HandleScript script) {
-  RootedObject varObj(cx, &GetVariablesObject(envChain));
-
-  if (script->isForEval()) {
-    
-    
-    
-    
-    
-    if (!script->bodyScope()->hasEnvironment()) {
-      MOZ_ASSERT(
-          !script->strict() &&
-          (!script->enclosingScope()->is<FunctionScope>() ||
-           !script->enclosingScope()->as<FunctionScope>().hasParameterExprs()));
-      if (!CheckEvalDeclarationConflicts(cx, script, envChain, varObj)) {
-        return false;
-      }
-    }
-  } else {
-    Rooted<LexicalEnvironmentObject*> lexicalEnv(
-        cx, &NearestEnclosingExtensibleLexicalEnvironment(envChain));
-    if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv, varObj)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 bool GlobalNameConflictsCheckFromIon(JSContext* cx, HandleScript script) {
   Rooted<LexicalEnvironmentObject*> globalLexical(
       cx, &cx->global()->lexicalEnvironment());
