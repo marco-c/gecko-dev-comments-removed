@@ -171,7 +171,7 @@ pref("dom.enable_performance_navigation_timing", true);
 pref("dom.performance.enable_notify_performance_timing", false);
 
 
-pref("dom.performance.enable_scheduler_timing", false);
+pref("dom.performance.enable_scheduler_timing", true);
 
 
 pref("dom.permissions.revoke.enable", false);
@@ -5072,7 +5072,7 @@ pref("extensions.webextensions.ExtensionStorageIDB.enabled", false);
 #endif
 
 
-pref("extensions.webextensions.enablePerformanceCounters", false);
+pref("extensions.webextensions.enablePerformanceCounters", true);
 
 
 
