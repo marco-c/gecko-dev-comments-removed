@@ -26,6 +26,7 @@
 #include "nsIScriptObjectPrincipal.h"
 #include "nsNetCID.h"
 #include "prtime.h"
+#include "mozilla/StaticPtr.h"
 
 
 
@@ -44,9 +45,30 @@ static const char kCookiesLifetimePolicy[] = "network.cookie.lifetimePolicy";
 
 static const char kPermissionType[] = "cookie";
 
+namespace {
+mozilla::StaticRefPtr<nsCookiePermission> gSingleton;
+}
+
 NS_IMPL_ISUPPORTS(nsCookiePermission,
                   nsICookiePermission,
                   nsIObserver)
+
+
+already_AddRefed<nsICookiePermission>
+nsCookiePermission::GetOrCreate()
+{
+  if (!gSingleton) {
+    gSingleton = new nsCookiePermission();
+  }
+  return do_AddRef(gSingleton);
+}
+
+
+void
+nsCookiePermission::Shutdown()
+{
+  gSingleton = nullptr;
+}
 
 bool
 nsCookiePermission::Init()

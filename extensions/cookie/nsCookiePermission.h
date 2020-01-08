@@ -13,22 +13,25 @@
 
 class nsIPrefBranch;
 
-class nsCookiePermission : public nsICookiePermission
-                         , public nsIObserver
+class nsCookiePermission final : public nsICookiePermission
+                               , public nsIObserver
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICOOKIEPERMISSION
   NS_DECL_NSIOBSERVER
 
-  nsCookiePermission()
-    : mCookiesLifetimePolicy(0) 
-    {}
+  
+  static already_AddRefed<nsICookiePermission> GetOrCreate();
+  static void Shutdown();
 
   bool Init();
   void PrefChanged(nsIPrefBranch *, const char *);
 
 private:
+  nsCookiePermission()
+    : mCookiesLifetimePolicy(0) 
+    {}
   virtual ~nsCookiePermission() {}
 
   bool EnsureInitialized() { return (mPermMgr != nullptr && mThirdPartyUtil != nullptr) || Init(); };
@@ -38,9 +41,5 @@ private:
 
   uint8_t      mCookiesLifetimePolicy;         
 };
-
-
-#define NS_COOKIEPERMISSION_CID \
- {0xEF565D0A, 0xAB9A, 0x4A13, {0x91, 0x60, 0x06, 0x44, 0xcd, 0xfd, 0x85, 0x9a }}
 
 #endif
