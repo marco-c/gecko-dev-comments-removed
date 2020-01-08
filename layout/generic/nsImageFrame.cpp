@@ -1039,8 +1039,9 @@ nsImageFrame::GetMinISize(gfxContext *aRenderingContext)
   DebugOnly<nscoord> result;
   DISPLAY_MIN_WIDTH(this, result);
   EnsureIntrinsicSizeAndRatio();
-  return mIntrinsicSize.width.GetUnit() == eStyleUnit_Coord ?
-    mIntrinsicSize.width.GetCoordValue() : 0;
+  const nsStyleCoord& iSize = GetWritingMode().IsVertical() ?
+                                mIntrinsicSize.height : mIntrinsicSize.width;
+  return iSize.GetUnit() == eStyleUnit_Coord ? iSize.GetCoordValue() : 0;
 }
 
  nscoord
@@ -1051,9 +1052,10 @@ nsImageFrame::GetPrefISize(gfxContext *aRenderingContext)
   DebugOnly<nscoord> result;
   DISPLAY_PREF_WIDTH(this, result);
   EnsureIntrinsicSizeAndRatio();
+  const nsStyleCoord& iSize = GetWritingMode().IsVertical() ?
+                                mIntrinsicSize.height : mIntrinsicSize.width;
   
-  return mIntrinsicSize.width.GetUnit() == eStyleUnit_Coord ?
-    mIntrinsicSize.width.GetCoordValue() : 0;
+  return iSize.GetUnit() == eStyleUnit_Coord ? iSize.GetCoordValue() : 0;
 }
 
  IntrinsicSize
@@ -1382,8 +1384,7 @@ struct nsRecessedBorder : public nsStyleBorder {
   }
 };
 
-class nsDisplayAltFeedback final : public nsDisplayItem
-{
+class nsDisplayAltFeedback : public nsDisplayItem {
 public:
   nsDisplayAltFeedback(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
     : nsDisplayItem(aBuilder, aFrame) {}
