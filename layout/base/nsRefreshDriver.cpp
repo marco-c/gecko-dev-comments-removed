@@ -38,7 +38,7 @@
 #include "nsPresContext.h"
 #include "nsComponentManagerUtils.h"
 #include "mozilla/Logging.h"
-#include "mozilla/dom/Document.h"
+#include "nsIDocument.h"
 #include "nsIXULRuntime.h"
 #include "jsapi.h"
 #include "nsContentUtils.h"
@@ -80,7 +80,6 @@
 using namespace mozilla;
 using namespace mozilla::widget;
 using namespace mozilla::ipc;
-using namespace mozilla::dom;
 using namespace mozilla::layout;
 
 static mozilla::LazyLogModule sRefreshDriverLog("nsRefreshDriver");
@@ -1434,10 +1433,11 @@ void nsRefreshDriver::DoTick() {
 }
 
 struct DocumentFrameCallbacks {
-  explicit DocumentFrameCallbacks(Document* aDocument) : mDocument(aDocument) {}
+  explicit DocumentFrameCallbacks(nsIDocument* aDocument)
+      : mDocument(aDocument) {}
 
-  RefPtr<Document> mDocument;
-  Document::FrameRequestCallbackList mCallbacks;
+  nsCOMPtr<nsIDocument> mDocument;
+  nsIDocument::FrameRequestCallbackList mCallbacks;
 };
 
 static nsDocShell* GetDocShell(nsPresContext* aPresContext) {
@@ -1445,7 +1445,7 @@ static nsDocShell* GetDocShell(nsPresContext* aPresContext) {
 }
 
 static bool HasPendingAnimations(nsIPresShell* aShell) {
-  Document* doc = aShell->GetDocument();
+  nsIDocument* doc = aShell->GetDocument();
   if (!doc) {
     return false;
   }
@@ -1501,7 +1501,7 @@ static void GetProfileTimelineSubDocShells(nsDocShell* aRootDocShell,
 }
 
 static void TakeFrameRequestCallbacksFrom(
-    Document* aDocument, nsTArray<DocumentFrameCallbacks>& aTarget) {
+    nsIDocument* aDocument, nsTArray<DocumentFrameCallbacks>& aTarget) {
   aTarget.AppendElement(aDocument);
   aDocument->TakeFrameRequestCallbacks(aTarget.LastElement().mCallbacks);
 }
@@ -1517,19 +1517,19 @@ void nsRefreshDriver::RunFullscreenSteps() {
 }
 
 void nsRefreshDriver::UpdateIntersectionObservations() {
-  AutoTArray<RefPtr<Document>, 32> documents;
+  AutoTArray<nsCOMPtr<nsIDocument>, 32> documents;
 
   if (mPresContext->Document()->HasIntersectionObservers()) {
     documents.AppendElement(mPresContext->Document());
   }
 
   mPresContext->Document()->CollectDescendantDocuments(
-      documents, [](const Document* document) -> bool {
+      documents, [](const nsIDocument* document) -> bool {
         return document->HasIntersectionObservers();
       });
 
   for (uint32_t i = 0; i < documents.Length(); ++i) {
-    Document* doc = documents[i];
+    nsIDocument* doc = documents[i];
     doc->UpdateIntersectionObservations();
     doc->ScheduleIntersectionObserverNotification();
   }
@@ -1560,7 +1560,7 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
 
   
   {
-    nsTArray<Document*> docsToRemove;
+    nsTArray<nsIDocument*> docsToRemove;
 
     
     
@@ -1574,7 +1574,7 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
       tickThrottledFrameRequests = true;
     }
 
-    for (Document* doc : mThrottledFrameRequestCallbackDocs) {
+    for (nsIDocument* doc : mThrottledFrameRequestCallbackDocs) {
       if (tickThrottledFrameRequests) {
         
         
@@ -1598,14 +1598,14 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
       
       
       
-      for (Document* doc : docsToRemove) {
+      for (nsIDocument* doc : docsToRemove) {
         mThrottledFrameRequestCallbackDocs.RemoveElement(doc);
       }
     }
   }
 
   
-  for (Document* doc : mFrameRequestCallbackDocs) {
+  for (nsIDocument* doc : mFrameRequestCallbackDocs) {
     TakeFrameRequestCallbacksFrom(doc, frameRequestCallbacks);
   }
 
@@ -1740,6 +1740,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   AutoRestore<TimeStamp> restoreTickStart(mTickStart);
   mTickStart = TimeStamp::Now();
   mTickVsyncId = aId;
+  mTickVsyncTime = aNowTime;
 
   gfxPlatform::GetPlatform()->SchedulePaintIfDeviceReset();
 
@@ -2121,6 +2122,8 @@ mozilla::TimeStamp nsRefreshDriver::GetTransactionStart() { return mTickStart; }
 
 VsyncId nsRefreshDriver::GetVsyncId() { return mTickVsyncId; }
 
+mozilla::TimeStamp nsRefreshDriver::GetVsyncStart() { return mTickVsyncTime; }
+
 void nsRefreshDriver::NotifyTransactionCompleted(
     mozilla::layers::TransactionId aTransactionId) {
   if (aTransactionId > mCompletedTransaction) {
@@ -2239,7 +2242,7 @@ void nsRefreshDriver::ScheduleViewManagerFlush() {
   EnsureTimerStarted(eNeverAdjustTimer);
 }
 
-void nsRefreshDriver::ScheduleFrameRequestCallbacks(Document* aDocument) {
+void nsRefreshDriver::ScheduleFrameRequestCallbacks(nsIDocument* aDocument) {
   NS_ASSERTION(mFrameRequestCallbackDocs.IndexOf(aDocument) ==
                        mFrameRequestCallbackDocs.NoIndex &&
                    mThrottledFrameRequestCallbackDocs.IndexOf(aDocument) ==
@@ -2255,7 +2258,7 @@ void nsRefreshDriver::ScheduleFrameRequestCallbacks(Document* aDocument) {
   EnsureTimerStarted();
 }
 
-void nsRefreshDriver::RevokeFrameRequestCallbacks(Document* aDocument) {
+void nsRefreshDriver::RevokeFrameRequestCallbacks(nsIDocument* aDocument) {
   mFrameRequestCallbackDocs.RemoveElement(aDocument);
   mThrottledFrameRequestCallbackDocs.RemoveElement(aDocument);
   
@@ -2269,7 +2272,7 @@ void nsRefreshDriver::ScheduleFullscreenEvent(
   EnsureTimerStarted();
 }
 
-void nsRefreshDriver::CancelPendingFullscreenEvents(Document* aDocument) {
+void nsRefreshDriver::CancelPendingFullscreenEvents(nsIDocument* aDocument) {
   for (auto i : Reversed(IntegerRange(mPendingFullscreenEvents.Length()))) {
     if (mPendingFullscreenEvents[i]->Document() == aDocument) {
       mPendingFullscreenEvents.RemoveElementAt(i);

@@ -30,7 +30,7 @@
 
 class nsPresContext;
 class nsIPresShell;
-
+class nsIDocument;
 class imgIRequest;
 class nsINode;
 class nsIRunnable;
@@ -92,7 +92,6 @@ class nsAPostRefreshObserver {
 
 class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
                               public nsARefreshObserver {
-  using Document = mozilla::dom::Document;
   using TransactionId = mozilla::layers::TransactionId;
   using VVPResizeEvent =
       mozilla::dom::VisualViewport::VisualViewportResizeEvent;
@@ -256,12 +255,12 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
 
 
-  void ScheduleFrameRequestCallbacks(Document* aDocument);
+  void ScheduleFrameRequestCallbacks(nsIDocument* aDocument);
 
   
 
 
-  void RevokeFrameRequestCallbacks(Document* aDocument);
+  void RevokeFrameRequestCallbacks(nsIDocument* aDocument);
 
   
 
@@ -274,7 +273,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
 
-  void CancelPendingFullscreenEvents(Document* aDocument);
+  void CancelPendingFullscreenEvents(nsIDocument* aDocument);
 
   
 
@@ -383,6 +382,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void ResetInitialTransactionId(TransactionId aTransactionId) override;
   mozilla::TimeStamp GetTransactionStart() override;
   mozilla::VsyncId GetVsyncId() override;
+  mozilla::TimeStamp GetVsyncStart() override;
 
   bool IsWaitingForPaint(mozilla::TimeStamp aTime);
 
@@ -535,6 +535,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::TimeStamp mMostRecentRefresh;
   mozilla::TimeStamp mTickStart;
   mozilla::VsyncId mTickVsyncId;
+  mozilla::TimeStamp mTickVsyncTime;
   mozilla::TimeStamp mNextThrottledFrameRequestTick;
   mozilla::TimeStamp mNextRecomputeVisibilityTick;
 
@@ -561,8 +562,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<nsIPresShell*, 16> mStyleFlushObservers;
   AutoTArray<nsIPresShell*, 16> mLayoutFlushObservers;
   
-  nsTArray<Document*> mFrameRequestCallbackDocs;
-  nsTArray<Document*> mThrottledFrameRequestCallbackDocs;
+  nsTArray<nsIDocument*> mFrameRequestCallbackDocs;
+  nsTArray<nsIDocument*> mThrottledFrameRequestCallbackDocs;
   nsTObserverArray<nsAPostRefreshObserver*> mPostRefreshObservers;
   nsTArray<mozilla::UniquePtr<mozilla::PendingFullscreenEvent>>
       mPendingFullscreenEvents;
