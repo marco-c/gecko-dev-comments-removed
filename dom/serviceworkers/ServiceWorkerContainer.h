@@ -15,6 +15,8 @@ class nsIGlobalWindow;
 namespace mozilla {
 namespace dom {
 
+class ClientPostMessageArgs;
+struct MessageEventInit;
 class Promise;
 struct RegistrationOptions;
 class ServiceWorker;
@@ -64,7 +66,19 @@ public:
 
   IMPL_EVENT_HANDLER(controllerchange)
   IMPL_EVENT_HANDLER(error)
-  IMPL_EVENT_HANDLER(message)
+  
+  
+  
+  
+  inline mozilla::dom::EventHandlerNonNull* GetOnmessage()
+  {
+    return GetEventHandler(nsGkAtoms::onmessage);
+  }
+  inline void SetOnmessage(mozilla::dom::EventHandlerNonNull* aCallback)
+  {
+    SetEventHandler(nsGkAtoms::onmessage, aCallback);
+    StartMessages();
+  }
 
   static bool IsEnabled(JSContext* aCx, JSObject* aGlobal);
 
@@ -89,6 +103,9 @@ public:
   already_AddRefed<Promise>
   GetRegistrations(ErrorResult& aRv);
 
+  void
+  StartMessages();
+
   Promise*
   GetReady(ErrorResult& aRv);
 
@@ -103,6 +120,9 @@ public:
   
   void
   ControllerChanged(ErrorResult& aRv);
+
+  void
+  ReceiveMessage(const ClientPostMessageArgs& aArgs);
 
 private:
   ServiceWorkerContainer(nsIGlobalObject* aGlobal,
@@ -121,6 +141,27 @@ private:
   GetGlobalIfValid(ErrorResult& aRv,
                    const std::function<void(nsIDocument*)>&& aStorageFailureCB = nullptr) const;
 
+  struct ReceivedMessage;
+
+  
+  
+  
+  void
+  EnqueueReceivedMessageDispatch(RefPtr<ReceivedMessage> aMessage);
+
+  template <typename F>
+  void
+  RunWithJSContext(F&& aCallable);
+
+  void
+  DispatchMessage(RefPtr<ReceivedMessage> aMessage);
+
+  static bool
+  FillInMessageEventInit(JSContext* aCx,
+                         nsIGlobalObject* aGlobal,
+                         ReceivedMessage& aMessage,
+                         MessageEventInit& aInit);
+
   RefPtr<Inner> mInner;
 
   
@@ -129,6 +170,13 @@ private:
 
   RefPtr<Promise> mReadyPromise;
   MozPromiseRequestHolder<ServiceWorkerRegistrationPromise> mReadyPromiseHolder;
+
+  
+  bool mMessagesStarted = false;
+
+  
+  
+  nsTArray<RefPtr<ReceivedMessage>> mPendingMessages;
 };
 
 } 
