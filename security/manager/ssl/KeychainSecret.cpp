@@ -69,6 +69,16 @@ nsresult KeychainSecret::StoreSecret(const nsACString& aSecret,
   
   
   
+
+  
+  
+  
+  nsresult rv = DeleteSecret(aLabel);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
+            ("DeleteSecret before StoreSecret failed"));
+    return rv;
+  }
   const CFStringRef keys[] = {kSecClass, kSecAttrAccount, kSecValueData};
   ScopedCFType<CFStringRef> label(MozillaStringToCFString(aLabel));
   if (!label) {
@@ -89,10 +99,6 @@ nsresult KeychainSecret::StoreSecret(const nsACString& aSecret,
   ScopedCFType<CFDictionaryRef> addDictionary(CFDictionaryCreate(
       nullptr, (const void**)&keys, (const void**)&values, ArrayLength(keys),
       &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks));
-  
-  
-  
-  
   
   OSStatus osrv = SecItemAdd(addDictionary.get(), nullptr);
   if (osrv != errSecSuccess) {
