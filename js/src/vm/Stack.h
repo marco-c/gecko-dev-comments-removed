@@ -1917,7 +1917,6 @@ class InterpreterFrameIterator
 
 
 
-
 class JitFrameIter
 {
   protected:
