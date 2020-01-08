@@ -1209,6 +1209,18 @@ public:
     {
     }
 
+    
+    explicit Ptr(const HashTable& aTable)
+      : mEntry(nullptr)
+#ifdef DEBUG
+      , mTable(&aTable)
+      , mGeneration(aTable.generation())
+#endif
+    {
+    }
+
+    bool isValid() const { return !!mEntry; }
+
   public:
     Ptr()
       : mEntry(nullptr)
@@ -1218,8 +1230,6 @@ public:
 #endif
     {
     }
-
-    bool isValid() const { return !!mEntry; }
 
     bool found() const
     {
@@ -1285,6 +1295,21 @@ public:
 #endif
     {
     }
+
+    
+    
+    
+    AddPtr(const HashTable& aTable, HashNumber aHashNumber)
+      : Ptr(aTable)
+      , mKeyHash(aHashNumber)
+#ifdef DEBUG
+      , mMutationCount(aTable.mMutationCount)
+#endif
+    {
+      MOZ_ASSERT(isLive());
+    }
+
+    bool isLive() const { return isLiveHash(mKeyHash); }
 
   public:
     AddPtr()
@@ -2107,16 +2132,12 @@ public:
       return AddPtr();
     }
 
+    HashNumber keyHash = prepareHash(aLookup);
+
     if (!mTable) {
-      uint32_t newCapacity = rawCapacity();
-      RebuildStatus status = changeTableSize(newCapacity, ReportFailure);
-      MOZ_ASSERT(status != NotOverloaded);
-      if (status == RehashFailed) {
-        return AddPtr();
-      }
+      return AddPtr(*this, keyHash);
     }
 
-    HashNumber keyHash = prepareHash(aLookup);
     
     
     
@@ -2133,7 +2154,7 @@ public:
     MOZ_ASSERT(!(aPtr.mKeyHash & sCollisionBit));
 
     
-    if (!aPtr.isValid()) {
+    if (!aPtr.isLive()) {
       return false;
     }
 
@@ -2142,14 +2163,25 @@ public:
     MOZ_ASSERT(aPtr.mMutationCount == mMutationCount);
 #endif
 
-    
-    
-    if (aPtr.mEntry->isRemoved()) {
+    if (!aPtr.isValid()) {
+      MOZ_ASSERT(!mTable && mEntryCount == 0);
+      uint32_t newCapacity = rawCapacity();
+      RebuildStatus status = changeTableSize(newCapacity, ReportFailure);
+      MOZ_ASSERT(status != NotOverloaded);
+      if (status == RehashFailed) {
+        return false;
+      }
+      aPtr.mEntry = &findNonLiveEntry(aPtr.mKeyHash);
+
+    } else if (aPtr.mEntry->isRemoved()) {
+      
+      
       if (!this->checkSimulatedOOM()) {
         return false;
       }
       mRemovedCount--;
       aPtr.mKeyHash |= sCollisionBit;
+
     } else {
       
       RebuildStatus status = rehashIfOverloaded();
@@ -2210,20 +2242,27 @@ public:
                                   Args&&... aArgs)
   {
     
-    if (!aPtr.isValid()) {
+    if (!aPtr.isLive()) {
       return false;
     }
 #ifdef DEBUG
     aPtr.mGeneration = generation();
     aPtr.mMutationCount = mMutationCount;
 #endif
-    {
+    if (mTable) {
       ReentrancyGuard g(*this);
       
       MOZ_ASSERT(prepareHash(aLookup) == aPtr.mKeyHash);
       aPtr.mEntry = &lookup<ForAdd>(aLookup, aPtr.mKeyHash);
+      if (aPtr.found()) {
+        return true;
+      }
+    } else {
+      
+      
+      aPtr.mEntry = nullptr;
     }
-    return aPtr.found() || add(aPtr, std::forward<Args>(aArgs)...);
+    return add(aPtr, std::forward<Args>(aArgs)...);
   }
 
   void remove(Ptr aPtr)
