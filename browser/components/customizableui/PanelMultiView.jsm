@@ -1362,21 +1362,29 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-  _getNavigableElements() {
-    let buttons = Array.from(this.node.querySelectorAll(
-      "button,toolbarbutton,menulist,.text-link"));
+
+  get _navigableElements() {
+    if (this.__navigableElements) {
+      return this.__navigableElements;
+    }
+
+    let navigableElements = Array.from(this.node.querySelectorAll(
+      ":-moz-any(button,toolbarbutton,menulist,.text-link):not([disabled])"));
     let dwu = this._dwu;
-    return buttons.filter(button => {
-      if (button.hasAttribute("disabled")) {
+    return this.__navigableElements = navigableElements.filter(element => {
+      
+      if (!element.hasAttribute("tabindex")) {
+        element.setAttribute("tabindex", "0");
+      }
+      if (element.hasAttribute("disabled")) {
         return false;
       }
-      let bounds = dwu.getBoundsWithoutFlushing(button);
+      let bounds = dwu.getBoundsWithoutFlushing(element);
       return bounds.width > 0 && bounds.height > 0;
     });
   }
 
   
-
 
 
 
@@ -1399,7 +1407,7 @@ var PanelView = class extends AssociatedToNode {
 
 
   focusFirstNavigableElement() {
-    this.selectedElement = this._getNavigableElements()[0];
+    this.selectedElement = this._navigableElements[0];
     this.focusSelectedElement();
   }
 
@@ -1411,7 +1419,7 @@ var PanelView = class extends AssociatedToNode {
 
 
   moveSelection(isDown) {
-    let buttons = this.buttons;
+    let buttons = this._navigableElements;
     let lastSelected = this.selectedElement;
     let newButton = null;
     let maxIdx = buttons.length - 1;
@@ -1481,19 +1489,10 @@ var PanelView = class extends AssociatedToNode {
       return;
     }
 
-    let buttons = this.buttons;
-    if (!buttons || !buttons.length) {
-      buttons = this.buttons = this._getNavigableElements();
-      
-      for (let button of buttons) {
-        if (!button.classList.contains("subviewbutton-back") &&
-            !button.hasAttribute("tabindex")) {
-          button.setAttribute("tabindex", 0);
-        }
-      }
-    }
-    if (!buttons.length)
+    let buttons = this._navigableElements;
+    if (!buttons.length) {
       return;
+    }
 
     let stop = () => {
       event.stopPropagation();
@@ -1562,7 +1561,7 @@ var PanelView = class extends AssociatedToNode {
 
 
   clearNavigation() {
-    delete this.buttons;
+    delete this.__navigableElements;
     let selected = this.selectedElement;
     if (selected) {
       selected.blur();
