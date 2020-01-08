@@ -4907,7 +4907,8 @@ inline static bool FormControlShrinksForPercentISize(nsIFrame* aFrame) {
   }
 
   LayoutFrameType fType = aFrame->Type();
-  if (fType == LayoutFrameType::Meter || fType == LayoutFrameType::Progress) {
+  if (fType == LayoutFrameType::Meter || fType == LayoutFrameType::Progress ||
+      fType == LayoutFrameType::Range) {
     
     
     return true;
