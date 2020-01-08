@@ -1191,11 +1191,8 @@ nsXPCComponents_ID::CallOrConstruct(nsIXPConnectWrappedNative* wrapper,
     }
 
     
-
-    if (NS_FAILED(nsXPConnect::SecurityManager()->CanCreateInstance(cx, nsJSID::GetCID()))) {
-        
-        *_retval = false;
-        return NS_OK;
+    if (!nsContentUtils::IsCallerChrome()) {
+        return ThrowAndFail(NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED, cx, _retval);
     }
 
     
