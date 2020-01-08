@@ -27,7 +27,13 @@ ProfilerScreenshots::ProfilerScreenshots()
 ProfilerScreenshots::~ProfilerScreenshots()
 {
   if (mThread) {
-    mThread->Shutdown();
+    
+    
+    
+    
+    SystemGroup::Dispatch(TaskCategory::Other,
+                          NewRunnableMethod("ProfilerScreenshots::~ProfilerScreenshots",
+                                            mThread, &nsIThread::Shutdown));
     mThread = nullptr;
   }
 }
