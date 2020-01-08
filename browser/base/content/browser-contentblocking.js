@@ -412,11 +412,13 @@ var ContentBlocking = {
     }
 
     
-    let type = PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser) ?
-                 "trackingprotection-pb" :
-                 "trackingprotection";
-    let hasException = Services.perms.testExactPermission(baseURI, type) ==
-      Services.perms.ALLOW_ACTION;
+    let hasException = false;
+    if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
+      hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(baseURI);
+    } else {
+      hasException = Services.perms.testExactPermission(baseURI,
+        "trackingprotection") == Services.perms.ALLOW_ACTION;
+    }
 
     this.content.toggleAttribute("detected", detected);
     this.content.toggleAttribute("hasException", hasException);

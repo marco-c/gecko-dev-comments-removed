@@ -83,11 +83,6 @@ public:
                                                              const nsCString& aGrantedOrigin,
                                                              FirstPartyStorageAccessGrantedForOriginResolver&& aResolver);
 
-
-  
-  static nsresult
-  IsOnContentBlockingAllowList(nsIURI* aTopWinURI, bool& aIsAllowListed);
-
 };
 
 } 
