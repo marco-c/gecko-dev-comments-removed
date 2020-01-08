@@ -107,6 +107,14 @@ public:
   
 
 
+
+
+  static nsStaticAtom* NormalizeARIAToken(mozilla::dom::Element* aElement,
+                                          nsAtom* aAttr);
+
+  
+
+
   static DocAccessible* GetDocAccessibleFor(nsINode* aNode)
   {
     nsIPresShell *presShell = nsCoreUtils::GetPresShellFor(aNode);
