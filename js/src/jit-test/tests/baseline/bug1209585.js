@@ -1,8 +1,4 @@
-if (helperThreadCount() == 0)
-    quit();
 
-if (!("oomAtAllocation" in this && "resetOOMFailure" in this))
-    quit();
 
 if ("gczeal" in this)
     gczeal(0);

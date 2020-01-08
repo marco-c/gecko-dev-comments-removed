@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-    quit();
+
 
 oomTest(new Function(`
   let kJSEmbeddingMaxTypes = 1000000;

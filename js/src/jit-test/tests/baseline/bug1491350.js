@@ -1,5 +1,4 @@
-if (!('oomTest' in this))
-  quit();
+
 
 oomTest(new Function(`
   var a = ['p', 'q', 'r', 's', 't'];
