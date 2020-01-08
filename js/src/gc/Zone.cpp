@@ -259,7 +259,7 @@ void Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode,
     
     
     if (discardBaselineCode && script->hasICScript()) {
-      script->icScript()->purgeOptimizedStubs(script);
+      script->icScript()->purgeOptimizedStubs(script->zone());
     }
   }
 

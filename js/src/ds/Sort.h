@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef ds_Sort_h
 #define ds_Sort_h
@@ -22,14 +22,14 @@ MOZ_ALWAYS_INLINE void CopyNonEmptyArray(T* dst, const T* src, size_t nelems) {
   } while (src != end);
 }
 
-
+/* Helper function for MergeSort. */
 template <typename T, typename Comparator>
 MOZ_ALWAYS_INLINE bool MergeArrayRuns(T* dst, const T* src, size_t run1,
                                       size_t run2, Comparator c) {
   MOZ_ASSERT(run1 >= 1);
   MOZ_ASSERT(run2 >= 1);
 
-  
+  /* Copy runs already in sorted order. */
   const T* b = src + run1;
   bool lessOrEqual;
   if (!c(b[-1], b[0], &lessOrEqual)) {
@@ -37,7 +37,7 @@ MOZ_ALWAYS_INLINE bool MergeArrayRuns(T* dst, const T* src, size_t run1,
   }
 
   if (!lessOrEqual) {
-    
+    /* Runs are not already sorted, merge them. */
     for (const T* a = src;;) {
       if (!c(*a, *b, &lessOrEqual)) {
         return false;
@@ -61,21 +61,21 @@ MOZ_ALWAYS_INLINE bool MergeArrayRuns(T* dst, const T* src, size_t run1,
   return true;
 }
 
-} 
+} /* namespace detail */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Sort the array using the merge sort algorithm. The scratch should point to
+ * a temporary storage that can hold nelems elements.
+ *
+ * The comparator must provide the () operator with the following signature:
+ *
+ *     bool operator()(const T& a, const T& a, bool* lessOrEqualp);
+ *
+ * It should return true on success and set *lessOrEqualp to the result of
+ * a <= b operation. If it returns false, the sort terminates immediately with
+ * the false result. In this case the content of the array and scratch is
+ * arbitrary.
+ */
 template <typename T, typename Comparator>
 MOZ_MUST_USE bool MergeSort(T* array, size_t nelems, T* scratch, Comparator c) {
   const size_t INS_SORT_LIMIT = 3;
@@ -84,10 +84,10 @@ MOZ_MUST_USE bool MergeSort(T* array, size_t nelems, T* scratch, Comparator c) {
     return true;
   }
 
-  
-
-
-
+  /*
+   * Apply insertion sort to small chunks to reduce the number of merge
+   * passes needed.
+   */
   for (size_t lo = 0; lo < nelems; lo += INS_SORT_LIMIT) {
     size_t hi = lo + INS_SORT_LIMIT;
     if (hi >= nelems) {
@@ -136,6 +136,6 @@ MOZ_MUST_USE bool MergeSort(T* array, size_t nelems, T* scratch, Comparator c) {
   return true;
 }
 
-} 
+} /* namespace js */
 
-#endif 
+#endif /* ds_Sort_h */

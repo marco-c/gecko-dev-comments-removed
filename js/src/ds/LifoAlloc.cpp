@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ds/LifoAlloc.h"
 
@@ -23,7 +23,7 @@ using mozilla::tl::BitSize;
 namespace js {
 namespace detail {
 
-
+/* static */
 UniquePtr<BumpChunk> BumpChunk::newWithCapacity(size_t size) {
   MOZ_DIAGNOSTIC_ASSERT(RoundUpPow2(size) == size);
   MOZ_DIAGNOSTIC_ASSERT(size >= sizeof(BumpChunk));
@@ -34,9 +34,9 @@ UniquePtr<BumpChunk> BumpChunk::newWithCapacity(size_t size) {
 
   UniquePtr<BumpChunk> result(new (mem) BumpChunk(size));
 
-  
-  
-  
+  // We assume that the alignment of LIFO_ALLOC_ALIGN is less than that of the
+  // underlying memory allocator -- creating a new BumpChunk should always
+  // satisfy the LIFO_ALLOC_ALIGN alignment constraint.
   MOZ_ASSERT(AlignPtr(result->begin()) == result->begin());
   return result;
 }
@@ -61,10 +61,10 @@ static uint8_t* AlignPtrDown(uint8_t* ptr, uintptr_t align) {
 
 void BumpChunk::setReadOnly() {
   uintptr_t pageSize = gc::SystemPageSize();
-  
-  
-  
-  
+  // The allocated chunks might not be aligned on page boundaries. This code
+  // is used to ensure that we are changing the memory protection of pointers
+  // which are within the range of the BumpChunk, or that the range formed by
+  // [b .. e] is empty.
   uint8_t* b = base();
   uint8_t* e = capacity_;
   b = AlignPtrUp(b, pageSize);
@@ -78,10 +78,10 @@ void BumpChunk::setReadOnly() {
 
 void BumpChunk::setReadWrite() {
   uintptr_t pageSize = gc::SystemPageSize();
-  
-  
-  
-  
+  // The allocated chunks might not be aligned on page boundaries. This code
+  // is used to ensure that we are changing the memory protection of pointers
+  // which are within the range of the BumpChunk, or that the range formed by
+  // [b .. e] is empty.
   uint8_t* b = base();
   uint8_t* e = capacity_;
   b = AlignPtrUp(b, pageSize);
@@ -95,8 +95,8 @@ void BumpChunk::setReadWrite() {
 
 #endif
 
-}  
-}  
+}  // namespace detail
+}  // namespace js
 
 void LifoAlloc::reset(size_t defaultChunkSize) {
   MOZ_ASSERT(mozilla::IsPowerOfTwo(defaultChunkSize));
@@ -122,8 +122,8 @@ void LifoAlloc::freeAll() {
     decrementCurSize(bc->computedSizeOfIncludingThis());
   }
 
-  
-  
+  // Nb: maintaining curSize_ correctly isn't easy.  Fortunately, this is an
+  // excellent sanity check.
   MOZ_ASSERT(curSize_ == 0);
 }
 
@@ -131,8 +131,8 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n) {
   MOZ_ASSERT(fallibleScope_,
              "[OOM] Cannot allocate a new chunk in an infallible scope.");
 
-  
-  
+  // Compute the size which should be requested in order to be able to fit |n|
+  // bytes in a newly allocated chunk, or default to |defaultChunkSize_|.
 
   size_t minSize;
   if (MOZ_UNLIKELY(!detail::BumpChunk::allocSizeWithRedZone(n, &minSize) ||
@@ -143,7 +143,7 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n) {
   const size_t chunkSize =
       minSize > defaultChunkSize_ ? RoundUpPow2(minSize) : defaultChunkSize_;
 
-  
+  // Create a new BumpChunk, and allocate space for it.
   UniqueBumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize);
   if (!result) {
     return nullptr;
@@ -153,9 +153,9 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n) {
 }
 
 bool LifoAlloc::getOrCreateChunk(size_t n) {
-  
-  
-  
+  // Look for existing unused BumpChunks to satisfy the request, and pick the
+  // first one which is large enough, and move it into the list of used
+  // chunks.
   if (!unused_.empty()) {
     if (unused_.begin()->canAlloc(n)) {
       chunks_.append(unused_.popFirst());
@@ -176,7 +176,7 @@ bool LifoAlloc::getOrCreateChunk(size_t n) {
     }
   }
 
-  
+  // Allocate a new BumpChunk with enough space for the next allocation.
   UniqueBumpChunk newChunk = newChunkWithCapacity(n);
   if (!newChunk) {
     return false;
