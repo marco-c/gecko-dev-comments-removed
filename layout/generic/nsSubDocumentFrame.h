@@ -13,6 +13,12 @@
 #include "nsFrameLoader.h"
 #include "Units.h"
 
+namespace mozilla {
+namespace layout {
+class RenderFrameParent;
+}
+}
+
 
 
 
@@ -134,13 +140,15 @@ public:
     }
   }
 
+  mozilla::layout::RenderFrameParent* GetRenderFrameParent() const;
+
 protected:
   friend class AsyncFrameInit;
 
   
   mozilla::CSSIntSize GetMarginAttributes();
 
-  nsFrameLoader* FrameLoader();
+  nsFrameLoader* FrameLoader() const;
 
   bool IsInline() { return mIsInline; }
 
@@ -167,7 +175,8 @@ protected:
   nsView* GetViewInternal() const override { return mOuterView; }
   void SetViewInternal(nsView* aView) override { mOuterView = aView; }
 
-  RefPtr<nsFrameLoader> mFrameLoader;
+  mutable RefPtr<nsFrameLoader> mFrameLoader;
+
   nsView* mOuterView;
   nsView* mInnerView;
   bool mIsInline;
