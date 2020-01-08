@@ -423,6 +423,20 @@ public:
 
 
 
+
+
+
+
+  static already_AddRefed<nsISupports> CallGetCustomInterface(
+    Element* aElement, const nsIID& aIID);
+
+  
+
+
+
+
+
+
   void RegisterUnresolvedElement(Element* aElement,
                                  nsAtom* aTypeName = nullptr);
 
