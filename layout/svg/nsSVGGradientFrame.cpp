@@ -370,9 +370,15 @@ nsSVGGradientFrame::GetReferencedGradient()
     nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
                                               mContent->GetUncomposedDoc(), base);
 
-    property =
-      SVGObserverUtils::GetPaintingProperty(targetURI, this,
-                          SVGObserverUtils::HrefAsPaintingProperty());
+    
+    
+    RefPtr<URLAndReferrerInfo> target =
+      new URLAndReferrerInfo(targetURI,
+                             mContent->OwnerDoc()->GetDocumentURI(),
+                             mContent->OwnerDoc()->GetReferrerPolicy());
+
+    property = SVGObserverUtils::GetPaintingProperty(target, this,
+      SVGObserverUtils::HrefAsPaintingProperty());
     if (!property)
       return nullptr;
   }

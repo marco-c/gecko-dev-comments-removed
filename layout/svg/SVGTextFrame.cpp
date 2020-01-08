@@ -5010,8 +5010,15 @@ SVGTextFrame::GetTextPathGeometryElement(nsIFrame* aTextPathFrame)
     nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
                                               content->GetUncomposedDoc(), base);
 
+    
+    
+    RefPtr<URLAndReferrerInfo> target =
+      new URLAndReferrerInfo(targetURI,
+                             mContent->OwnerDoc()->GetDocumentURI(),
+                             mContent->OwnerDoc()->GetReferrerPolicy());
+
     property = SVGObserverUtils::GetTextPathProperty(
-      targetURI,
+      target,
       aTextPathFrame,
       SVGObserverUtils::HrefAsTextPathProperty());
     if (!property)
