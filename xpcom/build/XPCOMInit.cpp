@@ -705,15 +705,16 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   
   
   
+  nsCOMPtr<nsISupports> componentLoader =
+    do_GetService("@mozilla.org/moz/jsloader;1");
+
+  
+  
+  
   nsDirectoryService::gService->RegisterCategoryProviders();
 
   
   SharedThreadPool::InitStatics();
-
-  
-  
-  nsCOMPtr<nsISupports> componentLoader =
-    do_GetService("@mozilla.org/moz/jsloader;1");
 
   mozilla::ScriptPreloader::GetSingleton();
   mozilla::scache::StartupCache::GetSingleton();
