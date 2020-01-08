@@ -215,7 +215,26 @@ function unwatchRuntime(id) {
 }
 
 function updateUSBRuntimes(runtimes) {
-  return { type: USB_RUNTIMES_UPDATED, runtimes };
+  return async (dispatch, getState) => {
+    const currentRuntime = getCurrentRuntime(getState().runtimes);
+
+    if (currentRuntime &&
+        currentRuntime.type === RUNTIMES.USB &&
+        !runtimes.find(runtime => currentRuntime.id === runtime.id)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      await dispatch(Actions.selectPage(RUNTIMES.THIS_FIREFOX, RUNTIMES.THIS_FIREFOX));
+    }
+
+    dispatch({ type: USB_RUNTIMES_UPDATED, runtimes });
+  };
 }
 
 module.exports = {
