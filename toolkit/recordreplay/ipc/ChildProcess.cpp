@@ -448,13 +448,12 @@ void
 ChildProcessInfo::LaunchSubprocess()
 {
   size_t channelId = gNumChannels++;
-  MOZ_RELEASE_ASSERT((channelId == Channel::RecordingId) == IsRecording());
 
   
   
   
   
-  mChannel = new Channel(channelId, [=](Message* aMsg) {
+  mChannel = new Channel(channelId, IsRecording(), [=](Message* aMsg) {
       ReceiveChildMessageOnMainThread(channelId, aMsg);
     });
 

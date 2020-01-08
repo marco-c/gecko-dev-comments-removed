@@ -401,10 +401,6 @@ public:
   
   typedef std::function<void(Message*)> MessageHandler;
 
-  
-  
-  static const size_t RecordingId = 0;
-
 private:
   
   size_t mId;
@@ -443,7 +439,7 @@ private:
 public:
   
   
-  Channel(size_t aId, const MessageHandler& aHandler);
+  Channel(size_t aId, bool aMiddlemanRecording, const MessageHandler& aHandler);
 
   size_t GetId() { return mId; }
 
