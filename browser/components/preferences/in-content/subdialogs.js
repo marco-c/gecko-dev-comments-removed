@@ -341,12 +341,15 @@ SubDialog.prototype = {
 
     if (comparisonFrameHeight > maxHeight) {
       
+      
+      
+      
       frameHeight = maxHeight + "px";
       frameMinHeight = maxHeight + "px";
-      let containers = this._frame.contentDocument.querySelectorAll(".largeDialogContainer");
-      for (let container of containers) {
-        container.classList.add("doScroll");
-      }
+      let contentPane =
+          this._frame.contentDocument.querySelector(".contentPane") ||
+          this._frame.contentDocument.documentElement;
+      contentPane.classList.add("doScroll");
     }
 
     this._frame.style.height = frameHeight;
