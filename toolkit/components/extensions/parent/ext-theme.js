@@ -78,7 +78,7 @@ class Theme {
 
 
   load() {
-    const {details} = this;
+    const {extension, details} = this;
 
     if (details.colors) {
       this.loadColors(details.colors);
@@ -95,6 +95,8 @@ class Theme {
     if (details.properties) {
       this.loadProperties(details.properties);
     }
+
+    this.loadMetadata(extension);
 
     let lwtData = {
       theme: this.lwtStyles,
@@ -335,6 +337,17 @@ class Theme {
         }
       }
     }
+  }
+
+  
+
+
+
+
+
+  loadMetadata(extension) {
+    this.lwtStyles.id = extension.id;
+    this.lwtStyles.version = extension.version;
   }
 
   static unload(windowId) {
