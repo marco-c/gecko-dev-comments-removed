@@ -463,11 +463,13 @@ function getUserMediaTracksAndStreams(count, type = 'audio') {
   });
 }
 
+
 async function exchangeOffer(caller, callee) {
   const offer = await caller.createOffer();
   await caller.setLocalDescription(offer);
   return callee.setRemoteDescription(offer);
 }
+
 async function exchangeAnswer(caller, callee) {
   const answer = await callee.createAnswer();
   await callee.setLocalDescription(answer);
@@ -478,6 +480,17 @@ async function exchangeOfferAnswer(caller, callee) {
   return exchangeAnswer(caller, callee);
 }
 
+async function exchangeAnswerAndListenToOntrack(t, caller, callee) {
+  const ontrackPromise = addEventListenerPromise(t, caller, 'track');
+  await exchangeAnswer(caller, callee);
+  return ontrackPromise;
+}
+
+async function exchangeOfferAndListenToOntrack(t, caller, callee) {
+  const ontrackPromise = addEventListenerPromise(t, callee, 'track');
+  await exchangeOffer(caller, callee);
+  return ontrackPromise;
+}
 
 
 
@@ -502,4 +515,28 @@ function addEventListenerPromise(t, target, type, listener) {
       resolve(e);
     }));
   });
+}
+
+function createPeerConnectionWithCleanup(t) {
+  const pc = new RTCPeerConnection();
+  t.add_cleanup(() => pc.close());
+  return pc;
+}
+
+async function createTrackAndStreamWithCleanup(t, kind = 'audio') {
+  let constraints = {};
+  constraints[kind] = true;
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  const [track] = stream.getTracks();
+  t.add_cleanup(() => track.stop());
+  return [track, stream];
+}
+
+function findTransceiverForSender(pc, sender) {
+  const transceivers = pc.getTransceivers();
+  for (let i = 0; i < transceivers.length; ++i) {
+    if (transceivers[i].sender == sender)
+      return transceivers[i];
+  }
+  return null;
 }
