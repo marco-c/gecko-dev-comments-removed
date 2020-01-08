@@ -44,9 +44,7 @@ class ChangesView {
       store: this.store,
     }, changesApp);
 
-    
-    
-    this.inspector.target.once("will-navigate", this.destroy);
+    this.inspector.target.on("will-navigate", this.onClearChanges);
 
     
     
