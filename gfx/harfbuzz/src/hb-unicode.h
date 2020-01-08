@@ -43,6 +43,14 @@ HB_BEGIN_DECLS
 
 
 
+
+
+#define HB_UNICODE_MAX 0x10FFFFu
+
+
+
+
+
 typedef enum
 {
   HB_UNICODE_GENERAL_CATEGORY_CONTROL,			

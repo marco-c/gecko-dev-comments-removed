@@ -28,9 +28,9 @@
 
 
 
-#include "hb-private.hh"
+#include "hb.hh"
 
-#include "hb-unicode-private.hh"
+#include "hb-unicode.hh"
 
 
 

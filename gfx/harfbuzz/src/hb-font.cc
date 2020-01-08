@@ -26,10 +26,10 @@
 
 
 
-#include "hb-private.hh"
+#include "hb.hh"
 
-#include "hb-font-private.hh"
-#include "hb-machinery-private.hh"
+#include "hb-font.hh"
+#include "hb-machinery.hh"
 
 
 

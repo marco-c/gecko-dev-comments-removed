@@ -24,8 +24,8 @@
 
 
 
-#include "hb-ot-shape-fallback-private.hh"
-#include "hb-ot-layout-gsubgpos-private.hh"
+#include "hb-ot-shape-fallback.hh"
+#include "hb-ot-layout-gsubgpos.hh"
 
 static unsigned int
 recategorize_combining_class (hb_codepoint_t u,

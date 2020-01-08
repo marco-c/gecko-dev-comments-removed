@@ -22,9 +22,9 @@
 
 
 
-#include "hb-private.hh"
+#include "hb.hh"
 #define HB_SHAPER directwrite
-#include "hb-shaper-impl-private.hh"
+#include "hb-shaper-impl.hh"
 
 #include <DWrite_1.h>
 

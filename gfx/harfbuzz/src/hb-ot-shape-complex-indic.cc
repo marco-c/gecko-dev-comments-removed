@@ -24,8 +24,8 @@
 
 
 
-#include "hb-ot-shape-complex-indic-private.hh"
-#include "hb-ot-layout-private.hh"
+#include "hb-ot-shape-complex-indic.hh"
+#include "hb-ot-layout.hh"
 
 
 

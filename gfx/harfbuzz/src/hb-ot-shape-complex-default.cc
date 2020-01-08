@@ -24,7 +24,7 @@
 
 
 
-#include "hb-ot-shape-complex-private.hh"
+#include "hb-ot-shape-complex.hh"
 
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_default =

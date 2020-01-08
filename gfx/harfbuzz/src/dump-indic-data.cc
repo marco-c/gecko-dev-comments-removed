@@ -24,7 +24,7 @@
 
 
 
-#include "hb-ot-shape-complex-indic-private.hh"
+#include "hb-ot-shape-complex-indic.hh"
 
 int
 main (void)

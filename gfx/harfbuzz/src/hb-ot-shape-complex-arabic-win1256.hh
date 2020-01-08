@@ -313,7 +313,7 @@ OT_TABLE_END
 
 
 #if 0
-#include "hb-private.hh" 
+#include "hb.hh" 
 #endif
 #ifdef OT_MEASURE
 #include "hb-ot-shape-complex-arabic-win1256.hh"

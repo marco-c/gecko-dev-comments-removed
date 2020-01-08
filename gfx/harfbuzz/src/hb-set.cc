@@ -24,7 +24,7 @@
 
 
 
-#include "hb-set-private.hh"
+#include "hb-set.hh"
 
 
 

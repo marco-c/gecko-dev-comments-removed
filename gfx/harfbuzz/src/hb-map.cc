@@ -24,7 +24,7 @@
 
 
 
-#include "hb-map-private.hh"
+#include "hb-map.hh"
 
 
 

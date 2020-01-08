@@ -24,12 +24,10 @@
 
 
 
-#include "hb-open-type-private.hh"
+#include "hb-open-type.hh"
 
-#include "hb-ot-layout-private.hh"
-#include "hb-ot-layout-gsubgpos-private.hh"
-
-#include "hb-aat-layout-private.hh"
+#include "hb-ot-face.hh"
+#include "hb-aat-layout.hh"
 #include "hb-aat-layout-ankr-table.hh"
 #include "hb-aat-layout-bsln-table.hh" 
 #include "hb-aat-layout-feat-table.hh" 
@@ -51,24 +49,11 @@ _get_morx (hb_face_t *face, hb_blob_t **blob = nullptr)
       *blob = hb_blob_get_empty ();
     return Null(AAT::morx);
   }
-  hb_ot_layout_t * layout = hb_ot_layout_from_face (face);
-  const AAT::morx& morx = *(layout->table.morx.get ());
+  const AAT::morx& morx = *(hb_ot_face_data (face)->morx.get ());
   if (blob)
-    *blob = layout->table.morx.get_blob ();
+    *blob = hb_ot_face_data (face)->morx.get_blob ();
   return morx;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 void
 hb_aat_layout_substitute (hb_font_t *font, hb_buffer_t *buffer)

@@ -26,8 +26,8 @@
 
 
 
-#include "hb-ot-shape-complex-use-private.hh"
-#include "hb-ot-shape-complex-arabic-private.hh"
+#include "hb-ot-shape-complex-use.hh"
+#include "hb-ot-shape-complex-arabic.hh"
 
 
 #define use_category() complex_var_u8_0()

@@ -29,7 +29,7 @@
 #define HB_STRING_ARRAY_HH
 #endif
 
-#include "hb-private.hh"
+#include "hb.hh"
 
 
 

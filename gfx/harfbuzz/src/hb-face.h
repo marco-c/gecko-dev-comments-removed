@@ -33,6 +33,7 @@
 
 #include "hb-common.h"
 #include "hb-blob.h"
+#include "hb-set.h"
 
 HB_BEGIN_DECLS
 
@@ -119,6 +120,38 @@ hb_face_get_table_tags (const hb_face_t *face,
 			unsigned int  start_offset,
 			unsigned int *table_count, 
 			hb_tag_t     *table_tags );
+
+
+
+
+
+
+HB_EXTERN void
+hb_face_collect_unicodes (hb_face_t *face,
+			  hb_set_t  *out);
+
+HB_EXTERN void
+hb_face_collect_variation_selectors (hb_face_t *face,
+				     hb_set_t  *out);
+
+HB_EXTERN void
+hb_face_collect_variation_unicodes (hb_face_t *face,
+				    hb_codepoint_t variation_selector,
+				    hb_set_t  *out);
+
+
+
+
+
+
+HB_EXTERN hb_face_t *
+hb_face_builder_create (void);
+
+HB_EXTERN hb_bool_t
+hb_face_builder_add_table (hb_face_t *face,
+			   hb_tag_t   tag,
+			   hb_blob_t *blob);
+
 
 HB_END_DECLS
 

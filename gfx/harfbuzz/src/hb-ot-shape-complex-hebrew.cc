@@ -24,7 +24,7 @@
 
 
 
-#include "hb-ot-shape-complex-private.hh"
+#include "hb-ot-shape-complex.hh"
 
 
 static bool

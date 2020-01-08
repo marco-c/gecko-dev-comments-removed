@@ -14,7 +14,7 @@
 
 
 
-#include "hb-ot-shape-complex-indic-private.hh"
+#include "hb-ot-shape-complex-indic.hh"
 
 
 #define ISC_A	INDIC_SYLLABIC_CATEGORY_AVAGRAHA		/*  16 chars; Avagraha */
