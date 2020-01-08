@@ -1014,7 +1014,19 @@ void BaselineScript::toggleProfilerInstrumentation(bool enable) {
   }
 }
 
-void ICScript::purgeOptimizedStubs(Zone* zone) {
+void ICScript::purgeOptimizedStubs(JSScript* script) {
+  MOZ_ASSERT(script->icScript() == this);
+
+  Zone* zone = script->zone();
+  if (zone->isGCSweeping() && IsAboutToBeFinalizedDuringSweep(*script)) {
+    
+    
+    
+    
+    
+    return;
+  }
+
   JitSpew(JitSpew_BaselineIC, "Purging optimized stubs");
 
   for (size_t i = 0; i < numICEntries(); i++) {
