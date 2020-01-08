@@ -1214,6 +1214,23 @@ class Element : public FragmentOrElement {
 
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
       ShadowRootMode aMode);
+
+  
+  void AttachAndSetUAShadowRoot();
+
+  
+  
+  void NotifyUAWidgetSetupOrChange();
+
+  enum class UnattachShadowRoot {
+    No,
+    Yes,
+  };
+
+  
+  
+  void NotifyUAWidgetTeardown(UnattachShadowRoot = UnattachShadowRoot::Yes);
+
   void UnattachShadow();
 
   ShadowRoot* GetShadowRootByMode() const;

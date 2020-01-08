@@ -226,9 +226,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     return IsNodeInternal(aFirst, aArgs...);
   }
 
-  
-  void AttachAndSetUAShadowRoot();
-
  protected:
   virtual ~nsGenericHTMLElement() {}
 

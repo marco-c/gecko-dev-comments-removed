@@ -1689,7 +1689,6 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
                        aParentFrame->IsDateTimeControlFrame())) {
     
     
-    MOZ_ASSERT(aOriginatingElement.GetShadowRoot()->IsUAWidget());
     return;
   }
 

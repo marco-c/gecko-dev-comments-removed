@@ -4000,12 +4000,7 @@ nsresult HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
     } else if (nsContentUtils::IsUAWidgetEnabled() &&
                aName == nsGkAtoms::controls && IsInComposedDoc()) {
-      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
-          this, NS_LITERAL_STRING("UAWidgetAttributeChanged"), CanBubble::eYes,
-          ChromeOnlyDispatch::eYes);
-      
-      
-      dispatcher->RunDOMEventWhenSafe();
+      NotifyUAWidgetSetupOrChange();
     }
   }
 
@@ -4047,10 +4042,7 @@ nsresult HTMLMediaElement::BindToTree(nsIDocument* aDocument,
     
     AttachAndSetUAShadowRoot();
 #ifdef ANDROID
-    AsyncEventDispatcher* dispatcher =
-        new AsyncEventDispatcher(this, NS_LITERAL_STRING("UAWidgetBindToTree"),
-                                 CanBubble::eYes, ChromeOnlyDispatch::eYes);
-    dispatcher->RunDOMEventWhenSafe();
+    NotifyUAWidgetSetupOrChange();
 #else
     
     
@@ -4059,10 +4051,7 @@ nsresult HTMLMediaElement::BindToTree(nsIDocument* aDocument,
     
     
     if (Controls()) {
-      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
-          this, NS_LITERAL_STRING("UAWidgetBindToTree"), CanBubble::eYes,
-          ChromeOnlyDispatch::eYes);
-      dispatcher->RunDOMEventWhenSafe();
+      NotifyUAWidgetSetupOrChange();
     }
 #endif
   }
@@ -4283,16 +4272,8 @@ void HTMLMediaElement::UnbindFromTree(bool aDeep, bool aNullParent) {
   mUnboundFromTree = true;
   mVisibilityState = Visibility::UNTRACKED;
 
-  if (GetShadowRoot() && IsInComposedDoc()) {
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "HTMLMediaElement::UnbindFromTree::UAWidgetUnbindFromTree",
-        [self = RefPtr<Element>(this)]() {
-          nsContentUtils::DispatchChromeEvent(
-              self->OwnerDoc(), self,
-              NS_LITERAL_STRING("UAWidgetUnbindFromTree"), CanBubble::eYes,
-              Cancelable::eNo);
-          self->UnattachShadow();
-        }));
+  if (nsContentUtils::IsUAWidgetEnabled() && IsInComposedDoc()) {
+    NotifyUAWidgetTeardown();
   }
 
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
