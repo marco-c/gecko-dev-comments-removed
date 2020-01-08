@@ -40,7 +40,13 @@ public:
 
 
 
-  virtual bool ApplyContentShift(const CSSPoint& aShiftDelta)
+
+
+
+
+
+
+  virtual bool HandleScrollOffsetUpdate(const Maybe<CSSPoint>& aRelativeDelta)
   {
     return false;
   }

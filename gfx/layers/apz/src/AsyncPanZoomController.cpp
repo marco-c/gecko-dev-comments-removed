@@ -4413,8 +4413,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       if (!mAnimation ||
-          relativeDelta.isNothing() ||
-          !mAnimation->ApplyContentShift(relativeDelta.value())) {
+          !mAnimation->HandleScrollOffsetUpdate(relativeDelta)) {
         
         
         
