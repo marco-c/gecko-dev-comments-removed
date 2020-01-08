@@ -1,5 +1,7 @@
 
 
+
+
 function f() {
     var x = new SharedArrayBuffer(4096);
     var y = new Int32Array(x);
@@ -8,5 +10,4 @@ function f() {
     assertEq(y[1023], 0);
 }
 
-if (this.SharedArrayBuffer)
-    f();
+f();

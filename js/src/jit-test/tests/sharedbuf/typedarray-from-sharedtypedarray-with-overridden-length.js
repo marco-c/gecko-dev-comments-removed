@@ -1,5 +1,4 @@
-if (!this.SharedArrayBuffer)
-    quit(0);
+
 
 
 

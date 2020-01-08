@@ -1,6 +1,8 @@
 
 
 
+
+
 function $(stdlib, foreign, heap) {
     "use asm";
     var f64 = new stdlib.Float64Array(heap);
@@ -8,8 +10,6 @@ function $(stdlib, foreign, heap) {
     return f
 }
 
-if (this.SharedArrayBuffer) {
-    var heap = new SharedArrayBuffer(65536);
-    (new Float64Array(heap))[0] = 3.14159;
-    assertEq($(this, {}, heap)(), 3.14159);
-}
+var heap = new SharedArrayBuffer(65536);
+(new Float64Array(heap))[0] = 3.14159;
+assertEq($(this, {}, heap)(), 3.14159);

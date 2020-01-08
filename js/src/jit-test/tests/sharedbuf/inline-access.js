@@ -14,9 +14,6 @@
 
 
 
-if (!this.SharedArrayBuffer)
-    quit();
-
 function f(ta) {
     return (ta[2] = ta[0] + ta[1] + ta.length);
 }
