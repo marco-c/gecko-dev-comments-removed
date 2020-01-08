@@ -82,25 +82,30 @@ Sanitizer.prototype = {
   
   items: {
     
+    
+    
     cache: {
       clear: function() {
-        return new Promise(function(resolve, reject) {
-          let refObj = {};
-          TelemetryStopwatch.start("FX_SANITIZE_CACHE", refObj);
+        let refObj = {};
+        TelemetryStopwatch.start("FX_SANITIZE_CACHE", refObj);
 
-          try {
-            Services.cache2.clear();
-          } catch (er) {}
+        try {
+          Services.cache2.clear();
+        } catch (er) {}
 
-          let imageCache = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools)
+        let imageCache = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools)
                                                            .getImgCacheForDocument(null);
-          try {
-            imageCache.clearCache(false); 
-          } catch (er) {}
+        try {
+          imageCache.clearCache(false); 
+        } catch (er) {}
 
-          TelemetryStopwatch.finish("FX_SANITIZE_CACHE", refObj);
-          resolve();
-        });
+        return EventDispatcher.instance.sendRequestForResult({ type: "Sanitize:Cache" })
+          .catch((err) => {
+            Cu.reportError(`Java-side cache clearing failed with error: ${err}`);
+          })
+          .then(() => {
+            TelemetryStopwatch.finish("FX_SANITIZE_CACHE", refObj);
+          });
       },
 
       get canClear() {
