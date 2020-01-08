@@ -562,13 +562,7 @@ Target.prototype = {
         
         
         
-        const {form} = await this._client.request({
-          to: this.form.actor, type: "connect",
-        });
-
-        this._form = form;
-        this._url = this.form.url;
-        this._title = this.form.title;
+        this.activeTab = await this.activeTab.connect();
       }
 
       
