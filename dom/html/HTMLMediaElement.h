@@ -564,6 +564,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool IsVideoDecodingSuspended() const;
 
   
+  bool IsVisible() const;
+
+  
   
   
   

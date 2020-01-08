@@ -52,6 +52,28 @@ function appendVideoToDoc(url, token, width, height) {
 
 
 
+
+function waitUntilVisible(video) {
+  let videoChrome = SpecialPowers.wrap(video);
+  if (videoChrome.isVisible) {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    videoChrome.addEventListener("visibilitychanged", () => {
+      if (videoChrome.isVisible) {
+        ok(true, `${video.token} is visible.`);
+        videoChrome.removeEventListener("visibilitychanged", this);
+        resolve();
+      }
+    });
+  });
+}
+
+
+
+
+
 function waitUntilPlaying(video) {
   var p = once(video, 'playing', () => { ok(true, `${video.token} played.`); });
   Log(video.token, "Start playing");
