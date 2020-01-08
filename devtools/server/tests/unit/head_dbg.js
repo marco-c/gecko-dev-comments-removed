@@ -375,64 +375,55 @@ function addTestGlobal(name, server = DebuggerServer) {
 
 
 
-function getTestTab(client, title, callback) {
-  client.listTabs().then(function(response) {
-    for (const tab of response.tabs) {
-      if (tab.title === title) {
-        callback(tab);
-        return;
-      }
+async function getTestTab(client, title) {
+  const { tabs } = await client.mainRoot.listTabs();
+  for (const tab of tabs) {
+    if (tab.title === title) {
+      return tab;
     }
-    callback(null);
-  });
+  }
+  return null;
 }
 
 
 
-function attachTestTab(client, title, callback) {
-  getTestTab(client, title, function(tab) {
-    client.attachTarget(tab).then(([response, targetFront]) => {
-      Assert.equal(response.type, "tabAttached");
-      Assert.ok(typeof response.threadActor === "string");
-      callback(response, targetFront);
-    });
-  });
-}
-
-
-
-
-
-function attachTestThread(client, title, callback) {
-  attachTestTab(client, title, function(tabResponse, targetFront) {
-    function onAttach([response, threadClient]) {
-      Assert.equal(threadClient.state, "paused", "Thread client is paused");
-      Assert.equal(response.type, "paused");
-      Assert.ok("why" in response);
-      Assert.equal(response.why.type, "attached");
-      callback(response, targetFront, threadClient, tabResponse);
-    }
-    targetFront.attachThread({
-      useSourceMaps: true,
-      autoBlackBox: true,
-    }).then(onAttach);
-  });
+async function attachTestTab(client, title) {
+  const tab = await getTestTab(client, title);
+  const [, targetFront] = await client.attachTarget(tab);
+  const response = await targetFront.attach();
+  Assert.equal(response.type, "tabAttached");
+  Assert.ok(typeof response.threadActor === "string");
+  return targetFront;
 }
 
 
 
 
 
-function attachTestTabAndResume(client, title, callback = () => {}) {
-  return new Promise((resolve) => {
-    attachTestThread(client, title, function(response, targetFront, threadClient) {
-      threadClient.resume(function(response) {
-        Assert.equal(response.type, "resumed");
-        callback(response, targetFront, threadClient);
-        resolve([response, targetFront, threadClient]);
-      });
-    });
+async function attachTestThread(client, title, callback = () => {}) {
+  const targetFront = await attachTestTab(client, title);
+  const [response, threadClient] = await targetFront.attachThread({
+    useSourceMaps: true,
+    autoBlackBox: true,
   });
+  Assert.equal(threadClient.state, "paused", "Thread client is paused");
+  Assert.equal(response.type, "paused");
+  Assert.ok("why" in response);
+  Assert.equal(response.why.type, "attached");
+  callback(response, targetFront, threadClient);
+  return { targetFront, threadClient };
+}
+
+
+
+
+
+async function attachTestTabAndResume(client, title, callback = () => {}) {
+  const { targetFront, threadClient } = await attachTestThread(client, title);
+  const response = await threadClient.resume();
+  Assert.equal(response.type, "resumed");
+  callback(response, targetFront, threadClient);
+  return { targetFront, threadClient };
 }
 
 
@@ -940,7 +931,7 @@ function threadClientTest(test, options = {}) {
 
     
     
-    const [, targetFront, threadClient] =
+    const { targetFront, threadClient } =
       await attachTestTabAndResume(client, scriptName);
 
     
