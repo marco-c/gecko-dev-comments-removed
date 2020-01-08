@@ -3070,6 +3070,22 @@ Checker.prototype = {
   onLoad: function UC_onLoad(event) {
     LOG("Checker:onLoad - request completed downloading document");
     Services.prefs.clearUserPref("security.pki.mitm_canary_issuer");
+    
+    
+    try {
+      let sslStatus = request.channel.QueryInterface(Ci.nsIRequest)
+                        .securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+      if (sslStatus && sslStatus.succeededCertChain) {
+        let rootCert = null;
+        for (rootCert of XPCOMUtils.IterSimpleEnumerator(sslStatus.succeededCertChain.getEnumerator(),
+                                                         Ci.nsIX509Cert));
+        if (rootCert) {
+          Services.prefs.setStringPref("security.pki.mitm_detected", !rootCert.isBuiltInRoot);
+        }
+      }
+    } catch (e) {
+      LOG("Checker:onLoad - Getting sslStatus failed.");
+    }
 
     try {
       

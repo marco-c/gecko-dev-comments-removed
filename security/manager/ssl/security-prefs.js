@@ -143,3 +143,11 @@ pref("security.pki.distrust_ca_policy", 1);
 pref("security.pki.mitm_canary_issuer", "");
 
 pref("security.pki.mitm_canary_issuer.enabled", true);
+
+
+
+
+
+
+
+pref("security.pki.mitm_detected", false);
