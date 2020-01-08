@@ -3024,12 +3024,6 @@ pref("layout.css.individual-transform.enabled", false);
 pref("layout.css.initial-letter.enabled", false);
 
 
-pref("layout.css.mix-blend-mode.enabled", true);
-
-
-pref("layout.css.isolation.enabled", true);
-
-
 pref("layout.css.scrollbar-color.enabled", true);
 
 
@@ -3076,9 +3070,6 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-justify.enabled", true);
 
 
-pref("layout.css.image-orientation.enabled", true);
-
-
 
 pref("layout.css.paint-order.enabled", true);
 
@@ -3089,9 +3080,6 @@ pref("layout.css.prefixes.transitions", true);
 pref("layout.css.prefixes.animations", true);
 pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
-
-
-pref("layout.css.background-blend-mode.enabled", true);
 
 
 
@@ -3108,16 +3096,10 @@ pref("layout.css.overflow-clip-box.enabled", false);
 pref("layout.css.contain.enabled", false);
 
 
-pref("layout.css.box-decoration-break.enabled", true);
-
-
 pref("layout.css.outline-style-auto.enabled", false);
 
 
 pref("layout.css.scroll-behavior.enabled", true);
-
-
-pref("layout.css.scroll-behavior.property-enabled", true);
 
 
 
@@ -5841,9 +5823,6 @@ pref("plugins.rewrite_youtube_embeds", true);
 
 
 pref("dom.mozBrowserFramesEnabled", false);
-
-
-pref("layout.css.color-adjust.enabled", true);
 
 pref("dom.audiochannel.audioCompeting", false);
 pref("dom.audiochannel.audioCompeting.allAgents", false);

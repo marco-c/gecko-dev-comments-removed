@@ -19,6 +19,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/IdleDeadline.h"
+#include "mozilla/dom/JSWindowActorService.h"
 #include "mozilla/dom/ReportingHeader.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowBinding.h"  
@@ -797,6 +798,14 @@ constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
 
  bool ChromeUtils::IsPopupTokenUnused(GlobalObject& aGlobal) {
   return PopupBlocker::IsPopupOpeningTokenUnused();
+
+ void ChromeUtils::RegisterWindowActor(
+    const GlobalObject& aGlobal, const nsAString& aName,
+    const WindowActorOptions& aOptions, ErrorResult& aRv) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<JSWindowActorService> service = JSWindowActorService::GetSingleton();
+  service->RegisterWindowActor(aName, aOptions, aRv);
 }
 
 }  
