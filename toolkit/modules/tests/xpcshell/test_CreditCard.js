@@ -15,20 +15,42 @@ add_task(function isValidNumber() {
   }
 
   testValid("0000000000000000", true);
+
+  testValid("41111111112", false); 
+  testValid("4111-1111-112", false); 
+  testValid("55555555555544440018", false); 
+  testValid("5555 5555 5555 4444 0018", false); 
+
   testValid("4929001587121045", true);
   testValid("5103059495477870", true);
   testValid("6011029476355493", true);
   testValid("3589993783099582", true);
   testValid("5415425865751454", true);
-  if (CreditCard.isValidNumber("30190729470495")) {
-    ok(false, "todo: 14-digit numbers (Diners Club) aren't supported by isValidNumber yet");
-  }
-  if (CreditCard.isValidNumber("36333851788250")) {
-    ok(false, "todo: 14-digit numbers (Diners Club) aren't supported by isValidNumber yet");
-  }
-  if (CreditCard.isValidNumber("3532596776688495393")) {
-    ok(false, "todo: 19-digit numbers (JCB, Discover, Maestro) could have 16-19 digits");
-  }
+
+  testValid("378282246310005", true); 
+  testValid("371449635398431", true); 
+  testValid("378734493671000", true); 
+  testValid("5610591081018250", true); 
+  testValid("6759649826438453", true); 
+  testValid("6799990100000000019", true); 
+  testValid("6799-9901-0000-0000019", true); 
+  testValid("30569309025904", true); 
+  testValid("38520000023237", true); 
+  testValid("6011111111111117", true); 
+  testValid("6011000990139424", true); 
+  testValid("3530111333300000", true); 
+  testValid("3566002020360505", true); 
+  testValid("3532596776688495393", true); 
+  testValid("3532 5967 7668 8495393", true); 
+  testValid("5555555555554444", true); 
+  testValid("5105105105105100", true); 
+  testValid("2221000000000009", true); 
+  testValid("4111111111111111", true); 
+  testValid("4012888888881881", true); 
+  testValid("4222222222222", true); 
+  testValid("4222 2222 22222", true); 
+  testValid("4035 5010 0000 0008", true); 
+
   testValid("5038146897157463", true);
   testValid("4026313395502338", true);
   testValid("6387060366272981", true);
@@ -55,7 +77,8 @@ add_task(function isValidNumber() {
   testValid("0000-0000-0080-4609", true);
   testValid("0000 0000 0222 331", true);
   testValid("344060747836806", true);
-  testValid("001064088", true);
+  testValid("001064088", false); 
+  testValid("00-10-64-088", false); 
   testValid("4929001587121046", false);
   testValid("5103059495477876", false);
   testValid("6011029476355494", false);
@@ -117,6 +140,7 @@ add_task(function test_maskNumber() {
   testMask("3589993783099582", "**** 9582");
   testMask("5415425865751454", "**** 1454");
   testMask("344060747836806", "**** 6806");
+  testMask("6799990100000000019", "**** 0019");
   Assert.throws(() => (new CreditCard({number: "1234"})).maskedNumber,
     /Invalid credit card number/,
     "Four or less numbers should throw when retrieving the maskedNumber");
@@ -135,6 +159,8 @@ add_task(function test_longMaskedNumber() {
   testMask("3589993783099582", "************9582");
   testMask("5415425865751454", "************1454");
   testMask("344060747836806", "***********6806");
+  testMask("6799990100000000019", "***************0019");
+
   Assert.throws(() => (new CreditCard({number: "1234"})).longMaskedNumber,
     /Invalid credit card number/,
     "Four or less numbers should throw when retrieving the maskedNumber");
