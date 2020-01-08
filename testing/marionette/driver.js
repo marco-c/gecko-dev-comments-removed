@@ -3411,10 +3411,6 @@ GeckoDriver.prototype.receiveMessage = function(message) {
 
     case "Marionette:ListenersAttached":
       if (message.json.outerWindowID === this.curBrowser.curFrameId) {
-        
-        
-        
-        this.sendAsync("newSession");
         this.curBrowser.flushPendingCommands();
       }
       break;
