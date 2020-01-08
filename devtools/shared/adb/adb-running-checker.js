@@ -15,10 +15,25 @@ const client = require("./adb-client");
 exports.check = async function check() {
   let socket;
   let state;
+  let timerID;
+  const TIMEOUT_TIME = 1000;
 
   console.debug("Asking for host:version");
 
   return new Promise(resolve => {
+    
+    
+    
+    timerID = setTimeout(() => {
+      socket.close();
+      resolve(false);
+    }, TIMEOUT_TIME);
+
+    function finish(returnValue) {
+      clearTimeout(timerID);
+      resolve(returnValue);
+    }
+
     const runFSM = function runFSM(packetData) {
       console.debug("runFSM " + state);
       switch (state) {
@@ -35,22 +50,22 @@ exports.check = async function check() {
           socket.close();
           const version = parseInt(data, 16);
           if (version >= 31) {
-            resolve(true);
+            finish(true);
           } else {
             console.log("killing existing adb as we need version >= 31");
-            resolve(false);
+            finish(false);
           }
           break;
         default:
           console.debug("Unexpected State: " + state);
-          resolve(false);
+          finish(false);
       }
     };
 
     const setupSocket = function() {
       socket.s.onerror = function(event) {
         console.debug("running checker onerror");
-        resolve(false);
+        finish(false);
       };
 
       socket.s.onopen = function(event) {
