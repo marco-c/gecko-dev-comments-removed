@@ -652,10 +652,11 @@ bool HTMLInputElement::IsPopupBlocked() const {
 
   
   if (win->GetPopupControlState() <= openBlocked) {
-    return false;
+    return !nsContentUtils::TryUsePopupOpeningToken();
   }
 
-  return !nsContentUtils::CanShowPopup(OwnerDoc()->NodePrincipal());
+  return !nsContentUtils::CanShowPopupByPermission(
+             OwnerDoc()->NodePrincipal());
 }
 
 nsresult HTMLInputElement::InitColorPicker() {

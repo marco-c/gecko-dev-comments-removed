@@ -3292,6 +3292,9 @@ class nsContentUtils {
 
   static PopupControlState GetPopupControlState() { return sPopupControlState; }
 
+  static void PopupStatePusherCreated();
+  static void PopupStatePusherDestroyed();
+
   
   static uint32_t InnerOrOuterWindowCreated();
   
@@ -3301,7 +3304,14 @@ class nsContentUtils {
     return sInnerOrOuterWindowCount;
   }
 
-  static bool CanShowPopup(nsIPrincipal* aPrincipal);
+  
+  
+  static bool CanShowPopupByPermission(nsIPrincipal* aPrincipal);
+
+  
+  
+  
+  static bool TryUsePopupOpeningToken();
 
   
 
@@ -3495,6 +3505,11 @@ class nsContentUtils {
   static mozilla::LazyLogModule sDOMDumpLog;
 
   static PopupControlState sPopupControlState;
+  static uint32_t sPopupStatePusherCount;
+
+  
+  
+  static bool sUnusedPopupToken;
 
   static int32_t sInnerOrOuterWindowCount;
   static uint32_t sInnerOrOuterWindowSerialCounter;
