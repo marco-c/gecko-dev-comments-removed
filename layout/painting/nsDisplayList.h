@@ -2619,6 +2619,15 @@ public:
 
 
 
+  virtual bool NeedsGeometryUpdates() const
+  {
+    return false;
+  }
+
+  
+
+
+
 
   virtual bool MustPaintOnContentSide() const { return false; }
 
@@ -5224,6 +5233,16 @@ public:
                             const DisplayItemClipChain* aClip) override;
   virtual bool CanApplyOpacity() const override;
   virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override;
+
+  bool NeedsGeometryUpdates() const override
+  {
+    
+    
+    
+    
+    
+    return mChildOpacityState == ChildOpacityState::Deferred;
+  }
 
   
 

@@ -4988,7 +4988,8 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     
     
     
-    if (!combined.IsEmpty() || aData->mLayerState == LAYER_INACTIVE) {
+    if (!combined.IsEmpty() || aData->mLayerState == LAYER_INACTIVE ||
+        item->NeedsGeometryUpdates()) {
       geometry = item->AllocateGeometry(mDisplayListBuilder);
     }
     aData->mClip.AddOffsetAndComputeDifference(shift, aData->mGeometry->ComputeInvalidationRegion(),
