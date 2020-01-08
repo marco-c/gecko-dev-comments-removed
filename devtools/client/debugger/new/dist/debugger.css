@@ -2053,6 +2053,10 @@ menuseparator {
   color: var(--theme-comment);
 }
 
+.theme-dark .outline-filter-input.focused {
+  border: 1px solid var(--blue-50);
+}
+
 
 
 
@@ -2158,6 +2162,11 @@ menuseparator {
 
 .outline-footer button.active {
   background: var(--theme-highlight-blue);
+  color: #ffffff;
+}
+
+.theme-dark .outline-footer button.active {
+  background: var(--theme-selection-background);
   color: #ffffff;
 }
 
