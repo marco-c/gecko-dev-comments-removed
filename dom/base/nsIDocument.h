@@ -561,7 +561,7 @@ public:
 
 
 
-  void NotifyPossibleTitleChange(bool aBoundTitleElement);
+  virtual void NotifyPossibleTitleChange(bool aBoundTitleElement);
 
   
 
