@@ -16,8 +16,6 @@ const GENERATED_LINE = 86;
 const ORIGINAL_LINE = 13;
 
 add_task(async function() {
-  await pushPref("devtools.debugger.new-debugger-frontend", true);
-
   
   
   const toolbox = await openNewTabAndToolbox(INITIAL_URL, "webconsole");
