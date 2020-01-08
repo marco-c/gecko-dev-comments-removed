@@ -37,7 +37,7 @@ public:
   virtual SyncHandle GetSyncHandle() = 0;
 
   
-  virtual bool Synchronize() = 0;
+  virtual bool Synchronize(bool aFallible = false) = 0;
 
 protected:
   SyncObjectHost() { }
