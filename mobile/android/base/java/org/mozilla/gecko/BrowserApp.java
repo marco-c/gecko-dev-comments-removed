@@ -1084,6 +1084,10 @@ public class BrowserApp extends GeckoApp
                 
                 if (userReturnedToFullApp) {
                     ActivityUtils.setFullScreen(this, true);
+                } else {
+                    
+                    
+                    setRequestedOrientationForCurrentActivity(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
                 }
             }
         }
