@@ -58,9 +58,33 @@ struct NativeIterator
     
     struct Flags
     {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         static constexpr uint32_t Initialized = 0x1;
+
+        
+        
         static constexpr uint32_t Active = 0x2;
+
+        
+        
+        
+        
         static constexpr uint32_t HasUnvisitedPropertyDeletion = 0x4;
+
+        
+        
+        
+        
         static constexpr uint32_t NotReusable = Active | HasUnvisitedPropertyDeletion;
     };
 
@@ -248,6 +272,12 @@ struct NativeIterator
 
     bool isReusable() const {
         MOZ_ASSERT(isInitialized());
+
+        
+        
+        
+        
+        
         return flags_ == Flags::Initialized;
     }
 

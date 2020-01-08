@@ -56,6 +56,9 @@ typedef Rooted<PropertyIteratorObject*> RootedPropertyIteratorObject;
 
 static const gc::AllocKind ITERATOR_FINALIZE_KIND = gc::AllocKind::OBJECT2_BACKGROUND;
 
+
+
+
 void
 NativeIterator::trace(JSTracer* trc)
 {
@@ -66,11 +69,24 @@ NativeIterator::trace(JSTracer* trc)
     if (iterObj_)
         TraceManuallyBarrieredEdge(trc, &iterObj_, "iterObj");
 
+    
+    
+    
     std::for_each(guardsBegin(), guardsEnd(),
                   [trc](HeapReceiverGuard& guard) {
                       guard.trace(trc);
                   });
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     GCPtrFlatString* begin = MOZ_LIKELY(isInitialized()) ? propertiesBegin() : propertyCursor_;
     std::for_each(begin, propertiesEnd(),
                   [trc](GCPtrFlatString& prop) {
@@ -674,7 +690,7 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
     propertyCursor_(reinterpret_cast<GCPtrFlatString*>(guardsBegin() + numGuards)),
     propertiesEnd_(propertyCursor_),
     guardKey_(guardKey),
-    flags_(0)
+    flags_(0) 
 {
     MOZ_ASSERT(!*hadError);
 
@@ -740,6 +756,8 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
         MOZ_ASSERT(i == numGuards);
     }
 
+    
+    
     MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
     markInitialized();
 
