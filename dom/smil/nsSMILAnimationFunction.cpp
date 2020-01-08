@@ -9,7 +9,7 @@
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/Move.h"
 #include "nsISMILAttr.h"
-#include "nsSMILCSSValueType.h"
+#include "SMILCSSValueType.h"
 #include "nsSMILParserUtils.h"
 #include "SMILNullType.h"
 #include "nsSMILTimedElement.h"
@@ -341,7 +341,7 @@ nsresult nsSMILAnimationFunction::InterpolateResult(
   
   
   
-  if (nsSMILCSSValueType::PropertyFromValue(aValues[0]) ==
+  if (SMILCSSValueType::PropertyFromValue(aValues[0]) ==
       eCSSProperty_visibility) {
     calcMode = CALC_DISCRETE;
   }
@@ -434,7 +434,7 @@ nsresult nsSMILAnimationFunction::InterpolateResult(
       
       
       
-      if (aResult.mType == &nsSMILCSSValueType::sSingleton) {
+      if (aResult.mType == &SMILCSSValueType::sSingleton) {
         
         
         
@@ -443,7 +443,7 @@ nsresult nsSMILAnimationFunction::InterpolateResult(
           MOZ_ASSERT(aResult.mU.mPtr, "The last value should not be empty");
         } else {
           
-          nsSMILCSSValueType::FinalizeValue(aResult, aValues[index + 1]);
+          SMILCSSValueType::FinalizeValue(aResult, aValues[index + 1]);
         }
       }
     }

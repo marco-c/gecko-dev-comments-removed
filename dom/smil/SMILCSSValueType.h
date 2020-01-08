@@ -20,18 +20,17 @@ class DeclarationBlock;
 namespace dom {
 class Element;
 }  
-}  
 
 
 
 
-class nsSMILCSSValueType : public nsISMILType {
+class SMILCSSValueType : public nsISMILType {
  public:
   typedef mozilla::dom::Element Element;
   typedef mozilla::AnimationValue AnimationValue;
 
   
-  static nsSMILCSSValueType sSingleton;
+  static SMILCSSValueType sSingleton;
 
  protected:
   
@@ -131,7 +130,9 @@ class nsSMILCSSValueType : public nsISMILType {
 
  private:
   
-  constexpr nsSMILCSSValueType() {}
+  constexpr SMILCSSValueType() {}
 };
+
+}  
 
 #endif  
