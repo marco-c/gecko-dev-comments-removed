@@ -596,6 +596,31 @@ nsHttpChannel::Connect()
     return ConnectOnTailUnblock();
 }
 
+static bool
+IsContentPolicyTypeWhitelistedForFastBlock(nsILoadInfo* aLoadInfo)
+{
+  nsContentPolicyType type = aLoadInfo ?
+                             aLoadInfo->GetExternalContentPolicyType() :
+                             nsIContentPolicy::TYPE_OTHER;
+  switch (type) {
+  
+  case nsIContentPolicy::TYPE_IMAGE:
+  case nsIContentPolicy::TYPE_IMAGESET:
+  case nsIContentPolicy::TYPE_INTERNAL_IMAGE:
+  case nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD:
+  case nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON:
+  
+  case nsIContentPolicy::TYPE_FONT:
+  
+  case nsIContentPolicy::TYPE_STYLESHEET:
+  case nsIContentPolicy::TYPE_INTERNAL_STYLESHEET:
+  case nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD:
+    return true;
+  default:
+    return false;
+  }
+}
+
 bool
 nsHttpChannel::CheckFastBlocked()
 {
@@ -616,7 +641,9 @@ nsHttpChannel::CheckFastBlocked()
         return false;
     }
 
-    if (!sIsFastBlockEnabled || !timestamp) {
+    if (!sIsFastBlockEnabled ||
+        IsContentPolicyTypeWhitelistedForFastBlock(mLoadInfo) ||
+        !timestamp) {
         return false;
     }
 
