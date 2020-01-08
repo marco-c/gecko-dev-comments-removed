@@ -535,6 +535,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     typedef DebuggerWeakMap<JSScript*> ScriptWeakMap;
     ScriptWeakMap scripts;
 
+    using LazyScriptWeakMap = DebuggerWeakMap<LazyScript*>;
+    LazyScriptWeakMap lazyScripts;
+
     
     typedef DebuggerWeakMap<JSObject*, true> SourceWeakMap;
     SourceWeakMap sources;
@@ -1115,6 +1118,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     JSObject* wrapScript(JSContext* cx, HandleScript script);
+
+    JSObject* wrapLazyScript(JSContext* cx, Handle<LazyScript*> script);
 
     
 
