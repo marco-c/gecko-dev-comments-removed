@@ -1713,7 +1713,6 @@ PaintByLayer(nsDisplayItem* aItem,
 static bool
 PaintItemByDrawTarget(nsDisplayItem* aItem,
                       gfx::DrawTarget* aDT,
-                      const LayerRect& aImageRect,
                       const LayoutDevicePoint& aOffset,
                       nsDisplayListBuilder* aDisplayListBuilder,
                       const RefPtr<BasicLayerManager>& aManager,
@@ -1723,7 +1722,8 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
   MOZ_ASSERT(aDT);
 
   bool isInvalidated = false;
-  aDT->ClearRect(aImageRect.ToUnknownRect());
+  
+  aDT->ClearRect(Rect(aDT->GetRect()));
   RefPtr<gfxContext> context = gfxContext::CreateOrNull(aDT);
   MOZ_ASSERT(context);
 
@@ -1768,14 +1768,14 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
     
     if (aHighlight) {
       aDT->SetTransform(gfx::Matrix());
-      aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(aHighlight.value()));
+      aDT->FillRect(Rect(aDT->GetRect()), gfx::ColorPattern(aHighlight.value()));
     }
     if (aItem->Frame()->PresContext()->GetPaintFlashing() && isInvalidated) {
       aDT->SetTransform(gfx::Matrix());
       float r = float(rand()) / RAND_MAX;
       float g = float(rand()) / RAND_MAX;
       float b = float(rand()) / RAND_MAX;
-      aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
+      aDT->FillRect(Rect(aDT->GetRect()), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
     }
   }
 
@@ -1823,7 +1823,10 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
 
   const int32_t appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
-  LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(paintBounds, appUnitsPerDevPixel);
+  auto bounds = LayoutDeviceRect::FromAppUnits(paintBounds, appUnitsPerDevPixel);
+  if (bounds.IsEmpty()) {
+    return nullptr;
+  }
 
   gfx::Size scale = aSc.GetInheritedScale();
   gfx::Size oldScale = fallbackData->GetScale();
@@ -1834,31 +1837,18 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   bool differentScale = gfx::FuzzyEqual(scale.width, oldScale.width, 1e-6f) &&
                         gfx::FuzzyEqual(scale.height, oldScale.height, 1e-6f);
 
-  
-  
-  LayerIntSize paintSize = RoundedToInt(LayerSize(bounds.Width() * scale.width, bounds.Height() * scale.height));
-  if (paintSize.width == 0 || paintSize.height == 0) {
-    return nullptr;
-  }
+  LayoutDeviceToLayerScale2D layerScale(scale.width, scale.height);
+  auto scaledBounds = bounds * layerScale;
+  auto dtRect = RoundedOut(scaledBounds);
+  auto dtSize = dtRect.Size();
 
-  
-  
-  auto scaledBounds = bounds * LayoutDeviceToLayerScale(1);
-  scaledBounds.Scale(scale.width, scale.height);
-  LayerIntSize dtSize = RoundedToInt(scaledBounds).Size();
+  aImageRect = dtRect / layerScale;
 
-  
-  
-  
-  if (dtSize.width <= 0 || dtSize.height <= 0) {
-    return nullptr;
-  }
+  auto offset = aImageRect.TopLeft();
+
+  nsDisplayItemGeometry* geometry = fallbackData->GetGeometry();
 
   bool needPaint = true;
-  LayoutDeviceIntPoint offset = RoundedToInt(bounds.TopLeft());
-  aImageRect = LayoutDeviceRect(offset, LayoutDeviceSize(RoundedToInt(bounds).Size()));
-  LayerRect paintRect = LayerRect(LayerPoint(0, 0), LayerSize(paintSize));
-  nsDisplayItemGeometry* geometry = fallbackData->GetGeometry();
 
   
   
@@ -1922,9 +1912,9 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
       if (!fallbackData->mBasicLayerManager) {
         fallbackData->mBasicLayerManager = new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
       }
-      bool isInvalidated = PaintItemByDrawTarget(aItem, dt, paintRect, offset, aDisplayListBuilder,
+      bool isInvalidated = PaintItemByDrawTarget(aItem, dt, offset, aDisplayListBuilder,
                                                  fallbackData->mBasicLayerManager, scale, highlight);
-      recorder->FlushItem(IntRect(0, 0, paintSize.width, paintSize.height));
+      recorder->FlushItem(IntRect({ 0, 0 }, dtSize.ToUnknownSize()));
       TakeExternalSurfaces(recorder, fallbackData->mExternalSurfaces, mManager, aResources);
       recorder->Finish();
 
@@ -1960,7 +1950,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
           if (!fallbackData->mBasicLayerManager) {
             fallbackData->mBasicLayerManager = new BasicLayerManager(mManager->GetWidget());
           }
-          isInvalidated = PaintItemByDrawTarget(aItem, dt, paintRect, offset,
+          isInvalidated = PaintItemByDrawTarget(aItem, dt, offset,
                                                 aDisplayListBuilder,
                                                 fallbackData->mBasicLayerManager, scale,
                                                 highlight);
@@ -2018,7 +2008,7 @@ WebRenderCommandBuilder::BuildWrMaskImage(nsDisplayItem* aItem,
 
   wr::WrImageMask imageMask;
   imageMask.image = fallbackData->GetKey().value();
-  imageMask.rect = wr::ToRoundedLayoutRect(aBounds);
+  imageMask.rect = wr::ToRoundedLayoutRect(imageRect);
   imageMask.repeat = false;
   return Some(imageMask);
 }
