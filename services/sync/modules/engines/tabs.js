@@ -44,11 +44,6 @@ TabEngine.prototype = {
   _storeObj: TabStore,
   _trackerObj: TabTracker,
   _recordObj: TabSetRecord,
-  
-  
-  
-  
-  hasSyncedThisSession: false,
 
   syncPriority: 3,
 
@@ -81,7 +76,6 @@ TabEngine.prototype = {
     await SyncEngine.prototype._resetClient.call(this);
     await this._store.wipe();
     this._tracker.modified = true;
-    this.hasSyncedThisSession = false;
   },
 
   async removeClientData() {
@@ -98,11 +92,6 @@ TabEngine.prototype = {
     }
 
     return SyncEngine.prototype._reconcile.call(this, item);
-  },
-
-  async _syncFinish() {
-    this.hasSyncedThisSession = true;
-    return SyncEngine.prototype._syncFinish.call(this);
   },
 };
 
