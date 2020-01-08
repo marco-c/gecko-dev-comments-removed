@@ -278,6 +278,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  bool IsLoopingBack(double aPrevPos, double aCurPos) const;
+
+  
+  
   bool CanPlayThrough();
 
   
