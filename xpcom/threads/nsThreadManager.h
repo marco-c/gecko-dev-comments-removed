@@ -9,6 +9,7 @@
 
 #include "mozilla/Mutex.h"
 #include "nsIThreadManager.h"
+#include "nsRefPtrHashtable.h"
 #include "nsThread.h"
 
 class nsIRunnable;
@@ -35,7 +36,7 @@ public:
 
   
   
-  void UnregisterCurrentThread(nsThread& aThread);
+  void UnregisterCurrentThread(nsThread& aThread, bool aIfExists = false);
 
   
   
@@ -73,7 +74,10 @@ private:
   nsThreadManager()
     : mCurThreadIndex(0)
     , mMainPRThread(nullptr)
+    , mLock("nsThreadManager.mLock")
     , mInitialized(false)
+    , mCurrentNumberOfThreads(1)
+    , mHighestNumberOfThreads(1)
   {
   }
 
@@ -83,12 +87,19 @@ private:
 
   static void ReleaseThread(void* aData);
 
+  nsRefPtrHashtable<nsPtrHashKey<PRThread>, nsThread> mThreadsByPRThread;
   unsigned            mCurThreadIndex;  
   RefPtr<nsThread>  mMainThread;
   PRThread*         mMainPRThread;
+  mozilla::OffTheBooksMutex mLock;  
   mozilla::Atomic<bool,
                   mozilla::SequentiallyConsistent,
                   mozilla::recordreplay::Behavior::DontPreserve> mInitialized;
+
+  
+  uint32_t            mCurrentNumberOfThreads;
+  
+  uint32_t            mHighestNumberOfThreads;
 };
 
 #define NS_THREADMANAGER_CID                       \
