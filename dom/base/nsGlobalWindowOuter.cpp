@@ -20,7 +20,6 @@
 #include "nsISecureBrowserUI.h"
 #include "nsIWebProgressListener.h"
 #include "mozilla/AntiTrackingCommon.h"
-#include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/LocalStorage.h"
 #include "mozilla/dom/Storage.h"
@@ -1039,7 +1038,6 @@ nsGlobalWindowOuter::CleanUp()
   }
   mChromeEventHandler = nullptr; 
   mParentTarget = nullptr;
-  mMessageManager = nullptr;
 
   mArguments = nullptr;
 
@@ -1146,7 +1144,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowOuter)
   
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChromeEventHandler)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mParentTarget)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMessageManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOpenerForInitialContentBrowser)
 
@@ -1173,7 +1170,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowOuter)
   
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mChromeEventHandler)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParentTarget)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mMessageManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOpenerForInitialContentBrowser)
 
@@ -2243,7 +2239,6 @@ nsGlobalWindowOuter::UpdateParentTarget()
   
   
   
-  
 
   
   
@@ -2251,25 +2246,28 @@ nsGlobalWindowOuter::UpdateParentTarget()
   
 
   nsCOMPtr<Element> frameElement = GetOuterWindow()->GetFrameElementInternal();
-  mMessageManager = nsContentUtils::TryGetTabChildGlobal(frameElement);
+  nsCOMPtr<EventTarget> eventTarget =
+    nsContentUtils::TryGetTabChildGlobalAsEventTarget(frameElement);
 
-  if (!mMessageManager) {
+  if (!eventTarget) {
     nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
     if (topWin) {
       frameElement = topWin->GetFrameElementInternal();
-      mMessageManager = nsContentUtils::TryGetTabChildGlobal(frameElement);
+      eventTarget =
+        nsContentUtils::TryGetTabChildGlobalAsEventTarget(frameElement);
     }
   }
 
-  if (!mMessageManager) {
-    mMessageManager = nsContentUtils::TryGetTabChildGlobal(mChromeEventHandler);
+  if (!eventTarget) {
+    eventTarget =
+      nsContentUtils::TryGetTabChildGlobalAsEventTarget(mChromeEventHandler);
   }
 
-  if (mMessageManager) {
-    mParentTarget = mMessageManager;
-  } else {
-    mParentTarget = mChromeEventHandler;
+  if (!eventTarget) {
+    eventTarget = mChromeEventHandler;
   }
+
+  mParentTarget = eventTarget;
 }
 
 EventTarget*
@@ -7627,19 +7625,6 @@ nsPIDOMWindowOuter::MaybeCreateDoc()
     nsCOMPtr<nsIDocument> document = docShell->GetDocument();
     Unused << document;
   }
-}
-
-void
-nsPIDOMWindowOuter::SetChromeEventHandlerInternal(EventTarget* aChromeEventHandler)
-{
-  
-  
-  mChromeEventHandler = aChromeEventHandler;
-
-  
-  
-  mParentTarget = nullptr;
-  mMessageManager = nullptr;
 }
 
 mozilla::dom::DocGroup*

@@ -18,7 +18,10 @@ add_task(async function init() {
 function frameScript() {
   
   
-  let mm = docShell.messageManager;
+  let mm = docShell.sameTypeRootTreeItem.
+    QueryInterface(Ci.nsIDocShell).
+    QueryInterface(Ci.nsIInterfaceRequestor).
+    getInterface(Ci.nsIContentFrameMessageManager);
 
   let wrap = function(original) {
     return function(name, ...args) {

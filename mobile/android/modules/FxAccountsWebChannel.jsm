@@ -196,9 +196,9 @@ this.FxAccountsWebChannel.prototype = {
 
         switch (command) {
           case COMMAND_LOADED:
-            
-            
-            let mm = sendingContext.browser.docShell.messageManager;
+            let mm = sendingContext.browser.docShell
+              .QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIContentFrameMessageManager);
             mm.sendAsyncMessage(COMMAND_LOADED);
             break;
 

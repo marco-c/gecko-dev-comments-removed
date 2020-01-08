@@ -57,7 +57,9 @@ let ProcessObserver = {
 
         
         
-        let messageManager = window.docShell.messageManager;
+        let messageManager = window.docShell
+                                   .QueryInterface(Ci.nsIInterfaceRequestor)
+                                   .getInterface(Ci.nsIContentFrameMessageManager);
 
         let { ChildMessagePort } =
           ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm", {});

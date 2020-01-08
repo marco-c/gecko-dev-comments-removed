@@ -425,5 +425,15 @@ function getMessageManagerForWindow(aContentWindow) {
     return null;
   }
 
-  return docShell.messageManager;
+  let ir = docShell.sameTypeRootTreeItem
+                   .QueryInterface(Ci.nsIInterfaceRequestor);
+  try {
+    
+    return ir.getInterface(Ci.nsIContentFrameMessageManager);
+  } catch (e) {
+    if (e.result == Cr.NS_NOINTERFACE) {
+      return null;
+    }
+    throw e;
+  }
 }
