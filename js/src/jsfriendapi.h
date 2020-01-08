@@ -301,8 +301,7 @@ namespace JS {
 
 
 extern JS_FRIEND_API(JS::UniqueChars)
-FormatStackDump(JSContext* cx, JS::UniqueChars&& buf, bool showArgs, bool showLocals,
-                bool showThisProps);
+FormatStackDump(JSContext* cx, bool showArgs, bool showLocals, bool showThisProps);
 
 
 
