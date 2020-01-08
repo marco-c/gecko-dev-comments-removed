@@ -634,8 +634,8 @@ KeyframeEffect::ConvertTarget(
   return result;
 }
 
-template <class KeyframeEffectType, class OptionsType>
- already_AddRefed<KeyframeEffectType>
+template <class OptionsType>
+ already_AddRefed<KeyframeEffect>
 KeyframeEffect::ConstructKeyframeEffect(
     const GlobalObject& aGlobal,
     const Nullable<ElementOrCSSPseudoElement>& aTarget,
@@ -668,8 +668,8 @@ KeyframeEffect::ConstructKeyframeEffect(
     KeyframeEffectParamsFromUnion(aOptions, aGlobal.CallerType());
 
   Maybe<OwningAnimationTarget> target = ConvertTarget(aTarget);
-  RefPtr<KeyframeEffectType> effect =
-    new KeyframeEffectType(doc, target, timingParams, effectOptions);
+  RefPtr<KeyframeEffect> effect =
+    new KeyframeEffect(doc, target, timingParams, effectOptions);
 
   effect->SetKeyframes(aGlobal.Context(), aKeyframes, aRv);
   if (aRv.Failed()) {
@@ -679,8 +679,7 @@ KeyframeEffect::ConstructKeyframeEffect(
   return effect.forget();
 }
 
-template<class KeyframeEffectType>
- already_AddRefed<KeyframeEffectType>
+ already_AddRefed<KeyframeEffect>
 KeyframeEffect::ConstructKeyframeEffect(const GlobalObject& aGlobal,
                                         KeyframeEffect& aSource,
                                         ErrorResult& aRv)
@@ -697,11 +696,11 @@ KeyframeEffect::ConstructKeyframeEffect(const GlobalObject& aGlobal,
   
   
   
-  RefPtr<KeyframeEffectType> effect =
-    new KeyframeEffectType(doc,
-                           aSource.mTarget,
-                           aSource.SpecifiedTiming(),
-                           aSource.mEffectOptions);
+  RefPtr<KeyframeEffect> effect =
+    new KeyframeEffect(doc,
+                       aSource.mTarget,
+                       aSource.SpecifiedTiming(),
+                       aSource.mEffectOptions);
   
   
   effect->mCumulativeChangeHint = aSource.mCumulativeChangeHint;
@@ -882,8 +881,7 @@ KeyframeEffect::Constructor(
     const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
     ErrorResult& aRv)
 {
-  return ConstructKeyframeEffect<KeyframeEffect>(aGlobal, aTarget,
-                                                 aKeyframes, aOptions, aRv);
+  return ConstructKeyframeEffect(aGlobal, aTarget, aKeyframes, aOptions, aRv);
 }
 
  already_AddRefed<KeyframeEffect>
@@ -891,7 +889,7 @@ KeyframeEffect::Constructor(const GlobalObject& aGlobal,
                             KeyframeEffect& aSource,
                             ErrorResult& aRv)
 {
-  return ConstructKeyframeEffect<KeyframeEffect>(aGlobal, aSource, aRv);
+  return ConstructKeyframeEffect(aGlobal, aSource, aRv);
 }
 
  already_AddRefed<KeyframeEffect>
@@ -902,8 +900,7 @@ KeyframeEffect::Constructor(
     const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
     ErrorResult& aRv)
 {
-  return ConstructKeyframeEffect<KeyframeEffect>(aGlobal, aTarget, aKeyframes,
-                                                 aOptions, aRv);
+  return ConstructKeyframeEffect(aGlobal, aTarget, aKeyframes, aOptions, aRv);
 }
 
 void
