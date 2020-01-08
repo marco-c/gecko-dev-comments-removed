@@ -119,7 +119,7 @@ static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition)
 
 
 
-static bool HaveFixedSize(const ReflowInput& aReflowInput)
+inline bool HaveFixedSize(const ReflowInput& aReflowInput)
 {
   NS_ASSERTION(aReflowInput.mStylePosition, "crappy reflowInput - null stylePosition");
   
@@ -579,23 +579,8 @@ nsImageFrame::SourceRectToDest(const nsIntRect& aRect)
     (!(_state).HasAtLeastOneOfStates(NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED) && \
      (_state).HasState(NS_EVENT_STATE_LOADING) && (_loadingOK)))
 
-static bool HasAltText(const Element& aElement)
-{
-  
-  
-  if (aElement.IsHTMLElement(nsGkAtoms::input)) {
-    return true;
-  }
 
-  MOZ_ASSERT(aElement.IsHTMLElement(nsGkAtoms::img));
-  nsAutoString altText;
-  return aElement.GetAttr(nsGkAtoms::alt, altText) && !altText.IsEmpty();
-}
-
-
-
-
- bool
+bool
 nsImageFrame::ShouldCreateImageFrameFor(const Element& aElement,
                                         ComputedStyle& aStyle)
 {
@@ -605,25 +590,44 @@ nsImageFrame::ShouldCreateImageFrameFor(const Element& aElement,
     return true;
   }
 
-  if (aStyle.StyleUIReset()->mForceBrokenImageIcon) {
-    return true;
-  }
-
   
-  if (gIconLoad && gIconLoad->mPrefForceInlineAltText) {
-    return false;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool useSizedBox;
 
-  if (!HasAltText(aElement)) {
-    return true;
+  if (aStyle.StyleUIReset()->mForceBrokenImageIcon) {
+    useSizedBox = true;
   }
-
-  if (aElement.OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks) {
+  else if (gIconLoad && gIconLoad->mPrefForceInlineAltText) {
+    useSizedBox = false;
+  }
+  else if (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
+           !aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::alt) &&
+           !aElement.IsHTMLElement(nsGkAtoms::object) &&
+           !aElement.IsHTMLElement(nsGkAtoms::input)) {
     
-    return HaveSpecifiedSize(aStyle.StylePosition());
+    
+    
+    useSizedBox = true;
+  }
+  else if (aElement.OwnerDoc()->GetCompatibilityMode() !=
+           eCompatibility_NavQuirks) {
+    useSizedBox = false;
+  }
+  else {
+    
+    useSizedBox = HaveSpecifiedSize(aStyle.StylePosition());
   }
 
-  return false;
+  return useSizedBox;
 }
 
 nsresult
