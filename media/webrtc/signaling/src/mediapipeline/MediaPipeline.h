@@ -11,14 +11,14 @@
 #include <map>
 
 #include "sigslot.h"
+#include "transportlayer.h" 
 
 #include "signaling/src/media-conduit/MediaConduitInterface.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Atomics.h"
-#include "SrtpFlow.h"
+#include "SrtpFlow.h" 
 #include "mediapacket.h"
 #include "mtransport/runnable_utils.h"
-#include "mtransport/transportflow.h"
 #include "AudioPacketizer.h"
 #include "StreamTracks.h"
 #include "signaling/src/peerconnection/PacketDumper.h"
@@ -33,6 +33,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 class MediaPipelineFilter;
+class MediaTransportBase;
 class PeerIdentity;
 class AudioProxyThread;
 class VideoFrameConverter;
@@ -83,13 +84,8 @@ public:
     TRANSMIT,
     RECEIVE
   };
-  enum class StateType
-  {
-    MP_CONNECTING,
-    MP_OPEN,
-    MP_CLOSED
-  };
   MediaPipeline(const std::string& aPc,
+                MediaTransportBase* aTransportHandler,
                 DirectionType aDirection,
                 nsCOMPtr<nsIEventTarget> aMainThread,
                 nsCOMPtr<nsIEventTarget> aStsThread,
@@ -104,12 +100,10 @@ public:
   
   void Shutdown_m();
 
-  void UpdateTransport_m(RefPtr<TransportFlow> aRtpTransport,
-                         RefPtr<TransportFlow> aRtcpTransport,
+  void UpdateTransport_m(const std::string& aTransportId,
                          nsAutoPtr<MediaPipelineFilter> aFilter);
 
-  void UpdateTransport_s(RefPtr<TransportFlow> aRtpTransport,
-                         RefPtr<TransportFlow> aRtcpTransport,
+  void UpdateTransport_s(const std::string& aTransportId,
                          nsAutoPtr<MediaPipelineFilter> aFilter);
 
   
@@ -124,8 +118,6 @@ public:
   virtual DirectionType Direction() const { return mDirection; }
   int Level() const { return mLevel; }
   virtual bool IsVideo() const = 0;
-
-  bool IsDoingRtcpMux() const { return mRtp.mType == MUX; }
 
   class RtpCSRCStats
   {
@@ -178,8 +170,6 @@ public:
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaPipeline)
 
-  typedef enum { RTP, RTCP, MUX, MAX_RTP_TYPE } RtpType;
-
   
   class PipelineTransport : public TransportInterface
   {
@@ -208,40 +198,10 @@ public:
 
 protected:
   virtual ~MediaPipeline();
-  nsresult AttachTransport_s();
   friend class PipelineTransport;
 
-  struct TransportInfo
-  {
-    TransportInfo(RefPtr<TransportFlow> aFlow, RtpType aType)
-      : mTransport(aFlow)
-      , mSrtp(mTransport ? mTransport->GetLayer("srtp") : nullptr)
-      , mState(StateType::MP_CONNECTING)
-      , mType(aType)
-    {
-    }
-
-    void Detach()
-    {
-      mTransport = nullptr;
-      mSrtp = nullptr;
-    }
-
-    RefPtr<TransportFlow> mTransport;
-    TransportLayer* mSrtp;
-    StateType mState;
-    RtpType mType;
-  };
-
   
-  virtual nsresult TransportFailed_s(TransportInfo& aInfo);
-  
-  virtual nsresult TransportReady_s(TransportInfo& aInfo);
-  void UpdateRtcpMuxState(TransportInfo& aInfo);
-
-  nsresult ConnectTransport_s(TransportInfo& aInfo);
-
-  TransportInfo* GetTransportInfo_s(TransportLayer* aLayer);
+  virtual void TransportReady_s() {}
 
   void IncrementRtpPacketsSent(int aBytes);
   void IncrementRtcpPacketsSent();
@@ -249,25 +209,32 @@ protected:
   virtual void OnRtpPacketReceived() {};
   void IncrementRtcpPacketsReceived();
 
-  virtual nsresult SendPacket(TransportLayer* aLayer,
-                              MediaPacket& packet);
+  virtual nsresult SendPacket(MediaPacket& packet);
 
   
-  void StateChange(TransportLayer* aLayer, TransportLayer::State);
-  void RtpPacketReceived(TransportLayer* aLayer, MediaPacket& packet);
-  void RtcpPacketReceived(TransportLayer* aLayer, MediaPacket& packet);
-  void PacketReceived(TransportLayer* aLayer, MediaPacket& packet);
+  void RtpStateChange(const std::string& aTransportId, TransportLayer::State);
+  void RtcpStateChange(const std::string& aTransportId, TransportLayer::State);
+  virtual void CheckTransportStates();
+  void PacketReceived(const std::string& aTransportId, MediaPacket& packet);
+
+  void RtpPacketReceived(MediaPacket& packet);
+  void RtcpPacketReceived(MediaPacket& packet);
+
+  void EncryptedPacketSending(const std::string& aTransportId,
+                              MediaPacket& aPacket);
 
   void SetDescription_s(const std::string& description);
 
   const DirectionType mDirection;
   size_t mLevel;
+  std::string mTransportId;
+  RefPtr<MediaTransportBase> mTransportHandler;
   RefPtr<MediaSessionConduit> mConduit; 
                                         
 
-  
-  TransportInfo mRtp;
-  TransportInfo mRtcp;
+  TransportLayer::State mRtpState = TransportLayer::TS_NONE;
+  TransportLayer::State mRtcpState = TransportLayer::TS_NONE;
+  bool mSignalsConnected = false;
 
   
   
@@ -277,7 +244,6 @@ protected:
   
   RefPtr<PipelineTransport> mTransport;
 
-  
   
   int32_t mRtpPacketsSent;
   int32_t mRtcpPacketsSent;
@@ -315,6 +281,7 @@ class MediaPipelineTransmit : public MediaPipeline
 public:
   
   MediaPipelineTransmit(const std::string& aPc,
+                        MediaTransportBase* aTransportHandler,
                         nsCOMPtr<nsIEventTarget> aMainThread,
                         nsCOMPtr<nsIEventTarget> aStsThread,
                         bool aIsVideo,
@@ -339,7 +306,7 @@ public:
   void DetachMedia() override;
 
   
-  nsresult TransportReady_s(TransportInfo& aInfo) override;
+  void TransportReady_s() override;
 
   
   
@@ -373,6 +340,7 @@ class MediaPipelineReceive : public MediaPipeline
 public:
   
   MediaPipelineReceive(const std::string& aPc,
+                       MediaTransportBase* aTransportHandler,
                        nsCOMPtr<nsIEventTarget> aMainThread,
                        nsCOMPtr<nsIEventTarget> aStsThread,
                        RefPtr<MediaSessionConduit> aConduit);
@@ -392,6 +360,7 @@ class MediaPipelineReceiveAudio : public MediaPipelineReceive
 {
 public:
   MediaPipelineReceiveAudio(const std::string& aPc,
+                            MediaTransportBase* aTransportHandler,
                             nsCOMPtr<nsIEventTarget> aMainThread,
                             nsCOMPtr<nsIEventTarget> aStsThread,
                             RefPtr<AudioSessionConduit> aConduit,
@@ -421,6 +390,7 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive
 {
 public:
   MediaPipelineReceiveVideo(const std::string& aPc,
+                            MediaTransportBase* aTransportHandler,
                             nsCOMPtr<nsIEventTarget> aMainThread,
                             nsCOMPtr<nsIEventTarget> aStsThread,
                             RefPtr<VideoSessionConduit> aConduit,

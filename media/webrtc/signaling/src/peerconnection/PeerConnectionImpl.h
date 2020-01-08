@@ -212,14 +212,6 @@ public:
   }
 
   
-  void SetAllowIceLoopback(bool val) { mAllowIceLoopback = val; }
-  bool GetAllowIceLoopback() const { return mAllowIceLoopback; }
-
-  
-  void SetAllowIceLinkLocal(bool val) { mAllowIceLinkLocal = val; }
-  bool GetAllowIceLinkLocal() const { return mAllowIceLinkLocal; }
-
-  
   virtual const std::string& GetHandle();
 
   
@@ -233,7 +225,6 @@ public:
                               const std::string& defaultRtcpAddr,
                               uint16_t defaultRtcpPort,
                               const std::string& transportId);
-  void EndOfLocalCandidates(const std::string& transportId);
 
   static void ListenThread(void *aData);
   static void ConnectThread(void *aData);
@@ -447,7 +438,10 @@ public:
   }
 
   
-  bool PrivacyRequested() const { return mPrivacyRequested; }
+  bool PrivacyRequested() const
+  {
+    return mPrivacyRequested.isSome() && *mPrivacyRequested;
+  }
 
   NS_IMETHODIMP GetFingerprint(char** fingerprint);
   void GetFingerprint(nsAString& fingerprint)
@@ -541,7 +535,7 @@ public:
 
   bool IsClosed() const;
   
-  nsresult SetDtlsConnected(bool aPrivacyRequested);
+  nsresult OnAlpnNegotiated(const std::string& aAlpn);
 
   bool HasMedia() const;
 
@@ -611,7 +605,8 @@ private:
       uint16_t* remoteport,
       uint32_t* maxmessagesize,
       bool*     mmsset,
-      std::string* transportId) const;
+      std::string* transportId,
+      bool* client) const;
 
   nsresult AddRtpTransceiverToJsepSession(RefPtr<JsepTransceiver>& transceiver);
   already_AddRefed<TransceiverImpl> CreateTransceiverImpl(
@@ -649,10 +644,6 @@ private:
   mozilla::dom::PCImplIceConnectionState mIceConnectionState;
   mozilla::dom::PCImplIceGatheringState mIceGatheringState;
 
-  
-  
-  bool mDtlsConnected;
-
   nsCOMPtr<nsIThread> mThread;
   
   nsWeakPtr mPCObserver;
@@ -679,7 +670,7 @@ private:
   
   
   
-  bool mPrivacyRequested;
+  Maybe<bool> mPrivacyRequested;
 
   
   std::string mHandle;
@@ -693,8 +684,6 @@ private:
   
   RefPtr<mozilla::DataChannelConnection> mDataConnection;
 
-  bool mAllowIceLoopback;
-  bool mAllowIceLinkLocal;
   bool mForceIceTcp;
   RefPtr<PeerConnectionMedia> mMedia;
 
