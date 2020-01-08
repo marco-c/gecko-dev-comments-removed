@@ -3,7 +3,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "addDebuggerToGlobal" ];
+var EXPORTED_SYMBOLS = [ "addDebuggerToGlobal", "addSandboxedDebuggerToGlobal" ];
 
 
 
@@ -22,6 +22,14 @@ const init = Cc["@mozilla.org/jsdebugger;1"].createInstance(Ci.IJSDebugger);
 function addDebuggerToGlobal(global) {
   init.addClass(global);
   initPromiseDebugging(global);
+}
+
+
+
+function addSandboxedDebuggerToGlobal(global) {
+  var sb = Cu.Sandbox(global, {freshCompartment: true});
+  addDebuggerToGlobal(sb);
+  global.Debugger = sb.Debugger;
 }
 
 function initPromiseDebugging(global) {

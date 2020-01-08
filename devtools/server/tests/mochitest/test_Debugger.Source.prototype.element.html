@@ -18,7 +18,7 @@
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
-addDebuggerToGlobal(this);
+addSandboxedDebuggerToGlobal(this);
 
 window.onload = function() {
   SimpleTest.waitForExplicitFinish();
