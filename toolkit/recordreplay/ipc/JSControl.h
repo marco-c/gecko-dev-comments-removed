@@ -55,7 +55,10 @@ struct BreakpointPosition
     EnterFrame,
 
     
-    NewScript
+    NewScript,
+
+    
+    WarpTarget
   ));
 
   Kind mKind;
@@ -106,6 +109,7 @@ struct BreakpointPosition
     case OnPop: return "OnPop";
     case EnterFrame: return "EnterFrame";
     case NewScript: return "NewScript";
+    case WarpTarget: return "WarpTarget";
     }
     MOZ_CRASH("Bad BreakpointPosition kind");
   }

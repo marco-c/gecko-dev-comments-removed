@@ -367,6 +367,9 @@ public:
   bool mAlwaysSaveTemporaryCheckpoints;
 
   
+  InfallibleVector<std::pair<ProgressCounter, size_t>, 0, UntrackedAllocPolicy> mTimeWarpTargetCheckpoints;
+
+  
   NavigationState()
     : mPhase(&mForwardPhase)
   {
@@ -1138,8 +1141,8 @@ RecordReplayInterface_ExecutionProgressCounter()
 
 } 
 
-static ExecutionPoint
-NewExecutionPoint(const BreakpointPosition& aPosition)
+ExecutionPoint
+CurrentExecutionPoint(const BreakpointPosition& aPosition)
 {
   return ExecutionPoint(gNavigation->LastCheckpoint().mNormal,
                         gProgressCounter, aPosition);
@@ -1149,7 +1152,57 @@ void
 PositionHit(const BreakpointPosition& position)
 {
   AutoDisallowThreadEvents disallow;
-  gNavigation->PositionHit(NewExecutionPoint(position));
+  gNavigation->PositionHit(CurrentExecutionPoint(position));
+}
+
+extern "C" {
+
+MOZ_EXPORT ProgressCounter
+RecordReplayInterface_NewTimeWarpTarget()
+{
+  
+  
+  recordreplay::RecordReplayAssert("NewTimeWarpTarget");
+
+  if (!gNavigation) {
+    return 0;
+  }
+
+  
+  
+  ProgressCounter progress = ++gProgressCounter;
+
+  PositionHit(BreakpointPosition(BreakpointPosition::WarpTarget));
+
+  
+  
+  
+  if (gNavigation->mTimeWarpTargetCheckpoints.empty() ||
+      progress > gNavigation->mTimeWarpTargetCheckpoints.back().first)
+  {
+    size_t checkpoint = gNavigation->LastCheckpoint().mNormal;
+    gNavigation->mTimeWarpTargetCheckpoints.emplaceBack(progress, checkpoint);
+  }
+
+  return progress;
+}
+
+} 
+
+ExecutionPoint
+TimeWarpTargetExecutionPoint(ProgressCounter aTarget)
+{
+  Maybe<size_t> checkpoint;
+  for (auto entry : gNavigation->mTimeWarpTargetCheckpoints) {
+    if (entry.first == aTarget) {
+      checkpoint.emplace(entry.second);
+      break;
+    }
+  }
+  MOZ_RELEASE_ASSERT(checkpoint.isSome());
+
+  return ExecutionPoint(checkpoint.ref(), aTarget,
+                        BreakpointPosition(BreakpointPosition::WarpTarget));
 }
 
 bool

@@ -344,6 +344,10 @@ AdvanceExecutionProgressCounter()
 
 
 
+MFBT_API ProgressCounter NewTimeWarpTarget();
+
+
+
 
 MFBT_API bool IsInternalScript(const char* aURL);
 

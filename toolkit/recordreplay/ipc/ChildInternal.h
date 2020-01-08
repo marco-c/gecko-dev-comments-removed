@@ -52,6 +52,13 @@ bool MaybeDivergeFromRecording();
 void PositionHit(const js::BreakpointPosition& aPosition);
 
 
+js::ExecutionPoint CurrentExecutionPoint(const js::BreakpointPosition& aPosition);
+
+
+
+js::ExecutionPoint TimeWarpTargetExecutionPoint(ProgressCounter aTarget);
+
+
 
 void BeforeCheckpoint();
 
