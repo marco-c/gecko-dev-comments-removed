@@ -57,7 +57,8 @@ RemoteXULForbidsXBLScope(nsIPrincipal* aPrincipal, HandleObject aGlobal)
 }
 
 XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
-                                             JS::HandleObject aGlobal)
+                                             JS::HandleObject aGlobal,
+                                             const mozilla::SiteIdentifier& aSite)
       : mWrappedNativeMap(Native2WrappedNativeMap::newMap(XPC_NATIVE_MAP_LENGTH)),
         mWrappedNativeProtoMap(ClassInfo2WrappedNativeProtoMap::newMap(XPC_NATIVE_PROTO_MAP_LENGTH)),
         mComponents(nullptr),
@@ -83,10 +84,13 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
 
     MOZ_COUNT_CTOR(XPCWrappedNativeScope);
 
+    nsIPrincipal* principal = GetPrincipal();
+
     
     JS::Compartment* c = js::GetObjectCompartment(aGlobal);
     MOZ_ASSERT(!JS_GetCompartmentPrivate(c));
-    CompartmentPrivate* priv = new CompartmentPrivate(c);
+    CompartmentPrivate* priv =
+        new CompartmentPrivate(c, BasePrincipal::Cast(principal), aSite);
     JS_SetCompartmentPrivate(c, priv);
 
     
@@ -98,7 +102,6 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
     
     
     
-    nsIPrincipal* principal = GetPrincipal();
     mAllowContentXBLScope = !RemoteXULForbidsXBLScope(principal, aGlobal);
 
     

@@ -907,6 +907,13 @@ IterateRealms(JSContext* cx, void* data, IterateRealmCallback realmCallback);
 
 
 extern JS_PUBLIC_API(void)
+IterateRealmsWithPrincipals(JSContext* cx, JSPrincipals* principals, void* data,
+                            IterateRealmCallback realmCallback);
+
+
+
+
+extern JS_PUBLIC_API(void)
 IterateRealmsInCompartment(JSContext* cx, JS::Compartment* compartment, void* data,
                            IterateRealmCallback realmCallback);
 

@@ -92,6 +92,8 @@ bool IsInUAWidgetScope(JSObject* obj);
 
 bool IsInSandboxCompartment(JSObject* obj);
 
+void SetCompartmentChangedDocumentDomain(JS::Compartment* compartment);
+
 
 
 

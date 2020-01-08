@@ -25,6 +25,39 @@ namespace extensions {
   class WebExtensionPolicy;
 }
 
+class BasePrincipal;
+
+
+
+
+
+
+
+class SiteIdentifier
+{
+public:
+  void Init(BasePrincipal* aPrincipal)
+  {
+    MOZ_ASSERT(aPrincipal);
+    mPrincipal = aPrincipal;
+  }
+
+  bool IsInitialized() const { return !!mPrincipal; }
+
+  bool Equals(const SiteIdentifier& aOther) const;
+
+private:
+  friend class ::ExpandedPrincipal;
+
+  BasePrincipal* GetPrincipal() const
+  {
+    MOZ_ASSERT(IsInitialized());
+    return mPrincipal;
+  }
+
+  RefPtr<BasePrincipal> mPrincipal;
+};
+
 
 
 
@@ -165,6 +198,8 @@ public:
   }
 
   uint32_t GetOriginNoSuffixHash() const { return mOriginNoSuffix->hash(); }
+
+  virtual nsresult GetSiteIdentifier(SiteIdentifier& aSite) = 0;
 
 protected:
   virtual ~BasePrincipal();

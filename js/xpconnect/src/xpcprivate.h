@@ -935,7 +935,8 @@ public:
     
     JSObject* EnsureContentXBLScope(JSContext* cx);
 
-    XPCWrappedNativeScope(JSContext* cx, JS::HandleObject aGlobal);
+    XPCWrappedNativeScope(JSContext* cx, JS::HandleObject aGlobal,
+                          const mozilla::SiteIdentifier& aSite);
 
     nsAutoPtr<JSObject2JSObjectMap> mWaiverWrapperMap;
 
@@ -2914,6 +2915,51 @@ enum WrapperDenialType {
 };
 bool ReportWrapperDenial(JSContext* cx, JS::HandleId id, WrapperDenialType type, const char* reason);
 
+class CompartmentOriginInfo
+{
+public:
+    CompartmentOriginInfo(const CompartmentOriginInfo&) = delete;
+
+    CompartmentOriginInfo(mozilla::BasePrincipal* aOrigin,
+                          const mozilla::SiteIdentifier& aSite)
+      : mOrigin(aOrigin)
+      , mSite(aSite)
+    {
+        MOZ_ASSERT(aOrigin);
+        MOZ_ASSERT(aSite.IsInitialized());
+    }
+
+    bool IsSameOrigin(nsIPrincipal* aOther) const;
+
+    const mozilla::SiteIdentifier& SiteRef() const {
+        return mSite;
+    }
+
+    bool HasChangedDocumentDomain() const {
+        return mChangedDocumentDomain;
+    }
+    void SetChangedDocumentDomain() {
+        mChangedDocumentDomain = true;
+    }
+
+private:
+    
+    
+    
+    
+    
+    RefPtr<mozilla::BasePrincipal> mOrigin;
+
+    
+    
+    
+    
+    mozilla::SiteIdentifier mSite;
+
+    
+    bool mChangedDocumentDomain = false;
+};
+
 
 
 
@@ -2924,7 +2970,8 @@ class CompartmentPrivate
     CompartmentPrivate(const CompartmentPrivate&) = delete;
 
 public:
-    explicit CompartmentPrivate(JS::Compartment* c);
+    CompartmentPrivate(JS::Compartment* c, mozilla::BasePrincipal* origin,
+                       const mozilla::SiteIdentifier& site);
 
     ~CompartmentPrivate();
 
@@ -2940,6 +2987,8 @@ public:
         JS::Compartment* compartment = js::GetObjectCompartment(object);
         return Get(compartment);
     }
+
+    CompartmentOriginInfo originInfo;
 
     
     
