@@ -647,17 +647,33 @@ class ADBDevice(ADBCommand):
         
         ls_dir = "/sdcard"
 
-        if self.shell_bool("/system/bin/ls {}".format(ls_dir), timeout=timeout):
+        if self.is_file("/system/bin/ls", timeout=timeout):
             self._ls = "/system/bin/ls"
-        elif self.shell_bool("/system/xbin/ls {}".format(ls_dir), timeout=timeout):
+        elif self.is_file("/system/xbin/ls", timeout=timeout):
             self._ls = "/system/xbin/ls"
         else:
             raise ADBError("ADBDevice.__init__: ls could not be found")
-        try:
-            self.shell_output("%s -1A {}".format(ls_dir) % self._ls, timeout=timeout)
-            self._ls += " -1A"
-        except ADBError:
-            self._ls += " -a"
+
+        
+        
+        
+        
+        
+        start_time = time.time()
+        boot_completed = False
+        while not boot_completed and (time.time() - start_time) <= float(timeout):
+            try:
+                self.shell_output("%s -1A {}".format(ls_dir) % self._ls, timeout=timeout)
+                boot_completed = True
+                self._ls += " -1A"
+            except ADBError as e:
+                if 'No such file or directory' not in e.message:
+                    boot_completed = True
+                    self._ls += " -a"
+            if not boot_completed:
+                time.sleep(2)
+        if not boot_completed:
+            raise ADBTimeoutError("ADBDevice: /sdcard not found.")
 
         self._logger.info("%s supported" % self._ls)
 
