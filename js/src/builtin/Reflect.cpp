@@ -29,19 +29,22 @@ Reflect_deleteProperty(JSContext* cx, unsigned argc, Value* vp)
     
     RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.deleteProperty",
                                              args.get(0)));
-    if (!target)
+    if (!target) {
         return false;
+    }
 
     
     RootedValue propertyKey(cx, args.get(1));
     RootedId key(cx);
-    if (!ToPropertyKey(cx, propertyKey, &key))
+    if (!ToPropertyKey(cx, propertyKey, &key)) {
         return false;
+    }
 
     
     ObjectOpResult result;
-    if (!DeleteProperty(cx, target, key, result))
+    if (!DeleteProperty(cx, target, key, result)) {
         return false;
+    }
     args.rval().setBoolean(result.reallyOk());
     return true;
 }
@@ -55,13 +58,15 @@ js::Reflect_getPrototypeOf(JSContext* cx, unsigned argc, Value* vp)
     
     RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.getPrototypeOf",
                                              args.get(0)));
-    if (!target)
+    if (!target) {
         return false;
+    }
 
     
     RootedObject proto(cx);
-    if (!GetPrototype(cx, target, &proto))
+    if (!GetPrototype(cx, target, &proto)) {
         return false;
+    }
     args.rval().setObjectOrNull(proto);
     return true;
 }
@@ -74,13 +79,15 @@ js::Reflect_isExtensible(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.isExtensible", args.get(0)));
-    if (!target)
+    if (!target) {
         return false;
+    }
 
     
     bool extensible;
-    if (!IsExtensible(cx, target, &extensible))
+    if (!IsExtensible(cx, target, &extensible)) {
         return false;
+    }
     args.rval().setBoolean(extensible);
     return true;
 }
@@ -94,8 +101,9 @@ js::Reflect_ownKeys(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.ownKeys", args.get(0)));
-    if (!target)
+    if (!target) {
         return false;
+    }
 
     
     return GetOwnPropertyKeys(cx, target, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS,
@@ -111,13 +119,15 @@ Reflect_preventExtensions(JSContext* cx, unsigned argc, Value* vp)
     
     RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.preventExtensions",
                                              args.get(0)));
-    if (!target)
+    if (!target) {
         return false;
+    }
 
     
     ObjectOpResult result;
-    if (!PreventExtensions(cx, target, result))
+    if (!PreventExtensions(cx, target, result)) {
         return false;
+    }
     args.rval().setBoolean(result.reallyOk());
     return true;
 }
@@ -130,14 +140,16 @@ Reflect_set(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.set", args.get(0)));
-    if (!target)
+    if (!target) {
         return false;
+    }
 
     
     RootedValue propertyKey(cx, args.get(1));
     RootedId key(cx);
-    if (!ToPropertyKey(cx, propertyKey, &key))
+    if (!ToPropertyKey(cx, propertyKey, &key)) {
         return false;
+    }
 
     
     RootedValue receiver(cx, args.length() > 3 ? args[3] : args.get(0));
@@ -145,8 +157,9 @@ Reflect_set(JSContext* cx, unsigned argc, Value* vp)
     
     ObjectOpResult result;
     RootedValue value(cx, args.get(2));
-    if (!SetProperty(cx, target, key, value, receiver, result))
+    if (!SetProperty(cx, target, key, value, receiver, result)) {
         return false;
+    }
     args.rval().setBoolean(result.reallyOk());
     return true;
 }
@@ -164,8 +177,9 @@ Reflect_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject obj(cx, NonNullObjectArg(cx, "`target`", "Reflect.setPrototypeOf", args.get(0)));
-    if (!obj)
+    if (!obj) {
         return false;
+    }
 
     
     if (!args.get(1).isObjectOrNull()) {
@@ -178,8 +192,9 @@ Reflect_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp)
 
     
     ObjectOpResult result;
-    if (!SetPrototype(cx, obj, proto, result))
+    if (!SetPrototype(cx, obj, proto, result)) {
         return false;
+    }
     args.rval().setBoolean(result.reallyOk());
     return true;
 }
@@ -208,18 +223,22 @@ JSObject*
 js::InitReflect(JSContext* cx, Handle<GlobalObject*> global)
 {
     RootedObject proto(cx, GlobalObject::getOrCreateObjectPrototype(cx, global));
-    if (!proto)
+    if (!proto) {
         return nullptr;
+    }
 
     RootedObject reflect(cx, NewObjectWithGivenProto<PlainObject>(cx, proto, SingletonObject));
-    if (!reflect)
+    if (!reflect) {
         return nullptr;
-    if (!JS_DefineFunctions(cx, reflect, methods))
+    }
+    if (!JS_DefineFunctions(cx, reflect, methods)) {
         return nullptr;
+    }
 
     RootedValue value(cx, ObjectValue(*reflect));
-    if (!DefineDataProperty(cx, global, cx->names().Reflect, value, JSPROP_RESOLVING))
+    if (!DefineDataProperty(cx, global, cx->names().Reflect, value, JSPROP_RESOLVING)) {
         return nullptr;
+    }
 
     global->setConstructor(JSProto_Reflect, value);
 

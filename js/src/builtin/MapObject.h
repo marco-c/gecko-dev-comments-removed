@@ -312,35 +312,42 @@ IsOptimizableInitForSet(JSContext* cx, HandleObject setObject, HandleValue itera
 {
     MOZ_ASSERT(!*optimized);
 
-    if (!iterable.isObject())
+    if (!iterable.isObject()) {
         return true;
+    }
 
     RootedObject array(cx, &iterable.toObject());
-    if (!IsPackedArray(array))
+    if (!IsPackedArray(array)) {
         return true;
+    }
 
     
     RootedNativeObject setProto(cx, getPrototypeOp(cx, cx->global()));
-    if (!setProto)
+    if (!setProto) {
         return false;
+    }
 
     
-    if (setObject->staticPrototype() != setProto)
+    if (setObject->staticPrototype() != setProto) {
         return true;
+    }
 
     
     Shape* addShape = setProto->lookup(cx, cx->names().add);
-    if (!addShape || !addShape->isDataProperty())
+    if (!addShape || !addShape->isDataProperty()) {
         return true;
+    }
 
     
     RootedValue add(cx, setProto->getSlot(addShape->slot()));
-    if (!isBuiltinOp(add))
+    if (!isBuiltinOp(add)) {
         return true;
+    }
 
     ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
-    if (!stubChain)
+    if (!stubChain) {
         return false;
+    }
 
     return stubChain->tryOptimizeArray(cx, array.as<ArrayObject>(), optimized);
 }
