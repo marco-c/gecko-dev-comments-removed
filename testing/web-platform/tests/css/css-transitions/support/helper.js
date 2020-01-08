@@ -275,4 +275,45 @@ root.waitForAnimationFrames = (frameCount, onFrame) => {
 root.waitForAllAnimations = animations =>
   Promise.all(animations.map(animation => animation.ready));
 
+
+
+
+
+
+
+
+
+
+
+
+root.frameTimeout = (promiseToWaitOn, framesToWait, message) => {
+  let framesRemaining = framesToWait;
+  let aborted = false;
+
+  const timeoutPromise = new Promise(function waitAFrame(resolve, reject) {
+    if (aborted) {
+      resolve();
+      return;
+    }
+    if (framesRemaining-- > 0) {
+      requestAnimationFrame(() => {
+        waitAFrame(resolve, reject);
+      });
+      return;
+    }
+    let errorMessage = 'Timed out waiting for Promise to resolve';
+    if (message) {
+      errorMessage += `: ${message}`;
+    }
+    reject(new Error(errorMessage));
+  });
+
+  const wrappedPromiseToWaitOn = promiseToWaitOn.then(result => {
+    aborted = true;
+    return result;
+  });
+
+  return Promise.race([timeoutPromise, wrappedPromiseToWaitOn]);
+};
+
 })(window);
