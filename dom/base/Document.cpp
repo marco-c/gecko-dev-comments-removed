@@ -268,13 +268,13 @@
 #ifdef MOZ_XUL
 #include "mozilla/dom/XULBroadcastManager.h"
 #include "mozilla/dom/XULPersist.h"
+#include "mozilla/dom/TreeBoxObject.h"
 #include "nsIXULWindow.h"
 #include "nsXULCommandDispatcher.h"
 #include "nsXULPopupManager.h"
 #include "nsIDocShellTreeOwner.h"
 #endif
 #include "nsIPresShellInlines.h"
-#include "mozilla/dom/BoxObject.h"
 
 #include "mozilla/DocLoadingTimelineMarker.h"
 
@@ -311,7 +311,7 @@ typedef nsTArray<Link*> LinkArray;
 
 static LazyLogModule gDocumentLeakPRLog("DocumentLeak");
 static LazyLogModule gCspPRLog("CSP");
-static LazyLogModule gUserInteractionPRLog("UserInteraction");
+LazyLogModule gUserInteractionPRLog("UserInteraction");
 
 static nsresult GetHttpChannelHelper(nsIChannel* aChannel,
                                      nsIHttpChannel** aHttpChannel) {
@@ -5892,7 +5892,21 @@ already_AddRefed<BoxObject> Document::GetBoxObjectFor(Element* aElement,
     return boxObject.forget();
   }
 
-  boxObject = new BoxObject();
+  int32_t namespaceID;
+  RefPtr<nsAtom> tag = BindingManager()->ResolveTag(aElement, &namespaceID);
+#ifdef MOZ_XUL
+  if (namespaceID == kNameSpaceID_XUL) {
+    if (tag == nsGkAtoms::tree) {
+      boxObject = new TreeBoxObject();
+    } else {
+      boxObject = new BoxObject();
+    }
+  } else
+#endif  
+  {
+    boxObject = new BoxObject();
+  }
+
   boxObject->Init(aElement);
   entry.OrInsert([&boxObject]() { return boxObject; });
 
@@ -11652,16 +11666,29 @@ void Document::SetUserHasInteracted() {
   MaybeAllowStorageForOpenerAfterUserInteraction();
 }
 
+BrowsingContext* Document::GetBrowsingContext() const {
+  nsPIDOMWindowOuter* outer = GetWindow();
+  return outer ? outer->GetBrowsingContext() : nullptr;
+}
+
 void Document::NotifyUserGestureActivation() {
-  
-  
-  Document* doc = this;
-  while (doc && !doc->mUserGestureActivated) {
-    MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug,
-            ("Document %p has been activated by user.", this));
-    doc->mUserGestureActivated = true;
-    doc = doc->GetSameTypeParentDocument();
+  if (HasBeenUserGestureActivated()) {
+    return;
   }
+
+  RefPtr<BrowsingContext> bc = GetBrowsingContext();
+  if (!bc) {
+    return;
+  }
+  bc->NotifyUserGestureActivation();
+}
+
+bool Document::HasBeenUserGestureActivated() {
+  RefPtr<BrowsingContext> bc = GetBrowsingContext();
+  if (!bc) {
+    return false;
+  }
+  return bc->GetUserGestureActivation();
 }
 
 void Document::MaybeNotifyAutoplayBlocked() {
@@ -11927,26 +11954,6 @@ void Document::MaybeStoreUserInteractionAsPermission() {
 
 void Document::ResetUserInteractionTimer() {
   mHasUserInteractionTimerScheduled = false;
-}
-
-bool Document::HasBeenUserGestureActivated() {
-  if (mUserGestureActivated) {
-    return true;
-  }
-
-  
-  Document* doc = GetSameTypeParentDocument();
-  while (doc) {
-    if (doc->mUserGestureActivated) {
-      
-      
-      NotifyUserGestureActivation();
-      break;
-    }
-    doc = doc->GetSameTypeParentDocument();
-  }
-
-  return mUserGestureActivated;
 }
 
 bool Document::IsExtensionPage() const {

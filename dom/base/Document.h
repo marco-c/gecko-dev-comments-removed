@@ -3302,6 +3302,8 @@ class Document : public nsINode,
   
   bool HasBeenUserGestureActivated();
 
+  BrowsingContext* GetBrowsingContext() const;
+
   
   
   bool IsExtensionPage() const;

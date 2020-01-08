@@ -141,6 +141,18 @@ class BrowsingContext : public nsWrapperCache,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
+  
+  
+  void NotifyUserGestureActivation();
+
+  
+  
+  void SetUserGestureActivation();
+
+  
+  bool GetUserGestureActivation();
+
+  
   inline JSObject* GetWindowProxy() const { return mWindowProxy; }
   
   void SetWindowProxy(JS::Handle<JSObject*> aWindowProxy) {
@@ -204,6 +216,8 @@ class BrowsingContext : public nsWrapperCache,
   
   void ClearWindowProxy() { mWindowProxy = nullptr; }
 
+  BrowsingContext* TopLevelBrowsingContext();
+
   
   const Type mType;
 
@@ -222,6 +236,10 @@ class BrowsingContext : public nsWrapperCache,
   
   JS::Heap<JSObject*> mWindowProxy;
   bool mClosed;
+
+  
+  
+  bool mIsActivatedByUserGesture;
 };
 
 
