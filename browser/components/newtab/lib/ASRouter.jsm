@@ -298,6 +298,18 @@ class _ASRouter {
   }
 
   
+  
+  normalizeItemFrequency({frequency}) {
+    if (frequency && frequency.custom) {
+      for (const setting of frequency.custom) {
+        if (setting.period === "daily") {
+          setting.period = ONE_DAY_IN_MS;
+        }
+      }
+    }
+  }
+
+  
   _updateMessageProviders() {
     const providers = [
       
@@ -316,6 +328,7 @@ class _ASRouter {
         provider.url = provider.url.replace(/%STARTPAGE_VERSION%/g, STARTPAGE_VERSION);
         provider.url = Services.urlFormatter.formatURL(provider.url);
       }
+      this.normalizeItemFrequency(provider);
       
       provider.lastUpdated = undefined;
       return provider;
@@ -376,6 +389,10 @@ class _ASRouter {
           newState.providers.push(provider);
           newState.messages = [...newState.messages, ...messages];
         }
+      }
+
+      for (const message of newState.messages) {
+        this.normalizeItemFrequency(message);
       }
 
       
@@ -538,9 +555,6 @@ class _ASRouter {
         const now = Date.now();
         for (const setting of item.frequency.custom) {
           let {period} = setting;
-          if (period === "daily") {
-            period = ONE_DAY_IN_MS;
-          }
           const impressionsInPeriod = impressions.filter(t => (now - t) < period);
           if (impressionsInPeriod.length >= setting.cap) {
             return false;
@@ -665,11 +679,11 @@ class _ASRouter {
 
 
 
-  getLongestPeriod(message) {
-    if (!message.frequency || !message.frequency.custom) {
+  getLongestPeriod(item) {
+    if (!item.frequency || !item.frequency.custom) {
       return null;
     }
-    return message.frequency.custom.sort((a, b) => b.period - a.period)[0].period;
+    return item.frequency.custom.sort((a, b) => b.period - a.period)[0].period;
   }
 
   
