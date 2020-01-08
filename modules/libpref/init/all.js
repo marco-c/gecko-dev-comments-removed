@@ -556,6 +556,7 @@ pref("media.benchmark.frames", 300);
 pref("media.benchmark.timeout", 1000);
 
 pref("media.media-capabilities.enabled", false);
+pref("media.media-capabilities.screen.enabled", false);
 
 #ifdef MOZ_WEBSPEECH
 pref("media.webspeech.synth.enabled", false);
@@ -2088,7 +2089,7 @@ pref("network.dns.offline-localhost", true);
 
 
 
-pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
+pref("network.dns.resolver-thread-extra-idle-time-seconds", -1);
 
 
 pref("network.standard-url.max-length", 1048576);
@@ -3842,21 +3843,6 @@ pref("intl.tsf.support_imm", true);
 pref("intl.tsf.associate_imc_only_when_imm_ime_is_active", false);
 
 
-
-
-
-
-
-
-
-
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", true);
-#else
-pref("intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later", false);
-#endif
 
 
 pref("intl.tsf.hack.atok.create_native_caret", true);
