@@ -385,14 +385,16 @@ public class testDistribution extends ContentProviderTest {
     }
 
     private void checkAddon() {
-        try {
-            final String[] prefNames = { "distribution.test.addonEnabled" };
-            final JSONArray preferences = getPrefs(prefNames);
-            final JSONObject pref = (JSONObject) preferences.get(0);
-            mAsserter.is(pref.getBoolean("value"), true, "check distribution add-on is enabled");
-        } catch (JSONException e) {
-            mAsserter.ok(false, "exception getting preferences", e.toString());
-        }
+        
+
+
+
+
+
+
+
+
+
     }
 
     private JSONArray getPrefs(String[] prefNames) throws JSONException {
