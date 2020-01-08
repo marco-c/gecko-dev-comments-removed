@@ -2955,6 +2955,13 @@ uint64_t NextWindowID() {
   MOZ_RELEASE_ASSERT(windowID < (uint64_t(1) << kWindowIDWindowBits));
   uint64_t windowBits = windowID & ((uint64_t(1) << kWindowIDWindowBits) - 1);
 
+  
+  
+  
+  if (recordreplay::IsMiddleman()) {
+    windowBits |= uint64_t(1) << (kWindowIDWindowBits - 1);
+  }
+
   return (processBits << kWindowIDWindowBits) | windowBits;
 }
 

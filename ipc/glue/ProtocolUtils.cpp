@@ -642,13 +642,29 @@ bool IToplevelProtocol::IsOnCxxStack() const {
   return GetIPCChannel()->IsOnCxxStack();
 }
 
+int32_t IToplevelProtocol::ToplevelState::NextId() {
+  
+  
+  
+  int32_t tag = 0;
+  if (recordreplay::IsMiddleman()) {
+    tag |= 1 << 0;
+  }
+  if (mProtocol->GetSide() == ParentSide) {
+    tag |= 1 << 1;
+  }
+
+  
+  
+  return (++mLastLocalId << 2) | tag;
+}
+
 int32_t IToplevelProtocol::ToplevelState::Register(IProtocol* aRouted) {
   if (aRouted->Id() != kNullActorId && aRouted->Id() != kFreedActorId) {
     
     return aRouted->Id();
   }
-  int32_t id =
-      mProtocol->GetSide() == ParentSide ? ++mLastRouteId : --mLastRouteId;
+  int32_t id = NextId();
   mActorMap.AddWithID(aRouted, id);
   aRouted->SetId(id);
 
@@ -687,8 +703,7 @@ IToplevelProtocol::ToplevelState::ToplevelState(const char* aName,
                                                 Side aSide)
     : ProtocolState(),
       mProtocol(aProtocol),
-      mLastRouteId(aSide == ParentSide ? kFreedActorId : kNullActorId),
-      mLastShmemId(aSide == ParentSide ? kFreedActorId : kNullActorId),
+      mLastLocalId(0),
       mEventTargetMutex("ProtocolEventTargetMutex"),
       mChannel(aName, aProtocol) {}
 
@@ -701,8 +716,7 @@ Shmem::SharedMemory* IToplevelProtocol::ToplevelState::CreateSharedMemory(
   if (!segment) {
     return nullptr;
   }
-  int32_t id =
-      mProtocol->GetSide() == ParentSide ? ++mLastShmemId : --mLastShmemId;
+  int32_t id = NextId();
   Shmem shmem(Shmem::PrivateIPDLCaller(), segment.get(), id);
 
   base::ProcessId pid =
