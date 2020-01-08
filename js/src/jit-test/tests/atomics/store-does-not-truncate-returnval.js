@@ -1,6 +1,3 @@
-if (!this.SharedArrayBuffer)
-    quit(0);
-
 var ia = new Int32Array(new SharedArrayBuffer(4));
 
 

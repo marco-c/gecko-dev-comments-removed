@@ -2,16 +2,7 @@
 
 
 
-if (!(this.SharedArrayBuffer && this.getSharedObject && this.setSharedObject && this.evalInWorker))
-    quit(0);
 
-try {
-    
-    evalInWorker("37");
-}
-catch (e) {
-    quit(0);
-}
 
 
 

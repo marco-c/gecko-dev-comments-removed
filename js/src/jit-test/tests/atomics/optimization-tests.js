@@ -11,9 +11,6 @@
 
 
 
-if (!(this.Atomics && this.SharedArrayBuffer))
-    quit(0);
-
 var sum = 0;
 
 function f(ia, k) {
