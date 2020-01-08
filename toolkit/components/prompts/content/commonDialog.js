@@ -12,9 +12,7 @@ function commonDialogOnLoad() {
                                  .QueryInterface(Ci.nsIWritablePropertyBag);
     
     args = {};
-    let propEnum = propBag.enumerator;
-    while (propEnum.hasMoreElements()) {
-        let prop = propEnum.getNext().QueryInterface(Ci.nsIProperty);
+    for (let prop of propBag.enumerator) {
         args[prop.name] = prop.value;
     }
 

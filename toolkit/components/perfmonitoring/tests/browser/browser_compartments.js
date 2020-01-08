@@ -245,9 +245,7 @@ add_task(async function test() {
     
     let titles = [];
     let map = new Map();
-    let windows = Services.wm.getEnumerator("navigator:browser");
-    while (windows.hasMoreElements()) {
-      let window = windows.getNext();
+    for (let window of Services.wm.getEnumerator("navigator:browser")) {
       let tabbrowser = window.gBrowser;
       for (let browser of tabbrowser.browsers) {
         let id = browser.outerWindowID; 

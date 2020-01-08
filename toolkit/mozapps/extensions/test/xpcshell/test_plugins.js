@@ -37,9 +37,7 @@ async function run_test() {
 
 
 function get_test_plugin() {
-  var pluginEnum = Services.dirsvc.get("APluginsDL", Ci.nsISimpleEnumerator);
-  while (pluginEnum.hasMoreElements()) {
-    let dir = pluginEnum.getNext().QueryInterface(Ci.nsIFile);
+  for (let dir of Services.dirsvc.get("APluginsDL", Ci.nsISimpleEnumerator)) {
     let plugin = dir.clone();
     
     plugin.append("npswftest.plugin");

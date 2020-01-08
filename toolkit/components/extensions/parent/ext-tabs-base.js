@@ -1354,10 +1354,7 @@ class WindowTrackerBase extends EventEmitter {
     
     
 
-    let e = Services.wm.getEnumerator("");
-    while (e.hasMoreElements()) {
-      let window = e.getNext();
-
+    for (let window of Services.wm.getEnumerator("")) {
       let ok = includeIncomplete;
       if (window.document.readyState === "complete") {
         ok = this.isBrowserWindow(window);

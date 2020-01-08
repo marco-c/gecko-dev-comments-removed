@@ -260,9 +260,7 @@ this.LoginManagerStorage_json.prototype = {
     let realMatchData = {};
     let options = {};
     
-    let propEnum = matchData.enumerator;
-    while (propEnum.hasMoreElements()) {
-      let prop = propEnum.getNext().QueryInterface(Ci.nsIProperty);
+    for (let prop of matchData.enumerator) {
       switch (prop.name) {
         
         case "schemeUpgrades": {

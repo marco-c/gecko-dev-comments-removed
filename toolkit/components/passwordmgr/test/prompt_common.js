@@ -49,24 +49,15 @@ function getDialogDoc() {
   
   
   
-  var enumerator = SpecialPowers.Services.wm.getXULWindowEnumerator(null);
-
-  while (enumerator.hasMoreElements()) {
-    var win = enumerator.getNext();
-    var windowDocShell = win.QueryInterface(Ci.nsIXULWindow).docShell;
-
-    var containedDocShells = windowDocShell.getDocShellEnumerator(
-                                      Ci.nsIDocShellTreeItem.typeChrome,
-                                      Ci.nsIDocShell.ENUMERATE_FORWARDS);
-    while (containedDocShells.hasMoreElements()) {
-        
-        var childDocShell = containedDocShells.getNext();
+  for (let {docShell} of SpecialPowers.Services.wm.getXULWindowEnumerator(null)) {
+    var containedDocShells = docShell.getDocShellEnumerator(
+                                      docShell.typeChrome,
+                                      docShell.ENUMERATE_FORWARDS);
+    for (let childDocShell of containedDocShells) {
         
         if (childDocShell.busyFlags != Ci.nsIDocShell.BUSY_FLAGS_NONE)
           continue;
-        var childDoc = childDocShell.QueryInterface(Ci.nsIDocShell)
-                                    .contentViewer
-                                    .DOMDocument;
+        var childDoc = childDocShell.contentViewer.DOMDocument;
 
         
         if (childDoc.location.href == "chrome://global/content/commonDialog.xul")

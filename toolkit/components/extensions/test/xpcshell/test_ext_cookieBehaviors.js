@@ -153,14 +153,10 @@ add_task(async function test_localStorage_on_session_lifetimePolicy() {
     domStorageStoredValue,
   } = await ContentTask.spawn(addonBrowser, {uuid, isRemoteBrowser}, (params) => {
     const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
-    let windowEnumerator = Services.ww.getWindowEnumerator();
-
     let bgPageWindow;
 
     
-    while (windowEnumerator.hasMoreElements()) {
-      let win = windowEnumerator.getNext();
-
+    for (let win of Services.ww.getWindowEnumerator()) {
       
       
       

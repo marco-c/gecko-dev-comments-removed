@@ -25,13 +25,10 @@ const EXPORTED_SYMBOLS = ["WebNavigationFrames"];
 
 
 
-function* iterateDocShellTree(docShell) {
-  let docShellsEnum = docShell.getDocShellEnumerator(
-    docShell.typeContent, docShell.ENUMERATE_FORWARDS);
 
-  while (docShellsEnum.hasMoreElements()) {
-    yield docShellsEnum.getNext().QueryInterface(Ci.nsIDocShell);
-  }
+function iterateDocShellTree(docShell) {
+  return docShell.getDocShellEnumerator(
+    docShell.typeContent, docShell.ENUMERATE_FORWARDS);
 }
 
 

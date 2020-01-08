@@ -473,10 +473,7 @@ _ContextualIdentityService.prototype = {
   },
 
   _forEachContainerTab(callback, userContextId = 0) {
-    let windowList = Services.wm.getEnumerator("navigator:browser");
-    while (windowList.hasMoreElements()) {
-      let win = windowList.getNext();
-
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
       if (win.closed || !win.gBrowser) {
         continue;
       }
@@ -530,10 +527,7 @@ _ContextualIdentityService.prototype = {
     
     let cookiesUserContextIds = new Set();
 
-    const enumerator = Services.cookies.enumerator;
-    while (enumerator.hasMoreElements()) {
-      const cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
-
+    for (let cookie of Services.cookies.enumerator) {
       
       if (cookie.originAttributes.userContextId >= minUserContextId &&
           !keepDataContextIds.includes(cookie.originAttributes.userContextId)) {

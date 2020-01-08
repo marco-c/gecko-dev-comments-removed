@@ -217,9 +217,7 @@ nsUnknownContentTypeDialog.prototype = {
       
       
       gDownloadLastDir = this._mDownloadDir;
-      let windowsEnum = Services.wm.getEnumerator("");
-      while (windowsEnum.hasMoreElements()) {
-        let someWin = windowsEnum.getNext();
+      for (let someWin of Services.wm.getEnumerator("")) {
         
         
         

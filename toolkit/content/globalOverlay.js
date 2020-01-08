@@ -8,10 +8,7 @@ function closeWindow(aClose, aPromptFunction) {
   
   if (AppConstants.platform != "macosx") {
     var windowCount = 0;
-    var e = Services.wm.getEnumerator(null);
-
-    while (e.hasMoreElements()) {
-      var w = e.getNext();
+    for (let w of Services.wm.getEnumerator(null)) {
       if (w.closed) {
         continue;
       }
