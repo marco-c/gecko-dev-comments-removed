@@ -87,7 +87,6 @@ add_task(async function test() {
   await withSidebarTree("bookmarks", async () => {
     
     PlacesUtils.bookmarks.addObserver(bookmarksObserver);
-    PlacesUtils.annotations.addObserver(bookmarksObserver);
     var addedBookmarks = [];
 
     
@@ -113,7 +112,6 @@ add_task(async function test() {
 
     
     PlacesUtils.bookmarks.removeObserver(bookmarksObserver);
-    PlacesUtils.annotations.removeObserver(bookmarksObserver);
   });
 
   
@@ -129,14 +127,7 @@ add_task(async function test() {
 var bookmarksObserver = {
   QueryInterface: ChromeUtils.generateQI([
     Ci.nsINavBookmarkObserver,
-    Ci.nsIAnnotationObserver
   ]),
-
-  
-  onItemAnnotationSet() {},
-  onItemAnnotationRemoved() {},
-  onPageAnnotationSet() {},
-  onPageAnnotationRemoved() {},
 
   
   onItemAdded: function PSB_onItemAdded(aItemId, aFolderId, aIndex,
