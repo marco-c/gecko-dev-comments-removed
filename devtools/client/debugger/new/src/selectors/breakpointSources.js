@@ -18,7 +18,7 @@ var _source = require("../utils/source");
 
 function getBreakpointsForSource(source, breakpoints) {
   const bpList = breakpoints.valueSeq();
-  return bpList.filter(bp => bp.location.sourceId == source.id && !bp.hidden && (bp.text || bp.originalText || bp.condition)).sortBy(bp => bp.location.line).toJS();
+  return bpList.filter(bp => bp.location.sourceId == source.id && !bp.hidden && (bp.text || bp.originalText || bp.condition || bp.disabled)).sortBy(bp => bp.location.line).toJS();
 }
 
 function findBreakpointSources(sources, breakpoints) {
