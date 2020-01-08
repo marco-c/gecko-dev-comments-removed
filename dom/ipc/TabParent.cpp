@@ -531,7 +531,8 @@ mozilla::ipc::IPCResult TabParent::RecvSizeShellTo(
 }
 
 mozilla::ipc::IPCResult TabParent::RecvDropLinks(nsTArray<nsString>&& aLinks) {
-  nsCOMPtr<nsIBrowser> browser = do_QueryInterface(mFrameElement);
+  nsCOMPtr<nsIBrowser> browser =
+      mFrameElement ? mFrameElement->AsBrowser() : nullptr;
   if (browser) {
     
     
@@ -1909,7 +1910,8 @@ mozilla::ipc::IPCResult TabParent::RecvRequestFocus(const bool& aCanRaise) {
 mozilla::ipc::IPCResult TabParent::RecvEnableDisableCommands(
     const nsString& aAction, nsTArray<nsCString>&& aEnabledCommands,
     nsTArray<nsCString>&& aDisabledCommands) {
-  nsCOMPtr<nsIBrowser> browser = do_QueryInterface(mFrameElement);
+  nsCOMPtr<nsIBrowser> browser =
+      mFrameElement ? mFrameElement->AsBrowser() : nullptr;
   bool isRemoteBrowser = false;
   if (browser) {
     browser->GetIsRemoteBrowser(&isRemoteBrowser);
@@ -3293,7 +3295,8 @@ mozilla::ipc::IPCResult TabParent::RecvLookUpDictionary(
 
 mozilla::ipc::IPCResult TabParent::RecvShowCanvasPermissionPrompt(
     const nsCString& aFirstPartyURI) {
-  nsCOMPtr<nsIBrowser> browser = do_QueryInterface(mFrameElement);
+  nsCOMPtr<nsIBrowser> browser =
+      mFrameElement ? mFrameElement->AsBrowser() : nullptr;
   if (!browser) {
     
     
