@@ -1597,6 +1597,17 @@ CallMethodHelper::ConvertIndependentParam(uint8_t i)
 
     
     
+    if (i >= mArgc) {
+        MOZ_ASSERT(paramInfo.IsOptional(), "missing non-optional argument!");
+        if (type.Tag() == nsXPTType::T_IID) {
+            
+            dp->val.p = new nsIID();
+            return true;
+        }
+    }
+
+    
+    
     
     
     if (!paramInfo.IsOut()) {
