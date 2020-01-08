@@ -535,7 +535,6 @@ protected:
                       bool aIsActive);
 
   
-  nsIFrame* GetParentScrollbarFrame(nsIFrame *aFrame);
   bool IsParentScrollbarRolledOver(nsIFrame* aFrame);
 
   void RenderWidget(const WidgetInfo& aWidgetInfo,
