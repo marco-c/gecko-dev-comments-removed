@@ -754,7 +754,7 @@ RenderWithAllMasks(Layer* aLayer, Compositor* aCompositor,
   
 
   
-  gfx::Rect visibleRect(aLayer->GetLocalVisibleRegion().ToUnknownRegion().GetBounds());
+  gfx::Rect visibleRect(aLayer->GetLocalVisibleRegion().GetBounds().ToUnknownRect());
   gfx::Matrix4x4 transform = aLayer->GetEffectiveTransform();
   
   gfx::IntRect surfaceRect =
