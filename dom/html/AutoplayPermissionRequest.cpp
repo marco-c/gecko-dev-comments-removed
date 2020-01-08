@@ -96,6 +96,9 @@ AutoplayPermissionRequest::Cancel()
 {
   if (mManager) {
     mManager->DenyPlayRequest();
+    
+    
+    mManager = nullptr;
   }
   return NS_OK;
 }
@@ -105,6 +108,9 @@ AutoplayPermissionRequest::Allow(JS::HandleValue aChoices)
 {
   if (mManager) {
     mManager->ApprovePlayRequest();
+    
+    
+    mManager = nullptr;
   }
   return NS_OK;
 }
