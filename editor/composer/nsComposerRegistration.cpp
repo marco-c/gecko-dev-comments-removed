@@ -1,27 +1,28 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/EditorSpellCheck.h"   // for NS_EDITORSPELLCHECK_CID, etc
-#include "mozilla/HTMLEditorController.h" // for HTMLEditorController, etc
-#include "mozilla/Module.h"             // for Module, Module::CIDEntry, etc
+
+
+
+
+#include "mozilla/EditorSpellCheck.h"   
+#include "mozilla/HTMLEditorController.h" 
+#include "mozilla/Module.h"             
 #include "mozilla/ModuleUtils.h"
-#include "mozilla/mozalloc.h"           // for operator new
-#include "nsCOMPtr.h"                   // for nsCOMPtr, getter_AddRefs, etc
-#include "nsComponentManagerUtils.h"    // for do_CreateInstance
-#include "nsComposeTxtSrvFilter.h"      // for nsComposeTxtSrvFilter, etc
-#include "nsDebug.h"                    // for NS_ENSURE_SUCCESS
-#include "nsEditingSession.h"           // for NS_EDITINGSESSION_CID, etc
-#include "nsError.h"                    // for NS_ERROR_NO_AGGREGATION, etc
-#include "nsIController.h"              // for nsIController
-#include "nsIControllerCommandTable.h"  // for nsIControllerCommandTable, etc
-#include "nsIControllerContext.h"       // for nsIControllerContext
-#include "nsID.h"                       // for NS_DEFINE_NAMED_CID, etc
+#include "mozilla/mozalloc.h"           
+#include "nsCOMPtr.h"                   
+#include "nsBaseCommandController.h"    
+#include "nsComponentManagerUtils.h"    
+#include "nsComposeTxtSrvFilter.h"      
+#include "nsDebug.h"                    
+#include "nsEditingSession.h"           
+#include "nsError.h"                    
+#include "nsIController.h"              
+#include "nsIControllerCommandTable.h"  
+#include "nsIControllerContext.h"       
+#include "nsID.h"                       
 #include "nsISupportsImpl.h"
-#include "nsISupportsUtils.h"           // for NS_ADDREF, NS_RELEASE
-#include "nsServiceManagerUtils.h"      // for do_GetService
-#include "nscore.h"                     // for nsresult
+#include "nsISupportsUtils.h"           
+#include "nsServiceManagerUtils.h"      
+#include "nscore.h"                     
 
 using mozilla::EditorSpellCheck;
 
@@ -38,21 +39,21 @@ static NS_DEFINE_CID(kHTMLEditorCommandTableCID, NS_HTMLEDITOR_COMMANDTABLE_CID)
 static NS_DEFINE_CID(kHTMLEditorDocStateCommandTableCID, NS_HTMLEDITOR_DOCSTATE_COMMANDTABLE_CID);
 
 
-////////////////////////////////////////////////////////////////////////
-// Define the contructor function for the objects
-//
-// NOTE: This creates an instance of objects by using the default constructor
-//
+
+
+
+
+
 
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsEditingSession)
 NS_GENERIC_FACTORY_CONSTRUCTOR(EditorSpellCheck)
 
-// There are no macros that enable us to have 2 constructors
-// for the same object
-//
-// Here we are creating the same object with two different contract IDs
-// and then initializing it different.
-// Basically, we need to tell the filter whether it is doing mail or not
+
+
+
+
+
+
 static nsresult
 nsComposeTxtSrvFilterConstructor(nsISupports *aOuter, REFNSIID aIID,
                                  void **aResult, bool aIsForMail)
@@ -89,24 +90,23 @@ nsComposeTxtSrvFilterConstructorForMail(nsISupports *aOuter,
 }
 
 
-// Constructor for a controller set up with a command table specified
-// by the CID passed in. This function uses do_GetService to get the
-// command table, so that every controller shares a single command
-// table, for space-efficiency.
-//
-// The only reason to go via the service manager for the command table
-// is that it holds onto the singleton for us, avoiding static variables here.
+
+
+
+
+
+
+
 static nsresult
 CreateControllerWithSingletonCommandTable(const nsCID& inCommandTableCID, nsIController **aResult)
 {
-  nsresult rv;
-  nsCOMPtr<nsIController> controller = do_CreateInstance("@mozilla.org/embedcomp/base-command-controller;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIController> controller = new nsBaseCommandController();
 
+  nsresult rv;
   nsCOMPtr<nsIControllerCommandTable> composerCommandTable = do_GetService(inCommandTableCID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // this guy is a singleton, so make it immutable
+  
   composerCommandTable->MakeImmutable();
 
   nsCOMPtr<nsIControllerContext> controllerContext = do_QueryInterface(controller, &rv);
@@ -121,8 +121,8 @@ CreateControllerWithSingletonCommandTable(const nsCID& inCommandTableCID, nsICon
 }
 
 
-// Here we make an instance of the controller that holds doc state commands.
-// We set it up with a singleton command table.
+
+
 static nsresult
 nsHTMLEditorDocStateControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
                                               void **aResult)
@@ -134,8 +134,8 @@ nsHTMLEditorDocStateControllerConstructor(nsISupports *aOuter, REFNSIID aIID,
   return controller->QueryInterface(aIID, aResult);
 }
 
-// Tere we make an instance of the controller that holds composer commands.
-// We set it up with a singleton command table.
+
+
 static nsresult
 nsHTMLEditorControllerConstructor(nsISupports *aOuter, REFNSIID aIID, void **aResult)
 {
@@ -146,7 +146,7 @@ nsHTMLEditorControllerConstructor(nsISupports *aOuter, REFNSIID aIID, void **aRe
   return controller->QueryInterface(aIID, aResult);
 }
 
-// Constructor for a command table that is pref-filled with HTML editor commands
+
 static nsresult
 nsHTMLEditorCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
                                               void **aResult)
@@ -159,14 +159,14 @@ nsHTMLEditorCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
   rv = mozilla::HTMLEditorController::RegisterHTMLEditorCommands(commandTable);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // we don't know here whether we're being created as an instance,
-  // or a service, so we can't become immutable
+  
+  
 
   return commandTable->QueryInterface(aIID, aResult);
 }
 
 
-// Constructor for a command table that is pref-filled with HTML editor doc state commands
+
 static nsresult
 nsHTMLEditorDocStateCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
                                               void **aResult)
@@ -180,8 +180,8 @@ nsHTMLEditorDocStateCommandTableConstructor(nsISupports *aOuter, REFNSIID aIID,
                                         commandTable);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // we don't know here whether we're being created as an instance,
-  // or a service, so we can't become immutable
+  
+  
 
   return commandTable->QueryInterface(aIID, aResult);
 }
