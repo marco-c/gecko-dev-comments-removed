@@ -104,7 +104,7 @@ ObjectRealm::init(JSContext* cx)
 }
 
 bool
-Realm::init(JSContext* cx)
+Realm::init(JSContext* cx, JSPrincipals* principals)
 {
     
 
@@ -122,6 +122,14 @@ Realm::init(JSContext* cx)
     {
         ReportOutOfMemory(cx);
         return false;
+    }
+
+    if (principals) {
+        
+        
+        isSystem_ = (principals == cx->runtime()->trustedPrincipals());
+        JS_HoldPrincipals(principals);
+        principals_ = principals;
     }
 
     return true;

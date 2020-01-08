@@ -180,18 +180,16 @@ JS::SetRealmPrincipals(JS::Realm* realm, JSPrincipals* principals)
 
     
     
+    
+    
     const JSPrincipals* trusted = realm->runtimeFromMainThread()->trustedPrincipals();
     bool isSystem = principals && principals == trusted;
+    MOZ_RELEASE_ASSERT(realm->isSystem() == isSystem);
 
     
     if (realm->principals()) {
         JS_DropPrincipals(TlsContext.get(), realm->principals());
         realm->setPrincipals(nullptr);
-        
-        
-        
-        
-        MOZ_ASSERT(realm->isSystem() == isSystem);
     }
 
     
@@ -199,9 +197,6 @@ JS::SetRealmPrincipals(JS::Realm* realm, JSPrincipals* principals)
         JS_HoldPrincipals(principals);
         realm->setPrincipals(principals);
     }
-
-    
-    realm->setIsSystem(isSystem);
 }
 
 JS_FRIEND_API(JSPrincipals*)
@@ -353,9 +348,7 @@ js::IsSystemCompartment(JS::Compartment* comp)
     
     
     
-    
-    MOZ_RELEASE_ASSERT(comp->realms().length() == 1);
-
+    MOZ_ASSERT(comp->realms()[0]->isSystem() == comp->realms().back()->isSystem());
     return comp->realms()[0]->isSystem();
 }
 

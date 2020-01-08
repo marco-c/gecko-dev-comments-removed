@@ -451,7 +451,7 @@ class JS::Realm : public JS::shadow::Realm
     Realm(JS::Compartment* comp, const JS::RealmOptions& options);
     ~Realm();
 
-    MOZ_MUST_USE bool init(JSContext* cx);
+    MOZ_MUST_USE bool init(JSContext* cx, JSPrincipals* principals);
     void destroy(js::FreeOp* fop);
     void clearTables();
 
@@ -500,6 +500,7 @@ class JS::Realm : public JS::shadow::Realm
     }
     void setIsSelfHostingRealm() {
         isSelfHostingRealm_ = true;
+        isSystem_ = true;
     }
 
     
@@ -678,19 +679,6 @@ class JS::Realm : public JS::shadow::Realm
 
     bool isSystem() const {
         return isSystem_;
-    }
-    void setIsSystem(bool isSystem) {
-        if (isSystem_ == isSystem)
-            return;
-
-        
-        
-        
-        
-        
-        
-        performanceMonitoring.unlink();
-        isSystem_ = isSystem;
     }
 
     

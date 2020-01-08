@@ -8084,11 +8084,13 @@ js::NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& op
     }
 
     UniquePtr<Realm> realm(cx->new_<Realm>(comp, options));
-    if (!realm || !realm->init(cx))
+    if (!realm || !realm->init(cx, principals))
         return nullptr;
 
     
-    JS::SetRealmPrincipals(realm.get(), principals);
+    
+    if (!compHolder)
+        MOZ_RELEASE_ASSERT(realm->isSystem() == IsSystemCompartment(comp));
 
     AutoLockGC lock(rt);
 
