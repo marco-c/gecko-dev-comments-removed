@@ -15,6 +15,8 @@ const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { button } = dom;
 const { HTMLTooltip } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
 
+const isMacOS = Services.appinfo.OS === "Darwin";
+
 loader.lazyRequireGetter(this, "createPortal", "devtools/client/shared/vendor/react-dom", true);
 
 
@@ -344,6 +346,16 @@ class MenuButton extends PureComponent {
           if (this.tooltip.focusEnd()) {
             e.preventDefault();
           }
+        }
+        break;
+      case "t":
+        if (isMacOS && e.metaKey || !isMacOS && e.ctrlKey) {
+          
+          
+          
+          
+          
+          this.hideMenu();
         }
         break;
     }
