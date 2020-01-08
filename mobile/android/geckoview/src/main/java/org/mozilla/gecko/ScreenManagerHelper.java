@@ -20,6 +20,20 @@ class ScreenManagerHelper {
     
 
 
+    public static void refreshScreenInfo() {
+        
+        
+        if (GeckoThread.isRunning()) {
+            nativeRefreshScreenInfo();
+        }
+    }
+
+    @WrapForJNI(stubName = "RefreshScreenInfo", dispatchTo = "gecko")
+    private native static void nativeRefreshScreenInfo();
+
+    
+
+
 
 
 
