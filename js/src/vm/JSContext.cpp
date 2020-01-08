@@ -1562,18 +1562,12 @@ JSContext::updateJITEnabled()
 size_t
 JSContext::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
 {
-#ifdef DEBUG
-    HelperThread* helper = helperThread_.refNoCheck();
-    MOZ_ASSERT_IF(helper, helper->idle());
-#endif
-
     
 
 
 
 
-    return tempLifoAlloc_.refNoCheck().sizeOfExcludingThis(mallocSizeOf) +
-           cycleDetectorVector_.refNoCheck().sizeOfExcludingThis(mallocSizeOf);
+    return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf);
 }
 
 #ifdef DEBUG
