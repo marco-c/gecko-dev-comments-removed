@@ -72,26 +72,66 @@ InfallibleQuote(RangedPtr<const SrcCharT> srcBegin, RangedPtr<const SrcCharT> sr
     
     *dstPtr++ = '"';
 
+    auto ToLowerHex = [](uint8_t u) {
+        MOZ_ASSERT(u <= 0xF);
+        return "0123456789abcdef"[u];
+    };
+
     
     while (srcBegin != srcEnd) {
-        SrcCharT c = *srcBegin++;
-        size_t escapeIndex = c % sizeof(escapeLookup);
-        Latin1Char escaped = escapeLookup[escapeIndex];
-        if (MOZ_LIKELY((escapeIndex != size_t(c)) || !escaped)) {
+        const SrcCharT c = *srcBegin++;
+
+        
+        if (MOZ_LIKELY(c < sizeof(escapeLookup))) {
+            Latin1Char escaped = escapeLookup[c];
+
+            
+            if (escaped == 0) {
+                *dstPtr++ = c;
+                continue;
+            }
+
+            
+            *dstPtr++ = '\\';
+            *dstPtr++ = escaped;
+            if (escaped == 'u') {
+                *dstPtr++ = '0';
+                *dstPtr++ = '0';
+
+                uint8_t x = c >> 4;
+                MOZ_ASSERT(x < 10);
+                *dstPtr++ = '0' + x;
+
+                *dstPtr++ = ToLowerHex(c & 0xF);
+            }
+
+            continue;
+        }
+
+        
+        if (!unicode::IsSurrogate(c)) {
             *dstPtr++ = c;
             continue;
         }
-        *dstPtr++ = '\\';
-        *dstPtr++ = escaped;
-        if (escaped == 'u') {
-            MOZ_ASSERT(c < ' ');
-            MOZ_ASSERT((c >> 4) < 10);
-            uint8_t x = c >> 4, y = c % 16;
-            *dstPtr++ = '0';
-            *dstPtr++ = '0';
-            *dstPtr++ = '0' + x;
-            *dstPtr++ = y < 10 ? '0' + y : 'a' + (y - 10);
+
+        
+        if (MOZ_LIKELY(unicode::IsLeadSurrogate(c) &&
+                       srcBegin < srcEnd &&
+                       unicode::IsTrailSurrogate(*srcBegin)))
+        {
+            *dstPtr++ = c;
+            *dstPtr++ = *srcBegin++;
+            continue;
         }
+
+        
+        char32_t as32 = char32_t(c);
+        *dstPtr++ = '\\';
+        *dstPtr++ = 'u';
+        *dstPtr++ = ToLowerHex(as32 >> 12);
+        *dstPtr++ = ToLowerHex((as32 >> 8) & 0xF);
+        *dstPtr++ = ToLowerHex((as32 >> 4) & 0xF);
+        *dstPtr++ = ToLowerHex(as32 & 0xF);
     }
 
     
