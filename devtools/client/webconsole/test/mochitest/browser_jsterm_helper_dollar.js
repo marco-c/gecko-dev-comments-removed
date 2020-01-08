@@ -16,6 +16,14 @@ const TEST_URI = `data:text/html,
 `;
 
 add_task(async function() {
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
   const jsterm = hud.jsterm;
 
@@ -38,4 +46,4 @@ add_task(async function() {
   jsterm.execute("$('div')");
   message = await onMessage;
   ok(message, "`$('div')` does return null");
-});
+}

@@ -8,6 +8,14 @@
 "use strict";
 
 add_task(async function() {
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
   const hud = await openNewTabAndConsole("about:config");
   ok(hud, "we have a console");
   ok(hud.iframeWindow, "we have the console UI window");
@@ -18,5 +26,5 @@ add_task(async function() {
 
   
   await jstermSetValueAndComplete(jsterm, "docu");
-  is(jsterm.completeNode.value, "    ment", "'docu' completion");
-});
+  checkJsTermCompletionValue(jsterm, "    ment", "'docu' completion");
+}

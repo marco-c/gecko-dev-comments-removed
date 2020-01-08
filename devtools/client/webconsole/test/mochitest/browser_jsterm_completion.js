@@ -10,64 +10,71 @@
 const TEST_URI = "data:text/html;charset=utf8,<p>test code completion";
 
 add_task(async function() {
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
   const {jsterm, ui} = await openNewTabAndConsole(TEST_URI);
-  const input = jsterm.inputNode;
 
   
   await jstermSetValueAndComplete(jsterm, "docu");
-  is(input.value, "docu", "'docu' completion (input.value)");
-  is(jsterm.completeNode.value, "    ment", "'docu' completion (completeNode)");
+  is(jsterm.getInputValue(), "docu", "'docu' completion (input.value)");
+  checkJsTermCompletionValue(jsterm, "    ment", "'docu' completion (completeNode)");
 
   
   await jstermSetValueAndComplete(jsterm, "docu", undefined, jsterm.COMPLETE_FORWARD);
-  is(input.value, "document", "'docu' tab completion");
-  is(input.selectionStart, 8, "start selection is alright");
-  is(input.selectionEnd, 8, "end selection is alright");
-  is(jsterm.completeNode.value.replace(/ /g, ""), "", "'docu' completed");
+  is(jsterm.getInputValue(), "document", "'docu' tab completion");
+
+  checkJsTermCursor(jsterm, "document".length, "cursor is at the end of 'document'");
+  is(getJsTermCompletionValue(jsterm).replace(/ /g, ""), "", "'docu' completed");
 
   
   
   await jstermSetValueAndComplete(jsterm, "window.Ob", undefined,
                                   jsterm.COMPLETE_FORWARD);
-  is(input.value, "window.Object", "'window.Ob' tab completion");
+  is(jsterm.getInputValue(), "window.Object", "'window.Ob' tab completion");
 
   
   await jstermSetValueAndComplete(
     jsterm, "document.getElem", undefined, jsterm.COMPLETE_FORWARD);
-  is(input.value, "document.getElem", "'document.getElem' completion");
-  is(jsterm.completeNode.value, "                entsByTagNameNS",
+  is(jsterm.getInputValue(), "document.getElem", "'document.getElem' completion");
+  checkJsTermCompletionValue(jsterm, "                entsByTagNameNS",
      "'document.getElem' completion");
 
   
   await jsterm.complete(jsterm.COMPLETE_FORWARD);
-  is(input.value, "document.getElem", "'document.getElem' completion");
-  is(jsterm.completeNode.value, "                entsByTagName",
+  is(jsterm.getInputValue(), "document.getElem", "'document.getElem' completion");
+  checkJsTermCompletionValue(jsterm, "                entsByTagName",
      "'document.getElem' another tab completion");
 
   
   await jstermComplete(jsterm, jsterm.COMPLETE_BACKWARD);
-  is(input.value, "document.getElem", "'document.getElem' untab completion");
-  is(jsterm.completeNode.value, "                entsByTagNameNS",
+  is(jsterm.getInputValue(), "document.getElem", "'document.getElem' untab completion");
+  checkJsTermCompletionValue(jsterm, "                entsByTagNameNS",
      "'document.getElem' completion");
 
   ui.clearOutput();
 
   await jstermSetValueAndComplete(jsterm, "docu");
-  is(jsterm.completeNode.value, "    ment", "'docu' completion");
+  checkJsTermCompletionValue(jsterm, "    ment", "'docu' completion");
 
   await jsterm.execute();
-  is(jsterm.completeNode.value, "", "clear completion on execute()");
+  checkJsTermCompletionValue(jsterm, "", "clear completion on execute()");
 
   
   await jstermSetValueAndComplete(jsterm, "console.log('one');\nconsol");
-  is(jsterm.completeNode.value, "                   \n      e",
+  checkJsTermCompletionValue(jsterm, "                   \n      e",
      "multi-line completion");
 
   
   await jstermSetValueAndComplete(jsterm, "Object.name.sl");
-  is(jsterm.completeNode.value, "              ice", "non-object completion");
+  checkJsTermCompletionValue(jsterm, "              ice", "non-object completion");
 
   
   await jstermSetValueAndComplete(jsterm, "'Asimov'.sl");
-  is(jsterm.completeNode.value, "           ice", "string literal completion");
-});
+  checkJsTermCompletionValue(jsterm, "           ice", "string literal completion");
+}

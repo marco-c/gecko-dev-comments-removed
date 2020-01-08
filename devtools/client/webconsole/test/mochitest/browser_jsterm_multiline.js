@@ -77,43 +77,44 @@ const DATA = [
 
 add_task(async function() {
   
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
+  
   Services.telemetry.clearEvents();
 
   
   const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
   ok(!snapshot.parent, "No events have been logged for the main process");
 
-  const hud = await openNewTabAndConsole(TEST_URI);
-  const { inputNode } = hud.jsterm;
+  const {jsterm} = await openNewTabAndConsole(TEST_URI);
 
   for (const {input, shiftKey} of SHOULD_ENTER_MULTILINE) {
-    hud.jsterm.setInputValue(input);
+    jsterm.setInputValue(input);
     EventUtils.synthesizeKey("VK_RETURN", { shiftKey });
 
-    const inputValue = hud.jsterm.getInputValue();
-    is(inputNode.selectionStart, inputNode.selectionEnd, "selection is collapsed");
-    is(inputNode.selectionStart, inputValue.length, "caret at end of multiline input");
-
-    const inputWithNewline = input + "\n";
-    is(inputValue, inputWithNewline, "Input value is correct");
+    
+    
+    const newValue = jsterm.getInputValue().replace(/ +$/g, "");
+    is(newValue, input + "\n", "A new line was added");
   }
 
   for (const {input, shiftKey} of SHOULD_EXECUTE) {
-    hud.jsterm.setInputValue(input);
+    jsterm.setInputValue(input);
     EventUtils.synthesizeKey("VK_RETURN", { shiftKey });
 
-    await waitFor(() => !hud.jsterm.getInputValue());
-
-    const inputValue = hud.jsterm.getInputValue();
-    is(inputNode.selectionStart, 0, "selection starts/ends at 0");
-    is(inputNode.selectionEnd, 0, "selection starts/ends at 0");
-    is(inputValue, "", "Input value is cleared");
+    await waitFor(() => !jsterm.getInputValue());
+    is(jsterm.getInputValue(), "", "Input is cleared");
   }
 
-  await hud.jsterm.execute("document.\nlocation.\nhref");
+  await jsterm.execute("document.\nlocation.\nhref");
 
   checkEventTelemetry();
-});
+}
 
 function checkEventTelemetry() {
   const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);

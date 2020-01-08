@@ -11,27 +11,30 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "test/mochitest/test-console.html";
 
 add_task(async function() {
-  const hud = await openNewTabAndConsole(TEST_URI);
-  testCompletion(hud);
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
 });
 
-function testCompletion(hud) {
+async function performTests() {
+  const hud = await openNewTabAndConsole(TEST_URI);
   const jsterm = hud.jsterm;
-  const input = jsterm.inputNode;
 
   
   jsterm.setInputValue("var d = ");
   EventUtils.sendString("5;");
-  is(input.value, "var d = 5;", "var d = 5;");
-  is(jsterm.completeNode.value, "", "no completion");
+  is(jsterm.getInputValue(), "var d = 5;", "var d = 5;");
+  checkJsTermCompletionValue(jsterm, "", "no completion");
   EventUtils.synthesizeKey("KEY_Enter");
-  is(jsterm.completeNode.value, "", "clear completion on execute()");
+  checkJsTermCompletionValue(jsterm, "", "clear completion on execute()");
 
   
   jsterm.setInputValue("var a = ");
   EventUtils.sendString("d");
-  is(input.value, "var a = d", "var a = d");
-  is(jsterm.completeNode.value, "", "no completion");
+  is(jsterm.getInputValue(), "var a = d", "var a = d");
+  checkJsTermCompletionValue(jsterm, "", "no completion");
   EventUtils.synthesizeKey("KEY_Enter");
-  is(jsterm.completeNode.value, "", "clear completion on execute()");
+  checkJsTermCompletionValue(jsterm, "", "clear completion on execute()");
 }

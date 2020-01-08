@@ -13,6 +13,14 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
 
 add_task(async function() {
   
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
+  
   await pushPref("devtools.debugger.new-debugger-frontend", false);
 
   const { jsterm } = await openNewTabAndConsole(TEST_URI);
@@ -93,7 +101,7 @@ add_task(async function() {
   
   await jstermComplete("foo2Obj[0].");
   is(getPopupLabels(popup).length, 0, "no items for foo2Obj[0]");
-});
+}
 
 function getPopupLabels(popup) {
   return popup.getItems().map(item => item.label);

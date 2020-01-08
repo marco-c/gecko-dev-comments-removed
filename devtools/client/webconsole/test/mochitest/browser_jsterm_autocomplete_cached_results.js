@@ -11,38 +11,58 @@
 const TEST_URI = "data:text/html;charset=utf8,<p>test cached autocompletion results";
 
 add_task(async function() {
-  const { jsterm } = await openNewTabAndConsole(TEST_URI);
-  const {
-    autocompletePopup: popup,
-    completeNode,
-    inputNode: input,
-  } = jsterm;
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
 
-  const jstermComplete = (value, offset) =>
-    jstermSetValueAndComplete(jsterm, value, offset);
+async function performTests() {
+  const { jsterm } = await openNewTabAndConsole(TEST_URI);
+  const { autocompletePopup: popup } = jsterm;
+
+  const jstermComplete = (value, caretPosition) =>
+    jstermSetValueAndComplete(jsterm, value, caretPosition);
 
   
   await jstermComplete("doc");
-  is(input.value, "doc", "'docu' completion (input.value)");
-  is(completeNode.value, "   ument", "'docu' completion (completeNode)");
+  is(jsterm.getInputValue(), "doc", "'docu' completion (input.value)");
+  checkJsTermCompletionValue(jsterm, "   ument", "'docu' completion (completeNode)");
 
   
   await jstermComplete("window.");
   ok(popup.getItems().length > 0, "'window.' gave a list of suggestions");
 
-  await jsterm.execute("window.docfoobar = true");
+  info("Add a property on the window object");
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, () => {
+    content.wrappedJSObject.window.docfoobar = true;
+  });
 
   
-  await jstermComplete("window.doc");
+  let onUpdated = jsterm.once("autocomplete-updated");
+  EventUtils.synthesizeKey("d");
+  await onUpdated;
+  ok(!getPopupLabels(popup).includes("docfoobar"),
+    "autocomplete popup does not contain docfoobar. List has not been updated");
+
+  
+  jsterm.once("autocomplete-updated");
+  EventUtils.synthesizeKey("o");
+  await onUpdated;
+  ok(!getPopupLabels(popup).includes("docfoobar"),
+    "autocomplete popup does not contain docfoobar. List has not been updated");
+
+  
+  onUpdated = jsterm.once("autocomplete-updated");
+  EventUtils.synthesizeKey("KEY_Backspace");
+  await onUpdated;
   ok(!getPopupLabels(popup).includes("docfoobar"),
     "autocomplete cached results do not contain docfoobar. list has not been updated");
 
-  
-  await jstermComplete("window.do");
-  ok(!getPopupLabels(popup).includes("docfoobar"),
-    "autocomplete cached results do not contain docfoobar. list has not been updated");
-
-  await jsterm.execute("delete window.docfoobar");
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, () => {
+    delete content.wrappedJSObject.window.docfoobar;
+  });
 
   
   await jstermComplete("window.");
@@ -58,13 +78,18 @@ add_task(async function() {
   await jstermComplete("dump(window.)", -1);
   ok(popup.getItems().length > 0, "'dump(window.' gave a list of suggestions");
 
-  await jsterm.execute("window.docfoobar = true");
+  info("Add a property on the window object");
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, () => {
+    content.wrappedJSObject.window.docfoobar = true;
+  });
 
   
-  await jstermComplete("dump(window.doc)", -1);
+  onUpdated = jsterm.once("autocomplete-updated");
+  EventUtils.synthesizeKey("d");
+  await onUpdated;
   ok(!getPopupLabels(popup).includes("docfoobar"),
     "autocomplete cached results do not contain docfoobar. list has not been updated");
-});
+}
 
 function getPopupLabels(popup) {
   return popup.getItems().map(item => item.label);

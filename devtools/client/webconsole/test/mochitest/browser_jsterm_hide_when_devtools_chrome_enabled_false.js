@@ -23,6 +23,14 @@
 "use strict";
 
 add_task(async function() {
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
   let browserConsole, webConsole, objInspector;
 
   
@@ -52,8 +60,11 @@ add_task(async function() {
   objInspector = await getObjectInspector(webConsole);
   testJSTermIsVisible(webConsole);
   await testObjectInspectorPropertiesAreSet(objInspector);
+
+  info("Close webconsole and browser console");
   await closeConsole(browserTab);
-});
+  await HUDService.toggleBrowserConsole();
+}
 
 
 

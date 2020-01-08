@@ -12,10 +12,18 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "test/mochitest/test-jsterm-dollar.html";
 
 add_task(async function() {
+  
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
+
+async function performTests() {
   const hud = await openNewTabAndConsole(TEST_URI);
   await test$(hud);
   await test$$(hud);
-});
+}
 
 async function test$(hud) {
   hud.ui.clearOutput();
