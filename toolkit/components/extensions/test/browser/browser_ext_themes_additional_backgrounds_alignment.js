@@ -5,7 +5,6 @@
 
 
 add_task(async function test_default_additional_backgrounds_alignment() {
-  const LEFT_TOP = "0% 0%";
   const RIGHT_TOP = "100% 0%";
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -44,7 +43,7 @@ add_task(async function test_default_additional_backgrounds_alignment() {
 
   Assert.equal(
     toolboxCS.getPropertyValue("background-position"),
-    LEFT_TOP,
+    RIGHT_TOP,
     toolbox.id + " only contains default additional backgrounds alignment property"
   );
 
