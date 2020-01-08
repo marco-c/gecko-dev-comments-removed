@@ -152,7 +152,6 @@ public:
   
   
   
-  
   static void
   NotifyBlockingDecision(nsIChannel* aChannel, BlockingDecision aDecision,
                          uint32_t aRejectedReason);

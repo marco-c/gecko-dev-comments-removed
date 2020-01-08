@@ -1002,15 +1002,6 @@ public:
   
 
 
-  bool GetHasSlowTrackingContentBlocked()
-  {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
-  }
-
-  
-
-
   bool GetHasAllCookiesBlocked()
   {
     return mContentBlockingLog.HasBlockedAnyOfType(
@@ -1053,17 +1044,6 @@ public:
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
                              aHasTrackingContentBlocked);
-  }
-
-  
-
-
-  void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked,
-                                        const nsAString& aOriginBlocked)
-  {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT,
-                             aHasSlowTrackingContentBlocked);
   }
 
   

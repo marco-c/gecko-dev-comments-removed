@@ -234,8 +234,7 @@ ReportBlockingToConsole(nsPIDOMWindowOuter* aWindow, nsIURI* aURI,
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION ||
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL ||
-             aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN ||
-             aRejectedReason == nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
+             aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN);
 
   nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
   if (NS_WARN_IF(!docShell)) {
@@ -263,10 +262,6 @@ ReportBlockingToConsole(nsPIDOMWindowOuter* aWindow, nsIURI* aURI,
 
     case nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN:
       message = "CookieBlockedForeign";
-      break;
-
-    case nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT:
-      message = "CookieBlockedSlowTrackingContent";
       break;
 
     default:
@@ -1321,19 +1316,12 @@ AntiTrackingCommon::NotifyBlockingDecision(nsIChannel* aChannel,
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION ||
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL ||
-             aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN ||
-             aRejectedReason == nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
+             aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN);
   MOZ_ASSERT(aDecision == BlockingDecision::eBlock ||
              aDecision == BlockingDecision::eAllow);
 
   if (!aChannel) {
     return;
-  }
-
-  
-  bool sendCookieLoadedNotification = false;
-  if (aRejectedReason != nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT) {
-    sendCookieLoadedNotification = true;
   }
 
   
@@ -1344,8 +1332,7 @@ AntiTrackingCommon::NotifyBlockingDecision(nsIChannel* aChannel,
     
     if (aDecision == BlockingDecision::eBlock) {
       parentChannel->NotifyTrackingCookieBlocked(aRejectedReason);
-    } else if (sendCookieLoadedNotification) {
-      
+    } else {
       parentChannel->NotifyCookieAllowed();
     }
     return;
@@ -1375,10 +1362,8 @@ AntiTrackingCommon::NotifyBlockingDecision(nsIChannel* aChannel,
     ReportBlockingToConsole(pwin, uri, aRejectedReason);
   }
 
-  if (sendCookieLoadedNotification) {
-    pwin->NotifyContentBlockingState(nsIWebProgressListener::STATE_COOKIES_LOADED,
-                                     aChannel, false, uri);
-  }
+  pwin->NotifyContentBlockingState(nsIWebProgressListener::STATE_COOKIES_LOADED,
+                                   aChannel, false, uri);
 }
 
  void
@@ -1391,16 +1376,9 @@ AntiTrackingCommon::NotifyBlockingDecision(nsPIDOMWindowInner* aWindow,
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION ||
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
              aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL ||
-             aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN ||
-             aRejectedReason == nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
+             aRejectedReason == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN);
   MOZ_ASSERT(aDecision == BlockingDecision::eBlock ||
              aDecision == BlockingDecision::eAllow);
-
-  
-  bool sendCookieLoadedNotification = false;
-  if (aRejectedReason != nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT) {
-    sendCookieLoadedNotification = true;
-  }
 
   nsCOMPtr<nsPIDOMWindowOuter> pwin = GetTopWindow(aWindow);
   if (!pwin) {
@@ -1432,10 +1410,8 @@ AntiTrackingCommon::NotifyBlockingDecision(nsPIDOMWindowInner* aWindow,
     ReportBlockingToConsole(pwin, uri, aRejectedReason);
   }
 
-  if (sendCookieLoadedNotification) {
-    pwin->NotifyContentBlockingState(nsIWebProgressListener::STATE_COOKIES_LOADED,
-                                     channel, false, uri);
-  }
+  pwin->NotifyContentBlockingState(nsIWebProgressListener::STATE_COOKIES_LOADED,
+                                   channel, false, uri);
 }
 
  void
