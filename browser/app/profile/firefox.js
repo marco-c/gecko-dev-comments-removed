@@ -1466,15 +1466,12 @@ pref("media.gmp-widevinecdm.enabled", true);
 
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
-pref("media.autoplay.ask-permission", false);
-
 pref("media.autoplay.default", 1); 
 
 pref("media.autoplay.block-webaudio", true);
 #else
 pref("media.autoplay.default", 0); 
 pref("media.autoplay.enabled.user-gestures-needed", false);
-pref("media.autoplay.ask-permission", false);
 pref("media.autoplay.block-webaudio", false);
 #endif
 
