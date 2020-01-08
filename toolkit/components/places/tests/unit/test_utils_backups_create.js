@@ -10,11 +10,10 @@
 
 const NUMBER_OF_BACKUPS = 10;
 
-add_task(async function() {
+async function createBackups(nBackups, dateObj, bookmarksBackupDir) {
   
-  let dateObj = new Date();
   let dates = [];
-  while (dates.length < NUMBER_OF_BACKUPS) {
+  while (dates.length < nBackups) {
     
     let randomDate = new Date(dateObj.getFullYear() - 1,
                               Math.floor(12 * Math.random()),
@@ -24,10 +23,6 @@ add_task(async function() {
   }
   
   dates.sort();
-
-  
-  let backupFolderPath = await PlacesBackups.getBackupFolder();
-  let bookmarksBackupDir = new FileUtils.File(backupFolderPath);
 
   
   
@@ -42,10 +37,10 @@ add_task(async function() {
       do_throw("Unable to create fake backup " + backupFile.leafName);
   }
 
-  await PlacesBackups.create(NUMBER_OF_BACKUPS);
-  
-  dates.push(dateObj.getTime());
+  return dates;
+}
 
+async function checkBackups(dates, bookmarksBackupDir) {
   
   
   for (let i = 0; i < dates.length; i++) {
@@ -72,7 +67,9 @@ add_task(async function() {
     if (backupFile.exists() != shouldExist)
       do_throw("Backup should " + (shouldExist ? "" : "not") + " exist: " + backupFilename);
   }
+}
 
+async function cleanupFiles(bookmarksBackupDir) {
   
   
   
@@ -81,5 +78,53 @@ add_task(async function() {
     let entry = files.nextFile;
     entry.remove(false);
   }
+  
+  delete PlacesBackups._backupFiles;
   Assert.ok(!bookmarksBackupDir.directoryEntries.hasMoreElements());
+}
+
+add_task(async function test_create_backups() {
+  let backupFolderPath = await PlacesBackups.getBackupFolder();
+  let bookmarksBackupDir = new FileUtils.File(backupFolderPath);
+
+  let dateObj = new Date();
+  let dates = await createBackups(NUMBER_OF_BACKUPS, dateObj, bookmarksBackupDir);
+  
+  await PlacesBackups.create(NUMBER_OF_BACKUPS);
+  dates.push(dateObj.getTime());
+  await checkBackups(dates, bookmarksBackupDir);
+  await cleanupFiles(bookmarksBackupDir);
+});
+
+add_task(async function test_saveBookmarks_with_no_backups() {
+  let backupFolderPath = await PlacesBackups.getBackupFolder();
+  let bookmarksBackupDir = new FileUtils.File(backupFolderPath);
+
+  Services.prefs.setIntPref("browser.bookmarks.max_backups", 0);
+
+  let filePath = do_get_tempdir().path + "/backup.json";
+  await PlacesBackups.saveBookmarksToJSONFile(filePath);
+  let files = bookmarksBackupDir.directoryEntries;
+  Assert.ok(!files.hasMoreElements(), "Should have no backup files.");
+  await OS.File.remove(filePath);
+  
+  
+  delete PlacesBackups._backupFiles;
+});
+
+add_task(async function test_saveBookmarks_with_backups() {
+  let backupFolderPath = await PlacesBackups.getBackupFolder();
+  let bookmarksBackupDir = new FileUtils.File(backupFolderPath);
+
+  Services.prefs.setIntPref("browser.bookmarks.max_backups", NUMBER_OF_BACKUPS);
+
+  let filePath = do_get_tempdir().path + "/backup.json";
+  let dateObj = new Date();
+  let dates = await createBackups(NUMBER_OF_BACKUPS, dateObj, bookmarksBackupDir);
+
+  await PlacesBackups.saveBookmarksToJSONFile(filePath);
+  dates.push(dateObj.getTime());
+  await checkBackups(dates, bookmarksBackupDir);
+  await OS.File.remove(filePath);
+  await cleanupFiles(bookmarksBackupDir);
 });
