@@ -758,6 +758,17 @@
   max-width: 42em;
 }
 
+
+
+
+#allTabsMenu-allTabsView > .panel-subview-body {
+  padding-bottom: 0;
+}
+
+#allTabsMenu-tabsSeparator {
+  margin-bottom: 0;
+}
+
 .all-tabs-item > .all-tabs-secondary-button {
   padding: 0;
   padding-inline-start: 6px;
