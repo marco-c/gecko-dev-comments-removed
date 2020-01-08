@@ -367,7 +367,7 @@ AsyncImagePipelineManager::ApplyAsyncImageForPipeline(const wr::Epoch& aEpoch,
 
     
     
-    aMaybeFastTxn.UpdateEpoch(aPipelineId, aEpoch);
+    aSceneBuilderTxn.UpdateEpoch(aPipelineId, aEpoch);
     if (aPipeline->mCurrentTexture) {
       HoldExternalImage(aPipelineId, aEpoch, aPipeline->mCurrentTexture->AsWebRenderTextureHost());
     }
