@@ -44,7 +44,7 @@ enum PlaneType {
 
 typedef struct Dav1dThreadPicture {
     Dav1dPicture p;
-    int visible, flushed;
+    int visible;
     struct thread_data *t;
     
     
@@ -58,6 +58,16 @@ int dav1d_thread_picture_alloc(Dav1dThreadPicture *p, int w, int h,
                                enum Dav1dPixelLayout layout, int bpc,
                                struct thread_data *t, int visible,
                                Dav1dPicAllocator *);
+
+
+
+
+
+
+
+
+int dav1d_picture_alloc_copy(Dav1dPicture *dst, const int w,
+                             const Dav1dPicture *src);
 
 
 
@@ -98,6 +108,6 @@ void dav1d_thread_picture_signal(const Dav1dThreadPicture *p, int y,
                                  enum PlaneType plane_type);
 
 int default_picture_allocator(Dav1dPicture *, void *cookie);
-void default_picture_release(uint8_t *, void *allocator_data, void *cookie);
+void default_picture_release(Dav1dPicture *, void *cookie);
 
 #endif 

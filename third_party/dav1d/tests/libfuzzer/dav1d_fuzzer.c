@@ -25,12 +25,15 @@
 
 
 
+#include "config.h"
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <dav1d/dav1d.h>
+#include "src/cpu.h"
 #include "dav1d_fuzzer.h"
 
 static unsigned r32le(const uint8_t *const p) {
@@ -58,9 +61,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     Dav1dContext * ctx = NULL;
     Dav1dPicture pic;
     const uint8_t *ptr = data;
+    int have_seq_hdr = 0;
     int err;
 
     dav1d_version();
+
+    
+#if defined(__has_feature)
+  #if __has_feature(memory_sanitizer)
+    dav1d_set_cpu_flags_mask(0);
+  #endif
+#endif
 
     if (size < 32) goto end;
     ptr += 32; 
@@ -91,6 +102,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
             break;
 
         if (!frame_size) continue;
+
+        if (!have_seq_hdr) {
+            Dav1dSequenceHeader seq = { 0 };
+            int err = dav1d_parse_sequence_header(&seq, ptr, frame_size);
+            
+            if  (err != 0) {
+                ptr += frame_size;
+                continue;
+            }
+            have_seq_hdr = 1;
+        }
 
         
         p = dav1d_data_create(&buf, frame_size);
