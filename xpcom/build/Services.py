@@ -46,8 +46,6 @@ service('ThirdPartyUtil', 'mozIThirdPartyUtil',
         "@mozilla.org/thirdpartyutil;1")
 service('URIFixup', 'nsIURIFixup',
         "@mozilla.org/docshell/urifixup;1")
-service('EffectiveTLDService', 'nsIEffectiveTLDService',
-        "@mozilla.org/network/effective-tld-service;1")
 
 
 
@@ -79,7 +77,6 @@ CPP_INCLUDES = """
 #include "nsIUUIDGenerator.h"
 #include "nsIGfxInfo.h"
 #include "nsIURIFixup.h"
-#include "nsIEffectiveTLDService.h"
 """
 
 
