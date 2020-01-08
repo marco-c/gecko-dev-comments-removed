@@ -1604,7 +1604,13 @@ var FrontClassWithSpec = function(actorSpec, frontProto) {
   
   const cls = function() {
     const instance = Object.create(cls.prototype);
-    instance.initialize.apply(instance, arguments);
+    const initializer = instance.initialize.apply(instance, arguments);
+
+    
+    
+    if (initializer && typeof initializer.then === "function") {
+      return initializer.then(resolve => instance);
+    }
     return instance;
   };
   cls.prototype = extend(Front.prototype, generateRequestMethods(actorSpec, frontProto));
