@@ -298,20 +298,10 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     
     
     
-    
-    
-    if (this.player.startTime) {
-      this.previousStartTime = this.player.startTime;
-    }
-
-    
-    
-    
     return {
       type: this.getType(),
       
       startTime: this.player.startTime,
-      previousStartTime: this.previousStartTime,
       currentTime: this.player.currentTime,
       playState: this.player.playState,
       playbackRate: this.player.playbackRate,
@@ -414,76 +404,6 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     if (hasChanged) {
       this.emit("changed", this.getCurrentState());
     }
-  },
-
-  
-
-
-  pause: function() {
-    this.player.pause();
-    return this.player.ready;
-  },
-
-  
-
-
-
-  play: function() {
-    this.player.play();
-    return this.player.ready;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  ready: function() {
-    return this.player.ready;
-  },
-
-  
-
-
-  setCurrentTime: function(currentTime) {
-    
-    
-    
-    
-    
-    const timing = this.player.effect.getComputedTiming();
-    if (timing.delay < 0) {
-      currentTime += timing.delay;
-    }
-    if (currentTime < 0) {
-      currentTime = 0;
-    } else if (currentTime * this.player.playbackRate > timing.endTime) {
-      currentTime = timing.endTime;
-    }
-    this.player.currentTime = currentTime * this.player.playbackRate;
-  },
-
-  
-
-
-  setPlaybackRate: function(playbackRate) {
-    this.player.updatePlaybackRate(playbackRate);
-    return this.player.ready;
-  },
-
-  
-
-
-
-
-  getFrames: function() {
-    return this.player.effect.getKeyframes();
   },
 
   
@@ -812,53 +732,6 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
   
 
 
-  pauseAll: function() {
-    
-    
-    for (const player of
-         this.getAllAnimations(this.targetActor.window.document, true)) {
-      this.pauseSync(player);
-    }
-    this.allAnimationsPaused = true;
-  },
-
-  
-
-
-
-  playAll: function() {
-    
-    
-    for (const player of
-      this.getAllAnimations(this.targetActor.window.document, true)) {
-      this.playSync(player);
-    }
-    this.allAnimationsPaused = false;
-  },
-
-  toggleAll: function() {
-    if (this.allAnimationsPaused) {
-      this.playAll();
-    } else {
-      this.pauseAll();
-    }
-  },
-
-  
-
-
-
-
-
-  toggleSeveral: function(players, shouldPause) {
-    return Promise.all(players.map(player => {
-      return shouldPause ? player.pause() : player.play();
-    }));
-  },
-
-  
-
-
 
 
   pauseSome: function(actors) {
@@ -888,18 +761,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-
-
-  setCurrentTimes: function(players, time, shouldPause, options) {
-    
-    
-    if (!options.relativeToCreatedTime) {
-      return Promise.all(players.map(player => {
-        const pause = shouldPause ? player.pause() : Promise.resolve();
-        return pause.then(() => player.setCurrentTime(time));
-      }));
-    }
-
+  setCurrentTimes: function(players, time, shouldPause) {
     for (const actor of players) {
       const player = actor.player;
 
@@ -919,9 +781,10 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
   setPlaybackRates: function(players, rate) {
-    return Promise.all(
-      players.map(player => player.setPlaybackRate(rate))
-    );
+    return Promise.all(players.map(({ player }) => {
+      player.updatePlaybackRate(rate);
+      return player.ready;
+    }));
   },
 
   

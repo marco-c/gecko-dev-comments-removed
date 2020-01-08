@@ -6,50 +6,15 @@
 
 
 
-
 add_task(async function() {
   const {client, walker, animations} =
     await initAnimationsFrontForUrl(MAIN_DOMAIN + "animation.html");
 
-  await testSetCurrentTime(walker, animations);
   await testSetCurrentTimes(walker, animations);
 
   await client.close();
   gBrowser.removeCurrentTab();
 });
-
-async function testSetCurrentTime(walker, animations) {
-  info("Retrieve an animated node");
-  const node = await walker.querySelector(walker.rootNode, ".simple-animation");
-
-  info("Retrieve the animation player for the node");
-  const [player] = await animations.getAnimationPlayersForNode(node);
-
-  ok(player.setCurrentTime, "Player has the setCurrentTime method");
-
-  info("Check that the setCurrentTime method can be called");
-  
-  
-  
-  await player.setCurrentTime(player.initialState.currentTime + 1000);
-
-  info("Pause the animation so we can really test if setCurrentTime works");
-  await player.pause();
-  const pausedState = await player.getCurrentState();
-
-  info("Set the current time to currentTime + 5s");
-  await player.setCurrentTime(pausedState.currentTime + 5000);
-
-  const updatedState1 = await player.getCurrentState();
-  is(Math.round(updatedState1.currentTime - pausedState.currentTime), 5000,
-    "The currentTime was updated to +5s");
-
-  info("Set the current time to currentTime - 2s");
-  await player.setCurrentTime(updatedState1.currentTime - 2000);
-  const updatedState2 = await player.getCurrentState();
-  is(Math.round(updatedState2.currentTime - updatedState1.currentTime), -2000,
-    "The currentTime was updated to -2s");
-}
 
 async function testSetCurrentTimes(walker, animations) {
   ok(animations.setCurrentTimes, "The AnimationsActor has the right method");
@@ -63,12 +28,15 @@ async function testSetCurrentTimes(walker, animations) {
   ok(players.length > 1, "Node has more than 1 animation player");
 
   info("Try to set multiple current times at once");
-  await animations.setCurrentTimes(players, 500, true);
+  
+  const createdTime = players[1].state.createdTime;
+  await animations.setCurrentTimes(players, createdTime + 500, true);
 
   info("Get the states of players and verify their correctness");
   for (let i = 0; i < players.length; i++) {
     const state = await players[i].getCurrentState();
     is(state.playState, "paused", `Player ${i + 1} is paused`);
-    is(state.currentTime, 500, `Player ${i + 1} has the right currentTime`);
+    is(parseInt(state.currentTime.toPrecision(6), 10), 500,
+       `Player ${i + 1} has the right currentTime`);
   }
 }
