@@ -634,6 +634,11 @@ BrowserGlue.prototype = {
     const MAX_DELAY = 300;
     let delay = 3;
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      
+      
+      if (win.closed || !win.gBrowser) {
+        return;
+      }
       delay += win.gBrowser.tabs.length;
     }
     delay = delay <= MAX_DELAY ? delay : MAX_DELAY;
