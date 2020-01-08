@@ -22,8 +22,26 @@ class AboutConfigRowTest {
     return this.querySelector("td.cell-value").textContent;
   }
 
-  get firstButton() {
-    return this.querySelector("button");
+  
+
+
+  get valueInput() {
+    return this.querySelector("td.cell-value input");
+  }
+
+  
+
+
+
+  get editColumnButton() {
+    return this.querySelector("td.cell-edit > button");
+  }
+
+  
+
+
+  get resetColumnButton() {
+    return this.querySelector("td:last-child > button");
   }
 
   hasClass(className) {
