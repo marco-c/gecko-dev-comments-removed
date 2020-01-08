@@ -8,8 +8,6 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/SimpleServiceDiscovery.jsm");
 
-Cu.importGlobalProperties(["InspectorUtils"]);
-
 
 var chromeWin;
 

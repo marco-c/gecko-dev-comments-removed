@@ -13,8 +13,6 @@ const {escaped} = ChromeUtils.import("resource://testing-common/AddonTestUtils.j
 
 const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 
-Cu.importGlobalProperties(["URL"]);
-
 
 
 Services.prefs.setIntPref("media.autoplay.default", Ci.nsIAutoplay.ALLOWED);

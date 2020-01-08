@@ -53,24 +53,6 @@ const nsIPropertyElement = Ci.nsIPropertyElement;
 
 
 
-
-
-
-
-
-let needToImportNode = false;
-try {
-    Node;
-} catch (e) {
-    needToImportNode = true;
-}
-if (needToImportNode) {
-    Cu.importGlobalProperties(["Node"]);
-}
-
-
-
-
 const MAC = (navigator.platform.includes("Mac"));
 const LINUX = (navigator.platform.includes("Linux"));
 const SOLARIS = (navigator.platform.includes("SunOS"));
