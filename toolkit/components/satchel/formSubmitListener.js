@@ -85,6 +85,12 @@ let satchelFormListener = {
 
         
         
+        if (input.hasBeenTypePassword) {
+          continue;
+        }
+
+        
+        
 
         
         if (input.hasAttribute("autocomplete") &&

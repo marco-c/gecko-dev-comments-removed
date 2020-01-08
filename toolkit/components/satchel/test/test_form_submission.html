@@ -312,6 +312,8 @@ function startTest() {
   $_(13, "test1").value = "dontSaveThis";
   $_(14, "test1").type  = "password";
   $_(14, "test1").value = "dontSaveThis";
+  // Set it back to type=text to simulate a password visibility toggle.
+  $_(14, "test1").type  = "text";
 
   let testData = ccNumbers.valid16;
   for (let i = 0; i != testData.length; i++) {
