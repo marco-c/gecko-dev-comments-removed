@@ -384,7 +384,17 @@ WebConsoleClient.prototype = {
 
 
 
-  autocomplete: function(string, cursor, frameActor, selectedNodeActor) {
+
+
+
+
+  autocomplete: function(
+    string,
+    cursor,
+    frameActor,
+    selectedNodeActor,
+    authorizedEvaluations
+  ) {
     const packet = {
       to: this._actor,
       type: "autocomplete",
@@ -392,6 +402,7 @@ WebConsoleClient.prototype = {
       cursor,
       frameActor,
       selectedNodeActor,
+      authorizedEvaluations,
     };
     return this._client.request(packet);
   },

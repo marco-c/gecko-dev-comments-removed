@@ -246,12 +246,13 @@ function analyzeInputString(str) {
 
 
 
+
 function JSPropertyProvider({
   dbgObject,
   environment,
   inputValue,
   cursor,
-  invokeUnsafeGetter = false,
+  authorizedEvaluations = [],
   webconsoleActor,
   selectedNodeActor,
 }) {
@@ -448,18 +449,16 @@ function JSPropertyProvider({
       return null;
     }
 
-    if (!invokeUnsafeGetter && DevToolsUtils.isUnsafeGetter(obj, prop)) {
-      
-      
-      if (index !== properties.length - 1) {
-        return null;
-      }
+    const propPath = [firstProp].concat(properties.slice(0, index + 1));
+    const authorized = authorizedEvaluations.some(
+      x => JSON.stringify(x) === JSON.stringify(propPath));
 
+    if (!authorized && DevToolsUtils.isUnsafeGetter(obj, prop)) {
       
       
       return {
         isUnsafeGetter: true,
-        getterName: prop,
+        getterPath: propPath,
       };
     }
 
@@ -468,7 +467,7 @@ function JSPropertyProvider({
       
       obj = getArrayMemberProperty(obj, null, prop);
     } else {
-      obj = DevToolsUtils.getProperty(obj, prop, invokeUnsafeGetter);
+      obj = DevToolsUtils.getProperty(obj, prop, authorized);
     }
 
     if (!isObjectUsable(obj)) {
