@@ -52,23 +52,6 @@ ClientPaintedLayer::EnsureContentClient()
   return true;
 }
 
-bool
-ClientPaintedLayer::CanRecordLayer(ReadbackProcessor* aReadback)
-{
-  
-  
-  if (!PaintThread::Get()) {
-    return false;
-  }
-
-  
-  if (aReadback && UsedForReadback()) {
-    return false;
-  }
-
-  return true;
-}
-
 void
 ClientPaintedLayer::UpdateContentClient(PaintState& aState)
 {
@@ -95,7 +78,6 @@ ClientPaintedLayer::UpdatePaintRegion(PaintState& aState)
 
   if (!aState.mRegionToDraw.IsEmpty() && !ClientManager()->GetPaintedLayerCallback()) {
     ClientManager()->SetTransactionIncomplete();
-    mContentClient->EndPaint(nullptr);
     return false;
    }
 
@@ -108,8 +90,17 @@ ClientPaintedLayer::UpdatePaintRegion(PaintState& aState)
   return true;
 }
 
+void
+ClientPaintedLayer::FinishPaintState(PaintState& aState)
+{
+  if (aState.mAsyncTask) {
+    ClientManager()->SetQueuedAsyncPaints();
+    PaintThread::Get()->QueuePaintTask(aState.mAsyncTask);
+  }
+}
+
 uint32_t
-ClientPaintedLayer::GetPaintFlags()
+ClientPaintedLayer::GetPaintFlags(ReadbackProcessor* aReadback)
 {
   uint32_t flags = ContentClient::PAINT_CAN_DRAW_ROTATED;
   #ifndef MOZ_IGNORE_PAINT_WILL_RESAMPLE
@@ -122,34 +113,43 @@ ClientPaintedLayer::GetPaintFlags()
      }
    }
   #endif
+  if ((!aReadback || !UsedForReadback()) && PaintThread::Get()) {
+    flags |= ContentClient::PAINT_ASYNC;
+  }
   return flags;
 }
 
 void
-ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
+ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
 {
-  AUTO_PROFILER_LABEL("ClientPaintedLayer::PaintThebes", GRAPHICS);
-
+  AUTO_PROFILER_LABEL("ClientPaintedLayer::RenderLayerWithReadback", GRAPHICS);
   NS_ASSERTION(ClientManager()->InDrawing(),
                "Can only draw in drawing phase");
 
-  uint32_t flags = GetPaintFlags();
+  RenderMaskLayers(this);
+
+  if (!EnsureContentClient()) {
+    return;
+  }
+
+  nsTArray<ReadbackProcessor::Update> readbackUpdates;
+  nsIntRegion readbackRegion;
+  if (aReadback && UsedForReadback()) {
+    aReadback->GetPaintedLayerUpdates(this, &readbackUpdates);
+  }
+
+  uint32_t flags = GetPaintFlags(aReadback);
 
   PaintState state = mContentClient->BeginPaint(this, flags);
   if (!UpdatePaintRegion(state)) {
+    mContentClient->EndPaint(state, nullptr);
+    FinishPaintState(state);
     return;
   }
 
   bool didUpdate = false;
   RotatedBuffer::DrawIterator iter;
   while (DrawTarget* target = mContentClient->BorrowDrawTargetForPainting(state, &iter)) {
-    if (!target || !target->IsValid()) {
-      if (target) {
-        mContentClient->ReturnDrawTarget(target);
-      }
-      continue;
-    }
-
     SetAntialiasingFlags(this, target);
 
     RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(target);
@@ -168,150 +168,12 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
     didUpdate = true;
   }
 
-  mContentClient->EndPaint(aReadbackUpdates);
+  mContentClient->EndPaint(state, &readbackUpdates);
+  FinishPaintState(state);
 
   if (didUpdate) {
     UpdateContentClient(state);
   }
-}
-
-class MOZ_RAII AutoQueuedAsyncPaint
-{
-public:
-  explicit AutoQueuedAsyncPaint(ClientLayerManager* aLayerManager)
-    : mLayerManager(aLayerManager)
-    , mQueuedAsyncPaints(false)
-  { }
-
-  void Queue() { mQueuedAsyncPaints = true; }
-
-  ~AutoQueuedAsyncPaint()
-  {
-    if (mQueuedAsyncPaints) {
-      mLayerManager->SetQueuedAsyncPaints();
-    }
-  }
-
-private:
-  ClientLayerManager* mLayerManager;
-  bool mQueuedAsyncPaints;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void
-ClientPaintedLayer::PaintOffMainThread()
-{
-  AutoQueuedAsyncPaint asyncPaints(ClientManager());
-
-  uint32_t flags = GetPaintFlags();
-  PaintState state = mContentClient->BeginPaint(this, flags | ContentClient::PAINT_ASYNC);
-
-  if (state.mBufferState && state.mBufferState->HasOperations()) {
-    PaintThread::Get()->PrepareBuffer(state.mBufferState);
-    asyncPaints.Queue();
-  }
-
-  if (!UpdatePaintRegion(state)) {
-    return;
-  }
-
-  bool didUpdate = false;
-  RotatedBuffer::DrawIterator iter;
-
-  
-  while (RefPtr<CapturedPaintState> captureState =
-          mContentClient->BorrowDrawTargetForRecording(state, &iter))
-  {
-    DrawTarget* target = captureState->mTargetDual;
-    if (!target || !target->IsValid()) {
-      if (target) {
-        mContentClient->ReturnDrawTarget(target);
-      }
-      continue;
-    }
-
-    RefPtr<DrawTargetCapture> captureDT =
-      Factory::CreateCaptureDrawTarget(target->GetBackendType(),
-                                       target->GetSize(),
-                                       target->GetFormat());
-
-    captureDT->SetTransform(captureState->mTargetTransform);
-    SetAntialiasingFlags(this, captureDT);
-
-    RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(captureDT);
-    MOZ_ASSERT(ctx); 
-
-    ClientManager()->GetPaintedLayerCallback()(this,
-                                              ctx,
-                                              iter.mDrawRegion,
-                                              iter.mDrawRegion,
-                                              state.mClip,
-                                              state.mRegionToInvalidate,
-                                              ClientManager()->GetPaintedLayerCallbackData());
-
-    ctx = nullptr;
-
-    captureState->mCapture = captureDT.forget();
-    PaintThread::Get()->PaintContents(captureState,
-                                      ContentClient::PrepareDrawTargetForPainting);
-
-    mContentClient->ReturnDrawTarget(target);
-
-    asyncPaints.Queue();
-    didUpdate = true;
-  }
-
-  PaintThread::Get()->EndLayer();
-  mContentClient->EndPaint(nullptr);
-
-  if (didUpdate) {
-    UpdateContentClient(state);
-  }
-}
-
-void
-ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
-{
-  RenderMaskLayers(this);
-
-  if (!EnsureContentClient()) {
-    return;
-  }
-
-  if (CanRecordLayer(aReadback)) {
-    PaintOffMainThread();
-    return;
-  }
-
-  nsTArray<ReadbackProcessor::Update> readbackUpdates;
-  nsIntRegion readbackRegion;
-  if (aReadback && UsedForReadback()) {
-    aReadback->GetPaintedLayerUpdates(this, &readbackUpdates);
-  }
-
-  PaintThebes(&readbackUpdates);
 }
 
 already_AddRefed<PaintedLayer>
