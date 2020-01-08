@@ -563,7 +563,6 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   : mWindow(aWindow)
   , mWaylandDisplay(WaylandDisplayGet(aWindow->GetWaylandDisplay()))
   , mWaylandBuffer(nullptr)
-  , mBackupBuffer(nullptr)
   , mFrameCallback(nullptr)
   , mLastCommittedSurface(nullptr)
   , mDisplayThreadMessageLoop(MessageLoop::current())
@@ -574,6 +573,8 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow *aWindow)
   , mIsMainThread(NS_IsMainThread())
   , mNeedScaleFactorUpdate(true)
 {
+  for (int i = 0; i < BACK_BUFFER_NUM; i++)
+    mBackupBuffer[i] = nullptr;
 }
 
 WindowSurfaceWayland::~WindowSurfaceWayland()
@@ -594,7 +595,12 @@ WindowSurfaceWayland::~WindowSurfaceWayland()
   }
 
   delete mWaylandBuffer;
-  delete mBackupBuffer;
+
+  for (int i = 0; i < BACK_BUFFER_NUM; i++) {
+    if (mBackupBuffer[i]) {
+      delete mBackupBuffer[i];
+    }
+  }
 
   if (!mIsMainThread) {
     
@@ -614,7 +620,6 @@ WindowSurfaceWayland::GetWaylandBufferToDraw(int aWidth, int aHeight)
 {
   if (!mWaylandBuffer) {
     mWaylandBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
-    mBackupBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
     return mWaylandBuffer;
   }
 
@@ -628,24 +633,38 @@ WindowSurfaceWayland::GetWaylandBufferToDraw(int aWidth, int aHeight)
     return mWaylandBuffer;
   }
 
+  MOZ_ASSERT(!mPendingCommit,
+             "Uncommitted buffer switch, screen artifacts ahead.");
+
   
-  if (mBackupBuffer->IsAttached()) {
+  int availableBuffer;
+  for (availableBuffer = 0; availableBuffer < BACK_BUFFER_NUM;
+       availableBuffer++) {
+    if (!mBackupBuffer[availableBuffer]) {
+      mBackupBuffer[availableBuffer] =
+          new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
+      break;
+    }
+
+    if (!mBackupBuffer[availableBuffer]->IsAttached()) {
+      break;
+    }
+  }
+
+  if (MOZ_UNLIKELY(availableBuffer == BACK_BUFFER_NUM)) {
     NS_WARNING("No drawing buffer available");
     return nullptr;
   }
 
-  MOZ_ASSERT(!mPendingCommit,
-             "Uncommitted buffer switch, screen artifacts ahead.");
+  WindowBackBuffer *lastWaylandBuffer = mWaylandBuffer;
+  mWaylandBuffer = mBackupBuffer[availableBuffer];
+  mBackupBuffer[availableBuffer] = lastWaylandBuffer;
 
-  WindowBackBuffer *tmp = mWaylandBuffer;
-  mWaylandBuffer = mBackupBuffer;
-  mBackupBuffer = tmp;
-
-  if (mBackupBuffer->IsMatchingSize(aWidth, aHeight)) {
+  if (lastWaylandBuffer->IsMatchingSize(aWidth, aHeight)) {
     
     
     
-    mWaylandBuffer->SetImageDataFromBuffer(mBackupBuffer);
+    mWaylandBuffer->SetImageDataFromBuffer(lastWaylandBuffer);
     
     
     mWaylandBufferFullScreenDamage = true;
