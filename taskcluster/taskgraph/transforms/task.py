@@ -298,6 +298,9 @@ task_description_schema = Schema({
         
         
         Optional('purge-caches-exit-status'): [int],
+
+        
+        Optional('skip-artifacts'): bool,
     }, {
         Required('implementation'): 'generic-worker',
         Required('os'): Any('windows', 'macosx'),
@@ -376,6 +379,9 @@ task_description_schema = Schema({
         
         Required('chain-of-trust'): bool,
         Optional('taskcluster-proxy'): bool,
+
+        
+        Optional('skip-artifacts'): bool,
     }, {
         Required('implementation'): 'native-engine',
         Required('os'): Any('macosx', 'linux'),
@@ -409,6 +415,8 @@ task_description_schema = Schema({
             
             Required('name'): basestring,
         }],
+        
+        Optional('skip-artifacts'): bool,
     }, {
         Required('implementation'): 'script-engine-autophone',
         Required('os'): Any('macosx', 'linux'),
@@ -939,7 +947,7 @@ def build_generic_worker_payload(config, task, task_def):
 
     artifacts = []
 
-    for artifact in worker['artifacts']:
+    for artifact in worker.get('artifacts', []):
         a = {
             'path': artifact['path'],
             'type': artifact['type'],
