@@ -7148,6 +7148,8 @@ nsWindow::GetSystemCSDSupportLevel() {
             sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         } else if (strstr(currentDesktop, "LXQt") != nullptr) {
             sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
+        } else if (strstr(currentDesktop, "Deepin") != nullptr) {
+            sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
         } else {
 
 
