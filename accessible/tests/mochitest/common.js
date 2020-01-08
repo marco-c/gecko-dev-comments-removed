@@ -857,7 +857,7 @@ function shortenString(aString, aMaxLength) {
 
 
 function getMainChromeWindow(aWindow) {
-  return aWindow.document.docShell.rootTreeItem.domWindow;
+  return aWindow.docShell.rootTreeItem.domWindow;
 }
 
 

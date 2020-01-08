@@ -129,7 +129,7 @@ function sectionalizeObject(obj) {
 
 
 function getMainWindow() {
-  return window.document.docShell.rootTreeItem.domWindow;
+  return window.docShell.rootTreeItem.domWindow;
 }
 
 

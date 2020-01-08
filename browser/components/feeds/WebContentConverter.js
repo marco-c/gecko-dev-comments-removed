@@ -287,7 +287,7 @@ WebContentConverterRegistrar.prototype = {
 
 
   _getBrowserWindowForContentWindow(aContentWindow) {
-    return aContentWindow.document.docShell.rootTreeItem.domWindow
+    return aContentWindow.docShell.rootTreeItem.domWindow
                          .wrappedJSObject;
   },
 

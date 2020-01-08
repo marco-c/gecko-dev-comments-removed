@@ -75,7 +75,7 @@ function addWindow(aUrl) {
 }
 
 function getChromeWindow(aWindow) {
-  return aWindow.document.docShell.rootTreeItem.domWindow;
+  return aWindow.docShell.rootTreeItem.domWindow;
 }
 
 

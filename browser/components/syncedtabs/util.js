@@ -10,6 +10,6 @@ var EXPORTED_SYMBOLS = [
 
 
 function getChromeWindow(window) {
-  return window.document.docShell.rootTreeItem.domWindow
+  return window.docShell.rootTreeItem.domWindow
          .wrappedJSObject;
 }
