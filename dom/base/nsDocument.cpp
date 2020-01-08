@@ -7228,6 +7228,69 @@ nsIDocument::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv)
   return adoptedNode;
 }
 
+void
+nsIDocument::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
+                                               const nsAString& aHeightString,
+                                               const nsAString& aScaleString)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mMinWidth = nsViewportInfo::Auto;
+  mMaxWidth = nsViewportInfo::Auto;
+  if (!aWidthString.IsEmpty()) {
+    mMinWidth = nsViewportInfo::ExtendToZoom;
+    if (aWidthString.EqualsLiteral("device-width")) {
+      mMaxWidth = nsViewportInfo::DeviceSize;
+    } else {
+      nsresult widthErrorCode;
+      mMaxWidth = aWidthString.ToInteger(&widthErrorCode);
+      if (NS_FAILED(widthErrorCode)) {
+        mMaxWidth = 1.0f;
+      } else if (mMaxWidth >= 0.0f) {
+        mMaxWidth = clamped(mMaxWidth, CSSCoord(1.0f), CSSCoord(10000.0f));
+      } else {
+        mMaxWidth = nsViewportInfo::Auto;
+      }
+    }
+  
+  } else if (!aScaleString.IsEmpty()) {
+    if (aHeightString.IsEmpty()) {
+      mMinWidth = nsViewportInfo::ExtendToZoom;
+      mMaxWidth = nsViewportInfo::ExtendToZoom;
+    }
+  }
+
+  mMinHeight = nsViewportInfo::Auto;
+  mMaxHeight = nsViewportInfo::Auto;
+  if (!aHeightString.IsEmpty()) {
+    mMinHeight = nsViewportInfo::ExtendToZoom;
+    if (aHeightString.EqualsLiteral("device-height")) {
+      mMaxHeight = nsViewportInfo::DeviceSize;
+    } else {
+      nsresult heightErrorCode;
+      mMaxHeight = aHeightString.ToInteger(&heightErrorCode);
+      if (NS_FAILED(heightErrorCode)) {
+        mMaxHeight = 1.0f;
+      } else if (mMaxHeight >= 0.0f) {
+        mMaxHeight = clamped(mMaxHeight, CSSCoord(1.0f), CSSCoord(10000.0f));
+      } else {
+        mMaxHeight = nsViewportInfo::Auto;
+      }
+    }
+  }
+}
+
 nsViewportInfo
 nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
 {
@@ -7352,27 +7415,25 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     GetHeaderData(nsGkAtoms::viewport_height, heightStr);
     GetHeaderData(nsGkAtoms::viewport_width, widthStr);
 
-    mAutoSize = false;
+    
+    
+    ParseWidthAndHeightInMetaViewport(widthStr, heightStr, scaleStr);
 
-    if (widthStr.EqualsLiteral("device-width")) {
+    mAutoSize = false;
+    if (mMaxWidth == nsViewportInfo::DeviceSize) {
       mAutoSize = true;
     }
-
     if (widthStr.IsEmpty() &&
-        (heightStr.EqualsLiteral("device-height") ||
+        (mMaxHeight == nsViewportInfo::DeviceSize ||
          (mScaleFloat.scale == 1.0)))
     {
       mAutoSize = true;
     }
 
-    nsresult widthErrorCode, heightErrorCode;
-    mViewportSize.width = widthStr.ToInteger(&widthErrorCode);
-    mViewportSize.height = heightStr.ToInteger(&heightErrorCode);
-
     
     
-    mValidWidth = (!widthStr.IsEmpty() && NS_SUCCEEDED(widthErrorCode) && mViewportSize.width > 0);
-    mValidHeight = (!heightStr.IsEmpty() && NS_SUCCEEDED(heightErrorCode) && mViewportSize.height > 0);
+    mValidWidth = (!widthStr.IsEmpty() && mMaxWidth > 0);
+    mValidHeight = (!heightStr.IsEmpty() && mMaxHeight > 0);
 
     
     
@@ -7419,35 +7480,118 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
       effectiveAllowZoom = true;
     }
 
-    CSSSize size = mViewportSize;
+    
+    auto ComputeExtendZoom = [&]() -> float {
+      if (mValidScaleFloat && effectiveValidMaxScale) {
+        return std::min(mScaleFloat.scale, effectiveMaxScale.scale);
+      }
+      if (mValidScaleFloat) {
+        return mScaleFloat.scale;
+      }
+      if (effectiveValidMaxScale) {
+        return effectiveMaxScale.scale;
+      }
+      return nsViewportInfo::Auto;
+    };
 
-    if (!mValidWidth) {
-      if (mValidHeight && !aDisplaySize.IsEmpty()) {
-        size.width = size.height * aDisplaySize.width / aDisplaySize.height;
+    
+    
+    float extendZoom = ComputeExtendZoom();
+
+    CSSCoord minWidth = mMinWidth;
+    CSSCoord maxWidth = mMaxWidth;
+    CSSCoord minHeight = mMinHeight;
+    CSSCoord maxHeight = mMaxHeight;
+
+    
+    
+    CSSToScreenScale defaultPixelScale =
+      layoutDeviceScale * LayoutDeviceToScreenScale(1.0f);
+    CSSSize displaySize = ScreenSize(aDisplaySize) / defaultPixelScale;
+
+    
+    if (maxWidth == nsViewportInfo::DeviceSize) {
+      maxWidth = displaySize.width;
+    }
+    if (maxHeight == nsViewportInfo::DeviceSize) {
+      maxHeight = displaySize.height;
+    }
+    if (extendZoom == nsViewportInfo::Auto) {
+      if (maxWidth == nsViewportInfo::ExtendToZoom) {
+        maxWidth = nsViewportInfo::Auto;
+      }
+      if (maxHeight == nsViewportInfo::ExtendToZoom) {
+        maxHeight = nsViewportInfo::Auto;
+      }
+      if (minWidth == nsViewportInfo::ExtendToZoom) {
+        minWidth = maxWidth;
+      }
+      if (minHeight == nsViewportInfo::ExtendToZoom) {
+        minHeight = maxHeight;
+      }
+    } else {
+      CSSSize extendSize = displaySize / extendZoom;
+      if (maxWidth == nsViewportInfo::ExtendToZoom) {
+        maxWidth = extendSize.width;
+      }
+      if (maxHeight == nsViewportInfo::ExtendToZoom) {
+        maxHeight = extendSize.height;
+      }
+      if (minWidth == nsViewportInfo::ExtendToZoom) {
+        minWidth = nsViewportInfo::Max(extendSize.width, maxWidth);
+      }
+      if (minHeight == nsViewportInfo::ExtendToZoom) {
+        minHeight = nsViewportInfo::Max(extendSize.height, maxHeight);
+      }
+    }
+    
+    
+    CSSCoord width = nsViewportInfo::Auto;
+    if (minWidth != nsViewportInfo::Auto || maxWidth != nsViewportInfo::Auto) {
+      width =
+        nsViewportInfo::Max(minWidth,
+                            nsViewportInfo::Min(maxWidth, displaySize.width));
+    }
+    CSSCoord height = nsViewportInfo::Auto;
+    if (minHeight != nsViewportInfo::Auto || maxHeight != nsViewportInfo::Auto) {
+      height =
+        nsViewportInfo::Max(minHeight,
+                            nsViewportInfo::Min(maxHeight, displaySize.height));
+    }
+
+    
+    
+    if (width == nsViewportInfo::Auto) {
+      if (height == nsViewportInfo::Auto ||
+          aDisplaySize.height == 0) {
+        
+        
+        
+        width = gfxPrefs::DesktopViewportWidth() / fullZoom;
       } else {
-        
-        
-        
-        size.width = gfxPrefs::DesktopViewportWidth() / fullZoom;
+        width = height * aDisplaySize.width / aDisplaySize.height;
       }
     }
 
-    if (!mValidHeight) {
-      if (!aDisplaySize.IsEmpty()) {
-        size.height = size.width * aDisplaySize.height / aDisplaySize.width;
+    
+    
+    if (height == nsViewportInfo::Auto) {
+      if (aDisplaySize.width == 0) {
+        height = aDisplaySize.height;
       } else {
-        size.height = size.width;
+        height = width * aDisplaySize.height / aDisplaySize.width;
       }
     }
+    MOZ_ASSERT(width != nsViewportInfo::Auto && height != nsViewportInfo::Auto);
+
+    CSSSize size(width, height);
 
     CSSToScreenScale scaleFloat = mScaleFloat * layoutDeviceScale;
     CSSToScreenScale scaleMinFloat = effectiveMinScale * layoutDeviceScale;
     CSSToScreenScale scaleMaxFloat = effectiveMaxScale * layoutDeviceScale;
 
     if (mAutoSize) {
-      
-      CSSToScreenScale defaultPixelScale = layoutDeviceScale * LayoutDeviceToScreenScale(1.0f);
-      size = ScreenSize(aDisplaySize) / defaultPixelScale;
+      size = displaySize;
     }
 
     size.width = clamped(size.width, float(kViewportMinSize.width), float(kViewportMaxSize.width));
