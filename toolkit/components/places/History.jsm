@@ -389,6 +389,8 @@ var History = Object.freeze({
 
 
 
+
+
   removeVisitsByFilter(filter, onResult = null) {
     if (!filter || typeof filter != "object") {
       throw new TypeError("Expected a filter");
@@ -398,6 +400,7 @@ var History = Object.freeze({
     let hasEndDate = "endDate" in filter;
     let hasURL = "url" in filter;
     let hasLimit = "limit" in filter;
+    let hasTransition = "transition" in filter;
     if (hasBeginDate) {
       this.ensureDate(filter.beginDate);
     }
@@ -407,7 +410,11 @@ var History = Object.freeze({
     if (hasBeginDate && hasEndDate && filter.beginDate > filter.endDate) {
       throw new TypeError("`beginDate` should be at least as old as `endDate`");
     }
-    if (!hasBeginDate && !hasEndDate && !hasURL && !hasLimit) {
+    if (hasTransition &&
+        !this.isValidTransition(filter.transition)) {
+      throw new TypeError("`transition` should be valid");
+    }
+    if (!hasBeginDate && !hasEndDate && !hasURL && !hasLimit && !hasTransition) {
       throw new TypeError("Expected a non-empty filter");
     }
 
@@ -576,8 +583,8 @@ var History = Object.freeze({
 
 
 
-  isValidTransition(transitionType) {
-    return Object.values(History.TRANSITIONS).includes(transitionType);
+  isValidTransition(transition) {
+    return Object.values(History.TRANSITIONS).includes(transition);
   },
 
   
@@ -902,7 +909,10 @@ var cleanupPages = async function(db, pages) {
 
 
 
-var notifyCleanup = async function(db, pages) {
+
+
+
+var notifyCleanup = async function(db, pages, transition = -1) {
   let notifiedCount = 0;
   let observers = PlacesUtils.history.getObservers();
 
@@ -911,16 +921,11 @@ var notifyCleanup = async function(db, pages) {
   for (let page of pages) {
     let uri = NetUtil.newURI(page.url.href);
     let guid = page.guid;
-    if (page.hasVisits) {
-      
-      
-      continue;
-    }
-    if (page.hasForeign) {
+    if (page.hasVisits || page.hasForeign) {
       
       
       notify(observers, "onDeleteVisits",
-        [uri, false, guid, reason, -1]);
+        [uri, page.hasVisits > 0, guid, reason, transition]);
     } else {
       
       notify(observers, "onDeleteURI",
@@ -1036,6 +1041,7 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
   
   let conditions = [];
   let args = {};
+  let transition = -1;
   if ("beginDate" in filter) {
     conditions.push("v.visit_date >= :begin * 1000");
     args.begin = Number(filter.beginDate);
@@ -1046,6 +1052,11 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
   }
   if ("limit" in filter) {
     args.limit = Number(filter.limit);
+  }
+  if ("transition" in filter) {
+    conditions.push("v.visit_type = :transition");
+    args.transition = filter.transition;
+    transition = filter.transition;
   }
 
   let optionalJoin = "";
@@ -1122,7 +1133,7 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
       await cleanupPages(db, pages);
     });
 
-    notifyCleanup(db, pages);
+    notifyCleanup(db, pages, transition);
     notifyOnResult(onResultData, onResult); 
   } finally {
     
