@@ -254,13 +254,13 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         
         
         kw_options['app'] = self.app
-        if self.app == "firefox":
+        if self.app == "firefox" or self.app == "geckoview":
             binary_path = self.binary_path or self.config.get('binary_path')
             if not binary_path:
                 self.fatal("Raptor requires a path to the binary.")
             kw_options['binary'] = binary_path
         else:
-            if not self.run_local and self.binary_path is None:
+            if not self.run_local:
                 
                 
                 kw_options['binary'] = self.chrome_path
@@ -288,8 +288,6 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             options.extend(['--code-coverage'])
         for key, value in kw_options.items():
             options.extend(['--%s' % key, value])
-        if self.binary_path is not None:
-            options.extend(['--binary', self.binary_path])
 
         return options
 
