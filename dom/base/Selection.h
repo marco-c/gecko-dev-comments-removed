@@ -12,7 +12,7 @@
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/RangeBoundary.h"
-#include "mozilla/SelectionChangeListener.h"
+#include "mozilla/SelectionChangeEventDispatcher.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
@@ -123,8 +123,8 @@ public:
 
   void EnableSelectionChangeEvent()
   {
-    if (!mSelectionChangeListener) {
-      mSelectionChangeListener = new SelectionChangeListener();
+    if (!mSelectionChangeEventDispatcher) {
+      mSelectionChangeEventDispatcher = new SelectionChangeEventDispatcher();
     }
   }
 
@@ -731,7 +731,7 @@ private:
   RefPtr<nsRange> mCachedRange;
   RefPtr<nsFrameSelection> mFrameSelection;
   RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;
-  RefPtr<SelectionChangeListener> mSelectionChangeListener;
+  RefPtr<SelectionChangeEventDispatcher> mSelectionChangeEventDispatcher;
   RefPtr<nsAutoScrollTimer> mAutoScrollTimer;
   nsTArray<nsCOMPtr<nsISelectionListener>> mSelectionListeners;
   nsRevocableEventPtr<ScrollSelectionIntoViewEvent> mScrollEvent;

@@ -4,34 +4,36 @@
 
 
 
-#ifndef mozilla_SelectionChangeListener_h_
-#define mozilla_SelectionChangeListener_h_
+#ifndef mozilla_SelectionChangeEventDispatcher_h
+#define mozilla_SelectionChangeEventDispatcher_h
 
 #include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
 
-class nsRange;
+class nsIDocument;
 class nsINode;
+class nsRange;
 
 namespace mozilla {
+
 namespace dom {
+class Selection;
+}
 
-
-
-
-class SelectionChangeListener final
+class SelectionChangeEventDispatcher final
 {
 public:
   
   
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SelectionChangeListener)
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(SelectionChangeListener)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
+    SelectionChangeEventDispatcher)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(SelectionChangeEventDispatcher)
 
   MOZ_CAN_RUN_SCRIPT
   void OnSelectionChange(nsIDocument* aDocument,
-                         Selection* aSelection,
+                         dom::Selection* aSelection,
                          int16_t aReason);
 
   
@@ -60,10 +62,9 @@ public:
 private:
   nsTArray<RawRangeData> mOldRanges;
 
-  ~SelectionChangeListener() {}
+  ~SelectionChangeEventDispatcher() {}
 };
 
-} 
 } 
 
 #endif 
