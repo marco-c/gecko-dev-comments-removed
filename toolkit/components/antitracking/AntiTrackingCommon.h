@@ -118,10 +118,17 @@ public:
                                                              const nsCString& aGrantedOrigin,
                                                              FirstPartyStorageAccessGrantedForOriginResolver&& aResolver);
 
+  enum ContentBlockingAllowListPurpose {
+    eStorageChecks,
+    eTrackingProtection,
+    eTrackingAnnotations,
+  };
 
   
   static nsresult
-  IsOnContentBlockingAllowList(nsIURI* aTopWinURI, bool& aIsAllowListed);
+  IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
+                               ContentBlockingAllowListPurpose aPurpose,
+                               bool& aIsAllowListed);
 
   
   

@@ -1580,32 +1580,38 @@ PREF("preferences.allow.omt-write", bool, true)
 
 
 
-#include "ContentBlockingDefaultPrefValues.h"
-
 
 VARCACHE_PREF(
   "browser.contentblocking.enabled",
    browser_contentblocking_enabled,
-  bool, CONTENTBLOCKING_ENABLED
+  bool, true
 )
 
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
 
 VARCACHE_PREF(
   "browser.contentblocking.ui.enabled",
    browser_contentblocking_ui_enabled,
-  bool, CONTENTBLOCKING_UI_ENABLED
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 
 VARCACHE_PREF(
-  "browser.contentblocking.rejecttrackers.ui.enabled",
-   browser_contentblocking_rejecttrackers_ui_enabled,
-  bool, CONTENTBLOCKING_REJECTTRACKERS_UI_ENABLED
+  "browser.contentblocking.allowlist.storage.enabled",
+   browser_contentblocking_allowlist_storage_enabled,
+  bool, false
 )
 
-#undef CONTENTBLOCKING_ENABLED
-#undef CONTENTBLOCKING_UI_ENABLED
-#undef CONTENTBLOCKING_REJECTTRACKERS_UI_ENABLED
+VARCACHE_PREF(
+  "browser.contentblocking.allowlist.annotations.enabled",
+   browser_contentblocking_allowlist_annotations_enabled,
+  bool, true
+)
 
 
 VARCACHE_PREF(
