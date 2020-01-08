@@ -773,6 +773,10 @@ MayRetargetToChromeIfCanNotHandleEvent(
     EventTargetChainItem* chromeTargetEtci =
       EventTargetChainItemForChromeTarget(aChain, aContent, aChildEtci);
     if (chromeTargetEtci) {
+      
+      
+      
+      chromeTargetEtci->SetIsChromeHandler(true);
       chromeTargetEtci->GetEventTargetParent(aPreVisitor);
       return chromeTargetEtci;
     }
