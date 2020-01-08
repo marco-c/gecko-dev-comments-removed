@@ -32,6 +32,7 @@ var { assert } = DevToolsUtils;
 var { TabSources } = require("devtools/server/actors/utils/TabSources");
 var makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const Debugger = require("Debugger");
+const ReplayDebugger = require("devtools/server/actors/replay/debugger");
 const InspectorUtils = require("InspectorUtils");
 
 const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
@@ -238,6 +239,12 @@ const browsingContextTargetPrototype = {
     
     this.listenForNewDocShells = false;
 
+    let canRewind = false;
+    if (Debugger.recordReplayProcessKind() == "Middleman") {
+      const replayDebugger = new ReplayDebugger();
+      canRewind = replayDebugger.canRewind();
+    }
+
     this.traits = {
       reconfigure: true,
       
@@ -249,7 +256,7 @@ const browsingContextTargetPrototype = {
       
       logInPage: true,
       
-      canRewind: Debugger.allDebuggersCanRewind(),
+      canRewind,
     };
 
     this._workerTargetActorList = null;
