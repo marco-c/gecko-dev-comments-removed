@@ -50,7 +50,6 @@
 
 
 #include "mozilla/EditorUtils.h"
-#include "HTMLEditorObjectResizerUtils.h"
 #include "WSRunObject.h"
 #include "nsGkAtoms.h"
 #include "nsIWidget.h"
