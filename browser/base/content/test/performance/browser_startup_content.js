@@ -68,6 +68,23 @@ const whitelist = {
     "resource://gre/modules/ExtensionUtils.jsm",
     "resource://gre/modules/MessageChannel.jsm",
   ]),
+  frameScripts: new Set([
+    
+    "resource://specialpowers/MozillaLogger.js",
+    "resource://specialpowers/specialpowersFrameScript.js",
+    "chrome://mochikit/content/shutdown-leaks-collector.js",
+    "chrome://mochikit/content/tests/SimpleTest/AsyncUtilsContent.js",
+    "chrome://mochikit/content/tests/BrowserTestUtils/content-utils.js",
+
+    
+    "chrome://global/content/browser-content.js",
+
+    
+    "chrome://formautofill/content/FormAutofillFrameScript.js",
+
+    
+    "resource://gre/modules/addons/Content.js",
+  ]),
   processScripts: new Set([
     "chrome://global/content/process-content.js",
     "resource:///modules/ContentObservers.js",
@@ -89,6 +106,7 @@ const intermittently_loaded_whitelist = {
   modules: new Set([
     "resource://gre/modules/sessionstore/Utils.jsm",
   ]),
+  frameScripts: new Set([]),
   processScripts: new Set([]),
 };
 
@@ -139,6 +157,12 @@ add_task(async function() {
   } + ")()", false);
 
   let loadedInfo = await promise;
+
+  
+  loadedInfo.frameScripts = {};
+  for (let [uri] of Services.mm.getDelayedFrameScripts()) {
+    loadedInfo.frameScripts[uri] = "";
+  }
 
   
   loadedInfo.processScripts = {};
