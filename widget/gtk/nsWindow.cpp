@@ -3668,6 +3668,15 @@ nsWindow::Create(nsIWidget* aParent,
     bool            needsAlphaVisual = (mWindowType == eWindowType_popup &&
                                        aInitData->mSupportTranslucency);
 
+    
+    
+    
+    
+    if (mWindowType == eWindowType_toplevel &&
+        Preferences::GetBool("mozilla.widget.use-argb-visuals", false)) {
+        needsAlphaVisual = true;
+    }
+
     if (aParent) {
         parentnsWindow = static_cast<nsWindow*>(aParent);
         parentGdkWindow = parentnsWindow->mGdkWindow;
@@ -3759,6 +3768,13 @@ nsWindow::Create(nsIWidget* aParent,
                     }
                 }
             }
+        }
+
+        
+        
+        
+        if (mWindowType == eWindowType_toplevel && mHasAlphaVisual) {
+            mIsTransparent = true;
         }
 
         
