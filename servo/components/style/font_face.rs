@@ -161,7 +161,7 @@ impl FontWeightRange {
 
 
 
-#[derive(Clone, Debug, PartialEq,)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FontStretchRange(pub FontStretch, pub FontStretch);
 impl_range!(FontStretchRange, FontStretch);
 
