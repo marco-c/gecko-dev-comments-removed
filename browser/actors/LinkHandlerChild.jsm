@@ -90,7 +90,9 @@ class LinkHandlerChild extends ActorChild {
     }
 
     let rel = link.rel && link.rel.toLowerCase();
-    if (!rel || !link.href)
+    
+    
+    if (!rel || !link.href || !link.getAttribute("href"))
       return;
 
     
