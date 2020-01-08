@@ -570,6 +570,9 @@ class DesktopInstance(GeckoInstance):
         "browser.urlbar.userMadeSearchSuggestionsChoice": True,
 
         
+        "browser.warnOnQuit": False,
+
+        
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
     }
