@@ -140,14 +140,16 @@ AnimationFrameDiscardingQueue::AnimationFrameDiscardingQueue(
     AnimationFrameRetainedBuffer&& aQueue)
     : AnimationFrameBuffer(aQueue),
       mInsertIndex(aQueue.mFrames.Length()),
-      mFirstFrame(std::move(aQueue.mFrames[0])) {
+      mFirstFrame(aQueue.mFrames[0]) {
   MOZ_ASSERT(!mSizeKnown);
   MOZ_ASSERT(!mRedecodeError);
   MOZ_ASSERT(mInsertIndex > 0);
-  MOZ_ASSERT(mGetIndex > 0);
   mMayDiscard = true;
 
-  for (size_t i = aQueue.mGetIndex; i < mInsertIndex; ++i) {
+  
+  
+  
+  for (size_t i = mGetIndex; i < mInsertIndex; ++i) {
     MOZ_ASSERT(aQueue.mFrames[i]);
     mDisplay.push_back(std::move(aQueue.mFrames[i]));
   }
