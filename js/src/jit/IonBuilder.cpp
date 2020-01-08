@@ -12852,7 +12852,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_functionthis() {
   MOZ_ASSERT(info().funMaybeLazy());
   MOZ_ASSERT(!info().funMaybeLazy()->isArrow());
 
-  if (script()->strict() || info().funMaybeLazy()->isSelfHostedBuiltin()) {
+  if (script()->strict()) {
     
     current->pushSlot(info().thisSlot());
     return Ok();

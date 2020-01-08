@@ -1741,7 +1741,7 @@ bool BaselineCodeGen<Handler>::emit_JSOP_FUNCTIONTHIS() {
   frame.pushThis();
 
   
-  if (script->strict() || (function() && function()->isSelfHostedBuiltin())) {
+  if (script->strict()) {
     return true;
   }
 
