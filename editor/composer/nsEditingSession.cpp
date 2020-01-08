@@ -427,7 +427,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   
   if (needHTMLController) {
     
-    rv = SetupEditorCommandController("@mozilla.org/editor/htmleditorcontroller;1",
+    rv = SetupEditorCommandController(nsBaseCommandController::CreateHTMLEditorController,
                                       aWindow,
                                       static_cast<nsIEditor*>(htmlEditor),
                                       &mHTMLCommandControllerId);
@@ -1407,7 +1407,7 @@ nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow)
   }
 
   
-  rv = SetupEditorCommandController("@mozilla.org/editor/htmleditorcontroller;1",
+  rv = SetupEditorCommandController(nsBaseCommandController::CreateHTMLEditorController,
                                     aWindow,
                                     static_cast<nsIEditor*>(htmlEditor.get()),
                                     &mHTMLCommandControllerId);
