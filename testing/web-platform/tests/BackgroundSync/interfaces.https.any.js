@@ -10,6 +10,5 @@ idl_test(
   ['service-workers', 'html', 'dom'],
   idlArray => {
     
-  },
-  'Background Sync interfaces.'
+  }
 );

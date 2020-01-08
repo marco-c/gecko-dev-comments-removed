@@ -10,6 +10,5 @@ idl_test(
   ['dom'],
   idl_array => {
     
-  },
-  'webgl1 interfaces'
+  }
 );

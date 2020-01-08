@@ -9,4 +9,4 @@ idl_test(
   ['payment-method-basic-card'],
   [], 
   null, 
-  'payment-method-basic-card interfaces.');
+);

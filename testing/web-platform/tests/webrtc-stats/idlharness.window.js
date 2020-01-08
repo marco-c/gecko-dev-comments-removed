@@ -10,5 +10,5 @@ idl_test(
   [], 
   idl_array => {
     
-  },
-  'webrtc-stats interfaces.');
+  }
+);
