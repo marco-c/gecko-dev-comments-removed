@@ -216,7 +216,9 @@ var PreferenceExperiments = {
 
   async saveStartupPrefs() {
     const prefBranch = Services.prefs.getBranch(STARTUP_EXPERIMENT_PREFS_BRANCH);
-    prefBranch.deleteBranch("");
+    for (const pref of prefBranch.getChildList("")) {
+      prefBranch.clearUserPref(pref);
+    }
 
     
     
@@ -520,12 +522,12 @@ var PreferenceExperiments = {
         
         preferences.clearUserPref(preferenceName);
       } else {
+        log.warn(
+          `Can't revert pref for experiment ${experimentName} because it had no default value. `
+          + `Preference will be reset at the next restart.`
+        );
         
         
-        
-        
-        
-        Services.prefs.getDefaultBranch("").deleteBranch(preferenceName);
       }
     }
 

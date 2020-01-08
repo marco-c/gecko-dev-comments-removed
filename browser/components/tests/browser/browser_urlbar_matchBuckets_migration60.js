@@ -79,6 +79,10 @@ add_task(async function installStudyAndMigrate() {
   await sanityCheckInitialState();
 
   
+  
+  Services.prefs.getDefaultBranch(PREF_NAME).setCharPref("", "");
+
+  
   await PreferenceExperiments.start(newExperimentOpts());
   Assert.ok(await PreferenceExperiments.has(STUDY_NAME),
             "Study installed");
