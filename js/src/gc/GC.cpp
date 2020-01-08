@@ -4135,7 +4135,7 @@ bool GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason,
     if (ShouldCollectZone(zone, reason)) {
       MOZ_ASSERT(zone->canCollect());
       any = true;
-      zone->changeGCState(Zone::NoGC, Zone::Mark);
+      zone->changeGCState(Zone::NoGC, Zone::MarkBlackOnly);
     } else {
       *isFullOut = false;
     }
@@ -4184,7 +4184,7 @@ bool GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason,
 }
 
 static void DiscardJITCodeForGC(JSRuntime* rt) {
-  js::CancelOffThreadIonCompile(rt, JS::Zone::Mark);
+  js::CancelOffThreadIonCompile(rt, JS::Zone::MarkBlackOnly);
   for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
     gcstats::AutoPhase ap(rt->gc.stats(),
                           gcstats::PhaseKind::MARK_DISCARD_CODE);
@@ -4647,7 +4647,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
     
     for (GCZonesIter zone(runtime); !zone.done(); zone.next()) {
-      zone->changeGCState(Zone::Mark, Zone::MarkGray);
+      zone->changeGCState(Zone::MarkBlackOnly, Zone::MarkBlackAndGray);
     }
 
     AutoSetMarkColor setColorGray(gc->marker, MarkColor::Gray);
@@ -4657,7 +4657,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
     
     for (GCZonesIter zone(runtime); !zone.done(); zone.next()) {
-      zone->changeGCState(Zone::MarkGray, Zone::Mark);
+      zone->changeGCState(Zone::MarkBlackAndGray, Zone::MarkBlackOnly);
     }
     MOZ_ASSERT(gc->marker.isDrained());
   }
@@ -4973,7 +4973,7 @@ void GCRuntime::getNextSweepGroup() {
     for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
       MOZ_ASSERT(!zone->gcNextGraphComponent);
       zone->setNeedsIncrementalBarrier(false);
-      zone->changeGCState(Zone::Mark, Zone::NoGC);
+      zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
       zone->arenas.unmarkPreMarkedFreeCells();
       zone->gcGrayRoots().clearAndFree();
     }
@@ -5108,8 +5108,9 @@ void GCRuntime::markIncomingCrossCompartmentPointers(MarkColor color) {
   bool unlinkList = color == MarkColor::Gray;
 
   for (SweepGroupCompartmentsIter c(rt); !c.done(); c.next()) {
-    MOZ_ASSERT_IF(color == MarkColor::Gray, c->zone()->isGCMarkingGray());
-    MOZ_ASSERT_IF(color == MarkColor::Black, c->zone()->isGCMarkingBlack());
+    MOZ_ASSERT_IF(color == MarkColor::Gray,
+                  c->zone()->isGCMarkingBlackAndGray());
+    MOZ_ASSERT_IF(color == MarkColor::Black, c->zone()->isGCMarkingBlackOnly());
     MOZ_ASSERT_IF(c->gcIncomingGrayPointers,
                   IsGrayListObject(c->gcIncomingGrayPointers));
 
@@ -5219,7 +5220,8 @@ void js::NotifyGCPostSwap(JSObject* a, JSObject* b, unsigned removedFlags) {
   }
 }
 
-static inline void MaybeCheckWeakMapMarking(GCRuntime* gc) {
+static inline void MaybeCheckWeakMapMarking(GCRuntime* gc)
+{
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
 
   bool shouldCheck;
@@ -5253,7 +5255,7 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(FreeOp* fop,
   
   
   for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
-    zone->changeGCState(Zone::Mark, Zone::MarkGray);
+    zone->changeGCState(Zone::MarkBlackOnly, Zone::MarkBlackAndGray);
   }
 
   AutoSetMarkColor setColorGray(marker, MarkColor::Gray);
@@ -5266,10 +5268,6 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(FreeOp* fop,
   markGrayReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_GRAY);
   markWeakReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_GRAY_WEAK);
 
-  
-  for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
-    zone->changeGCState(Zone::MarkGray, Zone::Mark);
-  }
   MOZ_ASSERT(marker.isDrained());
 
   
@@ -5574,7 +5572,7 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(FreeOp* fop,
   bool sweepingAtoms = false;
   for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
     
-    zone->changeGCState(Zone::Mark, Zone::Sweep);
+    zone->changeGCState(Zone::MarkBlackAndGray, Zone::Sweep);
 
     
     zone->arenas.unmarkPreMarkedFreeCells();
@@ -6742,7 +6740,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 
       for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         zone->setNeedsIncrementalBarrier(false);
-        zone->changeGCState(Zone::Mark, Zone::NoGC);
+        zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
         zone->arenas.unmarkPreMarkedFreeCells();
       }
 
@@ -6862,9 +6860,8 @@ static bool ShouldCleanUpEverything(JS::gcreason::Reason reason,
   return IsShutdownGC(reason) || gckind == GC_SHRINK;
 }
 
-void GCRuntime::incrementalSlice(SliceBudget& budget,
-                                 JS::gcreason::Reason reason,
-                                 AutoGCSession& session) {
+void GCRuntime::incrementalSlice(
+    SliceBudget& budget, JS::gcreason::Reason reason, AutoGCSession& session) {
   AutoDisableBarriers disableBarriers(rt);
 
   bool destroyingRuntime = (reason == JS::gcreason::DESTROY_RUNTIME);
@@ -7014,20 +7011,21 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
 
       MOZ_FALLTHROUGH;
 
-    case State::Finalize: {
-      gcstats::AutoPhase ap(stats(),
-                            gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
+    case State::Finalize:
+      {
+        gcstats::AutoPhase ap(stats(),
+                              gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
 
-      
-      if (!budget.isUnlimited()) {
         
-        if (isBackgroundSweeping()) {
-          break;
+        if (!budget.isUnlimited()) {
+          
+          if (isBackgroundSweeping()) {
+            break;
+          }
+        } else {
+          waitBackgroundSweepEnd();
         }
-      } else {
-        waitBackgroundSweepEnd();
       }
-    }
 
       {
         
@@ -7296,7 +7294,8 @@ void GCRuntime::maybeCallGCCallback(JSGCStatus status) {
 
 
 MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
-    bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::Reason reason) {
+    bool nonincrementalByAPI, SliceBudget budget,
+    JS::gcreason::Reason reason) {
   
   rt->mainContextFromOwnThread()->verifyIsSafeToGC();
 
