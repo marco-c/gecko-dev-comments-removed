@@ -83,7 +83,7 @@ class TelemetryTestCase(PuppeteerMixin, MarionetteTestCase):
         
         time.sleep(5)
 
-    def wait_for_pings(self, action_func, ping_filter_func, count):
+    def wait_for_pings(self, action_func, ping_filter, count):
         """Call the given action and wait for pings to come in and return
         the `count` number of pings, that match the given filter.
         """
@@ -98,7 +98,7 @@ class TelemetryTestCase(PuppeteerMixin, MarionetteTestCase):
             new_pings = self.pings[current_num_pings:]
 
             
-            filtered_pings[:] = [p for p in new_pings if ping_filter_func(p)]
+            filtered_pings[:] = [p for p in new_pings if ping_filter(p)]
 
             return len(filtered_pings) >= count
 
