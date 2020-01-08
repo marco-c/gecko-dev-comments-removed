@@ -7589,7 +7589,10 @@ class MGetFirstDollarIndex
       : MUnaryInstruction(classOpcode, str)
     {
         setResultType(MIRType::Int32);
-        setMovable();
+
+        
+        
+        MOZ_ASSERT(!isMovable());
     }
 
   public:
