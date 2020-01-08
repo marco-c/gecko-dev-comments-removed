@@ -744,7 +744,42 @@ void CodeGenerator::visitUrshD(LUrshD* ins) {
 }
 
 void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
-  MOZ_CRASH("visitPowHalfD");
+  FloatRegister input = ToFloatRegister(ins->input());
+  FloatRegister output = ToFloatRegister(ins->output());
+
+  ScratchDoubleScope scratch(masm);
+
+  Label done, sqrt;
+
+  if (!ins->mir()->operandIsNeverNegativeInfinity()) {
+    
+    masm.loadConstantDouble(NegativeInfinity<double>(), scratch);
+
+    Assembler::DoubleCondition cond = Assembler::DoubleNotEqualOrUnordered;
+    if (ins->mir()->operandIsNeverNaN()) {
+      cond = Assembler::DoubleNotEqual;
+    }
+    masm.branchDouble(cond, input, scratch, &sqrt);
+
+    
+    masm.zeroDouble(output);
+    masm.subDouble(scratch, output);
+    masm.jump(&done);
+
+    masm.bind(&sqrt);
+  }
+
+  if (!ins->mir()->operandIsNeverNegativeZero()) {
+    
+    
+    masm.zeroDouble(scratch);
+    masm.addDouble(input, scratch);
+    masm.sqrtDouble(scratch, output);
+  } else {
+    masm.sqrtDouble(input, output);
+  }
+
+  masm.bind(&done);
 }
 
 MoveOperand CodeGeneratorARM64::toMoveOperand(const LAllocation a) const {
