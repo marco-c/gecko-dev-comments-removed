@@ -130,7 +130,7 @@ typedef FrameMetrics::ViewID ViewID;
 
 
 
-#define MAX_SAME_URL_CONTENT_FRAMES 1
+#define MAX_SAME_URL_CONTENT_FRAMES 2
 
 
 
