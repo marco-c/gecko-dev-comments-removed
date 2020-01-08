@@ -300,7 +300,10 @@ impl IsParallelTo for (Number, Number, Number) {
         
         
         let self_vector = DirectionVector::new(self.0.get(), self.1.get(), self.2.get());
-        self_vector.cross(*vector).square_length().approx_eq(&0.0f32)
+        self_vector
+            .cross(*vector)
+            .square_length()
+            .approx_eq(&0.0f32)
     }
 }
 
