@@ -9,6 +9,7 @@
 #include "TextEditUtils.h"
 #include "TypeInState.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/ContentIterator.h"
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/SelectionState.h"
@@ -26,7 +27,6 @@
 #include "nsGkAtoms.h"
 #include "nsAtom.h"
 #include "nsIContent.h"
-#include "nsIContentIterator.h"
 #include "nsNameSpaceManager.h"
 #include "nsINode.h"
 #include "nsISupportsImpl.h"
@@ -175,18 +175,18 @@ nsresult HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
       
       
 
-      OwningNonNull<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+      RefPtr<ContentSubtreeIterator> subtreeIter = new ContentSubtreeIterator();
 
       nsTArray<OwningNonNull<nsIContent>> arrayOfNodes;
 
       
-      rv = iter->Init(range);
+      rv = subtreeIter->Init(range);
       
       
       
       if (NS_SUCCEEDED(rv)) {
-        for (; !iter->IsDone(); iter->Next()) {
-          OwningNonNull<nsINode> node = *iter->GetCurrentNode();
+        for (; !subtreeIter->IsDone(); subtreeIter->Next()) {
+          OwningNonNull<nsINode> node = *subtreeIter->GetCurrentNode();
 
           if (node->IsContent() && IsEditable(node)) {
             arrayOfNodes.AppendElement(*node->AsContent());
@@ -1341,13 +1341,15 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
         }
       } else {
         
-        nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+        RefPtr<ContentSubtreeIterator> subtreeIter =
+            new ContentSubtreeIterator();
 
         nsTArray<OwningNonNull<nsIContent>> arrayOfNodes;
 
         
-        for (iter->Init(range); !iter->IsDone(); iter->Next()) {
-          nsCOMPtr<nsINode> node = iter->GetCurrentNode();
+        for (subtreeIter->Init(range); !subtreeIter->IsDone();
+             subtreeIter->Next()) {
+          nsCOMPtr<nsINode> node = subtreeIter->GetCurrentNode();
           if (NS_WARN_IF(!node)) {
             return NS_ERROR_FAILURE;
           }
@@ -1488,17 +1490,18 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
       
       
 
-      OwningNonNull<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+      RefPtr<ContentSubtreeIterator> subtreeIter = new ContentSubtreeIterator();
 
       
-      rv = iter->Init(range);
+      rv = subtreeIter->Init(range);
       if (NS_SUCCEEDED(rv)) {
         nsTArray<OwningNonNull<nsIContent>> arrayOfNodes;
-        for (; !iter->IsDone(); iter->Next()) {
-          if (NS_WARN_IF(!iter->GetCurrentNode()->IsContent())) {
+        for (; !subtreeIter->IsDone(); subtreeIter->Next()) {
+          if (NS_WARN_IF(!subtreeIter->GetCurrentNode()->IsContent())) {
             return NS_ERROR_FAILURE;
           }
-          OwningNonNull<nsIContent> node = *iter->GetCurrentNode()->AsContent();
+          OwningNonNull<nsIContent> node =
+              *subtreeIter->GetCurrentNode()->AsContent();
 
           if (IsEditable(node)) {
             arrayOfNodes.AppendElement(node);
