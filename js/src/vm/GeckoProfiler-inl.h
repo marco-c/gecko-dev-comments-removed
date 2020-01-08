@@ -98,7 +98,6 @@ AutoGeckoProfilerEntry::AutoGeckoProfilerEntry(JSContext* cx, const char* label,
     profiler_->profilingStack_->pushLabelFrame(label,
                                              nullptr,
                                              this,
-                                             0,
                                             category);
 }
 

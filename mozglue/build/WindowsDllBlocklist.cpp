@@ -669,8 +669,7 @@ continue_loading:
   
   
   
-  AutoProfilerLabel label("WindowsDllBlocklist::patched_LdrLoadDll", dllName,
-                          __LINE__);
+  AutoProfilerLabel label("WindowsDllBlocklist::patched_LdrLoadDll", dllName);
 
 #ifdef _M_AMD64
   

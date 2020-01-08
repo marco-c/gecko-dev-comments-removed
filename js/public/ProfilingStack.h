@@ -146,8 +146,11 @@ class ProfilingStackFrame
                     mozilla::recordreplay::Behavior::DontPreserve> spOrScript;
 
     
+    
+    
+    
     mozilla::Atomic<int32_t, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> lineOrPcOffset;
+                    mozilla::recordreplay::Behavior::DontPreserve> pcOffsetIfJS_;
 
     
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
@@ -163,8 +166,8 @@ class ProfilingStackFrame
         dynamicString_ = other.dynamicString();
         void* spScript = other.spOrScript;
         spOrScript = spScript;
-        int32_t offset = other.lineOrPcOffset;
-        lineOrPcOffset = offset;
+        int32_t offsetIfJS = other.pcOffsetIfJS_;
+        pcOffsetIfJS_ = offsetIfJS;
         uint32_t kindAndCategory = other.kindAndCategory_;
         kindAndCategory_ = kindAndCategory;
         return *this;
@@ -233,12 +236,12 @@ class ProfilingStackFrame
     const char* dynamicString() const { return dynamicString_; }
 
     void initLabelFrame(const char* aLabel, const char* aDynamicString, void* sp,
-                        uint32_t aLine, Category aCategory)
+                        Category aCategory)
     {
         label_ = aLabel;
         dynamicString_ = aDynamicString;
         spOrScript = sp;
-        lineOrPcOffset = static_cast<int32_t>(aLine);
+        
         kindAndCategory_ = uint32_t(Kind::LABEL) | (uint32_t(aCategory) << uint32_t(Kind::KIND_BITCOUNT));
         MOZ_ASSERT(isLabelFrame());
     }
@@ -248,7 +251,7 @@ class ProfilingStackFrame
         label_ = "";
         dynamicString_ = nullptr;
         spOrScript = sp;
-        lineOrPcOffset = 0;
+        
         kindAndCategory_ = uint32_t(Kind::SP_MARKER) | (uint32_t(Category::OTHER) << uint32_t(Kind::KIND_BITCOUNT));
         MOZ_ASSERT(isSpMarkerFrame());
     }
@@ -259,7 +262,7 @@ class ProfilingStackFrame
         label_ = aLabel;
         dynamicString_ = aDynamicString;
         spOrScript = aScript;
-        lineOrPcOffset = pcToOffset(aScript, aPc);
+        pcOffsetIfJS_ = pcToOffset(aScript, aPc);
         kindAndCategory_ = uint32_t(Kind::JS_NORMAL) | (uint32_t(Category::JS) << uint32_t(Kind::KIND_BITCOUNT));
         MOZ_ASSERT(isJsFrame());
     }
@@ -282,11 +285,6 @@ class ProfilingStackFrame
     }
 
     JS_PUBLIC_API(JSScript*) script() const;
-
-    uint32_t line() const {
-        MOZ_ASSERT(!isJsFrame());
-        return static_cast<uint32_t>(lineOrPcOffset);
-    }
 
     
     JSScript* rawScript() const {
@@ -363,13 +361,13 @@ class ProfilingStack final
     ~ProfilingStack();
 
     void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
-                        uint32_t line, js::ProfilingStackFrame::Category category) {
+                        js::ProfilingStackFrame::Category category) {
         uint32_t oldStackPointer = stackPointer;
 
         if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
             ensureCapacitySlow();
         }
-        frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, line, category);
+        frames[oldStackPointer].initLabelFrame(label, dynamicString, sp, category);
 
         
         

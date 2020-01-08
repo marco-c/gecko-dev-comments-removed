@@ -2493,12 +2493,11 @@ locked_profiler_start(PSLockRef aLock, uint32_t aCapacity, double aInterval,
 
 
 ProfilingStack*
-MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp,
-                  uint32_t aLine)
+MozGlueLabelEnter(const char* aLabel, const char* aDynamicString, void* aSp)
 {
   ProfilingStack* profilingStack = AutoProfilerLabel::sProfilingStack.get();
   if (profilingStack) {
-    profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp, aLine,
+    profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp,
                                 js::ProfilingStackFrame::Category::OTHER);
   }
   return profilingStack;
