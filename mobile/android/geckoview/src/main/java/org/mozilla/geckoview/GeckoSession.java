@@ -2600,7 +2600,7 @@ public class GeckoSession implements Parcelable {
 
 
 
-        default void onFirstComposite(GeckoSession session) {}
+        void onFirstComposite(GeckoSession session);
     }
 
     public interface SelectionActionDelegate {

@@ -373,6 +373,10 @@ public class WebAppActivity extends AppCompatActivity
         
     }
 
+    @Override
+    public void onFirstComposite(final GeckoSession session) {
+    }
+
     @Override 
     public void onFullScreen(GeckoSession session, boolean fullScreen) {
         updateFullScreenContent(fullScreen);

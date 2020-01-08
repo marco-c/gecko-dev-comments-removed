@@ -723,6 +723,10 @@ public class CustomTabsActivity extends AppCompatActivity
         
     }
 
+    @Override
+    public void onFirstComposite(final GeckoSession session) {
+    }
+
     @Override 
     public void startActionMode(final ActionMode.Callback callback) {
         endActionMode();

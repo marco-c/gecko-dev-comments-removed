@@ -264,7 +264,7 @@ public class MediaElement {
 
 
 
-        default void onPlaybackStateChange(MediaElement mediaElement, @MediaStateFlags int mediaState) {}
+        void onPlaybackStateChange(MediaElement mediaElement, @MediaStateFlags int mediaState);
 
         
 
@@ -273,7 +273,7 @@ public class MediaElement {
 
 
 
-        default void onReadyStateChange(MediaElement mediaElement, @ReadyStateFlags int readyState) {}
+        void onReadyStateChange(MediaElement mediaElement, @ReadyStateFlags int readyState);
 
         
 
@@ -281,7 +281,7 @@ public class MediaElement {
 
 
 
-        default void onMetadataChange(MediaElement mediaElement, Metadata metaData) {}
+        void onMetadataChange(MediaElement mediaElement, Metadata metaData);
 
         
 
@@ -289,40 +289,7 @@ public class MediaElement {
 
 
 
-        default void onLoadProgress(MediaElement mediaElement, LoadProgressInfo progressInfo) {}
-
-        
-
-
-
-
-
-
-        default void onVolumeChange(MediaElement mediaElement, double volume, boolean muted) {}
-
-        
-
-
-
-
-
-        default void onTimeChange(MediaElement mediaElement, double time) {}
-
-        
-
-
-
-
-
-        default void onPlaybackRateChange(MediaElement mediaElement, double rate) {}
-
-        
-
-
-
-
-
-        default void onFullscreenChange(MediaElement mediaElement, boolean fullscreen) {}
+        void onLoadProgress(MediaElement mediaElement, LoadProgressInfo progressInfo);
 
         
 
@@ -331,7 +298,40 @@ public class MediaElement {
 
 
 
-        default void onError(MediaElement mediaElement, @MediaErrorFlags int errorCode) {}
+        void onVolumeChange(MediaElement mediaElement, double volume, boolean muted);
+
+        
+
+
+
+
+
+        void onTimeChange(MediaElement mediaElement, double time);
+
+        
+
+
+
+
+
+        void onPlaybackRateChange(MediaElement mediaElement, double rate);
+
+        
+
+
+
+
+
+        void onFullscreenChange(MediaElement mediaElement, boolean fullscreen);
+
+        
+
+
+
+
+
+
+        void onError(MediaElement mediaElement, @MediaErrorFlags int errorCode);
     }
 
      long getVideoId() {

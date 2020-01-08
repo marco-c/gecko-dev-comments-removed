@@ -914,6 +914,10 @@ public abstract class GeckoApp extends GeckoActivity
         
     }
 
+    @Override
+    public void onFirstComposite(final GeckoSession session) {
+    }
+
     protected void setFullScreen(final boolean fullscreen) {
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
