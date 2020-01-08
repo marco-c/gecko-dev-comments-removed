@@ -113,20 +113,11 @@ use std::marker::PhantomData;
 
 #[macro_export]
 macro_rules! smallvec {
-    
-    (@one $x:expr) => (1usize);
     ($elem:expr; $n:expr) => ({
-        $crate::SmallVec::from_elem($elem, $n)
+        SmallVec::from_elem($elem, $n)
     });
     ($($x:expr),*$(,)*) => ({
-        let count = 0usize $(+ smallvec!(@one $x))*;
-        let mut vec = $crate::SmallVec::new();
-        if count <= vec.inline_size() {
-            $(vec.push($x);)*
-            vec
-        } else {
-            $crate::SmallVec::from_vec(vec![$($x,)*])
-        }
+        SmallVec::from_slice(&[$($x),*])
     });
 }
 
@@ -240,7 +231,14 @@ impl<'a, T: 'a> Iterator for Drain<'a,T> {
 
     #[inline]
     fn next(&mut self) -> Option<T> {
-        self.iter.next().map(|reference| unsafe { ptr::read(reference) })
+        match self.iter.next() {
+            None => None,
+            Some(reference) => {
+                unsafe {
+                    Some(ptr::read(reference))
+                }
+            }
+        }
     }
 
     #[inline]
@@ -252,7 +250,14 @@ impl<'a, T: 'a> Iterator for Drain<'a,T> {
 impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
-        self.iter.next_back().map(|reference| unsafe { ptr::read(reference) })
+        match self.iter.next_back() {
+            None => None,
+            Some(reference) => {
+                unsafe {
+                    Some(ptr::read(reference))
+                }
+            }
+        }
     }
 }
 
@@ -286,8 +291,6 @@ impl<A: Array> SmallVecData<A> {
     fn from_inline(inline: A) -> SmallVecData<A> {
         SmallVecData { inline }
     }
-    #[inline]
-    unsafe fn into_inline(self) -> A { self.inline }
     #[inline]
     unsafe fn heap(&self) -> (*mut A::Item, usize) {
         self.heap
@@ -327,13 +330,6 @@ impl<A: Array> SmallVecData<A> {
     #[inline]
     fn from_inline(inline: A) -> SmallVecData<A> {
         SmallVecData::Inline(ManuallyDrop::new(inline))
-    }
-    #[inline]
-    unsafe fn into_inline(self) -> A {
-        match self {
-            SmallVecData::Inline(a) => ManuallyDrop::into_inner(a),
-            _ => debug_unreachable!(),
-        }
     }
     #[inline]
     unsafe fn heap(&self) -> (*mut A::Item, usize) {
@@ -485,47 +481,6 @@ impl<A: Array> SmallVec<A> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn from_buf_and_len(buf: A, len: usize) -> SmallVec<A> {
-        assert!(len <= A::size());
-        unsafe { SmallVec::from_buf_and_len_unchecked(buf, len) }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub unsafe fn from_buf_and_len_unchecked(buf: A, len: usize) -> SmallVec<A> {
-        SmallVec {
-            capacity: len,
-            data: SmallVecData::from_inline(buf),
-        }
-    }
-
-
-    
-    
-    
-    
-    
     pub unsafe fn set_len(&mut self, new_len: usize) {
         let (_, len_ptr, _) = self.triple_mut();
         *len_ptr = new_len;
@@ -610,7 +565,7 @@ impl<A: Array> SmallVec<A> {
         unsafe {
             let (_, &mut len, cap) = self.triple_mut();
             if len == cap {
-                self.reserve(1);
+                self.grow(cmp::max(cap * 2, 1))
             }
             let (ptr, len_ptr, _) = self.triple_mut();
             *len_ptr = len + 1;
@@ -638,14 +593,15 @@ impl<A: Array> SmallVec<A> {
     pub fn grow(&mut self, new_cap: usize) {
         unsafe {
             let (ptr, &mut len, cap) = self.triple_mut();
-            let unspilled = !self.spilled();
+            let spilled = self.spilled();
             assert!(new_cap >= len);
             if new_cap <= self.inline_size() {
-                if unspilled {
+                if !spilled {
                     return;
                 }
                 self.data = SmallVecData::from_inline(mem::uninitialized());
                 ptr::copy_nonoverlapping(ptr, self.data.inline_mut().ptr_mut(), len);
+                deallocate(ptr, cap);
             } else if new_cap != cap {
                 let mut vec = Vec::with_capacity(new_cap);
                 let new_alloc = vec.as_mut_ptr();
@@ -653,11 +609,10 @@ impl<A: Array> SmallVec<A> {
                 ptr::copy_nonoverlapping(ptr, new_alloc, len);
                 self.data = SmallVecData::from_heap(new_alloc, len);
                 self.capacity = new_cap;
-                if unspilled {
-                    return;
+                if spilled {
+                    deallocate(ptr, cap);
                 }
             }
-            deallocate(ptr, cap);
         }
     }
 
@@ -668,7 +623,6 @@ impl<A: Array> SmallVec<A> {
     
     
     
-    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         
         
@@ -866,22 +820,6 @@ impl<A: Array> SmallVec<A> {
     
     
     
-    pub fn into_inner(self) -> Result<A, Self> {
-        if self.spilled() || self.len() != A::size() {
-            Err(self)
-        } else {
-            unsafe {
-                let data = ptr::read(&self.data);
-                mem::forget(self);
-                Ok(data.into_inline())
-            }
-        }
-    }
-
-    
-    
-    
-    
     
     pub fn retain<F: FnMut(&mut A::Item) -> bool>(&mut self, mut f: F) {
         let mut del = 0;
@@ -946,25 +884,9 @@ impl<A: Array> SmallVec<A> where A::Item: Copy {
     
     
     pub fn from_slice(slice: &[A::Item]) -> Self {
-        let len = slice.len();
-        if len <= A::size() {
-            SmallVec {
-                capacity: len,
-                data: SmallVecData::from_inline(unsafe {
-                    let mut data: A = mem::uninitialized();
-                    ptr::copy_nonoverlapping(slice.as_ptr(), data.ptr_mut(), len);
-                    data
-                })
-            }
-        } else {
-            let mut b = slice.to_vec();
-            let ptr = b.as_mut_ptr();
-            mem::forget(b);
-            SmallVec {
-                capacity: len,
-                data: SmallVecData::from_heap(ptr, len),
-            }
-        }
+        let mut vec = Self::new();
+        vec.extend_from_slice(slice);
+        vec
     }
 
     
@@ -1253,7 +1175,7 @@ impl<A: Array> Extend<A::Item> for SmallVec<A> {
 
 impl<A: Array> fmt::Debug for SmallVec<A> where A::Item: fmt::Debug {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_list().entries(self.iter()).finish()
+        write!(f, "{:?}", &**self)
     }
 }
 
@@ -1757,7 +1679,6 @@ mod tests {
         assert_eq!(&v.iter().map(|v| *v).collect::<Vec<_>>(), &[0, 5, 6, 1, 2, 3]);
     }
 
-    #[cfg(feature = "std")]
     #[test]
     
     fn test_insert_many_panic() {
@@ -2029,18 +1950,6 @@ mod tests {
     }
 
     #[test]
-    fn test_into_inner() {
-        let vec = SmallVec::<[u8; 2]>::from_iter(0..2);
-        assert_eq!(vec.into_inner(), Ok([0, 1]));
-
-        let vec = SmallVec::<[u8; 2]>::from_iter(0..1);
-        assert_eq!(vec.clone().into_inner(), Err(vec));
-
-        let vec = SmallVec::<[u8; 2]>::from_iter(0..3);
-        assert_eq!(vec.clone().into_inner(), Err(vec));
-    }
-
-    #[test]
     fn test_from_vec() {
         let vec = vec![];
         let small_vec: SmallVec<[u8; 3]> = SmallVec::from_vec(vec);
@@ -2161,10 +2070,10 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_serde() {
-        use self::bincode::{config, deserialize};
+        use self::bincode::{serialize, deserialize, Bounded};
         let mut small_vec: SmallVec<[i32; 2]> = SmallVec::new();
         small_vec.push(1);
-        let encoded = config().limit(100).serialize(&small_vec).unwrap();
+        let encoded = serialize(&small_vec, Bounded(100)).unwrap();
         let decoded: SmallVec<[i32; 2]> = deserialize(&encoded).unwrap();
         assert_eq!(small_vec, decoded);
         small_vec.push(2);
@@ -2172,7 +2081,7 @@ mod tests {
         small_vec.push(3);
         small_vec.push(4);
         
-        let encoded = config().limit(100).serialize(&small_vec).unwrap();
+        let encoded = serialize(&small_vec, Bounded(100)).unwrap();
         let decoded: SmallVec<[i32; 2]> = deserialize(&encoded).unwrap();
         assert_eq!(small_vec, decoded);
     }
