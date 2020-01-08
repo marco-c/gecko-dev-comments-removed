@@ -295,9 +295,12 @@ pref("string.bad-keyword", TRUE);
 
   
   DEFAULT(R"(
-/ comment
-    )",
+/ comment;
+/
+; /)",
     "test:2: prefs parse error: expected '/' or '*' after '/'\n"
+    "test:3: prefs parse error: expected '/' or '*' after '/'\n"
+    "test:4: prefs parse error: expected '/' or '*' after '/'\n"
   );
 
   

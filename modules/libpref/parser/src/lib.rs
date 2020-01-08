@@ -76,12 +76,6 @@
 
 
 
-
-
-
-
-
-
 use std::os::raw::{c_char, c_uchar};
 
 
@@ -535,9 +529,17 @@ impl<'t> Parser<'t> {
 
     #[inline(always)]
     fn get_char(&mut self) -> u8 {
-        let c = self.buf[self.i];
-        self.i += 1;
-        c
+        
+        
+        
+        if self.i < self.buf.len() {
+            let c = unsafe { *self.buf.get_unchecked(self.i) };
+            self.i += 1;
+            c
+        } else {
+            debug_assert!(self.i == self.buf.len());
+            EOF
+        }
     }
 
     
@@ -571,6 +573,8 @@ impl<'t> Parser<'t> {
             
             
             
+            
+            
             let c = unsafe { self.get_char_unchecked() };
 
             
@@ -588,8 +592,6 @@ impl<'t> Parser<'t> {
                     break;
                 }
                 EOF => {
-                    
-                    self.unget_char();
                     break;
                 }
                 _ => continue
@@ -615,8 +617,6 @@ impl<'t> Parser<'t> {
                     self.match_char(b'\n');
                 }
                 EOF => {
-                    
-                    self.unget_char();
                     return false
                 }
                 _ => continue
@@ -630,11 +630,10 @@ impl<'t> Parser<'t> {
         for _ in 0..ndigits {
             value = value << 4;
             match self.get_char() {
-                c @ b'0'... b'9' => value += (c - b'0') as u16,
+                c @ b'0'...b'9' => value += (c - b'0') as u16,
                 c @ b'A'...b'F' => value += (c - b'A') as u16 + 10,
                 c @ b'a'...b'f' => value += (c - b'a') as u16 + 10,
                 _ => {
-                    
                     self.unget_char();
                     return None;
                 }
@@ -716,7 +715,15 @@ impl<'t> Parser<'t> {
                                 return Token::Error("unterminated /* comment");
                             }
                         }
-                        _ => return Token::Error("expected '/' or '*' after '/'")
+                        c @ _ =>  {
+                            if c == b'\n' || c == b'\r' {
+                                
+                                
+                                
+                                self.unget_char();
+                            }
+                            return Token::Error("expected '/' or '*' after '/'");
+                        }
                     }
                     continue;
                 }
@@ -871,9 +878,12 @@ impl<'t> Parser<'t> {
                         }
                         continue; 
                     }
-                    _ => {
-                        
-                        self.unget_char();
+                    c @ _ => {
+                        if c == b'\n' || c == b'\r' {
+                            
+                            
+                            self.unget_char();
+                        }
                         self.string_error_token(
                             &mut token, "unexpected escape sequence character after '\\'");
                         continue;
@@ -894,8 +904,6 @@ impl<'t> Parser<'t> {
                 }
 
             } else if c == EOF {
-                
-                self.unget_char();
                 self.string_error_token(&mut token, "unterminated string literal");
                 break;
 
