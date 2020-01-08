@@ -257,7 +257,8 @@ struct Redirection
 };
 
 
-extern Redirection gRedirections[];
+size_t NumRedirections();
+Redirection& GetRedirection(size_t aCallId);
 
 
 
@@ -282,7 +283,7 @@ DefineAllCallFunctions(DEFAULTABI)
 static inline void*
 OriginalFunction(size_t aCallId)
 {
-  return gRedirections[aCallId].mOriginalFunction;
+  return GetRedirection(aCallId).mOriginalFunction;
 }
 
 #define TokenPaste(aFirst, aSecond) aFirst ## aSecond
