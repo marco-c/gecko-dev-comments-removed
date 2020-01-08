@@ -2798,8 +2798,9 @@ SetPropertyIgnoringNamedGetter(JSContext* cx, JS::HandleObject obj, JS::HandleId
 
 
 extern JS_FRIEND_API(bool)
-ExecuteInGlobalAndReturnScope(JSContext* cx, JS::HandleObject obj, JS::HandleScript script,
-                              JS::MutableHandleObject scope);
+ExecuteInFrameScriptEnvironment(JSContext* cx, JS::HandleObject obj,
+                                JS::HandleScript script,
+                                JS::MutableHandleObject scope);
 
 
 

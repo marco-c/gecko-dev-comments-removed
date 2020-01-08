@@ -3887,11 +3887,14 @@ EvalReturningScope(JSContext* cx, unsigned argc, Value* vp)
         
         
         AutoRealm ar(cx, global);
-
-        if (!js::ExecuteInGlobalAndReturnScope(cx, global, script, &lexicalScope))
+        JS::RootedObject obj(cx, JS_NewPlainObject(cx));
+        if (!obj)
             return false;
 
-        varObj = lexicalScope->enclosingEnvironment();
+        if (!js::ExecuteInFrameScriptEnvironment(cx, obj, script, &lexicalScope))
+            return false;
+
+        varObj = lexicalScope->enclosingEnvironment()->enclosingEnvironment();
     }
 
     RootedObject rv(cx, JS_NewPlainObject(cx));
