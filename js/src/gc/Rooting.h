@@ -87,6 +87,9 @@ typedef JS::GCVector<Shape*>        ShapeVector;
 typedef JS::GCVector<JSString*>     StringVector;
 
 
+
+
+
 template <typename T>
 class MOZ_RAII FakeRooted : public RootedBase<T, FakeRooted<T>>
 {
@@ -113,6 +116,9 @@ class MOZ_RAII FakeRooted : public RootedBase<T, FakeRooted<T>>
 
     FakeRooted(const FakeRooted&) = delete;
 };
+
+
+
 
 
 template <typename T>

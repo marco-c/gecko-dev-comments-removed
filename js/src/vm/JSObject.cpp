@@ -502,6 +502,7 @@ static unsigned
 GetSealedOrFrozenAttributes(unsigned attrs, IntegrityLevel level)
 {
     
+    
     if (level == IntegrityLevel::Frozen && !(attrs & (JSPROP_GETTER | JSPROP_SETTER))) {
         return JSPROP_PERMANENT | JSPROP_READONLY;
     }

@@ -314,6 +314,7 @@ JSObject*
 js::Nursery::allocateObject(JSContext* cx, size_t size, size_t nDynamicSlots, const js::Class* clasp)
 {
     
+    
     MOZ_ASSERT(size >= sizeof(RelocationOverlay));
 
     
@@ -333,16 +334,14 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t nDynamicSlots, co
         slots = static_cast<HeapSlot*>(allocateBuffer(cx->zone(), nDynamicSlots * sizeof(HeapSlot)));
         if (!slots) {
             
-
-
-
+            
             return nullptr;
         }
     }
 
     
-
-
+    
+    
     if (nDynamicSlots) {
         static_cast<NativeObject*>(obj)->initSlots(slots);
     }
@@ -354,6 +353,7 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t nDynamicSlots, co
 Cell*
 js::Nursery::allocateString(Zone* zone, size_t size, AllocKind kind)
 {
+    
     
     MOZ_ASSERT(size >= sizeof(RelocationOverlay));
 
@@ -657,11 +657,6 @@ js::Nursery::renderProfileJSON(JSONPrinter& json) const
             stats().allocsSinceMinorGCTenured());
     }
 
-    if (stats().getStat(gcstats::STAT_OBJECT_GROUPS_PRETENURED)) {
-        json.property("groups_pretenured",
-            stats().getStat(gcstats::STAT_OBJECT_GROUPS_PRETENURED));
-    }
-
     json.beginObjectProperty("phase_times");
 
 #define EXTRACT_NAME(name, text) #name,
@@ -830,7 +825,6 @@ js::Nursery::collect(JS::gcreason::Reason reason)
             }
         }
     }
-    stats().setStat(gcstats::STAT_OBJECT_GROUPS_PRETENURED, pretenureCount);
 
     mozilla::Maybe<AutoGCSession> session;
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {

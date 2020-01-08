@@ -200,6 +200,7 @@ EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags
                 hasHoles = true;
             } else {
                 
+                
                 if (!Enumerate<CheckForDuplicates>(cx, pobj, INT_TO_JSID(i),
                                                     true, flags, visited, props))
                 {
@@ -208,6 +209,7 @@ EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags
             }
         }
 
+        
         
         if (pobj->is<TypedArrayObject>()) {
             size_t len = pobj->as<TypedArrayObject>().length();
@@ -593,6 +595,7 @@ js::GetPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags, AutoIdVecto
 static inline void
 RegisterEnumerator(ObjectRealm& realm, NativeIterator* ni)
 {
+    
     
     ni->link(realm.enumerators);
 

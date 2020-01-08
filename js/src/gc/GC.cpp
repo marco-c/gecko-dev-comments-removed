@@ -846,7 +846,7 @@ GCRuntime::prepareToFreeChunk(ChunkInfo& info)
 {
     MOZ_ASSERT(numArenasFreeCommitted >= info.numArenasFreeCommitted);
     numArenasFreeCommitted -= info.numArenasFreeCommitted;
-    stats().count(gcstats::COUNT_DESTROY_CHUNK);
+    stats().count(gcstats::STAT_DESTROY_CHUNK);
 #ifdef DEBUG
     
 
@@ -1394,10 +1394,8 @@ GCRuntime::finish()
     }
 
     
-
-
-
-
+    
+    
     sweepTask.join();
     allocTask.cancelAndWait();
     decommitTask.cancelAndWait();
@@ -2500,7 +2498,7 @@ ArenaList::relocateArenas(Arena* toRelocate, Arena* relocated, SliceBudget& slic
         
         arena->next = relocated;
         relocated = arena;
-        stats.count(gcstats::COUNT_ARENA_RELOCATED);
+        stats.count(gcstats::STAT_ARENA_RELOCATED);
     }
 
     check();
@@ -5630,19 +5628,15 @@ GCRuntime::endMarkingSweepGroup(FreeOp* fop, SliceBudget& budget)
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_MARK);
 
     
-
-
-
-
+    
+    
     markIncomingCrossCompartmentPointers(MarkColor::Black);
     markWeakReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_WEAK);
 
     
-
-
-
-
-
+    
+    
+    
     for (SweepGroupZonesIter zone(rt); !zone.done(); zone.next()) {
         zone->changeGCState(Zone::Mark, Zone::MarkGray);
     }
@@ -5651,6 +5645,7 @@ GCRuntime::endMarkingSweepGroup(FreeOp* fop, SliceBudget& budget)
     
     markIncomingCrossCompartmentPointers(MarkColor::Gray);
 
+    
     
     markGrayReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_GRAY);
     markWeakReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_GRAY_WEAK);

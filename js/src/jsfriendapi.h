@@ -2555,6 +2555,7 @@ NON_INTEGER_ATOM_TO_JSID(JSString* atom)
 }
 
 
+
 static MOZ_ALWAYS_INLINE bool
 JSID_IS_ATOM(jsid id)
 {

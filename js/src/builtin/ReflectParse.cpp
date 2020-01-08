@@ -449,6 +449,7 @@ class NodeBuilder
         }
 
         
+        
         RootedValue optVal(cx, val.isMagic(JS_SERIALIZE_NO_NODE) ? NullValue() : val);
         return DefineDataProperty(cx, obj, atom->asPropertyName(), optVal);
     }
@@ -3655,6 +3656,7 @@ ASTSerializer::functionBody(ParseNode* pn, TokenPos* pos, MutableHandleValue dst
 {
     NodeVector elts(cx);
 
+    
     
     for (ParseNode* next = pn; next; next = next->pn_next) {
         RootedValue child(cx);

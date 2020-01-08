@@ -119,6 +119,7 @@ static inline size_t
 GetGCKindSlots(AllocKind thingKind)
 {
     
+    
     switch (thingKind) {
       case AllocKind::FUNCTION:
       case AllocKind::OBJECT0:

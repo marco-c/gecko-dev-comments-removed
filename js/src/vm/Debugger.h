@@ -152,6 +152,7 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
 
   public:
     
+    
 
     typedef typename Base::Entry Entry;
     typedef typename Base::Ptr Ptr;
@@ -586,6 +587,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     using LazyScriptVector = JS::GCVector<LazyScript*>;
 
     
+    
     typedef DebuggerWeakMap<JSObject*, true> SourceWeakMap;
     SourceWeakMap sources;
 
@@ -597,16 +599,16 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     ObjectWeakMap environments;
 
     
+    
     typedef DebuggerWeakMap<WasmInstanceObject*> WasmInstanceWeakMap;
     WasmInstanceWeakMap wasmInstanceScripts;
 
     
+    
     WasmInstanceWeakMap wasmInstanceSources;
 
     
-
-
-
+    
 #ifdef NIGHTLY_BUILD
     uint32_t traceLoggerLastDrainedSize;
     uint32_t traceLoggerLastDrainedIteration;

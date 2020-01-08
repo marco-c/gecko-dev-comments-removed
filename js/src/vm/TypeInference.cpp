@@ -3722,6 +3722,7 @@ void
 js::TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc, const js::Value& rval)
 {
     
+    
     if (!(CodeSpec[*pc].format & JOF_TYPESET)) {
         return;
     }

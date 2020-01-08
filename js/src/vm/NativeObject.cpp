@@ -2506,6 +2506,7 @@ GetNonexistentProperty(JSContext* cx, HandleId id, IsNameLookup nameLookup, Muta
 }
 
 
+
 bool
 GetNonexistentProperty(JSContext* cx, const jsid& id, IsNameLookup nameLookup,
                        FakeMutableHandle<Value> vp)

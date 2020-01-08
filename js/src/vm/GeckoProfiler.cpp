@@ -126,8 +126,7 @@ GeckoProfilerRuntime::enable(bool enabled)
     jit::ToggleBaselineProfiling(rt, enabled);
 
     
-
-
+    
     if (cx->jitActivation) {
         
         if (enabled) {

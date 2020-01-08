@@ -9331,6 +9331,7 @@ DebuggerFrame::olderGetter(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+
 static bool
 DebuggerArguments_getArg(JSContext* cx, unsigned argc, Value* vp)
 {

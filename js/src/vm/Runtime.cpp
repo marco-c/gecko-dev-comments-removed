@@ -233,6 +233,7 @@ JSRuntime::init(JSContext* cx, uint32_t maxbytes, uint32_t maxNurseryBytes)
     gc.atomsZone = atomsZone.release();
 
     
+    
     gcInitialized = true;
 
     if (!InitRuntimeNumberState(this)) {

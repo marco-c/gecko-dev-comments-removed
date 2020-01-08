@@ -209,6 +209,7 @@ class NewObjectCache
         Entry* entry = &entries[*pentry];
 
         
+        
         return entry->clasp == clasp && entry->key == key;
     }
 

@@ -362,16 +362,15 @@ class ShapeTable {
     uint32_t capacity() const { return JS_BIT(HASH_BITS - hashShift_); }
 
     
+    
     bool needsToGrow() const {
         uint32_t size = capacity();
         return entryCount_ + removedCount_ >= size - (size >> 2);
     }
 
     
-
-
-
-
+    
+    
     bool grow(JSContext* cx);
 };
 
@@ -780,6 +779,7 @@ class Shape : public gc::TenuredCell
     inline void initDictionaryShape(const StackShape& child, uint32_t nfixed,
                                     GCPtrShape* dictp);
 
+    
     
     static Shape* replaceLastProperty(JSContext* cx, StackBaseShape& base,
                                       TaggedProto proto, HandleShape shape);

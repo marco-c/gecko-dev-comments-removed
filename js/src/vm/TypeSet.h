@@ -476,9 +476,13 @@ class TypeSet
     }
 
     
+    
     static TemporaryTypeSet* unionSets(TypeSet* a, TypeSet* b, LifoAlloc* alloc);
+
+    
     
     static TemporaryTypeSet* intersectSets(TemporaryTypeSet* a, TemporaryTypeSet* b, LifoAlloc* alloc);
+
     
 
 
@@ -878,8 +882,10 @@ class TemporaryTypeSet : public TypeSet
     bool maybeCallable(CompilerConstraintList* constraints);
 
     
+    
     bool maybeEmulatesUndefined(CompilerConstraintList* constraints);
 
+    
     
     JSObject* maybeSingleton();
     ObjectKey* maybeSingleObject();
@@ -888,9 +894,7 @@ class TemporaryTypeSet : public TypeSet
     bool propertyNeedsBarrier(CompilerConstraintList* constraints, jsid id);
 
     
-
-
-
+    
     bool filtersType(const TemporaryTypeSet* other, Type type) const;
 
     enum DoubleConversion

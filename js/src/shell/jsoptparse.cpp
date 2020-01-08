@@ -366,6 +366,7 @@ OptionParser::handleArg(size_t argc, char** argv, size_t* i, bool* optionsAllowe
       case OptionKindMultiString:
       {
         
+        
         StringArg value(argv[*i], *i);
         return arg->asMultiStringOption()->strings.append(value) ? Okay : Fail;
       }
@@ -379,6 +380,7 @@ OptionParser::parseArgs(int inputArgc, char** argv)
 {
     MOZ_ASSERT(inputArgc >= 0);
     size_t argc = inputArgc;
+    
     
     bool optionsAllowed = true;
 

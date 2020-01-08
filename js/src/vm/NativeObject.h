@@ -1119,6 +1119,7 @@ class NativeObject : public ShapedObject
     }
 
     
+    
 
     HeapSlot& getFixedSlotRef(uint32_t slot) {
         MOZ_ASSERT(slotIsFixed(slot));

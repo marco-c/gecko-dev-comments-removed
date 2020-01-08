@@ -492,7 +492,6 @@ class InlineListReverseIterator
 
 
 
-
 template <typename T> class InlineConcatListIterator;
 template <typename T>
 class InlineConcatList

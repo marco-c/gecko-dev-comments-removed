@@ -52,19 +52,16 @@ NewDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr,
 
 
 
-
-
 extern ArrayObject * JS_FASTCALL
 NewDenseUnallocatedArray(JSContext* cx, uint32_t length, HandleObject proto = nullptr,
                          NewObjectKind newKind = GenericObject);
 
 
 
-
-
 extern ArrayObject * JS_FASTCALL
 NewDensePartlyAllocatedArray(JSContext* cx, uint32_t length, HandleObject proto = nullptr,
                              NewObjectKind newKind = GenericObject);
+
 
 
 extern ArrayObject * JS_FASTCALL

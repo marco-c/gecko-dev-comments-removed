@@ -51,6 +51,7 @@ js::CreateRegExpMatchResult(JSContext* cx, HandleString input, const MatchPairs&
 
 
     
+    
     JSObject* templateObject = cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
     if (!templateObject) {
         return false;
@@ -66,7 +67,7 @@ js::CreateRegExpMatchResult(JSContext* cx, HandleString input, const MatchPairs&
     }
 
     
-
+    
     for (size_t i = 0; i < numPairs; i++) {
         const MatchPair& pair = matches[i];
 
@@ -85,11 +86,11 @@ js::CreateRegExpMatchResult(JSContext* cx, HandleString input, const MatchPairs&
     }
 
     
-
+    
     arr->setSlot(RegExpRealm::MatchResultObjectIndexSlot, Int32Value(matches[0].start));
 
     
-
+    
     arr->setSlot(RegExpRealm::MatchResultObjectInputSlot, StringValue(input));
 
 #ifdef DEBUG

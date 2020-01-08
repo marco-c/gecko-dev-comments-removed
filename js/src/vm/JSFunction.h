@@ -927,25 +927,20 @@ class FunctionExtended : public JSFunction
     static const unsigned NUM_EXTENDED_SLOTS = 2;
 
     
+    
     static const unsigned ARROW_NEWTARGET_SLOT = 0;
 
     static const unsigned METHOD_HOMEOBJECT_SLOT = 0;
 
     
-
-
-
+    
     static const unsigned WASM_INSTANCE_SLOT = 0;
 
     
-
-
-
+    
     static const unsigned WASM_TLSDATA_SLOT = 1;
 
     
-
-
     static const unsigned ASMJS_MODULE_SLOT = 0;
 
 

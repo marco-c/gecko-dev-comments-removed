@@ -9877,6 +9877,7 @@ static bool
 InstanceClassHasProtoAtDepth(const Class* clasp, uint32_t protoID, uint32_t depth)
 {
     
+    
     return true;
 }
 

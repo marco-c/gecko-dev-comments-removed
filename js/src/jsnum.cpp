@@ -1331,9 +1331,7 @@ js::InitNumberClass(JSContext* cx, Handle<GlobalObject*> global)
     }
 
     
-
-
-
+    
     static const JSConstDoubleSpec number_constants[] = {
         
         {"NaN",               GenericNaN()               },
@@ -1380,6 +1378,7 @@ js::InitNumberClass(JSContext* cx, Handle<GlobalObject*> global)
         return nullptr;
     }
 
+    
     
     RootedId parseFloatId(cx, NameToId(cx->names().parseFloat));
     JSFunction* parseFloat = DefineFunction(cx, global, parseFloatId, num_parseFloat, 1,

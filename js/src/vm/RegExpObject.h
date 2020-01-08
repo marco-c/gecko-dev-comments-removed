@@ -200,6 +200,7 @@ bool
 ParseRegExpFlags(JSContext* cx, JSString* flagStr, RegExpFlag* flagsOut);
 
 
+
 inline RegExpShared*
 RegExpToShared(JSContext* cx, HandleObject obj)
 {

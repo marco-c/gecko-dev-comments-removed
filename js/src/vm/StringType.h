@@ -1167,7 +1167,7 @@ class JSFatInlineString : public JSInlineString
     static bool lengthFits(size_t length);
 
     
-
+    
     MOZ_ALWAYS_INLINE void finalize(js::FreeOp* fop);
 };
 
@@ -1193,22 +1193,18 @@ class JSExternalString : public JSLinearString
     }
 
     
-
-
-
+    
     const char16_t* twoByteChars() const {
         return rawTwoByteChars();
     }
 
     
-
+    
     inline void finalize(js::FreeOp* fop);
 
     
-
-
-
-
+    
+    
     JSFlatString* ensureFlat(JSContext* cx);
 
 #if defined(DEBUG) || defined(JS_JITSPEW)

@@ -519,6 +519,7 @@ static_assert(sizeof(ChunkTrailer) == ChunkTrailerSize,
               "ChunkTrailer size must match the API defined size.");
 
 
+
 struct ChunkInfo
 {
     void init() {

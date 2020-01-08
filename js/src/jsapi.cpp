@@ -3119,6 +3119,7 @@ JS_DeepFreezeObject(JSContext* cx, HandleObject obj)
     cx->check(obj);
 
     
+    
     bool extensible;
     if (!IsExtensible(cx, obj, &extensible)) {
         return false;

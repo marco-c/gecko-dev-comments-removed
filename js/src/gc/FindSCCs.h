@@ -150,6 +150,7 @@ class ComponentFinder
     static const unsigned Undefined = 0;
 
     
+    
     static const unsigned Finished = (unsigned)-1;
 
     void processNode(Node* v) {

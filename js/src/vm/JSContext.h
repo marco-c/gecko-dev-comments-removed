@@ -874,6 +874,7 @@ struct JSContext : public JS::RootingContext,
     }
 
     
+    
     js::FutexThread fx;
 
     

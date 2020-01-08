@@ -2808,7 +2808,8 @@ AppendDollarReplacement(StringBuffer& newReplaceChars, size_t firstDollarIndex,
         }
 
         switch (*(it + 1)) {
-          case '$': 
+          case '$':
+            
             if (!newReplaceChars.append(*it)) {
                 return false;
             }
@@ -2828,7 +2829,9 @@ AppendDollarReplacement(StringBuffer& newReplaceChars, size_t firstDollarIndex,
                 return false;
             }
             break;
-          default: 
+          default:
+            
+            
             if (!newReplaceChars.append(*it)) {
                 return false;
             }
@@ -4284,6 +4287,7 @@ BuildFlatMatchArray(JSContext* cx, HandleString str, HandleString pattern, int32
         return true;
     }
 
+    
     
     JSObject* templateObject = cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
     if (!templateObject) {

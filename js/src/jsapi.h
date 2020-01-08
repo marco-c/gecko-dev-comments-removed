@@ -1867,6 +1867,9 @@ extern JS_PUBLIC_API JSObject*
 JS_NewObjectWithGivenProto(JSContext* cx, const JSClass* clasp, JS::Handle<JSObject*> proto);
 
 
+
+
+
 extern JS_PUBLIC_API JSObject*
 JS_NewPlainObject(JSContext* cx);
 
