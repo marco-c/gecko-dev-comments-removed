@@ -39,9 +39,9 @@ function test_lazy_api() {
 
   const client = new DebuggerClient(DebuggerServer.connectPipe());
   client.connect().then(function onConnect() {
-    client.listTabs().then(onListTabs);
+    client.mainRoot.rootForm.then(onRootForm);
   });
-  function onListTabs(response) {
+  function onRootForm(response) {
     
     
     Assert.ok(!isActorLoaded);

@@ -100,24 +100,17 @@ var onConnectionReady = async function([aType, aTraits]) {
     parent.remove();
   }
 
-  const response = await gClient.listTabs();
-
   parent = document.getElementById("tabTargetActors");
 
   
-  const globals = Cu.cloneInto(response, {});
-  delete globals.tabs;
-  delete globals.selected;
-  
-  
-
-  
+  const response = await gClient.mainRoot.listTabs();
   for (let i = 0; i < response.tabs.length; i++) {
     buildTabLink(response.tabs[i], parent, i == response.selected);
   }
 
   const gParent = document.getElementById("globalActors");
 
+  const globals = await gClient.mainRoot.rootForm;
   
   
   
