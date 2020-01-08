@@ -5950,17 +5950,17 @@ IonBuilder::compareTryBitwise(bool* emitted, JSOp op, MDefinition* left, MDefini
     }
 
     
-    if (left->maybeEmulatesUndefined(constraints()) ||
-        right->maybeEmulatesUndefined(constraints()))
-    {
-        if (canTrackOptimization)
-            trackOptimizationOutcome(TrackedOutcome::OperandMaybeEmulatesUndefined);
-        return Ok();
-    }
-
-    
     
     if (op == JSOP_EQ || op == JSOP_NE) {
+
+        
+        if (left->maybeEmulatesUndefined(constraints()) ||
+            right->maybeEmulatesUndefined(constraints()))
+        {
+            if (canTrackOptimization)
+                trackOptimizationOutcome(TrackedOutcome::OperandMaybeEmulatesUndefined);
+            return Ok();
+        }
 
         
         
