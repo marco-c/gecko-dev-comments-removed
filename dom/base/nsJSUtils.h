@@ -82,6 +82,9 @@ class nsJSUtils {
     JS::AutoObjectVector mScopeChain;
 
     
+    JS::Rooted<JSScript*> mScript;
+
+    
     
     nsresult mRv;
 
@@ -100,6 +103,8 @@ class nsJSUtils {
     bool mWantsReturnValue;
 
     bool mExpectScopeChain;
+
+    bool mScriptUsed;
 #endif
 
    public:
@@ -112,7 +117,11 @@ class nsJSUtils {
 
     ~ExecutionContext() {
       
-      MOZ_ASSERT(!mWantsReturnValue);
+      MOZ_ASSERT_IF(!mSkip, !mWantsReturnValue);
+
+      
+      
+      MOZ_ASSERT_IF(mEncodeBytecode && mScript && mRv == NS_OK, mScriptUsed);
     }
 
     
@@ -137,51 +146,50 @@ class nsJSUtils {
     
     
     
+    MOZ_MUST_USE nsresult JoinCompile(JS::OffThreadToken** aOffThreadToken);
+
+    
+    nsresult Compile(JS::CompileOptions& aCompileOptions,
+                     JS::SourceText<char16_t>& aSrcBuf);
+
+    
+    nsresult Compile(JS::CompileOptions& aCompileOptions,
+                     const nsAString& aScript);
+
+    
+    nsresult Decode(JS::CompileOptions& aCompileOptions,
+                    mozilla::Vector<uint8_t>& aBytecodeBuf,
+                    size_t aBytecodeIndex);
+
     
     
     
+    nsresult JoinDecode(JS::OffThreadToken** aOffThreadToken);
+
+    nsresult JoinDecodeBinAST(JS::OffThreadToken** aOffThreadToken);
+
     
+    nsresult DecodeBinAST(JS::CompileOptions& aCompileOptions,
+                          const uint8_t* aBuf, size_t aLength);
+
     
+    JSScript* GetScript();
+
     
-    MOZ_MUST_USE nsresult
-    ExtractReturnValue(JS::MutableHandle<JS::Value> aRetValue);
+    MOZ_MUST_USE nsresult ExecScript();
 
     
     
     
     
     
-    MOZ_MUST_USE nsresult JoinAndExec(JS::OffThreadToken** aOffThreadToken,
-                                      JS::MutableHandle<JSScript*> aScript);
-
-    
-    nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
-                            JS::SourceText<char16_t>& aSrcBuf,
-                            JS::MutableHandle<JSScript*> aScript);
-
-    
-    nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
-                            const nsAString& aScript);
-
-    
-    MOZ_MUST_USE nsresult DecodeAndExec(JS::CompileOptions& aCompileOptions,
-                                        mozilla::Vector<uint8_t>& aBytecodeBuf,
-                                        size_t aBytecodeIndex);
-
     
     
     
-    MOZ_MUST_USE nsresult
-    DecodeJoinAndExec(JS::OffThreadToken** aOffThreadToken);
-
-    MOZ_MUST_USE nsresult
-    DecodeBinASTJoinAndExec(JS::OffThreadToken** aOffThreadToken,
-                            JS::MutableHandle<JSScript*> aScript);
-
     
-    nsresult DecodeBinASTAndExec(JS::CompileOptions& aCompileOptions,
-                                 const uint8_t* aBuf, size_t aLength,
-                                 JS::MutableHandle<JSScript*> aScript);
+    
+    
+    MOZ_MUST_USE nsresult ExecScript(JS::MutableHandle<JS::Value> aRetValue);
   };
 
   static nsresult CompileModule(JSContext* aCx,
