@@ -25,6 +25,12 @@ add_task(async function() {
   ok(isSidebarItemSelected(thisFirefoxSidebarItem),
     "ThisFirefox sidebar item is selected by default");
 
+  
+  
+  
+  
+  await waitUntil(() => findDebugTargetByText("about:debugging", document));
+
   info("Open a new background tab TAB1");
   const backgroundTab1 = await addTab(TAB_URL_1, { background: true });
 
