@@ -1155,7 +1155,12 @@ class TupBackend(CommonBackend):
                                     if '*' not in p:
                                         yield p + '/'
                             prefix = ''.join(_prefix(f.full_path))
-                            self.backend_input_files.add(prefix)
+
+                            
+                            
+                            
+                            if os.path.exists(prefix):
+                                self.backend_input_files.add(prefix)
 
                             output_dir = ''
                             
