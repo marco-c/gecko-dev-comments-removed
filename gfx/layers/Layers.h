@@ -243,6 +243,7 @@ class LayerManager : public FrameRecorder {
         mSnapEffectiveTransforms(true),
         mId(0),
         mInTransaction(false),
+        mContainsSVG(false),
         mPaintedPixelCount(0) {}
 
   
@@ -742,6 +743,8 @@ class LayerManager : public FrameRecorder {
   }
   void PayloadPresented();
 
+  void SetContainsSVG(bool aContainsSVG) { mContainsSVG = aContainsSVG; }
+
  protected:
   RefPtr<Layer> mRoot;
   gfx::UserData mUserData;
@@ -763,6 +766,9 @@ class LayerManager : public FrameRecorder {
 
   uint64_t mId;
   bool mInTransaction;
+
+  
+  bool mContainsSVG;
   
   
   TimeStamp mAnimationReadyTime;
