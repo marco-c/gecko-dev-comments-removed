@@ -30,7 +30,6 @@ shippingAddress.init("USA",
                      "Test locality",    
                      "94066",            
                      "123456",           
-                     "en",               
                      "Testing Org",      
                      "Bill A. Pacheco",  
                      "+1-434-441-3879"); 

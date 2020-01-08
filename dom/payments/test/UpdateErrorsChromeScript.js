@@ -27,7 +27,6 @@ shippingAddress.init("USA",
                      "Test locality",    
                      "94066",            
                      "123456",           
-                     "en",               
                      "Testing Org",      
                      "Bill A. Pacheco",  
                      "+1-434-441-3879"); 
@@ -102,10 +101,6 @@ function checkAddressErrors(errors) {
   if (errors.dependentLocality != "dependentLocality error") {
     emitTestFail("Expect shippingAddressErrors.dependentLocality as 'dependentLocality error', but got" +
                   errors.dependentLocality);
-  }
-  if (errors.languageCode != "languageCode error") {
-    emitTestFail("Expect shippingAddressErrors.languageCode as 'languageCode error', but got" +
-                  errors.languageCode);
   }
   if (errors.organization != "organization error") {
     emitTestFail("Expect shippingAddressErrors.organization as 'organization error', but got" +

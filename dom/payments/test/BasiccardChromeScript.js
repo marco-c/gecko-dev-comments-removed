@@ -24,7 +24,6 @@ billingAddress.init("USA",
                      "",                 
                      "94066",            
                      "123456",           
-                     "en",               
                      "",                 
                      "Bill A. Pacheco",  
                      "+14344413879"); 
