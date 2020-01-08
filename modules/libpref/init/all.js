@@ -3101,9 +3101,6 @@ pref("layout.idle_period.required_quiescent_frames", 2);
 pref("layout.idle_period.time_limit", 1);
 
 
-pref("layout.css.webkit-appearance.enabled", false);
-
-
 pref("dom.animations-api.core.enabled", true);
 
 

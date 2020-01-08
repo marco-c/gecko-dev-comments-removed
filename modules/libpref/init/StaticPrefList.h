@@ -340,6 +340,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "layout.css.webkit-appearance.enabled",
+   layout_css_webkit_appearance_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
   "layout.css.moz-document.content.enabled",
    layout_css_moz_document_content_enabled,
   bool, false
