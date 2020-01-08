@@ -29,12 +29,14 @@ def test(mod, path, entity=None):
             "chrome/pluginproblem/pluginproblem.dtd",
             "chrome/global/aboutSupport.dtd",
             "chrome/global/aboutSupport.properties",
-            "crashreporter/crashes.dtd",
-            "crashreporter/crashes.properties",
             "chrome/global/mozilla.dtd",
             "chrome/global/aboutTelemetry.dtd",
             "chrome/global/aboutTelemetry.properties",
-            "chrome/global/aboutWebrtc.properties"):
+            "chrome/global/aboutWebrtc.properties",
+        ):
+            return "error"
+        if re.match(r"crashreporter/[^/]*.ftl", path):
+            
             return "error"
         return "ignore"
 
@@ -52,7 +54,7 @@ def test(mod, path, entity=None):
         
         return "error"
     if mod == "mobile/android":
-        if not entity:
+        if entity is None:
             if (re.match(r"mobile-l10n.js", path) or
                 re.match(r"defines.inc", path)):
                 return "ignore"

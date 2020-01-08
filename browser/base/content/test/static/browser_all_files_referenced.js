@@ -171,11 +171,6 @@ whitelist = new Set(whitelist.filter(item =>
 const ignorableWhitelist = new Set([
   
   
-  "chrome://global/locale/crashes.dtd",
-  "chrome://global/locale/crashes.properties",
-
-  
-  
 
   
   "resource://app/blocklist.xml",

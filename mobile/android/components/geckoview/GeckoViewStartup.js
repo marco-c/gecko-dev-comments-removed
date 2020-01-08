@@ -5,8 +5,10 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  FileSource: "resource://gre/modules/L10nRegistry.jsm",
   GeckoViewTelemetryController: "resource://gre/modules/GeckoViewTelemetryController.jsm",
   GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
+  L10nRegistry: "resource://gre/modules/L10nRegistry.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -111,6 +113,11 @@ GeckoViewStartup.prototype = {
         
         
         GeckoViewTelemetryController.setup();
+
+        
+        let locales = Services.locale.getPackagedLocales();
+        const greSource = new FileSource("toolkit", locales, "resource://gre/localization/{locale}/");
+        L10nRegistry.registerSource(greSource);
         break;
       }
     }
