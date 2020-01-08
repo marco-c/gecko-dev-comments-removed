@@ -556,7 +556,14 @@ nsCaseTransformTextRunFactory::TransformString(
         break;
       }
 
-      ch = ToUpperCase(ch);
+      
+      
+      
+      
+      
+      if (ch < 0x10D0 || ch > 0x10FF) {
+        ch = ToUpperCase(ch);
+      }
       break;
 
     case NS_STYLE_TEXT_TRANSFORM_CAPITALIZE:
