@@ -27,6 +27,7 @@
 #include "frontend/BytecodeControlStructures.h"
 #include "frontend/CForEmitter.h"
 #include "frontend/EmitterScope.h"
+#include "frontend/ForInEmitter.h"
 #include "frontend/ForOfLoopControl.h"
 #include "frontend/IfEmitter.h"
 #include "frontend/Parser.h"
@@ -4987,6 +4988,8 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, const EmitterScope* headLexical
     MOZ_ASSERT(forInHead->isKind(ParseNodeKind::ForIn));
     MOZ_ASSERT(forInHead->isArity(PN_TERNARY));
 
+    ForInEmitter forIn(this, headLexicalEmitterScope);
+
     
     
     ParseNode* forInTarget = forInHead->pn_kid1;
@@ -5014,114 +5017,38 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, const EmitterScope* headLexical
         }
     }
 
+    if (!forIn.emitIterated())                            
+        return false;
+
     
     ParseNode* expr = forInHead->pn_kid3;
-    if (!emitTreeInBranch(expr))                          
+    if (!emitTree(expr))                                  
         return false;
 
     MOZ_ASSERT(forInLoop->pn_iflags == 0);
 
-    if (!emit1(JSOP_ITER))                                
+    MOZ_ASSERT_IF(headLexicalEmitterScope,
+                  forInTarget->isKind(ParseNodeKind::Let) ||
+                  forInTarget->isKind(ParseNodeKind::Const));
+
+    if (!forIn.emitInitialize())                          
         return false;
 
-    
-    
-    if (!emit1(JSOP_UNDEFINED))                           
+    if (!emitInitializeForInOrOfTarget(forInHead))        
         return false;
 
-    LoopControl loopInfo(this, StatementKind::ForInLoop);
-
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_FOR_IN, &noteIndex))
+    if (!forIn.emitBody())                                
         return false;
-
-    
-    
-    if (!loopInfo.emitEntryJump(this))                    
-        return false;
-
-    if (!loopInfo.emitLoopHead(this, Nothing()))          
-        return false;
-
-    
-    
-    if (headLexicalEmitterScope) {
-        
-        
-        
-        
-        
-        MOZ_ASSERT(forInTarget->isKind(ParseNodeKind::Let) ||
-                   forInTarget->isKind(ParseNodeKind::Const));
-        MOZ_ASSERT(headLexicalEmitterScope == innermostEmitterScope());
-        MOZ_ASSERT(headLexicalEmitterScope->scope(this)->kind() == ScopeKind::Lexical);
-
-        if (headLexicalEmitterScope->hasEnvironment()) {
-            if (!emit1(JSOP_RECREATELEXICALENV))          
-                return false;
-        }
-
-        
-        if (!headLexicalEmitterScope->deadZoneFrameSlots(this))
-            return false;
-    }
-
-    {
-#ifdef DEBUG
-        auto loopDepth = this->stackDepth;
-#endif
-        MOZ_ASSERT(loopDepth >= 2);
-
-        if (!emit1(JSOP_ITERNEXT))                        
-            return false;
-
-        if (!emitInitializeForInOrOfTarget(forInHead))    
-            return false;
-
-        MOZ_ASSERT(this->stackDepth == loopDepth,
-                   "iterator and iterval must be left on the stack");
-    }
 
     
     ParseNode* forBody = forInLoop->pn_right;
     if (!emitTree(forBody))                               
         return false;
 
-    
-    loopInfo.setContinueTarget(offset());
-
-    
-    if (!updateSourceCoordNotes(forInHead->pn_pos.begin))
+    if (!forIn.emitEnd(Some(forInHead->pn_pos.begin)))    
         return false;
 
-    if (!loopInfo.emitLoopEntry(this, Nothing()))         
-        return false;
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!emit1(JSOP_MOREITER))                            
-        return false;
-    if (!emit1(JSOP_ISNOITER))                            
-        return false;
-
-    if (!loopInfo.emitLoopEnd(this, JSOP_IFEQ))           
-        return false;
-
-    
-    if (!setSrcNoteOffset(noteIndex, 0, loopInfo.loopEndOffsetFromEntryJump()))
-        return false;
-
-    if (!loopInfo.patchBreaksAndContinues(this))
-        return false;
-
-    
-    if (!emit1(JSOP_POP))                                 
-        return false;
-
-    if (!tryNoteList.append(JSTRY_FOR_IN, this->stackDepth, loopInfo.headOffset(), offset()))
-        return false;
-
-    return emit1(JSOP_ENDITER);                           
+    return true;
 }
 
 
