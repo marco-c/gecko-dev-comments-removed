@@ -768,6 +768,11 @@ nsCSPHostSrc::visit(nsCSPSrcVisitor* aVisitor) const
 void
 nsCSPHostSrc::toString(nsAString& outStr) const
 {
+  if (mGeneratedFromSelfKeyword) {
+    outStr.AppendASCII("'self'");
+    return;
+  }
+
   
   if (mHost.EqualsASCII("*") &&
       mScheme.IsEmpty() &&
