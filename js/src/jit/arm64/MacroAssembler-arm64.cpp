@@ -50,6 +50,12 @@ const vixl::MacroAssembler& MacroAssemblerCompat::asVIXL() const {
   return *static_cast<const vixl::MacroAssembler*>(this);
 }
 
+void MacroAssemblerCompat::mov(CodeLabel* label, Register dest) {
+  BufferOffset bo = movePatchablePtr(ImmPtr( nullptr), dest);
+  label->patchAt()->bind(bo.getOffset());
+  label->setLinkMode(CodeLabel::MoveImmediate);
+}
+
 BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmPtr ptr, Register dest) {
   const size_t numInst = 1;           
   const unsigned numPoolEntries = 2;  

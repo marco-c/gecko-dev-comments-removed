@@ -760,30 +760,72 @@ MoveOperand CodeGeneratorARM64::toMoveOperand(const LAllocation a) const {
 class js::jit::OutOfLineTableSwitch
     : public OutOfLineCodeBase<CodeGeneratorARM64> {
   MTableSwitch* mir_;
-  Vector<CodeLabel, 8, JitAllocPolicy> codeLabels_;
+  CodeLabel jumpLabel_;
 
   void accept(CodeGeneratorARM64* codegen) override {
     codegen->visitOutOfLineTableSwitch(this);
   }
 
  public:
-  OutOfLineTableSwitch(TempAllocator& alloc, MTableSwitch* mir)
-      : mir_(mir), codeLabels_(alloc) {}
+  OutOfLineTableSwitch(MTableSwitch* mir)
+      : mir_(mir) {}
 
   MTableSwitch* mir() const { return mir_; }
 
-  bool addCodeLabel(CodeLabel label) { return codeLabels_.append(label); }
-  CodeLabel codeLabel(unsigned i) { return codeLabels_[i]; }
+  CodeLabel* jumpLabel() { return &jumpLabel_; }
 };
 
 void CodeGeneratorARM64::visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool) {
-  MOZ_CRASH("visitOutOfLineTableSwitch");
+  MTableSwitch* mir = ool->mir();
+
+  masm.haltingAlign(sizeof(void*));
+  masm.bind(ool->jumpLabel());
+  masm.addCodeLabel(*ool->jumpLabel());
+
+  for (size_t i = 0; i < mir->numCases(); i++) {
+    LBlock* caseblock = skipTrivialBlocks(mir->getCase(i))->lir();
+    Label* caseheader = caseblock->label();
+    uint32_t caseoffset = caseheader->offset();
+
+    
+    
+    CodeLabel cl;
+    masm.writeCodePointer(&cl);
+    cl.target()->bind(caseoffset);
+    masm.addCodeLabel(cl);
+  }
 }
 
 void CodeGeneratorARM64::emitTableSwitchDispatch(MTableSwitch* mir,
-                                                 Register index_,
-                                                 Register base_) {
-  MOZ_CRASH("emitTableSwitchDispatch");
+                                                 Register index,
+                                                 Register base) {
+  Label* defaultcase = skipTrivialBlocks(mir->getDefault())->lir()->label();
+
+  
+  if (mir->low() != 0) {
+    masm.sub32(Imm32(mir->low()), index);
+  }
+
+  
+  int32_t cases = mir->numCases();
+  masm.branch32(Assembler::AboveOrEqual, index, Imm32(cases), defaultcase);
+
+  
+  
+  
+  
+  
+  
+  
+  OutOfLineTableSwitch* ool = new(alloc()) OutOfLineTableSwitch(mir);
+  addOutOfLineCode(ool, mir);
+
+  
+  masm.mov(ool->jumpLabel(), base);
+  BaseIndex pointer(base, index, ScalePointer);
+
+  
+  masm.branchToComputedAddress(pointer);
 }
 
 void CodeGenerator::visitMathD(LMathD* math) {
