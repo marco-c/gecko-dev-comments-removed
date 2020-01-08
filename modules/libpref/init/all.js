@@ -239,8 +239,7 @@ pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_i
 
 
 
-pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode",
-     "www.rememberthemilk.com");
+pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "");
 #endif
 
 
@@ -1285,17 +1284,7 @@ pref("dom.disable_open_click_delay", 1000);
 pref("dom.serviceWorkers.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
-
-
-#ifdef NIGHTLY_BUILD
-pref("dom.storage.next_gen", false);
-#else
-pref("dom.storage.next_gen", false);
-#endif
 pref("dom.storage.default_quota",      5120);
-pref("dom.storage.shadow_writes", true);
-pref("dom.storage.snapshot_prefill", 16384);
-pref("dom.storage.snapshot_reusing", true);
 pref("dom.storage.testing", false);
 
 pref("dom.send_after_paint_to_content", false);
