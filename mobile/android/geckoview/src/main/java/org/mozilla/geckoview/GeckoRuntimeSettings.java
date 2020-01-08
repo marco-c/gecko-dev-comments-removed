@@ -303,8 +303,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-        public @NonNull Builder locale(String languageTag) {
-            mSettings.mLocale = languageTag;
+        public @NonNull Builder locales(String[] requestedLocales) {
+            mSettings.mRequestedLocales = requestedLocales;
             return this;
         }
     }
@@ -394,7 +394,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
      int mScreenWidthOverride;
      int mScreenHeightOverride;
      Class<? extends Service> mCrashHandler;
-     String mLocale;
+     String[] mRequestedLocales;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
         mCookieBehavior, mCookieLifetime, mConsoleOutput,
@@ -437,7 +437,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mScreenWidthOverride = settings.mScreenWidthOverride;
         mScreenHeightOverride = settings.mScreenHeightOverride;
         mCrashHandler = settings.mCrashHandler;
-        mLocale = settings.mLocale;
+        mRequestedLocales = settings.mRequestedLocales;
     }
 
      Map<String, Object> getPrefsMap() {
@@ -450,7 +450,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
     }
 
      void flush() {
-        flushLocale();
+        flushLocales();
 
         
         
@@ -606,8 +606,10 @@ public final class GeckoRuntimeSettings implements Parcelable {
     
 
 
-    public String getLocale() {
-        return mLocale;
+
+
+    public String[] getLocales() {
+        return mRequestedLocales;
     }
 
     
@@ -615,14 +617,14 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
-    public void setLocale(String languageTag) {
-        mLocale = languageTag;
-        flushLocale();
+    public void setLocales(String[] requestedLocales) {
+        mRequestedLocales = requestedLocales;
+        flushLocales();
     }
 
-    private void flushLocale() {
+    private void flushLocales() {
         final GeckoBundle data = new GeckoBundle(1);
-        data.putString("languageTag", mLocale);
+        data.putStringArray("requestedLocales", mRequestedLocales);
         EventDispatcher.getInstance().dispatch("GeckoView:SetLocale", data);
     }
 
@@ -841,7 +843,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         out.writeInt(mScreenWidthOverride);
         out.writeInt(mScreenHeightOverride);
         out.writeString(mCrashHandler != null ? mCrashHandler.getName() : null);
-        out.writeString(mLocale);
+        out.writeStringArray(mRequestedLocales);
     }
 
     
@@ -875,7 +877,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
             }
         }
 
-        mLocale = source.readString();
+        mRequestedLocales = source.createStringArray();
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
