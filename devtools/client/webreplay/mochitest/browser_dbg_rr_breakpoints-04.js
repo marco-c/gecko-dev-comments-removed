@@ -4,16 +4,19 @@
 
 
 
+"use strict";
 
-async function test() {
-  waitForExplicitFinish();
 
+
+
+
+add_task(async function() {
   const dbg = await attachRecordingDebugger("doc_rr_continuous.html");
   const {threadClient, tab, toolbox} = dbg;
 
   await setBreakpoint(threadClient, "doc_rr_continuous.html", 14);
   await resumeToLine(threadClient, 14);
-  let value = await evaluateInTopFrame(threadClient, "number");
+  const value = await evaluateInTopFrame(threadClient, "number");
   await resumeToLine(threadClient, 14);
   await checkEvaluateInTopFrame(threadClient, "number", value + 1);
   await rewindToLine(threadClient, 14);
@@ -29,5 +32,4 @@ async function test() {
 
   await toolbox.destroy();
   await gBrowser.removeTab(tab);
-  finish();
-}
+});

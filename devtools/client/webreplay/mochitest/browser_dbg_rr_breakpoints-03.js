@@ -4,9 +4,12 @@
 
 
 
-async function test() {
-  waitForExplicitFinish();
+"use strict";
 
+
+
+
+add_task(async function() {
   const dbg = await attachRecordingDebugger("doc_rr_continuous.html");
   const {threadClient, tab, toolbox} = dbg;
 
@@ -14,7 +17,9 @@ async function test() {
   await setBreakpoint(threadClient, "doc_rr_continuous.html", 19);
   await resumeToLine(threadClient, 19);
   await reverseStepOverToLine(threadClient, 18);
-  await checkEvaluateInTopFrame(threadClient, "SpecialPowers.Cu.recordReplayDirective(/* AlwaysTakeTemporarySnapshots */ 3)", undefined);
+  await checkEvaluateInTopFrame(threadClient,
+    "SpecialPowers.Cu.recordReplayDirective(/* AlwaysTakeTemporarySnapshots */ 3)",
+    undefined);
   await stepInToLine(threadClient, 22);
   await setBreakpoint(threadClient, "doc_rr_continuous.html", 24);
   await resumeToLine(threadClient, 24);
@@ -23,5 +28,4 @@ async function test() {
 
   await toolbox.destroy();
   await gBrowser.removeTab(tab);
-  finish();
-}
+});
