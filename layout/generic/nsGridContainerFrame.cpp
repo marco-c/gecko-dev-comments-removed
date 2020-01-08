@@ -3604,7 +3604,8 @@ MeasuringReflow(nsIFrame*           aChild,
 
   ReflowOutput childSize(childRI);
   nsReflowStatus childStatus;
-  const uint32_t flags = NS_FRAME_NO_MOVE_FRAME | NS_FRAME_NO_SIZE_VIEW;
+  const uint32_t flags = NS_FRAME_NO_MOVE_FRAME | NS_FRAME_NO_SIZE_VIEW |
+                         NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD;
   parent->ReflowChild(aChild, pc, childSize, childRI, wm,
                       LogicalPoint(wm), nsSize(), flags, childStatus);
   nsContainerFrame::FinishReflowChild(aChild, pc, childSize, &childRI, wm,
@@ -5882,6 +5883,31 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   }
 
   
+  if (HasAnyStateBits(NS_STATE_GRID_HAS_CHILD_NIFS)) {
+    nsFrameList framesToPush;
+    nsIFrame* firstChild = mFrames.FirstChild();
+    
+    for (auto child = firstChild; child; child = child->GetNextSibling()) {
+      if (auto* childNIF = child->GetNextInFlow()) {
+        if (childNIF->GetParent() == this) {
+          for (auto c = child->GetNextSibling(); c; c = c->GetNextSibling()) {
+            if (c == childNIF) {
+              
+              mFrames.RemoveFrame(childNIF);
+              framesToPush.AppendFrame(nullptr, childNIF);
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (!framesToPush.IsEmpty()) {
+      MergeSortedOverflow(framesToPush);
+    }
+    RemoveStateBits(NS_STATE_GRID_HAS_CHILD_NIFS);
+  }
+
+  
   if (HasAnyStateBits(NS_STATE_GRID_DID_PUSH_ITEMS)) {
     RemoveStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
     nsFrameList items;
@@ -6547,9 +6573,13 @@ nsGridContainerFrame::DrainSelfOverflowList()
   
   
   
+  
   AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
   if (overflowFrames) {
     ::MergeSortedFrameLists(mFrames, *overflowFrames, GetContent());
+    
+    
+    AddStateBits(NS_STATE_GRID_HAS_CHILD_NIFS);
     return true;
   }
   return false;
