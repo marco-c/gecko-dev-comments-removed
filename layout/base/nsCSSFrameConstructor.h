@@ -1842,6 +1842,9 @@ private:
   
   
   
+  
+  
+  
   nsContainerFrame* InitAndWrapInColumnSetFrameIfNeeded(
     nsFrameConstructorState& aState,
     nsIContent* aContent,
@@ -1876,6 +1879,79 @@ private:
                       PendingBinding*          aPendingBinding);
 
   void CreateBulletFrameForListItemIfNeeded(nsBlockFrame* aBlockFrame);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsContainerFrame* BeginBuildingColumns(nsFrameConstructorState& aState,
+                                         nsIContent* aContent,
+                                         nsContainerFrame* aParentFrame,
+                                         nsContainerFrame* aColumnContent,
+                                         ComputedStyle* aComputedStyle);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void FinishBuildingColumns(nsFrameConstructorState& aState,
+                             nsContainerFrame* aColumnSetWrapper,
+                             nsContainerFrame* aColumnContent,
+                             nsFrameList& aColumnContentSiblings);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool MayNeedToCreateColumnSpanSiblings(nsContainerFrame* aBlockFrame,
+                                         const nsFrameList& aChildList);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsFrameItems CreateColumnSpanSiblings(nsFrameConstructorState& aState,
+                                        nsContainerFrame* aInitialBlock,
+                                        nsFrameList& aChildList,
+                                        nsIFrame* aPositionedFrame);
 
   nsIFrame* ConstructInline(nsFrameConstructorState& aState,
                             FrameConstructionItem&   aItem,

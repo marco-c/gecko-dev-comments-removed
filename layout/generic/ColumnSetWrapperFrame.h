@@ -33,6 +33,8 @@ public:
                                                      ComputedStyle* aStyle,
                                                      nsFrameState aStateFlags);
 
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
+
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
@@ -48,6 +50,12 @@ public:
 private:
   explicit ColumnSetWrapperFrame(ComputedStyle* aStyle);
   ~ColumnSetWrapperFrame() override = default;
+
+#ifdef DEBUG
+  
+  
+  bool mFinishedBuildingColumns = false;
+#endif
 };
 
 } 

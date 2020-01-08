@@ -33,6 +33,36 @@ ColumnSetWrapperFrame::ColumnSetWrapperFrame(ComputedStyle* aStyle)
 {
 }
 
+void
+ColumnSetWrapperFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
+{
+  MOZ_ASSERT(!GetPrevContinuation(),
+             "Who set NS_FRAME_OWNS_ANON_BOXES on our continuations?");
+
+  
+  
+  nsIFrame* columnSet = PrincipalChildList().FirstChild();
+  MOZ_ASSERT(columnSet && columnSet->IsColumnSetFrame(),
+             "The first child should always be ColumnSet!");
+  aResult.AppendElement(OwnedAnonBox(columnSet));
+
+#ifdef DEBUG
+  
+  
+  
+  for (nsIFrame* child : PrincipalChildList()) {
+    if (child == columnSet) {
+      
+      continue;
+    }
+    MOZ_ASSERT((child->IsColumnSetFrame() ||
+                child->Style()->GetPseudo() == nsCSSAnonBoxes::columnSpanWrapper()) &&
+               child->GetPrevContinuation(),
+               "Prev continuation is not set properly?");
+  }
+#endif
+}
+
 #ifdef DEBUG_FRAME_DUMP
 nsresult
 ColumnSetWrapperFrame::GetFrameName(nsAString& aResult) const
@@ -48,7 +78,11 @@ void
 ColumnSetWrapperFrame::AppendFrames(ChildListID aListID,
                                     nsFrameList& aFrameList)
 {
-  MOZ_ASSERT_UNREACHABLE("Unsupported operation!");
+#ifdef DEBUG
+  MOZ_ASSERT(!mFinishedBuildingColumns, "Should only call once!");
+  mFinishedBuildingColumns = true;
+#endif
+
   nsBlockFrame::AppendFrames(aListID, aFrameList);
 }
 

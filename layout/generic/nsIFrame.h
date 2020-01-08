@@ -3886,6 +3886,14 @@ public:
   inline bool IsAbsolutelyPositioned(const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
+  
+  
+  
+  
+  
+  inline bool IsColumnSpan() const;
+
+  
 
 
 

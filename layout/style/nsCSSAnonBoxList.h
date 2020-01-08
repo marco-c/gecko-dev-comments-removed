@@ -75,6 +75,11 @@ CSS_NON_INHERITING_ANON_BOX(pageBreak, ":-moz-pagebreak")
 
 
 
+CSS_NON_INHERITING_ANON_BOX(columnSpanWrapper, ":-moz-column-span-wrapper")
+
+
+
+
 
 
 
@@ -109,7 +114,14 @@ CSS_ANON_BOX(pageSequence, ":-moz-page-sequence")
 CSS_ANON_BOX(scrolledContent, ":-moz-scrolled-content")
 CSS_ANON_BOX(scrolledCanvas, ":-moz-scrolled-canvas")
 CSS_ANON_BOX(scrolledPageSequence, ":-moz-scrolled-page-sequence")
+
+
+
+CSS_ANON_BOX(columnSet, ":-moz-column-set")
+
+
 CSS_ANON_BOX(columnContent, ":-moz-column-content")
+
 CSS_ANON_BOX(viewport, ":-moz-viewport")
 CSS_ANON_BOX(viewportScroll, ":-moz-viewport-scroll")
 
