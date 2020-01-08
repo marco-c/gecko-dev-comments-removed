@@ -145,18 +145,22 @@ protected:
 
   struct ColumnBalanceData {
     
-    nscoord mMaxBSize;
+    nscoord mMaxBSize = 0;
+
     
-    nscoord mSumBSize;
+    nscoord mSumBSize = 0;
+
     
-    nscoord mLastBSize;
-    
-    
-    nscoord mMaxOverflowingBSize;
-    
+    nscoord mLastBSize = 0;
+
     
     
-    bool mHasExcessBSize;
+    nscoord mMaxOverflowingBSize = 0;
+
+    
+    
+    
+    bool mHasExcessBSize = false;
 
     void Reset() {
       mMaxBSize = mSumBSize = mLastBSize = mMaxOverflowingBSize = 0;
