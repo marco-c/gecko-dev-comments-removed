@@ -56,7 +56,7 @@ public:
   
   
   
-  void NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo);
+  void NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo, bool aRender);
 
   
   
@@ -239,11 +239,32 @@ private:
   
   Mutex mUpdatesLock;
   
-  
-  
-  
-  
-  std::queue<std::pair<wr::PipelineId, Maybe<wr::Epoch>>> mUpdatesQueue;
+  Atomic<uint64_t> mUpdatesCount;
+  struct PipelineUpdates {
+    PipelineUpdates(const uint64_t aUpdatesCount, const bool aRendered)
+      : mUpdatesCount(aUpdatesCount)
+      , mRendered(aRendered)
+    {}
+    bool NeedsToWait(const uint64_t aUpdatesCount) {
+      MOZ_ASSERT(mUpdatesCount <= aUpdatesCount);
+      
+      
+      if (mUpdatesCount == aUpdatesCount && !mRendered) {
+        
+        return true;
+      }
+      return false;
+    }
+    const uint64_t mUpdatesCount;
+    const bool mRendered;
+    
+    
+    
+    
+    
+    std::queue<std::pair<wr::PipelineId, Maybe<wr::Epoch>>> mQueue;
+  };
+  std::queue<UniquePtr<PipelineUpdates>> mUpdatesQueues;
 };
 
 } 

@@ -36,6 +36,7 @@ AsyncImagePipelineManager::AsyncImagePipelineManager(already_AddRefed<wr::WebRen
  , mWillGenerateFrame(false)
  , mDestroyed(false)
  , mUpdatesLock("UpdatesLock")
+ , mUpdatesCount(0)
 {
   MOZ_COUNT_CTOR(AsyncImagePipelineManager);
 }
@@ -542,23 +543,40 @@ AsyncImagePipelineManager::HoldExternalImage(const wr::PipelineId& aPipelineId, 
 }
 
 void
-AsyncImagePipelineManager::NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo)
+AsyncImagePipelineManager::NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo, bool aRender)
 {
   
   
   MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
 
-  MutexAutoLock lock(mUpdatesLock);
+  
+  
+  
+  uint64_t currCount = aRender ? ++mUpdatesCount : mUpdatesCount;
+  auto updates = MakeUnique<PipelineUpdates>(currCount, aRender);
+
   for (uintptr_t i = 0; i < aInfo.epochs.length; i++) {
-    mUpdatesQueue.push(std::make_pair(
+    updates->mQueue.emplace(std::make_pair(
         aInfo.epochs.data[i].pipeline_id,
         Some(aInfo.epochs.data[i].epoch)));
   }
   for (uintptr_t i = 0; i < aInfo.removed_pipelines.length; i++) {
-    mUpdatesQueue.push(std::make_pair(
+    updates->mQueue.emplace(std::make_pair(
         aInfo.removed_pipelines.data[i],
         Nothing()));
   }
+
+  {
+    
+    MutexAutoLock lock(mUpdatesLock);
+    mUpdatesQueues.push(std::move(updates));
+  }
+
+  if (!aRender) {
+    
+    return;
+  }
+
   
   layers::CompositorThreadHolder::Loop()->PostTask(
       NewRunnableMethod("ProcessPipelineUpdates",
@@ -575,19 +593,41 @@ AsyncImagePipelineManager::ProcessPipelineUpdates()
     return;
   }
 
-  while (true) {
-    wr::PipelineId pipelineId;
-    Maybe<wr::Epoch> epoch;
+  UniquePtr<PipelineUpdates> updates;
 
-    { 
+  while (true) {
+    
+    if (updates && updates->mQueue.empty()) {
+      updates = nullptr;
+    }
+
+    
+    if (!updates) {
+      
       MutexAutoLock lock(mUpdatesLock);
-      if (mUpdatesQueue.empty()) {
+      if (mUpdatesQueues.empty()) {
+        
         break;
       }
-      pipelineId = mUpdatesQueue.front().first;
-      epoch = mUpdatesQueue.front().second;
-      mUpdatesQueue.pop();
+      
+      uint64_t currCount = mUpdatesCount;
+      if (mUpdatesQueues.front()->NeedsToWait(currCount)) {
+        
+        break;
+      }
+      updates = std::move(mUpdatesQueues.front());
+      mUpdatesQueues.pop();
     }
+    MOZ_ASSERT(updates);
+
+    if (updates->mQueue.empty()) {
+      
+      continue;
+    }
+
+    wr::PipelineId pipelineId = updates->mQueue.front().first;
+    Maybe<wr::Epoch> epoch = updates->mQueue.front().second;
+    updates->mQueue.pop();
 
     if (epoch.isSome()) {
       ProcessPipelineRendered(pipelineId, *epoch);

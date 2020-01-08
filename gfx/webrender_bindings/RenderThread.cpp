@@ -394,7 +394,7 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
   
   
   MOZ_ASSERT(pipelineMgr);
-  pipelineMgr->NotifyPipelinesUpdated(info);
+  pipelineMgr->NotifyPipelinesUpdated(info, aRender);
 
   layers::CompositorThreadHolder::Loop()->PostTask(NewRunnableFunction(
     "NotifyDidRenderRunnable",
