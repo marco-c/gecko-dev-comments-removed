@@ -286,40 +286,27 @@ class PlacesFeed {
   handoffSearchToAwesomebar({_target, data, meta}) {
     const urlBar = _target.browser.ownerGlobal.gURLBar;
 
-    if (!data.hiddenFocus && !data.text) {
+    if (!data.text) {
       
       urlBar.focus();
-      this.store.dispatch(ac.OnlyToOneContent({type: at.SHOW_SEARCH}, meta.fromTarget));
       
       return;
     }
 
-    if (data.text) {
-      
-      urlBar.search(data.text);
-      this.store.dispatch(ac.OnlyToOneContent({type: at.HIDE_SEARCH}, meta.fromTarget));
-    } else {
-      
-      urlBar.hiddenFocus();
-    }
+    
+    urlBar.search(data.text);
 
-    const onKeydown = event => {
-      
-      if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
-        
-        
-        this.store.dispatch(ac.OnlyToOneContent({type: at.HIDE_SEARCH}, meta.fromTarget));
-        urlBar.removeHiddenFocus();
-        urlBar.removeEventListener("keydown", onKeydown);
-      }
-    };
     const onDone = () => {
       
       this.store.dispatch(ac.OnlyToOneContent({type: at.SHOW_SEARCH}, meta.fromTarget));
-      urlBar.removeHiddenFocus();
-      urlBar.removeEventListener("keydown", onKeydown);
       urlBar.removeEventListener("mousedown", onDone);
       urlBar.removeEventListener("blur", onDone);
+    };
+    const onKeydown = event => {
+      
+      if (event.key === "Escape") {
+        onDone();
+      }
     };
     urlBar.addEventListener("keydown", onKeydown);
     urlBar.addEventListener("mousedown", onDone);
