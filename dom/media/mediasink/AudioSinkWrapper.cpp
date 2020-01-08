@@ -29,7 +29,9 @@ const MediaSink::PlaybackParams& AudioSinkWrapper::GetPlaybackParams() const {
 void AudioSinkWrapper::SetPlaybackParams(const PlaybackParams& aParams) {
   AssertOwnerThread();
   if (mAudioSink) {
-    mAudioSink->SetVolume(aParams.mVolume);
+    if (aParams.mVolume) {
+      mAudioSink->SetVolume(*aParams.mVolume);
+    }
     mAudioSink->SetPlaybackRate(aParams.mPlaybackRate);
     mAudioSink->SetPreservesPitch(aParams.mPreservesPitch);
   }
@@ -96,7 +98,7 @@ bool AudioSinkWrapper::HasUnplayedFrames(TrackType aType) const {
 
 void AudioSinkWrapper::SetVolume(double aVolume) {
   AssertOwnerThread();
-  mParams.mVolume = aVolume;
+  mParams.mVolume = Some(aVolume);
   if (mAudioSink) {
     mAudioSink->SetVolume(aVolume);
   }
@@ -196,6 +198,10 @@ void AudioSinkWrapper::Stop() {
 
   if (mAudioSink) {
     mAudioSinkEndedPromise.DisconnectIfExists();
+    
+    
+    
+    mParams.mVolume.reset();
     mAudioSink->Shutdown();
     mAudioSink = nullptr;
     mEndedPromise = nullptr;

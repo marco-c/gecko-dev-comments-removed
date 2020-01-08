@@ -187,7 +187,9 @@ nsresult AudioSink::InitializeAudioStream(const PlaybackParams& aParams) {
 
   
   
-  mAudioStream->SetVolume(aParams.mVolume);
+  if (aParams.mVolume) {
+    mAudioStream->SetVolume(*aParams.mVolume);
+  }
   mAudioStream->SetPlaybackRate(aParams.mPlaybackRate);
   mAudioStream->SetPreservesPitch(aParams.mPreservesPitch);
   return mAudioStream->Start();
