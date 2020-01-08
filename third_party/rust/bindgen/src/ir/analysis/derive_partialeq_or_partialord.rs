@@ -199,6 +199,13 @@ impl<'ctx> CannotDerivePartialEqOrPartialOrd<'ctx> {
                     return CanDerive::ArrayTooLarge;
                 }
             }
+            TypeKind::Vector(..) => {
+                
+                
+                
+                trace!("    vectors cannot derive `PartialEq`/`PartialOrd`");
+                return CanDerive::No;
+            }
 
             TypeKind::Pointer(inner) => {
                 let inner_type =

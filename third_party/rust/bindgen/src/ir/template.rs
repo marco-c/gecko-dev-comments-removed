@@ -99,7 +99,7 @@ use parse::ClangItemParser;
 
 
 
-pub trait TemplateParameters {
+pub trait TemplateParameters : Sized {
     
     
     
@@ -108,8 +108,7 @@ pub trait TemplateParameters {
     
     
     
-    fn self_template_params(&self, ctx: &BindgenContext)
-        -> Vec<TypeId>;
+    fn self_template_params(&self, ctx: &BindgenContext) -> Vec<TypeId>;
 
     
     

@@ -3,7 +3,6 @@
 use ir::context::BindgenContext;
 use ir::layout::Layout;
 use quote;
-use std::mem;
 use proc_macro2::{Term, Span};
 
 pub mod attributes {
@@ -92,12 +91,9 @@ pub fn blob(layout: Layout) -> quote::Tokens {
 
 
 pub fn integer_type(layout: Layout) -> Option<quote::Tokens> {
-    
-    if layout.size > mem::size_of::<u64>() {
-        None
-    } else {
-        Some(blob(layout))
-    }
+    let name = Layout::known_type_for_size(layout.size)?;
+    let name = Term::new(name, Span::call_site());
+    Some(quote! { #name })
 }
 
 

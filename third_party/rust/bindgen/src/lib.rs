@@ -16,6 +16,8 @@
 
 #![recursion_limit="128"]
 
+#[macro_use]
+extern crate bitflags;
 extern crate cexpr;
 #[macro_use]
 #[allow(unused_extern_crates)]
@@ -94,48 +96,59 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
+fn args_are_cpp(clang_args: &[String]) -> bool {
+    return clang_args
+        .windows(2)
+        .any(|w| w[0] == "-x=c++" || w[1] == "-x=c++" || w == &["-x", "c++"]);
+}
 
-
-
-#[derive(Debug, Clone)]
-pub struct CodegenConfig {
-    
-    pub functions: bool,
-    
-    pub types: bool,
-    
-    pub vars: bool,
-    
-    pub methods: bool,
-    
-    pub constructors: bool,
-    
-    pub destructors: bool,
+bitflags! {
+    /// A type used to indicate which kind of items we have to generate.
+    pub struct CodegenConfig: u32 {
+        /// Whether to generate functions.
+        const FUNCTIONS = 1 << 0;
+        /// Whether to generate types.
+        const TYPES = 1 << 1;
+        /// Whether to generate constants.
+        const VARS = 1 << 2;
+        /// Whether to generate methods.
+        const METHODS = 1 << 3;
+        /// Whether to generate constructors
+        const CONSTRUCTORS = 1 << 4;
+        /// Whether to generate destructors.
+        const DESTRUCTORS = 1 << 5;
+    }
 }
 
 impl CodegenConfig {
     
-    pub fn all() -> Self {
-        CodegenConfig {
-            functions: true,
-            types: true,
-            vars: true,
-            methods: true,
-            constructors: true,
-            destructors: true,
-        }
+    pub fn functions(self) -> bool {
+        self.contains(CodegenConfig::FUNCTIONS)
     }
 
     
-    pub fn nothing() -> Self {
-        CodegenConfig {
-            functions: false,
-            types: false,
-            vars: false,
-            methods: false,
-            constructors: false,
-            destructors: false,
-        }
+    pub fn types(self) -> bool {
+        self.contains(CodegenConfig::TYPES)
+    }
+
+    
+    pub fn vars(self) -> bool {
+        self.contains(CodegenConfig::VARS)
+    }
+
+    
+    pub fn methods(self) -> bool {
+        self.contains(CodegenConfig::METHODS)
+    }
+
+    
+    pub fn constructors(self) -> bool {
+        self.contains(CodegenConfig::CONSTRUCTORS)
+    }
+
+    
+    pub fn destructors(self) -> bool {
+        self.contains(CodegenConfig::DESTRUCTORS)
     }
 }
 
@@ -284,6 +297,20 @@ impl Builder {
             })
             .count();
 
+        self.options
+            .blacklisted_functions
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--blacklist-function".into());
+                output_vector.push(
+                    item.trim_left_matches("^")
+                        .trim_right_matches("$")
+                        .into(),
+                );
+            })
+            .count();
+
         if !self.options.layout_tests {
             output_vector.push("--no-layout-tests".into());
         }
@@ -373,7 +400,7 @@ impl Builder {
             output_vector.push("--disable-name-namespacing".into());
         }
 
-        if !self.options.codegen_config.functions {
+        if !self.options.codegen_config.functions() {
             output_vector.push("--ignore-functions".into());
         }
 
@@ -381,28 +408,28 @@ impl Builder {
 
         
         let mut options: Vec<String> = Vec::new();
-        if self.options.codegen_config.functions {
+        if self.options.codegen_config.functions() {
             options.push("function".into());
         }
-        if self.options.codegen_config.types {
+        if self.options.codegen_config.types() {
             options.push("types".into());
         }
-        if self.options.codegen_config.vars {
+        if self.options.codegen_config.vars() {
             options.push("vars".into());
         }
-        if self.options.codegen_config.methods {
+        if self.options.codegen_config.methods() {
             options.push("methods".into());
         }
-        if self.options.codegen_config.constructors {
+        if self.options.codegen_config.constructors() {
             options.push("constructors".into());
         }
-        if self.options.codegen_config.destructors {
+        if self.options.codegen_config.destructors() {
             options.push("destructors".into());
         }
 
         output_vector.push(options.join(","));
 
-        if !self.options.codegen_config.methods {
+        if !self.options.codegen_config.methods() {
             output_vector.push("--ignore-methods".into());
         }
 
@@ -696,6 +723,13 @@ impl Builder {
     
     pub fn blacklist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.blacklisted_types.insert(arg);
+        self
+    }
+
+    
+    
+    pub fn blacklist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.blacklisted_functions.insert(arg);
         self
     }
 
@@ -1043,13 +1077,13 @@ impl Builder {
 
     
     pub fn ignore_functions(mut self) -> Builder {
-        self.options.codegen_config.functions = false;
+        self.options.codegen_config.remove(CodegenConfig::FUNCTIONS);
         self
     }
 
     
     pub fn ignore_methods(mut self) -> Builder {
-        self.options.codegen_config.methods = false;
+        self.options.codegen_config.remove(CodegenConfig::METHODS);
         self
     }
 
@@ -1150,7 +1184,7 @@ impl Builder {
                 || name_file.ends_with(".hh")
                 || name_file.ends_with(".h++")
         }
-        
+
         let clang = clang_sys::support::Clang::find(None, &[]).ok_or_else(|| {
             io::Error::new(io::ErrorKind::Other, "Cannot find clang executable")
         })?;
@@ -1160,9 +1194,7 @@ impl Builder {
         let mut wrapper_contents = String::new();
 
         
-        let mut is_cpp = self.options.clang_args.windows(2).any(|w| {
-            w[0] == "-x=c++" || w[1] == "-x=c++" || w == &["-x", "c++"]
-        });
+        let mut is_cpp = args_are_cpp(&self.options.clang_args);
 
         
         for header in &self.input_headers {
@@ -1255,6 +1287,10 @@ struct BindgenOptions {
     
     
     blacklisted_types: RegexSet,
+
+    
+    
+    blacklisted_functions: RegexSet,
 
     
     
@@ -1465,6 +1501,7 @@ impl BindgenOptions {
         self.whitelisted_types.build();
         self.whitelisted_functions.build();
         self.blacklisted_types.build();
+        self.blacklisted_functions.build();
         self.opaque_types.build();
         self.bitfield_enums.build();
         self.constified_enums.build();
@@ -1494,9 +1531,10 @@ impl Default for BindgenOptions {
         let rust_target = RustTarget::default();
 
         BindgenOptions {
-            rust_target: rust_target,
+            rust_target,
             rust_features: rust_target.into(),
             blacklisted_types: Default::default(),
+            blacklisted_functions: Default::default(),
             opaque_types: Default::default(),
             rustfmt_path: Default::default(),
             whitelisted_types: Default::default(),
@@ -1621,8 +1659,7 @@ impl Bindings {
         if let Some(clang) = clang_sys::support::Clang::find(
             None,
             &clang_args_for_clang_sys,
-        )
-        {
+        ) {
             
             
             let has_target_arg = options
@@ -1632,9 +1669,15 @@ impl Bindings {
                 .is_some();
             if !has_target_arg {
                 
-                
-                if let Some(cpp_search_paths) = clang.cpp_search_paths {
-                    for path in cpp_search_paths.into_iter() {
+                let is_cpp = args_are_cpp(&options.clang_args);
+                let search_paths = if is_cpp {
+                  clang.cpp_search_paths
+                } else {
+                  clang.c_search_paths
+                };
+
+                if let Some(search_paths) = search_paths {
+                    for path in search_paths.into_iter() {
                         if let Ok(path) = path.into_os_string().into_string() {
                             options.clang_args.push("-isystem".to_owned());
                             options.clang_args.push(path);

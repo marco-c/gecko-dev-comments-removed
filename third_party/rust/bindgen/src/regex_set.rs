@@ -3,9 +3,6 @@
 use regex::RegexSet as RxSet;
 
 
-
-
-
 #[derive(Debug)]
 pub struct RegexSet {
     items: Vec<String>,

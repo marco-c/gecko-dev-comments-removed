@@ -51,13 +51,6 @@ impl Cursor {
     }
 
     
-    pub fn null() -> Self {
-        Cursor {
-            x: unsafe { clang_getNullCursor() },
-        }
-    }
-
-    
     pub fn spelling(&self) -> String {
         unsafe { cxstring_into_string(clang_getCursorSpelling(self.x)) }
     }
