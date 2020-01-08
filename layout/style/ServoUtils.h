@@ -13,9 +13,13 @@
 #include "mozilla/TypeTraits.h"
 #include "MainThreadUtils.h"
 
+void AssertIsMainThreadOrServoLangFontPrefsCacheLocked();
+
 namespace mozilla {
 
 
+void InitializeServo();
+void ShutdownServo();
 void AssertIsMainThreadOrServoFontMetricsLocked();
 
 class ServoStyleSet;

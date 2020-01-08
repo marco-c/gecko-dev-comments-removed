@@ -4,7 +4,9 @@
 
 
 
-#include "mozilla/ServoBindings.h"
+
+
+#include "mozilla/GeckoBindings.h"
 
 #include "ChildIterator.h"
 #include "ErrorReporter.h"
@@ -61,6 +63,7 @@
 #include "mozilla/SizeOfState.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/SystemGroup.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/ServoTraversalStatistics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/RWLock.h"
@@ -2437,6 +2440,8 @@ Gecko_XBLBinding_InheritsStyle(RawGeckoXBLBindingBorrowed aXBLBinding)
 
 static StaticRefPtr<UACacheReporter> gUACacheReporter;
 
+namespace mozilla {
+
 void
 InitializeServo()
 {
@@ -2460,8 +2465,6 @@ ShutdownServo()
   delete sServoFFILock;
   Servo_Shutdown();
 }
-
-namespace mozilla {
 
 void
 AssertIsMainThreadOrServoFontMetricsLocked()
