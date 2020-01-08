@@ -293,13 +293,23 @@ public:
   
   bool IsDependentOn(const char_type* aStart, const char_type* aEnd) const
   {
-     
-     
-     
-     
-     
-     
-    return (aStart < (mData + mLength) && aEnd > mData);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return (reinterpret_cast<uintptr_t>(aStart) <
+              reinterpret_cast<uintptr_t>(mData + mLength) &&
+            reinterpret_cast<uintptr_t>(aEnd) >
+              reinterpret_cast<uintptr_t>(mData));
   }
 
 protected:
