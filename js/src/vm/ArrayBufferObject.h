@@ -97,6 +97,7 @@ int32_t LiveMappedBufferCount();
 
 
 
+
 class ArrayBufferObjectMaybeShared;
 
 mozilla::Maybe<uint32_t> WasmArrayBufferMaxSize(const ArrayBufferObjectMaybeShared* buf);
@@ -461,13 +462,39 @@ bool CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
 class ArrayBufferViewObject : public NativeObject
 {
   public:
+    
+    static constexpr size_t BUFFER_SLOT = 0;
+    static_assert(BUFFER_SLOT == JS_TYPEDARRAYLAYOUT_BUFFER_SLOT,
+                  "self-hosted code with burned-in constants must get the "
+                  "right buffer slot");
+
+    
+    static constexpr size_t LENGTH_SLOT = 1;
+    static_assert(LENGTH_SLOT == JS_TYPEDARRAYLAYOUT_LENGTH_SLOT,
+                  "self-hosted code with burned-in constants must get the "
+                  "right length slot");
+
+    
+    static constexpr size_t BYTEOFFSET_SLOT = 2;
+    static_assert(BYTEOFFSET_SLOT == JS_TYPEDARRAYLAYOUT_BYTEOFFSET_SLOT,
+                  "self-hosted code with burned-in constants must get the "
+                  "right byteOffset slot");
+
+    static constexpr size_t RESERVED_SLOTS = 3;
+
+#ifdef DEBUG
+    static const uint8_t ZeroLengthArrayData = 0x4A;
+#endif
+
+    
+    
+    
+    
+    static constexpr size_t DATA_SLOT = 3;
+
     static ArrayBufferObjectMaybeShared* bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*> obj);
 
     void notifyBufferDetached(JSContext* cx, void* newData);
-
-#ifdef DEBUG
-    bool isSharedMemory();
-#endif
 
     
     

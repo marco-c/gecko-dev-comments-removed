@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef vm_DataViewObject_h
 #define vm_DataViewObject_h
@@ -14,16 +14,15 @@
 #include "vm/ArrayBufferObject.h"
 #include "vm/JSObject.h"
 #include "vm/SharedArrayObject.h"
-#include "vm/TypedArrayObject.h"
 
 namespace js {
 
-// In the DataViewObject, the private slot contains a raw pointer into
-// the buffer.  The buffer may be shared memory and the raw pointer
-// should not be exposed without sharedness information accompanying
-// it.
 
-class DataViewObject : public NativeObject
+
+
+
+
+class DataViewObject : public ArrayBufferViewObject
 {
   private:
     static const ClassSpec classSpec_;
@@ -62,19 +61,19 @@ class DataViewObject : public NativeObject
     static const Class protoClass_;
 
     static Value byteOffsetValue(const DataViewObject* view) {
-        Value v = view->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT);
+        Value v = view->getFixedSlot(BYTEOFFSET_SLOT);
         MOZ_ASSERT(v.toInt32() >= 0);
         return v;
     }
 
     static Value byteLengthValue(const DataViewObject* view) {
-        Value v = view->getFixedSlot(TypedArrayObject::LENGTH_SLOT);
+        Value v = view->getFixedSlot(LENGTH_SLOT);
         MOZ_ASSERT(v.toInt32() >= 0);
         return v;
     }
 
     static Value bufferValue(const DataViewObject* view) {
-        return view->getFixedSlot(TypedArrayObject::BUFFER_SLOT);
+        return view->getFixedSlot(BUFFER_SLOT);
     }
 
     uint32_t byteOffset() const {
@@ -170,6 +169,6 @@ class DataViewObject : public NativeObject
     static const JSPropertySpec properties[];
 };
 
-} // namespace js
+} 
 
-#endif /* vm_DataViewObject_h */
+#endif 
