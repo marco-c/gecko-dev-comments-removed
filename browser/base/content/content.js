@@ -44,9 +44,6 @@ XPCOMUtils.defineLazyProxy(this, "formSubmitObserver", () => {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIFormSubmitObserver, Ci.nsISupportsWeakReference])
 });
 
-XPCOMUtils.defineLazyProxy(this, "LightWeightThemeWebInstallListener",
-                           "resource:///modules/LightWeightThemeWebInstallListener.jsm");
-
 Services.obs.addObserver(formSubmitObserver, "invalidformsubmit", true);
 
 
@@ -265,10 +262,6 @@ var PageMetadataMessenger = {
   }
 };
 PageMetadataMessenger.init();
-
-addEventListener("InstallBrowserTheme", LightWeightThemeWebInstallListener, false, true);
-addEventListener("PreviewBrowserTheme", LightWeightThemeWebInstallListener, false, true);
-addEventListener("ResetBrowserThemePreview", LightWeightThemeWebInstallListener, false, true);
 
 let OfflineApps = {
   _docId: 0,
