@@ -253,7 +253,7 @@ function PopupNotifications(tabbrowser, panel,
         
         getNotificationFromElement(focusedElement) == notification ||
         notification.contains(focusedElement)) {
-      this._onButtonEvent(aEvent, "secondarybuttoncommand", notification);
+      this._onButtonEvent(aEvent, "secondarybuttoncommand", "esc-press", notification);
     }
   };
 
@@ -319,6 +319,11 @@ PopupNotifications.prototype = {
   },
 
   
+
+
+
+
+
 
 
 
@@ -809,7 +814,7 @@ PopupNotifications.prototype = {
       popupnotification.setAttribute("popupid", n.id);
       popupnotification.setAttribute("oncommand", "PopupNotifications._onCommand(event);");
       if (Services.prefs.getBoolPref("privacy.permissionPrompts.showCloseButton")) {
-        popupnotification.setAttribute("closebuttoncommand", "PopupNotifications._onButtonEvent(event, 'secondarybuttoncommand');");
+        popupnotification.setAttribute("closebuttoncommand", "PopupNotifications._onButtonEvent(event, 'secondarybuttoncommand', 'esc-press');");
       } else {
         popupnotification.setAttribute("closebuttoncommand", `PopupNotifications._dismiss(event, ${TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON});`);
       }
@@ -1477,7 +1482,7 @@ PopupNotifications.prototype = {
     this._setNotificationUIState(notificationEl);
   },
 
-  _onButtonEvent(event, type, notificationEl = null) {
+  _onButtonEvent(event, type, source = "button", notificationEl = null) {
     if (!notificationEl) {
       notificationEl = getNotificationFromElement(event.originalTarget);
     }
@@ -1541,7 +1546,8 @@ PopupNotifications.prototype = {
     if (action) {
       try {
         action.callback.call(undefined, {
-          checkboxChecked: notificationEl.checkbox.checked
+          checkboxChecked: notificationEl.checkbox.checked,
+          source,
         });
       } catch (error) {
         Cu.reportError(error);
@@ -1569,7 +1575,8 @@ PopupNotifications.prototype = {
 
     try {
       target.action.callback.call(undefined, {
-        checkboxChecked: notificationEl.checkbox.checked
+        checkboxChecked: notificationEl.checkbox.checked,
+        source: "menucommand",
       });
     } catch (error) {
       Cu.reportError(error);

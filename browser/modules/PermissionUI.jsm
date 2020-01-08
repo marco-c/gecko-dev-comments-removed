@@ -312,10 +312,9 @@ var PermissionPromptPrototype = {
           }
 
           if (this.permissionKey) {
-
-            
-            if ((state && state.checkboxChecked) ||
+            if ((state && state.checkboxChecked && state.source != "esc-press") ||
                 promptAction.scope == SitePermissions.SCOPE_PERSISTENT) {
+              
               let scope = SitePermissions.SCOPE_PERSISTENT;
               
               if (PrivateBrowsingUtils.isBrowserPrivate(this.browser)) {
