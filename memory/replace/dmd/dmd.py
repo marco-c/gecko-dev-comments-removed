@@ -338,10 +338,9 @@ def getDigestFromFile(args, inputFile):
             
             
             
-            
             for frameKey in frameKeys:
                 frameDesc = frameTable[frameKey]
-                if frameDesc in ('DMD.cpp', 'dmd.cpp', 'SmokeDMD'):
+                if 'DMD.cpp' in frameDesc or 'dmd.cpp' in frameDesc:
                     return [fmt.format(1, ': ... DMD.cpp ...')]
 
         
