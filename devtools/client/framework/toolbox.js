@@ -41,8 +41,6 @@ loader.lazyRequireGetter(this, "getHighlighterUtils",
   "devtools/client/framework/toolbox-highlighter-utils", true);
 loader.lazyRequireGetter(this, "Selection",
   "devtools/client/framework/selection", true);
-loader.lazyRequireGetter(this, "InspectorFront",
-  "devtools/shared/fronts/inspector", true);
 loader.lazyRequireGetter(this, "flags",
   "devtools/shared/flags");
 loader.lazyRequireGetter(this, "KeyShortcuts",
@@ -160,8 +158,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this._pingTelemetrySelectTool = this._pingTelemetrySelectTool.bind(this);
   this.toggleSplitConsole = this.toggleSplitConsole.bind(this);
   this.toggleOptions = this.toggleOptions.bind(this);
-  this.togglePaintFlashing = this.togglePaintFlashing.bind(this);
-  this.isPaintFlashing = false;
 
   this._target.on("close", this.destroy);
 
@@ -804,7 +800,6 @@ Toolbox.prototype = {
       onClick(event) {
         if (typeof onClick == "function") {
           onClick(event, toolbox);
-          button.emit("updatechecked");
         }
       },
       onKeyDown(event) {
@@ -1357,19 +1352,6 @@ Toolbox.prototype = {
       button.isVisible = this._commandIsVisible(button);
     });
     this.component.setToolboxButtons(this.toolbarButtons);
-  },
-
-  
-
-
-  togglePaintFlashing: function() {
-    if (this.isPaintFlashing) {
-      this.telemetry.toolOpened("paintflashing");
-    } else {
-      this.telemetry.toolClosed("paintflashing");
-    }
-    this.isPaintFlashing = !this.isPaintFlashing;
-    this.target.activeTab.reconfigure({"paintFlashing": this.isPaintFlashing});
   },
 
   
@@ -2712,7 +2694,7 @@ Toolbox.prototype = {
   initInspector: function() {
     if (!this._initInspector) {
       this._initInspector = (async function() {
-        this._inspector = InspectorFront(this._target.client, this._target.form);
+        this._inspector = this.target.getFront("inspector");
         const pref = "devtools.inspector.showAllAnonymousContent";
         const showAllAnonymousContent = Services.prefs.getBoolPref(pref);
         this._walker = await this._inspector.getWalker({ showAllAnonymousContent });
@@ -2800,7 +2782,6 @@ Toolbox.prototype = {
         await this.highlighterUtils.stopPicker();
       }
 
-      await this._inspector.destroy();
       if (this._highlighter) {
         
         
