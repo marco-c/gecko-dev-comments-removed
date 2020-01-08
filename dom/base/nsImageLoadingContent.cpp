@@ -1408,11 +1408,10 @@ bool nsImageLoadingContent::HaveSize(imgIRequest* aImage) {
 void nsImageLoadingContent::BindToTree(Document* aDocument, nsIContent* aParent,
                                        nsIContent* aBindingParent) {
   
-  
-  if (!aDocument) return;
-
-  TrackImage(mCurrentRequest);
-  TrackImage(mPendingRequest);
+  if (GetOurCurrentDoc()) {
+    TrackImage(mCurrentRequest);
+    TrackImage(mPendingRequest);
+  }
 }
 
 void nsImageLoadingContent::UnbindFromTree(bool aDeep, bool aNullParent) {
