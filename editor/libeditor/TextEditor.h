@@ -119,7 +119,10 @@ public:
 
 
 
-  nsresult PasteAsAction(int32_t aClipboardType);
+
+
+  nsresult PasteAsAction(int32_t aClipboardType,
+                         bool aDispatchPasteEvent);
 
   
 
@@ -139,7 +142,10 @@ public:
 
 
 
-  virtual nsresult PasteAsQuotationAsAction(int32_t aClipboardType);
+
+
+  virtual nsresult PasteAsQuotationAsAction(int32_t aClipboardType,
+                                            bool aDispatchPasteEvent);
 
   
 

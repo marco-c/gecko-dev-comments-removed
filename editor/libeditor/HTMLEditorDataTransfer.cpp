@@ -1459,9 +1459,10 @@ HTMLEditor::HavePrivateHTMLFlavor(nsIClipboard* aClipboard)
 }
 
 nsresult
-HTMLEditor::PasteInternal(int32_t aClipboardType)
+HTMLEditor::PasteInternal(int32_t aClipboardType,
+                          bool aDispatchPasteEvent)
 {
-  if (!FireClipboardEvent(ePaste, aClipboardType)) {
+  if (aDispatchPasteEvent && !FireClipboardEvent(ePaste, aClipboardType)) {
     return NS_OK;
   }
 
@@ -1690,12 +1691,14 @@ HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable)
 }
 
 nsresult
-HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType)
+HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
+                                     bool aDispatchPasteEvent)
 {
   MOZ_ASSERT(aClipboardType == nsIClipboard::kGlobalClipboard ||
              aClipboardType == nsIClipboard::kSelectionClipboard);
 
   if (IsPlaintextEditor()) {
+    
     return PasteAsPlaintextQuotation(aClipboardType);
   }
 
@@ -1743,7 +1746,11 @@ HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType)
   }
 
   
-  rv = PasteInternal(aClipboardType);
+  
+  
+  
+  
+  rv = PasteInternal(aClipboardType, aDispatchPasteEvent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

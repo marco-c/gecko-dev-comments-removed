@@ -33,6 +33,7 @@
 
 #include "nsCommandParams.h"
 #include "nsCOMPtr.h"
+#include "nsCopySupport.h"
 #include "nsFocusManager.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIClipboard.h"
@@ -5132,12 +5133,8 @@ EventStateManager::HandleMiddleClickPaste(nsIPresShell* aPresShell,
   MOZ_ASSERT(aMouseEvent->mMessage == eMouseClick &&
              aMouseEvent->button == WidgetMouseEventBase::eMiddleButton);
   MOZ_ASSERT(aStatus);
+  MOZ_ASSERT(*aStatus != nsEventStatus_eConsumeNoDefault);
   MOZ_ASSERT(aTextEditor);
-
-  if (*aStatus == nsEventStatus_eConsumeNoDefault) {
-    
-    return NS_OK;
-  }
 
   RefPtr<Selection> selection = aTextEditor->GetSelection();
   if (NS_WARN_IF(!selection)) {
@@ -5173,6 +5170,15 @@ EventStateManager::HandleMiddleClickPaste(nsIPresShell* aPresShell,
   }
 
   
+  
+  
+  if (!nsCopySupport::FireClipboardEvent(ePaste, clipboardType,
+                                         aPresShell, selection)) {
+    *aStatus = nsEventStatus_eConsumeNoDefault;
+    return NS_OK;
+  }
+
+  
   if (aTextEditor->Destroyed() ||
       aTextEditor->IsReadonly() ||
       aTextEditor->IsDisabled()) {
@@ -5198,11 +5204,11 @@ EventStateManager::HandleMiddleClickPaste(nsIPresShell* aPresShell,
   
   if (aMouseEvent->IsControl()) {
     DebugOnly<nsresult> rv =
-      aTextEditor->PasteAsQuotationAsAction(clipboardType);
+      aTextEditor->PasteAsQuotationAsAction(clipboardType, false);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to paste as quotation");
   } else {
     DebugOnly<nsresult> rv =
-      aTextEditor->PasteAsAction(clipboardType);
+      aTextEditor->PasteAsAction(clipboardType, false);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to paste");
   }
   *aStatus = nsEventStatus_eConsumeNoDefault;

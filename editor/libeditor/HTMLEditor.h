@@ -160,7 +160,10 @@ public:
 
 
 
-  virtual nsresult PasteAsQuotationAsAction(int32_t aClipboardType) override;
+
+
+  virtual nsresult PasteAsQuotationAsAction(int32_t aClipboardType,
+                                            bool aDispatchPasteEvent) override;
 
   
 
@@ -1313,7 +1316,10 @@ protected:
 
 
 
-  nsresult PasteInternal(int32_t aClipboardType);
+
+
+  nsresult PasteInternal(int32_t aClipboardType,
+                         bool aDispatchPasteEvent);
 
   
 
