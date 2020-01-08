@@ -54,7 +54,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
 
   await extension.startup();
 
-  const target = gDevTools.getTargetForTab(tab);
+  const target = await gDevTools.getTargetForTab(tab);
   
   
   const toolbox = await gDevTools.showToolbox(target, "styleeditor");
