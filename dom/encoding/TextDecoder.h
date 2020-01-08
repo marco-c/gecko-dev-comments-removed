@@ -33,7 +33,7 @@ public:
               ErrorResult& aRv)
   {
     nsAutoPtr<TextDecoder> txtDecoder(new TextDecoder());
-    txtDecoder->Init(aEncoding, aOptions.mFatal, aRv);
+    txtDecoder->Init(aEncoding, aOptions, aRv);
     if (aRv.Failed()) {
       return nullptr;
     }
@@ -63,8 +63,8 @@ public:
 
 
 
-
-  void Init(const nsAString& aLabel, const bool aFatal, ErrorResult& aRv);
+  void Init(const nsAString& aLabel, const TextDecoderOptions& aOptions,
+            ErrorResult& aRv);
 
   
 
@@ -73,9 +73,8 @@ public:
 
 
 
-
   void InitWithEncoding(NotNull<const Encoding*> aEncoding,
-                        const bool aFatal);
+                        const TextDecoderOptions& aOptions);
 
   
 

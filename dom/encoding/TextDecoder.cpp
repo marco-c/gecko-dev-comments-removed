@@ -15,7 +15,8 @@ namespace mozilla {
 namespace dom {
 
 void
-TextDecoder::Init(const nsAString& aLabel, const bool aFatal,
+TextDecoder::Init(const nsAString& aLabel,
+                  const TextDecoderOptions& aOptions,
                   ErrorResult& aRv)
 {
   
@@ -28,18 +29,18 @@ TextDecoder::Init(const nsAString& aLabel, const bool aFatal,
     aRv.ThrowRangeError<MSG_ENCODING_NOT_SUPPORTED>(label);
     return;
   }
-  InitWithEncoding(WrapNotNull(encoding), aFatal);
+  InitWithEncoding(WrapNotNull(encoding), aOptions);
 }
 
 void
 TextDecoder::InitWithEncoding(NotNull<const Encoding*> aEncoding,
-                              const bool aFatal)
+                              const TextDecoderOptions& aOptions)
 {
   aEncoding->Name(mEncoding);
   
   
   
-  mFatal = aFatal;
+  mFatal = aOptions.mFatal;
 
   
   mDecoder = aEncoding->NewDecoderWithBOMRemoval();
