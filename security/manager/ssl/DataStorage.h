@@ -15,7 +15,6 @@
 #include "nsCOMPtr.h"
 #include "nsDataHashtable.h"
 #include "nsIObserver.h"
-#include "nsIThread.h"
 #include "nsITimer.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
@@ -30,6 +29,7 @@ class ContentChild;
 class DataStorageEntry;
 class DataStorageItem;
 }
+
 
 
 
@@ -215,7 +215,6 @@ private:
   DataStorageTable  mPersistentDataTable;
   DataStorageTable  mTemporaryDataTable;
   DataStorageTable  mPrivateDataTable;
-  nsCOMPtr<nsIThread> mWorkerThread;
   nsCOMPtr<nsIFile> mBackingFile;
   nsCOMPtr<nsITimer> mTimer; 
   uint32_t mTimerDelay; 
