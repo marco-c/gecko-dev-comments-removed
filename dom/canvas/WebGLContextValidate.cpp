@@ -621,23 +621,17 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
         return false;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     mDefaultVertexArray = WebGLVertexArray::Create(this);
+    mDefaultVertexArray->BindVertexArray();
     mDefaultVertexArray->mAttribs.SetLength(mGLMaxVertexAttribs);
-    mBoundVertexArray = mDefaultVertexArray;
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (gl->IsCoreProfile()) {
-        mDefaultVertexArray->GenVertexArray();
-        mDefaultVertexArray->BindVertexArray();
-    }
 
     mPixelStore_FlipY = false;
     mPixelStore_PremultiplyAlpha = false;

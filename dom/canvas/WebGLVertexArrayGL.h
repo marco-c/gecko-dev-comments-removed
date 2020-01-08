@@ -17,19 +17,11 @@ class WebGLVertexArrayGL
 
 public:
     virtual void DeleteImpl() override;
-    virtual void BindVertexArrayImpl() override;
-    virtual void GenVertexArray() override;
-    virtual bool IsVertexArrayImpl() const override;
+    virtual void BindVertexArray() override;
 
 protected:
     explicit WebGLVertexArrayGL(WebGLContext* webgl);
     ~WebGLVertexArrayGL();
-
-    
-    
-    
-    
-    bool mIsVAO;
 };
 
 } 
