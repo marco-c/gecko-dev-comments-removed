@@ -8,9 +8,6 @@
 const {Cu} = require("chrome");
 const ChromeUtils = require("ChromeUtils");
 
-
-const {serializeStack, parseStack} = ChromeUtils.import("resource://devtools/shared/base-loader.js", {});
-
 const {
   METHOD_FUNCTION,
   GETTER_FUNCTION,
@@ -340,6 +337,42 @@ CallWatcher.prototype = {
     }
   },
 };
+
+function parseURI(uri) {
+  return String(uri).split(" -> ").pop();
+}
+
+function parseStack(stack) {
+  const lines = String(stack).split("\n");
+  return lines.reduce(function(frames, line) {
+    if (line) {
+      const atIndex = line.indexOf("@");
+      const columnIndex = line.lastIndexOf(":");
+      const lineIndex = line.lastIndexOf(":", columnIndex - 1);
+      const fileName = parseURI(line.slice(atIndex + 1, lineIndex));
+      const lineNumber = parseInt(line.slice(lineIndex + 1, columnIndex), 10);
+      const columnNumber = parseInt(line.slice(columnIndex + 1), 10);
+      const name = line.slice(0, atIndex).split("(").shift();
+      frames.unshift({
+        fileName: fileName,
+        name: name,
+        lineNumber: lineNumber,
+        columnNumber: columnNumber,
+      });
+    }
+    return frames;
+  }, []);
+}
+
+function serializeStack(frames) {
+  return frames.reduce(function(stack, frame) {
+    return frame.name + "@" +
+           frame.fileName + ":" +
+           frame.lineNumber + ":" +
+           frame.columnNumber + "\n" +
+           stack;
+  }, "");
+}
 
 
 

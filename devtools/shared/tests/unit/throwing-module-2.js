@@ -1,0 +1,8 @@
+"use strict";
+
+function throwingMethod() {
+  
+  throw "my-exception";
+}
+
+throwingMethod();
