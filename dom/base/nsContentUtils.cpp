@@ -8883,12 +8883,24 @@ nsContentUtils::StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
     return false;
   }
 
+  
   if (!httpChannel->GetIsTrackingResource()) {
     return false;
   }
 
-  
-  return true;
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = httpChannel->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  return !loadInfo->IsFirstPartyStorageAccessGrantedFor(uri);
 }
 
 
