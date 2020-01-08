@@ -8,18 +8,22 @@
 use attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use matching::{ElementSelectorFlags, MatchingContext};
 use parser::SelectorImpl;
-use servo_arc::NonZeroPtrMut;
 use std::fmt::Debug;
+use std::ptr::NonNull;
 
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OpaqueElement(NonZeroPtrMut<()>);
+pub struct OpaqueElement(NonNull<()>);
+
+unsafe impl Send for OpaqueElement {}
 
 impl OpaqueElement {
     
-    pub fn new<T>(ptr: *const T) -> Self {
-        OpaqueElement(NonZeroPtrMut::new(ptr as *const () as *mut ()))
+    pub fn new<T>(ptr: &T) -> Self {
+        unsafe {
+            OpaqueElement(NonNull::new_unchecked(ptr as *const T as *const () as *mut ()))    
+        }
     }
 }
 

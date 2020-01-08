@@ -80,66 +80,35 @@ const MAX_REFCOUNT: usize = (isize::MAX) as usize;
 
 
 
-
-
-
-
-
-
-pub struct NonZeroPtrMut<T: ?Sized + 'static>(&'static mut T);
-impl<T: ?Sized> NonZeroPtrMut<T> {
-    pub fn new(ptr: *mut T) -> Self {
-        assert!(!(ptr as *mut u8).is_null());
-        NonZeroPtrMut(unsafe { mem::transmute(ptr) })
-    }
-
-    pub fn ptr(&self) -> *mut T {
-        self.0 as *const T as *mut T
-    }
-}
-
-impl<T: ?Sized + 'static> Clone for NonZeroPtrMut<T> {
-    fn clone(&self) -> Self {
-        NonZeroPtrMut::new(self.ptr())
-    }
-}
-
-impl<T: ?Sized + 'static> fmt::Pointer for NonZeroPtrMut<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Pointer::fmt(&self.ptr(), f)
-    }
-}
-
-impl<T: ?Sized + 'static> fmt::Debug for NonZeroPtrMut<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        <Self as fmt::Pointer>::fmt(self, f)
-    }
-}
-
-impl<T: ?Sized + 'static> PartialEq for NonZeroPtrMut<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.ptr() == other.ptr()
-    }
-}
-
-impl<T: ?Sized + 'static> Eq for NonZeroPtrMut<T> {}
-
-impl<T: Sized + 'static> Hash for NonZeroPtrMut<T> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.ptr().hash(state)
-    }
-}
-
 #[repr(C)]
-pub struct Arc<T: ?Sized + 'static> {
-    p: NonZeroPtrMut<ArcInner<T>>,
+pub struct Arc<T: ?Sized> {
+    p: ptr::NonNull<ArcInner<T>>,
 }
 
 
 
 
 
-pub struct UniqueArc<T: ?Sized + 'static>(Arc<T>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct UniqueArc<T: ?Sized>(Arc<T>);
 
 impl<T> UniqueArc<T> {
     #[inline]
@@ -172,6 +141,7 @@ impl<T> DerefMut for UniqueArc<T> {
 unsafe impl<T: ?Sized + Sync + Send> Send for Arc<T> {}
 unsafe impl<T: ?Sized + Sync + Send> Sync for Arc<T> {}
 
+
 #[repr(C)]
 struct ArcInner<T: ?Sized> {
     count: atomic::AtomicUsize,
@@ -182,34 +152,50 @@ unsafe impl<T: ?Sized + Sync + Send> Send for ArcInner<T> {}
 unsafe impl<T: ?Sized + Sync + Send> Sync for ArcInner<T> {}
 
 impl<T> Arc<T> {
+    
     #[inline]
     pub fn new(data: T) -> Self {
         let x = Box::new(ArcInner {
             count: atomic::AtomicUsize::new(1),
             data: data,
         });
-        Arc {
-            p: NonZeroPtrMut::new(Box::into_raw(x)),
+        unsafe {
+            Arc {
+                p: ptr::NonNull::new_unchecked(Box::into_raw(x)),
+            }
         }
     }
 
+    
+    
+    
+    
+    
     #[inline]
-    pub fn into_raw(this: Self) -> *const T {
+    fn into_raw(this: Self) -> *const T {
         let ptr = unsafe { &((*this.ptr()).data) as *const _ };
         mem::forget(this);
         ptr
     }
 
+    
+    
+    
+    
+    
+    
     #[inline]
     unsafe fn from_raw(ptr: *const T) -> Self {
         
         
         let ptr = (ptr as *const u8).offset(-offset_of!(ArcInner<T>, data));
         Arc {
-            p: NonZeroPtrMut::new(ptr as *mut ArcInner<T>),
+            p: ptr::NonNull::new_unchecked(ptr as *mut ArcInner<T>),
         }
     }
 
+    
+    
     
     
     #[inline]
@@ -240,7 +226,7 @@ impl<T> Arc<T> {
     
     
     pub fn heap_ptr(&self) -> *const c_void {
-        self.p.ptr() as *const ArcInner<T> as *const c_void
+        self.p.as_ptr() as *const ArcInner<T> as *const c_void
     }
 }
 
@@ -261,13 +247,15 @@ impl<T: ?Sized> Arc<T> {
         let _ = Box::from_raw(self.ptr());
     }
 
+    
+    
     #[inline]
     pub fn ptr_eq(this: &Self, other: &Self) -> bool {
         this.ptr() == other.ptr()
     }
 
     fn ptr(&self) -> *mut ArcInner<T> {
-        self.p.ptr()
+        self.p.as_ptr()
     }
 }
 
@@ -300,8 +288,10 @@ impl<T: ?Sized> Clone for Arc<T> {
             process::abort();
         }
 
-        Arc {
-            p: NonZeroPtrMut::new(self.ptr()),
+        unsafe {
+            Arc {
+                p: ptr::NonNull::new_unchecked(self.ptr()),
+            }
         }
     }
 }
@@ -316,6 +306,19 @@ impl<T: ?Sized> Deref for Arc<T> {
 }
 
 impl<T: Clone> Arc<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn make_mut(this: &mut Self) -> &mut T {
         if !this.is_unique() {
@@ -335,6 +338,7 @@ impl<T: Clone> Arc<T> {
 }
 
 impl<T: ?Sized> Arc<T> {
+    
     #[inline]
     pub fn get_mut(this: &mut Self) -> Option<&mut T> {
         if this.is_unique() {
@@ -347,6 +351,7 @@ impl<T: ?Sized> Arc<T> {
         }
     }
 
+    
     #[inline]
     pub fn is_unique(&self) -> bool {
         
@@ -402,6 +407,7 @@ impl<T: ?Sized + PartialEq> PartialEq for Arc<T> {
         !Self::ptr_eq(self, other) && *(*self) != *(*other)
     }
 }
+
 impl<T: ?Sized + PartialOrd> PartialOrd for Arc<T> {
     fn partial_cmp(&self, other: &Arc<T>) -> Option<Ordering> {
         (**self).partial_cmp(&**other)
@@ -615,8 +621,10 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
             size_of::<usize>() * 2,
             "The Arc will be fat"
         );
-        Arc {
-            p: NonZeroPtrMut::new(ptr),
+        unsafe {
+            Arc {
+                p: ptr::NonNull::new_unchecked(ptr),
+            }
         }
     }
 
@@ -651,7 +659,22 @@ impl<H> HeaderWithLength<H> {
 }
 
 type HeaderSliceWithLength<H, T> = HeaderSlice<HeaderWithLength<H>, T>;
-pub struct ThinArc<H: 'static, T: 'static> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+pub struct ThinArc<H, T> {
     ptr: *mut ArcInner<HeaderSliceWithLength<H, [T; 1]>>,
 }
 
@@ -670,7 +693,7 @@ fn thin_to_thick<H, T>(
     fake_slice as *mut ArcInner<HeaderSliceWithLength<H, [T]>>
 }
 
-impl<H: 'static, T: 'static> ThinArc<H, T> {
+impl<H, T> ThinArc<H, T> {
     
     
     #[inline]
@@ -679,9 +702,9 @@ impl<H: 'static, T: 'static> ThinArc<H, T> {
         F: FnOnce(&Arc<HeaderSliceWithLength<H, [T]>>) -> U,
     {
         
-        let transient = NoDrop::new(Arc {
-            p: NonZeroPtrMut::new(thin_to_thick(self.ptr)),
-        });
+        let transient = unsafe { NoDrop::new(Arc {
+            p: ptr::NonNull::new_unchecked(thin_to_thick(self.ptr)),
+        })};
 
         
         let result = f(&transient);
@@ -693,6 +716,16 @@ impl<H: 'static, T: 'static> ThinArc<H, T> {
 
         
         result
+    }
+
+    
+    
+    pub fn from_header_and_iter<I>(header: H, items: I) -> Self
+    where
+        I: Iterator<Item = T> + ExactSizeIterator
+    {
+        let header = HeaderWithLength::new(header, items.len());
+        Arc::into_thin(Arc::from_header_and_iter(header, items))
     }
 
     
@@ -712,21 +745,21 @@ impl<H, T> Deref for ThinArc<H, T> {
     }
 }
 
-impl<H: 'static, T: 'static> Clone for ThinArc<H, T> {
+impl<H, T> Clone for ThinArc<H, T> {
     #[inline]
     fn clone(&self) -> Self {
         ThinArc::with_arc(self, |a| Arc::into_thin(a.clone()))
     }
 }
 
-impl<H: 'static, T: 'static> Drop for ThinArc<H, T> {
+impl<H, T> Drop for ThinArc<H, T> {
     #[inline]
     fn drop(&mut self) {
         let _ = Arc::from_thin(ThinArc { ptr: self.ptr });
     }
 }
 
-impl<H: 'static, T: 'static> Arc<HeaderSliceWithLength<H, [T]>> {
+impl<H, T> Arc<HeaderSliceWithLength<H, [T]>> {
     
     
     #[inline]
@@ -750,20 +783,26 @@ impl<H: 'static, T: 'static> Arc<HeaderSliceWithLength<H, [T]>> {
     pub fn from_thin(a: ThinArc<H, T>) -> Self {
         let ptr = thin_to_thick(a.ptr);
         mem::forget(a);
-        Arc {
-            p: NonZeroPtrMut::new(ptr),
+        unsafe {
+            Arc {
+                p: ptr::NonNull::new_unchecked(ptr),
+            }
         }
     }
 }
 
-impl<H: PartialEq + 'static, T: PartialEq + 'static> PartialEq for ThinArc<H, T> {
+impl<H: PartialEq, T: PartialEq> PartialEq for ThinArc<H, T> {
     #[inline]
     fn eq(&self, other: &ThinArc<H, T>) -> bool {
         ThinArc::with_arc(self, |a| ThinArc::with_arc(other, |b| *a == *b))
     }
 }
 
-impl<H: Eq + 'static, T: Eq + 'static> Eq for ThinArc<H, T> {}
+impl<H: Eq, T: Eq> Eq for ThinArc<H, T> {}
+
+
+
+
 
 
 
@@ -782,28 +821,28 @@ impl<H: Eq + 'static, T: Eq + 'static> Eq for ThinArc<H, T> {}
 
 #[derive(Eq)]
 #[repr(C)]
-pub struct RawOffsetArc<T: 'static> {
-    ptr: NonZeroPtrMut<T>,
+pub struct RawOffsetArc<T> {
+    ptr: ptr::NonNull<T>,
 }
 
-unsafe impl<T: 'static + Sync + Send> Send for RawOffsetArc<T> {}
-unsafe impl<T: 'static + Sync + Send> Sync for RawOffsetArc<T> {}
+unsafe impl<T: Sync + Send> Send for RawOffsetArc<T> {}
+unsafe impl<T: Sync + Send> Sync for RawOffsetArc<T> {}
 
-impl<T: 'static> Deref for RawOffsetArc<T> {
+impl<T> Deref for RawOffsetArc<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
-        unsafe { &*self.ptr.ptr() }
+        unsafe { &*self.ptr.as_ptr() }
     }
 }
 
-impl<T: 'static> Clone for RawOffsetArc<T> {
+impl<T> Clone for RawOffsetArc<T> {
     #[inline]
     fn clone(&self) -> Self {
         Arc::into_raw_offset(self.clone_arc())
     }
 }
 
-impl<T: 'static> Drop for RawOffsetArc<T> {
+impl<T> Drop for RawOffsetArc<T> {
     fn drop(&mut self) {
         let _ = Arc::from_raw_offset(RawOffsetArc {
             ptr: self.ptr.clone(),
@@ -811,7 +850,7 @@ impl<T: 'static> Drop for RawOffsetArc<T> {
     }
 }
 
-impl<T: fmt::Debug + 'static> fmt::Debug for RawOffsetArc<T> {
+impl<T: fmt::Debug> fmt::Debug for RawOffsetArc<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&**self, f)
     }
@@ -827,7 +866,7 @@ impl<T: PartialEq> PartialEq for RawOffsetArc<T> {
     }
 }
 
-impl<T: 'static> RawOffsetArc<T> {
+impl<T> RawOffsetArc<T> {
     
     
     #[inline]
@@ -836,7 +875,7 @@ impl<T: 'static> RawOffsetArc<T> {
         F: FnOnce(&Arc<T>) -> U,
     {
         
-        let transient = unsafe { NoDrop::new(Arc::from_raw(self.ptr.ptr())) };
+        let transient = unsafe { NoDrop::new(Arc::from_raw(self.ptr.as_ptr())) };
 
         
         let result = f(&transient);
@@ -850,6 +889,8 @@ impl<T: 'static> RawOffsetArc<T> {
         result
     }
 
+    
+    
     
     
     #[inline]
@@ -886,13 +927,15 @@ impl<T: 'static> RawOffsetArc<T> {
     }
 }
 
-impl<T: 'static> Arc<T> {
+impl<T> Arc<T> {
     
     
     #[inline]
     pub fn into_raw_offset(a: Self) -> RawOffsetArc<T> {
-        RawOffsetArc {
-            ptr: NonZeroPtrMut::new(Arc::into_raw(a) as *mut T),
+        unsafe {
+            RawOffsetArc {
+                ptr: ptr::NonNull::new_unchecked(Arc::into_raw(a) as *mut T),
+            }
         }
     }
 
@@ -900,11 +943,12 @@ impl<T: 'static> Arc<T> {
     
     #[inline]
     pub fn from_raw_offset(a: RawOffsetArc<T>) -> Self {
-        let ptr = a.ptr.ptr();
+        let ptr = a.ptr.as_ptr();
         mem::forget(a);
         unsafe { Arc::from_raw(ptr) }
     }
 }
+
 
 
 
@@ -932,6 +976,7 @@ impl<'a, T> Clone for ArcBorrow<'a, T> {
 }
 
 impl<'a, T> ArcBorrow<'a, T> {
+    
     #[inline]
     pub fn clone_arc(&self) -> Arc<T> {
         let arc = unsafe { Arc::from_raw(self.0) };
@@ -947,10 +992,14 @@ impl<'a, T> ArcBorrow<'a, T> {
         ArcBorrow(r)
     }
 
+    
+    
     pub fn ptr_eq(this: &Self, other: &Self) -> bool {
         this.0 as *const T == other.0 as *const T
     }
 
+    
+    
     #[inline]
     pub fn with_arc<F, U>(&self, f: F) -> U
     where
@@ -994,13 +1043,21 @@ impl<'a, T> Deref for ArcBorrow<'a, T> {
 
 
 
-pub struct ArcUnion<A: 'static, B: 'static> {
-    p: NonZeroPtrMut<()>,
-    phantom_a: PhantomData<&'static A>,
-    phantom_b: PhantomData<&'static B>,
+
+
+
+
+pub struct ArcUnion<A, B> {
+    p: ptr::NonNull<()>,
+    phantom_a: PhantomData<A>,
+    phantom_b: PhantomData<B>,
 }
 
-impl<A: PartialEq + 'static, B: PartialEq + 'static> PartialEq for ArcUnion<A, B> {
+unsafe impl<A: Sync + Send, B: Send + Sync> Send for ArcUnion<A, B> {}
+unsafe impl<A: Sync + Send, B: Send + Sync> Sync for ArcUnion<A, B> {}
+
+
+impl<A: PartialEq, B: PartialEq> PartialEq for ArcUnion<A, B> {
     fn eq(&self, other: &Self) -> bool {
         use ArcUnionBorrow::*;
         match (self.borrow(), other.borrow()) {
@@ -1011,16 +1068,17 @@ impl<A: PartialEq + 'static, B: PartialEq + 'static> PartialEq for ArcUnion<A, B
     }
 }
 
+
 #[derive(Debug)]
-pub enum ArcUnionBorrow<'a, A: 'static, B: 'static> {
+pub enum ArcUnionBorrow<'a, A: 'a, B: 'a> {
     First(ArcBorrow<'a, A>),
     Second(ArcBorrow<'a, B>),
 }
 
-impl<A: 'static, B: 'static> ArcUnion<A, B> {
-    fn new(ptr: *mut ()) -> Self {
+impl<A, B> ArcUnion<A, B> {
+    unsafe fn new(ptr: *mut ()) -> Self {
         ArcUnion {
-            p: NonZeroPtrMut::new(ptr),
+            p: ptr::NonNull::new_unchecked(ptr),
             phantom_a: PhantomData,
             phantom_b: PhantomData,
         }
@@ -1034,11 +1092,11 @@ impl<A: 'static, B: 'static> ArcUnion<A, B> {
     
     pub fn borrow(&self) -> ArcUnionBorrow<A, B> {
         if self.is_first() {
-            let ptr = self.p.ptr() as *const A;
+            let ptr = self.p.as_ptr() as *const A;
             let borrow = unsafe { ArcBorrow::from_ref(&*ptr) };
             ArcUnionBorrow::First(borrow)
         } else {
-            let ptr = ((self.p.ptr() as usize) & !0x1) as *const B;
+            let ptr = ((self.p.as_ptr() as usize) & !0x1) as *const B;
             let borrow = unsafe { ArcBorrow::from_ref(&*ptr) };
             ArcUnionBorrow::Second(borrow)
         }
@@ -1046,17 +1104,21 @@ impl<A: 'static, B: 'static> ArcUnion<A, B> {
 
     
     pub fn from_first(other: Arc<A>) -> Self {
-        Self::new(Arc::into_raw(other) as *mut _)
+        unsafe {
+            Self::new(Arc::into_raw(other) as *mut _)
+        }
     }
 
     
     pub fn from_second(other: Arc<B>) -> Self {
-        Self::new(((Arc::into_raw(other) as usize) | 0x1) as *mut _)
+        unsafe {
+            Self::new(((Arc::into_raw(other) as usize) | 0x1) as *mut _)
+        }
     }
 
     
     pub fn is_first(&self) -> bool {
-        self.p.ptr() as usize & 0x1 == 0
+        self.p.as_ptr() as usize & 0x1 == 0
     }
 
     
@@ -1081,7 +1143,7 @@ impl<A: 'static, B: 'static> ArcUnion<A, B> {
     }
 }
 
-impl<A: 'static, B: 'static> Clone for ArcUnion<A, B> {
+impl<A, B> Clone for ArcUnion<A, B> {
     fn clone(&self) -> Self {
         match self.borrow() {
             ArcUnionBorrow::First(x) => ArcUnion::from_first(x.clone_arc()),
@@ -1090,7 +1152,7 @@ impl<A: 'static, B: 'static> Clone for ArcUnion<A, B> {
     }
 }
 
-impl<A: 'static, B: 'static> Drop for ArcUnion<A, B> {
+impl<A, B> Drop for ArcUnion<A, B> {
     fn drop(&mut self) {
         match self.borrow() {
             ArcUnionBorrow::First(x) => unsafe {
