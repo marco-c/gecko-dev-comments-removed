@@ -608,6 +608,22 @@ GetIBContainingBlockFor(nsIFrame* aFrame)
   return parentFrame;
 }
 
+static nsIFrame*
+GetMultiColumnContainingBlockFor(nsIFrame* aFrame)
+{
+  MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR),
+             "Should only be called if the frame has a multi-column ancestor!");
+
+  nsIFrame* current = aFrame->GetParent();
+  while (current && !current->IsColumnSetWrapperFrame()) {
+    current = current->GetParent();
+  }
+
+  MOZ_ASSERT(current, "No ColumnSetWrapperFrame in a valid column hierarchy?");
+
+  return current;
+}
+
 
 static bool
 ParentIsWrapperAnonBox(nsIFrame* aParent)
@@ -839,6 +855,15 @@ public:
   
   nsContainerFrame* GetGeometricParent(const nsStyleDisplay& aStyleDisplay,
                                        nsContainerFrame* aContentParentFrame) const;
+
+  
+  
+  
+  
+  
+  
+  
+  void ReparentAbsoluteItems(nsContainerFrame* aNewParent);
 
   
 
@@ -1153,6 +1178,43 @@ nsFrameConstructorState::GetGeometricParent(const nsStyleDisplay& aStyleDisplay,
   }
 
   return aContentParentFrame;
+}
+
+void
+nsFrameConstructorState::ReparentAbsoluteItems(nsContainerFrame* aNewParent)
+{
+  
+  
+
+  MOZ_ASSERT(aNewParent->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR),
+             "Restrict the usage under column hierarchy.");
+
+  nsFrameList newAbsoluteItems;
+
+  nsIFrame* current = mAbsoluteItems.FirstChild();
+  while (current) {
+    nsIFrame* placeholder = current->GetPlaceholderFrame();
+
+    if (nsLayoutUtils::IsProperAncestorFrame(aNewParent, placeholder)) {
+      nsIFrame* next = current->GetNextSibling();
+      mAbsoluteItems.RemoveFrame(current);
+      newAbsoluteItems.AppendFrame(aNewParent, current);
+      current = next;
+    } else {
+      current = current->GetNextSibling();
+    }
+  }
+
+  if (newAbsoluteItems.NotEmpty()) {
+    
+    
+    nsFrameConstructorSaveState absoluteSaveState;
+
+    
+    
+    PushAbsoluteContainingBlock(aNewParent, aNewParent, absoluteSaveState);
+    mAbsoluteItems.SetFrames(newAbsoluteItems);
+  }
 }
 
 nsAbsoluteItems*
@@ -8493,6 +8555,12 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
     newFrame->AddStateBits(NS_FRAME_OUT_OF_FLOW);
   }
 
+  
+  
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    newFrame->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+  }
+
   if (nextInFlow) {
     nextInFlow->SetPrevInFlow(newFrame);
     newFrame->SetNextInFlow(nextInFlow);
@@ -8663,6 +8731,65 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
   MOZ_ASSERT(aFrame == aFrame->FirstContinuation(),
              "aFrame not the result of GetPrimaryFrame()?");
 
+  nsIFrame* inFlowFrame =
+    (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
+      aFrame->GetPlaceholderFrame() : aFrame;
+  MOZ_ASSERT(inFlowFrame, "How did that happen?");
+  MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
+             "placeholder for primary frame has previous continuations?");
+  nsIFrame* parent = inFlowFrame->GetParent();
+
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    nsIFrame* grandparent = parent->GetParent();
+    MOZ_ASSERT(grandparent);
+
+    bool needsReframe =
+      
+      
+      aFrame->IsColumnSpan() ||
+      
+      
+      
+      
+      aFrame->GetProperty(nsIFrame::HasColumnSpanSiblings()) ||
+      
+      
+      
+      
+      
+      
+      
+      (parent->Style()->GetPseudo() == nsCSSAnonBoxes::columnContent() &&
+       
+       
+       !aFrame->GetPrevSibling() && !aFrame->GetNextSibling() &&
+       
+       !parent->GetPrevInFlow() &&
+       
+       
+       grandparent->GetPrevSibling());
+
+    if (needsReframe) {
+      nsIFrame* containingBlock = GetMultiColumnContainingBlockFor(aFrame);
+
+#ifdef DEBUG
+      if (IsFramePartOfIBSplit(aFrame)) {
+        nsIFrame* ibContainingBlock = GetIBContainingBlockFor(aFrame);
+        MOZ_ASSERT(containingBlock == ibContainingBlock ||
+                   nsLayoutUtils::IsProperAncestorFrame(containingBlock,
+                                                        ibContainingBlock),
+                   "Multi-column containing block should be equal to or be the "
+                   "ancestor of the IB containing block!");
+      }
+#endif
+
+      TRACE("Multi-column");
+      RecreateFramesForContent(containingBlock->GetContent(),
+                               InsertionKind::Async);
+      return true;
+    }
+  }
+
   if (IsFramePartOfIBSplit(aFrame)) {
     
     
@@ -8679,14 +8806,6 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame)
                              InsertionKind::Async);
     return true;
   }
-
-  nsIFrame* inFlowFrame =
-    (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
-      aFrame->GetPlaceholderFrame() : aFrame;
-  MOZ_ASSERT(inFlowFrame, "How did that happen?");
-  MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
-             "placeholder for primary frame has previous continuations?");
-  nsIFrame* parent = inFlowFrame->GetParent();
 
   if (parent && parent->IsDetailsFrame()) {
     HTMLSummaryElement* summary =
@@ -10539,7 +10658,7 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
                "Setting up a first-letter frame on a non-first block continuation?");
     auto parent = static_cast<nsContainerFrame*>(aParentFrame->FirstContinuation());
     if (MOZ_UNLIKELY(parent->IsLineFrame())) {
-      parent = parent->GetParent();
+      parent = static_cast<nsContainerFrame*>(parent->GetParent()->FirstContinuation());
     }
     parent->SetHasFirstLetterChild();
     aBlockFrame->SetProperty(nsContainerFrame::FirstLetterProperty(),
@@ -10660,7 +10779,7 @@ static void ClearHasFirstLetterChildFrom(nsContainerFrame* aParentFrame)
     static_cast<nsContainerFrame*>(aParentFrame->FirstContinuation());
   if (MOZ_UNLIKELY(parent->IsLineFrame())) {
     MOZ_ASSERT(!parent->HasFirstLetterChild());
-    parent = parent->GetParent();
+    parent = static_cast<nsContainerFrame*>(parent->GetParent()->FirstContinuation());
   }
   MOZ_ASSERT(parent->HasFirstLetterChild());
   parent->ClearHasFirstLetterChild();
@@ -10898,12 +11017,9 @@ nsCSSFrameConstructor::InitAndWrapInColumnSetFrameIfNeeded(
   ComputedStyle* aComputedStyle)
 {
   MOZ_ASSERT((aBlockFrame->IsBlockFrame() || aBlockFrame->IsDetailsFrame()),
-             "aBlock should either be a block frame or a details frame.");
+             "aBlockFrame should either be a block frame or a details frame.");
 
-  const nsStyleColumn* styleColumn = aComputedStyle->StyleColumn();
-
-  if (styleColumn->mColumnCount == nsStyleColumn::kColumnCountAuto &&
-      styleColumn->mColumnWidth.GetUnit() == eStyleUnit_Auto) {
+  if (!aComputedStyle->StyleColumn()->IsColumnContainerStyle()) {
     aBlockFrame->SetComputedStyleWithoutNotification(aComputedStyle);
     InitAndRestoreFrame(aState, aContent, aParentFrame, aBlockFrame);
     return aBlockFrame;
@@ -10937,18 +11053,100 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
                                       PendingBinding*          aPendingBinding)
 {
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   nsBlockFrame* blockFrame = do_QueryFrame(*aNewFrame);
   MOZ_ASSERT(blockFrame->IsBlockFrame() || blockFrame->IsDetailsFrame(),
              "not a block frame nor a details frame?");
 
-  *aNewFrame =
-    InitAndWrapInColumnSetFrameIfNeeded(aState, aContent, aParentFrame,
-                                        blockFrame, aComputedStyle);
+  
+  const bool needsColumn =
+    aComputedStyle->StyleColumn()->IsColumnContainerStyle();
+  if (needsColumn) {
+    *aNewFrame =
+      BeginBuildingColumns(aState, aContent, aParentFrame, blockFrame, aComputedStyle);
 
-  if (blockFrame != *aNewFrame) {
-    
     if (aPositionedFrameForAbsPosContainer == blockFrame) {
       aPositionedFrameForAbsPosContainer = *aNewFrame;
+    }
+  } else {
+    
+    blockFrame->SetComputedStyleWithoutNotification(aComputedStyle);
+    InitAndRestoreFrame(aState, aContent, aParentFrame, blockFrame);
+
+    if (StaticPrefs::layout_css_column_span_enabled()) {
+      if (blockFrame->IsColumnSpan()) {
+        
+        
+        blockFrame->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
+      }
     }
   }
 
@@ -10976,13 +11174,68 @@ nsCSSFrameConstructor::ConstructBlock(nsFrameConstructorState& aState,
   }
 
   
+  
+  
+  
+  AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
+  if (StaticPrefs::layout_css_column_span_enabled()) {
+    if (needsColumn) {
+      aState.mAdditionalStateBits |= NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR;
+    } else if (blockFrame->IsColumnSpan()) {
+      aState.mAdditionalStateBits &= ~NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR;
+    }
+  }
+
+  
   nsFrameItems childItems;
   ProcessChildren(aState, aContent, aComputedStyle, blockFrame, true,
                   childItems, true, aPendingBinding);
 
+  if (!StaticPrefs::layout_css_column_span_enabled()) {
+    
+    blockFrame->SetInitialChildList(kPrincipalList, childItems);
+    CreateBulletFrameForListItemIfNeeded(blockFrame);
+    return;
+  }
+
+  if (!MayNeedToCreateColumnSpanSiblings(blockFrame, childItems)) {
+    
+    blockFrame->SetInitialChildList(kPrincipalList, childItems);
+    return;
+  }
+
   
-  blockFrame->SetInitialChildList(kPrincipalList, childItems);
-  CreateBulletFrameForListItemIfNeeded(blockFrame);
+  
+  nsFrameList initialNonColumnSpanKids =
+    childItems.Split([](nsIFrame* f) { return f->IsColumnSpan(); });
+  blockFrame->SetInitialChildList(kPrincipalList, initialNonColumnSpanKids);
+  if (childItems.IsEmpty()) {
+    
+    return;
+  }
+
+  nsFrameList columnSpanSiblings =
+    CreateColumnSpanSiblings(aState, blockFrame, childItems,
+                             aPositionedFrameForAbsPosContainer);
+
+  if (needsColumn) {
+    
+    FinishBuildingColumns(aState, *aNewFrame, blockFrame, columnSpanSiblings);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aFrameItems.AppendFrames(nullptr, columnSpanSiblings);
+  }
+
+  MOZ_ASSERT(columnSpanSiblings.IsEmpty(),
+             "The column-span siblings should be moved to the proper place!");
 }
 
 void
@@ -11014,6 +11267,218 @@ nsCSSFrameConstructor::CreateBulletFrameForListItemIfNeeded(
   }
 }
 
+nsContainerFrame*
+nsCSSFrameConstructor::BeginBuildingColumns(
+  nsFrameConstructorState& aState,
+  nsIContent* aContent,
+  nsContainerFrame* aParentFrame,
+  nsContainerFrame* aColumnContent,
+  ComputedStyle* aComputedStyle)
+{
+  MOZ_ASSERT(aColumnContent->IsBlockFrame() || aColumnContent->IsDetailsFrame(),
+             "aColumnContent should either be a block frame or a details frame.");
+  MOZ_ASSERT(aComputedStyle->StyleColumn()->IsColumnContainerStyle(),
+             "No need to build a column hierarchy!");
+
+  if (!StaticPrefs::layout_css_column_span_enabled()) {
+    
+    
+    nsContainerFrame* columnSetFrame =
+      NS_NewColumnSetFrame(mPresShell, aComputedStyle,
+                           nsFrameState(NS_FRAME_OWNS_ANON_BOXES));
+    InitAndRestoreFrame(aState, aContent, aParentFrame, columnSetFrame);
+    SetInitialSingleChild(columnSetFrame, aColumnContent);
+
+    RefPtr<ComputedStyle> anonBlockStyle = mPresShell->StyleSet()->
+      ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::columnContent(),
+                                         aComputedStyle);
+    aColumnContent->SetComputedStyleWithoutNotification(anonBlockStyle);
+    InitAndRestoreFrame(aState, aContent, columnSetFrame, aColumnContent);
+
+    return columnSetFrame;
+  }
+
+  
+  
+  
+  
+  
+  
+  nsBlockFrame* columnSetWrapper =
+    NS_NewColumnSetWrapperFrame(mPresShell, aComputedStyle,
+                                nsFrameState(NS_FRAME_OWNS_ANON_BOXES));
+  InitAndRestoreFrame(aState, aContent, aParentFrame, columnSetWrapper);
+
+  RefPtr<ComputedStyle> columnSetStyle = mPresShell->StyleSet()->
+    ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::columnSet(),
+                                       aComputedStyle);
+  nsContainerFrame* columnSet =
+    NS_NewColumnSetFrame(mPresShell, columnSetStyle,
+                         nsFrameState(NS_FRAME_OWNS_ANON_BOXES));
+  InitAndRestoreFrame(aState, aContent, columnSetWrapper, columnSet);
+  columnSet->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+
+  RefPtr<ComputedStyle> blockStyle = mPresShell->StyleSet()->
+    ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::columnContent(),
+                                       columnSetStyle);
+  aColumnContent->SetComputedStyleWithoutNotification(blockStyle);
+  InitAndRestoreFrame(aState, aContent, columnSet, aColumnContent);
+  aColumnContent->AddStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+
+  
+  SetInitialSingleChild(columnSetWrapper, columnSet);
+  SetInitialSingleChild(columnSet, aColumnContent);
+
+  return columnSetWrapper;
+}
+
+void
+nsCSSFrameConstructor::FinishBuildingColumns(
+  nsFrameConstructorState& aState,
+  nsContainerFrame* aColumnSetWrapper,
+  nsContainerFrame* aColumnContent,
+  nsFrameList& aColumnContentSiblings)
+{
+  MOZ_ASSERT(StaticPrefs::layout_css_column_span_enabled(),
+             "Call this only when layout.css.column-span.enabled is true!");
+
+  nsContainerFrame* prevColumnSet = aColumnContent->GetParent();
+
+  MOZ_ASSERT(prevColumnSet->IsColumnSetFrame() &&
+             prevColumnSet->GetParent() == aColumnSetWrapper,
+             "Should have established column hierarchy!");
+
+  nsFrameItems finalItems;
+  while (aColumnContentSiblings.NotEmpty()) {
+    nsIFrame* f = aColumnContentSiblings.RemoveFirstChild();
+    if (f->IsColumnSpan()) {
+      
+      
+      finalItems.AddChild(f);
+    } else {
+      auto* continuingColumnSet = static_cast<nsContainerFrame*>(
+        CreateContinuingFrame(mPresShell->GetPresContext(),
+                              prevColumnSet,
+                              aColumnSetWrapper,
+                              false));
+      f->SetParent(continuingColumnSet);
+      SetInitialSingleChild(continuingColumnSet, f);
+      finalItems.AddChild(continuingColumnSet);
+      prevColumnSet = continuingColumnSet;
+    }
+  }
+
+  finalItems.ApplySetParent(aColumnSetWrapper);
+  aColumnSetWrapper->AppendFrames(kPrincipalList, finalItems);
+}
+
+bool
+nsCSSFrameConstructor::MayNeedToCreateColumnSpanSiblings(
+  nsContainerFrame* aBlockFrame,
+  const nsFrameList& aChildList)
+{
+  MOZ_ASSERT(StaticPrefs::layout_css_column_span_enabled(),
+             "Call this only when layout.css.column-span.enabled is true!");
+
+  if (aBlockFrame->IsColumnSpan() ||
+      !aBlockFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  if (aChildList.IsEmpty()) {
+    
+    return false;
+  }
+
+  if (aBlockFrame->IsDetailsFrame()) {
+    
+    return false;
+  }
+
+  if (aBlockFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    
+    
+    return false;
+  }
+
+  
+  return true;
+}
+
+nsFrameItems
+nsCSSFrameConstructor::CreateColumnSpanSiblings(nsFrameConstructorState& aState,
+                                                nsContainerFrame* aInitialBlock,
+                                                nsFrameList& aChildList,
+                                                nsIFrame* aPositionedFrame)
+{
+  MOZ_ASSERT(!aPositionedFrame || aPositionedFrame->IsAbsPosContainingBlock());
+
+  nsIContent* const content = aInitialBlock->GetContent();
+  ComputedStyle* const initialBlockStyle = aInitialBlock->Style();
+  nsContainerFrame* const parentFrame = aInitialBlock->GetParent();
+
+  aInitialBlock->SetProperty(nsIFrame::HasColumnSpanSiblings(), true);
+
+  nsFrameItems siblings;
+  nsContainerFrame* lastNonColumnSpanWrapper = aInitialBlock;
+  do {
+    MOZ_ASSERT(aChildList.NotEmpty(), "Why call this if child list is empty?");
+    MOZ_ASSERT(aChildList.FirstChild()->IsColumnSpan(),
+               "Must have the child starting with column-span!");
+
+    
+    
+    RefPtr<ComputedStyle> columnSpanWrapperStyle = mPresShell->StyleSet()->
+      ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::columnSpanWrapper());
+    nsBlockFrame* columnSpanWrapper =
+      NS_NewBlockFrame(mPresShell, columnSpanWrapperStyle);
+    InitAndRestoreFrame(aState, content, parentFrame, columnSpanWrapper, false);
+    columnSpanWrapper->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+
+    nsFrameList columnSpanKids =
+      aChildList.Split([](nsIFrame* f) { return !f->IsColumnSpan(); });
+    columnSpanKids.ApplySetParent(columnSpanWrapper);
+    columnSpanWrapper->SetInitialChildList(kPrincipalList, columnSpanKids);
+    if (aPositionedFrame) {
+      aState.ReparentAbsoluteItems(columnSpanWrapper);
+    }
+
+    siblings.AddChild(columnSpanWrapper);
+
+    
+    
+    nsBlockFrame* nonColumnSpanWrapper =
+      NS_NewBlockFrame(mPresShell, initialBlockStyle);
+    InitAndRestoreFrame(aState, content, parentFrame, nonColumnSpanWrapper, false);
+    nonColumnSpanWrapper->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+
+    if (aChildList.NotEmpty()) {
+      nsFrameList nonColumnSpanKids =
+        aChildList.Split([](nsIFrame* f) { return f->IsColumnSpan(); });
+
+      nonColumnSpanKids.ApplySetParent(nonColumnSpanWrapper);
+      nonColumnSpanWrapper->SetInitialChildList(kPrincipalList, nonColumnSpanKids);
+      if (aPositionedFrame) {
+        aState.ReparentAbsoluteItems(nonColumnSpanWrapper);
+      }
+    }
+
+    lastNonColumnSpanWrapper->SetNextContinuation(nonColumnSpanWrapper);
+    nonColumnSpanWrapper->SetPrevContinuation(lastNonColumnSpanWrapper);
+    siblings.AddChild(nonColumnSpanWrapper);
+
+    lastNonColumnSpanWrapper = nonColumnSpanWrapper;
+  } while (aChildList.NotEmpty());
+
+  return siblings;
+}
+
 nsIFrame*
 nsCSSFrameConstructor::ConstructInline(nsFrameConstructorState& aState,
                                        FrameConstructionItem&   aItem,
@@ -11021,6 +11486,20 @@ nsCSSFrameConstructor::ConstructInline(nsFrameConstructorState& aState,
                                        const nsStyleDisplay*    aDisplay,
                                        nsFrameItems&            aFrameItems)
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -11182,10 +11661,35 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     
     nsFrameList blockKids =
       aChildItems.Split([](nsIFrame* f) { return f->IsInlineOutside(); });
-    MoveChildrenTo(aInitialInline, blockFrame, blockKids);
 
-    SetFrameIsIBSplit(lastNewInline, blockFrame);
-    aSiblings.AddChild(blockFrame);
+    if (!StaticPrefs::layout_css_column_span_enabled() ||
+        !aInitialInline->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+      MoveChildrenTo(aInitialInline, blockFrame, blockKids);
+
+      SetFrameIsIBSplit(lastNewInline, blockFrame);
+      aSiblings.AddChild(blockFrame);
+    } else {
+      
+      
+      nsFrameList initialNonColumnSpanKids =
+        blockKids.Split([](nsIFrame* f) { return f->IsColumnSpan(); });
+      MoveChildrenTo(aInitialInline, blockFrame, initialNonColumnSpanKids);
+
+      SetFrameIsIBSplit(lastNewInline, blockFrame);
+      aSiblings.AddChild(blockFrame);
+
+      if (blockKids.NotEmpty()) {
+        
+        
+        AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
+        aState.mAdditionalStateBits |= NS_FRAME_PART_OF_IBSPLIT;
+
+        nsFrameItems columnSpanSiblings =
+          CreateColumnSpanSiblings(aState, blockFrame, blockKids,
+                                   aIsAbsPosCB ? aInitialInline : nullptr);
+        aSiblings.AppendFrames(nullptr, columnSpanSiblings);
+      }
+    }
 
     
     
@@ -11573,6 +12077,46 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   }
 
   
+  if (aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    if (aFrame->IsColumnSetWrapperFrame()) {
+      
+      
+      TRACE("Multi-column");
+      RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+      return true;
+    }
+
+    bool anyColumnSpanItems = false;
+    for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
+      if (iter.item().mComputedStyle->StyleColumn()->IsColumnSpanStyle()) {
+        anyColumnSpanItems = true;
+        break;
+      }
+    }
+
+    bool needsReframe =
+      
+      anyColumnSpanItems ||
+      
+      
+      
+      aFrame->Style()->GetPseudo() == nsCSSAnonBoxes::columnSpanWrapper() ||
+      
+      
+      IsFramePartOfIBSplit(aFrame);
+
+    if (needsReframe) {
+      TRACE("Multi-column");
+      RecreateFramesForContent(
+        GetMultiColumnContainingBlockFor(aFrame)->GetContent(),
+        InsertionKind::Async);
+      return true;
+    }
+
+    return false;
+  }
+
+  
   
   do {
     if (IsInlineFrame(aFrame)) {
@@ -11687,7 +12231,7 @@ nsCSSFrameConstructor::ReframeContainingBlock(nsIFrame* aFrame)
         printf("  ==> blockContent=%p\n", blockContent);
       }
 #endif
-      RecreateFramesForContent(blockContent->AsElement(), InsertionKind::Async);
+      RecreateFramesForContent(blockContent, InsertionKind::Async);
       return;
     }
   }
