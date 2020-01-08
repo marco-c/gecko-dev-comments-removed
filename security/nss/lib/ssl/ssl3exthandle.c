@@ -1174,17 +1174,18 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, const SECItem *ticket,
                                   &decryptedTicket.len,
                                   decryptedTicket.len);
     if (rv != SECSuccess) {
-        SECITEM_ZfreeItem(&decryptedTicket, PR_FALSE);
-
         
 
-        if (PORT_GetError() != SEC_ERROR_NOT_A_RECIPIENT) {
-            SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
-            return SECFailure;
+
+
+        if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 ||
+            PORT_GetError() == SEC_ERROR_NOT_A_RECIPIENT) {
+            SECITEM_ZfreeItem(&decryptedTicket, PR_FALSE);
+            return SECSuccess;
         }
 
-        
-
+        SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
+        goto loser;
     }
 
     rv = ssl_ParseSessionTicket(ss, &decryptedTicket, &parsedTicket);
