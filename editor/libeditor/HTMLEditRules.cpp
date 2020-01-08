@@ -9437,10 +9437,8 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
   
   
 
-  
-  RefPtr<PostContentIterator> postOrderIter = new PostContentIterator();
-
-  nsresult rv = postOrderIter->Init(mDocChangeRange);
+  PostContentIterator postOrderIter;
+  nsresult rv = postOrderIter.Init(mDocChangeRange);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -9449,8 +9447,8 @@ nsresult HTMLEditRules::RemoveEmptyNodesInChangedRange() {
       skipList;
 
   
-  for (; !postOrderIter->IsDone(); postOrderIter->Next()) {
-    OwningNonNull<nsINode> node = *postOrderIter->GetCurrentNode();
+  for (; !postOrderIter.IsDone(); postOrderIter.Next()) {
+    OwningNonNull<nsINode> node = *postOrderIter.GetCurrentNode();
 
     nsCOMPtr<nsINode> parent = node->GetParentNode();
 
