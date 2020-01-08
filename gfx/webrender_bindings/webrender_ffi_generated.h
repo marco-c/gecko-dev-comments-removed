@@ -529,6 +529,7 @@ struct MemoryReport {
   uintptr_t swap_chain;
 };
 
+
 template<typename T, typename U>
 struct TypedSize2D {
   T width;
@@ -743,6 +744,8 @@ struct TypedVector2D {
 };
 
 using LayoutVector2D = TypedVector2D<float, LayoutPixel>;
+
+
 
 template<typename T, typename U>
 struct TypedSideOffsets2D {
