@@ -142,35 +142,41 @@ public:
     };
 
     
-    if (!WebAudioUtils::IsTimeValid(TimeOf(aEvent)) ||
-        !WebAudioUtils::IsTimeValid(aEvent.mTimeConstant)) {
-      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    if (!WebAudioUtils::IsTimeValid(TimeOf(aEvent))) {
+      aRv.template ThrowRangeError<
+        MSG_INVALID_AUDIOPARAM_METHOD_START_TIME_ERROR>();
+      return false;
+    }
+    if (!WebAudioUtils::IsTimeValid(aEvent.mTimeConstant)) {
+      aRv.template ThrowRangeError<
+        MSG_INVALID_AUDIOPARAM_EXPONENTIAL_CONSTANT_ERROR>();
       return false;
     }
 
     if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
       if (!aEvent.mCurve || !aEvent.mCurveLength) {
-        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+        return false;
+      }
+      if (aEvent.mCurveLength < 2) {
+        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+        return false;
+      }
+      if (aEvent.mDuration <= 0) {
+        aRv.ThrowRangeError();
         return false;
       }
     }
 
-    bool timeAndValueValid = IsValid(aEvent.mValue) &&
-                             IsValid(aEvent.mDuration);
-    if (!timeAndValueValid) {
-      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
-      return false;
-    }
+    MOZ_ASSERT(IsValid(aEvent.mValue) && IsValid(aEvent.mDuration));
 
     
     
     for (unsigned i = 0; i < mEvents.Length(); ++i) {
       if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
-          !(aEvent.mType == AudioTimelineEvent::SetValueCurve &&
-            TimeOf(aEvent) == TimeOf(mEvents[i])) &&
           TimeOf(mEvents[i]) <= TimeOf(aEvent) &&
-          TimeOf(mEvents[i]) + mEvents[i].mDuration >= TimeOf(aEvent)) {
-        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+          TimeOf(mEvents[i]) + mEvents[i].mDuration > TimeOf(aEvent)) {
+        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
         return false;
       }
     }
@@ -179,14 +185,9 @@ public:
     
     if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
       for (unsigned i = 0; i < mEvents.Length(); ++i) {
-        
-        if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
-            TimeOf(mEvents[i]) == TimeOf(aEvent)) {
-          continue;
-        }
-        if (TimeOf(mEvents[i]) > TimeOf(aEvent) &&
-            TimeOf(mEvents[i]) < TimeOf(aEvent) + aEvent.mDuration) {
-          aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        if (TimeOf(aEvent) < TimeOf(mEvents[i]) &&
+            TimeOf(aEvent) + aEvent.mDuration >= TimeOf(mEvents[i])) {
+          aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
           return false;
         }
       }
@@ -195,7 +196,8 @@ public:
     
     if (aEvent.mType == AudioTimelineEvent::ExponentialRamp) {
       if (aEvent.mValue <= 0.f) {
-        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        aRv.template ThrowRangeError<
+          MSG_INVALID_AUDIOPARAM_EXPONENTIAL_VALUE_ERROR>();
         return false;
       }
       const AudioTimelineEvent* previousEvent = GetPreviousEvent(TimeOf(aEvent));
@@ -219,10 +221,7 @@ public:
   {
     for (unsigned i = 0; i < mEvents.Length(); ++i) {
       if (aEvent.template Time<TimeType>() == mEvents[i].template Time<TimeType>()) {
-        if (aEvent.mType == mEvents[i].mType) {
           
-          mEvents.ReplaceElementAt(i, aEvent);
-        } else {
           
           do {
             ++i;
@@ -230,8 +229,6 @@ public:
                    aEvent.mType != mEvents[i].mType &&
                    aEvent.template Time<TimeType>() == mEvents[i].template Time<TimeType>());
           mEvents.InsertElementAt(i, aEvent);
-        }
-        return;
       }
       
       if (aEvent.template Time<TimeType>() < mEvents[i].template Time<TimeType>()) {
