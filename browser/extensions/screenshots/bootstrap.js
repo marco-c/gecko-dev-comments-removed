@@ -25,25 +25,6 @@ let appStartupPromise = new Promise((resolve, reject) => {
 });
 
 const prefs = Services.prefs;
-const prefObserver = {
-  register() {
-    prefs.addObserver(PREF_BRANCH, this, false); 
-  },
-
-  unregister() {
-    prefs.removeObserver(PREF_BRANCH, this, false); 
-  },
-
-  observe(aSubject, aTopic, aData) {
-    
-    
-    if (aData === USER_DISABLE_PREF) {
-      
-      appStartupPromise = appStartupPromise.then(handleStartup);
-    }
-  }
-};
-
 
 const appStartupObserver = {
   register() {
@@ -119,6 +100,18 @@ const APP_SHUTDOWN = 2;
 let addonData, startupReason;
 
 function startup(data, reason) { 
+  addonResourceURI = data.resourceURI;
+
+  if (Services.prefs.getBoolPref(USER_DISABLE_PREF, false)) {
+    AddonManager.getActiveAddons().then(result => {
+      let addon = result.addons.find(a => a.id == ADDON_ID);
+      if (addon) {
+        addon.disable({allowSystemAddons: true});
+      }
+    });
+    return;
+  }
+
   addonData = data;
   startupReason = reason;
   if (reason === APP_STARTUP) {
@@ -126,14 +119,11 @@ function startup(data, reason) {
   } else {
     appStartupDone();
   }
-  prefObserver.register();
-  addonResourceURI = data.resourceURI;
   
   appStartupPromise = appStartupPromise.then(handleStartup);
 }
 
 function shutdown(data, reason) { 
-  prefObserver.unregister();
   const webExtension = LegacyExtensionsUtils.getEmbeddedExtensionFor({
     id: ADDON_ID,
     resourceURI: addonResourceURI
@@ -155,20 +145,14 @@ function getBoolPref(pref) {
   return prefs.getPrefType(pref) && prefs.getBoolPref(pref);
 }
 
-function shouldDisable() {
-  return getBoolPref(USER_DISABLE_PREF);
-}
-
 function handleStartup() {
   const webExtension = LegacyExtensionsUtils.getEmbeddedExtensionFor({
     id: ADDON_ID,
     resourceURI: addonResourceURI
   });
 
-  if (!shouldDisable() && !webExtension.started) {
+  if (!webExtension.started) {
     start(webExtension);
-  } else if (shouldDisable()) {
-    stop(webExtension, ADDON_DISABLE);
   }
 }
 
