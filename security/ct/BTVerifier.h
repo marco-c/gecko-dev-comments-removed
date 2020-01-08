@@ -10,6 +10,7 @@
 #include "BTInclusionProof.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
+#include "mozpkix/pkixtypes.h"
 
 namespace mozilla { namespace ct {
 
@@ -17,6 +18,13 @@ namespace mozilla { namespace ct {
 
 pkix::Result DecodeInclusionProof(pkix::Reader& input,
   InclusionProofDataV2& output);
+
+
+
+
+pkix::Result VerifyInclusionProof(const InclusionProofDataV2& proof,
+  pkix::Input leafEntry, pkix::Input expectedRootHash,
+  pkix::DigestAlgorithm digestAlgorithm);
 
 } } 
 
