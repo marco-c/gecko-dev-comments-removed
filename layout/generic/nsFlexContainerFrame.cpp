@@ -4166,6 +4166,7 @@ nsFlexContainerFrame::ComputeCrossSize(const ReflowInput& aReflowInput,
   
   
   if (aReflowInput.mStyleDisplay->IsContainSize()) {
+    *aIsDefinite = true;
     return aReflowInput.ComputedMinBSize();
   }
 
