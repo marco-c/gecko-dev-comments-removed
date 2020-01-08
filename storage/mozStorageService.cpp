@@ -796,7 +796,7 @@ Service::Observe(nsISupports *, const char *aTopic, const char16_t *)
           
           
           CrashReporter::AnnotateCrashReport(
-            NS_LITERAL_CSTRING("StorageConnectionNotClosed"),
+            CrashReporter::Annotation::StorageConnectionNotClosed,
             connections[i]->getFilename());
 #ifdef DEBUG
           printf_stderr("Storage connection not closed: %s",

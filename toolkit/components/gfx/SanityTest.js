@@ -4,6 +4,7 @@
 
 "use strict";
 
+ChromeUtils.import("resource://gre/modules/CrashReporter.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -70,16 +71,6 @@ function reportResult(val) {
 function reportTestReason(val) {
   let histogram = Services.telemetry.getHistogramById("GRAPHICS_SANITY_TEST_REASON");
   histogram.add(val);
-}
-
-function annotateCrashReport(value) {
-  try {
-    
-    var crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].
-                          getService(Ci.nsICrashReporter);
-    crashReporter.annotateCrashReport("GraphicsSanityTest", value ? "1" : "");
-  } catch (e) {
-  }
 }
 
 function setTimeout(aMs, aCallback) {
@@ -240,9 +231,8 @@ var listener = {
       this.mm = null;
     }
 
-    
-    
-    annotateCrashReport(false);
+    CrashReporter.removeAnnotation(
+      CrashReporter.annotations.GraphicsSanityTest);
   }
 };
 
@@ -330,7 +320,8 @@ SanityTest.prototype = {
 
     if (!this.shouldRunTest()) return;
 
-    annotateCrashReport(true);
+    CrashReporter.addAnnotation(
+      CrashReporter.annotations.GraphicsSanityTest, "1");
 
     
     var sanityTest = Services.ww.openWindow(null,

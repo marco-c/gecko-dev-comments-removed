@@ -13,6 +13,9 @@
 #define nsExceptionHandler_h__
 
 #include "mozilla/Assertions.h"
+#include "mozilla/EnumeratedArray.h"
+
+#include "CrashAnnotations.h"
 
 #include <functional>
 #include <stddef.h>
@@ -37,8 +40,6 @@
 #endif
 
 class nsIFile;
-template<class KeyClass, class DataType> class nsDataHashtable;
-class nsCStringHashKey;
 
 namespace CrashReporter {
 
@@ -92,8 +93,11 @@ nsresult SetMinidumpPath(const nsAString& aPath);
 
 
 
-nsresult AnnotateCrashReport(const nsACString& key, const nsACString& data);
-nsresult RemoveCrashReportAnnotation(const nsACString& key);
+nsresult AnnotateCrashReport(Annotation key, bool data);
+nsresult AnnotateCrashReport(Annotation key, int data);
+nsresult AnnotateCrashReport(Annotation key, unsigned int data);
+nsresult AnnotateCrashReport(Annotation key, const nsACString& data);
+nsresult RemoveCrashReportAnnotation(Annotation key);
 nsresult AppendAppNotesToCrashReport(const nsACString& data);
 
 void AnnotateOOMAllocationSize(size_t size);
@@ -113,7 +117,8 @@ nsresult UnregisterAppMemory(void* ptr);
 void SetIncludeContextHeap(bool aValue);
 
 
-typedef nsDataHashtable<nsCStringHashKey, nsCString> AnnotationTable;
+typedef mozilla::EnumeratedArray<Annotation, Annotation::Count, nsCString>
+        AnnotationTable;
 
 void DeleteMinidumpFilesForID(const nsAString& id);
 bool GetMinidumpForID(const nsAString& id, nsIFile** minidump);
