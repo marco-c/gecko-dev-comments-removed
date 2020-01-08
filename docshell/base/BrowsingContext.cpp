@@ -16,6 +16,7 @@
 #include "nsRefPtrHashtable.h"
 #include "nsIDocShell.h"
 #include "nsContentUtils.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace dom {
@@ -57,6 +58,28 @@ BrowsingContext::Init()
 BrowsingContext::GetLog()
 {
   return gBrowsingContextLog;
+}
+
+
+
+
+
+
+ void
+BrowsingContext::CleanupContexts(uint64_t aProcessId)
+{
+  if (sRootBrowsingContexts) {
+    RefPtr<BrowsingContext> context = sRootBrowsingContexts->getFirst();
+
+    while (context) {
+      RefPtr<BrowsingContext> next = context->getNext();
+      if (context->IsOwnedByProcess() &&
+          aProcessId == context->OwnerProcessId()) {
+        context->Detach();
+      }
+      context = next;
+    }
+  }
 }
 
  already_AddRefed<BrowsingContext>
