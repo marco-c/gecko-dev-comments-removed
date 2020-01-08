@@ -385,6 +385,12 @@ private:
   
 
 
+
+  mozilla::net::ReferrerPolicy GetReferrerPolicy(nsIScriptElement* aElement);
+
+  
+
+
   static nsresult CheckContentPolicy(nsIDocument* aDocument,
                                      nsISupports* aContext,
                                      nsIURI* aURI,

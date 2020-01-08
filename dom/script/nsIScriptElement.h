@@ -16,6 +16,7 @@
 #include "nsIContent.h"
 #include "nsContentCreatorFunctions.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/net/ReferrerPolicy.h"
 
 
 #define NS_ISCRIPTELEMENT_IID \
@@ -271,6 +272,14 @@ public:
   {
     
     return mozilla::CORS_NONE;
+  }
+
+  
+
+
+  virtual mozilla::net::ReferrerPolicy GetReferrerPolicy()
+  {
+    return mozilla::net::RP_Unset;
   }
 
   
