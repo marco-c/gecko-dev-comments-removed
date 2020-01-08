@@ -1595,7 +1595,8 @@ nsContainerFrame::MoveInlineOverflowToChildList(nsIFrame* aLineContainer)
       
       if (aLineContainer->GetPrevContinuation()) {
         ReparentFloatsForInlineChild(aLineContainer,
-                                     prevOverflowFrames->FirstChild(), true);
+                                     prevOverflowFrames->FirstChild(), true,
+                                     ReparentingDirection::Forwards);
       }
       
       
@@ -1748,7 +1749,8 @@ nsContainerFrame::PullNextInFlowChild(ContinuationTraversingState& aState)
  void
 nsContainerFrame::ReparentFloatsForInlineChild(nsIFrame* aOurLineContainer,
                                                nsIFrame* aFrame,
-                                               bool aReparentSiblings)
+                                               bool aReparentSiblings,
+                                               ReparentingDirection aDirection)
 {
   
   
@@ -1769,7 +1771,7 @@ nsContainerFrame::ReparentFloatsForInlineChild(nsIFrame* aOurLineContainer,
   NS_ASSERTION(ourBlock, "Not a block, but broke vertically?");
 
   while (true) {
-    ourBlock->ReparentFloats(aFrame, frameBlock, false);
+    ourBlock->ReparentFloats(aFrame, frameBlock, false, aDirection);
 
     if (!aReparentSiblings)
       return;
@@ -1784,7 +1786,8 @@ nsContainerFrame::ReparentFloatsForInlineChild(nsIFrame* aOurLineContainer,
     
     
     
-    ReparentFloatsForInlineChild(aOurLineContainer, next, aReparentSiblings);
+    ReparentFloatsForInlineChild(aOurLineContainer, next, aReparentSiblings,
+                                 aDirection);
     return;
   }
 }

@@ -2151,15 +2151,16 @@ static bool LineHasClear(nsLineBox* aLine) {
 
 void
 nsBlockFrame::ReparentFloats(nsIFrame* aFirstFrame, nsBlockFrame* aOldParent,
-                             bool aReparentSiblings) {
+                             bool aReparentSiblings,
+                             ReparentingDirection aDirection)
+{
   nsFrameList list;
   aOldParent->CollectFloats(aFirstFrame, list, aReparentSiblings);
   if (list.NotEmpty()) {
     for (nsIFrame* f : list) {
       MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
                  "CollectFloats should've removed that bit");
-      
-      ReparentFrame(f, aOldParent, this, ReparentingDirection::Backwards);
+      ReparentFrame(f, aOldParent, this, aDirection);
     }
     mFloats.AppendFrames(nullptr, list);
   }
@@ -2673,7 +2674,8 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
       aState.mPrevChild = mFrames.LastChild();
 
       
-      ReparentFloats(pulledLine->mFirstChild, nextInFlow, true);
+      ReparentFloats(pulledLine->mFirstChild, nextInFlow, true,
+                     ReparentingDirection::Backwards);
 
       DumpLine(aState, pulledLine, deltaBCoord, 0);
 #ifdef DEBUG
@@ -2957,7 +2959,8 @@ nsBlockFrame::PullFrameFrom(nsLineBox*           aLine,
 
     
     
-    ReparentFloats(frame, aFromContainer, false);
+    ReparentFloats(frame, aFromContainer, false,
+                   ReparentingDirection::Backwards);
   } else {
     MOZ_ASSERT(aLine == aFromLine.prev());
   }
