@@ -40,6 +40,9 @@ XPCOMUtils.defineLazyProxy(this, "PopupBlocking", () => {
 XPCOMUtils.defineLazyProxy(this, "SelectionSourceContent",
   "resource://gre/modules/SelectionSourceContent.jsm");
 
+XPCOMUtils.defineLazyProxy(this, "WebChannelContent",
+  "resource://gre/modules/WebChannelContent.jsm");
+
 XPCOMUtils.defineLazyProxy(this, "DateTimePickerContent", () => {
   let tmp = {};
   ChromeUtils.import("resource://gre/modules/DateTimePickerContent.jsm", tmp);
@@ -285,90 +288,9 @@ var FindBar = {
 };
 FindBar.init();
 
-let WebChannelMessageToChromeListener = {
-  
-  
-  
-  URL_WHITELIST_PREF: "webchannel.allowObject.urlWhitelist",
-
-  
-  
-  _cachedWhitelist: [],
-  _lastWhitelistValue: "",
-
-  init() {
-    addEventListener("WebChannelMessageToChrome", e => {
-      this._onMessageToChrome(e);
-    }, true, true);
-  },
-
-  _getWhitelistedPrincipals() {
-    let whitelist = Services.prefs.getCharPref(this.URL_WHITELIST_PREF);
-    if (whitelist != this._lastWhitelistValue) {
-      let urls = whitelist.split(/\s+/);
-      this._cachedWhitelist = urls.map(origin =>
-        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin));
-    }
-    return this._cachedWhitelist;
-  },
-
-  _onMessageToChrome(e) {
-    
-    let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
-
-    if (e.detail) {
-      if (typeof e.detail != "string") {
-        
-        
-        
-        
-        let objectsAllowed = this._getWhitelistedPrincipals().some(whitelisted =>
-          principal.originNoSuffix == whitelisted.originNoSuffix);
-        if (!objectsAllowed) {
-          Cu.reportError("WebChannelMessageToChrome sent with an object from a non-whitelisted principal");
-          return;
-        }
-      }
-      sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
-    } else {
-      Cu.reportError("WebChannel message failed. No message detail.");
-    }
-  }
-};
-
-WebChannelMessageToChromeListener.init();
-
-
-
-addMessageListener("WebChannelMessageToContent", function(e) {
-  if (e.data) {
-    
-    
-    
-    
-    let eventTarget = e.objects.eventTarget || content;
-
-    
-    let targetPrincipal = eventTarget instanceof Ci.nsIDOMWindow ? eventTarget.document.nodePrincipal : eventTarget.nodePrincipal;
-
-    if (e.principal.subsumes(targetPrincipal)) {
-      
-      
-      let targetWindow = eventTarget instanceof Ci.nsIDOMWindow ? eventTarget : eventTarget.ownerGlobal;
-
-      eventTarget.dispatchEvent(new targetWindow.CustomEvent("WebChannelMessageToContent", {
-        detail: Cu.cloneInto({
-          id: e.data.id,
-          message: e.data.message,
-        }, targetWindow),
-      }));
-    } else {
-      Cu.reportError("WebChannel message failed. Principal mismatch.");
-    }
-  } else {
-    Cu.reportError("WebChannel message failed. No message data.");
-  }
-});
+addEventListener("WebChannelMessageToChrome", WebChannelContent,
+                 true, true);
+addMessageListener("WebChannelMessageToContent", WebChannelContent);
 
 var AudioPlaybackListener = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
