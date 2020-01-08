@@ -357,17 +357,19 @@ function hasFocus(node) {
 
 
 
-async function setInputValueForAutocompletion(
+
+
+
+
+
+
+function jstermSetValueAndComplete(
   jsterm,
   value,
   caretPosition = value.length,
+  completionType
 ) {
-  jsterm.setInputValue("");
-  jsterm.focus();
-
-  const updated = jsterm.once("autocomplete-updated");
-  EventUtils.sendString(value);
-  await updated;
+  jsterm.setInputValue(value);
 
   if (caretPosition < 0) {
     caretPosition = value.length + caretPosition;
@@ -384,6 +386,27 @@ async function setInputValueForAutocompletion(
       jsterm.editor.setCursor(jsterm.editor.getPosition(caretPosition));
     }
   }
+
+  return jstermComplete(jsterm, completionType);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function jstermComplete(jsterm, completionType = jsterm.COMPLETE_HINT_ONLY) {
+  const updated = jsterm.once("autocomplete-updated");
+  jsterm.complete(completionType);
+  return updated;
 }
 
 

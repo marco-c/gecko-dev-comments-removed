@@ -23,14 +23,14 @@ async function performTests() {
   const {autocompletePopup} = jsterm;
 
   
-  await setInputValueForAutocompletion(jsterm, "docu");
+  await jstermSetValueAndComplete(jsterm, "docu");
   is(jsterm.getInputValue(), "docu", "'docu' completion (input.value)");
   checkJsTermCompletionValue(jsterm, "    ment", "'docu' completion (completeNode)");
   is(autocompletePopup.items.length, 1, "autocomplete popup has 1 item");
-  is(autocompletePopup.isOpen, false, "autocomplete popup is not open");
+  ok(autocompletePopup.isOpen, "autocomplete popup is open with 1 item");
 
   
-  EventUtils.synthesizeKey("KEY_Tab");
+  await jstermSetValueAndComplete(jsterm, "docu", undefined, jsterm.COMPLETE_FORWARD);
   is(jsterm.getInputValue(), "document", "'docu' tab completion");
 
   checkJsTermCursor(jsterm, "document".length, "cursor is at the end of 'document'");
@@ -38,64 +38,47 @@ async function performTests() {
 
   
   
-  await setInputValueForAutocompletion(jsterm, "window.Ob");
-  EventUtils.synthesizeKey("KEY_Tab");
+  await jstermSetValueAndComplete(jsterm, "window.Ob", undefined,
+                                  jsterm.COMPLETE_FORWARD);
   is(jsterm.getInputValue(), "window.Object", "'window.Ob' tab completion");
 
   
-  const onPopupOpened = autocompletePopup.once("popup-opened");
-  await setInputValueForAutocompletion(jsterm, "document.getElem");
+  await jstermSetValueAndComplete(
+    jsterm, "document.getElem", undefined, jsterm.COMPLETE_FORWARD);
   is(jsterm.getInputValue(), "document.getElem", "'document.getElem' completion");
   checkJsTermCompletionValue(jsterm, "                entById",
      "'document.getElem' completion");
 
   
-  await onPopupOpened;
-  EventUtils.synthesizeKey("KEY_ArrowDown");
+  await jsterm.complete(jsterm.COMPLETE_FORWARD);
   is(jsterm.getInputValue(), "document.getElem", "'document.getElem' completion");
   checkJsTermCompletionValue(jsterm, "                entsByClassName",
      "'document.getElem' another tab completion");
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  await waitFor(() => (getJsTermCompletionValue(jsterm) || "").includes("entById"));
+  await jstermComplete(jsterm, jsterm.COMPLETE_BACKWARD);
   is(jsterm.getInputValue(), "document.getElem", "'document.getElem' untab completion");
   checkJsTermCompletionValue(jsterm, "                entById",
      "'document.getElem' completion");
 
   ui.clearOutput();
 
-  await setInputValueForAutocompletion(jsterm, "docu");
+  await jstermSetValueAndComplete(jsterm, "docu");
   checkJsTermCompletionValue(jsterm, "    ment", "'docu' completion");
 
-  let onAutocompletUpdated = jsterm.once("autocomplete-updated");
   await jsterm.execute();
   checkJsTermCompletionValue(jsterm, "", "clear completion on execute()");
 
   
-  
-  
-  onAutocompletUpdated = jsterm.once("autocomplete-updated");
-  jsterm.setInputValue("console.log('one');\n");
-  EventUtils.sendString("consol");
-  await onAutocompletUpdated;
-  checkJsTermCompletionValue(jsterm, "\n      e", "multi-line completion");
+  await jstermSetValueAndComplete(jsterm, "console.log('one');\nconsol");
+  checkJsTermCompletionValue(jsterm, "                   \n      e",
+     "multi-line completion");
 
   
-  onAutocompletUpdated = jsterm.once("autocomplete-updated");
-  jsterm.setInputValue("{\n\n}");
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  EventUtils.sendString("console.g");
-  await onAutocompletUpdated;
-  checkJsTermValueAndCursor(jsterm, "{\nconsole.g|\n}");
-  checkJsTermCompletionValue(jsterm, "\n         roup", "multi-line completion");
-  is(autocompletePopup.isOpen, true, "popup is opened");
-
-  
-  await setInputValueForAutocompletion(jsterm, "Object.name.sl");
+  await jstermSetValueAndComplete(jsterm, "Object.name.sl");
   checkJsTermCompletionValue(jsterm, "              ice", "non-object completion");
 
   
-  await setInputValueForAutocompletion(jsterm, "'Asimov'.sl");
+  await jstermSetValueAndComplete(jsterm, "'Asimov'.sl");
   checkJsTermCompletionValue(jsterm, "           ice", "string literal completion");
 }
