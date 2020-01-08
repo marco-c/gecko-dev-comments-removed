@@ -840,15 +840,6 @@ static nsCString hszValue( DWORD instance, HSZ hsz ) {
     result += "]";
     return result;
 }
-#else
-
-
-static nsCString uTypeDesc( UINT ) {
-    return nsCString( "?" );
-}
-static nsCString hszValue( DWORD, HSZ ) {
-    return nsCString( "?" );
-}
 #endif
 
 
