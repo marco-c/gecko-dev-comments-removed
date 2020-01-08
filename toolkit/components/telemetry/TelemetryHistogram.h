@@ -80,7 +80,7 @@ size_t
 GetMapShallowSizesOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
 size_t
-GetHistogramSizesofIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+GetHistogramSizesOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
 
 
