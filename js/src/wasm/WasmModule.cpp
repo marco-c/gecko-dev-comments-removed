@@ -1112,6 +1112,7 @@ static bool CreateExportObject(JSContext* cx,
   return true;
 }
 
+#ifdef ENABLE_WASM_GC
 static bool MakeStructField(JSContext* cx, const ValType& v, bool isMutable,
                             const char* format, uint32_t fieldNo,
                             AutoIdVector* ids, AutoValueVector* fieldTypeObjs,
@@ -1172,10 +1173,24 @@ static bool MakeStructField(JSContext* cx, const ValType& v, bool isMutable,
 
   return true;
 }
+#endif
 
 bool Module::makeStructTypeDescrs(
     JSContext* cx,
     MutableHandle<StructTypeDescrVector> structTypeDescrs) const {
+  
+  if (structTypes().length() == 0) {
+    return true;
+  }
+
+#ifndef ENABLE_WASM_GC
+  MOZ_CRASH("Should not have seen any struct types");
+#else
+
+#ifndef ENABLE_BINARYDATA
+#error "GC types require TypedObject"
+#endif
+
   
   
   RootedObject typedObjectModule(
@@ -1252,6 +1267,7 @@ bool Module::makeStructTypeDescrs(
   }
 
   return true;
+#endif
 }
 
 bool Module::instantiate(JSContext* cx, Handle<FunctionVector> funcImports,
