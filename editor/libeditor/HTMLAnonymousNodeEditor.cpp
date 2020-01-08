@@ -295,7 +295,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 
   
   if (NS_WARN_IF(!IsObjectResizerEnabled() &&
-                 !mIsAbsolutelyPositioningEnabled &&
+                 !IsAbsolutePositionEditorEnabled() &&
                  !IsInlineTableEditorEnabled())) {
     return NS_OK;
   }
@@ -320,7 +320,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   nsAtom* focusTagAtom = focusElement->NodeInfo()->NameAtom();
 
   RefPtr<Element> absPosElement;
-  if (mIsAbsolutelyPositioningEnabled) {
+  if (IsAbsolutePositionEditorEnabled()) {
     
     
     absPosElement = GetAbsolutelyPositionedSelectionContainer();
@@ -361,7 +361,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   
   
 
-  if (mIsAbsolutelyPositioningEnabled && mAbsolutelyPositionedObject &&
+  if (IsAbsolutePositionEditorEnabled() && mAbsolutelyPositionedObject &&
       absPosElement != mAbsolutelyPositionedObject) {
     HideGrabber();
     NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
@@ -402,7 +402,7 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
     }
   }
 
-  if (mIsAbsolutelyPositioningEnabled && absPosElement &&
+  if (IsAbsolutePositionEditorEnabled() && absPosElement &&
       IsModifiableNode(*absPosElement) && absPosElement != hostContent) {
     if (mAbsolutelyPositionedObject) {
       nsresult rv = RefreshGrabber();

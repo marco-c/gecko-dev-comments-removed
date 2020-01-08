@@ -248,10 +248,20 @@ public:
   }
 
   
-  bool AbsolutePositioningEnabled() const
+
+
+
+
+  void EnableAbsolutePositionEditor(bool aEnable)
+  {
+    mIsAbsolutelyPositioningEnabled = aEnable;
+  }
+  bool IsAbsolutePositionEditorEnabled() const
   {
     return mIsAbsolutelyPositioningEnabled;
   }
+
+  
 
   
 
