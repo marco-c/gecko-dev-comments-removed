@@ -957,14 +957,6 @@
 
 
 
-#define NS_GENERIC_CONTENT_SNIFFER \
-    "@mozilla.org/network/content-sniffer;1"
-
-
-
-
-
-
 #define NS_BINARYDETECTOR_CONTRACTID \
     "@mozilla.org/network/binary-detector;1"
 
