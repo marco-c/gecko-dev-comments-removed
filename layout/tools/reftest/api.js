@@ -66,6 +66,11 @@ this.reftest = class extends ExtensionAPI {
     
     
     let win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (!win) {
+      
+      
+      win = Services.wm.getMostRecentWindow("navigator:geckoview");
+    }
 
     if (Services.appinfo.OS == "Android") {
       ChromeUtils.import("resource://reftest/reftest.jsm");
