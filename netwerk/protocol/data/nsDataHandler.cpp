@@ -11,6 +11,7 @@
 #include "DataChannelChild.h"
 #include "plstr.h"
 #include "nsSimpleURI.h"
+#include "mozilla/dom/MimeType.h"
 
 
 
@@ -143,13 +144,13 @@ nsDataHandler::AllowPort(int32_t port, const char *scheme, bool *_retval) {
     return NS_OK;
 }
 
-#define BASE64_EXTENSION ";base64"
 
 
 
 
 
-bool
+
+static bool
 FindOffsetOf(const nsACString& aPattern, const nsACString& aSrc,
              nsACString::size_type& aOffset)
 {
@@ -158,7 +159,7 @@ FindOffsetOf(const nsACString& aPattern, const nsACString& aSrc,
     nsACString::const_iterator begin, end;
     aSrc.BeginReading(begin);
     aSrc.EndReading(end);
-    if (!FindInReadable(aPattern, begin, end, kComparator)) {
+    if (!RFindInReadable(aPattern, begin, end, kComparator)) {
         return false;
     }
 
@@ -175,8 +176,8 @@ nsDataHandler::ParsePathWithoutRef(
     bool& aIsBase64,
     nsDependentCSubstring* aDataBuffer)
 {
-    static NS_NAMED_LITERAL_CSTRING(kBase64Ext, BASE64_EXTENSION);
-    static NS_NAMED_LITERAL_CSTRING(kCharset, "charset=");
+    static NS_NAMED_LITERAL_CSTRING(kBase64, "base64");
+    static NS_NAMED_LITERAL_CSTRING(kCharset, "charset");
 
     aIsBase64 = false;
 
@@ -197,8 +198,8 @@ nsDataHandler::ParsePathWithoutRef(
 
         
         nsACString::size_type base64;
-        if (FindOffsetOf(kBase64Ext, mediaType, base64)) {
-            nsACString::size_type offset = base64 + kBase64Ext.Length();
+        if (FindOffsetOf(kBase64, mediaType, base64) && base64 > 0) {
+            nsACString::size_type offset = base64 + kBase64.Length();
             
             
             
@@ -207,37 +208,51 @@ nsDataHandler::ParsePathWithoutRef(
             
             
             if (offset == mediaType.Length() || mediaType[offset] == ';') {
-                aIsBase64 = true;
+                MOZ_DIAGNOSTIC_ASSERT(base64 > 0, "Did someone remove the check?");
                 
-                mediaType.Rebind(aPath, 0, base64);
+                
+                base64--;
+                
+                while (base64 > 0 && mediaType[base64] == ' ') {
+                    base64--;
+                }
+                if (mediaType[base64] == ';') {
+                    aIsBase64 = true;
+                    
+                    mediaType.Rebind(aPath, 0, base64);
+                }
             }
         }
 
         
-        int32_t semiColon = mediaType.FindChar(';');
+        nsACString::size_type startIndex = 0;
+        while (startIndex < mediaType.Length() && mediaType[startIndex] == ' ') {
+            startIndex++;
+        }
 
-        if (semiColon == 0 || mediaType.IsEmpty()) {
+        nsAutoCString mediaTypeBuf;
+        
+        if (startIndex < mediaType.Length() && mediaType[startIndex] == ';') {
+            mediaTypeBuf.AssignLiteral("text/plain");
+            mediaTypeBuf.Append(mediaType);
+            mediaType.Rebind(mediaTypeBuf, 0, mediaTypeBuf.Length());
+        }
+
+        
+        UniquePtr<CMimeType> parsed = CMimeType::Parse(mediaType);
+        if (parsed) {
+            parsed->GetFullType(aContentType);
+            if (aContentCharset) {
+                parsed->GetParameterValue(kCharset, *aContentCharset);
+            }
+        } else {
             
             aContentType.AssignLiteral("text/plain");
-        } else {
-            aContentType = Substring(mediaType, 0, semiColon);
-            ToLowerCase(aContentType);
-            if (!aContentType.StripWhitespace(mozilla::fallible)) {
-                return NS_ERROR_OUT_OF_MEMORY;
+            if (aContentCharset) {
+                aContentCharset->AssignLiteral("US-ASCII");
             }
         }
 
-        if (semiColon != kNotFound && aContentCharset) {
-            auto afterSemi = Substring(mediaType, semiColon + 1);
-            nsACString::size_type charset;
-            if (FindOffsetOf(kCharset, afterSemi, charset)) {
-                *aContentCharset =
-                        Substring(afterSemi, charset + kCharset.Length());
-                if (!aContentCharset->StripWhitespace(mozilla::fallible)) {
-                    return NS_ERROR_OUT_OF_MEMORY;
-                }
-            }
-        }
     }
 
     if (aDataBuffer) {
