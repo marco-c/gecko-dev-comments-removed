@@ -5413,9 +5413,9 @@ void CodeGenerator::visitDefVar(LDefVar* lir) {
   JSScript* script = current->mir()->info().script();
   jsbytecode* pc = lir->mir()->resumePoint()->pc();
 
-  pushArg(ImmPtr(pc));                    
-  pushArg(ImmGCPtr(script));              
-  pushArg(envChain);                      
+  pushArg(ImmPtr(pc));        
+  pushArg(ImmGCPtr(script));  
+  pushArg(envChain);          
 
   callVM(DefVarInfo, lir);
 }

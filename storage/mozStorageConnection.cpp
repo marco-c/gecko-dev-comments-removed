@@ -603,8 +603,10 @@ nsresult Connection::initialize() {
   }
 
 #ifdef MOZ_SQLITE_FTS3_TOKENIZER
-  srv = ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 1, 0);
-  MOZ_ASSERT(srv == SQLITE_OK, "SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER should be enabled");
+  srv =
+      ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 1, 0);
+  MOZ_ASSERT(srv == SQLITE_OK,
+             "SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER should be enabled");
 #endif
 
   
@@ -642,8 +644,10 @@ nsresult Connection::initialize(nsIFile *aDatabaseFile) {
   }
 
 #ifdef MOZ_SQLITE_FTS3_TOKENIZER
-  srv = ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 1, 0);
-  MOZ_ASSERT(srv == SQLITE_OK, "SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER should be enabled");
+  srv =
+      ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 1, 0);
+  MOZ_ASSERT(srv == SQLITE_OK,
+             "SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER should be enabled");
 #endif
 
   
@@ -676,8 +680,10 @@ nsresult Connection::initialize(nsIFileURL *aFileURL) {
   }
 
 #ifdef MOZ_SQLITE_FTS3_TOKENIZER
-  srv = ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 1, 0);
-  MOZ_ASSERT(srv == SQLITE_OK, "SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER should be enabled");
+  srv =
+      ::sqlite3_db_config(mDBConn, SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, 1, 0);
+  MOZ_ASSERT(srv == SQLITE_OK,
+             "SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER should be enabled");
 #endif
 
   

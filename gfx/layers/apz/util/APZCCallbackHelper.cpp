@@ -205,7 +205,8 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
           aRequest, actualScrollOffset);
     }
   } else if (aRequest.IsRootContent() &&
-             aRequest.GetScrollOffset() != aRequest.GetLayoutViewport().TopLeft()) {
+             aRequest.GetScrollOffset() !=
+                 aRequest.GetLayoutViewport().TopLeft()) {
     
     
     

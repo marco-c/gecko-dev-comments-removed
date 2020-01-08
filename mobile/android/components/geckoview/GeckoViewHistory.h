@@ -21,7 +21,7 @@ namespace mozilla {
 namespace dom {
 class Document;
 }
-}
+}  
 
 struct VisitedURI {
   nsCOMPtr<nsIURI> mURI;

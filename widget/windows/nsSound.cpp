@@ -115,13 +115,16 @@ void nsSound::PurgeLastSound() {
   
   if (mSoundPlayer) {
     if (mPlayerThread) {
-      mPlayerThread->Dispatch(NS_NewRunnableFunction(
-        "nsSound::PurgeLastSound", [player = std::move(mSoundPlayer)]() {
-          
-          
-          
-          ::PlaySoundW(nullptr, nullptr, SND_PURGE);
-        }), NS_DISPATCH_NORMAL);
+      mPlayerThread->Dispatch(
+          NS_NewRunnableFunction("nsSound::PurgeLastSound",
+                                 [player = std::move(mSoundPlayer)]() {
+                                   
+                                   
+                                   
+                                   
+                                   ::PlaySoundW(nullptr, nullptr, SND_PURGE);
+                                 }),
+          NS_DISPATCH_NORMAL);
     }
   }
 }

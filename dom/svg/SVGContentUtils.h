@@ -191,8 +191,7 @@ class SVGContentUtils {
   
 
 
-  static nsresult ReportToConsole(dom::Document* doc,
-                                  const char* aWarning,
+  static nsresult ReportToConsole(dom::Document* doc, const char* aWarning,
                                   const char16_t** aParams,
                                   uint32_t aParamsLength);
 

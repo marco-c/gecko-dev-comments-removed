@@ -11,71 +11,50 @@
 namespace mozilla {
 namespace layers {
 
-RenderRootStateManager::RenderRootStateManager(WebRenderLayerManager* aLayerManager)
-  : mLayerManager(aLayerManager)
-  , mDestroyed(false)
-{
-}
+RenderRootStateManager::RenderRootStateManager(
+    WebRenderLayerManager* aLayerManager)
+    : mLayerManager(aLayerManager), mDestroyed(false) {}
 
-RenderRootStateManager::~RenderRootStateManager()
-{}
+RenderRootStateManager::~RenderRootStateManager() {}
 
 
 
 
 
 
-void
-RenderRootStateManager::AddRef()
-{
-  mLayerManager->AddRef();
-}
+void RenderRootStateManager::AddRef() { mLayerManager->AddRef(); }
 
-void
-RenderRootStateManager::Release()
-{
-  mLayerManager->Release();
-}
+void RenderRootStateManager::Release() { mLayerManager->Release(); }
 
-
-WebRenderBridgeChild*
-RenderRootStateManager::WrBridge() const
-{
+WebRenderBridgeChild* RenderRootStateManager::WrBridge() const {
   return mLayerManager->WrBridge();
 }
 
-WebRenderCommandBuilder&
-RenderRootStateManager::CommandBuilder()
-{
+WebRenderCommandBuilder& RenderRootStateManager::CommandBuilder() {
   return mLayerManager->CommandBuilder();
 }
 
 RenderRootStateManager::WebRenderUserDataRefTable*
-RenderRootStateManager::GetWebRenderUserDataTable()
-{
+RenderRootStateManager::GetWebRenderUserDataTable() {
   return mLayerManager->GetWebRenderUserDataTable();
 }
 
-wr::IpcResourceUpdateQueue&
-RenderRootStateManager::AsyncResourceUpdates()
-{
+wr::IpcResourceUpdateQueue& RenderRootStateManager::AsyncResourceUpdates() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!mAsyncResourceUpdates) {
     mAsyncResourceUpdates.emplace(WrBridge());
 
     RefPtr<Runnable> task = NewRunnableMethod(
-      "RenderRootStateManager::FlushAsyncResourceUpdates",
-      this, &RenderRootStateManager::FlushAsyncResourceUpdates);
+        "RenderRootStateManager::FlushAsyncResourceUpdates", this,
+        &RenderRootStateManager::FlushAsyncResourceUpdates);
     NS_DispatchToMainThread(task.forget());
   }
 
   return mAsyncResourceUpdates.ref();
 }
 
-void
-RenderRootStateManager::Destroy()
-{
+void RenderRootStateManager::Destroy() {
   ClearAsyncAnimations();
 
   if (WrBridge()) {
@@ -90,9 +69,7 @@ RenderRootStateManager::Destroy()
   mDestroyed = true;
 }
 
-void
-RenderRootStateManager::FlushAsyncResourceUpdates()
-{
+void RenderRootStateManager::FlushAsyncResourceUpdates() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!mAsyncResourceUpdates) {
@@ -106,21 +83,16 @@ RenderRootStateManager::FlushAsyncResourceUpdates()
   mAsyncResourceUpdates.reset();
 }
 
-void
-RenderRootStateManager::AddImageKeyForDiscard(wr::ImageKey key)
-{
+void RenderRootStateManager::AddImageKeyForDiscard(wr::ImageKey key) {
   mImageKeysToDelete.AppendElement(key);
 }
 
-void
-RenderRootStateManager::AddBlobImageKeyForDiscard(wr::BlobImageKey key)
-{
+void RenderRootStateManager::AddBlobImageKeyForDiscard(wr::BlobImageKey key) {
   mBlobImageKeysToDelete.AppendElement(key);
 }
 
-void
-RenderRootStateManager::DiscardImagesInTransaction(wr::IpcResourceUpdateQueue& aResources)
-{
+void RenderRootStateManager::DiscardImagesInTransaction(
+    wr::IpcResourceUpdateQueue& aResources) {
   for (const auto& key : mImageKeysToDelete) {
     aResources.DeleteImage(key);
   }
@@ -131,9 +103,7 @@ RenderRootStateManager::DiscardImagesInTransaction(wr::IpcResourceUpdateQueue& a
   mBlobImageKeysToDelete.Clear();
 }
 
-void
-RenderRootStateManager::DiscardLocalImages()
-{
+void RenderRootStateManager::DiscardLocalImages() {
   
   
   
@@ -141,16 +111,12 @@ RenderRootStateManager::DiscardLocalImages()
   mBlobImageKeysToDelete.Clear();
 }
 
-void
-RenderRootStateManager::ClearCachedResources()
-{
+void RenderRootStateManager::ClearCachedResources() {
   mActiveCompositorAnimationIds.clear();
   mDiscardedCompositorAnimationsIds.Clear();
 }
 
-void
-RenderRootStateManager::AddActiveCompositorAnimationId(uint64_t aId)
-{
+void RenderRootStateManager::AddActiveCompositorAnimationId(uint64_t aId) {
   
   
   
@@ -158,9 +124,7 @@ RenderRootStateManager::AddActiveCompositorAnimationId(uint64_t aId)
   mActiveCompositorAnimationIds.insert(aId);
 }
 
-void
-RenderRootStateManager::AddCompositorAnimationsIdForDiscard(uint64_t aId)
-{
+void RenderRootStateManager::AddCompositorAnimationsIdForDiscard(uint64_t aId) {
   if (mActiveCompositorAnimationIds.erase(aId)) {
     
     
@@ -169,42 +133,33 @@ RenderRootStateManager::AddCompositorAnimationsIdForDiscard(uint64_t aId)
   }
 }
 
-void
-RenderRootStateManager::DiscardCompositorAnimations()
-{
-  if (WrBridge()->IPCOpen() &&
-      !mDiscardedCompositorAnimationsIds.IsEmpty()) {
-    WrBridge()->
-      SendDeleteCompositorAnimations(mDiscardedCompositorAnimationsIds);
+void RenderRootStateManager::DiscardCompositorAnimations() {
+  if (WrBridge()->IPCOpen() && !mDiscardedCompositorAnimationsIds.IsEmpty()) {
+    WrBridge()->SendDeleteCompositorAnimations(
+        mDiscardedCompositorAnimationsIds);
   }
   mDiscardedCompositorAnimationsIds.Clear();
 }
 
-void
-RenderRootStateManager::RegisterAsyncAnimation(const wr::ImageKey& aKey,
-                                              SharedSurfacesAnimation* aAnimation)
-{
+void RenderRootStateManager::RegisterAsyncAnimation(
+    const wr::ImageKey& aKey, SharedSurfacesAnimation* aAnimation) {
   mAsyncAnimations.insert(std::make_pair(wr::AsUint64(aKey), aAnimation));
 }
 
-void
-RenderRootStateManager::DeregisterAsyncAnimation(const wr::ImageKey& aKey)
-{
+void RenderRootStateManager::DeregisterAsyncAnimation(
+    const wr::ImageKey& aKey) {
   mAsyncAnimations.erase(wr::AsUint64(aKey));
 }
 
-void
-RenderRootStateManager::ClearAsyncAnimations()
-{
+void RenderRootStateManager::ClearAsyncAnimations() {
   for (const auto& i : mAsyncAnimations) {
     i.second->Invalidate(this);
   }
   mAsyncAnimations.clear();
 }
 
-void
-RenderRootStateManager::WrReleasedImages(const nsTArray<wr::ExternalImageKeyPair>& aPairs)
-{
+void RenderRootStateManager::WrReleasedImages(
+    const nsTArray<wr::ExternalImageKeyPair>& aPairs) {
   
   
   
@@ -223,54 +178,41 @@ RenderRootStateManager::WrReleasedImages(const nsTArray<wr::ExternalImageKeyPair
   }
 }
 
-void
-RenderRootStateManager::AddWebRenderParentCommand(const WebRenderParentCommand& aCmd)
-{
+void RenderRootStateManager::AddWebRenderParentCommand(
+    const WebRenderParentCommand& aCmd) {
   WrBridge()->AddWebRenderParentCommand(aCmd);
 }
-void
-RenderRootStateManager::UpdateResources(wr::IpcResourceUpdateQueue& aResources)
-{
+void RenderRootStateManager::UpdateResources(
+    wr::IpcResourceUpdateQueue& aResources) {
   WrBridge()->UpdateResources(aResources);
 }
-void
-RenderRootStateManager::AddPipelineIdForAsyncCompositable(const wr::PipelineId& aPipelineId,
-                                                   const CompositableHandle& aHandle)
-{
+void RenderRootStateManager::AddPipelineIdForAsyncCompositable(
+    const wr::PipelineId& aPipelineId, const CompositableHandle& aHandle) {
   WrBridge()->AddPipelineIdForAsyncCompositable(aPipelineId, aHandle);
 }
-void
-RenderRootStateManager::AddPipelineIdForCompositable(const wr::PipelineId& aPipelineId,
-                                              const CompositableHandle& aHandle)
-{
+void RenderRootStateManager::AddPipelineIdForCompositable(
+    const wr::PipelineId& aPipelineId, const CompositableHandle& aHandle) {
   WrBridge()->AddPipelineIdForCompositable(aPipelineId, aHandle);
 }
-void
-RenderRootStateManager::RemovePipelineIdForCompositable(const wr::PipelineId& aPipelineId)
-{
+void RenderRootStateManager::RemovePipelineIdForCompositable(
+    const wr::PipelineId& aPipelineId) {
   WrBridge()->RemovePipelineIdForCompositable(aPipelineId);
 }
-  
-  
-void
-RenderRootStateManager::ReleaseTextureOfImage(const wr::ImageKey& aKey)
-{
+
+
+void RenderRootStateManager::ReleaseTextureOfImage(const wr::ImageKey& aKey) {
   WrBridge()->ReleaseTextureOfImage(aKey);
 }
 
-wr::FontInstanceKey
-RenderRootStateManager::GetFontKeyForScaledFont(gfx::ScaledFont* aScaledFont,
-                                              wr::IpcResourceUpdateQueue* aResources)
-{
+wr::FontInstanceKey RenderRootStateManager::GetFontKeyForScaledFont(
+    gfx::ScaledFont* aScaledFont, wr::IpcResourceUpdateQueue* aResources) {
   return WrBridge()->GetFontKeyForScaledFont(aScaledFont, aResources);
 }
 
-wr::FontKey
-RenderRootStateManager::GetFontKeyForUnscaledFont(gfx::UnscaledFont* aUnscaledFont,
-                                                wr::IpcResourceUpdateQueue* aResources)
-{
+wr::FontKey RenderRootStateManager::GetFontKeyForUnscaledFont(
+    gfx::UnscaledFont* aUnscaledFont, wr::IpcResourceUpdateQueue* aResources) {
   return WrBridge()->GetFontKeyForUnscaledFont(aUnscaledFont, aResources);
 }
 
-} 
-} 
+}  
+}  

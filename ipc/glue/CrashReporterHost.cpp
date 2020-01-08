@@ -20,15 +20,20 @@
 
 
 
-static_assert(nsICrashService::PROCESS_TYPE_MAIN == (int)GeckoProcessType_Default,
+static_assert(nsICrashService::PROCESS_TYPE_MAIN ==
+                  (int)GeckoProcessType_Default,
               "GeckoProcessType enum is out of sync with nsICrashService!");
-static_assert(nsICrashService::PROCESS_TYPE_PLUGIN == (int)GeckoProcessType_Plugin,
+static_assert(nsICrashService::PROCESS_TYPE_PLUGIN ==
+                  (int)GeckoProcessType_Plugin,
               "GeckoProcessType enum is out of sync with nsICrashService!");
-static_assert(nsICrashService::PROCESS_TYPE_CONTENT == (int)GeckoProcessType_Content,
+static_assert(nsICrashService::PROCESS_TYPE_CONTENT ==
+                  (int)GeckoProcessType_Content,
               "GeckoProcessType enum is out of sync with nsICrashService!");
-static_assert(nsICrashService::PROCESS_TYPE_IPDLUNITTEST == (int)GeckoProcessType_IPDLUnitTest,
+static_assert(nsICrashService::PROCESS_TYPE_IPDLUNITTEST ==
+                  (int)GeckoProcessType_IPDLUnitTest,
               "GeckoProcessType enum is out of sync with nsICrashService!");
-static_assert(nsICrashService::PROCESS_TYPE_GMPLUGIN == (int)GeckoProcessType_GMPlugin,
+static_assert(nsICrashService::PROCESS_TYPE_GMPLUGIN ==
+                  (int)GeckoProcessType_GMPlugin,
               "GeckoProcessType enum is out of sync with nsICrashService!");
 static_assert(nsICrashService::PROCESS_TYPE_GPU == (int)GeckoProcessType_GPU,
               "GeckoProcessType enum is out of sync with nsICrashService!");
@@ -36,13 +41,14 @@ static_assert(nsICrashService::PROCESS_TYPE_VR == (int)GeckoProcessType_VR,
               "GeckoProcessType enum is out of sync with nsICrashService!");
 static_assert(nsICrashService::PROCESS_TYPE_RDD == (int)GeckoProcessType_RDD,
               "GeckoProcessType enum is out of sync with nsICrashService!");
-static_assert(nsICrashService::PROCESS_TYPE_SOCKET == (int)GeckoProcessType_Socket,
+static_assert(nsICrashService::PROCESS_TYPE_SOCKET ==
+                  (int)GeckoProcessType_Socket,
               "GeckoProcessType enum is out of sync with nsICrashService!");
 
 
-static_assert(nsICrashService::PROCESS_TYPE_SOCKET + 1 == (int)GeckoProcessType_End,
+static_assert(nsICrashService::PROCESS_TYPE_SOCKET + 1 ==
+                  (int)GeckoProcessType_End,
               "GeckoProcessType enum is out of sync with nsICrashService!");
-
 
 namespace mozilla {
 namespace ipc {
@@ -116,14 +122,14 @@ bool CrashReporterHost::FinalizeCrashReport() {
     
     switch (mProcessType) {
 #define GECKO_PROCESS_TYPE(enum_name, string_name, xre_name) \
-      case GeckoProcessType_##enum_name: \
-        type.AssignLiteral(string_name); \
-        break;
+  case GeckoProcessType_##enum_name:                         \
+    type.AssignLiteral(string_name);                         \
+    break;
 #include "mozilla/GeckoProcessTypes.h"
 #undef GECKO_PROCESS_TYPE
-    default:
-      NS_ERROR("unknown process type");
-      break;
+      default:
+        NS_ERROR("unknown process type");
+        break;
     }
   }
   annotations[CrashReporter::Annotation::ProcessType] = type;
@@ -188,9 +194,9 @@ bool CrashReporterHost::FinalizeCrashReport() {
   } else {
     switch (aProcessType) {
 #define GECKO_PROCESS_TYPE(enum_name, string_name, xre_name) \
-      case GeckoProcessType_##enum_name:                     \
-        telemetryKey.AssignLiteral(string_name);             \
-        break;
+  case GeckoProcessType_##enum_name:                         \
+    telemetryKey.AssignLiteral(string_name);                 \
+    break;
 #include "mozilla/GeckoProcessTypes.h"
 #undef GECKO_PROCESS_TYPE
       

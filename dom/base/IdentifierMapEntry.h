@@ -31,7 +31,7 @@ namespace mozilla {
 namespace dom {
 class Document;
 class Element;
-}
+}  
 
 
 

@@ -27,10 +27,10 @@ class SMILKeySpline {
 
 
 
-  SMILKeySpline(double aX1, double aY1, double aX2, double aY2)
-      : mX1(0), mY1(0), mX2(0), mY2(0) {
-    Init(aX1, aY1, aX2, aY2);
-  }
+    SMILKeySpline(double aX1, double aY1, double aX2, double aY2)
+        : mX1(0), mY1(0), mX2(0), mY2(0) {
+      Init(aX1, aY1, aX2, aY2);
+    }
 
     double X1() const { return mX1; }
     double Y1() const { return mY1; }

@@ -279,7 +279,6 @@ class SelectionStyleProvider final {
       
       style.AppendFloat(alpha);
       style.AppendPrintf(");");
-
     }
     nscolor selectionBackgroundColor;
     if (NS_SUCCEEDED(

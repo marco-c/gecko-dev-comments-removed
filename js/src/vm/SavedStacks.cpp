@@ -1703,8 +1703,7 @@ void SavedStacks::chooseSamplingProbability(Realm* realm) {
 
     if (dbgp->trackingAllocationSites && dbgp->enabled) {
       foundAnyDebuggers = true;
-      probability =
-          std::max(dbgp->allocationSamplingProbability, probability);
+      probability = std::max(dbgp->allocationSamplingProbability, probability);
     }
   }
   MOZ_ASSERT(foundAnyDebuggers);

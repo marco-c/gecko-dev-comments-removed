@@ -77,8 +77,8 @@ class SVGIntegerPair {
           mIndex(aIndex) {}
     virtual ~DOMAnimatedInteger();
 
-    SVGIntegerPair* mVal;    
-    PairIndex mIndex;        
+    SVGIntegerPair* mVal;  
+    PairIndex mIndex;      
 
     virtual int32_t BaseVal() override { return mVal->GetBaseValue(mIndex); }
     virtual void SetBaseVal(int32_t aValue) override {
