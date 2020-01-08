@@ -127,8 +127,10 @@ private:
 
     
     
+    
     JSObject* attachExpandoObject(JSContext* cx, JS::HandleObject target,
                                   JS::HandleObject exclusiveWrapper,
+                                  JS::HandleObject exclusiveWrapperGlobal,
                                   nsIPrincipal* origin);
 
     XrayTraits(XrayTraits&) = delete;

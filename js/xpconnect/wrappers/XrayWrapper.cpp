@@ -1171,11 +1171,16 @@ static const size_t JSSLOT_WRAPPER_HOLDER_CONTENTS = 0;
 JSObject*
 XrayTraits::attachExpandoObject(JSContext* cx, HandleObject target,
                                 HandleObject exclusiveWrapper,
+                                HandleObject exclusiveWrapperGlobal,
                                 nsIPrincipal* origin)
 {
     
     MOZ_ASSERT(js::IsObjectInContextCompartment(target, cx));
-    MOZ_ASSERT_IF(exclusiveWrapper, !js::IsObjectInContextCompartment(exclusiveWrapper, cx));
+    if (exclusiveWrapper) {
+        MOZ_ASSERT(!js::IsObjectInContextCompartment(exclusiveWrapper, cx));
+        MOZ_ASSERT(JS_IsGlobalObject(exclusiveWrapperGlobal));
+        js::AssertSameCompartment(exclusiveWrapper, exclusiveWrapperGlobal);
+    }
 
     
 #ifdef DEBUG
@@ -1206,7 +1211,7 @@ XrayTraits::attachExpandoObject(JSContext* cx, HandleObject target,
     
     RootedObject wrapperHolder(cx);
     if (exclusiveWrapper) {
-        JSAutoRealmAllowCCW ar(cx, exclusiveWrapper);
+        JSAutoRealm ar(cx, exclusiveWrapperGlobal);
         wrapperHolder = JS_NewObjectWithGivenProto(cx, &gWrapperHolderClass, nullptr);
         if (!wrapperHolder)
             return nullptr;
@@ -1220,7 +1225,7 @@ XrayTraits::attachExpandoObject(JSContext* cx, HandleObject target,
     
     if (exclusiveWrapper) {
         RootedObject cachedExpandoObject(cx, expandoObject);
-        JSAutoRealmAllowCCW ar(cx, exclusiveWrapper);
+        JSAutoRealm ar(cx, exclusiveWrapperGlobal);
         if (!JS_WrapObject(cx, &cachedExpandoObject))
             return nullptr;
         JSObject* holder = ensureHolder(cx, exclusiveWrapper);
@@ -1247,6 +1252,9 @@ JSObject*
 XrayTraits::ensureExpandoObject(JSContext* cx, HandleObject wrapper,
                                 HandleObject target)
 {
+    MOZ_ASSERT(js::IsObjectInContextCompartment(wrapper, cx));
+    RootedObject wrapperGlobal(cx, JS::CurrentGlobalOrNull(cx));
+
     
     JSAutoRealm ar(cx, target);
     RootedObject expandoObject(cx);
@@ -1255,6 +1263,7 @@ XrayTraits::ensureExpandoObject(JSContext* cx, HandleObject wrapper,
     if (!expandoObject) {
         bool isExclusive = CompartmentHasExclusiveExpandos(wrapper);
         expandoObject = attachExpandoObject(cx, target, isExclusive ? wrapper : nullptr,
+                                            wrapperGlobal,
                                             ObjectPrincipal(wrapper));
     }
     return expandoObject;
@@ -1275,6 +1284,7 @@ XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject srcC
 
         
         RootedObject exclusiveWrapper(cx);
+        RootedObject exclusiveWrapperGlobal(cx);
         RootedObject wrapperHolder(cx, JS_GetReservedSlot(oldHead,
                                                           JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER)
                                                          .toObjectOrNull());
@@ -1294,6 +1304,7 @@ XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject srcC
                 exclusiveWrapper = dst;
                 if (!JS_WrapObject(cx, &exclusiveWrapper))
                     return false;
+                exclusiveWrapperGlobal = JS::CurrentGlobalOrNull(cx);
             }
         } else {
             JSAutoRealm ar(cx, oldHead);
@@ -1309,6 +1320,7 @@ XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject srcC
             
             
             RootedObject newHead(cx, attachExpandoObject(cx, dst, exclusiveWrapper,
+                                                         exclusiveWrapperGlobal,
                                                          GetExpandoObjectPrincipal(oldHead)));
             if (!JS_CopyPropertiesFrom(cx, newHead, oldHead))
                 return false;
@@ -1940,16 +1952,16 @@ XrayWrapper<Base, Traits>::defineProperty(JSContext* cx, HandleObject wrapper,
         return true;
 
     
-    
     RootedObject target(cx, Traits::getTargetObject(wrapper));
-    JSAutoRealm ar(cx, target);
-    JS_MarkCrossZoneId(cx, id);
-
-    
     RootedObject expandoObject(cx, Traits::singleton.ensureExpandoObject(cx, wrapper,
                                                                          target));
     if (!expandoObject)
         return false;
+
+    
+    
+    JSAutoRealm ar(cx, target);
+    JS_MarkCrossZoneId(cx, id);
 
     
     Rooted<PropertyDescriptor> wrappedDesc(cx, desc);
