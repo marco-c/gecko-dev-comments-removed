@@ -430,7 +430,15 @@ class ScriptSource
         { }
     };
 
-    using SourceType = mozilla::Variant<Missing, Uncompressed, Compressed>;
+    struct BinAST
+    {
+        SharedImmutableString string;
+        explicit BinAST(SharedImmutableString&& str)
+          : string(std::move(str))
+        { }
+    };
+
+    using SourceType = mozilla::Variant<Missing, Uncompressed, Compressed, BinAST>;
     SourceType data;
 
     
@@ -555,7 +563,8 @@ class ScriptSource
     MOZ_MUST_USE bool setSourceCopy(JSContext* cx, JS::SourceBufferHolder& srcBuf);
     void setSourceRetrievable() { sourceRetrievable_ = true; }
     bool sourceRetrievable() const { return sourceRetrievable_; }
-    bool hasSourceData() const { return !data.is<Missing>(); }
+    bool hasSourceText() const { return hasUncompressedSource() || hasCompressedSource(); }
+    bool hasBinASTSource() const { return data.is<BinAST>(); }
     bool hasUncompressedSource() const { return data.is<Uncompressed>(); }
     bool hasCompressedSource() const { return data.is<Compressed>(); }
 
@@ -570,13 +579,17 @@ class ScriptSource
                 return c.uncompressedLength;
             }
 
+            size_t match(const BinAST& b) {
+                return b.string.length();
+            }
+
             size_t match(const Missing& m) {
                 MOZ_CRASH("ScriptSource::length on a missing source");
                 return 0;
             }
         };
 
-        MOZ_ASSERT(hasSourceData());
+        MOZ_ASSERT(hasSourceText() || hasBinASTSource());
         return data.match(LengthMatcher());
     }
 
@@ -605,6 +618,25 @@ class ScriptSource
                                           size_t rawLength,
                                           size_t sourceLength);
     void setCompressedSource(SharedImmutableString&& raw, size_t sourceLength);
+
+#if defined(JS_BUILD_BINAST)
+
+    
+
+
+
+
+    MOZ_MUST_USE bool setBinASTSourceCopy(JSContext* cx, const uint8_t* buf, size_t len);
+
+    
+
+
+
+    MOZ_MUST_USE bool setBinASTSource(JSContext* cx, UniqueChars&& buf, size_t len);
+
+    const uint8_t* binASTSource();
+
+#endif 
 
     
     template <XDRMode mode>

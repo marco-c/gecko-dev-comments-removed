@@ -4102,7 +4102,7 @@ JS_DecompileScript(JSContext* cx, HandleScript script)
     if (fun) {
         return JS_DecompileFunction(cx, fun);
     }
-    bool haveSource = script->scriptSource()->hasSourceData();
+    bool haveSource = script->scriptSource()->hasSourceText();
     if (!haveSource && !JSScript::loadSource(cx, script->scriptSource(), &haveSource)) {
         return nullptr;
     }
@@ -6560,11 +6560,6 @@ JS_SetGlobalJitCompilerOption(JSContext* cx, JSJitCompilerOption opt, uint32_t v
       case JSJITCOMPILER_TRACK_OPTIMIZATIONS:
         jit::JitOptions.disableOptimizationTracking = !value;
         break;
-#ifdef JS_TRACE_LOGGING
-      case JSJITCOMPILER_ENABLE_TRACELOGGER:
-        jit::JitOptions.enableTraceLogger = !!value;
-        break;
-#endif
       case JSJITCOMPILER_SPECTRE_INDEX_MASKING:
         jit::JitOptions.spectreIndexMasking = !!value;
         break;

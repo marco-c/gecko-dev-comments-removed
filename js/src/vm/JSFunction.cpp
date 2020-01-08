@@ -1051,7 +1051,7 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource)
     
     bool addParentheses = haveSource && isToSource && (fun->isLambda() && !fun->isArrow());
 
-    if (haveSource && !script->scriptSource()->hasSourceData() &&
+    if (haveSource && !script->scriptSource()->hasSourceText() &&
         !JSScript::loadSource(cx, script->scriptSource(), &haveSource))
     {
         return nullptr;
@@ -1783,7 +1783,7 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
 
         
 
-        MOZ_ASSERT(lazy->scriptSource()->hasSourceData());
+        MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
 
         
         size_t lazyLength = lazy->sourceEnd() - lazy->sourceStart();
