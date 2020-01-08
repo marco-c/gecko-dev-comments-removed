@@ -1751,10 +1751,6 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
 
   JSObject* GetJSObjectPreserveColor() const { return mJSObj.unbarrieredGet(); }
 
-  JSObject* GetJSObjectGlobalPreserveColor() const {
-    return mJSObjGlobal.unbarrieredGet();
-  }
-
   
   
   
@@ -1790,11 +1786,6 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   void UpdateObjectPointerAfterGC() {
     MOZ_ASSERT(IsRootWrapper());
     JS_UpdateWeakPointerAfterGC(&mJSObj);
-    JS_UpdateWeakPointerAfterGC(&mJSObjGlobal);
-    
-    
-    
-    MOZ_ASSERT_IF(mJSObj, mJSObjGlobal);
   }
 
   bool IsAggregatedToNative() const { return mRoot->mOuter != nullptr; }
@@ -1817,9 +1808,8 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
 
  protected:
   nsXPCWrappedJS() = delete;
-  nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj, JSObject* aJSObjGlobal,
-                 nsXPCWrappedJSClass* aClass, nsXPCWrappedJS* root,
-                 nsresult* rv);
+  nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj, nsXPCWrappedJSClass* aClass,
+                 nsXPCWrappedJS* root, nsresult* rv);
 
   bool CanSkip();
   void Destroy();
@@ -1831,13 +1821,6 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   }
 
   JS::Heap<JSObject*> mJSObj;
-  
-  
-  
-  
-  
-  
-  JS::Heap<JSObject*> mJSObjGlobal;
   RefPtr<nsXPCWrappedJSClass> mClass;
   nsXPCWrappedJS* mRoot;  
   nsXPCWrappedJS* mNext;
