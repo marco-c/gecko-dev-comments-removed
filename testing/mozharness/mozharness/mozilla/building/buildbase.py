@@ -840,10 +840,6 @@ or run without that action (ie: --no-{action})"
         env['MOZ_SOURCE_REPO'] = repo_path
 
         if self.query_is_nightly() or self.query_is_nightly_promotion():
-            if self.query_is_nightly():
-                
-                
-                env["IS_NIGHTLY"] = "yes"
             
             if c.get('update_channel'):
                 env["MOZ_UPDATE_CHANNEL"] = c['update_channel']
@@ -855,7 +851,6 @@ or run without that action (ie: --no-{action})"
 
         
         if c.get('enable_release_promotion'):
-            env['ENABLE_RELEASE_PROMOTION'] = "1"
             update_channel = c.get('update_channel', self.branch)
             self.info("Release promotion update channel: %s"
                       % (update_channel,))
