@@ -42,8 +42,6 @@ var consoleAppender;
 
 var allBranches = new Set();
 
-let {Appender} = Log;
-
 const ONE_BYTE = 1;
 const ONE_KILOBYTE = 1024 * ONE_BYTE;
 const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
@@ -59,18 +57,16 @@ const PR_UINT32_MAX = 0xffffffff;
 
 
 
-function StorageStreamAppender(formatter) {
-  Appender.call(this, formatter);
-  this._name = "StorageStreamAppender";
-}
+class StorageStreamAppender extends Log.Appender {
+  constructor(formatter) {
+    super(formatter);
+    this._name = "StorageStreamAppender";
 
-StorageStreamAppender.prototype = {
-  __proto__: Appender.prototype,
+    this._converterStream = null; 
+    this._outputStream = null; 
 
-  _converterStream: null, 
-  _outputStream: null,    
-
-  _ss: null,
+    this._ss = null;
+  }
 
   get outputStream() {
     if (!this._outputStream) {
@@ -89,30 +85,30 @@ StorageStreamAppender.prototype = {
       this._converterStream.init(this._outputStream, "UTF-8");
     }
     return this._converterStream;
-  },
+  }
 
-  newOutputStream: function newOutputStream() {
+  newOutputStream() {
     let ss = this._ss = Cc["@mozilla.org/storagestream;1"]
                           .createInstance(Ci.nsIStorageStream);
     ss.init(STREAM_SEGMENT_SIZE, PR_UINT32_MAX, null);
     return ss.getOutputStream(0);
-  },
+  }
 
-  getInputStream: function getInputStream() {
+  getInputStream() {
     if (!this._ss) {
       return null;
     }
     return this._ss.newInputStream(0);
-  },
+  }
 
-  reset: function reset() {
+  reset() {
     if (!this._outputStream) {
       return;
     }
     this.outputStream.close();
     this._outputStream = null;
     this._ss = null;
-  },
+  }
 
   doAppend(formatted) {
     if (!formatted) {
@@ -132,31 +128,29 @@ StorageStreamAppender.prototype = {
       }
     }
   }
-};
-
-
-
-
-
-function FlushableStorageAppender(formatter) {
-  StorageStreamAppender.call(this, formatter);
-  this.sawError = false;
 }
 
-FlushableStorageAppender.prototype = {
-  __proto__: StorageStreamAppender.prototype,
+
+
+
+
+class FlushableStorageAppender extends StorageStreamAppender {
+  constructor(formatter) {
+    super(formatter);
+    this.sawError = false;
+  }
 
   append(message) {
     if (message.level >= Log.Level.Error) {
       this.sawError = true;
     }
     StorageStreamAppender.prototype.append.call(this, message);
-  },
+  }
 
   reset() {
-    Log.StorageStreamAppender.prototype.reset.call(this);
+    super.reset();
     this.sawError = false;
-  },
+  }
 
   
   
@@ -175,7 +169,7 @@ FlushableStorageAppender.prototype = {
     } catch (ex) {
       log.error("Failed to copy log stream to file", ex);
     }
-  },
+  }
 
   
 
@@ -216,8 +210,8 @@ FlushableStorageAppender.prototype = {
       }
     }
     log.trace("finished copy to", fullOutputFileName);
-  },
-};
+  }
+}
 
 
 function LogManager(prefRoot, logNames, logFilePrefix) {

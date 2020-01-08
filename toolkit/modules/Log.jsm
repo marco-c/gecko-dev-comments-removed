@@ -64,50 +64,38 @@ var Log = {
     Log.repository = value;
   },
 
-  LogMessage,
-  Logger,
-  LoggerRepository,
-
-  BasicFormatter,
-
-  Appender,
-  DumpAppender,
-  ConsoleAppender,
-
-  ParameterFormatter,
-
-  _formatError: function _formatError(e) {
-    let result = e.toString();
+  _formatError(e) {
+    let result = String(e);
     if (e.fileName) {
-      result +=  " (" + e.fileName;
+      let loc = [e.fileName];
       if (e.lineNumber) {
-        result += ":" + e.lineNumber;
+        loc.push(e.lineNumber);
       }
       if (e.columnNumber) {
-        result += ":" + e.columnNumber;
+        loc.push(e.columnNumber);
       }
-      result += ")";
+      result += `(${loc.join(":")})`;
     }
-    return result + " " + Log.stackTrace(e);
+    return `${result} ${Log.stackTrace(e)}`;
   },
 
   
   
-  exceptionStr: function exceptionStr(e) {
+  exceptionStr(e) {
     if (!e) {
-      return "" + e;
+      return String(e);
     }
     if (e instanceof Ci.nsIException) {
-      return e.toString() + " " + Log.stackTrace(e);
+      return `${e} ${Log.stackTrace(e)}`;
     } else if (isError(e)) {
       return Log._formatError(e);
     }
     
     let message = e.message || e;
-    return message + " " + Log.stackTrace(e);
+    return `${message} ${Log.stackTrace(e)}`;
   },
 
-  stackTrace: function stackTrace(e) {
+  stackTrace(e) {
     
     if (e.location) {
       let frame = e.location;
@@ -136,7 +124,7 @@ var Log = {
         }
         frame = frame.caller;
       }
-      return "Stack trace: " + output.join("\n");
+      return `Stack trace: ${output.join("\n")}`;
     }
     
     if (e.stack) {
@@ -156,70 +144,72 @@ var Log = {
 
 
 
-function LogMessage(loggerName, level, message, params) {
-  this.loggerName = loggerName;
-  this.level = level;
-  
-
-
-
-
-
-  if (!params && message && (typeof(message) == "object") &&
-      (typeof(message.valueOf()) != "string")) {
-    this.message = null;
-    this.params = message;
-  } else {
+class LogMessage {
+  constructor(loggerName, level, message, params) {
+    this.loggerName = loggerName;
+    this.level = level;
     
-    this.message = message;
-    this.params = params;
+
+
+
+
+
+    if (!params && message && (typeof(message) == "object") &&
+        (typeof(message.valueOf()) != "string")) {
+      this.message = null;
+      this.params = message;
+    } else {
+      
+      this.message = message;
+      this.params = params;
+    }
+
+    
+    
+    this._structured = this.params && this.params.action;
+    this.time = Date.now();
   }
 
-  
-  
-  this._structured = this.params && this.params.action;
-  this.time = Date.now();
-}
-LogMessage.prototype = {
   get levelDesc() {
     if (this.level in Log.Level.Desc)
       return Log.Level.Desc[this.level];
     return "UNKNOWN";
-  },
-
-  toString: function LogMsg_toString() {
-    let msg = "LogMessage [" + this.time + " " + this.level + " " +
-      this.message;
-    if (this.params) {
-      msg += " " + JSON.stringify(this.params);
-    }
-    return msg + "]";
   }
-};
 
-
-
-
-
-
-function Logger(name, repository) {
-  if (!repository)
-    repository = Log.repository;
-  this._name = name;
-  this.children = [];
-  this.ownAppenders = [];
-  this.appenders = [];
-  this._repository = repository;
+  toString() {
+    let msg = `${this.time} ${this.level} ${this.message}`;
+    if (this.params) {
+      msg += ` ${JSON.stringify(this.params)}`;
+    }
+    return `LogMessage [${msg}]`;
+  }
 }
-Logger.prototype = {
-  _levelPrefName: null,
-  _levelPrefValue: null,
+
+
+
+
+
+
+class Logger {
+  constructor(name, repository) {
+    if (!repository)
+      repository = Log.repository;
+    this._name = name;
+    this.children = [];
+    this.ownAppenders = [];
+    this.appenders = [];
+    this._repository = repository;
+
+    this._levelPrefName = null;
+    this._levelPrefValue = null;
+    this._level = null;
+    this._parent = null;
+  }
 
   get name() {
     return this._name;
-  },
+  }
 
-  _level: null,
   get level() {
     if (this._levelPrefName) {
       
@@ -245,7 +235,7 @@ Logger.prototype = {
       return this.parent.level;
     dumpError("Log warning: root logger configuration error: no level defined");
     return Log.Level.All;
-  },
+  }
   set level(level) {
     if (this._levelPrefName) {
       
@@ -257,12 +247,11 @@ Logger.prototype = {
       return;
     }
     this._level = level;
-  },
+  }
 
-  _parent: null,
   get parent() {
     return this._parent;
-  },
+  }
   set parent(parent) {
     if (this._parent == parent) {
       return;
@@ -277,7 +266,7 @@ Logger.prototype = {
     this._parent = parent;
     parent.children.push(this);
     this.updateAppenders();
-  },
+  }
 
   manageLevelFromPref(prefName) {
     if (prefName == this._levelPrefName) {
@@ -292,9 +281,9 @@ Logger.prototype = {
     }
     this._levelPrefName = prefName;
     XPCOMUtils.defineLazyPreferenceGetter(this, "_levelPrefValue", prefName);
-  },
+  }
 
-  updateAppenders: function updateAppenders() {
+  updateAppenders() {
     if (this._parent) {
       let notOwnAppenders = this._parent.appenders.filter(function(appender) {
         return !this.ownAppenders.includes(appender);
@@ -308,24 +297,24 @@ Logger.prototype = {
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].updateAppenders();
     }
-  },
+  }
 
-  addAppender: function Logger_addAppender(appender) {
+  addAppender(appender) {
     if (this.ownAppenders.includes(appender)) {
       return;
     }
     this.ownAppenders.push(appender);
     this.updateAppenders();
-  },
+  }
 
-  removeAppender: function Logger_removeAppender(appender) {
+  removeAppender(appender) {
     let index = this.ownAppenders.indexOf(appender);
     if (index == -1) {
       return;
     }
     this.ownAppenders.splice(index, 1);
     this.updateAppenders();
-  },
+  }
 
   _unpackTemplateLiteral(string, params) {
     if (!Array.isArray(params)) {
@@ -355,7 +344,7 @@ Logger.prototype = {
       concat += `\${${i}}${string[i + 1]}`;
     }
     return [concat, params];
-  },
+  }
 
   log(level, string, params) {
     if (this.level > level)
@@ -375,53 +364,54 @@ Logger.prototype = {
       }
       appender.append(message);
     }
-  },
+  }
 
   fatal(string, ...params) {
     this.log(Log.Level.Fatal, string, params);
-  },
+  }
   error(string, ...params) {
     this.log(Log.Level.Error, string, params);
-  },
+  }
   warn(string, ...params) {
     this.log(Log.Level.Warn, string, params);
-  },
+  }
   info(string, ...params) {
     this.log(Log.Level.Info, string, params);
-  },
+  }
   config(string, ...params) {
     this.log(Log.Level.Config, string, params);
-  },
+  }
   debug(string, ...params) {
     this.log(Log.Level.Debug, string, params);
-  },
+  }
   trace(string, ...params) {
     this.log(Log.Level.Trace, string, params);
   }
-};
+}
 
 
 
 
 
 
-function LoggerRepository() {}
-LoggerRepository.prototype = {
-  _loggers: {},
+class LoggerRepository {
+  constructor() {
+    this._loggers = {};
+    this._rootLogger = null;
+  }
 
-  _rootLogger: null,
   get rootLogger() {
     if (!this._rootLogger) {
       this._rootLogger = new Logger("root", this);
       this._rootLogger.level = Log.Level.All;
     }
     return this._rootLogger;
-  },
+  }
   set rootLogger(logger) {
     throw "Cannot change the root logger";
-  },
+  }
 
-  _updateParents: function LogRep__updateParents(name) {
+  _updateParents(name) {
     let pieces = name.split(".");
     let cur, parent;
 
@@ -448,7 +438,7 @@ LoggerRepository.prototype = {
       if (logger != name && logger.indexOf(name) == 0)
         this._updateParents(logger);
     }
-  },
+  }
 
   
 
@@ -465,7 +455,7 @@ LoggerRepository.prototype = {
     this._loggers[name] = new Logger(name, this);
     this._updateParents(name);
     return this._loggers[name];
-  },
+  }
 
   
 
@@ -499,22 +489,23 @@ LoggerRepository.prototype = {
       return log.log(level, string, params);
     };
     return proxy;
-  },
-};
-
-
-
-
-
-
-
-function BasicFormatter(dateFormat) {
-  if (dateFormat) {
-    this.dateFormat = dateFormat;
   }
-  this.parameterFormatter = new ParameterFormatter();
 }
-BasicFormatter.prototype = {
+
+
+
+
+
+
+
+class BasicFormatter {
+  constructor(dateFormat) {
+    if (dateFormat) {
+      this.dateFormat = dateFormat;
+    }
+    this.parameterFormatter = new ParameterFormatter();
+  }
+
   
 
 
@@ -564,15 +555,15 @@ BasicFormatter.prototype = {
       return textParts.join(": ");
     }
     return undefined;
-  },
+  }
 
-  format: function BF_format(message) {
+  format(message) {
     return message.time + "\t" +
       message.loggerName + "\t" +
       message.levelDesc + "\t" +
       this.formatText(message);
   }
-};
+}
 
 
 
@@ -588,10 +579,11 @@ function isError(aObj) {
 
 
 
-function ParameterFormatter() {
-  this._name = "ParameterFormatter";
-}
-ParameterFormatter.prototype = {
+class ParameterFormatter {
+  constructor() {
+    this._name = "ParameterFormatter";
+  }
+
   format(ob) {
     try {
       if (ob === undefined) {
@@ -606,7 +598,7 @@ ParameterFormatter.prototype = {
         return ob;
       }
       if (ob instanceof Ci.nsIException) {
-        return ob.toString() + " " + Log.stackTrace(ob);
+        return `${ob} ${Log.stackTrace(ob)}`;
       } else if (isError(ob)) {
         return Log._formatError(ob);
       }
@@ -619,75 +611,73 @@ ParameterFormatter.prototype = {
         return val;
       });
     } catch (e) {
-      dumpError("Exception trying to format object for log message: " + Log.exceptionStr(e));
+      dumpError(`Exception trying to format object for log message: ${Log.exceptionStr(e)}`);
     }
     
     try {
       return ob.toSource();
     } catch (_) { }
     try {
-      return "" + ob;
+      return String(ob);
     } catch (_) {
       return "[object]";
     }
   }
-};
-
-
-
-
-
-
-
-function Appender(formatter) {
-  this._name = "Appender";
-  this._formatter = formatter || new BasicFormatter();
 }
-Appender.prototype = {
-  level: Log.Level.All,
 
-  append: function App_append(message) {
+
+
+
+
+
+
+class Appender {
+  constructor(formatter) {
+    this.level = Log.Level.All;
+    this._name = "Appender";
+    this._formatter = formatter || new BasicFormatter();
+  }
+
+  append(message) {
     if (message) {
       this.doAppend(this._formatter.format(message));
     }
-  },
-  toString: function App_toString() {
-    return this._name + " [level=" + this.level +
-      ", formatter=" + this._formatter + "]";
-  },
-};
+  }
 
-
-
-
-
-
-function DumpAppender(formatter) {
-  Appender.call(this, formatter);
-  this._name = "DumpAppender";
+  toString() {
+    return `${this._name} [level=${this.level}, formatter=${this._formatter}]`;
+  }
 }
-DumpAppender.prototype = {
-  __proto__: Appender.prototype,
 
-  doAppend: function DApp_doAppend(formatted) {
+
+
+
+
+
+class DumpAppender extends Appender {
+  constructor(formatter) {
+    super(formatter);
+    this._name = "DumpAppender";
+  }
+
+  doAppend(formatted) {
     dump(formatted + "\n");
   }
-};
-
-
-
-
-
-
-function ConsoleAppender(formatter) {
-  Appender.call(this, formatter);
-  this._name = "ConsoleAppender";
 }
-ConsoleAppender.prototype = {
-  __proto__: Appender.prototype,
+
+
+
+
+
+
+class ConsoleAppender extends Appender {
+  constructor(formatter) {
+    super(formatter);
+    this._name = "ConsoleAppender";
+  }
 
   
-  append: function App_append(message) {
+  append(message) {
     if (message) {
       let m = this._formatter.format(message);
       if (message.level > Log.Level.Warn) {
@@ -696,9 +686,23 @@ ConsoleAppender.prototype = {
       }
       this.doAppend(m);
     }
-  },
+  }
 
-  doAppend: function CApp_doAppend(formatted) {
+  doAppend(formatted) {
     Services.console.logStringMessage(formatted);
   }
-};
+}
+
+Object.assign(Log, {
+  LogMessage,
+  Logger,
+  LoggerRepository,
+
+  BasicFormatter,
+
+  Appender,
+  DumpAppender,
+  ConsoleAppender,
+
+  ParameterFormatter,
+});
