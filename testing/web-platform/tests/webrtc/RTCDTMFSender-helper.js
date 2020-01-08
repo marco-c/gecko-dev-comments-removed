@@ -109,16 +109,12 @@ function test_tone_change_events(testFunc, toneChanges, desc) {
         const now = Date.now();
         const duration = now - lastEventTime;
 
-        
-        
-        
-        assert_between_inclusive(duration, expectedDuration,
-                                 expectedDuration + 4000,
+        assert_approx_equals(duration, expectedDuration, 400,
           `Expect tonechange event for "${tone}" to be fired approximately after ${expectedDuration} milliseconds`);
 
         lastEventTime = now;
 
-        if (toneChanges.length === 0) {
+        if(toneChanges.length === 0) {
           
           
           

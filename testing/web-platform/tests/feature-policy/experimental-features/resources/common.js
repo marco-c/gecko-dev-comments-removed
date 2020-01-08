@@ -58,10 +58,3 @@ function createIframe(container, attributes) {
   container.appendChild(new_iframe);
   return new_iframe;
 }
-
-
-function wait_for_load(e) {
-  return new Promise((resolve) => {
-    e.addEventListener("load", resolve);
-  });
-}

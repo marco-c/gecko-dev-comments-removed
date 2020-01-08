@@ -3,7 +3,7 @@
 
 
 function createWasmModule() {
-    return fetch('/wasm/incrementer.wasm')
+    return fetch('incrementer.wasm')
         .then(response => {
             if (!response.ok) throw new Error(response.statusText);
             return response.arrayBuffer();
