@@ -929,12 +929,14 @@ inline uint32_t BitfieldReverse(uint32_t value)
 }
 
 
-#if defined(ANGLE_PLATFORM_WINDOWS)
+#if defined(_M_IX86) || defined(_M_X64)
+#define ANGLE_HAS_BITCOUNT_32
 inline int BitCount(uint32_t bits)
 {
     return static_cast<int>(__popcnt(bits));
 }
-#if defined(ANGLE_IS_64_BIT_CPU)
+#if defined(_M_X64)
+#define ANGLE_HAS_BITCOUNT_64
 inline int BitCount(uint64_t bits)
 {
     return static_cast<int>(__popcnt64(bits));
@@ -943,18 +945,38 @@ inline int BitCount(uint64_t bits)
 #endif  
 
 #if defined(ANGLE_PLATFORM_POSIX)
+#define ANGLE_HAS_BITCOUNT_32
 inline int BitCount(uint32_t bits)
 {
     return __builtin_popcount(bits);
 }
 
 #if defined(ANGLE_IS_64_BIT_CPU)
+#define ANGLE_HAS_BITCOUNT_64
 inline int BitCount(uint64_t bits)
 {
     return __builtin_popcountll(bits);
 }
 #endif  
 #endif  
+
+int BitCountPolyfill(uint32_t bits);
+
+#if !defined(ANGLE_HAS_BITCOUNT_32)
+inline int BitCount(const uint32_t bits)
+{
+    return BitCountPolyfill(bits);
+}
+#endif  
+
+#if !defined(ANGLE_HAS_BITCOUNT_64)
+inline int BitCount(const uint64_t bits)
+{
+    return BitCount(static_cast<uint32_t>(bits >> 32)) + BitCount(static_cast<uint32_t>(bits));
+}
+#endif  
+#undef ANGLE_HAS_BITCOUNT_32
+#undef ANGLE_HAS_BITCOUNT_64
 
 inline int BitCount(uint8_t bits)
 {
