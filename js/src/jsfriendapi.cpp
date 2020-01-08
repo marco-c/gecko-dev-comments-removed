@@ -153,7 +153,7 @@ JS_FRIEND_API bool JS::GetIsSecureContext(JS::Realm* realm) {
   return realm->creationOptions().secureContext();
 }
 
-JS_FRIEND_API JSPrincipals* JS_GetCompartmentPrincipals(
+JS_FRIEND_API JSPrincipals* JS_DeprecatedGetCompartmentPrincipals(
     JS::Compartment* compartment) {
   
   
