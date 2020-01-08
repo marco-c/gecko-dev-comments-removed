@@ -38,7 +38,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["crypto", "TextEncoder"]);
 const {
   DefaultMap,
   DefaultWeakMap,
-  ExtensionError,
   getInnerWindowID,
   getWinUtils,
   promiseDocumentIdle,
@@ -606,8 +605,9 @@ class UserScript extends Script {
       });
 
       
+      
       if (apiScript) {
-        this.injectUserScriptAPIs(userScriptSandbox, context);
+        context.userScriptsEvents.emit("on-before-script", this.scriptMetadata, userScriptSandbox);
       }
 
       for (let script of sandboxScripts) {
@@ -644,88 +644,6 @@ class UserScript extends Script {
     });
 
     return sandbox;
-  }
-
-  injectUserScriptAPIs(userScriptScope, context) {
-    const {extension, scriptMetadata} = this;
-    const {userScriptAPIs, cloneScope: apiScope} = context;
-
-    if (!userScriptAPIs) {
-      return;
-    }
-
-    let clonedMetadata;
-
-    const UserScriptError = userScriptScope.Error;
-    const UserScriptPromise = userScriptScope.Promise;
-
-    const wrappedFnMap = new WeakMap();
-
-    function safeReturnCloned(res) {
-      try {
-        return Cu.cloneInto(res, userScriptScope);
-      } catch (err) {
-        Cu.reportError(
-          `userScripts API method wrapper for ${extension.policy.debugName}: ${err}`
-        );
-        throw new UserScriptError("Unable to clone object in the userScript sandbox");
-      }
-    }
-
-    function wrapUserScriptAPIMethod(fn, fnName) {
-      return Cu.exportFunction(function(...args) {
-        let fnArgs = Cu.cloneInto([], apiScope);
-
-        try {
-          for (let arg of args) {
-            if (typeof arg === "function") {
-              if (!wrappedFnMap.has(arg)) {
-                wrappedFnMap.set(arg, Cu.exportFunction(arg, apiScope));
-              }
-              fnArgs.push(wrappedFnMap.get(arg));
-            } else {
-              fnArgs.push(Cu.cloneInto(arg, apiScope));
-            }
-          }
-        } catch (err) {
-          Cu.reportError(`Error cloning userScriptAPIMethod parameters in ${fnName}: ${err}`);
-          throw new UserScriptError("Only serializable parameters are supported");
-        }
-
-        if (clonedMetadata === undefined) {
-          clonedMetadata = Cu.cloneInto(scriptMetadata, apiScope);
-        }
-
-        const res = runSafeSyncWithoutClone(fn, fnArgs, clonedMetadata, userScriptScope);
-
-        if (res instanceof context.Promise) {
-          return UserScriptPromise.resolve().then(async () => {
-            let value;
-            try {
-              value = await res;
-            } catch (err) {
-              if (err instanceof context.Error) {
-                throw new UserScriptError(err.message);
-              } else {
-                throw safeReturnCloned(err);
-              }
-            }
-            return safeReturnCloned(value);
-          });
-        }
-
-        return safeReturnCloned(res);
-      }, userScriptScope);
-    }
-
-    for (let key of Object.keys(userScriptAPIs)) {
-      Schemas.exportLazyGetter(userScriptScope, key, () => {
-        
-        return wrapUserScriptAPIMethod(userScriptAPIs[key], key);
-      });
-    }
-
-    context.userScriptsEvents.emit("on-before-script", clonedMetadata, userScriptScope);
   }
 }
 
@@ -849,9 +767,6 @@ class ContentScriptContextChild extends BaseContext {
     Schemas.exportLazyGetter(this.sandbox, "chrome", () => this.chromeObj);
 
     
-    this.userScriptAPIs = null;
-
-    
     
     
     this.hasUserScriptAPIs = false;
@@ -876,14 +791,6 @@ class ContentScriptContextChild extends BaseContext {
 
   get cloneScope() {
     return this.sandbox;
-  }
-
-  setUserScriptAPIs(extCustomAPIs) {
-    if (this.userScriptAPIs) {
-      throw new ExtensionError("userScripts APIs may only be set once");
-    }
-
-    this.userScriptAPIs = extCustomAPIs;
   }
 
   async executeAPIScript(apiScript) {
