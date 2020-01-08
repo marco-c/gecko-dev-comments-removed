@@ -360,10 +360,11 @@ DebuggerClient.prototype = {
 
 
 
-  attachTarget: async function(targetActor) {
-    let front = this._frontPool.actor(targetActor);
+  attachTarget: async function(targetActorForm) {
+    const actorID = targetActorForm.actor;
+    let front = this._frontPool.actor(actorID);
     if (!front) {
-      front = new BrowsingContextTargetFront(this, { actor: targetActor });
+      front = new BrowsingContextTargetFront(this, targetActorForm);
       this._frontPool.manage(front);
     }
 

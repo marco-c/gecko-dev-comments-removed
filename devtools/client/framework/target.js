@@ -529,7 +529,7 @@ Target.prototype = {
       
       
       if (!this.activeTab) {
-        const [, targetFront] = await this._client.attachTarget(this.form.actor);
+        const [, targetFront] = await this._client.attachTarget(this.form);
         this.activeTab = targetFront;
       } else {
         await this.activeTab.attach();
