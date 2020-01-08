@@ -1092,6 +1092,9 @@ void Display::initDisplayExtensions()
     
     mDisplayExtensions.createContextExtensionsEnabled = true;
 
+    
+    mDisplayExtensions.provokingVertexDontCare = true;
+
     mDisplayExtensionString = GenerateExtensionsString(mDisplayExtensions);
 }
 

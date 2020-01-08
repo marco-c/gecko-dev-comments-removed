@@ -1563,6 +1563,9 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
                               angle::SubjectIndex index,
                               angle::SubjectMessage message) override;
 
+    
+    bool provokingVertexDontCare() const { return mProvokingVertexDontCare; }
+
   private:
     void initialize();
 
@@ -1682,6 +1685,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     egl::Display *mCurrentDisplay;
     const bool mWebGLContext;
     const bool mExtensionsEnabled;
+    const bool mProvokingVertexDontCare;
     MemoryProgramCache *mMemoryProgramCache;
 
     State::DirtyObjects mDrawDirtyObjects;
