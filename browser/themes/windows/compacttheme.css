@@ -61,7 +61,7 @@
 @media (-moz-windows-glass) {
   
   #TabsToolbar {
-    --toolbarbutton-icon-fill-opacity: 1;
+    --lwt-toolbarbutton-icon-fill: white;
   }
 
   
