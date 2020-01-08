@@ -201,6 +201,10 @@ public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(GLContext)
     static MOZ_THREAD_LOCAL(uintptr_t) sCurrentContext;
 
+    static void ClearGetCurrentContextTLS() {
+        sCurrentContext.set(0);
+    }
+
     bool mImplicitMakeCurrent = false;
     bool mUseTLSIsCurrent;
 
@@ -342,6 +346,7 @@ public:
 protected:
     bool mIsOffscreen;
     mutable bool mContextLost = false;
+    bool mIsDestroyed = false;
 
     
 
@@ -3378,8 +3383,7 @@ public:
     virtual void ReleaseSurface() {}
 
     bool IsDestroyed() const {
-        
-        return mSymbols.fUseProgram == nullptr;
+        return mIsDestroyed;
     }
 
     GLContext* GetSharedContext() { return mSharedContext; }
