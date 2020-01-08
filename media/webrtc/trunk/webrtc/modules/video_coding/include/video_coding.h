@@ -414,8 +414,6 @@ class VideoCodingModule : public Module {
       EncodedImageCallback* post_encode_callback) = 0;
   
   virtual void TriggerDecoderShutdown() = 0;
-  
-  virtual void Reset() = 0;
 };
 
 }  

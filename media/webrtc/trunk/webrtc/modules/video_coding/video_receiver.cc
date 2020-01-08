@@ -218,10 +218,6 @@ void VideoReceiver::TriggerDecoderShutdown() {
   _receiver.TriggerDecoderShutdown();
 }
 
-void VideoReceiver::Reset() {
-  _receiver.Reset();
-}
-
 
 
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
