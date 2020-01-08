@@ -184,10 +184,8 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
                               const nsRect& aDirtyRect, nsPoint aPt,
                               nsDisplayListBuilder* aBuilder);
 
-  nsITreeBoxObject* GetTreeBoxObject() const { return mTreeBoxObject; }
-
   
-  mozilla::dom::Element* GetBaseElement();
+  mozilla::dom::XULTreeElement* GetBaseElement();
 
   bool GetVerticalOverflow() const { return mVerticalOverflow; }
   bool GetHorizontalOverflow() const { return mHorizontalOverflow; }
@@ -371,9 +369,6 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
   
   nsPoint AdjustClientCoordsToBoxCoordSpace(int32_t aX, int32_t aY);
 
-  
-  void EnsureBoxObject();
-
   void EnsureView();
 
   nsresult GetCellWidth(int32_t aRow, nsTreeColumn* aCol,
@@ -531,7 +526,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
   RefPtr<ScrollbarActivity> mScrollbarActivity;
 
   
-  nsCOMPtr<nsITreeBoxObject> mTreeBoxObject;
+  RefPtr<mozilla::dom::XULTreeElement> mTree;
 
   
   RefPtr<nsTreeColumns> mColumns;

@@ -21,8 +21,13 @@ class nsTreeColumn;
 class nsIBoxObject;
 class nsIFrame;
 class nsIDocShell;
-class nsITreeBoxObject;
 class nsIWidget;
+
+namespace mozilla {
+namespace dom {
+class XULTreeElement;
+}
+}  
 
 
 
@@ -51,7 +56,7 @@ class nsCoreUtils {
 
 
 
-  static void DispatchClickEvent(nsITreeBoxObject *aTreeBoxObj,
+  static void DispatchClickEvent(mozilla::dom::XULTreeElement *aTree,
                                  int32_t aRowIndex, nsTreeColumn *aColumn,
                                  const nsAString &aPseudoElt = EmptyString());
 
@@ -240,30 +245,29 @@ class nsCoreUtils {
 
 
   static already_AddRefed<nsIBoxObject> GetTreeBodyBoxObject(
-      nsITreeBoxObject *aTreeBoxObj);
+      mozilla::dom::XULTreeElement *aTree);
 
   
 
 
-  static already_AddRefed<nsITreeBoxObject> GetTreeBoxObject(
-      nsIContent *aContent);
+  static mozilla::dom::XULTreeElement *GetTree(nsIContent *aContent);
 
   
 
 
   static already_AddRefed<nsTreeColumn> GetFirstSensibleColumn(
-      nsITreeBoxObject *aTree);
+      mozilla::dom::XULTreeElement *aTree);
 
   
 
 
-  static uint32_t GetSensibleColumnCount(nsITreeBoxObject *aTree);
+  static uint32_t GetSensibleColumnCount(mozilla::dom::XULTreeElement *aTree);
 
   
 
 
   static already_AddRefed<nsTreeColumn> GetSensibleColumnAt(
-      nsITreeBoxObject *aTree, uint32_t aIndex);
+      mozilla::dom::XULTreeElement *aTree, uint32_t aIndex);
 
   
 

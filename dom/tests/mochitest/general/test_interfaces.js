@@ -1284,6 +1284,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULTextElement", insecureContext: true, xbl: true},
 
+    {name: "XULTreeElement", insecureContext: true, xbl: true},
+
   ];
 
 
