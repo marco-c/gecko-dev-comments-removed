@@ -152,8 +152,8 @@ impl<F, T> CoordinateSpaceMapping<F, T> {
         clip_scroll_tree: &ClipScrollTree,
     ) -> Option<Self> {
         let spatial_nodes = &clip_scroll_tree.spatial_nodes;
-        let ref_spatial_node = &spatial_nodes[ref_spatial_node_index.0];
-        let target_spatial_node = &spatial_nodes[target_node_index.0];
+        let ref_spatial_node = &spatial_nodes[ref_spatial_node_index.0 as usize];
+        let target_spatial_node = &spatial_nodes[target_node_index.0 as usize];
 
         if ref_spatial_node_index == target_node_index {
             Some(CoordinateSpaceMapping::Local)
@@ -2214,7 +2214,7 @@ impl PrimitiveStore {
 
             let spatial_node = &frame_context
                 .clip_scroll_tree
-                .spatial_nodes[prim_instance.spatial_node_index.0];
+                .spatial_nodes[prim_instance.spatial_node_index.0 as usize];
 
             
             
@@ -3325,7 +3325,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 120, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 112, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 40, "PrimitiveInstanceKind size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 20, "PrimitiveTemplateKind size changed");

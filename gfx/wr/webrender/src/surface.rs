@@ -288,8 +288,8 @@ impl SurfaceDescriptor {
                 
                 
                 
-                let raster_spatial_node = &clip_scroll_tree.spatial_nodes[raster_spatial_node_index.0];
-                let surface_spatial_node = &clip_scroll_tree.spatial_nodes[surface_spatial_node_index.0];
+                let raster_spatial_node = &clip_scroll_tree.spatial_nodes[raster_spatial_node_index.0 as usize];
+                let surface_spatial_node = &clip_scroll_tree.spatial_nodes[surface_spatial_node_index.0 as usize];
 
                 let mut key = CoordinateSpaceMapping::<LayoutPixel, PicturePixel>::new(
                     raster_spatial_node_index,
