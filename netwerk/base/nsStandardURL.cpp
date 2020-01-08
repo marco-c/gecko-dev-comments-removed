@@ -2425,7 +2425,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
             if (strncmp(relpath + scheme.mPos + scheme.mLen, "://", 3) == 0) {
                 
                 
-                result = NS_strdup(relpath);
+                result = NS_xstrdup(relpath);
             } else {
                 
                 
@@ -2436,7 +2436,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
         } else {
             
             
-            result = NS_strdup(relpath);
+            result = NS_xstrdup(relpath);
         }
     } else {
         

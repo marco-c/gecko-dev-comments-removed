@@ -55,12 +55,12 @@ int NS_strncmp(const char16_t* aStrA, const char16_t* aStrB, size_t aLen);
 
 
 
-char16_t* NS_strdup(const char16_t* aString);
+char16_t* NS_xstrdup(const char16_t* aString);
 
 
 
 
-char* NS_strdup(const char* aString);
+char* NS_xstrdup(const char* aString);
 
 
 
@@ -70,7 +70,7 @@ char* NS_strdup(const char* aString);
 
 
 template<typename CharT>
-CharT* NS_strndup(const CharT* aString, uint32_t aLen);
+CharT* NS_xstrndup(const CharT* aString, uint32_t aLen);
 
 
 
