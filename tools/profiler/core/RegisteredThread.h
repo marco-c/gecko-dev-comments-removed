@@ -11,6 +11,7 @@
 
 #include "platform.h"
 #include "ThreadInfo.h"
+#include "js/TraceLoggerAPI.h"
 
 
 
@@ -186,8 +187,6 @@ class RegisteredThread final {
     
     js::SetContextProfilingStack(aContext,
                                  &RacyRegisteredThread().ProfilingStack());
-
-    PollJSSampling();
   }
 
   void ClearJSContext() {
@@ -203,13 +202,13 @@ class RegisteredThread final {
   
   
   
-  void StartJSSampling(bool aTrackOptimizations) {
+  void StartJSSampling(uint32_t aJSFlags) {
     
 
     MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
                        mJSSampling == INACTIVE_REQUESTED);
     mJSSampling = ACTIVE_REQUESTED;
-    mJSTrackOptimizations = aTrackOptimizations;
+    mJSFlags = aJSFlags;
   }
 
   
@@ -240,13 +239,20 @@ class RegisteredThread final {
       if (mJSSampling == ACTIVE_REQUESTED) {
         mJSSampling = ACTIVE;
         js::EnableContextProfilingStack(mContext, true);
-        JS_SetGlobalJitCompilerOption(
-            mContext, JSJITCOMPILER_TRACK_OPTIMIZATIONS, mJSTrackOptimizations);
+        JS_SetGlobalJitCompilerOption(mContext,
+                                      JSJITCOMPILER_TRACK_OPTIMIZATIONS,
+                                      TrackOptimizationsEnabled());
+        if (JSTracerEnabled()) {
+          JS::StartTraceLogger(mContext);
+        }
         js::RegisterContextProfilingEventMarker(mContext, profiler_add_marker);
 
       } else if (mJSSampling == INACTIVE_REQUESTED) {
         mJSSampling = INACTIVE;
         js::EnableContextProfilingStack(mContext, false);
+        if (JSTracerEnabled()) {
+          JS::StopTraceLogger(mContext);
+        }
       }
     }
   }
@@ -311,7 +317,15 @@ class RegisteredThread final {
     INACTIVE_REQUESTED = 3,
   } mJSSampling;
 
-  bool mJSTrackOptimizations;
+  uint32_t mJSFlags;
+
+  bool TrackOptimizationsEnabled() {
+    return mJSFlags & uint32_t(JSSamplingFlags::TrackOptimizations);
+  }
+
+  bool JSTracerEnabled() {
+    return mJSFlags & uint32_t(JSSamplingFlags::TraceLogging);
+  }
 };
 
 #endif  

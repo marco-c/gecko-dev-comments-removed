@@ -5,6 +5,7 @@
 
 
 #include "ProfiledThreadData.h"
+#include "js/TraceLoggerAPI.h"
 
 #include "mozilla/dom/ContentChild.h"
 
@@ -37,7 +38,7 @@ void ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer,
                                     JSContext* aCx,
                                     SpliceableJSONWriter& aWriter,
                                     const TimeStamp& aProcessStartTime,
-                                    double aSinceTime) {
+                                    double aSinceTime, bool JSTracerEnabled) {
   if (mJITFrameInfoForPreviousJSContexts &&
       mJITFrameInfoForPreviousJSContexts->HasExpired(aBuffer.mRangeStart)) {
     mJITFrameInfoForPreviousJSContexts = nullptr;
@@ -102,7 +103,99 @@ void ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer,
     aWriter.EndArray();
   }
 
+  if (aCx && JSTracerEnabled) {
+    StreamTraceLoggerJSON(aCx, aWriter, aProcessStartTime);
+  }
+
   aWriter.End();
+}
+
+void ProfiledThreadData::StreamTraceLoggerJSON(
+    JSContext* aCx, SpliceableJSONWriter& aWriter,
+    const TimeStamp& aProcessStartTime) {
+  aWriter.StartObjectProperty("jsTracerEvents");
+  {
+    JS::AutoTraceLoggerLockGuard lockGuard;
+    uint32_t length = 0;
+
+    
+    aWriter.StartArrayProperty("events", mozilla::JSONWriter::SingleLineStyle);
+    {
+      JS::TraceLoggerIdBuffer collectionBuffer(lockGuard, aCx);
+      while (collectionBuffer.NextChunk()) {
+        for (uint32_t val : collectionBuffer) {
+          aWriter.IntElement(val);
+          length++;
+        }
+      }
+    }
+    aWriter.EndArray();
+
+    
+    aWriter.StartArrayProperty("timestamps",
+                               mozilla::JSONWriter::SingleLineStyle);
+    {
+      JS::TraceLoggerTimeStampBuffer collectionBuffer(lockGuard, aCx);
+      while (collectionBuffer.NextChunk()) {
+        for (TimeStamp val : collectionBuffer) {
+          aWriter.DoubleElement((val - aProcessStartTime).ToMicroseconds());
+        }
+      }
+    }
+    aWriter.EndArray();
+
+    
+    aWriter.StartArrayProperty("durations",
+                               mozilla::JSONWriter::SingleLineStyle);
+    {
+      JS::TraceLoggerDurationBuffer collectionBuffer(lockGuard, aCx);
+      while (collectionBuffer.NextChunk()) {
+        for (double val : collectionBuffer) {
+          if (val == -1) {
+            aWriter.NullElement();
+          } else {
+            aWriter.DoubleElement(val);
+          }
+        }
+      }
+    }
+    aWriter.EndArray();
+
+    
+    aWriter.StartArrayProperty("line", mozilla::JSONWriter::SingleLineStyle);
+    {
+      JS::TraceLoggerLineNoBuffer collectionBuffer(lockGuard, aCx);
+      while (collectionBuffer.NextChunk()) {
+        for (int32_t val : collectionBuffer) {
+          if (val == -1) {
+            aWriter.NullElement();
+          } else {
+            aWriter.IntElement(val);
+          }
+        }
+      }
+    }
+    aWriter.EndArray();
+
+    
+    aWriter.StartArrayProperty("column", mozilla::JSONWriter::SingleLineStyle);
+    {
+      JS::TraceLoggerColNoBuffer collectionBuffer(lockGuard, aCx);
+      while (collectionBuffer.NextChunk()) {
+        for (int32_t val : collectionBuffer) {
+          if (val == -1) {
+            aWriter.NullElement();
+          } else {
+            aWriter.IntElement(val);
+          }
+        }
+      }
+    }
+    aWriter.EndArray();
+
+    aWriter.IntProperty("length", length);
+  }
+  aWriter.EndObject();
 }
 
 void StreamSamplesAndMarkers(const char* aName, int aThreadId,
