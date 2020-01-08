@@ -663,8 +663,18 @@ struct WebRenderMemoryReporterHelper {
 
   void Report(size_t aBytes, const char* aName) const
   {
+    
+    
+    
+    
+    
+    nsAutoCString processName;
+    if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+      GPUParent::GetGPUProcessName(processName);
+    }
+
     nsPrintfCString path("explicit/gfx/webrender/%s", aName);
-    mCallback->Callback(EmptyCString(), path,
+    mCallback->Callback(processName, path,
                         nsIMemoryReporter::KIND_HEAP, nsIMemoryReporter::UNITS_BYTES,
                         aBytes, EmptyCString(), mData);
   }

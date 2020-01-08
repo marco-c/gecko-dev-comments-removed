@@ -26,6 +26,11 @@ public:
 
   static GPUParent* GetSingleton();
 
+  
+  
+  
+  static void GetGPUProcessName(nsACString& aStr);
+
   bool Init(base::ProcessId aParentPid,
             const char* aParentBuildID,
             MessageLoop* aIOLoop,
