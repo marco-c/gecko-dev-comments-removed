@@ -1,6 +1,10 @@
 
 
 
+var tmpScope = {};
+ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm", tmpScope);
+var TelemetryStopwatch = tmpScope.TelemetryStopwatch;
+
 const HIST_NAME = "TELEMETRY_SEND_SUCCESS";
 const HIST_NAME2 = "RANGE_CHECKSUM_ERRORS";
 const KEYED_HIST = { id: "TELEMETRY_INVALID_PING_TYPE_SUBMITTED", key: "TEST" };
@@ -21,6 +25,12 @@ function run_test() {
   histogram = Telemetry.getKeyedHistogramById(KEYED_HIST.id);
   snapshot = histogram.snapshot(KEYED_HIST.key);
   originalCount3 = Object.values(snapshot.values).reduce((a, b) => a += b, 0);
+
+  Assert.ok(!TelemetryStopwatch.start(3));
+  Assert.ok(!TelemetryStopwatch.start({}));
+  Assert.ok(!TelemetryStopwatch.start("", 3));
+  Assert.ok(!TelemetryStopwatch.start("", ""));
+  Assert.ok(!TelemetryStopwatch.start({}, {}));
 
   Assert.ok(TelemetryStopwatch.start("mark1"));
   Assert.ok(TelemetryStopwatch.start("mark2"));
@@ -114,6 +124,11 @@ function run_test() {
   Assert.ok(!TelemetryStopwatch.finish(HIST_NAME, refObj));
 
   
+  for (let key of [3, {}, ""]) {
+    Assert.ok(!TelemetryStopwatch.startKeyed(KEYED_HIST.id, key));
+  }
+
+  
   Assert.ok(!TelemetryStopwatch.runningKeyed("HISTOGRAM", "KEY1"));
   Assert.ok(!TelemetryStopwatch.runningKeyed("HISTOGRAM", "KEY2"));
   Assert.ok(!TelemetryStopwatch.runningKeyed("HISTOGRAM", "KEY1", refObj));
@@ -152,8 +167,7 @@ function run_test() {
 
   
   Assert.ok(TelemetryStopwatch.startKeyed(KEYED_HIST.id, KEYED_HIST.key));
-  Assert.throws(() => TelemetryStopwatch.cancel(KEYED_HIST.id, KEYED_HIST.key),
-                /is not an object/);
+  Assert.ok(!TelemetryStopwatch.cancel(KEYED_HIST.id, KEYED_HIST.key));
   Assert.ok(TelemetryStopwatch.cancelKeyed(KEYED_HIST.id, KEYED_HIST.key));
   Assert.ok(!TelemetryStopwatch.cancelKeyed(KEYED_HIST.id, KEYED_HIST.key));
 

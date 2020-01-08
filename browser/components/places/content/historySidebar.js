@@ -20,6 +20,8 @@ XPCOMUtils.defineLazyScriptGetter(this, ["PlacesInsertionPoint", "PlacesControll
                                   "chrome://browser/content/places/controller.js");
 
 
+ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm");
+
 var gHistoryTree;
 var gSearchBox;
 var gHistoryGrouping = "";
