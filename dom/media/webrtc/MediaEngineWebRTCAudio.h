@@ -142,49 +142,6 @@ private:
   
 
 
-  struct Allocation {
-    Allocation() = delete;
-    explicit Allocation(const RefPtr<AllocationHandle>& aHandle);
-    ~Allocation();
-
-#ifdef DEBUG
-    
-    
-    
-    GraphTime mLastCallbackAppendTime = 0;
-#endif
-    
-    
-    
-    bool mLiveFramesAppended = false;
-
-    
-    
-    
-    bool mLiveSilenceAppended = false;
-
-    const RefPtr<AllocationHandle> mHandle;
-    RefPtr<SourceMediaStream> mStream;
-    TrackID mTrackID = TRACK_NONE;
-    PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
-    bool mEnabled = false;
-  };
-
-  
-
-
-  class AllocationHandleComparator {
-  public:
-    bool Equals(const Allocation& aAllocation,
-                const RefPtr<const AllocationHandle>& aHandle) const
-    {
-      return aHandle == aAllocation.mHandle;
-    }
-  };
-
-  
-
-
 
 
 
@@ -241,6 +198,14 @@ private:
   bool PassThrough(MediaStreamGraphImpl* aGraphImpl) const;
 
   
+  
+  RefPtr<AllocationHandle> mHandle;
+  RefPtr<SourceMediaStream> mStream;
+  TrackID mTrackID = TRACK_NONE;
+  PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
+  bool mEnabled = false;
+
+  
   const RefPtr<AudioDeviceInfo> mDeviceInfo;
   
   const bool mDelayAgnostic;
@@ -260,11 +225,9 @@ private:
   
   
   Atomic<MediaEngineSourceState> mState;
+  
+  
   Mutex mMutex;
-  
-  
-  
-  UniquePtr<Allocation> mAllocation;
   
   
   
@@ -297,6 +260,21 @@ private:
   AlignedFloatBuffer mDeinterleavedBuffer;
   
   AlignedFloatBuffer mInputDownmixBuffer;
+#ifdef DEBUG
+  
+  
+  
+  GraphTime mLastCallbackAppendTime = 0;
+#endif
+  
+  
+  
+  bool mLiveFramesAppended = false;
+
+  
+  
+  
+  bool mLiveSilenceAppended = false;
 };
 
 
