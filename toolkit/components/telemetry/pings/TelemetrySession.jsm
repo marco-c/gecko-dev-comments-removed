@@ -1982,7 +1982,7 @@ var Impl = {
     }
 
     
-    const batchID = Policy.now();
+    const batchID = Services.appinfo.appBuildID;
 
     let prioEncodedData;
 
