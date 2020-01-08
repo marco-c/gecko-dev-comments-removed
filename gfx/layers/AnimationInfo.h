@@ -62,7 +62,6 @@ public:
   InfallibleTArray<AnimData>& GetAnimationData() { return mAnimationData; }
   AnimationArray& GetAnimations() { return mAnimations; }
   bool ApplyPendingUpdatesForThisTransaction();
-  bool HasOpacityAnimation() const;
   bool HasTransformAnimation() const;
 
   
