@@ -112,6 +112,7 @@ struct BlobItemData
   Matrix mMatrix; 
   Matrix4x4Flagged mTransform; 
   float mOpacity; 
+  RefPtr<BasicLayerManager> mLayerManager;
 
   IntRect mImageRect;
   LayerIntPoint mGroupOffset;
@@ -449,7 +450,7 @@ struct DIGroup
       GP("mRect %d %d %d %d\n", aData->mRect.x, aData->mRect.y, aData->mRect.width, aData->mRect.height);
       InvalidateRect(aData->mRect);
       aData->mInvalid = true;
-    } else if ( (aItem->IsInvalid(invalid) && invalid.IsEmpty())) {
+    } else if (aData->mInvalid ||  (aItem->IsInvalid(invalid) && invalid.IsEmpty())) {
       MOZ_RELEASE_ASSERT(imageRect.IsEqualEdges(aData->mImageRect));
       MOZ_RELEASE_ASSERT(mLayerBounds.TopLeft() == aData->mGroupOffset);
       UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
@@ -806,6 +807,32 @@ struct DIGroup
   }
 };
 
+
+
+
+static BlobItemData*
+GetBlobItemDataForGroup(nsDisplayItem* aItem, DIGroup* aGroup)
+{
+  BlobItemData* data = GetBlobItemData(aItem);
+  if (data) {
+    MOZ_RELEASE_ASSERT(data->mGroup->mDisplayItems.Contains(data));
+    if (data->mGroup != aGroup) {
+      GP("group don't match %p %p\n", data->mGroup, aGroup);
+      data->ClearFrame();
+      
+      
+      data = nullptr;
+    }
+  }
+  if (!data) {
+    GP("Allocating blob data\n");
+    data = new BlobItemData(aGroup, aItem);
+    aGroup->mDisplayItems.PutEntry(data);
+  }
+  data->mUsed = true;
+  return data;
+}
+
 void
 Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem, const IntRect& aItemBounds,
                             nsDisplayList* aChildren, gfxContext* aContext,
@@ -872,26 +899,32 @@ Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem, const IntRect
       GP("Paint Mask\n");
       
       
-      gfx::Size scale(1, 1);
-      RefPtr<BasicLayerManager> blm = new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
-      PaintByLayer(aItem, mDisplayListBuilder, blm, aContext, scale, [&]() {
-                   static_cast<nsDisplayMask*>(aItem)->PaintAsLayer(mDisplayListBuilder,
-                                                                    aContext, blm);
-                   });
-      aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
+      if (data->mLayerManager->GetRoot()) {
+        data->mLayerManager->BeginTransaction();
+        static_cast<nsDisplayMask*>(aItem)->PaintAsLayer(mDisplayListBuilder,
+                                                       aContext, data->mLayerManager);
+        if (data->mLayerManager->InTransaction()) {
+          data->mLayerManager->AbortTransaction();
+        }
+        aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      }
       break;
     }
     case DisplayItemType::TYPE_FILTER: {
       GP("Paint Filter\n");
       
       
-      RefPtr<BasicLayerManager> blm = new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
-      gfx::Size scale(1, 1);
-      PaintByLayer(aItem, mDisplayListBuilder, blm, aContext, scale, [&]() {
-                   static_cast<nsDisplayFilter*>(aItem)->PaintAsLayer(mDisplayListBuilder,
-                                                                      aContext, blm);
-                   });
-      aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
+      if (data->mLayerManager->GetRoot()) {
+        data->mLayerManager->BeginTransaction();
+        static_cast<nsDisplayFilter*>(aItem)->PaintAsLayer(mDisplayListBuilder,
+                                                           aContext, data->mLayerManager);
+        if (data->mLayerManager->InTransaction()) {
+          data->mLayerManager->AbortTransaction();
+        }
+        aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      }
       break;
     }
 
@@ -963,32 +996,6 @@ IsItemProbablyActive(nsDisplayItem* aItem, nsDisplayListBuilder* aDisplayListBui
     
     return false;
   }
-}
-
-
-
-
-static BlobItemData*
-GetBlobItemDataForGroup(nsDisplayItem* aItem, DIGroup* aGroup)
-{
-  BlobItemData* data = GetBlobItemData(aItem);
-  if (data) {
-    MOZ_RELEASE_ASSERT(data->mGroup->mDisplayItems.Contains(data));
-    if (data->mGroup != aGroup) {
-      GP("group don't match %p %p\n", data->mGroup, aGroup);
-      data->ClearFrame();
-      
-      
-      data = nullptr;
-    }
-  }
-  if (!data) {
-    GP("Allocating blob data\n");
-    data = new BlobItemData(aGroup, aItem);
-    aGroup->mDisplayItems.PutEntry(data);
-  }
-  data->mUsed = true;
-  return data;
 }
 
 
@@ -1076,6 +1083,10 @@ Grouper::ConstructGroupInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
   }
 }
 
+bool BuildLayer(nsDisplayItem* aItem, BlobItemData* aData,
+                nsDisplayListBuilder* aDisplayListBuilder,
+                const gfx::Size& aScale);
+
 void
 Grouper::ConstructItemInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
                                      wr::DisplayListBuilder& aBuilder,
@@ -1084,8 +1095,15 @@ Grouper::ConstructItemInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
                                      const StackingContextHelper& aSc)
 {
   nsDisplayList* children = aItem->GetChildren();
+  BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
 
-  if (aItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
+  if (aItem->GetType() == DisplayItemType::TYPE_FILTER ||
+      aItem->GetType() == DisplayItemType::TYPE_MASK) {
+    gfx::Size scale(1, 1);
+    
+    
+    data->mInvalid = BuildLayer(aItem, data, mDisplayListBuilder, scale);
+  } else if (aItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
     nsDisplayTransform* transformItem = static_cast<nsDisplayTransform*>(aItem);
     const Matrix4x4Flagged& t = transformItem->GetTransform();
     Matrix t2d;
@@ -1101,12 +1119,13 @@ Grouper::ConstructItemInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
 
     mTransform = m;
   } else if (children) {
+    sIndent++;
     ConstructGroupInsideInactive(aCommandBuilder, aBuilder, aResources, aGroup, children, aSc);
+    sIndent--;
   }
 
   GP("Including %s of %d\n", aItem->Name(), aGroup->mDisplayItems.Count());
 
-  BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
   aGroup->ComputeGeometryChange(aItem, data, mTransform, mDisplayListBuilder); 
 }
 
@@ -1554,6 +1573,50 @@ WebRenderCommandBuilder::PushImage(nsDisplayItem* aItem,
   aBuilder.PushImage(r, r, !aItem->BackfaceIsHidden(), wr::ToImageRendering(sampleFilter), key.value());
 
   return true;
+}
+
+bool
+BuildLayer(nsDisplayItem* aItem,
+           BlobItemData* aData,
+           nsDisplayListBuilder* aDisplayListBuilder,
+           const gfx::Size& aScale)
+{
+  if (!aData->mLayerManager) {
+    aData->mLayerManager = new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
+  }
+  RefPtr<BasicLayerManager> blm = aData->mLayerManager;
+  UniquePtr<LayerProperties> props;
+  if (blm->GetRoot()) {
+    props = LayerProperties::CloneFrom(blm->GetRoot());
+  }
+  FrameLayerBuilder* layerBuilder = new FrameLayerBuilder();
+  layerBuilder->Init(aDisplayListBuilder, blm, nullptr, true);
+  layerBuilder->DidBeginRetainedLayerTransaction(blm);
+
+  blm->BeginTransaction();
+  bool isInvalidated = false;
+
+  ContainerLayerParameters param(aScale.width, aScale.height);
+  RefPtr<Layer> root = aItem->BuildLayer(aDisplayListBuilder, blm, param);
+
+  if (root) {
+    blm->SetRoot(root);
+    layerBuilder->WillEndTransaction();
+
+    
+    nsIntRegion invalid;
+    if (props) {
+      props->ComputeDifferences(root, invalid, nullptr);
+      if (!invalid.IsEmpty()) {
+        isInvalidated = true;
+      }
+    } else {
+      isInvalidated = true;
+    }
+  }
+  blm->AbortTransaction();
+
+  return isInvalidated;
 }
 
 static bool
