@@ -189,6 +189,11 @@ function GetModuleNamespace(module)
     assert(IsObject(module) && IsModule(module), "GetModuleNamespace called with non-module");
 
     
+    
+    if (module.status === MODULE_STATUS_EVALUATED_ERROR)
+        throw GetModuleEvaluationError(module);
+
+    
     assert(module.status !== MODULE_STATUS_UNINSTANTIATED,
            "Bad module state in GetModuleNamespace");
 
