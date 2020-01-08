@@ -1648,7 +1648,7 @@ class StaticAnalysis(MachCommandBase):
     """Utilities for running C++ static analysis checks and format."""
 
     
-    _format_include_extensions = ('.cpp', '.c', '.h', '.java')
+    _format_include_extensions = ('.cpp', '.c', '.cc', '.h', '.java')
     
     _format_ignore_file = '.clang-format-ignore'
 
