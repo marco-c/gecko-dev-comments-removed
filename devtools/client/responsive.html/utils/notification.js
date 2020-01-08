@@ -22,7 +22,7 @@ loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools"
 
 
 
-function showNotification(window, tab, { toolboxButton, msg, priority } = {}) {
+async function showNotification(window, tab, { toolboxButton, msg, priority } = {}) {
   
   let nbox = window.gBrowser.getNotificationBox(tab.linkedBrowser);
 
@@ -30,7 +30,7 @@ function showNotification(window, tab, { toolboxButton, msg, priority } = {}) {
   
   
   if (toolboxButton) {
-    const target = TargetFactory.forTab(tab);
+    const target = await TargetFactory.forTab(tab);
     const toolbox = gDevTools.getToolbox(target);
     if (toolbox) {
       nbox = toolbox.notificationBox;
