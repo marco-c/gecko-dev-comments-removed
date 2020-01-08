@@ -11,7 +11,6 @@
 #include "mozilla/interceptor/Trampoline.h"
 
 #include "mozilla/ScopeExit.h"
-#include "mozilla/TypedEnumBits.h"
 
 #define COPY_CODES(NBYTES)  do {    \
   tramp.CopyFrom(origBytes.GetAddress(), NBYTES); \
@@ -21,26 +20,15 @@
 namespace mozilla {
 namespace interceptor {
 
-enum class DetourFlags : uint32_t
-{
-  eDefault = 0,
-  eEnable10BytePatch = 1, 
-  eTestOnlyForce10BytePatch = 3, 
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DetourFlags)
-
 template <typename VMPolicy>
 class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy>
 {
   typedef typename VMPolicy::MMPolicyT MMPolicyT;
-  DetourFlags mFlags;
 
 public:
   template <typename... Args>
   explicit WindowsDllDetourPatcher(Args... aArgs)
     : WindowsDllPatcherBase<VMPolicy>(std::forward<Args>(aArgs)...)
-    , mFlags(DetourFlags::eDefault)
   {
   }
 
@@ -128,19 +116,25 @@ public:
       if (!origBytes) {
         continue;
       }
-
-      origBytes.Commit();
 #elif defined(_M_X64)
-      if (opcode1 == 0x49) {
-        if (!Clear13BytePatch(origBytes, tramp.GetCurrentRemoteAddress())) {
-          continue;
-        }
-      } else if (opcode1 == 0xB8) {
-        if (!Clear10BytePatch(origBytes)) {
-          continue;
-        }
-      } else {
-        MOZ_ASSERT_UNREACHABLE("Unrecognized patch!");
+      
+      MOZ_ASSERT(opcode1 == 0x49);
+      if (opcode1 != 0x49) {
+        continue;
+      }
+
+      Maybe<uint8_t> maybeOpcode2 = origBytes.ReadByte();
+      if (!maybeOpcode2) {
+        continue;
+      }
+
+      uint8_t opcode2 = maybeOpcode2.value();
+      if (opcode2 != 0xBB) {
+        continue;
+      }
+
+      origBytes.WritePointer(tramp.GetCurrentRemoteAddress());
+      if (!origBytes) {
         continue;
       }
 #elif defined(_M_ARM64)
@@ -148,84 +142,18 @@ public:
 #else
 #error "Unknown processor type"
 #endif
+
+      origBytes.Commit();
     }
 
     this->mVMPolicy.Clear();
   }
 
-  bool Clear13BytePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes,
-                        const uintptr_t aResetToAddress)
-  {
-    Maybe<uint8_t> maybeOpcode2 = aOrigBytes.ReadByte();
-    if (!maybeOpcode2) {
-      return false;
-    }
-
-    uint8_t opcode2 = maybeOpcode2.value();
-    if (opcode2 != 0xBB) {
-      return false;
-    }
-
-    aOrigBytes.WritePointer(aResetToAddress);
-    if (!aOrigBytes) {
-      return false;
-    }
-
-    return aOrigBytes.Commit();
-  }
-
-  bool Clear10BytePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes)
-  {
-    Maybe<uint32_t> maybePtr32 = aOrigBytes.ReadLong();
-    if (!maybePtr32) {
-      return false;
-    }
-
-    uint32_t ptr32 = maybePtr32.value();
-    
-    if (ptr32 & 0x80000000) {
-      return false;
-    }
-
-    uintptr_t trampPtr = ptr32;
-
-    
-    
-    
-    WritableTargetFunction<MMPolicyT> writableIntermediate(this->mVMPolicy,
-        trampPtr - sizeof(uintptr_t), 13 + sizeof(uintptr_t));
-    if (!writableIntermediate) {
-      return false;
-    }
-
-    Maybe<uintptr_t> stubTramp = writableIntermediate.ReadEncodedPtr();
-    if (!stubTramp || !stubTramp.value()) {
-      return false;
-    }
-
-    Maybe<uint8_t> maybeOpcode1 = writableIntermediate.ReadByte();
-    if (!maybeOpcode1) {
-      return false;
-    }
-
-    
-    
-    uint8_t opcode1 = maybeOpcode1.value();
-    if (opcode1 != 0x49) {
-      return false;
-    }
-
-    
-    return Clear13BytePatch(writableIntermediate, stubTramp.value());
-  }
-
-  void Init(DetourFlags aFlags = DetourFlags::eDefault, int aNumHooks = 0)
+  void Init(int aNumHooks = 0)
   {
     if (Initialized()) {
       return;
     }
-
-    mFlags = aFlags;
 
     if (aNumHooks == 0) {
       
@@ -234,12 +162,7 @@ public:
       aNumHooks = this->mVMPolicy.GetAllocGranularity() / kHookSize;
     }
 
-    ReservationFlags resFlags = ReservationFlags::eDefault;
-    if (aFlags & DetourFlags::eEnable10BytePatch) {
-      resFlags |= ReservationFlags::eForceFirst2GB;
-    }
-
-    this->mVMPolicy.Reserve(aNumHooks, resFlags);
+    this->mVMPolicy.Reserve(aNumHooks);
   }
 
   bool Initialized() const
@@ -622,15 +545,8 @@ protected:
     }
 #elif defined(_M_X64)
     bool foundJmp = false;
-    
-    
-    
-    
-    bool use10BytePatch = (mFlags & DetourFlags::eTestOnlyForce10BytePatch) ==
-                          DetourFlags::eTestOnlyForce10BytePatch;
-    const uint32_t bytesRequired = use10BytePatch ? 10 : 13;
 
-    while (origBytes.GetOffset() < bytesRequired) {
+    while (origBytes.GetOffset() < 13) {
       
       
       
@@ -644,15 +560,6 @@ protected:
           ++origBytes;
           continue;
         }
-
-        
-        
-        if (this->mVMPolicy.IsTrampolineSpaceInLowest2GB() &&
-            origBytes.GetOffset() >= 10) {
-          use10BytePatch = true;
-          break;
-        }
-
         MOZ_ASSERT_UNREACHABLE("Opcode sequence includes commands after JMP");
         return;
       }
@@ -1043,18 +950,6 @@ protected:
         } else if ((origBytes[1] & (kMaskMod|kMaskReg)) == BuildModRmByte(kModReg, 2, 0)) {
           
           COPY_CODES(2);
-        } else if (((origBytes[1] & kMaskReg) >> kRegFieldShift) == 4) {
-          
-          int len = CountModRmSib(origBytes + 1);
-          if (len < 0) {
-            
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
-            return;
-          }
-
-          COPY_CODES(len + 1);
-
-          foundJmp = true;
         } else {
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
@@ -1110,8 +1005,8 @@ protected:
 #endif
 
     
-    void* trampPtr = tramp.EndExecutableCode();
-    if (!trampPtr) {
+    *aOutTramp = tramp.EndExecutableCode();
+    if (!(*aOutTramp)) {
       return;
     }
 
@@ -1125,69 +1020,18 @@ protected:
     target.WriteByte(0xe9); 
     target.WriteDisp32(aDest); 
 #elif defined(_M_X64)
-    if (use10BytePatch) {
-      
-      
-      
-      
-      Trampoline<MMPolicyT> callTramp(this->mVMPolicy.GetNextTrampoline());
-      if (!callTramp) {
-        return;
-      }
-
-      
-      
-      callTramp.WriteEncodedPointer(nullptr);
-      
-      callTramp.WriteEncodedPointer(trampPtr);
-      callTramp.StartExecutableCode();
-
-      
-      callTramp.WriteByte(0x49);
-      callTramp.WriteByte(0xbb);
-      callTramp.WritePointer(aDest);
-
-      
-      callTramp.WriteByte(0x41);
-      callTramp.WriteByte(0xff);
-      callTramp.WriteByte(0xe3);
-
-      void* callTrampStart = callTramp.EndExecutableCode();
-      if (!callTrampStart) {
-        return;
-      }
-
-      target.WriteByte(0xB8); 
-
-      
-      MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(callTrampStart) & (~0x7FFFFFFFULL)));
-
-      target.WriteLong(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(callTrampStart) & 0x7FFFFFFFU));
-      target.WriteByte(0x48); 
-      target.WriteByte(0x63); 
-      
-      target.WriteByte(BuildModRmByte(kModReg, kRegAx, kRegAx));
-      target.WriteByte(0xFF); 
-      target.WriteByte(BuildModRmByte(kModReg, 4, kRegAx)); 
-    } else {
-      
-      target.WriteByte(0x49);
-      target.WriteByte(0xbb);
-      target.WritePointer(aDest);
-
-      
-      target.WriteByte(0x41);
-      target.WriteByte(0xff);
-      target.WriteByte(0xe3);
-    }
-#endif
-
-    if (!target.Commit()) {
-      return;
-    }
+    
+    target.WriteByte(0x49);
+    target.WriteByte(0xbb);
+    target.WritePointer(aDest);
 
     
-    *aOutTramp = trampPtr;
+    target.WriteByte(0x41);
+    target.WriteByte(0xff);
+    target.WriteByte(0xe3);
+#endif
+
+    target.Commit();
   }
 };
 
