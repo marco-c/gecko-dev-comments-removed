@@ -105,6 +105,9 @@ const EVENTS = {
 
   
   PAYLOAD_READY: "NetMonitor:PayloadReady",
+
+  
+  THROTTLING_CHANGED: "NetMonitor:ThrottlingChanged",
 };
 
 const UPDATE_PROPS = [
