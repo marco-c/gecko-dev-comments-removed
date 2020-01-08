@@ -17,8 +17,8 @@
 
 use std::env;
 use std::fs::File;
-use std::path::*;
 use std::io::Write;
+use std::path::*;
 
 fn main() {
     

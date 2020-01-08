@@ -36,7 +36,7 @@ impl<W: Write> EventWriter<W> {
     #[inline]
     pub fn new_with_config(sink: W, config: EmitterConfig) -> EventWriter<W> {
         EventWriter {
-            sink: sink,
+            sink,
             emitter: Emitter::new(config)
         }
     }
@@ -70,6 +70,16 @@ impl<W: Write> EventWriter<W> {
             XmlEvent::Characters(content) =>
                 self.emitter.emit_characters(&mut self.sink, content)
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn inner_mut(&mut self) -> &mut W {
+        &mut self.sink
     }
 
     

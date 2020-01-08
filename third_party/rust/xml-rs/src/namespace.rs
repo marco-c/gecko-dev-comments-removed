@@ -50,6 +50,8 @@ pub const NS_XML_URI: &'static str      = "http://www.w3.org/XML/1998/namespace"
 
 
 
+
+
 pub const NS_NO_PREFIX: &'static str    = "";
 
 
@@ -363,7 +365,7 @@ pub struct NamespaceStackMappings<'a> {
 }
 
 impl<'a> NamespaceStackMappings<'a> {
-    fn to_next_namespace(&mut self) -> bool {
+    fn go_to_next_namespace(&mut self) -> bool {
         self.current_namespace = self.namespaces.next().map(|ns| ns.into_iter());
         self.current_namespace.is_some()
     }
@@ -374,7 +376,7 @@ impl<'a> Iterator for NamespaceStackMappings<'a> {
 
     fn next(&mut self) -> Option<UriMapping<'a>> {
         
-        if self.current_namespace.is_none() && !self.to_next_namespace() {
+        if self.current_namespace.is_none() && !self.go_to_next_namespace() {
             return None;
         }
         let next_item = self.current_namespace.as_mut().unwrap().next();
@@ -391,7 +393,7 @@ impl<'a> Iterator for NamespaceStackMappings<'a> {
                 Some((k, v))
             },
             
-            None => if self.to_next_namespace() {
+            None => if self.go_to_next_namespace() {
                 
                 self.next()
             } else {
