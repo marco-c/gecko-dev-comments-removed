@@ -37,7 +37,7 @@ namespace gfx {
 using namespace mozilla::ipc;
 
 
-static const float kMinPaintScale = 0.05;
+static const float kMinPaintScale = 0.05f;
 
  PaintFragment
 PaintFragment::Record(nsIDocShell* aDocShell,
