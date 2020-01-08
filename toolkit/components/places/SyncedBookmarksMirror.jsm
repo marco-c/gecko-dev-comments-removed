@@ -2113,7 +2113,8 @@ async function initializeTempMirrorEntities(db) {
   
   await db.execute(`
     CREATE TEMP TRIGGER insertNewLocalItems
-    INSTEAD OF DELETE ON itemsToMerge WHEN OLD.localId IS NULL
+    INSTEAD OF DELETE ON itemsToMerge WHEN OLD.useRemote AND
+                                           OLD.localId IS NULL
     BEGIN
       /* Record an item added notification for the new item. */
       INSERT INTO itemsAdded(guid, keywordChanged, level)
@@ -3118,6 +3119,15 @@ class MergedBookmarkNode {
 
   useRemote() {
     switch (this.mergeState.value) {
+      case BookmarkMergeState.TYPE.LOCAL:
+        if (!this.localNode) {
+          
+          
+          throw new TypeError(
+            "Can't have local value state without local node");
+        }
+        return false;
+
       case BookmarkMergeState.TYPE.REMOTE:
         if (!this.remoteNode) {
           
@@ -3125,16 +3135,19 @@ class MergedBookmarkNode {
           throw new TypeError(
             "Can't have remote value state without remote node");
         }
-        return this.remoteNode.needsMerge;
-
-      case BookmarkMergeState.TYPE.LOCAL:
-        return false;
+        if (this.localNode) {
+          
+          
+          return this.remoteNode.needsMerge;
+        }
+        
+        
+        return true;
     }
     throw new TypeError("Unexpected value state");
   }
 
   
-
 
 
 
@@ -3148,9 +3161,22 @@ class MergedBookmarkNode {
           throw new TypeError(
             "Can't have local structure state without local node");
         }
-        return this.localNode.needsMerge;
+        if (this.remoteNode) {
+          
+          
+          return this.localNode.needsMerge;
+        }
+        
+        
+        return true;
 
       case BookmarkMergeState.TYPE.REMOTE:
+        if (!this.remoteNode) {
+          
+          
+          throw new TypeError(
+            "Can't have remote structure state without remote node");
+        }
         return false;
 
       case BookmarkMergeState.TYPE.NEW:
@@ -3459,10 +3485,6 @@ class BookmarkMerger {
       return BookmarkMergeState.local;
     }
     if (localNode.needsMerge && remoteNode.needsMerge) {
-      
-      
-      
-      
       
       
       let valueState = localNode.newerThan(remoteNode) ?
