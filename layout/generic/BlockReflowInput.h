@@ -154,7 +154,8 @@ public:
 
   bool FlowAndPlaceFloat(nsIFrame* aFloat);
 
-  void PlaceBelowCurrentLineFloats(nsLineBox* aLine);
+  void PlaceBelowCurrentLineFloats(nsFloatCacheFreeList& aFloats,
+                                   nsLineBox* aLine);
 
   
   
@@ -380,6 +381,10 @@ public:
   
   
   nsFloatCacheFreeList mBelowCurrentLineFloats;
+
+  
+  
+  nsTArray<nsIFrame*> mNoWrapFloats;
 
   nscoord mMinLineHeight;
 

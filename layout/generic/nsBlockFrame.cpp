@@ -3971,6 +3971,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
           aState.FloatManager()->PopState(&floatManagerState);
           
           aState.mCurrentLineFloats.DeleteAll();
+          MOZ_ASSERT(aState.mNoWrapFloats.IsEmpty());
           aState.mBelowCurrentLineFloats.DeleteAll();
         }
 
@@ -4597,6 +4598,9 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
                         bool* aKeepReflowGoing)
 {
   
+  aLineLayout.FlushNoWrapFloats();
+
+  
   aLineLayout.TrimTrailingWhiteSpace();
 
   
@@ -4802,7 +4806,8 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   if (aState.mBelowCurrentLineFloats.NotEmpty()) {
     
     
-    aState.PlaceBelowCurrentLineFloats(aLine);
+    aState.PlaceBelowCurrentLineFloats(aState.mBelowCurrentLineFloats, aLine);
+    aLine->AppendFloats(aState.mBelowCurrentLineFloats);
   }
 
   

@@ -264,6 +264,7 @@ nsLineLayout::EndLineReflow()
                (!mSpansAllocated && !mSpansFreed && !mSpanFreeList &&
                 !mFramesAllocated && !mFramesFreed && !mFrameFreeList),
                "Allocated frames or spans on non-base line layout?");
+  MOZ_ASSERT(mRootSpan == mCurrentSpan);
 
   UnlinkFrame(mRootSpan->mFrame);
   mCurrentSpan = mRootSpan = nullptr;
@@ -457,6 +458,12 @@ nsLineLayout::EndSpan(nsIFrame* aFrame)
   printf(": EndSpan width=%d\n", mCurrentSpan->mICoord - mCurrentSpan->mIStart);
 #endif
   PerSpanData* psd = mCurrentSpan;
+  MOZ_ASSERT(psd->mParent, "We never call this on the root");
+
+  if (psd->mNoWrap && !psd->mParent->mNoWrap) {
+    FlushNoWrapFloats();
+  }
+
   nscoord iSizeResult = psd->mLastFrame ? (psd->mICoord - psd->mIStart) : 0;
 
   mSpanDepth--;
@@ -954,27 +961,14 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
       pfd->mSkipWhenTrimmingWhitespace = true;
       nsIFrame* outOfFlowFrame = nsLayoutUtils::GetFloatFromPlaceholder(aFrame);
       if (outOfFlowFrame) {
-        
-        
-        
-        nscoord availableISize = psd->mIEnd - (psd->mICoord - mTrimmableISize);
-        if (psd->mNoWrap) {
+        if (psd->mNoWrap &&
+            !LineIsEmpty() && 
+            !GetOutermostLineLayout()->mBlockRI->mFlags.mCanHaveTextOverflow) {
           
-          
-          
-          
-          
-          
-          
-          
-          
-          availableISize = 0;
+          RecordNoWrapFloat(outOfFlowFrame);
+        } else {
+          placedFloat = TryToPlaceFloat(outOfFlowFrame);
         }
-        placedFloat = GetOutermostLineLayout()->
-          AddFloat(outOfFlowFrame, availableISize);
-        NS_ASSERTION(!(outOfFlowFrame->IsLetterFrame() &&
-                       GetFirstLetterStyleOK()),
-                    "FirstLetterStyle set on line with floating first letter");
       }
     }
     else if (isText) {
@@ -1119,8 +1113,8 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
         VerticalAlignFrames(span);
       }
 
-      if (!continuingTextRun) {
-        if (!psd->mNoWrap && (!LineIsEmpty() || placedFloat)) {
+      if (!continuingTextRun && !psd->mNoWrap) {
+        if (!LineIsEmpty() || placedFloat) {
           
           
           
@@ -1504,6 +1498,60 @@ nsLineLayout::DumpPerSpanData(PerSpanData* psd, int32_t aIndent)
   }
 }
 #endif
+
+void
+nsLineLayout::RecordNoWrapFloat(nsIFrame* aFloat)
+{
+  GetOutermostLineLayout()->mBlockRI->mNoWrapFloats.AppendElement(aFloat);
+}
+
+void
+nsLineLayout::FlushNoWrapFloats()
+{
+  auto& noWrapFloats = GetOutermostLineLayout()->mBlockRI->mNoWrapFloats;
+  for (nsIFrame* floatedFrame : noWrapFloats) {
+    TryToPlaceFloat(floatedFrame);
+  }
+  noWrapFloats.Clear();
+}
+
+bool
+nsLineLayout::TryToPlaceFloat(nsIFrame* aFloat)
+{
+  
+  
+  nscoord availableISize = mCurrentSpan->mIEnd - (mCurrentSpan->mICoord - mTrimmableISize);
+  NS_ASSERTION(!(aFloat->IsLetterFrame() && GetFirstLetterStyleOK()),
+              "FirstLetterStyle set on line with floating first letter");
+  return GetOutermostLineLayout()->AddFloat(aFloat, availableISize);
+}
+
+bool
+nsLineLayout::NotifyOptionalBreakPosition(nsIFrame* aFrame,
+                                          int32_t aOffset,
+                                          bool aFits,
+                                          gfxBreakPriority aPriority)
+{
+  MOZ_ASSERT(!aFits || !mNeedBackup,
+             "Shouldn't be updating the break position with a break that fits "
+             "after we've already flagged an overrun");
+  MOZ_ASSERT(mCurrentSpan, "Should be doing line layout");
+  if (mCurrentSpan->mNoWrap) {
+    FlushNoWrapFloats();
+  }
+
+  
+  
+  if ((aFits && aPriority >= mLastOptionalBreakPriority) ||
+      !mLastOptionalBreakFrame) {
+    mLastOptionalBreakFrame = aFrame;
+    mLastOptionalBreakFrameOffset = aOffset;
+    mLastOptionalBreakPriority = aPriority;
+  }
+  return aFrame && mForceBreakFrame == aFrame &&
+    mForceBreakFrameOffset == aOffset;
+}
+
 
 #define VALIGN_OTHER  0
 #define VALIGN_TOP    1

@@ -251,21 +251,21 @@ public:
 
 
 
-  bool NotifyOptionalBreakPosition(nsIFrame* aFrame, int32_t aOffset,
-                                   bool aFits, gfxBreakPriority aPriority) {
-    NS_ASSERTION(!aFits || !mNeedBackup,
-                  "Shouldn't be updating the break position with a break that fits after we've already flagged an overrun");
-    
-    
-    if ((aFits && aPriority >= mLastOptionalBreakPriority) ||
-        !mLastOptionalBreakFrame) {
-      mLastOptionalBreakFrame = aFrame;
-      mLastOptionalBreakFrameOffset = aOffset;
-      mLastOptionalBreakPriority = aPriority;
-    }
-    return aFrame && mForceBreakFrame == aFrame &&
-      mForceBreakFrameOffset == aOffset;
-  }
+  bool NotifyOptionalBreakPosition(nsIFrame* aFrame,
+                                   int32_t aOffset,
+                                   bool aFits,
+                                   gfxBreakPriority aPriority);
+
+  
+  bool TryToPlaceFloat(nsIFrame* aFloat);
+
+  
+  
+  void RecordNoWrapFloat(nsIFrame* aFloat);
+
+  
+  void FlushNoWrapFloats();
+
   
 
 
