@@ -21,58 +21,23 @@ namespace frontend {
 
 struct BytecodeEmitter;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS IfEmitter
+class MOZ_STACK_CLASS BranchEmitterBase
 {
-  public:
+  protected:
+    BytecodeEmitter* bce_;
+
+    
+    JumpList jumpAroundThen_;
+
+    
+    JumpList jumpsAroundElse_;
+
+    
+    
+    
+    
+    int32_t thenDepth_ = 0;
+
     
     
     
@@ -92,30 +57,91 @@ class MOZ_STACK_CLASS IfEmitter
         
         NoLexicalAccessInBranch
     };
-
-  private:
-    BytecodeEmitter* bce_;
-
-    
-    JumpList jumpAroundThen_;
-
-    
-    JumpList jumpsAroundElse_;
-
-    
-    
-    
-    
-    int32_t thenDepth_;
-
     Kind kind_;
+
     mozilla::Maybe<TDZCheckCache> tdzCache_;
 
 #ifdef DEBUG
     
-    int32_t pushed_;
-    bool calculatedPushed_;
+    int32_t pushed_ = 0;
+    bool calculatedPushed_ = false;
+#endif
 
+  protected:
+    BranchEmitterBase(BytecodeEmitter* bce, Kind kind);
+
+    MOZ_MUST_USE bool emitThenInternal(SrcNoteType type);
+    void calculateOrCheckPushed();
+    MOZ_MUST_USE bool emitElseInternal();
+    MOZ_MUST_USE bool emitEndInternal();
+
+  public:
+#ifdef DEBUG
+    
+    
+    
+    int32_t pushed() const {
+        return pushed_;
+    }
+
+    
+    
+    
+    int32_t popped() const {
+        return -pushed_;
+    }
+#endif
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS IfEmitter : public BranchEmitterBase
+{
+  protected:
+#ifdef DEBUG
+    
+    
     
     
     
@@ -142,10 +168,10 @@ class MOZ_STACK_CLASS IfEmitter
         Start,
 
         
-        Then,
+        If,
 
         
-        Cond,
+        Then,
 
         
         ThenElse,
@@ -159,7 +185,7 @@ class MOZ_STACK_CLASS IfEmitter
         
         End
     };
-    State state_;
+    State state_ = State::Start;
 #endif
 
   protected:
@@ -169,36 +195,41 @@ class MOZ_STACK_CLASS IfEmitter
   public:
     explicit IfEmitter(BytecodeEmitter* bce);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_MUST_USE bool emitIf(const mozilla::Maybe<uint32_t>& ifPos);
+
     MOZ_MUST_USE bool emitThen();
-    MOZ_MUST_USE bool emitCond();
     MOZ_MUST_USE bool emitThenElse();
 
+    MOZ_MUST_USE bool emitElseIf(const mozilla::Maybe<uint32_t>& ifPos);
     MOZ_MUST_USE bool emitElse();
-    MOZ_MUST_USE bool emitElseIf();
 
     MOZ_MUST_USE bool emitEnd();
-
-#ifdef DEBUG
-    
-    
-    
-    int32_t pushed() const {
-        return pushed_;
-    }
-
-    
-    
-    
-    int32_t popped() const {
-        return -pushed_;
-    }
-#endif
-
-  private:
-    MOZ_MUST_USE bool emitIfInternal(SrcNoteType type);
-    void calculateOrCheckPushed();
-    MOZ_MUST_USE bool emitElseInternal();
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -209,6 +240,62 @@ class MOZ_STACK_CLASS InternalIfEmitter : public IfEmitter
 {
   public:
     explicit InternalIfEmitter(BytecodeEmitter* bce);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS CondEmitter : public BranchEmitterBase
+{
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    enum class State {
+        
+        Start,
+
+        
+        Cond,
+
+        
+        ThenElse,
+
+        
+        Else,
+
+        
+        End
+    };
+    State state_ = State::Start;
+#endif
+
+  public:
+    explicit CondEmitter(BytecodeEmitter* bce);
+
+    MOZ_MUST_USE bool emitCond();
+    MOZ_MUST_USE bool emitThenElse();
+    MOZ_MUST_USE bool emitElse();
+    MOZ_MUST_USE bool emitEnd();
 };
 
 } 
