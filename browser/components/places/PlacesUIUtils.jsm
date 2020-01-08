@@ -543,17 +543,9 @@ var PlacesUIUtils = {
     }
 
     
-    
-    if (aNode.itemId == -1) {
-      
-      
-      
-      return !PlacesUtils.nodeIsFolder(parentNode);
-    }
-
-    
-    if (PlacesUtils.nodeIsQuery(parentNode))
+    if (aNode.itemId == -1 || PlacesUtils.nodeIsQuery(parentNode)) {
       return true;
+    }
 
     
     return !this.isFolderReadOnly(parentNode);
