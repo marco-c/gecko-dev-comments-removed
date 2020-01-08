@@ -1104,7 +1104,15 @@ class JSTerm extends Component {
         filterBy = input.substring(input.lastIndexOf(lastNonAlpha) + 1);
       }
 
-      const newList = this._autocompleteCache.sort().filter(l => l.startsWith(filterBy));
+      const filterByLc = filterBy.toLocaleLowerCase();
+      const looseMatching = !filterBy || filterBy[0].toLocaleLowerCase() === filterBy[0];
+      const newList = this._autocompleteCache.filter(l => {
+        if (looseMatching) {
+          return l.toLocaleLowerCase().startsWith(filterByLc);
+        }
+
+        return l.startsWith(filterBy);
+      });
 
       this._receiveAutocompleteProperties(null, {
         matches: newList,
@@ -1146,21 +1154,35 @@ class JSTerm extends Component {
       this._autocompleteQuery = inputUntilCursor;
     }
 
-    const matches = message.matches;
-    const lastPart = message.matchProp;
+    const {matches, matchProp} = message;
     if (!matches.length) {
       this.clearCompletion();
       this.emit("autocomplete-updated");
       return;
     }
 
+    const items = matches.map(match => ({
+      preLabel: match.substring(0, matchProp.length),
+      label: match
+    }));
+
+    if (items.length > 0) {
+      const suffix = items[0].label.substring(matchProp.length);
+      this.setAutoCompletionText(suffix);
+    }
+
     const popup = this.autocompletePopup;
-    const items = matches.map(match => ({ preLabel: lastPart, label: match }));
     popup.setItems(items);
 
     const minimumAutoCompleteLength = 2;
 
-    if (items.length >= minimumAutoCompleteLength) {
+    
+    
+    
+    
+    if (items.length >= minimumAutoCompleteLength || (
+      items.length === 1 && items[0].preLabel !== matchProp
+    )) {
       let popupAlignElement;
       let xOffset;
       let yOffset;
@@ -1168,12 +1190,12 @@ class JSTerm extends Component {
       if (this.editor) {
         popupAlignElement = this.node.querySelector(".CodeMirror-cursor");
         
-        xOffset = -1 * lastPart.length * this._inputCharWidth;
+        xOffset = -1 * matchProp.length * this._inputCharWidth;
         yOffset = 5;
       } else if (this.inputNode) {
         const offset = inputUntilCursor.length -
           (inputUntilCursor.lastIndexOf("\n") + 1) -
-          lastPart.length;
+          matchProp.length;
         xOffset = (offset * this._inputCharWidth) + this._chevronWidth;
         popupAlignElement = this.inputNode;
       }
@@ -1185,10 +1207,6 @@ class JSTerm extends Component {
       popup.hidePopup();
     }
 
-    if (items.length > 0) {
-      const suffix = items[0].label.substring(lastPart.length);
-      this.setAutoCompletionText(suffix);
-    }
     this.emit("autocomplete-updated");
   }
 
@@ -1234,22 +1252,21 @@ class JSTerm extends Component {
 
   acceptProposedCompletion() {
     let completionText = this.getAutoCompletionText();
+    let numberOfCharsToReplaceCharsBeforeCursor;
+
     
     
     
-    if (
-      !completionText
-      && this.autocompletePopup.isOpen
-      && this.autocompletePopup.selectedItem
-    ) {
+    if (this.autocompletePopup.isOpen && this.autocompletePopup.selectedItem) {
       const {selectedItem} = this.autocompletePopup;
-      completionText = selectedItem.label.substring(selectedItem.preLabel.length);
+      completionText = selectedItem.label;
+      numberOfCharsToReplaceCharsBeforeCursor = selectedItem.preLabel.length;
     }
 
     this.clearCompletion();
 
     if (completionText) {
-      this.insertStringAtCursor(completionText);
+      this.insertStringAtCursor(completionText, numberOfCharsToReplaceCharsBeforeCursor);
     }
   }
 
@@ -1272,14 +1289,19 @@ class JSTerm extends Component {
 
 
 
-  insertStringAtCursor(str) {
+
+  insertStringAtCursor(str, numberOfCharsToReplaceCharsBeforeCursor = 0) {
     const value = this.getInputValue();
-    const prefix = this.getInputValueBeforeCursor();
+    let prefix = this.getInputValueBeforeCursor();
     const suffix = value.replace(prefix, "");
+
+    if (numberOfCharsToReplaceCharsBeforeCursor) {
+      prefix =
+        prefix.substring(0, prefix.length - numberOfCharsToReplaceCharsBeforeCursor);
+    }
 
     
     const editorCursor = this.editor && this.editor.getCursor();
-
     this.setInputValue(prefix + str + suffix);
 
     if (this.inputNode) {
@@ -1289,7 +1311,7 @@ class JSTerm extends Component {
       
       this.editor.setCursor({
         line: editorCursor.line,
-        ch: editorCursor.ch + str.length
+        ch: editorCursor.ch + str.length - numberOfCharsToReplaceCharsBeforeCursor
       });
     }
   }

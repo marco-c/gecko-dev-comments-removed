@@ -1175,7 +1175,7 @@ WebConsoleActor.prototype =
         this.dbg.removeDebuggee(this.evalWindow);
       }
 
-      matches = result.matches || [];
+      matches = result.matches || new Set();
       matchProp = result.matchProp;
 
       
@@ -1183,18 +1183,26 @@ WebConsoleActor.prototype =
       
       const lastNonAlphaIsDot = /[.][a-zA-Z0-9$\s]*$/.test(reqText);
       if (!lastNonAlphaIsDot) {
-        matches = matches.concat(this._getWebConsoleCommandsCache().filter(n =>
+        this._getWebConsoleCommandsCache().forEach(n => {
           
-          
-          n !== "screenshot" && n.startsWith(result.matchProp)
-        ));
+          if (n !== "screenshot" && n.startsWith(result.matchProp)) {
+            matches.add(n);
+          }
+        });
       }
-    }
 
-    
-    
-    
-    matches = [...new Set(matches)].sort();
+      
+      
+      
+      matches = Array.from(matches).sort((a, b) => {
+        const lA = a[0].toLocaleLowerCase() === a[0];
+        const lB = b[0].toLocaleLowerCase() === b[0];
+        if (lA === lB) {
+          return a < b ? -1 : 1;
+        }
+        return lA ? -1 : 1;
+      });
+    }
 
     return {
       from: this.actorID,

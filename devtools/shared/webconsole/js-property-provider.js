@@ -414,9 +414,17 @@ function getMatchedProps(obj, match) {
 
 
 
+
 function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
   const matches = new Set();
   let numProps = 0;
+
+  const insensitiveMatching = match && match[0].toUpperCase() !== match[0];
+  const propertyMatches = prop => {
+    return insensitiveMatching
+      ? prop.toLocaleLowerCase().startsWith(match.toLocaleLowerCase())
+      : prop.startsWith(match);
+  };
 
   
   const iter = chainIterator(obj);
@@ -437,7 +445,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
 
     for (let i = 0; i < props.length; i++) {
       const prop = props[i];
-      if (prop.indexOf(match) != 0) {
+      if (!propertyMatches(prop)) {
         continue;
       }
       if (prop.indexOf("-") > -1) {
@@ -459,7 +467,7 @@ function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
 
   return {
     matchProp: match,
-    matches: [...matches],
+    matches,
   };
 }
 
