@@ -332,7 +332,11 @@ ToolSidebar.prototype = {
       return;
     }
 
+    currentToolId = this.getTelemetryPanelNameOrOther(currentToolId);
+
     if (previousToolId) {
+      previousToolId = this.getTelemetryPanelNameOrOther(previousToolId);
+
       this._telemetry.toolClosed(previousToolId);
 
       this._telemetry.recordEvent("devtools.main", "sidepanel_changed", "inspector", null,
@@ -344,6 +348,33 @@ ToolSidebar.prototype = {
       );
     }
     this._telemetry.toolOpened(currentToolId);
+  },
+
+  
+
+
+
+
+
+
+
+
+  getTelemetryPanelNameOrOther: function(id) {
+    if (!this._toolNames) {
+      
+      
+      const ids = this._tabbar.state.tabs.map(({ id: toolId }) => {
+        return toolId.includes("-") ? "other" : toolId;
+      });
+
+      this._toolNames = new Set(ids);
+    }
+
+    if (!this._toolNames.has(id)) {
+      return "other";
+    }
+
+    return id;
   },
 
   

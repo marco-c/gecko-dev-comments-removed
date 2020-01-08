@@ -3385,6 +3385,15 @@ Toolbox.prototype = {
     return extInfo && Services.prefs.getBoolPref(extInfo.pref, false);
   },
 
+  
+
+
+
+
+
+
+
+
   getTelemetryPanelNameOrOther: function(id) {
     if (!this._toolNames) {
       const definitions = gDevTools.getToolDefinitionArray();
@@ -3392,9 +3401,11 @@ Toolbox.prototype = {
 
       this._toolNames = new Set(definitionIds);
     }
+
     if (!this._toolNames.has(id)) {
       return "other";
     }
+
     return id;
   },
 };
