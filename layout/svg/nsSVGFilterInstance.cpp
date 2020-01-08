@@ -309,7 +309,7 @@ nsSVGFilterInstance::GetOrCreateSourceAlphaIndex(nsTArray<FilterPrimitiveDescrip
 
   
   
-  FilterPrimitiveDescription descr(PrimitiveType::ToAlpha);
+  FilterPrimitiveDescription descr(AsVariant(ToAlphaAttributes()));
   descr.SetInputPrimitive(0, mSourceGraphicIndex);
 
   const FilterPrimitiveDescription& sourcePrimitiveDescr =
@@ -321,7 +321,7 @@ nsSVGFilterInstance::GetOrCreateSourceAlphaIndex(nsTArray<FilterPrimitiveDescrip
   descr.SetInputColorSpace(0, colorSpace);
   descr.SetOutputColorSpace(colorSpace);
 
-  aPrimitiveDescrs.AppendElement(descr);
+  aPrimitiveDescrs.AppendElement(std::move(descr));
   mSourceAlphaIndex = aPrimitiveDescrs.Length() - 1;
   mSourceAlphaAvailable = true;
   return mSourceAlphaIndex;

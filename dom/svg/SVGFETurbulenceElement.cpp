@@ -136,13 +136,11 @@ SVGFETurbulenceElement::GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
     
     
     if (type == SVG_TURBULENCE_TYPE_TURBULENCE) {
-      return FilterPrimitiveDescription(PrimitiveType::Empty);
+      return FilterPrimitiveDescription();
     }
-    FilterPrimitiveDescription descr(PrimitiveType::Flood);
     FloodAttributes atts;
     atts.mColor = Color(0.5, 0.5, 0.5, 0.5);
-    descr.Attributes() = AsVariant(std::move(atts));
-    return descr;
+    return FilterPrimitiveDescription(AsVariant(std::move(atts)));
   }
 
   
@@ -162,7 +160,6 @@ SVGFETurbulenceElement::GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
                               fY == 0 ? 0 : (1 / firstPeriodInFilterSpace.height));
   gfxPoint offset = firstPeriodInFilterSpace.TopLeft();
 
-  FilterPrimitiveDescription descr(PrimitiveType::Turbulence);
   TurbulenceAttributes atts;
   atts.mOffset = IntPoint::Truncate(offset.x, offset.y);
   atts.mBaseFrequency = frequencyInFilterSpace;
@@ -170,8 +167,7 @@ SVGFETurbulenceElement::GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
   atts.mOctaves = octaves;
   atts.mStitchable = stitch == SVG_STITCHTYPE_STITCH;
   atts.mType = type;
-  descr.Attributes() = AsVariant(std::move(atts));
-  return descr;
+  return FilterPrimitiveDescription(AsVariant(std::move(atts)));
 }
 
 bool

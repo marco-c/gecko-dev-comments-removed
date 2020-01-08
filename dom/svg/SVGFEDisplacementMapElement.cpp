@@ -100,24 +100,20 @@ SVGFEDisplacementMapElement::GetPrimitiveDescription(nsSVGFilterInstance* aInsta
   if (aInputsAreTainted[1]) {
     
     
-    FilterPrimitiveDescription descr(PrimitiveType::Offset);
     OffsetAttributes atts;
     atts.mValue = IntPoint(0, 0);
-    descr.Attributes() = AsVariant(std::move(atts));
-    return descr;
+    return FilterPrimitiveDescription(AsVariant(std::move(atts)));
   }
 
   float scale = aInstance->GetPrimitiveNumber(SVGContentUtils::XY,
                                               &mNumberAttributes[SCALE]);
   uint32_t xChannel = mEnumAttributes[CHANNEL_X].GetAnimValue();
   uint32_t yChannel = mEnumAttributes[CHANNEL_Y].GetAnimValue();
-  FilterPrimitiveDescription descr(PrimitiveType::DisplacementMap);
   DisplacementMapAttributes atts;
   atts.mScale = scale;
   atts.mXChannel = xChannel;
   atts.mYChannel = yChannel;
-  descr.Attributes() = AsVariant(std::move(atts));
-  return descr;
+  return FilterPrimitiveDescription(AsVariant(std::move(atts)));
 }
 
 bool
