@@ -22,16 +22,14 @@ function dirtyStyle() {
   gNavToolbox.style.color = "red";
 }
 
-const gWindowUtils = window.windowUtils;
 
 
 
 
-
-function assertNoFlushesRequired() {
-  Assert.ok(!gWindowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_STYLE),
+function assertNoFlushesRequired(win = window) {
+  Assert.ok(!win.windowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_STYLE),
             "No style flushes are required.");
-  Assert.ok(!gWindowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_LAYOUT),
+  Assert.ok(!win.windowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_LAYOUT),
             "No layout flushes are required.");
 }
 
@@ -39,11 +37,53 @@ function assertNoFlushesRequired() {
 
 
 
-function assertFlushesRequired() {
-  Assert.ok(gWindowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_STYLE),
+function assertFlushesRequired(win = window) {
+  Assert.ok(win.windowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_STYLE),
             "Style flush required.");
-  Assert.ok(gWindowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_LAYOUT),
+  Assert.ok(win.windowUtils.needsFlush(Ci.nsIDOMWindowUtils.FLUSH_LAYOUT),
             "Layout flush required.");
+}
+
+
+
+
+
+
+
+
+
+
+
+function assertFunctionDoesNotFlushLayout(win, fn) {
+  let sawReflow = false;
+
+  let observer = {
+    reflow(start, end) {
+      Assert.ok(false, "Saw a reflow when one was not expected");
+      dump("Stack: " + new Error().stack + "\n");
+      sawReflow = true;
+    },
+
+    reflowInterruptible(start, end) {
+      
+      
+    },
+
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIReflowObserver,
+                                            Ci.nsISupportsWeakReference]),
+  };
+
+  let docShell = win.docShell;
+  docShell.addWeakReflowObserver(observer);
+
+  try {
+    fn();
+    if (!sawReflow) {
+      Assert.ok(true, "Did not see any reflows.");
+    }
+  } finally {
+    docShell.removeWeakReflowObserver(observer);
+  }
 }
 
 
@@ -243,4 +283,55 @@ add_task(async function test_execution_order() {
     Assert.equal(result[i], i,
       "Callbacks and Promises should have run in the expected order.");
   }
+
+  await cleanTheDOM();
+});
+
+
+
+
+
+
+add_task(async function test_subframe_flushes() {
+  const DUMMY_PAGE = getRootDirectory(gTestPath);
+  const PAGE_NAME = "parent-document-flushed";
+  const ABOUT_PAGE = `about:${PAGE_NAME}`;
+
+  
+  
+  
+  await BrowserTestUtils.registerAboutPage(registerCleanupFunction,
+                                           PAGE_NAME, DUMMY_PAGE, 0);
+  await BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: ABOUT_PAGE,
+  }, async browser => {
+    Assert.ok(!browser.isRemoteBrowser, "Should have a non-remote browser.");
+    
+    
+    let outerContent = browser.contentWindow;
+    let outerDoc = browser.contentDocument;
+    let iframe = outerDoc.createElement("iframe");
+    iframe.src = ABOUT_PAGE;
+    let loaded = BrowserTestUtils.waitForEvent(iframe, "load");
+    outerDoc.body.appendChild(iframe);
+    await loaded;
+
+    let innerContent = iframe.contentWindow;
+    let innerDoc = iframe.contentDocument;
+    let target = innerDoc.body;
+    Assert.ok(target);
+
+    assertNoFlushesRequired(outerContent);
+    await window.promiseDocumentFlushed(() => {});
+
+    target.style.width = "5px";
+    assertNoFlushesRequired(outerContent);
+    assertFlushesRequired(innerContent);
+    await window.promiseDocumentFlushed(() => {
+      assertFunctionDoesNotFlushLayout(innerContent, () => {
+        target.getBoundingClientRect();
+      });
+    });
+  });
 });
