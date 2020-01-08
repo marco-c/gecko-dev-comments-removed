@@ -487,14 +487,12 @@ bool nsOuterWindowProxy::getPropertyDescriptor(
 
 
 
-#ifndef RELEASE_OR_BETA
 static bool IsNonConfigurableReadonlyPrimitiveGlobalProp(JSContext* cx,
                                                          JS::Handle<jsid> id) {
   return id == GetJSIDByIndex(cx, XPCJSContext::IDX_NAN) ||
          id == GetJSIDByIndex(cx, XPCJSContext::IDX_UNDEFINED) ||
          id == GetJSIDByIndex(cx, XPCJSContext::IDX_INFINITY);
 }
-#endif
 
 bool nsOuterWindowProxy::getOwnPropertyDescriptor(
     JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
@@ -5075,8 +5073,7 @@ void nsGlobalWindowOuter::NotifyContentBlockingState(unsigned aState,
     return;
   }
 
-  eventSink->OnSecurityChange(aChannel, oldState, state,
-                              doc->GetContentBlockingLog());
+  eventSink->OnSecurityChange(aChannel, state);
 }
 
 

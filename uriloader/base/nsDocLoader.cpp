@@ -40,7 +40,6 @@
 
 using mozilla::DebugOnly;
 using mozilla::LogLevel;
-using mozilla::dom::ContentBlockingLog;
 
 
 
@@ -1394,9 +1393,8 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
 
 
 
-NS_IMETHODIMP nsDocLoader::OnSecurityChange(
-    nsISupports* aContext, uint32_t aOldState, uint32_t aState,
-    ContentBlockingLog* aContentBlockingLog) {
+NS_IMETHODIMP nsDocLoader::OnSecurityChange(nsISupports* aContext,
+                                            uint32_t aState) {
   
   
   
@@ -1409,7 +1407,7 @@ NS_IMETHODIMP nsDocLoader::OnSecurityChange(
 
   
   if (mParent) {
-    mParent->OnSecurityChange(aContext, aOldState, aState, aContentBlockingLog);
+    mParent->OnSecurityChange(aContext, aState);
   }
   return NS_OK;
 }
