@@ -16,7 +16,7 @@ class AdbDevice {
   }
 
   async initialize() {
-    const model = await shell("getprop ro.product.model");
+    const model = await shell(this.id, "getprop ro.product.model");
     this.model = model.trim();
   }
 
@@ -24,16 +24,12 @@ class AdbDevice {
     return this.model || this.id;
   }
 
-  
-  
-  
-  
   async getRuntimeSocketPaths() {
     
     
     
     const query = "cat /proc/net/unix";
-    const rawSocketInfo = await shell(query);
+    const rawSocketInfo = await shell(this.id, query);
 
     
     let socketInfos = rawSocketInfo.split(/\r?\n/);
