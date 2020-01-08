@@ -1854,6 +1854,14 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
     
     
     if (!aGeneration) {
+      nsChangeHint hintForDisplayItem =
+        LayerAnimationInfo::GetChangeHintFor(aDisplayItemType);
+      
+      
+      if (NS_IsHintSubset(hintForDisplayItem, aHintForThisFrame)) {
+        return true;
+      }
+
       if (!effectiveAnimationProperties) {
         effectiveAnimationProperties.emplace(
           nsLayoutUtils::GetAnimationPropertiesForCompositor(aFrame));
@@ -1861,8 +1869,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       const nsCSSPropertyIDSet& propertiesForDisplayItem =
         LayerAnimationInfo::GetCSSPropertiesFor(aDisplayItemType);
       if (effectiveAnimationProperties->Intersects(propertiesForDisplayItem)) {
-        hint |=
-          LayerAnimationInfo::GetChangeHintFor(aDisplayItemType);
+        hint |= hintForDisplayItem;
       }
     }
     return true;
