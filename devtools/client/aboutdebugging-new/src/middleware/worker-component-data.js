@@ -48,7 +48,7 @@ function toComponentData(workers, isServiceWorker) {
     let { fetch } = worker;
     const {
       name,
-      registrationActor,
+      registrationFront,
       scope,
       subscription,
       workerTargetFront,
@@ -57,7 +57,7 @@ function toComponentData(workers, isServiceWorker) {
     
     
     
-    const id = workerTargetFront ? workerTargetFront.actorID : registrationActor;
+    const id = workerTargetFront ? workerTargetFront.actorID : registrationFront.actorID;
 
     let isActive = false;
     let isRunning = false;
@@ -79,7 +79,7 @@ function toComponentData(workers, isServiceWorker) {
         isActive,
         isRunning,
         pushServiceEndpoint,
-        registrationActor,
+        registrationFront,
         scope,
         status,
       },

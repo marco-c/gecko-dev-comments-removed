@@ -33,6 +33,7 @@ class ClientWrapper {
     this.client = client;
     
     this.contentProcessFronts = [];
+    this.serviceWorkerRegistrationFronts = [];
   }
 
   addOneTimeListener(evt, listener) {

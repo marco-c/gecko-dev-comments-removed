@@ -30,7 +30,7 @@ const workerTargetDetails = {
   
   isRunning: PropTypes.bool,
   
-  registrationActor: PropTypes.string,
+  registrationFront: PropTypes.object,
   
   scope: PropTypes.string,
   

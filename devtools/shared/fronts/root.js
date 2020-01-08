@@ -82,15 +82,19 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
       other: [],
     };
 
-    registrations.forEach(form => {
+    registrations.forEach(front => {
+      
+      
+      
+      
       result.service.push({
-        name: form.url,
-        url: form.url,
-        scope: form.scope,
-        fetch: form.fetch,
-        registrationActor: form.actor,
-        active: form.active,
-        lastUpdateTime: form.lastUpdateTime,
+        active: front.active,
+        fetch: front.fetch,
+        lastUpdateTime: front.lastUpdateTime,
+        name: front.url,
+        registrationFront: front,
+        scope: front.scope,
+        url: front.url,
       });
     });
 

@@ -34,7 +34,7 @@ class Worker extends Component {
         name: PropTypes.string.isRequired,
         scope: PropTypes.string.isRequired,
         
-        registrationActor: PropTypes.string,
+        registrationFront: PropTypes.object,
         workerTargetFront: PropTypes.object,
       }).isRequired,
     };
@@ -64,19 +64,13 @@ class Worker extends Component {
       return;
     }
 
-    const { client, worker } = this.props;
-    client.request({
-      to: worker.registrationActor,
-      type: "start",
-    });
+    const { registrationFront } = this.props.worker;
+    registrationFront.start();
   }
 
   unregister() {
-    const { client, worker } = this.props;
-    client.request({
-      to: worker.registrationActor,
-      type: "unregister",
-    });
+    const { registrationFront } = this.props.worker;
+    registrationFront.unregister();
   }
 
   isRunning() {
