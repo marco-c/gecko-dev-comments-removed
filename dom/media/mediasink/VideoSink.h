@@ -108,7 +108,8 @@ private:
     MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   }
 
-  MediaQueue<VideoData>& VideoQueue() const {
+  MediaQueue<VideoData>& VideoQueue() const
+  {
     return mVideoQueue;
   }
 
@@ -130,6 +131,8 @@ private:
 
   
   TimeUnit mVideoFrameEndTime;
+
+  uint32_t mOldDroppedCount;
 
   
   MediaEventListener mPushListener;

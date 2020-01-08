@@ -194,6 +194,9 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvDidComposite(InfallibleTArray<ImageCompositeNotification>&& aNotifications) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvReportFramesDropped(const CompositableHandle& aHandle, const uint32_t& aFrames) override;
+
   
   RefPtr<ImageClient> CreateImageClient(
     CompositableType aType,
@@ -403,6 +406,7 @@ private:
 
   Mutex mContainerMapLock;
   std::unordered_map<uint64_t, RefPtr<ImageContainerListener>> mImageContainerListeners;
+  RefPtr<ImageContainerListener> FindListener(const CompositableHandle& aHandle);
 
 #if defined(XP_WIN)
   

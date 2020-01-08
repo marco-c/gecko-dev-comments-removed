@@ -356,6 +356,7 @@ public:
   explicit ImageContainerListener(ImageContainer* aImageContainer);
 
   void NotifyComposite(const ImageCompositeNotification& aNotification);
+  void NotifyDropped(uint32_t aDropped);
   void ClearImageContainer();
   void DropImageClient();
 private:
@@ -613,11 +614,11 @@ public:
 
   uint32_t GetDroppedImageCount()
   {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mDroppedImageCount;
   }
 
   void NotifyComposite(const ImageCompositeNotification& aNotification);
+  void NotifyDropped(uint32_t aDropped);
 
   ImageContainerListener* GetImageContainerListener()
   {
@@ -676,7 +677,7 @@ private:
   TimeDuration mPaintDelay;
 
   
-  uint32_t mDroppedImageCount;
+  mozilla::Atomic<uint32_t> mDroppedImageCount;
 
   
   

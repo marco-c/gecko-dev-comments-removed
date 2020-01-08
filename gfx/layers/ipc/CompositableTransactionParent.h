@@ -9,6 +9,7 @@
 
 #include <vector>                       
 #include "mozilla/Attributes.h"         
+#include "mozilla/NotNull.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/TextureClient.h"
@@ -48,6 +49,8 @@ protected:
 
 
   bool ReceiveCompositableUpdate(const CompositableOperation& aEdit);
+  bool ReceiveCompositableUpdate(const CompositableOperationDetail& aDetail,
+                                 NotNull<CompositableHost*> aCompositable);
 
   void ReleaseCompositable(const CompositableHandle& aHandle);
 
