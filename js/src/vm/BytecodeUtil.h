@@ -532,7 +532,7 @@ DecompileValueGenerator(JSContext* cx, int spindex, HandleValue v,
 
 
 
-UniqueChars
+JSString*
 DecompileArgument(JSContext* cx, int formalIndex, HandleValue v);
 
 static inline unsigned

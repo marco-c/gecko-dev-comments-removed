@@ -2369,7 +2369,7 @@ DecompileArgumentFromStack(JSContext* cx, int formalIndex, UniqueChars* res)
     return *res != nullptr;
 }
 
-UniqueChars
+JSString*
 js::DecompileArgument(JSContext* cx, int formalIndex, HandleValue v)
 {
     {
@@ -2377,16 +2377,12 @@ js::DecompileArgument(JSContext* cx, int formalIndex, HandleValue v)
         if (!DecompileArgumentFromStack(cx, formalIndex, &result))
             return nullptr;
         if (result && strcmp(result.get(), "(intermediate value)"))
-            return result;
+            return NewStringCopyZ<CanGC>(cx, result.get());
     }
     if (v.isUndefined())
-        return DuplicateString(cx, js_undefined_str); 
+        return cx->names().undefined; 
 
-    RootedString fallback(cx, ValueToSource(cx, v));
-    if (!fallback)
-        return nullptr;
-
-    return EncodeLatin1(cx, fallback);
+    return ValueToSource(cx, v);
 }
 
 extern bool

@@ -218,12 +218,12 @@ extern const char       js_EscapeMap[];
 
 
 extern JS::UniqueChars
-QuoteString(JSContext* cx, JSString* str, char quote = 0);
+QuoteString(JSContext* cx, JSString* str, char quote = '\0');
 
 
 
 extern bool
-QuoteString(Sprinter* sp, JSString* str, char quote = 0);
+QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
 
 } 
 
