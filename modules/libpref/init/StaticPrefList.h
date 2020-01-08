@@ -213,6 +213,15 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  "dom.input_events.conform_to_level_1",
+   dom_input_events_conform_to_level_1,
+  bool, true
+)
+
+
+
 VARCACHE_PREF(
   "dom.webcomponents.shadowdom.report_usage",
    dom_webcomponents_shadowdom_report_usage,

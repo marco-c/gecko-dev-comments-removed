@@ -2017,14 +2017,24 @@ void EditorBase::NotifyEditorObservers(
   }
 }
 
-void EditorBase::FireInputEvent() {
+void EditorBase::FireInputEvent(EditAction aEditAction) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  
+  
+  
+  
+  
+  
+  
+
   RefPtr<Element> targetElement = GetInputEventTargetElement();
   if (NS_WARN_IF(!targetElement)) {
     return;
   }
   RefPtr<TextEditor> textEditor = AsTextEditor();
-  DebugOnly<nsresult> rvIgnored =
-      nsContentUtils::DispatchInputEvent(targetElement, textEditor);
+  DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
+      targetElement, ToInputType(aEditAction), textEditor);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "Failed to dispatch input event");
 }

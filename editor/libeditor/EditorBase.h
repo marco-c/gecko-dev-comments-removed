@@ -1771,8 +1771,14 @@ class EditorBase : public nsIEditor,
 
   nsresult DetermineCurrentDirection();
 
+  
+
+
+
   MOZ_CAN_RUN_SCRIPT
-  void FireInputEvent();
+  void FireInputEvent() { FireInputEvent(GetEditAction()); }
+  MOZ_CAN_RUN_SCRIPT
+  void FireInputEvent(EditAction aEditAction);
 
   
 

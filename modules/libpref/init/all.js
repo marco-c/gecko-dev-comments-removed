@@ -234,6 +234,9 @@ pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "");
 pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "");
 
 
+pref("dom.inputevent.inputtype.enabled", true);
+
+
 pref("dom.webmidi.enabled", false);
 
 
@@ -5342,10 +5345,11 @@ pref("dom.vr.external.quit.timeout", 10000);
 
 pref("dom.vr.navigation.timeout", 5000);
 
-#if defined(HAVE_64BIT_BUILD)
+#if defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
 
 pref("dom.vr.oculus.enabled", true);
 #else
+
 pref("dom.vr.oculus.enabled", false);
 #endif
 
@@ -5374,7 +5378,7 @@ pref("dom.vr.oculus.invisible.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 
-#if !defined(HAVE_64BIT_BUILD)
+#if !defined(HAVE_64BIT_BUILD) && !defined(ANDROID)
 
 pref("dom.vr.openvr.enabled", false);
 #elif defined(XP_WIN) || defined(XP_MACOSX)

@@ -31,10 +31,15 @@ class InputEvent : public UIEvent {
     return InputEvent_Binding::Wrap(aCx, this, aGivenProto);
   }
 
+  void GetInputType(nsAString& aInputType);
   bool IsComposing();
 
  protected:
   ~InputEvent() {}
+
+  
+  
+  nsString mInputTypeValue;
 };
 
 }  

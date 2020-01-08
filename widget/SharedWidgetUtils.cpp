@@ -18,7 +18,10 @@ namespace mozilla {
 namespace widget {
 
 
-void WidgetUtils::Shutdown() { WidgetKeyboardEvent::Shutdown(); }
+void WidgetUtils::Shutdown() {
+  WidgetKeyboardEvent::Shutdown();
+  InternalEditorInputEvent::Shutdown();
+}
 
 
 already_AddRefed<nsIWidget> WidgetUtils::DOMWindowToWidget(

@@ -385,8 +385,10 @@ var FormDataInternal = {
 
 
   fireInputEvent(node) {
+    
+    
     let event = node.isInputEventTarget ?
-      new node.ownerGlobal.InputEvent("input", {bubbles: true}) :
+      new node.ownerGlobal.InputEvent("input", {bubbles: true, inputType: ""}) :
       new node.ownerGlobal.Event("input", {bubbles: true});
     node.dispatchEvent(event);
   },

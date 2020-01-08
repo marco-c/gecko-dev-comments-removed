@@ -306,7 +306,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
 
     
     if (mDispatchInputEvent) {
-      FireInputEvent();
+      FireInputEvent(EditAction::eDeleteByDrag);
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }

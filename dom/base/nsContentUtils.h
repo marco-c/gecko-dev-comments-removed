@@ -1401,10 +1401,14 @@ class nsContentUtils {
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchInputEvent(Element* aEventTarget);
   MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchInputEvent(Element* aEventTarget,
+                                     mozilla::EditorInputType aEditorInputType,
                                      mozilla::TextEditor* aTextEditor);
 
   
