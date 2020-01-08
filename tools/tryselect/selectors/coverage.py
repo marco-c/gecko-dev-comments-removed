@@ -182,18 +182,18 @@ def tests_covering_file(cursor, path):
     return set(e[0] for e in cursor.fetchall())
 
 
-def tests_in_chunk(cursor, platform, suite):
+def tests_in_chunk(cursor, platform, chunk):
     '''Returns a set of tests that are contained in a given chunk.
     '''
     cursor.execute('SELECT path FROM chunk_to_test WHERE platform=? AND chunk=?',
-                   (platform, suite))
+                   (platform, chunk))
     
     
     return set(e[0].split(' ')[0] for e in cursor.fetchall())
 
 
 def chunks_covering_file(cursor, path):
-    '''Returns a set of (platform, suite) tuples with the chunks that cover a given source file.
+    '''Returns a set of (platform, chunk) tuples with the chunks that cover a given source file.
     '''
     cursor.execute('SELECT platform, chunk FROM file_to_chunk WHERE path=?', (path,))
     return set(cursor.fetchall())
@@ -211,7 +211,7 @@ def find_tests(changed_files):
 
     Returns: a (test_files, test_chunks) tuple with two sets.
     test_files - contains tests that should be run to verify changes to changed_files.
-    test_chunks - contains (platform, suite) tuples with chunks that should be
+    test_chunks - contains (platform, chunk) tuples with chunks that should be
                   run. These chunnks do not support running a subset of the tests (like
                   cppunit or gtest), so the whole chunk must be run.
     '''
@@ -254,13 +254,13 @@ def find_tests(changed_files):
         remaining_test_chunks = set()
         
         
-        for platform, suite in test_chunks:
-            tests = tests_in_chunk(c, platform, suite)
+        for platform, chunk in test_chunks:
+            tests = tests_in_chunk(c, platform, chunk)
             if tests:
                 for test in tests:
                     test_files.add(test.replace('\\', '/'))
             else:
-                remaining_test_chunks.add((platform, suite))
+                remaining_test_chunks.add((platform, chunk))
 
     return test_files, remaining_test_chunks
 
@@ -305,17 +305,17 @@ def filter_tasks_by_chunks(tasks, chunks):
     '''Find all tasks that will run the given chunks.
     '''
     selected_tasks = set()
-    for platform, suite in chunks:
+    for platform, chunk in chunks:
         platform = PLATFORM_MAP.get(platform, platform)
         match = False
         for task in tasks:
             
             
-            if platform in task and suite in task:
+            if platform in task and chunk in task:
                 selected_tasks.add(task)
                 match = True
         if not match:
-            print('Warning: no task found for chunk', platform, suite)
+            print('Warning: no task found for chunk', platform, chunk)
 
     return list(selected_tasks)
 
