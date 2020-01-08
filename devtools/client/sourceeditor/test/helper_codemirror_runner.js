@@ -28,6 +28,7 @@ function runCodeMirrorTest(browser) {
   
   
   mm.loadFrameScript("data:," +
+    "ChromeUtils.import('resource://gre/modules/Timer.jsm');" +
     "content.wrappedJSObject.mozilla_setStatus = function(statusMsg, type, customMsg) {" +
     "  sendSyncMessage('setStatus', {statusMsg: statusMsg, type: type, customMsg: customMsg});" +
     "};" +
