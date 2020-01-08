@@ -65,6 +65,8 @@ const PAGES = {
 const PREFERENCES = {
   
   NETWORK_ENABLED: "devtools.aboutdebugging.network",
+  
+  WIFI_ENABLED: "devtools.aboutdebugging.wifi",
 };
 
 const RUNTIME_PREFERENCE = {
