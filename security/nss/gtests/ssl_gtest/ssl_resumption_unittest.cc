@@ -550,6 +550,37 @@ TEST_P(TlsConnectTls13, TestTls13ResumeNoCertificateRequest) {
 
 
 
+
+
+
+TEST_P(TlsConnectTls13, WriteBeforeHandshakeCompleteOnResumption) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  client_->SetupClientAuth();
+  server_->RequestClientAuth(true);
+  Connect();
+  SendReceive();  
+  ScopedCERTCertificate cert1(SSL_LocalCertificate(client_->ssl_fd()));
+
+  Reset();
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ExpectResumption(RESUME_TICKET);
+  server_->RequestClientAuth(false);
+  StartConnect();
+  client_->Handshake();  
+  server_->Handshake();  
+
+  server_->SendData(10);
+  client_->ReadBytes(10);  
+  server_->Handshake();    
+  CheckConnected();
+
+  
+  ScopedCERTCertificate cert2(SSL_PeerCertificate(server_->ssl_fd()));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert1->derCert, &cert2->derCert));
+}
+
+
+
 static uint16_t ChooseOneCipher(uint16_t version) {
   if (version >= SSL_LIBRARY_VERSION_TLS_1_3) {
     return TLS_AES_128_GCM_SHA256;

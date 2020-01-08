@@ -936,6 +936,25 @@ ssl_SecureSend(sslSocket *ss, const unsigned char *buf, int len, int flags)
             firstClientWrite = ss->ssl3.hs.ws == idle_handshake;
             ssl_ReleaseSSL3HandshakeLock(ss);
         }
+        
+
+
+
+
+
+
+
+
+
+
+
+        if (ss->sec.isServer &&
+            ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 &&
+            !tls13_ShouldRequestClientAuth(ss)) {
+            ssl_GetSSL3HandshakeLock(ss);
+            allowEarlySend = TLS13_IN_HS_STATE(ss, wait_finished);
+            ssl_ReleaseSSL3HandshakeLock(ss);
+        }
         if (!allowEarlySend && ss->handshake) {
             rv = ssl_Do1stHandshake(ss);
         }

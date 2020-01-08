@@ -41,7 +41,7 @@ extern SECItem *SECITEM_AllocItem(PLArenaPool *arena, SECItem *item,
 
 
 extern SECStatus SECITEM_MakeItem(PLArenaPool *arena, SECItem *dest,
-                                  unsigned char *data, unsigned int len);
+                                  const unsigned char *data, unsigned int len);
 
 
 
