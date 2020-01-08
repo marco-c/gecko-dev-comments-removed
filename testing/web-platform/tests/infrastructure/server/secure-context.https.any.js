@@ -1,3 +1,4 @@
+
 test(() => {
   assert_true(self.isSecureContext);
 }, "Use of .https file name flag implies secure context");
