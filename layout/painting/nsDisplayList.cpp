@@ -368,18 +368,16 @@ AddTransformFunctions(const nsCSSValueList* aList,
         break;
       }
       case eCSSKeyword_interpolatematrix: {
-        bool dummy;
         Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessInterpolateMatrix(
-          matrix, array, aRefBox, &dummy);
+          matrix, array, aRefBox);
         aFunctions.AppendElement(TransformMatrix(matrix));
         break;
       }
       case eCSSKeyword_accumulatematrix: {
-        bool dummy;
         Matrix4x4 matrix;
         nsStyleTransformMatrix::ProcessAccumulateMatrix(
-          matrix, array, aRefBox, &dummy);
+          matrix, array, aRefBox);
         aFunctions.AppendElement(TransformMatrix(matrix));
         break;
       }
@@ -8376,7 +8374,6 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
   }
 
   
-  bool dummyBool;
   Matrix4x4 result;
   
   
@@ -8395,8 +8392,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(
       aProperties.mMotion,
       aProperties.mTransformList ? aProperties.mTransformList->mHead : nullptr,
       refBox,
-      aAppUnitsPerPixel,
-      &dummyBool);
+      aAppUnitsPerPixel);
   } else if (hasSVGTransforms) {
     
     float pixelsPerCSSPx = AppUnitsPerCSSPixel() / aAppUnitsPerPixel;

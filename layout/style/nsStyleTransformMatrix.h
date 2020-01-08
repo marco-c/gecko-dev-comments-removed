@@ -176,20 +176,15 @@ namespace nsStyleTransformMatrix {
   void
   ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                            const nsCSSValue::Array* aData,
-                           TransformReferenceBox& aBounds,
-                           bool* aContains3dTransform);
+                           TransformReferenceBox& aBounds);
 
   void
   ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                           const nsCSSValue::Array* aData,
-                          TransformReferenceBox& aBounds,
-                          bool* aContains3dTransform);
+                          TransformReferenceBox& aBounds);
 
 
   
-
-
-
 
 
 
@@ -201,8 +196,7 @@ namespace nsStyleTransformMatrix {
 
   mozilla::gfx::Matrix4x4 ReadTransforms(const nsCSSValueList* aList,
                                          TransformReferenceBox& aBounds,
-                                         float aAppUnitsPerMatrixUnit,
-                                         bool* aContains3dTransform);
+                                         float aAppUnitsPerMatrixUnit);
 
   
   
@@ -211,8 +205,7 @@ namespace nsStyleTransformMatrix {
                  const mozilla::Maybe<mozilla::MotionPathData>& aMotion,
                  const nsCSSValueList* aTransform,
                  TransformReferenceBox& aRefBox,
-                 float aAppUnitsPerMatrixUnit,
-                 bool* aContains3dTransform);
+                 float aAppUnitsPerMatrixUnit);
 
   
 
