@@ -421,6 +421,10 @@ cubeb* GetCubebContextUnlocked()
             ("%s: returning null context due to %s!", __func__, PREF_CUBEB_FORCE_NULL_CONTEXT));
     return nullptr;
   }
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    return nullptr;
+  }
   if (sCubebState != CubebState::Uninitialized) {
     
     
