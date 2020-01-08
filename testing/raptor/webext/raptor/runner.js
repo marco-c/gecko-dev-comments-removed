@@ -261,19 +261,7 @@ async function stopGeckoProfiling() {
   await browser.geckoProfiler.stop();
 }
 
-async function pauseGeckoProfiling() {
-  postToControlServer("status", "pausing gecko profiling");
-  await browser.geckoProfiler.pause();
-}
-
-async function resumeGeckoProfiling() {
-  postToControlServer("status", "resuming gecko profiling");
-  await browser.geckoProfiler.resume();
-}
-
 async function getGeckoProfile() {
-  
-  await pauseGeckoProfiling();
   
   postToControlServer("status", "retrieving gecko profile");
   let arrayBuffer = await browser.geckoProfiler.getProfileAsArrayBuffer();
@@ -282,19 +270,21 @@ async function getGeckoProfile() {
   console.log(profile);
   postToControlServer("gecko_profile", [testName, pageCycle, profile]);
   
+  await stopGeckoProfiling();
+  
   if (pageCycle + 1 <= pageCycles) {
-    await resumeGeckoProfiling();
+    await startGeckoProfiling();
   }
 }
 
-function nextCycle() {
+async function nextCycle() {
   pageCycle++;
   if (pageCycle == 1) {
     let text = "running " + pageCycles + " pagecycles of " + testURL;
     postToControlServer("status", text);
     
     if (geckoProfiling) {
-      startGeckoProfiling();
+      await startGeckoProfiling();
     }
   }
   if (pageCycle <= pageCycles) {
@@ -482,6 +472,7 @@ function cleanUp() {
   } else if (testType == "benchmark") {
     console.log("benchmark complete");
   }
+  
   
   if (geckoProfiling) {
     stopGeckoProfiling();
