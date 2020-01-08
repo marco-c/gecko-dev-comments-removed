@@ -158,7 +158,9 @@ function fetchStylesheetFromNetworkMonitor(href, consoleActor) {
     return null;
   }
   const content = request._response.content;
-  if (request._discardResponseBody || request._truncated || !content) {
+  if (request._discardResponseBody || request._truncated || !content || !content.size) {
+    
+    
     return null;
   }
 
