@@ -1509,6 +1509,11 @@ pref("browser.contentblocking.ui.enabled", false);
 pref("browser.contentblocking.global-toggle.enabled", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("network.cookie.cookieBehavior", 4 );
+#endif
+
+
 pref("browser.contentblocking.fastblock.ui.enabled", true);
 pref("browser.contentblocking.fastblock.control-center.ui.enabled", true);
 pref("browser.contentblocking.trackingprotection.ui.enabled", true);
