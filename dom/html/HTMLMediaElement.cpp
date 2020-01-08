@@ -35,6 +35,7 @@
 #include "MediaManager.h"
 #include "MediaMetadataManager.h"
 #include "MediaResource.h"
+#include "MediaShutdownManager.h"
 #include "MediaSourceDecoder.h"
 #include "MediaStreamError.h"
 #include "MediaStreamGraph.h"
@@ -3451,6 +3452,12 @@ HTMLMediaElement::HTMLMediaElement(
 
   RegisterActivityObserver();
   NotifyOwnerDocumentActivityChanged();
+
+  
+  
+  
+  
+  MediaShutdownManager::InitStatics();
 
   mShutdownObserver->Subscribe(this);
 }
