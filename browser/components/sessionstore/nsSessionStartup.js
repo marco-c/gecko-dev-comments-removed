@@ -266,6 +266,7 @@ SessionStartup.prototype = {
       Services.obs.removeObserver(this, "sessionstore-windows-restored");
       
       this._initialState = null;
+      this._didRestore = true;
       break;
     case "browser:purge-session-history":
       Services.obs.removeObserver(this, "browser:purge-session-history");
@@ -337,6 +338,10 @@ SessionStartup.prototype = {
     
     
     if (!this._initialState && !this._resumeSessionEnabled) {
+      return false;
+    }
+    
+    if (this._didRestore) {
       return false;
     }
 
