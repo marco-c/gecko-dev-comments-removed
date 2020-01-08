@@ -200,14 +200,14 @@ class StreamTracks {
 
 
 
-  StreamTime GetEnd() const;
+  StreamTime GetEarliestTrackEnd() const;
 
   
 
 
 
 
-  StreamTime GetAllTracksEnd() const;
+  StreamTime GetLatestTrackEnd() const;
 
 #ifdef DEBUG
   void DumpTrackInfo() const;
