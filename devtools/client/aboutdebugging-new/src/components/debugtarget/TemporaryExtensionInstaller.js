@@ -1,0 +1,38 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const Actions = require("../../actions/index");
+
+
+
+
+class TemporaryExtensionInstaller extends PureComponent {
+  static get propTypes() {
+    return {
+      dispatch: PropTypes.func.isRequired,
+    };
+  }
+
+  install() {
+    this.props.dispatch(Actions.installTemporaryExtension());
+  }
+
+  render() {
+    return dom.button(
+      {
+        className: "aboutdebugging-button",
+        onClick: e => this.install()
+      },
+      "Load Temporary Add-on…"
+    );
+  }
+}
+
+module.exports = TemporaryExtensionInstaller;
