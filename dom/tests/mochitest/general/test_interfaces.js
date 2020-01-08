@@ -1263,6 +1263,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULScrollElement", insecureContext: true, xbl: true},
 
+    {name: "XULTextElement", insecureContext: true, xbl: true},
+
   ];
 
 
