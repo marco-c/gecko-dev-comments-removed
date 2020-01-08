@@ -698,25 +698,6 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
         return NS_OK;
     }
 
-    if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("app") &&
-        !scheme.EqualsLiteral("blob")) {
-        
-        nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(uri);
-        nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(innerURI);
-        if (!fileURL) {
-            ReportError(cx, LOAD_ERROR_URI_NOT_LOCAL, uri);
-            return NS_OK;
-        }
-
-        
-        
-        nsAutoCString tmp(filename.get());
-        tmp.AppendLiteral(" -> ");
-        tmp.Append(uriStr);
-
-        uriStr = tmp;
-    }
-
     
     
     bool useCompilationScope = false;

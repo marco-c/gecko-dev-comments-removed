@@ -123,12 +123,7 @@ class Frame extends Component {
       frame = this.props.frame;
     }
 
-    
-    
-    
-    const source = frame.source
-      ? String(frame.source).split(" -> ").pop()
-      : "";
+    const source = frame.source || "";
     const line = frame.line != void 0 ? Number(frame.line) : null;
     const column = frame.column != void 0 ? Number(frame.column) : null;
 
