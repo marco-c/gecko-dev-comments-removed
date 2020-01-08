@@ -1801,7 +1801,7 @@ already_AddRefed<imgIRequest> nsImageFrame::GetCurrentRequest() const {
 
 void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                     const nsDisplayListSet& aLists) {
-  if (!IsVisibleForPainting(aBuilder)) return;
+  if (!IsVisibleForPainting()) return;
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 

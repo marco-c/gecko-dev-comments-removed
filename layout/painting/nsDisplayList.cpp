@@ -99,12 +99,6 @@
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 using namespace mozilla;
 using namespace mozilla::layers;
 using namespace mozilla::dom;
@@ -515,7 +509,7 @@ static void AddAnimationForProperty(nsIFrame* aFrame,
     animation->startTime() = startTime.Value();
   }
 
-  animation->holdTime() = aAnimation->GetCurrentTime().Value();
+  animation->holdTime() = aAnimation->GetCurrentTimeAsDuration().Value();
 
   const ComputedTiming computedTiming =
       aAnimation->GetEffect()->GetComputedTiming();
@@ -1068,16 +1062,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
   MOZ_COUNT_CTOR(nsDisplayListBuilder);
 
   mBuildCompositorHitTestInfo = mAsyncPanZoomEnabled && IsForPainting();
-
-  nsPresContext* pc = aReferenceFrame->PresContext();
-  nsIPresShell* shell = pc->PresShell();
-  if (pc->IsRenderingOnlySelection()) {
-    nsCOMPtr<nsISelectionController> selcon(do_QueryInterface(shell));
-    if (selcon) {
-      mBoundingSelection =
-          selcon->GetSelection(nsISelectionController::SELECTION_NORMAL);
-    }
-  }
 
   static_assert(
       static_cast<uint32_t>(DisplayItemType::TYPE_MAX) < (1 << TYPE_BITS),
