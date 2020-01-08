@@ -197,7 +197,7 @@ public:
 
   void EnsureNextIterationLocked();
 
-  MediaStreamGraphImpl* GraphImpl() {
+  MediaStreamGraphImpl* GraphImpl() const {
     return mGraphImpl;
   }
 
@@ -269,7 +269,7 @@ public:
 
   bool OnThread() override
   {
-    return mThread && mThread->EventTarget()->IsOnCurrentThread();
+    return !mThread || mThread->EventTarget()->IsOnCurrentThread();
   }
 
   bool ThreadRunning() override
@@ -442,17 +442,6 @@ public:
                      uint32_t aChannels,
                      uint32_t aFrames,
                      uint32_t aSampleRate) override;
-
-  
-  virtual void SetInputListener(AudioDataListener *aListener) {
-    MOZ_ASSERT(!IsStarted());
-    mAudioInput = aListener;
-  }
-  
-  virtual void RemoveInputListener(AudioDataListener *aListener) {
-    MOZ_ASSERT(OnThread());
-    mAudioInput = nullptr;
-  }
 
   AudioCallbackDriver* AsAudioCallbackDriver() override {
     return this;
