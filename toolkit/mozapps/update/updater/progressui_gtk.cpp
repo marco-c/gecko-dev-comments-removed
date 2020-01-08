@@ -52,23 +52,31 @@ int InitProgressUI(int *pargc, char ***pargv) {
 }
 
 int ShowProgressUI() {
-  if (!sEnableUI) return -1;
+  if (!sEnableUI) {
+    return -1;
+  }
 
   
   
   
   usleep(500000);
 
-  if (sQuit || sProgressVal > 70.0f) return 0;
+  if (sQuit || sProgressVal > 70.0f) {
+    return 0;
+  }
 
   char ini_path[PATH_MAX];
   SprintfLiteral(ini_path, "%s.ini", sProgramPath);
 
   StringTable strings;
-  if (ReadStrings(ini_path, &strings) != OK) return -1;
+  if (ReadStrings(ini_path, &strings) != OK) {
+    return -1;
+  }
 
   sWin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  if (!sWin) return -1;
+  if (!sWin) {
+    return -1;
+  }
 
   static GdkPixbuf *pixbuf;
   char icon_path[PATH_MAX];
