@@ -41,6 +41,12 @@ var cnERR ='OOPS! FATAL ERROR: no regexp match in extractLocaleTimeString()';
 
 writeHeaderToLog( SECTION + " "+ TITLE);
 
+var now = new Date();
+
+
+
+var TIME_NOW = now.valueOf();
+
 
 
 status = "typeof (now.toLocaleTimeString())"; 
@@ -58,12 +64,12 @@ addDateTestCase(0);
 addDateTestCase(TZ_ADJUST);
   
 
-addDateTestCase(TIME_1900);
-addDateTestCase(TIME_1900 - TZ_ADJUST);
+addDateTestCase(UTC_01_JAN_1900);
+addDateTestCase(UTC_01_JAN_1900 - TZ_ADJUST);
 
 
-addDateTestCase(TIME_2000);
-addDateTestCase(TIME_2000 - TZ_ADJUST);
+addDateTestCase(UTC_01_JAN_2000);
+addDateTestCase(UTC_01_JAN_2000 - TZ_ADJUST);
    
 
 addDateTestCase(UTC_29_FEB_2000);
@@ -75,9 +81,9 @@ addDateTestCase( TIME_NOW);
 addDateTestCase( TIME_NOW - TZ_ADJUST);
 
 
-addDateTestCase(UTC_1_JAN_2005);
-addDateTestCase(UTC_1_JAN_2005 - 1000);
-addDateTestCase(UTC_1_JAN_2005 - TZ_ADJUST);
+addDateTestCase(UTC_01_JAN_2005);
+addDateTestCase(UTC_01_JAN_2005 - 1000);
+addDateTestCase(UTC_01_JAN_2005 - TZ_ADJUST);
 
 test();
 

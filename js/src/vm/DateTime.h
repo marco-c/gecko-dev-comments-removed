@@ -17,27 +17,27 @@
 namespace js {
 
 
-const double HoursPerDay = 24;
-const double MinutesPerHour = 60;
-const double SecondsPerMinute = 60;
-const double msPerSecond = 1000;
-const double msPerMinute = msPerSecond * SecondsPerMinute;
-const double msPerHour = msPerMinute * MinutesPerHour;
+constexpr double HoursPerDay = 24;
+constexpr double MinutesPerHour = 60;
+constexpr double SecondsPerMinute = 60;
+constexpr double msPerSecond = 1000;
+constexpr double msPerMinute = msPerSecond * SecondsPerMinute;
+constexpr double msPerHour = msPerMinute * MinutesPerHour;
 
 
-const double msPerDay = msPerHour * HoursPerDay;
-
-
-
+constexpr double msPerDay = msPerHour * HoursPerDay;
 
 
 
 
-const unsigned SecondsPerHour = 60 * 60;
-const unsigned SecondsPerDay = SecondsPerHour * 24;
 
-const double StartOfTime = -8.64e15;
-const double EndOfTime = 8.64e15;
+
+
+constexpr unsigned SecondsPerHour = 60 * 60;
+constexpr unsigned SecondsPerDay = SecondsPerHour * 24;
+
+constexpr double StartOfTime = -8.64e15;
+constexpr double EndOfTime = 8.64e15;
 
 extern bool
 InitDateTimeState();
@@ -126,13 +126,16 @@ class DateTimeInfo
 
 
 
-    static int64_t getDSTOffsetMilliseconds(int64_t utcMilliseconds) {
+    static int32_t getDSTOffsetMilliseconds(int64_t utcMilliseconds) {
         auto guard = instance->lock();
         return guard->internalGetDSTOffsetMilliseconds(utcMilliseconds);
     }
 
     
-    static double localTZA() {
+
+
+
+    static int32_t localTZA() {
         auto guard = instance->lock();
         return guard->localTZA_;
     }
@@ -150,46 +153,71 @@ class DateTimeInfo
         return guard->internalUpdateTimeZoneAdjustment(mode);
     }
 
-    
+    struct RangeCache {
+        
+        
+        int64_t startSeconds, endSeconds;
+        int64_t oldStartSeconds, oldEndSeconds;
 
+        
+        int32_t offsetMilliseconds;
+        int32_t oldOffsetMilliseconds;
 
+        void reset();
 
-
-
-
-
-
-
-    double localTZA_;
-
-    
-
-
-
-
-
-    int64_t computeDSTOffsetMilliseconds(int64_t utcSeconds);
-
-    int64_t offsetMilliseconds;
-    int64_t rangeStartSeconds, rangeEndSeconds; 
-
-    int64_t oldOffsetMilliseconds;
-    int64_t oldRangeStartSeconds, oldRangeEndSeconds; 
+        void sanityCheck();
+    };
 
     
 
 
 
-    int32_t utcToLocalStandardOffsetSeconds;
 
-    static const int64_t MaxUnixTimeT = 2145859200; 
+
+
+
+
+
+    int32_t localTZA_;
+
+    
+
+
+
+    int32_t utcToLocalStandardOffsetSeconds_;
+
+    RangeCache dstRange_; 
+
+    
+    
+    
+    
+    
+    
+    static const int64_t MinTimeT = 0; 
+    static const int64_t MaxTimeT = 2145830400; 
 
     static const int64_t RangeExpansionAmount = 30 * SecondsPerDay;
 
-    int64_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
     bool internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
 
-    void sanityCheck();
+    int64_t toClampedSeconds(int64_t milliseconds);
+
+    using ComputeFn = int32_t (DateTimeInfo::*)(int64_t);
+
+    
+
+
+    int32_t getOrComputeValue(RangeCache& range, int64_t seconds, ComputeFn compute);
+
+    
+
+
+
+
+    int32_t computeDSTOffsetMilliseconds(int64_t utcSeconds);
+
+    int32_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
 };
 
 enum class IcuTimeZoneStatus { Valid, NeedsUpdate };
