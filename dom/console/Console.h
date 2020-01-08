@@ -45,8 +45,9 @@ public:
   Create(JSContext* aCx, nsPIDOMWindowInner* aWindow, ErrorResult& aRv);
 
   static already_AddRefed<Console>
-  CreateForWorklet(JSContext* aCx, uint64_t aOuterWindowID,
-                   uint64_t aInnerWindowID, ErrorResult& aRv);
+  CreateForWorklet(JSContext* aCx, nsIGlobalObject* aGlobal,
+                   uint64_t aOuterWindowID, uint64_t aInnerWindowID,
+                   ErrorResult& aRv);
 
   static void
   Log(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
@@ -134,7 +135,7 @@ public:
   SetConsoleEventHandler(AnyCallback* aHandler);
 
 private:
-  Console(JSContext* aCx, nsPIDOMWindowInner* aWindow,
+  Console(JSContext* aCx, nsIGlobalObject* aGlobal,
           uint64_t aOuterWindowID, uint64_t aInnerWIndowID);
   ~Console();
 
@@ -440,7 +441,8 @@ private:
   InternalLogLevelToInteger(MethodName aName) const;
 
   
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
+  
   nsCOMPtr<nsIConsoleAPIStorage> mStorage;
   RefPtr<JSObjectHolder> mSandbox;
 
