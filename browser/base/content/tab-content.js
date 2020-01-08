@@ -22,16 +22,6 @@ ActorManagerChild.attach(this, "browsers");
 
 var global = this;
 
-addMessageListener("Browser:HideSessionRestoreButton", function(message) {
-  
-  let doc = content.document;
-  let container;
-  if (doc.documentURI.toLowerCase() == "about:home" &&
-      (container = doc.getElementById("sessionRestoreContainer"))) {
-    container.hidden = true;
-  }
-});
-
 XPCOMUtils.defineLazyProxy(this, "LightweightThemeChildHelper",
   "resource:///modules/LightweightThemeChildHelper.jsm");
 
