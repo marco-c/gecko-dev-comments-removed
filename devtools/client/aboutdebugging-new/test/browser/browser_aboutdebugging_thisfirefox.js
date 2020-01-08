@@ -21,9 +21,6 @@ add_task(async function() {
   const { document, tab } = await openAboutDebugging();
 
   
-  await waitUntil(() => document.querySelector(".js-runtime-page"));
-
-  
   const selectedSidebarItem = document.querySelector(".js-sidebar-item-selected");
   ok(selectedSidebarItem, "An item is selected in the sidebar");
   is(selectedSidebarItem.textContent, "This Firefox",
