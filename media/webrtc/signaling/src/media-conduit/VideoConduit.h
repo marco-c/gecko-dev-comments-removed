@@ -471,7 +471,7 @@ private:
   mozilla::Atomic<bool> mEngineTransmitting; 
   mozilla::Atomic<bool> mEngineReceiving;    
 
-  int mCapId;   
+  int mCapId = -1; 
   
   nsTArray<UniquePtr<VideoCodecConfig>> mRecvCodecList;
 
@@ -484,28 +484,28 @@ private:
   webrtc::RtcpPacketTypeCounter mRecvPacketCounts;
 
   
-  webrtc::VideoReceiveStream* mRecvStream;
-  webrtc::VideoSendStream* mSendStream;
+  webrtc::VideoReceiveStream* mRecvStream = nullptr;
+  webrtc::VideoSendStream* mSendStream = nullptr;
 
-  unsigned short mLastWidth;
-  unsigned short mLastHeight;
-  unsigned short mSendingWidth;
-  unsigned short mSendingHeight;
-  unsigned short mReceivingWidth;
-  unsigned short mReceivingHeight;
+  unsigned short mLastWidth = 0;
+  unsigned short mLastHeight = 0;
+  unsigned short mSendingWidth = 0;
+  unsigned short mSendingHeight = 0;
+  unsigned short mReceivingWidth = 0;
+  unsigned short mReceivingHeight = 0;
   unsigned int   mSendingFramerate;
-  bool mVideoLatencyTestEnable;
-  uint64_t mVideoLatencyAvg;
+  bool mVideoLatencyTestEnable = false;
+  uint64_t mVideoLatencyAvg = 0;
   
-  int mMinBitrate;
-  int mStartBitrate;
-  int mPrefMaxBitrate;
-  int mNegotiatedMaxBitrate;
-  int mMinBitrateEstimate;
-  bool mDenoising;
-  bool mLockScaling; 
-  uint8_t mSpatialLayers;
-  uint8_t mTemporalLayers;
+  int mMinBitrate = 0;
+  int mStartBitrate = 0;
+  int mPrefMaxBitrate = 0;
+  int mNegotiatedMaxBitrate = 0;
+  int mMinBitrateEstimate = 0;
+  bool mDenoising = false;
+  bool mLockScaling = false; 
+  uint8_t mSpatialLayers = 1;
+  uint8_t mTemporalLayers = 1;
 
   rtc::VideoSinkWants mLastSinkWanted;
 
@@ -526,14 +526,14 @@ private:
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;
 
   
-  bool mAllowSsrcChange;
-  bool mWaitingForInitialSsrc;
+  bool mAllowSsrcChange = true;
+  bool mWaitingForInitialSsrc = true;
 
   
-  uint32_t mRecvSSRC; 
+  uint32_t mRecvSSRC = 0; 
 
   
-  bool mRecvSSRCSetInProgress;
+  bool mRecvSSRCSetInProgress = false;
   struct QueuedPacket {
     int mLen;
     uint8_t mData[1];
@@ -545,8 +545,8 @@ private:
   
   nsAutoPtr<webrtc::VideoEncoder> mEncoder; 
   std::vector<std::unique_ptr<webrtc::VideoDecoder>> mDecoders;
-  WebrtcVideoEncoder* mSendCodecPlugin;
-  WebrtcVideoDecoder* mRecvCodecPlugin;
+  WebrtcVideoEncoder* mSendCodecPlugin = nullptr;
+  WebrtcVideoDecoder* mRecvCodecPlugin = nullptr;
 
   nsCOMPtr<nsITimer> mVideoStatsTimer;
 
