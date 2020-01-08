@@ -44,7 +44,6 @@ class nsXBLPrototypeHandler;
 typedef uint32_t SuspendTypes;
 
 namespace mozilla {
-class AutoplayPermissionManager;
 namespace dom {
 class AudioContext;
 class BrowsingContext;
@@ -564,11 +563,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   virtual nsISerialEventTarget* EventTargetFor(
       mozilla::TaskCategory aCategory) const = 0;
 
-  
-  
-  already_AddRefed<mozilla::AutoplayPermissionManager>
-  GetAutoplayPermissionManager();
-
   void RegisterReportingObserver(mozilla::dom::ReportingObserver* aObserver,
                                  bool aBuffered);
 
@@ -666,11 +660,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   uint32_t mNumOfOpenWebSockets;
-
-  
-  
-  
-  RefPtr<mozilla::AutoplayPermissionManager> mAutoplayPermissionManager;
 
   
   
