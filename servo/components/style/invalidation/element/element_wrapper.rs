@@ -45,6 +45,11 @@ pub trait ElementSnapshot: Sized {
 
     
     
+    
+    fn debug_list_attributes(&self) -> String { String::new() }
+
+    
+    
     fn id_attr(&self) -> Option<&WeakAtom>;
 
     
