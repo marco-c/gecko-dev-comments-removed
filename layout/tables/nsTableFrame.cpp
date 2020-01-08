@@ -675,7 +675,7 @@ nsTableFrame::CreateSyntheticColGroupFrame()
 
   RefPtr<ComputedStyle> colGroupStyle;
   colGroupStyle = shell->StyleSet()->
-    ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableColGroup);
+    ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableColGroup());
   
   nsTableColGroupFrame* newFrame =
     NS_NewTableColGroupFrame(shell, colGroupStyle);
@@ -734,7 +734,7 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
     
     nsIContent* iContent = aColGroupFrame->GetContent();
     RefPtr<ComputedStyle> computedStyle = shell->StyleSet()->
-      ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableCol);
+      ResolveNonInheritingAnonymousBoxStyle(nsCSSAnonBoxes::tableCol());
     
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
@@ -8201,7 +8201,7 @@ nsTableFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
 {
   nsIFrame* wrapper = GetParent();
   MOZ_ASSERT(wrapper->Style()->GetPseudo() ==
-               nsCSSAnonBoxes::tableWrapper,
+               nsCSSAnonBoxes::tableWrapper(),
              "What happened to our parent?");
   aResult.AppendElement(
     OwnedAnonBox(wrapper, &UpdateStyleOfOwnedAnonBoxesForTableWrapper));
@@ -8214,12 +8214,12 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   ServoRestyleState& aRestyleState)
 {
   MOZ_ASSERT(aWrapperFrame->Style()->GetPseudo() ==
-               nsCSSAnonBoxes::tableWrapper,
+               nsCSSAnonBoxes::tableWrapper(),
              "What happened to our parent?");
 
   RefPtr<ComputedStyle> newStyle =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-      nsCSSAnonBoxes::tableWrapper, aOwningFrame->Style());
+      nsCSSAnonBoxes::tableWrapper(), aOwningFrame->Style());
 
   
   
