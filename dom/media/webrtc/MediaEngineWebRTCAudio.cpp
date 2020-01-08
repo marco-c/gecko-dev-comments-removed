@@ -805,6 +805,12 @@ MediaEngineWebRTCMicrophoneSource::Pull(const RefPtr<const AllocationHandle>& aH
     
     delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
 
+    if (delta < 0) {
+      LOG_FRAMES(("Not appending silence for allocation %p; %" PRId64 " frames already buffered",
+                  mAllocations[i].mHandle.get(), -delta));
+      return;
+    }
+
     if (!mAllocations[i].mLiveFramesAppended ||
         !mAllocations[i].mLiveSilenceAppended) {
       
@@ -813,12 +819,6 @@ MediaEngineWebRTCMicrophoneSource::Pull(const RefPtr<const AllocationHandle>& aH
       
       
       delta += WEBAUDIO_BLOCK_SIZE;
-    }
-
-    if (delta < 0) {
-      LOG_FRAMES(("Not appending silence for allocation %p; %" PRId64 " frames already buffered",
-                  mAllocations[i].mHandle.get(), -delta));
-      return;
     }
 
     LOG_FRAMES(("Pulling %" PRId64 " frames of silence for allocation %p",
