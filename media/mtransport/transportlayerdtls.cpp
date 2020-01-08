@@ -829,11 +829,11 @@ void TransportLayerDtls::StateChange(TransportLayer *layer, State state) {
       break;
 
     case TS_CONNECTING:
-      MOZ_MTLOG(ML_ERROR, LAYER_INFO << "Lower layer is connecting.");
+      MOZ_MTLOG(ML_INFO, LAYER_INFO << "Lower layer is connecting.");
       break;
 
     case TS_OPEN:
-      MOZ_MTLOG(ML_ERROR,
+      MOZ_MTLOG(ML_INFO,
                 LAYER_INFO << "Lower layer is now open; starting TLS");
       
       
@@ -848,7 +848,7 @@ void TransportLayerDtls::StateChange(TransportLayer *layer, State state) {
       break;
 
     case TS_CLOSED:
-      MOZ_MTLOG(ML_ERROR, LAYER_INFO << "Lower layer is now closed");
+      MOZ_MTLOG(ML_INFO, LAYER_INFO << "Lower layer is now closed");
       TL_SET_STATE(TS_CLOSED);
       break;
 

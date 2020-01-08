@@ -65,12 +65,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   RefPtr<NrIceCtxHandler> ice_ctx_hdlr() const { return mIceCtxHdlr; }
   RefPtr<NrIceCtx> ice_ctx() const { return mIceCtxHdlr->ctx(); }
 
-  RefPtr<NrIceMediaStream> ice_media_stream(size_t i) const {
-    return mIceCtxHdlr->ctx()->GetStream(i);
-  }
-
-  size_t num_ice_media_streams() const {
-    return mIceCtxHdlr->ctx()->GetStreamCount();
+  RefPtr<NrIceMediaStream> ice_media_stream(
+      const std::string& aTransportId) const {
+    return mIceCtxHdlr->ctx()->GetStream(aTransportId);
   }
 
   
@@ -78,11 +75,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   
-  nsresult ActivateOrRemoveTransports(const JsepSession& aSession,
-                                      const bool forceIceTcp);
-
-  
-  nsresult UpdateTransceiverTransports(const JsepSession& aSession);
+  nsresult UpdateTransports(const JsepSession& aSession,
+                            const bool forceIceTcp);
 
   
   void StartIceChecks(const JsepSession& session);
@@ -101,8 +95,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void RollbackIceRestart();
 
   
-  void AddIceCandidate(const std::string& candidate, const std::string& mid,
-                       uint32_t aMLine);
+  void AddIceCandidate(const std::string& candidate,
+                       const std::string& aTransportId);
 
   
   void UpdateNetworkState(bool online);
@@ -122,12 +116,14 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
       RefPtr<TransceiverImpl>* aTransceiverImpl);
 
   void GetTransmitPipelinesMatching(
-      dom::MediaStreamTrack* aTrack,
+      const dom::MediaStreamTrack* aTrack,
       nsTArray<RefPtr<MediaPipeline>>* aPipelines);
 
   void GetReceivePipelinesMatching(
-      dom::MediaStreamTrack* aTrack,
+      const dom::MediaStreamTrack* aTrack,
       nsTArray<RefPtr<MediaPipeline>>* aPipelines);
+
+  std::string GetTransportIdMatching(const dom::MediaStreamTrack& aTrack) const;
 
   nsresult AddRIDExtension(dom::MediaStreamTrack& aRecvTrack,
                            unsigned short aExtensionId);
@@ -154,20 +150,17 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   const nsCOMPtr<nsIThread>& GetMainThread() const { return mMainThread; }
   const nsCOMPtr<nsIEventTarget>& GetSTSThread() const { return mSTSThread; }
 
-  static size_t GetTransportFlowIndex(int aStreamIndex, bool aRtcp)
-  {
-    return aStreamIndex * 2 + (aRtcp ? 1 : 0);
-  }
-
   
   
-  RefPtr<TransportFlow> GetTransportFlow(int aStreamIndex, bool aIsRtcp) {
-    int index_inner = GetTransportFlowIndex(aStreamIndex, aIsRtcp);
-
-    if (mTransportFlows.find(index_inner) == mTransportFlows.end())
+  RefPtr<TransportFlow> GetTransportFlow(const std::string& aId,
+                                         bool aIsRtcp) {
+    auto& flows = aIsRtcp ? mRtcpTransportFlows : mTransportFlows;
+    auto it = flows.find(aId);
+    if (it == flows.end()) {
       return nullptr;
+    }
 
-    return mTransportFlows[index_inner];
+    return it->second;
   }
 
   
@@ -178,9 +171,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   }
 
   
-  void AddTransportFlow(int aIndex, bool aRtcp,
+  void AddTransportFlow(const std::string& aId, bool aRtcp,
                         const RefPtr<TransportFlow> &aFlow);
-  void RemoveTransportFlow(int aIndex, bool aRtcp);
+  void RemoveTransportFlow(const std::string& aId, bool aRtcp);
   void ConnectDtlsListener_s(const RefPtr<TransportFlow>& aFlow);
   void DtlsConnected_s(TransportLayer* aFlow,
                        TransportLayer::State state);
@@ -193,12 +186,12 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   sigslot::signal2<NrIceCtx*, NrIceCtx::ConnectionState>
       SignalIceConnectionStateChange;
   
-  sigslot::signal2<const std::string&, uint16_t> SignalCandidate;
+  sigslot::signal2<const std::string&, const std::string&> SignalCandidate;
   
   sigslot::signal5<const std::string&, uint16_t,
-                   const std::string&, uint16_t, uint16_t>
+                   const std::string&, uint16_t, const std::string&>
       SignalUpdateDefaultCandidate;
-  sigslot::signal1<uint16_t>
+  sigslot::signal1<const std::string&>
       SignalEndOfLocalCandidates;
 
   
@@ -243,17 +236,19 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void SelfDestruct_m();
 
   
-  void EnsureTransport_s(size_t aLevel, size_t aComponentCount);
-  void ActivateOrRemoveTransport_s(
-      size_t aMLine,
-      size_t aComponentCount,
-      const std::string& aUfrag,
-      const std::string& aPassword,
-      const std::vector<std::string>& aCandidateList);
-  void RemoveTransportsAtOrAfter_s(size_t aMLine);
+  nsresult UpdateTransport(const JsepTransceiver& aTransceiver,
+                           bool aForceIceTcp);
+
+  void EnsureTransport_s(const std::string& aTransportId,
+                         size_t aComponentCount);
+  void ActivateTransport_s(const std::string& aTransportId,
+                           size_t aComponentCount,
+                           const std::string& aUfrag,
+                           const std::string& aPassword,
+                           const std::vector<std::string>& aCandidateList);
+  void RemoveTransportsExcept_s(const std::set<std::string>& aTransportIds);
   nsresult UpdateTransportFlows(const JsepTransceiver& transceiver);
-  nsresult UpdateTransportFlow(size_t aLevel,
-                               bool aIsRtcp,
+  nsresult UpdateTransportFlow(bool aIsRtcp,
                                const JsepTransport& aTransport);
 
   void GatherIfReady();
@@ -274,8 +269,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void ConnectSignals(NrIceCtx *aCtx, NrIceCtx *aOldCtx=nullptr);
 
   
-  void AddIceCandidate_s(const std::string& aCandidate, const std::string& aMid,
-                         uint32_t aMLine);
+  void AddIceCandidate_s(const std::string& aCandidate,
+                         const std::string& aTransportId);
 
   void UpdateNetworkState_s(bool online);
 
@@ -291,7 +286,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                             uint16_t aDefaultPort,
                             const std::string& aDefaultRtcpAddr,
                             uint16_t aDefaultRtcpPort,
-                            uint16_t aMLine);
+                            const std::string& aTransportId);
   void GetDefaultCandidates(const NrIceMediaStream& aStream,
                             NrIceCandidate* aCandidate,
                             NrIceCandidate* aRtcpCandidate);
@@ -305,12 +300,12 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                           uint16_t aDefaultPort,
                           const std::string& aDefaultRtcpAddr,
                           uint16_t aDefaultRtcpPort,
-                          uint16_t aMLine);
+                          const std::string& aTransportId);
   void EndOfLocalCandidates_m(const std::string& aDefaultAddr,
                               uint16_t aDefaultPort,
                               const std::string& aDefaultRtcpAddr,
                               uint16_t aDefaultRtcpPort,
-                              uint16_t aMLine);
+                              const std::string& aTransportId);
   bool IsIceCtxReady() const {
     return mProxyResolveCompleted && mLocalAddrsCompleted;
   }
@@ -330,7 +325,10 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   RefPtr<NrIceResolver> mDNSResolver;
 
   
-  std::map<int, RefPtr<TransportFlow> > mTransportFlows;
+  std::map<std::string, RefPtr<TransportFlow> > mTransportFlows;
+
+  
+  std::map<std::string, RefPtr<TransportFlow> > mRtcpTransportFlows;
 
   
   UniquePtr<PCUuidGenerator> mUuidGen;
