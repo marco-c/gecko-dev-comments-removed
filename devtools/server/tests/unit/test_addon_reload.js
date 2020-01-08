@@ -92,12 +92,7 @@ add_task(async function testReloadExitedAddon() {
   
   equal(newAddonActor.actor, addonTargetActor.actor);
 
-  const onAddonListChanged = new Promise((resolve) => {
-    client.addListener("addonListChanged", function listener() {
-      client.removeListener("addonListChanged", listener);
-      resolve();
-    });
-  });
+  const onAddonListChanged = client.mainRoot.once("addonListChanged");
 
   
   const addonUpgradeFile = getSupportFile("addons/web-extension-upgrade");
