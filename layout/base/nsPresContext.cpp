@@ -1369,7 +1369,7 @@ GetPropagatedScrollStylesForViewport(nsPresContext* aPresContext,
   
   ServoStyleSet* styleSet = aPresContext->StyleSet();
   RefPtr<ComputedStyle> rootStyle =
-    styleSet->ResolveStyleFor(docElement, nullptr, LazyComputeBehavior::Allow);
+    styleSet->ResolveStyleFor(docElement, LazyComputeBehavior::Allow);
   if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
     
     return docElement;
@@ -1394,7 +1394,7 @@ GetPropagatedScrollStylesForViewport(nsPresContext* aPresContext,
              "GetBodyElement returned something bogus");
 
   RefPtr<ComputedStyle> bodyStyle =
-    styleSet->ResolveStyleFor(bodyElement, rootStyle,
+    styleSet->ResolveStyleFor(bodyElement,
                               LazyComputeBehavior::Allow);
 
   if (CheckOverflow(bodyStyle->StyleDisplay(), aStyles)) {

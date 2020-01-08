@@ -146,10 +146,8 @@ public:
   void SetAuthorStyleDisabled(bool aStyleDisabled);
 
   
-  
   already_AddRefed<ComputedStyle>
   ResolveStyleFor(dom::Element* aElement,
-                  ComputedStyle* aParentContext,
                   LazyComputeBehavior aMayCompute);
 
   
