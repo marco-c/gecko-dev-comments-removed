@@ -3074,6 +3074,9 @@ pref("layout.css.ruby.intercharacter.enabled", false);
 pref("layout.css.overscroll-behavior.enabled", true);
 
 
+pref("layout.css.motion-path.enabled", false);
+
+
 
 
 
