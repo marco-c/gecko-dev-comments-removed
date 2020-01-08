@@ -30,7 +30,7 @@ base::ProcessId MiddlemanProcessId();
 base::ProcessId ParentProcessId();
 
 
-void MaybeCreateInitialCheckpoint();
+void CreateCheckpoint();
 
 
 
