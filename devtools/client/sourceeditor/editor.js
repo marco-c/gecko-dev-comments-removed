@@ -151,6 +151,12 @@ function Editor(config) {
   this.config.extraKeys[Editor.keyFor("indentMore")] = false;
 
   
+  
+  
+  this.config.extraKeys["Alt-B"] = false;
+  this.config.extraKeys["Alt-F"] = false;
+
+  
   Object.keys(config).forEach(k => {
     if (k != "extraKeys") {
       this.config[k] = config[k];
