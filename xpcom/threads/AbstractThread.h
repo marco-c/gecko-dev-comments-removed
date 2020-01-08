@@ -74,7 +74,7 @@ public:
   virtual nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                             DispatchReason aReason = NormalDispatch) = 0;
 
-  virtual bool IsCurrentThreadIn() = 0;
+  virtual bool IsCurrentThreadIn() const = 0;
 
   
   

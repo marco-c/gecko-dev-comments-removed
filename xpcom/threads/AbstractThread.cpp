@@ -61,7 +61,7 @@ public:
   
   using AbstractThread::Dispatch;
 
-  virtual bool IsCurrentThreadIn() override
+  virtual bool IsCurrentThreadIn() const override
   {
     return mTarget->IsOnCurrentThread();
   }

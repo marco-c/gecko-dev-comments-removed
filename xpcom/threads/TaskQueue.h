@@ -102,7 +102,7 @@ public:
 
   
   
-  bool IsCurrentThreadIn() override;
+  bool IsCurrentThreadIn() const override;
 
   
   
