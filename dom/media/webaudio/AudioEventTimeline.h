@@ -11,7 +11,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/PodOperations.h"
-#include "mozilla/ErrorResult.h"
 
 #include "MainThreadUtils.h"
 #include "nsTArray.h"
@@ -117,6 +116,13 @@ inline int64_t AudioTimelineEvent::Time<int64_t>() const
   return mTimeInTicks;
 }
 
+
+
+
+
+
+
+
 class AudioEventTimeline
 {
 public:
@@ -126,6 +132,7 @@ public:
       mLastComputedValue(aDefaultValue)
   { }
 
+  template <class ErrorResult>
   bool ValidateEvent(AudioTimelineEvent& aEvent, ErrorResult& aRv)
   {
     MOZ_ASSERT(NS_IsMainThread());
@@ -135,41 +142,35 @@ public:
     };
 
     
-    if (!WebAudioUtils::IsTimeValid(TimeOf(aEvent))) {
-      aRv.template ThrowRangeError<
-        MSG_INVALID_AUDIOPARAM_METHOD_START_TIME_ERROR>();
-      return false;
-    }
-    if (!WebAudioUtils::IsTimeValid(aEvent.mTimeConstant)) {
-      aRv.template ThrowRangeError<
-        MSG_INVALID_AUDIOPARAM_EXPONENTIAL_CONSTANT_ERROR>();
+    if (!WebAudioUtils::IsTimeValid(TimeOf(aEvent)) ||
+        !WebAudioUtils::IsTimeValid(aEvent.mTimeConstant)) {
+      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
       return false;
     }
 
     if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
       if (!aEvent.mCurve || !aEvent.mCurveLength) {
-        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-        return false;
-      }
-      if (aEvent.mCurveLength < 2) {
-        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-        return false;
-      }
-      if (aEvent.mDuration <= 0) {
-        aRv.template ThrowRangeError<MSG_INVALID_CURVE_DURATION_ERROR>();
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
         return false;
       }
     }
 
-    MOZ_ASSERT(IsValid(aEvent.mValue) && IsValid(aEvent.mDuration));
+    bool timeAndValueValid = IsValid(aEvent.mValue) &&
+                             IsValid(aEvent.mDuration);
+    if (!timeAndValueValid) {
+      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      return false;
+    }
 
     
     
     for (unsigned i = 0; i < mEvents.Length(); ++i) {
       if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
+          !(aEvent.mType == AudioTimelineEvent::SetValueCurve &&
+            TimeOf(aEvent) == TimeOf(mEvents[i])) &&
           TimeOf(mEvents[i]) <= TimeOf(aEvent) &&
-          TimeOf(mEvents[i]) + mEvents[i].mDuration > TimeOf(aEvent)) {
-        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+          TimeOf(mEvents[i]) + mEvents[i].mDuration >= TimeOf(aEvent)) {
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
         return false;
       }
     }
@@ -178,9 +179,14 @@ public:
     
     if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
       for (unsigned i = 0; i < mEvents.Length(); ++i) {
-        if (TimeOf(aEvent) < TimeOf(mEvents[i]) &&
-            TimeOf(aEvent) + aEvent.mDuration >= TimeOf(mEvents[i])) {
-          aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+        
+        if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
+            TimeOf(mEvents[i]) == TimeOf(aEvent)) {
+          continue;
+        }
+        if (TimeOf(mEvents[i]) > TimeOf(aEvent) &&
+            TimeOf(mEvents[i]) < TimeOf(aEvent) + aEvent.mDuration) {
+          aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
           return false;
         }
       }
@@ -189,8 +195,7 @@ public:
     
     if (aEvent.mType == AudioTimelineEvent::ExponentialRamp) {
       if (aEvent.mValue <= 0.f) {
-        aRv.template ThrowRangeError<
-          MSG_INVALID_AUDIOPARAM_EXPONENTIAL_VALUE_ERROR>();
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
         return false;
       }
       const AudioTimelineEvent* previousEvent = GetPreviousEvent(TimeOf(aEvent));
@@ -214,7 +219,10 @@ public:
   {
     for (unsigned i = 0; i < mEvents.Length(); ++i) {
       if (aEvent.template Time<TimeType>() == mEvents[i].template Time<TimeType>()) {
+        if (aEvent.mType == mEvents[i].mType) {
           
+          mEvents.ReplaceElementAt(i, aEvent);
+        } else {
           
           do {
             ++i;
@@ -222,6 +230,8 @@ public:
                    aEvent.mType != mEvents[i].mType &&
                    aEvent.template Time<TimeType>() == mEvents[i].template Time<TimeType>());
           mEvents.InsertElementAt(i, aEvent);
+        }
+        return;
       }
       
       if (aEvent.template Time<TimeType>() < mEvents[i].template Time<TimeType>()) {
@@ -260,6 +270,7 @@ public:
     }
   }
 
+  template <class ErrorResult>
   void SetValueAtTime(float aValue, double aStartTime, ErrorResult& aRv)
   {
     AudioTimelineEvent event(AudioTimelineEvent::SetValueAtTime, aStartTime, aValue);
@@ -269,6 +280,7 @@ public:
     }
   }
 
+  template <class ErrorResult>
   void LinearRampToValueAtTime(float aValue, double aEndTime, ErrorResult& aRv)
   {
     AudioTimelineEvent event(AudioTimelineEvent::LinearRamp, aEndTime, aValue);
@@ -278,6 +290,7 @@ public:
     }
   }
 
+  template <class ErrorResult>
   void ExponentialRampToValueAtTime(float aValue, double aEndTime, ErrorResult& aRv)
   {
     AudioTimelineEvent event(AudioTimelineEvent::ExponentialRamp, aEndTime, aValue);
@@ -287,6 +300,7 @@ public:
     }
   }
 
+  template <class ErrorResult>
   void SetTargetAtTime(float aTarget, double aStartTime, double aTimeConstant, ErrorResult& aRv)
   {
     AudioTimelineEvent event(AudioTimelineEvent::SetTarget, aStartTime, aTarget, aTimeConstant);
@@ -296,6 +310,7 @@ public:
     }
   }
 
+  template <class ErrorResult>
   void SetValueCurveAtTime(const float* aValues, uint32_t aValuesLength, double aStartTime, double aDuration, ErrorResult& aRv)
   {
     AudioTimelineEvent event(AudioTimelineEvent::SetValueCurve, aStartTime, 0.0f, 0.0f, aDuration, aValues, aValuesLength);

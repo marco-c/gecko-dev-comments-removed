@@ -221,37 +221,22 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
      return mValue;
   }
 
-  
-  
   auto TimeOf = [](const AudioTimelineEvent* aEvent) -> TimeType {
-    if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
-      return aEvent->template Time<TimeType>() + aEvent->mDuration;
-    }
     return aEvent->template Time<TimeType>();
-  };
-
-  
-  
-  auto ValueOf = [](const AudioTimelineEvent* aEvent) -> float {
-    if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
-      return aEvent->mCurve[aEvent->mCurveLength - 1];
-    }
-    return aEvent->mValue;
   };
 
   
   
   if (aPrevious->mType == AudioTimelineEvent::SetTarget) {
     return ExponentialApproach(TimeOf(aPrevious),
-                               mLastComputedValue, ValueOf(aPrevious),
+                               mLastComputedValue, aPrevious->mValue,
                                aPrevious->mTimeConstant, aTime);
   }
 
   
   
-  if (aPrevious->mType == AudioTimelineEvent::SetValueCurve &&
-      aTime <= aPrevious->template Time<TimeType>() + aPrevious->mDuration) {
-    return ExtractValueFromCurve(aPrevious->template Time<TimeType>(),
+  if (aPrevious->mType == AudioTimelineEvent::SetValueCurve) {
+    return ExtractValueFromCurve(TimeOf(aPrevious),
                                  aPrevious->mCurve, aPrevious->mCurveLength,
                                  aPrevious->mDuration, aTime);
   }
@@ -265,7 +250,7 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
         
         return aPrevious->mValue;
       case AudioTimelineEvent::SetValueCurve:
-        return ExtractValueFromCurve(aPrevious->template Time<TimeType>(),
+        return ExtractValueFromCurve(TimeOf(aPrevious),
                                      aPrevious->mCurve, aPrevious->mCurveLength,
                                      aPrevious->mDuration, aTime);
       case AudioTimelineEvent::SetTarget:
@@ -284,15 +269,15 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
   switch (aNext->mType) {
   case AudioTimelineEvent::LinearRamp:
     return LinearInterpolate(TimeOf(aPrevious),
-                             ValueOf(aPrevious),
+                             aPrevious->mValue,
                              TimeOf(aNext),
-                             ValueOf(aNext), aTime);
+                             aNext->mValue, aTime);
 
   case AudioTimelineEvent::ExponentialRamp:
     return ExponentialInterpolate(TimeOf(aPrevious),
-                                  ValueOf(aPrevious),
+                                  aPrevious->mValue,
                                   TimeOf(aNext),
-                                  ValueOf(aNext), aTime);
+                                  aNext->mValue, aTime);
 
   case AudioTimelineEvent::SetValueAtTime:
   case AudioTimelineEvent::SetTarget:
@@ -313,7 +298,7 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
     
     return aPrevious->mValue;
   case AudioTimelineEvent::SetValueCurve:
-    return ExtractValueFromCurve(aPrevious->template Time<TimeType>(),
+    return ExtractValueFromCurve(TimeOf(aPrevious),
                                  aPrevious->mCurve, aPrevious->mCurveLength,
                                  aPrevious->mDuration, aTime);
   case AudioTimelineEvent::SetTarget:
