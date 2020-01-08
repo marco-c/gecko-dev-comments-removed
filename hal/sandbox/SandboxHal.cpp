@@ -134,7 +134,10 @@ LockScreenOrientation(const dom::ScreenOrientationInternal& aOrientation)
 void
 UnlockScreenOrientation()
 {
-  Hal()->SendUnlockScreenOrientation();
+  
+  if (!recordreplay::IsMiddleman()) {
+    Hal()->SendUnlockScreenOrientation();
+  }
 }
 
 void
