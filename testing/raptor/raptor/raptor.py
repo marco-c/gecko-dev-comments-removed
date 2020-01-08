@@ -12,6 +12,7 @@ import time
 
 import mozinfo
 
+from mozdevice import ADBAndroid
 from mozlog import commandline, get_default_logger
 from mozprofile import create_profile
 from mozrunner import runners
@@ -55,7 +56,10 @@ class Raptor(object):
         self.benchmark = None
 
         
-        self.profile = create_profile(self.config['app'])
+        if self.config['app'] == 'geckoview':
+            self.profile = create_profile('firefox')
+        else:
+            self.profile = create_profile(self.config['app'])
 
         
         with open(os.path.join(self.profile_data_dir, 'profiles.json'), 'r') as fh:
@@ -70,13 +74,23 @@ class Raptor(object):
         self.results_handler = RaptorResultsHandler()
 
         
-        self.output_handler = OutputHandler()
-        process_args = {
-            'processOutputLine': [self.output_handler],
-        }
-        runner_cls = runners[app]
-        self.runner = runner_cls(
-            binary, profile=self.profile, process_args=process_args)
+        
+
+        if self.config['app'] == "geckoview":
+            
+            self.log.info("creating android device handler using mozdevice")
+            self.device = ADBAndroid(verbose=True)
+            self.device.clear_logcat()
+        else:
+            
+            self.log.info("creating browser runner using mozrunner")
+            self.output_handler = OutputHandler()
+            process_args = {
+                'processOutputLine': [self.output_handler],
+            }
+            runner_cls = runners[app]
+            self.runner = runner_cls(
+                binary, profile=self.profile, process_args=process_args)
 
         self.log.info("raptor config: %s" % str(self.config))
 
@@ -91,6 +105,13 @@ class Raptor(object):
     def start_control_server(self):
         self.control_server = RaptorControlServer(self.results_handler)
         self.control_server.start()
+
+        
+        if self.config['app'] == "geckoview":
+            self.log.info("making the raptor control server port available to device")
+            _tcp_port = "tcp:%s" % self.control_server.port
+            _cmd = ["reverse", _tcp_port, _tcp_port]
+            self.device.command_output(_cmd)
 
     def get_playback_config(self, test):
         self.config['playback_tool'] = test.get('playback')
@@ -122,6 +143,13 @@ class Raptor(object):
                         benchmark_port)
 
         
+        if self.config['app'] == "geckoview":
+            self.log.info("making the raptor benchmarks server port available to device")
+            _tcp_port = "tcp:%s" % benchmark_port
+            _cmd = ["reverse", _tcp_port, _tcp_port]
+            self.device.command_output(_cmd)
+
+        
         raptor_webext = os.path.join(webext_dir, 'raptor')
         self.log.info("installing webext %s" % raptor_webext)
         self.profile.addons.install(raptor_webext)
@@ -135,7 +163,7 @@ class Raptor(object):
                               but we do not install them on non Firefox browsers.")
 
         
-        if self.config['app'] == "firefox":
+        if self.config['app'] in ["firefox", "geckoview"]:
             webext_id = self.profile.addons.addon_details(raptor_webext)['id']
 
         
@@ -144,11 +172,46 @@ class Raptor(object):
             
             self.playback = get_playback(self.config)
 
-        self.runner.start()
+        
+        if self.config['app'] == "geckoview":
+            self.log.info("copying firefox profile onto the android device")
+            self.device_profile = "/sdcard/raptor-profile"
+            if self.device.is_dir(self.device_profile):
+                self.device.rm(self.device_profile, recursive=True)
 
-        proc = self.runner.process_handler
-        self.output_handler.proc = proc
-        self.control_server.browser_proc = proc
+            self.device.mkdir(self.device_profile)
+            self.device.push(self.profile.profile, self.device_profile)
+
+            self.log.info("setting permisions to profile dir on the device")
+            self.device.chmod(self.device_profile, recursive=True)
+
+            
+            self.log.info("starting %s" % self.config['app'])
+
+            extra_args = ["-profile", self.device_profile,
+                          "--es", "env0", "LOG_VERBOSE=1",
+                          "--es", "env1", "R_LOG_LEVEL=6"]
+
+            self.device.launch_activity(self.config['binary'],
+                                        "GeckoViewActivity",
+                                        extra_args=extra_args,
+                                        url='about:blank',
+                                        fail_if_running=False)
+
+            self.control_server.device = self.device
+            self.control_server.app_name = self.config['binary']
+
+        else:
+            
+            self.log.info("starting %s" % self.config['app'])
+
+            self.runner.start()
+            proc = self.runner.process_handler
+            self.output_handler.proc = proc
+
+            self.control_server.browser_proc = proc
+
+        
         self.control_server._finished = False
 
         
@@ -159,26 +222,31 @@ class Raptor(object):
                 time.sleep(1)
                 elapsed_time += 1
                 if elapsed_time > (timeout) - 5:  
+                    self.log.info("application timed out after {} seconds".format(timeout))
                     self.control_server.wait_for_quit()
                     break
         finally:
-            try:
-                self.runner.check_for_crashes()
-            except NotImplementedError:  
-                pass
+            if self.config['app'] != "geckoview":
+                try:
+                    self.runner.check_for_crashes()
+                except NotImplementedError:  
+                    pass
+            
 
         if self.playback is not None:
             self.playback.stop()
 
         
         
-        if self.config['app'] == "firefox":
+        if self.config['app'] in ["firefox", "geckoview"]:
             self.log.info("removing webext %s" % raptor_webext)
             self.profile.addons.remove_addon(webext_id)
 
-        if self.runner.is_running():
-            self.log.info("Application timed out after {} seconds".format(timeout))
-            self.runner.stop()
+        if self.config['app'] != "geckoview":
+            if self.runner.is_running():
+                self.runner.stop()
+        
+        
 
     def process_results(self):
         
@@ -197,7 +265,8 @@ class Raptor(object):
 
     def clean_up(self):
         self.control_server.stop()
-        self.runner.stop()
+        if self.config['app'] != "geckoview":
+            self.runner.stop()
         self.log.info("finished")
 
 

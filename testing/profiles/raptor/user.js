@@ -1,3 +1,6 @@
 
 
 user_pref("dom.performance.time_to_non_blank_paint.enabled", true);
+
+
+user_pref("geckoview.console.enabled", true);

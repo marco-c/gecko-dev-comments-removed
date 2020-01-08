@@ -55,7 +55,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin):
           }],
         [["--app"],
          {"default": "firefox",
-          "choices": ["firefox", "chrome"],
+          "choices": ["firefox", "chrome", "geckoview"],
           "dest": "app",
           "help": "name of the application we are testing (default: firefox)"
           }],
@@ -109,12 +109,16 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin):
         if self.run_local:
             
             
+            
+            
+            
             self.app = "firefox"
             if 'raptor_cmd_line_args' in self.config:
-                for next_arg in self.config['raptor_cmd_line_args']:
-                    if "chrome" in next_arg:
-                        self.app = "chrome"
-                        break
+                for app in ['chrome', 'geckoview']:
+                    for next_arg in self.config['raptor_cmd_line_args']:
+                        if app in next_arg:
+                            self.app = app
+                            break
         else:
             
             self.test = self.config['test']
