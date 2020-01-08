@@ -2377,14 +2377,26 @@ HTMLEditor::MakeOrChangeList(const nsAString& aListType,
 }
 
 NS_IMETHODIMP
-HTMLEditor::RemoveList(const nsAString&)
+HTMLEditor::RemoveList(const nsAString& aListType)
 {
   if (!mRules) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  AutoEditActionDataSetter editActionData(*this,
-                                          EditAction::eRemoveListElement);
+  
+  
+  
+  
+  
+  
+  
+
+  RefPtr<nsAtom> listAtom = NS_Atomize(aListType);
+  if (NS_WARN_IF(!listAtom)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  AutoEditActionDataSetter editActionData(
+    *this, HTMLEditUtils::GetEditActionForRemoveList(*listAtom));
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }

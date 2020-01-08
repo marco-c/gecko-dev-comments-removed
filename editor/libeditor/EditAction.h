@@ -172,10 +172,13 @@ enum class EditAction
 
   
   
-  
   eInsertUnorderedListElement,
   eInsertOrderedListElement,
-  eInsertDefinitionListElementv,
+
+  
+  
+  eRemoveUnorderedListElement,
+  eRemoveOrderedListElement,
 
   
   eRemoveListElement,

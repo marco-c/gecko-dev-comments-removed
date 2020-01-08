@@ -721,6 +721,22 @@ HTMLEditUtils::GetEditActionForInsert(const nsAtom& aTagName)
 }
 
 EditAction
+HTMLEditUtils::GetEditActionForRemoveList(const nsAtom& aTagName)
+{
+  
+  
+  if (&aTagName == nsGkAtoms::ul) {
+    
+    return EditAction::eRemoveUnorderedListElement;
+  }
+  if (&aTagName == nsGkAtoms::ol) {
+    
+    return EditAction::eRemoveOrderedListElement;
+  }
+  return EditAction::eRemoveListElement;
+}
+
+EditAction
 HTMLEditUtils::GetEditActionForInsert(const Element& aElement)
 {
   return GetEditActionForInsert(*aElement.NodeInfo()->NameAtom());
