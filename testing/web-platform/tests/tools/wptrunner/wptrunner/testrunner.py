@@ -623,10 +623,10 @@ class TestRunnerManager(threading.Thread):
 
     def wait_finished(self):
         assert isinstance(self.state, RunnerManagerState.running)
-        
-        
         self.logger.debug("Wait finished")
 
+        
+        
         return self.after_test_end(self.state.test, True)
 
     def after_test_end(self, test, restart):
