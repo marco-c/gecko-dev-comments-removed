@@ -4592,6 +4592,7 @@ nsGlobalWindowOuter::AlertOrConfirm(bool aAlert,
   
   nsAutoString final;
   nsContentUtils::StripNullChars(aMessage, final);
+  nsContentUtils::PlatformToDOMLineBreaks(final);
 
   nsresult rv;
   nsCOMPtr<nsIPromptFactory> promptFac =
