@@ -376,6 +376,7 @@ DataChannelConnection::Destroy()
 
   MOZ_ASSERT(mSTS);
   ASSERT_WEBRTC(NS_IsMainThread());
+  mListener = nullptr;
   
   
   
