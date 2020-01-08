@@ -415,6 +415,11 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
 
 
+  const Encoding* mFeedChardetIfEncoding;
+
+  
+
+
   bool mReparseForbidden;
 
   
@@ -529,11 +534,6 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
   nsCOMPtr<nsICharsetDetector> mChardet;
-
-  
-
-
-  bool mFeedChardet;
 
   
 
