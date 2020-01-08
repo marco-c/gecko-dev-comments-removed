@@ -5224,10 +5224,13 @@ SVGTextFrame::DoGlyphPositioning()
   SVGTextContentElement* element = static_cast<SVGTextContentElement*>(GetContent());
   nsSVGLength2* textLengthAttr =
     element->GetAnimatedLength(nsGkAtoms::textLength);
+  uint16_t lengthAdjust =
+    element->EnumAttributes()[SVGTextContentElement::LENGTHADJUST].GetAnimValue();
   bool adjustingTextLength = textLengthAttr->IsExplicitlySet();
   float expectedTextLength = textLengthAttr->GetAnimValue(element);
 
-  if (adjustingTextLength && expectedTextLength < 0.0f) {
+  if (adjustingTextLength &&
+      (expectedTextLength < 0.0f || lengthAdjust == LENGTHADJUST_UNKNOWN)) {
     
     adjustingTextLength = false;
   }
@@ -5277,8 +5280,6 @@ SVGTextFrame::DoGlyphPositioning()
     float actualTextLength =
       static_cast<float>(presContext->AppUnitsToGfxUnits(frameLength) * factor);
 
-    uint16_t lengthAdjust =
-      element->EnumAttributes()[SVGTextContentElement::LENGTHADJUST].GetAnimValue();
     switch (lengthAdjust) {
       case LENGTHADJUST_SPACINGANDGLYPHS:
         
