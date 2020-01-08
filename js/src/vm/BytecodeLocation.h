@@ -154,16 +154,6 @@ class BytecodeLocation
         return GET_JUMP_OFFSET(rawBytecode_ + (2 * JUMP_OFFSET_LEN));
     }
 
-    
-    
-    BytecodeLocation getTableSwitchCaseByIndex(size_t index) const {
-        MOZ_ASSERT(is(JSOP_TABLESWITCH));
-        RawBytecode offsetLoc = rawBytecode_ +
-                                (3 *  JUMP_OFFSET_LEN) + 
-                                (index * JUMP_OFFSET_LEN); 
-        return BytecodeLocation(*this, rawBytecode_ + GET_JUMP_OFFSET(offsetLoc));
-    }
-
 #ifdef DEBUG
     
     bool isValid() const {

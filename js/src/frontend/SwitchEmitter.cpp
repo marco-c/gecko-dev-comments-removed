@@ -6,6 +6,8 @@
 
 #include "frontend/SwitchEmitter.h"
 
+#include "mozilla/Span.h"
+
 #include "jsutil.h"
 
 #include "frontend/BytecodeEmitter.h"
@@ -202,9 +204,6 @@ SwitchEmitter::emitTable(const TableGenerator& tableGen)
     top_ = bce_->offset();
 
     
-
-    
-    size_t switchSize = size_t(JUMP_OFFSET_LEN * (3 + tableGen.tableLength()));
     if (!bce_->newSrcNote2(SRC_TABLESWITCH, 0, &noteIndex_)) {
         return false;
     }
@@ -215,7 +214,7 @@ SwitchEmitter::emitTable(const TableGenerator& tableGen)
     }
 
     MOZ_ASSERT(top_ == bce_->offset());
-    if (!bce_->emitN(JSOP_TABLESWITCH, switchSize)) {
+    if (!bce_->emitN(JSOP_TABLESWITCH, JSOP_TABLESWITCH_LENGTH - sizeof(jsbytecode))) {
         return false;
     }
 
@@ -454,10 +453,19 @@ SwitchEmitter::emitEnd()
 
         
         for (uint32_t i = 0, length = caseOffsets_.length(); i < length; i++) {
-            ptrdiff_t off = caseOffsets_[i];
-            SET_JUMP_OFFSET(pc, (off != 0 ? off : defaultJumpTargetOffset_.offset) - top_);
-            pc += JUMP_OFFSET_LEN;
+            if (caseOffsets_[i] == 0) {
+                caseOffsets_[i] = defaultJumpTargetOffset_.offset;
+            }
         }
+
+        
+        uint32_t firstResumeIndex = 0;
+        mozilla::Span<ptrdiff_t> offsets = mozilla::MakeSpan(caseOffsets_.begin(),
+                                                             caseOffsets_.end());
+        if (!bce_->allocateResumeIndexRange(offsets, &firstResumeIndex)) {
+            return false;
+        }
+        SET_RESUMEINDEX(pc, firstResumeIndex);
     }
 
     
