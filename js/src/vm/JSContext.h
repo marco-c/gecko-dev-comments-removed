@@ -1071,6 +1071,16 @@ ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
 extern void
 ReportUsageErrorASCII(JSContext* cx, HandleObject callee, const char* msg);
 
+
+
+
+
+
+
+extern bool
+PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
+           JSErrorReport* report, bool reportWarnings);
+
 extern void
 ReportIsNotDefined(JSContext* cx, HandlePropertyName name);
 
