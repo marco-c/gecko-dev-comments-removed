@@ -16,6 +16,7 @@
 
 
 namespace mozilla {
+namespace dom {
 
 
 
@@ -167,7 +168,8 @@ bool DOMSVGNumber::IndexIsValid() {
 
 JSObject* DOMSVGNumber::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
-  return dom::SVGNumber_Binding::Wrap(aCx, this, aGivenProto);
+  return SVGNumber_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+}  
 }  

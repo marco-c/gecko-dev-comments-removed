@@ -15,6 +15,7 @@
 
 
 namespace mozilla {
+namespace dom {
 
 static inline nsSVGAttrTearoffTable<SVGAnimatedLengthList,
                                     DOMSVGAnimatedLengthList>&
@@ -123,4 +124,5 @@ const SVGAnimatedLengthList& DOMSVGAnimatedLengthList::InternalAList() const {
   return *mElement->GetAnimatedLengthList(mAttrEnum);
 }
 
+}  
 }  

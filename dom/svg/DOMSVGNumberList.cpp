@@ -19,7 +19,7 @@
 
 namespace {
 
-using mozilla::DOMSVGNumber;
+using mozilla::dom::DOMSVGNumber;
 
 void UpdateListIndicesFromIndex(FallibleTArray<DOMSVGNumber*>& aItemsArray,
                                 uint32_t aStartingIndex) {
@@ -35,6 +35,7 @@ void UpdateListIndicesFromIndex(FallibleTArray<DOMSVGNumber*>& aItemsArray,
 }  
 
 namespace mozilla {
+namespace dom {
 
 
 
@@ -368,4 +369,5 @@ void DOMSVGNumberList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex) {
   UpdateListIndicesFromIndex(animVal->mItems, aIndex);
 }
 
+}  
 }  

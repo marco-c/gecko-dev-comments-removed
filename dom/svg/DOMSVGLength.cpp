@@ -21,7 +21,7 @@
 
 namespace mozilla {
 
-using namespace dom;
+namespace dom {
 
 static nsSVGAttrTearoffTable<nsSVGLength2, DOMSVGLength>
     sBaseSVGLengthTearOffTable, sAnimSVGLengthTearOffTable;
@@ -54,7 +54,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(DOMSVGLength)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMSVGLength)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  NS_INTERFACE_MAP_ENTRY(mozilla::DOMSVGLength)  
+  NS_INTERFACE_MAP_ENTRY(DOMSVGLength)  
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
@@ -462,4 +462,5 @@ bool DOMSVGLength::IndexIsValid() {
 }
 #endif
 
+}  
 }  

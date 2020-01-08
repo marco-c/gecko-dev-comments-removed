@@ -35,7 +35,6 @@ class ErrorResult;
 
 namespace dom {
 class SVGElement;
-}
 
 
 
@@ -235,6 +234,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMSVGLength, MOZILLA_DOMSVGLENGTH_IID)
 
+}  
 }  
 
 #undef MOZ_SVG_LIST_INDEX_BIT_COUNT

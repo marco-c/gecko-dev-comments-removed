@@ -20,7 +20,6 @@ namespace mozilla {
 
 namespace dom {
 class SVGElement;
-}
 
 
 
@@ -152,6 +151,7 @@ class DOMSVGNumber final : public nsISupports, public nsWrapperCache {
   float mValue;
 };
 
+}  
 }  
 
 #undef MOZ_SVG_LIST_INDEX_BIT_COUNT

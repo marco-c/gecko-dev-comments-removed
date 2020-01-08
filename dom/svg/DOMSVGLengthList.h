@@ -17,11 +17,9 @@
 
 namespace mozilla {
 
-class DOMSVGLength;
-
 namespace dom {
+class DOMSVGLength;
 class SVGElement;
-}
 
 
 
@@ -161,6 +159,7 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
   RefPtr<DOMSVGAnimatedLengthList> mAList;
 };
 
+}  
 }  
 
 #endif  
