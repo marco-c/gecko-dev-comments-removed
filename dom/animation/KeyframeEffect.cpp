@@ -1609,12 +1609,10 @@ KeyframeEffect::CalculateCumulativeChangeHint(const ComputedStyle* aComputedStyl
         
         
         
-        mCumulativeChangeHint |= nsChangeHint_AddOrRemoveTransform |
-                                 nsChangeHint_RepaintFrame |
-                                 nsChangeHint_UpdateContainingBlock |
-                                 nsChangeHint_UpdateOverflow |
-                                 nsChangeHint_UpdatePostTransformOverflow |
-                                 nsChangeHint_UpdateTransformLayer;
+        mCumulativeChangeHint |=
+          nsChangeHint_ComprehensiveAddOrRemoveTransform |
+          nsChangeHint_UpdatePostTransformOverflow |
+          nsChangeHint_UpdateTransformLayer;
         continue;
       }
 

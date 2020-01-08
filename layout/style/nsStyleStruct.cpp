@@ -3811,17 +3811,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 
 
   if (HasTransformStyle() != aNewData.HasTransformStyle()) {
-    
-    
-    
-    
-    
-    
-    
-    hint |= nsChangeHint_UpdateContainingBlock |
-            nsChangeHint_AddOrRemoveTransform |
-            nsChangeHint_UpdateOverflow |
-            nsChangeHint_RepaintFrame;
+    hint |= nsChangeHint_ComprehensiveAddOrRemoveTransform;
   } else {
     
 

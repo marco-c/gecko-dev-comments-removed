@@ -470,6 +470,21 @@ static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
 
 
 
+
+
+
+
+
+
+
+#define nsChangeHint_ComprehensiveAddOrRemoveTransform \
+  nsChangeHint(nsChangeHint_UpdateContainingBlock |    \
+               nsChangeHint_AddOrRemoveTransform |     \
+               nsChangeHint_UpdateOverflow |           \
+               nsChangeHint_RepaintFrame)
+
+
+
 inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint) {
   nsChangeHint result =
     aChangeHint & nsChangeHint_Hints_NeverHandledForDescendants;
