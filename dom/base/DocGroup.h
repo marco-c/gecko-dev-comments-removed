@@ -17,13 +17,11 @@
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/PerformanceCounter.h"
-
+#include "mozilla/PerformanceTypes.h"
 
 namespace mozilla {
 class AbstractThread;
 namespace dom {
-
-class PerformanceInfo;
 
 
 
@@ -64,8 +62,7 @@ public:
     return mPerformanceCounter;
   }
 
-  PerformanceInfo
-  ReportPerformanceInfo();
+  RefPtr<PerformanceInfoPromise> ReportPerformanceInfo();
 
   TabGroup* GetTabGroup()
   {

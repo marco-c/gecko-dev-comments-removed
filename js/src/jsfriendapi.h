@@ -2982,6 +2982,13 @@ LogDtor(void* self, const char* type, uint32_t sz);
 #define JS_COUNT_DTOR(Class)                            \
     LogDtor((void*) this, #Class, sizeof(Class))
 
+
+
+
+
+extern JS_FRIEND_API uint64_t
+GetGCHeapUsageForObjectZone(JSObject* obj);
+
 } 
 
 #endif 

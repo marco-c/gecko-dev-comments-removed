@@ -11,6 +11,7 @@
 #include "nsID.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"  
 #include "mozilla/dom/DOMTypes.h"   
+#include "mozilla/PerformanceTypes.h"
 
 namespace mozilla {
 
@@ -47,21 +48,20 @@ private:
 
 
 
-
 class AggregatedResults final
 {
 public:
-  AggregatedResults(nsID aUUID, PerformanceMetricsCollector* aCollector,
-                    dom::Promise* aPromise);
+  AggregatedResults(nsID aUUID, PerformanceMetricsCollector* aCollector);
   ~AggregatedResults() = default;
   void AppendResult(const nsTArray<dom::PerformanceInfo>& aMetrics);
   void SetNumResultsRequired(uint32_t aNumResultsRequired);
   void Abort(nsresult aReason);
   void ResolveNow();
+  RefPtr<RequestMetricsPromise> GetPromise();
 
 private:
   RefPtr<IPCTimeout> mIPCTimeout;
-  RefPtr<dom::Promise> mPromise;
+  MozPromiseHolder<RequestMetricsPromise> mHolder;
   uint32_t mPendingResults;
   FallibleTArray<dom::PerformanceInfoDictionary> mData;
 
@@ -90,15 +90,14 @@ class PerformanceMetricsCollector final
 {
 public:
   NS_INLINE_DECL_REFCOUNTING(PerformanceMetricsCollector)
-
-  static void RequestMetrics(dom::Promise* aPromise);
+  static RefPtr<RequestMetricsPromise> RequestMetrics();
   static nsresult DataReceived(const nsID& aUUID,
                                const nsTArray<dom::PerformanceInfo>& aMetrics);
   void ForgetAggregatedResults(const nsID& aUUID);
 
 private:
   ~PerformanceMetricsCollector();
-  void RequestMetricsInternal(dom::Promise* aPromise);
+  RefPtr<RequestMetricsPromise> RequestMetricsInternal();
   nsresult DataReceivedInternal(const nsID& aUUID,
                                 const nsTArray<dom::PerformanceInfo>& aMetrics);
   nsDataHashtable<nsIDHashKey, UniquePtr<AggregatedResults>> mAggregatedResults;

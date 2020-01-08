@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_workers_WorkerDebugger_h
 #define mozilla_dom_workers_WorkerDebugger_h
 
+#include "mozilla/PerformanceTypes.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsIWorkerDebugger.h"
@@ -48,7 +49,7 @@ public:
 
 
 
-  PerformanceInfo
+  RefPtr<PerformanceInfoPromise>
   ReportPerformanceInfo();
 
 private:

@@ -6,7 +6,7 @@
 #ifndef PerformanceUtils_h
 #define PerformanceUtils_h
 
-#include "mozilla/dom/DOMTypes.h"   
+#include "mozilla/PerformanceTypes.h"
 
 namespace mozilla {
 
@@ -14,7 +14,15 @@ namespace mozilla {
 
 
 
-void CollectPerformanceInfo(nsTArray<dom::PerformanceInfo>& aMetrics);
+nsTArray<RefPtr<PerformanceInfoPromise>>
+CollectPerformanceInfo();
+
+
+
+
+RefPtr<MemoryPromise>
+CollectMemoryInfo(const nsCOMPtr<nsPIDOMWindowOuter>& aWindow,
+                  const RefPtr<AbstractThread>& aEventTarget);
 
 } 
-#endif   
+#endif 
