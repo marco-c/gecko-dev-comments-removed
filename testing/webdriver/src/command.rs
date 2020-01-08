@@ -432,7 +432,6 @@ pub struct LocatorParameters {
 
 
 
-
 #[derive(Debug, PartialEq)]
 pub enum NewSessionParameters {
     Spec(SpecNewSessionParameters),
@@ -450,6 +449,7 @@ impl<'de> Deserialize<'de> for NewSessionParameters {
             return Ok(NewSessionParameters::Spec(caps));
         }
 
+        warn!("You are using deprecated legacy session negotiation patterns (desiredCapabilities/requiredCapabilities), see https://developer.mozilla.org/en-US/docs/Web/WebDriver/Capabilities#Legacy");
         let legacy = LegacyNewSessionParameters::deserialize(value).map_err(de::Error::custom)?;
         Ok(NewSessionParameters::Legacy(legacy))
     }
