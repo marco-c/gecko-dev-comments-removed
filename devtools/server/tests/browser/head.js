@@ -121,15 +121,6 @@ async function initInspectorFront(url) {
 
 
 
-function getRootForm(client) {
-  return client.listTabs();
-}
-
-
-
-
-
-
 function waitUntilClientConnected(client) {
   return new Promise(resolve => {
     client.addOneTimeListener("connected", resolve);
