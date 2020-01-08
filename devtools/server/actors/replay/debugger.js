@@ -19,13 +19,32 @@
 "use strict";
 
 const RecordReplayControl = !isWorker && require("RecordReplayControl");
+const Services = require("Services");
 
 
 
 
+
+
+const Direction = {
+  FORWARD: "FORWARD",
+  BACKWARD: "BACKWARD",
+  NONE: "NONE",
+};
 
 function ReplayDebugger() {
-  RecordReplayControl.registerReplayDebugger(this);
+  const existing = RecordReplayControl.registerReplayDebugger(this);
+  if (existing) {
+    
+    
+    return existing;
+  }
+
+  
+  this._paused = false;
+
+  
+  this._direction = Direction.NONE;
 
   
   this._breakpoints = [];
@@ -45,6 +64,23 @@ function ReplayDebugger() {
   
   this._scripts = [];
   this._scriptSources = [];
+
+  
+  this._threadPauseCount = 0;
+
+  
+  
+  this._cancelPerformPause = false;
+
+  
+  this._resumeCallback = null;
+
+  
+  
+  this.replayingOnForcedPause = null;
+
+  
+  this.replayingOnPositionChange = null;
 }
 
 
@@ -59,14 +95,6 @@ ReplayDebugger.prototype = {
   replaying: true,
 
   canRewind: RecordReplayControl.canRewind,
-  replayResumeBackward() { RecordReplayControl.resume( false); },
-  replayResumeForward() { RecordReplayControl.resume( true); },
-  replayTimeWarp: RecordReplayControl.timeWarp,
-
-  replayPause() {
-    RecordReplayControl.pause();
-    this._repaint();
-  },
 
   replayCurrentExecutionPoint() {
     return this._sendRequest({ type: "currentExecutionPoint" });
@@ -82,13 +110,17 @@ ReplayDebugger.prototype = {
   removeAllDebuggees() {},
 
   replayingContent(url) {
+    this._ensurePaused();
     return this._sendRequest({ type: "getContent", url });
   },
 
+  
+  
   _sendRequest(request) {
+    assert(this._paused);
     const data = RecordReplayControl.sendRequest(request);
-    
-    
+    dumpv("SendRequest: " +
+          JSON.stringify(request) + " -> " + JSON.stringify(data));
     if (data.exception) {
       ThrowError(data.exception);
     }
@@ -100,6 +132,7 @@ ReplayDebugger.prototype = {
   
   
   _sendRequestAllowDiverge(request) {
+    assert(this._paused);
     RecordReplayControl.maybeSwitchToReplayingChild();
     return this._sendRequest(request);
   },
@@ -116,19 +149,231 @@ ReplayDebugger.prototype = {
     }
   },
 
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  replayResumeBackward() { this._resume( false); },
+  replayResumeForward() { this._resume( true); },
+
+  _resume(forward) {
+    this._ensurePaused();
+    this._setResume(() => {
+      this._paused = false;
+      this._direction = forward ? Direction.FORWARD : Direction.BACKWARD;
+      dumpv("Resuming " + this._direction);
+      RecordReplayControl.resume(forward);
+      if (this._paused) {
+        
+        
+        this.replayingOnForcedPause(this.getNewestFrame());
+      }
+    });
+  },
+
+  replayTimeWarp(target) {
+    this._ensurePaused();
+    this._setResume(() => {
+      this._paused = false;
+      this._direction = Direction.NONE;
+      dumpv("Warping " + JSON.stringify(target));
+      RecordReplayControl.timeWarp(target);
+
+      
+      
+      assert(this._paused);
+      this.replayingOnForcedPause(this.getNewestFrame());
+    });
+  },
+
+  replayPause() {
+    this._ensurePaused();
+
+    
+    this._resumeCallback = null;
+  },
+
+  _ensurePaused() {
+    if (!this._paused) {
+      RecordReplayControl.waitUntilPaused();
+      assert(this._paused);
+    }
+  },
+
+  
+  
+  
+  _onPause() {
+    this._paused = true;
+
+    
+    if (this.replayingOnPositionChange) {
+      this.replayingOnPositionChange();
+    }
+
+    
+    
+    this._cancelPerformPause = false;
+    Services.tm.dispatchToMainThread(this._performPause.bind(this));
+  },
+
+  _performPause() {
+    
+    
+    
+    if (!this._paused || this._cancelPerformPause || this._resumeCallback) {
+      return;
+    }
+
+    const point = this.replayCurrentExecutionPoint();
+    dumpv("PerformPause " + JSON.stringify(point));
+
+    if (point.position.kind == "Invalid") {
+      
+    } else {
+      
+      for (const { handler, position } of this._breakpoints) {
+        if (RecordReplayControl.positionSubsumes(position, point.position)) {
+          handler();
+          assert(!this._threadPauseCount);
+          if (this._resumeCallback) {
+            break;
+          }
+        }
+      }
+    }
+
+    
+    
+    
+    assert(!this._threadPauseCount);
+    if (!this._resumeCallback) {
+      switch (this._direction) {
+      case Direction.FORWARD: this.replayResumeForward(); break;
+      case Direction.BACKWARD: this.replayResumeBackward(); break;
+      }
+    }
+  },
+
+  
+  
+  _onSwitchChild() {
+    
+    if (this.replayingOnPositionChange) {
+      
+      const paused = this._paused;
+      this._paused = true;
+      this.replayingOnPositionChange();
+      this._paused = paused;
+    }
+  },
+
+  replayPushThreadPause() {
+    
+    
+    assert(this._paused);
+    assert(!this._resumeCallback);
+    if (++this._threadPauseCount == 1) {
+      
+      RecordReplayControl.markExplicitPause();
+
+      
+      this._direction = Direction.NONE;
+
+      
+      this._repaint();
+
+      
+      
+      this._cancelPerformPause = true;
+    }
+    const point = this.replayCurrentExecutionPoint();
+    dumpv("PushPause " + JSON.stringify(point));
+  },
+
+  replayPopThreadPause() {
+    dumpv("PopPause");
+
+    
+    if (--this._threadPauseCount == 0 && this._resumeCallback) {
+      Services.tm.dispatchToMainThread(this._performResume.bind(this));
+    }
+  },
+
+  _setResume(callback) {
+    assert(this._paused);
+
+    
+    this._resumeCallback = callback;
+
+    
+    if (!this._threadPauseCount) {
+      Services.tm.dispatchToMainThread(this._performResume.bind(this));
+    }
+  },
+
+  _performResume() {
+    assert(this._paused && !this._threadPauseCount);
+    if (this._resumeCallback && !this._threadPauseCount) {
+      const callback = this._resumeCallback;
+      this._invalidateAfterUnpause();
+      this._resumeCallback = null;
+      callback();
+    }
+  },
+
+  
+  _invalidateAfterUnpause() {
+    this._frames.forEach(frame => frame._invalidate());
+    this._frames.length = 0;
+
+    this._objects.forEach(obj => obj._invalidate());
+    this._objects.length = 0;
+  },
+
+  
+  
+  
+
   _setBreakpoint(handler, position, data) {
-    const id = RecordReplayControl.setBreakpoint(handler, position);
-    this._breakpoints.push({id, position, data});
+    this._ensurePaused();
+    dumpv("AddBreakpoint " + JSON.stringify(position));
+    RecordReplayControl.addBreakpoint(position);
+    this._breakpoints.push({handler, position, data});
   },
 
   _clearMatchingBreakpoints(callback) {
-    this._breakpoints = this._breakpoints.filter(breakpoint => {
-      if (callback(breakpoint)) {
-        RecordReplayControl.clearBreakpoint(breakpoint.id);
-        return false;
+    this._ensurePaused();
+    const newBreakpoints = this._breakpoints.filter(bp => !callback(bp));
+    if (newBreakpoints.length != this._breakpoints.length) {
+      dumpv("ClearBreakpoints");
+      RecordReplayControl.clearBreakpoints();
+      for (const { position } of newBreakpoints) {
+        dumpv("AddBreakpoint " + JSON.stringify(position));
+        RecordReplayControl.addBreakpoint(position);
       }
-      return true;
-    });
+    }
+    this._breakpoints = newBreakpoints;
   },
 
   _searchBreakpoints(callback) {
@@ -155,16 +400,6 @@ ReplayDebugger.prototype = {
     } else {
       this._clearMatchingBreakpoints(({position}) => position.kind == kind);
     }
-  },
-
-  
-  
-  invalidateAfterUnpause() {
-    this._frames.forEach(frame => frame._invalidate());
-    this._frames.length = 0;
-
-    this._objects.forEach(obj => obj._invalidate());
-    this._objects.length = 0;
   },
 
   
@@ -211,6 +446,7 @@ ReplayDebugger.prototype = {
   },
 
   findAllConsoleMessages() {
+    this._ensurePaused();
     const messages = this._sendRequest({ type: "findConsoleMessages" });
     return messages.map(this._convertConsoleMessage.bind(this));
   },
@@ -235,6 +471,7 @@ ReplayDebugger.prototype = {
   },
 
   findSources() {
+    this._ensurePaused();
     const data = this._sendRequest({ type: "findSources" });
     return data.map(source => this._addSource(source));
   },
@@ -363,8 +600,7 @@ ReplayDebugger.prototype = {
   get onEnterFrame() { return this._breakpointKindGetter("EnterFrame"); },
   set onEnterFrame(handler) {
     this._breakpointKindSetter("EnterFrame", handler,
-                               () => { this._repaint();
-                                       handler.call(this, this.getNewestFrame()); });
+                               () => { handler.call(this, this.getNewestFrame()); });
   },
 
   get replayingOnPopFrame() {
@@ -375,31 +611,13 @@ ReplayDebugger.prototype = {
 
   set replayingOnPopFrame(handler) {
     if (handler) {
-      this._setBreakpoint(() => { this._repaint();
-                                  handler.call(this, this.getNewestFrame()); },
+      this._setBreakpoint(() => { handler.call(this, this.getNewestFrame()); },
                           { kind: "OnPop" }, handler);
     } else {
       this._clearMatchingBreakpoints(({position}) => {
         return position.kind == "OnPop" && !position.script;
       });
     }
-  },
-
-  get replayingOnForcedPause() {
-    return this._breakpointKindGetter("ForcedPause");
-  },
-  set replayingOnForcedPause(handler) {
-    this._breakpointKindSetter("ForcedPause", handler,
-                               () => { this._repaint();
-                                       handler.call(this, this.getNewestFrame()); });
-  },
-
-  get replayingOnPositionChange() {
-    return this._breakpointKindGetter("PositionChange");
-  },
-  set replayingOnPositionChange(handler) {
-    this._breakpointKindSetter("PositionChange", handler,
-                               () => { handler.call(this); });
   },
 
   getNewConsoleMessage() {
@@ -447,8 +665,7 @@ ReplayDebuggerScript.prototype = {
   getPredecessorOffsets(pc) { return this._forward("getPredecessorOffsets", pc); },
 
   setBreakpoint(offset, handler) {
-    this._dbg._setBreakpoint(() => { this._dbg._repaint();
-                                     handler.hit(this._dbg.getNewestFrame()); },
+    this._dbg._setBreakpoint(() => { handler.hit(this._dbg.getNewestFrame()); },
                              { kind: "Break", script: this._data.id, offset },
                              handler);
   },
@@ -565,8 +782,7 @@ ReplayDebuggerFrame.prototype = {
     this._clearOnStepBreakpoints();
     offsets.forEach(offset => {
       this._dbg._setBreakpoint(
-        () => { this._dbg._repaint();
-                handler.call(this._dbg.getNewestFrame()); },
+        () => { handler.call(this._dbg.getNewestFrame()); },
         { kind: "OnStep",
           script: this._data.script,
           offset,
@@ -584,7 +800,6 @@ ReplayDebuggerFrame.prototype = {
   set onPop(handler) {
     if (handler) {
       this._dbg._setBreakpoint(() => {
-          this._dbg._repaint();
           const result = this._dbg._sendRequest({ type: "popFrameResult" });
           handler.call(this._dbg.getNewestFrame(),
                        this._dbg._convertCompletionValue(result));
@@ -785,6 +1000,10 @@ ReplayDebuggerEnvironment.prototype = {
 
 
 
+function dumpv(str) {
+  
+}
+
 function NYI() {
   ThrowError("Not yet implemented");
 }
@@ -802,7 +1021,7 @@ function ThrowError(msg)
 
 function assert(v) {
   if (!v) {
-    throw new Error("Assertion Failed!");
+    ThrowError("Assertion Failed!");
   }
 }
 
