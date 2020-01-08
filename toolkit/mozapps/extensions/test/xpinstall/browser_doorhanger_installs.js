@@ -361,7 +361,7 @@ async function test_restartless() {
     "XPI": "restartless.xpi",
   }));
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  gBrowser.loadURI(TESTROOT + "installtrigger.html?" + triggers);
+  BrowserTestUtils.loadURI(gBrowser, TESTROOT + "installtrigger.html?" + triggers);
   await progressPromise;
   let installDialog = await dialogPromise;
 
@@ -407,7 +407,7 @@ async function test_sequential() {
   triggers = encodeURIComponent(JSON.stringify({
     "Theme XPI": "theme.xpi",
   }));
-  gBrowser.loadURI(TESTROOT + "installtrigger.html?" + triggers);
+  BrowserTestUtils.loadURI(gBrowser, TESTROOT + "installtrigger.html?" + triggers);
   await progressPromise;
 
   
@@ -511,7 +511,7 @@ async function test_localFile() {
   });
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  gBrowser.loadURI(path);
+  BrowserTestUtils.loadURI(gBrowser, path);
   await failPromise;
 
   
@@ -531,7 +531,7 @@ async function test_tabClose() {
   let dialogPromise = waitForInstallDialog("addon-install-confirmation");
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  gBrowser.loadURI(TESTROOT + "restartless.xpi");
+  BrowserTestUtils.loadURI(gBrowser, TESTROOT + "restartless.xpi");
   await progressPromise;
   await dialogPromise;
 
@@ -561,7 +561,7 @@ async function test_tabNavigate() {
 
   let closePromise = waitForNotificationClose();
   let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  gBrowser.loadURI("about:blank");
+  BrowserTestUtils.loadURI(gBrowser, "about:blank");
   await closePromise;
 
   
@@ -611,12 +611,12 @@ async function test_wrongHost() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
 
   let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, false, requestedUrl);
-  gBrowser.loadURI(TESTROOT2 + "enabled.html");
+  BrowserTestUtils.loadURI(gBrowser, TESTROOT2 + "enabled.html");
   await loadedPromise;
 
   let progressPromise = waitForProgressNotification();
   let notificationPromise = waitForNotification("addon-install-failed");
-  gBrowser.loadURI(TESTROOT + "corrupt.xpi");
+  BrowserTestUtils.loadURI(gBrowser, TESTROOT + "corrupt.xpi");
   await progressPromise;
   let panel = await notificationPromise;
 
@@ -647,7 +647,7 @@ async function test_renotifyBlocked() {
   await new Promise(resolve => executeSoon(resolve));
 
   notificationPromise = waitForNotification("addon-install-blocked");
-  gBrowser.loadURI(TESTROOT + "installtrigger.html?" + triggers);
+  BrowserTestUtils.loadURI(gBrowser, TESTROOT + "installtrigger.html?" + triggers);
   await notificationPromise;
 
   let installs = await AddonManager.getAllInstalls();
