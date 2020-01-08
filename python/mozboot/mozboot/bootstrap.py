@@ -297,15 +297,20 @@ class Bootstrapper(object):
         state_dir, _ = get_state_dir()
 
         if not os.path.exists(state_dir):
+            should_create_state_dir = True
             if not self.instance.no_interactive:
                 choice = self.instance.prompt_int(
                     prompt=STATE_DIR_INFO.format(statedir=state_dir),
                     low=1,
                     high=2)
 
-                if choice == 1:
-                    print('Creating global state directory: %s' % state_dir)
-                    os.makedirs(state_dir, mode=0o770)
+                should_create_state_dir = choice == 1
+
+            
+            
+            if should_create_state_dir:
+                print('Creating global state directory: %s' % state_dir)
+                os.makedirs(state_dir, mode=0o770)
 
         state_dir_available = os.path.exists(state_dir)
         return state_dir_available, state_dir
@@ -316,24 +321,20 @@ class Bootstrapper(object):
                                                checkout_root):
         
         
-        if not self.instance.no_interactive:
-            
-            
-            
-            
-            
-            
-            if not state_dir_available:
-                print(STYLO_NODEJS_DIRECTORY_MESSAGE.format(statedir=state_dir))
-                sys.exit(1)
 
-            if not have_clone:
-                print(STYLE_NODEJS_REQUIRES_CLONE)
-                sys.exit(1)
+        
+        
+        if not state_dir_available:
+            print(STYLO_NODEJS_DIRECTORY_MESSAGE.format(statedir=state_dir))
+            sys.exit(1)
 
-            self.instance.state_dir = state_dir
-            self.instance.ensure_stylo_packages(state_dir, checkout_root)
-            self.instance.ensure_node_packages(state_dir, checkout_root)
+        if not have_clone:
+            print(STYLE_NODEJS_REQUIRES_CLONE)
+            sys.exit(1)
+
+        self.instance.state_dir = state_dir
+        self.instance.ensure_stylo_packages(state_dir, checkout_root)
+        self.instance.ensure_node_packages(state_dir, checkout_root)
 
     def bootstrap(self):
         if self.choice is None:
