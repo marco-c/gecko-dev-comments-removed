@@ -204,12 +204,9 @@ struct RepaintRequest {
   
   
   
+  
   float mPresShellResolution;
 
-  
-  
-  
-  
   
   
   
@@ -234,23 +231,8 @@ struct RepaintRequest {
 
   
   
-  
-  
   CSSToLayoutDeviceScale mDevPixelsPerCSSPixel;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   CSSPoint mScrollOffset;
@@ -280,6 +262,12 @@ struct RepaintRequest {
   
   
   
+  
+  
+  
+  
+  
+  
   CSSRect mViewport;
 
   
@@ -299,6 +287,9 @@ struct RepaintRequest {
   
   bool mUseDisplayPortMargins : 1;
 
+  
+  
+  
   
   bool mIsScrollInfoLayer : 1;
 };
