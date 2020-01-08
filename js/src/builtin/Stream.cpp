@@ -2131,7 +2131,11 @@ ReadableStreamReaderGenericRelease(JSContext* cx, Handle<ReadableStreamReader*> 
     }
 
     
-    MOZ_ASSERT(UnwrapReaderFromStreamNoThrow(unwrappedStream) == unwrappedReader);
+#ifdef DEBUG
+    
+    ReadableStreamReader* unwrappedReader2 = UnwrapReaderFromStreamNoThrow(unwrappedStream);
+    MOZ_ASSERT_IF(unwrappedReader2, unwrappedReader2 == unwrappedReader);
+#endif
 
     
     
