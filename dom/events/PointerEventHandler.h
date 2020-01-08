@@ -169,6 +169,11 @@ public:
            aEvent->mMessage == eTouchPointerCancel;
   }
 
+  static MOZ_ALWAYS_INLINE int32_t GetSpoofedPointerIdForRFP()
+  {
+    return sSpoofedPointerId.valueOr(0);
+  }
+
 private:
   
   
@@ -183,6 +188,17 @@ private:
                 bool aIsGotCapture,
                 const WidgetPointerEvent* aPointerEvent,
                 nsIContent* aCaptureTarget);
+
+  
+  
+  
+  static Maybe<int32_t> sSpoofedPointerId;
+
+  
+  
+  
+  static void MaybeCacheSpoofedPointerID(uint16_t aInputSource,
+                                         uint32_t aPointerId);
 };
 
 } 
