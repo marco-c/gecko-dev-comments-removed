@@ -2098,8 +2098,10 @@ UpdateService.prototype = {
     
     
     
-    AUSTLMY.pingBoolPref("UPDATE_NOT_PREF_UPDATE_AUTO_" + this._pingSuffix,
-                         PREF_APP_UPDATE_AUTO, true, true);
+    this.getAutoUpdateIsEnabled().then(enabled => {
+      AUSTLMY.pingGeneric("UPDATE_NOT_PREF_UPDATE_AUTO_" + this._pingSuffix,
+                          enabled, DEFAULT_APP_UPDATE_AUTO);
+    });
     
     
     
