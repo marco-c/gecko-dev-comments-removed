@@ -7316,17 +7316,8 @@ void nsIDocument::Sanitize() {
         HTMLInputElement::FromNodeOrNull(nodes->Item(i));
     if (!input) continue;
 
-    bool resetValue = false;
-
     input->GetAttribute(NS_LITERAL_STRING("autocomplete"), value);
-    if (value.LowerCaseEqualsLiteral("off")) {
-      resetValue = true;
-    } else {
-      input->GetType(value);
-      if (value.LowerCaseEqualsLiteral("password")) resetValue = true;
-    }
-
-    if (resetValue) {
+    if (value.LowerCaseEqualsLiteral("off") || input->HasBeenTypePassword()) {
       input->Reset();
     }
   }
