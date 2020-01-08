@@ -50,5 +50,11 @@ DllServices::NotifyDllLoad(const bool aIsMainThread, const nsString& aDllName)
   obsServ->NotifyObservers(nullptr, topic, aDllName.get());
 }
 
-} 
+void
+DllServices::NotifyUntrustedModuleLoads(
+  const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents)
+{
+}
+
+}
 
