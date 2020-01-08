@@ -805,7 +805,9 @@ class MozPromise : public MozPromiseBase {
                    mMagic3 == sMagic && mMagic4 == &mMutex);
     RefPtr<ThenValueBase> thenValue = aThenValue;
     MutexAutoLock lock(mMutex);
-    MOZ_DIAGNOSTIC_ASSERT(!IsExclusive || !mHaveRequest);
+    
+    
+    
     mHaveRequest = true;
     PROMISE_LOG("%s invoking Then() [this=%p, aThenValue=%p, isPending=%d]",
                 aCallSite, this, thenValue.get(), (int)IsPending());
@@ -916,7 +918,9 @@ class MozPromise : public MozPromiseBase {
   void ChainTo(already_AddRefed<Private> aChainedPromise,
                const char* aCallSite) {
     MutexAutoLock lock(mMutex);
-    MOZ_DIAGNOSTIC_ASSERT(!IsExclusive || !mHaveRequest);
+    
+    
+    
     mHaveRequest = true;
     RefPtr<Private> chainedPromise = aChainedPromise;
     PROMISE_LOG(
@@ -1081,7 +1085,12 @@ class MozPromise<ResolveValueT, RejectValueT, IsExclusive>::Private
 };
 
 
-typedef MozPromise<bool, nsresult,  false> GenericPromise;
+typedef MozPromise<bool, nsresult,  true> GenericPromise;
+
+
+
+typedef MozPromise<bool, nsresult,  false>
+    GenericNonExclusivePromise;
 
 
 
