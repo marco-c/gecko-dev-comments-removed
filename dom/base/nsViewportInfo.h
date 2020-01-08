@@ -28,6 +28,10 @@ class MOZ_STACK_CLASS nsViewportInfo
       AutoSize,
       FixedSize,
     };
+    enum class AutoScaleFlag {
+      AutoScale,
+      FixedScale,
+    };
     enum class ZoomFlag {
       AllowZoom,
       DisallowZoom,
@@ -52,12 +56,13 @@ class MOZ_STACK_CLASS nsViewportInfo
                    const mozilla::CSSToScreenScale& aMaxZoom,
                    const mozilla::CSSSize& aSize,
                    AutoSizeFlag aAutoSizeFlag,
+                   AutoScaleFlag aAutoScaleFlag,
                    ZoomFlag aZoomFlag) :
                      mDefaultZoom(aDefaultZoom),
                      mMinZoom(aMinZoom),
                      mMaxZoom(aMaxZoom),
                      mSize(aSize),
-                     mDefaultZoomValid(true),
+                     mDefaultZoomValid(aAutoScaleFlag != AutoScaleFlag::AutoScale),
                      mAutoSize(aAutoSizeFlag == AutoSizeFlag::AutoSize),
                      mAllowZoom(aZoomFlag == ZoomFlag::AllowZoom)
     {
@@ -108,6 +113,8 @@ class MOZ_STACK_CLASS nsViewportInfo
     
     mozilla::CSSSize mSize;
 
+    
+    
     
     
     bool mDefaultZoomValid;
