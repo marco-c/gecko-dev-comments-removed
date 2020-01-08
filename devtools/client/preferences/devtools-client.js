@@ -312,3 +312,10 @@ pref("devtools.responsive.reloadConditions.touchSimulation", false);
 pref("devtools.responsive.reloadConditions.userAgent", false);
 
 pref("devtools.responsive.reloadNotification.enabled", true);
+
+
+#ifdef MOZILLA_OFFICIAL
+  pref("devtools.aboutdebugging.showSystemAddons", false);
+#else
+  pref("devtools.aboutdebugging.showSystemAddons", true);
+#endif
