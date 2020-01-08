@@ -13731,6 +13731,15 @@ class CGGlobalNames(CGGeneric):
             entries.append((name, nativeEntry))
 
         
+        
+        
+        if len(entries) == 0:
+            CGGeneric.__init__(self, define=dedent('''
+                static_assert(false, "No WebIDL global name entries!");
+                '''))
+            return
+
+        
         phf = PerfectHash(entries, GLOBAL_NAMES_PHF_SIZE)
 
         
