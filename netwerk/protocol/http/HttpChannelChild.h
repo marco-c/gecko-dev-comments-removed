@@ -363,45 +363,45 @@ private:
   
   Atomic<bool, ReleaseAcquire> mFlushedForDiversion;
 
-  bool mIsFromCache;
-  bool mCacheEntryAvailable;
-  bool mAltDataCacheEntryAvailable;
+  uint8_t mIsFromCache : 1;
+  uint8_t mCacheEntryAvailable : 1;
+  uint8_t mAltDataCacheEntryAvailable : 1;
 
   
-  bool mSendResumeAt;
+  uint8_t mSendResumeAt : 1;
 
-  bool mKeptAlive; 
-
-  
-  
-  bool mSuspendSent;
+  uint8_t mKeptAlive : 1; 
 
   
   
-  bool mSynthesizedResponse;
+  uint8_t mSuspendSent : 1;
 
   
   
-  bool mShouldInterceptSubsequentRedirect;
-  
-  
-  bool mRedirectingForSubsequentSynthesizedResponse;
+  uint8_t mSynthesizedResponse : 1;
 
   
   
-  bool mPostRedirectChannelShouldIntercept;
+  uint8_t mShouldInterceptSubsequentRedirect : 1;
   
   
-  
-  bool mPostRedirectChannelShouldUpgrade;
+  uint8_t mRedirectingForSubsequentSynthesizedResponse : 1;
 
   
   
-  bool mShouldParentIntercept;
+  uint8_t mPostRedirectChannelShouldIntercept : 1;
+  
+  
+  
+  uint8_t mPostRedirectChannelShouldUpgrade : 1;
 
   
   
-  bool mSuspendParentAfterSynthesizeResponse;
+  uint8_t mShouldParentIntercept : 1;
+
+  
+  
+  uint8_t mSuspendParentAfterSynthesizeResponse : 1;
 
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
