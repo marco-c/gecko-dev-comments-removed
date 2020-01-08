@@ -10,6 +10,7 @@
 #include <algorithm>  
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
@@ -200,13 +201,21 @@ Maybe<bool> ModuleEvaluator::IsModuleTrusted(
   }
   ToLowerCase(dllLeafLower);  
 
-#if ENABLE_TESTS
+  
+  
+  
   int scoreThreshold = 100;
+#ifdef ENABLE_TESTS
   
-  
-  if (dllLeafLower.EqualsLiteral("mozglue.dll") ||
-      dllLeafLower.EqualsLiteral("modules-test.dll")) {
-    scoreThreshold = 99999;
+  if (mozilla::EnvHasValue("XPCSHELL_TEST_PROFILE_DIR")) {
+    
+    
+    
+    
+    if (dllLeafLower.EqualsLiteral("untrusted-startup-test-dll.dll") ||
+        dllLeafLower.EqualsLiteral("modules-test.dll")) {
+      scoreThreshold = 99999;
+    }
   }
 #else
   static const int scoreThreshold = 100;

@@ -56,7 +56,7 @@ add_task(async function test_send_ping() {
 
     
     
-    { nameMatch: /mozglue.dll/i, expectedTrusted: false,
+    { nameMatch: /untrusted-startup-test-dll.dll/i, expectedTrusted: false,
         isStartup: true, wasFound: false },
     { nameMatch: /kernelbase.dll/i, expectedTrusted: true,
         isStartup: true, wasFound: false },
