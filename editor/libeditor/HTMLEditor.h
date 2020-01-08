@@ -1533,6 +1533,26 @@ protected:
 
 
 
+  nsresult InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
+                                          const nsAString& aCitation,
+                                          bool aInsertHTML,
+                                          nsINode** aNodeInserted);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   template<typename PT, typename CT>
