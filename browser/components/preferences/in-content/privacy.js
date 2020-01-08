@@ -23,6 +23,12 @@ ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingUiEnabled",
                                       "browser.contentblocking.ui.enabled");
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataUiEnabled",
+                                      "browser.contentblocking.cookies-site-data.ui.enabled");
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersRecommended",
+                                      "browser.contentblocking.cookies-site-data.ui.reject-trackers.recommended");
+
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingEnabled",
                                       "browser.contentblocking.enabled");
 
@@ -267,6 +273,7 @@ var gPrivacyPane = {
     }
 
     this.trackingProtectionReadPrefs();
+    this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
 
     this.updateContentBlockingVisibility();
@@ -275,6 +282,14 @@ var gPrivacyPane = {
       gPrivacyPane.trackingProtectionReadPrefs.bind(gPrivacyPane));
     Preferences.get("privacy.trackingprotection.pbmode.enabled").on("change",
       gPrivacyPane.trackingProtectionReadPrefs.bind(gPrivacyPane));
+
+    
+    Preferences.get("network.cookie.cookieBehavior").on("change",
+      gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane));
+    Preferences.get("network.cookie.lifetimePolicy").on("change",
+      gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane));
+    Preferences.get("browser.privatebrowsing.autostart").on("change",
+      gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane));
 
     setEventListener("trackingProtectionExceptions", "command",
       gPrivacyPane.showTrackingProtectionExceptions);
@@ -476,6 +491,7 @@ var gPrivacyPane = {
 
 
   updateContentBlockingVisibility() {
+    
     let visibleState = {
       "contentBlockingHeader": true,
       "contentBlockingDescription": true,
@@ -490,6 +506,31 @@ var gPrivacyPane = {
     };
     for (let id in visibleState) {
       document.getElementById(id).hidden = contentBlockingUiEnabled != visibleState[id];
+    }
+
+    
+    visibleState = {
+      "acceptCookies": false,
+      "blockCookies": true,
+    };
+    for (let id in visibleState) {
+      document.getElementById(id).hidden = contentBlockingCookiesAndSiteDataUiEnabled != visibleState[id];
+    }
+    if (contentBlockingCookiesAndSiteDataUiEnabled) {
+      
+      
+      let keepUntil = document.getElementById("keepRow");
+      document.getElementById("acceptCookies").removeChild(keepUntil);
+      let blockThirdPartyRow = document.getElementById("blockThirdPartyRow");
+      document.getElementById("blockCookies").appendChild(keepUntil);
+      keepUntil.classList.remove("indent"); 
+      keepUntil.setAttribute("style", "margin-top: 1em"); 
+
+      
+      let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackers");
+      if (contentBlockingCookiesAndSiteDataRejectTrackersRecommended) {
+        document.l10n.setAttributes(blockCookiesFromTrackers, "sitedata-block-trackers-option-recommended");
+      }
     }
   },
 
@@ -563,6 +604,51 @@ var gPrivacyPane = {
       tpControl.value = "private";
     } else {
       tpControl.value = "never";
+    }
+  },
+
+  
+
+
+  networkCookieBehaviorReadPrefs() {
+    let behavior = Preferences.get("network.cookie.cookieBehavior").value;
+    let blockCookiesCtrl = document.getElementById("blockCookies");
+    let blockCookiesLabel = document.getElementById("blockCookiesLabel");
+    let blockCookiesMenu = document.getElementById("blockCookiesMenu");
+    let keepUntilLabel = document.getElementById("keepUntil");
+    let keepUntilMenu = document.getElementById("keepCookiesUntil");
+
+    let blockCookies = (behavior != 0);
+    let cookieBehaviorLocked = Services.prefs.prefIsLocked("network.cookie.cookieBehavior");
+    let blockCookiesControlsDisabled = !blockCookies || cookieBehaviorLocked;
+    blockCookiesLabel.disabled = blockCookiesMenu.disabled = blockCookiesControlsDisabled;
+
+    let completelyBlockCookies = (behavior == 2);
+    let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
+    let cookieExpirationLocked = Services.prefs.prefIsLocked("network.cookie.lifetimePolicy");
+    let keepUntilControlsDisabled = privateBrowsing || completelyBlockCookies || cookieExpirationLocked;
+    keepUntilLabel.disabled = keepUntilMenu.disabled = keepUntilControlsDisabled;
+
+    switch (behavior) {
+      case Ci.nsICookieService.BEHAVIOR_ACCEPT:
+        blockCookiesCtrl.value = "allow";
+        break;
+      case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
+        blockCookiesCtrl.value = "disallow";
+        blockCookiesMenu.value = "all-third-parties";
+        break;
+      case Ci.nsICookieService.BEHAVIOR_REJECT:
+        blockCookiesCtrl.value = "disallow";
+        blockCookiesMenu.value = "always";
+        break;
+      case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
+        blockCookiesCtrl.value = "disallow";
+        blockCookiesMenu.value = "unvisited";
+        break;
+      case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
+        blockCookiesCtrl.value = "disallow";
+        blockCookiesMenu.value = "trackers";
+        break;
     }
   },
 
@@ -974,13 +1060,13 @@ var gPrivacyPane = {
   readAcceptThirdPartyCookies() {
     var pref = Preferences.get("network.cookie.cookieBehavior");
     switch (pref.value) {
-      case 0:
+      case Ci.nsICookieService.BEHAVIOR_ACCEPT:
         return "always";
-      case 1:
+      case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
         return "never";
-      case 2:
+      case Ci.nsICookieService.BEHAVIOR_REJECT:
         return "never";
-      case 3:
+      case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
         return "visited";
       default:
         return undefined;
@@ -991,11 +1077,80 @@ var gPrivacyPane = {
     var accept = document.getElementById("acceptThirdPartyMenu").selectedItem;
     switch (accept.value) {
       case "always":
-        return 0;
+        return Ci.nsICookieService.BEHAVIOR_ACCEPT;
       case "visited":
-        return 3;
+        return Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN;
       case "never":
-        return 1;
+        return Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
+      default:
+        return undefined;
+    }
+  },
+
+  
+
+
+
+
+
+
+  readBlockCookies() {
+    
+    let pref = Preferences.get("network.cookie.cookieBehavior");
+    let blockCookies = (pref.value != 0);
+
+    
+    
+    return blockCookies ? "disallow" : "allow";
+  },
+
+  
+
+
+
+  writeBlockCookies() {
+    let block = document.getElementById("blockCookies");
+    let blockCookiesMenu = document.getElementById("blockCookiesMenu");
+
+    
+    if (block.value == "disallow") {
+      blockCookiesMenu.selectedIndex = 0;
+      return this.writeBlockCookiesFrom();
+    }
+
+    return Ci.nsICookieService.BEHAVIOR_ACCEPT;
+  },
+
+  
+
+
+  readBlockCookiesFrom() {
+    let pref = Preferences.get("network.cookie.cookieBehavior");
+    switch (pref.value) {
+      case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
+        return "all-third-parties";
+      case Ci.nsICookieService.BEHAVIOR_REJECT:
+        return "always";
+      case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
+        return "unvisited";
+      case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
+        return "trackers";
+      default:
+        return undefined;
+    }
+  },
+
+  writeBlockCookiesFrom() {
+    let block = document.getElementById("blockCookiesMenu").selectedItem;
+    switch (block.value) {
+      case "trackers":
+        return Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER;
+      case "unvisited":
+        return Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN;
+      case "always":
+        return Ci.nsICookieService.BEHAVIOR_REJECT;
+      case "all-third-parties":
+        return Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
       default:
         return undefined;
     }
