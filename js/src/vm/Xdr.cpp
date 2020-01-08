@@ -453,7 +453,25 @@ XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer)
     }
 
     
+    
+    
     DepthFirstSliceIterator dfs(cx(), tree_);
+
+    size_t totalLength = buffer.length();
+    auto sliceCounter = [&](const Slice& slice) -> bool {
+        totalLength += slice.sliceLength;
+        return true;
+    };
+
+    if (!dfs.iterate(sliceCounter)) {
+        ReportOutOfMemory(cx());
+        return fail(JS::TranscodeResult_Throw);
+    };
+
+    if (!buffer.reserve(totalLength)) {
+        ReportOutOfMemory(cx());
+        return fail(JS::TranscodeResult_Throw);
+    }
 
     auto sliceCopier = [&](const Slice& slice) -> bool {
         
@@ -463,7 +481,8 @@ XDRIncrementalEncoder::linearize(JS::TranscodeBuffer& buffer)
         MOZ_ASSERT(buffer.length() % sizeof(XDRAlignment) == 0);
         MOZ_ASSERT(slice.sliceLength % sizeof(XDRAlignment) == 0);
 
-        return buffer.append(slices_.begin() + slice.sliceBegin, slice.sliceLength);
+        buffer.infallibleAppend(slices_.begin() + slice.sliceBegin, slice.sliceLength);
+        return true;
     };
 
     if (!dfs.iterate(sliceCopier)) {
