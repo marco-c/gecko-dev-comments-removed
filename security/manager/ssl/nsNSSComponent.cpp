@@ -666,7 +666,12 @@ nsNSSComponent::MaybeImportEnterpriseRoots()
   if (!importEnterpriseRoots) {
     return;
   }
+  ImportEnterpriseRoots();
+}
 
+void
+nsNSSComponent::ImportEnterpriseRoots()
+{
   UniqueCERTCertList roots;
   nsresult rv = GatherEnterpriseRoots(roots);
   if (NS_FAILED(rv)) {
@@ -676,12 +681,11 @@ nsNSSComponent::MaybeImportEnterpriseRoots()
 
   {
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(!mEnterpriseRoots);
     mEnterpriseRoots = std::move(roots);
   }
 }
 
-NS_IMETHODIMP
+nsresult
 nsNSSComponent::TrustLoaded3rdPartyRoots()
 {
   
@@ -774,9 +778,11 @@ nsNSSComponent::GetEnterpriseRoots(nsIX509CertList** enterpriseRoots)
 class LoadLoadableRootsTask final : public Runnable
 {
 public:
-  explicit LoadLoadableRootsTask(nsNSSComponent* nssComponent)
+  explicit LoadLoadableRootsTask(nsNSSComponent* nssComponent,
+                                 bool importEnterpriseRoots)
     : Runnable("LoadLoadableRootsTask")
     , mNSSComponent(nssComponent)
+    , mImportEnterpriseRoots(importEnterpriseRoots)
   {
     MOZ_ASSERT(nssComponent);
   }
@@ -789,6 +795,7 @@ private:
   NS_IMETHOD Run() override;
   nsresult LoadLoadableRoots();
   RefPtr<nsNSSComponent> mNSSComponent;
+  bool mImportEnterpriseRoots;
   nsCOMPtr<nsIThread> mThread;
 };
 
@@ -806,9 +813,6 @@ LoadLoadableRootsTask::Dispatch()
   
   return mThread->Dispatch(this, NS_DISPATCH_NORMAL);
 }
-
-
-
 
 NS_IMETHODIMP
 LoadLoadableRootsTask::Run()
@@ -830,8 +834,8 @@ LoadLoadableRootsTask::Run()
     return NS_OK;
   }
 
-  nsresult rv = LoadLoadableRoots();
-  if (NS_FAILED(rv)) {
+  nsresult loadLoadableRootsResult = LoadLoadableRoots();
+  if (NS_WARN_IF(NS_FAILED(loadLoadableRootsResult))) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("LoadLoadableRoots failed"));
     
     
@@ -839,22 +843,35 @@ LoadLoadableRootsTask::Run()
     
   }
 
-  if (NS_SUCCEEDED(rv)) {
+  
+  
+  if (NS_SUCCEEDED(loadLoadableRootsResult)) {
     if (NS_FAILED(LoadExtendedValidationInfo())) {
       
       
       MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("failed to load EV info"));
     }
   }
+
+  if (mImportEnterpriseRoots) {
+    mNSSComponent->ImportEnterpriseRoots();
+  }
+  nsresult rv = mNSSComponent->TrustLoaded3rdPartyRoots();
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error,
+            ("failed to trust loaded 3rd party roots"));
+  }
+
   {
     MonitorAutoLock rootsLoadedLock(mNSSComponent->mLoadableRootsLoadedMonitor);
     mNSSComponent->mLoadableRootsLoaded = true;
     
     
-    mNSSComponent->mLoadableRootsLoadedResult = rv;
+    mNSSComponent->mLoadableRootsLoadedResult = loadLoadableRootsResult;
     rv = mNSSComponent->mLoadableRootsLoadedMonitor.NotifyAll();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      MOZ_LOG(gPIPNSSLog, LogLevel::Error,
+              ("failed to notify loadable roots loaded monitor"));
     }
   }
 
@@ -1857,7 +1874,6 @@ nsNSSComponent::InitializeNSS()
   
   
   MaybeEnableFamilySafetyCompatibility();
-  MaybeImportEnterpriseRoots();
 
   ConfigureTLSSessionIdentifiers();
 
@@ -1939,18 +1955,14 @@ nsNSSComponent::InitializeNSS()
     mMitmDetecionEnabled =
       Preferences::GetBool("security.pki.mitm_canary_issuer.enabled", true);
 
-    nsCOMPtr<nsINSSComponent> handle(this);
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsNSSComponent::TrustLoaded3rdPartyRoots",
-    [handle]() {
-      MOZ_ALWAYS_SUCCEEDS(handle->TrustLoaded3rdPartyRoots());
-    }));
-
     
     
     setValidationOptions(true, lock);
 
+    bool importEnterpriseRoots = Preferences::GetBool(kEnterpriseRootModePref,
+                                                      false);
     RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
-      new LoadLoadableRootsTask(this));
+      new LoadLoadableRootsTask(this, importEnterpriseRoots));
     rv = loadLoadableRootsTask->Dispatch();
     if (NS_FAILED(rv)) {
       return rv;
@@ -1967,21 +1979,24 @@ nsNSSComponent::ShutdownNSS()
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ShutdownNSS\n"));
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MutexAutoLock lock(mMutex);
-
+  bool loadLoadableRootsTaskDispatched;
+  {
+    MutexAutoLock lock(mMutex);
+    loadLoadableRootsTaskDispatched = mLoadLoadableRootsTaskDispatched;
+  }
   
   
   
   
   
   
-  if (mLoadLoadableRootsTaskDispatched) {
+  if (loadLoadableRootsTaskDispatched) {
     Unused << BlockUntilLoadableRootsLoaded();
-    mLoadLoadableRootsTaskDispatched = false;
   }
 
   ::mozilla::psm::UnloadLoadableRoots();
 
+  MutexAutoLock lock(mMutex);
 #ifdef XP_WIN
   mFamilySafetyRoot = nullptr;
   mEnterpriseRoots = nullptr;
