@@ -157,6 +157,9 @@ public:
   void SetPreservesPitch(bool aPreservesPitch);
   void SetLooping(bool aLooping);
 
+  
+  RefPtr<GenericPromise> SetSink(AudioDeviceInfo* aSink);
+
   bool GetMinimizePreroll() const { return mMinimizePreroll; }
 
   

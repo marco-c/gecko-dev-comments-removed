@@ -296,6 +296,8 @@ public:
   
   void SetVideoDecodeMode(VideoDecodeMode aMode);
 
+  RefPtr<GenericPromise> InvokeSetSink(RefPtr<AudioDeviceInfo> aSink);
+
 private:
   class StateObject;
   class DecodeMetadataState;
@@ -368,6 +370,16 @@ private:
                                                TrackInfo::kVideoTrack));
 
   void SetVideoDecodeModeInternal(VideoDecodeMode aMode);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<GenericPromise> SetSink(RefPtr<AudioDeviceInfo> aSink);
 
 protected:
   virtual ~MediaDecoderStateMachine();
@@ -447,7 +459,8 @@ protected:
   
   
   
-  void StartMediaSink();
+  
+  nsresult StartMediaSink();
 
   
   void PlayStateChanged();
@@ -738,6 +751,9 @@ private:
 
   
   Canonical<bool> mIsAudioDataAudible;
+
+  
+  Atomic<int> mSetSinkRequestsCount;
 
 public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() const;
