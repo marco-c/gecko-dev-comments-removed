@@ -427,7 +427,7 @@ class RemoteAutomation(Automation):
             if stagedShutdown:
                 
                 try:
-                    self.device.pkill(self.procName, sig=3, attempts=1)
+                    self.device.pkill(self.procName, sig=3, attempts=1, root=True)
                 except ADBTimeoutError:
                     raise
                 except:  
@@ -435,7 +435,7 @@ class RemoteAutomation(Automation):
                 time.sleep(3)
                 
                 try:
-                    self.device.pkill(self.procName, sig=6, attempts=1)
+                    self.device.pkill(self.procName, sig=6, attempts=1, root=True)
                 except ADBTimeoutError:
                     raise
                 except:  
@@ -447,15 +447,30 @@ class RemoteAutomation(Automation):
                         print("%s still alive after SIGABRT: waiting..." % self.procName)
                         time.sleep(5)
                     else:
-                        return
+                        break
                     retries += 1
-                try:
-                    self.device.pkill(self.procName, sig=9, attempts=1)
-                except ADBTimeoutError:
-                    raise
-                except:  
-                    print("%s still alive after SIGKILL!" % self.procName)
+                if self.device.process_exist(self.procName):
+                    try:
+                        self.device.pkill(self.procName, sig=9, attempts=1, root=True)
+                    except ADBTimeoutError:
+                        raise
+                    except:  
+                        print("%s still alive after SIGKILL!" % self.procName)
                 if self.device.process_exist(self.procName):
                     self.device.stop_application(self.procName)
             else:
                 self.device.stop_application(self.procName)
+            
+            
+            
+            crashreporter = "%s.CrashReporter" % self.procName
+            if self.device.process_exist(crashreporter):
+                print("Warning: %s unexpectedly found running. Killing..." % crashreporter)
+                try:
+                    self.device.pkill(crashreporter, root=True)
+                except ADBTimeoutError:
+                    raise
+                except:  
+                    pass
+            if self.device.process_exist(crashreporter):
+                print("ERROR: %s still running!!" % crashreporter)
