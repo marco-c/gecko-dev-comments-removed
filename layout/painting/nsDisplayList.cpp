@@ -9421,8 +9421,8 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
 {
   bool snap;
   float appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-  nsRect displayBounds = GetBounds(aDisplayListBuilder, &snap);
-  LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(displayBounds, appUnitsPerDevPixel);
+  nsRect displayBound = GetBounds(aDisplayListBuilder, &snap);
+  LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(displayBound, appUnitsPerDevPixel);
 
   Maybe<wr::WrImageMask> mask = aManager->CommandBuilder().BuildWrMaskImage(this, aBuilder, aResources,
                                                                             aSc, aDisplayListBuilder,
@@ -9455,9 +9455,7 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
                    Nothing(),
                    &clipId);
     sc = layer.ptr();
-    
-    
-    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Nothing());
+    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Some(clipId));
   }
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, *sc, aManager, aDisplayListBuilder);
@@ -9737,41 +9735,11 @@ nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuild
     }
   }
 
-  bool snap;
-  float auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-  nsRect displayBounds = GetBounds(aDisplayListBuilder, &snap);
-  auto bounds = LayoutDeviceRect::FromAppUnits(displayBounds, auPerDevPixel);
-  
-  
-  
-  
-  wr::WrClipId clipId =
-    aBuilder.DefineClip(Nothing(), wr::ToRoundedLayoutRect(bounds));
-
   float opacity = mFrame->StyleEffects()->mOpacity;
-  StackingContextHelper sc(
-      aSc,
-      aBuilder,
-      wrFilters,
-      LayoutDeviceRect(),
-      nullptr,
-      nullptr,
-      opacity != 1.0f && mHandleOpacity ? &opacity : nullptr,
-      nullptr,
-      nullptr,
-      gfx::CompositionOp::OP_OVER,
-      true,
-      false,
-      Nothing(),
-      &clipId);
-
-  
-  
-  aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Nothing());
+  StackingContextHelper sc(aSc, aBuilder, wrFilters, LayoutDeviceRect(), nullptr,
+                           nullptr, opacity != 1.0f && mHandleOpacity ? &opacity : nullptr);
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, sc, aManager, aDisplayListBuilder);
-
-  aManager->CommandBuilder().PopOverrideForASR(GetActiveScrolledRoot());
   return true;
 }
 
