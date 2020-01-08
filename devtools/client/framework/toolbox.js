@@ -2265,7 +2265,14 @@ Toolbox.prototype = {
 
 
   get preferenceFront() {
-    return this.target.client.mainRoot.getFront("preference");
+    const frontPromise = this.target.client.mainRoot.getFront("preference");
+    frontPromise.then(front => {
+      
+      
+      this._preferenceFront = front;
+    });
+
+    return frontPromise;
   },
 
   
@@ -2275,6 +2282,7 @@ Toolbox.prototype = {
 
   async toggleNoAutohide() {
     const front = await this.preferenceFront;
+
     const toggledValue = !(await this._isDisableAutohideEnabled());
 
     front.setBoolPref(DISABLE_AUTOHIDE_PREF, toggledValue);
