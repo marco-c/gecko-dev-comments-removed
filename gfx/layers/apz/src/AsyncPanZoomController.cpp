@@ -500,9 +500,6 @@ typedef PlatformSpecificStateBase
 
 
 
-
-
-
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -3942,42 +3939,6 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncViewportTransform(
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!gfxPrefs::APZAllowCheckerboarding() &&
-      !mLastContentPaintMetrics.GetDisplayPort().IsEmpty()) {
-    CSSSize viewportSize = currentViewport.Size();
-    CSSPoint maxViewportOffset =
-        lastPaintViewport.TopLeft() +
-        CSSPoint(mLastContentPaintMetrics.GetDisplayPort().XMost() -
-                     viewportSize.width,
-                 mLastContentPaintMetrics.GetDisplayPort().YMost() -
-                     viewportSize.height);
-    CSSPoint minViewportOffset =
-        lastPaintViewport.TopLeft() +
-        mLastContentPaintMetrics.GetDisplayPort().TopLeft();
-
-    if (minViewportOffset.x < maxViewportOffset.x) {
-      currentViewportOffset.x = clamped(
-          currentViewportOffset.x, minViewportOffset.x, maxViewportOffset.x);
-    }
-    if (minViewportOffset.y < maxViewportOffset.y) {
-      currentViewportOffset.y = clamped(
-          currentViewportOffset.y, minViewportOffset.y, maxViewportOffset.y);
-    }
-  }
-
-  
-  
-  
-  
-  
   CSSToParentLayerScale2D effectiveZoom =
       Metrics().LayersPixelsPerCSSPixel() * LayerToParentLayerScale(1.0f);
   ParentLayerPoint translation =
@@ -4001,32 +3962,6 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncTransform(
   }
 
   CSSPoint currentScrollOffset = GetEffectiveScrollOffset(aMode);
-
-  
-  
-  if (!gfxPrefs::APZAllowCheckerboarding() &&
-      !mLastContentPaintMetrics.GetDisplayPort().IsEmpty()) {
-    CSSSize compositedSize =
-        mLastContentPaintMetrics.CalculateCompositedSizeInCssPixels();
-    CSSPoint maxScrollOffset =
-        lastPaintScrollOffset +
-        CSSPoint(mLastContentPaintMetrics.GetDisplayPort().XMost() -
-                     compositedSize.width,
-                 mLastContentPaintMetrics.GetDisplayPort().YMost() -
-                     compositedSize.height);
-    CSSPoint minScrollOffset =
-        lastPaintScrollOffset +
-        mLastContentPaintMetrics.GetDisplayPort().TopLeft();
-
-    if (minScrollOffset.x < maxScrollOffset.x) {
-      currentScrollOffset.x =
-          clamped(currentScrollOffset.x, minScrollOffset.x, maxScrollOffset.x);
-    }
-    if (minScrollOffset.y < maxScrollOffset.y) {
-      currentScrollOffset.y =
-          clamped(currentScrollOffset.y, minScrollOffset.y, maxScrollOffset.y);
-    }
-  }
 
   CSSToParentLayerScale2D effectiveZoom = GetEffectiveZoom(aMode);
   ParentLayerPoint translation =
@@ -4230,8 +4165,7 @@ void AsyncPanZoomController::FlushActiveCheckerboardReport() {
 bool AsyncPanZoomController::IsCurrentlyCheckerboarding() const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
-  if (!gfxPrefs::APZAllowCheckerboarding() ||
-      mScrollMetadata.IsApzForceDisabled()) {
+  if (mScrollMetadata.IsApzForceDisabled()) {
     return false;
   }
 
