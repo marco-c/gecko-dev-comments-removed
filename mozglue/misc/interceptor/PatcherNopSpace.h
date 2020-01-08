@@ -17,6 +17,8 @@ namespace interceptor {
 template <typename VMPolicy>
 class WindowsDllNopSpacePatcher final : public WindowsDllPatcherBase<VMPolicy>
 {
+  typedef typename VMPolicy::MMPolicyT MMPolicyT;
+
   
   mozilla::Vector<void*> mPatchedFns;
 
