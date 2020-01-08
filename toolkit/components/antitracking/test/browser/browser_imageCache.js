@@ -6,13 +6,13 @@ AntiTracking.runTest("Image cache - should load the image twice.",
     
     let img = document.createElement("img");
     document.body.appendChild(img);
-    img.src = "https://tracking.example.com/browser/toolkit/components/antitracking/test/browser/image.sjs",
+    img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
     await new Promise(resolve => { img.onload = resolve; });
     ok(true, "Image 1 loaded");
 
     img = document.createElement("img");
     document.body.appendChild(img);
-    img.src = "https://tracking.example.com/browser/toolkit/components/antitracking/test/browser/image.sjs",
+    img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
     await new Promise(resolve => { img.onload = resolve; });
     ok(true, "Image 2 loaded");
   },
@@ -22,13 +22,13 @@ AntiTracking.runTest("Image cache - should load the image twice.",
     
     let img = document.createElement("img");
     document.body.appendChild(img);
-    img.src = "https://tracking.example.com/browser/toolkit/components/antitracking/test/browser/image.sjs",
+    img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
     await new Promise(resolve => { img.onload = resolve; });
     ok(true, "Image 3 loaded");
 
     img = document.createElement("img");
     document.body.appendChild(img);
-    img.src = "https://tracking.example.com/browser/toolkit/components/antitracking/test/browser/image.sjs",
+    img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs",
     await new Promise(resolve => { img.onload = resolve; });
     ok(true, "Image 4 loaded");
   },
@@ -40,7 +40,7 @@ AntiTracking.runTest("Image cache - should load the image twice.",
 
 
 add_task(async _ => {
-  await fetch("https://tracking.example.com/browser/toolkit/components/antitracking/test/browser/image.sjs?result")
+  await fetch("https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs?result")
     .then(r => r.text())
     .then(text => {
       is(text, 2, "The image should be loaded correctly.");
