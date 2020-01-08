@@ -9,15 +9,9 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <stdint.h>
 
-#include "js/Conversions.h"
-#include "js/Date.h"
-#include "js/Initialization.h"
-#include "js/Value.h"
 #include "threading/ExclusiveData.h"
 
 namespace js {
@@ -50,6 +44,20 @@ InitDateTimeState();
 
 extern void
 FinishDateTimeState();
+
+enum class ResetTimeZoneMode : bool {
+  DontResetIfOffsetUnchanged,
+  ResetEvenIfOffsetUnchaged,
+};
+
+
+
+
+
+
+
+extern void
+ResetTimeZoneInternal(ResetTimeZoneMode mode);
 
 
 
@@ -134,11 +142,11 @@ class DateTimeInfo
     
     
     
-    friend void JS::ResetTimeZone();
+    friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
 
-    static void updateTimeZoneAdjustment() {
+    static void updateTimeZoneAdjustment(ResetTimeZoneMode mode) {
         auto guard = instance->lock();
-        guard->internalUpdateTimeZoneAdjustment();
+        guard->internalUpdateTimeZoneAdjustment(mode);
     }
 
     
@@ -178,7 +186,7 @@ class DateTimeInfo
     static const int64_t RangeExpansionAmount = 30 * SecondsPerDay;
 
     int64_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
-    void internalUpdateTimeZoneAdjustment();
+    void internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
 
     void sanityCheck();
 };

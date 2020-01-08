@@ -834,6 +834,14 @@ nsRFPService::UpdateRFPPref()
     }
   }
 
+  
+  
+#if defined(XP_WIN)
+  _tzset();
+#else
+  tzset();
+#endif
+
   nsJSUtils::ResetTimeZone();
 }
 
