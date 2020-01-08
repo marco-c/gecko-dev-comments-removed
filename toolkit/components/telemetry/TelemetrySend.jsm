@@ -224,6 +224,18 @@ var TelemetrySend = {
   
 
 
+
+
+
+
+
+  sendingEnabled(ping = null) {
+    return TelemetrySendImpl.sendingEnabled(ping);
+  },
+
+  
+
+
   notifyCanUpload() {
     return TelemetrySendImpl.notifyCanUpload();
   },
@@ -1224,7 +1236,6 @@ var TelemetrySendImpl = {
   },
 
   
-
 
 
 
