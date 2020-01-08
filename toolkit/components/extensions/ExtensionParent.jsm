@@ -1052,7 +1052,8 @@ ParentAPIManager.init();
 
 
 class HiddenXULWindow {
-  constructor() {
+  constructor(privateMode) {
+    this.privateMode = privateMode;
     this._windowlessBrowser = null;
     this.waitInitialized = this.initWindowlessBrowser();
   }
@@ -1102,7 +1103,7 @@ class HiddenXULWindow {
     this.chromeShell = this._windowlessBrowser.docShell
                            .QueryInterface(Ci.nsIWebNavigation);
 
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+    if (this.privateMode) {
       let attrs = this.chromeShell.getOriginAttributes();
       attrs.privateBrowsingId = 1;
       this.chromeShell.setOriginAttributes(attrs);
@@ -1165,6 +1166,15 @@ class HiddenXULWindow {
 }
 
 
+let _hiddenWindows = new Map();
+
+function getHiddenWindow(privateMode = PrivateBrowsingUtils.permanentPrivateBrowsing) {
+  if (!_hiddenWindows.has(privateMode)) {
+    _hiddenWindows.set(privateMode, new HiddenXULWindow(privateMode));
+  }
+
+  return _hiddenWindows.get(privateMode);
+}
 
 
 
@@ -1179,13 +1189,13 @@ class HiddenXULWindow {
 
 
 
-class HiddenExtensionPage extends HiddenXULWindow {
+
+class HiddenExtensionPage {
   constructor(extension, viewType) {
     if (!extension || !viewType) {
       throw new Error("extension and viewType parameters are mandatory");
     }
 
-    super();
     this.extension = extension;
     this.viewType = viewType;
     this.browser = null;
@@ -1203,8 +1213,6 @@ class HiddenExtensionPage extends HiddenXULWindow {
       this.browser.remove();
       this.browser = null;
     }
-
-    super.shutdown();
   }
 
   
@@ -1218,7 +1226,7 @@ class HiddenExtensionPage extends HiddenXULWindow {
       throw new Error("createBrowserElement called twice");
     }
 
-    this.browser = await super.createBrowserElement({
+    this.browser = await getHiddenWindow().createBrowserElement({
       "webextension-view-type": this.viewType,
       "remote": this.extension.remote ? "true" : null,
       "remoteType": this.extension.remote ?
