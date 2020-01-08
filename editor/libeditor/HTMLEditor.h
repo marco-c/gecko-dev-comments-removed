@@ -783,6 +783,17 @@ protected:
 
   nsresult LoadHTML(const nsAString& aInputString);
 
+  
+
+
+
+
+
+
+  nsresult
+  ReplaceHeadContentsWithSourceWithTransaction(
+    const nsAString& aSourceToInsert);
+
   nsresult GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
                                       bool aBlockLevel);
   nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);

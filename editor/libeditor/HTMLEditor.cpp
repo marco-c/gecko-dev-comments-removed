@@ -1214,14 +1214,9 @@ HTMLEditor::CollapseSelectionToDeepestNonTableFirstChild(Selection* aSelection,
   selection->Collapse(node, 0);
 }
 
-
-
-
-
-
-
-NS_IMETHODIMP
-HTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
+nsresult
+HTMLEditor::ReplaceHeadContentsWithSourceWithTransaction(
+              const nsAString& aSourceToInsert)
 {
   
   AutoTopLevelEditSubActionNotifier
@@ -1244,55 +1239,63 @@ HTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
 
   RefPtr<nsContentList> nodeList =
     document->GetElementsByTagName(NS_LITERAL_STRING("head"));
-  NS_ENSURE_TRUE(nodeList, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!nodeList)) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsCOMPtr<nsIContent> headNode = nodeList->Item(0);
-  NS_ENSURE_TRUE(headNode, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!headNode)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
   
-  nsAutoString inputString (aSourceToInsert);  
+  nsAutoString inputString(aSourceToInsert);
 
   
-  inputString.ReplaceSubstring(u"\r\n", u"\n");
+  inputString.ReplaceSubstring(NS_LITERAL_STRING("\r\n"),
+                               NS_LITERAL_STRING("\n"));
 
   
-  inputString.ReplaceSubstring(u"\r", u"\n");
+  inputString.ReplaceSubstring(NS_LITERAL_STRING("\r"),
+                               NS_LITERAL_STRING("\n"));
 
   AutoPlaceholderBatch beginBatching(this);
 
   
   RefPtr<nsRange> range = selection->GetRangeAt(0);
-  NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!range)) {
+    return NS_ERROR_FAILURE;
+  }
 
   ErrorResult err;
-  RefPtr<DocumentFragment> docfrag =
+  RefPtr<DocumentFragment> documentFragment =
     range->CreateContextualFragment(inputString, err);
 
   
   
 
   if (err.Failed()) {
-#ifdef DEBUG
-    printf("Couldn't create contextual fragment: error was %X\n",
-           err.ErrorCodeAsInt());
-#endif
     return err.StealNSResult();
   }
-  NS_ENSURE_TRUE(docfrag, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!documentFragment)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   while (nsCOMPtr<nsIContent> child = headNode->GetFirstChild()) {
     nsresult rv = DeleteNodeWithTransaction(*child);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
   int32_t offsetOfNewNode = 0;
 
   
-  while (nsCOMPtr<nsIContent> child = docfrag->GetFirstChild()) {
+  while (nsCOMPtr<nsIContent> child = documentFragment->GetFirstChild()) {
     nsresult rv =
       InsertNodeWithTransaction(*child,
                                 EditorRawDOMPoint(headNode, offsetOfNewNode++));
@@ -1362,13 +1365,15 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
   if (foundhead) {
     if (foundclosehead) {
       nsresult rv =
-        ReplaceHeadContentsWithHTML(Substring(beginhead, beginclosehead));
+        ReplaceHeadContentsWithSourceWithTransaction(
+          Substring(beginhead, beginclosehead));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     } else if (foundbody) {
       nsresult rv =
-        ReplaceHeadContentsWithHTML(Substring(beginhead, beginbody));
+        ReplaceHeadContentsWithSourceWithTransaction(
+          Substring(beginhead, beginbody));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1376,7 +1381,9 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
       
       
       
-      nsresult rv = ReplaceHeadContentsWithHTML(Substring(beginhead, endtotal));
+      nsresult rv =
+        ReplaceHeadContentsWithSourceWithTransaction(
+          Substring(beginhead, endtotal));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1387,14 +1394,15 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
     NS_NAMED_LITERAL_STRING(head, "<head>");
     if (foundclosehead) {
       nsresult rv =
-        ReplaceHeadContentsWithHTML(head + Substring(begintotal,
-                                                     beginclosehead));
+        ReplaceHeadContentsWithSourceWithTransaction(
+          head + Substring(begintotal, beginclosehead));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     } else if (foundbody) {
-      nsresult rv = ReplaceHeadContentsWithHTML(head + Substring(begintotal,
-                                                                 beginbody));
+      nsresult rv =
+        ReplaceHeadContentsWithSourceWithTransaction(
+          head + Substring(begintotal, beginbody));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1402,7 +1410,7 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
       
       
       
-      nsresult rv = ReplaceHeadContentsWithHTML(head);
+      nsresult rv = ReplaceHeadContentsWithSourceWithTransaction(head);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
