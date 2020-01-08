@@ -459,8 +459,7 @@ let BrowserUsageTelemetry = {
 
       if (details.alias &&
           engine.wrappedJSObject._internalAliases.includes(details.alias)) {
-        let aliasCountId =
-          [getSearchEngineId(engine), details.alias, source].join(".");
+        let aliasCountId = getSearchEngineId(engine) + ".alias";
         histogram.add(aliasCountId);
       }
     }
