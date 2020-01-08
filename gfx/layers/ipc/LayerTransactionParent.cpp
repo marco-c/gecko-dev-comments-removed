@@ -887,52 +887,9 @@ bool LayerTransactionParent::IsSameProcess() const {
 TransactionId LayerTransactionParent::FlushTransactionId(
     const VsyncId& aId, TimeStamp& aCompositeEnd) {
   if (mId.IsValid() && mPendingTransaction.IsValid() && !mVsyncRate.IsZero()) {
-    double latencyMs = (aCompositeEnd - mTxnStartTime).ToMilliseconds();
-    double latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-    int32_t fracLatencyNorm = lround(latencyNorm * 100.0);
-    Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME, fracLatencyNorm);
-
-    if (!(mTxnVsyncId == VsyncId()) && mVsyncStartTime) {
-      latencyMs = (aCompositeEnd - mVsyncStartTime).ToMilliseconds();
-      latencyNorm = latencyMs / mVsyncRate.ToMilliseconds();
-      fracLatencyNorm = lround(latencyNorm * 100.0);
-      Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME_VSYNC,
-                            fracLatencyNorm);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (fracLatencyNorm < 200) {
-        
-        Telemetry::AccumulateCategorical(
-            LABELS_CONTENT_FRAME_TIME_REASON::OnTime);
-      } else {
-        if (mTxnVsyncId == VsyncId() || aId == VsyncId() || mTxnVsyncId >= aId) {
-          
-          
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
-        } else if (aId - mTxnVsyncId > 1) {
-          
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
-        } else {
-          
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
-        }
-      }
-    }
+    RecordContentFrameTime(mTxnVsyncId, mVsyncStartTime, mTxnStartTime, aId,
+                           aCompositeEnd, TimeDuration::FromMilliseconds(0),
+                           mVsyncRate, false, false);
   }
 
 #if defined(ENABLE_FRAME_LATENCY_LOG)

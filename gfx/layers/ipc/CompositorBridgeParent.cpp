@@ -2489,6 +2489,17 @@ int32_t RecordContentFrameTime(
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (fracLatencyNorm < 200) {
       
       Telemetry::AccumulateCategorical(
