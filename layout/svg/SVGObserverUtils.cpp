@@ -432,14 +432,14 @@ nsSVGMaskProperty::ResolveImage(uint32_t aIndex)
 }
 
 bool
-nsSVGTextPathProperty::TargetIsValid()
+SVGTextPathObserver::TargetIsValid()
 {
   Element* target = GetTarget();
   return target && target->IsSVGElement(nsGkAtoms::path);
 }
 
 void
-nsSVGTextPathProperty::OnRenderingChange()
+SVGTextPathObserver::OnRenderingChange()
 {
   nsSVGRenderingObserverProperty::OnRenderingChange();
 
@@ -559,9 +559,9 @@ SVGObserverUtils::GetMarkerProperty(nsIURI* aURI, nsIFrame* aFrame,
   return GetEffectProperty(aURI, aFrame, aProperty);
 }
 
-nsSVGTextPathProperty*
+SVGTextPathObserver*
 SVGObserverUtils::GetTextPathProperty(nsIURI* aURI, nsIFrame* aFrame,
-  const mozilla::FramePropertyDescriptor<nsSVGTextPathProperty>* aProperty)
+  const mozilla::FramePropertyDescriptor<SVGTextPathObserver>* aProperty)
 {
   return GetEffectProperty(aURI, aFrame, aProperty);
 }

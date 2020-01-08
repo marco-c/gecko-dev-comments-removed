@@ -348,10 +348,10 @@ protected:
   virtual void OnRenderingChange() override;
 };
 
-class nsSVGTextPathProperty final : public nsSVGRenderingObserverProperty
+class SVGTextPathObserver final : public nsSVGRenderingObserverProperty
 {
 public:
-  nsSVGTextPathProperty(nsIURI* aURI, nsIFrame* aFrame, bool aReferenceImage)
+  SVGTextPathObserver(nsIURI* aURI, nsIFrame* aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage)
     , mValid(true) {}
 
@@ -496,7 +496,7 @@ public:
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(FillProperty, nsSVGPaintingProperty)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(StrokeProperty, nsSVGPaintingProperty)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(HrefAsTextPathProperty,
-                                       nsSVGTextPathProperty)
+                                       SVGTextPathObserver)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(HrefAsPaintingProperty,
                                        nsSVGPaintingProperty)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(BackgroundImageProperty,
@@ -661,9 +661,9 @@ public:
   
 
 
-  static nsSVGTextPathProperty *
+  static SVGTextPathObserver *
   GetTextPathProperty(nsIURI* aURI, nsIFrame* aFrame,
-    const mozilla::FramePropertyDescriptor<nsSVGTextPathProperty>* aProperty);
+    const mozilla::FramePropertyDescriptor<SVGTextPathObserver>* aProperty);
   
 
 
