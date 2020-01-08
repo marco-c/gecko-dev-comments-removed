@@ -123,11 +123,9 @@ class RobocopTestRunner(MochitestDesktop):
             self.printDeviceInfo()
         self.setupLocalPaths()
         self.buildProfile()
-        
         self.startServers(
             self.options,
-            debuggerInfo=None,
-            ignoreSSLTunnelExts=True)
+            debuggerInfo=None)
         self.log.debug("Servers started")
 
     def cleanup(self):
