@@ -94,6 +94,10 @@ enum TextureAllocationFlags {
   
   
   ALLOC_UPDATE_FROM_SURFACE = 1 << 7,
+
+  
+  
+  ALLOC_ALLOW_DIRECT_MAPPING = 1 << 8,
 };
 
 
