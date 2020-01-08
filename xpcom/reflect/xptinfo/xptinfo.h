@@ -31,6 +31,7 @@ struct nsXPTInterfaceInfo;
 struct nsXPTType;
 struct nsXPTParamInfo;
 struct nsXPTMethodInfo;
+struct nsXPTConstantInfo;
 struct nsXPTDOMObjectInfo;
 
 
@@ -41,6 +42,7 @@ inline const nsXPTInterfaceInfo* GetInterface(uint16_t aIndex);
 inline const nsXPTType& GetType(uint16_t aIndex);
 inline const nsXPTParamInfo& GetParam(uint16_t aIndex);
 inline const nsXPTMethodInfo& GetMethod(uint16_t aIndex);
+inline const nsXPTConstantInfo& GetConstant(uint16_t aIndex);
 inline const nsXPTDOMObjectInfo& GetDOMObjectInfo(uint16_t aIndex);
 inline const char* GetString(uint32_t aIndex);
 
@@ -93,10 +95,8 @@ struct nsXPTInterfaceInfo
   bool HasAncestor(const nsIID& aIID) const;
 
   
-  uint16_t ConstantCount() const;
-  const char* Constant(uint16_t aIndex, JS::MutableHandleValue aConst) const;
-
-  
+  uint16_t ConstantCount() const { return mNumConsts; }
+  const nsXPTConstantInfo& Constant(uint16_t aIndex) const;
   uint16_t MethodCount() const { return mNumMethods; }
   const nsXPTMethodInfo& Method(uint16_t aIndex) const;
 
@@ -122,9 +122,7 @@ struct nsXPTInterfaceInfo
   nsresult HasAncestor(const nsIID* aIID, bool* aRetval) const;
   nsresult IsMainProcessScriptableOnly(bool* aRetval) const;
 
-  
-  
-  bool EnsureResolved() const { return !mIsShim; }
+  bool EnsureResolved() const { return true; } 
 
   
   
@@ -141,8 +139,8 @@ struct nsXPTInterfaceInfo
   uint16_t mMethods; 
 
   uint16_t mConsts : 14; 
-  uint16_t mIsShim : 1; 
   uint16_t mFunction : 1;
+  
 
   uint8_t mNumMethods; 
   uint8_t mNumConsts; 
@@ -509,6 +507,36 @@ static_assert(sizeof(nsXPTMethodInfo) == 8, "wrong size");
 
 
 
+struct nsXPTConstantInfo
+{
+  const char* Name() const {
+    return xpt::detail::GetString(mName);
+  }
+
+  JS::Value JSValue() const {
+    if (mSigned || mValue <= uint32_t(INT32_MAX)) {
+      return JS::Int32Value(int32_t(mValue));
+    }
+    return JS::DoubleValue(mValue);
+  }
+
+  
+  
+  
+
+  uint32_t mName : 31; 
+
+  
+  uint32_t mSigned: 1;
+  uint32_t mValue; 
+};
+
+
+static_assert(sizeof(nsXPTConstantInfo) == 8, "wrong size");
+
+
+
+
 
 
 struct nsXPTDOMObjectInfo
@@ -570,39 +598,16 @@ public:
 
 
 
-struct ConstInfo
-{
-  
-  
-  
-
-  uint32_t mName : 31; 
-
-  
-  uint32_t mSigned: 1;
-  uint32_t mValue; 
-};
-
-
-static_assert(sizeof(ConstInfo) == 8, "wrong size");
-
-
-
-
-
 
 
 extern const nsXPTInterfaceInfo sInterfaces[];
 extern const nsXPTType sTypes[];
 extern const nsXPTParamInfo sParams[];
 extern const nsXPTMethodInfo sMethods[];
+extern const nsXPTConstantInfo sConsts[];
 extern const nsXPTDOMObjectInfo sDOMObjects[];
 
 extern const char sStrings[];
-extern const ConstInfo sConsts[];
-
-
-extern const mozilla::dom::NativePropertyHooks* sPropHooks[];
 
 
 
@@ -634,6 +639,12 @@ inline const nsXPTMethodInfo&
 GetMethod(uint16_t aIndex)
 {
   return sMethods[aIndex];
+}
+
+inline const nsXPTConstantInfo&
+GetConstant(uint16_t aIndex)
+{
+  return sConsts[aIndex];
 }
 
 inline const nsXPTDOMObjectInfo&
