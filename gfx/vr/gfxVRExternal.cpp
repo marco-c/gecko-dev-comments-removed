@@ -235,7 +235,7 @@ VRDisplayExternal::SubmitFrame(const layers::SurfaceDescriptor& aTexture,
   memset(&displayState, 0, sizeof(VRDisplayState));
   while (displayState.mLastSubmittedFrameId < aFrameId) {
     if (manager->PullState(&displayState, &mLastSensorState, mDisplayInfo.mControllerState)) {
-      if (!displayState.mIsConnected) {
+      if (displayState.mSuppressFrames || !displayState.mIsConnected) {
         
         return false;
       }
