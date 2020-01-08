@@ -158,10 +158,36 @@ function getAbbreviatedMimeType(mimeType) {
 
 
 
+function getUrl(url) {
+  try {
+    return new URL(url);
+  } catch (err) {
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
+function getUrlProperty(input, property) {
+  const url = getUrl(input);
+  return url && url[property] ? url[property] : "";
+}
+
+
+
+
+
+
+
 
 
 function getUrlBaseName(url) {
-  const pathname = (new URL(url)).pathname;
+  const pathname = getUrlProperty(url, "pathname");
   return getUnicodeUrlPath(
     pathname.replace(/\S*\//, "") || pathname || "/");
 }
@@ -173,7 +199,7 @@ function getUrlBaseName(url) {
 
 
 function getUrlQuery(url) {
-  return (new URL(url)).search.replace(/^\?/, "");
+  return getUrlProperty(url, "search").replace(/^\?/, "");
 }
 
 
@@ -183,7 +209,9 @@ function getUrlQuery(url) {
 
 
 function getUrlBaseNameWithQuery(url) {
-  return getUrlBaseName(url) + getUnicodeUrlPath((new URL(url)).search);
+  const basename = getUrlBaseName(url);
+  const search = getUrlProperty(url, "search");
+  return basename + getUnicodeUrlPath(search);
 }
 
 
@@ -193,7 +221,7 @@ function getUrlBaseNameWithQuery(url) {
 
 
 function getUrlHostName(url) {
-  return new URL(url).hostname;
+  return getUrlProperty(url, "hostname");
 }
 
 
@@ -203,7 +231,7 @@ function getUrlHostName(url) {
 
 
 function getUrlHost(url) {
-  return new URL(url).host;
+  return getUrlProperty(url, "host");
 }
 
 
@@ -214,7 +242,8 @@ function getUrlHost(url) {
 
 
 function getUrlScheme(url) {
-  return (new URL(url)).protocol.replace(":", "").toLowerCase();
+  const protocol = getUrlProperty(url, "protocol");
+  return protocol.replace(":", "").toLowerCase();
 }
 
 
