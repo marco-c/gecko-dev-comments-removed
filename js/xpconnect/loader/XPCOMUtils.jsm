@@ -76,16 +76,6 @@ var XPCOMUtils = {
   
 
 
-
-
-
-  generateQI: function XPCU_generateQI(interfaces) {
-    return ChromeUtils.generateQI(interfaces);
-  },
-
-  
-
-
   generateNSGetFactory: function XPCU_generateNSGetFactory(componentsArray) {
     let classes = {};
     for (let i = 0; i < componentsArray.length; i++) {
