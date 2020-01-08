@@ -20,10 +20,9 @@ window._gBrowser = {
   init() {
     ChromeUtils.defineModuleGetter(this, "AsyncTabSwitcher",
       "resource:///modules/AsyncTabSwitcher.jsm");
-    ChromeUtils.defineModuleGetter(this, "UrlbarProviderOpenTabs",
-      "resource:///modules/UrlbarProviderOpenTabs.jsm");
 
     XPCOMUtils.defineLazyServiceGetters(this, {
+      _unifiedComplete: ["@mozilla.org/autocomplete/search;1?name=unifiedcomplete", "mozIPlacesAutoComplete"],
       serializationHelper: ["@mozilla.org/network/serialization-helper;1", "nsISerializationHelper"],
       mURIFixup: ["@mozilla.org/docshell/urifixup;1", "nsIURIFixup"],
     });
@@ -945,8 +944,13 @@ window._gBrowser = {
     if (securityUI) {
       
       
+      
+      
+      let state = securityUI.state;
+      let oldState = securityUI.oldState;
       this._callProgressListeners(null, "onSecurityChange",
-                                  [webProgress, null, securityUI.state, true],
+                                  [webProgress, null, oldState, state,
+                                   securityUI.contentBlockingLogJSON, true],
                                   true, false);
     }
 
@@ -1666,12 +1670,17 @@ window._gBrowser = {
 
     
     let securityUI = aBrowser.securityUI;
+    
+    
     let state = securityUI ? securityUI.state :
+      Ci.nsIWebProgressListener.STATE_IS_INSECURE;
+    let oldState = securityUI ? securityUI.oldState :
       Ci.nsIWebProgressListener.STATE_IS_INSECURE;
     
     
     this._callProgressListeners(aBrowser, "onSecurityChange",
-                                [aBrowser.webProgress, null, state, true],
+                                [aBrowser.webProgress, null, oldState, state,
+                                 securityUI.contentBlockingLogJSON, true],
                                 true, false);
 
     if (aShouldBeRemote) {
@@ -2470,8 +2479,7 @@ window._gBrowser = {
         if (lazyBrowserURI) {
           
           
-          this.UrlbarProviderOpenTabs.registerOpenTab(lazyBrowserURI.spec,
-                                                      userContextId);
+          this._unifiedComplete.registerOpenPage(lazyBrowserURI, userContextId);
           b.registeredOpenURI = lazyBrowserURI;
         }
       } else {
@@ -2939,9 +2947,8 @@ window._gBrowser = {
     }
 
     if (browser.registeredOpenURI && !aAdoptedByTab) {
-      let userContextId = browser.getAttribute("usercontextid") || 0;
-      this.UrlbarProviderOpenTabs.unregisterOpenTab(browser.registeredOpenURI.spec,
-                                                    userContextId);
+      this._unifiedComplete.unregisterOpenPage(browser.registeredOpenURI,
+        browser.getAttribute("usercontextid") || 0);
       delete browser.registeredOpenURI;
     }
 
@@ -3227,9 +3234,8 @@ window._gBrowser = {
 
     
     if (otherBrowser.registeredOpenURI) {
-      let userContextId = otherBrowser.getAttribute("usercontextid") || 0;
-      this.UrlbarProviderOpenTabs.unregisterOpenTab(otherBrowser.registeredOpenURI.spec,
-                                                    userContextId);
+      this._unifiedComplete.unregisterOpenPage(otherBrowser.registeredOpenURI,
+        otherBrowser.getAttribute("usercontextid") || 0);
       delete otherBrowser.registeredOpenURI;
     }
 
@@ -3848,16 +3854,6 @@ window._gBrowser = {
     }
   },
 
-  selectAllTabs() {
-    let visibleTabs = this.visibleTabs;
-    gBrowser.addRangeToMultiSelectedTabs(visibleTabs[0],
-                                         visibleTabs[visibleTabs.length - 1]);
-  },
-
-  allTabsSelected() {
-    return this.visibleTabs.every(t => t.multiselected);
-  },
-
   lockClearMultiSelectionOnce() {
     this._clearMultiSelectionLockedOnce = true;
     this._clearMultiSelectionLocked = true;
@@ -4372,9 +4368,8 @@ window._gBrowser = {
     for (let tab of this.tabs) {
       let browser = tab.linkedBrowser;
       if (browser.registeredOpenURI) {
-        let userContextId = browser.getAttribute("usercontextid") || 0;
-        this.UrlbarProviderOpenTabs.unregisterOpenTab(browser.registeredOpenURI.spec,
-                                                      userContextId);
+        this._unifiedComplete.unregisterOpenPage(browser.registeredOpenURI,
+          browser.getAttribute("usercontextid") || 0);
         delete browser.registeredOpenURI;
       }
 
@@ -5032,8 +5027,8 @@ class TabProgressListener {
 
       let userContextId = this.mBrowser.getAttribute("usercontextid") || 0;
       if (this.mBrowser.registeredOpenURI) {
-        let uri = this.mBrowser.registeredOpenURI;
-        gBrowser.UrlbarProviderOpenTabs.unregisterOpenTab(uri.spec, userContextId);
+        gBrowser._unifiedComplete
+          .unregisterOpenPage(this.mBrowser.registeredOpenURI, userContextId);
         delete this.mBrowser.registeredOpenURI;
       }
       
@@ -5041,8 +5036,7 @@ class TabProgressListener {
       if (!isBlankPageURL(aLocation.spec) &&
           (!PrivateBrowsingUtils.isWindowPrivate(window) ||
             PrivateBrowsingUtils.permanentPrivateBrowsing)) {
-        gBrowser.UrlbarProviderOpenTabs.registerOpenTab(aLocation.spec,
-                                                        userContextId);
+        gBrowser._unifiedComplete.registerOpenPage(aLocation, userContextId);
         this.mBrowser.registeredOpenURI = aLocation;
       }
 
@@ -5076,9 +5070,10 @@ class TabProgressListener {
     this.mMessage = aMessage;
   }
 
-  onSecurityChange(aWebProgress, aRequest, aState) {
+  onSecurityChange(aWebProgress, aRequest, aOldState, aState, aContentBlockingLogJSON) {
     this._callProgressListeners("onSecurityChange",
-                                [aWebProgress, aRequest, aState]);
+                                [aWebProgress, aRequest, aOldState, aState,
+                                 aContentBlockingLogJSON]);
   }
 
   onRefreshAttempted(aWebProgress, aURI, aDelay, aSameURI) {
@@ -5369,9 +5364,6 @@ var TabContextMenu = {
     this.contextTab.toggleMuteMenuItem = toggleMute;
     this.contextTab.toggleMultiSelectMuteMenuItem = toggleMultiSelectMute;
     this._updateToggleMuteMenuItems(this.contextTab);
-
-    let selectAllTabs = document.getElementById("context_selectAllTabs");
-    selectAllTabs.disabled = gBrowser.allTabsSelected();
 
     this.contextTab.addEventListener("TabAttrModified", this);
     aPopupMenu.addEventListener("popuphiding", this);
