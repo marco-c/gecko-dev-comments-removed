@@ -139,12 +139,7 @@ void Servo_StyleSheet_GetSourceURL(
 
 uint8_t Servo_StyleSheet_GetOrigin(RawServoStyleSheetContentsBorrowed sheet);
 
-
-
-
-
-
-RawServoStyleSet* Servo_StyleSet_Init(RawGeckoPresContextOwned pres_context);
+RawServoStyleSet* Servo_StyleSet_Init(RawGeckoPresContextBorrowed pres_context);
 void Servo_StyleSet_RebuildCachedData(RawServoStyleSetBorrowed set);
 
 

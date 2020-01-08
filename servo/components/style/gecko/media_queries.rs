@@ -12,7 +12,7 @@ use euclid::TypedScale;
 use gecko::values::{convert_nscolor_to_rgba, convert_rgba_to_nscolor};
 use gecko_bindings::bindings;
 use gecko_bindings::structs;
-use gecko_bindings::structs::{nsPresContext, RawGeckoPresContextOwned};
+use gecko_bindings::structs::{nsPresContext, RawGeckoPresContextBorrowed};
 use media_queries::MediaType;
 use properties::ComputedValues;
 use servo_arc::Arc;
@@ -30,7 +30,7 @@ pub struct Device {
     
     
     
-    pres_context: RawGeckoPresContextOwned,
+    pres_context: RawGeckoPresContextBorrowed,
     default_values: Arc<ComputedValues>,
     
     
@@ -77,7 +77,7 @@ unsafe impl Send for Device {}
 
 impl Device {
     
-    pub fn new(pres_context: RawGeckoPresContextOwned) -> Self {
+    pub fn new(pres_context: RawGeckoPresContextBorrowed) -> Self {
         assert!(!pres_context.is_null());
         Device {
             pres_context,

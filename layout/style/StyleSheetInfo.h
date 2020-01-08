@@ -18,6 +18,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 class StyleSheet;
+struct URLExtraData;
 
 
 
