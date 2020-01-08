@@ -2,14 +2,14 @@
 
 
 
-use api::{DebugFlags, DeviceIntPoint, DeviceIntRect, DeviceIntSize, DirtyRect, ImageDirtyRect};
-use api::{ExternalImageType, ImageFormat};
-use api::ImageDescriptor;
+use api::{DebugFlags, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
+use api::{DirtyRect, ImageDirtyRect, DocumentId, ExternalImageType, ImageFormat};
+use api::{IdNamespace, ImageDescriptor};
 use device::{TextureFilter, total_gpu_bytes_allocated};
 use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle};
 use gpu_types::{ImageSource, UvRectKind};
-use internal_types::{CacheTextureId, LayerIndex, TextureUpdateList, TextureUpdateSource};
+use internal_types::{CacheTextureId, FastHashMap, LayerIndex, TextureUpdateList, TextureUpdateSource};
 use internal_types::{TextureSource, TextureCacheAllocInfo, TextureCacheUpdate};
 use profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
 use render_backend::{FrameId, FrameStamp};
@@ -282,7 +282,7 @@ impl SharedTextures {
 
 
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct EntryHandles {
@@ -410,6 +410,27 @@ impl EvictionThresholdBuilder {
     }
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PerDocumentData {
+    
+    
+    last_shared_cache_expiration: FrameStamp,
+
+    
+    
+    handles: EntryHandles,
+}
+
+impl PerDocumentData {
+    pub fn new() -> Self {
+        PerDocumentData {
+            last_shared_cache_expiration: FrameStamp::INVALID,
+            handles: EntryHandles::default(),
+        }
+    }
+}
+
 
 
 
@@ -454,9 +475,6 @@ pub struct TextureCache {
     now: FrameStamp,
 
     
-    last_shared_cache_expiration: FrameStamp,
-
-    
     
     reached_reclaim_threshold: Option<SystemTime>,
 
@@ -464,7 +482,15 @@ pub struct TextureCache {
     entries: FreeList<CacheEntry, CacheEntryMarker>,
 
     
-    handles: EntryHandles,
+    
+    
+    
+    per_doc_data: FastHashMap<DocumentId, PerDocumentData>,
+
+    
+    
+    
+    doc_data: PerDocumentData,
 }
 
 impl TextureCache {
@@ -497,16 +523,16 @@ impl TextureCache {
 
         TextureCache {
             shared_textures: SharedTextures::new(),
+            reached_reclaim_threshold: None,
+            entries: FreeList::new(),
             max_texture_size,
             max_texture_layers,
             debug_flags: DebugFlags::empty(),
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
             now: FrameStamp::INVALID,
-            last_shared_cache_expiration: FrameStamp::INVALID,
-            reached_reclaim_threshold: None,
-            entries: FreeList::new(),
-            handles: EntryHandles::default(),
+            per_doc_data: FastHashMap::default(),
+            doc_data: PerDocumentData::new(),
         }
     }
 
@@ -516,7 +542,7 @@ impl TextureCache {
     #[allow(dead_code)]
     pub fn new_for_testing(max_texture_size: i32, max_texture_layers: usize) -> Self {
         let mut cache = Self::new(max_texture_size, max_texture_layers);
-        let mut now = FrameStamp::first();
+        let mut now = FrameStamp::first(DocumentId(IdNamespace(1), 1));
         now.advance();
         cache.begin_frame(now);
         cache
@@ -528,32 +554,43 @@ impl TextureCache {
 
     
     pub fn clear_standalone(&mut self) {
-        let standalone_entry_handles = mem::replace(
-            &mut self.handles.standalone,
-            Vec::new(),
-        );
+        debug_assert!(!self.now.is_valid());
+        let mut per_doc_data = mem::replace(&mut self.per_doc_data, FastHashMap::default());
+        for (&_, doc_data) in per_doc_data.iter_mut() {
+            let standalone_entry_handles = mem::replace(
+                &mut doc_data.handles.standalone,
+                Vec::new(),
+            );
 
-        for handle in standalone_entry_handles {
-            let entry = self.entries.free(handle);
-            entry.evict();
-            self.free(entry);
+            for handle in standalone_entry_handles {
+                let entry = self.entries.free(handle);
+                entry.evict();
+                self.free(entry);
+            }
         }
+        self.per_doc_data = per_doc_data;
     }
 
     
     pub fn clear_shared(&mut self) {
-        let shared_entry_handles = mem::replace(
-            &mut self.handles.shared,
-            Vec::new(),
-        );
+        self.unset_doc_data();
+        let mut per_doc_data = mem::replace(&mut self.per_doc_data, FastHashMap::default());
+        for (&_, doc_data) in per_doc_data.iter_mut() {
+            let shared_entry_handles = mem::replace(
+                &mut doc_data.handles.shared,
+                Vec::new(),
+            );
 
-        for handle in shared_entry_handles {
-            let entry = self.entries.free(handle);
-            entry.evict();
-            self.free(entry);
+            for handle in shared_entry_handles {
+                let entry = self.entries.free(handle);
+                entry.evict();
+                self.free(entry);
+            }
         }
 
         self.shared_textures.clear(&mut self.pending_updates);
+        self.per_doc_data = per_doc_data;
+        self.set_doc_data();
     }
 
     
@@ -563,15 +600,30 @@ impl TextureCache {
         self.clear_shared();
     }
 
+    fn set_doc_data(&mut self) {
+        let document_id = self.now.document_id();
+        self.doc_data = self.per_doc_data
+                            .remove(&document_id)
+                            .unwrap_or_else(|| PerDocumentData::new());
+    }
+
+    fn unset_doc_data(&mut self) {
+        self.per_doc_data.insert(self.now.document_id(),
+                                 mem::replace(&mut self.doc_data, PerDocumentData::new()));
+    }
+
     
     pub fn begin_frame(&mut self, stamp: FrameStamp) {
+        debug_assert!(!self.now.is_valid());
         self.now = stamp;
+        self.set_doc_data();
         self.maybe_reclaim_shared_cache_memory();
     }
 
     
     
     fn maybe_reclaim_shared_cache_memory(&mut self) {
+        debug_assert!(self.now.is_valid());
         
         
         const RECLAIM_THRESHOLD_BYTES: usize = 5 * 1024 * 1024;
@@ -581,7 +633,7 @@ impl TextureCache {
         
         
         let time_since_last_gc = self.now.time()
-            .duration_since(self.last_shared_cache_expiration.time())
+            .duration_since(self.doc_data.last_shared_cache_expiration.time())
             .unwrap_or(Duration::default());
         let do_periodic_gc = time_since_last_gc >= Duration::from_secs(5) &&
             self.shared_textures.size_in_bytes() >= RECLAIM_THRESHOLD_BYTES * 2;
@@ -593,6 +645,10 @@ impl TextureCache {
             self.maybe_expire_old_shared_entries(threshold);
         }
 
+        
+        
+        
+        
         
         
         
@@ -610,10 +666,10 @@ impl TextureCache {
                 self.reached_reclaim_threshold = None;
             }
         }
-
     }
 
     pub fn end_frame(&mut self, texture_cache_profile: &mut TextureCacheProfileCounters) {
+        debug_assert!(self.now.is_valid());
         
         
         
@@ -633,6 +689,9 @@ impl TextureCache {
             .update_profile(&mut texture_cache_profile.pages_rgba8_linear);
         self.shared_textures.array_rgba8_nearest
             .update_profile(&mut texture_cache_profile.pages_rgba8_nearest);
+
+        self.unset_doc_data();
+        self.now = FrameStamp::INVALID;
     }
 
     
@@ -690,6 +749,8 @@ impl TextureCache {
         uv_rect_kind: UvRectKind,
         eviction: Eviction,
     ) {
+        debug_assert!(self.now.is_valid());
+
         
         
         
@@ -853,12 +914,13 @@ impl TextureCache {
     
     
     fn expire_old_entries(&mut self, kind: EntryKind, threshold: EvictionThreshold) {
+        debug_assert!(self.now.is_valid());
         
         
         
-        for i in (0..self.handles.select(kind).len()).rev() {
+        for i in (0..self.doc_data.handles.select(kind).len()).rev() {
             let evict = {
-                let entry = self.entries.get(&self.handles.select(kind)[i]);
+                let entry = self.entries.get(&self.doc_data.handles.select(kind)[i]);
                 match entry.eviction {
                     Eviction::Manual => false,
                     Eviction::Auto => threshold.should_evict(entry.last_access),
@@ -880,7 +942,7 @@ impl TextureCache {
                 }
             };
             if evict {
-                let handle = self.handles.select(kind).swap_remove(i);
+                let handle = self.doc_data.handles.select(kind).swap_remove(i);
                 let entry = self.entries.free(handle);
                 entry.evict();
                 self.free(entry);
@@ -892,12 +954,13 @@ impl TextureCache {
     
     
     fn maybe_expire_old_shared_entries(&mut self, threshold: EvictionThreshold) -> bool {
-        let old_len = self.handles.shared.len();
-        if self.last_shared_cache_expiration.frame_id() < self.now.frame_id() {
+        debug_assert!(self.now.is_valid());
+        let old_len = self.doc_data.handles.shared.len();
+        if self.doc_data.last_shared_cache_expiration.frame_id() < self.now.frame_id() {
             self.expire_old_entries(EntryKind::Shared, threshold);
-            self.last_shared_cache_expiration = self.now;
+            self.doc_data.last_shared_cache_expiration = self.now;
         }
-        self.handles.shared.len() != old_len
+        self.doc_data.handles.shared.len() != old_len
     }
 
     
@@ -1106,6 +1169,7 @@ impl TextureCache {
     
     
     fn allocate(&mut self, params: &CacheAllocParams, handle: &mut TextureCacheHandle) {
+        debug_assert!(self.now.is_valid());
         let new_cache_entry = self.allocate_cache_entry(params);
         let new_kind = new_cache_entry.details.kind();
 
@@ -1125,9 +1189,9 @@ impl TextureCache {
                     
                     
                     let (from, to) = if new_kind == EntryKind::Standalone {
-                        (&mut self.handles.shared, &mut self.handles.standalone)
+                        (&mut self.doc_data.handles.shared, &mut self.doc_data.handles.standalone)
                     } else {
-                        (&mut self.handles.standalone, &mut self.handles.shared)
+                        (&mut self.doc_data.handles.standalone, &mut self.doc_data.handles.shared)
                     };
                     let idx = from.iter().position(|h| h.weak() == *handle).unwrap();
                     to.push(from.remove(idx));
@@ -1136,7 +1200,7 @@ impl TextureCache {
             }
             UpsertResult::Inserted(new_handle) => {
                 *handle = new_handle.weak();
-                self.handles.select(new_kind).push(new_handle);
+                self.doc_data.handles.select(new_kind).push(new_handle);
             }
         }
     }

@@ -794,6 +794,10 @@ pub struct IdNamespace(pub u32);
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct DocumentId(pub IdNamespace, pub u32);
 
+impl DocumentId {
+    pub const INVALID: DocumentId = DocumentId(IdNamespace(0), 0);
+}
+
 
 
 
