@@ -10,6 +10,7 @@
 const { PureComponent } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
+const Services = require("Services");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { button } = dom;
 const {
@@ -167,6 +168,22 @@ class MenuButton extends PureComponent {
 
   onHidden() {
     this.setState({ expanded: false });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.state.win.setTimeout(() => {
+      if (this.buttonRef) {
+        this.buttonRef.style.pointerEvents = "auto";
+      }
+    }, 0);
   }
 
   async onClick(e) {
@@ -177,6 +194,18 @@ class MenuButton extends PureComponent {
 
       if (!e.defaultPrevented) {
         const wasKeyboardEvent = e.screenX === 0 && e.screenY === 0;
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!this.state.expanded &&
+            !Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
+          this.buttonRef.style.pointerEvents = "none";
+        }
         await this.toggleMenu(e.target);
         
         if (wasKeyboardEvent && this.tooltip) {
