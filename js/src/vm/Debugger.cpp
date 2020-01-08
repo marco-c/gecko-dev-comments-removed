@@ -5743,6 +5743,14 @@ DelazifyScript(JSContext* cx, Handle<LazyScript*> lazyScript)
         if (!DelazifyScript(cx, enclosingLazyScript)) {
             return nullptr;
         }
+
+        if (!lazyScript->enclosingScriptHasEverBeenCompiled()) {
+            
+            
+            
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_OPTIMIZED_OUT_FUN);
+            return nullptr;
+        }
     }
     MOZ_ASSERT(lazyScript->enclosingScriptHasEverBeenCompiled());
 
