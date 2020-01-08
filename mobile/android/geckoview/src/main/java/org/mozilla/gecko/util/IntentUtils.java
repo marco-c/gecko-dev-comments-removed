@@ -6,8 +6,10 @@
 
 package org.mozilla.gecko.util;
 
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
@@ -15,7 +17,9 @@ import android.text.TextUtils;
 
 import org.mozilla.gecko.mozglue.SafeIntent;
 
+import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -104,4 +108,113 @@ public class IntentUtils {
         final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
         return !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
     }
+
+    
+
+
+
+
+
+
+
+    private static Uri normalizeUriScheme(final Uri uri) {
+        final String scheme = uri.getScheme();
+        final String lower  = scheme.toLowerCase(Locale.US);
+        if (lower.equals(scheme)) {
+            return uri;
+        }
+
+        
+        return uri.buildUpon().scheme(lower).build();
+    }
+
+
+    
+
+
+
+
+
+
+    public static Uri normalizeUri(final String aUri) {
+        final Uri normUri = normalizeUriScheme(
+            aUri.indexOf(':') >= 0
+            ? Uri.parse(aUri)
+            : new Uri.Builder().scheme(aUri).build());
+        return normUri;
+    }
+
+    public static boolean isUriSafeForScheme(final String aUri) {
+        return isUriSafeForScheme(normalizeUri(aUri));
+    }
+
+    
+
+
+
+
+
+
+
+
+    public static boolean isUriSafeForScheme(final Uri aUri) {
+        final String scheme = aUri.getScheme();
+        if ("tel".equals(scheme) || "sms".equals(scheme)) {
+            
+            
+            
+            final String number = aUri.getSchemeSpecificPart();
+            if (number.contains("#") || number.contains("*") ||
+                aUri.getFragment() != null) {
+                return false;
+            }
+        }
+
+        if (("intent".equals(scheme) || "android-app".equals(scheme))) {
+            
+            return getSafeIntent(aUri) != null;
+        }
+
+        return true;
+    }
+
+    
+
+
+
+
+
+
+
+    public static Intent getSafeIntent(final Uri aUri) {
+        final Intent intent;
+        try {
+            intent = Intent.parseUri(aUri.toString(), 0);
+        } catch (final URISyntaxException e) {
+            return null;
+        }
+
+        final Uri data = intent.getData();
+        if (data != null &&
+            "file".equals(normalizeUriScheme(data).getScheme())) {
+            return null;
+        }
+
+        
+        intent.addCategory(Intent.CATEGORY_BROWSABLE);
+
+        
+        
+        intent.setComponent(null);
+        nullIntentSelector(intent);
+
+        return intent;
+    }
+
+    
+    @TargetApi(15)
+    private static void nullIntentSelector(final Intent intent) {
+        intent.setSelector(null);
+    }
+
 }

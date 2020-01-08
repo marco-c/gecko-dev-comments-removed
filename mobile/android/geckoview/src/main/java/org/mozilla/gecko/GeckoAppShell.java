@@ -936,20 +936,6 @@ public class GeckoAppShell
         return type + "/" + subType;
     }
 
-    static boolean isUriSafeForScheme(Uri aUri) {
-        
-        
-        
-        final String scheme = aUri.getScheme();
-        if ("tel".equals(scheme) || "sms".equals(scheme)) {
-            final String number = aUri.getSchemeSpecificPart();
-            if (number.contains("#") || number.contains("*") || aUri.getFragment() != null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     @WrapForJNI(calledFrom = "gecko")
     private static boolean openUriExternal(String targetURI,
                                            String mimeType,
