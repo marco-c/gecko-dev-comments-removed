@@ -678,42 +678,70 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
       return;
     }
 
-    const lineWidth = getDisplayPixelRatio(this.win);
     const containerQuad = getUntransformedQuad(this.currentNode, "content");
     const containerBounds = containerQuad.getBounds();
-
-    
-    this.drawJustifyContent(0, 0, containerBounds.width, containerBounds.height);
+    const { width: containerWidth, height: containerHeight } = containerBounds;
 
     for (const flexLine of this.flexData.lines) {
       const { crossStart, crossSize } = flexLine;
+      let mainStart = 0;
+
+      
+      
+      if (this.axes === "horizontal-lr vertical-bt" ||
+          this.axes === "horizontal-rl vertical-tb") {
+        mainStart = containerWidth;
+      }
 
       for (const flexItem of flexLine.items) {
         const { left, top, right, bottom } = flexItem.rect;
 
-        
         switch (this.axes) {
           case "horizontal-lr vertical-tb":
+          case "horizontal-rl vertical-bt":
+            this.drawJustifyContent(mainStart, crossStart, left, crossStart + crossSize);
+            mainStart = right;
+            break;
           case "horizontal-lr vertical-bt":
           case "horizontal-rl vertical-tb":
-          case "horizontal-rl vertical-bt":
-            clearRect(this.ctx, left, crossStart + lineWidth, right,
-              crossStart + crossSize - lineWidth, this.currentMatrix);
+            this.drawJustifyContent(right, crossStart, mainStart, crossStart + crossSize);
+            mainStart = left;
             break;
           case "vertical-tb horizontal-lr":
           case "vertical-bt horizontal-rl":
-            clearRect(this.ctx,
-              crossStart + lineWidth * 2, top,
-              crossStart + crossSize - lineWidth, bottom, this.currentMatrix);
+            this.drawJustifyContent(crossStart, mainStart, crossStart + crossSize, top);
+            mainStart = bottom;
             break;
           case "vertical-bt horizontal-lr":
           case "vertical-tb horizontal-rl":
-            clearRect(this.ctx,
-              containerBounds.width - crossStart - crossSize + lineWidth * 2, top,
-              containerBounds.width - crossStart - lineWidth, bottom,
-              this.currentMatrix);
+            this.drawJustifyContent(containerWidth - crossStart - crossSize, mainStart,
+              containerWidth - crossStart, top);
+            mainStart = bottom;
             break;
         }
+      }
+
+      
+      switch (this.axes) {
+        case "horizontal-lr vertical-tb":
+        case "horizontal-rl vertical-bt":
+          this.drawJustifyContent(mainStart, crossStart, containerWidth,
+            crossStart + crossSize);
+          break;
+        case "horizontal-lr vertical-bt":
+        case "horizontal-rl vertical-tb":
+          this.drawJustifyContent(0, crossStart, mainStart, crossStart + crossSize);
+          break;
+        case "vertical-tb horizontal-lr":
+        case "vertical-bt horizontal-rl":
+          this.drawJustifyContent(crossStart, mainStart, crossStart + crossSize,
+            containerHeight);
+          break;
+        case "vertical-bt horizontal-lr":
+        case "vertical-tb horizontal-rl":
+          this.drawJustifyContent(containerWidth - crossStart - crossSize, mainStart,
+            containerWidth - crossStart, containerHeight);
+          break;
       }
     }
   }
