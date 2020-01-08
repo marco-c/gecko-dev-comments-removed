@@ -87,13 +87,60 @@ public:
   nsresult GetString(const char* aSection, const char* aKey,
                      char* aResult, uint32_t aResultLen);
 
+  
+
+
+
+
+
+
+
+  nsresult SetString(const char* aSection, const char* aKey, const char* aValue);
+
+  
+
+
+
+
+
+
+
+  nsresult DeleteString(const char* aSection, const char* aKey);
+
+  
+
+
+
+
+
+
+  nsresult DeleteSection(const char* aSection);
+
+  
+
+
+
+
+  nsresult WriteToFile(nsIFile *aFile);
+
 private:
   struct INIValue
   {
     INIValue(const char* aKey, const char* aValue)
-      : key(aKey)
-      , value(aValue)
+      : key(strdup(aKey))
+      , value(strdup(aValue))
     {
+    }
+
+    ~INIValue()
+    {
+      delete key;
+      delete value;
+    }
+
+    void SetValue(const char* aValue) {
+      delete value;
+      value = strdup(aValue);
     }
 
     const char* key;
@@ -101,10 +148,13 @@ private:
     mozilla::UniquePtr<INIValue> next;
   };
 
-  nsClassHashtable<nsDepCharHashKey, INIValue> mSections;
-  nsCString mFileContents;
+  nsClassHashtable<nsCharPtrHashKey, INIValue> mSections;
 
   nsresult InitFromString(const nsCString& aStr);
+
+  bool IsValidSection(const char* aSection);
+  bool IsValidKey(const char* aKey);
+  bool IsValidValue(const char* aValue);
 };
 
 #endif 
