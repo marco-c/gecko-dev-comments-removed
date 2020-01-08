@@ -39,6 +39,11 @@ const CSS_TYPE_SHORTHAND_AND_LONGHAND = 2;
 
 
 
+const CSS_TYPE_LEGACY_SHORTHAND = 3;
+
+
+
+
 
 
 
@@ -4299,18 +4304,44 @@ var gCSSProperties = {
   "page-break-after": {
     domProp: "pageBreakAfter",
     inherited: false,
-    type: CSS_TYPE_LONGHAND,
+    type: CSS_TYPE_LEGACY_SHORTHAND,
+    alias_for: "break-after",
+    subproperties: [ "break-after" ],
     initial_values: [ "auto" ],
     other_values: [ "always", "avoid", "left", "right" ],
-    invalid_values: []
+    legacy_mapping: {
+      always: "page",
+    },
+    invalid_values: [ "page", "column" ]
   },
   "page-break-before": {
     domProp: "pageBreakBefore",
     inherited: false,
-    type: CSS_TYPE_LONGHAND,
+    type: CSS_TYPE_LEGACY_SHORTHAND,
+    alias_for: "break-before",
+    subproperties: [ "break-before" ],
     initial_values: [ "auto" ],
     other_values: [ "always", "avoid", "left", "right" ],
-    invalid_values: []
+    legacy_mapping: {
+      always: "page",
+    },
+    invalid_values: [ "page", "column" ]
+  },
+  "break-after": {
+    domProp: "breakAfter",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: [ "auto" ],
+    other_values: [ "always", "page", "avoid", "left", "right" ],
+    invalid_values: [ ]
+  },
+  "break-before": {
+    domProp: "breakBefore",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: [ "auto" ],
+    other_values: [ "always", "page", "avoid", "left", "right" ],
+    invalid_values: [ ]
   },
   "break-inside": {
     domProp: "breakInside",

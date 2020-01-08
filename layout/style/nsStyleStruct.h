@@ -2015,8 +2015,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   mozilla::StyleClear mBreakType;
   mozilla::StyleBreakWithin mBreakInside;
-  mozilla::StyleBreakBetween mPageBreakBefore;
-  mozilla::StyleBreakBetween mPageBreakAfter;
+  mozilla::StyleBreakBetween mBreakBefore;
+  mozilla::StyleBreakBetween mBreakAfter;
   uint8_t mOverflowX;           
   uint8_t mOverflowY;           
   uint8_t mOverflowClipBoxBlock;     
@@ -2329,10 +2329,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   static bool ShouldBreak(mozilla::StyleBreakBetween aBreak)
   {
     switch (aBreak) {
-      
-      
       case mozilla::StyleBreakBetween::Left:
       case mozilla::StyleBreakBetween::Right:
+      case mozilla::StyleBreakBetween::Page:
       case mozilla::StyleBreakBetween::Always:
         return true;
       case mozilla::StyleBreakBetween::Auto:
@@ -2346,12 +2345,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   bool BreakBefore() const
   {
-    return ShouldBreak(mPageBreakBefore);
+    return ShouldBreak(mBreakBefore);
   }
 
   bool BreakAfter() const
   {
-    return ShouldBreak(mPageBreakAfter);
+    return ShouldBreak(mBreakAfter);
   }
 
   
