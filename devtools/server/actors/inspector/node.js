@@ -204,7 +204,8 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
     
     
-    if (numChildren === 0 || hasAnonChildren || isShadowHost(this.rawNode)) {
+    if (numChildren === 0 || hasAnonChildren || isShadowHost(this.rawNode) ||
+      isShadowAnonymous(this.rawNode)) {
       numChildren = this.walker.countChildren(this);
     }
 
