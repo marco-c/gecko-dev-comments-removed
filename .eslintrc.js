@@ -39,27 +39,5 @@ module.exports = {
     "env": {
       "mozilla/browser-window": true
     }
-  }, {
-    
-    
-    "files": [
-      "accessible/**",
-      "caps/**",
-      "chrome/**",
-      "devtools/**",
-      "dom/**",
-      "extensions/**",
-      "intl/**",
-      "js/**",
-      "mobile/**",
-      "security/**",
-      "storage/**",
-      "testing/**",
-      "tools/**",
-      "xpcom/**",
-    ],
-    "rules": {
-      "comma-dangle": "off",
-    }
   }]
 };
