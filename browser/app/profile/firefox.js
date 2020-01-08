@@ -1742,7 +1742,6 @@ pref("app.normandy.first_run", true);
 pref("app.normandy.logging.level", 50); 
 pref("app.normandy.run_interval_seconds", 21600); 
 pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
-pref("app.normandy.remotesettings.enabled", false);
 #ifdef MOZ_DATA_REPORTING
 pref("app.shield.optoutstudies.enabled", true);
 #else
@@ -1789,3 +1788,8 @@ pref("browser.discovery.containers.enabled", true);
 pref("browser.discovery.sites", "addons.mozilla.org");
 
 pref("browser.engagement.recent_visited_origins.expiry", 86400); 
+
+
+#ifdef NIGHTLY_BUILD
+pref("browser.aboutConfig.showWarning", true);
+#endif
