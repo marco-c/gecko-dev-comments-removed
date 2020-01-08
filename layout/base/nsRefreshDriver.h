@@ -145,8 +145,8 @@ public:
 
 
 
-  bool AddTimerAdjustmentObserver(nsATimerAdjustmentObserver *aObserver);
-  bool RemoveTimerAdjustmentObserver(nsATimerAdjustmentObserver *aObserver);
+  void AddTimerAdjustmentObserver(nsATimerAdjustmentObserver* aObserver);
+  void RemoveTimerAdjustmentObserver(nsATimerAdjustmentObserver* aObserver);
 
   void PostScrollEvent(mozilla::Runnable* aScrollEvent);
   void DispatchScrollEvents();
