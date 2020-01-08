@@ -1,0 +1,15 @@
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+function myWebExtensionPopupAddonFunction() {
+  browser.test.sendMessage("popupPageFunctionCalled", browser.runtime.getManifest());
+}
