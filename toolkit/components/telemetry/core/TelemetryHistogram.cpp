@@ -153,6 +153,7 @@ struct HistogramInfo {
   const char *expiration() const;
   nsresult label_id(const char* label, uint32_t* labelId) const;
   bool allows_key(const nsACString& key) const;
+  bool is_single_store() const;
 };
 
 
@@ -181,6 +182,54 @@ struct KeyedHistogramSnapshotInfo {
 
 typedef mozilla::Vector<KeyedHistogramSnapshotInfo> KeyedHistogramSnapshotsArray;
 typedef mozilla::Vector<KeyedHistogramSnapshotsArray> KeyedHistogramProcessSnapshotsArray;
+
+
+
+
+
+
+class Histogram {
+public:
+  
+
+
+
+
+  Histogram(HistogramID histogramId, const HistogramInfo& info, bool expired);
+  ~Histogram();
+
+  
+
+
+  void Add(uint32_t sample);
+
+  
+
+
+
+  void Clear();
+
+  
+
+
+  bool GetHistogram(const nsACString& store, base::Histogram** h);
+
+  bool IsExpired() const { return mIsExpired; }
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+
+private:
+  
+  typedef nsClassHashtable<nsCStringHashKey, base::Histogram> HistogramStore;
+  HistogramStore mStorage;
+
+  
+  base::Histogram* mSingleStore;
+
+  
+  
+  bool mIsExpired;
+};
 
 class KeyedHistogram {
 public:
@@ -237,12 +286,13 @@ bool gCanRecordExtended = false;
 
 
 
-base::Histogram** gHistogramStorage;
+Histogram** gHistogramStorage;
 
 KeyedHistogram** gKeyedHistogramStorage;
 
 
-base::Histogram* gExpiredHistogram = nullptr;
+base::Histogram* gExpiredBaseHistogram = nullptr;
+Histogram* gExpiredHistogram = nullptr;
 
 
 KeyedHistogram* gExpiredKeyedHistogram = nullptr;
@@ -302,9 +352,9 @@ size_t internal_HistogramStorageIndex(const StaticMutexAutoLock& aLock,
   return aHistogramId * size_t(ProcessID::Count) + size_t(aProcessId);
 }
 
-base::Histogram* internal_GetHistogramFromStorage(const StaticMutexAutoLock& aLock,
-                                                  HistogramID aHistogramId,
-                                                  ProcessID aProcessId)
+Histogram* internal_GetHistogramFromStorage(const StaticMutexAutoLock& aLock,
+                                            HistogramID aHistogramId,
+                                            ProcessID aProcessId)
 {
   size_t index = internal_HistogramStorageIndex(aLock, aHistogramId, aProcessId);
   return gHistogramStorage[index];
@@ -313,7 +363,7 @@ base::Histogram* internal_GetHistogramFromStorage(const StaticMutexAutoLock& aLo
 void internal_SetHistogramInStorage(const StaticMutexAutoLock& aLock,
                                     HistogramID aHistogramId,
                                     ProcessID aProcessId,
-                                    base::Histogram* aHistogram)
+                                    Histogram* aHistogram)
 {
   MOZ_ASSERT(XRE_IsParentProcess(),
     "Histograms are stored only in the parent process.");
@@ -346,7 +396,11 @@ void internal_SetKeyedHistogramInStorage(HistogramID aHistogramId,
 
 
 base::Histogram*
-internal_CreateHistogramInstance(const HistogramInfo& info, int bucketsOffset);
+internal_CreateBaseHistogramInstance(const HistogramInfo& info, int bucketsOffset);
+
+
+Histogram*
+internal_CreateHistogramInstance(HistogramID histogramId);
 
 bool
 internal_IsHistogramEnumId(HistogramID aID)
@@ -356,7 +410,7 @@ internal_IsHistogramEnumId(HistogramID aID)
 }
 
 
-base::Histogram*
+Histogram*
 internal_GetHistogramById(const StaticMutexAutoLock& aLock,
                           HistogramID histogramId,
                           ProcessID processId,
@@ -366,16 +420,15 @@ internal_GetHistogramById(const StaticMutexAutoLock& aLock,
   MOZ_ASSERT(!gHistogramInfos[histogramId].keyed);
   MOZ_ASSERT(processId < ProcessID::Count);
 
-  base::Histogram* h = internal_GetHistogramFromStorage(aLock, histogramId, processId);
+  Histogram* h = internal_GetHistogramFromStorage(aLock, histogramId, processId);
   if (h || !instantiate) {
     return h;
   }
 
-  const HistogramInfo& info = gHistogramInfos[histogramId];
-  const int bucketsOffset = gHistogramBucketLowerBoundIndex[histogramId];
-  h = internal_CreateHistogramInstance(info, bucketsOffset);
+  h = internal_CreateHistogramInstance(histogramId);
   MOZ_ASSERT(h);
   internal_SetHistogramInStorage(aLock, histogramId, processId, h);
+
   return h;
 }
 
@@ -435,21 +488,6 @@ internal_GetHistogramIdByName(const StaticMutexAutoLock& aLock,
   return NS_ERROR_ILLEGAL_VALUE;
 }
 
-
-void
-internal_ClearHistogramById(const StaticMutexAutoLock& aLock,
-                            HistogramID histogramId,
-                            ProcessID processId)
-{
-  size_t index = internal_HistogramStorageIndex(aLock, histogramId, processId);
-  if (gHistogramStorage[index] == gExpiredHistogram) {
-    
-    return;
-  }
-  delete gHistogramStorage[index];
-  gHistogramStorage[index] = nullptr;
-}
-
 }
 
 
@@ -489,7 +527,7 @@ internal_IsEmpty(const StaticMutexAutoLock& aLock, const base::Histogram *h)
 bool
 internal_IsExpired(const StaticMutexAutoLock& aLock, base::Histogram* h)
 {
-  return h == gExpiredHistogram;
+  return h == gExpiredBaseHistogram;
 }
 
 void
@@ -571,6 +609,12 @@ HistogramInfo::allows_key(const nsACString& key) const
   return false;
 }
 
+bool
+HistogramInfo::is_single_store() const
+{
+  return store_count == 1 && store_index == UINT16_MAX;
+}
+
 } 
 
 
@@ -604,8 +648,33 @@ internal_CheckHistogramArguments(const HistogramInfo& info)
   return NS_OK;
 }
 
+Histogram*
+internal_CreateHistogramInstance(HistogramID histogramId)
+{
+  const HistogramInfo& info = gHistogramInfos[histogramId];
+
+  if (NS_FAILED(internal_CheckHistogramArguments(info))) {
+    MOZ_ASSERT(false, "Failed histogram argument checks.");
+    return nullptr;
+  }
+
+  const bool isExpired = IsExpiredVersion(info.expiration());
+
+  if (isExpired) {
+    if (!gExpiredHistogram) {
+      gExpiredHistogram = new Histogram(histogramId, info,  true);
+    }
+
+    return gExpiredHistogram;
+  }
+
+  Histogram *wrapper = new Histogram(histogramId, info,  false);
+
+  return wrapper;
+}
+
 base::Histogram*
-internal_CreateHistogramInstance(const HistogramInfo& passedInfo, int bucketsOffset)
+internal_CreateBaseHistogramInstance(const HistogramInfo& passedInfo, int bucketsOffset)
 {
   if (NS_FAILED(internal_CheckHistogramArguments(passedInfo))) {
     MOZ_ASSERT(false, "Failed histogram argument checks.");
@@ -619,8 +688,8 @@ internal_CreateHistogramInstance(const HistogramInfo& passedInfo, int bucketsOff
   const int* buckets = &gHistogramBucketLowerBounds[bucketsOffset];
 
   if (isExpired) {
-    if (gExpiredHistogram) {
-      return gExpiredHistogram;
+    if (gExpiredBaseHistogram) {
+      return gExpiredBaseHistogram;
     }
 
     
@@ -657,7 +726,7 @@ internal_CreateHistogramInstance(const HistogramInfo& passedInfo, int bucketsOff
   }
 
   if (isExpired) {
-    gExpiredHistogram = h;
+    gExpiredBaseHistogram = h;
   }
 
   return h;
@@ -665,7 +734,7 @@ internal_CreateHistogramInstance(const HistogramInfo& passedInfo, int bucketsOff
 
 nsresult
 internal_HistogramAdd(const StaticMutexAutoLock& aLock,
-                      base::Histogram& histogram,
+                      Histogram& histogram,
                       const HistogramID id,
                       uint32_t value,
                       ProcessID aProcessType)
@@ -904,9 +973,19 @@ internal_GetHistogramsSnapshot(const StaticMutexAutoLock& aLock,
 
       bool shouldInstantiate =
         info.histogramType == nsITelemetry::HISTOGRAM_FLAG;
-      base::Histogram* h = internal_GetHistogramById(aLock, id, ProcessID(process),
+      Histogram* w = internal_GetHistogramById(aLock, id, ProcessID(process),
                                                shouldInstantiate);
-      if (!h || internal_IsExpired(aLock, h) || !internal_ShouldReflectHistogram(aLock, h, id)) {
+      if (!w || w->IsExpired()) {
+        continue;
+      }
+
+      base::Histogram *h = nullptr;
+      NS_NAMED_LITERAL_CSTRING(store, "main");
+      if (!w->GetHistogram(store, &h)) {
+        continue;
+      }
+
+      if (!internal_ShouldReflectHistogram(aLock, h, id)) {
         continue;
       }
 
@@ -934,6 +1013,125 @@ internal_GetHistogramsSnapshot(const StaticMutexAutoLock& aLock,
     }
   }
   return NS_OK;
+}
+
+} 
+
+
+
+
+
+
+namespace {
+
+Histogram::Histogram(HistogramID histogramId, const HistogramInfo& info, bool expired)
+  : mStorage()
+  , mSingleStore(nullptr)
+  , mIsExpired(expired)
+{
+  if (IsExpired()) {
+    return;
+  }
+
+  base::Histogram* h;
+  const int bucketsOffset = gHistogramBucketLowerBoundIndex[histogramId];
+
+  if (info.is_single_store()) {
+    mSingleStore = internal_CreateBaseHistogramInstance(info, bucketsOffset);
+  } else {
+    for (uint32_t i = 0; i < info.store_count; i++) {
+      auto store = nsDependentCString(&gHistogramStringTable[gHistogramStoresTable[info.store_index + i]]);
+      h = internal_CreateBaseHistogramInstance(info, bucketsOffset);
+      mStorage.Put(store, h);
+    }
+  }
+}
+
+Histogram::~Histogram()
+{
+  delete mSingleStore;
+}
+
+void
+Histogram::Add(uint32_t sample)
+{
+  MOZ_ASSERT(XRE_IsParentProcess(), "Only add to histograms in the parent process");
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
+  if (IsExpired()) {
+    return;
+  }
+
+  if (mSingleStore != nullptr) {
+    mSingleStore->Add(sample);
+  } else {
+    for (auto iter = mStorage.Iter(); !iter.Done(); iter.Next()) {
+      auto& h = iter.Data();
+      h->Add(sample);
+    }
+  }
+}
+
+void
+Histogram::Clear()
+{
+  MOZ_ASSERT(XRE_IsParentProcess(), "Only clear histograms in the parent process");
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
+  if (mSingleStore != nullptr) {
+    mSingleStore->Clear();
+  } else {
+    base::Histogram* h = nullptr;
+    bool found = GetHistogram(NS_LITERAL_CSTRING("main"), &h);
+    if (!found) {
+      return;
+    }
+    MOZ_ASSERT(h, "Should have found a valid histogram in the main store");
+
+    h->Clear();
+  }
+}
+
+bool
+Histogram::GetHistogram(const nsACString& store, base::Histogram** h)
+{
+  MOZ_ASSERT(!IsExpired());
+  if (IsExpired()) {
+    return false;
+  }
+
+  if (mSingleStore != nullptr){
+    *h = mSingleStore;
+    return true;
+  }
+
+  return mStorage.Get(store, h);
+}
+
+size_t
+Histogram::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
+{
+  size_t n = 0;
+  n += aMallocSizeOf(this);
+  
+
+
+
+
+  n += mStorage.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = mStorage.Iter(); !iter.Done(); iter.Next()) {
+    auto& h = iter.Data();
+    n += h->SizeOfIncludingThis(aMallocSizeOf);
+  }
+  if (mSingleStore != nullptr) {
+    
+    n += mSingleStore->SizeOfIncludingThis(aMallocSizeOf);
+  }
+  return n;
 }
 
 } 
@@ -986,7 +1184,7 @@ KeyedHistogram::~KeyedHistogram()
 {
   for (auto iter = mHistogramMap.Iter(); !iter.Done(); iter.Next()) {
     base::Histogram* h = iter.Get()->mData;
-    if (h == gExpiredHistogram) {
+    if (h == gExpiredBaseHistogram) {
       continue;
     }
     delete h;
@@ -1004,7 +1202,7 @@ KeyedHistogram::GetHistogram(const nsCString& key, base::Histogram** histogram)
   }
 
   int bucketsOffset = gHistogramBucketLowerBoundIndex[mId];
-  base::Histogram* h = internal_CreateHistogramInstance(mHistogramInfo, bucketsOffset);
+  base::Histogram* h = internal_CreateBaseHistogramInstance(mHistogramInfo, bucketsOffset);
   if (!h) {
     return NS_ERROR_FAILURE;
   }
@@ -1085,7 +1283,7 @@ KeyedHistogram::Clear()
 
   for (auto iter = mHistogramMap.Iter(); !iter.Done(); iter.Next()) {
     base::Histogram* h = iter.Get()->mData;
-    if (h == gExpiredHistogram) {
+    if (h == gExpiredBaseHistogram) {
       continue;
     }
     delete h;
@@ -1289,9 +1487,9 @@ void internal_Accumulate(const StaticMutexAutoLock& aLock, HistogramID aId, uint
     return;
   }
 
-  base::Histogram *h = internal_GetHistogramById(aLock, aId, ProcessID::Parent);
-  MOZ_ASSERT(h);
-  internal_HistogramAdd(aLock, *h, aId, aSample, ProcessID::Parent);
+  Histogram *w = internal_GetHistogramById(aLock, aId, ProcessID::Parent);
+  MOZ_ASSERT(w);
+  internal_HistogramAdd(aLock, *w, aId, aSample, ProcessID::Parent);
 }
 
 void
@@ -1318,10 +1516,11 @@ internal_AccumulateChild(const StaticMutexAutoLock& aLock,
     return;
   }
 
-  if (base::Histogram* h = internal_GetHistogramById(aLock, aId, aProcessType)) {
-    internal_HistogramAdd(aLock, *h, aId, aSample, aProcessType);
-  } else {
+  Histogram *w = internal_GetHistogramById(aLock, aId, aProcessType);
+  if (w == nullptr) {
     NS_WARNING("Failed GetHistogramById for CHILD");
+  } else {
+    internal_HistogramAdd(aLock, *w, aId, aSample, aProcessType);
   }
 }
 
@@ -1354,11 +1553,14 @@ internal_ClearHistogram(const StaticMutexAutoLock& aLock, HistogramID id)
         kh->Clear();
       }
     }
-  }
-
-  
-  for (uint32_t process = 0; process < static_cast<uint32_t>(ProcessID::Count); ++process) {
-    internal_ClearHistogramById(aLock, id, static_cast<ProcessID>(process));
+  } else {
+    
+    for (uint32_t process = 0; process < static_cast<uint32_t>(ProcessID::Count); ++process) {
+      Histogram* h = internal_GetHistogramById(aLock, id, static_cast<ProcessID>(process),  false);
+      if (h) {
+        h->Clear();
+      }
+    }
   }
 }
 
@@ -1588,7 +1790,15 @@ internal_JSHistogram_Snapshot(JSContext *cx, unsigned argc, JS::Value *vp)
     
     
     
-    base::Histogram* h = internal_GetHistogramById(locker, id, ProcessID::Parent);
+    Histogram* w = internal_GetHistogramById(locker, id, ProcessID::Parent);
+    base::Histogram *h = nullptr;
+    NS_NAMED_LITERAL_CSTRING(store, "main");
+    if (!w->GetHistogram(store, &h)) {
+      
+      
+      args.rval().setUndefined();
+      return true;
+    }
     
     
     if (NS_FAILED(internal_GetHistogramAndSamples(locker, h, dataSnapshot))) {
@@ -2051,7 +2261,7 @@ void TelemetryHistogram::InitializeGlobalState(bool canRecordBase,
 
   if (XRE_IsParentProcess()) {
     gHistogramStorage =
-      new base::Histogram*[HistogramCount * size_t(ProcessID::Count)] {};
+      new Histogram*[HistogramCount * size_t(ProcessID::Count)] {};
     gKeyedHistogramStorage =
       new KeyedHistogram*[HistogramCount * size_t(ProcessID::Count)] {};
   }
@@ -2101,6 +2311,8 @@ void TelemetryHistogram::DeInitializeGlobalState()
     delete[] gHistogramStorage;
     delete[] gKeyedHistogramStorage;
   }
+  delete gExpiredBaseHistogram;
+  gExpiredBaseHistogram = nullptr;
   delete gExpiredHistogram;
   gExpiredHistogram = nullptr;
   delete gExpiredKeyedHistogram;
@@ -2643,7 +2855,7 @@ TelemetryHistogram::GetHistogramSizesOfIncludingThis(mozilla::MallocSizeOf
 
   
   if (gHistogramStorage) {
-    n += HistogramCount * size_t(ProcessID::Count) * sizeof(base::Histogram*);
+    n += HistogramCount * size_t(ProcessID::Count) * sizeof(Histogram*);
     for (size_t i = 0; i < HistogramCount * size_t(ProcessID::Count); ++i) {
       if (gHistogramStorage[i] && gHistogramStorage[i] != gExpiredHistogram) {
         n += gHistogramStorage[i]->SizeOfIncludingThis(aMallocSizeOf);
@@ -3062,10 +3274,21 @@ TelemetryHistogram::DeserializeHistograms(JSContext* aCx, JS::HandleValue aData)
         }
 
         
-        base::Histogram* h = internal_GetHistogramById(locker, id, procID);
+        Histogram* w = internal_GetHistogramById(locker, id, procID);
+        MOZ_ASSERT(w);
+
+        if (!w || w->IsExpired()) {
+          continue;
+        }
+
+        base::Histogram *h = nullptr;
+        NS_NAMED_LITERAL_CSTRING(store, "main");
+        if (!w->GetHistogram(store, &h)) {
+          continue;
+        }
         MOZ_ASSERT(h);
 
-        if (!h || internal_IsExpired(locker, h)) {
+        if (!h) {
           
           continue;
         }
