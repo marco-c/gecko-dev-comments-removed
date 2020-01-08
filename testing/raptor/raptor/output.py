@@ -81,7 +81,22 @@ class Output(object):
                     new_subtest['value'] = 0
                     new_subtest['unit'] = test.subtest_unit
 
+                    
+                    LOG.info("ignoring the first %s value due to initial pageload noise"
+                             % measurement_name)
                     filtered_values = filter.ignore_first(new_subtest['replicates'], 1)
+
+                    
+                    
+                    
+                    
+                    if measurement_name == "ttfi":
+                        filtered_values = filter.ignore_negative(filtered_values)
+                        
+                        
+                        if len(filtered_values) < 1:
+                            continue
+
                     new_subtest['value'] = filter.median(filtered_values)
 
                     vals.append([new_subtest['value'], new_subtest['name']])

@@ -215,11 +215,12 @@ function measureTTFI() {
     
     
     if (gRetryCounter <= 25 * (1000 / 200)) {
-      console.log("\TTFI is not yet available (0), retry number " + gRetryCounter + "...\n");
+      console.log("TTFI is not yet available (0), retry number " + gRetryCounter + "...\n");
       window.setTimeout(measureTTFI, 200);
     } else {
       
-      sendResult("ttfi", 0);
+      console.log("TTFI was not available for this pageload");
+      sendResult("ttfi", -1);
     }
   }
 }
@@ -256,7 +257,9 @@ function sendResult(_type, _value) {
   
   console.log("sending result back to runner: " + _type + " " + _value);
   chrome.runtime.sendMessage({"type": _type, "value": _value}, function(response) {
-    console.log(response.text);
+    if (response !== undefined) {
+      console.log(response.text);
+    }
   });
 }
 
