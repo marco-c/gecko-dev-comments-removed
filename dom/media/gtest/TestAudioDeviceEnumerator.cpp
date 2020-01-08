@@ -3,13 +3,13 @@
 
 
 
+#define ENABLE_SET_CUBEB_BACKEND 1
+#include "AudioDeviceInfo.h"
+#include "CubebDeviceEnumerator.h"
 #include "gtest/gtest.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Attributes.h"
 #include "nsTArray.h"
-#define ENABLE_SET_CUBEB_BACKEND 1
-#include "CubebUtils.h"
-#include "MediaEngineWebRTC.h"
 
 using namespace mozilla;
 
