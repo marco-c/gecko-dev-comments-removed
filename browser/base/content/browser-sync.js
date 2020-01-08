@@ -122,13 +122,16 @@ var gSync = {
     }
 
     
-    let statusBroadcaster = document.getElementById("sync-status");
-    if (!statusBroadcaster) {
+    let syncIcon = document.getElementById("appMenu-fxa-icon");
+    if (!syncIcon) {
       
       
       return;
     }
-    statusBroadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
+    let syncNow = document.getElementById("PanelUI-remotetabs-syncnow");
+    let label = this.syncStrings.GetStringFromName("syncnow.label");
+    syncIcon.setAttribute("label", label);
+    syncNow.setAttribute("label", label);
     
     
     document.getElementById("sync-setup").hidden = false;
@@ -259,8 +262,8 @@ var gSync = {
   },
 
   updateSyncStatus(state) {
-    const broadcaster = document.getElementById("sync-status");
-    const syncingUI = broadcaster.getAttribute("syncstatus") == "active";
+    let syncNow = document.getElementById("PanelUI-remotetabs-syncnow");
+    const syncingUI = syncNow.getAttribute("syncstatus") == "active";
     if (state.syncing != syncingUI) { 
       state.syncing ? this.onActivityStart() : this.onActivityStop();
     }
@@ -562,19 +565,29 @@ var gSync = {
     clearTimeout(this._syncAnimationTimer);
     this._syncStartTime = Date.now();
 
-    let broadcaster = document.getElementById("sync-status");
-    broadcaster.setAttribute("syncstatus", "active");
-    broadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncingtabs.label"));
-    broadcaster.setAttribute("disabled", "true");
+    let label = this.syncStrings.GetStringFromName("syncingtabs.label");
+    let syncIcon = document.getElementById("appMenu-fxa-icon");
+    let syncNow = document.getElementById("PanelUI-remotetabs-syncnow");
+    syncIcon.setAttribute("syncstatus", "active");
+    syncIcon.setAttribute("label", label);
+    syncIcon.setAttribute("disabled", "true");
+    syncNow.setAttribute("syncstatus", "active");
+    syncNow.setAttribute("label", label);
+    syncNow.setAttribute("disabled", "true");
   },
 
   _onActivityStop() {
     if (!gBrowser)
       return;
-    let broadcaster = document.getElementById("sync-status");
-    broadcaster.removeAttribute("syncstatus");
-    broadcaster.removeAttribute("disabled");
-    broadcaster.setAttribute("label", this.syncStrings.GetStringFromName("syncnow.label"));
+    let label = this.syncStrings.GetStringFromName("syncnow.label");
+    let syncIcon = document.getElementById("appMenu-fxa-icon");
+    let syncNow = document.getElementById("PanelUI-remotetabs-syncnow");
+    syncIcon.removeAttribute("syncstatus");
+    syncIcon.removeAttribute("disabled");
+    syncIcon.setAttribute("label", label);
+    syncNow.removeAttribute("syncstatus");
+    syncNow.removeAttribute("disabled");
+    syncNow.setAttribute("label", label);
     Services.obs.notifyObservers(null, "test:browser-sync:activity-stop");
   },
 
@@ -644,7 +657,6 @@ var gSync = {
 
 
 
-
   updateSyncButtonsTooltip(state) {
     const status = state.status;
 
@@ -666,12 +678,15 @@ var gSync = {
       tooltiptext = this.formatLastSyncDate(state.lastSync);
     }
 
-    let broadcaster = document.getElementById("sync-status");
-    if (broadcaster) {
+    let syncIcon = document.getElementById("appMenu-fxa-icon");
+    if (syncIcon) {
+      let syncNow = document.getElementById("PanelUI-remotetabs-syncnow");
       if (tooltiptext) {
-        broadcaster.setAttribute("tooltiptext", tooltiptext);
+        syncIcon.setAttribute("tooltiptext", tooltiptext);
+        syncNow.setAttribute("tooltiptext", tooltiptext);
       } else {
-        broadcaster.removeAttribute("tooltiptext");
+        syncIcon.removeAttribute("tooltiptext");
+        syncNow.removeAttribute("tooltiptext");
       }
     }
   },
