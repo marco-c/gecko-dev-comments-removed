@@ -213,6 +213,7 @@ PremultiplyFallback(const uint8_t* aSrc, int32_t aSrcGap,
       
       
       
+      
       rb = rb*a + 0x00FF00FF;
       rb = (rb + ((rb >> 8) & 0x00FF00FF)) & 0xFF00FF00;
 

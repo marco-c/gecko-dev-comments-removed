@@ -193,6 +193,7 @@ UnpremultiplyVector_NEON(const uint16x8_t& aSrc)
   
   
   
+  
   rb =
     vhaddq_u16(
       vmulq_u16(rb, q1234lohi.val[1]),

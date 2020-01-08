@@ -39,6 +39,7 @@
 
 
 
+
 class nsPluginLogging
 {
 public:

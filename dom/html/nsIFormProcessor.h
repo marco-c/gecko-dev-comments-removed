@@ -57,6 +57,9 @@ public:
 
 
 
+
+
+
   virtual nsresult ProcessValue(mozilla::dom::Element* aElement,
                                 const nsAString& aName,
                                 nsAString& aValue) = 0;
@@ -72,6 +75,8 @@ public:
                                    nsAString& newValue) = 0;
 
   
+
+
 
 
 

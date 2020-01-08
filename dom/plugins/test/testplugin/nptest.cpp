@@ -2457,6 +2457,7 @@ static bool
 streamTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
 {
   
+  
   if (!(7 <= argCount && argCount <= 8))
     return false;
 

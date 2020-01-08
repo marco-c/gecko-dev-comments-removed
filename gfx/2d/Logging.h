@@ -763,6 +763,7 @@ typedef Log<LOG_CRITICAL, CriticalLogger> CriticalLog;
 
 
 
+
 #define gfxCriticalNote gfxCriticalError(gfxCriticalError::DefaultOptions(false))
 #define gfxCriticalNoteOnce static gfxCriticalError GFX_LOGGING_GLUE(sOnceAtLine,__LINE__) = gfxCriticalNote
 

@@ -350,6 +350,7 @@ public:
 
   IntRect mSamplingRect;          
 
+
 };
 
 class StoredPattern;
@@ -960,6 +961,7 @@ public:
 
 
 
+
   virtual already_AddRefed<UnscaledFont>
     CreateUnscaledFont(uint32_t aIndex,
                        const uint8_t* aInstanceData,
@@ -1036,6 +1038,8 @@ public:
                               const Matrix& aTransform);
 
   
+
+
 
 
 
@@ -1470,6 +1474,7 @@ public:
 
 
 
+
   virtual void GetGlyphRasterizationMetrics(ScaledFont *aScaledFont, const uint16_t* aGlyphIndices,
                                             uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics)
   {
@@ -1720,6 +1725,8 @@ public:
 #endif
 
   
+
+
 
 
 

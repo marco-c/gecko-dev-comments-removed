@@ -1157,6 +1157,7 @@ PresentationControllingInfo::NotifyData(const nsACString& aData, bool aIsBinary)
 
 
 
+
 NS_IMPL_ISUPPORTS_INHERITED(PresentationPresentingInfo,
                             PresentationSessionInfo,
                             nsITimerCallback,
