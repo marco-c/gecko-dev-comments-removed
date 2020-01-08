@@ -3279,6 +3279,25 @@ NextWindowID()
   return (processBits << kWindowIDWindowBits) | windowBits;
 }
 
+
+
+void
+SendFirstPartyStorageAccessGrantedForOriginToParentProcess(nsIPrincipal* aPrincipal,
+                                                           const nsACString& aParentOrigin,
+                                                           const nsACString& aGrantedOrigin)
+{
+  MOZ_ASSERT(!XRE_IsParentProcess());
+
+  ContentChild* cc = ContentChild::GetSingleton();
+  MOZ_ASSERT(cc);
+
+  
+  
+  Unused << cc->SendFirstPartyStorageAccessGrantedForOrigin(IPC::Principal(aPrincipal),
+                                                            aParentOrigin,
+                                                            aGrantedOrigin);
+}
+
 mozilla::ipc::IPCResult
 ContentChild::RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
                                     const uint32_t& aAction)

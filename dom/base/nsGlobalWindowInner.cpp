@@ -18,7 +18,6 @@
 #include "nsDOMNavigationTiming.h"
 #include "nsIDOMStorageManager.h"
 #include "mozilla/dom/AutoplayRequest.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DOMJSProxyHandler.h"
 #include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/EventTarget.h"
@@ -8189,14 +8188,11 @@ nsGlobalWindowInner::SaveFirstPartyStorageAccessGrantedFor(const nsAString& aOri
     return;
   }
 
-  ContentChild* cc = ContentChild::GetSingleton();
-  MOZ_ASSERT(cc);
-
   
   
-  Unused << cc->SendFirstPartyStorageAccessGrantedForOrigin(IPC::Principal(principal),
-                                                            parentOrigin,
-                                                            grantedOrigin);
+  SendFirstPartyStorageAccessGrantedForOriginToParentProcess(principal,
+                                                             parentOrigin,
+                                                             grantedOrigin);
 }
 
  void
@@ -8480,8 +8476,15 @@ nsPIDOMWindowInner::GetAutoplayRequest()
 
 namespace mozilla {
 namespace dom {
+
 extern uint64_t
 NextWindowID();
+
+extern void
+SendFirstPartyStorageAccessGrantedForOriginToParentProcess(nsIPrincipal* aPrincipal,
+                                                           const nsACString& aParentOrigin,
+                                                           const nsACString& aGrantedOrigin);
+
 } 
 } 
 
