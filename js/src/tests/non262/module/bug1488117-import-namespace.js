@@ -1,0 +1,3 @@
+
+
+import* as ns from "./bug1488117.js";
