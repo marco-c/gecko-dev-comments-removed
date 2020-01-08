@@ -19,9 +19,8 @@ namespace js {
 
 
 
-
-extern const char*
-AtomToPrintableString(JSContext* cx, JSAtom* atom, UniqueChars* bytes);
+extern UniqueChars
+AtomToPrintableString(JSContext* cx, JSAtom* atom);
 
 class PropertyName;
 
