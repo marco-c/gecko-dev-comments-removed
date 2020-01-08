@@ -2713,23 +2713,13 @@ nsPIDOMWindowInner::HasOpenWebSockets() const
          (mTopInnerWindow && mTopInnerWindow->mNumOfOpenWebSockets);
 }
 
-bool
-nsPIDOMWindowInner::GetAudioCaptured() const
-{
-  return mAudioCaptured;
-}
-
-nsresult
+void
 nsPIDOMWindowInner::SetAudioCapture(bool aCapture)
 {
-  mAudioCaptured = aCapture;
-
   RefPtr<AudioChannelService> service = AudioChannelService::GetOrCreate();
   if (service) {
     service->SetWindowAudioCaptured(GetOuterWindow(), mWindowID, aCapture);
   }
-
-  return NS_OK;
 }
 
 
@@ -8169,7 +8159,6 @@ nsPIDOMWindowInner::nsPIDOMWindowInner(nsPIDOMWindowOuter *aOuterWindow)
   mMayHaveMouseEnterLeaveEventListener(false),
   mMayHavePointerEnterLeaveEventListener(false),
   mMayHaveTextEventListenerInDefaultGroup(false),
-  mAudioCaptured(false),
   mOuterWindow(aOuterWindow),
   
   mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),

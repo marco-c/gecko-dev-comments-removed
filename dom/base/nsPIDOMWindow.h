@@ -196,8 +196,7 @@ public:
   void MuteAudioContexts();
   void UnmuteAudioContexts();
 
-  bool GetAudioCaptured() const;
-  nsresult SetAudioCapture(bool aCapture);
+  void SetAudioCapture(bool aCapture);
 
   mozilla::dom::Performance* GetPerformance();
 
@@ -681,8 +680,6 @@ protected:
   
   
   bool mMayHaveTextEventListenerInDefaultGroup;
-
-  bool mAudioCaptured;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
