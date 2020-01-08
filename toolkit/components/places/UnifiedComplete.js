@@ -80,20 +80,6 @@ const QUERYINDEX_FRECENCY      = 10;
 
 
 
-
-const TOKEN_TO_BEHAVIOR_MAP = new Map([
-  ["^", "history"],
-  ["*", "bookmark"],
-  ["+", "tag"],
-  ["%", "openpage"],
-  ["~", "typed"],
-  ["$", "searches"],
-  ["#", "title"],
-  ["@", "url"],
-]);
-
-
-
 const DISALLOWED_URLLIKE_PREFIXES = [
   "http", "https", "ftp",
 ];
@@ -354,11 +340,21 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "syncUsernamePref",
                                       "services.sync.username");
+
+
+
+
+XPCOMUtils.defineLazyGetter(this, "TOKEN_TO_BEHAVIOR_MAP", () => new Map(
+  Object.entries(UrlbarTokenizer.RESTRICT).map(
+    ([type, char]) => [char, type.toLowerCase()]
+  )
+));
 
 function setTimeout(callback, ms) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -877,7 +873,7 @@ Search.prototype = {
         query = query.substr(0, UrlbarPrefs.get("maxCharsForSearchSuggestions"));
         
         
-        if (this.hasBehavior("searches") &&
+        if (this.hasBehavior("search") &&
             !this._inPrivateWindow &&
             !this._prohibitSearchSuggestionsFor(query)) {
           let engine;

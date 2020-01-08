@@ -43,10 +43,25 @@ var UrlbarTokenizer = {
     RESTRICT_BOOKMARK: 5,
     RESTRICT_TAG: 6,
     RESTRICT_OPENPAGE: 7,
-    RESTRICT_TYPED: 8,
-    RESTRICT_SEARCH: 9,
-    RESTRICT_TITLE: 10,
-    RESTRICT_URL: 11,
+    RESTRICT_SEARCH: 8,
+    RESTRICT_TITLE: 9,
+    RESTRICT_URL: 10,
+  },
+
+  
+  
+  
+  
+  
+  
+  RESTRICT: {
+    HISTORY: "^",
+    BOOKMARK: "*",
+    TAG: "+",
+    OPENPAGE: "%",
+    SEARCH: "?",
+    TITLE: "#",
+    URL: "$",
   },
 
   
@@ -168,22 +183,11 @@ var UrlbarTokenizer = {
   },
 };
 
-
-
-
-
-
-
-UrlbarTokenizer.CHAR_TO_TYPE_MAP = new Map([
-  ["^", UrlbarTokenizer.TYPE.RESTRICT_HISTORY],
-  ["*", UrlbarTokenizer.TYPE.RESTRICT_BOOKMARK],
-  ["+", UrlbarTokenizer.TYPE.RESTRICT_TAG],
-  ["%", UrlbarTokenizer.TYPE.RESTRICT_OPENPAGE],
-  ["~", UrlbarTokenizer.TYPE.RESTRICT_TYPED],
-  ["$", UrlbarTokenizer.TYPE.RESTRICT_SEARCH],
-  ["#", UrlbarTokenizer.TYPE.RESTRICT_TITLE],
-  ["@", UrlbarTokenizer.TYPE.RESTRICT_URL],
-]);
+const CHAR_TO_TYPE_MAP = new Map(
+  Object.entries(UrlbarTokenizer.RESTRICT).map(
+    ([type, char]) => [ char, UrlbarTokenizer.TYPE[`RESTRICT_${type}`] ]
+  )
+);
 
 
 
@@ -195,8 +199,8 @@ function splitString(searchString) {
   
   let tokens = searchString.trim().split(UrlbarTokenizer.REGEXP_SPACES);
   let accumulator = [];
-  let hasRestrictionToken = tokens.some(t => UrlbarTokenizer.CHAR_TO_TYPE_MAP.has(t));
-  let chars = Array.from(UrlbarTokenizer.CHAR_TO_TYPE_MAP.keys()).join("");
+  let hasRestrictionToken = tokens.some(t => CHAR_TO_TYPE_MAP.has(t));
+  let chars = Array.from(CHAR_TO_TYPE_MAP.keys()).join("");
   logger.debug("Restriction chars", chars);
   for (let token of tokens) {
     
@@ -248,7 +252,7 @@ function filterTokens(tokens) {
       value: token,
       type: UrlbarTokenizer.TYPE.TEXT,
     };
-    let restrictionType = UrlbarTokenizer.CHAR_TO_TYPE_MAP.get(token);
+    let restrictionType = CHAR_TO_TYPE_MAP.get(token);
     if (tokens.length > 1 &&
         restrictionType &&
         foundRestriction.length == 0 ||

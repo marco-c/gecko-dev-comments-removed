@@ -35,8 +35,7 @@ add_task(async function init() {
 
 add_task(async function mainTest() {
   
-  
-  await promiseAutocompleteResultPopup("$ test", window);
+  await promiseAutocompleteResultPopup(`${UrlbarTokenizer.RESTRICT.SEARCH} test`, window);
   await promiseSuggestionsPresent("Waiting for initial suggestions");
 
   
