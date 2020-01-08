@@ -1550,6 +1550,9 @@ pref("browser.contentblocking.introCount", 0);
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tracking-protection/start/");
 
 
+pref("urlclassifier.trackingAnnotationSkipURLs", "google.com/recaptcha/,*.google.com/recaptcha/");
+
+
 pref("privacy.usercontext.about_newtab_segregation.enabled", true);
 
 #ifdef NIGHTLY_BUILD
