@@ -1336,17 +1336,17 @@ class Assembler : public AssemblerShared
   protected:
     
     
-    struct RelativePatch
+    class RelativePatch
     {
         void* target_;
-        Relocation::Kind kind_;
+        RelocationKind kind_;
 
       public:
-        RelativePatch(void* target, Relocation::Kind kind)
+        RelativePatch(void* target, RelocationKind kind)
           : target_(target), kind_(kind)
         { }
         void* target() const { return target_; }
-        Relocation::Kind kind() const { return kind_; }
+        RelocationKind kind() const { return kind_; }
     };
 
     
@@ -1776,7 +1776,7 @@ class Assembler : public AssemblerShared
     }
     void retarget(Label* label, Label* target);
     
-    void retarget(Label* label, void* target, Relocation::Kind reloc);
+    void retarget(Label* label, void* target, RelocationKind reloc);
 
     static void Bind(uint8_t* rawCode, const CodeLabel& label);
 
@@ -1791,7 +1791,7 @@ class Assembler : public AssemblerShared
 #ifdef DEBUG
         MOZ_ASSERT(dataRelocations_.length() == 0);
         for (auto& j : jumps_)
-            MOZ_ASSERT(j.kind() == Relocation::HARDCODED);
+            MOZ_ASSERT(j.kind() == RelocationKind::HARDCODED);
 #endif
     }
 
@@ -1808,9 +1808,9 @@ class Assembler : public AssemblerShared
     static bool HasRoundInstruction(RoundingMode mode) { return false; }
 
   protected:
-    void addPendingJump(BufferOffset src, ImmPtr target, Relocation::Kind kind) {
+    void addPendingJump(BufferOffset src, ImmPtr target, RelocationKind kind) {
         enoughMemory_ &= jumps_.append(RelativePatch(target.value, kind));
-        if (kind == Relocation::JITCODE)
+        if (kind == RelocationKind::JITCODE)
             writeRelocation(src);
     }
 

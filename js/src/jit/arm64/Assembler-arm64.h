@@ -275,16 +275,16 @@ class Assembler : public vixl::Assembler
     static bool HasRoundInstruction(RoundingMode mode) { return false; }
 
     
-    void addJumpRelocation(BufferOffset src, Relocation::Kind reloc);
+    void addJumpRelocation(BufferOffset src, RelocationKind reloc);
 
   protected:
     
     
-    void addPendingJump(BufferOffset src, ImmPtr target, Relocation::Kind kind);
+    void addPendingJump(BufferOffset src, ImmPtr target, RelocationKind kind);
 
     
     
-    size_t addPatchableJump(BufferOffset src, Relocation::Kind kind);
+    size_t addPatchableJump(BufferOffset src, RelocationKind kind);
 
   public:
     static uint32_t PatchWrite_NearCallSize() {
@@ -337,7 +337,7 @@ class Assembler : public vixl::Assembler
 #ifdef DEBUG
         MOZ_ASSERT(dataRelocations_.length() == 0);
         for (auto& j : pendingJumps_)
-            MOZ_ASSERT(j.kind == Relocation::HARDCODED);
+            MOZ_ASSERT(j.kind == RelocationKind::HARDCODED);
 #endif
     }
 
@@ -393,9 +393,9 @@ class Assembler : public vixl::Assembler
     {
         BufferOffset offset;
         void* target;
-        Relocation::Kind kind;
+        RelocationKind kind;
 
-        RelativePatch(BufferOffset offset, void* target, Relocation::Kind kind)
+        RelativePatch(BufferOffset offset, void* target, RelocationKind kind)
           : offset(offset), target(target), kind(kind)
         { }
     };

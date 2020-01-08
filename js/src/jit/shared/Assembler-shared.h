@@ -445,17 +445,14 @@ struct BaseObjectSlotIndex : BaseValueIndex
 #endif
 };
 
-class Relocation {
-  public:
-    enum Kind {
-        
-        
-        HARDCODED,
+enum class RelocationKind {
+    
+    
+    HARDCODED,
 
-        
-        
-        JITCODE
-    };
+    
+    
+    JITCODE
 };
 
 class RepatchLabel
