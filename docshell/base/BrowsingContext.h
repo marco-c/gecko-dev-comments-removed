@@ -4,8 +4,8 @@
 
 
 
-#ifndef BrowsingContext_h
-#define BrowsingContext_h
+#ifndef mozilla_dom_BrowsingContext_h
+#define mozilla_dom_BrowsingContext_h
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
@@ -143,4 +143,5 @@ class BrowsingContext : public nsWrapperCache,
 
 }  
 }  
-#endif
+
+#endif  
