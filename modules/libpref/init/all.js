@@ -1053,6 +1053,12 @@ pref("browser.dom.window.dump.enabled", true, sticky);
 pref("toolkit.dump.emit", false);
 
 
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+pref("devtools.recordreplay.enabled", false);
+pref("devtools.recordreplay.enableRewinding", true);
+#endif
+
+
 pref("view_source.syntax_highlight", true);
 pref("view_source.wrap_long_lines", false);
 pref("view_source.editor.path", "");

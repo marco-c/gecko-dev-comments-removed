@@ -113,6 +113,16 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
     
     toggleMenuItem("menu_devtools_connect", devtoolsRemoteEnabled);
+
+    
+    try {
+      const recordReplayEnabled = Services.prefs.getBoolPref("devtools.recordreplay.enabled");
+      toggleMenuItem("menu_devtools_recordExecution", recordReplayEnabled);
+      toggleMenuItem("menu_devtools_saveRecording", recordReplayEnabled);
+      toggleMenuItem("menu_devtools_replayExecution", recordReplayEnabled);
+    } catch (e) {
+      
+    }
   },
 
   

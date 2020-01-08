@@ -1779,6 +1779,7 @@ window._gBrowser = {
     
     
     
+    
 
     let b = document.createElementNS(this._XUL_NS, "browser");
     b.permanentKey = {};
@@ -1799,6 +1800,16 @@ window._gBrowser = {
     if (aParams.remoteType) {
       b.setAttribute("remoteType", aParams.remoteType);
       b.setAttribute("remote", "true");
+    }
+
+    let recordExecution = aParams && aParams.recordExecution;
+    if (recordExecution) {
+      b.setAttribute("recordExecution", recordExecution);
+    }
+
+    let replayExecution = aParams && aParams.replayExecution;
+    if (replayExecution) {
+      b.setAttribute("replayExecution", replayExecution);
     }
 
     if (aParams.openerWindow) {
@@ -2152,6 +2163,8 @@ window._gBrowser = {
     skipBackgroundNotify,
     triggeringPrincipal,
     userContextId,
+    recordExecution,
+    replayExecution,
   } = {}) {
     
     if (this.selectedTab.owner) {
@@ -2331,7 +2344,9 @@ window._gBrowser = {
       
       if (aURI == BROWSER_NEW_TAB_URL &&
           !userContextId &&
-          !PrivateBrowsingUtils.isWindowPrivate(window)) {
+          !PrivateBrowsingUtils.isWindowPrivate(window) &&
+          !recordExecution &&
+          !replayExecution) {
         b = this._getPreloadedBrowser();
         if (b) {
           usingPreloadedContent = true;
@@ -2348,6 +2363,8 @@ window._gBrowser = {
           openerWindow: opener,
           nextTabParentId,
           name,
+          recordExecution,
+          replayExecution,
         });
       }
 
