@@ -56,8 +56,9 @@ ModuleScript::UnlinkScript()
 {
   
   if (mScript) {
-    MOZ_ASSERT(JS::GetTopLevelScriptPrivate(mScript) == this);
-    JS::SetTopLevelScriptPrivate(mScript, nullptr);
+    MOZ_ASSERT(JS::GetModuleHostDefinedField(mScript).toPrivate() ==
+               this);
+    JS::SetModuleHostDefinedField(mScript, JS::UndefinedValue());
     mScript = nullptr;
   }
 }
@@ -80,9 +81,7 @@ ModuleScript::SetScript(JS::Handle<JSScript*> aScript)
 
   
   
-  MOZ_ASSERT(!JS::GetTopLevelScriptPrivate(mScript));
-  JS::SetTopLevelScriptPrivate(mScript, this);
-
+  JS::SetModuleHostDefinedField(mScript, JS::PrivateValue(this));
   HoldJSObjects(this);
 }
 

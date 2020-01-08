@@ -763,13 +763,8 @@ HostResolveImportedModule(JSContext* aCx, JS::Handle<JSScript*> aScript,
                           JS::Handle<JSString*> aSpecifier)
 {
   
-  void* value = JS::GetTopLevelScriptPrivate(aScript);
-  if (!value) {
-    JS_ReportErrorASCII(aCx, "Module script not found");
-    return nullptr;
-  }
-
-  auto script = static_cast<ModuleScript*>(value);
+  JS::Value value = JS::GetModuleHostDefinedField(aScript);
+  auto script = static_cast<ModuleScript*>(value.toPrivate());
   MOZ_ASSERT(script->Script() == aScript);
 
   
@@ -802,13 +797,13 @@ HostPopulateImportMeta(JSContext* aCx, JS::Handle<JSScript*> aScript,
 {
   MOZ_DIAGNOSTIC_ASSERT(aScript);
 
-  void* value = JS::GetTopLevelScriptPrivate(aScript);
-  if (!value) {
+  JS::Value value = JS::GetModuleHostDefinedField(aScript);
+  if (value.isUndefined()) {
     JS_ReportErrorASCII(aCx, "Module script not found");
     return false;
   }
 
-  auto script = static_cast<ModuleScript*>(value);
+  auto script = static_cast<ModuleScript*>(value.toPrivate());
   MOZ_DIAGNOSTIC_ASSERT(script->Script() == aScript);
 
   nsAutoCString url;
