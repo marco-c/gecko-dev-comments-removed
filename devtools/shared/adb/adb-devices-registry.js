@@ -4,51 +4,77 @@
 
 "use strict";
 
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const EventEmitter = require("devtools/shared/event-emitter");
 const { adbAddon, ADB_ADDON_STATES } = require("devtools/shared/adb/adb-addon");
 
 
 
-const EXPORTED_SYMBOLS = ["Devices"];
 
-const Devices = {
-  _devices: {},
 
-  register: function(name, device) {
+
+
+class AdbDevicesRegistry extends EventEmitter {
+  constructor() {
+    super();
+
+    
+    this._devices = {};
+
+    
+    
+    this._onAdbAddonUpdate = this._onAdbAddonUpdate.bind(this);
+    adbAddon.on("update", this._onAdbAddonUpdate);
+  }
+
+  
+
+
+
+
+
+
+
+  register(name, device) {
     this._devices[name] = device;
     this.emit("register");
-  },
+  }
 
-  unregister: function(name) {
+  
+
+
+
+
+
+  unregister(name) {
     delete this._devices[name];
     this.emit("unregister");
-  },
+  }
 
-  available: function() {
+  
+
+
+  available() {
     return Object.keys(this._devices).sort();
-  },
+  }
 
-  getByName: function(name) {
+  
+
+
+
+
+
+  getByName(name) {
     return this._devices[name];
-  },
+  }
 
-  updateAdbAddonStatus: function() {
+  _onAdbAddonUpdate() {
     const installed = adbAddon.status === ADB_ADDON_STATES.INSTALLED;
     if (!installed) {
       for (const name in this._devices) {
         this.unregister(name);
       }
     }
-  },
-};
+  }
+}
 
-Object.defineProperty(this, "Devices", {
-  value: Devices,
-  enumerable: true,
-  writable: false,
-});
-
-EventEmitter.decorate(Devices);
-
-adbAddon.on("update", () => Devices.updateAdbAddonStatus());
+exports.adbDevicesRegistry = new AdbDevicesRegistry();
