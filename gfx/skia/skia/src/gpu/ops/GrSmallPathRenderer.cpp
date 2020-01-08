@@ -269,6 +269,12 @@ private:
         SkASSERT(vertexStride == sizeof(SkPoint) + sizeof(GrColor) + 2*sizeof(uint16_t));
 
         const GrBuffer* vertexBuffer;
+
+        
+        
+        if (instanceCount > SK_MaxS32 / kVerticesPerQuad) {
+            return;
+        }
         void* vertices = target->makeVertexSpace(vertexStride,
                                                  kVerticesPerQuad * instanceCount,
                                                  &vertexBuffer,
