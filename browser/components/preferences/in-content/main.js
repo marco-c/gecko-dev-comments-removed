@@ -235,9 +235,9 @@ if (AppConstants.MOZ_UPDATER) {
 var promiseLoadHandlersList;
 
 
-function getBundleForLocale(locale) {
+function getBundleForLocales(newLocales) {
   let locales = Array.from(new Set([
-    locale,
+    ...newLocales,
     ...Services.locale.getRequestedLocales(),
     Services.locale.lastFallbackLocale,
   ]));
@@ -806,29 +806,35 @@ var gMainPane = {
   },
 
   
-  async onBrowserLanguageChange(event) {
-    let locale = event.target.value;
+  async showConfirmLanguageChangeMessageBar(locales) {
     let messageBar = document.getElementById("confirmBrowserLanguage");
-    if (locale == Services.locale.getRequestedLocale()) {
-      messageBar.hidden = true;
-      return;
-    }
     
-    let newBundle = getBundleForLocale(locale);
-    let description = messageBar.querySelector("description");
+    let newBundle = getBundleForLocales(locales);
+    let description = messageBar.querySelector(".message-bar-description");
     description.textContent = await newBundle.formatValue(
       "confirm-browser-language-change-description");
-    let button = messageBar.querySelector("button");
+    let button = messageBar.querySelector(".message-bar-button");
     button.setAttribute(
       "label", await newBundle.formatValue(
         "confirm-browser-language-change-button"));
+    button.setAttribute("locales", locales.join(","));
     messageBar.hidden = false;
+  },
+
+  hideConfirmLanguageChangeMessageBar() {
+    let messageBar = document.getElementById("confirmBrowserLanguage");
+    messageBar.hidden = true;
+    messageBar.querySelector(".message-bar-button").removeAttribute("locales");
   },
 
   
   confirmBrowserLanguageChange() {
-    let locale = document.getElementById("defaultBrowserLanguage").value;
-    Services.locale.setRequestedLocales([locale]);
+    let localesString = (event.target.getAttribute("locales") || "").trim();
+    if (!localesString || localesString.length == 0) {
+      return;
+    }
+    let locales = localesString.split(",");
+    Services.locale.setRequestedLocales(locales);
 
     
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
@@ -836,6 +842,21 @@ var gMainPane = {
     if (!cancelQuit.data) {
       Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart);
     }
+  },
+
+  
+  onBrowserLanguageChange(event) {
+    let locale = event.target.value;
+    if (locale == Services.locale.getRequestedLocale()) {
+      this.hideConfirmLanguageChangeMessageBar();
+      return;
+    }
+    let locales = Array.from(new Set([
+      locale,
+      ...Services.locale.getRequestedLocales(),
+      ...Services.locale.getAvailableLocales(),
+    ]).values());
+    this.showConfirmLanguageChangeMessageBar(locales);
   },
 
   onBrowserRestoreSessionChange(event) {
