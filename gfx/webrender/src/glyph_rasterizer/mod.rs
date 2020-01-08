@@ -15,7 +15,7 @@ use rayon::ThreadPool;
 use std::cmp;
 use std::hash::{Hash, Hasher};
 use std::mem;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 #[cfg(feature = "pathfinder")]
@@ -451,6 +451,8 @@ pub struct FontContexts {
     
     #[allow(dead_code)]
     workers: Arc<ThreadPool>,
+    locked_mutex: Mutex<bool>,
+    locked_cond: Condvar,
 }
 
 impl FontContexts {
@@ -475,6 +477,46 @@ impl FontContexts {
     
     pub fn num_worker_contexts(&self) -> usize {
         self.worker_contexts.len()
+    }
+}
+
+pub trait ForEach<T> {
+    fn for_each<F: Fn(MutexGuard<T>) + Send + 'static>(&self, f: F);
+}
+
+impl ForEach<FontContext> for Arc<FontContexts> {
+    fn for_each<F: Fn(MutexGuard<FontContext>) + Send + 'static>(&self, f: F) {
+        
+        let mut locked = self.locked_mutex.lock().unwrap();
+        *locked = false;
+
+        
+        let font_contexts = self.clone();
+        
+        self.workers.spawn(move || {
+            
+            let mut locks = Vec::with_capacity(font_contexts.num_worker_contexts() + 1);
+            locks.push(font_contexts.lock_shared_context());
+            for i in 0 .. font_contexts.num_worker_contexts() {
+                locks.push(font_contexts.lock_context(Some(i)));
+            }
+
+            
+            *font_contexts.locked_mutex.lock().unwrap() = true;
+            font_contexts.locked_cond.notify_all();
+
+            
+            for context in locks {
+                f(context);
+            }
+        });
+
+        
+        
+        
+        while !*locked {
+            locked = self.locked_cond.wait(locked).unwrap();
+        }
     }
 }
 
@@ -527,6 +569,8 @@ impl GlyphRasterizer {
                 #[cfg(feature = "pathfinder")]
                 pathfinder_context: create_pathfinder_font_context()?,
                 workers: Arc::clone(&workers),
+                locked_mutex: Mutex::new(false),
+                locked_cond: Condvar::new(),
         };
 
         Ok(GlyphRasterizer {
@@ -541,27 +585,12 @@ impl GlyphRasterizer {
     }
 
     pub fn add_font(&mut self, font_key: FontKey, template: FontTemplate) {
-        let font_contexts = Arc::clone(&self.font_contexts);
-        
-        
-        font_contexts
-            .lock_shared_context()
-            .add_font(&font_key, &template);
-
-        
-        
-        
-        
-        
-        
-        for i in 0 .. font_contexts.num_worker_contexts() {
-            font_contexts
-                .lock_context(Some(i))
-                .add_font(&font_key, &template);
-        }
-
         #[cfg(feature = "pathfinder")]
         self.add_font_to_pathfinder(&font_key, &template);
+
+        self.font_contexts.for_each(move |mut context| {
+            context.add_font(&font_key, &template);
+        });
     }
 
     pub fn delete_font(&mut self, font_key: FontKey) {
@@ -599,18 +628,10 @@ impl GlyphRasterizer {
             return
         }
 
-        let font_contexts = Arc::clone(&self.font_contexts);
         let fonts_to_remove = mem::replace(&mut self.fonts_to_remove, Vec::new());
-
-        self.workers.spawn(move || {
+        self.font_contexts.for_each(move |mut context| {
             for font_key in &fonts_to_remove {
-                font_contexts.lock_shared_context().delete_font(font_key);
-            }
-            for i in 0 .. font_contexts.num_worker_contexts() {
-                let mut context = font_contexts.lock_context(Some(i));
-                for font_key in &fonts_to_remove {
-                    context.delete_font(font_key);
-                }
+                context.delete_font(font_key);
             }
         });
     }
