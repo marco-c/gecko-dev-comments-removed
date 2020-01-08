@@ -242,10 +242,6 @@ AnimationFrameDiscardingQueue::Get(size_t aFrame, bool aForDisplay)
 {
   
   
-  MOZ_ASSERT(aFrame == 0 || mAdvance == 0);
-
-  
-  
   
   
   if (aForDisplay && aFrame == 0) {
@@ -270,6 +266,10 @@ AnimationFrameDiscardingQueue::Get(size_t aFrame, bool aForDisplay)
   if (offset >= mDisplay.size()) {
     return nullptr;
   }
+
+  
+  
+  MOZ_ASSERT(aFrame == 0 || mAdvance == 0);
 
   
   MOZ_ASSERT(mDisplay[offset]);
