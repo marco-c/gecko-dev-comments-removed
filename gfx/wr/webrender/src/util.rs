@@ -624,7 +624,6 @@ impl<Src, Dst> FastTransform<Src, Dst> {
     }
 
     
-    #[allow(unused)]
     pub fn is_identity(&self)-> bool {
         match *self {
             FastTransform::Offset(offset) => {

@@ -4,7 +4,7 @@
 
 
 use api::{ExternalScrollId, LayoutPixel, LayoutPoint, LayoutRect, LayoutSize, LayoutTransform};
-use api::{LayoutVector2D, PipelineId, PropertyBinding, ReferenceFrameKind, ScrollClamping, ScrollLocation};
+use api::{LayoutVector2D, PipelineId, PropertyBinding, ScrollClamping, ScrollLocation};
 use api::{TransformStyle, ScrollSensitivity, StickyOffsetBounds};
 use clip_scroll_tree::{CoordinateSystem, CoordinateSystemId, SpatialNodeIndex, TransformUpdateState};
 use euclid::SideOffsets2D;
@@ -117,15 +117,17 @@ impl SpatialNode {
         parent_index: Option<SpatialNodeIndex>,
         transform_style: TransformStyle,
         source_transform: Option<PropertyBinding<LayoutTransform>>,
-        kind: ReferenceFrameKind,
+        source_perspective: Option<LayoutTransform>,
         origin_in_parent_reference_frame: LayoutVector2D,
         pipeline_id: PipelineId,
     ) -> Self {
         let identity = LayoutTransform::identity();
+        let source_perspective = source_perspective.map_or_else(
+            LayoutFastTransform::identity, |perspective| perspective.into());
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform: source_transform.unwrap_or(PropertyBinding::Value(identity)),
-            kind,
+            source_perspective,
             origin_in_parent_reference_frame,
             invertible: true,
         };
@@ -139,6 +141,7 @@ impl SpatialNode {
     ) -> Self {
         Self::new(pipeline_id, Some(parent_index), SpatialNodeType::StickyFrame(sticky_frame_info))
     }
+
 
     pub fn add_child(&mut self, child: SpatialNodeIndex) {
         self.children.push(child);
@@ -254,26 +257,17 @@ impl SpatialNode {
         match self.node_type {
             SpatialNodeType::ReferenceFrame(ref mut info) => {
                 
-                let source_transform = LayoutFastTransform::from(
-                    scene_properties.resolve_layout_transform(&info.source_transform)
-                );
+                let source_transform = scene_properties.resolve_layout_transform(&info.source_transform);
 
                 
                 
-                let source_transform = match info.kind {
-                    ReferenceFrameKind::Perspective => {
-                        
-                        
-                        source_transform
-                            .pre_translate(&state.parent_accumulated_scroll_offset)
-                            .post_translate(-state.parent_accumulated_scroll_offset)
-                    }
-                    ReferenceFrameKind::Transform => source_transform,
-                };
-
+                let scrolled_perspective = info.source_perspective
+                    .pre_translate(&state.parent_accumulated_scroll_offset)
+                    .post_translate(-state.parent_accumulated_scroll_offset);
                 let resolved_transform =
                     LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
-                        .pre_mul(&source_transform);
+                    .pre_mul(&source_transform.into())
+                    .pre_mul(&scrolled_perspective);
 
                 
                 
@@ -500,8 +494,8 @@ impl SpatialNode {
                 state.parent_reference_frame_transform = self.world_viewport_transform;
 
                 let should_flatten =
-                    info.kind == ReferenceFrameKind::Transform &&
-                    info.transform_style == TransformStyle::Flat;
+                    info.transform_style == TransformStyle::Flat &&
+                    info.source_perspective.is_identity();
 
                 if should_flatten {
                     state.parent_reference_frame_transform = state.parent_reference_frame_transform.project_to_2d();
@@ -667,7 +661,7 @@ pub struct ReferenceFrameInfo {
     
     pub source_transform: PropertyBinding<LayoutTransform>,
     pub transform_style: TransformStyle,
-    pub kind: ReferenceFrameKind,
+    pub source_perspective: LayoutFastTransform,
 
     
     
