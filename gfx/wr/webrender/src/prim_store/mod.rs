@@ -3,8 +3,8 @@
 
 
 use api::{AlphaType, BorderRadius, ClipMode, ColorF, PictureRect, ColorU, LayoutVector2D};
-use api::{DeviceIntRect, DeviceIntSize, DevicePixelScale, ExtendMode, DeviceRect, LayoutSideOffsetsAu};
-use api::{FilterOp, GradientStop, ImageKey, ImageRendering, TileOffset, RepeatMode};
+use api::{DeviceIntRect, DeviceIntSize, DevicePixelScale, DeviceRect, LayoutSideOffsetsAu};
+use api::{FilterOp, ImageKey, ImageRendering, TileOffset, RepeatMode};
 use api::{LayoutPoint, LayoutRect, LayoutSideOffsets, LayoutSize};
 use api::{PremultipliedColorF, PropertyBinding, Shadow, YuvColorSpace, YuvFormat};
 use api::{DeviceIntSideOffsets, WorldPixel, BoxShadowClipMode, NormalBorder, WorldRect, LayoutToWorldScale};
@@ -28,6 +28,7 @@ use intern;
 use internal_types::FastHashMap;
 use picture::{PictureCompositeMode, PicturePrimitive, PictureUpdateState};
 use picture::{ClusterRange, PrimitiveList, SurfaceIndex, TileDescriptor};
+use prim_store::gradient::{LinearGradientDataHandle, RadialGradientDataHandle};
 use prim_store::text_run::{TextRunDataHandle, TextRunPrimitive};
 #[cfg(debug_assertions)]
 use render_backend::{FrameId};
@@ -38,7 +39,7 @@ use renderer::{MAX_VERTEX_TEXTURE_WIDTH};
 use resource_cache::{ImageProperties, ImageRequest, ResourceCache};
 use scene::SceneProperties;
 use segment::SegmentBuilder;
-use std::{cmp, fmt, hash, mem, ops, u32, usize};
+use std::{cmp, fmt, hash, ops, u32, usize};
 #[cfg(debug_assertions)]
 use std::sync::atomic::{AtomicUsize, Ordering};
 use storage;
@@ -47,6 +48,7 @@ use util::{ScaleOffset, MatrixHelpers, MaxRect, recycle_vec};
 use util::{pack_as_float, project_rect, raster_rect_to_device_pixels};
 use smallvec::SmallVec;
 
+pub mod gradient;
 pub mod text_run;
 
 
@@ -391,43 +393,6 @@ pub enum PrimitiveKeyKind {
         image_rendering: ImageRendering,
         alpha_type: AlphaType,
     },
-    LinearGradient {
-        extend_mode: ExtendMode,
-        start_point: PointKey,
-        end_point: PointKey,
-        stretch_size: SizeKey,
-        tile_spacing: SizeKey,
-        stops: Vec<GradientStopKey>,
-        reverse_stops: bool,
-        nine_patch: Option<Box<NinePatchDescriptor>>,
-    },
-    RadialGradient {
-        extend_mode: ExtendMode,
-        center: PointKey,
-        params: RadialGradientParams,
-        stretch_size: SizeKey,
-        stops: Vec<GradientStopKey>,
-        tile_spacing: SizeKey,
-        nine_patch: Option<Box<NinePatchDescriptor>>,
-    },
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, PartialEq)]
-pub struct GradientStopKey {
-    pub offset: f32,
-    pub color: ColorU,
-}
-
-impl Eq for GradientStopKey {}
-
-impl hash::Hash for GradientStopKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.offset.to_bits().hash(state);
-        self.color.hash(state);
-    }
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -572,26 +537,6 @@ impl SizeKey {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
-pub struct RadialGradientParams {
-    pub start_radius: f32,
-    pub end_radius: f32,
-    pub ratio_xy: f32,
-}
-
-impl Eq for RadialGradientParams {}
-
-impl hash::Hash for RadialGradientParams {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.start_radius.to_bits().hash(state);
-        self.end_radius.to_bits().hash(state);
-        self.ratio_xy.to_bits().hash(state);
-    }
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, PartialEq)]
 pub struct PointKey {
     x: f32,
     y: f32,
@@ -727,18 +672,6 @@ impl AsInstanceKind<PrimitiveDataHandle> for PrimitiveKey {
                     image_instance_index,
                 }
             }
-            PrimitiveKeyKind::LinearGradient { .. } => {
-                PrimitiveInstanceKind::LinearGradient {
-                    data_handle,
-                    visible_tiles_range: GradientTileRange::empty(),
-                }
-            }
-            PrimitiveKeyKind::RadialGradient { .. } => {
-                PrimitiveInstanceKind::RadialGradient {
-                    data_handle,
-                    visible_tiles_range: GradientTileRange::empty(),
-                }
-            }
             PrimitiveKeyKind::Unused => {
                 
                 
@@ -792,28 +725,6 @@ pub enum PrimitiveTemplateKind {
         image_rendering: ImageRendering,
         sub_rect: Option<DeviceIntRect>,
         alpha_type: AlphaType,
-    },
-    LinearGradient {
-        extend_mode: ExtendMode,
-        start_point: LayoutPoint,
-        end_point: LayoutPoint,
-        stretch_size: LayoutSize,
-        tile_spacing: LayoutSize,
-        stops_opacity: PrimitiveOpacity,
-        stops: Vec<GradientStop>,
-        brush_segments: Vec<BrushSegment>,
-        reverse_stops: bool,
-        stops_handle: GpuCacheHandle,
-    },
-    RadialGradient {
-        extend_mode: ExtendMode,
-        center: LayoutPoint,
-        params: RadialGradientParams,
-        stretch_size: LayoutSize,
-        tile_spacing: LayoutSize,
-        brush_segments: Vec<BrushSegment>,
-        stops: Vec<GradientStop>,
-        stops_handle: GpuCacheHandle,
     },
     Clear,
     Unused,
@@ -901,89 +812,6 @@ impl PrimitiveKeyKind {
                 PrimitiveTemplateKind::LineDecoration {
                     cache_key,
                     color: color.into(),
-                }
-            }
-            PrimitiveKeyKind::LinearGradient {
-                extend_mode,
-                tile_spacing,
-                start_point,
-                end_point,
-                stretch_size,
-                stops,
-                reverse_stops,
-                nine_patch,
-                ..
-            } => {
-                let mut min_alpha: f32 = 1.0;
-
-                
-                
-                let stops = stops.iter().map(|stop| {
-                    let color: ColorF = stop.color.into();
-                    min_alpha = min_alpha.min(color.a);
-
-                    GradientStop {
-                        offset: stop.offset,
-                        color,
-                    }
-                }).collect();
-
-                let mut brush_segments = Vec::new();
-
-                if let Some(ref nine_patch) = nine_patch {
-                    brush_segments = nine_patch.create_segments(size);
-                }
-
-                
-                
-                
-                let stops_opacity = PrimitiveOpacity::from_alpha(min_alpha);
-
-                PrimitiveTemplateKind::LinearGradient {
-                    extend_mode,
-                    start_point: start_point.into(),
-                    end_point: end_point.into(),
-                    stretch_size: stretch_size.into(),
-                    tile_spacing: tile_spacing.into(),
-                    stops_opacity,
-                    stops,
-                    brush_segments,
-                    reverse_stops,
-                    stops_handle: GpuCacheHandle::new(),
-                }
-            }
-            PrimitiveKeyKind::RadialGradient {
-                extend_mode,
-                params,
-                stretch_size,
-                tile_spacing,
-                nine_patch,
-                center,
-                stops,
-                ..
-            } => {
-                let mut brush_segments = Vec::new();
-
-                if let Some(ref nine_patch) = nine_patch {
-                    brush_segments = nine_patch.create_segments(size);
-                }
-
-                let stops = stops.iter().map(|stop| {
-                    GradientStop {
-                        offset: stop.offset,
-                        color: stop.color.into(),
-                    }
-                }).collect();
-
-                PrimitiveTemplateKind::RadialGradient {
-                    center: center.into(),
-                    extend_mode,
-                    params,
-                    stretch_size: stretch_size.into(),
-                    tile_spacing: tile_spacing.into(),
-                    brush_segments,
-                    stops_handle: GpuCacheHandle::new(),
-                    stops,
                 }
             }
         }
@@ -1123,40 +951,6 @@ impl PrimitiveTemplateKind {
                     0.0,
                 ]);
             }
-            PrimitiveTemplateKind::LinearGradient { stretch_size, start_point, end_point, extend_mode, .. } => {
-                request.push([
-                    start_point.x,
-                    start_point.y,
-                    end_point.x,
-                    end_point.y,
-                ]);
-                request.push([
-                    pack_as_float(extend_mode as u32),
-                    stretch_size.width,
-                    stretch_size.height,
-                    0.0,
-                ]);
-            }
-            PrimitiveTemplateKind::RadialGradient {
-                center,
-                ref params,
-                extend_mode,
-                stretch_size,
-                ..
-            } => {
-                request.push([
-                    center.x,
-                    center.y,
-                    params.start_radius,
-                    params.end_radius,
-                ]);
-                request.push([
-                    params.ratio_xy,
-                    pack_as_float(extend_mode as u32),
-                    stretch_size.width,
-                    stretch_size.height,
-                ]);
-            }
             PrimitiveTemplateKind::Unused => {}
         }
     }
@@ -1176,16 +970,6 @@ impl PrimitiveTemplateKind {
                 }
             }
             PrimitiveTemplateKind::ImageBorder { ref brush_segments, .. } => {
-                for segment in brush_segments {
-                    
-                    request.write_segment(
-                        segment.local_rect,
-                        segment.extra_data,
-                    );
-                }
-            }
-            PrimitiveTemplateKind::LinearGradient { ref brush_segments, .. } |
-            PrimitiveTemplateKind::RadialGradient { ref brush_segments, .. } => {
                 for segment in brush_segments {
                     
                     request.write_segment(
@@ -1235,48 +1019,6 @@ impl PrimitiveTemplate {
                 PrimitiveOpacity::from_alpha(color.a)
             }
             PrimitiveTemplateKind::NormalBorder { .. } => {
-                
-                PrimitiveOpacity::translucent()
-            }
-            PrimitiveTemplateKind::LinearGradient {
-                stretch_size,
-                tile_spacing,
-                stops_opacity,
-                ref mut stops_handle,
-                reverse_stops,
-                ref stops,
-                ..
-            } => {
-                if let Some(mut request) = frame_state.gpu_cache.request(stops_handle) {
-                    GradientGpuBlockBuilder::build(
-                        reverse_stops,
-                        &mut request,
-                        stops,
-                    );
-                }
-
-                
-                
-                
-                
-                
-                let stride = stretch_size + tile_spacing;
-                if stride.width >= self.common.prim_size.width &&
-                   stride.height >= self.common.prim_size.height {
-                    stops_opacity
-                } else {
-                    PrimitiveOpacity::translucent()
-                }
-            }
-            PrimitiveTemplateKind::RadialGradient { ref mut stops_handle, ref stops, .. } => {
-                if let Some(mut request) = frame_state.gpu_cache.request(stops_handle) {
-                    GradientGpuBlockBuilder::build(
-                        false,
-                        &mut request,
-                        stops,
-                    );
-                }
-
                 
                 PrimitiveOpacity::translucent()
             }
@@ -1708,214 +1450,6 @@ pub enum ImageSource {
     },
 }
 
-
-pub const GRADIENT_DATA_FIRST_STOP: usize = 0;
-
-pub const GRADIENT_DATA_LAST_STOP: usize = GRADIENT_DATA_SIZE - 1;
-
-
-pub const GRADIENT_DATA_TABLE_BEGIN: usize = GRADIENT_DATA_FIRST_STOP + 1;
-
-pub const GRADIENT_DATA_TABLE_END: usize = GRADIENT_DATA_LAST_STOP;
-
-pub const GRADIENT_DATA_TABLE_SIZE: usize = 128;
-
-
-pub const GRADIENT_DATA_SIZE: usize = GRADIENT_DATA_TABLE_SIZE + 2;
-
-#[derive(Debug)]
-#[repr(C)]
-
-pub struct GradientDataEntry {
-    pub start_color: PremultipliedColorF,
-    pub end_color: PremultipliedColorF,
-}
-
-
-struct GradientGpuBlockBuilder {}
-
-impl GradientGpuBlockBuilder {
-    
-    
-    fn fill_colors(
-        start_idx: usize,
-        end_idx: usize,
-        start_color: &PremultipliedColorF,
-        end_color: &PremultipliedColorF,
-        entries: &mut [GradientDataEntry; GRADIENT_DATA_SIZE],
-    ) {
-        
-        let inv_steps = 1.0 / (end_idx - start_idx) as f32;
-        let step_r = (end_color.r - start_color.r) * inv_steps;
-        let step_g = (end_color.g - start_color.g) * inv_steps;
-        let step_b = (end_color.b - start_color.b) * inv_steps;
-        let step_a = (end_color.a - start_color.a) * inv_steps;
-
-        let mut cur_color = *start_color;
-
-        
-        for index in start_idx .. end_idx {
-            let entry = &mut entries[index];
-            entry.start_color = cur_color;
-            cur_color.r += step_r;
-            cur_color.g += step_g;
-            cur_color.b += step_b;
-            cur_color.a += step_a;
-            entry.end_color = cur_color;
-        }
-    }
-
-    
-    
-    #[inline]
-    fn get_index(offset: f32) -> usize {
-        (offset.max(0.0).min(1.0) * GRADIENT_DATA_TABLE_SIZE as f32 +
-            GRADIENT_DATA_TABLE_BEGIN as f32)
-            .round() as usize
-    }
-
-    
-    fn build(
-        reverse_stops: bool,
-        request: &mut GpuDataRequest,
-        src_stops: &[GradientStop],
-    ) {
-        
-        
-        
-        
-        let mut src_stops = src_stops.into_iter();
-        let mut cur_color = match src_stops.next() {
-            Some(stop) => {
-                debug_assert_eq!(stop.offset, 0.0);
-                stop.color.premultiplied()
-            }
-            None => {
-                error!("Zero gradient stops found!");
-                PremultipliedColorF::BLACK
-            }
-        };
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut entries: [GradientDataEntry; GRADIENT_DATA_SIZE] = unsafe { mem::uninitialized() };
-
-        if reverse_stops {
-            
-            GradientGpuBlockBuilder::fill_colors(
-                GRADIENT_DATA_LAST_STOP,
-                GRADIENT_DATA_LAST_STOP + 1,
-                &cur_color,
-                &cur_color,
-                &mut entries,
-            );
-
-            
-            
-            
-            let mut cur_idx = GRADIENT_DATA_TABLE_END;
-            for next in src_stops {
-                let next_color = next.color.premultiplied();
-                let next_idx = Self::get_index(1.0 - next.offset);
-
-                if next_idx < cur_idx {
-                    GradientGpuBlockBuilder::fill_colors(
-                        next_idx,
-                        cur_idx,
-                        &next_color,
-                        &cur_color,
-                        &mut entries,
-                    );
-                    cur_idx = next_idx;
-                }
-
-                cur_color = next_color;
-            }
-            if cur_idx != GRADIENT_DATA_TABLE_BEGIN {
-                error!("Gradient stops abruptly at {}, auto-completing to white", cur_idx);
-                GradientGpuBlockBuilder::fill_colors(
-                    GRADIENT_DATA_TABLE_BEGIN,
-                    cur_idx,
-                    &PremultipliedColorF::WHITE,
-                    &cur_color,
-                    &mut entries,
-                );
-            }
-
-            
-            GradientGpuBlockBuilder::fill_colors(
-                GRADIENT_DATA_FIRST_STOP,
-                GRADIENT_DATA_FIRST_STOP + 1,
-                &cur_color,
-                &cur_color,
-                &mut entries,
-            );
-        } else {
-            
-            GradientGpuBlockBuilder::fill_colors(
-                GRADIENT_DATA_FIRST_STOP,
-                GRADIENT_DATA_FIRST_STOP + 1,
-                &cur_color,
-                &cur_color,
-                &mut entries,
-            );
-
-            
-            
-            
-            let mut cur_idx = GRADIENT_DATA_TABLE_BEGIN;
-            for next in src_stops {
-                let next_color = next.color.premultiplied();
-                let next_idx = Self::get_index(next.offset);
-
-                if next_idx > cur_idx {
-                    GradientGpuBlockBuilder::fill_colors(
-                        cur_idx,
-                        next_idx,
-                        &cur_color,
-                        &next_color,
-                        &mut entries,
-                    );
-                    cur_idx = next_idx;
-                }
-
-                cur_color = next_color;
-            }
-            if cur_idx != GRADIENT_DATA_TABLE_END {
-                error!("Gradient stops abruptly at {}, auto-completing to white", cur_idx);
-                GradientGpuBlockBuilder::fill_colors(
-                    cur_idx,
-                    GRADIENT_DATA_TABLE_END,
-                    &PremultipliedColorF::WHITE,
-                    &cur_color,
-                    &mut entries,
-                );
-            }
-
-            
-            GradientGpuBlockBuilder::fill_colors(
-                GRADIENT_DATA_LAST_STOP,
-                GRADIENT_DATA_LAST_STOP + 1,
-                &cur_color,
-                &cur_color,
-                &mut entries,
-            );
-        }
-
-        for entry in entries.iter() {
-            request.push(entry.start_color);
-            request.push(entry.end_color);
-        }
-    }
-}
-
 #[derive(Debug)]
 #[repr(C)]
 struct ClipRect {
@@ -2153,8 +1687,6 @@ impl IsVisible for PrimitiveKeyKind {
             PrimitiveKeyKind::ImageBorder { .. } |
             PrimitiveKeyKind::YuvImage { .. } |
             PrimitiveKeyKind::Image { .. } |
-            PrimitiveKeyKind::LinearGradient { .. } |
-            PrimitiveKeyKind::RadialGradient { .. } |
             PrimitiveKeyKind::Clear |
             PrimitiveKeyKind::Unused => {
                 true
@@ -2207,8 +1739,6 @@ impl CreateShadow for PrimitiveKeyKind {
             }
             PrimitiveKeyKind::ImageBorder { .. } |
             PrimitiveKeyKind::YuvImage { .. } |
-            PrimitiveKeyKind::LinearGradient { .. } |
-            PrimitiveKeyKind::RadialGradient { .. } |
             PrimitiveKeyKind::Unused |
             PrimitiveKeyKind::Clear => {
                 panic!("bug: this prim is not supported in shadow contexts");
@@ -2298,12 +1828,12 @@ pub enum PrimitiveInstanceKind {
     },
     LinearGradient {
         
-        data_handle: PrimitiveDataHandle,
+        data_handle: LinearGradientDataHandle,
         visible_tiles_range: GradientTileRange,
     },
     RadialGradient {
         
-        data_handle: PrimitiveDataHandle,
+        data_handle: RadialGradientDataHandle,
         visible_tiles_range: GradientTileRange,
     },
     
@@ -2401,8 +1931,12 @@ impl PrimitiveInstance {
             PrimitiveInstanceKind::ImageBorder { data_handle, .. } |
             PrimitiveInstanceKind::Rectangle { data_handle, .. } |
             PrimitiveInstanceKind::YuvImage { data_handle, .. } |
-            PrimitiveInstanceKind::Image { data_handle, .. } |
-            PrimitiveInstanceKind::LinearGradient { data_handle, .. } |
+            PrimitiveInstanceKind::Image { data_handle, .. } => {
+                data_handle.uid()
+            }
+            PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
+                data_handle.uid()
+            }
             PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
                 data_handle.uid()
             }
@@ -3496,43 +3030,33 @@ impl PrimitiveStore {
                 write_segment(prim_data, image_instance.segment_instance_index, frame_state, scratch);
             }
             PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
-                let prim_data = &mut resources.prim_data_store[*data_handle];
+                let prim_data = &mut resources.linear_grad_data_store[*data_handle];
 
                 
                 
-                prim_data.update(
-                    pic_context.surface_index,
-                    frame_state,
-                );
+                prim_data.update(frame_state);
 
-                let (extend_mode, stretch_size, start_point, end_point, tile_spacing) = match prim_data.kind {
-                    PrimitiveTemplateKind::LinearGradient { ref extend_mode, ref stretch_size, ref start_point, ref end_point, ref tile_spacing, .. } => {
-                        (extend_mode, stretch_size, start_point, end_point, tile_spacing)
-                    }
-                    _ => unreachable!()
-                };
-
-                if *tile_spacing != LayoutSize::zero() {
+                if prim_data.tile_spacing != LayoutSize::zero() {
                     *visible_tiles_range = decompose_repeated_primitive(
                         &prim_instance.combined_local_clip_rect,
                         &prim_local_rect,
-                        &stretch_size,
-                        &tile_spacing,
+                        &prim_data.stretch_size,
+                        &prim_data.tile_spacing,
                         prim_context,
                         frame_state,
                         &pic_context.dirty_world_rect,
                         &mut scratch.gradient_tiles,
                         &mut |_, mut request| {
                             request.push([
-                                start_point.x,
-                                start_point.y,
-                                end_point.x,
-                                end_point.y,
+                                prim_data.start_point.x,
+                                prim_data.start_point.y,
+                                prim_data.end_point.x,
+                                prim_data.end_point.y,
                             ]);
                             request.push([
-                                pack_as_float(*extend_mode as u32),
-                                stretch_size.width,
-                                stretch_size.height,
+                                pack_as_float(prim_data.extend_mode as u32),
+                                prim_data.stretch_size.width,
+                                prim_data.stretch_size.height,
                                 0.0,
                             ]);
                         }
@@ -3547,44 +3071,34 @@ impl PrimitiveStore {
                 
             }
             PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, .. } => {
-                let prim_data = &mut resources.prim_data_store[*data_handle];
+                let prim_data = &mut resources.radial_grad_data_store[*data_handle];
 
                 
                 
-                prim_data.update(
-                    pic_context.surface_index,
-                    frame_state,
-                );
+                prim_data.update(frame_state);
 
-                let (params, extend_mode, stretch_size, tile_spacing, center) = match prim_data.kind {
-                    PrimitiveTemplateKind::RadialGradient { ref params, ref extend_mode, stretch_size, ref tile_spacing, center, .. } => {
-                        (params, extend_mode, stretch_size, tile_spacing, center)
-                    }
-                    _ => unreachable!()
-                };
-
-                if *tile_spacing != LayoutSize::zero() {
+                if prim_data.tile_spacing != LayoutSize::zero() {
                     *visible_tiles_range = decompose_repeated_primitive(
                         &prim_instance.combined_local_clip_rect,
                         &prim_local_rect,
-                        &stretch_size,
-                        &tile_spacing,
+                        &prim_data.stretch_size,
+                        &prim_data.tile_spacing,
                         prim_context,
                         frame_state,
                         &pic_context.dirty_world_rect,
                         &mut scratch.gradient_tiles,
                         &mut |_, mut request| {
                             request.push([
-                                center.x,
-                                center.y,
-                                params.start_radius,
-                                params.end_radius,
+                                prim_data.center.x,
+                                prim_data.center.y,
+                                prim_data.params.start_radius,
+                                prim_data.params.end_radius,
                             ]);
                             request.push([
-                                params.ratio_xy,
-                                pack_as_float(*extend_mode as u32),
-                                stretch_size.width,
-                                stretch_size.height,
+                                prim_data.params.ratio_xy,
+                                pack_as_float(prim_data.extend_mode as u32),
+                                prim_data.stretch_size.width,
+                                prim_data.stretch_size.height,
                             ]);
                         },
                     );
@@ -4030,40 +3544,26 @@ impl PrimitiveInstance {
                 }
             }
             PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
-                let prim_data = &resources.prim_data_store[data_handle];
+                let prim_data = &resources.linear_grad_data_store[data_handle];
 
                 
                 
-                match prim_data.kind {
-                    PrimitiveTemplateKind::LinearGradient { ref brush_segments, .. } => {
-                        if brush_segments.is_empty() {
-                            return false;
-                        }
-
-                        brush_segments.as_slice()
-                    }
-                    _ => {
-                        unreachable!();
-                    }
+                if prim_data.brush_segments.is_empty() {
+                    return false;
                 }
+
+                prim_data.brush_segments.as_slice()
             }
             PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
-                let prim_data = &resources.prim_data_store[data_handle];
+                let prim_data = &resources.radial_grad_data_store[data_handle];
 
                 
                 
-                match prim_data.kind {
-                    PrimitiveTemplateKind::RadialGradient { ref brush_segments, .. } => {
-                        if brush_segments.is_empty() {
-                            return false;
-                        }
-
-                        brush_segments.as_slice()
-                    }
-                    _ => {
-                        unreachable!();
-                    }
+                if prim_data.brush_segments.is_empty() {
+                    return false;
                 }
+
+                prim_data.brush_segments.as_slice()
             }
         };
 
@@ -4317,6 +3817,7 @@ fn update_opacity_binding(
 #[test]
 #[cfg(target_os = "linux")]
 fn test_struct_sizes() {
+    use std::mem;
     
     
     
@@ -4325,8 +3826,8 @@ fn test_struct_sizes() {
     
     assert_eq!(mem::size_of::<PrimitiveInstance>(), 128, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 40, "PrimitiveInstanceKind size changed");
-    assert_eq!(mem::size_of::<PrimitiveTemplate>(), 168, "PrimitiveTemplate size changed");
-    assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 112, "PrimitiveTemplateKind size changed");
-    assert_eq!(mem::size_of::<PrimitiveKey>(), 128, "PrimitiveKey size changed");
+    assert_eq!(mem::size_of::<PrimitiveTemplate>(), 144, "PrimitiveTemplate size changed");
+    assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 88, "PrimitiveTemplateKind size changed");
+    assert_eq!(mem::size_of::<PrimitiveKey>(), 124, "PrimitiveKey size changed");
     assert_eq!(mem::size_of::<PrimitiveKeyKind>(), 96, "PrimitiveKeyKind size changed");
 }
