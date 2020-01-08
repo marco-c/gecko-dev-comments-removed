@@ -7251,7 +7251,7 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
                            true);
   }
 
-  if (!gfxPrefs::MetaViewportEnabled()) {
+  if (!nsLayoutUtils::ShouldHandleMetaViewport(this)) {
     return nsViewportInfo(aDisplaySize,
                           defaultScale,
                            false);
