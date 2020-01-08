@@ -135,14 +135,7 @@ pref("app.update.elevation.promptMaxAttempts", 2);
 
 
 
-
-
-
-
-
-#ifndef XP_WIN
 pref("app.update.auto", true);
-#endif
 
 
 pref("app.update.silent", false);
