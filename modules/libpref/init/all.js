@@ -5433,10 +5433,9 @@ pref("network.captive-portal-service.enabled", false);
 
 pref("network.trr.mode", 0);
 
-pref("network.trr.uri", "https://mozilla.cloudflare-dns.com/dns-query");
+pref("network.trr.uri", "");
 
 pref("network.trr.credentials", "");
-pref("network.trr.custom_uri", "");
 
 #if defined(ANDROID)
 
