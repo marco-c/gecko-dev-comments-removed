@@ -106,7 +106,7 @@ function testOnWindow(resolve, reject) {
   let win = mainWindow.OpenBrowserWindow({remote: true});
 
   whenDelayedStartupFinished(win, function() {
-    SimpleTest.executeSoon(function() { win.gBrowser.loadURI(gContentPage); });
+    SimpleTest.executeSoon(function() { BrowserTestUtils.loadURI(win.gBrowser, gContentPage); });
     awaitBrowserLoaded(win.gBrowser.selectedBrowser).then(() => {
       resolve(win);
     }).catch((reason) => {
@@ -127,7 +127,6 @@ async function setupTest() {
   await SpecialPowers.pushPrefEnv({ "set": [
     ["browser.contentblocking.enabled", true],
     ["browser.fastblock.enabled", true],
-    ["browser.fastblock.limit", 0],
     ["browser.fastblock.timeout", 5000],
     ["network.http.tailing.enabled", true],
     ["privacy.trackingprotection.enabled", false],
