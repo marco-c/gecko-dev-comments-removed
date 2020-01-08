@@ -93,6 +93,30 @@ mozilla::LazyLogModule ApplicationReputationService::prlog("ApplicationReputatio
 
 enum class LookupType { AllowlistOnly, BlocklistOnly, BothLists };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using Reason = mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_REASON;
+
 class PendingDBLookup;
 
 
@@ -188,16 +212,15 @@ private:
 
   
   
-  nsresult OnComplete(bool shouldBlock, nsresult rv,
-    uint32_t verdict = nsIApplicationReputationService::VERDICT_SAFE);
+  nsresult OnComplete(uint32_t aVerdict, Reason aReason, nsresult aRv);
 
   
   
   nsresult OnStopRequestInternal(nsIRequest *aRequest,
                                  nsISupports *aContext,
                                  nsresult aResult,
-                                 bool* aShouldBlock,
-                                 uint32_t* aVerdict);
+                                 uint32_t& aVerdict,
+                                 Reason& aReason);
 
   
   nsresult GetSpecHash(nsACString& aSpec, nsACString& hexEncodedHash);
@@ -251,7 +274,7 @@ private:
   nsresult SendRemoteQuery();
 
   
-  nsresult SendRemoteQueryInternal();
+  nsresult SendRemoteQueryInternal(Reason& aReason);
 };
 
 
@@ -377,8 +400,8 @@ PendingDBLookup::HandleEvent(const nsACString& tables)
     mPendingLookup->mBlocklistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, BLOCK_LIST);
     LOG(("Found principal %s on blocklist [this = %p]", mSpec.get(), this));
-    return mPendingLookup->OnComplete(true, NS_OK,
-      nsIApplicationReputationService::VERDICT_DANGEROUS);
+    return mPendingLookup->OnComplete(nsIApplicationReputationService::VERDICT_DANGEROUS,
+                                      Reason::LocalBlocklist, NS_OK);
   }
 
   nsAutoCString allowList;
@@ -888,7 +911,8 @@ PendingLookup::LookupNext()
   
   
   if (mAllowlistCount > 0) {
-    return OnComplete(false, NS_OK);
+    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE,
+                      Reason::LocalWhitelist, NS_OK);
   }
 
   MOZ_ASSERT_IF(!mIsBinaryFile, mAllowlistSpecs.Length() == 0);
@@ -928,12 +952,14 @@ PendingLookup::LookupNext()
   
   if (!mIsBinaryFile) {
     LOG(("Not eligible for remote lookups [this=%p]", this));
-    return OnComplete(false, NS_OK);
+    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE,
+                      Reason::NonBinaryFile, NS_OK);
   }
 
   nsresult rv = SendRemoteQuery();
   if (NS_FAILED(rv)) {
-    return OnComplete(false, rv);
+    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE,
+                      Reason::InternalError, rv);
   }
   return NS_OK;
 }
@@ -1127,7 +1153,8 @@ PendingLookup::StartLookup()
   mStartTime = TimeStamp::Now();
   nsresult rv = DoLookupInternal();
   if (NS_FAILED(rv)) {
-    return OnComplete(false, NS_OK);
+    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE,
+                      Reason::InternalError, NS_OK);
   }
   return rv;
 }
@@ -1298,14 +1325,11 @@ PendingLookup::DoLookupInternal()
 }
 
 nsresult
-PendingLookup::OnComplete(bool shouldBlock, nsresult rv, uint32_t verdict)
+PendingLookup::OnComplete(uint32_t aVerdict, Reason aReason, nsresult aRv)
 {
-  MOZ_ASSERT(!shouldBlock ||
-             verdict != nsIApplicationReputationService::VERDICT_SAFE);
-
-  if (NS_FAILED(rv)) {
+  if (NS_FAILED(aRv)) {
     nsAutoCString errorName;
-    mozilla::GetErrorName(rv, errorName);
+    mozilla::GetErrorName(aRv, errorName);
     LOG(("Failed sending remote query for application reputation "
          "[rv = %s, this = %p]", errorName.get(), this));
   }
@@ -1315,18 +1339,52 @@ PendingLookup::OnComplete(bool shouldBlock, nsresult rv, uint32_t verdict)
     mTimeoutTimer = nullptr;
   }
 
+  bool shouldBlock = true;
+  switch (aVerdict) {
+    case nsIApplicationReputationService::VERDICT_DANGEROUS:
+      if (!Preferences::GetBool(PREF_BLOCK_DANGEROUS, true)) {
+        shouldBlock = false;
+        aReason = Reason::DangerousPrefOff;
+      }
+      break;
+    case nsIApplicationReputationService::VERDICT_UNCOMMON:
+      if (!Preferences::GetBool(PREF_BLOCK_UNCOMMON, true)) {
+        shouldBlock = false;
+        aReason = Reason::UncommonPrefOff;
+      }
+      break;
+    case nsIApplicationReputationService::VERDICT_POTENTIALLY_UNWANTED:
+      if (!Preferences::GetBool(PREF_BLOCK_POTENTIALLY_UNWANTED, true)) {
+        shouldBlock = false;
+        aReason = Reason::UnwantedPrefOff;
+      }
+      break;
+    case nsIApplicationReputationService::VERDICT_DANGEROUS_HOST:
+      if (!Preferences::GetBool(PREF_BLOCK_DANGEROUS_HOST, true)) {
+        shouldBlock = false;
+        aReason = Reason::DangerousHostPrefOff;
+      }
+      break;
+    default:
+      shouldBlock = false;
+      break;
+  }
+
+  AccumulateCategorical(aReason);
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SHOULD_BLOCK,
-    shouldBlock);
+             shouldBlock);
+
   double t = (TimeStamp::Now() - mStartTime).ToMilliseconds();
   LOG(("Application Reputation verdict is %u, obtained in %f ms [this = %p]",
-       verdict, t, this));
+       aVerdict, t, this));
   if (shouldBlock) {
     LOG(("Application Reputation check failed, blocking bad binary [this = %p]",
         this));
   } else {
     LOG(("Application Reputation check passed [this = %p]", this));
   }
-  nsresult res = mCallback->OnComplete(shouldBlock, rv, verdict);
+
+  nsresult res = mCallback->OnComplete(shouldBlock, aRv, aVerdict);
   return res;
 }
 
@@ -1396,9 +1454,11 @@ PendingLookup::ParseCertificates(nsIArray* aSigArray)
 nsresult
 PendingLookup::SendRemoteQuery()
 {
-  nsresult rv = SendRemoteQueryInternal();
+  Reason reason = Reason::NotSet;
+  nsresult rv = SendRemoteQueryInternal(reason);
   if (NS_FAILED(rv)) {
-    return OnComplete(false, rv);
+    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE,
+                      reason, rv);
   }
   
   
@@ -1406,19 +1466,26 @@ PendingLookup::SendRemoteQuery()
 }
 
 nsresult
-PendingLookup::SendRemoteQueryInternal()
+PendingLookup::SendRemoteQueryInternal(Reason& aReason)
 {
+  auto scopeExit = mozilla::MakeScopeExit([&aReason] () {
+    if (aReason == Reason::NotSet) {
+      aReason = Reason::InternalError;
+    }
+  });
+
   
   if (!Preferences::GetBool(PREF_SB_DOWNLOADS_REMOTE_ENABLED, false)) {
     LOG(("Remote lookups are disabled [this = %p]", this));
+    aReason = Reason::RemoteLookupDisabled;
     return NS_ERROR_NOT_AVAILABLE;
   }
   
   nsAutoCString serviceUrl;
-  NS_ENSURE_SUCCESS(Preferences::GetCString(PREF_SB_APP_REP_URL, serviceUrl),
-                    NS_ERROR_NOT_AVAILABLE);
-  if (serviceUrl.IsEmpty()) {
-    LOG(("Remote lookup URL is empty [this = %p]", this));
+  if (NS_FAILED(Preferences::GetCString(PREF_SB_APP_REP_URL, serviceUrl)) ||
+      serviceUrl.IsEmpty()) {
+    LOG(("Remote lookup URL is empty or absent [this = %p]", this));
+    aReason = Reason::RemoteLookupDisabled;
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1611,9 +1678,6 @@ PendingLookup::OnStopRequest(nsIRequest *aRequest,
                              nsresult aResult) {
   NS_ENSURE_STATE(mCallback);
 
-  bool shouldBlock = false;
-  uint32_t verdict = nsIApplicationReputationService::VERDICT_SAFE;
-
   if (aResult != NS_ERROR_NET_TIMEOUT) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_REMOTE_LOOKUP_TIMEOUT,
       false);
@@ -1627,9 +1691,10 @@ PendingLookup::OnStopRequest(nsIRequest *aRequest,
       mozilla::Telemetry::APPLICATION_REPUTATION_REMOTE_LOOKUP_RESPONSE_TIME, msecs);
   }
 
-  nsresult rv = OnStopRequestInternal(aRequest, aContext, aResult,
-                                      &shouldBlock, &verdict);
-  OnComplete(shouldBlock, rv, verdict);
+  uint32_t verdict = nsIApplicationReputationService::VERDICT_SAFE;
+  Reason reason = Reason::NotSet;
+  nsresult rv = OnStopRequestInternal(aRequest, aContext, aResult, verdict, reason);
+  OnComplete(verdict, reason, rv);
   return rv;
 }
 
@@ -1637,8 +1702,15 @@ nsresult
 PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
                                      nsISupports *aContext,
                                      nsresult aResult,
-                                     bool* aShouldBlock,
-                                     uint32_t* aVerdict) {
+                                     uint32_t& aVerdict,
+                                     Reason& aReason) {
+  auto scopeExit = mozilla::MakeScopeExit([&aReason] () {
+    
+    if (aReason == Reason::NotSet) {
+      aReason = Reason::NetworkError;
+    }
+  });
+
   if (NS_FAILED(aResult)) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
       SERVER_RESPONSE_FAILED);
@@ -1646,8 +1718,6 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
     return aResult;
   }
 
-  *aShouldBlock = false;
-  *aVerdict = nsIApplicationReputationService::VERDICT_SAFE;
   nsresult rv;
   nsCOMPtr<nsIHttpChannel> channel = do_QueryInterface(aRequest, &rv);
   if (NS_FAILED(rv)) {
@@ -1694,23 +1764,33 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
     std::min<uint32_t>(response.verdict(), 7));
   switch(response.verdict()) {
     case safe_browsing::ClientDownloadResponse::DANGEROUS:
-      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_DANGEROUS, true);
-      *aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS;
+      aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS;
+      aReason = Reason::VerdictDangerous;
       break;
     case safe_browsing::ClientDownloadResponse::DANGEROUS_HOST:
-      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_DANGEROUS_HOST, true);
-      *aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS_HOST;
+      aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS_HOST;
+      aReason = Reason::VerdictDangerousHost;
       break;
     case safe_browsing::ClientDownloadResponse::POTENTIALLY_UNWANTED:
-      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_POTENTIALLY_UNWANTED, false);
-      *aVerdict = nsIApplicationReputationService::VERDICT_POTENTIALLY_UNWANTED;
+      aVerdict = nsIApplicationReputationService::VERDICT_POTENTIALLY_UNWANTED;
+      aReason = Reason::VerdictUnwanted;
       break;
     case safe_browsing::ClientDownloadResponse::UNCOMMON:
-      *aShouldBlock = Preferences::GetBool(PREF_BLOCK_UNCOMMON, false);
-      *aVerdict = nsIApplicationReputationService::VERDICT_UNCOMMON;
+      aVerdict = nsIApplicationReputationService::VERDICT_UNCOMMON;
+      aReason = Reason::VerdictUncommon;
+      break;
+    case safe_browsing::ClientDownloadResponse::UNKNOWN:
+      aVerdict = nsIApplicationReputationService::VERDICT_SAFE;
+      aReason = Reason::VerdictUnknown;
+      break;
+    case safe_browsing::ClientDownloadResponse::SAFE:
+      aVerdict = nsIApplicationReputationService::VERDICT_SAFE;
+      aReason = Reason::VerdictSafe;
       break;
     default:
       
+      aVerdict = nsIApplicationReputationService::VERDICT_SAFE;
+      aReason = Reason::VerdictUnrecognized;
       break;
   }
 
@@ -1754,8 +1834,13 @@ ApplicationReputationService::QueryReputation(
 
   nsresult rv = QueryReputationInternal(aQuery, aCallback);
   if (NS_FAILED(rv)) {
+    Reason reason = rv == NS_ERROR_NOT_AVAILABLE ?
+      Reason::DPDisabled : Reason::InternalError;
+
+    AccumulateCategorical(reason);
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SHOULD_BLOCK,
       false);
+
     aCallback->OnComplete(false, rv,
                           nsIApplicationReputationService::VERDICT_SAFE);
   }
@@ -1765,7 +1850,7 @@ ApplicationReputationService::QueryReputation(
 nsresult ApplicationReputationService::QueryReputationInternal(
   nsIApplicationReputationQuery* aQuery,
   nsIApplicationReputationCallback* aCallback) {
-  nsresult rv;
+
   
   if (!Preferences::GetBool(PREF_SB_MALWARE_ENABLED, false)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -1776,7 +1861,7 @@ nsresult ApplicationReputationService::QueryReputationInternal(
   }
 
   nsCOMPtr<nsIURI> uri;
-  rv = aQuery->GetSourceURI(getter_AddRefs(uri));
+  nsresult rv = aQuery->GetSourceURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
   
   NS_ENSURE_STATE(uri);
