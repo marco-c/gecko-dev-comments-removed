@@ -141,25 +141,19 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   }
 
   
-  RefPtr<NodeInfo> nodeInfo;
-  nodeInfo = doc->NodeInfoManager()->GetNodeInfo(nsGkAtoms::label, nullptr,
-                                                 kNameSpaceID_XUL,
-                                                 nsINode::ELEMENT_NODE);
-  NS_TrustedNewXULElement(getter_AddRefs(mTextContent), nodeInfo.forget());
+  mTextContent = doc->CreateHTMLElement(nsGkAtoms::label);
   
   
   mTextContent->SetIsNativeAnonymousRoot();
-  mTextContent->SetAttr(kNameSpaceID_None, nsGkAtoms::crop,
-                        NS_LITERAL_STRING("center"), false);
+  RefPtr<nsTextNode> text = new nsTextNode(doc->NodeInfoManager());
+  mTextContent->AppendChildTo(text, false);
 
   
   nsAutoString value;
   HTMLInputElement::FromNode(mContent)->GetDisplayFileName(value);
   UpdateDisplayedValue(value, false);
 
-  if (!aElements.AppendElement(mTextContent)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  aElements.AppendElement(mTextContent);
 
   
   mContent->AddSystemEventListener(NS_LITERAL_STRING("drop"),
@@ -475,7 +469,8 @@ nsFileControlFrame::GetFrameName(nsAString& aResult) const
 void
 nsFileControlFrame::UpdateDisplayedValue(const nsAString& aValue, bool aNotify)
 {
-  mTextContent->SetAttr(kNameSpaceID_None, nsGkAtoms::value, aValue, aNotify);
+  auto* text = Text::FromNode(mTextContent->GetFirstChild());
+  text->SetText(aValue, aNotify);
 }
 
 nsresult
