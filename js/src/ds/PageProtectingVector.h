@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef ds_PageProtectingVector_h
 #define ds_PageProtectingVector_h
@@ -18,20 +18,20 @@
 
 namespace js {
 
-/*
- * PageProtectingVector is a vector that can only grow or be cleared, restricts
- * access to memory pages that haven't been used yet, and marks all of its fully
- * used memory pages as read-only. It can be used to detect heap corruption in
- * important buffers, since anything that tries to write into its protected
- * pages will crash. On Nightly and Aurora, these crashes will additionally be
- * annotated with a moz crash reason using MemoryProtectionExceptionHandler.
- *
- * PageProtectingVector's protection is limited to full pages. If the front
- * of its buffer is not aligned on a page boundary, elems preceding the first
- * page boundary will not be protected. Similarly, the end of the buffer will
- * not be fully protected unless it is aligned on a page boundary. Altogether,
- * up to two pages of memory may not be protected.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T, size_t MinInlineCapacity = 0,
           class AllocPolicy = mozilla::MallocAllocPolicy,
           bool ProtectUsed = true, bool ProtectUnused = true,
@@ -53,42 +53,42 @@ class PageProtectingVector final {
   static const size_t elemSize = 1 << elemShift;
   static const size_t elemMask = elemSize - 1;
 
-  /* We hardcode the page size here to minimize administrative overhead. */
+  
   static const size_t pageShift = 12;
   static const size_t pageSize = 1 << pageShift;
   static const size_t pageMask = pageSize - 1;
 
-  /*
-   * The number of elements that can be added before we need to either adjust
-   * the active page or resize the buffer. If |elemsUntilTest < 0| we will
-   * take the slow paths in the append calls.
-   */
+  
+
+
+
+
   intptr_t elemsUntilTest;
 
-  /*
-   * The offset of the currently 'active' page - that is, the page that is
-   * currently being written to. If both used and unused bytes are protected,
-   * this will be the only (fully owned) page with read and write access.
-   */
+  
+
+
+
+
   size_t currPage;
 
-  /*
-   * The first fully owned page. This is the first page that can
-   * be protected, but it may not be the first *active* page.
-   */
+  
+
+
+
   size_t initPage;
 
-  /*
-   * The last fully owned page. This is the last page that can
-   * be protected, but it may not be the last *active* page.
-   */
+  
+
+
+
   size_t lastPage;
 
-  /*
-   * The size in elems that a buffer needs to be before its pages will be
-   * protected. This is intended to reduce churn for small vectors while
-   * still offering protection when they grow large enough.
-   */
+  
+
+
+
+
   size_t lowerBound;
 
 #ifdef DEBUG
@@ -354,10 +354,10 @@ class PageProtectingVector final {
     protectNewBuffer();
   }
 
-  /*
-   * Sets the lower bound on the size, in elems, that this vector's underlying
-   * capacity has to be before its used pages will be protected.
-   */
+  
+
+
+
   void setLowerBoundForProtection(size_t elems) {
     if (lowerBound != elems) {
       unprotectOldBuffer();
@@ -366,7 +366,7 @@ class PageProtectingVector final {
     }
   }
 
-  /* Disable protection on the smallest containing region. */
+  
   MOZ_ALWAYS_INLINE void unprotectRegion(T* first, size_t size) {
 #ifdef DEBUG
     regionUnprotected = true;
@@ -380,7 +380,7 @@ class PageProtectingVector final {
     }
   }
 
-  /* Re-enable protection on the smallest containing region. */
+  
   MOZ_ALWAYS_INLINE void reprotectRegion(T* first, size_t size) {
 #ifdef DEBUG
     regionUnprotected = false;
@@ -477,8 +477,8 @@ template <typename U>
 MOZ_NEVER_INLINE void
 PageProtectingVector<T, A, B, C, D, E, F, G>::infallibleAppendSlow(
     const U* values, size_t size) {
-  // Ensure that we're here because we reached a page
-  // boundary and not because of a buffer overflow.
+  
+  
   MOZ_RELEASE_ASSERT(
       MOZ_LIKELY(length() + size <= capacity()),
       "About to overflow our AssemblerBuffer using infallibleAppend!");
@@ -497,6 +497,6 @@ PageProtectingVector<T, A, B, C, D, E, F, G>::appendSlow(const U* values,
   return appendNewBuffer(values, size);
 }
 
-} /* namespace js */
+} 
 
-#endif /* ds_PageProtectingVector_h */
+#endif 

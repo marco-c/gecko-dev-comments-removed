@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef ds_PriorityQueue_h
 #define ds_PriorityQueue_h
@@ -11,14 +11,14 @@
 
 namespace js {
 
-/*
- * Class which represents a heap based priority queue using a vector.
- * Inserting elements and removing the highest priority one are both O(log n).
- *
- * Template parameters are the same as for Vector, with the addition that P
- * must have a static priority(const T&) method which returns higher numbers
- * for higher priority elements.
- */
+
+
+
+
+
+
+
+
 template <class T, class P, size_t MinInlineCapacity = 0,
           class AllocPolicy = TempAllocPolicy>
 class PriorityQueue {
@@ -60,18 +60,18 @@ class PriorityQueue {
   }
 
  private:
-  /*
-   * Elements of the vector encode a binary tree:
-   *
-   *      0
-   *    1   2
-   *   3 4 5 6
-   *
-   * The children of element N are (2N + 1) and (2N + 2).
-   * The parent of element N is (N - 1) / 2.
-   *
-   * Each element has higher priority than its children.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
 
   void siftDown(size_t n) {
     while (true) {
@@ -119,6 +119,6 @@ class PriorityQueue {
   }
 };
 
-} /* namespace js */
+} 
 
-#endif /* ds_PriorityQueue_h */
+#endif 

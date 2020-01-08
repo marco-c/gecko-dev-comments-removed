@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef ds_Nestable_h
 #define ds_Nestable_h
@@ -12,7 +12,7 @@
 
 namespace js {
 
-// A base class for nestable structures.
+
 template <typename Concrete>
 class MOZ_STACK_CLASS Nestable {
   Concrete** stack_;
@@ -23,11 +23,11 @@ class MOZ_STACK_CLASS Nestable {
     *stack_ = static_cast<Concrete*>(this);
   }
 
-  // These method are protected. Some derived classes, such as ParseContext,
-  // do not expose the ability to walk the stack.
+  
+  
   Concrete* enclosing() const { return enclosing_; }
 
-  template <typename Predicate /* (Concrete*) -> bool */>
+  template <typename Predicate >
   static Concrete* findNearest(Concrete* it, Predicate predicate) {
     while (it && !predicate(it)) {
       it = it->enclosing();
@@ -43,7 +43,7 @@ class MOZ_STACK_CLASS Nestable {
     return it ? &it->template as<T>() : nullptr;
   }
 
-  template <typename T, typename Predicate /* (T*) -> bool */>
+  template <typename T, typename Predicate >
   static T* findNearest(Concrete* it, Predicate predicate) {
     while (it && (!it->template is<T>() || !predicate(&it->template as<T>()))) {
       it = it->enclosing();
@@ -58,6 +58,6 @@ class MOZ_STACK_CLASS Nestable {
   }
 };
 
-}  // namespace js
+}  
 
-#endif /* ds_Nestable_h */
+#endif 
