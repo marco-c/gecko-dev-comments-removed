@@ -6,8 +6,7 @@
 
 #include "MemorySnapshot.h"
 
-#include "ipc/ChildIPC.h"
-#include "js/ReplayHooks.h"
+#include "ipc/ChildInternal.h"
 #include "mozilla/Maybe.h"
 #include "DirtyMemoryHandler.h"
 #include "InfallibleVector.h"
@@ -161,7 +160,7 @@ struct DirtyPage {
 
 
 typedef SplayTree<DirtyPage, DirtyPage::AddressSort,
-                  AllocPolicy<UntrackedMemoryKind::SortedDirtyPageSet>, 4> SortedDirtyPageSet;
+                  AllocPolicy<MemoryKind::SortedDirtyPageSet>, 4> SortedDirtyPageSet;
 
 
 struct DirtyPageSet {
@@ -172,7 +171,7 @@ struct DirtyPageSet {
   
   
   
-  InfallibleVector<DirtyPage, 256, AllocPolicy<UntrackedMemoryKind::DirtyPageSet>> mPages;
+  InfallibleVector<DirtyPage, 256, AllocPolicy<MemoryKind::DirtyPageSet>> mPages;
 
   explicit DirtyPageSet(const CheckpointId& aCheckpoint)
     : mCheckpoint(aCheckpoint)
@@ -189,7 +188,7 @@ struct SnapshotThreadWorklist {
 
   
   
-  InfallibleVector<DirtyPageSet, 256, AllocPolicy<UntrackedMemoryKind::Generic>> mSets;
+  InfallibleVector<DirtyPageSet, 256, AllocPolicy<MemoryKind::Generic>> mSets;
 };
 
 
@@ -232,7 +231,7 @@ static const size_t NumSnapshotThreads = 8;
 class FreeRegionSet {
   
   
-  AllocatedMemoryKind mKind;
+  MemoryKind mKind;
 
   
   SpinLock mLock;
@@ -277,12 +276,12 @@ class FreeRegionSet {
   void* ExtractLockHeld(size_t aSize, AutoSpinLock& aLockHeld);
 
 public:
-  explicit FreeRegionSet(AllocatedMemoryKind aKind)
+  explicit FreeRegionSet(MemoryKind aKind)
     : mKind(aKind), mRegions(MyAllocPolicy(*this))
   {}
 
   
-  static FreeRegionSet& Get(AllocatedMemoryKind aKind);
+  static FreeRegionSet& Get(MemoryKind aKind);
 
   
   void Insert(void* aAddress, size_t aSize);
@@ -312,9 +311,9 @@ struct MemoryInfo {
   
   
   SplayTree<AllocatedMemoryRegion, AllocatedMemoryRegion::AddressSort,
-            AllocPolicy<UntrackedMemoryKind::TrackedRegions>, 4>
+            AllocPolicy<MemoryKind::TrackedRegions>, 4>
     mTrackedRegions;
-  InfallibleVector<AllocatedMemoryRegion, 512, AllocPolicy<UntrackedMemoryKind::TrackedRegions>>
+  InfallibleVector<AllocatedMemoryRegion, 512, AllocPolicy<MemoryKind::TrackedRegions>>
     mTrackedRegionsByAllocationOrder;
   SpinLock mTrackedRegionsLock;
 
@@ -347,7 +346,7 @@ struct MemoryInfo {
   double mTimeTotals[(size_t) TimerKind::Count];
 
   
-  Atomic<ssize_t, Relaxed, Behavior::DontPreserve> mMemoryBalance[UntrackedMemoryKind::Count];
+  Atomic<ssize_t, Relaxed, Behavior::DontPreserve> mMemoryBalance[(size_t) MemoryKind::Count];
 
   
   void* mDirtyMemoryFaults[50];
@@ -360,7 +359,7 @@ struct MemoryInfo {
 
   MemoryInfo()
     : mMemoryChangesAllowed(true)
-    , mFreeUntrackedRegions(UntrackedMemoryKind::FreeRegions)
+    , mFreeUntrackedRegions(MemoryKind::FreeRegions)
     , mStartTime(CurrentTime())
     , mIntentionalCrashesAllowed(true)
   {
@@ -483,7 +482,7 @@ RecordReplayInterface_InternalRecordReplayDirective(long aDirective)
     gMemoryInfo->mCrashSoon = false;
     break;
   case Directive::AlwaysSaveTemporaryCheckpoints:
-    JS::replay::hooks.alwaysSaveTemporaryCheckpoints();
+    navigation::AlwaysSaveTemporaryCheckpoints();
     break;
   case Directive::AlwaysMarkMajorCheckpoints:
     child::NotifyAlwaysMarkMajorCheckpoints();
@@ -558,14 +557,14 @@ SnapshotThreadCondition::WaitUntilNoLongerActive()
 static uint8_t*
 AllocatePageCopy()
 {
-  return (uint8_t*) AllocateMemory(PageSize, UntrackedMemoryKind::PageCopy);
+  return (uint8_t*) AllocateMemory(PageSize, MemoryKind::PageCopy);
 }
 
 
 static void
 FreePageCopy(uint8_t* aPage)
 {
-  DeallocateMemory(aPage, PageSize, UntrackedMemoryKind::PageCopy);
+  DeallocateMemory(aPage, PageSize, MemoryKind::PageCopy);
 }
 
 
@@ -875,7 +874,7 @@ ProcessAllInitialMemoryRegions()
 
 
 
-static FreeRegionSet gFreeRegions(TrackedMemoryKind);
+static FreeRegionSet gFreeRegions(MemoryKind::Tracked);
 
 
 
@@ -902,9 +901,9 @@ FixupFreeRegionsAfterRewind()
 }
 
  FreeRegionSet&
-FreeRegionSet::Get(AllocatedMemoryKind aKind)
+FreeRegionSet::Get(MemoryKind aKind)
 {
-  return (aKind == TrackedMemoryKind) ? gFreeRegions : gMemoryInfo->mFreeUntrackedRegions;
+  return (aKind == MemoryKind::Tracked) ? gFreeRegions : gMemoryInfo->mFreeUntrackedRegions;
 }
 
 void*
@@ -931,7 +930,7 @@ FreeRegionSet::MaybeRefillNextChunk(AutoSpinLock& aLockHeld)
 
   
   size_t size = ChunkPages * PageSize;
-  gMemoryInfo->mMemoryBalance[mKind] += size;
+  gMemoryInfo->mMemoryBalance[(size_t) mKind] += size;
 
   mNextChunk = ExtractLockHeld(size, aLockHeld);
 
@@ -1026,14 +1025,14 @@ FreeRegionSet::Intersects(void* aAddress, size_t aSize)
 
 
 void
-RegisterAllocatedMemory(void* aBaseAddress, size_t aSize, AllocatedMemoryKind aKind)
+RegisterAllocatedMemory(void* aBaseAddress, size_t aSize, MemoryKind aKind)
 {
   MOZ_RELEASE_ASSERT(aBaseAddress == PageBase(aBaseAddress));
   MOZ_RELEASE_ASSERT(aSize == RoundupSizeToPageBoundary(aSize));
 
   uint8_t* aAddress = reinterpret_cast<uint8_t*>(aBaseAddress);
 
-  if (aKind != TrackedMemoryKind) {
+  if (aKind != MemoryKind::Tracked) {
     if (!HasSavedCheckpoint()) {
       AddInitialUntrackedMemoryRegion(aAddress, aSize);
     }
@@ -1096,13 +1095,13 @@ RestoreWritableFixedMemory(void* aAddress, size_t aSize)
 }
 
 void*
-AllocateMemoryTryAddress(void* aAddress, size_t aSize, AllocatedMemoryKind aKind)
+AllocateMemoryTryAddress(void* aAddress, size_t aSize, MemoryKind aKind)
 {
   MOZ_RELEASE_ASSERT(aAddress == PageBase(aAddress));
   aSize = RoundupSizeToPageBoundary(aSize);
 
   if (gMemoryInfo) {
-    gMemoryInfo->mMemoryBalance[aKind] += aSize;
+    gMemoryInfo->mMemoryBalance[(size_t) aKind] += aSize;
   }
 
   if (HasSavedCheckpoint()) {
@@ -1116,10 +1115,8 @@ AllocateMemoryTryAddress(void* aAddress, size_t aSize, AllocatedMemoryKind aKind
   return res;
 }
 
-extern "C" {
-
-MOZ_EXPORT void*
-RecordReplayInterface_AllocateMemory(size_t aSize, AllocatedMemoryKind aKind)
+void*
+AllocateMemory(size_t aSize, MemoryKind aKind)
 {
   if (!IsReplaying()) {
     return DirectAllocateMemory(nullptr, aSize);
@@ -1127,8 +1124,8 @@ RecordReplayInterface_AllocateMemory(size_t aSize, AllocatedMemoryKind aKind)
   return AllocateMemoryTryAddress(nullptr, aSize, aKind);
 }
 
-MOZ_EXPORT void
-RecordReplayInterface_DeallocateMemory(void* aAddress, size_t aSize, AllocatedMemoryKind aKind)
+void
+DeallocateMemory(void* aAddress, size_t aSize, MemoryKind aKind)
 {
   
   aSize += (uint8_t*) aAddress - PageBase(aAddress);
@@ -1140,19 +1137,19 @@ RecordReplayInterface_DeallocateMemory(void* aAddress, size_t aSize, AllocatedMe
   }
 
   if (gMemoryInfo) {
-    gMemoryInfo->mMemoryBalance[aKind] -= aSize;
+    gMemoryInfo->mMemoryBalance[(size_t) aKind] -= aSize;
   }
 
   
   if (!HasSavedCheckpoint()) {
-    if (IsReplaying() && aKind != TrackedMemoryKind) {
+    if (IsReplaying() && aKind != MemoryKind::Tracked) {
       RemoveInitialUntrackedRegion((uint8_t*) aAddress, aSize);
     }
     DirectDeallocateMemory(aAddress, aSize);
     return;
   }
 
-  if (aKind == TrackedMemoryKind) {
+  if (aKind == MemoryKind::Tracked) {
     
     
     bool executable;
@@ -1166,8 +1163,6 @@ RecordReplayInterface_DeallocateMemory(void* aAddress, size_t aSize, AllocatedMe
   
   FreeRegionSet::Get(aKind).Insert(aAddress, aSize);
 }
-
-} 
 
 
 
@@ -1273,7 +1268,7 @@ void
 InitializeMemorySnapshots()
 {
   MOZ_RELEASE_ASSERT(gMemoryInfo == nullptr);
-  void* memory = AllocateMemory(sizeof(MemoryInfo), UntrackedMemoryKind::Generic);
+  void* memory = AllocateMemory(sizeof(MemoryInfo), MemoryKind::Generic);
   gMemoryInfo = new(memory) MemoryInfo();
 
   

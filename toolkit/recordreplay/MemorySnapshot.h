@@ -40,11 +40,11 @@ void RestoreWritableFixedMemory(void* aAddress, size_t aSize);
 
 
 
-void* AllocateMemoryTryAddress(void* aAddress, size_t aSize, AllocatedMemoryKind aKind);
+void* AllocateMemoryTryAddress(void* aAddress, size_t aSize, MemoryKind aKind);
 
 
 
-void RegisterAllocatedMemory(void* aBaseAddress, size_t aSize, AllocatedMemoryKind aKind);
+void RegisterAllocatedMemory(void* aBaseAddress, size_t aSize, MemoryKind aKind);
 
 
 void InitializeMemorySnapshots();

@@ -110,12 +110,12 @@ public:
     , mCallbackStorage(nullptr)
   {
     
-    mCallbackStorage = (uint8_t*) AllocateMemory(CallbackStorageCapacity, TrackedMemoryKind);
+    mCallbackStorage = (uint8_t*) AllocateMemory(CallbackStorageCapacity, MemoryKind::Tracked);
   }
 
   ~StableHashTableInfo() {
     MOZ_ASSERT(mHashToKey.empty());
-    DeallocateMemory(mCallbackStorage, CallbackStorageCapacity, TrackedMemoryKind);
+    DeallocateMemory(mCallbackStorage, CallbackStorageCapacity, MemoryKind::Tracked);
   }
 
   bool AppearsValid() {

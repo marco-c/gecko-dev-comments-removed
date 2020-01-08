@@ -9,11 +9,11 @@
 
 #include "base/process.h"
 
-#include "js/ReplayHooks.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/Maybe.h"
 
 #include "File.h"
+#include "JSControl.h"
 #include "Monitor.h"
 
 namespace mozilla {
@@ -260,9 +260,9 @@ struct SetBreakpointMessage : public Message
 
   
   
-  JS::replay::ExecutionPosition mPosition;
+  js::BreakpointPosition mPosition;
 
-  SetBreakpointMessage(size_t aId, const JS::replay::ExecutionPosition& aPosition)
+  SetBreakpointMessage(size_t aId, const js::BreakpointPosition& aPosition)
     : Message(MessageType::SetBreakpoint, sizeof(*this))
     , mId(aId)
     , mPosition(aPosition)
@@ -425,7 +425,7 @@ private:
   Monitor mMonitor;
 
   
-  InfallibleVector<char, 0, AllocPolicy<UntrackedMemoryKind::Generic>> mMessageBuffer;
+  InfallibleVector<char, 0, AllocPolicy<MemoryKind::Generic>> mMessageBuffer;
 
   
   size_t mMessageBytes;
