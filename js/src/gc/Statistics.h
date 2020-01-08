@@ -192,6 +192,27 @@ struct Statistics
         thresholdTriggered = true;
     }
 
+    void noteNurseryAlloc() {
+        allocsSinceMinorGC.nursery++;
+    }
+
+    
+    void setAllocsSinceMinorGCTenured(uint32_t allocs) {
+        allocsSinceMinorGC.tenured = allocs;
+    }
+
+    uint32_t allocsSinceMinorGCNursery() {
+        return allocsSinceMinorGC.nursery;
+    }
+
+    uint32_t allocsSinceMinorGCTenured() {
+        return allocsSinceMinorGC.tenured;
+    }
+
+    uint32_t* addressOfAllocsSinceMinorGCNursery() {
+        return &allocsSinceMinorGC.nursery;
+    }
+
     void beginNurseryCollection(JS::gcreason::Reason reason);
     void endNurseryCollection(JS::gcreason::Reason reason);
 
@@ -314,6 +335,15 @@ struct Statistics
                     STAT_LIMIT,
                     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
                                     mozilla::recordreplay::Behavior::DontPreserve>> counts;
+
+    
+
+
+
+    struct {
+        uint32_t nursery;
+        uint32_t tenured;
+    } allocsSinceMinorGC;
 
     
     size_t preBytes;

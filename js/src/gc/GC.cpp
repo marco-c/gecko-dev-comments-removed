@@ -7952,6 +7952,14 @@ GCRuntime::minorGC(JS::gcreason::Reason reason, gcstats::PhaseKind phase)
     if (rt->mainContextFromOwnThread()->suppressGC)
         return;
 
+    
+    
+    
+    uint32_t numAllocs = rt->mainContextFromOwnThread()->getAndResetAllocsThisZoneSinceMinorGC();
+    for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next())
+        numAllocs += zone->getAndResetTenuredAllocsSinceMinorGC();
+    rt->gc.stats().setAllocsSinceMinorGCTenured(numAllocs);
+
     gcstats::AutoPhase ap(rt->gc.stats(), phase);
 
     nursery().clearMinorGCRequest();
@@ -8239,6 +8247,8 @@ GCRuntime::mergeRealms(Realm* source, Realm* target)
 
     
     target->zone()->arenas.adoptArenas(&source->zone()->arenas, targetZoneIsCollecting);
+    target->zone()->addTenuredAllocsSinceMinorGC(
+        source->zone()->getAndResetTenuredAllocsSinceMinorGC());
     target->zone()->usage.adopt(source->zone()->usage);
     target->zone()->adoptUniqueIds(source->zone());
     target->zone()->adoptMallocBytes(source->zone());

@@ -131,6 +131,11 @@ struct JSContext : public JS::RootingContext,
     js::ThreadData<js::gc::FreeLists*> freeLists_;
 
     
+    
+    
+    uint32_t allocsThisZoneSinceMinorGC_;
+
+    
     js::ThreadData<js::gc::FreeLists*> atomsZoneFreeLists_;
 
   public:
@@ -196,6 +201,20 @@ struct JSContext : public JS::RootingContext,
 
     void reportAllocationOverflow() {
         js::ReportAllocationOverflow(this);
+    }
+
+    void noteTenuredAlloc() {
+        allocsThisZoneSinceMinorGC_++;
+    }
+
+    uint32_t* addressOfTenuredAllocCount() {
+        return &allocsThisZoneSinceMinorGC_;
+    }
+
+    uint32_t getAndResetAllocsThisZoneSinceMinorGC() {
+        uint32_t allocs = allocsThisZoneSinceMinorGC_;
+        allocsThisZoneSinceMinorGC_ = 0;
+        return allocs;
     }
 
     
