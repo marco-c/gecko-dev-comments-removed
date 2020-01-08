@@ -641,6 +641,27 @@ var paymentDialogWrapper = {
     }
   },
 
+  async onChangePaymentMethod({
+    selectedPaymentCardBillingAddressGUID: billingAddressGUID,
+  }) {
+    const methodName = "basic-card";
+    let methodDetails;
+    try {
+      let billingAddress = await this._convertProfileAddressToPaymentAddress(billingAddressGUID);
+      const basicCardChangeDetails = Cc["@mozilla.org/dom/payments/basiccard-change-details;1"]
+                                       .createInstance(Ci.nsIBasicCardChangeDetails);
+      basicCardChangeDetails.initData(billingAddress);
+      methodDetails = basicCardChangeDetails.QueryInterface(Ci.nsIMethodChangeDetails);
+    } catch (ex) {
+      
+      
+      Cu.reportError(ex);
+      return;
+    }
+
+    paymentSrv.changePaymentMethod(this.request.requestId, methodName, methodDetails);
+  },
+
   async onChangeShippingAddress({shippingAddressGUID}) {
     if (shippingAddressGUID) {
       
@@ -749,6 +770,10 @@ var paymentDialogWrapper = {
       }
       case "changePayerAddress": {
         this.onChangePayerAddress(data);
+        break;
+      }
+      case "changePaymentMethod": {
+        this.onChangePaymentMethod(data);
         break;
       }
       case "changeShippingAddress": {
