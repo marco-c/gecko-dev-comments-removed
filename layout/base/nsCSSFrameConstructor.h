@@ -781,7 +781,7 @@ private:
 
   struct PseudoParentData {
     const FrameConstructionData mFCData;
-    nsICSSAnonBoxPseudo * const* mPseudoType;
+    nsICSSAnonBoxPseudo* const mPseudoType;
   };
   
 
