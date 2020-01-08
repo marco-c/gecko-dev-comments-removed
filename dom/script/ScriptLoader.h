@@ -311,6 +311,23 @@ class ScriptLoader final : public nsISupports {
 
   void Destroy() { GiveUpBytecodeEncoding(); }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  static void ResolveImportedModule(JSContext* aCx,
+                                    JS::Handle<JS::Value> aReferencingPrivate,
+                                    JS::Handle<JSString*> aSpecifier,
+                                    JS::MutableHandle<JSObject*> aModuleOut);
+
   void StartDynamicImport(ModuleLoadRequest* aRequest);
   void FinishDynamicImport(ModuleLoadRequest* aRequest, nsresult aResult);
   void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
@@ -321,6 +338,8 @@ class ScriptLoader final : public nsISupports {
 
 
   static LoadedScript* GetActiveScript(JSContext* aCx);
+
+  nsIDocument* GetDocument() const { return mDocument; }
 
  private:
   virtual ~ScriptLoader();
@@ -578,6 +597,7 @@ class ScriptLoader final : public nsISupports {
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
 
   
+ public:
   static LazyLogModule gCspPRLog;
   static LazyLogModule gScriptLoaderLog;
 };
