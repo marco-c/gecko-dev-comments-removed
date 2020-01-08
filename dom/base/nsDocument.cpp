@@ -3361,6 +3361,13 @@ nsIDocument::LocalizationLinkAdded(Element* aLinkElement)
     AutoTArray<nsString, 1> resourceIds;
     resourceIds.AppendElement(href);
     mDocumentL10n->AddResourceIds(resourceIds);
+  } else if (mReadyState == READYSTATE_COMPLETE) {
+    
+    
+    AutoTArray<nsString, 1> resourceIds;
+    resourceIds.AppendElement(href);
+    InitializeLocalization(resourceIds);
+    mDocumentL10n->TriggerInitialDocumentTranslation();
   } else {
     
     
@@ -5307,10 +5314,7 @@ void
 nsDocument::EndLoad()
 {
 #if defined(DEBUG) && !defined(ANDROID)
-  
-  if (!mParserAborted) {
-    AssertContentPrivilegedAboutPageHasCSP(mDocumentURI, NodePrincipal());
-  }
+  AssertContentPrivilegedAboutPageHasCSP(mDocumentURI, NodePrincipal());
 #endif
 
   
