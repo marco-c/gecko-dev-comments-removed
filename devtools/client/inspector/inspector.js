@@ -938,11 +938,16 @@ Inspector.prototype = {
         id: "fontinspector",
         title: INSPECTOR_L10N.getStr("inspector.sidebar.fontInspectorTitle"),
       },
-      {
+    ];
+
+    if (Services.prefs.getBoolPref(TRACK_CHANGES_PREF)) {
+      
+      
+      sidebarPanels.splice(2, 0, {
         id: "changesview",
         title: INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle"),
-      },
-    ];
+      });
+    }
 
     for (const { id, title } of sidebarPanels) {
       
