@@ -6421,6 +6421,21 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     mListener = listener;
     mListenerContext = context;
 
+    
+    if (!DelayHttpChannelQueue::AttemptQueueChannel(this)) {
+        
+        AsyncOpenFinal(TimeStamp::Now());
+    }
+
+    return NS_OK;
+}
+
+nsresult
+nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp)
+{
+    
+    nsresult rv;
+
     if (mLoadGroup)
         mLoadGroup->AddRequest(this, nullptr);
 
@@ -6429,7 +6444,7 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     
     
     if (!mAsyncOpenTimeOverriden) {
-      mAsyncOpenTime = TimeStamp::Now();
+      mAsyncOpenTime = aTimeStamp;
     }
 
     
