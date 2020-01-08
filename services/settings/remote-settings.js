@@ -193,10 +193,10 @@ async function fetchLatestChanges(url, lastEtag) {
 
 
 
-async function loadDumpFile(filename) {
-  
-  const { components: folderFile } = OS.Path.split(filename);
-  const fileURI = `resource://app/defaults/settings/${folderFile.join("/")}`;
+
+
+async function loadDumpFile(bucket, collection) {
+  const fileURI = `resource://app/defaults/settings/${bucket}/${collection}.json`;
   const response = await fetch(fileURI);
   if (!response.ok) {
     throw new Error(`Could not read from '${fileURI}'`);
@@ -223,12 +223,6 @@ class RemoteSettingsClient {
 
   get identifier() {
     return `${this.bucketName}/${this.collectionName}`;
-  }
-
-  get filename() {
-    
-    const identifier = OS.Path.join(...this.identifier.split("/"));
-    return `${identifier}.json`;
   }
 
   get lastCheckTimePref() {
@@ -302,7 +296,7 @@ class RemoteSettingsClient {
     
     if (timestamp == null) {
       try {
-        const { data } = await loadDumpFile(this.filename);
+        const { data } = await loadDumpFile(this.bucketName, this.collectionName);
         await c.loadDump(data);
       } catch (e) {
         
@@ -353,7 +347,7 @@ class RemoteSettingsClient {
       
       if (!collectionLastModified && loadDump) {
         try {
-          const initialData = await loadDumpFile(this.filename);
+          const initialData = await loadDumpFile(this.bucketName, this.collectionName);
           await collection.loadDump(initialData.data);
           collectionLastModified = await collection.db.getLastModified();
         } catch (e) {
@@ -586,9 +580,8 @@ async function databaseExists(bucket, collection) {
 
 
 async function hasLocalDump(bucket, collection) {
-  const filename = OS.Path.join(bucket, `${collection}.json`);
   try {
-    await loadDumpFile(filename);
+    await loadDumpFile(bucket, collection);
     return true;
   } catch (e) {
     return false;

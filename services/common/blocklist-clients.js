@@ -108,31 +108,6 @@ async function updatePinningList({ data: { current: records } }) {
 
 
 
-
-async function updateJSONBlocklist(client, { data: { current: records } }) {
-  
-  const path = OS.Path.join(OS.Constants.Path.profileDir, client.filename);
-  const blocklistFolder = OS.Path.dirname(path);
-
-  await OS.File.makeDir(blocklistFolder, {from: OS.Constants.Path.profileDir});
-
-  const serialized = JSON.stringify({data: records}, null, 2);
-  try {
-    await OS.File.writeAtomic(path, serialized, {tmpPath: path + ".tmp"});
-    
-    const eventData = {filename: client.filename};
-    Services.cpmm.sendAsyncMessage("Blocklist:reload-from-disk", eventData);
-  } catch (e) {
-    Cu.reportError(e);
-  }
-}
-
-
-
-
-
-
-
 async function targetAppFilter(entry, environment) {
   
   
@@ -211,7 +186,6 @@ function initialize() {
     signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS_SIGNER),
     filterFunc: targetAppFilter,
   });
-  AddonBlocklistClient.on("sync", updateJSONBlocklist.bind(null, AddonBlocklistClient));
 
   PluginBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_COLLECTION), {
     bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
@@ -219,7 +193,6 @@ function initialize() {
     signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_SIGNER),
     filterFunc: targetAppFilter,
   });
-  PluginBlocklistClient.on("sync", updateJSONBlocklist.bind(null, PluginBlocklistClient));
 
   GfxBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_COLLECTION), {
     bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET),
@@ -227,7 +200,6 @@ function initialize() {
     signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_SIGNER),
     filterFunc: targetAppFilter,
   });
-  GfxBlocklistClient.on("sync", updateJSONBlocklist.bind(null, GfxBlocklistClient));
 
   PinningBlocklistClient = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_PINNING_COLLECTION), {
     bucketName: Services.prefs.getCharPref(PREF_BLOCKLIST_PINNING_BUCKET),

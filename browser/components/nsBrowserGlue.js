@@ -1805,7 +1805,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 72;
+    const UI_VERSION = 73;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2140,6 +2140,19 @@ BrowserGlue.prototype = {
       
       let pref = "devtools.performance.recording.interval";
       Services.prefs.setIntPref(pref, Services.prefs.getIntPref(pref, 1) * 1000);
+    }
+
+    if (currentUIVersion < 73) {
+      
+      OS.File.removeDir(OS.Path.join(OS.Constants.Path.profileDir, "blocklists"),
+                        { ignoreAbsent: true });
+      OS.File.removeDir(OS.Path.join(OS.Constants.Path.profileDir, "blocklists-preview"),
+                        { ignoreAbsent: true });
+      for (const filename of ["addons.json", "plugins.json", "gfx.json"]) {
+        
+        const path = OS.Path.join(OS.Constants.Path.profileDir, `blocklists-${filename}`);
+        OS.File.remove(path, { ignoreAbsent: true });
+      }
     }
 
     
