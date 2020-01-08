@@ -71,7 +71,7 @@ add_task(async function no_request_if_prefed_off() {
   await promiseAfterCache();
 
   
-  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName(false));
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName(false));
 
   
   let metadata = await promiseGlobalMetadata();
@@ -90,7 +90,7 @@ add_task(async function should_get_geo_defaults_only_once() {
   Assert.equal(Services.prefs.getCharPref("browser.search.region"), "FR");
   await asyncReInit();
   checkRequest();
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
   await promiseAfterCache();
 
   
@@ -105,7 +105,7 @@ add_task(async function should_get_geo_defaults_only_once() {
   
   await asyncReInit();
   checkNoRequest();
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
 });
 
 add_task(async function should_request_when_region_not_set() {
@@ -198,7 +198,7 @@ add_task(async function should_recheck_when_broken_hash() {
   
   
   Assert.ok(!Services.search.isInitialized);
-  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName(false));
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName(false));
   Assert.ok(Services.search.isInitialized);
 
   await reInitPromise;
@@ -219,13 +219,13 @@ add_task(async function should_recheck_when_broken_hash() {
   Assert.equal(metadata.searchDefaultHash, hash);
 
   
-  Assert.equal(Services.search.currentEngine.name, getDefaultEngineName(false));
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName(false));
 
   
   
   await asyncReInit();
   checkNoRequest();
-  Assert.equal(Services.search.currentEngine.name, kTestEngineName);
+  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
 });
 
 add_task(async function should_remember_cohort_id() {

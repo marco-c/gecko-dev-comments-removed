@@ -105,7 +105,7 @@ add_task(async function() {
 
   
   let result = promiseValues[2];
-  let engineName = Services.search.currentEngine.name;
+  let engineName = Services.search.defaultEngine.name;
   Assert.deepEqual(
     PlacesUtils.parseActionUrl(result.url),
     {

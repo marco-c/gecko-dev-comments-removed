@@ -6,11 +6,11 @@ function run_test() {
   Assert.ok(Services.search.isInitialized);
 
   
-  let currentEngine = Services.search.currentEngine;
+  let currentEngine = Services.search.defaultEngine;
   Services.search.removeEngine(currentEngine);
 
   
-  Assert.notEqual(Services.search.currentEngine.name, currentEngine.name);
+  Assert.notEqual(Services.search.defaultEngine.name, currentEngine.name);
   Assert.ok(currentEngine.hidden);
 
   
@@ -19,7 +19,7 @@ function run_test() {
 
   
   
-  Assert.equal(Services.search.currentEngine.name, currentEngine.name);
+  Assert.equal(Services.search.defaultEngine.name, currentEngine.name);
   Assert.ok(!currentEngine.hidden);
   Assert.equal(Services.search.getVisibleEngines().length, 1);
 }

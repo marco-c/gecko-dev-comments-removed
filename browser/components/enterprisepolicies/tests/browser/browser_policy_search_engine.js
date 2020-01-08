@@ -51,7 +51,7 @@ async function test_opensearch(shouldWork) {
 add_task(async function test_install_and_set_default() {
   
   
-  isnot(Services.search.currentEngine.name, "MozSearch",
+  isnot(Services.search.defaultEngine.name, "MozSearch",
         "Default search engine should not be MozSearch when test starts");
   is(Services.search.getEngineByName("Foo"), null,
      "Engine \"Foo\" should not be present when test starts");
@@ -72,18 +72,18 @@ add_task(async function test_install_and_set_default() {
 
   
   
-  is(Services.search.currentEngine.name, "MozSearch",
+  is(Services.search.defaultEngine.name, "MozSearch",
      "Specified search engine should be the default");
 
   
-  Services.search.removeEngine(Services.search.currentEngine);
+  Services.search.removeEngine(Services.search.defaultEngine);
   EnterprisePolicyTesting.resetRunOnceState();
 });
 
 
 
 add_task(async function test_install_and_set_default_prevent_installs() {
-  isnot(Services.search.currentEngine.name, "MozSearch",
+  isnot(Services.search.defaultEngine.name, "MozSearch",
         "Default search engine should not be MozSearch when test starts");
   is(Services.search.getEngineByName("Foo"), null,
      "Engine \"Foo\" should not be present when test starts");
@@ -103,11 +103,11 @@ add_task(async function test_install_and_set_default_prevent_installs() {
     },
   });
 
-  is(Services.search.currentEngine.name, "MozSearch",
+  is(Services.search.defaultEngine.name, "MozSearch",
      "Specified search engine should be the default");
 
   
-  Services.search.removeEngine(Services.search.currentEngine);
+  Services.search.removeEngine(Services.search.defaultEngine);
   EnterprisePolicyTesting.resetRunOnceState();
 });
 
