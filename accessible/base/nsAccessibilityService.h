@@ -473,6 +473,7 @@ static const char kEventTypeNames[][40] = {
   "object attribute changed",                
   "virtual cursor changed",                   
   "text value change",                       
+  "scrolling",                               
 };
 
 #endif

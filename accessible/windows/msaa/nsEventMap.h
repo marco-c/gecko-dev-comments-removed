@@ -98,6 +98,6 @@ static const uint32_t gWinEventMap[] = {
   IA2_EVENT_HYPERTEXT_NLINKS_CHANGED,                
   IA2_EVENT_OBJECT_ATTRIBUTE_CHANGED,                
   kEVENT_WIN_UNKNOWN,                                 
-  EVENT_OBJECT_VALUECHANGE                          
+  EVENT_OBJECT_VALUECHANGE,                          
+  kEVENT_WIN_UNKNOWN,                                
 };
-

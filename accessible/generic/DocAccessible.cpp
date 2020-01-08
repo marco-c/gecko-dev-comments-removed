@@ -610,17 +610,10 @@ DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure)
 {
   DocAccessible* docAcc = reinterpret_cast<DocAccessible*>(aClosure);
 
-  if (docAcc && docAcc->mScrollPositionChangedTicks &&
-      ++docAcc->mScrollPositionChangedTicks > 2) {
-    
-    
-    
-    
-    nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_END, docAcc);
+  if (docAcc) {
+    docAcc->DispatchScrollingEvent(nsIAccessibleEvent::EVENT_SCROLLING_END);
 
-    docAcc->mScrollPositionChangedTicks = 0;
     if (docAcc->mScrollWatchTimer) {
-      docAcc->mScrollWatchTimer->Cancel();
       docAcc->mScrollWatchTimer = nullptr;
       NS_RELEASE(docAcc); 
     }
@@ -633,24 +626,31 @@ DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure)
 void
 DocAccessible::ScrollPositionDidChange(nscoord aX, nscoord aY)
 {
+  const uint32_t kScrollEventInterval = 100;
+  TimeStamp timestamp = TimeStamp::Now();
+  if (mLastScrollingDispatch.IsNull() ||
+      (timestamp - mLastScrollingDispatch).ToMilliseconds() >= kScrollEventInterval) {
+    DispatchScrollingEvent(nsIAccessibleEvent::EVENT_SCROLLING);
+    mLastScrollingDispatch = timestamp;
+  }
+
   
   
-  const uint32_t kScrollPosCheckWait = 50;
+  
   if (mScrollWatchTimer) {
-    mScrollWatchTimer->SetDelay(kScrollPosCheckWait);  
+    mScrollWatchTimer->SetDelay(kScrollEventInterval);
   }
   else {
     NS_NewTimerWithFuncCallback(getter_AddRefs(mScrollWatchTimer),
                                 ScrollTimerCallback,
                                 this,
-                                kScrollPosCheckWait,
-                                nsITimer::TYPE_REPEATING_SLACK,
+                                kScrollEventInterval,
+                                nsITimer::TYPE_ONE_SHOT,
                                 "a11y::DocAccessible::ScrollPositionDidChange");
     if (mScrollWatchTimer) {
       NS_ADDREF_THIS(); 
     }
   }
-  mScrollPositionChangedTicks = 1;
 }
 
 
@@ -2442,4 +2442,25 @@ DocAccessible::IsLoadEventTarget() const
 
   
   return (treeItem->ItemType() == nsIDocShellTreeItem::typeContent);
+}
+
+void
+DocAccessible::DispatchScrollingEvent(uint32_t aEventType)
+{
+  nsIScrollableFrame* sf = mPresShell->GetRootScrollFrameAsScrollable();
+
+  int32_t appUnitsPerDevPixel = mPresShell->GetPresContext()->AppUnitsPerDevPixel();
+  LayoutDevicePoint scrollPoint = LayoutDevicePoint::FromAppUnits(
+    sf->GetScrollPosition(), appUnitsPerDevPixel) * mPresShell->GetResolution();
+
+  LayoutDeviceRect scrollRange = LayoutDeviceRect::FromAppUnits(
+    sf->GetScrollRange(), appUnitsPerDevPixel);
+  scrollRange.ScaleRoundOut(mPresShell->GetResolution());
+
+  RefPtr<AccEvent> event = new AccScrollingEvent(aEventType, this,
+                                                 scrollPoint.x, scrollPoint.y,
+                                                 scrollRange.width,
+                                                 scrollRange.height);
+
+  nsEventShell::FireEvent(event);
 }
