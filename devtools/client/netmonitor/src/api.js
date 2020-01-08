@@ -12,6 +12,9 @@ const { configureStore } = require("./create-store");
 const { EVENTS } = require("./constants");
 const Actions = require("./actions/index");
 
+
+const Telemetry = require("devtools/client/shared/telemetry");
+
 const {
   getDisplayedRequestById,
   getSortedRequests
@@ -31,7 +34,10 @@ function NetMonitorAPI() {
   this.connector = new Connector();
 
   
-  this.store = configureStore(this.connector);
+  this.telemetry = new Telemetry();
+
+  
+  this.store = configureStore(this.connector, this.telemetry);
 
   
   this._requestFinishedListeners = new Set();
