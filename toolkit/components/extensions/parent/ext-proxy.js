@@ -228,6 +228,11 @@ this.proxy = class extends ExtensionAPI {
 
               let value = details.value;
 
+              
+              if (value.proxyType == null) {
+                value.proxyType = "system";
+              }
+
               if (!PROXY_TYPES_MAP.has(value.proxyType)) {
                 throw new ExtensionError(
                   `${value.proxyType} is not a valid value for proxyType.`);
