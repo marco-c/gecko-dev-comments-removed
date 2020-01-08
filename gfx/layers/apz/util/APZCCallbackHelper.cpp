@@ -19,15 +19,16 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/TouchEvents.h"
-#include "nsContentUtils.h"
 #include "nsContainerFrame.h"
-#include "nsIScrollableFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsIInterfaceRequestorUtils.h"
+#include "nsContentUtils.h"
 #include "nsIContent.h"
-#include "nsIDocument.h"
 #include "nsIDOMWindow.h"
 #include "nsIDOMWindowUtils.h"
+#include "nsIDocument.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIScrollableFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsPrintfCString.h"
 #include "nsRefreshDriver.h"
 #include "nsString.h"
 #include "nsView.h"
@@ -114,11 +115,29 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
   
   
   
-  if (aFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
-    MOZ_ASSERT(targetScrollPosition.y == geckoScrollPosition.y);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFrame->GetScrollbarStyles().mVertical == NS_STYLE_OVERFLOW_HIDDEN &&
+      targetScrollPosition.y != geckoScrollPosition.y) {
+    NS_WARNING(nsPrintfCString(
+          "APZCCH: targetScrollPosition.y (%f) != geckoScrollPosition.y (%f)",
+          targetScrollPosition.y, geckoScrollPosition.y).get());
   }
-  if (aFrame->GetScrollbarStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN) {
-    MOZ_ASSERT(targetScrollPosition.x == geckoScrollPosition.x);
+  if (aFrame->GetScrollbarStyles().mHorizontal == NS_STYLE_OVERFLOW_HIDDEN &&
+      targetScrollPosition.x != geckoScrollPosition.x) {
+    NS_WARNING(nsPrintfCString(
+          "APZCCH: targetScrollPosition.x (%f) != geckoScrollPosition.x (%f)",
+          targetScrollPosition.x, geckoScrollPosition.x).get());
   }
 
   
