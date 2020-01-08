@@ -731,7 +731,9 @@ var BrowserTestUtils = {
       TestUtils.topicObserved("browser-delayed-startup-finished",
                               subject => subject == win).then(() => win);
 
-    let loadPromise = this.firstBrowserLoaded(win, !options.waitForNonAboutBlankLoad);
+    let loadPromise = this.firstBrowserLoaded(win, !options.waitForTabURL, browser => {
+      return !options.waitForTabURL || options.waitForTabURL == browser.currentURI.spec;
+    });
 
     await startupPromise;
     await loadPromise;
