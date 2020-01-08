@@ -72,7 +72,7 @@ class nsITimeoutHandler;
 class nsIWebBrowserChrome;
 class mozIDOMWindowProxy;
 
-class nsDocShellLoadState;
+class nsDocShellLoadInfo;
 class nsDOMWindowList;
 class nsScreen;
 class nsHistory;
@@ -606,7 +606,7 @@ public:
             mozilla::ErrorResult& aError);
   nsresult Open(const nsAString& aUrl, const nsAString& aName,
                 const nsAString& aOptions,
-                nsDocShellLoadState* aLoadState,
+                nsDocShellLoadInfo* aLoadInfo,
                 bool aForceNoOpener,
                 nsPIDOMWindowOuter **_retval) override;
   mozilla::dom::Navigator* GetNavigator() override;
@@ -900,7 +900,7 @@ private:
                         bool aNavigate,
                         nsIArray *argv,
                         nsISupports *aExtraArgument,
-                        nsDocShellLoadState* aLoadState,
+                        nsDocShellLoadInfo* aLoadInfo,
                         bool aForceNoOpener,
                         nsPIDOMWindowOuter **aReturn);
 

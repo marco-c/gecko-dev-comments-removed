@@ -31,7 +31,7 @@ class nsIChannel;
 class nsIContent;
 class nsICSSDeclaration;
 class nsIDocShell;
-class nsDocShellLoadState;
+class nsDocShellLoadInfo;
 class nsIDocument;
 class nsIPrincipal;
 class nsIScriptTimeoutHandler;
@@ -1094,8 +1094,8 @@ public:
   virtual void
   NotifyContentBlockingState(unsigned aState,
                              nsIChannel* aChannel,
-                             bool aBlocked,
-                             nsIURI* aURIHint) = 0;
+                             bool aBlocked = true,
+                             nsIURI* aURIHint = nullptr) = 0;
 
   
   void MarkUncollectableForCCGeneration(uint32_t aGeneration)
@@ -1125,7 +1125,7 @@ public:
   
   virtual nsresult Open(const nsAString& aUrl, const nsAString& aName,
                         const nsAString& aOptions,
-                        nsDocShellLoadState* aLoadState,
+                        nsDocShellLoadInfo* aLoadInfo,
                         bool aForceNoOpener,
                         nsPIDOMWindowOuter **_retval) = 0;
   virtual nsresult OpenDialog(const nsAString& aUrl, const nsAString& aName,

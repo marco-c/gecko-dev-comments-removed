@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDocShellLoadState_h__
-#define nsDocShellLoadState_h__
+#ifndef nsDocShellLoadInfo_h__
+#define nsDocShellLoadInfo_h__
 
 
 #include "nsCOMPtr.h"
@@ -17,28 +17,21 @@ class nsIInputStream;
 class nsISHEntry;
 class nsIURI;
 class nsIDocShell;
-class OriginAttibutes;
 
 
 
 
 
-class nsDocShellLoadState final
+class nsDocShellLoadInfo
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(nsDocShellLoadState);
+  NS_INLINE_DECL_REFCOUNTING(nsDocShellLoadInfo);
 
-  nsDocShellLoadState();
-
-  
+  nsDocShellLoadInfo();
 
   nsIURI* Referrer() const;
 
   void SetReferrer(nsIURI* aReferrer);
-
-  nsIURI* URI() const;
-
-  void SetURI(nsIURI* aURI);
 
   nsIURI* OriginalURI() const;
 
@@ -55,10 +48,6 @@ public:
   bool KeepResultPrincipalURIIfSet() const;
 
   void SetKeepResultPrincipalURIIfSet(bool aKeep);
-
-  nsIPrincipal* PrincipalToInherit() const;
-
-  void SetPrincipalToInherit(nsIPrincipal* aPrincipalToInherit);
 
   bool LoadReplace() const;
 
@@ -92,7 +81,7 @@ public:
 
   void SetSHEntry(nsISHEntry* aSHEntry);
 
-  const nsString& Target() const;
+  void GetTarget(nsAString& aTarget) const;
 
   void SetTarget(const nsAString& aTarget);
 
@@ -114,7 +103,7 @@ public:
 
   bool IsSrcdocLoad() const;
 
-  const nsString& SrcdocData() const;
+  void GetSrcdocData(nsAString& aSrcdocData) const;
 
   void SetSrcdocData(const nsAString& aSrcdocData);
 
@@ -134,53 +123,12 @@ public:
   void
   SetMaybeResultPrincipalURI(mozilla::Maybe<nsCOMPtr<nsIURI>> const& aRPURI);
 
-  uint32_t LoadFlags() const;
-
-  void SetLoadFlags(uint32_t aFlags);
-
-  bool FirstParty() const;
-
-  void SetFirstParty(bool aFirstParty);
-
-  const nsCString& TypeHint() const;
-
-  void SetTypeHint(const nsCString& aTypeHint);
-
-  const nsString& FileName() const;
-
-  void SetFileName(const nsAString& aFileName);
-
-  uint32_t DocShellInternalLoadFlags() const;
-
-  void SetDocShellInternalLoadFlags(uint32_t aFlags);
-
-  
-  
-  
-  
-  
-  nsresult SetupInheritingPrincipal(uint32_t aItemType, const mozilla::OriginAttributes& aOriginAttributes);
-
-  
-  
-  nsresult SetupTriggeringPrincipal(const mozilla::OriginAttributes& aOriginAttributes);
-
-  
-  
-  
-  
-  void CalculateDocShellInternalLoadFlags();
 protected:
-  
-  
-  ~nsDocShellLoadState();
+  virtual ~nsDocShellLoadInfo();
 
 protected:
   
   nsCOMPtr<nsIURI> mReferrer;
-
-  
-  nsCOMPtr<nsIURI> mURI;
 
   
   nsCOMPtr<nsIURI> mOriginalURI;
@@ -213,12 +161,6 @@ protected:
   
   
   bool mPrincipalIsExplicit;
-
-  
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
 
   
   
@@ -267,27 +209,6 @@ protected:
   
   
   nsCOMPtr<nsIURI> mBaseURI;
-
-  
-  uint32_t mLoadFlags;
-
-  
-  bool mFirstParty;
-
-  
-  
-  nsCString mTypeHint;
-
-  
-  
-  
-  
-  nsString mFileName;
-
-  
-  
-  
-  uint32_t mDocShellInternalLoadFlags;
 };
 
 #endif 
