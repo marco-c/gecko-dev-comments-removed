@@ -194,7 +194,11 @@ public:
 
 
 
-  nsresult SetCurrentFrame(gfx::SourceSurfaceSharedData* aSurface,
+
+
+
+  nsresult SetCurrentFrame(gfx::SourceSurface* aParentSurface,
+                           gfx::SourceSurfaceSharedData* aSurface,
                            const gfx::IntRect& aDirtyRect);
 
   
@@ -203,7 +207,11 @@ public:
 
 
 
-  nsresult UpdateKey(gfx::SourceSurfaceSharedData* aSurface,
+
+
+
+  nsresult UpdateKey(gfx::SourceSurface* aParentSurface,
+                     gfx::SourceSurfaceSharedData* aSurface,
                      WebRenderLayerManager* aManager,
                      wr::IpcResourceUpdateQueue& aResources,
                      wr::ImageKey& aKey);
