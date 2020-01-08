@@ -250,9 +250,6 @@ LoopUnroller::go(LoopIterationBound* bound)
     graph.insertBlockAfter(unrolledBackedge, newPreheader);
     graph.renumberBlocksAfter(oldPreheader);
 
-    if (!unrolledDefinitions.init())
-        return false;
-
     
     
     MOZ_ASSERT(header->getPredecessor(0) == oldPreheader);

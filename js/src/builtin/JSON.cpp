@@ -661,9 +661,7 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, const V
             
             
             const uint32_t MaxInitialSize = 32;
-            Rooted<GCHashSet<jsid>> idSet(cx, GCHashSet<jsid>(cx));
-            if (!idSet.init(Min(len, MaxInitialSize)))
-                return false;
+            Rooted<GCHashSet<jsid>> idSet(cx, GCHashSet<jsid>(cx, Min(len, MaxInitialSize)));
 
             
             uint32_t k = 0;

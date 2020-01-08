@@ -89,9 +89,6 @@ struct BreadthFirst {
     { }
 
     
-    bool init() { return visited.init(); }
-
-    
     
     bool addStart(Node node) { return pending.append(node); }
 

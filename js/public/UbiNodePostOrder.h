@@ -124,9 +124,6 @@ struct PostOrder {
     { }
 
     
-    MOZ_MUST_USE bool init() { return seen.init(); }
-
-    
     
     MOZ_MUST_USE bool addStart(const Node& node) {
         if (!seen.put(node))

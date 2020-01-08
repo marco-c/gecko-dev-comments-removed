@@ -963,6 +963,7 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     stats_(rt),
     marker(rt),
     usage(nullptr),
+    rootsHash(256),
     nextCellUniqueId_(LargestTaggedNullCellPointer + 1), 
     numArenasFreeCommitted(0),
     verifyPreData(nullptr),
@@ -1286,9 +1287,6 @@ bool
 GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
 {
     MOZ_ASSERT(SystemPageSize());
-
-    if (!rootsHash.ref().init(256))
-        return false;
 
     {
         AutoLockGCBgAlloc lock(rt);
@@ -4699,9 +4697,6 @@ js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session)
 
 
 
-    if (!map.init())
-        return;
-
     JSRuntime* runtime = gc->rt;
     GCMarker* gcmarker = &gc->marker;
 
@@ -4732,8 +4727,6 @@ js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session)
 
 
     WeakMapSet markedWeakMaps;
-    if (!markedWeakMaps.init())
-        return;
 
     
 
@@ -8077,7 +8070,7 @@ js::NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& op
 
     if (!comp) {
         compHolder = cx->make_unique<JS::Compartment>(zone);
-        if (!compHolder || !compHolder->init(cx))
+        if (!compHolder)
             return nullptr;
 
         comp = compHolder.get();
@@ -8254,9 +8247,6 @@ GCRuntime::mergeRealms(Realm* source, Realm* target)
 
             if (!target->scriptNameMap)
                 oomUnsafe.crash("Failed to create a script name map.");
-
-            if (!target->scriptNameMap->init())
-                oomUnsafe.crash("Failed to initialize a script name map.");
         }
 
         for (ScriptNameMap::Range r = source->scriptNameMap->all(); !r.empty(); r.popFront()) {

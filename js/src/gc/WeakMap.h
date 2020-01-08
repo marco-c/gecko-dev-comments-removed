@@ -92,7 +92,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase>
     virtual bool findZoneEdges() = 0;
     virtual void sweep() = 0;
     virtual void traceMappings(WeakMapTracer* tracer) = 0;
-    virtual void finish() = 0;
+    virtual void clearAndCompact() = 0;
 
     
     
@@ -127,8 +127,6 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, ZoneAllocPolicy>,
 
     explicit WeakMap(JSContext* cx, JSObject* memOf = nullptr);
 
-    bool init(uint32_t len = 16);
-
     
     
     
@@ -139,7 +137,7 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, ZoneAllocPolicy>,
         return p;
     }
 
-    AddPtr lookupForAdd(const Lookup& l) const {
+    AddPtr lookupForAdd(const Lookup& l) {
         AddPtr p = Base::lookupForAdd(l);
         if (p)
             exposeGCThingToActiveJS(p->value());
@@ -178,8 +176,9 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, ZoneAllocPolicy>,
 
     void sweep() override;
 
-    void finish() override {
-        Base::finish();
+    void clearAndCompact() override {
+        Base::clear();
+        Base::compact();
     }
 
     
@@ -212,7 +211,6 @@ class ObjectWeakMap
 
   public:
     explicit ObjectWeakMap(JSContext* cx);
-    bool init();
 
     JS::Zone* zone() const { return map.zone(); }
 

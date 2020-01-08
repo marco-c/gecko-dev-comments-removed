@@ -24,7 +24,6 @@ class WrapperOwner : public virtual JavaScriptShared
            ActorDestroyReason;
 
     WrapperOwner();
-    bool init();
 
     
     

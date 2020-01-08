@@ -122,7 +122,6 @@ BEGIN_TEST(testTracingIncomingCCWs)
     
 
     JS::CompartmentSet compartments;
-    CHECK(compartments.init());
     CHECK(compartments.put(global2->compartment()));
 
     void* thing = wrappee.get();

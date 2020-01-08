@@ -3581,9 +3581,6 @@ jit::EliminateRedundantChecks(MIRGraph& graph)
 {
     BoundsCheckMap checks(graph.alloc());
 
-    if (!checks.init())
-        return false;
-
     
     Vector<MBasicBlock*, 1, JitAllocPolicy> worklist(graph.alloc());
 

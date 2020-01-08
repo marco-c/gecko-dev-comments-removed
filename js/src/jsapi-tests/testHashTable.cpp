@@ -143,8 +143,6 @@ template <class NewKeyFunction>
 static bool
 SlowRekey(IntMap* m) {
     IntMap tmp;
-    if (!tmp.init())
-        return false;
 
     for (auto iter = m->iter(); !iter.done(); iter.next()) {
         if (NewKeyFunction::shouldBeRemoved(iter.get().key()))
@@ -169,8 +167,6 @@ template <class NewKeyFunction>
 static bool
 SlowRekey(IntSet* s) {
     IntSet tmp;
-    if (!tmp.init())
-        return false;
 
     for (auto iter = s->iter(); !iter.done(); iter.next()) {
         if (NewKeyFunction::shouldBeRemoved(iter.get()))
@@ -194,8 +190,6 @@ SlowRekey(IntSet* s) {
 BEGIN_TEST(testHashRekeyManual)
 {
     IntMap am, bm;
-    CHECK(am.init());
-    CHECK(bm.init());
     for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
         fprintf(stderr, "map1: %lu\n", i);
@@ -216,8 +210,6 @@ BEGIN_TEST(testHashRekeyManual)
     }
 
     IntSet as, bs;
-    CHECK(as.init());
-    CHECK(bs.init());
     for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
         fprintf(stderr, "set1: %lu\n", i);
@@ -244,8 +236,6 @@ END_TEST(testHashRekeyManual)
 BEGIN_TEST(testHashRekeyManualRemoval)
 {
     IntMap am, bm;
-    CHECK(am.init());
-    CHECK(bm.init());
     for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
         fprintf(stderr, "map2: %lu\n", i);
@@ -270,8 +260,6 @@ BEGIN_TEST(testHashRekeyManualRemoval)
     }
 
     IntSet as, bs;
-    CHECK(as.init());
-    CHECK(bs.init());
     for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
         fprintf(stderr, "set1: %lu\n", i);
@@ -338,7 +326,6 @@ BEGIN_TEST(testHashSetOfMoveOnlyType)
     typedef js::HashSet<MoveOnlyType, MoveOnlyType::HashPolicy, js::SystemAllocPolicy> Set;
 
     Set set;
-    CHECK(set.init());
 
     MoveOnlyType a(1);
 
@@ -356,9 +343,6 @@ static bool
 GrowUntilResize()
 {
     IntMap m;
-
-    if (!m.init())
-        return false;
 
     
     size_t lastCapacity = m.capacity();
@@ -398,7 +382,6 @@ END_TEST(testHashMapGrowOOM)
 BEGIN_TEST(testHashTableMovableModIterator)
 {
     IntSet set;
-    CHECK(set.init());
 
     
 
@@ -435,3 +418,84 @@ IntSet::ModIterator setModIter(IntSet& set)
 }
 
 END_TEST(testHashTableMovableModIterator)
+
+BEGIN_TEST(testHashLazyStorage)
+{
+    
+    
+    uint32_t defaultCap = 32;
+    uint32_t minCap = 4;
+
+    IntSet set;
+    CHECK(set.capacity() == 0);
+
+    CHECK(set.put(1));
+    CHECK(set.capacity() == defaultCap);
+
+    set.compact();                  
+    CHECK(set.capacity() == minCap);
+
+    set.clear();
+    CHECK(set.capacity() == minCap);
+
+    set.compact();
+    CHECK(set.capacity() == 0);
+
+    CHECK(set.putNew(1));
+    CHECK(set.capacity() == minCap);
+
+    set.clear();
+    set.compact();
+    CHECK(set.capacity() == 0);
+
+    
+    set.lookupForAdd(1);
+    CHECK(set.capacity() == minCap);
+
+    set.clear();
+    set.compact();
+    CHECK(set.capacity() == 0);
+
+    CHECK(set.reserve(0));          
+    CHECK(set.capacity() == 0);
+
+    CHECK(set.reserve(1));
+    CHECK(set.capacity() == minCap);
+
+    CHECK(set.reserve(0));          
+    CHECK(set.capacity() == minCap);
+
+    CHECK(set.reserve(2));          
+    CHECK(set.capacity() == minCap);
+
+    
+    set.compact();
+    CHECK(set.capacity() == 0);
+
+    CHECK(set.reserve(128));
+    CHECK(set.capacity() == 256);
+    CHECK(set.reserve(3));          
+    CHECK(set.capacity() == 256);
+    for (int i = 0; i < 8; i++) {
+      CHECK(set.putNew(i));
+    }
+    CHECK(set.count() == 8);
+    CHECK(set.capacity() == 256);
+    set.compact();
+    CHECK(set.capacity() == 16);
+    set.compact();                  
+    CHECK(set.capacity() == 16);
+    for (int i = 8; i < 16; i++) {
+      CHECK(set.putNew(i));
+    }
+    CHECK(set.count() == 16);
+    CHECK(set.capacity() == 32);
+    set.clear();
+    CHECK(set.capacity() == 32);
+    set.compact();
+    CHECK(set.capacity() == 0);
+
+    return true;
+}
+END_TEST(testHashLazyStorage)
+

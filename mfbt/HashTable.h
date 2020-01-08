@@ -134,7 +134,6 @@ using Generation = Opaque<uint64_t>;
 
 
 
-
 template<class Key,
          class Value,
          class HashPolicy = DefaultHasher<Key>,
@@ -173,10 +172,14 @@ public:
 
   
 
-  
-  
-  explicit HashMap(AllocPolicy aPolicy = AllocPolicy())
-    : mImpl(aPolicy)
+  explicit HashMap(AllocPolicy aAllocPolicy = AllocPolicy(),
+                   uint32_t aLen = Impl::sDefaultLen)
+    : mImpl(aAllocPolicy, aLen)
+  {
+  }
+
+  explicit HashMap(uint32_t aLen)
+    : mImpl(AllocPolicy(), aLen)
   {
   }
 
@@ -192,13 +195,6 @@ public:
   }
 
   
-  
-  MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
-
-  
-
-  
-  bool initialized() const { return mImpl.initialized(); }
 
   
   Generation generation() const { return mImpl.generation(); }
@@ -211,7 +207,7 @@ public:
 
   
   
-  size_t capacity() const { return mImpl.capacity(); }
+  uint32_t capacity() const { return mImpl.capacity(); }
 
   
   
@@ -225,6 +221,14 @@ public:
     return aMallocSizeOf(this) +
            mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
+
+  
+  
+  void compact() { mImpl.compact(); }
+
+  
+  
+  MOZ_MUST_USE bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
 
   
 
@@ -336,7 +340,7 @@ public:
   
   
   using AddPtr = typename Impl::AddPtr;
-  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) const
+  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup)
   {
     return mImpl.lookupForAdd(aLookup);
   }
@@ -374,6 +378,12 @@ public:
   
   
   void remove(Ptr aPtr) { mImpl.remove(aPtr); }
+
+  
+  void clear() { mImpl.clear(); }
+
+  
+  void clearAndCompact() { mImpl.clearAndCompact(); }
 
   
 
@@ -428,20 +438,7 @@ public:
   using Range = typename Impl::Range;
   using Enum = typename Impl::Enum;
   Range all() const { return mImpl.all(); }
-
-  
-
-  
-  void clear() { mImpl.clear(); }
-
-  
-  void clearAndShrink() { mImpl.clearAndShrink(); }
-
-  
-  
-  void finish() { mImpl.finish(); }
 };
-
 
 
 
@@ -490,10 +487,14 @@ public:
 
   
 
-  
-  
-  explicit HashSet(AllocPolicy a = AllocPolicy())
-    : mImpl(a)
+  explicit HashSet(AllocPolicy aAllocPolicy = AllocPolicy(),
+                   uint32_t aLen = Impl::sDefaultLen)
+    : mImpl(aAllocPolicy, aLen)
+  {
+  }
+
+  explicit HashSet(uint32_t aLen)
+    : mImpl(AllocPolicy(), aLen)
   {
   }
 
@@ -509,13 +510,6 @@ public:
   }
 
   
-  
-  MOZ_MUST_USE bool init(uint32_t aLen = 16) { return mImpl.init(aLen); }
-
-  
-
-  
-  bool initialized() const { return mImpl.initialized(); }
 
   
   Generation generation() const { return mImpl.generation(); }
@@ -528,7 +522,7 @@ public:
 
   
   
-  size_t capacity() const { return mImpl.capacity(); }
+  uint32_t capacity() const { return mImpl.capacity(); }
 
   
   
@@ -542,6 +536,14 @@ public:
     return aMallocSizeOf(this) +
            mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
+
+  
+  
+  void compact() { mImpl.compact(); }
+
+  
+  
+  MOZ_MUST_USE bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
 
   
 
@@ -651,7 +653,7 @@ public:
   
   
   using AddPtr = typename Impl::AddPtr;
-  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) const
+  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup)
   {
     return mImpl.lookupForAdd(aLookup);
   }
@@ -683,6 +685,12 @@ public:
   
   
   void remove(Ptr aPtr) { mImpl.remove(aPtr); }
+
+  
+  void clear() { mImpl.clear(); }
+
+  
+  void clearAndCompact() { mImpl.clearAndCompact(); }
 
   
 
@@ -750,18 +758,6 @@ public:
   using Range = typename Impl::Range;
   using Enum = typename Impl::Enum;
   Range all() const { return mImpl.all(); }
-
-  
-
-  
-  void clear() { mImpl.clear(); }
-
-  
-  void clearAndShrink() { mImpl.clearAndShrink(); }
-
-  
-  
-  void finish() { mImpl.finish(); }
 };
 
 
@@ -1452,7 +1448,7 @@ public:
       }
 
       if (mRemoved) {
-        mTable.compactIfUnderloaded();
+        mTable.compact();
       }
     }
   };
@@ -1539,7 +1535,7 @@ private:
   HashTable(const HashTable&) = delete;
   void operator=(const HashTable&) = delete;
 
-  static const size_t CAP_BITS = 30;
+  static const uint32_t CAP_BITS = 30;
 
 public:
   uint64_t mGen : 56;      
@@ -1555,6 +1551,7 @@ public:
 
   
   
+  static const uint32_t sDefaultLen = 16;
   static const uint32_t sMinCapacity = 4;
   static const uint32_t sMaxInit = 1u << (CAP_BITS - 1);
   static const uint32_t sMaxCapacity = 1u << CAP_BITS;
@@ -1569,9 +1566,40 @@ public:
   static const HashNumber sRemovedKey = Entry::sRemovedKey;
   static const HashNumber sCollisionBit = Entry::sCollisionBit;
 
-  void setTableSizeLog2(uint32_t aSizeLog2)
+  static uint32_t bestCapacity(uint32_t aLen)
   {
-    mHashShift = kHashNumberBits - aSizeLog2;
+    static_assert((sMaxInit * sAlphaDenominator) / sAlphaDenominator ==
+                    sMaxInit,
+                  "multiplication in numerator below could overflow");
+    static_assert(sMaxInit * sAlphaDenominator <=
+                    UINT32_MAX - sMaxAlphaNumerator,
+                  "numerator calculation below could potentially overflow");
+
+    
+    
+    
+    uint32_t capacity =
+      (aLen * sAlphaDenominator + sMaxAlphaNumerator - 1) / sMaxAlphaNumerator;
+    capacity = (capacity < sMinCapacity)
+             ? sMinCapacity
+             : RoundUpPow2(capacity);
+
+    MOZ_ASSERT(capacity >= aLen);
+    MOZ_ASSERT(capacity <= sMaxCapacity);
+
+    return capacity;
+  }
+
+  static uint32_t hashShift(uint32_t aLen)
+  {
+    
+    
+    
+    if (MOZ_UNLIKELY(aLen > sMaxInit)) {
+      MOZ_CRASH("initial length is too large");
+    }
+
+    return kHashNumberBits - mozilla::CeilingLog2(bestCapacity(aLen));
   }
 
   static bool isLiveHash(HashNumber aHash) { return Entry::isLiveHash(aHash); }
@@ -1631,10 +1659,10 @@ public:
   }
 
 public:
-  explicit HashTable(AllocPolicy aAllocPolicy)
+  HashTable(AllocPolicy aAllocPolicy, uint32_t aLen)
     : AllocPolicy(aAllocPolicy)
     , mGen(0)
-    , mHashShift(kHashNumberBits)
+    , mHashShift(hashShift(aLen))
     , mTable(nullptr)
     , mEntryCount(0)
     , mRemovedCount(0)
@@ -1645,50 +1673,10 @@ public:
   {
   }
 
-  MOZ_MUST_USE bool init(uint32_t aLen)
+  explicit HashTable(AllocPolicy aAllocPolicy)
+    : HashTable(aAllocPolicy, sDefaultLen)
   {
-    MOZ_ASSERT(!initialized());
-
-    
-    
-    
-    if (MOZ_UNLIKELY(aLen > sMaxInit)) {
-      this->reportAllocOverflow();
-      return false;
-    }
-
-    static_assert((sMaxInit * sAlphaDenominator) / sAlphaDenominator ==
-                    sMaxInit,
-                  "multiplication in numerator below could overflow");
-    static_assert(sMaxInit * sAlphaDenominator <=
-                    UINT32_MAX - sMaxAlphaNumerator,
-                  "numerator calculation below could potentially overflow");
-
-    
-    
-    
-    uint32_t newCapacity =
-      (aLen * sAlphaDenominator + sMaxAlphaNumerator - 1) / sMaxAlphaNumerator;
-    if (newCapacity < sMinCapacity) {
-      newCapacity = sMinCapacity;
-    }
-
-    
-    uint32_t log2 = mozilla::CeilingLog2(newCapacity);
-    newCapacity = 1u << log2;
-
-    MOZ_ASSERT(newCapacity >= aLen);
-    MOZ_ASSERT(newCapacity <= sMaxCapacity);
-
-    mTable = createTable(*this, newCapacity);
-    if (!mTable) {
-      return false;
-    }
-    setTableSizeLog2(log2);
-    return true;
   }
-
-  bool initialized() const { return !!mTable; }
 
   ~HashTable()
   {
@@ -1720,10 +1708,14 @@ private:
     return (aHash1 - aDoubleHash.mHash2) & aDoubleHash.mSizeMask;
   }
 
+  
   bool overloaded()
   {
     static_assert(sMaxCapacity <= UINT32_MAX / sMaxAlphaNumerator,
                   "multiplication below could overflow");
+
+    
+    
     return mEntryCount + mRemovedCount >=
            capacity() * sMaxAlphaNumerator / sAlphaDenominator;
   }
@@ -1843,14 +1835,17 @@ private:
     RehashFailed
   };
 
-  RebuildStatus changeTableSize(int aDeltaLog2,
+  RebuildStatus changeTableSize(uint32_t newCapacity,
                                 FailureBehavior aReportFailure = ReportFailure)
   {
+    MOZ_ASSERT(IsPowerOfTwo(newCapacity));
+    MOZ_ASSERT(!!mTable == !!capacity());
+
     
     Entry* oldTable = mTable;
-    uint32_t oldCap = capacity();
-    uint32_t newLog2 = kHashNumberBits - mHashShift + aDeltaLog2;
-    uint32_t newCapacity = 1u << newLog2;
+    uint32_t oldCapacity = capacity();
+    uint32_t newLog2 = mozilla::CeilingLog2(newCapacity);
+
     if (MOZ_UNLIKELY(newCapacity > sMaxCapacity)) {
       if (aReportFailure) {
         this->reportAllocOverflow();
@@ -1864,13 +1859,13 @@ private:
     }
 
     
-    setTableSizeLog2(newLog2);
+    mHashShift = kHashNumberBits - newLog2;
     mRemovedCount = 0;
     mGen++;
     mTable = newTable;
 
     
-    Entry* end = oldTable + oldCap;
+    Entry* end = oldTable + oldCapacity;
     for (Entry* src = oldTable; src < end; ++src) {
       if (src->isLive()) {
         HashNumber hn = src->getKeyHash();
@@ -1882,12 +1877,15 @@ private:
     }
 
     
-    this->free_(oldTable, oldCap);
+    this->free_(oldTable, oldCapacity);
     return Rehashed;
   }
 
   bool shouldCompressTable()
   {
+    
+    
+    
     
     return mRemovedCount >= (capacity() >> 2);
   }
@@ -1898,8 +1896,10 @@ private:
       return NotOverloaded;
     }
 
-    int deltaLog2 = shouldCompressTable() ? 0 : 1;
-    return changeTableSize(deltaLog2, aReportFailure);
+    uint32_t newCapacity = shouldCompressTable()
+                         ? rawCapacity()
+                         : rawCapacity() * 2;
+    return changeTableSize(newCapacity, aReportFailure);
   }
 
   
@@ -1931,24 +1931,7 @@ private:
   void checkUnderloaded()
   {
     if (underloaded()) {
-      (void)changeTableSize(-1, DontReportFailure);
-    }
-  }
-
-  
-  
-  
-  void compactIfUnderloaded()
-  {
-    int32_t resizeLog2 = 0;
-    uint32_t newCapacity = capacity();
-    while (wouldBeUnderloaded(newCapacity, mEntryCount)) {
-      newCapacity = newCapacity >> 1;
-      resizeLog2--;
-    }
-
-    if (resizeLog2 != 0) {
-      (void)changeTableSize(resizeLog2, DontReportFailure);
+      (void)changeTableSize(capacity() / 2, DontReportFailure);
     }
   }
 
@@ -1961,10 +1944,10 @@ private:
   {
     mRemovedCount = 0;
     mGen++;
-    for (size_t i = 0; i < capacity(); ++i) {
+    for (uint32_t i = 0; i < capacity(); ++i) {
       mTable[i].unsetCollision();
     }
-    for (size_t i = 0; i < capacity();) {
+    for (uint32_t i = 0; i < capacity();) {
       Entry* src = &mTable[i];
 
       if (!src->isLive() || src->hasCollision()) {
@@ -2035,70 +2018,88 @@ public:
 #endif
   }
 
-  void clearAndShrink()
+  
+  
+  
+  void compact()
   {
-    clear();
-    compactIfUnderloaded();
-  }
-
-  void finish()
-  {
-#ifdef DEBUG
-    MOZ_ASSERT(!mEntered);
-#endif
-    if (!mTable) {
+    if (empty()) {
+      
+      this->free_(mTable, capacity());
+      mGen++;
+      mHashShift = hashShift(0);  
+      mTable = nullptr;
+      mRemovedCount = 0;
       return;
     }
 
-    destroyTable(*this, mTable, capacity());
-    mTable = nullptr;
-    mGen++;
-    mEntryCount = 0;
-    mRemovedCount = 0;
-#ifdef DEBUG
-    mMutationCount++;
-#endif
+    uint32_t bestCapacity = this->bestCapacity(mEntryCount);
+    MOZ_ASSERT(bestCapacity <= capacity());
+
+    if (bestCapacity < capacity()) {
+      (void)changeTableSize(bestCapacity, DontReportFailure);
+    }
+  }
+
+  void clearAndCompact()
+  {
+    clear();
+    compact();
+  }
+
+  MOZ_MUST_USE bool reserve(uint32_t aLen)
+  {
+    if (aLen == 0) {
+      return true;
+    }
+
+    uint32_t bestCapacity = this->bestCapacity(aLen);
+    if (bestCapacity <= capacity()) {
+      return true;  
+    }
+
+    RebuildStatus status = changeTableSize(bestCapacity, DontReportFailure);
+    MOZ_ASSERT(status != NotOverloaded);
+    return status != RehashFailed;
   }
 
   Iterator iter() const
   {
-    MOZ_ASSERT(mTable);
     return Iterator(*this);
   }
 
   ModIterator modIter()
   {
-    MOZ_ASSERT(mTable);
     return ModIterator(*this);
   }
 
   Range all() const
   {
-    MOZ_ASSERT(mTable);
     return Range(*this);
   }
 
   bool empty() const
   {
-    MOZ_ASSERT(mTable);
-    return !mEntryCount;
+    return mEntryCount == 0;
   }
 
   uint32_t count() const
   {
-    MOZ_ASSERT(mTable);
     return mEntryCount;
+  }
+
+  uint32_t rawCapacity() const
+  {
+    return 1u << (kHashNumberBits - mHashShift);
   }
 
   uint32_t capacity() const
   {
-    MOZ_ASSERT(mTable);
-    return 1u << (kHashNumberBits - mHashShift);
+    return mTable ? rawCapacity() : 0;
   }
 
   Generation generation() const
   {
-    MOZ_ASSERT(mTable);
     return Generation(mGen);
   }
 
@@ -2114,7 +2115,7 @@ public:
 
   MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const
   {
-    if (!HasHash<HashPolicy>(aLookup)) {
+    if (!mTable || !HasHash<HashPolicy>(aLookup)) {
       return Ptr();
     }
     HashNumber keyHash = prepareHash(aLookup);
@@ -2127,12 +2128,22 @@ public:
     return readonlyThreadsafeLookup(aLookup);
   }
 
-  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) const
+  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup)
   {
     ReentrancyGuard g(*this);
     if (!EnsureHash<HashPolicy>(aLookup)) {
       return AddPtr();
     }
+
+    if (!mTable) {
+      uint32_t newCapacity = rawCapacity();
+      RebuildStatus status = changeTableSize(newCapacity, ReportFailure);
+      MOZ_ASSERT(status != NotOverloaded);
+      if (status == RehashFailed) {
+        return AddPtr();
+      }
+    }
+
     HashNumber keyHash = prepareHash(aLookup);
     
     
@@ -2144,7 +2155,7 @@ public:
   MOZ_MUST_USE bool add(AddPtr& aPtr, Args&&... aArgs)
   {
     ReentrancyGuard g(*this);
-    MOZ_ASSERT(mTable);
+    MOZ_ASSERT_IF(aPtr.isValid(), mTable);
     MOZ_ASSERT_IF(aPtr.isValid(), aPtr.mTable == this);
     MOZ_ASSERT(!aPtr.found());
     MOZ_ASSERT(!(aPtr.mKeyHash & sCollisionBit));

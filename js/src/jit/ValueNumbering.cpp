@@ -79,13 +79,6 @@ ValueNumberer::VisibleValues::VisibleValues(TempAllocator& alloc)
 {}
 
 
-bool
-ValueNumberer::VisibleValues::init()
-{
-    return set_.init();
-}
-
-
 ValueNumberer::VisibleValues::Ptr
 ValueNumberer::VisibleValues::findLeader(const MDefinition* def) const
 {
@@ -1208,6 +1201,12 @@ bool ValueNumberer::cleanupOSRFixups()
 
 ValueNumberer::ValueNumberer(MIRGenerator* mir, MIRGraph& graph)
   : mir_(mir), graph_(graph),
+    
+    
+    
+    
+    
+    
     values_(graph.alloc()),
     deadDefs_(graph.alloc()),
     remainingBlocks_(graph.alloc()),
@@ -1219,18 +1218,6 @@ ValueNumberer::ValueNumberer(MIRGenerator* mir, MIRGraph& graph)
     dependenciesBroken_(false),
     hasOSRFixups_(false)
 {}
-
-bool
-ValueNumberer::init()
-{
-    
-    
-    
-    
-    
-    
-    return values_.init();
-}
 
 bool
 ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)

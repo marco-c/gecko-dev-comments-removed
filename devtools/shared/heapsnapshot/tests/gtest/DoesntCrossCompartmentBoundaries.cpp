@@ -28,7 +28,6 @@ DEF_TEST(DoesntCrossCompartmentBoundaries, {
     
     
     JS::CompartmentSet targetCompartments;
-    ASSERT_TRUE(targetCompartments.init());
     ASSERT_TRUE(targetCompartments.put(compartment));
 
     FakeNode nodeA;

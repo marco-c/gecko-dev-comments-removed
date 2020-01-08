@@ -547,14 +547,12 @@ SnapshotReader::readAllocation()
     return RValueAllocation::read(allocReader_);
 }
 
-bool
-SnapshotWriter::init()
-{
+SnapshotWriter::SnapshotWriter()
     
     
     
-    return allocMap_.init(32);
-}
+  : allocMap_(32)
+{}
 
 RecoverReader::RecoverReader(SnapshotReader& snapshot, const uint8_t* recovers, uint32_t size)
   : reader_(nullptr, nullptr),
@@ -647,8 +645,6 @@ SnapshotWriter::trackSnapshot(uint32_t pcOpcode, uint32_t mirOpcode, uint32_t mi
 bool
 SnapshotWriter::add(const RValueAllocation& alloc)
 {
-    MOZ_ASSERT(allocMap_.initialized());
-
     uint32_t offset;
     RValueAllocMap::AddPtr p = allocMap_.lookupForAdd(alloc);
     if (!p) {

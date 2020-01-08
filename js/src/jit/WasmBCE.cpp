@@ -31,8 +31,6 @@ jit::EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph)
 {
     
     LastSeenMap lastSeen;
-    if (!lastSeen.init())
-        return false;
 
     for (ReversePostorderIterator bIter(graph.rpoBegin()); bIter != graph.rpoEnd(); bIter++) {
         MBasicBlock* block = *bIter;

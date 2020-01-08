@@ -108,10 +108,8 @@ Enumerate(JSContext* cx, HandleObject pobj, jsid id,
 {
     if (CheckForDuplicates) {
         if (!ht) {
-            ht.emplace(cx);
             
-            if (!ht->init(5))
-                return false;
+            ht.emplace(cx, 5);
         }
 
         

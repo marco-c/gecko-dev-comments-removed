@@ -344,7 +344,6 @@ TestUnassociatedWeakMaps()
     
     auto weakMap = cx->make_unique<GCManagedObjectWeakMap>(cx);
     CHECK(weakMap);
-    CHECK(weakMap->init());
 
     
     Rooted<GCManagedObjectWeakMap*> rootMap(cx, weakMap.get());
