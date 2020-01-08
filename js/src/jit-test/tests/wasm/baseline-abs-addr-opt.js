@@ -10,8 +10,6 @@
 
 
 
-
-
 function gen(base, offset) {
   return wasmEvalText(`(module
 			(memory 1)

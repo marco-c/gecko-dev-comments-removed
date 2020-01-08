@@ -104,15 +104,40 @@ bool js::ToClampedIndex(JSContext* cx, HandleValue v, uint32_t length,
 
 
 
-#if defined(MOZ_TSAN) || defined(MOZ_ASAN)
+
+
+
+
+
+
+
+
+#if defined(JS_CODEGEN_ARM64) && defined(ANDROID)
+
+static const int32_t MaximumLiveMappedBuffers = 75;
+#elif defined(MOZ_TSAN) || defined(MOZ_ASAN)
+
+
 static const int32_t MaximumLiveMappedBuffers = 500;
 #else
 static const int32_t MaximumLiveMappedBuffers = 1000;
 #endif
+
+
+
+
+
+#if defined(JS_CODEGEN_ARM64) && defined(ANDROID)
+static const int32_t StartTriggeringAtLiveBufferCount = 15;
+static const int32_t StartSyncFullGCAtLiveBufferCount =
+    MaximumLiveMappedBuffers - 15;
+static const int32_t AllocatedBuffersPerTrigger = 15;
+#else
 static const int32_t StartTriggeringAtLiveBufferCount = 100;
 static const int32_t StartSyncFullGCAtLiveBufferCount =
     MaximumLiveMappedBuffers - 100;
 static const int32_t AllocatedBuffersPerTrigger = 100;
+#endif
 
 static Atomic<int32_t, mozilla::ReleaseAcquire> liveBufferCount(0);
 static Atomic<int32_t, mozilla::ReleaseAcquire> allocatedSinceLastTrigger(0);

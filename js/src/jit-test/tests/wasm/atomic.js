@@ -1,6 +1,5 @@
 
 
-
 const oob = /index out of bounds/;
 const unaligned = /unaligned memory access/;
 const RuntimeError = WebAssembly.RuntimeError;

@@ -1,5 +1,3 @@
-
-
 const RuntimeError = WebAssembly.RuntimeError;
 
 function loadModuleSrc(type, ext, offset, align, drop = false) {
