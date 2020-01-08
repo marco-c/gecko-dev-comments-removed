@@ -26,6 +26,12 @@ class AlignmentFinder
   {
     char mChar;
     T mT;
+
+    
+    
+    
+    
+    ~Aligner() = delete;
   };
 
 public:
