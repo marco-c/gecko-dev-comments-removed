@@ -118,16 +118,17 @@ def backfill_action(parameters, graph_config, input, task_group_id, task_id, tas
 
                 if input.get('testPath', ''):
                     tp = input.get('testPath', '')
-                    gpu_required = False
-                    
-                    if 'gpu' in task.task['metadata']['name'] or \
-                       'webgl' in task.task['metadata']['name'] or \
-                       'canvas' in tp or \
-                       'gfx/tests' in tp or \
-                       ('reftest' in tp and 'jsreftest' not in tp):
-                        gpu_required = True
                     is_wpttest = 'web-platform' in task.task['metadata']['name']
                     is_android = 'android' in task.task['metadata']['name']
+                    gpu_required = False
+                    
+                    if (not is_wpttest) and \
+                       ('gpu' in task.task['metadata']['name'] or
+                        'webgl' in task.task['metadata']['name'] or
+                        'canvas' in tp or
+                        'gfx/tests' in tp or
+                        ('reftest' in tp and 'jsreftest' not in tp)):
+                        gpu_required = True
 
                     
                     preamble_length = 3
