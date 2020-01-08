@@ -41,6 +41,7 @@ public:
   , mBuilderDumpIndex(0)
   , mDumpIndent(0)
   , mDoGrouping(false)
+  , mContainsSVGGroup(false)
   {}
 
   void Destroy();
@@ -120,6 +121,8 @@ public:
   bool ShouldDumpDisplayList();
   wr::usize GetBuilderDumpIndex() { return mBuilderDumpIndex; }
 
+  bool GetContainsSVGGroup() { return mContainsSVGGroup; }
+
   
   
   
@@ -194,6 +197,10 @@ public:
   
   
   bool mDoGrouping;
+
+  
+  
+  bool mContainsSVGGroup;
 };
 
 } 

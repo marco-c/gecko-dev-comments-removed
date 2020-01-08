@@ -1266,6 +1266,7 @@ WebRenderCommandBuilder::BuildWebRenderCommands(wr::DisplayListBuilder& aBuilder
   mLastCanvasDatas.Clear();
   mLastAsr = nullptr;
   mBuilderDumpIndex = 0;
+  mContainsSVGGroup = false;
   MOZ_ASSERT(mDumpIndent == 0);
   mClipManager.BeginBuild(mManager, aBuilder);
 
@@ -1396,7 +1397,7 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
         
         
         
-        mDoGrouping = true;
+        mContainsSVGGroup = mDoGrouping = true;
         GP("attempting to enter the grouping code\n");
       }
 
