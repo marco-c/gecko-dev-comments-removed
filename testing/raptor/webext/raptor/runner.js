@@ -22,6 +22,9 @@ var postStartupDelay = 30000;
 
 var pageCycleDelay = 1000;
 
+var newTabDelay = 1000;
+var reuseTab = false;
+
 var browserName;
 var ext;
 var testName = null;
@@ -86,6 +89,10 @@ function getTestSettings() {
         results.lower_is_better = settings.lower_is_better === true;
         results.subtest_lower_is_better = settings.subtest_lower_is_better === true;
         results.alert_threshold = settings.alert_threshold;
+
+        if (settings.newtab_per_cycle !== undefined) {
+          reuseTab = settings.newtab_per_cycle;
+        }
 
         if (settings.page_timeout !== undefined) {
           pageTimeout = settings.page_timeout;
@@ -165,12 +172,16 @@ function getBrowserInfo() {
 
 function testTabCreated(tab) {
   testTabID = tab.id;
-  console.log("opened new empty tab " + testTabID);
-  nextCycle();
+  postToControlServer("status", "opened new empty tab " + testTabID);
+}
+
+function testTabRemoved(tab) {
+  postToControlServer("status", "Removed tab " + testTabID);
+  testTabID = 0;
 }
 
 async function testTabUpdated(tab) {
-  console.log("test tab updated");
+  postToControlServer("status", "test tab updated " + testTabID);
   
   await waitForResult();
   
@@ -232,12 +243,25 @@ function nextCycle() {
       } else if (testType == "benchmark") {
         isBenchmarkPending = true;
       }
-      
-      ext.tabs.update(testTabID, {url: testURL}, testTabUpdated);
-    }, pageCycleDelay);
-  } else {
-    verifyResults();
-  }
+
+      if (reuseTab && testTabID != 0) {
+        
+        ext.tabs.remove(testTabID);
+        postToControlServer("status", "closing Tab " + testTabID);
+
+        
+        ext.tabs.create({url: "about:blank"});
+        postToControlServer("status", "Open new tab");
+      }
+      setTimeout(function() {
+        postToControlServer("status", "update tab " + testTabID);
+        
+        ext.tabs.update(testTabID, {url: testURL}, testTabUpdated);
+        }, newTabDelay);
+      }, pageCycleDelay);
+    } else {
+      verifyResults();
+    }
 }
 
 function timeoutAlarmListener() {
@@ -402,8 +426,13 @@ function runner() {
       }
       
       ext.runtime.onMessage.addListener(resultListener);
+
       
       ext.tabs.onCreated.addListener(testTabCreated);
+
+      
+      ext.tabs.onRemoved.addListener(testTabRemoved);
+
       
       ext.alarms.onAlarm.addListener(timeoutAlarmListener);
 
@@ -413,10 +442,14 @@ function runner() {
       postToControlServer("status", text);
 
       
+      
       if (config.browser == "geckoview") {
         setTimeout(function() { nextCycle(); }, postStartupDelay);
       } else {
-        setTimeout(function() { ext.tabs.create({url: "about:blank"}); }, postStartupDelay);
+        setTimeout(function() {
+          ext.tabs.create({url: "about:blank"});
+          nextCycle();
+        }, postStartupDelay);
       }
     });
   });
