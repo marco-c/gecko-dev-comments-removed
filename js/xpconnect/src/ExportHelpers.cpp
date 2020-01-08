@@ -300,7 +300,7 @@ FunctionForwarder(JSContext* cx, unsigned argc, Value* vp)
         
         
         
-        JSAutoRealmAllowCCW ar(cx, unwrappedFun);
+        JSAutoRealm ar(cx, unwrappedFun);
         if (!CheckSameOriginArg(cx, options, thisVal) || !JS_WrapValue(cx, &thisVal))
             return false;
 
@@ -400,7 +400,7 @@ ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope, HandleV
     {
         
         
-        JSAutoRealmAllowCCW ar(cx, targetScope);
+        JSAutoRealm ar(cx, targetScope);
 
         
         funObj = UncheckedUnwrap(funObj);
@@ -483,7 +483,7 @@ CreateObjectIn(JSContext* cx, HandleValue vobj, CreateObjectInOptions& options,
 
     RootedObject obj(cx);
     {
-        JSAutoRealmAllowCCW ar(cx, scope);
+        JSAutoRealm ar(cx, scope);
         JS_MarkCrossZoneId(cx, options.defineAs);
 
         obj = JS_NewPlainObject(cx);
