@@ -394,6 +394,11 @@ class TemplateFunction(object):
         code = func.func_code
         firstlineno = code.co_firstlineno
         lines = sandbox._current_source.splitlines(True)
+        if lines:
+            
+            
+            if not lines[-1].endswith('\n'):
+                lines[-1] += '\n'
         lines = inspect.getblock(lines[firstlineno - 1:])
 
         
