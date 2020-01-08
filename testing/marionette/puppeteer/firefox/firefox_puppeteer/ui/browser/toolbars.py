@@ -123,7 +123,7 @@ class LocationBar(UIBaseLib):
         :returns: Reference to the urlbar context menu.
         """
         
-        parent = self.urlbar.find_element(By.ANON_ATTRIBUTE, {'anonid': 'textbox-input-box'})
+        parent = self.urlbar.find_element(By.ANON_ATTRIBUTE, {'anonid': 'moz-input-box'})
         return parent.find_element(By.ANON_ATTRIBUTE, {'anonid': 'input-box-contextmenu'})
 
     @property

@@ -39,9 +39,12 @@ class MozXULElement extends XULElement {
 
 
 
-  static parseXULToFragment(str, entities = "") {
+
+
+
+  static parseXULToFragment(str, preamble = "") {
     let doc = gXULDOMParser.parseFromString(`
-      ${entities}
+      ${preamble}
       <box xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
         ${str}
       </box>
@@ -117,6 +120,7 @@ window.MozXULElement = MozXULElement;
 for (let script of [
   "chrome://global/content/elements/stringbundle.js",
   "chrome://global/content/elements/general.js",
+  "chrome://global/content/elements/textbox.js",
 ]) {
   Services.scriptloader.loadSubScript(script, window);
 }
