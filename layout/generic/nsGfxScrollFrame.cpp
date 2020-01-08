@@ -2941,6 +2941,18 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsAtom* aOrig
   mLastSmoothScrollOrigin = nullptr;
   mScrollGeneration = ++sScrollGenerationCounter;
 
+  
+  
+  
+  
+  
+  
+  
+  if (mIsRoot && nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin)) {
+    content->SetProperty(nsGkAtoms::apzCallbackTransform, new CSSPoint(),
+                         nsINode::DeleteProperty<CSSPoint>);
+  }
+
   ScrollVisual();
 
   bool schedulePaint = true;
