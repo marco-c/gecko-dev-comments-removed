@@ -15,7 +15,6 @@ const storageGetIDBHistogram = "WEBEXT_STORAGE_LOCAL_IDB_GET_MS";
 const storageSetIDBHistogram = "WEBEXT_STORAGE_LOCAL_IDB_SET_MS";
 
 
-
 async function measureOp(histogram, fn) {
   const stopwatchKey = {};
   TelemetryStopwatch.start(histogram, stopwatchKey);
@@ -57,18 +56,32 @@ this.storage = class extends ExtensionAPI {
   }
 
   getLocalIDBBackend(context, {hasParentListeners, serialize, storagePrincipal}) {
-    const dbPromise = ExtensionStorageIDB.open(storagePrincipal);
+    let dbPromise;
+    async function getDB() {
+      if (dbPromise) {
+        return dbPromise;
+      }
+
+      dbPromise = ExtensionStorageIDB.open(storagePrincipal).catch(err => {
+        
+        
+        dbPromise = null;
+        throw err;
+      });
+
+      return dbPromise;
+    }
 
     return {
       get(keys) {
         return measureOp(storageGetIDBHistogram, async () => {
-          const db = await dbPromise;
+          const db = await getDB();
           return db.get(keys);
         });
       },
       set(items) {
         return measureOp(storageSetIDBHistogram, async () => {
-          const db = await dbPromise;
+          const db = await getDB();
           const changes = await db.set(items, {
             serialize: ExtensionStorage.serialize,
           });
@@ -85,7 +98,7 @@ this.storage = class extends ExtensionAPI {
         });
       },
       async remove(keys) {
-        const db = await dbPromise;
+        const db = await getDB();
         const changes = await db.remove(keys);
 
         if (!changes) {
@@ -99,7 +112,7 @@ this.storage = class extends ExtensionAPI {
         }
       },
       async clear() {
-        const db = await dbPromise;
+        const db = await getDB();
         const changes = await db.clear(context.extension);
 
         if (!changes) {
