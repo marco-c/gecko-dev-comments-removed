@@ -6,9 +6,16 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 const BROWSER_LANGUAGES_URL = "chrome://browser/content/preferences/browserLanguages.xul";
 
 function assertLocaleOrder(list, locales) {
-  is(list.children.length, 2, "There are two requested locales");
+  is(list.itemCount, locales.split(",").length,
+     "The right number of locales are requested");
   is(Array.from(list.children).map(child => child.value).join(","),
      locales, "The requested locales are in order");
+}
+
+function assertAvailableLocales(list, locales) {
+  is(list.itemCount, locales.length, "The right number of locales are available");
+  is(Array.from(list.firstElementChild.children).map(item => item.value).sort(),
+     locales.sort().join(","), "The available locales match");
 }
 
 async function openDialog(doc) {
@@ -16,9 +23,12 @@ async function openDialog(doc) {
   doc.getElementById("manageBrowserLanguagesButton").doCommand();
   let dialogWin = await dialogLoaded;
   let dialogDoc = dialogWin.document;
-  let list = dialogDoc.getElementById("activeLocales");
-  let dialog = dialogDoc.getElementById("BrowserLanguagesDialog");
-  return {dialog, dialogDoc, list};
+  return {
+    dialog: dialogDoc.getElementById("BrowserLanguagesDialog"),
+    dialogDoc,
+    available: dialogDoc.getElementById("availableLocales"),
+    requested: dialogDoc.getElementById("requestedLocales"),
+  };
 }
 
 add_task(async function testReorderingBrowserLanguages() {
@@ -36,14 +46,14 @@ add_task(async function testReorderingBrowserLanguages() {
   is(messageBar.hidden, true, "The message bar is hidden at first");
 
   
-  let {dialog, dialogDoc, list} = await openDialog(doc);
+  let {dialog, dialogDoc, requested} = await openDialog(doc);
 
   
-  assertLocaleOrder(list, "pl,en-US");
+  assertLocaleOrder(requested, "pl,en-US");
 
   
   dialogDoc.getElementById("down").doCommand();
-  assertLocaleOrder(list, "en-US,pl");
+  assertLocaleOrder(requested, "en-US,pl");
 
   
   let dialogClosed = BrowserTestUtils.waitForEvent(dialogDoc.documentElement, "dialogclosing");
@@ -57,22 +67,70 @@ add_task(async function testReorderingBrowserLanguages() {
   let newDialog = await openDialog(doc);
   dialog = newDialog.dialog;
   dialogDoc = newDialog.dialogDoc;
-  list = newDialog.list;
+  requested = newDialog.requested;
 
   
-  assertLocaleOrder(list, "en-US,pl");
+  assertLocaleOrder(requested, "en-US,pl");
 
   
-  list.selectedItem = list.querySelector("[value='pl']");
+  requested.selectedItem = requested.querySelector("[value='pl']");
   
   dialogDoc.getElementById("up").doCommand();
-  assertLocaleOrder(list, "pl,en-US");
+  assertLocaleOrder(requested, "pl,en-US");
 
   
   dialogClosed = BrowserTestUtils.waitForEvent(dialogDoc.documentElement, "dialogclosing");
   dialog.acceptDialog();
   await dialogClosed;
   is(messageBar.hidden, true, "The message bar is hidden again");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function testAddAndRemoveRequestedLanguages() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["intl.multilingual.enabled", true],
+      ["intl.locale.requested", "pl,it,en-US,he"],
+    ],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+
+  let doc = gBrowser.contentDocument;
+  let messageBar = doc.getElementById("confirmBrowserLanguage");
+  is(messageBar.hidden, true, "The message bar is hidden at first");
+
+  
+  let {dialog, dialogDoc, available, requested} = await openDialog(doc);
+
+  
+  assertLocaleOrder(requested, "pl,it,en-US,he");
+  assertAvailableLocales(available, []);
+
+  
+  dialogDoc.getElementById("remove").doCommand();
+  dialogDoc.getElementById("remove").doCommand();
+  assertLocaleOrder(requested, "en-US,he");
+  assertAvailableLocales(available, ["it", "pl"]);
+
+  
+  let [it] = [available.getItemAtIndex(0), available.getItemAtIndex(1)]
+    .filter(item => item.value == "it");
+  
+  available.selectedItem = it;
+  dialogDoc.getElementById("add").doCommand();
+
+  assertLocaleOrder(requested, "it,en-US,he");
+  assertAvailableLocales(available, ["pl"]);
+
+  
+  let dialogClosed = BrowserTestUtils.waitForEvent(dialogDoc.documentElement, "dialogclosing");
+  dialog.acceptDialog();
+  await dialogClosed;
+  is(messageBar.hidden, false, "The message bar is now visible");
+  is(messageBar.querySelector("button").getAttribute("locales"), "it,en-US,he",
+     "The locales are set on the message bar button");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
