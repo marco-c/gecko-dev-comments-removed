@@ -1465,7 +1465,7 @@ pref("browser.translation.neverForLanguages", "");
 
 pref("browser.translation.ui.show", false);
 
-pref("browser.translation.engine", "bing");
+pref("browser.translation.engine", "Google");
 
 
 

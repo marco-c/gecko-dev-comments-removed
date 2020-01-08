@@ -119,6 +119,11 @@ var whitelist = [
   {file: "resource://pdf.js/web/debugger.js"},
 
   
+  {file: "resource://app/modules/translation/BingTranslator.jsm"},
+  {file: "resource://app/modules/translation/GoogleTranslator.jsm"},
+  {file: "resource://app/modules/translation/YandexTranslator.jsm"},
+
+  
   
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
