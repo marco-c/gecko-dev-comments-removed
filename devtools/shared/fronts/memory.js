@@ -62,29 +62,44 @@ const MemoryFront = protocol.FrontClassWithSpec(memorySpec, {
 
 
 
-  transferHeapSnapshot: protocol.custom(function(snapshotId) {
+  transferHeapSnapshot: protocol.custom(async function(snapshotId) {
     if (!this.heapSnapshotFileActorID) {
       throw new Error("MemoryFront initialized without a rootForm");
     }
 
-    const request = this._client.request({
-      to: this.heapSnapshotFileActorID,
-      type: "transferHeapSnapshot",
-      snapshotId
-    });
+    try {
+      const request = this._client.request({
+        to: this.heapSnapshotFileActorID,
+        type: "transferHeapSnapshot",
+        snapshotId
+      });
 
-    return new Promise((resolve, reject) => {
       const outFilePath =
         HeapSnapshotFileUtils.getNewUniqueHeapSnapshotTempFilePath();
       const outFile = new FileUtils.File(outFilePath);
-
       const outFileStream = FileUtils.openSafeFileOutputStream(outFile);
-      request.on("bulk-reply", async function({ copyTo }) {
-        await copyTo(outFileStream);
-        FileUtils.closeSafeFileOutputStream(outFileStream);
-        resolve(outFilePath);
-      });
-    });
+
+      
+      
+      
+      
+      const { copyTo } = await request;
+      await copyTo(outFileStream);
+
+      FileUtils.closeSafeFileOutputStream(outFileStream);
+      return outFilePath;
+    } catch (e) {
+      if (e.error) {
+        
+        
+        throw new Error(
+          `The server's actor threw an error: (${e.error}) ${e.message}`
+        );
+      }
+
+      
+      throw e;
+    }
   })
 });
 
