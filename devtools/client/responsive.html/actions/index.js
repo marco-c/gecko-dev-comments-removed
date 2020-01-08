@@ -49,9 +49,6 @@ createEnum([
   "CHANGE_PIXEL_RATIO",
 
   
-  "CHANGE_RELOAD_CONDITION",
-
-  
   "LOAD_DEVICE_LIST_START",
 
   
@@ -59,9 +56,6 @@ createEnum([
 
   
   "LOAD_DEVICE_LIST_END",
-
-  
-  "LOAD_RELOAD_CONDITIONS_END",
 
   
   "REMOVE_DEVICE",
@@ -83,6 +77,12 @@ createEnum([
 
   
   "TOGGLE_LEFT_ALIGNMENT",
+
+  
+  "TOGGLE_RELOAD_ON_TOUCH_SIMULATION",
+
+  
+  "TOGGLE_RELOAD_ON_USER_AGENT",
 
   
   "TOGGLE_TOUCH_SIMULATION",

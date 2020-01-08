@@ -27,24 +27,6 @@ exports.loadableState = createEnum([
 
 
 
-exports.reloadConditions = {
-
-  
-  touchSimulation: PropTypes.bool,
-
-  
-  userAgent: PropTypes.bool,
-
-  
-  state: PropTypes.oneOf(Object.keys(exports.loadableState)),
-
-};
-
-
-
-
-
-
 const device = {
 
   
@@ -122,16 +104,6 @@ exports.networkThrottling = {
 
   
   profile: PropTypes.string,
-
-};
-
-
-
-
-exports.touchSimulation = {
-
-  
-  enabled: PropTypes.bool,
 
 };
 
