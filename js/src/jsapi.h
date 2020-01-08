@@ -4677,23 +4677,6 @@ SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
 
 
 
-
-class WasmModuleListener
-{
-  protected:
-    virtual ~WasmModuleListener() {}
-
-  public:
-    
-    
-    
-    
-    virtual MozExternalRefCountType MOZ_XPCOM_ABI AddRef() = 0;
-    virtual MozExternalRefCountType MOZ_XPCOM_ABI Release() = 0;
-
-    virtual void onCompilationComplete() = 0;
-};
-
 struct WasmModule : js::AtomicRefCounted<WasmModule>
 {
     virtual ~WasmModule() {}
@@ -4705,6 +4688,11 @@ IsWasmModuleObject(HandleObject obj);
 
 extern JS_PUBLIC_API(RefPtr<WasmModule>)
 GetWasmModule(HandleObject obj);
+
+
+
+
+
 
 extern JS_PUBLIC_API(RefPtr<WasmModule>)
 DeserializeWasmModule(PRFileDesc* bytecode, BuildIdCharVector&& buildId,
