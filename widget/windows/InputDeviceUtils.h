@@ -16,9 +16,6 @@ class InputDeviceUtils {
 public:
   static HDEVNOTIFY RegisterNotification(HWND aHwnd);
   static void UnregisterNotification(HDEVNOTIFY aHandle);
-
-  
-  static DWORD CountMouseDevices();
 };
 
 } 
