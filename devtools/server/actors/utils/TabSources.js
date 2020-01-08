@@ -93,7 +93,7 @@ TabSources.prototype = {
     
     
     
-    if (source.url in this._htmlDocumentSourceActors) {
+    if (isInlineSource && source.url in this._htmlDocumentSourceActors) {
       return this._htmlDocumentSourceActors[source.url];
     }
 
@@ -237,7 +237,7 @@ TabSources.prototype = {
     
     
     const element = source.element ? source.element.unsafeDereference() : null;
-    if (element && (element.tagName !== "SCRIPT" || !element.hasAttribute("src"))) {
+    if (element && element.tagName === "SCRIPT" && !element.hasAttribute("src")) {
       if (source.introductionScript) {
         
         
