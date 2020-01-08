@@ -11,7 +11,6 @@
 
 
 
-
 function run_test() {
   Assert.ok(typeof(this.MODULE_IMPORTED) == "undefined");
   Assert.ok(typeof(this.MODULE_URI) == "undefined");
@@ -19,7 +18,4 @@ function run_test() {
   ChromeUtils.import(uri);
   Assert.ok(MODULE_URI == uri);
   Assert.ok(MODULE_IMPORTED);
-  Assert.ok(SUBMODULE_IMPORTED);
-  Assert.ok(same_scope);
-  Assert.ok(SUBMODULE_IMPORTED_TO_SCOPE);
 }
