@@ -4,6 +4,8 @@ ChromeUtils.defineModuleGetter(this, "ExtensionStorage",
                                "resource://gre/modules/ExtensionStorage.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionStorageIDB",
                                "resource://gre/modules/ExtensionStorageIDB.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryStopwatch",
                                "resource://gre/modules/TelemetryStopwatch.jsm");
 
@@ -55,7 +57,7 @@ this.storage = class extends ExtensionAPI {
     };
   }
 
-  getLocalIDBBackend(context, {hasParentListeners, serialize, storagePrincipal}) {
+  getLocalIDBBackend(context, {fireOnChanged, serialize, storagePrincipal}) {
     let dbPromise;
     async function getDB() {
       if (dbPromise) {
@@ -86,14 +88,8 @@ this.storage = class extends ExtensionAPI {
             serialize: ExtensionStorage.serialize,
           });
 
-          if (!changes) {
-            return;
-          }
-
-          const hasListeners = await hasParentListeners();
-          if (hasListeners) {
-            await context.childManager.callParentAsyncFunction(
-              "storage.local.IDBBackend.fireOnChanged", [changes]);
+          if (changes) {
+            fireOnChanged(changes);
           }
         });
       },
@@ -101,34 +97,23 @@ this.storage = class extends ExtensionAPI {
         const db = await getDB();
         const changes = await db.remove(keys);
 
-        if (!changes) {
-          return;
-        }
-
-        const hasListeners = await hasParentListeners();
-        if (hasListeners) {
-          await context.childManager.callParentAsyncFunction(
-            "storage.local.IDBBackend.fireOnChanged", [changes]);
+        if (changes) {
+          fireOnChanged(changes);
         }
       },
       async clear() {
         const db = await getDB();
         const changes = await db.clear(context.extension);
 
-        if (!changes) {
-          return;
-        }
-
-        const hasListeners = await hasParentListeners();
-        if (hasListeners) {
-          await context.childManager.callParentAsyncFunction(
-            "storage.local.IDBBackend.fireOnChanged", [changes]);
+        if (changes) {
+          fireOnChanged(changes);
         }
       },
     };
   }
 
   getAPI(context) {
+    const {extension} = context;
     const serialize = ExtensionStorage.serializeForContext.bind(null, context);
     const deserialize = ExtensionStorage.deserializeForContext.bind(null, context);
 
@@ -152,9 +137,17 @@ this.storage = class extends ExtensionAPI {
       return sanitized;
     }
 
+    function fireOnChanged(changes) {
+      
+      
+      
+      
+      Services.cpmm.sendAsyncMessage(`Extension:StorageLocalOnChanged:${extension.uuid}`, changes);
+    }
+
     
     
-    let promiseStorageLocalBackend;
+    
     const getStorageLocalBackend = async () => {
       const {
         backendEnabled,
@@ -167,33 +160,58 @@ this.storage = class extends ExtensionAPI {
 
       return this.getLocalIDBBackend(context, {
         storagePrincipal,
-        hasParentListeners() {
-          
-          
-          
-          return context.childManager.callParentAsyncFunction(
-            "storage.local.IDBBackend.hasListeners", []);
-        },
+        fireOnChanged,
         serialize,
       });
     };
+
+    
+    let selectedBackend;
+
+    const useStorageIDBBackend = extension.getSharedData("storageIDBBackend");
+    if (useStorageIDBBackend === false) {
+      selectedBackend = this.getLocalFileBackend(context, {deserialize, serialize});
+    } else if (useStorageIDBBackend === true) {
+      selectedBackend = this.getLocalIDBBackend(context, {
+        storagePrincipal: extension.getSharedData("storageIDBPrincipal"),
+        fireOnChanged,
+        serialize,
+      });
+    }
+
+    let promiseStorageLocalBackend;
 
     
     const local = {};
     for (let method of ["get", "set", "remove", "clear"]) {
       local[method] = async function(...args) {
         try {
-          if (!promiseStorageLocalBackend) {
-            promiseStorageLocalBackend = getStorageLocalBackend();
-          }
-          const backend = await promiseStorageLocalBackend.catch(err => {
+          
+          if (!selectedBackend) {
+            if (!promiseStorageLocalBackend) {
+              promiseStorageLocalBackend = getStorageLocalBackend().catch(err => {
+                
+                promiseStorageLocalBackend = null;
+                throw err;
+              });
+            }
+
             
-            promiseStorageLocalBackend = null;
-            throw err;
-          });
+            
+            
+            if (method !== "get") {
+              
+              const result = await context.childManager.callParentAsyncFunction(
+                "storage.local.callMethodInParentProcess", [method, args]);
+              return result;
+            }
+
+            
+            selectedBackend = await promiseStorageLocalBackend;
+          }
 
           
-          const result = await backend[method](...args);
+          const result = await selectedBackend[method](...args);
           return result;
         } catch (err) {
           
