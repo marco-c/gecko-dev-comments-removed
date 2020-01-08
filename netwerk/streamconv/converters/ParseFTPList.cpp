@@ -19,6 +19,8 @@
 
 using mozilla::CheckedInt;
 
+static const int kMaxFTPListLen = 32768;
+
 static inline int ParsingFailed(struct list_state *state)
 {
   if (state->parsed_one || state->lstyle) 
@@ -71,6 +73,10 @@ int ParseFTPList(const char *line, struct list_state *state,
     linelen--;
 
   
+
+  if (linelen > kMaxFTPListLen) {
+    return ParsingFailed(state);
+  }
 
   if (linelen > 0)
   {
