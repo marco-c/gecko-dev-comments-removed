@@ -5444,8 +5444,8 @@ var TabContextMenu = {
     contextMoveTabToStart.disabled = selectedTabs[0]._tPos == 0 && allSelectedTabsAdjacent;
 
     
-    let contextDuplicateTab = document.getElementById("context_duplicateTab");
-    contextDuplicateTab.hidden = multiselectionContext;
+    document.getElementById("context_duplicateTab").hidden = multiselectionContext;
+    document.getElementById("context_duplicateTabs").hidden = !multiselectionContext;
 
     
     
@@ -5536,6 +5536,14 @@ var TabContextMenu = {
       isContextMenu: true,
       excludeUserContextId: this.contextTab.getAttribute("usercontextid"),
     });
+  },
+  duplicateSelectedTabs() {
+    let tabsToDuplicate = gBrowser.selectedTabs;
+    let newIndex = tabsToDuplicate[tabsToDuplicate.length - 1]._tPos + 1;
+    for (let tab of tabsToDuplicate) {
+      let newTab = SessionStore.duplicateTab(window, tab);
+      gBrowser.moveTabTo(newTab, newIndex++);
+    }
   },
   reopenInContainer(event) {
     let userContextId = parseInt(event.target.getAttribute("data-usercontextid"));
