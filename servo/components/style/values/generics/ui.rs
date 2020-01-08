@@ -67,3 +67,27 @@ impl<ImageUrl: ToCss, Number: ToCss> ToCss for CursorImage<ImageUrl, Number> {
         Ok(())
     }
 }
+
+
+
+
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
+         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+pub enum ScrollbarColor<Color> {
+    
+    Auto,
+    
+    Colors {
+        
+        thumb: Color,
+        
+        track: Color,
+    }
+}
+
+impl<Color> Default for ScrollbarColor<Color> {
+    #[inline]
+    fn default() -> Self {
+        ScrollbarColor::Auto
+    }
+}

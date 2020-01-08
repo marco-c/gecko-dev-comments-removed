@@ -20,3 +20,6 @@ pub type Cursor = generics::Cursor<CursorImage>;
 
 
 pub type CursorImage = generics::CursorImage<ComputedImageUrl, Number>;
+
+
+pub type ScrollbarColor = generics::ScrollbarColor<Color>;

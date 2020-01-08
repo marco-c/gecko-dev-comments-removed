@@ -31,8 +31,7 @@ body {
 :root[platform="mac"] {
   
   
-  scrollbar-face-color: var(--theme-body-color-inactive);
-  scrollbar-track-color: var(--theme-splitter-color);
+  scrollbar-color: var(--theme-body-color-inactive) var(--theme-splitter-color);
 }
 
 .theme-selected,
