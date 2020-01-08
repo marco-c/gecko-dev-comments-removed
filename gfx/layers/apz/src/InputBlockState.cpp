@@ -68,9 +68,7 @@ InputBlockState::SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aT
       aState == TargetConfirmationState::eConfirmed &&
       mTargetApzc && aTargetApzc &&
       mTargetApzc->GetGuid() != aTargetApzc->GetGuid()) {
-#ifdef NIGHTLY_BUILD
-    MOZ_RELEASE_ASSERT(false, "APZ and main thread confirmed scrollbar drag block with different targets");
-#endif
+    MOZ_ASSERT(false, "APZ and main thread confirmed scrollbar drag block with different targets");
     UpdateTargetApzc(aTargetApzc);
     return true;
   }
