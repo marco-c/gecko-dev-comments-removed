@@ -30,11 +30,6 @@ class FallbackEncoding : public nsIObserver, nsSupportsWeakReference {
   
 
 
-  static bool sFallbackToUTF8ForFile;
-
-  
-
-
 
 
 

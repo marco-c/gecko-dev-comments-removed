@@ -26,9 +26,6 @@
 
 class nsHtml5Parser;
 
-#define NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE 1024
-#define NS_HTML5_STREAM_PARSER_SNIFFING_BUFFER_SIZE 1024
-
 enum eParserMode {
   
 
@@ -107,6 +104,10 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   template <typename T>
   using NotNull = mozilla::NotNull<T>;
   using Encoding = mozilla::Encoding;
+
+  const uint32_t SNIFFING_BUFFER_SIZE = 1024;
+  const uint32_t READ_BUFFER_SIZE = 1024;
+  const uint32_t LOCAL_FILE_UTF_8_BUFFER_SIZE = 1024*1024*50; 
 
   friend class nsHtml5RequestStopper;
   friend class nsHtml5DataAvailable;
@@ -244,6 +245,8 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
   void DoStopRequest();
 
+  void DoDataAvailableBuffer(mozilla::Buffer<uint8_t>&& aBuffer);
+
   void DoDataAvailable(mozilla::Span<const uint8_t> aBuffer);
 
   static nsresult CopySegmentsToParser(nsIInputStream* aInStream,
@@ -311,6 +314,19 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
   nsresult SetupDecodingFromBom(NotNull<const Encoding*> aEncoding);
+
+  
+
+
+
+
+  void CommitLocalFileToUTF8();
+
+  
+
+
+
+  void ReDecodeLocalFile();
 
   
 
@@ -488,6 +504,14 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
 
 
+
+  uint32_t mLocalFileBytesBuffered;
+
+  nsTArray<mozilla::Buffer<uint8_t>> mBufferedLocalFileData;
+
+  
+
+
   bool mTerminated;
   bool mInterrupted;
   mozilla::Mutex mTerminatedMutex;
@@ -517,6 +541,12 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   bool mInitialEncodingWasFromParentFrame;
 
   bool mHasHadErrors;
+
+  
+
+
+
+  bool mDecodingLocalFileAsUTF8;
 
   
 

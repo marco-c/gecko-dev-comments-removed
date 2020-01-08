@@ -282,8 +282,8 @@ class nsHTMLDocument : public nsDocument, public nsIHTMLDocument {
   void TryParentCharset(nsIDocShell* aDocShell, int32_t& charsetSource,
                         NotNull<const Encoding*>& aEncoding);
   void TryTLD(int32_t& aCharsetSource, NotNull<const Encoding*>& aCharset);
-  void TryFallback(int32_t& aCharsetSource,
-                   NotNull<const Encoding*>& aEncoding);
+  static void TryFallback(int32_t& aCharsetSource,
+                          NotNull<const Encoding*>& aEncoding);
 
   
   virtual void SetDocumentCharacterSet(
