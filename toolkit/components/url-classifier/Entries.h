@@ -89,12 +89,9 @@ struct SafebrowsingHash
   void ToString(nsACString& aStr) const {
     uint32_t len = ((sHashSize + 2) / 3) * 4;
 
-    
-    
-    aStr.SetCapacity(len + 1);
-    PL_Base64Encode((char*)buf, sHashSize, aStr.BeginWriting());
-    aStr.BeginWriting()[len] = '\0';
     aStr.SetLength(len);
+    PL_Base64Encode((char*)buf, sHashSize, aStr.BeginWriting());
+    MOZ_ASSERT(aStr.BeginReading()[len] == '\0');
   }
 
   void ToHexString(nsACString& aStr) const {
