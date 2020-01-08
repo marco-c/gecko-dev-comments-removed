@@ -8,6 +8,8 @@ ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this
 
 
 add_task(async function testGlobalToggle() {
+  await SpecialPowers.pushPrefEnv({set: [["privacy.trackingprotection.appMenuToggle.enabled", true]]});
+
   async function runTest(privateWindow) {
     let win = await BrowserTestUtils.openNewBrowserWindow({private: privateWindow});
 

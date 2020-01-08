@@ -7,6 +7,8 @@ ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this
 
 
 add_task(async function testPreferencesButton() {
+  await SpecialPowers.pushPrefEnv({set: [["privacy.trackingprotection.appMenuToggle.enabled", true]]});
+
   let cuiTestUtils = new CustomizableUITestUtils(window);
 
   await BrowserTestUtils.withNewTab(gBrowser, async function(browser) {
