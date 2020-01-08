@@ -3289,6 +3289,10 @@ class Document : public nsINode,
 
   
   
+  mozilla::dom::DocumentAutoplayPolicy AutoplayPolicy() const;
+
+  
+  
   
   
   

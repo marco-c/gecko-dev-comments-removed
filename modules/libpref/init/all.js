@@ -621,6 +621,11 @@ pref("media.allowed-to-play.enabled", false);
 
 
 
+
+pref("dom.media.autoplay.autoplay-policy-api", false);
+
+
+
 pref("media.video-queue.default-size", 10);
 
 

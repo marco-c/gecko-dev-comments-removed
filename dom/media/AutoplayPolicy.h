@@ -31,6 +31,9 @@ class Document;
 class AutoplayPolicy {
  public:
   
+  static DocumentAutoplayPolicy IsAllowedToPlay(const Document& aDocument);
+
+  
   static bool IsAllowedToPlay(const HTMLMediaElement& aElement);
 
   
