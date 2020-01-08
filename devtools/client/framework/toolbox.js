@@ -3060,7 +3060,6 @@ Toolbox.prototype = {
     });
 
     this._performance = await this.target.getFront("performance");
-    await this.performance.connect();
 
     
     this.emit("profiler-connected");
