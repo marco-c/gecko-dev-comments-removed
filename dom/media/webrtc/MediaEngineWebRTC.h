@@ -79,7 +79,7 @@ private:
 
   
   Mutex mMutex;
-  UniquePtr<mozilla::CubebDeviceEnumerator> mEnumerator;
+  RefPtr<mozilla::CubebDeviceEnumerator> mEnumerator;
   const bool mDelayAgnostic;
   const bool mExtendedFilter;
   
