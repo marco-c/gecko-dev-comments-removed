@@ -24,6 +24,7 @@ add_task(async function() {
   await testCtrlModifier(shortcuts);
   await testInvalidShortcutString(shortcuts);
   await testCmdShiftShortcut(shortcuts);
+  await testTabCharacterShortcut(shortcuts);
   shortcuts.destroy();
 
   await testTarget();
@@ -421,4 +422,41 @@ function testInvalidShortcutString(shortcuts) {
 
   shortcuts.on("Cmmd+F", function() {});
   ok(true, "on() shouldn't throw when passing invalid shortcut string");
+}
+
+
+
+
+
+
+async function testTabCharacterShortcut(shortcuts) {
+  if (!isOSX) {
+    return;
+  }
+
+  info("Test tab character shortcut");
+
+  once(shortcuts, "CmdOrCtrl+Alt+I", event => {
+    ok(false, "This handler must not be executed");
+  });
+
+  const onKey = once(shortcuts, "CmdOrCtrl+Alt+Shift+I", event => {
+    info("Test for CmdOrCtrl+Alt+Shift+I");
+    is(event.key, "^");
+    is(event.keyCode, 73);
+  });
+
+  
+  
+  
+  EventUtils.synthesizeKey("^", {
+    code: "KeyI",
+    key: "^",
+    keyCode: 73,
+    shiftKey: true,
+    altKey: true,
+    metaKey: true,
+  }, window);
+
+  await onKey;
 }

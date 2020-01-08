@@ -224,8 +224,15 @@ KeyShortcuts.prototype = {
     }
     if (shortcut.shift != event.shiftKey) {
       
+      const char = String.fromCharCode(event.keyCode);
+      let isAlphabetical = (char.length == 1 && char.match(/[a-zA-Z]/));
+
       
-      const isAlphabetical = event.key && event.key.match(/[a-zA-Z]/);
+      
+      if (!isAlphabetical) {
+        isAlphabetical = event.key && event.key.match(/[a-zA-Z]/);
+      }
+
       
       const cmdShortcut = shortcut.meta && !shortcut.alt && !shortcut.ctrl;
       if (isAlphabetical || cmdShortcut) {
