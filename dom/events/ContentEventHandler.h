@@ -360,11 +360,6 @@ protected:
                                 LayoutDeviceIntRect& aRect,
                                 WritingMode& aWritingMode);
 
-  
-  NodePosition GetNodePositionHavingFlatText(const NodePosition& aNodePosition);
-  NodePosition GetNodePositionHavingFlatText(nsINode* aNode,
-                                             int32_t aNodeOffset);
-
   struct MOZ_STACK_CLASS FrameAndNodeOffset final
   {
     

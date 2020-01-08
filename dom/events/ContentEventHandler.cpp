@@ -1561,50 +1561,6 @@ ContentEventHandler::EnsureNonEmptyRect(LayoutDeviceIntRect& aRect) const
   aRect.width = std::max(1, aRect.width);
 }
 
-ContentEventHandler::NodePosition
-ContentEventHandler::GetNodePositionHavingFlatText(
-                       const NodePosition& aNodePosition)
-{
-  return GetNodePositionHavingFlatText(aNodePosition.Container(),
-                                       aNodePosition.Offset());
-}
-
-ContentEventHandler::NodePosition
-ContentEventHandler::GetNodePositionHavingFlatText(nsINode* aNode,
-                                                   int32_t aNodeOffset)
-{
-  if (aNode->IsText()) {
-    return NodePosition(aNode, aNodeOffset);
-  }
-
-  int32_t childCount = static_cast<int32_t>(aNode->GetChildCount());
-
-  
-  if (!childCount) {
-    MOZ_ASSERT(!aNodeOffset || aNodeOffset == 1);
-    return NodePosition(aNode, aNodeOffset);
-  }
-
-  
-  if (aNodeOffset < childCount) {
-    return NodePosition(aNode->GetChildAt_Deprecated(aNodeOffset), 0);
-  }
-
-  
-  
-  
-  if (aNodeOffset == childCount) {
-    nsINode* node = aNode->GetChildAt_Deprecated(childCount - 1);
-    return NodePosition(node,
-      node->IsText()
-        ? static_cast<int32_t>(node->AsContent()->TextLength())
-        : 1);
-  }
-
-  NS_WARNING("aNodeOffset is invalid value");
-  return NodePosition();
-}
-
 ContentEventHandler::FrameAndNodeOffset
 ContentEventHandler::GetFirstFrameInRangeForTextRect(const RawRange& aRawRange)
 {
