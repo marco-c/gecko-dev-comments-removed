@@ -75,11 +75,11 @@ class NameResolver
     bool nameExpression(ParseNode* n, bool* foundName) {
         switch (n->getKind()) {
           case ParseNodeKind::Dot:
-            if (!nameExpression(n->pn_left, foundName))
+            if (!nameExpression(n->expr(), foundName))
                 return false;
             if (!*foundName)
                 return true;
-            return appendPropertyReference(n->pn_right->pn_atom);
+            return appendPropertyReference(n->pn_atom);
 
           case ParseNodeKind::Name:
             *foundName = true;
@@ -315,17 +315,17 @@ class NameResolver
     bool resolveTaggedTemplate(ParseNode* node, HandleAtom prefix) {
         MOZ_ASSERT(node->isKind(ParseNodeKind::TaggedTemplate));
 
-        ParseNode* tag = node->pn_left;
+        ParseNode* element = node->pn_head;
 
         
         
-        if (!resolve(tag, prefix))
+        if (!resolve(element, prefix))
             return false;
 
         
         
         
-        ParseNode* element = node->pn_right->pn_head;
+        element = element->pn_next;
 #ifdef DEBUG
         {
             MOZ_ASSERT(element->isKind(ParseNodeKind::CallSiteObj));
@@ -697,6 +697,9 @@ class NameResolver
           case ParseNodeKind::Pow:
           case ParseNodeKind::Pipeline:
           case ParseNodeKind::Comma:
+          case ParseNodeKind::New:
+          case ParseNodeKind::Call:
+          case ParseNodeKind::SuperCall:
           case ParseNodeKind::Array:
           case ParseNodeKind::StatementList:
           case ParseNodeKind::ParamsBody:
@@ -730,30 +733,9 @@ class NameResolver
             break;
 
           case ParseNodeKind::TaggedTemplate:
-            MOZ_ASSERT(cur->isArity(PN_BINARY));
+            MOZ_ASSERT(cur->isArity(PN_LIST));
             if (!resolveTaggedTemplate(cur, prefix))
                 return false;
-            break;
-
-          case ParseNodeKind::New:
-          case ParseNodeKind::Call:
-          case ParseNodeKind::SuperCall:
-            MOZ_ASSERT(cur->isArity(PN_BINARY));
-            if (!resolve(cur->pn_left, prefix))
-                return false;
-            if (!resolve(cur->pn_right, prefix))
-                return false;
-            break;
-
-          
-          
-          
-          case ParseNodeKind::Arguments:
-            MOZ_ASSERT(cur->isArity(PN_LIST));
-            for (ParseNode* element = cur->pn_head; element; element = element->pn_next) {
-                if (!resolve(element, prefix))
-                    return false;
-            }
             break;
 
           
@@ -784,12 +766,12 @@ class NameResolver
           }
 
           case ParseNodeKind::Dot:
-            MOZ_ASSERT(cur->isArity(PN_BINARY));
+            MOZ_ASSERT(cur->isArity(PN_NAME));
 
             
             if (cur->as<PropertyAccess>().isSuper())
                 break;
-            if (!resolve(cur->pn_left, prefix))
+            if (!resolve(cur->expr(), prefix))
                 return false;
             break;
 
@@ -828,7 +810,6 @@ class NameResolver
           case ParseNodeKind::ExportSpec: 
           case ParseNodeKind::CallSiteObj: 
           case ParseNodeKind::ClassNames:  
-          case ParseNodeKind::PropertyName:  
             MOZ_CRASH("should have been handled by a parent node");
 
           case ParseNodeKind::Limit: 
