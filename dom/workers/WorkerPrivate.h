@@ -174,12 +174,6 @@ public:
   }
 
   bool
-  Terminate()
-  {
-    return Notify(Terminating);
-  }
-
-  bool
   Close();
 
   
@@ -590,7 +584,7 @@ public:
     AssertIsOnParentThread();
 
     MutexAutoLock lock(mMutex);
-    return mParentStatus < Terminating;
+    return mParentStatus < Canceling;
   }
 
   WorkerStatus
@@ -1226,7 +1220,7 @@ private:
       status = mStatus;
     }
 
-    if (status < Terminating) {
+    if (status < Canceling) {
       return true;
     }
 
@@ -1334,7 +1328,6 @@ private:
 
   WorkerType mWorkerType;
 
-  
   
   
   

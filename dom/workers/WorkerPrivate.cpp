@@ -507,8 +507,8 @@ public:
   : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount),
     mStatus(aStatus)
   {
-    MOZ_ASSERT(aStatus == Closing || aStatus == Terminating ||
-               aStatus == Canceling || aStatus == Killing);
+    MOZ_ASSERT(aStatus == Closing || aStatus == Canceling ||
+               aStatus == Killing);
   }
 
 private:
@@ -1834,7 +1834,7 @@ WorkerPrivate::Notify(WorkerStatus aStatus)
     return true;
   }
 
-  NS_ASSERTION(aStatus != Terminating || mQueuedRunnables.IsEmpty(),
+  NS_ASSERTION(aStatus != Canceling || mQueuedRunnables.IsEmpty(),
                "Shouldn't have anything queued!");
 
   
@@ -1889,7 +1889,7 @@ WorkerPrivate::Freeze(nsPIDOMWindowInner* aWindow)
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (mParentStatus >= Canceling) {
       return true;
     }
   }
@@ -1946,7 +1946,7 @@ WorkerPrivate::Thaw(nsPIDOMWindowInner* aWindow)
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (mParentStatus >= Canceling) {
       return true;
     }
   }
@@ -1997,7 +1997,7 @@ WorkerPrivate::ParentWindowResumed()
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (mParentStatus >= Canceling) {
       return;
     }
   }
@@ -2024,7 +2024,7 @@ WorkerPrivate::PropagateFirstPartyStorageAccessGranted()
   {
     MutexAutoLock lock(mMutex);
 
-    if (mParentStatus >= Terminating) {
+    if (mParentStatus >= Canceling) {
       return;
     }
   }
@@ -2062,7 +2062,7 @@ WorkerPrivate::ModifyBusyCount(bool aIncrease)
     bool shouldCancel;
     {
       MutexAutoLock lock(mMutex);
-      shouldCancel = mParentStatus == Terminating;
+      shouldCancel = mParentStatus == Canceling;
     }
 
     if (shouldCancel && !Cancel()) {
@@ -3255,13 +3255,12 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
   Maybe<JSAutoRealm> workerCompartment;
 
   for (;;) {
-    WorkerStatus currentStatus, previousStatus;
+    WorkerStatus currentStatus;
     bool debuggerRunnablesPending = false;
     bool normalRunnablesPending = false;
 
     {
       MutexAutoLock lock(mMutex);
-      previousStatus = mStatus;
 
       while (mControlQueue.IsEmpty() &&
              !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
@@ -3286,7 +3285,7 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
     if (currentStatus != Running && !HasActiveHolders()) {
 
       
-      if (previousStatus != Running && currentStatus != Killing) {
+      if (currentStatus == Canceling) {
         NotifyInternal(Killing);
 
 #ifdef DEBUG
@@ -3543,7 +3542,7 @@ WorkerPrivate::GetClientInfo() const
   AssertIsOnWorkerThread();
   Maybe<ClientInfo> clientInfo;
   if (!mClientSource) {
-    MOZ_DIAGNOSTIC_ASSERT(mStatus >= Terminating);
+    MOZ_DIAGNOSTIC_ASSERT(mStatus >= Canceling);
     return clientInfo;
   }
   clientInfo.emplace(mClientSource->Info());
@@ -3566,7 +3565,7 @@ WorkerPrivate::GetController()
   AssertIsOnWorkerThread();
   {
     MutexAutoLock lock(mMutex);
-    if (mStatus >= Terminating) {
+    if (mStatus >= Canceling) {
       return Maybe<ServiceWorkerDescriptor>();
     }
   }
@@ -3582,7 +3581,7 @@ WorkerPrivate::Control(const ServiceWorkerDescriptor& aServiceWorker)
   MOZ_DIAGNOSTIC_ASSERT(Type() != WorkerTypeService);
   {
     MutexAutoLock lock(mMutex);
-    if (mStatus >= Terminating) {
+    if (mStatus >= Canceling) {
       return;
     }
   }
@@ -3605,7 +3604,7 @@ WorkerPrivate::ExecutionReady()
   AssertIsOnWorkerThread();
   {
     MutexAutoLock lock(mMutex);
-    if (mStatus >= Terminating) {
+    if (mStatus >= Canceling) {
       return;
     }
   }
@@ -4195,7 +4194,7 @@ already_AddRefed<nsIEventTarget>
 WorkerPrivate::CreateNewSyncLoop(WorkerStatus aFailStatus)
 {
   AssertIsOnWorkerThread();
-  MOZ_ASSERT(aFailStatus >= Terminating,
+  MOZ_ASSERT(aFailStatus >= Canceling,
              "Sync loops can be created when the worker is in Running/Closing state!");
 
   {
@@ -4592,7 +4591,7 @@ WorkerPrivate::NotifyInternal(WorkerStatus aStatus)
       return true;
     }
 
-    if (aStatus >= Terminating) {
+    if (aStatus >= Canceling) {
       MutexAutoUnlock unlock(mMutex);
       mClientSource.reset();
       if (mScope) {
@@ -4680,9 +4679,7 @@ WorkerPrivate::NotifyInternal(WorkerStatus aStatus)
     return true;
   }
 
-  MOZ_ASSERT(aStatus == Terminating ||
-             aStatus == Canceling ||
-             aStatus == Killing);
+  MOZ_ASSERT(aStatus == Canceling || aStatus == Killing);
 
   
   return false;
@@ -5076,7 +5073,7 @@ WorkerPrivate::StartCancelingTimer()
   
   {
     MutexAutoLock lock(mMutex);
-    if (ParentStatus() >= Terminating) {
+    if (ParentStatus() >= Canceling) {
       return;
     }
   }

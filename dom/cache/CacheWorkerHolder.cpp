@@ -20,7 +20,7 @@ CacheWorkerHolder::Create(WorkerPrivate* aWorkerPrivate, Behavior aBehavior)
   MOZ_DIAGNOSTIC_ASSERT(aWorkerPrivate);
 
   RefPtr<CacheWorkerHolder> workerHolder = new CacheWorkerHolder(aBehavior);
-  if (NS_WARN_IF(!workerHolder->HoldWorker(aWorkerPrivate, Terminating))) {
+  if (NS_WARN_IF(!workerHolder->HoldWorker(aWorkerPrivate, Canceling))) {
     return nullptr;
   }
 
@@ -95,7 +95,7 @@ CacheWorkerHolder::Notify(WorkerStatus aStatus)
 
   
   
-  if (aStatus < Terminating || mNotified) {
+  if (aStatus < Canceling || mNotified) {
     return true;
   }
 

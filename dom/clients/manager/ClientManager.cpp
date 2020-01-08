@@ -67,7 +67,7 @@ ClientManager::ClientManager()
     
     
     workerHolderToken =
-      WorkerHolderToken::Create(workerPrivate, Terminating,
+      WorkerHolderToken::Create(workerPrivate, Canceling,
                                 WorkerHolderToken::AllowIdleShutdownStart);
     if (NS_WARN_IF(!workerHolderToken)) {
       Shutdown();

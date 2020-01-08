@@ -31,8 +31,6 @@ class WorkerPrivate;
 
 
 
-
-
 enum WorkerStatus
 {
   
@@ -47,11 +45,6 @@ enum WorkerStatus
   
   
   Closing,
-
-  
-  
-  
-  Terminating,
 
   
   

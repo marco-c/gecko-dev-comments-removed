@@ -1462,7 +1462,7 @@ gfxUtils::ThreadSafeGetFeatureStatus(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
                                    status);
 
     ErrorResult rv;
-    runnable->Dispatch(dom::WorkerStatus::Terminating, rv);
+    runnable->Dispatch(dom::WorkerStatus::Canceling, rv);
     if (rv.Failed()) {
         
         
