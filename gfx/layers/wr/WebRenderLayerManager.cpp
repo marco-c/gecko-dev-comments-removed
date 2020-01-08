@@ -364,8 +364,7 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
       
       
       
-      WrBridge()->UpdateResources(mAsyncResourceUpdates.ref(),
-                                   false);
+      WrBridge()->UpdateResources(mAsyncResourceUpdates.ref());
     }
     mAsyncResourceUpdates.reset();
   }
@@ -761,8 +760,7 @@ WebRenderLayerManager::FlushAsyncResourceUpdates()
   }
 
   if (!IsDestroyed() && WrBridge()) {
-    WrBridge()->UpdateResources(mAsyncResourceUpdates.ref(),
-                                 true);
+    WrBridge()->UpdateResources(mAsyncResourceUpdates.ref());
   }
 
   mAsyncResourceUpdates.reset();
