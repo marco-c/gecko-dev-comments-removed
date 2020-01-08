@@ -188,14 +188,12 @@ void AsyncCompositionManager::ComputeRotation() {
   }
 }
 
-#ifdef DEBUG
 static void GetBaseTransform(Layer* aLayer, Matrix4x4* aTransform) {
   
   *aTransform = (aLayer->AsHostLayer()->GetShadowTransformSetByAnimation()
                      ? aLayer->GetLocalTransform()
                      : aLayer->GetTransform());
 }
-#endif
 
 static void TransformClipRect(
     Layer* aLayer, const ParentLayerToParentLayerMatrix4x4& aTransform) {
@@ -277,7 +275,6 @@ static void TranslateShadowLayer(
   }
 }
 
-#ifdef DEBUG
 static void AccumulateLayerTransforms(Layer* aLayer, Layer* aAncestor,
                                       Matrix4x4& aMatrix) {
   
@@ -287,7 +284,6 @@ static void AccumulateLayerTransforms(Layer* aLayer, Layer* aAncestor,
     aMatrix *= transform;
   }
 }
-#endif
 
 static LayerPoint GetLayerFixedMarginsOffset(
     Layer* aLayer, const ScreenMargin& aFixedLayerMargins) {
@@ -405,12 +401,6 @@ void AsyncCompositionManager::AlignFixedAndStickyLayers(
     const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
     const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
     const ScreenMargin& aFixedLayerMargins, ClipPartsCache* aClipPartsCache) {
-  
-  
-  if (aCurrentTransformForRoot.IsSingular()) {
-    return;
-  }
-
   Layer* layer = aStartTraversalAt;
   bool needsAsyncTransformUnapplied = false;
   if (Maybe<ScrollableLayerGuid::ViewID> fixedTo = IsFixedOrSticky(layer)) {
@@ -437,17 +427,34 @@ void AsyncCompositionManager::AlignFixedAndStickyLayers(
   
 
   
-  
-  
-#ifdef DEBUG
   Matrix4x4 ancestorTransform;
   if (layer != aTransformedSubtreeRoot) {
     AccumulateLayerTransforms(layer->GetParent(), aTransformedSubtreeRoot,
                               ancestorTransform);
   }
   ancestorTransform.NudgeToIntegersFixedEpsilon();
-  MOZ_ASSERT(ancestorTransform.IsIdentity());
-#endif
+
+  
+  
+  
+  if (layer->GetIsFixedPosition()) {
+    MOZ_ASSERT(ancestorTransform.IsIdentity());
+  }
+
+  
+  
+  
+  
+  auto oldCumulativeTransform = ViewAs<LayerToParentLayerMatrix4x4>(
+      ancestorTransform * aPreviousTransformForRoot.ToUnknownMatrix());
+  auto newCumulativeTransform = ViewAs<LayerToParentLayerMatrix4x4>(
+      ancestorTransform * aCurrentTransformForRoot.ToUnknownMatrix());
+
+  
+  
+  if (newCumulativeTransform.IsSingular()) {
+    return;
+  }
 
   
   
@@ -478,9 +485,9 @@ void AsyncCompositionManager::AlignFixedAndStickyLayers(
   
   
   ParentLayerPoint offsetAnchorInSubtreeRootSpace =
-      aPreviousTransformForRoot.TransformPoint(offsetAnchor);
+      oldCumulativeTransform.TransformPoint(offsetAnchor);
   LayerPoint transformedAnchor =
-      aCurrentTransformForRoot.Inverse().TransformPoint(
+      newCumulativeTransform.Inverse().TransformPoint(
           offsetAnchorInSubtreeRootSpace);
 
   
@@ -533,7 +540,7 @@ void AsyncCompositionManager::AlignFixedAndStickyLayers(
     
     LayerPoint newTransformedAnchor = unconsumedTranslation + anchor;
     ParentLayerPoint newTransformedAnchorInSubtreeRootSpace =
-        aPreviousTransformForRoot.TransformPoint(newTransformedAnchor);
+        oldCumulativeTransform.TransformPoint(newTransformedAnchor);
     LayerToParentLayerMatrix4x4 newTransform = aPreviousTransformForRoot;
     newTransform.PostTranslate(newTransformedAnchorInSubtreeRootSpace -
                                offsetAnchorInSubtreeRootSpace);
