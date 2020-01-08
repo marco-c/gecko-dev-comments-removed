@@ -1383,11 +1383,23 @@ void FetchDriver::SetController(
 void FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const {
   MOZ_ASSERT(aChannel);
 
+  
+  
+  
+  
+  
+  nsTArray<nsCString> headersSet;
+
   AutoTArray<InternalHeaders::Entry, 5> headers;
   mRequest->Headers()->GetEntries(headers);
   bool hasAccept = false;
   for (uint32_t i = 0; i < headers.Length(); ++i) {
-    if (!hasAccept && headers[i].mName.EqualsLiteral("accept")) {
+    bool alreadySet = headersSet.Contains(headers[i].mName);
+    if (!alreadySet) {
+      headersSet.AppendElement(headers[i].mName);
+    }
+
+    if (!hasAccept && headers[i].mName.EqualsIgnoreCase("accept")) {
       hasAccept = true;
     }
     if (headers[i].mValue.IsEmpty()) {
@@ -1396,7 +1408,7 @@ void FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const {
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     } else {
       DebugOnly<nsresult> rv = aChannel->SetRequestHeader(
-          headers[i].mName, headers[i].mValue, false );
+          headers[i].mName, headers[i].mValue, alreadySet );
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
