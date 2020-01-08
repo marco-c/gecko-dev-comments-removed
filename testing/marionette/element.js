@@ -1153,22 +1153,39 @@ element.isObscured = function(el) {
 
 
 
-element.getInViewCentrePoint = function(rect, win) {
-  const {max, min} = Math;
 
-  let x = {
+
+
+
+
+
+
+
+
+
+
+
+
+element.getInViewCentrePoint = function(rect, win) {
+  const {floor, max, min} = Math;
+
+  
+  let visible = {
     left: max(0, min(rect.x, rect.x + rect.width)),
     right: min(win.innerWidth, max(rect.x, rect.x + rect.width)),
-  };
-  let y = {
     top: max(0, min(rect.y, rect.y + rect.height)),
     bottom: min(win.innerHeight, max(rect.y, rect.y + rect.height)),
   };
 
-  return {
-    x: (x.left + x.right) / 2,
-    y: (y.top + y.bottom) / 2,
-  };
+  
+  let x = (visible.left + visible.right) / 2.0;
+  let y = (visible.top + visible.bottom) / 2.0;
+
+  
+  x = floor(x);
+  y = floor(y);
+
+  return {x, y};
 };
 
 
