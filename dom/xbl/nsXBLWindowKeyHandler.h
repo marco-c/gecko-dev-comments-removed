@@ -89,9 +89,6 @@ protected:
              const mozilla::WidgetKeyboardEvent& aWidgetKeyboardEvent) const;
 
   
-  static void EnsureSpecialDocInfo();
-
-  
   
   nsresult EnsureHandlers();
 
@@ -126,12 +123,7 @@ protected:
   nsWeakPtr              mWeakPtrForElement;
   mozilla::dom::EventTarget* mTarget; 
 
-  
-  
   nsXBLPrototypeHandler* mHandler;     
-
-  
-  static uint32_t sRefCnt;
 };
 
 already_AddRefed<nsXBLWindowKeyHandler>
