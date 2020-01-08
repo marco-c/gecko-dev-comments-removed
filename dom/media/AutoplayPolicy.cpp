@@ -60,6 +60,18 @@ static bool IsActivelyCapturingOrHasAPermission(nsPIDOMWindowInner* aWindow) {
           nsContentUtils::IsExactSitePermAllow(principal, "screen"));
 }
 
+static bool IsSiteInAutoplayWhiteList(const Document* aDocument) {
+  return aDocument ? nsContentUtils::IsExactSitePermAllow(
+                         aDocument->NodePrincipal(), "autoplay-media")
+                   : false;
+}
+
+static bool IsSiteInAutoplayBlackList(const Document* aDocument) {
+  return aDocument ? nsContentUtils::IsExactSitePermDeny(
+                         aDocument->NodePrincipal(), "autoplay-media")
+                   : false;
+}
+
 static bool IsWindowAllowedToPlay(nsPIDOMWindowInner* aWindow) {
   if (!aWindow) {
     return false;
@@ -89,13 +101,6 @@ static bool IsWindowAllowedToPlay(nsPIDOMWindowInner* aWindow) {
   Document* approver = ApproverDocOf(*aWindow->GetExtantDoc());
   if (!approver) {
     return false;
-  }
-
-  if (nsContentUtils::IsExactSitePermAllow(approver->NodePrincipal(),
-                                           "autoplay-media")) {
-    AUTOPLAY_LOG(
-        "Allow autoplay as document has permanent autoplay permission.");
-    return true;
   }
 
   if (approver->HasBeenUserGestureActivated()) {
@@ -169,28 +174,40 @@ static bool IsEnableBlockingWebAudioByUserGesturePolicy() {
 }
 
 static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
-  const uint32_t autoplayDefault = DefaultAutoplayBehaviour();
   
-  
-  if (!Preferences::GetBool("media.autoplay.enabled.user-gestures-needed",
-                            false)) {
-    
-    return (autoplayDefault == nsIAutoplay::ALLOWED || aElement.IsBlessed() ||
-            EventStateManager::IsHandlingUserInput());
-  }
+
+
+
+
+
+
+
 
   if (IsMediaElementAllowedToPlay(aElement)) {
     return true;
   }
 
-  if (IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow())) {
-    AUTOPLAY_LOG("Autoplay allowed as window is allowed to play, media %p.",
-                 &aElement);
+  Document* approver = ApproverDocOf(*aElement.OwnerDoc());
+  if (IsSiteInAutoplayWhiteList(approver)) {
+    AUTOPLAY_LOG(
+        "Allow autoplay as document has permanent autoplay permission.");
     return true;
   }
 
-  return IsMediaElementAllowedToPlay(aElement) ||
-         autoplayDefault == nsIAutoplay::ALLOWED;
+  if (DefaultAutoplayBehaviour() == nsIAutoplay::ALLOWED &&
+      !IsSiteInAutoplayBlackList(approver)) {
+    AUTOPLAY_LOG(
+        "Allow autoplay as global autoplay setting is allowing autoplay by "
+        "default.");
+    return true;
+  }
+
+  if (!Preferences::GetBool("media.autoplay.enabled.user-gestures-needed",
+                            false)) {
+    
+    return aElement.IsBlessed() || EventStateManager::IsHandlingUserInput();
+  }
+  return IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow());
 }
 
  bool AutoplayPolicy::IsAllowedToPlay(
@@ -203,11 +220,40 @@ static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
 
  bool AutoplayPolicy::IsAllowedToPlay(
     const AudioContext& aContext) {
-  if (!IsEnableBlockingWebAudioByUserGesturePolicy()) {
+  
+
+
+
+
+
+
+
+
+  if (aContext.IsOffline()) {
     return true;
   }
 
-  return IsAudioContextAllowedToPlay(aContext);
+  nsPIDOMWindowInner* window = aContext.GetParentObject();
+  Document* approver = aContext.GetParentObject() ?
+      ApproverDocOf(*(window->GetExtantDoc())) : nullptr;
+  if (IsSiteInAutoplayWhiteList(approver)) {
+    AUTOPLAY_LOG(
+        "Allow autoplay as document has permanent autoplay permission.");
+    return true;
+  }
+
+  if (DefaultAutoplayBehaviour() == nsIAutoplay::ALLOWED &&
+      !IsSiteInAutoplayBlackList(approver)) {
+    AUTOPLAY_LOG(
+        "Allow autoplay as global autoplay setting is allowing autoplay by "
+        "default.");
+    return true;
+  }
+
+  if (!IsEnableBlockingWebAudioByUserGesturePolicy()) {
+    return true;
+  }
+  return IsWindowAllowedToPlay(window);
 }
 
  DocumentAutoplayPolicy AutoplayPolicy::IsAllowedToPlay(
