@@ -1051,6 +1051,13 @@ StorageAccessPermissionPrompt.prototype = {
     let origins = new Set();
     while (perms.length) {
       let perm = perms.shift();
+      
+      
+      
+      if (perm.type != prefix &&
+          !perm.type.startsWith(`${prefix}^`)) {
+        continue;
+      }
       origins.add(perm.principal.origin);
     }
     return origins.size;
