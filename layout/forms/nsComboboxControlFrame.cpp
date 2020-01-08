@@ -1338,19 +1338,26 @@ protected:
 NS_IMPL_FRAMEARENA_HELPERS(nsComboboxDisplayFrame)
 
 void
-nsComboboxDisplayFrame::Reflow(nsPresContext*           aPresContext,
-                               ReflowOutput&     aDesiredSize,
+nsComboboxDisplayFrame::Reflow(nsPresContext*     aPresContext,
+                               ReflowOutput&      aDesiredSize,
                                const ReflowInput& aReflowInput,
-                               nsReflowStatus&          aStatus)
+                               nsReflowStatus&    aStatus)
 {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   ReflowInput state(aReflowInput);
   if (state.ComputedBSize() == NS_INTRINSICSIZE) {
+    float inflation = nsLayoutUtils::FontSizeInflationFor(mComboBox);
     
     
     
-    state.SetComputedBSize(mComboBox->mListControlFrame->GetBSizeOfARow());
+    
+    auto lh = ReflowInput::CalcLineHeight(mComboBox->GetContent(),
+                                          mComboBox->Style(),
+                                          aPresContext,
+                                          NS_UNCONSTRAINEDSIZE,
+                                          inflation);
+    state.SetComputedBSize(lh);
   }
   WritingMode wm = aReflowInput.GetWritingMode();
   nscoord computedISize = mComboBox->mDisplayISize -
