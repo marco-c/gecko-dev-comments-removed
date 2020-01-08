@@ -44,7 +44,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Downloads: "resource://gre/modules/Downloads.jsm",
   DownloadUIHelper: "resource://gre/modules/DownloadUIHelper.jsm",
   DownloadUtils: "resource://gre/modules/DownloadUtils.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+});
+
+XPCOMUtils.defineLazyServiceGetters(this, {
+  gClipboardHelper: ["@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper"],
 });
 
 XPCOMUtils.defineLazyGetter(this, "DownloadsLogger", () => {
@@ -277,6 +282,30 @@ var DownloadsCommon = {
       return DownloadsCommon.DOWNLOAD_CANCELED;
     }
     return DownloadsCommon.DOWNLOAD_NOTSTARTED;
+  },
+
+  
+
+
+  async deleteDownload(download) {
+    
+    
+    
+    try {
+      await PlacesUtils.history.remove(download.source.url);
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+    let list = await Downloads.getList(Downloads.ALL);
+    await list.remove(download);
+    await download.finalize(true);
+  },
+
+  
+
+
+  copyDownloadLink(download) {
+    gClipboardHelper.copyString(download.source.url);
   },
 
   

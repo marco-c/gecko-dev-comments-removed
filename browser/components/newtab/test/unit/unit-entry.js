@@ -5,15 +5,6 @@ import chaiJsonSchema from "chai-json-schema";
 import enzyme from "enzyme";
 enzyme.configure({adapter: new Adapter()});
 
-class DownloadElementShell {
-  downloadsCmd_open() {}
-  downloadsCmd_show() {}
-  downloadsCmd_openReferrer() {}
-  downloadsCmd_delete() {}
-  get sizeStrings() { return {stateLabel: "1.5 MB"}; }
-  displayName() {}
-}
-
 
 const origConsoleError = console.error; 
 console.error = function(msg, ...args) { 
@@ -104,7 +95,14 @@ const TEST_GLOBAL = {
   PluralForm: {get() {}},
   Preferences: FakePrefs,
   PrivateBrowsingUtils: {isWindowPrivate: () => false},
-  DownloadsViewUI: {DownloadElementShell},
+  DownloadsViewUI: {
+    getDisplayName: () => "filename.ext",
+    getSizeWithUnits: () => "1.5 MB",
+  },
+  FileUtils: {
+    
+    File: function() {}, 
+  },
   Services: {
     locale: {
       get appLocaleAsLangTag() { return "en-US"; },

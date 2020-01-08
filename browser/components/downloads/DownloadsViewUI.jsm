@@ -22,7 +22,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DownloadsCommon: "resource:///modules/DownloadsCommon.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
-  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
 });
 
 var gDownloadElementButtons = {
@@ -74,6 +73,31 @@ var DownloadsViewUI = {
 
   isCommandName(name) {
     return name.startsWith("cmd_") || name.startsWith("downloadsCmd_");
+  },
+
+  
+
+
+
+
+
+  getDisplayName(download) {
+    return download.target.path ? OS.Path.basename(download.target.path)
+                                : download.source.url;
+  },
+
+  
+
+
+
+
+  getSizeWithUnits(download) {
+    if (download.target.size === undefined) {
+      return "";
+    }
+
+    let [size, unit] = DownloadUtils.convertByteUnits(download.target.size);
+    return DownloadsCommon.strings.sizeWithUnits(size, unit);
   },
 };
 
@@ -145,40 +169,6 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
            (this.download.succeeded ? "&state=normal" : "");
   },
 
-  
-
-
-
-
-  get displayName() {
-    if (!this.download.target.path) {
-      return this.download.source.url;
-    }
-    return OS.Path.basename(this.download.target.path);
-  },
-
-  
-
-
-
-
-
-  get sizeStrings() {
-    let s = DownloadsCommon.strings;
-    let sizeStrings = {};
-
-    if (this.download.target.size !== undefined) {
-      let [size, unit] = DownloadUtils.convertByteUnits(this.download.target.size);
-      sizeStrings.stateLabel = s.sizeWithUnits(size, unit);
-      sizeStrings.status = s.statusSeparator(s.stateCompleted, sizeStrings.stateLabel);
-    } else {
-      
-      sizeStrings.stateLabel = s.sizeUnknown;
-      sizeStrings.status = s.stateCompleted;
-    }
-    return sizeStrings;
-  },
-
   get browserWindow() {
     return BrowserWindowTracker.getTopWindow();
   },
@@ -196,6 +186,55 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
                                          "progressmeter");
     }
     return this.__progressElement;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  showStatus(status, hoverStatus = status) {
+    this.element.setAttribute("status", status);
+    this.element.setAttribute("hoverStatus", hoverStatus);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  showStatusWithDetails(stateLabel, hoverStatus) {
+    let [displayHost] =
+        DownloadUtils.getURIHost(this.download.source.referrer ||
+                                 this.download.source.url);
+    let [displayDate] =
+        DownloadUtils.getReadableDates(new Date(this.download.endTime));
+
+    let firstPart =
+        DownloadsCommon.strings.statusSeparator(stateLabel, displayHost);
+    let fullStatus =
+        DownloadsCommon.strings.statusSeparator(firstPart, displayDate);
+
+    if (!this.isPanel) {
+      this.showStatus(fullStatus);
+    } else {
+      this.showStatus(stateLabel, hoverStatus || fullStatus);
+    }
   },
 
   showButton(type) {
@@ -217,98 +256,174 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     this.element.setAttribute("buttonhidden", "true");
   },
 
+  lastEstimatedSecondsLeft: Infinity,
+
   
 
 
 
-
   _updateState() {
-    this.element.setAttribute("displayName", this.displayName);
+    this.element.setAttribute("displayName",
+                              DownloadsViewUI.getDisplayName(this.download));
     this.element.setAttribute("image", this.image);
     this.element.setAttribute("state",
                               DownloadsCommon.stateOfDownload(this.download));
 
-    
-    
     if (!this.download.stopped) {
-      this.showButton("cancel");
-    } else if (this.download.succeeded) {
       
       
-    } else if (this.download.error) {
-      if (this.download.error.becauseBlockedByParentalControls) {
-        this.hideButton();
-      } else if (this.download.error.becauseBlockedByReputationCheck) {
-        
-        
-      } else {
-        this.showButton("retry");
-      }
-    } else if (this.download.canceled) {
-      if (this.download.hasPartialData) {
-        this.showButton("cancel");
-      } else {
-        this.showButton("retry");
-      }
-    } else {
+      
       this.showButton("cancel");
-    }
-
-    if (!this.download.succeeded && this.download.error &&
-        this.download.error.becauseBlockedByReputationCheck) {
-      this.element.setAttribute("verdict",
-                                this.download.error.reputationCheckVerdict);
-    } else {
-      this.element.removeAttribute("verdict");
     }
 
     
     this.lastEstimatedSecondsLeft = Infinity;
 
-    this._updateProgress();
+    this._updateStateInner();
   },
 
   
 
 
 
-  _updateProgress() {
-    
-    
-    if (this.download.succeeded) {
-      if (this.download.target.exists) {
-        this.element.setAttribute("exists", "true");
-        this.showButton("show");
-      } else {
-        this.element.removeAttribute("exists");
-        this.hideButton();
-      }
-    } else if (this.download.error &&
-               this.download.error.becauseBlockedByReputationCheck) {
-      if (!this.download.hasBlockedData) {
-        this.hideButton();
-      } else if (this.isPanel) {
-        this.showButton("subviewOpenOrRemoveFile");
-      } else {
-        switch (this.download.error.reputationCheckVerdict) {
-          case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
-            this.showButton("askOpenOrRemoveFile");
-            break;
-          case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
-            this.showButton("askRemoveFileOrAllow");
-            break;
-          default: 
-            this.showButton("removeFile");
-            break;
+
+
+  _updateStateInner() {
+    let progressPaused = false;
+
+    if (!this.download.stopped) {
+      
+      
+      
+      let totalBytes = this.download.hasProgress ? this.download.totalBytes
+                                                 : -1;
+      let [status, newEstimatedSecondsLeft] = DownloadUtils.getDownloadStatus(
+                                              this.download.currentBytes,
+                                              totalBytes,
+                                              this.download.speed,
+                                              this.lastEstimatedSecondsLeft);
+      this.lastEstimatedSecondsLeft = newEstimatedSecondsLeft;
+      this.showStatus(status);
+    } else {
+      let verdict = "";
+
+      
+      
+      
+      if (this.download.succeeded) {
+        if (this.download.target.exists) {
+          
+          this.element.setAttribute("exists", "true");
+          let sizeWithUnits = DownloadsViewUI.getSizeWithUnits(this.download);
+          if (this.isPanel) {
+            
+            
+            
+            
+            let status = DownloadsCommon.strings.stateCompleted;
+            if (sizeWithUnits) {
+              status = DownloadsCommon.strings.statusSeparator(status,
+                                                               sizeWithUnits);
+            }
+            this.showStatus(status,
+                            this.string("download-open-file-description"));
+          } else {
+            
+            
+            this.showStatusWithDetails(sizeWithUnits ||
+                                       DownloadsCommon.strings.sizeUnknown);
+          }
+          this.showButton("show");
+        } else {
+          
+          
+          this.element.removeAttribute("exists");
+          let label = DownloadsCommon.strings.fileMovedOrMissing;
+          this.showStatusWithDetails(label, label);
+          this.hideButton();
         }
+      } else if (this.download.error) {
+        if (this.download.error.becauseBlockedByParentalControls) {
+          
+          this.showStatusWithDetails(
+            DownloadsCommon.strings.stateBlockedParentalControls);
+          this.hideButton();
+        } else if (this.download.error.becauseBlockedByReputationCheck) {
+          verdict = this.download.error.reputationCheckVerdict;
+          let hover = "";
+          if (!this.download.hasBlockedData) {
+            
+            this.hideButton();
+          } else if (this.isPanel) {
+            
+            
+            
+            this.showButton("subviewOpenOrRemoveFile");
+            hover = this.string("download-show-more-information-description");
+          } else {
+            
+            
+            switch (verdict) {
+              case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
+                this.showButton("askOpenOrRemoveFile");
+                break;
+              case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+                this.showButton("askRemoveFileOrAllow");
+                break;
+              default: 
+                this.showButton("removeFile");
+                break;
+            }
+          }
+          this.showStatusWithDetails(this.rawBlockedTitleAndDetails[0], hover);
+        } else {
+          
+          this.showStatusWithDetails(DownloadsCommon.strings.stateFailed);
+          this.showButton("retry");
+        }
+      } else if (this.download.canceled) {
+        if (this.download.hasPartialData) {
+          
+          
+          
+          let totalBytes =
+              this.download.hasProgress ? this.download.totalBytes : -1;
+          let transfer =
+              DownloadUtils.getTransferTotal(this.download.currentBytes,
+                                             totalBytes);
+          this.showStatus(DownloadsCommon.strings.statusSeparatorBeforeNumber(
+                          DownloadsCommon.strings.statePaused, transfer));
+          this.showButton("cancel");
+          progressPaused = true;
+        } else {
+          
+          this.showStatusWithDetails(DownloadsCommon.strings.stateCanceled);
+          this.showButton("retry");
+        }
+      } else {
+        
+        
+        
+        
+        
+        this.showStatus(DownloadsCommon.strings.stateStarting);
+        this.showButton("cancel");
       }
+
+      
+      
+      if (verdict) {
+        this.element.setAttribute("verdict", verdict);
+      } else {
+        this.element.removeAttribute("verdict");
+      }
+
+      this.element.classList.toggle("temporary-block",
+                                    !!this.download.hasBlockedData);
     }
 
     
     
-    this.element.classList.toggle("temporary-block",
-                                  !!this.download.hasBlockedData);
-
     
     if (this.download.hasProgress) {
       this.element.setAttribute("progressmode", "normal");
@@ -317,8 +432,7 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
       this.element.setAttribute("progressmode", "undetermined");
     }
 
-    if (this.download.stopped && this.download.canceled &&
-        this.download.hasPartialData) {
+    if (progressPaused) {
       this.element.setAttribute("progresspaused", "true");
     } else {
       this.element.removeAttribute("progresspaused");
@@ -330,97 +444,6 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
       event.initEvent("ValueChange", true, true);
       this._progressElement.dispatchEvent(event);
     }
-
-    let labels = this.statusLabels;
-    if (this.isPanel) {
-      this.element.setAttribute("status", labels.status);
-      this.element.setAttribute("hoverStatus", labels.hoverStatus);
-    } else {
-      this.element.setAttribute("status", labels.fullStatus);
-      this.element.setAttribute("fullStatus", labels.fullStatus);
-    }
-  },
-
-  lastEstimatedSecondsLeft: Infinity,
-
-  
-
-
-
-  get statusLabels() {
-    let s = DownloadsCommon.strings;
-
-    let status = "";
-    let hoverStatus = "";
-    let fullStatus = "";
-
-    if (!this.download.stopped) {
-      let totalBytes = this.download.hasProgress ? this.download.totalBytes
-                                                 : -1;
-      let newEstimatedSecondsLeft;
-      [status, newEstimatedSecondsLeft] = DownloadUtils.getDownloadStatus(
-                                          this.download.currentBytes,
-                                          totalBytes,
-                                          this.download.speed,
-                                          this.lastEstimatedSecondsLeft);
-      this.lastEstimatedSecondsLeft = newEstimatedSecondsLeft;
-      hoverStatus = status;
-    } else if (this.download.canceled && this.download.hasPartialData) {
-      let totalBytes = this.download.hasProgress ? this.download.totalBytes
-                                                 : -1;
-      let transfer = DownloadUtils.getTransferTotal(this.download.currentBytes,
-                                                    totalBytes);
-
-      
-      
-      status = s.statusSeparatorBeforeNumber(s.statePaused, transfer);
-      hoverStatus = status;
-    } else if (!this.download.succeeded && !this.download.canceled &&
-               !this.download.error) {
-      status = s.stateStarting;
-      hoverStatus = status;
-    } else {
-      let stateLabel;
-
-      if (this.download.succeeded && !this.download.target.exists) {
-        stateLabel = s.fileMovedOrMissing;
-        hoverStatus = stateLabel;
-      } else if (this.download.succeeded) {
-        
-        let sizeStrings = this.sizeStrings;
-        stateLabel = sizeStrings.stateLabel;
-        status = sizeStrings.status;
-        hoverStatus = this.string("download-open-file-description");
-      } else if (this.download.canceled) {
-        stateLabel = s.stateCanceled;
-      } else if (this.download.error.becauseBlockedByParentalControls) {
-        stateLabel = s.stateBlockedParentalControls;
-      } else if (this.download.error.becauseBlockedByReputationCheck) {
-        stateLabel = this.rawBlockedTitleAndDetails[0];
-        if (this.download.hasBlockedData) {
-          hoverStatus = this.string(
-            "download-show-more-information-description");
-        }
-      } else {
-        stateLabel = s.stateFailed;
-      }
-
-      let referrer = this.download.source.referrer || this.download.source.url;
-      let [displayHost ] = DownloadUtils.getURIHost(referrer);
-
-      let date = new Date(this.download.endTime);
-      let [displayDate ] = DownloadUtils.getReadableDates(date);
-
-      let firstPart = s.statusSeparator(stateLabel, displayHost);
-      fullStatus = s.statusSeparator(firstPart, displayDate);
-      status = status || stateLabel;
-    }
-
-    return {
-      status,
-      hoverStatus: hoverStatus || fullStatus,
-      fullStatus: fullStatus || status,
-    };
   },
 
   
@@ -617,18 +640,6 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
   },
 
   cmd_delete() {
-    (async () => {
-      
-      
-      
-      try {
-        await PlacesUtils.history.remove(this.download.source.url);
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-      let list = await Downloads.getList(Downloads.ALL);
-      await list.remove(this.download);
-      await this.download.finalize(true);
-    })().catch(Cu.reportError);
+    DownloadsCommon.deleteDownload(this.download).catch(Cu.reportError);
   },
 };
