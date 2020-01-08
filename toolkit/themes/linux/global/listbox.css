@@ -44,29 +44,6 @@ listbox:focus > listitem[selected="true"] {
 
 
 
-listheader { 
-  -moz-appearance: treeheadercell;
-  -moz-box-align: center;
-  background-color: -moz-Dialog;
-  color: -moz-DialogText;
-}
-
-.listheader-icon {
-  margin-inline-end: 2px;
-}
-
-.listheader-label {
-  margin: 0 !important;
-}
-
-
-
-.listheader-sortdirection {
-  -moz-appearance: treeheadersortarrow;
-}
-
-
-
 .listcell-label {
   margin: 0 !important;
   padding-top: 0;
