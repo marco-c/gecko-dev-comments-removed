@@ -61,16 +61,7 @@ struct BreakpointPosition
     ConsoleMessage,
 
     
-    WarpTarget,
-
-    
-    
-    
-    ForcedPause,
-
-    
-    
-    PositionChange
+    WarpTarget
   ));
 
   Kind mKind;
@@ -123,8 +114,6 @@ struct BreakpointPosition
     case NewScript: return "NewScript";
     case ConsoleMessage: return "ConsoleMessage";
     case WarpTarget: return "WarpTarget";
-    case ForcedPause: return "ForcedPause";
-    case PositionChange: return "PositionChange";
     }
     MOZ_CRASH("Bad BreakpointPosition kind");
   }
@@ -192,6 +181,14 @@ struct ExecutionPoint
 
 
 typedef InfallibleVector<char16_t> CharBuffer;
+
+
+
+
+bool DebuggerOnPause();
+
+
+void DebuggerOnSwitchChild();
 
 
 

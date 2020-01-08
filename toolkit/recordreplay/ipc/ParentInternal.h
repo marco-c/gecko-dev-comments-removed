@@ -59,9 +59,6 @@ static Monitor* gMonitor;
 void Resume(bool aForward);
 
 
-void Pause();
-
-
 void TimeWarp(const js::ExecutionPoint& target);
 
 
@@ -76,6 +73,13 @@ void ClearBreakpoints();
 
 
 void MaybeSwitchToReplayingChild();
+
+
+void WaitUntilActiveChildIsPaused();
+
+
+
+void MarkActiveChildExplicitPause();
 
 
 

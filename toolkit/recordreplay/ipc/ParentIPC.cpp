@@ -585,9 +585,6 @@ SpawnReplayingChildren()
 }
 
 
-static void HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind);
-
-
 static void
 SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
 {
@@ -614,9 +611,8 @@ SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
   }
 
   
-  
   if (aChild->IsRecording() != oldActiveChild->IsRecording()) {
-    HitBreakpointsWithKind(js::BreakpointPosition::Kind::PositionChange);
+    js::DebuggerOnSwitchChild();
   }
 }
 
@@ -835,7 +831,7 @@ HasSavedCheckpointsInRange(ChildProcessInfo* aChild, size_t aStart, size_t aEnd)
   return true;
 }
 
-static void
+void
 MarkActiveChildExplicitPause()
 {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
@@ -874,6 +870,20 @@ ActiveChildTargetCheckpoint()
     return Some(gActiveChild->RewindTargetCheckpoint());
   }
   return Nothing();
+}
+
+void
+WaitUntilActiveChildIsPaused()
+{
+  if (gActiveChild->IsPaused()) {
+    
+    
+    
+    js::DebuggerOnPause();
+  } else {
+    MaybeCreateCheckpointInRecordingChild();
+    gActiveChild->WaitUntilPaused();
+  }
 }
 
 void
@@ -963,8 +973,7 @@ RecvDebuggerResponse(const DebuggerResponseMessage& aMsg)
 void
 SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse)
 {
-  MaybeCreateCheckpointInRecordingChild();
-  gActiveChild->WaitUntilPaused();
+  MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   MOZ_RELEASE_ASSERT(!gResponseBuffer);
   gResponseBuffer = aResponse;
@@ -1008,15 +1017,6 @@ ClearBreakpoints()
   }
 }
 
-
-
-static bool gChildExecuteForward = true;
-static bool gChildExecuteBackward = false;
-
-
-
-static bool gResumeForwardOrBackward = false;
-
 static void
 MaybeSendRepaintMessage()
 {
@@ -1052,14 +1052,9 @@ MaybeSendRepaintMessage()
 void
 Resume(bool aForward)
 {
-  gActiveChild->WaitUntilPaused();
+  MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   MaybeSendRepaintMessage();
-
-  
-  gResumeForwardOrBackward = false;
-  gChildExecuteForward = aForward;
-  gChildExecuteBackward = !aForward;
 
   
   
@@ -1069,7 +1064,7 @@ Resume(bool aForward)
     
     if (targetCheckpoint == CheckpointId::Invalid) {
       SendMessageToUIProcess("HitRecordingBeginning");
-      HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause);
+      js::DebuggerOnPause();
       return;
     }
 
@@ -1096,7 +1091,7 @@ Resume(bool aForward)
       MOZ_RELEASE_ASSERT(!gActiveChild->IsRecording());
       if (!gRecordingChild) {
         SendMessageToUIProcess("HitRecordingEndpoint");
-        HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause);
+        js::DebuggerOnPause();
         return;
       }
 
@@ -1116,12 +1111,7 @@ Resume(bool aForward)
 void
 TimeWarp(const js::ExecutionPoint& aTarget)
 {
-  gActiveChild->WaitUntilPaused();
-
-  
-  gResumeForwardOrBackward = false;
-  gChildExecuteForward = false;
-  gChildExecuteBackward = false;
+  MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   
   
@@ -1161,31 +1151,6 @@ TimeWarp(const js::ExecutionPoint& aTarget)
 
   gActiveChild->WaitUntilPaused();
   SendMessageToUIProcess("TimeWarpFinished");
-  HitBreakpointsWithKind(js::BreakpointPosition::Kind::ForcedPause);
-}
-
-void
-Pause()
-{
-  MaybeCreateCheckpointInRecordingChild();
-  gActiveChild->WaitUntilPaused();
-
-  
-  
-  gChildExecuteForward = false;
-  gChildExecuteBackward = false;
-
-  MarkActiveChildExplicitPause();
-}
-
-static void
-ResumeForwardOrBackward()
-{
-  MOZ_RELEASE_ASSERT(!gChildExecuteForward || !gChildExecuteBackward);
-
-  if (gResumeForwardOrBackward && (gChildExecuteForward || gChildExecuteBackward)) {
-    Resume(gChildExecuteForward);
-  }
 }
 
 void
@@ -1197,7 +1162,6 @@ ResumeBeforeWaitingForIPDLReply()
   
   
   if (gActiveChild->IsPaused()) {
-    MOZ_RELEASE_ASSERT(gChildExecuteForward);
     Resume(true);
   }
 }
@@ -1209,91 +1173,28 @@ RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
   MaybeUpdateGraphicsAtCheckpoint(aMsg.mCheckpointId);
 
   
-  HitBreakpointsWithKind(js::BreakpointPosition::Kind::PositionChange);
-
-  
   
   
   if (MainThreadIsWaitingForIPDLReply()) {
-    MOZ_RELEASE_ASSERT(gChildExecuteForward);
     Resume(true);
-  } else if (!gResumeForwardOrBackward) {
-    gResumeForwardOrBackward = true;
-    gMainThreadMessageLoop->PostTask(NewRunnableFunction("ResumeForwardOrBackward",
-                                                         ResumeForwardOrBackward));
+  } else if (!js::DebuggerOnPause()) {
+    gMainThreadMessageLoop->PostTask(NewRunnableFunction("RecvHitCheckpointResume", Resume, true));
   }
-}
-
-static void
-HitBreakpoint(uint32_t* aBreakpoints, size_t aNumBreakpoints,
-              js::BreakpointPosition::Kind aSharedKind)
-{
-  if (!gActiveChild->IsPaused()) {
-    delete[] aBreakpoints;
-    return;
-  }
-
-  switch (aSharedKind) {
-  case js::BreakpointPosition::ForcedPause:
-    MarkActiveChildExplicitPause();
-    MOZ_FALLTHROUGH;
-  case js::BreakpointPosition::PositionChange:
-    
-    for (size_t i = 0; i < aNumBreakpoints; i++) {
-      AutoSafeJSContext cx;
-      if (!js::HitBreakpoint(cx, aBreakpoints[i])) {
-        Print("Warning: hitBreakpoint hook threw an exception.\n");
-      }
-    }
-    break;
-  default:
-    gResumeForwardOrBackward = true;
-
-    MarkActiveChildExplicitPause();
-
-    
-    
-    for (size_t i = 0; i < aNumBreakpoints && gResumeForwardOrBackward; i++) {
-      AutoSafeJSContext cx;
-      if (!js::HitBreakpoint(cx, aBreakpoints[i])) {
-        Print("Warning: hitBreakpoint hook threw an exception.\n");
-      }
-    }
-
-    
-    
-    if (gResumeForwardOrBackward) {
-      ResumeForwardOrBackward();
-    }
-    break;
-  }
-
-  delete[] aBreakpoints;
 }
 
 static void
 RecvHitBreakpoint(const HitBreakpointMessage& aMsg)
 {
-  uint32_t* breakpoints = new uint32_t[aMsg.NumBreakpoints()];
-  PodCopy(breakpoints, aMsg.Breakpoints(), aMsg.NumBreakpoints());
-  gMainThreadMessageLoop->PostTask(NewRunnableFunction("HitBreakpoint", HitBreakpoint,
-                                                       breakpoints, aMsg.NumBreakpoints(),
-                                                       js::BreakpointPosition::Invalid));
-}
-
-static void
-HitBreakpointsWithKind(js::BreakpointPosition::Kind aKind)
-{
-  Vector<uint32_t> breakpoints;
-  gActiveChild->GetMatchingInstalledBreakpoints([=](js::BreakpointPosition::Kind aInstalled) {
-      return aInstalled == aKind;
-    }, breakpoints);
-  if (!breakpoints.empty()) {
-    uint32_t* newBreakpoints = new uint32_t[breakpoints.length()];
-    PodCopy(newBreakpoints, breakpoints.begin(), breakpoints.length());
-    gMainThreadMessageLoop->PostTask(NewRunnableFunction("HitBreakpoint", HitBreakpoint,
-                                                         newBreakpoints, breakpoints.length(),
-                                                         aKind));
+  
+  
+  
+  
+  
+  
+  if (aMsg.mRecordingEndpoint) {
+    Resume(true);
+  } else if (!js::DebuggerOnPause()) {
+    gMainThreadMessageLoop->PostTask(NewRunnableFunction("RecvHitBreakpointResume", Resume, true));
   }
 }
 
