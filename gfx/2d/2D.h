@@ -1761,6 +1761,9 @@ public:
   static already_AddRefed<DrawTarget>
     CreateDualDrawTarget(DrawTarget *targetA, DrawTarget *targetB);
 
+  static already_AddRefed<SourceSurface>
+    CreateDualSourceSurface(SourceSurface *sourceA, SourceSurface *sourceB);
+
   
 
 
