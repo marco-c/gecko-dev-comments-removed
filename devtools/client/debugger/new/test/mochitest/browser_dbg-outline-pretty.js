@@ -11,7 +11,7 @@ function getNthItem(dbg, index) {
 
 
 add_task(async function () {
-  const dbg = await initDebugger("doc-scripts.html");
+  const dbg = await initDebugger("doc-scripts.html", "simple1");
   const {
     selectors: { getSelectedSource },
     getState

@@ -4,7 +4,7 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html");
+  const dbg = await initDebugger("doc-scripts.html", "simple2");
   let doc = dbg.win.document;
 
   await selectSource(dbg, "simple2");

@@ -12,7 +12,7 @@
 
 
 
-import { isDevelopment } from "devtools-environment";
+import { prefs } from "./prefs";
 
 
 
@@ -24,9 +24,7 @@ import { isDevelopment } from "devtools-environment";
 
 
 export function log(...args: any[]) {
-  if (!isDevelopment()) {
-    return;
+  if (prefs.logging) {
+    console.log(...args);
   }
-
-  console.log.apply(console, ["[log]", ...args]);
 }

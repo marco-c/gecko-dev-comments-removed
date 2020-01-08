@@ -14,7 +14,7 @@ async function previews(dbg, fnName, previews) {
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-preview.html");
+  const dbg = await initDebugger("doc-preview.html", "preview.js");
   await selectSource(dbg, "preview.js");
 
   await previews(dbg, "empties", [

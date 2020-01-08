@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react-redux"));
+		module.exports = factory(require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-redux"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"));
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/client/shared/vendor/react", "Services", "devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react-dom-factories", "devtools/client/shared/vendor/react-redux"], factory);
+		define(["devtools/client/shared/vendor/react", "Services", "devtools/client/shared/vendor/react-redux", "devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react-dom-factories"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react-redux")) : factory(root["devtools/client/shared/vendor/react"], root["Services"], root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/react-redux"]);
+		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-redux"), require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories")) : factory(root["devtools/client/shared/vendor/react"], root["Services"], root["devtools/client/shared/vendor/react-redux"], root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react-dom-factories"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_22__, __WEBPACK_EXTERNAL_MODULE_1758__, __WEBPACK_EXTERNAL_MODULE_1759__, __WEBPACK_EXTERNAL_MODULE_1763__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_22__, __WEBPACK_EXTERNAL_MODULE_3592__, __WEBPACK_EXTERNAL_MODULE_3642__, __WEBPACK_EXTERNAL_MODULE_3643__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -70,7 +70,7 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 2105);
+ 	return __webpack_require__(__webpack_require__.s = 3730);
  })
 
  ({
@@ -142,21 +142,35 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 
  }),
 
- 1758:
+ 22:
  (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_1758__;
+module.exports = __WEBPACK_EXTERNAL_MODULE_22__;
 
  }),
 
- 1759:
+ 3592:
  (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_1759__;
+module.exports = __WEBPACK_EXTERNAL_MODULE_3592__;
 
  }),
 
- 1760:
+ 3642:
+ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_3642__;
+
+ }),
+
+ 3643:
+ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_3643__;
+
+ }),
+
+ 3644:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -170,7 +184,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_1759__;
 const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 const tokenSplitRegex = /(\s|\'|\"|\\)+/;
 const ELLIPSIS = "\u2026";
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -589,7 +603,7 @@ module.exports = {
 
  }),
 
- 1762:
+ 3645:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -609,14 +623,7 @@ module.exports = {
 
  }),
 
- 1763:
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_1763__;
-
- }),
-
- 1767:
+ 3647:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -626,42 +633,42 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_1763__;
 
 
 
-__webpack_require__(1831);
+__webpack_require__(3672);
 
 
-const Undefined = __webpack_require__(1832);
-const Null = __webpack_require__(1833);
-const StringRep = __webpack_require__(1770);
-const Number = __webpack_require__(1834);
-const ArrayRep = __webpack_require__(1774);
-const Obj = __webpack_require__(1835);
-const SymbolRep = __webpack_require__(1836);
-const InfinityRep = __webpack_require__(1837);
-const NaNRep = __webpack_require__(1838);
-const Accessor = __webpack_require__(1839);
+const Undefined = __webpack_require__(3673);
+const Null = __webpack_require__(3674);
+const StringRep = __webpack_require__(3648);
+const Number = __webpack_require__(3675);
+const ArrayRep = __webpack_require__(3649);
+const Obj = __webpack_require__(3676);
+const SymbolRep = __webpack_require__(3677);
+const InfinityRep = __webpack_require__(3678);
+const NaNRep = __webpack_require__(3679);
+const Accessor = __webpack_require__(3680);
 
 
-const Accessible = __webpack_require__(1840);
-const Attribute = __webpack_require__(1841);
-const DateTime = __webpack_require__(1842);
-const Document = __webpack_require__(1843);
-const DocumentType = __webpack_require__(1844);
-const Event = __webpack_require__(1845);
-const Func = __webpack_require__(1795);
-const PromiseRep = __webpack_require__(1846);
-const RegExp = __webpack_require__(1847);
-const StyleSheet = __webpack_require__(1848);
-const CommentNode = __webpack_require__(1849);
-const ElementNode = __webpack_require__(1850);
-const TextNode = __webpack_require__(1851);
-const ErrorRep = __webpack_require__(1797);
-const Window = __webpack_require__(1852);
-const ObjectWithText = __webpack_require__(1853);
-const ObjectWithURL = __webpack_require__(1854);
-const GripArray = __webpack_require__(1798);
-const GripMap = __webpack_require__(1800);
-const GripMapEntry = __webpack_require__(1801);
-const Grip = __webpack_require__(1784);
+const Accessible = __webpack_require__(3787);
+const Attribute = __webpack_require__(3681);
+const DateTime = __webpack_require__(3682);
+const Document = __webpack_require__(3683);
+const DocumentType = __webpack_require__(3684);
+const Event = __webpack_require__(3685);
+const Func = __webpack_require__(3658);
+const PromiseRep = __webpack_require__(3686);
+const RegExp = __webpack_require__(3687);
+const StyleSheet = __webpack_require__(3688);
+const CommentNode = __webpack_require__(3689);
+const ElementNode = __webpack_require__(3690);
+const TextNode = __webpack_require__(3691);
+const ErrorRep = __webpack_require__(3660);
+const Window = __webpack_require__(3692);
+const ObjectWithText = __webpack_require__(3693);
+const ObjectWithURL = __webpack_require__(3694);
+const GripArray = __webpack_require__(3661);
+const GripMap = __webpack_require__(3663);
+const GripMapEntry = __webpack_require__(3664);
+const Grip = __webpack_require__(3656);
 
 
 
@@ -756,7 +763,7 @@ module.exports = {
 
  }),
 
- 1770:
+ 3648:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -767,7 +774,7 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 const {
   containsURL,
@@ -780,9 +787,9 @@ const {
   isGrip,
   tokenSplitRegex,
   ELLIPSIS
-} = __webpack_require__(1760);
+} = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { a, span } = dom;
 
 
@@ -1030,7 +1037,7 @@ module.exports = {
 
  }),
 
- 1774:
+ 3649:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1043,10 +1050,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const dom = __webpack_require__(1759);
-const PropTypes = __webpack_require__(1758);
-const { wrapRender } = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
+const dom = __webpack_require__(3643);
+const PropTypes = __webpack_require__(3642);
+const { wrapRender } = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
 const { span } = dom;
 
 const ModePropType = PropTypes.oneOf(
@@ -1138,7 +1145,7 @@ ItemRep.propTypes = {
 };
 
 function ItemRep(props) {
-  const { Rep } = __webpack_require__(1767);
+  const { Rep } = __webpack_require__(3647);
 
   const { object, delim, mode } = props;
   return span({}, Rep(_extends({}, props, {
@@ -1170,7 +1177,7 @@ module.exports = {
 
  }),
 
- 1775:
+ 3650:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1183,11 +1190,11 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const PropTypes = __webpack_require__(1758);
-const { maybeEscapePropertyName, wrapRender } = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
+const PropTypes = __webpack_require__(3642);
+const { maybeEscapePropertyName, wrapRender } = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
 
-const { span } = __webpack_require__(1759);
+const { span } = __webpack_require__(3643);
 
 
 
@@ -1218,8 +1225,8 @@ PropRep.propTypes = {
 
 
 function PropRep(props) {
-  const Grip = __webpack_require__(1784);
-  const { Rep } = __webpack_require__(1767);
+  const Grip = __webpack_require__(3656);
+  const { Rep } = __webpack_require__(3647);
 
   let { name, mode, equal, suppressQuotes } = props;
 
@@ -1250,7 +1257,7 @@ module.exports = wrapRender(PropRep);
 
  }),
 
- 1780:
+ 3655:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1260,16 +1267,16 @@ module.exports = wrapRender(PropRep);
 
 
 
-const { MODE } = __webpack_require__(1762);
-const { REPS, getRep } = __webpack_require__(1767);
-const objectInspector = __webpack_require__(1855);
+const { MODE } = __webpack_require__(3645);
+const { REPS, getRep } = __webpack_require__(3647);
+const objectInspector = __webpack_require__(3695);
 
 const {
   parseURLEncodedText,
   parseURLParams,
   maybeEscapePropertyName,
   getGripPreviewItems
-} = __webpack_require__(1760);
+} = __webpack_require__(3644);
 
 module.exports = {
   REPS,
@@ -1284,7 +1291,7 @@ module.exports = {
 
  }),
 
- 1784:
+ 3656:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1297,14 +1304,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { interleave, isGrip, wrapRender } = __webpack_require__(1760);
-const PropRep = __webpack_require__(1775);
-const { MODE } = __webpack_require__(1762);
+const { interleave, isGrip, wrapRender } = __webpack_require__(3644);
+const PropRep = __webpack_require__(3650);
+const { MODE } = __webpack_require__(3645);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -1400,7 +1407,7 @@ function safePropIterator(props, object, max) {
 
 function propIterator(props, object, max) {
   if (object.preview && Object.keys(object.preview).includes("wrappedValue")) {
-    const { Rep } = __webpack_require__(1767);
+    const { Rep } = __webpack_require__(3647);
 
     return [Rep({
       object: object.preview.wrappedValue,
@@ -1589,7 +1596,7 @@ module.exports = Grip;
 
  }),
 
- 1785:
+ 3657:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1601,13 +1608,1315 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const { maybeEscapePropertyName } = __webpack_require__(1760);
-const ArrayRep = __webpack_require__(1774);
-const GripArrayRep = __webpack_require__(1798);
-const GripMap = __webpack_require__(1800);
-const GripMapEntryRep = __webpack_require__(1801);
-const ErrorRep = __webpack_require__(1797);
-const { isLongString } = __webpack_require__(1770);
+const client = __webpack_require__(3665);
+const loadProperties = __webpack_require__(3666);
+const node = __webpack_require__(3667);
+const { nodeIsError, nodeIsPrimitive } = node;
+const selection = __webpack_require__(3698);
+
+const { MODE } = __webpack_require__(3645);
+const {
+  REPS: { Rep, Grip }
+} = __webpack_require__(3647);
+
+
+function shouldRenderRootsInReps(roots) {
+  if (roots.length > 1) {
+    return false;
+  }
+
+  const root = roots[0];
+  const name = root && root.name;
+  return (name === null || typeof name === "undefined") && (nodeIsPrimitive(root) || nodeIsError(root));
+}
+
+function renderRep(item, props) {
+  return Rep(_extends({}, props, {
+    object: node.getValue(item),
+    mode: props.mode || MODE.TINY,
+    defaultRep: Grip
+  }));
+}
+
+module.exports = {
+  client,
+  loadProperties,
+  node,
+  renderRep,
+  selection,
+  shouldRenderRootsInReps
+};
+
+ }),
+
+ 3658:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+const PropTypes = __webpack_require__(3642);
+
+
+const { getGripType, isGrip, cropString, wrapRender } = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
+
+const dom = __webpack_require__(3643);
+const { span } = dom;
+
+const IGNORED_SOURCE_URLS = ["debugger eval code"];
+
+
+
+
+FunctionRep.propTypes = {
+  object: PropTypes.object.isRequired,
+  parameterNames: PropTypes.array,
+  onViewSourceInDebugger: PropTypes.func
+};
+
+function FunctionRep(props) {
+  const { object: grip, onViewSourceInDebugger, recordTelemetryEvent } = props;
+
+  let jumpToDefinitionButton;
+  if (onViewSourceInDebugger && grip.location && grip.location.url && !IGNORED_SOURCE_URLS.includes(grip.location.url)) {
+    jumpToDefinitionButton = dom.button({
+      className: "jump-definition",
+      draggable: false,
+      title: "Jump to definition",
+      onClick: e => {
+        
+        
+        e.stopPropagation();
+        if (recordTelemetryEvent) {
+          recordTelemetryEvent("jump_to_definition");
+        }
+        onViewSourceInDebugger(grip.location);
+      }
+    });
+  }
+
+  return span({
+    "data-link-actor-id": grip.actor,
+    className: "objectBox objectBox-function",
+    
+    
+    dir: "ltr"
+  }, getTitle(grip, props), getFunctionName(grip, props), "(", ...renderParams(props), ")", jumpToDefinitionButton);
+}
+
+function getTitle(grip, props) {
+  const { mode } = props;
+
+  if (mode === MODE.TINY && !grip.isGenerator && !grip.isAsync) {
+    return null;
+  }
+
+  let title = mode === MODE.TINY ? "" : "function ";
+
+  if (grip.isGenerator) {
+    title = mode === MODE.TINY ? "* " : "function* ";
+  }
+
+  if (grip.isAsync) {
+    title = `${"async" + " "}${title}`;
+  }
+
+  return span({
+    className: "objectTitle"
+  }, title);
+}
+
+
+
+
+
+
+
+function getFunctionName(grip, props = {}) {
+  let { functionName } = props;
+  let name;
+
+  if (functionName) {
+    const end = functionName.length - 1;
+    functionName = functionName.startsWith('"') && functionName.endsWith('"') ? functionName.substring(1, end) : functionName;
+  }
+
+  if (grip.displayName != undefined && functionName != undefined && grip.displayName != functionName) {
+    name = `${functionName}:${grip.displayName}`;
+  } else {
+    name = cleanFunctionName(grip.userDisplayName || grip.displayName || grip.name || props.functionName || "");
+  }
+
+  return cropString(name, 100);
+}
+
+const objectProperty = /([\w\d]+)$/;
+const arrayProperty = /\[(.*?)\]$/;
+const functionProperty = /([\w\d]+)[\/\.<]*?$/;
+const annonymousProperty = /([\w\d]+)\(\^\)$/;
+
+
+
+
+
+
+
+
+
+function cleanFunctionName(name) {
+  for (const reg of [objectProperty, arrayProperty, functionProperty, annonymousProperty]) {
+    const match = reg.exec(name);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return name;
+}
+
+function renderParams(props) {
+  const { parameterNames = [] } = props;
+
+  return parameterNames.filter(param => param).reduce((res, param, index, arr) => {
+    res.push(span({ className: "param" }, param));
+    if (index < arr.length - 1) {
+      res.push(span({ className: "delimiter" }, ", "));
+    }
+    return res;
+  }, []);
+}
+
+
+function supportsObject(grip, noGrip = false) {
+  const type = getGripType(grip, noGrip);
+  if (noGrip === true || !isGrip(grip)) {
+    return type == "function";
+  }
+
+  return type == "Function";
+}
+
+
+
+module.exports = {
+  rep: wrapRender(FunctionRep),
+  supportsObject,
+  cleanFunctionName,
+  
+  getFunctionName
+};
+
+ }),
+
+ 3659:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+module.exports = {
+  ELEMENT_NODE: 1,
+  ATTRIBUTE_NODE: 2,
+  TEXT_NODE: 3,
+  CDATA_SECTION_NODE: 4,
+  ENTITY_REFERENCE_NODE: 5,
+  ENTITY_NODE: 6,
+  PROCESSING_INSTRUCTION_NODE: 7,
+  COMMENT_NODE: 8,
+  DOCUMENT_NODE: 9,
+  DOCUMENT_TYPE_NODE: 10,
+  DOCUMENT_FRAGMENT_NODE: 11,
+  NOTATION_NODE: 12,
+
+  
+  DOCUMENT_POSITION_DISCONNECTED: 0x01,
+  DOCUMENT_POSITION_PRECEDING: 0x02,
+  DOCUMENT_POSITION_FOLLOWING: 0x04,
+  DOCUMENT_POSITION_CONTAINS: 0x08,
+  DOCUMENT_POSITION_CONTAINED_BY: 0x10,
+  DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: 0x20
+};
+
+ }),
+
+ 3660:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+const PropTypes = __webpack_require__(3642);
+
+const { getGripType, isGrip, wrapRender } = __webpack_require__(3644);
+const { cleanFunctionName } = __webpack_require__(3658);
+const { isLongString } = __webpack_require__(3648);
+const { MODE } = __webpack_require__(3645);
+
+const dom = __webpack_require__(3643);
+const { span } = dom;
+const IGNORED_SOURCE_URLS = ["debugger eval code"];
+
+
+
+
+ErrorRep.propTypes = {
+  object: PropTypes.object.isRequired,
+  
+  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  
+  renderStacktrace: PropTypes.func
+};
+
+function ErrorRep(props) {
+  const object = props.object;
+  const preview = object.preview;
+
+  let name;
+  if (preview && preview.name && preview.kind) {
+    switch (preview.kind) {
+      case "Error":
+        name = preview.name;
+        break;
+      case "DOMException":
+        name = preview.kind;
+        break;
+      default:
+        throw new Error("Unknown preview kind for the Error rep.");
+    }
+  } else {
+    name = "Error";
+  }
+
+  const content = [];
+
+  if (props.mode === MODE.TINY) {
+    content.push(name);
+  } else {
+    content.push(`${name}: "${preview.message}"`);
+  }
+
+  if (preview.stack && props.mode !== MODE.TINY) {
+    const stacktrace = props.renderStacktrace ? props.renderStacktrace(parseStackString(preview.stack)) : getStacktraceElements(props, preview);
+    content.push("\n", stacktrace);
+  }
+
+  return span({
+    "data-link-actor-id": object.actor,
+    className: "objectBox-stackTrace"
+  }, content);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getStacktraceElements(props, preview) {
+  const stack = [];
+  if (!preview.stack) {
+    return stack;
+  }
+
+  parseStackString(preview.stack).forEach((frame, index, frames) => {
+    let onLocationClick;
+    const {
+      filename,
+      lineNumber,
+      columnNumber,
+      functionName,
+      location
+    } = frame;
+
+    if (props.onViewSourceInDebugger && !IGNORED_SOURCE_URLS.includes(filename)) {
+      onLocationClick = e => {
+        
+        e.stopPropagation();
+        props.onViewSourceInDebugger({
+          url: filename,
+          line: lineNumber,
+          column: columnNumber
+        });
+      };
+    }
+
+    stack.push("\t", span({
+      key: `fn${index}`,
+      className: "objectBox-stackTrace-fn"
+    }, cleanFunctionName(functionName)), " ", span({
+      key: `location${index}`,
+      className: "objectBox-stackTrace-location",
+      onClick: onLocationClick,
+      title: onLocationClick ? `View source in debugger → ${location}` : undefined
+    }, location), "\n");
+  });
+
+  return span({
+    key: "stack",
+    className: "objectBox-stackTrace-grid"
+  }, stack);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseStackString(stack) {
+  const res = [];
+  if (!stack) {
+    return res;
+  }
+
+  const isStacktraceALongString = isLongString(stack);
+  const stackString = isStacktraceALongString ? stack.initial : stack;
+
+  stackString.split("\n").forEach((frame, index, frames) => {
+    if (!frame) {
+      
+      return;
+    }
+
+    
+    
+    
+    
+    if (isStacktraceALongString && index === frames.length - 1) {
+      return;
+    }
+
+    let functionName;
+    let location;
+
+    
+    
+    
+    
+    
+    
+    const result = frame.match(/^(.*)@(.*)$/);
+    if (result && result.length === 3) {
+      functionName = result[1];
+
+      
+      
+      
+      location = result[2].split(" -> ").pop();
+    }
+
+    if (!functionName) {
+      functionName = "<anonymous>";
+    }
+
+    
+    
+    
+    const locationParts = location.match(/^(.*):(\d+):(\d+)$/);
+
+    if (location && locationParts) {
+      const [, filename, line, column] = locationParts;
+      res.push({
+        filename,
+        functionName,
+        location,
+        columnNumber: Number(column),
+        lineNumber: Number(line)
+      });
+    }
+  });
+
+  return res;
+}
+
+
+function supportsObject(object, noGrip = false) {
+  if (noGrip === true || !isGrip(object)) {
+    return false;
+  }
+  return object.preview && getGripType(object, noGrip) === "Error" || object.class === "DOMException";
+}
+
+
+module.exports = {
+  rep: wrapRender(ErrorRep),
+  supportsObject
+};
+
+ }),
+
+ 3661:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+
+const PropTypes = __webpack_require__(3642);
+
+const { lengthBubble } = __webpack_require__(3662);
+const {
+  interleave,
+  getGripType,
+  isGrip,
+  wrapRender,
+  ellipsisElement
+} = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
+
+const dom = __webpack_require__(3643);
+const { span } = dom;
+const { ModePropType } = __webpack_require__(3649);
+const DEFAULT_TITLE = "Array";
+
+
+
+
+
+GripArray.propTypes = {
+  object: PropTypes.object.isRequired,
+  
+  mode: ModePropType,
+  provider: PropTypes.object,
+  onDOMNodeMouseOver: PropTypes.func,
+  onDOMNodeMouseOut: PropTypes.func,
+  onInspectIconClick: PropTypes.func
+};
+
+function GripArray(props) {
+  const { object, mode = MODE.SHORT } = props;
+
+  let brackets;
+  const needSpace = function (space) {
+    return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
+  };
+
+  const config = {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-array"
+  };
+
+  const title = getTitle(props, object);
+
+  if (mode === MODE.TINY) {
+    const isEmpty = getLength(object) === 0;
+
+    
+    if (!isEmpty && object.class !== "Array") {
+      return span(config, title);
+    }
+
+    brackets = needSpace(false);
+    return span(config, title, span({
+      className: "arrayLeftBracket"
+    }, brackets.left), isEmpty ? null : ellipsisElement, span({
+      className: "arrayRightBracket"
+    }, brackets.right));
+  }
+
+  const max = maxLengthMap.get(mode);
+  const items = arrayIterator(props, object, max);
+  brackets = needSpace(items.length > 0);
+
+  return span({
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-array"
+  }, title, span({
+    className: "arrayLeftBracket"
+  }, brackets.left), ...interleave(items, ", "), span({
+    className: "arrayRightBracket"
+  }, brackets.right), span({
+    className: "arrayProperties",
+    role: "group"
+  }));
+}
+
+function getLength(grip) {
+  if (!grip.preview) {
+    return 0;
+  }
+
+  return grip.preview.length || grip.preview.childNodesLength || 0;
+}
+
+function getTitle(props, object) {
+  const objectLength = getLength(object);
+  const isEmpty = objectLength === 0;
+
+  let title = props.title || object.class || DEFAULT_TITLE;
+
+  const length = lengthBubble({
+    object,
+    mode: props.mode,
+    maxLengthMap,
+    getLength
+  });
+
+  if (props.mode === MODE.TINY) {
+    if (isEmpty) {
+      if (object.class === DEFAULT_TITLE) {
+        return null;
+      }
+
+      return span({ className: "objectTitle" }, `${title} `);
+    }
+
+    let trailingSpace;
+    if (object.class === DEFAULT_TITLE) {
+      title = null;
+      trailingSpace = " ";
+    }
+
+    return span({ className: "objectTitle" }, title, length, trailingSpace);
+  }
+
+  return span({ className: "objectTitle" }, title, length, " ");
+}
+
+function getPreviewItems(grip) {
+  if (!grip.preview) {
+    return null;
+  }
+
+  return grip.preview.items || grip.preview.childNodes || [];
+}
+
+function arrayIterator(props, grip, max) {
+  const { Rep } = __webpack_require__(3647);
+
+  let items = [];
+  const gripLength = getLength(grip);
+
+  if (!gripLength) {
+    return items;
+  }
+
+  const previewItems = getPreviewItems(grip);
+  const provider = props.provider;
+
+  let emptySlots = 0;
+  let foldedEmptySlots = 0;
+  items = previewItems.reduce((res, itemGrip) => {
+    if (res.length >= max) {
+      return res;
+    }
+
+    let object;
+    try {
+      if (!provider && itemGrip === null) {
+        emptySlots++;
+        return res;
+      }
+
+      object = provider ? provider.getValue(itemGrip) : itemGrip;
+    } catch (exc) {
+      object = exc;
+    }
+
+    if (emptySlots > 0) {
+      res.push(getEmptySlotsElement(emptySlots));
+      foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
+      emptySlots = 0;
+    }
+
+    if (res.length < max) {
+      res.push(Rep(_extends({}, props, {
+        object,
+        mode: MODE.TINY,
+        
+        title: undefined
+      })));
+    }
+
+    return res;
+  }, []);
+
+  
+  if (items.length < max && emptySlots > 0) {
+    items.push(getEmptySlotsElement(emptySlots));
+    foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
+  }
+
+  const itemsShown = items.length + foldedEmptySlots;
+  if (gripLength > itemsShown) {
+    items.push(ellipsisElement);
+  }
+
+  return items;
+}
+
+function getEmptySlotsElement(number) {
+  
+  return `<${number} empty slot${number > 1 ? "s" : ""}>`;
+}
+
+function supportsObject(grip, noGrip = false) {
+  if (noGrip === true || !isGrip(grip)) {
+    return false;
+  }
+
+  return grip.preview && (grip.preview.kind == "ArrayLike" || getGripType(grip, noGrip) === "DocumentFragment");
+}
+
+const maxLengthMap = new Map();
+maxLengthMap.set(MODE.SHORT, 3);
+maxLengthMap.set(MODE.LONG, 10);
+
+
+module.exports = {
+  rep: wrapRender(GripArray),
+  supportsObject,
+  maxLengthMap,
+  getLength
+};
+
+ }),
+
+ 3662:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+const PropTypes = __webpack_require__(3642);
+
+const { wrapRender } = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
+const { ModePropType } = __webpack_require__(3649);
+
+const dom = __webpack_require__(3643);
+const { span } = dom;
+
+GripLengthBubble.propTypes = {
+  object: PropTypes.object.isRequired,
+  maxLengthMap: PropTypes.instanceOf(Map).isRequired,
+  getLength: PropTypes.func.isRequired,
+  mode: ModePropType,
+  visibilityThreshold: PropTypes.number
+};
+
+function GripLengthBubble(props) {
+  const {
+    object,
+    mode = MODE.SHORT,
+    visibilityThreshold = 2,
+    maxLengthMap,
+    getLength,
+    showZeroLength = false
+  } = props;
+
+  const length = getLength(object);
+  const isEmpty = length === 0;
+  const isObvious = [MODE.SHORT, MODE.LONG].includes(mode) && length > 0 && length <= maxLengthMap.get(mode) && length <= visibilityThreshold;
+  if (isEmpty && !showZeroLength || isObvious) {
+    return "";
+  }
+
+  return span({
+    className: "objectLengthBubble"
+  }, `(${length})`);
+}
+
+module.exports = {
+  lengthBubble: wrapRender(GripLengthBubble)
+};
+
+ }),
+
+ 3663:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+
+const { lengthBubble } = __webpack_require__(3662);
+const PropTypes = __webpack_require__(3642);
+const {
+  interleave,
+  isGrip,
+  wrapRender,
+  ellipsisElement
+} = __webpack_require__(3644);
+const PropRep = __webpack_require__(3650);
+const { MODE } = __webpack_require__(3645);
+const { ModePropType } = __webpack_require__(3649);
+
+const { span } = __webpack_require__(3643);
+
+
+
+
+
+GripMap.propTypes = {
+  object: PropTypes.object,
+  
+  mode: ModePropType,
+  isInterestingEntry: PropTypes.func,
+  onDOMNodeMouseOver: PropTypes.func,
+  onDOMNodeMouseOut: PropTypes.func,
+  onInspectIconClick: PropTypes.func,
+  title: PropTypes.string
+};
+
+function GripMap(props) {
+  const { mode, object } = props;
+
+  const config = {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-object"
+  };
+
+  const title = getTitle(props, object);
+  const isEmpty = getLength(object) === 0;
+
+  if (isEmpty || mode === MODE.TINY) {
+    return span(config, title);
+  }
+
+  const propsArray = safeEntriesIterator(props, object, maxLengthMap.get(mode));
+
+  return span(config, title, span({
+    className: "objectLeftBrace"
+  }, " { "), ...interleave(propsArray, ", "), span({
+    className: "objectRightBrace"
+  }, " }"));
+}
+
+function getTitle(props, object) {
+  const title = props.title || (object && object.class ? object.class : "Map");
+  return span({
+    className: "objectTitle"
+  }, title, lengthBubble({
+    object,
+    mode: props.mode,
+    maxLengthMap,
+    getLength,
+    showZeroLength: true
+  }));
+}
+
+function safeEntriesIterator(props, object, max) {
+  max = typeof max === "undefined" ? 3 : max;
+  try {
+    return entriesIterator(props, object, max);
+  } catch (err) {
+    console.error(err);
+  }
+  return [];
+}
+
+function entriesIterator(props, object, max) {
+  
+  const isInterestingEntry = props.isInterestingEntry || ((type, value) => {
+    return type == "boolean" || type == "number" || type == "string" && value.length != 0;
+  });
+
+  const mapEntries = object.preview && object.preview.entries ? object.preview.entries : [];
+
+  let indexes = getEntriesIndexes(mapEntries, max, isInterestingEntry);
+  if (indexes.length < max && indexes.length < mapEntries.length) {
+    
+    indexes = indexes.concat(getEntriesIndexes(mapEntries, max - indexes.length, (t, value, name) => {
+      return !isInterestingEntry(t, value, name);
+    }));
+  }
+
+  const entries = getEntries(props, mapEntries, indexes);
+  if (entries.length < getLength(object)) {
+    
+    entries.push(ellipsisElement);
+  }
+
+  return entries;
+}
+
+
+
+
+
+
+
+
+
+function getEntries(props, entries, indexes) {
+  const { onDOMNodeMouseOver, onDOMNodeMouseOut, onInspectIconClick } = props;
+
+  
+  indexes.sort(function (a, b) {
+    return a - b;
+  });
+
+  return indexes.map((index, i) => {
+    const [key, entryValue] = entries[index];
+    const value = entryValue.value !== undefined ? entryValue.value : entryValue;
+
+    return PropRep({
+      name: key,
+      equal: " \u2192 ",
+      object: value,
+      mode: MODE.TINY,
+      onDOMNodeMouseOver,
+      onDOMNodeMouseOut,
+      onInspectIconClick
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+function getEntriesIndexes(entries, max, filter) {
+  return entries.reduce((indexes, [key, entry], i) => {
+    if (indexes.length < max) {
+      const value = entry && entry.value !== undefined ? entry.value : entry;
+      
+      
+      const type = (value && value.class ? value.class : typeof value).toLowerCase();
+
+      if (filter(type, value, key)) {
+        indexes.push(i);
+      }
+    }
+
+    return indexes;
+  }, []);
+}
+
+function getLength(grip) {
+  return grip.preview.size || 0;
+}
+
+function supportsObject(grip, noGrip = false) {
+  if (noGrip === true || !isGrip(grip)) {
+    return false;
+  }
+  return grip.preview && grip.preview.kind == "MapLike";
+}
+
+const maxLengthMap = new Map();
+maxLengthMap.set(MODE.SHORT, 3);
+maxLengthMap.set(MODE.LONG, 10);
+
+
+module.exports = {
+  rep: wrapRender(GripMap),
+  supportsObject,
+  maxLengthMap,
+  getLength
+};
+
+ }),
+
+ 3664:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+
+const PropTypes = __webpack_require__(3642);
+
+const dom = __webpack_require__(3643);
+const { span } = dom;
+const { wrapRender } = __webpack_require__(3644);
+const PropRep = __webpack_require__(3650);
+const { MODE } = __webpack_require__(3645);
+
+
+
+
+GripMapEntry.propTypes = {
+  object: PropTypes.object,
+  
+  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  onDOMNodeMouseOver: PropTypes.func,
+  onDOMNodeMouseOut: PropTypes.func,
+  onInspectIconClick: PropTypes.func
+};
+
+function GripMapEntry(props) {
+  const { object } = props;
+
+  const { key, value } = object.preview;
+
+  return span({
+    className: "objectBox objectBox-map-entry"
+  }, PropRep(_extends({}, props, {
+    name: key,
+    object: value,
+    equal: " \u2192 ",
+    title: null,
+    suppressQuotes: false
+  })));
+}
+
+function supportsObject(grip, noGrip = false) {
+  if (noGrip === true) {
+    return false;
+  }
+  return grip && (grip.type === "mapEntry" || grip.type === "storageEntry") && grip.preview;
+}
+
+function createGripMapEntry(key, value) {
+  return {
+    type: "mapEntry",
+    preview: {
+      key,
+      value
+    }
+  };
+}
+
+
+module.exports = {
+  rep: wrapRender(GripMapEntry),
+  createGripMapEntry,
+  supportsObject
+};
+
+ }),
+
+ 3665:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const { getValue, nodeHasFullText } = __webpack_require__(3667); 
+
+
+
+async function enumIndexedProperties(objectClient, start, end) {
+  try {
+    const { iterator } = await objectClient.enumProperties({
+      ignoreNonIndexedProperties: true
+    });
+    const response = await iteratorSlice(iterator, start, end);
+    return response;
+  } catch (e) {
+    console.error("Error in enumIndexedProperties", e);
+    return {};
+  }
+}
+
+async function enumNonIndexedProperties(objectClient, start, end) {
+  try {
+    const { iterator } = await objectClient.enumProperties({
+      ignoreIndexedProperties: true
+    });
+    const response = await iteratorSlice(iterator, start, end);
+    return response;
+  } catch (e) {
+    console.error("Error in enumNonIndexedProperties", e);
+    return {};
+  }
+}
+
+async function enumEntries(objectClient, start, end) {
+  try {
+    const { iterator } = await objectClient.enumEntries();
+    const response = await iteratorSlice(iterator, start, end);
+    return response;
+  } catch (e) {
+    console.error("Error in enumEntries", e);
+    return {};
+  }
+}
+
+async function enumSymbols(objectClient, start, end) {
+  try {
+    const { iterator } = await objectClient.enumSymbols();
+    const response = await iteratorSlice(iterator, start, end);
+    return response;
+  } catch (e) {
+    console.error("Error in enumSymbols", e);
+    return {};
+  }
+}
+
+async function getPrototype(objectClient) {
+  if (typeof objectClient.getPrototype !== "function") {
+    console.error("objectClient.getPrototype is not a function");
+    return Promise.resolve({});
+  }
+  return objectClient.getPrototype();
+}
+
+async function getFullText(longStringClient, item) {
+  const { initial, fullText, length } = getValue(item);
+
+  
+  
+  if (nodeHasFullText(item)) {
+    return Promise.resolve({ fullText });
+  }
+
+  return new Promise((resolve, reject) => {
+    longStringClient.substring(initial.length, length, response => {
+      if (response.error) {
+        console.error("LongStringClient.substring", `${response.error}: ${response.message}`);
+        reject({});
+        return;
+      }
+
+      resolve({
+        fullText: initial + response.substring
+      });
+    });
+  });
+}
+
+function iteratorSlice(iterator, start, end) {
+  start = start || 0;
+  const count = end ? end - start + 1 : iterator.count;
+
+  if (count === 0) {
+    return Promise.resolve({});
+  }
+  return iterator.slice(start, count);
+}
+
+module.exports = {
+  enumEntries,
+  enumIndexedProperties,
+  enumNonIndexedProperties,
+  enumSymbols,
+  getPrototype,
+  getFullText
+};
+
+ }),
+
+ 3666:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+const {
+  enumEntries,
+  enumIndexedProperties,
+  enumNonIndexedProperties,
+  getPrototype,
+  enumSymbols,
+  getFullText
+} = __webpack_require__(3665);
+
+const {
+  getClosestGripNode,
+  getClosestNonBucketNode,
+  getValue,
+  nodeHasAccessors,
+  nodeHasAllEntriesInPreview,
+  nodeHasProperties,
+  nodeIsBucket,
+  nodeIsDefaultProperties,
+  nodeIsEntries,
+  nodeIsMapEntry,
+  nodeIsPrimitive,
+  nodeIsProxy,
+  nodeNeedsNumericalBuckets,
+  nodeIsLongString
+} = __webpack_require__(3667);
+
+function loadItemProperties(item, createObjectClient, createLongStringClient, loadedProperties) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  const [start, end] = item.meta ? [item.meta.startIndex, item.meta.endIndex] : [];
+
+  const promises = [];
+  let objectClient;
+  const getObjectClient = () => objectClient || createObjectClient(value);
+
+  if (shouldLoadItemIndexedProperties(item, loadedProperties)) {
+    promises.push(enumIndexedProperties(getObjectClient(), start, end));
+  }
+
+  if (shouldLoadItemNonIndexedProperties(item, loadedProperties)) {
+    promises.push(enumNonIndexedProperties(getObjectClient(), start, end));
+  }
+
+  if (shouldLoadItemEntries(item, loadedProperties)) {
+    promises.push(enumEntries(getObjectClient(), start, end));
+  }
+
+  if (shouldLoadItemPrototype(item, loadedProperties)) {
+    promises.push(getPrototype(getObjectClient()));
+  }
+
+  if (shouldLoadItemSymbols(item, loadedProperties)) {
+    promises.push(enumSymbols(getObjectClient(), start, end));
+  }
+
+  if (shouldLoadItemFullText(item, loadedProperties)) {
+    promises.push(getFullText(createLongStringClient(value), item));
+  }
+
+  return Promise.all(promises).then(mergeResponses);
+}
+
+function mergeResponses(responses) {
+  const data = {};
+
+  for (const response of responses) {
+    if (response.hasOwnProperty("ownProperties")) {
+      data.ownProperties = _extends({}, data.ownProperties, response.ownProperties);
+    }
+
+    if (response.ownSymbols && response.ownSymbols.length > 0) {
+      data.ownSymbols = response.ownSymbols;
+    }
+
+    if (response.prototype) {
+      data.prototype = response.prototype;
+    }
+
+    if (response.fullText) {
+      data.fullText = response.fullText;
+    }
+  }
+
+  return data;
+}
+
+function shouldLoadItemIndexedProperties(item, loadedProperties = new Map()) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  return value && nodeHasProperties(gripItem) && !loadedProperties.has(item.path) && !nodeIsProxy(item) && !nodeNeedsNumericalBuckets(item) && !nodeIsEntries(getClosestNonBucketNode(item)) &&
+  
+  !nodeIsDefaultProperties(item);
+}
+
+function shouldLoadItemNonIndexedProperties(item, loadedProperties = new Map()) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  return value && nodeHasProperties(gripItem) && !loadedProperties.has(item.path) && !nodeIsProxy(item) && !nodeIsEntries(getClosestNonBucketNode(item)) && !nodeIsBucket(item) &&
+  
+  !nodeIsDefaultProperties(item);
+}
+
+function shouldLoadItemEntries(item, loadedProperties = new Map()) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  return value && nodeIsEntries(getClosestNonBucketNode(item)) && !nodeHasAllEntriesInPreview(gripItem) && !loadedProperties.has(item.path) && !nodeNeedsNumericalBuckets(item);
+}
+
+function shouldLoadItemPrototype(item, loadedProperties = new Map()) {
+  const value = getValue(item);
+
+  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsLongString(item);
+}
+
+function shouldLoadItemSymbols(item, loadedProperties = new Map()) {
+  const value = getValue(item);
+
+  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsLongString(item) && !nodeIsProxy(item);
+}
+
+function shouldLoadItemFullText(item, loadedProperties = new Map()) {
+  return !loadedProperties.has(item.path) && nodeIsLongString(item);
+}
+
+module.exports = {
+  loadItemProperties,
+  mergeResponses,
+  shouldLoadItemEntries,
+  shouldLoadItemIndexedProperties,
+  shouldLoadItemNonIndexedProperties,
+  shouldLoadItemPrototype,
+  shouldLoadItemSymbols,
+  shouldLoadItemFullText
+};
+
+ }),
+
+ 3667:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+const { maybeEscapePropertyName } = __webpack_require__(3644);
+const ArrayRep = __webpack_require__(3649);
+const GripArrayRep = __webpack_require__(3661);
+const GripMap = __webpack_require__(3663);
+const GripMapEntryRep = __webpack_require__(3664);
+const ErrorRep = __webpack_require__(3660);
+const { isLongString } = __webpack_require__(3648);
 
 const MAX_NUMERICAL_PROPERTIES = 100;
 
@@ -2445,171 +3754,13 @@ module.exports = {
 
  }),
 
- 1786:
+ 3669:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-function initialState() {
-  return {
-    expandedPaths: new Set(),
-    loadedProperties: new Map(),
-    evaluations: new Map(),
-    actors: new Set()
-  };
-} 
-
-
-
-
-function reducer(state = initialState(), action = {}) {
-  const { type, data } = action;
-
-  const cloneState = overrides => _extends({}, state, overrides);
-
-  if (type === "NODE_EXPAND") {
-    return cloneState({
-      expandedPaths: new Set(state.expandedPaths).add(data.node.path)
-    });
-  }
-
-  if (type === "NODE_COLLAPSE") {
-    const expandedPaths = new Set(state.expandedPaths);
-    expandedPaths.delete(data.node.path);
-    return cloneState({ expandedPaths });
-  }
-
-  if (type === "NODE_PROPERTIES_LOADED") {
-    return cloneState({
-      actors: data.actor ? new Set(state.actors || []).add(data.actor) : state.actors,
-      loadedProperties: new Map(state.loadedProperties).set(data.node.path, action.data.properties)
-    });
-  }
-
-  if (type === "ROOTS_CHANGED") {
-    return cloneState();
-  }
-
-  if (type === "GETTER_INVOKED") {
-    return cloneState({
-      actors: data.actor ? new Set(state.actors || []).add(data.result.from) : state.actors,
-      evaluations: new Map(state.evaluations).set(data.node.path, {
-        getterValue: data.result && data.result.value && (data.result.value.return || data.result.value.throw)
-      })
-    });
-  }
-
-  return state;
-}
-
-function getObjectInspectorState(state) {
-  return state.objectInspector;
-}
-
-function getExpandedPaths(state) {
-  return getObjectInspectorState(state).expandedPaths;
-}
-
-function getExpandedPathKeys(state) {
-  return [...getExpandedPaths(state).keys()];
-}
-
-function getActors(state) {
-  return getObjectInspectorState(state).actors;
-}
-
-function getLoadedProperties(state) {
-  return getObjectInspectorState(state).loadedProperties;
-}
-
-function getLoadedPropertyKeys(state) {
-  return [...getLoadedProperties(state).keys()];
-}
-
-function getEvaluations(state) {
-  return getObjectInspectorState(state).evaluations;
-}
-
-const selectors = {
-  getActors,
-  getEvaluations,
-  getExpandedPathKeys,
-  getExpandedPaths,
-  getLoadedProperties,
-  getLoadedPropertyKeys
-};
-
-Object.defineProperty(module.exports, "__esModule", {
-  value: true
-});
-module.exports = selectors;
-module.exports.default = reducer;
-
- }),
-
- 1787:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-
-
-
-
-const client = __webpack_require__(1805);
-const loadProperties = __webpack_require__(1804);
-const node = __webpack_require__(1785);
-const { nodeIsError, nodeIsPrimitive } = node;
-const selection = __webpack_require__(1860);
-
-const { MODE } = __webpack_require__(1762);
-const {
-  REPS: { Rep, Grip }
-} = __webpack_require__(1767);
-
-
-function shouldRenderRootsInReps(roots) {
-  if (roots.length > 1) {
-    return false;
-  }
-
-  const root = roots[0];
-  const name = root && root.name;
-  return (name === null || typeof name === "undefined") && (nodeIsPrimitive(root) || nodeIsError(root));
-}
-
-function renderRep(item, props) {
-  return Rep(_extends({}, props, {
-    object: node.getValue(item),
-    mode: props.mode || MODE.TINY,
-    defaultRep: Grip
-  }));
-}
-
-module.exports = {
-  client,
-  loadProperties,
-  node,
-  renderRep,
-  selection,
-  shouldRenderRootsInReps
-};
-
- }),
-
- 1792:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _tree = __webpack_require__(1802);
+var _tree = __webpack_require__(3670);
 
 var _tree2 = _interopRequireDefault(_tree);
 
@@ -2623,992 +3774,7 @@ module.exports = {
 
  }),
 
- 1795:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-
-const PropTypes = __webpack_require__(1758);
-
-
-const { getGripType, isGrip, cropString, wrapRender } = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
-
-const dom = __webpack_require__(1759);
-const { span } = dom;
-
-const IGNORED_SOURCE_URLS = ["debugger eval code"];
-
-
-
-
-FunctionRep.propTypes = {
-  object: PropTypes.object.isRequired,
-  parameterNames: PropTypes.array,
-  onViewSourceInDebugger: PropTypes.func
-};
-
-function FunctionRep(props) {
-  const { object: grip, onViewSourceInDebugger, recordTelemetryEvent } = props;
-
-  let jumpToDefinitionButton;
-  if (onViewSourceInDebugger && grip.location && grip.location.url && !IGNORED_SOURCE_URLS.includes(grip.location.url)) {
-    jumpToDefinitionButton = dom.button({
-      className: "jump-definition",
-      draggable: false,
-      title: "Jump to definition",
-      onClick: e => {
-        
-        
-        e.stopPropagation();
-        if (recordTelemetryEvent) {
-          recordTelemetryEvent("jump_to_definition");
-        }
-        onViewSourceInDebugger(grip.location);
-      }
-    });
-  }
-
-  return span({
-    "data-link-actor-id": grip.actor,
-    className: "objectBox objectBox-function",
-    
-    
-    dir: "ltr"
-  }, getTitle(grip, props), getFunctionName(grip, props), "(", ...renderParams(props), ")", jumpToDefinitionButton);
-}
-
-function getTitle(grip, props) {
-  const { mode } = props;
-
-  if (mode === MODE.TINY && !grip.isGenerator && !grip.isAsync) {
-    return null;
-  }
-
-  let title = mode === MODE.TINY ? "" : "function ";
-
-  if (grip.isGenerator) {
-    title = mode === MODE.TINY ? "* " : "function* ";
-  }
-
-  if (grip.isAsync) {
-    title = `${"async" + " "}${title}`;
-  }
-
-  return span({
-    className: "objectTitle"
-  }, title);
-}
-
-
-
-
-
-
-
-function getFunctionName(grip, props = {}) {
-  let { functionName } = props;
-  let name;
-
-  if (functionName) {
-    const end = functionName.length - 1;
-    functionName = functionName.startsWith('"') && functionName.endsWith('"') ? functionName.substring(1, end) : functionName;
-  }
-
-  if (grip.displayName != undefined && functionName != undefined && grip.displayName != functionName) {
-    name = `${functionName}:${grip.displayName}`;
-  } else {
-    name = cleanFunctionName(grip.userDisplayName || grip.displayName || grip.name || props.functionName || "");
-  }
-
-  return cropString(name, 100);
-}
-
-const objectProperty = /([\w\d\$]+)$/;
-const arrayProperty = /\[(.*?)\]$/;
-const functionProperty = /([\w\d]+)[\/\.<]*?$/;
-const annonymousProperty = /([\w\d]+)\(\^\)$/;
-
-
-
-
-
-
-
-
-
-function cleanFunctionName(name) {
-  for (const reg of [objectProperty, arrayProperty, functionProperty, annonymousProperty]) {
-    const match = reg.exec(name);
-    if (match) {
-      return match[1];
-    }
-  }
-
-  return name;
-}
-
-function renderParams(props) {
-  const { parameterNames = [] } = props;
-
-  return parameterNames.filter(param => param).reduce((res, param, index, arr) => {
-    res.push(span({ className: "param" }, param));
-    if (index < arr.length - 1) {
-      res.push(span({ className: "delimiter" }, ", "));
-    }
-    return res;
-  }, []);
-}
-
-
-function supportsObject(grip, noGrip = false) {
-  const type = getGripType(grip, noGrip);
-  if (noGrip === true || !isGrip(grip)) {
-    return type == "function";
-  }
-
-  return type == "Function";
-}
-
-
-
-module.exports = {
-  rep: wrapRender(FunctionRep),
-  supportsObject,
-  cleanFunctionName,
-  
-  getFunctionName
-};
-
- }),
-
- 1796:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-module.exports = {
-  ELEMENT_NODE: 1,
-  ATTRIBUTE_NODE: 2,
-  TEXT_NODE: 3,
-  CDATA_SECTION_NODE: 4,
-  ENTITY_REFERENCE_NODE: 5,
-  ENTITY_NODE: 6,
-  PROCESSING_INSTRUCTION_NODE: 7,
-  COMMENT_NODE: 8,
-  DOCUMENT_NODE: 9,
-  DOCUMENT_TYPE_NODE: 10,
-  DOCUMENT_FRAGMENT_NODE: 11,
-  NOTATION_NODE: 12,
-
-  
-  DOCUMENT_POSITION_DISCONNECTED: 0x01,
-  DOCUMENT_POSITION_PRECEDING: 0x02,
-  DOCUMENT_POSITION_FOLLOWING: 0x04,
-  DOCUMENT_POSITION_CONTAINS: 0x08,
-  DOCUMENT_POSITION_CONTAINED_BY: 0x10,
-  DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: 0x20
-};
-
- }),
-
- 1797:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-
-const PropTypes = __webpack_require__(1758);
-
-const { getGripType, isGrip, wrapRender } = __webpack_require__(1760);
-const { cleanFunctionName } = __webpack_require__(1795);
-const { isLongString } = __webpack_require__(1770);
-const { MODE } = __webpack_require__(1762);
-
-const dom = __webpack_require__(1759);
-const { span } = dom;
-const IGNORED_SOURCE_URLS = ["debugger eval code"];
-
-
-
-
-ErrorRep.propTypes = {
-  object: PropTypes.object.isRequired,
-  
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  
-  renderStacktrace: PropTypes.func
-};
-
-function ErrorRep(props) {
-  const object = props.object;
-  const preview = object.preview;
-
-  let name;
-  if (preview && preview.name && preview.kind) {
-    switch (preview.kind) {
-      case "Error":
-        name = preview.name;
-        break;
-      case "DOMException":
-        name = preview.kind;
-        break;
-      default:
-        throw new Error("Unknown preview kind for the Error rep.");
-    }
-  } else {
-    name = "Error";
-  }
-
-  const content = [];
-
-  if (props.mode === MODE.TINY) {
-    content.push(name);
-  } else {
-    content.push(`${name}: "${preview.message}"`);
-  }
-
-  if (preview.stack && props.mode !== MODE.TINY) {
-    const stacktrace = props.renderStacktrace ? props.renderStacktrace(parseStackString(preview.stack)) : getStacktraceElements(props, preview);
-    content.push("\n", stacktrace);
-  }
-
-  return span({
-    "data-link-actor-id": object.actor,
-    className: "objectBox-stackTrace"
-  }, content);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getStacktraceElements(props, preview) {
-  const stack = [];
-  if (!preview.stack) {
-    return stack;
-  }
-
-  parseStackString(preview.stack).forEach((frame, index, frames) => {
-    let onLocationClick;
-    const {
-      filename,
-      lineNumber,
-      columnNumber,
-      functionName,
-      location
-    } = frame;
-
-    if (props.onViewSourceInDebugger && !IGNORED_SOURCE_URLS.includes(filename)) {
-      onLocationClick = e => {
-        
-        e.stopPropagation();
-        props.onViewSourceInDebugger({
-          url: filename,
-          line: lineNumber,
-          column: columnNumber
-        });
-      };
-    }
-
-    stack.push("\t", span({
-      key: `fn${index}`,
-      className: "objectBox-stackTrace-fn"
-    }, cleanFunctionName(functionName)), " ", span({
-      key: `location${index}`,
-      className: "objectBox-stackTrace-location",
-      onClick: onLocationClick,
-      title: onLocationClick ? `View source in debugger → ${location}` : undefined
-    }, location), "\n");
-  });
-
-  return span({
-    key: "stack",
-    className: "objectBox-stackTrace-grid"
-  }, stack);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function parseStackString(stack) {
-  const res = [];
-  if (!stack) {
-    return res;
-  }
-
-  const isStacktraceALongString = isLongString(stack);
-  const stackString = isStacktraceALongString ? stack.initial : stack;
-
-  stackString.split("\n").forEach((frame, index, frames) => {
-    if (!frame) {
-      
-      return;
-    }
-
-    
-    
-    
-    
-    if (isStacktraceALongString && index === frames.length - 1) {
-      return;
-    }
-
-    let functionName;
-    let location;
-
-    
-    
-    
-    
-    
-    
-    const result = frame.match(/^(.*)@(.*)$/);
-    if (result && result.length === 3) {
-      functionName = result[1];
-
-      
-      
-      
-      location = result[2].split(" -> ").pop();
-    }
-
-    if (!functionName) {
-      functionName = "<anonymous>";
-    }
-
-    
-    
-    
-    const locationParts = location.match(/^(.*):(\d+):(\d+)$/);
-
-    if (location && locationParts) {
-      const [, filename, line, column] = locationParts;
-      res.push({
-        filename,
-        functionName,
-        location,
-        columnNumber: Number(column),
-        lineNumber: Number(line)
-      });
-    }
-  });
-
-  return res;
-}
-
-
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
-  }
-  return object.preview && getGripType(object, noGrip) === "Error" || object.class === "DOMException";
-}
-
-
-module.exports = {
-  rep: wrapRender(ErrorRep),
-  supportsObject
-};
-
- }),
-
- 1798:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-
-
-
-
-
-const PropTypes = __webpack_require__(1758);
-
-const { lengthBubble } = __webpack_require__(1799);
-const {
-  interleave,
-  getGripType,
-  isGrip,
-  wrapRender,
-  ellipsisElement
-} = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
-
-const dom = __webpack_require__(1759);
-const { span } = dom;
-const { ModePropType } = __webpack_require__(1774);
-const DEFAULT_TITLE = "Array";
-
-
-
-
-
-GripArray.propTypes = {
-  object: PropTypes.object.isRequired,
-  
-  mode: ModePropType,
-  provider: PropTypes.object,
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func
-};
-
-function GripArray(props) {
-  const { object, mode = MODE.SHORT } = props;
-
-  let brackets;
-  const needSpace = function (space) {
-    return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
-  };
-
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-array"
-  };
-
-  const title = getTitle(props, object);
-
-  if (mode === MODE.TINY) {
-    const isEmpty = getLength(object) === 0;
-
-    
-    if (!isEmpty && object.class !== "Array") {
-      return span(config, title);
-    }
-
-    brackets = needSpace(false);
-    return span(config, title, span({
-      className: "arrayLeftBracket"
-    }, brackets.left), isEmpty ? null : ellipsisElement, span({
-      className: "arrayRightBracket"
-    }, brackets.right));
-  }
-
-  const max = maxLengthMap.get(mode);
-  const items = arrayIterator(props, object, max);
-  brackets = needSpace(items.length > 0);
-
-  return span({
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-array"
-  }, title, span({
-    className: "arrayLeftBracket"
-  }, brackets.left), ...interleave(items, ", "), span({
-    className: "arrayRightBracket"
-  }, brackets.right), span({
-    className: "arrayProperties",
-    role: "group"
-  }));
-}
-
-function getLength(grip) {
-  if (!grip.preview) {
-    return 0;
-  }
-
-  return grip.preview.length || grip.preview.childNodesLength || 0;
-}
-
-function getTitle(props, object) {
-  const objectLength = getLength(object);
-  const isEmpty = objectLength === 0;
-
-  let title = props.title || object.class || DEFAULT_TITLE;
-
-  const length = lengthBubble({
-    object,
-    mode: props.mode,
-    maxLengthMap,
-    getLength
-  });
-
-  if (props.mode === MODE.TINY) {
-    if (isEmpty) {
-      if (object.class === DEFAULT_TITLE) {
-        return null;
-      }
-
-      return span({ className: "objectTitle" }, `${title} `);
-    }
-
-    let trailingSpace;
-    if (object.class === DEFAULT_TITLE) {
-      title = null;
-      trailingSpace = " ";
-    }
-
-    return span({ className: "objectTitle" }, title, length, trailingSpace);
-  }
-
-  return span({ className: "objectTitle" }, title, length, " ");
-}
-
-function getPreviewItems(grip) {
-  if (!grip.preview) {
-    return null;
-  }
-
-  return grip.preview.items || grip.preview.childNodes || [];
-}
-
-function arrayIterator(props, grip, max) {
-  const { Rep } = __webpack_require__(1767);
-
-  let items = [];
-  const gripLength = getLength(grip);
-
-  if (!gripLength) {
-    return items;
-  }
-
-  const previewItems = getPreviewItems(grip);
-  const provider = props.provider;
-
-  let emptySlots = 0;
-  let foldedEmptySlots = 0;
-  items = previewItems.reduce((res, itemGrip) => {
-    if (res.length >= max) {
-      return res;
-    }
-
-    let object;
-    try {
-      if (!provider && itemGrip === null) {
-        emptySlots++;
-        return res;
-      }
-
-      object = provider ? provider.getValue(itemGrip) : itemGrip;
-    } catch (exc) {
-      object = exc;
-    }
-
-    if (emptySlots > 0) {
-      res.push(getEmptySlotsElement(emptySlots));
-      foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
-      emptySlots = 0;
-    }
-
-    if (res.length < max) {
-      res.push(Rep(_extends({}, props, {
-        object,
-        mode: MODE.TINY,
-        
-        title: undefined
-      })));
-    }
-
-    return res;
-  }, []);
-
-  
-  if (items.length < max && emptySlots > 0) {
-    items.push(getEmptySlotsElement(emptySlots));
-    foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
-  }
-
-  const itemsShown = items.length + foldedEmptySlots;
-  if (gripLength > itemsShown) {
-    items.push(ellipsisElement);
-  }
-
-  return items;
-}
-
-function getEmptySlotsElement(number) {
-  
-  return `<${number} empty slot${number > 1 ? "s" : ""}>`;
-}
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
-  }
-
-  return grip.preview && (grip.preview.kind == "ArrayLike" || getGripType(grip, noGrip) === "DocumentFragment");
-}
-
-const maxLengthMap = new Map();
-maxLengthMap.set(MODE.SHORT, 3);
-maxLengthMap.set(MODE.LONG, 10);
-
-
-module.exports = {
-  rep: wrapRender(GripArray),
-  supportsObject,
-  maxLengthMap,
-  getLength
-};
-
- }),
-
- 1799:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-const PropTypes = __webpack_require__(1758);
-
-const { wrapRender } = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
-const { ModePropType } = __webpack_require__(1774);
-
-const dom = __webpack_require__(1759);
-const { span } = dom;
-
-GripLengthBubble.propTypes = {
-  object: PropTypes.object.isRequired,
-  maxLengthMap: PropTypes.instanceOf(Map).isRequired,
-  getLength: PropTypes.func.isRequired,
-  mode: ModePropType,
-  visibilityThreshold: PropTypes.number
-};
-
-function GripLengthBubble(props) {
-  const {
-    object,
-    mode = MODE.SHORT,
-    visibilityThreshold = 2,
-    maxLengthMap,
-    getLength,
-    showZeroLength = false
-  } = props;
-
-  const length = getLength(object);
-  const isEmpty = length === 0;
-  const isObvious = [MODE.SHORT, MODE.LONG].includes(mode) && length > 0 && length <= maxLengthMap.get(mode) && length <= visibilityThreshold;
-  if (isEmpty && !showZeroLength || isObvious) {
-    return "";
-  }
-
-  return span({
-    className: "objectLengthBubble"
-  }, `(${length})`);
-}
-
-module.exports = {
-  lengthBubble: wrapRender(GripLengthBubble)
-};
-
- }),
-
- 1800:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-
-
-const { lengthBubble } = __webpack_require__(1799);
-const PropTypes = __webpack_require__(1758);
-const {
-  interleave,
-  isGrip,
-  wrapRender,
-  ellipsisElement
-} = __webpack_require__(1760);
-const PropRep = __webpack_require__(1775);
-const { MODE } = __webpack_require__(1762);
-const { ModePropType } = __webpack_require__(1774);
-
-const { span } = __webpack_require__(1759);
-
-
-
-
-
-GripMap.propTypes = {
-  object: PropTypes.object,
-  
-  mode: ModePropType,
-  isInterestingEntry: PropTypes.func,
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  title: PropTypes.string
-};
-
-function GripMap(props) {
-  const { mode, object } = props;
-
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-object"
-  };
-
-  const title = getTitle(props, object);
-  const isEmpty = getLength(object) === 0;
-
-  if (isEmpty || mode === MODE.TINY) {
-    return span(config, title);
-  }
-
-  const propsArray = safeEntriesIterator(props, object, maxLengthMap.get(mode));
-
-  return span(config, title, span({
-    className: "objectLeftBrace"
-  }, " { "), ...interleave(propsArray, ", "), span({
-    className: "objectRightBrace"
-  }, " }"));
-}
-
-function getTitle(props, object) {
-  const title = props.title || (object && object.class ? object.class : "Map");
-  return span({
-    className: "objectTitle"
-  }, title, lengthBubble({
-    object,
-    mode: props.mode,
-    maxLengthMap,
-    getLength,
-    showZeroLength: true
-  }));
-}
-
-function safeEntriesIterator(props, object, max) {
-  max = typeof max === "undefined" ? 3 : max;
-  try {
-    return entriesIterator(props, object, max);
-  } catch (err) {
-    console.error(err);
-  }
-  return [];
-}
-
-function entriesIterator(props, object, max) {
-  
-  const isInterestingEntry = props.isInterestingEntry || ((type, value) => {
-    return type == "boolean" || type == "number" || type == "string" && value.length != 0;
-  });
-
-  const mapEntries = object.preview && object.preview.entries ? object.preview.entries : [];
-
-  let indexes = getEntriesIndexes(mapEntries, max, isInterestingEntry);
-  if (indexes.length < max && indexes.length < mapEntries.length) {
-    
-    indexes = indexes.concat(getEntriesIndexes(mapEntries, max - indexes.length, (t, value, name) => {
-      return !isInterestingEntry(t, value, name);
-    }));
-  }
-
-  const entries = getEntries(props, mapEntries, indexes);
-  if (entries.length < getLength(object)) {
-    
-    entries.push(ellipsisElement);
-  }
-
-  return entries;
-}
-
-
-
-
-
-
-
-
-
-function getEntries(props, entries, indexes) {
-  const { onDOMNodeMouseOver, onDOMNodeMouseOut, onInspectIconClick } = props;
-
-  
-  indexes.sort(function (a, b) {
-    return a - b;
-  });
-
-  return indexes.map((index, i) => {
-    const [key, entryValue] = entries[index];
-    const value = entryValue.value !== undefined ? entryValue.value : entryValue;
-
-    return PropRep({
-      name: key,
-      equal: " \u2192 ",
-      object: value,
-      mode: MODE.TINY,
-      onDOMNodeMouseOver,
-      onDOMNodeMouseOut,
-      onInspectIconClick
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-function getEntriesIndexes(entries, max, filter) {
-  return entries.reduce((indexes, [key, entry], i) => {
-    if (indexes.length < max) {
-      const value = entry && entry.value !== undefined ? entry.value : entry;
-      
-      
-      const type = (value && value.class ? value.class : typeof value).toLowerCase();
-
-      if (filter(type, value, key)) {
-        indexes.push(i);
-      }
-    }
-
-    return indexes;
-  }, []);
-}
-
-function getLength(grip) {
-  return grip.preview.size || 0;
-}
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
-  }
-  return grip.preview && grip.preview.kind == "MapLike";
-}
-
-const maxLengthMap = new Map();
-maxLengthMap.set(MODE.SHORT, 3);
-maxLengthMap.set(MODE.LONG, 10);
-
-
-module.exports = {
-  rep: wrapRender(GripMap),
-  supportsObject,
-  maxLengthMap,
-  getLength
-};
-
- }),
-
- 1801:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-
-
-
-
-
-const PropTypes = __webpack_require__(1758);
-
-const dom = __webpack_require__(1759);
-const { span } = dom;
-const { wrapRender } = __webpack_require__(1760);
-const PropRep = __webpack_require__(1775);
-const { MODE } = __webpack_require__(1762);
-
-
-
-
-GripMapEntry.propTypes = {
-  object: PropTypes.object,
-  
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func
-};
-
-function GripMapEntry(props) {
-  const { object } = props;
-
-  const { key, value } = object.preview;
-
-  return span({
-    className: "objectBox objectBox-map-entry"
-  }, PropRep(_extends({}, props, {
-    name: key,
-    object: value,
-    equal: " \u2192 ",
-    title: null,
-    suppressQuotes: false
-  })));
-}
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true) {
-    return false;
-  }
-  return grip && (grip.type === "mapEntry" || grip.type === "storageEntry") && grip.preview;
-}
-
-function createGripMapEntry(key, value) {
-  return {
-    type: "mapEntry",
-    preview: {
-      key,
-      value
-    }
-  };
-}
-
-
-module.exports = {
-  rep: wrapRender(GripMapEntry),
-  createGripMapEntry,
-  supportsObject
-};
-
- }),
-
- 1802:
+ 3670:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3622,11 +3788,11 @@ var _react = __webpack_require__(0);
 
 var _react2 = _interopRequireDefault(_react);
 
-var _reactDomFactories = __webpack_require__(1759);
+var _reactDomFactories = __webpack_require__(3643);
 
 var _reactDomFactories2 = _interopRequireDefault(_reactDomFactories);
 
-var _propTypes = __webpack_require__(1758);
+var _propTypes = __webpack_require__(3642);
 
 var _propTypes2 = _interopRequireDefault(_propTypes);
 
@@ -3636,7 +3802,7 @@ const { Component, createFactory } = _react2.default;
 
 
 
-__webpack_require__(1803);
+__webpack_require__(3671);
 
 
 const AUTO_EXPAND_DEPTH = 0;
@@ -4434,285 +4600,21 @@ exports.default = Tree;
 
  }),
 
- 1803:
+ 3671:
  (function(module, exports) {
 
 
 
  }),
 
- 1804:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-
-
-
-
-const {
-  enumEntries,
-  enumIndexedProperties,
-  enumNonIndexedProperties,
-  getPrototype,
-  enumSymbols,
-  getFullText
-} = __webpack_require__(1805);
-
-const {
-  getClosestGripNode,
-  getClosestNonBucketNode,
-  getValue,
-  nodeHasAccessors,
-  nodeHasAllEntriesInPreview,
-  nodeHasProperties,
-  nodeIsBucket,
-  nodeIsDefaultProperties,
-  nodeIsEntries,
-  nodeIsMapEntry,
-  nodeIsPrimitive,
-  nodeIsProxy,
-  nodeNeedsNumericalBuckets,
-  nodeIsLongString
-} = __webpack_require__(1785);
-
-function loadItemProperties(item, createObjectClient, createLongStringClient, loadedProperties) {
-  const gripItem = getClosestGripNode(item);
-  const value = getValue(gripItem);
-
-  const [start, end] = item.meta ? [item.meta.startIndex, item.meta.endIndex] : [];
-
-  const promises = [];
-  let objectClient;
-  const getObjectClient = () => objectClient || createObjectClient(value);
-
-  if (shouldLoadItemIndexedProperties(item, loadedProperties)) {
-    promises.push(enumIndexedProperties(getObjectClient(), start, end));
-  }
-
-  if (shouldLoadItemNonIndexedProperties(item, loadedProperties)) {
-    promises.push(enumNonIndexedProperties(getObjectClient(), start, end));
-  }
-
-  if (shouldLoadItemEntries(item, loadedProperties)) {
-    promises.push(enumEntries(getObjectClient(), start, end));
-  }
-
-  if (shouldLoadItemPrototype(item, loadedProperties)) {
-    promises.push(getPrototype(getObjectClient()));
-  }
-
-  if (shouldLoadItemSymbols(item, loadedProperties)) {
-    promises.push(enumSymbols(getObjectClient(), start, end));
-  }
-
-  if (shouldLoadItemFullText(item, loadedProperties)) {
-    promises.push(getFullText(createLongStringClient(value), item));
-  }
-
-  return Promise.all(promises).then(mergeResponses);
-}
-
-function mergeResponses(responses) {
-  const data = {};
-
-  for (const response of responses) {
-    if (response.hasOwnProperty("ownProperties")) {
-      data.ownProperties = _extends({}, data.ownProperties, response.ownProperties);
-    }
-
-    if (response.ownSymbols && response.ownSymbols.length > 0) {
-      data.ownSymbols = response.ownSymbols;
-    }
-
-    if (response.prototype) {
-      data.prototype = response.prototype;
-    }
-
-    if (response.fullText) {
-      data.fullText = response.fullText;
-    }
-  }
-
-  return data;
-}
-
-function shouldLoadItemIndexedProperties(item, loadedProperties = new Map()) {
-  const gripItem = getClosestGripNode(item);
-  const value = getValue(gripItem);
-
-  return value && nodeHasProperties(gripItem) && !loadedProperties.has(item.path) && !nodeIsProxy(item) && !nodeNeedsNumericalBuckets(item) && !nodeIsEntries(getClosestNonBucketNode(item)) &&
-  
-  !nodeIsDefaultProperties(item);
-}
-
-function shouldLoadItemNonIndexedProperties(item, loadedProperties = new Map()) {
-  const gripItem = getClosestGripNode(item);
-  const value = getValue(gripItem);
-
-  return value && nodeHasProperties(gripItem) && !loadedProperties.has(item.path) && !nodeIsProxy(item) && !nodeIsEntries(getClosestNonBucketNode(item)) && !nodeIsBucket(item) &&
-  
-  !nodeIsDefaultProperties(item);
-}
-
-function shouldLoadItemEntries(item, loadedProperties = new Map()) {
-  const gripItem = getClosestGripNode(item);
-  const value = getValue(gripItem);
-
-  return value && nodeIsEntries(getClosestNonBucketNode(item)) && !nodeHasAllEntriesInPreview(gripItem) && !loadedProperties.has(item.path) && !nodeNeedsNumericalBuckets(item);
-}
-
-function shouldLoadItemPrototype(item, loadedProperties = new Map()) {
-  const value = getValue(item);
-
-  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsLongString(item);
-}
-
-function shouldLoadItemSymbols(item, loadedProperties = new Map()) {
-  const value = getValue(item);
-
-  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsLongString(item) && !nodeIsProxy(item);
-}
-
-function shouldLoadItemFullText(item, loadedProperties = new Map()) {
-  return !loadedProperties.has(item.path) && nodeIsLongString(item);
-}
-
-module.exports = {
-  loadItemProperties,
-  mergeResponses,
-  shouldLoadItemEntries,
-  shouldLoadItemIndexedProperties,
-  shouldLoadItemNonIndexedProperties,
-  shouldLoadItemPrototype,
-  shouldLoadItemSymbols,
-  shouldLoadItemFullText
-};
-
- }),
-
- 1805:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const { getValue, nodeHasFullText } = __webpack_require__(1785); 
-
-
-
-async function enumIndexedProperties(objectClient, start, end) {
-  try {
-    const { iterator } = await objectClient.enumProperties({
-      ignoreNonIndexedProperties: true
-    });
-    const response = await iteratorSlice(iterator, start, end);
-    return response;
-  } catch (e) {
-    console.error("Error in enumIndexedProperties", e);
-    return {};
-  }
-}
-
-async function enumNonIndexedProperties(objectClient, start, end) {
-  try {
-    const { iterator } = await objectClient.enumProperties({
-      ignoreIndexedProperties: true
-    });
-    const response = await iteratorSlice(iterator, start, end);
-    return response;
-  } catch (e) {
-    console.error("Error in enumNonIndexedProperties", e);
-    return {};
-  }
-}
-
-async function enumEntries(objectClient, start, end) {
-  try {
-    const { iterator } = await objectClient.enumEntries();
-    const response = await iteratorSlice(iterator, start, end);
-    return response;
-  } catch (e) {
-    console.error("Error in enumEntries", e);
-    return {};
-  }
-}
-
-async function enumSymbols(objectClient, start, end) {
-  try {
-    const { iterator } = await objectClient.enumSymbols();
-    const response = await iteratorSlice(iterator, start, end);
-    return response;
-  } catch (e) {
-    console.error("Error in enumSymbols", e);
-    return {};
-  }
-}
-
-async function getPrototype(objectClient) {
-  if (typeof objectClient.getPrototype !== "function") {
-    console.error("objectClient.getPrototype is not a function");
-    return Promise.resolve({});
-  }
-  return objectClient.getPrototype();
-}
-
-async function getFullText(longStringClient, item) {
-  const { initial, fullText, length } = getValue(item);
-
-  
-  
-  if (nodeHasFullText(item)) {
-    return Promise.resolve({ fullText });
-  }
-
-  return new Promise((resolve, reject) => {
-    longStringClient.substring(initial.length, length, response => {
-      if (response.error) {
-        console.error("LongStringClient.substring", `${response.error}: ${response.message}`);
-        reject({});
-        return;
-      }
-
-      resolve({
-        fullText: initial + response.substring
-      });
-    });
-  });
-}
-
-function iteratorSlice(iterator, start, end) {
-  start = start || 0;
-  const count = end ? end - start + 1 : iterator.count;
-
-  if (count === 0) {
-    return Promise.resolve({});
-  }
-  return iterator.slice(start, count);
-}
-
-module.exports = {
-  enumEntries,
-  enumIndexedProperties,
-  enumNonIndexedProperties,
-  enumSymbols,
-  getPrototype,
-  getFullText
-};
-
- }),
-
- 1831:
+ 3672:
  (function(module, exports) {
 
 
 
  }),
 
- 1832:
+ 3673:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4723,9 +4625,9 @@ module.exports = {
 
 
 
-const { getGripType, wrapRender } = __webpack_require__(1760);
+const { getGripType, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -4752,7 +4654,7 @@ module.exports = {
 
  }),
 
- 1833:
+ 3674:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4763,8 +4665,8 @@ module.exports = {
 
 
 
-const { wrapRender } = __webpack_require__(1760);
-const dom = __webpack_require__(1759);
+const { wrapRender } = __webpack_require__(3644);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -4795,7 +4697,7 @@ module.exports = {
 
  }),
 
- 1834:
+ 3675:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4806,11 +4708,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
-const { getGripType, wrapRender } = __webpack_require__(1760);
+const { getGripType, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -4845,7 +4747,7 @@ module.exports = {
 
  }),
 
- 1835:
+ 3676:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4858,12 +4760,12 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const PropTypes = __webpack_require__(1758);
-const { wrapRender, ellipsisElement } = __webpack_require__(1760);
-const PropRep = __webpack_require__(1775);
-const { MODE } = __webpack_require__(1762);
+const PropTypes = __webpack_require__(3642);
+const { wrapRender, ellipsisElement } = __webpack_require__(3644);
+const PropRep = __webpack_require__(3650);
+const { MODE } = __webpack_require__(3645);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 const DEFAULT_TITLE = "Object";
@@ -5017,7 +4919,7 @@ module.exports = {
 
  }),
 
- 1836:
+ 3677:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5028,11 +4930,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
-const { getGripType, wrapRender } = __webpack_require__(1760);
+const { getGripType, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5064,7 +4966,7 @@ module.exports = {
 
  }),
 
- 1837:
+ 3678:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5075,11 +4977,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
-const { getGripType, wrapRender } = __webpack_require__(1760);
+const { getGripType, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5108,7 +5010,7 @@ module.exports = {
 
  }),
 
- 1838:
+ 3679:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5119,9 +5021,9 @@ module.exports = {
 
 
 
-const { getGripType, wrapRender } = __webpack_require__(1760);
+const { getGripType, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5143,7 +5045,7 @@ module.exports = {
 
  }),
 
- 1839:
+ 3680:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5156,10 +5058,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const dom = __webpack_require__(1759);
-const PropTypes = __webpack_require__(1758);
-const { wrapRender } = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
+const dom = __webpack_require__(3643);
+const PropTypes = __webpack_require__(3642);
+const { wrapRender } = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
 const { span } = dom;
 
 
@@ -5175,7 +5077,7 @@ function Accessor(props) {
   const { object, evaluation, onInvokeGetterButtonClick } = props;
 
   if (evaluation) {
-    const { Rep, Grip } = __webpack_require__(1767);
+    const { Rep, Grip } = __webpack_require__(3647);
     return span({
       className: "objectBox objectBox-accessor objectTitle"
     }, Rep(_extends({}, props, {
@@ -5232,7 +5134,7 @@ module.exports = {
 
  }),
 
- 1840:
+ 3681:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5243,136 +5145,13 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
-const { button, span } = __webpack_require__(1759);
-
-
-const { isGrip, wrapRender } = __webpack_require__(1760);
-const { rep: StringRep } = __webpack_require__(1770);
-
-
-
-
-Accessible.propTypes = {
-  object: PropTypes.object.isRequired,
-  inspectIconTitle: PropTypes.string,
-  nameMaxLength: PropTypes.number,
-  onAccessibleClick: PropTypes.func,
-  onAccessibleMouseOver: PropTypes.func,
-  onAccessibleMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  roleFirst: PropTypes.bool,
-  separatorText: PropTypes.string
-};
-
-function Accessible(props) {
-  const {
-    object,
-    inspectIconTitle,
-    nameMaxLength,
-    onAccessibleClick,
-    onAccessibleMouseOver,
-    onAccessibleMouseOut,
-    onInspectIconClick,
-    roleFirst,
-    separatorText
-  } = props;
-  const elements = getElements(object, nameMaxLength, roleFirst, separatorText);
-  const isInTree = object.preview && object.preview.isConnected === true;
-  const baseConfig = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-accessible"
-  };
-
-  let inspectIcon;
-  if (isInTree) {
-    if (onAccessibleClick) {
-      Object.assign(baseConfig, {
-        onClick: _ => onAccessibleClick(object),
-        className: `${baseConfig.className} clickable`
-      });
-    }
-
-    if (onAccessibleMouseOver) {
-      Object.assign(baseConfig, {
-        onMouseOver: _ => onAccessibleMouseOver(object)
-      });
-    }
-
-    if (onAccessibleMouseOut) {
-      Object.assign(baseConfig, {
-        onMouseOut: onAccessibleMouseOut
-      });
-    }
-
-    if (onInspectIconClick) {
-      inspectIcon = button({
-        className: "open-accessibility-inspector",
-        title: inspectIconTitle,
-        onClick: e => {
-          if (onAccessibleClick) {
-            e.stopPropagation();
-          }
-
-          onInspectIconClick(object, e);
-        }
-      });
-    }
-  }
-
-  return span(baseConfig, ...elements, inspectIcon);
-}
-
-function getElements(grip, nameMaxLength, roleFirst = false, separatorText = ": ") {
-  const { name, role } = grip.preview;
-  const elements = [];
-  if (name) {
-    elements.push(StringRep({
-      className: "accessible-name",
-      object: name,
-      cropLimit: nameMaxLength
-    }), span({ className: "separator" }, separatorText));
-  }
-
-  elements.push(span({ className: "accessible-role" }, role));
-  return roleFirst ? elements.reverse() : elements;
-}
-
-
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
-  }
-
-  return object.preview && object.typeName && object.typeName === "accessible";
-}
-
-
-module.exports = {
-  rep: wrapRender(Accessible),
-  supportsObject
-};
-
- }),
-
- 1841:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-
-const PropTypes = __webpack_require__(1758);
-const dom = __webpack_require__(1759);
+const PropTypes = __webpack_require__(3642);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
-const { getGripType, isGrip, wrapRender } = __webpack_require__(1760);
-const { rep: StringRep } = __webpack_require__(1770);
+const { getGripType, isGrip, wrapRender } = __webpack_require__(3644);
+const { rep: StringRep } = __webpack_require__(3648);
 
 
 
@@ -5411,7 +5190,7 @@ module.exports = {
 
  }),
 
- 1842:
+ 3682:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5422,12 +5201,12 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { getGripType, isGrip, wrapRender } = __webpack_require__(1760);
+const { getGripType, isGrip, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5475,7 +5254,7 @@ module.exports = {
 
  }),
 
- 1843:
+ 3683:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5486,7 +5265,7 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
 const {
@@ -5494,9 +5273,9 @@ const {
   isGrip,
   getURLDisplayString,
   wrapRender
-} = __webpack_require__(1760);
+} = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5544,7 +5323,7 @@ module.exports = {
 
  }),
 
- 1844:
+ 3684:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5555,11 +5334,11 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { getGripType, isGrip, wrapRender } = __webpack_require__(1760);
-const dom = __webpack_require__(1759);
+const { getGripType, isGrip, wrapRender } = __webpack_require__(3644);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5596,7 +5375,7 @@ module.exports = {
 
  }),
 
- 1845:
+ 3685:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5609,13 +5388,13 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { isGrip, wrapRender } = __webpack_require__(1760);
+const { isGrip, wrapRender } = __webpack_require__(3644);
 
-const { MODE } = __webpack_require__(1762);
-const { rep } = __webpack_require__(1784);
+const { MODE } = __webpack_require__(3645);
+const { rep } = __webpack_require__(3656);
 
 
 
@@ -5702,7 +5481,7 @@ module.exports = {
 
  }),
 
- 1846:
+ 3686:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5715,14 +5494,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
-const { getGripType, isGrip, wrapRender } = __webpack_require__(1760);
+const { getGripType, isGrip, wrapRender } = __webpack_require__(3644);
 
-const PropRep = __webpack_require__(1775);
-const { MODE } = __webpack_require__(1762);
+const PropRep = __webpack_require__(3650);
+const { MODE } = __webpack_require__(3645);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5747,7 +5526,7 @@ function PromiseRep(props) {
   };
 
   if (props.mode === MODE.TINY) {
-    const { Rep } = __webpack_require__(1767);
+    const { Rep } = __webpack_require__(3647);
 
     return span(config, getTitle(object), span({
       className: "objectLeftBrace"
@@ -5811,7 +5590,7 @@ module.exports = {
 
  }),
 
- 1847:
+ 3687:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5822,12 +5601,12 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { getGripType, isGrip, wrapRender } = __webpack_require__(1760);
+const { getGripType, isGrip, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5867,7 +5646,7 @@ module.exports = {
 
  }),
 
- 1848:
+ 3688:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5878,7 +5657,7 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
 const {
@@ -5886,9 +5665,9 @@ const {
   isGrip,
   getURLDisplayString,
   wrapRender
-} = __webpack_require__(1760);
+} = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -5936,7 +5715,7 @@ module.exports = {
 
  }),
 
- 1849:
+ 3689:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5947,16 +5726,16 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 const {
   isGrip,
   cropString,
   cropMultipleLines,
   wrapRender
-} = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
-const nodeConstants = __webpack_require__(1796);
-const dom = __webpack_require__(1759);
+} = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
+const nodeConstants = __webpack_require__(3659);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -6000,7 +5779,7 @@ module.exports = {
 
  }),
 
- 1850:
+ 3690:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6011,15 +5790,15 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { isGrip, wrapRender } = __webpack_require__(1760);
-const { rep: StringRep } = __webpack_require__(1770);
-const { MODE } = __webpack_require__(1762);
-const nodeConstants = __webpack_require__(1796);
+const { isGrip, wrapRender } = __webpack_require__(3644);
+const { rep: StringRep } = __webpack_require__(3648);
+const { MODE } = __webpack_require__(3645);
+const nodeConstants = __webpack_require__(3659);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -6155,7 +5934,7 @@ module.exports = {
 
  }),
 
- 1851:
+ 3691:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6166,13 +5945,13 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { isGrip, cropString, wrapRender } = __webpack_require__(1760);
-const { MODE } = __webpack_require__(1762);
+const { isGrip, cropString, wrapRender } = __webpack_require__(3644);
+const { MODE } = __webpack_require__(3645);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -6260,7 +6039,7 @@ module.exports = {
 
  }),
 
- 1852:
+ 3692:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6271,7 +6050,7 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
 const {
@@ -6279,11 +6058,11 @@ const {
   isGrip,
   getURLDisplayString,
   wrapRender
-} = __webpack_require__(1760);
+} = __webpack_require__(3644);
 
-const { MODE } = __webpack_require__(1762);
+const { MODE } = __webpack_require__(3645);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -6339,7 +6118,7 @@ module.exports = {
 
  }),
 
- 1853:
+ 3693:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6350,14 +6129,14 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { isGrip, wrapRender } = __webpack_require__(1760);
+const { isGrip, wrapRender } = __webpack_require__(3644);
 
-const String = __webpack_require__(1770).rep;
+const String = __webpack_require__(3648).rep;
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -6402,7 +6181,7 @@ module.exports = {
 
  }),
 
- 1854:
+ 3694:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6413,12 +6192,12 @@ module.exports = {
 
 
 
-const PropTypes = __webpack_require__(1758);
+const PropTypes = __webpack_require__(3642);
 
 
-const { isGrip, getURLDisplayString, wrapRender } = __webpack_require__(1760);
+const { isGrip, getURLDisplayString, wrapRender } = __webpack_require__(3644);
 
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 const { span } = dom;
 
 
@@ -6465,7 +6244,7 @@ module.exports = {
 
  }),
 
- 1855:
+ 3695:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6475,15 +6254,161 @@ module.exports = {
 
 
 
-const ObjectInspector = __webpack_require__(1856);
-const utils = __webpack_require__(1787);
-const reducer = __webpack_require__(1786);
+const ObjectInspector = __webpack_require__(3829);
+const utils = __webpack_require__(3657);
+const reducer = __webpack_require__(3703);
 
 module.exports = { ObjectInspector, utils, reducer };
 
  }),
 
- 1856:
+ 3698:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+function documentHasSelection() {
+  const selection = getSelection();
+  if (!selection) {
+    return false;
+  }
+
+  return selection.type === "Range";
+}
+
+module.exports = {
+  documentHasSelection
+};
+
+ }),
+
+ 3699:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const { loadItemProperties } = __webpack_require__(3666); 
+
+
+
+const { getLoadedProperties, getActors } = __webpack_require__(3703);
+
+
+
+
+
+function nodeExpand(node, actor) {
+  return async ({ dispatch, getState }) => {
+    dispatch({ type: "NODE_EXPAND", data: { node } });
+    dispatch(nodeLoadProperties(node, actor));
+  };
+}
+
+function nodeCollapse(node) {
+  return {
+    type: "NODE_COLLAPSE",
+    data: { node }
+  };
+}
+
+
+
+
+
+
+function nodeLoadProperties(node, actor) {
+  return async ({ dispatch, client, getState }) => {
+    const state = getState();
+    const loadedProperties = getLoadedProperties(state);
+    if (loadedProperties.has(node.path)) {
+      return;
+    }
+
+    try {
+      const properties = await loadItemProperties(node, client.createObjectClient, client.createLongStringClient, loadedProperties);
+
+      dispatch(nodePropertiesLoaded(node, actor, properties));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
+
+function nodePropertiesLoaded(node, actor, properties) {
+  return {
+    type: "NODE_PROPERTIES_LOADED",
+    data: { node, actor, properties }
+  };
+}
+
+function closeObjectInspector() {
+  return async ({ getState, client }) => {
+    releaseActors(getState(), client);
+  };
+}
+
+
+
+
+
+
+
+
+
+function rootsChanged(props) {
+  return async ({ dispatch, client, getState }) => {
+    releaseActors(getState(), client);
+    dispatch({
+      type: "ROOTS_CHANGED",
+      data: props
+    });
+  };
+}
+
+function releaseActors(state, client) {
+  const actors = getActors(state);
+  for (const actor of actors) {
+    client.releaseActor(actor);
+  }
+}
+
+function invokeGetter(node, grip, getterName) {
+  return async ({ dispatch, client, getState }) => {
+    try {
+      const objectClient = client.createObjectClient(grip);
+      const result = await objectClient.getPropertyValue(getterName);
+      dispatch({
+        type: "GETTER_INVOKED",
+        data: {
+          node,
+          result
+        }
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
+
+module.exports = {
+  closeObjectInspector,
+  invokeGetter,
+  nodeExpand,
+  nodeCollapse,
+  nodeLoadProperties,
+  nodePropertiesLoaded,
+  rootsChanged
+};
+
+ }),
+
+ 3703:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6491,7 +6416,243 @@ module.exports = { ObjectInspector, utils, reducer };
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _devtoolsComponents = __webpack_require__(1792);
+function initialState() {
+  return {
+    expandedPaths: new Set(),
+    loadedProperties: new Map(),
+    evaluations: new Map(),
+    actors: new Set()
+  };
+} 
+
+
+
+
+function reducer(state = initialState(), action = {}) {
+  const { type, data } = action;
+
+  const cloneState = overrides => _extends({}, state, overrides);
+
+  if (type === "NODE_EXPAND") {
+    return cloneState({
+      expandedPaths: new Set(state.expandedPaths).add(data.node.path)
+    });
+  }
+
+  if (type === "NODE_COLLAPSE") {
+    const expandedPaths = new Set(state.expandedPaths);
+    expandedPaths.delete(data.node.path);
+    return cloneState({ expandedPaths });
+  }
+
+  if (type === "NODE_PROPERTIES_LOADED") {
+    return cloneState({
+      actors: data.actor ? new Set(state.actors || []).add(data.actor) : state.actors,
+      loadedProperties: new Map(state.loadedProperties).set(data.node.path, action.data.properties)
+    });
+  }
+
+  if (type === "ROOTS_CHANGED") {
+    return cloneState();
+  }
+
+  if (type === "GETTER_INVOKED") {
+    return cloneState({
+      actors: data.actor ? new Set(state.actors || []).add(data.result.from) : state.actors,
+      evaluations: new Map(state.evaluations).set(data.node.path, {
+        getterValue: data.result && data.result.value && (data.result.value.return || data.result.value.throw)
+      })
+    });
+  }
+
+  return state;
+}
+
+function getObjectInspectorState(state) {
+  return state.objectInspector;
+}
+
+function getExpandedPaths(state) {
+  return getObjectInspectorState(state).expandedPaths;
+}
+
+function getExpandedPathKeys(state) {
+  return [...getExpandedPaths(state).keys()];
+}
+
+function getActors(state) {
+  return getObjectInspectorState(state).actors;
+}
+
+function getLoadedProperties(state) {
+  return getObjectInspectorState(state).loadedProperties;
+}
+
+function getLoadedPropertyKeys(state) {
+  return [...getLoadedProperties(state).keys()];
+}
+
+function getEvaluations(state) {
+  return getObjectInspectorState(state).evaluations;
+}
+
+const selectors = {
+  getActors,
+  getEvaluations,
+  getExpandedPathKeys,
+  getExpandedPaths,
+  getLoadedProperties,
+  getLoadedPropertyKeys
+};
+
+Object.defineProperty(module.exports, "__esModule", {
+  value: true
+});
+module.exports = selectors;
+module.exports.default = reducer;
+
+ }),
+
+ 3730:
+ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(3655);
+
+
+ }),
+
+ 3787:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+const PropTypes = __webpack_require__(3642);
+const { button, span } = __webpack_require__(3643);
+
+
+const { isGrip, wrapRender } = __webpack_require__(3644);
+const { rep: StringRep } = __webpack_require__(3648);
+
+
+
+
+Accessible.propTypes = {
+  object: PropTypes.object.isRequired,
+  inspectIconTitle: PropTypes.string,
+  nameMaxLength: PropTypes.number,
+  onAccessibleClick: PropTypes.func,
+  onAccessibleMouseOver: PropTypes.func,
+  onAccessibleMouseOut: PropTypes.func,
+  onInspectIconClick: PropTypes.func,
+  roleFirst: PropTypes.bool,
+  separatorText: PropTypes.string
+};
+
+function Accessible(props) {
+  const {
+    object,
+    inspectIconTitle,
+    nameMaxLength,
+    onAccessibleClick,
+    onAccessibleMouseOver,
+    onAccessibleMouseOut,
+    onInspectIconClick,
+    roleFirst,
+    separatorText
+  } = props;
+  const elements = getElements(object, nameMaxLength, roleFirst, separatorText);
+  const isInTree = object.preview && object.preview.isConnected === true;
+  const baseConfig = {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-accessible"
+  };
+
+  let inspectIcon;
+  if (isInTree) {
+    if (onAccessibleClick) {
+      Object.assign(baseConfig, {
+        onClick: _ => onAccessibleClick(object),
+        className: `${baseConfig.className} clickable`
+      });
+    }
+
+    if (onAccessibleMouseOver) {
+      Object.assign(baseConfig, {
+        onMouseOver: _ => onAccessibleMouseOver(object)
+      });
+    }
+
+    if (onAccessibleMouseOut) {
+      Object.assign(baseConfig, {
+        onMouseOut: onAccessibleMouseOut
+      });
+    }
+
+    if (onInspectIconClick) {
+      inspectIcon = button({
+        className: "open-accessibility-inspector",
+        title: inspectIconTitle,
+        onClick: e => {
+          if (onAccessibleClick) {
+            e.stopPropagation();
+          }
+
+          onInspectIconClick(object, e);
+        }
+      });
+    }
+  }
+
+  return span(baseConfig, ...elements, inspectIcon);
+}
+
+function getElements(grip, nameMaxLength, roleFirst = false, separatorText = ": ") {
+  const { name, role } = grip.preview;
+  const elements = [];
+  if (name) {
+    elements.push(StringRep({
+      className: "accessible-name",
+      object: name,
+      cropLimit: nameMaxLength
+    }), span({ className: "separator" }, separatorText));
+  }
+
+  elements.push(span({ className: "accessible-role" }, role));
+  return roleFirst ? elements.reverse() : elements;
+}
+
+
+function supportsObject(object, noGrip = false) {
+  if (noGrip === true || !isGrip(object)) {
+    return false;
+  }
+
+  return object.preview && object.typeName && object.typeName === "accessible";
+}
+
+
+module.exports = {
+  rep: wrapRender(Accessible),
+  supportsObject
+};
+
+ }),
+
+ 3829:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _devtoolsComponents = __webpack_require__(3669);
 
 var _devtoolsComponents2 = _interopRequireDefault(_devtoolsComponents);
 
@@ -6502,19 +6663,19 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 const { Component, createFactory, createElement } = __webpack_require__(0);
-const { connect } = __webpack_require__(1763);
-const actions = __webpack_require__(1857);
+const { connect } = __webpack_require__(3592);
+const actions = __webpack_require__(3699);
 
-const selectors = __webpack_require__(1786);
+const selectors = __webpack_require__(3703);
 
 const Tree = createFactory(_devtoolsComponents2.default.Tree);
-__webpack_require__(1858);
+__webpack_require__(3830);
 
-const ObjectInspectorItem = createFactory(__webpack_require__(1859));
+const ObjectInspectorItem = createFactory(__webpack_require__(3831));
 
 const classnames = __webpack_require__(175);
 
-const Utils = __webpack_require__(1787);
+const Utils = __webpack_require__(3657);
 const { renderRep, shouldRenderRootsInReps } = Utils;
 const {
   getChildrenWithEvaluations,
@@ -6757,135 +6918,14 @@ module.exports = props => {
 
  }),
 
- 1857:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const { loadItemProperties } = __webpack_require__(1804); 
-
-
-
-const { getLoadedProperties, getActors } = __webpack_require__(1786);
-
-
-
-
-
-function nodeExpand(node, actor) {
-  return async ({ dispatch, getState }) => {
-    dispatch({ type: "NODE_EXPAND", data: { node } });
-    dispatch(nodeLoadProperties(node, actor));
-  };
-}
-
-function nodeCollapse(node) {
-  return {
-    type: "NODE_COLLAPSE",
-    data: { node }
-  };
-}
-
-
-
-
-
-
-function nodeLoadProperties(node, actor) {
-  return async ({ dispatch, client, getState }) => {
-    const state = getState();
-    const loadedProperties = getLoadedProperties(state);
-    if (loadedProperties.has(node.path)) {
-      return;
-    }
-
-    try {
-      const properties = await loadItemProperties(node, client.createObjectClient, client.createLongStringClient, loadedProperties);
-
-      dispatch(nodePropertiesLoaded(node, actor, properties));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-}
-
-function nodePropertiesLoaded(node, actor, properties) {
-  return {
-    type: "NODE_PROPERTIES_LOADED",
-    data: { node, actor, properties }
-  };
-}
-
-function closeObjectInspector() {
-  return async ({ getState, client }) => {
-    releaseActors(getState(), client);
-  };
-}
-
-
-
-
-
-
-
-
-
-function rootsChanged(props) {
-  return async ({ dispatch, client, getState }) => {
-    releaseActors(getState(), client);
-    dispatch({
-      type: "ROOTS_CHANGED",
-      data: props
-    });
-  };
-}
-
-function releaseActors(state, client) {
-  const actors = getActors(state);
-  for (const actor of actors) {
-    client.releaseActor(actor);
-  }
-}
-
-function invokeGetter(node, grip, getterName) {
-  return async ({ dispatch, client, getState }) => {
-    try {
-      const objectClient = client.createObjectClient(grip);
-      const result = await objectClient.getPropertyValue(getterName);
-      dispatch({
-        type: "GETTER_INVOKED",
-        data: {
-          node,
-          result
-        }
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-}
-
-module.exports = {
-  closeObjectInspector,
-  invokeGetter,
-  nodeExpand,
-  nodeCollapse,
-  nodeLoadProperties,
-  nodePropertiesLoaded,
-  rootsChanged
-};
-
- }),
-
- 1858:
+ 3830:
  (function(module, exports) {
 
 
 
  }),
 
- 1859:
+ 3831:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6904,15 +6944,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 const { Component } = __webpack_require__(0);
-const dom = __webpack_require__(1759);
+const dom = __webpack_require__(3643);
 
 const { appinfo } = _devtoolsServices2.default;
 const isMacOS = appinfo.OS === "Darwin";
 
 const classnames = __webpack_require__(175);
-const { MODE } = __webpack_require__(1762);
+const { MODE } = __webpack_require__(3645);
 
-const Utils = __webpack_require__(1787);
+const Utils = __webpack_require__(3657);
 
 const {
   getValue,
@@ -7120,46 +7160,6 @@ class ObjectInspectorItem extends Component {
 }
 
 module.exports = ObjectInspectorItem;
-
- }),
-
- 1860:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-function documentHasSelection() {
-  const selection = getSelection();
-  if (!selection) {
-    return false;
-  }
-
-  return selection.type === "Range";
-}
-
-module.exports = {
-  documentHasSelection
-};
-
- }),
-
- 2105:
- (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(1780);
-
-
- }),
-
- 22:
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_22__;
 
  })
 
