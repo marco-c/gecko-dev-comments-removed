@@ -540,10 +540,10 @@ class ExtensionData {
   
   
   static comparePermissions(oldPermissions, newPermissions) {
-    let oldMatcher = new MatchPatternSet(oldPermissions.origins);
+    let oldMatcher = new MatchPatternSet(oldPermissions.origins, {restrictSchemes: false});
     return {
       
-      origins: newPermissions.origins.filter(perm => !oldMatcher.subsumesDomain(new MatchPattern(perm))),
+      origins: newPermissions.origins.filter(perm => !oldMatcher.subsumesDomain(new MatchPattern(perm, {restrictSchemes: false}))),
       permissions: newPermissions.permissions.filter(perm => !oldPermissions.permissions.includes(perm)),
     };
   }
@@ -1105,7 +1105,10 @@ class ExtensionData {
         allUrls = true;
         break;
       }
-      let match = /^[a-z*]+:\/\/([^/]*)\//.exec(permission);
+
+      
+      
+      let match = /^[a-z*]+:\/\/([^/]*)\/|^about:/.exec(permission);
       if (!match) {
         throw new Error(`Unparseable host permission ${permission}`);
       }
