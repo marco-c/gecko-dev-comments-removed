@@ -2289,17 +2289,6 @@ protected:
 
 
 
-extern JSObject*
-xpc_NewIDObject(JSContext* cx, JS::HandleObject scope, const nsID& aID);
-
-extern const nsID*
-xpc_JSObjectToID(JSContext* cx, JSObject* obj);
-
-extern bool
-xpc_JSObjectIsID(JSContext* cx, JSObject* obj);
-
-
-
 
 class MOZ_RAII AutoScriptEvaluate
 {

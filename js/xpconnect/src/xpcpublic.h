@@ -32,6 +32,7 @@
 class nsGlobalWindowInner;
 class nsIPrincipal;
 class nsIHandleReportCallback;
+struct nsXPTInterfaceInfo;
 
 namespace mozilla {
 namespace dom {
@@ -732,6 +733,52 @@ YieldCooperativeContext();
 
 void
 ResumeCooperativeContext();
+
+
+
+
+
+
+
+mozilla::Maybe<nsID> JSValue2ID(JSContext* aCx, JS::HandleValue aVal);
+
+
+
+
+bool ID2JSValue(JSContext* aCx, const nsID& aId, JS::MutableHandleValue aVal);
+
+
+
+
+
+
+
+
+
+bool IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
+                     JS::MutableHandleValue aVal);
+
+
+
+
+
+
+
+
+
+bool ClassID2JSValue(JSContext* aCx, const nsCID& aId,
+                     JS::MutableHandleValue aVal);
+
+
+
+
+
+
+
+
+
+bool ContractID2JSValue(JSContext* aCx, const nsACString& aContract,
+                        JS::MutableHandleValue aVal);
 
 } 
 

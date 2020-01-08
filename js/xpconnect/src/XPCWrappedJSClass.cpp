@@ -174,10 +174,9 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
     js::AssertSameCompartment(scope, jsobjArg);
 
     RootedObject jsobj(cx, jsobjArg);
-    JSObject* id;
+    RootedValue arg(cx);
     RootedValue retval(cx);
     RootedObject retObj(cx);
-    bool success = false;
     RootedValue fun(cx);
 
     
@@ -224,55 +223,51 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
         return nullptr;
     }
 
-    if ((id = xpc_NewIDObject(cx, scope, aIID))) {
-        
-        
-        
-
-        {
-            RootedValue arg(cx, JS::ObjectValue(*id));
-            success = JS_CallFunctionValue(cx, jsobj, fun, HandleValueArray(arg), &retval);
-        }
-
-        if (!success && JS_IsExceptionPending(cx)) {
-            RootedValue jsexception(cx, NullValue());
-
-            if (JS_GetPendingException(cx, &jsexception)) {
-                if (jsexception.isObject()) {
-                    
-                    
-                    JS::Rooted<JSObject*> exceptionObj(cx, &jsexception.toObject());
-                    Exception* e = nullptr;
-                    UNWRAP_OBJECT(Exception, &exceptionObj, e);
-
-                    if (e && e->GetResult() == NS_NOINTERFACE) {
-                        JS_ClearPendingException(cx);
-                    }
-                } else if (jsexception.isNumber()) {
-                    nsresult rv;
-                    
-                    if (jsexception.isDouble()) {
-                        
-                        
-                        
-                        rv = (nsresult)(uint32_t)(jsexception.toDouble());
-                    } else {
-                        rv = (nsresult)(jsexception.toInt32());
-                    }
-
-                    if (rv == NS_NOINTERFACE) {
-                        JS_ClearPendingException(cx);
-                    }
-                }
-            }
-        } else if (!success) {
-            NS_WARNING("QI hook ran OOMed - this is probably a bug!");
-        }
-
-        if (success) {
-            success = JS_ValueToObject(cx, retval, &retObj);
-        }
+    if (!xpc::ID2JSValue(cx, aIID, &arg)) {
+        return nullptr;
     }
+
+    
+    
+    
+
+    bool success =
+        JS_CallFunctionValue(cx, jsobj, fun, HandleValueArray(arg), &retval);
+    if (!success && JS_IsExceptionPending(cx)) {
+        RootedValue jsexception(cx, NullValue());
+
+        if (JS_GetPendingException(cx, &jsexception)) {
+            if (jsexception.isObject()) {
+                
+                
+                JS::Rooted<JSObject*> exceptionObj(cx, &jsexception.toObject());
+                Exception* e = nullptr;
+                UNWRAP_OBJECT(Exception, &exceptionObj, e);
+
+                if (e && e->GetResult() == NS_NOINTERFACE) {
+                    JS_ClearPendingException(cx);
+                }
+            } else if (jsexception.isNumber()) {
+                nsresult rv;
+                
+                if (jsexception.isDouble())
+                    
+                    
+                    
+                    rv = (nsresult)(uint32_t)(jsexception.toDouble());
+                else
+                    rv = (nsresult)(jsexception.toInt32());
+
+                if (rv == NS_NOINTERFACE)
+                    JS_ClearPendingException(cx);
+            }
+        }
+    } else if (!success) {
+        NS_WARNING("QI hook ran OOMed - this is probably a bug!");
+    }
+
+    if (success)
+        success = JS_ValueToObject(cx, retval, &retObj);
 
     return success ? retObj.get() : nullptr;
 }
