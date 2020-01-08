@@ -4259,10 +4259,12 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 
     
     
-    if (!mIsDestroying) {
+    if (MOZ_LIKELY(!mIsDestroying)) {
       viewManager->FlushDelayedResize(false);
       mPresContext->FlushPendingMediaFeatureValuesChanged();
+    }
 
+    if (MOZ_LIKELY(!mIsDestroying)) {
       
       
       mStyleSet->UpdateStylistIfNeeded();
@@ -4284,22 +4286,22 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
       if (aFlush.mFlushAnimations && mPresContext->EffectCompositor()) {
         mPresContext->EffectCompositor()->PostRestyleForThrottledAnimations();
       }
+    }
 
-      
-      if (!mIsDestroying) {
-        nsAutoScriptBlocker scriptBlocker;
+    
+    if (MOZ_LIKELY(!mIsDestroying)) {
+      nsAutoScriptBlocker scriptBlocker;
 #ifdef MOZ_GECKO_PROFILER
-        AutoProfilerStyleMarker tracingStyleFlush(std::move(mStyleCause));
+      AutoProfilerStyleMarker tracingStyleFlush(std::move(mStyleCause));
 #endif
 
-        mPresContext->RestyleManager()->ProcessPendingRestyles();
-      }
+      mPresContext->RestyleManager()->ProcessPendingRestyles();
     }
 
     
     
     
-    if (!mIsDestroying) {
+    if (MOZ_LIKELY(!mIsDestroying)) {
       mDocument->BindingManager()->ProcessAttachedQueue();
     }
 
@@ -4310,7 +4312,7 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     
     
-    if (!mIsDestroying) {
+    if (MOZ_LIKELY(!mIsDestroying)) {
       nsAutoScriptBlocker scriptBlocker;
 #ifdef MOZ_GECKO_PROFILER
       AutoProfilerStyleMarker tracingStyleFlush(std::move(mStyleCause));
@@ -7938,6 +7940,7 @@ DispatchKeyPressEventsEvenForNonPrintableKeys(nsIURI* aURI)
     host = NS_LITERAL_CSTRING("*") +
              nsDependentCSubstring(host, startIndexOfNextLevel);
   }
+  return false;
 }
 #endif 
 
