@@ -10,8 +10,8 @@
 #include <unordered_map>    
 #include <unordered_set>    
 
-#include "FrameMetrics.h"   
 #include "mozilla/layers/FocusTarget.h" 
+#include "mozilla/layers/ScrollableLayerGuid.h"   
 #include "mozilla/Mutex.h"  
 
 namespace mozilla {
@@ -167,8 +167,8 @@ private:
   
   
   
-  FrameMetrics::ViewID mFocusHorizontalTarget;
-  FrameMetrics::ViewID mFocusVerticalTarget;
+  ScrollableLayerGuid::ViewID mFocusHorizontalTarget;
+  ScrollableLayerGuid::ViewID mFocusVerticalTarget;
 };
 
 } 

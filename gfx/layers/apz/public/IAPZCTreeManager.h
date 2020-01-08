@@ -9,8 +9,8 @@
 
 #include <stdint.h>                     
 
-#include "FrameMetrics.h"               
 #include "mozilla/layers/LayersTypes.h" 
+#include "mozilla/layers/ScrollableLayerGuid.h" 
 #include "nsTArrayForwardDeclare.h"     
 #include "nsISupportsImpl.h"            
 #include "Units.h"                      

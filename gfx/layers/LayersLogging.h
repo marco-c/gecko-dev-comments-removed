@@ -36,7 +36,7 @@ AppendToString(std::stringstream& aStream, const void* p,
                const char* pfx="", const char* sfx="");
 
 void
-AppendToString(std::stringstream& aStream, FrameMetrics::ViewID n,
+AppendToString(std::stringstream& aStream, ScrollableLayerGuid::ViewID n,
                const char* pfx="", const char* sfx="");
 
 void

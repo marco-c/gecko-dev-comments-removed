@@ -582,7 +582,7 @@ public:
                                                          gfx::CompositorHitTestInfo* aOutHitResult,
                                                          HitTestingTreeNodeAutoLock* aOutScrollbarNode = nullptr);
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const LayersId& aLayersId,
-                                                         const FrameMetrics::ViewID& aScrollId);
+                                                         const ScrollableLayerGuid::ViewID& aScrollId);
   ScreenToParentLayerMatrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
   ParentLayerToScreenMatrix4x4 GetApzcToGeckoTransform(const AsyncPanZoomController *aApzc) const;
   ScreenPoint GetCurrentMousePosition() const;

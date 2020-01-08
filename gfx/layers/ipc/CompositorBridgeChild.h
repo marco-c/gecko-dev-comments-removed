@@ -75,7 +75,7 @@ public:
 
 
 
-  bool LookupCompositorFrameMetrics(const FrameMetrics::ViewID aId, FrameMetrics&);
+  bool LookupCompositorFrameMetrics(const ScrollableLayerGuid::ViewID aId, FrameMetrics&);
 
   static CompositorBridgeChild* Get();
 
@@ -301,7 +301,7 @@ private:
     ~SharedFrameMetricsData();
 
     void CopyFrameMetrics(FrameMetrics* aFrame);
-    FrameMetrics::ViewID GetViewID();
+    ScrollableLayerGuid::ViewID GetViewID();
     LayersId GetLayersId() const;
     uint32_t GetAPZCId();
 

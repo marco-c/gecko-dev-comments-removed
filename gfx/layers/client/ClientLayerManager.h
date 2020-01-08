@@ -202,7 +202,7 @@ public:
   
   
   
-  void LogTestDataForCurrentPaint(FrameMetrics::ViewID aScrollId,
+  void LogTestDataForCurrentPaint(ScrollableLayerGuid::ViewID aScrollId,
                                   const std::string& aKey,
                                   const std::string& aValue)
   {
@@ -219,7 +219,7 @@ public:
   
   
   void LogTestDataForRepaintRequest(SequenceNumber aSequenceNumber,
-                                    FrameMetrics::ViewID aScrollId,
+                                    ScrollableLayerGuid::ViewID aScrollId,
                                     const std::string& aKey,
                                     const std::string& aValue)
   {

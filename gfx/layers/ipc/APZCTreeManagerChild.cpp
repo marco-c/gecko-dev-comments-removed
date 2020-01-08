@@ -186,7 +186,7 @@ APZCTreeManagerChild::RecvNotifyPinchGesture(const PinchGestureType& aType,
 }
 
 mozilla::ipc::IPCResult
-APZCTreeManagerChild::RecvCancelAutoscroll(const FrameMetrics::ViewID& aScrollId)
+APZCTreeManagerChild::RecvCancelAutoscroll(const ScrollableLayerGuid::ViewID& aScrollId)
 {
   
   

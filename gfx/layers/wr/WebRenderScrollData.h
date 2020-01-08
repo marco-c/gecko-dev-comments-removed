@@ -84,8 +84,8 @@ public:
   void SetScrollbarAnimationId(const uint64_t& aId) { mScrollbarAnimationId = aId; }
   const uint64_t& GetScrollbarAnimationId() const { return mScrollbarAnimationId; }
 
-  void SetFixedPositionScrollContainerId(FrameMetrics::ViewID aId) { mFixedPosScrollContainerId = aId; }
-  FrameMetrics::ViewID GetFixedPositionScrollContainerId() const { return mFixedPosScrollContainerId; }
+  void SetFixedPositionScrollContainerId(ScrollableLayerGuid::ViewID aId) { mFixedPosScrollContainerId = aId; }
+  ScrollableLayerGuid::ViewID GetFixedPositionScrollContainerId() const { return mFixedPosScrollContainerId; }
 
   void Dump(const WebRenderScrollData& aOwner) const;
 
@@ -116,7 +116,7 @@ private:
   EventRegionsOverride mEventRegionsOverride;
   ScrollbarData mScrollbarData;
   uint64_t mScrollbarAnimationId;
-  FrameMetrics::ViewID mFixedPosScrollContainerId;
+  ScrollableLayerGuid::ViewID mFixedPosScrollContainerId;
 };
 
 
@@ -146,7 +146,7 @@ public:
   const WebRenderLayerScrollData* GetLayerData(size_t aIndex) const;
 
   const ScrollMetadata& GetScrollMetadata(size_t aIndex) const;
-  Maybe<size_t> HasMetadataFor(const FrameMetrics::ViewID& aScrollId) const;
+  Maybe<size_t> HasMetadataFor(const ScrollableLayerGuid::ViewID& aScrollId) const;
 
   const FocusTarget& GetFocusTarget() const { return mFocusTarget; }
   void SetFocusTarget(const FocusTarget& aFocusTarget);
@@ -180,7 +180,7 @@ private:
   
   
   
-  std::map<FrameMetrics::ViewID, size_t> mScrollIdMap;
+  std::map<ScrollableLayerGuid::ViewID, size_t> mScrollIdMap;
 
   
   

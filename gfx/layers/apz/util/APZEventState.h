@@ -9,10 +9,10 @@
 
 #include <stdint.h>
 
-#include "FrameMetrics.h"     
 #include "Units.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/GeckoContentController.h"  
+#include "mozilla/layers/ScrollableLayerGuid.h"     
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"  
@@ -42,7 +42,7 @@ typedef std::function<void(const ScrollableLayerGuid&,
 
 class APZEventState {
   typedef GeckoContentController::APZStateChange APZStateChange;
-  typedef FrameMetrics::ViewID ViewID;
+  typedef ScrollableLayerGuid::ViewID ViewID;
 public:
   APZEventState(nsIWidget* aWidget,
                 ContentReceivedInputBlockCallback&& aCallback);

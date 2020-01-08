@@ -2734,7 +2734,7 @@ TabParent::ApzAwareEventRoutingToChild(ScrollableLayerGuid* aOutTargetGuid,
       
       if (RenderFrameParent* rfp = GetRenderFrame()) {
         if (aOutTargetGuid->mLayersId != rfp->GetLayersId()) {
-          *aOutTargetGuid = ScrollableLayerGuid(rfp->GetLayersId(), 0, FrameMetrics::NULL_SCROLL_ID);
+          *aOutTargetGuid = ScrollableLayerGuid(rfp->GetLayersId(), 0, ScrollableLayerGuid::NULL_SCROLL_ID);
         }
       }
     }
@@ -2823,6 +2823,13 @@ TabParent::GetLoadContext()
     mLoadContext = loadContext;
   }
   return loadContext.forget();
+}
+
+NS_IMETHODIMP
+TabParent::GetUseAsyncPanZoom(bool* useAsyncPanZoom)
+{
+  *useAsyncPanZoom = AsyncPanZoomEnabled();
+  return NS_OK;
 }
 
 

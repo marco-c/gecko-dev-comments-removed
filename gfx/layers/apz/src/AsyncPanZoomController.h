@@ -1342,7 +1342,7 @@ private:
 
 
 public:
-  FrameMetrics::ViewID GetScrollHandoffParentId() const {
+  ScrollableLayerGuid::ViewID GetScrollHandoffParentId() const {
     return mScrollMetadata.GetScrollParentId();
   }
 

@@ -9,8 +9,8 @@
 
 #include <stdint.h> 
 
-#include "FrameMetrics.h"        
 #include "mozilla/DefineEnum.h"  
+#include "mozilla/layers/ScrollableLayerGuid.h" 
 #include "mozilla/Variant.h"     
 
 class nsIPresShell;
@@ -29,8 +29,8 @@ class FocusTarget final
 public:
   struct ScrollTargets
   {
-    FrameMetrics::ViewID mHorizontal;
-    FrameMetrics::ViewID mVertical;
+    ScrollableLayerGuid::ViewID mHorizontal;
+    ScrollableLayerGuid::ViewID mVertical;
 
     bool operator==(const ScrollTargets& aRhs) const
     {

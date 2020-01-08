@@ -42,7 +42,7 @@ using namespace mozilla::layers;
 namespace mozilla {
 namespace layout {
 
-typedef FrameMetrics::ViewID ViewID;
+typedef ScrollableLayerGuid::ViewID ViewID;
 
 
 

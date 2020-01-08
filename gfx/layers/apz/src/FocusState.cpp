@@ -21,8 +21,8 @@ FocusState::FocusState()
   , mFocusHasKeyEventListeners(false)
   , mReceivedUpdate(false)
   , mFocusLayersId{0}
-  , mFocusHorizontalTarget(FrameMetrics::NULL_SCROLL_ID)
-  , mFocusVerticalTarget(FrameMetrics::NULL_SCROLL_ID)
+  , mFocusHorizontalTarget(ScrollableLayerGuid::NULL_SCROLL_ID)
+  , mFocusVerticalTarget(ScrollableLayerGuid::NULL_SCROLL_ID)
 {
 }
 
@@ -88,8 +88,8 @@ FocusState::Update(LayersId aRootLayerTreeId,
   
   mFocusHasKeyEventListeners = false;
   mFocusLayersId = aRootLayerTreeId;
-  mFocusHorizontalTarget = FrameMetrics::NULL_SCROLL_ID;
-  mFocusVerticalTarget = FrameMetrics::NULL_SCROLL_ID;
+  mFocusHorizontalTarget = ScrollableLayerGuid::NULL_SCROLL_ID;
+  mFocusVerticalTarget = ScrollableLayerGuid::NULL_SCROLL_ID;
 
   
   
@@ -203,7 +203,7 @@ FocusState::GetHorizontalTarget() const
   
   if (!IsCurrent(lock) ||
       mFocusHasKeyEventListeners ||
-      mFocusHorizontalTarget == FrameMetrics::NULL_SCROLL_ID) {
+      mFocusHorizontalTarget == ScrollableLayerGuid::NULL_SCROLL_ID) {
     return Nothing();
   }
   return Some(ScrollableLayerGuid(mFocusLayersId, 0, mFocusHorizontalTarget));
@@ -221,7 +221,7 @@ FocusState::GetVerticalTarget() const
   
   if (!IsCurrent(lock) ||
       mFocusHasKeyEventListeners ||
-      mFocusVerticalTarget == FrameMetrics::NULL_SCROLL_ID) {
+      mFocusVerticalTarget == ScrollableLayerGuid::NULL_SCROLL_ID) {
     return Nothing();
   }
   return Some(ScrollableLayerGuid(mFocusLayersId, 0, mFocusVerticalTarget));

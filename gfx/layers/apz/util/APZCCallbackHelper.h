@@ -6,7 +6,6 @@
 #ifndef mozilla_layers_APZCCallbackHelper_h
 #define mozilla_layers_APZCCallbackHelper_h
 
-#include "FrameMetrics.h"
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZUtils.h"
@@ -57,7 +56,6 @@ private:
 
 class APZCCallbackHelper
 {
-    typedef mozilla::layers::FrameMetrics FrameMetrics;
     typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
 
 public:
@@ -81,7 +79,7 @@ public:
 
     static bool GetOrCreateScrollIdentifiers(nsIContent* aContent,
                                              uint32_t* aPresShellIdOut,
-                                             FrameMetrics::ViewID* aViewIdOut);
+                                             ScrollableLayerGuid::ViewID* aViewIdOut);
 
     
 
@@ -183,15 +181,15 @@ public:
                                                         const SetAllowedTouchBehaviorCallback& aCallback);
 
     
-    static void NotifyMozMouseScrollEvent(const FrameMetrics::ViewID& aScrollId, const nsString& aEvent);
+    static void NotifyMozMouseScrollEvent(const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent);
 
     
     static void NotifyFlushComplete(nsIPresShell* aShell);
 
-    static void NotifyAsyncScrollbarDragRejected(const FrameMetrics::ViewID& aScrollId);
-    static void NotifyAsyncAutoscrollRejected(const FrameMetrics::ViewID& aScrollId);
+    static void NotifyAsyncScrollbarDragRejected(const ScrollableLayerGuid::ViewID& aScrollId);
+    static void NotifyAsyncAutoscrollRejected(const ScrollableLayerGuid::ViewID& aScrollId);
 
-    static void CancelAutoscroll(const FrameMetrics::ViewID& aScrollId);
+    static void CancelAutoscroll(const ScrollableLayerGuid::ViewID& aScrollId);
 
     static ScreenMargin
     AdjustDisplayPortForScrollDelta(const RepaintRequest& aRequest,

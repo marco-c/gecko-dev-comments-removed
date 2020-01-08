@@ -7,13 +7,13 @@
 #ifndef mozilla_layers_GeckoContentController_h
 #define mozilla_layers_GeckoContentController_h
 
-#include "FrameMetrics.h"               
 #include "InputData.h"                  
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
 #include "mozilla/DefineEnum.h"         
 #include "mozilla/EventForwards.h"      
 #include "mozilla/layers/RepaintRequest.h" 
+#include "mozilla/layers/ScrollableLayerGuid.h" 
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -148,7 +148,7 @@ public:
   
 
 
-  virtual void NotifyMozMouseScrollEvent(const FrameMetrics::ViewID& aScrollId, const nsString& aEvent)
+  virtual void NotifyMozMouseScrollEvent(const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent)
   {}
 
   
@@ -156,8 +156,8 @@ public:
 
   virtual void NotifyFlushComplete() = 0;
 
-  virtual void NotifyAsyncScrollbarDragRejected(const FrameMetrics::ViewID& aScrollId) = 0;
-  virtual void NotifyAsyncAutoscrollRejected(const FrameMetrics::ViewID& aScrollId) = 0;
+  virtual void NotifyAsyncScrollbarDragRejected(const ScrollableLayerGuid::ViewID& aScrollId) = 0;
+  virtual void NotifyAsyncAutoscrollRejected(const ScrollableLayerGuid::ViewID& aScrollId) = 0;
 
   virtual void CancelAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
 

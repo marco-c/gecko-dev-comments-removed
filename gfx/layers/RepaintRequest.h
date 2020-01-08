@@ -35,7 +35,7 @@ public:
   ));
 
   RepaintRequest()
-    : mScrollId(FrameMetrics::NULL_SCROLL_ID)
+    : mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID)
     , mPresShellResolution(1)
     , mCompositionBounds(0, 0, 0, 0)
     , mCumulativeResolution()
@@ -188,7 +188,7 @@ public:
     return mScrollGeneration;
   }
 
-  FrameMetrics::ViewID GetScrollId() const
+  ScrollableLayerGuid::ViewID GetScrollId() const
   {
     return mScrollId;
   }
@@ -244,7 +244,7 @@ protected:
 
 private:
   
-  FrameMetrics::ViewID mScrollId;
+  ScrollableLayerGuid::ViewID mScrollId;
 
   
   

@@ -10,7 +10,6 @@
 #include <map>
 
 #include "gfxPrefs.h"
-#include "FrameMetrics.h"
 #include "nsDebug.h"             
 #include "nsTArray.h"
 #include "mozilla/Assertions.h"  
@@ -18,6 +17,7 @@
 #include "mozilla/GfxMessageUtils.h" 
 #include "mozilla/ToString.h"    
 #include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 #include "ipc/IPCMessageUtils.h"
 #include "js/TypeDecls.h"
 
@@ -45,7 +45,7 @@ typedef uint32_t SequenceNumber;
 
 
 class APZTestData {
-  typedef FrameMetrics::ViewID ViewID;
+  typedef ScrollableLayerGuid::ViewID ViewID;
   friend struct IPC::ParamTraits<APZTestData>;
   friend struct APZTestDataToJSConverter;
 public:
@@ -128,7 +128,7 @@ public:
   }
 
   template <typename Value>
-  void LogTestData(FrameMetrics::ViewID aScrollId,
+  void LogTestData(ScrollableLayerGuid::ViewID aScrollId,
                    const std::string& aKey,
                    const Value& aValue) const {
     if (mTestData) {  
@@ -136,7 +136,7 @@ public:
     }
   }
 
-  void LogTestData(FrameMetrics::ViewID aScrollId,
+  void LogTestData(ScrollableLayerGuid::ViewID aScrollId,
                    const std::string& aKey,
                    const std::string& aValue) const {
     if (mTestData) {

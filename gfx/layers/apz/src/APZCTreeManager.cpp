@@ -916,7 +916,8 @@ APZCTreeManager::PrepareNodeForLayer(const RecursiveMutexAutoLock& aProofOfTreeL
   
   
   
-  ScrollableLayerGuid guid(aLayersId, aMetrics);
+  ScrollableLayerGuid guid(aLayersId, aMetrics.GetPresShellId(),
+                           aMetrics.GetScrollId());
   auto insertResult = aState.mApzcMap.insert(std::make_pair(guid, static_cast<AsyncPanZoomController*>(nullptr)));
   if (!insertResult.second) {
     apzc = insertResult.first->second;
@@ -1288,7 +1289,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
           
           
           
-          aOutTargetGuid->mScrollId = FrameMetrics::NULL_SCROLL_ID;
+          aOutTargetGuid->mScrollId = ScrollableLayerGuid::NULL_SCROLL_ID;
         }
       }
       break;
@@ -1811,7 +1812,7 @@ APZCTreeManager::ProcessTouchInputForScrollbarDrag(MultiTouchInput& aTouchInput,
   
   
   
-  aOutTargetGuid->mScrollId = FrameMetrics::NULL_SCROLL_ID;
+  aOutTargetGuid->mScrollId = ScrollableLayerGuid::NULL_SCROLL_ID;
 
   return result;
 }
@@ -2458,7 +2459,7 @@ GuidComparatorIgnoringPresShell(const ScrollableLayerGuid& aOne, const Scrollabl
 
 already_AddRefed<AsyncPanZoomController>
 APZCTreeManager::GetTargetAPZC(const LayersId& aLayersId,
-                               const FrameMetrics::ViewID& aScrollId)
+                               const ScrollableLayerGuid::ViewID& aScrollId)
 {
   MutexAutoLock lock(mMapLock);
   ScrollableLayerGuid guid(aLayersId, 0, aScrollId);
@@ -2537,7 +2538,7 @@ APZCTreeManager::GetAPZCAtPointWR(const ScreenPoint& aHitTestPoint,
   }
 
   wr::WrPipelineId pipelineId;
-  FrameMetrics::ViewID scrollId;
+  ScrollableLayerGuid::ViewID scrollId;
   gfx::CompositorHitTestInfo hitInfo;
   bool hitSomething = wr->HitTest(wr::ToWorldPoint(aHitTestPoint),
       pipelineId, scrollId, hitInfo);
@@ -2549,7 +2550,7 @@ APZCTreeManager::GetAPZCAtPointWR(const ScreenPoint& aHitTestPoint,
   result = GetTargetAPZC(layersId, scrollId);
   if (!result) {
     
-    MOZ_ASSERT(scrollId == FrameMetrics::NULL_SCROLL_ID);
+    MOZ_ASSERT(scrollId == ScrollableLayerGuid::NULL_SCROLL_ID);
     result = FindRootApzcForLayersId(layersId);
     MOZ_ASSERT(result);
   }
@@ -2599,7 +2600,7 @@ APZCTreeManager::BuildOverscrollHandoffChain(const RefPtr<AsyncPanZoomController
   while (apzc != nullptr) {
     result->Add(apzc);
 
-    if (apzc->GetScrollHandoffParentId() == FrameMetrics::NULL_SCROLL_ID) {
+    if (apzc->GetScrollHandoffParentId() == ScrollableLayerGuid::NULL_SCROLL_ID) {
       if (!apzc->IsRootForLayersId()) {
         
         NS_WARNING("Found a non-root APZ with no handoff parent");
@@ -2668,7 +2669,7 @@ APZCTreeManager::GetTargetApzcForNode(HitTestingTreeNode* aNode)
       APZCTM_LOG("Found target %p using ancestor lookup\n", n->GetApzc());
       return n->GetApzc();
     }
-    if (n->GetFixedPosTarget() != FrameMetrics::NULL_SCROLL_ID) {
+    if (n->GetFixedPosTarget() != ScrollableLayerGuid::NULL_SCROLL_ID) {
       RefPtr<AsyncPanZoomController> fpTarget =
           GetTargetAPZC(n->GetLayersId(), n->GetFixedPosTarget());
       APZCTM_LOG("Found target APZC %p using fixed-pos lookup on %" PRIu64 "\n", fpTarget.get(), n->GetFixedPosTarget());

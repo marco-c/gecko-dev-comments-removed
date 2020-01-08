@@ -7,11 +7,11 @@
 #ifndef mozilla_layers_HitTestingTreeNode_h
 #define mozilla_layers_HitTestingTreeNode_h
 
-#include "FrameMetrics.h"                   
 #include "Layers.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/LayersTypes.h"     
+#include "mozilla/layers/ScrollableLayerGuid.h" 
 #include "mozilla/Maybe.h"                  
 #include "mozilla/RefPtr.h"               
 
@@ -118,14 +118,14 @@ public:
   
   ScrollDirection GetScrollbarDirection() const;
   bool IsScrollThumbNode() const;  
-  FrameMetrics::ViewID GetScrollTargetId() const;
+  ScrollableLayerGuid::ViewID GetScrollTargetId() const;
   const ScrollbarData& GetScrollbarData() const;
   const uint64_t& GetScrollbarAnimationId() const;
 
   
 
-  void SetFixedPosData(FrameMetrics::ViewID aFixedPosTarget);
-  FrameMetrics::ViewID GetFixedPosTarget() const;
+  void SetFixedPosData(ScrollableLayerGuid::ViewID aFixedPosTarget);
+  ScrollableLayerGuid::ViewID GetFixedPosTarget() const;
 
   
 
@@ -170,7 +170,7 @@ private:
   
   ScrollbarData mScrollbarData;
 
-  FrameMetrics::ViewID mFixedPosTarget;
+  ScrollableLayerGuid::ViewID mFixedPosTarget;
 
   
 
