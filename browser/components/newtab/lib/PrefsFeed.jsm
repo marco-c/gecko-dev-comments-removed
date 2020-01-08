@@ -106,6 +106,13 @@ this.PrefsFeed = class PrefsFeed {
       "browser.newtabpage.activity-stream.fxaccounts.endpoint", "https://accounts.firefox.com");
 
     
+    
+    let searchTopSiteExperimentPrefValue = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts");
+    values["improvesearch.topSiteSearchShortcuts"] = searchTopSiteExperimentPrefValue;
+    this._prefMap.set("improvesearch.topSiteSearchShortcuts", searchTopSiteExperimentPrefValue);
+
+    
     this.store.dispatch(ac.BroadcastToContent({type: at.PREFS_INITIAL_VALUES, data: values}));
 
     this._migratePrefs();
