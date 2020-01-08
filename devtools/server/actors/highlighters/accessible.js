@@ -5,12 +5,11 @@
 "use strict";
 
 const { AutoRefreshHighlighter } = require("./auto-refresh");
-const { getBounds } = require("./utils/accessibility");
-
+const { getBounds, Infobar } = require("./utils/accessibility");
 const {
   CanvasFrameAnonymousContentHelper,
   createNode,
-  createSVGNode
+  createSVGNode,
 } = require("./utils/markup");
 
 const { setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
@@ -46,11 +45,23 @@ const { setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class AccessibleHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
-
     this.ID_CLASS_PREFIX = "accessible-";
+    this.accessibleInfobar = new Infobar(this);
 
     this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
       this._buildMarkup.bind(this));
@@ -73,7 +84,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
     const container = createNode(this.win, {
       attributes: {
         "class": "highlighter-container",
-        "role": "presentation"
+        "aria-hidden": "true"
       }
     });
 
@@ -82,7 +93,6 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
       attributes: {
         "id": "root",
         "class": "root",
-        "role": "presentation"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -96,7 +106,6 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
         "width": "100%",
         "height": "100%",
         "hidden": "true",
-        "role": "presentation"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -107,10 +116,12 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
       attributes: {
         "class": "bounds",
         "id": "bounds",
-        "role": "presentation"
       },
       prefix: this.ID_CLASS_PREFIX
     });
+
+    
+    this.accessibleInfobar.buildMarkup(root);
 
     return container;
   }
@@ -127,6 +138,8 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
     this.highlighterEnv.off("will-navigate", this.onWillNavigate);
     this.pageListenerTarget.removeEventListener("pagehide", this.onPageHide);
     this.pageListenerTarget = null;
+    this.accessibleInfobar.destroy();
+    this.accessibleInfobar = null;
 
     this.markup.destroy();
     AutoRefreshHighlighter.prototype.destroy.call(this);
@@ -156,11 +169,15 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
 
     const { duration } = this.options;
     const shown = this._update();
-    if (shown && duration) {
-      this._highlightTimer = setTimeout(() => {
-        this.hide();
-      }, duration);
+    if (shown) {
+      this.emit("highlighter-event", { options: this.options, type: "shown"});
+      if (duration) {
+        this._highlightTimer = setTimeout(() => {
+          this.hide();
+        }, duration);
+      }
     }
+
     return shown;
   }
 
@@ -175,6 +192,9 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
 
     if (this._updateAccessibleBounds()) {
       this._showAccessibleBounds();
+
+      this.accessibleInfobar.show();
+
       shown = true;
     } else {
       
@@ -193,6 +213,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   _hide() {
     setIgnoreLayoutChanges(true);
     this._hideAccessibleBounds();
+    this.accessibleInfobar.hide();
     setIgnoreLayoutChanges(false,
                            this.highlighterEnv.window.document.documentElement);
   }
@@ -230,7 +251,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   _updateAccessibleBounds() {
     const bounds = this._bounds;
     if (!bounds) {
-      this._hideAccessibleBounds();
+      this._hide();
       return false;
     }
 
