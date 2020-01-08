@@ -874,8 +874,8 @@ Animation::CancelNoUpdate()
     }
     ResetFinishedPromise();
 
-    
-    QueuePlaybackEvent(NS_LITERAL_STRING("cancel"), TimeStamp());
+    QueuePlaybackEvent(NS_LITERAL_STRING("cancel"),
+                       GetTimelineCurrentTimeAsTimeStamp());
   }
 
   StickyTimeDuration activeTime = mEffect
