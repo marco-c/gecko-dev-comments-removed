@@ -1623,10 +1623,9 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
         if (!frontend::CompileLazyFunction(cx, lazy, chars.get(), lazyLength)) {
             
             
-            
-            fun->initLazyScript(lazy);
-            if (lazy->hasScript())
-                lazy->resetScript();
+            MOZ_ASSERT(fun->isInterpretedLazy());
+            MOZ_ASSERT(fun->lazyScript() == lazy);
+            MOZ_ASSERT(!lazy->hasScript());
             return false;
         }
 
