@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! Specified types for UI properties.
+
+
+
+
 
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::ui as generics;
@@ -15,17 +15,17 @@ use std::fmt::{self, Write};
 use style_traits::cursor::CursorKind;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
-/// auto | <color>
+
 pub type ColorOrAuto = Either<Color, Auto>;
 
-/// A specified value for the `cursor` property.
+
 pub type Cursor = generics::Cursor<CursorImage>;
 
-/// A specified value for item of `image cursors`.
+
 pub type CursorImage = generics::CursorImage<SpecifiedImageUrl, Number>;
 
 impl Parse for Cursor {
-    /// cursor: [<url> [<number> <number>]?]# [auto | default | ...]
+    
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -72,12 +72,12 @@ impl Parse for CursorImage {
     }
 }
 
-/// Specified value of `-moz-force-broken-image-icon`
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct MozForceBrokenImageIcon(pub bool);
 
 impl MozForceBrokenImageIcon {
-    /// Return initial value of -moz-force-broken-image-icon which is false.
+    
     #[inline]
     pub fn false_value() -> MozForceBrokenImageIcon {
         MozForceBrokenImageIcon(false)
@@ -89,7 +89,7 @@ impl Parse for MozForceBrokenImageIcon {
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<MozForceBrokenImageIcon, ParseError<'i>> {
-        // We intentionally don't support calc values here.
+        
         match input.expect_integer()? {
             0 => Ok(MozForceBrokenImageIcon(false)),
             1 => Ok(MozForceBrokenImageIcon(true)),
@@ -123,7 +123,7 @@ impl From<MozForceBrokenImageIcon> for u8 {
     }
 }
 
-/// A specified value for `scrollbar-color` property
+
 pub type ScrollbarColor = generics::ScrollbarColor<Color>;
 
 impl Parse for ScrollbarColor {
@@ -141,9 +141,14 @@ impl Parse for ScrollbarColor {
     }
 }
 
-/// The specified value for the `user-select` property.
-///
-/// https://drafts.csswg.org/css-ui-4/#propdef-user-select
+fn in_ua_sheet(context: &ParserContext) -> bool {
+    use crate::stylesheets::Origin;
+    context.stylesheet_origin == Origin::UserAgent
+}
+
+
+
+
 #[allow(missing_docs)]
 #[derive(
     Clone,
@@ -163,9 +168,15 @@ pub enum UserSelect {
     Text,
     #[parse(aliases = "-moz-none")]
     None,
-    /// Force selection of all children, unless an ancestor has `none` set.
+    
     All,
-    /// Like `text`, except that it won't get overridden by ancestors having
-    /// `all`.
+    
+    
+    
+    
+    
+    
+    
+    #[parse(condition = "in_ua_sheet")]
     MozText,
 }
