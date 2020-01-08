@@ -786,7 +786,7 @@ def enable_code_coverage(config, tests):
                 test['max-run-time'] = 1800
                 if 'linux' in test['build-platform']:
                     test['docker-image'] = {"in-tree": "desktop1604-test"}
-        elif test['build-platform'] == 'linux64-jsdcov/opt':
+        elif 'jsdcov' in test['build-platform']:
             
             
             if test['run-on-projects'] not in [[], ['try']]:
