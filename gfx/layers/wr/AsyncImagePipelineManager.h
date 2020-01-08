@@ -56,7 +56,7 @@ public:
   
   
   
-  void NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo, bool aRender);
+  void NotifyPipelinesUpdated(const wr::WrPipelineInfo& aInfo, bool aRender);
 
   
   

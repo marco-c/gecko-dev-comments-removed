@@ -72,6 +72,19 @@ protected:
   wr::WrShaders* mShaders;
 };
 
+class WebRenderPipelineInfo {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderPipelineInfo);
+public:
+  explicit WebRenderPipelineInfo(wr::WrPipelineInfo aPipelineInfo);
+
+  const wr::WrPipelineInfo& Raw() { return mPipelineInfo; }
+
+protected:
+  ~WebRenderPipelineInfo();
+
+  const wr::WrPipelineInfo mPipelineInfo;
+};
+
 
 
 

@@ -340,7 +340,7 @@ RenderThread::RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent)
 
 static void
 NotifyDidRender(layers::CompositorBridgeParent* aBridge,
-                wr::WrPipelineInfo aInfo,
+                RefPtr<WebRenderPipelineInfo> aInfo,
                 TimeStamp aStart,
                 TimeStamp aEnd,
                 bool aRender)
@@ -352,15 +352,15 @@ NotifyDidRender(layers::CompositorBridgeParent* aBridge,
     aBridge->GetWrBridge()->RecordFrame();
   }
 
-  for (uintptr_t i = 0; i < aInfo.epochs.length; i++) {
+  auto info = aInfo->Raw();
+
+  for (uintptr_t i = 0; i < info.epochs.length; i++) {
     aBridge->NotifyPipelineRendered(
-        aInfo.epochs.data[i].pipeline_id,
-        aInfo.epochs.data[i].epoch,
+        info.epochs.data[i].pipeline_id,
+        info.epochs.data[i].epoch,
         aStart,
         aEnd);
   }
-
-  wr_pipeline_info_delete(aInfo);
 }
 
 void
@@ -382,9 +382,9 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
   }
 
   auto& renderer = it->second;
-
+  bool rendered = false;
   if (aRender) {
-    renderer->UpdateAndRender(aReadbackSize, aReadbackBuffer, aHadSlowFrame);
+    rendered = renderer->UpdateAndRender(aReadbackSize, aReadbackBuffer, aHadSlowFrame);
   } else {
     renderer->Update();
   }
@@ -392,17 +392,7 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
   renderer->CheckGraphicsResetStatus();
 
   TimeStamp end = TimeStamp::Now();
-
   auto info = renderer->FlushPipelineInfo();
-  RefPtr<layers::AsyncImagePipelineManager> pipelineMgr =
-      renderer->GetCompositorBridge()->GetAsyncImagePipelineManager();
-  
-  
-  
-  
-  
-  MOZ_ASSERT(pipelineMgr);
-  pipelineMgr->NotifyPipelinesUpdated(info, aRender);
 
   layers::CompositorThreadHolder::Loop()->PostTask(NewRunnableFunction(
     "NotifyDidRenderRunnable",
@@ -412,6 +402,25 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId,
     aStartTime, end,
     aRender
   ));
+
+  if (rendered) {
+    
+    
+    
+    
+    
+    renderer->WaitForGPU();
+  }
+
+  RefPtr<layers::AsyncImagePipelineManager> pipelineMgr =
+      renderer->GetCompositorBridge()->GetAsyncImagePipelineManager();
+  
+  
+  
+  
+  
+  MOZ_ASSERT(pipelineMgr);
+  pipelineMgr->NotifyPipelinesUpdated(info->Raw(), aRender);
 }
 
 void
@@ -793,6 +802,16 @@ WebRenderShaders::WebRenderShaders(gl::GLContext* gl,
 
 WebRenderShaders::~WebRenderShaders() {
   wr_shaders_delete(mShaders, mGL.get());
+}
+
+WebRenderPipelineInfo::WebRenderPipelineInfo(wr::WrPipelineInfo aPipelineInfo)
+  : mPipelineInfo(aPipelineInfo)
+{
+}
+
+WebRenderPipelineInfo::~WebRenderPipelineInfo()
+{
+  wr_pipeline_info_delete(mPipelineInfo);
 }
 
 WebRenderThreadPool::WebRenderThreadPool()

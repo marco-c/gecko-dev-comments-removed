@@ -544,7 +544,7 @@ AsyncImagePipelineManager::HoldExternalImage(const wr::PipelineId& aPipelineId, 
 }
 
 void
-AsyncImagePipelineManager::NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo, bool aRender)
+AsyncImagePipelineManager::NotifyPipelinesUpdated(const wr::WrPipelineInfo& aInfo, bool aRender)
 {
   
   

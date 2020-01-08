@@ -341,7 +341,11 @@ RenderCompositorANGLE::EndFrame()
   if (mCompositionDevice) {
     mCompositionDevice->Commit();
   }
+}
 
+void
+RenderCompositorANGLE::WaitForGPU()
+{
   
   
   
