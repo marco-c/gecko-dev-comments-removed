@@ -443,6 +443,11 @@ struct SurfaceCache
 
   static size_t MaximumCapacity();
 
+  
+
+
+  static bool IsLegalSize(const IntSize& aSize);
+
 private:
   virtual ~SurfaceCache() = 0;  
 };
