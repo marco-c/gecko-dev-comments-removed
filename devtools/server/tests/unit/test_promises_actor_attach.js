@@ -15,14 +15,14 @@ add_task(async function() {
   const parentProcessActors = await getParentProcessActors(client);
 
   
-  await attachTab(client, parentProcessActors);
+  await attachTarget(client, parentProcessActors);
   await testAttach(client, parentProcessActors);
 
   const response = await listTabs(client);
   const targetTab = findTab(response.tabs, "promises-actor-test");
   ok(targetTab, "Found our target tab.");
 
-  const [ tabResponse ] = await attachTab(client, targetTab);
+  const [ tabResponse ] = await attachTarget(client, targetTab);
 
   await testAttach(client, tabResponse);
 
