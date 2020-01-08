@@ -18,11 +18,14 @@
 
 
 
+
 use self::UndoLog::*;
 
+use std::fmt;
 use std::mem;
 use std::ops;
 
+#[derive(Debug)]
 pub enum UndoLog<D: SnapshotVecDelegate> {
     
     OpenSnapshot,
@@ -45,6 +48,20 @@ pub struct SnapshotVec<D: SnapshotVecDelegate> {
     undo_log: Vec<UndoLog<D>>,
 }
 
+impl<D> fmt::Debug for SnapshotVec<D>
+    where D: SnapshotVecDelegate,
+          D: fmt::Debug,
+          D::Undo: fmt::Debug,
+          D::Value: fmt::Debug
+{
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("SnapshotVec")
+            .field("values", &self.values)
+            .field("undo_log", &self.undo_log)
+            .finish()
+    }
+}
+
 
 pub struct Snapshot {
     
@@ -62,6 +79,13 @@ impl<D: SnapshotVecDelegate> SnapshotVec<D> {
     pub fn new() -> SnapshotVec<D> {
         SnapshotVec {
             values: Vec::new(),
+            undo_log: Vec::new(),
+        }
+    }
+
+    pub fn with_capacity(c: usize) -> SnapshotVec<D> {
+        SnapshotVec {
+            values: Vec::with_capacity(c),
             undo_log: Vec::new(),
         }
     }
@@ -96,6 +120,12 @@ impl<D: SnapshotVecDelegate> SnapshotVec<D> {
     }
 
     
+    pub fn reserve(&mut self, additional: usize) {
+        
+        self.values.reserve(additional);
+    }
+
+    
     
     
     pub fn get_mut(&mut self, index: usize) -> &mut D::Value {
@@ -111,8 +141,24 @@ impl<D: SnapshotVecDelegate> SnapshotVec<D> {
         }
     }
 
+    
+    
+    pub fn set_all(&mut self, mut new_elems: impl FnMut(usize) -> D::Value) {
+        if !self.in_snapshot() {
+            for (slot, index) in self.values.iter_mut().zip(0..) {
+                *slot = new_elems(index);
+            }
+        } else {
+            for i in 0..self.values.len() {
+                self.set(i, new_elems(i));
+            }
+        }
+    }
+
     pub fn update<OP>(&mut self, index: usize, op: OP)
-        where OP: FnOnce(&mut D::Value), D::Value: Clone
+    where
+        OP: FnOnce(&mut D::Value),
+        D::Value: Clone,
     {
         if self.in_snapshot() {
             let old_elem = self.values[index].clone();
@@ -224,8 +270,21 @@ impl<D: SnapshotVecDelegate> ops::IndexMut<usize> for SnapshotVec<D> {
     }
 }
 
+impl<D: SnapshotVecDelegate> Extend<D::Value> for SnapshotVec<D> {
+    fn extend<T>(&mut self, iterable: T)
+    where
+        T: IntoIterator<Item = D::Value>,
+    {
+        for item in iterable {
+            self.push(item);
+        }
+    }
+}
+
 impl<D: SnapshotVecDelegate> Clone for SnapshotVec<D>
-    where D::Value: Clone, D::Undo: Clone,
+where
+    D::Value: Clone,
+    D::Undo: Clone,
 {
     fn clone(&self) -> Self {
         SnapshotVec {
@@ -236,7 +295,9 @@ impl<D: SnapshotVecDelegate> Clone for SnapshotVec<D>
 }
 
 impl<D: SnapshotVecDelegate> Clone for UndoLog<D>
-    where D::Value: Clone, D::Undo: Clone,
+where
+    D::Value: Clone,
+    D::Undo: Clone,
 {
     fn clone(&self) -> Self {
         match *self {
@@ -248,4 +309,3 @@ impl<D: SnapshotVecDelegate> Clone for UndoLog<D>
         }
     }
 }
-

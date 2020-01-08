@@ -2,10 +2,10 @@
 pub trait IterUtilsExt : Iterator {
     
     
-    fn find_map<F, R>(&mut self, mut f: F) -> Option<R>
+    fn ex_find_map<F, R>(&mut self, mut f: F) -> Option<R>
         where F: FnMut(Self::Item) -> Option<R>
     {
-        while let Some(elt) = self.next() {
+        for elt in self {
             if let result @ Some(_) = f(elt) {
                 return result;
             }
@@ -15,7 +15,7 @@ pub trait IterUtilsExt : Iterator {
 
     
     
-    fn rfind_map<F, R>(&mut self, mut f: F) -> Option<R>
+    fn ex_rfind_map<F, R>(&mut self, mut f: F) -> Option<R>
         where F: FnMut(Self::Item) -> Option<R>,
               Self: DoubleEndedIterator,
     {

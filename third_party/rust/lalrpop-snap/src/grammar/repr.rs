@@ -357,6 +357,10 @@ impl Types {
         &self.parse_error_type
     }
 
+    pub fn error_recovery_type(&self) -> &TypeRepr {
+        &self.error_recovery_type
+    }
+
     
     
     pub fn triple_type(&self) -> TypeRepr {

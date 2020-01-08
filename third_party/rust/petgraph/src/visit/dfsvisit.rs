@@ -4,7 +4,7 @@ use visit::IntoNeighbors;
 use visit::{VisitMap, Visitable};
 
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Default)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Default, Hash)]
 pub struct Time(pub usize);
 
 
@@ -78,7 +78,7 @@ impl<B> ControlFlow for Control<B> {
 impl<E> ControlFlow for Result<(), E> {
     fn continuing() -> Self { Ok(()) }
     fn should_break(&self) -> bool {
-        if let Err(_) = *self { true } else { false }
+        self.is_err()
     }
 }
 

@@ -78,6 +78,20 @@ impl Configuration {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    pub fn generate_in_source_tree(&mut self) -> &mut Self {
+        self.set_in_dir(Path::new("."))
+            .set_out_dir(Path::new("."))
+    }
+
+    
+    
     pub fn force_build(&mut self, val: bool) -> &mut Configuration {
         self.session.force_build = val;
         self
@@ -149,7 +163,25 @@ impl Configuration {
 
     
     pub fn process_dir<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<Error>> {
-        let session = Rc::new(self.session.clone());
+        let mut session = self.session.clone();
+
+        
+        
+        if session.in_dir.is_none() {
+            let mut in_dir = try!(env::current_dir());
+            in_dir.push("src");
+            session.in_dir = Some(in_dir);
+        }
+
+        if session.out_dir.is_none() {
+            let out_dir = match env::var_os("OUT_DIR") {
+                Some(var) => var,
+                None => return Err("missing OUT_DIR variable")?,
+            };
+            session.out_dir = Some(PathBuf::from(out_dir));
+        }
+
+        let session = Rc::new(session);
         try!(build::process_dir(session, path));
         Ok(())
     }
