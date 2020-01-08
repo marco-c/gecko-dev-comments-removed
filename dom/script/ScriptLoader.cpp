@@ -1074,8 +1074,9 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
     
     
     securityFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
-    if (aRequest->CORSMode() == CORS_NONE ||
-        aRequest->CORSMode() == CORS_ANONYMOUS) {
+    if (aRequest->CORSMode() == CORS_NONE) {
+      securityFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
+    } else if (aRequest->CORSMode() == CORS_ANONYMOUS) {
       securityFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
     } else {
       MOZ_ASSERT(aRequest->CORSMode() == CORS_USE_CREDENTIALS);
