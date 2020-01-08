@@ -360,14 +360,14 @@ class GCSchedulingTunables
 
 
 
-    UnprotectedData<double> allocThresholdFactor_;
+    UnprotectedData<float> allocThresholdFactor_;
 
     
 
 
 
 
-    UnprotectedData<double> allocThresholdFactorAvoidInterrupt_;
+    UnprotectedData<float> allocThresholdFactorAvoidInterrupt_;
 
     
 
@@ -404,8 +404,8 @@ class GCSchedulingTunables
 
     MainThreadData<uint64_t> highFrequencyLowLimitBytes_;
     MainThreadData<uint64_t> highFrequencyHighLimitBytes_;
-    MainThreadData<double> highFrequencyHeapGrowthMax_;
-    MainThreadData<double> highFrequencyHeapGrowthMin_;
+    MainThreadData<float> highFrequencyHeapGrowthMax_;
+    MainThreadData<float> highFrequencyHeapGrowthMin_;
 
     
 
@@ -413,7 +413,7 @@ class GCSchedulingTunables
 
 
 
-    MainThreadData<double> lowFrequencyHeapGrowth_;
+    MainThreadData<float> lowFrequencyHeapGrowth_;
 
     
 
@@ -471,9 +471,9 @@ class GCSchedulingTunables
 private:
     void setHighFrequencyLowLimit(uint64_t value);
     void setHighFrequencyHighLimit(uint64_t value);
-    void setHighFrequencyHeapGrowthMin(double value);
-    void setHighFrequencyHeapGrowthMax(double value);
-    void setLowFrequencyHeapGrowth(double value);
+    void setHighFrequencyHeapGrowthMin(float value);
+    void setHighFrequencyHeapGrowthMax(float value);
+    void setLowFrequencyHeapGrowth(float value);
     void setMinEmptyChunkCount(uint32_t value);
     void setMaxEmptyChunkCount(uint32_t value);
 };
@@ -561,7 +561,7 @@ class MemoryCounter
 class ZoneHeapThreshold
 {
     
-    GCLockData<double> gcHeapGrowthFactor_;
+    GCLockData<float> gcHeapGrowthFactor_;
 
     
     mozilla::Atomic<size_t, mozilla::Relaxed,
@@ -569,13 +569,13 @@ class ZoneHeapThreshold
 
   public:
     ZoneHeapThreshold()
-      : gcHeapGrowthFactor_(3.0),
+      : gcHeapGrowthFactor_(3.0f),
         gcTriggerBytes_(0)
     {}
 
-    double gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
+    float gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
     size_t gcTriggerBytes() const { return gcTriggerBytes_; }
-    double eagerAllocTrigger(bool highFrequencyGC) const;
+    float eagerAllocTrigger(bool highFrequencyGC) const;
 
     void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
                        const GCSchedulingTunables& tunables, const GCSchedulingState& state,
@@ -583,10 +583,10 @@ class ZoneHeapThreshold
     void updateForRemovedArena(const GCSchedulingTunables& tunables);
 
   private:
-    static double computeZoneHeapGrowthFactorForHeapSize(size_t lastBytes,
-                                                         const GCSchedulingTunables& tunables,
-                                                         const GCSchedulingState& state);
-    static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
+    static float computeZoneHeapGrowthFactorForHeapSize(size_t lastBytes,
+                                                        const GCSchedulingTunables& tunables,
+                                                        const GCSchedulingState& state);
+    static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
                                           JSGCInvocationKind gckind,
                                           const GCSchedulingTunables& tunables,
                                           const AutoLockGC& lock);
