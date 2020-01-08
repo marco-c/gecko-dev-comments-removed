@@ -19,6 +19,7 @@ namespace js {
 
 
 
+
 extern UniqueChars
 AtomToPrintableString(JSContext* cx, JSAtom* atom);
 
