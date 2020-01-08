@@ -628,9 +628,6 @@ XRE_InitChildProcess(int aArgc,
   }
 
   
-  
-  
-  base::ProcessId actualParentPID = parentPID;
   parentPID = recordreplay::RecordReplayValue(parentPID);
 
 #ifdef XP_MACOSX
@@ -683,7 +680,7 @@ XRE_InitChildProcess(int aArgc,
   
   
   
-  recordreplay::child::InitRecordingOrReplayingProcess(actualParentPID, &aArgc, &aArgv);
+  recordreplay::child::InitRecordingOrReplayingProcess(&aArgc, &aArgv);
 
   {
     

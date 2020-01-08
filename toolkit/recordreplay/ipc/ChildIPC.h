@@ -34,8 +34,7 @@ namespace child {
 
 
 
-void InitRecordingOrReplayingProcess(base::ProcessId aParentPid,
-                                     int* aArgc, char*** aArgv);
+void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv);
 
 
 char* PrefsShmemContents(size_t aPrefsLen);
