@@ -7,7 +7,7 @@
 var gDialog;
 var gBundleBrand;
 var gPKIBundle;
-var gSecInfo;
+var gSSLStatus;
 var gCert;
 var gChecking;
 var gBroken;
@@ -38,9 +38,9 @@ function initExceptionDialog() {
       document.getElementById("locationTextBox").value = args[0].location;
       document.getElementById("checkCertButton").disabled = false;
 
-      if (args[0].securityInfo) {
-        gSecInfo = args[0].securityInfo;
-        gCert = gSecInfo.serverCert;
+      if (args[0].sslStatus) {
+        gSSLStatus = args[0].sslStatus;
+        gCert = gSSLStatus.serverCert;
         gBroken = true;
         updateCertStatus();
       } else if (args[0].prefetchCert) {
@@ -76,9 +76,10 @@ function initExceptionDialog() {
 
 function grabCert(req, evt) {
   if (req.channel && req.channel.securityInfo) {
-    gSecInfo = req.channel.securityInfo
-                  .QueryInterface(Ci.nsITransportSecurityInfo);
-    gCert = gSecInfo ? gSecInfo.serverCert : null;
+    gSSLStatus = req.channel.securityInfo
+                    .QueryInterface(Ci.nsITransportSecurityInfo).SSLStatus;
+    gCert = gSSLStatus ? gSSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert
+                       : null;
   }
   gBroken = evt.type == "error";
   gChecking = false;
@@ -91,7 +92,7 @@ function grabCert(req, evt) {
 
 function checkCert() {
   gCert = null;
-  gSecInfo = null;
+  gSSLStatus = null;
   gChecking = true;
   gBroken = false;
   updateCertStatus();
@@ -184,13 +185,13 @@ function updateCertStatus() {
       var uts = "addExceptionUnverifiedOrBadSignatureShort";
       var utl = "addExceptionUnverifiedOrBadSignatureLong2";
       var use1 = false;
-      if (gSecInfo.isDomainMismatch) {
+      if (gSSLStatus.isDomainMismatch) {
         bucketId += gNsISecTel.WARNING_BAD_CERT_TOP_ADD_EXCEPTION_FLAG_DOMAIN;
         use1 = true;
         shortDesc = mms;
         longDesc  = mml;
       }
-      if (gSecInfo.isNotValidAtThisTime) {
+      if (gSSLStatus.isNotValidAtThisTime) {
         bucketId += gNsISecTel.WARNING_BAD_CERT_TOP_ADD_EXCEPTION_FLAG_TIME;
         if (!use1) {
           use1 = true;
@@ -202,7 +203,7 @@ function updateCertStatus() {
           longDesc2  = exl;
         }
       }
-      if (gSecInfo.isUntrusted) {
+      if (gSSLStatus.isUntrusted) {
         bucketId +=
           gNsISecTel.WARNING_BAD_CERT_TOP_ADD_EXCEPTION_FLAG_UNTRUSTED;
         if (!use1) {
@@ -298,7 +299,7 @@ function viewCertButtonClick() {
 
 
 function addException() {
-  if (!gCert || !gSecInfo) {
+  if (!gCert || !gSSLStatus) {
     return;
   }
 
@@ -307,17 +308,17 @@ function addException() {
   var flags = 0;
   let confirmBucketId =
         gNsISecTel.WARNING_BAD_CERT_TOP_CONFIRM_ADD_EXCEPTION_BASE;
-  if (gSecInfo.isUntrusted) {
+  if (gSSLStatus.isUntrusted) {
     flags |= overrideService.ERROR_UNTRUSTED;
     confirmBucketId +=
         gNsISecTel.WARNING_BAD_CERT_TOP_CONFIRM_ADD_EXCEPTION_FLAG_UNTRUSTED;
   }
-  if (gSecInfo.isDomainMismatch) {
+  if (gSSLStatus.isDomainMismatch) {
     flags |= overrideService.ERROR_MISMATCH;
     confirmBucketId +=
            gNsISecTel.WARNING_BAD_CERT_TOP_CONFIRM_ADD_EXCEPTION_FLAG_DOMAIN;
   }
-  if (gSecInfo.isNotValidAtThisTime) {
+  if (gSSLStatus.isNotValidAtThisTime) {
     flags |= overrideService.ERROR_TIME;
     confirmBucketId +=
            gNsISecTel.WARNING_BAD_CERT_TOP_CONFIRM_ADD_EXCEPTION_FLAG_TIME;

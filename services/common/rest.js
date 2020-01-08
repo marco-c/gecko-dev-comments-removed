@@ -488,7 +488,7 @@ RESTRequest.prototype = {
 
   
 
-  notifyCertProblem(socketInfo, secInfo, targetHost) {
+  notifyCertProblem(socketInfo, sslStatus, targetHost) {
     this._log.warn("Invalid HTTPS certificate encountered!");
     
     

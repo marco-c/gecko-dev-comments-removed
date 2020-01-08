@@ -588,6 +588,7 @@ var NetworkHelper = {
     const wpl = Ci.nsIWebProgressListener;
     const NSSErrorsService = Cc["@mozilla.org/nss_errors_service;1"]
                                .getService(Ci.nsINSSErrorsService);
+    const SSLStatus = securityInfo.SSLStatus;
     if (!NSSErrorsService.isNSSErrorCode(securityInfo.errorCode)) {
       const state = securityInfo.securityState;
 
@@ -620,23 +621,23 @@ var NetworkHelper = {
       }
 
       
-      info.cipherSuite = securityInfo.cipherName;
+      info.cipherSuite = SSLStatus.cipherName;
 
       
-      info.keaGroupName = securityInfo.keaGroupName;
+      info.keaGroupName = SSLStatus.keaGroupName;
 
       
-      info.signatureSchemeName = securityInfo.signatureSchemeName;
+      info.signatureSchemeName = SSLStatus.signatureSchemeName;
 
       
       info.protocolVersion =
-        this.formatSecurityProtocol(securityInfo.protocolVersion);
+        this.formatSecurityProtocol(SSLStatus.protocolVersion);
 
       
-      info.cert = this.parseCertificateInfo(securityInfo.serverCert);
+      info.cert = this.parseCertificateInfo(SSLStatus.serverCert);
 
       
-      info.certificateTransparency = securityInfo.certificateTransparencyStatus;
+      info.certificateTransparency = SSLStatus.certificateTransparencyStatus;
 
       
       if (httpActivity.hostname) {
@@ -730,13 +731,13 @@ var NetworkHelper = {
 
   formatSecurityProtocol: function(version) {
     switch (version) {
-      case Ci.nsITransportSecurityInfo.TLS_VERSION_1:
+      case Ci.nsISSLStatus.TLS_VERSION_1:
         return "TLSv1";
-      case Ci.nsITransportSecurityInfo.TLS_VERSION_1_1:
+      case Ci.nsISSLStatus.TLS_VERSION_1_1:
         return "TLSv1.1";
-      case Ci.nsITransportSecurityInfo.TLS_VERSION_1_2:
+      case Ci.nsISSLStatus.TLS_VERSION_1_2:
         return "TLSv1.2";
-      case Ci.nsITransportSecurityInfo.TLS_VERSION_1_3:
+      case Ci.nsISSLStatus.TLS_VERSION_1_3:
         return "TLSv1.3";
       default:
         DevToolsUtils.reportException("NetworkHelper.formatSecurityProtocol",

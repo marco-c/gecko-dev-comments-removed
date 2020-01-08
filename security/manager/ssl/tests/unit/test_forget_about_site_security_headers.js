@@ -41,7 +41,7 @@ var uri = Services.io.newURI("https://a.pinning2.example.com");
 
 
 
-var secInfo = new FakeTransportSecurityInfo(constructCertFromFile(
+var sslStatus = new FakeSSLStatus(constructCertFromFile(
   "test_pinning_dynamic/a.pinning2.example.com-pinningroot.pem"));
 
 
@@ -50,10 +50,10 @@ var secInfo = new FakeTransportSecurityInfo(constructCertFromFile(
 
 add_task(async function() {
   sss.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri, GOOD_MAX_AGE,
-                    secInfo, 0,
+                    sslStatus, 0,
                     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
   sss.processHeader(Ci.nsISiteSecurityService.HEADER_HPKP, uri,
-                    GOOD_MAX_AGE + VALID_PIN + BACKUP_PIN, secInfo, 0,
+                    GOOD_MAX_AGE + VALID_PIN + BACKUP_PIN, sslStatus, 0,
                     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
 
   Assert.ok(sss.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0),
@@ -75,10 +75,10 @@ add_task(async function() {
 
 add_task(async function() {
   sss.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri, GOOD_MAX_AGE,
-                    secInfo, 0,
+                    sslStatus, 0,
                     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
   sss.processHeader(Ci.nsISiteSecurityService.HEADER_HPKP, uri,
-                    GOOD_MAX_AGE + VALID_PIN + BACKUP_PIN, secInfo, 0,
+                    GOOD_MAX_AGE + VALID_PIN + BACKUP_PIN, sslStatus, 0,
                     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
 
   Assert.ok(sss.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0),
@@ -90,7 +90,7 @@ add_task(async function() {
   
   let unrelatedURI = Services.io.newURI("https://example.org");
   sss.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, unrelatedURI,
-                    GOOD_MAX_AGE, secInfo, 0,
+                    GOOD_MAX_AGE, sslStatus, 0,
                     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
   Assert.ok(sss.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
                              unrelatedURI, 0), "example.org should be HSTS");
@@ -124,11 +124,11 @@ add_task(async function() {
 
   for (let originAttributes of originAttributesList) {
     sss.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri, GOOD_MAX_AGE,
-                      secInfo, 0,
+                      sslStatus, 0,
                       Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
                       originAttributes);
     sss.processHeader(Ci.nsISiteSecurityService.HEADER_HPKP, uri,
-                      GOOD_MAX_AGE + VALID_PIN + BACKUP_PIN, secInfo, 0,
+                      GOOD_MAX_AGE + VALID_PIN + BACKUP_PIN, sslStatus, 0,
                       Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
                       originAttributes);
 
@@ -141,7 +141,7 @@ add_task(async function() {
 
     
     sss.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, unrelatedURI,
-                      GOOD_MAX_AGE, secInfo, 0,
+                      GOOD_MAX_AGE, sslStatus, 0,
                       Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
                       originAttributes);
     Assert.ok(sss.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
