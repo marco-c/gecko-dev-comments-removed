@@ -359,6 +359,55 @@ class ExtensionAPI extends EventEmitter {
 
 
 
+class InnerWindowReference {
+  constructor(contentWindow, innerWindowID) {
+    this.contentWindow = contentWindow;
+    this.innerWindowID = innerWindowID;
+    this.needWindowIDCheck = false;
+
+    contentWindow.addEventListener("pagehide", this, {mozSystemGroup: true}, false);
+    contentWindow.addEventListener("pageshow", this, {mozSystemGroup: true}, false);
+  }
+
+  get() {
+    
+    
+    
+    if (!this.needWindowIDCheck || getInnerWindowID(this.contentWindow) === this.innerWindowID) {
+      return this.contentWindow;
+    }
+    return null;
+  }
+
+  invalidate() {
+    
+    
+    
+    if (this.contentWindow) {
+      this.contentWindow.removeEventListener("pagehide", this, {mozSystemGroup: true});
+      this.contentWindow.removeEventListener("pageshow", this, {mozSystemGroup: true});
+    }
+    this.contentWindow = null;
+    this.needWindowIDCheck = false;
+  }
+
+  handleEvent(event) {
+    if (this.contentWindow) {
+      this.needWindowIDCheck = event.type === "pagehide";
+    } else {
+      
+      event.currentTarget.removeEventListener("pagehide", this, {mozSystemGroup: true});
+      event.currentTarget.removeEventListener("pageshow", this, {mozSystemGroup: true});
+    }
+  }
+}
+
+
+
+
+
+
+
 
 class BaseContext {
   constructor(envType, extension) {
@@ -373,16 +422,13 @@ class BaseContext {
     this.active = true;
     this.incognito = null;
     this.messageManager = null;
-    this.docShell = null;
     this.contentWindow = null;
     this.innerWindowID = 0;
   }
 
   setContentWindow(contentWindow) {
-    let {document, docShell} = contentWindow;
-
     this.innerWindowID = getInnerWindowID(contentWindow);
-    this.messageManager = docShell.messageManager;
+    this.messageManager = contentWindow.docShell.messageManager;
 
     if (this.incognito == null) {
       this.incognito = PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
@@ -390,34 +436,26 @@ class BaseContext {
 
     MessageChannel.setupMessageManagers([this.messageManager]);
 
-    let onPageShow = event => {
-      if (!event || event.target === document) {
-        this.docShell = docShell;
-        this.contentWindow = contentWindow;
-        this.active = true;
-      }
-    };
-    let onPageHide = event => {
-      if (!event || event.target === document) {
-        
-        Promise.resolve().then(() => {
-          this.docShell = null;
-          this.contentWindow = null;
-          this.active = false;
-        });
-      }
-    };
-
-    onPageShow();
-    contentWindow.addEventListener("pagehide", onPageHide, true);
-    contentWindow.addEventListener("pageshow", onPageShow, true);
+    let windowRef = new InnerWindowReference(contentWindow, this.innerWindowID);
+    Object.defineProperty(this, "active", {
+      configurable: true,
+      enumerable: true,
+      get: () => windowRef.get() !== null,
+    });
+    Object.defineProperty(this, "contentWindow", {
+      configurable: true,
+      enumerable: true,
+      get: () => windowRef.get(),
+    });
     this.callOnClose({
       close: () => {
-        onPageHide();
-        if (this.active) {
-          contentWindow.removeEventListener("pagehide", onPageHide, true);
-          contentWindow.removeEventListener("pageshow", onPageShow, true);
-        }
+        
+        Promise.resolve().then(() => {
+          windowRef.invalidate();
+          windowRef = null;
+          Object.defineProperty(this, "contentWindow", {value: null});
+          Object.defineProperty(this, "active", {value: false});
+        });
       },
     });
   }
@@ -732,6 +770,7 @@ class BaseContext {
     for (let obj of this.onClose) {
       obj.close();
     }
+    this.onClose.clear();
   }
 
   
