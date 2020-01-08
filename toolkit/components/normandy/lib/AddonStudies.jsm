@@ -246,7 +246,7 @@ var AddonStudies = {
       reason,
     });
 
-    await this.onUnenroll(study.addonId);
+    await this.onUnenroll(study.addonId, reason);
   },
 
   
@@ -275,12 +275,12 @@ var AddonStudies = {
 
 
 
-  onUnenroll(id) {
+  onUnenroll(id, reason) {
     let callbacks = this._unenrollListeners.get(id);
     let promises = [];
     if (callbacks) {
       for (let callback of callbacks) {
-        promises.push(callback());
+        promises.push(callback(reason));
       }
     }
     return Promise.all(promises);
