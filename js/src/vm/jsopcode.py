@@ -198,7 +198,7 @@ def get_tag_value(line):
 def get_opcodes(dir):
     iter_pat = re.compile(r"/\*(.*?)\*/"  
                           r"|"
-                          r"macro\("      
+                          r"MACRO\("      
                           r"(?P<name>[^,]+),\s*"
                           r"(?P<value>[0-9]+),\s*"
                           r"(?P<display_name>[^,]+,)\s*"
