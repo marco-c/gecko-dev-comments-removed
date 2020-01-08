@@ -1346,6 +1346,12 @@ impl Device {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn link_program(
         &mut self,
         program: &mut Program,
@@ -1874,6 +1880,8 @@ impl Device {
         Ok(program)
     }
 
+    
+    
     
     
     
