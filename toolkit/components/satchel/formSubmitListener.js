@@ -93,8 +93,8 @@ let satchelFormListener = {
         
 
         
-        if (input.hasAttribute("autocomplete") &&
-          input.getAttribute("autocomplete").toLowerCase() == "off") {
+        let autocompleteInfo = input.getAutocompleteInfo();
+        if (autocompleteInfo && !autocompleteInfo.canAutomaticallyPersist) {
           continue;
         }
 
