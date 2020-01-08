@@ -3731,12 +3731,18 @@ nsWindow::Create(nsIWidget* aParent,
         Unused << gfxPlatform::GetPlatform();
 
         bool useWebRender = gfx::gfxVars::UseWebRender() &&
-            AllowWebRenderForThisWindow();
+             AllowWebRenderForThisWindow();
+
+        bool shouldAccelerate = ComputeShouldAccelerate();
+        MOZ_ASSERT(shouldAccelerate | !useWebRender);
 
         
         
         
-        if (mIsX11Display) {
+
+        
+        
+        if (mIsX11Display && shouldAccelerate) {
             auto display =
                 GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
             auto screen = gtk_widget_get_screen(mShell);
