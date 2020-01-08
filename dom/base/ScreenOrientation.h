@@ -19,18 +19,6 @@ namespace dom {
 
 class Promise;
 
-
-typedef uint32_t ScreenOrientationInternal;
-
-static const ScreenOrientationInternal eScreenOrientation_None               = 0;
-static const ScreenOrientationInternal eScreenOrientation_PortraitPrimary    = 1u << 0;
-static const ScreenOrientationInternal eScreenOrientation_PortraitSecondary  = 1u << 1;
-static const ScreenOrientationInternal eScreenOrientation_LandscapePrimary   = 1u << 2;
-static const ScreenOrientationInternal eScreenOrientation_LandscapeSecondary = 1u << 3;
-
-
-static const ScreenOrientationInternal eScreenOrientation_Default            = 1u << 4;
-
 class ScreenOrientation final : public DOMEventTargetHelper,
                                 public mozilla::hal::ScreenConfigurationObserver
 {
@@ -63,7 +51,7 @@ public:
 
   void Notify(const mozilla::hal::ScreenConfiguration& aConfiguration) override;
 
-  static void UpdateActiveOrientationLock(ScreenOrientationInternal aOrientation);
+  static void UpdateActiveOrientationLock(hal::ScreenOrientation aOrientation);
 
 private:
   virtual ~ScreenOrientation();
@@ -86,7 +74,7 @@ private:
 
   
   
-  bool LockDeviceOrientation(ScreenOrientationInternal aOrientation,
+  bool LockDeviceOrientation(hal::ScreenOrientation aOrientation,
                              bool aIsFullscreen, ErrorResult& aRv);
 
   
@@ -97,7 +85,7 @@ private:
   
   
   
-  already_AddRefed<Promise> LockInternal(ScreenOrientationInternal aOrientation,
+  already_AddRefed<Promise> LockInternal(hal::ScreenOrientation aOrientation,
                                          ErrorResult& aRv);
 
   void DispatchChangeEvent();

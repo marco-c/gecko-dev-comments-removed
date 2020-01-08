@@ -8,6 +8,7 @@
 #define nsDocShell_h__
 
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/HalScreenConfiguration.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
@@ -69,7 +70,6 @@ namespace dom {
 class ClientInfo;
 class ClientSource;
 class EventTarget;
-typedef uint32_t ScreenOrientationInternal;
 } 
 } 
 
@@ -1019,9 +1019,7 @@ private:
 
   eCharsetReloadState mCharsetReloadState;
 
-  
-  
-  mozilla::dom::ScreenOrientationInternal mOrientationLock;
+  mozilla::hal::ScreenOrientation mOrientationLock;
 
   int32_t mParentCharsetSource;
   int32_t mMarginWidth;

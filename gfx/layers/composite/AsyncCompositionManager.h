@@ -12,9 +12,9 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
-#include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/Matrix.h"         
+#include "mozilla/HalScreenConfiguration.h" 
 #include "mozilla/layers/FrameUniformityData.h" 
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/RefPtr.h"                   
@@ -102,7 +102,7 @@ public:
     mTargetConfig = aTargetConfig;
   }
 
-  bool RequiresReorientation(mozilla::dom::ScreenOrientationInternal aOrientation) const
+  bool RequiresReorientation(hal::ScreenOrientation aOrientation) const
   {
     return mTargetConfig.orientation() != aOrientation;
   }

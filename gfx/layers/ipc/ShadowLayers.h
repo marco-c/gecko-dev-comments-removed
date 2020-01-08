@@ -13,8 +13,8 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/WidgetUtils.h"        
-#include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/ipc/SharedMemory.h"   
+#include "mozilla/HalScreenConfiguration.h" 
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -158,7 +158,7 @@ public:
 
   void BeginTransaction(const gfx::IntRect& aTargetBounds,
                         ScreenRotation aRotation,
-                        mozilla::dom::ScreenOrientationInternal aOrientation);
+                        hal::ScreenOrientation aOrientation);
 
   
 

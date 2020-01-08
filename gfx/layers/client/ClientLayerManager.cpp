@@ -10,7 +10,6 @@
 #include "gfxPrefs.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/Hal.h"
-#include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/dom/TabChild.h"       
 #include "mozilla/dom/TabGroup.h"       
 #include "mozilla/hal_sandbox/PHal.h"   
@@ -213,7 +212,7 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
   
   
   
-  dom::ScreenOrientationInternal orientation;
+  hal::ScreenOrientation orientation;
   if (dom::TabChild* window = mWidget->GetOwningTabChild()) {
     orientation = window->GetOrientation();
   } else {
