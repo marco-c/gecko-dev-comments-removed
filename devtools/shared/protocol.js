@@ -1359,20 +1359,14 @@ Front.prototype = extend(Pool.prototype, {
 
 
   send: function(packet) {
-    if (!packet.to) {
-      packet.to = this.actorID;
-    }
-
-    
-    
-    if (!packet.to) {
-      throw new Error(
-        `Can not send request because front '${this.typeName}' is already destroyed.`);
-    }
-
-    
-    if (this.conn._transport) {
+    if (packet.to) {
       this.conn._transport.send(packet);
+    } else {
+      packet.to = this.actorID;
+      
+      if (this.conn._transport) {
+        this.conn._transport.send(packet);
+      }
     }
   },
 
