@@ -109,15 +109,27 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      const { newFrameloader } = E10SUtils.shouldLoadURIInBrowser(
-        tab.linkedBrowser,
-        "about:blank"
+      
+      
+      const {
+        requiredRemoteType,
+        mustChangeProcess,
+        newFrameloader
+      } = E10SUtils.shouldLoadURIInBrowser(
+         tab.linkedBrowser,
+        "http://example.com"
       );
       if (newFrameloader) {
         debug(`Tab will force a new frameloader on navigation, load about:blank first`);
         await loadURIWithNewFrameLoader(tab.linkedBrowser, "about:blank", {
           flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
           triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
+        });
+      }
+      if (mustChangeProcess) {
+        debug(`Tab will force a process flip on navigation, load about:blank first`);
+        gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true, {
+          remoteType: requiredRemoteType,
         });
       }
 
