@@ -495,34 +495,6 @@ SetUpReadableStreamDefaultController(JSContext* cx,
                                      double highWaterMarkVal,
                                      HandleValue size);
 
-
-
-
-ReadableStream*
-ReadableStream::createDefaultStream(JSContext* cx, HandleValue underlyingSource,
-                                    HandleValue size, double highWaterMark,
-                                    HandleObject proto )
-{
-    cx->check(underlyingSource, size, proto);
-    MOZ_ASSERT(size.isUndefined() || IsCallable(size));
-    MOZ_ASSERT(highWaterMark >= 0);
-
-    
-    Rooted<ReadableStream*> stream(cx, create(cx));
-    if (!stream) {
-        return nullptr;
-    }
-
-    
-    
-    
-    
-    if (!SetUpReadableStreamDefaultController(cx, stream, underlyingSource, highWaterMark, size)) {
-        return nullptr;
-    }
-    return stream;
-}
-
 static MOZ_MUST_USE ReadableByteStreamController*
 CreateExternalReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream,
                                            void* underlyingSource);
@@ -588,7 +560,10 @@ ReadableStream::constructor(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    
+    Rooted<ReadableStream*> stream(cx, ReadableStream::create(cx));
+    if (!stream) {
+        return false;
+    }
 
     
     RootedValue size(cx);
@@ -648,9 +623,9 @@ ReadableStream::constructor(JSContext* cx, unsigned argc, Value* vp)
         
         
         
-        Rooted<ReadableStream*> stream(cx,
-            createDefaultStream(cx, underlyingSource, size, highWaterMark));
-        if (!stream) {
+        if (!SetUpReadableStreamDefaultController(cx, stream, underlyingSource,
+                                                  highWaterMark, size))
+        {
             return false;
         }
 
@@ -862,6 +837,47 @@ CLASS_SPEC(ReadableStream, 0, SlotCount, 0, 0, JS_NULL_CLASS_OPS);
 
 
 
+
+
+
+
+MOZ_MUST_USE ReadableStream*
+CreateReadableStream(JSContext* cx,
+                     HandleValue underlyingSource,
+                     double highWaterMark = 1,
+                     HandleValue sizeAlgorithm = UndefinedHandleValue,
+                     HandleObject proto = nullptr)
+{
+
+    cx->check(underlyingSource, sizeAlgorithm, proto);
+    MOZ_ASSERT(sizeAlgorithm.isUndefined() || IsCallable(sizeAlgorithm));
+
+    
+    
+    
+    MOZ_ASSERT(highWaterMark >= 0);
+
+    
+    
+    Rooted<ReadableStream*> stream(cx, ReadableStream::create(cx, proto));
+    if (!stream) {
+        return nullptr;
+    }
+
+    
+    
+    
+    
+    
+    if (!SetUpReadableStreamDefaultController(cx, stream, underlyingSource, highWaterMark,
+                                              sizeAlgorithm))
+    {
+        return nullptr;
+    }
+
+    
+    return stream;
+}
 
 
 
@@ -1270,8 +1286,7 @@ ReadableStreamTee(JSContext* cx,
     
     
     RootedValue underlyingSource(cx, ObjectValue(*teeState));
-    branch1Stream.set(ReadableStream::createDefaultStream(cx, underlyingSource,
-                                                          UndefinedHandleValue, 1));
+    branch1Stream.set(CreateReadableStream(cx, underlyingSource));
     if (!branch1Stream) {
         return false;
     }
@@ -1284,8 +1299,7 @@ ReadableStreamTee(JSContext* cx,
     
     
     
-    branch2Stream.set(ReadableStream::createDefaultStream(cx, underlyingSource,
-                                                          UndefinedHandleValue, 1));
+    branch2Stream.set(CreateReadableStream(cx, underlyingSource));
     if (!branch2Stream) {
         return false;
     }
@@ -4234,7 +4248,7 @@ JS::NewReadableDefaultStreamObject(JSContext* cx,
     }
     RootedValue sourceVal(cx, ObjectValue(*source));
     RootedValue sizeVal(cx, size ? ObjectValue(*size) : UndefinedValue());
-    return ReadableStream::createDefaultStream(cx, sourceVal, sizeVal, highWaterMark, proto);
+    return CreateReadableStream(cx, sourceVal, highWaterMark, sizeVal);
 }
 
 JS_PUBLIC_API JSObject*
