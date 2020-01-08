@@ -3139,8 +3139,15 @@ JS_GetFunctionDisplayId(JSFunction* fun);
 
 
 
+
 extern JS_PUBLIC_API(uint16_t)
 JS_GetFunctionArity(JSFunction* fun);
+
+
+
+
+JS_PUBLIC_API(bool)
+JS_GetFunctionLength(JSContext* cx, JS::HandleFunction fun, uint16_t* length);
 
 
 
