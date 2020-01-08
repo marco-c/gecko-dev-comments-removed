@@ -1780,7 +1780,7 @@ PeerConnectionWrapper.prototype = {
   checkStats : function(stats, twoMachines) {
     
     const isWin7 = navigator.userAgent.includes("Windows NT 6.1");
-    const clockDriftAllowance = isWin7 ? 1000 : 0;
+    const clockDriftAllowanceMs = isWin7 ? 1000 : 250;
 
     
     var counters = {};
@@ -1788,24 +1788,18 @@ PeerConnectionWrapper.prototype = {
       info("Checking stats for " + key + " : " + res);
       
       ok(res.id == key, "Coherent stats id");
-      var nowish = Date.now() + clockDriftAllowance;
-      var minimum = this.whenCreated;
+      
+      
+      const nowish = Date.now() + clockDriftAllowanceMs;
+      const minimum = this.whenCreated - clockDriftAllowanceMs;
+      const type = res.isRemote ? "rtcp" : "rtp";
       if (!twoMachines) {
-        
-        
-        if (false) {
-          ok(res.timestamp >= minimum,
-             "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
-                 res.timestamp + " >= " + minimum + " (" +
-                 (res.timestamp - minimum) + " ms)");
-        } else {
-          info("FIXME bug 1495446: uncomment the timestamp test case " +
-               "above after RTCP epoch bug 1495446 is fixed.");
-        }
+        ok(res.timestamp >= minimum,
+           `Valid ${type} timestamp ${res.timestamp} >= ${minimum} (
+              ${res.timestamp - minimum} ms)`);
         ok(res.timestamp <= nowish,
-           "Valid " + (res.isRemote? "rtcp" : "rtp") + " timestamp " +
-               res.timestamp + " <= " + nowish + " (" +
-               (res.timestamp - nowish) + " ms)");
+           `Valid ${type} timestamp ${res.timestamp} <= ${nowish} (
+              ${res.timestamp - nowish} ms)`);
       }
       if (res.isRemote) {
         continue;

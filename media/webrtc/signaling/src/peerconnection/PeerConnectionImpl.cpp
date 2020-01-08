@@ -2805,18 +2805,18 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
           
           
           
-          DOMHighResTimeStamp timestamp;
           uint32_t jitterMs;
           uint32_t packetsReceived;
           uint64_t bytesReceived;
           uint32_t packetsLost;
           int32_t rtt;
-          if (mp.Conduit()->GetRTCPReceiverReport(
-                  &timestamp, &jitterMs, &packetsReceived, &bytesReceived,
-                  &packetsLost, &rtt)) {
+          if (mp.Conduit()->GetRTCPReceiverReport(&jitterMs, &packetsReceived,
+                                                  &bytesReceived, &packetsLost,
+                                                  &rtt)) {
             remoteId = NS_LITERAL_STRING("outbound_rtcp_") + idstr;
             RTCInboundRTPStreamStats s;
-            s.mTimestamp.Construct(timestamp);
+            
+            s.mTimestamp.Construct(query->now);
             s.mId.Construct(remoteId);
             s.mType.Construct(RTCStatsType::Inbound_rtp);
             ssrc.apply([&s](uint32_t aSsrc) { s.mSsrc.Construct(aSsrc); });
@@ -2839,6 +2839,7 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
         
         {
           RTCOutboundRTPStreamStats s;
+          
           s.mTimestamp.Construct(query->now);
           s.mId.Construct(localId);
           s.mType.Construct(RTCStatsType::Outbound_rtp);
@@ -2895,14 +2896,13 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
         }
         {
           
-          DOMHighResTimeStamp timestamp;
           uint32_t packetsSent;
           uint64_t bytesSent;
-          if (mp.Conduit()->GetRTCPSenderReport(&timestamp, &packetsSent,
-                                                &bytesSent)) {
+          if (mp.Conduit()->GetRTCPSenderReport(&packetsSent, &bytesSent)) {
             remoteId = NS_LITERAL_STRING("inbound_rtcp_") + idstr;
             RTCOutboundRTPStreamStats s;
-            s.mTimestamp.Construct(timestamp);
+            
+            s.mTimestamp.Construct(query->now);
             s.mId.Construct(remoteId);
             s.mType.Construct(RTCStatsType::Outbound_rtp);
             ssrc.apply([&s](uint32_t aSsrc) { s.mSsrc.Construct(aSsrc); });
