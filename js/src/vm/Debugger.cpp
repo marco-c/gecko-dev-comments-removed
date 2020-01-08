@@ -837,6 +837,9 @@ Debugger::hasAnyLiveHooks(JSRuntime* rt) const
     if (!enabled)
         return false;
 
+    
+    
+    
     if (getHook(OnDebuggerStatement) ||
         getHook(OnExceptionUnwind) ||
         getHook(OnNewScript) ||
