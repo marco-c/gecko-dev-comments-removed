@@ -868,11 +868,6 @@ public:
 
 
 
-  bool mNonRealtimeProcessing;
-  
-
-
-
   bool mStreamOrderDirty;
   AudioMixer mMixer;
   const RefPtr<AbstractThread> mAbstractMainThread;
