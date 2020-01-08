@@ -149,7 +149,12 @@ LocaleService::NegotiateAppLocales(nsTArray<nsCString>& aRetVal)
 
     NegotiateLanguages(requestedLocales, availableLocales, defaultLocale,
                        LangNegStrategy::Filtering, aRetVal);
-  } else {
+  }
+
+  nsAutoCString lastFallbackLocale;
+  GetLastFallbackLocale(lastFallbackLocale);
+
+  if (!aRetVal.Contains(lastFallbackLocale)) {
     
     
     
@@ -159,11 +164,6 @@ LocaleService::NegotiateAppLocales(nsTArray<nsCString>& aRetVal)
     
     
     
-    
-    
-    
-    nsAutoCString lastFallbackLocale;
-    GetLastFallbackLocale(lastFallbackLocale);
     aRetVal.AppendElement(lastFallbackLocale);
   }
 }
