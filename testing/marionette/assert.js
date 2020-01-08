@@ -19,9 +19,9 @@ const {
 } = ChromeUtils.import("chrome://marionette/content/error.js", {});
 const {pprint} = ChromeUtils.import("chrome://marionette/content/format.js", {});
 
-XPCOMUtils.defineLazyGetter(this, "browser", () => {
-  const {browser} = ChromeUtils.import("chrome://marionette/content/browser.js", {});
-  return browser;
+XPCOMUtils.defineLazyModuleGetters(this, {
+  evaluate: "chrome://marionette/content/evaluate.js",
+  browser: "chrome://marionette/content/browser.js",
 });
 
 this.EXPORTED_SYMBOLS = ["assert"];
@@ -51,13 +51,9 @@ this.assert = {};
 
 
 
-
-
 assert.acyclic = function(obj, msg = "", error = JavaScriptError) {
-  try {
-    JSON.stringify(obj);
-  } catch (e) {
-    throw new error(msg || e);
+  if (evaluate.isCyclic(obj)) {
+    throw new error(msg || "Cyclic object value");
   }
 };
 

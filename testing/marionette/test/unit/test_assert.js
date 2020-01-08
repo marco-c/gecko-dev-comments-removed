@@ -18,36 +18,11 @@ const {
 
 add_test(function test_acyclic() {
   assert.acyclic({});
-  assert.acyclic(new Object());
-  assert.acyclic([]);
-  assert.acyclic(new Array());
 
-  
   Assert.throws(() => {
     let obj = {};
     obj.reference = obj;
     assert.acyclic(obj);
-  }, JavaScriptError);
-
-  
-  Assert.throws(() => {
-    let arr = [];
-    arr.push(arr);
-    assert.acyclic(arr);
-  }, JavaScriptError);
-
-  
-  Assert.throws(() => {
-    let arr = [];
-    arr.push(arr);
-    assert.acyclic({arr});
-  }, JavaScriptError);
-
-  
-  Assert.throws(() => {
-    let obj = {};
-    obj.reference = obj;
-    assert.acyclic([obj]);
   }, JavaScriptError);
 
   

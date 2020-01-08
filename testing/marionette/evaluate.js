@@ -292,6 +292,24 @@ evaluate.toJSON = function(obj, seenEls) {
 
 
 
+evaluate.isCyclic = function(obj) {
+  try {
+    JSON.stringify(obj);
+    return false;
+  } catch (e) {
+    return true;
+  }
+};
+
+
+
+
+
+
+
+
+
+
 
 
 
