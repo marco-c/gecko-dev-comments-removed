@@ -861,6 +861,11 @@ nsTextBoxFrame::UpdateAccessTitle()
         return;
     }
 
+    if (StringEndsWith(mTitle, accessKeyLabel)) {
+      
+      return;
+    }
+
     const nsDependentString& kEllipsis = nsContentUtils::GetLocalizedEllipsis();
     uint32_t offset = mTitle.Length();
     if (StringEndsWith(mTitle, kEllipsis)) {
