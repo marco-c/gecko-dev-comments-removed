@@ -18,7 +18,11 @@ function waitForInsecureLoginFormsStateChange(browser, count) {
 
 add_task(async function test_simple() {
   await SpecialPowers.pushPrefEnv({
-    "set": [["security.insecure_password.ui.enabled", true]],
+    "set": [
+      ["security.insecure_password.ui.enabled", true],
+      
+      ["network.proxy.no_proxies_on", ""],
+    ],
   });
 
   for (let [origin, expectWarning] of [

@@ -9,6 +9,8 @@ const WARNING_PATTERN = [{
 }];
 
 add_task(async function testInsecurePasswordWarning() {
+  
+  await SpecialPowers.pushPrefEnv({set: [["network.proxy.no_proxies_on", ""]]});
   let warningPatternHandler;
 
   function messageHandler(msgObj) {

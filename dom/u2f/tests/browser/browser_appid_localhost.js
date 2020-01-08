@@ -20,6 +20,8 @@ function promiseU2FRegister(tab, app_id) {
 
 add_task(async function () {
   
+  await SpecialPowers.pushPrefEnv({set: [["network.proxy.no_proxies_on", ""]]});
+  
   Services.prefs.setBoolPref("security.webauth.u2f", true);
   Services.prefs.setBoolPref("security.webauth.webauthn_enable_softtoken", true);
   Services.prefs.setBoolPref("security.webauth.webauthn_enable_usbtoken", false);
