@@ -352,12 +352,7 @@ impl<T: ?Sized> Arc<T> {
         
         
         
-        
-        
-        
-        
-        
-        self.inner().count.load(Relaxed) == 1
+        self.inner().count.load(Acquire) == 1
     }
 }
 
