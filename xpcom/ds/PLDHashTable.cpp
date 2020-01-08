@@ -16,6 +16,7 @@
 #include "nsPointerHashKeys.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ChaosMode.h"
 
 using namespace mozilla;
@@ -300,6 +301,12 @@ PLDHashTable::Hash2(PLDHashNumber aHash0,
 
 
  bool
+PLDHashTable::MatchSlotKeyhash(Slot& aSlot, const PLDHashNumber aKeyHash)
+{
+  return (aSlot.KeyHash() & ~kCollisionFlag) == aKeyHash;
+}
+
+ bool
 PLDHashTable::MatchEntryKeyhash(const PLDHashEntryHdr* aEntry,
                                 const PLDHashNumber aKeyHash)
 {
@@ -307,11 +314,16 @@ PLDHashTable::MatchEntryKeyhash(const PLDHashEntryHdr* aEntry,
 }
 
 
+auto
+PLDHashTable::SlotForIndex(uint32_t aIndex) const -> Slot
+{
+  return mEntryStore.SlotForIndex(aIndex, mEntrySize);
+}
+
 PLDHashEntryHdr*
 PLDHashTable::AddressEntry(uint32_t aIndex) const
 {
-  return reinterpret_cast<PLDHashEntryHdr*>(
-      mEntryStore.Get() + aIndex * mEntrySize);
+  return SlotForIndex(aIndex).ToEntry();
 }
 
 PLDHashTable::~PLDHashTable()
@@ -326,15 +338,11 @@ PLDHashTable::~PLDHashTable()
   }
 
   
-  char* entryAddr = mEntryStore.Get();
-  char* entryLimit = entryAddr + Capacity() * mEntrySize;
-  while (entryAddr < entryLimit) {
-    PLDHashEntryHdr* entry = (PLDHashEntryHdr*)entryAddr;
-    if (EntryIsLive(entry)) {
-      mOps->clearEntry(this, entry);
+  mEntryStore.ForEachSlot(Capacity(), mEntrySize, [&](const Slot& aSlot) {
+    if (aSlot.IsLive()) {
+      mOps->clearEntry(this, aSlot.ToEntry());
     }
-    entryAddr += mEntrySize;
-  }
+  });
 
   recordreplay::DestroyPLDHashTableCallbacks(mOps);
 
@@ -364,9 +372,11 @@ PLDHashTable::Clear()
 
 
 
-template <PLDHashTable::SearchReason Reason>
-MOZ_ALWAYS_INLINE PLDHashEntryHdr*
-PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash) const
+template <PLDHashTable::SearchReason Reason, typename Success, typename Failure>
+MOZ_ALWAYS_INLINE
+auto
+PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash,
+                          Success&& aSuccess, Failure&& aFailure) const
 {
   MOZ_ASSERT(mEntryStore.Get());
   NS_ASSERTION(!(aKeyHash & kCollisionFlag),
@@ -374,18 +384,20 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash) const
 
   
   PLDHashNumber hash1 = Hash1(aKeyHash);
-  PLDHashEntryHdr* entry = AddressEntry(hash1);
+  Slot slot = SlotForIndex(hash1);
 
   
-  if (EntryIsFree(entry)) {
-    return (Reason == ForAdd) ? entry : nullptr;
+  if (slot.IsFree()) {
+    return (Reason == ForAdd) ? aSuccess(slot) : aFailure();
   }
 
   
   PLDHashMatchEntry matchEntry = mOps->matchEntry;
-  if (MatchEntryKeyhash(entry, aKeyHash) &&
-      matchEntry(entry, aKey)) {
-    return entry;
+  if (MatchSlotKeyhash(slot, aKeyHash)) {
+    PLDHashEntryHdr* e = slot.ToEntry();
+    if (matchEntry(e, aKey)) {
+      return aSuccess(slot);
+    }
   }
 
   
@@ -395,34 +407,38 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash) const
 
   
   
-  PLDHashEntryHdr* firstRemoved = nullptr;
+  Maybe<Slot> firstRemoved;
 
   for (;;) {
     if (Reason == ForAdd && !firstRemoved) {
-      if (MOZ_UNLIKELY(EntryIsRemoved(entry))) {
-        firstRemoved = entry;
+      if (MOZ_UNLIKELY(slot.IsRemoved())) {
+        firstRemoved.emplace(slot);
       } else {
-        entry->mKeyHash |= kCollisionFlag;
+        slot.MarkColliding();
       }
     }
 
     hash1 -= hash2;
     hash1 &= sizeMask;
 
-    entry = AddressEntry(hash1);
-    if (EntryIsFree(entry)) {
-      return (Reason == ForAdd) ? (firstRemoved ? firstRemoved : entry)
-                                : nullptr;
+    slot = SlotForIndex(hash1);
+    if (slot.IsFree()) {
+      if (Reason != ForAdd) {
+        return aFailure();
+      }
+      return aSuccess(firstRemoved.refOr(slot));
     }
 
-    if (MatchEntryKeyhash(entry, aKeyHash) &&
-        matchEntry(entry, aKey)) {
-      return entry;
+    if (MatchSlotKeyhash(slot, aKeyHash)) {
+      PLDHashEntryHdr* e = slot.ToEntry();
+      if (matchEntry(e, aKey)) {
+        return aSuccess(slot);
+      }
     }
   }
 
   
-  return nullptr;
+  return aFailure();
 }
 
 
@@ -432,8 +448,8 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash) const
 
 
 
-MOZ_ALWAYS_INLINE PLDHashEntryHdr*
-PLDHashTable::FindFreeEntry(PLDHashNumber aKeyHash) const
+MOZ_ALWAYS_INLINE auto
+PLDHashTable::FindFreeSlot(PLDHashNumber aKeyHash) const -> Slot
 {
   MOZ_ASSERT(mEntryStore.Get());
   NS_ASSERTION(!(aKeyHash & kCollisionFlag),
@@ -441,11 +457,11 @@ PLDHashTable::FindFreeEntry(PLDHashNumber aKeyHash) const
 
   
   PLDHashNumber hash1 = Hash1(aKeyHash);
-  PLDHashEntryHdr* entry = AddressEntry(hash1);
+  Slot slot = SlotForIndex(hash1);
 
   
-  if (EntryIsFree(entry)) {
-    return entry;
+  if (slot.IsFree()) {
+    return slot;
   }
 
   
@@ -454,16 +470,15 @@ PLDHashTable::FindFreeEntry(PLDHashNumber aKeyHash) const
   Hash2(aKeyHash, hash2, sizeMask);
 
   for (;;) {
-    NS_ASSERTION(!EntryIsRemoved(entry),
-                 "!EntryIsRemoved(entry)");
-    entry->mKeyHash |= kCollisionFlag;
+    MOZ_ASSERT(!slot.IsRemoved());
+    slot.MarkColliding();
 
     hash1 -= hash2;
     hash1 &= sizeMask;
 
-    entry = AddressEntry(hash1);
-    if (EntryIsFree(entry)) {
-      return entry;
+    slot = SlotForIndex(hash1);
+    if (slot.IsFree()) {
+      return slot;
     }
   }
 
@@ -498,25 +513,21 @@ PLDHashTable::ChangeTable(int32_t aDeltaLog2)
   mRemovedCount = 0;
 
   
-  char* oldEntryStore;
-  char* oldEntryAddr;
-  oldEntryAddr = oldEntryStore = mEntryStore.Get();
+  char* oldEntryStore = mEntryStore.Get();
   mEntryStore.Set(newEntryStore, &mGeneration);
   PLDHashMoveEntry moveEntry = mOps->moveEntry;
 
   
   uint32_t oldCapacity = 1u << oldLog2;
-  for (uint32_t i = 0; i < oldCapacity; ++i) {
-    PLDHashEntryHdr* oldEntry = (PLDHashEntryHdr*)oldEntryAddr;
-    if (EntryIsLive(oldEntry)) {
-      const PLDHashNumber key = oldEntry->mKeyHash & ~kCollisionFlag;
-      PLDHashEntryHdr* newEntry = FindFreeEntry(key);
-      NS_ASSERTION(EntryIsFree(newEntry), "EntryIsFree(newEntry)");
-      moveEntry(this, oldEntry, newEntry);
-      newEntry->mKeyHash = key;
+  EntryStore::ForEachSlot(oldEntryStore, oldCapacity, mEntrySize, [&](const Slot& slot) {
+    if (slot.IsLive()) {
+      const PLDHashNumber key = slot.KeyHash() & ~kCollisionFlag;
+      Slot newSlot = FindFreeSlot(key);
+      MOZ_ASSERT(newSlot.IsFree());
+      moveEntry(this, slot.ToEntry(), newSlot.ToEntry());
+      newSlot.SetKeyHash(key);
     }
-    oldEntryAddr += mEntrySize;
-  }
+  });
 
   free(oldEntryStore);
   return true;
@@ -545,11 +556,18 @@ PLDHashTable::Search(const void* aKey) const
   AutoReadOp op(mChecker);
 #endif
 
-  PLDHashEntryHdr* entry = mEntryStore.Get()
-                         ? SearchTable<ForSearchOrRemove>(aKey,
-                                                          ComputeKeyHash(aKey))
-                         : nullptr;
-  return entry;
+  if (!mEntryStore.Get()) {
+    return nullptr;
+  }
+
+  return SearchTable<ForSearchOrRemove>(aKey,
+                                        ComputeKeyHash(aKey),
+                                        [&](Slot& slot) -> PLDHashEntryHdr* {
+                                          return slot.ToEntry();
+                                        },
+                                        [&]() -> PLDHashEntryHdr* {
+                                          return nullptr;
+                                        });
 }
 
 PLDHashEntryHdr*
@@ -595,21 +613,26 @@ PLDHashTable::Add(const void* aKey, const mozilla::fallible_t&)
   
   
   PLDHashNumber keyHash = ComputeKeyHash(aKey);
-  PLDHashEntryHdr* entry = SearchTable<ForAdd>(aKey, keyHash);
-  if (!EntryIsLive(entry)) {
+  Slot slot = SearchTable<ForAdd>(aKey, keyHash,
+                                  [&](Slot& found) -> Slot { return found; },
+                                  [&]() -> Slot {
+                                    MOZ_CRASH("Nope");
+                                    return Slot(nullptr);
+                                  });
+  if (!slot.IsLive()) {
     
-    if (EntryIsRemoved(entry)) {
+    if (slot.IsRemoved()) {
       mRemovedCount--;
       keyHash |= kCollisionFlag;
     }
     if (mOps->initEntry) {
-      mOps->initEntry(entry, aKey);
+      mOps->initEntry(slot.ToEntry(), aKey);
     }
-    entry->mKeyHash = keyHash;
+    slot.SetKeyHash(keyHash);
     mEntryCount++;
   }
 
-  return entry;
+  return slot.ToEntry();
 }
 
 PLDHashEntryHdr*
@@ -640,14 +663,19 @@ PLDHashTable::Remove(const void* aKey)
   AutoWriteOp op(mChecker);
 #endif
 
-  PLDHashEntryHdr* entry = mEntryStore.Get()
-                         ? SearchTable<ForSearchOrRemove>(aKey,
-                                                          ComputeKeyHash(aKey))
-                         : nullptr;
-  if (entry) {
-    RawRemove(entry);
-    ShrinkIfAppropriate();
+  if (!mEntryStore.Get()) {
+    return;
   }
+
+  PLDHashNumber keyHash = ComputeKeyHash(aKey);
+  SearchTable<ForSearchOrRemove>(aKey, keyHash,
+                                 [&](Slot& slot) {
+                                   RawRemove(slot);
+                                   ShrinkIfAppropriate();
+                                 },
+                                 [&]() {
+                                   
+                                 });
 }
 
 void
@@ -664,6 +692,13 @@ PLDHashTable::RemoveEntry(PLDHashEntryHdr* aEntry)
 void
 PLDHashTable::RawRemove(PLDHashEntryHdr* aEntry)
 {
+  Slot slot(aEntry);
+  RawRemove(slot);
+}
+
+void
+PLDHashTable::RawRemove(Slot& aSlot)
+{
   
   
   
@@ -671,16 +706,17 @@ PLDHashTable::RawRemove(PLDHashEntryHdr* aEntry)
 
   MOZ_ASSERT(mEntryStore.Get());
 
-  MOZ_ASSERT(EntryIsLive(aEntry), "EntryIsLive(aEntry)");
+  MOZ_ASSERT(aSlot.IsLive());
 
   
-  PLDHashNumber keyHash = aEntry->mKeyHash;
-  mOps->clearEntry(this, aEntry);
+  PLDHashEntryHdr* entry = aSlot.ToEntry();
+  PLDHashNumber keyHash = aSlot.KeyHash();
+  mOps->clearEntry(this, entry);
   if (keyHash & kCollisionFlag) {
-    MarkEntryRemoved(aEntry);
+    aSlot.MarkRemoved();
     mRemovedCount++;
   } else {
-    MarkEntryFree(aEntry);
+    aSlot.MarkFree();
   }
   mEntryCount--;
 }
@@ -731,8 +767,7 @@ PLDHashTable::Iterator::Iterator(Iterator&& aOther)
 {
   
   aOther.mTable = nullptr;
-  aOther.mLimit = nullptr;
-  aOther.mCurrent = nullptr;
+  
   aOther.mNexts = 0;
   aOther.mNextsLimit = 0;
   aOther.mHaveRemoved = false;
@@ -741,8 +776,8 @@ PLDHashTable::Iterator::Iterator(Iterator&& aOther)
 
 PLDHashTable::Iterator::Iterator(PLDHashTable* aTable)
   : mTable(aTable)
-  , mLimit(mTable->mEntryStore.Get() + mTable->Capacity() * mTable->mEntrySize)
-  , mCurrent(mTable->mEntryStore.Get())
+  , mLimit(mTable->mEntryStore.SlotForIndex(mTable->Capacity(), mTable->mEntrySize))
+  , mCurrent(mTable->mEntryStore.SlotForIndex(0, mTable->mEntrySize))
   , mNexts(0)
   , mNextsLimit(mTable->EntryCount())
   , mHaveRemoved(false)
@@ -756,8 +791,8 @@ PLDHashTable::Iterator::Iterator(PLDHashTable* aTable)
       mTable->Capacity() > 0) {
     
     
-    mCurrent += ChaosMode::randomUint32LessThan(mTable->Capacity()) *
-                mTable->mEntrySize;
+    uint32_t i = ChaosMode::randomUint32LessThan(mTable->Capacity());
+    mCurrent = mTable->mEntryStore.SlotForIndex(i, mTable->mEntrySize);
   }
 
   
@@ -784,15 +819,16 @@ MOZ_ALWAYS_INLINE bool
 PLDHashTable::Iterator::IsOnNonLiveEntry() const
 {
   MOZ_ASSERT(!Done());
-  return !EntryIsLive(reinterpret_cast<PLDHashEntryHdr*>(mCurrent));
+  return !mCurrent.IsLive();
 }
 
 MOZ_ALWAYS_INLINE void
 PLDHashTable::Iterator::MoveToNextEntry()
 {
-  mCurrent += mEntrySize;
+  mCurrent.Next(mEntrySize);
   if (mCurrent == mLimit) {
-    mCurrent = mTable->mEntryStore.Get();  
+    
+    mCurrent = mTable->mEntryStore.SlotForIndex(0, mEntrySize);
   }
 }
 
@@ -814,8 +850,7 @@ PLDHashTable::Iterator::Next()
 void
 PLDHashTable::Iterator::Remove()
 {
-  
-  mTable->RawRemove(Get());
+  mTable->RawRemove(mCurrent);
   mHaveRemoved = true;
 }
 
