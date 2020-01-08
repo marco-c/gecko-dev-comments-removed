@@ -231,6 +231,16 @@ pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys",
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
 #endif
 
+#ifdef NIGHTLY_BUILD
+
+
+
+
+
+pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode",
+     "docs.google.com,www.rememberthemilk.com");
+#endif
+
 
 pref("dom.webmidi.enabled", false);
 

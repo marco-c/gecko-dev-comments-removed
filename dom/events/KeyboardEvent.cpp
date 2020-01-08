@@ -148,6 +148,7 @@ void KeyboardEvent::GetInitDict(KeyboardEventInit& aParam)
 
 bool
 KeyboardEvent::ShouldUseSameValueForCharCodeAndKeyCode(
+                 const WidgetKeyboardEvent& aWidgetKeyboardEvent,
                  CallerType aCallerType) const
 {
   
@@ -157,10 +158,13 @@ KeyboardEvent::ShouldUseSameValueForCharCodeAndKeyCode(
   
   
   
+  
+  
   if (mInitializedByJS ||
-      mEvent->mMessage != eKeyPress ||
+      aWidgetKeyboardEvent.mMessage != eKeyPress ||
+      aWidgetKeyboardEvent.mUseLegacyKeyCodeAndCharCodeValues ||
       aCallerType == CallerType::System ||
-      mEvent->mFlags.mInSystemGroup) {
+      aWidgetKeyboardEvent.mFlags.mInSystemGroup) {
     return false;
   }
 
@@ -193,7 +197,8 @@ KeyboardEvent::CharCode(CallerType aCallerType)
   
 
   if (widgetKeyboardEvent->mKeyNameIndex != KEY_NAME_INDEX_USE_STRING &&
-      ShouldUseSameValueForCharCodeAndKeyCode(aCallerType)) {
+      ShouldUseSameValueForCharCodeAndKeyCode(*widgetKeyboardEvent,
+                                              aCallerType)) {
     return ComputeTraditionalKeyCode(*widgetKeyboardEvent, aCallerType);
   }
 
@@ -226,7 +231,8 @@ KeyboardEvent::KeyCode(CallerType aCallerType)
   
 
   if (widgetKeyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
-      ShouldUseSameValueForCharCodeAndKeyCode(aCallerType)) {
+      ShouldUseSameValueForCharCodeAndKeyCode(*widgetKeyboardEvent,
+                                              aCallerType)) {
     return widgetKeyboardEvent->mCharCode;
   }
 

@@ -872,7 +872,13 @@ private:
   
   bool mForceDispatchKeyPressEventsForNonPrintableKeys : 1;
   
-  bool mInitializedForceDispatchKeyPressEventsForNonPrintableKeys : 1;
+  
+  
+  
+  bool mForceUseLegacyKeyCodeAndCharCodeValues : 1;
+  
+  
+  bool mInitializedWithKeyPressEventDispatchingBlacklist : 1;
 #endif 
 
   static bool sDisableNonTestMouseEvents;

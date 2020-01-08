@@ -197,11 +197,17 @@ VARCACHE_PREF(
 
 
 
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE  true
+#else
+# define PREF_VALUE  false
+#endif
 VARCACHE_PREF(
   "dom.keyboardevent.keypress.set_keycode_and_charcode_to_same_value",
    dom_keyboardevent_keypress_set_keycode_and_charcode_to_same_value,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 
 
@@ -437,13 +443,6 @@ VARCACHE_PREF(
   "dom.xhr.standard_content_type_normalization",
    dom_xhr_standard_content_type_normalization,
   RelaxedAtomicBool, false
-)
-
-
-VARCACHE_PREF(
-  "dom.block_multiple_popups",
-   dom_block_multiple_popups,
-  bool, true
 )
 
 

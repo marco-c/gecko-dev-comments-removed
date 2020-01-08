@@ -166,6 +166,7 @@ protected:
     , mIsComposing(false)
     , mIsSynthesizedByTIP(false)
     , mMaybeSkippableInRemoteProcess(true)
+    , mUseLegacyKeyCodeAndCharCodeValues(false)
     , mEditCommandsForSingleLineEditorInitialized(false)
     , mEditCommandsForMultiLineEditorInitialized(false)
     , mEditCommandsForRichTextEditorInitialized(false)
@@ -195,6 +196,7 @@ public:
     , mIsComposing(false)
     , mIsSynthesizedByTIP(false)
     , mMaybeSkippableInRemoteProcess(true)
+    , mUseLegacyKeyCodeAndCharCodeValues(false)
     , mEditCommandsForSingleLineEditorInitialized(false)
     , mEditCommandsForMultiLineEditorInitialized(false)
     , mEditCommandsForRichTextEditorInitialized(false)
@@ -400,6 +402,10 @@ public:
   
   
   bool mMaybeSkippableInRemoteProcess;
+  
+  
+  
+  bool mUseLegacyKeyCodeAndCharCodeValues;
 
   bool CanSkipInRemoteProcess() const
   {
@@ -681,6 +687,8 @@ public:
 #endif
     mIsSynthesizedByTIP = aEvent.mIsSynthesizedByTIP;
     mMaybeSkippableInRemoteProcess = aEvent.mMaybeSkippableInRemoteProcess;
+    mUseLegacyKeyCodeAndCharCodeValues =
+      aEvent.mUseLegacyKeyCodeAndCharCodeValues;
 
     
     
