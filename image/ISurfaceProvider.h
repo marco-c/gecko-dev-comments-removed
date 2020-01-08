@@ -112,11 +112,10 @@ protected:
 
   
   
-  
-  virtual RawAccessFrameRef RawAccessRef(size_t aFrame)
+  virtual already_AddRefed<imgFrame> GetFrame(size_t aFrame)
   {
-    MOZ_ASSERT_UNREACHABLE("Surface provider does not support raw access!");
-    return RawAccessFrameRef();
+    MOZ_ASSERT_UNREACHABLE("Surface provider does not support direct access!");
+    return nullptr;
   }
 
   
@@ -208,16 +207,16 @@ public:
     return mDrawableRef ? NS_OK : NS_ERROR_FAILURE;
   }
 
-  RawAccessFrameRef RawAccessRef(size_t aFrame)
+  already_AddRefed<imgFrame> GetFrame(size_t aFrame)
   {
     MOZ_ASSERT(mHaveSurface, "Trying to get on an empty DrawableSurface?");
 
     if (!mProvider) {
       MOZ_ASSERT_UNREACHABLE("Trying to get on a static DrawableSurface?");
-      return RawAccessFrameRef();
+      return nullptr;
     }
 
-    return mProvider->RawAccessRef(aFrame);
+    return mProvider->GetFrame(aFrame);
   }
 
   void Reset()
