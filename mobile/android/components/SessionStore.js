@@ -894,7 +894,7 @@ SessionStore.prototype = {
 
     
     let content = aBrowser.contentWindow;
-    let [formdata] = Utils.mapFrameTree(content, FormData.collect);
+    let [formdata] = Utils.mapFrameTree(content, SessionStoreUtils.collectFormData);
     formdata = PrivacyFilter.filterFormData(formdata || {});
 
     

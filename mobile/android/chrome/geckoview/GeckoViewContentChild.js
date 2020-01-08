@@ -83,7 +83,8 @@ class GeckoViewContentChild extends GeckoViewChildModule {
   collectSessionState() {
     let history = SessionHistory.collect(docShell);
     let [formdata, scrolldata] = this.Utils.mapFrameTree(
-        content, FormData.collect, SessionStoreUtils.collectScrollPosition);
+        content, SessionStoreUtils.collectFormData,
+        SessionStoreUtils.collectScrollPosition);
 
     
     let zoom = 1;
