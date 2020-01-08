@@ -748,7 +748,7 @@ var BookmarksEventHandler = {
       
       
       if (target.localName == "menu" || target.localName == "toolbarbutton")
-        PlacesUIUtils.openContainerNodeInTabs(target._placesNode, aEvent, aView);
+        PlacesUIUtils.openMultipleLinksInTabs(target._placesNode, aEvent, aView);
     } else if (aEvent.button == 1) {
       
       this.onCommand(aEvent);
