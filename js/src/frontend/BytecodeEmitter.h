@@ -19,6 +19,7 @@
 #include "frontend/NameFunctions.h"
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"
+#include "frontend/ValueUsage.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Interpreter.h"
 #include "vm/Iteration.h"
@@ -108,18 +109,6 @@ struct CGYieldAndAwaitOffsetList {
 
 typedef Vector<jsbytecode, 64> BytecodeVector;
 typedef Vector<jssrcnote, 64> SrcNotesVector;
-
-
-enum class ValueUsage {
-    
-    
-    WantValue,
-
-    
-    
-    
-    IgnoreValue
-};
 
 class EmitterScope;
 class NestableControl;

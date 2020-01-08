@@ -1,0 +1,28 @@
+
+
+
+
+
+
+#ifndef frontend_ValueUsage_h
+#define frontend_ValueUsage_h
+
+namespace js {
+namespace frontend {
+
+
+enum class ValueUsage {
+    
+    
+    WantValue,
+
+    
+    
+    
+    IgnoreValue
+};
+
+} 
+} 
+
+#endif 
