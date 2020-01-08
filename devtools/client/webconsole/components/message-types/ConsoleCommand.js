@@ -35,6 +35,7 @@ function ConsoleCommand(props) {
     type,
     level,
     messageText,
+    timeStamp,
   } = message;
 
   
@@ -48,6 +49,7 @@ function ConsoleCommand(props) {
     messageBody,
     serviceContainer,
     indent,
+    timeStamp,
     timestampsVisible,
   });
 }

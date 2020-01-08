@@ -976,11 +976,14 @@ WebConsoleActor.prototype =
 
 
   _waitForResultAndSend: async function(response) {
+    let updateTimestamp = false;
+
     
     if (
       response.helperResult && typeof response.helperResult.then == "function"
     ) {
       response.helperResult = await response.helperResult;
+      updateTimestamp = true;
     } else if (response.awaitResult && typeof response.awaitResult.then === "function") {
       let result;
       try {
@@ -1000,6 +1003,14 @@ WebConsoleActor.prototype =
 
       
       delete response.awaitResult;
+
+      updateTimestamp = true;
+    }
+
+    if (updateTimestamp) {
+      
+      
+      response.timestamp = Date.now();
     }
 
     
